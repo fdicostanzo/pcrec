@@ -2419,3 +2419,22 @@ writes `some()`. MANAGER'S NOTE (mine, put to him as a question, slug bare-loop-
 rule he ruled at 14:30 (last-pass-default: a bare looped label reads the LAST pass). Both readings fail `3x`; they
 part on `x3` and `73` (last pass HOLDS, every pass FAILS). And his label-versus-capture ground removes the regex
 reason for "last pass" (a label is the language's own, so its bare reading is a language choice again).
+
+**2026-11-17 OWNER RULING — labels match every pass, captures match the last (Frank, to session 138, evening).**
+Asked **bare-loop-label** twice (on `x3` with `/(?:(?<a>\d)|(?<b>[a-z]))*/ & (a: <5)`: every pass FAILS, last pass
+HOLDS). HIS WORDS, in order: "The alternation case: the outer loop is labels a | b. The first loop the a is matched
+and exists. Good. The second loop the b matches then the condition fails." and then "The alternation case: I
+thought we said labels match every pass but captures match the last".
+RECORD: (1) A condition on a LABEL set in a loop is judged on EVERY PASS (each pass with its own labels, a group
+that took no part being unset in that pass: his lean of the same evening); (2) a CAPTURE, regex's, holds the LAST
+value, as PCRE does. This is his statement of the label-versus-capture distinction. THE RECORD DID NOT SAY IT
+BEFORE: the 14:30 entry ruled a bare looped label reads the LAST pass ("last-pass-default: regex"), and the
+label-versus-capture addendum recorded only a difference of LIFETIME. So this REVERSES last-pass-default for
+LABELS (the last-pass reading stays, as what a capture is) and RESTORES for labels the 2026-11-14 Q4 ruling ("`x:`
+= all iterations") and the 2026-11-15 "a plain condition = ALL hits" reading, which 14:30 had reversed. His 14:30
+requirement carries over turned around: the LAST-pass meaning, and `some`, must each have a way of being written,
+defined and tested. Nested loops: his lean is the OUTER reading (every enclosing loop's pass). MINE, for the next
+revision to run and for him to confirm where it decides answers: on `x3` the program above FAILS (the first pass
+has no `a`, and a test on an absent label fails); whether zero passes holds (the 11-16 absent-rule said "at least
+one"); how NOT composes with "every pass"; that the bare joint is then per pass (joint-last-pass dissolves); how
+the last-pass meaning is spelled (through the capture, or a named form).
