@@ -12,4 +12,5 @@ Three check fixes from review r39, no compiler or kit source change. All validat
 make strict clean; run_g2_win.sh 27376 passed / 0 failed; tests/compound/run_shell_checks.sh 17/0; run_lever_fence.sh PASS; m6read_check_sab_anchors.py all resolve; sabotage rows S3310, S3311, S3320, S3321 DETECTED. No full make test, no queue, no timing, no cloud. Sabotage ids used: S3320, S3321 (S3322-S3324 unused).
 
 ## STATE AT HANDOFF
-Branch lane/memfn-formsfixj, all committed. No rulings file existed. OWED: none
+Branch lane/memfn-formsfixj, all committed. Rulings file empty (nothing applied).
+OWED: none
