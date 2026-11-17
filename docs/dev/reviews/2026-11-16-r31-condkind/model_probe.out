@@ -1,0 +1,17 @@
+(1) /\d+/ & !/0+/ searched on '0 7': per-span HOLDS; per-subject FAILS
+(1) /\d+/ & !/0+/ searched on '0': per-span FAILS; per-subject FAILS
+(1) /\d+/ & !/0+/ searched on '7': per-span HOLDS; per-subject HOLDS
+(1) /\d+/ & !/0+/ searched on '00 70': per-span HOLDS; per-subject FAILS
+(2) /a/ & /b/ searched on 'ab': joined on source row HOLDS; same stretch FAILS
+(2) /a/ & /b/ searched on 'a': joined on source row FAILS; same stretch FAILS
+(2) /a/ & /b/ searched on 'ba': joined on source row HOLDS; same stretch FAILS
+(3) when((d: <5), (d: "0")) searched on '1 7': case-when per row HOLDS; body with per-subject complement FAILS
+(3) when((d: <5), (d: "0")) searched on '7': case-when per row HOLDS; body with per-subject complement HOLDS
+(3) when((d: <5), (d: "0")) searched on '1': case-when per row FAILS; body with per-subject complement FAILS
+(3) when((d: <5), (d: "0")) searched on '0 7': case-when per row HOLDS; body with per-subject complement HOLDS
+(4) RZ (1110): all((h: <5, k: 3..7)) [A2] vs all((h: <5)) & (k: 3..7): differ on 5 ['0', '1', '2', '8', '9']
+(5) (P | Q) & (h = 0: <5) on '7': one reading FAILS; union of rows HOLDS
+(5) (P | Q) & (h = 0: <5) on '3': one reading HOLDS; union of rows HOLDS
+(6) some((h = 0: <5)) on '': h repeated (regex) FAILS; h set once (program) HOLDS
+(6) some((h = 0: <5)) on '3;': h repeated (regex) HOLDS; h set once (program) HOLDS
+(6) some((h = 0: <5)) on '7;': h repeated (regex) FAILS; h set once (program) FAILS
