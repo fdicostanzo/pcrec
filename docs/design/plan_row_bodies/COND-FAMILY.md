@@ -2216,3 +2216,16 @@ for, that is a NOTED EXCEPTION (stated as such, with what regex alone would give
 following from it: the draft keeps one short list of these exceptions (the hit list first; the loop's pass table,
 records and defaults are candidates for the same list, each still the owner's to confirm), and the rule for how a
 condition on such a value interacts with backtracking is asked for each, since regex cannot answer it.
+
+**2026-11-17 OWNER — an exception proves itself, or is asked for by name (Frank, to session 138, box clock about
+13:30; refines the 13:20 entry; two alternatives in his words, not yet a choice between them).** HIS WORDS: "An
+exception should have to prove itself. And be converted to regular language. Alternatively, the default might be
+regex behavior and the exception explicitly requested all_matches(rx)". RECORD: (A) a feature beyond the regex
+model must EARN its place and have a REGULAR-LANGUAGE form (the manager reads "converted to regular language" as:
+what it computes is shown to be expressible as, and compiled to, a regular language; his to correct); or (B) the
+DEFAULT everywhere is regex behaviour and the beyond-regex value is REQUESTED EXPLICITLY by a named form
+(`all_matches(rx)` is his example; a placeholder spelling, D193 add. 4). MINE: the two combine (regex behaviour by
+default; a named request for the exception; the named form admitted only with its regular-language account or its
+capability level stated), and the 11-15 ruling already has this shape for hits ("reading ONE hit needs captures, a
+higher level with its cost shown; count/some/all in phase 1", CF:972-980): count, some and all over the hits are
+regular; holding the hits as values is the level-gated part.
