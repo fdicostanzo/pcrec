@@ -158,3 +158,14 @@ language and the plan; and he offers a way to REMOVE the back-flow where it is a
 neither hardware nor language: the facts are about the EMITTED TEXT (what the artifact contains; how many bytes of
 C it is), and they flow back only because the gates are measured on the text; a fact-finding agent is classifying
 the 14 fields and the size caps before he is asked again.
+
+## 2026-11-17 evening, the owner rules emitter-backflow
+
+Shown the fact sheet (docs/dev/lanes/archbackflow_facts.md: nine back-flowing facts decide something; five are
+about the emitted text, four about the plan, none about hardware; both size caps are checked on text after emission
+and tripping one walks a ten-rung emit-and-retry ladder; gates already in plan units are checked before emission
+and cause no back-flow) and asked: is the target a one-way hand-off with size gates counted in plan units, with
+today's back-flow recorded as a noted deviation? HIS WORDS: "emitter-backflow: yes one way with deviation".
+RECORD: planner to emitter is a LAYER handoff, ONE WAY (not a module seam with a return record); code-length gates
+become plan-unit ("op code") gates; today's back-flow is a NOTED DEVIATION (register row 6c in
+docs/dev/guide/architecture.md), corrected when the record-first and stream work reach that site. Not started now.
