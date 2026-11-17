@@ -1,7 +1,13 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 9 for the kit manager (lane formsfixe, 2026-11-17; the design text beside the
-cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 9 applies the re-check of
+Status: DRAFT rev 10 for the kit manager (lane formsfixg, 2026-11-17; the design text beside the
+cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 10 applies the re-check of
+rev 9's fixes, review r38 (`docs/dev/reviews/2026-11-17-r38-memfn-forms4.md`, its RULED section:
+the CLASS behind J1 and J2 closed, not the instance: the twin term per pattern, the launches in
+rounds, and a drill with noise at every level of the night; the drill's arm level then needed
+CONFIRM BY RE-RUN, ruled by the kit manager as rulings entry R2; J3, J4, J7, J8, J9 as text or small
+script fixes; J5 and J6 are lane formsfixh's checks, not this text's; read "Changes in rev 10"
+first). Rev 9 (lane formsfixe) applied the re-check of
 rev 8's fixes, review r37 (`docs/dev/reviews/2026-11-17-r37-memfn-forms3.md`, its RULED section:
 H1 and H2 as ONE mechanism, the twin contrasts, plus H3, H4 and H7 in the rule's text and the
 script; H9 and H10 as text; H5, H6 and H8 are lane formsfixf's checks, not this text's; read
@@ -48,6 +54,30 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 10 (by r38 finding id)
+
+Review r38 re-checked rev 9's fixes (`lane/memfn-forms` 5d2a98710). Its two rule defects (J1,
+J2) were, for the third round running, noise shapes one level below the drills (r36 G2 the
+night, r37 H1 one regime, r38 J1 one pattern; J2 the launch ORDER), masked today exactly as the
+earlier ones (every real night takes step (5) while NOT-WARM and short-subject are
+approximations). The kit manager RULED the class closed, not the instance: the estimator at
+the finest level the night times twins, a night order that does not correlate arm with time,
+and a drill family that varies noise at EVERY level. `cards.py selftest` is the drill record
+(182 checks, 0 failed; lane formsfixg's report, "Validation"). J5 and J6 are lane formsfixh's
+checks (compound section (4), G2), J10 is NOTED.
+
+| id | change | where |
+|---|---|---|
+| J1 | The twin term is ALSO computed per PATTERN, over the pattern's own hash-equal pools in its cells read (df 12 at a 2-arm pool, 36 at `hex24`), a floor in addition to the (regime, layer) one: `f(c) = max(f(r, l), twin(pattern))`; a pattern with no estimate (df 0) voids its cells through the gate, never pooled up. One pattern's arms at offsets τ 2 % / 3 %: 0.000 at `hex24`, `hex32` and `hex64` (pools of 4, 3, 2), τ 1/2/3 % (drill (xxi)) (r38: 0.40-0.69). Control: `hex64` τ 2 % under rev 9's floor 0.610 (accept > 0.15) | §3 "The twin term PER PATTERN", drill (xxi) |
+| J2 | Each cell is timed in ROUNDS, one launch of every arm per round, the round's arm order a fixed permutation from the cell's key; the cells' order and the ruled night order unchanged. r38's step (+5 % after `hex24`'s H(4)): a step of +2/+5/+10 % with its cut drawn inside `hex24`'s pattern block, its layer block, one cell and the cell's middle round: 0.000 in every row (drill (xxi)). Control: the same step in rev 9's arm-major order under rev 9's floor 0.337 (accept > 0.15); the same cut in rounds under rev 9's floor 0.000. A selftest row checks `time_cells` launches in rounds, in the order the drills use | night order step 1, drill (xxi) |
+| CLASS | Drill (xxi), RULED: between-run noise confined to each pooled level in turn (the night, one regime, one layer, one pattern at each pool size, one arm: I and every finite head H(0) .. H(64)) at τ 1/2/3 %, and a box-speed STEP (+2/+5/+10 %, the cut drawn inside the block each night) and a linear DRIFT (2/5/10 % over the block) in a block of each level of the launch order (the night, one pattern's block, one layer of it, one cell, the cell's middle round in `hex24` and in `hex64`): 84 rows, worst P(h\* != 64) 0.020 (H(24)'s arm at τ 3 %) over 300 nights each (accept <= 0.05). Every earlier drill re-run: selftest 182 checks, 0 failed: every rev 9 line holds (noise, heterogeneous noise, splits, whole-arm shifts, between-run offsets, gate cost, R0, re-run, C3, void by method, deny, identity); the earlier controls, now with the per-pattern term and the confirm off too, read 0.177, 0.397, 0.663, 0.403 (accept > 0.15 each); the cost recorded: G4's one-cell 5 % win of H(8) ships 8 in 126 of 200 nights (rev 9: 157), since a single winning cell must now reproduce. POWER (a true 5 % win of H(8) in one regime): 282 (hit-dense) and 274 (random) of 300. Void rate on pure noise: 0.000 (normal launches) and 0.030 (t(5)) of nights (F3: <= 5 %) | drill (xxi), (xv)-(xx) |
+| R2 (CONFIRM) | The class drill's ARM level failed for a head arm (H(8) τ 2 %: 0.187; rev 9 0.197): no twin pool holds a head where it is compared. RULED (kit manager's rulings entry R2): CONFIRM BY RE-RUN, a head's win beyond `f` in a cell counts only if the cell's one confirming re-run wins again; an unreproduced win reads as a tie with I. Arm rows for every head: I and H(0) .. H(64) at τ 1/2/3 %, 30 rows, worst 0.020 (H(24), τ 3 %; H(8) 0.000 / 0.000 / 0.000); control (rev 9's rule) 0.213. The FAST 3-of-5 split NAMED LIMIT is RETIRED: 0 of 100 (rev 9: 27) | §3 "Confirm by re-run", "A split that moves a median", drill (xxi) |
+| J3 | RECORDED LIMIT: the agreement gate is sized by N (head comparisons), not its own test count; at N = 0 it voids nearly every cell (re-run rounds, never a wrong h\*); unreachable on a healthy night | §3 "A split that moves a median" (the gate) |
+| J4 | (1) A cell the gate voids only after the first-owed cells are read owes a second `rerun` round; rounds end (each cell re-timed at most once). (2) The gate reads a floor that includes the disagreeing pool's own contrast (stated) | §3 "The re-run", the gate |
+| J7 | The identity check's reach is printed and floored PER SOURCE (cards, census, movers); at h\* < 64 the movers file's own count must be nonzero | §3 "The identity check" |
+| J8 | `cards.py c3`'s VACUOUS text names the cause: H(64) loops nowhere in C3/C4 at this window width (or its loop text moved) | night order 2b (script text) |
+| J9 | memfn/tests NOTES.md lists the forms' later plants (S3285, S3287-S3289, S3300, S3301, S3304); three pointers in formsfixh's files are exact replacement lines for the landing lane (rulings R1) | lane report |
 
 ## Changes in rev 9 (by r37 finding id)
 
@@ -691,20 +721,60 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       the largest over the smallest exceeds `1 + f(c)` (the cell's own floor, below, whose twin
       term already measures that noise), the cell is VOID, joins the re-run list (§"The re-run")
       and is never a pick. A pool of two voids on any such disagreement: it cannot tell which arm
-      moved. Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
-      length). A slow split in a head's own arm only makes that head lose. The residual is a FAST
+      moved. [rev 10, r38 J1] The cell's own floor `f(c)` includes its pattern's twin term, and a
+      cell whose pattern has no twin estimate voids here too. [rev 10, r38 J4 (2)] The gate reads
+      the floor computed over the cells read BEFORE it gates, which includes the disagreeing
+      pool's own contrast: a 2-arm contrast of `s` lifts its (regime, layer) twin floor to about
+      0.86 `s`, and the gate still fires (0.90-0.92 of nights at 2 `f`, r38). A statement, not a
+      defect. [rev 10, RECORDED LIMIT, r38 J3] The gate's threshold is sized by N, the HEAD
+      comparison count, not by the gate's own test count (pools x arm pairs). On a degenerate
+      night where every C1-C2 head is hash-equal to I (N = 0, `z` = 1.645: a no-op lever build,
+      or R0 removing every moving head) it voids nearly every cell on pure noise (first-void
+      0.983-0.993 of nights, 1-3 re-run rounds); the cost is re-run rounds, never a wrong h\*
+      (P(h\* != 64) 0.000-0.003), and a healthy width-32 or width-4095 night never reaches it
+      (0.000 first-void). Recorded, not built against.
+      Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
+      length). A slow split in a head's own arm only makes that head lose. ~~The residual is a FAST
       3-of-5 split in a head arm, which is outside the pool's reach and the gate's: it ships that
       head in 27 of 100 nights at 1.5 `f` (`cards.py selftest`'s RECORD line, not gated;
       27 of 100 under rev 8). A fast
       transient on 3 of 5 consecutive launches is not the shape interrupts, migrations or
-      frequency drops take (they slow a launch). It is recorded, not built against. Drill (xviii)
+      frequency drops take (they slow a launch). It is recorded, not built against.~~ [rev 10,
+      r38 R2: the NAMED LIMIT is RETIRED. The confirming re-run (below, "Confirm by re-run")
+      does not repeat a transient, so the fast split's win does not reproduce: 0 of 100
+      nights (rev 9's rule on the same nights: 27); `selftest` now checks it, accept
+      <= 5 of 100.] Drill (xviii)
       checks the pooled reading. C3 (R2's C3 half, R5) still reads I's own arm: C3 never feeds
       the pick.
     - **The re-run [rev 7, r35 F7].** A cell void once (missing, an arm void, bimodal) is
       re-timed WHOLE, every arm of it, in a later step of the same night (`cards.py rerun`),
       and the re-run's rows replace the first reading of that cell. The rule refuses to reach
       step (5) while any cell has been attempted once; a cell is void twice only when its
-      re-run is void too. A gate failure is never re-run (it is R0, F5).
+      re-run is void too. A gate failure is never re-run (it is R0, F5). [rev 10, r38 J4 (1)]
+      `rule` lists the cells void once by a missing or void arm or a bimodal arm BEFORE the
+      agreement gate runs, so a cell the gate voids only once those cells are read owes a
+      SECOND `rerun` round (observed in 4 of 2,100 one-pattern nights; up to 3 rounds in J3's
+      shape). Each round re-times only cells attempted once; no cell is re-timed twice, so the
+      rounds end. `rule` names each owed round with `NEXT cards.py rerun RUNDIR`.
+    - **Confirm by re-run [rev 10, RULED r38 R2 (the kit manager's rulings entry R2, lane
+      formsfixg)].** The class drill (xxi) found a level no floor can read: between-run noise
+      confined to ONE head's arm. No twin pool holds a head where that head is compared (its
+      twins exist only in `lit40`/`abc60`, where it never is), so a head whose arm carries its
+      own offset `exp(N(0, 2 %))` in every cell stayed in E whenever its worst ratio fell under
+      `1 + f` and then "won": P(h\* != 64) = 0.187 for H(8) (0.21 H(0), 0.17 H(16), 0.08 H(32);
+      rev 9's rule 0.197, J1's per-pattern term neither helps nor hurts). Replication is the
+      general answer over every level: **a head's win beyond `f` in a cell (`t(I, c) / t(H(h), c)
+      > 1 + f(c)`) COUNTS only if the cell's confirming re-run wins again beyond `f(c)`.** After
+      the voids are settled and the gate has run, `rule` lists every cell holding a head's win
+      and owes ONE confirming re-run of each (`cards.py rerun` times every arm of the cell, in
+      rounds, into `results_confirm.tsv`). A win that does not reproduce reads as a TIE with I in
+      that cell (no win, never a void, never a pick); a confirm reading with a missing, void or
+      bimodal arm confirms nothing. The cell's reading of record stays the first one; the
+      confirm decides only whether its wins count. One confirming re-run per winning cell, no
+      more, and the ruled night order is unchanged (the re-run sits inside the cards step).
+      Cost: a pure-noise night holds no win (the floor is sized to α over every comparison:
+      no confirm cell on any of 300 pure-noise nights, normal or t(5) launches); a night with one real 5 % win of one head in one regime confirms about
+      10 (mean 10.0 hit-dense, 9.8 random; 14 at most) cells, about 5 s each.
     - **Void by method [rev 7, r35 F8].** A cell in a regime whose method is the kit's
       approximation (below, "The regimes' methods") is void by method: it counts as void twice
       (no re-run can give it the bench's method) and step (5) reads it.
@@ -775,6 +845,23 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     cover_cap.md §11.4's reading, the launch term needs no pool of two, and the twin term carries
     between-run noise per (regime, layer). The comparison against I's POOLED median has less
     noise than two single arms, so `sqrt(2)` is conservative.
+  - **The twin term PER PATTERN [rev 10, RULED r38 J1].** Pooled per (regime, layer) over 9
+    patterns, the twin term dilutes noise confined to ONE pattern: between-run offsets act per
+    binary, i.e. per pattern kernel, and 18 of the 31 df come from `lit40`/`abc60`, which make no
+    head-against-I comparison. Every arm of one pattern carrying its own 2 % offset gave P(h\* !=
+    64) = 0.40-0.69 under rev 9 (r38 SIMULATE-1, VERIFY). So the twin term is ALSO computed at the
+    finest level the night times twins: per pattern, over that pattern's own hash-equal pools in
+    its cells read (its 12 (regime, layer) cells: df 12 at a 2-arm pool, 24 at a 3-arm pool, 36
+    at `hex24`'s 4), by the same formula and the same `z(α / N)`. A cell's floor is `f(c) =
+    max(f(r, l), twin(pattern))`: the per-pattern term is a floor IN ADDITION to the (regime,
+    layer) one, never instead of it. A pattern whose cells read leave no pool of two (df 0) has
+    no estimate: its cells are VOID through the agreement gate (re-run once, then void twice),
+    never pooled up to a coarser level. (Reachable only by a pool record without the grid top,
+    which H3 already refuses, so the clause is a guard.) The χ² bound already pays for a small
+    df: at df 12 its factor is 1.52 (1.27 at df 31), so a pattern with few cells read gets a
+    higher floor, not a borrowed one. On a 1 % night the A/A term (about 4.4 %) still binds; the
+    per-pattern term binds only where one pattern is noisier (`selftest`'s class drill, drill
+    (xxi)).
   - **Why this mechanism.** Rev 6 used `f_AA`, the max of about 12 A/A draws, as the threshold of
     every comparison, but the rule makes 600 of them with every regime read (108 C1-C2 cells x 9 heads, less the
     cells where a head is I: 50 per regime and layer) and 400 on a night with the two
@@ -925,6 +1012,24 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   A/A cells spared, τ = 1, 2, 3 %: 0.000, 0.000, 0.000. Every regime, the A/A arms too: 0.000, 0.000, 0.000. Every
   regime, the A/A cells spared: 0.003, 0.000, 0.000. Control: τ 2 % in one regime under rev 8's rule:
   0.663 (accept > 0.15; r37 measured 0.26-0.29 through VERIFY).
+- **(xxi) THE CLASS DRILL: noise at every level of the night [rev 10, RULED r38; `selftest`'s
+  (r38) lines].** 300 pure-noise nights a row (1 % launch noise, every regime read), accept
+  P(h\* != 64) <= 0.05. (1) Between-run offsets `exp(N(0, τ))`, τ = 1, 2, 3 %, confined to
+  each pooled level in turn: the night (every arm, A/A too), one regime (`random`), one layer
+  (`on`), one pattern (`hex24`, `hex32`, `hex64`: pools of 4, 3, 2), one arm (I, and each
+  finite head H(0) .. H(64), in every C1-C2 cell): 48 rows, P(h\* != 64) 0.000 at the night, regime, layer and pattern levels and for I's arm; 0.000-0.020 for the head arms (worst H(24) at τ 3 %, 0.020), under the confirm below. (2) A box-speed STEP (+2, +5,
+  +10 %, its cut drawn uniformly inside the block each night, held to the end) and a linear
+  DRIFT (2, 5, 10 % from the block's start to its end, held after) in a block of each level of
+  the launch order: the night, `hex24`'s pattern block, its `off` layer block, one cell (one
+  regime there: `hex24`/near-miss/off), and the cell's middle round (in `hex24` and in
+  `hex64`, a 2-arm pool): 36 rows, every one 0.000. A step inside a cell splits every arm's launches, so
+  the bimodal test voids the cell and the re-run reads it (nights with a first void at a +5 % / +10 % step: the night 94 / 154 of 300, the pattern block 109 / 177, the layer block 104 / 178, the cell 83 / 175, the middle round 198-211 / 300; at +2 % 0-1). Controls, under rev
+  9's rule: one pattern (`hex64`) at τ 2 % 0.610; r38's step (+5 % after `hex24`'s H(4)) in
+  rev 9's arm-major order 0.337 (the same cut in rounds, rev 9's floor: 0.000); H(8)'s arm
+  at τ 2 % 0.213 (accept > 0.15 each). POWER, a true 5 % win of H(8) in every cell of ONE
+  regime where it loops: 282 (hit-dense) and 274 (random) of 300 of 300 nights (rev 9's rule: 294 and 294; accept >= 90 % and >=
+  half of rev 9's). The void rate on pure noise: 0.000 (normal launches) and 0.030 (t(5)) of nights (F3: <= 5 %). Every earlier
+  drill (i)-(xx) re-runs under rev 10 with its result unchanged (selftest 182 checks, 0 failed: every rev 9 line holds (noise, heterogeneous noise, splits, whole-arm shifts, between-run offsets, gate cost, R0, re-run, C3, void by method, deny, identity); the earlier controls, now with the per-pattern term and the confirm off too, read 0.177, 0.397, 0.663, 0.403 (accept > 0.15 each); the cost recorded: G4's one-cell 5 % win of H(8) ships 8 in 126 of 200 nights (rev 9: 157), since a single winning cell must now reproduce).
 - **(xix) A kept head without a win [rev 8, RULED r36 G4; `selftest`'s (G4) lines].** One cell
   (`k` = 60): H(8) = 0.97, H(16) = H(24) = 0.99, H(32) and H(64) = 1.00, the shorter heads
   losing; `f` = 0.025. E = {8, 16, 24} (threshold 0.994) and nothing is dominated (0.99 / 0.97
@@ -1216,7 +1321,11 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
     24, 32 and 64, both layers), and then identity at h\* < 64 runs over bytes no head can move.
     So at h\* < 64 the check first renders every pattern of its population (movers, cards, census)
     at lever h\* AND at lever 64 on the FROZEN binary (lever 64's bytes are what a head-blind
-    check degenerates to), prints how many differ, and refuses at zero. It lives with the kit's card script under `memfn/` (outside the G7
+    check degenerates to), prints how many differ, and refuses at zero. [rev 10, RULED r38 J7]
+    The count is printed and floored PER SOURCE (cards, census, movers), not pooled: at h\* < 64
+    the PATTERNS file's own moving count must be nonzero, so a movers file that moves nothing
+    (`a{40}`) fails even where a card moves (rev 9's pooled count passed it on card `hex32` at
+    h 24). It lives with the kit's card script under `memfn/` (outside the G7
     fence); a pcrec-side copy under a fenced directory takes an `ALLOW` entry.
 
 ### Answers, controlled by G2 [rev 2, F9; rev 3, F8]
@@ -1329,7 +1438,19 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
   1. The form cards C1, C2 and C5, with the A/A cells, run on the frozen combined-branch binary,
      h set through the head lever; a cell void once is re-run in the same window (`cards.py
      rerun`) [rev 7, r35 F7]. The rule that picks h (R0-R5 above, the dominance-cycle clause
-     included, as RULED in rev 5, and rev 7's floor) is committed before the run.
+     included, as RULED in rev 5, and rev 7's floor) is committed before the run. **Inside a
+     card's block each cell is timed in ROUNDS [rev 10, RULED r38 J2]:** one launch of every arm
+     of the cell (card, pattern, regime, layer) per round, 5 rounds, each round in a fixed
+     pseudo-random arm order derived from the cell's key (`cards.py` `round_arms`), after every
+     arm's untimed gate run. Rev 9 timed arm-major (all 5 launches of one arm, then the next),
+     and the cell list puts I first and its twins (h24, h32, h64 at `k` = 24) last in a
+     pattern's block, so a step in box speed between them read as a head win: a +4 % step after
+     `hex24`'s H(4) gave P(h\* != 64) = 0.15-0.18, +5 % 0.32-0.37 (r38 SIMULATE-2, VERIFY). In
+     rounds every arm samples the same stretch of time: a step outside a cell's middle round moves
+     every arm's median alike; inside the middle round it splits the arms at random (never twins
+     against heads by construction), and the bimodal test, the twin terms and the gate read it.
+     The order of the cells themselves, and the ruled night order (cards, freeze h, identity,
+     width cells), are unchanged.
   2. h is frozen by that rule's reading.
   2b. C3 is timed at the frozen h\* on the same binary (`cards.py c3`), and R2's C3 half and R5
      read it [rev 7, r35 F4]; C4's size record is taken at h\* (no timing). Before it times
@@ -1811,6 +1932,13 @@ by `git grep`). They are updated in the build or flagged in its report:
    - **The void step** shares no source with the timings: it reads only whether a cell has a
      reading, and a void cell never helps a head (§3 R1 step (5)) [rev 6, R5-2].
    - **Timing** is checked by pcrec's G1 (`no-span-loop`) and by the engine-route reference C5.
+   - **The rule's floor** is drilled on synthetic nights with noise at EVERY level of the
+     night's structure (drill (xxi), rev 10, RULED r38): between-run noise confined to the
+     night, one regime, one layer, one pattern, one arm, and a step and a drift in box speed in
+     a block of each level of the launch order. The drills place their steps in the order
+     `cards.py` times (`launch_order`, one source on purpose: the property drilled is the rule
+     on THAT order; a selftest row checks `time_cells` follows it), and each acceptance is the
+     literal 5 % of r35 F2. Each defect class has a control under rev 9's rule that must fail.
    - **Populations are counted.** G2's long rows are named rows; G2-win's per-family, per-h
      line counts the looped sites. The force cell's population is the whole corpus.
 3. **What moves when data is regenerated: relevant if R3 fires.** The forms read no measured

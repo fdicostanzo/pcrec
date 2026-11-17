@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: 0BSD
 # Provenance: original pcrec-memory-functions text (lane forms, R-45 plan A; lane formsfixa,
 # review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1; lane formsfixe,
-# review r37's H1-H4, H7: the twin term, the agreement gate, the pool record and reach refusals).
+# review r37's H1-H4, H7: the twin term, the agreement gate, the pool record and reach refusals;
+# lane formsfixg, review r38's J1, J2, J7, J8: the per-pattern twin term, the launch rounds, the
+# class drill, the identity reach per source).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
-identity check (docs/design/memfn/r45_reply.md rev 9 §3 "The cards", "The head `h` and the
+identity check (docs/design/memfn/r45_reply.md rev 10 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -22,7 +24,8 @@ THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR on
                            subject; C4's size record at the grid top) and prints the cell list
                            and count; no clock
   run RUNDIR [--with-approx]
-                           step 1: times C1, C2, C5 and the A/A cells (results.tsv). Regimes
+                           step 1: times C1, C2, C5 and the A/A cells (results.tsv), each
+                           cell in ROUNDS of one launch per arm (rev 10, r38 J2). Regimes
                            the kit only APPROXIMATES are void by method (rev 7, F8) and are not
                            timed unless --with-approx (a record only; the rule never reads them)
   rerun RUNDIR             re-times every cell `rule` lists as VOID ONCE (all its arms), into
@@ -32,8 +35,9 @@ THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR on
                            at h*); the line `rule: NEXT ...` names it
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest                 the rule against every drill r45_reply rev 9 §3 lists, plus the noise
-                           drill (F2), the unimodal drill (F3) and the void/R0/re-run drills
+  selftest                 the rule against every drill r45_reply rev 10 §3 lists, plus the noise
+                           drill (F2), the unimodal drill (F3), the void/R0/re-run drills and
+                           the CLASS drill (r38: noise, a step and a drift at every level)
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
                            over the card patterns, the census covers (read from the sweep's own
@@ -414,9 +418,11 @@ def loop_audit(texts, reach_arm=None):
     return leaks, reach
 
 
-def check_deny(rundir, cl, reach_arm=None):
+def check_deny(rundir, cl, reach_arm=None, vacuous_why="the loop text moved, or no arm loops at this width"):
     """Every arm-I artifact of `cl` carries no span loop, and a reach artifact does (the reach
-    control; `reach_arm` names its arm, else any non-I arm). Returns (failures, n_I, n_reach)."""
+    control; `reach_arm` names its arm, else any non-I arm). `vacuous_why`: the caller's reading of
+    an empty reach (rev 10, r38 J8: c3's is a width where H(64) loops nowhere, not a moved loop
+    text). Returns (failures, n_I, n_reach)."""
     keys = sorted({(c[1], c[2], c[4], c[0] == "C4") for c in cl})
     texts = [("%s %s %s" % (k[0], k[1], k[2]), k[1], open(artifact(rundir, k[0], k[1], k[2], size=k[3]), "rb").read())
              for k in keys]
@@ -426,8 +432,7 @@ def check_deny(rundir, cl, reach_arm=None):
     if not nI:
         bad.append("DENY CHECK VACUOUS: no arm-I artifact in the cell list")
     if not reach:
-        bad.append("DENY CHECK VACUOUS: no %s artifact emits a span loop (the loop text moved?)"
-                   % (reach_arm or "non-I"))
+        bad.append("DENY CHECK VACUOUS: no %s artifact emits a span loop (%s)" % (reach_arm or "non-I", vacuous_why))
     return bad, nI, len(reach)
 
 
@@ -495,21 +500,15 @@ def _exec(argv, cell, env=None):
     return t.stdout
 
 
-def run_cell(rundir, cell, n, timed):
-    """Not timed: the gate's line. Timed: the list of LAUNCHES launch times (ns/B)."""
+def run_cell(rundir, cell, n):
+    """The gate's line (no clock), or C4's size record. Timing is `time_cells`' (rev 10: the rounds)."""
     card, pat, arm, regime, layer = cell
     if card == "C4":
         cb, secs, rss, text = size_record(rundir, pat, arm, layer)
         return "size c_bytes=%d gcc_s=%.2f rss_kb=%d text=%d" % (cb, secs, rss, text)
     exe, _a = build_cell(rundir, pat, arm, layer)
     sp, k, s = subj_file(rundir, pat, regime, n)
-    code = str(REGIME_CODE.get(regime, 0))
-    out = _exec([exe, sp, code, k, s], cell)
-    if not timed:
-        return out.strip()
-    env = dict(os.environ, CARD_TIME="1")
-    return [float(_exec(["taskset", "-c", CPU, exe, sp, code, k, s], cell, env).split()[1])
-            for _ in range(LAUNCHES)]
+    return _exec([exe, sp, str(REGIME_CODE.get(regime, 0)), k, s], cell).strip()
 
 
 # ---- results files: one row per arm cell ------------------------------------------------------
@@ -545,20 +544,83 @@ def read_rows(path):
     return out
 
 
+# ---- THE LAUNCH ORDER (rev 10, RULED r38 J2): interleaved within a cell --------------------
+# Rev 9 timed a card's arm cells ARM-MAJOR (all 5 launches of one arm, then the next arm), so a
+# step in box speed between I and its twins (h24, h32, h64 at k 24: last in the block) read as a
+# head win no estimator could see (r38 J2). Rev 10 times each CELL (card, pattern, regime,
+# layer) as ROUNDS: one launch of every arm per round, LAUNCHES rounds, so every arm of the
+# cell samples the same stretch of time and a step or a drift moves every arm alike. Within a
+# round the arms run in a fixed pseudo-random order per (cell, round), derived from the cell's
+# key (no RNG state; `cards.py` and the drills read the same order): a step INSIDE the middle
+# round splits the cell's arms into "before" and "after" at random, never twins against heads
+# by construction. The cells' own order (the ruled night order inside a card) is unchanged.
+def cell_groups(cl):
+    """The cell list `cl` grouped by cell (card, pattern, regime, layer), in first-appearance order:
+    [(cellkey, [arm cells])]."""
+    groups = {}
+    for c in cl:
+        groups.setdefault((c[0], c[1], c[3], c[4]), []).append(c)
+    return list(groups.items())
+
+
+def round_arms(cs, r):
+    """Round r's launch order over a cell's arm cells `cs`: a fixed permutation from the cell key."""
+    return sorted(cs, key=lambda c: hashlib.sha256(("%s/%d" % ("/".join(c), r)).encode()).hexdigest())
+
+
+def launch_order(cl, interleave=True):
+    """[(arm cell, launch index)] in the order the night times them; interleave=False is rev 9's
+    arm-major order (the drills' control)."""
+    out = []
+    if not interleave:
+        for c in cl:
+            out += [(c, i) for i in range(LAUNCHES)]
+        return out
+    for _k, cs in cell_groups(cl):
+        for r in range(LAUNCHES):
+            out += [(c, r) for c in round_arms(cs, r)]
+    return out
+
+
+def prepare_cell(rundir, cell, n):
+    """The gate run (untimed) of one arm cell; returns its timed argv. Raises GateFail on a wrong
+    answer, anything else on a void."""
+    _card, pat, _arm, regime, _layer = cell
+    exe, _a = build_cell(rundir, pat, cell[2], cell[4])
+    sp, k, s = subj_file(rundir, pat, regime, n)
+    code = str(REGIME_CODE.get(regime, 0))
+    _exec([exe, sp, code, k, s], cell)
+    return ["taskset", "-c", CPU, exe, sp, code, k, s]
+
+
 def time_cells(rundir, cl, path, with_approx=True):
+    env = dict(os.environ, CARD_TIME="1")
     with open(path, "a") as f:
         if os.path.getsize(path) == 0:
             f.write(HEADER)
-        for c in cl:
-            if c[3] in APPROX and not with_approx:
-                f.write(row_line(c, "method", note="void by method: " + APPROX[c[3]]))
-                continue
-            try:
-                f.write(row_line(c, "ok", run_cell(rundir, c, SUBJECT_N, True)))
-            except GateFail as e:
-                f.write(row_line(c, "gatefail", note=str(e)))
-            except Exception as e:      # noqa: BLE001 -- a void, re-run once (F7)
-                f.write(row_line(c, "void", note=str(e)))
+        for _key, cs in cell_groups(cl):
+            argv, launches, out = {}, {}, {}
+            for c in cs:
+                if c[3] in APPROX and not with_approx:
+                    out[c] = row_line(c, "method", note="void by method: " + APPROX[c[3]])
+                    continue
+                try:
+                    argv[c] = prepare_cell(rundir, c, SUBJECT_N)
+                    launches[c] = []
+                except GateFail as e:
+                    out[c] = row_line(c, "gatefail", note=str(e))
+                except Exception as e:      # noqa: BLE001 -- a void, re-run once (F7)
+                    out[c] = row_line(c, "void", note=str(e))
+            for r in range(LAUNCHES):       # the rounds (rev 10, J2): one launch of every arm per round
+                for c in round_arms(list(argv), r):
+                    if c in out:
+                        continue
+                    try:
+                        launches[c].append(float(_exec(argv[c], c, env).split()[1]))
+                    except Exception as e:      # noqa: BLE001 -- the arm is void, re-run once (F7)
+                        out[c] = row_line(c, "void", note=str(e))
+            for c in cs:
+                f.write(out[c] if c in out else row_line(c, "ok", launches[c]))
             f.flush()
 
 
@@ -600,6 +662,13 @@ def cmd_plan(_args):
         len(s1_read), w(s1_read), len(s1), w(s1)))
     print("#   c3:   %d cells timed, %.2f h (C4's sizes: compile-only, not in the window)" % (len(s2_read), w(s2_read)))
     print("#   rerun: one cell per void, ~%.0f s per C1-C2 cell (10 arms)" % (10 * EST_LAUNCH_S * (1 + LAUNCHES)))
+    per = 10 * EST_LAUNCH_S * (1 + LAUNCHES)
+    print("#   confirm (rev 10, r38 R2): one re-run of each C1-C2 cell holding a win beyond f, ~%.0f s a cell; a "
+          "pure-noise night ~0 cells (selftest: mean 0.000 a night), a night with one real 5 %% win of one head in "
+          "one regime ~10-14 cells (selftest: mean ~10), %.2f h" % (per, 14 * per / 3600.0))
+    print("# timing order (rev 10, r38 J2): the cells above grouped by (card, pattern, regime, layer), each timed in "
+          "%d ROUNDS of one launch per arm (`launch_order`): run %d cells, %d timed launches" % (
+              LAUNCHES, len(cell_groups(s1_read)), len(launch_order(s1_read))))
 
 
 def cmd_dry(args):
@@ -632,7 +701,7 @@ def cmd_dry(args):
 
     def one(c):
         try:
-            return c, run_cell(rundir, c, n, False), None
+            return c, run_cell(rundir, c, n), None
         except Exception as e:
             return c, None, str(e)
     with ThreadPoolExecutor(max_workers=jobs) as ex:
@@ -706,7 +775,9 @@ def c3_deny_check(rundir):
     artifacts over C3 and C4, rendered whatever h* the step times (rev 8's L proved the regex
     works, not that the defect's arm loops: at width 32 only C4's hex32 at h0 loops, and an
     ignored deny read GREEN). Where H(64) loops nowhere (width 32) the check is VACUOUS and red."""
-    return check_deny(rundir, cells(hstar=GRID_TOP, cards=STEP2B), reach_arm="h%d" % GRID_TOP)
+    return check_deny(rundir, cells(hstar=GRID_TOP, cards=STEP2B), reach_arm="h%d" % GRID_TOP,
+                      vacuous_why="H(%d) loops nowhere in C3/C4 at this window width (a width below the cards' "
+                                  "longest span, e.g. 32), or its loop text moved" % GRID_TOP)
 
 
 def cmd_c3(args):
@@ -728,14 +799,16 @@ def cmd_c3(args):
     with open(os.path.join(rundir, "sizes_h%d.tsv" % h), "w") as f:
         for c in cells(hstar=h, cards=("C4",)):
             try:
-                f.write("\t".join(c) + "\t" + run_cell(rundir, c, 0, False) + "\n")
+                f.write("\t".join(c) + "\t" + run_cell(rundir, c, 0) + "\n")
             except Exception as e:      # noqa: BLE001
                 f.write("\t".join(c) + "\tFAIL " + str(e).replace("\n", " ")[:300] + "\n")
     print("cards: C3 at H(%d) in %s; next: cards.py rule %s" % (h, res, rundir))
 
 
 def cmd_rerun(args):
-    """Re-times every cell the rule lists as void ONCE, all arms of the cell (F7)."""
+    """Re-times every cell the rule lists as void ONCE, all arms of the cell (F7), into
+    results_rerun.tsv / results_c3_h<H>_rerun.tsv; and every cell the rule lists as holding a win
+    beyond f, ONCE, into results_confirm.tsv (rev 10, r38 R2: confirm by re-run)."""
     rundir = args[0]
     night = load_night(rundir)
     v = analyse(night, set())
@@ -743,8 +816,14 @@ def cmd_rerun(args):
         print("cards: rerun: the night is void or defective (`rule` says why); nothing to re-run")
         return 2
     todo = v["owed_rerun"]
+    if v["owed_confirm"]:
+        cl = [k for k in cells(cards=STEP1) if (k[0], k[1], k[3], k[4]) in v["owed_confirm"]]
+        time_cells(rundir, cl, os.path.join(rundir, "results_confirm.tsv"))
+        print("cards: confirming re-run of %d cells (%d arm cells) that hold a win beyond f"
+              % (len(v["owed_confirm"]), len(cl)))
+        return 0
     if not todo:
-        print("cards: rerun: no cell is void once")
+        print("cards: rerun: no cell is void once and no win awaits its confirm")
         return 0
     for src, cellkeys in todo.items():
         # every arm the card defines for the cell, whether or not step 1 wrote its row
@@ -952,16 +1031,24 @@ def pool_floors(f_aa, raw, glob, n_all, n_comp, alpha=ALPHA, twins=None):
             up = max(up, glob * (1 + zc * MEDSD_REL / math.sqrt(max(1, n_all))))
         fl = max(f_aa, math.exp(z * math.sqrt(2) * SDMED5 * up) - 1) if POOL_TERM else f_aa
         if TWIN_TERM and p in twins:
-            sc, df = twins[p]
-            fl = max(fl, math.exp(z * sc * math.sqrt(df / chi2_lower(1 - SIGMA_CONF, df))) - 1)
+            fl = max(fl, twin_term(twins[p], z))
         out[p] = fl
     return out
+
+
+def twin_term(tw, z):
+    """One twin term: exp(z x sigma_c,up) - 1, sigma_c raised to its SIGMA_CONF upper bound
+    sqrt(df / chi2(1 - SIGMA_CONF; df)) (exact; df can be small)."""
+    sc, df = tw
+    return math.exp(z * sc * math.sqrt(df / chi2_lower(1 - SIGMA_CONF, df))) - 1
 
 
 POOL_I = True       # selftest's control turns I's pool off (rev 7's reading) to show the G3 drill sees it
 POOL_TERM = True    # selftest's control turns the pool term off (rev 7's floor) to show the drill sees it
 TWIN_TERM = True    # selftest's controls turn the twin term off (rev 8's floor) to show the H1 drill sees it
 AGREE_GATE = True   # ... and the agreement gate off (rev 8's rule) to show the H2 drill sees it
+PAT_TWIN = True     # selftest's controls turn the PER-PATTERN twin term off (rev 9's floor) to show J1's drill sees it
+CONFIRM = True      # ... and the confirming re-run off (rev 9's rule) to show the arm-level drill sees it (r38 R2)
 
 
 def bimodal(launches, sig):
@@ -1025,7 +1112,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
     """The whole rule over a night's files. Returns a dict: code (0 complete, 2 void/defective,
     3 owed), lines (the record), hstar, label, rec, owed_rerun {file: {cellkeys}}."""
     lines, owed = [], {}
-    res = {"code": 0, "lines": lines, "hstar": None, "label": None, "rec": None, "owed_rerun": owed}
+    res = {"code": 0, "lines": lines, "hstar": None, "label": None, "rec": None, "owed_rerun": owed,
+           "owed_confirm": set(), "wins": 0, "confirmed": 0}
     if "results.tsv" not in night["files"]:
         lines.append("rule: no results.tsv: step 1 (`run`) has not run")
         res["code"] = 3
@@ -1095,7 +1183,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
     # ---- C1-C2 cells: read, void twice, void by method, or owed a re-run (F7, F8) -----------
     ccells, vc, tI, t = [], [], {}, {h: {} for h in heads}
     sa = {h: {} for h in heads}
-    pool_n, pool_meds, cell_key = {}, {}, {}
+    pool_n, pool_meds, cell_key, pool_arms = {}, {}, {}, {}
     for card in ("C1", "C2"):
         for pat in CARD_PATS[card]:
             for rg in REGIMES:
@@ -1134,6 +1222,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
                     ccells.append(cid)
                     tI[cid] = statistics.median([v for a in pool for v in rows[(card, pat, a, rg, ly)]["launches"]])
                     pool_n[cid] = len(pool)
+                    pool_arms[cid] = pool
                     pool_meds[cid] = [rows[(card, pat, a, rg, ly)]["med"] for a in pool]
                     cell_key[cid] = (card, pat, rg, ly)
                     for h in heads:
@@ -1158,26 +1247,47 @@ def analyse(night, g2_defective, alpha=ALPHA):
         return res
 
     def floors_over(cs):
-        """The floors over the cells `cs` (N and the twin contrasts read from them)."""
+        """The floors over the cells `cs` (N and the twin contrasts read from them): the (regime,
+        layer) floors, and the PER-PATTERN twin terms (rev 10, RULED r38 J1)."""
         n_c = sum(1 for h in heads for c in cs if not sa[h][c])
         f_, fd_ = count_floor(aa_logs, n_c, alpha)
-        logs = {}
+        logs, plogs = {}, {}
         for c in cs:
-            logs.setdefault(tuple(c.split("/")[1:3]), []).append([math.log(m) for m in pool_meds[c]])
+            lm = [math.log(m) for m in pool_meds[c]]
+            logs.setdefault(tuple(c.split("/")[1:3]), []).append(lm)
+            plogs.setdefault(c.split("/")[0], []).append(lm)
         tw = twin_sigmas(logs)
-        return f_, fd_, tw, pool_floors(f_, sig_raw, glob, n_all, n_c, alpha, twins=tw)
-    f, fd, tw, floors = floors_over(ccells)
+        ptw = twin_sigmas(plogs)
+        z = z_upper(alpha / max(1, n_c))
+        pterm = {p: twin_term(v, z) for p, v in ptw.items()}
+        return f_, fd_, tw, pool_floors(f_, sig_raw, glob, n_all, n_c, alpha, twins=tw), ptw, pterm
+    f, fd, tw, floors, ptw, pterm = floors_over(ccells)
+
+    def cell_floor(c):
+        """THE CELL'S FLOOR (rev 10, RULED r38 J1): max(its (regime, layer) floor, its PATTERN's twin
+        term). The twin term is computed at the finest level the night times twins: per pattern,
+        over that pattern's own hash-equal pools in the cells read (its 12 (regime, layer) cells:
+        df 12 at a 2-arm pool, 36 at hex24's 4), because between-run noise acts per binary and a
+        (regime, layer) term pooled over 9 patterns dilutes one pattern's noise (r38 J1: 0.40-0.69).
+        A pattern with no estimate (df 0) has no term: its cells are VOID (the gate), never pooled up."""
+        p, rg, ly = c.split("/")
+        fl = floors.get((rg, ly), f)
+        return max(fl, pterm[p]) if PAT_TWIN and p in pterm else fl
     # THE AGREEMENT GATE (rev 9, RULED r37 H2): I's pool is one binary, so its arms' medians differ
     # only by noise. Where they disagree beyond the cell's own floor, one of them moved (a whole-arm
     # slowdown moves a 2-arm pool's median by ~half its size and no gap test sees it): the cell is
     # VOID, re-run once, never a pick. A pool of two cannot say which arm moved; it voids too.
+    # Rev 10 (r38 J1): the cell's own floor includes its pattern's twin term, and a cell whose
+    # pattern has no twin estimate is void here too (never pooled up to a coarser level).
     gated = []
     if AGREE_GATE:
         for c in list(ccells):
             ms = pool_meds[c]
-            fl = floors.get(tuple(c.split("/")[1:3]), f)
-            if len(ms) >= 2 and max(ms) / min(ms) > 1 + fl:
-                gated.append("%s (pool of %d: %.4f > 1 + %.4f)" % (c, len(ms), max(ms) / min(ms), fl))
+            fl = cell_floor(c)
+            noest = PAT_TWIN and c.split("/")[0] not in pterm
+            if noest or (len(ms) >= 2 and max(ms) / min(ms) > 1 + fl):
+                gated.append("%s (no twin estimate for its pattern)" % c if noest else
+                             "%s (pool of %d: %.4f > 1 + %.4f)" % (c, len(ms), max(ms) / min(ms), fl))
                 ccells.remove(c)
                 del tI[c], pool_n[c]
                 for h in heads:
@@ -1197,7 +1307,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
         res["code"] = 3
         return res
     if gated:      # void twice: the floors are re-read over the cells still read
-        f, fd, tw, floors = floors_over(ccells)
+        f, fd, tw, floors, ptw, pterm = floors_over(ccells)
     lines.append("rule: f(A/A) = %.4f (count-sized: A/A sigma %.4f, upper %.4f over %d cells; N = %d comparisons, "
                  "z = %.2f; the A/A max ratio alone %.4f)" % (f, fd["sigma"], fd["sigma_up"], len(aa_logs),
                                                                fd["N"], fd["z"], fd["f_aa"]))
@@ -1208,7 +1318,50 @@ def analyse(night, g2_defective, alpha=ALPHA):
     lines.append("rule: f per (regime, layer) = max(f(A/A), the launch-sigma term, the twin term) (rev 9): %s"
                  % ", ".join("%s/%s %.4f" % (rg, ly, pf(rg, ly)) for rg in REGIMES if rg not in APPROX
                              for ly in ("off", "on")))
-    fcell = {c: pf(*c.split("/")[1:3]) for c in ccells}
+    lines.append("rule: twin term per pattern (its own hash-equal pools, rev 10, r38 J1)%s: %s"
+                 % ("" if PAT_TWIN else " [OFF: control]",
+                    ", ".join("%s sigma %.4f df %d term %.4f" % (p, ptw[p][0], ptw[p][1], pterm[p])
+                              for p in sorted(ptw))))
+    fcell = {c: cell_floor(c) for c in ccells}
+    # CONFIRM BY RE-RUN (rev 10, RULED r38 R2: the arm level of the class drill). No twin pool holds
+    # a head where that head is compared, so no floor sees between-run noise confined to ONE head
+    # arm (H(8) at tau 2 %: 0.187 under rev 9 and under J1's per-pattern term alike). Replication
+    # is the general answer: a head's win beyond f in a cell COUNTS only if the cell's confirming
+    # re-run (`results_confirm.tsv`: fresh launches of every arm, in rounds) wins again beyond the
+    # cell's floor. A win that does not reproduce reads as a TIE with I in that cell (no win, never a
+    # void, never a pick); a confirm reading with a missing, void or bimodal arm confirms nothing.
+    # One confirming re-run per winning cell, no more.
+    wins = sorted((h, c) for h in heads for c in ccells if not sa[h][c] and tI[c] / t[h][c] > 1 + fcell[c])
+    conf = merge(*night["files"]["results_confirm.tsv"])[0] if "results_confirm.tsv" in night["files"] else {}
+    cconf = {(k[0], k[1], k[3], k[4]) for k in conf}
+    need = sorted({cell_key[c] for _h, c in wins} - cconf) if CONFIRM else []
+    res["wins"] = len(wins)
+    if need:
+        res["owed_confirm"] = set(need)
+        lines.append("rule: %d cell(s) hold a head's win beyond f (%d wins): R1 waits for their confirming re-run (%s%s)"
+                     % (len(need), len(wins), ", ".join("/".join(k) for k in need[:6]), ", ..." if len(need) > 6 else ""))
+        lines.append("rule: NEXT cards.py rerun RUNDIR")
+        res["code"] = 3
+        return res
+
+    def confirmed(h, c):
+        card, pat, rg, ly = cell_key[c]
+        arms = pool_arms[c] + ["h%d" % h]
+        rs = [conf.get((card, pat, a, rg, ly)) for a in arms]
+        if any(r is None or is_void((card, pat, a, rg, ly), r) for a, r in zip(arms, rs)):
+            return False
+        tI2 = statistics.median([v for r in rs[:-1] for v in r["launches"]])
+        return tI2 / rs[-1]["med"] > 1 + fcell[c]
+    nconf = 0
+    for h, c in wins if CONFIRM else []:
+        if confirmed(h, c):
+            nconf += 1
+        else:
+            t[h][c] = tI[c]
+    res["confirmed"] = nconf
+    if wins and CONFIRM:
+        lines.append("rule: confirm by re-run (rev 10, r38 R2): %d of %d wins beyond f reproduced; the rest read as a tie "
+                     "with I" % (nconf, len(wins)))
     lines.append("rule: I's pool per cell read (arms whose artifact is I's, measured): %s"
                  % ", ".join("%s %d" % kv for kv in sorted(pool_n.items())))
     lines.append("rule: R0 defective heads: %s; cells read %d, void %d" % (sorted(defective) or "none",
@@ -1258,7 +1411,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
             hv = t[hs].get(cid)
             ev = rows.get(("C5", pat, "engine", "near-miss", "off"))
             if hv is not None and ev and ev["status"] == "ok" and hv / ev["med"] > 1 + max(
-                    pf("near-miss", ly), pf("near-miss", "off")):
+                    fcell[cid], pf("near-miss", "off")):
                 lines.append("R4 near-miss trigger (r45_reply §4): %s/%s H(%d) %.4f vs engine %.4f"
                              % (pat, ly, hs, hv, ev["med"]))
     # C3 at h* (step 2b, F4): R2's C3 half and R5; absent, NOT COMPUTED and owed
@@ -1450,7 +1603,8 @@ DRILLS = [
 
 # ---- synthetic nights: the noise, unimodal and void/R0/re-run drills (rev 7, F2-F7) --------
 def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_read=True, regimes=None,
-               rscale=None, aascale=1.0, splits=None, cellwins=None, armoff=None):
+               rscale=None, aascale=1.0, splits=None, cellwins=None, armoff=None, timefx=None,
+               order="interleaved", pos0=0):
     """A synthetic step-1 results set: C1-C2 every arm, A/A every regime and layer; each arm cell's
     LAUNCHES launches are T x exp(noise) with T the cell's true time (one per pattern/regime/
     layer, every arm equal: pure noise) times the arm's `wins` factor where its text is not I's.
@@ -1463,12 +1617,18 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
     noise (rev 9, r37 H1): every arm of those regimes (None: every regime) carries its own offset
     exp(N(0, tau)), held over all its launches; the A/A arms are spared when spare_aa. A re-run
     draws fresh offsets (a new run). Its draws come after the arm's launches, so a night without
-    `armoff` draws exactly rev 8's stream."""
+    `armoff` draws exactly rev 8's stream. `armoff` (tau, sel): the offset on every arm cell
+    `sel(key)` names (rev 10's CLASS DRILL, r38: noise confined to one night, regime, layer,
+    pattern or arm). TIME (rev 10, r38 J2): `timefx(pos)` multiplies every launch by a function
+    of its position in the night's launch order (`launch_order` over step 1's cells, the order
+    `time_cells` times; `order` "arm-major" is rev 9's, the control), `pos0` the first position
+    (a re-run runs after the night). It draws nothing, so the streams are unchanged."""
     wins = wins or {}
     rscale = rscale or {}
     splits = splits or {}
     cellwins = cellwins or {}
     rows = {}
+    slots = launch_slots(order) if timefx else None
 
     def eps():
         if noise == "t5":
@@ -1485,9 +1645,12 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
             ls = [T * math.exp(sg * eps()) * (fac if i < n else 1.0) for i in range(LAUNCHES)]
         else:
             ls = [T * math.exp(sg * eps()) for _ in range(LAUNCHES)]
-        if armoff and (armoff[1] is None or key[3] in armoff[1]) and not (armoff[2] and key[0] == "AA"):
+        if armoff and (armoff[1](key) if callable(armoff[1]) else
+                       (armoff[1] is None or key[3] in armoff[1]) and not (armoff[2] and key[0] == "AA")):
             o = math.exp(rng.gauss(0, armoff[0]))
             ls = [v * o for v in ls]
+        if timefx:
+            ls = [v * timefx(pos0 + q) for v, q in zip(ls, slots[key[:5]])]
         rows[key] = {"status": "ok", "med": statistics.median(ls), "launches": ls,
                      "method": "kit" if approx_read else method_of(key[3]), "note": ""}
     same = {}
@@ -1510,6 +1673,18 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
     return rows, same
 
 
+@functools.lru_cache(maxsize=None)
+def launch_slots(order="interleaved"):
+    """{arm cell: [the night position of each of its launches]} over step 1's cells (C5's launches
+    take their places in the order too), and the night's launch count under key None."""
+    lo = launch_order(cells(cards=STEP1), interleave=order == "interleaved")
+    out = {}
+    for q, (c, _i) in enumerate(lo):
+        out.setdefault(c, []).append(q)
+    out[None] = len(lo)
+    return out
+
+
 def synth_night(rng, sigma, **kw):
     """One whole synthetic night through `analyse`: step 1, then the re-run of any cell void once
     (fresh launches), so the drill exercises the merge too."""
@@ -1521,13 +1696,29 @@ def synth_night(rng, sigma, **kw):
         night = {"files": {"results.tsv": (rows, {})}, "same": same}
         v = analyse(night, set())
         voided_first = sum(len(s) for s in v["owed_rerun"].values())
-        if v["owed_rerun"].get("results.tsv"):
-            kw2 = dict(kw, bimodal_cells=(), splits={})     # a transient does not recur on the re-run
+        # the re-run rounds: a transient does not recur; the re-run runs AFTER the night (a time
+        # effect holds its end value there). A cell the gate voids only once the cells first owed
+        # are read owes a further round (r38 J4 (1)); every cell is re-run at most once
+        kw2 = dict(kw, bimodal_cells=(), splits={},
+                   pos0=launch_slots(kw.get("order", "interleaved"))[None] if kw.get("timefx") else 0)
+        redo, rounds = {}, 0
+        while v["owed_rerun"].get("results.tsv") and rounds < 3:
+            rounds += 1
             fresh, _s = synth_rows(rng, sigma, **kw2)
-            redo = {k: r for k, r in fresh.items() if (k[0], k[1], k[3], k[4]) in v["owed_rerun"]["results.tsv"]}
+            redo.update({k: r for k, r in fresh.items() if (k[0], k[1], k[3], k[4]) in v["owed_rerun"]["results.tsv"]})
             night["files"]["results.tsv"] = (rows, redo)
             v = analyse(night, set())
         v["voided_first"] = voided_first
+        v["rerun_rounds"] = rounds
+        if v["owed_confirm"]:       # the confirming re-run (rev 10, r38 R2): fresh launches, after the night
+            fresh, _s = synth_rows(rng, sigma, **kw2)
+            night["files"]["results_confirm.tsv"] = (
+                {k: r for k, r in fresh.items() if (k[0], k[1], k[3], k[4]) in v["owed_confirm"]}, {})
+            ncells = len(v["owed_confirm"])
+            v = analyse(night, set())
+            v["voided_first"], v["rerun_rounds"], v["confirm_cells"] = voided_first, rounds, ncells
+        else:
+            v["confirm_cells"] = 0
         return v
     finally:
         APPROX = keep
@@ -1540,19 +1731,114 @@ def noise_drill(trials=NOISE_TRIALS, sigma=0.01, noise="normal", seed=1, **kw):
     """P(h* != 64), the nights with a first void, the median f(A/A); NOISE_LAST keeps the median
     floor of (hit-dense, off), the cell floor the H2 drill sizes its shifts by."""
     rng = random.Random(seed)
-    off, voids, fs, fc = 0, 0, [], []
+    off, voids, fs, fc, cc = 0, 0, [], [], []
     for _ in range(trials):
         v = synth_night(rng, sigma, noise=noise, **kw)
         off += v["hstar"] != GRID_TOP
         voids += v["voided_first"] > 0
         fs.append(v.get("f", 0))
+        cc.append(v.get("confirm_cells", 0))
         if v.get("floors"):
             fc.append(v["floors"].get(("hit-dense", "off"), 0))
     NOISE_LAST["fcell"] = statistics.median(fc) if fc else 0.0
+    NOISE_LAST["confirm"] = cc
     return off / trials, voids, statistics.median(fs)
 
 
 NOISE_LAST = {}
+
+
+# ---- THE CLASS DRILL (rev 10, RULED r38): noise at EVERY level of the night's structure -------
+# Three rounds running (r36 G2, r37 H1, r38 J1/J2) the rule's defect was a noise shape one level
+# below the drills: an estimator pooled coarser than the noise it must read, or a noise that
+# followed the launch ORDER. So the drill family varies noise at each level the floor pools over
+# (night, regime, layer, pattern, arm) and a STEP and a DRIFT in box speed inside a block of each
+# level of the night's launch order (the night; one pattern's block; one layer of it; one cell =
+# one regime there; the cell's middle round, where a step splits the arms). The blocks sit in
+# hex24 (the largest twin pool, r38 J2's shape) and the middle round also in hex64 (a 2-arm pool).
+CLASS_TAUS = (0.01, 0.02, 0.03)
+CLASS_SIZES = (0.02, 0.05, 0.10)
+
+
+def _c12(k):
+    return k[0] in ("C1", "C2")
+
+
+CLASS_NOISE = [
+    # (level, what, armoff selector): the offset exp(N(0, tau)) per arm cell it names
+    ("night", "every arm, A/A too", lambda k: True),
+    ("regime", "one regime (random), A/A spared", lambda k: _c12(k) and k[3] == "random"),
+    ("layer", "one layer (on), A/A spared", lambda k: _c12(k) and k[4] == "on"),
+    ("pattern", "hex24 (pool 4)", lambda k: k[1] == "hex24"),
+    ("pattern", "hex32 (pool 3)", lambda k: k[1] == "hex32"),
+    ("pattern", "hex64 (pool 2)", lambda k: k[1] == "hex64"),
+    ("arm", "I, every cell", lambda k: _c12(k) and k[2] == "I"),
+] + [("arm", "H(%d), every cell" % h, (lambda k, a="h%d" % h: _c12(k) and k[2] == a)) for h in GRID]
+
+
+@functools.lru_cache(maxsize=None)
+def night_blocks():
+    """The launch-order blocks the class drill places a step or a drift in: {name: (first, end)}
+    positions in the interleaved night (`launch_order` over step 1's cells); each block is
+    asserted CONTIGUOUS, so the drill's block is the night's."""
+    lo = launch_order(cells(cards=STEP1))
+    sel = {
+        "night": lambda c, r: True,
+        "pattern block (hex24)": lambda c, r: c[:2] == ("C1", "hex24"),
+        "layer block (hex24/off)": lambda c, r: c[:2] == ("C1", "hex24") and c[4] == "off",
+        "regime cell (hex24/near-miss/off)": lambda c, r: c[:2] == ("C1", "hex24") and c[3:] == ("near-miss", "off"),
+        "middle round (hex24/near-miss/off)": lambda c, r: (c[:2] == ("C1", "hex24") and c[3:] == ("near-miss", "off")
+                                                            and r == LAUNCHES // 2),
+        "middle round (hex64/near-miss/off)": lambda c, r: (c[:2] == ("C2", "hex64") and c[3:] == ("near-miss", "off")
+                                                            and r == LAUNCHES // 2),
+    }
+    out = {}
+    for name, f in sel.items():
+        qs = [q for q, (c, r) in enumerate(lo) if f(c, r)]
+        assert qs and qs[-1] - qs[0] + 1 == len(qs), "block %s is not contiguous" % name
+        out[name] = (qs[0], qs[-1] + 1)
+    return out
+
+
+def time_drill(kind, block, size, seed, trials=NOISE_TRIALS, sigma=0.01, **kw):
+    """P(h* != 64) and the nights with a first void, on 1 % nights with a box-speed STEP (x(1 +
+    size) from a cut drawn uniformly inside the block, every night its own cut, held to the end)
+    or a linear DRIFT (0 at the block's start to `size` at its end, held after) in launch order."""
+    a, b = night_blocks()[block] if block in night_blocks() else block
+    rng, rc = random.Random(seed), random.Random(seed + 7919)
+    off = voids = 0
+    for _ in range(trials):
+        if kind == "step":
+            cut = rc.randrange(a + 1, b) if b - a > 1 else a
+            fx = lambda q, cut=cut: 1 + size if q >= cut else 1.0       # noqa: E731
+        else:
+            fx = lambda q: 1 + size * min(1.0, max(0.0, (q - a) / (b - a)))      # noqa: E731
+        v = synth_night(rng, sigma, timefx=fx, **kw)
+        off += v["hstar"] != GRID_TOP
+        voids += v["voided_first"] > 0
+    return off / trials, voids
+
+
+def power_cells(head, regime, win):
+    """`cellwins` for a true win of H(head) in ONE regime: every C1-C2 cell of that regime where the
+    head's text is not I's (both layers)."""
+    out = {}
+    for card in ("C1", "C2"):
+        for p in CARD_PATS[card]:
+            if p in ("lit40", "abc60") or head >= len(PATTERNS[p][1]):
+                continue
+            for ly in LAYERS:
+                out[(card, p, "h%d" % head, regime, ly)] = win
+    return out
+
+
+def power_rate(head=8, regime="hit-dense", win=0.95, trials=NOISE_TRIALS, seed=700, with_confirms=False):
+    rng = random.Random(seed)
+    vs = [synth_night(rng, 0.01, cellwins=power_cells(head, regime, win)) for _ in range(trials)]
+    picks = [v["hstar"] for v in vs]
+    if with_confirms:
+        return sum(x == head for x in picks), picks, [v.get("confirm_cells", 0) for v in vs]
+    return sum(x == head for x in picks), picks
 
 
 def cmd_selftest(_args):
@@ -1595,11 +1881,12 @@ def cmd_selftest(_args):
               % (ph, NOISE_TRIALS, fmh, nvh))
     # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance;
     # rev 9's twin term and gate also see a noisier regime, so the control turns them off too
-    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False, False
+    # (rev 10: and the per-pattern twin term, which sees a noisier regime too)
+    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 5
     try:
         pc, _nv, _fm = noise_drill(seed=41, rscale={"not-warm": 3.0})
     finally:
-        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True, True
+        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 5
     check("(G2) control: one regime 3x, A/A floor alone", pc > 0.15,
           "P(h* != 64) = %.3f over %d trials (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # its power (the floor's cost, recorded): a true 10 % win of every head <= 8 where it loops
@@ -1655,13 +1942,15 @@ def cmd_selftest(_args):
         check("(G3) 3-of-5 split of I, %.1f f (%.1f %%)" % (mult, 100 * s), offn / NOISE_TRIALS <= 0.05,
               "P(h* != 64) = %.3f over %d nights (accept <= 0.05)" % (offn / NOISE_TRIALS, NOISE_TRIALS))
     # its control: rev 7's reading (I's own arm alone) under the same split must FAIL the acceptance
-    globals()["POOL_I"] = False
+    # (rev 10: rev 7 had no per-pattern twin term either; with I alone no pool has a twin, so the
+    # term would void every cell and blind the control)
+    globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False, False
     try:
         rng = random.Random(65)
         offc = sum(synth_night(rng, 0.01, splits={cellI: (3, 1 + 1.5 * fmed)})["hstar"] != GRID_TOP
                    for _ in range(NOISE_TRIALS))
     finally:
-        globals()["POOL_I"] = True
+        globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True, True
     check("(G3) control: the 1.5 f split, I's arm alone", offc / NOISE_TRIALS > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)"
           % (offc / NOISE_TRIALS, NOISE_TRIALS))
@@ -1673,12 +1962,21 @@ def cmd_selftest(_args):
         picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 + s)})["hstar"] for _ in range(100)]
         check("(G3) converse: the split in H(8), %.1f f" % mult, sum(x == 8 for x in picks) == 0,
               "h* = 8 in %d of 100 nights (accept 0); picks %s" % (sum(x == 8 for x in picks), sorted(set(picks))))
-    # RECORD (not a check): a FAST 3-of-5 split in a head arm is outside the pool's reach and the
-    # gate's (r36's null-rate numbers, rev 8 §3 "Bimodal"); its rate is printed for the record
+    # The FAST 3-of-5 split in a head arm: outside the pool's reach and the gate's (r36's null-rate
+    # numbers, rev 8 §3 "Bimodal"), rev 9's NAMED LIMIT (27 of 100). Rev 10's confirming re-run
+    # (r38 R2) retires it: a transient does not recur on the confirm. Now a check (accept <= 5 of
+    # 100), with rev 9's rate printed beside it
     rng = random.Random(90)
     picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
-    print("RECORD (G3) a FAST 3-of-5 split in H(8), 1.5 f: h* = 8 in %d of 100 nights (not gated; residual; "
-          "rev 9 re-measured under the twin term and the agreement gate)" % sum(x == 8 for x in picks))
+    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
+    try:
+        rng = random.Random(90)
+        picks9 = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
+    finally:
+        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+    check("(G3, r38 R2) a FAST 3-of-5 split in H(8), 1.5 f", sum(x == 8 for x in picks) <= 5,
+          "h* = 8 in %d of 100 nights (accept <= 5: rev 9's NAMED LIMIT retired by the confirm); rev 9's rule: %d of 100"
+          % (sum(x == 8 for x in picks), sum(x == 8 for x in picks9)))
 
     # H1 (rev 9, RULED r37): BETWEEN-RUN noise, an offset per ARM held over its 5 launches. In one
     # regime with the A/A cells spared (the shape the launch term and the night-wide A/A term
@@ -1692,11 +1990,11 @@ def cmd_selftest(_args):
                   "P(h* != 64) = %.3f over %d nights (accept <= 0.05); median f(A/A) %.4f, f(hit-dense/off) %.4f; "
                   "nights with a first void %d" % (ph, NOISE_TRIALS, fmh, NOISE_LAST["fcell"], nvh))
     # its control: rev 8's rule (no twin term, no agreement gate) on the 2 % one-regime night
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 4
     try:
         pc, _nv, _fm = noise_drill(seed=301, armoff=(0.02, ("not-warm",), True))
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 4
     check("(H1) control: tau 2 %, one regime, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
 
@@ -1714,11 +2012,11 @@ def cmd_selftest(_args):
                                                                           100 * mult * fcell), ph <= 0.05,
                       "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
                       % (ph, NOISE_TRIALS, nvh))
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 4
     try:
         pc, _nv, _fm = noise_drill(seed=499, splits={("C2", "hex64", "I", "hit-dense", "off"): (5, 1 + 1.5 * fcell)})
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 4
     check("(H2) control: I at hex64, 1.5 f, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # the agreement gate's own cost: the void rate it ADDS on pure noise (F3's acceptance: <= 5 %
@@ -1825,8 +2123,15 @@ def cmd_selftest(_args):
     # moving class picks 1, its E[D] head; the literal classes are not read
     APP, globals()["APPROX"] = APPROX, {}
     try:
-        rows, same = synth_rows(random.Random(10), 0.01, wins={1: 0.70})
-        v = analyse({"files": {"results.tsv": (rows, {})}, "same": same}, set())
+        rng = random.Random(10)
+        rows, same = synth_rows(rng, 0.01, wins={1: 0.70})
+        night = {"files": {"results.tsv": (rows, {})}, "same": same}
+        v = analyse(night, set())
+        if v["owed_confirm"]:       # rev 10 (r38 R2): its wins are confirmed by the cells' re-run
+            fresh, _s = synth_rows(rng, 0.01, wins={1: 0.70})
+            night["files"]["results_confirm.tsv"] = (
+                {k: r for k, r in fresh.items() if (k[0], k[1], k[3], k[4]) in v["owed_confirm"]}, {})
+            v = analyse(night, set())
     finally:
         globals()["APPROX"] = APP
     notread = sorted(l.split()[2].rstrip(":") for l in v["lines"] if "never a mover" in l)
@@ -1849,14 +2154,15 @@ def cmd_selftest(_args):
     lk, rc_ = loop_audit(w32, reach_arm="h64")
     seen = {}
     real = check_deny
-    globals()["check_deny"] = lambda _rd, cl, reach_arm=None: seen.update(
-        arms=sorted({c[2] for c in cl}), cards=sorted({c[0] for c in cl}), reach=reach_arm) or ([], 0, 0)
+    globals()["check_deny"] = lambda _rd, cl, reach_arm=None, vacuous_why=None: seen.update(
+        arms=sorted({c[2] for c in cl}), cards=sorted({c[0] for c in cl}), reach=reach_arm, why=vacuous_why) or ([], 0, 0)
     try:
         c3_deny_check("-")
     finally:
         globals()["check_deny"] = real
     check("(H4) c3's reach arm is H(64), the defect's", lk0 == [] and rc0 == ["hex32 h0 off"] and lk == [] and rc_ == []
-          and seen.get("reach") == "h64" and "h64" in seen.get("arms", []) and seen.get("cards") == ["C3", "C4"],
+          and seen.get("reach") == "h64" and "h64" in seen.get("arms", []) and seen.get("cards") == ["C3", "C4"]
+          and "loops nowhere" in (seen.get("why") or ""),
           "width 32, ignored deny: reach h0 %s (rev 8: green), reach h64 %s (vacuous: red); c3 checks %s over "
           "arms %s, reach %s" % (rc0, rc_, seen.get("cards"), seen.get("arms"), seen.get("reach")))
     # G8 (rev 8, r36): an empty movers file at h < 64 is refused; a smoke exits 4 first (the
@@ -1875,6 +2181,92 @@ def cmd_selftest(_args):
     rr = (reach_refusal(32, 0, 40), reach_refusal(24, 3, 40), reach_refusal(64, 0, 40))
     check("(H7) identity: zero movers at h < 64 refused", bool(rr[0]) and rr[1] is None and rr[2] is None,
           "h 32 none move: %s; h 24 three move: %s; h 64: %s" % (bool(rr[0]), rr[1], rr[2]))
+    # ---- rev 10 (RULED r38): THE CLASS DRILL, its controls, the power line, the void rate ----
+    for i, (lvl, what, sel) in enumerate(CLASS_NOISE):
+        for j, tau in enumerate(CLASS_TAUS):
+            ph, nvh, _fm = noise_drill(seed=1000 + 10 * i + j, armoff=(tau, sel))
+            check("(r38) noise at %s: %s, tau %d %%" % (lvl, what, round(100 * tau)), ph <= 0.05,
+                  "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
+                  % (ph, NOISE_TRIALS, nvh))
+    for i, block in enumerate(night_blocks()):
+        for kind in ("step", "drift"):
+            for j, size in enumerate(CLASS_SIZES):
+                ph, nvh = time_drill(kind, block, size, seed=1200 + 20 * i + 10 * (kind == "drift") + j)
+                check("(r38) %s %+d %% in the %s" % (kind, round(100 * size), block), ph <= 0.05,
+                      "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
+                      % (ph, NOISE_TRIALS, nvh))
+    # the controls: each defect's own shape under rev 9's rule must FAIL the acceptance
+    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
+    try:
+        pj1, _n = noise_drill(seed=1400, armoff=(0.02, lambda k: k[1] == "hex64"))[:2]
+        cut = min(launch_slots("arm-major")[("C1", "hex24", "h8", rg, ly)][0] for rg in REGIMES for ly in LAYERS)
+        pj2, _n = time_drill("step", (cut, cut + 1), 0.05, seed=1401, order="arm-major")
+        pj2i, _n = time_drill("step", (cut, cut + 1), 0.05, seed=1401)
+        parm, _n, _f = noise_drill(seed=1402, armoff=(0.02, lambda k: _c12(k) and k[2] == "h8"))
+    finally:
+        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+    check("(r38) control J1: hex64 tau 2 %, rev 9's floor", pj1 > 0.15,
+          "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pj1, NOISE_TRIALS))
+    check("(r38) control J2: +5 % after hex24's H(4), arm-major", pj2 > 0.15,
+          "P(h* != 64) = %.3f over %d nights, rev 9's floor and order (accept > 0.15); the same cut in the "
+          "interleaved order, rev 9's floor: %.3f" % (pj2, NOISE_TRIALS, pj2i))
+    check("(r38 R2) control: H(8)'s arm tau 2 %, rev 9's rule", parm > 0.15,
+          "P(h* != 64) = %.3f over %d nights, no per-pattern term and no confirm (accept > 0.15)" % (parm, NOISE_TRIALS))
+    # the POWER line: a real 5 % win of ONE head in ONE regime, before (rev 9's rule) and after;
+    # with the confirm cells it costs (the plan's re-run term on a night with one real win)
+    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
+    try:
+        pw0 = {rg: power_rate(regime=rg)[0] for rg in ("hit-dense", "random")}
+    finally:
+        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+    pw1, pcc = {}, {}
+    for rg in ("hit-dense", "random"):
+        pw1[rg], _p, pcc[rg] = power_rate(regime=rg, with_confirms=True)
+    check("(r38) power: a 5 % win of H(8) in one regime", all(pw1[rg] >= max(0.9 * NOISE_TRIALS, pw0[rg] / 2)
+                                                             for rg in pw1),
+          "h* = 8 in %s of %d nights (rev 9's rule: %s; accept >= 90 %% and >= half rev 9's); confirm cells a night "
+          "mean %s" % ("/".join("%s %d" % kv for kv in pw1.items()), NOISE_TRIALS,
+                       "/".join("%s %d" % kv for kv in pw0.items()),
+                       "/".join("%s %.1f" % (rg, statistics.mean(v)) for rg, v in pcc.items())))
+    # the void rate on pure noise under rev 10 (F3: <= 5 % of nights void a cell once)
+    for nm, nz, sd in (("normal", "normal", 1500), ("t(5)", "t5", 1501)):
+        _p, nv, _f = noise_drill(seed=sd, noise=nz)
+        check("(r38) void rate on pure noise, %s launches" % nm, nv / NOISE_TRIALS <= 0.05,
+              "nights with a first void %.3f (accept <= 0.05); confirm cells a night mean %.3f, nights with one %d"
+              % (nv / NOISE_TRIALS, statistics.mean(NOISE_LAST["confirm"]), sum(1 for x in NOISE_LAST["confirm"] if x)))
+    # J2: `time_cells` times in ROUNDS (stubbed execution, no clock): each run of n launches holds
+    # every arm of the cell once, and the order is the one the drills place their steps in
+    import tempfile
+    calls = []
+    real_p, real_e = prepare_cell, _exec
+    globals()["prepare_cell"] = lambda _rd, c, _n: list(c)
+    globals()["_exec"] = lambda argv, c, env=None: calls.append(tuple(c)) or "t %d\n" % (len(calls) + 1)
+    try:
+        cl = [c for c in cells(cards=("C1",)) if c[1] == "hex24" and c[3] in ("hit-dense", "near-miss")]
+        import pwd
+        troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
+        os.makedirs(troot, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=troot) as td:      # the temp root, never /tmp
+            out = os.path.join(td, "r.tsv")
+            open(out, "w").close()
+            time_cells(td, cl, out)
+            nrows = sum(1 for ln in open(out) if not ln.startswith("#"))
+    finally:
+        globals()["prepare_cell"], globals()["_exec"] = real_p, real_e
+    n_arm = len(GRID) + 1
+    rounds = [calls[i:i + n_arm] for i in range(0, len(calls), n_arm)]
+    rr = all(len(set(r)) == n_arm and len({(c[0], c[1], c[3], c[4]) for c in r}) == 1 for r in rounds)
+    same_order = [c for c, _i in launch_order(cl)] == calls
+    check("(r38 J2) time_cells interleaves the arms in rounds", rr and same_order and nrows == len(cl)
+          and len(calls) == LAUNCHES * len(cl),
+          "%d launches over %d arm cells (%d rows): every round of %d holds each arm once: %s; the drills' order: %s"
+          % (len(calls), len(cl), nrows, n_arm, rr, same_order))
+    # J7: the identity reach per SOURCE: a movers file that moves nothing fails though a card moves
+    rs = (source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 0}, has_movers=True),
+          source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 2}, has_movers=True),
+          source_reach_refusal(64, {"cards": 0, "census": 0, "movers": 0}, has_movers=True))
+    check("(r38 J7) identity: the movers file's own reach", bool(rs[0]) and rs[1] is None and rs[2] is None,
+          "h 24, a card moves, movers 0: %s; movers 2: %s; h 64: %s" % (bool(rs[0]), rs[1], rs[2]))
     print("selftest: %d checks, %d failed" % (nchk, bad))
     return 1 if bad else 0
 
@@ -1936,6 +2328,24 @@ def reach_refusal(h, n_moving, n_pats):
     return ("h = %d < %d and none of the %d patterns (cards, census, movers) renders differently at lever %d "
             "than at lever %d on the frozen binary: the identity check would compare a population blind to "
             "the head (K35); refusing" % (h, GRID_TOP, n_pats, h, GRID_TOP))
+
+
+def source_reach_refusal(h, counts, has_movers):
+    """The reach PER SOURCE (rev 10, RULED r38 J7): `counts` {cards, census, movers: the number of
+    that source's patterns whose bytes move at h}. Rev 9 pooled the three (r37 H7), so a movers
+    file that moves nothing passed whenever a card moved (r38 J7: `a{40}` beside card hex32 at h
+    24). At h < 64 the movers file's OWN count must be nonzero, and so must the total (K35).
+    None: proceed."""
+    if h >= GRID_TOP:
+        return None
+    if has_movers and not counts.get("movers"):
+        return ("h = %d < %d and none of the PATTERNS file's patterns renders differently at lever %d than at "
+                "lever %d on the frozen binary (cards %d, census %d move): the predicted movers are the "
+                "population at h* < 64 and this one is blind to the head (K35); refusing"
+                % (h, GRID_TOP, h, GRID_TOP, counts.get("cards", 0), counts.get("census", 0)))
+    if not sum(counts.values()):
+        return reach_refusal(h, 0, 0)
+    return None
 
 
 def lever_reach(h, pats, wf):
@@ -2010,7 +2420,11 @@ def cmd_identity(args):
               "binary (r37 H7)%s" % (len(moving), len(allp), h, GRID_TOP,
                                      (": " + ", ".join(repr(p) for p in moving[:8]) + (", ..." if len(moving) > 8 else ""))
                                      if moving else ""))
-        why = reach_refusal(h, len(moving), len(allp))
+        mv = set(moving)
+        counts = {"cards": len(mv & set(pats)), "census": len(mv & set(census)), "movers": len(mv & set(movers))}
+        print("identity: reach per source (r38 J7): cards %d of %d, census %d of %d, movers %d of %d"
+              % (counts["cards"], len(set(pats)), counts["census"], len(set(census)), counts["movers"], len(set(movers))))
+        why = source_reach_refusal(h, counts, has_movers=bool(rest))
         if why:
             print("identity: FAIL: " + why)
             return 4 if limit else 1
