@@ -2292,3 +2292,17 @@ ADDENDUM, same day about 14:20, HIS WORDS: "Although I don't know the spelling. 
 the conditional's SPELLING is open; `?` is not to be assumed (it is a quantifier, the lazy mark and the group
 prefix in regex). MINE: the draft already spells the two-argument form as a call, `when(c, p)`; a third argument
 (`when(c, p, q)`) would add the else branch with no new mark; a later syntax step decides.
+
+**2026-11-17 OWNER QUESTIONS on when-meaning (Frank, to session 138, box clock about 14:25; questions, no ruling).**
+HIS WORDS: "when-meaning: are pcre conditions dfa? Is adopting this when definition dfa and is it a primitive or
+could it be defined in the language?" MANAGER'S ANSWERS (checked on the built compiler where stated; the rest
+MINE, for the next revision's model to confirm): (1) PCRE's conditional group is NOT BUILT in pcrec (`(?(1)b|c)`,
+`(?(?=a)ab|cd)` and `(?(<h>)b)` are refused: "module 'conditionals' is enabled but (?(...) is not implemented
+yet") and the registry plans it VM-only; the regular spelling of a conditional on a lookahead, `(?=a)ab|(?!a)cd`,
+compiles under `--engine=dfa`. (2) The MEANING needs no such group: with c and p conditions on the match in hand,
+"if c then p" is the condition `NOT c | p` (OR between CONDITIONS, tested once; not an alternation of patterns),
+a boolean combination of tests, which is automaton work at the default level. (3) So `when` is NOT a primitive:
+`when(c, p)` := `NOT c | p`, and a three-argument form := `(c & p) | (NOT c & q)`, definable in the language; this
+became possible with absent-under-not (NOT is two-valued, so "not c" is exactly "c is not true"). PCRE's
+conditional group stays the regex MODEL of the meaning, not the mechanism. UNVERIFIED: that `x & (NOT c | p)`
+equals the conditional-group model on the 1,110 texts (rev 24's model must run it).
