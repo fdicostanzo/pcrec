@@ -2479,3 +2479,13 @@ enclosing loop set it (the "every enclosing loop" candidate of revision 24.1's r
 the same evening, now ruled). An INNER view (every inner pass; the inner loop's last pass within each outer pass)
 is written by nesting: the condition, with its label, is placed inside, at the level it speaks about. Example
 (rev 24.1's lines, `/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)`): `3;,,` and `3;;,` FAIL from outside.
+ADDENDUM, same evening, HIS WORDS: "Then from the perspective of the condition, an rx is a black box that exposes
+labels". RECORD: the PRINCIPLE behind the evening's rulings: to a condition a pattern is opaque; what it offers is
+its labels (at the outermost view), and a condition reads nothing else of it. MINE, for the revision to state and
+test: (a) the box offers its results IN ORDER (its paths, PCRE's preference), each with its labels; a rejecting
+condition takes the next result (branch-scope (ii) said from the outside); (b) captures, passes and inner labels
+are INSIDE the box: reached only by writing the condition inside, or by an explicit request (the hit list, the pass
+forms); (c) the spelling principle becomes: two patterns that offer the same results in the same order with the
+same labels answer every condition alike (review r40's A6 counterexample differs in its paths, so it is not a
+counterexample to this form); (d) it is the same shape as the architecture goals ruled today (a structure is read
+through what its owner exposes).
