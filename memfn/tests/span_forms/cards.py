@@ -1592,12 +1592,13 @@ def cmd_selftest(_args):
         check("(G2) noise drill, %s" % nm, ph <= 0.05,
               "P(h* != 64) = %.3f over %d trials (accept <= 0.05); median f(A/A) %.4f; nights with a first void %d"
               % (ph, NOISE_TRIALS, fmh, nvh))
-    # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance
-    globals()["POOL_TERM"] = False
+    # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance;
+    # rev 9's twin term and gate also see a noisier regime, so the control turns them off too
+    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False, False
     try:
         pc, _nv, _fm = noise_drill(seed=41, rscale={"not-warm": 3.0})
     finally:
-        globals()["POOL_TERM"] = True
+        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True, True
     check("(G2) control: one regime 3x, A/A floor alone", pc > 0.15,
           "P(h* != 64) = %.3f over %d trials (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # its power (the floor's cost, recorded): a true 10 % win of every head <= 8 where it loops
