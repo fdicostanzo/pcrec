@@ -1,0 +1,173 @@
+ORDER: forward
+
+PART 1: WHAT A ROW IS
+   (1a) RZ /(?<k>\d)(?:;(?<h>\d))*/, 1110 subjects: `(h: <5)` read over the match row (every pass, LEFT JOIN) vs over pass rows (some pass): differ 500 (smallest '0;0;5': FAILS / HOLDS)
+        LST /(?:(?<h>\d)(?::(?<m>\d))?,)*/, 43 lists: `((h, m): m < h)` match row vs pass rows: differ 10 (smallest '1,6:2,': FAILS / HOLDS)
+   (1b) zero passes on RZ `3` (k = 3, no h): `(h: <5, k: 3..7)` FAILS, `(h?: <5, k: 3..7)` HOLDS (M1) / HOLDS (M2c), `some((h: <5))` FAILS; on `9`: `(h?: <5, k: 3..7)` FAILS (the outside k still tested: zero-pass-record)
+   (1c) T2 /(?<h>\d{1,2})(?::(?<m>\d\d))?/, 11110 subjects, q := t2 & ((h, m): late), late = padded(>= (9, 30)):
+        `t2 & !q` per whole subject (S1) holds on 1970; per span (S2, searched) on 11110; `!` of the searched q on 1970; NOT ((h, m): late) whole 1878, searched 11106
+        S1 vs S2 complement                          differ  9140 (smallest '9:30')
+        S2 complement vs complement of searched q    differ  9140 (smallest '9:30')
+
+PART 2: THE TWO NOTS (and the complement on the set), unmarked and marked
+   N = /(?<h>\d)?x/, 11 subjects; per candidate: answers on `x` (h absent), `3x`, `7x`; holds on n of 11
+   NOT (h: <5)  (the condition's NOT, three-valued)           M1 F/F/H  5  M1t F/F/H  5  M1a F/F/H  5  M2c F/F/H  5  M2r F/F/H  5
+   (h: !(<5))   (the complement on the set)                   M1 F/F/H  5  M1t F/F/H  5  M1a F/F/H  5  M2c F/F/H  5  M2r F/F/H  5
+   P & !q, q := P & (h: <5)   (the statement's complement)    M1 H/F/H  6  M1t H/F/H  6  M1a H/F/H  6  M2c H/F/H  6  M2r H/F/H  6
+   NOT (h?: <5)  (the mark resolves inside)                   M1 F/F/H  5  M1t F/F/H  5  M1a F/F/H  5  M2c H/F/H  6  M2r H/F/H  6
+   (h?: !(<5))                                                M1 H/F/H  6  M1t H/F/H  6  M1a H/F/H  6  M2c H/F/H  6  M2r H/F/H  6
+   P & !q, q := P & (h?: <5)                                  M1 F/F/H  5  M1t F/F/H  5  M1a F/F/H  5  M2c F/F/H  5  M2r F/F/H  5
+   RZ (h looped), 1,110 subjects: holds on: NOT (h: <5) 800, (h: !(<5)) 300, RZ & !q 810; NOT vs set complement differ 500 (smallest '0;0;5'); NOT vs !q differ 10 (smallest '0')
+
+PART 3: THE MARK CANDIDATES SIDE BY SIDE (M1 one row, any text; M1t one row, the label's regex domain; M1a one row, IS NULL OR; M2c ruled; M2r ruled value set, V4's unit)
+   (T2) 11,110 subjects; witnesses `9`, `5`, `9:15`, `10`
+      ((h, m): late)                     M1 9140 [9=F 5=F 9:15=F 10=F] | M1t 9140 [9=F 5=F 9:15=F 10=F] | M1a 9140 [9=F 5=F 9:15=F 10=F] | M2c 9140 [9=F 5=F 9:15=F 10=F] DOM | M2r 9140 [9=F 5=F 9:15=F 10=F] DOM
+      ((h, m?): late)                    M1 9232 [9=H 5=F 9:15=F 10=H] | M1t 9232 [9=H 5=F 9:15=F 10=H] | M1a 9250 [9=H 5=H 9:15=F 10=H] | M2c 9232 [9=H 5=F 9:15=F 10=H] DOM(m)100 values | M2r 9232 [9=H 5=F 9:15=F 10=H] DOM(m)100 values
+      ((h, m = 0): late)                 M1 9230 [9=F 5=F 9:15=F 10=H] | M1t 9230 [9=F 5=F 9:15=F 10=H] | M1a 9230 [9=F 5=F 9:15=F 10=H] | M2c 9230 [9=F 5=F 9:15=F 10=H] DOM | M2r 9230 [9=F 5=F 9:15=F 10=H] DOM
+      ((h, m?): !late)                   M1 1970 [9=H 5=H 9:15=H 10=H] | M1t 1880 [9=H 5=H 9:15=H 10=F] | M1a 1970 [9=H 5=H 9:15=H 10=H] | M2c 1880 [9=H 5=H 9:15=H 10=F] DOM(m)100 values | M2r 1880 [9=H 5=H 9:15=H 10=F] DOM(m)100 values
+      M1 vs M1t: differ on 0, 0, 0, 90 ('10')
+      M1 vs M1a: differ on 0, 18 ('0'), 0, 0
+      M1 vs M2c: differ on 0, 0, 0, 90 ('10')
+      M1 vs M2r: differ on 0, 0, 0, 90 ('10')
+      M1t vs M1a: differ on 0, 18 ('0'), 0, 90 ('10')
+      M1t vs M2c: differ on 0, 0, 0, 0
+      M1t vs M2r: differ on 0, 0, 0, 0
+      M1a vs M2c: differ on 0, 18 ('0'), 0, 90 ('10')
+      M1a vs M2r: differ on 0, 18 ('0'), 0, 90 ('10')
+      M2c vs M2r: differ on 0, 0, 0, 0
+   (T2+) the same, with `(m?: padded(<30))` added; and the complemented pattern `t2 & !q`, q := t2 & ((h, m?): late)
+      ((h, m?): late) & (m?: <30)        M1 2792 [9=H 5=F 09=H] | M1t 2792 [9=H 5=F 09=H] | M1a 2810 [9=H 5=H 09=H] | M2c 2790 [9=F 5=F 09=F] DOM(m)30 values | M2r 2790 [9=F 5=F 09=F] DOM(m)30 values
+      t2 & !q                            M1 1878 [9=F 5=H 09=F] | M1t 1878 [9=F 5=H 09=F] | M1a 1860 [9=F 5=F 09=F] | M2c 1878 [9=F 5=H 09=F] DOM | M2r 1878 [9=F 5=H 09=F] DOM
+      t2 & !q & (m?: <30)                M1  618 [9=F 5=H 09=F] | M1t  618 [9=F 5=H 09=F] | M1a  600 [9=F 5=F 09=F] | M2c  618 [9=F 5=H 09=F] DOM(m)30 values | M2r  618 [9=F 5=H 09=F] DOM(m)30 values
+      M1 vs M1t: differ on 0, 0, 0
+      M1 vs M1a: differ on 18 ('0'), 18 ('0'), 18 ('0')
+      M1 vs M2c: differ on 2 ('9'), 0, 0
+      M1 vs M2r: differ on 2 ('9'), 0, 0
+      M1t vs M1a: differ on 18 ('0'), 18 ('0'), 18 ('0')
+      M1t vs M2c: differ on 2 ('9'), 0, 0
+      M1t vs M2r: differ on 2 ('9'), 0, 0
+      M1a vs M2c: differ on 20 ('0'), 18 ('0'), 18 ('0')
+      M1a vs M2r: differ on 20 ('0'), 18 ('0'), 18 ('0')
+      M2c vs M2r: differ on 0, 0, 0
+   (ZE) zero-pass-empty, /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/, 11,100 subjects; witnesses `0-3`, `5-3`
+      (h?: <$a, k: 3)                    M1  339 [0-3=F 5-3=H] | M1t  339 [0-3=F 5-3=H] | M1a  430 [0-3=H 5-3=H] | M2c  339 [0-3=F 5-3=H] DOM(h){0,1,2,3,4,5,6,7,8} | M2r  339 [0-3=F 5-3=H] DOM(h){0,1,2,3,4,5,6,7,8}
+      M1 vs M1t: differ on 0
+      M1 vs M1a: differ on 91 ('0-0')
+      M1 vs M2c: differ on 0
+      M1 vs M2r: differ on 0
+      M1t vs M1a: differ on 91 ('0-0')
+      M1t vs M2c: differ on 0
+      M1t vs M2r: differ on 0
+      M1a vs M2c: differ on 91 ('0-0')
+      M1a vs M2r: differ on 91 ('0-0')
+      M2c vs M2r: differ on 0
+   (MN) a set disjoint from the label's values: /(?<mnum>[123])?-(?<d>\d)/, 40 subjects; witness `-5`
+      (mnum?: >5)                        M1   10 [-5=H] | M1t    0 [-5=F] | M1a   10 [-5=H] | M2c    0 [-5=F] DOM(mnum){} | M2r    0 [-5=F] DOM(mnum){}
+      (mnum?: <3)                        M1   30 [-5=H] | M1t   30 [-5=H] | M1a   30 [-5=H] | M2c   30 [-5=H] DOM(mnum){1,2} | M2r   30 [-5=H] DOM(mnum){1,2}
+      M1 vs M1t: differ on 10 ('-0'), 0
+      M1 vs M1a: differ on 0, 0
+      M1 vs M2c: differ on 10 ('-0'), 0
+      M1 vs M2r: differ on 10 ('-0'), 0
+      M1t vs M1a: differ on 10 ('-0'), 0
+      M1t vs M2c: differ on 0, 0
+      M1t vs M2r: differ on 0, 0
+      M1a vs M2c: differ on 10 ('-0'), 0
+      M1a vs M2r: differ on 10 ('-0'), 0
+      M2c vs M2r: differ on 0, 0
+   (J) one-witness, /(?<j>\d)(?<h>\d)?(?<k>\d)/, 1,100 subjects; witness `12`
+      (h?: <$k) & (h?: >$j)              M1  210 [12=H] | M1t  201 [12=H] | M1a  220 [12=H] | M2c  184 [12=H] DOM(h){1,2,3,4,5,6,7,8} | M2r  184 [12=H] DOM(h){1,2,3,4,5,6,7,8}
+      (h?: >$j & <$k)                    M1  156 [12=F] | M1t  156 [12=F] | M1a  220 [12=H] | M2c  156 [12=F] DOM(h){1,2,3,4,5,6,7,8} | M2r  156 [12=F] DOM(h){1,2,3,4,5,6,7,8}
+      M1 vs M1t: differ on 9 ('91'), 0
+      M1 vs M1a: differ on 10 ('00'), 64 ('00')
+      M1 vs M2c: differ on 26 ('01'), 0
+      M1 vs M2r: differ on 26 ('01'), 0
+      M1t vs M1a: differ on 19 ('00'), 64 ('00')
+      M1t vs M2c: differ on 17 ('01'), 0
+      M1t vs M2r: differ on 17 ('01'), 0
+      M1a vs M2c: differ on 36 ('00'), 64 ('00')
+      M1a vs M2r: differ on 36 ('00'), 64 ('00')
+      M2c vs M2r: differ on 0, 0
+      [M1] two conditions vs one: differ 54 (smallest '01')
+      [M1t] two conditions vs one: differ 45 (smallest '01')
+      [M1a] two conditions vs one: differ 0
+      [M2c] two conditions vs one: differ 28 (smallest '12')
+      [M2r] two conditions vs one: differ 28 (smallest '12')
+   (BR) domain-scope's table (the branch reset with 0-1 passes, 17 subjects); witness `b`
+      P & (h?: <5)                       M1    7 [b=H] | M1t    7 [b=H] | M1a    7 [b=H] | M2c    7 [b=H] DOM(h){0,1,2,3,4} | M2r    7 [b=H] DOM(h){0,1,2,3,4}
+      P & (k: "b") & (h?: <5)            M1    1 [b=H] | M1t    1 [b=H] | M1a    1 [b=H] | M2c    0 [b=F] DOM(h){} | M2r    0 [b=F] DOM(h){}
+      P & ((k, h?): ("b", <5))           M1    1 [b=H] | M1t    1 [b=H] | M1a    2 [b=H] | M2c    0 [b=F] DOM(h){} | M2r    0 [b=F] DOM(h){}
+      P & (k?: "b") & (h?: <5)           M1    1 [b=H] | M1t    1 [b=H] | M1a    1 [b=H] | M2c    0 [b=F] DOM(h){}(k){b} | M2r    0 [b=F] DOM(h){}(k){b}
+      P & ((k, h?): (a,<5)|(b,>=5))      M1   12 [b=H] | M1t   12 [b=H] | M1a   12 [b=H] | M2c   12 [b=H] DOM(h){0,1,2,3,4,5,6,7,8,9} | M2r   12 [b=H] DOM(h){0,1,2,3,4,5,6,7,8,9}
+      P & ((k, h?): ("a", <5))           M1    6 [b=F] | M1t    6 [b=F] | M1a    7 [b=H] | M2c    6 [b=F] DOM(h){0,1,2,3,4} | M2r    6 [b=F] DOM(h){0,1,2,3,4}
+      M1 vs M1t: differ on 0, 0, 0, 0, 0, 0
+      M1 vs M1a: differ on 0, 0, 1 ('a'), 0, 0, 1 ('b')
+      M1 vs M2c: differ on 0, 1 ('b'), 1 ('b'), 1 ('b'), 0, 0
+      M1 vs M2r: differ on 0, 1 ('b'), 1 ('b'), 1 ('b'), 0, 0
+      M1t vs M1a: differ on 0, 0, 1 ('a'), 0, 0, 1 ('b')
+      M1t vs M2c: differ on 0, 1 ('b'), 1 ('b'), 1 ('b'), 0, 0
+      M1t vs M2r: differ on 0, 1 ('b'), 1 ('b'), 1 ('b'), 0, 0
+      M1a vs M2c: differ on 0, 1 ('b'), 2 ('a'), 1 ('b'), 0, 1 ('b')
+      M1a vs M2r: differ on 0, 1 ('b'), 2 ('a'), 1 ('b'), 0, 1 ('b')
+      M2c vs M2r: differ on 0, 0, 0, 0, 0, 0
+   (LST) mark-in-none, 43 lists; witnesses `6,`, `1,`
+      occurs.none(((h, m?): m < h))      M1   13 [6,=F 1,=F] | M1t   21 [6,=F 1,=H] | M1a   13 [6,=F 1,=F] | M2c   21 [6,=F 1,=H] DOM(m){2,7} | M2r   21 [6,=F 1,=H] DOM(m){2,7}
+        + (m?: >5)                       M1    7 [6,=F 1,=F] | M1t   13 [6,=F 1,=H] | M1a    7 [6,=F 1,=F] | M2c   21 [6,=H 1,=H] DOM(m){7} | M2r   21 [6,=H 1,=H] DOM(m){7}
+      M1 vs M1t: differ on 8 ('1,'), 6 ('1,')
+      M1 vs M1a: differ on 0, 0
+      M1 vs M2c: differ on 8 ('1,'), 14 ('1,')
+      M1 vs M2r: differ on 8 ('1,'), 14 ('1,')
+      M1t vs M1a: differ on 8 ('1,'), 6 ('1,')
+      M1t vs M2c: differ on 0, 8 ('6,')
+      M1t vs M2r: differ on 0, 8 ('6,')
+      M1a vs M2c: differ on 8 ('1,'), 14 ('1,')
+      M1a vs M2r: differ on 8 ('1,'), 14 ('1,')
+      M2c vs M2r: differ on 0, 0
+      [M1] adding (m?: >5) turns FAILS into HOLDS on 0 lists
+      [M1t] adding (m?: >5) turns FAILS into HOLDS on 0 lists
+      [M1a] adding (m?: >5) turns FAILS into HOLDS on 0 lists
+      [M2c] adding (m?: >5) turns FAILS into HOLDS on 8 lists (smallest '6,')
+      [M2r] adding (m?: >5) turns FAILS into HOLDS on 8 lists (smallest '6,')
+   (R2) review r30 RULING-2: P = /(?<h>\d)?-(?<k>[1-9])(?:\+(?<j>[5-9]))?|-(?<k>0)\+(?<j>[0-4])/, Q = its first branch, 1210 source rows
+      [M1] P & C1 and Q & C1 equal behaviour: True (324 rows); + C2: differ 0 of 1210
+      [M1t] P & C1 and Q & C1 equal behaviour: True (324 rows); + C2: differ 54 of 1210 (smallest '-1': P HOLDS, Q FAILS)
+      [M1a] P & C1 and Q & C1 equal behaviour: False (329 rows); + C2: differ 5 of 1210 (smallest '-0+0': P HOLDS, Q FAILS)
+      [M2c] P & C1 and Q & C1 equal behaviour: True (324 rows); + C2: differ 54 of 1210 (smallest '-1': P HOLDS, Q FAILS)
+      [M2r] P & C1 and Q & C1 equal behaviour: True (324 rows); + C2: differ 0 of 1210
+   (S9) review r30 SIMULATE-9: /(?<h>\d)?-(?:(?<k>\d)|-(?<j>\d))/, 220 subjects, `((h?, k): h < k) & (j?: <3)` (a non-product joint with an unmarked partner beside a third marked label)
+      [M1] holds on 54; on `-1` HOLDS
+      [M1t] holds on 54; on `-1` HOLDS
+      [M1a] holds on 58; on `-1` HOLDS
+      [M2c] holds on 54; on `-1` HOLDS; DOM(j) {0,1,2}
+      [M2r] holds on 0; on `-1` FAILS; DOM(j) {}
+   (R7) review r30 RULING-7: the product joint as ONE condition vs its record = `&` spelling, beside (j?: <5); 355 rows
+      [M1] joint vs record = `&`: differ 0; without (j?: <5): 0
+      [M1t] joint vs record = `&`: differ 0; without (j?: <5): 0
+      [M1a] joint vs record = `&`: differ 25 (smallest '-5+0'); without (j?: <5): 25
+      [M2c] joint vs record = `&`: differ 30 (smallest '-0'); without (j?: <5): 0
+      [M2r] joint vs record = `&`: differ 0; without (j?: <5): 0
+
+PART 4: THE PROGRAM SEARCH (every program of 1-3 conditions, rev 22's pools A, B, P, LST) against rev 22's own engine, and between candidates; FAIL -> HOLD when a condition is added
+   729 (pool, program) cases; the REV22 column only for rev 22's own pools (no EXTRA condition)
+   M1    vs M1a  :  118 programs answer differently (  150 program-subject pairs); smallest: LST `((h, m?): m < h)` on '' (FAILS / HOLDS)
+   M1    vs M1t  :  109 programs answer differently (  296 program-subject pairs); smallest: A `((h?, k?): h < k)` on 'a9' (HOLDS / FAILS)
+   M1    vs M2c  :  292 programs answer differently ( 1323 program-subject pairs); smallest: A `((h?, k): h < k)` on 'b1' (HOLDS / FAILS)
+   M1    vs M2r  :  292 programs answer differently ( 1323 program-subject pairs); smallest: A `((h?, k): h < k)` on 'b1' (HOLDS / FAILS)
+   M1    vs REV22:  130 programs answer differently (  567 program-subject pairs); smallest: A `((h?, k?): h < k)` on 'a9' (HOLDS / FAILS)
+   M1a   vs M2c  :  325 programs answer differently ( 1473 program-subject pairs); smallest: LST `((h, m?): m < h)` on '' (HOLDS / FAILS)
+   M1a   vs M2r  :  325 programs answer differently ( 1473 program-subject pairs); smallest: LST `((h, m?): m < h)` on '' (HOLDS / FAILS)
+   M1a   vs REV22:  139 programs answer differently (  600 program-subject pairs); smallest: LST `((h, m?): m < h)` on '' (HOLDS / FAILS)
+   M1t   vs M1a  :  202 programs answer differently (  446 program-subject pairs); smallest: LST `((h, m?): m < h)` on '' (FAILS / HOLDS)
+   M1t   vs M2c  :  231 programs answer differently ( 1055 program-subject pairs); smallest: A `((h?, k): h < k)` on 'b1' (HOLDS / FAILS)
+   M1t   vs M2r  :  231 programs answer differently ( 1055 program-subject pairs); smallest: A `((h?, k): h < k)` on 'b1' (HOLDS / FAILS)
+   M1t   vs REV22:   90 programs answer differently (  369 program-subject pairs); smallest: LST `(m?: <5) & (m?: >5)` on '' (HOLDS / FAILS)
+   M2c   vs M2r  :    0 programs answer differently (    0 program-subject pairs)
+   M2c   vs REV22:    0 programs answer differently (    0 program-subject pairs)
+   M2r   vs REV22:    0 programs answer differently (    0 program-subject pairs)
+   [M1   ] adding a condition turns a FAIL into a HOLD in 0 of 1585 (program, added condition) pairs
+   [M1t  ] adding a condition turns a FAIL into a HOLD in 0 of 1585 (program, added condition) pairs
+   [M1a  ] adding a condition turns a FAIL into a HOLD in 0 of 1585 (program, added condition) pairs
+   [M2c  ] adding a condition turns a FAIL into a HOLD in 4 of 1585 (program, added condition) pairs; smallest: LST `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
+   [M2r  ] adding a condition turns a FAIL into a HOLD in 4 of 1585 (program, added condition) pairs; smallest: LST `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
+   [REV22] adding a condition turns a FAIL into a HOLD in 3 of 845 (program, added condition) pairs; smallest: LST `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
+
+END
