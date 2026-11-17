@@ -89,3 +89,6 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 ## 2026-11-16 — critic round predspec20 (review r29)
 - A 5-critic + 1-verifier design re-check ran in ~25 min wall with zero coordinator interventions; the coordinator's main value was the freeze-drift hand mapping (two owner rulings landed mid-round and settled or reshaped 6 findings) and the consolidation of 50 findings into 17 groups. The pattern fits any fold re-check where rulings are moving the same afternoon.
+
+## 2026-11-16 — critic round predspec22 (review r30)
+- A 4-critic + verifier round on a 6,000-line design closed in 30 minutes wall, coordinator-drafted, with every agent returning inside its launch turn; the coordinator pattern scales to giant subjects when critics get frozen copies and a runnable evidence tree, and briefs are ONE question with two sub-parts.
