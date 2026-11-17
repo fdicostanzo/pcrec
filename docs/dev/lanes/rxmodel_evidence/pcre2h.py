@@ -3,8 +3,10 @@
 # D181 wall). It compiles a pattern, runs it in three modes (WHOLE value, SEARCHED first match, FIND-ALL) and serves
 # STRING CALLOUTS `(?C"name")` from Python functions: a callout's function sees the captures set at that point
 # (by group name), the match's start and the current position, and returns True (continue: callout result 0) or
-# False / None (result 1: "fail here", PCRE backtracks to its next choice). A callout may also stand as the condition
-# of a conditional group, `(?(?C"name")yes|no)`: result 0 takes `yes`, nonzero takes `no`.
+# False / None (result 1: "fail here", PCRE backtracks to its next choice). A callout used as the CONDITION of a
+# conditional group is written inside a lookahead, `(?(?=(?C"name"))yes|no)`: result 0 takes `yes`, nonzero `no`.
+# (Written bare before an assertion, `(?(?C"name")(?=)yes|no)`, a nonzero result does NOT take `no`: it backtracks;
+# selfcheck() shows both.)
 #
 # Compile options used for every model: PCRE2_NO_AUTO_POSSESS and PCRE2_NO_START_OPTIMIZE (and NO_DOTSTAR_ANCHOR), so
 # no optimization removes a path a callout would see (the pcre2callout documentation names these as the options that
@@ -150,6 +152,11 @@ def selfcheck():
     out.append(("NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts %d (expect 6: every start tried)" % d.calls, d.calls == 6))
     u0 = Pcre(r"(?:(?<a>a)|x)\k<a>b"); u1 = Pcre(r"(?:(?<a>a)|x)\k<a>b", opts=PCRE2_MATCH_UNSET_BACKREF)
     out.append(("MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\\k<a>b` on `xb` default %s, with the option %s (expect None, a match)" % (u0.search("xb"), u1.search("xb")), u0.search("xb") is None and u1.search("xb") is not None))
+    for v in (True, False):
+        b = Pcre(r'x(?(?C"t")(?=)a|b)', {"t": lambda c, v=v: v}); k = Pcre(r'x(?(?=(?C"t"))a|b)', {"t": lambda c, v=v: v})
+        res = (b.search("xa") is not None, b.search("xb") is not None, k.search("xa") is not None, k.search("xb") is not None)
+        out.append(("callout as a condition, callout %s: bare `x(?(?C)(?=)a|b)` matches xa/xb %s/%s ; inside a lookahead `x(?(?=(?C))a|b)` %s/%s (expect %s)" % (
+            "TRUE" if v else "FALSE", res[0], res[1], res[2], res[3], "T/F, T/F" if v else "F/F, F/T"), res == ((True, False, True, False) if v else (False, False, False, True))))
     w = Pcre(r"\d+")
     out.append(("ANCHORED|ENDANCHORED (WHOLE): `\\d+` whole on `12` %s, on `12x` %s, on `x12` %s" % (w.whole("12"), w.whole("12x"), w.whole("x12")), (w.whole("12"), w.whole("12x"), w.whole("x12")) == (True, False, False)))
     return out
