@@ -1,0 +1,122 @@
+ORDER: forward
+  D1 t2 & !q (q := t2 & late) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  D1 t2 & !q (q := t2 & late) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+  D1 t2 & !q (q := t2 & late) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+  D2 /\d+/ & !/0+/ (11-15 20:43 tie) on `0`: WHOLE FAILS | SEARCHED FAILS
+  D2 /\d+/ & !/0+/ (11-15 20:43 tie) on `0 7`: WHOLE FAILS | SEARCHED HOLDS `7`@2
+  D3 t2 & NOT late on `9`: WHOLE FAILS | SEARCHED FAILS
+  D3 t2 & NOT late on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  D3 t2 & NOT late on `9:30`: WHOLE FAILS | SEARCHED FAILS
+  D4 t2 & ((h, m): !R) (R = >= (9, 30)) on `9`: WHOLE FAILS | SEARCHED FAILS
+  D4 t2 & ((h, m): !R) (R = >= (9, 30)) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  D4 t2 & ((h, m): !R) (R = >= (9, 30)) on `9:30`: WHOLE FAILS | SEARCHED FAILS
+  D5 t2 & !contains(q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  D5 t2 & !contains(q) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+  D5 t2 & !contains(q) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+  D6 t2 & nowhere(q) [proposed whole-text test] on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  D6 t2 & nowhere(q) [proposed whole-text test] on `9:30`: WHOLE FAILS | SEARCHED FAILS
+  D6 t2 & nowhere(q) [proposed whole-text test] on `9:30 1`: WHOLE FAILS | SEARCHED FAILS
+  D7 (a, b) record (a = 0: <10, b: >$a) [$a reads the real label] on `/5`: WHOLE FAILS | SEARCHED FAILS
+  D7 (a, b) record (a = 0: <10, b: >$a) [$a reads the real label] on `2/5`: WHOLE HOLDS | SEARCHED HOLDS `2/5`@0
+  D7 (a, b) record (a = 0: <10, b: >$a) [$a reads the real label] on `x/5`: WHOLE FAILS | SEARCHED FAILS
+  D8 the joint ((a = 0, b): a < 10 & b > a) on `/5`: WHOLE HOLDS | SEARCHED HOLDS `/5`@0
+  D8 the joint ((a = 0, b): a < 10 & b > a) on `2/5`: WHOLE HOLDS | SEARCHED HOLDS `2/5`@0
+  D8 the joint ((a = 0, b): a < 10 & b > a) on `x/5`: WHOLE FAILS | SEARCHED HOLDS `/5`@1
+  D9 two defaults on one label (h = 0: <5) & (h = 9: >7) on `3x`: WHOLE FAILS | SEARCHED HOLDS `x`@1
+  D9 two defaults on one label (h = 0: <5) & (h = 9: >7) on `a x`: WHOLE FAILS | SEARCHED HOLDS `x`@2
+  D9 two defaults on one label (h = 0: <5) & (h = 9: >7) on `x`: WHOLE HOLDS | SEARCHED HOLDS `x`@0
+  SEARCHED REP (364) (h = 0: c) every pass, possibly none  holds 364 first ''
+  SEARCHED REP (364) (h: !S) (every pass in !S)            holds 132 first '7;'
+  SEARCHED REP (364) NOT c (not every pass)                holds 132 first '7;'
+  SEARCHED REP (364) NOT some(c)                           holds 364 first ''
+  SEARCHED REP (364) P & !(P & c)                          holds 364 first ''
+  SEARCHED REP (364) occurs.none((h = "x": !S)) narrower   holds 364 first ''
+  SEARCHED REP (364) occurs.none(c)                        holds 364 first ''
+  SEARCHED REP (364) plain c (every pass, >=1 row)         holds 132 first '3;'
+  WHOLE REP (364) (h = 0: c) every pass, possibly none  holds 20 first ''
+  WHOLE REP (364) (h: !S) (every pass in !S)            holds 2 first '7;'
+  WHOLE REP (364) NOT c (not every pass)                holds 22 first '7;'
+  WHOLE REP (364) NOT some(c)                           holds 20 first ''
+  WHOLE REP (364) P & !(P & c)                          holds 40 first ''
+  WHOLE REP (364) occurs.none((h = "x": !S)) narrower   holds 3 first ''
+  WHOLE REP (364) occurs.none(c)                        holds 20 first ''
+  WHOLE REP (364) plain c (every pass, >=1 row)         holds 2 first '3;'
+  SEARCHED SV (341) (h = "x": !S)   holds 220 first 'x'
+  SEARCHED SV (341) (h = "x": >=5)  holds 56 first '7x'
+  SEARCHED SV (341) (h: !S)         holds 56 first '7x'
+  SEARCHED SV (341) NOT (h = 0: c)  holds 56 first '7x'
+  SEARCHED SV (341) NOT (h = 9: c)  holds 220 first 'x'
+  SEARCHED SV (341) NOT c           holds 56 first '7x'
+  SEARCHED SV (341) P & !(P & c)    holds 220 first 'x'
+  WHOLE SV (341) (h = "x": !S)   holds 2 first 'x'
+  WHOLE SV (341) (h = "x": >=5)  holds 1 first '7x'
+  WHOLE SV (341) (h: !S)         holds 1 first '7x'
+  WHOLE SV (341) NOT (h = 0: c)  holds 1 first '7x'
+  WHOLE SV (341) NOT (h = 9: c)  holds 2 first 'x'
+  WHOLE SV (341) NOT c           holds 1 first '7x'
+  WHOLE SV (341) P & !(P & c)    holds 2 first 'x'
+  SEARCHED REP (364) [NOT c (not every pass)] vs [(h: !S) (every pass in !S)] differ 0 first None
+  SEARCHED REP (364) [NOT c (not every pass)] vs [P & !(P & c)] differ 232 first ''
+  SEARCHED REP (364) [(h: !S) (every pass in !S)] vs [P & !(P & c)] differ 232 first ''
+  WHOLE REP (364) [NOT c (not every pass)] vs [(h: !S) (every pass in !S)] differ 20 first '7;;'
+  WHOLE REP (364) [NOT c (not every pass)] vs [P & !(P & c)] differ 18 first ''
+  WHOLE REP (364) [(h: !S) (every pass in !S)] vs [P & !(P & c)] differ 38 first ''
+  SEARCHED SV (341) [NOT c] vs [(h: !S)] differ 0 first None
+  SEARCHED SV (341) [NOT c] vs [P & !(P & c)] differ 164 first 'x'
+  SEARCHED SV (341) [(h: !S)] vs [P & !(P & c)] differ 164 first 'x'
+  WHOLE SV (341) [NOT c] vs [(h: !S)] differ 0 first None
+  WHOLE SV (341) [NOT c] vs [P & !(P & c)] differ 1 first 'x'
+  WHOLE SV (341) [(h: !S)] vs [P & !(P & c)] differ 1 first 'x'
+  ROW REP `` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=H/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+  ROW REP `3;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=H/H ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=F/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=H/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+  ROW REP `3;3;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=H/H ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=F/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=H/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+  ROW REP `3;7;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/H ; NOT c (not every pass)=H/H ; (h: !S) (every pass in !S)=F/H ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=F/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+  ROW REP `3;;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/H ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+  ROW REP `7;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=H/H ; (h: !S) (every pass in !S)=H/H ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=F/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+  ROW REP `7;;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=H/H ; (h: !S) (every pass in !S)=F/H ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=F/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+  ROW REP `;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+  ROW SV `3x` (WHOLE/SEARCHED): NOT c=F/F ; (h: !S)=F/F ; P & !(P & c)=F/H ; NOT (h = 0: c)=F/F ; NOT (h = 9: c)=F/H ; (h = "x": !S)=F/H ; (h = "x": >=5)=F/F
+  ROW SV `7x` (WHOLE/SEARCHED): NOT c=H/H ; (h: !S)=H/H ; P & !(P & c)=H/H ; NOT (h = 0: c)=H/H ; NOT (h = 9: c)=H/H ; (h = "x": !S)=H/H ; (h = "x": >=5)=H/H
+  ROW SV `x` (WHOLE/SEARCHED): NOT c=F/F ; (h: !S)=F/F ; P & !(P & c)=H/H ; NOT (h = 0: c)=F/F ; NOT (h = 9: c)=H/H ; (h = "x": !S)=H/H ; (h = "x": >=5)=F/F
+  SEARCHED T2 (11,110) t2 & !contains(q) holds 11110 first '0'
+  SEARCHED T2 (11,110) t2 & !q (pattern difference) holds 11110 first '0'
+  SEARCHED T2 (11,110) t2 & ((h, m): !R) (set complement) holds 10230 first '0:00'
+  SEARCHED T2 (11,110) t2 & NOT late (condition NOT) holds 10230 first '0:00'
+  SEARCHED T2 (11,110) t2 & nowhere(q) [proposed] holds 1970 first '0'
+  WHOLE T2 (11,110) t2 & !contains(q) holds 1970 first '0'
+  WHOLE T2 (11,110) t2 & !q (pattern difference) holds 1970 first '0'
+  WHOLE T2 (11,110) t2 & ((h, m): !R) (set complement) holds 1860 first '0:00'
+  WHOLE T2 (11,110) t2 & NOT late (condition NOT) holds 1860 first '0:00'
+  WHOLE T2 (11,110) t2 & nowhere(q) [proposed] holds 1970 first '0'
+  SEARCHED T2 (11,110) t2 & !q holds while the text has a late time somewhere: 9140 first '9:30'
+  WHOLE T2 (11,110) t2 & !q holds while the text has a late time somewhere: 0 first None
+  SEARCHED T2 (11,110) t2 & ((h, m = 0): !R) holds 11110 first '0'; vs t2 & !q differ 0 first None
+  WHOLE T2 (11,110) t2 & ((h, m = 0): !R) holds 1880 first '0'; vs t2 & !q differ 90 first '10'
+  CLOSING (1,111 lists) ((h = 0, m = 00): R) every pass, possibly none   WHOLE holds 40 (I1 differ 25 first '3,'; I2a differ 45 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  CLOSING (1,111 lists) ((h, m = 00): R) (h without a default)           WHOLE holds 39 (I1 differ 26 first ''; I2a differ 46 first ''; I2b differ 1 first '') | SEARCHED holds 1110
+  CLOSING (1,111 lists) ((h, m): R) plain                                WHOLE holds 14 (I1 differ 1 first ''; I2a differ 71 first ''; I2b differ 26 first '') | SEARCHED holds 852
+  CLOSING (1,111 lists) occurs.none(((h, m = 00): !R))                   WHOLE holds 40 (I1 differ 25 first '3,'; I2a differ 45 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  CLOSING (1,111 lists) occurs.none(((h, m = 99): !R))                   WHOLE holds 15 (I1 differ 0; I2a differ 70 first '3,'; I2b differ 25 first '3,') | SEARCHED holds 1111
+  CLOSING (1,111 lists) occurs.none(((h, m): !R))                        WHOLE holds 85 (I1 differ 70 first '3,'; I2a differ 0; I2b differ 45 first '12,') | SEARCHED holds 1111
+  CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [legal again]       WHOLE holds 85 (I1 differ 70 first '3,'; I2a differ 0; I2b differ 45 first '12,') | SEARCHED holds 1111
+  ZERO-PASS (n = 0: <5) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+  ZERO-PASS (n = 0: <5) on `3,`: WHOLE HOLDS | SEARCHED HOLDS `3,`@0
+  ZERO-PASS (n = 0: <5) on `3,7,`: WHOLE FAILS | SEARCHED HOLDS `3,`@0
+  ZERO-PASS (n = 0: <5) on `7,`: WHOLE FAILS | SEARCHED HOLDS ``@0
+  ZERO-PASS (n: <5) on ``: WHOLE FAILS | SEARCHED FAILS
+  ZERO-PASS (n: <5) on `3,`: WHOLE HOLDS | SEARCHED HOLDS `3,`@0
+  ZERO-PASS (n: <5) on `3,7,`: WHOLE FAILS | SEARCHED HOLDS `3,`@0
+  ZERO-PASS (n: <5) on `7,`: WHOLE FAILS | SEARCHED FAILS
+  ZERO-PASS NOT (n: <5) on ``: WHOLE FAILS | SEARCHED FAILS
+  ZERO-PASS NOT (n: <5) on `3,`: WHOLE FAILS | SEARCHED FAILS
+  ZERO-PASS NOT (n: <5) on `3,7,`: WHOLE HOLDS | SEARCHED HOLDS `3,7,`@0
+  ZERO-PASS NOT (n: <5) on `7,`: WHOLE HOLDS | SEARCHED HOLDS `7,`@0
+  ZERO-PASS NOT some((n: <5)) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+  ZERO-PASS NOT some((n: <5)) on `3,`: WHOLE FAILS | SEARCHED HOLDS ``@0
+  ZERO-PASS NOT some((n: <5)) on `3,7,`: WHOLE FAILS | SEARCHED HOLDS ``@0
+  ZERO-PASS NOT some((n: <5)) on `7,`: WHOLE HOLDS | SEARCHED HOLDS `7,`@0
+  ZERO-PASS some((n: <5)) on ``: WHOLE FAILS | SEARCHED FAILS
+  ZERO-PASS some((n: <5)) on `3,`: WHOLE HOLDS | SEARCHED HOLDS `3,`@0
+  ZERO-PASS some((n: <5)) on `3,7,`: WHOLE HOLDS | SEARCHED HOLDS `3,7,`@0
+  ZERO-PASS some((n: <5)) on `7,`: WHOLE FAILS | SEARCHED FAILS
+END
