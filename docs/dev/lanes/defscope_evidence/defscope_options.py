@@ -204,6 +204,7 @@ def dif(x, y, pool):
 
 
 OPTS = ("LOCAL", "COLUMN", "POS", "DOLLAR")
+OPTSD = OPTS + ("DECL",)                     # DECL runs with every label of the pool declared `= 0`
 C = lambda v: ("c", v)
 
 # --------------------------------------------------------------------------------------------- the conditions used
@@ -239,6 +240,20 @@ print("   (1b) record `(a = 0: <10, b: >$a)` (the record is ONE condition: LOCAL
 for o in OPTS:
     x = run([(ca, [C("0")]), (cb, [None])], AB, o)
     print("      %-7s holds %s, on `-1` %s; vs the record differ %s" % (o, cnt(x), hf(x, AB, "-1"), dif(x, rec, AB)))
+# (1b') the PER-ENTRY reading of LOCAL: a default fills its label's SLOT in the test that names it, and a `$a` always
+# reads the row (so a record is exactly the AND of its entries); the author's spelling of "b above a, an absent a read
+# as 0" is then the JOINT condition with the default on a's slot
+xe = vecE(ca, [C("0")], AB, {}) & vecE(cb, [None], AB, {})
+jab = Cond("((a = 0, b): a < 10 & b > a)", [("a", ""), ("b", "")],
+           lambda t, v: canon(t[0]) and int(t[0]) < 10 and canon(t[1]) and int(t[1]) > int(t[0]))
+xj = vecE(jab, [C("0"), None], AB, {})
+print("   (1b') PER-ENTRY: the record `(a = 0: <10, b: >$a)` = its `&` spelling, holds %d (on `-1` %s); the joint "
+      "`((a = 0, b): a < 10 & b > a)` holds %d (on `-1` %s), vs the per-condition record differ %s" % (
+          popc(xe), hf(xe, AB, "-1"), popc(xj), hf(xj, AB, "-1"), dif(xj, rec, AB)))
+a_lt10 = Cond("(a: <10)", [("a", "")], lambda t, v: canon(t[0]) and int(t[0]) < 10)
+xd = run([(cb, [None]), (a_lt10, [None]), (ca, [C("0")])], AB, "DOLLAR")
+print("        DOLLAR, one statement, two values for a: `(b: >$a) & (a: <10) & (a = 0: <10)` holds %d; on `-1` %s "
+      "(`(b: >$a)` reads a as 0, `(a: <10)` reads it as absent)" % (popc(xd), hf(xd, AB, "-1")))
 # (1c) `$a` read later, and a computed label reading a (w := $a + 1, tested (w: >=1)); the predicate draft (rev 22)
 # defines no replacement template, so that half of the battery item cannot be run
 w1 = Cond("(w: >=1), w := $a + 1", [], lambda t, v: v.get("a") is not None and canon(v["a"]) and int(v["a"]) + 1 >= 1,
@@ -259,15 +274,16 @@ def ctl_of(c, var):
     return [var if ctl == "?" else (C(ctl[1]) if isinstance(ctl, tuple) else None) for _, ctl in c.labs]
 
 
-nord = {o: [0, 0, None] for o in OPTS}
+nord = {o: [0, 0, None] for o in OPTSD}
 for pool, base, extra in SEARCH:
     pl = base + extra
     for i, j in itertools.combinations(range(len(pl)), 2):
         for v1 in VARIANTS:
             for v2 in VARIANTS:
                 pr = [(pl[i], ctl_of(pl[i], v1)), (pl[j], ctl_of(pl[j], v2))]
-                for o in OPTS:
-                    a, b = run(pr, pool, o), run(pr[::-1], pool, o)
+                for o in OPTSD:
+                    dcl = {l: C("0") for l in pool.labels}
+                    a, b = run(pr, pool, o, decl=dcl), run(pr[::-1], pool, o, decl=dcl)
                     nord[o][0] += 1
                     if a != b:
                         nord[o][1] += 1
@@ -276,14 +292,14 @@ for pool, base, extra in SEARCH:
                                           "ERROR" if ERR in (a, b) else low(a ^ b, pool))
 print("   (1d) the order of `&`: (2-condition program, controls) cases over rev 22's pools A, B, P, LST (+ condkind's "
       "EXTRA), each mark replaced by nothing or `= 0/4/5/9/\"x\"`: the answer moves when the two are swapped:")
-for o in OPTS:
+for o in OPTSD:
     print("      %-7s %d of %d%s" % (o, nord[o][1], nord[o][0], "" if nord[o][2] is None else
                                      "; first: pool %s `%s` at %r" % nord[o][2]))
 xab, xba = run([(ca, [C("0")]), (cb, [None])], AB, "POS"), run([(cb, [None]), (ca, [C("0")])], AB, "POS")
 print("      POS on AB: `(a = 0: <10) & (b: >$a)` holds %d, `(b: >$a) & (a = 0: <10)` holds %d: differ %s" % (
     popc(xab), popc(xba), dif(xab, xba, AB)))
 # (1e) adding a condition never admits a subject: (1-2 condition program, added condition), controls per condition
-mono = {o: [0, 0, 0, None] for o in OPTS}
+mono = {o: [0, 0, 0, None] for o in OPTSD}
 for pool, base, extra in SEARCH:
     pl = base + extra
     for n_ in (1, 2):
@@ -295,8 +311,9 @@ for pool, base, extra in SEARCH:
                         continue
                     for va in VARIANTS:
                         pr2 = pr + [(pl[j], ctl_of(pl[j], va))]
-                        for o in OPTS:
-                            a, b = run(pr, pool, o), run(pr2, pool, o)
+                        for o in OPTSD:
+                            dcl = {l: C("0") for l in pool.labels}
+                            a, b = run(pr, pool, o, decl=dcl), run(pr2, pool, o, decl=dcl)
                             mono[o][0] += 1
                             if ERR in (a, b):
                                 mono[o][2] += 1
@@ -309,11 +326,34 @@ for pool, base, extra in SEARCH:
                                     mono[o][3] = cand
 print("   (1e) adding a condition turns a FAIL into a HOLD: (program of 1-2 conditions, added condition) pairs, each "
       "condition's marks replaced by one control (nothing or `= 0/4/5/9/\"x\"`), pools A, B, P, LST (+ EXTRA):")
-for o in OPTS:
+for o in OPTSD:
     print("      %-7s %d of %d admit (and %d pairs are a compile ERROR: two defaults for one label)%s" % (
         o, mono[o][1], mono[o][0], mono[o][2], "" if mono[o][3] is None else
-        "; first: `%s` + `%s` admits %d on pool %s, smallest %r" % mono[o][3][1:3] + (mono[o][3][0],) +
-        mono[o][3][3:]))
+        "; first: `%s` + `%s` admits %d on pool %s, smallest %r" % (mono[o][3][1:3] + (mono[o][3][0],) +
+                                                                      mono[o][3][3:])))
+# POS with the added condition written FIRST (appending can never admit under POS: a default reaches only later
+# conditions, so the conditions already there read what they read before)
+pf = [0, 0, None]
+for pool, base, extra in SEARCH:
+    pl = base + extra
+    for n_ in (1, 2):
+        for combo in itertools.combinations(range(len(pl)), n_):
+            for vb in VARIANTS:
+                pr = [(pl[i], ctl_of(pl[i], vb)) for i in combo]
+                a = run(pr, pool, "POS")
+                for j in range(len(pl)):
+                    if j in combo:
+                        continue
+                    for va in VARIANTS:
+                        b = run([(pl[j], ctl_of(pl[j], va))] + pr, pool, "POS")
+                        pf[0] += 1
+                        if b & ~a:
+                            pf[1] += 1
+                            if pf[2] is None:
+                                pf[2] = ("%s [%s]" % (pl[j].name, va), " & ".join("%s [%s]" % (c.name, x) for c, x in pr),
+                                         pool.name, popc(b & ~a), low(b & ~a, pool))
+print("      POS with the added condition written FIRST: %d of %d admit; first: `%s` & `%s` on pool %s admits %d, "
+      "smallest %r" % ((pf[1], pf[0]) + pf[2]))
 pr = [(h_lt5, [None])]
 for o in OPTS:
     a, b = run(pr, A, o), run(pr + [(h_lt9, [C("0")])], A, o)
@@ -352,12 +392,14 @@ for o in OPTS:
         o, cnt(x1), hf(x1, A, "c"), cnt(x2), hf(x2, A, "c"), cnt(x3), hf(x3, A, "c")))
 S_ = [(h_lt9, [C("0")])]                                          # S := A & (h = 0: <9); q1 := A & (h: <5)
 q1 = [(h_lt5, [None])]
-for o in OPTS + ("COLUMN-b2",):
+for o in OPTS + ("COLUMN-b2", "DECL"):
     oo = "COLUMN" if o == "COLUMN-b2" else o
     seed = merge(S_) if o == "COLUMN-b2" else None
-    sq = run(S_ + q1, A, oo)
-    snq = run(S_, A, oo) & compl(q1, A, oo, seed=seed)
-    setc = run(S_ + [(h_nlt5, [None])], A, oo)
+    dcl = {"h": C("0")}                                       # DECL: A declares h = 0 (S then carries no default)
+    sq = run(S_ + q1, A, oo, decl=dcl)
+    snq = run(S_, A, oo, decl=dcl) & (full(A) & ~run(q1, A, oo, decl=dcl) if o == "DECL" else
+                                      compl(q1, A, oo, seed=seed))
+    setc = run(S_ + [(h_nlt5, [None])], A, oo, decl=dcl)
     print("      %-9s S & q1 holds %s, S & !q1 holds %s: BOTH on %s (`c`: %s / %s); S & (h: !(<5)) holds %s: vs "
           "S & !q1 differ %s" % (o, cnt(sq), cnt(snq), "n/a" if ERR in (sq, snq) else popc(sq & snq),
                                  hf(sq, A, "c"), hf(snq, A, "c"), cnt(setc), dif(setc, snq, A)))
@@ -433,9 +475,12 @@ print("\nPART 2: THE REWRITE RUN UNDER EACH OPTION (condkind2's 339 marked progr
 progs = G["progs"]
 
 
+INDOM = False                                 # True: only values the label can hold (no sentinel)
+
+
 def choices(pool, lab):
-    return [None] + [C(v) for v in consts(pool, lab)] + \
-        [("$", x) for x in pool.labels if x != lab and never_absent(pool, x)]
+    cv = sorted(pool.rdom[lab], key=lambda s: (len(s), s)) if INDOM else consts(pool, lab)
+    return [None] + [C(v) for v in cv] + [("$", x) for x in pool.labels if x != lab and never_absent(pool, x)]
 
 
 def occs(prog):
@@ -521,6 +566,21 @@ for k in sorted(RES, key=lambda k: (k[0], k[1], k[2])):
     r = RES[k]
     if r["LOCAL"][0] is not None and r["POS"][0] is None:
         print("      %-6s %-4s %-50s POS-any %s" % (k[0], k[1], k[2], r.get("POS-any", (None,))[0]))
+# the same run with no sentinel allowed (a constant default must be a value the label can hold)
+INDOM = True
+nos = {o: [0, 0, []] for o in ("LOCAL", "COLUMN")}
+for st, pool, nm, prog, target, key in progs:
+    for o in ("LOCAL", "COLUMN"):
+        if RES[(st, pool.name, nm)][o][0] is None:
+            continue
+        nos[o][0] += 1
+        if search(prog, pool, target, o)[0] is None:
+            nos[o][1] += 1
+            nos[o][2].append("%s %s `%s` (%s)" % (st, pool.name, nm, RES[(st, pool.name, nm)][o][0]))
+INDOM = False
+for o in ("LOCAL", "COLUMN"):
+    print("   %-7s of its %d rewrites, %d need a value the label never holds (a sentinel)%s" % (
+        o, nos[o][0], nos[o][1], "" if not nos[o][2] else "; first: " + sorted(nos[o][2])[0]))
 # DECL: ONE declared default per label for EVERY program of the pool (the declaration is part of the pattern)
 print("   DECL (one declared default per label per POOL, every condition reads it): the best declaration per pool")
 bypool = {}
