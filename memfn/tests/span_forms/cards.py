@@ -992,9 +992,11 @@ def cmd_run(args):
     res = os.path.join(rundir, "results.tsv")
     if os.path.exists(res):
         raise SystemExit("cards: %s exists; a night's step 1 runs once (re-runs: `rerun`)" % res)
-    # a FRESH run id each night (rev 12, r41 L6): a G2 record left in a reused RUNDIR names another run and refuses
-    if os.path.exists(os.path.join(rundir, RUN_ID)):
-        os.remove(os.path.join(rundir, RUN_ID))
+    # a RUNDIR is ONE night (rev 12, r41 L6): any results file of an earlier timing refuses, so a G2 record
+    # can only be this night's (its run id must match RUNDIR's, `night_g2`)
+    old = [n for n in os.listdir(rundir) if n.startswith("results") and n.endswith(".tsv")]
+    if old:
+        raise SystemExit("cards: %s holds %s from an earlier timing: a RUNDIR is one night" % (rundir, ", ".join(sorted(old))))
     print("cards: run id %s" % run_id(rundir, create=True))
     open(res, "w").close()
     dbad, nI, nreach = check_deny(rundir, cells(cards=STEP1))
@@ -1057,8 +1059,11 @@ RUN_ID = "run_id"
 
 
 def run_id(rundir, create=False):
-    """The night's run id (RUNDIR/run_id, written once by `dry`/`run`): keys the G2 record (rev 12,
-    r41 L6) and seeds the per-launch layout draws (rev 12, r41 L9). None when absent and not created."""
+    """The night's run id (RUNDIR/run_id, written ONCE by the first command that needs it: `dry`,
+    `run`, or `rule`/`rerun --g2` recording the list before any timing, as job 701 does): keys the G2
+    record (rev 12, r41 L6) and seeds the per-launch layout draws (rev 12, r41 L9). Never renewed: a
+    RUNDIR is one night (`run` refuses one that holds any results file). None when absent and not
+    created."""
     p = os.path.join(rundir, RUN_ID)
     if not os.path.exists(p):
         if not create:
@@ -1116,7 +1121,7 @@ def night_g2(rundir, g2file=None):
     record of another run (a reused RUNDIR), or a file whose bytes moved since it was recorded,
     REFUSES (exit 2), as does `--g2` naming a file that differs from the recorded one."""
     rec = os.path.join(rundir, G2_RECORD)
-    rid = run_id(rundir)
+    rid = run_id(rundir, create=bool(g2file))
     old = json.load(open(rec)) if os.path.exists(rec) else None
     if old is not None and old.get("run_id") != rid:
         raise SystemExit2("cards: %s holds run %s, this RUNDIR is run %s: a stale G2 record (remove it and pass "
@@ -2419,9 +2424,12 @@ def selftest_rev12(check):
         open(other, "w").write("32\n")
         open(g, "w").write("16\n")
         differs = refuses(night_g2, td, other)              # a second, different list for the night
-        os.remove(os.path.join(td, RUN_ID))
-        rid2 = run_id(td, create=True)                     # `run` on a reused RUNDIR: a fresh id
-        stale = refuses(night_g2, td) and rid2 != rid
+        other_dir = os.path.join(td, "other")             # another night's RUNDIR: its record copied in
+        os.makedirs(other_dir)
+        rid2 = run_id(other_dir, create=True)
+        with open(os.path.join(other_dir, G2_RECORD), "w") as f:
+            f.write(open(os.path.join(td, G2_RECORD)).read())
+        stale = refuses(night_g2, other_dir) and rid2 != rid
     check("(r41 L6) strict arguments and the keyed G2 record", all(pa) and good and first and moved and differs and stale,
           "refused (unknown, valueless x2, extra positional, mistyped flag, none): %s; --g2=F and --g2 F accepted: %s; "
           "recorded and re-read %s; moved file refused %s; a second list refused %s; another run's record refused %s"
