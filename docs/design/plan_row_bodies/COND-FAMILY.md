@@ -2275,3 +2275,16 @@ is NOT adopted: he is unsure of it. MINE: the gate form needs no `fail` at all (
 program), and a general two-branch conditional is `(C & M1) | (NOT C & M2)`; should an always-failing piece ever
 be wanted, regex has one (PCRE's `(*FAIL)`, the empty negative lookahead), so it would be a regex notion, not an
 invention; not proposed now.
+
+**2026-11-17 OWNER IDEA — a two- or three-argument conditional as a rewrite (Frank, to session 138, box clock
+about 14:15; an idea, not a ruling).** HIS WORDS: "We might adopt something like a rewrite from 2 or 3 argument ?:
+to make writing easier". RECORD: a conditional form (`c ? p` and `c ? p : q`; the spelling is a placeholder) that
+REWRITES to pieces already ruled, as a writing convenience. MANAGER'S POINTS given to him (MINE): (1) regex already
+has this construct: PCRE's conditional group `(?(c)yes|no)`, whose two-argument form PASSES when c is false (an
+absent no-branch matches empty), so the two-argument form is "if c then p" (the draft's `when`), NOT the whole-text
+gate (which is plain `c & m`); (2) lane rxmodel ran it: the conditional group equals `when`'s FILTER form exactly,
+while the alternation rewrite `(x & c & p) | (x & NOT c)` is a different, also well-defined thing (they differ on
+125 of 1,110 texts: `5;1;9` searched reports `5;1;9` against `5;1`, because in the alternation the first branch
+may send x back to a shorter match before the second branch is tried); (3) so "rewrite to what" IS the open
+when-meaning question, now asked as: the conditional means PCRE's conditional group. Filed with when-meaning; no
+new item.
