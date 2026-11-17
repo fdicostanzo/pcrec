@@ -1,6 +1,9 @@
 # A condition as its own kind: the owner's SQL model, worked out (EXPLORATION)
 
-STATUS: EXPLORATION, rules nothing. Lane condkind (opus), 2026-11-16, on the owner's go ("Go. Purely exploration",
+STATUS: EXPLORATION, rules nothing. TWO PARTS: Part I (sections 1-7 and "Left open", lane condkind, kept as
+delivered) works the owner's SQL model out with the optional mark; Part II (the note's own revision, lane condkind2,
+2026-11-16, on the owner's go "drop-mark: another exploration on these ideas", COND-FAMILY 21:19) works the same
+model out WITHOUT the mark. Part I: lane condkind (opus), 2026-11-16, on the owner's go ("Go. Purely exploration",
 COND-FAMILY 2026-11-16 20:44, **definition-lane**). Design only, no build go. It edits neither
 `predicates_draft.md` (stays at rev 22) nor any ruling: every 2026-11-16 ruling in COND-FAMILY.md is an INPUT here,
 and where the model would change one, the change comes back as a named question (section 7), never as a new text.
@@ -412,3 +415,358 @@ rewrites already spell both questions.
 - `when` as a library macro (FIXIND-1): needs a row-level "c is not true"; the complemented pattern of `x & c` is that
   today; no new operator is proposed.
 - Searched mode beyond the complement (which span is reported, D196) is unchanged by the model and not run.
+
+---
+
+# Part II: the model without the mark (lane condkind2, 2026-11-16)
+
+STATUS: EXPLORATION, rules nothing; the note's own revision (Part I above stays as delivered). It edits neither
+`predicates_draft.md` (rev 22) nor any ruling. THE OWNER'S QUESTION (COND-FAMILY 21:16, his words): "What if we got
+rid of the mark? I think it's a large source of issues. Absence is a "null" which never matches. Use the default to
+get past it. Thoughts?"; his go (21:19): "drop-mark: another exploration on these ideas". The manager's judgment in
+the 21:16 entry (in favour; three named costs: a condition against a value unknown when written, the default's
+scope, silent drift) is HIS, unrun: this part tests it. Spellings are placeholders (D193 add. 4). Evidence:
+`docs/dev/lanes/condkind2_evidence/` (`condkind2_nomark.py`, its output `condkind2_nomark.out`; commands in II.7).
+Part I's choices are kept: the source row is the subject (S1), a result row is one match with the passes as a nested
+table (R1).
+
+## II.0 Goals
+
+Ranked; who benefits: the owner, who decides **drop-mark**; the next predicate revision, which inherits it.
+
+1. THE QUESTION ANSWERED BY RUN. Every marked program in the existing pools is searched for a rewrite with defaults
+   only that gives rev 22's answer on every subject. Measurable: every program counted in exactly one outcome; every
+   count unchanged by the order-swap run, with a sabotage showing the swap check can fail.
+2. THE SHAPES THAT DO NOT REWRITE, each with a worked example, the author's alternative, and whether the question
+   the mark asked is one anybody needs.
+3. THE DEFAULT'S SCOPE laid out side by side with counts (it becomes the load-bearing open item).
+4. THE RULINGS RE-READ: each one STANDS / RETIRED / CHANGES; the value set's readers found by grep with line cites.
+5. FEW QUESTIONS: at most three, each about what an object IS.
+
+Non-goals: no rev 23, no spelling, no warning designed (section II.4 describes only), no ruling.
+
+Standing questions (docs/design/CLAUDE.md): (1) measurement regime NOT RELEVANT (no timing; counts of answers over
+populations). (2) Independent control RELEVANT to the evidence: the target answers are rev 22's own engine
+(predspec21_check.py exec'd verbatim, via Part I's `rev22_ref.py`) for rev 22's pools, and Part I's M2c (which
+equals rev 22's engine on all 346 of those programs, 0 of 21,452 pairs) for the worked pools; the no-mark answers
+come from this part's own one-row evaluator, not from Part I's. The search can fail: every program past the first
+tier prints how far the best one-constant rewrite is off (e.g. 44 subjects for the J pair); the lane's own first
+hand-written sentinel rewrite was caught off by one subject (II.2.3). (3) What moves when data is regenerated: NOT
+RELEVANT (no table or stamp; the rev 22 reference TSV is scratch).
+
+## II.1 The model without the mark
+
+### II.1.1 Every construct of Part I section 3, the mark removed
+
+A label in a condition carries NOTHING or a DEFAULT. Absent = NULL. A test of a tuple holding a NULL is UNKNOWN and
+the row is dropped (absent-rule (2) unchanged). A default is COALESCE: the absent label reads as its value and is
+tested like a text.
+
+| construct | without the mark | a test of one row? |
+|---|---|---|
+| unmarked `(h: S)` | `where h in S`; NULL -> UNKNOWN -> dropped (unchanged) | yes |
+| default `(h = v: S)` | `where coalesce(h, v) in S` (its scope: II.3) | yes |
+| the mark `(h?: S)` | GONE; `h?` is a compile error naming the default | - |
+| joint `((h, m): R)`, record, mixed record | unchanged; a missing part is NULL unless defaulted | yes |
+| missing part under dictionary order (`10` against `padded(>= (9, 30))`, m absent) | FAILS as ruled; `m = 0` gives (10, 0), HOLDS | yes |
+| label twice | unchanged (error) | (error) |
+| `some` / `count` / `occurs.*` | count the passes (no LEFT JOIN row) whose test is TRUE; a default reads in each pass | yes |
+| `all(c)` | rev 22 defines it as "c with every label marked" (L93, §4.3): with no mark it has no definition (II.5) | - |
+| `!` on a pattern, on a set; `!` on a condition | unchanged (the anti-join; the set complement; the error) | as Part I |
+| `when(c, p)` | unchanged; c is read once | yes |
+| `$a` on the value side; a computed label | unchanged (NULL a -> UNKNOWN) | yes |
+| zero passes | a plain condition reads the LEFT JOIN row, a default fills it; a group question sees no pass | yes |
+
+STOP RULE: the draft's default construct is defined well enough to run (§4.2 RULE point (3): "the absent label reads
+as v and is tested like any value", one string, at a label left of `:`; §4.1's errors: a `$x` default is legal when
+x can never be absent). What the draft does NOT define is how FAR a default reaches (only "in the condition where it
+is written" is stated): II.3 runs the alternatives, each labelled as the lane's.
+
+### II.1.2 The properties, by run (`condkind2_nomark.out` PART 1)
+
+- EVERY CONDITION IS A TEST OF ONE ROW: by construction (the evaluator reads one row), and the order-swap run (every
+  order the engine has, Part I's included, reversed) prints the same lines.
+- ADDING A CONDITION NEVER ADMITS A SUBJECT: 0 of 11,388 (program, added condition) pairs over 1,278 programs (rev
+  22's pools plus Part I's three extra conditions, each mark replaced by nothing or by `= 0`, `= 4`, `= 5`, `= 9`,
+  `= "x"`). Rev 22's own engine: 3 of 845 (Part I).
+- RECORD = `&`: `(h = v: <5, k: 3..7)` vs `(h = v: <5) & (k: 3..7)` on RZ (1,110, h looped, zero passes in): 0
+  differ over 14 controls. EXCEPT a `$` across entries: review r30 I SURVIVES (II.3.2).
+- EQUAL BEHAVIOUR ANSWERS ALIKE: review r30 RULING-2's pair with every mark a default (`((h = v, k): h < k)`, then
+  `& (j = w: <5)`): 196 (v, w) pairs with the same rows, 0 subjects differ (rev 22: 54 of 1,210). RULING-7 (the
+  product joint vs its record = `&` spelling beside `(j = w: <5)`): 56 pairs, 0 differ (rev 22: 30 of 355).
+  SIMULATE-9 is order-free (the swap run prints the same 45 / 54 / 45).
+- `some(c)` AND `occurs.none(c)` NEVER BOTH HOLD: 0 over 43 lists x 14 controls (rev 22 with the mark: 14 of 43).
+- ONE WITNESS: with ONE default, two conditions and their one-condition spelling agree, `(h = v: <$k) & (h = v: >$j)`
+  vs `(h = v: >$j & <$k)`: 0 differ over 13 values. With TWO defaults for h, `(h = 0: <$k) & (h = 9: >$j)` holds on
+  81 h-absent subjects of J, on 45 of which (smallest `01`) no one value is both below k and above j: the old
+  oddity is back exactly when one label gets two defaults (II.3.3).
+
+### II.1.3 Review r30's findings: dissolve or survive
+
+| group | what | without the mark | count | Part I's one-row marks (M1t) / the mark as ruled (M2) |
+|---|---|---|---|---|
+| A | transparency unit; equal-behaviour split; order dependence | DISSOLVES (no value set) | RULING-2 54 -> 0; RULING-7 30 -> 0; swap-identical | dissolves / survives |
+| B | a complemented pattern opaque vs flattened | DISSOLVES (q's answers read no value set) | by construction, not run | dissolves / survives |
+| C | `when`, RULING-6 (c read in two programs) | DISSOLVES | by construction | dissolves / survives |
+| C, J | FIXIND-1 (`when` not writable as a macro), relative-complement | SURVIVES (not about the mark) | - | survives / survives |
+| D | "adding a condition never admits" only at the top | the through-a-mark half DISSOLVES (0 of 11,388); the classical half inside `!q` SURVIVES by design (a complement is antitone) | 0 | dissolves / survives |
+| E | `some(c)` and `none(c)` both hold | DISSOLVES | 14 -> 0 | dissolves / survives |
+| F | the closing example's R read by value | SURVIVES (set membership) | - | survives |
+| G | the error hints | FIXIND-5 CHANGES (`label.unset`'s first fix `h?` no longer exists; the fix is a default); FIXIND-3, -6, -7 SURVIVE (FIXIND-7 is about defaults on lists); RULING-9's split DISSOLVES with one default per label | 0 with one default | survives |
+| H | worked answers on spellings §4.2 (d) / §5.2 reject | (e2)'s marked pair DISSOLVES; `occurs.none((g = "": !"a"))` vs the §5.2 error SURVIVES and becomes central (a default the label never holds, II.3.5) | - | survives |
+| I | record = `&` vs default-reaches-dollar | SURVIVES: the default's scope | 9 of 110 (II.3.2) | survives |
+| K | searched complement | decided by Part I's **source-row**, unchanged | - | same |
+| L, M | record and text residue | SURVIVE | - | survive |
+
+Compared with Part I: dropping the mark dissolves what the best one-row mark (M1t) dissolved (A, B, C's RULING-6,
+D's mark half, E), and in addition H's first half and the one-witness split (with one default per label), without
+reversing a ruling by name the way M1t reversed **domain-scope**: those rulings lose their subject instead (II.5).
+
+## II.2 The rewrite run (the main evidence)
+
+THE TARGET: rev 22's answer on every subject of the program's pool. THE SEARCH, per program, the first tier that
+gives the target EXACTLY (`condkind2_nomark.out` PART 2): T0 one constant (or nothing) per LABEL, the same in every
+condition; T1 a constant per OCCURRENCE (each condition its own); T2 adds a `$x` default whose x can never be absent
+(legal in rev 22); T3 adds `$x` for any x and `$x + 1` / `$x - 1` (NOT legal today: an expression default, or a
+default that can itself be absent); T4 no default at all: a value chosen freely per row and pass (an arbitrary
+function of the row; the upper bound); NONE. Constants range over the label's own values plus three it never holds
+(`""`, `"x"`, `"99"`). THE PROGRAMS: (REV22) every marked program of rev 22's pools A, B, P, LST, 1-3 conditions:
+314 of the 346; (WORKED) 21 programs from rev 22's worked examples and review r30's witnesses as Part I coded them
+(T2, ZE, RZ, MN, J, BR, LST, RULING-2's P and Q, SIMULATE-9, RULING-7); (PROBE) 4 programs the lane designed to defeat
+a constant. The r30 round scripts' other programs are not ported (II.8).
+
+### II.2.1 Counts
+
+| set | programs | T0 (one per label) | of which NOTHING (the mark changed no answer) | T1 (per occurrence) | T2 | T3 (expression) | T4 (no default) | NONE |
+|---|---|---|---|---|---|---|---|---|
+| REV22 | 314 | 314 | 219 | 0 | 0 | 0 | 0 | 0 |
+| WORKED | 21 | 19 | 5 | 1 | 0 | 1 | 0 | 0 |
+| PROBE | 4 | 0 | 0 | 1 | 1 | 0 | 2 | 0 |
+
+- 219 of rev 22's 314 marked programs give rev 22's answers with the mark simply DELETED; the other 95 with one
+  constant per label. No rewrite in REV22 or WORKED needs a value the label never holds (0).
+- The rewrites found for the worked examples are each the obvious stand-in: `((h, m?): late)` -> `m = 30` (the least
+  late minute); `((h, m?): !late)` -> `m = 00`; `(h?: <$a, k: 3)` -> `h = 0`; `(h?: <$k)` -> `h = 0`;
+  `occurs.none(((h, m?): m < h))` -> `m = 2`; RULING-2's P, SIMULATE-9, RULING-7's joint -> `h = 0, j = 0`;
+  `(mnum?: >5)` and domain-scope's two `b` rows -> nothing.
+- THE REWRITE IS PER PROGRAM, NOT PER CONDITION: in 45 of 680 (rev 22 program, the same + one condition) pairs, no
+  rewrite of the larger program keeps the smaller one's default. Smallest, pool A `/a(?<h>\d)|b(?<k>\d)|c/`, subject
+  `b3`: rev 22 `(h?: <5)` HOLDS (rewrite `h = 0`); rev 22 `(h?: <5) & (k: <5)` FAILS (no match of the program has an
+  h, so its value set is empty: **domain-scope**); the no-mark program `(h = 0: <5) & (k: <5)` HOLDS. Likewise the
+  mark-in-none pair: `occurs.none(((h, m?): m < h))` rewrites with `m = 2`, and once `(m?: >5)` is added only `m = 7`
+  works. These 45 are exactly where rev 22's answer to a condition moves with the program's OTHER conditions; without
+  the mark the author's default stays and the answer does not move. That is the change, not a cost of the rewrite.
+
+### II.2.2 The brief's expected "cannot" shapes, tested
+
+| shape | example (pool) | outcome | the rewrite |
+|---|---|---|---|
+| a condition against a value unknown when written | `(h?: <$k)` (J, 1,100); `(h?: <$a, k: 3)` (ZE, 11,100) | T0, exact | `h = 0`: a one-sided comparison has an extreme witness (the least value h can hold) |
+| the same, two-sided | `(h?: >$j & <$k)` (J) | T3 only | `h = $j + 1` (an expression default; best constant 16 off at `02`) |
+| a joint condition with a missing part | `((h, m?): late)`, `((h, m?): !late)`, `& (m?: padded(<30))` (T2, 11,110) | T0 | `m = 30`, `m = 00`, `m = 00` |
+| a mark under a group question | `occurs.none(((h, m?): m < h))`, the same `& (m?: >5)`; `some`, `at_most` (LST, 43) | T0 | `m = 2`; `m = 7` (per program, II.2.1) |
+| a loop that ran zero times | RZ, ZE, LST's empty list | T0 | `h = 0`; the LEFT JOIN row reads the default |
+| two marked conditions on one label | `(h?: <$k) & (h?: >$j)` (J) | T1 | `h = 1` in the first, `h = 8` in the second: one default PER OCCURRENCE (one per label: 44 off at `02`) |
+
+Four of the five expected shapes rewrite with one constant per label; the fifth needs a default per occurrence.
+Only the two-sided `$` comparison needs an expression.
+
+### II.2.3 The shape that no default reaches
+
+A JOINT RELATION BETWEEN AN ABSENT LABEL AND A PRESENT ONE WHOSE VALUES RANGE WIDER (the lane's probes, PROBE rows):
+
+- PROGRAM `/(?<h>[0-4])?-(?<k>\d)/ & ((h?, k): h == k)`, 60 subjects. SUBJECT `-3`: rev 22 HOLDS (3 is a value h can
+  take); SUBJECT `-7`: rev 22 FAILS (h never takes 7). No constant does (best 4 off at `-1`); `h = $k` HOLDS on `-7`
+  too; no `$k ± 1` either: T4 only (the default would have to be "k when k < 5, else nothing"). The same with
+  `((h?, k): k - 3 < h < k)` (T4). When h and k range alike (`/(?<h>\d)?-(?<k>\d)/`), `h = $k` rewrites (T2, legal:
+  k is never absent).
+- WHAT THE AUTHOR WRITES INSTEAD (the SENTINEL ROUTE): a default the label never holds, and the set extended by hand
+  with the absent case: `((h = "x", k): h == k | (h == "x" & k < 5))`: 0 of 60 differ from rev 22; `((h = "x", k):
+  k - 3 < h < k | (h == "x" & 1 <= k <= 6))`: 0 of 60. The route always exists for a fixed program (the added rows
+  are the set's projection onto the other labels over the label's values), and the author derives that projection
+  by hand: the lane's first try wrote `k <= 7` and the run caught it (1 off, `-7`).
+- THE QUESTION THE MARK ASKED here is "could the missing h have equalled this k", i.e. "is k a value h can take".
+  An author who needs it can say so directly on the present label (the sentinel row, or `k < 5`). The lane found no
+  example in rev 22's pools, worked examples or review r30's witnesses that asks it (0 of 335 programs need T4).
+
+## II.3 The default's scope (now the load-bearing open item)
+
+`condkind2_nomark.out` PART 1 (1c), (1f) and PART 3. Each alternative is the lane's.
+
+### II.3.1 One default per LABEL or per CONDITION
+
+| | per CONDITION (as rev 22 writes it: at a label in a condition) | per LABEL (one value for h in the program) |
+|---|---|---|
+| rewrites (II.2) | all of T0 and T1 | T0 only: loses the J pair (1 of 21 worked) and one probe |
+| `(h = 0: <5) & (h = 9: >7)` (pool A, 21) | legal; HOLDS on 11 h-absent subjects (smallest `c`) though `(h = v: <5 & >7)` holds on 0 for every v | a compile error (two defaults for h) |
+| one witness | back: 45 of 81 (II.1.2) | gone: 0 |
+| SQL reading | `where coalesce(h, v) in S`, local to the test | `select coalesce(h, v) as h ...` (II.3.6) |
+
+### II.3.2 Does a default reach a later `$h` (review r30 I, **dollar-across-and**)
+
+`/(?<a>\d)?-(?<b>\d)/`, 110 subjects; SUBJECT `-1` (a absent, b = 1):
+
+| reading | `(a = 0: <10, b: >$a)` (record) | `(a = 0: <10) & (b: >$a)` | differ |
+|---|---|---|---|
+| LOCAL to its condition | HOLDS (54 hold) | FAILS (45 hold: `$a` is NULL in the second condition) | 9, `-1` |
+| a COLUMN of the statement (every reader sees it) | HOLDS (54) | HOLDS (54) | 0 |
+| POSITIONAL (reaches later conditions only) | HOLDS | HOLDS written in this order (54); `(b: >$a) & (a = 0: <10)` FAILS (45) | 9: `&` stops commuting |
+
+POSITIONAL is out (it breaks the order-free `&` that a one-row model has for free). LOCAL keeps conditions
+independent and leaves record = `&` with one exception (a cross-entry `$`). The COLUMN reading makes record = `&`
+hold without exception and makes `$a` read the default; its price is that the default also reaches conditions that
+did not ask for it: `P & (h = 0: <5) & (h: <3)` reads h as 0 in the second condition too.
+
+### II.3.3 Two conditions giving one label different defaults
+
+Legal under LOCAL; it is the old one-witness oddity written out: `(h = 0: <$k) & (h = 9: >$j)` on J holds on 81
+h-absent subjects, 45 of them (`01`) where no single h fits both. Under the COLUMN reading it is an error by
+construction (one column, one value). Of the 335 programs rewritten, ONE needs two defaults for one label (the J
+pair) and it is the one-witness example itself.
+
+### II.3.4 A default on a label set inside a loop
+
+Per pass (a COALESCE in each pass of the nested table). On ZERO passes the plain condition's LEFT JOIN row reads the
+default, a group question sees no pass: RZ (`/(?<k>\d)(?:;(?<h>\d))*/`), SUBJECT `3`: `(h = 0: <5)` HOLDS (all 10
+zero-pass subjects hold), `some((h = 0: <5))` FAILS (0 of 10). Rev 22 answers both the same way (§4.2 RULE point (3)
+"read on the empty list too"; §4.3 "zero passes are no pass"); without the mark nothing changes here, and
+`predicates_future.md` item 7 (a default "undoing the `*`") is that behaviour already. Under the COLUMN reading the
+same holds if the coalesce is applied per pass of the nested table; if it were applied only where a pass exists, the
+plain condition would change on zero passes (10 subjects of RZ): the column reading must say which.
+
+### II.3.5 A default value the label could never hold (the owner's 17:02 remark, item 11)
+
+- The rewrite run needed none: 0 of 335 programs rewrite ONLY with such a value.
+- The shape no default reaches (II.2.3) has exactly one route, the sentinel: a value the label never holds. If item
+  11 were a RESTRICTION, that shape would have no rewrite at all; as a WARNING it would fire on every sentinel.
+- A deliberate out-of-range value changes answers: `((h, m = 0): late)` vs `((h, m = "x"): late)` on T2: 90 differ
+  (the sentinel makes the test fail where 0 made it pass). `m = 60` is NOT out of range for `\d\d` (the regex's
+  values are what count; 2 differ from `m = 0`).
+- §5.2's `occurs.none((g = "": !"a"))` (review r30 H) is this case: its default `""` is a value g never holds, and
+  "every hit, possibly none" depends on it.
+
+### II.3.6 How a default reads in the owner's SQL model
+
+- LOCAL: `select * from (P) t where coalesce(t.h, v) in S` (the where-clause only; a later reader sees NULL).
+- COLUMN: `select * from (select ..., coalesce(h, v) as h from P) t where ...` (the select list; every later reader,
+  `$h` included, sees v; one default per label; a second different one is an error). Under the COLUMN reading the
+  default is a property of the STATEMENT's label, not of a condition, even when written inside one.
+
+## II.4 Silent drift
+
+A default that does not satisfy its own condition after an edit is DEAD (it gives the same answers as no control):
+pool A, `(h = 4: <3)` (edited from `<5`) vs `(h: <3)`: 0 differ. And a default does not FOLLOW an edit the way the
+mark did: `late` edited to `padded(>= (9, 45))`, the kept rewrite `((h, m = 30): late45)` vs rev 22's `((h, m?):
+late45)`: 2 of 11,110 differ (SUBJECT `9`: rev 22 HOLDS, the stale default FAILS; the new rewrite is `m = 45`).
+
+What a compile-time warning could decide (description only):
+- ONE LABEL, CONSTANT SET: exactly (is v in S). This is `default.unused` (b) of §7.1 already ("the default's text is
+  outside every set it meets"). 55 of the 60 marked condition occurrences counted (pool conditions, worked and probe programs) have a
+  constant set.
+- A JOINT, CONSTANT SET: exactly whether the default is DEAD (no tuple of the other labels with v passes); not
+  whether an edit moved it from the intended witness (`m = 30` against `>= (9, 45)` is alive, and wrong for h = 9).
+- A SET READING `$k` (5 of the 60): only per match (`(h = 0: <$k)` is dead where k = 0); at compile time at most
+  "dead for some values of k", from k's possible values.
+- Items 11 and 12: item 11 asks whether v is a value the LABEL can hold (a different test: v in the label's values,
+  not v in S); item 12 (a macro raising its own warning on a property of the sets) is where a "dead default" check
+  would live for library macros; both read only constant sets and the label's regex values.
+
+## II.5 What retires and what survives
+
+THE VALUE SET'S READERS, by grep over `predicates_draft.md` (`grep -n -i 'DOM(\|domain\|value set\|can hold'`, 107
+lines, each read): the PER-PROGRAM value set (DOM, **domain-scope**, **mark-narrows**) is read by the mark and by
+nothing else: the definition and its rules (lines 2077-2090 THE DOMAIN; 2092-2122 WHICH CONDITIONS NARROW DOM;
+2042-2056 point (3) under F1; 2066-2075 the general form's D = DOM(h); 1036 the glossary), the mark's derived uses
+(`all(c)` line 4381 and row L93; `(g?: ...)` lines 1509, 1596; a complemented pattern's own DOMs line 1232; the
+mark's projection of a tuple set line 3091; negation over a marked label lines 4587-4591; rows L82, L99, L103, L104). ONE OTHER READER uses "the values h can hold":
+the EMPTY-INTERSECTION ERROR of §5.2 (lines 2333-2334, 2459-2460, the rule at line 2854: "an empty intersection from PURE PARTS"),
+which reads the label's values from the regex and the literal, never the program's conditions. Without the mark it
+stays and needs only a per-LABEL value set (the regex's), the same set item 11 would read. `default.unused` (line 3212)
+reads sets, not values; line 1325's "literal's domain" is a numeral rule, a different object.
+
+| ruling or reading | without the mark | note |
+|---|---|---|
+| **absent-rule** (1) one kind of absence; (2) a condition needs a text; (4) a set never contains absence | STANDS | |
+| **absent-rule** (3) the two controls, "not both" | CHANGES (owner's word: the rule is LOCKED) | one control remains: the default; "not both" has no subject |
+| **zero-pass-empty** (F1, the mark's one meaning) | RETIRED | its corner (a set empty AS WRITTEN is the §5.2 error) STANDS as part of §5.2 |
+| **mark-domain** (15:27) / the spelling principle (*) | the PRINCIPLE STANDS and holds by construction for one-row tests (RULING-2 0); its use for a value set RETIRED | |
+| **match-context** (16:13), **domain-scope** (16:31), **mark-narrows** (16:44) | RETIRED (no reader but the mark) | the 45 per-program rewrites (II.2.1) are what they decided |
+| **mark-in-none** (17:42, left as is) | RETIRED (no mark inside `none`); the owner's own avoiding spelling `m = 0` is the rewrite | |
+| **not-is-complement** (both halves) | STANDS | Part I's **condition-not** unchanged |
+| **label-twice**, **record-is-product**, **zero-pass-record**, **optional-as-loop**, **default-set**, **colon-scope**, **unset-component** / **default-unused** | STAND | record-is-product holds by run (RULING-7 0) |
+| one-witness (manager's, L104) | RETIRED with one default per label; under LOCAL it returns as a scope question (II.3.3) | |
+| default-reaches-dollar (manager's, 16:23) | STANDS inside one condition; across `&` it is II.3.2 (**default-scope**) | |
+| not-of-marked (manager's, 14:31) | RETIRED | |
+| the never-absent-mark warning (manager's, 14:31) | RETIRED; `default.unused` (a) covers the default | |
+| `all(c)` = c with every label marked (manager's, r28 C) | CHANGES (manager's; no owner word needed): with no mark it has no definition: `all(c)` = c, or `all` retires | not in any pool |
+| the "if it is possible" tier (15:27 reading (4)) | SHRINKS to the §5.2 error's per-label regex values | |
+| (e2.1), (e2.2), (e1) | STAND | (e2.1) across `&` is II.3.2 |
+| `predicates_future.md` item 3 (`m = some(...)`, a several-value default) | parked as is; note: "some value of a set would do" IS the mark's existential, so adopting it brings the mark back | |
+
+## II.6 Questions for the owner
+
+Three, each about what an object IS. A reply either way is wanted on each.
+
+**drop-mark** (is the optional mark a construct of the language).
+CURRENT: absent-rule (3): two controls, the mark `h?` ("some value h could hold would put the tuple in the set",
+read over the program's matches) and the default `h = v`.
+EXAMPLE: rev 22's `(h?: <5) & (k: <5)` over `/a(?<h>\d)|b(?<k>\d)|c/` on `b3` FAILS (no match of the program has an
+h); written without the mark, `(h = 0: <5) & (k: <5)`, it HOLDS. Over the pools: 219 of rev 22's 314 marked programs
+answer the same with the mark deleted, the other 95 with one constant default per label; of 21 worked examples 19
+with one constant per label, 1 with a default per condition, 1 with `h = $j + 1`. The only shape no default reaches
+(a joint relation where the absent label's values are narrower than its partner's) is written with a sentinel and
+a hand-extended set.
+LEANING: drop it. The default is the same thing with the author naming the witness; every condition becomes a test
+of one row, review r30 A, B, C (RULING-6), D's mark half, E and one-witness dissolve, and five owner rulings and three
+manager readings lose their subject without reversing an answer anyone wrote down. Cost: in 45 of 680 program pairs the author's default no
+longer follows the program's other conditions (that is the point), and a default does not follow an edit of its set
+(II.4).
+
+**default-scope** (what a default IS: a value for one test, or the label's value in the statement).
+CURRENT: the default is written "at a label left of `:` in a condition"; how far it reaches is not stated (review r30
+I, **dollar-across-and**, filed).
+EXAMPLE: `/(?<a>\d)?-(?<b>\d)/` on `-1`: `(a = 0: <10, b: >$a)` HOLDS; `(a = 0: <10) & (b: >$a)` FAILS if the default
+is local to its test, HOLDS if it is the label's value in the statement (9 of 110 differ). And `(h = 0: <5) & (h = 9:
+>7)`: legal and holding on every h-absent subject if local; an error if the default is the label's.
+LEANING: the label's value in the statement (SQL's `coalesce` in the select list): record = `&` with no exception,
+one witness per label, `$a` reads it; it rewrote 333 of the 335 programs. Its price: a default written in one
+condition reaches every condition on that label, so the spelling should eventually sit on the label, not in a
+condition (a spelling step for later).
+
+**default-value** (what values a default may be).
+CURRENT: one string (default-set), any text; item 11 (only values the label could hold) parked with the manager's
+judgment "not as a restriction".
+EXAMPLE: `/(?<h>[0-4])?-(?<k>\d)/`, rev 22's `((h?, k): h == k)`: `-3` HOLDS, `-7` FAILS. Without the mark the one
+spelling that gives these answers is `((h = "x", k): h == k | (h == "x" & k < 5))`, whose default `"x"` is a value h
+never holds; and §5.2's own idiom `occurs.none((g = "": !"a"))` uses one too.
+LEANING: any text, no restriction and no warning for being outside the label's values; the useful warning is the
+DEAD default (v satisfies nothing), which `default.unused` (b) already is.
+
+## II.7 Population runs
+
+From the lane scratch dir `$PCREC_TMPDIR/scratch/condkind2/`, W = the worktree root:
+
+    timeout 300 python3 -I W/docs/dev/lanes/condkind_evidence/rev22_ref.py rev22_ref.tsv
+    timeout 600 python3 -I W/docs/dev/lanes/condkind_evidence/condkind_model.py rev22_ref.tsv > premise.out
+    diff <(grep -v '^ORDER:' premise.out) <(grep -v '^ORDER:' W/docs/dev/lanes/condkind_evidence/condkind_model.out)  # empty
+    timeout 900 python3 -I W/docs/dev/lanes/condkind2_evidence/condkind2_nomark.py rev22_ref.tsv > fwd.out
+    CONDKIND2_SWAP=1 timeout 900 python3 -I W/docs/dev/lanes/condkind2_evidence/condkind2_nomark.py rev22_ref.tsv > swap.out
+    diff <(grep -v '^ORDER:' fwd.out) <(grep -v '^ORDER:' swap.out)                  # empty: SWAP-IDENTICAL
+    CONDKIND2_SABOTAGE=1 (forward and swapped) -> the diff shows 110 lines (e.g. record = `&` 0 vs 25, RULING-7 0 vs 25)
+
+Each run takes under 10 s. `fwd.out` is committed as `condkind2_evidence/condkind2_nomark.out`; every count in this
+part is from it, after the swap run printed the same lines. The premise (Part I's output reproduced byte for byte,
+ORDER aside) held.
+
+## II.8 Left open
+
+- The other review r30 round programs (`docs/dev/reviews/2026-11-16-r30-predspec22/*.py`) are not ported; the rewrite
+  run covers rev 22's pools, Part I's codings of rev 22's worked examples and r30's three DOM witnesses (RULING-2,
+  RULING-7, SIMULATE-9).
+- The rewrites are per POOL: a constant that reproduces rev 22 encodes what the label can hold in that regex (`h = 0`
+  works where 0 is a value of h); a different regex can need a different default. Not counted.
+- `all(c)` without the mark (II.5): the manager's to restate.
+- B and C (RULING-6) are claimed dissolved by construction, not by a run.
+- The COLUMN reading's zero-pass detail (II.3.4) and where a statement-level default is written: not designed.
+- The searched mode of a default (rev 22 §4.2 WHOLE VALUE, NOT SEARCHED: 1,660 of 11,110 for `m = 0`) is unchanged and
+  not re-run.
