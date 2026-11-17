@@ -1,0 +1,96 @@
+rxlib_check.py  libpcre2-8 10.46 2025-08-27  python 3.14.4  sabotage=False
+
+PART A  harness selfcheck
+  OK  NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3)
+  OK  NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried)
+  OK  MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match)
+  OK  callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F)
+  OK  callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T)
+  OK  ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False
+
+PART B  the three before/after examples (note section 1)
+
+B1  every item of a list under 5
+  BEFORE: item := /(?<h>\d)/ & (h: <5)   then   /(?:${item};)*/
+  AFTER : item := [h = rx.digit] & (h: <5)   then   rx.loop(item € ";")
+  BEFORE regex model: (?:(?:(?<h>\d)(?C"b1"));)*
+  AFTER  expansion:   (?:(?:(?<h>\d)(?C"c1"))(?:\;)){0,}
+  INTENT (Python re): (?:[0-4];)*
+    on '3;7;'     BEFORE (False, (0, 2, ('3',)), ((0, 2, ('3',)), (2, 2, (None,)), (3, 3, (None,)), (4, 4, (None,))))
+    on '3;7;'     AFTER  (False, (0, 2, ('3',)), ((0, 2, ('3',)), (2, 2, (None,)), (3, 3, (None,)), (4, 4, (None,))))
+    on '3;3;'     BEFORE (True, (0, 4, ('3',)), ((0, 4, ('3',)), (4, 4, (None,))))
+    on '3;3;'     AFTER  (True, (0, 4, ('3',)), ((0, 4, ('3',)), (4, 4, (None,))))
+    on '7;3;'     BEFORE (False, (0, 0, (None,)), ((0, 0, (None,)), (1, 1, (None,)), (2, 4, ('3',)), (4, 4, (None,))))
+    on '7;3;'     AFTER  (False, (0, 0, (None,)), ((0, 0, (None,)), (1, 1, (None,)), (2, 4, ('3',)), (4, 4, (None,))))
+    on '3;;'      BEFORE (False, (0, 2, ('3',)), ((0, 2, ('3',)), (2, 2, (None,)), (3, 3, (None,))))
+    on '3;;'      AFTER  (False, (0, 2, ('3',)), ((0, 2, ('3',)), (2, 2, (None,)), (3, 3, (None,))))
+  over 364 texts: BEFORE vs AFTER differ WHOLE 0; SEARCHED 0; FIND-ALL 0 (first None)
+  over 364 texts: AFTER vs INTENT differ WHOLE 0; SEARCHED 0; FIND-ALL 0 (first None)
+
+B2  a time of day, labelled parts, a condition on the hour
+  BEFORE: t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/   then   t2 & (h: <13)
+  AFTER : t2 := [h = rx.digits(1, 2)] € rx.optional(":" € [m = rx.digits(2, 2)])   then   t2 & (h: <13)
+  BEFORE regex model: (?<h>\d{1,2})(?::(?<m>\d\d))?(?C"b2")
+  AFTER  expansion:   (?:(?<h>\d{1,2}))(?:(?:(?:\:)(?:(?<m>\d{2,2})))?)(?C"c2")
+  INTENT (Python re): (?:1[0-2]|\d)(?::\d\d)?
+    on '14:30'    BEFORE (False, (0, 1, ('1', None)), ((0, 1, ('1', None)), (1, 5, ('4', '30'))))
+    on '14:30'    AFTER  (False, (0, 1, ('1', None)), ((0, 1, ('1', None)), (1, 5, ('4', '30'))))
+    on '9:30'     BEFORE (True, (0, 4, ('9', '30')), ((0, 4, ('9', '30')),))
+    on '9:30'     AFTER  (True, (0, 4, ('9', '30')), ((0, 4, ('9', '30')),))
+    on '12:45'    BEFORE (True, (0, 5, ('12', '45')), ((0, 5, ('12', '45')),))
+    on '12:45'    AFTER  (True, (0, 5, ('12', '45')), ((0, 5, ('12', '45')),))
+    on '00:30'    BEFORE (False, (0, 1, ('0', None)), ((0, 1, ('0', None)), (1, 5, ('0', '30'))))
+    on '00:30'    AFTER  (False, (0, 1, ('0', None)), ((0, 1, ('0', None)), (1, 5, ('0', '30'))))
+    on '9:30 14:00' BEFORE (False, (0, 4, ('9', '30')), ((0, 4, ('9', '30')), (5, 6, ('1', None)), (6, 10, ('4', '00'))))
+    on '9:30 14:00' AFTER  (False, (0, 4, ('9', '30')), ((0, 4, ('9', '30')), (5, 6, ('1', None)), (6, 10, ('4', '00'))))
+  over 3906 texts: BEFORE vs AFTER differ WHOLE 0; SEARCHED 0; FIND-ALL 0 (first None)
+  over 3906 texts: AFTER vs INTENT differ WHOLE 0; SEARCHED 0; FIND-ALL 0 (first None)
+
+B3  an alternation, a label in both branches, a condition outside it
+  BEFORE: A := /(?<l>\d)\d/, B := /(?<l>\d\d)/   then   (B | A) & (l: <20)
+  AFTER : A := [l = rx.digit] € rx.digit, B := [l = rx.digits(2, 2)]   then   (B | A) & (l: <20)
+  BEFORE regex model: (?|(?<l>\d\d)|(?<l>\d)\d)(?C"b3")
+  AFTER  expansion:   (?|(?<l>\d{2,2})|(?:(?<l>\d))(?:\d))(?C"c3")
+  INTENT (Python re): \d\d
+    on '25'       BEFORE (True, (0, 2, ('2',)), ((0, 2, ('2',)),))
+    on '25'       AFTER  (True, (0, 2, ('2',)), ((0, 2, ('2',)),))
+    on '15'       BEFORE (True, (0, 2, ('15',)), ((0, 2, ('15',)),))
+    on '15'       AFTER  (True, (0, 2, ('15',)), ((0, 2, ('15',)),))
+    on '25 13'    BEFORE (False, (0, 2, ('2',)), ((0, 2, ('2',)), (3, 5, ('13',))))
+    on '25 13'    AFTER  (False, (0, 2, ('2',)), ((0, 2, ('2',)), (3, 5, ('13',))))
+    on '05'       BEFORE (True, (0, 2, ('0',)), ((0, 2, ('0',)),))
+    on '05'       AFTER  (True, (0, 2, ('0',)), ((0, 2, ('0',)),))
+  over 341 texts: BEFORE vs AFTER differ WHOLE 0; SEARCHED 0; FIND-ALL 0 (first None)
+  over 341 texts: AFTER vs INTENT differ WHOLE 0; SEARCHED 0; FIND-ALL 0 (first None)
+
+PART C  the separator loop's definition (plain; Python re against a split oracle)
+  loop([ab], min=0, max=inf, sep=",") = (?:(?:[ab])(?:(?:\,)(?:[ab])){0,})?              differ 0 of 1093 (first None)
+    the ONE-COPY form (conditional group) (?:(?(<s>)(?:\,))(?:[ab])(?<s>)){0,}     differ 0 of 1093 (first None)
+  loop([ab], min=1, max=inf, sep=",") = (?:[ab])(?:(?:\,)(?:[ab])){0,}                   differ 0 of 1093 (first None)
+    the ONE-COPY form (conditional group) (?:(?(<s>)(?:\,))(?:[ab])(?<s>)){1,}     differ 0 of 1093 (first None)
+  loop([ab], min=0, max=1, sep=",") = (?:(?:[ab])(?:(?:\,)(?:[ab])){0,0})?             differ 0 of 1093 (first None)
+    the ONE-COPY form (conditional group) (?:(?(<s>)(?:\,))(?:[ab])(?<s>)){0,1}    differ 0 of 1093 (first None)
+  loop([ab], min=0, max=2, sep=",") = (?:(?:[ab])(?:(?:\,)(?:[ab])){0,1})?             differ 0 of 1093 (first None)
+    the ONE-COPY form (conditional group) (?:(?(<s>)(?:\,))(?:[ab])(?<s>)){0,2}    differ 0 of 1093 (first None)
+  loop([ab], min=2, max=3, sep=",") = (?:[ab])(?:(?:\,)(?:[ab])){1,2}                  differ 0 of 1093 (first None)
+    the ONE-COPY form (conditional group) (?:(?(<s>)(?:\,))(?:[ab])(?<s>)){2,3}    differ 0 of 1093 (first None)
+  loop([ab], min=3, max=3, sep=",") = (?:[ab])(?:(?:\,)(?:[ab])){2,2}                  differ 0 of 1093 (first None)
+    the ONE-COPY form (conditional group) (?:(?(<s>)(?:\,))(?:[ab])(?<s>)){3,3}    differ 0 of 1093 (first None)
+
+PART D  where a condition stands in a sequence (note section 3)
+  (A & (h: <5)) € B  =  (?:(?<h>\d)(?C"dA"))(?:(?:(?:\;)(?:(?<m>\d)))?)
+  (A € B) & (h: <5)  =  (?:(?<h>\d))(?:(?:(?:\;)(?:(?<m>\d)))?)(?C"dB")
+  c reads only A's label: differ WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+    on '3;7' first (True, (0, 3, ('3', '7')), ((0, 3, ('3', '7')),)) | second (True, (0, 3, ('3', '7')), ((0, 3, ('3', '7')),))
+    on '7;3' first (False, (2, 3, ('3', None)), ((2, 3, ('3', None)),)) | second (False, (2, 3, ('3', None)), ((2, 3, ('3', None)),))
+  c reads B's label m:  differ WHOLE 2; SEARCHED 66; FIND-ALL 66 of 364
+    on '3;3' early (False, None, ()) | late (True, (0, 3, ('3', '3')), ((0, 3, ('3', '3')),))
+    on '3;7' early (False, None, ()) | late (False, None, ())
+
+PART E  the same label twice: what PCRE reads for a duplicate name (backreference, no callout)
+  (?J)(?'h'\d)(?:;(?'h'\d))?=\k<h>             two groups named h, both set: \k<h> reads: 3;7=3 HOLDS, 3;7=7 fails, 3=3 HOLDS
+  (?J)(?'h'\d)(?:;(?'h'\d))*=\k<h>             separator loop with the item written twice: 1;2;3=1 HOLDS, 1;2;3=3 fails
+  (?:(?'h'\d);)*=\k<h>                         one group in a loop (the last-pass control): 1;2;3;=1 fails, 1;2;3;=3 HOLDS
+  (?:(?(<s>);)(?'h'\d)(?<s>))*=\k<h>           the one-copy separator loop (conditional group): 1;2;3=1 fails, 1;2;3=3 HOLDS
+
+SUMMARY: PART A failures + PART B and PART C (two-copy form) differences = 0 (forward run expects 0; RXLIB_SABOTAGE=1 must move it)
