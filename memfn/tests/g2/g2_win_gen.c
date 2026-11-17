@@ -1136,18 +1136,20 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
 /* THE LEVER'S STRICT VALUE PARSE (review r36 G10), mf_lever's own (the CLI's row is
  * tests/cli/run_cli_tests.sh): `span-head=N` is plain decimal digits, 0..MF_SPAN_HEAD_MAX;
  * a sign, a space, an empty value, a trailing byte and one past the top are refused. */
+static long lever_ok, lever_n;          /* counted APART (r37 H6): the call's deletion reads 0 of 8 */
 static void lever_controls(long *ok)
 {
     static const struct { const char *name; int refused; } c[] = {
         { "span-head=-0", 1 }, { "span-head=+8", 1 }, { "span-head= 8", 1 }, { "span-head=4096", 1 },
         { "span-head=", 1 }, { "span-head=8x", 1 }, { "span-head=08", 0 }, { "span-head=4095", 0 },
     };
+    lever_n = (long)(sizeof c / sizeof c[0]);
     for (unsigned i = 0; i < sizeof c / sizeof c[0]; i++) {
         mf_art *art = mf_art_begin(&g_arena, "g2wl", 0, NULL, NULL);
         if (!art || mf_art_target(art, mf_portable_target())) { fail(-1, "lever control", "no art"); continue; }
         int rc = mf_lever(art, c[i].name);
         if (!!rc != c[i].refused) fail(-1, "lever control", c[i].name);
-        else (*ok)++;
+        else { (*ok)++; lever_ok++; }
     }
 }
 
@@ -1348,7 +1350,7 @@ static void loops_check(int id, const g2w_site *x, const g2w_dec *d, const char 
  * pass's head. */
 static const int LONG_K[] = { 500, G2W_MAXSPAN * G2W_MAXPOS < 4095 ? G2W_MAXSPAN * G2W_MAXPOS : 4095 };
 static const char *const LONG_A = "abc", *const LONG_B = "01x\n";
-static long long_rendered, long_deny, long_looped, long_pinned;
+static long long_rendered, long_deny, long_looped, long_pinned, long_pinned_force;
 
 static void long_rows(buf *defs, buf *ld, long *nl)
 {
@@ -1455,7 +1457,7 @@ static void long_rows(buf *defs, buf *ld, long *nl)
                             snprintf(m, sizeof m, "k %d mid %d head %d (%s): first loop [%d,%d), G2's [%d,%d), %d vs %d loops",
                                      k, mid, hp, res.form_id, lo[0], end[0], xn ? xlo[0] : -1, xn ? xend[0] : -1, n, xn);
                             if (!same) fail(id, "long row pin", m);
-                            else long_pinned++;
+                            else { long_pinned++; long_pinned_force += st == 2; }
                         }
                     }
                     bputs(defs, ft);
@@ -2069,8 +2071,9 @@ int main(int argc, char **argv)
     printf(" repeated=%ld (of %d repeated-class sites) mixed=%ld (of %ld mixed sites)\n", loops[FAM_N], n8,
            mixed_looped, mixed_sites);
     printf("g2_win_gen: span loops legit=%ld pinned_sites=%ld pinned_loops=%ld; long rendered=%ld looped=%ld "
-           "deny_witness=%ld pinned=%ld\n", legit_loops, pin_sites, pin_loops, long_rendered, long_looped,
-           long_deny, long_pinned);
+           "deny_witness=%ld pinned=%ld pinned_force=%ld\n", legit_loops, pin_sites, pin_loops, long_rendered, long_looped,
+           long_deny, long_pinned, long_pinned_force);
+    printf("g2_win_gen: lever controls ok=%ld of %ld\n", lever_ok, lever_n);
     printf("g2_win_gen: wide-report rendered=%ld past64=%ld\n", wr_rendered, wr_past64);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;

@@ -62,7 +62,7 @@ trap 'rm -rf "$WORK"' EXIT
 # own (G2W_R2_SITES; the 2200 before them unchanged): the widened PAIR's
 # population, any two bytes at any position.
 FLOOR_SITES=2500                # every generated site renders (no refusal)
-FLOOR_CONTROLS=112              # the controls, the NOP and REPORT refusals (116)
+FLOOR_CONTROLS=207              # the controls, the NOP and REPORT refusals (230 measured, r37 H6; BASE 222 + the 8 lever rows)
 FLOOR_QUERIES=1500              # mf_ask equal to a same-phase define, every site
 FLOOR_TWO_RUNS=77               # alternatives stating two R-shaped spans, refused (F-8 ruling; 86, lane wsc2)
 FLOOR_CALLS=3300000             # answer calls, each in four layouts (3745812)
@@ -111,7 +111,7 @@ GRID_HEADS="0 1 2 4 8 16 24 32 64"   # asserted equal to cards.py's GRID below (
 G2W_SHIPPED_HEAD=64                  # the SHIPPED head, a literal (r36 G1): pinned in g2_win_gen.c's default pass
 FLOOR_WR_RENDERED=54 FLOOR_WR_PAST64=32     # the wide REPORT stream (K35, r36 G9; measured 60 / 36, less ~10%)
 LOOP_FLOORS_DEF="parked:4 pair:5 mass:5 mline:5 part:6 report:7 random:5 repeated:12 mixed:8"
-FLOOR_LONG_RENDERED_DEF=24 FLOOR_LONG_LOOPED_DEF=16 FLOOR_DENY_WITNESS=8 FLOOR_LONG_PINNED_DEF=8
+FLOOR_LONG_RENDERED_DEF=24 FLOOR_LONG_LOOPED_DEF=16 FLOOR_DENY_WITNESS=8 FLOOR_LONG_PINNED_DEF=8 FLOOR_LONG_PINNED_FORCE=8 FLOOR_PIN_SITES_DEF=50   # pinned_sites measured 55 (r37 H5)
 FLOOR_BREAKS_DEF=2197 FLOOR_SWAPS_DEF=86 FLOOR_LONG_SUBJ_DEF=561 FLOOR_LONG_PINNED_HEAD=8 FLOOR_LONG_SUBJ_HEAD=187
 LOOP_FLOORS_0="parked:29 pair:30 mass:38 mline:13 part:36 report:36 random:43 repeated:72 mixed:24" PIN_FLOOR_0=271 BREAK_FLOOR_0=2480
 LOOP_FLOORS_1="parked:28 pair:28 mass:37 mline:13 part:34 report:36 random:41 repeated:70 mixed:24" PIN_FLOOR_1=264 BREAK_FLOOR_1=2612
@@ -454,6 +454,14 @@ sites=$(grep -h '^G2W sites' "$WORK/plain.run.log" | awk '{print $3}')
 floor sites "${sites:-0}" "$FLOOR_SITES"
 ctl=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'controls refused [0-9]+' | grep -oE '[0-9]+$')
 floor controls "${ctl:-0}" "$FLOOR_CONTROLS"
+# r37 H6: the lever controls held by EQUALITY (a deterministic table of 8; the floor above is met without them)
+lv=$(grep -h '^g2_win_gen: lever controls' "$WORK/plain.gen.log" | head -1)
+case "$lv" in
+    "g2_win_gen: lever controls ok="[0-9]*" of "[0-9]*)
+        lv_ok=${lv#*ok=}; lv_ok=${lv_ok%% *}; lv_n=${lv##* of }
+        if [ "$lv_n" = 8 ] && [ "$lv_ok" = 8 ]; then tp=$((tp + 1)); else note "lever controls ok=$lv_ok of $lv_n (want 8 of 8)"; fi ;;
+    *) note "lever controls: no 'lever controls ok=N of M' line in the generator's output" ;;
+esac
 qry=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'queries agreeing [0-9]+' | grep -oE '[0-9]+$')
 floor queries "${qry:-0}" "$FLOOR_QUERIES"
 two=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'two runs refused [0-9]+' | grep -oE '[0-9]+$')
@@ -512,7 +520,12 @@ fam_floors "$WORK/plain.gen.log" "default" "$LOOP_FLOORS_DEF"
 floor "default long rendered" "$(sl "$WORK/plain.gen.log" rendered)" "$FLOOR_LONG_RENDERED_DEF"
 floor "default long looped" "$(sl "$WORK/plain.gen.log" looped)" "$FLOOR_LONG_LOOPED_DEF"
 floor "default deny witnesses (no loop under no-span-loop)" "$(sl "$WORK/plain.gen.log" deny_witness)" "$FLOOR_DENY_WITNESS"
-floor "default long pinned (the force)" "$(sl "$WORK/plain.gen.log" pinned)" "$FLOOR_LONG_PINNED_DEF"
+# r37 H5: the default state's pins and the force's counted APART (the old shared counter was met by the
+# force's 8 alone), and the default pass's pinned sites floored (deleting pin_head's literal reads 0).
+dpin=$(( $(sl "$WORK/plain.gen.log" pinned) - $(sl "$WORK/plain.gen.log" pinned_force) ))
+floor "default long pinned (default state)" "$dpin" "$FLOOR_LONG_PINNED_DEF"
+floor "default long pinned (the force)" "$(sl "$WORK/plain.gen.log" pinned_force)" "$FLOOR_LONG_PINNED_FORCE"
+floor "default pinned sites" "$(sl "$WORK/plain.gen.log" pinned_sites)" "$FLOOR_PIN_SITES_DEF"
 floor "default breaks" "$(rv "$WORK/plain.run.log" breaks breaks)" "$FLOOR_BREAKS_DEF"
 floor "default class swaps" "$(rv "$WORK/plain.run.log" breaks swaps)" "$FLOOR_SWAPS_DEF"
 floor "default long-row subjects" "$(rv "$WORK/plain.run.log" longrows subjects)" "$FLOOR_LONG_SUBJ_DEF"
