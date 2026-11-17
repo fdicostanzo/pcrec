@@ -649,6 +649,20 @@ Q pass-own-labels   (a) the empty alternative `/(?:(?<h>\d|);)*/` (h set to the 
 Q pass-own-labels       the same with a default `(h = 0: <5)` (PCRE's conditional sees the empty h as SET, so the default never fires): WHOLE 21 (first `;`: FAILS vs HOLDS); SEARCHED 135 (first `;`: ``@0 vs `;`@0); FIND-ALL 225 (first `;`: [``@0, ``@1] vs [`;`@0, ``@1]) of 364
 Q pass-own-labels   (b) a helper group marking each pass's start, `/(?:(?<ps>)(?<h>\d)?;)*(?C)/`, the callout reading h only when it starts at or after ps (set in this pass), vs the engine's pass-own: bare WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364 ; with the default `h = 0` WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364 ; inside the body (W1c's item) WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
 Q pass-own-labels     CONTROL: the same callout model against the engine's CARRY (must differ): WHOLE 8 (first `3;;`: FAILS vs HOLDS); SEARCHED 33 (first `3;;`: `3;`@0 vs `3;;`@0); FIND-ALL 33 (first `3;;`: [`3;`@0] vs [`3;;`@0]) of 364
+Q operand-context `/\d+/ & /\b\d+/`
+Q operand-context   THE DRAFT'S READING: the operand sees the stretch's own text: WHOLE `1` HOLDS ; SEARCHED `a1 1` `1`@1 ; FIND-ALL `a11 1a1` [`11`@1, `1`@4, `1`@6]
+Q operand-context   the operand sees the subject around the stretch: WHOLE `1` HOLDS ; SEARCHED `a1 1` `1`@3 ; FIND-ALL `a11 1a1` [`1`@4]
+Q operand-context   THE DRAFT'S READING: the operand sees the stretch's own text vs the operand sees the subject around the stretch: WHOLE 0; SEARCHED 90 (first `a1`: `1`@1 vs FAILS); FIND-ALL 132 (first `a1`: [`1`@1] vs []) of 364 (labels compared)
+Q operand-context `/\d+/ & /(?<![a-z])\d+/`
+Q operand-context   THE DRAFT'S READING: the operand sees the stretch's own text: WHOLE `1` HOLDS ; SEARCHED `a1 1` `1`@1 ; FIND-ALL `a11 1a1` [`11`@1, `1`@4, `1`@6]
+Q operand-context   the operand sees the subject around the stretch: WHOLE `1` HOLDS ; SEARCHED `a1 1` `1`@3 ; FIND-ALL `a11 1a1` [`1`@2, `1`@4]
+Q operand-context   THE DRAFT'S READING: the operand sees the stretch's own text vs the operand sees the subject around the stretch: WHOLE 0; SEARCHED 90 (first `a1`: `1`@1 vs FAILS); FIND-ALL 132 (first `a1`: [`1`@1] vs []) of 364 (labels compared)
+Q operand-context `/\d+/ & /\d+(?![a-z])/`
+Q operand-context   THE DRAFT'S READING: the operand sees the stretch's own text: WHOLE `1` HOLDS ; SEARCHED `a1 1` `1`@1 ; FIND-ALL `a11 1a1` [`11`@1, `1`@4, `1`@6]
+Q operand-context   the operand sees the subject around the stretch: WHOLE `1` HOLDS ; SEARCHED `a1 1` `1`@1 ; FIND-ALL `a11 1a1` [`11`@1, `1`@6]
+Q operand-context   THE DRAFT'S READING: the operand sees the stretch's own text vs the operand sees the subject around the stretch: WHOLE 0; SEARCHED 122 (first `1a`: `1`@0 vs FAILS); FIND-ALL 132 (first `1a`: [`1`@0] vs []) of 364 (labels compared)
+Q operand-context   RE-RUN the draft's reading of `/\d+/ & /\b\d+/` against libpcre2 `/\d+(?C)/`, the callout matching the operand on the stretch alone (holding and stretch): WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+Q operand-context   RE-RUN the subject-context candidate against libpcre2 `/\d+(?C)/`, the callout matching the operand in the subject at the stretch's start, end tied (holding and stretch): WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
 == PART F: whole-text legality (J & C & occurrences(M), matched WHOLE)
 F F1 J := `/[\s\S]*/` (any text), C := `!contains(q)`, M := `occurrences(t2)`: `J & !contains(q) & occurrences(t2)`
 F F1   WHOLE `9:15 1`: HOLDS, hits [`9:15`, `1`] ; route (ii)'s find-all: [`9:15`, `1`]

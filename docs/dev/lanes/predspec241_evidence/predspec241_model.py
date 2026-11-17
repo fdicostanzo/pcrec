@@ -1303,6 +1303,28 @@ print("Q pass-own-labels   (b) a helper group marking each pass's start, `/(?:(?
 print("Q pass-own-labels     CONTROL: the same callout model against the engine's CARRY (must differ): %s" % diffcount(hs(rxm), pkey(now, lambda: W(REP(), h5())), RG3))
 
 
+# 12. operand-context (exception-rule's list, rulings R1 (c)): an `&` operand's lookarounds and `\b` read the
+# stretch's own text (THE DRAFT'S READING, FIX-A3; the owner ruled only "^ $ refer to the scoped match") or the subject
+# around the stretch (the operand matched in the subject with its end tied to the stretch's: rev 24's engine).
+class AndCtx:
+    def __init__(self, a, b): self.a, self.b = a, b
+    def walk(self, s, i):
+        for e1, r1, c1 in self.a.walk(s, i):
+            for e2, r2, c2 in self.b.walk(s, i):
+                if e2 == e1: yield e1, merge(r1, r2), c1 + c2
+CTXPOOL = strings("1a ", 5)
+for nm, B in (("`/\\w+/ & /\\b\\w/`... `/\\d+/ & /\\b\\d+/`", r"\b\d+"), ("`/\\d+/ & /(?<![a-z])\\d+/`", r"(?<![a-z])\d+"), ("`/\\d+/ & /\\d+(?![a-z])/`", r"\d+(?![a-z])")):
+    qcase("operand-context", nm.split("... ")[-1],
+          [("THE DRAFT'S READING: the operand sees the stretch's own text", progf(lambda B=B: AND(Pat(r"\d+"), Pat(B)), ())),
+           ("the operand sees the subject around the stretch", progf(lambda B=B: AndCtx(Pat(r"\d+"), Pat(B)), ()))],
+          ("1", "a1 1", "a11 1a1"), CTXPOOL)
+rxo = P.Pcre(r'\d+(?C"b")', {"b": lambda c: re.match(r"\b\d+\Z", c.subject[c.start:c.pos]) is not None})
+qline("operand-context", "the draft's reading of `/\\d+/ & /\\b\\d+/` against libpcre2 `/\\d+(?C)/`, the callout matching the operand on the stretch alone (holding and stretch): %s" % diffcount(
+    lambda m, t: (lambda k: (k is not None) if m == "WHOLE" else (None if k is None else k[:2]) if m == "SEARCHED" else tuple(x[:2] for x in k))(rxkey(rxo, ())(m, t)), under(NOWR, lambda: AND(Pat(r"\d+"), Pat(r"\b\d+"))), CTXPOOL))
+rxo2 = P.Pcre(r'\d+(?C"b")', {"b": lambda c: re.match(r"\b\d+", c.subject[c.start:]) is not None and re.match(r"\b\d+", c.subject[c.start:]) is not None and any(m.end() == c.pos for m in [re.compile(r"\b\d+").match(c.subject, c.start)] if m) })
+qline("operand-context", "the subject-context candidate against libpcre2 `/\\d+(?C)/`, the callout matching the operand in the subject at the stretch's start, end tied (holding and stretch): %s" % diffcount(
+    lambda m, t: (lambda k: (k is not None) if m == "WHOLE" else (None if k is None else k[:2]) if m == "SEARCHED" else tuple(x[:2] for x in k))(rxkey(rxo2, ())(m, t)), under(NOWR, lambda: AndCtx(Pat(r"\d+"), Pat(r"\b\d+"))), CTXPOOL))
+
 # ================================================================================================= PART F: whole-text
 # The owner's model (2026-11-17 13:55, adopted if legal at 14:05): a parser J of the whole text; a check C against J's
 # result that can fail the whole thing; a search M for the matches inside J's span; the matches reported only when C
