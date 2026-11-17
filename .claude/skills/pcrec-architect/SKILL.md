@@ -1,0 +1,166 @@
+---
+name: pcrec-architect
+description: Write the ARCHITECTURE NOTE for a pcrec (or memfn kit) feature - the step between requirements and design ([ARCH-STEP]). Given the feature's requirements (the owner's rulings, the contract and worked examples - a design-of-record file or a plan row) and TODAY'S CODE, the architect lane answers "where does this live in the tree as it is, and what must change shape first?" - a site map found by grep, the ride-along register rows it touches, the remodels that land first, the general form, the seams, what is deleted, and what the design step must decide. It writes the note; it designs no algorithm, writes no code and proposes no schedule. The note is reviewed by the pcrec-critic skill's ARCHITECTURE mode, never by its writer. Args: the requirements (a plan tag or a design-of-record path), a topic name.
+---
+
+# pcrec architect: the architecture note
+
+The owner's problem (2026-11-17, `docs/design/plan_row_bodies/ARCH-STEP.md`): "we discover over time that the
+feature is aggregated onto existing code and then have to go through a lengthy refactor". The split is
+requirements -> ARCHITECTURE -> design -> build, each with its own review. This skill is the architecture step's
+WRITER. Its standard is `docs/dev/guide/architecture.md`: part 1's goals with their CHECK lines, part 2's rules
+with their BEFORE DESIGN questions, part 3's ride-along register and its HOW TO USE IT. The note answers those;
+this skill does not restate them. When the guide and this skill disagree, the guide wins and you fix the skill.
+
+## 1. Where it sits, and who does what
+
+| step | question | output | reviewed by |
+|---|---|---|---|
+| requirements | what must it do? | the contract, worked examples, the owner's rulings | the owner |
+| **architecture** | where does it live in today's code; what changes shape first? | **the architecture note** (this skill) | `pcrec-critic` ARCHITECTURE mode |
+| design | exactly how is it built? | fields, algorithms, build units, tests | `pcrec-critic` design mode, against the ACCEPTED note |
+| build | does the code match? | code | `pcrec-critic` code mode |
+
+| role | who | does | never |
+|---|---|---|---|
+| **launcher** | the manager | decides the step applies (section 2), briefs the architect as a lane (BRIEF_TEMPLATE.md), launches the critic round on the delivered note, rules its dispositions, marks the note ACCEPTED, relays OPEN QUESTIONS to the owner | writes the note; reviews it alone |
+| **architect** | ONE opus lane, in its own worktree | sections 3-6: reads requirements and code, writes and commits the note | designs an algorithm, a field layout or a test; edits `src/`, `cli/`, `lib/`, `memfn/src/`; proposes a schedule or a build order beyond "lands first"; reviews its own note; edits the register (it PROPOSES rows) |
+| **critics** | the `pcrec-critic` round, ARCHITECTURE mode | review the note against the tree | are the architect, or read its report before their findings |
+
+The writer and the critic are ALWAYS different agents (owner, 2026-11-17: "or a single expert but then it's
+reviewing its own design"). A fix round on the note is a FRESH architect lane briefed from the review.
+
+## 2. When the step applies (the size trigger: PROPOSED, the owner has not ruled it)
+
+FULL NOTE when the feature touches TWO OR MORE existing decision sites, or adds a mechanism (a new table, record,
+pass, seam, AST kind, entry kind or option family). Otherwise the ONE-PARAGRAPH FORM (section 5, last part).
+"Decision site" = a place where today's code chooses (an `if`/`switch` on an enum, flag or kind; a table walk; a
+refusal). The architect decides which form applies from the site map's first pass and says so on the note's first
+line, with the count. A paragraph-form note that finds two sites converts itself to the full form.
+
+## 3. Freeze (architect, first)
+
+1. TREE: `T=$(git -C <worktree> rev-parse HEAD)` at lane start (the lane's branch is cut from main). Every command in
+   the note runs against `$T` with `git grep -n <pattern> $T -- src cli lib memfn/src` or `git show $T:<path>`, so a
+   reader can re-run it after main moves. Record `T` in the note's header.
+2. REQUIREMENTS: the files and rulings named by the brief, each with the commit you read it at. If the
+   requirements are not stable (a design-of-record marked NOT STABLE, open owner questions that change WHAT the
+   feature does), say so in the header; the note may still be written, but every site that depends on an open
+   requirement is marked `REQ-OPEN <slug>`.
+3. The register: `docs/dev/guide/architecture.md` part 3 at `$T` (`git show $T:docs/dev/guide/architecture.md`).
+
+## 4. Procedure (architect)
+
+1. VOCABULARY. From the requirements, list the nouns and verbs the feature acts on: AST kinds, facts, engines,
+   entries, options, flags, records, kit fields, limits, spec sections. For each, the identifiers the tree uses
+   for it (find them by reading, then grep): enum prefixes (`A_`, `ENGM_`, `CRA_`, `CAND_ROUTE_`), table names
+   (`cand_rows[]`, `fit_rungs[]`, `entry_rows[]`, `kindrow.def`, `limits.def`, `axes.def`), record types (`Job`,
+   `Ctx`, `CandRow`). The vocabulary list goes in the note: the critic re-derives the site map from it.
+2. SITE MAP. Grep every vocabulary term at `$T`; READ THE CODE at each hit (not only the documents describing it:
+   archhist entry 2's bitmap was "a stated choice" in APPROACH.md, the code was where its limit lived). Keep each
+   site where the feature's code will run, read, write or be chosen. Count call sites, not only tables (rule
+   "Notice siblings": 26 hand tests of one answer had no table to count). Classify each site with exactly one of:
+   - `ROW` a row in an existing declared table (goal 2): name the table and its executor;
+   - `CHAIN->TABLE` an if/switch chain that becomes a table first (rule "Decisions are declared tables"; at about
+     three members, rule "Notice siblings");
+   - `SHARED` one function or record all sites should go through (goal 1; rule "One question, one primitive, from
+     the second caller"): name the question, the existing answer(s) found by grep, and which survives;
+   - `NEW-SEAM` a new crossing between stages, parts or the kit (goal 3): writer and readers named;
+   - `WIDEN` a data shape the feature needs inputs outside of (goal 4; rule "A shape states the inputs it covers"):
+     the shape, what it covers today, what the feature and the planned rows need;
+   - `AS-IS` the site takes the feature with no change of shape (say why in one clause).
+   A site the feature would join by adding a branch to a chain, a second mechanism beside a first, or a private
+   copy of a declared table is NEVER `AS-IS`: that is the aggregation this step exists to stop.
+3. REGISTER LOOKUP (goal 5; part 3's HOW TO USE IT). Grep part 3 for every file and function in the site map and for
+   the feature's plan tag. Each matching row: RIDES FIRST, JOINS <abi event in flight>, or NOT CARRIED with the
+   reason. A site classified `CHAIN->TABLE`, `SHARED` or `WIDEN` with no row PROPOSES a row in the register's own
+   columns. Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files.
+4. REMODELS THAT LAND FIRST. Each `CHAIN->TABLE`, `SHARED` or `WIDEN` site the feature needs now becomes one unit:
+   what changes shape, its GATE (no-mover with byte identity / abi event / kit seam event, D146), its SIZE (S/M/L as
+   part 3), and the test that it is SEPARABLE: it lands, answer-identical, without the feature. A remodel the feature
+   does not need yet is not a unit: it becomes a register row with its trigger (rule "Build under measurement").
+5. GENERAL FORM AND SIBLINGS. Name the general form of what the feature adds (rule "Build the general form"); its
+   siblings already in the tree (the decision family it joins); the plan rows that will extend the same shape
+   next (grep `docs/dev/plan.md` by tag and vocabulary: goal 4's CHECK); and the unlocks, each with its trigger.
+6. SEAMS. For each `NEW-SEAM` and each existing seam the feature sends new facts across: the one writer, the
+   readers, the facts both ways (manifesto §1 F4), the layer direction of every new call (rule "Layering holds at
+   the call level"), and whether it could be written to text and read back (manifesto principle 9). Kit seams state
+   facts with no verb about the kit's use (rule "Across the kit boundary").
+7. DELETED. What each remodel and the feature delete (rule "Simplification is a benefit on its own"); a remodel with
+   an empty list names another reason or is dropped.
+8. HAND-OFFS. What the design step must decide (algorithms, field layouts, limits, tests: handed on, not decided
+   here) and OPEN QUESTIONS FOR THE OWNER (each a word slug; plain words; a leaning).
+
+## 5. The note (template)
+
+Path: `docs/design/<topic>_arch.md` (one note per feature; a later revision edits it, the panel outcome inline, as
+docs/design/CLAUDE.md says of living notes). Every line that says "today the code does X" carries its command,
+run at `$T`, inline or in the section's command list. No line numbers without the command that found them.
+
+```
+# <feature>: architecture note
+STATUS: DRAFT | REVIEWED <review file> | ACCEPTED <date, by whom>
+FORM: full | paragraph   (trigger, PROPOSED: <n> existing decision sites touched; mechanisms added: <list or none>)
+TREE: <T>   REQUIREMENTS: <files and rulings, each @commit>   REGISTER READ: architecture.md part 3 @<T>
+
+## Goals served
+Which part-1 goals the feature touches, and which it trades against (rule "A design states its goals": the
+architecture step's answer to that rule's BEFORE DESIGN question). Not the feature's own goals: those are the
+requirements'.
+
+## Requirements read
+Each file and ruling by cite (a D-row, a plan tag, a design section `§n`, the owner's words with date); the
+vocabulary list (section 4.1); REQ-OPEN items.
+
+## Site map
+| # | site (file, function or table) | command (at T) | today | class | goal/rule |
+One row per site. "today" = what the code does there in one clause. class = ROW | CHAIN->TABLE | SHARED |
+NEW-SEAM | WIDEN | AS-IS. The commands and their hit counts follow the table, so the critic can re-run them.
+
+## Register rows looked up
+[DEPENDS ON THE OWNER: whether a note MUST cite the rows it looked up; written the strict way]
+| register row | why it matches (file, function or tag) | rides first / joins <event> / not carried: reason |
+Then: rows the note PROPOSES (register columns: remodel, shape (rule), where, event, size and gate, deletes).
+"No row matched" is written out with the greps that found none.
+
+## Remodels that land first
+Per unit: what changes shape; gate (no-mover + byte identity / abi / kit); size; separable (lands without the
+feature: yes, because ...); [DEPENDS ON THE OWNER: whether "nothing gets slower on the cells it touches" gates all
+product code; written the strict way] the cells it touches and the speed gate; what it deletes.
+
+## The general form and its siblings
+The general form; the family and its members today (with the grep); the planned rows that extend the same shape
+(goal 4: each shown to fit, or the shape widens first); unlocks, each with its trigger.
+
+## Seams
+| seam | writer | readers | facts down | facts up | new calls and their layer direction | text round trip |
+
+## What is deleted
+Per remodel and for the feature: the special cases, copies, arms and kinds that go.
+
+## What the design step must decide
+Handed on, not decided here: each item names the site-map row it belongs to.
+
+## Open questions for the owner
+Each: a word slug, the question in plain words, why it matters to the shape, the architect's leaning.
+```
+
+PARAGRAPH FORM (below the trigger): the header lines, then one paragraph naming: the one decision site (with its
+command) and its class; the register rows matched (or "none", with the grep); and why no remodel lands first.
+
+## 6. Self-check before delivery (architect)
+
+- Every site-map row has a command, a class and a goal/rule; every command re-runs at `$T` and prints what the row
+  says (re-run them all once, last).
+- Every vocabulary term was grepped; a term with zero hits is listed as such (it is a `NEW-SEAM` or a new shape).
+- Every `CHAIN->TABLE`/`SHARED`/`WIDEN` row appears either under "Remodels that land first" or as a register row
+  (matched or proposed) with its trigger.
+- No algorithm, field layout, schedule or test design appears outside "What the design step must decide".
+- Plan rows cited by TAG, spec sections by `§`, never by line (`make test-plan-lint` PL14, `make test-spec-history`).
+- The note is committed on the lane branch; the lane report names `T` and the note's path.
+
+## 7. What it never does
+
+Writes product code or tests; designs an algorithm; runs `make` beyond the doc checks its brief names; edits
+`docs/dev/guide/architecture.md` (the manager updates the register at a landing; the note proposes rows); reviews
+its own note or a revision of it; decides an OPEN QUESTION the owner has not answered; schedules work.
