@@ -447,3 +447,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-16 0ac65188a none — review r31 filed, critic-skill process changes (docs)
 - 2026-11-16 634c67d39 none — review r32 filed, critic-skill process changes (docs)
 - 2026-11-16 f646f083e none — condition_kind.md Part IV (searched mode exploration) and its evidence (docs)
+- 2026-11-17 910b202ef none — predicates_draft.md rev 23 and its evidence (docs)
