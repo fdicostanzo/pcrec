@@ -2083,3 +2083,17 @@ of the first branch before any row of the second); derived from row-is-match ("t
 "`|` is PCRE's one parse"; the evidence engine's other order is corrected and the moved counts re-run. (4) OPEN
 with the owner at this entry: pass-table, group-truth, quiet-gate (the kit's), whole-text (parked);
 lookahead-labels arises only if the lookahead route is stated.
+
+**2026-11-17 RECORD after review r34 (round predspec231 on rev 23.1; session 137, box clock 03:47; the manager's
+entries, no owner word).** (1) WITHDRAWN: the manager's ruling **branch-order** (03:01 item 3). The round showed
+what it was told without: with A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`, `(B | A) & (l: <20)` on `25`
+FAILS while `(B & (l: <20)) | (A & (l: <20))` HOLDS (`&` no longer distributes over `|`, against the ruled
+`t & [f, g]` = `(t & f) | (t & g)`); adding a positive condition inside a branch can ADMIT a subject; and its
+"derivation" is a scope rule (a condition inside a branch sends the search to the next branch, one outside does
+not). It goes to the owner as **branch-scope**, three readings: (i) no fallthrough; (ii) fallthrough for conditions
+inside AND outside (reverses the ruled reject of `(B | A) & (l: "a")` on `aa`); (iii) rev 23.1's scope rule. Rev
+23.2 keeps (iii) as the draft's text, labelled OPEN. (2) Asked of the owner as **record-under-not**: review r33's
+fix made "a record is exactly the AND of its entries" hold only WITHOUT a NOT around it; that narrows his 11:35
+record-is-product ("absolutely") and was not returned to him. (3) LESSON, the same one as 11-16: two manager
+rulings in one night (the whole-statement default lean; branch-order) fell to the next round; a rule that decides
+ANSWERS and is not word for word in his record is asked, not told.
