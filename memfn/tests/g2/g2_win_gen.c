@@ -43,6 +43,12 @@
 #include "memfn.h"
 #include "g2_win.h"
 
+/* positions per span G2 states: r45_reply's 128, or the kit's span bound
+ * where that is less (32 before the [COVER-CAP] stage 2 raise). DERIVED, so a
+ * tree carrying the raise runs the promised value with no edit (lane
+ * formsfixb ruling R1); printed in the runtime record (`g2_win_gen: twins`). */
+#define G2W_MAXPOS  (MF_WSPAN_POS < 128 ? MF_WSPAN_POS : 128)
+
 /* The twins held to the kit's own bounds (g2_win.h; review r35 F12): a twin
  * past its bound would state what the kit refuses. */
 _Static_assert(G2W_MAXPOS <= MF_WSPAN_POS, "G2W_MAXPOS is past the kit's span (MF_WSPAN_POS)");
@@ -1281,11 +1287,6 @@ static void loops_check(int id, const g2w_site *x, const g2w_dec *d, const char 
             ok = e[j].off == lo[l] + (j - i) && e[j].core && wide_set(e[j].set) &&
                  !memcmp(e[j].set, e[i].set, 32) && e[j].offer == e[i].offer;
         if (!ok) {
-            if (getenv("G2W_LOOPDBG"))
-                for (int j = 0; j < ne; j++)
-                    if (e[j].off >= lo[l] - 1 && e[j].off <= end[l])
-                        printf("  dbg site %d off %d core %d wide %d offer %u set0 %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", id, e[j].off, e[j].core,
-                               wide_set(e[j].set), e[j].offer, e[j].set[0], e[j].set[1], e[j].set[2], e[j].set[3], e[j].set[4], e[j].set[5], e[j].set[6], e[j].set[7], e[j].set[8], e[j].set[9], e[j].set[10], e[j].set[11], e[j].set[12], e[j].set[13], e[j].set[14], e[j].set[15]);
             snprintf(m, sizeof m, "the loop [%d, %d) is not one WIDE core set over tested entries", lo[l], end[l]);
             fail(id, "span loop", m);
             return;
@@ -1466,7 +1467,8 @@ int main(int argc, char **argv)
     const char *rcn = getenv("G2W_RC_SITES");
     int n8 = rcn ? atoi(rcn) : 150;
     const char *stn = getenv("G2W_ST_SITES");
-    int n9 = stn ? atoi(stn) : 224;     /* 7 families x 8 finite heads x 4 */
+    int n9 = stn ? atoi(stn) : 448;     /* ~7 per (family, head) pair, the pairs   */
+                                        /* the floors hold (224 left 2 at head 64) */
     const char *wrn = getenv("G2W_WR_SITES");
     int n10 = wrn ? atoi(wrn) : 60;
     const char *shn = getenv("G2W_SPAN_HEAD");
@@ -2031,6 +2033,8 @@ int main(int argc, char **argv)
            "table %ld own %ld noffer %ld meet %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld stop_run %ld\n", fc_fn,
            fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below,
            tn_stop_own, af_walk, af_other, tn_stop_run);
+    printf("g2_win_gen: twins maxpos=%d long=%d,%d reach=%d (MF_WSPAN_POS %d, MF_WMAX_SPAN %d)\n",
+           (int)G2W_MAXPOS, LONG_K[0], LONG_K[1], G2W_REACH, (int)MF_WSPAN_POS, (int)MF_WMAX_SPAN);
     printf("g2_win_gen: loops head=%s", g_span_lever[0] ? g_span_lever + 10 : "default");
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], loops[i]);
     printf(" repeated=%ld (of %d repeated-class sites) mixed=%ld (of %ld mixed sites)\n", loops[FAM_N], n8,

@@ -637,6 +637,8 @@ wide_floors() {
     wv() { grep -h "^G2PWIDE" "$WORK/$tag.gen.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
     pv() { grep -h "^G2P partd" "$WORK/$tag.run.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
     grep -h '^G2PWIDE\|^G2P partd' "$WORK/$tag.gen.log" "$WORK/$tag.run.log"
+    # the runtime record states which tree it covered (G2P_MAXRUN as derived from MF_WSPAN_POS)
+    grep -h '^g2_pres_gen: twins' "$WORK/$tag.gen.log" | sed 's/^g2_pres_gen: /G2P /'
     for x in $FLOOR_WIDE; do floor "$tag ${x%%:*}" "$(wv "${x%%:*}")" "${x#*:}"; done
     for x in $FLOOR_WIDE_RUN; do floor "$tag driver ${x%%:*}" "$(pv "${x%%:*}")" "${x#*:}"; done
     local u r

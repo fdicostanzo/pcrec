@@ -18,14 +18,14 @@
  * has a literal or drawn length of its own. R-45 (r45_reply rev 6 §3
  * "Answers, controlled by G2"; review r35 F12): G2W_REACH 256, CHOSEN, twice
  * the span r45_reply names (128, twice the largest finite grid head, 64, so
- * that head has positions on both sides). G2W_MAXPOS stays AT the kit's
- * bound: MF_WSPAN_POS is 32 until its raise ([COVER-CAP] stage 2), and a
- * twin past it would state what the kit refuses; G2 reaches past 64 with
- * stretches of several spans (a loop crosses span boundaries). TRIGGER: the
- * MF_WSPAN_POS raise moves G2W_MAXPOS to 128 (r45_reply's value). The
- * generator (the only file that includes memfn.h) holds each twin to the
- * kit's own bound with a _Static_assert. */
-#define G2W_MAXPOS  32      /* positions per span (memfn.h MF_WSPAN_POS)        */
+ * that head has positions on both sides). G2W_MAXPOS, the positions per
+ * span G2 states, is DERIVED in the generator (the only file that includes
+ * memfn.h, and the only one that reads it): min(128, MF_WSPAN_POS), 32 in a
+ * tree before the [COVER-CAP] stage 2 raise and r45_reply's 128 after it,
+ * with no edit (ruling R1 of lane formsfixb); G2 reaches past 64 with
+ * stretches of several spans either way (a loop crosses span boundaries).
+ * The generator holds each twin to the kit's own bound with a
+ * _Static_assert. */
 #define G2W_MAXSPAN 32      /* spans per alternative (MF_WMAX_SPAN)             */
 #define G2W_LO      (-8)    /* the least offset (memfn.h -MF_MAX_BACK)          */
 #define G2W_REACH   256     /* offsets lie below it (MF_WREACH)                 */

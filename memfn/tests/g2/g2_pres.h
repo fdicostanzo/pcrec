@@ -16,10 +16,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* the longest generated run (MF_WSPAN_POS), its draw's top (g2_pres_gen.c);
-   AT the kit's bound, asserted there. r45_reply rev 6 §3 names 64: TRIGGER,
-   the MF_WSPAN_POS raise ([COVER-CAP] stage 2) moves it, its draw with it */
-#define G2P_MAXRUN  32
+/* the longest run a site can carry: r45_reply rev 6 §3's 64. The longest
+   GENERATED run, G2P_MAXRUN, is DERIVED in g2_pres_gen.c (the only file that
+   includes memfn.h): min(G2P_RUNCAP, MF_WSPAN_POS), 32 before the
+   [COVER-CAP] stage 2 raise and 64 after it with no edit (lane formsfixb
+   ruling R1); this capacity only sizes the arrays */
+#define G2P_RUNCAP  64
 #define G2P_MAXPART 1           /* the run parts a site lays out: ONE, the part
                                    the kit derives from the run span (MF_SITE_ABI
                                    27; no host-cut window, no second part)   */
@@ -61,7 +63,7 @@ typedef struct {
     unsigned    run_len;
     int32_t     omin;           /* the run span's STATED omin (may be < 0)     */
     int64_t     head_max;       /* K as stated (signed; 0 on an ON_MISS site)  */
-    uint8_t     run[G2P_MAXRUN], mask[G2P_MAXRUN];
+    uint8_t     run[G2P_RUNCAP], mask[G2P_RUNCAP];
     int         has_scan, scan; /* the site's reply: mf_class.run              */
     unsigned    ver_lo, ver_len;/* the site's reply: its verified extent       */
     unsigned    nparts;

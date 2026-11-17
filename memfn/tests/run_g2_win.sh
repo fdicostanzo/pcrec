@@ -104,11 +104,21 @@ FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
 # 199, random 17, repeated 59; at 8: mass 1, random 3, repeated 24; at 24:
 # repeated 9). A family with no loop at a head has no floor there.
 FLOOR_PLANTED=56
-# MEASURE-PLACEHOLDERS (formsfixb): replaced by the measured floors below
-LOOP_FLOORS_DEF="parked:0"
-FLOOR_LONG_RENDERED_DEF=0 FLOOR_LONG_LOOPED_DEF=0 FLOOR_DENY_WITNESS=0 FLOOR_LONG_PINNED_DEF=0
-FLOOR_BREAKS_DEF=0 FLOOR_SWAPS_DEF=0 FLOOR_LONG_SUBJ_DEF=0 FLOOR_LONG_PINNED_HEAD=0 FLOOR_LONG_SUBJ_HEAD=0
-for h_ in 0 1 2 4 8 16 24 32 64; do eval "LOOP_FLOORS_$h_='parked:0'"; done
+# MEASURED (lane formsfixb, 2026-11-17, seed 20261022, the dev box; each a K35 floor ~90% of its measured count,
+# at least 1): the span loops per (family, head) incl. the repeated-class family and its MIXED sites (F13, F16),
+# the head passes' exactly pinned sites (F14), the deterministic breaks (F17), the long rows (F12, F15).
+LOOP_FLOORS_DEF="parked:4 pair:5 mass:5 mline:5 part:6 report:7 random:5 repeated:12 mixed:8"
+FLOOR_LONG_RENDERED_DEF=24 FLOOR_LONG_LOOPED_DEF=16 FLOOR_DENY_WITNESS=8 FLOOR_LONG_PINNED_DEF=8
+FLOOR_BREAKS_DEF=2197 FLOOR_SWAPS_DEF=86 FLOOR_LONG_SUBJ_DEF=561 FLOOR_LONG_PINNED_HEAD=8 FLOOR_LONG_SUBJ_HEAD=187
+LOOP_FLOORS_0="parked:29 pair:30 mass:38 mline:13 part:36 report:36 random:43 repeated:72 mixed:24" PIN_FLOOR_0=271 BREAK_FLOOR_0=2480
+LOOP_FLOORS_1="parked:28 pair:28 mass:37 mline:13 part:34 report:36 random:41 repeated:70 mixed:24" PIN_FLOOR_1=264 BREAK_FLOOR_1=2612
+LOOP_FLOORS_2="parked:28 pair:28 mass:34 mline:13 part:32 report:36 random:41 repeated:67 mixed:24" PIN_FLOOR_2=259 BREAK_FLOOR_2=2801
+LOOP_FLOORS_4="parked:25 pair:27 mass:27 mline:13 part:27 report:33 random:36 repeated:63 mixed:24" PIN_FLOOR_4=232 BREAK_FLOOR_4=3271
+LOOP_FLOORS_8="parked:22 pair:24 mass:24 mline:13 part:24 report:27 random:27 repeated:56 mixed:22" PIN_FLOOR_8=201 BREAK_FLOOR_8=3149
+LOOP_FLOORS_16="parked:20 pair:21 mass:21 mline:13 part:22 report:23 random:25 repeated:45 mixed:18" PIN_FLOOR_16=180 BREAK_FLOOR_16=2908
+LOOP_FLOORS_24="parked:17 pair:18 mass:18 mline:13 part:18 report:18 random:17 repeated:36 mixed:16" PIN_FLOOR_24=147 BREAK_FLOOR_24=2689
+LOOP_FLOORS_32="parked:12 pair:14 mass:13 mline:12 part:11 report:14 random:13 repeated:31 mixed:14" PIN_FLOOR_32=115 BREAK_FLOOR_32=2517
+LOOP_FLOORS_64="parked:4 pair:5 mass:5 mline:5 part:6 report:7 random:5 repeated:12 mixed:8" PIN_FLOOR_64=49 BREAK_FLOOR_64=2301
 # plan_frame.md 3.0b: the framed EMIT ask's (frame_row, stream) cells and the
 # frame part's classes, each at the measured count less ~10% (seed 20261022,
 # 1500 sites: E-func/none 233, E-func/restart 38, E-stmt/none 355,
@@ -316,7 +326,9 @@ one_run() {
     local rc2=$?
     local rc3=0
     if [ -z "${G2W_NOASAN:-}" ]; then
-        "$CC" -std=gnu11 -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all \
+        # -g1 (line tables, no locals): the long rows' 1024-position functions
+        # cost -g's variable tracking ~100 s of compile (lane formsfixb, measured)
+        "$CC" -std=gnu11 -O1 -g1 -fsanitize=address,undefined -fno-sanitize-recover=all \
             -I"$G2" "$G2/g2_win_run.c" "$G2/g2_win_ref.c" "$WORK/$tag.out/g2w_sites.c" \
             -o "$WORK/$tag.asan" 2> "$WORK/$tag.asanbuild" \
             || { echo "FAIL: $tag: the ASan+UBSan driver does not build"; return 1; }
@@ -491,6 +503,8 @@ rv() { grep -h "^G2W $2" "$1" | grep -oE "$3=[0-9]+" | head -1 | cut -d= -f2; }
 fam_floors() {   # fam_floors LOG LABEL "fam:N .."
     for lf in $3; do floor "$2 loops ${lf%%:*}" "$(lp "$1" "${lf%%:*}")" "${lf#*:}"; done
 }
+# the runtime record states which tree it covered: the twins as derived from the kit's bounds
+grep -h '^g2_win_gen: twins' "$WORK/plain.gen.log" | sed 's/^g2_win_gen: /G2W /'
 fam_floors "$WORK/plain.gen.log" "default" "$LOOP_FLOORS_DEF"
 floor "default long rendered" "$(sl "$WORK/plain.gen.log" rendered)" "$FLOOR_LONG_RENDERED_DEF"
 floor "default long looped" "$(sl "$WORK/plain.gen.log" looped)" "$FLOOR_LONG_LOOPED_DEF"
