@@ -5,7 +5,8 @@
 - Review number r40 was free (the last was r34 in `docs/dev/reviews`; the kit's r35-r39 are not in this tree); used as briefed.
 - Id check: every id in dispositions.md (A1-A9, B1-B9, C1-C6, SIMULATE-8) is in the draft and every draft id is ruled; no mismatch. The draft's "ten owner questions" became nine (pass-own-labels not asked, per A1).
 - Checks: `grep -rnE 'plan\.md:[0-9]'` over the review and its directory finds nothing; no `.md:N` line cite anywhere; `make -s test-plan-lint` PASS (45 plants, 0 failures); `check_claudemd_size.sh --all` 384 files within limits.
-- Nothing owed. Not done: no code, no disposition changed.
+OWED: none
+- Not done: no code, no disposition changed.
 
 ## WHAT WAS FILED
 - `docs/dev/reviews/2026-11-17-r40-predspec24.md`: the draft with each PROPOSED line replaced by the ruled disposition and note (coordinator's proposal kept in brackets; "proposed X, ruled Y" where they differ: A1 no owner question, A4 no restriction of `hits` to WHOLE, A5 left-side-first withdrawn); a rulings summary, verdict NOT STABLE, the nine owner questions by slug, "What happens next" (fix lane predspec241 = rev 24.1, questions to the owner, short confirming re-check).
