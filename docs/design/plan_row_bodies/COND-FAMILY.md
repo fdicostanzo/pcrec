@@ -1940,3 +1940,8 @@ mark-narrows, mark-in-none, zero-pass-empty's corner, one-witness, not-of-marked
 (1) a condition against a value not known when written (`< $k`) may have no fixed default that passes; (2) the
 default's scope (dollar-across-and; one default per label or per condition) becomes the load-bearing open item;
 (3) a default that stops satisfying an edited condition fails silently. Asked as **drop-mark**.
+
+**2026-11-16 OWNER GO — drop-mark, as an exploration (Frank, to session 137, box clock 21:19).** Asked **drop-mark**,
+HIS WORDS: "drop-mark: another exploration on these ideas". RECORD: not a ruling to drop the mark; lane condkind2
+(opus, design only) explores the model WITHOUT the mark (absence never matches; the default gets past it), rules
+nothing, edits neither predicates_draft.md nor any ruling.
