@@ -422,7 +422,9 @@ searched program, the answer is the row the search prefers among the rows that s
 a test reads never passes that test, negated or not; to get past a missing label, the author writes a default for it
 inside the test. (Rev 23.1, review r33 F12: a label missing INSIDE a nested program, such as the program after `x:`,
 is that program's business: the nested program keeps or drops its own row, and the outer test sees only "the label's
-text is, or is not, a row of it", a yes or a no; §R.3's nested row.)
+text is, or is not, a row of it", a yes or a no; §R.3's nested row. Rev 23.2, review r34 F-DOC-5: a yes or a no when
+the outer label is SET ONCE and present; an ABSENT outer label gives UNKNOWN, as any test of it, and a REPEATED one
+is tested per pass, R.1.5.)
 
 PRECISELY:
 
@@ -431,15 +433,23 @@ nested in a larger one stands in a PLACE, and the place fixes its text and its m
 places are §11 THE ROLE TABLE's rows, which this list follows; rev 23 had put all four nested places in the
 whole-value mode, which rows 5 and 7 contradict):
 
-| place (ROLE TABLE row) | its text | its mode | what the outer row sees |
-|---|---|---|---|
-| either side of `&` (rows 1, 2) | the stretch both sides match | WHOLE value: at most the one row whose stretch is that text | the row itself (the join of R.1.4) |
-| a `label:` set (row 3) | the label's text in this row | WHOLE value | yes / no: the label's text is, or is not, a row (R.1.5; §R.3's nested row) |
-| a `contains`/`occurrences` argument (row 5: it lands in a HOLE of the body, §2.6) | the enclosing stretch | SEARCHED, find-all: the hits are the argument's rows found leftmost, non-overlapping, in R22's order within that stretch (R.1.9) | the hits, as the repeated label `hit` (R.1.9; review r33 F4) |
-| a `records` item (row 7) | its file text | SEARCHED, find-all (R.1.9; §7) | one record per row found |
-| the program's final pattern (row 6) | the subject | SEARCHED (or WHOLE when the caller matches a whole value) | the reported row |
+| place (ROLE TABLE row) | its text | its mode | what the outer row sees | reads the ORDER of the table's rows? (rev 23.2) |
+|---|---|---|---|---|
+| either side of `&` (rows 1, 2) | the stretch both sides match | WHOLE value: at most the one row whose stretch is that text | the row itself (the join of R.1.4) | no, except which `|` branch's labels the row carries (R.1.4, OPEN: **branch-scope**) |
+| a `label:` set (row 3) | the label's text in this row | WHOLE value | yes / no: the label's text is, or is not, a row (R.1.5; §R.3's nested row); for a set-once, present label (an absent one gives UNKNOWN, a repeated one is tested per pass; rev 23.2, review r34 F-DOC-5) | no |
+| a `contains`/`occurrences` argument (row 5: it lands in a HOLE of the body, §2.6) | the enclosing stretch | SEARCHED, find-all: the hits are the argument's rows found leftmost, non-overlapping, in R22's order within that stretch (R.1.9) | the hits, as the repeated label `hit` (R.1.9; review r33 F4) | YES: the hit list, the hit count and so whether a count question HOLDS (`/a\|aba/` and `/aba\|a/` have the same rows on `aba` and the hits `a`, `a` vs `aba`) |
+| a `records` item (row 7) | its file text | SEARCHED, find-all (R.1.9; §7) | one record per row found | YES, as row 5 |
+| the program's final pattern (row 6) | the subject | SEARCHED (or WHOLE when the caller matches a whole value) | the reported row | SEARCHED: which row is REPORTED (whether the program holds does not read it); WHOLE: no |
 
-A FILTER ROLE (rows 1-4, 8) is a whole-value place; rows 5 and 7 are searched places. Vocabulary (review r31 K):
+A FILTER ROLE (rows 1-4, 8) is a whole-value place; rows 5 and 7 are searched places. THE ORDER (rev 23.2, review
+r34 A3, in part): the rows of a table have an ORDER, PCRE's preference order (the leftmost start, then the ends the
+pattern prefers there; for a `|` of filtered branches, the draft's current reading (iii), OPEN), and the last column
+says which places read it. So there are THREE modes, not two: WHOLE (reads no order), SEARCHED at the top (reads it
+only for the reported row) and FIND-ALL places (read it for the hit list, the count, and so for whether the program
+holds). R.1.3's "same TABLE" re-derivation and R.1.10's "the mode changes only which rows exist" speak of the rows
+only and are therefore narrower outside WHOLE (`/a|aba/` vs `/aba|a/` above, `predspec23d_model.out` PART Y); they
+are not rewritten here: whether the order is part of a pattern's meaning in every place follows the answer to
+**branch-scope** (§R.8 item 6), and the general form is `predicates_future.md` item 17. Vocabulary (review r31 K):
 "source row" and "result row" are retired; rev 23 says SUBJECT (the text), ROW (one potential match) and STRETCH (a
 row's text).
 
@@ -448,7 +458,9 @@ R.1.2 THE TABLE of a pattern P on a text: every POTENTIAL MATCH of P in it. A RO
 and end), the VALUE of every label P can set there (each value is P's own parse of the stretch, PCRE's one reading,
 §4.5), and, for a label set inside a loop, the loop's PASSES as a NESTED TABLE: one pass row per pass, in match order,
 each with the values that pass set; a loop that ran zero times has ONE pass row with every pass label absent (the
-LEFT JOIN row of zero-pass-record, 12:45). THE NESTED PASS TABLE ("R1") HAS NO OWNER RECORD (review r31 FREEZE
+draft's "LEFT JOIN" row: R1, below; rev 23.2, review r34 F-DOC-3: rev 23 credited it to zero-pass-record, 12:45,
+whose record has no such phrase and whose zero-pass wording, the manager's, 14:31 reversed; 12:45 ruled the ANSWER,
+a label outside the pairing loop tested once on zero passes, §R.11). THE NESTED PASS TABLE ("R1") HAS NO OWNER RECORD (review r31 FREEZE
 NOTE): it is THE DRAFT'S READING, the one every ruled answer on a looped label already relies on (rev 22 §4.3's
 sequence rule), and it is asked as **pass-table** (§R.8). A name set both inside and outside the loop (rev 22 L35,
 §13 O35) stays a compile ERROR until O35 is designed (review r31 J, PLAN: R1 does not say whether such a name is a
@@ -601,7 +613,9 @@ of the language (all-question, 23:18, his words: "all-question: retire"):
 
 R.1.8 "REPEATED" is read from the REGEX THAT DEFINES THE LABEL: a label is repeated when that operand regex can set
 it more than once in a match (**repeated-means**, the MANAGER's ruling, told to the owner by name; 22:58 entry item
-(4); review r31 D). A WHERE never changes a statement's columns, so `P & c` never makes a label set-once.
+(4); review r31 D). A WHERE never changes a statement's columns, so `P & c` never makes a label set-once. The label
+`hit` of a `contains`/`occurrences` argument (§2.6) is ALWAYS repeated: it is set once per hit of the find-all
+(R.1.9), whatever the argument's regex (rev 23.2, review r34 F-DOC-6).
 
 R.1.9 HOW A PROGRAM REPORTS. WHOLE-VALUE mode: the program holds on the value when the whole value is a surviving
 row. SEARCHED mode: the program reports the PREFERRED SURVIVING ROW: the leftmost start, then the left operand's
@@ -740,7 +754,8 @@ canonical numerals: `09:45` (hour `09`) and `10:05` (minute `05`) are NOT late; 
 of the PADDED spelling. Every count that moved is §R.7d.
 
 A FOURTH MEMBER: NOT OVER A NESTED PROGRAM (rev 23.1, review r33 F12 and its family note). With X :=
-`/(?<x>[\d:]+)/`, `(x: q)` asks whether x's text is a row of q, a YES or a NO (R.1.1's place table), so the third
+`/(?<x>[\d:]+)/`, `(x: q)` asks whether x's text is a row of q, a YES or a NO when x is set once and present (an
+absent x gives UNKNOWN, a repeated x is tested per pass; rev 23.2, review r34 F-DOC-5) (R.1.1's place table), so the third
 value does not cross the `label:` boundary and NOT over it acts as the DIFFERENCE for q's own labels
 (`predspec23c_model.out` PART 6; WHOLE / SEARCHED):
 
@@ -1286,7 +1301,7 @@ order, which is the meaning, not an evaluation order. Every count quoted from it
 | repeated-means (from the operand regex) | MANAGER'S RULING, owner told | 22:58 item (4) |
 | searched-complement | CLOSED by row-is-match | 22:58 item (5) -> 23:46 |
 | complement-per-match, complement-retry | WITHDRAWN as questions | 23:46 |
-| nested-complement (a `contains` argument filters potential matches like a program) | MANAGER'S ("MINE"), stated: `t2 & contains(t2 & !q)` on `9:30` HOLDS / HOLDS, its hit `9` (PART 1, D11) | 23:46 |
+| nested-complement (a `contains` argument filters potential matches like a program) | MANAGER'S ("MINE"), stated: `t2 & contains(t2 & !q)` on `9:30` HOLDS / HOLDS, its first hit `9` (PART 1, D11); the argument's full hit list on `9:30` is `9`@0 AND `30`@2, so `occurrences(t2 & !q, min = 2)` HOLDS on a text whose only time is late (rev 23.2, review r34 A3; R.1.9; `predspec23d_model.out` PART Y) | 23:46 |
 | the whole-text question | OPEN: **whole-text** (§R.8) | 23:46 ("MINE") |
 | absent-rule (1) one kind of absence, (2) a condition needs a text, (4) a set never contains absence | STAND (LOCKED); (2) as locked says the test FAILS on an absent label, which 23:48 re-reads three-valued as UNKNOWN (observable under NOT: FALSE would make NOT TRUE) (rev 23.1, F15) | 14:31; 23:48 |
 | absent-rule (3) the two controls | CHANGED: the mark clause removed; the default is the one control | 14:31; 21:49 |
