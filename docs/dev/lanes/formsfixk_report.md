@@ -116,11 +116,19 @@ All under `nice`, `gnutimeout`; never more than 8 drill processes (one stray ove
 ~1 min while a dry and two drills overlapped; the baseline selftest was stopped by `safekill`
 to keep within it).
 
-- **selftest (full, the tip's cards.py; `selftest_full_r2c.log`):** FULLLINE. Class drill
-  worst CLASSWORST. Earlier controls: EARLYCTRL.
+- **selftest (full; `selftest_full_r2c.log` on 992be5477):** `selftest: 205 checks, 1 failed`.
+  The one FAIL was `(r39 K6) ... control (no G2 record, rev 10's rerun): stalled 0 of 12 (accept
+  >= 1)`. The drill's 4.5 % win sat at rev 11's floor (~0.043, A/A from `aa`/`aa-twin`). Under
+  `aa`/`aa.b` the floor reads ~0.047, so G2 = {16}'s one-comparison move of the floor no longer
+  reached the band. The drill win was re-centred to 0.953 (b31effa9b), and the K6 block was re-run
+  alone in the module: `ok (r39 K6) ... stalled 0, rerun timed the rule's owed list on every pass:
+  True ...; control ...: stalled 4 of 12 (accept >= 1)`. A full selftest on the tip
+  (`selftest_full_tip.log`) is TIPLINE. Class drill (r38, 89 rows) worst `(r38) noise at arm:
+  H(8), every cell, tau 2 % P(h* != 64) = 0.017` (accept <= 0.05). Earlier controls: F3 48/50,
+  G2 0.177, G3 0.397, fast split 27/100, H1 0.663, H2 0.403, J1 0.610 (each > its line).
 - **selftest --rev12** (`selftest_rev12_r2b.log` on a68e56c17, the R2 B control re-run at τ 3 %
-  on the tip in the full run above): 16 checks, 0 failed except that control at τ 2 % (0.143,
-  hence the move to τ 3 %, the τ 2 % reading printed). Quoted lines:
+  in the full run above): 16 checks; the R2 B control first gated at τ 2 % read 0.143 (just under
+  its 0.15 line). It is now gated at τ 3 % (0.423), with the τ 2 % reading printed. Quoted lines:
 
   | layout model | τ 1 % | τ 2 % | τ 3 % |
   |---|---|---|---|
@@ -131,7 +139,7 @@ to keep within it).
 
   P(h\* != 64) over 300 nights (accept <= 0.05); voids = nights with a first void (accept <= 0.05
   at τ 1 %, <= 0.10 at τ 2 %). Controls: `(R2 B) control: heads-only tau 3 %, no per-text term`
-  CTRLB3 (accept > 0.15; τ 2 %: CTRLB2); `(R2 C) control: phase tau 2 %, the raw bimodal test`
+  0.423 (accept > 0.15; τ 2 %: 0.143); `(R2 C) control: phase tau 2 %, the raw bimodal test`
   voids 0.263 (accept > 0.10). GAP_K 4.5 false-split rate per arm, variant-aware / raw: 0 / 0
   (τ 0, 1 %), 0 / 2.5e-4 (τ 2 %), 0 / 1.25e-3 (τ 3 %). Power, layout τ 0 (gated) / 1 % / 2 %
   (RECORD): one 5 % winner 281 / 170 / 7 (rev 11's line 270), one 10 % 300 / 299 / 260 (270),

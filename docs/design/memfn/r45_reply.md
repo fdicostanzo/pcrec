@@ -102,11 +102,12 @@ a first void; **gated** rows marked G, the rest RECORD.
 | rho 0.95 correlated variants (R2 A) | 0.123, voids 0.000 | 0.663, voids 0.000 | 0.580, voids 0.003 |
 
 Accept: P <= 0.05; voids <= 0.05 at τ 1 % (F3), <= 0.10 at τ 2 % (R2 C). Controls: the per-text
-term off, heads only, τ 3 % CTRLB3 (gated > 0.15; τ 2 % CTRLB2, printed); the raw bimodal test, phase,
+term off, heads only, τ 3 % 0.423 (gated > 0.15; τ 2 % 0.143, printed); the raw bimodal test, phase,
 τ 2 %: voids 0.263 (gated > 0.10). GAP_K 4.5's per-arm false-split rate under the variant-aware
 test: 0 at τ 0/1/2/3 % (sigma read 0.0093-0.0094), against the raw test's 0 / 0 / 2.5e-4 / 1.25e-3
 (0.3 and 1.5 false voids a night of ~1,200 arms at τ 2 / 3 %). F3's control arm keeps its rev 11
-line (the full `selftest`). Power (H(8) in hit-dense; multi = every head <= 16 5 % faster), layout
+line (the full `selftest`: 48 of 50). Drill K6's win moves 0.955 -> 0.953 so its control still
+reaches the floor's band under the `aa`/`aa.b` A/A pair (control 4 of 12 stalls). Power (H(8) in hit-dense; multi = every head <= 16 5 % faster), layout
 τ 0 (G, rev 11's lines) / 1 % / 2 % (RECORD, pinned in `POWER_RECORD`): one 5 % winner 281 / 170 /
 7 of 300 (rev 11's line 270), one 10 % winner 300 / 299 / 260 (270), multi 279 / 176 / 5 (255).
 The per-text term is what buys the heads-only rows and costs power: a 5 % win is seen about half
