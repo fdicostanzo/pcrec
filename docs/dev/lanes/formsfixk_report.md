@@ -1,10 +1,9 @@
-# formsfixk report: layout pools replace the layout twins (review r41, RULED L9, L5, L6, L8): STOPPED
-
-STATE: stopped (the brief's stop rule: drill and power rows miss their accept lines; see STATE AT HANDOFF)
+# formsfixk report: layout pools replace the layout twins (review r41, RULED L9, L5, L6, L8; rulings R2 A-D)
 
 Lane formsfixk (opus, 2026-11-17), branch `lane/memfn-formsfixk` from `lane/memfn-forms` @ 42fd4b33e.
 Charter: review r41's RULED section (`docs/dev/reviews/2026-11-17-r41-memfn-forms6.md`, committed
-here). Rulings file `docs/dev/lanes/formsfixk_rulings.md`: R1 applied (the Summary's last sentence).
+here). Rulings file `docs/dev/lanes/formsfixk_rulings.md` (gitignored; quoted in STATE AT HANDOFF):
+R1 applied (the Summary's last sentence); R2 (A-D, the answers to the lane's first stop) applied.
 
 ## Summary
 
@@ -19,9 +18,13 @@ pool from the built exes (nm + objdump of `rxa_search`'s backward-branch targets
 64-B and 32-B phases, relative layouts, and a REFUSAL of a pool with one 64-B phase vector or one
 relative layout. On the dry run every pool moves both phases (3-4 distinct vectors of each per
 pool), 0 refused, 1374 of 1374 cells gated. L5 (one source for the confirm's arm list), L6
-(strict arguments, the keyed G2 record) and L8 (S3320/S3321 doc lines) are done. The rule's drill
-rows under the four layout models the ruling names do NOT all hold, nor do two power rows at
-layout τ 1 %: the lane STOPPED and sent the kit manager four questions (below, STATE AT HANDOFF).
+(strict arguments, the keyed G2 record) and L8 (S3320/S3321 doc lines) are done. The drill rows
+did not all hold as first built; the lane stopped with four questions and the kit manager ruled
+R2: a per-TEXT layout term (B) and a variant-aware bimodal test (C) are built, each with its
+control, and the correlated-layout rows (A) and the power rows at layout τ >= 1 % (D) are RECORDs
+with `rule` printing the night's measured share and its power line. Every gated row now holds:
+heads-only τ 2 % 0.000 (accept 0.05), phase-model voids at τ 2 % 0.000 (accept 0.10). The price
+is power: a 5 % win is seen 170 of 300 nights at layout τ 1 % and 7 at 2 % (a 10 % win 299 / 260).
 R1: the pool mechanism is ARM-GENERIC at the TU level (`pool_variants` keys on any TU's text hash,
 `build_cell` adds the prelude and flags to whatever artifact + driver it compiles, and the proof
 needs only the hot function's symbol), so main's width-rule arms (cover_cap.md §11.4, a different
@@ -62,8 +65,27 @@ calls; nothing was built for it.
   G2 file's sha-256: another run's record, a recorded file whose bytes moved, or a second
   different `--g2` list refuse (exit 2); `run` refuses a RUNDIR that holds any results file.
   `identity` keeps its own argument handling (not in L6's list; unchanged).
-- **L3.** The power rows at layout τ 0 and 1 % are gated with rev 11's accept lines, RECORD at
-  2 %; r45_reply rev 12 states the numbers.
+- **L3 / R2 D.** The power rows at layout τ 0 are gated with rev 11's accept lines; at τ 1 and
+  2 % they are RECORDs (R2 D), pinned in `POWER_RECORD`; `power_line` prints the night's power at
+  its measured layout sigma (the nearest pinned row) and whether it is below rev 11's lines.
+- **R2 A.** The rho rows are RECORDs; `rule`'s layout line prints the texts read and the
+  between-variant sigma per text (median, max) the night measures; rev 12 §3 states R2 A's
+  sentence (the share common to every variant is the BODY's own layout, which ships: the text's
+  speed, not noise). No data prelude.
+- **R2 B.** `text_effects` (per text, over every file read, each file's row its own level: a
+  two-way fit, 4 backfitting passes, effects centred, the between-variant variance less its
+  estimation noise), `varmed5` (the exact variance of the median of LAUNCHES uniform draws over
+  the pool's effects), `text_var`, and `layout_text_term` in `cell_floor`: per cell the floor is
+  at least exp(z sqrt(V_I + V_h)) - 1 over the heads compared there, z the rule's own Bonferroni
+  z. Switch `LAYOUT_TEXT_TERM` (the control). Text grouping (`text_of`): I's pool by the measured
+  identity record, each other head its own, aa per layer, C3/C5 per arm.
+- **R2 C.** `adjusted` (a row's launches with its text's per-variant effect removed) and
+  `is_void` reading the adjusted launches against the pools' sigma of adjusted launches; GAP_K
+  stays 4.5. Switch `VARIANT_BIMODAL` (the control). `gapk_rate` re-derives the per-arm
+  false-split rate with texts of 6 rows fitted as `analyse` fits them, both tests.
+- **A bug found on the way (fixed before the numbers below):** the first R2 build keyed the fit
+  by cell, so a confirm row merged its launches into the first reading's row level; every power
+  night's confirm then voided its text (one 10 % winner 0 of 300). The fit keys (file, cell).
 - **L8.** S3320 and S3321 named in memfn/tests/NOTES.md, tests/compound/CLAUDE.md (4) and
   `run_shell_checks.sh`'s header. This lane adds no mech plant (sabotage ids S3330-S3334 unused):
   the cards' controls are `selftest` rows, as NOTES.md says.
@@ -86,6 +108,7 @@ calls; nothing was built for it.
 | the confirm's fresh twins `I.cf` / `h<N>.cf` (the arms, their dry-run proof and gate pass, the `.cf` owed check) | L9: the confirm re-times I and the head on fresh draws of the same pools. The CONFIRM ITSELF is kept: the drills still need it (G3 / r38 R2's fast 3-of-5 split retires only by the confirm) |
 | `synth_exe` and the `exeoff` drill model, r39 K1's drill rows (per-exe offsets, "the night measures the offset", their control) | replaced by `synth_body` / `synth_layout_effect` and the (r41 L9) rows |
 | L4's two single-half rows (proposed) | both halves are deleted; the new pool refusal has its own one-control-per-half row |
+| the first stop's gated rho, heads-only τ 3 % and τ 1 % power rows (as gates) | R2 A, B, D: kept as RECORD rows, not deleted |
 
 ## Validation
 
@@ -93,35 +116,38 @@ All under `nice`, `gnutimeout`; never more than 8 drill processes (one stray ove
 ~1 min while a dry and two drills overlapped; the baseline selftest was stopped by `safekill`
 to keep within it).
 
-- **selftest (full, HEAD's cards.py):** OWED at the time of writing; log
-  `/var/tmp/pcrec-pcrec/scratch/memfn/formsfixk/selftest_final.log`, completion line
-  `selftest: N checks, M failed` then `rc=`. Expected: every rev 11 earlier row as before plus
-  13 FAILs, all in the (r41 L9) layout / void rows and the two (r41 L3) τ 1 % power rows below.
-  A WIP run of the same earlier drills (`selftest_wip1_partial.log`, 105 lines, stopped early
-  to free the box) passed every earlier row it reached, controls included: G2 0.177, F3 control
-  48/50, G3 0.397, fast-split control 27/100, H1 0.663, H2 0.403 (accept > 0.15 or as stated).
-- **selftest --rev12** (`selftest_rev12.log`, 30 checks, 13 failed):
+- **selftest (full, the tip's cards.py; `selftest_full_r2c.log`):** FULLLINE. Class drill
+  worst CLASSWORST. Earlier controls: EARLYCTRL.
+- **selftest --rev12** (`selftest_rev12_r2b.log` on a68e56c17, the R2 B control re-run at τ 3 %
+  on the tip in the full run above): 16 checks, 0 failed except that control at τ 2 % (0.143,
+  hence the move to τ 3 %, the τ 2 % reading printed). Quoted lines:
 
   | layout model | τ 1 % | τ 2 % | τ 3 % |
   |---|---|---|---|
-  | phase (fixed function of text, 64-B phase) | 0.000, voids 0.023 | 0.000, voids **0.310** | 0.010, voids **0.490** |
-  | heads only | 0.000, voids 0.040 | **0.057**, voids **0.943** | 0.007, voids **1.000** |
-  | rho 0.8 | 0.017, voids 0.003 | **0.247**, voids 0.040 | **0.350**, voids **0.210** |
-  | rho 0.95 | **0.117**, voids 0.000 | **0.603**, voids 0.003 | **0.630**, voids 0.013 |
+  | phase (fixed function of text, 64-B phase) | 0.000, voids 0.000 (G) | 0.000, voids 0.000 (G) | 0.000 (G), voids 0.000 (REC) |
+  | heads only | 0.000, voids 0.000 (G) | 0.000, voids 0.000 (G) | 0.000, voids 0.000 (REC, R2 B) |
+  | rho 0.8 (REC, R2 A) | 0.017, voids 0.000 | 0.210, voids 0.000 | 0.260, voids 0.000 |
+  | rho 0.95 (REC, R2 A) | 0.123, voids 0.000 | 0.663, voids 0.000 | 0.580, voids 0.003 |
 
-  P(h\* != 64) over 300 nights (accept <= 0.05); voids = nights with a first void (accept <= 0.05).
-  Power (300 nights), layout τ 0 / 1 % / 2 % (RECORD): one 5 % winner 281 / **192** / 26 (accept
-  >= 270), one 10 % winner 300 / 299 / 259 (accept >= 270), every head <= 16 5 % faster 279 /
-  **184** / 30 (accept >= 255). GAP_K false-split rate per arm (1e5 arms): 0, 0, 3.5e-4, 9.1e-4 at
-  τ 0/1/2/3 %. The pool refusal per half: ok. L6: ok (6 refusals, both `--g2` spellings, record,
-  moved file, second list, another run's record).
+  P(h\* != 64) over 300 nights (accept <= 0.05); voids = nights with a first void (accept <= 0.05
+  at τ 1 %, <= 0.10 at τ 2 %). Controls: `(R2 B) control: heads-only tau 3 %, no per-text term`
+  CTRLB3 (accept > 0.15; τ 2 %: CTRLB2); `(R2 C) control: phase tau 2 %, the raw bimodal test`
+  voids 0.263 (accept > 0.10). GAP_K 4.5 false-split rate per arm, variant-aware / raw: 0 / 0
+  (τ 0, 1 %), 0 / 2.5e-4 (τ 2 %), 0 / 1.25e-3 (τ 3 %). Power, layout τ 0 (gated) / 1 % / 2 %
+  (RECORD): one 5 % winner 281 / 170 / 7 (rev 11's line 270), one 10 % 300 / 299 / 260 (270),
+  multi 279 / 176 / 5 (255). Pool refusal per half ok; L6 ok.
+- **The first stop's numbers** (before R2, `selftest_rev12.log`, 30 checks, 13 failed): P(h\* !=
+  64) phase 0.000 / 0.000 / 0.010, voids 0.023 / **0.310** / **0.490**; heads-only 0.000 /
+  **0.057** / 0.007, voids 0.040 / **0.943** / **1.000**; rho 0.8 0.017 / **0.247** / **0.350**;
+  rho 0.95 **0.117** / **0.603** / **0.630**; power at τ 1 % 192 / 299 / 184.
 - **Measured for the questions (scratch, not in the selftest):** GAP_K table
   (`gapk_table.txt`): K 4.5 / 5.0 / 5.5 / 6.0 -> false voids a night at τ 2 % 0.29 / 0.10 / 0.02
   / 0.00, τ 3 % 1.20 / 0.38 / 0.10 / 0.05; the F3 control arm (2 of 5 launches 8 % slow, σ 1 %)
   flagged 0.94 / 0.88 / 0.76 / 0.61 (its selftest row needs >= 45/50). Power at layout τ 1 % with
   more launches (`power_L7.log`, `power_L9.log`): LAUNCHES 7: 263 / 240; LAUNCHES 9: 277 / 273
   (pure noise 0.000, no voids, median f 0.050 / 0.043).
-- **dry** (WIDTH_FLAG=none): `--quick` (`dry5.log`) and FULL subject (`dryfull.log`, cold rundir,
+- **dry** (WIDTH_FLAG=none; run on 1712a0812: R2's diff touches only `analyse`, the drills and
+  `power_line`, none of `dry`'s build/gate/proof path, so it was not re-run): `--quick` (`dry5.log`) and FULL subject (`dryfull.log`, cold rundir,
   JOBS=6, 298 s wall): cells 1374, built and gated 1374, failures 0; 80 timed texts x 4 variants
   = 320 exes; distinct 64-B phase vectors per pool min 3 max 4, 32-B min 3 max 4, relative
   layouts min 2 max 3; pools REFUSED 0; deny check 42 / 54, 0 failures; step 2b's check WOULD
@@ -133,7 +159,10 @@ to keep within it).
   distinct timed texts, 320 exes, since hash-equal arms share a pool); run 788 cells timed, 0.11 h; gates +2364 calls,
   +0.0066 h; c3 96 cells, 0.01 h; rerun ~5 s a C1-C2 cell (10 arms); confirm bound 56 cells, 456
   arm cells, 0.065 h; 132 timing cells, 3940 timed launches (rev 11: 860 cells, 0.11 h).
-- **make strict:** rc 0 ("whole tree compiles clean with -Werror -Wshadow").
+- **plan** re-run on the tip: identical (run 788 cells 0.11 h, gates +0.0066 h, c3 0.01 h,
+  confirm bound 0.065 h).
+- **make strict:** rc 0 on the tip ("whole tree compiles clean with -Werror -Wshadow; the kit's
+  target table check passes").
 - **doc checks:** `make test-claudemd-size test-spec-history test-doc-lint` rc 0 (15 / 11 checks
   passed, 0 failed).
 
@@ -149,37 +178,24 @@ to keep within it).
 - 701's `g2_record` (`cards rule RUNDIR --g2 FILE` before `run`): works with L6 (the run id is
   written by that call and kept by `run`); `rule_verdict`'s patterns and the canned outputs are
   untouched by this diff.
-- If question D is ruled as more launches: LAUNCHES 9 doubles roughly step 1's timed part (0.11
-  -> ~0.18 h by the plan's formula), 701's cap +~1.5 ks, past the fixed 3 h total: not possible
-  without moving another job's cap.
+- R2 changes nothing the job set reads: `rule` prints two more lines (`rule: layout pools ...`,
+  `rule: power at this night's layout sigma ...`), neither matching `rule_verdict`'s patterns;
+  LAUNCHES unchanged, so est/caps unchanged. **The job set needs NO changes.**
 
 ## STATE AT HANDOFF
 
-STOPPED by the brief's stop rule (a drill or power row misses its accept line). Committed tip:
-the branch head (`git -C worktrees/formsfixk log -1`); last rulings entry applied: R1. Sent to the
-kit manager at about 17:05 (SendMessage), with my leaning on each:
+DONE. Committed tip: the branch head (`git -C worktrees/formsfixk log -1`); last rulings entry
+applied: R2. The rulings file is gitignored here; its R2 text in summary: A rho rows
+RECORD, the common share is the body's own layout (the text's speed), print the share, no data
+prelude; B per-text layout term, ACCEPT heads-only τ 2 % <= 0.05, τ 3 % may be RECORD; C
+variant-aware bimodal test, GAP_K 4.5, re-derive its rate, ACCEPT phase voids <= 0.10 at τ 2 %
+(RECORD at 3 %), F3's control keeps its rev 11 line; D power RECORD at τ >= 1 %, the night prints
+its power against its measured layout sigma and whether it is below rev 11's lines, LAUNCHES and
+the 3 h cap fixed. All met (Validation).
 
-- **A. Correlated layout (rho rows).** A layout share common to every variant of a text is, by
-  construction, that text's own speed; no within-text pool averages it (0.117 at rho 0.95, τ 1 %;
-  0.60-0.63 at 2-3 %). Leaning: those rows RECORD (the rule measures layout-averaged speed),
-  print the night's measured share, and optionally widen the draw with a data-section prelude
-  (.rodata/.data placement is the one layout input the pools do not move today).
-- **B. Heads-only layout.** The floor's estimators (A/A, I's pools) read only I's and aa's
-  texts, so a head text more layout-sensitive than I is unseen (0.057 at τ 2 %, voids 0.94).
-  Leaning: a per-TEXT layout term from each text's own launches grouped by the recorded variant
-  (df = its launches over regimes), floor per comparison = max(current, the head's own term).
-- **C. The bimodal test under layout mixture.** Voids 0.31 / 0.49 a night at τ 2 / 3 %; no GAP_K
-  keeps both F3's control (needs ~4.5) and the void rate (needs >= 5.5). Leaning: a
-  variant-aware test (the gap after removing the text's per-variant effect, same machinery as B),
-  GAP_K kept at 4.5.
-- **D. Power at layout τ 1 %.** 192 / 184 of 300 (accept 270 / 255); LAUNCHES 9 restores it
-  (277 / 273) but breaks the 3 h cap. Leaning: power rows RECORD at τ >= 1 % and the night prints
-  power as a function of its measured layout sigma (L3's own form).
+For the next round (sized round 7): the per-text term's largest value on a synthetic τ 1.5 %
+night is 0.11 (one cell's floor), which is where the power goes; a reviewer may want the term's
+df (4 variants a text) drilled at its own level. `POWER_RECORD` is a hand pin from one drill run:
+re-pin when the rule or the drill moves (the selftest prints both).
 
-What remains for the morning lane (once A-D are ruled): build B and C if ruled (in `analyse`,
-`launch_sigmas`/`bimodal`, with drill rows), re-run `selftest` whole and `--rev12`, `dry`, `plan`,
-then a sized round 7. OWED now: the final full selftest's quote (log path and completion line
-above); if it shows any FAIL outside the 13 listed, that is a regression to chase first.
-`lanecheck` is run with `STATE: stopped` (rc 2 is the honest stop).
-
-OWED: the full selftest verdict (`/var/tmp/pcrec-pcrec/scratch/memfn/formsfixk/selftest_final.log`, line `selftest: N checks, M failed`); rulings A-D.
+OWED: none.

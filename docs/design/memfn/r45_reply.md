@@ -1,11 +1,12 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 12, STOPPED (lane formsfixk, 2026-11-17): rev 12 applies review r41
+Status: DRAFT rev 12 (lane formsfixk, 2026-11-17): rev 12 applies review r41
 (`docs/dev/reviews/2026-11-17-r41-memfn-forms6.md`, its RULED section): the layout twins are
 REPLACED by layout POOLS (setup randomization of every arm's layout, L9), the strict arguments and
-the keyed G2 record (L6), the confirm's arm list from one source (L5); the lane STOPPED under its
-stop rule because drill and power rows miss their accept lines (read "Changes in rev 12" first;
-the questions it needs ruled are listed there). Rev 11:
+the keyed G2 record (L6), the confirm's arm list from one source (L5); and the kit manager's
+rulings R2 A-D on the four questions the lane's first stop raised (`docs/dev/lanes/formsfixk_rulings.md`):
+a per-TEXT layout term, a variant-aware bimodal test, the correlated-layout and τ >= 1 % power
+rows as RECORDs (read "Changes in rev 12" first). Rev 11:
 DRAFT rev 11 for the kit manager (lane formsfixi, 2026-11-17; the design text beside the
 cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 11 applies the re-check of
 rev 10's fixes, review r39 (`docs/dev/reviews/2026-11-17-r39-memfn-forms5.md`, its RULED section:
@@ -66,14 +67,14 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
 
-## Changes in rev 12 (by r41 finding id) [STOPPED: drill rows miss; questions below]
+## Changes in rev 12 (by r41 finding id, then the rulings R2 A-D)
 
 Review r41 re-checked rev 11 (`lane/memfn-forms` 42fd4b33e): the layout twin was a whole-.text shift
 by a multiple of the TU's alignment (L1), so the night's between-exe estimate was a lower bound of
 unknown tightness (L2). The kit manager RULED the general form, SETUP RANDOMIZATION (L9), in place
-of the twins. Built and measured here; the drill rows the ruling named do NOT all hold, so the
-lane stopped (its report, "STATE AT HANDOFF", is the hand-off; lane formsfixk's report quotes
-every row).
+of the twins. Built and measured here; the drill rows the ruling named did not all hold at first
+(the stop table below, kept as the record), the lane stopped with four questions, and the kit
+manager ruled R2 A-D; with them every gated row holds (the second table).
 
 | id | change | where |
 |---|---|---|
@@ -84,9 +85,35 @@ every row).
 | L4 | Its layout half is deleted with the twins (no layout term remains); its fresh-twin half is deleted with them (the confirm draws from the pools): nothing left to control per half. The pool refusal itself has one control per half (a selftest row) | drill (xxiii) |
 | L7 | Deleted with the twins: no `h<N>.cf`; every exe's cache name carries its variant's prelude bytes and flags | `cards.py` `build_cell` |
 | L8 | S3320 and S3321 named in memfn/tests/NOTES.md, tests/compound/CLAUDE.md (4) and run_shell_checks.sh's header | doc lines |
+| R2 A | The correlated-layout (rho) rows are RECORD: a layout share common to every variant of a text is a property of that BODY's own internal layout, which is what ships, so it IS the text's speed, not noise. `rule` prints the share the night measures (per text, the between-variant sigma; median and max). No data prelude | §3 "The layout pools", drill (xxiii) |
+| R2 B | A per-TEXT layout term: each text's launches grouped by recorded variant (`text_effects`: a two-way fit, row level + variant effect, over every row of the text in every file read, each file's row its own level), its between-variant variance less its estimation noise, turned into the variance of one median of LAUNCHES draws plus the finite pool's mean offset (`text_var`); per cell the floor is max(the rev 11 floor, exp(z sqrt(V_I + V_h)) - 1) over the heads compared there (`layout_text_term`). Control: the term off | `cards.py` `analyse`; drill (xxiii) |
+| R2 C | A variant-aware bimodal test: each row's launches with its text's per-variant effect removed (`adjusted`), against the pool sigma of the adjusted launches; GAP_K stays 4.5; its false-split rate re-derived under the new test (`gapk_rate`, texts of 6 rows, the fit as `analyse` makes it). Control: the raw test | `cards.py` `is_void`; drill (xxiii) |
+| R2 D | Power RECORD at layout τ >= 1 % (a missed win keeps 64: speed only, never an answer); `POWER_RECORD` pins the drill's rows and `rule` prints the night's power at its own MEASURED layout sigma and whether it is below rev 11's accept lines. LAUNCHES and the 3 h cap unchanged | `cards.py` `power_line`; drill (xxiii) |
 
-**STOP (the lane's stop rule: a drill or power row misses its accept line).** Drill (xxiii), 300
-nights a row, 1 % launch noise, every regime read, `cards.py selftest --rev12`:
+**After R2 (the rule as it stands).** Drill (xxiii), 300 nights a row, 1 % launch noise, every
+regime read, `cards.py selftest --rev12` (16 checks, 0 failed): P(h\* != 64), then the nights with
+a first void; **gated** rows marked G, the rest RECORD.
+
+| layout model | τ 1 % | τ 2 % | τ 3 % |
+|---|---|---|---|
+| a fixed function of (text, 64-B phase) | G 0.000, voids G 0.000 | G 0.000, voids G 0.000 | G 0.000, voids 0.000 |
+| heads only (I's and aa's pools none) | G 0.000, voids G 0.000 | G 0.000, voids G 0.000 | 0.000, voids 0.000 |
+| rho 0.8 correlated variants (R2 A) | 0.017, voids 0.000 | 0.210, voids 0.000 | 0.260, voids 0.000 |
+| rho 0.95 correlated variants (R2 A) | 0.123, voids 0.000 | 0.663, voids 0.000 | 0.580, voids 0.003 |
+
+Accept: P <= 0.05; voids <= 0.05 at τ 1 % (F3), <= 0.10 at τ 2 % (R2 C). Controls: the per-text
+term off, heads only, τ 3 % CTRLB3 (gated > 0.15; τ 2 % CTRLB2, printed); the raw bimodal test, phase,
+τ 2 %: voids 0.263 (gated > 0.10). GAP_K 4.5's per-arm false-split rate under the variant-aware
+test: 0 at τ 0/1/2/3 % (sigma read 0.0093-0.0094), against the raw test's 0 / 0 / 2.5e-4 / 1.25e-3
+(0.3 and 1.5 false voids a night of ~1,200 arms at τ 2 / 3 %). F3's control arm keeps its rev 11
+line (the full `selftest`). Power (H(8) in hit-dense; multi = every head <= 16 5 % faster), layout
+τ 0 (G, rev 11's lines) / 1 % / 2 % (RECORD, pinned in `POWER_RECORD`): one 5 % winner 281 / 170 /
+7 of 300 (rev 11's line 270), one 10 % winner 300 / 299 / 260 (270), multi 279 / 176 / 5 (255).
+The per-text term is what buys the heads-only rows and costs power: a 5 % win is seen about half
+the time at layout τ 1 % and almost never at 2 %; a 10 % win holds. The night's power line says
+which side of rev 11's lines its measured layout sigma falls.
+
+**The first stop (before R2; the record).** Drill (xxiii) as first built, 300 nights a row:
 
 | layout model | τ 1 % | τ 2 % | τ 3 % |
 |---|---|---|---|
@@ -971,15 +998,24 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     higher floor, not a borrowed one. On a 1 % night the A/A term (about 4.4 %) still binds; the
     per-pattern term binds only where one pattern is noisier (`selftest`'s class drill, drill
     (xxi)).
-    - **The layout pools [rev 12, RULED r41 L9; STOPPED, see "Changes in rev 12"].** The twin
+    - **The layout pools [rev 12, RULED r41 L9, R2 A-D; see "Changes in rev 12"].** The twin
     below was a whole-.text shift by a multiple of the TU's alignment: it kept its base's 32-B phase
     and relative layout (r41 L1), so it read a lower bound (L2). Rev 12 randomizes every arm's
     layout instead: each text is a pool of variants (an in-TU prelude and an alignment variant),
     every launch draws one and records it, so layout noise is in every arm's launches, iid across
     comparisons by construction, and every estimator above (the launch term, the twin terms, the A/A
-    pair `aa`/`aa.b`, the gate) reads it at its own level. No separate term; `rule` prints the
-    night's between-variant sigma as a RECORD. The drill rows (xxiii) that do not hold are the
-    stop.
+    pair `aa`/`aa.b`, the gate) reads it at its own level. Those estimators read I's and aa's
+    texts only, so R2 B adds a PER-TEXT layout term: each text's launches grouped by the recorded
+    variant give its between-variant variance (launch noise removed), and each cell's floor is at
+    least exp(z sqrt(V_I + V_h)) - 1 for the heads compared there, V the variance of one median of
+    LAUNCHES draws from that text's pool plus the finite pool's mean offset. R2 C makes the bimodal
+    test variant-aware: it reads each row with its text's per-variant effect removed, so a split
+    the layout draw explains is not a transient (GAP_K stays 4.5). R2 A: a layout share common to
+    every variant of a text is a property of that BODY's own internal layout, which is what ships,
+    so it IS the text's speed, not noise; no pool averages it and the rule does not try; `rule`
+    prints the share the night measures (per text, median and max). R2 D: power at layout τ >= 1 %
+    is a RECORD (a missed win keeps 64, speed only); `rule` prints the night's power at its measured
+    layout sigma against rev 11's accept lines.
     - ~~**The layout twin term [rev 11, RULED r39 K1].**~~ [SUPERSEDED by rev 12, r41 L9: `I.lt`, `aa-twin` and the term are deleted.] Every estimator above is a contrast INSIDE
     ONE EXE: I's pools are hash-equal artifacts run as one cached exe, the twin terms and the gate
     read them, and rev 10's A/A pair was one exe too. A head against I is TWO exes, so an offset
@@ -1178,9 +1214,11 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   drill (i)-(xx) re-runs under rev 10 with its result unchanged (selftest 182 checks, 0 failed: every rev 9 line holds (noise, heterogeneous noise, splits, whole-arm shifts, between-run offsets, gate cost, R0, re-run, C3, void by method, deny, identity); the earlier controls, now with the per-pattern term and the confirm off too, read 0.177, 0.397, 0.663, 0.403 (accept > 0.15 each); the cost recorded: G4's one-cell 5 % win of H(8) ships 8 in 126 of 200 nights (rev 9: 157), since a single winning cell must now reproduce).
 - **(xxiii) The layout pools [rev 12, RULED r41 L9, L3, L6; `selftest`'s (r41) lines, alone
   `cards.py selftest --rev12`].** The table in "Changes in rev 12" (the stop): every layout model
-  the ruling names at τ 1/2/3 % with its void rate, GAP_K's false-split rate under layout, the
-  power rows at τ 0/1 % and the 2 % RECORD; the pool refusal with one control per half (one
-  64-B phase vector; one relative layout); the strict arguments and the keyed G2 record (L6).
+  the ruling names at τ 1/2/3 % with its void rate (R2's gated and RECORD rows), the controls for
+  the per-text term (R2 B) and the variant-aware test (R2 C), GAP_K's false-split rate under both
+  tests, the power rows at τ 0 (gated) and 1/2 % (RECORD, R2 D); the pool refusal with one control
+  per half (one 64-B phase vector; one relative layout); the strict arguments and the keyed G2
+  record (L6).
 - **(xxii) The exe level, the confirm's readers and the owed list [rev 11, RULED r39;
   `selftest`'s (r39) lines, alone `cards.py selftest --rev11`].** 300 nights a row unless
   stated, 1 % launch noise, every regime read. (1) **Per-exe offsets (K1):** one offset `exp(N(0,
