@@ -2193,3 +2193,11 @@ to". RECORD: for each open choice, find the plain-regex construct the predicate 
 what regex does there EXPLAIN (and, where it is unambiguous, decide) the choice; where no regex model exists, or it
 contradicts something he ruled, say so and bring that to him as the real question. Lane rxmodel does it against
 real PCRE2 answers. MANAGER'S FIRST PASS given to him in chat is MINE and unverified until that lane reports.
+
+**2026-11-17 OWNER — a regex model for occurrences (Frank, to session 138, box clock about 13:10; a model offered
+with "Correct?", not a ruling).** HIS WORDS: "Occurances(rx) can be run as a search within a span. It's essentially
+/(.*(${rx}))*.*/ So not global Correct?" MANAGER'S ANSWER (mine; handed to lane rxmodel as R1 to run on PCRE2): yes
+as a model, ONE pattern over the span, with the gap made LAZY (as written, greedy, the first pass takes the
+rightmost hit); being one pattern, a rejecting condition re-enters it under the branch-scope ruling (pathimpact's
+reading H2), which a global search (hits committed one by one, H1) does not; regex keeps only the last pass's
+capture, so a test on EVERY hit is a piece inside the loop body.
