@@ -336,11 +336,12 @@ static int cover_width_limit(const Ctx *cx)
 }
 
 /* C15: the cover's width is within the window search's width limit
- * (cover_cap.md §11.2) and the statement fits what the kit's window
- * interface carries, read from the kit's own shape bounds, so
- * `cover_window` states no span the kit refuses (its refusal bounds
- * MF_WSPAN_POS and MF_WREACH; the span's rows are pcrec's own storage of
- * exactly its length since MF_SITE_ABI 30, so no overrun is possible). */
+ * (cover_cap.md §11.2). The kit-bound conjuncts after it (MF_WSPAN_POS,
+ * MF_WREACH, MF_MAX_FWD) cannot be false at a legal build: the width is at
+ * most PCREC_ANCHORED_MAX_STATES - 1 and the seam assertion below holds that
+ * inside the kit's bounds (review r32 F4; removal filed as a plan row). The
+ * span's rows are pcrec's own storage of exactly its length since
+ * MF_SITE_ABI 30, so no overrun is possible. */
 /* THE SEAM (cover_cap.md §11.1 B2): the cover walk ends before the anchored
  * machine's ceiling, so a cover states at most the ceiling less one
  * positions, its after side at offset k reaches the ceiling, and its proof
@@ -353,6 +354,14 @@ _Static_assert(PCREC_ANCHORED_MAX_STATES - 1 <= MF_WSPAN_POS &&
                PCREC_ANCHORED_MAX_STATES <= MF_MAX_FWD,
                "the cover seam: PCREC_ANCHORED_MAX_STATES exceeds the memfn kit's declared "
                "window bounds (MF_WSPAN_POS, MF_WREACH, MF_MAX_FWD); a -D may only lower it");
+/* The kit header's derivation the seam leans on (review r32 F3; cover_cap.md
+ * §11.6.3): one threshold, the span bound one below the reach and the proof
+ * ceiling equal to it. This assert, not the run-time `window_bounds_check`,
+ * is the control for a one-conjunct weakening of the seam assertion above
+ * (S3266): a kit change that splits them fails the build here. */
+_Static_assert(MF_MAX_FWD == MF_WREACH && MF_WSPAN_POS == MF_WREACH - 1,
+               "the memfn kit's window bounds no longer derive from one threshold "
+               "(MF_MAX_FWD == MF_WREACH, MF_WSPAN_POS == MF_WREACH - 1)");
 static bool cc_fits(CoverSt *st)
 {
     int k = st->w.k;
@@ -459,8 +468,9 @@ static bool cc_proven(CoverSt *st)
  * `-fno-kit-proof` (§7) is filed under [IFACE-PUSH], not built: the kit's
  * `--memfn=no-window-search` declines C13 (`refused`), D172 S3. C15
  * `width-limit` (kind `limit`, cover_cap.md §11.2) is read right after C7:
- * the window search's width, and until the seam carries a counted span the
- * kit's own shape bounds with it. */
+ * the window search's width. Its kit-bound conjuncts are implied by the
+ * width's range and the seam assertion at every legal build (review r32
+ * F4; their removal is a plan row), so its `why` means the width. */
 typedef struct {
     const char *cid;            /* C1..C15                                   */
     const char *id;             /* the `why`                                 */
@@ -659,6 +669,11 @@ mf_site *pcrec_cover_site(Ctx *cx, const PcrecCover *cv, const char *stem,
     return s;
 }
 
+/* A proof row that proves nothing: every byte admitted (review r32 F18). */
+static const uint8_t kn_all_ones[32] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
 const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class *cls)
 {
     const MkEnd *e = &cv->end;
@@ -688,12 +703,8 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
         else                           memset(want, 0xff, 32);
         /* the kit's counted rows (MF_CLASS_V 11): every offset outside
            [MF_PROOF_LO, MF_PROOF_LO + proof_n) proves nothing, all ones */
-        static const uint8_t ones[32] = {
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
         long row = (long)d - MF_PROOF_LO;
-        const uint8_t *got = cls->proof && row < (long)cls->proof_n ? cls->proof[row] : ones;
+        const uint8_t *got = cls->proof && row < (long)cls->proof_n ? cls->proof[row] : kn_all_ones;
         for (int b = 0; b < 256; b++) {
             bool w = kn_has(want, b), g = kn_has(got, b);
             if (w != g)

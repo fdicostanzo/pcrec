@@ -186,9 +186,11 @@ mf_rows *pcrec_memfn_rows(Ctx *cx, const mf_site *s, PcrecRowsPart part)
     if (mf_rows_need(s, &proof_cap, &plan_cap))
         pcrec_ctx_fail(cx, 0, "internal error: the kit refuses to size an ask's storage "
                        "(mf_rows_need) (src/gen/memfn_sites.c)");
-    if (part == PCREC_ROWS_PROOF_CEILING) proof_cap = MF_MAX_FWD - MF_PROOF_LO;
-    if (part == PCREC_ROWS_PLAN) proof_cap = 0;
-    else plan_cap = 0;
+    switch (part) {             /* no default: a new part is a -Wswitch alarm */
+    case PCREC_ROWS_PROOF:         plan_cap = 0; break;
+    case PCREC_ROWS_PROOF_CEILING: proof_cap = MF_MAX_FWD - MF_PROOF_LO; plan_cap = 0; break;
+    case PCREC_ROWS_PLAN:          proof_cap = 0; break;
+    }
     mf_rows *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
     r->proof_cap = proof_cap;
     r->plan_cap = plan_cap;
@@ -782,7 +784,8 @@ static void rank_probe(DelegSite id, const mf_site *s)
 static const char *const routed_kind_name[] = {
     [MF_SK_UNSTATED] = "UNSTATED", [MF_SK_DFA_SCAN] = "DFA_SCAN",
     [MF_SK_DFA_HAT] = "DFA_HAT", [MF_SK_HYB_PF] = "HYB_PF",
-    [MF_SK_VM_ATTEMPT] = "VM_ATTEMPT", [MF_SK_DFA_ATTEMPT] = "DFA_ATTEMPT" };
+    [MF_SK_VM_ATTEMPT] = "VM_ATTEMPT", [MF_SK_DFA_ATTEMPT] = "DFA_ATTEMPT",
+    [MF_SK_REPORT] = "REPORT" };
 static void routed_record(DelegSite id, const mf_site *s, const char *row)
 {
     const char *const *kn = routed_kind_name;
