@@ -2563,3 +2563,10 @@ CORRECTION, minutes later, HIS WORDS: "It's not so much a ruling as an observati
 ruling: empty-pass stays THE MANAGER'S READING (regex behaviour kept, by exception-rule), TOLD to the owner, with
 his OBSERVATION on it ("makes sense as the entire rx is optional"). The manager over-recorded; "RULED" in that
 entry is withdrawn.
+
+**2026-11-17 OWNER, on pass tests over nested loops (Frank, to session 138, evening).** Told (review r42 finding
+A2) that `some(...)`, `occurs` and an index on a label two loops deep read the OUTER loop's passes, each at its
+outermost view (`/(?:(?:(?<h>\d)?;)*,)*/` on `3;7;,`: `some((h: <5))` FAILS, the group's `h` being 7; the inner
+view is written by nesting the test on the group), as following from nested-pass. HIS WORDS: ""pass tests on a
+label two loops deep read the outer passes" this is how i expected." RECORD: the manager's reading stands with his
+confirmation that it is what he expected (his words; not asked as a ruling).
