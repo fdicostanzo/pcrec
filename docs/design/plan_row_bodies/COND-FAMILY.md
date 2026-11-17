@@ -2184,3 +2184,12 @@ program holds and in the stretch reported; `A & !B` = `A & NOT (0: B)` (label 0 
 three-valued NOT is two-valued there); they part only in that `&` brings B's labels into the row. If it holds,
 pattern-`&` and the complement after `&` can be DEFINED through the condition on 0, and the open items
 complement-place, nested-complement and polarity-rule may reduce to the rules for conditions.
+
+**2026-11-17 OWNER DIRECTION — decide the open choices by a REGEX MODEL where one exists (Frank, to session 138,
+box clock about 12:55).** After lane pathimpact listed six points the branch-scope ruling does not decide. HIS
+WORDS: "Predicates: rather than I make arbitrary decisions on various choices that have difficult to predict
+ramification, can we come up with a regex model for each and use that to explain it. At least, where it is able
+to". RECORD: for each open choice, find the plain-regex construct the predicate construct corresponds to, and let
+what regex does there EXPLAIN (and, where it is unambiguous, decide) the choice; where no regex model exists, or it
+contradicts something he ruled, say so and bring that to him as the real question. Lane rxmodel does it against
+real PCRE2 answers. MANAGER'S FIRST PASS given to him in chat is MINE and unverified until that lane reports.
