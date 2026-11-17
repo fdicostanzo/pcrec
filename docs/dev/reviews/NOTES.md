@@ -36,3 +36,9 @@
 - `2026-11-16-r22-memfn-r45b.md` (+ dir) — DESIGN RE-CHECK of the R-45 reply rev 2: 2 opus lenses (fix-induced, owner criteria + readiness), F1-F18; OVERALL NOT READY (U3 only; plan B ready with text fixes); ruled by the kit manager (F2 cover storage to MF_MAX_FWD, F9 finite-h default, F10 largest-h tie-break, F12 test-only h lever); applied in rev 3 (lane r45c).
 - `2026-11-16-r23-memfn-r45c.md` — fix-induced DESIGN RE-CHECK of the R-45 reply rev 3 (one opus critic, read-only): R3-1..R3-8; POST AFTER LISTED TEXT FIXES (R3-1: normalising against I plus the largest-h tie-break discards partial wins); ruled by the kit manager (dominance step, grid-top 64 CHOSEN, "main, with Frank", a width-32 witness); applied in rev 4 (lane r45d).
 - `2026-11-16-r25-memfn-r45e.md` — fix-induced re-check of the R-45 reply rev 5 (one critic): R5-1..R5-8; SEND AFTER TEXT FIXES (R5-1: the segmenter groups across spans, so `\w{32}\B` moves at h* = 32); R5-1..R5-6 ruled fix-now by the kit manager; applied in rev 6 (lane r45f).
+
+## Index entries moved out of CLAUDE.md (lane formsfixc, 2026-11-17; size limit)
+
+- `2026-11-06-r9-memfn-s2c.md` (+ dir) — CODE round on span_pick stage 2 unit S2c (the producer): emission byte-identical; harness-fidelity findings G1-G4 + window items; NOT READY until the FIX-NOW set lands; new lens row.
+- `2026-11-06-r10-memfn-s2rev14.md` — one critic on span_cards rev 1.4 (fix-induced + fidelity + simulate), relayed by message: READY for window 2 with listed fixes; REV14-1 a consistent negative sign passes as zero, REV14-2 uncapped r, REV14-3 null_check substring; fixes on lane/memfn-s2c14fix.
+- `2026-11-07-r11-memfn-s2rev15.md` — span_cards rev 1.5 critic (fused fact fidelity, est-commit bypass, value = max(0, med)); window 2 FULL accepted.

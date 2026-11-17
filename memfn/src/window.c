@@ -1438,7 +1438,7 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
     return 0;
 }
 
-/* ---- THE SPAN FORMS (R-45 r45_reply rev 6 §3 "The forms") ----------------
+/* ---- THE SPAN FORMS (R-45 r45_reply rev 8 §3 "The forms") ----------------
  *
  * Over the existing segmenter, the plan's tested positions in offset order
  * (each the meet `merge` computed) fall into segments of one KIND, first
@@ -1459,12 +1459,14 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
  * §3: UNMEASURED; its trigger is a census row with a periodic span of 36 or
  * more positions).
  *
- * THE DEFAULT HEAD. UNMEASURED DEFAULT: CHOSEN grid top, set by the form
- * cards (r45_reply rev 6 §3): until the cards C1-C2 run and rule R1 picks h*,
- * the kit ships the grid's top, 64, so that at pcrec's default window width
- * (32: its largest stated offset is 32) no span loops and nothing moves. The
- * cards' script (memfn/tests/span_forms/cards.py) replaces it with h* and its
- * card ids. */
+ * THE DEFAULT HEAD. UNMEASURED DEFAULT: 64, CHOSEN (the cards' grid top; the
+ * build's interim, the kit manager's launch ruling for lane forms, r45_reply
+ * rev 8 §3 "Scope"; review r36 G14): the form cards have not run. Until the
+ * cards C1-C2 run and rule R1 picks h*, the kit ships 64, so that at pcrec's
+ * default window width (32: its largest stated offset is 32) no span loops
+ * and nothing moves. The cards' script (memfn/tests/span_forms/cards.py)
+ * then gives h* and its label, and the build that compiles h* in replaces
+ * this constant. */
 enum { WF_SPAN_HEAD = 64 };
 #define WF_LOOP_ID "span-loop"
 
