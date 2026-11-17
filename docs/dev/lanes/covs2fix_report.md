@@ -48,7 +48,16 @@ OWED: none
 
 ## CLOUD RUNS DISPATCHED
 
-Filled in after dispatch (the next commit); see the lines below.
+All four from lane/covs2fix at 02ec70f9d (the report commit; the next commit only fills this section), owner main, not waited on. Proof, `git ls-remote origin 'refs/heads/cloud/main/*/covs2fix*'`:
+
+    02ec70f9da0cd9679a45b9a3ffdc5738104e8ab1	refs/heads/cloud/main/asan/covs2fix-asan
+    02ec70f9da0cd9679a45b9a3ffdc5738104e8ab1	refs/heads/cloud/main/axes/covs2fix-axes
+    02ec70f9da0cd9679a45b9a3ffdc5738104e8ab1	refs/heads/cloud/main/mechrows/covs2fix-rows.rows.S1130_S1131_S1132_S1133_S1134_S1136_S1137_S1139_S1140_S1141_S1148_S3220_S3221_S3222_S3223_S3224_S3225_S3226_S3234_S3260_S3263_S3264_S3265_S3266
+    02ec70f9da0cd9679a45b9a3ffdc5738104e8ab1	refs/heads/cloud/main/test/covs2fix-test
+
+- covs2fix-test (kind test), covs2fix-axes (kind axes), covs2fix-asan (kind asan).
+- covs2fix-rows (kind mechrows): every sabotage row whose SAB_FILE is src/gen/known.c (the file holding the F3/F4/F18 edits: S1130-S1134, S1136, S1137, S1139-S1141, S1148, S3220-S3226, S3234, S3260, S3264-S3266), the rows whose files were edited (S3223, S3260, S3263), and the brief's S3223, S3260, S3264, S3265, S3266: 24 rows. No memfn_sites.c/.h row exists.
+- The pre-push hook ran `strict ok` on the pushed commit.
 
 ## LEFT OPEN
 
