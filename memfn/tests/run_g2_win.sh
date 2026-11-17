@@ -520,11 +520,14 @@ fam_floors "$WORK/plain.gen.log" "default" "$LOOP_FLOORS_DEF"
 floor "default long rendered" "$(sl "$WORK/plain.gen.log" rendered)" "$FLOOR_LONG_RENDERED_DEF"
 floor "default long looped" "$(sl "$WORK/plain.gen.log" looped)" "$FLOOR_LONG_LOOPED_DEF"
 floor "default deny witnesses (no loop under no-span-loop)" "$(sl "$WORK/plain.gen.log" deny_witness)" "$FLOOR_DENY_WITNESS"
-# r37 H5: the default state's pins and the force's counted APART (the old shared counter was met by the
-# force's 8 alone), and the default pass's pinned sites floored (deleting pin_head's literal reads 0).
-dpin=$(( $(sl "$WORK/plain.gen.log" pinned) - $(sl "$WORK/plain.gen.log" pinned_force) ))
+# r37 H5 + r38 J6: the default state's pins and the force's each COUNTED directly (never one derived from
+# the other by subtraction), each floored, and held equal to the total (the table is deterministic).
+dpin=$(sl "$WORK/plain.gen.log" pinned_def)
 floor "default long pinned (default state)" "$dpin" "$FLOOR_LONG_PINNED_DEF"
 floor "default long pinned (the force)" "$(sl "$WORK/plain.gen.log" pinned_force)" "$FLOOR_LONG_PINNED_FORCE"
+ptot=$(sl "$WORK/plain.gen.log" pinned); pfor=$(sl "$WORK/plain.gen.log" pinned_force)
+if [ -n "$ptot" ] && [ -n "$dpin" ] && [ -n "$pfor" ] && [ "$ptot" = "$((dpin + pfor))" ]; then tp=$((tp + 1))
+else note "default long pinned: total ${ptot:-?} != default ${dpin:-?} + force ${pfor:-?} (a pinned state counted twice or elsewhere)"; fi
 floor "default pinned sites" "$(sl "$WORK/plain.gen.log" pinned_sites)" "$FLOOR_PIN_SITES_DEF"
 floor "default breaks" "$(rv "$WORK/plain.run.log" breaks breaks)" "$FLOOR_BREAKS_DEF"
 floor "default class swaps" "$(rv "$WORK/plain.run.log" breaks swaps)" "$FLOOR_SWAPS_DEF"
