@@ -1937,6 +1937,27 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
     done
 fi
 
+# [COVER-CAP] stage 2 B7 (docs/design/cover_cap.md §11.1 "Answer identity",
+# lane covs2g): THE WIDTH ARM. The whole corpus with the public option
+# `--window-search-width=` at the ceiling less one (the widest legal width,
+# PCREC_ANCHORED_MAX_STATES - 1, read from `--list-limits` and failing loud,
+# never an empty substitution, K35) against the default run: every cover the
+# default declines for width alone becomes a cover here, and its answers must
+# not move. Compound parts compile with a copy of their parent's options
+# (src/core/compound.c part_compile), so the arm reaches part covers too.
+# `lost_ok` 0: a legal width may never refuse a pattern the default compiles
+# (a refusal here is a finding: r27 READ-3, the code-size cap at 4095, is
+# such a one and is not allowed for).
+if [ -z "$AXES" ] || axes_has --window-search-width; then
+    _wsw_ceil="$("$PCREC" --list-limits 2>/dev/null | awk -F'\t' '$1 == "PCREC_ANCHORED_MAX_STATES" { print $2 }')"
+    case "$_wsw_ceil" in
+        ''|*[!0-9]*|0|1) echo "axes: FAIL: --list-limits gives no usable PCREC_ANCHORED_MAX_STATES ('$_wsw_ceil'): the width arm has no width" >&2; exit 1 ;;
+    esac
+    job_label+=("--window-search-width=$((_wsw_ceil - 1)) (cover_cap.md §11.1, the width arm)")
+    job_flags+=("--window-search-width=$((_wsw_ceil - 1))")
+    job_lost_ok+=("0")
+fi
+
 # ============================================================================
 # [ENTRY-TABLE] E1 THE PART-LAYOUT CONTROLS (docs/spec/tuning.md §2.51-§2.53;
 # docs/design/compound_entries.md §3.6 "answer identity"): VALUED parameters

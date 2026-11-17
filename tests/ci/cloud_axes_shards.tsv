@@ -106,3 +106,4 @@ unit	shard	weight_s	weight_source
 -fno-prefilter-collapse	20	303.5	runner measured
 -fno-req-run	20	434	runner measured
 -fno-view-edge	20	378.5	runner measured
+--window-search-width	17	387	ESTIMATE-median-default (added by hand, lane covs2g: the generator splits the --harness=mfind pair, see covs2g_report.md LEFT OPEN)
