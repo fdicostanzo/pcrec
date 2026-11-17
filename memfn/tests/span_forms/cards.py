@@ -1422,36 +1422,112 @@ PAT_TWIN = True     # selftest's controls turn the PER-PATTERN twin term off (re
 CONFIRM = True      # ... and the confirming re-run off (rev 9's rule) to show the arm-level drill sees it (r38 R2)
 
 
-def layout_reading(rows, ccells, cell_key, pool_arms):
-    """The night's layout reading (rev 12, r41 L9; a RECORD): over I's pools in the cells read, the
-    log launches grouped by the recorded pool variant; per cell the between-variant variance of the
-    variant means less the within-variant (launch) part, pooled over cells (one-way ANOVA, method of
-    moments). Returns the printed text."""
-    ests, wss, wdf, n = [], 0.0, 0, 0
-    for c in ccells:
-        card, pat, rg, ly = cell_key[c]
-        by = {}
-        for a in pool_arms[c]:
-            r = rows[(card, pat, a, rg, ly)]
-            for v, x in zip(r.get("variants") or [], r["launches"]):
-                by.setdefault(v, []).append(math.log(x))
-        groups = [g for g in by.values() if g]
-        if len(groups) < 2:
+LAYOUT_TEXT_TERM = True    # selftest's control turns the per-TEXT layout term off (rev 12 before R2 B)
+VARIANT_BIMODAL = True     # ... and the variant-aware bimodal test off (rev 12 before R2 C: the raw launches)
+
+
+def text_effects(rows, text_of):
+    """THE PER-TEXT LAYOUT EFFECTS (rev 12, RULED R2 B/C): every arm row's launches with their recorded
+    pool variants, grouped by the TEXT the arm runs (`text_of(key)`, None: not grouped). Per text a
+    two-way fit, log x = row level + variant effect (backfitting, 4 passes; the effects centred to mean
+    0), over every row of that text (all its regimes and hash-equal arms). Returns {text: (effects
+    {v: e_v}, sL2)}: sL2 the between-variant variance of the effects, unbiased over the pool's
+    variants, less the effects' own estimation noise (the residual variance over each variant's
+    launch count), floored at 0. A text with launches in fewer than 2 variants is absent."""
+    by = {}
+    for k, r in (rows.items() if isinstance(rows, dict) else rows):
+        if r.get("status") != "ok" or not r.get("variants"):
             continue
-        n += 1
-        ms = [sum(g) / len(g) for g in groups]
-        w = sum(sum((x - m) ** 2 for x in g) for g, m in zip(groups, ms))
-        df = sum(len(g) - 1 for g in groups)
-        wss, wdf = wss + w, wdf + df
-        mw = w / df if df else 0.0
-        gm = sum(ms) / len(ms)
-        vb = sum((m - gm) ** 2 for m in ms) / (len(ms) - 1)
-        ests.append(vb - mw * sum(1.0 / len(g) for g in groups) / len(groups))
-    if not n:
-        return "no cell read holds a variant record of two or more variants (rows without `variants`): not read"
-    return ("%d cells read with >= 2 variants in I's pool; between-variant (layout) sigma %.4f (pooled moment "
-            "estimate, launch noise removed), within-variant launch sigma %.4f (df %d)"
-            % (n, math.sqrt(max(0.0, sum(ests) / len(ests))), math.sqrt(wss / wdf) if wdf else 0.0, wdf))
+        t = text_of(k)
+        if t is not None:
+            by.setdefault(t, []).append((k, [math.log(x) for x in r["launches"]], r["variants"]))
+    out = {}
+    for t, rs in by.items():
+        vs = sorted({v for _k, _l, vv in rs for v in vv})
+        if len(vs) < 2:
+            continue
+        e = {v: 0.0 for v in vs}
+        lev = {}
+        for _ in range(4):
+            for k, ls, vv in rs:
+                lev[k] = sum(x - e[v] for x, v in zip(ls, vv)) / len(ls)
+            acc = {v: [] for v in vs}
+            for k, ls, vv in rs:
+                for x, v in zip(ls, vv):
+                    acc[v].append(x - lev[k])
+            e = {v: sum(a) / len(a) for v, a in acc.items()}
+            m = sum(e.values()) / len(e)
+            e = {v: x - m for v, x in e.items()}
+        res = [x - lev[k] - e[v] for k, ls, vv in rs for x, v in zip(ls, vv)]
+        n = len(res)
+        dfr = max(1, n - len(rs) - len(vs) + 1)
+        s2 = sum(x * x for x in res) / dfr
+        cnt = {v: sum(1 for _k, _l, vv in rs for w in vv if w == v) for v in vs}
+        noise = sum(s2 / cnt[v] for v in vs) / len(vs)
+        sl2 = max(0.0, sum(x * x for x in e.values()) / (len(vs) - 1) - noise)
+        out[t] = (e, sl2)
+    return out
+
+
+def varmed5(effects, pool=None, n=None):
+    """The variance of the MEDIAN of LAUNCHES draws (uniform over `pool` variants) of the effects
+    {v: e_v} (variants never drawn count as e = 0), plus the pool-mean term: exact by the order
+    statistics of uniform draws (P(median <= e_(k)) = P(at least ceil(n/2) draws <= the k-th))."""
+    pool = pool or POOL_SIZE
+    xs = sorted([effects.get(v, 0.0) for v in range(pool)])
+    n = n or LAUNCHES
+    need = n // 2 + 1
+    cdf = []
+    for k in range(1, pool + 1):
+        q = k / pool
+        cdf.append(sum(math.comb(n, j) * q ** j * (1 - q) ** (n - j) for j in range(need, n + 1)))
+    pm = [cdf[0]] + [cdf[i] - cdf[i - 1] for i in range(1, pool)]
+    mu = sum(p * x for p, x in zip(pm, xs))
+    return sum(p * (x - mu) ** 2 for p, x in zip(pm, xs))
+
+
+def text_var(te, t, n=None):
+    """A text's layout variance in one median (rev 12, R2 B): its median-of-draws variance plus its
+    finite pool's mean offset (sL2 / POOL_SIZE: the pool's own draw, not the text's speed); 0 when
+    the night has no estimate for it."""
+    if t not in te:
+        return 0.0
+    e, sl2 = te[t]
+    raw = sum(x * x for x in e.values()) / max(1, len(e) - 1)
+    shrink = sl2 / raw if raw > 0 else 0.0           # the noise-corrected share of the plug-in spread
+    return varmed5(e, n=n) * shrink + sl2 / POOL_SIZE
+
+
+def adjusted(r, te, t):
+    """A row's launches with its text's per-variant effect removed (rev 12, R2 C), else as read."""
+    if not VARIANT_BIMODAL or t not in te or not r.get("variants"):
+        return r["launches"]
+    e = te[t][0]
+    return [x / math.exp(e.get(v, 0.0)) for x, v in zip(r["launches"], r["variants"])]
+
+
+# THE NIGHT'S POWER AGAINST ITS OWN LAYOUT SIGMA (rev 12, RULED R2 D): `selftest --rev12`'s power rows
+# (300 nights each, the "phase" layout model, 1 % launch noise), RECORDED here by hand from lane formsfixk's
+# run (a RECORD: re-pin when the rule or the drill moves): {layout tau: (one 5 % winner, one 10 % winner,
+# every head <= 16 5 % faster), each of 300}; rev 11's accept lines 270 / 270 / 255.
+POWER_RECORD = {0.0: None, 0.01: None, 0.02: None}
+POWER_ACCEPT = (270, 270, 255)
+
+
+def power_line(sig):
+    """The night's power line (R2 D): the RECORD row nearest its measured layout sigma, and whether that
+    power is below rev 11's accept lines."""
+    known = {t: v for t, v in POWER_RECORD.items() if v}
+    if not known:
+        return "no power record pinned"
+    t = min(known, key=lambda x: abs(x - sig))
+    v = known[t]
+    below = [n for n, (got, acc) in zip(("one 5 %", "one 10 %", "multi 5 %"), zip(v, POWER_ACCEPT)) if got < acc]
+    return ("measured layout sigma %.4f -> the RECORD row at tau %d %%: one 5 %% winner %d, one 10 %% winner %d, "
+            "every head <= 16 5 %% faster %d, of 300 nights; %s" % (
+                sig, round(100 * t), v[0], v[1], v[2],
+                "BELOW rev 11's accept lines (%s): a win of that size may go unseen; a missed win keeps 64 "
+                "(speed only, never an answer)" % ", ".join(below) if below else "at or above rev 11's accept lines"))
 
 
 def bimodal(launches, sig):
@@ -1559,11 +1635,32 @@ def analyse(night, g2_defective, alpha=ALPHA):
                              % ("/".join(k), where))
     heads = [h for h in GRID if h not in defective]
 
+    # THE TEXTS' LAYOUT EFFECTS (rev 12, RULED R2 B/C): each arm row grouped by the text it runs (I's
+    # pool by the measured identity record; each other head its own; aa; the engine route; C3's arms),
+    # the per-variant effects fitted over all of that text's rows (every regime, every reading's file)
+    def text_of(k):
+        card, pat, arm, _rg, ly = k
+        if card == "AA":
+            return ("aa", ly)
+        if card in ("C1", "C2"):
+            h = arm_head(arm)
+            if arm_base(arm) == "I" or (h is not None and h in same_heads(same, pat, ly)):
+                return ("I", pat, ly)
+            return (arm_base(arm), pat, ly)
+        return (card, pat, arm_base(arm), ly)
+    te = text_effects([(k, r) for _n, rr in allfiles for k, r in rr.items()], text_of)
+    adj_rows = {k: dict(r, launches=adjusted(r, te, text_of(k))) if r["status"] == "ok" else r
+                for k, r in rows.items()}
+    sigs_b, glob_b = launch_sigmas(adj_rows) if VARIANT_BIMODAL else (sigs, glob)
+
     def is_void(k, r):
+        """Void: not ok, or BIMODAL; rev 12 (RULED R2 C): the test reads the launches with the text's
+        per-variant effect removed, against the pool's sigma of those adjusted launches, so a split the
+        layout draw explains is not a transient."""
         if r["status"] != "ok":
             return r["status"]
-        sig = sigs.get((k[3], k[4]), glob)
-        return "bimodal" if bimodal(r["launches"], sig) else None
+        sig = sigs_b.get((k[3], k[4]), glob_b)
+        return "bimodal" if bimodal(adjusted(r, te, text_of(k)), sig) else None
 
     # ---- the floor: A/A cells of the regimes READ (approximated regimes are void by method) ---
     aa_logs = []
@@ -1650,6 +1747,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
         res["code"] = 2
         return res
 
+    z_now = [0.0]
+
     def floors_over(cs):
         """The floors over the cells `cs` (N and the twin contrasts read from them): the (regime,
         layer) floors, and the PER-PATTERN twin terms (rev 10, RULED r38 J1)."""
@@ -1664,6 +1763,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
         ptw = twin_sigmas(plogs)
         z = z_upper(alpha / max(1, n_c))
         pterm = {p: twin_term(v, z) for p, v in ptw.items()}
+        z_now[0] = z
         return f_, fd_, tw, pool_floors(f_, sig_raw, glob, n_all, n_c, alpha, twins=tw), ptw, pterm
     f, fd, tw, floors, ptw, pterm = floors_over(ccells)
 
@@ -1676,7 +1776,23 @@ def analyse(night, g2_defective, alpha=ALPHA):
         A pattern with no estimate (df 0) has no term: its cells are VOID (the gate), never pooled up."""
         p, rg, ly = c.split("/")
         fl = floors.get((rg, ly), f)
-        return max(fl, pterm[p]) if PAT_TWIN and p in pterm else fl
+        fl = max(fl, pterm[p]) if PAT_TWIN and p in pterm else fl
+        return max(fl, layout_text_term(c)) if LAYOUT_TEXT_TERM else fl
+
+    def layout_text_term(c):
+        """THE PER-TEXT LAYOUT TERM (rev 12, RULED R2 B): for each head compared with I in cell c, the
+        log variance of t(I) / t(H(h)) from the two TEXTS' own layout pools (`text_var`: the median of
+        5 draws plus the finite pool's mean offset, I's side over its pool's launches), the term
+        exp(z(alpha / N) sqrt(V_I + V_h)) - 1; the cell takes the largest (one floor a cell). The
+        floor's other estimators read only I's and aa's texts; a head text more layout-sensitive than
+        I is read here."""
+        card, pat, rg, ly = cell_key[c]
+        vi = text_var(te, ("I", pat, ly), n=LAUNCHES * pool_n.get(c, 1))     # I's pooled median
+        best = 0.0
+        for h in heads:
+            if not sa[h][c]:
+                best = max(best, math.exp(z_now[0] * math.sqrt(vi + text_var(te, ("h%d" % h, pat, ly)))) - 1)
+        return best
     # THE AGREEMENT GATE (rev 9, RULED r37 H2): I's pool is one binary, so its arms' medians differ
     # only by noise. Where they disagree beyond the cell's own floor, one of them moved (a whole-arm
     # slowdown moves a 2-arm pool's median by ~half its size and no gap test sees it): the cell is
@@ -1726,11 +1842,18 @@ def analyse(night, g2_defective, alpha=ALPHA):
                  % ("" if PAT_TWIN else " [OFF: control]",
                     ", ".join("%s sigma %.4f df %d term %.4f" % (p, ptw[p][0], ptw[p][1], pterm[p])
                               for p in sorted(ptw))))
-    # THE NIGHT'S LAYOUT READING (rev 12, RULED r41 L9; a RECORD, never an input to the rule): every
-    # launch ran a recorded pool variant, so I's pools hold launches of one text at several layouts;
-    # the between-variant sigma of their log times (one-way, per cell, pooled) is the layout effect
-    # the medians average over (it replaces rev 11's twin-measured "between-exe offset", r41 L2).
-    lines.append("rule: layout pools (rev 12, r41 L9): %s" % layout_reading(rows, ccells, cell_key, pool_arms))
+    # THE NIGHT'S LAYOUT READING (rev 12, RULED r41 L9, R2 A/D): every launch ran a recorded pool
+    # variant; per text the between-variant sigma (`text_effects`, launch noise removed) is the layout
+    # share the draws average over. A share COMMON to every variant of a text is that text's own speed
+    # (R2 A) and no estimator reads it. Printed with the per-text term and the night's power line.
+    lsig = sorted(math.sqrt(v[1]) for v in te.values())
+    msig = statistics.median(lsig) if lsig else 0.0
+    lines.append("rule: layout pools (rev 12, r41 L9): %s" % (
+        "%d texts with a variant record; between-variant (layout) sigma per text median %.4f, max %.4f; per-text "
+        "layout term (R2 B)%s: largest %.4f" % (len(lsig), msig, lsig[-1], "" if LAYOUT_TEXT_TERM else " [OFF: control]",
+                                                max((layout_text_term(c) for c in ccells), default=0.0))
+        if lsig else "no row carries a variant record: not read"))
+    lines.append("rule: power at this night's layout sigma (rev 12, R2 D): %s" % power_line(msig))
     fcell = {c: cell_floor(c) for c in ccells}
     # CONFIRM BY RE-RUN (rev 10, RULED r38 R2; rev 11, RULED r39 K3, K4, K6; rev 12, r41 L9).
     # Replication: a head's win beyond f in a cell COUNTS only if the cell's confirming re-run wins
@@ -2341,43 +2464,118 @@ def _confirm_rows(rng, owed, **kw):
     return synth_rows(rng, 0.01, only=confirm_only(owed), **kw)[0]
 
 
-def gapk_rate(tau, trials=100000, sigma=0.01, seed=1, pool=POOL_SIZE):
-    """GAP_K's FALSE-SPLIT rate under LAYOUT bimodality (rev 12, RULED r41 L9): the fraction of arms
-    `bimodal` flags when each of the 5 launches draws one of `pool` variants whose effects are
-    exp(N(0, tau)) (the "phase" model) on top of launch noise sigma; the test's sigma is the pool's
-    launch sigma as `launch_sigmas` reads it (median SD over MED_SD5, from the same population).
-    Returns (rate per arm, the sigma read)."""
+def gapk_rate(tau, texts=10000, sigma=0.01, seed=1, pool=POOL_SIZE, aware=True, rows_per_text=6):
+    """GAP_K's FALSE-SPLIT rate under LAYOUT bimodality (rev 12, RULED r41 L9; R2 C re-derived): `texts`
+    synthetic texts, each a pool of `pool` variants with effects exp(N(0, tau)) (the "phase" model) and
+    `rows_per_text` arm rows (a head text's regimes) of LAUNCHES launches, each launch a uniform draw,
+    on top of launch noise sigma. aware (R2 C): the test reads each row with its text's per-variant
+    effect removed (`text_effects` fitted over the text's rows, as `analyse` does) against the sigma of
+    those adjusted launches; else (rev 12 before R2) the raw launches against the raw sigma. Returns
+    (rate per arm row, the sigma read)."""
     rng = random.Random(seed)
-
-    def arm():
+    rows = {}
+    for t in range(texts):
         eff = [rng.gauss(0, tau) for _ in range(pool)]
-        return [math.exp(eff[rng.randrange(pool)] + sigma * rng.gauss(0, 1)) for _ in range(LAUNCHES)]
-    sds = [statistics.stdev([math.log(x) for x in arm()]) for _ in range(5000)]
+        for j in range(rows_per_text):
+            vs = [rng.randrange(pool) for _ in range(LAUNCHES)]
+            rows[(t, j)] = {"status": "ok", "variants": vs,
+                            "launches": [math.exp(eff[v] + sigma * rng.gauss(0, 1)) for v in vs]}
+    if aware:
+        te = text_effects(rows, lambda k: k[0])
+        old = _flags(VARIANT_BIMODAL=True)
+        try:
+            ls = {k: adjusted(r, te, k[0]) for k, r in rows.items()}
+        finally:
+            _flags(**old)
+    else:
+        ls = {k: r["launches"] for k, r in rows.items()}
+    sds = [statistics.stdev([math.log(x) for x in v]) for v in ls.values()]
     sig = statistics.median(sds) / MED_SD5
-    return sum(bimodal(arm(), sig) for _ in range(trials)) / trials, sig
+    return sum(bimodal(v, sig) for v in ls.values()) / len(ls), sig
 
 
 def selftest_rev12(check):
-    """The rev 12 rows (RULED r41 L9): the layout POOLS under every layout model the ruling names (a
-    fixed function of (body, 64-B phase); heads-only; rho 0.8 / 0.95 correlated variants) at tau
-    1/2/3 %; GAP_K's false-split rate re-derived under layout bimodality; the power rows at tau 0 and
-    1 %, RECORD at 2 % (r41 L3)."""
-    models = (("phase", "a fixed function of (body, 64-B phase)", {}),
+    """The rev 12 rows (RULED r41 L9, R2): the layout POOLS under every layout model the ruling names (a
+    fixed function of (text, 64-B phase); heads-only; rho 0.8 / 0.95 correlated variants) at tau
+    1/2/3 %, with the per-TEXT layout term (R2 B) and the variant-aware bimodal test (R2 C), each with
+    its control; GAP_K's false-split rate re-derived under the new test; the power rows at tau 0
+    (gated) and 1/2 % (RECORD, R2 D); the pool refusal per half; L6."""
+    # accept per (model, tau): (P(h* != 64) gated?, void-night line or None for RECORD) -- R2's terms:
+    # rho rows RECORD (A: a share common to every variant IS the text's speed); heads-only tau 3 % RECORD
+    # (B); voids <= 0.05 at tau 1 % (F3), <= 0.10 at tau 2 % (C), RECORD at 3 %
+    models = (("phase", "a fixed function of (text, 64-B phase)", {}),
               ("heads", "heads only (I's and aa's pools carry none)", {}),
               ("rho", "rho 0.8 correlated variants", {"rho": 0.8}),
               ("rho", "rho 0.95 correlated variants", {"rho": 0.95}))
+    void_acc = {0.01: 0.05, 0.02: 0.10, 0.03: None}
     for i, (model, what, extra) in enumerate(models):
         for j, tau in enumerate(CLASS_TAUS):
             ph, nvh, _fm = noise_drill(seed=3300 + 10 * i + j, layout=dict(extra, model=model, tau=tau))
             cc = NOISE_LAST["confirm"]
-            check("(r41 L9) layout: %s, tau %d %%" % (what, round(100 * tau)), ph <= 0.05,
-                  "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d (%.3f); confirm "
-                  "cells a night mean %.2f, max %d" % (ph, NOISE_TRIALS, nvh, nvh / NOISE_TRIALS, statistics.mean(cc),
-                                                      max(cc)))
-            check("(r41 L9) layout void rate: %s, tau %d %%" % (model + ("" if model != "rho" else " %.2f" % extra["rho"]),
-                                                                 round(100 * tau)), nvh / NOISE_TRIALS <= 0.05,
-                  "nights with a first void %.3f (F3's acceptance, the bimodal test and the gate under layout "
-                  "bimodality: accept <= 0.05)" % (nvh / NOISE_TRIALS))
+            name = "(r41 L9) layout: %s, tau %d %%" % (what, round(100 * tau))
+            line = ("P(h* != 64) = %.3f over %d nights%s; nights with a first void %d (%.3f); confirm cells a night "
+                    "mean %.2f, max %d" % (ph, NOISE_TRIALS, "" if model == "rho" or (model == "heads" and tau > 0.025)
+                                           else " (accept <= 0.05)", nvh, nvh / NOISE_TRIALS, statistics.mean(cc), max(cc)))
+            if model == "rho" or (model == "heads" and tau > 0.025):
+                print("REC  %-48s %s (RECORD, R2 %s)" % (name, line, "A" if model == "rho" else "B"))
+            else:
+                check(name, ph <= 0.05, line)
+            vname = "(r41 L9) layout void rate: %s, tau %d %%" % (model + ("" if model != "rho" else " %.2f" % extra["rho"]),
+                                                                   round(100 * tau))
+            acc = void_acc[tau]
+            if acc is None or model == "rho":
+                print("REC  %-48s nights with a first void %.3f (RECORD)" % (vname, nvh / NOISE_TRIALS))
+            else:
+                check(vname, nvh / NOISE_TRIALS <= acc, "nights with a first void %.3f (the variant-aware bimodal test "
+                      "and the gate under layout: accept <= %.2f)" % (nvh / NOISE_TRIALS, acc))
+    # the CONTROLS, one per new mechanism (r41 L4's lesson): the per-text term off on the heads-only 2 % night;
+    # the variant-aware test off on the phase 2 % night
+    old = _flags(LAYOUT_TEXT_TERM=False)
+    try:
+        pb, nvb, _f = noise_drill(seed=3311, layout=dict(model="heads", tau=0.02))
+    finally:
+        _flags(**old)
+    check("(R2 B) control: heads-only tau 2 %, no per-text term", pb > 0.15,
+          "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15); voids %d" % (pb, NOISE_TRIALS, nvb))
+    old = _flags(VARIANT_BIMODAL=False)
+    try:
+        _pc, nvc, _f = noise_drill(seed=3301, layout=dict(model="phase", tau=0.02))
+    finally:
+        _flags(**old)
+    check("(R2 C) control: phase tau 2 %, the raw bimodal test", nvc / NOISE_TRIALS > 0.10,
+          "nights with a first void %.3f (the drill sees the defect: accept > 0.10)" % (nvc / NOISE_TRIALS))
+    # GAP_K re-derived under the variant-aware test (R2 C; GAP_K stays 4.5)
+    for tau in (0.0,) + CLASS_TAUS:
+        rate, sg = gapk_rate(tau, seed=3390 + round(1000 * tau))
+        raw, sgr = gapk_rate(tau, texts=4000, seed=3395 + round(1000 * tau), aware=False)
+        print("REC  %-48s per-arm false-split rate %.2e variant-aware (sigma read %.4f), %.2e raw (sigma %.4f); "
+              "~1200 arms a night -> %.3f / %.3f expected false voids a night" % (
+                  "(R2 C) GAP_K %.1f under layout tau %d %%" % (GAP_K, round(100 * tau)), rate, sg, raw, sgr,
+                  1200 * rate, 1200 * raw))
+    # the POWER rows (r41 L3; R2 D): one winner 5 % / 10 % (H(8), hit-dense) and the multi-winner row; gated at
+    # layout tau 0 (rev 11's accept lines), RECORD at 1 and 2 % (POWER_RECORD pins them for `rule`'s power line)
+    multi = {}
+    for h in (0, 1, 2, 4, 8, 16):
+        multi.update(power_cells(h, "hit-dense", 0.95))
+    for k, tau in enumerate((0.0, 0.01, 0.02)):
+        lay = dict(model="phase", tau=tau) if tau else None
+        n5, _p = power_rate(win=0.95, seed=3400 + k, layout=lay)
+        n10, _p = power_rate(win=0.90, seed=3410 + k, layout=lay)
+        rng = random.Random(3420 + k)
+        nm = sum(synth_night(rng, 0.01, cellwins=multi, layout=lay)["hstar"] == 16 for _ in range(NOISE_TRIALS))
+        got = (n5, n10, nm)
+        pin = POWER_RECORD.get(tau)
+        for (nmx, acc), n in zip((("one winner 5 %% (H(8))", POWER_ACCEPT[0]), ("one winner 10 %% (H(8))", POWER_ACCEPT[1]),
+                                  ("every head <= 16 5 %% faster", POWER_ACCEPT[2])), got):
+            name = "(r41 L3) power: %s, layout tau %d %%" % (nmx % (), round(100 * tau))
+            line = "h* = %s in %d of %d nights (rev 11's accept >= %d)" % ("16" if "16" in nmx else "8", n, NOISE_TRIALS, acc)
+            if tau == 0.0:
+                check(name, n >= acc, line)
+            else:
+                print("REC  %-48s %s (RECORD, R2 D)" % (name, line))
+        if tau:
+            print("REC  %-48s %s (the pinned POWER_RECORD row %s: re-pin when they differ)"
+                  % ("(R2 D) power record tau %d %%" % round(100 * tau), got, pin))
     # the POOL REFUSAL, one row per half (r41 L4's lesson): phases moving + layouts moving passes; one
     # 64-B phase set (layouts moving) refuses; one relative layout (phases moving) refuses; and pool_variants
     # itself spans the four 16-B phase classes mod 64 and both alignments for every text drawn
@@ -2437,34 +2635,6 @@ def selftest_rev12(check):
           "refused (unknown, valueless x2, extra positional, mistyped flag, none): %s; --g2=F and --g2 F accepted: %s; "
           "recorded and re-read %s; moved file refused %s; a second list refused %s; another run's record refused %s"
           % (pa, good, first, moved, differs, stale))
-    # GAP_K re-derived (r41 L9's caveat): the per-arm false-split rate when the launches mix pool variants
-    for tau in (0.0,) + CLASS_TAUS:
-        rate, sg = gapk_rate(tau, seed=3390 + round(1000 * tau))
-        print("REC  %-48s per-arm false-split rate %.2e (sigma read %.4f; 1e5 arms; ~%d arms a night -> %.3f expected "
-              "false voids a night)" % ("(r41 L9) GAP_K under layout tau %d %%" % round(100 * tau), rate, sg, 1200,
-                                         1200 * rate))
-    # the POWER rows (r41 L3 + L9): one winner 5 % / 10 % (H(8), hit-dense) and the multi-winner row, at
-    # layout tau 0 and 1 % (accept lines as rev 11's), RECORD at 2 %
-    multi = {}
-    for h in (0, 1, 2, 4, 8, 16):
-        multi.update(power_cells(h, "hit-dense", 0.95))
-    for k, tau in enumerate((0.0, 0.01, 0.02)):
-        lay = dict(model="phase", tau=tau) if tau else None
-        n5, _p = power_rate(win=0.95, seed=3400 + k, layout=lay)
-        n10, _p = power_rate(win=0.90, seed=3410 + k, layout=lay)
-        rng = random.Random(3420 + k)
-        pm = [synth_night(rng, 0.01, cellwins=multi, layout=lay)["hstar"] for _ in range(NOISE_TRIALS)]
-        nm = sum(x == 16 for x in pm)
-        rows = (("one winner 5 %% (H(8))", n5, 0.90), ("one winner 10 %% (H(8))", n10, 0.90),
-                ("every head <= 16 5 %% faster", nm, 0.85))
-        for nmx, n, acc in rows:
-            name = "(r41 L3) power: %s, layout tau %d %%" % (nmx % (), round(100 * tau))
-            line = "h* = %s in %d of %d nights (accept >= %d %%)" % ("16" if "16" in nmx else "8", n, NOISE_TRIALS,
-                                                                      round(100 * acc))
-            if tau < 0.015:
-                check(name, n >= acc * NOISE_TRIALS, line)
-            else:
-                print("REC  %-48s %s (RECORD, not gated)" % (name, line))
 
 
 def selftest_rev11(check):
