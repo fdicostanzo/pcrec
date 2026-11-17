@@ -147,6 +147,7 @@ class OccS:
     find-all of X inside the stretch, committed (the named all-hits request; each hit a fresh match, no carry);
     `subject=True` (the hits-text candidate): the subject's own global find-all, the hits lying inside the stretch."""
     def __init__(self, X, mn=0, subject=False):
+        self.hit_ok = None
         self.X, self.mn, self.subject = X, mn, subject; self.key = ("L", "occ", id(self)); self.labs = labels_of(X) | {"hit"}
     def own_hit(self, s, g, e, row):
         p = {k: v for k, v in row.last.items() if v is not None}; p["hit"] = s[g:e]; return p
@@ -165,6 +166,7 @@ class OccS:
                 for e, row, c in self.X.walk(s, g):
                     own = carry_pass(row, c, carry)
                     if own is None: continue
+                    if self.hit_ok is not None and not self.hit_ok(s, i, g, e): continue
                     own["hit"] = s[g:e]
                     h = hits + (own,)
                     if e == g:                              # an empty hit ends the loop
@@ -364,6 +366,8 @@ TP5 = strings("905: ", 5)                                  # 3,906
 SVPOOL = strings("37x ", 4)                                # 341
 AHPOOL = strings("abc37", 3)                               # 156
 OCCPOOL = strings("12 x", 4)                               # 341
+ABP5 = strings("ab ", 5)                                   # 364
+SCX5 = strings("37;x", 5)                                  # 1,365
 KHPOOL = LP["KHPOOL"]                                      # 1,110
 CLOSEPOOL, TMPOOL, XYPOOL = LP["CLOSEPOOL"], LP["TMPOOL"], LP["XYPOOL"]
 
@@ -488,8 +492,8 @@ WAYS = [
   lambda: W(Pat(REP1p), h5()), lambda: Rep(W(Pat(ITEM1), h5()), 1), RG3),
  ("W1b", "the same, by group questions", "`/(?:(?<h>\\d);)*/ & (h: <5)`", "`/(?:(?<h>\\d);)*/ & some((h: <5)) & occurs.none(NOT (h: <5))`",
   lambda: W(Pat(REP1p), h5()), lambda: W(Pat(REP1p), SOME(h5()), NONE(NOT(h5()))), RG3),
- ("W1c", "every pass, at least one, a pass may lack h", "REP & `(h: <5)`", "`/(?:${item})+/`, item := `/(?<h>\\d)?;/ & (h: <5)`",
-  lambda: W(REP(), h5()), lambda: Rep(W(Pat(ITEMO), h5()), 1), RG3),
+ ("W1c", "every pass, at least one, a pass may lack h (re-spelled in rev 24.1: a pass lacking h is not a pass of the item, so the loop ends there, as the old meaning's failing pass does)", "REP & `(h: <5)`", "`/(?:${item})+/`, item := `/(?<h>\\d);/ & (h: <5)` (= W1a's spelling)",
+  lambda: W(REP(), h5()), lambda: Rep(W(Pat(ITEM1), h5()), 1), RG3),
  ("W1d", "the same, by group questions", "REP & `(h: <5)`", "REP & `some((h: <5)) & occurs.none(NOT (h: <5))`",
   lambda: W(REP(), h5()), lambda: W(REP(), SOME(h5()), NONE(NOT(h5()))), RG3),
  ("W2a", "every pass, possibly none (rev 23.2's `(h = d: S)`)", "REP & `(h = 0: <5)`", "`/(?:${item})*/`, item := `/(?<h>\\d)?;/ & (h = 0: <5)`",
@@ -517,6 +521,10 @@ WAYS = [
  ("W6a", "some", "REP & `some((h: <5))`", "the same spelling", lambda: W(REP(), SOME(h5())), lambda: W(REP(), SOME(h5())), RG3),
  ("W6b", "occurs.exactly", "REP & `occurs.exactly(2, (h: <5))`", "the same spelling", lambda: W(REP(), EXACTLY(2, h5())), lambda: W(REP(), EXACTLY(2, h5())), RG3),
  ("W6c", "NOT some = occurs.none", "REP & `NOT some((h: <5))`", "REP & `occurs.none((h: <5))`", lambda: W(REP(), NOT(SOME(h5()))), lambda: W(REP(), NONE(h5())), RG3),
+ ("W6d", "occurs.at_least (r40 B9: run)", "REP & `occurs.at_least(2, (h: <5))`", "the same spelling", lambda: W(REP(), Count(h5(), lambda n: n >= 2)), lambda: W(REP(), Count(h5(), lambda n: n >= 2)), RG3),
+ ("W6e", "occurs.at_most (r40 B9: run)", "REP & `occurs.at_most(1, (h: <5))`", "the same spelling", lambda: W(REP(), Count(h5(), lambda n: n <= 1)), lambda: W(REP(), Count(h5(), lambda n: n <= 1)), RG3),
+ ("W7b", "one hit's label by literal index, `$m.hit[2].g` as a test (r40 B9: run)", "`hits(/ab(?<g>[xy])/) & (g[2]: \"x\")`", "the same spelling",
+  lambda: W(Committed(Pat(ABXYp)), Idx("g", 2, eq("x"))), lambda: W(Committed(Pat(ABXYp)), Idx("g", 2, eq("x"))), XYPOOL),
  ("W7", "one pass by literal index", "REP & `(h[2]: <5)`", "the same spelling", lambda: W(REP(), Idx("h", 2, lt(5))), lambda: W(REP(), Idx("h", 2, lt(5))), RG3),
  ("W8", "the committed hits of a search, every hit (rev 23.2's plain condition on `hit`)", "`occurrences(/(?<n>\\d+)/) & (n: <100)`",
   "`hits(/(?<n>\\d+)/) & some((n: <100)) & occurs.none(NOT (n: <100))` (the named all-hits request)",
@@ -548,7 +556,8 @@ def val2(r):
 v23, v24 = val2("23.2"), val2("24")
 print("B W10 reading a pass's value `$h[2]` (the captures level) on REP's whole rows: texts whose value differs %d of %d (both rules read the same pass table)" % (sum(1 for s in RG3 if v23.get(s) != v24.get(s)), len(RG3)))
 # CONTROL for PART B: the comparison can fail. The rev 24 BARE spelling (the last pass) against the old meaning.
-CTRL = [("W1a-bare", "`/(?:(?<h>\\d);)*/ & (h: <5)` read under rev 24 (the last pass)", lambda: W(Pat(REP1p), h5()), lambda: W(Pat(REP1p), h5()), RG3),
+CTRL = [("W1c-carry", "the rev 24 spelling with the OPTIONAL item, `/(?:${item})+/`, item := `/(?<h>\\d)?;/ & (h: <5)` (rev 24's W1c; a pass lacking h reads the earlier pass's h, FIX-A1)", lambda: W(REP(), h5()), lambda: Rep(W(Pat(ITEMO), h5()), 1), RG3),
+        ("W1a-bare", "`/(?:(?<h>\\d);)*/ & (h: <5)` read under rev 24 (the last pass)", lambda: W(Pat(REP1p), h5()), lambda: W(Pat(REP1p), h5()), RG3),
         ("W2b-bare", "REP & `(h = 0: <5)` under rev 24", lambda: W(REP(), C("h", lt(5), h="0")), lambda: W(REP(), C("h", lt(5), h="0")), RG3),
         ("W4a-bare", "KH & `(h: <5, k: between(3, 7))` under rev 24", lambda: W(KH(), ANDC(h5(), pk())), lambda: W(KH(), ANDC(h5(), pk())), KHPOOL),
         ("W4c-bare", "CLOSE & `((h = 0, m = 0): (<10, <30))` under rev 24", lambda: W(Pat(CLOSEp), close_R(h="0", m="0")), lambda: W(Pat(CLOSEp), close_R(h="0", m="0")), CLOSEPOOL),
@@ -598,6 +607,39 @@ def fmtc(s, m, k):
     one = lambda x: "`%s`@%d%s" % (s[x[0]:x[1]], x[0], "".join(" %s=%s" % lv for lv in x[2]))
     if m == "SEARCHED": return "FAILS" if k is None else one(k)
     return "[" + ", ".join(one(x) for x in k) + "]"
+class SM:
+    """FIX-A3's independent control: a libpcre2 model of `A & B` (kind "and") or `A & !B` (kind "not") in which B is
+    its OWN compiled pattern, run WHOLE (ANCHORED | ENDANCHORED) on the stretch that a callout at the end of A extracts
+    (subject[start_match:current_position]); so B's anchors and lookarounds read the stretch, as R.1.4 says, and the
+    model does not share the engine's construction. A failing inner match makes the callout fail: PCRE backtracks
+    into A's next path (A's paths outer). B's own callouts see A's captures (`o`) and B's (`c`). The reported labels
+    are A's captures and the inner match's (the last successful callout's)."""
+    def __init__(self, outer, inner, kind, ico=None):
+        self.kind, self.side, self.o = kind, {}, {}
+        self.pattern = "%s (?C) then %s%s on the stretch" % (outer, "!" if kind == "not" else "", inner)
+        self.inner = P.Pcre(inner, {k: (lambda c, f=f: f(c, self.o)) for k, f in (ico or {}).items()})
+        self.outer = P.Pcre(outer + '(?C"__op")', {"__op": self._op})
+    def _op(self, ctx):
+        self.o = {nm: ctx.get(nm) for nm in self.outer.names}
+        r = self.inner.match(ctx.stretch(), 0, P.PCRE2_ANCHORED | P.PCRE2_ENDANCHORED)
+        if self.kind == "not": return r is None
+        if r is None: return False
+        self.side = r[2]; return True
+    def match(self, s, start=0, opts=0):
+        self.side = {}
+        r = self.outer.match(s, start, opts)
+        if r is None: return None
+        d = dict(r[2]); d.update(self.side); return r[0], r[1], d
+    def search(self, s, pos=0): return self.match(s, pos)
+    def findall(self, s):
+        out, pos = [], 0
+        while pos <= len(s):
+            r = self.match(s, pos)
+            if r is None: break
+            out.append(r); pos = r[1] if r[1] > r[0] else r[1] + 1
+        return out
+PABx, PCDx = r"(?<a>\d+)(?<b>\d+)", r"(?<c>\d+)(?<d>\d+)"
+T2x = r"(?<h>\d{1,2})(?::(?<m>\d\d))?"
 PCASES = [
  ("V1", "branch-scope `(B | A) & (l: <20)`", r'(?|(?<l>\d\d)|(?<l>\d)\d)(?C"l<20")', lambda: W(alt_BA(), lab_l(lt(20))), ("l",), DSP),
  ("V2", "L60 `(B | A) & (l: \"a\")`", r'(?|(?<l>aa)|(?<l>a)a)(?C"l=a")', lambda: W(alt_BA(Ba, Aa), lab_l(eq("a"))), ("l",), AB4),
@@ -609,7 +651,7 @@ PCASES = [
  ("V8", "REP & `(h: !<5)`", r'(?:(?<h>\d)?;)*(?C"h!<5")', lambda: W(REP(), C("h", lambda v: not lt(5)(v))), ("h",), RG3),
  ("V9", "REP & `NOT (h: <5)`", r'(?:(?<h>\d)?;)*(?!(?C"h<5"))', lambda: W(REP(), NOT(h5())), ("h",), RG3),
  ("V10", "every pass: `/(?:${item})+/`, item := `/(?<h>\\d);/ & (h: <5)`", r'(?:(?<h>\d)(?C"h<5");)+', lambda: Rep(W(Pat(ITEM1), h5()), 1), ("h",), RG3),
- ("V11", "complement: `P & !(P & (a: \"1\"))` (a tied negative lookahead)", r'(*napla:(?<a>\d+)(?<b>\d+)' + REST + r')(?!(?<a2>\d+)(?<b2>\d+)(?C"a2=1")\k<T>\z)' + EAT,
+ ("V11", "complement: `P & !(P & (a: \"1\"))` (the operand run WHOLE on the extracted stretch)", SM(PABx, PABx + '(?C"a=1")', "not", {"a=1": lambda c, o: c.get("a") == "1"}),
   lambda: D(Pat(PABp), W(Pat(PABp), C("a", eq("1")))), ("a", "b"), DSP),
  ("V12", "a lookahead is not re-entered", r'(?=(?<x>\d+))\d(?C"x=1")', lambda: W(Pat(r"(?=(?P<x>\d+))\d"), C("x", eq("1"))), ("x",), DSP),
  ("V13", "when(c, p) = x & (NOT c | p): an alternation of two tests", r'(?<k>\d)(?:;(?<h>\d))*(?:(?!(?C"h<5"))|(?C"p"))', lambda: WHEN(KH(), h5(), pk()), ("k", "h"), KHPOOL),
@@ -619,15 +661,34 @@ PCASES = [
  ("V16", "occurrences, the condition inside: `occurrences(/(?<n>\\d+)/ & (n: <100), min = 1)`", r'(?:[\s\S]*?(?<n>\d+)(?C"n<100"))+[\s\S]*', lambda: OCC(NN(), 1), ("n",), OCCPOOL),
  ("V17", "atomic(B | A) & (l: <20)", r'(?>(?|(?<l>\d\d)|(?<l>\d)\d))(?C"l<20")', lambda: W(Atom(alt_BA()), lab_l(lt(20))), ("l",), DSP),
  ("V18", "atomic(P & (a: \"1\"))", r'(?>(?<a>\d+)(?<b>\d+)(?C"a=1"))', lambda: Atom(W(Pat(PABp), C("a", eq("1")))), ("a", "b"), DSP),
- ("V19", "join-order left: `(P & Q) & ((a: \"1\") | (c: \"1\"))`", r'(*napla:(?<a>\d+)(?<b>\d+)' + REST + r')(?<c>\d+)(?<d>\d+)' + TIE + r'(?C"a=1|c=1")',
+ ("V19", "join-order left: `(P & Q) & ((a: \"1\") | (c: \"1\"))` (Q WHOLE on the extracted stretch)", SM(PABx, PCDx + '(?C"a|c")', "and", {"a|c": lambda c, o: o.get("a") == "1" or c.get("c") == "1"}),
   lambda: W(AND(Pat(PABp), Pat(PCDp)), ORC(C("a", eq("1")), C("c", eq("1")))), ("a", "b", "c", "d"), DSP),
- ("V20", "`t2 & !q` (the tied complement)", r'(*napla:(?<h>\d{1,2})(?::(?<m>\d\d))?' + REST + r')(?!(?<h2>\d{1,2})(?::(?<m2>\d\d))?(?C"late2")\k<T>\z)' + EAT,
+ ("V20", "`t2 & !q` (q WHOLE on the extracted stretch)", SM(T2x, T2x + '(?C"late")', "not", {"late": lambda c, o: late(c.get("h"), c.get("m"))}),
   lambda: D(mk_t2(), mk_q()), ("h", "m"), TP5),
+ ("V21", "join-order with a LAZY right operand: `G & L`, G := /(?<a>\\d+)/, L := /(?<c>\\d+?)/", SM(r"(?<a>\d+)", r"(?<c>\d+?)", "and"),
+  lambda: AND(Pat(r"(?P<a>\d+)"), Pat(r"(?P<c>\d+?)")), ("a", "c"), DSP),
+ ("V22", "the same, the other order: `L & G`", SM(r"(?<c>\d+?)", r"(?<a>\d+)", "and"),
+  lambda: AND(Pat(r"(?P<c>\d+?)"), Pat(r"(?P<a>\d+)")), ("a", "c"), DSP),
+ ("V23", "an ANCHORED right operand: `/\\d/ & /\\d$/`", SM(r"\d", r"\d$", "and"), lambda: AND(Pat(r"\d"), Pat(r"\d$")), (), DSP),
+ ("V24", "a LOOKAHEAD right operand under the complement: `/\\d/ & !/\\d(?=\\d)/`", SM(r"\d", r"\d(?=\d)", "not"), lambda: D(Pat(r"\d"), Pat(r"\d(?=\d)")), (), DSP),
+ ("V25", "a `\\b` right operand: `/\\d+/ & /\\d+\\b/`", SM(r"\d+", r"\d+\b", "and"), lambda: AND(Pat(r"\d+"), Pat(r"\d+\b")), (), DSP),
+ # THE PLACE-BY-OPERATOR GRID (r40 A1, A2): a label set inside a loop place, read by a condition INSIDE the place
+ # (reading the labels set so far) or OUTSIDE it (the last setting overall)
+ ("G1", "hole loop, OPTIONAL label, condition INSIDE: `/(?:${item})+/`, item := `/(?<h>\\d)?;/ & (h: <5)` (W1c)", r'(?:(?<h>\d)?;(?C"h<5"))+', lambda: Rep(W(Pat(r"(?P<h>\d)?;"), h5()), 1), ("h",), RG3),
+ ("G2", "occurrences, OPTIONAL label, condition INSIDE: `occurrences(/(?<x>(?<g>a)?b)/ & (g: \"a\"), min = 1)`", r'(?:[\s\S]*?(?<x>(?<g>a)?b)(?C"g=a"))+[\s\S]*', lambda: OCC(W(Pat(r"(?P<x>(?P<g>a)?b)"), C("g", eq("a"))), 1), ("x", "g"), ABP5),
+ ("G3", "hole loop, OPTIONAL label, condition OUTSIDE: `/(?:${item})+/ & (h: <5)`, item := `/(?<h>\\d)?;/`", r'(?:(?<h>\d)?;)+(?C"h<5")', lambda: W(Rep(Pat(r"(?P<h>\d)?;"), 1), h5()), ("h",), RG3),
+ ("G4", "occurrences, OPTIONAL label, condition OUTSIDE: `occurrences(/(?<x>(?<g>a)?b)/, min = 1) & (g: \"a\")`", r'(?:[\s\S]*?(?<x>(?<g>a)?b))+[\s\S]*(?C"g=a")', lambda: W(OCC(Pat(r"(?P<x>(?P<g>a)?b)"), 1), C("g", eq("a"))), ("x", "g"), ABP5),
+ ("G5", "hole loop, label looped at TWO depths, condition OUTSIDE: item := `/(?:(?<h>\\d);)+x/`", r'(?:(?:(?<h>\d);)+x)+(?C"h<5")', lambda: W(Rep(Pat(r"(?:(?P<h>\d);)+x"), 1), h5()), ("h",), SCX5),
+ ("G6", "occurrences, label looped at TWO depths, condition OUTSIDE: `occurrences(/(?:(?<h>\\d);)+/, min = 1) & (h: <5)`", r'(?:[\s\S]*?(?:(?<h>\d);)+)+[\s\S]*(?C"h<5")', lambda: W(OCC(Pat(r"(?:(?P<h>\d);)+"), 1), h5()), ("h",), SCX5),
+ ("G7", "hole loop, ATOMIC item, condition OUTSIDE: item := `atomic(B | A)`, then `(l: <20)`", r'(?:(?>(?|(?<l>\d\d)|(?<l>\d)\d)))+(?C"l<20")', lambda: W(Rep(Atom(alt_BA()), 1), lab_l(lt(20))), ("l",), DSP),
+ ("G8", "occurrences, ATOMIC argument, condition OUTSIDE: `occurrences(atomic(B | A), min = 1) & (l: <20)`", r'(?:[\s\S]*?(?>(?|(?<l>\d\d)|(?<l>\d)\d)))+[\s\S]*(?C"l<20")', lambda: W(OCC(Atom(alt_BA()), 1), lab_l(lt(20))), ("l",), DSP),
+ ("G9", "hole loop, label looped at TWO depths, condition INSIDE: item := `/(?:(?<h>\\d);)+x/ & (h: <5)`", r'(?:(?:(?<h>\d);)+x(?C"h<5"))+', lambda: Rep(W(Pat(r"(?:(?P<h>\d);)+x"), h5()), 1), ("h",), SCX5),
 ]
 CO["late2"] = lambda c: late(c.get("h2"), c.get("m2"))
+CO["g=a"] = Tc("g", eq("a"))
 pexact = 0
 for tag, nm, pat, mk, labs, pool in PCASES:
-    rx = P.Pcre(pat, CO)
+    rx = pat if isinstance(pat, SM) else P.Pcre(pat, CO)
     f1, f2 = rxkey(rx, labs), enkey(mk, labs)
     out = []
     for m in ("WHOLE", "SEARCHED", "FIND-ALL"):
@@ -637,9 +698,26 @@ for tag, nm, pat, mk, labs, pool in PCASES:
             out.append("%s %d (first `%s`: PCRE2 %s, engine %s)" % (m, len(d), w, fmtc(w, m, f1(m, w)), fmtc(w, m, f2(m, w))))
         else: out.append("%s 0" % m)
     if all(x.split(" ")[1] == "0" for x in out): pexact += 1
-    print("C %s %s  /%s/" % (tag, nm, pat))
+    print("C %s %s  /%s/" % (tag, nm, rx.pattern))
     print("C %s   texts that differ: %s of %d" % (tag, "; ".join(out), len(pool)))
 print("== PART C SUMMARY: %d models; %d equal to the engine in every mode" % (len(PCASES), pexact))
+# THE ORDER CHECK (r40 C1: replaces the order-swap run, which reversed nothing that carries meaning). `&`'s operand
+# order carries meaning in rev 24 (join-order: labels; a lazy operand: the stretch). Each `&` model is run against the
+# engine with its operands SWAPPED: that comparison MUST differ (else the model cannot tell the orders apart and the
+# PART C equality guards nothing); the forward comparison is PART C's line.
+print("== ORDER CHECK: each `&` model of PART C against the engine with the operands SWAPPED (must differ)")
+PBY = {t: (pt, lb, pl) for t, n_, pt, m_, lb, pl in PCASES}
+ocheck = []
+for tag, mksw in (("V19", lambda: W(AND(Pat(PCDp), Pat(PABp)), ORC(C("a", eq("1")), C("c", eq("1"))))),
+                  ("V21", lambda: AND(Pat(r"(?P<c>\d+?)"), Pat(r"(?P<a>\d+)"))),
+                  ("V22", lambda: AND(Pat(r"(?P<a>\d+)"), Pat(r"(?P<c>\d+?)")))):
+    rx, labs, pool = PBY[tag]
+    f1, f2 = rxkey(rx, labs), enkey(mksw, labs)
+    n = [sum(1 for s in pool if f1(m, s) != f2(m, s)) for m in ("WHOLE", "SEARCHED", "FIND-ALL")]
+    ok = sum(n) > 0; ocheck.append(ok)
+    print("C ORDER %s the model vs the engine with the operands swapped: WHOLE %d; SEARCHED %d; FIND-ALL %d of %d: %s" % (
+        tag, n[0], n[1], n[2], len(pool), "DIFFERS (the check can fail)" if ok else "EQUAL: THE CHECK GUARDS NOTHING"))
+print("== ORDER CHECK SUMMARY: %d of %d swapped runs differ from their model" % (sum(ocheck), len(ocheck)))
 
 # ================================================================================================= PART D: properties
 print("== PART D: properties of the rev 24 rules (NOW), with rev 23.2 (BEFORE) beside")
@@ -679,7 +757,11 @@ print("D D4 NOT on a condition vs the complement: `P & NOT (a: \"1\")` vs `P & !
 for nm, A_, B_ in (("`/(?<l>\\d+)/` & `/1\\d*/`", lambda: Pat(r"(?P<l>\d+)"), lambda: Pat(r"1\d*")),
                    ("`/(?<l>\\d+)/` & `/\\d+?/` (a lazy B)", lambda: Pat(r"(?P<l>\d+)"), lambda: Pat(r"\d+?")),
                    ("`/\\d+/` & `(P & (a: \"1\"))` (a conditioned B)", lambda: Pat(r"\d+"), lambda: W(Pat(PABp), C("a", eq("1")))),
-                   ("`t2` & `q`", mk_t2, mk_q)):
+                   ("`t2` & `q`", mk_t2, mk_q),
+                   ("`/\\d/` & `/\\d$/` (an ANCHORED B, r40 A3)", lambda: Pat(r"\d"), lambda: Pat(r"\d$")),
+                   ("`/\\d/` & `/\\d(?=\\d)/` (a LOOKAHEAD B)", lambda: Pat(r"\d"), lambda: Pat(r"\d(?=\d)")),
+                   ("`/\\d+/` & `/\\d+\\b/` (a `\\b` B)", lambda: Pat(r"\d+"), lambda: Pat(r"\d+\b")),
+                   ("`/\\d+/` & `/(?<!1)\\d+/` (a LOOKBEHIND B)", lambda: Pat(r"\d+"), lambda: Pat(r"(?<!1)\d+"))):
     x = lambda A_=A_, B_=B_: AND(A_(), B_()); y = lambda A_=A_, B_=B_: ZERO(A_(), B_())
     xd = lambda A_=A_, B_=B_: D(A_(), B_())
     yd = lambda A_=A_, B_=B_: Keep(ope(A_()), lambda row, s, i, e, B_=B_: whole_row(B_(), s[i:e]) is None)
@@ -711,21 +793,6 @@ print("D D11 last-pass-default moves: `/(?:(?<h>\\d);)*/ & (h: <5)` NOW vs BEFOR
 a = lambda: W(KH(), ANDC(h5(), pk()))
 print("D D11 the pairing example `KH & (h: <5, k: between(3, 7))` NOW vs BEFORE: %s" % diffcount(nowf(a), bef(a), KHPOOL))
 
-# ================================================================================================= PART E: the open table
-# Each item left open (the manager's readings and the told-not-ruled items): every candidate on a WHOLE value, a
-# SEARCHED text and a several-match subject (FIND-ALL), and the texts on which each candidate differs from the first
-# (the draft's reading) over a set. A candidate is a program plus the rules it runs under.
-print("== PART E: the open items, every candidate run (the first candidate is the draft's reading)")
-@contextlib.contextmanager
-def kleene():
-    """rev 24's rules except the logic: Kleene three-valued (the retired reading), for set-once labels only."""
-    with rules(NOWR):
-        old = LP["MODE"]["v"]; LP["MODE"]["v"] = "T3"
-        try: yield
-        finally: LP["MODE"]["v"] = old
-@contextlib.contextmanager
-def now(): 
-    with rules(NOWR): yield
 def labkey(row, labs): return tuple((l, tuple(hitlist(row)) if l == "#hits" else row.last.get(l)) for l in labs)
 def candf(ctx, mk, labs):
     """(mode, text) -> the answer WITH the candidate's labels (the reported row's labels are part of what is compared)."""
@@ -755,6 +822,77 @@ def diffl(f1, f2, pool):
             out.append("%s %d (first `%s`: %s vs %s)" % (m, len(d), w, fmtl(w, m, f1(m, w)), fmtl(w, m, f2(m, w))))
         else: out.append("%s 0" % m)
     return "; ".join(out) + " of %d (labels compared)" % len(pool)
+# ---- rev 24.1 additions (review r40): the kept sentences A6, A8, A9 and C5 name, re-run under rev 24's rules
+def l100(r):
+    gt10 = lambda v: num(v) and int(v) > 10
+    with rules(r):
+        pab, pa, pb = W(Pat(PABp), C("a", lt(5)), C("a", gt10)), W(Pat(PABp), C("a", lt(5))), W(Pat(PABp), C("a", gt10))
+        xs = [t for t in DIG4 if keyW(pab, t) != (keyW(pa, t) and keyW(pb, t))]
+    return "%d of %d%s" % (len(xs), len(DIG4), (" (first `%s`)" % min(xs, key=lambda x: (len(x), x))) if xs else "")
+print("D D12 (r40 A8, L100) `P & A & B` vs 'P & A holds and P & B holds', P := /(?<a>\\d+)(?<b>\\d+)/, A := `(a: <5)`, B := `(a: >10)`, WHOLE: NOW %s ; BEFORE %s" % (l100(NOWR), l100("23.2")))
+RX = lambda: Pat(ABXYp)
+a = lambda: OCC(W(RX(), C("g", eq("x"))), 1); b = lambda: W(OCC(RX(), 1), C("g", eq("x")))
+print("D D13 (r40 A8, L61) `contains(r & (g: \"x\"))` vs `contains(r) & (g: \"x\")`, r := /ab(?<g>[xy])/: NOW %s ; BEFORE %s" % (diffcount(nowf(a), nowf(b), XYPOOL), diffcount(bef(a), bef(b), XYPOOL)))
+with rules(NOWR):
+    print("D D13 (L58) `contains(r) & (g: \"x\")` on `abx aby`: NOW WHOLE %s ; SEARCHED %s" % (aW(b(), "abx aby"), aS(b(), "abx aby", ("g",))))
+with rules("23.2"):
+    print("D D13 (L58) the same, BEFORE: WHOLE %s ; SEARCHED %s" % (aW(b(), "abx aby"), aS(b(), "abx aby", ("g",))))
+def when_cbody(c):
+    return lambda: ALT(W(KH(), c(), pk()), D(KH(), W(KH(), c())))
+for nm, c in (("`(h: <5)`", h5), ("`(h = 0: <5)`", lambda: C("h", lt(5), h="0"))):
+    a = when_cbody(c); b = lambda c=c: W(KH(), NOT(c())); b2 = lambda c=c: WHEN(KH(), c(), pk())
+    nb = lambda c=c: ALT(W(KH(), c(), pk()), W(KH(), NOT(c())))
+    print("D D14 (r40 A8, §8) `when` with c = %s: the complement body `(x & c & p) | (x & !(x & c))` vs the NOT body `(x & c & p) | (x & NOT c)`: NOW %s" % (nm, diffcount(nowf(a), nowf(nb), KHPOOL)))
+    print("D D14   the complement body vs R.1.10's `x & (NOT c | p)`: NOW %s ; WHOLE holds: complement body %d, R.1.10 %d of %d (BEFORE: complement body %d)" % (
+        diffcount(nowf(a), nowf(b2), KHPOOL), holds(NOWR, a, KHPOOL), holds(NOWR, b2, KHPOOL), len(KHPOOL), holds("23.2", a, KHPOOL)))
+def labdiff(f1, f2, pool): return diffl(f1, f2, pool)
+SVn = lambda: Pat(SVp)
+for tag, nm, mka, mkb, pool, labs in (
+        ("D15", "(r40 A9, §7.1) `NOT (h = 9: <5)` vs `NOT (h: <5)` on /(?<h>\\d)?x/", lambda: W(SVn(), NOT(C("h", lt(5), h="9"))), lambda: W(SVn(), NOT(h5())), SVPOOL, ("h",)),
+        ("D15", "(§7.1) REP `NOT (h = \"x\": <5)` vs `NOT (h: <5)`", lambda: W(REP(), NOT(C("h", lt(5), h="x"))), lambda: W(REP(), NOT(h5())), RG3, ("h",)),
+        ("D15", "(§7.1) REP `(h: <5)` vs `NOT some(NOT (h: <5))`", lambda: W(REP(), h5()), lambda: W(REP(), NOT(SOME(NOT(h5())))), RG3, ("h",)),
+        ("D15", "(positive control) `(h = 9: <5)` vs `(h: <5)` on /(?<h>\\d)?x/", lambda: W(SVn(), C("h", lt(5), h="9")), lambda: W(SVn(), h5()), SVPOOL, ("h",)),
+        ("D16", "(r40 A8, L30 empty S) `NOT (h: <0)` vs `(h: !<0)` on /(?<h>\\d)?x/", lambda: W(SVn(), NOT(C("h", lt(0)))), lambda: W(SVn(), C("h", lambda v: not lt(0)(v))), SVPOOL, ("h",)),
+        ("D16", "(L30 full S) `NOT (h: <10)` vs `(h: !<10)` on /(?<h>\\d)?x/", lambda: W(SVn(), NOT(C("h", lt(10)))), lambda: W(SVn(), C("h", lambda v: not lt(10)(v))), SVPOOL, ("h",)),
+        ("D16", "(L30 empty S, REP) `NOT (h: <0)` vs `(h: !<0)`", lambda: W(REP(), NOT(C("h", lt(0)))), lambda: W(REP(), C("h", lambda v: not lt(0)(v))), RG3, ("h",)),
+        ("D19", "(r40 A6 (b), the dead branch) `/(?<a>\\d)|(?<b>\\d)/ & (b: \"1\")` vs `/(?<a>\\d)/ & (b: \"1\")`", lambda: W(ALT(Pat(r"(?P<a>\d)"), Pat(r"(?P<b>\d)")), C("b", eq("1"))), lambda: W(Pat(r"(?P<a>\d)"), C("b", eq("1"))), DIG4, ("a", "b")),
+        ("D19", "(the same two patterns, no condition)", lambda: ALT(Pat(r"(?P<a>\d)"), Pat(r"(?P<b>\d)")), lambda: Pat(r"(?P<a>\d)"), DIG4, ("a", "b")),
+        ("D21", "(r40 C5, L95) `t2 & !q` vs `t2 & ((h, m = 0): !R)`, R := `>= (9, 30)`", lambda: D(mk_t2(), mk_q()), lambda: W(mk_t2(), C(("h", "m"), lambda h, m: not late(h, m), m="0")), TP5, ("h", "m"))):
+    f = lambda mk, r: candf(lambda r=r: rules(r), mk, labs)
+    print("D %s %s: NOW %s ; BEFORE %s" % (tag, nm, diffl(f(mka, NOWR), f(mkb, NOWR), pool), diffl(f(mka, "23.2"), f(mkb, "23.2"), pool)))
+MN = r"(?P<mname>Jan|Feb|Mar)?-(?P<d>\d)"
+mnum = lambda f: C("mname", lambda v: f(("Jan", "Feb", "Mar").index(v) + 1))
+for r in (NOWR, "23.2"):
+    with rules(r):
+        Pn = W(Pat(MN), NOT(mnum(lambda n: n < 3)))
+        print("D D17 (r40 A8, §4.4) `mnum := $mname.index` over /(?<mname>Jan|Feb|Mar)?-(?<d>\\d)/, `NOT (mnum: <3)` on `-5` (mnum absent with mname), rules %s: WHOLE %s ; SEARCHED %s" % (r, aW(Pn, "-5"), aS(Pn, "-5")))
+for nm, mkp, mkc in (("`atomic((B & (l: <20)) | A) & (l: <20)` over `atomic(B | A) & (l: <20)` (a condition INSIDE an atomic part, r40 A6 (a))",
+                      lambda: W(Atom(alt_BA()), lab_l(lt(20))), lambda: W(Atom(ALT(W(Pat(Bd), lab_l(lt(20))), Pat(Ad))), lab_l(lt(20)))),
+                     ("`/(?=(?<x>\\d+))\\d/ & (x: \"1\")` over `/(?=(?<x>\\d+))\\d/` (a lookahead)", lambda: Pat(r"(?=(?P<x>\d+))\d"), lambda: W(Pat(r"(?=(?P<x>\d+))\d"), C("x", eq("1"))))):
+    print("D D18 adding a condition admits a text: %s: NOW %s" % (nm, admits(NOWR, mkp, mkc, DIG4)))
+# C2: a `records` item (§7): compile-time, condition-free, never re-entered: the one-pattern loop's first path vs
+# the committed find-all, hit lists compared
+def hitsof(mk, s):
+    with rules(NOWR):
+        rw = whole_row(mk(), s); return None if rw is None else hitlist(rw)
+xs = [t for t in DSP if hitsof(lambda: OCC(Pat(r"\d+")), t) != hitsof(lambda: Committed(Pat(r"\d+")), t)]
+print("D D20 (r40 C2) a `records` item, condition-free: the one-pattern model's first WHOLE path vs the committed find-all, hit lists: %d of %d differ" % (len(xs), len(DSP)))
+
+# ================================================================================================= PART E: the open table
+# Each item left open (the manager's readings and the told-not-ruled items): every candidate on a WHOLE value, a
+# SEARCHED text and a several-match subject (FIND-ALL), and the texts on which each candidate differs from the first
+# (the draft's reading) over a set. A candidate is a program plus the rules it runs under.
+print("== PART E: the open items, every candidate run (the first candidate is the draft's reading)")
+@contextlib.contextmanager
+def kleene():
+    """rev 24's rules except the logic: Kleene three-valued (the retired reading), for set-once labels only."""
+    with rules(NOWR):
+        old = LP["MODE"]["v"]; LP["MODE"]["v"] = "T3"
+        try: yield
+        finally: LP["MODE"]["v"] = old
+@contextlib.contextmanager
+def now(): 
+    with rules(NOWR): yield
 def ecase(tag, slug, desc, cands, labs, texts, pool):
     print("E %s **%s** %s" % (tag, slug, desc))
     fs = []
@@ -826,6 +964,163 @@ ecase("E15", "conditional spelling (the meaning: the library definitions)", "`KH
        ("the two-argument form `KH & when((h: <5), p)`", now, lambda: WHEN(KH(), h5(), pk()))],
       ("k", "h"), ("5;1;9", "1;0;9", "1;0;9 5;1;9 2;7"), KHPOOL)
 
+# ================================================================================================= PART Q: the owner questions
+# Review r40's nine owner questions (the manager takes them to the owner). Each: the draft's current definition is the
+# FIRST candidate where one exists (labelled THE DRAFT'S READING in the draft); each candidate's answers on a WHOLE
+# value, a SEARCHED subject and a several-match subject; the texts on which each differs from the first, labels
+# compared in every mode; and the earlier rulings' lines it touches, RE-RUN under each candidate. Nothing is chosen.
+print("== PART Q: the owner questions of review r40, every candidate run (nothing chosen; the first candidate is the draft's current reading)")
+REJ = "REJECTED (a compile error)"
+def progf(mk, labs, ctx=None): return candf(ctx or now, mk, labs)
+def rejf(modes=("WHOLE", "SEARCHED", "FIND-ALL"), base=None):
+    def f(m, s): return REJ if m in modes else base(m, s)
+    return f
+def fmtq(s, m, k): return k if k == REJ else fmtl(s, m, k)
+def qcase(slug, desc, cands, texts, pool):
+    print("Q %s %s" % (slug, desc))
+    for nm, f in cands:
+        print("Q %s   %s: WHOLE `%s` %s ; SEARCHED `%s` %s ; FIND-ALL `%s` %s" % (slug, nm, texts[0], fmtq(texts[0], "WHOLE", f("WHOLE", texts[0])),
+              texts[1], fmtq(texts[1], "SEARCHED", f("SEARCHED", texts[1])), texts[2], fmtq(texts[2], "FIND-ALL", f("FIND-ALL", texts[2]))))
+    for nm, f in cands[1:]:
+        out = []
+        for m in ("WHOLE", "SEARCHED", "FIND-ALL"):
+            d = [t for t in pool if cands[0][1](m, t) != f(m, t)]
+            if d:
+                w = min(d, key=lambda x: (len(x), x))
+                out.append("%s %d (first `%s`: %s vs %s)" % (m, len(d), w, fmtq(w, m, cands[0][1](m, w)), fmtq(w, m, f(m, w))))
+            else: out.append("%s 0" % m)
+        print("Q %s   %s vs %s: %s of %d (labels compared)" % (slug, cands[0][0], nm, "; ".join(out), len(pool)))
+def qline(slug, txt): print("Q %s   RE-RUN %s" % (slug, txt))
+
+# 1. hits-text
+H3P = lambda subj=False: W(Committed(Pat(NUMp), 0, subj), NONE(NOT(C("n", lt(100)))))
+qcase("hits-text", "`hits(/(?<n>\\d+)/) & occurs.none(NOT (n: <100))` (H3): whose search are the hits?",
+      [("THE DRAFT'S READING: the global search of the MATCHED STRETCH (re-run inside each stretch the pattern tries)", progf(H3P, ("#hits",))),
+       ("the global search of the SUBJECT (its hits that lie inside the stretch)", progf(lambda: H3P(True), ("#hits",))),
+       ("`hits` legal in WHOLE only (a SEARCHED or FIND-ALL program with `hits` is an error)", rejf(("SEARCHED", "FIND-ALL"), progf(H3P, ("#hits",))))],
+      ("1234", "x300 12", "1234 5 300"), OCCPOOL)
+for tag, mko, mkn, pool in (("W8", lambda: W(OCC(Pat(NUMp)), C("n", lt(100))), lambda: W(Committed(Pat(NUMp), 0, True), SOME(C("n", lt(100))), NONE(NOT(C("n", lt(100))))), OCCPOOL),
+                            ("W9", lambda: W(OCC(Pat(ABXYp)), C("g", eq("x"))), lambda: W(Committed(Pat(ABXYp), 0, True), SOME(C("g", eq("x"))), NONE(NOT(C("g", eq("x"))))), XYPOOL)):
+    qline("hits-text", "%s (the old meaning, rev 23.2) against its rev 24 spelling with the SUBJECT's hits: %s (the draft's reading: PART B %s, 0)" % (tag, diffcount(under("23.2", mko), under("24", mkn), pool), tag))
+# 2. atomic-search
+def firststart(mk_inner, mk_full, labs):
+    cache = {}
+    def srch(Pi, Pf, s, pos):
+        for i in range(pos, len(s) + 1):
+            if any(True for _ in acc_iter(Pi, s, i)):
+                for e, row in acc_iter(Pf, s, i): return i, e, row
+                return None
+        return None
+    def f(m, s):
+        with now():
+            if "p" not in cache: cache["p"] = (mk_inner(), mk_full())
+            Pi, Pf = cache["p"]
+            if m == "WHOLE":
+                r = whole_row(Pf, s); return None if r is None else labkey(r, labs)
+            if m == "SEARCHED":
+                r = srch(Pi, Pf, s, 0); return None if r is None else (r[0], r[1], labkey(r[2], labs))
+            out, pos = [], 0
+            while pos <= len(s):
+                r = srch(Pi, Pf, s, pos)
+                if r is None: break
+                out.append((r[0], r[1], labkey(r[2], labs))); pos = r[1] if r[1] > r[0] else r[1] + 1
+            return tuple(out)
+    return f
+qcase("atomic-search", "`atomic(t2) & !q` (predicates_future item 14): what does atomic do in a search?",
+      [("THE DRAFT'S READING: PCRE's atomic group (regex-settles (5)): no retry inside, the search moves to the next start", progf(lambda: D(Atom(mk_t2()), mk_q()), ("h", "m"))),
+       ("stop at the first match start: where the atomic part first matches, the condition judges that match; if it fails there the search ends", firststart(lambda: Atom(mk_t2()), lambda: D(Atom(mk_t2()), mk_q()), ("h", "m")))],
+      ("9:30", "9:30", "9:30 9:15"), TP5)
+f1 = progf(lambda: W(Atom(alt_BA()), lab_l(lt(20))), ("l",)); f2 = firststart(lambda: Atom(alt_BA()), lambda: W(Atom(alt_BA()), lab_l(lt(20))), ("l",))
+qline("atomic-search", "B8 `atomic(B | A) & (l: <20)` (regex-settles (5)) under the first-start candidate: %s" % diffl(f1, f2, DSP))
+f1 = progf(lambda: Atom(W(Pat(PABp), C("a", eq("1")))), ("a", "b")); f2 = firststart(lambda: Atom(W(Pat(PABp), C("a", eq("1")))), lambda: Atom(W(Pat(PABp), C("a", eq("1")))), ("a", "b"))
+qline("atomic-search", "B9 `atomic(P & (a: \"1\"))` (a condition INSIDE) under the first-start candidate: %s" % diffl(f1, f2, DSP))
+# 3. joint-last-pass
+class LastPassTest:
+    """A joint read on the LAST PASS's own values (a label that pass did not set is absent there)."""
+    def __init__(self, labs, pred): self.labs, self.pred = labs, pred
+    def ev(self, row, view=None):
+        lps = set(row.loop.get(l) for l in self.labs if row.loop.get(l) is not None)
+        if len(lps) != 1: return False
+        ps = row.passes.get(lps.pop(), [])
+        if not ps: return False
+        vals = [ps[-1].get(l) for l in self.labs]
+        return None not in vals and bool(self.pred(*vals))
+JPOOL = lists(["9:45,", "10,", "10:45,", "9,"], 3)
+jeq = lambda h, m: (h, m) == ("10", "45")
+JJ = lambda: C(("h", "m"), jeq)
+qcase("joint-last-pass", "`CLOSE & ((h, m): == (10, 45))`, CLOSE := /(?:(?<h>\\d+)(?::(?<m>\\d\\d))?,)*/: a joint over a loop",
+      [("THE DRAFT'S READING: each label's last setting (PCRE's capture state; possibly from different passes)", progf(lambda: W(Pat(CLOSEp), JJ()), ("h", "m"))),
+       ("the last pass's own tuple (a label it did not set is absent)", progf(lambda: W(Pat(CLOSEp), LastPassTest(("h", "m"), jeq)), ("h", "m"))),
+       ("some pass holds the tuple (`some(J)`)", progf(lambda: W(Pat(CLOSEp), SOME(JJ())), ("h", "m"))),
+       ("every pass, at least one (rev 23.2's per-pass pairing, `some(J) & occurs.none(NOT J)`)", progf(lambda: W(Pat(CLOSEp), SOME(JJ()), NONE(NOT(JJ()))), ("h", "m")))],
+      ("9:45,10,", "10,9:45,", "9:45,10, 10:45,"), JPOOL)
+rxj = P.Pcre(r'(?:(?<h>\d+)(?::(?<m>\d\d))?,)*(?C"j")', {"j": lambda c: jeq(c.get("h"), c.get("m"))})
+qline("joint-last-pass", "the draft's reading against libpcre2 `/(?:(?<h>\\d+)(?::(?<m>\\d\\d))?,)*(?C)/` (the callout tests the joint): %s" % diffl(rxkey(rxj, ("h", "m")), enkey(lambda: W(Pat(CLOSEp), JJ()), ("h", "m")), JPOOL).replace(" (labels compared)", ""))
+# 4. hits-committed: PART E E4 (the named all-hits request, committed vs one pattern) and PART B's W8-bare control
+f1 = under("23.2", lambda: W(OCC(Pat(ABXYp)), C("g", eq("x")))); f2 = under("24", lambda: W(OCC(Pat(ABXYp)), SOME(C("g", eq("x"))), NONE(NOT(C("g", eq("x"))))))
+qline("hits-committed", "W9's old meaning against its spelling over the ONE-PATTERN hits (the candidate that drops the committed list): %s" % diffcount(f1, f2, XYPOOL))
+# 5. join-order
+G_, L_ = lambda: Pat(r"(?P<a>\d+)"), lambda: Pat(r"(?P<c>\d+?)")
+qcase("join-order", "`G & L`, G := /(?<a>\\d+)/, L := /(?<c>\\d+?)/ (a LAZY right operand)",
+      [("THE DRAFT'S READING: the left side's paths outer", progf(lambda: AND(G_(), L_()), ("a", "c"))),
+       ("the right side's paths outer", progf(lambda: AND(L_(), G_()), ("a", "c")))],
+      ("11", "11", "11 123"), DSP)
+X_, B_, A_ = lambda: Pat(r"\d+"), lambda: Pat(r"\d"), lambda: Pat(r"\d\d")
+for nm, sw in (("left outer", False), ("right outer", True)):
+    j = (lambda a, b: AND(b, a)) if sw else (lambda a, b: AND(a, b))
+    qline("join-order", "(%s) `X & (B | A)` vs `(X & B) | (X & A)`, X := /\\d+/, B := /\\d/, A := /\\d\\d/ (`&` distributing over a `|` on the RIGHT): %s" % (nm,
+        diffcount(nowf(lambda: j(X_(), ALT(B_(), A_()))), nowf(lambda: ALT(j(X_(), B_()), j(X_(), A_()))), DSP)))
+    qline("join-order", "(%s) `(B | A) & X` vs `(B & X) | (A & X)` (a `|` on the LEFT): %s" % (nm,
+        diffcount(nowf(lambda: j(ALT(B_(), A_()), X_())), nowf(lambda: ALT(j(B_(), X_()), j(A_(), X_()))), DSP)))
+    qline("join-order", "(%s) the LAW with a lazy B: `/(?<l>\\d+)/ & /\\d+?/` vs `/(?<l>\\d+)/ & (0: /\\d+?/)`: %s" % (nm,
+        diffcount(nowf(lambda: j(Pat(r"(?P<l>\d+)"), Pat(r"\d+?"))), nowf(lambda: ZERO(Pat(r"(?P<l>\d+)"), Pat(r"\d+?"))), DSP)))
+# 6. polarity-rule
+T2N = lambda: W(mk_t2(), NOT(C("h", lt(0))))
+qcase("polarity-rule", "`t2 & NOT (h: <0)`: a test that can never pass, under NOT (always TRUE)",
+      [("THE DRAFT'S READING (the manager's 13:25): no error, no warning", progf(T2N, ("h",))),
+       ("a WARNING (the answers as the draft's)", progf(T2N, ("h",))),
+       ("the §5.2 ERROR at every polarity (as `t2 & (h: <0)` without NOT)", rejf())],
+      ("9:30", "x9:30", "9:30 1"), TP5)
+qline("polarity-rule", "E6/E6b: the draft's reading equals plain `t2` (PART E). Without NOT, `t2 & (h: <0)` is the §5.2 ERROR under every candidate")
+# 7. exception-rule
+qcase("exception-rule", "H3 `hits(/(?<n>\\d+)/) & occurs.none(NOT (n: <100))` (the hit list of an rx whose hit list is NOT proven regular, lane rxmodel)",
+      [("(B) asked for by name (13:30 (B); the draft's reading as rev 24 printed it)", progf(H3P, ("#hits",))),
+       ("(A) proven or not offered: the hit list of `\\d+` is unproven, so `hits` is not offered", rejf()),
+       ("both: proven, OR asked for by name (the manager's lean)", progf(H3P, ("#hits",)))],
+      ("1234", "x300 12", "1234 5 300"), OCCPOOL)
+W9N = lambda: W(Committed(Pat(ABXYp)), SOME(C("g", eq("x"))), NONE(NOT(C("g", eq("x")))))
+qcase("exception-rule", "W9 `hits(/ab(?<g>[xy])/) & some((g: \"x\")) & occurs.none(NOT (g: \"x\"))` (a hit list proven regular, lane lastpass: 0 of 85)",
+      [("(B) asked for by name", progf(W9N, ("#hits",))), ("(A) proven", progf(W9N, ("#hits",))), ("both", progf(W9N, ("#hits",)))],
+      ("abx", "abx aby", "abxabx aby abx"), XYPOOL)
+# 8. pass-list-read
+PLp = r"(?:(?P<h>\d);)*(?P<k>\d)"
+qcase("pass-list-read", "`/(?:(?<h>\\d);)*(?<k>\\d)/ & (k: == $h)`: what a bare `$h` reads on a value side when h is looped",
+      [("THE DRAFT'S READING: `$h` is the PASS LIST (§R.4's `sorted`/`distinct` read it); comparing k with a list has no stated meaning", rejf()),
+       ("the last pass, as regex's `\\k<h>` (last-pass-default's rule for a bare `h:` applied to `$h`)", progf(lambda: W(Pat(PLp), C(("k", "h"), lambda k, h: k == h)), ("h", "k"))),
+       ("the pass list, k equal to SOME pass", progf(lambda: W(Pat(PLp), SOME(C(("h", "k"), lambda h, k: h == k))), ("h", "k"))),
+       ("the pass list, k equal to EVERY pass (at least one)", progf(lambda: W(Pat(PLp), SOME(C(("h", "k"), lambda h, k: h == k)), NONE(NOT(C(("h", "k"), lambda h, k: h == k)))), ("h", "k")))],
+      ("3;7;7", "3;7;3", "3;7;7 7;3;3"), RG3)
+rxb = P.Pcre(r'(?:(?<h>\d);)*(?<k>\k<h>)')
+qline("pass-list-read", "the last-pass candidate against libpcre2's backreference `/(?:(?<h>\\d);)*(?<k>\\k<h>)/`: %s" % diffl(rxkey(rxb, ("h", "k")), enkey(lambda: W(Pat(PLp), C(("k", "h"), lambda k, h: k == h)), ("h", "k")), RG3).replace(" (labels compared)", ""))
+# 9. zero-place
+class OccG0(OccS):
+    """`occurrences(A & (0: B))` with `0` read as PCRE's group 0: B whole on the text from the PROGRAM's match start
+    to the hit's end (not the hit)."""
+    def __init__(self, A, B, mn=0):
+        OccS.__init__(self, A, mn); self.B = B
+        self.hit_ok = lambda s, i, g, e: whole_row(self.B, s[i:e]) is not None
+qcase("zero-place", "`occurrences(/\\d+/ & (0: /1\\d*/), min = 1)`: what `0` names inside a nested place",
+      [("THE LAW's twin `occurrences(/\\d+/ & /1\\d*/, min = 1)` (the reference: `&` on the hit's stretch)", progf(lambda: OCC(AND(Pat(r"\d+"), Pat(r"1\d*")), 1), ("#hits",))),
+       ("`0` = the innermost stretch (the hit)", progf(lambda: OCC(ZERO(Pat(r"\d+"), Pat(r"1\d*")), 1), ("#hits",))),
+       ("`0` = PCRE's group 0 (the program's match start to here)", progf(lambda: OccG0(Pat(r"\d+"), Pat(r"1\d*"), 1), ("#hits",)))],
+      (" 1", " 1", " 1 12"), DSP)
+rxg0 = P.Pcre(r'(?:[\s\S]*?\d+(?C"z"))+[\s\S]*', {"z": lambda c: re.fullmatch(r"1\d*", c.subject[c.start:c.pos]) is not None})
+qline("zero-place", "the group-0 candidate against libpcre2 `/(?:[\\s\\S]*?\\d+(?C))+[\\s\\S]*/` (the callout tests `/1\\d*/` whole on subject[start_match:current_position]), holding and stretch: %s" % diffcount(
+    lambda m, t: (lambda k: (k is not None) if m == "WHOLE" else (None if k is None else k[:2]) if m == "SEARCHED" else tuple(x[:2] for x in k))(rxkey(rxg0, ())(m, t)),
+    under(NOWR, lambda: OccG0(Pat(r"\d+"), Pat(r"1\d*"), 1)), DSP))
+qline("zero-place", "at the top level the two candidates are one (group 0 is the stretch): D5's LAW lines")
+# 10. the C2 records model: no question (D20: 0 differ; the item is condition-free and its result is a value)
+
 # ================================================================================================= PART F: whole-text
 # The owner's model (2026-11-17 13:55, adopted if legal at 14:05): a parser J of the whole text; a check C against J's
 # result that can fail the whole thing; a search M for the matches inside J's span; the matches reported only when C
@@ -869,5 +1164,5 @@ nc = under(NOWR, lambda: D(mk_t2(), OCC(mk_q(), 1)))
 print("F F3 the SEARCHED form: `t2 & !contains(q)` vs route (ii) `t2 & text.none(q)` (a text-level test, not a ruled piece): %s" % diffcount(nc, r2key, TP5))
 
 # ================================================================================================= summary
-print("== SUMMARY: catalogue %d lines, MOVED %d; printed rev 23.2 answers %d, mismatches %d; old meanings %d rows, %d at 0; libpcre2 models %d, %d equal" % (
-    len(CAT), len(moved), pchk, len(pmis), len(WAYS), zero, len(PCASES), pexact))
+print("== SUMMARY: catalogue %d lines, MOVED %d; printed rev 23.2 answers %d, mismatches %d; old meanings %d rows, %d at 0; libpcre2 models %d, %d equal; order check %d of %d differ" % (
+    len(CAT), len(moved), pchk, len(pmis), len(WAYS), zero, len(PCASES), pexact, sum(ocheck), len(ocheck)))
