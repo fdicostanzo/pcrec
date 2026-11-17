@@ -1985,3 +1985,18 @@ STATE OF THE MODEL after this evening: a pattern is a statement; the source row 
 is a three-valued test of one result row; absent is null and never matches; no optional mark; a default is per
 test and may be any text; the complement of a statement is the source rows it did not match; `!` on a condition
 stays an error. NEXT: a critic round on condition_kind.md (Parts I-III), then rev 23 of predicates_draft.md.
+
+**2026-11-16 RECORD after review r31 (round condkind on docs/design/condition_kind.md; session 137, box clock 22:58;
+the manager's entries, no owner word in this entry).** (1) WITHDRAWN: the 22:30 entry's "MINE ... \"all\" = every
+pass passes, and there may be none" as a restatement needing no owner word: the round showed it answers two causes
+of absence oppositely, on the LOCKED absent-rule's ground; asked of the owner as **all-question**. (2) CORRECTION
+to the 21:49 entry's cost sentence: `(h?: <5) & (k: <5)` on `b3` with the mark merely DELETED still FAILS; it
+HOLDS only once the author writes `h = 0`; and the 20:36 entry's "16:32" is the 16:31 entry. (3)
+**condition-not**, told to the owner twice this evening (after Part I; in the model summary) with no objection, is
+recorded as TOLD, NOT RULED: `!` on a condition stays a compile error (his 17:29 not-is-complement), its reason
+restated as "one spelling per question" since his 19:49 words give a condition's NOT a meaning. (4) MANAGER RULING,
+told to the owner by name (**repeated-means**): a label is "repeated" when the REGEX that defines it can set it
+more than once in a match, not "in some match of the program" (rev 22 section 4.3 rested on the retired
+domain-scope). (5) Asked of the owner: **searched-complement** (review r31 finding A: source-row YES makes a
+complement per subject, which in a SEARCHED program contradicts the ruled same-stretch tie of 11-15 20:43:
+`/\d+/ & !/0+/` on `0 7`).
