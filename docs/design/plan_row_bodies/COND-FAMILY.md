@@ -2395,3 +2395,12 @@ ramifications should be determined" before it is ruled: what moves in the draft,
 (the record's "a pass that sets nothing keeps the earlier value" was the manager's account of the regex model),
 to the every-pass spelling, to defaults and joints in loops, and to the regex models (PCRE2 has no direct model;
 an exception in his sense). Lane predspec241 writes both candidates out (its R2, R3); the ruling waits for that.
+ADDENDUM, same evening, HIS WORDS: "joint-last-pass: that logic might be justified if you differentiate between a
+label and a capture". RECORD: a possible GROUND for the lean above: a CAPTURE is regex's (inside rx text, a
+backreference to it reads what PCRE holds, the earlier pass's value included); a LABEL is the predicate language's
+own (what a condition reads), and may have its own lifetime (a pass's labels are its own; unset when the group took
+no part). Under his exception-rule this is then not "something that looks like regex behaving otherwise": the
+capture still behaves like regex; the label is an explicit feature of the language. MINE, to be worked out by lane
+predspec241 (its R4) before he rules: one named group gives both; the two can disagree on one text (`\k<m>` inside
+the literal against `(m: ...)` outside it); where a label takes its value from the capture (the end of each pass);
+what the draft's existing sentences on `\k<x>`, `capture(x)` and the `captures` level say today.
