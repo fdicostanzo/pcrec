@@ -50,3 +50,9 @@ sites or adds a mechanism; a paragraph otherwise.
   accepted architecture note; the design brief cites it.
 - A6 PILOT on the next feature to reach a build go, and a RETRO TEST: write the note for one A1 refactor from its
   pre-refactor commit and see whether it names what the refactor later did.
+
+## 2026-11-17, the owner on the goals document (after A1 and A2 were summarised to him)
+
+"I like the goals document. It's a good document to keep live and consult on new feature to see if refactors can
+ride along. Do it". So A3 is a GO, and the document has a second job beside goals and rules: a LIVE register of the
+remodels we know we want, each with the event that should carry it, consulted whenever a new feature is planned.
