@@ -2450,3 +2450,23 @@ condition is a piece at the place it is written). What a bare condition written 
 looped label is therefore OPEN again (asked: after-loop-read). The manager had launched a revision lane
 (predspec242) on the entry above; it was stopped at once, nothing written. LESSON (mine): "I thought we said" was
 a recollection, not a ruling; the settle-before-launch rule applies to it.
+
+**2026-11-17 OWNER RULING — after-loop-read: the last pass's own label (Frank, to session 138, evening).** After
+his reconsideration above, shown that the ALL meaning is the condition on the item ("Then the rx is "a loop of
+(times after 9:30)", his words, to `late := time & ((h, m): >= (9, 30))`, `/(?:${late},)*/`), and asked what a
+bare condition written after the whole pattern reads from a label set inside a loop, with the table on
+`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)` (`3qxx`: regex's carried value HOLDS, the last pass's own label FAILS, a
+compile error refuses; `q3xx`, `7q3xx`: both readings HOLD) and the manager's lean (the compile error). HIS WORDS:
+"after-loop-read: ok I see it. Last pass own label makes sense".
+RECORD, the settled state of the evening: (1) a condition written INSIDE a loop, on the item, is judged in every
+pass: that is how "all" is written (the regex model of a condition as a piece where it stands). (2) A bare
+condition written AFTER the pattern reads, for a label set inside a loop, THE LAST PASS'S OWN LABEL: unset when
+that pass did not set it (the test then fails; a per-test default then applies). (3) So a loop pass has its own
+labels and a group that took no part in a pass is unset in it (his lean of the evening, now relied on by (2)); the
+CAPTURE stays regex's (the carried value, read inside rx text). (4) SUPERSEDED the same evening: "labels match
+every pass" as the meaning of a bare condition after the loop. (5) last-pass-default (14:30) STANDS, with its edge
+changed: the record's "a pass that sets nothing keeps the earlier value" was the manager's account of the regex
+model and is true of the capture only. Nested loops: his lean is the OUTER reading (every enclosing loop's pass
+unsets), not yet ruled. MINE: joint-last-pass dissolves (a bare joint reads the last pass's own tuple); the
+manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the
+manager's proposal.
