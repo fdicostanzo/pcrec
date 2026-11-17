@@ -100,11 +100,13 @@
 # on). Unit: ratio to I's time in the same (pat, regime, layer) cell (raw medians, ns per subject
 # byte, 1 MiB subject); C4 is bytes (emitted C, `.text`), no timing; C5 the engine route
 # (`--memfn=no-window-search`) over I. `lengths` `-`: one call length (the 1 MiB subject), no
-# estimator. `aa_rule` `aa-cell`: the floor f is the largest |median ratio - 1| of the lit-l16
-# A/A pair over every regime and layer. The script, its dry run, R0-R5 and the identity check:
+# estimator. `aa_rule` `aa-cell`: the floor f is read from the lit-l16 A/A pair over every regime
+# read and both layers, SIZED TO THE RULE'S COMPARISON COUNT (r45_reply.md rev 7 §3 "The floor
+# `f`": exp(z(0.05 / N) x the A/A sigma's upper bound) - 1, never below the largest A/A ratio). The script, its dry run, R0-R5 and the identity check:
 # memfn/tests/span_forms/cards.py. UNMEASURED: no set holds a ver-7 row and no box has run it;
 # the regimes `not-warm` and `short-subject` are the kit's approximations until the bench names
-# its methods (D198 (f), its `short-subject-search` subject). The design names kit-synthetic.tsv
+# its methods (D198 (f), its `short-subject-search` subject), and their cells are VOID BY METHOD
+# until then (rev 7 §3). The design names kit-synthetic.tsv
 # for these rows; they live here because kit-synthetic's cards are the synthetic sets', "never
 # measured" (its header), and these are measured method cards (lane forms report, Cards).
 #
