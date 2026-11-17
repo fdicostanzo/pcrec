@@ -2598,3 +2598,13 @@ the rule (no answer changes); (2) the START-OF-SUBJECT and END-OF-SUBJECT assert
 filter take the same interpretation: the subject, to the filter, is the stretch. MINE: `\G` stays refused (it
 names the search's start, which the stretch has none of); the next revision states the sentence once in R.1.4 and
 derives the anchors and the subject assertions from it.
+
+**2026-11-17 OWNER RULING — join-order: the left side decides (Frank, to session 138, evening).** Asked, with
+revision 24.3's row and its `G & L` example (`11` SEARCHED: `11` if the left side decides, `1` if the right; 0 /
+1,008 / 1,197 of 1,365 differ; holding never differs) and the manager's lean (left). HIS WORDS: "join-order: left
+side decides. That's always how I thought of it. In concedes the logical purity that you seemed to be going for for
+the reality that regex is not pure." RECORD: RULED: in `P & Q` the LEFT side's order decides which match is
+reported and which labels come with it; `&` stays symmetric for whether a program holds. His remark: this gives up
+the logical purity (a symmetric `&`) for the reality that regex is not pure (order matters in regex). The LAW
+`A & B` = `A & (0: B)` holds for the reported match with the left side deciding; `&` distributes over `|` with the
+`|` on the left.
