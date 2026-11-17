@@ -2201,3 +2201,8 @@ as a model, ONE pattern over the span, with the gap made LAZY (as written, greed
 rightmost hit); being one pattern, a rejecting condition re-enters it under the branch-scope ruling (pathimpact's
 reading H2), which a global search (hits committed one by one, H1) does not; regex keeps only the last pass's
 capture, so a test on EVERY hit is a piece inside the loop body.
+ADDENDUM, same day about 13:15, HIS WORDS: "Formatting lost some operators". So the pattern text quoted above is
+NOT as he typed it (his message's formatting dropped characters); the manager reads the intended pattern as the
+lazy-gap form (`(.*?(${rx}))*.*`), and the "fix" in the manager's answer is then his own pattern, not a correction.
+Unconfirmed character for character; the meaning (one pattern over the span, the loop walks the hits in order) is
+what is recorded.
