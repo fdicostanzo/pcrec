@@ -2360,3 +2360,24 @@ above is stamped "about 13:55"; it FOLLOWS and answers the 14:25 questions entry
 his words. The 11:50 entry's sentence in full, for anyone quoting it: "However, it is in line with regex behavior so
 I do like it and think it should be the general behavior" (its subject is the backtracking on a rejecting
 condition). The SQL picture's "each row remembers its branch" is lane pathimpact's finding, not in his words.
+
+**2026-11-17 OWNER RULING — exception-rule (Frank, to session 138, evening; settles the two alternatives of the
+"an exception proves itself, or is asked for by name" entry above, which review r40 finding B2 showed were never
+chosen between).** Asked with the manager's lean ("both: by name decides visibility, prove-itself decides the
+level"). HIS WORDS: "exception-rule: everything that looks like regex should behave like regex unless we explicitly
+allow. This is the prove itself portion in that an exception has to be either so useful or the "expected
+understanding" whereas the actual regex behavior is obscure so as to be useless. Exceptions should be requested by
+using those features explicitly. If requested (and optioned in if needed), they don't have to be regular regex or
+even legal regex."
+RECORD: (1) THE DEFAULT: anything that looks like regex behaves like regex, unless an exception is explicitly
+allowed. (2) "PROVE ITSELF" is the bar for ALLOWING an exception, and it is about WORTH, not about regularity: the
+exception is either so useful, or it is what a reader would expect where the real regex behaviour is so obscure as
+to be useless. (3) Exceptions are REQUESTED by using their own explicit features (and opted in where a capability
+level requires it); a requested exception need not be a regular language, nor even something legal regex can say.
+CORRECTS the manager: "converted to regular language" (13:30) was read by the manager as "must reduce to an
+automaton" and the lean tied the proof to the capability level; that reading is superseded: regularity is NOT the
+bar, and the levels are a separate, existing rule (11-14). CONSEQUENCES, MINE, for the revision to check: whole-text
+as he modelled it is legal as a requested feature; the hit list is admitted as an explicit request without a
+regularity proof (its level is whatever its reads need); every place where the draft makes something that LOOKS
+like plain regex behave otherwise is a candidate exception that must either be allowed by him under (2) or revert
+to regex behaviour: the revision lists them.
