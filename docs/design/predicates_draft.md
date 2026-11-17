@@ -990,6 +990,35 @@ value" is the manager's record and falls: R13;; above); absent-rule (11-16 14:31
 conditions ("a pass that did not set it" is absent); joint-loops (1) (11:17): a bare joint pairs within the LAST pass
 (not every pass); regex-settles (4)'s one-pattern `occurrences`: its hits no longer carry labels; §2.6's THE
 ITERATION'S OWN VALUES (rev 10 LEAN) becomes the rule; PART B's old meanings: all 23 still at 0.
+(5) A LABEL IS NOT A CAPTURE (rulings R4; the owner, on joint-last-pass: "that logic might be justified if you
+differentiate between a label and a capture"). The second candidate read this way: a CAPTURE is regex's (inside rx
+text: `\k<h>`, a conditional group, a callout) and reads what PCRE holds, the carried value included, the regex
+model exactly; a LABEL is the predicate language's (what a condition, a default, a joint, `$h`, `some` / `occurs`
+read) with its own lifetime: a pass's labels are its own, unset when the group took no part in that pass.
+(a) WHAT THE DRAFT SAYS TODAY. It already separates the two in places: §4.3's RULE says "PCRE's own `\k<x>` INSIDE
+rx text sees the last iteration (PCRE's meaning, inside a literal); the expression's `$x` keeps its one meaning at
+every level", and gives a duplicate label inside a loop "the iteration's own values"; §2.6's THE ITERATION'S OWN
+VALUES calls itself "a stated DEPARTURE from PCRE's raw capture state, not from PCRE's parse", and §2.6 refuses an
+`occurrences` argument whose `\k<c>` can read an earlier hit's capture (the raw state) because no per-iteration
+reading can change it. `capture(x) := /(?<${x.label}>${x})/` (§5.3) and the labelled array `[x = R]` IS the rx
+`(?<x>R)` (§3.1): a label is DEFINED by a regex group, so every label today also has a capture. Named groups are
+the literal's labels (§4.1: `x:` constrains, `$x` reads); reading a value out of a pass or hit is the `captures`
+level (§6.1, RULED BY ACCEPTANCE, CF:977). No section states a label's LIFETIME apart from its group's.
+(b) ONE TEXT, TWO ANSWERS (PART Q): on `9:45,10,` libpcre2's capture m after the loop is `45`, and
+`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/` matches `9:45,10,45` WHOLE; the LABEL m after the loop is `45` under
+the carry and ABSENT under pass-own (WHOLE HOLDS h = `10`, m absent).
+(c) WHEN A LABEL TAKES ITS VALUE. The text fixes the setting point: at the group's close (R.1: a condition "reads the
+labels set so far"; W1a's item condition stands before the `;` that ends the pass). It does not fix the CLEARING
+point; candidates: the start of each pass of the INNERMOST enclosing loop, or of EVERY enclosing loop (the
+nested-loop line above: 4 of 1,365 differ).
+(d) UNDER EXCEPTION-RULE, two views, one sentence each: AS AN EXCEPTION, a label looks like the regex group that
+defines it, so a value that differs from the capture is regex behaving otherwise and needs his allowance (the
+"expected understanding" bar); AS A FEATURE, a label never was regex syntax (it is read only by the language's
+conditions, defaults, joints and `$`), so its lifetime is the definition of a language feature and regex's
+captures stay untouched.
+(e) THE RX MODULE (`docs/design/rx_module.md`): it spells a labelled part `[h = X]` and, by §3.1, that IS
+`(?<h>X)`, so the form carries a capture as well as a label; a label with NO capture would need a new definition
+of `[h = X]` (or a new form), which the note does not give.
 
 STOP RULE: no two RULINGS decide an answer differently, and no engine fix of rev 24.1 changes an answer the owner
 was shown when he ruled (PART A's 68 lines are unchanged by the fixes; pass-own-labels is a candidate, not a fix, and

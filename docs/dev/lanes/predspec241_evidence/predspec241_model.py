@@ -1286,6 +1286,14 @@ try:
 except ValueError as e:
     dn = "no libpcre2 control: PCRE2 compiles duplicate names under (?J), but the harness's by-name capture read refuses them (%s)" % e
 print("Q pass-own-labels     %s" % dn)
+# rulings R4: a CAPTURE (regex's: `\k<m>`, a conditional group, a callout read PCRE's state) vs a LABEL (the language's)
+rxk = P.Pcre(r'(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>')
+rxc = P.Pcre(r'(?:(?<h>\d+)(?::(?<m>\d\d))?,)*(?C"m")', {"m": lambda c: (CAPM.append(c.get("m")) or True)})
+CAPM = []; rxc.match("9:45,10,", 0, P.PCRE2_ANCHORED | P.PCRE2_ENDANCHORED)
+lm = progf(lambda: W(Pat(CLOSEp)), ("h", "m"), passown)("WHOLE", "9:45,10,")
+lc = progf(lambda: W(Pat(CLOSEp)), ("h", "m"))("WHOLE", "9:45,10,")
+print("Q pass-own-labels   CAPTURE vs LABEL on `9:45,10,` (rulings R4 (b)): libpcre2's capture m after the loop (a callout) reads %r; the backreference `/(?:(?<h>\\d+)(?::(?<m>\\d\\d))?,)*\\k<m>/` WHOLE on `9:45,10,45` %s and on `9:45,10,` %s; the LABEL m after the loop: carry %s, pass-own %s" % (
+    CAPM[-1] if CAPM else None, "MATCHES" if rxk.match("9:45,10,45", 0, P.PCRE2_ANCHORED | P.PCRE2_ENDANCHORED) else "FAILS", "MATCHES" if rxk.match("9:45,10,", 0, P.PCRE2_ANCHORED | P.PCRE2_ENDANCHORED) else "FAILS", fmtq("9:45,10,", "WHOLE", lc), fmtq("9:45,10,", "WHOLE", lm)))
 print("Q pass-own-labels RAMIFICATIONS (3): regex models of pass-own")
 rxe = P.Pcre(r'(?:(?<h>\d|);)*(?C"h<5")', CO)
 rxe0 = P.Pcre(r'(?:(?<h>\d|);)*(?(<h>)(?C"h<5")|(?C"d0<5"))', CO)

@@ -13,10 +13,14 @@ states (§R) is a line of `predspec241_model.out`. Rules nothing. Historical aft
   the order swap is replaced by PART C's ORDER CHECK (a check that can fail). Loads lane lastpass's engine in memory
   (and through it pathimpact's path enumerator and rxmodel's libpcre2-8 harness `../rxmodel_evidence/pcre2h.py`).
   PARTS: A the catalogue (68 lines, NOW = rev 24, BEFORE = rev 23.2, PRINTED CHECK); B the ways to write the old
-  meanings (23 rows + controls); C callout models on libpcre2 (34: `&`/`!B` models run the operand as its own
-  pattern WHOLE on the stretch a callout extracts; the place-by-operator grid G1-G9) + the ORDER CHECK; D properties
-  (D12-D21: the kept sentences review r40 names); E the open items; Q the owner questions of review r40, every
-  candidate run; F whole-text legality.
+  meanings (23 rows + controls); C callout models on libpcre2 (38: `&`/`!B` models run the operand as its own
+  pattern WHOLE on the stretch a callout extracts; defaults as PCRE conditional groups V26-V29; the place-by-operator
+  grid G1-G9) + the ORDER CHECK; D properties (D12-D21: the kept sentences review r40 names); E the open items; Q
+  the owner questions, every candidate run: hits-text, atomic-search, joint-last-pass, hits-committed, join-order,
+  polarity-rule, exception-rule (ruled after the run's text was written; its lines stay as the record),
+  pass-list-read, zero-place, pass-own-labels (the context `passown`: no carry inside a loop, after the loop the last
+  pass's own value; its RAMIFICATIONS re-run PARTS A-C and direct evaluators for nested loops and a label set before
+  the loop), operand-context (`AndCtx`: the operand in the subject, end tied); F whole-text legality.
 - `predspec241_model.out` — the forward run (committed).
 
 ## Run (one engine process at a time; no make; nothing under /tmp)
