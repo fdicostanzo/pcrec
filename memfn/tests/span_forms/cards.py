@@ -662,6 +662,10 @@ def cmd_plan(_args):
         len(s1_read), w(s1_read), len(s1), w(s1)))
     print("#   c3:   %d cells timed, %.2f h (C4's sizes: compile-only, not in the window)" % (len(s2_read), w(s2_read)))
     print("#   rerun: one cell per void, ~%.0f s per C1-C2 cell (10 arms)" % (10 * EST_LAUNCH_S * (1 + LAUNCHES)))
+    per = 10 * EST_LAUNCH_S * (1 + LAUNCHES)
+    print("#   confirm (rev 10, r38 R2): one re-run of each C1-C2 cell holding a win beyond f, ~%.0f s a cell; a "
+          "pure-noise night ~0 cells (selftest: mean 0.000 a night), a night with one real 5 %% win of one head in "
+          "one regime ~10-14 cells (selftest: mean ~10), %.2f h" % (per, 14 * per / 3600.0))
     print("# timing order (rev 10, r38 J2): the cells above grouped by (card, pattern, regime, layer), each timed in "
           "%d ROUNDS of one launch per arm (`launch_order`): run %d cells, %d timed launches" % (
               LAUNCHES, len(cell_groups(s1_read)), len(launch_order(s1_read))))
