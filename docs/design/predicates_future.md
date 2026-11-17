@@ -357,6 +357,9 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   STRICTNESS (every warning becomes an error). Same open points as above: its scope (file or binding), what an
   imported library's setting does to the importer, and whether a host can impose it from outside. Spelling a
   placeholder; `@options(...)` and `@config.strict()` are two of his examples for one family.
+  Refined the same evening: `@options.strict(/no-fail/)`: strictness is SELECTIVE, a pattern over warning NAMES;
+  the matched warnings become errors. So each warning carries a stable name, and "all" is a pattern matching
+  every name.
 
 ## 21. Building patterns without rx literals: an `rx` module and a concatenation operator
 

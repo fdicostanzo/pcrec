@@ -2537,3 +2537,10 @@ example and a placeholder spelling (D193 add. 4). It joins the options-in-the-so
 20: capability opt-ins declared in the source). MINE: the setting covers every warning the language has (the
 proposed warning on a bare condition over a looped label included), and its scope and a host's ability to impose
 it are the same questions item 20 already lists.
+ADDENDUM, same evening. To the manager's reading "the setting covers every warning the language has", HIS WORDS:
+""One reading of mine: the setting covers...": @options.strict(/no-fail/)". RECORD: strictness is SELECTIVE: the
+setting takes a pattern over WARNING NAMES, and the warnings whose names it matches become errors (his example
+selects a warning named `no-fail`); it sits in the same `@options` family as the capability opt-ins. Spelling a
+placeholder. CORRECTS the manager's reading (not "every warning" by default). MINE: so every warning needs a
+stable NAME (the draft already names its diagnostics: `empty.search`, `label.ambiguous`, `default.unused`,
+`anchor.whole`); "all warnings" is then the pattern that matches every name; the two polarity warnings need names.
