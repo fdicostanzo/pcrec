@@ -2608,3 +2608,7 @@ reported and which labels come with it; `&` stays symmetric for whether a progra
 the logical purity (a symmetric `&`) for the reality that regex is not pure (order matters in regex). The LAW
 `A & B` = `A & (0: B)` holds for the reported match with the left side deciding; `&` distributes over `|` with the
 `|` on the left.
+NOTE on the join-order entry above (2026-11-17, the manager, confirmed by the owner the same evening: "This phone is
+autocorrecting my words to gibberish"; "Your interpretation was correct"): in his quoted sentence "In concedes"
+reads "It concedes"; in the documentation request quoted in predicates_future.md item 24, "makes inlet into" reads
+"makes it into". The quotes are kept as received.
