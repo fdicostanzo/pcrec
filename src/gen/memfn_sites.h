@@ -197,6 +197,13 @@ mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n);
 #define PCREC_WSTMT_REACH 64
 _Static_assert(PCREC_WSTMT_POS <= MF_WSPAN_POS && PCREC_WSTMT_REACH <= MF_WREACH,
                "pcrec's non-cover window statement bounds lie inside the kit's");
+/* The kit's BINDING bounds for a non-cover span (review r32 F3): a presence
+ * run's span ranks and terms every position, so its length is held to the
+ * ranking (MF_RANK_MAX) and the term list (MF_MAX_TERM); 4095 above cannot
+ * bind. A kit that lowers either fails pcrec's build here, never a compile. */
+_Static_assert(PCREC_WSTMT_POS <= MF_RANK_MAX && PCREC_WSTMT_POS <= MF_MAX_TERM,
+               "pcrec's non-cover window statement bound exceeds the kit's ranking "
+               "(MF_RANK_MAX) or term (MF_MAX_TERM) bound");
 /* Fills span `w`: `len` positions from `start`, verify `v`, its core every
  * position (narrow it with pcrec_memfn_wspan_core); every set empty until a
  * position setter below fills it. The span's per-position lists (`len`
