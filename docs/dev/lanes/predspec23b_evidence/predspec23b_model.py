@@ -158,6 +158,9 @@ for name, P in order([("((h, m = 0): padded(>= (9, 30)))", PL("0")), ("((h, m): 
     c, w = count(T2POOL, lambda s: holds("WHOLE", P, s) != holds("SEARCHED", P, s))
     emit((0, 2, name), "  MODE (sec 0.1) t2 & %s: WHOLE vs SEARCHED differ on %d of 11,110, first %r (rev 21: 1,660 under m = 0, 0 unmarked)" % (name, c, w))
 
+for mode in MODES:
+    emit((0, 3, mode), "  MODE (sec 0.1) t2 & ((h, m = 0): padded(>= (9, 30))) on `9:15` %s: %s" % (mode, rep(mode, PL("0"), "9:15")))
+
 # ---- PART 1: sec 0.1 L94 rewritten: (h: <5, k = 3: between(3, 7)) on /x?/ vs /(?:x|)/ ----
 L94A = r"(?P<k>\d)?-(?P<h>\d)?"
 L94B = r"(?:(?P<k>\d)|)-(?:(?P<h>\d)|)"
@@ -184,6 +187,20 @@ for name, c in order([("(g: \"x\") plain", ptest("g", eqx)),
                       ("count((g: \"y\")) == 1", lambda r: count_(lambda p: None if p.get("g") is None else p["g"] == "y")(r) == 1)]):
     for s in order(["abxabyabx", "xyz"]):
         emit((2, name, s), "  OCC /ab(?<g>[xy])/ %s on `%s`: %s" % (name, s, both(OCC(RG, [c]), s)))
+# PART 2b: rev 22's 127 spans over {a, b} to length 6 of occurrences(/(?<g>a)?b/): "every hit, possibly none"
+# (R.1.7, a default in the set) vs the narrower question (a sentinel outside it), both modes
+AB127 = M.strings("ab", 6)
+assert len(AB127) == 127
+RGA = r"(?P<g>a)?b"
+EVERY = OCC(RGA, [ptest("g", lambda v: v == "a", "a")])
+NARROW = OCC(RGA, [lambda r: not any(dv(p.get("g"), "") != "a" for p in r["_real"])])
+for mode in MODES:
+    for name, PP in order([("(g = \"a\": \"a\")", EVERY), ("occurs.none((g = \"\": !\"a\"))", NARROW)]):
+        c, w = count(AB127, lambda s: holds(mode, PP, s))
+        emit((2, "b", mode, name), "  OCC127 %s %s holds %d of 127 first %r" % (mode, name, c, w))
+    c, w = count(AB127, lambda s: holds(mode, EVERY, s) != holds(mode, NARROW, s))
+    hitless, _ = count(AB127, lambda s: any(m.group("g") is None for m in re.finditer(RGA, s)))
+    emit((2, "c", mode), "  OCC127 %s every-possibly-none vs narrower differ %d first %r (spans with a hit lacking g: %d)" % (mode, c, w, hitless))
 # SAME ITERATION BY RECORD (sec 4.3): /(?<g>[xy])(?<h>\d)/ hits
 RGH = r"(?P<g>[xy])(?P<h>\d)"
 rec_some = some_(lambda p: None if p.get("g") is None or p.get("h") is None else (p["g"] == "x" and p["h"] == "1"))
@@ -296,7 +313,7 @@ ROUTES = [
     ("(i)(b) /\\A(?![\\s\\S]*${q})[\\s\\S]*?${t2}/ (gate at the text's start)", P2(r"(?s:.*?)" + T2, [], [], [], [text_none], start0=True)),
     ("(ii) t2 & text.none(q)", P2(T2, [], [], [], [text_none])),
 ]
-SUBJ = ["9:30", "9:15", "9:15 9:30", "9:30 9:15", "9:30 1"]
+SUBJ = ["9:30", "9:15", "9:15 9:30", "9:30 9:15", "9:30 1", "9:15 1", "a 9:15"]
 for name, PP in order(ROUTES):
     for s in order(SUBJ):
         emit((7, 1, name, s), "  ROUTE %s on `%s`: %s ; find-all %s" % (name, s, both(PP, s), fa(PP, s)))
@@ -305,7 +322,7 @@ for mode in MODES:
         for name, PP in order(ROUTES):
             c, w = count(pool, lambda s: holds(mode, PP, s))
             emit((7, 2, mode, poolname, name), "  ROUTE %s %s %s holds %d first %r" % (mode, poolname, name, c, w))
-        for a_, b_ in order([(2, 4), (3, 4), (0, 4)]):
+        for a_, b_ in order([(2, 4), (3, 4), (0, 4), (1, 4)]):
             c, w = count(pool, lambda s: holds(mode, ROUTES[a_][1], s) != holds(mode, ROUTES[b_][1], s))
             emit((7, 3, mode, poolname, a_, b_), "  ROUTE %s %s [%s] vs [%s] differ %d first %r" % (mode, poolname, ROUTES[a_][0], ROUTES[b_][0], c, w))
 # find-all: how many texts of T2PAIRS report MORE THAN ONE match under each route, and route (ii)'s all-or-none

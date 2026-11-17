@@ -2,7 +2,7 @@
 
 ## Changelog
 
-- **rev 23 (lane predspec23, 2026-11-16).** Re-founds the draft on the owner's condition model (COND-FAMILY 19:31-23:48): a new §R (read first) holds the one definition (a row is one potential match; a condition is a three-valued test of one row with `&` and NOT; absent never matches; a per-test default; `$a` reads the real label; `|` PCRE's one parse; pattern difference after `&`; the preferred surviving row in searched mode), the three spellings of not, the whole-text question, review r31's text items, MODE OF THE ANSWERS extended, the examples that moved (12), the change table (118 sites) and the ruling table. The optional mark and `all` are OUT (drop-mark 21:49, all-question 23:18). Rewritten in place: §0.3 rows, §2.2 WHAT `!` TAKES, §4.2, §4.3's group questions and closing example, §5.4's label-control, `|` and `!` rows; rev 22's text of them moved verbatim to §16.3-§16.5. Evidence `docs/dev/lanes/predspec23_evidence/`. **The BODY of rev 23 was completed by lane predspec23b (2026-11-17):** the rev 22 sentences that still used the mark, DOM or `all` in §0, §0.1, §0.2, §2.3, §2.6, §4.1, §4.3, §4.4, §6.1, §7.1, §8 and §13 are rewritten or labelled history, the seven REV 23 NOTEs removed, every worked example in them re-run in both modes (`docs/dev/lanes/predspec23b_evidence/`; the ones whose answer moved are listed in §R.7b), and §R.4 lays out the TWO WHOLE-TEXT ROUTES side by side (§R.4.1); §R.8's **whole-text** question presents both. The draft stays rev 23.
+- **rev 23 (lane predspec23, 2026-11-16).** Re-founds the draft on the owner's condition model (COND-FAMILY 19:31-23:48): a new §R (read first) holds the one definition (a row is one potential match; a condition is a three-valued test of one row with `&` and NOT; absent never matches; a per-test default; `$a` reads the real label; `|` PCRE's one parse; pattern difference after `&`; the preferred surviving row in searched mode), the three spellings of not, the whole-text question, review r31's text items, MODE OF THE ANSWERS extended, the examples that moved (12), the change table (118 sites) and the ruling table. The optional mark and `all` are OUT (drop-mark 21:49, all-question 23:18). Rewritten in place: §0.3 rows, §2.2 WHAT `!` TAKES, §4.2, §4.3's group questions and closing example, §5.4's label-control, `|` and `!` rows; rev 22's text of them moved verbatim to §16.3-§16.5. Evidence `docs/dev/lanes/predspec23_evidence/`. **The BODY of rev 23 was completed by lane predspec23b (2026-11-17):** the rev 22 sentences that still used the mark, DOM or `all` in §0, §0.1, §0.2, §2.3, §2.6, §4.1, §4.3, §4.4, §6.1, §7.1, §8 and §13 are rewritten or labelled history, the seven section notes rev 23 had added removed, every worked example in them re-run in both modes (`docs/dev/lanes/predspec23b_evidence/`; the ones whose answer moved are listed in §R.7b), and §R.4 lays out the TWO WHOLE-TEXT ROUTES side by side (§R.4.1); §R.8's **whole-text** question presents both. The draft stays rev 23.
 - **rev 22 (lane predspec22, 2026-11-16).** Folds the owner's 17:29-17:46 answers. (A) **not-is-complement** (CF
   17:29, RULED): `!` takes a PATTERN (a regex, a label-free filter, a named program) or a SET, never a CONDITION; on a
   condition a compile ERROR naming the two rewrites, the complement on the set or the complemented pattern `q := P &
@@ -370,8 +370,10 @@ SPELLINGS ARE PLACEHOLDERS (D193 addendum 4): this section fixes meanings only; 
 MODE (WHOLE value or SEARCHED). How rev 23 treats the rest of the document: §R.9 lists every site rev 22 had for a
 term the rulings touch, with its rev 23 disposition; the normative sections that rested on the mark (§2.2 WHAT `!`
 TAKES and the complemented-pattern readings, §4.2) are REWRITTEN in place and rev 22's text of them is moved
-verbatim to §16.3 and §16.4, the record. Elsewhere a rev 22 sentence that still names the optional mark `h?`, the
-per-program value set DOM, or `all(...)` is HISTORY: read it through §R.9's row for its site.
+verbatim to §16.3 and §16.4, the record. Lane predspec23b (2026-11-17) completed the body: every live sentence
+outside §R that used the optional mark `h?`, the per-program value set DOM or `all(...)` is rewritten; what still
+names them is dated history (a REV n paragraph, a ruling table, a CLOSED item, §16), labelled where it stands (§R.9's
+row for its site; §13's closing REV 23 block).
 
 ### R.0 Goals of rev 23 (ranked; the highest wins a conflict)
 
@@ -607,8 +609,10 @@ WHAT ASKS IT TODAY:
     11,110 of 11,110 (PART 3).
   - A standalone `!B` is the compile error of §R.1.4 (rev 22 §2.2: `${!B}`, `C | !B`).
   - Anchoring: `/\A[\s\S]*\z/ & contains(A) & !contains(B)` asks it, but its row is the WHOLE text, so the program
-    no longer reports A's match; and a regex lookahead (`\A(?![\s\S]*B)`) spells it only for a B with no conditions
-    (no regex spells "a late time").
+    no longer reports A's match; and a regex lookahead (`\A(?![\s\S]*B)`) gates only from the start of the text.
+    (Rev 23 as first written said the lookahead spells it "only for a B with no conditions"; lane predspec23b found
+    that §11's hole rule already gives a program with conditions in a hole a string set, so `(?![\s\S]*${q})` is
+    spellable; what it asks is ROUTE (i) of §R.4.1.)
 - PROPOSED (the draft's; the manager's 23:46 "MINE" asked for it to be stated and shown): a TEXT-LEVEL TEST, written
   here `text.none(B)` (placeholder), "B has no potential match anywhere in the subject": a test that reads no label
   of the row (SQL: `where not exists (select * from B)` over the same text, an uncorrelated subquery), so it is TRUE
@@ -618,7 +622,75 @@ WHAT ASKS IT TODAY:
   "text" is that role's stretch (R.1.1), so inside a whole-value program it equals `!contains(B)`.
   RUN (PART 1, D6; PART 3): `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS reporting `9:15`;
   on `9:30 1` FAILS / FAILS. Over 11,110 `t2` texts it holds on 1,970 in BOTH modes.
-- Asked as **whole-text** (§R.8).
+- Asked as **whole-text** (§R.8); the owner PARKED it on 2026-11-17 ("Let's not answer now", as relayed in the
+  predspec23b brief) after asking whether it could be asked now in a single rx. §R.4.1 lays the two routes side by
+  side; NOTHING is decided.
+
+### R.4.1 THE TWO WHOLE-TEXT ROUTES, side by side (lane predspec23b; nothing decided)
+
+The question: in a SEARCHED program, "report A's preferred row only if the text has no match of B anywhere", with B
+a pattern WITH conditions. Example throughout: `t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/`, `q := t2 & ((h, m): >= (9,
+30))` (a late time). Evidence: `predspec23b_model.out` PART 7 (WHOLE / SEARCHED; find-all = leftmost, non-overlapping
+later matches, §R.1.9).
+
+ROUTE (i): A PATTERN WITH CONDITIONS INSIDE A LOOKAHEAD.
+- What it is. §11's hole rule already lets a hole hold a program with conditions (`${isodate & (year: 2000)}`: a
+  sub-pattern, its STRING SET, each `label:` condition inside reading its label within the hole's text). Put inside a
+  regex lookahead, `(?![\s\S]*${q})` asks at a POSITION: "no row of q starts here or later". In the model: the
+  lookahead is part of the STATEMENT (the pattern), not a condition; at a position it runs its own body as a
+  statement over the text from there; a condition inside it is a WHERE on the rows of THAT search (the lookahead's
+  own table), never on the outer row; the lookahead holds when that filtered table is nonempty (`(?=`) or empty
+  (`(?!`). This keeps R.1.5 ("a condition reads only its row"): each condition reads a row of its own statement.
+- Its labels outside it. A NEGATIVE lookahead's labels are ABSENT outside (no row of it exists; PCRE leaves its
+  captures unset). A POSITIVE lookahead's labels would be those of the lookahead's PREFERRED SURVIVING ROW (its
+  leftmost start, then its first-preferred end its conditions accept: D196's retry inside the lookahead; PCRE keeps
+  the captures of the first successful parse; a label the outer pattern also sets is §4.1's ambiguity error): THE
+  DRAFT'S READING, the lane's, asked as **lookahead-labels** (§R.8; no rev 22 or record text covers it).
+- What it adds to the definition block: ONE clause in R.1.4 (an assertion's body is a statement; the assertion holds
+  at a position when that statement's rows anchored there, filtered by its own conditions, exist / do not), and
+  the positive lookahead's labels above. No new kind, no new test of a row.
+- Spellings and answers. (a) At the row's start, `/(?![\s\S]*${q})${t2}/` ("no late time from here on"): on `9:30`
+  FAILS / HOLDS reporting `30`@2 (the stretch `30` starts after the late time's start, so nothing late lies ahead of
+  it); on `9:15` HOLDS / HOLDS `9:15`; on `9:15 9:30` FAILS / HOLDS `30`@7; on `9:30 9:15` FAILS / HOLDS `30`@2,
+  find-all `30`@2, `9:15`@5. (b) Gated at the text's start, `/\A(?![\s\S]*${q})[\s\S]*?${t2}/`: on `9:30`, `9:15
+  9:30`, `9:30 9:15` FAILS / FAILS; on `9:15` HOLDS / HOLDS; but its reported row starts at 0 and includes the gap
+  before the time (`a 9:15`: HOLDS / HOLDS reporting `a 9:15`@0, where route (ii) reports `9:15`@2; `\K`, which would
+  move the start, is refused: §13 O17), and find-all gives AT MOST ONE match (`9:15 1`: only `9:15`; a later search
+  cannot start at `\A`).
+- Counts (11,110 one-time texts T2; 600 two-time texts T2PAIRS, lane searchrow's). SEARCHED: (a) holds on 11,110 and
+  600, (ii) on 1,970 and 132, differing on 9,140 and 468 (first `9:30`); (b) equals (ii) on both pools (0 differ).
+  WHOLE: (a), (ii) and `t2 & !q` all hold on 1,970 and 11; (b) on 1,970 and 132: its `[\s\S]*?` gap lets a whole
+  value be "any text, then a time" (first `1 1`). Find-all over T2PAIRS: (a) reports 2+ matches on 264 texts.
+- What it cannot say: "no B ANYWHERE" while reporting A's own row, past the first match. A lookbehind to the start
+  (`(?<=\A(?![\s\S]*${q})[\s\S]*)`) would, but it is unbounded, which PCRE2 and pcrec's bounded lookbehind refuse.
+  In a filter role an assertion may not read beyond the stretch (§13 O17), so there it asks about the stretch only.
+- Where it surprises: (a) reads "from here on", so on `9:30` it reports `30`, a piece of the very late time the
+  author meant to exclude; (b) changes what is reported and stops find-all after one match.
+
+ROUTE (ii): THE SEPARATE TEXT-LEVEL TEST, `text.none(B)` (placeholder; §R.4's PROPOSED bullet).
+- What it is: a condition that reads NO label of the row: TRUE for every row of a text with no row of B, FALSE for
+  every row otherwise (SQL `NOT EXISTS`, an uncorrelated subquery); two-valued; composes with `&` and NOT.
+- Answers: `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS `9:15`; on `9:15 9:30` and `9:30
+  9:15` FAILS / FAILS; on `9:30 1` FAILS / FAILS. Find-all is ALL OR NONE per text: `9:15 1` reports `9:15`@0 and
+  `1`@5,
+  `9:15 9:30` none (121 of the 600 two-time texts report 2+ matches). In a whole-value program it equals
+  `!contains(B)` (0 of 11,110 and 0 of 600 differ, WHOLE).
+- What it adds: a SECOND KIND of condition, one that reads the text rather than the row: R.1.5's "a condition reads
+  only its row ... never the pattern's text" gains an exception (the text is the subject, R.1.1; in a filter role,
+  the stretch). Its positive `text.some(B)`.
+- What it cannot say: anything POSITIONAL ("no B before A", "no B after A", "no B within 10 characters"): for those
+  the author writes route (i)'s lookaround, which already exists.
+- Where it surprises: a find-all program with `text.none` reports every match or none, so adding one more B anywhere
+  in a long text removes every match; and inside a filter role (`(x: t2 & text.none(q))`) "the text" quietly means
+  the label's text.
+
+SIDE BY SIDE on `9:30` (WHOLE / SEARCHED): today's `t2 & !q` FAILS / HOLDS `9`@0; route (i)(a) FAILS / HOLDS `30`@2;
+route (i)(b) FAILS / FAILS; route (ii) FAILS / FAILS.
+
+LEANING (the lane's; DECIDED NOTHING): route (ii) for the question as asked, because it is the only spelling that
+says "no B anywhere" for every match of a searched program and reports A's own row; with route (i) recorded as what
+the existing hole rule ALREADY means (a positional question, "from here on"), stated in R.1.4 as one clause and its
+positive-lookahead labels asked, rather than offered as the whole-text answer.
 
 ### R.5 Review r31's text items, applied
 
@@ -660,7 +732,8 @@ WHAT ASKS IT TODAY:
 - J: R.1.2 (O35 stays an error, PLAN).
 - K: R.1.1's vocabulary; BY DESIGN's legend loses "a mark's stated meaning" and reads "a construct's stated meaning
   (§R.1)"; `joint_condition.md` (RULED) and `predicates_future.md` items 3, 6, 8, 11, 12 are superseded in part by
-  §R (those files are not edited by this lane: LEFT OPEN).
+  §R (lane predspec23 left them; lane predspec23b wrote a dated superseded-in-part note at the head of
+  `joint_condition.md` and at items 3, 6, 8, 11 and 12 of `predicates_future.md`, rewriting none).
 
 ### R.6 MODE OF THE ANSWERS, extended
 
@@ -693,17 +766,41 @@ Every rev 22 example that used the mark or `all`, rewritten with a default, and 
 | 11 | source-row's example as he was shown it at 21:49 (`t2 & !q` on `9:30` FAILS) | superseded by row-is-match | HOLDS reporting `9` SEARCHED (as rev 22), FAILS WHOLE (PART 1) |
 | 12 | L36 `(x: S)` vs `all((x: S))`; L93 `all((x: S))` vs `(x?: S)` SAME | both rows RETIRED; the look-alike now is `(x: S)` vs `(x = d: S)` (d in S): they part on absent rows and zero passes | §R.3, row 3 above |
 
+R.7b EXAMPLES RE-RUN BY LANE PREDSPEC23B (the body rewrite; `predspec23b_model.out`, part named; WHOLE / SEARCHED).
+Every worked example in the rewritten passages was re-run in both modes; most keep their answer (the default spells
+what the mark spelled on these rows). The ones that MOVED or gained an answer:
+
+| # | site | rev 22 | rev 23 (WHOLE / SEARCHED) |
+|---|---|---|---|
+| b1 | §0.1 MODE OF THE ANSWERS | `((h, m?): padded(>= (9, 30)))` on `9:15`: searched reports `9`; 1,698 of 11,110 differ whole vs searched under `m?` | `((h, m = 0): ...)`: FAILS / HOLDS reporting `15`@2 (MOVED: `9` reads (9, 0)); 1,660 differ under `m = 0` (as rev 21), 0 without a default (PART 0) |
+| b2 | §13 O28 | `!(x: S)` an ERROR (rev 22); the marked pair on `t2`/`9`: `!((h, m?): R)` FAILS, `((h, m?): !R)` HOLDS | `NOT (n: <5)` on `1,7,` HOLDS / HOLDS, on `7,,` HOLDS / HOLDS; with a default on `9`, `NOT ((h, m = 00): R)` and `((h, m = 00): !R)` both HOLD / HOLD (MOVED: the pair no longer parts) (PART 6) |
+| b3 | §2.6 / §4.3 naming | `occurs.none((g = "": !"a"))` named "every hit, possibly none" | the same spelling is §R.1.7's NARROWER question; "every hit, possibly none" is `(g = "a": "a")`; WHOLE they differ on 94 of 127, SEARCHED 0 (PART 2b). Answers of the spelling unchanged; its NAME moved |
+| b4 | §8 `when` | rev 20-21's body `(x & c & p) \| (x & !c)` was the rev 22 ERROR | legal again with NOT; differs from the library body on 10 / 110 of 1,110 for c = `(h: <5)` (first `0`), 0 / 0 for `(h = 0: <5)` (PART 5) |
+| b5 | §2.6 first row | a plain `(g: "x")` "fails" on the hits `abx`, `aby`, `abx` | FAILS / HOLDS reporting `abxab` (a SEARCHED answer stated for the first time; PART 2) |
+| b6 | §4.3 list of two optional fields | `(a?: <5, b?: between(3, 7))`: `3-6,` HOLDS, `7-2,` FAILS, `''` HOLDS | `(a = 0: <5, b = 3: between(3, 7))`: same WHOLE; SEARCHED `7-2,` HOLDS reporting the empty stretch (PART 3) |
+| b7 | §4.3 pairing loop | `(h?: <5, k: between(3, 7))` on `3` HOLDS | `(h = 0: ...)` HOLDS / HOLDS; `3;7` FAILS / HOLDS reporting `3` (PART 3) |
+| b8 | §4.4 computed label | `(mnum?: <3)` on `-5` HOLDS | `(mnum = 1: <3)` HOLDS / HOLDS; `Mar-5` FAILS / HOLDS `-5`@3 (PART 4) |
+| b9 | §8 (4) TM2-L list table | `m?`, `h?` columns | defaults inside R give the same WHOLE rows; SEARCHED every row with h's default holds on all five lists (PART 5) |
+
+Unchanged in both modes (re-run): §0.1 L94 (0 of 121), §4.3 SAME ITERATION BY RECORD (`x2 y1`, `x1 y2`), the
+pairing list `10:00,9:30,`, (RZ) record = `&` (0 of 1,110), §8 caveat (2) on `10`.
+
 Rev 22's other worked answers stand: §12's twelve examples (no mark, no `all`: r31 SITES), the searched examples of
 condition_kind.md IV.3 under R22 (L34 `12`, L59 `12`, §11 (i) `30`@1, L13 `5`@3, §4.2 `15`@2, E-IPV4 `56.1.1.1`).
 
 ### R.8 QUESTIONS FOR THE OWNER (each wants a reply either way; spellings are placeholders)
 
-1. **whole-text**. Today: "the text contains no B anywhere" has no spelling in a searched program; `A & !B` and `A &
-   !contains(B)` ask about A's matched stretch only. Example: `t2 & !q` on `9:30` — WHOLE value FAILS; SEARCHED
-   HOLDS reporting `9`; the proposed `t2 & text.none(q)` FAILS in both. Should the language have a text-level test
-   ("B has no potential match anywhere in the text", a condition that reads no label of the row), or is "the text has
-   no B" left to whole-value programs and anchoring? Leaning: add it (§R.4): it is SQL's `NOT EXISTS`, one meaning,
-   two-valued, and it equals `!contains(B)` wherever the row is the whole text.
+1. **whole-text** (PARKED by the owner 2026-11-17, "Let's not answer now"; restated by lane predspec23b with both
+   routes, §R.4.1). Today: "the text contains no B anywhere" has no spelling in a searched program that reports A's
+   own row; `A & !B` and `A & !contains(B)` ask about A's matched stretch only. Example: `t2 & !q` on `9:30` — WHOLE
+   value FAILS; SEARCHED HOLDS reporting `9`. TWO ROUTES: (i) a pattern with conditions inside a regex lookahead,
+   which §11's hole rule already gives a meaning: at the row's start, `/(?![\s\S]*${q})${t2}/` asks "no late time
+   from here on" (on `9:30` FAILS / HOLDS reporting `30`@2); gated at `\A` it asks the whole text but reports a row
+   starting at 0 and at most one match in find-all (on `9:30` FAILS / FAILS); (ii) a separate text-level test,
+   `t2 & text.none(q)`, a condition reading no label of the row (on `9:30` FAILS / FAILS; find-all all or none).
+   Which, if either, should the language offer for "no B anywhere"? Leaning: (ii) for this question (SQL's `NOT
+   EXISTS`, one meaning, two-valued, equal to `!contains(B)` wherever the row is the whole text), with (i) stated as
+   what the hole rule already means, a POSITIONAL question, not the whole-text answer.
 2. **pass-table**. Today (the draft's reading R1, no record): a row is one potential match, and a loop's passes are a
    table nested inside that row (one pass row per pass; zero passes = one pass row with the label absent). Example:
    `/(?:(?<h>\d)?;)*/` on `7;;`: `(h: <5)` FAILS / FAILS (pass 1 fails), `NOT (h: <5)` HOLDS / HOLDS ("not every
@@ -715,6 +812,16 @@ condition_kind.md IV.3 under R22 (L34 `12`, L59 `12`, §11 (i) `30`@1, L13 `5`@3
    absent) `some((h: <5))` is FALSE, so `NOT some((h: <5))` HOLDS / HOLDS. The alternative makes `some` three-valued
    (UNKNOWN when no pass is TRUE and some pass lacks h), and then `NOT some(...)` FAILS there. Leaning: yes/no (EXISTS),
    which keeps rev 22's L102 equality and the narrower question's sentinel spelling.
+4. **lookahead-labels** (asked only if route (i) of **whole-text** is taken or stated; lane predspec23b). Today
+   (the draft's reading, no record): a negative lookahead's labels are absent outside it; a POSITIVE lookahead
+   holding a program with conditions gives the outer row the labels of ITS preferred surviving row (leftmost start,
+   then the first-preferred end its conditions accept, D196's retry inside the lookahead), as PCRE keeps the
+   captures of a positive lookahead's first successful parse. Example (unrun: the evaluator implements only the
+   negative form): `/(?=[\s\S]*${late_m})${t2}/` with `late_m := /\d\d:(?<lm>\d\d)/ & (lm: >= 30)`, on `9:15 10:45`:
+   the outer row `9:15`@0 with h = 9, m = 15, and lm = 45 from the lookahead's row `10:45`; with `q` itself inside,
+   q's h and m would name t2's labels twice, §4.1's ambiguity error. The alternative: a lookahead's labels are never
+   visible outside (one rule for both polarities, but not PCRE's meaning for plain regex text, G3). Leaning: the
+   draft's reading (PCRE's), with a clash the existing ambiguity error.
 
 ### R.9 THE CHANGE TABLE, rev 22 -> rev 23, site by site
 
@@ -844,7 +951,11 @@ named), STANDS.
 | S154 | 5470-5471 | 13 default-reaches-dollar | (e2.1) | COVERED | RETIRED-HISTORY where it names the mark or DOM (read with a default, §R.1.6); otherwise STANDS |
 | S155 | 5484-5489 | 13 PLAN: default and mark IN or OUT of phase 1; all depends on the mark; unlock behind (e2.1) and one-witness | all( | AFFECTED-UNCOVERED | RETIRED-HISTORY: the mark and `all` are out; the default's phase-1 status as rev 22 left it |
 
-118 sites listed (35 AFFECTED-UNCOVERED, 83 COVERED).
+118 sites listed (35 AFFECTED-UNCOVERED, 83 COVERED). Lane predspec23b applied every RETIRED-HISTORY row in place:
+the live sentence rewritten with a default, NOT or the group question that remains (and the rev 22 wording kept in a
+"rev 22: ..." clause where the answer is quoted), or, where the sentence is dated history, a [REV 23: ...] note or
+the §13 closing block. No site's disposition was found to contradict §R or the record (the STOP RULE did not fire);
+one naming inconsistency inside §R is noted at §R.7b row b3 (row 10 of §R.7 keeps rev 22's name).
 
 ### R.10 Evidence
 
@@ -855,7 +966,11 @@ Commands, from a scratch directory under `$PCREC_TMPDIR` (W = the worktree):
 NOTHING; with `PREDSPEC23_SABOTAGE=1` (Kleene AND made order-dependent) the forward and swapped runs DIFFER (4 lines,
 e.g. `NOT c` vs `(h: !S)` WHOLE first `7;;` vs `;7;`). Every count is printed in both modes. Earlier lanes' numbers
 quoted (`searchrow.out`, `defscope_options.out`) were re-run forward and with their own SWAP switches: identical, and
-forward identical to the committed outputs.
+forward identical to the committed outputs. Lane predspec23b: `docs/dev/lanes/predspec23b_evidence/predspec23b_model.py`
+(imports the evaluator above read-only; adds pass rows with every label, `|` of filtered patterns, find-all and the
+two whole-text routes); `timeout 600 python3 -I W/.../predspec23b_model.py > fwd.out`, `PREDSPEC23B_SWAP=1 ... >
+swap.out`: the diff without ORDER lines prints NOTHING; with `PREDSPEC23B_SABOTAGE=1` forward vs swapped DIFFER (2
+lines, O28's `7,,` row). Its PART 0 re-derives predspec23's T2 counts (1,970 / 11,110) and rev 21's 1,660.
 
 ### R.11 THE RULING TABLE (by record entry; stands / retired / reversed / open)
 
@@ -2607,8 +2722,10 @@ HOLDS (`predspec23_model.out` PART 5). Over the 127 spans over {a, b} to length 
 rev 22's intent "every hit's g is `a`, possibly none" (a hit WITHOUT g fails it) is `occurs.none((g = "": !"a"))`
 (rev 22's 0 differ, WHOLE, stands; the marked row retires). In rev 23's names that intent is THE NARROWER QUESTION
 (a sentinel outside the set); R.1.7's "every pass, possibly none", `(g = "a": "a")`, lets a hit without g pass, and
-the two part exactly on the spans with such a hit (`predspec23b_model.out` PART 2b, both modes). §R.7 row 10 keeps
-rev 22's name for the intent.
+the two part exactly on the spans with such a hit: WHOLE 94 of 127 differ (the 94 spans with a hit lacking g; on
+this regex g can only be `a`, so `(g = "a": "a")` holds on all 127 and the narrower question on 33), SEARCHED 0 (both
+hold on all 127: a shorter stretch always survives, §R.6) (`predspec23b_model.out` PART 2b). §R.7 row 10 keeps rev
+22's name for the intent.
 
 THE CLOSING EXAMPLE (rev 23 rewrite; rev 22's table is in §16.5). Over `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/` with R =
 `(<10, <30)`, the same 1,111 lists (hours `3`, `12`; minutes absent, `15`, `45`, `05`, `99`; 0-3 items),

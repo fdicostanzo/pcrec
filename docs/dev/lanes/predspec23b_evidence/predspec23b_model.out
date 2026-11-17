@@ -3,6 +3,8 @@ ORDER: forward
   CONTROL WHOLE T2 (11,110) t2 & !q holds 1970 (predspec23 PART 3: WHOLE 1970, SEARCHED 11110)
   MODE (sec 0.1) t2 & ((h, m = 0): padded(>= (9, 30))): WHOLE vs SEARCHED differ on 1660 of 11,110, first '0:10' (rev 21: 1,660 under m = 0, 0 unmarked)
   MODE (sec 0.1) t2 & ((h, m): padded(>= (9, 30))): WHOLE vs SEARCHED differ on 0 of 11,110, first None (rev 21: 1,660 under m = 0, 0 unmarked)
+  MODE (sec 0.1) t2 & ((h, m = 0): padded(>= (9, 30))) on `9:15` SEARCHED: HOLDS `15`@2
+  MODE (sec 0.1) t2 & ((h, m = 0): padded(>= (9, 30))) on `9:15` WHOLE: FAILS
   L94 (h: <5, k = 3: between(3, 7)) SEARCHED: /x?/ holds 55 of 121; vs /(?:x|)/ differ 0 first None
   L94 (h: <5, k = 3: between(3, 7)) WHOLE: /x?/ holds 30 of 121; vs /(?:x|)/ differ 0 first None
   L94 (h: <5, k: between(3, 7)) SEARCHED: /x?/ holds 25 of 121; vs /(?:x|)/ differ 0 first None
@@ -11,6 +13,12 @@ ORDER: forward
   OCC /ab(?<g>[xy])/ (g = "x": "x") every hit, possibly none on `xyz`: WHOLE HOLDS | SEARCHED HOLDS `xyz`@0
   OCC /ab(?<g>[xy])/ (g: "x") plain on `abxabyabx`: WHOLE FAILS | SEARCHED HOLDS `abxab`@0
   OCC /ab(?<g>[xy])/ (g: "x") plain on `xyz`: WHOLE FAILS | SEARCHED FAILS
+  OCC127 SEARCHED (g = "a": "a") holds 127 of 127 first ''
+  OCC127 SEARCHED occurs.none((g = "": !"a")) holds 127 of 127 first ''
+  OCC127 WHOLE (g = "a": "a") holds 127 of 127 first ''
+  OCC127 WHOLE occurs.none((g = "": !"a")) holds 33 of 127 first ''
+  OCC127 SEARCHED every-possibly-none vs narrower differ 0 first None (spans with a hit lacking g: 94)
+  OCC127 WHOLE every-possibly-none vs narrower differ 94 first 'b' (spans with a hit lacking g: 94)
   OCC /ab(?<g>[xy])/ count((g: "y")) == 1 on `abxabyabx`: WHOLE HOLDS | SEARCHED HOLDS `abxabyabx`@0
   OCC /ab(?<g>[xy])/ count((g: "y")) == 1 on `xyz`: WHOLE FAILS | SEARCHED FAILS
   OCC /ab(?<g>[xy])/ occurs.exactly(2, (g: "x")) on `abxabyabx`: WHOLE HOLDS | SEARCHED HOLDS `abxabyabx`@0
@@ -111,30 +119,40 @@ ORDER: forward
   O28 t2 & NOT ((h, m): R) (R = padded(>= (9, 30))) on `9`: WHOLE FAILS | SEARCHED FAILS
   O28 t2 & t2 & !(t2 & ((h, m): R)) (R = padded(>= (9, 30))) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
   ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
   ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:15 9:30`: WHOLE FAILS | SEARCHED HOLDS `30`@7 ; find-all [`30`@7]
   ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `30`@2 ; find-all [`30`@2]
   ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `30`@2 ; find-all [`30`@2, `1`@5]
   ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:30 9:15`: WHOLE FAILS | SEARCHED HOLDS `30`@2 ; find-all [`30`@2, `9:15`@5]
+  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
   ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:15 1`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
   ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:15 9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
   ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
   ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:30 1`: WHOLE FAILS | SEARCHED FAILS ; find-all []
   ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:30 9:15`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `a 9:15`: WHOLE HOLDS | SEARCHED HOLDS `a 9:15`@0 ; find-all [`a 9:15`@0]
   ROUTE (ii) t2 & text.none(q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+  ROUTE (ii) t2 & text.none(q) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
   ROUTE (ii) t2 & text.none(q) on `9:15 9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
   ROUTE (ii) t2 & text.none(q) on `9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
   ROUTE (ii) t2 & text.none(q) on `9:30 1`: WHOLE FAILS | SEARCHED FAILS ; find-all []
   ROUTE (ii) t2 & text.none(q) on `9:30 9:15`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+  ROUTE (ii) t2 & text.none(q) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
   ROUTE t2 & !contains(q) (today) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+  ROUTE t2 & !contains(q) (today) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
   ROUTE t2 & !contains(q) (today) on `9:15 9:30`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `9`@5, `30`@7]
   ROUTE t2 & !contains(q) (today) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2]
   ROUTE t2 & !contains(q) (today) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `1`@5]
   ROUTE t2 & !contains(q) (today) on `9:30 9:15`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `9:15`@5]
+  ROUTE t2 & !contains(q) (today) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
   ROUTE t2 & !q (pattern difference, today) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+  ROUTE t2 & !q (pattern difference, today) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
   ROUTE t2 & !q (pattern difference, today) on `9:15 9:30`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `9`@5, `30`@7]
   ROUTE t2 & !q (pattern difference, today) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2]
   ROUTE t2 & !q (pattern difference, today) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `1`@5]
   ROUTE t2 & !q (pattern difference, today) on `9:30 9:15`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `9:15`@5]
+  ROUTE t2 & !q (pattern difference, today) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
   ROUTE SEARCHED T2 (11,110) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 11110 first '0'
   ROUTE SEARCHED T2 (11,110) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 1970 first '0'
   ROUTE SEARCHED T2 (11,110) (ii) t2 & text.none(q) holds 1970 first '0'
@@ -156,15 +174,19 @@ ORDER: forward
   ROUTE WHOLE T2PAIRS (600) t2 & !contains(q) (today) holds 11 first '1'
   ROUTE WHOLE T2PAIRS (600) t2 & !q (pattern difference, today) holds 11 first '1'
   ROUTE SEARCHED T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 9140 first '9:30'
+  ROUTE SEARCHED T2 (11,110) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 9140 first '9:30'
   ROUTE SEARCHED T2 (11,110) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 9140 first '9:30'
   ROUTE SEARCHED T2 (11,110) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
   ROUTE SEARCHED T2PAIRS (600) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 468 first '9:30'
+  ROUTE SEARCHED T2PAIRS (600) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 468 first '9:30'
   ROUTE SEARCHED T2PAIRS (600) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 468 first '9:30'
   ROUTE SEARCHED T2PAIRS (600) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
   ROUTE WHOLE T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 0 first None
+  ROUTE WHOLE T2 (11,110) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 0 first None
   ROUTE WHOLE T2 (11,110) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
   ROUTE WHOLE T2 (11,110) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
   ROUTE WHOLE T2PAIRS (600) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 0 first None
+  ROUTE WHOLE T2PAIRS (600) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 0 first None
   ROUTE WHOLE T2PAIRS (600) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
   ROUTE WHOLE T2PAIRS (600) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 121 first '1 1'
   ROUTE FIND-ALL T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start): texts with 2+ matches 264
