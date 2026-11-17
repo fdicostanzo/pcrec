@@ -2123,8 +2123,15 @@ def cmd_selftest(_args):
     # moving class picks 1, its E[D] head; the literal classes are not read
     APP, globals()["APPROX"] = APPROX, {}
     try:
-        rows, same = synth_rows(random.Random(10), 0.01, wins={1: 0.70})
-        v = analyse({"files": {"results.tsv": (rows, {})}, "same": same}, set())
+        rng = random.Random(10)
+        rows, same = synth_rows(rng, 0.01, wins={1: 0.70})
+        night = {"files": {"results.tsv": (rows, {})}, "same": same}
+        v = analyse(night, set())
+        if v["owed_confirm"]:       # rev 10 (r38 R2): its wins are confirmed by the cells' re-run
+            fresh, _s = synth_rows(rng, 0.01, wins={1: 0.70})
+            night["files"]["results_confirm.tsv"] = (
+                {k: r for k, r in fresh.items() if (k[0], k[1], k[3], k[4]) in v["owed_confirm"]}, {})
+            v = analyse(night, set())
     finally:
         globals()["APPROX"] = APP
     notread = sorted(l.split()[2].rstrip(":") for l in v["lines"] if "never a mover" in l)
