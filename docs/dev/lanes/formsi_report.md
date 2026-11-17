@@ -16,4 +16,6 @@
 - `make strict`: clean.
 
 ## STATE AT HANDOFF
-Committed on lane/memfn-forms. No rulings file existed. OWED: none
+Committed on lane/memfn-forms. No rulings file existed.
+
+OWED: none
