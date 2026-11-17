@@ -63,3 +63,31 @@ Asked **critic-home** (its own skill, or a new mode of the existing critic skill
 critic skill". So unit A4 is: an architect WRITER skill (new), and an ARCHITECTURE MODE of `pcrec-critic` with its
 own lenses (the coordinator, blinded critics, verifier and process log are reused); the writer and the critic are
 always different agents.
+
+## 2026-11-17, the owner's review of the draft goals (answer to goals-ranking)
+
+Shown the five draft goals of docs/dev/guide/architecture.md part 1 in rank order. HIS WORDS:
+
+"goals-ranking:
+1. there are two kinds of seams. Module seams like between pcrec and kit _planner_ are a defined api and data can
+travel back and forth as needed but each tries to keep its own concern. Layer seams should if possible be one data
+direction. Pcrec hands off data to the emitter. If there needs to be data back and forth between layers, that
+suggests a module split like between the kit planner and kit emitter. The purpose of this goal is to isolate
+responsibility to better organize change. Each module has its api and contract.
+2. decision tables are a technique rather than a goal in-and-of itself. The goal is to contain decision making into
+an easily understood, modified, inspected, tested unit. Tables fulfill that goal. This is to say that tables
+fulfill the first goal.
+3. I would add a goal which is basically object oriented design style in that data structures and the code that
+modifies them are co located. If something needs to read or modify a structure it should use an accessor design
+for that.
+You do cover some of the above as well"
+
+RECORD: (1) the seams goal distinguishes MODULE seams (a defined API and contract; data both ways as needed; each
+side keeps its own concern) from LAYER seams (one data direction where possible; a need for back-and-forth between
+layers is the signal for a module split); its PURPOSE is isolating responsibility so change is organised. (2)
+"Tables" is not a goal: it is a TECHNIQUE serving the goal "decision making is contained in a unit that is easily
+understood, modified, inspected and tested", which is the first goal (one home per question); the draft's goal 2
+folds into goal 1, and "act through the row" stays as a rule. (3) A NEW goal: a data structure and the code that
+modifies it live together; anything else reads or modifies it through accessors. MINE, to be confirmed: the
+manifesto's "a handoff carries facts both ways" (the draft's source for goal 3) is now scoped to MODULE seams; the
+rank order of the reshaped goals (he numbered his comments, he did not rank the result).
