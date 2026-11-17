@@ -1861,6 +1861,13 @@ by `git grep`). They are updated in the build or flagged in its report:
    - **The void step** shares no source with the timings: it reads only whether a cell has a
      reading, and a void cell never helps a head (§3 R1 step (5)) [rev 6, R5-2].
    - **Timing** is checked by pcrec's G1 (`no-span-loop`) and by the engine-route reference C5.
+   - **The rule's floor** is drilled on synthetic nights with noise at EVERY level of the
+     night's structure (drill (xxi), rev 10, RULED r38): between-run noise confined to the
+     night, one regime, one layer, one pattern, one arm, and a step and a drift in box speed in
+     a block of each level of the launch order. The drills place their steps in the order
+     `cards.py` times (`launch_order`, one source on purpose: the property drilled is the rule
+     on THAT order; a selftest row checks `time_cells` follows it), and each acceptance is the
+     literal 5 % of r35 F2. Each defect class has a control under rev 9's rule that must fail.
    - **Populations are counted.** G2's long rows are named rows; G2-win's per-family, per-h
      line counts the looped sites. The force cell's population is the whole corpus.
 3. **What moves when data is regenerated: relevant if R3 fires.** The forms read no measured
