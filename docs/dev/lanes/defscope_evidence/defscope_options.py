@@ -550,6 +550,24 @@ for st in ("REV22", "WORKED", "PROBE"):
     line.append("POS in some order %d" % sum(1 for k in ks if RES[k]["POS"][0] is not None or "POS-any" in RES[k]))
     print("   [%s] %d programs; rewrite exactly (constant or a never-absent `$x` default): %s" % (st, len(ks),
                                                                                               ", ".join(line)))
+rep = []
+for k in sorted(RES, key=lambda k: (k[0], k[1], k[2])):
+    sol = RES[k]["LOCAL"][0]
+    if sol is None:
+        continue
+    per = {}
+    for part in sol.split(" | "):
+        l, x = part.split("=", 1)
+        if x != "nothing":
+            per.setdefault(l, []).append(x)
+    if any(len(v) >= 2 for v in per.values()):
+        rep.append((k, sol))
+print("   LOCAL: rewrites that write a default for one label in two or more conditions (the author repeats it): %d; "
+      "with two DIFFERENT values: %d%s" % (len(rep), sum(1 for k, sol in rep if any(
+          len(set(v)) >= 2 for v in [[p_.split("=", 1)[1] for p_ in sol.split(" | ") if p_.split("=", 1)[0] == l and
+                                      p_.split("=", 1)[1] != "nothing"] for l in {p_.split("=", 1)[0] for p_ in
+                                                                                  sol.split(" | ")}])),
+          "" if not rep else "; first: %s `%s` -> %s" % (rep[0][0][1], rep[0][0][2], rep[0][1])))
 print("   programs that do NOT rewrite under COLUMN (best one-default-per-label: subjects off, smallest), with LOCAL's "
       "rewrite:")
 for k in sorted(RES, key=lambda k: (k[0], k[1], k[2])):

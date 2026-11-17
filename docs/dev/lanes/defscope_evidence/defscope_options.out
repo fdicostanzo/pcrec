@@ -76,6 +76,7 @@ PART 2: THE REWRITE RUN UNDER EACH OPTION (condkind2's 339 marked programs; targ
    [REV22] 314 programs; rewrite exactly (constant or a never-absent `$x` default): LOCAL 314, COLUMN 314, POS 314, DOLLAR 314, POS in some order 314
    [WORKED] 21 programs; rewrite exactly (constant or a never-absent `$x` default): LOCAL 20, COLUMN 19, POS 19, DOLLAR 20, POS in some order 19
    [PROBE] 4 programs; rewrite exactly (constant or a never-absent `$x` default): LOCAL 2, COLUMN 1, POS 1, DOLLAR 2, POS in some order 1
+   LOCAL: rewrites that write a default for one label in two or more conditions (the author repeats it): 35; with two DIFFERENT values: 15; first: H5 `((h?, k): h < k) & ((h?, k): h + 3 > k)` -> h='0' | h='4'
    programs that do NOT rewrite under COLUMN (best one-default-per-label: subjects off, smallest), with LOCAL's rewrite:
       PROBE  H5   ((h?, k): h < k) & ((h?, k): h + 3 > k)            COLUMN off 4 at '-3'; LOCAL h='0' | h='4'
       PROBE  H5   ((h?, k): h == k), h [0-4], k \d                   COLUMN off 4 at '-1'; LOCAL None
