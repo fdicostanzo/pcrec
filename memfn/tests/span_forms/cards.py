@@ -802,7 +802,9 @@ def cmd_c3(args):
 
 
 def cmd_rerun(args):
-    """Re-times every cell the rule lists as void ONCE, all arms of the cell (F7)."""
+    """Re-times every cell the rule lists as void ONCE, all arms of the cell (F7), into
+    results_rerun.tsv / results_c3_h<H>_rerun.tsv; and every cell the rule lists as holding a win
+    beyond f, ONCE, into results_confirm.tsv (rev 10, r38 R2: confirm by re-run)."""
     rundir = args[0]
     night = load_night(rundir)
     v = analyse(night, set())
@@ -810,8 +812,14 @@ def cmd_rerun(args):
         print("cards: rerun: the night is void or defective (`rule` says why); nothing to re-run")
         return 2
     todo = v["owed_rerun"]
+    if v["owed_confirm"]:
+        cl = [k for k in cells(cards=STEP1) if (k[0], k[1], k[3], k[4]) in v["owed_confirm"]]
+        time_cells(rundir, cl, os.path.join(rundir, "results_confirm.tsv"))
+        print("cards: confirming re-run of %d cells (%d arm cells) that hold a win beyond f"
+              % (len(v["owed_confirm"]), len(cl)))
+        return 0
     if not todo:
-        print("cards: rerun: no cell is void once")
+        print("cards: rerun: no cell is void once and no win awaits its confirm")
         return 0
     for src, cellkeys in todo.items():
         # every arm the card defines for the cell, whether or not step 1 wrote its row
@@ -1036,6 +1044,7 @@ POOL_TERM = True    # selftest's control turns the pool term off (rev 7's floor)
 TWIN_TERM = True    # selftest's controls turn the twin term off (rev 8's floor) to show the H1 drill sees it
 AGREE_GATE = True   # ... and the agreement gate off (rev 8's rule) to show the H2 drill sees it
 PAT_TWIN = True     # selftest's controls turn the PER-PATTERN twin term off (rev 9's floor) to show J1's drill sees it
+CONFIRM = True      # ... and the confirming re-run off (rev 9's rule) to show the arm-level drill sees it (r38 R2)
 
 
 def bimodal(launches, sig):
@@ -1099,7 +1108,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
     """The whole rule over a night's files. Returns a dict: code (0 complete, 2 void/defective,
     3 owed), lines (the record), hstar, label, rec, owed_rerun {file: {cellkeys}}."""
     lines, owed = [], {}
-    res = {"code": 0, "lines": lines, "hstar": None, "label": None, "rec": None, "owed_rerun": owed}
+    res = {"code": 0, "lines": lines, "hstar": None, "label": None, "rec": None, "owed_rerun": owed,
+           "owed_confirm": set(), "wins": 0, "confirmed": 0}
     if "results.tsv" not in night["files"]:
         lines.append("rule: no results.tsv: step 1 (`run`) has not run")
         res["code"] = 3
@@ -1169,7 +1179,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
     # ---- C1-C2 cells: read, void twice, void by method, or owed a re-run (F7, F8) -----------
     ccells, vc, tI, t = [], [], {}, {h: {} for h in heads}
     sa = {h: {} for h in heads}
-    pool_n, pool_meds, cell_key = {}, {}, {}
+    pool_n, pool_meds, cell_key, pool_arms = {}, {}, {}, {}
     for card in ("C1", "C2"):
         for pat in CARD_PATS[card]:
             for rg in REGIMES:
@@ -1208,6 +1218,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
                     ccells.append(cid)
                     tI[cid] = statistics.median([v for a in pool for v in rows[(card, pat, a, rg, ly)]["launches"]])
                     pool_n[cid] = len(pool)
+                    pool_arms[cid] = pool
                     pool_meds[cid] = [rows[(card, pat, a, rg, ly)]["med"] for a in pool]
                     cell_key[cid] = (card, pat, rg, ly)
                     for h in heads:
@@ -1308,6 +1319,45 @@ def analyse(night, g2_defective, alpha=ALPHA):
                     ", ".join("%s sigma %.4f df %d term %.4f" % (p, ptw[p][0], ptw[p][1], pterm[p])
                               for p in sorted(ptw))))
     fcell = {c: cell_floor(c) for c in ccells}
+    # CONFIRM BY RE-RUN (rev 10, RULED r38 R2: the arm level of the class drill). No twin pool holds
+    # a head where that head is compared, so no floor sees between-run noise confined to ONE head
+    # arm (H(8) at tau 2 %: 0.187 under rev 9 and under J1's per-pattern term alike). Replication
+    # is the general answer: a head's win beyond f in a cell COUNTS only if the cell's confirming
+    # re-run (`results_confirm.tsv`: fresh launches of every arm, in rounds) wins again beyond the
+    # cell's floor. A win that does not reproduce reads as a TIE with I in that cell (no win, never a
+    # void, never a pick); a confirm reading with a missing, void or bimodal arm confirms nothing.
+    # One confirming re-run per winning cell, no more.
+    wins = sorted((h, c) for h in heads for c in ccells if not sa[h][c] and tI[c] / t[h][c] > 1 + fcell[c])
+    conf = merge(*night["files"]["results_confirm.tsv"])[0] if "results_confirm.tsv" in night["files"] else {}
+    cconf = {(k[0], k[1], k[3], k[4]) for k in conf}
+    need = sorted({cell_key[c] for _h, c in wins} - cconf) if CONFIRM else []
+    res["wins"] = len(wins)
+    if need:
+        res["owed_confirm"] = set(need)
+        lines.append("rule: %d cell(s) hold a head's win beyond f (%d wins): R1 waits for their confirming re-run (%s%s)"
+                     % (len(need), len(wins), ", ".join("/".join(k) for k in need[:6]), ", ..." if len(need) > 6 else ""))
+        lines.append("rule: NEXT cards.py rerun RUNDIR")
+        res["code"] = 3
+        return res
+
+    def confirmed(h, c):
+        card, pat, rg, ly = cell_key[c]
+        arms = pool_arms[c] + ["h%d" % h]
+        rs = [conf.get((card, pat, a, rg, ly)) for a in arms]
+        if any(r is None or is_void((card, pat, a, rg, ly), r) for a, r in zip(arms, rs)):
+            return False
+        tI2 = statistics.median([v for r in rs[:-1] for v in r["launches"]])
+        return tI2 / rs[-1]["med"] > 1 + fcell[c]
+    nconf = 0
+    for h, c in wins if CONFIRM else []:
+        if confirmed(h, c):
+            nconf += 1
+        else:
+            t[h][c] = tI[c]
+    res["confirmed"] = nconf
+    if wins and CONFIRM:
+        lines.append("rule: confirm by re-run (rev 10, r38 R2): %d of %d wins beyond f reproduced; the rest read as a tie "
+                     "with I" % (nconf, len(wins)))
     lines.append("rule: I's pool per cell read (arms whose artifact is I's, measured): %s"
                  % ", ".join("%s %d" % kv for kv in sorted(pool_n.items())))
     lines.append("rule: R0 defective heads: %s; cells read %d, void %d" % (sorted(defective) or "none",
@@ -1656,6 +1706,15 @@ def synth_night(rng, sigma, **kw):
             v = analyse(night, set())
         v["voided_first"] = voided_first
         v["rerun_rounds"] = rounds
+        if v["owed_confirm"]:       # the confirming re-run (rev 10, r38 R2): fresh launches, after the night
+            fresh, _s = synth_rows(rng, sigma, **kw2)
+            night["files"]["results_confirm.tsv"] = (
+                {k: r for k, r in fresh.items() if (k[0], k[1], k[3], k[4]) in v["owed_confirm"]}, {})
+            ncells = len(v["owed_confirm"])
+            v = analyse(night, set())
+            v["voided_first"], v["rerun_rounds"], v["confirm_cells"] = voided_first, rounds, ncells
+        else:
+            v["confirm_cells"] = 0
         return v
     finally:
         APPROX = keep
@@ -1668,15 +1727,17 @@ def noise_drill(trials=NOISE_TRIALS, sigma=0.01, noise="normal", seed=1, **kw):
     """P(h* != 64), the nights with a first void, the median f(A/A); NOISE_LAST keeps the median
     floor of (hit-dense, off), the cell floor the H2 drill sizes its shifts by."""
     rng = random.Random(seed)
-    off, voids, fs, fc = 0, 0, [], []
+    off, voids, fs, fc, cc = 0, 0, [], [], []
     for _ in range(trials):
         v = synth_night(rng, sigma, noise=noise, **kw)
         off += v["hstar"] != GRID_TOP
         voids += v["voided_first"] > 0
         fs.append(v.get("f", 0))
+        cc.append(v.get("confirm_cells", 0))
         if v.get("floors"):
             fc.append(v["floors"].get(("hit-dense", "off"), 0))
     NOISE_LAST["fcell"] = statistics.median(fc) if fc else 0.0
+    NOISE_LAST["confirm"] = cc
     return off / trials, voids, statistics.median(fs)
 
 
@@ -1708,9 +1769,7 @@ CLASS_NOISE = [
     ("pattern", "hex32 (pool 3)", lambda k: k[1] == "hex32"),
     ("pattern", "hex64 (pool 2)", lambda k: k[1] == "hex64"),
     ("arm", "I, every cell", lambda k: _c12(k) and k[2] == "I"),
-    ("arm", "H(64), every cell", lambda k: _c12(k) and k[2] == "h64"),
-    ("arm", "H(8), every cell", lambda k: _c12(k) and k[2] == "h8"),
-]
+] + [("arm", "H(%d), every cell" % h, (lambda k, a="h%d" % h: _c12(k) and k[2] == a)) for h in GRID]
 
 
 @functools.lru_cache(maxsize=None)
@@ -1769,9 +1828,12 @@ def power_cells(head, regime, win):
     return out
 
 
-def power_rate(head=8, regime="hit-dense", win=0.95, trials=NOISE_TRIALS, seed=700):
+def power_rate(head=8, regime="hit-dense", win=0.95, trials=NOISE_TRIALS, seed=700, with_confirms=False):
     rng = random.Random(seed)
-    picks = [synth_night(rng, 0.01, cellwins=power_cells(head, regime, win))["hstar"] for _ in range(trials)]
+    vs = [synth_night(rng, 0.01, cellwins=power_cells(head, regime, win)) for _ in range(trials)]
+    picks = [v["hstar"] for v in vs]
+    if with_confirms:
+        return sum(x == head for x in picks), picks, [v.get("confirm_cells", 0) for v in vs]
     return sum(x == head for x in picks), picks
 
 
@@ -1816,11 +1878,11 @@ def cmd_selftest(_args):
     # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance;
     # rev 9's twin term and gate also see a noisier regime, so the control turns them off too
     # (rev 10: and the per-pattern twin term, which sees a noisier regime too)
-    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = (False,) * 4
+    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 5
     try:
         pc, _nv, _fm = noise_drill(seed=41, rscale={"not-warm": 3.0})
     finally:
-        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = (True,) * 4
+        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 5
     check("(G2) control: one regime 3x, A/A floor alone", pc > 0.15,
           "P(h* != 64) = %.3f over %d trials (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # its power (the floor's cost, recorded): a true 10 % win of every head <= 8 where it loops
@@ -1878,13 +1940,13 @@ def cmd_selftest(_args):
     # its control: rev 7's reading (I's own arm alone) under the same split must FAIL the acceptance
     # (rev 10: rev 7 had no per-pattern twin term either; with I alone no pool has a twin, so the
     # term would void every cell and blind the control)
-    globals()["POOL_I"], globals()["PAT_TWIN"] = False, False
+    globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False, False
     try:
         rng = random.Random(65)
         offc = sum(synth_night(rng, 0.01, splits={cellI: (3, 1 + 1.5 * fmed)})["hstar"] != GRID_TOP
                    for _ in range(NOISE_TRIALS))
     finally:
-        globals()["POOL_I"], globals()["PAT_TWIN"] = True, True
+        globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True, True
     check("(G3) control: the 1.5 f split, I's arm alone", offc / NOISE_TRIALS > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)"
           % (offc / NOISE_TRIALS, NOISE_TRIALS))
@@ -1896,12 +1958,21 @@ def cmd_selftest(_args):
         picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 + s)})["hstar"] for _ in range(100)]
         check("(G3) converse: the split in H(8), %.1f f" % mult, sum(x == 8 for x in picks) == 0,
               "h* = 8 in %d of 100 nights (accept 0); picks %s" % (sum(x == 8 for x in picks), sorted(set(picks))))
-    # RECORD (not a check): a FAST 3-of-5 split in a head arm is outside the pool's reach and the
-    # gate's (r36's null-rate numbers, rev 8 §3 "Bimodal"); its rate is printed for the record
+    # The FAST 3-of-5 split in a head arm: outside the pool's reach and the gate's (r36's null-rate
+    # numbers, rev 8 §3 "Bimodal"), rev 9's NAMED LIMIT (27 of 100). Rev 10's confirming re-run
+    # (r38 R2) retires it: a transient does not recur on the confirm. Now a check (accept <= 5 of
+    # 100), with rev 9's rate printed beside it
     rng = random.Random(90)
     picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
-    print("RECORD (G3) a FAST 3-of-5 split in H(8), 1.5 f: h* = 8 in %d of 100 nights (not gated; residual; "
-          "rev 9 re-measured under the twin term and the agreement gate)" % sum(x == 8 for x in picks))
+    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
+    try:
+        rng = random.Random(90)
+        picks9 = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
+    finally:
+        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+    check("(G3, r38 R2) a FAST 3-of-5 split in H(8), 1.5 f", sum(x == 8 for x in picks) <= 5,
+          "h* = 8 in %d of 100 nights (accept <= 5: rev 9's NAMED LIMIT retired by the confirm); rev 9's rule: %d of 100"
+          % (sum(x == 8 for x in picks), sum(x == 8 for x in picks9)))
 
     # H1 (rev 9, RULED r37): BETWEEN-RUN noise, an offset per ARM held over its 5 launches. In one
     # regime with the A/A cells spared (the shape the launch term and the night-wide A/A term
@@ -1915,11 +1986,11 @@ def cmd_selftest(_args):
                   "P(h* != 64) = %.3f over %d nights (accept <= 0.05); median f(A/A) %.4f, f(hit-dense/off) %.4f; "
                   "nights with a first void %d" % (ph, NOISE_TRIALS, fmh, NOISE_LAST["fcell"], nvh))
     # its control: rev 8's rule (no twin term, no agreement gate) on the 2 % one-regime night
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = False, False, False
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 4
     try:
         pc, _nv, _fm = noise_drill(seed=301, armoff=(0.02, ("not-warm",), True))
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = True, True, True
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 4
     check("(H1) control: tau 2 %, one regime, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
 
@@ -1937,11 +2008,11 @@ def cmd_selftest(_args):
                                                                           100 * mult * fcell), ph <= 0.05,
                       "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
                       % (ph, NOISE_TRIALS, nvh))
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = False, False, False
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 4
     try:
         pc, _nv, _fm = noise_drill(seed=499, splits={("C2", "hex64", "I", "hit-dense", "off"): (5, 1 + 1.5 * fcell)})
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = True, True, True
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 4
     check("(H2) control: I at hex64, 1.5 f, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # the agreement gate's own cost: the void rate it ADDS on pure noise (F3's acceptance: <= 5 %
@@ -2114,35 +2185,44 @@ def cmd_selftest(_args):
                       "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
                       % (ph, NOISE_TRIALS, nvh))
     # the controls: each defect's own shape under rev 9's rule must FAIL the acceptance
-    globals()["PAT_TWIN"] = False
+    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
     try:
         pj1, _n = noise_drill(seed=1400, armoff=(0.02, lambda k: k[1] == "hex64"))[:2]
         cut = min(launch_slots("arm-major")[("C1", "hex24", "h8", rg, ly)][0] for rg in REGIMES for ly in LAYERS)
         pj2, _n = time_drill("step", (cut, cut + 1), 0.05, seed=1401, order="arm-major")
         pj2i, _n = time_drill("step", (cut, cut + 1), 0.05, seed=1401)
+        parm, _n, _f = noise_drill(seed=1402, armoff=(0.02, lambda k: _c12(k) and k[2] == "h8"))
     finally:
-        globals()["PAT_TWIN"] = True
+        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
     check("(r38) control J1: hex64 tau 2 %, rev 9's floor", pj1 > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pj1, NOISE_TRIALS))
     check("(r38) control J2: +5 % after hex24's H(4), arm-major", pj2 > 0.15,
           "P(h* != 64) = %.3f over %d nights, rev 9's floor and order (accept > 0.15); the same cut in the "
           "interleaved order, rev 9's floor: %.3f" % (pj2, NOISE_TRIALS, pj2i))
-    # the POWER line: a real 5 % win of ONE head in ONE regime, before (rev 9's floor) and after
-    globals()["PAT_TWIN"] = False
+    check("(r38 R2) control: H(8)'s arm tau 2 %, rev 9's rule", parm > 0.15,
+          "P(h* != 64) = %.3f over %d nights, no per-pattern term and no confirm (accept > 0.15)" % (parm, NOISE_TRIALS))
+    # the POWER line: a real 5 % win of ONE head in ONE regime, before (rev 9's rule) and after;
+    # with the confirm cells it costs (the plan's re-run term on a night with one real win)
+    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
     try:
         pw0 = {rg: power_rate(regime=rg)[0] for rg in ("hit-dense", "random")}
     finally:
-        globals()["PAT_TWIN"] = True
-    pw1 = {rg: power_rate(regime=rg)[0] for rg in ("hit-dense", "random")}
+        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+    pw1, pcc = {}, {}
+    for rg in ("hit-dense", "random"):
+        pw1[rg], _p, pcc[rg] = power_rate(regime=rg, with_confirms=True)
     check("(r38) power: a 5 % win of H(8) in one regime", all(pw1[rg] >= max(0.9 * NOISE_TRIALS, pw0[rg] / 2)
                                                              for rg in pw1),
-          "h* = 8 in %s of %d nights (rev 9's floor: %s; accept >= 90 %% and >= half rev 9's)"
-          % ("/".join("%s %d" % kv for kv in pw1.items()), NOISE_TRIALS, "/".join("%s %d" % kv for kv in pw0.items())))
+          "h* = 8 in %s of %d nights (rev 9's rule: %s; accept >= 90 %% and >= half rev 9's); confirm cells a night "
+          "mean %s" % ("/".join("%s %d" % kv for kv in pw1.items()), NOISE_TRIALS,
+                       "/".join("%s %d" % kv for kv in pw0.items()),
+                       "/".join("%s %.1f" % (rg, statistics.mean(v)) for rg, v in pcc.items())))
     # the void rate on pure noise under rev 10 (F3: <= 5 % of nights void a cell once)
     for nm, nz, sd in (("normal", "normal", 1500), ("t(5)", "t5", 1501)):
         _p, nv, _f = noise_drill(seed=sd, noise=nz)
         check("(r38) void rate on pure noise, %s launches" % nm, nv / NOISE_TRIALS <= 0.05,
-              "nights with a first void %.3f (accept <= 0.05)" % (nv / NOISE_TRIALS))
+              "nights with a first void %.3f (accept <= 0.05); confirm cells a night mean %.3f, nights with one %d"
+              % (nv / NOISE_TRIALS, statistics.mean(NOISE_LAST["confirm"]), sum(1 for x in NOISE_LAST["confirm"] if x)))
     # J2: `time_cells` times in ROUNDS (stubbed execution, no clock): each run of n launches holds
     # every arm of the cell once, and the order is the one the drills place their steps in
     import tempfile
