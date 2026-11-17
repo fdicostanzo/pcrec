@@ -2570,3 +2570,22 @@ outermost view (`/(?:(?:(?<h>\d)?;)*,)*/` on `3;7;,`: `some((h: <5))` FAILS, the
 view is written by nesting the test on the group), as following from nested-pass. HIS WORDS: ""pass tests on a
 label two loops deep read the outer passes" this is how i expected." RECORD: the manager's reading stands with his
 confirmation that it is what he expected (his words; not asked as a ruling).
+
+**2026-11-17 OWNER RULING — operand-context (Frank, to session 138, evening).** Asked which constructs besides
+`\b` are refused on the right side of `&` because they look past the matched text (revision 24.3 §R.8's row;
+the manager's lean: all of `\B`, edge lookarounds, `\G`, `\K`). HIS WORDS: "operand-context: ^ $ should be
+redundant as the filter is anchored. Does that mean that interpretation is unnecessary? I would say at this point
+that any piece that might look outside is a compiler error. Then if we discover later we can relax it we can
+review."
+RECORD: (1) RULED: in a filter operand, ANY piece that MIGHT look outside the matched text is a COMPILE ERROR;
+deliberately conservative ("if we discover later we can relax it we can review"). (2) His question on `^` / `$`:
+since a filter must match the whole stretch, `^` and `$` at its edges are redundant; is the 11-15 interpretation
+("^...$ meant the start and end of the filtered condition") then needed at all? THE MANAGER'S ANSWER (mine, given
+to him): at the edges yes, redundant (the draft already warns there, `anchor.whole`); the interpretation is still
+needed for an anchor that is NOT at the edge (inside an alternation, or under multi-line mode after a newline
+inside the stretch), and it need not be a rule of its own: it is the consequence of ONE sentence, "the filter is
+matched against the stretch as if the stretch were the whole text"; the refusal in (1) is then the explicit
+exception to that sentence for pieces that would otherwise silently see nothing outside. MINE, the conservative
+reading of "might look outside" for the next revision: `\b` and `\B` where the position can be an edge of the
+operand, a lookbehind that can reach before its start, a lookahead that can reach past its end, and `\G` and `\K`
+(they speak about the search, not the string); pieces that stay inside the operand are fine.
