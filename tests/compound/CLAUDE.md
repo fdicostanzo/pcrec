@@ -124,7 +124,7 @@ the split client's `.rxt` corpus (G1) arrives with B4.
     span-head lever's strict value parse (R-45 G10, moved from the CLI
     tests for the fence; sabotage S3286) and the forwarded value's
     absolute anchor (r37 H8: head 8 renders a `_j = 8; for (` loop;
-    sabotages S3302, S3303).
+    sabotages S3302, S3303; S3312, the CLI's stored head + 2, r38 J5).
 - **run_part_measures.sh** — [MEASURE-SET] (lane partmeas;
   docs/spec/measures.md §5¶8, §4¶3): a compound's parts read P's
   measurement set, and the shell's `MEASURES` is the union over P and the
