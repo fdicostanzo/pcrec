@@ -2728,7 +2728,10 @@ def selftest_rev11(check):
         import contextlib
         import io
         rng = random.Random(seed)
-        cw = power_cells(8, "hit-dense", 0.955)
+        # the win sits at the night's floor, where one comparison fewer (G2 = {16}) moves the owed list;
+        # rev 12 (r41 L9): 0.953, was 0.955 (the A/A pair is now aa / aa.b, a different draw, and its
+        # floor reads ~0.047 against rev 11's ~0.043, so 0.955 no longer reached the band: control 0 of 12)
+        cw = power_cells(8, "hit-dense", 0.953)
         old = _flags(APPROX={})
         real_tc = time_cells
         same_lists = True
