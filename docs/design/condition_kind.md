@@ -1,6 +1,8 @@
 # A condition as its own kind: the owner's SQL model, worked out (EXPLORATION)
 
-STATUS: EXPLORATION, rules nothing. THREE PARTS: Part I (sections 1-7 and "Left open", lane condkind, kept as
+STATUS: EXPLORATION, rules nothing. FOUR PARTS (Part IV, lane searchrow, 2026-11-16, at the end: what a result row
+and a complement are in SEARCHED mode, after review r31 finding A; it asks **complement-per-match**,
+**complement-retry** and **nested-complement**). Part I (sections 1-7 and "Left open", lane condkind, kept as
 delivered) works the owner's SQL model out with the optional mark; Part II (the note's own revision, lane condkind2,
 2026-11-16, on the owner's go "drop-mark: another exploration on these ideas", COND-FAMILY 21:19) works the same
 model out WITHOUT the mark; Part III (lane defscope, 2026-11-16, after the owner's rulings drop-mark, default-value
@@ -1039,3 +1041,292 @@ programs that need two different defaults is 2 (they rewrite under (a), not unde
   (a1)'s `$` counts rest on one pool.
 - (e) declared defaults have no spelling and were run as "every label of the pool declared"; whether a declared
   default would also change what a capture returns outside conditions is not a predicate question and is not run.
+
+# Part IV: searched mode (lane searchrow, 2026-11-16)
+
+STATUS: EXPLORATION, rules nothing. Parts I-III stay as delivered. This part edits neither `predicates_draft.md`
+(rev 22) nor any ruling. Spellings are placeholders (D193 add. 4); only meaning is discussed.
+
+THE QUESTION. Review r31 finding A: **source-row** (COND-FAMILY 21:49, YES: "A row of the source is the whole
+subject; a searched pattern gives several result rows per subject; the complement is per subject") was answered
+on ONE example, `t2 & !q` FAILING on `9:30`. Read as worded, it collides with the RULED same-stretch tie (11-15
+20:43: the sides of `&` "match the same stretch whole") on `/\d+/ & !/0+/` searched on `0 7`, which rev 22 says
+HOLDS, reporting `7`. Is there ONE definition of the searched result row and of the complement that gives BOTH
+answers he was shown? Or must he choose?
+
+THE ANSWER IN SHORT. Yes. If a complement removes MATCHES rather than SUBJECTS, both answers come out: `9:30` FAILS
+and `0 7` HOLDS reporting `7`. On all 11,110 `t2` subjects such a candidate also gives exactly the per-subject
+answers he said yes to. But it has a price, and the price is a choice. Three things cannot all be kept:
+- (a) his `9:30` answer;
+- (b) D196's retry: when a filter rejects the left operand's preferred end, the search tries the next end (RULED
+  2026-11-12; rev 22's L34, L59, L13, §11, §4.2 and E-IPV4 examples rest on it);
+- (c) "adding a condition never admits a subject".
+
+Each candidate below keeps two of the three. That is the smallest choice the owner must make
+(**complement-retry**).
+
+## IV.0 Goals
+
+Ranked; who benefits: the owner, who answers **searched-complement** (asked after review r31); rev 23, which
+inherits it.
+
+1. THE TWO RULINGS SIDE BY SIDE. Every candidate's answer on `9:30` and `0 7`, and on every searched example rev 22
+   works. Measurable: one table, every cell from a run (PART 1 of the output) or a stated hand derivation.
+2. THE PROPERTIES REVIEW r31 FOUND BROKEN, counted under each candidate. These are `when`, adding a condition, a
+   nested filter role, a records item, and the standalone complement. Measurable: one count per candidate per
+   pool, each unchanged by the order-swap run.
+3. THE AMENDED WORDING, if one exists, with the examples that show it still gives what he said yes to.
+4. FEW QUESTIONS: at most three, each about what an object IS.
+
+Non-goals: no rev 23, no spelling, no ruling, no edit of Parts I-III.
+
+Standing questions (docs/design/CLAUDE.md):
+- (1) Measurement regime: NOT RELEVANT. There is no timing; every number counts answers over a population.
+- (2) Independent control: RELEVANT to the evidence.
+  - The evaluator (`docs/dev/lanes/searchrow_evidence/searchrow.py`) is this lane's own, written from rev 22's text
+    and D196. The earlier lanes' engines are whole-value only (Part I's `rev22_ref.py` and Parts II-III's
+    evaluators read one value), so none of them has the span level this part needs. They are not imported.
+  - The control is that the new evaluator reproduces independent numbers:
+    - Part I §1.1's 1,970 (whole value and per subject) and its 9,140 (`9:30`);
+    - review r31's verify V1 (`0 7`), V3 (6,050 vs 11,110, differ 5,060, `9:45`) and V5 (1,009, `9:30`);
+    - the spans rev 22 itself reports for L34, L59, L13, §11 (i) and §4.2's `9:15`.
+
+    Those numbers come from the verify scripts (`crit-condkind/VERIFY/v1,v3,v5.py`, by another author), from Part
+    I's engine, and from libpcre2 runs cited in rev 22. None of them was taken from this script.
+  - Who counts each population: each pool has its own generator in the script, with its size asserted.
+- (3) What moves when data is regenerated: NOT RELEVANT. There is no table, stamp or generated file.
+
+## IV.1 What rev 22 says a searched program reports (and what it does not)
+
+- D196 (decisions.md, RULED 2026-11-12): "The match reported is the leftmost start, then the left operand's
+  first-preferred end the right operand accepts exactly."
+- Rev 22 §0.1 MODE OF THE ANSWERS: "D196 tries the next end when a filter rejects the preferred one".
+- Rev 22 §4.5 IN A SEARCHED PROGRAM THE CONDITION SELECTS THE SPAN: each span has its own parse.
+- Rev 22 §11, THE ROLE TABLE row 6: a program's FINAL pattern is searched in the subject.
+
+So rev 22 defines ONE reported match, the first. It nowhere defines the program's SEQUENCE of matches. Rev 22 has
+several matches per text in only two places:
+- `records(text, rx)` (§7): "one ITEM per compile-time match of the item rx", tiling the text;
+- the hits of `occurrences` (§2.6): "find-all order"; "the loop equals find-all hit for hit".
+
+STOP-RULE GAP, stated: "a searched pattern gives several result rows per subject" (his words) needs that sequence.
+This part takes it to be the non-overlapping, leftmost find-all: each match is found as D196 finds the first, and the
+next search starts at its end. That is the lane's assumption, labelled. It is the reading under which records and
+`occurrences` already work. It is LOAD-BEARING for the M candidates: if a program's rows were its FIRST match only,
+then `/\d+/ & !/0+/` on `0 7` would FAIL under M and M+ (the first match `0` is removed and nothing follows). It is
+asked inside **complement-per-match** (IV.6).
+
+## IV.2 The candidates
+
+A result row in searched mode carries (subject, span, label values, pass table) (review r31 A2's text fix). In
+WHOLE-VALUE mode the stretch is the whole value and every candidate below is the same: there, Parts I-III's
+counts are untouched.
+
+| id | the rows of `A & conds & !B` on a subject | where it comes from |
+|---|---|---|
+| R22 | D196, every filter asked of the stretch, the complement too (a stretch B does not match whole); a rejection sends the search to A's next end | rev 22 §2.2 reading (3), "`!q` ... narrows the outside program's matches like any filter" (the manager's reading, checked by rev 22's run, not ruled) |
+| X | every span on which A matches whole, the conditions hold and B does not match whole | Part I §1.1 S2 |
+| S | as R22 for conditions; the complement per SUBJECT: no rows at all if B has a row anywhere in the subject | **source-row** as worded |
+| M | PCRE's own reported matches of A (find-all, each at A's preferred end), then each one kept if the conditions hold and B does not match its stretch whole; nothing is retried | the manager's candidate, as briefed |
+| M+ | the find-all of `A & conds` under D196 (conditions retry ends), then a complement removes the finished rows whose stretch B matches whole; the complement does not send the search to another end | this lane's |
+| Mr | M+, but a row is removed only if it IS one of B's own reported rows (same span): SQL's EXCEPT on rows | this lane's variant (his 20:41 words read literally: "all the matches from the table that didn't get matched by the uncomplemented") |
+
+In all of them, a complement with nothing on its left, at the top of a program, is per subject (IV.5).
+
+## IV.3 The two rulings, and every searched example rev 22 works
+
+All rows are SEARCHED. They come from PART 1 of `searchrow.out`, except where marked "hand". Each cell gives the
+answer and the reported spans (`text`@start).
+
+| program, subject | R22 | X | S | M | M+ | Mr | rev 22 says |
+|---|---|---|---|---|---|---|---|
+| `t2 & !q`, `9:30` (q := t2 & late; **source-row**'s example, he was shown FAILS) | HOLDS `9`@0 | HOLDS | **FAILS** | **FAILS** | **FAILS** | **FAILS** | HOLDS (§2.2 (3)) |
+| `/\d+/ & !/0+/`, `0 7` (review r31 A1; the 20:43 tie) | **HOLDS `7`** | **HOLDS `7`** | FAILS | **HOLDS `7`** | **HOLDS `7`** | **HOLDS `7`** | HOLDS `7` |
+| the same, `00 70` | HOLDS `70` | HOLDS | FAILS | HOLDS `70` | HOLDS `70` | HOLDS `70` | HOLDS |
+| `t2 & !q`, `9:30 1` (two reported matches) | HOLDS `9`,`30`,`1` | HOLDS | FAILS | HOLDS `1`@5 | HOLDS `1`@5 | HOLDS `1`@5 | HOLDS |
+| L34 `/(?<a>\d+)(?<b>\d+)/ & (a: <5) & (b: <5)`, `123` | HOLDS `12` | HOLDS | HOLDS `12` | FAILS | HOLDS `12` | HOLDS `12` | `12` |
+| L59 the same `& (a: "1")`, `123` | HOLDS `12` | HOLDS | HOLDS `12` | FAILS | HOLDS `12` | HOLDS `12` | `12` |
+| §11 (i) `/\d+/ & <256`, `x300 12` | `30`@1 | - | `30`@1 | `12`@5 | `30`@1 | `30`@1 | `30` at 1-3 |
+| L13 `/\d+/ & padded(/^5/)`, `x005` | `5`@3 | `5`@3 | `5`@3 | FAILS | `5`@3 | `5`@3 | `5` at 3-4 |
+| §4.2 `t2 & ((h, m = 0): padded(>= (9, 30)))`, `9:15` | `15`@2 | `15`@2 | `15`@2 | FAILS | `15`@2 | `15`@2 | `15` at 2 |
+| §11 row `/\w+/ & anchored(/foo/)`, `xfoo` (hand) | `foo`@1 | | `foo`@1 | FAILS | `foo`@1 | `foo`@1 | 1-4 |
+| L66 `headers & occurs.exactly(1, (name: any_case("Host")))`, two Host headers (hand) | `Host: a` | | as R22 | FAILS (the whole block is the reported match) | as R22 | as R22 | matches `Host: a` |
+| §12.3 E-IPV4 `256.1.1.1` (hand) | `56.1.1.1` | | as R22 | FAILS | as R22 | as R22 | searched as `56.1.1.1` |
+| 11-15 20:43, `999${/\d+/ & <100}999`, `99945999` (a HOLE: whole value) | matches | matches | matches | matches | matches | matches | matches |
+
+READING THE TABLE.
+- S keeps `9:30` and loses `0 7`. R22 and X keep `0 7` and lose `9:30`. This is review r31 A1, reproduced: the
+  premise test held.
+- M, M+ and Mr keep both. M then loses EVERY rev 22 example in which a condition sends the search to a shorter end
+  or a later start. Those examples are D196's own case: M gives D196 up.
+- M+ and Mr keep both rulings' answers AND every rev 22 example.
+- Mr parts from M+ only where B's own find-all does not report a stretch that B matches whole (`/\d+/ & !/0|00/` on
+  `00`: M+ FAILS, Mr HOLDS). The 20:43 tie ("match the same stretch whole") picks M+ over Mr; Mr is not carried
+  further.
+
+## IV.4 The properties review r31 found broken, under each candidate
+
+POOLS (each generated by its own code in `searchrow.py`):
+- T2: the 11,110 `t2` subjects of Part I. Each has exactly one reported `t2` match.
+- T2PAIRS: 600 subjects. The first 24 are single tokens from h in {1, 9, 10, 21} with minutes in {none, 00, 15, 30,
+  45, 50}; the other 576 are two such tokens joined by a space. These are subjects with SEVERAL reported matches,
+  which T2 lacks.
+- DIG: 696 strings of `0`, `1`, `7` and single inner spaces, length 1-5.
+
+Every count below is SEARCHED unless it says WHOLE.
+
+| property (program; pool) | R22 | X | S | M | M+ | WHOLE (all) |
+|---|---|---|---|---|---|---|
+| `t2 & !q` holds (T2) | 11,110 | 11,110 | 1,970 | 1,970 | 1,970 | 1,970 |
+| `t2 & !q` differs from S (T2) | 9,140, `9:30` | 9,140 | - | 0 | 0 | |
+| `t2 & !q` holds (T2PAIRS) | 600 | 600 | 132 | 418 | 418 | 11 |
+| `t2 & !q` differs from S (T2PAIRS) | 468 | 468 | - | 286, `1 9:30` | 286, `1 9:30` | |
+| `/\d+/ & !/0+/` holds (DIG); differs from R22 | 684; 0 | 684; 0 | 138; 546, `01` | 684; 0 | 684; 0 | |
+| `when`: body `(x & c & p) \| (x & !(x & c))` vs the case-when written as a filter `x & W` (T2) | 11,110 vs 11,110 | same | 6,050 vs 11,110, differ 5,060, `9:45` | 6,050 vs 6,050, differ 0 | 6,050 vs 11,110, differ 5,060 | 6,050 vs 6,050 |
+| the same (T2PAIRS) | 600 vs 600 | same | 426 vs 600, 174 | 558 vs 558, 0 | 558 vs 600, 42 | 18 vs 18 |
+| M+'s body vs the case-when read PER REPORTED MATCH, as sets (T2; T2PAIRS) | | | | | 0; 0 | |
+| adding `(h: >20)` to q in `q & !(q & late)` admits (T2; T2PAIRS) | 0; 0 | 0; 0 | 1,009, `9:30`; 214 | 0; 0 | 1,009, `9:30`; 126 | 0; 0 |
+| adding `(m = 0: <20)` to `t2 & !/\d:\d\d/` admits (T2; T2PAIRS) | 0; 0 | 0; 0 | 0; 0 | 0; 0 | 800, `0:20`; 90, `1:30` | |
+| `/\d+/ & !/\d\d/` vs `/\d+/ &` (the positive filter "not two digits") differ (DIG) | 0 | 0 | 657, `00` | 0 | 90, `00` | |
+| `/\d+/ & <17` (no complement) differs from D196 (DIG) | 0 | 0 | 0 | 356, `17` | 0 | |
+
+Mr's counts equal M+'s on every line (output).
+
+`when` ((x, c, p) = (t2, late, `(m: <45)`), the owner's 11-13 meaning "if in c, must also be in p; otherwise
+unconstrained"):
+- Under M, the ruled body IS the per-row "case when" (0 differ on both pools).
+- Under M+, the body equals the case-when read over the REPORTED MATCHES (0 differ as sets, both pools). It does
+  NOT equal the same test written as a condition, which D196 lets retry onto a shorter span: that form is vacuous
+  on T2 (11,110 of 11,110), as under R22. So under M+, Part I §3's "`when` is SQL's `case when`" holds with "per
+  reported match". The body gives 6,050, the answer source-row gave.
+- Under S, the body and the case-when part on 5,060 (review r31 A3, reproduced).
+
+ADDING A CONDITION NEVER ADMITS:
+- R22 and M keep it in both modes.
+- S breaks it through a program used twice (1,009, review r31 A4, reproduced).
+- M+ breaks it the same way (1,009). It also breaks it at the TOP of a chain, where S does not (800 of 11,110).
+  Example: `t2 & !/\d:\d\d/` FAILS on `0:20`, because the reported match `0:20` is removed. Adding `(m = 0: <20)`
+  makes D196 reject `0:20` (m = 20) and report `0` (m absent, the default 0 passes). `0` is not removed, so the
+  program HOLDS.
+
+  The mechanism is the one rev 22 §0.1 MODE OF THE ANSWERS already lists as SILENT (a shorter span drops a label;
+  fix: `anchored(...)`), now reaching a complement.
+- WHOLE VALUE: 0 under every candidate.
+
+ONE SET, TWO SPELLINGS: under M+, `A & !B` and `A & (a positive filter for "not B")` part (90 of 696). The complement
+does not retry; the filter does.
+
+WHOLE-VALUE MODE AS THE SPECIAL CASE: every candidate evaluates a filter role through the same whole-value test. The
+output's WHOLE lines (1,970; when 6,050 = 6,050; admitted 0) are Part I §1.1's and review r31 V3/V5's whole-value
+numbers. No count of Parts I-III changes.
+
+## IV.5 Nested filter role, records item, standalone complement (hand, from IV.2's definitions)
+
+- `contains(A & !B)`. This is a nested filter role (review r31 A1's nested case). `contains(x) :=
+  occurrences(x, min = 1)` (rev 22 L58), whose hits are find-all hits (§2.6). Two readings:
+  - (n1) The argument is a SEARCHED place. Its rows are the find-all of `A & !B` under the same candidate, so
+    `contains(t2 & !q)` FAILS on `9:30` exactly as the program `t2 & !q` does. The program and its `contains`
+    agree.
+  - (n2) The argument is a hole whose stretch the surrounding backtracking chooses. The row is then the stretch
+    (as X), and `contains(t2 & !q)` HOLDS on `9:30` through `9`. On T2 that is 11,110 against the top level's 1,970
+    under M or M+: they part on 9,140 (derived: X's row set, IV.4 line 1).
+
+  On `0 7` both readings HOLD (the stretch `7`). S has no nested subject: if the subject is `contains`'s value,
+  `contains(/\d+/ & !/0+/)` on `0 7` FAILS. Asked as **nested-complement**.
+- RECORDS ITEM (`records(text, item & !B)`, rev 22 §7). The items are already the item rx's find-all, so under M+
+  the items are that find-all minus the items B matches whole. The removed items' bytes are then untiled, and that
+  is rev 22's own compile error naming them (unless `gaps = "allow"`). Under S, one B row anywhere in the FILE
+  removes every item. Under R22, a rejected item is retried at a shorter end and the tiling shifts.
+- STANDALONE `!B`, `C | !B`. Under M, M+ and S, a complement's rows are rows of its LEFT operand. Alone at the top
+  it is per subject: it holds when B finds nothing, and reports no span. Rev 22's error on `${!B}` and `C | !B`
+  (§2.2, a LEAN resting on the macro foundation) gets a reason in the model's words: a complement alone has no
+  span to report, and `|` needs one (it is PCRE's one parse at a span, §4.5).
+
+  Under X, `!B` alone is every span B does not match, so `C | !B` would be defined, and would report a span
+  nearly everywhere: the error's reason lapses.
+
+## IV.6 The amended wording
+
+Under M+, source-row would read (the change is in the second and third clauses):
+
+> A row of the source is the whole subject. A searched statement gives several result rows per subject: the
+> matches it reports, leftmost and not overlapping, each found as D196 finds a match (its conditions may send the
+> search to a shorter end). A complement on the right of `&` removes the matches whose stretch the complemented
+> statement matches whole; it does not send the search to another end. A complement with nothing on its left is per
+> subject.
+
+THE EXAMPLES THAT SHOW IT STILL GIVES WHAT HE SAID YES TO:
+- `t2 & !q` on `9:30` FAILS.
+- Over all 11,110 `t2` subjects, `t2 & !q` holds on 1,970, the same subjects as "per subject" (0 differ).
+- `/\d+/ & !/0+/` on `0 7` HOLDS reporting `7`, as the 20:43 tie gives.
+
+WHERE IT PARTS FROM "PER SUBJECT": only on subjects with several reported matches. `t2 & !q` on `9:30 1` HOLDS
+reporting `1` (per subject FAILS); 286 of 600 T2PAIRS subjects.
+
+Under M, the second clause becomes "PCRE's own matches of the left operand; a condition or complement keeps or drops
+each; nothing is retried". That reverses D196's "first-preferred end the right operand accepts".
+
+THE QUESTIONS (plain words; each wants a reply either way; spellings are placeholders):
+
+1. **complement-per-match**. Does a complement remove MATCHES, not subjects (the wording above, with "leftmost and
+   not overlapping" as the meaning of "several result rows")? Example: `9:30` still FAILS and `0 7` HOLDS with `7`.
+   `9:30 1` HOLDS with `1`, where "per subject" would fail it.
+   - Leaning: yes. It is the only reading that gives both answers he was shown.
+2. **complement-retry**. When the complement rejects a match, does the search try that start's next end, as D196
+   does for a condition? Three answers, each keeping two of the three things above:
+   - (M+) No, conditions retry and complements do not. This keeps `9:30` and D196. The cost: adding a condition
+     can admit a subject in searched mode (800 of 11,110; `0:20`), and `A & !B` differs from its positive
+     spelling (90 of 696).
+   - (M) Nothing retries. This keeps `9:30` and the property, and gives up D196: `/\d+/ & <256` on `x300 12`
+     reports `12`, not `30`, and L34, L59, L13, §4.2's `9:15` and E-IPV4 FAIL (356 of 696 on `/\d+/ & <17`).
+   - (R22) Everything retries. This keeps D196 and the property, and `t2 & !q` on `9:30` HOLDS reporting `9`,
+     reversing his source-row example.
+
+   Leaning (the lane's): M+. Both of his answers and the ruled D196 stand. The cost falls in the class rev 22 already
+   lists as SILENT in searched mode (a shorter span changes what a condition sees), and it has the same fix:
+   `anchored(...)`.
+3. **nested-complement**. Is a `contains`/`occurrences` argument a searched place (n1: its hits are the argument's
+   reported matches, so `contains(t2 & !q)` FAILS on `9:30` like the program) or a hole (n2: HOLDS through `9`)?
+   - Leaning: n1. Rev 22 already says those hits are find-all hits.
+
+WHAT A PERSON MUST READ TO PREDICT AN ANSWER:
+- R22 and X: one rule (every filter, a complement too, is asked of the stretch; D196 retries).
+- M: one rule (PCRE's matches, then drop).
+- S: two rules (conditions per stretch, the complement per subject). The second never names a span, so `0 7`
+  surprises.
+- M+: two rules (conditions per stretch with retry; complements drop finished matches). Their seam shows on `0:20`.
+
+## IV.7 Population runs
+
+From the lane scratch dir `$PCREC_TMPDIR/scratch/searchrow/`, W = the worktree root:
+
+    timeout 300 python3 -I W/docs/dev/lanes/searchrow_evidence/searchrow.py > fwd.out
+    SEARCHROW_SWAP=1 timeout 300 python3 -I W/docs/dev/lanes/searchrow_evidence/searchrow.py > swap.out
+    diff <(grep -v '^ORDER:' fwd.out) <(grep -v '^ORDER:' swap.out)        # empty: SWAP-IDENTICAL
+    SEARCHROW_SABOTAGE=1 (forward and swapped) -> the diff shows 4 lines (M+'s `when` body 6,049 vs 6,048 on T2,
+    456 vs 457 on T2PAIRS): the swap check can fail
+
+- Each run takes about 6 seconds.
+- `fwd.out` is committed as `searchrow_evidence/searchrow.out`. Every count in this part is from it, after the swap
+  run printed the same lines.
+- The swap reverses the pools, the candidates, and each program's condition and complement lists. The output is
+  printed in one canonical order whatever order it was computed in.
+- PREMISE TEST (review r31's `0 7` and 5,060): reproduced. `0 7`: R22 HOLDS `7`, S FAILS. `when`: S's body 6,050
+  against R22's 11,110 (= the case-when over every span), differ 5,060, first `9:45`.
+- APPROXIMATION, stated: the left operand's preference order of ends at a start is taken as `re.match`'s end first,
+  then the other whole-match ends, longest first. That is exact for the greedy regexes used (`t2`, `/\d+/`, L34's
+  pair). Python's `re` stands in for PCRE. No anchor or lookaround is in any left operand; L13's `^` sits in a
+  filter, which is matched on the slice, so `^` is the stretch's start.
+
+## IV.8 Left open
+
+- The find-all assumption (IV.1) is the lane's. Rev 22 defines only the first reported match, and the M candidates'
+  `0 7` answer depends on the sequence.
+- M+ variant not run: "a removed match resumes the search at the next START" instead of at its end. It parts from
+  M+ on `10` with `!/10/` (M+ FAILS, the variant reports `0`).
+- `|` of two searched programs: only its hold/fail is counted (the `when` body). What it REPORTS when one side is a
+  complement is the standalone case of IV.5.
+- L66, E-IPV4 and the `\w+`/`anchored` row are hand derivations from IV.2's definitions, not runs.
+- Labels under a complement: none of this part's complements carries labels outward (Part I §2, review r31 V9).
+  Nothing here changes that.
+- Interactions with `all` (review r31 C) and with what "repeated" means (D) are not run in searched mode.
