@@ -2404,3 +2404,18 @@ capture still behaves like regex; the label is an explicit feature of the langua
 predspec241 (its R4) before he rules: one named group gives both; the two can disagree on one text (`\k<m>` inside
 the literal against `(m: ...)` outside it); where a label takes its value from the capture (the end of each pass);
 what the draft's existing sentences on `\k<x>`, `capture(x)` and the `captures` level say today.
+
+**2026-11-17 OWNER on pass-own-labels after the ramifications (Frank, to session 138, evening; leans and a remark,
+not yet a ruling).** Shown revision 24.1's ramifications block (17 of 68 lines move; nested loops: the innermost
+loop's pass unsets, or every enclosing loop's; an alternation in a loop body, `/(?:(?<a>\d)|(?<b>[a-z]))*/ & (a:
+<5)` on `3x`, holds under PCRE's carry and fails under per-pass labels). HIS WORDS: "pass-own-labels: On the inner
+versus outer: which would be easier to get to if we chose the other? I am thinking we chose the outer pass because
+if someone composed them they'd see the labels at "their level"" and ""An alternation in a loop body is affected
+too". I would expect this under "all must pass" otherwise use some()".
+RECORD: (1) nested loops: his LEAN is the OUTER reading (every enclosing loop's pass unsets a label set inside it),
+for composition: whoever wraps a loop in another sees, in each of their passes, only the labels set in that pass.
+(2) the alternation case failing is what he EXPECTS, in his words "under all must pass"; for the other meaning one
+writes `some()`. MANAGER'S NOTE (mine, put to him as a question, slug bare-loop-label): "all must pass" is not the
+rule he ruled at 14:30 (last-pass-default: a bare looped label reads the LAST pass). Both readings fail `3x`; they
+part on `x3` and `73` (last pass HOLDS, every pass FAILS). And his label-versus-capture ground removes the regex
+reason for "last pass" (a label is the language's own, so its bare reading is a language choice again).
