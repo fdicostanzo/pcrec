@@ -1510,7 +1510,7 @@ def adjusted(r, te, t):
 # (300 nights each, the "phase" layout model, 1 % launch noise), RECORDED here by hand from lane formsfixk's
 # run (a RECORD: re-pin when the rule or the drill moves): {layout tau: (one 5 % winner, one 10 % winner,
 # every head <= 16 5 % faster), each of 300}; rev 11's accept lines 270 / 270 / 255.
-POWER_RECORD = {0.0: None, 0.01: None, 0.02: None}
+POWER_RECORD = {0.0: (281, 300, 279), 0.01: (170, 299, 176), 0.02: (7, 260, 5)}
 POWER_ACCEPT = (270, 270, 255)
 
 
@@ -2532,12 +2532,17 @@ def selftest_rev12(check):
                       "and the gate under layout: accept <= %.2f)" % (nvh / NOISE_TRIALS, acc))
     # the CONTROLS, one per new mechanism (r41 L4's lesson): the per-text term off on the heads-only 2 % night;
     # the variant-aware test off on the phase 2 % night
+    # (gated at tau 3 %, where the defect is plain; tau 2 % printed beside it: the term's row there
+    # reads 0.000, the control's share is the term's whole effect)
     old = _flags(LAYOUT_TEXT_TERM=False)
     try:
-        pb, nvb, _f = noise_drill(seed=3311, layout=dict(model="heads", tau=0.02))
+        pb2, _nv, _f = noise_drill(seed=3311, layout=dict(model="heads", tau=0.02))
+        pb, nvb, _f = noise_drill(seed=3312, layout=dict(model="heads", tau=0.03))
     finally:
         _flags(**old)
-    check("(R2 B) control: heads-only tau 2 %, no per-text term", pb > 0.15,
+    print("REC  %-48s P(h* != 64) = %.3f over %d nights (with the term: the row above)"
+          % ("(R2 B) control: heads-only tau 2 %, no term", pb2, NOISE_TRIALS))
+    check("(R2 B) control: heads-only tau 3 %, no per-text term", pb > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15); voids %d" % (pb, NOISE_TRIALS, nvb))
     old = _flags(VARIANT_BIMODAL=False)
     try:
