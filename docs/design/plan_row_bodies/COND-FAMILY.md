@@ -2544,3 +2544,12 @@ selects a warning named `no-fail`); it sits in the same `@options` family as the
 placeholder. CORRECTS the manager's reading (not "every warning" by default). MINE: so every warning needs a
 stable NAME (the draft already names its diagnostics: `empty.search`, `label.ambiguous`, `default.unused`,
 `anchor.whole`); "all warnings" is then the pattern that matches every name; the two polarity warnings need names.
+CORRECTIONS (2026-11-17, the manager; review round predspec242, findings B3 and C1). (1) The libpcre2 run quoted in
+the "OWNER on atomic-search" entry used the manager's OWN test for "not late" (a bare hour counted late from 10
+on) and the hour pattern `\d{1,2}`; the fragments it lists (`9`, `3`, `0`; `0`) are that toy rule's and do not
+reproduce under the draft's `late`; the entry's conclusion stands (the search goes on after an atomic group and
+after (*PRUNE); it resumes past the rejected match after (*SKIP); it ends after (*COMMIT)), and "(*SKIP), not
+(*PRUNE)" is THE MANAGER'S READING of his "(*prune) or similar": on his one text `9:30`, (*SKIP) and (*COMMIT)
+both give nothing. (2) In the label-versus-capture ADDENDUM, the manager's "(the end of each pass)" for where a
+label takes its value is SUPERSEDED: by after-loop-read's own example (the condition on the item, "a loop of (times
+after 9:30)") a condition inside the pass reads the labels set so far in that pass.
