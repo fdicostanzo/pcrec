@@ -2229,3 +2229,25 @@ default; a named request for the exception; the named form admitted only with it
 capability level stated), and the 11-15 ruling already has this shape for hits ("reading ONE hit needs captures, a
 higher level with its cost shown; count/some/all in phase 1", CF:972-980): count, some and all over the hits are
 regular; holding the hits as values is the level-gated part.
+
+**2026-11-17 OWNER RULINGS — regex-settles; absent-under-not (Frank, to session 138, box clock about 13:25).** Lane
+rxmodel (docs/dev/lanes/rxmodel_report.md; every model run on libpcre2 10.46 with callouts) was summarised to him
+with two questions. HIS WORDS: "regex-settles: yes settled" and "Absent under not: use regex rules."
+RECORD, regex-settles (the five points shown to him, each an exact match of one candidate): (1) a test on an
+ABSENT label fails and the pattern tries its next path (pathimpact E6, U1); (2) the complement `!B` holds when NO
+path of B survives over the stretch (E3, C1); (3) an outer condition never re-enters a lookahead, and a negative
+lookahead tries every inner path before it succeeds (E4 LA1, E4' NA1); (4) occurrences is his ONE-PATTERN model
+(the lazy-gap loop over the span): its first path has the global search's hits and a condition inside it
+re-enters (E5, H2); (5) atomic MEANS what PCRE's atomic group means (spelling still open, predicates_future 19).
+RECORD, absent-under-not: NOT follows regex: a NOT around a test of an absent label HOLDS (two-valued, a negative
+lookahead). REVERSES the absence clause of condition-not (2026-11-16 23:48: "absence never matches, negated or
+not"); NOT itself stays allowed.
+MINE, derived, to be checked by the next revision and its round (NOT his words): with no test left UNKNOWN,
+three-valued logic is retired everywhere (the told items three-valued-throughout, pass-and's Kleene AND and
+condition-or's Kleene OR fall to plain two-valued forms); record-under-not DISSOLVES (a record is the AND of its
+entries with or without a NOT; predicates_future item 18 is moot); "present and not under 5" is written with a
+per-test default or an explicit presence test; polarity-rule has no regex model and, under regex behaviour, no
+error or warning (still his to confirm). NOT ruled, still open with him: last-pass-default (a bare loop label
+reads the last pass; every pass asked for by name), which decides pass-table, group-truth and loop-condition;
+when-meaning; whole-text (parked); the atomic and options spellings. The manager takes join-order as left side
+first (reported labels only; told to him 13:45, no objection asked for).
