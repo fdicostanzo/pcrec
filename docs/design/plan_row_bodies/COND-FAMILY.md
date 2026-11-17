@@ -1864,3 +1864,13 @@ mark = "IS NULL OR ...", i.e. UNKNOWN counts as TRUE, a test of ONE match with n
 definition lane, to be laid beside the per-program value set: it would make domain-scope and mark-narrows
 unnecessary and would change zero-pass-empty's corner (a marked absent label against an empty set would HOLD) and
 not-is-complement (`!` on a condition would have a meaning); each such change goes back to him by name.
+
+**2026-11-16 OWNER REMARK, continued — the condition as a WHERE clause (Frank, box clock 19:49; an INPUT to the
+condition-kind definition).** His words: "A condition in sql is wrapping a sql statement \"select * from (...) t
+where condition\". Not on the condition there is well defined". THE MANAGER'S READING (his): the pattern is the
+table (its rows are the matches, the labels the columns); a condition is the WHERE predicate, a test of ONE row;
+`P & c` is `select * from P where c`. So there are TWO different "nots", both well defined: NOT on a condition
+(the predicate's negation, three-valued, inside the WHERE) and the complement / difference of patterns (EXCEPT on
+tables). His 17:29 ruling not-is-complement ("! takes an rx ... no meaning on a condition") was made while a
+condition had no definition of its own; under this model its first half stands (`!` on a pattern is a complement)
+and its second half is to be RE-ASKED by the definition lane, by name, with examples.
