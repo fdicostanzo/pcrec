@@ -11,6 +11,19 @@ worktrees/.mgr/waiting_on.kit; sabotage ids worktrees/.mgr/sabotage_ids.txt (nex
 1. This file. 2. memfn/docs/journal.md, 2026-11-16 entries. 3. responses.md's last two `done:` lines (R-44, R-45 plan B)
 and the R-45 reply block (rev 6). 4. D197 (the mfind instrument; one-sided timing).
 
+## UPDATE 2026-11-17 02:25 (read FIRST; supersedes the lines below where they differ)
+- mfcard-zen4-2 ran: 600-603, 605-607 GREEN; 604 + 608 (JMH, both arms) RED on the quiet gate (load ~1.9 baseline vs 2.0:
+  Frank's steam/ptyxis/code + idle Claude sessions + kworkers); 609 all levels INCONCLUSIVE only from never-ran JMH. MAIN RULED:
+  NOT a measurement, NOT the one re-run; next window = a fresh FIRST run of all 10 jobs (new RUN_ID, no FIRST_RUNDIR). The
+  quiet-gate question is Frank's (via main). Queue NO timing until main relays his answer + a cleared night. worktrees/mfind
+  stays pinned. Triage: scratch/memfn/tri-mfc604, tri-mfc608.
+- Main's combined branch lane/covs2b exists (covs2afix + main + lane/memfn-span4k + raise + READ-2/CHECK-1; pcrec abi 109 there).
+  Main reserved sabotage S3260-S3275; the kit's forms lane holds S3276-S3299 (next free S3300).
+- LANE forms (opus) RUNNING since 02:17: worktrees/forms, lane/memfn-forms from lane/memfn-span4k 60c2958ae; R-45 plan A (forms
+  I/L/H(h), span-loop PAIR row, test-only span-head=N lever, cards C1-C5 + dry run, interim h=64 labelled UNMEASURED, R28-2/3
+  witnesses, K1/K2 text, main's r32 F1 probe number). lanewatch armed. CPU ends 19:30 11-17. NEXT on delivery: code round
+  (coordinator), cloud test+axes, then deliver; tell main the head length + the probe number.
+
 ## CURRENT STATE (2026-11-16 17:30)
 - TIMING TONIGHT: jobs 600-609 QUEUED (box queue, not-before 2026-11-17T01:00, RUN_ID mfcard-zen4-2, FROZEN f6274c11b =
   lane/memfn-scanrow, merged on main as c9ff8b53d; worktrees/mfind fast-forwarded and pinned in .wtprune.keep). Job set
