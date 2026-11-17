@@ -39,6 +39,14 @@ Always on, whatever the situation:
   exactly"): bold, plain words (`**route-or-stretch**`), reused unchanged in chat and owner.md; he answers
   "slug: ...". Say which reading of a bare "agree" you took; a consequence YOU derive from his ruling is recorded
   as yours and checked by the next revision (two derived consequences were wrong that evening).
+- **A rule that decides ANSWERS is asked, never told** (2026-11-16/17, three times in one night: the source-row
+  wording asked on one example of my own framing; the whole-statement default lean; the branch-order "ruling"): if
+  it is not word for word in the owner's record it goes to him as a question, with the CURRENT definition, an
+  example in EVERY mode the language has, and a several-match subject. Before presenting any finding as a new
+  decision, grep the design of record for the plan that already covers it (cover_cap.md 11.3 held the owner's
+  inline-head-then-loops plan while I asked him to choose around its absence).
+- **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
+  run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
 - **Purpose over wording** (Frank 2026-11-07: "too literal with exact
   wording compliance"): when a rule's wording and its evident purpose
   diverge, follow the purpose and say so in one line.

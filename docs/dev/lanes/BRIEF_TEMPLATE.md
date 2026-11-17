@@ -57,6 +57,9 @@ A field with nothing to say is written "none", never dropped.
     covcap-r2, 2026-11-15: "`[ab]{1000}` lists 24" was false on one
     compile).
 
+    (A lane that dispatches CLOUD runs proves each one in its report with the matching
+    `git ls-remote origin 'refs/heads/cloud/OWNER/*/NAME*'` line; lanecheck knows only box-queue
+    keys, so its report says `OWED: none` and names the cloud runs in their own section; 2026-11-16.)
     OWED RUNS: queue every owed stage as a box-queue job (RUNS.md), name
     their keys in STATE AT HANDOFF, run lanecheck, SendMessage, then END.
     Do NOT wait for the jobs or for any notification: a fresh agent reads

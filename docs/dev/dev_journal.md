@@ -28144,3 +28144,13 @@ Next
 - Process changes landed with r33/r34: re-run every rule whose reason assumed an operator absent when a revision
   re-allows it; diff the previous round's verifier numbers against the published ones; mode closure covers
   find-all places; a ruling stated as a derivation is read literally.
+
+## 2026-11-17 (session 137 CLOSE, box clock 10:30, at the owner's /close; no lane alive, nothing in flight)
+
+- After 04:15: the kit's forms stayed in its own fix rounds (code stable through three rounds; its cards' pick rule
+  still being fixed; delivery to main expected 11-18 morning after a short final round); nothing of main's ran.
+- Rules moved into the manager skill at close ("a rule that decides ANSWERS is asked, never told", with the
+  grep-the-design-of-record clause; "a lane's cloud runs dispatched is a claim") and into BRIEF_TEMPLATE.md (cloud
+  runs proved by an ls-remote line). [COVER-CAP]'s plan status brought to today.
+- OPEN with the owner: branch-scope, record-under-not (both block rev 24 of the predicate draft), pass-table,
+  group-truth, quiet-gate (blocks the kit's next timing night); whole-text parked by him.
