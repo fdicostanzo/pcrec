@@ -303,3 +303,20 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - SOURCE: review r34 finding A4 and its GENERAL FORM note (c), a PLAN item by the manager's disposition. Not ruled.
 - TRIGGER: the owner's answer to **record-under-not** (predicates_draft.md §R.8 item 7), if it asks for the record to
   equal the AND of its entries under NOT.
+
+## 19. Atomic: a pattern that is not backtracked into once it has matched, and how to spell it
+
+- WHAT: under the 2026-11-17 branch-scope ruling a rejecting condition sends the pattern back to its next path
+  (PCRE's order). An ATOMIC form stops that: the pattern commits to its first match at a start and the condition
+  judges that one. It gives the owner's other reading (item 14: on `9:30` the time pattern returns `9:30`, done;
+  "not a late time" then rejects it instead of falling back to `9`). Example of the meaning only (spelling open):
+  atomic `(B | A)` with `(l: <20)` on `25` FAILS, and on `25 13` in a find-all place reports `13` only (B :=
+  `/(?<l>\d\d)/`, A := `/(?<l>\d)\d/`; worked by hand by the manager, not modelled). The search still moves to
+  later starts; "nothing anywhere in the text" is the parked whole-text question.
+- SPELLING: OPEN, the owner's to discuss. NOT adopted: PCRE's `(?>...)` wrapped around predicate-language
+  expressions (his words: "it opens a bunch of questions about rx grammar in predicate language"). Candidates he
+  named: backtracking-stop marks in the manner of Perl 6's colons (`:`, `::`, `:::`), and an `atomic()` transform.
+  Inside a `/.../` literal PCRE's own atomic group and possessive quantifiers already exist; what they mean for a
+  condition outside the literal is part of this item.
+- SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the branch-scope ruling). TRIGGER: "the start of a different
+  discussion" (his words); raise it when the next revision is stable or when he asks.

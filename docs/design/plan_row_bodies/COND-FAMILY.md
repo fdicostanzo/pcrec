@@ -2114,3 +2114,25 @@ to him for confirmation before any revision: the one-parse reject `(B | A) & (l:
 note (a) (`/(?<a>\d+)(?<b>\d+)/ & (a: 1)` on `123` fails); for whether a value holds it is the 2026-11-14 some-parse
 rule again, with PCRE's preference order choosing the reported row. His item 14 of predicates_future.md (the
 pattern returns `9:30`, done; the condition then rejects) is the ATOMIC form.
+
+**2026-11-17 OWNER RULING — branch-scope: reading (ii); atomic wanted, its spelling OPEN (Frank, to session 138, box
+clock about 11:35).** Asked to confirm (ii) "everywhere, reversing the two 11-15 answers above, with atomic as the
+opt-out" (the table shown: `(B | A) & (l: "a")` on `aa` holds through the second branch; `/(?<a>\d+)(?<b>\d+)/ &
+(a: 1)` on `123` holds with a = 1, b = 23; `(B | A) & (l: <20)` on `25 13`, find-all, reports `25` then `13`).
+HIS WORDS: "branch-scope: yes. I like that. Also, that makes me like 9:30 choice from yesterday more as well because
+if we have atomic, you can get the alternative I mentioned. I don't like your spelling for atomic as it opens a bunch
+of questions about rx grammar in predicate language but I don't know what it should be. Perl 6 was going to use :::
+colons as backtracking stops. We might consider similar language as well as atomic() transforms but that's for the
+start of a different discussion". RECORD: (1) a condition is ONE MORE PIECE of the pattern: when it rejects, the
+pattern backtracks in PCRE's own preference order, into another branch of `|` as into any other choice point, for
+conditions inside and outside the `|`; the reported row is the first path that satisfies the conditions. (2)
+REVERSED by it: the 11-15 one-parse reject (CF:953-955, L60) and note (a) of the 11-15 entry (a condition on a label
+set once judges PCRE's one parse); the manager's readings (i) and (iii) are dead. (3) row-is-match (11-16 23:46)
+stands and is liked more for it. (4) ATOMIC (no backtracking into the pattern once it has matched) is WANTED as the
+way to get his other reading (predicates_future.md item 14); its SPELLING is not chosen and is a separate
+discussion: the manager's `(?>...)` is NOT adopted (it opens the question of regex grammar inside the predicate
+language); candidates he named: backtracking-stop marks like Perl 6's colons, and an `atomic()` transform. Filed as
+predicates_future.md item 19. MINE, derived, to be checked by the next revision and its round (NOT his words):
+whether a value holds = some path satisfies the conditions (the 2026-11-14 some-parse rule again for holding, with
+PCRE's order choosing the report); `&` distributes over `|`; for a single match adding a condition never admits;
+in find-all places hits can re-split; the cost he asked for on 11-15 is expected lower, UNMEASURED.
