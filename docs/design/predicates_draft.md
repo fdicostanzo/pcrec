@@ -536,10 +536,14 @@ labels and pass table), never another row and never the pattern's text.
   r33 F1): a joint and the record of the same PRODUCT set also PART once NOT is applied. On a row with h outside S and
   m absent, the joint `((h, m): (S, T))` is UNKNOWN (a part is absent) while the record `(h: S, m: T)` is FALSE &
   UNKNOWN = FALSE; NOT drops the joint's row and keeps the record's. `t2 & NOT ((h, m): (<9, <30))` vs `t2 & NOT (h:
-  <9, m: <30)` on `10`: FAILS / FAILS vs HOLDS / HOLDS `10`@0; they differ on 101 (WHOLE) / 371 (SEARCHED) of the
-  11,110 `t2` texts (first `9`), and on 0 / 0 without NOT (`predspec23c_model.out` PART 2). Record-is-product (11:35)
-  is a statement about the record WITHOUT a NOT around it; under NOT the two are different questions, BY DESIGN
-  (§0.1 L83), and the author picks: the joint for "the time as one value", the record for "each part on its own".
+  <9, m: <30)` on `10`: FAILS / FAILS vs HOLDS / HOLDS `10`@0; they differ on 101 (WHOLE) / 281 (SEARCHED) of the
+  11,110 `t2` texts (first `9`), and on 0 / 0 without NOT (`predspec23d_model.out` PART B; rev 23.2, review r34 A1:
+  rev 23.1 printed 371 SEARCHED, its engine reading `<30` by value against §2.2's canonical numerals). THE SCOPE
+  "record-is-product (11:35) is a statement about the record WITHOUT a NOT around it; under NOT the two are
+  different questions" is THE MANAGER'S (his disposition of review r33 F1), not the owner's: his 11:35 words
+  ("record-is-product: absolutely") carry no such scope. Rev 23.2 (review r34 A4): it STANDS without NOT; under NOT
+  it is OPEN, asked as **record-under-not** (§R.8 item 7), and the author's choice below holds only if he keeps the
+  scope: the joint for "the time as one value", the record for "each part on its own" (§0.1 L83).
 - `c1 & c2` on conditions: Kleene AND. `NOT c` (written `!c`; condition-not, 23:48, his words: "condition-not : yes
   allow not"): Kleene NOT: TRUE<->FALSE, UNKNOWN stays UNKNOWN, so "a condition on an absent label is unknown, its NOT
   is unknown, the row is dropped (absence never matches, negated or not; a default gets past it)" (23:48 record).
@@ -564,7 +568,9 @@ of the language (all-question, 23:18, his words: "all-question: retire"):
 - "EVERY PASS, POSSIBLY NONE" is a PLAIN CONDITION WITH A DEFAULT: `(h = d: S)` with d in S. On zero passes the null
   pass row reads d and passes; a pass lacking h reads d too (ONE kind of absence: a loop that never ran and a pass
   that did not set the label are treated alike, as put to him at 23:18). For a joint, every part needs a default:
-  `((h = 0, m = 00): R)`.
+  `((h = 0, m = 0): R)` with R = `(<10, <30)` (rev 23.2, review r34 A1: rev 23.1 wrote `m = 00`, which §2.2's
+  canonical numerals put OUTSIDE `<30`, so that spelling fails on the empty list; a default must lie IN the set,
+  read as the set reads it).
 - THE NARROWER QUESTION, "zero passes are fine, a pass lacking the label is not", is NONE-OF-THE-OPPOSITE WITH A
   SENTINEL DEFAULT: `occurs.none((h = x: !S))` with x outside S: a real pass lacking h reads x, lies in `!S`, and is
   counted; zero passes have no real pass.
@@ -688,17 +694,22 @@ Over the 364 texts over {3, 7, ;} up to length 5: WHOLE `NOT c` 22, `(h: !S)` 2,
 differ 20 (first `7;;`), `NOT c` vs difference 18 (first the empty text), `(h: !S)` vs difference 38. SEARCHED 132,
 132, 364; `NOT c` vs `(h: !S)` differ 0 (a shorter stretch with fewer passes survives), either vs the difference 232.
 
-On `t2` (`/(?<h>\d{1,2})(?::(?<m>\d\d))?/`, R = `>= (9, 30)`, q := `t2 & ((h, m): R)`), 11,110 texts (PART 3):
+On `t2` (`/(?<h>\d{1,2})(?::(?<m>\d\d))?/`, R = `>= (9, 30)`, q := `t2 & ((h, m): R)`), 11,110 texts (PART 3,
+re-run under §2.2 by lane predspec23d, `predspec23d_model.out` PART B):
 
 | program | WHOLE holds | SEARCHED holds |
 |---|---|---|
-| `t2 & NOT ((h, m): R)` | 1,860 | 10,230 |
-| `t2 & ((h, m): !R)` | 1,860 | 10,230 |
-| `t2 & !q` (difference) | 1,970 | 11,110 |
-| `t2 & ((h, m = 0): !R)` (rev 22 L95's mark replaced by a default) | 1,880 (vs `t2 & !q` differ 90, first `10`) | 11,110 (differ 0) |
+| `t2 & NOT ((h, m): R)` | 2,830 | 10,300 |
+| `t2 & ((h, m): !R)` | 2,830 | 10,300 |
+| `t2 & !q` (difference) | 2,940 | 11,110 |
+| `t2 & ((h, m = 0): !R)` (rev 22 L95's mark replaced by a default) | 2,850 (vs `t2 & !q` differ 90, first `10`) | 11,110 (differ 0) |
 
-The 110 whole-value texts between 1,860 and 1,970 are the hour-only texts (`9`: m absent: NOT drops it, the
-difference keeps it).
+The 110 whole-value texts between 2,830 and 2,940 are the hour-only texts (`9`: m absent: NOT drops it, the
+difference keeps it). REV 23.2 (review r34 A1): R is UNPADDED, so by §2.2 a time is late only when BOTH parts are
+canonical numerals: `09:45` (hour `09`) and `10:05` (minute `05`) are NOT late; of the 100 two-digit minutes only
+`10`-`99` can lie in an unpadded minute set (`predspec23d_model.out` PART X). Rev 23 and 23.1 printed 1,860 /
+10,230, 1,970 and 1,880, its engine reading R by value, i.e. as `padded(>= (9, 30))` (§2.7); those are the numbers
+of the PADDED spelling. Every count that moved is §R.7d.
 
 A FOURTH MEMBER: NOT OVER A NESTED PROGRAM (rev 23.1, review r33 F12 and its family note). With X :=
 `/(?<x>[\d:]+)/`, `(x: q)` asks whether x's text is a row of q, a YES or a NO (R.1.1's place table), so the third
@@ -718,12 +729,15 @@ reads; to drop the row where q's m is absent, the author puts the NOT inside the
 
 `A & !B` is pattern difference: it asks about A's ROW, not about the text. Searched on `9:30`, `t2 & !q` HOLDS
 reporting `9` (row-is-match 23:46, "as rev 22") although the text contains a late time: WHOLE FAILS / SEARCHED HOLDS
-`9`@0 (PART 1, D1). Over the 11,110 `t2` texts, SEARCHED `t2 & !q` holds on 9,140 texts that contain a late time
-(first `9:30`); WHOLE on 0 (PART 3).
+`9`@0 (PART 1, D1). Over the 11,110 `t2` texts, SEARCHED `t2 & !q` holds on 8,240 texts that contain a late time
+(first `9:30`); WHOLE on 70 (first `09:30`: the whole value is not late, its hour `09` not being canonical, but its
+tail `9:30` is) (PART 3 under §2.2, `predspec23d_model.out` PART B; rev 23.1: 9,140 and 0, by value, §R.7d).
 
 WHAT ASKS IT TODAY:
 - WHOLE-VALUE mode: `x & !contains(B)` (rev 22 §2.6: `contains(r) := occurrences(r, min = 1)`; the stretch is the
-  whole value): `t2 & !contains(q)` WHOLE holds on 1,970 of 11,110, exactly the texts with no late time.
+  whole value): `t2 & !contains(q)` WHOLE holds on 2,870 of 11,110, exactly the texts with no late time (rev 23.2,
+  review r34 A1: 1,970 by value; under §2.2 `t2 & !q` WHOLE, 2,940, is NOT that set: it also keeps the 70 `09:mm`
+  texts whose tail is late, §R.7d).
 - SEARCHED mode: NOTHING asks it exactly.
   - `!contains(B)` reads the ROW's stretch: `t2 & !contains(q)` SEARCHED on `9:30` HOLDS reporting `9` (PART 1, D5);
     11,110 of 11,110 (PART 3).
@@ -745,7 +759,7 @@ WHAT ASKS IT TODAY:
   "text" is that place's text (R.1.1's table: a filter role's stretch; a `records` item's file text), so inside a
   whole-value program it equals `!contains(B)`.
   RUN (PART 1, D6; PART 3): `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS reporting `9:15`;
-  on `9:30 1` FAILS / FAILS. Over 11,110 `t2` texts it holds on 1,970 in BOTH modes.
+  on `9:30 1` FAILS / FAILS. Over 11,110 `t2` texts it holds on 2,870 in BOTH modes (rev 23.1: 1,970, by value).
 - Asked as **whole-text** (§R.8); the owner PARKED it on 2026-11-17 ("Let's not answer now", as relayed in the
   predspec23b brief) after asking whether it could be asked now in a single rx. §R.4.1 lays the two routes side by
   side; NOTHING is decided.
@@ -781,10 +795,12 @@ ROUTE (i): A PATTERN WITH CONDITIONS INSIDE A LOOKAHEAD.
   before the time (`a 9:15`: HOLDS / HOLDS reporting `a 9:15`@0, where route (ii) reports `9:15`@2; `\K`, which would
   move the start, is refused: §13 O17), and find-all gives AT MOST ONE match (`9:15 1`: only `9:15`; a later search
   cannot start at `\A`).
-- Counts (11,110 one-time texts T2; 600 two-time texts T2PAIRS, lane searchrow's). SEARCHED: (a) holds on 11,110 and
-  600, (ii) on 1,970 and 132, differing on 9,140 and 468 (first `9:30`); (b) equals (ii) on both pools (0 differ).
-  WHOLE: (a), (ii) and `t2 & !q` all hold on 1,970 and 11; (b) on 1,970 and 132: its `[\s\S]*?` gap lets a whole
-  value be "any text, then a time" (first `1 1`). Find-all over T2PAIRS: (a) reports 2+ matches on 264 texts.
+- Counts (11,110 one-time texts T2; 600 two-time texts T2PAIRS, lane searchrow's; q's R read under §2.2, rev 23.2,
+  review r34 A1, `predspec23d_model.out` PART B; the rev 23.1 numbers, read by value, are in §R.7d). SEARCHED: (a)
+  holds on 11,110 and 600, (ii) on 2,870 and 182, differing on 8,240 and 418 (first `9:30`); (b) equals (ii) on both
+  pools (0 differ). WHOLE: (a) and (ii) hold on 2,870 and 13, `t2 & !q` on 2,940 and 13 (it parts from (ii) on the
+  70 `09:mm` texts, first `09:30`, §R.4); (b) on 2,870 and 182: its `[\s\S]*?` gap lets a whole value be "any text,
+  then a time" (first `1 1`). Find-all over T2PAIRS: (a) reports 2+ matches on 312 texts.
 - What it cannot say: "no B ANYWHERE" while reporting A's own row, past the first match. A lookbehind to the start
   (`(?<=\A(?![\s\S]*${q})[\s\S]*)`) would, but it is unbounded, which PCRE2 and pcrec's bounded lookbehind refuse.
   In a filter role an assertion may not read beyond the stretch (§13 O17), so there it asks about the stretch only.
@@ -797,7 +813,7 @@ ROUTE (ii): THE SEPARATE TEXT-LEVEL TEST, `text.none(B)` (placeholder; §R.4's P
 - Answers: `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS `9:15`; on `9:15 9:30` and `9:30
   9:15` FAILS / FAILS; on `9:30 1` FAILS / FAILS. Find-all is ALL OR NONE per text: `9:15 1` reports `9:15`@0 and
   `1`@5,
-  `9:15 9:30` none (121 of the 600 two-time texts report 2+ matches). In a whole-value program it equals
+  `9:15 9:30` none (169 of the 600 two-time texts report 2+ matches; rev 23.1: 121, by value). In a whole-value program it equals
   `!contains(B)` (0 of 11,110 and 0 of 600 differ, WHOLE).
 - What it adds: a SECOND KIND of condition, one that reads the text rather than the row: R.1.5's "a condition reads
   only its row ... never the pattern's text" gains an exception (the text is the subject, R.1.1; in a filter role,
@@ -827,7 +843,8 @@ positive-lookahead labels asked, rather than offered as the whole-text answer.
   >20)` added to q admits 0 of 11,110 T2 and 0 of 600 T2PAIRS, SEARCHED; adding `(m = 0: <20)` to `t2 &
   !/\d:\d\d/` admits 0 and 0; WHOLE 0; `searchrow.out` PART 2, re-run forward and swapped, identical); A3 `when(c,
   p)`'s body `(x & c & p) | (x & !(x & c))` and its case-when form agree (R22: 11,110 vs 11,110 on T2, 600 vs 600 on
-  T2PAIRS, SEARCHED; 6,050 vs 6,050 WHOLE: `searchrow.out`), and are vacuous searched on T2 (a shorter stretch
+  T2PAIRS, SEARCHED; 6,105 vs 6,105 WHOLE under §2.2, `predspec23d_model.out` PART B; `searchrow.out`'s 6,050 read
+  late and `(m: <45)` by value, §R.7d), and are vacuous searched on T2 (a shorter stretch
   always survives: the rev 22 §0.1 MODE OF THE ANSWERS class). Rev 23.1 (review r33 F2): the agreement rests on a
   filtered branch FALLING THROUGH (without it the second branch is unreachable: with x = t2, c = `(h: <5)` and p
   TRUE, `7` HOLDS with fallthrough and FAILS without, review r33's verifier V-11), which
@@ -881,7 +898,7 @@ Rev 22 §0.1's list stands, with the mark's lines retired. Added:
   PART 5); on rev 22's closing-example lists every default and `occurs.none` spelling holds on 1,111 of 1,111
   SEARCHED (PART 4). Fix: `anchored(...)` or a non-nullable left operand.
 - CONDITION NOT drops a shorter stretch's absent row, pattern difference keeps it: `t2 & !q` SEARCHED holds on
-  11,110, `t2 & NOT ((h, m): R)` on 10,230 (PART 3).
+  11,110, `t2 & NOT ((h, m): R)` on 10,300 (PART 3 under §2.2; rev 23.1: 10,230, by value).
 - `t2 & !q` and `t2 & !contains(q)` searched report a shorter stretch (`9` in `9:30`), not "the text has no B"
   (§R.4).
 - (rev 23.1, review r33 F17) A NULLABLE B makes "no B" FALSE EVERYWHERE: an empty stretch is a potential match
@@ -901,12 +918,12 @@ Every rev 22 example that used the mark or `all`, rewritten with a default, and 
 
 | # | rev 22 (site) | rev 23 spelling | rev 23 answer (WHOLE / SEARCHED; evidence) |
 |---|---|---|---|
-| 1 | closing example, §4.3: `all(((h, m): R))` "accepts incomplete items" (11 of 259); `((h, m?): R)` and `occurs.none(((h, m?): !R))` rows | removed; I2b "every item fits R, an item without minutes acceptable when its hour fits, possibly none" is `((h = 0, m = 00): R)` (every pass, possibly none) or `occurs.none(((h, m = 00): !R))` | both EXACT on I2b (0 of 1,111 differ, WHOLE); SEARCHED both hold on 1,111 (R.6). `((h, m = 00): R)` without h's default misses `''` (1). PART 4 |
+| 1 | closing example, §4.3: `all(((h, m): R))` "accepts incomplete items" (11 of 259); `((h, m?): R)` and `occurs.none(((h, m?): !R))` rows | removed; I2b "every item fits R, an item without minutes acceptable when its hour fits, possibly none" is `((h = 0, m = 0): R)` (every pass, possibly none) or `occurs.none(((h, m = 0): !R))` (rev 23.2, review r34 A1: rev 23 and 23.1 wrote `m = 00`, outside `<30` under §2.2) | both EXACT on I2b (0 of 1,111 differ, WHOLE); SEARCHED both hold on 1,111 (R.6). `((h, m = 0): R)` without h's default misses `''` (1). `predspec23d_model.out` PART X; under §2.2 rev 23.1's `m = 00` spellings are I1's sentinel (`occurs.none`) and FAIL on the empty list (`((h = 0, m = 00): R)`), §R.7d |
 | 2 | §4.3 rev 21's `occurs.none(!((h, m): R))` "now an ERROR" | legal again with condition-not; its meaning is the three-valued NOT, so an item without minutes is UNKNOWN and not counted | = I2a (0 differ), not rev 21's I1 (70 differ, `3,`); same answers as `occurs.none(((h, m): !R))`, WHOLE; PART 4 |
 | 3 | §4.3 zero iterations: `(n?: <5)` and `all((n: <5))` HOLD on the empty span | `(n = 0: <5)` | HOLDS / HOLDS on ``; `(n: <5)` FAILS / FAILS; `some` FAILS; `NOT some((n: <5))` HOLDS (PART 5) |
 | 4 | L102: `!some(c)` an ERROR naming `occurs.none(c)` | legal; `NOT some(c)` = `occurs.none(c)` | 0 differ over REP (364) in both modes (PART 2) |
 | 5 | §2.2: `!` on a condition an ERROR | `NOT (h: S)`, three-valued | §R.3 |
-| 6 | L95 `t2 & !q` vs `((h, m?): !R)` | `((h, m = 0): !R)` | WHOLE 1,880 vs `t2 & !q` 1,970 (differ 90, `10`); SEARCHED 11,110 both (PART 3) |
+| 6 | L95 `t2 & !q` vs `((h, m?): !R)` | `((h, m = 0): !R)` | WHOLE 2,850 vs `t2 & !q` 2,940 (differ 90, `10`); SEARCHED 11,110 both (PART 3 under §2.2, `predspec23d_model.out` PART B; rev 23.1: 1,880 vs 1,970, by value) |
 | 7 | (e2.1), L101: `(a = 0: <10, b: >$a)` "SAME" as the joint | the record is the AND of its entries | on `/5` record FAILS, joint HOLDS, both modes (PART 1); defscope AB 45 vs 54 (WHOLE) |
 | 8 | 21:49 cost: `(h?: <5) & (k: <5)` on `b3` | `(h = 0: <5) & (k: <5)` | HOLDS / HOLDS on `/a(?<h>\d)\|b(?<k>\d)\|c/` (PART 1, D12); with the mark merely deleted, `(h: <5) & (k: <5)`, FAILS / FAILS (D13), the record's 22:58 correction |
 | 9 | L104 one-witness (a reading) | two defaults on one label, BY DESIGN | `(h = 0: <5) & (h = 9: >7)` on `x` HOLDS / HOLDS (PART 1) |
@@ -946,14 +963,56 @@ findings:
 | c1 | §8 `when` body on `/(?<k>\d)(?:;(?<h>\d))*/`, p = `(k: between(3, 7))`, c = `(h = 0: <5)`, on `5;9` (`predspec23b_model.out` PART 5) | HOLDS / HOLDS `5;9`@0 | HOLDS / HOLDS `5`@0 (MOVED: branch 1's shorter row `5`, c TRUE by the default, comes before branch 2's `5;9`); the NOT-c body moves the same way (PART 1) |
 | c2 | the same body, reported row over the 1,110 texts | end-major | MOVED on 125 texts for c = `(h: <5)` (first `3;0;5`: `3;0;5`@0 -> `3;0`@0) and 400 for c = `(h = 0: <5)` (first `3;5`: `3;5`@0 -> `3`@0); the NOT-c body the same 125 / 400 (PART 1; review r33's 125 and 400 reproduce, PART 0) |
 | c3 | `x & when(c, p)` (the filter form) vs its expansion `(x & c & p) \| (x & !q)` | "=" (§8, no mode) | equal WHOLE; hold on the same texts SEARCHED (0 differ); REPORT different rows on the 125 / 400 texts of c2 (the filter form reports end-major, D196; the expansion branch-major); on T2 with c = late, p = `(m: <45)` they report the same rows (0 of 11,110, 0 of 600) (PART 1) |
-| c4 | L83 `((h, m): (S, T))` vs `(h: S, m: T)` | SAME | DIFFERENT under NOT, BY DESIGN: `t2 & NOT ...` with S = `<9`, T = `<30` differ on 101 / 371 of 11,110 (first `9`); `10`: joint FAILS / FAILS, record HOLDS / HOLDS; 0 / 0 without NOT (PART 2) |
-| c5 | §4.3 closing example `occurs.none(NOT ((h, m): R))` (R = `(<10, <30)`) | "the condition NOT" = I2a | the JOINT spelling: I2a exactly (0 of 1,111 differ, WHOLE holds 85); its record twin `occurs.none(NOT (h: <10, m: <30))` = I2b exactly (0 differ, WHOLE holds 40; I2a differ 45, first `12,`); SEARCHED both 1,111 (PART 2) |
+| c4 | L83 `((h, m): (S, T))` vs `(h: S, m: T)` | SAME | DIFFERENT under NOT (rev 23.1: "BY DESIGN"; rev 23.2: that scope is the manager's, OPEN as **record-under-not**): `t2 & NOT ...` with S = `<9`, T = `<30` differ on 101 / 281 of 11,110 (first `9`; rev 23.1 printed 371, by value, §R.7d); `10`: joint FAILS / FAILS, record HOLDS / HOLDS; 0 / 0 without NOT (PART 2) |
+| c5 | §4.3 closing example `occurs.none(NOT ((h, m): R))` (R = `(<10, <30)`) | "the condition NOT" = I2a | the JOINT spelling: I2a exactly (0 of 1,111 differ, WHOLE holds 40); its record twin `occurs.none(NOT (h: <10, m: <30))` = I2b exactly (0 differ, WHOLE holds 15; I2a differ 25, first `12,`); SEARCHED both 1,111 (PART 2; the counts under §2.2, rev 23.2, `predspec23d_model.out` PART B; rev 23.1 printed 85 and 40 with I2a differ 45, by value) |
 | c6 | §R.3 / §7.1 `NOT (h = 9: <5)` vs `NOT (h: <5)` | (b) of `default.unused` fired on the first | differ 1 / 164 of 341 (SV), `NOT (h = "x": <5)` vs `NOT (h: <5)` 18 / 232 of 364 (REP): the default is USED; without NOT 0 / 0 (PART 3) |
 
 Holds-counts that do NOT move under branch-order (re-run, identical): `when` body 960 / 1,110 (c = `(h: <5)`) and
 955 / 1,045 (c = `(h = 0: <5)`); NOT-c body vs body 10 / 110 and 0 / 0 (§R.7b b4); §R.5 A3's 11,110 / 600 SEARCHED
-and 6,050 / 18 WHOLE (PART 1). No other worked answer in the draft uses `|` over filtered branches (checked by grep
+and 6,105 / 18 WHOLE (PART 1; rev 23.1 printed 6,050, by value, §R.7d). No other worked answer in the draft uses `|` over filtered branches (checked by grep
 for the `when` texts and the evidence's `alt=` sites: predspec23b PART 5 only).
+
+R.7d COUNTS THAT MOVED IN REV 23.2 (lane predspec23d, review r34 A1; `predspec23d_model.out`). §2.2 reads an UNPADDED
+integer set as CANONICAL numerals (no leading zero; a tuple holds only when every component is canonical: "There is
+no "compares by value" reading"). The evidence engines of lanes predspec23, predspec23b, predspec23c and searchrow
+read q's R = `>= (9, 30)`, the closing example's R = `(<10, <30)`, L83's `<30` and `when`'s `(m: <45)` BY VALUE,
+i.e. as if the draft had written `padded(...)`. Lane predspec23d re-ran EVERY line of the four engines with those
+sites read canonically (the engines read, not edited; PART A lists each moved line before and after, PART B every
+line). The draft keeps the unpadded spellings, so the counts move; an author who means minute VALUES writes
+`padded(...)` and gets the BEFORE column back. Each count below in both modes (WHOLE / SEARCHED where both exist):
+
+| site | count | rev 23.1 (by value) | rev 23.2 (§2.2) |
+|---|---|---|---|
+| R.1.5, §0.1 L83, R.7c c4 | `t2 & NOT ((h, m): (<9, <30))` vs `t2 & NOT (h: <9, m: <30)` differ | 101 / 371 | 101 / 281 (review r33's verifier printed 281) |
+| §R.3, §R.6 | `t2 & NOT ((h, m): R)` and `t2 & ((h, m): !R)` hold | 1,860 / 10,230 | 2,830 / 10,300 |
+| §R.3, §R.4 | `t2 & !q` holds | 1,970 / 11,110 | 2,940 / 11,110 |
+| §R.3, §R.7 row 6, §0.1 L95 | `t2 & ((h, m = 0): !R)` holds (vs `t2 & !q` differ) | 1,880 (90) / 11,110 (0) | 2,850 (90) / 11,110 (0) |
+| §R.4 | `t2 & !q` holds on a text with a late time somewhere | 0 / 9,140 | 70 (first `09:30`) / 8,240 |
+| §R.4, §R.4.1 | `t2 & !contains(q)`, `t2 & text.none(q)`, route (i)(a) WHOLE, route (i)(b) | 1,970 | 2,870 |
+| §R.4.1 | route (ii) holds on T2 / T2PAIRS, SEARCHED | 1,970 / 132 | 2,870 / 182 |
+| §R.4.1 | today's spellings vs route (ii) differ, SEARCHED, T2 / T2PAIRS | 9,140 / 468 | 8,240 / 418 |
+| §R.4.1 | WHOLE holds on T2PAIRS: (a), (ii), `t2 & !q`; route (i)(b) | 11; 132 | 13; 182 (vs (ii) differ 169, was 121) |
+| §R.4.1 | `t2 & !q` vs route (ii), WHOLE, T2 | 0 | 70 (first `09:30`) |
+| §R.4.1 | find-all over T2PAIRS, 2+ matches: route (i)(a); route (ii); `t2 & !q` | 264; 121; 589 | 312; 169; 587 |
+| §R.5 A3, R.7c | `when` on T2 (c = late, p = `(m: <45)`), body and case-when, WHOLE (T2 / T2PAIRS) | 6,050 / 18 | 6,105 / 18 |
+| §4.3, R.7c c5 | closing, `occurs.none(NOT ((h, m): R))` and `occurs.none(((h, m): !R))`: WHOLE holds; differ I1 / I2a / I2b | 85; 70 / 0 / 45 | 40; 36 / 0 / 25 |
+| §4.3, R.7c c5 | closing, record twin `occurs.none(NOT (h: <10, m: <30))` | 40; 25 / 45 / 0 | 15; 11 / 25 / 0 |
+| §4.3 | closing, `occurs.none(((h, m = 99): !R))` (I1's sentinel) | 15; 0 / 70 / 25 | 4; 0 / 36 / 11 |
+| §4.3, R.1.7, §R.7 row 1 | closing, `occurs.none(((h, m = 00): !R))`, rev 23.1's "default inside R" | 40; 25 / 45 / 0 | 4; 0 / 36 / 11 (= I1's sentinel: `00` is outside `<30`) |
+| §4.3, R.1.7, §R.7 row 1 | closing, `((h = 0, m = 00): R)`, rev 23.1's "every pass, possibly none" | 40; 25 / 45 / 0; SEARCHED 1,111 | 3; 1 / 37 / 12 (FAILS on the empty list `''`); SEARCHED 526 |
+| §4.3 | closing, `((h, m = 00): R)` | 39; 26 / 46 / 1; SEARCHED 1,110 | 3; 1 / 37 / 12; SEARCHED 526 |
+| §4.3 | closing, `((h, m): R)` plain | 14; 1 / 71 / 26; SEARCHED 852 | 3; 1 / 37 / 12; SEARCHED 526 |
+| §4.3, R.1.7, §R.7 row 1 (NEW spellings) | `occurs.none(((h, m = 0): !R))`; `((h = 0, m = 0): R)`; `((h, m = 0): R)` | (not run) | 15; 11 / 25 / 0 (I2b EXACT); 15; 11 / 25 / 0 (I2b EXACT, SEARCHED 1,111); 14; 12 / 26 / 1 (SEARCHED 1,110) |
+
+THE CLOSING EXAMPLE'S DEFAULT is RE-CHOSEN: `m = 0` (a canonical numeral inside `<30`) replaces `m = 00`, and with
+it "a default inside R gives I2b" is EXACT again (PART X). The intents are read with the same R, so under §2.2 an
+item `3:05,` is NOT in R (its minute `05` is not canonical): every spelling rejects it. The exactness pattern of rev
+23.1 (the joint NOT = I2a, its record twin = I2b) holds under both readings. Lines of the engines that moved but that
+the draft does not quote: searchrow's other candidates (S, M, M+, Mr; condition_kind.md Part IV's columns, not this
+draft's) and its find-all row `10:00 9:15` (R22 now reports `10:00`@0: `00` is not canonical, so `10:00` is not
+late); its R22 "adding a condition never admits" rows (§R.5 A4) stay 0 and 0. Not moved: every count over sets the
+engines already read canonically (`lt`, `ge`, `between`) or that the draft spells `padded` (§R.7b b1, b2, b9, the
+TM2-L table, caveat (2)).
 
 ### R.8 QUESTIONS FOR THE OWNER (each wants a reply either way; spellings are placeholders)
 
@@ -1163,7 +1222,8 @@ forward identical to the committed outputs. Lane predspec23b: `docs/dev/lanes/pr
 (imports the evaluator above read-only; adds pass rows with every label, `|` of filtered patterns, find-all and the
 two whole-text routes); `timeout 600 python3 -I W/.../predspec23b_model.py > fwd.out`, `PREDSPEC23B_SWAP=1 ... >
 swap.out`: the diff without ORDER lines prints NOTHING; with `PREDSPEC23B_SABOTAGE=1` forward vs swapped DIFFER (2
-lines, O28's `7,,` row). Its PART 0 re-derives predspec23's T2 counts (1,970 / 11,110) and rev 21's 1,660.
+lines, O28's `7,,` row). Its PART 0 re-derives predspec23's T2 counts (1,970 / 11,110, by value; 2,940 / 11,110
+under §2.2, §R.7d) and rev 21's 1,660.
 Lane predspec23c (rev 23.1): `docs/dev/lanes/predspec23c_evidence/predspec23c_model.py` (imports predspec23b's
 engine read-only and overrides ONE thing, the search order of `|` over filtered branches, to branch-major,
 **branch-order**; PART 0 reproduces review r33's 125 and 400 under the old order); `timeout 900 python3 -I
@@ -1638,7 +1698,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L80 | `P & lex_ge2([^h, ^m], lo)` vs `P & inner([^h, ^m], lo)` with `inner(s, lo) := Q & lex_ge2(s, lo)` (a reference passed into a body that lays it against ANOTHER operand) | [REV 20: PAUSED with the sigil (retire-paused CF 12:51), out of rev 20's language; the record, §16] DIFFERENT: ERROR | a reference keeps the operand it was WRITTEN against; the body's conditions read Q, so the call is a compile error naming both (table (B), B5: 828 of 828 refused, none answered); `wrap(s, lo) := lex_ge2(s, lo)` (the same operand) is SAME as the direct call (B2, 0 differ) | rev 19 |
 | L81 | `P & lex_ge2([^h, ^m], [9, 30])` vs `late := lex_ge2([^h, ^m], [9, 30])` then `P & late` | [REV 20: PAUSED with the sigil (retire-paused CF 12:51), out of rev 20's language; the record, §16] OPEN | under this document's lean (the reference resolved where the bound macro's operand is filled, like a bound condition) SAME (table (B), B4: 1,656 cases, 0 differ), keeping L2's binding/expansion rule; under the strictly visible-`&` reading the bound form is an ERROR ("no `&` in sight"). The owner's (**bound-reference**, §13 O76) | rev 19 |
 | L82 | `((h, m): R)` vs `((h, m = 0): R)` on `t2` (optional minutes) | DIFFERENT: BY DESIGN | the author's ONE control over an absent m (rev 23: the mark is out, drop-mark 21:49): plain is UNKNOWN where m is absent; the default reads m as 0 in this test only. Rev 22's counts (WHOLE): plain vs `m = 0` 90 of 11,110. `NOT ((h, m = 0): R)` is the classical complement on `t2` (no absent part left) | absent-rule CF 14:31; default-scope 22:30 |
-| L83 | `((h, m): (S, T))` vs `(h: S, m: T)` | SAME without NOT; DIFFERENT: BY DESIGN under NOT (rev 23.1) | the record IS the product (J9) as a test that KEEPS rows. Rev 23.1 (review r33 F1; fix-induced: the SAME rested on UNKNOWN and FALSE dropping the same rows): a joint with an absent part is UNKNOWN, the record with an entry FALSE is FALSE, so under NOT they part: `t2 & NOT ((h, m): (<9, <30))` vs `t2 & NOT (h: <9, m: <30)` on `10` FAILS / FAILS vs HOLDS / HOLDS; 101 / 371 of 11,110 (WHOLE / SEARCHED, first `9`), 0 / 0 without NOT; the closing example's `occurs.none(NOT ((h, m): R))` (the joint) is I2a, its record twin I2b (§R.1.5, §R.7c c4-c5; `predspec23c_model.out` PART 2) | record-is-product CF 11:35; condition-not 23:48 |
+| L83 | `((h, m): (S, T))` vs `(h: S, m: T)` | SAME without NOT; under NOT: OPEN, **record-under-not** (rev 23.1 wrote "DIFFERENT: BY DESIGN", the MANAGER'S scope, rev 23.2, review r34 A4) | the record IS the product (J9) as a test that KEEPS rows. Rev 23.1 (review r33 F1; fix-induced: the SAME rested on UNKNOWN and FALSE dropping the same rows): a joint with an absent part is UNKNOWN, the record with an entry FALSE is FALSE, so under NOT they part: `t2 & NOT ((h, m): (<9, <30))` vs `t2 & NOT (h: <9, m: <30)` on `10` FAILS / FAILS vs HOLDS / HOLDS; 101 / 281 of 11,110 (WHOLE / SEARCHED, first `9`; rev 23.1 printed 371, by value, §R.7d), 0 / 0 without NOT; the closing example's `occurs.none(NOT ((h, m): R))` (the joint) is I2a, its record twin I2b (§R.1.5, §R.7c c4-c5; `predspec23c_model.out` PART 2) | record-is-product CF 11:35; condition-not 23:48 |
 | L84 | `((h, m): >= (9, 30))` vs `((h, m): (>= 9, >= 30))` | DIFFERENT: BY DESIGN | dictionary order (outside the bracket) vs the per-part product (inside): padded, 2,700 of 11,000 `t` subjects differ (`10:00`; table (O)); unpadded, 1,800 under the domain reading (table (DM)). No warning (the manager's reading, CF 11:20) | two-orders CF 11:20 |
 | L85 | `(9, 0)` vs `[9, 0]` (as a set laid on `(h, m)`) | DIFFERENT: ERROR | one pair (arity 2) vs "9 or 0" (arity 1): `((h, m): >= [9, 0])` is the ARITY error, hint "write `(9, 0)`", never a silent answer | set-arity CF 10:26 |
 | L86 | `((h, m): R)` vs `(h, m: R)` | DIFFERENT: ERROR | the second is two entries, `h` with no `:` (an entry needs a set) and `m: R` with a k-ary set on one label (arity); the joint entry needs the parentheses | J1 |
@@ -1650,7 +1710,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L92 | `(h: A, h: B)` vs `(h: A & B)` | DIFFERENT: ERROR | a label named twice in one condition is a compile ERROR ("label-twice: agree an error"); `(h: A) & (h: B)` and `(h: A & B)` are the spellings | label-twice CF 13:16 |
 | L93 | (rev 22: `all((x: S))` vs `(x?: S)`) | RETIRED (rev 23) | both spellings are out of the language (all-question 23:18; drop-mark 21:49); see L36 | 23:18; 21:49 |
 | L94 | `/(?<k>\d)?-(?<h>\d)?/` vs `/(?:(?<k>\d)\|)-(?:(?<h>\d)\|)/` under `(h: <5, k = 3: between(3, 7))` (rev 23; rev 22 wrote `k?`) | SAME | `/x?/` and `/(?:x\|)/` answer alike under the pairing rule; a quantifier with upper bound 1 is not a loop for it (the manager's reading of how): 0 of 121 differ in BOTH modes, with the default and without it (`/x?/` holds WHOLE 30 / SEARCHED 55 with `k = 3`, 25 / 25 without; `predspec23b_model.out` PART 1) | optional-as-loop CF 15:23 |
-| L95 | `t2 & !q`, `q := t2 & ((h, m): R)`, vs `t2 & ((h, m = 0): !R)` | DIFFERENT: BY DESIGN (WHOLE); SAME (SEARCHED, on t2) | rev 23 (rev 22 wrote `((h, m?): !R)`): WHOLE 1,970 vs 1,880 of 11,110, differ 90 (first `10`: the default 0 puts (10, 0) in R, the difference keeps `10` as not a row of q); SEARCHED 11,110 both, differ 0 (`predspec23_model.out` PART 3) | drop-mark 21:49 |
+| L95 | `t2 & !q`, `q := t2 & ((h, m): R)`, vs `t2 & ((h, m = 0): !R)` | DIFFERENT: BY DESIGN (WHOLE); SAME (SEARCHED, on t2) | rev 23 (rev 22 wrote `((h, m?): !R)`): WHOLE 2,940 vs 2,850 of 11,110 (under §2.2, rev 23.2; 1,970 vs 1,880 by value, §R.7d), differ 90 (first `10`: the default 0 puts (10, 0) in R, the difference keeps `10` as not a row of q); SEARCHED 11,110 both, differ 0 (`predspec23_model.out` PART 3) | drop-mark 21:49 |
 | L96 | `t2 & [m = 0]` vs `t2 & (m = 0: S)` | DIFFERENT: BY DESIGN | an array's `=` NAMES a label (the alternative `0` labelled m); a condition's default READS one: 244 of 11,110 `t2` subjects differ (joint_condition.md table (DK)); the lane unsetdef's WARNING `label.both_sides` is PROPOSED, NOT RULED (§7.1) | J6 |
 | L97 | `t2 & (((h, m): R) \| (h: 10 \| 11))` (an unguarded hand slice) vs `t2 & ((h, m = 0): R)` | DIFFERENT: GAP | with R = `padded(between((9, 30), (11, 0)))`: without a guard "m absent" the slice also admits a PRESENT m (`11:45` passes by h = 11, though 11:45 is past 11:00): 99 of 11,110 differ (joint_condition.md table (DG)); both are legal programs, so no diagnostic is possible; `label.unset`'s text names the default as the fix | J6 |
 | L98 | `m(x) := (x: S)` then `P & m(h)` vs `P & (h: S)` (a macro parameter on the left of `:`) | DIFFERENT: ERROR | (rev 21, review r29 L, CENSUS-7) the left of `:` names LABELS (**colon-scope**, CF 11:32); a parameter name there is a compile ERROR, text illustrative (D26): "x is a parameter of m; the left of `:` names labels of the operand. Write the condition where the label is known, or pass the whole condition: `m(c) := ... c ...`"; a PER-LABEL mark through a macro has no spelling (§13, (e3)). Rev 20 read the parameter silently as a label named x | colon-scope CF 11:32; LEAN (review r29 L) |
@@ -2956,18 +3016,23 @@ hold on all 127: a shorter stretch always survives, §R.6) (`predspec23b_model.o
 
 THE CLOSING EXAMPLE (rev 23 rewrite; rev 22's table is in §16.5). Over `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/` with R =
 `(<10, <30)`, the same 1,111 lists (hours `3`, `12`; minutes absent, `15`, `45`, `05`, `99`; 0-3 items),
-`predspec23_model.out` PART 4, differences from each intent counted WHOLE VALUE:
+`predspec23_model.out` PART 4 re-run under §2.2 (rev 23.2, review r34 A1: R is unpadded, so its minutes are
+canonical numerals and `05` is NOT in `<30`; the intents are read with the same R; `predspec23d_model.out` PARTS B
+and X; rev 23 and 23.1 read R by value, which is `padded((<10, <30))`'s table, and wrote the default `m = 00`, §R.7d),
+differences from each intent counted WHOLE VALUE:
 
 | candidate | I1 "every item complete and in R, the empty list passes" | I2a "every item with minutes in R; an item without minutes acceptable" | I2b "every item in R; an item without minutes acceptable when its hour fits" | SEARCHED holds |
 |---|---|---|---|---|
-| `((h, m): R)` (plain) | 1 (`''`) | 71 | 26 | 852 |
-| `occurs.none(((h, m): !R))` | 70 (`3,`) | **0, EXACT** | 45 | 1,111 |
-| `occurs.none(NOT ((h, m): R))` (rev 21's spelling, legal again in rev 23) | 70 | **0, EXACT** | 45 | 1,111 |
-| `occurs.none(NOT (h: <10, m: <30))` (the RECORD twin of the line above; rev 23.1, review r33 F1; `predspec23c_model.out` PART 2) | 25 | 45 | **0, EXACT** | 1,111 |
-| `occurs.none(((h, m = 99): !R))` (sentinel outside R) | **0, EXACT** | 70 | 25 | 1,111 |
-| `occurs.none(((h, m = 00): !R))` (default inside R) | 25 | 45 | **0, EXACT** | 1,111 |
-| `((h = 0, m = 00): R)` (every pass, possibly none) | 25 | 45 | **0, EXACT** | 1,111 |
-| `((h, m = 00): R)` (h without a default) | 26 | 46 | 1 (`''`) | 1,110 |
+| `((h, m): R)` (plain) | 1 (`''`) | 37 | 12 | 526 |
+| `occurs.none(((h, m): !R))` | 36 (`3,`) | **0, EXACT** | 25 | 1,111 |
+| `occurs.none(NOT ((h, m): R))` (rev 21's spelling, legal again in rev 23) | 36 | **0, EXACT** | 25 | 1,111 |
+| `occurs.none(NOT (h: <10, m: <30))` (the RECORD twin of the line above; rev 23.1, review r33 F1; `predspec23c_model.out` PART 2) | 11 | 25 | **0, EXACT** | 1,111 |
+| `occurs.none(((h, m = 99): !R))` (sentinel outside R) | **0, EXACT** | 36 | 11 | 1,111 |
+| `occurs.none(((h, m = 0): !R))` (default inside R; rev 23.2's default) | 11 | 25 | **0, EXACT** | 1,111 |
+| `((h = 0, m = 0): R)` (every pass, possibly none; rev 23.2's default) | 11 | 25 | **0, EXACT** | 1,111 |
+| `((h, m = 0): R)` (h without a default) | 12 | 26 | 1 (`''`) | 1,110 |
+| rev 23.1's `occurs.none(((h, m = 00): !R))` (`00` is OUTSIDE `<30` under §2.2: another sentinel) | **0, EXACT** | 36 | 11 | 1,111 |
+| rev 23.1's `((h = 0, m = 00): R)` | 1 (`''`) | 37 | 12 | 526 |
 
 So I1 is the narrower question (a sentinel outside R), I2a the set complement (or, equally, the condition NOT OVER
 THE JOINT, `occurs.none(NOT ((h, m): R))`: on one pass they are the same question, §R.3; rev 23.1, review r33 F1: the
