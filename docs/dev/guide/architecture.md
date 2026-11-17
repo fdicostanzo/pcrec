@@ -1,8 +1,79 @@
-# Architecture rules
+# Architecture goals, rules and the ride-along register
 
-Design rules for new mechanisms, tables and interfaces. Each: the rule, a Why,
-a Source. Code-level rules are in `coding.md`; names and comments in `style.md`.
-Decision numbers are in `docs/dev/decisions.md`.
+What this is: the project's LIVE architecture document for product code (`src/`, `cli/`, `lib/`, `memfn/src/`).
+Consult it when planning a feature (part 3: which known remodels ride along), when writing or reviewing an
+architecture note or a design (parts 1 and 2), and at code review. Who updates it: the manager, at each landing
+that opens, rides or closes a register row; a lane that finds a new shape proposes a row in its report.
+
+Part 1 is the goals (DRAFT for the owner, 2026-11-17). Part 2 is the rules, each with the refactor history behind
+it and the question to answer BEFORE design. Part 3 is the register of known remodels and the event that should
+carry each. Code-level rules are in `coding.md`; names and comments in `style.md`. Decision numbers are in
+`docs/dev/decisions.md`. "A1" and "A2" below are the two survey reports this revision was built from:
+`docs/dev/lanes/archhist_report.md` (the refactor history, entries numbered 1-20) and
+`docs/dev/lanes/archreview_report.md` (today's tree: decision chains, parallel mechanisms, seams, options).
+An "architecture note" is the short document that answers, before design, where a feature lives in today's code
+and what must change shape first ([ARCH-STEP]); its template is not written yet.
+
+# Part 1. Goals (DRAFT 2026-11-17, for the owner)
+
+The owner's reason, verbatim: "This project is more than simply its stated goal. It's an effort to produce a
+viable long term project that can grow" (`docs/design/stream/manifesto.md` §1). And the problem this document is
+for: "we discover over time that the feature is aggregated onto existing code and then have to go through a
+lengthy refactor" (Frank 2026-11-17, `docs/design/plan_row_bodies/ARCH-STEP.md`). Of A1's 18 counted refactors,
+9 were a missing shared home (a primitive or a second mechanism beside the first), 3 a decision family that grew
+as branches, 2 a data shape with no room for the next feature, 2 an inconsistent interface.
+
+A GATE above every goal: no answer moves (PCRE2 is the semantics, D26) and nothing gets slower on the cells a
+change touches. Remodels are answer-identical units (manifesto §1, "a gate, not a goal").
+
+Ranked; each is answerable yes or no from a diff, a tree or an architecture note.
+
+1. **One home per question.** Every question the compiler answers (where can a match start, which engine, is this
+   request refused, how wide is this subtree, which bytes can begin it, what did the compile decide) has ONE table,
+   record or function, and new code asks it. CHECK: for each new function, table or field in the diff, name the
+   question it answers and show the grep for an existing answer; there is none, or the new code replaces it.
+   SOURCES: D124 item 1-2 ("ONE table/record per question for the whole artifact"; "an engine-local copy of a
+   shared decision is a defect"); Frank 2026-08-23 ("I don't want parallel mechanisms if we can avoid it"; rule
+   "Build the general form"); A1 entries 1, 3, 6, 8, 9, 13, 15, 16, 17.
+2. **A new choice is a new row, and the row is acted on, not re-asked.** Selections, fallbacks, refusals, entry
+   kinds and options are declared tables; a consumer acts through the chosen row and never re-tests its enum or
+   name. CHECK: the diff adds a row and adds no `if`/`case` on the table's answer outside the table's own
+   executor. SOURCES: Frank 2026-11-17 ("convert these conditions into decision tables and then add to them rather
+   than add more conditions to if tree", ARCH-STEP.md); D151 addendum 3 ("otherwise logic is spread around which
+   is the opposite of what we want"); A1 entries 10-12; A2 chains 1-4.
+3. **Seams are declared and carry facts both ways.** Every value that crosses from one stage or part to another
+   has one named writer and named readers; calls go down the layer order; a later stage reads the record a
+   decision was made in, never the emitted text. CHECK: each new cross-stage field, call or stamp in the diff
+   names its writer and readers; no new call from a lower layer to a higher one; no new `strstr` over the
+   artifact. SOURCES: manifesto §1 F1 FOCUS, F3, F4 NO BLINDNESS ("a handoff carries facts both ways"); D146/D157
+   (the kit seam, the model); A1 entries 4, 9, 13, 18; A2 "Seams without a contract" 1, 2, 4.
+4. **A data shape covers the inputs the plan already names.** A representation (a node, a class payload, a
+   record) states the range of inputs it covers; when a planned row needs inputs outside it, the shape is widened
+   first, as its own unit, not patched per consumer. CHECK: the architecture note lists the planned rows that
+   will extend each shape the feature introduces or extends, and shows each fits. SOURCES: D70 (owner: "I'm not
+   worried about memory but complexity and flexibility", A1 entry 1); APPROACH.md's encodings section (the
+   256-bit class bitmap stated as a choice, A1 entry 2); A1 entries 1, 2, 19.
+5. **Remodels ride along with the feature that needs them.** A known remodel is built when a feature, plan row or
+   measurement lands on its site, FIRST, as its own answer-identical unit; never ahead of that event, and never
+   skipped by building beside it. CHECK: the architecture note lists every part-3 row whose WHERE or event the
+   feature touches, and each lands first or the note says why not. SOURCES: Frank 2026-11-17, the go on this
+   document ("a good document to keep live and consult on new feature to see if refactors can ride along");
+   D153 ("don't live in a house we're remodeling"); D77 (build under measurement); `docs/design/stream/roadmap.md`
+   §7 (the ride-along rule); A1's "revisit when" triggers that fired later (entries 1, 2, 6).
+
+PRIORITY when two conflict: the gate first; then 1 > 2 > 3 > 4. Goal 5 decides WHEN, never WHAT: it may delay a
+remodel to its event, and when a feature must land before its remodel, implement-then-replace with an open
+register row is allowed (Frank 2026-08-23); a second permanent home is not.
+
+NON-GOALS: speed as an architecture goal (it is the gate; manifesto §1); the harness and tooling (rule "Product
+first, harness minimal"); remodels with no carrying event (D77); frameworks that move every pass at once
+(part 3, "considered, not adopted"); mirroring PCRE2's internal structure (D26).
+
+# Part 2. The rules
+
+Each rule: the rule, Why, Source; then HISTORY (the refactors in A1 or the tree shapes in A2 that taught it or
+came after it) and BEFORE DESIGN (the question an architecture note answers for it). Rules marked NEW 2026-11-17
+are DRAFT for the owner.
 
 ## A design states its goals, ranked, in checkable form
 Every design note opens with a short Goals section: three to five goals, each
@@ -16,6 +87,8 @@ is a finding against the design, not just a number.
 prototype gates and survived to the final timing run because no goal said
 what it was for or whether genericity could cost speed; a ranked goal would
 have cut it early. **Source:** Frank 2026-10-23 (the iterator find-all timing, job 599).
+HISTORY: no A1 refactor traces to missing goals; this rule covers speed and purpose, not shape.
+BEFORE DESIGN: which part-1 goals does the feature touch, and which does it trade against?
 
 ## Decisions are declared tables, not if-chains
 A selection (engine, form, route, start strategy) is a table of named rows
@@ -24,9 +97,17 @@ match, a combining table, or a priced argmin are all fine. Required: organized
 (declared rows, one selector), expandable (a new choice is a new row, no
 selector edit), clear (named predicates or a named cost formula), observable
 (listable, with every verdict and the winner printable). An optimizer may sit
-inside one row's action. The house idiom is `dfa_pfs[]` + `DFA_SELECT`.
+inside one row's action. The house idioms are `cand_rows[]` with `cand_select`
+(`src/gen/emit_dfa.c`, the start table) and `fit_rungs[]` (`src/core/compile.c`,
+the fallback ladder); `DFA_SELECT` survives over `dfa_reprs[]`. (Corrected
+2026-11-17: this line named `dfa_pfs[]`, folded into `cand_rows[]` by [START-TABLE].)
 **Why:** scattered nested conditionals cannot be inspected, ordered or denied
 per row. **Source:** Frank 2026-09-28 and 2026-10-12; D122, D151.
+HISTORY: taught by [START-TABLE] and [DEC-FALLBACK] (A1 10, 11; 32 and 42 commits), applied up front by the entry
+rows (A1 12). START-TABLE converted the selection but not the action: the answer is re-dispatched in four emitters
+(A2 chain 1; new rule "Act through the row").
+BEFORE DESIGN: list every decision site the feature touches (grep the answer's enum, e.g. `CRA_`, `ENGM_`); for
+each: a row in an existing table, a new arm, or an if-tree that becomes a table first.
 
 ## One table per slot: no private copy of a declared mechanism
 If a table or mechanism already declares how a slot is done, extend that table
@@ -37,6 +118,9 @@ keying rules on a label instead of on facts drops rows silently.
 reach it. S3's find step mapped the kit's FIND table onto a two-value enum and
 lost the two-stream form (29x on caseless literals). **Source:** 2026-10-23
 S3 code review (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, C1/C3, C5).
+HISTORY: produced by A1 16 (caught at code review, after the copy was built). Still in the tree: a core-tier
+admission keys on the selected row's name string `"all"` (`src/core/compound.c:210`, A2 seam 6).
+BEFORE DESIGN: for every table the feature reads, does it read the table itself, or a mapped enum or row name?
 
 ## Build the general form; no parallel mechanisms or special cases
 A recognizer, fold or desugar that exists only to reproduce a known construct
@@ -46,6 +130,12 @@ acceptable; parallel paths are not. Dead-capture elision is the worked example.
 **Why:** the special case becomes a duplicate path the general form must later
 delete, and optimizations reach only the narrow class. **Source:** Frank
 2026-08-23; D75 addendum.
+HISTORY: existed before, and did not prevent, D62 to A_CTX, the span slice (built 2026-10-21, deleted 2026-11-15),
+S3's private copy, D172's REPORT-only path and VMREC (A1 6, 13, 15, 16, 17); `lm_maxw` (`src/gen/lmwalk.c:80`,
+2026-10-29) is a fourth width walk (A2 parallel 1). What was missing: the rule was read at code review, after the
+build, and it names mechanisms where the failures were second answers to one QUESTION (goal 1).
+BEFORE DESIGN: name each question the feature's new code answers and grep for the existing answer (A2's
+"Parallel mechanisms" list is the worked example).
 
 ## Notice siblings of a decision family
 Before adding a predicate or a small table, ask whether it is a sibling of an
@@ -53,6 +143,11 @@ existing decision family, and say so. At about three dispersed members, propose
 the unified table. **Why:** a family built incrementally as local branches keeps
 growing until someone asks for the unification; start strategy ended as one
 candidate-row contract. **Source:** Frank 2026-10-06; D124, D151.
+HISTORY: the start family had three-plus dispersed members before its fold (A1 10). Families the count missed
+because they have no table: 26 two-way "am I on the VM route" tests and about ten engine-identity tests
+(A2 chains 1-2).
+BEFORE DESIGN: count the CALL SITES that ask the same question, not only the tables; at about three, the note
+proposes the table.
 
 ## A row checks its own contract
 A row's applicability predicate covers every site field it does not honour,
@@ -61,6 +156,8 @@ Prefer an allowlist of honoured fields so a new field defaults to declined.
 Give every row a population that reaches it. **Why:** K96 sat latent because
 the only caller never exercised the unhonoured fields, and corpus identity
 cannot see that class. **Source:** Frank 2026-10-07 (K96).
+HISTORY: produced by K96 (A1 18); its fix, ROWCON, grew into an engine and an abi event before closing 2026-11-10.
+BEFORE DESIGN: for each new or extended row, list the contract's fields and which the row honours.
 
 ## No silent defaults
 A row may USE a value only if the caller stated it; an unstated needed value is
@@ -71,6 +168,8 @@ evidence is not. Input-shape rules are enforced by a check, not just documented.
 **Why:** a default turns a forgotten statement into silent behaviour that
 surfaces only when circumstances line up. **Source:** Frank 2026-10-07; D161,
 D162.
+HISTORY: no A1 refactor traces to it.
+BEFORE DESIGN: list each value the new code uses and who states it.
 
 ## Across the kit boundary, send facts, not methods
 pcrec states facts (positions, rates, sets, bounds); the kit chooses the form.
@@ -78,6 +177,9 @@ Prefer the general fact (an ordered array and a count) over a specific pick. In
 fields, comments, briefs and messages never describe how the kit would use a
 fact. **Why:** a method-shaped field freezes one method into the contract.
 **Source:** D157, D146; see `addenda/kit.md`.
+HISTORY: the kit migration (A1 14, 266 commits, deliberate) is the precedent for a declared seam (A2 seam C2).
+BEFORE DESIGN: for each field the feature sends across the kit seam, state the fact in words with no verb about
+the kit's use of it.
 
 ## Build under measurement
 A mechanism or axis waits until a measurement names the need; say what
@@ -86,12 +188,17 @@ verdict needs and give each dropped item its trigger. A mechanism withdrawn on
 its own measurement is the process working: record the measured NO and keep the
 instrument. **Why:** an unmeasured build is growth that may be rebuilt or rolled
 back. **Source:** Frank 2026-08-25 and 2026-10-21; D77, D18.
+HISTORY: D62 ("revisit when a fifth AST analysis lands"), D42.3 ("re-open when a composition customer appears")
+and the utf8 premise each named a trigger that later fired (A1 1, 4, 6, 2). The trigger was right; what was
+missing was one place a planner looks triggers up when a feature arrives (part 3).
+BEFORE DESIGN: a remodel the feature does not need yet becomes a part-3 row with its trigger.
 
 ## Tuning constants are suspect
 An unroll width, block size or cut-over is measured (regime named), derived, or
 left to the compiler; otherwise label it an unmeasured default where it lives.
 Never adopt one silently. **Why:** an unmeasured constant looks like a decision
 and carries no evidence. **Source:** Frank 2026-10-05.
+HISTORY: no A1 refactor. BEFORE DESIGN: list the feature's constants and the evidence for each.
 
 ## A VM capacity change is measured through both entries
 A change to how the VM uses its frame or trail capacity measures its cost
@@ -100,12 +207,15 @@ buffers. **Why:** the default entry first runs on page-sized buffers and
 escalates; a mechanism that fires there and not under `_in` (K134's fast-tier
 compaction: +15 % on the default entry, +0.8 % under `_in`) is invisible to an
 `_in`-only measurement. **Source:** review 2026-10-29-r2 (F5).
+HISTORY: no A1 refactor. BEFORE DESIGN: does the feature change frame or trail use? If so, name both measurements.
 
 ## Simplification is a benefit on its own
 A change that deletes special cases or retires a parallel kind qualifies on
 that alone; present the deletions as the benefit, still measured and costed
 (abi events, identity gates). **Why:** a smaller, more general tree is the goal.
 **Source:** Frank 2026-10-18.
+HISTORY: every table-shaped A1 refactor was a no-mover whose benefit was its deletions (A1 10-12).
+BEFORE DESIGN: the note's "what is deleted" list; a remodel with an empty list needs another reason.
 
 ## Pre-release ABI changes happen, by ritual
 Before 1.0 an ABI or layout change is deliberate and methodical but allowed when
@@ -114,12 +224,17 @@ spec hunk in one change, new fields appended, both artifact kinds named. Fold a
 layout change into an abi event already in flight. **Why:** there are no
 consumers yet; avoidance blocks improvements. **Source:** Frank 2026-08-25; D40,
 D76, D94 (ritual in `coding.md` §3.1).
+HISTORY: D49 (abi 1 to 2), D62 to A_CTX (abi 80 to 81), [RUN-POS-SET] stages 1-2b (abi 97) (A1 4, 6, 19).
+BEFORE DESIGN: does each remodel the feature carries move bytes? If so, which abi event in flight does it join?
 
 ## Refactors outrank optimization on the same site
 While a refactor is in flight, an optimization touching its site waits for it.
 Refactors are no-movers; movers are not folded into them. Candidate lists carry
 a "remodel overlap" column. **Why:** optimizing a site about to be restructured
 means redoing the work. **Source:** Frank 2026-10-06; D153, D151.
+HISTORY: applied up front by the entry rows before the iterator (A1 12). It covers refactors IN FLIGHT; known but
+unscheduled remodels had no list, so a feature could not see them (part 3 is that list).
+BEFORE DESIGN: the part-3 lookup (goal 5).
 
 ## Product first, harness minimal
 Rank compiler correctness, emitted-code speed and stability, and the public
@@ -129,9 +244,12 @@ its checks are not future-proofed. Keep the cheapest honest control: a check
 never grades a function against itself. **Why:** the product's client wants
 stability; the harness is ours and can change any time. **Source:** Frank
 2026-10-21; D77; `docs/dev/learnings.md` section 3.
+HISTORY: no A1 refactor; it is why the call-level layering gate is not adopted (part 3).
+BEFORE DESIGN: is the new structure in product code or in the harness?
 
 ## Caller-facing names describe behaviour
 See `style.md` (Naming). **Source:** D174.
+BEFORE DESIGN: list the new caller-facing names.
 
 ## Consider a directory of parts and one runner for a growing set (a choice, not a rule)
 When a tool or record is a SET of independent items that grows over time (checks, monitors, test
@@ -150,3 +268,111 @@ the move worthwhile. **Why:** shared append-only files (the lanes history index,
 cloud shard tables) were the day's merge conflicts; each cost a delay or a re-run, not a wrong
 answer. **Source:** Frank 2026-11-12 ("a tool going forward if we think it works"; to be
 considered, not prescribed).
+HISTORY: no A1 refactor (merge conflicts, not reshapes).
+
+## One question, one primitive, from the second caller (NEW 2026-11-17, DRAFT)
+When a second site needs an answer or an operation another site already computes (a tree walk, a width, a flag
+question, a statement's text, saturating arithmetic), both call one primitive; the second caller's arrival is the
+trigger to extract it. A small, local second walk is still a second mechanism.
+**Why:** it is A1's most common shape: D70's union, D62 to A_CTX, the 2026-09-17 review's 75 re-implemented walks,
+[FLAG-ACCESS]'s 65 raw flag reads and [VMREC]'s 132 print sites were each extracted after the sites had grown;
+today `lm_maxw` re-spells `src/opt/mrl.c`'s width walk unsaturated (`src/gen/lmwalk.c:95`).
+**Source:** A1 "Patterns across them" (entries 1, 6, 8, 9, 13); A2 "Parallel mechanisms" 1, 3 and "What the guide
+does not say".
+
+## Act through the row, never re-ask its answer (NEW 2026-11-17, DRAFT)
+A table's answer is acted on through the chosen row (its action record or hook), never by re-testing the row's
+enum or name in each consumer. **Why:** the start table decides the recover act, then four emitters switch on it
+again (`unanch_scan`, `emit_landmark_walk`, `emit_rev_end`, the prologue prose in `src/gen/emit_dfa.c`) and 26
+sites test the VM route by hand; the prefilter rows already carry their `emit_block`/`emit_define` hooks.
+**Source:** A2 chains 1-2 and option 1; A1 10 (START-TABLE converted the selection, not the action).
+
+## Refusals are a decision family (NEW 2026-11-17, DRAFT)
+Which requests are refused (option combinations, force/deny pairs, request bits against pattern facts) is a
+declared table of named rows like any selection, listable. Diagnostic wording stays where D26 puts it.
+**Why:** it is the one decision family with no row, no name and no listing: five `if (force_on && ...)` arms in
+`prefilter_decision` (`src/opt/select_engine.c:1079-1107`) and about nine in `compile_driver`
+(`src/core/compile.c:2046`). **Source:** A2 chain 3 and option 2.
+
+## Layering holds at the call level (NEW 2026-11-17, DRAFT)
+Layer order (`src/facts/CLAUDE.md`) is judged by calls, not only includes: a function that lower layers call
+lives at their level. A known wrong-way call is written down by name where it lives until it moves.
+**Why:** the include graph reads 2 back-edges while about 30 call back-edges exist (facts and parse calling the
+`src/opt/mrl.c` width functions; core calling `pcrec_cand_body_route` in gen). **Source:** A2 seam 2;
+`src/CLAUDE.md` ("What the include graph cannot see"). Judged at review, not by a gate (part 3).
+
+## A decision is read from its record, never from the emitted text (NEW 2026-11-17, DRAFT)
+A later stage that needs what was decided reads the record that decided it; it does not parse, count or `strstr`
+the rendered artifact. **Why:** [VMREC]'s root cause was "printing IS recording" (A1 13); four text protocols
+remain (`fd_decisions` parses `#define`s back, `src/dump/facts_dump.c:129`; header marks spliced in
+`src/gen/memfn_stamps.c:334`; `pcrec_vm_stmt_respell`, `src/gen/vm_stmt.c:1085`; a body found by `strstr`,
+`vm_stmt.c:1165`). **Source:** A2 seam 4 and option 6; D182.
+
+## A stage-to-stage field names its one writer and its readers (NEW 2026-11-17, DRAFT)
+A field of `Job` or `Ctx` (or any record that crosses stages) has one declared writer stage and named reader
+stages; an emitter does not write driver state. **Why:** `Ctx` (`src/core/internal.h:3970`, about 70 fields) and
+`Job` (63 fields) are read from every layer with no declared writer; D62 to A_CTX and [FLAG-ACCESS] paid for this
+one field family at a time (A1 6, 9). **Source:** A2 seam 1 and option 5; roadmap hub H-FLAGS; manifesto §1 F4.
+
+## A new AST kind states its cost; a pass reads the kind table where it can (NEW 2026-11-17, DRAFT)
+An architecture note for a new AST kind lists the `src/core/kindrow.def` row and every hand-exhaustive walk the kind
+forces. A pass whose arm only restates the kind table's TEXT or PATH column reads the column; a pass whose answer
+is semantic keeps its exhaustive switch (`-Wswitch` is the net). **Why:** 27 files carry `case A_*` labels (115 in
+`src/opt/atomic.c`); `lm_maxw` lists exactly what kindrow.def's TEXT column already declares. The PATH column exists
+because a defaulted answer was once a miscompile, so this is per pass, never wholesale. **Source:** A2 chain 5 and
+option 4; A1 1, 6.
+
+## A shape states the inputs it covers (NEW 2026-11-17, DRAFT)
+A representation names the range it covers (code points, kinds, engines, offsets); a planned row needing more
+widens the shape first, as its own unit. **Why:** the class bitmap had no room above 0xFF though UTF-8 was planned
+(A1 2); fold handling spread over three files had no owner when alternation folds arrived (A1 19); LOOK-LOCATE's
+signed offset has no field in the start row schema (A2 "Where the next features will land"). **Source:** A1 2, 19;
+goal 4.
+
+# Part 3. The ride-along register
+
+One row per known remodel we want but have not built ahead of a need (D77). WHERE was checked at fed0b4886 (the
+commands are in `docs/dev/lanes/archgoals_report.md`). SIZE: S one small lane, M one lane with a review round,
+L several rounds. GATE: no-mover = answer-identical with a byte-identity gate; abi = an abi event; kit = a kit
+seam event (D146). The stream roadmap's own areas and hubs (`docs/design/stream/roadmap.md` §1-2) are rows by
+reference (row 12); a row below that overlaps one names it.
+
+| # | remodel | shape (rule) | where | event that carries it | size, gate | deletes | status |
+|---|---|---|---|---|---|---|---|
+| 1 | Start-table rows carry their recover/finish action | Act through the row | `cand_rows[]` emit_dfa.c:10517; `unanch_scan` switch :13814-13894; `emit_landmark_walk` :14985 (tests :15015-15049); `emit_rev_end` :14816; prologue prose :16115-16153; 26 `cand_finish_of(cx) ==/!= CAND_ROUTE_VM` tests | the next new recover or finish act: roadmap A-REV's reverse automaton (the stream chain after lookbehind stage 1), or [LOOK-LOCATE] | M, no-mover | the `CRA_*` switches, the act-keyed prose | open |
+| 2 | Engine identity asked one way | Act through the row; One table per slot | `fit.chosen == ENGM_*` and `cand_route_of`/`pcrec_cand_body_route` (64 hits emit_dfa.c, 2 emit_iter.c, 2 compound.c); `strcmp(..., "all")` compound.c:210 | each reader leaves with its roadmap area (A-VERDICT, A-ENTRY's X15) | S per reader, no-mover | the name-string admission; ad hoc engine tests | open |
+| 3 | Refusal table | Refusals are a decision family | `prefilter_decision` select_engine.c:940, arms :1079-1107; `compile_driver` compile.c:2046 | [FLAG-DEMOTE] (GO given; opens after S1 and kit K38-2), or the next force flag | S, no-mover (wording unchanged) | 5 + about 9 scattered arms | open |
+| 4 | Measure library below parse (width, nullable, TEXT first set, saturating arithmetic) | One question, one primitive; Layering at the call level | `pcrec_sat_mul` mrl.c:134, `pcrec_minw` :151, `pcrec_nullable` :315, `cwmax_walk` :545, `pcrec_cwmax` :685; `lm_maxw` lmwalk.c:80; `pcrec_vm_fmul` emit_vm.c:3874; `vm_general_min_width` :11436; `cc_width` known.c:315; callers in mod_lookaround.c | [VLOOKBEHIND] stage 2's architecture note (it adds a fourth group-width answer; build go 2026-11-10) | M; no-mover only after checking `lm_maxw`'s unsaturated multiply (lmwalk.c:95) on huge counts | 2-3 walks, the sat twin, facts->opt and parse->opt back-edges | open |
+| 5 | Kind defaults as a kindrow.def column, per pass | A new AST kind states its cost | `src/core/kindrow.def`; 27 files with `case A_*` (atomic.c 115) | per pass, when the pass is next touched; [COND-FAMILY]'s new kind; [DD-11.5]'s A_BOL/A_EOL into A_CTX | S per pass, no-mover | restated leaf lists | open |
+| 6a | Name each `Job`/`Ctx` field's writer and readers | A stage-to-stage field names its writer | `Job` internal.h (ends :3818), `struct Ctx` :3970 | the next feature that adds an emitter-to-driver flag (roadmap H-FLAGS) | S, no bytes | undeclared writes | open |
+| 6b | Stage outputs as typed records (Job stops being written by emitters) | same | same | as roadmap areas migrate, never standalone | L, no-mover | roadmap R14 | open |
+| 7a | Decisions listed from the Job, not parsed from `#define`s | A decision is read from its record | `fd_decisions` facts_dump.c:129 | the next change to the facts listing or a new decision stamp | S, listing identical | one text protocol | open |
+| 7b | The artifact as typed parts, kit returns parts | same | memfn_stamps.c:334-341; `pcrec_vm_stmt_respell` vm_stmt.c:1085; `strstr` vm_stmt.c:1165 | roadmap A-REC steps; [VMREC] (b); the next post-render rewrite | M per step; kit | three string protocols | open |
+| 8 | CLI non-axis option table, like `axes.def` | Decisions are declared tables | `cli_parse` cli/main.c:1278 (82 `else if` arms); `cli_dispatch` :2904 | [IFACE-PUSH] (hard trigger: at most 4 free flag bits; 6 today) | M, CLI identical | hand option arms | open |
+| 9 | Split the shared artifact emitter out of emit_dfa.c | Layering at the call level | `pcrec_emit_prologue` emit_dfa.c:16357; VM start code in emit_dfa.c | roadmap A-SEAM / H-HEADER only; a standalone move is churn | L pure move | nothing; makes the seam visible | open |
+| 10 | Shape widened for signed start offsets | A shape states the inputs it covers | `struct CandRow` emit_dfa.c:5752 | [LOOK-LOCATE] (trigger: span_arms unit L3 landed plus a bench cell) | S-M, abi likely | none | open |
+| 11 | One `\g`/name-reference grammar for parser modules | One question, one primitive | `br_name_ref` mod_backrefs.c:281, `rc_name_call` mod_recursion.c:293; six `*_strndup` copies in src/parse | the next change to reference syntax | S, no-mover | one grammar copy, five helpers | open |
+| 12 | Stream roadmap areas and hubs (A-SEAM ... A-PLAN, H-LADDER ... H-HEADER) | goals 1-3 | `docs/design/stream/roadmap.md` §1 table, per area | each area's "next step", ridden by the opt or feature lane that touches the area | per area | roadmap §5 ratchet | open; A-REV chain next ([STREAM]) |
+| 13 | VM body record-first, steps (b) and (c) | A decision is read from its record | src/gen/emit_vm.c, src/gen/vm_stmt.c | already chartered | M per step, no-mover | ad hoc prints | riding [VMREC] |
+| 14 | Alternation folds to one owner, stage 3 | One question, one primitive | src/facts/req.c rr_cat (`case A_LOOK` :1204), src/opt/altnf.c | GO 2026-11-11, starts when kit K38-2 lands (set S2); [REQ-LOOKAROUND] edits the same pass, so serialise | M, abi | fold handling over three files | riding [RUN-POS-SET] |
+| 15 | Internal deny word | A stage-to-stage field names its writer | `xdeny` in Ctx (design `docs/design/flag_demote_map.md` §1.1); 80 `pcrec_opt_has`/`pcrec_flags_has` readers | as row 3 | M | about 21 public bits | riding [FLAG-DEMOTE] |
+| 16 | A_BOL/A_EOL into A_CTX | One question, one primitive | src/core/ctxfn.def | [DD-11.5] part (a) review; no build go | M, abi | two kinds | open |
+| 17 | `^` absorbed by the unanchored engine | Build the general form | ENG_UNANCH (D42.7) | an [OPTLOOP] cycle selects it by measurement (D119/D137) | M | the `^` special path | open |
+| 18 | rx_info remodel | Seams declared | `docs/spec/match_api.md` rx_info section | the owner's word ([RXINFO-REMODEL], unscheduled) | M, abi | not yet stated | open |
+| 19 | One first-row walker for every table type | One question, one primitive | `pflw_walk` compile.c:1622, `st_why_walk` :1697, `pf_admit_walk` select_engine.c:859 | the next new declared table | S, no-mover | repeated six-line walkers | open |
+| 20 | One Ctx/longjmp/arena wrapper | One question, one primitive | `pcrec_compile` compile.c:3762, `pcrec_compile_in` :3791, `pcrec_compile_defs` src/core/compile_defs.c:43, the dump tier's two | a fifth copy | S, no-mover | four copies | open |
+
+HOW TO USE IT. When a feature is planned: (1) grep this table for every file and function the feature will touch
+and for its plan tag; (2) each matching row's remodel lands FIRST, as its own answer-identical unit (or joins the
+abi event in flight), and its status becomes "riding <tag>"; (3) if the feature touches a site that shows a part-2
+shape and has no row, the architecture note ADDS a row here; (4) a row that a note decides not to carry says why
+in the note; (5) a row is closed as "done <commit>" at its landing, by the manager.
+
+Considered, not adopted (A2 options 9-11, and two scopings):
+- A call-level layering gate (an `nm` ratchet in make test): harness for a risk not yet bitten; the known edges are
+  written down by name. Changes on a defect traced to a wrong-way call.
+- A general rewriting / nanopass framework for AST passes: moves every proof-carrying pass at once with no measured
+  need. Changes if several passes share a defect class a framework would have prevented.
+- Link-time registration of parser modules: the registry is already a declared, ordered table with a spec and
+  tests. Changes only if the registry stops needing order.
+- Row 5 wholesale (all passes at once) and row 9 standalone: refused for churn and for losing `-Wswitch`.
