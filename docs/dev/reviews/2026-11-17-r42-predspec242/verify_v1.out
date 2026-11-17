@@ -1,0 +1,10 @@
+FACT /(?:(?C"s")(?<p>)(?<h>\d)?)*(?C"e")/ WHOLE on `3`: (0, 1, {'p': '', 'h': '3'}) [('s', 0), ('s', 1), ('e', 1, (1, 1), (0, 1))]
+FACT /(?:a|(?<e>))*/ WHOLE on `a`: (0, 1, {'e': ''}) [('e', 1, (1, 1))]
+WITNESS `/(?:(?<h>\d)?)*/ & NOT (h: <5)` on `3`: engine W=None S=(0, 0, (('h', None),)) F=((0, 0, (('h', None),)), (1, 1, (('h', None),))) | libpcre2 W=(('h', None),) S=(0, 1, (('h', None),)) F=((0, 1, (('h', None),)), (1, 1, (('h', None),)))
+WITNESS `/(?:(?<h>\d)?)*/ & NOT (h: <5)` on `37`: engine W=(('h', '7'),) S=(0, 2, (('h', '7'),)) F=((0, 2, (('h', '7'),)), (2, 2, (('h', None),))) | libpcre2 W=(('h', None),) S=(0, 2, (('h', None),)) F=((0, 2, (('h', None),)), (2, 2, (('h', None),)))
+WITNESS `/(?:(?<h>\d)?)*/ & NOT (h: <5)` on `7`: engine W=(('h', '7'),) S=(0, 1, (('h', '7'),)) F=((0, 1, (('h', '7'),)), (1, 1, (('h', None),))) | libpcre2 W=(('h', None),) S=(0, 1, (('h', None),)) F=((0, 1, (('h', None),)), (1, 1, (('h', None),)))
+COUNT `/(?:(?<h>\d)?)*/ & NOT (h: <5)` engine vs libpcre2 (alphabet `37;`, len<=4): WHOLE 30 (first `3`: None vs (('h', None),)) / SEARCHED 80 (first `3`: (0, 0, (('h', None),)) vs (0, 1, (('h', None),))) / FIND-ALL 116 (first `3`: ((0, 0, (('h', None),)), (1, 1, (('h', None),))) vs ((0, 1, (('h', None),)), (1, 1, (('h', None),)))) of 121
+WITNESS `/(?:(?<h>\d)?)*/ & (h: <5)` on `3`: engine W=(('h', '3'),) S=(0, 1, (('h', '3'),)) F=((0, 1, (('h', '3'),)),) | libpcre2 W=(('h', '3'),) S=(0, 1, (('h', '3'),)) F=((0, 1, (('h', '3'),)),)
+WITNESS `/(?:(?<h>\d)?)*/ & (h: <5)` on `37`: engine W=None S=(0, 1, (('h', '3'),)) F=((0, 1, (('h', '3'),)),) | libpcre2 W=None S=(0, 1, (('h', '3'),)) F=((0, 1, (('h', '3'),)),)
+WITNESS `/(?:(?<h>\d)?)*/ & (h: <5)` on `7`: engine W=None S=None F=() | libpcre2 W=None S=None F=()
+COUNT `/(?:(?<h>\d)?)*/ & (h: <5)` engine vs libpcre2 (alphabet `37;`, len<=4): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 121
