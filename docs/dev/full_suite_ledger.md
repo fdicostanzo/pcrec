@@ -455,3 +455,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-17 4e45dabdb none — predicates_draft.md rev 23.2 (review r34 fixes) (docs)
 - 2026-11-17 f36a63f27 none — scripts/loadshame watch list + --present (scripts)
 - 2026-11-17 2b374961f none — lane pathimpact: predicate draft re-run under branch-scope (ii), evidence (docs)
+- 2026-11-17 1eec5b211 none — lane rxmodel: regex models of the open predicate choices on libpcre2, evidence (docs)
