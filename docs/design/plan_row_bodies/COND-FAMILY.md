@@ -1828,3 +1828,27 @@ passes satisfy it, an added condition can admit a subject (3 program pairs in la
 default; 0 unmarked); the draft documents it as a known property and names the two spellings that avoid it: the
 unmarked question with the complement on the set, and a default. The 14:50/r28 reading "a marked absence is COUNTED by
 the mark's one meaning" stands unchanged.
+
+**2026-11-16 OWNER DIRECTION — conditions are their own kind (Frank, to session 136, box clock 19:31).** After review
+r30 (rev 22 not stable) the manager proposed one design question (**mark-design**) in place of corner rulings; the
+owner asked for one corner (the sealed-vs-merged complemented pattern), then "What's the when issue?", then "Let's
+start from the fundamentals. What is the exact definition of a condition?". The manager answered from the draft (two
+kinds, rx and macro; a condition is a macro with an open subject slot filled by `&`; filter-role macros combine
+pointwise; prefix `!B` a macro, `A & !B` = A minus B) and named the clash: pointwise combination vs domain-scope
+for a marked condition. HIS WORDS: "History: you described conditions as macros because they look like them. It makes
+sense but is mathematically difficult. A \"regex & macro\" is not really a defined thing. That form is interpreted
+as: the macro is converted into a regex then those are intersected. The macro is just a convenience. So I think the
+issue is that conditions are the bastard child of macros and patterns. What they need is to be themselves. Then we
+define them mathematically, whatever that means." RECORD: DIRECTION (not a detailed ruling): a condition is to be
+its OWN KIND, neither macro nor pattern, with a mathematical definition; the 2026-11-15 "a condition is a macro"
+(CF:858) is superseded as the foundation once that definition is ruled. NO rev 23 of predicates_draft.md and no
+further corner rulings until it is. THE MANAGER'S SKETCH given to him (his, unrun, a starting point only): a pattern
+denotes a set of MATCHES (a subject with its labelling, pass by pass), not only strings; a condition denotes a set
+of labelled matches (a predicate on one match); `P & c` is then plain intersection, `!c` plain complement among
+matches, a record the intersection of its entries; unmarked conditions and defaults fit as predicates on one match;
+the optional mark's "a value the label could have had" is NOT a predicate on one match (it quantifies over the
+pattern's other matches), which is the precise sense in which it broke pointwise combination: the definition must
+either give the mark a one-match meaning or name it as the one construct that reads the pattern. Today's rulings
+(absent-rule, optional-as-loop, the spelling principle, match-context, zero-pass-empty, domain-scope, mark-narrows,
+not-is-complement, mark-in-none) stand as recorded and are INPUTS to that definition; each is re-read under it, and
+any that the definition cannot keep comes back to him by name.
