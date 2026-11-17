@@ -5,7 +5,7 @@ Consult it when planning a feature (part 3: which known remodels ride along), wh
 architecture note or a design (parts 1 and 2), and at code review. Who updates it: the manager, at each landing
 that opens, rides or closes a register row; a lane that finds a new shape proposes a row in its report.
 
-Part 1 is the goals (DRAFT for the owner, 2026-11-17, revised the same day to his review of the first draft). Part 2 is the rules, each with the refactor history behind
+Part 1 is the goals (2026-11-17: reshaped to the owner's review and in his order; still DRAFT on the points it marks). Part 2 is the rules, each with the refactor history behind
 it and the question to answer BEFORE design. Part 3 is the register of known remodels and the event that should
 carry each. Code-level rules are in `coding.md`; names and comments in `style.md`. Decision numbers are in
 `docs/dev/decisions.md`. "A1" and "A2" below are the two survey reports this revision was built from:
@@ -15,7 +15,7 @@ An "architecture note" is the short document that answers, before design, where 
 and what must change shape first ([ARCH-STEP]); its template and procedure are the `pcrec-architect` skill
 (`.claude/skills/pcrec-architect/SKILL.md`), its review the `pcrec-critic` skill's architecture mode.
 
-# Part 1. Goals (DRAFT 2026-11-17, for the owner; revised to his review of the first draft)
+# Part 1. Goals (2026-11-17; the owner's review and order applied; DRAFT only where marked)
 
 The owner's reason, verbatim: "This project is more than simply its stated goal. It's an effort to produce a
 viable long term project that can grow" (`docs/design/stream/manifesto.md` §1). And the problem this document is
@@ -27,10 +27,12 @@ as branches, 2 a data shape with no room for the next feature, 2 an inconsistent
 A GATE above every goal: no answer moves (PCRE2 is the semantics, D26) and nothing gets slower on the cells a
 change touches. Remodels are answer-identical units (manifesto §1, "a gate, not a goal").
 
-ORDER: the MANAGER'S PROPOSAL (2026-11-17). The owner reviewed the first draft the same day ("goals-ranking",
-`docs/design/plan_row_bodies/ARCH-STEP.md`, last section): he reshaped the draft's goals 1-3 and added one, numbering his
-comments; he did not rank the result. Each goal is answerable yes or no from a diff, a tree or an architecture note.
-His closing words on the draft: "You do cover some of the above as well".
+ORDER: THE OWNER'S (2026-11-17). He reviewed the first draft the same day ("goals-ranking",
+`docs/design/plan_row_bodies/ARCH-STEP.md`, last section): he reshaped the draft's goals 1-3 and added one,
+closing "You do cover some of the above as well"; then he agreed the order below ("goals-order: agree", to the
+manager's list). Each goal is answerable yes or no from a diff, a tree or an architecture note. STILL DRAFT, open
+with him: whether goal 4 stays a goal (shape-goal); which NEW 2026-11-17 rules of part 2 are adopted (new-rules);
+whether a note must cite the register rows it looked up (register-keeper); the speed gate's reach (speed-gate).
 
 1. **One home per question; each decision contained in one unit.** Every question the compiler answers (where can
    a match start, which engine, is this request refused, how wide is this subtree, which bytes can begin it, what
@@ -66,7 +68,7 @@ His closing words on the draft: "You do cover some of the above as well".
    in `docs/dev/lanes/archgoals2_report.md`): `Job` (`src/core/internal.h:3538-3818`, 63 fields by A2's count) and
    `struct Ctx` (`src/core/internal.h:3970-4455`, about 70 by A2's count) have no accessor layer; `cx->opt` is read
    directly in 43 files, `cx->job` in 27, `cx->ncap` in 19, `cx->mods` in 17, `cx->emit_in` in 16; 14 `Job` fields
-   are written by emitters and read by the driver (roadmap H-FLAGS); the flags word (`coding.md` §1.10) and the
+   are written by emitters, one of them read back by the driver's fallback ladder (roadmap H-FLAGS); the flags word (`coding.md` §1.10) and the
    facts layer are the parts that already meet the goal.
 3. **Seams: a module seam is an API with a contract; a layer hands data one way.** The goal's purpose, in the
    owner's words: "to isolate responsibility to better organize change. Each module has its api and contract."
@@ -85,11 +87,13 @@ His closing words on the draft: "You do cover some of the above as well".
    as needed but each tries to keep its own concern. Layer seams should if possible be one data direction. Pcrec
    hands off data to the emitter. If there needs to be data back and forth between layers, that suggests a module
    split like between the kit planner and kit emitter.", ARCH-STEP.md); `docs/design/stream/manifesto.md` §1 F4
-   ("A handoff carries facts both ways") and §3 principle 7 ("A seam carries facts in both directions, and only
-   facts"), which the first draft of this goal cited for "facts both ways" at every seam: READ HERE, by the
-   manager, as scoped by the owner's 2026-11-17 words (both ways at a MODULE seam; one way across a LAYER, with
-   back-and-forth the sign of a module split). The manifesto changes only with the owner (its §6); its text is
-   unchanged and the scoping is to be confirmed by him. Also D146/D157 (the kit seam, the model module seam);
+   ("A handoff carries facts both ways") and §3 principle 7 ("A seam carries facts in both directions"), which
+   the first draft of this goal cited for "facts both ways" at every seam, AS AMENDED 2026-11-17 with the owner's
+   "agree" (D185 addendum 2026-11-17): principle 7's "SCOPE (owner, 2026-11-17): "both directions" is for a
+   MODULE seam, a defined API and contract between two parts that each keep their own concern (the compiler and
+   the planner's kit face). Across LAYERS inside a part, data goes one way where possible (the compiler hands data
+   to the emitter); when layers need data back and forth, that is the signal to split a module there (as the
+   kit's planner and emitter were split)." Also D146/D157 (the kit seam, the model module seam);
    manifesto §3 principle 9 ("Every seam is a document"); A1 entries 4, 9, 13, 18; A2 "Seams without a contract"
    1, 2, 4.
 4. **A data shape covers the inputs the plan already names.** A representation (a node, a class payload, a
@@ -106,7 +110,7 @@ His closing words on the draft: "You do cover some of the above as well".
    D153 ("don't live in a house we're remodeling"); D77 (build under measurement); `docs/design/stream/roadmap.md`
    §7 (the ride-along rule); A1's "revisit when" triggers that fired later (entries 1, 2, 6).
 
-PRIORITY when two conflict (the manager's proposal, with the order above): the gate first; then 1 > 2 > 3 > 4.
+PRIORITY when two conflict (the owner's order, above): the gate first; then 1 > 2 > 3 > 4.
 Goal 5 decides WHEN, never WHAT: it may delay a remodel to its event, and when a feature must land before its
 remodel, implement-then-replace with an open register row is allowed (Frank 2026-08-23); a second permanent home is
 not.

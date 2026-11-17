@@ -95,7 +95,7 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    siblings already in the tree (the decision family it joins); the plan rows that will extend the same shape
    next (grep `docs/dev/plan.md` by tag and vocabulary: goal 4's CHECK); and the unlocks, each with its trigger.
 6. SEAMS. For each `NEW-SEAM` and each existing seam the feature sends new facts across: the one writer, the
-   readers, its kind (goal 3: a MODULE seam carries facts both ways, manifesto §1 F4 as goal 3 scopes it; a LAYER
+   readers, its kind (goal 3: a MODULE seam carries facts both ways, manifesto §1 F4 and principle 7's SCOPE of 2026-11-17; a LAYER
    handoff carries them one way, and back-flow argues a module split), the layer direction of every new call (rule "Layering holds at
    the call level"), and whether it could be written to text and read back (manifesto principle 9). Kit seams state
    facts with no verb about the kit's use (rule "Across the kit boundary").
