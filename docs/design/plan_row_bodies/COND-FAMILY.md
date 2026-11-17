@@ -1893,3 +1893,18 @@ put together @compiler.warn(cond, ...)"; the sketch (a placeholder spelling, D19
 none")` (so `predicates_draft.md` §0 quotes it). THE FOLLOW-UP, same hour, his words as item 12 quotes them: "It might
 be a property of the sets. <200 is a fixed set of strings but !<200 is an infinite set". RECORD: nothing ruled,
 nothing designed; item 12 holds the manager's notes and parks it.
+
+**2026-11-16 OWNER ANSWER — condition-kind, adjusted (Frank, to session 137, box clock 20:36).** Asked
+**condition-kind** ("go" or adjust) with the manager's wording "a pattern is a table: each match a row, each label a
+column", HIS WORDS: "condition-kind: a pattern is a SQL statement. The table is the set of matches". RECORD: the
+adjustment replaces the manager's "a pattern is a table": the PATTERN is the STATEMENT (the query), the TABLE is what
+it produces, the set of matches; a condition wraps the statement (his 19:49 form, "select * from (...) t where
+condition"). THE MANAGER'S READING OF THE ANSWER (his, said to the owner in the same reply): an adjustment to the
+question "go or adjust" is taken as the go for the ONE design lane (design only), starting from this version.
+CONSEQUENCES THE MANAGER DERIVES (his, unrun, to be checked by the definition lane and its critic round, none ruled):
+(1) a condition reads the table's ROWS, never the statement's text, so the spelling principle (15:29) is the
+statement that two statements with the same table answer every condition alike; (2) "a pattern narrowed by a
+condition is a different pattern" (domain-scope, 16:32) reads as: `P & c` is a NEW statement whose table is the
+filtered one; (3) the optional mark as ruled ("some value the label could have had") is not a test of one row but
+is expressible as a SUBQUERY over the statement's table, so the model has an honest place for BOTH candidate marks
+(the one-row "IS NULL OR ..." and the subquery over the value set), to be laid side by side.
