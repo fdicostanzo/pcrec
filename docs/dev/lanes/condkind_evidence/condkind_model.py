@@ -19,6 +19,9 @@
 # THE MARK CANDIDATES (an absent label written `h?`):
 #   M1    one row, "unknown counts as true", the unknown read EXACTLY: some TEXT in the absent label's place puts the
 #         tuple in the set (no statement is read; "any text" is the stand-in universe UNIV below)
+#   M1t   one row against a per-label CONSTANT: some value of the label's DOMAIN as the REGEX defines it (the values
+#         the label takes in any match of the regex that defines it, no condition applied: SQL's column DOMAIN; rev
+#         20's REGEX values), read as a fixed set like a type, never re-read through the program's conditions
 #   M1a   one row, "IS NULL OR ...": the whole test of that pass is TRUE when a marked label is absent
 #   M2c   as ruled (F1, domain-scope, mark-narrows): some value in DOM(h), DOM = h's values in the PROGRAM's rows (a
 #         subquery over the statement), a marked condition TRANSPARENT in a pass where its marked label is absent
@@ -142,7 +145,7 @@ def cands(lab, ctl, view, mode, dom, pool):
             return UNIV
         if mode == "M2":
             return sorted(dom[lab])
-        if mode == "REGEXDOM":
+        if mode == "M1t":
             return sorted(pool.rdom[lab])
     return []
 
@@ -225,7 +228,7 @@ class Ctx:
             if unit == "T-COND":
                 ok = all(cval(c, row, pool, "M2", None, self, skip=True) for c in O(prog))
             else:
-                ok = all(cval(c, row, pool, "REGEXDOM", None, self) for c in O(prog))
+                ok = all(cval(c, row, pool, "M1t", None, self) for c in O(prog))
             if ok:
                 for l, v in list(row.once.items()) + [kv for p in row.passes for kv in p.items()]:
                     if v is not None:
@@ -250,7 +253,7 @@ class Ctx:
 
 
 CTX = Ctx()
-MODES = ("M1", "M1a", "M2c", "M2r")
+MODES = ("M1", "M1t", "M1a", "M2c", "M2r")
 
 
 def ans(prog, pool, mode):
@@ -370,8 +373,8 @@ print("   RZ (h looped), 1,110 subjects: holds on: NOT (h: <5) %d, (h: !(<5)) %d
                                                            *ndiff(A_n, A_s, RZ), *ndiff(A_n, A_c, RZ)))
 
 # =====================================================================================================================
-print("\nPART 3: THE MARK CANDIDATES SIDE BY SIDE (M1 one row, any text; M1a one row, IS NULL OR; M2c ruled; M2r ruled "
-      "value set, V4's unit)")
+print("\nPART 3: THE MARK CANDIDATES SIDE BY SIDE (M1 one row, any text; M1t one row, the label's regex domain; M1a one "
+      "row, IS NULL OR; M2c ruled; M2r ruled value set, V4's unit)")
 
 
 def table(title, pool, progs, witnesses):
