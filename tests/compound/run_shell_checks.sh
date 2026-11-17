@@ -121,6 +121,27 @@ else
     bad "(3) the low-cap reference compiler failed to build: $(head -1 "$W/low.err")"
 fi
 
+# ---- (4) the span-head lever's strict value parse ----------------------------------
+# [MEMFN] R-45 (review r36 G10), moved here from tests/cli/run_cli_tests.sh (lane
+# formsfence: the lever fence allows the spelling only under tests/compound/): the
+# plain-decimal-digits, 0..4095 parse, pinned on the harness build's
+# `--harness=span-head=N` (the tester's spelling of the kit's `span-head=N`). Each
+# refused spelling is refused with the option's own text; the accepted ones compile.
+# Sabotage S3286 (the CLI's parse accepting an empty value) is detected here.
+for v in -0 +8 " 8" 4096 "" 8x; do
+    werr="$(pcrec_run "$HARNESS" -p rx "--harness=span-head=$v" -o "$W/sh.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+    if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "^pcrec: --harness=span-head= wants a head of 0\.\.4095 positions"; then
+        ok "(4) --harness=span-head='$v' is refused"
+    else
+        bad "(4) --harness=span-head='$v' was not refused with the option's text (rc $wrc): $werr"
+    fi
+done
+for v in 08 4095; do
+    werr="$(pcrec_run "$HARNESS" -p rx "--harness=span-head=$v" -o "$W/sh.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+    if [ "$wrc" -eq 0 ]; then ok "(4) --harness=span-head=$v is accepted"
+    else bad "(4) --harness=span-head=$v was refused (rc $wrc): $werr"; fi
+done
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
