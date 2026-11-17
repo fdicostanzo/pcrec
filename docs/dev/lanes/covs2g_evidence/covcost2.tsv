@@ -1,0 +1,9 @@
+pattern	enc	arm	pcrec_rc	pcrec_s	pcrec_maxrss_kb	emitted_c_bytes	RX_DFA_SCAN	RX_ENGINE_SEL	gcc_rc	gcc_s	gcc_maxrss_kb	text_bytes
+a{4095}	byte	default	0	0.62	80528	17299	unanchored	selected	0	0.05	33236	2008
+a{4095}	byte	W	0	0.62	80856	16761	cover	selected	0	0.04	32176	1656
+a{4095}	utf8	default	0	0.62	80304	21260	unanchored	selected	0	0.09	35276	3739
+a{4095}	utf8	W	0	0.62	80704	20505	cover	selected	0	0.06	33252	2107
+[0-9a-f]{1000}	byte	default	0	0.08	11876	20817	unanchored	selected	0	0.04	32680	1560
+[0-9a-f]{1000}	byte	W	0	0.35	11412	158121	cover	selected	0	0.51	113372	29752
+[0-9a-f]{1000}	utf8	default	0	0.08	11916	24561	unanchored	selected	0	0.08	34940	3195
+[0-9a-f]{1000}	utf8	W	0	0.08	11116	160552	cover	selected	0	1.61	162308	90491

@@ -1,0 +1,7 @@
+# compound-part trace compile (cover_cap.md §11.1 the test-axes arm, F12): trace build -DPCREC_CAND_TRACE of lane/covs2g, PCREC_KIT_PROOF_TRACE=1, pattern '^\w+|[0-9a-f]{40}'
+## arm: default
+KITPROOF	width-limit	k=0	routed=0	q
+#define RX_COMPOUND "none"
+## arm: --window-search-width=4095
+KITPROOF	cover	k=40	routed=0	q
+#define RX_COMPOUND "none"
