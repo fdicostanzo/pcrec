@@ -2470,3 +2470,12 @@ model and is true of the capture only. Nested loops: his lean is the OUTER readi
 unsets), not yet ruled. MINE: joint-last-pass dissolves (a bare joint reads the last pass's own tuple); the
 manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the
 manager's proposal.
+
+**2026-11-17 OWNER RULING — nested-pass: the outermost view (Frank, to session 138, evening).** HIS WORDS: "The view
+of the labels on an rx is the outermost view. To get inner views you nest the labels and condition". RECORD: seen
+from outside a pattern, a label is what the OUTERMOST level sees: every enclosing loop's pass starts with the
+labels inside it unset, so a bare condition after the pattern reads the label only if the last pass of each
+enclosing loop set it (the "every enclosing loop" candidate of revision 24.1's ramifications; his lean of earlier
+the same evening, now ruled). An INNER view (every inner pass; the inner loop's last pass within each outer pass)
+is written by nesting: the condition, with its label, is placed inside, at the level it speaks about. Example
+(rev 24.1's lines, `/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)`): `3;,,` and `3;;,` FAIL from outside.
