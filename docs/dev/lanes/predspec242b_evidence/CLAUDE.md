@@ -35,8 +35,9 @@ PART A MOVED 0; PART S prints STOP lines, the carry answers he was not shown). A
 and PART T run their rule explicitly (rev 24's context), so their checks pass under the switch too; PART T's labels
 are set in every pass that reads them, so the carry and the rule agree there by construction.
 
-Verdicts (2026-11-17): forward checks 18 of 18 OK, switch BYTE-IDENTICAL; sabotage 4 of 12 OK (run before PART T was
-added; PART S 0 of 5, helper-group models 6 of 16); switch: MOVED 0, shown tables 0 of 5 (each a STOP line).
+Verdicts (2026-11-17, the committed engine): forward checks 18 of 18 OK, switch BYTE-IDENTICAL; sabotage checks 7 of
+16 OK (PART S 0 of 5, helper-group models 6 of 16, MOVED 25); switch: MOVED 0, shown tables 0 of 5 (each a STOP
+line), plain libpcre2 38 of 38 equal.
 
 LIMITS (stated): the engine has no backreference node (PART L is libpcre2 only); a label set before a loop and again
 inside it (duplicate names) is run by rev 24.1's direct evaluator and a libpcre2 model with the outside group renamed.

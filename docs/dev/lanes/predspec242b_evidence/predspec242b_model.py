@@ -570,8 +570,19 @@ for nm, keep in (("last pass's own", False), ("keep-outside", True)):
     mo = pre_model(keep)
     dd = sum(1 for t in PP if (mo.key("WHOLE", t) is not None) != ((G["pre_ans"]("own", t) if not keep else pre_keep(t)).startswith("HOLDS")))
     print("Q before-and-inside   libpcre2 model (the outside group renamed h0, the two read as one label) for '%s' vs the direct evaluator: %d of %d differ (holds)" % (nm, dd, len(PP)))
+def _pk(mo, mode, s):
+    k = mo.key(mode, s)
+    if mode == "WHOLE": return "HOLDS" if k is not None else "FAILS"
+    if mode == "SEARCHED": return "FAILS" if k is None else "`%s`@%d" % (s[k[0]:k[1]], k[0])
+    return "[" + ", ".join("`%s`@%d" % (s[a:b], a) for a, b, _ in k) + "]"
+CARRYPRE = OwnRx(PRE, {"t": lambda v: lt5(v["h"] if v["h"] is not None else v["h0"])}, ("h", "h0", "ps"), {})
+for nm, mo in (("carry", CARRYPRE), ("last pass's own", pre_model(False)), ("keep-outside", pre_model(True))):
+    print("Q before-and-inside   %s (libpcre2 model): WHOLE `3;` %s ; SEARCHED `7;3;` %s ; FIND-ALL `3; 7;3;` %s" % (nm, _pk(mo, "WHOLE", "3;"), _pk(mo, "SEARCHED", "7;3;"), _pk(mo, "FIND-ALL", "3; 7;3;")))
 # hits as passes
 print("Q hits-pass: a hit of `occurrences` / `contains` as a pass: a bare condition after it reads the LAST HIT's own labels (the engine NOW): G4 above; `hits` (committed) hits are fresh matches under both readings")
+G4P = lambda: W(OCC(Pat(r"(?P<x>(?P<g>a)?b)"), 1), C("g", eq("a")))
+print("Q hits-pass   `occurrences(/(?<x>(?<g>a)?b)/, min = 1) & (g: \"a\")`: NOW %s ; rev 24.1 %s" % (
+    ans3(E(NOW, G4P, ("x", "g")), ("abb", "babb", "abb ab")), ans3(E("24.1", G4P, ("x", "g")), ("abb", "babb", "abb ab"))))
 H3P = lambda: W(Committed(Pat(NUMp)), NONE(NOT(C("n", lt(100)))))
 for slug, nm, mk, labs, texts, pool in (
         ("hits-text", "H3 `hits(/(?<n>\\d+)/) & occurs.none(NOT (n: <100))` (stretch)", H3P, ("#hits",), ("1234", "x300 12", "1234 5 300"), OCCPOOL),
@@ -590,16 +601,26 @@ for slug, nm, mk, labs, texts, pool in (
     a, b = E("24.1", mk, labs), E(NOW, mk, labs)
     d = diffn(a, b, pool)
     print("Q %s %s: NOW %s ; rev 24.1 vs NOW %s -> %s" % (slug, nm, ans3(b, texts), d[0], "UNCHANGED" if d[1] == 0 else "MOVES"))
+# rulings R4: atomic-search closed; item 14's reading is a backtracking-control verb. The three verbs on libpcre2:
+# a time pattern, then the verb, then a callout "not late" (the condition `!q` on the time's own labels).
+T2V = r"(?<h>\d{1,2})(?::(?<m>\d\d))?"
+for nm, pat in (("plain", T2V + '(?C"t")'), ("atomic group", "(?>" + T2V + ')(?C"t")'), ("(*PRUNE)", T2V + '(*PRUNE)(?C"t")'),
+                ("(*SKIP)", T2V + '(*SKIP)(?C"t")'), ("(*COMMIT)", T2V + '(*COMMIT)(?C"t")')):
+    mvb = carryrx(pat, {"t": lambda v: not late(v["h"], v["m"])}, ("h", "m"))
+    print("Q atomic-search-verbs (rulings R4) %s `/%s/` FIND-ALL: %s" % (nm, pat, " ; ".join("`%s` %s" % (t, _pk(mvb, "FIND-ALL", t)) for t in ("9:30", "9:30 8:15", "8:15 9:30 7:00"))))
 # some / occurs read each pass's own labels: equal under both (they read the pass table)
 for nm, mk in (("`REP & some((h: <5))`", lambda: W(Pat(REPp), SOME(h5()))), ("`REP & occurs.none(NOT (h: <5))`", lambda: W(Pat(REPp), NONE(NOT(h5())))),
                ("`REP & occurs.exactly(2, (h: <5))`", lambda: W(Pat(REPp), Count(h5(), lambda n: n == 2))), ("`CLOSE & some(((h, m = 00): == (10, 00)))`", lambda: W(Pat(CLOSEp), SOME(C(("h", "m"), lambda h, m: (h, m) == ("10", "00"), m="00"))))):
     a, b = u("24.1", mk), u(NOW, mk)
     print("Q some-own %s: rev 24.1 vs NOW (holds and stretch): %s" % (nm, dn(a, b, RG3 if "REP" in nm else JP).replace(" (labels compared)", "")))
+    print("Q some-own   NOW %s" % (ans3(b, ("3;;", "7;3;;", "7;; 3;;")) if "REP" in nm else ans3(b, ("9:45,10,", "10:45, 9:45,10,", "9:45,10, 10:45,"))))
 # looped-warning: which programs would warn; answers unchanged
 print("Q looped-warning (the manager's proposal): a WARNING when a bare condition after a pattern reads a label set inside a loop; it moves no answer. Programs of this file it would flag: " +
       ", ".join(t for t, _, d_, *__ in CAT if any(k in d_ for k in ("REP", "(?:(?<h>\\d);)*", "occurrences(/\\d+/) &", "KH &"))) )
 print("Q looped-warning   the bare form vs the item form it would point at: `/(?:(?<h>\\d);)*/ & (h: <5)` vs `/(?:${item})*/`, item := `/(?<h>\\d);/ & (h: <5)`: %s" % dn(
     u(NOW, lambda: W(Pat(REP1p), h5())), u(NOW, lambda: Rep(W(Pat(ITEM1), h5()), 0)), RG3).replace(" (labels compared)", ""))
+print("Q looped-warning   the bare form (it would warn) NOW %s ; the item form (no warning) NOW %s" % (
+    ans3(E(NOW, lambda: W(Pat(REP1p), h5()), ("h",)), ("7;3;", "3;7; 7;3;", "7;3; 3;7;")), ans3(E(NOW, lambda: Rep(W(Pat(ITEM1), h5()), 0), ("h",)), ("7;3;", "3;7; 7;3;", "7;3; 3;7;"))))
 
 # ================================================================================================= summary
 print("== CHECKS: " + "; ".join("%s %s" % (n, "OK" if ok else "FAILED") for n, ok in CHECKS))
