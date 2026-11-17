@@ -1737,7 +1737,10 @@ typedef struct {
      * (`pcrec_limits_tsv`); otherwise 1 .. PCREC_ANCHORED_MAX_STATES - 1,
      * and a value outside that is a malformed option (`pcrec_compile`
      * returns -1), never clamped. Settable both ways, not raise-only. A
-     * compound part compiles with its parent's value. docs/spec/limits.md
+     * compound part compiles with its parent's value. Answers are the same
+     * but cost is not: on a subject dense with near misses a search costs
+     * O(n*k) at width k, against the engine's O(n), so a wide width over
+     * untrusted subjects accepts that worst case. docs/spec/limits.md
      * §3.12, docs/spec/tuning.md §2.56. */
     int         window_search_width;
 } pcrec_options;
