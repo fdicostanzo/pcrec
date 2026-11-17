@@ -40,8 +40,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 ## Active
 - [ARCH-STEP] STATE:started — an ARCHITECTURE step between requirements and design, with its own review
   filed: 2026-11-17 Frank ("we discover over time that the feature is aggregated onto existing code and then have to go through a lengthy refactor ... requirements -> architecture-> design -> build Each with its own review and goals"; "I'd like to set up a plan with this"); manager wrote the row
-  status (2026-11-17): A1 DONE (docs/dev/lanes/archhist_report.md, 20 entries); A2 DONE (docs/dev/lanes/archreview_report.md); A3 running (lane archgoals; the owner's go 2026-11-17); NOT a build: docs, skills and reviews only
-  next: A3 goals document -> A4 writer + critic roles -> A5 wiring -> A6 pilot; units: docs/design/plan_row_bodies/ARCH-STEP.md
+  status (2026-11-17): A1 DONE (docs/dev/lanes/archhist_report.md, 20 entries); A2 DONE (docs/dev/lanes/archreview_report.md); A3 DRAFTED (docs/dev/guide/architecture.md: goals DRAFT, rules with history, a 22-row ride-along register), with the owner for review; NOT a build: docs, skills and reviews only
+  next: the owner's review of A3 -> A4 writer + critic roles -> A5 wiring -> A6 pilot; units: docs/design/plan_row_bodies/ARCH-STEP.md
 - [XARCH-DEV] STATE:started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
   filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
   status (2026-11-10): BUILD GO 2026-11-07; kit K0 d9df92c0d, pcrec P1 bfecd6143, U2+U3 (joint per-CPU SIMD) cf578177e landed 2026-11-09 (abi 98, MF_SITE_ABI 26); order: target_seam_units.md
