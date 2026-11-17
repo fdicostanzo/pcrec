@@ -2049,3 +2049,17 @@ filters potential matches like a program; "the text contains no B anywhere" is a
 needing its own spelling (a complement with nothing on its left, or not-contains), to be stated in rev 23 and
 shown to him. Review r31 finding A is closed by this ruling (A2-A5's text items follow it). STILL OPEN:
 **condition-not** (the manager's position: allow the three-valued NOT).
+
+**2026-11-16 OWNER RULING — condition-not: allowed (Frank, to session 137, box clock 23:48).** Asked "allow NOT on a
+condition as the three-valued where-clause NOT, reversing the second half of your 17:29 ruling?", HIS WORDS:
+"condition-not : yes allow not". RECORD: `!` on a condition is LEGAL and means the where-clause's NOT, three-valued:
+a condition on an absent label is unknown, its NOT is unknown, the row is dropped (absence never matches, negated
+or not; a default gets past it). REVERSES the second half of not-is-complement (17:29, "no meaning on a
+condition"; its first half, `!` on a pattern is a complement, stands) and the manager's told-not-ruled "stays an
+error" (23:0x entry, item 3). As shown to him: on one single-valued label NOT c equals the set complement
+`(h: !S)`; on a repeated label they part ("not every pass" vs "every pass in the complement"); the pattern
+difference `P & !(P & c)` differs from both on absent rows (it keeps them). STATE OF THE MODEL for rev 23: a
+pattern is a statement; a row is one potential match (the subject is the search text); a condition is a
+three-valued test of one row, with `&`, NOT; absent never matches; no optional mark; a default is per test, any
+text; no `all`; a complement of a pattern is the potential matches it does not match, used after `&` as pattern
+difference; `|` is PCRE's one parse; "repeated" is read from the operand regex (the manager's, told).
