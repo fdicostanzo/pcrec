@@ -1,9 +1,11 @@
 # A condition as its own kind: the owner's SQL model, worked out (EXPLORATION)
 
-STATUS: EXPLORATION, rules nothing. TWO PARTS: Part I (sections 1-7 and "Left open", lane condkind, kept as
+STATUS: EXPLORATION, rules nothing. THREE PARTS: Part I (sections 1-7 and "Left open", lane condkind, kept as
 delivered) works the owner's SQL model out with the optional mark; Part II (the note's own revision, lane condkind2,
 2026-11-16, on the owner's go "drop-mark: another exploration on these ideas", COND-FAMILY 21:19) works the same
-model out WITHOUT the mark. Part I: lane condkind (opus), 2026-11-16, on the owner's go ("Go. Purely exploration",
+model out WITHOUT the mark; Part III (lane defscope, 2026-11-16, after the owner's rulings drop-mark, default-value
+and source-row, COND-FAMILY 21:49) attacks every option for the SCOPE of a default alike and asks **default-scope**
+as what a default IS. Part I: lane condkind (opus), 2026-11-16, on the owner's go ("Go. Purely exploration",
 COND-FAMILY 2026-11-16 20:44, **definition-lane**). Design only, no build go. It edits neither
 `predicates_draft.md` (stays at rev 22) nor any ruling: every 2026-11-16 ruling in COND-FAMILY.md is an INPUT here,
 and where the model would change one, the change comes back as a named question (section 7), never as a new text.
@@ -770,3 +772,270 @@ ORDER aside) held.
 - The COLUMN reading's zero-pass detail (II.3.4) and where a statement-level default is written: not designed.
 - The searched mode of a default (rev 22 §4.2 WHOLE VALUE, NOT SEARCHED: 1,660 of 11,110 for `m = 0`) is unchanged and
   not re-run.
+
+---
+
+# Part III: the scope of a default (lane defscope, 2026-11-16)
+
+STATUS: EXPLORATION, rules nothing; the note's own revision (Parts I and II above stay as delivered). It edits neither
+`predicates_draft.md` (rev 22) nor any ruling. THE OWNER'S QUESTION (COND-FAMILY 21:49, his words): "Default-scope: is
+that oddity the only thing against it? I'd like a lane to consider the options. See if either choice has problems."
+INPUTS, ruled the same hour and not changed here: **drop-mark** YES (no optional mark; an absent label is a NULL that
+never matches; the default gets past it); **default-value** YES (any text; warn only on a default that can never be
+used); **source-row** YES (the whole subject); absent-rule minus its mark clause; optional-as-loop; label-twice;
+zero-pass-record; not-is-complement; the spelling principle (provisional wording). The manager's and lane condkind2's
+leaning (the whole-statement reading, II.6 **default-scope**) is treated as a claim to attack, like every other
+option. Spellings are placeholders (D193 add. 4): only meaning is discussed. Evidence:
+`docs/dev/lanes/defscope_evidence/` (`defscope_options.py`, its output `defscope_options.out`; commands in III.7).
+
+## III.0 Goals
+
+Ranked; who benefits: the owner, who rules **default-scope**; the next predicate revision, which inherits it.
+
+1. EVERY OPTION ATTACKED ALIKE. The same battery (two conditions on one label; record vs `&`; a later `$h`; the order
+   of `&`; adding a condition; loops and zero passes; group questions; the complement; the two nots; equal behaviour;
+   named programs reused; the rulings label-twice and zero-pass-record; the rewrite of Part II's programs; how it
+   reads) runs against each option. Measurable: every cell of the table in III.2 holds a run's count and witness, or
+   says the draft does not define the construct.
+2. COUNTS THAT HOLD. Every count unchanged by the order-swap run; a sabotage shows the swap check can fail.
+3. WHAT "ALL" IS without the mark, stated and run.
+4. ONE QUESTION, about what a default IS.
+
+Non-goals: no rev 23, no spelling, no warning designed, no ruling.
+
+Standing questions (docs/design/CLAUDE.md): (1) measurement regime NOT RELEVANT (no timing; counts of answers over
+populations). (2) Independent control RELEVANT to the evidence: the rewrite targets are rev 22's own engine's answers
+(via Part I's `rev22_ref.py`) and Part I's M2c for the worked pools, as in Part II; the "all" run is checked against
+an intent computed directly from Python `re.finditer`, and it reproduces rev 22 §4.3's own ENGINE-RUN numbers on the
+same population (0 for the sentinel spelling, 94 for the set complement alone, 7 for the plain condition); each
+option's evaluator is this part's own `run` (the one-pass test `nm_pass` is Part II's, unedited). Who counts the
+population: each pool is enumerated by its own generator (lanes condkind, condkind2), never filtered from another.
+(3) What moves when data is regenerated: NOT RELEVANT (no table or stamp; the rev 22 reference TSV is scratch).
+
+## III.1 The options, and what the scope unit IS
+
+In the owner's model a pattern is a statement over the source (one row per subject), `P & c` is `select * from (P) t
+where c`, an absent label is NULL, and a default is a COALESCE. Where the COALESCE sits is the scope.
+
+| option | a default `h = v` is | in the model | the unit it reaches |
+|---|---|---|---|
+| (a1) PER CONDITION (rev 22 as written: "at a label left of `:` in a condition", §4.2; (e2.1)) | a value for one test, its own `$h` included | `where coalesce(h, v) in S`, the one where-test that writes it | that condition (a record, a joint condition, the inner condition of a group question) |
+| (a2) PER ENTRY (the lane's statement of (a1) without (e2.1)) | a value for one SLOT: the label's place in the tuple of the test that names it; a `$h` always reads the row | as (a1), but `$h` is the row's column | that entry; a record is exactly the AND of its entries |
+| (b) PER LABEL, WHOLE STATEMENT (manager's and condkind2's leaning) | the label's value everywhere in the statement, `$h` included | `select coalesce(h, v) as h ...` LIFTED to the base of the statement (see below) | the statement (defined below); a second, different default for h is an error |
+| (c) POSITIONAL | the label's value from the writing condition onward | the model read LITERALLY: `(P where c1) where c2`, the COALESCE in the select list at c1's level | the conditions written after it; a later default on a filled label is dead |
+| (d) PER RECORD / JOINT | = (a1): a record is one condition | - | - |
+| (e) DECLARED AT THE DEFINITION | part of the pattern: the label's value wherever the pattern is used | the source statement itself returns `coalesce(h, v)` | every program built on the pattern; conditions carry no default |
+| (f) TESTS LOCAL, `$` READS THE STATEMENT (review r30 I's option (ii)) | (a1) for tests; a `$h` anywhere reads the statement's one default for h | where-test COALESCE + a select-list COALESCE seen only by `$` | tests: the condition; `$h`: the statement |
+
+THE SQL MODEL DOES NOT PICK (b) BY ITSELF. Read literally, `P & c1 & c2` nests (`select * from (select * from (P)
+where c1) where c2`), so a COALESCE in the select list "where the condition stands" reaches the conditions written
+AFTER it and none before: that is (c). Rev 22 §2.2 states `&` associative and commutative ("the ORDER and GROUPING of
+an `&` chain never change which strings it admits", `predicates_draft.md` line 1204), which (c) breaks (III.2). For
+the whole-statement reading the COALESCE must be lifted to the BASE of the chain, a rewrite of the source statement
+written from inside one condition. (b) is the model plus that lifting rule, not the model alone.
+
+WHAT "THE STATEMENT" IS under (b), worked on `q := P & (h = 0: <5)` (pool A, `/a(?<h>\d)|b(?<k>\d)|c/`, h absent on
+the 11 subjects `b0`-`b9`, `c`):
+- A NAMED PROGRAM IS INLINED: macros expand per use (rev 22 §5.2, line 2842; one kind of binding, §5.1 line 2779),
+  so `q & (h: <3)` is `P & (h = 0: <5) & (h: <3)`: h reads 0 in both conditions (on `c`: HOLDS; 14 of 21 hold; under
+  (a): FAILS, 3 hold).
+- `q & (h = 9: >7)`: a second, different default for h in one statement: a compile ERROR under (b); under (a) legal
+  (HOLDS on the 11, the one-witness oddity); under (c) the 9 is DEAD (0 hold; replacing `h = 9` with nothing changes 0
+  answers): reuse of a named program under a different default is an error or silently dead.
+- A COMPLEMENTED OPERAND IS ITS OWN STATEMENT (b1): rev 22 §2.2's reading (1), line 1232, "q is a COMPLETE PROGRAM
+  ... conditions outside q never narrow them", carried from value sets to defaults; and the complement carries no
+  labels out (Part I, §2). `P & !q` (5 hold, `c` FAILS: q's 0 stays inside q) is the same under every option. The
+  variant (b2) lets the outer statement's defaults reach INTO a complemented operand (labels still never come out).
+- A CONDITION NAMED AND USED INSIDE A GROUP QUESTION (`c := (h = 0: >7)`, `occurs.none(c)`): the default is in the
+  statement, so it reaches the plain conditions beside the group question (III.2, loops row).
+
+Under (a) none of this needs stating: the unit is the condition, wherever it is written or inlined. Under (e) the
+unit is the pattern, whatever program uses it.
+
+## III.2 The battery
+
+`defscope_options.out` PART 1 and PART 2. "h-absent" subjects of pool A are `b0`-`b9` and `c`. AB is
+`/(?<a>\d)?-(?<b>\d)/` (110 subjects, a absent on `-0`..`-9`). RZ is `/(?<k>\d)(?:;(?<h>\d))*/` (1,110 subjects,
+10 with zero passes). Each cell: the count, the witness, the answer. "none found" only where the item ran.
+
+| battery item | (a1) per condition | (a2) per entry | (b) whole statement | (c) positional | (e) declared | (f) `$` reads the statement |
+|---|---|---|---|---|---|---|
+| two conditions, SAME default: `(h = 0: <5) & (h = 0: >7)` (A) | 0 hold | 0 | 0 | 0 | (declared h = 0) 0 | 0 |
+| two conditions, DIFFERENT defaults: `(h = 0: <5) & (h = 9: >7)` (A) | 11 HOLD (`c`), though no one value is both below 5 and above 7: the one-witness oddity | 11, the same | ERROR | 0 hold: the 9 is dead (0 answers change without it) | cannot be written | 11 (an error only for a label some `$` reads) |
+| one WITH, one WITHOUT: `(h = 0: <5) & (h: <3)` (A) | 3 hold; `c` FAILS | 3 | 14; `c` HOLDS: the default reaches the condition that did not write one | 14 as written; 3 when the two are swapped | (declared h = 0) 14 | 3 |
+| record vs `&`, cross-entry `$a`: `(a = 0: <10, b: >$a)` vs `(a = 0: <10) & (b: >$a)` (AB) | 54 vs 45: differ 9, `-1` (review r30 I) | 45 vs 45: 0; the "b above a, absent a read as 0" question is the joint `((a = 0, b): a < 10 & b > a)`, 54 hold, `-1` HOLDS | 54 vs 54: 0 | 0 as written; 9 swapped | (declared a = 0) 0 | 0 |
+| `$h` read later, a computed label `w := $a + 1`, `(a = 0: <10) & (w: >=1)` (AB) | 100 hold; `-1` FAILS (w is absent) | 100 | 110, `-1` HOLDS, IF w is computed from the coalesced a; 100 if from the raw a (SQL's select list: a sibling item does not see an alias): (b) must say which | 110 | 110 | 110 |
+| `$h` in a replacement template | the predicate draft defines no template (rev 22 has no replacement; `replace_design.md` is the [VAR] substitution design, not a predicate construct): NOT RUN, construct undefined | same | same | same | same | same |
+| ORDER of `&` (6,300 two-condition cases, pools A, B, P, LST, controls nothing / `= 0/4/5/9/"x"`) | 0 move | 0 (by the record = AND) | 0 | 771 move (first: `(h: <5) & (h = 0: <5)` at `c`); AB `(a = 0: <10)` and `(b: >$a)` swapped: 9 (`-1`) | 0 | 0 |
+| ADDING a condition admits a subject (68,328 (program, added condition) pairs, same pools and controls) | 0 | 0 | 1,666 admit (first: `(h: <5)` + `(h = 0: <5)` admits all 11, `c`); 15,460 more pairs are compile ERRORS (two defaults) | 0 appended at the END; 3,421 when the added condition is written FIRST | 0 (conditions carry no default) | 0 over these pools (no `$` in them); AB: `(b: >$a)` + `(a = 0: <10)` admits 9 (`-1`) |
+| a condition that admits EVERY row: `(h = 0: <10) & (h: <5)` vs `(h: <5)` (A; `(h = 0: <10)` alone admits 21 of 21) | 0 differ (it is the identity) | 0 | 11 differ (`c`): a condition that filters nothing still changes the statement | 11 | cannot be written | 0 |
+| a LOOPED label per pass; ZERO passes: `(h = 0: <5)` (RZ) | 310 hold; the 10 zero-pass subjects HOLD (the LEFT JOIN row reads 0) | 310 | 310 if the COALESCE also fills the LEFT JOIN row; 300 (the 10 FAIL, `3`) if it fills only real passes: (b) must say which | 310 | 310 | 310 |
+| a default INSIDE a group question, a plain condition beside it: `occurs.none((h = 0: >7)) & (h: <5)` (RZ) | 300 hold; zero-pass `3` FAILS | 300 | 310; `3` HOLDS: the group question's default reaches the plain condition | 310 | (h = 0) 310 | 300 |
+| `some((h = 0: <5)) & (h: <5)` (RZ) | 300 | 300 | 300 | 300 | 300 | 300 |
+| zero-pass-record `(h = 0: <5, k: 3..7)` (RZ) | 155; `9` FAILS (k is tested), `3` HOLDS | 155 | 155 with the LEFT JOIN filled; 150 without (`3` FAILS) | 155 (the `&` spelling `(h = 0: <5) & (k: 3..7)`; the record row was run under (a) and (b) only) | 155 (the same) | 155 (the same) |
+| label-twice `((h, h): R)` | an error in one condition; no option changes it (the scope of a default is not involved) | same | same | same | same | same |
+| THE COMPLEMENT: S := A & (h = 0: <9); q1 := A & (h: <5); do `S & q1` and `S & !q1` BOTH hold? | never (0); `c`: FAILS / HOLDS | 0 | on all 11 (`c`: HOLDS / HOLDS): S's default reaches q1 inside `&`, not inside `!` (b1). (b2): 0, but then `!q1` reads its context's defaults: q1 is not a complete program | 11 | 0 (q1 reads the declaration either way) | 0 |
+| THE TWO NOTS beside a default: `S & (h: !(<5))` vs `S & !q1` (A) | differ 11 (`c`: FAILS / HOLDS), Part I's two different questions | 11 | 11 (b1); 0 (b2) | 11 | 0 | 11 |
+| `when(c, p)` = `(x & c & p) \| (x & !(x & c))`, c = `(a = 0: <10)`, p = `(b: >$a)` (AB) | 45; `-1` FAILS (p does not see c's default) | 45 | 54; `-1` HOLDS | 54 | (declared a = 0) 54 | 54 |
+| EQUAL BEHAVIOUR (review r30 RULING-2: 196 (v, w) pairs with the same rows; RULING-7: the product joint vs its record = `&` spelling) | 0; 0 | 0; 0 | 0; 0 | 0; 0 | 0; 0 | 0; 0 |
+| A NAMED PROGRAM REUSED: `q & (h: <3)`; `q & (h = 9: >7)`; `P & !q` (A, `c`) | 3, FAILS; 11, HOLDS; 5, FAILS | same | 14, HOLDS; ERROR; 5, FAILS | 14, HOLDS; 0, FAILS (the 9 dead); 5, FAILS | (declared h = 0, P's, not q's) 14, HOLDS; cannot be written (two values); 5, FAILS | 3; 11; 5 |
+| THE REWRITE of Part II's 339 programs (314 rev 22 + 21 worked + 4 probes), constants or a never-absent `$x` | 336 (314 + 20 + 2) | 336 (no pool program has a cross-entry `$`) | 334 (314 + 19 + 1): NOT the one-witness pair `(h?: <$k) & (h?: >$j)` on J (best 44 off, `02`: it needs `h = 1` in one condition and `h = 8` in the other) and the probe `((h?, k): h < k) & ((h?, k): h + 3 > k)` (4 off, `-3`; `h = 0` and `h = 4`) | 334, the same two, in every order | 266: one declaration per POOL serves every program on that pattern (pool A best 99 of 115, B 75 of 115, LST 55 of 62, P 21 of 22) | 336 |
+| a sentinel needed in those rewrites (a value the label never holds) | 0 | 0 (as (a1)) | 0 | not run | not run | not run |
+| WHAT ONE READS to know the value a condition tests | the condition alone | the entry alone (`$h` is the row) | the whole statement after inlining every named program, minus complemented operands: in 5,618 of 44,946 (program of 2-3 conditions, condition) cases the condition's own answer differs from reading it alone | everything written to its left: 4,682 of 44,946 | the pattern's definition | tests: the condition; a `$h`: the whole statement |
+
+THE (a2) COLUMN equals (a1)'s by construction except where a condition's `$` reads one of its OWN labels: the
+battery has one such condition (the record of the record-vs-`&` row, run separately as `(1b')`), and the 339 programs
+of the rewrite none (`defscope_options.out` PART 2: 0). The (e) column runs each program with the declaration equal to
+the value the program writes ("cannot be written" where it writes two), and in the order and adding rows with every
+label of the pool declared 0.
+
+The three that do not rewrite under (a) are Part II's: the two-sided `(h?: >$j & <$k)` (needs `h = $j + 1`, an
+expression) and the two probes that need the sentinel route (II.2.3). Under (b) and (c) the one-witness program
+itself does not rewrite: rev 22's answer there IS two stand-ins for one label.
+
+### III.2.1 The worst problem of each, with its example
+
+- (a1) PER CONDITION: TWO DIFFERENT DEFAULTS FOR ONE LABEL ARE LEGAL, and a record splits from its `&` spelling where
+  one entry reads another's `$`. `(h = 0: <5) & (h = 9: >7)` on `c` HOLDS (11 of 21) though no value of h is both;
+  `(a = 0: <10, b: >$a)` HOLDS on `-1`, its `&` spelling FAILS (9 of 110). Also: a default does not follow its label
+  into a later reader (`when`'s consequent 45 vs 54; a computed label 100 vs 110; `q & (h: <3)` 3 vs 14).
+- (a2) PER ENTRY: the record split is gone (0 of 110) and the cross-label question is the joint condition (54, as
+  (a1)'s record); what is left is (a1)'s two-defaults oddity (11 of 21) and "a default does not follow its label"
+  (the same three counts). It reverses the manager's derivation **default-reaches-dollar** (CF 16:23, not an owner
+  ruling): `(a = 0: <10, b: >$a)` on `-1` FAILS.
+- (b) WHOLE STATEMENT: ADDING A CONDITION ADMITS SUBJECTS. `(h: <5)` holds on 5 of pool A; add `(h = 0: <9)` (a
+  condition that admits every row by itself) and it holds on 16: the 11 h-absent subjects come in (1,666 of 68,328
+  pairs). Every one-row property Part II reported ("adding a condition never admits a subject", 0 of 11,388) was run
+  with the default local; under (b) it is false. Also: `S & q1` and `S & !q1` both hold on all 11 h-absent subjects
+  (or, under (b2), a complemented program reads its context); a named program reused with another default is a
+  compile error (15,460 of the 68,328 pairs); an unmarked condition's answer depends on a default written elsewhere
+  (5,618 of 44,946 cases); and the column must say whether a computed label reads the coalesced value (110 vs 100)
+  and whether the zero-pass LEFT JOIN row is filled (310 vs 300).
+- (c) POSITIONAL: `&` STOPS COMMUTING: 771 of 6,300 two-condition cases change when swapped; rev 22 §2.2 (line 1204)
+  states the opposite. A later default on the same label is silently dead; writing a condition first can admit
+  (3,421 of 68,328).
+- (e) DECLARED: ONE VALUE PER LABEL FOR EVERY PROGRAM ON THE PATTERN: 266 of 339 rewrite (73 need a value their
+  pool-mates do not); no condition can keep "absence fails" for a label another condition reads with a default
+  (`(h: <5)` with h declared 0 holds on the 11, as (b)); it is a new construct in the pattern, not in a condition.
+- (f) `$` READS THE STATEMENT: ONE LABEL, TWO VALUES IN ONE STATEMENT: `(b: >$a) & (a: <10) & (a = 0: <10)` on `-1`
+  FAILS because `(b: >$a)` reads a as 0 while `(a: <10)` reads it as absent; and adding `(a = 0: <10)` to `(b: >$a)`
+  admits 9 of 110 (`-1`).
+
+## III.3 "All" without the mark
+
+Rev 22 defines `all(c)` as "c with every label marked" (§4.3, the manager's reading, review r28 disposition C); with no
+mark it has no definition (II.5). The owner's 21:49 record calls it the manager's to restate. Two candidates, run
+(`defscope_options.out` PART 3):
+
+- A1, `all(c)` = c: the plain condition (every pass, at least one; the LEFT JOIN row on zero passes). Then `all`
+  adds nothing and retires.
+- A2, `all(c)` = EVERY PASS PASSES c, NONE NEEDED (SQL's ALL over the nested pass table: true on an empty table). On
+  the 127 strings over {a, b} up to length 6, hits of `occurrences(/(?<g>a)?b/)`, the intent "every hit's g is `a`,
+  possibly none" (computed from `re.finditer`): A2 `all((g: "a"))` differs on 0; the plain `(g: "a")` (A1) on 7 (`''`
+  and the strings with no hit); `occurs.none((g = "": !"a"))`, rev 22's spelling of the same intent through a
+  sentinel default, on 0; `occurs.none((g: !"a"))` on 94 (`b`: a hit without g is not counted). Rev 22 §4.3 printed
+  0, 94 and 7 for the same three on the same population from an ENGINE-RUN regex, so the run agrees with it. On RZ:
+  `(h: <5)` vs A2 differ on exactly the 10 zero-pass subjects; with `h = 0` they agree (the LEFT JOIN row reads 0, A2
+  sees no pass); with `h = 9` they differ on the 10 again (`(h = 9: <5)` FAILS on `3`, A2 HOLDS).
+
+A2 is the question rev 22 says has no name without a sentinel ("EVERY ITERATION, POSSIBLY NONE ... is NOT `all` and NOT
+the mark", §4.3), and needs no value set. Under the scope options `all` is one more condition: under (a) its default
+stays inside it; under (b) a default written inside `all(...)` reaches the plain conditions beside it, as the
+`occurs.none` row of III.2 shows (300 vs 310). THE LANE'S RECOMMENDATION: A2, restated by the manager (no owner word
+needed: the meaning being replaced was the manager's reading). It changes rev 22's `all` on a pass with an absent
+label (A2 FAILS; rev 22 held when some value would do) and on zero passes (A2 always HOLDS; rev 22 held when some value
+of the label's domain was in the set).
+
+## III.4 The leaning attacked
+
+Lane condkind2 (II.6) and the manager leaned to (b) on three grounds: record = `&` without exception, one witness per
+label, `$a` reads the default. Run: each holds (record vs `&` 0; two defaults are an error; `$a` reads 0). Their price,
+not counted in Part II: (b) gives up the property Part II's headline rested on (adding a condition never admits: 1,666
+of 68,328 admit under (b), 0 under (a)); it makes `S & q` and `S & !q` hold together (11 of 21) unless a complemented
+program reads its context; it makes a condition that admits every row change the answer of another (11 of 21); and it
+makes "what does this condition test" a question about the whole inlined statement (5,618 of 44,946 cases). Its two
+open definitions (computed labels, the zero-pass row) each move answers (10 of 110, 10 of 1,110).
+
+The per-condition reading's own problems are the two the owner and the manager named, and a third the battery found:
+the record split (9 of 110), two defaults for one label (11 of 21), and a default that does not follow its label into
+a later reader (`when`'s consequent, a computed label, a named program's reuse). The per-entry statement (a2) removes
+the first (0 of 110) by making a `$` always read the row and leaving the cross-label relation to the joint condition,
+which already exists for exactly that ("labels that go together are written together", 16:13).
+
+## III.5 Questions for the owner
+
+One question, about what a default IS. A reply either way is wanted.
+
+**default-scope** (what a default IS: a value for one test, or the label's value in the statement).
+CURRENT: rev 22 writes the default "at a label left of `:` in a condition" (§4.2) and does not say how far it
+reaches; its manager's derivation (e2.1) lets it reach a `$a` inside its own record; review r30 I asked about the `&`
+spelling (**dollar-across-and**).
+EXAMPLE: pool A `/a(?<h>\d)|b(?<k>\d)|c/`, the subject `c` (no h): `(h: <5)` FAILS. Now add `(h = 0: <9)`, which by
+itself admits every subject. Per test: `(h = 0: <9) & (h: <5)` still FAILS on `c`. Whole statement: it HOLDS (the
+added condition gave h the value 0 for the other one too), so adding a condition let a subject in.
+
+| problem (count, witness) | per test, (a1) per condition / (a2) per entry | whole statement (b) | positional (c) | declared on the pattern (e) | `$` reads the statement (f) |
+|---|---|---|---|---|---|
+| two different defaults for one label | legal: 11 of 21 hold where no value fits (`c`) | ERROR (15,460 of 68,328 pairs) | later one dead | cannot be written | legal (11) |
+| record vs its `&` spelling, cross-entry `$a` | (a1) differ 9 of 110 (`-1`); (a2) 0 | 0 | 9 when swapped | 0 | 0 |
+| a later reader (`when`'s consequent, a computed label, `q & (h: <3)`) sees the default | no: 45 vs 54, 100 vs 110, 3 vs 14 | yes; the computed label needs a rule (110 or 100) | yes, if written after | yes | `$` yes, tests no |
+| order of `&` | none found (0 of 6,300) | none found (0) | 771 of 6,300 | none found (0) | none found (0) |
+| adding a condition admits | none found (0 of 68,328) | 1,666 of 68,328 | 3,421 if written first | none found (0) | 9 of 110 (`$`) |
+| a condition admitting every row is not neutral | none found (0) | 11 of 21 | 11 | - | none found (0) |
+| `S & q` and `S & !q` both hold | none found (0) | 11 of 21 (or q reads its context) | 11 | none found (0) | none found (0) |
+| zero-pass LEFT JOIN row | reads the default (310) | must be stated (310 or 300) | reads it | reads it | reads it |
+| rewrite of the 339 programs | 336 | 334 (not the one-witness pair) | 334 | 266 (one value per pool) | 336 |
+| what one reads | the condition (a2: the entry) | the whole inlined statement (5,618 of 44,946 cases move) | everything to its left (4,682) | the pattern | condition, plus the statement for `$` |
+
+LEANING: per test, in the per-entry form (a2): a default fills its label's place in the test where it is written,
+and a `$x` always reads the row. It keeps every one-row property Part II counted (order-free, adding a condition never
+admits, equal behaviour answers alike, `S & q` and `S & !q` never both), makes record = `&` exact (0 of 110), and one
+reads a condition alone to know what it tests. ITS COST: (1) two different defaults for one label in one statement
+stay legal and give the one-witness oddity (11 of 21; it is also the only way to rewrite rev 22's one-witness program,
+which needs `h = 1` in one condition and `h = 8` in the other); a warning could name it, not designed here; (2) a
+default does not follow its label: the author who wants b compared with "a, or 0 when absent" writes the joint
+`((a = 0, b): b > a)` (54 of 110, as the record held before), and a computed label or `when`'s consequent reads the row
+(45 vs 54 on AB); (3) it reverses the manager's derivation default-reaches-dollar (not an owner ruling). If he prefers
+the default to be the label's value in the statement, the cost is (b)'s: adding a condition can admit (1,666 of 68,328),
+and the statement unit, computed labels and the zero-pass row each need a rule.
+
+No further question is unavoidable: "all" (III.3) is the manager's to restate, and the two-defaults warning is a
+diagnostic, not an object.
+
+## III.6 What the answer changes elsewhere
+
+- Per test (either form): Part II's one-row properties stand as run; II.3.2's LOCAL row stands; **dollar-across-and**
+  is answered by (a2) as "0 split" and by (a1) as "record = `&` excepts a cross-entry `$`".
+- Whole statement: Part II's monotone claim (0 of 11,388) must be restated as "under a local default"; the statement
+  unit (inlining, complement boundary b1/b2), the computed-label rule and the zero-pass row become rulings to write.
+- Either way: **default-value** (any text) is untouched; the rewrite of Part II needs no sentinel under (a) or (b) (0).
+
+## III.7 Population runs
+
+From the lane scratch dir `$PCREC_TMPDIR/scratch/defscope/`, W = the worktree root:
+
+    timeout 300 python3 -I W/docs/dev/lanes/condkind_evidence/rev22_ref.py rev22_ref.tsv
+    timeout 900 python3 -I W/docs/dev/lanes/condkind2_evidence/condkind2_nomark.py rev22_ref.tsv > premise.out
+    diff <(grep -v '^ORDER:' premise.out) <(grep -v '^ORDER:' W/docs/dev/lanes/condkind2_evidence/condkind2_nomark.out)  # empty
+    timeout 900 python3 -I W/docs/dev/lanes/defscope_evidence/defscope_options.py rev22_ref.tsv > fwd.out
+    DEFSCOPE_SWAP=1 timeout 900 python3 -I W/docs/dev/lanes/defscope_evidence/defscope_options.py rev22_ref.tsv > swap.out
+    diff <(grep -v '^ORDER:' fwd.out) <(grep -v '^ORDER:' swap.out)                  # empty: SWAP-IDENTICAL
+    DEFSCOPE_SABOTAGE=1 (forward and swapped) -> the diff shows 46 lines (e.g. (b)'s record vs `&` 0 vs 9; (b) admits 1,666 vs 3,354)
+
+The premise (lane condkind2's output reproduced, ORDER aside) held. Each run under a minute. `fwd.out` is committed as
+`defscope_evidence/defscope_options.out`; every count in this part is from it, after the swap run printed the same
+lines. The output's line "rewrites that write a default for one label in two or more conditions: 35; two different
+values: 15" counts the FIRST rewrite the search found, not a minimal one, and is not quoted; the robust count of
+programs that need two different defaults is 2 (they rewrite under (a), not under (b)).
+
+## III.8 Left open
+
+- The two-defaults warning under (a) (a statement giving one label two different defaults): not designed; it would
+  fire on the one rewrite that needs it.
+- (b)'s two open definitions (a computed label reads the coalesced or the raw value; the zero-pass row filled or not)
+  are counted, not chosen.
+- Searched mode of a default (II.8) is unchanged and not re-run under any option.
+- The battery's pools are Part I's and II's; a `$`-reading population larger than AB (110) is not built, so (f)'s and
+  (a1)'s `$` counts rest on one pool.
+- (e) declared defaults have no spelling and were run as "every label of the pool declared"; whether a declared
+  default would also change what a capture returns outside conditions is not a predicate question and is not run.
