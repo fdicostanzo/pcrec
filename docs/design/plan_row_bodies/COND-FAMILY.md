@@ -2506,3 +2506,22 @@ while find-all on the conditioned time gives `10:00`, `11:00`, `12:00`. MINE: na
 not invite the imperative or set reading (D174: names describe behaviour): an input to the rx-module naming
 ("loop") and to the spellings still open; open questions are to be asked as "what does this expression denote",
 and one that can only be answered by describing a procedure is either mis-asked or an explicit exception.
+
+**2026-11-17 OWNER on atomic-search (Frank, to session 138, evening).** Asked whether an atomic pattern in a search
+should stop the search going on to later positions (PCRE's atomic group does not: `atomic(t2) & !q` SEARCHED on
+`9:30` reports `30`; his item-14 reading "returns nothing"), with the manager's lean (atomic stays PCRE's; his other
+reading is a FINDING form on the first hit). HIS WORDS: "atomic: I think what I was looking for was more akin to
+(*prune) or similar. Atomic as used by say atomic() would provide pcre behavior. We might have other forms like
+A :: B which might be a concatenation which says match A then B but don't go back into A".
+RECORD: (1) `atomic()` (spelling a placeholder) means PCRE's atomic group, as ruled in regex-settles (5): no change.
+(2) The reading he filed as predicates_future item 14 is NOT atomic: it is a BACKTRACKING-CONTROL VERB in PCRE's
+sense, "(*prune) or similar". (3) An idea: a sequence form that does not go back into its left side (`A :: B`:
+match A, then B, never re-enter A; a placeholder spelling). All three belong to the parked atomic / backtracking
+discussion (predicates_future item 19); atomic-search is closed as a question. THE MANAGER'S RUN the same evening
+on libpcre2 10.46 (a time pattern, then the verb, then a callout "not late"; find-all): plain `9:30` -> `9`, `3`,
+`0`; the atomic group and (*PRUNE) both -> `0` (the search goes on to later starts; on this shape the two agree);
+(*SKIP) -> nothing on `9:30`, `8:15` on `9:30 8:15`, `8:15` and `7:00` on `8:15 9:30 7:00` (the search resumes
+AFTER the rejected match); (*COMMIT) -> nothing, and no later match either (`8:15 9:30 7:00` -> `8:15` only). So
+the verb that gives his item-14 words ("Now the pattern returns nothing", with later matches still found) is
+(*SKIP), which he also named on 2026-11-13 ("resume after a rejecting callout via a backtracking verb like
+(*SKIP)"); (*PRUNE) does not. `A :: B` as described is `(?>A)B`.

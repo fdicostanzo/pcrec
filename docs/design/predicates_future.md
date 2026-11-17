@@ -321,6 +321,15 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the branch-scope ruling). TRIGGER: "the start of a different
   discussion" (his words); raise it when the next revision is stable or when he asks.
 
+- 2026-11-17 evening, the owner (COND-FAMILY.md, "OWNER on atomic-search"): `atomic()` keeps PCRE's atomic-group
+  meaning; what he wanted from item 14 is "more akin to (*prune) or similar", a backtracking-control VERB; and a
+  sequence form that never re-enters its left side (`A :: B`, placeholder; as regex `(?>A)B`). Run on libpcre2
+  the same evening (a time, the verb, then a "not late" test; find-all): the atomic group and `(*PRUNE)` both let
+  the search go on to later starts (`9:30` -> a fragment); `(*SKIP)` resumes AFTER the rejected match (`9:30` ->
+  nothing; `8:15 9:30 7:00` -> `8:15`, `7:00`): this is item 14's reading; `(*COMMIT)` ends the search (`8:15`
+  only). So the discussion has THREE things to name, all regex notions: an atomic group, a no-re-entry sequence,
+  and a skip-past-on-reject verb.
+
 ## 20. Capability opt-ins declared in the source (`@options(...)`, spelling a placeholder)
 
 - WHAT: the capability levels (draft §6: the default promises linear automaton code only; `functions`, `captures`,
