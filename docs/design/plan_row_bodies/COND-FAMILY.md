@@ -2381,3 +2381,17 @@ as he modelled it is legal as a requested feature; the hit list is admitted as a
 regularity proof (its level is whatever its reads need); every place where the draft makes something that LOOKS
 like plain regex behave otherwise is a candidate exception that must either be allowed by him under (2) or revert
 to regex behaviour: the revision lists them.
+
+**2026-11-17 OWNER LEAN — a loop pass has its own labels (Frank, to session 138, evening; a lean with a request,
+NOT yet a ruling).** Asked **joint-last-pass** (a joint over a loop reads each label's last pass, so `((h, m): ==
+(10, 45))` on `9:45,10,` HOLDS under PCRE2, the minutes stale from the first item), then at his question "could you
+use defaults m=00" shown that a default cannot help while regex carries the earlier pass's value, and asked
+**pass-own-labels** (does a loop pass start with its body's labels unset; the manager's lean changed to yes, as an
+allowed exception under his exception-rule). HIS WORDS: "joint-last-pass: I think the expectation is that each loop
+has its own. The ramifications should be determined. Implementation details aside, I think most would expect that
+a missing group would unset". RECORD: his LEAN: each pass of a loop has its own labels; a group that does not take
+part in a pass is UNSET for that pass (against PCRE2, which keeps the earlier value). CONDITION: "the
+ramifications should be determined" before it is ruled: what moves in the draft, what it does to last-pass-default
+(the record's "a pass that sets nothing keeps the earlier value" was the manager's account of the regex model),
+to the every-pass spelling, to defaults and joints in loops, and to the regex models (PCRE2 has no direct model;
+an exception in his sense). Lane predspec241 writes both candidates out (its R2, R3); the ruling waits for that.
