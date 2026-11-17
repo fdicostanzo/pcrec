@@ -70,6 +70,10 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-17 r34, predicates_draft.md rev 23.1 (`docs/dev/reviews/2026-11-17-r34-predspec231.md`), accepted 2026-11-17 (manager): **on a re-check, diff every count the previous round's VERIFIER printed against the number the revision publishes, and quote the verifier's number beside the critic's in the fix-lane brief** (A1: r33's verifier printed 281 for L83 searched; rev 23.1 published the engine's 371, which read values where the draft's own section 2.2 reads canonical numerals).
+
+2026-11-17 r34, same round (applied by file34 as plain additions to the lens rows): **a manager ruling stated as a DERIVATION is read literally everywhere its premise applies (it can reverse a kept ruling, so it was a scope rule), and find-all places are a mode of their own in the mode-closure lens** (MODECLOSURE-4, A3).
+
 2026-11-17 r33, predicates_draft.md rev 23 (`docs/dev/reviews/2026-11-17-r33-predspec23.md`), accepted 2026-11-17 (manager): **when a revision RE-ALLOWS an operator, re-run every SAME row, warning and compile error whose stated reason assumed the operator absent** (F1, F7, F8: rev 22's "UNKNOWN and FALSE drop the same rows" silently underwrote L83, the `default.unused` (b) warning and the §5.2 error once NOT on conditions was legal again).
 
 2026-11-17 r33, same round (applied by file33 as a plain addition to the simulate lens): **when the evidence engine and the text agree on every number, read the engine's header for the readings it implements and check each is a sentence of the subject** (F2, F4: fallthrough over filtered `|` and find-all hits were the engine's own choices).

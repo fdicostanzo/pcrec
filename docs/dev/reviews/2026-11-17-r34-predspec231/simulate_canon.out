@@ -1,0 +1,95 @@
+#### run1
+== §R.3 set-once
+x {'NOT': 'FAILS / FAILS', '!S': 'FAILS / FAILS', 'diff': "HOLDS / HOLDS 'x'@0", 'NOT h=9': "HOLDS / HOLDS 'x'@0", 'h=x !S': "HOLDS / HOLDS 'x'@0", 'h=x >=5': 'FAILS / FAILS'}
+3x {'NOT': 'FAILS / FAILS', '!S': 'FAILS / FAILS', 'diff': "FAILS / HOLDS 'x'@1", 'NOT h=9': "FAILS / HOLDS 'x'@1", 'h=x !S': "FAILS / HOLDS 'x'@1", 'h=x >=5': 'FAILS / FAILS'}
+7x {'NOT': "HOLDS / HOLDS '7x'@0", '!S': "HOLDS / HOLDS '7x'@0", 'diff': "HOLDS / HOLDS '7x'@0", 'NOT h=9': "HOLDS / HOLDS '7x'@0", 'h=x !S': "HOLDS / HOLDS '7x'@0", 'h=x >=5': "HOLDS / HOLDS '7x'@0"}
+NOT (1, 56)
+!S (1, 56)
+diff (2, 220)
+NOT vs !S (0, 0, [], []) NOT vs diff (1, 164, ['x'], ['x'])
+== §R.3 repeated
+'' {'plain': 'FAILS / FAILS', 'NOT': 'FAILS / FAILS', '!S': 'FAILS / FAILS', 'diff': "HOLDS / HOLDS ''@0"}
+'3;' {'plain': "HOLDS / HOLDS '3;'@0", 'NOT': 'FAILS / FAILS', '!S': 'FAILS / FAILS', 'diff': "FAILS / HOLDS ''@0"}
+'3;7;' {'plain': "FAILS / HOLDS '3;'@0", 'NOT': "HOLDS / HOLDS '3;7;'@0", '!S': "FAILS / HOLDS '7;'@2", 'diff': "HOLDS / HOLDS '3;7;'@0"}
+'7;;' {'plain': 'FAILS / FAILS', 'NOT': "HOLDS / HOLDS '7;;'@0", '!S': "FAILS / HOLDS '7;'@0", 'diff': "HOLDS / HOLDS '7;;'@0"}
+'3;;' {'plain': "FAILS / HOLDS '3;'@0", 'NOT': 'FAILS / FAILS', '!S': 'FAILS / FAILS', 'diff': "HOLDS / HOLDS '3;;'@0"}
+NOT (22, 132)
+!S (2, 132)
+diff (40, 364)
+NOT vs !S (20, 0, ['7;;'], []) NOT vs diff (18, 232, [''], ['']) !S vs diff (38, 232, [''], [''])
+== c6: default under NOT
+SV NOT(h=9:<5) vs NOT(h:<5) (1, 164, ['x'], ['x'])
+REP NOT(h=x:<5) vs NOT(h:<5) (18, 232, [''], [''])
+SV (h=9:<5) vs (h:<5) (0, 0, [], [])
+REP (h=x:<5) vs (h:<5) (0, 0, [], [])
+REP some((h=x:<5)) vs some (0, 0, [], [])
+== R.2 sentinel and L30 edges
+sentinel HOLDS / HOLDS ''@0 HOLDS / HOLDS '7;'@0 FAILS / HOLDS ''@0 (7, 364)
+SV edge empty (0, 0, [], []) edge full (0, 0, [], [])
+REP edge empty (30, 0, ['3;;'], []) edge full (0, 0, [], [])
+== pass-and alternative (R.8 item 2b)
+7;; HOLDS / HOLDS '7;;'@0 FAILS / HOLDS '7;'@0
+differ (18, 0, ['7;;'], [])
+== condition-or (R.8 item 5)
+b7 FAILS / FAILS HOLDS / HOLDS 'b7'@0 differ (3, 89, ['c'], ['c'])
+#### run2
+== (h:<5)
+  5;9 body HOLDS / HOLDS '5;9'@0 | notc HOLDS / HOLDS '5;9'@0 | filter HOLDS / HOLDS '5;9'@0
+  5;1;9 body HOLDS / HOLDS '5;1'@0 | notc HOLDS / HOLDS '5;1'@0 | filter HOLDS / HOLDS '5;1;9'@0
+  3;0;5 body HOLDS / HOLDS '3;0'@0 | notc HOLDS / HOLDS '3;0'@0 | filter HOLDS / HOLDS '3;0;5'@0
+  3;5 body HOLDS / HOLDS '3;5'@0 | notc HOLDS / HOLDS '3;5'@0 | filter HOLDS / HOLDS '3;5'@0
+  0 body HOLDS / HOLDS '0'@0 | notc FAILS / FAILS | filter HOLDS / HOLDS '0'@0
+  body holds (960, 1110) filter holds (960, 1110)
+  body vs filter (dW, dS, ..., reported-row differ) (0, 0, [], [], 125, ['3;0;5'])
+  body vs notc (10, 110, ['0'], ['0'], 160, ['0'])
+  end-major vs branch-major reported differ 125 [('3;0;5', ('3;0;5', 0), ('3;0', 0))]
+== (h=0:<5)
+  5;9 body HOLDS / HOLDS '5'@0 | notc HOLDS / HOLDS '5'@0 | filter HOLDS / HOLDS '5;9'@0
+  5;1;9 body HOLDS / HOLDS '5;1'@0 | notc HOLDS / HOLDS '5;1'@0 | filter HOLDS / HOLDS '5;1;9'@0
+  3;0;5 body HOLDS / HOLDS '3;0'@0 | notc HOLDS / HOLDS '3;0'@0 | filter HOLDS / HOLDS '3;0;5'@0
+  3;5 body HOLDS / HOLDS '3'@0 | notc HOLDS / HOLDS '3'@0 | filter HOLDS / HOLDS '3;5'@0
+  0 body FAILS / FAILS | notc FAILS / FAILS | filter FAILS / FAILS
+  body holds (955, 1045) filter holds (955, 1045)
+  body vs filter (dW, dS, ..., reported-row differ) (0, 0, [], [], 400, ['3;5'])
+  body vs notc (0, 0, [], [], 0, [])
+  end-major vs branch-major reported differ 400 [('3;5', ('3;5', 0), ('3', 0))]
+#### run4
+== R.3 t2 table
+NOT (2830, 10300)
+!R (2830, 10300)
+diff (2940, 11110)
+m=0 !R (2850, 11110)
+m=0 !R vs diff (90, 0, ['10'], [])
+== c4 L83
+10 FAILS / FAILS | HOLDS / HOLDS '10'@0
+NOT (101, 281, ['9'], ['9']) noNOT (0, 0, [], [])
+== c3 on T2: when, c = late, p = (m:<45)
+T2 (0, 0, [], [], 0, [])
+PAIRS (0, 0, [], [], 0, [])
+A3 counts (6105, 11110) (18, 600)
+== fourth member
+9 [('NOT(x:q)', "HOLDS / HOLDS '9'@0"), ('(x:!q)', "HOLDS / HOLDS '9'@0"), ('(x: t2&NOT late)', 'FAILS / FAILS'), ('flat NOT', 'FAILS / FAILS'), ('flat diff', "HOLDS / HOLDS '9'@0")]
+9:30 [('NOT(x:q)', "FAILS / HOLDS '9:3'@0"), ('(x:!q)', "FAILS / HOLDS '9:3'@0"), ('(x: t2&NOT late)', 'FAILS / FAILS'), ('flat NOT', 'FAILS / FAILS'), ('flat diff', "FAILS / HOLDS '9'@0")]
+9:15 [('NOT(x:q)', "HOLDS / HOLDS '9:15'@0"), ('(x:!q)', "HOLDS / HOLDS '9:15'@0"), ('(x: t2&NOT late)', "HOLDS / HOLDS '9:15'@0"), ('flat NOT', "HOLDS / HOLDS '9:15'@0"), ('flat diff', "HOLDS / HOLDS '9:15'@0")]
+== R.4 / R.4.1 unchanged counts: t2&!q SEARCHED holds and contains-late
+#### run5
+plain holdsW 3 diff I1/I2a/I2b [12, 82, 37] ['', '', ''] SEARCHED 526
+none !R holdsW 40 diff I1/I2a/I2b [47, 45, 50] ['3,', '3:05,', '3:05,'] SEARCHED 1111
+none NOT joint holdsW 40 diff I1/I2a/I2b [47, 45, 50] ['3,', '3:05,', '3:05,'] SEARCHED 1111
+none NOT record holdsW 15 diff I1/I2a/I2b [22, 70, 25] ['3,', '3:05,', '3:05,'] SEARCHED 1111
+none m=99 !R holdsW 4 diff I1/I2a/I2b [11, 81, 36] ['3:05,', '3,', '3,'] SEARCHED 1111
+none m=00 !R holdsW 4 diff I1/I2a/I2b [11, 81, 36] ['3:05,', '3,', '3,'] SEARCHED 1111
+h=0,m=00 R holdsW 3 diff I1/I2a/I2b [12, 82, 37] ['', '', ''] SEARCHED 526
+m=00 R holdsW 3 diff I1/I2a/I2b [12, 82, 37] ['', '', ''] SEARCHED 526
+== H
+(1, 220) (1, 220) (0, 0, [], [], 0, []) (1, 220)
+== R.2 NOT (n:<0) vs some(any)
+121 (6, 64) (6, 64) (0, 0, [], [], 0, [])
+n=0:<5 on 7, FAILS / HOLDS ''@0
+== R.6 F17 nullable B
+'' B has a row: True
+'1,' B has a row: True
+'a' B has a row: True
+'7,' B has a row: True
+== R.1.9
+[(0, 2), (2, 4)] [(0, 4)] [(0, 2), (2, 4), (4, 6)]
