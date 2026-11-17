@@ -2000,3 +2000,14 @@ more than once in a match, not "in some match of the program" (rev 22 section 4.
 domain-scope). (5) Asked of the owner: **searched-complement** (review r31 finding A: source-row YES makes a
 complement per subject, which in a SEARCHED program contradicts the ruled same-stretch tie of 11-15 20:43:
 `/\d+/ & !/0+/` on `0 7`).
+
+**2026-11-16 OWNER RULING — all-question: retire (Frank, to session 137, box clock 23:18; after review r31 finding C).**
+Asked "should the \"all\" group question be retired, or kept with a new meaning?" with the list example
+(`/(?:(?<h>\d);)*/`: the plain condition fails on the empty list; `(h = 0: <5)` holds; `all` read as "every
+pass passes, none needed" holds), HIS WORDS: "all-question: retire". RECORD: the `all` group question is OUT of
+the language. "Every pass, possibly none" is written as a plain condition with a default; the narrower question
+("zero passes are fine, a pass lacking the label is not") is written as none-of-the-opposite with a sentinel
+default. As put to him: this keeps ONE kind of absence (a loop that never ran and a pass that did not set the
+label are treated alike) and does not bring back "an empty list holds" (reversed 14:31). Rev 22's closing example
+that used `all` to accept incomplete items is rewritten with a default in rev 23. Review r31 finding C is closed
+by this ruling.
