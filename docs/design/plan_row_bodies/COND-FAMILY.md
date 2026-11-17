@@ -1874,3 +1874,22 @@ table (its rows are the matches, the labels the columns); a condition is the WHE
 tables). His 17:29 ruling not-is-complement ("! takes an rx ... no meaning on a condition") was made while a
 condition had no definition of its own; under this model its first half stands (`!` on a pattern is a complement)
 and its second half is to be RE-ASKED by the definition lane, by name, with examples.
+
+**2026-11-16 OWNER REMARK — a default restricted to the values the label could hold (Frank, to session 136, box clock
+17:02; filed late by lane file30 from `predicates_future.md` item 11, review r30 RULING-3; this entry PREDATES the
+three entries before it, 19:31-19:49, and is appended here only because the file is append-only; a remark, not a
+ruling).** His words, as item 11 quotes them: "One interesting point is if the default should be restricted to the set
+of values it could have if it were there". `predicates_draft.md` (§0 table, the line dated 17:02 rev 21; §4.2 THE MARK
+IS EXISTENTIAL, THE DEFAULT CLASSICAL) quotes a second sentence of the same hour on the marked pair both holding:
+"This makes sense however. It's not the complementary condition that's making them hold. It's the mark. Logic aside,
+the default value provides the correct result". RECORD: nothing ruled; item 11 holds the manager's judgment given to
+him and parks the remark.
+
+**2026-11-16 OWNER REMARK — a macro raising its own warning (Frank, to session 136, box clock 17:46; filed late by
+lane file30 from `predicates_future.md` item 12, review r30 RULING-1; this entry PREDATES the three entries before it,
+19:31-19:49, and is appended here only because the file is append-only; a remark, not a ruling).** After ruling
+**mark-in-none** (LEFT AS IS, 17:42) his words, as item 12 quotes them: "If there is a way to describe it, we might
+put together @compiler.warn(cond, ...)"; the sketch (a placeholder spelling, D193 add. 4): `@compiler.warn(cond, "! In
+none")` (so `predicates_draft.md` §0 quotes it). THE FOLLOW-UP, same hour, his words as item 12 quotes them: "It might
+be a property of the sets. <200 is a fixed set of strings but !<200 is an infinite set". RECORD: nothing ruled,
+nothing designed; item 12 holds the manager's notes and parks it.
