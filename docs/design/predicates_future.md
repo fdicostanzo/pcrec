@@ -335,5 +335,10 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   construct and the opt-in, and a library listing shows each export's needed level; (c) THE CALLER: whether a compile option
   from outside may still cap or grant levels (a host that accepts untrusted programs wants a cap no source can
   raise); (d) what the cost tool prints (the level a program needed and why, §6) against what it declared.
+- AN ELEMENT WHOSE LEVEL DEPENDS ON ITS USE (a date test: an automaton against a fixed date, `functions` against a
+  run-time one). The owner, same day: "a constant is an rx where the count of the enumeration is 1". So there is
+  no constant-or-not case split: the needed level depends on how many values each argument's rx can take, the
+  automaton grows with that count, and the size budget (§4.6) draws the line (the manager's reading of his
+  sentence; a listing would state the dependence, not one level).
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md). TRIGGER: the atomic discussion (item 19), or the first build
   step that has to say how an opt-in is given.

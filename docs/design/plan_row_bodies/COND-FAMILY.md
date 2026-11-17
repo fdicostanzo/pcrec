@@ -2166,3 +2166,13 @@ asked for (the default, automaton code only, included) is a COMPILE ERROR, never
 2026-11-14 levels rule applied through an import. The other two points (scope, host cap) are "good ideas", not
 ruled. MINE, following from "it's not always clear what library element supports that": the error names the
 ELEMENT, the construct inside it and the opt-in, and a library's listing shows each export's needed level.
+
+**2026-11-17 OWNER — a constant is an rx whose enumeration has one member (Frank, to session 138, box clock about
+12:15).** To the manager's case "an element whose level depends on how it is used (an automaton against a constant,
+`functions` against a run-time value)". HIS WORDS: "Ref options: a constant is an rx where the count of the
+enumeration is 1". RECORD: "constant" is not a separate kind of argument; it is the count-1 end of ONE scale, the
+number of values the argument's rx can take. MINE, following from it (to be checked when item 20 is designed): an
+element's needed level is then a function of its arguments' enumerations (one value, twelve values and an unbounded
+or run-time value sit on one scale; the automaton's size grows with the count, the draft's own "the relation `d`
+has ~3.65M classes" message is the far end), and the line between the default level and `functions` is the SIZE
+BUDGET (§4.6), not a constant-or-not test; a listing states an element's level as that dependence.
