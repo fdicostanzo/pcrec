@@ -64,15 +64,15 @@ earlier ones (every real night takes step (5) while NOT-WARM and short-subject a
 approximations). The kit manager RULED the class closed, not the instance: the estimator at
 the finest level the night times twins, a night order that does not correlate arm with time,
 and a drill family that varies noise at EVERY level. `cards.py selftest` is the drill record
-({NCHK} checks, 0 failed; lane formsfixg's report, "Validation"). J5 and J6 are lane formsfixh's
+(182 checks, 0 failed; lane formsfixg's report, "Validation"). J5 and J6 are lane formsfixh's
 checks (compound section (4), G2), J10 is NOTED.
 
 | id | change | where |
 |---|---|---|
-| J1 | The twin term is ALSO computed per PATTERN, over the pattern's own hash-equal pools in its cells read (df 12 at a 2-arm pool, 36 at `hex24`), a floor in addition to the (regime, layer) one: `f(c) = max(f(r, l), twin(pattern))`; a pattern with no estimate (df 0) voids its cells through the gate, never pooled up. One pattern's arms at offsets τ 2 % / 3 %: 0.000 at `hex24`, `hex32` and `hex64` (pools of 4, 3, 2), τ 1/2/3 % (drill (xxi)) (r38: 0.40-0.69). Control: `hex64` τ 2 % under rev 9's floor {J1C} (accept > 0.15) | §3 "The twin term PER PATTERN", drill (xxi) |
-| J2 | Each cell is timed in ROUNDS, one launch of every arm per round, the round's arm order a fixed permutation from the cell's key; the cells' order and the ruled night order unchanged. r38's step (+5 % after `hex24`'s H(4)): a step of +2/+5/+10 % with its cut drawn inside `hex24`'s pattern block, its layer block, one cell and the cell's middle round: 0.000 in every row (drill (xxi)). Control: the same step in rev 9's arm-major order under rev 9's floor {J2C} (accept > 0.15); the same cut in rounds under rev 9's floor {J2CI}. A selftest row checks `time_cells` launches in rounds, in the order the drills use | night order step 1, drill (xxi) |
-| CLASS | Drill (xxi), RULED: between-run noise confined to each pooled level in turn (the night, one regime, one layer, one pattern at each pool size, one arm: I, H(64), H(8)) at τ 1/2/3 %, and a box-speed STEP (+2/+5/+10 %, the cut drawn inside the block each night) and a linear DRIFT (2/5/10 % over the block) in a block of each level of the launch order (the night, one pattern's block, one layer of it, one cell, the cell's middle round in `hex24` and in `hex64`): 81 rows, worst P(h\* != 64) 0.020 (H(24)'s arm at τ 3 %) over 300 nights each (accept <= 0.05). Every earlier drill re-run: {EARLIER}. POWER (a true 5 % win of H(8) in one regime): {POWER}. Void rate on pure noise: {VOID} of nights (F3: <= 5 %) | drill (xxi), (xv)-(xx) |
-| R2 (CONFIRM) | The class drill's ARM level failed for a head arm (H(8) τ 2 %: 0.187; rev 9 0.197): no twin pool holds a head where it is compared. RULED (kit manager's rulings entry R2): CONFIRM BY RE-RUN, a head's win beyond `f` in a cell counts only if the cell's one confirming re-run wins again; an unreproduced win reads as a tie with I. Arm rows for every head: I and H(0) .. H(64) at τ 1/2/3 %, 30 rows, worst 0.020 (H(24), τ 3 %; H(8) 0.000 / 0.000 / 0.000); control (rev 9's rule) {ARMC}. The FAST 3-of-5 split NAMED LIMIT is RETIRED: {FASTSPLIT} of 100 (rev 9: {FASTSPLIT9}) | §3 "Confirm by re-run", "A split that moves a median", drill (xxi) |
+| J1 | The twin term is ALSO computed per PATTERN, over the pattern's own hash-equal pools in its cells read (df 12 at a 2-arm pool, 36 at `hex24`), a floor in addition to the (regime, layer) one: `f(c) = max(f(r, l), twin(pattern))`; a pattern with no estimate (df 0) voids its cells through the gate, never pooled up. One pattern's arms at offsets τ 2 % / 3 %: 0.000 at `hex24`, `hex32` and `hex64` (pools of 4, 3, 2), τ 1/2/3 % (drill (xxi)) (r38: 0.40-0.69). Control: `hex64` τ 2 % under rev 9's floor 0.610 (accept > 0.15) | §3 "The twin term PER PATTERN", drill (xxi) |
+| J2 | Each cell is timed in ROUNDS, one launch of every arm per round, the round's arm order a fixed permutation from the cell's key; the cells' order and the ruled night order unchanged. r38's step (+5 % after `hex24`'s H(4)): a step of +2/+5/+10 % with its cut drawn inside `hex24`'s pattern block, its layer block, one cell and the cell's middle round: 0.000 in every row (drill (xxi)). Control: the same step in rev 9's arm-major order under rev 9's floor 0.337 (accept > 0.15); the same cut in rounds under rev 9's floor 0.000. A selftest row checks `time_cells` launches in rounds, in the order the drills use | night order step 1, drill (xxi) |
+| CLASS | Drill (xxi), RULED: between-run noise confined to each pooled level in turn (the night, one regime, one layer, one pattern at each pool size, one arm: I and every finite head H(0) .. H(64)) at τ 1/2/3 %, and a box-speed STEP (+2/+5/+10 %, the cut drawn inside the block each night) and a linear DRIFT (2/5/10 % over the block) in a block of each level of the launch order (the night, one pattern's block, one layer of it, one cell, the cell's middle round in `hex24` and in `hex64`): 84 rows, worst P(h\* != 64) 0.020 (H(24)'s arm at τ 3 %) over 300 nights each (accept <= 0.05). Every earlier drill re-run: selftest 182 checks, 0 failed: every rev 9 line holds (noise, heterogeneous noise, splits, whole-arm shifts, between-run offsets, gate cost, R0, re-run, C3, void by method, deny, identity); the earlier controls, now with the per-pattern term and the confirm off too, read 0.177, 0.397, 0.663, 0.403 (accept > 0.15 each); the cost recorded: G4's one-cell 5 % win of H(8) ships 8 in 126 of 200 nights (rev 9: 157), since a single winning cell must now reproduce. POWER (a true 5 % win of H(8) in one regime): 282 (hit-dense) and 274 (random) of 300. Void rate on pure noise: 0.000 (normal launches) and 0.030 (t(5)) of nights (F3: <= 5 %) | drill (xxi), (xv)-(xx) |
+| R2 (CONFIRM) | The class drill's ARM level failed for a head arm (H(8) τ 2 %: 0.187; rev 9 0.197): no twin pool holds a head where it is compared. RULED (kit manager's rulings entry R2): CONFIRM BY RE-RUN, a head's win beyond `f` in a cell counts only if the cell's one confirming re-run wins again; an unreproduced win reads as a tie with I. Arm rows for every head: I and H(0) .. H(64) at τ 1/2/3 %, 30 rows, worst 0.020 (H(24), τ 3 %; H(8) 0.000 / 0.000 / 0.000); control (rev 9's rule) 0.213. The FAST 3-of-5 split NAMED LIMIT is RETIRED: 0 of 100 (rev 9: 27) | §3 "Confirm by re-run", "A split that moves a median", drill (xxi) |
 | J3 | RECORDED LIMIT: the agreement gate is sized by N (head comparisons), not its own test count; at N = 0 it voids nearly every cell (re-run rounds, never a wrong h\*); unreachable on a healthy night | §3 "A split that moves a median" (the gate) |
 | J4 | (1) A cell the gate voids only after the first-owed cells are read owes a second `rerun` round; rounds end (each cell re-timed at most once). (2) The gate reads a floor that includes the disagreeing pool's own contrast (stated) | §3 "The re-run", the gate |
 | J7 | The identity check's reach is printed and floored PER SOURCE (cards, census, movers); at h\* < 64 the movers file's own count must be nonzero | §3 "The identity check" |
@@ -741,8 +741,8 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       transient on 3 of 5 consecutive launches is not the shape interrupts, migrations or
       frequency drops take (they slow a launch). It is recorded, not built against.~~ [rev 10,
       r38 R2: the NAMED LIMIT is RETIRED. The confirming re-run (below, "Confirm by re-run")
-      does not repeat a transient, so the fast split's win does not reproduce: {FASTSPLIT} of 100
-      nights (rev 9's rule on the same nights: {FASTSPLIT9}); `selftest` now checks it, accept
+      does not repeat a transient, so the fast split's win does not reproduce: 0 of 100
+      nights (rev 9's rule on the same nights: 27); `selftest` now checks it, accept
       <= 5 of 100.] Drill (xviii)
       checks the pooled reading. C3 (R2's C3 half, R5) still reads I's own arm: C3 never feeds
       the pick.
@@ -773,8 +773,8 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       confirm decides only whether its wins count. One confirming re-run per winning cell, no
       more, and the ruled night order is unchanged (the re-run sits inside the cards step).
       Cost: a pure-noise night holds no win (the floor is sized to α over every comparison:
-      {CONFNOISE}); a night with one real 5 % win of one head in one regime confirms about
-      {CONFPOWER} cells, about 5 s each.
+      no confirm cell on any of 300 pure-noise nights, normal or t(5) launches); a night with one real 5 % win of one head in one regime confirms about
+      10 (mean 10.0 hit-dense, 9.8 random; 14 at most) cells, about 5 s each.
     - **Void by method [rev 7, r35 F8].** A cell in a regime whose method is the kit's
       approximation (below, "The regimes' methods") is void by method: it counts as void twice
       (no re-run can give it the bench's method) and step (5) reads it.
@@ -1017,19 +1017,19 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   P(h\* != 64) <= 0.05. (1) Between-run offsets `exp(N(0, τ))`, τ = 1, 2, 3 %, confined to
   each pooled level in turn: the night (every arm, A/A too), one regime (`random`), one layer
   (`on`), one pattern (`hex24`, `hex32`, `hex64`: pools of 4, 3, 2), one arm (I, and each
-  finite head H(0) .. H(64), in every C1-C2 cell): 45 rows, P(h\* != 64) 0.000 at the night, regime, layer and pattern levels and for I's arm; 0.000-0.020 for the head arms (worst H(24) at τ 3 %, 0.020), under the confirm below. (2) A box-speed STEP (+2, +5,
+  finite head H(0) .. H(64), in every C1-C2 cell): 48 rows, P(h\* != 64) 0.000 at the night, regime, layer and pattern levels and for I's arm; 0.000-0.020 for the head arms (worst H(24) at τ 3 %, 0.020), under the confirm below. (2) A box-speed STEP (+2, +5,
   +10 %, its cut drawn uniformly inside the block each night, held to the end) and a linear
   DRIFT (2, 5, 10 % from the block's start to its end, held after) in a block of each level of
   the launch order: the night, `hex24`'s pattern block, its `off` layer block, one cell (one
   regime there: `hex24`/near-miss/off), and the cell's middle round (in `hex24` and in
   `hex64`, a 2-arm pool): 36 rows, every one 0.000. A step inside a cell splits every arm's launches, so
   the bimodal test voids the cell and the re-run reads it (nights with a first void at a +5 % / +10 % step: the night 94 / 154 of 300, the pattern block 109 / 177, the layer block 104 / 178, the cell 83 / 175, the middle round 198-211 / 300; at +2 % 0-1). Controls, under rev
-  9's rule: one pattern (`hex64`) at τ 2 % {J1C}; r38's step (+5 % after `hex24`'s H(4)) in
-  rev 9's arm-major order {J2C} (the same cut in rounds, rev 9's floor: {J2CI}); H(8)'s arm
-  at τ 2 % {ARMC} (accept > 0.15 each). POWER, a true 5 % win of H(8) in every cell of ONE
-  regime where it loops: {POWER} of 300 nights (rev 9's rule: {POWER9}; accept >= 90 % and >=
-  half of rev 9's). The void rate on pure noise: {VOID} of nights (F3: <= 5 %). Every earlier
-  drill (i)-(xx) re-runs under rev 10 with its result unchanged ({EARLIER}).
+  9's rule: one pattern (`hex64`) at τ 2 % 0.610; r38's step (+5 % after `hex24`'s H(4)) in
+  rev 9's arm-major order 0.337 (the same cut in rounds, rev 9's floor: 0.000); H(8)'s arm
+  at τ 2 % 0.213 (accept > 0.15 each). POWER, a true 5 % win of H(8) in every cell of ONE
+  regime where it loops: 282 (hit-dense) and 274 (random) of 300 of 300 nights (rev 9's rule: 294 and 294; accept >= 90 % and >=
+  half of rev 9's). The void rate on pure noise: 0.000 (normal launches) and 0.030 (t(5)) of nights (F3: <= 5 %). Every earlier
+  drill (i)-(xx) re-runs under rev 10 with its result unchanged (selftest 182 checks, 0 failed: every rev 9 line holds (noise, heterogeneous noise, splits, whole-arm shifts, between-run offsets, gate cost, R0, re-run, C3, void by method, deny, identity); the earlier controls, now with the per-pattern term and the confirm off too, read 0.177, 0.397, 0.663, 0.403 (accept > 0.15 each); the cost recorded: G4's one-cell 5 % win of H(8) ships 8 in 126 of 200 nights (rev 9: 157), since a single winning cell must now reproduce).
 - **(xix) A kept head without a win [rev 8, RULED r36 G4; `selftest`'s (G4) lines].** One cell
   (`k` = 60): H(8) = 0.97, H(16) = H(24) = 0.99, H(32) and H(64) = 1.00, the shorter heads
   losing; `f` = 0.025. E = {8, 16, 24} (threshold 0.994) and nothing is dominated (0.99 / 0.97
