@@ -56,3 +56,10 @@ sites or adds a mechanism; a paragraph otherwise.
 "I like the goals document. It's a good document to keep live and consult on new feature to see if refactors can
 ride along. Do it". So A3 is a GO, and the document has a second job beside goals and rules: a LIVE register of the
 remodels we know we want, each with the event that should carry it, consulted whenever a new feature is planned.
+
+## 2026-11-17, the owner on the critic's home
+
+Asked **critic-home** (its own skill, or a new mode of the existing critic skill). HIS WORDS: "critic-home: existing
+critic skill". So unit A4 is: an architect WRITER skill (new), and an ARCHITECTURE MODE of `pcrec-critic` with its
+own lenses (the coordinator, blinded critics, verifier and process log are reused); the writer and the critic are
+always different agents.
