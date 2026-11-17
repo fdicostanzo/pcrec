@@ -125,6 +125,11 @@ for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a_, b_, autojunk=False).
         chg.setdefault(k, set()).add(x)
 print("0 RE-RUN rev 24.1's evidence (every printed line) under NOW: lines that differ from the committed .out, per part (old + new lines): %s" % (
     ", ".join("%s %d" % (k, len(v)) for k, v in sorted(chg.items())) or "none"))
+print("0 RE-RUN every line of predspec241_model.out NOT listed below is printed identically under NOW; each changed hunk, rev 24.1's line (WAS) then NOW's:")
+for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a_, b_, autojunk=False).get_opcodes():
+    if op == "equal": continue
+    for x in a_[i1:i2]: print("0 WAS  " + x)
+    for x in b_[j1:j2]: print("0 NOW  " + x)
 for x in b_:
     if x.startswith("== SUMMARY") or x.startswith("== PART A SUMMARY") or x.startswith("== PART B SUMMARY") or x.startswith("== PART C SUMMARY") or x.startswith("== ORDER CHECK SUMMARY") or x.startswith("== PRINTED CHECK"):
         print("0 NOW   " + x)
@@ -278,6 +283,30 @@ print("S S5   libpcre2 helper-group model `/%s/` vs the engine NOW: %s ; CHECK %
 print("S S5   plain libpcre2 (a pass reads the carried m) vs the engine NOW: %s" % dn(rxk(mc), f, LP3))
 print("S S5   the same item under rev 24.1's carry vs NOW: %s" % dn(E("24.1", LATE, ("h", "m")), f, LP3))
 print("== PART S SUMMARY: %d of %d shown tables reproduced" % (sum(SHOWN), len(SHOWN)))
+
+# ================================================================================================= PART T: a run against the hits
+# Rulings R3 (the owner: "a matching language not a finding language"): the loop of (time & "10:00 or later") against
+# find-all on the conditioned time, each run on the engine and on libpcre2 (plain callouts: every label is set in the
+# pass that reads it, so the carry and the rule agree here; the check compares both).
+print("== PART T: a run against the hits (rulings R3), NOW = rev %s" % NOW)
+TT = "10:00,11:00,9:00,12:00,"
+def ten(h): return num(h) and int(h) >= 10
+def tenj(h, m): return num(h) and num(m) and (int(h), int(m)) >= (10, 0)
+TIMEc = r"(?P<h>\d{1,2}):(?P<m>\d\d)"
+for tag, desc, cnd, cb in (("T1", "`(h: >= 10)`", lambda: C("h", ten), lambda v: ten(v["h"])),
+                           ("T2", "`((h, m): >= (10, 0))`", lambda: C(("h", "m"), tenj), lambda v: tenj(v["h"], v["m"]))):
+    run = E(NOW, lambda: Rep(W(Pat(TIMEc + ","), cnd()), 0), ("h", "m"))
+    hits = E(NOW, lambda: W(Pat(TIMEc), cnd()), ("h", "m"))
+    print("T %s A RUN, the loop of (time & %s), `/(?:${t},)*/`, t := `/(?<h>\\d{1,2}):(?<m>\\d\\d)/ & %s`: WHOLE %s ; SEARCHED %s ; FIND-ALL %s" % (
+        tag, desc, desc, fq(TT, "WHOLE", run("WHOLE", TT)), fq(TT, "SEARCHED", run("SEARCHED", TT)), fq(TT, "FIND-ALL", run("FIND-ALL", TT))))
+    print("T %s THE HITS, find-all on t: %s ; SEARCHED %s ; WHOLE %s" % (tag, fq(TT, "FIND-ALL", hits("FIND-ALL", TT)), fq(TT, "SEARCHED", hits("SEARCHED", TT)), fq(TT, "WHOLE", hits("WHOLE", TT))))
+    mr = carryrx(r'(?:(?<h>\d{1,2}):(?<m>\d\d)(?C"t"),)*', {"t": cb}, ("h", "m"))
+    mh = carryrx(r'(?<h>\d{1,2}):(?<m>\d\d)(?C"t")', {"t": cb}, ("h", "m"))
+    pool = (TT,) + tuple(lists(["10:00,", "9:00,", "11:00,", "12:00,", "10:15,"], 3))
+    d1, d2 = diffn(rxk(mr), run, pool), diffn(rxk(mh), hits, pool)
+    print("T %s   libpcre2 `/%s/` vs the engine (the run): %s ; CHECK %s" % (tag, mr.pattern, d1[0], check("T %s run model = engine" % tag, d1[1] == 0)))
+    print("T %s   libpcre2 `/%s/` vs the engine (the hits): %s ; CHECK %s" % (tag, mh.pattern, d2[0], check("T %s hits model = engine" % tag, d2[1] == 0)))
+print("T NOTE T2's `00` is not a canonical numeral (§2.2, DICT-DOMAIN): `10:00` is outside `((h, m): >= (10, 0))`; T1 is the shown shape")
 
 # ================================================================================================= PART A
 print("== PART A: rev 24.1's catalogue (68 lines) under NOW (rev %s) vs rev 24.1 (carry): every moved line, before and after" % NOW)
