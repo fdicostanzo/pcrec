@@ -52,6 +52,7 @@ NOWR = os.environ.get("PREDSPEC241_RULES", "24")
 if NOWR not in ("24", "23.2"): sys.exit("PREDSPEC241_RULES must be 24 or 23.2")
 print("RUN: %s NOW=rev %s" % ("SABOTAGE" if SAB else "forward", NOWR))
 def order(xs): return list(xs)
+PASSOWN = {"v": False}                                # the pass-own-labels CANDIDATE (PART Q 10): a pass starts with its body's labels unset
 
 # ------------------------------------------------------------------------------------------------ load lastpass
 LPF = os.path.join(LANES, "lastpass_evidence", "lastpass_model.py")
@@ -69,6 +70,16 @@ Pat, Where, Diff, Alt, AndP, Keep, Occ = (LP[k] for k in ("Pat", "Where", "Diff"
 Test, Not_, And_, Or_, Count, Row = (LP[k] for k in ("Test", "Not", "And", "Or", "Count", "Row"))
 set_once_labels, strings, lists, merge = LP["set_once_labels"], LP["strings"], LP["lists"], LP["merge"]
 num, lt, ge, between, eq = LP["num"], LP["lt"], LP["ge"], LP["between"], LP["eq"]
+_row_of = LP["row_of"]
+def _row_of_po(r, s, i, e, caps, hist):
+    """The pass-own-labels CANDIDATE (PART Q 11; off unless PASSOWN): after a loop a looped label reads the LAST PASS's
+    own value (absent when that pass did not set it); the pass is the innermost enclosing loop's."""
+    row = _row_of(r, s, i, e, caps, hist)
+    if PASSOWN["v"]:
+        for l, lp in row.loop.items():
+            if lp is not None and row.passes.get(lp): row.last[l] = row.passes[lp][-1].get(l)
+    return row
+LP["row_of"] = _row_of_po
 
 # ------------------------------------------------------------------------------------------------ the rules switch
 RULES = {"v": "24"}
@@ -112,6 +123,7 @@ def passrow(key, labs, stretch, ps):
         row.loop[l] = key
         vals = [p[l] for p in ps if p.get(l) is not None]
         row.last[l] = vals[-1] if vals else None
+        if PASSOWN["v"] and ps: row.last[l] = ps[-1].get(l)   # the pass-own-labels candidate (PART Q 11)
         row.first[l] = vals[0] if vals else None
     return row
 def carry_pass(row, c, carry):
@@ -119,7 +131,7 @@ def carry_pass(row, c, carry):
     earlier pass set (PCRE's capture state at the callout). Returns the pass's own values, or None when a condition of
     the pass fails (the pass is not a path). Under the sabotage the carry is dropped."""
     own = {k: v for k, v in row.last.items() if v is not None}
-    if not SAB:
+    if not SAB and not PASSOWN["v"]:                     # PASSOWN: the pass-own-labels candidate (no carry)
         for k, v in carry.items():
             if row.last.get(k) is None: row.last[k] = v
     if not all(f() is True for f in c): return None
@@ -1127,6 +1139,169 @@ qline("zero-place", "the group-0 candidate against libpcre2 `/(?:[\\s\\S]*?\\d+(
     under(NOWR, lambda: OccG0(Pat(r"\d+"), Pat(r"1\d*"), 1)), DSP))
 qline("zero-place", "at the top level the two candidates are one (group 0 is the stretch): D5's LAW lines")
 # 10. the C2 records model: no question (D20: 0 differ; the item is condition-free and its result is a value)
+# 11. pass-own-labels (rulings R2, the owner's "could you use defaults m=00"): does a loop pass start with its body's
+# labels UNSET? THE DRAFT'S READING: no, PCRE's capture state (a label this pass did not set reads an earlier pass's
+# value; after the loop each label reads its last setting). THE CANDIDATE: each pass starts with its body's labels
+# unset (inside the body a label this pass did not set is absent, a default stands in; after the loop a label reads
+# the LAST PASS's own value, absent when that pass did not set it).
+_Tev = LP["Test"].ev
+def _ev_passown(self, row, view=None):
+    if PASSOWN["v"] and view is None and LP["MODE"]["v"] == "R" and any(row.loop.get(l) is not None for l in self.labs):
+        def get(l):
+            if row.loop.get(l) is None: return row.last.get(l)
+            ps = row.passes.get(row.loop[l]) or []
+            return ps[-1].get(l) if ps else None
+        return self.one(get)
+    return _Tev(self, row, view)
+LP["Test"].ev = _ev_passown
+@contextlib.contextmanager
+def passown():
+    with rules(NOWR):
+        PASSOWN["v"] = True
+        try: yield
+        finally: PASSOWN["v"] = False
+def pkey(ctx, mk):
+    cache = {}
+    def f(m, s):
+        with ctx():
+            if "p" not in cache: cache["p"] = mk()
+            return KEYS[m](cache["p"], s)
+    return f
+ITEMC = r"(?P<h>\d+)(?::(?P<m>\d\d))?,"
+JD = lambda: C(("h", "m"), jeq, m="00")
+PO_TEXTS = ("9:45,10,", "10,9:45,", "10:45,10,")
+for nm, mk in (("`CLOSE & ((h, m): == (10, 45))` (bare, after the loop)", lambda: W(Pat(CLOSEp), JJ())),
+               ("`CLOSE & ((h, m = 00): == (10, 45))` (bare, a default)", lambda: W(Pat(CLOSEp), JD())),
+               ("`CLOSE & ((h, m = 00): == (10, 00))` (bare, a default, the hour alone)", lambda: W(Pat(CLOSEp), C(("h", "m"), lambda h, m: (h, m) == ("10", "00"), m="00"))),
+               ("`/(?:${item})*/`, item := `/(?<h>\\d+)(?::(?<m>\\d\\d))?,/ & ((h, m): == (10, 45))` (the joint on the item, inside the loop)", lambda: Rep(W(Pat(ITEMC), JJ()), 0)),
+               ("`/(?:${item})*/`, item := `/(?<h>\\d+)(?::(?<m>\\d\\d))?,/ & ((h, m = 00): == (10, 45))` (inside, a default)", lambda: Rep(W(Pat(ITEMC), JD()), 0))):
+    a, b = progf(mk, ("h", "m")), progf(mk, ("h", "m"), passown)
+    print("Q pass-own-labels %s: WHOLE on %s: THE DRAFT'S READING (PCRE's capture state) %s ; PASS-OWN %s" % (nm, ", ".join("`%s`" % t for t in PO_TEXTS),
+          ", ".join(fmtq(t, "WHOLE", a("WHOLE", t)) for t in PO_TEXTS), ", ".join(fmtq(t, "WHOLE", b("WHOLE", t)) for t in PO_TEXTS)))
+    qcase("pass-own-labels", nm,
+          [("THE DRAFT'S READING: PCRE's capture state (carry; the last setting)", a), ("a pass starts with its body's labels UNSET", b)],
+          ("9:45,10,", "10,9:45,", "9:45,10, 10:45,10,"), JPOOL)
+qline("pass-own-labels", "R13;; `REP & (h: <5)` (last-pass-default's \"a pass that sets nothing keeps the earlier value\"), carry vs pass-own: %s" % diffl(progf(lambda: W(REP(), h5()), ("h",)), progf(lambda: W(REP(), h5()), ("h",), passown), RG3))
+qline("pass-own-labels", "the every-pass spelling with the OPTIONAL item (rev 24's W1c, item := `/(?<h>\\d)?;/ & (h: <5)`) against W1c's old meaning: carry %s ; pass-own %s" % (
+    diffcount(under("23.2", lambda: W(REP(), h5())), under("24", lambda: Rep(W(Pat(ITEMO), h5()), 1)), RG3),
+    diffcount(under("23.2", lambda: W(REP(), h5())), pkey(passown, lambda: Rep(W(Pat(ITEMO), h5()), 1)), RG3)))
+qline("pass-own-labels", "W2a, a per-test default inside the loop (item := `/(?<h>\\d)?;/ & (h = 0: <5)`) against its old meaning: carry %s ; pass-own %s" % (
+    diffcount(under("23.2", lambda: W(REP(), C("h", lt(5), h="0"))), under("24", lambda: Rep(W(Pat(ITEMO), C("h", lt(5), h="0")), 0)), RG3),
+    diffcount(under("23.2", lambda: W(REP(), C("h", lt(5), h="0"))), pkey(passown, lambda: Rep(W(Pat(ITEMO), C("h", lt(5), h="0")), 0)), RG3)))
+qline("pass-own-labels", "W1a (a MANDATORY label, every pass sets it): carry vs pass-own %s" % diffl(progf(lambda: Rep(W(Pat(ITEM1), h5()), 1), ("h",)), progf(lambda: Rep(W(Pat(ITEM1), h5()), 1), ("h",), passown), RG3))
+qline("pass-own-labels", "joint-last-pass: the bare joint under pass-own vs the 'last pass's own tuple' candidate (carry rules): %s" % diffl(progf(lambda: W(Pat(CLOSEp), JJ()), ("h", "m"), passown), progf(lambda: W(Pat(CLOSEp), LastPassTest(("h", "m"), jeq)), ("h", "m")), JPOOL))
+rxg1 = P.Pcre(r'(?:(?<h>\d)?;(?C"h<5"))+', CO)
+qline("pass-own-labels", "G1 against libpcre2 (PCRE's carry) `/(?:(?<h>\\d)?;(?C))+/`: carry %s ; pass-own %s" % (
+    diffl(rxkey(rxg1, ("h",)), progf(lambda: Rep(W(Pat(ITEMO), h5()), 1), ("h",)), RG3), diffl(rxkey(rxg1, ("h",)), progf(lambda: Rep(W(Pat(ITEMO), h5()), 1), ("h",), passown), RG3)))
+# RAMIFICATIONS (rulings R3): the whole revision's worked lines run both ways
+print("Q pass-own-labels RAMIFICATIONS (1): every worked line, PCRE's carry (the draft's reading) vs pass-own")
+pa_moved = []
+for tag, site, desc, mk, labs, texts, printed in CAT:
+    with passown():
+        Pn = mk(); po = (aW(Pn, texts[0]), aS(Pn, texts[1], labs), aF(Pn, texts[2], labs))
+    if po != RES[tag]["NOW"]:
+        pa_moved.append(tag)
+        print("Q pass-own-labels   PART A %s [%s] MOVES: WHOLE `%s` %s -> %s ; SEARCHED `%s` %s -> %s ; FIND-ALL `%s` %s -> %s" % (tag, site, texts[0], RES[tag]["NOW"][0], po[0], texts[1], RES[tag]["NOW"][1], po[1], texts[2], RES[tag]["NOW"][2], po[2]))
+print("Q pass-own-labels   PART A: %d of %d catalogue lines move (%s); %d do not" % (len(pa_moved), len(CAT), ", ".join(pa_moved), len(CAT) - len(pa_moved)))
+pb_nz = []
+for tag, what, old_, new_, mko, mkn, pool in WAYS:
+    d = diffcount(under("23.2", mko), pkey(passown, mkn), pool)
+    if not all(x.split(" ")[1] == "0" for x in d.split(" of ")[0].split("; ")): pb_nz.append(tag); print("Q pass-own-labels   PART B %s under pass-own against its old meaning: %s" % (tag, d))
+print("Q pass-own-labels   PART B: %d of %d old-meaning spellings still at 0 under pass-own (%s differ)" % (len(WAYS) - len(pb_nz), len(WAYS), ", ".join(pb_nz) or "none"))
+def sortk(f):
+    """the engine's labelled key with its labels in rxkey's (sorted) order"""
+    def g(m, t):
+        k = f(m, t)
+        if k is None: return None
+        if m == "WHOLE": return tuple(sorted(k))
+        if m == "SEARCHED": return (k[0], k[1], tuple(sorted(k[2])))
+        return tuple((a, b, tuple(sorted(l))) for a, b, l in k)
+    return g
+pc_ne = []
+for tag, nm, pat, mk, labs, pool in PCASES:
+    rx = pat if isinstance(pat, SM) else P.Pcre(pat, CO)
+    d = diffl(rxkey(rx, labs), sortk(progf(mk, labs, passown)), pool)
+    if not all(x.split(" ")[1] == "0" for x in d.split(" of ")[0].split("; ")): pc_ne.append(tag); print("Q pass-own-labels   PART C %s: libpcre2 (carry) vs the engine under pass-own: %s" % (tag, d))
+print("Q pass-own-labels   PART C: %d of %d libpcre2 models still equal under pass-own (%s differ)" % (len(PCASES) - len(pc_ne), len(PCASES), ", ".join(pc_ne) or "none"))
+print("Q pass-own-labels RAMIFICATIONS (2): the constructs")
+def both(nm, mk, labs, texts, pool):
+    a, b = progf(mk, labs), progf(mk, labs, passown)
+    print("Q pass-own-labels   %s: carry %s ; pass-own %s" % (nm, "; ".join("`%s` %s" % (t, fmtq(t, "WHOLE", a("WHOLE", t))) for t in texts), "; ".join("`%s` %s" % (t, fmtq(t, "WHOLE", b("WHOLE", t))) for t in texts)))
+    print("Q pass-own-labels     carry vs pass-own: %s" % diffl(a, b, pool))
+both("last-pass-default, bare `REP & (h: <5)` (WHOLE)", lambda: W(REP(), h5()), ("h",), ("3;;", "7;3;", "3;"), RG3)
+both("last-pass-default, mandatory label `/(?:(?<h>\\d);)*/ & (h: <5)`", lambda: W(Pat(REP1p), h5()), ("h",), ("7;3;", "3;7;"), RG3)
+both("a per-test default AFTER the loop, `REP & (h = 0: <5)`", lambda: W(REP(), C("h", lt(5), h="0")), ("h",), ("7;;", "3;;", "7;3;"), RG3)
+both("a per-test default AFTER the loop, outside the set, `REP & (h = 9: <5)`", lambda: W(REP(), C("h", lt(5), h="9")), ("h",), ("3;;", "3;"), RG3)
+both("a per-test default INSIDE the loop, `/(?:${item})+/`, item := `/(?<h>\\d)?;/ & (h = 9: <5)`", lambda: Rep(W(Pat(ITEMO), C("h", lt(5), h="9")), 1), ("h",), ("3;;", "3;"), RG3)
+both("the every-pass spelling, OPTIONAL item (rev 24's W1c)", lambda: Rep(W(Pat(ITEMO), h5()), 1), ("h",), ("3;;", "3;7;"), RG3)
+both("group questions over an optional label, `REP & some((h: <5)) & occurs.none(NOT (h: <5))` (W1d)", lambda: W(REP(), SOME(h5()), NONE(NOT(h5()))), ("h",), ("3;;", "3;"), RG3)
+both("`REP & occurs.exactly(2, (h: <5))`", lambda: W(REP(), Count(h5(), lambda n: n == 2)), ("h",), ("3;;3;", "3;3;"), RG3)
+both("an alternation in the body, `/(?:(?<a>\\d)|(?<b>[a-z]))*/ & (a: <5)`", lambda: W(Pat(r"(?:(?P<a>\d)|(?P<b>[a-z]))*"), C("a", lt(5))), ("a", "b"), ("3x", "x3", "3"), strings("37x", 5))
+both("occurrences, a condition INSIDE (G2), `occurrences(/(?<x>(?<g>a)?b)/ & (g: \"a\"), min = 1)`", lambda: OCC(W(Pat(r"(?P<x>(?P<g>a)?b)"), C("g", eq("a"))), 1), ("x", "g"), ("abb", "ab"), ABP5)
+both("occurrences, bare AFTER, `occurrences(/(?<x>(?<g>a)?b)/, min = 1) & (g: \"a\")`", lambda: W(OCC(Pat(r"(?P<x>(?P<g>a)?b)"), 1), C("g", eq("a"))), ("x", "g"), ("abb", "ab", "abab"), ABP5)
+# nested loops and a label set before the loop: a direct WHOLE evaluator (each text has one parse), independent of the engine
+def nest_parse(t):
+    if t and not t.endswith(","): return None
+    outs = t.split(",")[:-1] if t else []
+    passes = []
+    for o in outs:
+        if o and not o.endswith(";"): return None
+        ins = o.split(";")[:-1] if o else []
+        if any(x not in ("", "3", "7") for x in ins): return None
+        passes.append(ins)
+    return passes
+def nest_val(passes, cand):
+    if passes is None: return "nomatch"
+    if cand == "carry":
+        v = [x for o in passes for x in o if x]; return v[-1] if v else None
+    if cand == "inner":
+        inner = [x for o in passes for x in o]; return inner[-1] or None if inner else None
+    if cand == "every":
+        if not passes or not passes[-1]: return None
+        return passes[-1][-1] or None
+NEST = r"(?:(?:(?P<h>\d)?;)*,)*"
+NPOOL = strings("37;,", 5)
+def nest_ans(cand, t):
+    p = nest_parse(t)
+    if p is None: return "FAILS"
+    v = nest_val(p, cand); return "HOLDS h=%s" % v if (v is not None and int(v) < 5) else "FAILS h=%s" % v
+eng_c, eng_p = progf(lambda: W(Pat(NEST), h5()), ("h",)), progf(lambda: W(Pat(NEST), h5()), ("h",), passown)
+rxn = P.Pcre(r'(?:(?:(?<h>\d)?;)*,)*(?C"h<5")', CO)
+dc = sum(1 for t in NPOOL if (rxn.match(t, 0, P.PCRE2_ANCHORED | P.PCRE2_ENDANCHORED) is not None) != nest_ans("carry", t).startswith("HOLDS"))
+de = sum(1 for t in NPOOL if (eng_c("WHOLE", t) is not None) != nest_ans("carry", t).startswith("HOLDS"))
+di = sum(1 for t in NPOOL if (eng_p("WHOLE", t) is not None) != nest_ans("inner", t).startswith("HOLDS"))
+print("Q pass-own-labels   NESTED LOOPS `/(?:(?:(?<h>\\d)?;)*,)*/ & (h: <5)` (WHOLE; a direct evaluator, one parse per text): " + " ; ".join("`%s`: carry %s, innermost pass unsets %s, every enclosing pass unsets %s" % (t, nest_ans("carry", t), nest_ans("inner", t), nest_ans("every", t)) for t in ("3;,,", "3;;,", "3;,;,", "3;,7;,")))
+print("Q pass-own-labels     counts of %d texts (holds): carry vs innermost %d; carry vs every %d; innermost vs every %d. CONTROLS: the direct carry vs libpcre2 %d; vs the engine %d; the direct innermost vs the engine's pass-own %d" % (len(NPOOL),
+      sum(1 for t in NPOOL if nest_ans("carry", t)[:5] != nest_ans("inner", t)[:5]), sum(1 for t in NPOOL if nest_ans("carry", t)[:5] != nest_ans("every", t)[:5]), sum(1 for t in NPOOL if nest_ans("inner", t)[:5] != nest_ans("every", t)[:5]), dc, de, di))
+def pre_ans(cand, t):
+    if not re.fullmatch(r"\d?(?:;\d?)*", t): return "FAILS"
+    segs = t.split(";"); before, passes = segs[0] or None, [x or None for x in segs[1:]]
+    if cand == "carry": v = ([x for x in passes if x] or [before])[-1]
+    else: v = passes[-1] if passes else before
+    return "HOLDS h=%s" % v if (v is not None and int(v) < 5) else "FAILS h=%s" % v
+PPOOL = strings("37;", 5)
+print("Q pass-own-labels   A LABEL SET BEFORE THE LOOP AND INSIDE IT `/(?<h>\\d)?(?:;(?<h>\\d)?)*/ & (h: <5)` (duplicate names; WHOLE, a direct evaluator): " + " ; ".join("`%s`: carry %s, pass-own %s" % (t, pre_ans("carry", t), pre_ans("own", t)) for t in ("3", "3;", "3;7", "7;3;")) + " ; differ %d of %d" % (sum(1 for t in PPOOL if pre_ans("carry", t)[:5] != pre_ans("own", t)[:5]), len(PPOOL)))
+try:
+    P.Pcre(r'(?J)(?<h>\d)?(?:;(?<h>\d)?)*'); dn = "the harness reads it"
+except ValueError as e:
+    dn = "no libpcre2 control: PCRE2 compiles duplicate names under (?J), but the harness's by-name capture read refuses them (%s)" % e
+print("Q pass-own-labels     %s" % dn)
+print("Q pass-own-labels RAMIFICATIONS (3): regex models of pass-own")
+rxe = P.Pcre(r'(?:(?<h>\d|);)*(?C"h<5")', CO)
+rxe0 = P.Pcre(r'(?:(?<h>\d|);)*(?(<h>)(?C"h<5")|(?C"d0<5"))', CO)
+def hs(rx): return lambda m, t: (lambda k: (k is not None) if m == "WHOLE" else (None if k is None else k[:2]) if m == "SEARCHED" else tuple(x[:2] for x in k))(rxkey(rx, ())(m, t))
+print("Q pass-own-labels   (a) the empty alternative `/(?:(?<h>\\d|);)*/` (h set to the empty string each pass; a branch reset group `(?|(?<h>\\d)|())` is the same) with the test `(h: <5)`, holding and stretch, vs the engine's pass-own: %s" % diffcount(hs(rxe), pkey(passown, lambda: W(REP(), h5())), RG3))
+print("Q pass-own-labels       the same with a default `(h = 0: <5)` (PCRE's conditional sees the empty h as SET, so the default never fires): %s" % diffcount(hs(rxe0), pkey(passown, lambda: W(REP(), C("h", lt(5), h="0"))), RG3))
+def own_h(c):
+    sh, sp = c.span("h"), c.span("ps")
+    return None if (sh is None or sp is None or sh[0] < sp[0]) else c.subject[sh[0]:sh[1]]
+rxm = P.Pcre(r'(?:(?<ps>)(?<h>\d)?;)*(?C"own")', {"own": lambda c: (lambda v: v is not None and int(v) < 5)(own_h(c))})
+rxm0 = P.Pcre(r'(?:(?<ps>)(?<h>\d)?;)*(?C"own")', {"own": lambda c: (lambda v: int(v if v is not None else "0") < 5)(own_h(c))})
+rxmi = P.Pcre(r'(?:(?<ps>)(?<h>\d)?;(?C"own"))+', {"own": lambda c: (lambda v: v is not None and int(v) < 5)(own_h(c))})
+print("Q pass-own-labels   (b) a helper group marking each pass's start, `/(?:(?<ps>)(?<h>\\d)?;)*(?C)/`, the callout reading h only when it starts at or after ps (set in this pass), vs the engine's pass-own: bare %s ; with the default `h = 0` %s ; inside the body (W1c's item) %s" % (
+    diffcount(hs(rxm), pkey(passown, lambda: W(REP(), h5())), RG3), diffcount(hs(rxm0), pkey(passown, lambda: W(REP(), C("h", lt(5), h="0"))), RG3), diffcount(hs(rxmi), pkey(passown, lambda: Rep(W(Pat(ITEMO), h5()), 1)), RG3)))
+print("Q pass-own-labels     CONTROL: the same callout model against the engine's CARRY (must differ): %s" % diffcount(hs(rxm), pkey(now, lambda: W(REP(), h5())), RG3))
+
 
 # ================================================================================================= PART F: whole-text
 # The owner's model (2026-11-17 13:55, adopted if legal at 14:05): a parser J of the whole text; a check C against J's
