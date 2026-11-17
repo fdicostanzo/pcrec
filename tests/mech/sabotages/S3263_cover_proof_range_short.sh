@@ -21,8 +21,11 @@
 # shortened range silently.
 #
 # REACH: on the clean tree the witness is a cover (REACH-WHY=[cover]) at the shipped default
-# width 32 (--list-limits), its cover record k = 32 with an exact stretch of 32 and nothing
-# after (the facts listing's cover row `cover 32 32`).
+# width 32 (--list-limits), its cover record k = 32 with an exact stretch of 32 (the facts
+# listing's cover row `cover 32 32`). The REACH does NOT show the after side unstated: the
+# listing prints the same row for `\b[0-9a-f]{32}\b`, whose after side is stated (review r32
+# F20). That gap cannot hide a miss: a witness that gained a stated after side would leave B5
+# silent and the row would read UNDETECTED, loudly.
 SAB_ID='S3263-cover-proof-range-short'
 SAB_FILE='memfn/src/compose.c'
 SAB_SUITES='kitproof'

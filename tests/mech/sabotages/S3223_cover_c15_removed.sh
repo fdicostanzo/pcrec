@@ -4,7 +4,9 @@
 # Since the kit's raise (MF_WSPAN_POS 4095, lane memfn-span4k-raise) the planted tree COMPILES that cover and reads `cover`; the stage-1 path
 # (kit bounds at 32, cover_window's named internal error, a failed compile, READYLIMIT-7) no longer applies (lane covs2g, r45read W20/W22).
 # Shared (review r9 covs1 CHECKS-3, cross-plant matrix): the facts rows `a{600}(?:b|cc)` and `a{4095}` also lose width-limit under this plant;
-# `[0-9a-f]{@D1}` is flipped by S3223 alone (the off-by-one row S3234 leaves it declined).
+# `[0-9a-f]{@D1}` is flipped by S3223 AND S3260 (the default-fallback row; the off-by-one row S3234 leaves it declined).
+# The row that tells S3223 from S3260 is `N [0-9a-f]{@D}` (an explicit width below the default): S3223 reads cover, S3260
+# (which never reads the fallback under an explicit width) and the clean tree read unanchored (review r32 F14).
 # RE-AIMED 2026-11-15 (lane covs2a, A4/A7): plant text re-anchored on cc_fits' return line with the width conjunct; REACH moved from the
 # 40-letter literal (a cover at any default >= 40) to `[0-9a-f]{@D1}`, REACH-WHY width-limit.
 SAB_ID='S3223-cover_c15_removed'

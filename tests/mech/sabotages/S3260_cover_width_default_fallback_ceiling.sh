@@ -3,6 +3,8 @@
 # Witness: verdict `[0-9a-f]{@D1}` (one past the shipped width default, loader.sh) on the default arm expects decline (width-limit) and reads cover.
 # Why only now: until the kit's raise (MF_WSPAN_POS 32 -> 4095) the kit's own bounds declined k = D + 1 under the same name whatever the fallback read,
 # so no row could tell the fallback apart (r18 CHECKS-1). Control: an explicit `--window-search-width` never reads the fallback (the `W` arm).
+# NOT unique: S3223 (the bypass) flips the same witness and a superset of S3260's rows; only `N [0-9a-f]{@D}` tells them apart
+# (S3223 reads cover there, S3260 and the clean tree decline), so that row is S3223's discriminator and S3260's control (review r32 F14).
 SAB_ID='S3260-cover_width_default_fallback_ceiling'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'

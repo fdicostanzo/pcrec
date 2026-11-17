@@ -45,7 +45,7 @@ verdict	-	abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqr
 verdict	-	[0-9a-f]{24}	width=24	COVER-CAP stage 2: cover iff the width 24 <= the default
 verdict	-	[0-9a-f]{25}	width=25	COVER-CAP stage 2: cover iff the width 25 <= the default
 verdict	-	[0-9a-f]{@D}	cover	COVER-CAP stage 2: the class at the width default; S3234 (off by one)
-verdict	-	[0-9a-f]{@D1}	decline	COVER-CAP stage 2: the class one past the width default (width-limit); S3223 (bypass)
+verdict	-	[0-9a-f]{@D1}	decline	COVER-CAP stage 2: the class one past the width default (width-limit); S3223 (bypass) and S3260 (fallback) both flip it; the N row below tells them apart (review r32 F14)
 verdict	-	[0-9a-f]{40}	width=40	COVER-CAP stage 2: cover iff the width 40 <= the default
 verdict	-	[0-9a-f]{100}	width=100	COVER-CAP stage 2: cover iff the width 100 <= the default
 verdict	-	[0-9a-f]{1000}	width=1000	COVER-CAP stage 2: cover iff the width 1000 <= the default
@@ -64,7 +64,7 @@ verdict	W	[0-9a-f]{100}	cover	COVER-CAP stage 2 B7 (lane covs2g): the W twin of 
 verdict	W	[0-9a-f]{1000}	cover	COVER-CAP stage 2 B7 (lane covs2g): the W twin of the default-arm row, class 1000; R18 CONTRACT-1 (a W row at n >= 33 reads cover)
 verdict	W	\b[0-9a-f]{40}\b	cover	COVER-CAP stage 2 B7 (lane covs2g): the W twin of the default-arm row, \b class 40; R18 CONTRACT-1 (a W row at n >= 33 reads cover)
 verdict	W	\b[0-9a-f]{100}\b	cover	COVER-CAP stage 2 B7 (lane covs2g): the W twin of the default-arm row, \b class 100; R18 CONTRACT-1 (a W row at n >= 33 reads cover)
-verdict	N	[0-9a-f]{@D}	decline	COVER-CAP stage 2 review r18 CHECKS-2: the CLI value takes effect: a width one below the default declines a pattern of width D (a CLI that drops the value reads cover)
+verdict	N	[0-9a-f]{@D}	decline	COVER-CAP stage 2 review r18 CHECKS-2: the CLI value takes effect: a width one below the default declines a pattern of width D (a CLI that drops the value reads cover); also the one row that tells S3223 (reads cover) from S3260 (declines, as clean) (review r32 F14)
 verdict	-	ab|abc|ad	cover	COVER-CAP §3.2: no language branch
 verdict	-	(?:S(?i:ab)|(?i:sab))	cover	COVER-CAP §2: a rev-2 loss kept
 verdict	-	[a-c]*\ba	cover	COVER-CAP §2: a k = 1 gain
