@@ -2438,3 +2438,15 @@ revision to run and for him to confirm where it decides answers: on `x3` the pro
 has no `a`, and a test on an absent label fails); whether zero passes holds (the 11-16 absent-rule said "at least
 one"); how NOT composes with "every pass"; that the bare joint is then per pass (joint-last-pass dissolves); how
 the last-pass meaning is spelled (through the capture, or a named form).
+
+**2026-11-17 OWNER, reconsidering the entry above within minutes (Frank, to session 138, evening).** HIS WORDS: "I
+guess, as always, the devil is in the details. It works because the top level item is a loop. But if an "xx" were
+added as a terminal after the loop it wouldn't work. Thinking about it, what you should do is assign the condition
+inside the loop to get the all behavior".
+RECORD: the "labels match every pass" entry above is NOT SETTLED: he sees that a condition written after the whole
+pattern cannot be "per pass" once the pattern is more than the loop (a terminal after it), and that the "all"
+meaning is got by putting the condition INSIDE the loop, on the item (which is the regex model of the afternoon: a
+condition is a piece at the place it is written). What a bare condition written AFTER such a pattern reads from a
+looped label is therefore OPEN again (asked: after-loop-read). The manager had launched a revision lane
+(predspec242) on the entry above; it was stopped at once, nothing written. LESSON (mine): "I thought we said" was
+a recollection, not a ruling; the settle-before-launch rule applies to it.
