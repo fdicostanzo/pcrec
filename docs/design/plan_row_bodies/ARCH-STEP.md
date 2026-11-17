@@ -145,3 +145,16 @@ percentage on rare forms was ok and a turn off option was allowed. Plus, it was 
 RECORD: the gate is "no existing regex gets slower", and it covers every change to product code, not remodels
 only (the manager's lean was narrower and is superseded); allowances: a few percent on rare forms; a turn-off
 option; default off. Written into docs/dev/guide/architecture.md part 1 and the architect skill's first-unit line.
+
+## 2026-11-17 evening, the owner on emitter-backflow (a question back, and an idea; not yet a ruling)
+
+Asked **emitter-backflow** (the emitter writes 14 fields into the shared struct and the driver's fallback ladder
+reads one back to re-plan: a module seam with a result record, or a one-way layer handoff). HIS WORDS:
+"emitter-backflow: Are these questions about the hardware architecture or purely the language? Code length gates
+could be converted to op code gates". RECORD: before choosing between "module seam" and "one-way layer" he asks
+WHAT KIND of fact flows back: a fact about the target (hardware, or the emitted text), or a fact about the regex
+language and the plan; and he offers a way to REMOVE the back-flow where it is a size gate: count OPS of the plan
+(known before any text is written) in place of the LENGTH of the emitted code. The manager's first answer (mine):
+neither hardware nor language: the facts are about the EMITTED TEXT (what the artifact contains; how many bytes of
+C it is), and they flow back only because the gates are measured on the text; a fact-finding agent is classifying
+the 14 fields and the size caps before he is asked again.
