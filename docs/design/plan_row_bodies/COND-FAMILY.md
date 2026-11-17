@@ -2489,3 +2489,20 @@ forms); (c) the spelling principle becomes: two patterns that offer the same res
 same labels answer every condition alike (review r40's A6 counterexample differs in its paths, so it is not a
 counterexample to this form); (d) it is the same shape as the architecture goals ruled today (a structure is read
 through what its owner exposes).
+
+**2026-11-17 OWNER, on what kind of language this is (Frank, to session 138, evening; reflections, recorded as
+principles for the draft's framing, not rulings on any answer).** HIS WORDS: "I like this language because it's in
+terms no normal imperative language is." Then: "It's a bit deceptive in that it looks like functions and
+predicates and loops but it's not. Also, I and try to keep this in mind, it's a matching language not a finding
+language. That's where the SQL analogy breaks down because I expect the filter over times loop to return a set but
+it's not".
+RECORD: (1) the language is DECLARATIVE: an expression says what a match is, never how it is found. (2) Its forms
+LOOK like functions, predicates and loops and are not: a reader's imperative expectations are a known hazard. (3) It
+is a MATCHING language, not a FINDING language: a loop of conditioned items MATCHES a run (it stops at the first
+item that fails); it does not RETURN the set of items that pass. The set-returning expectation (the SQL picture)
+belongs to the explicit FINDING forms (a search, find-all, the hit list by name). Checked the same evening on
+libpcre2: on `10:00,11:00,9:00,12:00,` the loop of (time & "10:00 or later") matches `10:00,11:00,` (WHOLE fails),
+while find-all on the conditioned time gives `10:00`, `11:00`, `12:00`. MINE: names and the draft's framing should
+not invite the imperative or set reading (D174: names describe behaviour): an input to the rx-module naming
+("loop") and to the spellings still open; open questions are to be asked as "what does this expression denote",
+and one that can only be answered by describing a procedure is either mis-asked or an explicit exception.
