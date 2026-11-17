@@ -479,21 +479,42 @@ R.1.4 THE OPERATORS ON PATTERNS.
 - `P | Q`: PCRE's ONE parse of the alternation (rev 22 §4.5, RULED CF:953-955; L60): a row of `P | Q` is the one
   parse PCRE gives that stretch, with the labels of the branch it took, never a union of both sides' rows (review r31
   B). Rev 22's `(B | A) & (l: "a")` on `aa` REJECTS (one parse) and stays so.
-  BRANCH ORDER (rev 23.1, review r33 F2; the MANAGER'S RULING **branch-order**, told to the owner by name, not asked:
-  COND-FAMILY entry of 2026-11-17 03:01, item (3); the owner may object). A branch whose OWN condition (or complement,
-  or `&` operand) rejects a row FALLS THROUGH to the next branch, exactly as any failing piece of that branch makes
-  PCRE try further; the order is PCRE's own preference order, BRANCH-MAJOR: at a start, every row of the first branch,
-  in that branch's own preference order, before any row of the second. (Derived from row-is-match, "the search
-  reports the preferred surviving row", and "`|` is PCRE's one parse": a condition inside a branch fails like any
-  failing piece of that branch.) A condition OUTSIDE the `|` reads the one parse's row and never sends the parse to
-  another branch (the `(B | A)` example above). By mode: WHOLE value, the stretch is the whole value, so the order
-  decides only which branch's labels the row carries, never whether it holds; SEARCHED, whether the program holds
-  never moves either (the same rows are tried, in another order), but the REPORTED row can. Example
+  BRANCH ORDER: OPEN, **branch-scope** (§R.8 item 6). REV 23.2 (review r34 A2): rev 23.1 stated the rule below as
+  the MANAGER'S RULING **branch-order** (COND-FAMILY 2026-11-17 03:01 item (3)); the manager WITHDREW it as a ruling
+  (COND-FAMILY 2026-11-17 03:47 item (1)): it was told to the owner without its costs. The text below is READING
+  (iii) of branch-scope, kept as THE DRAFT'S CURRENT TEXT until he answers; the sentences it contradicts are listed
+  after it and are NOT rewritten. THE DRAFT'S TEXT (reading (iii)): a branch whose OWN condition (or complement,
+  or `&` operand) rejects a row FALLS THROUGH to the next branch; the order is PCRE's own preference order,
+  BRANCH-MAJOR: at a start, every row of the first branch, in that branch's own preference order, before any row of
+  the second. A condition OUTSIDE the `|` reads the one parse's row and never sends the parse to another branch (the
+  `(B | A)` example above). Rev 23.1 called this a derivation ("a condition inside a branch fails like any failing
+  piece of that branch"); read literally that derivation would send an OUTSIDE condition too, since in PCRE a piece
+  failing AFTER the group also backtracks into its next alternative (`(?:(aa)|(a))a` on `aa` takes the second
+  branch), and so reverse the `(B | A) & (l: "a")` reject kept above: what rev 23.1 adopted is a SCOPE rule (inside
+  falls through, outside does not), not a derivation. WHAT IT COSTS (with A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`;
+  `predspec23d_model.out` PART Y, WHOLE / SEARCHED): (1) `&` NO LONGER DISTRIBUTES over `|`: `(B | A) & (l: <20)`
+  on `25` FAILS / FAILS while `(B & (l: <20)) | (A & (l: <20))` HOLDS / HOLDS `25`@0 (over 85 texts over {0, 1, 2, 9}
+  to length 3 the two differ on 12 WHOLE, 48 SEARCHED, first `00`); (2) adding a POSITIVE condition inside a branch
+  can ADMIT a text, with no NOT and no find-all: `(B | A) & (l: <10)` on `12` FAILS / FAILS, `((B & (l: >50)) | A) &
+  (l: <10)` HOLDS / HOLDS `12`@0 (§4.2's list of admitting positions does not name this one); (3) in a FIND-ALL place
+  (R.1.1) the order moves whether the program holds: §R.7c's `when` expansion and its filter form part on
+  `occurrences(..., min = 2)` on 125 of the 1,110 KH texts for c = `(h: <5)` (first `3;0;5`: hits `3;0`@0, `5`@4 vs
+  `3;0;5`@0) and 310 for c = `(h = 0: <5)` (PART Y). The sentence "By mode: WHOLE value, ... the order decides only
+  which branch's labels the row carries, never whether it holds; SEARCHED, whether the program holds never moves
+  either" is true of the `|` ALONE, false once anything outside reads a label (cost (1)) or in a find-all place (cost
+  (3)). LIVE SENTENCES THIS READING CONTRADICTS (listed, not rewritten, until branch-scope is answered): §3.2 tool 2
+  ("`&` distributes over entries", with `rows & (w: >100)` as its example); §3.5 (`t & [f, g]` = `(t & f) | (t &
+  g)`, ruled CF:644); §4.1's array of conditions read as the condition-`|` (`(major: 2) | (major: 1, minor: >=4)` "in
+  the filter role, §3.5"), which §3.5 makes the `|` of filtered patterns: one array, two meanings under (iii). Under
+  readings (i) and (ii) none of them is contradicted (0 differ on the 85 texts, both modes, PART Y). Example of the
+  draft's text
   (`predspec23c_model.out` PART 1; KH := `/(?<k>\d)(?:;(?<h>\d))*/`, c = `(h: <5)`, p = `(k: between(3, 7))`):
   `(KH & c & p) | (KH & !(KH & c))` on `5;1;9`: WHOLE HOLDS (through branch 2: c is FALSE on the pass `9`);
   SEARCHED HOLDS reporting `5;1`@0 (branch 1's shorter row comes before every row of branch 2). Rev 23's evidence
   engine searched END-MAJOR (each end of the left regex, both branches at that end), a reading no sentence stated;
-  it reported `5;1;9`@0 (the counts that moved: §R.7c).
+  it reported `5;1;9`@0 (the counts that moved: §R.7c). Under reading (i) (no fallthrough) the second branch of
+  this program is unreachable, since both branches share KH's one parse (review r33's verifier V-11: `7` HOLDS with
+  fallthrough, FAILS without, on `t2` with c = `(h: <5)` and p TRUE).
 - `!P` (the COMPLEMENT of a pattern; not-is-complement's first half, 17:29, stands): the potential matches P does
   not match. It carries NO labels (THE MANAGER'S JUDGMENT given at 20:41, CF 20:41 entry, held by r31; rev 23 cited
   it as "20:41's judgment", review r33 F15). It is used AFTER `&`: `A & !B` is PATTERN
@@ -589,14 +610,21 @@ surviving row (D196's retry is that choice)"). D196's retry ("the left operand's
 operand accepts exactly") is that choice stated procedurally: a condition, an `&` operand or a complement that
 rejects the preferred end sends the search to the next end. A searched program's later matches are found the same
 way after the reported one (lane searchrow's IV.1 assumption: leftmost, non-overlapping find-all, as `records` and
-`occurrences` already work). The preference order of a `P | Q` program is BRANCH-MAJOR (R.1.4, **branch-order**).
-THE HIT LIST of a searched place (rev 23.1, review r33 F4; R.1.1's table: a `contains`/`occurrences` argument, a
+`occurrences` already work). The preference order of a `P | Q` program of filtered branches is BRANCH-MAJOR in the
+draft's current text (R.1.4, reading (iii) of **branch-scope**, OPEN; rev 23.2: no longer a ruling).
+THE HIT LIST of a searched place (rev 23.1, review r33 F4; R.1.1's table: a `contains`/`occurs` argument, a
 `records` item) is this find-all within the place's text: for a FILTERED argument, the argument's surviving rows,
-leftmost and non-overlapping, each at its first-preferred surviving end. `occurrences(/(?<n>\d+)/ & (n: <100))` on
+leftmost and non-overlapping, each its first-preferred surviving ROW (rev 23.2, review r34 F-DOC-6: "row", not
+"end", since a `|` argument's rows are ordered by branch as well as by end). THE DRAFT'S READING (the manager's
+disposition of review r33 F4, resting on his 23:46 MINE nested-complement; not the owner's words; rev 23.2, review
+r34 F-DOC-2), listed as **hit-list** in §R.8's table. `occurrences(/(?<n>\d+)/ & (n: <100))` on
 `1234` has the hits `12`@0 and `34`@2 (`predspec23c_model.out` PART 7). (§2.6's "PCRE's own matching of the body"
 is the same list for an UNFILTERED regex argument; for a filtered one the hole's string set has no order of its own,
 and an alternation of it would give `12`, `34` longest-first but `1`, `2`, `3`, `4` shortest-first, PART 7, so the
-string-set reading is not used for the hit list.)
+string-set reading is not used for the hit list.) The nested complement `t2 & !q` as an argument has, on `9:30`, the
+hits `9`@0 AND `30`@2 (`30` is the tail of the late time: there h = `30`, m is absent, q does not keep the row, so its
+complement does); so `occurrences(t2 & !q, min = 2)` HOLDS on a text whose only time is late (rev 23.2, review r34
+A3; `predspec23d_model.out` PART Y).
 FIND-ALL IS NOT MONOTONE (rev 23.1, review r33 F11): adding a condition can ADMIT a later row, because the longer row
 it now rejects no longer swallows it. `/(?<n>\d+)/` find-all on `1234` reports `1234`@0; with `(n: <100)` added it
 reports `12`@0 and `34`@2 (on `123456`: one match becomes three; PART 7). So a count of hits, a `records` count or
@@ -624,7 +652,7 @@ list of this lane's own):
 | `=` | unchanged; at a label in a condition: the default of R.1.6 |
 | `:` | unchanged (narrows a label that exists) |
 | `&` | R.1.4 on patterns; Kleene AND on conditions (R.1.5); pattern & condition = the WHERE |
-| `\|` | R.1.4: PCRE's one parse on patterns, a filtered branch falling through in branch-major order (**branch-order**, the manager's ruling, rev 23.1); on CONDITIONS Kleene OR (the draft's reading: rev 22's "pointwise on macros", restated; no ruled answer moves; asked as **condition-or**, §R.8, rev 23.1); pattern \| condition stays the error |
+| `\|` | R.1.4: PCRE's one parse on patterns; a filtered branch falling through in branch-major order is the draft's current text, OPEN as **branch-scope** (rev 23.2: the manager's ruling branch-order withdrawn, 03:47); on CONDITIONS Kleene OR (the draft's reading: rev 22's "pointwise on macros", restated; no ruled answer moves; asked as **condition-or**, §R.8, rev 23.1); pattern \| condition stays the error |
 | prefix `!` | on a pattern: its complement, used after `&` as pattern difference (R.1.4); on a SET: the set's complement over EVERY TEXT (R.5 G); on a CONDITION: the three-valued NOT (R.1.5; condition-not 23:48) |
 | comparisons, arithmetic, `:=`, `.`, `${ }`, `/.../`, `@`, `#`, literals | unchanged |
 | `$` | reads the real label (R.1.5); a repeated label's `$x` as rev 22 §4.3 |
@@ -848,7 +876,8 @@ positive-lookahead labels asked, rather than offered as the whole-text answer.
   always survives: the rev 22 §0.1 MODE OF THE ANSWERS class). Rev 23.1 (review r33 F2): the agreement rests on a
   filtered branch FALLING THROUGH (without it the second branch is unreachable: with x = t2, c = `(h: <5)` and p
   TRUE, `7` HOLDS with fallthrough and FAILS without, review r33's verifier V-11), which
-  **branch-order** now states (R.1.4); under its branch-major order the body and the case-when still hold on the same
+  rev 23.1 stated as **branch-order** (R.1.4; rev 23.2: withdrawn as a ruling, OPEN as **branch-scope**, reading
+  (iii) the draft's current text); under its branch-major order the body and the case-when still hold on the same
   texts and here report the same rows too (0 of 11,110 and 0 of 600 differ, SEARCHED; `predspec23c_model.out` PART 1),
   but on `/(?<k>\d)(?:;(?<h>\d))*/` they report different rows on 125 / 400 of 1,110 texts (§8, §R.7c). A5 the
   standalone-complement error kept (R.1.4; rev 23.1: as the manager's call, A5's own condition having lapsed); A6
@@ -908,7 +937,8 @@ Rev 22 §0.1's list stands, with the mark's lines retired. Added:
   too; `!contains(B)` is refused already (a nullable `occurrences` argument, §2.6, §13 O53). The evidence engines of
   lanes predspec23 and predspec23b tried only non-empty rows of B (their `text.none` read TRUE on ``, `1,`, `a`); no
   stated count moves, since q needs a digit. Fix for the author: a non-nullable B.
-- (rev 23.1, review r33 F2) `|` OVER FILTERED BRANCHES reports branch-major (R.1.4, **branch-order**), while `x & F`
+- (rev 23.1, review r33 F2) `|` OVER FILTERED BRANCHES reports branch-major (R.1.4; the draft's current text,
+  reading (iii) of **branch-scope**, OPEN), while `x & F`
   with a filter F reports end-major (x picks the ends, D196): `x & when(c, p)` and its expansion `(x & c & p) | (x &
   !q)` hold on the same texts in both modes and agree WHOLE, but SEARCHED can report different rows (§8; §R.7c).
 
@@ -954,20 +984,22 @@ Rev 22's other worked answers stand: §12's twelve examples (no mark, no `all`: 
 condition_kind.md IV.3 under R22 (L34 `12`, L59 `12`, §11 (i) `30`@1, L13 `5`@3, §4.2 `15`@2, E-IPV4 `56.1.1.1`).
 
 R.7c COUNTS AND ANSWERS THAT MOVED IN REV 23.1 (lane predspec23c; `predspec23c_model.out`, part named; WHOLE /
-SEARCHED). Under **branch-order** (R.1.4) the evidence engine's `|` order was corrected (end-major -> branch-major)
+SEARCHED). Under **branch-order** (R.1.4; rev 23.2: withdrawn as a ruling, now reading (iii) of **branch-scope**,
+OPEN, and every c-row below holds only under that reading) the evidence engine's `|` order was corrected (end-major -> branch-major)
 and every count and worked answer that rests on it was re-run in both modes; then review r33's other answer-level
 findings:
 
 | # | site | before | rev 23.1 (WHOLE / SEARCHED) |
 |---|---|---|---|
-| c1 | §8 `when` body on `/(?<k>\d)(?:;(?<h>\d))*/`, p = `(k: between(3, 7))`, c = `(h = 0: <5)`, on `5;9` (`predspec23b_model.out` PART 5) | HOLDS / HOLDS `5;9`@0 | HOLDS / HOLDS `5`@0 (MOVED: branch 1's shorter row `5`, c TRUE by the default, comes before branch 2's `5;9`); the NOT-c body moves the same way (PART 1) |
-| c2 | the same body, reported row over the 1,110 texts | end-major | MOVED on 125 texts for c = `(h: <5)` (first `3;0;5`: `3;0;5`@0 -> `3;0`@0) and 400 for c = `(h = 0: <5)` (first `3;5`: `3;5`@0 -> `3`@0); the NOT-c body the same 125 / 400 (PART 1; review r33's 125 and 400 reproduce, PART 0) |
+| c1 | §8 `when` body (the STANDALONE expansion; `x & when(c, p)` as defined, the filter form, did not move: PART 0's CONTROL, rev 23.2, review r34 D1) on `/(?<k>\d)(?:;(?<h>\d))*/`, p = `(k: between(3, 7))`, c = `(h = 0: <5)`, on `5;9` (`predspec23b_model.out` PART 5) | HOLDS / HOLDS `5;9`@0 | HOLDS / HOLDS `5`@0 (MOVED: branch 1's shorter row `5`, c TRUE by the default, comes before branch 2's `5;9`); the NOT-c body moves the same way (PART 1) |
+| c2 | the same standalone expansion, reported row over the 1,110 texts | end-major | MOVED on 125 texts for c = `(h: <5)` (first `3;0;5`: `3;0;5`@0 -> `3;0`@0) and 400 for c = `(h = 0: <5)` (first `3;5`: `3;5`@0 -> `3`@0); the NOT-c body the same 125 / 400 (PART 1; review r33's 125 and 400 reproduce, PART 0) |
 | c3 | `x & when(c, p)` (the filter form) vs its expansion `(x & c & p) \| (x & !q)` | "=" (§8, no mode) | equal WHOLE; hold on the same texts SEARCHED (0 differ); REPORT different rows on the 125 / 400 texts of c2 (the filter form reports end-major, D196; the expansion branch-major); on T2 with c = late, p = `(m: <45)` they report the same rows (0 of 11,110, 0 of 600) (PART 1) |
 | c4 | L83 `((h, m): (S, T))` vs `(h: S, m: T)` | SAME | DIFFERENT under NOT (rev 23.1: "BY DESIGN"; rev 23.2: that scope is the manager's, OPEN as **record-under-not**): `t2 & NOT ...` with S = `<9`, T = `<30` differ on 101 / 281 of 11,110 (first `9`; rev 23.1 printed 371, by value, §R.7d); `10`: joint FAILS / FAILS, record HOLDS / HOLDS; 0 / 0 without NOT (PART 2) |
 | c5 | §4.3 closing example `occurs.none(NOT ((h, m): R))` (R = `(<10, <30)`) | "the condition NOT" = I2a | the JOINT spelling: I2a exactly (0 of 1,111 differ, WHOLE holds 40); its record twin `occurs.none(NOT (h: <10, m: <30))` = I2b exactly (0 differ, WHOLE holds 15; I2a differ 25, first `12,`); SEARCHED both 1,111 (PART 2; the counts under §2.2, rev 23.2, `predspec23d_model.out` PART B; rev 23.1 printed 85 and 40 with I2a differ 45, by value) |
 | c6 | §R.3 / §7.1 `NOT (h = 9: <5)` vs `NOT (h: <5)` | (b) of `default.unused` fired on the first | differ 1 / 164 of 341 (SV), `NOT (h = "x": <5)` vs `NOT (h: <5)` 18 / 232 of 364 (REP): the default is USED; without NOT 0 / 0 (PART 3) |
 
-Holds-counts that do NOT move under branch-order (re-run, identical): `when` body 960 / 1,110 (c = `(h: <5)`) and
+Holds-counts that do NOT move under reading (iii) (re-run, identical; at the TOP of the program, not in a find-all
+place, where 125 / 310 of 1,110 move, R.1.4 cost (3)): `when` body 960 / 1,110 (c = `(h: <5)`) and
 955 / 1,045 (c = `(h = 0: <5)`); NOT-c body vs body 10 / 110 and 0 / 0 (§R.7b b4); §R.5 A3's 11,110 / 600 SEARCHED
 and 6,105 / 18 WHOLE (PART 1; rev 23.1 printed 6,050, by value, §R.7d). No other worked answer in the draft uses `|` over filtered branches (checked by grep
 for the `when` texts and the evidence's `alt=` sites: predspec23b PART 5 only).
@@ -1183,7 +1215,7 @@ The other 17 uncovered hits the critic found are UNAFFECTED (the other-side sigi
 | S118 | 2954 | 5.4 $ row | $ | COVERED | STANDS: `$` reads the real label |
 | S121 | 3087-3097 | 6.1 capability: mark projects over DOM; in-context DOM | mark; DOM | COVERED | RETIRED-HISTORY where it names the mark or DOM (read with a default, §R.1.6); otherwise STANDS |
 | S123 | 3205-3218, 3243 (rev 23.1: 3243, the never-absent-mark warning family, added) | 7.1 label.unset: three fixes; never-absent mark warning; default.unused; all inserts no mark | mark; all( | COVERED | RETIRED-HISTORY where it names the mark or DOM (read with a default, §R.1.6); otherwise STANDS |
-| S124 | 3338-3346 | 8 when(c,p) = (x&c&p) \| (x&!q) | complement | AFFECTED-UNCOVERED | STANDS, with its MODE stated in rev 23.1 (review r33 F2, **branch-order**): the filter form `x & when(c, p)` and the expansion agree WHOLE and hold on the same texts SEARCHED, but report different rows on 125 / 400 of 1,110 (§8, §R.7c) |
+| S124 | 3338-3346 | 8 when(c,p) = (x&c&p) \| (x&!q) | complement | AFFECTED-UNCOVERED | STANDS, with its MODE stated in rev 23.1 (review r33 F2, **branch-order**; rev 23.2: under reading (iii) of **branch-scope**, OPEN): the filter form `x & when(c, p)` and the expansion agree WHOLE and hold on the same texts SEARCHED, but report different rows on 125 / 400 of 1,110 and part in find-all places (125 / 310); which one `when` MEANS is the draft's reading, OPEN as **when-meaning** (§8, §R.7c, §R.8) |
 | S125 | 3365-3366 | 8 library group questions all(c) marked | all( | AFFECTED-UNCOVERED | RETIRED-HISTORY: library `all(c)` removed |
 | S126 | 3406, 3409-3419 (rev 23.1: 3406 added) | 8 library: author's two controls; empty list needs the mark | mark | COVERED | RETIRED-HISTORY where it names the mark or DOM (read with a default, §R.1.6); otherwise STANDS |
 | S128 | 3597 3619 3679 3714 3733 3765-3771 3850-3868 | 11 STRING SETS foundation; role table rows 6/7 | string sets | AFFECTED-UNCOVERED | STANDS with §R.1.1's vocabulary (string sets remain the meaning of a PATTERN's membership; a condition is not one) |
@@ -1275,7 +1307,7 @@ order, which is the meaning, not an evaluation order. Every count quoted from it
 | group questions two-valued (EXISTS) | the draft's reading, OPEN: **group-truth** | this revision |
 | `|` on conditions = Kleene OR | the draft's reading (restates rev 22's pointwise `|`; no answer moves without NOT), OPEN: **condition-or** (rev 23.1, F10) | this revision |
 | a plain condition on a looped label = Kleene AND over the pass rows | the draft's reading, OPEN: **pass-and** (§R.8 item 2 (b); rev 23.1, F10) | rev 23 |
-| branch-order (a filtered branch of `\|` falls through, branch-major, PCRE's order) | MANAGER'S RULING, owner told by name (the owner may object) | COND-FAMILY 2026-11-17 03:01 item (3) |
+| branch-order (a filtered branch of `\|` falls through, branch-major, PCRE's order) | WITHDRAWN as a ruling (rev 23.2, review r34 A2); the draft keeps it as reading (iii), OPEN: **branch-scope** (§R.8 item 6) | COND-FAMILY 2026-11-17 03:01 item (3); 03:47 item (1) |
 | a complement anywhere in an `&` chain filters its non-complement operands; after `label:` the label's text is the left operand; the standalone-complement error | the manager's disposition of review r33 F6; the error the MANAGER'S CALL (r31 A5's condition lapsed under row-is-match) | review r33 dispositions |
 | the 17:02 remark (a default restricted to the label's values) | PARKED by the record ("nothing ruled"); THE MANAGER'S READING links it to default-value (any text, "including one the label can never hold"), which answers it in substance (rev 23.1, F15) | 17:02; 21:49 |
 | the 17:46 remark (a macro raising its own warning) | PARKED (predicates_future item 12) | 17:46 |
@@ -2742,7 +2774,7 @@ vs user labels of those names: a user label so named is an ERROR (the manager's 
    **reference-index**, §13 O75): the owner's test (rulings R-1: "an array of something is that something") gives
    the array's meaning, "h or m", not its entries. Indexing an array of MACROS stays OUT (the owner, rulings R-1).
 2. `X & f` = filter by LANGUAGE; `&` distributes over entries and empty products drop:
-   `alts & !startsWith("#")` keeps passing literals; `rows & (w: >100)` keeps matching rows.
+   `alts & !startsWith("#")` keeps passing literals; `rows & (w: >100)` keeps matching rows. [REV 23.2, review r34 A2: CONTRADICTED by R.1.4's reading (iii), the draft's current text for a `|` of filtered branches; not rewritten: OPEN, **branch-scope**, §R.8 item 6.]
 3. `where(p, X)` = SELECT entries by a compile-time STRUCTURAL property (the selecting twin of `each`; not the filter
    role, §0.3); `where_group(p, X)` for the map interface; both return an rx (§2.1).
 4. `X.name` = a FIELD of the MAP INTERFACE of the thing on the left; `.name` is never digits. ONE meaning (the
@@ -2800,7 +2832,7 @@ kind of thing).
 ### 3.5 Arrays of filters and filter modifiers
 
 **RULE.** Closure one level up: an array of rx is an rx (alternation); an ARRAY OF MACROS is a macro, so an array
-in the filter role filters pointwise (`t & [f, g]` = `(t & f) | (t & g)`) and an ARRAY OF FILTER MODIFIERS is a
+in the filter role filters pointwise (`t & [f, g]` = `(t & f) | (t & g)`) [REV 23.2, review r34 A2: CONTRADICTED by R.1.4's reading (iii), the draft's current text for a `|` of filtered branches; not rewritten: OPEN, **branch-scope**, §R.8 item 6.] and an ARRAY OF FILTER MODIFIERS is a
 filter modifier (`[padded, any_case](S)` = `padded(S) | any_case(S)`). The `[ ]` bracket gives "any one entry" in
 every case, and the comma only separates entries (§5.4). A MIXED rx/macro array is an error (fix: write the rx entry
 as a section, `(& /x/)`).
@@ -2898,7 +2930,7 @@ comma or the closing paren, and inside an entry `&` and `|` bind tighter than `:
 record terms as ENTRY EXTENT, §0.3; every answer is unchanged, §13 O43). So:
 - all of several conditions = one record: `(major: 1, minor: >=4)` = `(major: 1) & (minor: >=4)`;
 - any one of several = separate records joined by `|`, or an array of them: `(major: 2) | (major: 1, minor: >=4)`
-  (= `[(major: 2), (major: 1, minor: >=4)]` in the filter role, §3.5);
+  (= `[(major: 2), (major: 1, minor: >=4)]` in the filter role, §3.5); [REV 23.2, review r34 A2: CONTRADICTED by R.1.4's reading (iii), the draft's current text for a `|` of filtered branches; not rewritten: OPEN, **branch-scope**, §R.8 item 6.]
 - a set after a label needs no parentheses: `(x: <200 | >900)`, `(month: padded(between(1, 12)))`;
 - `(major: 1 & minor: >=4)` is ONE entry, `major: (1 & minor: >=4)`, a compile ERROR (a label inside a value), not a
   misreading;
@@ -2959,7 +2991,10 @@ label in the ONE test that writes it, any text; `$a` reads the real label). In s
   every position: a condition added under NOT, inside a complement, `!contains`, `occurs.none` or a negative
   lookahead can admit (De Morgan), and FIND-ALL REPORTING IS NOT MONOTONE, even in positive position with no NOT:
   `/(?<n>\d+)/` find-all on `1234` reports `1234`; with `(n: <100)` added, `12` and `34` (§R.1.9;
-  `predspec23c_model.out` PART 7).
+  `predspec23c_model.out` PART 7). REV 23.2 (review r34 A2): under the draft's current reading (iii) of
+  **branch-scope** (OPEN), and under reading (ii), one more position admits: a condition added INSIDE a `|` branch
+  whose labels a test outside the `|` reads (`(B | A) & (l: <10)` on `12` FAILS / FAILS, `((B & (l: >50)) | A) & (l:
+  <10)` HOLDS / HOLDS, R.1.4 cost (2)); under reading (i) it does not.
 - Every count rev 22 gave here was WHOLE VALUE (review r31 I).
 
 ### 4.3 Repeated and duplicate labels: the general home of the group questions
@@ -3890,7 +3925,8 @@ again, and it is NOT the same: it differs from the body on 10 (WHOLE) / 110 (SEA
 first `0` (an absent h: NOT keeps it UNKNOWN and drops the row, the complement keeps it, §R.3), and on 0 / 0 for
 the defaulted c. The library body stays the complement form (§R.9 S124, STANDS): its "otherwise" branch includes the
 rows on which c is UNKNOWN.
-REV 23.1, `when`'s BODY WITH ITS MODE (review r33 F2; **branch-order**, the manager's ruling, §R.1.4). `when(c, p)`
+REV 23.1, `when`'s BODY WITH ITS MODE (review r33 F2; **branch-order**, then the manager's ruling, §R.1.4; rev 23.2:
+withdrawn, the draft's reading (iii) of **branch-scope**, OPEN). `when(c, p)`
 is a FILTER: in `x & when(c, p)` it keeps the rows of x on which `c & p` is TRUE or which are not rows of `x & c`.
 WHOLE value, that equals the expansion `(x & c & p) | (x & !q)`, `q := x & c` (the second branch is reached because
 a filtered branch falls through). SEARCHED, the two HOLD on the same texts, but they can REPORT DIFFERENT ROWS: `x &
@@ -3899,8 +3935,22 @@ branch-major (every row of the first branch before any of the second). Over the 
 `(h: <5)`: the filter form `5;1;9`@0, the expansion `5;1`@0) they report different rows on 125 texts for c = `(h:
 <5)` and 400 for c = `(h = 0: <5)` (first `3;5`: `3;5`@0 vs `3`@0); on T2 with c = late, p = `(m: <45)` on none (0
 of 11,110, 0 of 600) (`predspec23c_model.out` PART 1). So "`x & when(c, p)` = `(x & c & p) | (x & !q)`" above holds
-WHOLE and for whether the program holds; THE DEFINITION is the filter form, and the expansion is offered as its
-whole-value meaning, not as a searched spelling. The counts above are holds-counts and do not move (§R.7c).
+WHOLE and for whether the program holds at the top; THE DEFINITION is the filter form, and the expansion is offered
+as its whole-value meaning, not as a searched spelling. The counts above are holds-counts and do not move (§R.7c).
+REV 23.2 (review r34 D1). "THE DEFINITION is the filter form" is THE DRAFT'S READING (rev 23.1's choice, made under
+the then manager's ruling branch-order; SEARCHED and in find-all places it decides answers), not the owner's: his
+19:31 words call a macro "just a convenience", and the library body above (S124, STANDS) is the expansion, so with
+this reading the macro `when` means something other than its body. Asked as **when-meaning** (§R.8 item 8), which
+depends on **branch-scope**: under reading (i) the expansion's second branch is unreachable (both branches share x's
+one parse), so the expansion and the filter form part even WHOLE; under (ii) and (iii) they agree WHOLE. Which form
+MOVED in rev 23.1 (§R.7c c1, c2): the STANDALONE EXPANSION's reported row; `x & when(c, p)` as defined (the filter
+form) did not move (`predspec23c_model.out` PART 0's CONTROL lines: 0 differ from rev 23's engine). In a FIND-ALL
+place the two part on whether the program holds: `occurrences(..., min = 2)` over the 1,110 texts, 125 for c = `(h:
+<5)` (first `3;0;5`: the expansion's hits `3;0`@0, `5`@4, the filter form's `3;0;5`@0), 310 for c = `(h = 0: <5)`
+(`predspec23d_model.out` PART Y). The same holds for `occurrences` over any filtered argument (§2.6): its body puts
+the argument in a hole, whose string set R.1.9 does not use for the hit list, so that macro too means something
+other than its body; the general form, a filtered program keeping its ROW ORDER in every place, is a PLAN item
+(`predicates_future.md` item 17).
 The record of rev 20-21 follows. Rev 20: the body is unchanged, its answers move through `!c` where c's label is absent ON A LOOP'S ZERO PASSES:
 lane absimpact's (RZ) 9 of 1,110, `0` FAILED before 14:31 and HOLDS now, and a caller wanting the old answer marks
 c's label. On a SET-ONCE optional label, or a pass that skips it, the mark MOVES the answer instead: unmarked, `(h:
