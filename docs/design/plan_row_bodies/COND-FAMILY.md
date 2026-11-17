@@ -1923,3 +1923,8 @@ his word (**definition-lane**). THE MANAGER'S JUDGMENT given to him in the same 
 SQL's EXCEPT (source minus result); it makes a complemented pattern carry NO labels (the result's label columns do
 not exist on unmatched source rows); it defines both nots and they differ exactly on unmatched and absent-label
 rows; the one thing it leaves undefined is WHAT A ROW OF THE SOURCE IS (a whole subject, or a place in the text).
+
+**2026-11-16 OWNER GO — definition-lane (Frank, to session 137, box clock 20:44).** Asked **definition-lane** (may the
+one design lane start from his model as it stands), HIS WORDS: "Go. Purely exploration". RECORD: lane condkind
+(opus, design only) starts; its output is an EXPLORATION document, rules nothing, edits neither predicates_draft.md
+nor any ruling; what it finds comes back to him as named questions.
