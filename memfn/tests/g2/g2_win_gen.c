@@ -1133,8 +1133,8 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
     return 0;
 }
 
-/* THE LEVER'S STRICT VALUE PARSE (review r36 G10), mf_lever's own (the CLI's row is
- * tests/cli/run_cli_tests.sh): `span-head=N` is plain decimal digits, 0..MF_SPAN_HEAD_MAX;
+/* THE LEVER'S STRICT VALUE PARSE (review r36 G10), mf_lever's own (the CLI's rows are
+ * tests/compound/run_shell_checks.sh section (4)): `span-head=N` is plain decimal digits, 0..MF_SPAN_HEAD_MAX;
  * a sign, a space, an empty value, a trailing byte and one past the top are refused. */
 static long lever_ok, lever_n;          /* counted APART (r37 H6): the call's deletion reads 0 of 8 */
 static void lever_controls(long *ok)
