@@ -184,3 +184,11 @@ goals are tier 1; every existing and new rule is PLACED in a tier under the goal
 placing is not weakening); the two rules with no refactor behind them are candidates for tier 4; each rule's
 HISTORY line moves to tier 5 with a pointer; the critic raises FINDINGS on tiers 1-3 and NOTES on tier 4. The
 placement is a draft for him.
+
+## 2026-11-17 evening, the owner accepts the placement
+
+Shown the five-tier placement of all 27 rules (docs/dev/lanes/archtiers_report.md) with the lane's doubts. HIS
+WORDS: "tier-placement: yes. But it is a live document for you to adjust going forward". RECORD: the placement
+stands; docs/dev/guide/architecture.md is a LIVE document, and the MANAGER adjusts it going forward (tiers,
+placement, register rows) without asking each time; what stays the owner's: the four high-level rules and their
+order, the gate, the judgement section's quoted words, and any rule whose Source is his ruling (its wording).

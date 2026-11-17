@@ -155,7 +155,7 @@ first, harness minimal"); remodels with no carrying event (D77); frameworks that
 
 # Tier 2. Sub-rules
 
-PLACEMENT: a DRAFT FOR THE OWNER (lane archtiers, 2026-11-17); the rules' words are unchanged, only their place.
+PLACEMENT: accepted by the owner 2026-11-17 ("tier-placement: yes. But it is a live document for you to adjust going forward"); the manager adjusts tiers and placement as the document is used; the rules' words are unchanged, only their place.
 Each sub-rule says HOW a high-level rule (or the gate) is met: the rule, Why, Source, a pointer to its history
 in tier 5, and BEFORE DESIGN (the question an architecture note answers for it). A rule serving two high-level
 rules sits under the one it mainly serves, with a one-line pointer from the other. The last two groups hold
@@ -365,7 +365,7 @@ BEFORE DESIGN: list the new caller-facing names.
 
 # Tier 3. Corollaries
 
-PLACEMENT: a DRAFT FOR THE OWNER (lane archtiers, 2026-11-17); the rules' words are unchanged, only their place.
+PLACEMENT: accepted by the owner 2026-11-17 ("tier-placement: yes. But it is a live document for you to adjust going forward"); the manager adjusts tiers and placement as the document is used; the rules' words are unchanged, only their place.
 Each corollary FOLLOWS from tiers 1-2 (its "follows from" line names what) and is written down so it need not
 be re-derived; it binds like the rules it follows from.
 
@@ -448,7 +448,7 @@ BEFORE DESIGN: the register lookup (goal 4).
 
 # Tier 4. Considerations
 
-PLACEMENT: a DRAFT FOR THE OWNER (lane archtiers, 2026-11-17); the rules' words are unchanged, only their place.
+PLACEMENT: accepted by the owner 2026-11-17 ("tier-placement: yes. But it is a live document for you to adjust going forward"); the manager adjusts tiers and placement as the document is used; the rules' words are unchanged, only their place.
 "Less hard than the rules above but worth doing if effort permits" (the owner). IN PRACTICE: an architecture or
 code critic raises a FINDING against tiers 1-3 and a NOTE against tier 4; a consideration not followed needs no
 register row (it is not a deviation); an architecture note mentions one only where the feature's site is its
