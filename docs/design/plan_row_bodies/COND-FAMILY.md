@@ -2176,3 +2176,11 @@ element's needed level is then a function of its arguments' enumerations (one va
 or run-time value sit on one scale; the automaton's size grows with the count, the draft's own "the relation `d`
 has ~3.65M classes" message is the far end), and the line between the default level and `functions` is the SIZE
 BUDGET (§4.6), not a constant-or-not test; a listing states an element's level as that dependence.
+
+**2026-11-17 OWNER QUESTION, no ruling — is `A & B` the same as `A & (0: B)` (Frank, to session 138, about 12:25).**
+HIS WORDS: "Question on simplifying semantics (no ruling): is A & B The same as (new) A & (0: B) Where 0: is the
+whole match". MANAGER'S ANSWER (mine, a claim handed to lane pathimpact as R2 to test): the same in whether the
+program holds and in the stretch reported; `A & !B` = `A & NOT (0: B)` (label 0 is never absent, so the
+three-valued NOT is two-valued there); they part only in that `&` brings B's labels into the row. If it holds,
+pattern-`&` and the complement after `&` can be DEFINED through the condition on 0, and the open items
+complement-place, nested-complement and polarity-rule may reduce to the rules for conditions.
