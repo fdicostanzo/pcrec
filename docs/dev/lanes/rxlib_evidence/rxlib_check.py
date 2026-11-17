@@ -270,6 +270,43 @@ def main():
         p = pcre2h.Pcre(pat)
         print("  %-44s %s: %s" % (pat, what, ", ".join("%s %s" % (s, "HOLDS" if p.whole(s) else "fails") for s in ss)))
 
+    print("\nPART F  quantifier operators (rulings R2): `X ?` := /(?:${X})?/; the ends PCRE tries, in order, on `123`")
+    print("  (a callout after the quantified part records the position and says \"fail here\"; the match is anchored at 0)")
+    for pat in [r"(?:\d+)?", r"\d*", r"(?:\d+)??", r"\d*?", r"(?:\d+?)?", r"(?:\d+?)??", r"(?:\d+)?+", r"\d*+", r"(?:\d+)*", r"(?:\d+)+"]:
+        seen = []
+        q = pcre2h.Pcre(pat + '(?C"t")', {"t": lambda c, seen=seen: seen.append(c.pos)})
+        q.match("123", 0, pcre2h.PCRE2_ANCHORED)
+        same = "same strings as \\d*" if all((re.fullmatch(pat.replace("?+", "?").replace("*+", "*"), t) is not None) == (re.fullmatch(r"\d*", t) is not None) for t in texts("1x", 4)) else "other strings"
+        print("  %-14s ends tried %-28s %s" % (pat, seen, same))
+    print("\nPART G  the note's section 7 examples, each candidate run (WHOLE / SEARCHED / FIND-ALL)")
+    def show(tag, pat, conds, labs, whole, srch, fa):
+        q = compile_model(pat, conds) if conds else pcre2h.Pcre(pat)
+        print("  %-34s %-46s WHOLE %r %s | SEARCHED %r %s | FIND-ALL %r %s" % (tag, pat, whole, q.whole(whole),
+              srch, run3(q, srch, labs)[1], fa, run3(q, fa, labs)[2]))
+    print("  sequence-reading: wb € rx.digits € wb (wb = \\b); the HOLE reading is the edge-assertion error (no run)")
+    show("  splice reading", r"\b\d+\b", None, [], "12", "x12 34", "12 x34 56")
+    print("  sequence-precedence: \"x\" € \"1\" | \"2\"")
+    show("  P1 (€ tighter than |)", r"x1|2", None, [], "2", "y2", "x1 2 x2")
+    show("  P3 (| tighter than €)", r"x(?:1|2)", None, [], "2", "y2", "x1 2 x2")
+    print("  label-twice: [h = rx.digit] € rx.optional(\";\" € [h = rx.digit]) & (h: <5)")
+    first = lambda c: lt(5)(c.get("h1"))
+    last = lambda c: lt(5)(c.get("h2") if c.get("h2") is not None else c.get("h1"))
+    show("  D2 PCRE (first set group)", r'(?<h1>\d)(?:;(?<h2>\d))?(?C"t")', {"t": ("h1", lt(5))}, ["h1", "h2"], "3;7", "3;7", "3;7 8;2")
+    q = pcre2h.Pcre(r'(?<h1>\d)(?:;(?<h2>\d))?(?C"t")', {"t": last})
+    print("  %-34s %-46s WHOLE '3;7' %s | SEARCHED '3;7' %s | FIND-ALL '3;7 8;2' %s" % ("  D3 last set", q.pattern, q.whole("3;7"), q.search("3;7"), q.findall("3;7 8;2")))
+    print("  separator-label: rx.loop([h = rx.digit], sep = \",\") & (h: <5)")
+    show("  two-copy (PCRE: first item)", r'(?:(?<h1>\d)(?:,(?<h2>\d))*)?(?C"t")', {"t": ("h1", lt(5))}, ["h1"], "7,3", "7,3", "7,3 1,9")
+    show("  one-copy (last pass)", r'(?:(?(<s>),)(?<h>\d)(?<s>))*(?C"t")', {"t": ("h", lt(5))}, ["h"], "7,3", "7,3", "7,3 1,9")
+    print("  count-argument: rx.digits(n, n) with n := [2, 4] (an enumeration of two members)")
+    show("  C1 union, enumeration order", r"\d{2}|\d{4}", None, [], "1234", "12345", "12345")
+    show("  C1 whole on 123", r"\d{2}|\d{4}", None, [], "123", "x", "x")
+    show("  C3 hull", r"\d{2,4}", None, [], "123", "12345", "12345")
+    print("  quantifier-operators: [a = rx.digits] ? lazy, then [b = rx.digits(0)] € \"x\", & (b: <30)")
+    show("  (X ?) lazy on the outside", r'(?:(?<a>\d+))??(?<b>\d*)x(?C"t")', {"t": ("b", lt(30))}, ["a", "b"], "123x", "123x", "123x 45x")
+    show("  X * lazy (the plain-regex twin)", r'(?<a>\d*?)(?<b>\d*)x(?C"t")', {"t": ("b", lt(30))}, ["a", "b"], "123x", "123x", "123x 45x")
+    print("  quantifier-grammar: \"1\" + \"2\" if a sequence were juxtaposition")
+    show("  quantifier reading 1+2", r"1+2", None, [], "112", "x1112", "12 112 3")
+    show("  arithmetic reading (the rx 3)", r"3", None, [], "112", "x3", "12 112 3")
     print("\nSUMMARY: PART A failures + PART B and PART C (two-copy form) differences = %d (forward run expects 0; RXLIB_SABOTAGE=1 must move it)" % bad)
 
 

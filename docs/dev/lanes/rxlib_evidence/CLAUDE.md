@@ -11,7 +11,7 @@ merge; never edited after.
   selfcheck (lane rxmodel's `../rxmodel_evidence/pcre2h.py`, imported, never edited); PART B the note's three
   before/after examples on libpcre2-8 in WHOLE / SEARCHED / FIND-ALL, each against an intent oracle on Python `re`;
   PART C the separator loop against a split oracle (two-copy and one-copy forms); PART D where a condition stands in a
-  sequence; PART E what PCRE reads for a duplicate label name. `RXLIB_SABOTAGE=1` breaks the loop and `optional`
+  sequence; PART E what PCRE reads for a duplicate label name; PART F the quantifier operators (rulings R2); PART G every candidate of the note's section 7 examples. `RXLIB_SABOTAGE=1` breaks the loop and `optional`
   definitions (PART B must move).
 - `rxlib_check.out` — the forward run's output (a few seconds).
 

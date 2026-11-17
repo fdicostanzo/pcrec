@@ -93,4 +93,40 @@ PART E  the same label twice: what PCRE reads for a duplicate name (backreferenc
   (?:(?'h'\d);)*=\k<h>                         one group in a loop (the last-pass control): 1;2;3;=1 fails, 1;2;3;=3 HOLDS
   (?:(?(<s>);)(?'h'\d)(?<s>))*=\k<h>           the one-copy separator loop (conditional group): 1;2;3=1 fails, 1;2;3=3 HOLDS
 
+PART F  quantifier operators (rulings R2): `X ?` := /(?:${X})?/; the ends PCRE tries, in order, on `123`
+  (a callout after the quantified part records the position and says "fail here"; the match is anchored at 0)
+  (?:\d+)?       ends tried [3, 2, 1, 0]                 same strings as \d*
+  \d*            ends tried [3, 2, 1, 0]                 same strings as \d*
+  (?:\d+)??      ends tried [0, 3, 2, 1]                 same strings as \d*
+  \d*?           ends tried [0, 1, 2, 3]                 same strings as \d*
+  (?:\d+?)?      ends tried [1, 2, 3, 0]                 same strings as \d*
+  (?:\d+?)??     ends tried [0, 1, 2, 3]                 same strings as \d*
+  (?:\d+)?+      ends tried [3]                          same strings as \d*
+  \d*+           ends tried [3]                          same strings as \d*
+  (?:\d+)*       ends tried [3, 3, 2, 3, 3, 2, 1, 0]     same strings as \d*
+  (?:\d+)+       ends tried [3, 3, 2, 3, 3, 2, 1]        other strings
+
+PART G  the note's section 7 examples, each candidate run (WHOLE / SEARCHED / FIND-ALL)
+  sequence-reading: wb € rx.digits € wb (wb = \b); the HOLE reading is the edge-assertion error (no run)
+    splice reading                   \b\d+\b                                        WHOLE '12' True | SEARCHED 'x12 34' (4, 6, ()) | FIND-ALL '12 x34 56' ((0, 2, ()), (7, 9, ()))
+  sequence-precedence: "x" € "1" | "2"
+    P1 (€ tighter than |)            x1|2                                           WHOLE '2' True | SEARCHED 'y2' (1, 2, ()) | FIND-ALL 'x1 2 x2' ((0, 2, ()), (3, 4, ()), (6, 7, ()))
+    P3 (| tighter than €)            x(?:1|2)                                       WHOLE '2' False | SEARCHED 'y2' None | FIND-ALL 'x1 2 x2' ((0, 2, ()), (5, 7, ()))
+  label-twice: [h = rx.digit] € rx.optional(";" € [h = rx.digit]) & (h: <5)
+    D2 PCRE (first set group)        (?<h1>\d)(?:;(?<h2>\d))?(?C"t")                WHOLE '3;7' True | SEARCHED '3;7' (0, 3, ('3', '7')) | FIND-ALL '3;7 8;2' ((0, 3, ('3', '7')), (6, 7, ('2', None)))
+    D3 last set                      (?<h1>\d)(?:;(?<h2>\d))?(?C"t")                WHOLE '3;7' False | SEARCHED '3;7' (0, 1, {'h1': '3', 'h2': None}) | FIND-ALL '3;7 8;2' [(0, 1, {'h1': '3', 'h2': None}), (4, 7, {'h1': '8', 'h2': '2'})]
+  separator-label: rx.loop([h = rx.digit], sep = ",") & (h: <5)
+    two-copy (PCRE: first item)      (?:(?<h1>\d)(?:,(?<h2>\d))*)?(?C"t")           WHOLE '7,3' False | SEARCHED '7,3' (2, 3, ('3',)) | FIND-ALL '7,3 1,9' ((2, 3, ('3',)), (4, 7, ('1',)))
+    one-copy (last pass)             (?:(?(<s>),)(?<h>\d)(?<s>))*(?C"t")            WHOLE '7,3' True | SEARCHED '7,3' (0, 3, ('3',)) | FIND-ALL '7,3 1,9' ((0, 3, ('3',)), (4, 5, ('1',)))
+  count-argument: rx.digits(n, n) with n := [2, 4] (an enumeration of two members)
+    C1 union, enumeration order      \d{2}|\d{4}                                    WHOLE '1234' True | SEARCHED '12345' (0, 2, ()) | FIND-ALL '12345' ((0, 2, ()), (2, 4, ()))
+    C1 whole on 123                  \d{2}|\d{4}                                    WHOLE '123' False | SEARCHED 'x' None | FIND-ALL 'x' ()
+    C3 hull                          \d{2,4}                                        WHOLE '123' True | SEARCHED '12345' (0, 4, ()) | FIND-ALL '12345' ((0, 4, ()),)
+  quantifier-operators: [a = rx.digits] ? lazy, then [b = rx.digits(0)] € "x", & (b: <30)
+    (X ?) lazy on the outside        (?:(?<a>\d+))??(?<b>\d*)x(?C"t")               WHOLE '123x' True | SEARCHED '123x' (0, 4, ('12', '3')) | FIND-ALL '123x 45x' ((0, 4, ('12', '3')), (5, 8, ('4', '5')))
+    X * lazy (the plain-regex twin)  (?<a>\d*?)(?<b>\d*)x(?C"t")                    WHOLE '123x' True | SEARCHED '123x' (0, 4, ('1', '23')) | FIND-ALL '123x 45x' ((0, 4, ('1', '23')), (5, 8, ('4', '5')))
+  quantifier-grammar: "1" + "2" if a sequence were juxtaposition
+    quantifier reading 1+2           1+2                                            WHOLE '112' True | SEARCHED 'x1112' (1, 5, ()) | FIND-ALL '12 112 3' ((0, 2, ()), (3, 6, ()))
+    arithmetic reading (the rx 3)    3                                              WHOLE '112' False | SEARCHED 'x3' (1, 2, ()) | FIND-ALL '12 112 3' ((7, 8, ()),)
+
 SUMMARY: PART A failures + PART B and PART C (two-copy form) differences = 0 (forward run expects 0; RXLIB_SABOTAGE=1 must move it)
