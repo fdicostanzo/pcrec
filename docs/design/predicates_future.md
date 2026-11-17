@@ -407,3 +407,36 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   here; not ruled; no plan row (design only, D77). The names (`test.never`, `test.always`) stay the draft's proposal.
 - TRIGGER: the next design step on warnings or on `@options` (item 20), or any build of one of the three controls,
   whichever comes first.
+
+## 24. For the user documentation: the things a reader will get wrong unless told
+
+- WHAT: a running list of points the eventual user documentation of the predicate language MUST explain, each
+  with its worked example. Not design questions: each is settled; the risk is a reader's expectation. The owner,
+  2026-11-17, on the first one: "Interesting. Make sure that makes inlet into the eventual documentation".
+- THE LIST (add to it whenever a ruling surprises someone in the room; each entry names its COND-FAMILY.md entry):
+  1. MOVING A FILTER ACROSS AN ALTERNATION. `(B | A) & X` is the same as `(B & X) | (A & X)`; `X & (B | A)` is NOT
+     always the same as `(X & B) | (X & A)`: both hold on the same texts, but a search can report a different
+     match, because the LEFT side decides the order (join-order, ruled 2026-11-17). Example: X = `/\d+?/`, B =
+     `/\d\d/`, A = `/\d/`, searched in `11`: the first reports `1`, the second `11` (the manager's hand working;
+     the model: 0 / 1,008 / 1,197 of 1,365 differ). An array of filters, `X & [f, g]`, is the first form.
+  2. A MATCHING LANGUAGE, NOT A FINDING LANGUAGE. A loop of conditioned items matches a RUN (it stops at the first
+     item that fails); it does not return the set of items that pass: that is a find-all on the conditioned item
+     (the owner: "it's a matching language not a finding language"; `10:15,11:15,9:00,12:15,`: the run
+     `10:15,11:15,` against the hits `10:15`, `11:15`, `12:15`).
+  3. WHERE A CONDITION IS WRITTEN IS WHAT IT MEANS. On the item inside a loop: every pass. After the pattern: the
+     LAST pass's own label, unset if that pass did not set it (after-loop-read). Nested loops: the outermost view;
+     inner views by nesting the condition (nested-pass).
+  4. A LABEL IS NOT A CAPTURE. Inside pattern text a backreference reads what PCRE holds (a value carried from an
+     earlier pass included); a condition reads the label, which each pass owns.
+  5. `&` IS SYMMETRIC FOR HOLDING, LEFT-TO-RIGHT FOR WHAT IS REPORTED (join-order).
+  6. A FILTER SEES ONLY THE MATCHED TEXT: it is matched against the stretch as if the stretch were the whole
+     text; anything in it that might look outside is a compile error (operand-context).
+  7. NUMBERS ARE COMPARED AS WRITTEN NUMERALS: `(h, m): >= (9, 30)` does not hold for `10:00`, whose minutes `00`
+     are not a numeral unless the test's own literal is written with the zeros or is padded (the manager showed
+     the owner a wrong example of exactly this on 2026-11-17).
+  8. A SEARCH CAN START ANYWHERE: find-all on a conditioned time finds `10:45` inside `110:45` unless the item
+     has a boundary (plain regex behaviour; the condition adds nothing to it).
+  9. ATOMIC DOES NOT STOP A SEARCH FROM MOVING ON; the "judge the first match, then skip past it" behaviour is a
+     backtracking verb's (`(*SKIP)` in PCRE), not atomic's.
+- SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
+  documentation of the predicate language (docs/guide/ tier); until then the manager appends.
