@@ -2,6 +2,22 @@
 
 ## Changelog
 
+- **rev 23.1: review r33's fixes (lane predspec23c, 2026-11-17).** Applies the manager's dispositions of review r33
+  (round predspec23, NOT STABLE; F1-F17 and two notes; F14 by the manager). The `|` of filtered branches gets its
+  rule, **branch-order** (the manager's ruling told to the owner, COND-FAMILY 2026-11-17 03:01 item (3)): a branch
+  whose own condition rejects falls through, branch-major, PCRE's order (§R.1.4); the evidence engine's end-major
+  order is corrected and every count resting on it re-run in both modes (holds-counts unchanged; reported rows move
+  on 125 / 400 of 1,110, §R.7c); `when`'s body is stated with its mode (§8). The fix-induced lens (NOT re-allowed):
+  L83 becomes DIFFERENT, BY DESIGN under NOT (F1; the closing example names the joint spelling); `default.unused`
+  (b) becomes polarity-aware (F7); the §5.2 empty-intersection error is judged after default and polarity (F8, L30's
+  edges); the no-match-can-set error regains "the program's `&` operands" (F3); the body says a condition is its own
+  kind, not a macro (F9). §R.1.1 gains a place table with each nested place's mode (F5) and §R.1.9 the hit list of a
+  filtered argument (F4) and "find-all is not monotone" (F11); a complement anywhere in an `&` chain is defined and
+  the standalone-complement error marked the manager's call (F6); §R.3 gains NOT over a nested program (F12); R.1.3
+  cites 20:41 as written and the spelling principle with its asterisk (F6 (a), F13); §R.8 gains **pass-and** (in
+  pass-table) and **condition-or** and shows the record's own whole-text candidate (F10, F6 (c)); §R.6 the nullable-B
+  line (F17); attributions (F15); the change table's cites and §13's inline notes (F16). `predicates_future.md`
+  items 15-16 (the PLAN items). Evidence `docs/dev/lanes/predspec23c_evidence/`.
 - **rev 23 (lane predspec23, 2026-11-16).** Re-founds the draft on the owner's condition model (COND-FAMILY 19:31-23:48): a new §R (read first) holds the one definition (a row is one potential match; a condition is a three-valued test of one row with `&` and NOT; absent never matches; a per-test default; `$a` reads the real label; `|` PCRE's one parse; pattern difference after `&`; the preferred surviving row in searched mode), the three spellings of not, the whole-text question, review r31's text items, MODE OF THE ANSWERS extended, the examples that moved (12), the change table (118 sites) and the ruling table. The optional mark and `all` are OUT (drop-mark 21:49, all-question 23:18). Rewritten in place: §0.3 rows, §2.2 WHAT `!` TAKES, §4.2, §4.3's group questions and closing example, §5.4's label-control, `|` and `!` rows; rev 22's text of them moved verbatim to §16.3-§16.5. Evidence `docs/dev/lanes/predspec23_evidence/`. **The BODY of rev 23 was completed by lane predspec23b (2026-11-17):** the rev 22 sentences that still used the mark, DOM or `all` in §0, §0.1, §0.2, §2.3, §2.6, §4.1, §4.3, §4.4, §6.1, §7.1, §8 and §13 are rewritten or labelled history, the seven section notes rev 23 had added removed, every worked example in them re-run in both modes (`docs/dev/lanes/predspec23b_evidence/`; the ones whose answer moved are listed in §R.7b), and §R.4 lays out the TWO WHOLE-TEXT ROUTES side by side (§R.4.1); §R.8's **whole-text** question presents both. The draft stays rev 23.
 - **rev 22 (lane predspec22, 2026-11-16).** Folds the owner's 17:29-17:46 answers. (A) **not-is-complement** (CF
   17:29, RULED): `!` takes a PATTERN (a regex, a label-free filter, a named program) or a SET, never a CONDITION; on a
@@ -373,7 +389,9 @@ TAKES and the complemented-pattern readings, §4.2) are REWRITTEN in place and r
 verbatim to §16.3 and §16.4, the record. Lane predspec23b (2026-11-17) completed the body: every live sentence
 outside §R that used the optional mark `h?`, the per-program value set DOM or `all(...)` is rewritten; what still
 names them is dated history (a REV n paragraph, a ruling table, a CLOSED item, §16), labelled where it stands (§R.9's
-row for its site; §13's closing REV 23 block).
+row for its site; §13's closing REV 23 block). REV 23.1 (lane predspec23c, 2026-11-17) applies review r33's fixes;
+each edit carries "rev 23.1" and its finding id; the counts that moved are §R.7c; the evidence is
+`docs/dev/lanes/predspec23c_evidence/predspec23c_model.out` (PART n named).
 
 ### R.0 Goals of rev 23 (ranked; the highest wins a conflict)
 
@@ -1515,7 +1533,7 @@ absent row while pattern difference keeps it (§R.3). `all(((h, m): R))` leaves 
 | criterion | his words | checkable form (this document's) |
 |---|---|---|
 | A SET NEVER CONTAINS ABSENCE (his principle, CF 13:52) | "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set" | no construct gives a set an "absence" member; author control of absence lives on the LABEL (§4.2) |
-| MEANING, NOT SPELLING (**mark-domain**, RULED as a principle, CF 15:27, his qualifier "if it is possible") | "the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior, semantics, string set)? Not sure the exact phrasing." Its wording (CF 15:29, PROVISIONAL): "two patterns that match the same subjects and set their labels the same way answer every condition alike" (*) | equal-meaning spellings answer alike (`/x?/` vs `/(?:x\|)/`, §0.1 L94; `/(?<n>\d)*x/` vs `/(?:(?<n>\d)+)?x/`, §4.2); rev 23: a condition reads only its row (§R.1.5), so for conditions the principle holds by construction; rev 21-22's "where it is not possible (DOM not computable)" exception retires with DOM (§R.2). Where a label's LOOP-NESS is read from a non-regular operand, the syntactic list decides (§4.3) |
+| MEANING, NOT SPELLING (**mark-domain**, RULED as a principle, CF 15:27, his qualifier "if it is possible") | "the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior, semantics, string set)? Not sure the exact phrasing." Its wording (CF 15:29, PROVISIONAL): "two patterns that match the same subjects and set their labels the same way answer every condition alike" (*) | equal-meaning spellings answer alike (`/x?/` vs `/(?:x\|)/`, §0.1 L94; `/(?<n>\d)*x/` vs `/(?:(?<n>\d)+)?x/`, §4.2); rev 23: a condition reads only its row (§R.1.5), so for conditions the NARROWER same-table form holds (the manager's re-derivation; rev 23.1, review r33 F13, withdraws "holds by construction" for the ruled (*) form until it is checked against the compile rules keyed on repeatedness, `predicates_future.md` item 15); rev 21-22's "where it is not possible (DOM not computable)" exception retires with DOM (§R.2). Where a label's LOOP-NESS is read from a non-regular operand, the syntactic list decides (§4.3) |
 | SIMPLIFYING SEMANTICS (CF 11:35) | "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." | one meaning per construct in every shape; a shape-specific sub-rule counts against a choice |
 | SAVING PEOPLE FROM THEMSELVES (CF 12:45) | "The issue falls into the 'saving people from themselves' category that tools need to realistically consider" | per new construct, the author's natural misuse draws an error or a warning, or is listed as silent |
 | A TEST OF THE LANGUAGE (CF 00:31; rev 21, review r29 RULING-8) | "trying to work this out is more important than just the between macro for 2+ args. it tests the language on an interesting problem" | a worked problem is judged by what it shows about the language (which general rule it exercises or breaks), not by the one macro it yields |

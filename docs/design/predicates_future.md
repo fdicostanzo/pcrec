@@ -234,3 +234,40 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - STATUS: recorded, not ruled, not scheduled. TRIGGER (the manager's, any one): authors are surprised by a shorter
   stretch being reported in searched programs; D196's retry is re-opened; a "judge the finished match" mode is
   asked for by name.
+
+## 15. Check that the spelling principle (*) survives the rules keyed on repeatedness
+
+- WHAT: the ruled spelling principle (15:29, with its asterisk): "two patterns that match the same subjects and set
+  their labels the same way answer every condition alike" (*). Rev 23 restated it as "two patterns with the same
+  TABLE answer every condition alike" and called it true "by construction"; rev 23.1 labels that form the manager's
+  re-derivation under row-is-match and withdraws "by construction" for (*), because a table also carries the pass
+  table and whether a label is repeated (read from the operand regex, the manager's **repeated-means**). Two patterns
+  (*) calls alike can have different tables: `/(?:(?<h>\d);)+/ & /\d;/` and `/(?<h>\d);/` match the same subjects
+  and set h the same way, but h is repeated in the first. Any rule keyed on repeated vs set-once (the sibling-loop
+  error of joint-loops, group-question legality, `$h`'s sequence rule, `default.unused`, the §5.2 error's domain)
+  could split such a pair.
+- SOURCE: review r33 F13 (RULING-3; `docs/dev/reviews/` round predspec23, 2026-11-17), a PLAN item by the manager's
+  disposition. Not ruled by the owner; predicates are design only, so no plan row (D77).
+- THE CHECK, when it runs: list every compile rule and warning keyed on repeatedness; for each, build the pair
+  above (and a sibling-loop variant with a condition naming two looped labels) and run it through an evaluator in
+  both modes; any compile-status or answer split is a breach of (*) to be shown to the owner by name.
+- WHAT IT WOULD UNLOCK: a stated, checked "meaning, not spelling" for conditions, or the precise list of where
+  spelling still decides (which the owner's asterisk anticipates).
+- TRIGGER: the next revision of predicates_draft.md that touches repeatedness, or the first predicate build go.
+
+## 16. One place table for nested programs
+
+- WHAT: every place a program stands is a (TEXT, MODE) pair, MODE one of whole, searched-first, searched-all,
+  string-set, with a column for what crosses the boundary (rows, labels, or a yes/no). Rev 23.1's §R.1.1 place table
+  is the first cut (five places: `&` sides, a `label:` set, a `contains`/`occurrences` argument, a `records` item,
+  the final pattern). The general form would state at once: the hit list of a filtered argument (review r33 F4), the
+  modes of the nested places (F5), why NOT over a nested program acts as difference (F12), and both whole-text routes
+  (route (i) is a lookahead place, route (ii) a whole-text place).
+- SOURCE: review r33's family note MODECLOSURE-9 (GENERAL FORM AND UNLOCKS), a PLAN item by the manager's
+  disposition. Not ruled; no plan row (design only, D77).
+- WHAT IT WOULD UNLOCK: whole-text as one more row of the table rather than a new kind of condition; CORRELATED
+  subqueries (`text.none(B & (h: $h))`, the lookahead-labels question) as one column, "may the nested program read
+  the outer row?" (rev 23.1 states the correlated form OUT OF SCOPE, §R.4.1); monotonicity (where adding a condition
+  can admit, F11) stated per row.
+- TRIGGER (any one): the owner unparks **whole-text**; a second nested place gains conditions (a positive
+  lookahead's labels, a `records` item with NOT); the per-place prose drifts again.
