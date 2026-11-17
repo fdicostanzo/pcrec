@@ -1207,7 +1207,14 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     if (!row) return -1;
     /* every refusal before the first write to `rows` (review r27 SEAM-1): the
        presence decision and the layout read no proof row, so they are held
-       on the class's verdict first; only then is the proof written */
+       on the class's verdict first; only then is the proof written.
+       UNREACHED today (review r28 R28-2, recorded by lane forms): kit_class
+       writes a proof only on a FIND site, fd_pres refuses only in its PRES
+       scope (an ALL_PRESENT site stating pspans, fd_scope) and the layout
+       check runs only with npspan, which site_check refuses on every
+       non-ALL_PRESENT site (kit_presence_check); so no site both writes a
+       proof and is refused after it. The order is kept for the day a
+       presence-stating FIND exists; a witness is owed then */
     const kit_proof_st verdict = { NULL, 0, NULL };
     if (kit_class(row, s, out, &verdict) ||
         fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ||

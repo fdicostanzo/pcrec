@@ -2854,6 +2854,12 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
            SEAM-1/HOUSE-1): a refused ask writes nothing to `rows` */
         int ok = fp->plan_test && !wf_frame_of(art, def, gphases, r, d, w, fx, L, fp);
         if (ok && use && emit_use_refused(fp->ren, site, def)) ok = 0;
+        /* `!art->err[0]`: UNREACHED by a sound site (review r28 R28-3,
+           recorded by lane forms): wf_plan_site sets the art's error only on
+           a kit invariant failure (run_bytes' unspelled position, run_rank's
+           non-strict tie row, the pinned rank's first position), each a
+           fenced defect no stated input reaches; a witness needs a planted
+           defect beside the conjunct's own plant */
         if (ok && !art->err[0] && rows_hold(d, rows, 1)) {
             reply_of(d, out, rows);
             reply_frame(fp, out, rows);
