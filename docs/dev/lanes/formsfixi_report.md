@@ -45,7 +45,35 @@ fresh twins covers the rest, since an offset a fresh exe does not share cannot r
 
 ## Validation
 
-SELFTEST_PLACEHOLDER
+- `cards.py selftest` (this branch, `nice gnutimeout 3000 python3 -I -B -u ... selftest`, about 22 min wall;
+  `/var/tmp/pcrec-pcrec/scratch/memfn/formsfixi/selftest_2.log`): **`selftest: 197 checks, 0 failed`** (rev 10:
+  182). The new rows, quoted:
+  - `(r39 K1) per-exe offsets tau 1 % / 2 % / 3 %`: P(h* != 64) = 0.000 / 0.000 / 0.000 (accept <= 0.05). Confirm
+    cells on these no-win nights: mean 0.00 / 0.01 / 0.00, max 0 / 4 / 0, nights with one 0 / 1 / 0. Measured
+    between-exe sigma 0.0097 / 0.0197 / 0.0296 (accept within 35 % of tau); at tau 0 it reads 0.0004 (accept <= 0.004).
+  - `(r39 K1) control: tau 2 %, rev 10's floor and confirm` P(h* != 64) = 0.633 (accept > 0.15).
+  - `(r39 K4) power: every head <= 16 5 % faster (hit-dense)`: h* = 16 in 275 of 300 (accept >= 85 %; picks
+    {0: 3, 1: 1, 4: 3, 8: 5, 16: 275, 64: 13}). Control, rev 10's reading: 107 of 300 (accept < 85 %).
+  - `REC (r39 K4) power: a 4 % win of H(8), one regime`: 184 of 300 (RECORD, not gated).
+  - `(r39 K2)`: clean h* 8 (14 cells owed). H(8)'s confirm row gatefail gives h* 64, with an R0 line naming
+    results_confirm.tsv. I.cf gatefail gives code 2 and no h*.
+  - `(r39 K3)`: another head's confirm arm void gives h* 8; I.cf void gives h* 64.
+  - `(r39 K6)`: 12 nights through the commands, G2 = {16}: stalled 0, rerun == rule's owed list on every pass.
+    Control (no G2 record): 5 of 12 stalled (accept >= 1).
+  - K8: `(r38 J2) the same cut in rounds, rev 9's floor` 0.000 (accept <= 0.05); `(G3, r38 R2) control: the FAST
+    split, rev 9's rule` 30 of 100 (accept > 15).
+- The CLASS drill (84 rows) all pass. Worst P(h* != 64) is 0.017 (H(24) and H(32) arms at tau 3 %); every
+  level row other than the head arms reads 0.000, and every step/drift row reads 0.000.
+- Earlier drills: every line holds. F2 noise 0.000/0.000 (median f 0.0426/0.0369); G4 {8: 122, 64: 78}; fast
+  split 0/100; power (r38) 283 hit-dense / 276 random of 300 (confirm cells a night 10.8/10.6); void rate on
+  pure noise 0.000/0.033; gate void rate 0.000/0.040; F3 0.023 of nights; the time_cells rounds row holds
+  (rounds of 11 = I, I.lt, 9 heads).
+- **The earlier controls needed rev 11's twin turned off too.** Run 1 (`selftest_1.log`) read 197 checks, 4
+  failed: every acceptance row passed, but four controls were BLIND under rev 11's arm set, because the layout
+  twin also sees their defects. Readings: G2 3x regime 0.037, H1 0.147, H2 0.000, J2 arm-major 0.020. Every
+  earlier control now turns the layout term and I.lt's pool membership off as well, as rev 10's controls
+  turned the confirm off. They now read: G2 0.173, G3 0.337, H1 0.733, H2 0.410, J1 0.683, J2 0.393, R2 0.173
+  (each accept > 0.15).
 
 - `cards.py dry` (WIDTH_FLAG=none, JOBS=6, this worktree's build, full 1 MiB subjects;
   `/var/tmp/pcrec-pcrec/scratch/memfn/formsfixi/dry1.log`):

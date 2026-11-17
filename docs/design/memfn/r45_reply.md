@@ -1142,7 +1142,10 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   whole-arm shift, the arm-major step: under rev 11's arm set with only the older mechanism off
   they read 0.037, 0.147, 0.000 and 0.020, blind), so every earlier control now turns the layout
   twin term AND `I.lt`'s pool membership off too, as rev 10's controls turned the confirm off;
-  their readings are in lane formsfixi's report.
+  they read G2 0.173, G3 0.337, H1 0.733, H2 0.410, J1 0.683, J2 0.393, R2 0.173 (accept > 0.15
+  each). Every earlier drill re-runs under rev 11: selftest 197 checks, 0 failed; the class drill's
+  84 rows worst 0.017 (H(24) and H(32) arms at τ 3 %); G4's one-cell win ships 8 in 122 of 200;
+  power (r38) 283 and 276 of 300.
 - **(xix) A kept head without a win [rev 8, RULED r36 G4; `selftest`'s (G4) lines].** One cell
   (`k` = 60): H(8) = 0.97, H(16) = H(24) = 0.99, H(32) and H(64) = 1.00, the shorter heads
   losing; `f` = 0.025. E = {8, 16, 24} (threshold 0.994) and nothing is dominated (0.99 / 0.97
