@@ -2136,3 +2136,14 @@ predicates_future.md item 19. MINE, derived, to be checked by the next revision 
 whether a value holds = some path satisfies the conditions (the 2026-11-14 some-parse rule again for holding, with
 PCRE's order choosing the report); `&` distributes over `|`; for a single match adding a condition never admits;
 in find-all places hits can re-split; the cost he asked for on 11-15 is expected lower, UNMEASURED.
+
+**2026-11-17 OWNER, on the model after branch-scope (Frank, to session 138, box clock about 11:50).** HIS WORDS:
+"Notably: this is a break from the SQL model we were using. A encapsulating where clause in sql does not cause the
+inner sql to reconsider. However, it is in line with regex behavior so I do like it and think it should be the
+general behavior". RECORD: backtracking on a rejecting condition is THE GENERAL BEHAVIOUR; where the SQL picture and
+regex behaviour part, regex behaviour wins. MANAGER'S FRAMING offered in reply (MINE, not his words, to be checked
+by lane pathimpact and the next round): the SQL picture survives if the table holds EVERY path of the pattern (two
+paths over one stretch with different labels are two rows), ordered by PCRE's preference, and "first row" is taken
+AFTER the conditions filter (WHERE, then the first row); ATOMIC is "first row" taken BEFORE the filter (an inner
+statement limited to one row). What changed from 11-15 is then only where the limit sits, not that the inner
+statement reconsiders.
