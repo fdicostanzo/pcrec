@@ -11,7 +11,10 @@
  *   - legal: 0 (the built-in default), 1 and CEILING - 1 compile;
  *   - the conjunct reads the field: `[0-9a-f]{24}` stamps
  *     RX_DFA_SCAN "cover" at width 24 and does not at width 23 (the
- *     default 0 is the run_cover.sh verdict rows' business). */
+ *     default 0 is the run_cover.sh verdict rows' business);
+ *   - the boundary past the default (review r32 F10): at width 40, between
+ *     the default and the top, `[0-9a-f]{40}` is a cover and `[0-9a-f]{41}`
+ *     is not (a width check exact at <= 32 but off by one above it reds). */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -93,5 +96,7 @@ int main(int argc, char **argv)
     legal(ceil - 1);
     route("[0-9a-f]{24}", 24, 1);
     route("[0-9a-f]{24}", 23, 0);
+    route("[0-9a-f]{40}", 40, 1);
+    route("[0-9a-f]{41}", 40, 0);
     return nfail ? 1 : 0;
 }

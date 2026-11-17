@@ -14,7 +14,9 @@
 #                     N -> --window-search-width=<KP_D - 1> (the NARROWER width:
 #                     a pattern of width D must decline).
 #   kp_row_check FLAGS [VALUE]   fail loud (return 1, KP_ERR) on an unknown
-#                     FLAGS letter or a malformed `width=N`; callers stop the run.
+#                     FLAGS letter, W and N together, a malformed `width=N`, or a
+#                     `width=N` on a W or N row (judged against the default
+#                     width only; review r32 F9); callers stop the run.
 #   kp_pat PATTERN    the pattern with @LD1 / @LD (the first D + 1 / D
 #                     letters of a..z, cyclic) and @D1 / @D (D + 1 / D)
 #                     substituted, D = KP_D.
@@ -51,9 +53,11 @@ kp_row_check() {
     case "$1" in
         -) ;;
         ''|*[!iuRWN]*) KP_ERR="cases.tsv: FLAGS '$1' is not '-' or letters of iuRWN"; return 1 ;;
+        *W*N*|*N*W*) KP_ERR="cases.tsv: FLAGS '$1' names both W and N (two widths, an arm no doc defines)"; return 1 ;;
     esac
     case "${2-}" in
-        width=*) case "${2#width=}" in ''|*[!0-9]*) KP_ERR="cases.tsv: VALUE '$2' is not width=<decimal>"; return 1 ;; esac ;;
+        width=*) case "${2#width=}" in ''|*[!0-9]*) KP_ERR="cases.tsv: VALUE '$2' is not width=<decimal>"; return 1 ;; esac
+                 case "$1" in *[WN]*) KP_ERR="cases.tsv: VALUE '$2' on FLAGS '$1': width=N is judged against the DEFAULT width, so it belongs on a row with no W or N"; return 1 ;; esac ;;
     esac
     return 0
 }

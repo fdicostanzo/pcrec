@@ -72,15 +72,15 @@ scan() { sed -n 's/^#define RX_DFA_SCAN "\([^"]*\)".*/\1/p' "$1/a.c"; }
 # a FAIL that stops the run, never a silent decline. The self-test rows: the
 # refusal fires on an unknown FLAGS letter and a non-decimal width=N, and the
 # legal spellings pass (so the refusal is not a blanket).
-for t in "w:" "iX:" ":" "-:width=4O" "-:width=" "-:width=-3"; do
+for t in "w:" "iX:" ":" "-:width=4O" "-:width=" "-:width=-3" "W:width=24" "N:width=24" "uW:width=40" "WN:" "WN:cover"; do
     if kp_row_check "${t%%:*}" "${t#*:}"; then bad "loader self-test: '$t' was NOT refused"; else ok; fi
 done
-for t in "-:cover" "iuRWN:width=24" "u:decline"; do
+for t in "-:cover" "iuR:width=24" "iuRW:cover" "N:decline" "u:decline"; do
     if kp_row_check "${t%%:*}" "${t#*:}"; then ok; else bad "loader self-test: '$t' was refused ($KP_ERR)"; fi
 done
 
 # ---- verdict and facts rows ------------------------------------------------
-nv=0; nf=0
+nv=0; nf=0; nvW=0; nfW=0; nvN=0
 while IFS=$'\t' read -r kind fl pat val why; do
     case "$kind" in '#'*|'') continue ;; esac
     if ! kp_row_check "$fl" "$val"; then echo "FAIL: $KP_ERR"; echo "test-kitproof: FAIL"; exit 1; fi
@@ -89,6 +89,7 @@ while IFS=$'\t' read -r kind fl pat val why; do
     case "$kind" in
         verdict)
             nv=$((nv + 1))
+            case "$fl" in *W*) nvW=$((nvW + 1)) ;; *N*) nvN=$((nvN + 1)) ;; esac
             build "$fl" "$pat"; d="$BUILT"
             if [ -z "$d" ]; then bad "verdict $fl $pat: the harness compile failed ($why)"; continue; fi
             s="$(scan "$d")"
@@ -99,6 +100,7 @@ while IFS=$'\t' read -r kind fl pat val why; do
             fi ;;
         facts)
             nf=$((nf + 1))
+            case "$fl" in *W*) nfW=$((nfW + 1)) ;; esac
             # shellcheck disable=SC2046
             # the `cover` section's row for the case's encoding: listing rows
             # carry no section name, so the loader tracks the `#section` line
@@ -116,10 +118,11 @@ done < "$here/cases.tsv"
 
 # ---- answer rows -----------------------------------------------------------
 declare -A DRV=()
-na=0; ncell=0
+na=0; naW=0; ncell=0
 while IFS=$'\t' read -r fl phex shex want; do
     case "$fl" in '#'*|'') continue ;; esac
     na=$((na + 1))
+    case "$fl" in *W*) naW=$((naW + 1)) ;; esac
     if ! kp_row_check "$fl"; then echo "FAIL: answers.tsv: $KP_ERR"; echo "test-kitproof: FAIL"; exit 1; fi
     pat="$(printf '%s' "$phex" | xxd -r -p)"
     build "$fl" "$pat"; d="$BUILT"
@@ -167,19 +170,26 @@ if unit_build "$tmp/width_opt" "$here/width_opt.c" > "$tmp/width_opt.gcc" 2>&1; 
     while IFS= read -r line; do
         case "$line" in ok*) ok; nw=$((nw + 1)) ;; *) bad "width_opt: $line" ;; esac
     done < <("$TIMEOUT_BIN" 60 "$tmp/width_opt" "$KP_CEIL" 2>&1)
-    [ "$nw" -ge 8 ] && ok || bad "width_opt: only $nw checks passed (floor 8)"
+    [ "$nw" -ge 10 ] && ok || bad "width_opt: only $nw checks passed (floor 10)"
 else
     bad "width_opt.c does not build: $(head -3 "$tmp/width_opt.gcc")"
 fi
 
 # K35: the populations are counted, never assumed. Stage 2 B7 (lane covs2g,
-# cover_cap.md §11.6.2 FLOORS): verdict 50 + 10 W twins; facts 19 + 2 W twins;
-# answer 105 + 32 n >= 33 rows on W (end-at-k rows included) + 3 a{5} rows (the
-# §11.6.3 P3/P4 witness; the P1/P2 witness is the W [0-9a-f]{40} '0' x 40 row)
+# cover_cap.md §11.6.2 FLOORS): verdict 48 default + 1 N + 11 W; facts 19 +
+# 2 W; answer 108 without W + 32 with W (29 W + 3 Wu; end-at-k rows included;
+# the 3 Wu are the a{5} §11.6.3 P3/P4 witness; the P1/P2 witness is the W
+# [0-9a-f]{40} '0' x 40 row). The ARMS are floored too (review r32 F5): a
+# re-generation that swaps W rows for default ones keeps the kind totals and
+# drops every long-span witness.
 [ "$nv" -ge 60 ] && ok || bad "only $nv verdict rows (floor 60)"
 [ "$nf" -ge 21 ] && ok || bad "only $nf facts rows (floor 21)"
 [ "$na" -ge 140 ] && ok || bad "only $na answer rows (floor 140)"
-echo "kitproof: $nv verdicts, $nf facts, $na answers ($ncell cells)"
+[ "$nvW" -ge 11 ] && ok || bad "only $nvW W-arm verdict rows (floor 11)"
+[ "$nfW" -ge 2 ] && ok || bad "only $nfW W-arm facts rows (floor 2)"
+[ "$naW" -ge 32 ] && ok || bad "only $naW W-arm answer rows (floor 32)"
+[ "$nvN" -ge 1 ] && ok || bad "only $nvN N-arm verdict rows (floor 1)"
+echo "kitproof: $nv verdicts ($nvW W, $nvN N), $nf facts ($nfW W), $na answers ($naW W; $ncell cells)"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] && { echo "test-kitproof: PASS"; exit 0; } || { echo "test-kitproof: FAIL"; exit 1; }
