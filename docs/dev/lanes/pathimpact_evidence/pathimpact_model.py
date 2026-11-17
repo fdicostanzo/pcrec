@@ -9,6 +9,7 @@
 #     repeat count, each optional part) fixed; it fixes the end and every label's value (and a loop's passes);
 #   * paths are listed in PCRE's preference order (a backtracking enumerator over Python's own parse of the regex,
 #     PART A checks it against Python `re`: the first path is re.match's, the ends are re.fullmatch's);
+#   * PART G tests the rulings file's R1 table formulation; PART H its R2 claim `A & B` = `A & (0: B)`;
 #   * a condition is evaluated on a path's row; a path survives when every condition is TRUE on it (UNKNOWN rejects,
 #     as a WHERE keeps TRUE only; the alternative is listed OPEN); `&` with another pattern keeps a path when the other
 #     side has a path over the same stretch (left side's paths outer: OPEN, both orders run); a complement `!B` keeps
@@ -40,7 +41,7 @@ from re._constants import (LITERAL, NOT_LITERAL, ANY, IN, SUBPATTERN, BRANCH, MA
                            POSSESSIVE_REPEAT, AT, ASSERT, ASSERT_NOT, ATOMIC_GROUP, NEGATE, RANGE, CATEGORY,
                            CATEGORY_DIGIT, CATEGORY_NOT_DIGIT, CATEGORY_SPACE, CATEGORY_NOT_SPACE, CATEGORY_WORD,
                            CATEGORY_NOT_WORD, AT_BEGINNING_STRING, AT_BEGINNING, AT_END_STRING, AT_END,
-                           SRE_FLAG_DOTALL)
+                           SRE_FLAG_DOTALL, AT_BOUNDARY, AT_NON_BOUNDARY)
 
 sys.setrecursionlimit(20000)
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -122,25 +123,30 @@ class Rx:
                 for x in g: yield x; break
             else: yield from g
         elif op == AT:
+            wb = (pos > 0 and _word(s[pos - 1])) != (pos < n and _word(s[pos]))      # PART H: `\b`, `\B`
             ok = {AT_BEGINNING_STRING: pos == 0, AT_BEGINNING: pos == 0, AT_END_STRING: pos == n,
-                  AT_END: pos == n or (pos == n - 1 and s[pos] == "\n")}.get(av)
+                  AT_END: pos == n or (pos == n - 1 and s[pos] == "\n"), AT_BOUNDARY: wb, AT_NON_BOUNDARY: not wb}.get(av)
             if ok is None: raise ValueError("anchor %r" % (av,))
             if ok: yield pos, caps, hist
         elif op == ASSERT:
             d, items = av
-            if d != 1: raise ValueError("lookbehind")
-            g = self._seq(items, 0, s, pos, caps, hist, fl)
+            if d != 1: g = self._behind(items, s, pos, caps, hist, fl)       # PART H: lookbehind, the body ends at pos
+            else: g = self._seq(items, 0, s, pos, caps, hist, fl)
             for _, c2, h2 in g:
                 yield pos, c2, h2
                 if self.look_atomic: break
         elif op == ASSERT_NOT:
             d, items = av
-            if d != 1: raise ValueError("lookbehind")
-            if next(self._seq(items, 0, s, pos, caps, hist, fl), None) is None: yield pos, caps, hist
+            g = self._behind(items, s, pos, caps, hist, fl) if d != 1 else self._seq(items, 0, s, pos, caps, hist, fl)
+            if next(g, None) is None: yield pos, caps, hist
         elif op == ATOMIC_GROUP:
             for x in self._seq(av, 0, s, pos, caps, hist, fl): yield x; break
         else:
             raise ValueError("op %r" % (op,))
+    def _behind(self, items, s, pos, caps, hist, fl):
+        for k in range(pos, -1, -1):
+            for e, c2, h2 in self._seq(items, 0, s, k, caps, hist, fl):
+                if e == pos: yield e, c2, h2
     def _rep(self, items, lo, hi, greedy, count, s, pos, caps, hist, fl, nid):
         def more():
             if count < hi:
@@ -474,6 +480,8 @@ print("== PART A: the path enumerator against Python `re` (first path = re.match
 CTL = [(Bd, DIG4), (Ad, DIG4), (Ba, AB4), (Aa, AB4), (PAB, DIG4), (PABL, DIG4), (PA1, DIG4), (NL, DIG4),
        (R(r"(?P<b>\d+)(?P<a>\d)?"), DIG4), (R(r"(?=(?P<x>\d+))\d"), DIG4), (R(r"(?:(?P<h>\d);)*"), RG3),
        (R(r"(?:(?P<h>\d{1,2}),?)+"), strings("12,", 5)), (R(r"(?:[\s\S]*?(?P<hit>\d+))*[\s\S]*"), strings("1x2", 4)),
+       (R(r"\b\d+"), DSP), (R(r"\d+\b"), DSP), (R(r"(?<= )\d+"), DSP), (R(r"\d+(?!\d)"), DSP), (R(r"\B\d"), DSP),
+       (R(r"(?<!1)(?P<x>\d)\d*$"), DSP), (R(r"^\d+"), DSP),
        (T2, [h + (":" + m if m else "") for h in ["", "1", "9", "12", "09"] for m in [None, "00", "30", "5"]] + ["9:30 1", "1 9:3"])]
 for node, pool in order(CTL):
     rx, cre = node.rx, re.compile(node.rx.pattern)
@@ -756,13 +764,13 @@ for u in order(["U1", "U2"]):
         UNK["v"] = "U1"; return r
     eline((6, u), "E6 UNKNOWN %s `/(?<b>\\d+)(?<a>\\d)?/ & (a: <5)` on `12` (first path: b = 12, a absent)" % {"U1": "U1 (rejects and backtracks, as FALSE)", "U2": "U2 (ends the tries at this start)"}[u], e6)
 # E7 ATOMIC (a labelled extra: the MEANING of predicates_future.md items 14 / 19, no spelling).
-AT = [("`t2 & q` (q := t2 & late) on `9:30`", W(T2, late_f), W(Atomic(T2), late_f), "9:30", ("h", "m")),
+ATX = [("`t2 & q` (q := t2 & late) on `9:30`", W(T2, late_f), W(Atomic(T2), late_f), "9:30", ("h", "m")),
       ("`t2 & !q` on `9:30` (item 14's example)", Diff(T2, q), Diff(Atomic(T2), q), "9:30", ("h", "m")),
       ("`t2 & !q` on `9:30 10:15`", Diff(T2, q), Diff(Atomic(T2), q), "9:30 10:15", ("h", "m")),
       ("`(B | A) & (l: <20)` on `25`", W(Alt(Bd, Ad), l20), W(Atomic(Alt(Bd, Ad)), l20), "25", ("l",)),
       ("`(B | A) & (l: <20)` on `25 13`", W(Alt(Bd, Ad), l20), W(Atomic(Alt(Bd, Ad)), l20), "25 13", ("l",)),
       ("`P & (a: \"1\")` on `123`", W(PAB, a1), W(Atomic(PAB), a1), "123", ("a", "b"))]
-for nm, P1, P2_, s, labs in order(AT):
+for nm, P1, P2_, s, labs in order(ATX):
     eline((7, nm), "E7 ATOMIC %s: the rule %s ; atomic %s" % (nm, ans3(P1, s, labs=labs), ans3(P2_, s, labs=labs)), lambda: "")
 eline((7, "z"), "E7 ATOMIC vs (i) and (iii) over DIG4 for `(B | A) & (l: <20)` (holds; report)", lambda: " ; ".join(
     "atomic vs (%s) WHOLE %d SEARCHED %d" % (rd, cnt(DIG4, lambda s: whole(W(Atomic(Alt(Bd, Ad)), l20), s) != whole(W(Alt(Bd, Ad), l20), s, rd))[0],
@@ -926,6 +934,70 @@ for nm, T, P, pool, lt_, lp_ in order(GT):
 emit(("z",), "  G witnesses: NAIVE `((B & (l: >50)) | A) & (l: <10)` on `12`: table %s, evaluator %s ; `atomic(P & (a: \"1\"))` on `123`: first-row-before-filtering %s, evaluator %s" % (
     "HOLDS" if t_whole(Table(CBA, lambda r: lv(gt(50))(r) and lv(lt(10))(r)), "12") else "FAILS", "HOLDS" if whole(W(Alt(W(Bd, g50), Ad), l10), "12") else "FAILS",
     "HOLDS" if t_whole(Table(PAB.rx.pattern, lambda r: r["a"] == "1", atomic=True), "123") else "FAILS", "HOLDS" if whole(Atomic(W(PAB, a1)), "123") else "FAILS"))
+flush()
+
+# ======================================================================================================== PART H
+# Rulings file R2 (the owner's question; the manager's CLAIM): `A & B` (R.1.4's same-stretch join) vs `A & (0: B)`,
+# `0` a new label = the row's whole match, `(0: B)` an ordinary condition (the match's text, as a value, is in B: B
+# matched WHOLE against that value alone). Claimed: SAME in holds and in the stretch reported, WHOLE / SEARCHED /
+# find-all, and `A & !B` = `A & NOT (0: B)`; they part ONLY when something later reads a label B sets. `A & B` is run
+# two ways: IN-CONTEXT (B's paths over the stretch inside the whole text, PCRE's meaning for a final pattern, the
+# engine above) and SPAN (B matched against the stretch's own text, the draft's filter-role meaning: §11 / §13 O17,
+# CF:761 (3), an assertion that would read beyond the filtered stretch is REFUSED; CF:56 `^`/`$` = the stretch's ends).
+print("== PART H: the rulings-file R2 claim: `A & B` vs `A & (0: B)` (RULE); WHOLE / SEARCHED stretch / FIND-ALL stretches unless labels are named")
+def ZIN(A, B): return SF(A, lambda s, i, e: whole(B, s[i:e]))                  # A & (0: B)
+def ZNOT(A, B): return SF(A, lambda s, i, e: not whole(B, s[i:e]))             # A & NOT (0: B)
+class AndSpan:                                          # `A & B`, B matched against the stretch's own text (A's paths outer)
+    def __init__(self, a, b): self.a, self.b = a, b
+    def walk(self, s, i, inalt, cmp):
+        for e1, r1, c1 in self.a.walk(s, i, inalt, cmp):
+            for e2, r2, c2 in self.b.walk(s[i:e1], 0, inalt, cmp):
+                if e2 == e1 - i: yield e1, merge(r1, r2), c1 + c2
+class DiffSpan:
+    def __init__(self, node, B): self.node, self.B = node, B
+    def walk(self, s, i, inalt, cmp):
+        sc = "in" if inalt else "out"
+        for e, row, recs in self.node.walk(s, i, inalt, cmp):
+            yield e, row, recs + ((sc, not any(e2 == e - i for e2, _ in accepted(self.B, s[i:e], 0, CUR["rd"], cmp))),)
+TPOOL = strings("190: ", 4)                                     # 781 time texts
+DIGS = R(r"\d+")
+def hline(k, nm, P1, P2, pool, labs=()):
+    emit(k, "  H %s over %d texts: %s" % (nm, len(pool), three(RULE, P1, P2, pool, labs)))
+# H1: B without labels; the draft's own `&` and `& !` programs (`t2 & q`, `t2 & !q`, q := t2 & late)
+B1 = R(r"1\d*")
+hline((1, 0), "B without labels: `/(?<l>\\d+)/ & /1\\d*/` vs `& (0: /1\\d*/)`", And(NL, B1), ZIN(NL, B1), DSP, ("l",))
+hline((1, 1), "B without labels: `/(?<l>\\d+)/ & !/1\\d*/` vs `& NOT (0: /1\\d*/)`", Diff(NL, B1), ZNOT(NL, B1), DSP, ("l",))
+hline((1, 2), "the draft's `t2 & q` vs `t2 & (0: q)` (labels h, m compared)", And(T2, q), ZIN(T2, q), TPOOL, ("h", "m"))
+hline((1, 3), "the draft's `t2 & !q` vs `t2 & NOT (0: q)`", Diff(T2, q), ZNOT(T2, q), TPOOL, ("h", "m"))
+hline((1, 4), "`P & Q` (R.1.4's two-label join) vs `P & (0: Q)`, stretch only", And(PAB, PCD), ZIN(PAB, PCD), DSP)
+# H2: a label B sets, read later
+hline((2, 0), "B's labels read later: `(/\\d+/ & P) & (a: \"1\")` vs `(/\\d+/ & (0: P)) & (a: \"1\")`", W(And(DIGS, PAB), a1), W(ZIN(DIGS, PAB), a1), DIG4)
+hline((2, 1), "B's labels in the report: `/\\d+/ & P` vs `/\\d+/ & (0: P)` (labels a, b compared)", And(DIGS, PAB), ZIN(DIGS, PAB), DIG4, ("a", "b"))
+# H3: a conditioned program as B, both join orders (OPEN E1)
+PC1 = W(PAB, a1)
+for jv in order(["left", "right"]):
+    JOIN["v"] = jv
+    hline((3, jv, 0), "B a conditioned program, join %s-outer: `/\\d+/ & (P & (a: \"1\"))` vs `/\\d+/ & (0: P & (a: \"1\"))`" % jv, And(DIGS, PC1), ZIN(DIGS, PC1), DIG4)
+    hline((3, jv, 1), "B a conditioned program, join %s-outer: `/\\d+/ & !(P & (a: \"1\"))` vs `& NOT (0: P & (a: \"1\"))`" % jv, Diff(DIGS, PC1), ZNOT(DIGS, PC1), DIG4)
+    hline((3, jv, 2), "B lazy, join %s-outer: `/\\d+/ & /\\d+?/` vs `/\\d+/ & (0: /\\d+?/)`" % jv, And(DIGS, R(r"\d+?")), ZIN(DIGS, R(r"\d+?")), DSP)
+JOIN["v"] = "left"
+# H4: B holding `^`, `$`, `\b`, a lookaround: IN-CONTEXT (PCRE's final-pattern meaning) vs SPAN (the draft's filter role)
+for bp in order([r"^\d+", r"\d+$", r"\b\d+", r"\d+\b", r"\B\d+", r"(?<= )\d+", r"(?<!1)\d+", r"\d+(?!\d)", r"\d+(?= )"]):
+    Bx = R(bp)
+    nm = "/%s/" % Bx.rx.pattern
+    hline((4, bp, 0), "edge B IN-CONTEXT `/\\d+/ & %s` vs `/\\d+/ & (0: %s)`" % (nm, nm), And(DIGS, Bx), ZIN(DIGS, Bx), DSP)
+    hline((4, bp, 1), "edge B IN-CONTEXT `/\\d+/ & !%s` vs `& NOT (0: %s)`" % (nm, nm), Diff(DIGS, Bx), ZNOT(DIGS, Bx), DSP)
+    hline((4, bp, 2), "edge B SPAN (filter role) `/\\d+/ & %s` vs `/\\d+/ & (0: %s)`" % (nm, nm), AndSpan(DIGS, Bx), ZIN(DIGS, Bx), DSP)
+    hline((4, bp, 3), "edge B SPAN (filter role) `/\\d+/ & !%s` vs `& NOT (0: %s)`" % (nm, nm), DiffSpan(DIGS, Bx), ZNOT(DIGS, Bx), DSP)
+def wit(P, s): return "%s / %s / %s" % ("HOLDS" if whole(P, s) else "FAILS", (lambda r: "FAILS" if r is None else "`%s`@%d" % (s[r[0]:r[1]], r[0]))(search(P, s)), ["`%s`@%d" % (s[a:b], a) for a, b, _ in findall(P, s)])
+BB, BC = R(r"\b\d+"), R(r"^\d+")
+emit((5, 0), "  H witness `/\\d+/ & !/\\b\\d+/` on `11`: IN-CONTEXT %s ; SPAN %s ; `& NOT (0: /\\b\\d+/)` %s" % (wit(Diff(DIGS, BB), "11"), wit(DiffSpan(DIGS, BB), "11"), wit(ZNOT(DIGS, BB), "11")))
+emit((5, 1), "  H witness `/\\d+/ & /^\\d+/` on ` 1`: IN-CONTEXT %s ; SPAN %s ; `& (0: /^\\d+/)` %s" % (wit(And(DIGS, BC), " 1"), wit(AndSpan(DIGS, BC), " 1"), wit(ZIN(DIGS, BC), " 1")))
+JOIN["v"] = "right"
+emit((5, 2), "  H witness join right-outer `/\\d+/ & /\\d+?/` on `11`: & %s ; `& (0: /\\d+?/)` %s" % (wit(And(DIGS, R(r"\d+?")), "11"), wit(ZIN(DIGS, R(r"\d+?")), "11")))
+JOIN["v"] = "left"
+emit((5, 3), "  H witness labels read later `(/\\d+/ & P) & (a: \"1\")` on `123`: & %s [a=%s] ; `(/\\d+/ & (0: P)) & (a: \"1\")` %s (a is not set: UNKNOWN)" % (
+    wit(W(And(DIGS, PAB), a1), "123"), (search(W(And(DIGS, PAB), a1), "123") or (0, 0, {}))[2].get("a"), wit(W(ZIN(DIGS, PAB), a1), "123")))
 flush()
 
 print("== MOVED LINES (PART C, D, F lines whose answer under the RULE differs from rev 23.2's (iii)): %d" % len(MOVED))

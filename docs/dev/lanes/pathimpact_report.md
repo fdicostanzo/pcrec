@@ -7,9 +7,10 @@ edited. Every number below is printed by `pathimpact_evidence/pathimpact_model.p
 ## STATE AT HANDOFF
 
 - OWED: none
-- Rulings file `pathimpact_rulings.md`: last entry applied R1 (the owner's "regex behaviour is the general
-  behaviour" clarification and the manager's table formulation to test; tested in PROPERTIES CHECKED, P8).
-- Validation: forward run 1m29s; order-swap diff empty (0 lines); sabotage forward vs swapped diff 116 lines;
+- Rulings file `pathimpact_rulings.md`: last entry applied R2 (R1: the owner's "regex behaviour is the general
+  behaviour" clarification and the manager's table formulation, tested in PROPERTIES CHECKED P8; R2: the owner's
+  question `A & B` vs `A & (0: B)`, tested in P9).
+- Validation: forward run about 1m50s; order-swap diff empty (0 lines); sabotage forward vs swapped diff 129 lines;
   rule switch `PATHIMPACT_READING=iii` prints MOVED LINES 0 and engine hunks 0 (forward: 30 and 2).
 - Premise: `predspec23d_model.py` re-runs byte-identical to its committed `.out` (ORDER lines aside) before any hook.
 
@@ -144,6 +145,31 @@ The manager's derived consequences, each a claim to test. DIG4 = every text over
   FAILS, engine HOLDS (80 / 128 / 128) - "atomic = first row before filtering" holds only for conditions outside it.
   Loop and `!` agree once rows carry pass lists and complements filter by stretch.
 
+- P9 R2's CLAIM, `A & B` = `A & (0: B)` (`0` the row's whole match; `(0: B)` the match's text, as a value, is in B,
+  so B is matched WHOLE against that value alone; PART H). `A & B` run two ways: SPAN (B against the stretch's own
+  text: the draft's filter-role meaning, below) and IN-CONTEXT (B's paths over the stretch inside the whole text, PCRE's
+  meaning for a final pattern).
+  - HOLDS and the STRETCH reported, A's paths outer (E1 left): SAME, 0 in every mode: B without labels
+    (`/(?<l>\d+)/ & /1\d*/`, DSP), the draft's `t2 & q` (labels h, m too) and `P & Q`, a conditioned program as B
+    (`/\d+/ & (P & (a: "1"))`), a lazy B; `A & !B` = `A & NOT (0: B)` likewise 0 (incl. `t2 & !q`, 781 time texts).
+  - With B's paths outer (OPEN E1, right): the stretch PARTS. `/\d+/ & /\d+?/` vs `& (0: /\d+?/)`: SEARCHED 1,008 /
+    FIND-ALL 1,197 of 1,365; on `11`: `&` reports `1`@0 (find-all [`1`, `1`]), `(0:)` `11`@0. With a conditioned B
+    both orders agree (0). So the claim needs E1 settled left (or a join that keeps A's order).
+  - Labels read later: PART, as claimed. `(/\d+/ & P) & (a: "1")` vs `(/\d+/ & (0: P)) & (a: "1")`: WHOLE 84,
+    SEARCHED 180 of 341; on `123` `&` HOLDS a=1, `(0:)` FAILS (a is not set, UNKNOWN). The report's labels a, b
+    differ on 336 of 341 (no other difference).
+  - B holding `^`, `$`, `\b`, `\B`, a lookahead or a lookbehind (nine B's over 1,365 texts): SPAN vs `(0:)`: 0 in every
+    mode, `&` and `& !`. IN-CONTEXT vs `(0:)`: WHOLE always 0 (the stretch is the text); SEARCHED/FIND-ALL part on
+    every one of the nine in at least one of `&` / `& !` (up to 1,344; e.g. `/\d+/ & /^\d+/` on ` 1`: in context
+    FAILS, `(0:)` `1`@1; `/\d+/ & !/\b\d+/` on `11`: in context `1`@1, `(0:)` FAILS).
+  - What the draft says: both operands of `&` are filter roles (§11, the ruled row "BOTH operands of `&` are filter
+    roles", CF:1059-1060); in a filter role an assertion that would read beyond the filtered stretch is REFUSED (§13
+    O17, CF:761 (3); §11's EDGE-ASSERTION ERROR example `/\b(?<w>...)\b/ & (w: F)`), and `^`/`$` read the stretch's
+    ends (CF:56). So the draft's `&` is the SPAN form: an edge-reading B is a compile error and `^`/`$` agree with
+    `(0:)`; the two forms do not part there. A WHOLE-VALUE program is a filter role too (§R.1, "a filter role; a program
+    applied to a value"), so `(0: B)` with such a B meets the same refusal. They would part only if `&`'s B were read
+    in context, which the draft rules out.
+
 ## OPEN UNDER THE NEW RULE
 
 Points the owner's words do not decide. Each candidate is run (PART E), with one worked line.
@@ -194,16 +220,16 @@ The R.8 slugs, each candidate on a WHOLE value, a SEARCHED text and a FIND-ALL t
 W = /home/pcrec/projects/pcrec/worktrees/pathimpact; run from a scratch dir, e.g.
 `/var/tmp/pcrec-pcrec/scratch/pathimpact`. Python 3.14, standard library only.
 
-    timeout 900 python3 -I W/docs/dev/lanes/pathimpact_evidence/pathimpact_model.py > fwd.out        # ~1.5 min
+    timeout 900 python3 -I W/docs/dev/lanes/pathimpact_evidence/pathimpact_model.py > fwd.out        # ~2 min
     PATHIMPACT_SWAP=1 timeout 900 python3 -I W/docs/dev/lanes/pathimpact_evidence/pathimpact_model.py > swap.out
     diff <(grep -v '^ORDER:' fwd.out) <(grep -v '^ORDER:' swap.out)        # prints nothing (0 lines)
     PATHIMPACT_SABOTAGE=1 ... > sfwd.out ; PATHIMPACT_SABOTAGE=1 PATHIMPACT_SWAP=1 ... > sswap.out
-    diff <(grep -v '^ORDER:' sfwd.out) <(grep -v '^ORDER:' sswap.out) | grep -c '^<'   # 116: the swap check can fail
+    diff <(grep -v '^ORDER:' sfwd.out) <(grep -v '^ORDER:' sswap.out) | grep -c '^<'   # 129: the swap check can fail
     PATHIMPACT_READING=iii timeout 900 python3 -I W/.../pathimpact_model.py > iii.out  # THE RULE SWITCH
     grep '^== MOVED\|^== ENGINE' iii.out        # MOVED LINES 0, ENGINE hunks 0 (forward: 30 and 2)
-    diff <(grep -v '^ORDER:' fwd.out) <(grep -v '^ORDER:' iii.out) | grep -c '^<'      # 61 lines differ
+    diff <(grep -v '^ORDER:' fwd.out) <(grep -v '^ORDER:' iii.out) | grep -c '^<'      # 63 lines differ
 
 SWAP reverses text pools, condition lists and computation order (not PCRE's path order, which is meaning).
 SABOTAGE puts path order under SWAP, so every report resting on "the first surviving path" changes in the swapped run;
-its 116 lines reach PARTS A, B, C, D, E, F and G. `PATHIMPACT_ENDS=engine` keeps the earlier engines' own end order in
+its 129 lines reach PARTS A, B, C, D, E, F, G and H. `PATHIMPACT_ENDS=engine` keeps the earlier engines' own end order in
 PART B (ORDER CONTROL, printed in every run). `PATHIMPACT_READING=i` runs one parse everywhere.

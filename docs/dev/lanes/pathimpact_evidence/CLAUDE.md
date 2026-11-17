@@ -13,8 +13,9 @@ text. Historical after merge; never edited after.
   PART B re-runs the four earlier engines (predspec23, 23b, 23c, searchrow) through predspec23d's exec mechanism with
   path hooks and diffs against `predspec23d_model.out`; PART C the draft's worked lines; PART D the manager's claimed
   properties; PART E every OPEN candidate; PART F the R.8 owner questions; PART G the rulings-file R1 table
-  formulation built independently. Every C/D/F line prints MOVED or same against (iii).
-- `pathimpact_model.out` — the forward run's output (about 1.5 minutes).
+  formulation built independently; PART H the R2 claim `A & B` vs `A & (0: B)`
+  (the enumerator also handles `\b`/`\B` and lookbehind for it, checked in PART A). Every C/D/F line prints MOVED or same against (iii).
+- `pathimpact_model.out` — the forward run's output (about 2 minutes).
 
 Commands (swap check, sabotage and its measured reach, the rule switch `PATHIMPACT_READING=iii`): the header of
 `pathimpact_model.py` and the report's COMMANDS section.

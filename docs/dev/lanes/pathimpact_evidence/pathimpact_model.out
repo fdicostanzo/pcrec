@@ -3,6 +3,8 @@ ORDER: forward RULE=(ii)
   CONTROL /(?:(?P<h>\d);)*/ over 364 texts: 2005 starts, 2317 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
   CONTROL /(?:(?P<h>\d{1,2}),?)+/ over 364 texts: 2005 starts, 2918 stretches; MISMATCHES 0; stretches with 2+ paths 1368, with 2+ label sets 1288
   CONTROL /(?:[\s\S]*?(?P<hit>\d+))*[\s\S]*/ over 121 texts: 547 starts, 1549 stretches; MISMATCHES 0; stretches with 2+ paths 818, with 2+ label sets 818
+  CONTROL /(?<!1)(?P<x>\d)\d*$/ over 1365 texts: 7737 starts, 10107 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?<= )\d+/ over 1365 texts: 7737 starts, 0 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
   CONTROL /(?=(?P<x>\d+))\d/ over 341 texts: 1593 starts, 1252 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
   CONTROL /(?P<a>1)(?P<b>\d+)/ over 341 texts: 1593 starts, 436 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
   CONTROL /(?P<a>\d+)(?P<b>\d+)/ over 341 texts: 1593 starts, 1744 stretches; MISMATCHES 0; stretches with 2+ paths 832, with 2+ label sets 832
@@ -14,6 +16,11 @@ ORDER: forward RULE=(ii)
   CONTROL /(?P<l>\d\d)/ over 341 texts: 1593 starts, 912 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
   CONTROL /(?P<l>a)a/ over 31 texts: 129 starts, 17 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
   CONTROL /(?P<l>aa)/ over 31 texts: 129 starts, 17 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /\B\d/ over 1365 texts: 7737 starts, 0 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /\b\d+/ over 1365 texts: 7737 starts, 10107 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /\d+(?!\d)/ over 1365 texts: 7737 starts, 10107 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /\d+\b/ over 1365 texts: 7737 starts, 10107 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /^\d+/ over 1365 texts: 7737 starts, 10107 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
 == PART B: the four earlier engines re-run under the rule (through predspec23d's script, its canonical fixes kept); BEFORE = predspec23d_model.out as committed
   ENGINE LINES THAT MOVE (predspec23d's PART B / X / Y lines, every engine line in full): 2 hunks
     BEFORE ENGINE searchrow: 113 lines, 34 moved
@@ -233,6 +240,60 @@ ORDER: forward RULE=(ii)
   G `when` expansion, c = (h: <5), the row remembers its branch over 1110 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
   G loop `/(?:(?<h>\d);)*/ & (h: <5)` (a row's passes; zero passes UNKNOWN) over 364 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
   G witnesses: NAIVE `((B & (l: >50)) | A) & (l: <10)` on `12`: table FAILS, evaluator HOLDS ; `atomic(P & (a: "1"))` on `123`: first-row-before-filtering FAILS, evaluator HOLDS
+== PART H: the rulings-file R2 claim: `A & B` vs `A & (0: B)` (RULE); WHOLE / SEARCHED stretch / FIND-ALL stretches unless labels are named
+  H B without labels: `/(?<l>\d+)/ & /1\d*/` vs `& (0: /1\d*/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H B without labels: `/(?<l>\d+)/ & !/1\d*/` vs `& NOT (0: /1\d*/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H the draft's `t2 & q` vs `t2 & (0: q)` (labels h, m compared) over 781 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H the draft's `t2 & !q` vs `t2 & NOT (0: q)` over 781 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H `P & Q` (R.1.4's two-label join) vs `P & (0: Q)`, stretch only over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H B's labels read later: `(/\d+/ & P) & (a: "1")` vs `(/\d+/ & (0: P)) & (a: "1")` over 341 texts: differ WHOLE 84 (first '10'); SEARCHED 180 (first '10'); FIND-ALL 180 (first '10')
+  H B's labels in the report: `/\d+/ & P` vs `/\d+/ & (0: P)` (labels a, b compared) over 341 texts: differ WHOLE 0; SEARCHED 336 (first '00'); FIND-ALL 336 (first '00')
+  H B a conditioned program, join left-outer: `/\d+/ & (P & (a: "1"))` vs `/\d+/ & (0: P & (a: "1"))` over 341 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H B a conditioned program, join left-outer: `/\d+/ & !(P & (a: "1"))` vs `& NOT (0: P & (a: "1"))` over 341 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H B lazy, join left-outer: `/\d+/ & /\d+?/` vs `/\d+/ & (0: /\d+?/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H B a conditioned program, join right-outer: `/\d+/ & (P & (a: "1"))` vs `/\d+/ & (0: P & (a: "1"))` over 341 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H B a conditioned program, join right-outer: `/\d+/ & !(P & (a: "1"))` vs `& NOT (0: P & (a: "1"))` over 341 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H B lazy, join right-outer: `/\d+/ & /\d+?/` vs `/\d+/ & (0: /\d+?/)` over 1365 texts: differ WHOLE 0; SEARCHED 1008 (first '11'); FIND-ALL 1197 (first '11')
+  H edge B IN-CONTEXT `/\d+/ & /(?<!1)\d+/` vs `/\d+/ & (0: /(?<!1)\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & !/(?<!1)\d+/` vs `& NOT (0: /(?<!1)\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 693 (first '11'); FIND-ALL 693 (first '11')
+  H edge B SPAN (filter role) `/\d+/ & /(?<!1)\d+/` vs `/\d+/ & (0: /(?<!1)\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/(?<!1)\d+/` vs `& NOT (0: /(?<!1)\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /(?<= )\d+/` vs `/\d+/ & (0: /(?<= )\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 822 (first ' 1'); FIND-ALL 822 (first ' 1')
+  H edge B IN-CONTEXT `/\d+/ & !/(?<= )\d+/` vs `& NOT (0: /(?<= )\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 336 (first ' 1'); FIND-ALL 822 (first ' 1')
+  H edge B SPAN (filter role) `/\d+/ & /(?<= )\d+/` vs `/\d+/ & (0: /(?<= )\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/(?<= )\d+/` vs `& NOT (0: /(?<= )\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /\B\d+/` vs `/\d+/ & (0: /\B\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 1197 (first '11'); FIND-ALL 1197 (first '11')
+  H edge B IN-CONTEXT `/\d+/ & !/\B\d+/` vs `& NOT (0: /\B\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & /\B\d+/` vs `/\d+/ & (0: /\B\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/\B\d+/` vs `& NOT (0: /\B\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /\b\d+/` vs `/\d+/ & (0: /\b\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & !/\b\d+/` vs `& NOT (0: /\b\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 1197 (first '11'); FIND-ALL 1197 (first '11')
+  H edge B SPAN (filter role) `/\d+/ & /\b\d+/` vs `/\d+/ & (0: /\b\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/\b\d+/` vs `& NOT (0: /\b\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /\d+$/` vs `/\d+/ & (0: /\d+$/)` over 1365 texts: differ WHOLE 0; SEARCHED 822 (first '1 '); FIND-ALL 822 (first '1 ')
+  H edge B IN-CONTEXT `/\d+/ & !/\d+$/` vs `& NOT (0: /\d+$/)` over 1365 texts: differ WHOLE 0; SEARCHED 1344 (first '1 '); FIND-ALL 1344 (first '1 ')
+  H edge B SPAN (filter role) `/\d+/ & /\d+$/` vs `/\d+/ & (0: /\d+$/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/\d+$/` vs `& NOT (0: /\d+$/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /\d+(?!\d)/` vs `/\d+/ & (0: /\d+(?!\d)/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & !/\d+(?!\d)/` vs `& NOT (0: /\d+(?!\d)/)` over 1365 texts: differ WHOLE 0; SEARCHED 1197 (first '11'); FIND-ALL 1197 (first '11')
+  H edge B SPAN (filter role) `/\d+/ & /\d+(?!\d)/` vs `/\d+/ & (0: /\d+(?!\d)/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/\d+(?!\d)/` vs `& NOT (0: /\d+(?!\d)/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /\d+(?= )/` vs `/\d+/ & (0: /\d+(?= )/)` over 1365 texts: differ WHOLE 0; SEARCHED 822 (first '1 '); FIND-ALL 822 (first '1 ')
+  H edge B IN-CONTEXT `/\d+/ & !/\d+(?= )/` vs `& NOT (0: /\d+(?= )/)` over 1365 texts: differ WHOLE 0; SEARCHED 822 (first '1 '); FIND-ALL 822 (first '1 ')
+  H edge B SPAN (filter role) `/\d+/ & /\d+(?= )/` vs `/\d+/ & (0: /\d+(?= )/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/\d+(?= )/` vs `& NOT (0: /\d+(?= )/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /\d+\b/` vs `/\d+/ & (0: /\d+\b/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & !/\d+\b/` vs `& NOT (0: /\d+\b/)` over 1365 texts: differ WHOLE 0; SEARCHED 1197 (first '11'); FIND-ALL 1197 (first '11')
+  H edge B SPAN (filter role) `/\d+/ & /\d+\b/` vs `/\d+/ & (0: /\d+\b/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/\d+\b/` vs `& NOT (0: /\d+\b/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B IN-CONTEXT `/\d+/ & /^\d+/` vs `/\d+/ & (0: /^\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 336 (first ' 1'); FIND-ALL 822 (first ' 1')
+  H edge B IN-CONTEXT `/\d+/ & !/^\d+/` vs `& NOT (0: /^\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 1344 (first ' 1'); FIND-ALL 1344 (first ' 1')
+  H edge B SPAN (filter role) `/\d+/ & /^\d+/` vs `/\d+/ & (0: /^\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H edge B SPAN (filter role) `/\d+/ & !/^\d+/` vs `& NOT (0: /^\d+/)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  H witness `/\d+/ & !/\b\d+/` on `11`: IN-CONTEXT FAILS / `1`@1 / ['`1`@1'] ; SPAN FAILS / FAILS / [] ; `& NOT (0: /\b\d+/)` FAILS / FAILS / []
+  H witness `/\d+/ & /^\d+/` on ` 1`: IN-CONTEXT FAILS / FAILS / [] ; SPAN FAILS / `1`@1 / ['`1`@1'] ; `& (0: /^\d+/)` FAILS / `1`@1 / ['`1`@1']
+  H witness join right-outer `/\d+/ & /\d+?/` on `11`: & HOLDS / `1`@0 / ['`1`@0', '`1`@1'] ; `& (0: /\d+?/)` HOLDS / `11`@0 / ['`11`@0']
+  H witness labels read later `(/\d+/ & P) & (a: "1")` on `123`: & HOLDS / `123`@0 / ['`123`@0'] [a=1] ; `(/\d+/ & (0: P)) & (a: "1")` FAILS / FAILS / [] (a is not set: UNKNOWN)
 == MOVED LINES (PART C, D, F lines whose answer under the RULE differs from rev 23.2's (iii)): 30
 == ENGINE LINES THAT MOVE (PART B hunks): 2
 END
