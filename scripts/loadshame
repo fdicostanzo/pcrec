@@ -205,9 +205,11 @@ def report_watched(snap, first=None, span=None):
             if r:
                 roots.setdefault(r[0], [r, 0])[1] += 1
         r = max(roots.values(), key=lambda x: x[1])[0] if roots else (pidlist[0], snap[pidlist[0]][0], "", "?", False)
-        age = up - int(snap[r[0]][3]) / CLK if r[0] in snap else 0
-        d, rem = divmod(int(max(age, 0)), 86400)
-        up_s = "%dd %dh" % (d, rem // 3600) if d else "%dh %dm" % (rem // 3600, rem % 3600 // 60)
+        if r[0] in snap:
+            d, rem = divmod(int(max(up - int(snap[r[0]][3]) / CLK, 0)), 86400)
+            up_s = "%dd %dh" % (d, rem // 3600) if d else "%dh %dm" % (rem // 3600, rem % 3600 // 60)
+        else:
+            up_s = "?"                     # the root left between the scan and the climb
         if first is None:
             cores = "n/a"
         else:
