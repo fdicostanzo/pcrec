@@ -1,0 +1,857 @@
+ORDER: forward
+== PART A: every engine line under section 2.2 (canonical numerals); lines that MOVED, before -> after
+ENGINE predspec23: 127 lines, 18 moved
+  BEFORE  SEARCHED T2 (11,110) t2 & ((h, m): !R) (set complement) holds 10230 first '0:00'
+  AFTER   SEARCHED T2 (11,110) t2 & ((h, m): !R) (set complement) holds 10300 first '0:00'
+  BEFORE  SEARCHED T2 (11,110) t2 & NOT late (condition NOT) holds 10230 first '0:00'
+  AFTER   SEARCHED T2 (11,110) t2 & NOT late (condition NOT) holds 10300 first '0:00'
+  BEFORE  SEARCHED T2 (11,110) t2 & nowhere(q) [proposed] holds 1970 first '0'
+  AFTER   SEARCHED T2 (11,110) t2 & nowhere(q) [proposed] holds 2870 first '0'
+  BEFORE  WHOLE T2 (11,110) t2 & !contains(q) holds 1970 first '0'
+  AFTER   WHOLE T2 (11,110) t2 & !contains(q) holds 2870 first '0'
+  BEFORE  WHOLE T2 (11,110) t2 & !q (pattern difference) holds 1970 first '0'
+  AFTER   WHOLE T2 (11,110) t2 & !q (pattern difference) holds 2940 first '0'
+  BEFORE  WHOLE T2 (11,110) t2 & ((h, m): !R) (set complement) holds 1860 first '0:00'
+  AFTER   WHOLE T2 (11,110) t2 & ((h, m): !R) (set complement) holds 2830 first '0:00'
+  BEFORE  WHOLE T2 (11,110) t2 & NOT late (condition NOT) holds 1860 first '0:00'
+  AFTER   WHOLE T2 (11,110) t2 & NOT late (condition NOT) holds 2830 first '0:00'
+  BEFORE  WHOLE T2 (11,110) t2 & nowhere(q) [proposed] holds 1970 first '0'
+  AFTER   WHOLE T2 (11,110) t2 & nowhere(q) [proposed] holds 2870 first '0'
+  BEFORE  SEARCHED T2 (11,110) t2 & !q holds while the text has a late time somewhere: 9140 first '9:30'
+  AFTER   SEARCHED T2 (11,110) t2 & !q holds while the text has a late time somewhere: 8240 first '9:30'
+  BEFORE  WHOLE T2 (11,110) t2 & !q holds while the text has a late time somewhere: 0 first None
+  AFTER   WHOLE T2 (11,110) t2 & !q holds while the text has a late time somewhere: 70 first '09:30'
+  BEFORE  WHOLE T2 (11,110) t2 & ((h, m = 0): !R) holds 1880 first '0'; vs t2 & !q differ 90 first '10'
+  AFTER   WHOLE T2 (11,110) t2 & ((h, m = 0): !R) holds 2850 first '0'; vs t2 & !q differ 90 first '10'
+  BEFORE  CLOSING (1,111 lists) ((h = 0, m = 00): R) every pass, possibly none   WHOLE holds 40 (I1 differ 25 first '3,'; I2a differ 45 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  AFTER   CLOSING (1,111 lists) ((h = 0, m = 00): R) every pass, possibly none   WHOLE holds 3 (I1 differ 1 first ''; I2a differ 37 first ''; I2b differ 12 first '') | SEARCHED holds 526
+  BEFORE  CLOSING (1,111 lists) ((h, m = 00): R) (h without a default)           WHOLE holds 39 (I1 differ 26 first ''; I2a differ 46 first ''; I2b differ 1 first '') | SEARCHED holds 1110
+  AFTER   CLOSING (1,111 lists) ((h, m = 00): R) (h without a default)           WHOLE holds 3 (I1 differ 1 first ''; I2a differ 37 first ''; I2b differ 12 first '') | SEARCHED holds 526
+  BEFORE  CLOSING (1,111 lists) ((h, m): R) plain                                WHOLE holds 14 (I1 differ 1 first ''; I2a differ 71 first ''; I2b differ 26 first '') | SEARCHED holds 852
+  AFTER   CLOSING (1,111 lists) ((h, m): R) plain                                WHOLE holds 3 (I1 differ 1 first ''; I2a differ 37 first ''; I2b differ 12 first '') | SEARCHED holds 526
+  BEFORE  CLOSING (1,111 lists) occurs.none(((h, m = 00): !R))                   WHOLE holds 40 (I1 differ 25 first '3,'; I2a differ 45 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  AFTER   CLOSING (1,111 lists) occurs.none(((h, m = 00): !R))                   WHOLE holds 4 (I1 differ 0; I2a differ 36 first '3,'; I2b differ 11 first '3,') | SEARCHED holds 1111
+  BEFORE  CLOSING (1,111 lists) occurs.none(((h, m = 99): !R))                   WHOLE holds 15 (I1 differ 0; I2a differ 70 first '3,'; I2b differ 25 first '3,') | SEARCHED holds 1111
+  AFTER   CLOSING (1,111 lists) occurs.none(((h, m = 99): !R))                   WHOLE holds 4 (I1 differ 0; I2a differ 36 first '3,'; I2b differ 11 first '3,') | SEARCHED holds 1111
+  BEFORE  CLOSING (1,111 lists) occurs.none(((h, m): !R))                        WHOLE holds 85 (I1 differ 70 first '3,'; I2a differ 0; I2b differ 45 first '12,') | SEARCHED holds 1111
+  AFTER   CLOSING (1,111 lists) occurs.none(((h, m): !R))                        WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+  BEFORE  CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [legal again]       WHOLE holds 85 (I1 differ 70 first '3,'; I2a differ 0; I2b differ 45 first '12,') | SEARCHED holds 1111
+  AFTER   CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [legal again]       WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+ENGINE predspec23b: 196 lines, 27 moved
+  BEFORE  CONTROL WHOLE T2 (11,110) t2 & !q holds 1970 (predspec23 PART 3: WHOLE 1970, SEARCHED 11110)
+  AFTER   CONTROL WHOLE T2 (11,110) t2 & !q holds 2940 (predspec23 PART 3: WHOLE 1970, SEARCHED 11110)
+  BEFORE  ROUTE SEARCHED T2 (11,110) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 1970 first '0'
+  AFTER   ROUTE SEARCHED T2 (11,110) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 2870 first '0'
+  BEFORE  ROUTE SEARCHED T2 (11,110) (ii) t2 & text.none(q) holds 1970 first '0'
+  AFTER   ROUTE SEARCHED T2 (11,110) (ii) t2 & text.none(q) holds 2870 first '0'
+  BEFORE  ROUTE SEARCHED T2PAIRS (600) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 132 first '1'
+  AFTER   ROUTE SEARCHED T2PAIRS (600) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 182 first '1'
+  BEFORE  ROUTE SEARCHED T2PAIRS (600) (ii) t2 & text.none(q) holds 132 first '1'
+  AFTER   ROUTE SEARCHED T2PAIRS (600) (ii) t2 & text.none(q) holds 182 first '1'
+  BEFORE  ROUTE WHOLE T2 (11,110) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 1970 first '0'
+  AFTER   ROUTE WHOLE T2 (11,110) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 2870 first '0'
+  BEFORE  ROUTE WHOLE T2 (11,110) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 1970 first '0'
+  AFTER   ROUTE WHOLE T2 (11,110) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 2870 first '0'
+  BEFORE  ROUTE WHOLE T2 (11,110) (ii) t2 & text.none(q) holds 1970 first '0'
+  AFTER   ROUTE WHOLE T2 (11,110) (ii) t2 & text.none(q) holds 2870 first '0'
+  BEFORE  ROUTE WHOLE T2 (11,110) t2 & !contains(q) (today) holds 1970 first '0'
+  AFTER   ROUTE WHOLE T2 (11,110) t2 & !contains(q) (today) holds 2870 first '0'
+  BEFORE  ROUTE WHOLE T2 (11,110) t2 & !q (pattern difference, today) holds 1970 first '0'
+  AFTER   ROUTE WHOLE T2 (11,110) t2 & !q (pattern difference, today) holds 2940 first '0'
+  BEFORE  ROUTE WHOLE T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 11 first '1'
+  AFTER   ROUTE WHOLE T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 13 first '1'
+  BEFORE  ROUTE WHOLE T2PAIRS (600) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 132 first '1'
+  AFTER   ROUTE WHOLE T2PAIRS (600) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 182 first '1'
+  BEFORE  ROUTE WHOLE T2PAIRS (600) (ii) t2 & text.none(q) holds 11 first '1'
+  AFTER   ROUTE WHOLE T2PAIRS (600) (ii) t2 & text.none(q) holds 13 first '1'
+  BEFORE  ROUTE WHOLE T2PAIRS (600) t2 & !contains(q) (today) holds 11 first '1'
+  AFTER   ROUTE WHOLE T2PAIRS (600) t2 & !contains(q) (today) holds 13 first '1'
+  BEFORE  ROUTE WHOLE T2PAIRS (600) t2 & !q (pattern difference, today) holds 11 first '1'
+  AFTER   ROUTE WHOLE T2PAIRS (600) t2 & !q (pattern difference, today) holds 13 first '1'
+  BEFORE  ROUTE SEARCHED T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 9140 first '9:30'
+  AFTER   ROUTE SEARCHED T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 8240 first '9:30'
+  BEFORE  ROUTE SEARCHED T2 (11,110) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 9140 first '9:30'
+  AFTER   ROUTE SEARCHED T2 (11,110) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 8240 first '9:30'
+  BEFORE  ROUTE SEARCHED T2 (11,110) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 9140 first '9:30'
+  AFTER   ROUTE SEARCHED T2 (11,110) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 8240 first '9:30'
+  BEFORE  ROUTE SEARCHED T2PAIRS (600) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 468 first '9:30'
+  AFTER   ROUTE SEARCHED T2PAIRS (600) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 418 first '9:30'
+  BEFORE  ROUTE SEARCHED T2PAIRS (600) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 468 first '9:30'
+  AFTER   ROUTE SEARCHED T2PAIRS (600) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 418 first '9:30'
+  BEFORE  ROUTE SEARCHED T2PAIRS (600) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 468 first '9:30'
+  AFTER   ROUTE SEARCHED T2PAIRS (600) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 418 first '9:30'
+  BEFORE  ROUTE WHOLE T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 0 first None
+  AFTER   ROUTE WHOLE T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 70 first '09:30'
+  BEFORE  ROUTE WHOLE T2PAIRS (600) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 121 first '1 1'
+  AFTER   ROUTE WHOLE T2PAIRS (600) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 169 first '1 1'
+  BEFORE  ROUTE FIND-ALL T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start): texts with 2+ matches 264
+  AFTER   ROUTE FIND-ALL T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start): texts with 2+ matches 312
+  BEFORE  ROUTE FIND-ALL T2PAIRS (600) (ii) t2 & text.none(q): texts with 2+ matches 121
+  AFTER   ROUTE FIND-ALL T2PAIRS (600) (ii) t2 & text.none(q): texts with 2+ matches 169
+  BEFORE  ROUTE FIND-ALL T2PAIRS (600) t2 & !contains(q) (today): texts with 2+ matches 589
+  AFTER   ROUTE FIND-ALL T2PAIRS (600) t2 & !contains(q) (today): texts with 2+ matches 587
+  BEFORE  ROUTE FIND-ALL T2PAIRS (600) t2 & !q (pattern difference, today): texts with 2+ matches 589
+  AFTER   ROUTE FIND-ALL T2PAIRS (600) t2 & !q (pattern difference, today): texts with 2+ matches 587
+ENGINE predspec23c: 166 lines, 4 moved
+  BEFORE  WHEN-T2 WHOLE T2 (11,110) c = late, p = (m: <45): body holds 6050, case-when (filter form) holds 6050 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+  AFTER   WHEN-T2 WHOLE T2 (11,110) c = late, p = (m: <45): body holds 6105, case-when (filter form) holds 6105 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+  BEFORE  L83 SEARCHED T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 371 first '9'
+  AFTER   L83 SEARCHED T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 281 first '9'
+  BEFORE  CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [joint] WHOLE holds 85 (I1 differ 70 first '3,'; I2a differ 0; I2b differ 45 first '12,') | SEARCHED holds 1111
+  AFTER   CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [joint] WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+  BEFORE  CLOSING (1,111 lists) occurs.none(NOT (h: <10, m: <30)) [record] WHOLE holds 40 (I1 differ 25 first '3,'; I2a differ 45 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  AFTER   CLOSING (1,111 lists) occurs.none(NOT (h: <10, m: <30)) [record] WHOLE holds 15 (I1 differ 11 first '3,'; I2a differ 25 first '12,'; I2b differ 0) | SEARCHED holds 1111
+ENGINE searchrow: 113 lines, 34 moved
+  BEFORE  t2 & !q   [source-row's one example] on `10:00 9:15`: R22 HOLDS `10`@0,`00`@3,`9:15`@6 | X HOLDS `1`@0,`10`@0,`0`@1,`0:00`@1,`0`@3,`00`@3,`0`@4,`9`@6,`9:15`@6,`1`@8,`15`@8,`5`@9 | S FAILS | M HOLDS `9:15`@6 | M+ HOLDS `9:15`@6 | Mr HOLDS `9:15`@6
+  AFTER   t2 & !q   [source-row's one example] on `10:00 9:15`: R22 HOLDS `10:00`@0,`9:15`@6 | X HOLDS `1`@0,`10`@0,`10:00`@0,`0`@1,`0:00`@1,`0`@3,`00`@3,`0`@4,`9`@6,`9:15`@6,`1`@8,`15`@8,`5`@9 | S HOLDS `10:00`@0,`9:15`@6 | M HOLDS `10:00`@0,`9:15`@6 | M+ HOLDS `10:00`@0,`9:15`@6 | Mr HOLDS `10:00`@0,`9:15`@6
+  BEFORE  §11 (i) /\d+/ & <256 on `x300 12`: R22 HOLDS `30`@1,`0`@3,`12`@5 | X HOLDS `3`@1,`30`@1,`0`@2,`00`@2,`0`@3,`1`@5,`12`@5,`2`@6 | S HOLDS `30`@1,`0`@3,`12`@5 | M HOLDS `12`@5 | M+ HOLDS `30`@1,`0`@3,`12`@5 | Mr HOLDS `30`@1,`0`@3,`12`@5
+  AFTER   §11 (i) /\d+/ & <256 on `x300 12`: R22 HOLDS `30`@1,`0`@3,`12`@5 | X HOLDS `3`@1,`30`@1,`0`@2,`0`@3,`1`@5,`12`@5,`2`@6 | S HOLDS `30`@1,`0`@3,`12`@5 | M HOLDS `12`@5 | M+ HOLDS `30`@1,`0`@3,`12`@5 | Mr HOLDS `30`@1,`0`@3,`12`@5
+  BEFORE  SEARCHED T2 (11,110) t2 & !q holds: S 1970 first 0
+  AFTER   SEARCHED T2 (11,110) t2 & !q holds: S 2870 first 0
+  BEFORE  SEARCHED T2 (11,110) t2 & !q holds: M 1970 first 0
+  AFTER   SEARCHED T2 (11,110) t2 & !q holds: M 2940 first 0
+  BEFORE  SEARCHED T2 (11,110) t2 & !q holds: M+ 1970 first 0
+  AFTER   SEARCHED T2 (11,110) t2 & !q holds: M+ 2940 first 0
+  BEFORE  SEARCHED T2 (11,110) t2 & !q holds: Mr 1970 first 0
+  AFTER   SEARCHED T2 (11,110) t2 & !q holds: Mr 2940 first 0
+  BEFORE  SEARCHED T2PAIRS (600) t2 & !q holds: S 132 first 1
+  AFTER   SEARCHED T2PAIRS (600) t2 & !q holds: S 182 first 1
+  BEFORE  SEARCHED T2PAIRS (600) t2 & !q holds: M 418 first 1
+  AFTER   SEARCHED T2PAIRS (600) t2 & !q holds: M 468 first 1
+  BEFORE  SEARCHED T2PAIRS (600) t2 & !q holds: M+ 418 first 1
+  AFTER   SEARCHED T2PAIRS (600) t2 & !q holds: M+ 468 first 1
+  BEFORE  SEARCHED T2PAIRS (600) t2 & !q holds: Mr 418 first 1
+  AFTER   SEARCHED T2PAIRS (600) t2 & !q holds: Mr 468 first 1
+  BEFORE  WHOLE T2 (11,110) t2 & !q holds: 1970
+  AFTER   WHOLE T2 (11,110) t2 & !q holds: 2940
+  BEFORE  WHOLE T2PAIRS (600) t2 & !q holds: 11
+  AFTER   WHOLE T2PAIRS (600) t2 & !q holds: 13
+  BEFORE  SEARCHED T2 (11,110) t2 & !q, R22 vs S differ: 9140 first 9:30
+  AFTER   SEARCHED T2 (11,110) t2 & !q, R22 vs S differ: 8240 first 9:30
+  BEFORE  SEARCHED T2 (11,110) t2 & !q, X vs S differ: 9140 first 9:30
+  AFTER   SEARCHED T2 (11,110) t2 & !q, X vs S differ: 8240 first 9:30
+  BEFORE  SEARCHED T2 (11,110) t2 & !q, M vs S differ: 0 first None
+  AFTER   SEARCHED T2 (11,110) t2 & !q, M vs S differ: 70 first 09:30
+  BEFORE  SEARCHED T2 (11,110) t2 & !q, M+ vs S differ: 0 first None
+  AFTER   SEARCHED T2 (11,110) t2 & !q, M+ vs S differ: 70 first 09:30
+  BEFORE  SEARCHED T2 (11,110) t2 & !q, Mr vs S differ: 0 first None
+  AFTER   SEARCHED T2 (11,110) t2 & !q, Mr vs S differ: 70 first 09:30
+  BEFORE  SEARCHED T2PAIRS (600) t2 & !q, R22 vs S differ: 468 first 9:30
+  AFTER   SEARCHED T2PAIRS (600) t2 & !q, R22 vs S differ: 418 first 9:30
+  BEFORE  SEARCHED T2PAIRS (600) t2 & !q, X vs S differ: 468 first 9:30
+  AFTER   SEARCHED T2PAIRS (600) t2 & !q, X vs S differ: 418 first 9:30
+  BEFORE  SEARCHED T2 (11,110) when: M body 6050 case-when 6050 differ 0 first None
+  AFTER   SEARCHED T2 (11,110) when: M body 6105 case-when 6105 differ 0 first None
+  BEFORE  SEARCHED T2 (11,110) when: M+ body 6050 case-when 11110 differ 5060 first 9:45
+  AFTER   SEARCHED T2 (11,110) when: M+ body 6105 case-when 11110 differ 5005 first 9:45
+  BEFORE  SEARCHED T2 (11,110) when: Mr body 6050 case-when 11110 differ 5060 first 9:45
+  AFTER   SEARCHED T2 (11,110) when: Mr body 6105 case-when 11110 differ 5005 first 9:45
+  BEFORE  SEARCHED T2PAIRS (600) when: S body 426 case-when 600 differ 174 first 9:45
+  AFTER   SEARCHED T2PAIRS (600) when: S body 402 case-when 600 differ 198 first 9:45
+  BEFORE  WHOLE T2 (11,110) when: body 6050 case-when 6050
+  AFTER   WHOLE T2 (11,110) when: body 6105 case-when 6105
+  BEFORE  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): M+ admitted 1009 first 9:30
+  AFTER   SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): M+ admitted 939 first 9:30
+  BEFORE  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): Mr admitted 1009 first 9:30
+  AFTER   SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): Mr admitted 939 first 9:30
+  BEFORE  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): S admitted 214 first 9:30
+  AFTER   SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): S admitted 220 first 9:30
+  BEFORE  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): M+ admitted 126 first 9:30
+  AFTER   SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): M+ admitted 102 first 9:30
+  BEFORE  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): Mr admitted 126 first 9:30
+  AFTER   SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): Mr admitted 102 first 9:30
+  BEFORE  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 800 first 0:20
+  AFTER   SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 900 first 0:00
+  BEFORE  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 800 first 0:20
+  AFTER   SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 900 first 0:00
+  BEFORE  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 90 first 1:30
+  AFTER   SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 104 first 1:00
+  BEFORE  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 90 first 1:30
+  AFTER   SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 104 first 1:00
+  BEFORE  SEARCHED DIG /\d+/ & <17 (no complement): M differs from R22 (D196) on 356 first 17
+  AFTER   SEARCHED DIG /\d+/ & <17 (no complement): M differs from R22 (D196) on 407 first 00
+== PART B: every engine line under section 2.2, in full (the numbers rev 23.2 quotes)
+predspec23|  D1 t2 & !q (q := t2 & late) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23|  D1 t2 & !q (q := t2 & late) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+predspec23|  D1 t2 & !q (q := t2 & late) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+predspec23|  D10 /a/ & /b/ (a join on the stretch) on `ab`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D11 t2 & contains(t2 & !q) (nested-complement) on `9:30`: WHOLE HOLDS | SEARCHED HOLDS `9:30`@0
+predspec23|  D12 A & (h = 0: <5) & (k: <5), A = /a(?<h>\d)|b(?<k>\d)|c/ on `a3`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D12 A & (h = 0: <5) & (k: <5), A = /a(?<h>\d)|b(?<k>\d)|c/ on `b3`: WHOLE HOLDS | SEARCHED HOLDS `b3`@0
+predspec23|  D12 A & (h = 0: <5) & (k: <5), A = /a(?<h>\d)|b(?<k>\d)|c/ on `c`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D13 A & (h: <5) & (k: <5) (the mark merely deleted) on `b3`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D2 /\d+/ & !/0+/ (11-15 20:43 tie) on `0`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D2 /\d+/ & !/0+/ (11-15 20:43 tie) on `0 7`: WHOLE FAILS | SEARCHED HOLDS `7`@2
+predspec23|  D3 t2 & NOT late on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D3 t2 & NOT late on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23|  D3 t2 & NOT late on `9:30`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D4 t2 & ((h, m): !R) (R = >= (9, 30)) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D4 t2 & ((h, m): !R) (R = >= (9, 30)) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23|  D4 t2 & ((h, m): !R) (R = >= (9, 30)) on `9:30`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D5 t2 & !contains(q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23|  D5 t2 & !contains(q) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+predspec23|  D5 t2 & !contains(q) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+predspec23|  D6 t2 & nowhere(q) [proposed whole-text test] on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23|  D6 t2 & nowhere(q) [proposed whole-text test] on `9:30`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D6 t2 & nowhere(q) [proposed whole-text test] on `9:30 1`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D7 (a, b) record (a = 0: <10, b: >$a) [$a reads the real label] on `/5`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D7 (a, b) record (a = 0: <10, b: >$a) [$a reads the real label] on `2/5`: WHOLE HOLDS | SEARCHED HOLDS `2/5`@0
+predspec23|  D7 (a, b) record (a = 0: <10, b: >$a) [$a reads the real label] on `x/5`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  D8 the joint ((a = 0, b): a < 10 & b > a) on `/5`: WHOLE HOLDS | SEARCHED HOLDS `/5`@0
+predspec23|  D8 the joint ((a = 0, b): a < 10 & b > a) on `2/5`: WHOLE HOLDS | SEARCHED HOLDS `2/5`@0
+predspec23|  D8 the joint ((a = 0, b): a < 10 & b > a) on `x/5`: WHOLE FAILS | SEARCHED HOLDS `/5`@1
+predspec23|  D9 two defaults on one label (h = 0: <5) & (h = 9: >7) on `3x`: WHOLE FAILS | SEARCHED HOLDS `x`@1
+predspec23|  D9 two defaults on one label (h = 0: <5) & (h = 9: >7) on `a x`: WHOLE FAILS | SEARCHED HOLDS `x`@2
+predspec23|  D9 two defaults on one label (h = 0: <5) & (h = 9: >7) on `x`: WHOLE HOLDS | SEARCHED HOLDS `x`@0
+predspec23|  SEARCHED REP (364) (h = 0: c) every pass, possibly none  holds 364 first ''
+predspec23|  SEARCHED REP (364) (h: !S) (every pass in !S)            holds 132 first '7;'
+predspec23|  SEARCHED REP (364) NOT c (not every pass)                holds 132 first '7;'
+predspec23|  SEARCHED REP (364) NOT some(c)                           holds 364 first ''
+predspec23|  SEARCHED REP (364) P & !(P & c)                          holds 364 first ''
+predspec23|  SEARCHED REP (364) occurs.none((h = "x": !S)) narrower   holds 364 first ''
+predspec23|  SEARCHED REP (364) occurs.none(c)                        holds 364 first ''
+predspec23|  SEARCHED REP (364) plain c (every pass, >=1 row)         holds 132 first '3;'
+predspec23|  WHOLE REP (364) (h = 0: c) every pass, possibly none  holds 20 first ''
+predspec23|  WHOLE REP (364) (h: !S) (every pass in !S)            holds 2 first '7;'
+predspec23|  WHOLE REP (364) NOT c (not every pass)                holds 22 first '7;'
+predspec23|  WHOLE REP (364) NOT some(c)                           holds 20 first ''
+predspec23|  WHOLE REP (364) P & !(P & c)                          holds 40 first ''
+predspec23|  WHOLE REP (364) occurs.none((h = "x": !S)) narrower   holds 3 first ''
+predspec23|  WHOLE REP (364) occurs.none(c)                        holds 20 first ''
+predspec23|  WHOLE REP (364) plain c (every pass, >=1 row)         holds 2 first '3;'
+predspec23|  SEARCHED SV (341) (h = "x": !S)   holds 220 first 'x'
+predspec23|  SEARCHED SV (341) (h = "x": >=5)  holds 56 first '7x'
+predspec23|  SEARCHED SV (341) (h: !S)         holds 56 first '7x'
+predspec23|  SEARCHED SV (341) NOT (h = 0: c)  holds 56 first '7x'
+predspec23|  SEARCHED SV (341) NOT (h = 9: c)  holds 220 first 'x'
+predspec23|  SEARCHED SV (341) NOT c           holds 56 first '7x'
+predspec23|  SEARCHED SV (341) P & !(P & c)    holds 220 first 'x'
+predspec23|  WHOLE SV (341) (h = "x": !S)   holds 2 first 'x'
+predspec23|  WHOLE SV (341) (h = "x": >=5)  holds 1 first '7x'
+predspec23|  WHOLE SV (341) (h: !S)         holds 1 first '7x'
+predspec23|  WHOLE SV (341) NOT (h = 0: c)  holds 1 first '7x'
+predspec23|  WHOLE SV (341) NOT (h = 9: c)  holds 2 first 'x'
+predspec23|  WHOLE SV (341) NOT c           holds 1 first '7x'
+predspec23|  WHOLE SV (341) P & !(P & c)    holds 2 first 'x'
+predspec23|  SEARCHED REP (364) [NOT c (not every pass)] vs [(h: !S) (every pass in !S)] differ 0 first None
+predspec23|  SEARCHED REP (364) [NOT c (not every pass)] vs [P & !(P & c)] differ 232 first ''
+predspec23|  SEARCHED REP (364) [(h: !S) (every pass in !S)] vs [P & !(P & c)] differ 232 first ''
+predspec23|  WHOLE REP (364) [NOT c (not every pass)] vs [(h: !S) (every pass in !S)] differ 20 first '7;;'
+predspec23|  WHOLE REP (364) [NOT c (not every pass)] vs [P & !(P & c)] differ 18 first ''
+predspec23|  WHOLE REP (364) [(h: !S) (every pass in !S)] vs [P & !(P & c)] differ 38 first ''
+predspec23|  SEARCHED SV (341) [NOT c] vs [(h: !S)] differ 0 first None
+predspec23|  SEARCHED SV (341) [NOT c] vs [P & !(P & c)] differ 164 first 'x'
+predspec23|  SEARCHED SV (341) [(h: !S)] vs [P & !(P & c)] differ 164 first 'x'
+predspec23|  WHOLE SV (341) [NOT c] vs [(h: !S)] differ 0 first None
+predspec23|  WHOLE SV (341) [NOT c] vs [P & !(P & c)] differ 1 first 'x'
+predspec23|  WHOLE SV (341) [(h: !S)] vs [P & !(P & c)] differ 1 first 'x'
+predspec23|  ROW REP `` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=H/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+predspec23|  ROW REP `3;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=H/H ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=F/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=H/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+predspec23|  ROW REP `3;3;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=H/H ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=F/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=H/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+predspec23|  ROW REP `3;7;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/H ; NOT c (not every pass)=H/H ; (h: !S) (every pass in !S)=F/H ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=F/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+predspec23|  ROW REP `3;;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/H ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=F/H ; occurs.none(c)=F/H
+predspec23|  ROW REP `7;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=H/H ; (h: !S) (every pass in !S)=H/H ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=F/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+predspec23|  ROW REP `7;;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=H/H ; (h: !S) (every pass in !S)=F/H ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=F/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+predspec23|  ROW REP `;` (WHOLE/SEARCHED): plain c (every pass, >=1 row)=F/F ; NOT c (not every pass)=F/F ; (h: !S) (every pass in !S)=F/F ; P & !(P & c)=H/H ; (h = 0: c) every pass, possibly none=H/H ; occurs.none((h = "x": !S)) narrower=F/H ; NOT some(c)=H/H ; occurs.none(c)=H/H
+predspec23|  ROW SV `3x` (WHOLE/SEARCHED): NOT c=F/F ; (h: !S)=F/F ; P & !(P & c)=F/H ; NOT (h = 0: c)=F/F ; NOT (h = 9: c)=F/H ; (h = "x": !S)=F/H ; (h = "x": >=5)=F/F
+predspec23|  ROW SV `7x` (WHOLE/SEARCHED): NOT c=H/H ; (h: !S)=H/H ; P & !(P & c)=H/H ; NOT (h = 0: c)=H/H ; NOT (h = 9: c)=H/H ; (h = "x": !S)=H/H ; (h = "x": >=5)=H/H
+predspec23|  ROW SV `x` (WHOLE/SEARCHED): NOT c=F/F ; (h: !S)=F/F ; P & !(P & c)=H/H ; NOT (h = 0: c)=F/F ; NOT (h = 9: c)=H/H ; (h = "x": !S)=H/H ; (h = "x": >=5)=F/F
+predspec23|  SEARCHED T2 (11,110) t2 & !contains(q) holds 11110 first '0'
+predspec23|  SEARCHED T2 (11,110) t2 & !q (pattern difference) holds 11110 first '0'
+predspec23|  SEARCHED T2 (11,110) t2 & ((h, m): !R) (set complement) holds 10300 first '0:00'
+predspec23|  SEARCHED T2 (11,110) t2 & NOT late (condition NOT) holds 10300 first '0:00'
+predspec23|  SEARCHED T2 (11,110) t2 & nowhere(q) [proposed] holds 2870 first '0'
+predspec23|  WHOLE T2 (11,110) t2 & !contains(q) holds 2870 first '0'
+predspec23|  WHOLE T2 (11,110) t2 & !q (pattern difference) holds 2940 first '0'
+predspec23|  WHOLE T2 (11,110) t2 & ((h, m): !R) (set complement) holds 2830 first '0:00'
+predspec23|  WHOLE T2 (11,110) t2 & NOT late (condition NOT) holds 2830 first '0:00'
+predspec23|  WHOLE T2 (11,110) t2 & nowhere(q) [proposed] holds 2870 first '0'
+predspec23|  SEARCHED T2 (11,110) t2 & !q holds while the text has a late time somewhere: 8240 first '9:30'
+predspec23|  WHOLE T2 (11,110) t2 & !q holds while the text has a late time somewhere: 70 first '09:30'
+predspec23|  SEARCHED T2 (11,110) t2 & ((h, m = 0): !R) holds 11110 first '0'; vs t2 & !q differ 0 first None
+predspec23|  WHOLE T2 (11,110) t2 & ((h, m = 0): !R) holds 2850 first '0'; vs t2 & !q differ 90 first '10'
+predspec23|  CLOSING (1,111 lists) ((h = 0, m = 00): R) every pass, possibly none   WHOLE holds 3 (I1 differ 1 first ''; I2a differ 37 first ''; I2b differ 12 first '') | SEARCHED holds 526
+predspec23|  CLOSING (1,111 lists) ((h, m = 00): R) (h without a default)           WHOLE holds 3 (I1 differ 1 first ''; I2a differ 37 first ''; I2b differ 12 first '') | SEARCHED holds 526
+predspec23|  CLOSING (1,111 lists) ((h, m): R) plain                                WHOLE holds 3 (I1 differ 1 first ''; I2a differ 37 first ''; I2b differ 12 first '') | SEARCHED holds 526
+predspec23|  CLOSING (1,111 lists) occurs.none(((h, m = 00): !R))                   WHOLE holds 4 (I1 differ 0; I2a differ 36 first '3,'; I2b differ 11 first '3,') | SEARCHED holds 1111
+predspec23|  CLOSING (1,111 lists) occurs.none(((h, m = 99): !R))                   WHOLE holds 4 (I1 differ 0; I2a differ 36 first '3,'; I2b differ 11 first '3,') | SEARCHED holds 1111
+predspec23|  CLOSING (1,111 lists) occurs.none(((h, m): !R))                        WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+predspec23|  CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [legal again]       WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+predspec23|  ZERO-PASS (n = 0: <5) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+predspec23|  ZERO-PASS (n = 0: <5) on `3,`: WHOLE HOLDS | SEARCHED HOLDS `3,`@0
+predspec23|  ZERO-PASS (n = 0: <5) on `3,7,`: WHOLE FAILS | SEARCHED HOLDS `3,`@0
+predspec23|  ZERO-PASS (n = 0: <5) on `7,`: WHOLE FAILS | SEARCHED HOLDS ``@0
+predspec23|  ZERO-PASS (n: <5) on ``: WHOLE FAILS | SEARCHED FAILS
+predspec23|  ZERO-PASS (n: <5) on `3,`: WHOLE HOLDS | SEARCHED HOLDS `3,`@0
+predspec23|  ZERO-PASS (n: <5) on `3,7,`: WHOLE FAILS | SEARCHED HOLDS `3,`@0
+predspec23|  ZERO-PASS (n: <5) on `7,`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  ZERO-PASS NOT (n: <5) on ``: WHOLE FAILS | SEARCHED FAILS
+predspec23|  ZERO-PASS NOT (n: <5) on `3,`: WHOLE FAILS | SEARCHED FAILS
+predspec23|  ZERO-PASS NOT (n: <5) on `3,7,`: WHOLE HOLDS | SEARCHED HOLDS `3,7,`@0
+predspec23|  ZERO-PASS NOT (n: <5) on `7,`: WHOLE HOLDS | SEARCHED HOLDS `7,`@0
+predspec23|  ZERO-PASS NOT some((n: <5)) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+predspec23|  ZERO-PASS NOT some((n: <5)) on `3,`: WHOLE FAILS | SEARCHED HOLDS ``@0
+predspec23|  ZERO-PASS NOT some((n: <5)) on `3,7,`: WHOLE FAILS | SEARCHED HOLDS ``@0
+predspec23|  ZERO-PASS NOT some((n: <5)) on `7,`: WHOLE HOLDS | SEARCHED HOLDS `7,`@0
+predspec23|  ZERO-PASS some((n: <5)) on ``: WHOLE FAILS | SEARCHED FAILS
+predspec23|  ZERO-PASS some((n: <5)) on `3,`: WHOLE HOLDS | SEARCHED HOLDS `3,`@0
+predspec23|  ZERO-PASS some((n: <5)) on `3,7,`: WHOLE HOLDS | SEARCHED HOLDS `3,7,`@0
+predspec23|  ZERO-PASS some((n: <5)) on `7,`: WHOLE FAILS | SEARCHED FAILS
+predspec23|END
+predspec23b|  CONTROL SEARCHED T2 (11,110) t2 & !q holds 11110 (predspec23 PART 3: WHOLE 1970, SEARCHED 11110)
+predspec23b|  CONTROL WHOLE T2 (11,110) t2 & !q holds 2940 (predspec23 PART 3: WHOLE 1970, SEARCHED 11110)
+predspec23b|  MODE (sec 0.1) t2 & ((h, m = 0): padded(>= (9, 30))): WHOLE vs SEARCHED differ on 1660 of 11,110, first '0:10' (rev 21: 1,660 under m = 0, 0 unmarked)
+predspec23b|  MODE (sec 0.1) t2 & ((h, m): padded(>= (9, 30))): WHOLE vs SEARCHED differ on 0 of 11,110, first None (rev 21: 1,660 under m = 0, 0 unmarked)
+predspec23b|  MODE (sec 0.1) t2 & ((h, m = 0): padded(>= (9, 30))) on `9:15` SEARCHED: HOLDS `15`@2
+predspec23b|  MODE (sec 0.1) t2 & ((h, m = 0): padded(>= (9, 30))) on `9:15` WHOLE: FAILS
+predspec23b|  L94 (h: <5, k = 3: between(3, 7)) SEARCHED: /x?/ holds 55 of 121; vs /(?:x|)/ differ 0 first None
+predspec23b|  L94 (h: <5, k = 3: between(3, 7)) WHOLE: /x?/ holds 30 of 121; vs /(?:x|)/ differ 0 first None
+predspec23b|  L94 (h: <5, k: between(3, 7)) SEARCHED: /x?/ holds 25 of 121; vs /(?:x|)/ differ 0 first None
+predspec23b|  L94 (h: <5, k: between(3, 7)) WHOLE: /x?/ holds 25 of 121; vs /(?:x|)/ differ 0 first None
+predspec23b|  OCC /ab(?<g>[xy])/ (g = "x": "x") every hit, possibly none on `abxabyabx`: WHOLE FAILS | SEARCHED HOLDS `abxab`@0
+predspec23b|  OCC /ab(?<g>[xy])/ (g = "x": "x") every hit, possibly none on `xyz`: WHOLE HOLDS | SEARCHED HOLDS `xyz`@0
+predspec23b|  OCC /ab(?<g>[xy])/ (g: "x") plain on `abxabyabx`: WHOLE FAILS | SEARCHED HOLDS `abxab`@0
+predspec23b|  OCC /ab(?<g>[xy])/ (g: "x") plain on `xyz`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  OCC127 SEARCHED (g = "a": "a") holds 127 of 127 first ''
+predspec23b|  OCC127 SEARCHED occurs.none((g = "": !"a")) holds 127 of 127 first ''
+predspec23b|  OCC127 WHOLE (g = "a": "a") holds 127 of 127 first ''
+predspec23b|  OCC127 WHOLE occurs.none((g = "": !"a")) holds 33 of 127 first ''
+predspec23b|  OCC127 SEARCHED every-possibly-none vs narrower differ 0 first None (spans with a hit lacking g: 94)
+predspec23b|  OCC127 WHOLE every-possibly-none vs narrower differ 94 first 'b' (spans with a hit lacking g: 94)
+predspec23b|  OCC /ab(?<g>[xy])/ count((g: "y")) == 1 on `abxabyabx`: WHOLE HOLDS | SEARCHED HOLDS `abxabyabx`@0
+predspec23b|  OCC /ab(?<g>[xy])/ count((g: "y")) == 1 on `xyz`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  OCC /ab(?<g>[xy])/ occurs.exactly(2, (g: "x")) on `abxabyabx`: WHOLE HOLDS | SEARCHED HOLDS `abxabyabx`@0
+predspec23b|  OCC /ab(?<g>[xy])/ occurs.exactly(2, (g: "x")) on `xyz`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  OCC /ab(?<g>[xy])/ occurs.none((g = "": !"x")) narrower on `abxabyabx`: WHOLE FAILS | SEARCHED HOLDS `abxab`@0
+predspec23b|  OCC /ab(?<g>[xy])/ occurs.none((g = "": !"x")) narrower on `xyz`: WHOLE HOLDS | SEARCHED HOLDS `xyz`@0
+predspec23b|  OCC record some((g: "x", h: 1)) on `x1 y2`: WHOLE HOLDS | SEARCHED HOLDS `x1 y2`@0 ; some((g: "x")) & some((h: 1)): WHOLE HOLDS | SEARCHED HOLDS `x1 y2`@0
+predspec23b|  OCC record some((g: "x", h: 1)) on `x2 y1`: WHOLE FAILS | SEARCHED FAILS ; some((g: "x")) & some((h: 1)): WHOLE HOLDS | SEARCHED HOLDS `x2 y1`@0
+predspec23b|  OCC /ab(?<g>[xy])/ some((g: "x")) on `abxabyabx`: WHOLE HOLDS | SEARCHED HOLDS `abxabyabx`@0
+predspec23b|  OCC /ab(?<g>[xy])/ some((g: "x")) on `xyz`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  PAIR list & ((h, m): padded(>= (9, 30))) on `10:00,9:30,`: WHOLE HOLDS | SEARCHED HOLDS `10:00,9:30,`@0
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: between(3, 7)) on `3`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: between(3, 7)) on `3;4`: WHOLE HOLDS | SEARCHED HOLDS `3;4`@0
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: between(3, 7)) on `3;7`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: between(3, 7)) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h = 0: <5, k: between(3, 7)) on `3`: WHOLE HOLDS | SEARCHED HOLDS `3`@0
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h = 0: <5, k: between(3, 7)) on `3;4`: WHOLE HOLDS | SEARCHED HOLDS `3;4`@0
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h = 0: <5, k: between(3, 7)) on `3;7`: WHOLE FAILS | SEARCHED HOLDS `3`@0
+predspec23b|  PAIR /(?<k>\d)(?:;(?<h>\d))*/ & (h = 0: <5, k: between(3, 7)) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  PAIR record (h: <5, k: between(3, 7)) vs (h: <5) & (k: between(3, 7)) SEARCHED: differ 0 of 1,110 first None
+predspec23b|  PAIR record (h: <5, k: between(3, 7)) vs (h: <5) & (k: between(3, 7)) WHOLE: differ 0 of 1,110 first None
+predspec23b|  PAIR record (h = 0: <5, k: between(3, 7)) vs (h = 0: <5) & (k: between(3, 7)) SEARCHED: differ 0 of 1,110 first None
+predspec23b|  PAIR record (h = 0: <5, k: between(3, 7)) vs (h = 0: <5) & (k: between(3, 7)) WHOLE: differ 0 of 1,110 first None
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a = 0: <5, b = 3: between(3, 7)) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a = 0: <5, b = 3: between(3, 7)) on `-6,`: WHOLE HOLDS | SEARCHED HOLDS `-6,`@0
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a = 0: <5, b = 3: between(3, 7)) on `3-6,`: WHOLE HOLDS | SEARCHED HOLDS `3-6,`@0
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a = 0: <5, b = 3: between(3, 7)) on `3-6,-,`: WHOLE HOLDS | SEARCHED HOLDS `3-6,-,`@0
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a = 0: <5, b = 3: between(3, 7)) on `7-2,`: WHOLE FAILS | SEARCHED HOLDS ``@0
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a: <5, b: between(3, 7)) on ``: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a: <5, b: between(3, 7)) on `-6,`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a: <5, b: between(3, 7)) on `3-6,`: WHOLE HOLDS | SEARCHED HOLDS `3-6,`@0
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a: <5, b: between(3, 7)) on `3-6,-,`: WHOLE FAILS | SEARCHED HOLDS `3-6,`@0
+predspec23b|  PAIR /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a: <5, b: between(3, 7)) on `7-2,`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum = 1: <3) on `-5`: WHOLE HOLDS | SEARCHED HOLDS `-5`@0
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum = 1: <3) on `Feb-5`: WHOLE HOLDS | SEARCHED HOLDS `Feb-5`@0
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum = 1: <3) on `Mar-5`: WHOLE FAILS | SEARCHED HOLDS `-5`@3
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum = 9: <3) on `-5`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum = 9: <3) on `Feb-5`: WHOLE HOLDS | SEARCHED HOLDS `Feb-5`@0
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum = 9: <3) on `Mar-5`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum: <3) on `-5`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum: <3) on `Feb-5`: WHOLE HOLDS | SEARCHED HOLDS `Feb-5`@0
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & (mnum: <3) on `Mar-5`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & NOT (mnum: <3) on `-5`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & NOT (mnum: <3) on `Feb-5`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  COMPUTED mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/ & NOT (mnum: <3) on `Mar-5`: WHOLE HOLDS | SEARCHED HOLDS `Mar-5`@0
+predspec23b|  WHEN x & when((h = 0: <5), (k: between(3, 7))) on `0`: WHOLE FAILS | SEARCHED FAILS ; with NOT c in place of !q: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  WHEN x & when((h = 0: <5), (k: between(3, 7))) on `0;9`: WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; with NOT c in place of !q: WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+predspec23b|  WHEN x & when((h = 0: <5), (k: between(3, 7))) on `5`: WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; with NOT c in place of !q: WHOLE HOLDS | SEARCHED HOLDS `5`@0
+predspec23b|  WHEN x & when((h = 0: <5), (k: between(3, 7))) on `5;1`: WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; with NOT c in place of !q: WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+predspec23b|  WHEN x & when((h = 0: <5), (k: between(3, 7))) on `5;9`: WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; with NOT c in place of !q: WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+predspec23b|  WHEN x & when((h: <5), (k: between(3, 7))) on `0`: WHOLE HOLDS | SEARCHED HOLDS `0`@0 ; with NOT c in place of !q: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  WHEN x & when((h: <5), (k: between(3, 7))) on `0;9`: WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; with NOT c in place of !q: WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+predspec23b|  WHEN x & when((h: <5), (k: between(3, 7))) on `5`: WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; with NOT c in place of !q: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  WHEN x & when((h: <5), (k: between(3, 7))) on `5;1`: WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; with NOT c in place of !q: WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+predspec23b|  WHEN x & when((h: <5), (k: between(3, 7))) on `5;9`: WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; with NOT c in place of !q: WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+predspec23b|  WHEN SEARCHED c = (h = 0: <5): body holds 1045 of 1,110; body vs the NOT-c body differ 0 first None
+predspec23b|  WHEN WHOLE c = (h = 0: <5): body holds 955 of 1,110; body vs the NOT-c body differ 0 first None
+predspec23b|  WHEN SEARCHED c = (h: <5): body holds 1110 of 1,110; body vs the NOT-c body differ 110 first '0'
+predspec23b|  WHEN WHOLE c = (h: <5): body holds 960 of 1,110; body vs the NOT-c body differ 10 first '0'
+predspec23b|  TM2-L R = padded(>= (9, 30)) ((h = 10, m = 0): R) (WHOLE/SEARCHED): `` H/H ; `10,` H/H ; `9,` F/H ; `9:45,` H/H ; `10,9:15,` F/H
+predspec23b|  TM2-L R = padded(>= (9, 30)) ((h = 10, m = 30): R) (WHOLE/SEARCHED): `` H/H ; `10,` H/H ; `9,` H/H ; `9:45,` H/H ; `10,9:15,` F/H
+predspec23b|  TM2-L R = padded(>= (9, 30)) ((h, m = 0): R) (WHOLE/SEARCHED): `` F/F ; `10,` H/H ; `9,` F/F ; `9:45,` H/H ; `10,9:15,` F/H
+predspec23b|  TM2-L R = padded(>= (9, 30)) ((h, m = 30): R) (WHOLE/SEARCHED): `` F/F ; `10,` H/H ; `9,` H/H ; `9:45,` H/H ; `10,9:15,` F/H
+predspec23b|  TM2-L R = padded(>= (9, 30)) ((h, m): R) (WHOLE/SEARCHED): `` F/F ; `10,` F/F ; `9,` F/F ; `9:45,` H/H ; `10,9:15,` F/F
+predspec23b|  CAVEAT2 t2 & ((h, m = 0): padded(between((9, 30), (11, 0)))) on `10`: WHOLE HOLDS | SEARCHED HOLDS `10`@0
+predspec23b|  CAVEAT2 t2 & ((h, m): padded(between((9, 30), (11, 0)))) on `10`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: !<5) on ``: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: !<5) on `1,7,`: WHOLE FAILS | SEARCHED HOLDS `7,`@2
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: !<5) on `7,`: WHOLE HOLDS | SEARCHED HOLDS `7,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: !<5) on `7,,`: WHOLE FAILS | SEARCHED HOLDS `7,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: <5) on ``: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: <5) on `1,7,`: WHOLE FAILS | SEARCHED HOLDS `1,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: <5) on `7,`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & (n: <5) on `7,,`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & NOT (n: <5) on ``: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & NOT (n: <5) on `1,7,`: WHOLE HOLDS | SEARCHED HOLDS `1,7,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & NOT (n: <5) on `7,`: WHOLE HOLDS | SEARCHED HOLDS `7,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & NOT (n: <5) on `7,,`: WHOLE HOLDS | SEARCHED HOLDS `7,,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & P & !(P & (n: <5)) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & P & !(P & (n: <5)) on `1,7,`: WHOLE HOLDS | SEARCHED HOLDS `1,7,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & P & !(P & (n: <5)) on `7,`: WHOLE HOLDS | SEARCHED HOLDS `7,`@0
+predspec23b|  O28 /(?:(?<n>\d)?,)*/ & P & !(P & (n: <5)) on `7,,`: WHOLE HOLDS | SEARCHED HOLDS `7,,`@0
+predspec23b|  O28 SEARCHED pool {1,7,comma} to length 5 (364 texts) (n: !<5) holds 132 first '7,'
+predspec23b|  O28 WHOLE pool {1,7,comma} to length 5 (364 texts) (n: !<5) holds 2 first '7,'
+predspec23b|  O28 SEARCHED pool {1,7,comma} to length 5 (364 texts) (n: <5) holds 132 first '1,'
+predspec23b|  O28 WHOLE pool {1,7,comma} to length 5 (364 texts) (n: <5) holds 2 first '1,'
+predspec23b|  O28 SEARCHED pool {1,7,comma} to length 5 (364 texts) NOT (n: <5) holds 132 first '7,'
+predspec23b|  O28 WHOLE pool {1,7,comma} to length 5 (364 texts) NOT (n: <5) holds 22 first '7,'
+predspec23b|  O28 SEARCHED pool {1,7,comma} to length 5 (364 texts) P & !(P & (n: <5)) holds 364 first ''
+predspec23b|  O28 WHOLE pool {1,7,comma} to length 5 (364 texts) P & !(P & (n: <5)) holds 40 first ''
+predspec23b|  O28 SEARCHED NOT (n: <5) vs (n: !<5) differ 0 first None
+predspec23b|  O28 WHOLE NOT (n: <5) vs (n: !<5) differ 20 first ',7,'
+predspec23b|  O28 t2 & ((h, m = 00): !R) (R = padded(>= (9, 30))) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+predspec23b|  O28 t2 & ((h, m = 00): R) (R = padded(>= (9, 30))) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 t2 & ((h, m): !R) (R = padded(>= (9, 30))) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 t2 & ((h, m): R) (R = padded(>= (9, 30))) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 t2 & NOT ((h, m = 00): R) (R = padded(>= (9, 30))) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+predspec23b|  O28 t2 & NOT ((h, m): R) (R = padded(>= (9, 30))) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23b|  O28 t2 & t2 & !(t2 & ((h, m): R)) (R = padded(>= (9, 30))) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+predspec23b|  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+predspec23b|  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
+predspec23b|  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:15 9:30`: WHOLE FAILS | SEARCHED HOLDS `30`@7 ; find-all [`30`@7]
+predspec23b|  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `30`@2 ; find-all [`30`@2]
+predspec23b|  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `30`@2 ; find-all [`30`@2, `1`@5]
+predspec23b|  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `9:30 9:15`: WHOLE FAILS | SEARCHED HOLDS `30`@2 ; find-all [`30`@2, `9:15`@5]
+predspec23b|  ROUTE (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
+predspec23b|  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+predspec23b|  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:15 1`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+predspec23b|  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:15 9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:30 1`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `9:30 9:15`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) on `a 9:15`: WHOLE HOLDS | SEARCHED HOLDS `a 9:15`@0 ; find-all [`a 9:15`@0]
+predspec23b|  ROUTE (ii) t2 & text.none(q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+predspec23b|  ROUTE (ii) t2 & text.none(q) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
+predspec23b|  ROUTE (ii) t2 & text.none(q) on `9:15 9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (ii) t2 & text.none(q) on `9:30`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (ii) t2 & text.none(q) on `9:30 1`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (ii) t2 & text.none(q) on `9:30 9:15`: WHOLE FAILS | SEARCHED FAILS ; find-all []
+predspec23b|  ROUTE (ii) t2 & text.none(q) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
+predspec23b|  ROUTE t2 & !contains(q) (today) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+predspec23b|  ROUTE t2 & !contains(q) (today) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
+predspec23b|  ROUTE t2 & !contains(q) (today) on `9:15 9:30`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `9`@5, `30`@7]
+predspec23b|  ROUTE t2 & !contains(q) (today) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2]
+predspec23b|  ROUTE t2 & !contains(q) (today) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `1`@5]
+predspec23b|  ROUTE t2 & !contains(q) (today) on `9:30 9:15`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `9:15`@5]
+predspec23b|  ROUTE t2 & !contains(q) (today) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
+predspec23b|  ROUTE t2 & !q (pattern difference, today) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0]
+predspec23b|  ROUTE t2 & !q (pattern difference, today) on `9:15 1`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `1`@5]
+predspec23b|  ROUTE t2 & !q (pattern difference, today) on `9:15 9:30`: WHOLE FAILS | SEARCHED HOLDS `9:15`@0 ; find-all [`9:15`@0, `9`@5, `30`@7]
+predspec23b|  ROUTE t2 & !q (pattern difference, today) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2]
+predspec23b|  ROUTE t2 & !q (pattern difference, today) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `1`@5]
+predspec23b|  ROUTE t2 & !q (pattern difference, today) on `9:30 9:15`: WHOLE FAILS | SEARCHED HOLDS `9`@0 ; find-all [`9`@0, `30`@2, `9:15`@5]
+predspec23b|  ROUTE t2 & !q (pattern difference, today) on `a 9:15`: WHOLE FAILS | SEARCHED HOLDS `9:15`@2 ; find-all [`9:15`@2]
+predspec23b|  ROUTE SEARCHED T2 (11,110) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 11110 first '0'
+predspec23b|  ROUTE SEARCHED T2 (11,110) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 2870 first '0'
+predspec23b|  ROUTE SEARCHED T2 (11,110) (ii) t2 & text.none(q) holds 2870 first '0'
+predspec23b|  ROUTE SEARCHED T2 (11,110) t2 & !contains(q) (today) holds 11110 first '0'
+predspec23b|  ROUTE SEARCHED T2 (11,110) t2 & !q (pattern difference, today) holds 11110 first '0'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 600 first '1'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 182 first '1'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) (ii) t2 & text.none(q) holds 182 first '1'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) t2 & !contains(q) (today) holds 600 first '1'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) t2 & !q (pattern difference, today) holds 600 first '1'
+predspec23b|  ROUTE WHOLE T2 (11,110) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 2870 first '0'
+predspec23b|  ROUTE WHOLE T2 (11,110) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 2870 first '0'
+predspec23b|  ROUTE WHOLE T2 (11,110) (ii) t2 & text.none(q) holds 2870 first '0'
+predspec23b|  ROUTE WHOLE T2 (11,110) t2 & !contains(q) (today) holds 2870 first '0'
+predspec23b|  ROUTE WHOLE T2 (11,110) t2 & !q (pattern difference, today) holds 2940 first '0'
+predspec23b|  ROUTE WHOLE T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start) holds 13 first '1'
+predspec23b|  ROUTE WHOLE T2PAIRS (600) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start) holds 182 first '1'
+predspec23b|  ROUTE WHOLE T2PAIRS (600) (ii) t2 & text.none(q) holds 13 first '1'
+predspec23b|  ROUTE WHOLE T2PAIRS (600) t2 & !contains(q) (today) holds 13 first '1'
+predspec23b|  ROUTE WHOLE T2PAIRS (600) t2 & !q (pattern difference, today) holds 13 first '1'
+predspec23b|  ROUTE SEARCHED T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 8240 first '9:30'
+predspec23b|  ROUTE SEARCHED T2 (11,110) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 8240 first '9:30'
+predspec23b|  ROUTE SEARCHED T2 (11,110) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 8240 first '9:30'
+predspec23b|  ROUTE SEARCHED T2 (11,110) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 418 first '9:30'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 418 first '9:30'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 418 first '9:30'
+predspec23b|  ROUTE SEARCHED T2PAIRS (600) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE WHOLE T2 (11,110) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 70 first '09:30'
+predspec23b|  ROUTE WHOLE T2 (11,110) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE WHOLE T2 (11,110) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE WHOLE T2 (11,110) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE WHOLE T2PAIRS (600) [t2 & !q (pattern difference, today)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE WHOLE T2PAIRS (600) [t2 & !contains(q) (today)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE WHOLE T2PAIRS (600) [(i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start)] vs [(ii) t2 & text.none(q)] differ 0 first None
+predspec23b|  ROUTE WHOLE T2PAIRS (600) [(i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start)] vs [(ii) t2 & text.none(q)] differ 169 first '1 1'
+predspec23b|  ROUTE FIND-ALL T2PAIRS (600) (i)(a) /(?![\s\S]*${q})${t2}/ (lookahead at the row's start): texts with 2+ matches 312
+predspec23b|  ROUTE FIND-ALL T2PAIRS (600) (i)(b) /\A(?![\s\S]*${q})[\s\S]*?${t2}/ (gate at the text's start): texts with 2+ matches 0
+predspec23b|  ROUTE FIND-ALL T2PAIRS (600) (ii) t2 & text.none(q): texts with 2+ matches 169
+predspec23b|  ROUTE FIND-ALL T2PAIRS (600) t2 & !contains(q) (today): texts with 2+ matches 587
+predspec23b|  ROUTE FIND-ALL T2PAIRS (600) t2 & !q (pattern difference, today): texts with 2+ matches 587
+predspec23b|END
+predspec23c|  CONTROL KH (1,110) when body, c = (h = 0: <5): end-major (predspec23b) vs branch-major reported row differ 400 first '3;5' (review r33 F2: 125 for (h: <5), 400 for (h = 0: <5))
+predspec23c|  CONTROL KH (1,110) when body, c = (h: <5): end-major (predspec23b) vs branch-major reported row differ 125 first '3;0;5' (review r33 F2: 125 for (h: <5), 400 for (h = 0: <5))
+predspec23c|  CONTROL KH (1,110) c = (h = 0: <5): predspec23b's end-major body vs the filter form x & when(c, p) reported row differ 0 first None (expected 0: the old engine searched the body as the filter form)
+predspec23c|  CONTROL KH (1,110) c = (h: <5): predspec23b's end-major body vs the filter form x & when(c, p) reported row differ 0 first None (expected 0: the old engine searched the body as the filter form)
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `0`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5`@0
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+predspec23c|  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `0`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5`@0
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+predspec23c|  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `0`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+predspec23c|  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `0`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+predspec23c|  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+predspec23c|  WHEN SEARCHED c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c): holds 1045 of 1,110; filter form holds 1045
+predspec23c|  WHEN WHOLE c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c): holds 955 of 1,110; filter form holds 955
+predspec23c|  WHEN SEARCHED c = (h = 0: <5) body (x & c & p) | (x & !q): holds 1045 of 1,110; filter form holds 1045
+predspec23c|  WHEN WHOLE c = (h = 0: <5) body (x & c & p) | (x & !q): holds 955 of 1,110; filter form holds 955
+predspec23c|  WHEN SEARCHED c = (h: <5) NOT-c body (x & c & p) | (x & NOT c): holds 1000 of 1,110; filter form holds 1000
+predspec23c|  WHEN WHOLE c = (h: <5) NOT-c body (x & c & p) | (x & NOT c): holds 950 of 1,110; filter form holds 950
+predspec23c|  WHEN SEARCHED c = (h: <5) body (x & c & p) | (x & !q): holds 1110 of 1,110; filter form holds 1110
+predspec23c|  WHEN WHOLE c = (h: <5) body (x & c & p) | (x & !q): holds 960 of 1,110; filter form holds 960
+predspec23c|  WHEN SEARCHED c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) vs filter form x & when: reported row differ 400 of 1,110 first '3;5' (holds-or-not differ 0)
+predspec23c|  WHEN SEARCHED c = (h = 0: <5) body (x & c & p) | (x & !q) vs filter form x & when: reported row differ 400 of 1,110 first '3;5' (holds-or-not differ 0)
+predspec23c|  WHEN SEARCHED c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) vs filter form x & when: reported row differ 125 of 1,110 first '3;0;5' (holds-or-not differ 0)
+predspec23c|  WHEN SEARCHED c = (h: <5) body (x & c & p) | (x & !q) vs filter form x & when: reported row differ 125 of 1,110 first '3;0;5' (holds-or-not differ 0)
+predspec23c|  WHEN SEARCHED c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c): reported row MOVED by branch-order (end-major -> branch-major) on 400 of 1,110 first '3;5'
+predspec23c|  WHEN SEARCHED c = (h = 0: <5) body (x & c & p) | (x & !q): reported row MOVED by branch-order (end-major -> branch-major) on 400 of 1,110 first '3;5'
+predspec23c|  WHEN SEARCHED c = (h: <5) NOT-c body (x & c & p) | (x & NOT c): reported row MOVED by branch-order (end-major -> branch-major) on 125 of 1,110 first '3;0;5'
+predspec23c|  WHEN SEARCHED c = (h: <5) body (x & c & p) | (x & !q): reported row MOVED by branch-order (end-major -> branch-major) on 125 of 1,110 first '3;0;5'
+predspec23c|  WHEN-T2 SEARCHED T2 (11,110) c = late, p = (m: <45): body holds 11110, case-when (filter form) holds 11110 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+predspec23c|  WHEN-T2 WHOLE T2 (11,110) c = late, p = (m: <45): body holds 6105, case-when (filter form) holds 6105 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+predspec23c|  WHEN-T2 SEARCHED T2PAIRS (600) c = late, p = (m: <45): body holds 600, case-when (filter form) holds 600 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+predspec23c|  WHEN-T2 WHOLE T2PAIRS (600) c = late, p = (m: <45): body holds 18, case-when (filter form) holds 18 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+predspec23c|  WHEN-T2 SEARCHED T2 (11,110) body (branch-order) vs case-when: reported row differ 0 first None
+predspec23c|  WHEN-T2 SEARCHED T2PAIRS (600) body (branch-order) vs case-when: reported row differ 0 first None
+predspec23c|  WHEN-T2 on `10:50`: body WHOLE FAILS | SEARCHED HOLDS `10`@0 ; case-when WHOLE FAILS | SEARCHED HOLDS `10`@0
+predspec23c|  WHEN-T2 on `9:15`: body WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; case-when WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23c|  WHEN-T2 on `9:45`: body WHOLE FAILS | SEARCHED HOLDS `9`@0 ; case-when WHOLE FAILS | SEARCHED HOLDS `9`@0
+predspec23c|  PASS-AND NOT (h: <5) on ``: Kleene AND over passes WHOLE FAILS | SEARCHED FAILS ; alternative (a pass lacking h -> UNKNOWN) WHOLE FAILS | SEARCHED FAILS
+predspec23c|  PASS-AND NOT (h: <5) on `3;7;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `3;7;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE HOLDS | SEARCHED HOLDS `3;7;`@0
+predspec23c|  PASS-AND NOT (h: <5) on `7;3;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `7;3;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE HOLDS | SEARCHED HOLDS `7;3;`@0
+predspec23c|  PASS-AND NOT (h: <5) on `7;;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `7;;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE FAILS | SEARCHED HOLDS `7;`@0
+predspec23c|  PASS-AND SEARCHED REP (364) NOT (h: <5) Kleene vs alternative differ 0 first None
+predspec23c|  PASS-AND WHOLE REP (364) NOT (h: <5) Kleene vs alternative differ 18 first '7;;'
+predspec23c|  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `a7`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `a7`@0
+predspec23c|  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `b3`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE FAILS | SEARCHED FAILS
+predspec23c|  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `b7`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `b7`@0
+predspec23c|  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `c`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `c`@0
+predspec23c|  CONDITION-OR SEARCHED (156 texts over {a,b,c,3,7} to length 3) Kleene vs two-valued differ 89 first 'c'
+predspec23c|  CONDITION-OR WHOLE (156 texts over {a,b,c,3,7} to length 3) Kleene vs two-valued differ 3 first 'c'
+predspec23c|  L83 SEARCHED T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 281 first '9'
+predspec23c|  L83 SEARCHED T2 (11,110) plain: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 0 first None
+predspec23c|  L83 WHOLE T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 101 first '9'
+predspec23c|  L83 WHOLE T2 (11,110) plain: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 0 first None
+predspec23c|  L83 on `10`: t2 & NOT joint WHOLE FAILS | SEARCHED FAILS ; t2 & NOT record WHOLE HOLDS | SEARCHED HOLDS `10`@0
+predspec23c|  L83 on `10:15`: t2 & NOT joint WHOLE HOLDS | SEARCHED HOLDS `10:15`@0 ; t2 & NOT record WHOLE HOLDS | SEARCHED HOLDS `10:15`@0
+predspec23c|  L83 on `8`: t2 & NOT joint WHOLE FAILS | SEARCHED FAILS ; t2 & NOT record WHOLE FAILS | SEARCHED FAILS
+predspec23c|  L83 on `9`: t2 & NOT joint WHOLE FAILS | SEARCHED FAILS ; t2 & NOT record WHOLE HOLDS | SEARCHED HOLDS `9`@0
+predspec23c|  CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [joint] WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+predspec23c|  CLOSING (1,111 lists) occurs.none(NOT (h: <10, m: <30)) [record] WHOLE holds 15 (I1 differ 11 first '3,'; I2a differ 25 first '12,'; I2b differ 0) | SEARCHED holds 1111
+predspec23c|  DEFAULT-UNUSED SEARCHED REP (364) (h: <5) vs (h = "x": <5) [no NOT]: differ 0 first None
+predspec23c|  DEFAULT-UNUSED SEARCHED SV (341) (h: <5) vs (h = 9: <5) [no NOT]: differ 0 first None
+predspec23c|  DEFAULT-UNUSED SEARCHED REP (364) NOT (h: <5) vs NOT (h = "x": <5): differ 232 first ''
+predspec23c|  DEFAULT-UNUSED SEARCHED SV (341) NOT (h: <5) vs NOT (h = 9: <5): differ 164 first 'x'
+predspec23c|  DEFAULT-UNUSED SEARCHED REP (364) occurs.none(NOT (h = "x": <5)) vs occurs.none((h = "x": !<5)): differ 0 first None
+predspec23c|  DEFAULT-UNUSED SEARCHED REP (364) some((h: <5)) vs some((h = "x": <5)) [group, no NOT]: differ 0 first None
+predspec23c|  DEFAULT-UNUSED WHOLE REP (364) (h: <5) vs (h = "x": <5) [no NOT]: differ 0 first None
+predspec23c|  DEFAULT-UNUSED WHOLE SV (341) (h: <5) vs (h = 9: <5) [no NOT]: differ 0 first None
+predspec23c|  DEFAULT-UNUSED WHOLE REP (364) NOT (h: <5) vs NOT (h = "x": <5): differ 18 first ''
+predspec23c|  DEFAULT-UNUSED WHOLE SV (341) NOT (h: <5) vs NOT (h = 9: <5): differ 1 first 'x'
+predspec23c|  DEFAULT-UNUSED WHOLE REP (364) occurs.none(NOT (h = "x": <5)) vs occurs.none((h = "x": !<5)): differ 0 first None
+predspec23c|  DEFAULT-UNUSED WHOLE REP (364) some((h: <5)) vs some((h = "x": <5)) [group, no NOT]: differ 0 first None
+predspec23c|  EMPTY-ERROR SEARCHED NL (121) NOT (n: <0) [looped n] holds 64 of 121 first '3,'
+predspec23c|  EMPTY-ERROR SEARCHED NL (121) some((n: any text)) holds 64 of 121 first '3,'
+predspec23c|  EMPTY-ERROR SEARCHED REP (364) occurs.none((h = "x": !<10)) [sentinel, S covers every digit] holds 364 of 364 first ''
+predspec23c|  EMPTY-ERROR SEARCHED SV (341) (h: !<0) holds 110 of 341 first '3x'
+predspec23c|  EMPTY-ERROR SEARCHED SV (341) (h: !<10) holds 0 of 341 first None
+predspec23c|  EMPTY-ERROR SEARCHED SV (341) NOT (h: <0) holds 110 of 341 first '3x'
+predspec23c|  EMPTY-ERROR SEARCHED SV (341) NOT (h: <10) holds 0 of 341 first None
+predspec23c|  EMPTY-ERROR WHOLE NL (121) NOT (n: <0) [looped n] holds 6 of 121 first '3,'
+predspec23c|  EMPTY-ERROR WHOLE NL (121) some((n: any text)) holds 6 of 121 first '3,'
+predspec23c|  EMPTY-ERROR WHOLE REP (364) occurs.none((h = "x": !<10)) [sentinel, S covers every digit] holds 7 of 364 first ''
+predspec23c|  EMPTY-ERROR WHOLE SV (341) (h: !<0) holds 2 of 341 first '3x'
+predspec23c|  EMPTY-ERROR WHOLE SV (341) (h: !<10) holds 0 of 341 first None
+predspec23c|  EMPTY-ERROR WHOLE SV (341) NOT (h: <0) holds 2 of 341 first '3x'
+predspec23c|  EMPTY-ERROR WHOLE SV (341) NOT (h: <10) holds 0 of 341 first None
+predspec23c|  EMPTY-ERROR SEARCHED [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+predspec23c|  EMPTY-ERROR SEARCHED [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+predspec23c|  EMPTY-ERROR SEARCHED [NOT (n: <0) [looped n]] vs [some((n: any text))] differ 0 first None
+predspec23c|  EMPTY-ERROR WHOLE [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+predspec23c|  EMPTY-ERROR WHOLE [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+predspec23c|  EMPTY-ERROR WHOLE [NOT (n: <0) [looped n]] vs [some((n: any text))] differ 0 first None
+predspec23c|  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+predspec23c|  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on `3;`: WHOLE HOLDS | SEARCHED HOLDS `3;`@0
+predspec23c|  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on `7;`: WHOLE HOLDS | SEARCHED HOLDS `7;`@0
+predspec23c|  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on `;`: WHOLE FAILS | SEARCHED HOLDS ``@0
+predspec23c|  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ holds 220; vs the program without the test differ 0 first None
+predspec23c|  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ & (o = "1": <5) holds 220; vs the program without the test differ 0 first None
+predspec23c|  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ & (o: <5) holds 0; vs the program without the test differ 220 first 'y'
+predspec23c|  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ & NOT (o = "9": <5) holds 220; vs the program without the test differ 0 first None
+predspec23c|  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ holds 1; vs the program without the test differ 0 first None
+predspec23c|  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ & (o = "1": <5) holds 1; vs the program without the test differ 0 first None
+predspec23c|  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ & (o: <5) holds 0; vs the program without the test differ 1 first 'y'
+predspec23c|  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ & NOT (o = "9": <5) holds 1; vs the program without the test differ 0 first None
+predspec23c|  NESTED X & (x: !q) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+predspec23c|  NESTED X & (x: !q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23c|  NESTED X & (x: !q) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9:3`@0
+predspec23c|  NESTED X & (x: q) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  NESTED X & (x: q) on `9:15`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  NESTED X & (x: q) on `9:30`: WHOLE HOLDS | SEARCHED HOLDS `9:30`@0
+predspec23c|  NESTED X & (x: t2 & NOT late) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  NESTED X & (x: t2 & NOT late) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23c|  NESTED X & (x: t2 & NOT late) on `9:30`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  NESTED X & NOT (x: q) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+predspec23c|  NESTED X & NOT (x: q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23c|  NESTED X & NOT (x: q) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9:3`@0
+predspec23c|  NESTED t2 & !q (difference, flat) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+predspec23c|  NESTED t2 & !q (difference, flat) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23c|  NESTED t2 & !q (difference, flat) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+predspec23c|  NESTED t2 & NOT late (flat) on `9`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  NESTED t2 & NOT late (flat) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+predspec23c|  NESTED t2 & NOT late (flat) on `9:30`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  FIND-ALL /(?<n>\d+)/ on `1234`: [`1234`@0]
+predspec23c|  FIND-ALL /(?<n>\d+)/ on `123456`: [`123456`@0]
+predspec23c|  FIND-ALL /(?<n>\d+)/ & (n: <100) on `1234`: [`12`@0, `34`@2]
+predspec23c|  FIND-ALL /(?<n>\d+)/ & (n: <100) on `123456`: [`12`@0, `34`@2, `56`@4]
+predspec23c|  HITS string-set reading of the argument (set's alternation longest-first) on `1234`: ['12', '34']
+predspec23c|  HITS string-set reading of the argument (set's alternation shortest-first) on `1234`: ['1', '2', '3', '4']
+predspec23c|  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on ``: by the definition (empty rows included) False ; non-empty rows only True
+predspec23c|  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on `1,`: by the definition (empty rows included) False ; non-empty rows only True
+predspec23c|  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on `7,`: by the definition (empty rows included) False ; non-empty rows only False
+predspec23c|  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on `a`: by the definition (empty rows included) False ; non-empty rows only True
+predspec23c|  SWEEP L56/L65 /(?<n>\d)*x/ & NOT (n: <5) on `x`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  SWEEP L56/L65 /(?<n>\d)?x/ & NOT (n: <5) on `x`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  SWEEP L56/L65 /x|(?<n>\d)+/ & NOT (n: <5) on `x`: WHOLE FAILS | SEARCHED FAILS
+predspec23c|  SWEEP L94 SEARCHED NOT (h: <5, k = 3: between(3, 7)): /x?/ vs /(?:x|)/ differ 0 of 121 first None
+predspec23c|  SWEEP L94 WHOLE NOT (h: <5, k = 3: between(3, 7)): /x?/ vs /(?:x|)/ differ 0 of 121 first None
+predspec23c|  SWEEP L55 WHOLE (323 spans over {a,b,x,y} to length 4 with no hit) occurrences(r) & NOT (g: "x") vs min = 1: differ 0 first None (the first holds on 0)
+predspec23c|  SWEEP L30 SEARCHED SV (341) [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+predspec23c|  SWEEP L30 SEARCHED SV (341) [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+predspec23c|  SWEEP L30 WHOLE SV (341) [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+predspec23c|  SWEEP L30 WHOLE SV (341) [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+predspec23c|END
+searchrow|PART 1: examples (program; subject; mode SEARCHED; each candidate's rows)
+searchrow|  /\d+/ & !/0+/   [review r31 A1] on `0`: R22 FAILS | X FAILS | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+searchrow|  /\d+/ & !/0+/   [review r31 A1] on `0 7`: R22 HOLDS `7`@2 | X HOLDS `7`@2 | S FAILS | M HOLDS `7`@2 | M+ HOLDS `7`@2 | Mr HOLDS `7`@2
+searchrow|  /\d+/ & !/0+/   [review r31 A1] on `00 70`: R22 HOLDS `70`@3 | X HOLDS `7`@3,`70`@3 | S FAILS | M HOLDS `70`@3 | M+ HOLDS `70`@3 | Mr HOLDS `70`@3
+searchrow|  /\d+/ & !/0+/   [review r31 A1] on `10`: R22 HOLDS `10`@0 | X HOLDS `1`@0,`10`@0 | S FAILS | M HOLDS `10`@0 | M+ HOLDS `10`@0 | Mr HOLDS `10`@0
+searchrow|  /\d+/ & !/0|00/   [Mr vs M+] on `0 00`: R22 FAILS | X FAILS | S FAILS | M FAILS | M+ FAILS | Mr HOLDS `00`@2
+searchrow|  /\d+/ & !/0|00/   [Mr vs M+] on `00`: R22 FAILS | X FAILS | S FAILS | M FAILS | M+ FAILS | Mr HOLDS `00`@0
+searchrow|  /\d+/ & !/\d\d/ on `12`: R22 HOLDS `1`@0,`2`@1 | X HOLDS `1`@0,`2`@1 | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+searchrow|  /\d+/ & !/\d\d/ on `123`: R22 HOLDS `123`@0 | X HOLDS `1`@0,`123`@0,`2`@1,`3`@2 | S FAILS | M HOLDS `123`@0 | M+ HOLDS `123`@0 | Mr HOLDS `123`@0
+searchrow|  L34 /(?<a>\d+)(?<b>\d+)/ & (a: <5) & (b: <5) on `123`: R22 HOLDS `12`@0 | X HOLDS `12`@0,`23`@1 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+searchrow|  L59 /(?<a>\d+)(?<b>\d+)/ & (a: "1") on `123`: R22 HOLDS `12`@0 | X HOLDS `12`@0 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+searchrow|  t2 & !/\d:\d\d/   [the same without the condition] on `9:30`: R22 HOLDS `9`@0,`30`@2 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3 | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+searchrow|  t2 & !q   [source-row's one example] on `10:00 9:15`: R22 HOLDS `10:00`@0,`9:15`@6 | X HOLDS `1`@0,`10`@0,`10:00`@0,`0`@1,`0:00`@1,`0`@3,`00`@3,`0`@4,`9`@6,`9:15`@6,`1`@8,`15`@8,`5`@9 | S HOLDS `10:00`@0,`9:15`@6 | M HOLDS `10:00`@0,`9:15`@6 | M+ HOLDS `10:00`@0,`9:15`@6 | Mr HOLDS `10:00`@0,`9:15`@6
+searchrow|  t2 & !q   [source-row's one example] on `9:15`: R22 HOLDS `9:15`@0 | X HOLDS `9`@0,`9:15`@0,`1`@2,`15`@2,`5`@3 | S HOLDS `9:15`@0 | M HOLDS `9:15`@0 | M+ HOLDS `9:15`@0 | Mr HOLDS `9:15`@0
+searchrow|  t2 & !q   [source-row's one example] on `9:30`: R22 HOLDS `9`@0,`30`@2 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3 | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+searchrow|  t2 & !q   [source-row's one example] on `9:30 1`: R22 HOLDS `9`@0,`30`@2,`1`@5 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3,`1`@5 | S FAILS | M HOLDS `1`@5 | M+ HOLDS `1`@5 | Mr HOLDS `1`@5
+searchrow|  t2 & (m = 0: <20) & !/\d:\d\d/   [M+ admits by retry] on `9:30`: R22 HOLDS `9`@0,`30`@2 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3 | S FAILS | M FAILS | M+ HOLDS `9`@0,`30`@2 | Mr HOLDS `9`@0,`30`@2
+searchrow|  §11 (i) /\d+/ & <256 on `x300 12`: R22 HOLDS `30`@1,`0`@3,`12`@5 | X HOLDS `3`@1,`30`@1,`0`@2,`0`@3,`1`@5,`12`@5,`2`@6 | S HOLDS `30`@1,`0`@3,`12`@5 | M HOLDS `12`@5 | M+ HOLDS `30`@1,`0`@3,`12`@5 | Mr HOLDS `30`@1,`0`@3,`12`@5
+searchrow|  §4.2 t2 & ((h, m = 0): padded(>= (9, 30))) on `9:15`: R22 HOLDS `15`@2 | X HOLDS `15`@2 | S HOLDS `15`@2 | M FAILS | M+ HOLDS `15`@2 | Mr HOLDS `15`@2
+searchrow|  L13 /\d+/ & padded(/^5/) on `x005`: R22 HOLDS `5`@3 | X HOLDS `5`@3 | S HOLDS `5`@3 | M FAILS | M+ HOLDS `5`@3 | Mr HOLDS `5`@3
+searchrow|PART 2: counts (mode named on each line; smallest witness by length then text)
+searchrow|  SEARCHED T2 (11,110) t2 & !q holds: R22 11110 first 0
+searchrow|  SEARCHED T2 (11,110) t2 & !q holds: X 11110 first 0
+searchrow|  SEARCHED T2 (11,110) t2 & !q holds: S 2870 first 0
+searchrow|  SEARCHED T2 (11,110) t2 & !q holds: M 2940 first 0
+searchrow|  SEARCHED T2 (11,110) t2 & !q holds: M+ 2940 first 0
+searchrow|  SEARCHED T2 (11,110) t2 & !q holds: Mr 2940 first 0
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q holds: R22 600 first 1
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q holds: X 600 first 1
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q holds: S 182 first 1
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q holds: M 468 first 1
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q holds: M+ 468 first 1
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q holds: Mr 468 first 1
+searchrow|  WHOLE T2 (11,110) t2 & !q holds: 2940
+searchrow|  WHOLE T2PAIRS (600) t2 & !q holds: 13
+searchrow|  SEARCHED T2 (11,110) t2 & !q, R22 vs S differ: 8240 first 9:30
+searchrow|  SEARCHED T2 (11,110) t2 & !q, X vs S differ: 8240 first 9:30
+searchrow|  SEARCHED T2 (11,110) t2 & !q, M vs S differ: 70 first 09:30
+searchrow|  SEARCHED T2 (11,110) t2 & !q, M+ vs S differ: 70 first 09:30
+searchrow|  SEARCHED T2 (11,110) t2 & !q, Mr vs S differ: 70 first 09:30
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q, R22 vs S differ: 418 first 9:30
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q, X vs S differ: 418 first 9:30
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q, M vs S differ: 286 first 1 9:30
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q, M+ vs S differ: 286 first 1 9:30
+searchrow|  SEARCHED T2PAIRS (600) t2 & !q, Mr vs S differ: 286 first 1 9:30
+searchrow|  DIG pool size 696
+searchrow|  SEARCHED DIG /\d+/ & !/0+/ holds: R22 684; differs from R22 on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & !/0+/ holds: X 684; differs from R22 on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & !/0+/ holds: S 138; differs from R22 on 546 first 01
+searchrow|  SEARCHED DIG /\d+/ & !/0+/ holds: M 684; differs from R22 on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & !/0+/ holds: M+ 684; differs from R22 on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & !/0+/ holds: Mr 684; differs from R22 on 0 first None
+searchrow|  SEARCHED T2 (11,110) when: R22 body 11110 case-when 11110 differ 0 first None
+searchrow|  SEARCHED T2 (11,110) when: X body 11110 case-when 11110 differ 0 first None
+searchrow|  SEARCHED T2 (11,110) when: S body 6050 case-when 11110 differ 5060 first 9:45
+searchrow|  SEARCHED T2 (11,110) when: M body 6105 case-when 6105 differ 0 first None
+searchrow|  SEARCHED T2 (11,110) when: M+ body 6105 case-when 11110 differ 5005 first 9:45
+searchrow|  SEARCHED T2 (11,110) when: Mr body 6105 case-when 11110 differ 5005 first 9:45
+searchrow|  SEARCHED T2PAIRS (600) when: R22 body 600 case-when 600 differ 0 first None
+searchrow|  SEARCHED T2PAIRS (600) when: X body 600 case-when 600 differ 0 first None
+searchrow|  SEARCHED T2PAIRS (600) when: S body 402 case-when 600 differ 198 first 9:45
+searchrow|  SEARCHED T2PAIRS (600) when: M body 558 case-when 558 differ 0 first None
+searchrow|  SEARCHED T2PAIRS (600) when: M+ body 558 case-when 600 differ 42 first 9:45
+searchrow|  SEARCHED T2PAIRS (600) when: Mr body 558 case-when 600 differ 42 first 9:45
+searchrow|  WHOLE T2 (11,110) when: body 6105 case-when 6105
+searchrow|  WHOLE T2PAIRS (600) when: body 18 case-when 18
+searchrow|  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): R22 body vs case-when differ 0 first None
+searchrow|  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): X body vs case-when differ 0 first None
+searchrow|  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): S body vs case-when differ 4 first 77
+searchrow|  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): M body vs case-when differ 0 first None
+searchrow|  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): M+ body vs case-when differ 0 first None
+searchrow|  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): Mr body vs case-when differ 0 first None
+searchrow|  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): R22 admitted 0 first None
+searchrow|  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): X admitted 0 first None
+searchrow|  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): S admitted 1009 first 9:30
+searchrow|  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): M admitted 0 first None
+searchrow|  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): M+ admitted 939 first 9:30
+searchrow|  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): Mr admitted 939 first 9:30
+searchrow|  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): R22 admitted 0 first None
+searchrow|  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): X admitted 0 first None
+searchrow|  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): S admitted 220 first 9:30
+searchrow|  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): M admitted 0 first None
+searchrow|  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): M+ admitted 102 first 9:30
+searchrow|  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): Mr admitted 102 first 9:30
+searchrow|  WHOLE T2 (11,110) add (h: >20): admitted 0
+searchrow|  WHOLE T2PAIRS (600) add (h: >20): admitted 0
+searchrow|  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: R22 admitted 0 first None
+searchrow|  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: X admitted 0 first None
+searchrow|  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: S admitted 0 first None
+searchrow|  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: M admitted 0 first None
+searchrow|  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 900 first 0:00
+searchrow|  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 900 first 0:00
+searchrow|  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: R22 admitted 0 first None
+searchrow|  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: X admitted 0 first None
+searchrow|  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: S admitted 0 first None
+searchrow|  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: M admitted 0 first None
+searchrow|  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 104 first 1:00
+searchrow|  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 104 first 1:00
+searchrow|  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): R22 differ 0 first None
+searchrow|  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): X differ 0 first None
+searchrow|  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): S differ 657 first 00
+searchrow|  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): M differ 0 first None
+searchrow|  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): M+ differ 90 first 00
+searchrow|  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): Mr differ 90 first 00
+searchrow|  SEARCHED DIG /\d+/ & <17 (no complement): R22 differs from R22 (D196) on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & <17 (no complement): X differs from R22 (D196) on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & <17 (no complement): S differs from R22 (D196) on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & <17 (no complement): M differs from R22 (D196) on 407 first 00
+searchrow|  SEARCHED DIG /\d+/ & <17 (no complement): M+ differs from R22 (D196) on 0 first None
+searchrow|  SEARCHED DIG /\d+/ & <17 (no complement): Mr differs from R22 (D196) on 0 first None
+searchrow|  SEARCHED T2 (11,110) when: M+ body vs case-when per reported match (M's rule) differ 0 first None
+searchrow|  SEARCHED T2PAIRS (600) when: M+ body vs case-when per reported match (M's rule) differ 0 first None
+searchrow|END
+== PART X: the closing example (1,111 lists, R = (<10, <30) canonical) with the re-chosen default
+  CLOSING-X ((h = 0, m = 0): R) [rev 23.2's default]                 WHOLE holds 15 (I1 differ 11 first '3,'; I2a differ 25 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  CLOSING-X ((h = 0, m = 00): R) [rev 23.1's spelling]               WHOLE holds 3 (I1 differ 1 first ''; I2a differ 37 first ''; I2b differ 12 first '') | SEARCHED holds 526
+  CLOSING-X ((h, m = 0): R)                                          WHOLE holds 14 (I1 differ 12 first ''; I2a differ 26 first ''; I2b differ 1 first '') | SEARCHED holds 1110
+  CLOSING-X occurs.none(((h, m = 0): !R)) [rev 23.2's default]       WHOLE holds 15 (I1 differ 11 first '3,'; I2a differ 25 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  CLOSING-X occurs.none(((h, m = 00): !R)) [rev 23.1's spelling]     WHOLE holds 4 (I1 differ 0; I2a differ 36 first '3,'; I2b differ 11 first '3,') | SEARCHED holds 1111
+  CLOSING-X occurs.none(((h, m = 99): !R))                           WHOLE holds 4 (I1 differ 0; I2a differ 36 first '3,'; I2b differ 11 first '3,') | SEARCHED holds 1111
+  CLOSING-X occurs.none(((h, m): !R))                                WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+  CLOSING-X occurs.none(NOT ((h, m): R)) [joint]                     WHOLE holds 40 (I1 differ 36 first '3,'; I2a differ 0; I2b differ 25 first '12,') | SEARCHED holds 1111
+  CLOSING-X occurs.none(NOT (h: <10, m: <30)) [record twin]          WHOLE holds 15 (I1 differ 11 first '3,'; I2a differ 25 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  CLOSING-X WHOLE on ``: occurs.none(NOT ((h, m): R))=H ; occurs.none(NOT (h: <10, m: <30))=H ; occurs.none(((h, m): !R))=H ; occurs.none(((h, m = 99): !R))=H ; occurs.none(((h, m = 00): !R))=H ; occurs.none(((h, m = 0): !R))=H ; ((h = 0, m = 00): R)=F ; ((h = 0, m = 0): R)=H ; ((h, m = 0): R)=F
+  CLOSING-X WHOLE on `12,`: occurs.none(NOT ((h, m): R))=H ; occurs.none(NOT (h: <10, m: <30))=F ; occurs.none(((h, m): !R))=H ; occurs.none(((h, m = 99): !R))=F ; occurs.none(((h, m = 00): !R))=F ; occurs.none(((h, m = 0): !R))=F ; ((h = 0, m = 00): R)=F ; ((h = 0, m = 0): R)=F ; ((h, m = 0): R)=F
+  CLOSING-X WHOLE on `3,`: occurs.none(NOT ((h, m): R))=H ; occurs.none(NOT (h: <10, m: <30))=H ; occurs.none(((h, m): !R))=H ; occurs.none(((h, m = 99): !R))=F ; occurs.none(((h, m = 00): !R))=F ; occurs.none(((h, m = 0): !R))=H ; ((h = 0, m = 00): R)=F ; ((h = 0, m = 0): R)=H ; ((h, m = 0): R)=H
+  CLOSING-X WHOLE on `3,3:15,`: occurs.none(NOT ((h, m): R))=H ; occurs.none(NOT (h: <10, m: <30))=H ; occurs.none(((h, m): !R))=H ; occurs.none(((h, m = 99): !R))=F ; occurs.none(((h, m = 00): !R))=F ; occurs.none(((h, m = 0): !R))=H ; ((h = 0, m = 00): R)=F ; ((h = 0, m = 0): R)=H ; ((h, m = 0): R)=H
+  CLOSING-X WHOLE on `3:05,`: occurs.none(NOT ((h, m): R))=F ; occurs.none(NOT (h: <10, m: <30))=F ; occurs.none(((h, m): !R))=F ; occurs.none(((h, m = 99): !R))=F ; occurs.none(((h, m = 00): !R))=F ; occurs.none(((h, m = 0): !R))=F ; ((h = 0, m = 00): R)=F ; ((h = 0, m = 0): R)=F ; ((h, m = 0): R)=F
+  CLOSING-X WHOLE on `3:15,`: occurs.none(NOT ((h, m): R))=H ; occurs.none(NOT (h: <10, m: <30))=H ; occurs.none(((h, m): !R))=H ; occurs.none(((h, m = 99): !R))=H ; occurs.none(((h, m = 00): !R))=H ; occurs.none(((h, m = 0): !R))=H ; ((h = 0, m = 00): R)=H ; ((h = 0, m = 0): R)=H ; ((h, m = 0): R)=H
+  T2 MINUTES: 90 of 100 two-digit minutes are canonical numerals (first 10, last 99); `00`-`09` are not
+== PART Y: review r34's witnesses, run (WHOLE / SEARCHED)
+  BRANCH-SCOPE L60 `(B | A) & (l: "a")` on `aa`: (i) no fallthrough FAILS / FAILS ; (ii) inner and outer fall through HOLDS / HOLDS `aa`@0 ; (iii) rev 23.1's scope rule FAILS / FAILS
+  BRANCH-SCOPE `((B & (l: >50)) | A) & (l: <10)` on `12`: (i) no fallthrough FAILS / FAILS ; (ii) inner and outer fall through HOLDS / HOLDS `12`@0 ; (iii) rev 23.1's scope rule HOLDS / HOLDS `12`@0
+  BRANCH-SCOPE `(B & (l: "a")) | (A & (l: "a"))` on `aa`: (i) no fallthrough FAILS / FAILS ; (ii) inner and outer fall through HOLDS / HOLDS `aa`@0 ; (iii) rev 23.1's scope rule HOLDS / HOLDS `aa`@0
+  BRANCH-SCOPE `(B & (l: <20)) | (A & (l: <20))` on `25`: (i) no fallthrough FAILS / FAILS ; (ii) inner and outer fall through HOLDS / HOLDS `25`@0 ; (iii) rev 23.1's scope rule HOLDS / HOLDS `25`@0
+  BRANCH-SCOPE `(B | A) & (l: <10)` on `12`: (i) no fallthrough FAILS / FAILS ; (ii) inner and outer fall through HOLDS / HOLDS `12`@0 ; (iii) rev 23.1's scope rule FAILS / FAILS
+  BRANCH-SCOPE `(B | A) & (l: <20)` on `25`: (i) no fallthrough FAILS / FAILS ; (ii) inner and outer fall through HOLDS / HOLDS `25`@0 ; (iii) rev 23.1's scope rule FAILS / FAILS
+  POLARITY `t2 & !(t2 & (h: <0))` SEARCHED (every 7th T2 text, 1588): holds 1588; vs plain `t2` differ 0 first None
+  POLARITY `t2 & !(t2 & (h: <0))` WHOLE (every 7th T2 text, 1588): holds 1588; vs plain `t2` differ 0 first None
+  POLARITY `t2 & !(t2 & NOT (h: <0))` SEARCHED (every 7th T2 text, 1588): holds 0; vs plain `t2` differ 1588 first '0'
+  POLARITY `t2 & !(t2 & NOT (h: <0))` WHOLE (every 7th T2 text, 1588): holds 0; vs plain `t2` differ 1588 first '0'
+  POLARITY `t2 & NOT (h: <0)` SEARCHED (every 7th T2 text, 1588): holds 1588; vs plain `t2` differ 0 first None
+  POLARITY `t2 & NOT (h: <0)` WHOLE (every 7th T2 text, 1588): holds 1588; vs plain `t2` differ 0 first None
+  DEFAULT-UNUSED SEARCHED SV (341) `NOT NOT (h = 9: <5)` vs `NOT NOT (h: <5)`: differ 0 first None
+  DEFAULT-UNUSED WHOLE SV (341) `NOT NOT (h = 9: <5)` vs `NOT NOT (h: <5)`: differ 0 first None
+  DEFAULT-UNUSED SEARCHED REP (364) `P & !(P & (h = "x": <5))` vs `P & !(P & (h: <5))`: differ 0 first None
+  DEFAULT-UNUSED WHOLE REP (364) `P & !(P & (h = "x": <5))` vs `P & !(P & (h: <5))`: differ 0 first None
+  DEFAULT-UNUSED SEARCHED SV (341) `P & !(P & (h = 9: <5))` vs `P & !(P & (h: <5))`: differ 0 first None
+  DEFAULT-UNUSED WHOLE SV (341) `P & !(P & (h = 9: <5))` vs `P & !(P & (h: <5))`: differ 0 first None
+  DE-MORGAN SEARCHED REP (364) `(h: <5)` vs `NOT some(NOT (h: <5))` with some = EXISTS (the draft's group-truth): differ 232 first ''
+  DE-MORGAN WHOLE REP (364) `(h: <5)` vs `NOT some(NOT (h: <5))` with some = EXISTS (the draft's group-truth): differ 18 first ''
+  DE-MORGAN SEARCHED REP (364) `(h: <5)` vs `NOT some(NOT (h: <5))` with some = three-valued some over the pass table (the null pass row on zero passes): differ 0 first None
+  DE-MORGAN WHOLE REP (364) `(h: <5)` vs `NOT some(NOT (h: <5))` with some = three-valued some over the pass table (the null pass row on zero passes): differ 0 first None
+  DE-MORGAN SEARCHED REP (364) `(h: <5)` vs `NOT some(NOT (h: <5))` with some = three-valued some over the real passes: differ 232 first ''
+  DE-MORGAN WHOLE REP (364) `(h: <5)` vs `NOT some(NOT (h: <5))` with some = three-valued some over the real passes: differ 1 first ''
+  DE-MORGAN on ``: `(h: <5)` FAILS / FAILS ; `NOT some(NOT (h: <5))` [EXISTS (the draft's group-truth)] HOLDS / HOLDS ``@0
+  DE-MORGAN on `3;;`: `(h: <5)` FAILS / HOLDS `3;`@0 ; `NOT some(NOT (h: <5))` [EXISTS (the draft's group-truth)] HOLDS / HOLDS `3;;`@0
+  DE-MORGAN on `7;;`: `(h: <5)` FAILS / FAILS ; `NOT some(NOT (h: <5))` [EXISTS (the draft's group-truth)] FAILS / HOLDS ``@0
+  DE-MORGAN on ``: `(h: <5)` FAILS / FAILS ; `NOT some(NOT (h: <5))` [three-valued some over the pass table (the null pass row on zero passes)] FAILS / FAILS
+  DE-MORGAN on `3;;`: `(h: <5)` FAILS / HOLDS `3;`@0 ; `NOT some(NOT (h: <5))` [three-valued some over the pass table (the null pass row on zero passes)] FAILS / HOLDS `3;`@0
+  DE-MORGAN on `7;;`: `(h: <5)` FAILS / FAILS ; `NOT some(NOT (h: <5))` [three-valued some over the pass table (the null pass row on zero passes)] FAILS / FAILS
+  DE-MORGAN on ``: `(h: <5)` FAILS / FAILS ; `NOT some(NOT (h: <5))` [three-valued some over the real passes] HOLDS / HOLDS ``@0
+  DE-MORGAN on `3;;`: `(h: <5)` FAILS / HOLDS `3;`@0 ; `NOT some(NOT (h: <5))` [three-valued some over the real passes] FAILS / HOLDS `3;`@0
+  DE-MORGAN on `7;;`: `(h: <5)` FAILS / FAILS ; `NOT some(NOT (h: <5))` [three-valued some over the real passes] FAILS / HOLDS ``@0
+  BRANCH-SCOPE reading (i) SEARCHED (85 texts over {0,1,2,9} to length 3): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+  BRANCH-SCOPE reading (i) WHOLE (85 texts over {0,1,2,9} to length 3): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+  BRANCH-SCOPE reading (ii) SEARCHED (85 texts over {0,1,2,9} to length 3): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+  BRANCH-SCOPE reading (ii) WHOLE (85 texts over {0,1,2,9} to length 3): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+  BRANCH-SCOPE reading (iii) SEARCHED (85 texts over {0,1,2,9} to length 3): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 48 first '00'
+  BRANCH-SCOPE reading (iii) WHOLE (85 texts over {0,1,2,9} to length 3): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 12 first '00'
+  FIND-ALL occurrences(min = 2) of the `when` expansion W vs the filter form F, c = (h = 0: <5), over KH (1,110): holds-or-not differ 310 first '3;5'
+  FIND-ALL c = (h = 0: <5) on `3;0;5`: W [`3;0`@0, `5`@4] ; F [`3;0;5`@0]
+  FIND-ALL occurrences(min = 2) of the `when` expansion W vs the filter form F, c = (h: <5), over KH (1,110): holds-or-not differ 125 first '3;0;5'
+  FIND-ALL c = (h: <5) on `3;0;5`: W [`3;0`@0, `5`@4] ; F [`3;0;5`@0]
+  FIND-ALL `t2 & !q` hits on `09:30`: [`09:30`@0]
+  FIND-ALL `t2 & !q` hits on `10:45`: [`10`@0, `45`@3]
+  FIND-ALL `t2 & !q` hits on `9:15`: [`9:15`@0]
+  FIND-ALL `t2 & !q` hits on `9:30`: [`9`@0, `30`@2]
+  FIND-ALL /aba|a/ on `aba`: ['`aba`@0']
+  FIND-ALL /a|aba/ on `aba`: ['`a`@0', '`a`@2']
+  RECORD-UNDER-NOT `t2 & NOT joint (completion)` with S = `<9`, T = `<30` on `10`: HOLDS / HOLDS `10`@0 ; on `9`: HOLDS / HOLDS `9`@0 ; on `10:15`: HOLDS / HOLDS `10:15`@0
+  RECORD-UNDER-NOT `t2 & NOT joint (plain)` with S = `<9`, T = `<30` on `10`: FAILS / FAILS ; on `9`: FAILS / FAILS ; on `10:15`: HOLDS / HOLDS `10:15`@0
+  RECORD-UNDER-NOT `t2 & NOT record` with S = `<9`, T = `<30` on `10`: HOLDS / HOLDS `10`@0 ; on `9`: HOLDS / HOLDS `9`@0 ; on `10:15`: HOLDS / HOLDS `10:15`@0
+  RECORD-UNDER-NOT SEARCHED T2 (11,110) `t2 & NOT joint (completion)` vs `t2 & NOT record`: differ 0 first None
+  RECORD-UNDER-NOT SEARCHED T2 (11,110) `t2 & NOT joint (plain)` vs `t2 & NOT record`: differ 281 first '9'
+  RECORD-UNDER-NOT WHOLE T2 (11,110) `t2 & NOT joint (completion)` vs `t2 & NOT record`: differ 0 first None
+  RECORD-UNDER-NOT WHOLE T2 (11,110) `t2 & NOT joint (plain)` vs `t2 & NOT record`: differ 101 first '9'
+  RECORD-UNDER-NOT the cost: `t2 & ((h, m): >= (9, 30))` plain (UNKNOWN on an absent part) on `10`: FAILS / FAILS
+  RECORD-UNDER-NOT the cost: `t2 & ((h, m): >= (9, 30))` completion on `10`: FAILS / FAILS
+  RECORD-UNDER-NOT the cost: `t2 & ((h, m): padded(>= (9, 30)))` plain (UNKNOWN on an absent part) on `10`: FAILS / FAILS
+  RECORD-UNDER-NOT the cost: `t2 & ((h, m): padded(>= (9, 30)))` completion on `10`: HOLDS / HOLDS `10`@0
+  POLARITY L30 repeated edge SEARCHED REP (364) `NOT (h: <0)` vs `(h: !<0)` differ 0 first None
+  POLARITY L30 repeated edge WHOLE REP (364) `NOT (h: <0)` vs `(h: !<0)` differ 30 first '3;;'
+  POLARITY L30 repeated edge on `3;;`: `NOT (h: <0)` HOLDS / HOLDS `3;;`@0 ; `(h: !<0)` FAILS / HOLDS `3;`@0
+END
