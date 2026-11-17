@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r45_report.md
+sections: Summary; The five answers; Evidence; Open questions; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
