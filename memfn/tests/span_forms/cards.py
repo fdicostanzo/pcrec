@@ -384,6 +384,36 @@ def artifact(rundir, pat, arm, layer, size=False):
     return c
 
 
+# A span loop's text (window.c wf_loop: `size_t <J> = LO; for (; <J> < END; <J>++) if (!`; G2's
+# parse_loops reads the same head). Arm I (`--memfn=no-span-loop`) must carry none.
+LOOP_RE = re.compile(rb"_j = [0-9]+; for \(; [A-Za-z0-9_]*_j < [0-9]+; [A-Za-z0-9_]*_j\+\+\) if \(!")
+
+
+def loop_audit(texts):
+    """texts: [(label, arm, bytes)]. (arm-I cells whose text holds a span loop, non-I cells that do):
+    a deny that is ignored is invisible to every other check (r35 F15), and a zero over I with a
+    zero reach is vacuous (the caller fails that too)."""
+    leaks = [l for l, a, t in texts if a == "I" and LOOP_RE.search(t)]
+    reach = [l for l, a, t in texts if a != "I" and LOOP_RE.search(t)]
+    return leaks, reach
+
+
+def check_deny(rundir, cl):
+    """Every arm-I artifact of `cl` carries no span loop, and a non-I artifact does (the reach
+    control). Returns (failures, n_I, n_reach)."""
+    keys = sorted({(c[1], c[2], c[4], c[0] == "C4") for c in cl})
+    texts = [("%s %s %s" % (k[0], k[1], k[2]), k[1], open(artifact(rundir, k[0], k[1], k[2], size=k[3]), "rb").read())
+             for k in keys]
+    leaks, reach = loop_audit(texts)
+    nI = sum(1 for _l, a, _t in texts if a == "I")
+    bad = ["DENY IGNORED: arm I emits a span loop: %s" % l for l in leaks]
+    if not nI:
+        bad.append("DENY CHECK VACUOUS: no arm-I artifact in the cell list")
+    if not reach:
+        bad.append("DENY CHECK VACUOUS: no non-I artifact emits a span loop (the loop text moved?)")
+    return bad, nI, len(reach)
+
+
 def build_cell(rundir, pat, arm, layer):
     """The cell's binary (artifact + driver), gcc -O2; cached."""
     a = artifact(rundir, pat, arm, layer)
@@ -594,6 +624,10 @@ def cmd_dry(args):
             if err:
                 bad.append(err)
             done[c] = out
+    dbad, nI, nreach = check_deny(rundir, cl)
+    bad += dbad
+    print("# dry: deny check: %d arm-I artifacts with no span loop, %d non-I artifacts with one (reach), "
+          "failures %d" % (nI, nreach, len(dbad)))
     same = identical_to_I(rundir)
     print("# dry: cells %d, built and gated %d, failures %d; distinct compiles %d; subject %d B" %
           (len(cl), len(cl) - len(bad), len(bad), len(builds), n))
@@ -623,6 +657,13 @@ def cmd_run(args):
     if os.path.exists(res):
         raise SystemExit("cards: %s exists; a night's step 1 runs once (re-runs: `rerun`)" % res)
     open(res, "w").close()
+    dbad, nI, nreach = check_deny(rundir, cells(cards=STEP1))
+    print("cards: deny check: %d arm-I artifacts loop-free, reach %d" % (nI, nreach))
+    if dbad:
+        for b in dbad:
+            print("FAIL", b)
+        os.remove(res)
+        raise SystemExit("cards: the deny check failed; no timing")
     json.dump(identical_to_I(rundir), open(os.path.join(rundir, "same_as_I.json"), "w"))
     time_cells(rundir, cells(cards=STEP1), res, with_approx="--with-approx" in args)
     print("cards: results in %s; next: cards.py rule %s" % (res, rundir))
@@ -1335,7 +1376,13 @@ def cmd_selftest(_args):
     v = analyse({"files": {"results.tsv": (rows, {})}, "same": same}, set())
     check("(F8) approximated regimes void by method", v["hstar"] == GRID_TOP and "void by method" in v["label"],
           "h* %s; %s" % (v["hstar"], v["label"][:110]))
-    print("selftest: %d checks, %d failed" % (len(DRILLS) + 14, bad))
+    # r35 F15: the deny check fires on an arm-I artifact that carries a span loop, and passes a clean one
+    loop = b"x = ({ size_t rxa_mf1_j = 0; for (; rxa_mf1_j < 31; rxa_mf1_j++) if (!(a)) break; });"
+    lk, rc_ = loop_audit([("p I off", "I", loop), ("p h0 off", "h0", loop)])
+    check("(F15) deny check: a looping arm I fails", lk == ["p I off"] and rc_ == ["p h0 off"], "leaks %s reach %s" % (lk, rc_))
+    lk, rc_ = loop_audit([("p I off", "I", b"for (;;) { }"), ("p h0 off", "h0", loop)])
+    check("(F15) deny check: a clean arm I passes", lk == [] and rc_ == ["p h0 off"], "leaks %s reach %s" % (lk, rc_))
+    print("selftest: %d checks, %d failed" % (len(DRILLS) + 16, bad))
     return 1 if bad else 0
 
 
