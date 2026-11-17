@@ -1137,7 +1137,12 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   through the COMMANDS on disk (`rule --g2` with G2 = {16}, then `rerun` without `--g2`, as the
   night's jobs call them; a real 4.5 % win of H(8)): none stalled, and `rerun` timed exactly
   `rule`'s owed list on every pass; control (the G2 record removed, rev 10's `rerun`): 5 of 12
-  stalled (accept >= 1).
+  stalled (accept >= 1). (6) **The earlier controls [rev 11]:** rev 11's twin also sees the
+  defects the earlier controls plant (a noisier regime, a regime's between-run offset, I's
+  whole-arm shift, the arm-major step: under rev 11's arm set with only the older mechanism off
+  they read 0.037, 0.147, 0.000 and 0.020, blind), so every earlier control now turns the layout
+  twin term AND `I.lt`'s pool membership off too, as rev 10's controls turned the confirm off;
+  their readings are in lane formsfixi's report.
 - **(xix) A kept head without a win [rev 8, RULED r36 G4; `selftest`'s (G4) lines].** One cell
   (`k` = 60): H(8) = 0.97, H(16) = H(24) = 0.99, H(32) and H(64) = 1.00, the shorter heads
   losing; `f` = 0.025. E = {8, 16, 24} (threshold 0.994) and nothing is dominated (0.99 / 0.97

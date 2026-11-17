@@ -1238,6 +1238,9 @@ def layout_sigma(d):
 
 
 LAYOUT_TERM = True  # selftest's K1 control turns the layout twin term off (rev 10's floor)
+LAYOUT_TWIN_ARM = True  # ... and I.lt out of I's pool (rev 10's arm set); every EARLIER control turns both off too:
+                        # rev 11's twin also sees their defects (a control that left it on was blind, as rev 10's
+                        # controls had to turn the confirm off)
 LAYOUT_TWINS = True  # ... and the synthetic layout twins (rev 10: aa-twin was aa's exe, the confirm re-ran step 1's exes)
 READING_B = True    # selftest's K4 control turns reading B off (rev 10: an unreproduced win read as a tie in W/E/dominance)
 POOL_I = True       # selftest's control turns I's pool off (rev 7's reading) to show the G3 drill sees it
@@ -1398,7 +1401,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
                     # hash-equals I's in this cell (measured, `same_as_I.json`), R0 or not: one
                     # binary, so one reading, the median over all their launches
                     # rev 11 (r39 K1): I's LAYOUT TWIN `I.lt` is one more arm of the pool (another exe of I)
-                    pool = ["I"] + (["I.lt"] + ["h%d" % h for h in GRID if h in ident] if POOL_I else [])
+                    pool = ["I"] + ((["I.lt"] if LAYOUT_TWIN_ARM else []) + ["h%d" % h for h in GRID if h in ident]
+                                    if POOL_I else [])
                     if rows.get((card, pat, "I", rg, ly)) is None:
                         lines.append("rule: cell %s REFUSED: I's own arm is missing from its pool (no row); the "
                                      "night is DEFECTIVE (filed)" % cid)
@@ -2145,7 +2149,7 @@ def selftest_rev11(check):
     check("(r39 K1) the measurement on a night without exe offsets", NOISE_LAST["layout"] <= 0.004,
           "median measured between-exe sigma %.4f (accept <= 0.004: launch noise alone reads ~0)" % NOISE_LAST["layout"])
     # its control: rev 10's floor (no layout term) and confirm (step 1's exes again) on the 2 % night
-    old = _flags(LAYOUT_TERM=False, LAYOUT_TWINS=False)
+    old = _flags(LAYOUT_TERM=False, LAYOUT_TWINS=False, LAYOUT_TWIN_ARM=False)
     try:
         pc, _nv, _fm = noise_drill(seed=1610, exeoff=0.02)
     finally:
@@ -2342,11 +2346,11 @@ def cmd_selftest(args):
     # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance;
     # rev 9's twin term and gate also see a noisier regime, so the control turns them off too
     # (rev 10: and the per-pattern twin term, which sees a noisier regime too)
-    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 5
+    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = (False,) * 7
     try:
         pc, _nv, _fm = noise_drill(seed=41, rscale={"not-warm": 3.0})
     finally:
-        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 5
+        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = (True,) * 7
     check("(G2) control: one regime 3x, A/A floor alone", pc > 0.15,
           "P(h* != 64) = %.3f over %d trials (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # its power (the floor's cost, recorded): a true 10 % win of every head <= 8 where it loops
@@ -2404,13 +2408,13 @@ def cmd_selftest(args):
     # its control: rev 7's reading (I's own arm alone) under the same split must FAIL the acceptance
     # (rev 10: rev 7 had no per-pattern twin term either; with I alone no pool has a twin, so the
     # term would void every cell and blind the control)
-    globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False, False
+    globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = False, False, False, False, False
     try:
         rng = random.Random(65)
         offc = sum(synth_night(rng, 0.01, splits={cellI: (3, 1 + 1.5 * fmed)})["hstar"] != GRID_TOP
                    for _ in range(NOISE_TRIALS))
     finally:
-        globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True, True
+        globals()["POOL_I"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = True, True, True, True, True
     check("(G3) control: the 1.5 f split, I's arm alone", offc / NOISE_TRIALS > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)"
           % (offc / NOISE_TRIALS, NOISE_TRIALS))
@@ -2428,12 +2432,12 @@ def cmd_selftest(args):
     # 100), with rev 9's rate printed beside it
     rng = random.Random(90)
     picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
-    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
+    globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = False, False, False, False
     try:
         rng = random.Random(90)
         picks9 = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
     finally:
-        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+        globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = True, True, True, True
     check("(G3, r38 R2) a FAST 3-of-5 split in H(8), 1.5 f", sum(x == 8 for x in picks) <= 5,
           "h* = 8 in %d of 100 nights (accept <= 5: rev 9's NAMED LIMIT retired by the confirm)" % sum(x == 8 for x in picks))
     # its control, CHECKED (rev 11, r39 K8: rev 10 only printed it): rev 9's rule must ship the split
@@ -2453,11 +2457,11 @@ def cmd_selftest(args):
                   "P(h* != 64) = %.3f over %d nights (accept <= 0.05); median f(A/A) %.4f, f(hit-dense/off) %.4f; "
                   "nights with a first void %d" % (ph, NOISE_TRIALS, fmh, NOISE_LAST["fcell"], nvh))
     # its control: rev 8's rule (no twin term, no agreement gate) on the 2 % one-regime night
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 4
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = (False,) * 6
     try:
         pc, _nv, _fm = noise_drill(seed=301, armoff=(0.02, ("not-warm",), True))
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 4
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = (True,) * 6
     check("(H1) control: tau 2 %, one regime, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
 
@@ -2475,11 +2479,11 @@ def cmd_selftest(args):
                                                                           100 * mult * fcell), ph <= 0.05,
                       "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
                       % (ph, NOISE_TRIALS, nvh))
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (False,) * 4
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = (False,) * 6
     try:
         pc, _nv, _fm = noise_drill(seed=499, splits={("C2", "hex64", "I", "hit-dense", "off"): (5, 1 + 1.5 * fcell)})
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"] = (True,) * 4
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = (True,) * 6
     check("(H2) control: I at hex64, 1.5 f, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # the agreement gate's own cost: the void rate it ADDS on pure noise (F3's acceptance: <= 5 %
@@ -2659,7 +2663,7 @@ def cmd_selftest(args):
                       "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
                       % (ph, NOISE_TRIALS, nvh))
     # the controls: each defect's own shape under rev 9's rule must FAIL the acceptance
-    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
+    globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = False, False, False, False
     try:
         pj1, _n = noise_drill(seed=1400, armoff=(0.02, lambda k: k[1] == "hex64"))[:2]
         cut = min(launch_slots("arm-major")[("C1", "hex24", "h8", rg, ly)][0] for rg in REGIMES for ly in LAYERS)
@@ -2667,7 +2671,7 @@ def cmd_selftest(args):
         pj2i, _n = time_drill("step", (cut, cut + 1), 0.05, seed=1401)
         parm, _n, _f = noise_drill(seed=1402, armoff=(0.02, lambda k: _c12(k) and k[2] == "h8"))
     finally:
-        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+        globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = True, True, True, True
     check("(r38) control J1: hex64 tau 2 %, rev 9's floor", pj1 > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pj1, NOISE_TRIALS))
     check("(r38) control J2: +5 % after hex24's H(4), arm-major", pj2 > 0.15,
@@ -2681,11 +2685,11 @@ def cmd_selftest(args):
           "P(h* != 64) = %.3f over %d nights, no per-pattern term and no confirm (accept > 0.15)" % (parm, NOISE_TRIALS))
     # the POWER line: a real 5 % win of ONE head in ONE regime, before (rev 9's rule) and after;
     # with the confirm cells it costs (the plan's re-run term on a night with one real win)
-    globals()["PAT_TWIN"], globals()["CONFIRM"] = False, False
+    globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = False, False, False, False
     try:
         pw0 = {rg: power_rate(regime=rg)[0] for rg in ("hit-dense", "random")}
     finally:
-        globals()["PAT_TWIN"], globals()["CONFIRM"] = True, True
+        globals()["PAT_TWIN"], globals()["CONFIRM"], globals()["LAYOUT_TERM"], globals()["LAYOUT_TWIN_ARM"] = True, True, True, True
     pw1, pcc = {}, {}
     for rg in ("hit-dense", "random"):
         pw1[rg], _p, pcc[rg] = power_rate(regime=rg, with_confirms=True)
