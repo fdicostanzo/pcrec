@@ -24,7 +24,8 @@
 #       strict value parse (a sign, a space, an empty value, a trailing byte
 #       and one past the top refused) and the forwarded value, read at ONE
 #       absolute anchor (head 8 renders `_j = 8; for (`); S3286, S3302, S3303,
-#       S3312 (the CLI's stored span head + 2; r38 J5).
+#       S3312 (the CLI's stored span head + 2; r38 J5), S3321 (the largest head
+#       refused by a MAX - 1 bound; r39 K10, its own call's stderr printed).
 # Env: PCREC, PCREC_HARNESS, CC, KEEP=1.
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
