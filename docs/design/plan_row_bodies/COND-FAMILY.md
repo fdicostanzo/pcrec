@@ -2345,3 +2345,11 @@ Further, a concatenation operator so that A € B means A followed by B". RECORD
 constructs (his examples: digits, loop) and an operator for "A followed by B" (`€` is a placeholder, D193 add. 4),
 so a pattern can be composed, and its parts conditioned, without writing regex text. Filed as predicates_future.md
 item 21; a design note is the next step (lane rxlib), separate from revision 24.
+ADDENDUM to the rx-module proposal, same day about 14:55. (1) Lane rxlib's premise check: the draft already has
+`join([...], sep = s)` (a sequence of labelled parts), `list_of(X, sep = ...)` and `capture(x)`, and §2.5 records a
+LEAN of 2026-11-13 AGAINST a concatenation operator (the owner had offered "put it into an rx
+/(?&year)(?&mon)(?&day)/ or we have a concatenation operator"; the lean was the manager's). The proposal's
+operator reopens that lean; told to the owner. (2) HIS WORDS, a further idea: "Rx module: ? Operator could mean
+regex ?. So /\d+/ ? Becomes /(?:\d+)?/ Then /\d*/ Effectively". RECORD: quantifier operators on a pattern value,
+each meaning the regex quantifier on the grouped pattern; an idea for the design note (lane rxlib, its R2), not a
+ruling.
