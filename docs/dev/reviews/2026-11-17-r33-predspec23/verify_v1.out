@@ -1,0 +1,36 @@
+== V-3 pair: /(?:(?<h>\d);)+/ & /\d;/ vs /(?<h>\d);/
+(h: <5) differ WHOLE/SEARCHED over 341 : [0, 0]
+NOT (h: <5) differ WHOLE/SEARCHED over 341 : [0, 0]
+== V-5 SV: NOT (h: <5) vs NOT (h = 9: <5)
+on x: FAILS / FAILS | HOLDS / HOLDS `x`@0 | differ over SVPOOL [1, 164]
+== V-8/9 find-all /(?<n>\d+)/ with and without (n: <100)
+1234 plain [`1234`@0] | with (n: <100) [`12`@0, `34`@2]
+123456 plain [`123456`@0] | with (n: <100) [`12`@0, `34`@2, `56`@4]
+== V-10 X & NOT (x: q) on 9 vs flat t2 & NOT late
+9 X & NOT (x: q): HOLDS / HOLDS `9`@0 | t2 & NOT late: FAILS / FAILS
+9:15 X & NOT (x: q): HOLDS / HOLDS `9:15`@0 | t2 & NOT late: HOLDS / HOLDS `9:15`@0
+9:30 X & NOT (x: q): FAILS / HOLDS `9:3`@0 | t2 & NOT late: FAILS / FAILS
+== V-11 when body: fallthrough vs one parse without fallthrough (WHOLE)
+3 fallthrough: True | no fallthrough: True
+7 fallthrough: True | no fallthrough: False
+12 fallthrough: True | no fallthrough: False
+5;1;9 engine end-major 5;1;9 (0, 5) | branch-major 5;1 (0, 3)
+== V-12 nullable B: text.none by definition (empty rows included) vs engine form (non-empty only)
+'' text.none def: False | engine form: True
+'1,' text.none def: False | engine form: True
+'a' text.none def: False | engine form: True
+== V-13 pointwise !c (neither = difference) vs condition NOT on x
+on x: pointwise HOLDS / HOLDS `x`@0 | NOT FAILS / FAILS | differ SVPOOL [1, 164]
+== V-14 /(?<o>\d)x|y/ & /y/ & (o = "1": <5)
+differ default-vs-none [0, 0] | holds plain (W,S) [1, 11] | (o: <5) holds [0, 0]
+== V-15 NOT (n: <0) on /(?:(?<n>\d),)*/
+'' FAILS / FAILS
+'3,' HOLDS / HOLDS `3,`@0
+'3,7,' HOLDS / HOLDS `3,7,`@0
+sentinel occurs.none((h = 'x': !<10)) on /(?:(?<h>\d)?;)*/
+'' HOLDS / HOLDS ``@0
+';' FAILS / HOLDS ``@0
+'7;' HOLDS / HOLDS `7;`@0
+== V-16 on 10: NOT joint vs NOT record (S = <9, T = <30)
+on 10: joint FAILS / FAILS | record HOLDS / HOLDS `10`@0 | differ T2POOL [101, 281]
+without NOT differ [0, 0]
