@@ -2553,3 +2553,9 @@ after (*PRUNE); it resumes past the rejected match after (*SKIP); it ends after 
 both give nothing. (2) In the label-versus-capture ADDENDUM, the manager's "(the end of each pass)" for where a
 label takes its value is SUPERSEDED: by after-loop-read's own example (the condition on the item, "a loop of (times
 after 9:30)") a condition inside the pass reads the labels set so far in that pass.
+
+**2026-11-17 OWNER — empty-pass confirmed (Frank, to session 138, evening).** Told (review r42 finding A1) that
+when a loop's body can match nothing PCRE runs and keeps one final EMPTY pass, so after `/(?:(?<h>\d)?)*/` on `3`
+the last pass is the empty one and the label `h` is unset, and that the draft follows PCRE there. HIS WORDS: ""A
+loop's empty last pass counts as a pass": makes sense as the entire rx is optional." RECORD: RULED: the empty
+last pass of a loop with a nullable body IS a pass (regex behaviour kept; no exception wanted).
