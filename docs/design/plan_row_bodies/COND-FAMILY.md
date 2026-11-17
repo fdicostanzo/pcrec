@@ -2251,3 +2251,17 @@ error or warning (still his to confirm). NOT ruled, still open with him: last-pa
 reads the last pass; every pass asked for by name), which decides pass-table, group-truth and loop-condition;
 when-meaning; whole-text (parked); the atomic and options spellings. The manager takes join-order as left side
 first (reported labels only; told to him 13:45, no objection asked for).
+
+**2026-11-17 OWNER — whole-text as two questions on one parse (Frank, to session 138, box clock about 13:55; a
+model offered, confirmation asked by the manager; whole-text had been PARKED by him on 11-16).** HIS WORDS:
+"whole-text. This is not regex in the single pattern sense. I didn't fully understand your examples. If we had a
+larger parser like the json parser configured J, then used two paths: check C the overall fail against the json
+then search for the match M  J & C ? J & M : fail". RECORD: the whole-text question is NOT one pattern: a parser J
+of the whole text; a check C against J's result that can fail the whole thing; then a search M for the matches;
+the matches are reported only when the check holds. `? :` and `fail` are placeholders (D193 add. 4). MANAGER'S
+READING given to him (MINE, to be checked by the next revision): it is rev 23's route (ii) (a text-level test: a
+find-all keeps all its matches or none), and it needs no new semantics: J is a WHOLE-value pattern over the text, C
+a condition on J's row, M a search inside J's span (his one-pattern occurrences model), so it is `J & C` with the
+hits of M requested by name (the all-hits exception); lane rxmodel found the gate REGULAR (no stored values) and
+PCRE2 unable to spell it in one pattern (no unbounded lookbehind), which agrees with "not regex in the single
+pattern sense". The positional one-pattern form ("no B from here on", route (i)) remains what a lookahead means.
