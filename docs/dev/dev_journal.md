@@ -28084,3 +28084,35 @@ Next
   plan row and designed before the joint landing. Remaining: covs2d (checks past 32), the code round, the nights.
 - Kit told: the combined branch is cut; ids from S3276. Kit timing window 01:00 (its jobs are queued; this session's
   00:27 load check dies with the session: Frank told).
+
+## 2026-11-16 (session 137, box clock 20:04-23:25, IN FLIGHT; manager = fable)
+
+- [COVER-CAP] STAGE 2, branch lane/covs2b now @ 28af649c9. The red axes run (43979627350) was a dead GitHub runner
+  (lane axtri1116; its re-run GREEN). Lane covs2g (opus, tests only): the checks past 32 (47 kitproof rows, S3264-
+  S3266, the axes width arm at 4095, run_cover.sh under the sanitizers, the predictor re-pointed). Its test run was
+  RED on one unbounded `--list-limits` call (K37; lane covs2gtri, one line). covs2g REPORTED four cloud runs but only
+  one reached GitHub: the manager dispatched the missing two (covs2g2-rows, covs2g2-asan). All four kinds GREEN on
+  ad6f4cb56. CODE REVIEW r32 (round covs2code, filed by lane file32): 208 pairs 0 movers, answers = libpcre2, 17
+  plants caught; F1 = the code-size cap (plan row [COVER-SIZE-LADDER], filed by lane read3file); F2 the near-miss
+  O(n*k) cost unstated; small items. Lane covs2fix applied every FIX-NOW but F1 (268 compiles 0 movers) and filed
+  eight plan rows on the branch; its four cloud runs at 02ec70f9d are IN FLIGHT at this entry.
+- MY ERROR on F1: I asked the owner to choose a ladder rung or a spec fix, then proposed a "new" kit request for a
+  looped check. He remembered the plan of record: his 11-15 14:35 direction (cover_cap.md 11.3: a measured inline
+  head, then loops; three forms measured) and "forms now" (11-16). The branch has the kit's limit raise WITHOUT the
+  forms (every window still unrolled, 139 bytes of C per position: measured on `[0-9a-f]{40}`/`{80}`), which alone
+  is why the 500 KB code cap binds. Both questions withdrawn; re-test F1 once the forms are in. LESSON (already a
+  memory, pcrec-grep-plan-before-chartering): grep the design of record before presenting a finding as a new
+  decision, also when the finding comes from a blinded critic round.
+- PREDICATES (design only; docs/design/condition_kind.md, Parts I-IV, four exploration lanes condkind, condkind2,
+  defscope, searchrow; review r31 by round condkind, filed by lane file31; r30 filed by lane file30). OWNER tonight
+  (all quoted in COND-FAMILY.md's tail): the model ("a pattern is a SQL statement. The table is the source of
+  matches. Like the text for a pattern"; complement = his best guess, the source rows not matched); drop-mark YES;
+  default-value YES (any text); source-row YES (the whole subject); default-scope "yes per test"; all-question
+  "retire". MINE: repeated-means (the operand regex), condition-not told twice. My lean for a whole-statement default
+  was REFUTED by lane defscope (adding a condition admits, 1,666 of 68,328). Review r31: sound on whole values, NOT
+  READY for rev 23: source-row's wording collides with the 11-15 same-stretch ruling in SEARCHED mode. Part IV:
+  a complement that removes MATCHES gives both rulings their answers, with a three-way trade (his `9:30` answer,
+  D196's retry, "adding a condition never admits"). Asked: complement-per-match (with the retry choice),
+  nested-complement. No rev 23 until answered.
+- Process changes landed with r30/r31/r32 (critic skill: order-swap rule, mode-closure lens, ruling table, the
+  contract lens runs a new range's top through every compile cap).
