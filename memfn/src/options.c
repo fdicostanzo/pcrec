@@ -84,3 +84,24 @@ int kit_opt_denied(const char *opts, const char *name)
     }
     return 0;
 }
+
+/* 1 iff `--memfn=` string `opts` holds exactly the token `tok` (`len`
+ * bytes). */
+static int opt_has(const char *opts, const char *tok, size_t len)
+{
+    for (const char *p = opts; *p;) {
+        const char *end = strchr(p, ',');
+        size_t n = end ? (size_t)(end - p) : strlen(p);
+        if (n == len && memcmp(p, tok, len) == 0) return 1;
+        if (!end) break;
+        p = end + 1;
+    }
+    return 0;
+}
+
+int kit_opt_state(const char *opts, const char *name)
+{
+    if (!opts || !name) return 0;
+    if (kit_opt_denied(opts, name)) return -1;
+    return opt_has(opts, name, strlen(name)) ? 1 : 0;
+}

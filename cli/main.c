@@ -1539,6 +1539,17 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         /* [FIND-MINW] the minimum-width stop's inverse lever */
         else if (!strcmp(a, "--harness=no-min-width")) st->harness.no_min_width = 1;
         else if (!strcmp(a, "--harness=mfind")) st->harness.mfind = 1;
+        /* [MEMFN] R-45: the kit's valued lever, the span forms' inline head
+           (N is validated by the kit, mf_lever) */
+        else if (!strncmp(a, "--harness=span-head=", 20)) {
+            char *end;
+            unsigned long n = strtoul(a + 20, &end, 10);
+            if (!a[20] || *end || n > 4095) {
+                cli_err("--harness=span-head= wants a head of 0..4095 positions");
+                return 1;
+            }
+            st->harness.span_head = (unsigned)n + 1;
+        }
         /* [REQ-EMPTYCAT] span_arms §3.7: the necessary-run walk's restored
            arms, names joined by '+' (src/facts/walk_arms.def) */
         else if (!strncmp(a, "--harness=restore=", 18)) {

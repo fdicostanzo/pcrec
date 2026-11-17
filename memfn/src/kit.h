@@ -334,13 +334,20 @@ struct mf_art {
     /* R-30: the test-only levers mf_lever set (bit KIT_LEVER_*; 0 on every
        shipped compile) */
     unsigned     levers;
+    /* R-45 the VALUED lever `span-head=N` (KIT_LEVER_SPAN_HEAD set): the
+       inline head h of the span forms on this art (window.c wf_span_head) */
+    unsigned     span_head;
     char        err[256];
 };
 
 /* The test-only levers (mf_lever, compose.c's table). Bit 0 was
  * `pres-window` (R-30), retired at R-38 K38-2 with the two-part run; never
  * reused. */
-enum { KIT_LEVER_RUN_LEFT = 1u << 1, KIT_LEVER_MFIND = 1u << 2 };
+enum { KIT_LEVER_RUN_LEFT = 1u << 1, KIT_LEVER_MFIND = 1u << 2, KIT_LEVER_SPAN_HEAD = 1u << 3 };
+/* The valued lever's range (`span-head=N`, N in 0..4095): a head at the last
+ * offset a window statement can reach (MF_WREACH - 1) loops nothing (a loop
+ * takes two positions), so it renders exactly I. */
+#define KIT_SPAN_HEAD_MAX (MF_WREACH - 1)
 
 /* P3's run window, in run positions (R-30's and K38-1's): the stretch the
  * run decision verifies on an OPTIONAL route (KIT_RUN_WINDOW). Kit-internal
@@ -1319,6 +1326,7 @@ typedef struct {
 #define kit_walk       MF_NS(kit_walk)
 #define kit_ask        MF_NS(kit_ask)
 #define kit_opt_denied MF_NS(kit_opt_denied)
+#define kit_opt_state MF_NS(kit_opt_state)
 
 /* The first row of slot `slot` of table `t` that `denies` does not deny,
  * that the gate passes at `gphases` over `in`, and whose predicate holds over
@@ -1342,6 +1350,12 @@ int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
 /* 1 iff `--memfn=` string `opts` holds the token `no-<name>` (options.c; the
  * string was validated by mf_opts_check). NULL `opts` or `name`: 0. */
 int kit_opt_denied(const char *opts, const char *name);
+
+/* A PAIR row's three states in `--memfn=` string `opts` (options.c): -1
+ * where `no-<name>` is given (the deny wins when both spellings are, as
+ * pcrec's own pair rule, tuning.md §2.43¶1), 1 where only the bare `<name>`
+ * (the force) is, 0 where neither is (or `opts`/`name` is NULL). */
+int kit_opt_state(const char *opts, const char *name);
 
 /* One candidate of the window family's list as its trace record writes it
  * (span_pick.md §The shape "The trace", stage 1: no price). Three sources

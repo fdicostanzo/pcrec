@@ -244,6 +244,13 @@ mf_art *pcrec_memfn_art(Ctx *cx)
             mf_lever(job->mf, "mfind"))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
                            "`mfind`: %s", mf_art_error(job->mf));
+        /* R-45: the harness lever's span-forms head (the form cards' and the
+           identity check's instrument); never on a shipped compile */
+        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->span_head &&
+            mf_lever(job->mf, pcrec_sb_fragf(&cx->arena, "span-head=%u",
+                                             cx->emit_in->harness->span_head - 1)))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
+                           "`span-head`: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }
