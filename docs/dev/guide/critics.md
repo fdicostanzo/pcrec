@@ -70,6 +70,14 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-16 r30, predicates_draft.md rev 22 re-check (`docs/dev/reviews/2026-11-16-r30-predspec22.md`), accepted 2026-11-16 (manager): **when the evidence engine implements a rule by TRAPPING a poisoned value (a DOM "consulted"), swap the operand order inside every lambda and re-run; quote a count only after the swap leaves it unchanged** (SIMULATE-9: 30 of 355 by fn order alone).
+
+2026-11-16 r30, same round, accepted 2026-11-16 (manager): **when a fold introduces a NESTED program (a complemented pattern, a named program under an operator), drill every "adding X never ..." claim at three insertion points: the outer chain, inside the nested program, and through a binding both share** (SIMULATE-6, FIXIND-2: two lenses, two sides).
+
+2026-11-16 r30, same round, accepted 2026-11-16 (manager): **recompute every worked count with the DOCUMENT's own set-membership rules (literal domains, canonical numerals), never the check script's lambda** (SIMULATE-2: `int()` against the canonical-numeral rule).
+
+2026-11-16 r30, same round, accepted 2026-11-16 (manager): **grep every "CF hh:mm" citation of an owner quote: each must resolve to a record entry** (RULING-1/-3: two remarks quoted with no entry, one quoted differently in a parked-list file). Also: build a runnable read-only copy (`R/tree/`) when lane scripts read each other by relative path, and add the ruling lens on a re-check whenever the record hands the manager's readings to the round.
+
 2026-11-16 r29, predicates_draft.md rev 20 re-check (`docs/dev/reviews/2026-11-16-r29-predspec20.md`), ruled 2026-11-16 (manager): **a revision that WITHDRAWS a manager's reading must re-check every KEPT reading whose stated equivalence rested on it** (V4: 14:50 (b) "same as satisfied" was true only under (c) "any text", withdrawn in the same revision).
 
 2026-11-16 r29, same round, ruled 2026-11-16 (manager): **"apply each acceptance case in its REAL MODE" extends to every NEW worked table the revision adds, not only the acceptance cases** (SIMULATE-1/6: both new tables stated whole-value answers that move when searched).
