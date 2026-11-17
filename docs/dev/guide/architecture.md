@@ -12,7 +12,8 @@ carry each. Code-level rules are in `coding.md`; names and comments in `style.md
 `docs/dev/lanes/archhist_report.md` (the refactor history, entries numbered 1-20) and
 `docs/dev/lanes/archreview_report.md` (today's tree: decision chains, parallel mechanisms, seams, options).
 An "architecture note" is the short document that answers, before design, where a feature lives in today's code
-and what must change shape first ([ARCH-STEP]); its template is not written yet.
+and what must change shape first ([ARCH-STEP]); its template and procedure are the `pcrec-architect` skill
+(`.claude/skills/pcrec-architect/SKILL.md`), its review the `pcrec-critic` skill's architecture mode.
 
 # Part 1. Goals (DRAFT 2026-11-17, for the owner)
 
