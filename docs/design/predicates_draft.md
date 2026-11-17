@@ -379,7 +379,7 @@ row for its site; §13's closing REV 23 block).
 
 | # | goal | who benefits | measurable form |
 |---|---|---|---|
-| G23-1 | ONE definition of every construct in the owner's model, stated once (§R.1), every other section pointing at it | the owner reading for rulings; a future builder | §R.1 covers every row of rev 22's grammar and mark table (§5.4): the coverage table §R.1.9 has no row "undefined" |
+| G23-1 | ONE definition of every construct in the owner's model, stated once (§R.1), every other section pointing at it | the owner reading for rulings; a future builder | §R.1 covers every row of rev 22's grammar and mark table (§5.4): the coverage table §R.1.11 has no row "undefined" (rev 23.1: the cite was §R.1.9, review r33 F10) |
 | G23-2 | no answer that the record has not seen silently changes | the owner | every example that MOVED is listed (§R.7) with its answer in both modes; every reading this lane had to take is marked "the draft's reading" and listed (§R.8) |
 | G23-3 | every answer stated in both modes | the owner (review r29 F, r31 I) | every worked table in §R names WHOLE / SEARCHED; every new table is run in both |
 | G23-4 | the mark and `all` gone from the language | the owner (drop-mark 21:49, all-question 23:18) | no normative sentence uses either; history sites are labelled (§R.9) |
@@ -400,14 +400,28 @@ PLAIN WORDS. You give a pattern a TEXT. Think of every place in the text where t
 labels it would set there: that list is a TABLE, one ROW per potential match. A condition is a test of ONE row: it
 looks at that row's labels and says yes, no, or "can't tell" (a label it needs is missing). `&` keeps the rows
 both sides keep; a condition keeps the rows it says yes to; `!P` after `&` throws away the rows P would keep. In a
-searched program, the answer is the row the search prefers among the rows that survive. A missing label never
-passes a test, negated or not; to get past a missing label, the author writes a default for it inside the test.
+searched program, the answer is the row the search prefers among the rows that survive. A missing label of the row
+a test reads never passes that test, negated or not; to get past a missing label, the author writes a default for it
+inside the test. (Rev 23.1, review r33 F12: a label missing INSIDE a nested program, such as the program after `x:`,
+is that program's business: the nested program keeps or drops its own row, and the outer test sees only "the label's
+text is, or is not, a row of it", a yes or a no; §R.3's nested row.)
 
 PRECISELY:
 
-R.1.1 THE SUBJECT is the search text (row-is-match, 23:46: "the SUBJECT is the search text, not a row"). In a
-filter role (either side of `&`, a `label:` set, a `contains`/`occurrences` argument, a `records` item) the text is
-that role's STRETCH (rev 22 §11 THE ROLE TABLE: a filter role matches its stretch whole). Vocabulary (review r31 K):
+R.1.1 THE SUBJECT is the search text (row-is-match, 23:46: "the SUBJECT is the search text, not a row"). A program
+nested in a larger one stands in a PLACE, and the place fixes its text and its mode (rev 23.1, review r33 F5; the
+places are §11 THE ROLE TABLE's rows, which this list follows; rev 23 had put all four nested places in the
+whole-value mode, which rows 5 and 7 contradict):
+
+| place (ROLE TABLE row) | its text | its mode | what the outer row sees |
+|---|---|---|---|
+| either side of `&` (rows 1, 2) | the stretch both sides match | WHOLE value: at most the one row whose stretch is that text | the row itself (the join of R.1.4) |
+| a `label:` set (row 3) | the label's text in this row | WHOLE value | yes / no: the label's text is, or is not, a row (R.1.5; §R.3's nested row) |
+| a `contains`/`occurrences` argument (row 5: it lands in a HOLE of the body, §2.6) | the enclosing stretch | SEARCHED, find-all: the hits are the argument's rows found leftmost, non-overlapping, in R22's order within that stretch (R.1.9) | the hits, as the repeated label `hit` (R.1.9; review r33 F4) |
+| a `records` item (row 7) | its file text | SEARCHED, find-all (R.1.9; §7) | one record per row found |
+| the program's final pattern (row 6) | the subject | SEARCHED (or WHOLE when the caller matches a whole value) | the reported row |
+
+A FILTER ROLE (rows 1-4, 8) is a whole-value place; rows 5 and 7 are searched places. Vocabulary (review r31 K):
 "source row" and "result row" are retired; rev 23 says SUBJECT (the text), ROW (one potential match) and STRETCH (a
 row's text).
 
@@ -423,8 +437,19 @@ sequence rule), and it is asked as **pass-table** (§R.8). A name set both insid
 row column or a pass column).
 
 R.1.3 A PATTERN IS A STATEMENT (20:41, his words: "a pattern is a SQL statement. The table is the source of
-matches. Like the text for a pattern."): it is what PRODUCES the table from the text; two patterns with the same
-table answer every condition alike (the spelling principle, 15:29, restated). A WHOLE-VALUE program (a filter role;
+matches. Like the text for a pattern."). Rev 23.1 (review r33 F6 (a), F13): 20:41's RECORD makes the TABLE the
+SOURCE the statement runs over, the counterpart of the text, and says the manager's consequences derived from the
+20:36 wording ("the table is the set of matches") are NOT carried; rev 23 used the 20:36 wording here. The
+per-pattern table this section uses (R.1.2: "every potential match of P in the text") rests instead on the later
+framing he said yes to: his 23:31 remark ("the table is the set of possible matches so a row from the table
+represents a single potential match") and the 23:46 walk-through ("the table of the time pattern's potential
+matches"), answered "row-is-match: yes I agree". THE SPELLING PRINCIPLE stays as RULED, with its asterisk (15:29):
+"two patterns that match the same subjects and set their labels the same way answer every condition alike" (*). The
+form "two patterns with the same TABLE answer every condition alike" is THE MANAGER'S RE-DERIVATION under
+row-is-match (20:41 asks the definition lane to re-derive), not the ruled sentence; it is NARROWER (a table carries
+R.1.2's pass table and R.1.8's repeatedness, so two patterns (*) calls alike can have different tables:
+`/(?:(?<h>\d);)+/ & /\d;/` and `/(?<h>\d);/`), and whether a compile rule keyed on repeatedness can split such a pair
+is a PLAN item (`predicates_future.md` item 15). A WHOLE-VALUE program (a filter role;
 a program applied to a value) has, on a text, at most the rows whose stretch is the whole text. A SEARCHED program
 (rev 22 §11 row 6: a program's FINAL pattern) has every potential match in the subject.
 
@@ -436,14 +461,41 @@ R.1.4 THE OPERATORS ON PATTERNS.
 - `P | Q`: PCRE's ONE parse of the alternation (rev 22 §4.5, RULED CF:953-955; L60): a row of `P | Q` is the one
   parse PCRE gives that stretch, with the labels of the branch it took, never a union of both sides' rows (review r31
   B). Rev 22's `(B | A) & (l: "a")` on `aa` REJECTS (one parse) and stays so.
+  BRANCH ORDER (rev 23.1, review r33 F2; the MANAGER'S RULING **branch-order**, told to the owner by name, not asked:
+  COND-FAMILY entry of 2026-11-17 03:01, item (3); the owner may object). A branch whose OWN condition (or complement,
+  or `&` operand) rejects a row FALLS THROUGH to the next branch, exactly as any failing piece of that branch makes
+  PCRE try further; the order is PCRE's own preference order, BRANCH-MAJOR: at a start, every row of the first branch,
+  in that branch's own preference order, before any row of the second. (Derived from row-is-match, "the search
+  reports the preferred surviving row", and "`|` is PCRE's one parse": a condition inside a branch fails like any
+  failing piece of that branch.) A condition OUTSIDE the `|` reads the one parse's row and never sends the parse to
+  another branch (the `(B | A)` example above). By mode: WHOLE value, the stretch is the whole value, so the order
+  decides only which branch's labels the row carries, never whether it holds; SEARCHED, whether the program holds
+  never moves either (the same rows are tried, in another order), but the REPORTED row can. Example
+  (`predspec23c_model.out` PART 1; KH := `/(?<k>\d)(?:;(?<h>\d))*/`, c = `(h: <5)`, p = `(k: between(3, 7))`):
+  `(KH & c & p) | (KH & !(KH & c))` on `5;1;9`: WHOLE HOLDS (through branch 2: c is FALSE on the pass `9`);
+  SEARCHED HOLDS reporting `5;1`@0 (branch 1's shorter row comes before every row of branch 2). Rev 23's evidence
+  engine searched END-MAJOR (each end of the left regex, both branches at that end), a reading no sentence stated;
+  it reported `5;1;9`@0 (the counts that moved: §R.7c).
 - `!P` (the COMPLEMENT of a pattern; not-is-complement's first half, 17:29, stands): the potential matches P does
-  not match. It carries NO labels (20:41's judgment, held by r31). It is used AFTER `&`: `A & !B` is PATTERN
+  not match. It carries NO labels (THE MANAGER'S JUDGMENT given at 20:41, CF 20:41 entry, held by r31; rev 23 cited
+  it as "20:41's judgment", review r33 F15). It is used AFTER `&`: `A & !B` is PATTERN
   DIFFERENCE, the rows of A whose stretch B does not match whole (rev 22 §2.2 (3), "narrows the outside program's
   matches like any filter"; candidate R22, now the ruled reading under row-is-match: "a complement after `&` all
-  filter potential matches"). A complement with nothing on its left (`${!B}`, `C | !B`, a program that is only
-  `!B`) is a compile ERROR (review r31 A5, kept; the reason in the model's words: a complement's rows are rows of its
-  LEFT operand, so with nothing on its left there is no row to keep or report; the text-level question it might be
-  meant to ask is §R.4).
+  filter potential matches").
+  WHERE A COMPLEMENT STANDS (rev 23.1, review r33 F6 (d), (e); the manager's disposition of F6): a complement
+  ANYWHERE in an `&` chain filters the rows of the chain's NON-COMPLEMENT operands, and the chain must have one; the
+  first non-complement operand takes the left operand's part in reporting (R.1.9). So `!q & t2` = `t2 & !q`, and
+  `!startsWith("#") & alts` = `alts & !startsWith("#")` (§0.1 L1, L39: `&` is order-free, CF:722). After `label:`
+  the left operand is the LABEL'S TEXT: `(x: !B)` keeps the row when x's text is not a row of B (= `(x: !S_B)`, the
+  set complement of B's string set, R.5 G), and `(m: !contains(r))` is legal (§2.6).
+  A complement with NOTHING on its left, in no `&` chain and after no `label:` (`${!B}`, `C | !B`, a program that is
+  only `!B`), is a compile ERROR. Rev 23.1 (review r33 F6 (b)): the error is THE MANAGER'S CALL, not a ruled
+  consequence. Review r31 kept it (its disposition A5) "unless A1's answer gives the row a span", and row-is-match
+  (A1's answer) does give the row a span, so A5's own condition no longer holds; the manager's reason now is that a
+  standalone complement has no preference order of its own to report a row by (R.1.9 needs a left operand), and its
+  rows, read under his 20:41 guess as "all the matches from the table that didn't get matched", are every stretch
+  that is not a row of B, which asks "some stretch is not a B", not "no B anywhere" (§R.4; §R.8 **whole-text** lists
+  it as the record's third candidate).
 - A label-free filter (`startsWith`, `contains(r)`, `!contains(r)`, a comparison set used as a pattern) is a pattern
   like any other: it keeps the rows whose stretch it matches whole.
 
@@ -461,7 +513,14 @@ labels and pass table), never another row and never the pattern's text.
   iteration ... and at least one", **absent-rule** 14:31). THE DRAFT'S READING of the three-valued form (rev 22 said
   only "fails"); it moves no rev 22 answer while NOT is absent.
 - A record `(e1, e2, ...)`: the `&` of its entries (record-is-product for product records, 11:35; a record whose entry
-  reads another entry's label with `$` is the AND of its entries, NOT their joint: review r31 E).
+  reads another entry's label with `$` is the AND of its entries, NOT their joint: review r31 E). Rev 23.1 (review
+  r33 F1): a joint and the record of the same PRODUCT set also PART once NOT is applied. On a row with h outside S and
+  m absent, the joint `((h, m): (S, T))` is UNKNOWN (a part is absent) while the record `(h: S, m: T)` is FALSE &
+  UNKNOWN = FALSE; NOT drops the joint's row and keeps the record's. `t2 & NOT ((h, m): (<9, <30))` vs `t2 & NOT (h:
+  <9, m: <30)` on `10`: FAILS / FAILS vs HOLDS / HOLDS `10`@0; they differ on 101 (WHOLE) / 371 (SEARCHED) of the
+  11,110 `t2` texts (first `9`), and on 0 / 0 without NOT (`predspec23c_model.out` PART 2). Record-is-product (11:35)
+  is a statement about the record WITHOUT a NOT around it; under NOT the two are different questions, BY DESIGN
+  (§0.1 L83), and the author picks: the joint for "the time as one value", the record for "each part on its own".
 - `c1 & c2` on conditions: Kleene AND. `NOT c` (written `!c`; condition-not, 23:48, his words: "condition-not : yes
   allow not"): Kleene NOT: TRUE<->FALSE, UNKNOWN stays UNKNOWN, so "a condition on an absent label is unknown, its NOT
   is unknown, the row is dropped (absence never matches, negated or not; a default gets past it)" (23:48 record).
@@ -505,7 +564,20 @@ surviving row (D196's retry is that choice)"). D196's retry ("the left operand's
 operand accepts exactly") is that choice stated procedurally: a condition, an `&` operand or a complement that
 rejects the preferred end sends the search to the next end. A searched program's later matches are found the same
 way after the reported one (lane searchrow's IV.1 assumption: leftmost, non-overlapping find-all, as `records` and
-`occurrences` already work).
+`occurrences` already work). The preference order of a `P | Q` program is BRANCH-MAJOR (R.1.4, **branch-order**).
+THE HIT LIST of a searched place (rev 23.1, review r33 F4; R.1.1's table: a `contains`/`occurrences` argument, a
+`records` item) is this find-all within the place's text: for a FILTERED argument, the argument's surviving rows,
+leftmost and non-overlapping, each at its first-preferred surviving end. `occurrences(/(?<n>\d+)/ & (n: <100))` on
+`1234` has the hits `12`@0 and `34`@2 (`predspec23c_model.out` PART 7). (§2.6's "PCRE's own matching of the body"
+is the same list for an UNFILTERED regex argument; for a filtered one the hole's string set has no order of its own,
+and an alternation of it would give `12`, `34` longest-first but `1`, `2`, `3`, `4` shortest-first, PART 7, so the
+string-set reading is not used for the hit list.)
+FIND-ALL IS NOT MONOTONE (rev 23.1, review r33 F11): adding a condition can ADMIT a later row, because the longer row
+it now rejects no longer swallows it. `/(?<n>\d+)/` find-all on `1234` reports `1234`@0; with `(n: <100)` added it
+reports `12`@0 and `34`@2 (on `123456`: one match becomes three; PART 7). So a count of hits, a `records` count or
+`occurs.at_least(2, ...)` over hits can go from FALSE to TRUE when a condition is added inside the argument, with no
+NOT anywhere. "Adding a condition never admits" (§R.5 A4) is about whether the program holds at the top of an `&`
+chain, not about find-all reporting.
 
 R.1.10 WHOLE VS SEARCHED. Every construct above has ONE meaning; the mode changes only which rows exist (the whole
 value only, or every stretch). The answers part where a shorter or later stretch survives: §R.6 lists the cases.
@@ -527,21 +599,36 @@ list of this lane's own):
 | `=` | unchanged; at a label in a condition: the default of R.1.6 |
 | `:` | unchanged (narrows a label that exists) |
 | `&` | R.1.4 on patterns; Kleene AND on conditions (R.1.5); pattern & condition = the WHERE |
-| `\|` | R.1.4: PCRE's one parse on patterns; on CONDITIONS Kleene OR (the draft's reading: rev 22's "pointwise on macros", restated; no ruled answer moves); pattern \| condition stays the error |
+| `\|` | R.1.4: PCRE's one parse on patterns, a filtered branch falling through in branch-major order (**branch-order**, the manager's ruling, rev 23.1); on CONDITIONS Kleene OR (the draft's reading: rev 22's "pointwise on macros", restated; no ruled answer moves; asked as **condition-or**, §R.8, rev 23.1); pattern \| condition stays the error |
 | prefix `!` | on a pattern: its complement, used after `&` as pattern difference (R.1.4); on a SET: the set's complement over EVERY TEXT (R.5 G); on a CONDITION: the three-valued NOT (R.1.5; condition-not 23:48) |
 | comparisons, arithmetic, `:=`, `.`, `${ }`, `/.../`, `@`, `#`, literals | unchanged |
 | `$` | reads the real label (R.1.5); a repeated label's `$x` as rev 22 §4.3 |
 | `^` (PAUSED) | unchanged (paused) |
 | group questions (§4.3 table) | R.1.7: `all` REMOVED; `some`/`count`/`occurs.*` two-valued over the real passes |
-| §4.2's per-program value set DOM | RETIRED as a reader of conditions (it served only the mark); the per-LABEL value set the regex can give stays for the §5.2 empty-intersection error and for H (R.5) |
+| §4.2's per-program value set DOM | RETIRED as a reader of conditions (it served only the mark); the per-LABEL value set (the values the label takes in a match of the program's `&` operands, conditions not applied; rev 23.1, review r33 F3) stays for the §5.2 empty-intersection error (judged after default and polarity, R.2) and for H (R.5) |
 
 ### R.2 What retires with the mark and `all`
 
 Retired (they lose their subject; none is reversed: 21:49, as put to him): zero-pass-empty, match-context,
 domain-scope, mark-narrows, mark-in-none, mark-range (withdrawn), and the manager's readings one-witness and
 not-of-marked; absent-rule loses only its clause offering the mark. `all(c)` retires (23:18). The per-program
-DOM(h) of rev 21-22 has no reader left in conditions. Rev 22's §5.2 empty-intersection error STAYS, read from the
-values the label's own regex can give (review r31 F, RULING-5 (a)): `(n: <0)` on a digit label is still the error.
+DOM(h) of rev 21-22 has no reader left in conditions. Rev 22's §5.2 empty-intersection error STAYS (review r31 F,
+RULING-5 (a)), read from the values the label takes in a match of THE PROGRAM'S REGEX, ITS `&` OPERANDS, CONDITIONS
+NOT APPLIED (rev 22's qualifier, restored by rev 23.1, review r33 F3; rev 23 had "the label's own regex"): `(n: <0)`
+on a digit label is still the error. REV 23.1 (review r33 F8; the fix-induced lens: rev 22's domain assumed no NOT):
+the error is judged on the TEST AS WRITTEN, after its default and its polarity. The values it is tried on are those
+values plus the default's text when the test writes one (a joint: per tuple); the test is the error when it is TRUE
+on NONE of them, i.e. when it can never keep a row. So:
+- `(n: <0)`, `(x: !<10)` and `NOT (x: <10)` on a digit label are the error (never TRUE; L30's two spellings get the
+  same verdict at a full set, and at an empty set below);
+- `NOT (x: <0)` and `(x: !<0)` are LEGAL: TRUE wherever x is set ("x is present"); on the repeated n of
+  `/(?:(?<n>\d),)*/`, `NOT (n: <0)` is "some pass sets n", equal to `some((n: any text))` (0 of 121 differ, WHOLE
+  holds 6, SEARCHED 64; `predspec23c_model.out` PART 4), so it is no error; the author may prefer `some(...)`;
+- §R.1.7's sentinel idiom stays legal where S covers every value: `occurs.none((h = "x": !<10))` meets the default's
+  text `x`, which lies in `!<10`, and is not constant (on `/(?:(?<h>\d)?;)*/`: HOLDS on the empty text and on `7;`,
+  FAILS on `;` WHOLE; holds on 7 of 364 WHOLE; PART 4).
+The answers of each L30 pair agree (0 of 341 differ, both modes, PART 9); only the compile verdict was at stake, and
+this rule gives both spellings one verdict.
 
 ### R.3 The three spellings of "not" (condition NOT, set complement, pattern difference)
 
@@ -594,6 +681,20 @@ On `t2` (`/(?<h>\d{1,2})(?::(?<m>\d\d))?/`, R = `>= (9, 30)`, q := `t2 & ((h, m)
 The 110 whole-value texts between 1,860 and 1,970 are the hour-only texts (`9`: m absent: NOT drops it, the
 difference keeps it).
 
+A FOURTH MEMBER: NOT OVER A NESTED PROGRAM (rev 23.1, review r33 F12 and its family note). With X :=
+`/(?<x>[\d:]+)/`, `(x: q)` asks whether x's text is a row of q, a YES or a NO (R.1.1's place table), so the third
+value does not cross the `label:` boundary and NOT over it acts as the DIFFERENCE for q's own labels
+(`predspec23c_model.out` PART 6; WHOLE / SEARCHED):
+
+| text | `X & NOT (x: q)` | `X & (x: !q)` | `X & (x: t2 & NOT late)` | flat `t2 & NOT late` | flat `t2 & !q` |
+|---|---|---|---|---|---|
+| `9` (q's m absent) | HOLDS / HOLDS `9`@0 | HOLDS / HOLDS `9`@0 | FAILS / FAILS | FAILS / FAILS | HOLDS / HOLDS `9`@0 |
+| `9:30` | FAILS / HOLDS `9:3`@0 | FAILS / HOLDS `9:3`@0 | FAILS / FAILS | FAILS / FAILS | FAILS / HOLDS `9`@0 |
+| `9:15` | HOLDS / HOLDS | HOLDS / HOLDS | HOLDS / HOLDS | HOLDS / HOLDS | HOLDS / HOLDS |
+
+So "a missing label never passes a test, negated or not" (R.1 PLAIN WORDS) is about a label OF THE ROW the test
+reads; to drop the row where q's m is absent, the author puts the NOT inside the nested program (third column).
+
 ### R.4 THE WHOLE-TEXT QUESTION: "the text contains no B anywhere"
 
 `A & !B` is pattern difference: it asks about A's ROW, not about the text. Searched on `9:30`, `t2 & !q` HOLDS
@@ -607,7 +708,10 @@ WHAT ASKS IT TODAY:
 - SEARCHED mode: NOTHING asks it exactly.
   - `!contains(B)` reads the ROW's stretch: `t2 & !contains(q)` SEARCHED on `9:30` HOLDS reporting `9` (PART 1, D5);
     11,110 of 11,110 (PART 3).
-  - A standalone `!B` is the compile error of §R.1.4 (rev 22 §2.2: `${!B}`, `C | !B`).
+  - A standalone `!B` is the compile error of §R.1.4 (rev 22 §2.2: `${!B}`, `C | !B`). It is the FIRST of the two
+    spellings the manager's 23:46 MINE named ("a complement with nothing on its left, or not-contains"); the error
+    is the manager's call (§R.1.4, rev 23.1, review r33 F6), and read under his 20:41 guess it would ask "some
+    stretch is not a B", not "no B anywhere"; §R.8 **whole-text** shows it beside the two routes.
   - Anchoring: `/\A[\s\S]*\z/ & contains(A) & !contains(B)` asks it, but its row is the WHOLE text, so the program
     no longer reports A's match; and a regex lookahead (`\A(?![\s\S]*B)`) gates only from the start of the text.
     (Rev 23 as first written said the lookahead spells it "only for a B with no conditions"; lane predspec23b found
@@ -618,8 +722,9 @@ WHAT ASKS IT TODAY:
   of the row (SQL: `where not exists (select * from B)` over the same text, an uncorrelated subquery), so it is TRUE
   or FALSE alike for every row of one text, and `A & text.none(B)` reports A's preferred row exactly when the text
   has no B. Its positive is `text.some(B)`. It is a condition (it filters rows), not a pattern (it adds no label
-  and no stretch), so it composes with `&` and NOT like any condition and is two-valued. In a filter role its
-  "text" is that role's stretch (R.1.1), so inside a whole-value program it equals `!contains(B)`.
+  and no stretch), so it composes with `&` and NOT like any condition and is two-valued. In a nested place its
+  "text" is that place's text (R.1.1's table: a filter role's stretch; a `records` item's file text), so inside a
+  whole-value program it equals `!contains(B)`.
   RUN (PART 1, D6; PART 3): `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS reporting `9:15`;
   on `9:30 1` FAILS / FAILS. Over 11,110 `t2` texts it holds on 1,970 in BOTH modes.
 - Asked as **whole-text** (§R.8); the owner PARKED it on 2026-11-17 ("Let's not answer now", as relayed in the
@@ -679,7 +784,10 @@ ROUTE (ii): THE SEPARATE TEXT-LEVEL TEST, `text.none(B)` (placeholder; §R.4's P
   only its row ... never the pattern's text" gains an exception (the text is the subject, R.1.1; in a filter role,
   the stretch). Its positive `text.some(B)`.
 - What it cannot say: anything POSITIONAL ("no B before A", "no B after A", "no B within 10 characters"): for those
-  the author writes route (i)'s lookaround, which already exists.
+  the author writes route (i)'s lookaround, which already exists. Nor the CORRELATED form, "no B whose labels
+  relate to this row" (`text.none(B & (h: $h))`, SQL `NOT EXISTS (... where b.h = a.h)`): R.1.5 lets a condition read
+  only its own row, so a B reading the outer row's `$h` is OUT OF SCOPE of both routes (rev 23.1, review r33's family
+  note; the general place table that would hold it is `predicates_future.md` item 16).
 - Where it surprises: a find-all program with `text.none` reports every match or none, so adding one more B anywhere
   in a long text removes every match; and inside a filter role (`(x: t2 & text.none(q))`) "the text" quietly means
   the label's text.
@@ -701,7 +809,13 @@ positive-lookahead labels asked, rather than offered as the whole-text answer.
   !/\d:\d\d/` admits 0 and 0; WHOLE 0; `searchrow.out` PART 2, re-run forward and swapped, identical); A3 `when(c,
   p)`'s body `(x & c & p) | (x & !(x & c))` and its case-when form agree (R22: 11,110 vs 11,110 on T2, 600 vs 600 on
   T2PAIRS, SEARCHED; 6,050 vs 6,050 WHOLE: `searchrow.out`), and are vacuous searched on T2 (a shorter stretch
-  always survives: the rev 22 §0.1 MODE OF THE ANSWERS class); A5 the standalone-complement error kept (R.1.4); A6
+  always survives: the rev 22 §0.1 MODE OF THE ANSWERS class). Rev 23.1 (review r33 F2): the agreement rests on a
+  filtered branch FALLING THROUGH (without it the second branch is unreachable: with x = t2, c = `(h: <5)` and p
+  TRUE, `7` HOLDS with fallthrough and FAILS without, review r33's verifier V-11), which
+  **branch-order** now states (R.1.4); under its branch-major order the body and the case-when still hold on the same
+  texts and here report the same rows too (0 of 11,110 and 0 of 600 differ, SEARCHED; `predspec23c_model.out` PART 1),
+  but on `/(?<k>\d)(?:;(?<h>\d))*/` they report different rows on 125 / 400 of 1,110 texts (§8, §R.7c). A5 the
+  standalone-complement error kept (R.1.4; rev 23.1: as the manager's call, A5's own condition having lapsed); A6
   parked in `predicates_future.md` (no change here).
 - B: `|` is PCRE's one parse (R.1.4).
 - C (closed by all-question): R.1.7. Rev 22's closing example is rewritten (§R.7, row 1).
@@ -724,9 +838,14 @@ positive-lookahead labels asked, rather than offered as the whole-text answer.
 - G: `!S` complements over EVERY TEXT, so a non-label default sits in `!S`: `(h = "x": !<5)` HOLDS on `x` while `(h =
   "x": >=5)` FAILS (PART 2 table, both modes). Two set spellings are interchangeable only where they are equal over
   all texts.
-- H: a condition or a default on a label NO MATCH OF ITS REGEX CAN SET stays a compile ERROR (the reason now: the
-  per-label regex value set is empty, so the test is constant; without the error `(o = "1": <5)` would hold on every
-  subject silently).
+- H: a condition or a default on a label NO MATCH OF THE PROGRAM'S REGEX (ITS `&` OPERANDS, CONDITIONS NOT APPLIED)
+  CAN SET stays a compile ERROR (the reason now: the label's value set is empty, so the test is constant; without the
+  error `(o = "1": <5)` would hold on every subject silently). Rev 23.1 (review r33 F3) restores rev 22's qualifier,
+  which rev 23 had narrowed to "its regex": in `/(?<o>\d)x|y/ & /y/ & (o = "1": <5)` the operand that defines o can
+  set it, but no match of the `&` of the operands can (`/y/` admits only `y`), and the default makes the test
+  constant TRUE: it changes no answer (0 of 341 texts differ from the program without it, WHOLE holds 1, SEARCHED
+  220; `predspec23c_model.out` PART 5), exactly the silent hold H exists to stop. Under NOT the test stays constant
+  (`NOT (o = "9": <5)`: 0 differ), so H holds with NOT re-allowed.
 - I: every count in Parts II-III of condition_kind.md and in rev 22's §4.2 tables is WHOLE VALUE; MODE OF THE ANSWERS
   gains the nullable-loop instance (§R.6).
 - J: R.1.2 (O35 stays an error, PLAN).
@@ -746,6 +865,16 @@ Rev 22 §0.1's list stands, with the mark's lines retired. Added:
   11,110, `t2 & NOT ((h, m): R)` on 10,230 (PART 3).
 - `t2 & !q` and `t2 & !contains(q)` searched report a shorter stretch (`9` in `9:30`), not "the text has no B"
   (§R.4).
+- (rev 23.1, review r33 F17) A NULLABLE B makes "no B" FALSE EVERYWHERE: an empty stretch is a potential match
+  (R.1.2), so a B with a surviving empty row has a row in every text. B := `/(?:(?<n>\d),)*/ & (n = 9: >=5)` (the
+  "every pass, possibly none" idiom of R.1.7) keeps its zero-pass row at every position, so `text.none(B)` is FALSE
+  on ``, `1,`, `a` and `7,` (`predspec23c_model.out` PART 8), and route (i)'s `(?![\s\S]*${B})` fails everywhere
+  too; `!contains(B)` is refused already (a nullable `occurrences` argument, §2.6, §13 O53). The evidence engines of
+  lanes predspec23 and predspec23b tried only non-empty rows of B (their `text.none` read TRUE on ``, `1,`, `a`); no
+  stated count moves, since q needs a digit. Fix for the author: a non-nullable B.
+- (rev 23.1, review r33 F2) `|` OVER FILTERED BRANCHES reports branch-major (R.1.4, **branch-order**), while `x & F`
+  with a filter F reports end-major (x picks the ends, D196): `x & when(c, p)` and its expansion `(x & c & p) | (x &
+  !q)` hold on the same texts in both modes and agree WHOLE, but SEARCHED can report different rows (§8; §R.7c).
 
 ### R.7 EXAMPLES THAT MOVED (rev 22 answer -> rev 23 answer)
 
@@ -1316,9 +1445,11 @@ them (RULING-9): A SET NEVER CONTAINS ABSENCE, kept (D is per label); MEANING, N
 run under the program DOM (§4.2 THE CANDIDATES); SIMPLIFYING SEMANTICS, record = `&` at every depth kept; SAVING
 PEOPLE, the SILENT list is `all(((h, m): R))` on incomplete items and the label controls in searched mode (§4.2,
 §4.3); the one new GAP is §0.1 L97). REV 23 RE-GRADING (lane predspec23b): A SET NEVER CONTAINS ABSENCE, kept
-(absent is UNKNOWN, never a member, §R.1.5); MEANING, NOT SPELLING now holds BY CONSTRUCTION for conditions (a
-condition reads only its row, so two statements with the same table answer every condition alike, §R.1.3; the
-program-DOM populations and their "DOM not computable" exception retire with DOM); SIMPLIFYING SEMANTICS, a record =
+(absent is UNKNOWN, never a member, §R.1.5); MEANING, NOT SPELLING holds for conditions in the
+narrower, same-TABLE form (a condition reads only its row, so two statements with the same table answer every
+condition alike: the manager's re-derivation, §R.1.3); rev 23.1 (review r33 F13) withdraws "BY CONSTRUCTION" for the
+ruled (*) form, which has not been checked against the compile rules keyed on repeatedness (`predicates_future.md`
+item 15); the program-DOM populations and their "DOM not computable" exception retire with DOM); SIMPLIFYING SEMANTICS, a record =
 the AND of its entries (§R.1.5; record-is-product for product records); SAVING PEOPLE, the SILENT list is now: a
 default in SEARCHED mode, which a shorter stretch can make vacuous (§R.6: a nullable loop makes every default hold);
 `A & !B` and `A & !contains(B)` searched answer about A's row, not the text (§R.4); NOT on a condition drops an

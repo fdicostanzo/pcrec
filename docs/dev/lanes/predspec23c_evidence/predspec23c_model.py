@@ -19,7 +19,7 @@
 # (default.unused (b) under NOT); 4 F8 (the empty-intersection error's domain under NOT and `!S`); 5 F3 (a label its
 # operand sets but no match of the `&` of operands can); 6 F12 (NOT over a nested program); 7 F11/F4 (find-all is not
 # monotone; the hit list of a filtered argument); 8 F17 (a nullable B in text.none); 9 the re-allowed-NOT sweep rows
-# that need a run (L55, L56, L65, L94, L30).
+# that need a run (L55, L56, L65, L94, L30); 10 the two readings F10 asks to show (pass-and, condition-or).
 #
 # Commands (W = the worktree; run from a scratch dir under $PCREC_TMPDIR, e.g. /var/tmp/pcrec-pcrec/scratch/predspec23c):
 #   timeout 900 python3 -I W/docs/dev/lanes/predspec23c_evidence/predspec23c_model.py > fwd.out
@@ -262,6 +262,36 @@ for mode in MODES:
     for a_, b_ in order([(0, 1), (2, 3)]):
         d, w = count(SVPOOL, lambda s: B.holds(mode, F8[a_][3], s) != B.holds(mode, F8[b_][3], s))
         emit((9, 4, mode, a_), "  SWEEP L30 %s SV (341) [%s] vs [%s] differ %d first %r" % (mode, F8[a_][2], F8[b_][2], d, w))
+
+# ---- PART 10: two readings review r33 F10 asks to show the owner (pass-and, condition-or) ----
+def kand_alt(vals):                                  # the alternative: a pass lacking the label makes the test UNKNOWN
+    vals = order(vals)
+    if any(v is None for v in vals): return None
+    if any(v is False for v in vals): return False
+    return True
+def ptest_alt(lab, S):
+    return lambda r: kand_alt([(None if p.get(lab) is None else bool(S(p.get(lab)))) for p in r["_passes"]])
+PA_K, PA_A = rp(NOT(ptest("h", lt(5)))), rp(NOT(ptest_alt("h", lt(5))))
+for s in order(["7;;", "3;7;", "7;3;", ""]):
+    emit((10, 1, s), "  PASS-AND NOT (h: <5) on `%s`: Kleene AND over passes %s ; alternative (a pass lacking h -> UNKNOWN) %s" % (s, B.both(PA_K, s), B.both(PA_A, s)))
+for mode in MODES:
+    d, w = count(REPPOOL, lambda s: B.holds(mode, PA_K, s) != B.holds(mode, PA_A, s))
+    emit((10, 2, mode), "  PASS-AND %s REP (364) NOT (h: <5) Kleene vs alternative differ %d first %r" % (mode, d, w))
+AH = r"a(?P<h>\d)|b(?P<k>\d)|c"
+AHPOOL = M.strings("abc37", 3)
+def k_or(a, b):
+    if a is True or b is True: return True
+    if a is None or b is None: return None
+    return False
+def two(v): return v is True                          # rev 22's two-valued reading: absent fails
+ch, ck = test("h", lt(5)), test("k", lt(5))
+OR_K = P2(AH, [NOT(lambda r: k_or(ch(r), ck(r)))])
+OR_2 = P2(AH, [lambda r: not (two(ch(r)) or two(ck(r)))])
+for s in order(["b7", "a7", "b3", "c"]):
+    emit((10, 3, s), "  CONDITION-OR /a(?<h>\\d)|b(?<k>\\d)|c/ & NOT ((h: <5) | (k: <5)) on `%s`: Kleene OR %s ; two-valued OR (absent fails) %s" % (s, B.both(OR_K, s), B.both(OR_2, s)))
+for mode in MODES:
+    d, w = count(AHPOOL, lambda s: B.holds(mode, OR_K, s) != B.holds(mode, OR_2, s))
+    emit((10, 4, mode), "  CONDITION-OR %s (%d texts over {a,b,c,3,7} to length 3) Kleene vs two-valued differ %d first %r" % (mode, len(AHPOOL), d, w))
 
 for k in sorted(LINES, key=lambda k: tuple(str(x) for x in k)): print(LINES[k])
 print("END")

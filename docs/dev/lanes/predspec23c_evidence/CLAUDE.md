@@ -12,7 +12,8 @@ Evidence for `docs/design/predicates_draft.md` rev 23.1 (review r33's fixes; DES
   400); PART 1 `when` re-run, before/after per line; PART 2 F1 (L83 under NOT, the closing example's record twin);
   PART 3 F7 (`default.unused` (b)); PART 4 F8 (the empty-intersection error's domain); PART 5 F3; PART 6 F12 (NOT over
   a nested program); PART 7 F11/F4 (find-all; a filtered argument's hits); PART 8 F17 (nullable B); PART 9 the
-  re-allowed-NOT sweep rows that needed a run.
+  re-allowed-NOT sweep rows that needed a run; PART 10 the two readings review r33 F10 shows the owner
+  (pass-and, condition-or) beside their alternatives.
 - `predspec23c_model.out` — the forward run's output, the numbers rev 23.1 and the report quote.
 
 Commands (swap check and its sabotage): the header of `predspec23c_model.py`.

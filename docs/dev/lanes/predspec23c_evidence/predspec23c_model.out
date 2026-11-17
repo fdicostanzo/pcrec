@@ -60,6 +60,18 @@ ORDER: forward
   WHEN-T2 on `10:50`: body WHOLE FAILS | SEARCHED HOLDS `10`@0 ; case-when WHOLE FAILS | SEARCHED HOLDS `10`@0
   WHEN-T2 on `9:15`: body WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; case-when WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
   WHEN-T2 on `9:45`: body WHOLE FAILS | SEARCHED HOLDS `9`@0 ; case-when WHOLE FAILS | SEARCHED HOLDS `9`@0
+  PASS-AND NOT (h: <5) on ``: Kleene AND over passes WHOLE FAILS | SEARCHED FAILS ; alternative (a pass lacking h -> UNKNOWN) WHOLE FAILS | SEARCHED FAILS
+  PASS-AND NOT (h: <5) on `3;7;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `3;7;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE HOLDS | SEARCHED HOLDS `3;7;`@0
+  PASS-AND NOT (h: <5) on `7;3;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `7;3;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE HOLDS | SEARCHED HOLDS `7;3;`@0
+  PASS-AND NOT (h: <5) on `7;;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `7;;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE FAILS | SEARCHED HOLDS `7;`@0
+  PASS-AND SEARCHED REP (364) NOT (h: <5) Kleene vs alternative differ 0 first None
+  PASS-AND WHOLE REP (364) NOT (h: <5) Kleene vs alternative differ 18 first '7;;'
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `a7`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `a7`@0
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `b3`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE FAILS | SEARCHED FAILS
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `b7`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `b7`@0
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `c`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `c`@0
+  CONDITION-OR SEARCHED (156 texts over {a,b,c,3,7} to length 3) Kleene vs two-valued differ 89 first 'c'
+  CONDITION-OR WHOLE (156 texts over {a,b,c,3,7} to length 3) Kleene vs two-valued differ 3 first 'c'
   L83 SEARCHED T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 371 first '9'
   L83 SEARCHED T2 (11,110) plain: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 0 first None
   L83 WHOLE T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 101 first '9'
