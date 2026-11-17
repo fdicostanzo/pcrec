@@ -28116,3 +28116,31 @@ Next
   nested-complement. No rev 23 until answered.
 - Process changes landed with r30/r31/r32 (critic skill: order-swap rule, mode-closure lens, ruling table, the
   contract lens runs a new range's top through every compile cap).
+
+## 2026-11-17 (session 137, second part, box clock 23:25-04:15; manager = fable; no lane alive at this entry)
+
+- PREDICATES. OWNER (COND-FAMILY.md tail, his words): row-is-match ("a row from the table represents a single
+  potential match"; the subject is the search text: SUPERSEDES my source-row wording, which he had answered on one
+  example of my framing); condition-not ALLOWED (three-valued NOT); all-question RETIRE; item 14 of
+  predicates_future.md filed at his request (the pattern returns its match first, then the condition judges it);
+  whole-text PARKED ("Let's not answer now") after he asked whether one regex can already ask it. Lanes: searchrow
+  (Part IV), predspec23 + predspec23b (rev 23 and its body), predspec23c (rev 23.1), predspec23d (rev 23.2).
+  Reviews: r31 (the note), r33 (rev 23: NOT STABLE; re-allowing NOT broke rules that assumed it absent; three
+  unwritten rules), r34 (rev 23.1: NOT STABLE; the evidence compared numbers by value against the draft's
+  canonical-numeral rule, e.g. 371 -> 281; my branch-order ruling broke `&` over `|`). All filed (lanes file31,
+  file33, file34). Rev 23.2 is merged, NOT STABLE BY DESIGN: it ends section R.8 with one table of 14 open or
+  told-not-ruled items; no critic round until the owner answers branch-scope and record-under-not.
+- MY ERRORS, same shape twice more: (1) source-row: I asked a ruling on ONE whole-value-like example of my own
+  framing; the owner undid it two hours later. (2) branch-order: a manager "ruling" derived from his words, told
+  not asked; the next round showed it breaks distribution and admits. (3) I told him a lookahead cannot hold a
+  conditioned pattern; the draft's own hole rule allows it. RULE now in wake.md: a rule that decides ANSWERS and
+  is not word for word in his record is ASKED, with examples in BOTH modes and a several-match subject.
+- [COVER-CAP]. Review r32's fixes are on lane/covs2b @ 28af649c9, all four cloud kinds GREEN on the fixed tip. The
+  kit's timing night (D197's mfind cards, not the span forms) ended INCONCLUSIVE: the deciding card failed the
+  quiet gate twice (load 2.0-2.5 vs 2.0; Steam and desktop sessions; idle baseline ~1.9); ruled by precedent: not
+  the one re-run. Owner question quiet-gate. The kit's FORMS (inline head 64, then loops) are built on
+  lane/memfn-forms @ 7506bca30 (its round r35: land after fixes); the F1 probe is 24,024 B with them (510,342
+  before). Mine, told: F1 becomes a corrected spec sentence on the branch, no ladder rung (D77).
+- Process changes landed with r33/r34: re-run every rule whose reason assumed an operator absent when a revision
+  re-allows it; diff the previous round's verifier numbers against the published ones; mode closure covers
+  find-all places; a ruling stated as a derivation is read literally.
