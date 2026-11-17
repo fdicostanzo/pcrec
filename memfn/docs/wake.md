@@ -11,25 +11,25 @@ worktrees/.mgr/waiting_on.kit; sabotage ids worktrees/.mgr/sabotage_ids.txt (nex
 1. This file. 2. memfn/docs/journal.md, 2026-11-16 entries. 3. responses.md's last two `done:` lines (R-44, R-45 plan B)
 and the R-45 reply block (rev 6). 4. D197 (the mfind instrument; one-sided timing).
 
-## UPDATE 2026-11-17 02:25 (read FIRST; supersedes the lines below where they differ)
-- mfcard-zen4-2 ran: 600-603, 605-607 GREEN; 604 + 608 (JMH, both arms) RED on the quiet gate (load ~1.9 baseline vs 2.0:
-  Frank's steam/ptyxis/code + idle Claude sessions + kworkers); 609 all levels INCONCLUSIVE only from never-ran JMH. MAIN RULED:
-  NOT a measurement, NOT the one re-run; next window = a fresh FIRST run of all 10 jobs (new RUN_ID, no FIRST_RUNDIR). The
-  quiet-gate question is Frank's (via main). Queue NO timing until main relays his answer + a cleared night. worktrees/mfind
-  stays pinned. Triage: scratch/memfn/tri-mfc604, tri-mfc608.
-- Main's combined branch lane/covs2b exists (covs2afix + main + lane/memfn-span4k + raise + READ-2/CHECK-1; pcrec abi 109 there).
-  Main reserved sabotage S3260-S3275; the kit's forms lane holds S3276-S3299 (next free S3300).
-- 03:36 FORMS DELIVERED: lane/memfn-forms @ 7506bca30 (report docs/dev/lanes/forms_report.md; width-32 movers 0; width 4095
-  movers 1 [ab]{1000}; main's probe [0-9a-f]{3400}@4095 = 24,024 B, deny refused at 510,538). IN FLIGHT: code round
-  crit-memfn-forms (opus coordinator, scratch/crit-memfn-forms/, ~2.5 h) and cloud test+axes on 7506bca30 (monread --wait
-  armed). Lane asks to rule after the round: cards' home kit-grid@7 vs kit-synthetic; the force spelling's form-hash instance
-  not built; K1/K2 text (report "Cards"); a known tuning.md conflict at landing; R28-2/3 recorded UNREACHED. Then: done line,
-  tell main head length (64, UNMEASURED until the cards run) + the probe number.
-- (history) LANE forms (opus) RAN from 02:17: worktrees/forms, lane/memfn-forms from lane/memfn-span4k 60c2958ae; R-45 plan A (forms
-  I/L/H(h), span-loop PAIR row, test-only span-head=N lever, cards C1-C5 + dry run, interim h=64 labelled UNMEASURED, R28-2/3
-  witnesses, K1/K2 text, main's r32 F1 probe number). lanewatch armed. CPU ends 19:30 11-17. NEXT on delivery: code round
-  (coordinator), cloud test+axes, then deliver; tell main the head length + the probe number.
-
+## UPDATE 2026-11-17 13:55 (read FIRST; supersedes everything below where they differ)
+- TONIGHT (11-18 01:00): SET 1 = mfcard FRESH FIRST RUN QUEUED 600-609 (RUN_ID mfcard-zen4-3, FROZEN f6274c11b, no
+  FIRST_RUNDIR; Frank cleared it). Main checks Steam/VS Code (loadshame --present) at 00:30 and 01:00; any quiet-gate refusal
+  -> send main the line. Verdict rules: CONFIRM -> CONFIRM_CELLS + queue 610 only; INCONCLUSIVE -> the ONE re-run with
+  FIRST_RUNDIR(_AVX2)=mfcard-zen4-3 + new RUN_ID (may share 11-19 night); LOSS settles span_pick row 1 at that level; WIN ->
+  the ruled split shape under its own go. Any RED -> triage lane. Then unpin worktrees/mfind; r24 SR-1..4 owed.
+- FORMS (R-45 plan A): lane/memfn-forms @ 1aec5d4d3 = frozen-tree candidate. Reviews r35-r38 all ruled + fixed (filed under
+  docs/dev/reviews/2026-11-17-r35..r38). Code answer-clean, 0 movers at width 32, h=64 shipped UNMEASURED. Cards rule rev 10:
+  per-pattern twin term, interleaved rounds, agreement gate, CONFIRM BY RE-RUN, class drill (84 rows, worst 0.020); fast-split
+  limit retired. IN FLIGHT: round 5 crit-memfn-forms5 (scratch/crit-memfn-forms5) + cloud (test GREEN, axes pending).
+- CARDS NIGHT 11-19 01:00 CLEARED by Frank (set 2, cap 3 h). The cards MUST time on lane/covs2b WITH the forms merged. MAIN
+  TERMS: BY 14:00 11-18 send main the forms tip + responses.md done line + pcrec-side readers that move (abi, stamps, spec,
+  pins, test expectations, found by grep) + expected conflicts vs covs2b @ 28af649c9 (known: docs, tests/ci/cloud_axes_shards.tsv,
+  tests/ci/cloud_mech_shards.tsv: keep BOTH sides); if round 5 forces fixes that miss 14:00, tell main by 10:00 and the cards
+  move a night. Main merges + freezes covs2b by 20:00 and sends the sha. Job set WRITTEN + dry-run: scratch/memfn/fcards/jobs
+  700-704 (README has the queue lines; window.vars RUN_ID=fcards-zen4-1, FROZEN=main's sha; worktrees/fcards-night clean at
+  FROZEN, pin it in .wtprune.keep). 704 identity runs only at h*=64; h*<64 -> kit commit + abi event after the night. Send main
+  the keys when queued, and 'h* frozen' after 702.
+- Sabotage ids: next free S3320. Main accepted the critic-skill change (simulate drills each pooled level + order step).
 ## CURRENT STATE (2026-11-16 17:30)
 - TIMING TONIGHT: jobs 600-609 QUEUED (box queue, not-before 2026-11-17T01:00, RUN_ID mfcard-zen4-2, FROZEN f6274c11b =
   lane/memfn-scanrow, merged on main as c9ff8b53d; worktrees/mfind fast-forwarded and pinned in .wtprune.keep). Job set
