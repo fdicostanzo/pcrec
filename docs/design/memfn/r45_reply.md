@@ -1036,7 +1036,7 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
     gains a draw at lengths `h - 1`, `h` and `h + 1` for every finite grid h from 16 to 64.
     That reaches past 32, whatever §7's other-sites-at-32 decides for pcrec, because G2 tests the
     kit's forms, not pcrec's statements.
-- **The twins.** `G2W_MAXPOS` 128 and `G2W_REACH` 256, CHOSEN: twice the largest finite h (64),
+- **The twins** [formsfixb, ruling R1: DERIVED from the kit's bounds, `G2W_MAXPOS` = min(128, MF_WSPAN_POS), `G2P_MAXRUN` = min(64, MF_WSPAN_POS), the long row 1024 (4095 under the raise): 32 / 32 / 1024 in a tree before the raise]. `G2W_MAXPOS` 128 and `G2W_REACH` 256, CHOSEN: twice the largest finite h (64),
   so h = 64 has positions on both sides [rev 3: rev 2's 64 was twice 32, not twice the grid's
   largest]; reach twice the span, as today. Each carries
   `_Static_assert(G2W_MAXPOS <= MF_WSPAN_POS)` / `_Static_assert(G2W_REACH <= MF_WREACH)`.

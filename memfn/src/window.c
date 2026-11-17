@@ -1448,7 +1448,8 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
  *   2. a ONE-CLASS REPEAT: a maximal stretch of two or more consecutive
  *      offsets, every position core, carrying one byte-identical set kind 1
  *      can never take (KIT_POS_WIDE: three or more members, or two that are
- *      no cube) and one test (the same C-table offer, or none), across stated
+ *      no cube; WIDE includes the empty set, so an empty-meet stretch loops
+ *      too, answer-neutral: no subject byte passes it either way) and one test (the same C-table offer, or none), across stated
  *      span boundaries (the meet is per offset); from offset h on it renders
  *      as ONE LOOP over its offsets, before h as today's lone tests;
  *   3. a LONE test: anything else (a non-core position keeps its three-way
@@ -3461,7 +3462,9 @@ static int wf_pos_test(wf_rc *rc, kb *t, unsigned i)
 }
 
 /* The ONE-CLASS REPEAT's loop at tested entry `i` (kind 2 of THE SPAN
- * FORMS): the number of entries from `i` on that one loop tests, at least 2,
+ * FORMS): the number of entries from `i` on that one loop tests, at least 2 (the minimum
+ * of two is DERIVED, r45_reply rev 7 §3 "The forms": a one-entry loop is a lone
+ * test plus loop overhead, and gcc unrolls two trips),
  * or 0 where entry `i` starts none (its offset is below the head, it is not
  * a kind-2 position, or fewer than two such entries follow at consecutive
  * offsets). Entry `skip` (the position E-find's search proved) and a C-run
