@@ -2589,3 +2589,12 @@ exception to that sentence for pieces that would otherwise silently see nothing 
 reading of "might look outside" for the next revision: `\b` and `\B` where the position can be an edge of the
 operand, a lookbehind that can reach before its start, a lookahead that can reach past its end, and `\G` and `\K`
 (they speak about the search, not the string); pieces that stay inside the operand are fine.
+ADDENDUM, minutes later. To the manager's proposal (replace the separate anchor rule by ONE sentence: "the filter
+is matched against the stretch as if the stretch were the whole text"; `^` / `$` at the edges redundant, elsewhere
+the ends of the stretch as a consequence; the refusal of pieces that might look outside as the explicit exception),
+HIS WORDS: "operand-context: yes to that interpretation. Also, then the start of subject and end of subject need
+the same interpretation". RECORD: RULED: (1) the one-sentence interpretation replaces the 11-15 anchor wording as
+the rule (no answer changes); (2) the START-OF-SUBJECT and END-OF-SUBJECT assertions (`\A`, `\z`, `\Z`) in a
+filter take the same interpretation: the subject, to the filter, is the stretch. MINE: `\G` stays refused (it
+names the search's start, which the stretch has none of); the next revision states the sentence once in R.1.4 and
+derives the anchors and the subject assertions from it.
