@@ -150,11 +150,19 @@ MEDSD_REL = 0.4754
 # UNMEASURED DEFAULT: POOL_SIZE = 4 (one variant per 16-B phase mod 64, two of each alignment).
 POOL_SIZE = int(os.environ.get("POOL_SIZE", "4"))
 # UNMEASURED DEFAULT: the prelude's draw space, j in 0..255 (16-B steps mod 4096). STRATIFIED: variant
-# v takes the 16-B phase class (r + v) mod 4 (r drawn per pool), a random multiple of 64 B above it,
-# so a pool of 4 spans the four 16-B phases mod 64 by construction (the refusal is the check).
+# v takes the 16-B phase class (r + PHASE_ORDER[v mod 4]) mod 4 (r drawn per pool), a random multiple
+# of 64 B above it, so a pool of 4 spans the four 16-B phases mod 64 by construction (the refusal is
+# the check) AND the two variants of each alignment differ by 16 B mod 32 (classes r, r + 1 for the
+# even variants, r + 2, r + 3 for the odd): with (r + v) mod 4 they differed by 32 B, so a TU whose
+# .text gcc aligns to 32 kept every hot loop's 32-B phase in 18 of 80 pools (the formsfixk dry run).
+PHASE_ORDER = (0, 2, 1, 3)
 PRELUDE_STEPS = 256
-# UNMEASURED DEFAULT: the alignment variants (variant v takes ALIGN_VARIANTS[v % 2]).
-ALIGN_VARIANTS = ([], ["-fno-align-loops", "-fno-align-jumps", "-fno-align-labels"])
+# UNMEASURED DEFAULT: the alignment variants (variant v takes ALIGN_VARIANTS[v % 2]). The odd variant
+# turns off every gcc alignment of code, x86's tight-loop alignment too (`-mtune-ctrl=^align_tight_loops`,
+# gcc 15 x86 only: it pads a small hot loop to 32 B whatever -fno-align-loops says; without it 18 of 80
+# pools kept every hot loop's 32-B phase, the formsfixk dry run).
+ALIGN_VARIANTS = ([], ["-fno-align-functions", "-fno-align-loops", "-fno-align-jumps", "-fno-align-labels",
+                       "-mtune-ctrl=^align_tight_loops"])
 
 
 def pool_variants(textkey):
@@ -165,7 +173,7 @@ def pool_variants(textkey):
     out = []
     for v in range(POOL_SIZE):
         hi = hd[1 + v % 31] % (PRELUDE_STEPS // 4)
-        j = 4 * hi + (r + v) % 4
+        j = 4 * hi + (r + PHASE_ORDER[v % 4]) % 4
         out.append((v, 16 * j, ALIGN_VARIANTS[v % 2]))
     return out
 
@@ -592,8 +600,8 @@ def layout_of(exe):
 
 
 def pool_proof(rundir, pat, arm, layer):
-    """The pool's proof (rev 12, RULED r41 L9): every variant built; {v: (64-B phases of its hot
-    loops, 32-B phases, relative layout)}; and the refusal text when the variants share ONE 64-B
+    """The pool's proof (rev 12, RULED r41 L9): every variant built; {v: (64-B phase of each hot
+    loop in offset order, the 32-B phases, relative layout)}; and the refusal text when the variants share ONE 64-B
     phase set or ONE relative layout (the pool would not move what a head's body moves), else None."""
     lay = {}
     for v in range(POOL_SIZE):
@@ -603,18 +611,20 @@ def pool_proof(rundir, pat, arm, layer):
             return lay, "%s %s %s v%d: no %s_search symbol" % (pat, arm, layer, v, PREFIX)
         at, rel = lo
         pts = [at + o for o in rel] or [at]
-        lay[v] = (tuple(sorted({x % 64 for x in pts})), tuple(sorted({x % 32 for x in pts})), rel)
+        # per hot loop, IN ITS ORDER (never a set: two loops 32 B apart moving by 32 swap phases and keep the set)
+        lay[v] = (tuple(x % 64 for x in pts), tuple(x % 32 for x in pts), rel)
     why = pool_refusal(lay)
     return lay, ("POOL REFUSED %s %s %s: %s" % (pat, arm, layer, why) if why else None)
 
 
 def pool_refusal(lay):
     """THE POOL REFUSAL (rev 12, RULED r41 L9), one half per clause (r41 L4's lesson: one control a
-    half): `lay` {v: (64-B phase set, 32-B phase set, relative layout)}. Refused when every variant
-    shares ONE 64-B phase set, or ONE relative layout; the text, or None."""
+    half): `lay` {v: (64-B phase of each hot loop in order, 32-B phases, relative layout)}. Refused
+    when every variant puts every hot loop at ONE 64-B phase, or shares ONE relative layout; the
+    text, or None."""
     why = []
     if len({p64 for p64, _p, _r in lay.values()}) < 2:
-        why.append("every variant shares one 64-B phase set %s" % (next(iter(lay.values()))[0],))
+        why.append("every variant puts its hot loops at one 64-B phase each %s" % (next(iter(lay.values()))[0],))
     if len({r for _a, _b, r in lay.values()}) < 2:
         why.append("every variant shares one relative layout")
     return "; ".join(why) or None
@@ -940,7 +950,7 @@ def cmd_dry(args):
     spread64 = [len({p64 for p64, _q, _r in lay.values()}) for _k, _t, (lay, _w) in pools if lay]
     nrel = [len({r for _a, _b, r in lay.values()}) for _k, _t, (lay, _w) in pools if lay]
     print("# dry: layout pools (rev 12, r41 L9): %d timed texts x %d variants = %d exes, every variant answer-gated; "
-          "distinct 64-B phase sets per pool min %s max %s; distinct relative layouts per pool min %s max %s; "
+          "distinct 64-B phase vectors (each hot loop's) per pool min %s max %s; distinct relative layouts per pool min %s max %s; "
           "pools REFUSED %d" % (len(pools), POOL_SIZE, len(pools) * POOL_SIZE, min(spread64, default="-"),
                                 max(spread64, default="-"), min(nrel, default="-"), max(nrel, default="-"),
                                 len(prefused)))
