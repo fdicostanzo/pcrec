@@ -2032,3 +2032,20 @@ spelling asks exactly; asked as **condition-not**. (3) THE MANAGER'S ACCOUNT of 
 him: its meaning is the potential matches the pattern does not match; its value is pattern DIFFERENCE (`A & !B`:
 an A that is not a B), which regex spells only through lookahead tricks; once conditions have their own NOT, a
 complement of a program that carries conditions is needed only for "the condition is not true, absence included".
+
+**2026-11-16 OWNER RULING — row-is-match (Frank, to session 137, box clock 23:46).** After the walk-through on the
+text `9:30` (the table of the time pattern's potential matches: `9:30`, `9`, `30`, `3`, `0`; the question
+"a row is one potential match, and \"a time that is not a late time\" searched on `9:30` holds through `9`. Is
+that the model you mean?"), HIS WORDS: "row-is-match: yes I agree." RECORD: a ROW of the table is ONE POTENTIAL
+MATCH (a stretch of the text with the labels it sets); the SUBJECT is the search text, not a row. A condition, an
+`&` and a complement after `&` all filter potential matches; the search reports the preferred surviving row
+(D196's retry is that choice). SUPERSEDES the 21:49 source-row wording ("a row of the source is the whole subject;
+the complement is per subject"), which was the manager's framing: `t2 & !q` searched on `9:30` HOLDS reporting
+`9` (as rev 22), and agrees with the 11-15 20:43 same-stretch ruling (`/\d+/ & !/0+/` on `0 7` reports
+`7`). WITHDRAWN as questions: complement-per-match, complement-retry (Part IV's three-way trade came from mixing
+the two framings; under this ruling it is candidate R22, with "adding a condition never admits" at 0 in the lane's
+run). MINE, following from it, to be checked by the rev 23 round: nested-complement = a `contains` argument
+filters potential matches like a program; "the text contains no B anywhere" is a separate, whole-text question
+needing its own spelling (a complement with nothing on its left, or not-contains), to be stated in rev 23 and
+shown to him. Review r31 finding A is closed by this ruling (A2-A5's text items follow it). STILL OPEN:
+**condition-not** (the manager's position: allow the three-valued NOT).
