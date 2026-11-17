@@ -344,10 +344,6 @@ struct mf_art {
  * `pres-window` (R-30), retired at R-38 K38-2 with the two-part run; never
  * reused. */
 enum { KIT_LEVER_RUN_LEFT = 1u << 1, KIT_LEVER_MFIND = 1u << 2, KIT_LEVER_SPAN_HEAD = 1u << 3 };
-/* The valued lever's range (`span-head=N`, N in 0..4095): a head at the last
- * offset a window statement can reach (MF_WREACH - 1) loops nothing (a loop
- * takes two positions), so it renders exactly I. */
-#define KIT_SPAN_HEAD_MAX (MF_WREACH - 1)
 
 /* P3's run window, in run positions (R-30's and K38-1's): the stretch the
  * run decision verifies on an OPTIONAL route (KIT_RUN_WINDOW). Kit-internal
