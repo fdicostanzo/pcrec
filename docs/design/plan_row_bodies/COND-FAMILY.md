@@ -2559,3 +2559,7 @@ when a loop's body can match nothing PCRE runs and keeps one final EMPTY pass, s
 the last pass is the empty one and the label `h` is unset, and that the draft follows PCRE there. HIS WORDS: ""A
 loop's empty last pass counts as a pass": makes sense as the entire rx is optional." RECORD: RULED: the empty
 last pass of a loop with a nullable body IS a pass (regex behaviour kept; no exception wanted).
+CORRECTION, minutes later, HIS WORDS: "It's not so much a ruling as an observation". So the entry above is NOT a
+ruling: empty-pass stays THE MANAGER'S READING (regex behaviour kept, by exception-rule), TOLD to the owner, with
+his OBSERVATION on it ("makes sense as the entire rx is optional"). The manager over-recorded; "RULED" in that
+entry is withdrawn.
