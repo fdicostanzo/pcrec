@@ -28,4 +28,5 @@ by construction; the emitted default is the same as 3ede650a0.
 - No full make test, no queue jobs, no timing, no cloud.
 
 ## STATE AT HANDOFF
-Branch lane/memfn-formsfixf, all committed. No rulings file entries were present. OWED: none
+Branch lane/memfn-formsfixf, all committed. No rulings file entries were present.
+OWED: none
