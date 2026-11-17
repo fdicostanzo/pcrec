@@ -682,20 +682,53 @@ not-of-marked; absent-rule loses only its clause offering the mark. `all(c)` ret
 DOM(h) of rev 21-22 has no reader left in conditions. Rev 22's §5.2 empty-intersection error STAYS (review r31 F,
 RULING-5 (a)), read from the values the label takes in a match of THE PROGRAM'S REGEX, ITS `&` OPERANDS, CONDITIONS
 NOT APPLIED (rev 22's qualifier, restored by rev 23.1, review r33 F3; rev 23 had "the label's own regex"): `(n: <0)`
-on a digit label is still the error. REV 23.1 (review r33 F8; the fix-induced lens: rev 22's domain assumed no NOT):
+on a digit label is still the error. REV 23.1 (review r33 F8, the manager's disposition; the fix-induced lens: rev
+22's domain assumed no NOT; rev 23.2: THE DRAFT'S READING, its "polarity" defined below):
 the error is judged on the TEST AS WRITTEN, after its default and its polarity. The values it is tried on are those
 values plus the default's text when the test writes one (a joint: per tuple); the test is the error when it is TRUE
 on NONE of them, i.e. when it can never keep a row. So:
 - `(n: <0)`, `(x: !<10)` and `NOT (x: <10)` on a digit label are the error (never TRUE; L30's two spellings get the
   same verdict at a full set, and at an empty set below);
-- `NOT (x: <0)` and `(x: !<0)` are LEGAL: TRUE wherever x is set ("x is present"); on the repeated n of
+- `NOT (x: <0)` and `(x: !<0)` are LEGAL: on a SET-ONCE x, TRUE wherever x is set ("x is present"; on a label the
+  program ALWAYS sets that is constant TRUE, and WARNS under the polarity reading below); on a REPEATED x they part:
+  `NOT (h: <0)` is "SOME pass sets h", `(h: !<0)` "EVERY pass sets h" (on `/(?:(?<h>\d)?;)*/`, 30 of 364 differ WHOLE,
+  first `3;;`: HOLDS / HOLDS vs FAILS / HOLDS `3;`@0; 0 SEARCHED; `predspec23d_model.out` PART Y; rev 23.2, review
+  r34 D2); on the repeated n of
   `/(?:(?<n>\d),)*/`, `NOT (n: <0)` is "some pass sets n", equal to `some((n: any text))` (0 of 121 differ, WHOLE
   holds 6, SEARCHED 64; `predspec23c_model.out` PART 4), so it is no error; the author may prefer `some(...)`;
 - §R.1.7's sentinel idiom stays legal where S covers every value: `occurs.none((h = "x": !<10))` meets the default's
   text `x`, which lies in `!<10`, and is not constant (on `/(?:(?<h>\d)?;)*/`: HOLDS on the empty text and on `7;`,
   FAILS on `;` WHOLE; holds on 7 of 364 WHOLE; PART 4).
-The answers of each L30 pair agree (0 of 341 differ, both modes, PART 9); only the compile verdict was at stake, and
-this rule gives both spellings one verdict.
+The answers of each L30 pair agree ON A SET-ONCE LABEL (0 of 341 differ, both modes, PART 9; on a repeated label the
+empty-set edge parts, above); only the compile verdict was at stake there, and this rule gives both spellings one
+verdict.
+
+POLARITY, DEFINED ONCE (rev 23.2, review r34 D2; the manager's disposition FIX-NOW of a definition no record entry
+gives: THE DRAFT'S READING, listed as **polarity-rule**, §R.8 item 9). Rev 23.1 read "polarity" in three rules (this
+error, `default.unused` (b), §4.2's admitting positions) and defined it in none. Two counts, each read by named rules:
+- LOCAL POLARITY of a test: the parity of the Kleene NOTs between it and the nearest TWO-VALUED BOUNDARY above it.
+  The boundaries: the program's WHERE (a row is kept on TRUE only), a group question's per-pass count (`some`,
+  `count`, `occurs.*`), a pattern complement (`!q` keeps a row of the left operand whenever q's row is not TRUE), a
+  `label:` set (a yes or a no to the outer test, R.1.1). Even = POSITIVE, odd = NEGATIVE. A set complement `!S` is
+  not a NOT (it is another set). Only local polarity tells UNKNOWN from FALSE, so it is what this error, `dead.branch`
+  and `default.unused` (b) (§7.1) read.
+- OVERALL POLARITY of a test: the parity of EVERY negation between it and the top of the program: Kleene NOTs,
+  pattern complements, `!contains`, `occurs.none`, a negative lookahead. Read by §4.2 / §R.5 A4: a condition added
+  at negative overall polarity can ADMIT a text (De Morgan); at positive overall polarity it cannot, except in a
+  find-all place (R.1.9) and, under readings (ii) and (iii) of **branch-scope**, inside a `|` branch (R.1.4).
+THE UNIT this error judges is the WHOLE CONDITION at its boundary, not an atom inside it: `NOT ((x: <10) & (m: <5))`
+on digit labels is LEGAL (by De Morgan it keeps a row where m is 5-9), its dead part `NOT (x: <10)` WARNS
+(`dead.branch`); rev 23.1's text, "the test ... every value the label takes", read per atom, made it the error. The
+error fires when the whole condition, tried on every value its labels take and on its defaults' texts, is TRUE on
+none (CONSTANT-NEVER). Its MIRROR, CONSTANT-ALWAYS, a condition TRUE on every value of labels the program sets in
+EVERY match, WARNS (placeholder name `test.constant`): it is the silent hold §R.5 H exists to stop, and rev 23.1
+let it through. Witnesses (`predspec23d_model.out` PART Y; every 7th of the 11,110 `t2` texts, 1,588, WHOLE /
+SEARCHED): `t2 & NOT (h: <0)` (h is set in every match of t2): constant-always, the WARNING; it holds on all 1,588,
+0 differ from plain `t2`. `t2 & !(t2 & (h: <0))`: `(h: <0)` is at positive local polarity inside q (the complement
+is a boundary), constant-never, the ERROR; rev 23.1's reading through the complement made it legal and silently
+equal to `t2` (0 of 1,588 differ). `t2 & !(t2 & NOT (h: <0))`: q's condition is constant-always, the WARNING; the
+program otherwise never holds, silently (0 of 1,588). On a label that CAN be absent `NOT (x: <0)` means "x is
+present" and is silent, as above.
 
 ### R.3 The three spellings of "not" (condition NOT, set complement, pattern difference)
 
@@ -1309,12 +1342,12 @@ order, which is the meaning, not an evaluation order. Every count quoted from it
 | spelling principle (*) | STANDS with its asterisk; its value-set use retired; the same-TABLE form of R.1.3 is the manager's re-derivation, narrower (rev 23.1, F13; PLAN `predicates_future.md` item 15) | 15:27, 15:29 |
 | match-context, zero-pass-empty, domain-scope, mark-narrows, mark-in-none | RETIRED | 21:49 |
 | mark-range | WITHDRAWN | 21:49 |
-| the §5.2 empty-intersection error (zero-pass-empty's corner) | STANDS; read from the values of the program's `&` operands (rev 22's qualifier, restored, F3) and judged on the test after its default and polarity (F8; R.2) | review r31 F; review r33 F3, F8 (the manager's dispositions) |
+| the §5.2 empty-intersection error (zero-pass-empty's corner) | STANDS; read from the values of the program's `&` operands (rev 22's qualifier, restored, F3) and judged on the test after its default and polarity (F8; R.2); "polarity", the judged unit and the constant-always warning are THE DRAFT'S READING (rev 23.2, review r34 D2), **polarity-rule** | review r31 F; review r33 F3, F8 (the manager's dispositions) |
 | label-twice | STANDS (hint scoped: same default or none) | 13:16 |
 | record-is-product | STANDS for product records only | 11:35; 22:30 |
 | zero-pass-record | the ANSWER (a label outside the pairing loop is tested once on zero passes: `9` FAILS) and record = `&` STAND; the one null pass row ("LEFT JOIN", a phrase not in the record) is R1, OPEN: **pass-table** (rev 23.1, review r33 F15) | 12:45 |
 | default-set, colon-scope, unset-component | STAND | 10:43, 11:32, 11:05 |
-| default-unused | STANDS; its (b) clause ("the default's text is outside every set it meets") CHANGED by 23:48: under NOT such a default changes answers, so (b) applies only to a default under no NOT and no complement (§7.1; rev 23.1, review r33 F7) | 11:05; 23:48 |
+| default-unused | STANDS; its (b) clause ("the default's text is outside every set it meets") is scoped by the MANAGER'S disposition of review r33 F7 (not by 23:48, which made NOT legal and so made the scope necessary): under NOT such a default changes answers, so (b) fires only at POSITIVE LOCAL POLARITY (rev 23.2, review r34 D2: rev 23.1's "no NOT and no complement" under-fired; §7.1, §R.2 POLARITY); the draft's reading, **polarity-rule** | 11:05; 23:48; review r33 F7 |
 | joint-loops | STANDS | 11:17 |
 | (e2.2), (e1) | STAND (lane proposals, unruled as before) | rev 22 |
 | one-witness, not-of-marked, the never-absent-mark warning | RETIRED | 21:49 |
@@ -1692,7 +1725,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L27 | `X[<4]` vs `X[1\|2\|3]` | SAME | numeric filters range over positions 1..n (§3.2) | RUL-9 |
 | L28 | `$x & S` as a condition vs `(x: S)` | DIFFERENT: ERROR | the first is an ERROR "did you mean `x: ...`?" (§4.1) | §4.1 |
 | L29 | `a := 256` vs `b := "256"` under `<a` / `<b` | DIFFERENT: GAP | GAP; OPEN (§13 O27) | OWN-3 |
-| L30 | `!(x: S)` vs `(x: !S)` | SAME on a set-once label (answers and, rev 23.1, compile verdict); DIFFERENT: BY DESIGN on a repeated label (rev 23) | REV 23 (**condition-not**, 23:48): `!(x: S)` is the three-valued NOT, legal. On an absent x both are UNKNOWN (dropped); on a set-once x they are one question; on a repeated x NOT is "not every pass", the set complement "every pass in !S" (on `/(?:(?<h>\d)?;)*/` WHOLE: 20 of 364 differ, first `7;;`). The pattern difference `P & !(P & (x: S))` is the third spelling, keeping absent rows (§R.3; `predspec23_model.out` PART 2). THE EDGES (rev 23.1, review r33 F8): at an EMPTY S (`NOT (x: <0)` vs `(x: !<0)` on a digit label) both mean "x is present" and both are legal; at a FULL S (`NOT (x: <10)` vs `(x: !<10)`) both can never keep a row and both are the §5.2 error (the error judged after polarity and default, §R.2); answers 0 of 341 differ at both edges, both modes (`predspec23c_model.out` PART 9) | condition-not 23:48 |
+| L30 | `!(x: S)` vs `(x: !S)` | SAME on a set-once label (answers and, rev 23.1, compile verdict); DIFFERENT: BY DESIGN on a repeated label (rev 23) | REV 23 (**condition-not**, 23:48): `!(x: S)` is the three-valued NOT, legal. On an absent x both are UNKNOWN (dropped); on a set-once x they are one question; on a repeated x NOT is "not every pass", the set complement "every pass in !S" (on `/(?:(?<h>\d)?;)*/` WHOLE: 20 of 364 differ, first `7;;`). The pattern difference `P & !(P & (x: S))` is the third spelling, keeping absent rows (§R.3; `predspec23_model.out` PART 2). THE EDGES (rev 23.1, review r33 F8, the manager's disposition; rev 23.2: the draft's reading, **polarity-rule**): at an EMPTY S (`NOT (x: <0)` vs `(x: !<0)` on a digit label) both mean "x is present" ON A SET-ONCE LABEL and both are legal (on an always-set label both are constant TRUE and warn, §R.2 POLARITY; on a REPEATED label they part: "some pass sets x" vs "every pass sets x", 30 of 364 WHOLE, first `3;;`, 0 SEARCHED, `predspec23d_model.out` PART Y, rev 23.2, review r34 D2); at a FULL S (`NOT (x: <10)` vs `(x: !<10)`) both can never keep a row and both are the §5.2 error (the error judged after polarity and default, §R.2); answers 0 of 341 differ at both edges on the set-once pool, both modes (`predspec23c_model.out` PART 9) | condition-not 23:48 |
 | L31 | `some((g: "x", h: 1))` vs `some((g: "x")) & some((h: 1))` over a repeated label (`occurrences` hits included) | DIFFERENT: BY DESIGN | SAME HIT BY RECORD: one record = all its entries on the SAME iteration; two `some` calls may be met by different iterations (§4.3; on hits `x2 y1` of `/(?<g>[xy])(?<h>\d)/`: the first false, the second true). Replaces rev 7's GAP row (two `occurs.some` vs one `some(s)`); §13 O29 RESOLVED | CF:915-917 (accepted at CF:905) |
 | L32 | `/${q}/m` vs the inlined text of `q` | DIFFERENT: GAP | GAP; `flag.hole` (proposed); OPEN (§13 O32) | Q1R-11 |
 | L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) | RUL-7 |
@@ -3436,7 +3469,9 @@ in phase 1: it NARROWS, in a condition (`isodate & (year: <2000)` silently drops
 At NARROWING SITES (condition literals, an `&` whose operands come from definitions) an empty intersection from pure
 parts is an ERROR; a dead branch WARNS (`dead.branch`); nothing when emptiness is match- or parameter-dependent;
 NEVER inside an `@assert.*` argument, whose emptiness is the assertion's own question (§5.6). REV 23.1 (review r33
-F8; NOT on a condition re-allowed, 23:48): at a condition literal the error is judged on the TEST AS WRITTEN, after
+F8, the manager's disposition; NOT on a condition re-allowed, 23:48; rev 23.2: THE DRAFT'S READING, **polarity-rule**,
+with "polarity" and the judged UNIT defined in §R.2 POLARITY, which supersedes the per-atom wording here: the whole
+condition at its boundary is judged, and its constant-always mirror warns): at a condition literal the error is judged on the TEST AS WRITTEN, after
 its default and its polarity: the test is tried on every value the label takes in a match of the program's `&`
 operands (conditions not applied) and on the default's text when it writes one, and it is the error when it is TRUE
 on none of them (a test made constant-never by NOT or by `!S` is the error; one that is not constant is not). So
@@ -3806,7 +3841,14 @@ on a default under NO NOT and NO complement, because under NOT an out-of-set def
 turns that into TRUE: `NOT (h = 9: <5)` HOLDS on `x` where `NOT (h: <5)` FAILS (§R.3's own column; 1 of 341 WHOLE,
 164 SEARCHED; on a looped h, `NOT (h = "x": <5)` vs `NOT (h: <5)` 18 / 232 of 364), while without NOT the two
 answer alike (0 differ, both pools, both modes, and inside `some`; `predspec23c_model.out` PART 3); the 11:05
-premise "a default that can never change an answer" is unchanged, only (b)'s test of it narrows), [rev 20-22's NEVER-ABSENT MARK warning, on a mark `h?` over a label that can never
+premise "a default that can never change an answer" is unchanged, only (b)'s test of it narrows; REV 23.2, review
+r34 D2: "no NOT and no complement" UNDER-FIRES against that premise: under a pattern complement, a set complement
+`!S` and NOT NOT the out-of-set default still changes nothing (`P & !(P & (h = 9: <5))` vs `P & !(P & (h: <5))`,
+`NOT NOT (h = 9: <5)` vs `NOT NOT (h: <5)`: 0 of 341 differ, both modes; `P & !(P & (h = "x": <5))` vs `P & !(P &
+(h: <5))`: 0 of 364, both modes; `predspec23d_model.out` PART Y; `(h = 3: !<5)` vs `(h: !<5)` 0 / 0, review r34's
+verifier V6). So (b) reads LOCAL POLARITY (§R.2 POLARITY): it fires on a default at POSITIVE local polarity
+(no NOT, NOT NOT, under a complement, inside `!S`) and not at negative; the scope is THE MANAGER'S disposition of
+review r33 F7, restated by rev 23.2 as the draft's reading, **polarity-rule**, not 23:48's), [rev 20-22's NEVER-ABSENT MARK warning, on a mark `h?` over a label that can never
 be absent, RETIRED with the mark (drop-mark 21:49, §R.11); its proposed merge with `default.unused` (a) is moot:
 `default.unused` (a) covers the defaulted case alone], `compare.width`, `compare.looped` (rev 19: a tuple
 compare's field can hold more than one occurrence; RULED that it warns, rulings R-2, "looped-compare: warn"; REV 20:
