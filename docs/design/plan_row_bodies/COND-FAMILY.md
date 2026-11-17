@@ -2156,3 +2156,13 @@ restates the 2026-11-14 capability levels (default = automaton code only; indepe
 `captures`, `vm`, `eval`; draft §6) and adds the idea that the opt-ins are DECLARED IN THE SOURCE, in the `@` family
 (`@export`, `@check`, `@each`). Filed as predicates_future.md item 20; the spelling is a placeholder (his examples
 are not syntax, D193 add. 4).
+
+**2026-11-17 OWNER — a library element beyond the user's level is an ERROR (Frank, to session 138, box clock about
+12:10).** To the manager's three points on options written in the source (scope; libraries: the importer's options
+are the ceiling; a host cap). HIS WORDS: "Those are good ideas wrt options. I may want pure dfa but it's not always
+clear what library element supports that. So if I use a li library element that causes non-dfa behavior then it
+should error out". RECORD: RULED for libraries: using a library element that needs more than the level the user
+asked for (the default, automaton code only, included) is a COMPILE ERROR, never a silent lift; it is the
+2026-11-14 levels rule applied through an import. The other two points (scope, host cap) are "good ideas", not
+ruled. MINE, following from "it's not always clear what library element supports that": the error names the
+ELEMENT, the construct inside it and the opt-in, and a library's listing shows each export's needed level.

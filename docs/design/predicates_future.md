@@ -329,9 +329,10 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   family, so a program that needs more than the default says so where it is read. First user in sight: an ATOMIC
   form (item 19), which is VM-only in pcrec today wherever its cut can discard something.
 - QUESTIONS IT OPENS (the manager's, none ruled): (a) SCOPE: the whole file, or one binding or expression (an
-  atomic form in one program should not lift the promise for its neighbours); (b) LIBRARIES: an imported file's
-  declaration must not silently loosen the importer's promise; the leaning is that the caller's own options are
-  the ceiling and an import needing more is a compile error naming it; (c) THE CALLER: whether a compile option
+  atomic form in one program should not lift the promise for its neighbours); (b) LIBRARIES: RULED by the owner the same day ("if I use a
+  library element that causes non-dfa behavior then it should error out"): an element needing more than the
+  user's level is a compile error, never a silent lift; the manager adds: the error names the element, the
+  construct and the opt-in, and a library listing shows each export's needed level; (c) THE CALLER: whether a compile option
   from outside may still cap or grant levels (a host that accepts untrusted programs wants a cap no source can
   raise); (d) what the cost tool prints (the level a program needed and why, §6) against what it declared.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md). TRIGGER: the atomic discussion (item 19), or the first build
