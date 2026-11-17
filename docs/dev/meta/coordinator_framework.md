@@ -92,3 +92,6 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 ## 2026-11-16 — critic round predspec22 (review r30)
 - A 4-critic + verifier round on a 6,000-line design closed in 30 minutes wall, coordinator-drafted, with every agent returning inside its launch turn; the coordinator pattern scales to giant subjects when critics get frozen copies and a runnable evidence tree, and briefs are ONE question with two sub-parts.
+
+## 2026-11-16 — critic round condkind (review r31)
+- A pure design round (a definition note folded against a rulings record) ran in ~25 min wall with 5 agents and no build (4 critics + an opus verifier, 39 findings verified by group into 10 roots); every nested agent's final reply was lost and the files carried everything. Verify-by-group with an opus verifier is the right size when findings interlock; the verifier's opposite-recommendation item turned a conflict into "neither conflicts with a ruling; ask the owner". Fits any "fold a model into a client doc" round.

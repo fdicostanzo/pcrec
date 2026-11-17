@@ -190,3 +190,18 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   matters for a mark is relative to the label's value set: the set covers ALL of it (the mark is then always
   satisfied on absence: vacuous), NONE of it (already the empty-intersection error) or a proper part (a real test);
   finite vs infinite alone does not catch the `6,` flip (its set, `m < h`, is finite).
+
+## 13. One nested-relation statement for spans, passes and occurrence hits
+
+- WHAT: the condition model has three NESTED tables, each lifted to a yes/no by a different, partly implicit
+  quantifier: the SPANS under a subject (EXISTS over spans; NONE for a complement `!q`), the PASSES under a result
+  row (the outer and inner ALL of a looped label), and an `occurrences` item's HITS (COUNT). One general form would
+  state them together: a relation whose rows carry a nested table, and ONE quantifier statement that lifts it.
+- STATUS: review r31 (`docs/dev/reviews/2026-11-16-r31-condkind.md`, finding A6, MODEL-12, a SUSPECTED design gain),
+  NOTED and parked by the manager 2026-11-16; not ruled by the owner. No plan row: predicates are design only and
+  there is nothing to build (D77). Rev 23 states at least the span-level EXISTS and NONE as quantifiers; the general
+  form waits for a trigger.
+- WHAT IT WOULD UNLOCK: nested loops, span-level counts, and NOT on a condition, each with the nesting already in the
+  model rather than added per case.
+- TRIGGERS (any one): (1) a LIST INSIDE A LIST ITEM wanted (a nested loop); (2) a request to COUNT REPORTED MATCHES
+  (a span-level count); (3) **condition-not** re-asked (NOT on a condition, recorded as told-not-ruled in COND-FAMILY).
