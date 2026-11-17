@@ -2353,3 +2353,10 @@ operator reopens that lean; told to the owner. (2) HIS WORDS, a further idea: "R
 regex ?. So /\d+/ ? Becomes /(?:\d+)?/ Then /\d*/ Effectively". RECORD: quantifier operators on a pattern value,
 each meaning the regex quantifier on the grouped pattern; an idea for the design note (lane rxlib, its R2), not a
 ruling.
+CORRECTION (2026-11-17, the manager; review round predspec24 finding B4): the "OWNER RULING — when-meaning" entry
+above is stamped "about 13:55"; it FOLLOWS and answers the 14:25 questions entry, so its true time is after 14:25
+(the manager's box-clock notes drifted that afternoon; order in this file is the order of events). In that entry
+"there is ONE `|`, regex's alternation" is the MANAGER'S wording, which he agreed to ("when-meaning: agree"), not
+his words. The 11:50 entry's sentence in full, for anyone quoting it: "However, it is in line with regex behavior so
+I do like it and think it should be the general behavior" (its subject is the backtracking on a rejecting
+condition). The SQL picture's "each row remembers its branch" is lane pathimpact's finding, not in his words.
