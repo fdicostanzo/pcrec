@@ -2319,3 +2319,29 @@ primitive; its regex model is the pattern followed by an alternation of two test
 group); an optional else is `(c & p) | (NOT c & q)` in the same position. The spelling of a conditional stays open
 (`?` not assumed). MINE, for the next revision: the draft's separate rule for OR between conditions is deleted (one
 `|`); the equality of `x & (NOT c | p)` with the conditional-group model on the 1,110 texts is still to be run.
+
+**2026-11-17 OWNER RULING — last-pass-default: regex (Frank, to session 138, box clock about 14:30).** Shown lane
+lastpass's evidence (docs/dev/lanes/lastpass_report.md: `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;` FAILS today, HOLDS
+under regex with h = 3; 16 of 104 draft lines move) and, at his question "if regex, which is my lean, how would one
+write "every pass < 5"", three ways (a condition on the item with the loop over the conditioned item;
+`occurs.none(NOT (h: <5))` after the loop, plus `some(...)` for at least one; a named every-pass form as
+shorthand). HIS WORDS: "last-pass-default: regex. I want to have the method of achieving the alternative meanings
+defined and tested so we don't lose that functionality." RECORD: a bare label set in a loop, read by a condition
+written after the loop, means what regex means: the LAST pass that set it (a pass that sets nothing keeps the
+earlier value; no value when none did). REQUIRED WITH IT: every meaning the draft could express before (lane
+lastpass's table "what the named request must cover": every pass with and without at-least-one, the per-pass joint
+or record, not-every, some / count / occurs, a literal index, the committed hit list) has its way of being written
+DEFINED in the draft and TESTED against the old reading (0 differences shown), so no functionality is lost.
+REVERSES for bare conditions: 2026-11-14 Q4 ("`x:` = all iterations ... SUPERSEDES `$x` = last iteration") and the
+2026-11-15 search record (2) ("a plain condition = ALL hits"); the 11-16 retirement of `all` is revisited by the
+named every-pass form (spelling open). MINE, not ruled: a compile WARNING when a bare condition reads a looped
+label (proposed to him twice, not answered: carried as the manager's proposal in the next revision's open table);
+hits-committed and join-order as told at 13:45 / 14:35.
+
+**2026-11-17 OWNER PROPOSAL — building patterns without rx literals: an "rx" module and a concatenation operator
+(Frank, to session 138, same message; "Unrelated").** HIS WORDS: "this discussion is showing me that we need to
+support building rx without rx literals. Propose: an "rx" module that has "digits", "loop", and other constructs.
+Further, a concatenation operator so that A € B means A followed by B". RECORD: a library module of named pattern
+constructs (his examples: digits, loop) and an operator for "A followed by B" (`€` is a placeholder, D193 add. 4),
+so a pattern can be composed, and its parts conditioned, without writing regex text. Filed as predicates_future.md
+item 21; a design note is the next step (lane rxlib), separate from revision 24.

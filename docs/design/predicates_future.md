@@ -342,3 +342,20 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   sentence; a listing would state the dependence, not one level).
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md). TRIGGER: the atomic discussion (item 19), or the first build
   step that has to say how an opt-in is given.
+
+## 21. Building patterns without rx literals: an `rx` module and a concatenation operator
+
+- WHAT (the owner, 2026-11-17): "we need to support building rx without rx literals. Propose: an "rx" module that
+  has "digits", "loop", and other constructs. Further, a concatenation operator so that A € B means A followed by B"
+  (`€` is a placeholder). A library of named pattern constructs plus an operator for sequence, so a pattern is
+  composed from parts and each part can carry its own label and condition.
+- WHY NOW: the day's rulings make WHERE a condition is written decide its meaning (a condition is a piece of the
+  pattern; a bare loop label reads the last pass; "every pass" is a condition on the item with the loop over the
+  conditioned item). Today the only way to put a condition inside a loop is a hole in a literal
+  (`/(?:${item};)*/`); a loop construct taking a conditioned item says it directly.
+- THE MANAGER'S FIRST POINTS (none ruled): each construct is DEFINED by its regex text (a library over literals
+  and holes, no new primitive), so the regex model stays the meaning; the one new thing is the sequence operator
+  (its precedence against `&` and `|`; `A € B` := `/${A}${B}/`); how a part gets its label without a literal; how
+  labels of parts flow into the whole (a literal has its own group namespace today); greedy, lazy and possessive
+  loops; separators and counts as arguments.
+- SOURCE: COND-FAMILY.md, 2026-11-17. NEXT: a design note (lane rxlib), then the owner.
