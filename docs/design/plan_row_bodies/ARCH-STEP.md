@@ -91,3 +91,11 @@ folds into goal 1, and "act through the row" stays as a rule. (3) A NEW goal: a 
 modifies it live together; anything else reads or modifies it through accessors. MINE, to be confirmed: the
 manifesto's "a handoff carries facts both ways" (the draft's source for goal 3) is now scoped to MODULE seams; the
 rank order of the reshaped goals (he numbered his comments, he did not rank the result).
+
+## 2026-11-17, the owner on the manifesto scoping and the goals' order
+
+Asked whether his seam statement scopes the manifesto's "facts both ways" (both ways at module seams, one way
+across layers), to be amended in the same change: "agree" (docs/design/stream/manifesto.md amended, its change
+record). Asked **goals-order** (contained decisions / data with its code, accessors / seams, module and layer /
+data shapes / ride-along; the gate above all): "goals-order: agree". Still open from the review: shape-goal,
+new-rules, register-keeper, speed-gate.
