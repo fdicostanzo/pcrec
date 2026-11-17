@@ -393,3 +393,17 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   restructure in rev 24.1; filed here. Not ruled; no plan row (design only, D77).
 - TRIGGER: the owner's answers to rev 24.1's §R.8 questions (the table's open cells), or the next full revision of
   §R, whichever comes first.
+
+## 23. One severity-by-selector table for the warning controls (review r42 C3)
+
+- WHAT: one table, one row per (warning-name selector, severity) pair, that `@warn.off(..)`, `@warn.error(/.*/)` and
+  the owner's strictness setting (`@options.strict(..)`, his placeholder) all write into; a warning's severity in a
+  program is the first matching row. Today the draft states the same fact (which warnings are off, warnings, or
+  errors) in three spellings with three scope stories (§7.1, §R.2).
+- WHY: polarity-rule (RULED 2026-11-17: "Warnings are errors given some strictness setting", refined
+  "@options.strict(/no-fail/)") added the third control; three members is the house trigger for a unification
+  (memory of the forest-for-the-trees rule; the decisions-as-first-match-tables rule).
+- SOURCE: review r42 C3 (`docs/dev/reviews/2026-11-17-r42-predspec242.md`), the manager's disposition: PLAN, filed
+  here; not ruled; no plan row (design only, D77). The names (`test.never`, `test.always`) stay the draft's proposal.
+- TRIGGER: the next design step on warnings or on `@options` (item 20), or any build of one of the three controls,
+  whichever comes first.
