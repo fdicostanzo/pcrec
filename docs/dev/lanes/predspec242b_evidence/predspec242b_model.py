@@ -13,10 +13,14 @@
 #   P1 its pass-own-labels CANDIDATE becomes the default (`PASSOWN = {"v": PO0}`), so every line it prints is re-run
 #      under rev 24.2's rule; P2 its `passown()` context restores the default instead of switching it off;
 #   P3-P5 the candidate's three switches act under rev 24's rules only (rev 23.2's BEFORE column is never touched).
-# The run under P1 with PO0 = False (the guards only) must reproduce predspec241's committed .out BYTE FOR BYTE: that is
+# The run under P1 with PO0 = False (P3-P5's guards only; P6, P7 are applied only with PO0 = True) must reproduce predspec241's committed .out BYTE FOR BYTE: that is
 # the SWITCH BACK to rev 24.1's DRAFT READING (PCRE's carry), checked on every run (PART 0).
-# A label two loops deep: the engine's pass is the INNERMOST loop's (the owner LEANS to every enclosing loop's: PART N
-# runs both, with libpcre2 helper-group models for each).
+#   P6 (injected after its `LP["row_of"] = _row_of_po`) THE OUTERMOST VIEW (nested-pass, RULED the same evening: "The
+#      view of the labels on an rx is the outermost view"): inside one literal, a label read from outside is the last
+#      setting AFTER the last pass start of EVERY loop enclosing it (rev 24.1's candidate read the innermost loop's
+#      pass only); a hole loop (`Rep`) and `occurrences` give the same by construction (a pass's item is walked fresh);
+#      P7 its `_ev_passown` defers to the row (the row already holds the outermost view).
+# The INNERMOST reading stays only as a number of the record (PART N: a libpcre2 helper-group model per reading).
 #
 # SWITCHES (W = the worktree; run from $PCREC_TMPDIR/scratch/predspec242b; one process, about 3 minutes):
 #   timeout 1800 python3 -I -B W/docs/dev/lanes/predspec242b_evidence/predspec242b_model.py > fwd.out
@@ -37,6 +41,43 @@ for k in ("PREDSPEC241_SABOTAGE", "PREDSPEC241_RULES"): os.environ.pop(k, None)
 print("RUN: %s NOW=rev %s" % ("SABOTAGE" if SAB else "forward", NOWRULE))
 
 SRC = open(F241).read()
+OUTER = r'''
+from re._constants import SUBPATTERN as _SP, MAX_REPEAT as _MXR, MIN_REPEAT as _MNR, POSSESSIVE_REPEAT as _PR, BRANCH as _BR, ASSERT as _AS, ASSERT_NOT as _ASN, ATOMIC_GROUP as _AG, MAXREPEAT as _MAXR
+_ENCS = {}
+def _encs(r):
+    """group id -> every loop (upper bound >= 2; optional-as-loop: `x?` is not a loop) enclosing it, outermost first"""
+    if id(r) not in _ENCS:
+        enc = {}
+        def walk(items, loops):
+            for node in items:
+                op, av = node
+                if op == _SP:
+                    if av[0]: enc[av[0]] = loops
+                    walk(av[3], loops)
+                elif op in (_MXR, _MNR, _PR):
+                    walk(av[2], loops + (id(node),) if (av[1] == _MAXR or av[1] >= 2) else loops)
+                elif op == _BR:
+                    for a in av[1]: walk(a, loops)
+                elif op in (_AS, _ASN): walk(av[1], loops)
+                elif op == _AG: walk(av, loops)
+        walk(r.tree, ())
+        _ENCS[id(r)] = enc
+    return _ENCS[id(r)]
+def _row_of_outer(r, s, i, e, caps, hist):
+    """THE OUTERMOST VIEW (rev 24.2, P6): a label set inside loops reads its last setting after the last pass start of
+    every enclosing loop; unset when the last pass of some enclosing loop did not set it. Off unless PASSOWN."""
+    row = _row_of(r, s, i, e, caps, hist)
+    if PASSOWN["v"] and RULES["v"] == "24":
+        enc = _encs(r)
+        for nm, g in r.names.items():
+            ls = enc.get(g)
+            if not ls: continue
+            t = max([k for k, ev in enumerate(hist) if ev[0] == "it" and ev[1] in ls], default=-1)
+            vs = [s[ev[2]:ev[3]] for k, ev in enumerate(hist) if ev[0] == "g" and ev[1] == g and (SAB_OWN or k > t)]
+            row.last[nm] = (vs[0] if SAB_OWN else vs[-1]) if vs else None
+    return row
+LP["row_of"] = _row_of_outer
+'''
 def patched(po0, sab):
     s = SRC
     def rep(a, b):
@@ -47,6 +88,9 @@ def patched(po0, sab):
     rep('    if PASSOWN["v"]:\n        for l, lp in row.loop.items():', '    if PASSOWN["v"] and RULES["v"] == "24":\n        for l, lp in row.loop.items():')  # P3
     rep('if PASSOWN["v"] and ps: row.last[l] = ps[-1].get(l)', 'if PASSOWN["v"] and RULES["v"] == "24" and ps: row.last[l] = ps[%d].get(l)' % (0 if sab else -1))  # P4
     rep('if not SAB and not PASSOWN["v"]:', 'if not SAB and not (PASSOWN["v"] and RULES["v"] == "24"):')  # P5
+    if po0:                                   # P6, P7: rev 24.2's outermost view (the switch back runs rev 24.1's candidate untouched)
+        rep('LP["row_of"] = _row_of_po\n', 'LP["row_of"] = _row_of_po\n' + OUTER.replace("SAB_OWN", str(bool(sab))))       # P6
+        rep('    if PASSOWN["v"] and view is None and LP["MODE"]["v"] == "R" and any(', '    if False and PASSOWN["v"] and view is None and LP["MODE"]["v"] == "R" and any(')  # P7
     if sab:
         rep('row.last[l] = row.passes[lp][-1].get(l)', 'row.last[l] = row.passes[lp][0].get(l)')
         rep('            return ps[-1].get(l) if ps else None', '            return ps[0].get(l) if ps else None')
@@ -107,7 +151,13 @@ def R(rule):
         finally: G["PASSOWN"]["v"] = old
 NOW = NOWRULE
 def E(rule, mk, labs=()): return candf(lambda: R(rule), mk, labs)
-def fq(s, m, k): return k if k == REJ else fmtl(s, m, k)
+def _plainkey(m, k):
+    if m == "WHOLE": return isinstance(k, bool)
+    if m == "SEARCHED": return isinstance(k, tuple) and len(k) == 2
+    return isinstance(k, tuple) and len(k) > 0 and len(k[0]) == 2
+def fq(s, m, k):
+    if k == REJ: return k
+    return G["fmtk"](s, m, k) if _plainkey(m, k) else fmtl(s, m, k)
 def ans3(f, texts): return "WHOLE `%s` %s ; SEARCHED `%s` %s ; FIND-ALL `%s` %s" % (texts[0], fq(texts[0], "WHOLE", f("WHOLE", texts[0])), texts[1], fq(texts[1], "SEARCHED", f("SEARCHED", texts[1])), texts[2], fq(texts[2], "FIND-ALL", f("FIND-ALL", texts[2])))
 def diffn(f1, f2, pool, modes=("WHOLE", "SEARCHED", "FIND-ALL")):
     out, tot = [], 0
@@ -138,9 +188,10 @@ class OwnRx:
     def vals(self, c):
         v = {}
         for l in set(self.labs) | set(self.own):
-            if l in self.own:
-                sl, sp = c.span(l), c.span(self.own[l])
-                v[l] = None if (sl is None or sp is None or sl[0] < sp[0]) else c.subject[sl[0]:sl[1]]
+            if l in self.own:                     # a tuple of helpers = one per enclosing loop: the latest pass start counts
+                hs = self.own[l] if isinstance(self.own[l], tuple) else (self.own[l],)
+                sl, st = c.span(l), [c.span(x)[0] for x in hs if c.span(x) is not None]
+                v[l] = None if (sl is None or not st or sl[0] < max(st)) else c.subject[sl[0]:sl[1]]
             else: v[l] = c.get(l)
         return v
     def _end(self, c): self.side = self.vals(c); return True
@@ -213,6 +264,10 @@ w_, s_ = fq(LT, "WHOLE", f("WHOLE", LT)), fq(LT, "SEARCHED", f("SEARCHED", LT))
 print("S S5 `late := time & ((h, m): >= (9, 30))`, `/(?:${late},)*/` on `%s`: WHOLE %s ; SEARCHED %s ; SHOWN WHOLE FAILS, SEARCHED `10:00,`@0%s" % (LT, w_, s_,
       "" if (w_ == "FAILS" and s_.startswith("`10:00,`@0")) else "   STOP: differs from what he was shown"))
 SHOWN.append(w_ == "FAILS" and s_.startswith("`10:00,`@0"))
+print("S S5   CAUSE of the line above, if it STOPS: `00` is not a canonical numeral (§2.2, `0|[1-9]\\d*`), so `10:00` is outside `>= (9, 30)` (the manager's reading DICT-DOMAIN, §2.2); the same under rev 24.1's carry: WHOLE %s, SEARCHED %s" % (
+    fq(LT, "WHOLE", E("24.1", LATE, ("h", "m"))("WHOLE", LT)), fq(LT, "SEARCHED", E("24.1", LATE, ("h", "m"))("SEARCHED", LT))))
+for t in ("10:15,9:00,11:15,", "10:15,9:15,11:15,", "9:45,10:15,"):
+    print("S S5   with unpadded minutes, `%s`: WHOLE %s ; SEARCHED %s ; FIND-ALL %s" % (t, fq(t, "WHOLE", f("WHOLE", t)), fq(t, "SEARCHED", f("SEARCHED", t)), fq(t, "FIND-ALL", f("FIND-ALL", t))))
 print("S S5   FIND-ALL `%s`: %s" % (LT, fq(LT, "FIND-ALL", f("FIND-ALL", LT))))
 print("S S5   %s" % ans3(f, ("10:00,9:45,", "9:00,10:00,", "9:00,10:00, 9:45,9:15,")))
 LP3 = lists(["10:00,", "9:00,", "11:00,", "9:45,", "10,"], 3)
@@ -282,7 +337,7 @@ C2 = [
  ("V8", "REP & `(h: !<5)`", r'(?:(?<ps>)(?<h>\d)?;)*(?C"t")', {"t": lambda v: v["h"] is not None and not lt5(v["h"])}, ("h",), h_own, lambda: W(Pat(REPp), C("h", lambda x: not lt(5)(x))), RG3),
  ("V9", "REP & `NOT (h: <5)`", r'(?:(?<ps>)(?<h>\d)?;)*(?!(?C"t"))', {"t": lambda v: lt5(v["h"])}, ("h",), h_own, lambda: W(Pat(REPp), NOT(h5())), RG3),
  ("V29", "CLOSE & `((h = 0, m = 0): (<10, <30))`", r'(?:(?<ps>)(?<h>\d+)(?::(?<m>\d\d))?,)*(?C"t")',
-  {"t": lambda v: int(v["h"] or "0") < 10 and int(v["m"] or "0") < 30}, ("h", "m"), {"h": "ps", "m": "ps"},
+  {"t": lambda v: (lambda h, m: num(h) and num(m) and int(h) < 10 and int(m) < 30)(v["h"] if v["h"] is not None else "0", v["m"] if v["m"] is not None else "0")}, ("h", "m"), {"h": "ps", "m": "ps"},
   lambda: W(Pat(CLOSEp), G["close_R"](h="0", m="0")), CLOSEPOOL),
  ("G1", "item := `/(?<h>\\d)?;/ & (h: <5)`, `/(?:${item})+/` (inside)", r'(?:(?<ps>)(?<h>\d)?;(?C"t"))+', {"t": lambda v: lt5(v["h"])}, ("h",), h_own, lambda: Rep(W(Pat(ITEMO), h5()), 1), RG3),
  ("G2", "`occurrences(/(?<x>(?<g>a)?b)/ & (g: \"a\"), min = 1)` (inside)", r'(?:[\s\S]*?(?<ps>)(?<x>(?<g>a)?b)(?C"t"))+[\s\S]*', {"t": lambda v: v["g"] == "a"}, ("x", "g"), {"x": "ps", "g": "ps"},
@@ -291,14 +346,14 @@ C2 = [
  ("G4", "`occurrences(/(?<x>(?<g>a)?b)/, min = 1) & (g: \"a\")` (outside)", r'(?:[\s\S]*?(?<ps>)(?<x>(?<g>a)?b))+[\s\S]*(?C"t")', {"t": lambda v: v["g"] == "a"}, ("x", "g"), {"x": "ps", "g": "ps"},
   lambda: W(OCC(Pat(r"(?P<x>(?P<g>a)?b)"), 1), C("g", eq("a"))), ABP5),
  ("G5i", "two depths, outside, item := `/(?:(?<h>\\d);)+x/` (INNERMOST pass)", r'(?:(?:(?<ps>)(?<h>\d);)+x)+(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), h_own, lambda: W(Rep(Pat(r"(?:(?P<h>\d);)+x"), 1), h5()), SCX5),
- ("G5e", "the same (EVERY ENCLOSING pass)", r'(?:(?<ps>)(?:(?<h>\d);)+x)+(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), h_own, lambda: W(Rep(Pat(r"(?:(?P<h>\d);)+x"), 1), h5()), SCX5),
+ ("G5e", "the same (EVERY ENCLOSING pass)", r'(?:(?<po>)(?:(?<ps>)(?<h>\d);)+x)+(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), {"h": ("po", "ps")}, lambda: W(Rep(Pat(r"(?:(?P<h>\d);)+x"), 1), h5()), SCX5),
  ("G9i", "two depths, inside, item := `/(?:(?<h>\\d);)+x/ & (h: <5)` (INNERMOST)", r'(?:(?:(?<ps>)(?<h>\d);)+x(?C"t"))+', {"t": lambda v: lt5(v["h"])}, ("h",), h_own, lambda: Rep(W(Pat(r"(?:(?P<h>\d);)+x"), h5()), 1), SCX5),
- ("G9e", "the same (EVERY ENCLOSING)", r'(?:(?<ps>)(?:(?<h>\d);)+x(?C"t"))+', {"t": lambda v: lt5(v["h"])}, ("h",), h_own, lambda: Rep(W(Pat(r"(?:(?P<h>\d);)+x"), h5()), 1), SCX5),
- ("G6", "a place inside a place: `occurrences(/(?:(?<h>\\d);)+/, min = 1) & (h: <5)`", r'(?:[\s\S]*?(?<ps>)(?:(?<h>\d);)+)+[\s\S]*(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), h_own,
+ ("G9e", "the same (EVERY ENCLOSING)", r'(?:(?<po>)(?:(?<ps>)(?<h>\d);)+x(?C"t"))+', {"t": lambda v: lt5(v["h"])}, ("h",), {"h": ("po", "ps")}, lambda: Rep(W(Pat(r"(?:(?P<h>\d);)+x"), h5()), 1), SCX5),
+ ("G6", "a place inside a place: `occurrences(/(?:(?<h>\\d);)+/, min = 1) & (h: <5)`", r'(?:[\s\S]*?(?<po>)(?:(?<ps>)(?<h>\d);)+)+[\s\S]*(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), {"h": ("po", "ps")},
   lambda: W(OCC(Pat(r"(?:(?P<h>\d);)+"), 1), h5()), SCX5),
- ("G10", "a place inside a place, OPTIONAL: `occurrences(/(?:(?<h>\\d)?;)+/, min = 1) & (h: <5)` (INNERMOST)", r'(?:[\s\S]*?(?:(?<ps>)(?<h>\d)?;)+)+[\s\S]*(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), h_own,
+ ("G10i", "a place inside a place, OPTIONAL: `occurrences(/(?:(?<h>\\d)?;)+/, min = 1) & (h: <5)` (INNERMOST)", r'(?:[\s\S]*?(?:(?<ps>)(?<h>\d)?;)+)+[\s\S]*(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), h_own,
   lambda: W(OCC(Pat(r"(?:(?P<h>\d)?;)+"), 1), h5()), SCX5),
- ("G10e", "the same (EVERY ENCLOSING: the hit is the outer pass)", r'(?:[\s\S]*?(?<ps>)(?:(?<h>\d)?;)+)+[\s\S]*(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), h_own,
+ ("G10e", "the same (EVERY ENCLOSING: the hit is the outer pass)", r'(?:[\s\S]*?(?<po>)(?:(?<ps>)(?<h>\d)?;)+)+[\s\S]*(?C"t")', {"t": lambda v: lt5(v["h"])}, ("h",), {"h": ("po", "ps")},
   lambda: W(OCC(Pat(r"(?:(?P<h>\d)?;)+"), 1), h5()), SCX5),
  ("S1", "the alternation `/(?:(?<a>\\d)|(?<b>[a-z]))*xx/ & (a: <5)`", ALTo2, {"t": lambda v: lt5(v["a"])}, ("a", "b"), {"a": "ps", "b": "ps"}, lambda: W(Pat(ALTp), C("a", lt(5))), A37),
 ]
@@ -311,7 +366,7 @@ for tag, nm, pat, tests, labs, own, mk, pool in C2:
     if d[1]: c2ne.append(tag)
     print("C2 %s %s  /%s/" % (tag, nm, pat))
     print("C2 %s   vs the engine NOW: %s ; CONTROL vs the engine under rev 24.1's carry: %s" % (tag, d[0], "DIFFERS" if dc[1] else "EQUAL (this model cannot tell the readings apart here)"))
-check("C2 helper-group models (the innermost-pass ones) equal the engine", all(t in ("G5e", "G9e", "G10e") or t not in c2ne for t, *_ in C2))
+check("C2 helper-group models of the RULED reading (every enclosing pass) equal the engine", all(t in ("G5i", "G9i", "G10i") or t not in c2ne for t, *_ in C2))
 print("== PART C2 SUMMARY: %d of %d helper-group models equal to the engine NOW (%s differ); %d of %d differ from the carry engine (the control)" % (c2eq, len(C2), ", ".join(c2ne) or "none", c2ctl, len(C2)))
 # THE ORDER CHECK, re-run under NOW
 oc = []
@@ -367,28 +422,93 @@ for nm, mk in (("bare, after the loop", lambda: W(Pat(CLOSEp), JJ())), ("on the 
 print("J under rev 24.1's carry, the bare joint (each label's last setting, a tuple no pass held): %s" % ans3(E("24.1", lambda: W(Pat(CLOSEp), JJ()), ("h", "m")), ("9:45,10,", "10,9:45,", "9:45,10, 10:45,")))
 
 # ================================================================================================= PART N: nested-pass
-print("== PART N: nested-pass, a label two loops deep: the INNERMOST loop's pass unsets it, or EVERY ENCLOSING loop's pass")
+print("== PART N: nested-pass, RULED (\"The view of the labels on an rx is the outermost view. To get inner views you nest the labels and condition\"): every enclosing loop's pass unsets")
 NEST = r"(?:(?:(?P<h>\d)?;)*,)*"
+INNER = r"(?:(?P<h>\d)?;)*"
 NI = r'(?:(?:(?<ps>)(?<h>\d)?;)*,)*(?C"t")'
-NE = r'(?:(?<ps>)(?:(?<h>\d)?;)*,)*(?C"t")'
+NE = r'(?:(?<po>)(?:(?<ps>)(?<h>\d)?;)*,)*(?C"t")'
 NC = r'(?:(?:(?<h>\d)?;)*,)*(?C"t")'
 NP = strings("37;,", 5)
-mi, me, mcar = OwnRx(NI, {"t": lambda v: lt5(v["h"])}, ("h",), h_own), OwnRx(NE, {"t": lambda v: lt5(v["h"])}, ("h",), h_own), carryrx(NC, {"t": lambda v: lt5(v["h"])}, ("h",))
-eng = E(NOW, lambda: W(Pat(NEST), h5()), ("h",))
+mi, me, mcar = OwnRx(NI, {"t": lambda v: lt5(v["h"])}, ("h",), h_own), OwnRx(NE, {"t": lambda v: lt5(v["h"])}, ("h",), {"h": ("po", "ps")}), carryrx(NC, {"t": lambda v: lt5(v["h"])}, ("h",))
+class Seq:
+    """`X` followed by `Y` (a hole in a literal, `/${X}${Y}/`): each path of X, then each path of Y from its end."""
+    def __init__(self, a, b): self.a, self.b = a, b
+    def walk(self, s, i):
+        for e1, r1, c1 in self.a.walk(s, i):
+            for e2, r2, c2 in self.b.walk(s, e1):
+                r = G["merge"](r1, r2); r.stretch = (i, e2); yield e2, r, c1 + c2
+_lo = G["labels_of"]
+def _labels_of(node):
+    if isinstance(node, Seq): return _labels_of(node.a) | _labels_of(node.b)
+    return _lo(node)
+G["labels_of"] = _labels_of
 TX = ("3;,,", "3;;,", "3;,7;,", "7;,3;,")
-for t in TX:
-    print("N `/(?:(?:(?<h>\\d)?;)*,)*/ & (h: <5)` WHOLE `%s`: INNERMOST %s ; EVERY ENCLOSING (the owner's lean) %s ; PCRE's carry (rev 24.1) %s ; the engine NOW %s" % (
-        t, fq(t, "WHOLE", mi.key("WHOLE", t)), fq(t, "WHOLE", me.key("WHOLE", t)), fq(t, "WHOLE", mcar.key("WHOLE", t)), fq(t, "WHOLE", eng("WHOLE", t))))
-for nm, mod in (("INNERMOST", mi), ("EVERY ENCLOSING", me)):
-    print("N %s: %s" % (nm, ans3(rxk(mod), ("3;,,", "3;,, 7;,", "3;,, 3;;, 3;,7;,"))))
-print("N INNERMOST vs EVERY ENCLOSING: %s" % dn(rxk(mi), rxk(me), NP))
-print("N INNERMOST vs PCRE's carry: %s" % dn(rxk(mi), rxk(mcar), NP))
-d = diffn(rxk(mi), eng, NP)
-print("N the engine NOW (its pass is the innermost loop's) vs the INNERMOST helper model: %s ; CHECK %s" % (d[0], check("N innermost model = engine", d[1] == 0 or NOW != "24.2")))
-# rev 24.1's direct evaluator (WHOLE) for the every-enclosing reading, against the helper model
+VIEWS = [("OUTERMOST (bare, after the pattern)", lambda: W(Pat(NEST), h5())),
+         ("the same through holes, `/(?:${inner},)*/ & (h: <5)`, inner := `/(?:(?<h>\\d)?;)*/`", lambda: W(Rep(Seq(Pat(INNER), Pat(",")), 0), h5())),
+         ("INNER VIEW 1: on the inner item, every inner pass: `/(?:(?:${item})*,)*/`, item := `/(?<h>\\d)?;/ & (h: <5)`", lambda: Rep(Seq(Rep(W(Pat(ITEMO), h5()), 0), Pat(",")), 0)),
+         ("INNER VIEW 2: after the inner loop, inside the outer body (the inner loop's last pass, judged in each outer pass): `/(?:${inner},)*/`, inner := `/(?:(?<h>\\d)?;)*/ & (h: <5)`", lambda: Rep(Seq(W(Pat(INNER), h5()), Pat(",")), 0))]
+for nm, mk in VIEWS:
+    f = E(NOW, mk, ("h",))
+    print("N %s: %s" % (nm, " ; ".join("`%s` %s" % (t, fq(t, "WHOLE", f("WHOLE", t))) for t in TX)))
+    print("N   %s" % ans3(f, ("3;,,", "3;,, 7;,", "3;,, 3;;, 3;,7;,")))
+d = diffn(rxk(me), E(NOW, VIEWS[0][1], ("h",)), NP)
+print("N CHECK the engine NOW (outermost) vs the EVERY ENCLOSING helper-group model `/%s/`: %s ; %s" % (NE, d[0], check("N outermost model = engine", d[1] == 0 or NOW != "24.2")))
+d = diffn(E(NOW, VIEWS[0][1], ("h",)), E(NOW, VIEWS[1][1], ("h",)), NP)
+print("N the literal loop vs its spelling through holes (the same pattern): %s ; %s" % (d[0], check("N literal = holes", d[1] == 0)))
+mi1 = OwnRx(r'(?:(?<po>)(?:(?<ps>)(?<h>\d)?;(?C"t"))*,)*', {"t": lambda v: lt5(v["h"])}, ("h",), {"h": ("po", "ps")})
+mi2 = OwnRx(r'(?:(?<po>)(?:(?<ps>)(?<h>\d)?;)*(?C"t"),)*', {"t": lambda v: lt5(v["h"])}, ("h",), {"h": ("po", "ps")})
+for k, mo in ((2, mi1), (3, mi2)):
+    d = diffn(rxk(mo), E(NOW, VIEWS[k][1], ("h",)), NP)
+    print("N CHECK %s vs its helper-group model `/%s/`: %s ; %s" % (VIEWS[k][0].split(":")[0], mo.pattern, d[0], check("N inner view %d model = engine" % (k - 1), d[1] == 0 or NOW != "24.2")))
+print("N SPELLING: inner view 2 places a condition between the inner loop and the outer body's `,`; today that is written only by a hole in a literal (§11), one more reason under the rx-module proposal (predicates_future item 21)")
+print("N RECORD (rev 24.1's candidates): " + " ; ".join("`%s`: innermost %s, every enclosing %s, PCRE's carry %s" % (t, fq(t, "WHOLE", mi.key("WHOLE", t)), fq(t, "WHOLE", me.key("WHOLE", t)), fq(t, "WHOLE", mcar.key("WHOLE", t))) for t in TX))
+print("N RECORD innermost vs every enclosing: %s" % dn(rxk(mi), rxk(me), NP))
+print("N RECORD innermost vs PCRE's carry: %s ; every enclosing vs PCRE's carry: %s" % (dn(rxk(mi), rxk(mcar), NP), dn(rxk(me), rxk(mcar), NP)))
 ev = sum(1 for t in NP if G["nest_ans"]("every", t).startswith("HOLDS") != (me.key("WHOLE", t) is not None))
-print("N rev 24.1's direct WHOLE evaluator 'every enclosing' vs the EVERY ENCLOSING helper model: %d of %d differ (holds)" % (ev, len(NP)))
-print("N the catalogue: no line of PART A, B or C sets an OPTIONAL label two loops deep; G5, G9 (a mandatory label two deep) and G6 (a loop inside `occurrences`) answer alike under both (PART C2 G5i/G5e, G9i/G9e); G10/G10e (an optional label inside a loop inside `occurrences`) part them")
+print("N RECORD rev 24.1's direct WHOLE evaluator 'every enclosing' vs the EVERY ENCLOSING helper model: %d of %d differ (holds)" % (ev, len(NP)))
+
+# ================================================================================================= PART P: the principle
+print("== PART P: \"Then from the perspective of the condition, an rx is a black box that exposes labels\": the manager's readings (a)-(d) tested as CLAIMS")
+def results(rule, mk):
+    cache = {}
+    def f(s):
+        with R(rule):
+            if "p" not in cache: cache["p"] = mk()
+            Pn = cache["p"]
+            return tuple(tuple((e, tuple(sorted(row.last.items()))) for e, row, ck in Pn.walk(s, i) if all(c() is True for c in ck)) for i in range(len(s) + 1))
+    return f
+CONDS_H = [("(h: <5)", lambda: h5()), ("NOT (h: <5)", lambda: NOT(h5())), ("(h = 0: <5)", lambda: C("h", lt(5), h="0")), ("(h: !<5)", lambda: C("h", lambda x: not lt(5)(x))), ("(h: \"3\")", lambda: C("h", eq("3")))]
+PASSF = [("some((h: <5))", lambda: SOME(h5())), ("occurs.none(NOT (h: <5))", lambda: NONE(NOT(h5()))), ("(h[2]: <5)", lambda: G["Idx"]("h", 2, lt(5)))]
+def safe(f):
+    def g(m, s):
+        try: return f(m, s)
+        except ValueError: return REJ
+    return g
+PAIRS = [("SAME-1", "`/(?:(?<h>\\d);)*/` vs `/(?:(?:\\d;)*(?<h>\\d);)?/` (h looped vs h set once)", lambda: Pat(REP1p), lambda: Pat(r"(?:(?:\d;)*(?P<h>\d);)?"), RG3, CONDS_H),
+         ("SAME-2", "`/(?<h>\\d)?;/` vs `/(?:(?<h>\\d)|);/` (optional-as-loop's pair)", lambda: Pat(r"(?P<h>\d)?;"), lambda: Pat(r"(?:(?P<h>\d)|);"), RG3, CONDS_H),
+         ("SAME-3", "`/(?:(?<h>\\d)?;)*/` vs `/(?:(?:(?<h>\\d)?;)+)?/` (`x*` vs `(?:x+)?`)", lambda: Pat(REPp), lambda: Pat(r"(?:(?:(?P<h>\d)?;)+)?"), RG3, CONDS_H),
+         ("SAME-4", "REP vs `/(?:${item})*/`, item := `/(?<h>\\d)?;/` (a literal loop vs a hole loop)", lambda: Pat(REPp), lambda: Rep(Pat(ITEMO), 0), RG3, CONDS_H),
+         ("A6", "review r40 A6's dead-branch pair `/(?<a>\\d)|(?<b>\\d)/` vs `/(?<a>\\d)/`", lambda: Pat(r"(?P<a>\d)|(?P<b>\d)"), lambda: Pat(r"(?P<a>\d)"), G["DIG4"], [("(b: \"1\")", lambda: C("b", eq("1"))), ("(a: \"1\")", lambda: C("a", eq("1")))])]
+for tag, nm, m1, m2, pool, conds in PAIRS:
+    r1, r2 = results(NOW, m1), results(NOW, m2)
+    dr = [t for t in pool if r1(t) != r2(t)]
+    same = not dr
+    print("P %s %s: the results offered (every start, in order, each with its labels at the outermost view) %s" % (tag, nm,
+          "are the SAME on all %d texts" % len(pool) if same else "DIFFER on %d of %d texts (first `%s`: %s vs %s)" % (len(dr), len(pool), min(dr, key=lambda x: (len(x), x)), r1(min(dr, key=lambda x: (len(x), x)))[0], r2(min(dr, key=lambda x: (len(x), x)))[0])))
+    labs = ("a", "b") if tag == "A6" else ("h",)
+    tot = 0
+    for cn, mc in conds:
+        d = diffn(E(NOW, lambda: W(m1(), mc()), labs), E(NOW, lambda: W(m2(), mc()), labs), pool)
+        tot += d[1]
+        print("P %s   `& %s`: %s" % (tag, cn, d[0]))
+    if tag == "SAME-1":
+        for cn, mc in PASSF:
+            d = diffn(safe(E(NOW, lambda: W(m1(), mc()), labs)), safe(E(NOW, lambda: W(m2(), mc()), labs)), pool)
+            print("P %s   a PASS FORM `& %s` (an explicit request, inside the box): %s" % (tag, cn, d[0]))
+    if same: print("P %s   CLAIM (c) %s: %d texts x modes differ over the label conditions" % (tag, check("P %s same results answer alike" % tag, tot == 0), tot))
+print("P (a) the box offers its results in order and a rejecting condition takes the next: branch-scope (ii) as the engine and every libpcre2 callout model implement it (a callout failing = the next path); PART C/C2 are its test")
+print("P (b) captures, passes and inner labels are inside the box: PART L (the capture), PART N (inner views by nesting), SAME-1's pass forms (the pass table is reached only by an explicit request)")
+print("P (d) the architecture analogy: no run (a statement about the design, not an answer)")
 
 # ================================================================================================= PART Q
 print("== PART Q: what the rule leaves undetermined, and rev 24.1's other questions re-run (NOW vs rev 24.1)")
