@@ -19,8 +19,6 @@ and what must change shape first ([ARCH-STEP]); its template and procedure are t
 
 STILL DRAFT, open with the owner (each a word slug he can cite; everything else in part 1 is his, or agreed by him):
 - new-rules: which part-2 rules marked NEW 2026-11-17 are adopted.
-- register-keeper: whether an architecture note must cite the register rows it looked up.
-- speed-gate: whether "nothing gets slower on the cells a change touches" gates all product code.
 - ast-accessors: whether goal 2 covers the AST (leaning: sealed-AST reads stay direct, writes go through the owning pass).
 - ctx-owner: who owns `Job`/`Ctx` under goal 2 (leaning: split by writer as areas migrate, the driver owns the rest).
 - emitter-backflow: is planner-to-back-end a module seam or a layer handoff (leaning: a module seam, as roadmap H-FLAGS).
@@ -33,8 +31,15 @@ lengthy refactor" (Frank 2026-11-17, `docs/design/plan_row_bodies/ARCH-STEP.md`)
 9 were a missing shared home (a primitive or a second mechanism beside the first), 3 a decision family that grew
 as branches, 2 a data shape with no room for the next feature, 2 an inconsistent interface.
 
-A GATE above every goal: no answer moves (PCRE2 is the semantics, D26) and nothing gets slower on the cells a
-change touches. Remodels are answer-identical units (manifesto §1, "a gate, not a goal").
+A GATE above every goal: no answer moves (PCRE2 is the semantics, D26), and NO EXISTING REGEX GETS SLOWER. The
+speed half in the owner's words (2026-11-17, "speed-gate"): "before predicate and other changes, most all work was
+optimizations or adding regex. It's closer to "no existing regex should get slower" with the caveat that in
+practice a few percentage on rare forms was ok and a turn off option was allowed. Plus, it was fully acceptable if
+default off". So it gates EVERY change to product code, a feature as much as a remodel, with three allowances: a
+few percent on rare forms; a slowdown the user can turn off; anything that is off by default. Remodels are
+answer-identical units (manifesto §1, "a gate, not a goal"); where a remodel leaves the emitted code byte-identical
+that IS the speed proof, and where bytes move it carries a timing check on the affected cells (the manager's
+reading of how the gate is shown, not his words).
 
 ORDER: THE OWNER'S (2026-11-17). He reviewed the first draft the same day ("goals-ranking",
 `docs/design/plan_row_bodies/ARCH-STEP.md`, last section): he reshaped the draft's goals 1-3 and added one,

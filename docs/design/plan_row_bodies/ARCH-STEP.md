@@ -135,3 +135,13 @@ mechanism; below that one paragraph in the brief with the mandatory register lin
 a measurement or a doc lane has no note; the manager's lean: adopt, provisional until the pilot). HIS WORDS:
 "size-trigger: agree". Still open: speed-gate, new-rules, and the reach of goals 2 and 3 (ast-accessors, ctx-owner,
 emitter-backflow, accessor-grain).
+
+## 2026-11-17, the owner on the speed gate
+
+Asked **speed-gate** (the manager's lean: the gate applies to remodels everywhere; features and fixes are judged
+by their own design). HIS WORDS: "speed-gate: before predicate and other changes, most all work was optimizations
+or adding regex. It's closer to "no existing regex should get slower" with the caveat that in practice a few
+percentage on rare forms was ok and a turn off option was allowed. Plus, it was fully acceptable if default off".
+RECORD: the gate is "no existing regex gets slower", and it covers every change to product code, not remodels
+only (the manager's lean was narrower and is superseded); allowances: a few percent on rare forms; a turn-off
+option; default off. Written into docs/dev/guide/architecture.md part 1 and the architect skill's first-unit line.

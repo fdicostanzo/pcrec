@@ -142,8 +142,7 @@ noted-deviation row it PROPOSES (what, against which goal or rule, where, why sm
 
 ## Remodels that land first
 Per unit: what changes shape; gate (no-mover + byte identity / abi / kit); size; the checks that bind the moved
-code; the generic writers it must guard (WIDEN units); separable (lands without the feature: yes, because ...); [DEPENDS ON THE OWNER: whether "nothing gets slower on the cells it touches" gates all
-product code; written the strict way] the cells it touches and the speed gate; what it deletes.
+code; the generic writers it must guard (WIDEN units); separable (lands without the feature: yes, because ...); [the gate, the owner 2026-11-17: no existing regex gets slower; allowed: a few percent on rare forms, a slowdown the user can turn off, anything off by default; byte-identical emitted code is the proof, else a timing check] the cells it touches and the speed gate; what it deletes.
 
 ## The general form and its siblings
 The general form; the family and its members today (with the grep); the planned rows that extend the same shape
