@@ -174,8 +174,12 @@ def run(prog, pool, opt, lj=True, decl=None, seed=None):
             acc &= vecE(c, ct, pool, env, lj, only=frozenset(set(c.reads) - own))
         return acc
     if opt == "DECL":
+        if decl is None:                          # the declaration = the values the program writes (one per label)
+            decl = merge(prog)
+            if decl == ERR:
+                return ERR
         for c, ct in O(prog):
-            acc &= vecE(c, nones(c), pool, decl or {}, lj)
+            acc &= vecE(c, nones(c), pool, decl, lj)
         return acc
     raise ValueError(opt)
 
@@ -203,8 +207,8 @@ def dif(x, y, pool):
     return "%d%s" % (popc(d), "" if not d else " (smallest %r)" % low(d, pool))
 
 
-OPTS = ("LOCAL", "COLUMN", "POS", "DOLLAR")
-OPTSD = OPTS + ("DECL",)                     # DECL runs with every label of the pool declared `= 0`
+OPTS = ("LOCAL", "COLUMN", "POS", "DOLLAR", "DECL")    # DECL: declared = the values the program writes (ERROR:
+OPTSD = OPTS                                            # two values); in (1d)/(1e) every pool label declared `= 0`
 C = lambda v: ("c", v)
 
 # --------------------------------------------------------------------------------------------- the conditions used
@@ -355,7 +359,7 @@ for pool, base, extra in SEARCH:
 print("      POS with the added condition written FIRST: %d of %d admit; first: `%s` & `%s` on pool %s admits %d, "
       "smallest %r" % ((pf[1], pf[0]) + pf[2]))
 pr = [(h_lt5, [None])]
-for o in OPTS:
+for o in OPTS[:-1]:                          # DECL: a condition carries no default, so this case cannot be written
     a, b = run(pr, A, o), run(pr + [(h_lt9, [C("0")])], A, o)
     print("      %-7s pool A `(h: <5)` holds %d; + `(h = 0: <9)` holds %s (admits %s)" % (
         o, popc(a), cnt(b), "n/a" if b == ERR else popc(b & ~a)))
@@ -392,7 +396,7 @@ for o in OPTS:
         o, cnt(x1), hf(x1, A, "c"), cnt(x2), hf(x2, A, "c"), cnt(x3), hf(x3, A, "c")))
 S_ = [(h_lt9, [C("0")])]                                          # S := A & (h = 0: <9); q1 := A & (h: <5)
 q1 = [(h_lt5, [None])]
-for o in OPTS + ("COLUMN-b2", "DECL"):
+for o in OPTS + ("COLUMN-b2",):
     oo = "COLUMN" if o == "COLUMN-b2" else o
     seed = merge(S_) if o == "COLUMN-b2" else None
     dcl = {"h": C("0")}                                       # DECL: A declares h = 0 (S then carries no default)
@@ -410,7 +414,7 @@ for o in OPTS:
     x = ERR if ERR in (br1, br2) else br1 | br2
     print("   (1h) when((a = 0: <10), (b: >$a)) on AB, %-7s holds %s; on `-1` %s" % (o, cnt(x), hf(x, AB, "-1")))
 # (1i) a condition that admits every row is the identity: pool A `(h = 0: <10) & (h: <5)` vs `(h: <5)`
-for o in OPTS:
+for o in OPTS[:-1]:                          # DECL: as above
     a, b = run([(h_lt10, [C("0")]), (h_lt5, [None])], A, o), run([(h_lt5, [None])], A, o)
     print("   (1i) %-7s `(h = 0: <10)` admits %d of 21 alone; `(h = 0: <10) & (h: <5)` vs `(h: <5)` differ %s" % (
         o, popc(run([(h_lt10, [C("0")])], A, o)), dif(a, b, A)))
@@ -530,6 +534,9 @@ def search(prog, pool, target, opt, order=None):
     return None, best
 
 
+selfread = sum(1 for st, pool, nm, prog, target, key in progs for c in prog if set(c.reads) & {l for l, _ in c.labs})
+print("   conditions in the 339 programs whose `$` reads one of their OWN labels (the only place PER ENTRY can differ "
+      "from PER CONDITION): %d" % selfread)
 RES = {}
 for st, pool, nm, prog, target, key in progs:
     row = {}
