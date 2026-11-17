@@ -233,7 +233,7 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 <a id="s3-12"></a>
 ### 3.12 The window search's width
 
-<a id="s3-12-p1"></a>[3.12¶1] `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH` = 32 (positions, kind `selection knee`, override `flag+-D`) is the widest fixed-width match the window search reports with no matching engine behind it (the width counts BYTES of the subject: under `-e utf8` a character counts its encoded length, so `é{4}` has width 8): the artifact stamped `<PREFIX>_DFA_SCAN "cover"` (`match_api.md` §6.3.4¶2). A pattern whose fixed width is wider runs the engine, with the same answers. The value is not yet a measured choice.
+<a id="s3-12-p1"></a>[3.12¶1] `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH` = 32 (bytes, kind `selection knee`, override `flag+-D`) is the widest fixed-width match the window search reports with no matching engine behind it (the width counts BYTES of the subject: under `-e utf8` a character counts its encoded length, so `é{4}` has width 8): the artifact stamped `<PREFIX>_DFA_SCAN "cover"` (`match_api.md` §6.3.4¶2). A pattern whose fixed width is wider runs the engine, with the same answers. The value is not yet a measured choice.
 
 <a id="s3-12-p2"></a>[3.12¶2] The limit is a cliff, not a prefix: at 32, `[0-9a-f]{32}` is reported by the window search and `[0-9a-f]{33}` runs the engine for all 33 positions; one position more loses the whole window search, not one position of it. The `--emit-facts` listing's `cover` section names the decline `width-limit` with the width (`facts_listing.md` §4.5¶2); the listing and the exact stretch it states are not bounded by this limit.
 

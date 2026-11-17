@@ -1247,6 +1247,8 @@ F31: rev 5's grep `grep -n COVER src/core/limits.def` was too narrow for its sen
       PCREC_LIMIT(PCREC_DEFAULT_WINDOW_SEARCH_WIDTH, 32, "positions", "selection knee", FLAG_D, "3.12",
         "[COVER-CAP]: the widest fixed-width match the window search reports with no matching engine (the cover route); a wider one runs the engine; --window-search-width=N moves it per compile, -D moves the built-in default; UNMEASURED: stage 1's seam reach, kept so the stage-2 build is route-identical to main until the timing of cover_cap.md section 11.4 sets it", LIMITS_H)
 
+  [review r32 F11, 2026-11-16: the shipped row's unit is `bytes`, since the width counts subject bytes (§3.12¶1); the row above is the design-time text.]
+
   Home `LIMITS_H` with an `#ifndef` wiring block in `limits.h` (the FLAG_D shape; the SEVEN
   existing blocks, `limits.h:746-766`, follow the enum at `:723`; rev 5.2 FIND-20: the file's own
   comment at `:732` says six and is stale, A2 corrects it) and its derivation block there once measured (as
