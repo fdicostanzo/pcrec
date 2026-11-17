@@ -2011,3 +2011,24 @@ default. As put to him: this keeps ONE kind of absence (a loop that never ran an
 label are treated alike) and does not bring back "an empty list holds" (reversed 14:31). Rev 22's closing example
 that used `all` to accept incomplete items is rewritten with a default in rev 23. Review r31 finding C is closed
 by this ruling.
+
+**2026-11-16 OWNER REMARKS — what a row is; negating a condition; the value of a complemented pattern (Frank, to
+session 137, box clock 23:31; in reply to the question complement-per-match; remarks and questions, not rulings).** HIS
+WORDS, whole: "\"Tonight you ruled that a row of the source is the whole subject and \"the complement is per
+subject\" \". Let's look at this. If you are talking analogous from the SQL example, I think what I said the table
+is the set of possible matches so a row from the table represents a single potential match. Regardless of said,
+that is the idea. My understanding of subject is that it's the search text. I'm not sure the table and search text
+are exactly equivalent here. Backing up, you said that conditions can't be complemented although they are the where
+clause in the analogy. I'd said earlier they couldn't be complemented under the idea that they were not sets of
+strings but now if they are where clauses by analogy, it would seem straightforward to negate them although the
+meaning is specific to them. What is your position? What I'm trying to understand also is the value of the
+complemented pattern. Or the meaning." RECORD: (1) THE IDEA, his: a row of the table is ONE POTENTIAL MATCH; the
+subject is the search text, not a row. The wording "a row of the source is the whole subject; the complement is
+per subject" (source-row, 21:49) was the MANAGER's framing of the question, answered on one example; the manager
+WITHDRAWS it as the model's statement and asks him to confirm (**row-is-match**). (2) THE MANAGER'S POSITION given
+to him (his, changed from "keep the error"): NOT on a condition should be ALLOWED, as the where-clause's
+three-valued NOT (an absent label stays failing; a default gets past it), because it asks a question no other
+spelling asks exactly; asked as **condition-not**. (3) THE MANAGER'S ACCOUNT of the complemented pattern given to
+him: its meaning is the potential matches the pattern does not match; its value is pattern DIFFERENCE (`A & !B`:
+an A that is not a B), which regex spells only through lookahead tricks; once conditions have their own NOT, a
+complement of a program that carries conditions is needed only for "the condition is not true, absence included".
