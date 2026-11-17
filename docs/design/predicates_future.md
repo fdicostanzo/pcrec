@@ -352,6 +352,12 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md). TRIGGER: the atomic discussion (item 19), or the first build
   step that has to say how an opt-in is given.
 
+- 2026-11-17 evening, the owner (COND-FAMILY.md, "OWNER RULING — polarity-rule"): "Warnings are errors given some
+  strictness setting eg @config.strict()". A second kind of source-declared setting beside the capability opt-ins:
+  STRICTNESS (every warning becomes an error). Same open points as above: its scope (file or binding), what an
+  imported library's setting does to the importer, and whether a host can impose it from outside. Spelling a
+  placeholder; `@options(...)` and `@config.strict()` are two of his examples for one family.
+
 ## 21. Building patterns without rx literals: an `rx` module and a concatenation operator
 
 - WHAT (the owner, 2026-11-17): "we need to support building rx without rx literals. Propose: an "rx" module that

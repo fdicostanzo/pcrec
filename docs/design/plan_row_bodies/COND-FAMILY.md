@@ -2525,3 +2525,15 @@ AFTER the rejected match); (*COMMIT) -> nothing, and no later match either (`8:1
 the verb that gives his item-14 words ("Now the pattern returns nothing", with later matches still found) is
 (*SKIP), which he also named on 2026-11-13 ("resume after a rejecting callout via a backtracking verb like
 (*SKIP)"); (*PRUNE) does not. `A :: B` as described is `(?>A)B`.
+
+**2026-11-17 OWNER RULING — polarity-rule (Frank, to session 138, evening).** Asked what the compiler reports when
+a test can never pass (`(h: <0)` on `\d+`: an ERROR in the draft) or can never fail (`NOT (h: <0)`: silent in
+revision 24), with the manager's lean (a warning in both directions, an error in neither). HIS WORDS:
+"polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()".
+RECORD: (1) a test that can never pass and a test that can never fail each get a WARNING naming the test; neither
+is an error by default (the draft's §5.2 error becomes a warning; no answer of any program changes). (2) NEW,
+general: WARNINGS BECOME ERRORS under a strictness setting declared in the source; `@config.strict()` is his
+example and a placeholder spelling (D193 add. 4). It joins the options-in-the-source idea (predicates_future item
+20: capability opt-ins declared in the source). MINE: the setting covers every warning the language has (the
+proposed warning on a bare condition over a looped label included), and its scope and a host's ability to impose
+it are the same questions item 20 already lists.
