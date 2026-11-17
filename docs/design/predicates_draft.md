@@ -4441,7 +4441,10 @@ Agreeing look-alike (no error): an assertion strictly inside a value, `/(?<v>[\d
 
 ## 13. Open questions and contradictions
 
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
+Rev 23 (lane predspec23b): this section is a LOG; its RESOLVED and CLOSED entries are the record and keep the words
+of their revision. Each entry whose live text named the optional mark, DOM or `all` carries a [REV 23: ...] note,
+and the block REV 23: THE ITEMS THAT NAMED THE MARK, DOM OR `all` at the end of this section gives the status of
+each (from §R.11).
 
 Contradictions (C) are places where two notes, or a note and a ruling, give different readings; open items (O) are
 places the notes leave silent or explicitly open. Each gives both readings; none is resolved here except by a
@@ -4475,7 +4478,7 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
 - **C21** `count` as a value (rev 5): `count(...)` yields a number used like a subject number, LEAN (CF:823,
   "perhaps"); refused only over the budget with `occurs` named, RULED (CF:832); the 11-14 "NOT a count value (no
   number type)" is withdrawn (CF:782 (3)), §8. `some`/`all`/`count` as built-ins or library names: lean library
-  (prelude) names (rev 8, §4.3, §8).
+  (prelude) names (rev 8, §4.3, §8). [REV 23: `all` retired, all-question 23:18; the lean covers `some` and `count`.]
 - **C27** context-marked sets vs "matches ENTIRELY": RULED (CF:713): a set is the strings it matches entirely; `^` in
   a filter is the filtered span's start (CF:761), §11.
 - **C30** what a positional argument is: RULED (CF:732, CF:749): positional = required parameters, keywords =
@@ -4509,7 +4512,8 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
   [REV 20: OVERTAKEN 14:31 in its `all` half. `all(c)` is c with every label it names MARKED, read F1 (the manager's
   reading, review r28 disposition C; §4.3), so `all((x: S))` = `(x?: S)`: neither the plain condition nor the
   default. "Zero iterations: both hold" is FALSE under **absent-rule**: on zero passes the plain condition FAILS and
-  `all` holds exactly when some value in DOM(x) is in S (§4.2). `occurs.all` stays removed.]
+  `all` holds exactly when some value in DOM(x) is in S (§4.2). `occurs.all` stays removed.] [REV 23: `all` RETIRED
+  (all-question 23:18); "every pass, possibly none" is `(x = d: S)` with d in S (§R.1.7, §0.1 L36).]
 - **O12** `!~` (rev 8): RESOLVED: WITHDRAWN with `~` (CF:909, accepted at CF:905); the negated test is
   `!contains(rx)` (§2.6). L51 is restated on `!occurrences(r)` vs `!contains(r)`.
 - **O29** does each `some` pick its own occurrence (rev 8): RESOLVED by SAME HIT BY RECORD (CF:915-917, accepted at
@@ -4656,7 +4660,7 @@ Open items (rev 0, still open):
   empty-match rule presupposes a SEARCHED MODE chosen by the caller (predx O1 lean: the caller picks); not ruled.
 - **O2.** Precedence among `!`, `:`, `.`, `$`, prefix comparisons, arithmetic and `@` is stated only pairwise (C16,
   §4.1's entry extent; and `$` over a dot path, §5.4: `$a.b.c` = `$(a.b.c)`).
-- **O3.** Notes call several leanings "ruled" (unset label false, union type of duplicates, filtering by indexing). REV 20: "unset label false" is now RULED as part of **absent-rule** (CF 14:31: a condition on an absent label FAILS, §4.2); the other two stay as listed.
+- **O3.** Notes call several leanings "ruled" (unset label false, union type of duplicates, filtering by indexing). REV 20: "unset label false" is now RULED as part of **absent-rule** (CF 14:31: a condition on an absent label FAILS, §4.2); the other two stay as listed. [REV 23: a condition on an absent label is UNKNOWN, and the row is dropped, negated or not (§R.1.5, condition-not 23:48): "FAILS" for every program without NOT.]
 - **O5.** Do a map's per-field value constraints carry into joined labels (asked Frank 2026-11-14; lean yes; predx:
   yes by construction).
 - **O6.** `functions` presupposes DFA captures ([ENG-TDFA]); Q11 moves span REPORTING to `captures`; whether
@@ -4731,6 +4735,18 @@ review's proposed lean, in plain words, NOT resolved):
   iteration outside S" is `(x: !S)` (on `1,7,`: FAILS). On an absent x: `(x: !S)` FAILS, `P & !q` HOLDS; marked:
   `(x?: !S)`, or `P & !q` with `q := P & (x?: S)`, whose DOM is q's own (§0.1 L30). The look-alike rows L30, L95
   are restated; the warning of rev 3's lean is not needed.
+  REV 23 (**condition-not** 23:48; lane predspec23b's re-run, `predspec23b_model.out` PART 6, WHOLE / SEARCHED). `!`
+  on a condition is legal again as the three-valued NOT, so rev 3's two sentences and the complemented pattern are
+  THREE questions (§R.3), none a look-alike needing a warning. On `/(?:(?<n>\d)?,)*/` and `1,7,`: `(n: <5)` FAILS /
+  HOLDS (`1,`@0); `NOT (n: <5)` ("not every pass below 5") HOLDS / HOLDS; `(n: !<5)` ("every pass outside") FAILS /
+  HOLDS (`7,`@2); `P & !(P & (n: <5))` HOLDS / HOLDS. On `7,,` (a pass lacking n): `NOT (n: <5)` HOLDS / HOLDS (one
+  pass is FALSE, so the AND is FALSE whatever the other), `(n: !<5)` FAILS / HOLDS (`7,`). On the empty list: NOT and
+  `(n: !<5)` FAIL / FAIL (one null pass row, UNKNOWN), the difference HOLDS / HOLDS. Over the 364 texts over {1, 7,
+  `,`} to length 5: WHOLE `NOT c` 22, `(n: !<5)` 2, the difference 40 (they differ 20, first `,7,`); SEARCHED 132,
+  132, 364 (differ 0). On ONE absent set-once label (`t2` on `9`, R = `padded(>= (9, 30))`): `((h, m): R)`, `NOT
+  ((h, m): R)` and `((h, m): !R)` all FAIL / FAIL (m absent: UNKNOWN), the difference `t2 & !(t2 & ((h, m): R))` HOLDS
+  / HOLDS; with a default, `((h, m = 00): R)` FAILS / FAILS while `NOT ((h, m = 00): R)` and `((h, m = 00): !R)` HOLD
+  / HOLD (rev 21's "marked pair" FAILS / HOLDS is gone with the mark).
 - **O31. The dot family, and level selection.** (OWN-7, RUL-12; WIDENED in rev 7 by review r8 P6-12, CENSUS-24.)
   One `.` carries four resolutions: (1) a LABEL of the map interface (`d.year`, `rest.year`); (2) a module MEMBER
   (`json.row`), which is name resolution if a module is a namespace (O46's lean), not navigation on a value;
@@ -4798,7 +4814,7 @@ review's proposed lean, in plain words, NOT resolved):
   both legal programs, so no diagnostic is possible; `label.unset`'s text names the default as the fix); L100 (a
   marked condition read in its program) is BY DESIGN; the SILENT entries under SAVING PEOPLE FROM THEMSELVES (§0
   STANDING CRITERIA: `all(((h, m): R))` accepting incomplete items, the label controls in searched mode) are listed
-  there, not here.
+  there, not here. [REV 23: L100 is SAME (§0.1, no mark); the SILENT list is §0's rev 23 re-grading.]
 
 Open items NEW in rev 5 (from the 2026-11-15 entries and the rev 4 audit; plain words, each with a leaning):
 - **O39. The budgets: how big is too big?** RESOLVED in rev 10 (CF:977; the RESOLVED list), as its lean said. Two size limits are named but never set by the owner: (a) the
@@ -4924,7 +4940,7 @@ its readings and a lean, NONE decided here):
   (e) `some`/`all`: decided: `some(...)` is the one spelling of "some" (CF:912-914), and the witness rule is SAME
   ITERATION BY RECORD (O29 RESOLVED). [REV 20: "`all(...)` the default" is OVERTAKEN 14:31: `all(c)` is c with
   every label it names marked, read F1 (the manager's reading, review r28 disposition C; §4.3), not the plain
-  condition and not the default.]
+  condition and not the default.] [REV 23: `all` RETIRED (all-question 23:18), §R.1.7.]
   What stayed open here, the level of one-iteration access, is RULED in rev 10 (`captures`, CF:977; the RESOLVED
   list). C36 (the
   priority parse), which the whole restatement rested on, is RESOLVED in rev 9 by the one reading (CF:953-955).
@@ -5016,7 +5032,8 @@ here):
   11:35) and **pairing-loop** (CF 13:29, his words: "pairing-loop: I agree part 1"; the wording: "the pairing loop
   is the DEEPEST loop that encloses any named label; every other named label lies in the same pass of it or outside
   it with one value per pass; otherwise the sibling-loop error"; parts 2-3 settled by **absent-rule**, CF 14:31: "an
-  unmarked absent label fails the pass; marked: the others are tested"), with **optional-as-loop** (CF 15:23: "I agree
+  unmarked absent label fails the pass; marked: the others are tested"; rev 23: "marked" reads "defaulted", the
+  default standing in for the label in that test, §R.1.6), with **optional-as-loop** (CF 15:23: "I agree
   both spellings should answer alike"; THE MANAGER'S READING of how: a quantifier with an upper bound of 1 is not a
   loop for the pairing rule). His 13:29 remark "Even /x?/ is a loop from 0 to 1" is recorded as discussion ("that
   comment was for discussion", CF 15:23). Stated in §4.3 PER-PASS PAIRING; record = `&` on joint_condition.md's (UP)
@@ -5613,13 +5630,34 @@ OPEN ITEMS NEW IN REV 20 (each: reply either way; the plain-words drafts are in 
   error where the approximations differ, never silent; §4.2 WHAT COMPUTING THE RULE TAKES). Whether that is the
   intended tier for a ruled rule ("I'm assuming such logic is possible") is for the owner when a case needs it.
 - PLAN, not asked now (review r29 group O): at the next phase-1 review, whether tuple values, the default and the mark
-  are IN or OUT of phase 1; `all` (IN, ruled) now depends on the mark (§4.3) and inherits its refusals.
+  are IN or OUT of phase 1; `all` (IN, ruled) now depends on the mark (§4.3) and inherits its refusals. [REV 23: the
+  mark and `all` are out of the language; the PLAN item is tuple values and the default (and NOT on a condition),
+  §0.2.]
 - STANDING QUESTIONS (review r29 group P): the warning FAMILY over absence (`label.unset`, the never-absent-mark
   warning, `default.unused`, `label.both_sides` proposed) is a PLAN item, its trigger the next proposed member or the
   build of any one (FIXIND-11); the general "condition with candidate sets" transform (FIXIND-12) is NOTED as the
-  unlock behind (e2.1) and one-witness, not filed.
+  unlock behind (e2.1) and one-witness, not filed. [REV 23: the never-absent-mark warning retired (§7.1); (e2.1)
+  REVERSED and one-witness RETIRED (§R.11), so FIXIND-12 has no unlock left to stand behind.]
 - `list_of`'s minimum (whether a `list_of` part admits zero items): a gap in the draft, not in the rule; OPEN (lane
   absfold's finding, joint_condition.md §4G.5 (d)).
+
+REV 23: THE ITEMS THAT NAMED THE MARK, DOM OR `all` (lane predspec23b; status from §R.11, no new ruling):
+- RETIRED with the mark (drop-mark 21:49; they lose their subject, none is reversed): **zero-pass-empty**,
+  **match-context**, **domain-scope**, **mark-narrows**, **mark-in-none**, **mark-under-not** (already closed in rev
+  22), **one-witness**, the manager's readings (a) and (c) of §4.2 THE UNDEFINED ITEMS, the "IF IT IS POSSIBLE" TIER
+  FOR PROGRAMS (it was a tier for computing DOM), and (e3)'s PER-LABEL MARK on a condition passed to a macro. Their
+  worked examples above (`0-3`, `b`, `12`) are rev 21-22's answers and are not re-run (§16.4 holds the rules they
+  ran under).
+- REVERSED: **default-reaches-dollar** and (e2.1) (default-scope 22:30, §R.5 E); the lane's reading (i) of rev 22
+  ("what counts as a condition for the `!` error") loses its subject with condition-not 23:48 (`!` on a condition is
+  legal).
+- STANDS: (ii) the closing example's intents (rewritten without `all`, §4.3); (e1), (e2.2) and (f) as lane proposals,
+  unruled (rev 22 §4.2's text is in §16.4; (e1)'s computed-label example is rewritten in §4.4).
+- O3 (the "ruled" leanings), O28 (one rule for optional, repeated and never-entered labels) and O56 (which iteration
+  a record means): see their REV 23 paragraphs above. O28 is RESOLVED IN MEANING by condition-not: the three
+  spellings are three questions (§R.3).
+- O38's SILENT list is §0 STANDING CRITERIA's rev 23 list (no `all`; a default made vacuous by a shorter stretch;
+  `A & !B` searched).
 
 ## 14. Non-goals
 
