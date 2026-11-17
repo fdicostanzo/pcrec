@@ -89,7 +89,23 @@ Design of record: `docs/design/memfn/r45_reply.md` rev 6 (69acf5376). Rulings fi
 
 ## Movers
 
-PLACEHOLDER
+- **Width 32 / h = 64 (this branch): ZERO.** `scripts/emit_sweep.py --ref 60c2958ae --extra=-fmemfn-simd=x86-64-v3
+  --dumps-declared-new=--list-axes:span-loop` (log `/var/tmp/pcrec-pcrec/scratch/memfn/forms/sweep.log`): every
+  stream, base and SIMD-on, `movers=0 asymmetric=0` (argv 7,071 patterns; composition 465 files, 38 producing;
+  facts, emit-ir-auto x4, stderr; dumps 7 with the one declared new row). The script exits rc=1 on ONE
+  notice, the arms family's `NO DIFFER FLOOR PINNED` for the `--extra` arm (SIMD-on against SIMD-off on BOTH
+  sides, 59/59 c-default, 33/33 c-vm: no pin exists for that arm), not on a mover.
+- **The option's arms over the corpus (this branch, width 32):** deny `no-span-loop` 0 differ in every cell
+  (byte/utf8 x c-default/c-vm x SIMD off/on, 5,516 patterns); force `span-loop` (L) 14 corpus patterns differ
+  at c-default (both encodings, both layers), 0 at c-vm.
+- **Width 4095 (the combined tree, `--window-search-width=4095`, the same arm over the corpus):** default H(64)
+  against I: **1** corpus pattern, `[ab]{1000}` (c-default, both encodings, both layers; c-vm 0). L against
+  the default: 16 corpus patterns (18 / 17 with witnesses). Every other long census cover holds a literal run
+  (`a{500}`, `(?:abc){20}`) or a stretch under 64 positions (k 36, 40, 49, 60), so H(64) is I there.
+- **Main's probe** `[0-9a-f]{3400}` at width 4095 (combined tree): H(64) 24,024 C bytes byte / 26,311 utf8; L
+  15,181 / 17,587; I REFUSED by the 500,000 cap at 510,538 / 511,891 (main measured 510,342 on its own tree; the
+  same pattern with the cap lifted: 510,119 bytes written). The default now fits the cap with a ~20x margin.
+- No default-width byte moved, so no STOP and no abi event.
 
 ## abi
 
@@ -101,8 +117,49 @@ PLACEHOLDER
 
 ## Validation
 
-PLACEHOLDER
+Local, `nice`, -j4, each under gnutimeout, 2026-11-17 02:56-03:34; logs under
+`/var/tmp/pcrec-pcrec/scratch/memfn/forms/` (`val_*.log`, `val.log`). No full `make test`, no queue job, no timing.
+
+| check | verdict |
+|---|---|
+| `make strict` | rc 0 |
+| `make test-codegen` | rc 0 |
+| `make test-registry` (the `--list-axes` memfn floor 14) | rc 0 |
+| `make test-rxtsource` | rc 0 |
+| `make test-resource` | rc 0; "the allocation-failure injector's four witnesses: ... none is silently absorbed" (absorbs 0) |
+| `make test-memfn-link` (R-28 frames), `-manifest`, `-stamps`, `-arms`, `-deleg`, `-arch`, `-forms`, `-reach`, `-targets`, `-rows`, `-guarded`, `-simdfloor`, `-d27region`, `-rank`, `test-kitproof` | each rc 0 |
+| `make test-memfn-d27frame` | rc 0 (controls red in all 4 runs) |
+| `make test-memfn-finder` | rc 0, 28,905 passed, 0 failed |
+| `make test-memfn-g2` (quick) | rc 0, 70,358,673 passed, 0 failed |
+| G2 window family, `memfn/tests/run_g2_win.sh` (default + heads 0/8/24) | rc 0, 29,580 passed, 0 failed; loops at default 0; head 0: mass 34, report 199, random 17, repeated 59; head 8: mass 1, random 3, repeated 24; head 24: repeated 9; planted 63 |
+| `tests/memfn/run_arch_blind.sh` | rc 0 |
+| G7 lever fence `tests/compound/run_lever_fence.sh` | PASS (3 checks, 4 controls), after one fix (my first `word_of` spelled the harness option's prefix in tests/ci; respelled) |
+| `tests/axes` memfn arm (`MEMFN_REACH_ONLY=1`) | OK, 64 checks passed, 0 failed |
+| `tests/ci/cloud_axes_check.sh`, `cloud_mech_check.sh` | PASS (122 jobs + 32 passes; 1,315 ids in 90 shards) |
+| sabotage anchors `scripts/m6read_check_sab_anchors.py` | all anchors resolve (S1026 re-anchored: run_axes.sh's cell loop is one indent deeper) |
+| `scripts/check_claudemd_size.sh --all` | within limits |
+| cards: `cards.py selftest` | 21 drills, 0 failed |
+| cards: `cards.py dry` (combined tree, 1 MiB subjects) | 1,374 cells, 269 distinct compiles, 0 failures |
+| cards: `cards.py identity 64` / `identity 8` | 0 of 42 differ / 28 of 42 differ (control) |
+| sabotage rows, `tests/mech/run_sabotage_matrix.sh S3276 S3277 S3278 S3279 S1026` at 6c923adbe | `mech run COMPLETE: 5 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0)` |
+
+The rows, quoted:
+
+    S1026-memfn-axes-arm-flag-dropped  axesmemfn  axesmemfn:170fail/230pass  DETECTED
+    S3276-span-loop-end-short          g2win      g2win:124fail/23556pass    DETECTED
+    S3277-span-loop-mixed-sets         g2win      g2win:157fail/23523pass    DETECTED
+    S3278-span-loop-force-ignored      axesmemfn  axesmemfn:4fail/396pass    DETECTED
+    S3279-span-head-lever-ignored      g2win      g2win:6fail/23674pass      DETECTED
+
+Not run here: the cards' timing (a kit window main clears), the full `make test`, cloud runs.
 
 ## STATE AT HANDOFF
 
-PLACEHOLDER
+- Rulings file: empty at every checkpoint; last entry applied: none.
+- Branch `lane/memfn-forms`, every piece committed (WIP commits per piece). The scratch combined tree
+  `worktrees/forms-comb` (lane/covs2b 28af649c9 + this branch; one doc conflict resolved) was removed with
+  `scripts/wtprune --apply --force forms-comb`.
+- For the manager: (1) the kit-synthetic vs kit-grid@7 home of the cards (Cards); (2) the force spelling's
+  form-hash instance, not built, its trigger named (Pieces); (3) K1/K2 sentences for R6 (Cards); (4) the joint
+  landing will meet the same tuning.md §2.43¶3d conflict (keep both sides' sentences).
+- OWED: none
