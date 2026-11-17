@@ -28154,3 +28154,38 @@ Next
   runs proved by an ls-remote line). [COVER-CAP]'s plan status brought to today.
 - OPEN with the owner: branch-scope, record-under-not (both block rev 24 of the predicate draft), pass-table,
   group-truth, quiet-gate (blocks the kit's next timing night); whole-text parked by him.
+
+## 2026-11-17 (session 138, box clock 10:45-14:20, IN FLIGHT; manager = fable; lane predspec24 alive at this entry)
+
+- WAKE: 26 merged lane worktrees + branches pruned (wtprune --force by name after an ancestry check each). CI green.
+- OWNER, quiet-gate: "Track the trouble makers like steam and code and remind me to close them if you see them open,
+  including stealth open". Lane loadwatch: `scripts/loadshame` lists a WATCH table (Steam, VS Code) by presence,
+  `--present` (merged; a light critic, one fix). Manager skill's timing-window row and memory pcrec-timing-troublemakers.
+  Timing nights CLEARED by him: tonight from 01:00 (kit set 1, mfcard-zen4-3, keys 600-609 queued) and 11-18/19 from
+  01:00 (kit set 2, the span form cards; the kit's reviewed forms tip reaches me by 14:00 on 11-18, I merge it into
+  lane/covs2b and FREEZE that tip by 20:00). One-shot alarms at 00:27 on both nights (session-only).
+- PREDICATES, a foundation day. All in docs/design/plan_row_bodies/COND-FAMILY.md's tail, his words quoted:
+  branch-scope RULED (ii) (a condition is one more piece of the pattern; rejecting, it backtracks the pattern, `|`
+  included; my lean (i) was WRONG, it contradicted row-is-match on `9:30`); "regex behavior ... should be the
+  general behavior"; DIRECTION: decide open choices by a REGEX MODEL where one exists; regex-settles RULED (unknown
+  test fails and backtracks; `!B` = no path survives; lookaheads not re-entered; occurrences = his one-pattern
+  lazy-gap model; atomic = PCRE's atomic group, spelling open); absent-under-not RULED ("use regex rules": two-valued
+  NOT; reverses 11-16 23:48's absence clause; record-under-not dissolves, mine); when-meaning RULED (a library
+  definition, the pattern then "not c, or p"; ONE `|`); whole-text RULED "adopt it if it's legal" (his J / C / M
+  model; no `fail`); last-pass-default RULED regex, with "the method of achieving the alternative meanings defined
+  and tested". Ideas filed (predicates_future 19-21): atomic spelling, options declared in the source (a library
+  element beyond the user's level is a compile error: RULED), the rx module + a sequence operator + quantifier
+  operators. Evidence lanes, all merged: pathimpact (30 lines move under (ii)), rxmodel (each choice as PCRE2 text
+  with callouts on libpcre2 10.46), lastpass (16 of 104 looped-label lines move), rxlib (docs/design/rx_module.md,
+  25 constructs, 11 owner questions). Lane predspec24 (opus) is writing REVISION 24; a full critic round follows.
+- [ARCH-STEP] filed at his request (requirements -> architecture -> design -> build, each reviewed): A1 history
+  survey (archhist), A2 tree review (archreview), A3 the live goals document (archgoals: docs/dev/guide/
+  architecture.md, five DRAFT goals, 17 rules kept + 8 new DRAFT, a 22-row ride-along register), all merged. With
+  him: goals-review (ranking, shape-goal, new-rules, register-keeper, speed-gate) and critic-home.
+- KIT: two critic-skill changes accepted into docs/dev/guide/critics.md (drill a pooled noise estimator at each
+  level; drill comparison kinds). Its forms delivery holds for 14:00 on 11-18.
+- MY ERRORS: pushed twice while CI ran on the previous tip (cancelled runs; the check and the push are now separate
+  commands); filed the rx-module proposal without grepping the draft (`join`, `list_of` and an 11-13 lean against a
+  concatenation operator were already there; the lane's premise test caught it); two lanes cited plan rows by line
+  number (PL14; rule added to BOILERPLATE.md); a lane's helpers handed back to ME, not to it (briefs now say helpers
+  write to a file); the append-only lanes history index conflicts on every second merge (keep both lines).
