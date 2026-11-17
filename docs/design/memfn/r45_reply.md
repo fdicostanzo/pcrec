@@ -1,7 +1,11 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 8 for the kit manager (lane formsfixc, 2026-11-17; the design text beside the
-cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 8 applies the code
+Status: DRAFT rev 9 for the kit manager (lane formsfixe, 2026-11-17; the design text beside the
+cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 9 applies the re-check of
+rev 8's fixes, review r37 (`docs/dev/reviews/2026-11-17-r37-memfn-forms3.md`, its RULED section:
+H1 and H2 as ONE mechanism, the twin contrasts, plus H3, H4 and H7 in the rule's text and the
+script; H9 and H10 as text; H5, H6 and H8 are lane formsfixf's checks, not this text's; read
+"Changes in rev 9" first). Rev 8 (lane formsfixc) applied the code
 re-check on the fixes, review r36 (`docs/dev/reviews/2026-11-17-r36-memfn-forms2.md`, its RULED
 section: G2-G8 in the rule's text and the script, G12-G14 as text; its G3 as SUPERSEDED by the kit
 manager's rulings entry R1, `docs/dev/lanes/formsfixc_rulings.md`; read "Changes in rev 8"
@@ -528,8 +532,11 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
   - **(b) code size.** h near the length below which the inline chain's size costs nothing
     measurable. The kit has no number for it: UNMEASURED.
 - **The owner's words**, kept separate from the kit's, quoted in full [rev 7, r35 F25; rev 8, r36
-  G14: the 14:35 passage whole, from "Also,"] (2026-11-15, decisions.md D198 addendum 1 and
-  `docs/dev/dev_journal.md`): at 14:35, "Also, I would default to sub span loops (excepting the
+  G14; rev 9, r37 H9: rev 8 labelled "the 14:35 passage whole, from "Also,"", but the passage
+  opens two points earlier, and its point 3 is the dial §3 "The option" reads: now quoted whole]
+  (2026-11-15, decisions.md D198 addendum 1 and `docs/dev/dev_journal.md`): at 14:35, "2. stage 2
+  is fine. 3. we have a performance dial for pcrec. it could include some options for the kit.
+  Also, I would default to sub span loops (excepting the
   measured head inline ) then measure if inline was faster than the other way around. Measure
   three: all inline, all loops, header inline then loops. Then the speed dial option can be
   always inline should it prove that is faster", and at 15:00, "I predict most all rx will only
@@ -618,8 +625,11 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       SD of 5 normal draws, DERIVED), so one bimodal arm cannot inflate its own pool. The pool
       holds every timed arm of that regime and layer (C1, C2, C5 and the A/A arms); a pool of
       fewer than 10 arms (MIN_POOL, CHOSEN; unreachable on a real night, whose pools hold 92-105
-      arms) borrows the night's pooled sigma [rev 8, r36 G14 (SIMULATE-4)]. A cell is void when
-      ANY of its arms is: I's arm, every arm of I's pool, and every head whose text differs from
+      arms) borrows the night's pooled sigma for this test [rev 8, r36 G14 (SIMULATE-4)]; the
+      floor's launch term (below) never borrows DOWN: it takes the larger of the pool's own sigma
+      and the night's [rev 9, r37 H10 (1): rev 8 said "borrows" for both]. C3's cells read STEP
+      1's pool sigma for their (regime, layer) [rev 9, r37 H10 (3)]. A cell is void when ANY of
+      its arms is: I's arm, every arm of I's pool, and every head whose text differs from
       I's [rev 8: rev 7's "any arm whose text differs from I's" exempted I, which the script
       always tested]. 4.5 is CHOSEN from a simulation of 5 launches (2 x 10^7 draws): a false
       split has probability 1 x 10^-7 per arm under normal noise. Under t(5) it is about
@@ -645,11 +655,25 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       more launches). Pool membership is MEASURED: `cards.py` hashes each built artifact per
       layer when the cells are built (`same_as_I.json`), and `h >= k` is the expectation, never
       the test. A cell whose I row is missing is REFUSED loudly and the night is DEFECTIVE; it is
-      not void. One arm's transient then moves the pooled median by a fraction of a sigma.
-      Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
+      not void. So is a night whose pool RECORD is missing, or lacks any C1-C2 pattern x layer, or
+      lists a head set without 64 at a C1-C2 length [rev 9, r37 H3: rev 8 refused a missing I ROW
+      but read a missing record as I-alone pools, silently]. ~~One arm's transient then moves the
+      pooled median by a fraction of a sigma.~~ [rev 9, r37 H2: false for a pool of TWO arms, I and
+      H(64), which is every C1-C2 cell at `k` > 32 at the width R-45 exists for (`hex64`, `uuid36`,
+      `alt49`). A whole-arm shift `s` (all 5 launches) puts 5 of the 10 pooled launches high, so
+      the pooled median moves by about `s` / 2, each arm stays unimodal, and every looping head
+      "wins" by that much: r37 measured P(h\* != 64) = 0.34 at 1.5 `f`.] A pool that holds 3 or
+      more arms bounds one arm's transient to a fraction of a sigma; a pool of two cannot, and
+      neither can say from the pooled median alone which arm moved. **The agreement gate [rev 9,
+      RULED r37 H2]:** I's pool is ONE binary, so its arms' medians differ only by noise; where
+      the largest over the smallest exceeds `1 + f(c)` (the cell's own floor, below, whose twin
+      term already measures that noise), the cell is VOID, joins the re-run list (§"The re-run")
+      and is never a pick. A pool of two voids on any such disagreement: it cannot tell which arm
+      moved. Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
       length). A slow split in a head's own arm only makes that head lose. The residual is a FAST
       3-of-5 split in a head arm, which is outside the pool's reach and the gate's: it ships that
-      head in 27 of 100 nights at 1.5 `f` (`cards.py selftest`'s RECORD line, not gated). A fast
+      head in RATE_LIMIT of 100 nights at 1.5 `f` (`cards.py selftest`'s RECORD line, not gated;
+      27 of 100 under rev 8). A fast
       transient on 3 of 5 consecutive launches is not the shape interrupts, migrations or
       frequency drops take (they slow a launch). It is recorded, not built against. Drill (xviii)
       checks the pooled reading. C3 (R2's C3 half, R5) still reads I's own arm: C3 never feeds
@@ -701,15 +725,34 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     draws, so `sqrt(2) x 0.5355 x σ` is the log SD of a ratio of two arms' medians (DERIVED).
     σ_up raises σ to its 95 % bound by the median estimator's relative error, 0.4754 / sqrt(n)
     over the pool's n arms (DERIVED: 1 / (2 f(m) m), with f the density of a 5-draw SD at its
-    median m). A cell's comparisons (R1 (3)-(4), R2, R4, R5) use its own (regime, layer)'s
-    floor; E uses the largest floor of the cells read. **Why the launch-sigma bound, not a
-    per-(regime, layer) A/A floor** (the ruling left the choice to the lane): the night times ONE
-    A/A pair per (regime, layer). The 95 % upper bound of a sigma read from n = 1 is
-    `sqrt(1 / χ²(0.05; 1))`, about 16x the reading, so that floor would refuse every real win.
-    Making it usable needs about eight A/A pairs per pool, eight times the A/A arms. The
-    launch-sigma pool is already timed (about 100 arms per pool), already computed for the
-    bimodal test, and it is exactly the heterogeneity at issue. The A/A term stays as a floor
-    under it, because it carries the between-run effects that one arm's launches cannot see.
+    median m). A cell's comparisons (R1 (3)-(4), R2, R5) use its own (regime, layer)'s
+    floor; E uses the largest floor of the cells read. R4 compares H(h\*) at (near-miss, layer)
+    with C5's engine arm, which is timed at layer `off` only, so R4 reads the LARGER of the two
+    floors, `max(f(near-miss, l), f(near-miss, off))` [rev 9, r37 H10 (2): rev 8 said "its own
+    (regime, layer)'s floor"]. ~~**Why the launch-sigma bound, not a per-(regime, layer) A/A
+    floor**: the night times ONE A/A pair per (regime, layer) ... Making it usable needs about
+    eight A/A pairs per pool, eight times the A/A arms.~~ [rev 9, RULED r37 H1: WITHDRAWN. The
+    premise was false: the night already times about 40 hash-equal arms in 9 pools per (regime,
+    layer), I's pools, which is about 31 contrasts with no extra arm. And the launch term cannot
+    see between-run noise (below).]
+  - **The twin term [rev 9, RULED r37 H1 + H2, one mechanism with the agreement gate].** The
+    launch term reads one arm's launch-to-launch scatter, so it cannot see an offset an arm
+    carries over all 5 of its launches (between-run noise: placement, a frequency state, a
+    cache layout fixed at exec). The A/A term sees that, but it is one night-wide number, and an
+    offset in ONE regime dilutes into it: with a per-arm offset of 2 % in one regime, P(h\* !=
+    64) on pure noise was 0.26-0.29 under rev 8 (r37 SIMULATE-1, VERIFY). The arms that measure
+    it are already timed: every C1-C2 cell's I's pool (I and each head whose artifact hash-equals
+    I's there) is ONE binary timed as separate arms, so the spread of its arms' log medians is
+    launch noise plus between-run noise, the full noise of a head against I. Per (regime,
+    layer), over the cells read: `σ_c = sqrt(2 x SS / df)`, SS the pools' summed squared
+    deviations of `ln median` from their own pool mean and df the summed (arms - 1) (the RMS of
+    the twin contrasts; about 31 at the expected pools, `h >= k`: 3 + 3 + 2 + 2 + 1 + 9 + 1 + 9
+    + 1). It is raised to its 95 % bound `σ_c x sqrt(df / χ²(0.05; df))` (χ² now computed
+    exactly, since df can be small), and the floor becomes `f(r, l) = max(f, the launch term,
+    exp(z(α / N) x σ_c,up) - 1)`. Every term is a floor under the others: the A/A term keeps
+    cover_cap.md §11.4's reading, the launch term needs no pool of two, and the twin term carries
+    between-run noise per (regime, layer). The comparison against I's POOLED median has less
+    noise than two single arms, so `sqrt(2)` is conservative.
   - **Why this mechanism.** Rev 6 used `f_AA`, the max of about 12 A/A draws, as the threshold of
     every comparison, but the rule makes 600 of them with every regime read (108 C1-C2 cells x 9 heads, less the
     cells where a head is I: 50 per regime and layer) and 400 on a night with the two
@@ -1130,7 +1173,13 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
     h\* < 64 the predicted-movers file is REQUIRED and must be non-empty (it is the population
     there; an empty file at h\* = 32 and width 32 would pass on cards and census that no head
     can move, rev 8, RULED r36 G8), and the check refuses without it. A `--census-limit` run is a
-    SMOKE: it exits 4, never a verdict, even when its truncated census is empty [rev 8, G8]. It lives with the kit's card script under `memfn/` (outside the G7
+    SMOKE: it exits 4, never a verdict, even when its truncated census is empty [rev 8, G8].
+    **Its reach is the population that MOVES, not the file [rev 9, RULED r37 H7].** A non-empty
+    file can still name no head-sensitive pattern (`a{40}` is byte-identical at lever heads 0,
+    24, 32 and 64, both layers), and then identity at h\* < 64 runs over bytes no head can move.
+    So at h\* < 64 the check first renders every pattern of its population (movers, cards, census)
+    at lever h\* AND at lever 64 on the FROZEN binary (lever 64's bytes are what a head-blind
+    check degenerates to), prints how many differ, and refuses at zero. It lives with the kit's card script under `memfn/` (outside the G7
     fence); a pcrec-side copy under a fenced directory takes an `ALLOW` entry.
 
 ### Answers, controlled by G2 [rev 2, F9; rev 3, F8]
@@ -1248,9 +1297,13 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
   2b. C3 is timed at the frozen h\* on the same binary (`cards.py c3`), and R2's C3 half and R5
      read it [rev 7, r35 F4]; C4's size record is taken at h\* (no timing). Before it times
      anything, `cards.py c3` checks the deny on C3's and C4's artifacts: no arm-I artifact may
-     carry a span loop, and L (h0) is the reach arm that must [rev 8, RULED r36 G7]. This is
+     carry a span loop, and H(64), the arm an ignored deny renders, is the reach arm that must,
+     rendered over C3 and C4 whatever h\* the step times [rev 8, RULED r36 G7; rev 9, RULED r37
+     H4: rev 8's reach arm L proved the loop text is readable, not that the defect's arm loops;
+     at width 32 only C4's `hex32` at h0 loops, so an ignored deny read green]. This is
      the step where an ignored deny shows: I would render H(64), which loops past offset 64 at
-     `k` = 500, and step 1's patterns never reach that. A C3 gate failure at
+     `k` = 500, and step 1's patterns never reach that. Where H(64) loops nowhere (width 32),
+     the check is VACUOUS and refuses: no timing on a tree that cannot show the defect. A C3 gate failure at
      H(h\*) is R0 for h\*: step 2 picks again and 2b runs at the new pick (F5).
   3. The build compiles h\* in, and the identity check (above) proves that the rebuilt
      binary emits the same bytes as the lever at h\* on the frozen binary. Only then are the
