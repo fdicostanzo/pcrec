@@ -1,3 +1,0 @@
-# docs/dev/reviews/2026-11-17-r62-predspec242/ — critic texts for review r62
-
-The three critics' findings (ruling, modeclosure, simulate `_findings.md`) with their probe scripts and outputs, the verifier's `verify.md` and its scripts, the round's `COMMON.md`, the coordinator's `process.md`, and the manager's `dispositions.md` for `../2026-11-17-r62-predspec242.md` (predicates_draft.md rev 24.2 confirming re-check; the round dir is `crit-predspec242`). Records only; the review file holds the rulings. Scripts reference the round's scratch paths and are not meant to be re-run from here. The simulate critic's 134 KB `sab.out` is not kept.
