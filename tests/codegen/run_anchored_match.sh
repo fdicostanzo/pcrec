@@ -48,6 +48,9 @@
 #       the control that the arm behaves the same way at a cap no real shape
 #       reaches. Before r41's S1 the arm had ZERO reachable population; that
 #       is what the ceiling changed.
+#       §4c ([COVER-CAP] stage 2) holds the ceiling LOWER-ONLY by -D: known.c
+#       alone at the kit's declared positions bound + 2 must fail on the cover
+#       seam's assertion, by its message (mech S3266).
 #   §5  the corpus census, with every population PINNED. The vacuity this
 #       row is most exposed to is the form silently ceasing to be selected:
 #       every answer in the tree would stay right, `make test-axes` would stay
@@ -461,6 +464,44 @@ else
         && ok "§4b the control held: at least one pattern still selects unwrapped under the lowered cap, so the cap narrows rather than disables" \
         || bad "§4b NO pattern selects unwrapped under the 6-state cap — the reference build has the form switched off wholesale, so the rows above compare a dead axis"
 fi
+
+# =========================================================================
+# §4c THE CEILING MAY ONLY BE LOWERED BY -D (the cover seam's assertion)
+# =========================================================================
+# [COVER-CAP] stage 2 B2 (docs/design/cover_cap.md §11.6.3, the SEAM ASSERTION
+# REMOVED row; limits.md §3.12¶3): src/gen/known.c asserts at build time that
+# the ceiling fits the memfn kit's DECLARED window bounds, so a -D may lower
+# PCREC_ANCHORED_MAX_STATES and never raise it past them. The reference
+# compile is the ONE translation unit holding the assertion, at the kit's
+# declared positions bound + 2 (read from memfn/include/memfn.h, the kit's
+# declaration, not from pcrec), and it must FAIL BY THE ASSERTION'S MESSAGE,
+# never by a nonzero exit alone. Control: the same command at the shipped
+# ceiling must succeed, so the failure is the assertion and not the command.
+# SCOPE (cover_cap.md §11.6.3): the WHOLE assertion; a plant weakening one
+# conjunct is not seen (4097 fails all three, 4096 passes all three).
+SEAM_MSG='the cover seam: PCREC_ANCHORED_MAX_STATES exceeds'
+kit_pos="$(sed -n 's/^#define MF_WSPAN_POS \([0-9][0-9]*\)$/\1/p' "$ROOT_DIR/memfn/include/memfn.h")"
+case "$kit_pos" in
+    ''|*[!0-9]*) bad "§4c memfn/include/memfn.h declares no decimal MF_WSPAN_POS ('$kit_pos'): the reference compile has no bound to exceed" ;;
+    *)
+        seam_cc() { # seam_cc CEILING LOG: compile known.c alone at that ceiling
+            $CC -O0 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+                -DPCREC_ANCHORED_MAX_STATES="$1" -DPCREC_DEFAULT_WINDOW_SEARCH_WIDTH=32 \
+                -c -o "$WORKDIR/seam.o" "$ROOT_DIR/src/gen/known.c" > "$2" 2>&1
+        }
+        if seam_cc "$((kit_pos + 2))" "$WORKDIR/seam_hi.log"; then
+            bad "§4c known.c COMPILED at -DPCREC_ANCHORED_MAX_STATES=$((kit_pos + 2)), past the kit's declared $kit_pos positions: the cover seam's assertion is gone, so a -D can raise the ceiling past what the kit can state"
+        elif grep -q "$SEAM_MSG" "$WORKDIR/seam_hi.log"; then
+            ok "§4c known.c at -DPCREC_ANCHORED_MAX_STATES=$((kit_pos + 2)) fails on the cover seam's assertion, by its message"
+        else
+            bad "§4c known.c at -DPCREC_ANCHORED_MAX_STATES=$((kit_pos + 2)) failed, but NOT on the cover seam's assertion: $(head -3 "$WORKDIR/seam_hi.log")"
+        fi
+        if seam_cc "$((kit_pos + 1))" "$WORKDIR/seam_ok.log"; then
+            ok "§4c control: known.c compiles at the shipped ceiling $((kit_pos + 1)) with the same command"
+        else
+            bad "§4c control: known.c does not compile at -DPCREC_ANCHORED_MAX_STATES=$((kit_pos + 1)), so the failure above says nothing about the assertion: $(head -3 "$WORKDIR/seam_ok.log")"
+        fi ;;
+esac
 
 # =========================================================================
 # §6 THE OPTIONAL-CONTRIBUTOR DROP ([K53-SELRETRY])
