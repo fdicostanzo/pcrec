@@ -2306,3 +2306,16 @@ a boolean combination of tests, which is automaton work at the default level. (3
 became possible with absent-under-not (NOT is two-valued, so "not c" is exactly "c is not true"). PCRE's
 conditional group stays the regex MODEL of the meaning, not the mechanism. UNVERIFIED: that `x & (NOT c | p)`
 equals the conditional-group model on the 1,110 texts (rev 24's model must run it).
+
+**2026-11-17 OWNER RULING — when-meaning (Frank, to session 138, box clock about 13:55).** After his objection
+("Here | is "or" between conditions": but that means we're not defining when in regex unless we provide this
+logical or) the manager corrected its own wording: there is ONE `|`, regex's alternation; between conditions it is
+an alternation of two zero-width tests at one position (lane rxmodel ran it so: callouts in an alternation, 0 of
+156 differ), NOT is a negative lookahead, and what separates the two bodies of `when` is only where the pattern is
+written (once, outside the alternation; or repeated inside each branch, where the first branch can re-match it).
+Asked: "`when(c, p)` is defined in the language as the pattern followed by "not c, or p", with x written once.
+Agreed?" HIS WORDS: "when-meaning: agree". RECORD: `when(c, p)` is a LIBRARY DEFINITION, `x & (NOT c | p)`; no
+primitive; its regex model is the pattern followed by an alternation of two tests (equal to PCRE's conditional
+group); an optional else is `(c & p) | (NOT c & q)` in the same position. The spelling of a conditional stays open
+(`?` not assumed). MINE, for the next revision: the draft's separate rule for OR between conditions is deleted (one
+`|`); the equality of `x & (NOT c | p)` with the conditional-group model on the 1,110 texts is still to be run.
