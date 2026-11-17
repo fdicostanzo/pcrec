@@ -2,7 +2,7 @@
 
 ## Changelog
 
-- **rev 23 (lane predspec23, 2026-11-16).** Re-founds the draft on the owner's condition model (COND-FAMILY 19:31-23:48): a new §R (read first) holds the one definition (a row is one potential match; a condition is a three-valued test of one row with `&` and NOT; absent never matches; a per-test default; `$a` reads the real label; `|` PCRE's one parse; pattern difference after `&`; the preferred surviving row in searched mode), the three spellings of not, the whole-text question, review r31's text items, MODE OF THE ANSWERS extended, the examples that moved (12), the change table (118 sites) and the ruling table. The optional mark and `all` are OUT (drop-mark 21:49, all-question 23:18). Rewritten in place: §0.3 rows, §2.2 WHAT `!` TAKES, §4.2, §4.3's group questions and closing example, §5.4's label-control, `|` and `!` rows; rev 22's text of them moved verbatim to §16.3-§16.5. Evidence `docs/dev/lanes/predspec23_evidence/`.
+- **rev 23 (lane predspec23, 2026-11-16).** Re-founds the draft on the owner's condition model (COND-FAMILY 19:31-23:48): a new §R (read first) holds the one definition (a row is one potential match; a condition is a three-valued test of one row with `&` and NOT; absent never matches; a per-test default; `$a` reads the real label; `|` PCRE's one parse; pattern difference after `&`; the preferred surviving row in searched mode), the three spellings of not, the whole-text question, review r31's text items, MODE OF THE ANSWERS extended, the examples that moved (12), the change table (118 sites) and the ruling table. The optional mark and `all` are OUT (drop-mark 21:49, all-question 23:18). Rewritten in place: §0.3 rows, §2.2 WHAT `!` TAKES, §4.2, §4.3's group questions and closing example, §5.4's label-control, `|` and `!` rows; rev 22's text of them moved verbatim to §16.3-§16.5. Evidence `docs/dev/lanes/predspec23_evidence/`. **The BODY of rev 23 was completed by lane predspec23b (2026-11-17):** the rev 22 sentences that still used the mark, DOM or `all` in §0, §0.1, §0.2, §2.3, §2.6, §4.1, §4.3, §4.4, §6.1, §7.1, §8 and §13 are rewritten or labelled history, the seven section notes rev 23 had added removed, every worked example in them re-run in both modes (`docs/dev/lanes/predspec23b_evidence/`; the ones whose answer moved are listed in §R.7b), and §R.4 lays out the TWO WHOLE-TEXT ROUTES side by side (§R.4.1); §R.8's **whole-text** question presents both. The draft stays rev 23.
 - **rev 22 (lane predspec22, 2026-11-16).** Folds the owner's 17:29-17:46 answers. (A) **not-is-complement** (CF
   17:29, RULED): `!` takes a PATTERN (a regex, a label-free filter, a named program) or a SET, never a CONDITION; on a
   condition a compile ERROR naming the two rewrites, the complement on the set or the complemented pattern `q := P &
@@ -370,8 +370,10 @@ SPELLINGS ARE PLACEHOLDERS (D193 addendum 4): this section fixes meanings only; 
 MODE (WHOLE value or SEARCHED). How rev 23 treats the rest of the document: §R.9 lists every site rev 22 had for a
 term the rulings touch, with its rev 23 disposition; the normative sections that rested on the mark (§2.2 WHAT `!`
 TAKES and the complemented-pattern readings, §4.2) are REWRITTEN in place and rev 22's text of them is moved
-verbatim to §16.3 and §16.4, the record. Elsewhere a rev 22 sentence that still names the optional mark `h?`, the
-per-program value set DOM, or `all(...)` is HISTORY: read it through §R.9's row for its site.
+verbatim to §16.3 and §16.4, the record. Lane predspec23b (2026-11-17) completed the body: every live sentence
+outside §R that used the optional mark `h?`, the per-program value set DOM or `all(...)` is rewritten; what still
+names them is dated history (a REV n paragraph, a ruling table, a CLOSED item, §16), labelled where it stands (§R.9's
+row for its site; §13's closing REV 23 block).
 
 ### R.0 Goals of rev 23 (ranked; the highest wins a conflict)
 
@@ -607,8 +609,10 @@ WHAT ASKS IT TODAY:
     11,110 of 11,110 (PART 3).
   - A standalone `!B` is the compile error of §R.1.4 (rev 22 §2.2: `${!B}`, `C | !B`).
   - Anchoring: `/\A[\s\S]*\z/ & contains(A) & !contains(B)` asks it, but its row is the WHOLE text, so the program
-    no longer reports A's match; and a regex lookahead (`\A(?![\s\S]*B)`) spells it only for a B with no conditions
-    (no regex spells "a late time").
+    no longer reports A's match; and a regex lookahead (`\A(?![\s\S]*B)`) gates only from the start of the text.
+    (Rev 23 as first written said the lookahead spells it "only for a B with no conditions"; lane predspec23b found
+    that §11's hole rule already gives a program with conditions in a hole a string set, so `(?![\s\S]*${q})` is
+    spellable; what it asks is ROUTE (i) of §R.4.1.)
 - PROPOSED (the draft's; the manager's 23:46 "MINE" asked for it to be stated and shown): a TEXT-LEVEL TEST, written
   here `text.none(B)` (placeholder), "B has no potential match anywhere in the subject": a test that reads no label
   of the row (SQL: `where not exists (select * from B)` over the same text, an uncorrelated subquery), so it is TRUE
@@ -618,7 +622,75 @@ WHAT ASKS IT TODAY:
   "text" is that role's stretch (R.1.1), so inside a whole-value program it equals `!contains(B)`.
   RUN (PART 1, D6; PART 3): `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS reporting `9:15`;
   on `9:30 1` FAILS / FAILS. Over 11,110 `t2` texts it holds on 1,970 in BOTH modes.
-- Asked as **whole-text** (§R.8).
+- Asked as **whole-text** (§R.8); the owner PARKED it on 2026-11-17 ("Let's not answer now", as relayed in the
+  predspec23b brief) after asking whether it could be asked now in a single rx. §R.4.1 lays the two routes side by
+  side; NOTHING is decided.
+
+### R.4.1 THE TWO WHOLE-TEXT ROUTES, side by side (lane predspec23b; nothing decided)
+
+The question: in a SEARCHED program, "report A's preferred row only if the text has no match of B anywhere", with B
+a pattern WITH conditions. Example throughout: `t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/`, `q := t2 & ((h, m): >= (9,
+30))` (a late time). Evidence: `predspec23b_model.out` PART 7 (WHOLE / SEARCHED; find-all = leftmost, non-overlapping
+later matches, §R.1.9).
+
+ROUTE (i): A PATTERN WITH CONDITIONS INSIDE A LOOKAHEAD.
+- What it is. §11's hole rule already lets a hole hold a program with conditions (`${isodate & (year: 2000)}`: a
+  sub-pattern, its STRING SET, each `label:` condition inside reading its label within the hole's text). Put inside a
+  regex lookahead, `(?![\s\S]*${q})` asks at a POSITION: "no row of q starts here or later". In the model: the
+  lookahead is part of the STATEMENT (the pattern), not a condition; at a position it runs its own body as a
+  statement over the text from there; a condition inside it is a WHERE on the rows of THAT search (the lookahead's
+  own table), never on the outer row; the lookahead holds when that filtered table is nonempty (`(?=`) or empty
+  (`(?!`). This keeps R.1.5 ("a condition reads only its row"): each condition reads a row of its own statement.
+- Its labels outside it. A NEGATIVE lookahead's labels are ABSENT outside (no row of it exists; PCRE leaves its
+  captures unset). A POSITIVE lookahead's labels would be those of the lookahead's PREFERRED SURVIVING ROW (its
+  leftmost start, then its first-preferred end its conditions accept: D196's retry inside the lookahead; PCRE keeps
+  the captures of the first successful parse; a label the outer pattern also sets is §4.1's ambiguity error): THE
+  DRAFT'S READING, the lane's, asked as **lookahead-labels** (§R.8; no rev 22 or record text covers it).
+- What it adds to the definition block: ONE clause in R.1.4 (an assertion's body is a statement; the assertion holds
+  at a position when that statement's rows anchored there, filtered by its own conditions, exist / do not), and
+  the positive lookahead's labels above. No new kind, no new test of a row.
+- Spellings and answers. (a) At the row's start, `/(?![\s\S]*${q})${t2}/` ("no late time from here on"): on `9:30`
+  FAILS / HOLDS reporting `30`@2 (the stretch `30` starts after the late time's start, so nothing late lies ahead of
+  it); on `9:15` HOLDS / HOLDS `9:15`; on `9:15 9:30` FAILS / HOLDS `30`@7; on `9:30 9:15` FAILS / HOLDS `30`@2,
+  find-all `30`@2, `9:15`@5. (b) Gated at the text's start, `/\A(?![\s\S]*${q})[\s\S]*?${t2}/`: on `9:30`, `9:15
+  9:30`, `9:30 9:15` FAILS / FAILS; on `9:15` HOLDS / HOLDS; but its reported row starts at 0 and includes the gap
+  before the time (`a 9:15`: HOLDS / HOLDS reporting `a 9:15`@0, where route (ii) reports `9:15`@2; `\K`, which would
+  move the start, is refused: §13 O17), and find-all gives AT MOST ONE match (`9:15 1`: only `9:15`; a later search
+  cannot start at `\A`).
+- Counts (11,110 one-time texts T2; 600 two-time texts T2PAIRS, lane searchrow's). SEARCHED: (a) holds on 11,110 and
+  600, (ii) on 1,970 and 132, differing on 9,140 and 468 (first `9:30`); (b) equals (ii) on both pools (0 differ).
+  WHOLE: (a), (ii) and `t2 & !q` all hold on 1,970 and 11; (b) on 1,970 and 132: its `[\s\S]*?` gap lets a whole
+  value be "any text, then a time" (first `1 1`). Find-all over T2PAIRS: (a) reports 2+ matches on 264 texts.
+- What it cannot say: "no B ANYWHERE" while reporting A's own row, past the first match. A lookbehind to the start
+  (`(?<=\A(?![\s\S]*${q})[\s\S]*)`) would, but it is unbounded, which PCRE2 and pcrec's bounded lookbehind refuse.
+  In a filter role an assertion may not read beyond the stretch (§13 O17), so there it asks about the stretch only.
+- Where it surprises: (a) reads "from here on", so on `9:30` it reports `30`, a piece of the very late time the
+  author meant to exclude; (b) changes what is reported and stops find-all after one match.
+
+ROUTE (ii): THE SEPARATE TEXT-LEVEL TEST, `text.none(B)` (placeholder; §R.4's PROPOSED bullet).
+- What it is: a condition that reads NO label of the row: TRUE for every row of a text with no row of B, FALSE for
+  every row otherwise (SQL `NOT EXISTS`, an uncorrelated subquery); two-valued; composes with `&` and NOT.
+- Answers: `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS `9:15`; on `9:15 9:30` and `9:30
+  9:15` FAILS / FAILS; on `9:30 1` FAILS / FAILS. Find-all is ALL OR NONE per text: `9:15 1` reports `9:15`@0 and
+  `1`@5,
+  `9:15 9:30` none (121 of the 600 two-time texts report 2+ matches). In a whole-value program it equals
+  `!contains(B)` (0 of 11,110 and 0 of 600 differ, WHOLE).
+- What it adds: a SECOND KIND of condition, one that reads the text rather than the row: R.1.5's "a condition reads
+  only its row ... never the pattern's text" gains an exception (the text is the subject, R.1.1; in a filter role,
+  the stretch). Its positive `text.some(B)`.
+- What it cannot say: anything POSITIONAL ("no B before A", "no B after A", "no B within 10 characters"): for those
+  the author writes route (i)'s lookaround, which already exists.
+- Where it surprises: a find-all program with `text.none` reports every match or none, so adding one more B anywhere
+  in a long text removes every match; and inside a filter role (`(x: t2 & text.none(q))`) "the text" quietly means
+  the label's text.
+
+SIDE BY SIDE on `9:30` (WHOLE / SEARCHED): today's `t2 & !q` FAILS / HOLDS `9`@0; route (i)(a) FAILS / HOLDS `30`@2;
+route (i)(b) FAILS / FAILS; route (ii) FAILS / FAILS.
+
+LEANING (the lane's; DECIDED NOTHING): route (ii) for the question as asked, because it is the only spelling that
+says "no B anywhere" for every match of a searched program and reports A's own row; with route (i) recorded as what
+the existing hole rule ALREADY means (a positional question, "from here on"), stated in R.1.4 as one clause and its
+positive-lookahead labels asked, rather than offered as the whole-text answer.
 
 ### R.5 Review r31's text items, applied
 
@@ -660,7 +732,8 @@ WHAT ASKS IT TODAY:
 - J: R.1.2 (O35 stays an error, PLAN).
 - K: R.1.1's vocabulary; BY DESIGN's legend loses "a mark's stated meaning" and reads "a construct's stated meaning
   (§R.1)"; `joint_condition.md` (RULED) and `predicates_future.md` items 3, 6, 8, 11, 12 are superseded in part by
-  §R (those files are not edited by this lane: LEFT OPEN).
+  §R (lane predspec23 left them; lane predspec23b wrote a dated superseded-in-part note at the head of
+  `joint_condition.md` and at items 3, 6, 8, 11 and 12 of `predicates_future.md`, rewriting none).
 
 ### R.6 MODE OF THE ANSWERS, extended
 
@@ -693,17 +766,41 @@ Every rev 22 example that used the mark or `all`, rewritten with a default, and 
 | 11 | source-row's example as he was shown it at 21:49 (`t2 & !q` on `9:30` FAILS) | superseded by row-is-match | HOLDS reporting `9` SEARCHED (as rev 22), FAILS WHOLE (PART 1) |
 | 12 | L36 `(x: S)` vs `all((x: S))`; L93 `all((x: S))` vs `(x?: S)` SAME | both rows RETIRED; the look-alike now is `(x: S)` vs `(x = d: S)` (d in S): they part on absent rows and zero passes | §R.3, row 3 above |
 
+R.7b EXAMPLES RE-RUN BY LANE PREDSPEC23B (the body rewrite; `predspec23b_model.out`, part named; WHOLE / SEARCHED).
+Every worked example in the rewritten passages was re-run in both modes; most keep their answer (the default spells
+what the mark spelled on these rows). The ones that MOVED or gained an answer:
+
+| # | site | rev 22 | rev 23 (WHOLE / SEARCHED) |
+|---|---|---|---|
+| b1 | §0.1 MODE OF THE ANSWERS | `((h, m?): padded(>= (9, 30)))` on `9:15`: searched reports `9`; 1,698 of 11,110 differ whole vs searched under `m?` | `((h, m = 0): ...)`: FAILS / HOLDS reporting `15`@2 (MOVED: `9` reads (9, 0)); 1,660 differ under `m = 0` (as rev 21), 0 without a default (PART 0) |
+| b2 | §13 O28 | `!(x: S)` an ERROR (rev 22); the marked pair on `t2`/`9`: `!((h, m?): R)` FAILS, `((h, m?): !R)` HOLDS | `NOT (n: <5)` on `1,7,` HOLDS / HOLDS, on `7,,` HOLDS / HOLDS; with a default on `9`, `NOT ((h, m = 00): R)` and `((h, m = 00): !R)` both HOLD / HOLD (MOVED: the pair no longer parts) (PART 6) |
+| b3 | §2.6 / §4.3 naming | `occurs.none((g = "": !"a"))` named "every hit, possibly none" | the same spelling is §R.1.7's NARROWER question; "every hit, possibly none" is `(g = "a": "a")`; WHOLE they differ on 94 of 127, SEARCHED 0 (PART 2b). Answers of the spelling unchanged; its NAME moved |
+| b4 | §8 `when` | rev 20-21's body `(x & c & p) \| (x & !c)` was the rev 22 ERROR | legal again with NOT; differs from the library body on 10 / 110 of 1,110 for c = `(h: <5)` (first `0`), 0 / 0 for `(h = 0: <5)` (PART 5) |
+| b5 | §2.6 first row | a plain `(g: "x")` "fails" on the hits `abx`, `aby`, `abx` | FAILS / HOLDS reporting `abxab` (a SEARCHED answer stated for the first time; PART 2) |
+| b6 | §4.3 list of two optional fields | `(a?: <5, b?: between(3, 7))`: `3-6,` HOLDS, `7-2,` FAILS, `''` HOLDS | `(a = 0: <5, b = 3: between(3, 7))`: same WHOLE; SEARCHED `7-2,` HOLDS reporting the empty stretch (PART 3) |
+| b7 | §4.3 pairing loop | `(h?: <5, k: between(3, 7))` on `3` HOLDS | `(h = 0: ...)` HOLDS / HOLDS; `3;7` FAILS / HOLDS reporting `3` (PART 3) |
+| b8 | §4.4 computed label | `(mnum?: <3)` on `-5` HOLDS | `(mnum = 1: <3)` HOLDS / HOLDS; `Mar-5` FAILS / HOLDS `-5`@3 (PART 4) |
+| b9 | §8 (4) TM2-L list table | `m?`, `h?` columns | defaults inside R give the same WHOLE rows; SEARCHED every row with h's default holds on all five lists (PART 5) |
+
+Unchanged in both modes (re-run): §0.1 L94 (0 of 121), §4.3 SAME ITERATION BY RECORD (`x2 y1`, `x1 y2`), the
+pairing list `10:00,9:30,`, (RZ) record = `&` (0 of 1,110), §8 caveat (2) on `10`.
+
 Rev 22's other worked answers stand: §12's twelve examples (no mark, no `all`: r31 SITES), the searched examples of
 condition_kind.md IV.3 under R22 (L34 `12`, L59 `12`, §11 (i) `30`@1, L13 `5`@3, §4.2 `15`@2, E-IPV4 `56.1.1.1`).
 
 ### R.8 QUESTIONS FOR THE OWNER (each wants a reply either way; spellings are placeholders)
 
-1. **whole-text**. Today: "the text contains no B anywhere" has no spelling in a searched program; `A & !B` and `A &
-   !contains(B)` ask about A's matched stretch only. Example: `t2 & !q` on `9:30` — WHOLE value FAILS; SEARCHED
-   HOLDS reporting `9`; the proposed `t2 & text.none(q)` FAILS in both. Should the language have a text-level test
-   ("B has no potential match anywhere in the text", a condition that reads no label of the row), or is "the text has
-   no B" left to whole-value programs and anchoring? Leaning: add it (§R.4): it is SQL's `NOT EXISTS`, one meaning,
-   two-valued, and it equals `!contains(B)` wherever the row is the whole text.
+1. **whole-text** (PARKED by the owner 2026-11-17, "Let's not answer now"; restated by lane predspec23b with both
+   routes, §R.4.1). Today: "the text contains no B anywhere" has no spelling in a searched program that reports A's
+   own row; `A & !B` and `A & !contains(B)` ask about A's matched stretch only. Example: `t2 & !q` on `9:30` — WHOLE
+   value FAILS; SEARCHED HOLDS reporting `9`. TWO ROUTES: (i) a pattern with conditions inside a regex lookahead,
+   which §11's hole rule already gives a meaning: at the row's start, `/(?![\s\S]*${q})${t2}/` asks "no late time
+   from here on" (on `9:30` FAILS / HOLDS reporting `30`@2); gated at `\A` it asks the whole text but reports a row
+   starting at 0 and at most one match in find-all (on `9:30` FAILS / FAILS); (ii) a separate text-level test,
+   `t2 & text.none(q)`, a condition reading no label of the row (on `9:30` FAILS / FAILS; find-all all or none).
+   Which, if either, should the language offer for "no B anywhere"? Leaning: (ii) for this question (SQL's `NOT
+   EXISTS`, one meaning, two-valued, equal to `!contains(B)` wherever the row is the whole text), with (i) stated as
+   what the hole rule already means, a POSITIONAL question, not the whole-text answer.
 2. **pass-table**. Today (the draft's reading R1, no record): a row is one potential match, and a loop's passes are a
    table nested inside that row (one pass row per pass; zero passes = one pass row with the label absent). Example:
    `/(?:(?<h>\d)?;)*/` on `7;;`: `(h: <5)` FAILS / FAILS (pass 1 fails), `NOT (h: <5)` HOLDS / HOLDS ("not every
@@ -715,6 +812,16 @@ condition_kind.md IV.3 under R22 (L34 `12`, L59 `12`, §11 (i) `30`@1, L13 `5`@3
    absent) `some((h: <5))` is FALSE, so `NOT some((h: <5))` HOLDS / HOLDS. The alternative makes `some` three-valued
    (UNKNOWN when no pass is TRUE and some pass lacks h), and then `NOT some(...)` FAILS there. Leaning: yes/no (EXISTS),
    which keeps rev 22's L102 equality and the narrower question's sentinel spelling.
+4. **lookahead-labels** (asked only if route (i) of **whole-text** is taken or stated; lane predspec23b). Today
+   (the draft's reading, no record): a negative lookahead's labels are absent outside it; a POSITIVE lookahead
+   holding a program with conditions gives the outer row the labels of ITS preferred surviving row (leftmost start,
+   then the first-preferred end its conditions accept, D196's retry inside the lookahead), as PCRE keeps the
+   captures of a positive lookahead's first successful parse. Example (unrun: the evaluator implements only the
+   negative form): `/(?=[\s\S]*${late_m})${t2}/` with `late_m := /\d\d:(?<lm>\d\d)/ & (lm: >= 30)`, on `9:15 10:45`:
+   the outer row `9:15`@0 with h = 9, m = 15, and lm = 45 from the lookahead's row `10:45`; with `q` itself inside,
+   q's h and m would name t2's labels twice, §4.1's ambiguity error. The alternative: a lookahead's labels are never
+   visible outside (one rule for both polarities, but not PCRE's meaning for plain regex text, G3). Leaning: the
+   draft's reading (PCRE's), with a clash the existing ambiguity error.
 
 ### R.9 THE CHANGE TABLE, rev 22 -> rev 23, site by site
 
@@ -844,7 +951,11 @@ named), STANDS.
 | S154 | 5470-5471 | 13 default-reaches-dollar | (e2.1) | COVERED | RETIRED-HISTORY where it names the mark or DOM (read with a default, §R.1.6); otherwise STANDS |
 | S155 | 5484-5489 | 13 PLAN: default and mark IN or OUT of phase 1; all depends on the mark; unlock behind (e2.1) and one-witness | all( | AFFECTED-UNCOVERED | RETIRED-HISTORY: the mark and `all` are out; the default's phase-1 status as rev 22 left it |
 
-118 sites listed (35 AFFECTED-UNCOVERED, 83 COVERED).
+118 sites listed (35 AFFECTED-UNCOVERED, 83 COVERED). Lane predspec23b applied every RETIRED-HISTORY row in place:
+the live sentence rewritten with a default, NOT or the group question that remains (and the rev 22 wording kept in a
+"rev 22: ..." clause where the answer is quoted), or, where the sentence is dated history, a [REV 23: ...] note or
+the §13 closing block. No site's disposition was found to contradict §R or the record (the STOP RULE did not fire);
+one naming inconsistency inside §R is noted at §R.7b row b3 (row 10 of §R.7 keeps rev 22's name).
 
 ### R.10 Evidence
 
@@ -855,7 +966,11 @@ Commands, from a scratch directory under `$PCREC_TMPDIR` (W = the worktree):
 NOTHING; with `PREDSPEC23_SABOTAGE=1` (Kleene AND made order-dependent) the forward and swapped runs DIFFER (4 lines,
 e.g. `NOT c` vs `(h: !S)` WHOLE first `7;;` vs `;7;`). Every count is printed in both modes. Earlier lanes' numbers
 quoted (`searchrow.out`, `defscope_options.out`) were re-run forward and with their own SWAP switches: identical, and
-forward identical to the committed outputs.
+forward identical to the committed outputs. Lane predspec23b: `docs/dev/lanes/predspec23b_evidence/predspec23b_model.py`
+(imports the evaluator above read-only; adds pass rows with every label, `|` of filtered patterns, find-all and the
+two whole-text routes); `timeout 600 python3 -I W/.../predspec23b_model.py > fwd.out`, `PREDSPEC23B_SWAP=1 ... >
+swap.out`: the diff without ORDER lines prints NOTHING; with `PREDSPEC23B_SABOTAGE=1` forward vs swapped DIFFER (2
+lines, O28's `7,,` row). Its PART 0 re-derives predspec23's T2 counts (1,970 / 11,110) and rev 21's 1,660.
 
 ### R.11 THE RULING TABLE (by record entry; stands / retired / reversed / open)
 
@@ -904,7 +1019,7 @@ forward identical to the committed outputs.
 
 ## 0. Status, goals, standing questions
 
-**Status: DRAFT rev 23 (lane predspec23, 2026-11-16; §R is the condition model and wins over every later section). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
+**Status: DRAFT rev 23 (lane predspec23, 2026-11-16; body completed by lane predspec23b, 2026-11-17; §R is the condition model and wins over every later section). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
 #6 not scheduled; 2026-11-15, relayed in the predspec5 brief: "the predicate work is not a go to build as we are
 still in design"). Purpose (Frank 2026-11-14): "create a preliminary predicate spec doc with our latest ideas for the
 purpose of critical analysis. Provide reasoning." It consolidates the dated notes in
@@ -919,7 +1034,10 @@ field-reference direction of rev 16-19 retired in part and PAUSED in part (§16)
 the PROGRAM (§4.2 THE DOMAIN, WHICH CONDITIONS NARROW DOM) and lists what that does under negative polarity. Rev 22
 folds **not-is-complement** (CF 17:29: `!` takes a PATTERN or a SET, never a CONDITION; §2.2) and **mark-in-none**
 (CF 17:42: a mark inside a group question is LEFT AS IS, its property documented in §4.3), which close rev 21's
-**mark-under-not**; one-witness becomes a stated rule (§4.2 (e2)). A reader new to
+**mark-under-not**; one-witness becomes a stated rule (§4.2 (e2)). (Those rev 20-22 sentences are the record.)
+Rev 23 (§R) re-founds the draft on the owner's condition model: a row is one potential match, a condition a
+three-valued test of one row with `&` and NOT, absent never matches, a default per test; the optional mark, the
+per-program value set DOM and `all` are OUT (drop-mark 21:49, all-question 23:18). A reader new to
 `docs/design/joint_condition.md` reads §4.1, §4.2, §4.3 and §2.4 in that order.
 
 **SYNTAX IS PLACEHOLDER THROUGHOUT.** The owner rules semantics; spelling is a later design step (D193 add. 4).
@@ -974,7 +1092,7 @@ Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 | a module is described by its map interface (CF:896-898) | "what import is is less important than that its interface is a map" (CF:891-892) | "members reached as fields" |
 | `.` has one meaning (CF:898-899) | "agree" (CF:892), to the manager's lean | the whole content of the point (the lean he agreed to) |
 | search is a transform (CF:907-909) | "What if search was a transform like search(x) := /.*(?:(${x}.*).*/" (CF:903-904; a sketch, his spelling a placeholder) | "of the `contains` family"; `~` and `!~` WITHDRAWN; "an rx over the WHOLE value in which the occurrence group REPEATS" |
-| `some(...)` for some hits (CF:912-914) [rev 20: `all(...)` the default OVERTAKEN 14:31; `all(c)` = c with every label marked, §4.3] | "could you use some() to get some hits?" (CF:904-905, a question) | `all(...)` the default; `occurs` keeps counts only; `x & s` re-examined |
+| `some(...)` for some hits (CF:912-914) [rev 20: `all(...)` the default OVERTAKEN 14:31; `all(c)` = c with every label marked, §4.3; rev 23: `all` RETIRED, all-question 23:18, §R.1.7] | "could you use some() to get some hits?" (CF:904-905, a question) | `all(...)` the default; `occurs` keeps counts only; `x & s` re-examined |
 | the hit is a repeated label (CF:910-911); same hit by record (CF:915-917); the definition requirements (CF:918-921); group questions phase 1 (CF:922-924) | none | all of it ("Do it") |
 | one-iteration access at a higher capability level (CF:924-926) | rev 10: "1. agree" (CF:977), to the manager's item (1) "reading ONE hit needs captures, a higher level with its cost shown, count/some/all in phase 1" (CF:972-973): RULED BY ACCEPTANCE | (rev 9: the manager's lean, LEAN) |
 
@@ -1105,7 +1223,9 @@ joint_condition.md §2 and §4G-§4H carry the same entries with their evidence)
 19's (above), listed for their rev 20 state. Each row: the point, the owner's own words, and what is the record's or
 the manager's (each labelled; never the owner's). The rev 16-19 rows ABOVE on the tuple compares, their names,
 order, projection and slot, and on the sigil, stand as the record: RETIRED or PAUSED by the 12:48 and 12:51 rows
-below (§16).
+below (§16). REV 23: these rows are the RECORD as of 17:46; where a row's third column names the mark, DOM, `all`
+or the second half of not-is-complement, its status today is §R.11's (RETIRED, REVERSED or STANDS by row); the
+entries 19:31-23:48 that changed them are §R.11's "by" column, not repeated here.
 
 | ruling point | the owner's own words | what rests only on the record or is the manager's / this document's |
 |---|---|---|
@@ -1173,7 +1293,7 @@ the general form, L the owner's criteria listed unranked.
 
 | # | goal | who benefits | checkable form |
 |---|---|---|---|
-| G0 | LOOK-ALIKE CONSISTENCY / INTUITIVE BEHAVIOUR: forms that look like they should do the same thing DO the same thing; where they cannot, the compiler SAYS so for the program at hand. A rule whose effect a user cannot predict (context silently making a predicate fail) is a defect even when formally sound | every user (Frank: "Rx is already hieroglyphics"); reviewers of predicate programs | the LOOK-ALIKE TABLE (§0.1): every pair of forms that look alike is marked SAME, or DIFFERENT with exactly ONE class: ERROR or WARNING (the named diagnostic the compiler emits for the program at hand), BY DESIGN (the difference IS a mark's stated meaning, §5.4), or GAP (no diagnostic yet: an open defect, §13 O38); acceptance = no GAP row |
+| G0 | LOOK-ALIKE CONSISTENCY / INTUITIVE BEHAVIOUR: forms that look like they should do the same thing DO the same thing; where they cannot, the compiler SAYS so for the program at hand. A rule whose effect a user cannot predict (context silently making a predicate fail) is a defect even when formally sound | every user (Frank: "Rx is already hieroglyphics"); reviewers of predicate programs | the LOOK-ALIKE TABLE (§0.1): every pair of forms that look alike is marked SAME, or DIFFERENT with exactly ONE class: ERROR or WARNING (the named diagnostic the compiler emits for the program at hand), BY DESIGN (the difference IS a construct's stated meaning, §R.1, §5.4; rev 22: "a mark's"), or GAP (no diagnostic yet: an open defect, §13 O38); acceptance = no GAP row |
 | G0b | FEW KINDS, FEW MARKS, ONE MEANING EACH: "few types and few operators that always mean the same thing wherever they are used"; "a consistent grammar over comma where it has a specific meaning. Then macro application has a specific meaning" (CF:847-851) | every user (one meaning to learn per mark); the spelling step (a small fixed inventory to spell) | the MARK TABLE (§5.4: every mark, its ONE meaning, every position it may take) and the KIND COUNT (§2.1 KIND TABLE), each entry naming the §12 case that needs it; acceptance = no mark or kind with two meanings, and every mark and kind either needed by a case or listed in the TWO-WAY CENSUS (§12) as carried without one, with its reason |
 | G1 | EXPRESSIVENESS over the string: conditions PCRE cannot state (cross-label arithmetic, checksums, calendar validity, key-order independence, computed properties, occurrence counts) are short programs | users writing validators, filters, log/JSONL searches | every §12 acceptance case is written with no construct outside §§2-8 (the cases are chosen by the rules' own author: a control sharing its source, review OWN-15) |
 | G2 | LINEAR, AUTOMATON-CODE-ONLY BY DEFAULT: a program that compiles at the default level runs as automaton code (one pass or an automaton relax-then-verify split; linear time, no backtracking, hostile-input safe, self-contained output) | anyone matching untrusted input; embedders | at design: every §12 case names its level; at build: every default-level §12 case compiles to automaton code only (`RX_ENGINE` stamp); anything else is a compile error naming the construct and the opt-in, never a silent route change |
@@ -1195,12 +1315,19 @@ joint_condition.md §4H.9 the absence criteria; rev 21, review r29 RULING-8. Gra
 them (RULING-9): A SET NEVER CONTAINS ABSENCE, kept (D is per label); MEANING, NOT SPELLING, kept on every population
 run under the program DOM (§4.2 THE CANDIDATES); SIMPLIFYING SEMANTICS, record = `&` at every depth kept; SAVING
 PEOPLE, the SILENT list is `all(((h, m): R))` on incomplete items and the label controls in searched mode (§4.2,
-§4.3); the one new GAP is §0.1 L97):
+§4.3); the one new GAP is §0.1 L97). REV 23 RE-GRADING (lane predspec23b): A SET NEVER CONTAINS ABSENCE, kept
+(absent is UNKNOWN, never a member, §R.1.5); MEANING, NOT SPELLING now holds BY CONSTRUCTION for conditions (a
+condition reads only its row, so two statements with the same table answer every condition alike, §R.1.3; the
+program-DOM populations and their "DOM not computable" exception retire with DOM); SIMPLIFYING SEMANTICS, a record =
+the AND of its entries (§R.1.5; record-is-product for product records); SAVING PEOPLE, the SILENT list is now: a
+default in SEARCHED mode, which a shorter stretch can make vacuous (§R.6: a nullable loop makes every default hold);
+`A & !B` and `A & !contains(B)` searched answer about A's row, not the text (§R.4); NOT on a condition drops an
+absent row while pattern difference keeps it (§R.3). `all(((h, m): R))` leaves the list with `all`.
 
 | criterion | his words | checkable form (this document's) |
 |---|---|---|
 | A SET NEVER CONTAINS ABSENCE (his principle, CF 13:52) | "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set" | no construct gives a set an "absence" member; author control of absence lives on the LABEL (§4.2) |
-| MEANING, NOT SPELLING (**mark-domain**, RULED as a principle, CF 15:27, his qualifier "if it is possible") | "the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior, semantics, string set)? Not sure the exact phrasing." Its wording (CF 15:29, PROVISIONAL): "two patterns that match the same subjects and set their labels the same way answer every condition alike" (*) | equal-meaning spellings answer alike (`/x?/` vs `/(?:x\|)/`, §0.1 L94; `/(?<n>\d)*x/` vs `/(?:(?<n>\d)+)?x/`, §4.2); where it is not possible (DOM not computable), the answer never changes silently (§4.2 (a)) |
+| MEANING, NOT SPELLING (**mark-domain**, RULED as a principle, CF 15:27, his qualifier "if it is possible") | "the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior, semantics, string set)? Not sure the exact phrasing." Its wording (CF 15:29, PROVISIONAL): "two patterns that match the same subjects and set their labels the same way answer every condition alike" (*) | equal-meaning spellings answer alike (`/x?/` vs `/(?:x\|)/`, §0.1 L94; `/(?<n>\d)*x/` vs `/(?:(?<n>\d)+)?x/`, §4.2); rev 23: a condition reads only its row (§R.1.5), so for conditions the principle holds by construction; rev 21-22's "where it is not possible (DOM not computable)" exception retires with DOM (§R.2). Where a label's LOOP-NESS is read from a non-regular operand, the syntactic list decides (§4.3) |
 | SIMPLIFYING SEMANTICS (CF 11:35) | "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." | one meaning per construct in every shape; a shape-specific sub-rule counts against a choice |
 | SAVING PEOPLE FROM THEMSELVES (CF 12:45) | "The issue falls into the 'saving people from themselves' category that tools need to realistically consider" | per new construct, the author's natural misuse draws an error or a warning, or is listed as silent |
 | A TEST OF THE LANGUAGE (CF 00:31; rev 21, review r29 RULING-8) | "trying to work this out is more important than just the between macro for 2+ args. it tests the language on an interesting problem" | a worked problem is judged by what it shows about the language (which general rule it exercises or breaks), not by the one macro it yields |
@@ -1210,12 +1337,14 @@ PEOPLE, the SILENT list is `all(((h, m): R))` on incomplete items and the label 
 
 ### 0.1 The LOOK-ALIKE TABLE
 
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
+Rows L72-L81 and the dated EVERY ROW RE-APPLIED paragraphs below are the record; every other row states rev 23's answer
+(lane predspec23b removed the last mark and `all` from the live rows; the rows rev 23 replaced are verbatim in
+§16.6).
 
 Each row is a pair (or set) of forms a reader would expect to agree. SAME = one answer on every subject. DIFFERENT
 carries exactly ONE class (G0, review r8 P6-9): ERROR / WARNING = the named diagnostic the compiler emits when they
-differ for the program at hand; BY DESIGN = the difference is a mark's stated meaning (§5.4), which the reader is
-told once; GAP = no diagnostic yet (an open defect against G0, §13 O38). "(proposed)" = a named diagnostic
+differ for the program at hand; BY DESIGN = the difference is a construct's stated meaning (§R.1; rev 22: "a mark's
+stated meaning (§5.4)", review r31 K), which the reader is told once; GAP = no diagnostic yet (an open defect against G0, §13 O38). "(proposed)" = a named diagnostic
 recommended by a review and not yet adopted, so the row stays GAP. OPEN = the answer itself is undecided (§13).
 Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 
@@ -1226,7 +1355,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L3 | `isodate & (year: S, month: 2)` vs `isodate & (year: S) & (month: 2)` | SAME | the `( )` RECORD holds its entries together; the AND comes from the record, not the comma (§4.1, §5.4) | C22, CF:866 |
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
 | L5 | `x & (a: d)` vs `(a: d)(x)` | DIFFERENT: ERROR | the second is a compile ERROR: the operand is never an argument (CF:749's "subject", §0.3; hint: "write `x & (a: d)`"); application has one spelling (§2.3) | 2026-11-15 RULING (supersedes OWN-5's two spellings) |
-| L6 | `x & (a: d)` vs `each((& (a: d)), x)` | DIFFERENT: ERROR | `each` is the STRUCTURAL per-entry map (keeps entries, labels, order; the filter is mapped through the section `(& (a: d))`, §5.3); an alternative lacking `a` has `a` ABSENT, so the unmarked condition FAILS there and `&` loses it, with `label.unset`, an ERROR naming it under `each` (rev 21, review r29 J: one absence mechanism, no separate "drop"; with the mark, `each((& (a?: d)), x)` loses no entry and is NOT this error, §4.2) | OWN-5, 2026-11-15 RULING (mapping) |
+| L6 | `x & (a: d)` vs `each((& (a: d)), x)` | DIFFERENT: ERROR | `each` is the STRUCTURAL per-entry map (keeps entries, labels, order; the filter is mapped through the section `(& (a: d))`, §5.3); an alternative lacking `a` has `a` ABSENT, so the unmarked condition FAILS there and `&` loses it, with `label.unset`, an ERROR naming it under `each` (rev 21, review r29 J: one absence mechanism, no separate "drop"; rev 23: with a default, `each((& (a = v: d)), x)` with v in d, no entry lacks `a`'s stand-in, so it is NOT this error, §R.1.6; rev 22 wrote the mark `a?`) | OWN-5, 2026-11-15 RULING (mapping) |
 | L7 | `x: /^S\w*/` vs `x: startsWith("S")` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` (rev 14: an explicit anchor in a `label:` condition, a filter role; RULED 2026-11-15 20:44 (b) on main, "anchor-warn-scope: agree"; rev 11-13 class BY DESIGN). A `label:` condition matches its label's text WHOLE (§11 THE ONE WHOLE-MATCH RULE), so `/^S\w*/` is the strings that are ENTIRELY `S\w*` (its `^` adds nothing), while `startsWith("S")` is every string that starts with `S`: on the span `S-1` the first rejects, the second accepts. The two agree only where the span is word characters (E-CTX-1's x is `\w+`). "Starts with" is `startsWith("S")` or `contains(/^S/)` (L17). Rev 10 said SAME (review r12 SIMULATE-1) | CF:732, CF:761, D193 add. 3; whole-match: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12); the warning: 2026-11-15 20:44 (b) on main |
 | L8 | `num := /\b\d+\b/`: `/x${num}/` vs the pasted `/x\b\d+\b/` | DIFFERENT: ERROR | the hole form is the EDGE-ASSERTION ERROR ("put `\b` in the pattern that places num") | Q1X-3 (iv), Q1R-3 |
 | L9 | `p := /(?<=\$)\d+/`: the program `p` (searched) vs `[n = /\d+/] & (n: p)` | DIFFERENT: ERROR | the condition is the EDGE-ASSERTION ERROR; the searched final pattern keeps PCRE meaning | Q1X-3 (iii), Q1X-1 |
@@ -1314,7 +1443,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L91 | `[(9, 0), (10, 30)]` vs `([9, 10], [0, 30])` | DIFFERENT: BY DESIGN | a union of two tuples vs the product of two arity-1 sets (four tuples): 3 vs 6 of 11,000 padded `t` subjects (table (DM)) | set-arity CF 10:26 |
 | L92 | `(h: A, h: B)` vs `(h: A & B)` | DIFFERENT: ERROR | a label named twice in one condition is a compile ERROR ("label-twice: agree an error"); `(h: A) & (h: B)` and `(h: A & B)` are the spellings | label-twice CF 13:16 |
 | L93 | (rev 22: `all((x: S))` vs `(x?: S)`) | RETIRED (rev 23) | both spellings are out of the language (all-question 23:18; drop-mark 21:49); see L36 | 23:18; 21:49 |
-| L94 | `/(?<k>\d)?-(?<h>\d)?/` vs `/(?:(?<k>\d)\|)-(?:(?<h>\d)\|)/` under `(h: <5, k?: between(3, 7))` | SAME | `/x?/` and `/(?:x\|)/` answer alike under the pairing rule; a quantifier with upper bound 1 is not a loop for it (the manager's reading of how): 0 of 121 differ | optional-as-loop CF 15:23 |
+| L94 | `/(?<k>\d)?-(?<h>\d)?/` vs `/(?:(?<k>\d)\|)-(?:(?<h>\d)\|)/` under `(h: <5, k = 3: between(3, 7))` (rev 23; rev 22 wrote `k?`) | SAME | `/x?/` and `/(?:x\|)/` answer alike under the pairing rule; a quantifier with upper bound 1 is not a loop for it (the manager's reading of how): 0 of 121 differ in BOTH modes, with the default and without it (`/x?/` holds WHOLE 30 / SEARCHED 55 with `k = 3`, 25 / 25 without; `predspec23b_model.out` PART 1) | optional-as-loop CF 15:23 |
 | L95 | `t2 & !q`, `q := t2 & ((h, m): R)`, vs `t2 & ((h, m = 0): !R)` | DIFFERENT: BY DESIGN (WHOLE); SAME (SEARCHED, on t2) | rev 23 (rev 22 wrote `((h, m?): !R)`): WHOLE 1,970 vs 1,880 of 11,110, differ 90 (first `10`: the default 0 puts (10, 0) in R, the difference keeps `10` as not a row of q); SEARCHED 11,110 both, differ 0 (`predspec23_model.out` PART 3) | drop-mark 21:49 |
 | L96 | `t2 & [m = 0]` vs `t2 & (m = 0: S)` | DIFFERENT: BY DESIGN | an array's `=` NAMES a label (the alternative `0` labelled m); a condition's default READS one: 244 of 11,110 `t2` subjects differ (joint_condition.md table (DK)); the lane unsetdef's WARNING `label.both_sides` is PROPOSED, NOT RULED (§7.1) | J6 |
 | L97 | `t2 & (((h, m): R) \| (h: 10 \| 11))` (an unguarded hand slice) vs `t2 & ((h, m = 0): R)` | DIFFERENT: GAP | with R = `padded(between((9, 30), (11, 0)))`: without a guard "m absent" the slice also admits a PRESENT m (`11:45` passes by h = 11, though 11:45 is past 11:00): 99 of 11,110 differ (joint_condition.md table (DG)); both are legal programs, so no diagnostic is possible; `label.unset`'s text names the default as the fix | J6 |
@@ -1369,11 +1498,13 @@ MODE OF THE ANSWERS (rev 10, review r10 SIM-6, FIXB-7 (d)). A row's answer is on
 (the whole span, as a condition reads it) unless the row says SEARCHED. A searched program may report a SHORTER span
 than the value (D196 tries the next end when a filter rejects the preferred one), so a filter that is not
 upward-closed (a condition on an ambiguous label, a count) can pass on a shorter span: L34, L59 and L66 give both
-answers. REV 21 (review r29 F): the LABEL CONTROLS (`h?`, `h = v`) and the per-pass "every" of a looped condition are
-not upward-closed either: a shorter span can drop a label and let the mark or default read it (`t2 & ((h, m?):
-padded(>= (9, 30)))` on `9:15`: whole FAILS, searched reports `9`; 1,698 of 11,110 `t2` subjects differ whole vs
-searched under `m?`, 1,660 under `m = 0`, 0 unmarked; `10:00,9:15,` as a list, searched, reports `10:00,`, review r29
-verify V1; the counts: PART 4 (S1); §4.2 WHOLE VALUE). No warning (as for counts, L66); SILENT under SAVING PEOPLE FROM THEMSELVES; the fix is `anchored(...)`.
+answers. REV 21 (review r29 F), restated in rev 23: the DEFAULT (`h = v`, the one label control; rev 21-22 also
+named the mark `h?`, now out) and the per-pass "every" of a looped condition are not upward-closed either: a shorter
+span can drop a label and let the default read it (`t2 & ((h, m = 0): padded(>= (9, 30)))` on `9:15`: WHOLE FAILS,
+SEARCHED reports `15`@2, h = 15 with m's default; rev 21's example reported `9` through the mark); the smallest such
+subject is `0:10` (SEARCHED reports `10`); 1,660 of 11,110 `t2` subjects differ WHOLE vs SEARCHED under `m = 0`, 0 with no default (`predspec23b_model.out` PART
+0, re-derived; rev 21's 1,698 under `m?` retires with the mark); `10:00,9:15,` as a list, searched, reports `10:00,`
+(review r29 verify V1); §R.6 adds the nullable-loop case, where every default holds SEARCHED). No warning (as for counts, L66); SILENT under SAVING PEOPLE FROM THEMSELVES; the fix is `anchored(...)`.
 
 SAME ROWS RE-CHECKED UNDER THE ONE READING (rev 10, review r10 FIXB-1: a condition reads the SPELLING's parse). A SAME
 row can break only where its two forms spell a LABELLED operand differently. L1 and L39 reorder an `&` chain (the
@@ -1496,6 +1627,12 @@ L16 ("every hit, possibly none" with a default outside S), L100 (where an added 
 L102 (`!some(c)` vs `occurs.none(c)`, ERROR), L103 (a mark inside `none` vs the unmarked and defaulted spellings, BY
 DESIGN), L104 (two marked conditions vs one, BY DESIGN, one-witness). Evidence: `predspec22_check.out` PART A, B, D.
 
+EVERY ROW RE-APPLIED UNDER REV 23 (§R; drop-mark 21:49, default-scope 22:30, all-question 23:18, row-is-match 23:46,
+condition-not 23:48). Lane predspec23 rewrote L16, L30, L36, L55, L56, L65, L82, L93, L95, L99-L104 (§R.7; the old rows
+verbatim in §16.6); lane predspec23b finished the rest: the legend (BY DESIGN = a construct's stated meaning), L6
+(the defaulted `each` section, no answer moves), L94 (`k?` -> `k = 3`; 0 of 121 differ in both modes, as before).
+No other live row names the mark, DOM or `all`. The paragraphs REV 20-22 above are the record.
+
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
 Nothing is scheduled and there is no build go (Status above); "phase 1" is the owner's name for the first,
@@ -1524,7 +1661,7 @@ base-level predicate build whenever it is chartered.
   property mark `m(p: pure)` leaves with them (§13 O48).
 - IN: the GROUP QUESTIONS on a repeated label, `occurrences` hits included: a plain condition (all iterations; rev
   20: and at least one, §4.2), `some(...)`,
-  `all(...)`, `count(...)`, `occurs.exactly/at_least/at_most/none` ("compile to states and are phase 1": CF:922-924,
+  `count(...)` (rev 8-22 also `all(...)`, RETIRED in rev 23 by all-question 23:18, §R.1.7), `occurs.exactly/at_least/at_most/none` ("compile to states and are phase 1": CF:922-924,
   accepted at CF:905). NOT the default level: access to ONE iteration (`$m.hit[2]`), which needs captures inside a
   loop (CF:972-973, RULED BY ACCEPTANCE: "1. agree", CF:977; §4.3); reading EVERY iteration (`$m.hit`) or SELECTING
   iterations (`$m.hit[(g: "x")]`, keep iterations 1 and 3) at the same level: LEAN (this document's consequence;
@@ -1537,14 +1674,16 @@ base-level predicate build whenever it is chartered.
   (RULED, CF:977, §13 O39); a count is a canonical numeral string (RULED, CF:977-978).
 - Not stated by the owner: which library pieces (§8) and levels beyond the default (§6.1) phase 1 carries; and, of
   the constructs NO §12 case uses (the TWO-WAY CENSUS, §12: operator sections in code, the `occurrences` transform and
-  `some`/`all`, positional `X[...]`, `where`/`where_group`/`each_group`, `when`, `eval`, `@export`/`@warn`, `*`/`%`,
+  `some` (rev 22: and `all`, retired), positional `X[...]`, `where`/`where_group`/`each_group`, `when`, `eval`, `@export`/`@warn`, `*`/`%`,
   `.label`), which stay in phase 1. Sections are IN by ruling (CF:753); `occurrences` (spelled `search` through rev 12) is ruled as a library transform
   (CF:902-909, accepted at CF:905) and its group questions as phase 1 (above), but no case uses it. Rev 8 invents no
   case for them (review r8, DISPOSITIONS RULED, P6-9): the owner decides which stay.
-- REV 21 (review r29 group O, PLAN; not asked now): at the next phase-1 review, whether TUPLE VALUES, the DEFAULT and
-  the MARK are IN or OUT of phase 1 is put to the owner; `all(...)` is IN (ruled, above) and now reads DOM through
-  the mark's general form (§4.3), so it inherits the mark's refusals (§4.2 (a)) and its documented property inside a
-  group question (**mark-in-none**, §4.3; rev 21's open **mark-under-not** is closed, §13).
+- REV 21 (review r29 group O, PLAN; not asked now), restated in rev 23: at the next phase-1 review, whether TUPLE
+  VALUES and the DEFAULT are IN or OUT of phase 1 is put to the owner (the default is now the one absence control,
+  §R.1.6). The MARK is out of the language (drop-mark 21:49) and `all(...)` with it (all-question 23:18), so rev
+  21-22's sentence here ("`all(...)` is IN and reads DOM through the mark's general form, inheriting its refusals
+  and **mark-in-none**") is the record. Whether NOT on a condition (condition-not 23:48) is in phase 1 is not stated
+  by the owner; it is added to the same review.
 - REV 20: the joint condition takes the first-library slot in phase 1 (**retire-paused**, CF 12:51, the record:
   "the joint condition takes that first-library slot"); it uses no positional `X[...]` and no field reference. The
   REV 18-19 sentence below is RETIRED (the compares, CF:1166's slot) and PAUSED (the field reference), kept as the
@@ -1803,8 +1942,8 @@ and grouping-free: RULED (CF:722, OWN-1), SUPERSEDES the right-associative `&` l
 and the dropped lint: LEAN (review OWN-2, RUL-2). C1: RULED (CF:732): same matches, the report may differ. No `!`
 inside a normal rx: RULED (CF:795), PARKED, the spelling question NOT closed (CF:795 corrects CF:758). `!` takes a pattern
 or a set, never a condition: RULED (**not-is-complement**, CF 17:29), rev 22; its second half REVERSED in rev 23 (`!` on
-a condition is the three-valued NOT, **condition-not** 23:48); the complemented pattern's own DOMs, no
-labels and filter role: the manager's readings (CF 17:29), checked by rev 22; which things count as a condition (a
+a condition is the three-valued NOT, **condition-not** 23:48); the complemented pattern's no labels and filter role:
+the manager's readings (CF 17:29), checked by rev 22, now §R.1.4 (rev 22's "own DOMs" retire with DOM, §R.2); which things count as a condition (a
 test of a label the operand defines) and the error text: this document's statement of the ruling.
 
 ### 2.3 The unapplied-macro error
@@ -1817,9 +1956,10 @@ whole rx in the hole, `${/(\d+)/ & <256}`, with it OFF (§11, C4, CF:978-979). T
 ARGUMENT (CF:749's "the subject is never an argument", §0.3): application of a FILTER has ONE spelling, `x & f` (`x &
 (a: digit)`, `x & padded(S)`); this is the one input rule of §2.1 (a call fills parameters, `&` fills the operand slot;
 CF:860). A call that passes the operand (`(a: digit)(x)`, `p(x)`, `padded(S)(x)`) is a compile error naming the fix
-("write `x & p`"). An alternative of x lacking the label has it ABSENT, so an unmarked condition FAILS there and the alternative leaves
-the result (with the `label.unset` warning, §4.2), never an error; a marked condition keeps it where DOM would do (rev
-21, review r29 J: one absence mechanism).
+("write `x & p`"). An alternative of x lacking the label has it ABSENT, so a condition without a default FAILS there and the alternative leaves
+the result (with the `label.unset` warning, §4.2), never an error; a condition with a DEFAULT keeps it where the
+default passes (rev 23, §R.1.6; rev 21-22 named the mark here, "where DOM would do"; review r29 J: one absence
+mechanism).
 `each(f, A)` is NOT an application spelling: it is the STRUCTURAL per-entry map (§5.3), which keeps entries, labels
 and order and is an error on an entry lacking the label (§0.1 L6); a filter is mapped through an operator SECTION,
 `each((& f), A)` (§5.3).
@@ -1890,8 +2030,6 @@ expression always starts a binding (one-token look-ahead, §5.1).
 be added, filtered <256"). Arithmetic result width (`${$y + 1}` on `0099`): §13 O27.
 
 ### 2.6 `occurrences` and `contains` are transforms
-
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
 
 **RULE.** `occurrences` (spelled `search` through rev 12; renamed by the owner, CF:1026-1031 on main, his words
 "1 occurances", CF:1028) IS A LIBRARY TRANSFORM of the `contains` family, not an operator: it takes an rx and returns an rx
@@ -2032,11 +2170,14 @@ absence control; §4.2). `min` decides whether a bare `occurrences` accepts a sp
 `occurs` see; a condition on the hits needs a hit:
 - With `min = 0` zero hits are ALLOWED: `occurrences` never rejects (zero iterations always parse; as a set it is every
   string). A PLAIN condition on the hits FAILS over zero hits (g is absent, §4.2); `some(...)` fails, `count(...)` is
-  0, `occurs.none(...)` holds. "Every hit, possibly none" is `occurs.none((g = "": !"x"))` (rev 22: a default outside the set, so a hit without g is counted; rev 21 wrote `occurs.none(!(g: "x"))`, a `!` on a condition, **not-is-complement**; §4.3). The mark, `(g?: "x")` (and
-  `all((g: "x"))`, §4.3), says what it says: an absent g, zero hits included, passes when some value in DOM(g) is
-  `x`; on the population of lane absimpact (OC) that gave rev 9-19's plain answer on 0 of 5,461 spans, but on
-  `occurrences(/(?<g>a)?b/)` it parts from "every hit, possibly none" on 94 of 127 (§4.3).
-  Rev 8's lean (a plain condition FAILS on zero hits), withdrawn in rev 9, is the rule again, with the mark as its
+  0, `occurs.none(...)` holds. REV 23 (§R.1.7): "EVERY HIT, POSSIBLY NONE" is the plain condition with a default in
+  the set, `(g = "x": "x")` (a hit lacking g, or zero hits, reads `x`); THE NARROWER QUESTION, "zero hits are fine, a
+  hit lacking g is not", is `occurs.none((g = "": !"x"))`, a sentinel outside the set (rev 22 wrote this second form
+  for "every hit, possibly none"; under rev 23's one kind of absence the two part only on a hit lacking g). On `xyz`
+  (zero hits) the plain `(g: "x")` FAILS / FAILS, both other spellings HOLD / HOLD (WHOLE / SEARCHED;
+  `predspec23b_model.out` PART 2). Rev 21-22's mark `(g?: "x")` and `all((g: "x"))` are out (drop-mark 21:49,
+  all-question 23:18); their 94-of-127 comparison is rev 22's record (§16.5).
+  Rev 8's lean (a plain condition FAILS on zero hits), withdrawn in rev 9, is the rule again, with the default as its
   control.
 - With `min = 1` zero hits REJECT the span; otherwise the hits are the `min = 0` hits (above). Under a plain
   condition `min = 0` and `min = 1` now AGREE (0 of 5,461; 4,839 of 5,461 spans move from rev 9-19's answers).
@@ -2065,9 +2206,12 @@ review r12 SIMULATE-3).
 | `aab` | `/aab\|a/` | `aab`@0 | 1 | yes | `aab`@0 | yes (`min = 2` would give `a`@0, `a`@1: L57) |
 | `baa` | `/a*/` | the empty string @0, then the loop ends (rev 8's loop run) | 1 (find-all: 3) | refused (L53) | refused | refused |
 
-On the first row: a plain `(g: "x")` fails (hit 2), `some((g: "x"))` holds, `occurs.exactly(2, (g: "x"))` holds,
-`count((g: "y"))` = 1 (§4.3). On the `xyz` row: a plain `(g: "x")` FAILS at `min = 0` (rev 20: no hit gives g a text; rev 9-19
-said HOLDS, no hit to violate it), `(g?: "x")` HOLDS, and the span is rejected at `min = 1` (§0.1 L55). The unrolled form is NOT the loop for a nullable argument (it does not stop
+On the first row (as a value, `abxabyabx`; WHOLE / SEARCHED, `predspec23b_model.out` PART 2): a plain `(g: "x")`
+FAILS / HOLDS (hit 2 is `y`; searched, the shorter stretch `abxab` with one hit survives, the §0.1 MODE OF THE
+ANSWERS class), `some((g: "x"))` HOLDS / HOLDS, `occurs.exactly(2, (g: "x"))` HOLDS / HOLDS, `count((g: "y"))` = 1
+(HOLDS / HOLDS) (§4.3). On the `xyz` row: a plain `(g: "x")` FAILS / FAILS at `min = 0` (rev 20: no hit gives g a
+text; rev 9-19 said HOLDS, no hit to violate it), `(g = "x": "x")` HOLDS / HOLDS (rev 22's `(g?: "x")` row, rewritten
+with a default), and the span is rejected at `min = 1` (§0.1 L55). The unrolled form is NOT the loop for a nullable argument (it does not stop
 at an empty iteration: six empty hits on `baa`), which is why the `/a*/` row keeps rev 8's loop run.
 
 THE OWNER'S EXAMPLE (his semantics, CF:880-887 and the predspec7 brief; his own spelling bound `d` to a search of the
@@ -2120,7 +2264,8 @@ transform but not a filter modifier: LEAN (review r10 FIXA-1). The hits follow P
 (CF:932-933, his words); C36 RESOLVED by the one reading (CF:953-955). A bound name holds the transformed rx: RULED
 (CF:929, his words). `min` with default 0: the owner's LEAN ("Perhaps", CF:933-934); `min` only and no `max` for now:
 RULED (CF:951-952, "we could skip it for now"); `min` 0 or 1: RULED (CF:963-966), the error for other values LEAN
-(CF:968-969); rev 20: `min` decides acceptance; a plain condition needs a hit; `(g?: ...)` reads DOM(g) where g is absent (rev 21: not "possibly none", §4.3)
+(CF:968-969); rev 20: `min` decides acceptance; a plain condition needs a hit; rev 23: a default gets past an absent
+g, "every hit, possibly none" = `(g = d: S)` with d in S (§R.1.7; rev 21-22's `(g?: ...)` over DOM(g) is out)
 (**absent-rule**, CF 14:31, which REVERSES the zero-passes-hold half of CF:997-1000 and CF:933 as the absence
 control; rev 9-19: "zero hits decided by the quantifier and a plain condition true over zero allowed hits", RULED BY
 ACCEPTANCE at CF:997-1000, now OVERTAKEN). `contains` accepting what
@@ -2137,7 +2282,7 @@ CF:1011-1019, accepted at CF:1006; D193 add. 3; CF:761); rev 10's exact-end `$` 
 one-iteration access at captures: RULED BY ACCEPTANCE (CF:977). The owner's example: his intended behaviour; its
 `$` reading: LEAN (review r10 FIXA-3); the selection spelled in the path, `$m.hit[(g: "x")]`: LEAN (review r12
 CENSUS-1). SUPERSEDES rev 8's `contains(x) := /(?s).*${x}.*/` body, rev 8's zero-hit lean
-(fails; rev 20: that lean is the rule again, with the mark as its control), rev 9's unscoped `(?s)` body, and rev 7 §2.6 (`$x ~ rx` as an operator, the search result as a match-time
+(fails; rev 20: that lean is the rule again, with the default as its control since rev 23), rev 9's unscoped `(?s)` body, and rev 7 §2.6 (`$x ~ rx` as an operator, the search result as a match-time
 ARRAY VALUE, `!~` as sugar) and rev 6's "a search returns an rx (the occurrence set)" (CF:873) as a VALUE reading; its
 occurrence order (non-overlapping, leftmost, CF:74) is kept as requirement 1. Binding a test: allowed (§13 C6
 RESOLVED).
@@ -2437,7 +2582,8 @@ A MIXED RECORD (`((h, m): R, k: S)`) is the `&` of its entries (the manager's re
 A LABEL NAMED TWICE in one condition (`(h: A, h: B)`, `((h, h): R)`, `((h, m): R, h: S)`) is a compile ERROR (RULED,
 **label-twice**, CF 13:16, his words: "label-twice: agree an error. And that means it's also unofficially parked in
 case some other meaning becomes valuable").
-THE LABEL CONTROLS: a label in a condition may carry the MARK `h?` or the DEFAULT `h = v` (§4.2).
+THE LABEL CONTROL: a label in a condition may carry the DEFAULT `h = v`, per test, any text (§4.2, §R.1.6; rev 20-22
+also offered the MARK `h?`, out since drop-mark 21:49).
 LEFT AND RIGHT OF `:` (J2, **colon-scope**, CF 11:32: "colon-scope: yes with refinement: (a, b = c): ... the 'c' is
 a binding et al"): left of `:` names are LABELS; on the VALUE side (a default's value, a bound, a set) a bare name is
 a BINDING and a label's value is read `$x` (`(day: padded(<=$dim))`, `(wname.index: ==$wd)`; §13 C13).
@@ -2452,10 +2598,11 @@ THE ERRORS OF THE CONDITION FORM (rev 21, review r29 groups N, K, L; texts illus
   give x a default or a constant" (joint_condition.md's error, carried; K);
 - a LABEL NAMED TWICE, `(h: A, h: B)`: "h is named twice; write `(h: A & B)` or `(h: A) & (h: B)`" (**label-twice**);
 - an ENTRY WITH NO SET, `(h, m: R)`'s `h`: "an entry needs `: set`; for a joint condition write `((h, m): R)`" (L86);
-- `:` INSIDE A REFERENCE LIST, `((h, m: 0): R)`: "a reference list holds labels, marks and defaults; for a default
+- `:` INSIDE A REFERENCE LIST, `((h, m: 0): R)`: "a reference list holds labels and defaults; for a default
   write `m = 0`" (L87);
-- `?` OR `= v` ANYWHERE BUT A LABEL LEFT OF `:` (`(h: S?)`, `[h?]`): "the mark and the default sit on a label left
-  of `:`" (§5.4);
+- `= v` ANYWHERE BUT A LABEL LEFT OF `:` (`(h: S = 0)`): "a default sits on a label left of `:`" (§5.4);
+- (rev 20-22's mark `h?` left of `:` is not in the language, drop-mark 21:49; how a stray `?` there is reported is
+  the spelling step's, D193 add. 4);
 - a NESTED TUPLE LEFT OF `:`, `(((h, m), k): R)`: "the left of `:` is one flat list of labels";
 - a MACRO PARAMETER LEFT OF `:`, `m(x) := (x: S)`: "x is a parameter of m; the left of `:` names labels of the
   operand" (L98; L).
@@ -2530,8 +2677,6 @@ label in the ONE test that writes it, any text; `$a` reads the real label). In s
 
 ### 4.3 Repeated and duplicate labels: the general home of the group questions
 
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
-
 Rev 8's CONFLICT MARK (§13 C36: the priority parse vs the some-parse rule) is GONE: the ONE READING (§4.5, CF:953-955)
 makes a repeated label's iterations those of PCRE's parse, as for every label.
 
@@ -2574,8 +2719,13 @@ THE NARROWER QUESTION, "zero passes are fine, a pass lacking the label is not": 
 sentinel x outside S (23:18, as put to him). Over zero passes of `/(?:(?<n>\d),)*/` (the empty text, WHOLE / SEARCHED):
 `(n: <5)` FAILS / FAILS, `(n = 0: <5)` HOLDS / HOLDS, `some((n: <5))` FAILS / FAILS, `NOT some((n: <5))` HOLDS /
 HOLDS (`predspec23_model.out` PART 5). Over the 127 spans over {a, b} to length 6 of `occurrences(/(?<g>a)?b/)`,
-"every hit's g is `a`, possibly none" is `occurs.none((g = "": !"a"))` (rev 22's 0 differ, WHOLE, stands; the marked
-row retires).
+rev 22's intent "every hit's g is `a`, possibly none" (a hit WITHOUT g fails it) is `occurs.none((g = "": !"a"))`
+(rev 22's 0 differ, WHOLE, stands; the marked row retires). In rev 23's names that intent is THE NARROWER QUESTION
+(a sentinel outside the set); R.1.7's "every pass, possibly none", `(g = "a": "a")`, lets a hit without g pass, and
+the two part exactly on the spans with such a hit: WHOLE 94 of 127 differ (the 94 spans with a hit lacking g; on
+this regex g can only be `a`, so `(g = "a": "a")` holds on all 127 and the narrower question on 33), SEARCHED 0 (both
+hold on all 127: a shorter stretch always survives, §R.6) (`predspec23b_model.out` PART 2b). §R.7 row 10 keeps rev
+22's name for the intent.
 
 THE CLOSING EXAMPLE (rev 23 rewrite; rev 22's table is in §16.5). Over `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/` with R =
 `(<10, <30)`, the same 1,111 lists (hours `3`, `12`; minutes absent, `15`, `45`, `05`, `99`; 0-3 items),
@@ -2603,10 +2753,11 @@ SAME ITERATION BY RECORD (CF:915-917, accepted at CF:905). [REV 20: this is the 
 below (**record-is-product**, CF 11:35), which states it for every record and joint condition.] A record is ALL its entries together ON THE SAME
 ITERATION; two calls are two questions, which different iterations may answer. With `/(?<g>[xy])(?<h>\d)/` searched
 in a value (§2.6):
-- on `x2 y1` (hits g=x h=2, g=y h=1): `some((g: "x", h: 1))` FAILS (no one hit has both); `some((g: "x")) & some((h:
-  1))` HOLDS (hit 1 gives g = x, hit 2 gives h = 1). The two spellings DIFFER (§0.1 L31).
-- on `x1 y2` (hits g=x h=1, g=y h=2): both HOLD (hit 1 has both). The two spellings AGREE.
-For `all`/the plain condition the two spellings always agree (every iteration has both = every iteration has g and
+- on `x2 y1` (hits g=x h=2, g=y h=1): `some((g: "x", h: 1))` FAILS / FAILS (no one hit has both); `some((g: "x")) &
+  some((h: 1))` HOLDS / HOLDS (hit 1 gives g = x, hit 2 gives h = 1). The two spellings DIFFER (§0.1 L31).
+- on `x1 y2` (hits g=x h=1, g=y h=2): both HOLD / HOLD (hit 1 has both). The two spellings AGREE.
+(WHOLE / SEARCHED, the text as the value, `predspec23b_model.out` PART 2.) For the plain condition (rev 22 also
+named `all`, retired) the two spellings always agree (every iteration has both = every iteration has g and
 every iteration has h); `count((g: "x", h: 1))` counts the iterations that have both. This REPLACES rev 2's rule that
 every `some(s)` over the same set denotes the same occurrence ("two occurrences need two names"; §13 O29 RESOLVED).
 Which iteration a record means when its labels sit at different depths (g inside the loop, k outside it): §13 O56,
@@ -2620,24 +2771,32 @@ ERROR, SIBLING LOOPS (text illustrative, D26: "h and k sit in different loops (`
 `(?:(?<k>\d),)*`): no pass pairs one h with one k. Write one condition per loop, `P & (h: S) & (k: T)`, or ask a
 group question"). The cross product is not offered.
 - `list := /(?:(?<h>\d{1,2}):(?<m>\d\d),)*/`, `list & ((h, m): padded(>= (9, 30)))` = "every time in the list is at
-  least 9:30": `10:00,9:30,` HOLDS (rev 19's per-label sequence reading rejected it; 3 of 10 subjects differ,
+  least 9:30": `10:00,9:30,` HOLDS / HOLDS (WHOLE / SEARCHED, `predspec23b_model.out` PART 3; rev 19's per-label
+  sequence reading rejected it; 3 of 10 subjects differ,
   joint_condition.md table (L), `jointexp_check.out`).
 - A label OUTSIDE the loop is tested on every pass, and once on zero passes: `/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k:
-  between(3, 7))` on `9` FAILS, as `(h: <5) & (k: between(3, 7))` does (0 of 1,110 differ, (RZ)); on `3` it FAILS (h absent on zero
-  passes; `(h?: <5, k: between(3, 7))` HOLDS).
+  between(3, 7))` on `9` FAILS / FAILS, as `(h: <5) & (k: between(3, 7))` does (0 of 1,110 differ in BOTH modes, with
+  h's default and without it; (RZ), re-run in `predspec23b_model.out` PART 3); on `3` it FAILS / FAILS (h absent on
+  zero passes); with a default, `(h = 0: <5, k: between(3, 7))`, `3` HOLDS / HOLDS (rev 22 wrote the mark `h?` here,
+  same answer) and `3;7` FAILS / HOLDS reporting `3` (the shorter stretch with zero passes, §R.6).
 - WHAT IS A LOOP (RULED, **optional-as-loop**, CF 15:23, his words: "optional-as-loop: that comment was for
   discussion. I agree both spellings should answer alike." RECORD: "`x?` and `(?:x|)` answer alike under the pairing
   rule"). THE MANAGER'S READING of how (to be checked by this revision; checked, joint_condition.md §4H.5): "a
   quantifier with upper bound 1 is NOT a loop for the pairing rule (it pairs nothing: at most one value)". So
-  `/(?<k>\d)?-(?<h>\d)?/ & (h: <5, k?: between(3, 7))` answers (0 of 121 differ from `/(?:(?<k>\d)|)-(?:(?<h>\d)|)/`, and
-  record = `&` on all 121); two optional fields in one item of a list answer (`3-6,` HOLDS, `7-2,` FAILS, `''`
-  HOLDS for `(a?: <5, b?: between(3, 7))`). A loop is what can set a label more than once in some match of the
-  program (rev 21, review r29 E); `*`, `+`, `{n,m}` with m >= 2 or no m, a `list_of` part and an `occurrences` hit
-  are the syntactic list that decides it for a REGULAR program. A spelling whose quantifier can never repeat a label
+  `/(?<k>\d)?-(?<h>\d)?/ & (h: <5, k = 3: between(3, 7))` (rev 23; rev 22 wrote `k?`) answers alike in BOTH modes
+  (0 of 121 differ from `/(?:(?<k>\d)|)-(?:(?<h>\d)|)/`, with k's default and without it; `predspec23b_model.out`
+  PART 1); two optional fields in one item of a list, `/(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a = 0: <5, b = 3: between(3,
+  7))` (rev 22: `(a?: <5, b?: between(3, 7))`): `3-6,` HOLDS / HOLDS, `7-2,` FAILS / HOLDS reporting the empty stretch
+  (a nullable list, §R.6), `''` HOLDS / HOLDS, `-6,` HOLDS / HOLDS; without the defaults `''` and `-6,` FAIL / FAIL
+  (PART 3). A loop is what can set a label more than once in a match of THE OPERAND REGEX THAT DEFINES IT (rev 23,
+  **repeated-means**, §R.1.8; rev 21-22 said "in some match of the program", review r29 E); `*`, `+`, `{n,m}` with m
+  >= 2 or no m, a `list_of` part and an `occurrences` hit are the syntactic list that decides it for a REGULAR
+  operand. A spelling whose quantifier can never repeat a label
   is not a loop: `/(?:(?<k>\d)(?=-))*-(?:(?<h>\d)(?!\d))*/` matches and captures as `/(?<k>\d)?-(?<h>\d)?/` on 781
   of 781 subjects (PART 4 (LOOP)), so it pairs as that pattern does and draws no sibling-loops error (rev 20 read the
-  `*` and gave the error). Where the program is not regular (a backreference, recursion), whether a label can repeat
-  is read from the syntactic list: the "if it is possible" exception of **mark-domain**, stated.
+  `*` and gave the error; this 781-subject comparison is of captures alone, no condition, so it has no mode).
+  Where the operand is not regular (a backreference, recursion), whether a label can repeat is read from the
+  syntactic list: the "if it is possible" exception of **mark-domain**, stated.
 - THE LOOPED WARNING MOVED (RULED, CF 11:17): onto a HAND-WRITTEN `|` of conditions whose labels can repeat (`list &
   ((h: >9) | (h: 9, m: >=30))`: each alternative must hold on EVERY pass, so it is not a per-item test); the joint
   condition draws none (§7.1).
@@ -2655,7 +2814,7 @@ through the array interface (§3.1, §3.4); nothing is created. Two levels:
   the iterations whose own g is x, iterations 1 and 3 with their positions, the owner's array example, §2.6) need the
   same level: LEAN (this document's consequence, review r12 CENSUS-8; the selection's spelling: review r12 CENSUS-1,
   LEAN). Out of range = the iteration is absent and a test on it is false (CF:62; rev 20: ABSENT in **absent-rule**'s
-  one sense, §4.2; whether the label controls apply to an indexed path is not settled, §13 O56). A TEST on one iteration by a
+  one sense, §4.2; whether a default applies to an indexed path is not settled, §13 O56). A TEST on one iteration by a
   literal index (`(x[2]: S)`) does not read text out; CF:62's countdown makes it regular (~k states for i <= k), so
   this document reads it as a group question at the default level (LEAN; the ruling covers READING one hit, and
   whether a test counts as reading is not in his words; §13 O56).
@@ -2668,16 +2827,20 @@ through the array interface (§3.1, §3.4); nothing is created. Two levels:
 
 **REASONING.** "All iterations" is substitution into the loop body, the only pure lowering (predx §2.1, O4); the
 last-iteration rule would need captures inside a loop. One home for every repeated label means `occurrences` adds no rule
-(§2.6), and "some" has one spelling (`some(...)`), "every" the plain condition ("every, possibly none" is
-`occurs.none((g = d: !S))` with d outside S, rev 22; rev 21's `occurs.none(!(g: S))` is gone with `!` on a condition; `all` reads DOM, review r29 C), "how many" `count` and the `occurs` counts. The record-as-same-iteration rule is the record's own meaning (all entries together, §5.4) applied to one
+(§2.6), and "some" has one spelling (`some(...)`), "every" the plain condition ("every, possibly none" is the plain
+condition with a default in S, `(g = d: S)`; the narrower "zero passes fine, a pass lacking g not" is
+`occurs.none((g = x: !S))` with x outside S; rev 23, §R.1.7; rev 22 gave the second form for "every, possibly none",
+rev 21 `occurs.none(!(g: S))`, and rev 20-22's `all` read DOM, review r29 C: all retired), "how many" `count` and the
+`occurs` counts. The record-as-same-iteration rule is the record's own meaning (all entries together, §5.4) applied to one
 iteration, so it needs no extra rule either.
 
 **STATUS.** Sequence rule: RULED (CF:583, predx Q4), SUPERSEDES "plain `$x` = last iteration" at the default level.
-REV 20: plain condition FAILS on zero iterations: RULED (**absent-rule**, CF 14:31); `all(c)` = c with every label
-marked, a marked absence counted: the manager's readings (review r28 C, E); the pairing rule: RULED (**joint-loops**
+REV 20: plain condition FAILS on zero iterations: RULED (**absent-rule**, CF 14:31); (rev 20-22: `all(c)` = c with
+every label marked, a marked absence counted, the manager's readings, review r28 C, E; RETIRED, all-question 23:18
+and drop-mark 21:49); the pairing rule: RULED (**joint-loops**
 CF 11:17, part (1) 13:29); `?` not a loop for it: the manager's reading of how (CF 15:23; the ruling is that `/x?/` and `/(?:x|)/` answer alike; review r29 E), loop-ness by behaviour (rev 21) the
 manager's reading. SUPERSEDES rev 8-19's "plain condition = all, zero iterations included".
-Plain condition = all, `some`/`all` the one spelling, `occurs` counts only, same iteration by record, the hit a
+Plain condition = all, `some` the one spelling (rev 8-22: `some`/`all`), `occurs` counts only, same iteration by record, the hit a
 repeated label, group questions at the default level and phase 1: CF:910-917, CF:922-924 (accepted at CF:905;
 "could you use some() to get some hits?" is his own question, CF:904-905). `occurs.some`/`occurs.all` removed rather
 than aliased: LEAN. One-iteration access at `captures`: RULED BY ACCEPTANCE (CF:977, to CF:972-973; rev 9: LEAN); a
@@ -2688,12 +2851,10 @@ the hits of `occurrences`, CF:950/CF:953-955 for every label; C36 RESOLVED). Zer
 RULED (CF:682); its role as the FALLBACK to `count()`: LEAN (CF:823) with the budget rule RULED (CF:832); the name
 `occurs`: RULED in use (CF:782). Duplicate labels by index: LEAN (CF:400); union type cited "ruled" (CF:350; §13 O3).
 A duplicate label set twice in one match under `x: S`: §13 O35. The `occurs` condition argument is a parenthesised
-literal: RULED (CF:732, C31). Whether `some`, `all`, `count` are built-ins or library names: lean library (prelude)
+literal: RULED (CF:732, C31). Whether `some`, `count` are built-ins or library names: lean library (prelude)
 names (§8; C28 RESOLVED for `occurs.all`, the rest LEAN).
 
 ### 4.4 Computed labels are match-dependent bindings
-
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
 
 **RULE.** A COMPUTED LABEL is a value of the match that is not a substring. It is written as a MATCH-DEPENDENT
 BINDING: a binding that reads match labels IS a computed label of the pattern whose labels it reads (a macro whose
@@ -2710,10 +2871,13 @@ requirement is on the mapping itself (a table giving two values for one text is 
 per-label ambiguity check", was the some-parse rule's and is gone with it (review r10 FIXB-7 (c)). Tabulated mappings report a constant from the accept state (§6.2); numerals by digit conversion. A computed
 label's value is context-free (§11). Read it with `$` like any label (`$d`, `$wd`; rev 20: E-CAL's `<=$dim` and
 E-RFC's `==$wd`, §13 C13 RESOLVED by **colon-scope**, CF 11:32). ABSENT INPUTS (rev 20; the LANE'S PROPOSAL, not
-ruled, §4.2 (e1)): a computed label reading an ABSENT label is ABSENT itself, and its own controls apply, the mark
-over DOM of the computed label (the image of its mapping over the values its inputs can take) and a default:
-`mnum := $mname.index` over `/(?<mname>Jan|Feb|Mar)?-(?<d>\d)/` on `-5`: `(mnum: <3)` FAILS, `(mnum?: <3)` HOLDS,
-`(mnum = 9: <3)` FAILS. A COMPUTED LABEL IS ARITY 1 (rev 20; the manager's reading, round jointcond,
+ruled, §4.2 (e1)): a computed label reading an ABSENT label is ABSENT itself, and its own default applies (rev 23:
+the one control, §R.1.6; rev 20-22 also offered the mark over DOM of the computed label, out since drop-mark 21:49):
+`mnum := $mname.index` over `/(?<mname>Jan|Feb|Mar)?-(?<d>\d)/` on `-5` (WHOLE / SEARCHED, `predspec23b_model.out`
+PART 4): `(mnum: <3)` FAILS / FAILS, `(mnum = 9: <3)` FAILS / FAILS, `(mnum = 1: <3)` HOLDS / HOLDS (rev 22's
+`(mnum?: <3)` HOLDS, rewritten with a default in the set), `NOT (mnum: <3)` FAILS / FAILS (UNKNOWN stays UNKNOWN);
+on `Feb-5` the plain `(mnum: <3)` HOLDS / HOLDS; on `Mar-5` `(mnum = 1: <3)` FAILS / HOLDS reporting `-5`@3 (the
+shorter stretch without the month, §R.6). A COMPUTED LABEL IS ARITY 1 (rev 20; the manager's reading, round jointcond,
 TUPLE-BINDING): a match-dependent tuple (`($sh, $sm)`) is written inline in a condition or passed as an argument,
 never bound (`lo := ($sh, $sm)` is an error naming the inline form, `> ($sh, $sm)`); a CONSTANT tuple binds like any
 value (`lo := (9, 30)`, **tuple-anywhere**, CF 09:49). Through a filter modifier a value condition becomes a pattern: `month_numbered(<3)` =
@@ -2982,7 +3146,7 @@ settings: LEAN (review r10 CENSUS-14, CENSUS-15). Per-field constraints carrying
 This is the ONE place the marks are defined; every other section points here. It is G0b's MARK TABLE: each mark,
 its ONE meaning IN EACH POSITION it may take (a bracket's position decides which of its rows applies: `( )` has six
 rows (rev 20: the four, plus the reference tuple left of `:` and the value tuple; heads, the left of `:=` and the
-error shapes stay folded; the label controls have their own row, outside the bracket count), `[ ]` two readings; review r10 CENSUS-17), and the §12 case that needs it ("no case" marks a mark carried
+error shapes stay folded; the label control has its own row, outside the bracket count), `[ ]` two readings; review r10 CENSUS-17), and the §12 case that needs it ("no case" marks a mark carried
 without one; the TWO-WAY CENSUS in §12 gives the reason). Inside `/.../` none of this applies: rx text has PCRE's
 meaning (`\d{1,3}`, `(?<y>...)`, `[^,]`), with exactly TWO stated exceptions, §11 THE MARKS INSIDE `/.../`: `${`
 always opens a hole (`/${p},${p}/`) in a pattern position (in a class or `\Q...\E` it is written `$\{`), and `&` is
@@ -3160,13 +3324,11 @@ constant sets (each component in its literal's domain, §2.4). For SET-ONCE labe
 rows as single-label condition records; for LOOPED labels the union is taken PER PASS INSIDE the pairing loop's item,
 NOT as a `|` of records over the whole match (that `|` is the moved-warning look-alike, §0.1: 56 of 1,100 differ
 with passes, `3;5;6`, `jcfold2_check.out` (ZJ)). With `$` components it is a §4.6 relation priced by class count. A
-default slices the set at its text; a mark projects the set onto the other labels over DOM(h) (§4.2). REV 21: DOM(h) is per PROGRAM (**domain-scope**,
-CF 16:31, narrowed by **mark-narrows**, CF 16:44), so its automaton is the PROGRAM's automaton (the regex intersected
-with the unmarked conditions and the marked conditions' present-label tests) projected onto h: the IN-CONTEXT DOM
-AUTOMATON, OWED (not designed, not built; review r29 G). It is exact through every regular construct (lookarounds,
-atomic groups, conditionals, `{0}`, DEFINE, PCRE's priority). Where the program is not regular (a backreference,
-recursion, a condition relating unbounded labels), §4.2 item (a): exact first, then an under- and an
-over-approximation, the mark refused where they could differ; no answer and no level changes silently.
+default slices the set at its text (the row with h absent reads the default's text in that one test, §R.1.6). REV
+23: a condition reads only its row, so it needs no automaton beyond the program's own: rev 21-22's mark projected
+the set onto the other labels over a per-program DOM(h), which needed an IN-CONTEXT DOM AUTOMATON (OWED, never
+designed) and refused the mark where approximations could differ; all of that retires with the mark and DOM
+(drop-mark 21:49, §R.2).
 
 **`&` AT `vm` WITH A NON-REGULAR OPERAND.** The regular operands build the CANDIDATE automaton; the VM verifies the
 non-regular operand on each candidate span; the reported span follows D196 ([PRED-SPLIT]). CAVEAT (CF:63): D196's
@@ -3272,25 +3434,23 @@ OWN-7). Prerequisite list: LEAN (review Q1X-8). The untiled-range wording: LEAN 
 
 ### 7.1 Named warnings
 
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
-
 **RULE.** Every warning has a STABLE NAME in dotted families (a contract, stated in the spec): `empty.search`,
 `dead.branch`, `label.unset` (rev 20: fires wherever a label a condition names can be ABSENT where the condition
-reads it, `*`, `{0,n}` and `occurrences` at `min = 0` included, unless the label is marked or defaulted; its text
-names the THREE fixes, `h?` (absence acceptable), `h = v` (absence reads as v), an alternative without h; lane
+reads it, `*`, `{0,n}` and `occurrences` at `min = 0` included, unless the label is defaulted; its text names the
+TWO fixes (rev 23; rev 20-22 named three, the mark `h?` among them, out since drop-mark 21:49), `h = v` (absence
+reads as v in that test) and an alternative without h; lane
 absimpact's census: 15 programs in the draft and the joint-condition note draw it, 1 before 14:31; its name
 describes a state the rule no longer has, "unset", a name for the spelling step; RULED that an absent label fails,
-**absent-rule** CF 14:31; the name and text LEAN; REV 21, review r29 I: it does NOT fire on a label every
-alternative of which controls it or omits it (`[(h?: S), (k: T)]`: nothing to fix), inside a group question it does
-not name `g?` as a fix (the mark there is the counted mark of §4.3, a different question) and it does not fire on
-zero passes (zero passes are no pass for `some`/`count`/`occurs`, §4.3)), `default.unused` (rev 20: a label's default that can never change
+**absent-rule** CF 14:31; the name and text LEAN; REV 21, review r29 I, restated in rev 23: it does NOT fire on a
+label every alternative of which defaults it or omits it (`[(h = v: S), (k: T)]`: nothing to fix; rev 21-22 wrote
+`h?`), and it does not fire inside a group question on zero passes (zero passes are no pass for
+`some`/`count`/`occurs`, §4.3; rev 21-22's clause about the counted mark `g?` retires with the mark)), `default.unused` (rev 20: a label's default that can never change
 an answer: (a) the label is never absent where the condition reads it, (b) the default's text is outside every set
 it meets; a WARNING, the manager's reading of "default-unused: agree", CF 11:05; a looped default is USED on the
-empty list since 14:31), the NEVER-ABSENT MARK warning (rev 20: a mark `h?` on a label that can never be absent where
-the condition reads it; the manager's reading (14:31); name the spelling step's; §4.2 (f) proposes merging it with
-`default.unused` (a) into ONE warning, the lane's proposal; REV 21, review r29 I: it reads only a mark the author
-WROTE; `all(c)` reads DOM through the general form and inserts no mark, so `all((x: S))` over a never-absent x draws
-no warning), `compare.width`, `compare.looped` (rev 19: a tuple
+empty list since 14:31; rev 23: a default may be any text, default-value 21:49, and the warning is the one on a
+default that can never be USED), [rev 20-22's NEVER-ABSENT MARK warning, on a mark `h?` over a label that can never
+be absent, RETIRED with the mark (drop-mark 21:49, §R.11); its proposed merge with `default.unused` (a) is moot:
+`default.unused` (a) covers the defaulted case alone], `compare.width`, `compare.looped` (rev 19: a tuple
 compare's field can hold more than one occurrence; RULED that it warns, rulings R-2, "looped-compare: warn"; REV 20:
 MOVED, RULED **joint-loops** CF 11:17: the warning's subject is now a HAND-WRITTEN `|` OF CONDITIONS whose labels can
 repeat, each alternative checked over every pass, the message naming the joint condition as the per-item form; the
@@ -3314,7 +3474,7 @@ literal name `*`, matches nothing). Errors cannot be disabled (the edge-assertio
 that suppresses nothing raises `warn.unused` (itself suppressible).
 REV 21: the error for a label no match of the program's regex can set (a DEFINE group, `{0}`, a dead lookaround;
 §4.2 A LABEL NO MATCH CAN SET; review r29 B) is an ERROR, not a warning. The WARNING FAMILY over absence
-(`label.unset`, the never-absent mark, `default.unused`, `label.both_sides` proposed): a PLAN item, unify when the
+(`label.unset`, `default.unused`, `label.both_sides` proposed; rev 20-22 also the never-absent mark, retired): a PLAN item, unify when the
 next member is proposed or any one is built (review r29 P, FIXIND-11).
 REV 20, gone or proposed: `compare.repeated` (proposed in rev 19) is GONE: a label named twice in one condition is a
 COMPILE ERROR (RULED, **label-twice**, CF 13:16: "label-twice: agree an error"). `label.both_sides` (lane unsetdef's
@@ -3328,8 +3488,6 @@ list of names: LEAN (manager's list, review RUL-14.1). rev 2's `transform.noop` 
 argument is the unapplied-macro error (§2.3).
 
 ## 8. Libraries
-
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
 
 **RULE.** Standard library = prelude text (macros; typed parameters are out of phase 1, §5.2) on the foundation; it
 grows without compiler changes. Standard library sets (each call is a full rx, used in the filter role): `between`
@@ -3416,6 +3574,14 @@ As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(
 20-21's body `(x & c & p) | (x & !c)` put `!` on the condition c. The new body gives the old answers: over the 1,110
 subjects of `/(?<k>\d)(?:;(?<h>\d))*/` with p = `(k: between(3, 7))`, 0 differ for c = `(h: <5)` and 0 for c = `(h?:
 <5)` (`predspec22_check.out` PART A (A4); on `0`, h absent on zero passes: HOLDS unmarked, FAILS marked, as before).
+REV 23 (the body STANDS, §R.5 A3; lane predspec23b's re-run, `predspec23b_model.out` PART 5, WHOLE / SEARCHED): with
+c = `(h: <5)` the body holds on 960 / 1,110 of the 1,110 subjects and `0` HOLDS / HOLDS (q drops `0`, so `!q` keeps
+it); with the default c = `(h = 0: <5)` (rev 22's `(h?: <5)` rewritten) 955 / 1,045, and `0` FAILS / FAILS (c is
+TRUE, p is not). Now that NOT on a condition is legal, rev 20-21's body `(x & c & p) | (x & NOT c)` is a spelling
+again, and it is NOT the same: it differs from the body on 10 (WHOLE) / 110 (SEARCHED) subjects for c = `(h: <5)`,
+first `0` (an absent h: NOT keeps it UNKNOWN and drops the row, the complement keeps it, §R.3), and on 0 / 0 for
+the defaulted c. The library body stays the complement form (§R.9 S124, STANDS): its "otherwise" branch includes the
+rows on which c is UNKNOWN.
 The record of rev 20-21 follows. Rev 20: the body is unchanged, its answers move through `!c` where c's label is absent ON A LOOP'S ZERO PASSES:
 lane absimpact's (RZ) 9 of 1,110, `0` FAILED before 14:31 and HOLDS now, and a caller wanting the old answer marks
 c's label. On a SET-ONCE optional label, or a pass that skips it, the mark MOVES the answer instead: unmarked, `(h:
@@ -3438,8 +3604,8 @@ string literal read as its decoded text, is CUT in rev 16, §9; the `json` modul
   one-hit TEST of the family, ONE definition (§2.6, §0.1 L58; it also equals `occurrences(x) & some((hit: /(?s).*/))`);
   where no question reads x's labels the compiler may build it as the plain set. The negated test is `!contains(x)`
   (rev 7's `!~`, withdrawn).
-- THE GROUP QUESTIONS over any repeated label (§4.3, stated there once): `some(c)`, `all(c)` (rev 20: c with every
-  label it names MARKED, read F1, the manager's reading; not the plain condition, §4.3), `count(c)`, and the `occurs` module (`occurs := import("occurs")`), which keeps the COUNTS ONLY
+- THE GROUP QUESTIONS over any repeated label (§4.3, stated there once): `some(c)`, `count(c)` (rev 20-22 also
+  `all(c)`, c with every label marked; RETIRED, all-question 23:18, §R.1.7), and the `occurs` module (`occurs := import("occurs")`), which keeps the COUNTS ONLY
   (CF:913): `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`; rev 7's `occurs.some` and `occurs.all` are
   withdrawn (lean: removed, not aliased). `c` is the usual condition, passed as a parenthesised literal
   (`occurs.exactly(1, (name: set))`; C31 RESOLVED); one record = one iteration (SAME ITERATION BY RECORD, §4.3);
@@ -3480,20 +3646,24 @@ string literal read as its decoded text, is CUT in rev 16, §9; the `json` modul
   library until someone asks"). Their text is the record in §16.
   (2) THE DECIDED-PREFIX ORDER (rev 18 caveat (5): a field read only when every earlier field equals its bound) is
   WITHDRAWN (RULED, **unset-component**, CF 11:05: "unset-component: yes"): every component is read (§2.4, DOM) and an
-  absent label FAILS the condition unless the author marks it or gives it a default (§4.2). Answers MOVE: `t2 & ((h,
-  m): padded(between((9, 30), (11, 0))))` on `10` was accepted by rev 18-19 and FAILS now; `((h, m = 0): ...)` and
-  `((h, m?): ...)` are the author's two controls (table (TM2), §4.2).
+  absent label FAILS the condition unless the author gives it a default (§4.2; rev 20-22 also the mark). Answers
+  MOVE: `t2 & ((h, m): padded(between((9, 30), (11, 0))))` on `10` was accepted by rev 18-19 and FAILS / FAILS now;
+  `((h, m = 0): ...)`, the author's one control since rev 23, HOLDS / HOLDS (WHOLE / SEARCHED, `predspec23b_model.out`
+  PART 5; rev 20-22's second control `((h, m?): ...)` is out).
   (3) A BOUND FROM THE MATCH, `> ($sh, $sm)`: a §4.6 relation priced by class count (joint_condition.md table (SE):
   168 classes, 13,328 cases, 0 differ, `jcfold_check.out`); a `$` component is read by its VALUE, leading zeros
   ignored (§2.4; rev 18's LEAN for bounds, pending O27, survives here).
   (4) OVER A LOOP (rev 19 caveat (6), restated): a joint condition over looped labels is tested PER PASS of the
   pairing loop (§4.3, RULED **joint-loops** CF 11:17): `list := /(?:(?<h>\d{1,2}):(?<m>\d\d),)*/`, `list & ((h, m):
   padded(>= (9, 0)))` is "every time in the list", and it draws NO warning. ZERO PASSES: rev 19's "accept the empty
-  list" becomes FAIL ON THE EMPTY LIST UNLESS THE LOOPED LABEL IS MARKED (**absent-rule**, CF 14:31): on
-  `/(?:(?<h>\d{1,2})(?::(?<m>\d\d))?,)*/` the subjects `''` / `10,` / `9,` / `9:45,` / `10,9:15,` give, with R =
-  `padded(>= (9, 30))`: `((h, m): R)` F F F H F; `((h, m?): R)` F H H H F; `((h?, m = 0): R)` H H F H F; `((h?, m?):
-  R)` H H H H F (joint_condition.md table (TM2-L), `absfold_check.out`). The empty list needs the mark on h, the label
-  the zero passes leave absent. The looped warning (rulings R-2, CF 00:09: "looped-compare: warn") MOVED onto a
+  list" becomes FAIL ON THE EMPTY LIST UNLESS THE LOOPED LABEL HAS A DEFAULT (**absent-rule**, CF 14:31; rev 20-22 said
+  "IS MARKED"): on `/(?:(?<h>\d{1,2})(?::(?<m>\d\d))?,)*/` the subjects `''` / `10,` / `9,` / `9:45,` / `10,9:15,`
+  give, with R = `padded(>= (9, 30))` (WHOLE value; `predspec23b_model.out` PART 5): `((h, m): R)` F F F H F; `((h, m =
+  0): R)` F H F H F; `((h, m = 30): R)` F H H H F; `((h = 10, m = 0): R)` H H F H F; `((h = 10, m = 30): R)` H H H H F
+  (rev 20-22's table (TM2-L) wrote `m?` and `h?` where the last three write defaults inside R, with the same WHOLE
+  answers). The empty list needs a default on h, the label the zero passes leave absent. SEARCHED (the list is
+  nullable, §R.6): every row with h's default HOLDS on all five; the others hold on `10,9:15,` too (the stretch
+  `10,`), `((h, m): R)` still F F F H F. The looped warning (rulings R-2, CF 00:09: "looped-compare: warn") MOVED onto a
   hand-written `|` of conditions whose labels can repeat (§7.1).
   (5) LEVEL: default. With constant bounds the SET of every joint condition is a FINITE UNION OF PRODUCTS of
   per-label constant sets (§6.1); `>= (b1, ..., bk)` is k products (table (X): 24,420 cases, 0 differ,
@@ -4130,11 +4300,11 @@ the owner decides which stay in phase 1 (§0.2).
 | `count(...)` | none in code (E-HTTP's prose only) | the first spelling: LEAN (CF:823, "perhaps"); its budget refusal RULED (CF:832); a count is a numeral string RULED (CF:977-978) (review r10 FIXA-6) |
 | operator section `(& f)` in code | none (prose only, §5.2, §5.3) | RULED, IN phase 1 (CF:753) |
 | the `occurrences` transform (rev 7's `~`, `!~`: withdrawn) and its `min` setting | none (E-JSONL's `contains` is `occurrences(x, min = 1)` by definition, rev 9) | CF:907-909 (accepted at CF:905); its group questions phase 1 (CF:922-924); `min`: CF:933-934, CF:960; whether a case is wanted: the owner's (§0.2) |
-| `some(...)`, `all(...)` | none (the two `some(` hits are `@assert.some`) | CF:912-914 (accepted at CF:905; `some()` is his own question, CF:904-905) |
+| `some(...)` (rev 8-22 also `all(...)`, retired 23:18) | none (the two `some(` hits are `@assert.some`) | CF:912-914 (accepted at CF:905; `some()` is his own question, CF:904-905) |
 | `contains(...)` | E-JSONL | standard library (§8) |
 | `anchored(...)` | E-HTTP (rev 13) | standard library (§8); RULED (CF:1005, exact ends CF:1048-1053 on main) |
 | the joint condition `((p1, ..., pk): R)` and its comparison sets on tuple atoms (rev 20; rev 16-19's `lex_` family RETIRED, §16) | E-CAL's second spelling (§12.5) | RULED (**record-is-product** CF 11:35, **colon-scope** 11:32, **set-arity** 10:26, **two-orders** 11:20, **modifier-lift** 11:27, **joint-loops** 11:17; §4.1, §2.4) |
-| the label controls `h?` (the mark) and `h = v` (the default) (rev 20) | none | RULED (**absent-rule** CF 14:31; the default 10:37-11:05); spellings placeholders (§4.2) |
+| the label control `h = v` (the default; rev 20-22 also the mark `h?`, out since drop-mark 21:49) | none | RULED (**absent-rule** CF 14:31; the default 10:37-11:05; per test, any text: default-scope 22:30, default-value 21:49); spellings placeholders (§4.2) |
 | the field reference `^h` (rev 19) | none | PAUSED INDEFINITELY (**retire-paused** CF 12:51); out of rev 20's language (§16) |
 | positional `X[...]` | none (rev 18-19's tuple bodies used it, RETIRED with them, §16) | RULED (CF:553); the owner's search example reads one iteration by it (`$m.hit[2]`, §2.6), at the `captures` level (LEAN) |
 | `where`, `where_group`, `each_group` | none | LEAN (§3.2, §5.3); candidate cut |
@@ -4388,7 +4558,10 @@ Agreeing look-alike (no error): an assertion strictly inside a value, `/(?<v>[\d
 
 ## 13. Open questions and contradictions
 
-REV 23 NOTE: this section still names the optional mark `h?`, DOM or `all(...)` in places; those sentences are rev 22's HISTORY: the mark and `all` are out (drop-mark 21:49, all-question 23:18), a mark example reads with a default (§R.1.6) and its answer is not re-run unless §R.7 lists it; §R.9 gives each site's disposition.
+Rev 23 (lane predspec23b): this section is a LOG; its RESOLVED and CLOSED entries are the record and keep the words
+of their revision. Each entry whose live text named the optional mark, DOM or `all` carries a [REV 23: ...] note,
+and the block REV 23: THE ITEMS THAT NAMED THE MARK, DOM OR `all` at the end of this section gives the status of
+each (from §R.11).
 
 Contradictions (C) are places where two notes, or a note and a ruling, give different readings; open items (O) are
 places the notes leave silent or explicitly open. Each gives both readings; none is resolved here except by a
@@ -4422,7 +4595,7 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
 - **C21** `count` as a value (rev 5): `count(...)` yields a number used like a subject number, LEAN (CF:823,
   "perhaps"); refused only over the budget with `occurs` named, RULED (CF:832); the 11-14 "NOT a count value (no
   number type)" is withdrawn (CF:782 (3)), §8. `some`/`all`/`count` as built-ins or library names: lean library
-  (prelude) names (rev 8, §4.3, §8).
+  (prelude) names (rev 8, §4.3, §8). [REV 23: `all` retired, all-question 23:18; the lean covers `some` and `count`.]
 - **C27** context-marked sets vs "matches ENTIRELY": RULED (CF:713): a set is the strings it matches entirely; `^` in
   a filter is the filtered span's start (CF:761), §11.
 - **C30** what a positional argument is: RULED (CF:732, CF:749): positional = required parameters, keywords =
@@ -4456,7 +4629,8 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
   [REV 20: OVERTAKEN 14:31 in its `all` half. `all(c)` is c with every label it names MARKED, read F1 (the manager's
   reading, review r28 disposition C; §4.3), so `all((x: S))` = `(x?: S)`: neither the plain condition nor the
   default. "Zero iterations: both hold" is FALSE under **absent-rule**: on zero passes the plain condition FAILS and
-  `all` holds exactly when some value in DOM(x) is in S (§4.2). `occurs.all` stays removed.]
+  `all` holds exactly when some value in DOM(x) is in S (§4.2). `occurs.all` stays removed.] [REV 23: `all` RETIRED
+  (all-question 23:18); "every pass, possibly none" is `(x = d: S)` with d in S (§R.1.7, §0.1 L36).]
 - **O12** `!~` (rev 8): RESOLVED: WITHDRAWN with `~` (CF:909, accepted at CF:905); the negated test is
   `!contains(rx)` (§2.6). L51 is restated on `!occurrences(r)` vs `!contains(r)`.
 - **O29** does each `some` pick its own occurrence (rev 8): RESOLVED by SAME HIT BY RECORD (CF:915-917, accepted at
@@ -4603,7 +4777,7 @@ Open items (rev 0, still open):
   empty-match rule presupposes a SEARCHED MODE chosen by the caller (predx O1 lean: the caller picks); not ruled.
 - **O2.** Precedence among `!`, `:`, `.`, `$`, prefix comparisons, arithmetic and `@` is stated only pairwise (C16,
   §4.1's entry extent; and `$` over a dot path, §5.4: `$a.b.c` = `$(a.b.c)`).
-- **O3.** Notes call several leanings "ruled" (unset label false, union type of duplicates, filtering by indexing). REV 20: "unset label false" is now RULED as part of **absent-rule** (CF 14:31: a condition on an absent label FAILS, §4.2); the other two stay as listed.
+- **O3.** Notes call several leanings "ruled" (unset label false, union type of duplicates, filtering by indexing). REV 20: "unset label false" is now RULED as part of **absent-rule** (CF 14:31: a condition on an absent label FAILS, §4.2); the other two stay as listed. [REV 23: a condition on an absent label is UNKNOWN, and the row is dropped, negated or not (§R.1.5, condition-not 23:48): "FAILS" for every program without NOT.]
 - **O5.** Do a map's per-field value constraints carry into joined labels (asked Frank 2026-11-14; lean yes; predx:
   yes by construction).
 - **O6.** `functions` presupposes DFA captures ([ENG-TDFA]); Q11 moves span REPORTING to `captures`; whether
@@ -4678,6 +4852,18 @@ review's proposed lean, in plain words, NOT resolved):
   iteration outside S" is `(x: !S)` (on `1,7,`: FAILS). On an absent x: `(x: !S)` FAILS, `P & !q` HOLDS; marked:
   `(x?: !S)`, or `P & !q` with `q := P & (x?: S)`, whose DOM is q's own (§0.1 L30). The look-alike rows L30, L95
   are restated; the warning of rev 3's lean is not needed.
+  REV 23 (**condition-not** 23:48; lane predspec23b's re-run, `predspec23b_model.out` PART 6, WHOLE / SEARCHED). `!`
+  on a condition is legal again as the three-valued NOT, so rev 3's two sentences and the complemented pattern are
+  THREE questions (§R.3), none a look-alike needing a warning. On `/(?:(?<n>\d)?,)*/` and `1,7,`: `(n: <5)` FAILS /
+  HOLDS (`1,`@0); `NOT (n: <5)` ("not every pass below 5") HOLDS / HOLDS; `(n: !<5)` ("every pass outside") FAILS /
+  HOLDS (`7,`@2); `P & !(P & (n: <5))` HOLDS / HOLDS. On `7,,` (a pass lacking n): `NOT (n: <5)` HOLDS / HOLDS (one
+  pass is FALSE, so the AND is FALSE whatever the other), `(n: !<5)` FAILS / HOLDS (`7,`). On the empty list: NOT and
+  `(n: !<5)` FAIL / FAIL (one null pass row, UNKNOWN), the difference HOLDS / HOLDS. Over the 364 texts over {1, 7,
+  `,`} to length 5: WHOLE `NOT c` 22, `(n: !<5)` 2, the difference 40 (they differ 20, first `,7,`); SEARCHED 132,
+  132, 364 (differ 0). On ONE absent set-once label (`t2` on `9`, R = `padded(>= (9, 30))`): `((h, m): R)`, `NOT
+  ((h, m): R)` and `((h, m): !R)` all FAIL / FAIL (m absent: UNKNOWN), the difference `t2 & !(t2 & ((h, m): R))` HOLDS
+  / HOLDS; with a default, `((h, m = 00): R)` FAILS / FAILS while `NOT ((h, m = 00): R)` and `((h, m = 00): !R)` HOLD
+  / HOLD (rev 21's "marked pair" FAILS / HOLDS is gone with the mark).
 - **O31. The dot family, and level selection.** (OWN-7, RUL-12; WIDENED in rev 7 by review r8 P6-12, CENSUS-24.)
   One `.` carries four resolutions: (1) a LABEL of the map interface (`d.year`, `rest.year`); (2) a module MEMBER
   (`json.row`), which is name resolution if a module is a namespace (O46's lean), not navigation on a value;
@@ -4745,7 +4931,7 @@ review's proposed lean, in plain words, NOT resolved):
   both legal programs, so no diagnostic is possible; `label.unset`'s text names the default as the fix); L100 (a
   marked condition read in its program) is BY DESIGN; the SILENT entries under SAVING PEOPLE FROM THEMSELVES (§0
   STANDING CRITERIA: `all(((h, m): R))` accepting incomplete items, the label controls in searched mode) are listed
-  there, not here.
+  there, not here. [REV 23: L100 is SAME (§0.1, no mark); the SILENT list is §0's rev 23 re-grading.]
 
 Open items NEW in rev 5 (from the 2026-11-15 entries and the rev 4 audit; plain words, each with a leaning):
 - **O39. The budgets: how big is too big?** RESOLVED in rev 10 (CF:977; the RESOLVED list), as its lean said. Two size limits are named but never set by the owner: (a) the
@@ -4871,7 +5057,7 @@ its readings and a lean, NONE decided here):
   (e) `some`/`all`: decided: `some(...)` is the one spelling of "some" (CF:912-914), and the witness rule is SAME
   ITERATION BY RECORD (O29 RESOLVED). [REV 20: "`all(...)` the default" is OVERTAKEN 14:31: `all(c)` is c with
   every label it names marked, read F1 (the manager's reading, review r28 disposition C; §4.3), not the plain
-  condition and not the default.]
+  condition and not the default.] [REV 23: `all` RETIRED (all-question 23:18), §R.1.7.]
   What stayed open here, the level of one-iteration access, is RULED in rev 10 (`captures`, CF:977; the RESOLVED
   list). C36 (the
   priority parse), which the whole restatement rested on, is RESOLVED in rev 9 by the one reading (CF:953-955).
@@ -4963,7 +5149,8 @@ here):
   11:35) and **pairing-loop** (CF 13:29, his words: "pairing-loop: I agree part 1"; the wording: "the pairing loop
   is the DEEPEST loop that encloses any named label; every other named label lies in the same pass of it or outside
   it with one value per pass; otherwise the sibling-loop error"; parts 2-3 settled by **absent-rule**, CF 14:31: "an
-  unmarked absent label fails the pass; marked: the others are tested"), with **optional-as-loop** (CF 15:23: "I agree
+  unmarked absent label fails the pass; marked: the others are tested"; rev 23: "marked" reads "defaulted", the
+  default standing in for the label in that test, §R.1.6), with **optional-as-loop** (CF 15:23: "I agree
   both spellings should answer alike"; THE MANAGER'S READING of how: a quantifier with an upper bound of 1 is not a
   loop for the pairing rule). His 13:29 remark "Even /x?/ is a loop from 0 to 1" is recorded as discussion ("that
   comment was for discussion", CF 15:23). Stated in §4.3 PER-PASS PAIRING; record = `&` on joint_condition.md's (UP)
@@ -5560,13 +5747,34 @@ OPEN ITEMS NEW IN REV 20 (each: reply either way; the plain-words drafts are in 
   error where the approximations differ, never silent; §4.2 WHAT COMPUTING THE RULE TAKES). Whether that is the
   intended tier for a ruled rule ("I'm assuming such logic is possible") is for the owner when a case needs it.
 - PLAN, not asked now (review r29 group O): at the next phase-1 review, whether tuple values, the default and the mark
-  are IN or OUT of phase 1; `all` (IN, ruled) now depends on the mark (§4.3) and inherits its refusals.
+  are IN or OUT of phase 1; `all` (IN, ruled) now depends on the mark (§4.3) and inherits its refusals. [REV 23: the
+  mark and `all` are out of the language; the PLAN item is tuple values and the default (and NOT on a condition),
+  §0.2.]
 - STANDING QUESTIONS (review r29 group P): the warning FAMILY over absence (`label.unset`, the never-absent-mark
   warning, `default.unused`, `label.both_sides` proposed) is a PLAN item, its trigger the next proposed member or the
   build of any one (FIXIND-11); the general "condition with candidate sets" transform (FIXIND-12) is NOTED as the
-  unlock behind (e2.1) and one-witness, not filed.
+  unlock behind (e2.1) and one-witness, not filed. [REV 23: the never-absent-mark warning retired (§7.1); (e2.1)
+  REVERSED and one-witness RETIRED (§R.11), so FIXIND-12 has no unlock left to stand behind.]
 - `list_of`'s minimum (whether a `list_of` part admits zero items): a gap in the draft, not in the rule; OPEN (lane
   absfold's finding, joint_condition.md §4G.5 (d)).
+
+REV 23: THE ITEMS THAT NAMED THE MARK, DOM OR `all` (lane predspec23b; status from §R.11, no new ruling):
+- RETIRED with the mark (drop-mark 21:49; they lose their subject, none is reversed): **zero-pass-empty**,
+  **match-context**, **domain-scope**, **mark-narrows**, **mark-in-none**, **mark-under-not** (already closed in rev
+  22), **one-witness**, the manager's readings (a) and (c) of §4.2 THE UNDEFINED ITEMS, the "IF IT IS POSSIBLE" TIER
+  FOR PROGRAMS (it was a tier for computing DOM), and (e3)'s PER-LABEL MARK on a condition passed to a macro. Their
+  worked examples above (`0-3`, `b`, `12`) are rev 21-22's answers and are not re-run (§16.4 holds the rules they
+  ran under).
+- REVERSED: **default-reaches-dollar** and (e2.1) (default-scope 22:30, §R.5 E); the lane's reading (i) of rev 22
+  ("what counts as a condition for the `!` error") loses its subject with condition-not 23:48 (`!` on a condition is
+  legal).
+- STANDS: (ii) the closing example's intents (rewritten without `all`, §4.3); (e1), (e2.2) and (f) as lane proposals,
+  unruled (rev 22 §4.2's text is in §16.4; (e1)'s computed-label example is rewritten in §4.4).
+- O3 (the "ruled" leanings), O28 (one rule for optional, repeated and never-entered labels) and O56 (which iteration
+  a record means): see their REV 23 paragraphs above. O28 is RESOLVED IN MEANING by condition-not: the three
+  spellings are three questions (§R.3).
+- O38's SILENT list is §0 STANDING CRITERIA's rev 23 list (no `all`; a default made vacuous by a shorter stretch;
+  `A & !B` searched).
 
 ## 14. Non-goals
 

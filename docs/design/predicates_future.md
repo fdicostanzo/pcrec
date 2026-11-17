@@ -40,6 +40,7 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 
 ## 3. A default that is a set of several strings: `some(...)` / `all(...)`
 
+- SUPERSEDED IN PART 2026-11-17 (rev 23; read `predicates_draft.md` §R and COND-FAMILY 21:49-23:48 first; lane predspec23b, a note, the item not rewritten): `all` is RETIRED (all-question 23:18) and the optional mark is OUT (drop-mark 21:49), so the family above ("the mark = every value the label can take") has no mark member and "the mark already gives the 'any value fits' reading" no longer holds; a default is per test and may be any text (default-scope 22:30, default-value 21:49, §R.1.6). A several-string default stays a compile error; the trigger stands.
 - WHAT: a label default naming more than one value, with the author choosing the reading:
   `(h, m = all(between(0, 59))): R` (every value must fit: "the missing field does not matter") or `some(...)`
   (any value fits).
@@ -78,6 +79,7 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 
 ## 6. An author-written "ran but no value" (empty) value for `x*` loops
 
+- SUPERSEDED IN PART 2026-11-17 (rev 23; read `predicates_draft.md` §R and COND-FAMILY 21:49-23:48 first; lane predspec23b, a note, the item not rewritten): the author's control over an empty loop is now the DEFAULT alone (`(h = d: S)` with d in S = "every pass, possibly none", §R.1.7; the narrower question is `occurs.none((h = x: !S))` with a sentinel); the optional mark named below is out (drop-mark 21:49).
 - WHAT: a value for "the loop was reached and ran zero times" that the AUTHOR writes in the set to admit the
   empty case: `(h: <5 | empty, k: 3 | 4 | 5 | 6 | 7)`.
 - STATUS: the owner's idea, 2026-11-16 ("I meant we had a value to represent 'ran but no value' for x* forms").
@@ -111,6 +113,7 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 
 ## 8. `count` / `some` over a field reference (`count(^h)`, `some(^h)`)
 
+- SUPERSEDED IN PART 2026-11-17 (rev 23; read `predicates_draft.md` §R and COND-FAMILY 21:49-23:48 first; lane predspec23b, a note, the item not rewritten): `some` and `count` remain (two-valued, the draft's reading **group-truth**, §R.1.7) and `NOT some(c)` is legal (condition-not 23:48), so "no pass gave h a value" is now also `NOT some((h: /(?s).*/))`; "the markless alternative" below is the only one, the mark being out (drop-mark 21:49).
 - WHAT: the paused other-side sigil as the argument of a group question: `count(^h)` = how many times the loop
   gave h a value; `some(^h)` = h has at least one value (`P & (h: 9) & some(^h)`).
 - STATUS: the owner's question, 2026-11-16 ("If we had something similar, could then & count(^)"). Not ruled.
@@ -149,6 +152,7 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 
 ## 11. Restricting a default to the values the label could hold
 
+- SUPERSEDED IN PART 2026-11-17 (rev 23; read `predicates_draft.md` §R and COND-FAMILY 21:49-23:48 first; lane predspec23b, a note, the item not rewritten): ANSWERED by **default-value** (21:49, "Default-value: yes"): a default may be any text, a warning only on a default that can never be USED (§R.1.6, §R.11). The "three controls" family below lost its mark (drop-mark 21:49) and the per-program value set it cites (domain-scope) is RETIRED; the middle-ground warning is the `default.unused` warning's territory. Kept as the record of the remark.
 - WHAT: require (or warn unless) a default `m = v` names a value in the label's own value set, so the three
   controls form one family: no control = the empty set, a default = one possible value, the mark = every possible
   value.
@@ -165,6 +169,7 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 
 ## 12. A warning a macro raises about its own arguments
 
+- SUPERSEDED IN PART 2026-11-17 (rev 23; read `predicates_draft.md` §R and COND-FAMILY 21:49-23:48 first; lane predspec23b, a note, the item not rewritten): its motivating case, "a mark inside `none`" (**mark-in-none**), is RETIRED with the mark (drop-mark 21:49), and the cautions below that speak of "the mark" lose their subject; the idea itself (a library macro raising a warning on a property of its arguments' constant SETS) stands, its trigger now a first library-macro diagnostic wanted (the second clause unchanged).
 - WHAT: a library macro's body can raise a compile-time warning when a stated fact holds of what it was passed, so
   a diagnostic like "a mark inside `none`" lives in `none`'s own definition, not in the compiler's knowledge of one
   macro's name. The owner's sketch (a placeholder spelling, D193 add. 4): `@compiler.warn(cond, "! In none")`.
