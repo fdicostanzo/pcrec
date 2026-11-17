@@ -67,17 +67,24 @@ line, with the count. A paragraph-form note that finds two sites converts itself
      the second caller"): name the question, the existing answer(s) found by grep, and which survives;
    - `NEW-SEAM` a new crossing between stages, parts or the kit (goal 3): writer and readers named;
    - `WIDEN` a data shape the feature needs inputs outside of (goal 4; rule "A shape states the inputs it covers"):
-     the shape, what it covers today, what the feature and the planned rows need;
+     the shape, what it covers today, what the feature and the planned rows need, AND every GENERIC writer or
+     copier of the shape (whole-struct copies, memsets, field writes that do not test the kind or variant): each
+     is a hazard when the shape changes (retro test 2026-11-17: D70's union turned `rd_node`'s kind-blind
+     `revbody`/`possessive` writes into a clobber of another kind's bytes);
    - `AS-IS` the site takes the feature with no change of shape (say why in one clause).
    A site the feature would join by adding a branch to a chain, a second mechanism beside a first, or a private
    copy of a declared table is NEVER `AS-IS`: that is the aggregation this step exists to stop.
 3. REGISTER LOOKUP (goal 5; part 3's HOW TO USE IT). Grep part 3 for every file and function in the site map and for
    the feature's plan tag. Each matching row: RIDES FIRST, JOINS <abi event in flight>, or NOT CARRIED with the
    reason. A site classified `CHAIN->TABLE`, `SHARED` or `WIDEN` with no row PROPOSES a row in the register's own
-   columns. Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files.
+   columns. Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files,
+   and the "Revisit when" triggers of every D-row that names a site in the map (`scripts/entry -g` on the file or
+   function): a trigger the feature meets is looked up like a register row (the register is newer than most of
+   those triggers; D62's "a fifth AST analysis" was the D70 union's).
 4. REMODELS THAT LAND FIRST. Each `CHAIN->TABLE`, `SHARED` or `WIDEN` site the feature needs now becomes one unit:
    what changes shape, its GATE (no-mover with byte identity / abi event / kit seam event, D146), its SIZE (S/M/L as
-   part 3), and the test that it is SEPARABLE: it lands, answer-identical, without the feature. A remodel the feature
+   part 3), the CHECKS THAT BIND the code it moves (sabotage anchors in `tests/mech/`, pins and manifests, found by
+   grep; critics.md rule A3), and the test that it is SEPARABLE: it lands, answer-identical, without the feature. A remodel the feature
    does not need yet is not a unit: it becomes a register row with its trigger (rule "Build under measurement").
 5. GENERAL FORM AND SIBLINGS. Name the general form of what the feature adds (rule "Build the general form"); its
    siblings already in the tree (the decision family it joins); the plan rows that will extend the same shape
@@ -124,8 +131,8 @@ Then: rows the note PROPOSES (register columns: remodel, shape (rule), where, ev
 "No row matched" is written out with the greps that found none.
 
 ## Remodels that land first
-Per unit: what changes shape; gate (no-mover + byte identity / abi / kit); size; separable (lands without the
-feature: yes, because ...); [DEPENDS ON THE OWNER: whether "nothing gets slower on the cells it touches" gates all
+Per unit: what changes shape; gate (no-mover + byte identity / abi / kit); size; the checks that bind the moved
+code; the generic writers it must guard (WIDEN units); separable (lands without the feature: yes, because ...); [DEPENDS ON THE OWNER: whether "nothing gets slower on the cells it touches" gates all
 product code; written the strict way] the cells it touches and the speed gate; what it deletes.
 
 ## The general form and its siblings
