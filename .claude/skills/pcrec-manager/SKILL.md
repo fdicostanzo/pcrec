@@ -25,7 +25,7 @@ below fires, not before.
 | brief a lane | §3 below + `docs/dev/lanes/BRIEF_TEMPLATE.md` |
 | run a test suite or the full battery | the `pcrec-test` skill |
 | send a design to build, or land major code | the `pcrec-critic` skill (§5) |
-| plan a timing run, a bench window, anything in 20:00-01:00 | memories pcrec-box-evening-hold, pcrec-box-shared-with-frank, pcrec-bench-status; docs/dev/lanes/RUNS.md "TIMING WINDOWS"; run `scripts/loadshame` about 30 min before the window and tell Frank by name what is loading the box (Frank 2026-11-16) |
+| plan a timing run, a bench window, anything in 20:00-01:00 | memories pcrec-box-evening-hold, pcrec-box-shared-with-frank, pcrec-bench-status; docs/dev/lanes/RUNS.md "TIMING WINDOWS"; run `scripts/loadshame` about 30 min before the window and tell Frank by name what is loading the box (Frank 2026-11-16); `scripts/loadshame --present` lists the watched trouble makers (Steam, VS Code) by PRESENCE, however idle, window or not: remind him to close each one listed, 30 min before and at the start (Frank 2026-11-17; memory pcrec-timing-troublemakers) |
 | end or pause the session; Frank types /close or /idle | §6; the `close` / `idle` skills |
 | anything in root CLAUDE.md's situation index | that row |
 
