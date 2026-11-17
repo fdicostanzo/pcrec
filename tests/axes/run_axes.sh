@@ -1949,7 +1949,7 @@ fi
 # (a refusal here is a finding: r27 READ-3, the code-size cap at 4095, is
 # such a one and is not allowed for).
 if [ -z "$AXES" ] || axes_has --window-search-width; then
-    _wsw_ceil="$("$PCREC" --list-limits 2>/dev/null | awk -F'\t' '$1 == "PCREC_ANCHORED_MAX_STATES" { print $2 }')"
+    _wsw_ceil="$("$TIMEOUT_BIN" 60 "$PCREC" --list-limits 2>/dev/null | awk -F'\t' '$1 == "PCREC_ANCHORED_MAX_STATES" { print $2 }')"
     case "$_wsw_ceil" in
         ''|*[!0-9]*|0|1) echo "axes: FAIL: --list-limits gives no usable PCREC_ANCHORED_MAX_STATES ('$_wsw_ceil'): the width arm has no width" >&2; exit 1 ;;
     esac
