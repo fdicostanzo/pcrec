@@ -525,9 +525,16 @@ floor "default deny witnesses (no loop under no-span-loop)" "$(sl "$WORK/plain.g
 dpin=$(sl "$WORK/plain.gen.log" pinned_def)
 floor "default long pinned (default state)" "$dpin" "$FLOOR_LONG_PINNED_DEF"
 floor "default long pinned (the force)" "$(sl "$WORK/plain.gen.log" pinned_force)" "$FLOOR_LONG_PINNED_FORCE"
-ptot=$(sl "$WORK/plain.gen.log" pinned); pfor=$(sl "$WORK/plain.gen.log" pinned_force)
-if [ -n "$ptot" ] && [ -n "$dpin" ] && [ -n "$pfor" ] && [ "$ptot" = "$((dpin + pfor))" ]; then tp=$((tp + 1))
-else note "default long pinned: total ${ptot:-?} != default ${dpin:-?} + force ${pfor:-?} (a pinned state counted twice or elsewhere)"; fi
+# r39 K7: the equality is a function run on EVERY gen log (each head pass too): a head pass has one state
+# (the default's), so its pinned_def must equal pinned and its pinned_force be 0; a one-token mislabel of the
+# state test (st == 0 -> st == 2) reads pinned_def=0 there.
+pin_eq() {   # pin_eq LOG LABEL
+    local pt pd pf
+    pt=$(sl "$1" pinned); pd=$(sl "$1" pinned_def); pf=$(sl "$1" pinned_force)
+    if [ -n "$pt" ] && [ -n "$pd" ] && [ -n "$pf" ] && [ "$pt" = "$((pd + pf))" ]; then tp=$((tp + 1))
+    else note "$2 long pinned: total ${pt:-?} != default ${pd:-?} + force ${pf:-?} (a pinned state counted twice or elsewhere)"; fi
+}
+pin_eq "$WORK/plain.gen.log" default
 floor "default pinned sites" "$(sl "$WORK/plain.gen.log" pinned_sites)" "$FLOOR_PIN_SITES_DEF"
 floor "default breaks" "$(rv "$WORK/plain.run.log" breaks breaks)" "$FLOOR_BREAKS_DEF"
 floor "default class swaps" "$(rv "$WORK/plain.run.log" breaks swaps)" "$FLOOR_SWAPS_DEF"
@@ -580,6 +587,10 @@ for h in ${G2W_HEADS:-$GRID_HEADS}; do
     [ -n "$(eval echo "\${LOOP_FLOORS_$h:-}")" ] || note "head $h: no loop floors (every finite grid head is floored, F13)"
     floor "head $h pinned sites" "$(sl "$WORK/head$h.gen.log" pinned_sites)" "$(eval echo "\${PIN_FLOOR_$h:-1}")"
     floor "head $h long pinned" "$(sl "$WORK/head$h.gen.log" pinned)" "$FLOOR_LONG_PINNED_HEAD"
+    floor "head $h long pinned (default state)" "$(sl "$WORK/head$h.gen.log" pinned_def)" "$FLOOR_LONG_PINNED_HEAD"
+    pin_eq "$WORK/head$h.gen.log" "head $h"
+    pf=$(sl "$WORK/head$h.gen.log" pinned_force)
+    if [ "${pf:-x}" = 0 ]; then tp=$((tp + 1)); else note "head $h: ${pf:-?} pins counted as the force in a one-state pass"; fi
     floor "head $h breaks" "$(rv "$WORK/head$h.run.log" breaks breaks)" "$(eval echo "\${BREAK_FLOOR_$h:-1}")"
     floor "head $h long-row subjects" "$(rv "$WORK/head$h.run.log" longrows subjects)" "$FLOOR_LONG_SUBJ_HEAD"
     echo "G2W head $h wall ${t0:+$(( $(date +%s) - t0 ))}s"
