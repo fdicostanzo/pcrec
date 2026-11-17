@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: 0BSD
 # Provenance: original pcrec-memory-functions text (lane forms, R-45 plan A; lane formsfixa,
-# review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1).
+# review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1; lane formsfixe,
+# review r37's H1-H4, H7: the twin term, the agreement gate, the pool record and reach refusals).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
-identity check (docs/design/memfn/r45_reply.md rev 8 §3 "The cards", "The head `h` and the
+identity check (docs/design/memfn/r45_reply.md rev 9 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -14,7 +15,7 @@ shipped compile), I as the deny `--memfn=no-span-loop`, the engine route (C5) as
 `--memfn=no-window-search`; the artifact plus one find-all wrapper is one C file per cell, its
 answers gated against python `re` before any timing.
 
-THE NIGHT (r45_reply rev 8 §3 "the night order"; each step a command, RUNDIR one directory):
+THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR one directory):
   plan                     every cell (card, pattern, arm, regime, layer), the counts and the
                            EXPECTED WALL TIME of each timing step (UNMEASURED constants, named)
   dry RUNDIR [--quick]     builds EVERY cell (compile, gcc, the gate on every regime's
@@ -31,7 +32,7 @@ THE NIGHT (r45_reply rev 8 §3 "the night order"; each step a command, RUNDIR on
                            at h*); the line `rule: NEXT ...` names it
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest                 the rule against every drill r45_reply rev 8 §3 lists, plus the noise
+  selftest                 the rule against every drill r45_reply rev 9 §3 lists, plus the noise
                            drill (F2), the unimodal drill (F3) and the void/R0/re-run drills
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
@@ -66,7 +67,7 @@ GRID_TOP = 64
 SIMD = "-fmemfn-simd=x86-64-v3"
 LAYERS = {"off": [], "on": [SIMD]}
 
-# ---- the rule's statistical constants (r45_reply rev 8 §3 "The floor `f`", "Void") ----------
+# ---- the rule's statistical constants (r45_reply rev 9 §3 "The floor `f`", "Void") ----------
 # ALPHA: the rule's FAMILY-WISE false-pick budget, CHOSEN = the acceptance r35 F2 ruled (P(h* !=
 # 64 on pure noise) <= 5 %). The floor is sized so that ALL the per-cell comparisons together
 # show a false win beyond f with probability at most ALPHA (one-sided Bonferroni over N).
@@ -166,7 +167,7 @@ def method_of(regime):
     return "kit-approx" if regime in APPROX else "kit"
 
 
-# ---- the cards (r45_reply rev 8 §3 "The cards"; kit-grid@7) ---------------------------------
+# ---- the cards (r45_reply rev 9 §3 "The cards"; kit-grid@7) ---------------------------------
 FINITE = ["h%d" % h for h in GRID]
 CARD_ROWS = {"C1": "span_cross", "C2": "span_pop", "C3": "span_long", "C4": "span_size",
              "C5": "span_engine"}
@@ -755,7 +756,7 @@ def cmd_rerun(args):
     return 0
 
 
-# ---- THE RULE (r45_reply rev 8 §3, R0-R5, steps (1)-(5)) -------------------------------------
+# ---- THE RULE (r45_reply rev 9 §3, R0-R5, steps (1)-(5)) -------------------------------------
 def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="MEASURED"):
     """R1 over the FINITE heads `heads` (R0 already applied). cells_read: the C1-C2 cells with a
     reading; void_cells: the cells void twice (or void by method); t[h][c], tI[c] the raw
@@ -1324,7 +1325,7 @@ def death_depth(pat):
     return e
 
 
-# ---- the drills (r45_reply rev 8 §3 "Drills"), each with the result the design states ------
+# ---- the drills (r45_reply rev 9 §3 "Drills"), each with the result the design states ------
 def drill(spec):
     """spec: f, heads, cells [(id, k)], ratios {h: [per cell]} (t(I) = 1 unless tI given),
     void [ids]; the default ratio is 1.0 (a head that ties I)."""
@@ -1878,7 +1879,7 @@ def cmd_selftest(_args):
     return 1 if bad else 0
 
 
-# ---- the identity check (r45_reply rev 8 §3 "The head lever and its identity check") -------
+# ---- the identity check (r45_reply rev 9 §3 "The head lever and its identity check") -------
 ENCODINGS = {"byte": [], "utf8": ["-e", "utf8"]}
 
 

@@ -68,6 +68,7 @@ one binary. `cards.py selftest` is the drill record (89 checks; lane formsfixe's
 | H7 | The identity check counts the patterns whose FROZEN lever-h\* bytes differ from lever-64's, prints it, and refuses at zero when h\* < 64 (`a{40}` passed rev 8's file-level refusal) | §3 "The identity check" |
 | H9 | The owner's 14:35 passage is quoted whole, from "2. stage 2 is fine." | §3 "The owner's words" |
 | H10 | (1) The floor's thin pool takes the LARGER of its own and the night's sigma; the bimodal test borrows. (2) R4 reads `max(f(near-miss, l), f(near-miss, off))` (C5 is timed at `off` only). (3) C3's bimodal test reads step 1's pool sigma | §3 "Bimodal, defined", "The floor `f`" |
+| (fix-induced) | Drill (xv)'s G2 control (rev 7's floor on a 3x regime) turned off only the launch term; rev 9's twin term also sees a noisier regime, so the control read 0.000 and was blind. It now turns the twin term and the gate off too: 0.177 (accept > 0.15) | drill (xv) |
 | NAMED LIMIT | Re-measured under rev 9: a FAST 3-of-5 split in H(8)'s arm at 1.5 `f` ships 8 in 27 of 100 nights (27 under rev 8). Recorded, not gated, as RULED | §3 "A split that moves a median" |
 
 ## Changes in rev 8 (by r36 finding id)
