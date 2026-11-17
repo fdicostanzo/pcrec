@@ -312,6 +312,14 @@ C V24 a LOOKAHEAD right operand under the complement: `/\d/ & !/\d(?=\d)/`  /\d 
 C V24   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
 C V25 a `\b` right operand: `/\d+/ & /\d+\b/`  /\d+ (?C) then \d+\b on the stretch/
 C V25   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+C V26 a default inside the set: `/(?<h>\d)?x/ & (h = 0: <5)`  /(?<h>\d)?x(?(<h>)(?C"h<5")|(?C"d0<5"))/
+C V26   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+C V27 a default outside the set: `/(?<h>\d)?x/ & (h = 9: <5)`  /(?<h>\d)?x(?(<h>)(?C"h<5")|(?C"d9<5"))/
+C V27   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+C V28 the same under NOT: `/(?<h>\d)?x/ & NOT (h = 9: <5)`  /(?<h>\d)?x(?!(?(<h>)(?C"h<5")|(?C"d9<5")))/
+C V28   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+C V29 a joint with defaults over a loop: `CLOSE & ((h = 0, m = 0): (<10, <30))` (last settings)  /(?:(?<h>\d+)(?::(?<m>\d\d))?,)*(?(<h>)(?C"h<10")|(?C"d0<10"))(?(<m>)(?C"m<30")|(?C"d0<30"))/
+C V29   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1111
 C G1 hole loop, OPTIONAL label, condition INSIDE: `/(?:${item})+/`, item := `/(?<h>\d)?;/ & (h: <5)` (W1c)  /(?:(?<h>\d)?;(?C"h<5"))+/
 C G1   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
 C G2 occurrences, OPTIONAL label, condition INSIDE: `occurrences(/(?<x>(?<g>a)?b)/ & (g: "a"), min = 1)`  /(?:[\s\S]*?(?<x>(?<g>a)?b)(?C"g=a"))+[\s\S]*/
@@ -330,7 +338,7 @@ C G8 occurrences, ATOMIC argument, condition OUTSIDE: `occurrences(atomic(B | A)
 C G8   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
 C G9 hole loop, label looped at TWO depths, condition INSIDE: item := `/(?:(?<h>\d);)+x/ & (h: <5)`  /(?:(?:(?<h>\d);)+x(?C"h<5"))+/
 C G9   texts that differ: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
-== PART C SUMMARY: 34 models; 34 equal to the engine in every mode
+== PART C SUMMARY: 38 models; 38 equal to the engine in every mode
 == ORDER CHECK: each `&` model of PART C against the engine with the operands SWAPPED (must differ)
 C ORDER V19 the model vs the engine with the operands swapped: WHOLE 117; SEARCHED 414; FIND-ALL 414 of 1365: DIFFERS (the check can fail)
 C ORDER V21 the model vs the engine with the operands swapped: WHOLE 0; SEARCHED 1008; FIND-ALL 1197 of 1365: DIFFERS (the check can fail)
@@ -563,4 +571,4 @@ F F2   WHOLE `10,`: HOLDS, hits [`10`] ; route (ii)'s find-all: [`10`]
 F F2   WHOLE ``: HOLDS, hits [] ; route (ii)'s find-all: []
 F F2   texts where (holds, hits) differ from route (ii)'s (all matches or none): 0 of 156
 F F3 the SEARCHED form: `t2 & !contains(q)` vs route (ii) `t2 & text.none(q)` (a text-level test, not a ruled piece): WHOLE 0; SEARCHED 90 (first `9:50`: `9`@0 vs FAILS); FIND-ALL 90 (first `9:50`: [`9`@0, `50`@2] vs []) of 3906
-== SUMMARY: catalogue 68 lines, MOVED 28; printed rev 23.2 answers 109, mismatches 0; old meanings 23 rows, 23 at 0; libpcre2 models 34, 34 equal; order check 3 of 3 differ
+== SUMMARY: catalogue 68 lines, MOVED 28; printed rev 23.2 answers 109, mismatches 0; old meanings 23 rows, 23 at 0; libpcre2 models 38, 38 equal; order check 3 of 3 differ

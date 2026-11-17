@@ -672,6 +672,12 @@ PCASES = [
  ("V23", "an ANCHORED right operand: `/\\d/ & /\\d$/`", SM(r"\d", r"\d$", "and"), lambda: AND(Pat(r"\d"), Pat(r"\d$")), (), DSP),
  ("V24", "a LOOKAHEAD right operand under the complement: `/\\d/ & !/\\d(?=\\d)/`", SM(r"\d", r"\d(?=\d)", "not"), lambda: D(Pat(r"\d"), Pat(r"\d(?=\d)")), (), DSP),
  ("V25", "a `\\b` right operand: `/\\d+/ & /\\d+\\b/`", SM(r"\d+", r"\d+\b", "and"), lambda: AND(Pat(r"\d+"), Pat(r"\d+\b")), (), DSP),
+ # DEFAULTS (r40 C6: DEFAULTS leave §R.6's exception list): a per-test default is PCRE's conditional group on the label
+ ("V26", "a default inside the set: `/(?<h>\\d)?x/ & (h = 0: <5)`", r'(?<h>\d)?x(?(<h>)(?C"h<5")|(?C"d0<5"))', lambda: W(Pat(SVp), C("h", lt(5), h="0")), ("h",), SVPOOL),
+ ("V27", "a default outside the set: `/(?<h>\\d)?x/ & (h = 9: <5)`", r'(?<h>\d)?x(?(<h>)(?C"h<5")|(?C"d9<5"))', lambda: W(Pat(SVp), C("h", lt(5), h="9")), ("h",), SVPOOL),
+ ("V28", "the same under NOT: `/(?<h>\\d)?x/ & NOT (h = 9: <5)`", r'(?<h>\d)?x(?!(?(<h>)(?C"h<5")|(?C"d9<5")))', lambda: W(Pat(SVp), NOT(C("h", lt(5), h="9"))), ("h",), SVPOOL),
+ ("V29", "a joint with defaults over a loop: `CLOSE & ((h = 0, m = 0): (<10, <30))` (last settings)", r'(?:(?<h>\d+)(?::(?<m>\d\d))?,)*(?(<h>)(?C"h<10")|(?C"d0<10"))(?(<m>)(?C"m<30")|(?C"d0<30"))',
+  lambda: W(Pat(CLOSEp), close_R(h="0", m="0")), ("h", "m"), CLOSEPOOL),
  # THE PLACE-BY-OPERATOR GRID (r40 A1, A2): a label set inside a loop place, read by a condition INSIDE the place
  # (reading the labels set so far) or OUTSIDE it (the last setting overall)
  ("G1", "hole loop, OPTIONAL label, condition INSIDE: `/(?:${item})+/`, item := `/(?<h>\\d)?;/ & (h: <5)` (W1c)", r'(?:(?<h>\d)?;(?C"h<5"))+', lambda: Rep(W(Pat(r"(?P<h>\d)?;"), h5()), 1), ("h",), RG3),
@@ -686,6 +692,7 @@ PCASES = [
 ]
 CO["late2"] = lambda c: late(c.get("h2"), c.get("m2"))
 CO["g=a"] = Tc("g", eq("a"))
+CO.update({"d0<5": lambda c: True, "d9<5": lambda c: False, "h<10": Tc("h", lt(10)), "m<30": Tc("m", lt(30)), "d0<10": lambda c: True, "d0<30": lambda c: True})
 pexact = 0
 for tag, nm, pat, mk, labs, pool in PCASES:
     rx = pat if isinstance(pat, SM) else P.Pcre(pat, CO)
