@@ -70,6 +70,12 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-17 r40, predicates_draft.md rev 24 (`docs/dev/reviews/2026-11-17-r40-predspec24.md`), accepted 2026-11-17 (manager): **drill every "matches whole on the stretch" operator with an anchored, a `\b` and a lookahead operand, and treat a model built from the engine's own construction as no control** (A3: `&` matched the operand in the SUBJECT, so every anchor-free check passed and the LAW failed 1,344 of 1,365; PART C's PCRE2 models shared the construction).
+
+2026-11-17 r40, same round (accepted 2026-11-17, manager): **a mode-closure lens adds a CAPTURE-STATE drill to every regex-model claim: an optional label inside a looped place, a label looped at two depths read from outside, a place inside a place** (A1/A2: 5/34, 300 and 693 differ; every top-level model set its labels on every path and could not see carry-over).
+
+2026-11-17 r40, same round (accepted 2026-11-17, manager): **when evidence prints "(labels compared)", check each MODE's comparison key carries the labels; and name the evidence's ORDER/SWAP switch in COMMON and ask whether it can fail** (A5: a WHOLE key that is a bool compared holding only, 0 printed, 117 real; C1: SWAP reversed nothing that carries meaning in rev 24).
+
 2026-11-17 r34, predicates_draft.md rev 23.1 (`docs/dev/reviews/2026-11-17-r34-predspec231.md`), accepted 2026-11-17 (manager): **on a re-check, diff every count the previous round's VERIFIER printed against the number the revision publishes, and quote the verifier's number beside the critic's in the fix-lane brief** (A1: r33's verifier printed 281 for L83 searched; rev 23.1 published the engine's 371, which read values where the draft's own section 2.2 reads canonical numerals).
 
 2026-11-17 r34, same round (applied by file34 as plain additions to the lens rows): **a manager ruling stated as a DERIVATION is read literally everywhere its premise applies (it can reverse a kept ruling, so it was a scope rule), and find-all places are a mode of their own in the mode-closure lens** (MODECLOSURE-4, A3).
