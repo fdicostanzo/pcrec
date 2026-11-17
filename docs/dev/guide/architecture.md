@@ -5,7 +5,7 @@ Consult it when planning a feature (part 3: which known remodels ride along), wh
 architecture note or a design (parts 1 and 2), and at code review. Who updates it: the manager, at each landing
 that opens, rides or closes a register row; a lane that finds a new shape proposes a row in its report.
 
-Part 1 is the goals (DRAFT for the owner, 2026-11-17). Part 2 is the rules, each with the refactor history behind
+Part 1 is the goals (2026-11-17: reshaped to the owner's review and in his order; still DRAFT on the points it marks). Part 2 is the rules, each with the refactor history behind
 it and the question to answer BEFORE design. Part 3 is the register of known remodels and the event that should
 carry each. Code-level rules are in `coding.md`; names and comments in `style.md`. Decision numbers are in
 `docs/dev/decisions.md`. "A1" and "A2" below are the two survey reports this revision was built from:
@@ -15,7 +15,7 @@ An "architecture note" is the short document that answers, before design, where 
 and what must change shape first ([ARCH-STEP]); its template and procedure are the `pcrec-architect` skill
 (`.claude/skills/pcrec-architect/SKILL.md`), its review the `pcrec-critic` skill's architecture mode.
 
-# Part 1. Goals (DRAFT 2026-11-17, for the owner)
+# Part 1. Goals (2026-11-17; the owner's review and order applied; DRAFT only where marked)
 
 The owner's reason, verbatim: "This project is more than simply its stated goal. It's an effort to produce a
 viable long term project that can grow" (`docs/design/stream/manifesto.md` §1). And the problem this document is
@@ -27,27 +27,75 @@ as branches, 2 a data shape with no room for the next feature, 2 an inconsistent
 A GATE above every goal: no answer moves (PCRE2 is the semantics, D26) and nothing gets slower on the cells a
 change touches. Remodels are answer-identical units (manifesto §1, "a gate, not a goal").
 
-Ranked; each is answerable yes or no from a diff, a tree or an architecture note.
+ORDER: THE OWNER'S (2026-11-17). He reviewed the first draft the same day ("goals-ranking",
+`docs/design/plan_row_bodies/ARCH-STEP.md`, last section): he reshaped the draft's goals 1-3 and added one,
+closing "You do cover some of the above as well"; then he agreed the order below ("goals-order: agree", to the
+manager's list). Each goal is answerable yes or no from a diff, a tree or an architecture note. STILL DRAFT, open
+with him: whether goal 4 stays a goal (shape-goal); which NEW 2026-11-17 rules of part 2 are adopted (new-rules);
+whether a note must cite the register rows it looked up (register-keeper); the speed gate's reach (speed-gate).
 
-1. **One home per question.** Every question the compiler answers (where can a match start, which engine, is this
-   request refused, how wide is this subtree, which bytes can begin it, what did the compile decide) has ONE table,
-   record or function, and new code asks it. CHECK: for each new function, table or field in the diff, name the
-   question it answers and show the grep for an existing answer; there is none, or the new code replaces it.
-   SOURCES: D124 item 1-2 ("ONE table/record per question for the whole artifact"; "an engine-local copy of a
-   shared decision is a defect"); Frank 2026-08-23 ("I don't want parallel mechanisms if we can avoid it"; rule
-   "Build the general form"); A1 entries 1, 3, 6, 8, 9, 13, 15, 16, 17.
-2. **A new choice is a new row, and the row is acted on, not re-asked.** Selections, fallbacks, refusals, entry
-   kinds and options are declared tables; a consumer acts through the chosen row and never re-tests its enum or
-   name. CHECK: the diff adds a row and adds no `if`/`case` on the table's answer outside the table's own
-   executor. SOURCES: Frank 2026-11-17 ("convert these conditions into decision tables and then add to them rather
-   than add more conditions to if tree", ARCH-STEP.md); D151 addendum 3 ("otherwise logic is spread around which
-   is the opposite of what we want"); A1 entries 10-12; A2 chains 1-4.
-3. **Seams are declared and carry facts both ways.** Every value that crosses from one stage or part to another
-   has one named writer and named readers; calls go down the layer order; a later stage reads the record a
-   decision was made in, never the emitted text. CHECK: each new cross-stage field, call or stamp in the diff
-   names its writer and readers; no new call from a lower layer to a higher one; no new `strstr` over the
-   artifact. SOURCES: manifesto §1 F1 FOCUS, F3, F4 NO BLINDNESS ("a handoff carries facts both ways"); D146/D157
-   (the kit seam, the model); A1 entries 4, 9, 13, 18; A2 "Seams without a contract" 1, 2, 4.
+1. **One home per question; each decision contained in one unit.** Every question the compiler answers (where can
+   a match start, which engine, is this request refused, how wide is this subtree, which bytes can begin it, what
+   did the compile decide) has ONE table, record or function, and new code asks it; and the decision making behind
+   the answer is contained in a unit that can be understood, modified, inspected and tested on its own. A declared
+   table is the technique that usually fulfils this goal (rule "Decisions are declared tables"): a new choice is a
+   new row, and consumers act through the chosen row (rule "Act through the row"). Tables are not a goal of their
+   own. CHECK: for each new function, table or field in the diff, name the question it answers and show the grep
+   for an existing answer; there is none, or the new code replaces it. For each new or changed choice, the diff adds
+   a row to, or extends, the one unit that holds that decision, and adds no test of that unit's answer (an
+   `if`/`case` on its enum, row or name) outside the unit's own executor. SOURCES: the owner 2026-11-17
+   ("decision tables are a technique rather than a goal in-and-of itself. The goal is to contain decision making
+   into an easily understood, modified, inspected, tested unit. Tables fulfill that goal. This is to say that
+   tables fulfill the first goal.", ARCH-STEP.md); D124 item 1-2 ("ONE table/record per question for the whole
+   artifact"; "an engine-local copy of a shared decision is a defect"); Frank 2026-08-23 ("I don't want parallel
+   mechanisms if we can avoid it"; rule "Build the general form"); Frank 2026-11-17 ("convert these conditions into
+   decision tables and then add to them rather than add more conditions to if tree", ARCH-STEP.md); D151 addendum 3
+   ("otherwise logic is spread around which is the opposite of what we want"); A1 entries 1, 3, 6, 8-13, 15-17;
+   A2 chains 1-4.
+2. **Data lives with the code that modifies it; everything else uses its accessors.** A data structure (a struct,
+   a record, a table) and the code that writes it are co-located in one unit; code in another unit that needs to
+   read or modify it calls accessors the owning unit provides, and does not touch its fields. CHECK: for each struct
+   or record the diff reads or writes, the access is in the structure's own file or goes through its accessor; the
+   diff adds no direct field access from another file (where the structure has no accessor yet, the note or design
+   says so and cites the register row that adds it). SOURCES: the owner 2026-11-17 ("I would add a goal which is
+   basically object oriented design style in that data structures and the code that modifies them are co located.
+   If something needs to read or modify a structure it should use an accessor design for that.", ARCH-STEP.md);
+   `coding.md` §1.10, the accessor rule for the option word, and [FLAG-ACCESS], which built it (A1 entry 9: 65 raw
+   reads of the flags word in 15 files behind four accessors); A1 entry 6 (D62 to A_CTX) and entry 13 ([VMREC],
+   two descriptions of one VM statement until the record became the only writer); A2 "Seams without a contract"
+   item 1 (the `Job`/`Ctx` blackboard: "No accessor layer, no declared writer/reader per field"), with the facts
+   layer as the in-tree model (A2 contrast C1: `pf_enter`/ask accessors). DISTANCE TODAY (HEAD 5bfb03a19, commands
+   in `docs/dev/lanes/archgoals2_report.md`): `Job` (`src/core/internal.h:3538-3818`, 63 fields by A2's count) and
+   `struct Ctx` (`src/core/internal.h:3970-4455`, about 70 by A2's count) have no accessor layer; `cx->opt` is read
+   directly in 43 files, `cx->job` in 27, `cx->ncap` in 19, `cx->mods` in 17, `cx->emit_in` in 16; 14 `Job` fields
+   are written by emitters, one of them read back by the driver's fallback ladder (roadmap H-FLAGS); the flags word (`coding.md` §1.10) and the
+   facts layer are the parts that already meet the goal.
+3. **Seams: a module seam is an API with a contract; a layer hands data one way.** The goal's purpose, in the
+   owner's words: "to isolate responsibility to better organize change. Each module has its api and contract."
+   There are two kinds of seam. A MODULE seam (his example: pcrec and the kit planner) is a defined API with a
+   contract; data travels both ways as needed, and each side keeps its own concern. A LAYER seam (his example: pcrec
+   hands data to the emitter; the layer order is `src/CLAUDE.md`'s) carries data in one direction where possible:
+   calls go down the layer order, and a later stage reads the record a decision was made in, never the emitted
+   text. When data must go back and forth between layers, that is the signal for a module split (his example: the
+   kit planner and the kit emitter). At either kind, every value that crosses has one named writer and named
+   readers. CHECK: for each new cross-boundary value, call or stamp in the diff, say which kind of boundary it
+   crosses. A MODULE seam: name the API, its contract document and the test that binds it. A LAYER handoff: name
+   the direction; does anything now flow back (a lower layer writing what a higher one reads, a call from a lower
+   layer to a higher one, a `strstr` over the artifact)? If so, the note or design argues the module split, or
+   writes the edge down by name where it lives as an interim. SOURCES: the owner 2026-11-17 ("there are two kinds
+   of seams. Module seams like between pcrec and kit _planner_ are a defined api and data can travel back and forth
+   as needed but each tries to keep its own concern. Layer seams should if possible be one data direction. Pcrec
+   hands off data to the emitter. If there needs to be data back and forth between layers, that suggests a module
+   split like between the kit planner and kit emitter.", ARCH-STEP.md); `docs/design/stream/manifesto.md` §1 F4
+   ("A handoff carries facts both ways") and §3 principle 7 ("A seam carries facts in both directions"), which
+   the first draft of this goal cited for "facts both ways" at every seam, AS AMENDED 2026-11-17 with the owner's
+   "agree" (D185 addendum 2026-11-17): principle 7's "SCOPE (owner, 2026-11-17): "both directions" is for a
+   MODULE seam, a defined API and contract between two parts that each keep their own concern (the compiler and
+   the planner's kit face). Across LAYERS inside a part, data goes one way where possible (the compiler hands data
+   to the emitter); when layers need data back and forth, that is the signal to split a module there (as the
+   kit's planner and emitter were split)." Also D146/D157 (the kit seam, the model module seam);
+   manifesto §3 principle 9 ("Every seam is a document"); A1 entries 4, 9, 13, 18; A2 "Seams without a contract"
+   1, 2, 4.
 4. **A data shape covers the inputs the plan already names.** A representation (a node, a class payload, a
    record) states the range of inputs it covers; when a planned row needs inputs outside it, the shape is widened
    first, as its own unit, not patched per consumer. CHECK: the architecture note lists the planned rows that
@@ -62,9 +110,10 @@ Ranked; each is answerable yes or no from a diff, a tree or an architecture note
    D153 ("don't live in a house we're remodeling"); D77 (build under measurement); `docs/design/stream/roadmap.md`
    §7 (the ride-along rule); A1's "revisit when" triggers that fired later (entries 1, 2, 6).
 
-PRIORITY when two conflict: the gate first; then 1 > 2 > 3 > 4. Goal 5 decides WHEN, never WHAT: it may delay a
-remodel to its event, and when a feature must land before its remodel, implement-then-replace with an open
-register row is allowed (Frank 2026-08-23); a second permanent home is not.
+PRIORITY when two conflict (the owner's order, above): the gate first; then 1 > 2 > 3 > 4.
+Goal 5 decides WHEN, never WHAT: it may delay a remodel to its event, and when a feature must land before its
+remodel, implement-then-replace with an open register row is allowed (Frank 2026-08-23); a second permanent home is
+not.
 
 NON-GOALS: speed as an architecture goal (it is the gate; manifesto §1); the harness and tooling (rule "Product
 first, harness minimal"); remodels with no carrying event (D77); frameworks that move every pass at once
@@ -103,7 +152,9 @@ inside one row's action. The house idioms are `cand_rows[]` with `cand_select`
 the fallback ladder); `DFA_SELECT` survives over `dfa_reprs[]`. (Corrected
 2026-11-17: this line named `dfa_pfs[]`, folded into `cand_rows[]` by [START-TABLE].)
 **Why:** scattered nested conditionals cannot be inspected, ordered or denied
-per row. **Source:** Frank 2026-09-28 and 2026-10-12; D122, D151.
+per row. **Source:** Frank 2026-09-28 and 2026-10-12; D122, D151. A table is the
+usual TECHNIQUE for goal 1, not a goal of its own (the owner 2026-11-17: "Tables
+fulfill that goal").
 HISTORY: taught by [START-TABLE] and [DEC-FALLBACK] (A1 10, 11; 32 and 42 commits), applied up front by the entry
 rows (A1 12). START-TABLE converted the selection but not the action: the answer is re-dispatched in four emitters
 (A2 chain 1; new rule "Act through the row").
@@ -282,7 +333,7 @@ today `lm_maxw` re-spells `src/opt/mrl.c`'s width walk unsaturated (`src/gen/lmw
 does not say".
 
 ## Act through the row, never re-ask its answer (NEW 2026-11-17, DRAFT)
-A table's answer is acted on through the chosen row (its action record or hook), never by re-testing the row's
+Goal 1's containment, at the consumers. A table's answer is acted on through the chosen row (its action record or hook), never by re-testing the row's
 enum or name in each consumer. **Why:** the start table decides the recover act, then four emitters switch on it
 again (`unanch_scan`, `emit_landmark_walk`, `emit_rev_end`, the prologue prose in `src/gen/emit_dfa.c`) and 26
 sites test the VM route by hand; the prefilter rows already carry their `emit_block`/`emit_define` hooks.
@@ -295,12 +346,18 @@ declared table of named rows like any selection, listable. Diagnostic wording st
 `prefilter_decision` (`src/opt/select_engine.c:1079-1107`) and about nine in `compile_driver`
 (`src/core/compile.c:2046`). **Source:** A2 chain 3 and option 2.
 
-## Layering holds at the call level (NEW 2026-11-17, DRAFT)
+## Layering holds at the call level; data crosses a layer one way (NEW 2026-11-17, DRAFT)
 Layer order (`src/facts/CLAUDE.md`) is judged by calls, not only includes: a function that lower layers call
-lives at their level. A known wrong-way call is written down by name where it lives until it moves.
+lives at their level. Data crosses a layer in one direction, down with the calls (pcrec hands data to the
+emitter). Where a lower layer must hand data back to a higher one (an emitter-written `Job` field the driver
+reads, roadmap H-FLAGS), the design names it and argues either the module split that back-and-forth signals or
+an interim. A known wrong-way call or back-flow is written down by name where it lives until it moves (goal 3).
 **Why:** the include graph reads 2 back-edges while about 30 call back-edges exist (facts and parse calling the
 `src/opt/mrl.c` width functions; core calling `pcrec_cand_body_route` in gen). **Source:** A2 seam 2;
-`src/CLAUDE.md` ("What the include graph cannot see"). Judged at review, not by a gate (part 3).
+`src/CLAUDE.md` ("What the include graph cannot see"); the direction clause, the owner 2026-11-17 ("Layer seams
+should if possible be one data direction. ... If there needs to be data back and forth between layers, that
+suggests a module split like between the kit planner and kit emitter.", ARCH-STEP.md). Judged at review, not by
+a gate (part 3).
 
 ## A decision is read from its record, never from the emitted text (NEW 2026-11-17, DRAFT)
 A later stage that needs what was decided reads the record that decided it; it does not parse, count or `strstr`
@@ -311,7 +368,8 @@ remain (`fd_decisions` parses `#define`s back, `src/dump/facts_dump.c:129`; head
 
 ## A stage-to-stage field names its one writer and its readers (NEW 2026-11-17, DRAFT)
 A field of `Job` or `Ctx` (or any record that crosses stages) has one declared writer stage and named reader
-stages; an emitter does not write driver state. **Why:** `Ctx` (`src/core/internal.h:3970`, about 70 fields) and
+stages; an emitter does not write driver state (goal 3's layer direction); a reader in another file uses the
+owner's accessor (rule "A structure is read and written through its owner's accessors"). **Why:** `Ctx` (`src/core/internal.h:3970`, about 70 fields) and
 `Job` (63 fields) are read from every layer with no declared writer; D62 to A_CTX and [FLAG-ACCESS] paid for this
 one field family at a time (A1 6, 9). **Source:** A2 seam 1 and option 5; roadmap hub H-FLAGS; manifesto §1 F4.
 
@@ -330,6 +388,30 @@ widens the shape first, as its own unit. **Why:** the class bitmap had no room a
 signed offset has no field in the start row schema (A2 "Where the next features will land"). **Source:** A1 2, 19;
 goal 4.
 
+## A structure is read and written through its owner's accessors (NEW 2026-11-17, DRAFT)
+The code that writes a structure's fields lives in the structure's own file (or module), beside its definition;
+code in another file reads or modifies it through accessor functions that file provides, one per question or
+operation, never by direct field access. `coding.md` §1.10 (the option word, gated by
+`tests/core/flag_access_check.py`) is this rule's one enforced instance today; the facts layer's `pf_enter`/ask
+accessors are its model for a record. A structure with no accessor yet is not converted wholesale: a feature that
+adds a cross-file read or write adds the accessor (goal 5; register row 6a). **Why:** [FLAG-ACCESS] (A1 9) and D62
+to A_CTX (A1 6) paid for direct reads one field family at a time; `Job`/`Ctx` are read directly from every layer
+(`cx->opt` in 43 files) with no declared writer (A2 seam 1). **Source:** the owner 2026-11-17 (goal 2's words,
+ARCH-STEP.md); `coding.md` §1.10; A1 6, 9, 13; A2 "Seams without a contract" 1 and contrast C1.
+BEFORE DESIGN: for each structure the feature reads or writes from outside its file, name the accessor (existing,
+or added by the feature).
+
+## A module seam is an API with a written contract and tests (NEW 2026-11-17, DRAFT)
+Between modules (pcrec and the kit planner; the kit planner and the kit emitter), the seam is one declared API
+with a contract document and tests that bind it; data may travel both ways as needed, each side keeps its own
+concern, and what crosses is facts (rule "Across the kit boundary, send facts, not methods"; manifesto §3
+principles 7 and 9). **Why:** the two seams A2 found with a written contract and tests (the facts layer, the kit
+seam: A2 contrast C1, C2) are the two that have not been re-cut; the contract-less ones (A2 seams 1, 4, 6) are the
+register's rows 6-7 and 2. **Source:** the owner 2026-11-17 ("Module seams like between pcrec and kit _planner_ are
+a defined api and data can travel back and forth as needed but each tries to keep its own concern. ... Each module
+has its api and contract.", ARCH-STEP.md); D146, D157.
+BEFORE DESIGN: for each module seam the feature crosses, name the API, the contract document and the test.
+
 # Part 3. The ride-along register
 
 One row per known remodel we want but have not built ahead of a need (D77). WHERE was checked at fed0b4886 (the
@@ -345,8 +427,8 @@ reference (row 12); a row below that overlaps one names it.
 | 3 | Refusal table | Refusals are a decision family | `prefilter_decision` select_engine.c:940, arms :1079-1107; `compile_driver` compile.c:2046 | [FLAG-DEMOTE] (GO given; opens after S1 and kit K38-2), or the next force flag | S, no-mover (wording unchanged) | 5 + about 9 scattered arms | open |
 | 4 | Measure library below parse (width, nullable, TEXT first set, saturating arithmetic) | One question, one primitive; Layering at the call level | `pcrec_sat_mul` mrl.c:134, `pcrec_minw` :151, `pcrec_nullable` :315, `cwmax_walk` :545, `pcrec_cwmax` :685; `lm_maxw` lmwalk.c:80; `pcrec_vm_fmul` emit_vm.c:3874; `vm_general_min_width` :11436; `cc_width` known.c:315; callers in mod_lookaround.c | [VLOOKBEHIND] stage 2's architecture note (it adds a fourth group-width answer; build go 2026-11-10) | M; no-mover only after checking `lm_maxw`'s unsaturated multiply (lmwalk.c:95) on huge counts | 2-3 walks, the sat twin, facts->opt and parse->opt back-edges | open |
 | 5 | Kind defaults as a kindrow.def column, per pass | A new AST kind states its cost | `src/core/kindrow.def`; 27 files with `case A_*` (atomic.c 115) | per pass, when the pass is next touched; [COND-FAMILY]'s new kind; [DD-11.5]'s A_BOL/A_EOL into A_CTX | S per pass, no-mover | restated leaf lists | open |
-| 6a | Name each `Job`/`Ctx` field's writer and readers | A stage-to-stage field names its writer | `Job` internal.h (ends :3818), `struct Ctx` :3970 | the next feature that adds an emitter-to-driver flag (roadmap H-FLAGS) | S, no bytes | undeclared writes | open |
-| 6b | Stage outputs as typed records (Job stops being written by emitters) | same | same | as roadmap areas migrate, never standalone | L, no-mover | roadmap R14 | open |
+| 6a | Name each `Job`/`Ctx` field's writer and readers; a cross-file reader gets an accessor | A stage-to-stage field names its writer; A structure is read and written through its owner's accessors (goal 2) | `Job` internal.h (ends :3818), `struct Ctx` :3970 | the next feature that adds an emitter-to-driver flag (roadmap H-FLAGS) | S, no bytes | undeclared writes | open |
+| 6b | Stage outputs as typed records (Job stops being written by emitters) | same; Layering (data crosses a layer one way) | same | as roadmap areas migrate, never standalone | L, no-mover | roadmap R14 | open |
 | 7a | Decisions listed from the Job, not parsed from `#define`s | A decision is read from its record | `fd_decisions` facts_dump.c:129 | the next change to the facts listing or a new decision stamp | S, listing identical | one text protocol | open |
 | 7b | The artifact as typed parts, kit returns parts | same | memfn_stamps.c:334-341; `pcrec_vm_stmt_respell` vm_stmt.c:1085; `strstr` vm_stmt.c:1165 | roadmap A-REC steps; [VMREC] (b); the next post-render rewrite | M per step; kit | three string protocols | open |
 | 8 | CLI non-axis option table, like `axes.def` | Decisions are declared tables | `cli_parse` cli/main.c:1278 (82 `else if` arms); `cli_dispatch` :2904 | [IFACE-PUSH] (hard trigger: at most 4 free flag bits; 6 today) | M, CLI identical | hand option arms | open |
@@ -359,7 +441,7 @@ reference (row 12); a row below that overlaps one names it.
 | 15 | Internal deny word | A stage-to-stage field names its writer | `xdeny` in Ctx (design `docs/design/flag_demote_map.md` §1.1); 80 `pcrec_opt_has`/`pcrec_flags_has` readers | as row 3 | M | about 21 public bits | riding [FLAG-DEMOTE] |
 | 16 | A_BOL/A_EOL into A_CTX | One question, one primitive | src/core/ctxfn.def | [DD-11.5] part (a) review; no build go | M, abi | two kinds | open |
 | 17 | `^` absorbed by the unanchored engine | Build the general form | ENG_UNANCH (D42.7) | an [OPTLOOP] cycle selects it by measurement (D119/D137) | M | the `^` special path | open |
-| 18 | rx_info remodel | Seams declared | `docs/spec/match_api.md` rx_info section | the owner's word ([RXINFO-REMODEL], unscheduled) | M, abi | not yet stated | open |
+| 18 | rx_info remodel | A module seam is an API with a written contract (goal 3) | `docs/spec/match_api.md` rx_info section | the owner's word ([RXINFO-REMODEL], unscheduled) | M, abi | not yet stated | open |
 | 19 | One first-row walker for every table type | One question, one primitive | `pflw_walk` compile.c:1622, `st_why_walk` :1697, `pf_admit_walk` select_engine.c:859 | the next new declared table | S, no-mover | repeated six-line walkers | open |
 | 20 | One Ctx/longjmp/arena wrapper | One question, one primitive | `pcrec_compile` compile.c:3762, `pcrec_compile_in` :3791, `pcrec_compile_defs` src/core/compile_defs.c:43, the dump tier's two | a fifth copy | S, no-mover | four copies | open |
 

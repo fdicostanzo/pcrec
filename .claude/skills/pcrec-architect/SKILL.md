@@ -60,12 +60,17 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    archhist entry 2's bitmap was "a stated choice" in APPROACH.md, the code was where its limit lived). Keep each
    site where the feature's code will run, read, write or be chosen. Count call sites, not only tables (rule
    "Notice siblings": 26 hand tests of one answer had no table to count). Classify each site with exactly one of:
-   - `ROW` a row in an existing declared table (goal 2): name the table and its executor;
-   - `CHAIN->TABLE` an if/switch chain that becomes a table first (rule "Decisions are declared tables"; at about
+   - `ROW` a row in an existing declared table (goal 1; a table is its usual technique): name the table and its
+     executor;
+   - `CHAIN->TABLE` an if/switch chain that becomes a table first (goal 1; rule "Decisions are declared tables"; at about
      three members, rule "Notice siblings");
    - `SHARED` one function or record all sites should go through (goal 1; rule "One question, one primitive, from
      the second caller"): name the question, the existing answer(s) found by grep, and which survives;
-   - `NEW-SEAM` a new crossing between stages, parts or the kit (goal 3): writer and readers named;
+   - `NEW-SEAM` a new crossing between stages, parts or the kit (goal 3): writer and readers named, and its kind
+     (a module seam: API and contract; a layer handoff: its direction);
+   - `ACCESSOR` a direct field access to another unit's structure that the feature would add or extend (goal 2;
+     rule "A structure is read and written through its owner's accessors"): the structure, its owning file, and
+     the accessor that exists or must be added;
    - `WIDEN` a data shape the feature needs inputs outside of (goal 4; rule "A shape states the inputs it covers"):
      the shape, what it covers today, what the feature and the planned rows need, AND every GENERIC writer or
      copier of the shape (whole-struct copies, memsets, field writes that do not test the kind or variant): each
@@ -76,12 +81,12 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    copy of a declared table is NEVER `AS-IS`: that is the aggregation this step exists to stop.
 3. REGISTER LOOKUP (goal 5; part 3's HOW TO USE IT). Grep part 3 for every file and function in the site map and for
    the feature's plan tag. Each matching row: RIDES FIRST, JOINS <abi event in flight>, or NOT CARRIED with the
-   reason. A site classified `CHAIN->TABLE`, `SHARED` or `WIDEN` with no row PROPOSES a row in the register's own
+   reason. A site classified `CHAIN->TABLE`, `SHARED`, `ACCESSOR` or `WIDEN` with no row PROPOSES a row in the register's own
    columns. Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files,
    and the "Revisit when" triggers of every D-row that names a site in the map (`scripts/entry -g` on the file or
    function): a trigger the feature meets is looked up like a register row (the register is newer than most of
    those triggers; D62's "a fifth AST analysis" was the D70 union's).
-4. REMODELS THAT LAND FIRST. Each `CHAIN->TABLE`, `SHARED` or `WIDEN` site the feature needs now becomes one unit:
+4. REMODELS THAT LAND FIRST. Each `CHAIN->TABLE`, `SHARED`, `ACCESSOR` or `WIDEN` site the feature needs now becomes one unit:
    what changes shape, its GATE (no-mover with byte identity / abi event / kit seam event, D146), its SIZE (S/M/L as
    part 3), the CHECKS THAT BIND the code it moves (sabotage anchors in `tests/mech/`, pins and manifests, found by
    grep; critics.md rule A3), and the test that it is SEPARABLE: it lands, answer-identical, without the feature. A remodel the feature
@@ -90,7 +95,8 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    siblings already in the tree (the decision family it joins); the plan rows that will extend the same shape
    next (grep `docs/dev/plan.md` by tag and vocabulary: goal 4's CHECK); and the unlocks, each with its trigger.
 6. SEAMS. For each `NEW-SEAM` and each existing seam the feature sends new facts across: the one writer, the
-   readers, the facts both ways (manifesto §1 F4), the layer direction of every new call (rule "Layering holds at
+   readers, its kind (goal 3: a MODULE seam carries facts both ways, manifesto §1 F4 and principle 7's SCOPE of 2026-11-17; a LAYER
+   handoff carries them one way, and back-flow argues a module split), the layer direction of every new call (rule "Layering holds at
    the call level"), and whether it could be written to text and read back (manifesto principle 9). Kit seams state
    facts with no verb about the kit's use (rule "Across the kit boundary").
 7. DELETED. What each remodel and the feature delete (rule "Simplification is a benefit on its own"); a remodel with
@@ -122,7 +128,7 @@ vocabulary list (section 4.1); REQ-OPEN items.
 ## Site map
 | # | site (file, function or table) | command (at T) | today | class | goal/rule |
 One row per site. "today" = what the code does there in one clause. class = ROW | CHAIN->TABLE | SHARED |
-NEW-SEAM | WIDEN | AS-IS. The commands and their hit counts follow the table, so the critic can re-run them.
+NEW-SEAM | ACCESSOR | WIDEN | AS-IS. The commands and their hit counts follow the table, so the critic can re-run them.
 
 ## Register rows looked up
 [DEPENDS ON THE OWNER: whether a note MUST cite the rows it looked up; written the strict way]
@@ -160,7 +166,7 @@ command) and its class; the register rows matched (or "none", with the grep); an
 - Every site-map row has a command, a class and a goal/rule; every command re-runs at `$T` and prints what the row
   says (re-run them all once, last).
 - Every vocabulary term was grepped; a term with zero hits is listed as such (it is a `NEW-SEAM` or a new shape).
-- Every `CHAIN->TABLE`/`SHARED`/`WIDEN` row appears either under "Remodels that land first" or as a register row
+- Every `CHAIN->TABLE`/`SHARED`/`ACCESSOR`/`WIDEN` row appears either under "Remodels that land first" or as a register row
   (matched or proposed) with its trigger.
 - No algorithm, field layout, schedule or test design appears outside "What the design step must decide".
 - Plan rows cited by TAG, spec sections by `§`, never by line (`make test-plan-lint` PL14, `make test-spec-history`).
