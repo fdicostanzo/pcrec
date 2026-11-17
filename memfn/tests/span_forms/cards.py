@@ -816,14 +816,17 @@ def time_cells(rundir, cl, path, with_approx=True):
 # the rule; F11 asks for one launch's wall time in the cards' own window to replace them.
 EST_LAUNCH_S = float(os.environ.get("EST_LAUNCH_S", "0.08"))   # 50 ms timed + exec + one gate call
 EST_SWEEP_S = float(os.environ.get("EST_SWEEP_S", "0.004"))    # one 32 MiB eviction sweep (~8 GB/s)
+# one extra pool variant's untimed gate call (rev 12, r41 L9): MEASURED 0.0008-0.0033 s (median 0.0015) over 30
+# calls on 1 MiB subjects, 5 cells, lane formsfixk 2026-11-17 on a NON-quiet box (not a timing); 0.01 s = 3 x the max
+EST_GATE_S = float(os.environ.get("EST_GATE_S", "0.01"))
 
 
 def est_cell_s(cell):
-    """One arm cell's wall: its gate run plus LAUNCHES launches."""
-    if cell[3] == "not-warm":   # every call sweeps once per 4 KiB chunk: the gate call + one timed pass
+    """One arm cell's wall: its gate run on EVERY pool variant (rev 12, r41 L9) plus LAUNCHES launches."""
+    if cell[3] == "not-warm":   # every call sweeps once per 4 KiB chunk: the gate calls + one timed pass
         per = 2 * (SUBJECT_N // 4096) * EST_SWEEP_S
-        return (1 + LAUNCHES) * per
-    return EST_LAUNCH_S * (1 + LAUNCHES)
+        return (POOL_SIZE + LAUNCHES) * per
+    return EST_LAUNCH_S * (1 + LAUNCHES) + EST_GATE_S * (POOL_SIZE - 1)
 
 
 def cmd_plan(args):
@@ -854,16 +857,16 @@ def cmd_plan(args):
           "sweep, LAUNCHES %d, the cells already built by `dry`):" % (EST_LAUNCH_S, EST_SWEEP_S, LAUNCHES))
     print("#   run:  %d cells timed, %.2f h (with --with-approx: %d cells, %.2f h)" % (
         len(s1_read), w(s1_read), len(s1), w(s1)))
-    print("#   run's gates (rev 12, r41 L9): every arm cell gates EVERY pool variant before timing: +%d untimed gate "
-          "calls, +%.3f h (UNMEASURED: EST_LAUNCH_S each)" % ((POOL_SIZE - 1) * len(s1_read),
-                                                               (POOL_SIZE - 1) * len(s1_read) * EST_LAUNCH_S / 3600.0))
+    print("#   run's gates (rev 12, r41 L9): every arm cell gates EVERY pool variant before timing (in the hours above): "
+          "+%d untimed gate calls over rev 11's one a cell, +%.4f h (EST_GATE_S %.3f s each)"
+          % ((POOL_SIZE - 1) * len(s1_read), (POOL_SIZE - 1) * len(s1_read) * EST_GATE_S / 3600.0, EST_GATE_S))
     print("#   c3:   %d cells timed, %.2f h (C4's sizes: compile-only, not in the window)" % (len(s2_read), w(s2_read)))
     na = len(GRID) + 1
-    print("#   rerun: one cell per void, ~%.0f s per C1-C2 cell (%d arms)" % (na * EST_LAUNCH_S * (1 + LAUNCHES), na))
+    print("#   rerun: one cell per void, ~%.0f s per C1-C2 cell (%d arms)" % (na * est_cell_s(("C1", "-", "I", "random", "off")), na))
     # THE CONFIRM'S COST (rev 11, r39 K5; rev 12, r41 L9): one re-run per winning (cell, head) of I and the head, each
     # launch a fresh draw of its pool; its BOUND is every mover cell read with every moving head winning; the one-win
     # case is one head in one regime (its moving patterns x 2 layers)
-    lp = EST_LAUNCH_S * (1 + LAUNCHES)
+    lp = est_cell_s(("C1", "-", "I", "random", "off"))
     movers = [(card, p, rg) for card in ("C1", "C2") for p in CARD_PATS[card] for rg in REGIMES if rg not in APPROX
               if p not in ("lit40", "abc60") and any(h < len(PATTERNS[p][1]) for h in GRID)]
     bound_arms = sum(2 * (1 + sum(1 for h in GRID if h < len(PATTERNS[p][1]))) for _c, p, _r in movers)
