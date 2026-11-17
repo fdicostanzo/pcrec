@@ -2,7 +2,7 @@
 
 ## STATE AT HANDOFF
 - Rulings file `file42_rulings.md`: empty (no R-n applied).
-- NUMBER: r42 as briefed, although  already carries that number (the same duplication as the two r40 files; r41 likewise). The brief said to take the next free number if r42 is taken, but the manager's deliver file names the r42 path and lanecheck requires it, so the deliver file won; the manager may renumber (r50, r52 and r42+ are unused). Files differ by date and topic, so no path collides.
+- NUMBER: r42 as briefed, although the August review r42-artsize-close already carries that number (the same duplication as the two r40 files; r41 likewise). The brief said to take the next free number if r42 is taken, but the manager's deliver file names the r42 path and lanecheck requires it, so the deliver file won; the manager may renumber (r50, r52 and r42+ are unused). Files differ by date and topic, so no path collides.
 - Id check: every id in dispositions.md (A1-A6, B1-B3, C1-C7, D1-D2) is in the draft and every draft id is ruled; MODECLOSURE-5 is not named in dispositions.md and was filed DOC as the draft proposed (listed in the review). No other mismatch.
 - Checks: `grep -rnE 'plan\.md:[0-9]'` over the review and directory finds nothing; no `.md:N` cite in the review file; `make -s test-plan-lint` PASS; `check_claudemd_size.sh --all` 388 files within limits (reviews/CLAUDE.md index line shortened to fit its 12 KB limit).
 OWED: none. No code, no disposition changed.
