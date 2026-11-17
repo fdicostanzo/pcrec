@@ -28052,3 +28052,35 @@ Next
 - Housekeeping: 7 worktrees pruned by file28; owed (quiet gate): jcfix, revjc, ledg1116, absent, absimpact, absfold,
   file28, absfix, predspec20, file29, predspec21. Kit timing window 01:00 on 11-17 (10 jobs queued); a one-shot load
   check at 00:27. main pushed through 62fbef5ab, CI green on 13c13efde.
+
+## 2026-11-16 (session 136, second part and CLOSE, box clock 17:55-19:50; manager = fable)
+
+- PREDICATES: rev 22 of predicates_draft.md delivered and merged (lane predspec22: 51 `!`-on-a-condition sites
+  rewritten after the owner's not-is-complement; marks under "none" documented, his mark-in-none LEFT AS IS). Its
+  re-check round (review r30, coordinator crit-predspec22, 35 findings) says NOT STABLE: the mark-narrows variant has
+  no stated unit and, as the scripts filled it, splits equal-behaviour programs (54 of 1,210; the report I promised
+  the owner, made); a complemented pattern is sealed while the same text used positively is merged; `when` is not
+  writable as a macro; `(a = 0: <10, b: >$a)` and its `&` spelling differ (9 of 110). Dispositions written
+  (/var/tmp/pcrec-pcrec/scratch/crit-predspec22/dispositions.md); r30 NOT yet filed.
+- THE TURN: instead of more corner rulings I proposed one design question; the owner went to the fundamentals ("What is
+  the exact definition of a condition?") and gave a DIRECTION: conditions are "the bastard child of macros and
+  patterns. What they need is to be themselves. Then we define them mathematically", then the SQL parallel ("the same
+  problems as SQL wrt null field"; "A condition in sql is wrapping a sql statement select * from (...) t where
+  condition. Not on the condition there is well defined"). Recorded in COND-FAMILY.md's last three entries with my
+  sketch (a pattern = a set of labelled matches = the table; a condition = a test of one match = the WHERE clause;
+  three-valued logic for absence; two nots: predicate negation and pattern difference; the optional mark as ruled is
+  the one construct that is not a test of one match). NO rev 23 and no corner rulings until that definition is ruled.
+- LESSONS. (1) Ten rulings in one afternoon each fixed a corner and opened another: when a ruling makes the NEXT
+  question appear within the hour, stop and ask what the object IS (the wake.md lesson "three corners of one rule"
+  applied too late, by the owner). (2) I asked him about "`!` on a condition" without showing that the draft already
+  defined it pointwise ("A & !B = A minus B"); a question to the owner about changing X shows X's CURRENT definition
+  first. (3) Counts from an evidence script whose answer depends on the order conditions were written in were reported
+  to him as facts (the variant "passed every test"): an engine written for one lane's question must be order-swapped
+  before its counts are quoted (now a critic-skill process change, r30).
+- [COVER-CAP] STAGE 2: lane/covs2b @ 3ec992759 = the combined branch + covs2e (cover_cap.md rev 5.3) + covs2c (W5/B1,
+  witness row S3263, the MFWSTMT trace record). abi 109 on the branch, 0 default bytes moved. Cloud: covs2b-test,
+  covs2c-test, covs2c-rows GREEN; covs2b-axes in flight at close. READ-3 reproduced and NOT fixed (width 4095 on
+  [0-9a-f]{4095} fails at 612,696 B of code; no ladder rung drops the cover; limits.md 3.12 vs 8.4): to be filed as a
+  plan row and designed before the joint landing. Remaining: covs2d (checks past 32), the code round, the nights.
+- Kit told: the combined branch is cut; ids from S3276. Kit timing window 01:00 (its jobs are queued; this session's
+  00:27 load check dies with the session: Frank told).
