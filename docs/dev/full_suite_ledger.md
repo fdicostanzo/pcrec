@@ -458,3 +458,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-17 1eec5b211 none — lane rxmodel: regex models of the open predicate choices on libpcre2, evidence (docs)
 - 2026-11-17 f857b3132 none — lane lastpass: evidence for last-pass-default (docs)
 - 2026-11-17 4f820eef4 none — lane archhist: refactor-history survey, ARCH-STEP unit A1 (docs)
+- 2026-11-17 1c353a118 none — lane archreview: architecture-level tree review, ARCH-STEP unit A2 (docs)
