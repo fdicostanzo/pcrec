@@ -1908,3 +1908,18 @@ condition is a different pattern" (domain-scope, 16:32) reads as: `P & c` is a N
 filtered one; (3) the optional mark as ruled ("some value the label could have had") is not a test of one row but
 is expressible as a SUBQUERY over the statement's table, so the model has an honest place for BOTH candidate marks
 (the one-row "IS NULL OR ..." and the subquery over the value set), to be laid side by side.
+
+**2026-11-16 OWNER ANSWER, CORRECTED BY HIM — condition-kind (Frank, to session 137, box clock 20:41; he interrupted
+the manager's turn to restate; this entry SUPERSEDES the wording of the entry before it, whose quote was his first
+message).** HIS WORDS: "condition-kind: a pattern is a SQL statement. The table is the source of matches. Like the
+text for a pattern. I'm not sure what a complement of a sql statement is. Best guess: it is all the matches from the
+table that didn't get matched by the uncomplemented sql". RECORD: (a) the PATTERN is the STATEMENT; (b) the TABLE is
+the SOURCE the statement runs over, the counterpart of the TEXT a pattern runs over (NOT the set of matches, as his
+first message and the manager's entry above had it); (c) the complement of a statement, HIS BEST GUESS, not a
+ruling: the rows of the source that the uncomplemented statement did not match. The manager's three derived
+consequences in the entry above were derived under the first wording and are NOT carried: the definition lane
+re-derives them. NOT taken as a go: the manager's reading "an adjustment is the go" is withdrawn; the lane waits for
+his word (**definition-lane**). THE MANAGER'S JUDGMENT given to him in the same reply (his, unrun): the guess is
+SQL's EXCEPT (source minus result); it makes a complemented pattern carry NO labels (the result's label columns do
+not exist on unmatched source rows); it defines both nots and they differ exactly on unmatched and absent-label
+rows; the one thing it leaves undefined is WHAT A ROW OF THE SOURCE IS (a whole subject, or a place in the text).
