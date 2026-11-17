@@ -437,7 +437,7 @@ whole-value mode, which rows 5 and 7 contradict):
 |---|---|---|---|---|
 | either side of `&` (rows 1, 2) | the stretch both sides match | WHOLE value: at most the one row whose stretch is that text | the row itself (the join of R.1.4) | no, except which `|` branch's labels the row carries (R.1.4, OPEN: **branch-scope**) |
 | a `label:` set (row 3) | the label's text in this row | WHOLE value | yes / no: the label's text is, or is not, a row (R.1.5; §R.3's nested row); for a set-once, present label (an absent one gives UNKNOWN, a repeated one is tested per pass; rev 23.2, review r34 F-DOC-5) | no |
-| a `contains`/`occurrences` argument (row 5: it lands in a HOLE of the body, §2.6) | the enclosing stretch | SEARCHED, find-all: the hits are the argument's rows found leftmost, non-overlapping, in R22's order within that stretch (R.1.9) | the hits, as the repeated label `hit` (R.1.9; review r33 F4) | YES: the hit list, the hit count and so whether a count question HOLDS (`/a\|aba/` and `/aba\|a/` have the same rows on `aba` and the hits `a`, `a` vs `aba`) |
+| a `contains`/`occurrences` argument (row 5: it lands in a HOLE of the body, §2.6) | the enclosing stretch | SEARCHED, find-all: the hits are the argument's rows found leftmost, non-overlapping, in R22's order within that stretch (R.1.9) | the hits, as the repeated label `hit` (R.1.9; review r33 F4, the MANAGER'S disposition: the draft's reading **hit-list**, §R.8; rev 23.2, review r34 F-DOC-2) | YES: the hit list, the hit count and so whether a count question HOLDS (`/a\|aba/` and `/aba\|a/` have the same rows on `aba` and the hits `a`, `a` vs `aba`) |
 | a `records` item (row 7) | its file text | SEARCHED, find-all (R.1.9; §7) | one record per row found | YES, as row 5 |
 | the program's final pattern (row 6) | the subject | SEARCHED (or WHOLE when the caller matches a whole value) | the reported row | SEARCHED: which row is REPORTED (whether the program holds does not read it); WHOLE: no |
 
@@ -850,8 +850,8 @@ WHAT ASKS IT TODAY:
   whole-value program it equals `!contains(B)`.
   RUN (PART 1, D6; PART 3): `t2 & text.none(q)` on `9:30` FAILS / FAILS; on `9:15` HOLDS / HOLDS reporting `9:15`;
   on `9:30 1` FAILS / FAILS. Over 11,110 `t2` texts it holds on 2,870 in BOTH modes (rev 23.1: 1,970, by value).
-- Asked as **whole-text** (§R.8); the owner PARKED it on 2026-11-17 ("Let's not answer now", as relayed in the
-  predspec23b brief) after asking whether it could be asked now in a single rx. §R.4.1 lays the two routes side by
+- Asked as **whole-text** (§R.8); the owner PARKED it on 2026-11-17 ("Let's not answer now", COND-FAMILY entry
+  2026-11-17 03:01 item (1); rev 23.2, review r34 F-DOC-4: rev 23-23.1 cited the predspec23b brief) after asking whether it could be asked now in a single rx. §R.4.1 lays the two routes side by
   side; NOTHING is decided.
 
 ### R.4.1 THE TWO WHOLE-TEXT ROUTES, side by side (lane predspec23b; nothing decided)
@@ -1110,7 +1110,8 @@ TM2-L table, caveat (2)).
 
 ### R.8 QUESTIONS FOR THE OWNER (each wants a reply either way; spellings are placeholders)
 
-1. **whole-text** (PARKED by the owner 2026-11-17, "Let's not answer now"; restated by lane predspec23b with both
+1. **whole-text** (PARKED by the owner 2026-11-17, "Let's not answer now", COND-FAMILY 2026-11-17 03:01 item (1);
+   not asked again here; restated by lane predspec23b with both
    routes, §R.4.1). Today: "the text contains no B anywhere" has no spelling in a searched program that reports A's
    own row; `A & !B` and `A & !contains(B)` ask about A's matched stretch only. Example: `t2 & !q` on `9:30` — WHOLE
    value FAILS; SEARCHED HOLDS reporting `9`. TWO ROUTES: (i) a pattern with conditions inside a regex lookahead,
@@ -1349,7 +1350,8 @@ order, which is the meaning, not an evaluation order. Every count quoted from it
 | searched-complement | CLOSED by row-is-match | 22:58 item (5) -> 23:46 |
 | complement-per-match, complement-retry | WITHDRAWN as questions | 23:46 |
 | nested-complement (a `contains` argument filters potential matches like a program) | MANAGER'S ("MINE"), stated: `t2 & contains(t2 & !q)` on `9:30` HOLDS / HOLDS, its first hit `9` (PART 1, D11); the argument's full hit list on `9:30` is `9`@0 AND `30`@2, so `occurrences(t2 & !q, min = 2)` HOLDS on a text whose only time is late (rev 23.2, review r34 A3; R.1.9; `predspec23d_model.out` PART Y) | 23:46 |
-| the whole-text question | OPEN: **whole-text** (§R.8) | 23:46 ("MINE") |
+| the whole-text question | PARKED by the owner, not ruled: **whole-text** ("Let's not answer now", §R.8) | 23:46 ("MINE"); COND-FAMILY 2026-11-17 03:01 item (1) |
+| another reading of a searched condition (the pattern returns its match first, then the condition judges it) | FILED at his request, not ruled: `predicates_future.md` item 14 | 2026-11-16 23:55, COND-FAMILY 2026-11-17 03:01 item (2) |
 | absent-rule (1) one kind of absence, (2) a condition needs a text, (4) a set never contains absence | STAND (LOCKED); (2) as locked says the test FAILS on an absent label, which 23:48 re-reads three-valued as UNKNOWN (observable under NOT: FALSE would make NOT TRUE) (rev 23.1, F15) | 14:31; 23:48 |
 | absent-rule (3) the two controls | CHANGED: the mark clause removed; the default is the one control | 14:31; 21:49 |
 | optional-as-loop | STANDS | 15:23 |
@@ -1358,7 +1360,7 @@ order, which is the meaning, not an evaluation order. Every count quoted from it
 | mark-range | WITHDRAWN | 21:49 |
 | the §5.2 empty-intersection error (zero-pass-empty's corner) | STANDS; read from the values of the program's `&` operands (rev 22's qualifier, restored, F3) and judged on the test after its default and polarity (F8; R.2); "polarity", the judged unit and the constant-always warning are THE DRAFT'S READING (rev 23.2, review r34 D2), **polarity-rule** | review r31 F; review r33 F3, F8 (the manager's dispositions) |
 | label-twice | STANDS (hint scoped: same default or none) | 13:16 |
-| record-is-product | STANDS for product records only | 11:35; 22:30 |
+| record-is-product | STANDS without NOT (for product records); under NOT: OPEN, **record-under-not** (§R.8 item 7; rev 23.1 scoped it to "without NOT", the MANAGER'S scope, not returned to the owner; rev 23.2, review r34 A4) | 11:35; 22:30; COND-FAMILY 2026-11-17 03:47 item (2) |
 | zero-pass-record | the ANSWER (a label outside the pairing loop is tested once on zero passes: `9` FAILS) and record = `&` STAND; the one null pass row ("LEFT JOIN", a phrase not in the record) is R1, OPEN: **pass-table** (rev 23.1, review r33 F15) | 12:45 |
 | default-set, colon-scope, unset-component | STAND | 10:43, 11:32, 11:05 |
 | default-unused | STANDS; its (b) clause ("the default's text is outside every set it meets") is scoped by the MANAGER'S disposition of review r33 F7 (not by 23:48, which made NOT legal and so made the scope necessary): under NOT such a default changes answers, so (b) fires only at POSITIVE LOCAL POLARITY (rev 23.2, review r34 D2: rev 23.1's "no NOT and no complement" under-fired; §7.1, §R.2 POLARITY); the draft's reading, **polarity-rule** | 11:05; 23:48; review r33 F7 |
@@ -2425,8 +2427,12 @@ operators `~` and `!~` of rev 7 are WITHDRAWN: rev 7's `$m !~ r` is `(m: !contai
 one-to-one replacement, because a search result is no longer a value: a TEST is `contains`, a QUESTION about the hits
 is `occurrences` with a group question (§4.3). The hit needs no new concept: it is a REPEATED LABEL (§4.3), so a plain
 condition on a hit's label means ALL hits, `some(...)` some hit, `count(...)` and `occurs.*` count them, and one
-record means one hit (SAME HIT BY RECORD). The hits are those of PCRE's OWN matching of the body, "always" (the
-owner, CF:932-933): the ONE READING of §4.5.
+record means one hit (SAME HIT BY RECORD). For an UNFILTERED argument the hits are those of PCRE's OWN matching of
+the body, "always" (the owner, CF:932-933): the ONE READING of §4.5. For a FILTERED argument (one with a condition
+or a complement) they are the argument's surviving rows found leftmost, non-overlapping (R.1.9, the draft's reading
+**hit-list**, review r33 F4), NOT the body's matching of the hole's string set; so for a filtered argument this
+macro means something other than its body (rev 23.2, review r34 D1; **when-meaning**, §R.8; `predicates_future.md`
+item 17).
 
     occurrences(x, min = 0) := /(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/   # each hit is one iteration of the label `hit`; NAMED (CF:1028)
     contains(x)                  := occurrences(x, min = 1)                               # a TEST: at least one hit
