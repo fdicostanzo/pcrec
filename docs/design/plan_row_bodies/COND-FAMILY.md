@@ -3497,3 +3497,15 @@ reading, said to him in the session and not objected to): his lean "a filter can
 adopted as a rule; visibility goes by export, not by an operand's role. MEETS: free-name ("The rx should export
 the group"); label-flow (statement 2 keeps it inside a binding); predicates_future item 25 (label hygiene for
 libraries: answered in substance by statements 1, 3 and 6) and item 26.
+
+**2026-11-18 OWNER, clarifying export-rule's sixth statement, and adding a form: `[_ = A]` closes all exports
+(Frank, to session 139, morning).** HIS WORDS: "I meant it wouldn't export outside the binding. To close all
+exports use [_ = A]". RECORD: RULED, two parts. (1) CLARIFICATION of his addition: a part label that begins with
+`_` (`[_a = A]`) does not export OUTSIDE the binding; inside the binding it is an ordinary part label. (The entry
+above says the same: "usable inside its binding and exports nothing at all"; "at all" there is to be read as
+"outside the binding".) (2) A NEW FORM, his: the part label that is the bare underscore, `[_ = A]`, CLOSES ALL of
+A's exports. THE MANAGER'S READING of (2) (mine, to be checked by the next revision and confirmed with him if a
+run shows it matters): with `[_ = A]` none of A's labels is visible to anything outside A, neither outside the
+binding nor inside it, neither bare nor by path (`_` is not a name a path can go through); A still matches as it
+always does. Its use: dropping a part in without its public labels entering the binding's names, so they cannot
+make a reference ambiguous. Spellings are placeholders as everywhere (the single spellings review).
