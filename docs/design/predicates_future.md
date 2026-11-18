@@ -473,6 +473,13 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
       comparing an item with its predecessor: the sorted list, `/(?:(?=(?<n>\d))${c}(?<h>\d);)*/` with c :=
       "there is no previous item, or n >= $h" (run on libpcre2: `3;4;7;` holds, `3;7;4;` fails, searched it
       reports the sorted run `3;7;`). Most people should write the array form with `sorted`.
+  14. PATTERN POSITIONS AND SET POSITIONS (hole-reading and operand-context, ruled 2026-11-17). A hole and a part
+      of a sequence are PATTERN positions: the inserted pattern is a whole, in a non-capturing group, matched in
+      place, and an assertion at its edge sees its neighbours (`/x${num}/` with num := `/\b\d+\b/` is
+      `/x(?:\b\d+\b)/`, which can never match: a warning). The right side of `&`, a condition on a label and a
+      compile-time set are SET positions: a set of strings with no neighbours; anything that might look outside is
+      a compile error. The same named pattern therefore behaves like regex when inserted and like a set when
+      used as a filter.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 
