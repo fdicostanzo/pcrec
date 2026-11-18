@@ -3376,3 +3376,24 @@ reads B's own namespace (its `h`, unset at that point on a first pass). A declar
 let a part take a name from outside is the manager's proposal, NOT ruled (predicates_future item 26).
 (4) OBSERVATION, his, not a ruling: this "points to a label as something that can be manipulated and referenced.
 I almost wrote "first class type" but that might be too far". Added to predicates_future item 26.
+
+**2026-11-18 OWNER on path-and-ambiguity: the part label used twice is RULED; the read-out is open (Frank, to
+session 139, morning).** ASKED (the /q presentation of revision 25.1's section R.8 row in two corners, all
+examples hand-worked: 1 a part label mentioned twice, `[aa = A] SEQ "," SEQ [aa = A] & (aa.h: <5)`, the manager
+leaning the last mention; 2 what the match "reports" for a name both sides of `&` set and nothing references,
+`A & B`, the manager leaning that the name is not exported). HIS WORDS, in full: "path-and-ambiguity:
+1. in your specific example, what use is this ? How is it not simply an error? I mean, harmless I guess. If you
+repeated the condition after the first A as well then I can see it. For instance, if A was a list so you use
+"list" as a label then referenced it immediately after each label it would see that specific A and you wouldn't
+have to call it list1, list2, etc. so I agree the last reference
+2. my first instinct says right reference as the right side overrides the left. Then my second instinct says left
+as the right is just a filter.
+My confusion "reports". Do you mean captures?"
+RECORD. (1) RULED: a path through a part label mentioned more than once names the LAST mention as things stand
+where the reference is written ("so I agree the last reference"). His reasoning, kept: the manager's example (one
+condition after both) has little use and he first read it as an error, "harmless I guess"; the USE is a condition
+written right after each mention (a label such as `list` reused, each condition seeing that specific part, with
+no need for `list1`, `list2`). (2) NOT RULED: on the read-out he gives two instincts and settles on neither (the
+right, because the right side overrides the left; then the left, because the right is just a filter), and asks
+what "reports" means. ANSWERED IN THE SESSION: it means the captures a caller reads from the match result. The
+question stays open as **read-out**.
