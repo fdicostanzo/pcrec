@@ -2994,3 +2994,17 @@ by him earlier the same evening); (ii) when a lookaround makes A's `h` name text
 the label. To keep A's value in such a case its part is labelled (`[aa = A]`, `aa.h`), or the array form is used.
 CONFIRMED by him ("yes, i agree with those points"): last mention is not last match, with the two cases and the
 two ways to keep A's value as the manager stated them. Added to predicates_future.md item 24 (entry 15).
+
+**2026-11-17 OWNER, discussing count-argument (the rx module) (Frank, to session 138, evening; discussion, nothing
+ruled).** Asked what a count means when its pattern has several members (the note's `rx.digits(n, n)`, n := `[2,
+4]`). HIS WORDS: "please clarify: an array of rx is an rx and i thought [2,4] would be an array of two rx. an array
+of rx is interpreted as an alternation of the member so this would be 2|4. an enumeration of that would be 2
+elements, 2 and 4. what am i missing here?" (the manager: nothing; the question is whether a construct given an
+alternation where it expects one value DISTRIBUTES over it); then: "it hadn't occured to me to define this this
+way but it is interesting. what does the n,n option then mean? the cartesian?" THE MANAGER'S ANSWER (mine, hand
+reasoning, unrun): yes: `n` is a pattern, and each mention of a pattern stands for all its members independently
+(as `n SEQ n` matches `24` and `42`), so two arguments each given `2|4` range over the PAIRS: (2,2), (2,4), (4,2),
+(4,4); the pair with min above max matches nothing; together `\d{2}|\d{2,4}|\d{4}`, which as a set of strings is
+two to four digits. So the note's "union" reading (`\d{2}|\d{4}`) silently assumed the SAME member in both
+places, which a pattern mentioned twice does not give; "exactly n" for a several-member n needs ONE argument (a
+one-argument exact-count form), which then distributes to `\d{2}|\d{4}`.
