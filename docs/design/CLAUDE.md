@@ -1,8 +1,7 @@
 # docs/design/ — living design documents
 
-Documents that describe a design AND the process/learning of building it
-(panel-outcome blocks and refutations recorded inline rather than edited
-away). Living: revised as the design is reviewed and built, unlike
+Documents that describe a design AND the learning of building it (panel
+outcomes and refutations inline, not edited away). Living: revised as the design is reviewed and built, unlike
 docs/dev/'s append-only or historical records. Each note's status (PROPOSED /
 PANELED / RULED / BUILT / SUPERSEDED) is in its own header; read a note's
 PANEL OUTCOME / "REVISION n" / "§R" block before any section.
@@ -95,6 +94,7 @@ Search, start, scan and engine optimization notes
 - `stream/` — "one instruction stream" end state: `manifesto.md` (STABLE: goals, end state, principles; changes only with the owner), `roadmap.md` (LIVING: migration areas by code, hubs, provisional admission table, the ratchet), `approach.md` (rev 3, the design record of rounds 1-3), `arev.md` (A-REV: one automaton-run record, PROPOSED rev 2; first client the lookbehind hand-off as a proof step); `round1/` keeps the round-1 drafts.
 - `emit_backends_notes.md` — FORWARD NOTES only (Frank 2026-10-30, nothing scheduled): record-level cleanups, other code targets, a bytecode VM, a matcher IR with backend libraries, memfn on the backend side.
 - `cls_tree_design.md` — [CLS-TREE]; `poss_arms.md` — [ART-POSS-ARMS] (+ `poss_arms_measurements/`); `altcls_pinned_impl/` — [OPT-ALTCLS] pinned instrument.
+- `dense_hit_arch.md` — [REQ-PAST-LAST] dense-hit remedy: architecture note.
 - `c3_three_way.md` — C3 tier narrowing (built); `tt4m_harness_batching.md` — [TT-4M] step 2b.
 
 Engines, bounded repeat, budgets
