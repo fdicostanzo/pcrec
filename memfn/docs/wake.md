@@ -33,6 +33,8 @@ Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows
   FROZEN = lane/memfn-mfcal HEAD (report/deliver commits only), 809 exempt from the 07:00 cut. QUEUED 800-809 12:4x, keys
   sent to main (ACKED).
   Morning: a lane writes the loaded-vs-quiet comparison (809's compare.txt) for main/Frank.
+- R-46 ACKED 11-18 (dense-hit pre-check: a FORM reply only, no build go; request text on main 603154be1): design lane by day
+  11-19 after the night verdicts + a critic round; responses.md entry target ~17:00 11-19.
 - Owed later (after the night): r46 PLAN/DOC items (INTER_CLIP held-out, R0 counted apart, heavy-tail rows); r44 M
   [LAYOUT-DRAW] filed by main; prune worktrees (formsfixk..m, formsland*, gatebudget, crit trees) with scripts/wtprune;
   unpin worktrees/mfind after set 1; r24 SR-1..SR-4; ADQ-3-3; the mfind-long-run witness.
