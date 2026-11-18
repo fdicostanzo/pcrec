@@ -123,7 +123,7 @@ to keep within it).
   reached the band. The drill win was re-centred to 0.953 (b31effa9b), and the K6 block was re-run
   alone in the module: `ok (r39 K6) ... stalled 0, rerun timed the rule's owed list on every pass:
   True ...; control ...: stalled 4 of 12 (accept >= 1)`. A full selftest on the tip
-  (`selftest_full_tip.log`) is TIPLINE. Class drill (r38, 89 rows) worst `(r38) noise at arm:
+  (`selftest_full_tip.log`, b31effa9b): `selftest: 205 checks, 0 failed`, rc 0. Class drill (r38, 89 rows) worst `(r38) noise at arm:
   H(8), every cell, tau 2 % P(h* != 64) = 0.017` (accept <= 0.05). Earlier controls: F3 48/50,
   G2 0.177, G3 0.397, fast split 27/100, H1 0.663, H2 0.403, J1 0.610 (each > its line).
 - **selftest --rev12** (`selftest_rev12_r2b.log` on a68e56c17, the R2 B control re-run at τ 3 %
