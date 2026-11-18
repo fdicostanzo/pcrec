@@ -3881,3 +3881,25 @@ his `if($y & (0: 1492), "Columbus", $y)` is the one `when`. (m6) UNCHANGED: back
 the label, the scope rulings, the count-hole rulings (a count hole needs values known at compile time: the
 manager's wording). OPEN, asked as **read-is-constant**: whether a label read (`$y + 1`, `left($y, 2)`) is inside
 "restricted to constants now" or under construction.
+
+**2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation (Frank, to session 140, afternoon).**
+ASKED AS A RULING (slug read-is-constant: is a label read inside "restricted to constants now"; described to him
+at his request with the table one string / a set, compile time / match time). HIS WORDS, in full: "read-is-constant:
+I see the issue. Yes $y is a single value read at run time. At runtime, it is manipulated by left() et al using
+string manipulation built for simple strings. Semantically, $y is a regex of a single string. So operations that
+work on regex should work on it. That means, in practice, that there are two forms for each of them: the compile
+time version that works on general regex, and the runtime version that,while compiled, works on single value
+strings at run time. So $y + 1 and \d + 1 look the same, the first one happens at run time, and the second at
+compile time. My point was that we were applying & to $y but you could also go the other way and apply "single
+value" functions like x + 1 and left() to normal regex as well. The "under construction" remark is that this is
+hard and we shouldn't get bogged down with it now but acknowledge the direction."
+RULED: (1) `$y` is a single value read at run time; `left()` and its kin manipulate it at run time with string
+manipulation built for simple strings: BUILT NOW. (2) Semantically `$y` is a regex of a single string; operations
+that work on regex work on it. (3) Each operation has TWO FORMS: the compile-time form on general regex and the
+run-time form (compiled) on single-value strings; `$y + 1` (run time) and `\d + 1` (compile time) look the same.
+(4) The other direction (single-value functions such as `x + 1` and `left()` applied to normal regex) is the
+UNDER CONSTRUCTION part: hard, not to get bogged down in now, the direction acknowledged. THE MANAGER'S READINGS
+(mine, to be tested): (m1) the under-construction line is "a single-value function applied to an rx that is not
+a single string"; (m2) the regex operations on a read (`$y | "other"`, `$y & S`, `$y . "End"`, `when`) are built
+in their run-time form now; (m3) a compile-time constant (`left("Columbus", 2)`, `2025 + 1`) is folded at compile
+time.
