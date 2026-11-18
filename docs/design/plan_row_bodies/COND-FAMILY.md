@@ -3469,3 +3469,31 @@ statement put to him: the caller sees the public labels of the top-level program
 labels, never a private one. That settles the read-out corner of path-and-ambiguity in substance (a name two
 parts both make public is an ambiguous reference for the caller as for the program), pending the one ruling that
 closes the discussion.
+
+**2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public
+part labels (closes the export-scope discussion and path-and-ambiguity) (Frank, to session 139, morning).** ASKED
+AS A RULING, the whole as one statement, as put to him: "1. A label is public unless its name begins with `_`; a
+private label is visible only inside the binding it is written in. 2. Inside a binding, the public labels of
+everything written or used there are visible, read as labels are (last mention; an ambiguous reference is the
+error). 3. Outside a binding, what is visible is the public labels written in its own literals, and its public
+part labels; a part's public labels are reached by path through its part label. 4. A part label only
+disambiguates; it gives no access to anything private. 5. The caller's captures are what is visible from the
+top-level program by these rules." With the worked example (hand-worked): `year := /(?<v>\d{4})/`, `month :=
+/(?<v>\d\d)/`, `date := [y = year] SEQ "-" SEQ [m = month]`: outside `date`, `m.v` and `y.v` are reachable, a bare
+`v` is an error; `year & (v: >= 2000)` works. HIS WORDS: "export-rule: Agee and add [_a = A] is a private
+reference that wouldn't export at all" ("Agee" read as "Agree"). RECORD: RULED: the five statements, and his
+addition as a sixth: (6) a PART LABEL that begins with `_` (`[_a = A]`) is a private reference: it is usable
+inside its binding and exports nothing at all (neither itself nor a path to the part's labels). The `_` prefix is
+a spelling, a placeholder like the others, for the single spellings review; the RULE is public-by-default with a
+marked private.
+WHAT THIS CLOSES (the manager's statement of the state, to be checked by the next revision): path-and-ambiguity's
+second corner, the read-out (by statement 5: a name that two parts both make public is an ambiguous reference for
+the caller as for the program; label the parts and read by path); his proposal of the same morning ("the labels
+of an rx can only be seen if they are exported"; "all literal rx labels are exported in that scope", the scope
+being the binding) is this ruling's statements 1 and 3; pass-through, which he had left open ("idk. This was my
+reexport concern"), is answered by statement 3: the part label is the re-export, no re-export language is needed,
+and a bare re-export spelling could be added later without changing an answer. NOT CARRIED (the manager's
+reading, said to him in the session and not objected to): his lean "a filter can never produce captures" is not
+adopted as a rule; visibility goes by export, not by an operand's role. MEETS: free-name ("The rx should export
+the group"); label-flow (statement 2 keeps it inside a binding); predicates_future item 25 (label hygiene for
+libraries: answered in substance by statements 1, 3 and 6) and item 26.
