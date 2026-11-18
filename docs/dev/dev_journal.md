@@ -28270,3 +28270,16 @@ Next
 - ALSO at this wake: lane predspec25 (opus) launched for revision 25 of the predicates draft; 26 delivered
   worktrees and 20 merged branches pruned; the owner's idea of a condition with a label parameter filed as
   predicates_future item 26 (an idea, not a ruling).
+
+## 2026-11-17 (session 139, 23:40 box clock; the MEASURED startup context, correcting the note above)
+
+- The owner ran /context about 20 minutes after wake: 111.6k tokens. Messages 71.1k; memory files (root and user
+  CLAUDE.md plus the memory index) 18.7k; system tools 9.4k; skills list 7.2k; system prompt 4.2k; MCP 0.7k
+  (deferred tool schemas are listed at 26.4k but are not loaded). My estimate above was wrong in its split: the
+  fixed harness load is about 21k, not 20-25k plus skills, and the bulk (71k) is MESSAGES: the manager skill body,
+  the wake reads, tool output and my own writing (the lane brief, the journal note). Files read in full were four
+  (monitoring.md, wake.md, owner.md, BRIEF_TEMPLATE.md, about 27 KB); the large files were grepped only.
+- OWED (the owner: "lets look next session too and see if there are patterns"): at the NEXT wake, ask him for
+  /context (or note the figure he gives) right after the wake procedure and BEFORE any lane brief, so the wake's
+  own cost is separated from the session's work; record both sessions side by side here before building any of
+  the nine ideas.
