@@ -293,3 +293,9 @@ Round 2026-11-07 r12, memfn-planframe1 design (`docs/dev/reviews/2026-11-07-r12-
 1. **A design that SPLITS a row table lists every per-row branch in the consuming function** (`if (w->bren == B_PAIR)`), not only the table's columns: three critics found the same uncolumned piece (F2), and the floor's different skeleton (F3).
 2. **A design that re-labels what an accessor returns greps the accessor's readers** (F1, found independently by three critics, would have turned the correct build red).
 3. **A ruling held only in a denied ledger is quoted verbatim in COMMON**, with a ready plain-grep exclude string (a plain grep leaked one denied journal line).
+
+Round 2026-11-17 r43, predspec25 design re-check (`docs/dev/reviews/2026-11-17-r43-predspec25.md`); lessons ruled 2026-11-18.
+1. **An evidence engine's PARSER predicates are readings too.** The engine's `starts_operand` excluded the sequence mark, a clause the draft had dropped; the evidence passed because the code restored what the text lost. Simulate lens: diff the evidence's tokenizer/parser predicates against the subject's parse-rule sentences; a predicate with no sentence is a finding.
+2. **A record's RESTATEMENT of an agreed question can narrow it.** "The right side of `&`" existed only in the manager's record; the agreed question and the locked rule say an `&` operand. Ruling lens: diff each record restatement against the question the owner agreed to, list by list.
+3. **Fold marks show where a lane looked.** Eight or more unmarked readers of withdrawn or changed rules were found by grepping the withdrawn rule's TERMS over the whole subject, not by the marked list. Fix-induced lens: that grep is a standing step for a re-check that withdraws rules.
+

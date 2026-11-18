@@ -57,3 +57,9 @@
 - `2026-11-15-r12-predspec10.md` (+ dir) — confirming re-check of predicates_draft.md rev 10: SIMULATE-1..3, CENSUS-1..12; ruled, applied in rev 11.
 - `2026-11-15-r5-memfn-mfindcomb.md` (+ dir) — CODE round on the mfind combined tip (fused mfind instrument, G2 window checks, draft sets, emitted/contract/fidelity lenses); ruled, fixes by lanes mcfixa (A-C) and mcfixd (D-E).
 - `2026-11-15-r6-memfn-mcfix.md` (+ dir) — light CODE round on the r5 fix diff (slot timing harness, D197 rule table): rule pins/confirm guards, TIMED-SHAPE callee gaps, enum-keyed asserts; ruled, FIX-NOW items applied by lane mcfixb.
+
+## Index entries moved out of CLAUDE.md (file43, 2026-11-18; size limit)
+
+- `2026-10-23-r2-iter-code.md` (+ dir) — first round of the critic skill (now `pcrec-critic`): the find-all iterators on lane/iterland.
+- `2026-11-15-r7-memfn-mcfixb.md` (+ dir) — light CODE round on the r6 fix diff: the CLI `--second` parse (RULE-1), absent cells pin (RULE-2), FF__COUNT assert (CHECKS-2); ruled, FIX-NOW items applied by lane mcfixc; RULE-3 doc, RULE-4 pin table planned.
+- `2026-11-15-r8-memfn-mcfixc.md` (+ dir) — light CODE round on the r7 fix diff (adequacy of the changed sabotage rows, timed_form, CLI parse, absent-pin NOTE): ADQ-3 (absent cells pin priced on a windowed record) and ADQ-2 (no job reaches second-ness) ruled FIX-NOW, applied by lane pinfix; ADQ-1/ADQ-4 planned.

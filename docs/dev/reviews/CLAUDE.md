@@ -34,7 +34,6 @@ non-obvious code in src/ and odd-looking test cases trace to a finding here.
   the history file. Where a review has critic texts they sit in a sibling
   directory of the same name (e.g. `2026-10-05-r4-startset/`,
   `2026-10-07-r1-memfn-rowcon/`, `2026-10-08-r9-memfn-simd/`).
-- `2026-10-23-r2-iter-code.md` (+ dir) — first round of the critic skill (now `pcrec-critic`): the find-all iterators on lane/iterland.
 - `2026-09-17-code-review.md`, `2026-09-20-code-org.md`,
   `2026-09-20-frank-tour.md`, `2026-09-20-r61-fable-personal-review.md`,
   `2026-09-20-readability-experiments.md` (+ `2026-09-20-readability-data/`)
@@ -51,8 +50,6 @@ D6 (critic panels), D27 (blinded authors); `docs/dev/learnings.md` 3;
 `docs/dev/decisions.md`.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__dev__reviews.md
-- `2026-11-15-r7-memfn-mcfixb.md` (+ dir) — light CODE round on the r6 fix diff: the CLI `--second` parse (RULE-1), absent cells pin (RULE-2), FF__COUNT assert (CHECKS-2); ruled, FIX-NOW items applied by lane mcfixc; RULE-3 doc, RULE-4 pin table planned.
-- `2026-11-15-r8-memfn-mcfixc.md` (+ dir) — light CODE round on the r7 fix diff (adequacy of the changed sabotage rows, timed_form, CLI parse, absent-pin NOTE): ADQ-3 (absent cells pin priced on a windowed record) and ADQ-2 (no job reaches second-ness) ruled FIX-NOW, applied by lane pinfix; ADQ-1/ADQ-4 planned.
 - `2026-11-15-r9-memfn-pinfix.md` — single-critic CODE round on lane pinfix (r8 fixes: windowed records refuse a missing pin; 609/610 second-run wiring): LAND; ADQ-2-1 (common.sh inherited FIRST_RUNDIR from the caller env) fixed by the kit manager in the timing jobs; ADQ-3-3 (no plant for the manifest pin) owed after the window.
 - `2026-11-15-r13-covs2d.md` (+ dir) — DESIGN round on cover_cap.md rev 5 §11 (counted seam, width limit): 5 critics + verifier, F1-F29; all dispositions accepted, FIX-NOW in rev 5.1, per-compile valued option (F21) ruled now; kit request waits on a readiness re-check.
 - `2026-11-15-r14-predspec12.md` (+ dir) — short DESIGN re-check of predicates_draft.md rev 12 (anchoring): SIMULATE-1/2, CENSUS-1..8; F1 (filter side of `rx & rx`) to the owner, rest FIX-NOW/DOC in rev 13; general `anchored` form agreed.
@@ -74,3 +71,4 @@ History (long narrative, dated notes, measurements, per-lane records; not auto-i
 - `2026-11-17-r34-predspec231.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 23.1 (3 opus critics: fix-induced+ruling, mode closure, simulate + opus verifier; A1-A4, D1-D4, F-DOC-1..7): NOT STABLE; value-vs-canonical counts (371 -> 281), the manager WITHDREW branch-order; owner questions branch-scope and record-under-not, no further round until answered; fixes in lane predspec23d (rev 23.2); 4 process changes accepted.
 - `2026-11-17-r40-predspec24.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 24 (5 critics: ruling, mode closure, simulate, fix-induced, change table + opus verifier; A1-A9, B1-B9, C1-C6): NOT STABLE; the engine carried neither an optional label across passes nor `&` on the stretch, the WHOLE comparison key omitted labels; nine owner questions by slug (hits-text, atomic-search, joint-last-pass, hits-committed, join-order, polarity-rule, exception-rule, pass-list-read, zero-place); fixes in lane predspec241 (rev 24.1); 4 process changes accepted.
 - `2026-11-17-r42-predspec242.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 24.2 (r42 repeats): NOT STABLE narrowly; edges of the per-pass rule; owner questions operand-context, looped-warning; fixes in lane predspec243.
+- `2026-11-17-r43-predspec25.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 25 spanning 24.3, 24.4, 25 (5 opus critics: ruling, simulate, mode closure, fix-induced, census + opus verifier; groups A-K): fixes FIX-NOW; owner questions number-names, hole-in-filter, hit-carry, product-order, value-is-pattern, path-and-ambiguity, backref-across-parts; the one place table is rev 26's skeleton; 4 process changes accepted.
