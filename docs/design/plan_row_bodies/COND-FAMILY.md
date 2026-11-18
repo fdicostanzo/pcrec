@@ -2829,3 +2829,12 @@ the structural warnings keep short compiler-side names (`test.never`, `label.uns
 collide with them if the first component is the library's own path: to state in the next revision; the mechanism
 by which a library DEFINES a warning is predicates_future item 12; `compare.looped` and the manager's withdrawn
 looped-warning go to the next review as told.
+ADDENDUM, minutes later, HIS WORDS: "1. if there was a warning like blah.unused, the library could define
+mod.fn.unused and both could be ignored. Not sure if that's helpful or dangerous. 2. compiler errors and warnings
+are prefixed with "pcrec."". RECORD: (2) RULED: the compiler's own errors and warnings carry the prefix `pcrec.`
+(so `pcrec.test.never`, `pcrec.label.unset`); a library's carry its own path; `pcrec` is therefore not available as
+a library's first path component. (1) An OBSERVATION, not ruled: a pattern over names can select a compiler warning
+and a library's warning of the same last component together ("helpful or dangerous"). The manager's answer given
+to him (mine): helpful for making a whole kind strict, risky for switching things OFF (a broad pattern also
+silences warnings the user never saw, and ones added later); the draft's existing whole-name matching and
+`warn.unused` limit accidents; a listing of what a selector currently matches would remove the rest.
