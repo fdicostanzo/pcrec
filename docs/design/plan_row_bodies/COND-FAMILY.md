@@ -3778,3 +3778,15 @@ refused too, and the legal calls are `when(x, y)`, `when(x, y, z)`, `when(x, the
 = z)`, `when(x, y, else = z)`; `null` as the default of `else` is a placeholder for "nothing required" (the
 when-default ruling), not a new value he has ruled into the language; whether any parameter may be passed by
 name is a call-syntax point the next revision states from the draft's ONE INPUT RULE or asks.
+
+**2026-11-18 OWNER RULING — `then` is required; NOT gives the else-only behaviour (Frank, to session 139,
+afternoon).** The manager had stated back that the signature `when(cond, then, else = null)` makes `then` required
+and so refuses `when(x, else = z)`, revising his earlier spelling lean, and asked whether "else alone" should stay
+legal. HIS WORDS: "When: start with required then. Use NOT to get else behavior". RECORD: RULED: `then` is
+REQUIRED ("start with": conservative now, it can be relaxed later); the else-only form is not provided: the user
+negates the test, `when(NOT x, z)`, to get "if x does not hold, z; otherwise nothing more". The legal calls are
+therefore those of the entry above; his earlier lean that both branches are optional is superseded by this.
+THE MANAGER'S NOTE (mine, for the next revision to run): with a bare PATTERN as the test (which consumes,
+when-peek), `when(NOT x, z)` needs NOT of a pattern in a test position, which by complement-place is a filter-only
+value and by when-peek's reading would have to be a negative peek; the forms `when(NOT peek(x), z)` and a
+condition under NOT are clear; the bare-pattern case is to be stated or asked.
