@@ -1,0 +1,6 @@
+B grouping {'model': 'onereg', 'tau': 0.03, 'rg': 'hit-dense'} {'INTERACTION_VOID': False, 'PER_HEAD_FLOOR': True} win=None: flagged 200/200, h*=8   6, P(h*!=64) 0.130
+B grouping {'model': 'onereg', 'tau': 0.03, 'rg': 'hit-dense'} {'INTERACTION_VOID': False, 'PER_HEAD_FLOOR': False} win=None: flagged 200/200, h*=8   5, P(h*!=64) 0.180
+B grouping {'model': 'regime', 'tau': 0.02, 'heads': True} {'INTERACTION_VOID': False, 'PER_HEAD_FLOOR': True} win=None: flagged 200/200, h*=8   2, P(h*!=64) 0.110
+B grouping {'model': 'regime', 'tau': 0.02, 'heads': True} {'INTERACTION_VOID': False, 'PER_HEAD_FLOOR': False} win=None: flagged 200/200, h*=8   0, P(h*!=64) 0.065
+B grouping {'model': 'onereg', 'tau': 0.04, 'rg': 'random'} {'INTERACTION_VOID': False, 'PER_HEAD_FLOOR': True} win=None: flagged 200/200, h*=8   6, P(h*!=64) 0.265
+B grouping {'model': 'onereg', 'tau': 0.04, 'rg': 'random'} {'INTERACTION_VOID': False, 'PER_HEAD_FLOOR': False} win=None: flagged 200/200, h*=8   5, P(h*!=64) 0.230

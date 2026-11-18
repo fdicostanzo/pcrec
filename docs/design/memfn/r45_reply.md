@@ -1,6 +1,10 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 13 (lane formsfixl, 2026-11-18): rev 13 applies review r44
+Status: DRAFT rev 13.1 (lane formsfixm, 2026-11-18): rev 13.1 applies review r45
+(`docs/dev/reviews/2026-11-18-r45-memfn-forms8.md`, its RULINGS section): the interaction test reads
+each text's lack of fit against that text's OWN launch noise (FORMS8-1), a POOL_SIZE other than 4 is
+refused (FORMS8-2), and the text states what the interaction line and the layout bias read are and
+are not (FORMS8-3, -4, -5) (read "Changes in rev 13.1" first). Rev 13 (lane formsfixl, 2026-11-18): rev 13 applies review r44
 (`docs/dev/reviews/2026-11-18-r44-memfn-forms7.md`, its RULINGS section): the night reads each
 text's variant x regime interaction and voids its cells above a line (A), the layout term per
 (cell, head) (B), the pool refusal's 32-B half (C), the confirm's rounds and what it controls (D),
@@ -72,6 +76,21 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 13.1 (by r45 FORMS8 finding id)
+
+Review r45 re-checked rev 13 (`lane/memfn-formsfixl` 27b18e75c..3fd31c86d; answer-safe: every
+finding is speed or text). The kit manager's RULINGS bind. Script: `memfn/tests/span_forms/cards.py`;
+the new rows are in drill (xxiii) (`cards.py selftest --rev12`). Each new gated row was shown failing
+on 3fd31c86d's code (lane formsfixm's report, FIXES BY ID).
+
+| id | change | where |
+|---|---|---|
+| FORMS8-1 | (a) The interaction test reads each text's lack of fit against that TEXT's OWN pure error (the launches repeating a variant inside one of its rows), never the pure error pooled per regime over the night's texts: rev 13 read a text noisier than its regime's pool, or heavy-tailed launches, as an interaction (the critic: one pattern's head arms at 2x sigma flagged 100 of 100 nights, t(5) launches 55, no interaction in either). The night's per-regime pool now gives only the SHAPE of the noise across a text's regimes (its rows weighed by their regime variance; the level is the text's own). The line is an F on (lack-of-fit, pure-error) df, each Satterthwaite's effective df over the regime weights and shrunk by 1 / (1 + kappa / 2), kappa the night's excess kurtosis of the pure-error deviations standardized per (text, regime) (a moment match: m squared deviations of excess kurtosis kappa vary as m / (1 + kappa / 2) normal ones); the launches are first WINSORIZED at `INTER_CLIP` = 4 robust sigmas of the text's own residuals (a heavy-tailed launch alone in a (row, variant) cell enters the lack of fit whole and the pure error not at all; without the clip t(5) still flagged 21 of 300 nights). `INTER_CLIP` is MEASURED on the drill's synthetic models only (clip none / 5 / 4 / 3.5 / 3: t(5) nights flagged 21 / 9 / 11 / 10 / 10 of 300; r44 A's heads τ 3 % row 0.010 / 0.013 / 0.023 / 0.030 / **0.053**): 4 is the lowest line that holds both gates with room; on a real night UNMEASURED. A text with fewer than `INTER_MIN_PE_DF` = 4 pure-error df (UNMEASURED DEFAULT) is not read. The ruled TEST: per text, not the robust median-based form, because per-text df suffice (a head text's six regime rows carry ~12 pure-error df) and the heavy-tail failure the per-text F alone left (t(5)) was closed by the winsorizing, not by a different statistic. (b) THE VOID'S SCOPE is r1 step (5)'s existing rule, unchanged: any void cell keeps the grid top for the WHOLE night, so ONE flagged text means NO PICK THAT NIGHT (conservative by design; the would-be pick is only recorded); `rule`'s interaction line says so. (c) GATED rows, layout "phase" τ 1 % and one true 5 % H(8) win in hit-dense, no interaction anywhere: @@ROWS@@. Their control (`INTER_PE_PER_TEXT` off: rev 13's pooled chi-square form): @@CTRL@@. The r44 A rows under the new line: @@R44A@@ | `cards.py` `text_interaction`, `_clipped`, `_fit_stats`, `_additive_fit`, `f_lower`, `analyse` (`rule`'s line), `synth_rows` (`tscale`); drill (xxiii) |
+| FORMS8-2 | A `POOL_SIZE` other than 4 is REFUSED at start, before any command (exit 2, naming the knob): PHASE_ORDER strides four 16-B phase classes and ALIGN_VARIANTS two, so at 8 variant v + 4 repeats v's class and flags and r44 C's 32-B and distinct-layout clauses refused EVERY pool (the critic's `POOL_SIZE=8` repro: "variants 1 and 5 ... share the 32-B phases (7,); variants 0 and 4 ...; 4 distinct built layouts of 8 variants"). Selftest row: 2, 3 and 8 refused, 4 runs, and `POOL_SIZE=8 cards.py plan` exits 2 | `cards.py` `pool_size_refusal`, `main`; drill (xxiii) |
+| FORMS8-3 | Text: `INTER_SHARE` is an INDEX on the mean-square scale (the lack-of-fit mean square carries ~1.3 launches a (row, variant) cell), NOT the variance share, and it does NOT BIND today: with sL2 ~ 0 (a small layout main effect) the share is 1 for any sI2 > 0, so the F line alone decides. RECORD row (the critic's "mix" model, keyed unlike the fit; a 0.5 % interaction, half the launch sigma; one 5 % H(8) win): @@MIX@@. PLAN: an effect-size floor for the void (sI2 above a stated fraction of the floor's own variance); trigger: the first real night that flags a text | `cards.py` comment at `INTER_SHARE`, `rule`'s line; drill (xxiii) |
+| FORMS8-4 | Text: the COUPLING. r44 B's per-head floor does not hold P(h\* != 64) under a regime-specific layout on its own (its V_h is the head's text pooled over its regimes, diluted exactly as the per-text term is: the critic read 0.110-0.265 with the void off); the interaction void (A) is what carries that safety, so any looser line re-opens it. RECORD rows (the per-head floor and the new line together, no win): @@COUP@@ | §3 "The layout pools" (the interaction paragraph), `cards.py` comment at `INTER_SHARE`; drill (xxiii) |
+| FORMS8-5 | Text: `SIGMA_READ_BIAS` 0.88 is MEASURED on the drill's SYNTHETIC "phase" model (r44 V11, 30 nights a τ), not on night data; the bias depends on the layout model and the text mix, and `POWER_RECORD` is drilled under the same model, so the correction is self-consistent only inside it: on a real night it is an UNMEASURED correction | `cards.py` comment at `SIGMA_READ_BIAS` |
 
 ## Changes in rev 13 (by r44 finding id)
 
@@ -1083,7 +1102,14 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     lack-of-fit test of the per-text fit against the (row, variant) cell means, the launch noise from
     launches repeating a variant inside one row, pooled per regime over the night), prints the share,
     and VOIDS the C1-C2 cells of a text whose share exceeds 0.5 and whose lack of fit is beyond launch
-    noise at 0.01 family-wise (both UNMEASURED DEFAULTs; a void keeps the grid top).
+    noise at 0.01 family-wise (both UNMEASURED DEFAULTs; a void keeps the grid top). [rev 13.1, r45
+    FORMS8-1, -3, -4: the launch noise is the TEXT's OWN (its pure error, on launches winsorized at 4
+    robust sigmas, its regime shape from the night's pool; an F line on Satterthwaite df shrunk for the
+    night's kurtosis), not the regime's pool; ONE flagged text voids the night's pick (r1 step 5:
+    any void cell keeps the grid top for the whole night; conservative by design); the share is an
+    index on the mean-square scale, not the variance share, and does not bind today (the F line alone
+    decides); and this void is what holds P(h\* != 64) under a regime-specific layout, which the
+    per-head floor (B) does not hold on its own. See "Changes in rev 13.1".]
     - ~~**The layout twin term [rev 11, RULED r39 K1].**~~ [SUPERSEDED by rev 12, r41 L9: `I.lt`, `aa-twin` and the term are deleted.] Every estimator above is a contrast INSIDE
     ONE EXE: I's pools are hash-equal artifacts run as one cached exe, the twin terms and the gate
     read them, and rev 10's A/A pair was one exe too. A head against I is TWO exes, so an offset

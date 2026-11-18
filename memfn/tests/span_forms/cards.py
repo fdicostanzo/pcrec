@@ -1718,7 +1718,8 @@ def text_interaction(te, stats, regime_of, alpha=None, info=None):
     alpha / (texts read) on Satterthwaite's effective df of each side (regime-unequal rows weigh
     unequally), both df shrunk by 1 / (1 + kappa / 2), kappa the night's excess kurtosis of the
     pure-error deviations standardized per (text, regime) (a heavy-tailed launch spreads a variance
-    ratio as fewer df would: Box and Andersen's moment correction). r44 read the lack of fit against the
+    ratio as fewer df would: m squared deviations of excess kurtosis kappa vary as m / (1 + kappa / 2)
+    normal ones). r44 read the lack of fit against the
     regime pool alone, on chi-square: a text noisier than its regime's pool (one pattern's head arms at
     2x sigma) or heavy-tailed launches (t(5)) read as an interaction (r45 FORMS8-1: 100 and 55 of 100
     nights flagged with none). INTER_PE_PER_TEXT off: that r44 form (the control). Returns {text:
@@ -1845,8 +1846,9 @@ def adjusted(r, te, t):
 # the rule or the drill moves; r44 L: `selftest --rev12` CHECKS the pins at tau 1 and 2 %, so a stale pin is
 # red): {layout tau: (one 5 % winner, one 10 % winner, every head <= 16 5 % faster), each of 300}; rev 11's
 # accept lines 270 / 270 / 255. Re-pinned by lane formsfixl (r44 B's per-head floor moved them: rev 12 read
-# (170, 299, 176) / (7, 260, 5)).
-POWER_RECORD = {0.0: (281, 300, 279), 0.01: (204, 296, 179), 0.02: (25, 271, 18)}
+# (170, 299, 176) / (7, 260, 5)). Re-pinned by lane formsfixm (r45 FORMS8-1's per-text interaction test
+# voids other nights: rev 13 read (204, 296, 179) / (25, 271, 18)).
+POWER_RECORD = {0.0: (281, 300, 279), 0.01: (203, 296, 183), 0.02: (25, 267, 18)}
 POWER_ACCEPT = (270, 270, 255)
 
 
