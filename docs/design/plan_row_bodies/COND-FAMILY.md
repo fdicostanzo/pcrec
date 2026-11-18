@@ -3119,3 +3119,14 @@ separately. CLOSES: his position of 2026-11-17 ("do we define the groups as comi
 this ruling; the manager's "nearest pattern to its left" and "numbers are not subject to the ambiguous-reference
 error" are WITHDRAWN (review r43 group A); "label numbers: try them" is answered for the composed forms. Relaxing
 any refused form later changes no existing answer.
+
+**2026-11-18 OWNER RULING, addendum to number-names — zero is the exception (Frank, to session 139, morning).**
+HIS WORDS: "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is
+composed." RECORD: RULED (an addendum he volunteered to the question ruled just above). The number 0 is never
+refused: on one written literal and on every composed form (a sequence, an inserted pattern, an alternation of
+patterns, a repeat's operand) it names the entire match of the rx. Every other number keeps the rule above (only
+when there is no ambiguity). THE MANAGER'S READINGS (mine, to be checked by the next revision): (1) in an `&`
+chain with more than one pattern operand, 0 is still allowed, since every operand of the chain holds on the one
+same matched stretch, so "the entire match" is one thing there too; (2) inside a loop body or a hit-list argument,
+0 written in that part's own condition is that part's own match for the current pass or hit, by "the entire match
+of the rx" read for the rx the condition is attached to; he spoke to neither.
