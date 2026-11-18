@@ -3805,3 +3805,18 @@ natural reading is the never-matching alternation); precedence (`|` binds looses
 parentheses and `2 | 4 + 1` is `2 | 5`); long lists (the draft binds 12 bracketed lists, among them the month and
 day names and the alphabets, where `"Jan" | "Feb" | ...` is the same length); 4 nested bracket forms to read
 case by case. Counts by grep on revision 26 (`grep -c -E ':= *\[[^]=]*,'` = 12; `'\[\]'` = 10; `'\[ *\['` = 4).
+
+**2026-11-18 OWNER RULING — backref-label: capture (Frank, to session 140, afternoon).** ASKED AS A RULING (slug
+backref-label, by /q, with the witness `(?:(?<h>\d)?-\k<h>;)*` WHOLE `3-3;-3;`: PCRE holds (run under python `re`
+this session; the draft's libpcre2 run agrees), the label reading fails (the draft's model)). HIS WORDS, in full:
+"backref-label: capture. Plain rx in particular should work like pcre when we can. The behavior is pcre but is the
+scope still local to the literal?" RULED: a backreference written in a literal reads PCRE's CAPTURE, not the label.
+His QUESTION (a question, not a ruling): is the scope still local to the literal. THE MANAGER'S ANSWER to him, from
+the record (free-name and backref-across-parts, the same morning, unchanged by this ruling): yes; the ruling changes
+WHICH VALUE a reference reads (the capture, where the capture and the label part), not WHERE the name is looked
+up (the rx the reference is written in; a name that rx does not define is a compile error; a part's reference reads
+the part's own group). MANAGER'S READINGS, to be tested by the next revision lane: (m1) this narrows the morning
+clarification "it should be the last reference as labels" to WHICH GROUP a name resolves to, the value being the
+capture's; (m2) in a pattern that inserts a part exporting `h`, `\k<h>` reads that group's capture as PCRE would for
+the one group; (m3) two groups of one name inside ONE literal (the `(?J)` case, PART REF REF4) is NOT settled by
+"capture": PCRE refuses the literal without `(?J)` and reads the first set group with it; to be put to him.

@@ -28357,3 +28357,8 @@ Next
   on its DONE line. The stray run was left to finish (green; means nothing).
 - Startup-context measurement: asked Frank for /context (he is AFK); no lane briefed yet.
 - Alarm re-created for 00:27 on 11-19 (loadshame before the 01:00 window).
+- STARTUP-CONTEXT reading (Frank's /context, session 140, about 15:00, +65 min after wake and AFTER the freeze work,
+  no lane briefed): 112.3k total; messages 69.3k, memory files 18.7k, system tools 11.9k, skills 7.2k, deferred
+  system tools 18.2k, deferred MCP tools 5.6k, system prompt 4.2k. Session 139's figure: 111.6k at +20 min
+  (messages 71.1k, memory files 18.7k). Not like for like (this one includes an hour of work); the fixed part
+  (memory files 18.7k) is identical. No reduction idea built.
