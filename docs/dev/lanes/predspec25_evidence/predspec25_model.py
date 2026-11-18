@@ -447,6 +447,10 @@ bad1 = sum(1 for s in pool if (b.match(s, 0, P.PCRE2_ANCHORED | P.PCRE2_ENDANCHO
 print("RX5   one-argument vs Python `\\d{2}|\\d{4}`: %d of %d differ ; %s" % (bad1, len(pool), check("RX5 one-argument", bad1 == 0)))
 none_, gone2 = instantiate(r"\d{{{0},{1}}}", [["5"], ["2", "3"]])
 print("RX5 every combination illegal (min := [5], max := [2, 3]): removed %d of 2 -> `/%s/`: matches nothing (the can-never-match warning)" % (len(gone2), none_))
+kk, gk = instantiate(r"\d{{{0}}}", [["2", "x"]])
+print("RXK a member of the wrong kind in a count position, n := [\"2\", \"x\"]: by libpcre2 legality `\\d{x}` is a LEGAL pattern (literal")
+print("    braces), removed: %d -> `/%s/`: %s ; with the member refused by the position's kind -> `/(?:\\d{2})/`: %s" % (
+    len(gk), kk, show3(LRx(kk), "1{x}", "a1{x}", "12 3{x}"), show3(LRx(r"(?:\d{2})"), "1{x}", "a1{x}", "12 3{x}")))
 o3s, _ = instantiate(r"(?<r>\d{{{0},{1}}})", [["2", "3", "4"], ["2", "3", "4"]])
 fast = list(itertools.product(["2", "3", "4"], repeat=2)); fast = [(x, y) for y, x in fast]
 o3f = "(?|" + "|".join(r"(?<r>\d{%s,%s})" % c for c in fast if int(c[0]) <= int(c[1])) + ")"
@@ -527,6 +531,16 @@ r_ = om.search("1 a2 3"); fa = om.findall("12 3 45")
 print("E `occurrences(/\\d/, min = 2)` (the one-pattern model with `{2,}`): WHOLE `1a2` %s hits %s ; SEARCHED `1 a2 3` %s ; FIND-ALL `12 3 45` %d match(es), hits %s ; %s" % (
     W_(om, "1a2"), View(None, "", 0, 0, st).array("x"), S_(om, "1 a2 3"), len(fa), View(None, "", 0, 0, om.whole("12 3 45")[2]).array("x"),
     check("E min-values shown", W_(om, "1a2") == "HOLDS" and S_(om, "1 a2 3") == "`1 a2 3`@0" and len(fa) == 1)))
+# which "at least n": the quantifier {n,} (re-cuts the hits) or the count over the hits (occurs.at_least)?
+qc = mk(r"(?:[\s\S]*?(?<x>aab|a)){2,}[\s\S]*")
+qb = mk(r'(?:[\s\S]*?(?<x>aab|a))*[\s\S]*(?C"c")', {"c": lambda v: sum(1 for ps in (v.passes("x") or []) if ps.get("x") is not None) >= 2})
+qa = mk(r'(?>(?:[\s\S]*?(?<x>aab|a))*[\s\S]*)(?C"c")', {"c": lambda v: sum(1 for ps in (v.passes("x") or []) if ps.get("x") is not None) >= 2})
+for nm, p_ in (("(C) the quantifier `{2,}`", qc), ("(B) `occurrences(x) & occurs.at_least(2, ..)`, the condition re-entering", qb), ("(B') over the atomic hit list, `hits(x) & occurs.at_least(2, ..)`", qa)):
+    w = p_.whole("aab")
+    print("E min = 2 on x := `/aab|a/`, %s: WHOLE `aab` %s%s ; SEARCHED `xaab` %s ; FIND-ALL `aab a` %s" % (
+        nm, W_(p_, "aab"), (" hits %s" % View(None, "", 0, 0, w[2]).array("x")) if w[0] else "", S_(p_, "xaab"), F_(p_, "aab a")))
+d1 = D3(qc, qb, strings("ab ", 5), keys=False); d2 = D3(qc, qa, strings("ab ", 5), keys=False)
+print("E   (C) vs (B) %s ; (C) vs (B') %s (holds and stretch)" % (fmt3(d1), fmt3(d2)))
 print()
 
 # ======================================================================================================== PART W

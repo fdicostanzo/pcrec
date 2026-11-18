@@ -71,6 +71,8 @@ RX5   the one-argument exact count `rx.repeat(rx.digit, n)` -> `/(?|\d{2}|\d{4})
 RX5   WHOLE vs Python `\d{2,4}` (two to four digits, item 24 entry 16): 0 of 364 differ ; OK
 RX5   one-argument vs Python `\d{2}|\d{4}`: 0 of 364 differ ; OK
 RX5 every combination illegal (min := [5], max := [2, 3]): removed 2 of 2 -> `/(?!)/`: matches nothing (the can-never-match warning)
+RXK a member of the wrong kind in a count position, n := ["2", "x"]: by libpcre2 legality `\d{x}` is a LEGAL pattern (literal
+    braces), removed: 0 -> `/(?|\d{2}|\d{x})/`: WHOLE `1{x}` HOLDS ; SEARCHED `a1{x}` `1{x}`@1 ; FIND-ALL `12 3{x}` [`12`@0, `3{x}`@3] ; with the member refused by the position's kind -> `/(?:\d{2})/`: WHOLE `1{x}` FAILS ; SEARCHED `a1{x}` FAILS ; FIND-ALL `12 3{x}` [`12`@0]
 RX5 the ORDER of the product (THE DRAFT'S READING: first hole slowest) against first hole fastest, n := [2, 3, 4],
    `[r = repeat(rx.digit, n, n)] & (r: length in L)` for all 7 sets L, reported row with r: 0 / 0 / 0 texts summed (364 texts each) (answer-free here)
 RX6 `rx.repeat([a = rx.digit] & (a: <5), min = 1)` -> `/(?:(?:(?<a>(?:\d)))(?C"c"))+/`: WHOLE `3417` FAILS, `341` HOLDS a = `1` (array ['3', '4', '1']) ; SEARCHED `3417` `341`@0 a = `1` ; FIND-ALL `3417 82` [`341`@0 a = `1`, `2`@6 a = `2`]
@@ -100,6 +102,10 @@ RXA `rx.repeat(rx.digit, n + 1)`, n := [2, 4], read as distribution per mention 
 E `/(?<h>\d*)/ & NOT (h: <5)` (PCRE's empty matches, with the warning `pcrec.empty.search`): WHOLE `` HOLDS h = `` ; SEARCHED `a7` ``@0 ; FIND-ALL `7a3` [`7`@0, ``@1, ``@2, ``@3] ; OK
 E   engine vs libpcre2 (global loop): 0 / 0 / 0 of 121 ; OK
 E `occurrences(/\d/, min = 2)` (the one-pattern model with `{2,}`): WHOLE `1a2` HOLDS hits ['1', '2'] ; SEARCHED `1 a2 3` `1 a2 3`@0 ; FIND-ALL `12 3 45` 1 match(es), hits ['1', '2', '3', '4', '5'] ; OK
+E min = 2 on x := `/aab|a/`, (C) the quantifier `{2,}`: WHOLE `aab` HOLDS hits ['a', 'a'] ; SEARCHED `xaab` `xaab`@0 ; FIND-ALL `aab a` [`aab a`@0]
+E min = 2 on x := `/aab|a/`, (B) `occurrences(x) & occurs.at_least(2, ..)`, the condition re-entering: WHOLE `aab` HOLDS hits ['a', 'a'] ; SEARCHED `xaab` `xaab`@0 ; FIND-ALL `aab a` [`aab a`@0]
+E min = 2 on x := `/aab|a/`, (B') over the atomic hit list, `hits(x) & occurs.at_least(2, ..)`: WHOLE `aab` FAILS ; SEARCHED `xaab` FAILS ; FIND-ALL `aab a` [`aab a`@0]
+E   (C) vs (B) 0 / 0 / 0 of 364 ; (C) vs (B') 17 / 17 / 17 of 364 (first W `aab`) (holds and stretch)
 
 == PART W: the manager's reading 'the withdrawn looped-warning is the existing label.unset under the one rule'.
    looped-warning's trigger: a bare condition after the pattern reads a label whose group is inside a loop;
