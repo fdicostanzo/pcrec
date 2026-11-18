@@ -443,5 +443,15 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
       reader cannot see which group a number means (the owner, zero-place, 2026-11-17).
   11. THE HIT LIST IS FIND-THEN-JUDGE: atomic and anchored to its text; a search written as part of the pattern
       is re-entered by a rejecting test and will cut `1234` into `12` and `34` to satisfy "under 100".
+  12. THE LABEL RULE, EXPLAINED WITH THE SEPARATED LIST (the owner, 2026-11-17: "Use the list example in the docs
+      as part of the label explanation"). The rule: a label is a name; every branching (an alternation, an
+      optional, a loop as a branching over its number of passes) resets the labels inside it on entry; the branch
+      taken sets what it sets; the last mention wins; the array form takes every setting in order. The worked
+      example to carry it: a list of items separated by commas, written items-then-last,
+      `/(?:(?<h>\d),)*(?<h>\d)/` (on `7`: label 7, array 7; on `7,3,5`: label 5, array 7, 3, 5: one item is the
+      loop contributing nothing), beside first-then-rest, `/(?<h>\d)(?:,(?<h>\d))*/` (the same array; the label
+      UNSET on one item, because entering the loop resets the name and the zero-pass branch sets nothing). The pair
+      shows every part of the rule at once. Answers are the manager's hand working until revision 24.4 prints its
+      run.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
