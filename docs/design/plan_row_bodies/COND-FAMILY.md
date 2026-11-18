@@ -2657,3 +2657,18 @@ value the reader cannot see which group a number names. MINE: the law `A & B` = 
 place; the draft already gives each literal its own group namespace (numbered groups do not leak), which is (3);
 (4) becomes a line in the documentation list (predicates_future item 24) and a candidate WARNING when a numbered
 label is read on a pattern that is not written at that place (a proposal, his to accept).
+
+**2026-11-17 OWNER RULING — pass-list-read (Frank, to session 138, evening).** Asked what `$h` reads after the
+pattern when h is set in a loop (the last pass's own value, or the list of passes), with the draft's example
+`/(?:(?<h>\d);)*(?<k>\d)/ & (k: == $h)` and the manager's lean (the last pass's own; the list an explicit request).
+HIS WORDS: "pass-list-read: unqualified it is the last pass as standard pcre. I would like a form that allows other
+passes but it should be clear that that is what is requested. Specifically, it should have different spelling. Eg
+Perl uses @x. An array of such values is its own type."
+RECORD: RULED: (1) UNQUALIFIED, a label's value is the LAST PASS's, "as standard pcre". (2) A form for the OTHER
+passes is wanted, and it must be VISIBLY a different request: a DIFFERENT SPELLING (his example: Perl's `@x`; a
+placeholder, to the spellings review). (3) An array of such values is ITS OWN TYPE (not a scalar that happens to
+hold several): so a comparison of the array with a single value is a type matter, not a silent choice of
+"some" or "every". MINE, to be checked by the next revision: under tonight's per-pass labels "the last pass" is the
+last pass's OWN value (unset if that pass set none), which equals standard PCRE's capture wherever the group takes
+part in every pass and differs only where it does not: a point to put to him when the revision shows it;
+`sorted` and `distinct` take the array form; the array type is the same type as the hit list's values.
