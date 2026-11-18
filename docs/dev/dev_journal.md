@@ -28373,3 +28373,13 @@ Next
 - Frank 17:30: "Start both. Can we try the architecture process on these?" (start-lookaround, start-densehit).
   Lanes archlook and archdense (opus, architecture notes only, the [ARCH-STEP] pilot A6); critic rounds in mode
   arch follow each note.
+- 17:15-17:50: predspec27 delivered and MERGED (b22285a36; rev 27; 14 of 18 manager readings supported, 2 not, 2
+  untestable); critic round crit-predspec27 (design) launched. archdense and archlook delivered their architecture
+  notes (lane/archdense @ 5dcc98dfc, 13 sites; lane/archlook @ e7c814fcf, 28 rows, five refactors first); critic
+  rounds crit-archdense and crit-archlook (mode arch, its first uses). crit-archdense drafted in about 30 min:
+  NOT ACCEPTED, revise (12 groups, 0 answer / 0 speed, 8 design); dispositions ruled (scratch/mgr140/
+  r48_dispositions.md: cadence register row proposed with the counter-argument; A-PLAN trigger not fired by U1;
+  owner questions triaged 5 -> 1); fix lane archdense2 files it as r48 and revises the note.
+- SECOND stale plan row found by an architect lane: [REQ-LOOKAROUND] said not-started / rev 1 / no go; span_arms is
+  at rev 2.2 and D191 (11-09) gave L1 and L3 the build go. Row corrected and moved to Active (2843924a1). The
+  [LANDWALK] tag reads not-started while its stage 1 is BUILT (review r48 group A): a third; to fix at r48's landing.
