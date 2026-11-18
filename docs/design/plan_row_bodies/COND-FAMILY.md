@@ -2672,3 +2672,11 @@ hold several): so a comparison of the array with a single value is a type matter
 last pass's OWN value (unset if that pass set none), which equals standard PCRE's capture wherever the group takes
 part in every pass and differs only where it does not: a point to put to him when the revision shows it;
 `sorted` and `distinct` take the array form; the array type is the same type as the hit list's values.
+REOPENED for discussion, minutes later (pass-list-read, point (1) only). To the manager's flag (the last pass's OWN
+value against standard PCRE's carried capture, where the last pass skipped the group), HIS WORDS: "pass-list-read:
+let's discuss because I thought $x and x: did have different values. Then there at least 4 accesses. $x like pcre
+behavior / $x like x: behavior / $x as array / x:". RECORD: what an unqualified `$x` reads is UNDER DISCUSSION (the
+PCRE capture, or the label as `x:` reads it); points (2) and (3) of the entry above stand (the other passes by a
+visibly different spelling; an array is its own type). Background the manager brought to the discussion: the
+2026-11-14 ruling had `x:` = all iterations and `$x` = last iteration, which is where "different values" comes
+from; tonight's after-loop-read made `x:` after the pattern the last pass's own label.
