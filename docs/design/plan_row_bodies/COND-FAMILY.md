@@ -3643,3 +3643,18 @@ sentence as the reason a lone complement could be legal when matching; he ruled 
 (lone-complement-match: an error, provide "anything"), so no ruling rests on it; what it does change: what the
 provided `anything` matches is a real choice, asked as **anything-text**, and his own example `any := /.*/` would
 not accept a multi-line value.
+
+**2026-11-18 OWNER, a question on the conditional form (Frank, to session 139, afternoon; a QUESTION, nothing
+ruled).** HIS WORDS: "Predicate:
+For the
+A? B: C
+form we can't spell, is it the same as
+(A|B|fail)|C". RECORD: a question about the parked conditional (conditional-spelling; `?` is taken by the postfix
+quantifier). THE MANAGER'S READING OF THE FORMULA: "(A then B, or fail), or else C"; as typed, with `|` between A
+and B, it would be a plain alternation of all four. THE MANAGER'S ANSWER (in the session; a run in python `re`,
+A := "a digit is next" `(?=\d)`, B := `\d\d`, C := `\w`): NOT the same with an ordinary `fail`, because `X | fail`
+is just X, so the form is `A B | C` and falls through to C when A holds and B does not (whole `1`: the naive form
+HOLDS through C; an if-then-else must FAIL; find-all on `1x 12 a`: naive [`1`, `x`, `12`, `a`], guarded [`x`, `12`,
+`a`]). The same thing IS expressible without a new spelling as `(A then B) | (not A, then C)` (the guarded form
+above, `(?=\d)\d\d|(?!\d)\w`), or with a `fail` that COMMITS (ends the alternation), which is the backtracking-verb
+family parked as predicates_future item 19.
