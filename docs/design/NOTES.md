@@ -8,3 +8,7 @@
 - (moved from CLAUDE.md 2026-11-10, lane condsurv, for room) `inline_c.md` — [INLINE-C] DESIGN, pattern side (PROPOSED rev 1, lane inlinecrev1, after panel r1): one `A_CALLOUT` node for `(?C`/`(?{`, one call-site emitter and the shared return table, firing classes + `once`, generated segment functions, `verify` as a D156 FINISH row, the `--allow-code` + `sha256` pin trust gate, stages 0/1a/1b/2-5.
 
 - Files dropped from CLAUDE.md for size (2026-11-13), still present: `la_d27_extract.md`, `vlb_d27_extract.md`, `sr_d27_extract.md`.
+
+- (moved from CLAUDE.md 2026-11-18, lane landarch, for room) `stream/` — "one instruction stream" end state: `manifesto.md` (STABLE: goals, end state, principles; changes only with the owner), `roadmap.md` (LIVING: migration areas by code, hubs, provisional admission table, the ratchet), `approach.md` (rev 3, the design record of rounds 1-3), `arev.md` (A-REV: one automaton-run record, PROPOSED rev 2; first client the lookbehind hand-off as a proof step); `round1/` keeps the round-1 drafts.
+
+- (moved from CLAUDE.md 2026-11-18, lane landarch, for room) `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlookbehind_pieces.md`; `subroutines_design.md` + `subroutines_measurements/`; `frame_buffer_design.md`.
