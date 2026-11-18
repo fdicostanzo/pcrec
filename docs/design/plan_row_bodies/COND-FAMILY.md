@@ -2627,3 +2627,16 @@ one-pattern search made ATOMIC (nothing re-enters it once it has matched: hits-c
 it is applied to (it covers that text from end to end, so no outer search can shrink or shift it: hits-text). That
 gives `hits` a REGEX MODEL (an atomic group around the one-pattern search); a first try with only each hit atomic
 did NOT work (the lazy gap was re-entered), so the atomic group must enclose the whole loop.
+
+**2026-11-17 OWNER RULING — the hit list: atomic and anchored (hits-committed and hits-text together) (Frank, to
+session 138, evening).** Asked to confirm as one ruling: "`hits(r)` is the one-pattern search made atomic and
+anchored to the text it is applied to". HIS WORDS: "hits-text: yes but spelling to be reviewed with all other
+spellings." RECORD: RULED: (1) the named hit list is the one-pattern search (his lazy-gap loop) made ATOMIC: once it
+has matched, nothing re-enters it; its hits are those of a plain search, and tests on them judge a fixed list
+(hits-committed). (2) It is ANCHORED to the text it is applied to, covering it from end to end: a whole value; the
+match of the pattern to its left (the filter sentence); standing alone in a searched program, the whole subject
+(hits-text). (3) Its regex model is an atomic group around the whole one-pattern loop, anchored at both ends
+(run on libpcre2 in the entry above); reading the hits out as VALUES remains the captures-level part. (4) The
+SPELLING (`hits`, and every other spelling) is NOT settled: to be reviewed with all the other spellings. MINE: the
+standalone case needs no compile error (it reads the whole subject, as `\A...\z` would); the draft's noted
+exception "all hits of a search" becomes "has a regex model; values need the captures level".
