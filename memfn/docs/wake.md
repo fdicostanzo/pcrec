@@ -1,83 +1,61 @@
 # memfn kit — wake-up brief
 
-Rewritten 2026-11-16 17:30 by the kit session (pcrec-memfn). Tonight: the mfcard timing window from 01:00.
+Rewritten 2026-11-17 23:05 by the kit session (pcrec-memfn), closed at Frank's /close. Main (session 138) also closed;
+a NEW main wakes from its own brief. Tonight's timing set 1 runs from 01:00 without either session.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). Main = session `pcrec-main`. Frank rules, mostly via main.
-Ledger/journal branch: worktrees/memfn on lane/memfn-k1108. Heartbeat cron `17,47` (OWNER=kit); waiting list
-worktrees/.mgr/waiting_on.kit; sabotage ids worktrees/.mgr/sabotage_ids.txt (next free S3260).
+Ledger/journal branch: worktrees/memfn on lane/memfn-k1108. Heartbeat cron `17,47` (OWNER=kit; DELETED at close,
+recreate on wake). Waiting list worktrees/.mgr/waiting_on.kit. Sabotage ids worktrees/.mgr/sabotage_ids.txt (next S3335).
 
 ## Read in order
-1. This file. 2. memfn/docs/journal.md, 2026-11-16 entries. 3. responses.md's last two `done:` lines (R-44, R-45 plan B)
-and the R-45 reply block (rev 6). 4. D197 (the mfind instrument; one-sided timing).
+1. This file. 2. memfn/docs/journal.md, 2026-11-17 entries (the forms rounds r35-r41 and their rulings).
+3. docs/design/memfn/r45_reply.md rev 12 on lane/memfn-forms. 4. docs/dev/lanes/formsfixk_report.md on lane/memfn-forms.
 
-## UPDATE 2026-11-17 13:55 (read FIRST; supersedes everything below where they differ)
-- TONIGHT (11-18 01:00): SET 1 = mfcard FRESH FIRST RUN QUEUED 600-609 (RUN_ID mfcard-zen4-3, FROZEN f6274c11b, no
-  FIRST_RUNDIR; Frank cleared it). Main checks Steam/VS Code (loadshame --present) at 00:30 and 01:00; any quiet-gate refusal
-  -> send main the line. Verdict rules: CONFIRM -> CONFIRM_CELLS + queue 610 only; INCONCLUSIVE -> the ONE re-run with
-  FIRST_RUNDIR(_AVX2)=mfcard-zen4-3 + new RUN_ID (may share 11-19 night); LOSS settles span_pick row 1 at that level; WIN ->
-  the ruled split shape under its own go. Any RED -> triage lane. Then unpin worktrees/mfind; r24 SR-1..4 owed.
-- FORMS (R-45 plan A): lane/memfn-forms @ 1aec5d4d3 = frozen-tree candidate. Reviews r35-r38 all ruled + fixed (filed under
-  docs/dev/reviews/2026-11-17-r35..r38). Code answer-clean, 0 movers at width 32, h=64 shipped UNMEASURED. Cards rule rev 10:
-  per-pattern twin term, interleaved rounds, agreement gate, CONFIRM BY RE-RUN, class drill (84 rows, worst 0.020); fast-split
-  limit retired. IN FLIGHT: round 5 crit-memfn-forms5 (scratch/crit-memfn-forms5) + cloud (test GREEN, axes pending).
-- CARDS NIGHT 11-19 01:00 CLEARED by Frank (set 2, cap 3 h). The cards MUST time on lane/covs2b WITH the forms merged. MAIN
-  TERMS: BY 14:00 11-18 send main the forms tip + responses.md done line + pcrec-side readers that move (abi, stamps, spec,
-  pins, test expectations, found by grep) + expected conflicts vs covs2b @ 28af649c9 (known: docs, tests/ci/cloud_axes_shards.tsv,
-  tests/ci/cloud_mech_shards.tsv: keep BOTH sides); if round 5 forces fixes that miss 14:00, tell main by 10:00 and the cards
-  move a night. Main merges + freezes covs2b by 20:00 and sends the sha. Job set WRITTEN + dry-run: scratch/memfn/fcards/jobs
-  700-704 (README has the queue lines; window.vars RUN_ID=fcards-zen4-1, FROZEN=main's sha; worktrees/fcards-night clean at
-  FROZEN, pin it in .wtprune.keep). 704 identity runs only at h*=64; h*<64 -> kit commit + abi event after the night. Send main
-  the keys when queued, and 'h* frozen' after 702.
-- 14:25 ADD: round 5 (r39) on 1aec5d4d3 RULED: K1 LAYOUT TWIN (between-binary noise), K4 reading B, K6 one owed-confirm list,
-  + small items. formsfixj DONE @ 2f3c964fc (K7/K10/K11; its mech shard table is REGENERATED wholesale: tell main to
-  regenerate after merging, not line-merge). formsfixi (opus) running, due by 19:30. NEXT: landing lane merges formsfixi +
-  formsfixj into lane/memfn-forms; round 6 (sized) + cloud on that tip; job-set update (700 runs G2 head passes on FROZEN ->
-  G2 file; 701 calls `cards.py rule RUNDIR --g2 FILE` once before its loop; dry checks the file); by 14:00 11-18 deliver to
-  main. Main accepted both critic-skill proposals (each pooled level; comparison kinds).
-- 19:05 ADD (supersedes the 14:25 NEXT): round 6 (r41) ruled: L9 SETUP RANDOMIZATION replaced the layout twins (pools of 4
-  layout variants per text, per-launch draws; R2 per-text layout term + variant-aware bimodal test; power is RECORD: a 5 %
-  win is seen 170/300 at tau 1 %, 7 at 2 %; a missed win keeps 64). lane/memfn-forms FAST-FORWARDED to 27b18e75c = the
-  frozen candidate (formsfixk report docs/dev/lanes/formsfixk_report.md); cloud test+axes on it in flight. fcards jobs
-  UNCHANGED and updated earlier for G2 (700 runs G2 head passes -> g2_heads.txt; 701 one `rule --g2` first; total cap 9,672 s).
-  MORNING ORDER: (1) set 1's verdict (rules above); (2) when the box is free of set 1, round 7 (sized, 2 critics, both
-  simulate rules + perturbation lens) on 27b18e75c; judge K6's drill win re-centring 0.955->0.953; (3) BY 10:00 tell main
-  whether 14:00 holds (else the cards move a night); (4) by 14:00 the delivery package (tip, done line, moving readers by
-  grep, conflicts vs covs2b: docs + BOTH cloud shard tables, the mech table REGENERATED wholesale -> main regenerates after
-  merging; h=64 UNMEASURED; known limits incl. power RECORD). Main accepted both lens changes (comparison kinds; by
-  perturbation) and will check cover_cap §11.4's A/A floor with the kit before its width cells (pool is arm-generic).
-- Sabotage ids: next free S3335. Main accepted the critic-skill change (simulate drills each pooled level + order step).
-## CURRENT STATE (2026-11-16 17:30)
-- TIMING TONIGHT: jobs 600-609 QUEUED (box queue, not-before 2026-11-17T01:00, RUN_ID mfcard-zen4-2, FROZEN f6274c11b =
-  lane/memfn-scanrow, merged on main as c9ff8b53d; worktrees/mfind fast-forwarded and pinned in .wtprune.keep). Job set
-  /var/tmp/pcrec-pcrec/scratch/memfn/mcfixa/jobs/ (JF-1 unset GLIBC_TUNABLES; 609 rc follows d197; a refused NON-DECIDING scan
-  row prints "scan unpriced" and never vetoes). Main keeps the box clear from 00:30, load check 00:27; Frank asked to close Steam.
-  If the quiet gate refuses on Frank's processes: REPORT, never retry around it. Verdicts via `scripts/monread kit` (one
-  --wait armed). Rules: CONFIRM -> set CONFIRM_CELLS, queue 610 only; INCONCLUSIVE -> this was the FIRST run (zen4-1 ruled not
-  a run): the ONE re-run with FIRST_RUNDIR(_AVX2)=zen4-2 and a new RUN_ID; a second INCONCLUSIVE = NOT-WIN; LOSS settles
-  span_pick row 1 at that level; WIN -> the ruled split shape under its own go. Replay of zen4-1 under the fixed rule:
-  slot/replay_zen4-1.txt (generic CONFIRM, x86-64/v3 INCONCLUSIVE only because avx2 JMH never ran).
-- DELIVERED + MERGED today: R-44 D3 floor gate (c38f4362b), scanrow harness fix (c9ff8b53d).
-- DELIVERED, awaiting main: R-45 PLAN B lane/memfn-span4k @ 60c2958ae (cloud test + axes GREEN; reviews r27, r28) and the
-  HELD RAISE lane/memfn-span4k-raise @ 9d4907a16 (= 60c2958ae + 1; lands only on main's combined branch over covs2afix, with
-  main's READ-2 asserts + CHECK-1 witness). Witness row (b) follows main's stage-2 B5 text.
-- R-45 FORMS (plan A): GO EFFECTIVE (main, after r45chk) on design rev 6 @ 69acf5376 (lane/memfn-r45). NEXT: brief the forms
-  build lane cut from lane/memfn-span4k 60c2958ae; its first doc edit folds main's K1 (Q1's answer into the reply + which
-  "pcrec's side" items leave the combined branch) and K2 (a bench-run regime's lit-l16 A/A floor cells move to the bench);
-  it also owes R28-2/R28-3 witness rows. Owner rulings: forms now (one joint landing), keep-short-spans NO, near-miss later.
-  Night order: kit form cards first, h frozen by its rule, identity check, then main's width cells on the REBUILT binary.
-  Main asked the bench dev how NOT-WARM/short-subject cells are timed via pcrec-harness --harness=span-head=N.
-- OWED after tonight's verdict: r24 SR-1..SR-4 (scan-row harness notes; never on the frozen tree during the window);
-  ADQ-3-3 (slot sabotage row m8); the mfind-long-run witness shape; remove worktrees/mfind from .wtprune.keep after the verdict.
-- Worktrees to prune when their mtimes age (>120 min): scanrow, tri-span4kax, raisefix (wtprune --apply --force NAME).
+## Box rules (binding)
+Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows main cleared with Frank. If the quiet
+gate refuses on Frank's processes: REPORT to main, never retry around it. Queue + cloud verdicts only via
+`scripts/monread kit` (one `--wait` armed with run_in_background). Lanes wait in the FOREGROUND with a bound (they keep
+idling on background notifications: say so in every brief). Never merge to main or push main.
 
-## Lessons (today)
-- A timing job set's queue-time check must EXECUTE the job's own calls (an arm_check that re-implements them shares a source
-  with what it controls; r13 JF-2).
-- A refused non-deciding row must never veto a verdict; read "deciding" from one declared source (r13 JF-4).
-- A held commit that builds only on a future combined branch gets reviewed on a combined APPROXIMATION tree (r27: all three
-  blockers were found there).
-- After merging main into a branch that changed a seam signature, grep EVERY caller across the whole tree (lane probes too):
-  r33_sim/probe.c broke cloud axes (AX-1).
-- A new sizing helper's fallback on allocation failure is an absorbed OOM: test-resource's injector caught it (TRI-1).
-- Design replies converge in several short single-critic rounds; drill the rule as WRITTEN each time (r23 dominance, r25 voids).
+## FIRST ON WAKE
+1. `scripts/session_role kit`; recreate the heartbeat; `scripts/monread kit`; `scripts/boxqueue status`.
+2. SET 1 VERDICT (jobs 600-609, RUN_ID mfcard-zen4-3, FROZEN f6274c11b, job set
+   /var/tmp/pcrec-pcrec/scratch/memfn/mcfixa/jobs/; pre-window reading 23:19: no watched app, load 0.93 vs 2.0).
+   609 gives the d197 verdict per ISA level. Rules: CONFIRM -> set CONFIRM_CELLS, queue 610 only; INCONCLUSIVE -> the ONE
+   re-run with FIRST_RUNDIR(_AVX2)=mfcard-zen4-3 and a new RUN_ID (may share the 11-19 night; ask main for the window);
+   LOSS settles span_pick row 1 at that level; WIN -> the ruled split shape under its own go. Gate refusal -> tell main.
+   Any RED -> a triage lane. Afterwards: unpin worktrees/mfind from .wtprune.keep; r24 SR-1..SR-4 owed.
+3. FORMS (R-45 plan A): lane/memfn-forms @ 27b18e75c = frozen candidate (cloud test + axes GREEN). Rounds r35-r41 all
+   ruled and fixed; r41 replaced the layout twins by SETUP RANDOMIZATION (pools of 4 layout variants per text, per-launch
+   draws, per-text layout term, variant-aware bimodal test). selftest 205/0, class drill worst 0.017. Power is RECORD
+   (5 % win seen 170/300 at tau 1 %, 7 at 2 %; a missed win keeps 64). h=64 shipped UNMEASURED.
+   NEXT, once set 1 leaves the box: round 7 (sized: 2 critics; both simulate rules + the PERTURBATION lens, all in
+   docs/dev/guide/critics.md on main) on 27b18e75c via the pcrec-critic skill, topic memfn-forms7. Judge K6's drill win
+   re-centring 0.955 -> 0.953 (formsfixk report). Fixes if any, then cloud on the new tip.
+4. BY 10:00 11-18: tell main whether the 14:00 delivery holds; if not, the cards move a night (main asks Frank).
+   A new main may not be up: SendMessage AND a `[responses]` notice.
+5. BY 14:00 11-18, DELIVER to main: a `[responses]` done line (tip, report, validation), the pcrec-side readers that
+   move (abi number, stamps, spec sentences, pins, test expectations: FOUND BY GREP), expected conflicts vs lane/covs2b
+   @ 28af649c9 (docs; tests/ci/cloud_axes_shards.tsv; tests/ci/cloud_mech_shards.tsv was REGENERATED wholesale by
+   formsfixj: main regenerates after merging, keeping every id once, never a line merge), h=64 UNMEASURED, known limits
+   (power RECORD; the rho share is the body's own speed and is printed). Also: the layout pool is ARM-GENERIC at the TU
+   level (main's width arms could use it via a shared helper; nothing built), and cover_cap.md §11.4's A/A floor gets
+   checked WITH main before main's width cells are timed.
+6. AFTER main sends the frozen covs2b sha (by 20:00 11-18): `worktrees/fcards-night` at FROZEN, clean, pinned in
+   .wtprune.keep; window.vars RUN_ID=fcards-zen4-1, FROZEN=<sha>; queue 700-704 from
+   /var/tmp/pcrec-pcrec/scratch/memfn/fcards/jobs/README.md (not before 2026-11-19T01:00; total est 3,224 s, cap 9,672 s;
+   700 runs G2 head passes -> g2_heads.txt + g2_defective.txt; 701 makes one `cards.py rule --g2` call first); send main
+   the keys; after 702 tell main "h* frozen". 704 identity runs only at h*=64 (h*<64 = a kit commit + abi event after
+   the night). The cards MUST time on covs2b WITH the forms merged.
+
+## Hygiene owed
+Prune with `scripts/wtprune` (dry run, then --apply / --force NAME): forms fix lanes formsfixa..k, formsland*,
+fcards-dry*, scanrow, tri-span4kax, raisefix. Never rm -rf. Also owed: ADQ-3-3, the mfind-long-run witness.
+
+## Lessons (2026-11-17)
+- A noise estimator must be drilled at EVERY level it pools over AND by the PERTURBATION each side of a ratio carries
+  (what differs between the two objects, read with nm/readelf); six rounds each found one more level until the general
+  form (randomize the nuisance factor for every arm) closed the class and deleted the special machinery.
+- A lane's idle on a background notification stalls it: brief foreground bounded waits explicitly.
+- A finished lane's `NAME.done`/`.stopped` marker in a shared worktree blocks the next lane's lanecheck: remove it.
