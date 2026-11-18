@@ -2933,3 +2933,18 @@ write `(?:x)`), so `/${rx}?/` already applies to the whole rx; his proposal chan
 error for holes goes, and a hole (like a sequence part) becomes a PATTERN position, matched in place; the SET
 positions keep the rule (a filter operand, a label condition, a compile-time set), where tonight's "any piece that
 might look outside is a compiler error" is the same rule.
+
+**2026-11-17 OWNER RULING — hole-reading (Frank, to session 138, evening).** Asked: "declare that a hole is the
+inserted pattern as a whole, in a non-capturing group, matched in place, with holes leaving the list of set
+positions and the dead-assertion case becoming a warning?" HIS WORDS: "hole-reading: agree and explicitly then,
+assertions become ok to cross the border". RECORD: RULED: (1) a HOLE is the inserted pattern as a WHOLE, in a
+non-capturing group, matched where it stands (`/xxx${/foo/}yyy/` = `/xxx(?:foo)yyy/`; the inserted pattern keeps
+its own flags and its own group numbering, as before); a quantifier after a hole applies to the whole inserted
+pattern. (2) EXPLICITLY: an assertion at the inserted pattern's edge may CROSS THE BORDER: it reads the text of
+its neighbours, as in the written-out regex. The EDGE-ASSERTION ERROR for holes (the draft's L8) is WITHDRAWN. (3)
+The sequence operator and a hole are one reading (pattern positions). (4) NARROWS the 2026-11-14 Q1 ruling: "a
+hole's set" leaves its list of set positions; the string-set rule and its error stay for the right side of `&`, a
+condition on a label, a filter body and a compile-time set (2026-11-17: "any piece that might look outside is a
+compiler error"). (5) An inserted pattern's edge assertion that can never hold beside its neighbour (the draft's
+`/x${num}/`, num := `/\b\d+\b/`) is a structural WARNING of the can-never-match kind, not an error (the manager's
+proposal inside the question he agreed to).
