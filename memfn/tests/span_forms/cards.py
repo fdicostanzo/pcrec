@@ -38,8 +38,9 @@ THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR o
                            same recorded G2 list (rev 11, r39 K6): every cell VOID ONCE (all
                            its arms) into results_rerun.tsv / results_c3_h<H>_rerun.tsv (rev 7,
                            F7); once none is void, the CONFIRM: each cell holding a head's win
-                           beyond f, I and each winning head on FRESH pool draws, into
-                           results_confirm.tsv (rev 10 R2; rev 12 r41 L9)
+                           beyond f, I and each winning head on FRESH launch draws of the
+                           SAME pools, into results_confirm.tsv (round 1) or
+                           results_confirm_r<K>.tsv (round K, r44 D) (rev 10 R2; rev 12 r41 L9)
   rule RUNDIR [--g2 FILE]  R0-R5: the floor, h*, its label, the filings; exit 0 complete,
                            2 the night is void or defective, 3 a step is owed (a re-run, a
                            confirm, or C3 at h*); the line `rule: NEXT ...` names it. --g2
@@ -137,23 +138,33 @@ MEDSD_REL = 0.4754
 #   (1) an IN-TU PRELUDE: a top-level `.skip 16 x j` in .text AHEAD of the artifact, so the TU's own
 #       .text alignment cannot absorb it (the artifact's functions and its driver move by 16 j inside
 #       one aligned TU: their 16-B phase is kept, their 32-/64-B phase moves); and
-#   (2) an ALIGNMENT VARIANT: the odd variants compile with gcc's loop/jump/label alignment off
-#       (ALIGN_VARIANTS[1]), another RELATIVE layout of the same semantics (the padding inside each
-#       function moves; function entries stay 16-B aligned so the prelude still moves their phase).
+#   (2) an ALIGNMENT VARIANT: the odd variants compile with gcc's function/loop/jump/label alignment
+#       off (ALIGN_VARIANTS[1]): the SAME instruction stream with other alignment padding, so another
+#       RELATIVE layout (r44 H: one gcc -O2 does not ship; the even pair's is the default build's). Odd
+#       variants' function entries are NOT 16-B aligned (r44 G: `-fno-align-functions` puts
+#       `rxa_search` off the 16-B grid); the prelude moves them by its own 16 j all the same.
 # Every LAUNCH draws one variant of its arm's pool (`launch_variant`: a hash of the night's run id,
 # the arm cell and the round, recorded per launch in the results row's `variants` column), so
 # layout noise is iid in every comparison by construction and the median averages it at zero extra
 # launches (links only). Every variant is answer-gated (`dry`, and `prepare_cell` before timing);
 # `dry` prints each pool's phase spread (nm / objdump of the built exes, never counts) and REFUSES
-# a pool whose variants share one 64-B phase or one relative layout. Hash-equal arms (a head whose
-# text is I's) share I's pool: one text, one pool.
+# a pool whose variants share one 64-B phase or one relative layout, whose variants of one relative
+# layout share a 32-B phase vector, or that holds fewer than POOL_SIZE distinct built layouts (r44 C).
+# Hash-equal arms (a head whose text is I's) share I's pool: one text, one pool.
+# FIXED AXES (r44 F): a pool moves CODE placement only. In every variant of every text the data stay
+# put: the matcher's .rodata tables, .data/.bss, the driver's `main`, and the subject buffer (malloc'd,
+# 16 mod 64 on this box's glibc for the whole-buffer and not-warm regimes; short-subject record starts
+# vary by record but not by variant). A share common to every variant of a text therefore also holds
+# THIS harness's data placement, which a user's binary does not share.
 # UNMEASURED DEFAULT: POOL_SIZE = 4 (one variant per 16-B phase mod 64, two of each alignment).
 POOL_SIZE = int(os.environ.get("POOL_SIZE", "4"))
 # UNMEASURED DEFAULT: the prelude's draw space, j in 0..255 (16-B steps mod 4096). STRATIFIED: variant
 # v takes the 16-B phase class (r + PHASE_ORDER[v mod 4]) mod 4 (r drawn per pool), a random multiple
-# of 64 B above it, so a pool of 4 spans the four 16-B phases mod 64 by construction (the refusal is
-# the check) AND the two variants of each alignment differ by 16 B mod 32 (classes r, r + 1 for the
-# even variants, r + 2, r + 3 for the odd): with (r + v) mod 4 they differed by 32 B, so a TU whose
+# of 64 B above it, so the PRELUDES of a pool of 4 span the four 16-B phases mod 64 by construction.
+# What that buys each hot loop (r44 G, as built): each RELATIVE layout (alignment variant) is timed at
+# TWO 64-B classes 16 B apart (classes r, r + 1 for the even variants, r + 2, r + 3 for the odd), never
+# all four; and the two variants of each alignment differ by 16 B mod 32 (the selftest's 32-B row and
+# the refusal's 32-B half are the checks): with (r + v) mod 4 they differed by 32 B, so a TU whose
 # .text gcc aligns to 32 kept every hot loop's 32-B phase in 18 of 80 pools (the formsfixk dry run).
 PHASE_ORDER = (0, 2, 1, 3)
 PRELUDE_STEPS = 256
@@ -537,13 +548,27 @@ def text_key(rundir, pat, arm, layer):
     return a, src, _h(src, DRIVER)
 
 
+@functools.lru_cache(maxsize=None)
+def cc_ident():
+    """The compiler's identity for the exe cache key (r44 I): CC as named and `$CC --version`'s whole
+    output (`-O2 -std=gnu11 -w` are constants of `build_cell`, so they need no place in the key)."""
+    r = subprocess.run([CC, "--version"], capture_output=True, text=True, timeout=60)
+    return ("%s\n%s" % (CC, r.stdout)).encode("ascii", "replace").decode()
+
+
+def variant_key(key, pre, fl):
+    """The cache name's variant part: the text key, the prelude, the flags and the compiler (r44 I)."""
+    return _h(key, str(pre), " ".join(fl), cc_ident())
+
+
 def build_cell(rundir, pat, arm, layer, v=0):
     """Variant `v` of the cell's POOL (rev 12, RULED r41 L9): the artifact + driver TU with its
     in-TU prelude and alignment variant, gcc -O2, linked; cached by the text key AND the variant's
-    parameters (prelude bytes, flags: a changed draw space is a new name, r41 L7)."""
+    parameters (prelude bytes, flags: a changed draw space is a new name, r41 L7) AND the compiler (CC and
+    its --version, r44 I: an exe another gcc built is never re-used)."""
     a, src, key = text_key(rundir, pat, arm, layer)
     _v, pre, fl = pool_variants(key)[v]
-    vk = _h(key, str(pre), " ".join(fl))
+    vk = variant_key(key, pre, fl)
     exe = os.path.join(rundir, "bin", "x_%s_v%d_%s" % (key, v, vk))
     if os.path.exists(exe):
         return exe, a
@@ -618,15 +643,33 @@ def pool_proof(rundir, pat, arm, layer):
 
 
 def pool_refusal(lay):
-    """THE POOL REFUSAL (rev 12, RULED r41 L9), one half per clause (r41 L4's lesson: one control a
+    """THE POOL REFUSAL (rev 12, RULED r41 L9; r44 C), one clause a half (r41 L4's lesson: one control a
     half): `lay` {v: (64-B phase of each hot loop in order, 32-B phases, relative layout)}. Refused
-    when every variant puts every hot loop at ONE 64-B phase, or shares ONE relative layout; the
-    text, or None."""
+    when every variant puts every hot loop at ONE 64-B phase; or shares ONE relative layout; or (r44 C)
+    two variants of ONE relative layout share their per-loop 32-B phase vector (the alignment pair's
+    16 B mod 32 did not reach the loops: PHASE_ORDER's half); or the pool holds fewer than POOL_SIZE
+    distinct built layouts (64-B, 32-B, relative), since `text_var` charges the pool-mean term as
+    sL2 / POOL_SIZE, i.e. POOL_SIZE independent layouts. The text, or None."""
     why = []
     if len({p64 for p64, _p, _r in lay.values()}) < 2:
         why.append("every variant puts its hot loops at one 64-B phase each %s" % (next(iter(lay.values()))[0],))
     if len({r for _a, _b, r in lay.values()}) < 2:
         why.append("every variant shares one relative layout")
+    by_rel = {}
+    for v, (_a, p32, rel) in sorted(lay.items()):
+        by_rel.setdefault(rel, []).append((v, p32))
+    for rel, vs in sorted(by_rel.items()):
+        seen = {}
+        for v, p32 in vs:
+            if p32 in seen:
+                why.append("variants %d and %d of one relative layout share the 32-B phases %s" % (seen[p32], v, p32))
+                break
+            seen[p32] = v
+    # (a duplicated layout shares its relative layout AND its 32-B phases, so the clause above fires with
+    # this one: its plant shows both, never this one alone)
+    k = len(set(lay.values()))
+    if k < POOL_SIZE:
+        why.append("%d distinct built layouts of %d variants (text_var charges sL2 / %d)" % (k, POOL_SIZE, POOL_SIZE))
     return "; ".join(why) or None
 
 
@@ -1000,7 +1043,7 @@ def cmd_run(args):
     old = [n for n in os.listdir(rundir) if n.startswith("results") and n.endswith(".tsv")]
     if old:
         raise SystemExit("cards: %s holds %s from an earlier timing: a RUNDIR is one night" % (rundir, ", ".join(sorted(old))))
-    print("cards: run id %s" % run_id(rundir, create=True))
+    print("cards: run id %s" % start_timing(rundir))
     open(res, "w").close()
     dbad, nI, nreach = check_deny(rundir, cells(cards=STEP1))
     print("cards: deny check: %d arm-I artifacts loop-free, reach %d" % (nI, nreach))
@@ -1062,11 +1105,10 @@ RUN_ID = "run_id"
 
 
 def run_id(rundir, create=False):
-    """The night's run id (RUNDIR/run_id, written ONCE by the first command that needs it: `dry`,
-    `run`, or `rule`/`rerun --g2` recording the list before any timing, as job 701 does): keys the G2
-    record (rev 12, r41 L6) and seeds the per-launch layout draws (rev 12, r41 L9). Never renewed: a
-    RUNDIR is one night (`run` refuses one that holds any results file). None when absent and not
-    created."""
+    """The night's run id (RUNDIR/run_id, written by the first command that needs it: `dry`, `run`,
+    or `rule`/`rerun --g2` recording the list before any timing, as job 701 does): keys the G2 record
+    (rev 12, r41 L6) and seeds the per-launch layout draws (rev 12, r41 L9). Renewed only by `run`
+    (`start_timing`, r44 E) when the id already timed a night. None when absent and not created."""
     p = os.path.join(rundir, RUN_ID)
     if not os.path.exists(p):
         if not create:
@@ -1074,6 +1116,29 @@ def run_id(rundir, create=False):
         os.makedirs(rundir, exist_ok=True)
         open(p, "w").write("%s\n" % hashlib.sha256(os.urandom(32)).hexdigest()[:16])
     return open(p).read().strip()
+
+
+RUN_TIMED = "run_id.timed"
+
+
+def start_timing(rundir):
+    """`run`'s run id (r44 E): the RUNDIR's id, unless that id already TIMED a night (RUNDIR/run_id.timed
+    names it: a RUNDIR re-used after its results files were removed), in which case a FRESH id is minted,
+    so no draw sequence repeats. A G2 record keyed to any other id then REFUSES (exit 2): the record a
+    job writes before `run` (701) is kept, an earlier night's never is. Marks the id timed."""
+    rid = run_id(rundir, create=True)
+    pt = os.path.join(rundir, RUN_TIMED)
+    if os.path.exists(pt) and open(pt).read().strip() == rid:
+        open(os.path.join(rundir, RUN_ID), "w").write("%s\n" % hashlib.sha256(os.urandom(32)).hexdigest()[:16])
+        rid = run_id(rundir)
+    rec = os.path.join(rundir, G2_RECORD)
+    if os.path.exists(rec):
+        old = json.load(open(rec)).get("run_id")
+        if old != rid:
+            raise SystemExit2("cards: run: %s holds run %s, this timing is run %s: a G2 record of another night "
+                              "(remove it and record --g2 again)" % (G2_RECORD, old, rid))
+    open(pt, "w").write("%s\n" % rid)
+    return rid
 
 
 def parse_args(cmd, args, nflags=(), vflags=(), npos=1):
@@ -1159,6 +1224,22 @@ def owed_now(rundir, g2file=None):
     return v
 
 
+def confirm_name(k):
+    """The results file of confirm ROUND k (r44 D): round 1 `results_confirm.tsv`, round k
+    `results_confirm_r<k>.tsv`. A round's file name salts its launch draws (`time_cells`), so no round
+    repeats another's draw sequence, and each head's confirm reads the I row of ITS OWN round."""
+    return "results_confirm.tsv" if k == 1 else "results_confirm_r%d.tsv" % k
+
+
+CONFIRM_RE = re.compile(r"^results_confirm(_r([0-9]+))?\.tsv$")
+
+
+def confirm_round(name):
+    """The confirm round a results file holds (`confirm_name`'s inverse), else None."""
+    m = CONFIRM_RE.match(name)
+    return None if not m else int(m.group(2) or 1)
+
+
 def confirm_cells(owed):
     """The confirm's arm cells for owed {(card, pat, regime, layer): [heads]}: I and each owed head,
     every launch a FRESH draw of its arm's layout pool (rev 12, r41 L9: the pools replace rev 11's
@@ -1183,7 +1264,8 @@ def cmd_rerun(args):
     todo = v["owed_rerun"]
     if v["owed_confirm"]:
         cl = confirm_cells(v["owed_confirm"])
-        time_cells(rundir, cl, os.path.join(rundir, "results_confirm.tsv"))
+        k = 1 + sum(1 for n in os.listdir(rundir) if confirm_round(n) is not None)
+        time_cells(rundir, cl, os.path.join(rundir, confirm_name(k)))
         print("cards: confirming re-run of %d cells (%d arm cells: I and each winning head, fresh pool draws) that "
               "hold a win beyond f" % (len(v["owed_confirm"]), len(cl)))
         return 0
@@ -1201,7 +1283,7 @@ def cmd_rerun(args):
 
 
 # ---- THE RULE (r45_reply rev 11 §3, R0-R5, steps (1)-(5)) -------------------------------------
-def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="MEASURED", wins_ok=None):
+def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="MEASURED", wins_ok=None, fh=None, fp=None):
     """R1 over the FINITE heads `heads` (R0 already applied). cells_read: the C1-C2 cells with a
     reading; void_cells: the cells void twice (or void by method); t[h][c], tI[c] the raw
     medians; same_as_I[h][c] true where H(h)'s text is I's in cell c; f the floor, one number
@@ -1209,10 +1291,14 @@ def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="M
     R0-surviving head (rev 8, r36 G5), never the constant. Returns (h*, label, recorded pick or
     None, detail); h* None when no finite head survives R0. `wins_ok`: the (head, cell) wins the
     confirm reproduced (rev 11, r39 K4 READING B: they gate step (4)'s "beat I beyond f" ONLY;
-    W, E and dominance read the first reading); None: every first-reading win counts."""
+    W, E and dominance read the first reading); None: every first-reading win counts. `fh(c, h)` (r44
+    B): the floor of H(h) vs I in cell c (step (4)'s win and E's tolerance); `fp(c, g, h)`: the floor
+    of H(g) vs H(h) (dominance); both default to f's cell floor."""
     if not heads:
         return None, "no form ships: every finite head failed R0 (plan A's fallback: forms land OFF)", None, {}
     fc = (lambda c: f[c]) if isinstance(f, dict) else (lambda c: f)      # noqa: E731
+    fh = fh or (lambda c, h: fc(c))      # noqa: E731
+    fp = fp or (lambda c, g, h: fc(c))      # noqa: E731
     # E reads worst ratios across cells: its tolerance is the largest floor of the cells read
     fE = max((fc(c) for c in cells_read), default=max(f.values(), default=0.0) if isinstance(f, dict) else f)
     if top is None:
@@ -1228,13 +1314,17 @@ def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="M
         W[h] = max(terms) if terms else float("inf")
     # (2) E, computed once, never chained
     m = min(W.values())
-    E = sorted(h for h in heads if W[h] <= (1 + fE) * m)
+    # r44 B: E's tolerance per head, the largest of ITS floors against I over the cells read, and the
+    # minimum's own (W(h) / W(min) compares two heads' worst ratios to I); with one floor a cell this is fE
+    fEh = {h: max((fh(c, h) for c in cells_read), default=fE) for h in heads}
+    hm = min(heads, key=lambda h: W[h])
+    E = sorted(h for h in heads if W[h] <= (1 + max(fEh[h], fEh[hm])) * m)
 
     # (3) dominance over the cells READ only: g dominates h when g is faster beyond f in at
     #     least one cell and slower beyond f in none; keep the members dominated by the fewest
     def dom(g, h):
-        faster = any(t[h][c] / t[g][c] > 1 + fc(c) for c in cells_read)
-        slower = any(t[g][c] / t[h][c] > 1 + fc(c) for c in cells_read)
+        faster = any(t[h][c] / t[g][c] > 1 + fp(c, g, h) for c in cells_read)
+        slower = any(t[g][c] / t[h][c] > 1 + fp(c, g, h) for c in cells_read)
         return faster and not slower
     nd = {h: sum(1 for g in E if g != h and dom(g, h)) for h in E}
     least = min(nd.values())
@@ -1242,7 +1332,7 @@ def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="M
     # (4) the LARGEST kept head that is the top or itself beat I beyond f in some cell read
     #     (rev 8, r36 G4: the tolerance is not transitive, so a kept head within f of a
     #     winner and within f of I measured no win and never ships)
-    won = [h for h in kept if any(tI[c] / t[h][c] > 1 + fc(c) and (wins_ok is None or (h, c) in wins_ok)
+    won = [h for h in kept if any(tI[c] / t[h][c] > 1 + fh(c, h) and (wins_ok is None or (h, c) in wins_ok)
                                   for c in cells_read)]
     cand = [h for h in kept if h == top or h in won]
     pick = max(cand) if cand else top
@@ -1424,16 +1514,34 @@ CONFIRM = True      # ... and the confirming re-run off (rev 9's rule) to show t
 
 LAYOUT_TEXT_TERM = True    # selftest's control turns the per-TEXT layout term off (rev 12 before R2 B)
 VARIANT_BIMODAL = True     # ... and the variant-aware bimodal test off (rev 12 before R2 C: the raw launches)
+PER_HEAD_FLOOR = True      # r44 B: the layout term per (cell, head); off: rev 12's one cell max (the control)
+INTERACTION_VOID = True    # r44 A: void a text's cells on a variant x regime interaction; off: rev 12 (the control)
+# r44 A: THE VARIANT x REGIME INTERACTION LINES. A text's interaction is read from its own launches by a
+# lack-of-fit test: the per-text fit (row level + one effect a variant) against the (row, variant) cell
+# means, the launch noise from the launches that repeat a variant inside one row (pure error, pooled over
+# the night per regime). INTER_SHARE: the share sI2 / (sI2 + sL2), sI2 = max(0, MS(lack of fit) - the
+# pure-error variance), on the mean-square scale (an index: the lack-of-fit mean square carries ~1.3
+# launches a (row, variant) cell, so it is not a variance component). A text whose share exceeds
+# INTER_SHARE AND whose lack of fit is beyond launch noise at INTER_ALPHA (family-wise over the night's
+# texts, chi-square on the lack-of-fit df) has its C1-C2 cells VOIDED: the per-text term assumes one
+# effect a variant in every regime, which that text does not show (a void keeps the grid top, never a pick).
+# UNMEASURED DEFAULT: INTER_SHARE = 0.5 (set so drill (xxiii)'s interaction rows pass; never measured on
+# a real pool).
+INTER_SHARE = 0.5
+# UNMEASURED DEFAULT: INTER_ALPHA = 0.01 (the night's false-void budget for this test, family-wise).
+INTER_ALPHA = 0.01
 
 
-def text_effects(rows, text_of):
+def text_effects(rows, text_of, stats=None):
     """THE PER-TEXT LAYOUT EFFECTS (rev 12, RULED R2 B/C): every arm row's launches with their recorded
     pool variants, grouped by the TEXT the arm runs (`text_of(key)`, None: not grouped). Per text a
     two-way fit, log x = row level + variant effect (backfitting, 4 passes; the effects centred to mean
     0), over every row of that text (all its regimes and hash-equal arms). Returns {text: (effects
     {v: e_v}, sL2)}: sL2 the between-variant variance of the effects, unbiased over the pool's
     variants, less the effects' own estimation noise (the residual variance over each variant's
-    launch count), floored at 0. A text with launches in fewer than 2 variants is absent."""
+    launch count), floored at 0. A text with launches in fewer than 2 variants is absent. `stats` (a
+    dict, r44 A): filled per text with the fit's residual sum of squares and df, and per row (its key,
+    launches, pure-error SS and df: the launches that repeat a variant inside the row)."""
     by = {}
     for k, r in (rows.items() if isinstance(rows, dict) else rows):
         if r.get("status") != "ok" or not r.get("variants"):
@@ -1466,6 +1574,53 @@ def text_effects(rows, text_of):
         noise = sum(s2 / cnt[v] for v in vs) / len(vs)
         sl2 = max(0.0, sum(x * x for x in e.values()) / (len(vs) - 1) - noise)
         out[t] = (e, sl2)
+        if stats is not None:
+            prow = []
+            for k, ls, vv in rs:
+                g = {}
+                for x, v in zip(ls, vv):
+                    g.setdefault(v, []).append(x)
+                ss = sum((x - sum(a) / len(a)) ** 2 for a in g.values() for x in a)
+                prow.append((k, len(ls), ss, len(ls) - len(g)))
+            stats[t] = {"ss_res": sum(x * x for x in res), "df_a": n - len(rs) - len(vs) + 1, "rows": prow}
+    return out
+
+
+def text_interaction(te, stats, regime_of, alpha=None):
+    """THE VARIANT x REGIME INTERACTION per text (r44 A), from `text_effects`' stats: the pure-error
+    variance per regime pooled over every text of the night; per text the lack-of-fit mean square
+    (residual SS less the text's pure-error SS, over (row, variant) cells - rows - variants + 1 df),
+    its ratio to the pure-error variance its rows expect, the chi-square line at alpha / (texts read),
+    the share sI2 / (sI2 + sL2). Returns {text: (share, ratio, line, flagged, df)}; a text with no
+    lack-of-fit df or no pure-error estimate is absent."""
+    alpha = INTER_ALPHA if alpha is None else alpha
+    pe = {}
+    for st in stats.values():
+        for k, _n, ss, df in st["rows"]:
+            a = pe.setdefault(regime_of(k), [0.0, 0])
+            a[0] += ss
+            a[1] += df
+    s2 = {rg: ss / df for rg, (ss, df) in pe.items() if df > 0}
+    cand = {}
+    for t, st in stats.items():
+        rows = st["rows"]
+        dfp = sum(df for _k, _n, _ss, df in rows)
+        dfl = st["df_a"] - dfp
+        if dfl < 1 or any(regime_of(k) not in s2 for k, _n, _ss, _df in rows):
+            continue
+        ssl = max(0.0, st["ss_res"] - sum(ss for _k, _n, ss, _df in rows))
+        nn = sum(n for _k, n, _ss, _df in rows)
+        exp_ = sum(n * s2[regime_of(k)] for k, n, _ss, _df in rows) / nn
+        if exp_ <= 0:
+            continue
+        cand[t] = (ssl / dfl, exp_, dfl)
+    out = {}
+    for t, (msl, exp_, dfl) in cand.items():
+        line = chi2_lower(1 - alpha / len(cand), dfl) / dfl
+        si2 = max(0.0, msl - exp_)
+        sl2 = te[t][1] if t in te else 0.0
+        share = si2 / (si2 + sl2) if si2 > 0 else 0.0
+        out[t] = (share, msl / exp_, line, msl / exp_ > line and share > INTER_SHARE, dfl)
     return out
 
 
@@ -1514,18 +1669,39 @@ POWER_RECORD = {0.0: (281, 300, 279), 0.01: (170, 299, 176), 0.02: (7, 260, 5)}
 POWER_ACCEPT = (270, 270, 255)
 
 
+# r44 K: the night's sigma read (`msig`, the median over texts of sqrt(sL2)) runs LOW: the median of the root
+# of a ~3-df variance, less the noise subtraction. MEASURED (r44 V11, ESTIMATOR-6; the "phase" model, 30
+# nights a tau): msig / tau 0.875 / 0.880 / 0.880 at tau 1 / 1.5 / 2 %. The power line reads msig / this.
+SIGMA_READ_BIAS = 0.88
+
+
 def power_line(sig):
-    """The night's power line (R2 D): the RECORD row nearest its measured layout sigma, and whether that
-    power is below rev 11's accept lines."""
+    """The night's power line (R2 D; r44 K): the measured layout sigma corrected for its read bias
+    (SIGMA_READ_BIAS), the two RECORD rows that BRACKET it (never the nearest one across a cliff), the
+    power interpolated between them in log power, and whether that power is below rev 11's accept lines.
+    Above the largest pinned tau: that row is an upper bound."""
     known = {t: v for t, v in POWER_RECORD.items() if v}
     if not known:
         return "no power record pinned"
-    t = min(known, key=lambda x: abs(x - sig))
-    v = known[t]
-    below = [n for n, (got, acc) in zip(("one 5 %", "one 10 %", "multi 5 %"), zip(v, POWER_ACCEPT)) if got < acc]
-    return ("measured layout sigma %.4f -> the RECORD row at tau %d %%: one 5 %% winner %d, one 10 %% winner %d, "
-            "every head <= 16 5 %% faster %d, of 300 nights; %s" % (
-                sig, round(100 * t), v[0], v[1], v[2],
+    sc = sig / SIGMA_READ_BIAS
+    ts = sorted(known)
+    rowtxt = lambda t: "tau %d %% (%s)" % (round(100 * t), "/".join(map(str, known[t])))      # noqa: E731
+    if sc <= ts[0]:
+        est, where = known[ts[0]], "at or below the smallest pinned row, %s" % rowtxt(ts[0])
+    elif sc >= ts[-1]:
+        est, where = known[ts[-1]], ("ABOVE the largest pinned row, %s: the power is at most that row's"
+                                      % rowtxt(ts[-1]))
+    else:
+        lo = max(t for t in ts if t <= sc)
+        hi = min(t for t in ts if t > sc)
+        w = (sc - lo) / (hi - lo)
+        est = tuple(round(math.exp((1 - w) * math.log(max(a, 0.5)) + w * math.log(max(b, 0.5))))
+                    for a, b in zip(known[lo], known[hi]))
+        where = "between the RECORD rows %s and %s, log-interpolated" % (rowtxt(lo), rowtxt(hi))
+    below = [n for n, (got, acc) in zip(("one 5 %", "one 10 %", "multi 5 %"), zip(est, POWER_ACCEPT)) if got < acc]
+    return ("measured layout sigma %.4f (read ~%d %% low, r44 K: corrected %.4f) %s: one 5 %% winner %d, one 10 %% "
+            "winner %d, every head <= 16 5 %% faster %d, of 300 nights; %s" % (
+                sig, round(100 * (1 - SIGMA_READ_BIAS)), sc, where, est[0], est[1], est[2],
                 "BELOW rev 11's accept lines (%s): a win of that size may go unseen; a missed win keeps 64 "
                 "(speed only, never an answer)" % ", ".join(below) if below else "at or above rev 11's accept lines"))
 
@@ -1650,7 +1826,12 @@ def analyse(night, g2_defective, alpha=ALPHA):
         return (card, pat, arm_base(arm), ly)
     # keyed (file, cell): each file's row its own level (a confirm or re-run row of one cell is a
     # second reading, never the same row's launches)
-    te = text_effects([((n, k), r) for n, rr in allfiles for k, r in rr.items()], lambda nk: text_of(nk[1]))
+    tstats = {}
+    te = text_effects([((n, k), r) for n, rr in allfiles for k, r in rr.items()], lambda nk: text_of(nk[1]), tstats)
+    # r44 A: each text's variant x regime interaction, read from its own launches (`text_interaction`)
+    inter = text_interaction(te, tstats, lambda nk: nk[1][3])
+    flagged = {t for t, v in inter.items() if v[3]} if INTERACTION_VOID else set()
+    res["inter_flagged"] = len([t for t, v in inter.items() if v[3]])
     adj_rows = {k: dict(r, launches=adjusted(r, te, text_of(k))) if r["status"] == "ok" else r
                 for k, r in rows.items()}
     sigs_b, glob_b = launch_sigmas(adj_rows) if VARIANT_BIMODAL else (sigs, glob)
@@ -1698,6 +1879,16 @@ def analyse(night, g2_defective, alpha=ALPHA):
                         vc.append(cid + " (void by method)")
                         for h in heads:
                             sa[h][cid + " (void by method)"] = sa[h][cid]
+                        continue
+                    # r44 A: a cell whose I text or a compared head's text shows a variant x regime
+                    # interaction is VOID (the per-text term cannot cover it; never re-run: layout is fixed)
+                    hit = sorted({text_of((card, pat, a, rg, ly)) for a in ["I"] + ["h%d" % h for h in heads
+                                                                                   if not sa[h][cid]]} & flagged)
+                    if hit:
+                        lab = "%s (variant x regime interaction: %s)" % (cid, ", ".join("/".join(x) for x in hit))
+                        vc.append(lab)
+                        for h in heads:
+                            sa[h][lab] = sa[h][cid]
                         continue
                     # I's POOL (rulings R1, rev 8 r36 G3): I and every arm whose built artifact
                     # hash-equals I's in this cell (measured, `same_as_I.json`), R0 or not: one
@@ -1769,16 +1960,57 @@ def analyse(night, g2_defective, alpha=ALPHA):
         return f_, fd_, tw, pool_floors(f_, sig_raw, glob, n_all, n_c, alpha, twins=tw), ptw, pterm
     f, fd, tw, floors, ptw, pterm = floors_over(ccells)
 
+    def base_floor(c):
+        """The cell's floor without the layout term: max(its (regime, layer) floor, its pattern's twin term)."""
+        p, rg, ly = c.split("/")
+        fl = floors.get((rg, ly), f)
+        return max(fl, pterm[p]) if PAT_TWIN and p in pterm else fl
+
+    tv_cache = {}
+
+    def tvar(c, h):
+        """The layout variance in one median of the arm H(h) (None: I) in cell c (`text_var`; I's side,
+        and a head whose text is I's, over I's pooled launches)."""
+        card, pat, rg, ly = cell_key[c]
+        if h is None or sa[h][c]:
+            k = (("I", pat, ly), LAUNCHES * pool_n.get(c, 1))
+        else:
+            k = (("h%d" % h, pat, ly), None)
+        if k not in tv_cache:
+            tv_cache[k] = text_var(te, k[0], n=k[1])
+        return tv_cache[k]
+
+    def f_hI(c, h):
+        """r44 B: the floor of the comparison H(h) vs I in cell c (wins, the confirm, W/E, R2, R4): max(the
+        base floor, exp(z sqrt(V_I + V_h)) - 1) from the two texts' own pools; rev 12's cell max over
+        every head when PER_HEAD_FLOOR is off (the control)."""
+        if not PER_HEAD_FLOOR:
+            return cell_floor(c)
+        fl = base_floor(c)
+        if not LAYOUT_TEXT_TERM or sa[h][c]:
+            return fl
+        return max(fl, math.exp(z_now[0] * math.sqrt(tvar(c, None) + tvar(c, h))) - 1)
+
+    def f_pair(c, g, h):
+        """r44 B: the floor of H(g) vs H(h) in cell c (dominance): max(the base floor, exp(z sqrt(V_g +
+        V_h)) - 1); the cell max when PER_HEAD_FLOOR is off."""
+        if not PER_HEAD_FLOOR:
+            return cell_floor(c)
+        fl = base_floor(c)
+        if not LAYOUT_TEXT_TERM:
+            return fl
+        return max(fl, math.exp(z_now[0] * math.sqrt(tvar(c, g) + tvar(c, h))) - 1)
+
     def cell_floor(c):
         """THE CELL'S FLOOR (rev 10, RULED r38 J1): max(its (regime, layer) floor, its PATTERN's twin
-        term). The twin term is computed at the finest level the night times twins: per pattern,
+        term). r44 B: read by the AGREEMENT GATE only (I's arms against each other, with rev 12's largest
+        per-text term: a noisy head can only loosen the gate there) and printed; every head comparison
+        takes `f_hI` / `f_pair`. The twin term is computed at the finest level the night times twins: per pattern,
         over that pattern's own hash-equal pools in the cells read (its 12 (regime, layer) cells:
         df 12 at a 2-arm pool, 36 at hex24's 4), because between-run noise acts per binary and a
         (regime, layer) term pooled over 9 patterns dilutes one pattern's noise (r38 J1: 0.40-0.69).
         A pattern with no estimate (df 0) has no term: its cells are VOID (the gate), never pooled up."""
-        p, rg, ly = c.split("/")
-        fl = floors.get((rg, ly), f)
-        fl = max(fl, pterm[p]) if PAT_TWIN and p in pterm else fl
+        fl = base_floor(c)
         return max(fl, layout_text_term(c)) if LAYOUT_TEXT_TERM else fl
 
     def layout_text_term(c):
@@ -1788,12 +2020,10 @@ def analyse(night, g2_defective, alpha=ALPHA):
         exp(z(alpha / N) sqrt(V_I + V_h)) - 1; the cell takes the largest (one floor a cell). The
         floor's other estimators read only I's and aa's texts; a head text more layout-sensitive than
         I is read here."""
-        card, pat, rg, ly = cell_key[c]
-        vi = text_var(te, ("I", pat, ly), n=LAUNCHES * pool_n.get(c, 1))     # I's pooled median
         best = 0.0
         for h in heads:
             if not sa[h][c]:
-                best = max(best, math.exp(z_now[0] * math.sqrt(vi + text_var(te, ("h%d" % h, pat, ly)))) - 1)
+                best = max(best, math.exp(z_now[0] * math.sqrt(tvar(c, None) + tvar(c, h))) - 1)
         return best
     # THE AGREEMENT GATE (rev 9, RULED r37 H2): I's pool is one binary, so its arms' medians differ
     # only by noise. Where they disagree beyond the cell's own floor, one of them moved (a whole-arm
@@ -1855,25 +2085,62 @@ def analyse(night, g2_defective, alpha=ALPHA):
         "layout term (R2 B)%s: largest %.4f" % (len(lsig), msig, lsig[-1], "" if LAYOUT_TEXT_TERM else " [OFF: control]",
                                                 max((layout_text_term(c) for c in ccells), default=0.0))
         if lsig else "no row carries a variant record: not read"))
-    lines.append("rule: power at this night's layout sigma (rev 12, R2 D): %s" % power_line(msig))
+    lines.append("rule: layout pools hold FIXED (r44 F): the matcher's data tables (.rodata/.data/.bss), the "
+                 "driver's main, the subject buffer (16 mod 64 in the whole-buffer and not-warm regimes); a share "
+                 "common to every variant of a text includes THIS harness's data placement")
+    # r44 A: the night's own variant x regime interaction reading, per text
+    if inter:
+        shs = sorted(v[0] for v in inter.values())
+        fl_ = sorted(t for t, v in inter.items() if v[3])
+        lines.append("rule: variant x regime interaction (r44 A): %d texts read; share median %.3f, max %.3f; flagged "
+                     "(share > %.2f and lack of fit beyond launch noise at %.3f family-wise) %d%s%s" % (
+                         len(shs), statistics.median(shs), shs[-1], INTER_SHARE, INTER_ALPHA, len(fl_),
+                         ": " + ", ".join("%s share %.3f ratio %.2f (line %.2f)" % ("/".join(t), inter[t][0], inter[t][1],
+                                                                                  inter[t][2]) for t in fl_[:6]) if fl_ else "",
+                         "" if INTERACTION_VOID else " [OFF: control, nothing voided]"))
+    # r44 H: per text, the even (default-alignment) pair against the odd pair: the contrast of their effects
+    hcon = sorted((abs((e.get(0, 0) + e.get(2, 0)) - (e.get(1, 0) + e.get(3, 0))) / 2, t) for t, (e, _s) in te.items())
+    if hcon:
+        lines.append("rule: even-pair vs odd-pair contrast per text (r44 H; the odd pair's relative layout is not the "
+                     "one gcc -O2 ships): median %.4f, max %.4f (%s)" % (statistics.median([x for x, _t in hcon]),
+                                                                       hcon[-1][0], "/".join(hcon[-1][1])))
+    lines.append("rule: power at this night's layout sigma (rev 12, R2 D; r44 K): %s" % power_line(msig))
     fcell = {c: cell_floor(c) for c in ccells}
-    # CONFIRM BY RE-RUN (rev 10, RULED r38 R2; rev 11, RULED r39 K3, K4, K6; rev 12, r41 L9).
+    res["fcell"], res["tI"], res["t"] = fcell, tI, t
+    # CONFIRM BY RE-RUN (rev 10, RULED r38 R2; rev 11, RULED r39 K3, K4, K6; rev 12, r41 L9; r44 D).
     # Replication: a head's win beyond f in a cell COUNTS only if the cell's confirming re-run wins
-    # again beyond the cell's floor. The confirm times I and each head owed in that cell into
-    # results_confirm.tsv, every launch a FRESH draw of its arm's layout pool (rev 12: the pools
-    # replace rev 11's fresh twins I.cf / h<N>.cf; a layout draw cannot replicate except by chance,
-    # and the confirm retires a transient that does not recur, r38 R2). The confirm's reading of a
-    # head's win is the confirm's I median against its h<N> median: a missing, void or bimodal I or
-    # h<N> there confirms nothing for that head; another head's arm says nothing about this head's
-    # win (r39 K3). The confirm feeds ONE predicate, step (4)'s "beat I beyond f" (READING B, r39
+    # again beyond the cell's floor. The confirm times I and each head owed in that cell into its
+    # ROUND's file (`confirm_name`), every launch a fresh DRAW from the SAME 4-exe pools step 1 timed
+    # (the cache returns the built exes). So the confirm is NOT an exe-level control (r44 D): the pool's
+    # mean offset (`text_var`'s sL2 / POOL_SIZE term) replicates between the night and the confirm, and
+    # the exe level rests on the per-text layout term in the floor; the confirm retires a launch-level
+    # transient that does not recur (r38 R2). The confirm's reading of a head's win is ITS ROUND's I
+    # median against its h<N> median (r44 D: a later round's I never replaces it): a missing, void or
+    # bimodal I or h<N> there confirms nothing for that head; another head's arm says nothing about this
+    # head's win (r39 K3). The confirm feeds ONE predicate, step (4)'s "beat I beyond f" (READING B, r39
     # K4); W, E and dominance read the first reading, never the confirm's. One confirm per (cell,
     # head) win: a head whose confirm row exists is never owed again, so the confirms end.
-    wins = sorted((h, c) for h in heads for c in ccells if not sa[h][c] and tI[c] / t[h][c] > 1 + fcell[c])
-    conf = merge(*night["files"]["results_confirm.tsv"])[0] if "results_confirm.tsv" in night["files"] else {}
+    wins = sorted((h, c) for h in heads for c in ccells if not sa[h][c] and tI[c] / t[h][c] > 1 + f_hI(c, h))
+    # r44 H: each win re-read on the EVEN draws only (the default-alignment pair, the layout gcc ships): a
+    # record beside the pick, never an input to it
+    if wins:
+        ev = []
+        for h, c in wins:
+            card, pat, rg, ly = cell_key[c]
+            ie = [x for a in pool_arms[c] for x, v in zip(rows[(card, pat, a, rg, ly)]["launches"],
+                                                          rows[(card, pat, a, rg, ly)].get("variants") or []) if v % 2 == 0]
+            r_ = rows[(card, pat, "h%d" % h, rg, ly)]
+            he = [x for x, v in zip(r_["launches"], r_.get("variants") or []) if v % 2 == 0]
+            ev.append("H(%d) %s %.4f (even draws: %s)" % (h, c, tI[c] / t[h][c] - 1, "%.4f, I %d / H %d launches" % (
+                statistics.median(ie) / statistics.median(he) - 1, len(ie), len(he)) if ie and he else "none"))
+        lines.append("rule: wins beyond f re-read on even draws only (r44 H, a record): %s%s"
+                     % ("; ".join(ev[:8]), "; ..." if len(ev) > 8 else ""))
+    confs = [merge(*night["files"][n])[0] for n in sorted(night["files"], key=lambda n: confirm_round(n) or 0)
+             if confirm_round(n) is not None]
     need = {}
     for h, c in wins if CONFIRM else []:
         card, pat, rg, ly = cell_key[c]
-        if (card, pat, "h%d" % h, rg, ly) not in conf:
+        if not any((card, pat, "h%d" % h, rg, ly) in cf for cf in confs):
             need.setdefault(cell_key[c], []).append(h)
     res["wins"] = len(wins)
     if need:
@@ -1890,10 +2157,12 @@ def analyse(night, g2_defective, alpha=ALPHA):
     def confirmed(h, c):
         card, pat, rg, ly = cell_key[c]
         arms = ["I", "h%d" % h]
-        rs = [conf.get((card, pat, a, rg, ly)) for a in arms]
+        own = [cf for cf in confs if (card, pat, arms[1], rg, ly) in cf]       # the head's own round (one)
+        cf = own[0] if own else {}
+        rs = [cf.get((card, pat, a, rg, ly)) for a in arms]
         if any(r is None or is_void((card, pat, a, rg, ly), r) for a, r in zip(arms, rs)):
             return False
-        return rs[0]["med"] / rs[1]["med"] > 1 + fcell[c]
+        return rs[0]["med"] / rs[1]["med"] > 1 + f_hI(c, h)
     okwins = {(h, c) for h, c in wins if confirmed(h, c)} if CONFIRM else None
     res["confirmed"] = nok = len(okwins) if okwins is not None else 0
     if CONFIRM and not READING_B:       # the K4 control: rev 10's reading (an unreproduced win reads as a TIE)
@@ -1911,7 +2180,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
                                                                          len(ccells), len(vc)))
     measured = "MEASURED (kit-grid@7 cards C1 %s, C2 %s; %d cells read)" % (CARD_ROWS["C1"], CARD_ROWS["C2"],
                                                                            len(ccells))
-    hs, label, rec, det = r1(heads, ccells, vc, t, tI, sa, fcell, measured=measured, wins_ok=okwins)
+    hs, label, rec, det = r1(heads, ccells, vc, t, tI, sa, fcell, measured=measured, wins_ok=okwins, fh=f_hI, fp=f_pair)
     res.update(hstar=hs, label=label, rec=rec, f=f, floors=floors, det=det)
     if hs is None:
         lines.append("rule: h* none: %s" % label)
@@ -1933,7 +2202,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
                 lines.append("R3 class %s: its text is I's at every surviving head (never a mover): not read" % pat)
                 continue
             any_cls = True
-            hcls = r1(heads, mine, [], t, tI, sa, {c: fcell[c] for c in mine}, wins_ok=okwins)[0]
+            hcls = r1(heads, mine, [], t, tI, sa, {c: fcell[c] for c in mine}, wins_ok=okwins, fh=f_hI, fp=f_pair)[0]
             ed = death_depth(pat)
             near = min(heads, key=lambda h: (abs(h - ed), -h))
             track &= hcls == near
@@ -1945,7 +2214,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
     lines.append("rule: h* = %d, %s" % (hs, label))
     # R2 (C1-C2 half): every cell where I beats H(h*) beyond f (dial evidence; never changes h*)
     for c in ccells:
-        if t[hs][c] / tI[c] > 1 + fcell[c]:
+        if t[hs][c] / tI[c] > 1 + f_hI(c, hs):
             lines.append("R2 dial evidence: %s: H(%d) %.4f vs I %.4f" % (c, hs, t[hs][c], tI[c]))
     # R4: C1's near-miss column, H(h*) against C5 (the engine route)
     for pat in CARD_PATS["C1"]:
@@ -1954,7 +2223,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
             hv = t[hs].get(cid)
             ev = rows.get(("C5", pat, "engine", "near-miss", "off"))
             if hv is not None and ev and ev["status"] == "ok" and hv / ev["med"] > 1 + max(
-                    fcell[cid], pf("near-miss", "off")):
+                    f_hI(cid, hs), pf("near-miss", "off")):
                 lines.append("R4 near-miss trigger (r45_reply §4): %s/%s H(%d) %.4f vs engine %.4f"
                              % (pat, ly, hs, hv, ev["med"]))
     # C3 at h* (step 2b, F4): R2's C3 half and R5; absent, NOT COMPUTED and owed
@@ -2156,18 +2425,33 @@ def synth_body(key, same):
     return (arm_base(arm), pat, ly)
 
 
-def synth_layout_effect(lay, body, v):
+def synth_layout_effect(lay, body, v, rg=None):
     """The layout effect (a factor) of pool variant v of `body` under the drill's model `lay` (rev 12,
     RULED r41 L9 drill rows): {"tau", "model", "rho", "store"}. model "phase": a FIXED function of
     (body, the variant's 64-B phase) (the pool's variant v sits at phase class (r + v) mod 4, r drawn
     per body), exp(N(0, tau)) drawn once per (body, phase) a night; "heads": the same, on head
     texts only (I's and aa's pools carry none); "rho": CORRELATED offsets inside a pool, z_v = rho
     z_body + sqrt(1 - rho^2) e_v (a share rho^2 of the layout variance common to every variant of the
-    body, which no draw averages)."""
+    body, which no draw averages). r44 A: "regime": a VARIANT x REGIME effect, exp(N(0, tau)) drawn per
+    (body, regime `rg`, variant), nothing common to a variant across regimes (the shape the per-text fit
+    cannot hold; `heads`: on head texts only). r44 B: "loser": layout exp(N(0, tau)) per (body, variant)
+    on the texts of the arms `arms` only (a never-picked noisy head), every other text none."""
     st, tau = lay["store"], lay["tau"]
     if lay["model"] == "heads" and body[0] in ("I", "aa"):
         return 1.0
     rng = st["_rng"]
+    if lay["model"] == "regime":
+        if lay.get("heads") and body[0] in ("I", "aa"):
+            return 1.0
+        if (body, rg, v) not in st:
+            st[(body, rg, v)] = math.exp(rng.gauss(0, tau))
+        return st[(body, rg, v)]
+    if lay["model"] == "loser":
+        if body[0] not in lay["arms"]:
+            return 1.0
+        if (body, v) not in st:
+            st[(body, v)] = math.exp(rng.gauss(0, tau))
+        return st[(body, v)]
     if lay["model"] == "rho":
         if (body, "z") not in st:
             st[(body, "z")] = rng.gauss(0, 1)
@@ -2251,7 +2535,7 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
         if layout:
             body = synth_body(key, same)
             drawn = [layout["store"]["_rng"].randrange(POOL_SIZE) for _ in ls]
-            ls = [x * synth_layout_effect(layout, body, v) for x, v in zip(ls, drawn)]
+            ls = [x * synth_layout_effect(layout, body, v, key[3]) for x, v in zip(ls, drawn)]
         if timefx:
             ls = [v * timefx(pos0 + q) for v, q in zip(ls, slots.get(key[:5]) or slots[base])]
         rows[key] = {"status": "ok", "med": statistics.median(ls), "launches": ls,
@@ -2321,8 +2605,7 @@ def synth_night(rng, sigma, **kw):
             crounds += 1
             ncells += len(v["owed_confirm"])
             fresh, _s = synth_rows(rng, sigma, only=confirm_only(v["owed_confirm"]), **kw2)
-            conf.update(fresh)
-            night["files"]["results_confirm.tsv"] = (conf, {})
+            night["files"][confirm_name(crounds)] = (fresh, {})        # each round its own file (r44 D)
             v = analyse(night, set())
         v["voided_first"], v["rerun_rounds"], v["confirm_cells"] = voided_first, rounds, ncells
         return v
@@ -2337,9 +2620,10 @@ def noise_drill(trials=NOISE_TRIALS, sigma=0.01, noise="normal", seed=1, **kw):
     """P(h* != 64), the nights with a first void, the median f(A/A); NOISE_LAST keeps the median
     floor of (hit-dense, off), the cell floor the H2 drill sizes its shifts by."""
     rng = random.Random(seed)
-    off, voids, fs, fc, cc, lx = 0, 0, [], [], [], []
+    off, voids, fs, fc, cc, lx, ni = 0, 0, [], [], [], [], 0
     for _ in range(trials):
         v = synth_night(rng, sigma, noise=noise, **kw)
+        ni += v.get("inter_flagged", 0) > 0
         off += v["hstar"] != GRID_TOP
         voids += v["voided_first"] > 0
         fs.append(v.get("f", 0))
@@ -2348,6 +2632,7 @@ def noise_drill(trials=NOISE_TRIALS, sigma=0.01, noise="normal", seed=1, **kw):
             fc.append(v["floors"].get(("hit-dense", "off"), 0))
     NOISE_LAST["fcell"] = statistics.median(fc) if fc else 0.0
     NOISE_LAST["confirm"] = cc
+    NOISE_LAST["inter"] = ni
     return off / trials, voids, statistics.median(fs)
 
 
@@ -2516,8 +2801,9 @@ def selftest_rev12(check):
             cc = NOISE_LAST["confirm"]
             name = "(r41 L9) layout: %s, tau %d %%" % (what, round(100 * tau))
             line = ("P(h* != 64) = %.3f over %d nights%s; nights with a first void %d (%.3f); confirm cells a night "
-                    "mean %.2f, max %d" % (ph, NOISE_TRIALS, "" if model == "rho" or (model == "heads" and tau > 0.025)
-                                           else " (accept <= 0.05)", nvh, nvh / NOISE_TRIALS, statistics.mean(cc), max(cc)))
+                    "mean %.2f, max %d; nights with an interaction void (r44 A) %d" % (
+                        ph, NOISE_TRIALS, "" if model == "rho" or (model == "heads" and tau > 0.025)
+                        else " (accept <= 0.05)", nvh, nvh / NOISE_TRIALS, statistics.mean(cc), max(cc), NOISE_LAST["inter"]))
             if model == "rho" or (model == "heads" and tau > 0.025):
                 print("REC  %-48s %s (RECORD, R2 %s)" % (name, line, "A" if model == "rho" else "B"))
             else:
@@ -2551,6 +2837,41 @@ def selftest_rev12(check):
         _flags(**old)
     check("(R2 C) control: phase tau 2 %, the raw bimodal test", nvc / NOISE_TRIALS > 0.10,
           "nights with a first void %.3f (the drill sees the defect: accept > 0.10)" % (nvc / NOISE_TRIALS))
+    # r44 A: the VARIANT x REGIME interaction model (a drill keyed unlike the fit: its effects vary per regime,
+    # nothing common to a variant), heads only at tau 2 and 3 % GATED, every text at 2 % RECORD; the control
+    # (INTERACTION_VOID off: rev 12's rule) on heads only at 3 %, where r44 V1 read 0.193
+    for k, (tau, heads, gated) in enumerate(((0.02, True, True), (0.03, True, True), (0.02, False, False))):
+        ph, nvh, _f = noise_drill(seed=3330 + k, layout=dict(model="regime", tau=tau, heads=heads))
+        name = "(r44 A) layout: variant x regime, %s, tau %d %%" % ("heads only" if heads else "every text", round(100 * tau))
+        line = ("P(h* != 64) = %.3f over %d nights%s; nights with an interaction void %d; nights with a first void %.3f "
+                "(RECORD: the variant-aware bimodal test cannot hold this shape; a per-(text, regime) fit is PLANned)"
+                % (ph, NOISE_TRIALS, " (accept <= 0.05)" if gated else "", NOISE_LAST["inter"], nvh / NOISE_TRIALS))
+        if gated:
+            check(name, ph <= 0.05, line)
+        else:
+            print("REC  %-48s %s (RECORD)" % (name, line))
+    old = _flags(INTERACTION_VOID=False)
+    try:
+        pa_, _nv, _f = noise_drill(seed=3331, layout=dict(model="regime", tau=0.03, heads=True))
+    finally:
+        _flags(**old)
+    check("(r44 A) control: variant x regime heads tau 3 %, no void", pa_ > 0.10,
+          "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.10)" % (pa_, NOISE_TRIALS))
+    # r44 B: a NEVER-PICKED NOISY LOSER (H(1) 20 % slower everywhere, layout tau 4 % on its texts only) beside
+    # one 5 % winner H(8) in hit-dense; GATED at rev 11's line; the control (PER_HEAD_FLOOR off: rev 12's
+    # one cell max) at the same nights (r44 V2 read 151 of 300)
+    lose = dict(model="loser", tau=0.04, arms={"h1"})
+    nl, _p = power_rate(win=0.95, seed=3440, layout=lose, wins={1: 1.20})
+    check("(r44 B) power: one 5 % winner beside a noisy loser", nl >= POWER_ACCEPT[0],
+          "h* = 8 in %d of %d nights (rev 11's accept >= %d; H(1) 20 %% slower, layout tau 4 %% on its texts only)"
+          % (nl, NOISE_TRIALS, POWER_ACCEPT[0]))
+    old = _flags(PER_HEAD_FLOOR=False)
+    try:
+        nlc, _p = power_rate(win=0.95, seed=3440, layout=lose, wins={1: 1.20})
+    finally:
+        _flags(**old)
+    check("(r44 B) control: the same nights, one floor a cell", nlc < POWER_ACCEPT[0],
+          "h* = 8 in %d of %d nights (the drill sees the defect: accept < %d)" % (nlc, NOISE_TRIALS, POWER_ACCEPT[0]))
     # GAP_K re-derived under the variant-aware test (R2 C; GAP_K stays 4.5)
     for tau in (0.0,) + CLASS_TAUS:
         rate, sg = gapk_rate(tau, seed=3390 + round(1000 * tau))
@@ -2581,23 +2902,69 @@ def selftest_rev12(check):
             else:
                 print("REC  %-48s %s (RECORD, R2 D)" % (name, line))
         if tau:
-            print("REC  %-48s %s (the pinned POWER_RECORD row %s: re-pin when they differ)"
-                  % ("(R2 D) power record tau %d %%" % round(100 * tau), got, pin))
-    # the POOL REFUSAL, one row per half (r41 L4's lesson): phases moving + layouts moving passes; one
-    # 64-B phase set (layouts moving) refuses; one relative layout (phases moving) refuses; and pool_variants
-    # itself spans the four 16-B phase classes mod 64 and both alignments for every text drawn
-    ok_l = {0: ((0,), (0,), (8,)), 1: ((16,), (16,), (12,)), 2: ((32,), (0,), (8,)), 3: ((48,), (16,), (12,))}
-    one_ph = {v: ((16,), (16,), r) for v, (_a, _b, r) in ok_l.items()}
-    one_rel = {v: (a, b, (8,)) for v, (a, b, _r) in ok_l.items()}
+            check("(R2 D, r44 L) POWER_RECORD pin, tau %d %%" % round(100 * tau), got == pin,
+                  "the drill reads %s, POWER_RECORD pins %s (re-pin in the change that moves them)" % (got, pin))
+    # the POOL REFUSAL, one row per half (r41 L4's lesson; r44 C adds the 32-B half and the distinct-layout
+    # count): a moving pool passes; each plant fires its own clause and no other (the duplicate's plant fires
+    # the 32-B clause too, by construction: a duplicated layout shares its relative layout and 32-B phases)
+    A, B, C, D = (8,), (12,), (9,), (13,)
+    ok_l = {0: ((0,), (0,), A), 1: ((20,), (20,), B), 2: ((16,), (16,), A), 3: ((36,), (4,), B)}
+    one_ph = {0: ((16,), (16,), A), 1: ((16,), (16,), B), 2: ((16,), (16,), C), 3: ((16,), (16,), D)}
+    one_rel = {0: ((0,), (0,), A), 1: ((16,), (16,), A), 2: ((36,), (4,), A), 3: ((52,), (20,), A)}
+    one_32 = {0: ((0,), (0,), A), 1: ((20,), (20,), B), 2: ((32,), (0,), A), 3: ((36,), (4,), B)}
+    dup = {0: ((0,), (0,), A), 1: ((20,), (20,), B), 2: ((0,), (0,), A), 3: ((36,), (4,), B)}
+    T64, TREL, T32, TDIS = "one 64-B phase each", "shares one relative layout", "share the 32-B phases", "distinct built layouts"
+    rr = {n: pool_refusal(x) or "" for n, x in (("ok", ok_l), ("one_ph", one_ph), ("one_rel", one_rel),
+                                                ("one_32", one_32), ("dup", dup))}
+    fires = {n: tuple(t for t in (T64, TREL, T32, TDIS) if t in r) for n, r in rr.items()}
+    halves = (fires["ok"] == () and fires["one_ph"] == (T64,) and fires["one_rel"] == (TREL,)
+              and fires["one_32"] == (T32,) and fires["dup"] == (T32, TDIS))
     spans = all(len({(pre // 16) % 4 for _v, pre, _f in pool_variants("t%d" % i)}) == min(4, POOL_SIZE)
                 and len({tuple(f) for _v, _p, f in pool_variants("t%d" % i)}) == min(2, POOL_SIZE)
                 and all(0 <= pre < 16 * PRELUDE_STEPS and pre % 16 == 0 for _v, pre, _f in pool_variants("t%d" % i))
                 for i in range(2000))
-    r_ok, r_ph, r_rel = pool_refusal(ok_l), pool_refusal(one_ph), pool_refusal(one_rel)
-    check("(r41 L9) the pool refusal, each half", r_ok is None and r_ph and "64-B" in r_ph and "relative" not in r_ph
-          and r_rel and "relative" in r_rel and "64-B" not in r_rel and spans,
-          "moving: %s; one 64-B phase: %s; one relative layout: %s; pool_variants over 2000 texts spans the 16-B "
-          "phase classes and the alignments: %s" % (r_ok, r_ph, r_rel, spans))
+    check("(r41 L9, r44 C) the pool refusal, each half", halves and spans,
+          "clauses fired: moving %s; one 64-B phase %s; one relative layout %s; a 32-B-sharing pair %s; a duplicate %s; "
+          "pool_variants over 2000 texts spans the 16-B phase classes and the alignments: %s" % (
+              fires["ok"], fires["one_ph"], fires["one_rel"], fires["one_32"], fires["dup"], spans))
+    # r44 C: the CONSTRUCTION's 32-B half: each alignment's two variants (v, v + 2) take preludes 16 B apart
+    # mod 32, for every text drawn (fails on rev 11's PHASE_ORDER (0, 1, 2, 3), whose pairs sit 32 B apart)
+    bad32 = sum(1 for i in range(2000) for (v, pre, _f) in pool_variants("t%d" % i)
+                if v + 2 < POOL_SIZE and (pre - pool_variants("t%d" % i)[v + 2][1]) % 32 != 16)
+    check("(r44 C) each alignment pair's preludes differ by 16 B mod 32", bad32 == 0,
+          "pairs (v, v + 2) over 2000 texts NOT 16 B apart mod 32: %d (accept 0; PHASE_ORDER %s)" % (bad32, PHASE_ORDER))
+    # r44 K: the power line BRACKETS a sigma between two pinned rows (never the nearest row across a cliff) and
+    # reads the sigma corrected for its bias: a read of 0.88 x 1.5 % lies between the 1 % and 2 % rows
+    pl15 = power_line(SIGMA_READ_BIAS * 0.015)
+    pl05 = power_line(SIGMA_READ_BIAS * 0.005)
+    check("(r44 K) the power line brackets the night's sigma", "tau 1 %" in pl15 and "tau 2 %" in pl15
+          and "tau 0 %" in pl05 and "tau 1 %" in pl05,
+          "at a read of %.4f: %s | at %.4f: %s" % (SIGMA_READ_BIAS * 0.015, pl15[:230], SIGMA_READ_BIAS * 0.005, pl05[:120]))
+    # r44 D: each confirm ROUND its own file: its launch draws differ from every other round's (the salt), and a
+    # head's confirm reads the I row of its OWN round (a later round's I never replaces it)
+    cl_ = ("C1", "hex24", "I", "hit-dense", "off")
+    seqs = [[launch_variant("rid0|%s" % confirm_name(k), cl_, r) for r in range(LAUNCHES)] for k in (1, 2)]
+    old = _flags(APPROX={})
+    try:
+        rng = random.Random(1630)
+        cw = power_cells(8, "hit-dense", 0.90)
+        rows, same = synth_rows(rng, 0.01, cellwins=cw)
+        night = {"files": {"results.tsv": (rows, {})}, "same": same}
+        v0 = analyse(night, set())
+        owed = v0["owed_confirm"]
+        r1rows = _confirm_rows(rng, owed, cellwins=cw)                 # round 1: I and H(8), H(8) wins again
+        r2rows = {}
+        for (card, pat, rg, ly) in owed:                                 # round 2: I only, 15 % FASTER (a later round
+            k = (card, pat, "I", rg, ly)                                 # owed for another head re-times I there)
+            r2rows[k] = dict(r1rows[k], launches=[x * 0.85 for x in r1rows[k]["launches"]], med=r1rows[k]["med"] * 0.85)
+        night["files"][confirm_name(1)] = (r1rows, {})
+        night["files"][confirm_name(2)] = (r2rows, {})
+        vd = analyse(night, set())
+    finally:
+        _flags(**old)
+    check("(r44 D) the confirm's rounds: own draws, own I row", seqs[0] != seqs[1] and vd["hstar"] == 8,
+          "round 1 / 2 draws of one cell %s / %s; H(8)'s round-1 confirm against round 1's I with a 15 %% faster I in "
+          "round 2: h* %s (accept 8; %d cells owed)" % (seqs[0], seqs[1], vd["hstar"], len(owed)))
     # L6 (r41): unknown or mistyped arguments refuse (exit 2); the G2 record is keyed by run id and sha
     import contextlib
     import io
@@ -2642,6 +3009,51 @@ def selftest_rev12(check):
           "refused (unknown, valueless x2, extra positional, mistyped flag, none): %s; --g2=F and --g2 F accepted: %s; "
           "recorded and re-read %s; moved file refused %s; a second list refused %s; another run's record refused %s"
           % (pa, good, first, moved, differs, stale))
+    # r44 E: a RUNDIR re-used after its results files are removed: `run` mints a fresh run id and refuses the
+    # earlier night's G2 record; a record written before the FIRST `run` (job 701's order) is kept
+    saved = {n: globals()[n] for n in ("check_deny", "identical_to_I", "time_cells")}
+    globals().update(check_deny=lambda *a, **k: ([], 0, 0), identical_to_I=lambda *a, **k: {},
+                     time_cells=lambda *a, **k: None)
+    try:
+        with tempfile.TemporaryDirectory(dir=troot) as td:
+            g = os.path.join(td, "g2.txt")
+            open(g, "w").write("16\n")
+            rid0 = run_id(td, create=True)
+            night_g2(td, g)                                          # 701: the record before `run`
+            with contextlib.redirect_stdout(io.StringIO()):
+                cmd_run([td])
+            kept = run_id(td) == rid0 and night_g2(td)[0] == {16}
+            for n in os.listdir(td):
+                if n.startswith("results") and n.endswith(".tsv"):
+                    os.remove(os.path.join(td, n))
+            with contextlib.redirect_stdout(io.StringIO()):
+                again = refuses(cmd_run, [td])                       # the earlier night's record: refused
+            fresh = run_id(td) != rid0
+            os.remove(os.path.join(td, G2_RECORD))
+            with contextlib.redirect_stdout(io.StringIO()):
+                cmd_run([td])
+            rid2 = run_id(td)
+            seq = [launch_variant("%s|results.tsv" % r_, ("C1", "hex24", "h8", "hit-dense", "off"), k)
+                   for r_ in (rid0, rid2) for k in range(LAUNCHES)]
+    finally:
+        globals().update(saved)
+    check("(r44 E) a re-used RUNDIR: a fresh run id, the old G2 record refused", kept and again and fresh
+          and seq[:LAUNCHES] != seq[LAUNCHES:],
+          "701's pre-run record kept: %s; the re-used RUNDIR's second `run` refused the old record: %s; a fresh id: %s; "
+          "draws %s / %s" % (kept, again, fresh, seq[:LAUNCHES], seq[LAUNCHES:]))
+    # r44 I: the exe cache name carries the compiler (CC and its --version)
+    real_cc = cc_ident
+    try:
+        ks = []
+        for ident in ("gcc\ngcc (GCC) 15.2.0", "gcc\ngcc (GCC) 14.1.0"):
+            globals()["cc_ident"] = lambda ident=ident: ident
+            ks.append(variant_key("t0", 16, ["-fno-align-loops"]))
+    finally:
+        globals()["cc_ident"] = real_cc
+    check("(r44 I) the exe cache key carries the compiler", ks[0] != ks[1], "two compilers' keys %s / %s" % tuple(ks))
+
+
+K6_FIXED_WIN = None     # r44 J's fail-before: a fixed win for every K6 night (rev 12's 0.953 / 0.955), not placed
 
 
 def selftest_rev11(check):
@@ -2721,17 +3133,45 @@ def selftest_rev11(check):
     troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
     os.makedirs(troot, exist_ok=True)
 
-    def k6_night(seed, keep_record=True):
+    def k6_place(seed):
+        """r44 J: the K6 win placed BY CONSTRUCTION inside the night's own band. The night's rows without
+        the win (the same RNG stream: `cellwins` draws nothing) are read twice, with G2 = {16} and without;
+        the first C1-C2 hit-dense cell where H(8)'s text is not I's gets the factor that puts its ratio
+        t(I) / t(H(8)) at the MIDPOINT of (f with G2, f without G2) (the floor reads no H(8) time, so the
+        placement is exact). UNMEASURED DEFAULT: the midpoint (a margin of half the band each side).
+        Returns (cellwins, the band) or None when the first reading owes a re-run (no floor to place on)."""
+        old = _flags(APPROX={})
+        try:
+            rows, same = synth_rows(random.Random(seed), 0.01)
+            night = {"files": {"results.tsv": (rows, {})}, "same": same}
+            a, b = analyse(night, {16}), analyse(night, set())
+        finally:
+            _flags(**old)
+        if "fcell" not in a or "fcell" not in b:
+            return None
+        cs = sorted(c for c in a["fcell"] if c.split("/")[1] == "hit-dense" and c in b["fcell"] and c in a["t"][8]
+                    and a["t"][8][c] != a["tI"][c])
+        if not cs:
+            return None
+        c = cs[0]
+        lo, hi = a["fcell"][c], b["fcell"][c]
+        if not hi > lo:
+            return None
+        pat, rg, ly = c.split("/")
+        card = "C1" if pat in CARD_PATS["C1"] else "C2"
+        fac = (a["tI"][c] / a["t"][8][c]) / (1 + (lo + hi) / 2)
+        return {(card, pat, "h8", rg, ly): fac}, (lo, hi)
+
+    def k6_night(seed, keep_record=True, cw=None):
         """One night through the COMMANDS (files on disk): `rule --g2` (G2 = {16}) then `rerun` without
         --g2, as the night's jobs call them, until the rule stops owing a rerun. Returns (stalled,
-        rerun timed exactly the rule's owed list every pass, passes)."""
+        rerun timed exactly the rule's owed list every pass, passes). `cw`: the win (r44 J: `k6_place`'s,
+        inside the night's own band; rev 12's fixed 0.953 was seed-tuned, its control non-monotone in the
+        win: 4 / 0 / 0 / 2 of 12 at 0.953 / 0.954 / 0.955 / 0.958, r44 V10)."""
         import contextlib
         import io
         rng = random.Random(seed)
-        # the win sits at the night's floor, where one comparison fewer (G2 = {16}) moves the owed list;
-        # rev 12 (r41 L9): 0.953, was 0.955 (the A/A pair is now aa / aa.b, a different draw, and its
-        # floor reads ~0.047 against rev 11's ~0.043, so 0.955 no longer reached the band: control 0 of 12)
-        cw = power_cells(8, "hit-dense", 0.953)
+        cw = cw if cw is not None else power_cells(8, "hit-dense", 0.953)
         old = _flags(APPROX={})
         real_tc = time_cells
         same_lists = True
@@ -2778,14 +3218,22 @@ def selftest_rev11(check):
         finally:
             globals()["time_cells"] = real_tc
             _flags(**old)
-    res = [k6_night(1640 + i) for i in range(12)]
-    ctl = [k6_night(1640 + i, keep_record=False) for i in range(12)]
-    check("(r39 K6) `rule --g2` and `rerun` owe one list (G2 = {16})", not any(s for s, _l, _n in res)
-          and all(l for _s, l, _n in res) and sum(1 for s, _l, _n in ctl if s) >= 1,
-          "12 nights through the commands: stalled %d, rerun timed the rule's owed list on every pass: %s, passes %s; "
-          "control (no G2 record, rev 10's rerun): stalled %d of 12 (accept >= 1)"
-          % (sum(1 for s, _l, _n in res if s), all(l for _s, l, _n in res), [n for _s, _l, n in res],
-             sum(1 for s, _l, _n in ctl if s)))
+    # r44 J: the win placed in each night's own band (`k6_place`); the control is gated on a stall RATE over
+    # the placed nights. UNMEASURED DEFAULT: K6_NIGHTS 16 seeds, at least 12 placed, the control stalling on at
+    # least 80 % of the placed nights.
+    K6_NIGHTS = 16
+    placed = [(1640 + i, k6_place(1640 + i) if K6_FIXED_WIN is None else
+               (power_cells(8, "hit-dense", K6_FIXED_WIN), (0.0, 0.0))) for i in range(K6_NIGHTS)]
+    placed = [(sd, pl) for sd, pl in placed if pl is not None]
+    res = [k6_night(sd, cw=pl[0]) for sd, pl in placed]
+    ctl = [k6_night(sd, keep_record=False, cw=pl[0]) for sd, pl in placed]
+    nst = sum(1 for s, _l, _n in ctl if s)
+    check("(r39 K6, r44 J) `rule --g2` and `rerun` owe one list (G2 = {16})", len(placed) >= 12 and not any(s for s, _l, _n in res)
+          and all(l for _s, l, _n in res) and nst >= 0.8 * len(placed),
+          "%d of %d nights placed in their own band (bands %s); through the commands: stalled %d, rerun timed the rule's "
+          "owed list on every pass: %s, passes %s; control (no G2 record, rev 10's rerun): stalled %d of %d (accept >= 80 %%)"
+          % (len(placed), K6_NIGHTS, ", ".join("%.4f-%.4f" % pl[1] for _sd, pl in placed[:4]) + ", ...",
+             sum(1 for s, _l, _n in res if s), all(l for _s, l, _n in res), [n for _s, _l, n in res], nst, len(placed)))
 
 
 def cmd_selftest(args):
