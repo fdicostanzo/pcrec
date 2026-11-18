@@ -3058,3 +3058,18 @@ revision: ONE declared table of hole positions: per position, what it accepts (a
 strings; a number; a name), how one member is written in, what several members mean (the cartesian product, by
 the ruling above), and what makes a combination illegal there (removed). A position with no row is a compile
 error.
+
+**2026-11-17 OWNER RULING — quantifier operators (the rx module's last question) (Frank, to session 138,
+evening).** Asked whether to have postfix quantifier operators beside the named repeat, with the manager's lean
+(`?`, `*`, `+`, always greedy; lazy and counted repeats by the named construct). HIS WORDS: "so the two argument
+form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? *
+*? ? ??". RECORD: RULED: SIX postfix quantifier operators on a pattern: `+`, `+?`, `*`, `*?`, `?`, `??`, each
+meaning the regex quantifier of that spelling applied to the pattern as a whole (grouped), the lazy forms
+included, with regex's own behaviour (so `(X)??` prefers nothing, then X's own first choice, as PCRE does; the
+note's lazy-binding difference from a plain lazy quantifier is regex behaving as regex). The SAME marks with two
+operands are arithmetic: a binary `+` is addition; the postfix form has no right operand. `?` is thereby the
+optional, and a conditional is spelled otherwise (spellings review). NOT in his list, so by the named repeat
+construct only (the manager's reading): possessive forms and counts in braces. MINE, for the next revision: the
+parse rule (after `+` or `*`, a token that can begin an operand makes it binary, otherwise it is postfix; the
+sequence mark is explicit, so `A+ SEQ B` is unambiguous), and the message when a binary `+` is given patterns ("a
+sum of two patterns: did you mean A+ followed by B?").
