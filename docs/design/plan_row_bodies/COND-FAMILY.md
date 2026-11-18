@@ -3605,3 +3605,12 @@ lane run and not libpcre2): `any := /.*/`: on `712` the hits are an empty match 
 3; on `x712 55` the whole text at 0 and an empty match at 7; with a lazy `any := /.*?/` every hit is empty. So
 which "anything" is written decides the searched answers, which is the manager's reason to keep it written by the
 user and not implied; as a whole value every spelling of "anything" agrees.
+
+**2026-11-18 OWNER, clarifying the entry above (Frank, to session 139, late morning; DISCUSSION).** He stopped
+the manager while the entry above was being written and said: "I mean in the context of a match". RECORD: his
+point about a complement as "a filter on anything" (`any := /.*/`, `any & not seven`) is about a MATCH (a whole
+value), not about a search. The manager's simulation in the entry above answers a question he did not ask (what a
+search returns); it stays as the manager's own note, of use only for its last clause: as a whole value every
+spelling of "anything" gives the same answer. Whether a lone complement may then be allowed when matching (the
+"anything" implied) is put to him as **lone-complement-match**; until he rules, the complement-place ruling
+stands as recorded (a lone complement is an error at a use that needs it to produce a match).
