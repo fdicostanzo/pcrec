@@ -28402,3 +28402,12 @@ Next
 - OWED: [LANDWALK] plan tag (stage 1 is built; the tag reads not-started); the pilot write-up of the architecture
   step (process logs in docs/dev/reviews/2026-11-18-r49-archdense/process.md, r50's, r48's; the two architect
   lanes' SKILL FRICTION sections; coordinators' proposed changes HELD); wtprune of today's delivered worktrees.
+- 18:25-18:55: Frank ruled lookahead-home (the kit's method; a search loop for now; kit-found starts filed as his
+  idea, docs/design/plan_row_bodies/REQ-PAST-LAST.md); request R-46 filed (603154be1) and acked by the kit (form
+  due about 17:00 on 11-19); the dense-hit design lane waits for the form. Frank on context-producer-home: "I do
+  feel like we've covered this ground several times" + the span `foobar` at index -3: ONE producer (recorded in
+  docs/design/plan_row_bodies/REQ-LOOKAROUND.md; register row 28 withdrawn; [CTX-FACTS-NEG] re-scoped; 8993b8f82).
+  MY ERROR: I relayed a question D168/D172/D191.2-3 already answered; the architect, five critics and my triage
+  all missed D191.3. remodel-go taken as the manager's call (answer-identical refactors). Lane spanarms7 (opus):
+  span_arms rev 3, the L units re-based on the accepted note; its brief requires a record grep before any owner
+  question is listed.
