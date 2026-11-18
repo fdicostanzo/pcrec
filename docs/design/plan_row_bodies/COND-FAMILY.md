@@ -3628,3 +3628,18 @@ spelling for the single spellings review, with his preference recorded. THE MANA
 revision): `anything` lives in the rx module; what it matches (any text including newlines, so that as a whole
 value it accepts every text) is to be stated there and shown to him, since in a search its spelling decides the
 answers (the manager's note two entries above).
+
+**2026-11-18 MANAGER CORRECTION — three of the manager's readings of this morning were NOT supported by the runs
+(session 139, afternoon; no owner words in this entry).** Revision 26's lane tested the 24 passages marked as the
+manager's in the 2026-11-18 entries (its report's MANAGER READINGS CHECKED; evidence docs/dev/lanes/
+predspec26_evidence/). Three failed. (1) In "OWNER RULING — nullable argument: a warning": "the program keeps
+PCRE's meaning for the empty hit, as the empty search does" is wrong in its comparison: `occurrences` being a
+rewrite into a loop (hit-carry), a nullable argument gives the LOOP's one empty hit, not a find-all's; the warning
+ruling itself stands. (2) and (3) In "OWNER, discussing complement-place further" and the session's presentation
+of lone-complement-match: "as a whole value every spelling of 'anything' agrees" is FALSE: `/.*/` does not cross a
+newline, so as a whole value it differs from `/[\s\S]*/` on every text with a newline (90 of 121 texts in the
+lane's pool), and the lazy clause of the manager's `any` simulation was wrong too. The owner WAS TOLD the false
+sentence as the reason a lone complement could be legal when matching; he ruled against that lean anyway
+(lone-complement-match: an error, provide "anything"), so no ruling rests on it; what it does change: what the
+provided `anything` matches is a real choice, asked as **anything-text**, and his own example `any := /.*/` would
+not accept a multi-line value.
