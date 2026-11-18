@@ -3149,3 +3149,11 @@ argument with no condition before its group; the hits-pass and some-own readings
 2.6's second refusal (its reason "find-all starts each hit with the group unset") goes; this is one more entry
 for the user-documentation list (predicates_future item 24). NOT ANSWERED, still open: the rider asked with it
 (is refusing a nullable argument an error or a warning; the manager leans a warning, as he ruled the empty search).
+
+**2026-11-18 OWNER RULING — nullable argument: a warning (Frank, to session 139, morning).** The rider asked with
+hit-carry: a hit pattern that can match empty (the argument of `occurrences` / `hits`), which the draft refuses
+at section 2.6 for a reason he has since withdrawn; error or warning, the manager leaning a warning. HIS WORDS:
+"hit-carry: warning on nullable". RECORD: RULED: it is a WARNING, not an error. THE MANAGER'S READINGS (mine, to be
+checked by the next revision): the program keeps PCRE's meaning for the empty hit, as the empty search does under
+his 2026-11-17 ruling; the warning is the compiler's, so its name carries the `pcrec.` prefix; this makes it the
+fifth "probably a mistake" candidate settled as a warning.
