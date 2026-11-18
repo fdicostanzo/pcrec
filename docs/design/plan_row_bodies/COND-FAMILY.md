@@ -2864,3 +2864,20 @@ name or an imported element): `t := /(\d\d?):(\d\d)/` ... `t & (1: <13)` warns; 
 literal does not; `0` (the whole match) is exempt; structural; an error only under a strictness setting; a
 compiler warning, so named under `pcrec.` (the name, e.g. `pcrec.label.numbered`, to the spellings review). HIS
 WORDS: "Agree. Good warning". RECORD: ADOPTED.
+
+**2026-11-17 OWNER, three points on labels (Frank, to session 138, evening).** HIS WORDS: "My issues: 1. did we
+decide on a way to set labels in predicate language? And what does it mean? 2. setting labels is just the label
+using the group-label-not-capture syntax 3. if A & B & (1: blah) which A and B are rx literals, do we define the
+groups as coming from on B? Makes sense".
+THE MANAGER'S ANSWERS (from the draft, cited): (1) Yes, two spellings of ONE thing exist: inside pattern text a
+named group; in the expression layer the labelled part `[x = R]`, which the draft defines as that same group
+(§3.1: a one-entry labelled array IS the rx `(?<x>R)`). Its MEANING, after tonight: the label is the NAME for
+the text that part matched on the path taken, under the one label rule; TESTING it is free at the default level;
+reading its text OUT needs the `captures` level; `capture(x)` (§5.3) is the library macro for a caller-visible
+capture. Which single form the rx module offers for it is that note's open question (label-mark). (2) AGREED and
+recorded as his: setting a label is the group form read as a LABEL, not as a capture; the capture is regex's and
+exists only inside pattern text. (3) RECORD, his position ("Makes sense"), the manager agreeing: in `A & B & (1:
+...)` the NUMBER names a group of B, the pattern the condition is written on (the nearest pattern to its left);
+this is zero-place's rule ("numbers are labels of groups in that world") applied to a chain; so numbers never
+collide across `&` (every pattern has its own group 1) and are not subject to the shared-label error; a group of
+A is tested by writing the condition next to A, or by naming it.
