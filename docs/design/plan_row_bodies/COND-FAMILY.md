@@ -2992,3 +2992,5 @@ matched and wherever in the text it lies: (i) when B's `h` sits in an optional p
 was entered and reset the name, so `h` is UNSET, not A's value (the two-copy separated list on one item, accepted
 by him earlier the same evening); (ii) when a lookaround makes A's `h` name text that lies after B's, B's is still
 the label. To keep A's value in such a case its part is labelled (`[aa = A]`, `aa.h`), or the array form is used.
+CONFIRMED by him ("yes, i agree with those points"): last mention is not last match, with the two cases and the
+two ways to keep A's value as the manager stated them. Added to predicates_future.md item 24 (entry 15).

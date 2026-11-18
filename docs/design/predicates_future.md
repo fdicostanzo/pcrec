@@ -480,6 +480,14 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
       compile-time set are SET positions: a set of strings with no neighbours; anything that might look outside is
       a compile error. The same named pattern therefore behaves like regex when inserted and like a set when
       used as a filter.
+  15. LAST MENTION IS NOT LAST MATCH, AND A COMPOSED PATTERN BEHAVES LIKE A LITERAL (label-flow, ruled
+      2026-11-17). A label is whatever its pattern surfaces; a pattern built with the sequence operator, holes or
+      a loop surfaces labels exactly as one literal would. So two parts that both set `h` give ONE label, the last
+      mention in the pattern's order: with A := `/(?<h>\d)/` and B := `/(?:,(?<h>\d))?/`, `A SEQ B` on `7` leaves
+      `h` UNSET (B's optional part is entered and resets the name), not 7. To keep A's value, label the part
+      (`[aa = A]`, then `aa.h`) or use the array form. Parts from different authors that share a label name merge
+      this way silently. Across `&` there is no order: a name both sides surface is an error where it is
+      REFERENCED (not for merely existing). A binding's name is not a path.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 
