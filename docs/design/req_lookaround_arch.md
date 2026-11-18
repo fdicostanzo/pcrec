@@ -1,6 +1,6 @@
 # [REQ-LOOKAROUND] positive lookarounds in the run and the span check: architecture note
 
-STATUS: ACCEPTED rev 2.1 (the manager, 2026-11-18: rev 2 after review r50, confirm critic conf-archlook "accept after small edits", its ten edits applied by lane landarch; OPEN: the owner questions context-producer-home and remodel-go; the register proposals are accepted as proposals and entered in the register at this note's landing). Rev 1: lane archlook, opus, 2026-11-18, the [ARCH-STEP] pilot on a real
+STATUS: ACCEPTED rev 2.1 (the manager, 2026-11-18: rev 2 after review r50, confirm critic conf-archlook "accept after small edits", its ten edits applied by lane landarch; context-producer-home RULED 2026-11-18 (ONE producer; ND-1 / register row 28 withdrawn) and remodel-go CALLED by the manager (census, then remodel commits, then the feature), both in docs/design/plan_row_bodies/REQ-LOOKAROUND.md; the register proposals are accepted as proposals and entered in the register at this note's landing). Rev 1: lane archlook, opus, 2026-11-18, the [ARCH-STEP] pilot on a real
 feature. Review `docs/dev/reviews/2026-11-18-r50-archlook.md` (verdict RULED: NOT ACCEPTED as is; REVISE, then one
 confirm critic). Rev 2: lane archlook2, opus, 2026-11-18, a FRESH architect applying findings A1-A18 as the manager
 ruled them (`docs/dev/reviews/2026-11-18-r50-archlook/dispositions.md`). Each changed passage carries its tag `[r50 An]`.
