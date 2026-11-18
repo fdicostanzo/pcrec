@@ -3509,3 +3509,12 @@ run shows it matters): with `[_ = A]` none of A's labels is visible to anything 
 binding nor inside it, neither bare nor by path (`_` is not a name a path can go through); A still matches as it
 always does. Its use: dropping a part in without its public labels entering the binding's names, so they cannot
 make a reference ambiguous. Spellings are placeholders as everywhere (the single spellings review).
+
+**2026-11-18 OWNER confirms the reading of `[_ = A]` (Frank, to session 139, morning).** The manager's reading,
+as put to him: "with `[_ = A]`, none of A's labels is visible to anything outside A — neither outside the binding
+nor inside it, neither bare nor by path ... A still matches exactly as before"; asked whether he meant something
+narrower. HIS WORDS: "That's exactly right. It makes its labels invisible so you can use it to filter but not
+cloud the namespace". RECORD: RULED, the reading confirmed: `[_ = A]` makes A's labels invisible everywhere
+outside A; its purpose in his words: to use a part as a filter without clouding the namespace. (This is the form
+his earlier lean "a filter can never produce captures" takes under the export rule: not a property of filters,
+but something the user asks for per part.)
