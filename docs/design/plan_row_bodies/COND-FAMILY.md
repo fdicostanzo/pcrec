@@ -3454,3 +3454,18 @@ inserted part's exported names flow into the outer pattern; "behaves like a lite
 NOT YET CLEAR, asked in the session: whether "every" in (a) includes `_` labels through a part label. The
 manager's response (the `_` idea removes the need for an export spelling and, he argues, for re-export language
 too) is in the session; nothing here is the state until a ruling closes it.
+
+**2026-11-18 OWNER, export-scope discussion, third exchange (Frank, to session 139, morning; DISCUSSION; the
+manager then asks the whole as ONE ruling, export-rule).** The manager had asked three things: does a part label
+reach private labels (leaning no); may public labels flow through a second binding (the manager now proposing
+yes, the underscore doing the hiding); do the caller's captures follow the same rule. HIS WORDS, in full: ""Does a
+part label reach private labels?" Naming [x = A] only disambiguates scope, it doesn't give additional access
+Pass-through: idk. This was my reexport concern.
+
+The caller's captures: agree". RECORD: (1) HIS POSITION, plain: naming a part (`[x = A]`) only DISAMBIGUATES
+scope; it gives NO additional access. So a private label is not reachable through a part label either. (2)
+PASS-THROUGH: OPEN ("idk"); it is the re-export concern he raised. (3) THE CALLER'S CAPTURES: he AGREES with the
+statement put to him: the caller sees the public labels of the top-level program plus paths through its part
+labels, never a private one. That settles the read-out corner of path-and-ambiguity in substance (a name two
+parts both make public is an ambiguous reference for the caller as for the program), pending the one ruling that
+closes the discussion.
