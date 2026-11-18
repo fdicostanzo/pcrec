@@ -1,0 +1,29 @@
+s1: == CHECKS: 154 of 156 OK ; FAILED: H1 carries, H3 carried != plain
+s2: == CHECKS: 154 of 156 OK ; FAILED: P1 first slowest x=1 y=23, P3 seq-of-alts = first slowest
+s3: == CHECKS: 154 of 156 OK ; FAILED: P4 whole copy removed: never matches, P4b never matches
+s4: == CHECKS: 154 of 156 OK ; FAILED: HF1 `/\d+/ & /${num}/`, num := `/\b\d+\b/`, HF2 r47 witnesses refused
+s5: == CHECKS: 155 of 156 OK ; FAILED: REF1 B := `/\k<h>/` after A
+s6: == CHECKS: 154 of 156 OK ; FAILED: EX1 pdate _y.v outside, EX1 priv _t outside
+s7: == CHECKS: 150 of 156 OK ; FAILED: N2 one literal, shared name `/(?<h>\d)(?:,(?<h>\d))*/`, 1, N2 a sequence `A SEQ B`, 1, N2 an inserted pattern `/${A},(\d)/`, 1, N2 an alternation of patterns `(A | B)`, 1, N2 a repeat's operand `A+`, 1, N2 an `&` chain with two patterns `A & B & (1: ..)`, 1
+s8: == CHECKS: 152 of 156 OK ; FAILED: AL1 [2, 4] + [1, 10], AL1 [2, 4] * [1, 10], AL1 1 + [2, 4], AL1 [1, 2] + [10, 20, 30]
+s9: == CHECKS: 155 of 156 OK ; FAILED: VH3 literal text
+s10: == CHECKS: 152 of 156 OK ; FAILED: CX1 not_seven run alone (whole or searched), CX1 digits SEQ not_seven, CX1 occurrences(not_seven), CX1 /x${not_seven}y/ (THE MANAGER'S READING, agreed)
+s11: == CHECKS: 154 of 156 OK ; FAILED: CS4 cond, CS4 group of conditions only
+s12: == CHECKS: 155 of 156 OK ; FAILED: LA2 visible
+s13: == CHECKS: 155 of 156 OK ; FAILED: CS1 shown (fails / holds)
+s14: == CHECKS: 152 of 156 OK ; FAILED: A1 verified sentence = loop, min 0, A1 verified sentence = loop, min 1, A1 verified sentence = loop, min 2, A1 verified sentence = loop, min 3
+s15: == CHECKS: 155 of 156 OK ; FAILED: NZ zero inside a part = the part's own match
+s16: == CHECKS: 154 of 156 OK ; FAILED: HF2 reach classifier sound, HF2 r47 witnesses refused
+s17: == CHECKS: 154 of 156 OK ; FAILED: CS3 last = & (one level `[a = /\d+), CS3 last = & (inside a loop `([a =)
+s18: == CHECKS: 154 of 156 OK ; FAILED: P6 count [-1], P6 backreference ['h']
+s19: == CHECKS: 151 of 156 OK ; FAILED: COND when(peek(A), B, else = C), COND when(peek(A), B)            (n, COND when(A, B, else = C)        (A, COND when(A, B)                  (A, COND old when = guarded with a condition test
+s20: == CHECKS: 154 of 156 OK ; FAILED: COND when(A, B, else = C)        (A, COND when(A, B)                  (A
+s21: == CHECKS: 151 of 156 OK ; FAILED: COND when(peek(A), B)            (n, COND when(A, B)                  (A, COND when-default hand-worked, COND old when = guarded with a condition test, COND when(NOT peek(x), z)
+s22: == CHECKS: 155 of 156 OK ; FAILED: CS4 group of conditions only
+s23: == CHECKS: 155 of 156 OK ; FAILED: B5 caseless control
+s24: == CHECKS: 152 of 156 OK ; FAILED: A3 number-in-loop readings part, A4 backref one name parts, A5 two depths part, one depth agrees, B5 loop anchors part
+s25: == CHECKS: 155 of 156 OK ; FAILED: B1 non-adjacent holes part
+s26: == CHECKS: 155 of 156 OK ; FAILED: B6 member readings part with other parts
+s27: == CHECKS: 155 of 156 OK ; FAILED: A6 searched vacuous
+s28: == CHECKS: 155 of 156 OK ; FAILED: B2 per mention
+s29: == CHECKS: 155 of 156 OK ; FAILED: COND call when(x, else = z)
