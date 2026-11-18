@@ -206,6 +206,13 @@ F OK
 J `G & L` (left decides): SEARCHED `11` `11`@0 ; `L & G`: `1`@0 (rev 24.3 printed `11`@0 vs `1`@0) ; OK
 J zero-place: in `/\d+/ & (0: /1\d*/)` the `0` of the right side is the stretch (its world): SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12 21` [`1`@1, `12`@3, `1`@7]
 
+== PART S: shared-label re-examined: a label named in BOTH operands of `&`, read by a condition after the chain.
+   Candidates: ERROR (the draft, §4.1); LEFT (the left operand's setting stands); LAST MENTION in the reporting order
+   (left then right: the right operand's setting, which is unset when the right operand's own branching reset it)
+S `/(?<h>\d)\d/ & /\d(?<h>\d)/ & (h: <2)`: ERROR: REJECTED ; LEFT: WHOLE `12` HOLDS, `21` FAILS ; SEARCHED `21 12` `12`@3 ; FIND-ALL `12 21 10` [`12`@0, `10`@6] ; LAST: WHOLE `12` FAILS, `21` HOLDS ; SEARCHED `21 12` `21`@0 ; FIND-ALL `12 21 10` [`21`@3, `10`@6]
+S `/(?<h>\d)\d/ & /\d(?<h>[a-z])?\d/ & (h: <2)`: ERROR: REJECTED ; LEFT: WHOLE `12` HOLDS, `21` FAILS ; SEARCHED `21 12` `12`@3 ; FIND-ALL `12 21 10` [`12`@0, `10`@6] ; LAST: WHOLE `12` FAILS, `21` FAILS ; SEARCHED `21 12` FAILS ; FIND-ALL `12 21 10` []
+S LEFT vs LAST on the first pair, holds and stretch: 4 / 134 / 150 of 341 (first W `02`)
+
 == PART D: the review drills, under 244 (and 243 beside it)
 D optional label, looped place 244: W `3;;` FAILS ; W `3;;7;` FAILS ; S `7;;3;` `7;;3;`@0 h = `3` ; F `3;; 3;` [`3;`@0 h = `3`, `3;`@4 h = `3`]
 D optional label, looped place 243: W `3;;` FAILS ; W `3;;7;` FAILS ; S `7;;3;` `7;;3;`@0 h = `3` ; F `3;; 3;` [`3;`@0 h = `3`, `3;`@4 h = `3`]

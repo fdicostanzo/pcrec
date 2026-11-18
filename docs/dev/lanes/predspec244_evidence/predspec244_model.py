@@ -752,6 +752,28 @@ print("J zero-place: in `/\\d+/ & (0: /1\\d*/)` the `0` of the right side is the
     amp2(r"\d+", r"1\d*", " 1", "S"), amp2(r"\d+", r"1\d*", " 1 12 21", "F")))
 print()
 
+# ======================================================================================================== PART S
+print("== PART S: shared-label re-examined: a label named in BOTH operands of `&`, read by a condition after the chain.")
+print("   Candidates: ERROR (the draft, §4.1); LEFT (the left operand's setting stands); LAST MENTION in the reporting order")
+print("   (left then right: the right operand's setting, which is unset when the right operand's own branching reset it)")
+def shared(lsrc, rsrc, cand, test):
+    rp = mk(rsrc)
+    def amp_(v):
+        ok, rl, _ = rp.whole(v.s[v.start:v.pos])
+        if not ok: return False
+        lab = v.lab("h") if cand == "LEFT" else rl["h"]
+        return test(lab)
+    return mk(lsrc + '(?C"amp")', {"amp": amp_})
+for lsrc, rsrc in ((r"(?<h>\d)\d", r"\d(?<h>\d)"), (r"(?<h>\d)\d", r"\d(?<h>[a-z])?\d")):
+    cells = []
+    for cand in ("LEFT", "LAST"):
+        q = shared(lsrc, rsrc, cand, lt(2))
+        cells.append("%s: WHOLE `12` %s, `21` %s ; SEARCHED `21 12` %s ; FIND-ALL `12 21 10` %s" % (cand, W_(q, "12"), W_(q, "21"), S_(q, "21 12"), F_(q, "12 21 10")))
+    print("S `/%s/ & /%s/ & (h: <2)`: ERROR: REJECTED ; %s" % (lsrc, rsrc, " ; ".join(cells)))
+d = D3(shared(r"(?<h>\d)\d", r"\d(?<h>\d)", "LEFT", lt(2)), shared(r"(?<h>\d)\d", r"\d(?<h>\d)", "LAST", lt(2)), strings("012 ", 4), keys=False)
+print("S LEFT vs LAST on the first pair, holds and stretch: %s" % fmt3(d))
+print()
+
 # ======================================================================================================== PART D
 print("== PART D: the review drills, under 244 (and 243 beside it)")
 def both(tag, src, conds, texts, keys=()):
