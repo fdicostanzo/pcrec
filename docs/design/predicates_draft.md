@@ -1149,7 +1149,9 @@ differ, 1,110 texts, every mode, labels compared; "UNVERIFIED" at 14:25, now run
 `x & (NOT c | p)` on 0 / 125 / 125 (D14): it is not `when`.
 
 R.1.11 WHOLE-TEXT (14:05: "Whole text: adopt it if it's legal. Not sure about the "fail" part"; his model, 13:55:
-"J & C ? J & M : fail"): a parser J of the whole text, a check C on J's result, and the matches of M reported only
+"J & C ? J & M : fail" [REV 25.1: his notation of 13:55, quoted; since rev 25 `?` is the postfix OPTIONAL (quantifier
+operators: "`?` is the optional, so a conditional is spelled otherwise"), so this is no longer a spelling of the
+language, only his words (review r43 CENSUS-8)]): a parser J of the whole text, a check C on J's result, and the matches of M reported only
 when C holds. ADOPTED AS A REQUESTED FEATURE (review r40 B3; **exception-rule**, RULED: "If requested (and optioned
 in if needed), they don't have to be regular regex or even legal regex"): legal in WHOLE mode with ruled pieces and
 no `fail` (§R.5), reading M's matches through the hit list, which is requested by its own feature and needs no
@@ -1586,7 +1588,10 @@ and hit lists):
 - F1: J := `/[\s\S]*/`, C := `!contains(q)`, M := `t2`: `9:15 1` HOLDS, hits `9:15`, `1`; `9:30 1` FAILS; `` HOLDS
   with no hits; 0 of 3,906 texts differ from route (ii).
 - F2: J := TML (a comma list of times), C := `occurs.none(((h, m): >= (9, 30)))` on J's passes, M :=
-  `/(?<hh>\d{1,2})(?::(?<mm>\d\d))?/` (labels renamed: a label in both `&` sides is §4.1's error): `9,9:15,` HOLDS,
+  `/(?<hh>\d{1,2})(?::(?<mm>\d\d))?/` (labels renamed: [REV 25.1: rev 25 kept the reason "a label in both `&` sides is
+  §4.1's error", the existence form label-flow revised; the renaming is still needed because C REFERENCES h and m and
+  stands after every operand (R.1), so a name both sides surface would be the ambiguous-reference error (review r43
+  RULING-6)]): `9,9:15,` HOLDS,
   hits `9`, `9:15`; `9:15,9:45,` FAILS; 0 of 156 differ.
 VERDICT: ADOPTED, as a REQUESTED feature (**exception-rule**, RULED the evening of 11-17), in WHOLE mode: (a)
 READING the hit list is the all-hits exception, requested by name, at the captures level (§R.6); regularity is no
@@ -1932,6 +1937,11 @@ REVERSED, NARROWED OR REOPENED (each marked where it stood):
 | `compare.width` as a compiler warning | §7.1, §2.7 | MOVED to the compare library by the warnings ruling: "library warnings/errors should be id'd by the library path" |
 | every warning name without a prefix | §7.1, §R.2 | the compiler's names carry `pcrec.` (the ADDENDUM: "compiler errors and warnings are prefixed with "pcrec."") |
 | `rx_module.md`'s "union" reading (C1) of a several-member count, and its hole rule for `€`'s operands | `rx_module.md` §5, §7 | REPLACED by the count ruling (distribution per mention, the product, removal) and sequence-reading (a splice) |
+| [REV 25.1] rev 25's "the right side of `&`" as the narrowed set positions (copied from the record's restatement) | R.1.4, R.1.14 (4) | CORRECTED: the manager's SLIP (COND-FAMILY "2026-11-18 MANAGER CORRECTION — "the right side of `&`" was the manager's slip"); the positions are "an `&` operand" (Q1) and "both operands of `&` are filter roles" (locked); no owner words changed |
+| [REV 25.1] rev 25's filing of "numbers name the groups of the nearest pattern to their left" under §R.8's RULED heading | §R.8 RULED, R.1.13 | MOVED: the record's entry is "OWNER, three points on labels", his position ("Makes sense"); "nearest ... to their left" the manager's gloss; asked as **number-names** |
+| [REV 25.1] rev 25's "the product's order ... answer-free where run" | R.1.14 | WITHDRAWN: its witness could not discriminate; the order decides labels, asked as **product-order** |
+| [REV 25.1] the parse rule as rev 25 wrote it (without "the sequence mark is explicit") | R.1.14 | RESTORED from the record (MINE): the sequence mark cannot begin an operand |
+| [REV 25.1] rev 25's "inside rx text a backreference already reads it [the last-set capture]" | R.1.7 | WITHDRAWN: false under `(?J)` (first set group); **backref-across-parts** asked |
 
 MARKED SECTIONS (each carries a "[REV 24]" or "[REV 24.1]" mark at its head or inline, naming what is superseded):
 rev 24's: §0 status; §0.1 (rows L16, L30, L34, L36, L52, L55, L59, L60, L82, L83, L88); §0.2; §0.3 (pass, PCRE's
@@ -1951,7 +1961,13 @@ RULING-12); §4.3 (the `\k<x>` sentence: the capture, not the label, and a dupli
 might look outside, R.1.4). Rev 25's (each "[REV 25]"): §0.1 L8; §2.5 (the sequence operator, ruled); §2.6 (`min`);
 §4.1 (an ambiguous reference; `$x & S` an error by its type); §7 (the empty-match hazard a warning); §7.1 (the
 `pcrec.` prefix, `compare.width` to its library, `label.numbered`, looped-warning withdrawn); §11 (HOLES: a pattern
-position, the edge-assertion error withdrawn for holes; THE ROLE TABLE row 5).
+position, the edge-assertion error withdrawn for holes; THE ROLE TABLE row 5). Rev 25.1's (each "[REV 25.1]"; review r43,
+the withdrawn-term sweep in the lane report): §0.1 L15, L18, L57, L64, L71; §2.2 (precedence; the sequence operator);
+§2.6 (THE TWO ARGUMENT REFUSALS: a third way, the stale ground; THE ITERATION'S OWN VALUES: hit-carry); §2.7 (the
+edge-assertion error at a hole); §4.3 (the SEQUENCE RULE term); §5.1 (call/index, statement end); §5.4 (THE ONE
+OPERATOR TABLE; the `+ - * %`, `$` and `${ }` rows); §7.1 (the selectors prefixed; the table's `pcrec.` head,
+`empty.search`, `compare.width`, `compare.looped`, `label.numbered` and `match.never` rows); §8 (`min`); §11 (the hole
+row 2 and `/x${/^a/ & /(?s).*/}/`, re-derived); §12 (E-CTX-2 and its readers; `startsWith`); §13 O58.
 §16 and the changelog are the record and are not marked.
 
 ### R.10 Evidence
@@ -3054,7 +3070,7 @@ greedy longer, lazy shorter), the right only filters which ends are admitted; th
 `A & B` and `B & A` ACCEPT THE SAME SUBJECTS; D196's left operand picks the REPORTED span among overlapping
 qualifiers, so the report may differ (§0.1 L39; C1 RESOLVED).
 Precedence (D196): concatenation, then `&`, then `|`; inside a record entry `&` and `|` bind tighter than `:`
-and `=`, and the comma is no operator (it ends an entry; §4.1, §5.4). In the expression language there is no concatenation operator (§2.5).
+and `=`, and the comma is no operator (it ends an entry; §4.1, §5.4). In the expression language there is no concatenation operator (§2.5). [REV 25.1: REVERSED by rev 25: there IS one, the sequence operator, a splice binding tighter than `&` and `|` (R.1.14); every level is now §5.4's ONE OPERATOR TABLE (review r43 F)]
 
 **REASONING.** Extensional `&` keeps arrays and rx "the same". `!` as a filter: a standalone complement is useless
 in a searched program and VM-hostile, while under `&` it is bounded. A pure `&` is what the owner's look-alike criterion (G0)
@@ -3479,7 +3495,9 @@ after the zeros: `padded(/^5/)` = `/0*(?:^5)/` accepts only `5` (the `^` forbids
 `padded("5")` accepts `5`, `05`, `005` (§0.1 L13; libpcre2 10.46 and Python `re`, `predspec14_anchor.out`). No
 warning fires there: the anchor sits in a hole, and a hole is no role (§11 THE WARNING; here the anchor is also not at
 the edge, so it means something); `\b` and edge lookarounds at the hole's edge are the
-edge-assertion error, as in every hole (§11, L8). A value of all zeros needs no clause: `padded(between(0, 255))`
+edge-assertion error, as in every hole (§11, L8) [REV 25.1: WITHDRAWN by hole-reading (rev 25): an assertion at a
+hole's edge crosses the border and reads `0*`'s text; one that can never hold there draws the can-never-match warning
+`pcrec.match.never` (§7.1); review r43 RULING-7]. A value of all zeros needs no clause: `padded(between(0, 255))`
 accepts `000` (`0*` takes `00`, the hole `0`), `padded(between(1, 12))` rejects `00`.
 
 BODIES OF THE PROVIDED TRANSFORMS (rev 14; the check the manager's record of the 20:45 ruling calls for, CF:1110-1111:
@@ -3838,7 +3856,9 @@ label in the ONE test that writes it, any text; `$a` reads the real label). In s
 Rev 8's CONFLICT MARK (§13 C36: the priority parse vs the some-parse rule) is GONE: the ONE READING (§4.5, CF:953-955)
 makes a repeated label's iterations those of PCRE's parse, as for every label.
 
-**RULE.** At the default level a repeated label follows the SEQUENCE RULE: `x: S` constrains ALL iterations; a bare
+**RULE.** At the default level a repeated label follows the SEQUENCE RULE [REV 25.1: the TERM now collides with the
+sequence operator (R.1.14) and label-flow (3)'s last mention, which give the opposite answer; this "SEQUENCE RULE" is the
+11-14 Q4 all-iterations rule, REVERSED for bare conditions (the REV 24 banner above); review r43 CENSUS-7]: `x: S` constrains ALL iterations; a bare
 `$x` on a repeated label is EVERY iteration's captured string (§5.4 `$` row: one entry per iteration), which needs
 captures inside a loop, so at the default level it is an ERROR naming the group questions below and the `captures`
 level. At `vm`, PCRE's own `\k<x>` INSIDE rx text sees the last iteration (PCRE's meaning, inside a literal) [REV 24.3:
@@ -4182,7 +4202,10 @@ count against another label's value is such a relation: LEAN (CF:682).
 
 **RULE.** A program = bindings, expressions, calls and `@` STATEMENTS, with ONE final expression (the program's
 pattern); newlines are layout (whitespace and newlines are free between expression tokens: long logic goes in `:=`
-definitions, literals stay short). A `(` or `[` after an expression is always a call or an index, so a statement
+definitions, literals stay short). A `(` or `[` after an expression is always a call or an index [REV 25.1: after an
+OPERAND; after a postfix operator the parse rule reads the operator first, so in `x+ (y)` `+` is binary (THE DRAFT'S
+READING, R.1.14 (c)); and A STATEMENT ENDS BEFORE `NAME :=` (THE DRAFT'S READING, R.1.14 (b)); §5.4's operator table],
+so a statement
 that STARTS with `(` or `[` (a record on the left, a final array) continues the line before it: §13 O51 (review r8
 P6-13). A binding starts `name :=`. There is ONE kind of binding: `name := expression`,
 and the name names whatever its expression is, an rx or a macro (CF:858); a definition head `m(p1, p2) :=` makes a
@@ -4360,6 +4383,24 @@ Rev 20: an entry may hold both, `p = v: S`; `&` and `|` bind tighter than `=` an
 two-string default, an error (one string, CF 10:43). Rev 21 (review r29 CENSUS-5): `=` binds tighter than `:`, so
 `p = v: S` is `(p = v): S`, the default belonging to the label and S the entry's set.
 
+THE ONE OPERATOR TABLE [REV 25.1, review r43 F (FIXINDUCED-10's general form): it REPLACES the fragmentary
+precedence statements (§2.2's "concatenation, then `&`, then `|`", R.1.14's four-level order, §5.1's call/index
+sentence, the entry extent above), which now point here. Spellings are placeholders (`SEQ` the sequence operator);
+levels not ruled are marked THE DRAFT'S READING]:
+
+| level (tightest first) | operator | fix | associativity | status | defining section |
+|---|---|---|---|---|---|
+| 1 | `.` field, call `f(..)`, index `X[..]` | postfix, after an OPERAND (a name, a literal, a call, an index, a closing bracket) | left | THE DRAFT'S READING (rev 25.1: after an operator, `(`/`[` begin an operand) | §5.1, the `.` and `[ ]` rows |
+| 2 | `+ +? ++ * *? *+ ? ?? ?+` on a pattern | postfix (the parse rule: binary when a token that can begin an operand follows `+`/`*`; the sequence mark cannot begin one; read longest first; stacking left to right) | left (stacking) | RULED that they are postfix and tightest of the four (quantifier operators); the parse rule, longest first: MINE in the record; stacking: THE DRAFT'S READING | R.1.14 |
+| 3 | prefix `!`, `NOT`, prefix comparisons `< <= > >= ==` | prefix, on ONE atom (with its postfix operators) | right | THE DRAFT'S READING (rev 25.1; the comparisons' ONE atom is §5.4's row) | §2.2, §2.4, R.1.5 |
+| 4 | `* %` (numbers) | binary | left | THE DRAFT'S READING (rev 25.1); operands asked, **value-is-pattern** | §2.5 |
+| 5 | `+ -` (numbers) | binary | left | THE DRAFT'S READING (rev 25.1); operands asked, **value-is-pattern** | §2.5 |
+| 6 | the sequence operator `SEQ` | binary (a splice) | n-ary (associative) | RULED (sequence-precedence: "binds tighter than & and \|") | R.1.14 |
+| 7 | `&` | binary | n-ary (a chain; the left side decides the report) | RULED (order, join order) | R.1.4, §2.2 |
+| 8 | `\|` | binary | n-ary | RULED (order) | R.1.4, §2.2 |
+| 9 | `=` then `:` inside an entry | entry marks | `p = v: S` is `(p = v): S` | LEAN (rev 20-21) | the entry extent above |
+| statement | `:=`; a statement ends before `NAME :=` | statement | | `:=` LEAN; the statement end THE DRAFT'S READING (rev 25.1) | §5.1 |
+
 THE OTHER MARKS:
 
 | mark | where it may appear | its one meaning | §12 case |
@@ -4368,12 +4409,15 @@ THE OTHER MARKS:
 | `\|` | between two expressions | on patterns: PCRE's ONE parse of the alternation (rev 23 §R.1.4; never a union of rows; a filtered branch falls through, branch-major, **branch-order**, rev 23.1); concatenation of entries (§3.3); on conditions: Kleene OR (rev 23, the draft's reading of rev 22's pointwise `\|`; asked as **condition-or**, §R.8); pattern \| condition is an error (§2.1) | E-FILE, E-DEPTH |
 | prefix `!` | before an expression (expression language only, §2.2) | of a PATTERN: its complement, used after `&` as PATTERN DIFFERENCE (rev 23 §R.1.4); of a SET (value side): the complement over every text (§R.5 G); of a CONDITION (rev 23, condition-not 23:48): the three-valued NOT, an absent label stays UNKNOWN (§R.1.5, §R.3) | E-FILE |
 | `<` `<=` `>` `>=` `==` | prefix, before ONE atom; rev 20: the atom may be a TUPLE (`>= (9, 30)`, dictionary order, §2.4) | a COMPARISON SET (a full rx, §2.4; of arity k over a k-tuple) | E-CAL (`<=`), E-RFC (`==`), E-FILE (`<=`, `>`) |
-| `+` `-` `*` `%` | between numbers | arithmetic on numerals (§2.5) | E-NEAR, E-DEPTH (`-`); `+`, `*`, `%`: no case (the TWO-WAY CENSUS gives the reason; `+` listed in rev 11, review r12 CENSUS-7) |
+| `+` `-` `*` `%` | between numbers; [REV 25.1] and `+ *` (with `?` and the lazy and possessive forms) POSTFIX on a pattern, the quantifier operators (R.1.14; the operator table above) | arithmetic on numerals (§2.5); postfix: the regex quantifier on the operand as a whole | E-NEAR, E-DEPTH (`-`); `+`, `*`, `%`: no case (the TWO-WAY CENSUS gives the reason; `+` listed in rev 11, review r12 CENSUS-7) |
 | `:=` | statement start (a name, a definition head, or a record on the left, design only) | binds a name to an rx or a macro (§5.1) | every case |
 | `.` | after an expression or a label path | a FIELD of the MAP INTERFACE of the thing on the left (§3.2 tool 4), its ONE meaning (CF:898-899, agreed CF:892): a label (`d.year`, `rest.year`), a module member (`json.row`, §7), metadata (`.index`, `.label`, reserved fields) and a `$` path are instances. A user label named `index` or `label` is an ERROR naming the reserved field (rev 9: the manager's call, LEAN; §13 O31) | E-RFC (`.index`, `$rest.year`), E-JSONL and others (`json.row`), E-FILE (`r.word`) |
-| `$` | before a label PATH | the VALUE(S) of the whole label path in this match, read through the array interface: ONE ENTRY PER ITERATION in match order (a set-once label: one entry, so a one-string set; unset: no entry). For a GROUP label the value is its CAPTURED STRING (`$year`); for METADATA (`$mname.index`) or a COMPUTED LABEL (`$d`, `$wd`, §4.4) it is that value, a numeral string, not captured text (rev 11, review r12 CENSUS-11). An entry is a one-string rx with NO labels: a selection of iterations is written in the path, before `$` (`$m.hit[(g: "x")]`), never as a condition laid against `$`'s entries (review r12 CENSUS-1). The path is read whole: `$a.b.c` reads the path `a.b.c` (the parenthesised `$(a.b.c)` is notation here, not a program), so `$mname.index` is the index of mname's matched entry (11 for `Nov`), never the field `index` of `$mname` (review r8 P6-6). On a repeated label it needs captures, the `captures` level: for ONE iteration (`$m.hit[2]`, `$m.hit[2].g`) RULED BY ACCEPTANCE (CF:977, to CF:972-973's "reading ONE hit"); for every iteration (`$m.hit`) or a selection: LEAN (review r12 CENSUS-8; §4.3); one meaning at every level (review r10 FIXA-3, CENSUS-1; LEAN) | E-WEEKDAY, E-CAL, E-RFC, E-NEAR |
+| `$` | before a label PATH | the VALUE(S) of the whole label path in this match, read through the array interface: ONE ENTRY PER ITERATION in match order (a set-once label: one entry, so a one-string set; unset: no entry) [REV 25.1: THREE rulings stale (review r43 FIXINDUCED-7): an unqualified `$x` reads the LABEL, one value (R.1.7, "what an unqualified `$x` reads"); the ARRAY form, a different spelling, is the name's SETTINGS in setting order (array-slot); `[k]` on it indexes settings (THE DRAFT'S READING, R.1.7)]. For a GROUP label the value is its CAPTURED STRING (`$year`); for METADATA (`$mname.index`) or a COMPUTED LABEL (`$d`, `$wd`, §4.4) it is that value, a numeral string, not captured text (rev 11, review r12 CENSUS-11). An entry is a one-string rx with NO labels: a selection of iterations is written in the path, before `$` (`$m.hit[(g: "x")]`), never as a condition laid against `$`'s entries (review r12 CENSUS-1). The path is read whole: `$a.b.c` reads the path `a.b.c` (the parenthesised `$(a.b.c)` is notation here, not a program), so `$mname.index` is the index of mname's matched entry (11 for `Nov`), never the field `index` of `$mname` (review r8 P6-6). On a repeated label it needs captures, the `captures` level: for ONE iteration (`$m.hit[2]`, `$m.hit[2].g`) RULED BY ACCEPTANCE (CF:977, to CF:972-973's "reading ONE hit"); for every iteration (`$m.hit`) or a selection: LEAN (review r12 CENSUS-8; §4.3); one meaning at every level (review r10 FIXA-3, CENSUS-1; LEAN) | E-WEEKDAY, E-CAL, E-RFC, E-NEAR |
 | `^` (the OTHER-SIDE SIGIL; placeholder symbol, rev 19). REV 20: PAUSED INDEFINITELY (RULED, **retire-paused**, CF 12:51: "the pause on ^ is indefinite and requires real value other than 'override a users own *'"); NOT IN REV 20'S LANGUAGE; the row is kept as rev 19 wrote it, the record (§16) | before a label PATH (`^h`, `^d.year`, `^mnum`), in exactly TWO positions: (1) an ARGUMENT of a macro call (`is_late(^h)`), (2) an ENTRY of a spelled `[ ]` that is an argument (`lex_ge2([^h, ^m], [9, 0])`). Everywhere else an ERROR with its fix: an `&` operand or filter role (`P & ^h`: "a reference is not a filter; write `(h: S)`"), written directly on the left of `:` (`(^h: S)`: "write `(h: S)`"), a bound (`lex_ge2([^h, ^m], [^a1, ^a2])`: "a bound is a value; write `$a1`"), a hole (`${^h}`: "write `${$h}`"), the right of `:=` alone (`r := ^h`), mixed in an array with rx or macros (§3.5). Inside rx text `^` is PCRE's anchor (§11): the sigil is expression-language only, and its symbol is the spelling step's (D193 add. 4) | A FIELD REFERENCE: "this label, of the other side of the `&`". NEITHER A VALUE (it reads no text: that is `$h`) NOR A CONDITION (it constrains nothing: that is `h:`); a compile-time name of one field of one operand, which a body may only PASS ALONG or place on the left of `:` (§4.1's one exception). BINDING, fixed WHERE IT IS WRITTEN: the reference names the field a condition `(h: S)` written in place of the call would read (§4.1's lookup at that place: the other operands of the chain the call stands in, a label in two of them the ambiguity error, an unknown label the error listing those available). Written in a call that is an operand of `&`, that is the other side of THAT `&`; inside a condition's set (`P & (t: Q & lex_ge2([^h, ^m], lo))`) the inner `&`, Q's h; written INSIDE a macro body, the body's own `&`; PASSED into a body, it keeps the operand it was written against, and a body laying it against another operand is a compile error naming both (§8 table (B): 828 of 828 refused; rev 20: the model of the stated rule, not evidence, review r19 CENSUS-5). A call bound by name (`late := lex_ge2([^h, ^m], [9, 30])`, then `P & late`) is resolved where the bound macro's operand is filled, like a bound condition (§0.1 L2; OPEN, owner question **bound-reference**, §13 O76). A reference to an UNSET label is legal (the conditions on it fail per match, §4.2); to a REPEATED label the conditions follow the sequence rule and `compare.looped` warns (§8 caveat (6)); to a COMPUTED label (`^mnum`, §4.4) it names that label of the pattern whose labels it reads. One meaning in every occurrence (the census in §8 THE FIELD REFERENCE) | no §12 case (§8's tuple rows; TWO-WAY CENSUS) |
-| `${ }` | inside rx text, ALWAYS (in the opt-in, whatever the rx-`&` switch; §11) | a HOLE: the text the expression inside denotes, inserted where it stands. In an ATOM position (the usual one) it inserts an rx's set as ONE entry (§3.3); in a TYPED SYNTAX POSITION it supplies that position's value from a finite compile-time set: a quantifier bound (`{${min},}`, `\d{${n}}`), a class range end (`[${a}-${b}]`), a GROUP NAME (`(?<${x.label}>...)`, `(?<f_${i}>...)`: a one-string set that is a valid name), an OPTION'S VALUE (`(?i=${ci})`, boolean; the owner's 2026-11-13 example, CF:86-87; restored in rev 18, review r17 F10; whether it reaches INTO a hole is §13 O70's question) (§11; review r10 CENSUS-3). A macro in it is the unapplied-macro error (§2.3). LIFTING (rev 21, review r29 CHANGETAB-7; joint_condition.md §9 row 53): a macro whose body holds its argument in a hole LIFTS to a tuple set, acting on every part (**modifier-lift**, CF 11:27), when its result distributes over `\|` in that argument, which is checkable from the body (`padded`'s `/0*${rx}/` does); a body that does not distribute is the arity error (the manager's reading, round jointcond) | E-JSONL, E-DEPTH, E-CTX (`/a${num}/`); E-IPV4 (prose); typed positions: §2.6, §5.3 (no case) (rev 11, review r12 CENSUS-7; rev 15, review r16 CENSUS-8: E-HTTP left the row in rev 13, written `anchored(block)` since; `anchored`'s own body, §8, holds a hole) |
+| `${ }` | inside rx text, ALWAYS (in the opt-in, whatever the rx-`&` switch; §11) | a HOLE: the text the expression inside denotes, inserted where it stands. In an ATOM position (the usual one) it inserts an rx's set as ONE entry (§3.3) [REV 25.1: since
+rev 25 the inserted PATTERN as a whole, `(?:X)`, matched in place, its edge assertions crossing the border (hole-reading,
+R.1.14); several members are an alternation inside the group; the typed positions follow the position table, one copy
+of the literal per combination (R.1.14)]; in a TYPED SYNTAX POSITION it supplies that position's value from a finite compile-time set: a quantifier bound (`{${min},}`, `\d{${n}}`), a class range end (`[${a}-${b}]`), a GROUP NAME (`(?<${x.label}>...)`, `(?<f_${i}>...)`: a one-string set that is a valid name), an OPTION'S VALUE (`(?i=${ci})`, boolean; the owner's 2026-11-13 example, CF:86-87; restored in rev 18, review r17 F10; whether it reaches INTO a hole is §13 O70's question) (§11; review r10 CENSUS-3). A macro in it is the unapplied-macro error (§2.3). LIFTING (rev 21, review r29 CHANGETAB-7; joint_condition.md §9 row 53): a macro whose body holds its argument in a hole LIFTS to a tuple set, acting on every part (**modifier-lift**, CF 11:27), when its result distributes over `\|` in that argument, which is checkable from the body (`padded`'s `/0*${rx}/` does); a body that does not distribute is the arity error (the manager's reading, round jointcond) | E-JSONL, E-DEPTH, E-CTX (`/a${num}/`); E-IPV4 (prose); typed positions: §2.6, §5.3 (no case) (rev 11, review r12 CENSUS-7; rev 15, review r16 CENSUS-8: E-HTTP left the row in rev 13, written `anchored(block)` since; `anchored`'s own body, §8, holds a hole) |
 | `/.../` | value position | an rx literal with PCRE's meaning (§11) | every case but E-CAL (its `isodate` is a comment since rev 10; review r12 CENSUS-7) |
 | `@` | statement start | marks an EFFECT (§5.1): a module's effect (`@assert.some`) or one of the two effect built-ins `@warn`, `@export` (§5.1) | E-IPV4, E-CAL, E-CTX (`@assert.none`; review r12 CENSUS-7) |
 | `#` | outside rx text, to the end of the line | a COMMENT (layout; inside `/.../` `#` is PCRE's: a literal, or a comment only in extended mode, §11; review r10 CENSUS-17) | ten of the twelve §12 blocks |
@@ -4856,7 +4900,8 @@ string literal read as its decoded text, is CUT in rev 16, §9; the `json` modul
   owner, CF:1028, rev 13): `occurrences(x, min = 0) :=
   /(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/`, of the `contains` family: each hit, leftmost and non-overlapping along PCRE's
   own parse (the one reading, §4.5; "always", CF:932-933), is one iteration of the repeated label `hit` (§4.3), with
-  the argument's labels inside it. `min` (0 or 1, RULED, CF:963-966; default 0): with 0 it never rejects, with 1 a span with no
+  the argument's labels inside it. `min` [REV 25.1: REVERSED by min-values (rev 25, §R.2): ANY n, "at least n", the
+  quantifier `{n,}`; the error below is withdrawn; review r43 FIXINDUCED-3] (0 or 1, RULED, CF:963-966; default 0): with 0 it never rejects, with 1 a span with no
   hit is rejected; another value is a compile error naming `occurs.at_least` (LEAN, CF:968-969; §13 O58); NO `max`
   for now (CF:951-952). THE TWO ARGUMENT REFUSALS (§2.6, stated there once): a nullable argument (LEAN, manager; §13
   O53) and an argument with a backreference or conditional that can run while its group is unset in the current hit
@@ -5457,7 +5502,7 @@ E-CAL (`\d{4}`, `\d\d`, `-`), E-RFC (`\d{1,2}` then a space; names from fixed li
 isodates), E-FILE (`[^,]+` then `,`, `\d+` to the line end), E-HTTP (`name = token`, which has no `:`; `fvalue` holds
 no CR/LF, so the `list_of` iterations split at each `\r\n` in one way; predx §3.8), E-CTX-1/7 (`\w` then one space;
 the whole `name`), and the agreeing look-alike's `v` (the whole span). E-JSONL, E-IPV4, E-LUHN, E-SEP and E-DEPTH
-put no condition on a label (their `&` operands are label-free sets), and E-CTX-2..6 are compile errors. What rev 9
+put no condition on a label (their `&` operands are label-free sets), and E-CTX-2..6 are compile errors [REV 25.1: E-CTX-2 is no longer a compile error: hole-reading (rev 25) withdrew the edge-assertion error for holes; `/a${num}/` is `/a(?:\b\d+\b)/`, no match on `a12`, the can-never-match warning; review r43 FIXINDUCED-4]. What rev 9
 changes AROUND them: E-JSONL's `contains("timeout")` is now `occurrences("timeout", min = 1)` (§2.6), the same set; E-HTTP's
 `name` iterations would follow PCRE's parse if `fvalue` could hold a line break (it cannot). §0.1: L34 changes verdict
 (DIFFERENT: WARNING -> SAME, both levels read PCRE's parse); L16, L36, L51, L53 restated; L55-L59 new; no other row's
@@ -5469,7 +5514,7 @@ EXAMPLES RE-CHECKED). UNCHANGED (searched gives the expected answer because ever
 so a searched subject has no shorter qualifying span): E-WEEKDAY, E-LUHN, E-CAL (its "whole subject" answers hold
 searched too: isodate is 10 characters and so are the subjects), E-RFC, E-NEAR (a)-(c), E-SEP, E-JSONL (anchored by
 its own `/^${q}$/m`, line by line), E-FILE (already stated searched), E-CTX-1, E-CTX-7 and the agreeing look-alike
-(searched, the reported span is the whole subject), E-CTX-2..6 (compile errors). RESPELLED, ANSWER MOVED AS WRITTEN:
+(searched, the reported span is the whole subject), E-CTX-2..6 (compile errors; [REV 25.1: E-CTX-2 is no longer a compile error: hole-reading (rev 25) withdrew the edge-assertion error for holes; `/a${num}/` is `/a(?:\b\d+\b)/`, no match on `a12`, the can-never-match warning; review r43 FIXINDUCED-4]). RESPELLED, ANSWER MOVED AS WRITTEN:
 E-HTTP (searched, `Host: a\r\nhost: b` MATCHED the one-header span `Host: a`, where the case expects no match: a
 count is not upward-closed; rev 10 anchors the program, `/\A${block}\z/`, and the expected answers are unchanged;
 §0.1 L66). ADDED: E-IPV4's searched answer for `01.2.3.4` (`1.2.3.4`, beside the stated `256.1.1.1` -> `56.1.1.1`).
@@ -5505,7 +5550,7 @@ E-HTTP (`\A`/`\z` in the final pattern: the exact ends; the record's suggested `
 block followed by one final newline, L68, so the case keeps `\A...\z`), E-FILE (the item rx `/^[^\r\n]*$/m` is
 searched in the file text, an "everywhere else" position, as before; `!startsWith("#")` is a gap body), E-LUHN
 (`startsWith("4")`, a gap body), E-CTX-1, 5, 7 (a `^` in a filter or a modifier's argument adds nothing, the reason
-now the one rule), E-CTX-2, 3, 4, 6 (compile errors; the edge-assertion error is not an anchoring rule, §11),
+now the one rule), E-CTX-2, 3, 4, 6 (compile errors; the edge-assertion error is not an anchoring rule, §11; [REV 25.1: E-CTX-2 is no longer a compile error: hole-reading (rev 25) withdrew the edge-assertion error for holes; `/a${num}/` is `/a(?:\b\d+\b)/`, no match on `a12`, the can-never-match warning; review r43 FIXINDUCED-4]),
 E-WEEKDAY, E-IPV4 (`/\b${ipv4}\b/` a final pattern), E-CAL, E-RFC, E-NEAR, E-SEP, E-DEPTH (no anchor in a filter) and
 the agreeing look-alike. Rev 12's other change (the naming rule; `occurrences` OPEN) touches no case: no case writes
 `occurrences` (E-JSONL's `contains` passes the rule).
@@ -5782,7 +5827,7 @@ O21; no new grammar in rev 10 (the manager's pick).
 Each case puts an assertion where the three candidate models (§11) disagree; the answer is the RULED one (string
 sets, `^`/`$` = the filtered span's ends, the edge-assertion error for `\b` and edge lookarounds; CF:761; rev 12:
 THE ONE WHOLE-MATCH RULE, CF:1011-1020, the same answers). E-CTX-1, 5
-and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are review Q1X-2's table. LEVEL: none applies
+and 7 do not error; E-CTX-2, 3, 4, 6 do [REV 25.1: E-CTX-2 is no longer a compile error: hole-reading (rev 25) withdrew the edge-assertion error for holes; `/a${num}/` is `/a(?:\b\d+\b)/`, no match on `a12`, the can-never-match warning; review r43 FIXINDUCED-4]. The answers under the other models are review Q1X-2's table. LEVEL: none applies
 (compile errors). Rev 14: E-CTX-1 and E-CTX-7 draw the warning `anchor.whole`; E-CTX-5 draws none.
 
     P := /(?<w>\w) (?<x>\w+)/
@@ -5798,7 +5843,10 @@ and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are 
 - E-CTX-1: NO error, the WARNING `anchor.whole` (rev 14: an anchor in a `label:` condition); the condition matches
   x WHOLE, so x must be ENTIRELY `S\w*` (its `^` is x's start and adds nothing): `a Sab` -> match `a Sab`. Here the answer equals `(x: startsWith("S"))`'s only because x is
   `\w+`; in general the two differ (§0.1 L7; rev 11, review r12 SIMULATE-1). (A/B2: silent no match; B1: match.)
-- E-CTX-2: compile ERROR (`\b` at both edges of the hole's set). Fix: write the boundaries in the literal around the
+- E-CTX-2: [REV 25.1: since rev 25 NO error: hole-reading, "assertions become ok to cross the border": `/a${num}/` is
+  `/a(?:\b\d+\b)/`; on `a12` it finds nothing (the `\b` between `a` and `1` never holds), the same as the pasted text,
+  with the can-never-match warning `pcrec.match.never` (§7.1); SEARCHED `a 12` `12`@2; FIND-ALL `a12 x 34` [`34`@6]
+  (hand-worked from rev 25's PART RX3 expansion). The rest of this item is rev 24.4's, the record] compile ERROR (`\b` at both edges of the hole's set). Fix: write the boundaries in the literal around the
   hole, `/a\b${/\d+/}\b/`, which says what the pasted text says: on `a12` it finds nothing (`a` and `1` are both
   word characters). (B1: match, unlike the pasted text.)
 - E-CTX-3: compile ERROR (a lookbehind at the start of an assertion argument). Under A the assertion FAILED although
@@ -6454,7 +6502,7 @@ Items NEW in rev 9 (the owner's last two 2026-11-15 entries, CF:927-961; each wi
   the budget refusal common and send the cost back to the owner. Prerequisite: a construction of PCRE's reading as
   an automaton, which pcrec does not have today (an in-compiler automaton kit, [AUTOMATON-KIT], is the natural home).
   Lean: run it as its own measurement lane when the predicate front end nears a build go, not before (D77).
-- **O58. `min` above 1, and `max`.** RESOLVED in rev 10 (CF:963-966: reading (A); the RESOLVED list). (CF:951-952, CF:960; §0.1 L57.) Under PCRE's reading the quantifier `{n,}`
+- **O58. `min` above 1, and `max`.** [REV 25.1: the whole item, readings (A)-(C) and "Lean: (A)" included, is SUPERSEDED by min-values (rev 25, §R.2: at least n, the quantifier `{n,}`, (C)-like): `occurrences(x, min = 2)` and `occurrences(x) & occurs.at_least(2, ..)` agree (rev 25's PART E (C) vs (B) 0 / 0 / 0 of 364), so the "which rejects `aab`" below is the record; review r43 FIXINDUCED-3] RESOLVED in rev 10 (CF:963-966: reading (A); the RESOLVED list). (CF:951-952, CF:960; §0.1 L57.) Under PCRE's reading the quantifier `{n,}`
   with n >= 2 lets PCRE RE-CUT the hits to reach n (`x := /aab|a/` on `aab`: one hit at `min` 0 or 1, two at `min = 2`;
   libpcre2 and Python's `re`, `docs/dev/lanes/predspec9_reading.out`) [REV 25: RULED (C)-like, at least n (§R.2); under branch-scope re-entry the `occurs.at_least` form now HOLDS on `aab` too (rev 25's PART E), only the atomic hit list does not], so `occurrences(x, min = 2)` is not "at least two of
   the hits" (`occurrences(x) & occurs.at_least(2, (hit: /(?s).*/))`, which rejects `aab`). Readings: (A) `min` is 0 or 1;
