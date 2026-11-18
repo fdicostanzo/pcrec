@@ -3323,3 +3323,20 @@ where it is written"), stated for names instead of values; (c) a reference writt
 composition, sees the namespace defined there: the parts' surfaced labels, by label-flow (last mention; an
 ambiguous reference across `&` is the error; paths through a part's label); (d) the evidence models (1) by
 renaming groups apart before splicing.
+
+**2026-11-18 OWNER, clarifying backref-across-parts — a backreference reads as labels do: the last mention at its
+point (Frank, to session 139, morning).** HIS WORDS: "backref-across-parts: which is to say, it should be the last
+reference as labels". RECORD: RULED (his own restatement of the principle ruled just above, "a reference should
+use the namespace as it is defined at the point of reference"): a backreference reads a name the way a label is
+read: the LAST MENTION of that name as things stand at the point of the reference; not PCRE's first-set group
+under duplicate names. On the witness (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`) this is B's group,
+the answer already ruled, because B's group is the last mention before B's `\k<h>`.
+THE MANAGER'S CORRECTION OF HIS OWN READINGS IN THE ENTRY ABOVE: reading (a), "names inside a part are resolved in
+that part, before the splice", and (d), "renaming groups apart before splicing", are NARROWER than his rule and
+are WITHDRAWN as the rule; they give the same answer only when the part sets the name before it refers to it.
+WHERE THEY DIFFER (hand-worked by the manager, not run, not put to him; the next revision runs them and brings
+back any that surprises): B := `/\k<h>/` (B refers to a name it never sets) after A: his rule reads A's `h`, the
+withdrawn reading would refuse an unknown name; B := `/\k<h>(?<h>\d)/` after A: his rule reads A's `h` (the last
+mention at that point), the withdrawn reading would read B's own, still unset. So under his rule a part that
+refers to a name it does not set reads the surrounding pattern's label, like a parameter (meets predicates_future
+item 26); a part that sets a name before referring to it always reads its own.
