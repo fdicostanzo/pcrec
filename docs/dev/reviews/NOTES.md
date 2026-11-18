@@ -69,6 +69,13 @@
 - `2026-11-15-r9-memfn-pinfix.md` — single-critic CODE round on lane pinfix (r8 fixes: windowed records refuse a missing pin; 609/610 second-run wiring): LAND; ADQ-2-1 (common.sh inherited FIRST_RUNDIR from the caller env) fixed by the kit manager in the timing jobs; ADQ-3-3 (no plant for the manifest pin) owed after the window.
 - `2026-11-15-r13-covs2d.md` (+ dir) — DESIGN round on cover_cap.md rev 5 §11 (counted seam, width limit): 5 critics + verifier, F1-F29; all dispositions accepted, FIX-NOW in rev 5.1, per-compile valued option (F21) ruled now; kit request waits on a readiness re-check.
 
-## Index entries moved out of CLAUDE.md (predspec271, 2026-11-18; size limit)
+## Index entries moved out of CLAUDE.md (predspec271 and archdense2, 2026-11-18; size limit)
 
 - `2026-11-15-r14-predspec12.md` (+ dir) — short DESIGN re-check of predicates_draft.md rev 12 (anchoring): SIMULATE-1/2, CENSUS-1..8; F1 (filter side of `rx & rx`) to the owner, rest FIX-NOW/DOC in rev 13; general `anchored` form agreed.
+
+## Index entries moved out of CLAUDE.md (landarch, 2026-11-18; size limit)
+
+- `2026-11-15-r15-covs2e.md` (+ dir) — readiness re-check of cover_cap.md rev 5.1 (stage 2): 3 opus critics, FIND-1..FIND-20 + DRIFT-1 (D198 addendum 1 landed mid-round); every unit READY WITH LISTED TEXT FIXES; all accepted, applied in rev 5.2 (lane covs2f); kit request files as R-45.
+- `2026-11-15-r10-memfn-d3wire.md` — single-critic CODE round on lane d3wire (the D3 floor gate wiring): D3W-1/2 (floors 20-31 loose; deleting Part D witnesses stayed green) FIX-NOW with D3W-5/6/9, D3W-4 (cloud axes shard) and DOC D3W-7; fixed by lane d3fix; D3W-8 (floor-table family) noted.
+- `2026-11-15-r11-memfn-d3fix.md` — single-critic CODE round on lane d3fix (D3 floor gate): D3F-1 (dead bands; a gain reds through the plants with a wrong reason) FIX-NOW, D3F-2 (counts pinned, a membership swap is green) -> census as a set; fixed by lane d3fix2.
+- `2026-11-15-r16-predspec14.md` (+ dir) — confirming DESIGN re-check of predicates_draft.md rev 14 (3 opus critics): the `anchor.whole` warning gets ONE edge criterion (W1/W2), W3 to the owner (warn-in-macro-body), macro-body claims (FIXIND-1..3: two transforms lack a body), role lists, provenance, words; all accepted, applied in rev 15 (lane predspec15).
