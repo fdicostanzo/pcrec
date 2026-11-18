@@ -28328,3 +28328,19 @@ Next
   meaning wrongly once before getting it right; recorded "nearest pattern to the left" and "the right side of &"
   as his (both corrected in the record); narrowed his reference principle to "resolved in the part" and had to
   withdraw it. A critic reported the coordinator "stopped" when it had not (nested replies never deliver).
+
+## 2026-11-18 (session 139 CLOSE, about 14:00 box clock, at the owner's /close; no lane of main's alive)
+
+- Since the in-flight entry above: review r47 filed (lane file47, merged); rev 26.1 of the predicates draft
+  (lane predspec261: r47's fixes, the conditional, and three late rulings sent as R1-R3 through its rulings file,
+  each verified in the delivery) MERGED as 1e53bddb3; NOT reviewed, by choice, until the owner answers its
+  questions (about a dozen; the first to bring is backref-label, which changes plain PCRE answers). The owner's
+  afternoon rulings (the conditional: guarded form, when-default, when-test, when-peek, a single-argument `when`
+  an error, `then` required, NOT for else-only) and his proposal of arrays written with `|` only are in the record.
+- OPEN AT CLOSE, time-critical, in wake.md items 2 and 3: the cover-cap FREEZE before 20:00 (waits on the kit's
+  cloud test of lane/memfn-g2pcap @ d5c41db37; axes on a88871a19 still running), and tonight's three kit timing
+  sets from 01:00 with the 00:27 load check.
+- A rule added to the manager skill: a reason given to the owner is run too, and every manager reading in the
+  record is tested by the next revision lane. plan.md: COVER-CAP and COND-FAMILY status lines brought to today
+  (my first wording failed plan lint PL10, a 300-character limit; caught before the commit).
+- NEXT: wake.md. The startup-context comparison is owed at the next wake before any lane is briefed.

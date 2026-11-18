@@ -58,6 +58,11 @@ Always on, whatever the situation:
 - **Hand-worked examples are marked as such, and a number-comparing example is run under the draft's own rule
   sentence, QUOTED** (2026-11-17: I showed Frank `10:00` against `(9, 30)`, false under the draft's numeral rule,
   and paraphrased that rule wrongly in a critic brief).
+- **A REASON given to the owner is run too, and a manager reading goes to a lane to be tested** (2026-11-18, session 139: I told Frank
+  "every spelling of anything agrees as a whole value" (false: `/.*/` stops at a newline) and that the export rule
+  "settled" the caller's read-out (undefined); three of 24 marked readings failed their runs): a factual sentence
+  about what a pattern matches is run before it is said or is marked hand-worked, and every "MANAGER'S READING" in
+  the record is listed for the next revision lane to test and report as supported or not.
 - **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
   run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
 - **Purpose over wording** (Frank 2026-11-07: "too literal with exact
