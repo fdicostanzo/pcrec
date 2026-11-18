@@ -2898,3 +2898,19 @@ ADDENDUM (the label-number trial), HIS WORDS: "So the error for conditions with 
 n and 2 above". RECORD: his consequence, agreed by the manager: a group's NAME and its NUMBER are two names of ONE
 label, so a condition that names both (`(n: ..., 2: ...)` on `(a)(?:b)(?<n>c)...`) names a label twice and is the
 label-twice ERROR (ruled 11-16, kept 11-17). The compiler knows the aliasing from the pattern alone.
+
+**2026-11-17 OWNER RULINGS — the rx module: sequence-precedence and sequence-operator (Frank, to session 138,
+evening).** From docs/design/rx_module.md's question list. HIS WORDS: "sequence-precedence: binds tighter than &
+and | / sequence-operator: is there a reason why not? I expect rx construction and concatenation is common enough
+there. I'd do operator-less if I thought I could get away with it A B but I don't think it would work in the
+grammar."
+RECORD: RULED: (1) the SEQUENCE operator ("A followed by B") binds TIGHTER than `&` and `|` (the order pattern text
+already has, D196: sequence, then `&`, then `|`): `"x" SEQ "1" | "2"` is (x then 1) or 2; `A SEQ B & c` is (A then
+B) with the condition c on the whole; a condition on B alone is written `A SEQ (B & c)`. (2) There IS a sequence
+operator (the manager's 2026-11-13 lean against one is withdrawn; its reasons were the manager's: the layers
+argument no longer holds, since the expression language already writes patterns; the `+` overload is avoided by
+not using `+`). Its SPELLING goes to the spellings review (`€`, `¥`, `::` have appeared as his placeholders, `::`
+with a different meaning, the no-re-entry sequence). (3) JUXTAPOSITION (`A B`, no mark) is what he would prefer
+and judges unworkable in the grammar; the manager agrees and gives the collisions (mine): a parenthesised
+condition after a pattern (`A (h: <5)`), a call's argument list (`f (x)`), array entries, a prefix `!`, and two
+bindings on consecutive lines would each read as a sequence.
