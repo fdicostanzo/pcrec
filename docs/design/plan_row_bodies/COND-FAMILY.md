@@ -2856,3 +2856,11 @@ not a pattern but a match". RECORD: RULED: (1) a label named twice in one condit
 1 is withdrawn; no warning. (3) `$x & S` in a condition position stays an ERROR, and his reason is the type: `$x`
 is a MATCH (a value), not a pattern, so it cannot stand where a condition on a label is expected. With
 empty-search-error (a warning, ruled just before) all four candidates of revision 24.4's list are settled.
+
+**2026-11-17 OWNER — the numbered-label warning accepted (Frank, to session 138, evening).** The manager's proposal
+(from his "not recommended to use group numbers as it's confusing on bound values you can't see"): a compiler
+WARNING when a condition or a `$` reads a label by NUMBER on a pattern that is not written at that place (a bound
+name or an imported element): `t := /(\d\d?):(\d\d)/` ... `t & (1: <13)` warns; the same test on the inline
+literal does not; `0` (the whole match) is exempt; structural; an error only under a strictness setting; a
+compiler warning, so named under `pcrec.` (the name, e.g. `pcrec.label.numbered`, to the spellings review). HIS
+WORDS: "Agree. Good warning". RECORD: ADOPTED.
