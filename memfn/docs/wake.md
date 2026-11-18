@@ -13,18 +13,16 @@ The kit manager (`/pcrec-memfn-manager`). Ledger/journal branch: worktrees/memfn
 ## Box rules (binding)
 Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows main cleared. Never merge to main.
 
-## CURRENT STATE (12:30 11-18)
+## CURRENT STATE (15:00 11-18)
 - R-45 plan A DELIVERED 12:17: lane/memfn-forms @ 105bf8ef4, done line [responses] 7f655c9e3; cloud test + axes GREEN.
   Reviews r44 r45 (on the forms branch), r46 (no FIX-NOW, on lane/memfn-k1108 4e2649fd5). Main's landing lane merges it
   into a branch off lane/covs2b @ 28af649c9 and sends the FROZEN sha (by 20:00).
-- MERGE RED (13:00): main's cloud test on the forms merged into the cover-cap line red in G2 presence (58 x more than
-  MF_MAX_TERM terms). Lane g2pcap (lane/memfn-g2pcap off lane/covs2land 4d56a2537): G2P_MAXRUN = min(64, MF_WSPAN_POS,
-  MF_MAX_TERM); re-pins; checks; dispatches cloud test as last act by 15:30. Main needs the tip GREEN by 18:00 (word by
-  15:00 if slipping); then main freezes the combined line for set 2.
-- SET 2 (form cards, 700-704; jobs /var/tmp/pcrec-pcrec/scratch/memfn/fcards/jobs/README.md): when main sends the frozen
-  sha: `worktrees/fcards-night` at FROZEN, clean, pinned in .wtprune.keep; window.vars RUN_ID=fcards-zen4-1,
-  FROZEN=<sha>; DRY-RUN the job set against it first (r44/r45 changed cards.py's run id + confirm rounds); queue 700-704
-  (not before 2026-11-19T01:00); send main the keys; after 702 tell main "h* frozen". 704 identity only at h*=64.
+- MERGE RED fixed: g2pcap d5c41db37 cloud GREEN (44370476761); main merged it into lane/covs2land as 33fec79b3.
+  (cloud/kit/test/HEAD-1a91106 was a stray push of main HEAD by the lane: ignore.)
+- SET 2: main FROZE 33fec79b3efc4ce8b838cd8daa65908df5f4e847 (14:5x). worktrees/fcards-night at it, detached, pinned in
+  .wtprune.keep. Lane fcardsq (sonnet, in flight) builds it, checks 700-704 vs rev 13.1 cards.py, writes window.vars
+  (RUN_ID fcards-zen4-1), dry-runs, QUEUES 700-704; report /var/tmp/pcrec-pcrec/scratch/memfn/fcardsq/report.md; keys
+  to main by 16:30. After 702: tell main "h* frozen". 704 identity only at h*=64.
 - SET 1 re-run QUEUED (600-609, RUN_ID mfcard-zen4-4, FROZEN e7f9a4365 = run.py per-launch quiet budget,
   worktrees/mfind; fresh first run, no FIRST_RUNDIR); waits while any kit-fcards-* is pending/running; NOT_BEFORE
   2026-11-19T01:00. LAST night for set 1 (main): if avx2libc refuses again at the 3 % byte floors on a gate-held night,
