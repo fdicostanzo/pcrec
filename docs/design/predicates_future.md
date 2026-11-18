@@ -666,3 +666,30 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   [RUN-POS-SET] / required-run handoffs (starting an engine later), item 27.
 - SOURCE: COND-FAMILY.md, "OWNER RULING — match-is-rx", 2026-11-18. TRIGGER: phase two of the predicate build, or
   the first user program that needs a string function on a non-constant rx.
+
+## 31. Unlocks of "a match is an rx" beyond rev 27 (review r48 PREMISE-12; nothing scheduled)
+
+Filed by lane predspec271 (2026-11-18) as the manager ruled review r48's NOTED list ("file ... as one item (unlocks
+with their triggers), nothing scheduled"). The critic's notes, not the owner's ideas and not rulings; each waits on
+its trigger (build under measurement, D77).
+- U1 IMAGE FUNCTIONS give the cut transforms a meaning: `unpadded(S)` (image under strip-leading-zeros), `any_case(S)`
+  (image under the case-variant relation), `json.quoted(S)` (image under JSON-encode) are images of S under a string
+  function, the direction match-is-rx (3) names; finite S could be built by lifting. TRIGGER: [PRED-REREAD] / §13 O70
+  scheduled, or the first user program needing `unpadded`-shaped matching; the cut rulings (the owner's) go back to
+  him with this fact.
+- U2 ARRAYS AS FINITE RX: `@y` (the settings in order) and a hit list are finite rxs in an order; unifies `${@y}`,
+  membership tests of `$y` against `@y`, and array-lift. TRIGGER: the owner's answer to **array-in-hole**.
+- U3 GRAPH MANIPULATION SHARES A PRIMITIVE WITH THE SEARCH WORK: item 30's `left(rx, n)` (truncate the automaton at
+  depth n), `right` and the left quotient are the operation behind "start the DFA later after a proven span"
+  ([RUN-POS-SET] / required-run handoffs). TRIGGER: that primitive landing for the SEARCH side with a measured bench
+  win; never built for the predicate language first.
+- U4 PARTIAL EVALUATION BETWEEN THE TWO FORMS: one type lets the compiler move a value hole on a FINITE label to its
+  compile-time copies and back, by cost (R.1.12), provided the copies follow the label's path order and one flag rule
+  holds (**hole-flags**). TRIGGER: a bench loss of a VM value hole to its enumerated DFA spelling beyond noise.
+- U5 LEVELS DERIVED FROM PROPERTIES: with property columns (review r47 E1 / r48 O's general form), a program's level is
+  a fold over its operations' properties (a run-time operand in a matching position: VM with backreferences; all
+  compile-time and regular: DFA-able). TRIGGER: the first build go of the predicate language.
+- U6 A RUN-TIME COUNT IS A REPEATED BACKREFERENCE OF RUN-TIME LENGTH: `\d{${$n}}` and `(${$y})+` are one engine shape;
+  with T13's run-time meaning stated it costs the VM support T6 already needs; the netstring shape `(\d+):.{n}`, which
+  PCRE cannot express. TRIGGER: a user program needing a length-prefixed field.
+- SOURCE: `docs/dev/reviews/2026-11-18-r48-predspec27.md` (NOTED) and its `PREMISE.md` (PREMISE-12).

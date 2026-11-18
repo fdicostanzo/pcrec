@@ -351,6 +351,10 @@ print("J python `re` agrees (own flags FAILS, reference HOLDS on `a-A`): %s ; th
 print("\n== PART H: the one number domain (review r48 H)")
 qh = P.Pcre(r'(?<y>\d{4})-' + VQ, {"eq": lambda c: (lambda L: L is not None and c.get("v") == L)(plus1(c.get("y")))})
 print("H `/(?<y>\\d{4})-${$y + 1}/` under the one domain: %s" % show(qh, "0099-100", "0099-100 2025-2026", "0099-100 2025-2026 0100-101"))
+qp = P.Pcre(r'(?<y>\d{4})-' + VQ, {"eq": lambda c: c.get("y") is not None and c.get("v") == str(int(c.get("y")) + 1)})
+print("H the candidate PARSED (any digit string read as an integer, rev 27's `+`): %s" % show(qp, "0099-100", "0099-100 2025-2026", "0099-100 2025-2026 0100-101"))
+dhp, _ = diff3(qh, qp, [a + "-" + b for a in ("0099", "0999", "9999", "0100", "2025") for b in ("100", "0100", "1000", "10000", "101", "2026")])
+print("H one domain vs PARSED on 30 texts (five years x six tails): %d / %d / %d" % (dhp[0], dhp[1], dhp[2]))
 qw = P.Pcre(r'(?<y>\w+)-' + VQ, {"eq": lambda c: (lambda L: L is not None and c.get("v") == L)(plus1(c.get("y")))})
 print("H a non-numeral read `/(?<y>\\w+)-${$y + 1}/`: %s" % show(qw, "ab-ab1", "ab-ab1 9-10", "ab-ab1 9-10 b-c"))
 lt100 = lambda y: canon(y) and int(y) < 100            # §2.4: `y: <100` holds on canonical numerals below 100 only
@@ -368,6 +372,21 @@ print("A `\\d + 1` lifted in the values' order `(?:1|...|10)`: %s" % show(lift, 
 NP = pool("0123456789", 3)
 bad = sum(1 for t in NP if (W(lift, t) is not None) != (canon(t) and 1 <= int(t) <= 10))
 print("A WHOLE over %d digit texts (length <= 3) vs \"a canonical numeral 1..10\": %d differ ; %s" % (len(NP), bad, check("A lifting a finite operand = its image", bad == 0)))
+
+# =====================================================================================================================
+print("\n== PART CL: construction-line (b): a READ of a FINITE label in a COUNT hole (meaning if built)")
+# `/(?<n>[23])-\d{${$n}}/`: the run-time meaning (the count read where the hole stands) against the compile-time
+# copies of the finite label in its path order, `(?:2-\d{2}|3-\d{3})` (one copy per value of n)
+def cnt(c):
+    n, v = c.get("n"), c.get("v")
+    return n is not None and re.fullmatch(r"\d*", v) is not None and len(v) == int(n)
+rcl = P.Pcre(r'(?<n>[23])-' + VQ, {"eq": cnt})
+ccl = P.Pcre(r'(?:2-\d{2}|3-\d{3})')
+print("CL run-time count read: %s" % show(rcl, "2-12", "x3-12 3-123", "2-12 3-12 3-123"))
+print("CL compile-time copies: %s" % show(ccl, "2-12", "x3-12 3-123", "2-12 3-12 3-123"))
+dcl, fcl = diff3(rcl, ccl, pool("123-", 6))
+print("CL the two over %d texts (`123-`, length <= 6): %d / %d / %d (first %s) ; %s"
+      % (len(pool("123-", 6)), dcl[0], dcl[1], dcl[2], fcl, check("CL a finite count read = its compile-time copies", dcl == [0, 0, 0])))
 
 # =====================================================================================================================
 print("\n== PART I: under-construction-class (review r48 I): an image whose meaning is defined, the build not there")

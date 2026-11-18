@@ -1,9 +1,9 @@
-s1: 1 check line(s) FAILED: B only ALGEBRA keeps PCRE's answer for `(?:\k<y>|x)` ; on `$y + 1` ALGEBRA = WHOLE-HOLE = | ; == CHECKS: 14 of 15 OK
-s2: 1 check line(s) FAILED: B `/${$y + 1}-(?<y>\d)/` as a hit-list argument over 5461 texts (`12- `, length <= 6): tex| ; == CHECKS: 14 of 15 OK
-s3: 1 check line(s) FAILED: D FAILED| ; == CHECKS: 14 of 15 OK
-s4: 1 check line(s) FAILED: C FAILED| ; == CHECKS: 14 of 15 OK
-s5: 1 check line(s) FAILED: K the model "label where set, else the capture" vs `\k<y>` in the argument 0 / 0 / 0 ; FAI| ; == CHECKS: 14 of 15 OK
-s6: 1 check line(s) FAILED: J python `re` agrees (own flags FAILS, reference HOLDS on `a-A`): True ; the hole model vs| ; == CHECKS: 14 of 15 OK
-s7: 1 check line(s) FAILED: H `0099`: `y: <100` False ; `$y + 1` 100 ; `+` and `<` agree on the domain for 7 strings: | ; == CHECKS: 14 of 15 OK
-s8: 1 check line(s) FAILED: TT 161 cells (23 operations x 7 kinds), 15 NOT-MODELLED (no cell stated) ; FAILED| ; == CHECKS: 14 of 15 OK
-s9: 1 check line(s) FAILED: TT 161 cells (23 operations x 7 kinds), 15 NOT-MODELLED (no cell stated) ; FAILED| ; == CHECKS: 14 of 15 OK
+s1: 1 check line(s) FAILED: B only ALGEBRA keeps PCRE's answer for `(?:\k<y>|x)` ; on `$y + 1` ALGEBRA = WHOLE-HOLE = | ; == CHECKS: 15 of 16 OK
+s2: 1 check line(s) FAILED: B `/${$y + 1}-(?<y>\d)/` as a hit-list argument over 5461 texts (`12- `, length <= 6): tex| ; == CHECKS: 15 of 16 OK
+s3: 1 check line(s) FAILED: D FAILED| ; == CHECKS: 15 of 16 OK
+s4: 1 check line(s) FAILED: C FAILED| ; == CHECKS: 15 of 16 OK
+s5: 1 check line(s) FAILED: K the model "label where set, else the capture" vs `\k<y>` in the argument 0 / 0 / 0 ; FAI| ; == CHECKS: 15 of 16 OK
+s6: 1 check line(s) FAILED: J python `re` agrees (own flags FAILS, reference HOLDS on `a-A`): True ; the hole model vs| ; == CHECKS: 15 of 16 OK
+s7: 1 check line(s) FAILED: H `0099`: `y: <100` False ; `$y + 1` 100 ; `+` and `<` agree on the domain for 7 strings: | ; == CHECKS: 15 of 16 OK
+s8: 1 check line(s) FAILED: TT 161 cells (23 operations x 7 kinds), 15 NOT-MODELLED (no cell stated) ; FAILED| ; == CHECKS: 15 of 16 OK
+s9: 1 check line(s) FAILED: TT 161 cells (23 operations x 7 kinds), 15 NOT-MODELLED (no cell stated) ; FAILED| ; == CHECKS: 15 of 16 OK
