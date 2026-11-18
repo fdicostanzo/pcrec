@@ -3424,3 +3424,13 @@ strict / loose; which of them stands is part of what closes it. The manager's as
 proposal leaves to define (what "that scope" is; whether it replaces the filter lean) are in the session, asked as
 **export-scope**. Meets: "The rx should export the group" (free-name, the same morning); predicates_future item 25
 (label hygiene for libraries: its direction (a), a pattern exposes only what it declares).
+
+**2026-11-18 OWNER, discussing export-scope (Frank, to session 139, morning; DISCUSSION, nothing ruled by this
+entry).** HIS WORDS, in full: "export-scope: lets work out the details before settling this. Discuss.
+My visual was the scope was the binding.
+Export may not be explicit if the rx is named [aa = A]". RECORD: DISCUSSION. Two points of his picture, neither a
+ruling: (1) the scope of his proposal's "all literal rx labels are exported in that scope" is the BINDING (not a
+file or library region, the manager's reading of the entry above, which is thereby set aside); (2) an export need
+not be explicit when the rx is given a part label where it is used (`[aa = A]`): the label is a way to its labels.
+The manager's worked model built on these two points, and the choices it leaves, are in the session; the state is
+whatever ruling closes the discussion.
