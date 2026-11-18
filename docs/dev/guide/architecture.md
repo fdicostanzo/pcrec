@@ -25,7 +25,6 @@ and what must change shape first ([ARCH-STEP]); its template and procedure are t
 
 STILL DRAFT, open with the owner (each a word slug he can cite; everything else in tier 1 is his, or agreed by him):
 - ctx-owner: who owns `Job`/`Ctx` under goal 2 (leaning: split by writer as areas migrate, the driver owns the rest).
-- accessor-grain: one accessor per question or a getter/setter per field (leaning: per question, as `coding.md` §1.10).
 
 The owner's reason, verbatim: "This project is more than simply its stated goal. It's an effort to produce a
 viable long term project that can grow" (`docs/design/stream/manifesto.md` §1). And the problem this document is
@@ -92,7 +91,11 @@ rules below, in the register and in older notes means high-level rule N (the num
    to protect against a potential rewrite."): its direct reads are not a deviation and need no register row.
    HOW THE RULES APPLY IN TIME, his: "The rules are stronger moving forwards and sympathetic looking back." (new
    structures and new seams meet the rule in full; existing code is judged with sympathy and corrected when a
-   larger change reaches it, as the judgement section says). DISTANCE TODAY: tier 5. A rule serves this goal for what a structure may hold:
+   larger change reaches it, as the judgement section says). GRAIN (accessor-grain, closed 2026-11-18, "I agree"):
+   an accessor answers a QUESTION the caller has; no getter-per-field layer (`coding.md` §1.10). AND, his addition
+   the same day: "functionality wholly dependent on eg the AST, can be built in the AST area. Eg a graph walk": the
+   owning unit is also the home of generic operations over its structure (walks, searches), written once there
+   and not re-implemented by each caller over the representation. DISTANCE TODAY: tier 5. A rule serves this goal for what a structure may hold:
    "A shape states the inputs it covers" (tier 2; a goal until the owner's "shape-goal: I agree", 2026-11-17).
 3. **High-level rule 3: Seams: a module seam is an API with a contract; a layer hands data one way.** The goal's purpose, in the
    owner's words: "to isolate responsibility to better organize change. Each module has its api and contract."

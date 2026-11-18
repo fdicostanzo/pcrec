@@ -210,3 +210,19 @@ are stronger moving forwards and sympathetic looking back. THE MANAGER'S READING
 structure declares its interface (which fields, if any, are part of it) when it is introduced; (3) is the
 judgement section's point stated for time. Applied to docs/dev/guide/architecture.md under high-level rule 2 in
 the same change; the open-question line is removed there.
+
+## 2026-11-18, accessor-grain closed; functionality that depends wholly on a structure lives with it
+
+The manager proposed closing accessor-grain as following from the ast-accessors ruling, as put to him: "a getter
+per field is just the representation again with extra typing; an accessor should answer a question the caller
+has, and a plain field read is fine where the unit declares that field part of its interface". HIS WORDS: "I
+agree. Also, looking for functionality wholly dependent on eg the AST, can be built in the AST area. Eg a graph
+walk". RECORD: (1) accessor-grain CLOSED as proposed (RULED by "I agree"): an accessor answers a QUESTION the
+caller has; no getter-per-field layer; a field read is fine where the owning unit declares the field part of its
+interface. (2) AN ADDITION, his: functionality that depends WHOLLY on a structure (his example: a graph walk over
+the AST) can be built in that structure's own area. THE MANAGER'S READING (mine): this is high-level rule 2 from
+the other side: besides accessors for others, the owning unit is the home for generic operations over its
+structure (walks, searches, folds), so callers ask it to walk and do not each re-implement the traversal over its
+representation; for the grandfathered AST it is the sympathetic way forward: new traversals written once in the
+AST area as work reaches them, no rewrite of the existing ones. Applied to docs/dev/guide/architecture.md under
+high-level rule 2 in the same change.
