@@ -3706,3 +3706,17 @@ starts where A started. (2) A QUESTION, his, with a form he names: is the peek A
 peeked without the user writing anything) or ENFORCED (A must already be a test; a pattern is made one by an
 explicit transform, his placeholder `peek()`); answered in the session and put back to him as **when-peek**. The
 `peek()` transform is his suggestion of a form, for the single spellings review.
+
+**2026-11-18 OWNER RULING — when-peek: a bare pattern as the test CONSUMES, with a warning; `peek()` makes it a
+peek (Frank, to session 139, afternoon).** ASKED AS A RULING (slug when-peek: automatic, a pattern given as the
+test is silently peeked; or enforced, the test must be a condition or an explicit `peek(A)` and a bare pattern is
+a compile error; the manager leaning enforced; "automatic with a warning" named as a middle). HIS WORDS: "When
+peek: warn. A test pattern does consume and warns that it is." RECORD: RULED, a third answer, neither of the
+manager's two: a pattern written bare as the conditional's test DOES CONSUME (it behaves as a pattern does), and
+the compiler WARNS that it is consuming; to test without consuming the user writes the `peek()` transform. THE
+MANAGER'S READING OF HOW THIS SITS WITH when-test, ruled minutes earlier ("I agree peek A"), stated back to him in
+the session for correction: the two together say: `when(peek(A), B, else = C)` is the peek form (B starts where A
+started); `when(A, B, else = C)` with a bare pattern A is the CONSUMED form, `(A then B) | (not peek(A), then C)`,
+B continuing after A, plus the warning; a condition as the test consumes nothing and draws no warning. In the
+python `re` table of the when-test entry these are its two columns ("A as a peek", "A consumed"). The warning is
+the compiler's (a `pcrec.` name, to be chosen); `peek()` is a spelling for the single review.
