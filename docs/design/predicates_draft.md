@@ -10,8 +10,8 @@
   (`docs/dev/lanes/predspec244_evidence/`, a new engine with three label rules and libpcre2 controls): the one rule
   RUN against every label line rev 24.3 printed (82 lines, 0 differ; the switch back to rev 24.3's rules 0 differ;
   16 programs on their pools 0 / 0 / 0; the carry-vs-rule counts reproduced), its own libpcre2 control (the MARKER
-  MODEL, 10 programs, 0 differ; without markers 9 of 10 DIFFER), the sabotage caught (SABN checks OK), checks 128 of
-  128. TEXT: R.1.7 REWRITTEN around the one rule (the separated list as its worked example, rulings file R1-R2; the
+  MODEL, 10 programs, 0 differ; without markers 9 of 10 DIFFER), the sabotage caught (68 of 129 checks OK), checks 129 of
+  129. TEXT: R.1.7 REWRITTEN around the one rule (the separated list as its worked example, rulings file R1-R2; the
   derivations (i)-(vii), each run; two groups of one name, with libpcre2 under `(?J)`; THE THREE READS of a name: the
   label, the carried-capture form, the array form and its type rule; the marker model); R.1.4 the filter sentence and
   its refusal (THE DRAFT'S READING of the refused set), join order RULED, zero-place RULED; R.1.9 the hit list atomic
@@ -19,7 +19,7 @@
   shared-label re-examined (still asked: not entailed), three new questions (pass-start-read, array-slot,
   numbered-label-warning), ONE list of eleven spellings put off to a single review; §R.9 eight rows; §R.10; §R.11
   rows 44-55; marks in §4.3 and §11; `predicates_future.md` item 24. STOP RULE: nothing stopped (no shown answer
-  moved). SIZE_LINE
+  moved). 7,391 lines (893,310 bytes) before, 7,638 lines (919,410 bytes) after.
 
 - **rev 24.3: review r42's fixes; NOT STABLE pending the owner's answers (lane predspec243, 2026-11-17).** Applies
   the manager's dispositions of review r42 (`docs/dev/reviews/2026-11-17-r42-predspec242.md`). EVIDENCE FIRST
@@ -1104,7 +1104,8 @@ unset in every match, PCRE2: §16.4's DEFINE witness; derived, not an engine run
 OTHER COMPILE ERRORS WHOSE ONLY GROUND IS "PROBABLY A MISTAKE" (the program has a meaning; rulings R5 (c)): each a
 candidate for the same treatment, asked (§R.8 (b), each candidate's answers there), not changed here. The
 EDGE-ASSERTION error left this list: the owner ruled it on 2026-11-15 (§R.6, "disallow certain contextual rx like \b
-in a filter rx"); only its reach is asked (**operand-context**).
+in a filter rx"); rev 24.4: its reach is RULED too (operand-context: "any piece that might look outside is a
+compiler error"; the refused set THE DRAFT'S READING, R.1.4).
 
 | slug | the error (where) | the meaning the program would have |
 |---|---|---|
@@ -1162,12 +1163,14 @@ pass is meant, `*` where none is allowed; review r40 C3); `some`, `occurs.none`,
 W2a stays 0: a pass lacking h has its own h unset, so the default applies, as in the old meaning (under rev 24.1's
 carry it read the earlier pass's h, which had already passed the same test). NOT RUN, each with its reason (review r40 B9): SELECTING passes,
 `$m.hit[(g: "x")]` (a filter over the pass list that yields a list VALUE; the engine has no value-level node, and
-what a list value is on a value side is **pass-list-read**, §R.8); a pass compared with ANOTHER pass (`sorted`,
+a list value on a value side is the ARRAY FORM, rev 24.4, R.1.7); a pass compared with ANOTHER pass (`sorted`,
 `distinct`, §4.6: a relation between passes over the list `$h`, no engine node); the list `$x` itself (a bare `$h`
-on a value side: the last pass's own value, or the pass list, is **pass-list-read**; rev 24 silently read
-the pass list). W8 and W9 hold under the draft's readings of **hits-text** and **hits-committed**: with the
-SUBJECT's hits W8 differs on 0 / 56 / 56 of 341 (PART Q hits-text), and over the one-pattern hits W9 differs on 20
-/ 20 / 20 of 85 (PART Q hits-committed).
+on a value side: rev 24.4 RULED it the label, the pass list being the array form, R.1.7; rev 24 silently read
+the pass list). W8 and W9 held under rev 24.3's readings of hits-text (the stretch's hits) and hits-committed; rev
+24.4 RULES the hit list atomic and anchored (R.1.9): hits-committed as before (over the one-pattern hits W9 differs
+on 20 / 20 / 20 of 85, PART Q hits-committed), hits-text NOT the stretch reading: W8 is NOT RE-RUN under it (rev
+24.3's count for the subject candidate, 0 / 56 / 56 of 341, PART Q hits-text, bounds the texts where SEARCHED and
+FIND-ALL can move).
 CONTROLS (PART B, the comparison can fail): the restored W1c spelling under rev 24.1's carry differs from the old
 meaning on 5 / 34 / 34 of 364 (first `3;;`: the second pass reads h = `3`), so the restoration is the rule's doing;
 the BARE old spellings read under rev 24.2: W1a's on 1 / 7 / 7 of 364 (first `7;3;`), W2b's on 12 / 25 / 41 (rev
@@ -1199,8 +1202,9 @@ the gate regular); (b) the SEARCHED shape of his model, where each match of M is
 program, is NOT expressible with ruled pieces: the nearest, `t2 & !contains(q)`, reads the path's stretch, not the
 subject, and differs from route (ii) on 0 / 90 / 90 of 3,906 (reported row, first `9:50`; F3). THE MISSING RULE for
 that shape: a test of the WHOLE SUBJECT from inside a searched program (route (ii)'s `text.none(q)`, the same piece
-**hits-text**'s subject reading lacks); not invented here; it comes back to the owner if the searched shape is
-wanted.
+the stretch reading of hits-text lacked; rev 24.4: a hit list standing alone in a searched program now reads the
+whole subject (hits-text RULED, R.1.9), which supplies that piece for a HIT LIST only); not invented here; it comes
+back to the owner if the searched shape is wanted.
 
 ### R.6 EXCEPTIONS (exception-rule, RULED the evening of 2026-11-17)
 
@@ -1564,9 +1568,9 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
   overlap; PART C where the rules part (pass-start-read); PART L the separated list; PART M the marker model and the
   ORDER CHECK (without markers 9 of 10 programs DIFFER); PART N two groups of one name, with libpcre2 under `(?J)`;
   PART H the hit list on libpcre2 (the model and the failed first try); PART F the filter sentence's refusals; PART J
-  join order and zero-place; PART S shared-label's candidates; PART D the review drills. CHECKS 128 of 128 OK. The
+  join order and zero-place; PART S shared-label's candidates; PART D the review drills. CHECKS 129 of 129 OK. The
   SABOTAGE (`PREDSPEC244_SABOTAGE=1`: the one rule resets only on entering a LOOP, not an alternation or an optional):
-  checks SABN OK (the printed lines on S1-S5, REP, NEST, the empty pass, the marker-model comparisons and the
+  checks 68 of 129 OK (the printed lines on S1-S5, REP, NEST, the empty pass, the marker-model comparisons and the
   duplicate-name lines FAILED): caught. The SWITCH (`PREDSPEC244_RULES=243`) changes the default rule of the parts
   that take one (H, F, J); PART A runs both rule sets on every line in every run. PREMISE: predspec243's engine
   re-ran byte-identical to its committed .out (its checks 37 of 37).

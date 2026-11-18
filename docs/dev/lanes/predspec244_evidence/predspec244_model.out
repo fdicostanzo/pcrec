@@ -173,11 +173,12 @@ M U1    model `(?<b1>\d+)(?<e1>)(?<a1>\d)?(?C"t")` vs engine 244: 0 / 0 / 0 of 3
 M CAPTURES: rule carry vs plain libpcre2 on REP & (h: <5), 364 texts x 3 modes: 0 differ ; OK
 
 == PART H: the HIT LIST on libpcre2 10.46 (the manager's run of the evening, re-run): whole values; 'every number
-   under 100'. The hits are recorded by a callout as a stack (an entry is dropped when the match backs up past it)
+   under 100'. The hits are recorded by a callout as a stack (an entry that the new hit overlaps is dropped: the match backed out of it)
 H judged inside (the search as part of the pattern) `\A(?:.*?(?<n>\d+)(?C"in"))*\D*\z`: `1234` HOLDS (n = `34`) ; `12 34` HOLDS (n = `34`) ; `12 345` HOLDS (n = `5`) ; `x300 12` HOLDS (n = `12`)
-H FIRST TRY: each hit atomic, the list judged after `\A(?:.*?(?>(?<n>\d+))(?C"rec"))*\D*\z(?C"judge")`: `1234` FAILS (last list judged ['1234', '234', '34', '4']) ; `12 34` HOLDS hits ['12', '34'] ; `12 345` FAILS (last list judged ['12', '2', '345', '45', '5']) ; `x300 12` FAILS (last list judged ['300', '00', '0', '12', '2'])
+H FIRST TRY: each hit atomic, the list judged after `\A(?:.*?(?>(?<n>\d+))(?C"rec"))*\D*\z(?C"judge")`: `1234` HOLDS hits ['34'] ; `12 34` HOLDS hits ['12', '34'] ; `12 345` HOLDS hits ['12', '45'] ; `x300 12` HOLDS hits ['00', '12']
 H THE MODEL: the whole loop atomic, anchored at both ends, the list judged after `\A(?>(?:.*?(?<n>\d+)(?C"rec"))*\D*)\z(?C"judge")`: `1234` FAILS (last list judged ['1234']) ; `12 34` HOLDS hits ['12', '34'] ; `12 345` FAILS (last list judged ['12', '345']) ; `x300 12` FAILS (last list judged ['300', '12']) ; OK
 H the model with the general tail `[\s\S]*` `\A(?>(?:[\s\S]*?(?<n>\d+)(?C"rec"))*[\s\S]*)\z(?C"judge")`: `1234` FAILS (last list judged ['1234']) ; `12 34` HOLDS hits ['12', '34'] ; `12 345` FAILS (last list judged ['12', '345']) ; `x300 12` FAILS (last list judged ['300', '12'])
+H the first try against the model (it must DIFFER, the record's 'did NOT work'): first try ['HOLDS', 'HOLDS', 'HOLDS', 'HOLDS'] ; OK
 H the engine (rule 244, the atomic group and the pass table): `1234` FAILS ; `12 34` HOLDS ; `12 345` FAILS ; `x300 12` FAILS ; SEARCHED `x300 12` FAILS (standing alone it reads the whole subject) ; FIND-ALL `12 34` [`12 34`@0]
 H OK
 H `hits(/a(?<g>x)?/) & (g: "x")` (the last hit's own g): `axa` FAILS ; `aax` HOLDS g = `x` ; SEARCHED `axa` FAILS (rev 24.3 printed `ax`@0: the hits of the stretch)
@@ -226,4 +227,4 @@ D duplicate name across a loop 244: W `3` HOLDS h = unset ; W `3;` HOLDS h = uns
 D duplicate name across a loop 243: W `3` HOLDS h = unset ; W `3;` HOLDS h = unset ; W `3;4` FAILS
 D anchored / \b / lookahead operand: PART F (refused or allowed, by THE DRAFT'S READING)
 
-== CHECKS: 128 of 128 OK
+== CHECKS: 129 of 129 OK

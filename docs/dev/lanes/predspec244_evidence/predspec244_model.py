@@ -662,12 +662,12 @@ print()
 
 # ======================================================================================================== PART H
 print("== PART H: the HIT LIST on libpcre2 10.46 (the manager's run of the evening, re-run): whole values; 'every number")
-print("   under 100'. The hits are recorded by a callout as a stack (an entry is dropped when the match backs up past it)")
+print("   under 100'. The hits are recorded by a callout as a stack (an entry that the new hit overlaps is dropped: the match backed out of it)")
 def hitrun(pat, s):
     hits = []
     def rec(c):
         sp = c.span("n")
-        while hits and hits[-1][0] >= sp[0]: hits.pop()
+        while hits and hits[-1][1] > sp[0]: hits.pop()          # an entry this hit overlaps was backed out of
         hits.append(sp); return True
     judged = {}
     def judge(c):
@@ -689,6 +689,8 @@ for nm, pat in (("judged inside (the search as part of the pattern)", r'\A(?:.*?
     e = EXPH.get(pat)
     print("H %s `%s`: %s%s" % (nm, pat, " ; ".join("`%s` %s" % (t, r) for t, r in zip(HT, res)),
                                 "" if e is None else " ; " + check("H model", [r.split()[0] for r in res] == e)))
+ft = [hitrun(r'\A(?:.*?(?>(?<n>\d+))(?C"rec"))*\D*\z(?C"judge")', t).split()[0] for t in HT]
+print("H the first try against the model (it must DIFFER, the record's 'did NOT work'): first try %s ; %s" % (ft, check("H first try differs", ft != ["FAILS", "HOLDS", "FAILS", "FAILS"])))
 HAT = r'\A(?>(?:[\s\S]*?(?<n>\d+))*[\s\S]*)\z(?C"c")'
 hc = {"c": lambda v: all(lt(100)(p.get("n")) for p in v.passes("n"))}
 ph = mk(HAT, hc)
