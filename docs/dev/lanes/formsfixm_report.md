@@ -8,9 +8,9 @@ the scratch patch they ran against). Design text: `docs/design/memfn/r45_reply.m
 ## STATE AT HANDOFF
 
 STATE: delivered. Every RULING applied in its primary form; the FORMS8-1 FALLBACK (record-only) was
-NOT needed: (a)+(c) pass at 06:0x, before the 08:30 cut-off. Rulings file
+NOT needed: (a)+(c) passed in `selftest --rev12` at ~06:07, before the 08:30 cut-off. Rulings file
 `docs/dev/lanes/formsfixm_rulings.md`: empty at every poll (last read before the full selftest);
-no entry applied. Validation: complete (full selftest, make strict, doc checks; numbers below).
+no entry applied. Validation: complete (full selftest 222 / 0 failed, make strict, doc checks; numbers below).
 Owed: none. Files outside the brief's three: `docs/dev/reviews/CLAUDE.md` (the review's line, as the
 brief asked), the review's evidence dir, and the lanes history index line (lanes/CLAUDE.md N-1 rule).
 
@@ -78,7 +78,18 @@ Earlier rows that MOVED (none loosened; both readings):
 
 - **selftest --rev12** (copy of WIP 33e15ccc0, `rev12.log`): `selftest --rev12: 33 checks, 2 failed`.
   The two failures were the POWER_RECORD pins, re-pinned in be2994675.
-- **selftest (full)**: @@FULL@@
+- **selftest (full)**: run on be2994675's cards.py (copy `scratch/memfn/formsfixm/cards_full_be2994675.py`;
+  HEAD's cards.py differs only by 3 comment/docstring lines, the provenance header; PCREC_TREE = this
+  worktree), `python3 -I -u`, nice, log `scratch/memfn/formsfixm/selftest_full.log`:
+  `selftest: 222 checks, 0 failed`, EXIT 0 (07:38-09:08). formsfixl's run read 217; the 5 new checks
+  are this lane's. F2 0.000 / 0.000. Worst class-drill arm row `(r38) noise at arm: H(8), every cell, tau 2 %
+  P(h* != 64) = 0.017`. FINDING: the first attempt (timeout 5400, block-buffered) hit its bound with
+  no output (`selftest_full_timeout1.log`, EXIT 124). The selftest now takes ~90 min, where
+  formsfixl's took 65: the interaction test is ~30 % of `analyse` on a layout night. Of that,
+  `f_lower` is 1.24 s of 1.95 s per 20 nights (the bisection on float Satterthwaite df, which the
+  lru_cache never hits) and `_clipped` 0.64 s (cProfile, `prof.out`). Caching on df rounded to 0.01
+  would recover most of it. That is not done here: it would need a re-validation. Bound the night's
+  selftest at >= 7200 s.
 - **make strict** (-j8): rc 0, "strict: whole tree compiles clean with -Werror -Wshadow; the kit's
   target table check passes" (`strict.log`).
 - **doc checks** `make test-claudemd-size test-spec-history test-doc-lint test-plan-lint`: rc 0
