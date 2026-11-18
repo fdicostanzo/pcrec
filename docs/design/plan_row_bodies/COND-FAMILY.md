@@ -2747,3 +2747,20 @@ per-pass label, the outermost view for nested loops and "reached and empty" all 
 pass only through a branching inside the body, which resets it). The one consequence he was asked about: the
 two-copy separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7` gives h UNSET (the loop is entered and takes its
 zero-pass branch), against his earlier "the group is never checked".
+
+**2026-11-17 OWNER RULING — branchings reset the labels inside them (closes the before-and-inside discussion)
+(Frank, to session 138, evening).** Asked: "Is "entering a branching resets every label inside it" the rule, with
+the one-item list coming out unset?" HIS WORDS: "Yes. Let's keep it".
+RECORD: RULED, on his declarative account above ("It's not a loop. Like alternation, the "loop" is a branching of
+every possible number of passes simultaneously ... "Loops" reset all labels inside them because you don't know
+which branch will eventually get chosen"): (1) a LABEL is a NAME; labels BUBBLE UP ("last pass and last mention").
+(2) ONE RULE for every BRANCHING (an alternation; an optional; a loop, which is a branching over its number of
+passes): ENTERING it resets every label inside it; the branch taken then sets what it sets; in a sequence the LAST
+MENTION wins. (3) ACCEPTED with it: the two-copy separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7` leaves h UNSET
+(the loop is entered and takes its zero-pass branch); a name used before a loop and inside it does not survive the
+loop. (4) The ARRAY form takes every setting of the name in order, the one outside the loop included (his words in
+the discussion). FOLLOWING FROM IT (the manager's derivations, hand worked, for the next revision to RUN): the
+per-pass label, "reached and empty", the outermost view for nested loops, the alternation-in-a-loop table and the
+times-list `m = 00` table all follow from (2) and need no rule of their own; before-and-inside is DISSOLVED; two
+groups of one name are not an error (a deliberate difference from PCRE, which refuses duplicate names by default
+and otherwise reads the first group set).
