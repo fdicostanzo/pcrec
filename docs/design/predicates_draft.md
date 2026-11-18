@@ -1,8 +1,31 @@
 # The predicate language ([COND-FAMILY] #6): a preliminary specification for critical analysis
 
-**rev 25.1: review r43's fixes; NOT STABLE pending the owner's answers** (§R.8). (Rev 25: labels across parts, the warnings set, the rx module, the owner 2026-11-17 evening.)
+**rev 26: the owner's 2026-11-18 rulings folded; §R rebuilt on ONE PLACE TABLE (R.1.0); NOT STABLE pending the owner's answers** (§R.8). (Rev 25.1: review r43's fixes. Rev 25: labels across parts, the warnings set, the rx module, the owner 2026-11-17 evening.)
 
 ## Changelog
+
+- **rev 26: the owner's 2026-11-18 rulings folded; §R rebuilt on ONE PLACE TABLE; NOT STABLE pending the owner's
+  answers (lane predspec26, 2026-11-18).** STAGE A (the fold): every COND-FAMILY entry from "2026-11-18 MANAGER
+  CORRECTION — "the right side of `&`" was the manager's slip" to the end of the file (32 entries; §R.11 rows 76-107),
+  each applied where named, the owner's words quoted, every MANAGER'S READING carried as such and tested by a run where
+  one can be run (the lane's report, MANAGER READINGS CHECKED). STAGE B (the restructure): NEW R.1.0, THE PLACE TABLE
+  (14 places x 9 columns: text and mode, the KIND a place needs, re-entry, `0`, another number, what is VISIBLE and
+  EXPORTED, where a REFERENCE resolves, the regex model) and THE HOLE POSITIONS table (9 positions, each its own
+  rules); R.1.1's PLACES paragraph and rev 25.1's R.1.14 position table replaced by pointers; NEW R.1.15, THE VALUE HOLE
+  FLESHED OUT (unruled). EVIDENCE FIRST: `docs/dev/lanes/predspec26_evidence/` (premise: predspec251's engine
+  byte-identical, forward 25 of 25, sabotage 20 of 25 as committed; forward CHECKS 111 of 111 OK; 13 sabotages each
+  caught, all together 83 of 111). TEXT: §R's head and preamble; R.0 (the place table done, RULING-5 still plan);
+  R.1.0 (new); R.1.1; R.1.4 (hole-in-filter, complement-place, lone-complement-match, `anything`, lookahead-labels);
+  R.1.7 (hit-carry; backref-across-parts closed); R.1.9 (hit-carry, the nullable warning); R.1.13 (number-names and
+  `0`; path-and-ambiguity; NEW: EXPORT AND VISIBILITY, REFERENCES); R.1.14 (the product's scope, order, "legal",
+  removal, name-hole, the count hole's kind, array-lift, condition-in-sequence, quantified-condition; the rx-module
+  table); R.1.15 (new); §R.6 (five rows); §R.7 (rev 26's block); §R.8 (the RULED list; told rows nested-complement and
+  nullable-meaning; questions: **value-hole**, **other-holes**, **plus-operands**, **anything-text**, **backref-label**,
+  **zero-in-sequence**, **group-truth / pass-table** re-stated; the remaining table; spellings 20-23; the STOP RULE);
+  §R.9 (13 rows); §R.10; §R.11 (rows 77-107); §0.1 L33, L53, L62, L1, L39; §2.2; §2.5; §2.6 (THE TWO ARGUMENT
+  REFUSALS withdrawn as errors); §4.1; §5.4 (two operator rows); §8; §11; §13 (O27, O34, the captures-level lean, O53's
+  block). `predicates_future.md` item 24 gains entries 21-29. STOP RULE: nothing stopped. 8,256 lines (1,009,611 bytes)
+  before, 8,750 lines (1,073,336 bytes) after.
 
 - **rev 25.1: review r43's fixes; NOT STABLE pending the owner's answers (lane predspec251, 2026-11-18).** Applies the
   manager's RULED dispositions of review r43 (2026-11-17-r43, predspec25), groups A-J, and nothing else (group K and
@@ -520,7 +543,7 @@
   ruling and the adopted parts of `docs/dev/lanes/predx_report.md`.
 - **rev 0 (lane predspec, 2026-11-14).** First consolidation of the notes through the outer-layer note.
 
-## R. Rev 25.1: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
+## R. Rev 26: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
 
 Rev 24 (lane predspec24) applied the owner's rulings of 2026-11-17 (COND-FAMILY.md, the entries from "OWNER LEAN —
 branch-scope" to the end of the file); REV 24.1 (lane predspec241, 2026-11-17) applies the fixes of review r40
@@ -576,7 +599,16 @@ operator table (§5.4) and the parse rule's dropped clause restored; a value as 
 paths and the ambiguous reference as THE DRAFT'S READINGS (**path-and-ambiguity**); stale text and printed lines
 fixed, a backreference across parts asked (**backref-across-parts**); the evidence's checks extended (§R.10, rev 25.1's
 PARTS A-J). Every withdrawn or changed rule's TERMS were grepped over the whole draft and every reader fixed or marked
-"[REV 25.1]". Rev 23.2's §R is the record at `git show
+"[REV 25.1]". REV 26 (lane predspec26, 2026-11-18) folds the owner's rulings of 2026-11-18 (COND-FAMILY, the entries
+from "2026-11-18 MANAGER CORRECTION — "the right side of `&`" was the manager's slip" to the end of the file; §R.11
+rows 76-107): number-names with its zero addendum, hit-carry and the nullable warning, product-order (first slowest;
+the product's scope corrected to COUNT holes), "legal" by this language, name-hole, removal (the whole copy), the
+count hole's kind, array-lift, hole-in-filter, backref-across-parts closed by free-name, path-and-ambiguity and the
+export rule (public unless `_`; `[_a = A]`, `[_ = A]`), condition-in-sequence, quantified-condition (an error),
+lookahead-labels, complement-place and lone-complement-match (two kinds of rx; `anything`); and REBUILDS §R.1 on ONE
+PLACE TABLE (R.1.0) with the HOLE POSITIONS table, the value hole fleshed out (R.1.15, UNRULED). Every withdrawn or
+changed rule's terms were grepped over the whole draft and every reader fixed or marked "[REV 26]" (the lane's
+report). Rev 23.2's §R is the record at `git show
 9b61e41e9:docs/design/predicates_draft.md` (§16.7); rev 24.1's, rev 24.2's, rev 24.3's and rev 24.4's §R at the commits
 before their successors.
 SPELLINGS ARE PLACEHOLDERS (D193 addendum 4): `!`, `NOT`, `h = v`, `some`, `occurs.none`, `hits`, `atomic`, `when`
@@ -610,7 +642,7 @@ CROSS-REFERENCES: a `§R.n` cite in text written for rev 23-23.2 (outside this s
 paragraph or a §13 block) names REV 23.2's §R (§16.7); a cite in a "[REV 24]" or "[REV 24.1]" mark or this section
 names this section.
 
-### R.0 Goals of rev 24.1, kept by rev 24.2 through rev 25.1 (ranked; the highest wins a conflict)
+### R.0 Goals of rev 24.1, kept by rev 24.2 through rev 26 (ranked; the highest wins a conflict)
 
 | # | goal | who benefits | measurable form |
 |---|---|---|---|
@@ -630,7 +662,11 @@ rule's kind", "any pattern is legal"), grepped over the whole draft with the cou
 NEXT FULL revision (rev 26), which waits for the owner's answers to §R.8's new questions; the other three general
 forms of review r43 K (diagnostics as module elements, trigger: item 12 or 23 designed; ONE `repeat(X, min, max,
 mode)` with the operators as sugar, trigger: the spellings review or the first library needing a lazy count; the
-operator table, done in §5.4) are NOTED; RULING-5 (every single-value place run under distribution) is PLAN for rev 26.]
+operator table, done in §5.4) are NOTED; RULING-5 (every single-value place run under distribution) is PLAN for rev 26.] [REV 26: the ONE PLACE TABLE is
+DONE (R.1.0); the operator table was done in rev 25.1 (§5.4) and gains the two 2026-11-18 rows; RULING-5 is NOT done
+in rev 26 (array-lift settles arithmetic on arrays; the per-place list of where a single-value place distributes,
+`min = n`, `occurs.at_least(n, ..)`, `h[k]`, a default, an option value, is still PLAN); G24-1's term list (a) is
+extended with the terms rev 26 withdraws or changes (the lane's report, withdrawn-term sweep).]
 Rev 24.3 keeps them; its PCRE2 control for the
 per-pass label is the STRUCTURAL-UNROLLING model (§R.6, §R.10; G24-3's "checked against PCRE2 itself"), the
 helper-group callout model kept only where a group's text lies inside its own pass. Non-goals: no build (DESIGN ONLY; no build go); no syntax (D193 add. 4); no new rulings and no picks: where the
@@ -686,6 +722,55 @@ lookahead not re-entered = the condition reads the label of the lookahead's firs
 part are cut to its first that the rest of the part admits; join order = which pair is FIRST among the pairs both
 sides admit. Where none is found the question says so (§R.8).
 
+R.1.0 THE PLACE TABLE (rev 26; the skeleton of §R, `predicates_future.md` item 22, review r40 C6 and review r43
+group K; the columns the owner's 2026-11-18 rulings add are the KIND, the HOLE POSITIONS, what is VISIBLE, what a
+NUMBER names and where a REFERENCE resolves). ONE ROW per place a program or a part can stand; ONE COLUMN per fact the
+older prose stated place by place. Where a later subsection (R.1.1-R.1.15) and this table would say the same thing,
+the table is the statement and the subsection keeps the runs, the owner's words and the history; a cell that rests on
+a reading says so. Spellings are placeholders (§R.8's single list). Answers cited "rev 26's PART x" are lines of
+`docs/dev/lanes/predspec26_evidence/predspec26_model.out` (§R.10).
+THE TWO KINDS OF RX (complement-place, RULED 2026-11-18; HIS WORDS: "That means for rx: There is rx that can match.
+There is rx that can filter. Neither is wholly a subset of the other"): an rx CAN MATCH when it can produce a match by
+itself; it CAN FILTER when it can judge a stretch as its whole world (the filter sentence, R.1.4). THE MANAGER'S
+ILLUSTRATION (his, not the owner's words): filter-only, a complement `not seven`; match-only, a pattern with an
+outward-looking edge assertion (`/\b\d+\b/`, refused as a filter operand by operand-context); both, `/\d+/`. An `&`
+chain can match when every operand can filter and at least one can match (`digits & not_seven`). The KIND column
+says which kind each place NEEDS; the error is at the USE, never at a binding ("I think it's the use that is the
+problem"). RULE-AS-CODE in rev 26's PART CX (CX1, 10 rows).
+
+| place | its TEXT and MODE | the KIND it needs | re-entered by a condition outside it | `0` names (number-names addendum: "always the entire match of the rx however it is composed") | another NUMBER names (number-names: "Only when there is no ambiguity") | labels VISIBLE there; what it EXPORTS (export-rule) | a REFERENCE (`\k<h>`, `(h: ..)`, `$h`) written there resolves in | regex model, or the exception it is |
+|---|---|---|---|---|---|---|---|---|
+| THE PROGRAM (the top level) | the subject; WHOLE, SEARCHED or FIND-ALL (PCRE2's global loop, R.1.2) | MATCH: a lone complement is the compile error here in every mode (lone-complement-match); write `anything & not_seven` | n/a | the entire match | a group of the program's pattern only when that pattern is ONE written literal (or an `&` chain with ONE pattern operand) and the group's name is not shared; otherwise the compile error "name the group" (rev 26's PART N N2) | the caller's captures = what is visible from the top level (export-rule (5)): the public labels of its own literals and its public part labels, a part's labels by path; never a `_` label | the program's own namespace (the binding it is) | PCRE's pattern |
+| an `&` OPERAND (either side; R.1.4) | the stretch's own text, as the whole text (the filter sentence) | FILTER, both operands ("both operands of `&` are filter roles"); holes are FILLED FIRST, then the operand is judged (hole-in-filter, RULED); the chain matches only with one operand that can match | its paths, yes (backtracking; Q is tried whole on each stretch P offers) | the one stretch every operand holds on (THE MANAGER'S READING (1), supported: 0 / 0 / 0 of 364, PART N N3) | only in a chain with exactly ONE pattern operand (number-names) | each operand's public labels; a name two operands both surface is an AMBIGUOUS REFERENCE where it is referenced (label-flow (4)), for the caller too (export-rule (5)) | the namespace where the reference is written (the binding) | each operand its own pattern on the stretch (PART C of rev 24.1) |
+| a SEQUENCE OPERAND (R.1.14) | spliced in place (sequence-reading: "splice"), an edge assertion seeing its neighbours | MATCH (`digits SEQ not_seven` is the error) | yes (a splice is regex concatenation) | the entire match of the composed rx | refused (number-names: a sequence) | across the operator a shared name is ONE label, the last mention (label-flow (3)) | a reference INSIDE the part: the part's own namespace (free-name); a name it does not define is a compile error | regex concatenation |
+| a CONDITION as a sequence operand (condition-in-sequence, RULED: "yes and it's probably more natural than & but allow both") | zero width at its point, reading the labels as they stand there (pass-start-read) | a TEST, neither kind; a POSTFIX QUANTIFIER on it is a COMPILE ERROR (quantified-condition, RULED) | n/a (it is a piece: a failing test sends the pattern to its next path, R.1) | NOT STATED: asked, **zero-in-sequence** (§R.8) | as the rx it is written in | the labels set so far in that rx | the rx it is written in | a callout at that point (rev 26's PART CS) |
+| a LOOP BODY; a POSTFIX OPERAND (`X*`, `repeat`) (R.1.7) | each pass, in place | MATCH | yes, pass by pass | that pass's own match (THE MANAGER'S READING (2), supported: only it keeps the LAW, PART N N4) | refused (number-names: a repeat's operand) | inside a pass: its own labels, before a group the previous pass's (pass-start-read); outside: the last pass's own, at the outermost view (R.1.7) | the rx it is written in | the regex loop; the structural-unrolling model (§R.6) |
+| an `occurrences` / `contains` ARGUMENT (R.1.9) | its stretch, by the one-pattern lazy-gap model: a REWRITE into the hole of a loop template (hit-carry's premise, checked against the record) | MATCH (`occurrences(not_seven)` is the error); a NULLABLE argument is a WARNING (RULED) | yes (a hit is a pass) | that hit's own match (as for a loop body; PART N N4) | as THE PROGRAM, inside the argument | a hit is a pass: a condition AFTER its group reads its own hit, BEFORE it the previous hit's (hit-carry, RULED); after it, the last hit's own (hits-pass) | the argument's own namespace | the lazy-gap loop `(?:.*?(R))*.*` (his model) |
+| a HIT LIST `hits(r)` (R.1.9) | anchored to its text, atomic | MATCH | NO (atomic: "hits-committed") | each hit's own match | as the argument above | inside `r` as the argument above (hit-carry applies inside `r`); outside, the list is judged | `r`'s namespace | an atomic group around the anchored one-pattern loop (rev 24.4's PART H) |
+| an ATOMIC PART (R.1.4) | in place | MATCH | NO (a condition INSIDE it re-enters it before it commits) | the part's match | refused when the part is composed | as a sequence operand | the rx it is written in | PCRE's atomic group |
+| a POSITIVE LOOKAHEAD / LOOKBEHIND (R.1.4) | from its point, consuming nothing | inside a FILTER operand at its edge: refused (operand-context) | NO (not re-entered) | n/a | as the rx it is written in | its labels are VISIBLE after it, read by the usual rules (lookahead-labels, RULED: "agree"); a label set there may lie outside the matched text (PART LA LA3); a NEGATIVE lookahead's labels are never set; a lookbehind's the same (THE MANAGER'S READING, supported as regex behaviour, LA4) | the rx it is written in | PCRE's lookaround |
+| a PATTERN HOLE `${X}` (R.1.14 hole-reading) | in place, `(?:X)`, its edge assertions crossing the border | MATCH (`/x${not_seven}y/` is the error) | yes | the entire match of the composed rx (the outer rx's `0`) | refused (an inserted pattern) | for labels, only X's public (exported) names flow into the outer pattern ("Inserting through a hole." "Agree"); for matching it behaves like a literal | inside X, X's own namespace (free-name) | a non-capturing group |
+| a `label:` SET (a condition's set; §4) | the label's text, WHOLE | FILTER | no | the label's text | none (the set is a pattern on the label's text; THE DRAFT'S READING) | none | the condition's rx | PCRE on the label's text |
+| a `records` ITEM (§7) | a compile-time find-all over a compile-time string | MATCH, condition-free, DFA-able | no | n/a | n/a | a VALUE (a spelled array) | n/a | compile-time |
+| a BINDING `name := X` (the export scope: "My visual was the scope was the binding") | none of its own (X is used where `name` is used) | any: the error is at a USE ("not_seven := not seven" is legal) | n/a | n/a | n/a | INSIDE: everything written or used there, public labels of parts bare (last mention) and by path, the private labels of its own literals; OUTSIDE: the public labels written in its own literals and its public part labels (export-rule (1)-(3)) | the binding's own namespace; a reference to a name it does not define is a COMPILE ERROR (free-name: "Catastrophic. The rx should export the group.") | n/a |
+| a PART LABEL `[x = A]`, `[_x = A]`, `[_ = A]` | A in place | as the place it stands | as A's place | A's match by path (`x.0`: NOT STATED; no reader) | A's numbers: refused (A is a composed part) | `[x = A]`: A's PUBLIC labels by path `x.h`, never a private one ("Naming [x = A] only disambiguates scope, it doesn't give additional access"); `[_x = A]`: the same INSIDE the binding, nothing OUTSIDE it ("I meant it wouldn't export outside the binding"); `[_ = A]`: none of A's labels visible anywhere outside A ("That's exactly right. It makes its labels invisible so you can use it to filter but not cloud the namespace"); two mentions of `x`: the last mention (path-and-ambiguity (1), RULED) | a path resolves through the last mention of the part label | `(?<x>A)` for the label |
+
+THE HOLE POSITIONS (each a different thing with its own rules; name-hole, RULED, HIS WORDS: "this is why each target
+area of the hole is a different thing with its own rules"; no rule of one position carries to another by default;
+rev 25.1's single product column is WITHDRAWN). RULE-AS-CODE in rev 26's PART P P6.
+
+| hole position | what it takes | one value is written in as | SEVERAL values (an array) | what is removed | rests on |
+|---|---|---|---|---|---|
+| a PATTERN position (an atom; a part of a sequence) | a pattern (an rx that can MATCH: a complement here is the error) | `(?:X)`, its edge assertions reading the neighbours | an ALTERNATION inside the one group, in the values' order (as `${[a, b]}` always was): NO copies ("It doesn't apply for rx holes") | nothing is removed; a member that is not a legal pattern makes the whole a compile error (THE DRAFT'S READING, rev 25.1, kept) | hole-reading; product-order (1) |
+| a COUNT (a quantifier bound) | values that PRODUCE COUNTS, never converted to rx text ("for sanity sake, a count whole must have values that produce counts (and not convert to rx)"); a member that is not a count is a COMPILE ERROR (THE MANAGER'S READING of "must"; PCRE itself would read `\d{x}` as text, PART P P7) | the numeral | ONE COPY OF THE PATTERN PER COMBINATION, the cartesian product over the count holes, the FIRST HOLE SLOWEST, holes in written order, each hole's values in the order given (product-order (2), RULED) | an illegal combination removes the WHOLE COPY of the pattern (removal, RULED: "removal: whole copy"); "legal" by this language's rules ("Legal: yes legal sql."); every copy removed: the program never matches and the can-never-match warning reports it (THE MANAGER'S READING) | the count ruling; product-order; removal |
+| a GROUP NAME (or part of one, `(?<f_${i}>`) | exactly ONE name | the name | a COMPILE ERROR (name-hole, RULED: "I agree that arrays in names are a compiler error"); rev 25.1's join of name copies is WITHDRAWN | n/a | name-hole |
+| a CHARACTER CLASS member or range end | OPEN ("Idk for others") | the character | THE DRAFT'S READING (not put to him): more characters of the class, no copies; asked as **other-holes** (§R.8) | THE DRAFT'S READING: a range whose ends are out of order is a compile error (no copies to remove) | **other-holes** |
+| an OPTION's value (§11's typed positions) | OPEN ("Idk for others") | the value | OPEN; rev 25.1's "one copy per combination" is WITHDRAWN as a rule; asked as **other-holes** | OPEN | **other-holes** |
+| a BACKREFERENCE's name or number (`\k<${n}>`) | none: THE DRAFT'S READING (rev 25.1), a compile error | | | | rev 25.1 |
+| inside `\Q..\E` | none: the hole is not a hole there (THE DRAFT'S READING, rev 25.1) | | | | rev 25.1 |
+| ZERO values (`${[]}`) | THE DRAFT'S READING (rev 25.1): as every copy removed, `(?!)` | | | | rev 25.1 |
+| a MATCH VALUE in a pattern position (`${$y + 1}`, the generalized backreference) | UNRULED: his LEAN ("I didn't even think this was legal. I love it if it works. It needs to be fleshed out"); fleshed out in R.1.15 and asked as **value-hole** | literal text, never regex syntax (R.1.15) | per mention, as `$y` reads (R.1.15) | | **value-hole** |
+
 R.1.1 PLACES AND MODES. The subject is the search text (row-is-match, 11-16 23:46, STANDS). A nested program stands
 in a PLACE that fixes its text and mode: either side of `&`, and a `label:` set, are WHOLE-value places (the text is
 the stretch's OWN text, its ends being the ends `^`, `$`, `\b` and lookarounds see, §11's scoped match; or the
@@ -696,12 +781,7 @@ find-all give the same items (PART D D20: 0 of 1,365 hit lists differ) and the c
 R.1.1 said one-pattern while §R.6 and §7 said find-all; review r40 C2); the program's final pattern is SEARCHED (or
 WHOLE when the caller matches a whole value). Vocabulary: SUBJECT (the text), PATH (one complete way the pattern
 matches: a stretch, the value of every label, and for a loop the passes it ran), STRETCH (a path's text).
-PLACES (review r40 C6; the full table is the NEXT revision's skeleton, `predicates_future.md` item 22, after item
-16): what this section still states place by place and the table would state once, per place: its TEXT (stretch,
-hit, label text, subject, file), its MODE, whether a condition outside RE-ENTERS it (a loop and `occurrences`: yes;
-a lookahead and an atomic part: no; a `records` item and a `hits(r)` list: no), what `0` names there (RULED rev 24.4, zero-place: the
-whole match of the pattern `0` is written on, R.1.4), which labels it EXPORTS (a loop, an `occurrences` argument and an atomic part: every label set inside, the
-last pass's own, at the outermost view, R.1.7) and where adding a condition can ADMIT (R.1.3).
+PLACES: [REV 26: stated ONCE, by the place table, R.1.0; rev 25.1's paragraph here listed the columns that table now has (text, mode, re-entry, `0`, exports, admission).]
 
 R.1.2 THE TABLE AND ITS ORDER. The table of a program on a text holds EVERY PATH of the pattern, ordered by PCRE's
 preference (leftmost start; at a start, the order PCRE tries its choices), each path remembering which branch of
@@ -774,9 +854,18 @@ R.1.4 THE OPERATORS ON PATTERNS.
   "the right side of `&`" was the manager's slip" reads it as "an `&` operand", Q1's own words ("In a SET POSITION
   (an `&` operand, ...)") and the locked rule that "both operands of `&` are filter roles (the operator stays
   symmetric)" (review r43 B). So `/\b\d+/ & /\d+/` is the operand-context compile error, as before rev 25.] A HOLE
-  INSIDE A FILTER OPERAND (`/\d+/ & /${num}/`, num := `/\b\d+\b/`): THE DRAFT'S READING (rev 25.1), asked as
-  **hole-in-filter** (§R.8): the operand is classified AFTER expansion, so it is the operand-context error exactly as
-  `/\d+/ & num` (rev 25.1's PART B B2, with the two other readings run).
+  INSIDE A FILTER OPERAND (`/\d+/ & /${num}/`, num := `/\b\d+\b/`): [REV 26: RULED, **hole-in-filter** (COND-FAMILY
+  "2026-11-18 OWNER RULING — hole-in-filter: the filter error; fill the holes first"). HIS WORDS: "hole-in-filter: I
+  agree filter error. Also, your assessment that they are compatible if the holes are filled first is my
+  understanding". So: holes are FILLED FIRST (an inserted pattern's assertions may cross the hole's border,
+  hole-reading), THEN the finished operand is judged as a filter operand like any other; this program is the FILTER
+  ERROR exactly as `/\d+/ & num` (rev 25.1's PART B B2 ran the two readings not taken; rev 26's PART HF HF1,
+  RULE-AS-CODE, with its sabotage s4, the operand judged before filling, caught). His picture of use, recorded as his
+  description and not as rules: "there will be general rx and filter rx. Filter rx will be general and small and used
+  to generate other filters or conditions. It's not that filter rx would never have outward looking elements, it's
+  that it's difficult to figure out now what that means so the conservative route is to ban it"; the large example
+  patterns "would likely not ever be directly filtered ... but will use conditions instead". So the ban is a candidate
+  to RELAX later, with a definition (`predicates_future.md` item 24 entry 22: where to put a word-boundary check).]
   B'S WORLD (zero-place, RULED, below): "from the perspective of B, the subject is now whatever A matched. There is no
   outside subject (unless we allow context, etc). That's its whole world". Rev 24's engine ran Q in the subject with a
   tied end, so an anchored Q read past the stretch: `/\d/ & /\d$/` on `12` SEARCHED reported `2`@1 where this text
@@ -825,13 +914,39 @@ R.1.4 THE OPERATORS ON PATTERNS.
   right side outer the mirror holds (PART Q join-order; review r40 A5 (b)). With A := `/(?<l>\d)\d/`, B :=
   `/(?<l>\d\d)/`: `(B | A) & (l: <20)` on `25` HOLDS / `25`@0 l = `2` / on `25 13` [`25`@0, `13`@3] (PART A B1;
   libpcre2 V1).
-- `!B` (the complement; not-is-complement's first half, 11-16 17:29, STANDS): `A & !B` keeps a path of A when NO
+- `!B` (the complement; not-is-complement's first half, 11-16 17:29, STANDS) [REV 26: WHERE IT MAY STAND, RULED
+  (COND-FAMILY "2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx" and
+  "lone-complement-match: it stays an error; provide "anything""). His question, "is this legal? not_seven := not seven
+  It stands alone. I think it's the use that is the problem"; the rule as restated to him and agreed ("I agree with
+  your interpretation"): "A complement is a filter-only value. It may be bound, named, passed around and combined with
+  other complements. It may be used as an operand of `&` in a chain that has at least one positive pattern. Any use
+  that needs it to produce a match by itself is a compile error at that use"; with its table (digits := `/\d+/`,
+  seven := `/7\d*/`): `not_seven := not seven` legal; `digits & not_seven` legal (WHOLE `123` HOLDS, `712` FAILS: rev
+  26's PART CX CX2, run); `neither := not seven & not eight` legal; `not_seven` run alone, whole or searched, an error
+  at that use; `digits SEQ not_seven` an error; `occurrences(not_seven)` an error; and its two edges, agreed with it:
+  a complement in a pattern hole (`/x${not_seven}y/`) the same error; a lone complement as a whole-value validator an
+  error ("lone-complement-match: let's keep it an error and provide "anything". "Any" sounds like some()"). The
+  language PROVIDES a ready-made any-text pattern, placeholder name `anything` (his preference over `any`, which
+  "sounds like some()"); THE MANAGER'S READING: it lives in the rx module and matches any text INCLUDING NEWLINES. Run
+  (PART CX CX4): as a whole value `/(?s).*/` and `/[\s\S]*/` agree with each other on 0 of 121 texts, but `/.*/`
+  without dot-all differs on 90 (every text with a newline), so the manager's note "as a whole value every spelling
+  of "anything" agrees" holds only for spellings that match a newline; what `anything` matches is asked as
+  **anything-text** (§R.8). Every place's KIND: R.1.0.] `A & !B` keeps a path of A when NO
   PATH of B survives WHOLE on its stretch's own text (regex-settles (2): "the complement `!B` holds when NO path of
   B survives over the stretch"). Its libpcre2 models run B as its own pattern on the extracted stretch (PART C V11,
   V20, V24: 0 differ). `P & !(P & (a: "1"))` on `123` FAILS (P has the path a = `1`, b = `23`) / `23`@1 (PART A K1;
   rev 23.2: HOLDS / `123`@0).
 - LOOKAHEAD (regex-settles (3)): a condition outside a lookahead never re-enters it, and a negative lookahead tries
-  every inner path before it succeeds. `/(?=(?<x>\d+))\d/ & (x: "1")` on `12` FAILS (the lookahead's one path x =
+  every inner path before it succeeds. [REV 26: ITS LABELS, RULED (COND-FAMILY "2026-11-18 OWNER RULING —
+  lookahead-labels: visible, as in PCRE"; HIS WORDS: "lookahead-labels: agree.", to the leaning "visible, as in PCRE.
+  A positive lookahead's labels are set like any others and are read by the usual rules (last mention, public unless
+  `_`). A negative lookahead's labels are never set"). Shown and re-run (rev 26's PART LA): python `re`,
+  `/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/` WHOLE `1234` l = `4`, f = `1`; FIND-ALL `1234 4321 77` l/f `4`/`1`, `1`/`4`,
+  `7`/`7`; a negative lookahead's group unset; the condition's effect, hand-worked in the record, now RUN on libpcre2:
+  `& (l: > f)` WHOLE `1234` HOLDS, SEARCHED `4321 1234` `1234`@5, FIND-ALL `1234 4321 77` [`1234`@0]. A label set in
+  a lookahead may lie OUTSIDE the matched text (`/(?=\d*(?<l>\d)\b)(?<f>\d)/` SEARCHED `1234` `1`@0 l = `4`; item
+  24). THE MANAGER'S READING, not asked: the same holds for a lookbehind (`(?<=(?<b>\d))x` SEARCHED `a7x` b = `7`:
+  regex behaviour, SUPPORTED). pass-start-read's sorted-list example now rests on this ruling.] `/(?=(?<x>\d+))\d/ & (x: "1")` on `12` FAILS (the lookahead's one path x =
   `12` is not re-entered) / FAILS / on `112 12 1` [`1`@7] (PART A K3; V12).
 - ATOMIC (regex-settles (5): "atomic MEANS what PCRE's atomic group means"; spelling OPEN, `predicates_future.md`
   item 19; the manager's `(?>...)` is NOT adopted, 11:35): no path inside the atomic part is retried once it has
@@ -978,7 +1093,7 @@ model on 0 / 0 / 0 of 1,365. The record's corrected restatement of `/(?:${c}(?<h
 anything besides the LAST matches C" (each item is tested by the pass after it): WHOLE equals "every item except the
 last is under 5" (Python) on all 1,093 texts over `37;` to length 6 (0 differ). THE DRAFT'S READING the example relies
 on (the record: "the draft's reading, not ruled"): a label set inside a LOOKAHEAD (here n) is visible to the condition
-after it; it is PCRE's (libpcre2 above) and is **lookahead-labels** (§R.8, remaining table).
+after it; it is PCRE's (libpcre2 above) and is **lookahead-labels** (§R.8, remaining table) [REV 26: RULED, visible; R.1.4].
 TWO GROUPS OF ONE NAME (rev 24.4's PART N; NEW answers, WHOLE, the label h):
 
 | program | text | the one rule | rev 24.3's rules | the capture, the name's last setting (rule carry) | libpcre2 by name, under `(?J)` |
@@ -1014,7 +1129,10 @@ FAILS, the backreference reading the FIRST SET group of the name, as §R.6 says 
 SIMULATE-4). Inside one literal a backreference is regex's, untouched; ACROSS SPLICED PARTS it changes meaning: B :=
 `/(?<h>\d)\k<h>/` alone matches `33`, not `37`; `A SEQ B`, A := `/(?<h>\d)/`, written out with `(?J)` FAILS `733` and
 HOLDS `737` (without `(?J)` the splice is refused). What a backreference reads across parts is asked as
-**backref-across-parts** (§R.8)]; a visibly different spelling, put off to the spellings review (§R.8); (c) THE ARRAY FORM, REQUIRED (pass-list-read:
+**backref-across-parts** (§R.8)] [REV 26: backref-across-parts is CLOSED by free-name (R.1.13 REFERENCES): a
+reference uses the namespace of the rx it is WRITTEN in, read as labels are (the last mention at that point); B's
+`\k<h>` reads B's own group; "inside one literal a backreference is regex's, untouched" now MEETS that rule where a
+literal has two groups of one name, a case the record does not name: asked as **backref-label** (§R.8)]; a visibly different spelling, put off to the spellings review (§R.8); (c) THE ARRAY FORM, REQUIRED (pass-list-read:
 "I would like a form that allows other passes but it should be clear that that is what is requested. Specifically, it
 should have different spelling. Eg Perl uses @x. An array of such values is its own type"): every SETTING of the name
 in order, the one outside the loop included (ruling RECORD (4); his before-and-inside words "The array takes all h
@@ -1099,9 +1217,17 @@ that pass, or no pass, set it). `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;` HOLDS h =
 8 / 33 / 33 of 364 move). Every moved catalogue line is in §R.7.
 - INSIDE THE BODY. A condition inside the loop body (§11's hole rule) or inside an `occurrences` argument, AFTER its
   label's group or after a branching around it, reads the labels its own pass has set so far (before them, the
-  previous pass's value: **pass-start-read**, RULED rev 25, above). [REV 25.1: the ruling was shown and made for a
+  previous pass's value: **pass-start-read**, RULED rev 25, above). [REV 26: its reach into an `occurrences`/`hits`
+  argument (before its group, the PREVIOUS HIT's value) is RULED, **hit-carry** (COND-FAMILY "2026-11-18 OWNER RULING —
+  hit-carry: it carries, because `occurrences` is a rewrite"). HIS WORDS: "hit-carry: occurrences is a simple regex
+  rewrite ? So what the user provides gets inserted into a template hole like usual? If this is so, then the user is
+  creating this scenario themselves. They can simply put the condition after the label to get the normal behavior. In
+  cases where the user puts the condition before the label, they are expecting carries behavior". His premise is
+  checked against the record: `occurrences` IS his one-pattern model of 2026-11-17 ("It's essentially /(.*(${rx}))*.*/
+  So not global", R.1.9), the argument inserted into a loop template's hole. No scope rule, no exception for hit
+  lists. Rev 25.1's text, as asked:] [REV 25.1: the ruling was shown and made for a
   LOOP BODY; its reach into an `occurrences`/`hits` argument (before its group, the PREVIOUS HIT's value) is THE
-  DRAFT'S READING, asked as **hit-carry** (§R.8; review r43 C). It decides answers: `occurrences(/${c}(?<h>\d)/, min =
+  DRAFT'S READING, asked as **hit-carry** (§R.8; review r43 C) [REV 26: RULED, it carries]. It decides answers: `occurrences(/${c}(?<h>\d)/, min =
   2)`, c := NOT (h: >= 5), against the own-hit reading (c always holds before its group): WHOLE `73` FAILS against
   HOLDS h = `3`; over 364 texts (alphabet `37x`, length <= 5) WHOLE 84 differ, SEARCHED 84 by stretch and 134 with
   label h, FIND-ALL 84 / 134 (rev 25.1's PART C C2; the engine equals libpcre2 with the condition as a callout, 0 rows
@@ -1143,9 +1269,18 @@ R.1.9 OCCURRENCES AND THE HITS. `occurrences(r)` is the owner's ONE-PATTERN lazy
 (regex-settles (4), "the lazy-gap loop over the span", shown to him and "yes settled"; his 13:10 model "It's
 essentially /(.*(${rx}))*.*/ So not global", whose text his formatting altered, 13:15, "Formatting lost some
 operators"): its first path has the global search's hits, and a condition INSIDE it re-enters it, reading the
-labels its own hit has set so far (R.1.7: a hit is a pass) [REV 25.1: AFTER its label's group; BEFORE it, R.1.7's text
-reads the PREVIOUS hit's value, THE DRAFT'S READING asked as **hit-carry** (§R.8); under that reading the hits of an
-argument with such a condition are NOT a plain search's (R.1.7, rev 25.1's PART C C2)]. `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS
+labels its own hit has set so far (R.1.7: a hit is a pass) [REV 26: AFTER its label's group; BEFORE it, the PREVIOUS hit's
+value: **hit-carry**, RULED 2026-11-18 (R.1.7, his words there); so the hits of an argument with a condition before
+its group are NOT a plain search's: THE MANAGER'S CONSEQUENCE in the record, SUPPORTED by rev 26's PART H H3 (carried
+vs the plain hits, WHOLE 84 of 364 texts, alphabet `37x`, as rev 25.1's C2 printed); witness H1 (libpcre2, the
+condition a callout): `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5), WHOLE `73` FAILS, SEARCHED `73`
+FAILS, FIND-ALL `3x73` [`3x73`@0 h = `7`]; written after the label, H2: `33` HOLDS, `37` FAILS (carried `37` HOLDS
+h = `7`). A NULLABLE ARGUMENT is a WARNING (RULED: "hit-carry: warning on nullable"); THE MANAGER'S READINGS: "the program keeps PCRE's
+meaning for the empty hit, as the empty search does": NOT SUPPORTED AS WORDED, the two PCRE meanings differ (PART H
+H4, H5: PCRE's find-all of `/\d*/` on `a1b` gives four hits [``@0, `1`@1, ``@2, ``@3]; the one-pattern LOOP, the
+rewrite he ruled on, gives ONE, the empty hit at 0, because PCRE ends a loop on an empty iteration); the ruled premise
+(a rewrite) ENTAILS the loop's one hit, so that is the meaning kept (told, not asked); the warning's name carries
+`pcrec.` (NOT RUNNABLE, a name); it is the fifth "probably a mistake" candidate settled as a warning (§R.2)]. `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS
 with the hits `12`, `34` (H1; V16). A bare condition after it reads the LAST hit's own labels (R.1.7; **hits-pass**,
 §R.8 (a), closed by entailment): `occurrences(/\d+/) & (hit: <100)` on `1234` HOLDS (the
 pattern backs off until its last hit is under 100; H2; rev 23.2: FAILS). The hits are re-split whenever a condition
@@ -1156,8 +1291,9 @@ list: atomic and anchored"; written `hits(r)` here, `all_matches(rx)` his placeh
 single review, §R.8). His question, "hits-text: so hits is atomic ( and anchored ?)", and on being asked to confirm
 "`hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to", HIS WORDS: "hits-text:
 yes but spelling to be reviewed with all other spellings." So: (1) THE HIT LIST IS THE ONE-PATTERN SEARCH MADE ATOMIC:
-once it has matched, nothing re-enters it; its hits are those of a plain search (of the argument with its own
-conditions; [REV 25.1] where a condition precedes its group, **hit-carry** decides), and tests on them judge a fixed list
+once it has matched, nothing re-enters it; its hits are those of a plain search [REV 26: only with no condition before its group, hit-carry] (of the argument with its own
+conditions; [REV 26] where a condition precedes its group it reads the previous hit, **hit-carry**, RULED, so the hits
+are then not a plain search's), and tests on them judge a fixed list
 (**hits-committed**, RULED). (2) IT IS ANCHORED TO THE TEXT IT IS APPLIED TO, covering it from end to end: a whole
 value; the match of the pattern to its left (the filter sentence, R.1.4); standing alone in a searched program, the
 WHOLE SUBJECT (**hits-text**, RULED; no compile error is needed there: it reads the whole subject as `\A...\z`
@@ -1251,7 +1387,17 @@ MANAGER'S NOTE (the record, MINE, for the documentation): in a sequence, two par
 surface `h` merge silently (last mention), as two groups of one name do in a literal; labelling the parts is how one is
 picked (`predicates_future.md` item 24, entry 15). Library hygiene (item 25) is eased: a collision nobody references
 is harmless.
-PATHS AND THE AMBIGUOUS REFERENCE: THE DRAFT'S READINGS (rev 25.1, review r43 H; each asked under **path-and-ambiguity**,
+PATHS AND THE AMBIGUOUS REFERENCE [REV 26: **path-and-ambiguity** is CLOSED: its first corner RULED (COND-FAMILY
+"2026-11-18 OWNER on path-and-ambiguity"; HIS WORDS: "so I agree the last reference"): a path through a part label
+mentioned more than once names the LAST MENTION as things stand where the reference is written; his reason for the
+use: a label such as `list` reused, "referenced it immediately after each label it would see that specific A and you
+wouldn't have to call it list1, list2, etc."; reading (d) below is therefore RULED. Its second corner, the READ-OUT,
+is closed by **export-rule** (5) (below): the caller's captures follow the visibility rules, so a name two parts both
+make public is an AMBIGUOUS REFERENCE for the caller as for the program; label the parts and read by path. Reading (e)
+below ("the LEFT side's value") is WITHDRAWN. His lean "a filter can never produce captures" was NOT adopted (THE
+MANAGER'S READING in the record, said to him and not objected to): visibility goes by export, not by an operand's
+role; `[_ = A]` is the per-part form of it. Readings (a)-(c) stay THE DRAFT'S READINGS; (b) is free-name's principle
+"the namespace as it is defined at the point of reference" applied, so it is entailed.] THE DRAFT'S READINGS (rev 25.1, review r43 H; each asked under **path-and-ambiguity**,
 §R.8, where it decides an answer): (a) WHAT "AMBIGUOUS" IS: a reference is ambiguous when the LAST MENTION of the name,
 in pattern order, among the patterns the reference can see is not unique; the two sides of `&` are not ordered, so
 both are last mentions (label-flow (4)); across the sequence operator the later part's is (label-flow (3)); so `(A &
@@ -1266,6 +1412,63 @@ with TWO mentions of `aa` it is the last mention's (label-flow (3) applied to th
 (e) THE READ-OUT of a name both `&` sides surface, never referenced (`A & B`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`):
 the LEFT side's value (join-order, "left side decides", carried to the report), so WHOLE `12` reports h = `1`
 (hand-worked); asked.
+EXPORT AND VISIBILITY (rev 26; RULED, **export-rule**, COND-FAMILY "2026-11-18 OWNER RULING — export-rule: public
+unless `_`; a binding shows its own public labels and its public part labels", its clarification and the confirmation
+of `[_ = A]`; it closes the export-scope discussion, path-and-ambiguity and filter-captures). The statement put to him:
+"1. A label is public unless its name begins with `_`; a private label is visible only inside the binding it is written
+in. 2. Inside a binding, the public labels of everything written or used there are visible, read as labels are (last
+mention; an ambiguous reference is the error). 3. Outside a binding, what is visible is the public labels written in
+its own literals, and its public part labels; a part's public labels are reached by path through its part label. 4. A
+part label only disambiguates; it gives no access to anything private. 5. The caller's captures are what is visible
+from the top-level program by these rules." HIS WORDS: "export-rule: Agee and add [_a = A] is a private reference that
+wouldn't export at all" ("Agee" read as "Agree"); clarified: "I meant it wouldn't export outside the binding. To close
+all exports use [_ = A]"; and on the reading of `[_ = A]` put back to him: "That's exactly right. It makes its labels
+invisible so you can use it to filter but not cloud the namespace". So: statements (1)-(5); (6) a PART LABEL beginning
+with `_` (`[_a = A]`) is an ordinary part label inside its binding and exports nothing outside it; (7) the bare `[_ =
+A]` makes none of A's labels visible to anything outside A, inside the binding or outside it, bare or by path; A still
+matches as before. His discussion positions that the ruling carries: "My visual was the scope was the binding"; a part
+label reaches every PUBLIC label of the part ("Every. Private labels prefix with _."; "Naming [x = A] only
+disambiguates scope, it doesn't give additional access"); inserting through a hole: only the inserted part's exported
+names flow out ("Agree"). THE WORKED EXAMPLE he was shown (hand-worked there; rev 26's PART EX, RULE-AS-CODE for the
+visibility, libpcre2 for the matches): `year := /(?<v>\d{4})/`, `month := /(?<v>\d\d)/`, `date := [y = year] SEQ "-"
+SEQ [m = month]`: outside `date`, `m.v` and `y.v` are reachable and a bare `v` is an error (EX1); `year & (v: >= 2000)`
+works (EX2: WHOLE `2025` HOLDS, SEARCHED `x1999 2001` `2001`@6, FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10]);
+`date & (m.v: <= 12)` WHOLE `2025-11` HOLDS, `2025-13` FAILS (EX3). REPRODUCED. THE MANAGER'S STATEMENTS of what it
+closes, checked: pass-through ("idk. This was my reexport concern") is answered by statement (3), the part label being
+the re-export (`outer := [d = date] SEQ ..`: `d.m.v` visible by path, a bare `m.v` not; EX1): CONSISTENT, NOT RUNNABLE
+independently (visibility has no regex model; the classifier is the statement as code); label-mark (is a binding's
+name a label) closes by entailment: NO, by label-flow ("paths through a part's label, never a binding") and this rule;
+what remains is the label form's spelling (§R.8 spellings). Library hygiene (`predicates_future.md` item 25) is
+answered in substance by statements (1), (3) and (6)-(7). Per place: R.1.0's VISIBLE column. Spellings (`_`, `[_ =
+A]`) are placeholders (§R.8 spellings 20, 21).
+REFERENCES (rev 26; RULED, **backref-across-parts** and **free-name**, COND-FAMILY "2026-11-18 OWNER RULING —
+backref-across-parts", its clarification, the DISCUSSION that reopened it, and "OWNER RULING — free-name: a reference
+to a name the rx does not define is an error"). HIS WORDS, in order: "backref-across-parts: I agree but also, a
+reference should use the namespace as it is defined at the point of reference"; "backref-across-parts: which is to
+say, it should be the last reference as labels"; "let's discuss. I do like your idea. The trouble comes if the
+reference is to something not defined in that rx"; and, closing it: "backref-across-parts: I agree with error. It is
+like if a function in C were defined then references a variable it doesn't have defined so it looks up the call stack
+to the previous definition. Catastrophic. The rx should export the group." So: (1) a backreference inside a part reads
+the part's OWN group (the witness, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`, `A SEQ B`: WHOLE `733` HOLDS, `737`
+FAILS; the written-out regex under PCRE's duplicate names gives the reverse; REPRODUCED, rev 26's PART REF REF2); (2)
+a reference uses the namespace AS IT IS DEFINED AT THE POINT OF REFERENCE, read as labels are (the last mention); (3)
+a reference inside an rx to a name THAT RX DOES NOT DEFINE is a COMPILE ERROR, never a look into the surroundings; a
+name crosses from one rx to another only by the defining rx exporting it. THE STATE, the manager's statement in the
+record, checked: the namespace is that of the rx the reference is WRITTEN in, at the point of reference; inside a part,
+the part's own names; in a pattern that inserts or joins parts, also the labels those parts export. Its two cases
+(RULE-AS-CODE, REF1; sabotage s5, dynamic scoping, caught): B := `/\k<h>/` after A is the ERROR; B := `/\k<h>(?<h>\d)/`
+reads B's own `h`, unset at that point on a first pass (REF3: the renamed model `(?<h>\d)\k<h2>(?<h2>\d)` matches no
+text; with PCRE's MATCH_UNSET_BACKREF it would match `37`): what a reference to an unset name then DOES is regex's
+(it fails), THE DRAFT'S READING by exception-rule's default. WITHDRAWN as the rule (the record): the manager's readings
+(a) "names inside a part are resolved in that part, before the splice" and (d) "renaming groups apart before splicing"
+(narrower; the evidence still MODELS (1) by renaming, a model, not the rule). A DECLARED PARAMETER as a later way to
+let a part take a name from outside is the manager's proposal, NOT ruled (`predicates_future.md` item 26, with his
+observation "This also points to a label as something that can be manipulated and referenced. I almost wrote "first
+class type" but that might be too far"). A GAP the record does not name, asked: two groups of one name INSIDE ONE
+literal and a backreference after them (`/(?<h>\d);(?:(?<h>\d)|x)\k<h>/`): "read as labels are" gives the LABEL
+(entering the alternation resets h, so on `3;x3` the reference fails), PCRE's `(?J)` the first set group, a third
+reading the last group that was SET; they differ on 2 to 6 of 341 texts (REF4): **backref-label** (§R.8). Per place:
+R.1.0's REFERENCE column.
 SETTING A LABEL (COND-FAMILY "OWNER, three points on labels"). HIS WORDS: "1. did we decide on a way to set labels in
 predicate language? And what does it mean? 2. setting labels is just the label using the group-label-not-capture
 syntax 3. if A & B & (1: blah) which A and B are rx literals, do we define the groups as coming from on B? Makes
@@ -1274,9 +1477,35 @@ the labelled part `[x = R]`, which IS `(?<x>R)` (§3.1); its meaning, the NAME f
 path taken, under the one label rule; testing it is free at the default level, reading its text out needs `captures`
 (§6.2). (2) RECORDED AS HIS: setting a label is the group form read as a LABEL, not as a capture; the capture is
 regex's and exists only inside pattern text. He used the bracket form himself in the repeat entry ("can i name the
-item inside the repeat with [ a = rx.digit ]"); WHICH single form the rx module offers is still **label-mark** (§R.8,
+item inside the repeat with [ a = rx.digit ]"); WHICH single form the rx module offers is still **label-mark** [REV 26: closed by entailment; the spelling remains, §R.8 spellings 15] (§R.8,
 remaining).
-WHAT A NUMBER NAMES IN A CHAIN: HIS POSITION, NOT A RULING [REV 25.1: rev 25 headed this "NUMBERS NAME THE GROUPS OF
+WHAT A NUMBER NAMES (rev 26; RULED, **number-names**, COND-FAMILY "2026-11-18 OWNER RULING — number-names" and its
+addendum "zero is the exception"). Asked as a ruling with rev 25.1's witnesses (the sequence, the hole, the alternation
+and the shared-name runs, each whole / searched / find-all), with the manager's leaning "the conservative cut. A number
+is allowed only where nothing can be in doubt: the condition's pattern is one written literal, and the group it points
+at has no shared name. There it means exactly what regex means. Everywhere else it is a compile error saying 'name the
+group': on a sequence, an inserted pattern, an alternation of patterns, a repeat's operand, or an `&` chain with more
+than one pattern", HIS WORDS: "number-names: exactly. Only when there is no ambiguity." ADDENDUM, HIS WORDS:
+"number-names: the exception to our rule is 0. It is always the entire match of the rx however it is composed." So:
+(1) THE RULE is his second sentence: a number names a group ONLY WHEN THERE IS NO AMBIGUITY; the leaning's list is the
+first statement of where there is none (ONE WRITTEN LITERAL, with the regex meaning) and where there is (a sequence,
+an inserted pattern, an alternation of patterns, a repeat's operand, an `&` chain with more than one pattern operand):
+there the COMPILE ERROR "name the group". (2) `0` is never refused: on one literal and on every composed form it is the
+entire match of the rx. (3) Relaxing a refused form later changes no existing answer. Per place: R.1.0's NUMBER and
+`0` columns (RULE-AS-CODE: rev 26's PART N N2, 13 rows; sabotage s7, numbers on composed patterns, caught). THE
+MANAGER'S READINGS in the record, each run (rev 26's PART N): (a) a number on a group whose NAME is shared inside one
+literal (`/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)`) is REFUSED too: the two meanings a reader can give `1` there (the label
+h; group 1's own capture) differ on 7 / 277 / 284 of 364 texts (holds and stretch; WHOLE `3,7` FAILS against HOLDS),
+the 7 and 277 the record shows, REPRODUCED (N1): SUPPORTED, it is an ambiguity; he answered the question as a whole and
+did not speak to the sub-point separately; (b) in an `&` chain with more than one pattern operand `0` is still one
+thing, every operand holding on the one stretch: SUPPORTED (N3: 0 / 0 / 0 of 364); (c) inside a loop body or a
+hit-list argument, `0` written in that part's own condition is that part's own match for the current pass or hit:
+SUPPORTED (N4: inside an `occurrences` argument the LAW `A & B` = `A & (0: B)` holds under that reading on 0 of 364
+texts and fails under PCRE's group 0 on 81). WITHDRAWN (review r43 group A, the record): the manager's "nearest pattern
+to its left" and "numbers are not subject to the ambiguous-reference error". His position of 2026-11-17 ("do we define
+the groups as coming from on B? Makes sense") is now this ruling; "label numbers: try them" is answered for the
+composed forms. Rev 25.1's text of this paragraph, the record of the question as asked: [REV 26: SUPERSEDED by the
+ruling above] WHAT A NUMBER NAMES IN A CHAIN: HIS POSITION, NOT A RULING [REV 25.1: rev 25 headed this "NUMBERS NAME THE GROUPS OF
 THE NEAREST PATTERN TO THEIR LEFT" and filed it under §R.8's RULED heading; the record's entry is "OWNER, three points
 on labels", not a ruling, and "nearest ... to their left" is the manager's gloss (review r43 A, RULING-1)]. HIS WORDS
 (point 3): "if A & B & (1: blah) which A and B are rx literals, do we define the groups as coming from on B? Makes
@@ -1311,7 +1540,8 @@ FAILS; SEARCHED `5:3 3:5` `3:5`@4; FIND-ALL `5:3 3:5 4:9` [`3:5`@4, `4:9`@8]; (3
 number's meaning (a number on a group whose NAME is shared; what `1` names after the sequence operator, through a
 hole, over `|`, on an atomic part, in an `occurrences` argument, a postfix operand or a labelled part): ONE question,
 **number-names** (§R.8) [REV 25.1: rev 25 asked two, **numbered-duplicate** and **sequence-numbers**; review r43 A
-folds them].
+folds them] [REV 26: RULED, above: every one of those composed places refuses a number other than `0`; a number in an
+`occurrences` argument or on a labelled part follows the same test (one written literal), R.1.0].
 
 R.1.14 THE RX MODULE (rev 25; `docs/design/rx_module.md` rev 0 is the proposal; COND-FAMILY, the entries from "OWNER
 RULINGS — the rx module: sequence-precedence and sequence-operator" to the end of the file; rev 25's PART RX). `SEQ`
@@ -1338,7 +1568,8 @@ CROSS THE BORDER and read its neighbours' text; the EDGE-ASSERTION ERROR for hol
 sequence operator and a hole are ONE reading; (4) the 2026-11-14 Q1 list of SET positions loses "a hole's set": the
 string-set rule and its error stay for an `&` operand (either side; rev 25 wrote "the right side", the manager's
 slip, corrected: R.1.4 [REV 25.1]), a condition on a label, a filter body and a compile-time set (R.1.4); a hole INSIDE
-such an operand is classified after expansion (THE DRAFT'S READING, asked: **hole-in-filter**); an `&` written INSIDE
+such an operand is classified after expansion ([REV 26] RULED, **hole-in-filter**: the holes filled first, then the
+operand judged; R.1.4); an `&` written INSIDE
 a hole keeps both operands filter roles over the text the hole takes, so `/x${/^a/ & /(?s).*/}/` matches `xa` at 0-2
 (ROLE TABLE row 2, §0.1 L71, kept; rev 25.1's PART B B1: WHOLE `xa` HOLDS, SEARCHED `zxa` `xa`@1, FIND-ALL `xa xa xb`
 [`xa`@0, `xa`@3]; spliced with a non-filter left side, libpcre2's `x(?:^a)(?:(?s).*)`, it never matches); (5) an inserted pattern's edge assertion that can never hold beside its neighbour is a
@@ -1355,46 +1586,58 @@ R.1.14 "value position" means a TYPED SYNTAX POSITION INSIDE RX TEXT (a count, a
 value); elsewhere in this draft (§5.4's rows, §3) it is the expression language's "where a value may stand", a
 different sense (review r43 CENSUS-6); the next full revision names one of them otherwise] the literal is
 INSTANTIATED once per member; several holes with several members make the literal stand for the CARTESIAN PRODUCT of
-the combinations, and a combination that is not a legal pattern is REMOVED (not a compile error of the whole). THE
-POSITION TABLE (the manager's, MINE in the record "for the next revision": THE DRAFT'S PROPOSAL; a position with no row
-is a compile error, also MINE):
-
-| position | accepts | one member is written in as | several members | removed there |
-|---|---|---|---|---|
-| a PATTERN position (an atom; a part of a sequence) | a pattern (a VALUE there: **value-is-pattern**, §R.8 [REV 25.1]) | the pattern as a whole, `(?:X)`, its edge assertions reading the neighbours (hole-reading) | an alternation inside the group, in the value's order (as `${[a, b]}` always was) | [REV 25.1: rev 25 said "nothing (any pattern is legal)", false: `(?<=(?:\d+))x` is refused, and with members [`\d`, `\d+`] the ONE inner alternation `(?<=(?:\d|\d+))x` makes the WHOLE illegal (rev 25.1's PART D D3)] THE DRAFT'S READING: the PATTERN row has no copies, so an illegal member makes the whole a compile error (not a removal) |
-| a COUNT (a quantifier bound) | a finite set of numerals | the numeral | one copy of the literal per combination (the product) | a combination whose minimum is above its maximum |
-| a GROUP NAME (the whole name; PART of a name, `(?<f_${i}>`, is the same row with the name built by the insert [REV 25.1, THE DRAFT'S READING]) | a finite set of names | the name | one copy per combination, the copies joined by a PLAIN alternation and their groups renumbered (THE DRAFT'S READING, rev 25.1: rev 25's branch-reset join `(?|(?<a>\d)|(?<b>\d))` is refused by libpcre2, also under `(?J)`; PART D D3, D5) | a combination that is not a legal name |
-| a CHARACTER CLASS member or range end | a finite set of one-character strings | the character | one copy per combination | a range whose ends are out of order |
-| an OPTION's value (§11's typed positions) | the option's own finite set | the value | one copy per combination | a value the option refuses |
-| [REV 25.1] a BACKREFERENCE's name or number (`\k<${n}>`) | none: THE DRAFT'S READING, a compile error (the position is not in the table; a name in a backreference is the group-name question across parts, **backref-across-parts**) | | | |
-| [REV 25.1] inside `\Q..\E` | none: THE DRAFT'S READING, the hole is not a hole there (`\Q..\E` quotes its text, `${` included) | | | |
-| [REV 25.1] ZERO members (`${[]}`), any position | THE DRAFT'S READING: no copy, the literal REMOVED (as when every combination is illegal: `(?!)`) | | | |
+the combinations, and a combination that is not a legal pattern is REMOVED (not a compile error of the whole). [REV 26: THE PRODUCT'S SCOPE CORRECTED by the owner (COND-FAMILY "2026-11-18 OWNER RULING — product-order: first slowest; and a
+correction of the product's scope"; HIS WORDS: "product-order: first, the ruling was for counting holes which duplicate
+the pattern. It doesn't apply for rx holes. Idk for others"): "the literal is INSTANTIATED once per member" and the
+cartesian product are ruled for COUNT holes ONLY; not for pattern holes; OPEN for the others. And name-hole: "each
+target area of the hole is a different thing with its own rules". THE POSITION TABLE is now stated ONCE, as R.1.0's
+HOLE POSITIONS table; rev 25.1's table here (one product column for every position) overstated the ruling and is
+REPLACED (its text is at the rev 25.1 commit, §R.9).] (The rev 25 / 25.1 position table stood here: the manager's,
+MINE in the record "for the next revision"; a position with no row is a compile error, also MINE, kept in R.1.0.)
 
 RUN (PART RX4): a count position, n := [2, 4], `/(\d+?)\d{${n}}/` copied per member is `(?|(\d+?)\d{2}|(\d+?)\d{4})`:
 WHOLE `123456` gives group 1 = `1234`; ONE copy with an inner alternation, `(\d+?)(?:\d{2}|\d{4})`, gives `12`: the
 two readings differ in labels, and the ruling's "the literal is instantiated per member" is the first. THE DRAFT'S
-READINGS: the copies share their group numbers (PCRE's branch reset, so `1` names the same group in every copy),
-EXCEPT copies that differ in a group name (the GROUP NAME row: a plain alternation, renumbered; rev 25.1); the
-product's ORDER is the written order of the holes, the first slowest. [REV 25.1: rev 25 called the order
+READINGS: the copies share their group numbers (PCRE's branch reset, so `1` names the same group in every copy)
+[REV 26: the exception rev 25.1 made for copies that differ in a group name is WITHDRAWN with the join: an array in a
+name hole is a COMPILE ERROR, name-hole, RULED]; the product's ORDER [REV 26: RULED, **product-order** (2): HIS
+WORDS "Otherwise I agree with lean. It's predictable and the user can order the values themselves to get different
+results (eg longest first)", to the leaning "first hole slowest, in written order, with each hole's values in the order
+given"] is the written order of the holes, the first slowest. The witness he was shown re-run (rev 26's PART P P1):
+`/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2], WHOLE `123` x = `1`, y = `23`; the manager's Python run shown with
+it, REPRODUCED (P2): the sequence of two alternations `(?P<x>\d|\d\d)(?P<y>\d|\d\d)` on whole `123` gives x = `1`, y
+= `23`, longest first x = `12`, y = `3`; and on libpcre2 the sequence of alternations equals the first-slowest copies
+on 0 / 0 / 0 of 364 (P3; labels x, y): THE MANAGER'S READING "first slowest is the order regex itself gives a sequence
+of alternations", SUPPORTED. His OBSERVATION on it: "A subtle consequence of the parentheses group around concatenated
+elements." Sabotage s2, first fastest, caught. [REV 25.1: rev 25 called the order
 "answer-free where run"; its witness (n := [2, 3, 4], `[r = repeat(rx.digit, n, n)] & (r: length in L)`, 0 / 0 / 0
 of 364 summed) CANNOT tell the orders apart: with every length rejected, the lengths tried at 0 of `123456` are
 first-slowest [2, 3, 2, 4, 3, 2, 3, 4, 3, 4] and first-fastest [2, 3, 2, 3, 4, 3, 2, 4, 3, 4], the first try of each
 length 2, 3, 4 in both (rev 25.1's PART D D2). A witness that can: `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2],
 WHOLE `123`: first slowest x = `1`, y = `23`; first fastest x = `12`, y = `3`; 8 / 0 / 0 of 364 (labels x, y; PART D
 D1). The ORDER DECIDES REPORTED LABELS: asked as **product-order** (§R.8).] The order of a pattern-valued member
-list (`/2|4/` vs `/4|2/` as a count) is its alternation's order (THE DRAFT'S READING, under **product-order**).
-LEGAL (THE DRAFT'S READING, rev 25.1; review r43 D): a copy is legal when the LANGUAGE accepts it, i.e. PCRE2's
+list (`/2|4/` vs `/4|2/` as a count) is its alternation's order (THE DRAFT'S READING, under **product-order**) [REV 26: product-order RULED for the holes' order; this member-list reading stays THE DRAFT'S, unasked: no witness found where it decides an answer the ruled order does not].
+LEGAL [REV 26: RULED YES, "Legal: yes legal sql." (COND-FAMILY "2026-11-18 OWNER, on the cartesian idea and "legal"";
+THE MANAGER'S READING of the last word: "sql" a phone autocorrection, the sentence plain agreement); so a copy with two
+groups of one name is legal and not removed] (THE DRAFT'S READING, rev 25.1; review r43 D): a copy is legal when the LANGUAGE accepts it, i.e. PCRE2's
 syntax as pcrec reads it; a construct refused only because its MODULE is not built is NOT a removal cause (the
 "requires module" error stands for the whole). Two facts the rev 25 table hid (PART D D3, libpcre2): a copy with a
 duplicate name, `(?<h>\d)(?<h>\d)`, is refused by PCRE2 without `(?J)` though R.1.7 makes two groups of one name one
 label: under this reading such a copy is legal (pcrec's own two-groups-one-label rule), not removed. THE REMOVAL UNIT
-(THE DRAFT'S READING): the WHOLE LITERAL's copy, as the ruling's "remove illegal versions from the cartesion product"
+([REV 26] RULED, **removal**: "removal: whole copy"; rev 26's PART P P4 re-runs the witness he was shown: the program
+never matches, not even `a`; sabotage s3, the piece removed, caught) (THE DRAFT'S READING in rev 25.1): the WHOLE LITERAL's copy, as the ruling's "remove illegal versions from the cartesion product"
 reads: `/a|\d{${m},${M}}/`, m := [5], M := [2], is `(?!)` (WHOLE `a` FAILS; SEARCHED `xa` FAILS; FIND-ALL `a xa`
 []), while the same count through the library's `repeat` (its own literal) leaves `a|(?:(?!))` (WHOLE `a` HOLDS;
 SEARCHED `xa` `a`@1; FIND-ALL `a xa` [`a`@0, `a`@3]) (PART D D4): which spelling an author uses changes the answer;
-listed under **product-order**. A GAP, asked (**value-is-pattern**, §R.8, which folds rev 25's **hole-member-kind**):
-"not a legal PATTERN" lets a member of the wrong kind through where PCRE reads it as literal text (`\d{x}` is legal
-PCRE: the braces are text).
+listed under **product-order** [REV 26: the spelling-dependence stands as a FACT for the
+user documentation: the removal is the count hole's own rule, and `repeat` is its own literal]. THE MEMBER'S KIND [REV
+26: RULED for count holes (COND-FAMILY "2026-11-18 OWNER on value-is-pattern", part (2); HIS WORDS: "for sanity sake, a
+count whole must have values that produce counts (and not convert to rx)", "whole" read as "hole"): a count hole's
+values must PRODUCE COUNTS and are never converted to rx text; THE MANAGER'S READING of "must": a member that is not a
+count is a COMPILE ERROR, neither removed nor kept as PCRE's literal text (PCRE reads `\d{x}` as text: rev 26's PART P
+P7; not runnable as a rule beyond that fact). His IDEA beside it, a count as a FILTER over all numbers ("even numbers
+through modulus"), is `predicates_future.md` item 28, not a rule.] (rev 25.1: "not a legal PATTERN" let a member of
+the wrong kind through where PCRE reads it as literal text.)
 COUNTS, RULED (COND-FAMILY "OWNER RULING — the count proposal (the rx module's count-argument)"). HIS WORDS: "i agree
 with the count proposal. i'm curious how the repeat functionality would work however. is it a primative?" So (1) a
 construct given an ALTERNATION where it expects one value DISTRIBUTES over it, once per mention (n := `[2, 4]`: an
@@ -1405,7 +1648,28 @@ is a COMPILE-TIME rx-typed value (an array of rx, which "is interpreted as an al
 the count discussion); a MATCH-TIME array of a label's settings is NOT one: "An array of such values is ITS OWN TYPE"
 (pass-list-read (3), his words), so it never distributes and a comparison with it needs SOME or EVERY (R.1.7). Where
 else the distribution applies (`min = n`, `occurs.at_least(n, ..)`, `h[k]`, a default, an option value) is listed,
-not decided, for the next full revision (review r43 RULING-5, PLAN).] RUN (PART RX5; the manager's hand reasoning of the count
+not decided, for the next full revision (review r43 RULING-5, PLAN).] [REV 26: ARRAYS UNDER OPERATIONS, RULED,
+**array-lift** (COND-FAMILY "2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product"). His
+first message "array-lift: pairwise as default" he interrupted and replaced at once: "array-lift: I meant, alternations
+as you suggested. It's consistent that alternations combine on the product and multiply the rx and produce more
+alternations". The rule as proposed: "An array is an alternation of values, and a single value is a one-member array.
+Any operation defined on single values applies to arrays by taking every combination of members, first operand
+slowest, values in the order given". So `n + 1` needs no rule of its own; this is the "consistent, general rule" his
+lean on arithmetic over arrays asked for ("What is needed is a consistent, general rule about it and not something
+specific to adding to arrays for example. What happens to array + array ?"). The hand-worked arrays he was shown,
+REPRODUCED (rev 26's PART AL AL1): `[2, 4] + 1` = `[3, 5]`; `[2, 4] + [1, 10]` = `[3, 12, 5, 14]`; `[2, 4] * [1, 10]`
+= `[2, 20, 4, 40]`; and `rx.repeat(rx.digit, n + 1)`, n := [2, 4], is `(?|\d{3}|\d{5})` (AL2: WHOLE `123` HOLDS;
+SEARCHED `123456` `123`@0; FIND-ALL `12345 678` [`123`@0, `678`@6]). THE MANAGER'S READINGS stated with the question
+and not objected to: a repeated result is harmless (as alternatives the first occurrence wins: AL3, 0 / 0 / 0 of 364,
+SUPPORTED); the rule is about arrays the user writes, not the match-time array of a label's settings ("an array of
+such values is its own type", R.1.7; NOT RUNNABLE, a scope statement); a pairwise combination could exist later only
+as an explicit function (item 27's family). WITHDRAWN: "adding two patterns is an ordinary type error" as a general
+sentence. What `+` does on operands that are NOT numbers is not stated by any ruling: THE DRAFT'S READING (the
+manager's lean in the record) a TYPE ERROR, addition being arithmetic; asked as **plus-operands** (§R.8). Sabotage s8,
+pairwise, caught. His IDEAS of the same morning, cited, not folded: an explicit `cartesian(xx, yy, ...)` over arrays,
+chainable, whose result can be sorted by length (`predicates_future.md` item 27); an array of names as an INTERIM
+product ("I could also see them in the future being alternation as an interim product that is then further
+manipulated like Cartesian or join-per-element", item 27).] RUN (PART RX5; the manager's hand reasoning of the count
 discussion, "unrun" there): `rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4]: the product (2,2), (2,4), (4,2),
 (4,4); (4,2) REMOVED (libpcre2 refuses `\d{4,2}`: "numbers out of order in {} quantifier"); the rest
 `(?|\d{2,2}|\d{2,4}|\d{4,4})`: WHOLE `123` HOLDS; SEARCHED `12345` `12`@0; FIND-ALL `12345 6` [`12`@0, `34`@2]; WHOLE
@@ -1465,7 +1729,33 @@ associativity and defining section: §5.4's ONE OPERATOR TABLE (rev 25.1). TWO M
 (**value-is-pattern**, which folds rev 25's **plus-operands** [REV 25.1]; the evidence's `x + y` -> "TYPE ERROR"
 line is THE DRAFT'S READING, labelled so in rev 25.1's PART J); and what a postfix operator does to a CONDITION, which is "one more piece of the pattern" (R.1):
 the ruling names operators "on a pattern"; regex gives the piece a meaning (**quantified-condition**; "a quantifier on
-a condition is a type error" is a manager's reading that no ruling states, not adopted).
+a condition is a type error" is a manager's reading that no ruling states, not adopted). [REV 26: BOTH CLOSED OR
+SPLIT. **value-is-pattern** is answered in parts (COND-FAMILY "2026-11-18 OWNER on value-is-pattern: one ruling, two
+leans, one idea"): arithmetic over arrays by **array-lift** (above); a count hole's kind RULED (above); a matched value
+in a pattern position a LEAN, fleshed out in R.1.15 and asked as **value-hole**; `+` on non-numbers **plus-operands**.
+His OBSERVATION there: "In general, I did not anticipate these ideas and took the conservative route that eg repeat
+took a single decimal. If we are saying that alternation arrays create alteration patterns via counts, then some of
+these follow." **quantified-condition** is RULED (below).]
+A CONDITION IN SEQUENCE (rev 26; RULED, **condition-in-sequence**, COND-FAMILY "2026-11-18 OWNER RULING —
+condition-in-sequence: yes, and `&` stays"). His first question, "First, the idea that conditions could be sequenced in
+is new to me. How is it different than &"; the manager's answer: the same as `&` when the condition comes last,
+different when it stands earlier, because it is tested where it stands; and the disclosure that he had ruled on a
+condition inside a pattern as a hole in rx text, never as an operand of the sequence operator (rev 25's extension).
+HIS WORDS: "condition-in-sequence: yes and it's probably more natural than & but allow both." So a condition may be an
+operand of the sequence operator, standing at a point in the pattern, and BOTH forms stay. The hand-worked pair he was
+shown, RUN (rev 26's PART CS CS1, libpcre2, the condition a callout): `([h = rx.digit] SEQ (h: <5) SEQ ";")*` on
+`7;3;` WHOLE FAILS (the test runs each pass); `([h = rx.digit] SEQ ";")* & (h: <5)` WHOLE HOLDS h = `3` (the last
+mention); over 364 texts (`37;`) the two differ on 2 / 324 / 364 (labels compared); written LAST, the sequenced
+condition and `&` are one model (CS3). Sabotage s13, the sequenced condition tested once, caught.
+A QUANTIFIER ON A CONDITION (rev 26; RULED, **quantified-condition**, COND-FAMILY "2026-11-18 OWNER RULING —
+quantified-condition: an error, as a formal punt"), against the manager's leaning (regex's meaning with a warning). HIS
+WORDS: "quantified-condition: an error. This is a formal punt because we may find a better meaning for it in the
+future and this keeps that from breaking current code". So a postfix quantifier on a CONDITION is a COMPILE ERROR: an
+EXPLICIT EXCEPTION to "what looks like regex behaves like regex", requested by him as exception-rule requires (§R.6).
+THE MANAGER'S READINGS (RULE-AS-CODE, PART CS CS4; a statement of scope, not runnable against a control): it covers all
+nine postfix operators, a condition in sequence and a condition in rx text as a hole alike (`${c}?`); a quantifier on a
+GROUP holding a condition together with pattern text quantifies a pattern and is not this case. The regex reading he
+was shown and did not take (CS5): `[h = rx.digit] SEQ (h: <5)?` WHOLE `7` HOLDS, FIND-ALL `7 3` [`7`@0, `3`@2].
 WHAT `rx_module.md`'S QUESTIONS BECAME:
 
 | the note's question | state (rev 25) | where |
@@ -1474,13 +1764,60 @@ WHAT `rx_module.md`'S QUESTIONS BECAME:
 | sequence-operator | RULED: there is one; spelling to the review | above; §R.8 spellings |
 | sequence-precedence | RULED: tighter than `&` and `|` | above |
 | label-flow | RULED: flat by name; composed = literal; across `&` an ambiguous reference errs where referenced | R.1.13 |
-| label-mark | OPEN (he used `[a = rx.digit]`; "setting labels is just the label using the group-label-not-capture syntax") | §R.8 remaining |
+| label-mark | [REV 26] CLOSED by entailment (a binding's name is NOT a label: label-flow and export-rule; told to him, not objected to); the label form's SPELLING remains (§R.8 spellings 15) | R.1.13 EXPORT AND VISIBILITY |
 | label-twice (the note's: a label set by two parts of one sequence) | DISSOLVED: the one label rule and label-flow (3), the last mention | R.1.7, R.1.13 |
 | separator-label | DISSOLVED as asked (no PCRE duplicate-name rule applies); rev 24.4's `list_of` as form (a), a proposal | R.1.7 |
 | count-argument | RULED: distribution per mention, the product, illegal combinations removed, a finite count | above |
 | quantifier-operators | RULED: nine postfix operators beside the named `repeat` | above |
-| quantifier-grammar | RULED except two gaps: `+`/`*` binary are arithmetic, `?` is the optional, counts by `repeat`, a lazy or possessive mark is regex's on the whole operand, binding tight | above; **value-is-pattern** (rev 25.1, folding **plus-operands**), **quantified-condition** |
+| quantifier-grammar | RULED: `+`/`*` binary are arithmetic (on arrays by **array-lift**), `?` is the optional, counts by `repeat`, a lazy or possessive mark is regex's on the whole operand, binding tight; a quantifier on a CONDITION a compile error (rev 26) | above; **plus-operands** (the operand kinds of `+`, rev 26) |
 | every-pass-home | OPEN, as **every-pass-spelling** (the conditioned item inside `repeat` is the item form) | §R.8 remaining |
+
+R.1.15 THE VALUE HOLE, FLESHED OUT (rev 26; UNRULED; asked as **value-hole**, §R.8). HIS WORDS on a matched value in a
+pattern position, `/(?<y>\d{4})-${$y + 1}/` (COND-FAMILY "2026-11-18 OWNER on value-is-pattern", part (3)): "I didn't
+even think this was legal. I love it if it works. It needs to be fleshed out". So it is a LEAN, NOT settled as legal.
+EVERY USE of the form in this draft RESTS ON AN UNRULED FORM and is marked "[REV 26: **value-hole**]": §0.1 L33, §2.5,
+§4.1, §11 (generalized backreferences), §13 (O27, O34 and the captures-level lean); §16's copies are the record (the grep, the
+report's EXAMPLES THAT MOVED). Every answer below is rev 26's PART VH unless marked hand-worked; the model is a
+libpcre2 CALLOUT MODEL: at the hole, the value's text L is known (the label is read where the hole is written), and
+matching L there is modelled by a lazy capture `(?<v>[\s\S]*?)` plus a callout that accepts only v = L (the lazy
+capture tries every length; exactly one equals L). CONTROL: for the plain value `${$y}` the model equals PCRE's own
+backreference `\k<y>` on 0 / 0 / 0 of 364 texts (VH0), so the model is honest where PCRE has the construct.
+(1) WHAT TEXT THE VALUE BECOMES: the value's TEXT, inserted as LITERAL TEXT, never re-read as regex syntax (THE DRAFT'S
+READING; it is the backreference's own behaviour, which `${$y}` must equal). The two differ: `/(?<y>[\d.]+)-${$y}/` on
+`1.5-1x5`: as literal text FAILS, as regex syntax HOLDS (VH3; sabotage s9 caught). So a value is NOT a one-member
+pattern in a pattern position; it is a STRING, matched literally.
+(2) NUMERALS AND THEIR WIDTH: `$y + 1` is arithmetic on a NUMBER; its text is a numeral. Two candidates, both run
+(VH2): CANONICAL (§2.4's variable-width numerals, no leading zeros): `0099` + 1 is `100`, so `0099-100` HOLDS and
+`0099-0100` FAILS; WIDTH KEPT (the operand's width, zero-padded): `0099-0100` HOLDS and `0099-100` FAILS; `9999` + 1
+is `10000` under both (the width grows: `9999-10000` HOLDS under both). THE DRAFT'S READING: canonical (§2.4's
+numeral rule; §13 O27 asked the same question in rev 11 and was never ruled).
+(3) AN UNSET LABEL: `/(?<y>\d{4})?-${$y + 1}/` on `-`: FAIL (as PCRE's backreference to an unset group: WHOLE `-`
+FAILS) or EMPTY (as PCRE's MATCH_UNSET_BACKREF: WHOLE `-` HOLDS) or a COMPILE ERROR where the label can be unset (the
+`label.unset` family, §7.1) (VH4). THE DRAFT'S READING: FAIL (regex by default, exception-rule); `y + 1` of nothing is
+not a number.
+(4) IN A LOOP: the value is read where the hole is written (pass-start-read): after its group, the current pass's own
+value: `/(?:(?<y>\d{4})-${$y + 1};)*/` WHOLE `2025-2026;2030-2031;` HOLDS, `2025-2026;2030-2032;` FAILS (SEARCHED
+`2025-2026;`@0) (VH5); written before its group, the previous pass's.
+(5) IN A HIT-LIST ARGUMENT: **hit-carry** now applies: written after its group, the hit's own value; BEFORE it, the
+PREVIOUS HIT's: `occurrences(/${$y + 1}-(?<y>\d{4})/, min = 2)` (the unset value read as EMPTY for this run only, so the
+first hit can start) WHOLE `-2025 2026-2030` HOLDS, `-2025 2027-2030` FAILS (VH6).
+(6) EVERY MODE: WHOLE, SEARCHED and FIND-ALL as for any pattern; the draft's example `/(?<y>\d{4})-${$y + 1}/`: WHOLE
+`2025-2026` HOLDS / SEARCHED `x2025-2026` `2025-2026`@1 / FIND-ALL `2025-2026 2030-2032 2030-2031` [`2025-2026`@0,
+`2030-2031`@20] (VH1; the draft's hand-worked answers REPRODUCED). A several-match subject: the third member shows a
+later match being found after a failing one.
+(7) WHAT AN ENGINE MUST DO: the inserted text is known only at MATCH TIME, so the program is NOT a fixed regex: it is a
+generalized BACKREFERENCE (a computed string compared at the current position), at least the level of `\k<y>` (the VM
+with backreferences; not DFA-able in general); for a FINITE label (a label whose values are a known finite set, e.g.
+`\d{4}`) it can be ENUMERATED at compile time into an alternation of copies (`2025-2026|...`, 10,000 copies here):
+regular, but priced by its size (R.1.12, "a constant is an rx where the count of the enumeration is 1").
+(8) THE LIBPCRE2 CONTROL: the callout model above (VH0 shows it equals `\k<y>` where PCRE has the construct); no plain
+PCRE pattern expresses `$y + 1`.
+(9) WHAT IT MEETS: dollar-condition's ruled ground ("$x is not a pattern but a match"): (1) above is consistent with it,
+a value is inserted as TEXT, not as a pattern; R.1.12's "a constant is an rx where the count of the enumeration is 1"
+(a compile-time constant), which a match-time value is not; array-lift (arrays the user writes; a match-time value is
+one string); the hole positions (R.1.0): a match value in a COUNT position (`\d{${$n}}`) would make the count known only
+at match time, which the count ruling's "finite enumeration" excludes unless the label is finite: NOT STATED, part of
+**value-hole**.
 
 ### R.2 Compile checks under two-valued logic
 
@@ -1700,7 +2037,12 @@ the engine's (PART Q), reported row, labels compared.
 | any piece of a filter operand (a side of `&`, a `label:` set) that MIGHT LOOK OUTSIDE the stretch | it sees the subject around the stretch | a COMPILE ERROR (rev 24.4; R.1.4); WHICH pieces: THE DRAFT'S READING, `\b`/`\B` that can sit at an edge, a lookbehind reaching before the start, a lookahead reaching past the end, `\G`, `\K` (rev 24.4's PART F) | RULED, operand-context (rev 24.4): "I would say at this point that any piece that might look outside is a compiler error. Then if we discover later we can relax it we can review"; it widens the 2026-11-15 ruling ("disallow certain contextual rx like \b in a filter rx that would exceed the span rx that it was filtering") from `\b` to every such piece |
 | a label set inside a loop or any branching and read after it; and two groups of one name (A6; rev 24.4 PART N) | the CAPTURE: the value from the last time the group was set (PCRE's capture state); duplicate names a COMPILE ERROR without `(?J)`, under it the lowest-numbered SET group | the LABEL: a NAME, its last setting, every branching resetting the names inside it when entered (R.1.7): the last pass's own, at the outermost view; two groups of one name allowed | RULED (after-loop-read, nested-pass; rev 24.4: "branchings reset the labels inside them", "Yes. Let's keep it"); a LANGUAGE FEATURE (below); PCRE's carried value stays readable through the carried-capture form (required, spelling to the review) |
 | atomic in a search | PCRE's atomic group, the search moves on | the same | regex (atomic-search CLOSED by the owner: "Atomic as used by say atomic() would provide pcre behavior"); item 14's reading is a backtracking verb, item 19 |
-| a positive lookahead's labels | visible after it | the same | regex; "never visible outside" would be an exception: **lookahead-labels** |
+| a positive lookahead's labels | visible after it | the same | regex; "never visible outside" would be an exception: **lookahead-labels** [REV 26: RULED, visible: regex, no exception] |
+| [REV 26] a postfix QUANTIFIER on a CONDITION (`(h: <5)?`, `${c}*`) | regex would quantify the piece (`?` never fails, `+` as the bare test) | a COMPILE ERROR | ALLOWED, requested by the owner as an explicit exception: quantified-condition, "an error. This is a formal punt because we may find a better meaning for it in the future and this keeps that from breaking current code" (R.1.14) |
+| [REV 26] a BACKREFERENCE to a name the rx it is written in does not define (`B := /\k<h>/` used after A) | the written-out splice reads A's group | a COMPILE ERROR | ALLOWED: free-name, "Catastrophic. The rx should export the group." (R.1.13 REFERENCES) |
+| [REV 26] a backreference inside a part whose name another part also sets | `(?J)`'s first set group (the reverse answer) | the part's own group | ALLOWED: backref-across-parts (R.1.13); inside ONE literal with two groups of one name: **backref-label** (asked) |
+| [REV 26] a NUMBER on a composed pattern (`A SEQ B & (1: ..)`) | the written-out regex's group 1 | a COMPILE ERROR "name the group" (except `0`) | ALLOWED: number-names, "Only when there is no ambiguity" (R.1.13) |
+| [REV 26] a COUNT hole given a non-count (`\d{${n}}`, n := ["x"]) | PCRE reads `\d{x}` as literal text | a COMPILE ERROR (THE MANAGER'S READING of "must") | ALLOWED: "a count whole must have values that produce counts (and not convert to rx)" (R.1.14) |
 | a label named in both `&` operands | PCRE accepts duplicate names under `(?J)` | rev 25: an AMBIGUOUS REFERENCE, a compile error where a condition or a `$` references it, not for existing; a part's own label by a label on the part, `[aa = A]` then `aa.h` (R.1.13) | RULED (label-flow, revising shared-label's "keep the compiler error"): "it is an error to ambigously reference a label ... this is different than "its an error for labels of the same name to exist at all in A & B"" |
 | a name two parts of a SEQUENCE surface (rev 25) | (no regex form: the parts are spliced, so PCRE sees two groups of one name, refused without `(?J)`, the first set group under it) | ONE label, the LAST MENTION, as two groups of one name in a literal (R.1.7, R.1.13) | RULED (label-flow): "i adjust my rules to be such that a compose and a literal rx have the same label behavior"; "i adjust to say its the last mention" |
 | a HOLE in a pattern position (rev 25) | (`${}` is not regex) its WRITTEN-OUT regex: `/xxx${/foo/}yyy/` = `/xxx(?:foo)yyy/`, an edge assertion reading the neighbours | the same, with its own flags and its own group numbering (as before) | RULED (hole-reading): "assertions become ok to cross the border"; the own flags and numbering are the draft's earlier rule, kept by the ruling ("as before") |
@@ -1743,10 +2085,39 @@ box that exposes labels"; nothing chosen): each is an explicit request (its feat
 | the STRETCH (a result's own text) | the right operand of `&` and `!B`, run on it (R.1.4); `0:` ("the whole match", 12:25) | requested by writing `&` / `0:`; rev 24.4: `0` is the whole match of the pattern it is written on (zero-place RULED); an operand sees nothing past the stretch, any piece that might is refused (operand-context RULED) |
 | the HIT LIST | `hits(r)` | requested (§R.6 above); rev 24.4: atomic and anchored (hits-text, hits-committed RULED); a hit as a pass **hits-pass** |
 | the PASS FORMS (every pass's values) | `some`, `occurs.*`, `h[2]`, `$h[2]` | requested (the PASS TABLE row above); they tell same-result patterns apart (PART P SAME-1: `(h[2]: <5)` 2 / 14 / 14 of 364), so **same-results** states the principle for label conditions; whether they read each pass's own labels is **some-own**; rev 24.4: a bare `$h` reads the label (RULED), the other passes by the array form |
-| a lookahead's labels | the outer path's labels | PCRE's; **lookahead-labels** |
+| a lookahead's labels | the outer path's labels | PCRE's; **lookahead-labels** [REV 26: RULED, visible] |
 | an INNER view (a label inside an inner loop) | a condition nested at that level (R.1.7) | RULED (nested-pass): by nesting, not observed from outside |
 
 ### R.7 EXAMPLES THAT MOVED
+
+REV 25.1 -> REV 26 (the 2026-11-18 rulings; each category grepped over rev 25.1's WHOLE draft, `git show
+3c40ba007:docs/design/predicates_draft.md`, the commands and hit counts in lane predspec26's report EXAMPLES THAT
+MOVED; every live hit fixed in place or marked "[REV 26]"):
+- NUMBERS ON COMPOSED PATTERNS (number-names): 12 lines with `(n: ` or `$n`; every composed-pattern example sits in
+  R.1.13's number paragraph and §R.8's old row (now the record of the question; the ruling's paragraph precedes it) and
+  §R.11 row 64; §2.6's `$1` is prose. MOVED to the error: `A SEQ B & (1: <5)`, `/${A},(\d)/ & (1: ..)`, `(A | B) & (1:
+  <5)`, `A & B & (1: <2)` (rev 25's PART NUM line `/(\d)\d/ & /\d(\d)/ & (1: <2)` included), and the shared-name
+  `/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)` (THE MANAGER'S READING, supported); KEPT: one literal (`/(\d):(\d)/ & (2: > $1)`,
+  `/(?:(\d)?;)*/ & (1: <5)`, `(a)(?:b)(?<n>c)(?=d)((d)e)`).
+- REFERENCES THROUGH A BINDING (export-rule): 20 lines with a part label `[x = ..]`, 4 with a path; every reference is
+  to a public label, by path or inside the binding that uses the part: 0 moved (no example uses a `_` label).
+- QUANTIFIERS ON CONDITIONS (quantified-condition): one example, §R.8's witness `[h = rx.digit] SEQ (h: <5)?`: MOVED
+  from regex's meaning to the compile error (R.1.14; the regex reading kept as the record, rev 26's PART CS CS5).
+- A LONE COMPLEMENT (complement-place, lone-complement-match): §2.2's "Alone (`${!B}`, `C | !B`, a program that is only
+  `!B`)" stays an error, now RULED, at the use; §R.8's whole-value reading of `!q` (E9) is the record; `not_seven :=
+  not seven` and `digits & not_seven` are new examples (legal).
+- HIT-LIST ARGUMENTS WITH A CONDITION BEFORE ITS GROUP (hit-carry): R.1.7's and §R.8's `occurrences(/${c}(?<h>\d)/,
+  min = 2)` keep their CARRIED answers (WHOLE `73` FAILS), now RULED; §2.6's two refusals and §0.1 L53, L62 MOVE: the
+  nullable argument from an error to a WARNING (the loop's one hit), the carrying argument from an error to its
+  loop's meaning (`/(?:(?<c>a)|b)c(?(<c>)a|d)/` on `acabcd`: the one hit `aca`).
+- PRODUCTS OVER HOLES THAT ARE NOT COUNT HOLES (the scope correction): 6 lines; rev 25.1's table (product in every
+  position), the joined name copies (`(?:(?<a>\d)|(?<b>\d))`, now a compile error), and §11's "copied per member"
+  sentence: replaced or marked; the count examples (`/(\d+?)\d{${n}}/`, `rx.repeat(rx.digit, min = n, max = n)`) KEEP
+  their answers.
+- ARRAY ARITHMETIC (array-lift): `rx.repeat(rx.digit, n + 1)`, n := [2, 4]: rev 25.1 asked it ("DISTRIBUTED" vs a type
+  error); now RULED `(?|\d{3}|\d{5})`, the distributed answer (WHOLE `123` HOLDS; rev 26's PART AL AL2).
+- A VALUE IN A PATTERN POSITION (value-hole): 12 lines with `${$`; 7 live uses MARKED as resting on an unruled form
+  (§0.1 L33, §2.5, §4.1, §11, and three in §13: O27, O34 and the captures-level lean), §R.8's row replaced, §16's two the record.
 
 REV 24.1 -> REV 24.2 (PART A, 68 catalogue lines, each run under rev 24.2 (AFTER) and rev 24.1 (BEFORE), every mode;
 the premise: rev 24.1's pass-own candidate moved the same 17, and V7 the same 8 / 33 / 33, PART 0): MOVED 17, every
@@ -1864,6 +2235,32 @@ the file; removed from the questions, each applied where named):
   **count-argument**, the one `repeat`, the insert by position with the product and removal, and the nine postfix
   quantifier operators with their binding (R.1.14).
 
+RULED BY THE OWNER, rev 26 (COND-FAMILY, the entries of 2026-11-18 from "2026-11-18 MANAGER CORRECTION — "the right
+side of `&`" was the manager's slip" to the end of the file; removed from the questions, each applied where named; one
+row per entry in §R.11 rows 76-107):
+- **number-names**: "Only when there is no ambiguity"; addendum "the exception to our rule is 0" (R.1.13, R.1.0).
+- **hit-carry**: it carries ("occurrences is a simple regex rewrite"); the rider, a NULLABLE argument: "warning on
+  nullable" (R.1.7, R.1.9, §2.6).
+- **product-order**: first slowest ("I agree with lean"), the product's SCOPE corrected to COUNT holes ("It doesn't
+  apply for rx holes. Idk for others"); "Legal: yes legal sql."; **removal**: "whole copy"; **name-hole**: "arrays in
+  names are a compiler error" (R.1.14, R.1.0 HOLE POSITIONS).
+- **value-is-pattern**: SPLIT: a count hole's values produce counts (RULED); arithmetic over arrays a lean, then RULED
+  by **array-lift** ("alternations combine on the product"); a matched value in a pattern position a LEAN, now
+  **value-hole** (asked, below) (R.1.14, R.1.15).
+- **hole-in-filter**: "I agree filter error"; holes filled first (R.1.4).
+- **backref-across-parts**: the part's own group; the namespace at the point of reference, the last mention; closed by
+  **free-name**: a name the rx does not define is a compile error (R.1.13 REFERENCES).
+- **path-and-ambiguity**: the part label used twice, the last mention ("so I agree the last reference"); the read-out
+  closed by **export-rule** (statement (5)); **filter-captures** NOT adopted as a rule (R.1.13).
+- **export-rule** (closing **export-scope**): public unless `_`; a binding shows its own public labels and its public
+  part labels; `[_a = A]`, `[_ = A]` (R.1.13 EXPORT AND VISIBILITY).
+- **condition-in-sequence**: "yes ... but allow both"; **quantified-condition**: "an error. This is a formal punt" (R.1.14).
+- **lookahead-labels**: "agree" (R.1.4); **label-mark** closed by entailment, its spelling remains (R.1.14 table).
+- **complement-place**: the error is at the USE; two kinds of rx; **lone-complement-match**: "keep it an error and provide
+  "anything"" (R.1.4, R.1.0).
+- IDEAS, cited and not folded: `cartesian(xx, yy, ...)` and an array of names as an interim product
+  (`predicates_future.md` item 27); a count as a filter over all numbers (item 28); a declared parameter (item 26).
+
 REV 24.3 SPLITS THE REST IN TWO (review r42; the manager's dispositions): (a) what the manager TELLS the owner, each a
 reading the rulings entail, with its witness; (b) the QUESTIONS still asked. Every answer below is from rev 24.3's
 engine (PART Q unless named; its whole PART Q re-ran under rev 24.3 with 0 changed lines, PART 0, so rev 24.2's
@@ -1882,6 +2279,8 @@ with a slug.
 | **some-own** | `some`, `occurs.*` and a literal index read EACH PASS'S OWN labels [REV 25.1: as the pass forms read them after the loop; a condition inside a pass before its group is pass-start-read's, and inside an `occurrences` argument **hit-carry** (b)] | the owner's LEAN, relied on by after-loop-read: "most would expect that a missing group would unset"; a pass table that carried a value across passes would contradict it | `REP & some((h: <5))` on `3;;` HOLDS / `7;3;;` -> `7;3;;`@0 / `7;; 3;;` [`3;;`@4]; `CLOSE & some(((h, m = 00): == (10, 00)))` on `9:45,10,` HOLDS; rev 24.1 vs rev 24.2 0 / 0 / 0 of 364, 0 of 85 |
 | **same-results** | the spelling principle: two patterns are interchangeable under every CONDITION when they give the same results in the same order with the same labels (not only the same paths) | the black-box ADDENDUM: "Then from the perspective of the condition, an rx is a black box that exposes labels"; a condition reads nothing else of the box | SAME-1 `/(?:(?<h>\d);)*/` vs `/(?:(?:\d;)*(?<h>\d);)?/`: under `(h: <5)`, NOT, a default, `!<5`, `"3"` 0 of 364 each; the pass forms (requests that open the box, §R.6) tell them apart: `some((h: <5))` REJECTED on the set-once h, `(h[2]: <5)` 2 / 14 / 14 |
 | **unsettable-label** | a label no match can set makes the `test.never` WARNING, not an error (§R.2) | polarity-rule: "warning for both. Warnings are errors given some strictness setting" | §R.2's DEFINE witness: compiles, warns, its test fails on every text |
+| **nested-complement** (rev 26: ENTAILED) | a `contains` / `occurrences` argument FILTERS PATHS like a program: a complement inside it rejects a path and the loop tries the next (the one-pattern model), not the plain search's committed hits judged after | hit-carry's premise, checked against the record: "occurrences is a simple regex rewrite ? So what the user provides gets inserted into a template hole like usual?" | `contains(/\d+/ & !/7\d*/)` WHOLE: one-pattern vs committed 81 of 364 texts differ (alphabet `17 `), first `71`: one-pattern HOLDS (the hit `1`), committed FAILS (rev 26's PART RS RS1) |
+| **nullable-meaning** (rev 26: ENTAILED) | a nullable `occurrences` argument keeps the LOOP's meaning: at most one hit, the first, possibly empty (the manager's "PCRE's meaning ... as the empty search does" is NOT supported as worded: PCRE's find-all gives four hits on `a1b`) | the same premise (a rewrite into a loop template) and "hit-carry: warning on nullable" | `/\d*/` on `a1b`: the loop one hit [``@0]; PCRE's find-all [``@0, `1`@1, ``@2, ``@3] (PART H H4, H5) |
 
 (b) THE QUESTIONS STILL ASKED (G24-5: no regex model decides them, or the model has a twin with the opposite answer;
 THE DRAFT'S READING labelled, never chosen). Each: the definition, WHOLE / SEARCHED / several matches per candidate,
@@ -1889,33 +2288,36 @@ the texts that differ, and the rulings it touches, RE-RUN.
 
 | slug | the question | THE DRAFT'S READING (current) | WHOLE / SEARCHED / several matches, per candidate | the texts that differ from the draft's reading | what each costs; the earlier rulings it touches, RE-RUN |
 |---|---|---|---|---|---|
-| **number-names** (rev 25.1; REPLACES rev 25's **numbered-duplicate** and **sequence-numbers**, review r43 A) | what does a label NUMBER name on a COMPOSED pattern (the sequence operator, a hole, `\|`, an atomic part, `occurrences`, a postfix operand, a labelled part) and on a group whose NAME is shared (in one literal, or across `&`)? DENOTES: which group, or which label, `(1: ..)` and `$1` read | NONE consistent: his position "do we define the groups as coming from on B? Makes sense" (not a ruling); THE MANAGER'S CONSEQUENCE "numbers never collide across `&` ... and are not subject to the ambiguous-reference error" (a reading IN CONFLICT with his addendum "a group's name and its number are TWO NAMES OF ONE LABEL" and label-flow (4)); numbers local to each literal, a hole keeping its own numbering (the manager's answer in "label numbers: try them") | SHARED NAME, `/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)`: (a) the label h: WHOLE `3,7` FAILS, `7,3` HOLDS / SEARCHED `7,3` -> `7,3`@0 / FIND-ALL `3,7 7,3` [`7,3`@4]; (b) group 1's own: `3,7` HOLDS, `7,3` FAILS / `3`@2 / [`3,7`@0, `3`@6] (rev 25's PART NUM). SEQUENCE, `A SEQ B & (1: <5)`, A := `/(\d)/`, B := `/,(\d)/`: written-out (1 = A's): `3,7` HOLDS, `7,3` FAILS / `7,3 3,7` -> `3,7`@4 / [`3,7`@4]; nearest literal (1 = B's): FAILS, HOLDS / `7,3`@0 / [`7,3`@0]; none (the unknown-label error): REJECTED x3 (rev 25's PART NUM). HOLE, `/${A},(\d)/` vs the literal `/(\d),(\d)/` (A := `/(\d)/`): the literal `3,7` HOLDS, `7,3` FAILS / `3,7`@4 / [`3,7`@4]; own numbering `3,7` FAILS, `7,3` HOLDS / `7,3`@0 / [`7,3`@0] (rev 25.1's PART A A2). `\|`, `(A \| B) & (1: <5)`, A := `/(\d)x/`, B := `/(\d)y/`: distributed `3x` HOLDS, `3y` HOLDS / `7x 3y 3x` -> `3y`@3 / [`3y`@3, `3x`@6]; 1 = A's: `3y` FAILS / `3x`@6 / [`3x`@6]; 1 = B's: `3x` FAILS / `3y`@3 / [`3y`@3] (A1). ACROSS `&`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`, `A & B & (1: <2)`: the consequence (B's h) `12` FAILS, `21` HOLDS / `21 12` -> `21`@0 / `12 21 10` [`21`@3, `10`@6]; name = number: REJECTED x3 (A3) | shared name (a) vs (b) 7 / 277 / 284 of 364 (holds and stretch); sequence written-out vs nearest 2 / 14 / 14 of 121; either vs none every text | written-out numbering: what a reader of the expansion sees, but a part's numbers shift with what precedes it and composed = literal fails through holes the other way; per literal: no shift, but composed != literal (A2) and `\|`'s distribution law fails (A1); numbers as names: the ambiguous-reference error reaches them (A3). Touches zero-place, label-flow (2) and (4), the numbered-label warning (ADOPTED: numbers are discouraged) |
-| **hole-in-filter** (rev 25.1, review r43 B; the manager's correction entry asks it) | a HOLE whose inserted pattern carries an edge assertion, standing INSIDE a filter operand: `/\d+/ & /${num}/`, num := `/\b\d+\b/`. Is the operand classified AFTER expansion (the string-set rule and its error, as for `/\d+/ & num`), or does the hole's assertion cross the border there too (hole-reading)? DENOTES: whether such a program compiles, and what its assertion sees | (i) classified after expansion: the operand-context COMPILE ERROR, exactly as `/\d+/ & num` (R.1.4, THE DRAFT'S READING) | (i) REJECTED x3; (ii) CROSSING (the assertion reads the subject beyond the operand): WHOLE `12` HOLDS / SEARCHED `a12 34` -> `34`@4 / FIND-ALL `12 a34 56` [`12`@0, `56`@7]; (iii) the operand over the stretch's own text (no error): `12` HOLDS / `12`@1 / [`12`@0, `34`@4, `56`@7] (rev 25.1's PART B B2) | (i) vs either: every text; (ii) vs (iii): every text where a match touches a word character outside its stretch (the witnesses) | (i): one rule for every filter operand, the hole's edge freedom stops at the filter (the conservative operand-context ruling: "any piece that might look outside is a compiler error"); (ii): one rule for every hole, the filter's "whole world" broken by the hole; (iii): neither ruled. Touches operand-context, hole-reading, zero-place ("That's its whole world") |
-| **hit-carry** (rev 25.1, review r43 C) | does a condition inside an `occurrences` / `hits` argument, written BEFORE its label's group, read the PREVIOUS HIT's value (as pass-start-read does in a loop body)? DENOTES: what such a condition sees, so which hits the argument has | YES: R.1.7's text extends pass-start-read to `occurrences` arguments (rev 25); the ruling itself was shown for a loop body at ONE depth | `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5): YES WHOLE `73` FAILS / SEARCHED `73` FAILS / FIND-ALL `3x73` [`3x73`@0 h = `7`]; NO (own hit: c holds before its group) `73` HOLDS h = `3` / `73`@0 h = `3` / [`3x73`@0 h = `3`] (rev 25.1's PART C C2, C3; the engine equals libpcre2 with the condition as a callout, 0 rows). AT TWO DEPTHS in a loop (pass-start-read's own reach): `/(?:(?:(?=(?<n>\d))${c}(?<h>\d);)*,)*/`, c := h unset or n >= h, `7;,3;,`: the one rule HOLDS, libpcre2's capture FAILS, the intent "non-decreasing" fails (C1) | YES vs NO over 364 texts (alphabet `37x`, length <= 5): WHOLE 84, SEARCHED 84 by stretch and 134 with label h, FIND-ALL 84 / 134 | YES: one rule for loops and hit lists, and §2.6's second refusal (its reason "find-all starts each hit with the group unset") goes; hits-pass and some-own are narrowed (marked); NO: a scope rule (an argument's conditions read its own hit) and the hits stay a plain search's. ALSO ASKED HERE (review r43 C, the manager's disposition): §2.6's NULLABLE-ARGUMENT refusal rests on "the empty-match rule's kind of refusal", whose error rev 25 withdrew (empty-search-error: "warning"): is it a FIFTH error-or-warning candidate (a warning, PCRE's one-hit meaning kept), or does it stay an error? Touches pass-start-read, hits-pass, the hit-list ruling, empty-search-error |
-| **product-order** (rev 25.1, review r43 D) | several holes with several members: is the cartesian product's order the written order of the holes, FIRST SLOWEST, or first fastest? With it: what "a legal pattern" means for a copy, and what is REMOVED (the literal's copy or the hole's construct) | first slowest; a pattern-valued member list in its alternation's order; legal = the LANGUAGE's syntax as pcrec reads it, a module refusal not a removal cause, a duplicate-name copy legal (one label, R.1.7); the removal unit the whole literal's copy; ZERO members remove the literal; an illegal member in a PATTERN position (no copies) a compile error of the whole; copies differing in a GROUP NAME joined by a plain alternation, renumbered (each THE DRAFT'S READING, R.1.14, rev 25.1) | `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2]: FIRST SLOWEST WHOLE `123` HOLDS x = `1`, y = `23` / SEARCHED `a123` -> `12`@1 x = `1`, y = `2` / FIND-ALL `123 45 6789` [`12`@0, `45`@4, `67`@7, `89`@9]; FIRST FASTEST WHOLE `123` HOLDS x = `12`, y = `3`, SEARCHED and FIND-ALL the same as slowest (rev 25.1's PART D D1). REMOVAL, `/a\|\d{${m},${M}}/`, m := [5], M := [2]: the literal's copy `(?!)` WHOLE `a` FAILS / `xa` FAILS / `a xa` []; the hole's construct `a\|(?:(?!))` HOLDS / `a`@1 / [`a`@0, `a`@3] (D4) | slowest vs fastest 8 / 0 / 0 of 364 (labels x, y; first `111`); rev 25's witness 0 / 0 / 0 (it cannot discriminate, D2) | slowest: the order a reader of nested loops expects; fastest: none argued; legality by PCRE2 alone would REMOVE a copy with a duplicate name (`(?<h>\d)(?<h>\d)` is refused without `(?J)`) though R.1.7 makes it one label (D3). Touches the two-kinds ruling ("remove illegal versions from the cartesion product"), the count ruling |
-| **value-is-pattern** (rev 25.1; FOLDS rev 25's **plus-operands** and **hole-member-kind**, review r43 G) | is a match VALUE (a string, `$x`) a one-member PATTERN: in a pattern position (`${$x}`, `${$y + 1}`), as `&`'s left operand, as `+`'s operand? And in a VALUE position, is a member of the wrong KIND removed, refused, or kept as PCRE text? DENOTES: what `+` and holes accept | none consistent: R.1.12 RULES "a constant is an rx where the count of the enumeration is 1"; dollar-condition's ground (RULED, his words "$x is not a pattern but a match"); the record's "adding two patterns is an ordinary type error" (not his words; the evidence's `x + y` -> TYPE ERROR line is THE DRAFT'S READING, rev 25.1's PART J); a value position keeps a member by PATTERN legality (the ruling's words) | PLUS: `rx.repeat(rx.digit, n + 1)`, n := [2, 4]: DISTRIBUTED (3 \| 5) `(?\|\d{3}\|\d{5})` WHOLE `123` HOLDS / SEARCHED `123456` -> `123`@0 / FIND-ALL `12345 678` [`123`@0, `678`@6]; a type error: REJECTED x3 (rev 25's PART RX). MEMBER KIND, n := [`"2"`, `"x"`], `/\d{${n}}/`: PATTERN LEGALITY `(?\|\d{2}\|\d{x})` WHOLE `1{x}` HOLDS / `a1{x}` -> `1{x}`@1 / `12 3{x}` [`12`@0, `3{x}`@3]; BY KIND (removed) FAILS / FAILS / [`12`@0]; by kind as an error REJECTED x3 (rev 25's PART RX, RXK). VALUE IN A PATTERN POSITION: `/(?<y>\d{4})-${$y + 1}/` (§11) is legal only if a value is a one-member pattern (hand-worked: on `2025-2026` HOLDS / SEARCHED `x2025-2026` `2025-2026`@1 / FIND-ALL `2025-2026 2030-2032` [`2025-2026`@0]) | plus: every text; member kind: every text containing a literal `{x}`; value-in-pattern: every program using `${$..}` (11 occurrences in this draft) | yes: one rule with counts and holes, `${$x}` and the generalized backreference keep their meaning, dollar-condition's ground narrows to "where a condition is expected"; no: a NUMBER kind beside the rx, `${$x}` needs a conversion. Touches R.1.12, dollar-condition, the count ruling, the quantifier operators, the two-kinds ruling |
-| **path-and-ambiguity** (rev 25.1, review r43 H) | what a part's path `aa.h` names when `aa` is mentioned twice or contains a branching; and what value a name both `&` sides surface has when NOTHING references it. DENOTES: the reported labels | R.1.13's readings (a)-(e): ambiguity = the last mention is not unique, judged at the reading point; `aa.h` the last mention of `aa`; an unreferenced shared name reports the LEFT side's value | ALL HAND-WORKED. TWO MENTIONS, A := `/(?<h>\d)/`, `[aa = A] SEQ "," SEQ [aa = A] & (aa.h: <5)`: last mention WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` -> `7,3`@4 / FIND-ALL `3,7 7,3 1,2` [`7,3`@4, `1,2`@8]; first mention: the mirror; an error (two parts one label): REJECTED x3. READ-OUT, `A & B`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`, no reference: left WHOLE `12` h = `1` / `x12` -> `12`@1 h = `1` / `12 34` [h = `1`, h = `3`]; right: h = `2` / `2` / [`2`, `4`] | two mentions: every text whose two items fall on opposite sides of 5; read-out: every match (labels only) | last mention: one rule with label-flow (3); left value: one rule with join-order; error: safest, but label-flow says a name nobody references is harmless. Touches label-flow (3), (4), join-order |
-| **backref-across-parts** (rev 25.1, review r43 SIMULATE-4) | what a BACKREFERENCE inside one part reads when the parts are spliced and both surface the name: B := `/(?<h>\d)\k<h>/`, `A SEQ B`, A := `/(?<h>\d)/`. DENOTES: whether a part's own `\k<h>` keeps its meaning in a composition | none stated; the splice written out needs `(?J)`, where PCRE's backreference reads the FIRST SET group of the name (`(?J)(?:(?<x>a)\|(?<x>b))+\k<x>` WHOLE `abba` HOLDS, `abbb` FAILS) | SPLICED WITH `(?J)` (A's h, the first set): WHOLE `733` FAILS, `737` HOLDS / SEARCHED `1733 737` -> `737`@5 / FIND-ALL `737 733 747` [`737`@0, `747`@8]; B's OWN group: `733` HOLDS, `737` FAILS / `733`@1 / [`733`@4] (rev 25.1's PART I I1; B alone matches `33`, not `37`) | every text where the two digits after A differ from A's | B's own: composed = literal for B (label-flow (2)), a part's text keeps its meaning (the reason the sequence is a splice); `(?J)`'s first set group: what the written-out regex does. Touches sequence-reading, label-flow, the carried-capture form |
-| **quantified-condition** (new, rev 25) | a postfix quantifier operator after a CONDITION (`[h = rx.digit] SEQ (h: <5)?`): the operators are ruled "on a pattern", and a condition is "one more piece of the pattern" (R.1). DENOTES: what `?`, `+`, `*` on a zero-width test mean | regex's: the condition is a piece, the quantifier regex's on it (exception-rule's default); "a type error" is a manager's reading no ruling states, not adopted | as regex (`(?<h>\d)(?:(?C))?` etc., libpcre2, rev 25's PART RX): `?` WHOLE `7` HOLDS, `3` HOLDS / SEARCHED `73` -> `7`@0 / FIND-ALL `7 3` [`7`@0, `3`@2] (the test never fails: `pcrec.test.always`'s case); `+` `7` FAILS, `3` HOLDS / `3`@1 / [`3`@2] (as the bare test); `*` as `?`; TYPE ERROR: REJECTED x3 | `?` and `*` vs the bare test: every text where the test fails | regex: no rule, and `test.always` flags the useless forms; type error: one more refusal, the condition kept apart from patterns. Touches branch-scope (a condition is a piece), polarity-rule's `test.always` |
+| **value-hole** (rev 26; REPLACES the third part of **value-is-pattern**) | may a MATCHED VALUE stand in a pattern position (`/(?<y>\d{4})-${$y + 1}/`, the generalized backreference)? If yes: what text it becomes, a numeral's width, an unset label, its level. DENOTES: whether such a program compiles and what it matches | his LEAN, "I love it if it works. It needs to be fleshed out" (not settled as legal); R.1.15's readings: LITERAL TEXT, never regex syntax; CANONICAL numerals; an unset label FAILS; read where written (loops: pass-start-read; hit lists: hit-carry); the VM level (a generalized backreference) unless the label is finite | (rev 26's PART VH) LEGAL, the draft's readings: WHOLE `2025-2026` HOLDS / SEARCHED `x2025-2026` `2025-2026`@1 / FIND-ALL `2025-2026 2030-2032 2030-2031` [`2025-2026`@0, `2030-2031`@20]; width kept: `0099-0100` HOLDS where canonical FAILS (`0099-100` the reverse); unset as EMPTY: WHOLE `-` HOLDS where FAIL gives FAILS; reinterpreted as regex: `1.5-1x5` HOLDS where literal FAILS; NOT LEGAL: REJECTED x3 | legal vs not: every program using `${$..}` (7 live uses marked, R.1.15); canonical vs width: every padded value; fail vs empty: every text where the label is unset at the hole | legal: the generalized backreference keeps its meaning, the VM level; not legal: `\k<y>` stays the only spelling and `$y + 1` needs a condition (`(z: == $y + 1)` on a following group). Touches dollar-condition ("$x is not a pattern but a match"), R.1.12, the count ruling, array-lift |
+| **other-holes** (rev 26; the product-order correction's "Idk for others") | what SEVERAL values do in a CHARACTER-CLASS hole and in an OPTION hole (the product is ruled for COUNT holes only, "each target area of the hole is a different thing with its own rules") | class: THE DRAFT'S READING (stated in the record, not put to him), more characters of the class, no copies; a range end: none; option: none | CLASS MEMBER `/[${c}x]/`, c := [a, b]: more characters `[abx]` and one copy per member `(?:[ax]\|[bx])` agree (0 / 0 / 0 of 259, python `re`, PART OQ OQ1); RANGE END `/[${lo}-z]/`, lo := [a, x]: one copy per member `(?:[a-z]\|[x-z])` vs the members as characters `[ax-z]` differ on 1 / 51 / 103 of 259 (OQ2; WHOLE `b` HOLDS against FAILS); an error: REJECTED x3. OPTION (hand-worked): `/(?${o})abc/`, o := [i, ""]: copies `(?i)abc\|abc` WHOLE `ABC` HOLDS; an error REJECTED | members: none (the readings agree); range ends: the texts above; options: every text an option changes | per-position rules keep each position simple; an error now and a rule later changes no answer (his "conservative now, relax later") |
+| **plus-operands** (rev 25's slug, REUSED; the record: "what `+` does on operands that are not numbers is still to be stated") | `+` (and `*`) between operands that are NOT numbers: two patterns, two strings, a string and a number | a TYPE ERROR (the manager's lean in the record: addition is arithmetic); arrays of numbers combine by array-lift (RULED) | HAND-WORKED: `"a" + "b"`: type error REJECTED x3; as string concatenation `"ab"`: WHOLE `ab` HOLDS / SEARCHED `xab` `ab`@1 / FIND-ALL `ab ab` [`ab`@0, `ab`@3]; `x + y` on patterns: the sequence is `SEQ`, so a second spelling of it would be a type error or a synonym | every program that writes `+` between non-numbers | type error: one meaning per mark, `SEQ` keeps sequencing; concatenation: a second spelling of the sequence operator. Touches the quantifier operators ("the two argument form of + is addition"), array-lift |
+| **anything-text** (rev 26; lone-complement-match "provide "anything"") | what the provided `anything` matches; it decides SEARCHED answers beside a complement | THE MANAGER'S READING: any text INCLUDING newlines (`/[\s\S]*/`, greedy), in the rx module | (PART CX) WHOLE: `/[\s\S]*/` and `/(?s).*/` agree with each other (0 of 121); `/.*/` without dot-all differs on 90 (every text with a newline). FIND-ALL `anything & not seven`, greedy, `712`: [``@0, `12`@1, ``@3]; `x712 55`: [`x712 55`@0, ``@7]; LAZY on `712`: [``@0, ``@1, `1`@1, ``@2, `2`@2, ``@3] (PCRE2's global loop; the manager's simulation "with a lazy any every hit is empty" is NOT reproduced: it stepped one character after an empty match) | greedy vs lazy: every searched text; newline vs not: every text with a newline | greedy and newline-matching: the whole-value point holds for every text; lazy: empty hits. Touches complement-place, the empty-search warning (a lone `anything` is nullable) |
+| **backref-label** (rev 26; a gap of free-name's "read as labels are") | a backreference INSIDE ONE literal after two groups of one name: does it read the LABEL (the one rule: a branching resets), the last group that was SET, or PCRE's `(?J)` first set group? | THE LABEL (free-name's state: "read as labels are (the last mention)"); rev 25.1 said "inside one literal a backreference is regex's, untouched" | `/(?<h>\d);(?:(?<h>\d)\|x)\k<h>/` (PART REF REF4, libpcre2): LABEL WHOLE `3;x3` FAILS, `3;77` HOLDS, `3;73` FAILS / SEARCHED `3;x3 3;77` `3;77`@5; LAST SET `3;x3` HOLDS, `3;77` HOLDS, `3;73` FAILS / `3;x3`@0; `(?J)` `3;x3` HOLDS, `3;77` FAILS, `3;73` HOLDS / `3;x3`@0 | label vs last set 2 / 2 / 2 of 341; label vs `(?J)` 6 / 6 / 6; last set vs `(?J)` 4 / 4 / 4 | label: one reading for a name everywhere (conditions and references); `(?J)`: PCRE's, but PCRE refuses the literal without `(?J)`. Touches the one label rule, the carried-capture form, free-name |
+| **zero-in-sequence** (rev 26; a gap of the zero addendum) | what `0` names in a CONDITION standing as a SEQUENCE OPERAND (condition-in-sequence), where the entire match is not yet known | none stated | `[h = rx.digit] SEQ (0: "7") SEQ rx.digit`: `0` = the match SO FAR (PCRE's callout start to here): WHOLE `73` HOLDS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (PART OQ OQ3); `0` = the entire match: a COMPILE ERROR there (REJECTED x3) | so far vs error: every program with `0` in a sequenced condition | so far: regex's (a callout sees the match so far); error: the addendum's "entire match" kept literal. Touches number-names' addendum, condition-in-sequence |
+| **group-truth / pass-table** (re-stated, rev 26) | ASKED NOW: after a loop, do the group questions over the pass table, `NOT some(c)` and `occurs.none(c)`, agree with `occurs.none(NOT c)` read per pass? hit-carry (a condition INSIDE a pass, before its group, reads the previous pass) does NOT reach them: the pass forms judge the finished passes, each with its OWN labels (**some-own**) | each pass's own labels, two-valued | (rev 24.x's E12, not re-run) REP & `NOT some((h: <5))`: `;` HOLDS / on `7;;` `7;;`@0 / on `; 3;7;; 3;` eight | `= occurs.none((h: <5))` 0 / 0 / 0; `occurs.none(NOT (h: <5))` differs 21 / 201 / 301 of 364 (E12) | the 11-18 rulings do not entail an answer (rev 26's PART RS RS2): it stays asked |
+
+(Rev 25.1's rows for **number-names**, **hole-in-filter**, **hit-carry**, **product-order**, **value-is-pattern**,
+**path-and-ambiguity**, **backref-across-parts** and **quantified-condition**, each now RULED or split above, are at the
+rev 25.1 commit; §R.11 rows 76-107 say where each ruling is applied.)
 
 REMAINING (open, not owner questions here, or already asked):
 
 | slug | state | current definition | example (WHOLE / SEARCHED / several matches) | candidates and their answers |
 |---|---|---|---|---|
 | **sql-picture** | MANAGER'S RESTATEMENT (the 11:50 entry's MANAGER'S FRAMING); the owner on its limit (the evening: "a matching language not a finding language"; §R.1) | every path a row, the branch remembered; filter, then the first row; atomic = the first row before the filter | `((B & (l: >50)) \| A) & (l: <10)`: `12` HOLDS / `12`@0 / on `12 25 13` three | naive filtering: 16 / 336 / 336 of 341 rr (E8). ATOMIC CLAUSE REFUTED for a condition inside: 117 / 414 / 414 of 1,365 rr (E8b; PCRE2 V18 sides with the atomic group); outside the atomic part they agree (0, D9). FLAGGED; a set of items is the hits, never the loop (PART T) |
-| **complement-place** | OPEN | where may `!B` stand; is a lone `!B` an ERROR | `!q` as a whole value read as `/[\s\S]*/ & !q`: `9:30` FAILS / on `9` `9`@0 / on `9 9:30 10` [`9 9:30 10`@0, ``@9] | ERROR (rev 23.2) vs the whole-value reading (E9); a SEARCHED lone `!B` has no reading |
-| **nested-complement** | OPEN (11-16 23:46 MINE) | a `contains` argument filters paths like a program | `t2 & contains(t2 & !q)`: `9:30` HOLDS / `9:30`@0 / on `9:30 1` two | one-pattern vs committed hits: 0 / 0 / 0 of 3,906 rr, hit lists compared (E10) |
+| **complement-place** | [REV 26] RULED with **lone-complement-match**: the error is at a USE that needs a match; two kinds of rx | R.1.4, R.1.0 KIND | `digits & not_seven` WHOLE `123` HOLDS, `712` FAILS (rev 26's PART CX CX2); a lone `!B` REJECTED in every mode | rev 25.1's candidates (ERROR vs the whole-value reading, E9) are the record |
+| **nested-complement** | [REV 26] ENTAILED by hit-carry's premise (a rewrite): moved to the TOLD table (a) | a `contains` argument filters paths like a program | (a) above | (a) above |
 | **repeated-means** | MANAGER'S RULING, owner told (11-16 22:58 (4)) | repeated = set in a loop by its operand regex | `(h: <5)` on `/(?:(?<h>\d);)+/ & /\d;/`: `3;` HOLDS / on `7;3;` `3;`@2 / two | vs set once: 0 / 0 / 0 of 364 rr (E11, unchanged) |
-| **group-truth / pass-table** (inside the named forms) | OPEN | group questions read the pass table, two-valued, each pass's own labels (**some-own**) | REP & `NOT some((h: <5))`: `;` HOLDS / on `7;;` `7;;`@0 / on `; 3;7;; 3;` eight | = `occurs.none((h: <5))` 0 / 0 / 0; `occurs.none(NOT (h: <5))` differs 21 / 201 / 301 of 364 rr (E12) |
-| **lookahead-labels** | OPEN | a positive lookahead's labels are the outer path's (PCRE) | `/(?=[\s\S]*?\d\d:(?<lm>\d\d))(?<h>\d{1,2})(?::\d\d)?/ & (lm: >= 30)`: `10:45` HOLDS / on `9:15 10:45` `9:15`@0 lm = `45` / two | never visible outside: 54 / 54 / 54 of 3,906 rr (E13) ; rev 25: the sorted-list example of pass-start-read relies on it (n set in a lookahead, read by the condition after it; libpcre2 agrees, R.1.7) |
+| **group-truth / pass-table** | [REV 26] RE-STATED as a question in (b) | (b) | (b) | (b) |
+| **lookahead-labels** | [REV 26] RULED: visible, as in PCRE ("agree") | R.1.4 LOOKAHEAD | rev 26's PART LA | the never-visible candidate (E13: 54 / 54 / 54 of 3,906) is the record |
 | **atomic-spelling** | OPEN (`predicates_future.md` item 19) | the meaning is PCRE's atomic group | `atomic(B \| A) & (l: <20)`: `25` FAILS / FAILS / [`13`@3] | plain: 6 / 798 / 924 of 1,365 rr (E14); the verbs and `A :: B` filed here (atomic-search closed) |
 | **options-spelling** | IDEA (item 20) | opt-ins declared in the source; scope; host cap | none (moves no answer) | not run |
 | **conditional-spelling** | OPEN (14:20) | `when(c, p)` and the else form | `KH & when((h: <5), p, (k: <3))`: `5;1;9` FAILS / on `1;0;9` `1;0;9`@0 / three | two-argument form: 392 / 502 / 556 of 1,110 rr (E15); `?` is taken by item 21's addendum idea ; rev 25: `?` is now RULED the postfix optional ("`?` is thereby the optional, and a conditional is spelled otherwise", R.1.14) |
 | **every-pass-spelling** | OPEN (14:30); the owner the evening: "assign the condition inside the loop to get the all behavior" | a named shorthand for `some(c) & occurs.none(NOT c)` | §R.4 W1a, W1b | candidates: W1a's hole loop (the item form, his evening words), W1b's group questions, his `loop` over a conditioned item (item 21). THE MANAGER'S INPUT, not a ruling (the kind-of-language entry's MINE; his words "it looks like functions and predicates and loops but it's not"): a name should not invite the imperative or set reading (review r42 RULING-15) ; rev 25: with the rx module the item form is `rx.repeat(X & c, ..)` or `(X & c)*` (R.1.14, PART RX6) |
-| **rx-module** | RULED in substance (rev 25, R.1.14): the sequence operator (a splice, tighter than `&` and `|`), holes by position, counts by product, one `repeat`, nine postfix operators | as R.1.14 | R.1.14's runs (PART RX) | the gaps asked in (b) [REV 25.1]: **value-is-pattern** (folds plus-operands, hole-member-kind), **quantified-condition**, **number-names** (replaces sequence-numbers, numbered-duplicate), **product-order**, **hole-in-filter**, **backref-across-parts**; the spellings to the review |
-| **label-mark** | OPEN (`rx_module.md` question 5; COND-FAMILY "OWNER, three points on labels") | `[x = R]` IS `(?<x>R)` (§3.1); he used `[a = rx.digit]` and said "setting labels is just the label using the group-label-not-capture syntax" | `octet := rx.digits(1, 3)`, `ip2 := octet SEQ "." SEQ octet & (octet: <10)`: under L1 (the bracket form) the unknown-label error; under L3 (a binding's name is a label) one label, the LAST octet (label-flow (3): "i adjust to say its the last mention"; numerals by §2.4's rule): WHOLE `5.200` FAILS, `200.5` HOLDS octet = `5` / SEARCHED `5.200 20.5` -> `5.2`@0 octet = `2` / FIND-ALL `1.2 5.200 20.5` [`1.2`@0, `5.2`@4, `20.5`@10] (rev 25's PART RX, RXL) | L1 / L2 / L4 differ in spelling only; L3 makes every bound part a label, which label-flow's "a binding's name is not a path" does not forbid but does not ask for |
+| **rx-module** | RULED in substance (rev 25, R.1.14): the sequence operator (a splice, tighter than `&` and `|`), holes by position, counts by product, one `repeat`, nine postfix operators | as R.1.14 | R.1.14's runs (PART RX) | [REV 26: the rev 25.1 gaps are RULED or split (the RULED list above); open: **value-hole**, **other-holes**, **plus-operands**, **anything-text**, **backref-label**, **zero-in-sequence**] the gaps asked in (b) [REV 25.1]: **value-is-pattern** (folds plus-operands, hole-member-kind), **quantified-condition**, **number-names** (replaces sequence-numbers, numbered-duplicate), **product-order**, **hole-in-filter**, **backref-across-parts**; the spellings to the review |
+| **label-mark** | [REV 26] CLOSED by entailment (a binding's name is not a label: label-flow and export-rule; told, not objected to); the label form's spelling remains (spellings 15) | R.1.13 EXPORT AND VISIBILITY | rev 25's PART RXL lines are the record | n/a |
 
-THE SPELLINGS PUT OFF TO ONE REVIEW (rev 24.4, extended in rev 25 with the rx module's marks, items 11-15, and in rev 25.1 with items 16-19, settling none; one list; each with the MEANING already ruled; NO proposal here; D193
+THE SPELLINGS PUT OFF TO ONE REVIEW (rev 24.4, extended in rev 25 with the rx module's marks, items 11-15, in rev 25.1 with items 16-19, and in rev 26 with items 20-23, settling none; one list; each with the MEANING already ruled; NO proposal here; D193
 addendum 4: every spelling in this file is a placeholder). The owner: "hits-text: yes but spelling to be reviewed with
 all other spellings".
 
@@ -1935,11 +2337,15 @@ all other spellings".
 | 12 | the NINE POSTFIX QUANTIFIER OPERATORS (his marks in the ruling: `+ +? * *? ? ??`, then the possessive forms) | regex's quantifier of that spelling on the operand as a whole, binding tightly (R.1.14) |
 | 13 | the RX CONSTRUCT NAMES (`rx.repeat`, `rx.digit`, `rx.alnum`, the plurals) | one repeat construct; singular character constructs; plurals defined over `repeat` (R.1.14) |
 | 14 | a PART's LABEL PATH (his `aa.h`) | a part's own label, reached through a label on the part (label-flow; R.1.13) |
-| 15 | the LABEL MARK without a literal (`[x = R]` here) | the group form read as a label (his point 2; **label-mark** still asks WHICH form, §R.8 remaining) |
+| 15 | the LABEL MARK without a literal (`[x = R]` here) | the group form read as a label (his point 2; [REV 26: label-mark closed by entailment; only the SPELLING of the form remains here] **label-mark** still asks WHICH form, §R.8 remaining) |
 | 16 | [REV 25.1] the INDEX on the array form (`h[k]` here) and the PASS index of the pass forms (`(h[2]: ..)`) | array-slot splits them: `[k]` on the array form indexes SETTINGS (THE DRAFT'S READING, R.1.7), the pass forms PASSES; on `7;;3;` they differ (`3` vs unset); a spelling that tells the two apart (review r43 FIXINDUCED-7) |
 | 17 | [REV 25.1] the SEQUENCE MARK's constraint | whatever mark is chosen, it CANNOT BEGIN AN OPERAND (the record's "the sequence mark is explicit, so `A+ SEQ B` is unambiguous", MINE; R.1.14) |
 | 18 | [REV 25.1] the CAN-NEVER-MATCH warning (`pcrec.match.never` here) and the NUMBERED-LABEL warning (`pcrec.label.numbered`) | §7.1's rows; names the draft's, prefixed `pcrec.` (§R.2) |
 | 19 | [REV 25.1] the PARSE READINGS that decide what a program says: postfix operators stack; a statement ends before `NAME :=`; `(`/`[` is a call or an index only after an operand; the levels of prefix `!`/`NOT`/comparisons and of `+ - * %` (§5.4's ONE OPERATOR TABLE) | THE DRAFT'S READINGS (R.1.14 (a)-(c)); they decide parses, so each is for the spellings review to confirm or replace |
+| 20 | [REV 26] the PRIVATE-LABEL mark (the `_` prefix here; his: "Private labels prefix with _") | a label or a part label that does not export outside its binding (export-rule (1), (6); R.1.13) |
+| 21 | [REV 26] the CLOSE-ALL-EXPORTS part label (`[_ = A]` here, his) | none of A's labels visible anywhere outside A; A matches as before (export-rule (7); R.1.13) |
+| 22 | [REV 26] the ANY-TEXT pattern (`anything` here; his preference over `any`, which "sounds like some()") | the pattern the language provides to write beside a complement (lone-complement-match; what it matches is **anything-text**) |
+| 23 | [REV 26] the EXPLICIT PRODUCT (`cartesian(xx, yy, ...)` here, his) | an IDEA, not a rule (`predicates_future.md` item 27); listed so its spelling is reviewed with the rest if it is adopted |
 
 THE LABEL AND THE RX MODULE (rev 24.1's ramification (e), kept): `docs/design/rx_module.md` spells a labelled part
 `[h = X]` and, by §3.1, that IS `(?<h>X)`: the form gives a capture (regex's, carried) and a label (the language's,
@@ -1971,6 +2377,18 @@ r43): every witness the review confirmed at answer level is re-run (rev 25.1's P
 none failed to reproduce; one printed list of rev 25 is corrected (PART H's first try on `x300 12`: hits [`0`, `12`]
 under the canonical-numeral judge, not [`00`, `12`]; the verdict HOLDS unchanged; rev 25.1's PART I I2); the
 questions are now (b)'s seven new rows plus **quantified-condition** and the remaining table. Nothing STOPPED.
+REV 26: every table or answer line the owner was SHOWN in the 2026-11-18 entries is re-run (rev 26's PARTS N, H, P, AL,
+HF, REF, EX, CS, LA, CX): the shared-name difference (7 and 277 of 364: N1), the hit-carry witness (H1), the product
+witness and the manager's Python run (P1, P2), the joined name copies (P5), the removal witness (P4), the hand-worked
+arrays (AL1), the hole-in-filter witness (HF1), the backreference witness and its written-out reverse (REF2), the
+export example (EX1-EX3), the condition-in-sequence pair (CS1), the quantified-condition witness (CS5), the lookahead
+runs (LA1, LA2), the complement table (CX1, CX2) and the manager's `any` simulation (CX3); each reproduces EXCEPT one
+clause of the manager's simulation, which is not a table he was shown as an answer (the record keeps it "of use only
+for its last clause"): "with a lazy `any := /.*?/` every hit is empty" is NOT reproduced under PCRE2's global loop
+(R.1.2), and its last clause holds only for spellings that match a newline (**anything-text**). Nothing STOPPED: no
+two 2026-11-18 rulings decide an answer differently; one RULING meets an older sentence without a printed answer
+between them ("inside one literal a backreference is regex's, untouched" against "read as labels are"), asked as
+**backref-label**.
 
 ### R.9 Reversed, narrowed and reopened rulings; marked sections
 
@@ -2013,6 +2431,19 @@ REVERSED, NARROWED OR REOPENED (each marked where it stood):
 | [REV 25.1] rev 25's "the product's order ... answer-free where run" | R.1.14 | WITHDRAWN: its witness could not discriminate; the order decides labels, asked as **product-order** |
 | [REV 25.1] the parse rule as rev 25 wrote it (without "the sequence mark is explicit") | R.1.14 | RESTORED from the record (MINE): the sequence mark cannot begin an operand |
 | [REV 25.1] rev 25's "inside rx text a backreference already reads it [the last-set capture]" | R.1.7 | WITHDRAWN: false under `(?J)` (first set group); **backref-across-parts** asked |
+| [REV 26] rev 25.1's position table's single product column (several values duplicate the pattern in EVERY position) | R.1.14 table | NARROWED by product-order's scope correction: "the ruling was for counting holes which duplicate the pattern. It doesn't apply for rx holes. Idk for others" (R.1.0 HOLE POSITIONS) |
+| [REV 26] rev 25.1's join of name copies "as plain alternatives", renumbered | R.1.14 table, R.1.14 RX4 | WITHDRAWN by name-hole: "I agree that arrays in names are a compiler error" |
+| [REV 26] §2.6's two argument refusals (a nullable argument; a backreference or conditional before its group) as COMPILE ERRORS | §2.6, §0.1 L53, L62, §13 O53 | REPLACED: the nullable argument a WARNING ("hit-carry: warning on nullable"); the second refusal WITHDRAWN by hit-carry ("they are expecting carries behavior") |
+| [REV 26] R.1.9's "its hits are those of a plain search" | R.1.9 | NARROWED by hit-carry: only for an argument with no condition before its group |
+| [REV 26] the manager's "nearest pattern to its left" and "numbers are not subject to the ambiguous-reference error" (rev 25.1 had them as readings in conflict) | R.1.13, §R.8 | WITHDRAWN by number-names: "Only when there is no ambiguity" |
+| [REV 26] the manager's readings (a) "names inside a part are resolved in that part, before the splice" and (d) "renaming groups apart before splicing" as the RULE | COND-FAMILY only | WITHDRAWN as the rule by his clarification "it should be the last reference as labels" and free-name; renaming stays the evidence's MODEL |
+| [REV 26] rev 25.1's reading (e), "the read-out of a name both `&` sides surface is the LEFT side's value" | R.1.13 PATHS | WITHDRAWN by export-rule (5): an ambiguous reference for the caller as for the program |
+| [REV 26] the owner's lean "a filter can never produce captures" | COND-FAMILY only | NOT ADOPTED (export-rule: visibility by export, not by role; `[_ = A]` is its per-part form) |
+| [REV 26] rev 25's "a quantifier on a condition: regex's" (the draft's reading, **quantified-condition**) | R.1.14, §R.8 | REVERSED: "an error ... a formal punt" |
+| [REV 26] "adding two patterns is an ordinary type error" (the record, the manager's) as a general sentence | R.1.14, §R.8 | WITHDRAWN by array-lift's record; `+` on non-numbers asked **plus-operands** |
+| [REV 26] rev 25.1's "a value in a pattern position is legal only if a value is a one-member pattern" (value-is-pattern) | R.1.14, §R.8, §0.1 L33, §2.5, §4.1, §11, §13 | REPLACED by **value-hole** (his lean; R.1.15: a value is inserted as LITERAL TEXT); every use marked |
+| [REV 26] rev 25.1's "complement-place: OPEN" and the lone `!B`'s whole-value reading (E9) | §R.8 remaining, §2.2 | RULED: the error is at the use; lone-complement-match keeps it an error and provides `anything` |
+| [REV 26] "inside one literal a backreference is regex's, untouched" (rev 25.1, R.1.7 (b)) | R.1.7 | MEETS free-name's "read as labels are": asked **backref-label** |
 
 MARKED SECTIONS (each carries a "[REV 24]" or "[REV 24.1]" mark at its head or inline, naming what is superseded):
 rev 24's: §0 status; §0.1 (rows L16, L30, L34, L36, L52, L55, L59, L60, L82, L83, L88); §0.2; §0.3 (pass, PCRE's
@@ -2042,6 +2473,25 @@ row 2 and `/x${/^a/ & /(?s).*/}/`, re-derived); §12 (E-CTX-2 and its readers; `
 §16 and the changelog are the record and are not marked.
 
 ### R.10 Evidence
+
+REV 26 (lane predspec26, 2026-11-18): `docs/dev/lanes/predspec26_evidence/` (its CLAUDE.md lists the files and the
+classifier predicates beside the sentences that state them). `predspec26_model.py` is STANDALONE (it loads no earlier
+engine): libpcre2-8 10.46 through `../rxmodel_evidence/pcre2h.py` on hand-written regex, a condition a string callout,
+FIND-ALL PCRE2's global loop (R.1.2); Python `re` where the owner was shown a Python run; and COMPILE-TIME CLASSIFIERS
+that state the rulings as code (number names, kinds per place, holes by position, references, visibility, quantified
+conditions), each marked RULE-AS-CODE: a CONSISTENCY check of a ruling on its own witnesses, never an independent
+control. PARTS: N (number-names, `0`), H (hit-carry, the nullable argument), P (product order, removal, name-hole, the
+count kind), AL (array-lift), HF (hole-in-filter), REF (references, free-name, backref-label), EX (the export rule),
+CS (condition-in-sequence, quantified-condition), LA (lookahead-labels), CX (complement-place, `anything`), VH (the
+value hole, a callout model controlled against `\k<y>`: 0 / 0 / 0 of 364), RS (the two held-back questions), OQ (the
+new questions' witnesses). Produced by `(cd $PCREC_TMPDIR/scratch/predspec26 && timeout 900 python3 -I -B
+<worktree>/docs/dev/lanes/predspec26_evidence/predspec26_model.py)`: forward CHECKS 111 of 111 OK; thirteen sabotages
+(s1 hit-carry off, s2 first fastest, s3 removal of the piece, s4 a filter judged before its holes are filled, s5
+dynamic scoping, s6 `_` ignored, s7 numbers on composed patterns, s8 pairwise arrays, s9 a value as regex, s10 a lone
+complement matching, s11 a quantified condition as regex, s12 lookahead labels invisible, s13 a sequenced condition
+tested once), each alone FAILS at least one check, all together 83 of 111 (`predspec26_sabotage_each.out`,
+`predspec26_sabotage.out`). PREMISE: predspec251's engine re-run byte-identical to its committed outputs (forward 25 of
+25; `PREDSPEC251_SABOTAGE=1` 20 of 25, as committed). Cited in the text as "rev 26's PART x".
 
 REV 25.1 (lane predspec251, 2026-11-18): `docs/dev/lanes/predspec251_evidence/` (its CLAUDE.md lists the files and the
 parser predicates beside the sentences that state them). `predspec251_model.py` LOADS lane predspec25's engine (never
@@ -2130,7 +2580,7 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
   direct WHOLE evaluator and by libpcre2 models with the outside group renamed; rev 24.1's limit on a condition
   inside an atomic part inside a loop item stands.
 
-### R.11 THE RULING TABLE (one row per COND-FAMILY 2026-11-17 entry; review r40 B6, built from RULING-11)
+### R.11 THE RULING TABLE (one row per COND-FAMILY 2026-11-17 entry, and from rev 26 one per 2026-11-18 entry, rows 76-107; review r40 B6, built from RULING-11)
 
 | # | entry (time) | status in rev 25.1 [REV 25.1: the header said "rev 24.3"; rows 14, 28, 29, 57, 64 brought to rev 25.1, review r43 RULING-8] | where |
 |---|---|---|---|
@@ -2147,7 +2597,7 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
 | 11 | sql-picture framing (11:50, MINE) | manager's restatement; atomic clause refuted; NARROWED by row 38 ("That's where the SQL analogy breaks down") | **sql-picture** |
 | 12 | options in the language (12:05) | IDEA, item 20 | R.1.12 |
 | 13 | a library element beyond the level = COMPILE ERROR (12:10); MINE: the error names element, construct and opt-in | RULED; MINE part unruled | R.1.12 |
-| 14 | a constant = a count-1 enumeration (12:15); MINE: level = f(enumeration), the line is the size budget | RULED; MINE part unruled; its collision with "adding two patterns is an ordinary type error" asked (**value-is-pattern**, rev 25.1) | R.1.12, §R.8 |
+| 14 | a constant = a count-1 enumeration (12:15); MINE: level = f(enumeration), the line is the size budget | RULED; MINE part unruled; [REV 26: **value-is-pattern** split and closed, R.1.14; **plus-operands** asks `+` on non-numbers] its collision with "adding two patterns is an ordinary type error" asked (**value-is-pattern**, rev 25.1) | R.1.12, §R.8 |
 | 15 | `A & B` vs `A & (0: B)` (12:25, a question) | answered by the LAW, checked; its places: **zero-place** | R.1.4 |
 | 16 | the regex-model direction (12:55), with "where no regex model exists ... bring that to him" | STANDS; its second half is G24-5 | R.0, §R.8 |
 | 17 | occurrences model "Correct?" (13:10) + "Formatting lost some operators" (13:15) | settled by row 20 (4); character for character UNCONFIRMED | R.1.9 |
@@ -2207,15 +2657,46 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
 | 71 | count-argument, discussion (distribution per mention; the pairs) | discussion; closed by row 73 | R.1.14 |
 | 72 | one repeat construct; plurals as conveniences: "i agree with repeat. i agree with plurals" | AGREED; the count rules ruled in row 73 | R.1.14 |
 | 73 | the count proposal RULED: "i agree with the count proposal" | RULED | R.1.14 |
-| 74 | two kinds of hole; illegal combinations removed: "remove illegal versions from the cartesion product"; ADDENDUM: "the kinds are all the various places it can be inserted"; MINE: the position table | RULED; the table the draft's proposal; **hole-member-kind** asked [REV 25.1: folded into **value-is-pattern**; the product's order and legality asked as **product-order**] | R.1.14, §R.8 |
-| 75 | quantifier operators RULED: "+ +? * *? ? ??"; ADDENDA: possessive included, brace counts are `repeat`, `A + B` addition; precedence "fairly tight" | RULED; the type-error sentence and the quantified condition asked (**plus-operands** [REV 25.1: folded into **value-is-pattern**], **quantified-condition**) | R.1.14, §R.8 |
+| 74 | two kinds of hole; illegal combinations removed: "remove illegal versions from the cartesion product"; ADDENDUM: "the kinds are all the various places it can be inserted"; MINE: the position table | RULED; the table the draft's proposal; [REV 26: the product's scope corrected to COUNT holes, rows 81, 83] **hole-member-kind** asked [REV 25.1: folded into **value-is-pattern**; the product's order and legality asked as **product-order**] | R.1.14, §R.8 |
+| 75 | quantifier operators RULED: "+ +? * *? ? ??"; ADDENDA: possessive included, brace counts are `repeat`, `A + B` addition; precedence "fairly tight" | RULED; the type-error sentence and the quantified condition asked (**plus-operands** [REV 25.1: folded into **value-is-pattern**], **quantified-condition**) [REV 26: quantified-condition RULED an error (row 102); plus-operands asked again (rev 26)] | R.1.14, §R.8 |
 | - | STAND from 11-15 / 11-16: row-is-match, default-scope, default-value, drop-mark, label-twice, optional-as-loop, the 11-15 `&` (one stretch), not-is-complement's first half | STAND | R.1.1, R.1.4, R.1.6 |
 | - | repeated-means (the manager's ruling, owner told 11-16 22:58 (4)) | MANAGER'S RULING | R.1.8 |
-| 76 | [REV 25.1] 2026-11-18 MANAGER CORRECTION — "the right side of `&`" was the manager's slip (no owner words) | applied: "an `&` operand"; **hole-in-filter** asked | R.1.4, R.1.14, §R.8, §R.9 |
+| 76 | [REV 25.1] 2026-11-18 MANAGER CORRECTION — "the right side of `&`" was the manager's slip (no owner words) | applied: "an `&` operand"; **hole-in-filter** asked; [REV 26] RULED (row 87) | R.1.4, R.1.14, §R.8, §R.9 |
+| 77 | [REV 26] 2026-11-18 OWNER RULING — number-names | RULED: a number only when there is no ambiguity; composed forms the compile error "name the group"; MINE (the shared-name sub-point refused) SUPPORTED by run (N1) | R.1.13, R.1.0 |
+| 78 | [REV 26] 2026-11-18 OWNER RULING, addendum to number-names — zero is the exception | RULED: `0` always the entire match; MINE (1) and (2) SUPPORTED by run (N3, N4) | R.1.13, R.1.0 |
+| 79 | [REV 26] 2026-11-18 OWNER RULING — hit-carry: it carries, because `occurrences` is a rewrite | RULED; its CONSEQUENCES (MINE) checked: R.1.9's plain-search sentence narrowed (H3), §2.6's second refusal withdrawn, item 24 entry 21 | R.1.7, R.1.9, §2.6 |
+| 80 | [REV 26] 2026-11-18 OWNER RULING — nullable argument: a warning | RULED; MINE "PCRE's meaning ... as the empty search does" NOT SUPPORTED as worded (H4, H5): the loop's one hit, entailed by the rewrite | R.1.9, §2.6, §R.8 (a) |
+| 81 | [REV 26] 2026-11-18 OWNER RULING — product-order: first slowest; and a correction of the product's scope | RULED (order); SCOPE CORRECTED to count holes; the others OPEN (**other-holes**); `cartesian` an IDEA (item 27); MINE (the sequence of alternations) SUPPORTED (P2, P3) | R.1.14, R.1.0 HOLE POSITIONS |
+| 82 | [REV 26] 2026-11-18 OWNER, on the cartesian idea and "legal" | OBSERVATION and IDEA (item 27); "Legal: yes legal sql." RULED YES (MINE: "sql" an autocorrection, NOT RUNNABLE) | R.1.14 |
+| 83 | [REV 26] 2026-11-18 OWNER RULING — name-hole: an array in a group-name hole is a compile error | RULED; PRINCIPLE (each position its own rules); the join WITHDRAWN; an interim product an IDEA (item 27) | R.1.0 HOLE POSITIONS, R.1.14 |
+| 84 | [REV 26] 2026-11-18 OWNER RULING — removal: the whole copy | RULED; MINE (never matches, the warning) consistent (P4) | R.1.0, R.1.14 |
+| 85 | [REV 26] 2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea | (2) RULED (a count hole produces counts; MINE: an error, RULE-AS-CODE P6); (1) LEAN settled by array-lift; (3) LEAN, fleshed out (R.1.15), asked **value-hole**; the modulus IDEA item 28 | R.1.14, R.1.15 |
+| 86 | [REV 26] 2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product | RULED; MINE (repeats harmless SUPPORTED, AL3; scope NOT RUNNABLE); `+` on non-numbers asked **plus-operands** | R.1.14 |
+| 87 | [REV 26] 2026-11-18 OWNER RULING — hole-in-filter: the filter error; fill the holes first | RULED (both parts); his picture of use recorded as description; item 24 entry 22 | R.1.4, R.1.0 |
+| 88 | [REV 26] 2026-11-18 OWNER RULING — backref-across-parts: the part's own group; a reference uses the namespace at its point | RULED; MINE (a)-(d) partly WITHDRAWN by row 89 | R.1.13 REFERENCES |
+| 89 | [REV 26] 2026-11-18 OWNER, clarifying backref-across-parts — a backreference reads as labels do: the last mention at its point | RULED (his restatement); MINE's two hand cases settled the other way by row 91 | R.1.13 REFERENCES |
+| 90 | [REV 26] 2026-11-18 OWNER, reopening backref-across-parts for DISCUSSION | DISCUSSION, closed by row 91 | R.1.13 |
+| 91 | [REV 26] 2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error (closes the backref-across-parts discussion) | RULED; THE STATE (MINE) checked (REF1, REF3); a declared parameter NOT ruled (item 26); the one-literal case asked **backref-label** | R.1.13 REFERENCES, R.1.0 |
+| 92 | [REV 26] 2026-11-18 OWNER on path-and-ambiguity: the part label used twice is RULED; the read-out is open | (1) RULED (the last mention); (2) closed by row 98 | R.1.13 PATHS, R.1.0 |
+| 93 | [REV 26] 2026-11-18 OWNER on the read-out — a lean: a filter never produces captures | LEAN, NOT adopted (row 98's MINE) | R.1.13 |
+| 94 | [REV 26] 2026-11-18 OWNER PROPOSAL — labels are seen only if exported; a literal's labels are exported in its scope | PROPOSAL; became export-rule (1), (3) | R.1.13 |
+| 95 | [REV 26] 2026-11-18 OWNER, discussing export-scope | DISCUSSION (the scope is the binding) | R.1.13 |
+| 96 | [REV 26] 2026-11-18 OWNER, continuing the export-scope discussion | DISCUSSION (every public label through a part label; `_` private) | R.1.13 |
+| 97 | [REV 26] 2026-11-18 OWNER, export-scope discussion, third exchange | DISCUSSION (a part label only disambiguates; the caller's captures agreed) | R.1.13 |
+| 98 | [REV 26] 2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels (closes the export-scope discussion and path-and-ambiguity) | RULED (six statements); MINE (what it closes) checked where runnable (EX1-EX3) | R.1.13 EXPORT, R.1.0 |
+| 99 | [REV 26] 2026-11-18 OWNER, clarifying export-rule's sixth statement, and adding a form: `[_ = A]` closes all exports | RULED (both parts) | R.1.13, R.1.0 |
+| 100 | [REV 26] 2026-11-18 OWNER confirms the reading of `[_ = A]` | RULED (the reading confirmed) | R.1.13, R.1.0 |
+| 101 | [REV 26] 2026-11-18 OWNER RULING — condition-in-sequence: yes, and `&` stays | RULED; the shown pair RUN (CS1) | R.1.14, R.1.0 |
+| 102 | [REV 26] 2026-11-18 OWNER RULING — quantified-condition: an error, as a formal punt | RULED (an explicit exception, §R.6); MINE (scope) RULE-AS-CODE (CS4) | R.1.14, §R.6, R.1.0 |
+| 103 | [REV 26] 2026-11-18 OWNER RULING — lookahead-labels: visible, as in PCRE | RULED; MINE (lookbehind) SUPPORTED as regex (LA4); label-mark closed by entailment | R.1.4, R.1.0 |
+| 104 | [REV 26] 2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx | RULED with its table and two edges; the two kinds a PRINCIPLE (R.1.0) | R.1.4, R.1.0 |
+| 105 | [REV 26] 2026-11-18 OWNER, discussing complement-place further | DISCUSSION; MINE's simulation run (CX3: the lazy clause NOT reproduced) | R.1.4, §R.8 **anything-text** |
+| 106 | [REV 26] 2026-11-18 OWNER, clarifying the entry above | DISCUSSION ("in the context of a match"); closed by row 107 | R.1.4 |
+| 107 | [REV 26] 2026-11-18 OWNER RULING — lone-complement-match: it stays an error; provide "anything" | RULED; MINE (what `anything` matches) asked **anything-text** | R.1.4, R.1.0, §R.8 |
 
 ## 0. Status, goals, standing questions
 
-**Status: DRAFT rev 25.1 [REV 25.1: rev 25 left this "rev 24.2"; §R is the current state, NOT STABLE pending the owner's answers (§R.8); review r43 RULING-9] (rev 24.2: lane predspec242b, 2026-11-17 evening: the owner's rulings on labels in loops, after-loop-read and nested-pass, on rev 24.1; rev 24.1 lane predspec241: review r40's fixes on rev 24, lane predspec24's application of the owner's 2026-11-17 rulings, regex behaviour; NOT STABLE pending the owner's answers, §R.8; §R is the condition model and wins over every later section; sections it contradicts carry a "[REV 24]", "[REV 24.1]" or "[REV 24.2]" mark, §R.9; earlier: rev 23 lane predspec23, 23.1 predspec23c, 23.2 predspec23d). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
+**Status: DRAFT rev 26 [REV 26: lane predspec26, 2026-11-18, the owner's 2026-11-18 rulings and the place table; NOT STABLE pending the owner's answers, §R.8] [REV 25.1: rev 25 left this "rev 24.2"; §R is the current state, NOT STABLE pending the owner's answers (§R.8); review r43 RULING-9] (rev 24.2: lane predspec242b, 2026-11-17 evening: the owner's rulings on labels in loops, after-loop-read and nested-pass, on rev 24.1; rev 24.1 lane predspec241: review r40's fixes on rev 24, lane predspec24's application of the owner's 2026-11-17 rulings, regex behaviour; NOT STABLE pending the owner's answers, §R.8; §R is the condition model and wins over every later section; sections it contradicts carry a "[REV 24]", "[REV 24.1]" or "[REV 24.2]" mark, §R.9; earlier: rev 23 lane predspec23, 23.1 predspec23c, 23.2 predspec23d). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
 #6 not scheduled; 2026-11-15, relayed in the predspec5 brief: "the predicate work is not a go to build as we are
 still in design"). Purpose (Frank 2026-11-14): "create a preliminary predicate spec doc with our latest ideas for the
 purpose of critical analysis. Provide reasoning." It consolidates the dated notes in
@@ -2552,7 +3033,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 
 | # | forms | verdict | diagnostic / reason | source |
 |---|---|---|---|---|
-| L1 | `a & b & c` in any order or grouping, incl. transforms: `alts & !startsWith("#") & length(<=20)` vs `alts & length(<=20) & !startsWith("#")`; `(x & padded(S)) & T` vs `x & (padded(S) & T)` | SAME | `&` is pure intersection (§2.2, OWN-1 ruling). Rev 23.1 (review r33 F6 (d); fix-induced sweep): with a complement or a NOT condition anywhere in the chain it stays SAME: a complement filters the rows of the chain's non-complement operands wherever it is written (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10), and Kleene AND is order-free | OWN-1, RUL-11 [REV 24.1: holding is order-free; the reported LABELS and, with a lazy operand, the reported stretch depend on the order: **join-order**, §R.8 (117 / 414 / 414 of 1,365, E5; 0 / 1,008 / 1,197 with a lazy operand)] |
+| L1 | `a & b & c` in any order or grouping, incl. transforms: `alts & !startsWith("#") & length(<=20)` vs `alts & length(<=20) & !startsWith("#")`; `(x & padded(S)) & T` vs `x & (padded(S) & T)` | SAME | `&` is pure intersection (§2.2, OWN-1 ruling). Rev 23.1 (review r33 F6 (d); fix-induced sweep): with a complement or a NOT condition anywhere in the chain it stays SAME: a complement filters the rows of the chain's non-complement operands wherever it is written (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10) [REV 26: **complement-place** RULED: legal as an operand of a chain with at least one positive pattern, wherever written; R.1.4], and Kleene AND is order-free | OWN-1, RUL-11 [REV 24.1: holding is order-free; the reported LABELS and, with a lazy operand, the reported stretch depend on the order: **join-order**, §R.8 (117 / 414 / 414 of 1,365, E5; 0 / 1,008 / 1,197 with a lazy operand)] |
 | L2 | a binding vs its expansion: `m := /\d\d/ & padded(between(1, 12))` then `m & T` vs `/\d\d/ & padded(between(1, 12)) & T` | SAME | | OWN-1 (c) |
 | L3 | `isodate & (year: S, month: 2)` vs `isodate & (year: S) & (month: 2)` | SAME | the `( )` RECORD holds its entries together; the AND comes from the record, not the comma (§4.1, §5.4) | C22, CF:866 |
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
@@ -2584,13 +3065,13 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L30 | `!(x: S)` vs `(x: !S)` | SAME on a set-once label (answers and, rev 23.1, compile verdict); DIFFERENT: BY DESIGN on a repeated label (rev 23) | REV 23 (**condition-not**, 23:48): `!(x: S)` is the three-valued NOT, legal. On an absent x both are UNKNOWN (dropped); on a set-once x they are one question; on a repeated x NOT is "not every pass", the set complement "every pass in !S" (on `/(?:(?<h>\d)?;)*/` WHOLE: 20 of 364 differ, first `7;;`). The pattern difference `P & !(P & (x: S))` is the third spelling, keeping absent rows (§R.3; `predspec23_model.out` PART 2). THE EDGES (rev 23.1, review r33 F8, the manager's disposition; rev 23.2: the draft's reading, **polarity-rule**): at an EMPTY S (`NOT (x: <0)` vs `(x: !<0)` on a digit label) both mean "x is present" ON A SET-ONCE LABEL and both are legal (on an always-set label both are constant TRUE and warn, §R.2 POLARITY; on a REPEATED label they part: "some pass sets x" vs "every pass sets x", 30 of 364 WHOLE, first `3;;`, 0 SEARCHED, `predspec23d_model.out` PART Y, rev 23.2, review r34 D2); at a FULL S (`NOT (x: <10)` vs `(x: !<10)`) both can never keep a row and both are the §5.2 error (the error judged after polarity and default, §R.2); answers 0 of 341 differ at both edges on the set-once pool, both modes (`predspec23c_model.out` PART 9) | condition-not 23:48 [REV 24.1: two-valued (13:25): NOT holds on an ABSENT label, `!S` fails there, so the pair is DIFFERENT on an optional label; on a looped label both read the last setting; rules rev 24.1, reported row: set-once optional label, empty S 1 / 130 / 148 and full S 1 / 220 / 220 of 341; REP, empty S 6 / 248 / 364 of 364 (PART D D16; rev 23.2: 0, 0, 30 / 94 / 94); §R.3] |
 | L31 | `some((g: "x", h: 1))` vs `some((g: "x")) & some((h: 1))` over a repeated label (`occurrences` hits included) | DIFFERENT: BY DESIGN | SAME HIT BY RECORD: one record = all its entries on the SAME iteration; two `some` calls may be met by different iterations (§4.3; on hits `x2 y1` of `/(?<g>[xy])(?<h>\d)/`: the first false, the second true). Replaces rev 7's GAP row (two `occurs.some` vs one `some(s)`); §13 O29 RESOLVED | CF:915-917 (accepted at CF:905) |
 | L32 | `/${q}/m` vs the inlined text of `q` | DIFFERENT: GAP | GAP; `flag.hole` (proposed); OPEN (§13 O32) | Q1R-11 |
-| L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) | RUL-7 |
+| L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) [REV 26: **value-hole**, an UNRULED form, R.1.15] | RUL-7 |
 | L34 | `(a: <5) & (b: <5)` on an ambiguous two-label pattern (`/(?<a>\d+)(?<b>\d+)/` on `123`): default level vs `vm` | SAME | ONE READING (§4.5, CF:953-955): both levels read PCRE's one parse (a = `12`, b = `3`), so on the WHOLE SPAN `123` the program is false at both; SEARCHED in the subject `123` it reports `12` at both (a = `1`, b = `2` on that span; D196 tries the shorter end, §4.5); the default level may pay states for it (cost owed, §13 O57). `label.ambiguous` still names the label, as the POINTER to the author's validation (§5.6, CF:959), not as a report of a difference. Rev 8: DIFFERENT: WARNING (some-parse at default) | CF:953-955; rev 8 RUL-3 |
 | L35 | `(?J)` duplicate label vs a repeated label, under `x: S` | DIFFERENT: GAP | GAP; OPEN (§13 O35) | RUL-16 |
 | L36 | `(x: S)` vs `(x = d: S)` (d in S) on a repeated label (rev 23; rev 22's row compared `all((x: S))`, retired 23:18) | DIFFERENT: BY DESIGN | the default spells "every pass, possibly none": on zero passes and on a pass lacking x the default reads d (§R.1.7; `(n: <5)` vs `(n = 0: <5)` on the empty text: FAILS / HOLDS in both modes, `predspec23_model.out` PART 5) | all-question 23:18 |
 | L37 | `(wname.index: ==wd)` vs `(b: >$a)` | DIFFERENT: ERROR | REV 20: `(wname.index: ==wd)` is the bare-binding error: on the value side a bare name is a BINDING (here the computed label's macro, which no comparison atom takes), and a label's value is read `$wd`; so E-RFC writes `==$wd` and E-CAL `<=$dim` (§13 C13 RESOLVED) | OWN-11, r8 P6-11 |; colon-scope CF 11:32
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
-| L39 | `A & B` vs `B & A` | SAME | BOTH operands are filter roles, matched whole on the same span (RULED, CF:1054-1062 on main, rev 13; review r14 F1: a one-sided "filter side" would break this row), so the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2). Rev 23.1 (review r33 F6 (d)): a complement on either side (`!q & t2` vs `t2 & !q`) is the same program; the first non-complement operand reports (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10) | C1 ruling [REV 24.1: SAME for holding only; labels and, with a lazy operand, the stretch differ (**join-order**, §R.8)] |
+| L39 | `A & B` vs `B & A` | SAME | BOTH operands are filter roles, matched whole on the same span (RULED, CF:1054-1062 on main, rev 13; review r14 F1: a one-sided "filter side" would break this row), so the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2). Rev 23.1 (review r33 F6 (d)): a complement on either side (`!q & t2` vs `t2 & !q`) is the same program; the first non-complement operand reports (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10) [REV 26: **complement-place** RULED: legal as an operand of a chain with at least one positive pattern, wherever written; R.1.4] | C1 ruling [REV 24.1: SAME for holding only; labels and, with a lazy operand, the stretch differ (**join-order**, §R.8)] |
 | L40 | `isodate(year: S)` vs `isodate & (year: S)` | DIFFERENT: ERROR | the first is a compile ERROR: a pattern has no parameters; hint "write `isodate & (year: ...)`"; a parameterised pattern is a macro, `date_in(years) := isodate & (year: years)` (§5.2) | CF:744 |
 | L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` of `/^foo/` (rev 13 as `anchor.operand`, CF:1054-1062 on main; rev 11-12 class BY DESIGN). The directly applied `/^foo/` matches its stretch whole, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; whole-match: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L42 | `n := count((name: S))` then `headers & (n: ==1)` vs `headers & occurs.exactly(1, (name: S))` | SAME | one count, two spellings; `count()` is refused only over the BUDGET, naming the `occurs` form (§8) | CF:823 (LEAN), CF:832 |
@@ -2604,7 +3085,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L50 | a record on the left over `occurrences`, rev 8 spelling `(x, y) := $m & occurrences(/(?<a>\d)(?<b>\d)/)`: laid over the argument's GROUPS vs read as the first two HITS (Python's `x, y = re.findall(...)`) | OPEN | design only, out of phase 1 (§0.2). Rev 8 removes the second reading's footing (hits are iterations of a label, reached by the array interface over iterations, never entries of a value), so the lean is the first: the record is laid against the ARGUMENT's groups in their group order (the library's own `hit` group excluded; review r10 FIXA-4: in the body's own group order x would land on `hit`); x and y are then REPEATED labels, one iteration per hit, paired by iteration. Whether the form survives the withdrawal of `~` at all: §13 O54 | r8 P6-7 (DRIFT-6); CF:852 |
 | L51 | `(m: !occurrences(r))` vs `(m: !contains(r))` | DIFFERENT: ERROR | `occurrences(r)` accepts every string, so `!occurrences(r)` is EMPTY: the empty-intersection ERROR at a narrowing site (§5.2), hint "for no hit write `!contains(r)`". Replaces rev 7's `!($m ~ r)` vs `$m !~ r` GAP row (both operators withdrawn). With `min = 1`, `!occurrences(r, min = 1)` = `!contains(r)` (L58) | CF:909 (accepted at CF:905); §5.2 (LEAN) |
 | L52 | `(m: occurrences(r) & (g: "x"))` vs `(m: occurrences(r) & some((g: "x")))` | DIFFERENT: BY DESIGN | the LOOK-ALIKE ROW the transform ruling requires: a plain condition on a hit's label means ALL hits (the sequence rule, §4.3); "some hit" is `some(...)`. On `abx aby abx` with `r := /ab(?<g>[xy])/`: the first rejects (hit 2 has g = y), the second accepts. Whether it also gets a named warning: §13 O38 Rev 20: on a span with NO hit the plain condition FAILS too (§4.2), and `some(...)` fails; they differ only where hits exist (rev 21, review r29 CHANGETAB-9, the witnesses: `abx aby abx` rejects / accepts; `xyz` rejects / rejects) | CF:920-921 (accepted at CF:905) |
-| L53 | `(m: occurrences(/a*/))` vs find-all of `/a*/` (Python's `re.findall("a*", "baa")` = 3 results) | DIFFERENT: ERROR (lean) | the lazy-gap definition stops at an EMPTY hit (PCRE ends a loop whose iteration matched empty: 1 hit on `baa`); an `occurrences` argument that can match empty is refused, naming `x & !""` (§2.6, §13 O53) | CF:919-920 (accepted at CF:905); the refusal: LEAN (manager, rev 9) |
+| L53 | `(m: occurrences(/a*/))` vs find-all of `/a*/` (Python's `re.findall("a*", "baa")` = 3 results) | DIFFERENT: ERROR (lean) [REV 26: a WARNING, "hit-carry: warning on nullable"; the loop's one hit kept, R.1.9] | the lazy-gap definition stops at an EMPTY hit (PCRE ends a loop whose iteration matched empty: 1 hit on `baa`); an `occurrences` argument that can match empty is refused, naming `x & !""` (§2.6, §13 O53) | CF:919-920 (accepted at CF:905); the refusal: LEAN (manager, rev 9) |
 | L54 | `x & s` with s an rx vs `some(...)` | DIFFERENT: BY DESIGN | `x & s` is MEMBERSHIP in the rx s (any one entry under `&`, §3.4); `some(...)` asks whether some ITERATION of a repeated label meets a condition (§4.3). Rev 7's three spellings of "some result" (`x & s`, `some(s)`, `occurs.some`) become one: `some(...)` | CF:913-914 (accepted at CF:905) |
 | L55 | `(m: occurrences(r) & (g: S))` vs `(m: occurrences(r, min = 1) & (g: S))` on a span with NO hit | SAME | both reject on `xyz` with `r := /ab(?<g>[xy])/` (the first because the zero-hit null pass row makes `(g: S)` UNKNOWN, the second at `min = 1`); 0 of 5,461 (lane absimpact (OC), WHOLE). REV 23: the marked half retires with the mark; with a default `(g = d: S)`, d in S, the first accepts | absent-rule CF 14:31; drop-mark 21:49 |
 | L56 | `/(?<n>\d)?x/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | SAME | ONE KIND OF ABSENCE (**absent-rule**, CF 14:31): n is absent in both, so `(n: <5)` FAILS in both and `(n = 0: <5)` HOLDS in both (rev 23: the mark half retires) | absent-rule CF 14:31 |
@@ -2613,7 +3094,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L59 | `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` vs the constraint written into the pattern, `/(?<a>1)(?<b>\d+)/`, on `123` | DIFFERENT: WARNING | a condition READS PCRE's parse of the pattern it is laid against and never steers it (§4.5): that parse gives a = `12`, so on the WHOLE SPAN `123` the first rejects; a constraint written INTO the pattern changes the pattern, whose parse then gives a = `1`, so the second accepts. `label.ambiguous` names a and shows the witness; the author validates the intended reading (§5.6). SEARCHED in the subject `123`, the first reports `12` (the parse of `12` gives a = `1`): the condition never steers the PARSE of a span, but by D196 it selects which SPAN is reported (§4.5; review r10 FIXB-7 (d)) | CF:953-955; the no-steering statement: LEAN (this document) |
 | L60 | `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` vs `/(?<a>\d+?)(?<b>\d+)/ & (a: "1")` on the span `123`; `A \| B` vs `B \| A` under `(l: "a")` with `A := /(?<l>a)a/`, `B := /(?<l>aa)/`, on `aa` | DIFFERENT: WARNING | ONE LANGUAGE, TWO SPELLINGS, TWO PARSES (review r10 FIXB-1): membership is extensional (§2.2), but a CONDITION reads the parse of the spelling it is laid against (§4.5), so greedy vs lazy (a = `12` vs `1`: the first rejects, the second accepts) and union order (l = `a` vs `aa`: the first accepts, the second rejects) give different answers. `label.ambiguous` names a (resp. l) in both programs. A CONSEQUENCE of the ruled one reading, told to the owner (not asked). libpcre2 10.46, matched whole (PCRE2_ANCHORED with PCRE2_ENDANCHORED) | CF:953-955 (the one reading); the statement: LEAN (this document) |
 | L61 | `(m: contains(r & (g: "x")))` vs `(m: contains(r) & (g: "x"))`, `r := /ab(?<g>[xy])/`, on `abx aby` | DIFFERENT: BY DESIGN | a condition INSIDE the argument narrows WHAT IS SEARCHED FOR (the hits are the occurrences of `abx`: one hit, accepts); a condition on the OPERAND side reads EVERY hit (hit 2 has g = y: rejects). The same pair for `occurrences`: `occurrences(r & (g: S))` changes the hits, `occurrences(r) & (g: S)` tests every hit. The existential spelling over the hits is `some((g: "x"))` (L52) | review r10 FIXB-3 (manager's pick); LEAN [REV 24.1: now SAME: 0 / 0 / 0 of 85 (rules rev 24.1, reported row; rev 23.2: 20 / 20 / 20; PART D D13): a condition after `contains` re-enters it] |
-| L62 | `occurrences(/(?:(?<c>a)\|b)c(?(<c>)a\|d)/)` vs find-all of the same pattern on `acabcd` | DIFFERENT: ERROR | PCRE's loop carries a group's capture from an EARLIER iteration into a backreference or conditional of a later one (the loop finds ONE hit `aca`; find-all finds `aca`@0 and `bcd`@3), so an `occurrences` argument with a backreference or conditional that can run while its group is UNSET IN THE CURRENT HIT (here `(?(<c>)...)` on the `b` path) is REFUSED, the nullable refusal's sibling (§2.6 THE TWO ARGUMENT REFUSALS); an argument whose group is set before its reader on every path (`/(.)\1/`) is admitted (rev 11, review r12 SIMULATE-2) | review r10 SIM-1 (manager's pick); the narrowing: review r12 SIMULATE-2; LEAN |
+| L62 | `occurrences(/(?:(?<c>a)\|b)c(?(<c>)a\|d)/)` vs find-all of the same pattern on `acabcd` | DIFFERENT: ERROR [REV 26: NOT an error; the argument CARRIES, hit-carry, RULED ("they are expecting carries behavior"): the loop's one hit `aca` is the meaning, §2.6] | PCRE's loop carries a group's capture from an EARLIER iteration into a backreference or conditional of a later one (the loop finds ONE hit `aca`; find-all finds `aca`@0 and `bcd`@3), so an `occurrences` argument with a backreference or conditional that can run while its group is UNSET IN THE CURRENT HIT (here `(?(<c>)...)` on the `b` path) is REFUSED, the nullable refusal's sibling (§2.6 THE TWO ARGUMENT REFUSALS); an argument whose group is set before its reader on every path (`/(.)\1/`) is admitted (rev 11, review r12 SIMULATE-2) | review r10 SIM-1 (manager's pick); the narrowing: review r12 SIMULATE-2; LEAN |
 | L63 | `contains(/err$/)` vs `endsWith("err")` on the span `err\n` | DIFFERENT: BY DESIGN | `$` is PCRE's `$` with the span as the subject (§11 THE ONE WHOLE-MATCH RULE): it holds at the value's end AND before a final newline, so `contains(/err$/)` ACCEPTS `err\n` (the hit `err`, then the tail gap takes the `\n`), while `endsWith("err")` must END with `err` and REJECTS it (libpcre2 10.46 and Python `re`, `predspec12_anchor.out`). The exact end is PCRE's own `\z`: `contains(/err\z/)` = `endsWith("err")` (both reject `err\n`). Rev 10/11 said SAME, by an exact-end reading of `$` (review r10 SIM-5) that rev 12 withdraws as an extra rule; whether a warning should name a `$` that can meet a final newline: §13 O38 | rev 12: "plain PCRE with the value as the subject, no extra rule" (CF:1013-1014, accepted at CF:1006); the withdrawal of the exact end: LEAN (this document) |
 | L64 | `alt.x[1]` vs `(x[1]: S)` (and `$x[1]`) on `alt := /(?J)(?:(?<x>a)\|(?<x>b))+/` | DIFFERENT: BY DESIGN | `[n]` reads BY POSITION (§5.4 `[ ]` row): in VALUE position (`alt.x[1]`, the rx of the groups labelled x; [REV 25.1] THE DRAFT'S READING: label-flow's "a BINDING's name is not a path" holds WHERE A LABEL IS REFERENCED, a condition or a `$`, its own scope words, so a binding's `.` in a VALUE position stays legal, R.1.13) it is ENTRY 1 of that rx's array interface, the first group in the PATTERN (`a`); on the left of `:` and under `$` (match positions) it is ITERATION 1 of the label in the MATCH (`b` on `ba`) | review r10 FIXA-2, CENSUS-10; LEAN |
 | L65 | `/x\|(?<n>\d)+/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | SAME | n is ABSENT in both: `(n: <5)` FAILS in both, `(n = 0: <5)` HOLDS in both (rev 23: the mark half retires) | review r10 FIXB-2; absent-rule CF 14:31 |
@@ -3117,7 +3598,7 @@ transform, a filter modifier or `occurrences`/`contains`, §2.6, §2.7, is a mac
 with a position in the chain). Prefix `!B` on a pattern is its
 complement, used after `&` (rev 23 §R.1.4: `A & !B` = PATTERN DIFFERENCE, the rows of A whose stretch B does not match
 whole); `&!` is not a separate operator; a complement anywhere in an `&` chain filters the chain's non-complement
-operands, so `!B & A` = `A & !B` (rev 23.1, review r33 F6 (d), §R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10). A standalone `!B` where an rx is needed
+operands, so `!B & A` = `A & !B` (rev 23.1, review r33 F6 (d), §R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10) [REV 26: **complement-place** RULED: legal as an operand of a chain with at least one positive pattern, wherever written; R.1.4]. A standalone `!B` where an rx is needed
 (`${!B}`, `C | !B`) is a compile error (the MANAGER'S CALL, rev 23.1, §R.1.4). On a condition `!` is the three-valued
 NOT (rev 23, condition-not 23:48). Conditions in the filter role combine by Kleene's `&`, `|`, NOT (the OR: THE DRAFT'S
 READING, OPEN, **condition-or**, §R.8 item 5; rev 23.2, review r34 F-DOC-2), and macros by
@@ -3132,7 +3613,10 @@ WHAT `!` TAKES (rev 23; rev 22's text is §16.3). `!` applies to (§R.1.4, §R.1
   (THE MANAGER'S JUDGMENT given at 20:41; rev 23.1, review r33 F15). After `&` it is PATTERN DIFFERENCE: `A & !B` keeps the rows of A whose stretch B does not match whole
   (row-is-match, 23:46: "a complement after `&` all filter potential matches"). Written inline, `P & !(P & c)` is
   the same as the named `q`. After `label:` the label's text is its left operand (`(x: !B)`, `(m: !contains(r))`;
-  rev 23.1, §R.1.4). Alone (`${!B}`, `C | !B`, a program that is only `!B`) it is a compile ERROR, the MANAGER'S CALL
+  rev 23.1, §R.1.4). Alone (`${!B}`, `C | !B`, a program that is only `!B`) it is a compile ERROR [REV 26: RULED, complement-place and
+lone-complement-match: the error is at a USE that needs the complement to produce a match (these three), while
+BINDING it (`not_seven := not seven`) is legal and the language provides `anything` to write beside it; R.1.4,
+R.1.0], the MANAGER'S CALL
   (rev 23.1, review r33 F6 (b): r31 A5's condition for keeping it lapsed under row-is-match; the reason now: a
   standalone complement has no preference order to report a row by, and it would ask "some stretch is not a B";
   §R.1.4; the text-level question it might mean is §R.4, **whole-text**);
@@ -3244,7 +3728,7 @@ own spelling, CF:774). Exact decimal: LEAN. Whether the reading belongs to the l
 component in its literal's domain: the manager's reading (DICT-DOMAIN); the `$` component by value: LEAN (pending
 O27); no warning between the orders: the manager's reading (CF 11:20).
 
-### 2.5 No concatenation operator; arithmetic [REV 25: REVERSED: there IS a sequence operator, a splice, binding tighter than `&` and `|` (sequence-operator, sequence-precedence, sequence-reading, RULED; R.1.14); binary `+` is addition and its operands are asked (**plus-operands**, §R.8; REV 25.1: folded into **value-is-pattern**)] [REV 24.1: REOPENED: the owner's rx-module proposal with a concatenation operator (2026-11-17, `predicates_future.md` item 21) reopens this section's 2026-11-13 lean (the manager's)]
+### 2.5 No concatenation operator; arithmetic [REV 26: arithmetic on ARRAYS combines on the product, **array-lift** RULED; `+` on non-numbers **plus-operands**; R.1.14] [REV 25: REVERSED: there IS a sequence operator, a splice, binding tighter than `&` and `|` (sequence-operator, sequence-precedence, sequence-reading, RULED; R.1.14); binary `+` is addition and its operands are asked (**plus-operands**, §R.8; REV 25.1: folded into **value-is-pattern**)] [REV 24.1: REOPENED: the owner's rx-module proposal with a concatenation operator (2026-11-17, `predicates_future.md` item 21) reopens this section's 2026-11-13 lean (the manager's)]
 
 **RULE.** The expression language has no concatenation operator: sequencing is written inside a literal
 (`/${a}-${b}/`) or by `join`. `+ - * %` are arithmetic only, on numbers (§2.1): subject numbers can be added and
@@ -3256,7 +3740,7 @@ filtered through a computed label (`s := $x + $y`, then `P & (s: <50)`, §4.4; `
 expression always starts a binding (one-token look-ahead, §5.1).
 
 **STATUS.** No concatenation operator: LEAN (CF:69). Arithmetic on subject numbers: RULED (CF:782 (1): "\d+ numbers can
-be added, filtered <256"). Arithmetic result width (`${$y + 1}` on `0099`): §13 O27.
+be added, filtered <256"). Arithmetic result width (`${$y + 1}` on `0099`): §13 O27. [REV 26: **value-hole**, an UNRULED form, R.1.15]
 
 ### 2.6 `occurrences` and `contains` are transforms
 
@@ -3351,10 +3835,20 @@ THE DEFINITION'S REQUIREMENTS (CF:918-921, accepted at CF:905), and how the text
 3. THE EMPTY-MATCH ADVANCE: the first of THE TWO ARGUMENT REFUSALS below.
 4. THE LOOK-ALIKE ROW: "`(g: x)` on a search result means ALL hits" is §0.1 L52 (BY DESIGN).
 
-THE TWO ARGUMENT REFUSALS (stated once; review r10 SIM-1, the two are siblings). PCRE's LOOP over the body agrees
-with find-all hit for hit EXCEPT where one iteration can see another, and there are exactly two ways it can [REV 25.1:
+THE TWO ARGUMENT REFUSALS [REV 26: WITHDRAWN as errors: the nullable argument a WARNING, the carry RULED; kept below as the record] (stated once; review r10 SIM-1, the two are siblings). PCRE's LOOP over the body agrees
+with find-all hit for hit EXCEPT where one iteration can see another, and there are exactly two ways it can [REV 26: BOTH
+REFUSALS BELOW ARE WITHDRAWN as compile errors. hit-carry RULED 2026-11-18 ("occurrences is a simple regex rewrite
+... In cases where the user puts the condition before the label, they are expecting carries behavior"): the argument
+is a hole in a loop template, so an iteration that reads an earlier hit is the template's meaning, not a hazard; the
+second refusal's reason ("find-all starts each hit with the group unset") does not fit the rewrite and the refusal
+GOES (the argument's backreference or conditional reads what PCRE's loop gives, which is what a condition before its
+group reads); the first, the NULLABLE ARGUMENT, is a WARNING ("hit-carry: warning on nullable"), the LOOP's meaning
+kept (at most one hit, the first, possibly empty: entailed by the rewrite; R.1.9, rev 26's PART H H5). Withdrawing the
+second refusal is THE MANAGER'S CONSEQUENCE in the record, checked here: it rests only on the reason his premise
+removes. The text below is rev 25.1's, kept as the record of what the loop and find-all differ
+on (§0.1 L53, L62 still describe the difference; their verdicts move, §R.7)] [REV 25.1:
 THREE under rev 25's R.1.7 text: a CONDITION inside the argument written before its label's group reads the previous
-hit's value (pass-start-read carried into `occurrences`, THE DRAFT'S READING, asked as **hit-carry**, §R.8; review r43
+hit's value (pass-start-read carried into `occurrences`, THE DRAFT'S READING, asked as **hit-carry** [REV 26: RULED], §R.8; review r43
 C). If hit-carry is answered yes, the second refusal's reason ("find-all starts each hit with the group unset") no
 longer fits the one-pattern model and that refusal goes; if no, a scope rule is needed. Both refusals' ground below,
 "the empty-match rule's kind of refusal (§7)", names an ERROR rev 25 WITHDREW (empty-search-error: a warning, §R.2);
@@ -3429,7 +3923,7 @@ absence control; §4.2). `min` decides whether a bare `occurrences` accepts a sp
 
 HAND CHECKS (rev 9: re-run for `min` 0 and 1). Each row was derived by hand from the priority parse, then run on the
 system libpcre2-8 10.46 through its public API: the loop `(?:.*?(X)){min,}` UNROLLED into nested optionals with one
-capture group per iteration (equal to the loop in priority for an argument that passes THE TWO ARGUMENT REFUSALS;
+capture group per iteration (equal to the loop in priority for an argument that passes THE TWO ARGUMENT REFUSALS [REV 26: both withdrawn as errors, §2.6];
 review r10 SIM-1 found the backreference/conditional exception), matched against the whole span
 (PCRE2_ANCHORED|PCRE2_ENDANCHORED), every hit read from the final match, so nothing abandoned is recorded; Python
 3.14's `re` ran the same patterns as a second engine and agreed on every row (script and output:
@@ -3797,7 +4291,7 @@ filters" as the `[ ]` any-one reading: RULED (CF:863); "filter" read as the role
 record, a macro awaiting the pattern that defines x). `$x` = the CAPTURED STRING of this match (a one-string set,
 context-free, §11) for a set-once label; for a REPEATED label, one captured string per iteration, read through the
 array interface (§5.4 `$` row, §4.3). `x:` is ALWAYS the
-constrained side; `$x` is ALWAYS a value used (operand, insertion `${$x}`, output). Capture-vs-capture is `x: <$y`
+constrained side; `$x` is ALWAYS a value used (operand, insertion `${$x}` [REV 26: **value-hole**, an UNRULED form, R.1.15], output). Capture-vs-capture is `x: <$y`
 (§4.6). `$x & ...` used AS A CONDITION is an ERROR: "did you mean `x: ...`?" [REV 25: KEPT, by its type: "$x is not a pattern but a match" (dollar-condition, §R.2); a label name surfaced by both sides of `&` is an error only where REFERENCED (label-flow, R.1.13)]. The left of `:` is a label PATH
 (`d.year: <2000`), never an expression: a computed value is constrained through a computed label (§4.4).
 REV 20: NO EXCEPTION. Rev 19's one exception (a macro parameter bound to a FIELD REFERENCE standing on the left of
@@ -4479,11 +4973,11 @@ levels not ruled are marked THE DRAFT'S READING]:
 | level (tightest first) | operator | fix | associativity | status | defining section |
 |---|---|---|---|---|---|
 | 1 | `.` field, call `f(..)`, index `X[..]` | postfix, after an OPERAND (a name, a literal, a call, an index, a closing bracket) | left | THE DRAFT'S READING (rev 25.1: after an operator, `(`/`[` begin an operand) | §5.1, the `.` and `[ ]` rows |
-| 2 | `+ +? ++ * *? *+ ? ?? ?+` on a pattern | postfix (the parse rule: binary when a token that can begin an operand follows `+`/`*`; the sequence mark cannot begin one; read longest first; stacking left to right) | left (stacking) | RULED that they are postfix and tightest of the four (quantifier operators); the parse rule, longest first: MINE in the record; stacking: THE DRAFT'S READING | R.1.14 |
+| 2 | `+ +? ++ * *? *+ ? ?? ?+` on a pattern [REV 26: on a CONDITION a compile error, quantified-condition, RULED] | postfix (the parse rule: binary when a token that can begin an operand follows `+`/`*`; the sequence mark cannot begin one; read longest first; stacking left to right) | left (stacking) | RULED that they are postfix and tightest of the four (quantifier operators); the parse rule, longest first: MINE in the record; stacking: THE DRAFT'S READING | R.1.14 |
 | 3 | prefix `!`, `NOT`, prefix comparisons `< <= > >= ==` | prefix, on ONE atom (with its postfix operators) | right | THE DRAFT'S READING (rev 25.1; the comparisons' ONE atom is §5.4's row) | §2.2, §2.4, R.1.5 |
-| 4 | `* %` (numbers) | binary | left | THE DRAFT'S READING (rev 25.1); operands asked, **value-is-pattern** | §2.5 |
-| 5 | `+ -` (numbers) | binary | left | THE DRAFT'S READING (rev 25.1); operands asked, **value-is-pattern** | §2.5 |
-| 6 | the sequence operator `SEQ` | binary (a splice) | n-ary (associative) | RULED (sequence-precedence: "binds tighter than & and \|") | R.1.14 |
+| 4 | `* %` (numbers) | binary | left | THE DRAFT'S READING (rev 25.1); operands asked, **value-is-pattern** [REV 26: on arrays by **array-lift** (RULED); on non-numbers **plus-operands**] | §2.5 |
+| 5 | `+ -` (numbers) | binary | left | THE DRAFT'S READING (rev 25.1); operands asked, **value-is-pattern** [REV 26: on arrays by **array-lift** (RULED); on non-numbers **plus-operands**] | §2.5 |
+| 6 | the sequence operator `SEQ` | binary (a splice) | n-ary (associative) | RULED (sequence-precedence: "binds tighter than & and \|"); [REV 26] an operand may be a CONDITION (condition-in-sequence, RULED) | R.1.14 |
 | 7 | `&` | binary | n-ary (a chain; the left side decides the report) | RULED (order, join order) | R.1.4, §2.2 |
 | 8 | `\|` | binary | n-ary | RULED (order) | R.1.4, §2.2 |
 | 9 | `=` then `:` inside an entry | entry marks | `p = v: S` is `(p = v): S` | LEAN (rev 20-21) | the entry extent above |
@@ -4991,7 +5485,7 @@ string literal read as its decoded text, is CUT in rev 16, §9; the `json` modul
   the argument's labels inside it. `min` [REV 25.1: REVERSED by min-values (rev 25, §R.2): ANY n, "at least n", the
   quantifier `{n,}`; the error below is withdrawn; review r43 FIXINDUCED-3] (0 or 1, RULED, CF:963-966; default 0): with 0 it never rejects, with 1 a span with no
   hit is rejected; another value is a compile error naming `occurs.at_least` (LEAN, CF:968-969; §13 O58); NO `max`
-  for now (CF:951-952). THE TWO ARGUMENT REFUSALS (§2.6, stated there once): a nullable argument (LEAN, manager; §13
+  for now (CF:951-952). THE TWO ARGUMENT REFUSALS (§2.6, stated there once) [REV 26: both withdrawn as errors: a nullable argument a WARNING, the carry RULED; §2.6]: a nullable argument (LEAN, manager; §13
   O53) and an argument with a backreference or conditional that can run while its group is unset in the current hit
 (LEAN, review r10 SIM-1; narrowed in rev 11, review r12 SIMULATE-2).
   Each hit's labels are read within that hit (§2.6). `contains(x) := occurrences(x, min = 1)` is the
@@ -5376,7 +5870,7 @@ CF:993-994; CF:1013-1014). FINAL patterns and a `records` item rx are SEARCHED i
 context assertions included. Nullability for the empty-match rule is computed IN CONTEXT (§7). A named in-context form
 (a library call, no keyword) is added only on a measured need (D77).
 
-[REV 25 (R.1.14): hole-reading RULED: in a PATTERN position a hole is the inserted pattern as a WHOLE, `(?:X)`, matched in place, its edge assertions crossing the border (the EDGE-ASSERTION ERROR for holes WITHDRAWN); in a VALUE position (count, name, class, option) the literal is copied per member, several holes the cartesian product, illegal combinations REMOVED; the position table is R.1.14's (the draft's proposal).] HOLES `${expr}`: in an atom position every hole denotes a SET OF STRINGS and matches one of them (typed syntax
+[REV 25 (R.1.14): hole-reading RULED: in a PATTERN position a hole is the inserted pattern as a WHOLE, `(?:X)`, matched in place, its edge assertions crossing the border (the EDGE-ASSERTION ERROR for holes WITHDRAWN); in a VALUE position (count, name, class, option) the literal is copied per member, several holes the cartesian product, illegal combinations REMOVED; the position table is R.1.14's (the draft's proposal).] [REV 26: the copies and the product are ruled for COUNT holes ONLY (product-order's scope correction); an array in a NAME hole is a compile error (name-hole); CLASS and OPTION holes are OPEN (**other-holes**); a match value in a pattern position is UNRULED (**value-hole**); one table: R.1.0 HOLE POSITIONS.] HOLES `${expr}`: in an atom position every hole denotes a SET OF STRINGS and matches one of them (typed syntax
 positions, below, take one value from a finite set): a one-string set (a captured string, a
 quoted literal) inserts LITERAL TEXT (never re-parsed), any other rx inserts a sub-pattern (`${isodate & (year:
 2000)}` = a sub-pattern insertion); a MACRO in a hole is the unapplied-macro error (§2.3; CF:362). A hole's set is a
@@ -5392,7 +5886,7 @@ when the rx-`&` switch is ON: `(\d+)&${ <256 }` (with it OFF, the whole rx in th
 after an atom WITHOUT `&` is a FOLLOWING item (`(\d+)${ <256 }` = digits followed by a numeral below 256). The guard
 covers the whole concatenation on each side of its `&` within the alternative (D196 precedence, above): inside a
 longer literal group the guarded atom, `/port=(?:(\d+)&${<256})/`, since `/port=(\d+)&${<256}/` is empty (§0.1 L67;
-review r12 CENSUS-5). Generalized backreferences (`(?<y>\d{4})-${$y + 1}`); holes are order-free; holes in typed SYNTAX
+review r12 CENSUS-5). Generalized backreferences (`(?<y>\d{4})-${$y + 1}`) [REV 26: **value-hole**, an UNRULED form, R.1.15]; holes are order-free; holes in typed SYNTAX
 POSITIONS (`\d{${n}}`, `{${min},}`, `[${a}-${b}]`, a group name `(?<${x.label}>...)`, an option's value `(?i=${ci})`,
 boolean, CF:86-87, rev 18) supply that position's value
 from a finite compile-time set; holes never change structure seen outside: an atom hole is one entry, and a
@@ -6218,7 +6712,7 @@ review's proposed lean, in plain words, NOT resolved):
   negated numeric comparison meets a target with non-canonical members (`0150`, `abc`).
 - **O27. Does quoting a constant decide how it compares?** (OWN-3.) `a := 256` and `b := "256"` are the same set, yet
   `x & <a` compares numbers and `x & <b` compares text (`1000` out vs in), and `@assert.same(a, b)` passes. The same
-  question covers arithmetic results (does `${$y + 1}` on `0099` insert `100` or `0100`?) and leading-zero bounds
+  question covers arithmetic results (does `${$y + 1}` on `0099` insert `100` or `0100`?) [REV 26: **value-hole**, an UNRULED form, R.1.15] and leading-zero bounds
   (does `between(01, 12)` admit `1`, `05`?). Lean: make numeric vs text a property of the comparison you write, not
   of how the constant is quoted; arithmetic yields canonical numerals; width is set with the padding modifier.
 - **O28. One rule for conditions on optional, repeated and never-entered labels?** (OWN-4.) On `1,7,` with a
@@ -6294,7 +6788,7 @@ review's proposed lean, in plain words, NOT resolved):
   RESOLVED list): both conditions read PCRE's one parse, so the example is false at every level. Rev 8's lean
   (per-condition some-parse) is SUPERSEDED with the some-parse rule.
 - **O34. Same text twice: one level for every spelling?** (RUL-7.) `\k<s>` on a 3-valued finite group needs `vm`,
-  the value hole `${$s}` on the same label is default-level, and `each(..., enumerate(...))` is a third spelling.
+  the value hole `${$s}` [REV 26: **value-hole**, an UNRULED form, R.1.15] on the same label is default-level, and `each(..., enumerate(...))` is a third spelling.
   Lean: one rule keyed by whether the referenced language is finite, for all three spellings (links
   [BACKREF-FINITE]; if Q10 keeps the engine rule out of #6, the predicate front end must still lower `\k` on a finite
   label as it lowers `${$x}`, or refuse both).
@@ -6503,7 +6997,7 @@ here):
   item stays listed until the owner sees it. REV 10 (review r10 SIM-1, the manager's pick): its SIBLING is refused the
   same way, an argument whose own group is read by a backreference or conditional inside it (PCRE's loop carries the
   earlier hit's capture into a later hit: one hit `aca` where find-all finds `aca`, `bcd`; §0.1 L62); both refusals
-  are stated once, §2.6 THE TWO ARGUMENT REFUSALS. REV 11 (review r12 SIMULATE-2): the sibling is NARROWED to a
+  are stated once, §2.6 THE TWO ARGUMENT REFUSALS [REV 26: withdrawn as errors, §2.6]. REV 11 (review r12 SIMULATE-2): the sibling is NARROWED to a
   reader that can run while its group is unset in the current hit, the case its reason describes; `/(.)\1/` is
   admitted (LEAN, this lane's pick). Reading (B) for the sibling would be a per-iteration capture reset,
   which is not PCRE's parse of the written body.
@@ -6552,7 +7046,7 @@ here):
   that loop. (2) A literal index as a TEST (`(x[2]: S)`): by CF:62 (the 11-13 `s.nth(i)` rule: "YES if i is bounded",
   a countdown of ~k states) it is regular and needs no captures, while the transform record puts `d[2]` at a higher
   level (CF:924-926; rev 10: RULED for READING one hit, CF:977, which does not say whether a test reads it). Lean: a TEST on iteration i is a group question at the default level (it
-  reads no text out); READING iteration i's text (`$x[2]`, `${$x[2]}`) is the `captures` level. Both leans are this
+  reads no text out); READING iteration i's text (`$x[2]`, `${$x[2]}` [REV 26: **value-hole**, an UNRULED form, R.1.15]) is the `captures` level. Both leans are this
   document's. REV 20: (1) RULED, through **joint-loops** (CF 11:17: per-pass pairing), **record-is-product** (CF
   11:35) and **pairing-loop** (CF 13:29, his words: "pairing-loop: I agree part 1"; the wording: "the pairing loop
   is the DEEPEST loop that encloses any named label; every other named label lies in the same pass of it or outside
