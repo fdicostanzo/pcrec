@@ -2948,3 +2948,22 @@ condition on a label, a filter body and a compile-time set (2026-11-17: "any pie
 compiler error"). (5) An inserted pattern's edge assertion that can never hold beside its neighbour (the draft's
 `/x${num}/`, num := `/\b\d+\b/`) is a structural WARNING of the can-never-match kind, not an error (the manager's
 proposal inside the question he agreed to).
+
+**2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error (Frank, to session 138, evening; he
+writes "propose"; two points put back to him before it is recorded as ruled).** Asked label-flow (flat, nested, or
+flat with the path available). HIS WORDS: "label-flow: 1. propose: it is an error to ambigously reference a label.
+so if A & B & (h: blah) and A and B both use label h, it is an error. this is different than "its an error for
+labels of the same name to exist at all in A & B" 2. A . B & (h: blah) (concatenation. i don't have your dot) if A
+and B have h, the condition is ambigous and an error. 3. [aa = A] . B & (aa.h: blah). ok. 4. A . B & (A.h: blah)
+error. A is a binding not a label and could be ambigous if its used multiple times in an expression".
+RECORD (his proposal): (1) labels are reached FLAT by name; the error is an AMBIGUOUS REFERENCE (a name that more
+than one composed pattern sets), at the place it is referenced, across `&` and across the sequence operator alike;
+two patterns merely HAVING a label of the same name is not an error. This REVISES the shared-label ruling of the
+same evening from an error of existence to an error of reference (which also eases the library hygiene problem:
+a collision nobody references is harmless). (2) A part's labels are reached through a LABEL given to the part
+(`[aa = A]`, then `aa.h`). (3) A BINDING's name is not a path (`A.h` is an error): a binding can be used several
+times in one expression. PUT BACK TO HIM by the manager (mine) before recording as ruled: (a) inside ONE pattern
+literal, two groups of one name are still ONE label (the one label rule: last mention; the separated-list
+example); the ambiguity is between labels of DIFFERENT composed patterns; (b) the SAME bound pattern used twice in
+one expression (`(item SEQ ",")* SEQ item`): one label (last mention, the array takes all) or an ambiguous
+reference.
