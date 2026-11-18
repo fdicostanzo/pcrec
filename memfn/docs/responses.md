@@ -3573,3 +3573,26 @@ tree (0 movers at width 32; ASan/UBSan clean). Lands on main's combined branch W
 PCREC_PREFIX_K_MAX, a pcrec name for the reach-64 bound) and CHECK-1 (their witness). Witness row (b) follows main's stage-2 B5 text.
 OWED (kit, next seam touch = the forms build): R28-2, R28-3 witness rows. Reports: docs/dev/lanes/span4k_report.md, span4kfix_report.md,
 raisefix_report.md (on the raise branch).
+
+done: R-45 plan A (the span forms + their cards harness) — branch lane/memfn-forms @ 105bf8ef4 (from main 02bbd527f).
+Validation: landing formsland6 on ff81f31ac (report-only commits after): strict, codegen, registry, rxtsource, finder,
+link, resource, cli, compound (fence) green; G2 quick 70,358,672/0; run_g2_win 0 failed; sabotage anchors 1,335 resolve;
+cloud_mech_check PASS (90 shards); emit_sweep movers 0 vs 27b18e75c (default width); cards.py full selftest 222/0
+(formsfixm, ~90 min); cards.py dry 1,374 cells built and answer-gated, 0 failures (420-kit-formsfixl-dry); cloud test
++ axes on 105bf8ef4: test GREEN (run 44342044441) and axes GREEN (run 44342138134). Reviews: r35-r41 (11-17), r44, r45 (on the branch), r46 (kit branch lane/memfn-k1108).
+pcrec-side readers (found by grep): abi stays 108 on this branch (no reader added; covs2b's 109 carries); emit_dfa.c,
+known.c, memfn_sites.{c,h} adopt MF_SITE_ABI 30 / MF_CLASS_V 11 (pcrec_memfn_rows, pcrec_memfn_wspan); cli
+--harness=span-head=N (harness-only lever); docs/spec registry.md span-loop pair row + memfn floor 13 -> 14; tuning.md
+2.43 para 3d; ~40 mech sabotages; no MEMFN_FORMS/MEMFN_LIBC stamp, identity pin or codegen expectation moves.
+Expected conflicts vs lane/covs2b @ 28af649c9 (trial merge, 6, none in src/ or cli/): tests/ci/cloud_mech_shards.tsv
+and cloud_axes_shards.tsv (both regenerated: REGENERATE after the merge, every id once, never a line merge);
+docs/spec/tuning.md 2.43 para 3d (hand merge); docs/dev/reviews/CLAUDE.md (take covs2b's de-bulked side, re-add the
+r44/r45 index lines); docs/dev/reviews/NOTES.md and docs/dev/history/claude_md/docs__dev__lanes.md (keep both).
+Known limits: h=64 shipped UNMEASURED (the 11-19 night measures it); power is RECORD (5 % win at tau 1 %: 203/300;
+tau 2 %: 25/300); the rho share is the body's own speed and is printed; one interaction flag voids the whole night
+(stated); INTER_CLIP tuned in-sample (r46 FORMS9-1); R0 nights counted as off-64 in P rows (FORMS9-4); rare
+very-noisy rows / t(3) tails on one variant fail the accept lines (FORMS9-3/-8); the pools never move data, main or
+the subject buffer (r44 F); full selftest ~90 min. The layout pool is ARM-GENERIC at the TU level (main's width
+arms could use it through a shared helper: [LAYOUT-DRAW]); cover_cap.md section 11.4's A/A floor gets checked
+WITH the kit before main's width cells are timed.
+Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.md, formsland6_report.md.
