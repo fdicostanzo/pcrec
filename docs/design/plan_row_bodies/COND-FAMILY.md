@@ -3206,3 +3206,21 @@ judged legal by this language's rules (so a copy with two groups of one name is 
 meant something by the word, this entry is wrong and he will say. (4) A REQUEST, answered in the session: spell
 out the draft reading "copies that differ only in a group name are joined as plain alternatives" (not agreed to;
 the product for a group-name position is OPEN by his scope correction of the same morning).
+
+**2026-11-18 OWNER RULING — name-hole: an array in a group-name hole is a compile error (Frank, to session 139,
+morning).** ASKED AS A RULING (slug name-hole, after the manager spelled out revision 25.1's reading "copies that
+differ only in a group name are joined as plain alternatives": `/(?<${n}>\d)/`, n := [a, b], joined as
+`(?:(?<a>\d)|(?<b>\d))`; python `re` on `7`: a = `7`, b unset, the second copy dead; the manager's leaning: a
+group-name hole takes exactly one name, several is a compile error). HIS WORDS, in full: "Name-hole: this is why
+each target area of the hole is a different thing with its own rules.
+I agree that arrays in names are a compiler error.
+I could also see them in the future being alternation as an interim product that is then further manipulated
+like Cartesian or join-per-element"
+RECORD. (1) PRINCIPLE, his, restating his 2026-11-17 ruling that the insert's kinds are its positions: each target
+area of a hole is a different thing with its OWN rules; no rule for one position (the count hole's product)
+carries to another by default. (2) RULED: an array (several values) in a group-name hole is a COMPILE ERROR; a
+name hole takes one name. Revision 25.1's joining reading for name copies is WITHDRAWN (nothing is joined). (3) A
+FUTURE POSSIBILITY, not ruled ("I could also see them in the future"): an array of names giving an alternation as
+an INTERIM product, to be manipulated further (a cartesian product, a join per element); added to
+predicates_future item 27. STILL THE DRAFT'S READING, not put to him as a question: several members in a
+character-class hole are simply more characters of the class (no copies).

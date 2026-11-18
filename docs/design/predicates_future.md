@@ -565,6 +565,9 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   of pairs).
 - ADDED BY THE OWNER the same morning: "The other advantage of cartesian() is they you could sort them by length";
   and his observation on (a): "A subtle consequence of the parentheses group around concatenated elements."
+- AND, ruling name-hole (an array in a group-name hole is a compile error today): "I could also see them in the
+  future being alternation as an interim product that is then further manipulated like Cartesian or
+  join-per-element". So the family is: operations over arrays of parts (cartesian, a join per element, a sort).
 - QUESTIONS IT RAISES (none asked yet): what an element of the result is (a tuple of values, or the parts already
   joined in sequence); whether arrays of counts and arrays of rx can be mixed; whether an illegal combination is
   dropped or an error there.
