@@ -70,6 +70,12 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **simulate lens: "for every grouping a pooled estimator COLLAPSES, drill with an interaction term at that grouping; a synthetic model keyed like the fit cannot fail it"**.
+
+2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **perturbation lens: "name what each control holds FIXED (data sections, the driver's allocations, entry points outside the moved section) beside what it moves, and say which of those ships"**.
+
+2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **"a max-over-candidates term gets the never-picked drill with a NOISY loser, not only a slow one"**.
+
 2026-11-17 r40, predicates_draft.md rev 24 (`docs/dev/reviews/2026-11-17-r40-predspec24.md`), accepted 2026-11-17 (manager): **drill every "matches whole on the stretch" operator with an anchored, a `\b` and a lookahead operand, and treat a model built from the engine's own construction as no control** (A3: `&` matched the operand in the SUBJECT, so every anchor-free check passed and the LAW failed 1,344 of 1,365; PART C's PCRE2 models shared the construction).
 
 2026-11-17 r40, same round (accepted 2026-11-17, manager): **a mode-closure lens adds a CAPTURE-STATE drill to every regex-model claim: an optional label inside a looped place, a label looped at two depths read from outside, a place inside a place** (A1/A2: 5/34, 300 and 693 differ; every top-level model set its labels on every path and could not see carry-over).
