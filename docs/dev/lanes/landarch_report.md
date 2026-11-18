@@ -3,6 +3,7 @@
 ## STATE AT HANDOFF
 Complete. Rulings file docs/dev/lanes/landarch_rulings.md was empty: last R-n applied = none. Main tip is
 the commit that adds this report (the step 3-5 commit is 4a2c1fc25). Not pushed (the manager pushes).
+OWED: none
 Premise check: lane/archdense2 = 5a1f23d3a as stated; lane/archlook2 was 02e0555e2 before step 1 and is
 30c370701 after it.
 
