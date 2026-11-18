@@ -627,3 +627,19 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   a parameter); item 27 (operations over arrays).
 - SOURCE: COND-FAMILY.md, "OWNER on value-is-pattern", 2026-11-18. TRIGGER: the rx module's `repeat` being
   designed past a number and an array, or a user asking for a parity or step count.
+
+## 29. A compile-time assertion inside a definition (`@assert`, spelling a placeholder)
+
+- WHAT (the owner, 2026-11-18, ruling that `when` with a single argument is an error): "Ideally an @assert of
+  some sort." An IDEA: a definition (a macro, a library function) states a requirement on its arguments that the
+  compiler checks where the definition is USED, and refuses the call with the definition's own message.
+- THE MANAGER'S READING (mine, unchecked): the general form of what a signature does for "this parameter is
+  required"; it would let a library say "at least one of these two", "this argument must be a test", "this count
+  must be positive" without a compiler rule per case. It meets the warnings design (a library's own warnings are
+  named by its path; this would be a library's own ERRORS).
+- QUESTIONS IT RAISES (none asked yet): what an assertion may inspect (the KIND of an argument: a pattern that can
+  match, a filter, a test; a value); whether it runs per call or per expansion; its message and name.
+- MEETS: items 12, 20, 23 (what a library declares, options, the severity table); item 26 (parameters); the place
+  table's KIND column (revision 26).
+- SOURCE: COND-FAMILY.md, "OWNER RULING — a `when` with a single argument is an error", 2026-11-18. TRIGGER: the
+  library discussion, or the second construct that needs an argument rule a signature cannot express.

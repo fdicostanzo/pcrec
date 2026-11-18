@@ -3758,3 +3758,23 @@ overrule): a missing branch requires nothing, so `when(x)` is `(x) | (not x)`: w
 x it always holds and tests nothing; with a bare pattern as x (which consumes, when-peek) it takes x where x can
 match and nothing where it cannot. It is therefore NOT the same as x. THE MANAGER'S PROPOSAL beside it, a draft
 reading: a `when` with neither branch draws a compiler warning (it is almost certainly unfinished).
+
+**2026-11-18 OWNER RULING — a `when` with a single argument is an error (Frank, to session 139, afternoon).** After
+the manager's derivation of the entry above (`when(x)` would be `x | (not x)`: vacuous for a test; proposed: a
+warning). HIS WORDS, in full: "When: regardless, single arg has no value and should be an error. Ideally an
+@assert of some sort. If we said that
+when(cond, then, else = null) := ....
+Meant that the args could be options then it's handled syntactically". RECORD: (1) RULED: `when` with a single
+argument (the test alone) is a COMPILE ERROR: "single arg has no value". This replaces the manager's derivation
+and his proposed warning of the entry above. (2) HOW, his, two thoughts, neither a ruling on mechanism: "ideally
+an @assert of some sort" (a way for a definition to assert something about its arguments at compile time; an
+IDEA, filed in docs/design/predicates_future.md item 29); and the SIGNATURE doing it: if the definition is written
+`when(cond, then, else = null) := ...`, with `then` a parameter that has no default and `else` one that has, and
+if parameters may be given as options (by name) at the call, then the single-argument call is refused by the
+ordinary rule that a parameter without a default must be supplied: "handled syntactically". THE MANAGER'S READINGS
+(mine; stated back to him in the session): this signature makes `then` REQUIRED, which revises his spelling lean
+of the same afternoon ("two optional arg named then and else"; "or one else"): under it `when(x, else = z)` is
+refused too, and the legal calls are `when(x, y)`, `when(x, y, z)`, `when(x, then = y)`, `when(x, then = y, else
+= z)`, `when(x, y, else = z)`; `null` as the default of `else` is a placeholder for "nothing required" (the
+when-default ruling), not a new value he has ruled into the language; whether any parameter may be passed by
+name is a call-syntax point the next revision states from the draft's ONE INPUT RULE or asks.
