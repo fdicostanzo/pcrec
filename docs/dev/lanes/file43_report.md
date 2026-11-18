@@ -1,6 +1,7 @@
 # file43 report
 
 ## STATE AT HANDOFF
+OWED: none
 Rulings file: last entry applied R1 (framework note worded "coordinator never stopped"; fifth process change, COMMON failed-final-reply line, added to skill section 5; process.md re-copied). All task steps done; committed on lane/file43; not merged, not pushed.
 
 ## FILED
