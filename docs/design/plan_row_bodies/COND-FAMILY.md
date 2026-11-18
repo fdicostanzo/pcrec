@@ -2838,3 +2838,11 @@ and a library's warning of the same last component together ("helpful or dangero
 to him (mine): helpful for making a whole kind strict, risky for switching things OFF (a broad pattern also
 silences warnings the user never saw, and ones added later); the draft's existing whole-name matching and
 `warn.unused` limit accidents; a listing of what a selector currently matches would remove the rest.
+
+**2026-11-17 OWNER RULING — empty-search-error: a warning (Frank, to session 138, evening).** Asked whether a
+nullable final pattern SEARCHED in a predicate program is a compile error (the draft) or behaves as regex does with
+the warning (revision 24.4's row: `/(?<h>\d*)/ & NOT (h: <5)`; the manager's lean: the warning everywhere). HIS
+WORDS: "empty-search-error: warning". RECORD: RULED: a searched pattern that can match nothing behaves as PCRE does
+(its empty matches) in a predicate program as for a plain pattern, with the WARNING (`pcrec.empty.search` under
+the naming ruled the same evening); an error only where a strictness setting selects it. The draft's error for
+predicate programs is withdrawn.
