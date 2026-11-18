@@ -22,7 +22,7 @@ Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows
 - SET 2: main FROZE 33fec79b3efc4ce8b838cd8daa65908df5f4e847 (14:5x). worktrees/fcards-night at it, detached, pinned in
   .wtprune.keep. Lane fcardsq (sonnet, in flight) builds it, checks 700-704 vs rev 13.1 cards.py, writes window.vars
   (RUN_ID fcards-zen4-1), dry-runs, QUEUES 700-704; report /var/tmp/pcrec-pcrec/scratch/memfn/fcardsq/report.md; keys
-  to main by 16:30. After 702: tell main "h* frozen". 704 identity only at h*=64.
+  SENT to main (QUEUED 700-704). After 702: tell main "h* frozen". 704 identity only at h*=64; needs main's REBUILT_BUILD (+ MOVERS) set in fcards/jobs/window.vars after 702.
 - SET 1 re-run QUEUED (600-609, RUN_ID mfcard-zen4-4, FROZEN e7f9a4365 = run.py per-launch quiet budget,
   worktrees/mfind; fresh first run, no FIRST_RUNDIR); waits while any kit-fcards-* is pending/running; NOT_BEFORE
   2026-11-19T01:00. LAST night for set 1 (main): if avx2libc refuses again at the 3 % byte floors on a gate-held night,
