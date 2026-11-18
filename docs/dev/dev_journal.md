@@ -28283,3 +28283,48 @@ Next
   /context (or note the figure he gives) right after the wake procedure and BEFORE any lane brief, so the wake's
   own cost is separated from the session's work; record both sessions side by side here before building any of
   the nine ideas.
+
+## 2026-11-18 (session 139, in flight at 13:45 box clock; written while the owner is away)
+
+- PREDICATES (design only), three revisions in fourteen hours. Rev 25 (lane predspec25) folded the 11-17 evening
+  rulings and the rx module; review r43 (48 findings, none refuted; NOT STABLE) -> rev 25.1 (predspec251). The
+  owner then answered questions through the morning by /q, ALL in docs/design/plan_row_bodies/COND-FAMILY.md, the
+  2026-11-18 entries: number-names (only when there is no ambiguity; 0 always the entire match); hit-carry (it
+  carries: occurrences is a rewrite) and nullable (a warning); product-order (first hole slowest), with his
+  correction that the product was ruled for COUNT holes only; name-hole (an array is an error; each hole position
+  has its own rules); removal (the whole copy); a count hole takes counts; array-lift (operations on arrays
+  combine on the product); hole-in-filter (the filter error; fill, then judge); the reference rule and free-name
+  (a reference resolves in the namespace of the rx it is written in; a name that rx does not define is an error;
+  "The rx should export the group"); export-rule (public unless `_`; a binding shows its own public labels and its
+  public part labels; `[_a = A]`, `[_ = A]`); condition-in-sequence (yes, and `&` stays); quantified-condition (an
+  error, a formal punt); lookahead-labels (visible); complement-place (the error is at the use; "rx that can match
+  and rx that can filter") and lone-complement-match (an error; provide "anything"); then, afternoon, the
+  conditional: the guarded form, when-default, when-test and when-peek (`peek()` tests; a bare pattern consumes,
+  with a warning), a single-argument `when` an error, `then` required, NOT for else-only. Ideas filed:
+  predicates_future items 26 (a condition with a label parameter), 27 (cartesian), 28 (a count as a filter), 29
+  (@assert). Rev 26 (predspec26: the fold + section R on ONE place table) -> review r47 (NOT STABLE; the fold
+  faithful, six answer-level findings in the extensions) -> rev 26.1 IN FLIGHT (lane predspec261, with three late
+  rulings sent through its rulings file: VERIFY R1-R3 in the delivery).
+- ARCH-STEP: ast-accessors ruled (interface vs representation; the AST grandfathered; "the rules are stronger
+  moving forwards and sympathetic looking back"); accessor-grain closed; functionality wholly dependent on a
+  structure lives in its area. Applied under high-level rule 2 of docs/dev/guide/architecture.md.
+- COVER-CAP (set S3): the kit delivered its forms early (lane/memfn-forms @ 105bf8ef4); lane covs2land merged them
+  onto the cover-cap line (merge c774d15c0, tested tip a88871a19, branch lane/covs2land); cloud: mechrows GREEN,
+  asan GREEN, axes running, TEST RED on ONE failure (the kit's g2 presence generator emits runs up to 64 terms
+  once the span cap is 4095; window.c refuses over 32: each side green alone). Triage lane covs2tri diagnosed, did
+  not fix; the KIT fixes on lane/memfn-g2pcap (the generator's cap follows MF_MAX_TERM), tip due ~15:30, green
+  ~17:00; my freeze by 20:00 depends on it.
+- KIT TIMING: set 1 (mfcard-zen4-3) INCONCLUSIVE on the night of 11-18 (the JMH card timed out at the quiet gate a
+  third night: a whole-job wait budget against an idle load of about 2.0; the avx2libc arm missed two byte floors
+  at the 3% noise gate). I ruled a per-launch wait (threshold unchanged); the full set re-runs on the 11-19 night
+  after set 2 as its LAST night. The owner ruled quiet-threshold: try again, then run the green cards with the
+  load held near 3 and compare within noise: calibration set mfcal queued (keys 800-809, run mfcard-zen4-4L),
+  after both sets, no start after 07:00, spinners dead by 07:15.
+- THE OWNER ON THE SETS: S2 (required-runs stage 3 + the kit's part), S3, S4 "either order is fine. I just don't
+  want them dropped"; they are in owner.md's Next section. S2 has had no work since its go of 11-11.
+- STARTUP CONTEXT: measured 111.6k at +20 min (entries above); the comparison at the next wake is owed.
+- MY ERRORS: told the owner "every spelling of anything agrees as a whole value" (false: `/.*/` stops at a
+  newline) and that the export rule settled the caller's read-out (undefined: r47 B13); corrected the nullable
+  meaning wrongly once before getting it right; recorded "nearest pattern to the left" and "the right side of &"
+  as his (both corrected in the record); narrowed his reference principle to "resolved in the part" and had to
+  withdraw it. A critic reported the coordinator "stopped" when it had not (nested replies never deliver).
