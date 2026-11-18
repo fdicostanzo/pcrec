@@ -47,6 +47,17 @@ Always on, whatever the situation:
   decision, grep the design of record for the plan that already covers it (cover_cap.md 11.3 held the owner's
   inline-head-then-loops plan while I asked him to choose around its absence).
 - **The ride-along register is kept at every landing** (Frank 2026-11-17, [ARCH-STEP]): a landing that opens, rides or closes a row of `docs/dev/guide/architecture.md` part 3 updates the row in the same change; a small change made AGAINST a goal lands only with its "noted deviation" row (his judgement point: note it, correct it at the next larger change; do not remodel with every change).
+- **A remark is recorded as a RULING only when it answers a question asked as one, or he says so** (2026-11-17,
+  session 138, corrected by Frank twice: "It's not so much a ruling as an observation"; "I thought we said" was a
+  recollection): record his words as OBSERVATION, LEAN, DISCUSSION or RULING, and launch nothing on a
+  recollection; a discussion is closed by a question asked as a ruling.
+- **Check, then act, in SEPARATE commands** (2026-11-17, three times): read CI on the previous tip in one command
+  and push in the next (a chained push cancelled two CI runs); run `make -s test-plan-lint` after every lane
+  merge and READ it before committing anything else (a commit chained after a failed check left two wiring files
+  uncommitted for four hours while I told Frank they were in force); `git status --short` at every landing.
+- **Hand-worked examples are marked as such, and a number-comparing example is run under the draft's own rule
+  sentence, QUOTED** (2026-11-17: I showed Frank `10:00` against `(9, 30)`, false under the draft's numeral rule,
+  and paraphrased that rule wrongly in a critic brief).
 - **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
   run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
 - **Purpose over wording** (Frank 2026-11-07: "too literal with exact

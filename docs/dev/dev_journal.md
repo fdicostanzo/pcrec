@@ -28189,3 +28189,45 @@ Next
   concatenation operator were already there; the lane's premise test caught it); two lanes cited plan rows by line
   number (PL14; rule added to BOILERPLATE.md); a lane's helpers handed back to ME, not to it (briefs now say helpers
   write to a file); the append-only lanes history index conflicts on every second merge (keep both lines).
+
+## 2026-11-17 (session 138 CLOSE, box clock 14:20-23:30, at the owner's /close; no lane alive, nothing of main's in flight)
+
+- PREDICATES (design only), the rest of the day. Revisions 24 (lane predspec24), 24.1 (predspec241), 24.2
+  (predspec242b), 24.3 (predspec243), 24.4 (predspec244), all merged; critic rounds r40 (on 24: NOT STABLE; the
+  model disagreed with the text and with libpcre2 in four places) and r42 (on 24.2: NOT STABLE, narrowly), both
+  filed (lanes file40, file42) with process changes. THE OWNER'S RULINGS, all quoted in
+  docs/design/plan_row_bodies/COND-FAMILY.md's tail: exception-rule (looks like regex behaves like regex unless he
+  allows; exceptions requested explicitly); the label rules, reached through four stages in one evening and
+  settled as ONE rule (a label is a name; a branching, i.e. an alternation, an optional or a loop, resets the
+  labels inside it on entry; the last mention wins; a condition reads labels as they stand where it is written;
+  the array is only what was set); `$x` reads the label like `x:` ("pcre is wrong on this"), with a required ugly
+  way to PCRE's carried value; captures stay regex; the hit list = his one-pattern search made atomic and
+  anchored; the filter sentence + "any piece that might look outside is a compiler error"; join order = left;
+  numbers = labels of the pattern's own groups (label numbers and `$1` to be tried); warnings structural or
+  library-defined, compiler ones prefixed `pcrec.`, a library's by its path, strictness selective by name; empty
+  search a warning; `min = n` allowed; atomic-search closed (his other reading is a backtracking verb, (*SKIP) by
+  my libpcre2 run). RX MODULE (docs/design/rx_module.md, lane rxlib): all eleven questions answered: a sequence
+  operator that splices and binds tighter than `&` and `|`; a hole is the inserted pattern as a whole and
+  assertions may cross the border (narrows the 11-14 string-set ruling to set positions); `${}` is a
+  context-aware insert with a kind per position; counts distribute over an alternation per mention, illegal
+  combinations removed; one `repeat` construct, plurals as conveniences; nine postfix quantifier operators
+  binding tightly; label-flow: a composed pattern behaves like a literal, an ambiguous reference across `&` is
+  the error, paths through a part's label, never a binding. His framing: declarative; "a matching language not a
+  finding language"; "an rx is a black box that exposes labels". predicates_future.md items 19-25 (item 24 = the
+  list of sixteen points the user documentation must explain).
+- NOT YET FOLDED into the draft: everything ruled after rev 24.4's brief (pass-start-read onward, and the whole
+  rx module). NEXT: one revision, then a critic round; a spellings review (about fifteen entries); two parked
+  discussions.
+- [ARCH-STEP] A3-A5 done: the goals document reviewed by the owner and restructured into his five tiers (four
+  high-level rules in his order: decisions in one place; data with its code, accessors; seams, module vs layer;
+  remodels ride along; the gate "no existing regex gets slower" with three allowances; his judgement section);
+  skill pcrec-architect; mode arch in pcrec-critic; wiring in the manager skill and BRIEF_TEMPLATE; the stream
+  manifesto's principle 7 scoped by him; emitter-backflow ruled (a one-way hand-off, size gates in plan units;
+  register row 6c, a noted deviation; facts in docs/dev/lanes/archbackflow_facts.md).
+- KIT: three critic-skill changes accepted (pooled noise per level; comparison kinds; drill by perturbation). Its
+  set 1 (mfcard-zen4-3, keys 600-609) is queued for 01:00 on 11-18; at close the box read QUIET (load 0.93) with
+  no watched application present; its forms tip is due to me by 14:00 on 11-18.
+- MY ERRORS, now rules in the manager skill: recorded a remark as a ruling (corrected twice), launched a revision
+  lane on "I thought we said"; pushed while CI ran (twice more); committed after a failed plan-lint, leaving two
+  wiring files uncommitted for four hours while I told the owner they were in force; showed him a hand-worked
+  example the draft's numeral rule falsifies, and paraphrased that rule wrongly in a critic brief.
