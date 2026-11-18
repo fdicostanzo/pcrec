@@ -3350,3 +3350,29 @@ whole spliced pattern. So the two entries above are NOT the final state: what st
 (B's own group, both readings agree) and his principle's words; what is OPEN is the case he names, a reference
 inside a part to a name that part does not define. The manager's contribution to the discussion is in the session
 and is put to him as **free-name**; the state is whatever closes that question.
+
+**2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error (closes the
+backref-across-parts discussion) (Frank, to session 139, morning).** ASKED AS A RULING (slug free-name, after the
+manager laid out three meanings of a reference inside a part to a name that part does not set: it reads the
+surroundings; a compile error where the part is defined; a declared parameter; the manager's leaning: "the error
+now, with the declared parameter as the planned way to relax it"; and the manager's joining of his two sentences:
+the namespace is that of the rx the reference is WRITTEN in, read as labels are, the last mention at that point).
+HIS WORDS, in full: "backref-across-parts: I agree with error. It is like if a function in C were defined then
+references a variable it doesn't have defined so it looks up the call stack to the previous definition.
+Catastrophic. The rx should export the group.
+This also points to a label as something that can be manipulated and referenced. I almost wrote "first class type"
+but that might be too far"
+RECORD. (1) RULED: a reference inside an rx to a name that rx does not define is a COMPILE ERROR. His reason:
+reading the surroundings would be dynamic scoping, a function reaching up the call stack for a variable it never
+defined: "Catastrophic". (2) RULED WITH IT: "The rx should export the group": a name crosses from one rx to
+another by the DEFINING rx exporting it, never by the referring part reaching outward. (3) THE STATE OF
+backref-across-parts, closing the discussion (the manager's statement of what his answers now fix, to be checked
+by the next revision): a reference is resolved in the namespace of the rx it is WRITTEN in, as that namespace
+stands at the point of reference, read as labels are (the last mention); inside a part that namespace is the
+part's own names; in a pattern that inserts or joins parts it also holds the labels those parts export; a name
+not in it is the error of (1). The manager's two "where they differ" cases of the clarification entry are thereby
+settled the other way from that entry: B := `/\k<h>/` after A is the ERROR (not A's `h`); B := `/\k<h>(?<h>\d)/`
+reads B's own namespace (its `h`, unset at that point on a first pass). A declared parameter as the later way to
+let a part take a name from outside is the manager's proposal, NOT ruled (predicates_future item 26).
+(4) OBSERVATION, his, not a ruling: this "points to a label as something that can be manipulated and referenced.
+I almost wrote "first class type" but that might be too far". Added to predicates_future item 26.

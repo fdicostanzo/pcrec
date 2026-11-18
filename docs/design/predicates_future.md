@@ -544,6 +544,11 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - MEETS: item 25 (label hygiene for libraries: a library condition that names no label of its own cannot collide,
   which is direction (c), a rename at the point of use, seen from the condition's side); the label-flow ruling
   (an ambiguous reference across `&` is the error); docs/design/rx_module.md.
+- ADDED 2026-11-18 (the owner, ruling free-name: a reference inside an rx to a name it does not define is a
+  compile error; "The rx should export the group"): his observation "This also points to a label as something that
+  can be manipulated and referenced. I almost wrote "first class type" but that might be too far". The manager's
+  proposal there, NOT ruled: a DECLARED parameter is the later way to let a part take a name from outside, for
+  patterns as for conditions; and what "export" is (every label, or only the declared ones) meets item 25.
 - SOURCE: the owner's message, 2026-11-17. TRIGGER: the library discussion (items 12, 20, 23, 25), or the first
   revision of the draft after rev 25 that takes up reusable conditions. NOT in lane predspec25's scope.
 
