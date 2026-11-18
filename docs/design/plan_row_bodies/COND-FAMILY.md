@@ -3073,3 +3073,11 @@ construct only (the manager's reading): possessive forms and counts in braces. M
 parse rule (after `+` or `*`, a token that can begin an operand makes it binary, otherwise it is postfix; the
 sequence mark is explicit, so `A+ SEQ B` is unambiguous), and the message when a binary `+` is given patterns ("a
 sum of two patterns: did you mean A+ followed by B?").
+ADDENDUM (quantifier operators), HIS WORDS: "lets include the possessive forms but the brace counts are repeat.
+"did you mean A+ followed by B" A B isn't legal so its the addition form." RECORD: RULED: (1) the POSSESSIVE forms
+are included: NINE postfix quantifier operators, `+ +? ++`, `* *? *+`, `? ?? ?+`, each regex's own. (2) COUNTS IN
+BRACES are not operators: a counted repeat is the named `repeat` construct. (3) `A + B` is simply ADDITION:
+since a sequence needs its explicit mark, "A+ then B" cannot be written as `A + B`, so there is nothing to guess
+and no "did you mean" message of the manager's kind; adding two patterns is an ordinary type error. MINE, for the
+next revision: the operators are read longest first (`++` is the possessive, not two pluses), stated with one
+example each.
