@@ -1,6 +1,7 @@
 # layoutrow report
 
 ## STATE AT HANDOFF
+OWED: none
 Complete; doc only. Rulings file layoutrow_rulings.md: empty (no R-n applied). Commit on lane/layoutrow, not merged or pushed.
 
 ## FILED
@@ -11,4 +12,4 @@ Complete; doc only. Rulings file layoutrow_rulings.md: empty (no R-n applied). C
 
 ## CHECKS RUN
 - `timeout 120 make -s test-plan-lint`: "checks passed: 2, checks failed: 0".
-- `scripts/check_claudemd_size.sh --all`: see handback.
+- `scripts/check_claudemd_size.sh --all`: 393 files within limits.
