@@ -1,0 +1,206 @@
+predspec244 engine: default rule 244; libpcre2-8 10.46 2025-08-27
+
+== PART A: rev 24.3's printed label lines, under the one rule (244) AND the switch back (243); each line: the
+   answer under 244 ; under 243 ; the text rev 24.3 printed ; whether 244 equals the printed text
+A S1      WHOLE    `3qxx`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S1      WHOLE    `q3xx`                 244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A S1      WHOLE    `7q3xx`                244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A S1      SEARCHED `3qxx`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S1      FIND-ALL `3qxx q3xx 7q3xx`      244 [`q3xx`@5, `7q3xx`@10] ; 243 [`q3xx`@5, `7q3xx`@10] ; printed [`q3xx`@5, `7q3xx`@10] ; OK
+A S1a     WHOLE    `q3xx`                 244 HOLDS a = `3` ; 243 HOLDS a = `3` ; printed HOLDS a = `3` ; OK
+A S1a     WHOLE    `7q3xx`                244 HOLDS a = `3` ; 243 HOLDS a = `3` ; printed HOLDS a = `3` ; OK
+A S2      WHOLE    `9:45,10,`             244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S2      WHOLE    `10,9:45,`             244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S2      WHOLE    `10:45,10,`            244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S3      WHOLE    `9:45,10,`             244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S3      WHOLE    `10,9:45,`             244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S3      WHOLE    `10:45,10,`            244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S4      WHOLE    `9:45,10,`             244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A S4      WHOLE    `10,9:45,`             244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S4      WHOLE    `10:45,10,`            244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A S2s     SEARCHED `10,9:45, 10:45,`      244 `10:45,`@9 ; 243 `10:45,`@9 ; printed `10:45,`@9 ; OK
+A S2s     FIND-ALL `9:45,10, 10:45, 10,9:45,` 244 [`10:45,`@9] ; 243 [`10:45,`@9] ; printed [`10:45,`@9] ; OK
+A S5      WHOLE    `10:00,9:00,11:00,`    244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S5      SEARCHED `10:00,9:00,11:00,`    244 ``@0 ; 243 ``@0 ; printed ``@0 ; OK
+A S5      WHOLE    `10:15,9:00,11:15,`    244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S5      SEARCHED `10:15,9:00,11:15,`    244 `10:15,`@0 ; 243 `10:15,`@0 ; printed `10:15,`@0 ; OK
+A S5      WHOLE    `9:45,10:15,`          244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A S5      WHOLE    `9:45,10,`             244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A S5f     FIND-ALL `10:15,9:00,11:15,`    244 [`10:15,`@0, ``@6, ``@7, ``@8, ``@9, ``@10, `11:15,`@11, ``@17] ; 243 [`10:15,`@0, ``@6, ``@7, ``@8, ``@9, ``@10, `11:15,`@11, ``@17] ; printed [`10:15,`@0, ``@6, ``@7, ``@8, ``@9, ``@10, `11:15,`@11, ``@17] ; OK
+A N       WHOLE    `3;,,`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A N       WHOLE    `3;;,`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A N       WHOLE    `3;,7;,`               244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A N       WHOLE    `7;,3;,`               244 HOLDS h = `3` ; 243 HOLDS h = `3` ; printed HOLDS h = `3` ; OK
+A N       SEARCHED `3;,, 7;,`             244 `3;,`@0 h = `3` ; 243 `3;,`@0 h = `3` ; printed `3;,`@0 h = `3` ; OK
+A N       FIND-ALL `3;,, 3;;, 3;,7;,`     244 [`3;,`@0 h = `3`, `3;,`@10 h = `3`] ; 243 [`3;,`@0 h = `3`, `3;,`@10 h = `3`] ; printed [`3;,`@0 h = `3`, `3;,`@10 h = `3`] ; OK
+A Ni      WHOLE    `3;,,`                 244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A Ni      WHOLE    `3;;,`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A Ni      WHOLE    `3;,7;,`               244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A Ni      WHOLE    `7;,3;,`               244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A Ni      SEARCHED `3;,, 7;,`             244 `3;,,`@0 ; 243 `3;,,`@0 ; printed `3;,,`@0 ; OK
+A Nii     WHOLE    `3;,,`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A Nii     WHOLE    `3;;,`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A Nii     WHOLE    `3;,7;,`               244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A Nii     WHOLE    `7;,3;,`               244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A Nii     SEARCHED `3;,, 7;,`             244 `3;,`@0 h = `3` ; 243 `3;,`@0 h = `3` ; printed `3;,`@0 h = `3` ; OK
+A X2      WHOLE    `,`                    244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A X2      WHOLE    `3;7;,`                244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A X2      WHOLE    `7;3;,`                244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A X2b     WHOLE    `,3;,`                 244 HOLDS h = `3` ; 243 HOLDS h = `3` ; printed HOLDS h = `3` ; OK
+A X3      WHOLE    `37;,51;,`             244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A X3s     WHOLE    `3;7,`                 244 HOLDS h = `7`, k = `3` ; 243 HOLDS h = `7`, k = `3` ; printed HOLDS h = `7`, k = `3` ; OK
+A X1      WHOLE    `3`                    244 HOLDS h = unset ; 243 HOLDS h = unset ; printed HOLDS h = unset ; OK
+A X1      SEARCHED `3`                    244 `3`@0 h = unset ; 243 `3`@0 h = unset ; printed `3`@0 h = unset ; OK
+A X1      FIND-ALL `3`                    244 [`3`@0 h = unset, ``@1 h = unset] ; 243 [`3`@0 h = unset, ``@1 h = unset] ; printed [`3`@0 h = unset, ``@1 h = unset] ; OK
+A X1p     WHOLE    `3`                    244 HOLDS h = `3` ; 243 HOLDS h = `3` ; printed HOLDS h = `3` ; OK
+A X1e     WHOLE    `a`                    244 HOLDS e = `` ; 243 HOLDS e = `` ; printed HOLDS e = `` ; OK
+A L1      WHOLE    `7;3;`                 244 HOLDS h = `3` ; 243 HOLDS h = `3` ; printed HOLDS h = `3` ; OK
+A L1      SEARCHED `7;3;`                 244 `7;3;`@0 h = `3` ; 243 `7;3;`@0 h = `3` ; printed `7;3;`@0 h = `3` ; OK
+A L1      FIND-ALL `7;3; 3;7;`            244 [`7;3;`@0 h = `3`, `3;`@5 h = `3`] ; 243 [`7;3;`@0 h = `3`, `3;`@5 h = `3`] ; printed [`7;3;`@0 h = `3`, `3;`@5 h = `3`] ; OK
+A R13;;   WHOLE    `3;;`                  244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A R13;;   SEARCHED `3;;`                  244 `3;`@0 h = `3` ; 243 `3;`@0 h = `3` ; printed `3;`@0 h = `3` ; OK
+A R23;;   WHOLE    `3;;`                  244 HOLDS h = unset ; 243 HOLDS h = unset ; printed HOLDS h = unset ; OK
+A R23;;   SEARCHED `3;;`                  244 `3;;`@0 h = unset ; 243 `3;;`@0 h = unset ; printed `3;;`@0 h = unset ; OK
+A R23;;   FIND-ALL `3;7; 7;; 3;`          244 [`3;7;`@0 h = `7`, ``@4 h = unset, `7;;`@5 h = unset, ``@8 h = unset, ``@9 h = unset, `;`@10 h = unset, ``@11 h = unset] ; 243 [`3;7;`@0 h = `7`, ``@4 h = unset, `7;;`@5 h = unset, ``@8 h = unset, ``@9 h = unset, `;`@10 h = unset, ``@11 h = unset] ; printed [`3;7;`@0 h = `7`, ``@4 h = unset, `7;;`@5 h = unset, ``@8 h = unset, ``@9 h = unset, `;`@10 h = unset, ``@11 h = unset] ; OK
+A R37;;   WHOLE    `7;;`                  244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A R37;;   SEARCHED `7;;`                  244 `7;`@0 ; 243 `7;`@0 ; printed `7;`@0 ; OK
+A R37;;   FIND-ALL `3;7; 7;; 3;`          244 [`3;7;`@0, `7;`@5] ; 243 [`3;7;`@0, `7;`@5] ; printed [`3;7;`@0, `7;`@5] ; OK
+A Ib      WHOLE    `3;;`                  244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A VP      WHOLE    `3;`                   244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A VP      SEARCHED `3;7;`                 244 `3;`@0 ; 243 `3;`@0 ; printed `3;`@0 ; OK
+A VP      FIND-ALL `3;1; 7;`              244 [`3;1;`@0] ; 243 [`3;1;`@0] ; printed [`3;1;`@0] ; OK
+A SO      WHOLE    `3;;`                  244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A SO      SEARCHED `7;3;;`                244 `7;3;;`@0 ; 243 `7;3;;`@0 ; printed `7;3;;`@0 ; OK
+A SO      FIND-ALL `7;; 3;;`              244 [`3;;`@4] ; 243 [`3;;`@4] ; printed [`3;;`@4] ; OK
+A SO2     WHOLE    `9:45,10,`             244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A PL      WHOLE    `3;7;7`                244 HOLDS ; 243 HOLDS ; printed HOLDS ; OK
+A PL      WHOLE    `3;7;3`                244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A PL      FIND-ALL `3;7;7 7;3;3`          244 [`3;7;7`@0, `7;3;3`@6] ; 243 [`3;7;7`@0, `7;3;3`@6] ; printed [`3;7;7`@0, `7;3;3`@6] ; OK
+A PLo     WHOLE    `7;;7`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A PLo     SEARCHED `7;;7`                 244 FAILS ; 243 FAILS ; printed FAILS ; OK
+A PLo     FIND-ALL `7;;7 3;3`             244 [`3;3`@5] ; 243 [`3;3`@5] ; printed [`3;3`@5] ; OK
+A U1      WHOLE    `12`                   244 HOLDS a = `2`, b = `1` ; 243 HOLDS a = `2`, b = `1` ; printed HOLDS a = `2`, b = `1` ; OK
+A U1      SEARCHED `12`                   244 `12`@0 a = `2`, b = `1` ; 243 `12`@0 a = `2`, b = `1` ; printed `12`@0 a = `2`, b = `1` ; OK
+A U1      FIND-ALL `12 1 19 3`            244 [`12`@0 a = `2`, b = `1`] ; 243 [`12`@0 a = `2`, b = `1`] ; printed [`12`@0 a = `2`, b = `1`] ; OK
+A Z       WHOLE    `abb`                  244 HOLDS x = `b` ; 243 HOLDS x = `b` ; printed HOLDS x = `b` ; OK
+A OCC     WHOLE    `abb`                  244 HOLDS x = `ab`, g = `a` ; 243 HOLDS x = `ab`, g = `a` ; printed HOLDS x = `ab`, g = `a` ; OK
+A SUMMARY: 82 printed lines (each a mode of a text); 244 differs from the printed text on 0
+
+== PART B: rule 244 vs rule 243 over the pools (reported row, labels compared; WHOLE / SEARCHED / FIND-ALL), and the
+   carry-vs-rule counts rev 24.3 printed, recomputed by THIS engine under 243 and 244 (a check of the engine itself)
+B S1     (?:(?<a>\d)|(?<b>[a-z]))*xx(?C"c") on A37: 244 vs 243 0 / 0 / 0 of 1365 ; carry vs 244 28 / 40 / 40 of 1365 (first W `3qxx`) ; carry vs 243 28 / 40 / 40 of 1365 (first W `3qxx`) ; rev 24.3 printed 28 / 40 / 40 ; OK
+B REP    (?:(?<h>\d)?;)*(?C"c") on RG3: 244 vs 243 0 / 0 / 0 of 364 ; carry vs 244 8 / 33 / 33 of 364 (first W `3;;`) ; carry vs 243 8 / 33 / 33 of 364 (first W `3;;`) ; rev 24.3 printed 8 / 33 / 33 ; OK
+B ITEM   (?:(?<h>\d)?;(?C"c"))+ on RG3: 244 vs 243 0 / 0 / 0 of 364 ; carry vs 244 5 / 34 / 34 of 364 (first W `3;;`) ; carry vs 243 5 / 34 / 34 of 364 (first W `3;;`) ; rev 24.3 printed 5 / 34 / 34 ; OK
+B LATE   (?:(?<h>\d{1,2})(?::(?<m>\d\d))?,(?C"c"))* on LP3: 244 vs 243 0 / 0 / 0 of 156 ; carry vs 244 4 / 7 / 11 of 156 (first W `9:45,10,`) ; carry vs 243 4 / 7 / 11 of 156 (first W `9:45,10,`) ; rev 24.3 printed 4 / 7 / 11 ; OK
+B NEST   (?:(?:(?<h>\d)?;)*,)*(?C"c") on NP: 244 vs 243 0 / 0 / 0 of 1365 ; carry vs 244 10 / 20 / 20 of 1365 (first W `3;;,`) ; carry vs 243 10 / 20 / 20 of 1365 (first W `3;;,`) ; rev 24.3 printed 10 / 20 / 20 ; OK
+B Ni     (?:(?:(?<h>\d)?;(?C"c"))*,)* on NP: 244 vs 243 0 / 0 / 0 of 1365 ; OK
+B Nii    (?:(?:(?<h>\d)?;)*(?C"c"),)* on NP: 244 vs 243 0 / 0 / 0 of 1365 ; OK
+B CLOSE  (?:(?<h>\d+)(?::(?<m>\d\d))?,)*(?C"c") on JP: 244 vs 243 0 / 0 / 0 of 85 ; OK
+B CLOSE0 (?:(?<h>\d+)(?::(?<m>\d\d))?,)*(?C"c") on JP: 244 vs 243 0 / 0 / 0 of 85 ; OK
+B REPnot (?:(?<h>\d)?;)*(?C"c") on RG3: 244 vs 243 0 / 0 / 0 of 364 ; OK
+B X2     (?:(?:(?<h>\d)?;)*,)*(?C"c") on NP: 244 vs 243 0 / 0 / 0 of 1365 ; OK
+B X2b    (?:(?:(?<h>\d)?;)*,)*(?C"c") on NP: 244 vs 243 0 / 0 / 0 of 1365 ; OK
+B SO     (?:(?<h>\d)?;)*(?C"c") on RG3: 244 vs 243 0 / 0 / 0 of 364 ; OK
+B PLo    (?:(?<h>\d)?;)*(?<k>\d)(?C"c") on RG3: 244 vs 243 0 / 0 / 0 of 364 ; OK
+B ALT    (?:(?<a>\d)|(?<b>[a-z]))*(?C"c") on A37: 244 vs 243 0 / 0 / 0 of 1365 ; OK
+B TML    (?:(?<h>\d{1,2})(?::(?<m>\d\d))?,)*(?C"c") on TM: 244 vs 243 0 / 0 / 0 of 156 ; OK
+
+== PART C: where 244 and 243 PART: a condition in a pass placed BEFORE its label's group (no branching inside the body
+   around the group). 244: the loop resets once, on entry; a pass sees the previous pass's value until its own group
+   closes. 243: every pass starts with its labels unset.
+C 244   `/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5) at the pass start: WHOLE `3;7;` HOLDS ; `7;3;` FAILS ; `3;3;` HOLDS ; SEARCHED `7;3;` `7;`@0 ; FIND-ALL `7;3; 3;3;` [`7;`@0, `3;`@2, ``@4, `3;3;`@5, ``@9]
+C 243   `/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5) at the pass start: WHOLE `3;7;` HOLDS ; `7;3;` HOLDS ; `3;3;` HOLDS ; SEARCHED `7;3;` `7;3;`@0 ; FIND-ALL `7;3; 3;3;` [`7;3;`@0, ``@4, `3;3;`@5, ``@9]
+C carry `/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5) at the pass start: WHOLE `3;7;` HOLDS ; `7;3;` FAILS ; `3;3;` HOLDS ; SEARCHED `7;3;` `7;`@0 ; FIND-ALL `7;3; 3;3;` [`7;`@0, `3;`@2, ``@4, `3;3;`@5, ``@9]
+C 244 vs 243 on that program: 2 / 8 / 14 of 364 (first W `7;3;`) ; OK
+C with the group OPTIONAL, `/(?:${c}(?<h>\d)?;)*/`: 244 vs 243 15 / 29 / 47 of 364 (first W `7;;`) (the optional resets h only when it is entered, AFTER c)
+C inside an alternation in the body, `/(?:(?:${c}(?<h>\d);|x))*/`: 244 vs 243 0 / 0 / 0 of 1365 (the alternation resets on entry, before c)
+C OK
+
+== PART N: NEW answers of the one rule (WHOLE; SEARCHED / FIND-ALL where named); each beside rev 24.3's rule (243),
+   PCRE's capture (carry) and libpcre2 itself under (?J) (duplicate names allowed; the capture PCRE2 reads)
+N N1 `/(?<h>\d)?;(?<h>\d)?/`: without (?J) libpcre2: COMPILE ERROR: two named subpatterns have the same name (PCRE2_DUPNAMES not set)
+N N1   on `3;`: 244 HOLDS h = unset ; 243 HOLDS h = `3` ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `3` (groups `3`, unset) ; OK
+N N1   on `3;4`: 244 HOLDS h = `4` ; 243 HOLDS h = `4` ; carry HOLDS h = `4` ; libpcre2 (?J) by name h = `3` (groups `3`, `4`)
+N N1   on `;4`: 244 HOLDS h = `4` ; 243 HOLDS h = `4` ; carry HOLDS h = `4` ; libpcre2 (?J) by name h = `4` (groups unset, `4`)
+N N2 `/(?<h>\d)?(?:;(?<h>\d)?)*/`: without (?J) libpcre2: COMPILE ERROR: two named subpatterns have the same name (PCRE2_DUPNAMES not set)
+N N2   on `3;`: 244 HOLDS h = unset ; 243 HOLDS h = unset ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `3` (groups `3`, unset) ; OK
+N N2   on `7;3;`: 244 HOLDS h = unset ; 243 HOLDS h = unset ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `7` (groups `7`, `3`) ; OK
+N N2   on `7;3`: 244 HOLDS h = `3` ; 243 HOLDS h = `3` ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `7` (groups `7`, `3`) ; OK
+N N2   on `3`: 244 HOLDS h = unset ; 243 HOLDS h = unset ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `3` (groups `3`, unset) ; OK
+N N3 `/(?<h>\d)(?:,(?<h>\d))*/`: without (?J) libpcre2: COMPILE ERROR: two named subpatterns have the same name (PCRE2_DUPNAMES not set)
+N N3   on `7`: 244 HOLDS h = unset ; 243 HOLDS h = unset ; carry HOLDS h = `7` ; libpcre2 (?J) by name h = `7` (groups `7`, unset) ; OK
+N N3   on `7,3`: 244 HOLDS h = `3` ; 243 HOLDS h = `3` ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `7` (groups `7`, `3`) ; OK
+N N3   on `7,3,5`: 244 HOLDS h = `5` ; 243 HOLDS h = `5` ; carry HOLDS h = `5` ; libpcre2 (?J) by name h = `7` (groups `7`, `5`)
+N N4 `/(?<h>\d);(?:(?<h>\d)|x)/`: without (?J) libpcre2: COMPILE ERROR: two named subpatterns have the same name (PCRE2_DUPNAMES not set)
+N N4   on `3;x`: 244 HOLDS h = unset ; 243 HOLDS h = `3` ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `3` (groups `3`, unset) ; OK
+N N4   on `3;4`: 244 HOLDS h = `4` ; 243 HOLDS h = `4` ; carry HOLDS h = `4` ; libpcre2 (?J) by name h = `3` (groups `3`, `4`)
+N N5 `/(?<h>\d);(?:x|(?<h>\d))/`: without (?J) libpcre2: COMPILE ERROR: two named subpatterns have the same name (PCRE2_DUPNAMES not set)
+N N5   on `3;x`: 244 HOLDS h = unset ; 243 HOLDS h = `3` ; carry HOLDS h = `3` ; libpcre2 (?J) by name h = `3` (groups `3`, unset) ; OK
+N N5   on `3;4`: 244 HOLDS h = `4` ; 243 HOLDS h = `4` ; carry HOLDS h = `4` ; libpcre2 (?J) by name h = `3` (groups `3`, `4`)
+N N3 with `& (h: present)`, the items-then-last form against the two-copy list: two-copy `7` FAILS / SEARCHED `7 7,3` `7,3`@2 h = `3` / FIND-ALL `7 7,3` [`7,3`@2 h = `3`]
+N N3' items-then-last `/(?:(?<h>\d),)*(?<h>\d)/` (the last item outside the loop): `7` HOLDS h = `7` ; `7,3` HOLDS h = `3` ; SEARCHED `7 7,3` `7`@0 h = `7`
+N array form on N2 `7;;3;`: settings in order ['7', '3'] ; with a slot for each reset after a setting ['7', None, '3', None] (the open question **array-slot**)
+N array form on N2 `7;3;`: ['7', '3'] (label: unset) ; on REP `3;;7;`: ['3', '7'] (label: `7`)
+
+== PART M: the MARKER MODEL on libpcre2 (labels under the one rule) vs the engine's rule 244, reported row with labels;
+   and the ORDER CHECK: the same pattern with NO markers (PCRE's capture) must DIFFER where a branching resets
+M S1    model `(?<e1>)(?:(?<e2>)(?:(?<a1>\d)|(?<b1>[a-z])))*xx(?C"t")` vs engine 244: 0 / 0 / 0 of 1365 ; without markers (the capture) 28 / 40 / 40 (expected to differ) ; OK
+M REP   model `(?<e1>)(?:(?<e2>)(?<h1>\d)?;)*(?C"t")` vs engine 244: 0 / 0 / 0 of 364 ; without markers (the capture) 8 / 33 / 33 (expected to differ) ; OK
+M NEST  model `(?<e1>)(?:(?<e2>)(?:(?<e3>)(?<h1>\d)?;)*,)*(?C"t")` vs engine 244: 0 / 0 / 0 of 1365 ; without markers (the capture) 10 / 20 / 20 (expected to differ) ; OK
+M CLOSE model `(?<e1>)(?:(?<h1>\d+)(?<e2>)(?::(?<m1>\d\d))?,)*(?C"t")` vs engine 244: 0 / 0 / 0 of 85 ; without markers (the capture) 14 / 18 / 18 (expected to differ) ; OK
+M N2    model `(?<e1>)(?<h1>\d)?(?<e2>)(?:;(?<e3>)(?<h2>\d)?)*(?C"t")` vs engine 244: 0 / 0 / 0 of 364 ; without markers (the capture) 19 / 209 / 248 (expected to differ) ; OK
+M N1    model `(?<e1>)(?<h1>\d)?;(?<e2>)(?<h2>\d)?(?C"t")` vs engine 244: 0 / 0 / 0 of 364 ; without markers (the capture) 1 / 72 / 80 (expected to differ) ; OK
+M N3    model `(?<h1>\d)(?<e1>)(?:,(?<h2>\d))*(?C"t")` vs engine 244: 0 / 0 / 0 of 364 ; without markers (the capture) 2 / 286 / 326 (expected to differ) ; OK
+M N4    model `(?<h1>\d);(?<e1>)(?:(?<h2>\d)|x)(?C"t")` vs engine 244: 0 / 0 / 0 of 341 ; without markers (the capture) 2 / 18 / 18 (expected to differ) ; OK
+M N5    model `(?<h1>\d);(?<e1>)(?:x|(?<h2>\d))(?C"t")` vs engine 244: 0 / 0 / 0 of 341 ; without markers (the capture) 2 / 18 / 18 (expected to differ) ; OK
+M U1    model `(?<b1>\d+)(?<e1>)(?<a1>\d)?(?C"t")` vs engine 244: 0 / 0 / 0 of 341 ; without markers (the capture) 0 / 0 / 0 (expected equal) ; OK
+M CAPTURES: rule carry vs plain libpcre2 on REP & (h: <5), 364 texts x 3 modes: 0 differ ; OK
+
+== PART H: the HIT LIST on libpcre2 10.46 (the manager's run of the evening, re-run): whole values; 'every number
+   under 100'. The hits are recorded by a callout as a stack (an entry is dropped when the match backs up past it)
+H judged inside (the search as part of the pattern) `\A(?:.*?(?<n>\d+)(?C"in"))*\D*\z`: `1234` HOLDS (n = `34`) ; `12 34` HOLDS (n = `34`) ; `12 345` HOLDS (n = `5`) ; `x300 12` HOLDS (n = `12`)
+H FIRST TRY: each hit atomic, the list judged after `\A(?:.*?(?>(?<n>\d+))(?C"rec"))*\D*\z(?C"judge")`: `1234` FAILS (last list judged ['1234', '234', '34', '4']) ; `12 34` HOLDS hits ['12', '34'] ; `12 345` FAILS (last list judged ['12', '2', '345', '45', '5']) ; `x300 12` FAILS (last list judged ['300', '00', '0', '12', '2'])
+H THE MODEL: the whole loop atomic, anchored at both ends, the list judged after `\A(?>(?:.*?(?<n>\d+)(?C"rec"))*\D*)\z(?C"judge")`: `1234` FAILS (last list judged ['1234']) ; `12 34` HOLDS hits ['12', '34'] ; `12 345` FAILS (last list judged ['12', '345']) ; `x300 12` FAILS (last list judged ['300', '12']) ; OK
+H the model with the general tail `[\s\S]*` `\A(?>(?:[\s\S]*?(?<n>\d+)(?C"rec"))*[\s\S]*)\z(?C"judge")`: `1234` FAILS (last list judged ['1234']) ; `12 34` HOLDS hits ['12', '34'] ; `12 345` FAILS (last list judged ['12', '345']) ; `x300 12` FAILS (last list judged ['300', '12'])
+H the engine (rule 244, the atomic group and the pass table): `1234` FAILS ; `12 34` HOLDS ; `12 345` FAILS ; `x300 12` FAILS ; SEARCHED `x300 12` FAILS (standing alone it reads the whole subject) ; FIND-ALL `12 34` [`12 34`@0]
+H OK
+H `hits(/a(?<g>x)?/) & (g: "x")` (the last hit's own g): `axa` FAILS ; `aax` HOLDS g = `x` ; SEARCHED `axa` FAILS (rev 24.3 printed `ax`@0: the hits of the stretch)
+
+== PART F: the FILTER SENTENCE ('the filter is matched against the stretch as if the stretch were the whole text')
+   and THE DRAFT'S READING of 'any piece that might look outside' (refused at compile time): `\b`/`\B` that can
+   sit at an edge of the operand, a lookbehind that can reach before its start, a lookahead that can reach past its
+   end, `\G`, `\K`. Anchors `^ $ \A \z \Z` are ALLOWED (they are the stretch's ends). A classifier over the operand:
+F `^\d$`: ALLOWED ; `/\d+/ & /^\d$/`: WHOLE `12` FAILS, SEARCHED `a12 1` `1`@1, FIND-ALL `12 1 21` [`1`@0, `2`@1, `1`@3, `2`@5, `1`@6]
+F `\A\d\z`: ALLOWED ; `/\d+/ & /\A\d\z/`: WHOLE `12` FAILS, SEARCHED `a12 1` `1`@1, FIND-ALL `12 1 21` [`1`@0, `2`@1, `1`@3, `2`@5, `1`@6]
+F `\d+$`: ALLOWED ; `/\d+/ & /\d+$/`: WHOLE `12` HOLDS, SEARCHED `a12 1` `12`@1, FIND-ALL `12 1 21` [`12`@0, `1`@3, `21`@5]
+F `^1`: ALLOWED ; `/\d+/ & /^1/`: WHOLE `12` FAILS, SEARCHED `a12 1` `1`@1, FIND-ALL `12 1 21` [`1`@0, `1`@3, `1`@6]
+F `\b\d+`: REFUSED (`\b` can sit at an edge of the operand)
+F `\d+\b`: REFUSED (`\b` can sit at an edge of the operand)
+F `\B\d+`: REFUSED (`\B` can sit at an edge of the operand)
+F `1\b2`: ALLOWED ; `/\d+/ & /1\b2/`: WHOLE `12` FAILS, SEARCHED `a12 1` FAILS, FIND-ALL `12 1 21` []
+F `(?<=a)\d+`: REFUSED (a lookbehind that can reach before the operand's start)
+F `\d(?<=1)\d`: ALLOWED ; `/\d+/ & /\d(?<=1)\d/`: WHOLE `12` HOLDS, SEARCHED `a12 1` `12`@1, FIND-ALL `12 1 21` [`12`@0]
+F `\d+(?![a-z])`: REFUSED (a lookahead that can reach past the operand's end)
+F `\d(?=2)\d`: ALLOWED ; `/\d+/ & /\d(?=2)\d/`: WHOLE `12` HOLDS, SEARCHED `a12 1` `12`@1, FIND-ALL `12 1 21` [`12`@0]
+F `\G\d+`: REFUSED (`\G`: speaks about the search, not the string)
+F `\d\K\d*`: REFUSED (`\K`: speaks about the search, not the string)
+F OK
+
+== PART J: join order (left side decides) and zero-place (numbers are the pattern's own groups), re-run
+J `G & L` (left decides): SEARCHED `11` `11`@0 ; `L & G`: `1`@0 (rev 24.3 printed `11`@0 vs `1`@0) ; OK
+J zero-place: in `/\d+/ & (0: /1\d*/)` the `0` of the right side is the stretch (its world): SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12 21` [`1`@1, `12`@3, `1`@7]
+
+== PART D: the review drills, under 244 (and 243 beside it)
+D optional label, looped place 244: W `3;;` FAILS ; W `3;;7;` FAILS ; S `7;;3;` `7;;3;`@0 h = `3` ; F `3;; 3;` [`3;`@0 h = `3`, `3;`@4 h = `3`]
+D optional label, looped place 243: W `3;;` FAILS ; W `3;;7;` FAILS ; S `7;;3;` `7;;3;`@0 h = `3` ; F `3;; 3;` [`3;`@0 h = `3`, `3;`@4 h = `3`]
+D a label at two loop depths   244: W `3;,,` FAILS ; W `7;,3;,` HOLDS h = `3` ; S `3;,, 7;,` `3;,`@0 h = `3`
+D a label at two loop depths   243: W `3;,,` FAILS ; W `7;,3;,` HOLDS h = `3` ; S `3;,, 7;,` `3;,`@0 h = `3`
+D a place inside a place (ii)  244: W `3;,,` FAILS ; W `3;,` HOLDS h = `3` ; S `3;,, 7;,` `3;,`@0 h = `3`
+D a place inside a place (ii)  243: W `3;,,` FAILS ; W `3;,` HOLDS h = `3` ; S `3;,, 7;,` `3;,`@0 h = `3`
+D a nullable loop body         244: W `3` HOLDS h = unset ; W `` HOLDS h = unset ; S `3` `3`@0 h = unset ; F `3` [`3`@0 h = unset, ``@1 h = unset]
+D a nullable loop body         243: W `3` HOLDS h = unset ; W `` HOLDS h = unset ; S `3` `3`@0 h = unset ; F `3` [`3`@0 h = unset, ``@1 h = unset]
+D duplicate name across a loop 244: W `3` HOLDS h = unset ; W `3;` HOLDS h = unset ; W `3;4` FAILS
+D duplicate name across a loop 243: W `3` HOLDS h = unset ; W `3;` HOLDS h = unset ; W `3;4` FAILS
+D anchored / \b / lookahead operand: PART F (refused or allowed, by THE DRAFT'S READING)
+
+== CHECKS: 124 of 124 OK
