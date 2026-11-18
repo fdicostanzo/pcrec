@@ -3087,3 +3087,14 @@ to the single operand before it (a name, a literal, a call, a labelled part, a p
 regex quantifier binds to the atom before it; anything larger is parenthesised. The order, tightest first: a
 postfix quantifier; the sequence operator; `&`; `|` (the last three as ruled the same evening). So `A SEQ B+` is A
 then one or more B; `(A SEQ B)+` repeats the pair; `rx.digit+` is the digit repeated.
+
+**2026-11-18 MANAGER CORRECTION — "the right side of `&`" was the manager's slip (session 139; no owner words in
+this entry).** Review r43 (the critic round on revision 25) found that this record twice restates the set positions
+as "the right side of `&`" (in the hole-reading entry of 2026-11-17, and in one earlier restatement of the
+revision 24.3 row). Neither is the owner's wording. What he ruled and agreed to: the 2026-11-14 string-set ruling
+says "an `&` operand", and the locked rule is that BOTH operands of `&` are filter roles (the operator stays
+symmetric); the hole-reading question he answered said only that holes leave the list of set positions. The
+record's "right side" is therefore read as "an `&` operand" everywhere, and the next revision of the draft writes
+it so. NOT settled by this correction, and asked of the owner as **hole-in-filter**: a hole whose inserted pattern
+carries an edge assertion, standing INSIDE a filter operand (is the operand classified after expansion, so the
+string-set error applies, or does the hole's assertion cross the border there too).
