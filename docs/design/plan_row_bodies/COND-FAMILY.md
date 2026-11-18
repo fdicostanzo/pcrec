@@ -3840,3 +3840,14 @@ narrowed. Case: the options in force AT THE HOLE decide (python `re`, `a-A`: pla
 reference caseless holds; only the group caseless fails). `${@y}`: undefined in the draft; the manager's idea
 "any earlier setting, as an alternation" (hand-worked, slug array-in-hole), not folded in. On (5): see the
 session's reply (a hole takes a value EXPRESSION; the test in his `if` meets dollar-condition).
+
+**2026-11-18 OWNER on value-hole — "yes but": legal, on condition the type question is settled (Frank, to session
+140, afternoon).** ASKED AS A RULING (slug value-hole: a hole may hold an expression over label reads and
+constants; it matches any string the expression yields, as literal text, under the options in force at the hole;
+an expression that yields nothing fails). HIS WORDS, in full: "value-hole: yes but. This is either different than
+regex logic and the separation should be clear OR the types unified. Eg A match is a regex". RECORD: RULED yes to
+the form; with a CONDITION that is OPEN: either (A) value logic is a different logic from regex logic and the
+separation is made clear, or (B) the types are unified (his example: a match is a regex). NOT ruled: which of the
+two; value-filter; the numeral width and unset details. The manager's reading of the bare "yes": the form as
+asked, the details still to be confirmed. The manager put the fork back to him as **match-is-rx** with a lean
+(B, one type with stated properties); see the session's reply.
