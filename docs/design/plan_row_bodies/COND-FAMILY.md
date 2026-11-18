@@ -3747,3 +3747,14 @@ over-generalization, as is the draft's "at most one hit, the first, possibly emp
 hits are the plain search's hits up to AND INCLUDING the first empty hit, which ends the loop; the first `min` are
 always taken and may all be empty. The owner's ruling (a warning, not an error) is untouched; what the warning's
 documentation must say is this.
+
+**2026-11-18 OWNER on when-alone: his sentence was an interpretation; go with what is right (Frank, to session
+139, afternoon).** The manager had asked (slug when-alone) how "the when(x) form is the same as x" squares with
+when-default applied to both missing branches (`x | (not x)`). HIS WORDS: "when-alone: that wasn't my ruling but
+my interpretation. If it's wrong let's go with what's right." RECORD: his sentence "the when(x) form is the same
+as x" is WITHDRAWN by him as an interpretation; he asks for what follows from the rules. WHAT FOLLOWS (the
+manager's derivation from the two rulings of the same afternoon, the guarded form and when-default; his to
+overrule): a missing branch requires nothing, so `when(x)` is `(x) | (not x)`: with a condition or a `peek()` as
+x it always holds and tests nothing; with a bare pattern as x (which consumes, when-peek) it takes x where x can
+match and nothing where it cannot. It is therefore NOT the same as x. THE MANAGER'S PROPOSAL beside it, a draft
+reading: a `when` with neither branch draws a compiler warning (it is almost certainly unfinished).
