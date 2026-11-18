@@ -1,0 +1,83 @@
+predspec27 evidence; libpcre2-8 10.46 2025-08-27 ; SABOTAGE s1,s2,s3,s4,s5,s6,s7,s8
+selfcheck: NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3) ; OK
+selfcheck: NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried) ; OK
+selfcheck: MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match) ; OK
+selfcheck: callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F) ; OK
+selfcheck: callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T) ; OK
+selfcheck: ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False ; OK
+
+== PART BL: backref-label RULED: "capture. Plain rx in particular should work like pcre when we can."
+BL1 `\k<y>` (RULED: the capture) `/(?:(?<y>\d)?-\k<y>;)*/`: WHOLE `3-3;-3;` HOLDS y = `3` ; SEARCHED `3-3;-3;` `3-3;-3;`@0 y = `3` ; FIND-ALL `3-3;-3; 7-7;` [`3-3;-3;`@0 y = `3`, ``@7 y = unset, `7-7;`@8 y = `7`, ``@12 y = unset]
+BL1 the label read `${$y}` in the same place `/(?:(?<y>\d)?-${$y};)*/`: WHOLE `3-3;-3;` HOLDS ; SEARCHED `3-3;-3;` `3-3;-3;`@0 ; FIND-ALL `3-3;-3; 7-7;` [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12]
+BL1 the two forms part on 0 / 0 / 0 of 21845 texts (`37-;`, length <= 7), first None ; FAILED
+BL m1 `A SEQ B` on `7-7`: (i) B's own group, capture FAILS ; (ii) the splice under (?J) HOLDS ; (iii) the label FAILS
+BL m1 `A SEQ B` on `77-7`: (i) B's own group, capture HOLDS ; (ii) the splice under (?J) HOLDS ; (iii) the label HOLDS
+BL m1 `A SEQ B` on `73-3`: (i) B's own group, capture HOLDS ; (ii) the splice under (?J) FAILS ; (iii) the label HOLDS
+BL m1 over 364 texts (`37-`, length <= 5): (i) vs (ii) 6 / 66 / 66 (first ('W', '3-3')) ; (i) vs (iii) 0 / 0 / 0 ; OK
+BL m2 `/(?:${X}-\k<h>;)*/`, X := /(?<h>\d)?/: WHOLE `3-3;-3;` HOLDS ; SEARCHED `3-3;-3;` `3-3;-3;`@0 ; FIND-ALL `3-3;-3; 7-7;` [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12] ; vs the plain literal of BL1 0 / 0 / 0 of 21845 ; OK
+BL m3 `/(?<h>\d);(?:(?<h>\d)|x)\k<h>/` without (?J): libpcre2 REFUSED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
+BL m3 (?J) PCRE          WHOLE `3;x3` HOLDS ; SEARCHED `3;x3 3;77` `3;x3`@0 ; FIND-ALL `3;x3 3;77 3;73` [`3;x3`@0, `3;73`@10]
+BL m3 first set (model)  WHOLE `3;x3` HOLDS ; SEARCHED `3;x3 3;77` `3;x3`@0 ; FIND-ALL `3;x3 3;77 3;73` [`3;x3`@0, `3;73`@10]
+BL m3 last set           WHOLE `3;x3` HOLDS ; SEARCHED `3;x3 3;77` `3;x3`@0 ; FIND-ALL `3;x3 3;77 3;73` [`3;x3`@0, `3;77`@5]
+BL m3 label              WHOLE `3;x3` FAILS ; SEARCHED `3;x3 3;77` `3;77`@5 ; FIND-ALL `3;x3 3;77 3;73` [`3;77`@5]
+BL m3 over 341 texts (`37;x`, length <= 4): first-set model vs PCRE (?J) 0 / 0 / 0 ; label vs last set 2 / 2 / 2 ; label vs first set 6 / 6 / 6 ; first vs last 4 / 4 / 4 ; OK
+
+== PART VD: the value-hole discussion's answers (case at the hole; the narrowed control)
+VD1 `a-A` plain                        python `re` FAILS ; libpcre2 FAILS
+VD1 `a-A` all (?i)                     python `re` HOLDS ; libpcre2 HOLDS
+VD1 `a-A` only the reference caseless  python `re` HOLDS ; libpcre2 HOLDS
+VD1 `a-A` only the group caseless      python `re` FAILS ; libpcre2 FAILS
+VD1 the manager's table (plain fails; (?i) holds; only the reference caseless holds; only the group caseless fails) ; OK
+VD1b group caseless False hole caseless False: the literal-at-the-hole model vs `\k<y>` 0 / 0 / 0 of 3906, first None
+VD1b group caseless True  hole caseless True : the literal-at-the-hole model vs `\k<y>` 0 / 0 / 0 of 3906, first None
+VD1b group caseless False hole caseless True : the literal-at-the-hole model vs `\k<y>` 2 / 170 / 170 of 3906, first ('W', 'a-A')
+VD1b group caseless True  hole caseless False: the literal-at-the-hole model vs `\k<y>` 4 / 336 / 336 of 3906, first ('W', 'a-A')
+VD2 `${$y}` (the label) vs `\k<y>` (the capture): an optional in a loop 0 / 0 / 0 of 21845 (first None) ; two loops deep 0 / 0 / 0 of 5461 (first None) ; no optional, one depth 0 / 0 / 0 of 5461
+VD2 the model "the label where it is set, else the capture" vs `\k<y>`: 0 / 0 / 0 and 0 / 0 / 0 ; FAILED
+
+== PART UT: ONE TYPE (match-is-rx, read-is-constant)
+UT1 `/(?<x>\d+)/ & ($x & <5)`: WHOLE `3` HOLDS ; SEARCHED `73 3` `3`@1 ; FIND-ALL `3 7 33` [`3`@0, `3`@4, `3`@5]
+UT1 `/(?<x>\d+)/ & (x: <5)`:    WHOLE `3` HOLDS ; SEARCHED `73 3` `3`@1 ; FIND-ALL `3 7 33` [`3`@0, `3`@4, `3`@5] ; the two part on 0 / 0 / 0 of 364 (first None)
+UT1 `/(?<x>\d+)-/ & ($x & <5)`: WHOLE `3-` HOLDS ; SEARCHED `7-3-` `3-`@2 ; FIND-ALL `3- 7- 3-` [`3-`@0, `3-`@6]
+UT1 `/(?<x>\d+)-/ & (x: <5)`:    WHOLE `3-` HOLDS ; SEARCHED `7-3-` `3-`@2 ; FIND-ALL `3- 7- 3-` [`3-`@0, `3-`@6] ; the two part on 0 / 0 / 0 of 364 (first None)
+UT1 where the stretch IS x's text the two agree ; where it is not, `$x & <5` never holds (132 of 364 texts hold in any mode) ; FAILED
+UT2 (a) condition        WHOLE: `1492:Columbus` HOLDS, `2025:2025` HOLDS, `1492:1492` FAILS, `1492:1492Columbus` FAILS ; vs the semantic function 0 of 14 differ
+    SEARCHED `x1492:Columbus` `1492:Columbus`@1 ; FIND-ALL `1492:Columbus 2025:2025 1492:1492` [`1492:Columbus`@0, `2025:2025`@14]
+UT2 (b) bare, consumed   WHOLE: `1492:Columbus` FAILS, `2025:2025` HOLDS, `1492:1492` FAILS, `1492:1492Columbus` FAILS ; vs the semantic function 1 of 14 differ
+    SEARCHED `x1492:Columbus` FAILS ; FIND-ALL `1492:Columbus 2025:2025 1492:1492` [`2025:2025`@14]
+UT2 (c) peek             WHOLE: `1492:Columbus` FAILS, `2025:2025` HOLDS, `1492:1492` FAILS, `1492:1492Columbus` FAILS ; vs the semantic function 0 of 14 differ
+    SEARCHED `x1492:Columbus` FAILS ; FIND-ALL `1492:Columbus 2025:2025 1492:1492` [`2025:2025`@14]
+UT2 his intent (Columbus for 1492, else the year) is reading (a) only ; OK
+UT3 `\d` enumerates to 10 strings ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] ; `\d + 1` lifts to (?:10|1|2|3|4|5|6|7|8|9)
+UT3 WHOLE over 1111 digit texts (length <= 3): the alternation vs "a canonical numeral 1..10" 0 differ
+UT3 the values' order: WHOLE `10` HOLDS ; SEARCHED `x10` `10`@1 ; FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6]
+UT3 longest first:     WHOLE `10` HOLDS ; SEARCHED `x10` `10`@1 ; FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6]
+UT3 the two orders part on 0 / 0 / 0 of 1111 (WHOLE agrees: a set; SEARCHED and FIND-ALL do not: the ORDER is a fact of the lifted rx) ; FAILED
+UT3 `$y + 1` at RUN time `/(?<y>\d{4})-${$y + 1}/`: WHOLE `2025-2026` HOLDS y = `2025` ; SEARCHED `x2025-2026` `2025-2026`@1 y = `2025` ; FIND-ALL `2025-2026 2030-2032 2030-2031` [`2025-2026`@0 y = `2025`, `2030-2031`@20 y = `2030`] ; OK
+UT4 `/(?<y>\d)-${$y | "x"}/`: WHOLE `3-x` HOLDS ; SEARCHED `7-3 3-3` `3-3`@4 ; FIND-ALL `3-3 4-x 5-6 7-7` [`3-3`@0, `4-x`@4, `7-7`@12] ; the run-time model vs the plain PCRE pattern of the same strings 0 / 0 / 0 of 3906
+UT4 `/(?<y>\d)-${$y & <5}/`: WHOLE `3-3` HOLDS ; SEARCHED `7-7 3-3` `3-3`@4 ; FIND-ALL `3-3 7-7 4-4` [`3-3`@0, `4-4`@8] ; the run-time model vs the plain PCRE pattern of the same strings 0 / 0 / 0 of 3906
+UT4 `/(?<y>\d)-${$y . "E"}/` (`.` his joining placeholder): WHOLE `3-3E` HOLDS ; SEARCHED `x7-7E` `7-7E`@1 ; FIND-ALL `3-3E 4-4x 7-7E` [`3-3E`@0, `4-4x`@5, `7-7E`@10] ; the run-time model vs the plain PCRE pattern of the same strings 8 / 88 / 88 of 3906
+UT5 folding: left("Columbus", 2) = `Co` ; 2025 + 1 = `2026` ; a one-string rx in, a one-string rx out (RULE-AS-CODE)
+
+== PART TT: the TYPE TABLE (R.1.16) as RULE-AS-CODE (consistency, never a control)
+TT +          on const  -> BUILT
+TT +          on read   -> BUILT
+TT +          on finite -> BUILT
+TT +          on rx     -> UNDER CONSTRUCTION
+TT left       on read   -> BUILT
+TT left       on rx     -> UNDER CONSTRUCTION
+TT |          on read   -> BUILT
+TT &          on read   -> BUILT
+TT count-hole on finite -> BUILT
+TT count-hole on read   -> UNDER CONSTRUCTION
+TT 10 rows ; FAILED
+
+== CHECKS: 12 of 20 OK
+FAILED: BL1 ruled witness: `\k` HOLDS, `${$y}` FAILS, 2/2/2
+FAILED: VD1b options at the hole = backreference's
+FAILED: VD2 they part only where the label is unset and the capture set
+FAILED: UT1 legal; agrees on /(?<x>\d+)/, parts on /(?<x>\d+)-/
+FAILED: UT2 three readings = their semantic functions
+FAILED: UT3 compile-time form: WHOLE = 1..10, order decides SEARCHED
+FAILED: UT4 regex operations on a read: run-time model = PCRE
+FAILED: TT the table's cells
