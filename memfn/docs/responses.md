@@ -3596,3 +3596,5 @@ the subject buffer (r44 F); full selftest ~90 min. The layout pool is ARM-GENERI
 arms could use it through a shared helper: [LAYOUT-DRAW]); cover_cap.md section 11.4's A/A floor gets checked
 WITH the kit before main's width cells are timed.
 Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.md, formsland6_report.md.
+
+- ack: R-46 (2026-11-18 18:23, kit manager) — taken as a design REPLY only (no build go on either side): a form for the weaker presence-site question (whole run at or after p? and some position at or after p where it occurs), what moves in the reply contract (ret_pred, serves, G2's leftmost reference), and whether it is a seam event with no mover. Planned: a design lane by day 11-19 after tonight's sets' verdicts, with a critic round on the reply before it is posted here.
