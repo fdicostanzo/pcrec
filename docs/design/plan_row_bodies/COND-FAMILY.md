@@ -3681,3 +3681,18 @@ OPERATOR (an infix or postfix form of the conditional beside, or instead of, the
 spellings review, with the constraint that `?` is taken by the postfix quantifier. Still as the manager stated it
 and unruled: that the conditional is DEFINED as the guarded form (A written once through a binding; A a test: a
 condition, or a pattern used as a lookahead).
+
+**2026-11-18 OWNER RULING — the conditional is the guarded form; and his question on its test (Frank, to session
+139, afternoon).** He first asked: "When: what do you mean by guarded form? The OR NOT part?"; the manager:
+yes: each branch begins with its own test, `(A then B) | (not A, then C)`, the `not A` being what blocks the
+fall-through to C when A holds and B fails; the two-argument form is `(A then B) | (not A)`; and two consequences
+named: A is tested, not consumed; A is evaluated once per branch in principle. HIS WORDS: "When: yes guarded form.
+Does the A have to be a cond or look around ?" RECORD: (1) RULED: the conditional, however spelled, is DEFINED as
+the guarded form `(A then B) | (not A, then C)`. (2) A QUESTION, his, answered in the session and put back to him
+as **when-test**: must A be a condition or a lookaround. THE MANAGER'S ANSWER: the user need not write a
+lookaround; A may be any pattern, but two guarded forms then differ and one must be chosen: A as a PEEK (tested,
+not consumed; B starts where A started) or A CONSUMED (B continues after A; the guard on the else branch is still
+"A cannot match here"). Run in python `re`, A := `\d`, B := `\d\d`, C := `\w`, whole value: peek `(?=\d)\d\d|(?!\d)\w`:
+`12` holds, `123` fails, `x` holds, `1` fails; consumed `\d\d\d|(?!\d)\w`: `12` fails, `123` holds, `x` holds, `1`
+fails; and a label set by a peeked A is readable in B (`(?=(?<d>\d))\d\d` on `37`: d = `3`), by lookahead-labels.
+The manager's lean: A is always a TEST (a condition, or a pattern read as a peek).
