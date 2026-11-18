@@ -1,7 +1,7 @@
 # covs2land report
 
 ## STATE AT HANDOFF
-Rulings file: empty (no R-n applied). Merged tip: see CLOUD RUNS DISPATCHED for the exact sha the cloud runs test (the merge commit is c774d15c05585e0665373377cb19ec83907c4dc2; the report commit on top of it is the dispatched tip). OWED: none.
+Rulings file: empty (no R-n applied). Merged tip: see CLOUD RUNS DISPATCHED for the exact sha the cloud runs test (the merge commit is c774d15c05585e0665373377cb19ec83907c4dc2; the report commit a88871a19 on top of it is the tip the cloud runs test). OWED: none.
 Premise test: lane/memfn-forms = 105bf8ef412d92bcae7ce3567f41ef107a1767b8; merge-base with lane/covs2b = 60c2958ae, an ancestor of main (yes to both).
 
 ## MERGE AND CONFLICTS
@@ -27,4 +27,11 @@ Box idle (boxqueue/boxlock status free) before running. Merge commit pre-commit 
 No make test, mech or battery run locally.
 
 ## CLOUD RUNS DISPATCHED
-(see below, filled after dispatch)
+All four from lane/covs2land at a88871a1924400c858c433ab6981618eec034cf7 (the report commit; the next commit only fills this section; merge commit c774d15c0 is its parent), owner main, not waited on. The four kinds are those covs2fix_report.md dispatched for the previous tip (test, axes, asan, mechrows over its 24 rows) plus nothing else it named. Proof, `git ls-remote origin 'refs/heads/cloud/main/*/covs2land*'`:
+
+    a88871a1924400c858c433ab6981618eec034cf7	refs/heads/cloud/main/asan/covs2land-asan
+    a88871a1924400c858c433ab6981618eec034cf7	refs/heads/cloud/main/axes/covs2land-axes
+    a88871a1924400c858c433ab6981618eec034cf7	refs/heads/cloud/main/mechrows/covs2land-rows.rows.S1130_S1131_S1132_S1133_S1134_S1136_S1137_S1139_S1140_S1141_S1148_S3220_S3221_S3222_S3223_S3224_S3225_S3226_S3234_S3260_S3263_S3264_S3265_S3266
+    a88871a1924400c858c433ab6981618eec034cf7	refs/heads/cloud/main/test/covs2land-test
+
+OWED: none.
