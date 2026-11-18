@@ -2680,3 +2680,20 @@ PCRE capture, or the label as `x:` reads it); points (2) and (3) of the entry ab
 visibly different spelling; an array is its own type). Background the manager brought to the discussion: the
 2026-11-14 ruling had `x:` = all iterations and `$x` = last iteration, which is where "different values" comes
 from; tonight's after-loop-read made `x:` after the pattern the last pass's own label.
+
+**2026-11-17 OWNER RULING — what an unqualified `$x` reads (closes the discussion reopened above) (Frank, to session
+138, evening).** After the table on `3;;` (the PCRE capture is `3`, carried; the label is unset) and his
+restatement ("So the variation is that $x does not preserve its value from the last time it was set"), asked: "Is
+that the variation you want for `$x`: the last pass's value, not preserved from earlier passes?" HIS WORDS: "I do
+want that. It makes sense and frankly pcre is wrong on this. I agree but! We need a way to get the pcre behavior
+even if ugly".
+RECORD: RULED: (1) an unqualified `$x` reads the LABEL, exactly as `x:` does: the last pass's own value, NOT
+preserved from an earlier pass when the last pass did not set the group. `$x` and `x:` never disagree. This is a
+deliberate difference from PCRE ("frankly pcre is wrong on this"), the same one as the per-pass label; it
+supersedes the literal reading of "as standard pcre" in the pass-list-read entry above (true wherever the group
+takes part in the last pass). (2) REQUIRED: a way to get PCRE's behaviour (the value carried from the last time the
+group was set) from the expression side, "even if ugly": a distinct, visibly different spelling, to the spellings
+review. (3) Unchanged from the entry above: the other passes by their own spelling (his example `@x`); an array
+is its own type. So THREE values, THREE spellings: the label (`$x`, `x:`), the carried capture (ugly form, to be
+spelled), the array of passes (to be spelled). MINE: inside rx text the backreference already is PCRE's carried
+capture; the per-pass label joins the draft's list of deliberate differences from regex with his words.
