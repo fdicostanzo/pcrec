@@ -28383,3 +28383,11 @@ Next
 - SECOND stale plan row found by an architect lane: [REQ-LOOKAROUND] said not-started / rev 1 / no go; span_arms is
   at rev 2.2 and D191 (11-09) gave L1 and L3 the build go. Row corrected and moved to Active (2843924a1). The
   [LANDWALK] tag reads not-started while its stage 1 is BUILT (review r48 group A): a third; to fix at r48's landing.
+- 17:55-18:10: the coordinators settled review numbers among themselves: r48 predspec27, r49 archdense, r50
+  archlook (archdense2 was briefed r48: R-1 in its rulings file + a message; verify the rename at delivery).
+  crit-predspec27 (46 ids, 0 refuted; 5 answer / 9 design / 7 doc): NOT STABLE; dispositions ruled
+  (scratch/mgr140/r48_predspec27_dispositions.md: my m1 consequence on user arrays WITHDRAWN; `left` collision =
+  my spelling call; O to PLAN); fix lane predspec271. crit-archlook (36 raised, 17 groups, 0 answer): NOT
+  ACCEPTED; dispositions ruled (r50_archlook_dispositions.md: A8 the never fact has ONE home, READY-5's listing
+  kept as its rendering; A6 arithmetic-only merge; U-negctx declined); fix lane archlook2. Coordinators stopped.
+  Lesson (pilot): two coordinators the same day need the manager to ASSIGN review numbers in the launch prompt.
