@@ -3667,3 +3667,17 @@ branch as a NAMED, optional argument, `when(A, B, else = C)`, so that `when(A, B
 else left out. NOT SAID BY HIM, asked in the session as **when-default**: what `when(A, B)` denotes when A does
 not hold (the manager's lean: it holds and matches nothing, i.e. the guarded form `(A then B) | (not A)`; the
 other reading, that it fails, makes `when(A, B)` just `A then B`).
+
+**2026-11-18 OWNER RULING — when-default: the missing else requires nothing; and a `when` operator to be
+considered (Frank, to session 139, afternoon).** ASKED AS A RULING (slug when-default: what `when(A, B)` denotes
+when A does not hold; the two readings as put to him, the first: "It holds and matches nothing. 'If A then B;
+otherwise nothing is required.' In guarded form: `(A then B) | (not A)`", hand-worked with A := a digit is next,
+B := two digits: whole `12` holds, whole `1` fails, on text with no digit next the form holds without consuming
+anything; the second: it fails; the manager leaning the first). HIS WORDS: "When default: yes first example. Also,
+a when operator should be considered". RECORD: (1) RULED: the two-argument conditional, the else left out, HOLDS
+and matches nothing when its test does not hold: `(A then B) | (not A)`. The spelling stays a placeholder (his
+suggestion of the same afternoon: `when(A, B, else = C)`). (2) TO BE CONSIDERED, his, not a ruling: a `when`
+OPERATOR (an infix or postfix form of the conditional beside, or instead of, the function form); for the single
+spellings review, with the constraint that `?` is taken by the postfix quantifier. Still as the manager stated it
+and unruled: that the conditional is DEFINED as the guarded form (A written once through a binding; A a test: a
+condition, or a pattern used as a lookahead).
