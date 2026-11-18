@@ -17,6 +17,7 @@ item 24 (entries 21-29 appended, nothing else) and `docs/dev/lanes/predspec26_ev
   COND-FAMILY, predicates_draft or predicates_future change since 3c40ba007.
 - STOPS: none. Every table shown to the owner in the 11-18 entries reproduced except the manager's lazy-`any` clause
   (CX3), which is a manager's reading, not a shown ruling's table: recorded as NOT SUPPORTED, not a STOP.
+OWED: none.
 - RUNS NOT RUN: none; all single-process python scripts of seconds, before the 20:00 hold.
 - Draft size: 8,256 lines (1,009,611 bytes) before, 8,750 lines (1,073,336 bytes) after (`wc -lc`).
 
