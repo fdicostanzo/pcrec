@@ -451,7 +451,21 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
       `/(?:(?<h>\d),)*(?<h>\d)/` (on `7`: label 7, array 7; on `7,3,5`: label 5, array 7, 3, 5: one item is the
       loop contributing nothing), beside first-then-rest, `/(?<h>\d)(?:,(?<h>\d))*/` (the same array; the label
       UNSET on one item, because entering the loop resets the name and the zero-pass branch sets nothing). The pair
-      shows every part of the rule at once. Answers are the manager's hand working until revision 24.4 prints its
-      run.
+      shows every part of the rule at once. RUN by revision 24.4 (`docs/dev/lanes/predspec244_evidence/`, PART L):
+      the hand answers above are CONFIRMED, none differs; and the owner's sketch "list(item)|item" over form (a) is
+      redundant (the single-item branch is never reached), over form (b) it does not help (the list branch takes `7`
+      with the label unset), and with a list of two or more items it works (label `7` on `7`). The draft proposes
+      `list_of(X, sep = S)` as form (a) (predicates_draft.md R.1.7).
+  13. TWO GROUPS OF ONE NAME ARE ONE LABEL, AND THAT IS NOT PCRE. PCRE refuses duplicate names unless told
+      (`(?J)`), and then reads the FIRST group that is set; the language allows them and reads the LAST mention:
+      `/(?<h>\d);(?:(?<h>\d)|x)/` on `3;x` leaves h UNSET (entering the alternation reset it), where PCRE under
+      `(?J)` gives `3` (the ruling "branchings reset the labels inside them", 2026-11-17; revision 24.4 PART N).
+  14. THREE WAYS TO READ A NAME: the label (`x:` and `$x` alike, the last setting after the resets), PCRE's carried
+      capture (its own, deliberately different spelling, "even if ugly"), and the array of every setting (its own
+      type: comparing it with one value needs "some" or "every"). On `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/` and
+      `9:45,10,` the label m is unset and the carried capture is `45` (the `$x` ruling, 2026-11-17).
+  15. A HIT LIST STANDING ALONE READS THE WHOLE TEXT, EVEN IN A SEARCH: it is anchored to the text it is applied to,
+      so in a searched program with nothing to its left it is the whole subject's list (the hit-list ruling,
+      2026-11-17; `x300 12`: hits `300`, `12`).
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
