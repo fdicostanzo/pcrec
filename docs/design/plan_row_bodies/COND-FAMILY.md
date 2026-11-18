@@ -2612,3 +2612,18 @@ NOTE on the join-order entry above (2026-11-17, the manager, confirmed by the ow
 autocorrecting my words to gibberish"; "Your interpretation was correct"): in his quoted sentence "In concedes"
 reads "It concedes"; in the documentation request quoted in predicates_future.md item 24, "makes inlet into" reads
 "makes it into". The quotes are kept as received.
+
+**2026-11-17 OWNER on what `hits` is (Frank, to session 138, evening; questions, not yet a ruling).** Asked
+hits-text, he first walked `1234` as a search re-entered by the test ("I'd expect it to grab all then fail lt ...
+then look back at subject 123 and repeat, but then subject 12 succeeds..."), which is the one-pattern occurrences
+model, not `hits`. Told that `hits(r)` finds with a plain search first and judges the fixed list after, HIS WORDS:
+"hits-text: so hits is atomic ( and anchored ?)". THE MANAGER'S ANSWER (mine), with a run on libpcre2 10.46 the
+same evening (whole values; "every number under 100"): the search as part of the pattern, each hit judged inside
+(`\A(?:.*?(?<n>\d+)(?C))*\D*\z`): `1234`, `12 34`, `12 345`, `x300 12` all HOLD (a long number is cut into short
+ones); the SAME loop inside an ATOMIC group, anchored at both ends of its text, the list judged after it
+(`\A(?>(?:.*?(?<n>\d+)(?C record))*\D*)\z(?C judge)`): `1234` FAILS with hits [`1234`], `12 34` HOLDS [`12`,
+`34`], `12 345` FAILS [`12`, `345`], `x300 12` FAILS [`300`, `12`]. So YES to both words: `hits(r)` is his
+one-pattern search made ATOMIC (nothing re-enters it once it has matched: hits-committed) and ANCHORED to the text
+it is applied to (it covers that text from end to end, so no outer search can shrink or shift it: hits-text). That
+gives `hits` a REGEX MODEL (an atomic group around the one-pattern search); a first try with only each hit atomic
+did NOT work (the lazy gap was re-entered), so the atomic group must enclose the whole loop.
