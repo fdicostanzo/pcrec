@@ -28362,3 +28362,14 @@ Next
   system tools 18.2k, deferred MCP tools 5.6k, system prompt 4.2k. Session 139's figure: 111.6k at +20 min
   (messages 71.1k, memory files 18.7k). Not like for like (this one includes an hour of work); the fixed part
   (memory files 18.7k) is identical. No reduction idea built.
+- 15:10-17:35: owner rulings by /q, all in COND-FAMILY.md (his words): backref-label = capture; value-hole yes
+  under match-is-rx (types unified; both directions; built for constants and reads, the rest UNDER CONSTRUCTION);
+  read-is-constant (two forms of each operation). predicates_future item 30 filed (rx string manipulation as graph
+  manipulation). Lane predspec27 (opus) folds them as rev 27 and tests every manager reading.
+- CORRECTION of my 11-18 hand-off: set S2 ([RUN-POS-SET] stage 3 + the kit's Part D) LANDED 11-14 (9cecc3caa) and
+  closed 11-14/15; wake.md, owner.md and the plan row said "GO given, no work since" (the row's 11-11 status line
+  was stale and I copied it without reading the journal). Plan row fixed 57fcb5737. Lesson: a "not started" claim
+  about a GO'd set is checked against the journal and `git log`, never against a status line alone.
+- Frank 17:30: "Start both. Can we try the architecture process on these?" (start-lookaround, start-densehit).
+  Lanes archlook and archdense (opus, architecture notes only, the [ARCH-STEP] pilot A6); critic rounds in mode
+  arch follow each note.
