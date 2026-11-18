@@ -3696,3 +3696,13 @@ not consumed; B starts where A started) or A CONSUMED (B continues after A; the 
 `12` holds, `123` fails, `x` holds, `1` fails; consumed `\d\d\d|(?!\d)\w`: `12` fails, `123` holds, `x` holds, `1`
 fails; and a label set by a peeked A is readable in B (`(?=(?<d>\d))\d\d` on `37`: d = `3`), by lookahead-labels.
 The manager's lean: A is always a TEST (a condition, or a pattern read as a peek).
+
+**2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced (Frank, to session
+139, afternoon).** ASKED AS A RULING (slug when-test: a pattern as the conditional's test is a PEEK, tested and
+not consumed, B starting where A started, or CONSUMED; the python `re` table of the entry above; the manager
+leaning the peek: "A is always a test, never consumed"). HIS WORDS: "When: I agree peek A. Automatic or enforced?
+peek() transform". RECORD: (1) RULED: the conditional's test A is a PEEK: tested at the position, not consumed; B
+starts where A started. (2) A QUESTION, his, with a form he names: is the peek AUTOMATIC (a pattern given as A is
+peeked without the user writing anything) or ENFORCED (A must already be a test; a pattern is made one by an
+explicit transform, his placeholder `peek()`); answered in the session and put back to him as **when-peek**. The
+`peek()` transform is his suggestion of a form, for the single spellings review.
