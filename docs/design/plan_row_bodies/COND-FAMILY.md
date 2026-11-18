@@ -3224,3 +3224,13 @@ FUTURE POSSIBILITY, not ruled ("I could also see them in the future"): an array 
 an INTERIM product, to be manipulated further (a cartesian product, a join per element); added to
 predicates_future item 27. STILL THE DRAFT'S READING, not put to him as a question: several members in a
 character-class hole are simply more characters of the class (no copies).
+
+**2026-11-18 OWNER RULING — removal: the whole copy (Frank, to session 139, morning).** ASKED AS A RULING (slug
+removal; the run witness `/a|\d{${m},${M}}/`, m := [5], M := [2]: removing the whole copy of the pattern, the
+program never matches, not even `a`; removing only the piece holding the hole, `a` still matches; the manager's
+leaning: the whole copy, by his words "remove illegal versions from the cartesion product"). HIS WORDS: "removal:
+whole copy". RECORD: RULED: an illegal combination of count-hole values removes the WHOLE COPY of the pattern, not
+the piece holding the hole. THE MANAGER'S READINGS (mine, to be checked by the next revision): when every copy is
+removed the program can never match, and the can-never-match warning reports it; "legal" is judged by this
+language's rules (ruled the same morning); the rule is the count hole's own (each hole position has its own
+rules).
