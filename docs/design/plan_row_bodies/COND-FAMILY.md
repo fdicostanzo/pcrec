@@ -3658,3 +3658,12 @@ HOLDS through C; an if-then-else must FAIL; find-all on `1x 12 a`: naive [`1`, `
 `a`]). The same thing IS expressible without a new spelling as `(A then B) | (not A, then C)` (the guarded form
 above, `(?=\d)\d\d|(?!\d)\w`), or with a `fail` that COMMITS (ends the alternation), which is the backtracking-verb
 family parked as predicates_future item 19.
+
+**2026-11-18 OWNER, on spelling the conditional (Frank, to session 139, afternoon; a SUGGESTION on a spelling,
+nothing ruled).** After the manager's answer above (the conditional is the guarded form `(A then B) | (not A, then
+C)`; a `when(A, B, C)` convenience would expand to it). HIS WORDS: "when(A, B, else = C) would allow the two
+arguments form". RECORD: a spelling suggestion for the single spellings review (conditional-spelling): the else
+branch as a NAMED, optional argument, `when(A, B, else = C)`, so that `when(A, B)` is the same construct with the
+else left out. NOT SAID BY HIM, asked in the session as **when-default**: what `when(A, B)` denotes when A does
+not hold (the manager's lean: it holds and matches nothing, i.e. the guarded form `(A then B) | (not A)`; the
+other reading, that it fails, makes `when(A, B)` just `A then B`).
