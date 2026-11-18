@@ -174,7 +174,7 @@ carries over unchanged") but records no firing, and the D62 addendum ("Ruling su
 "multiline-`$` is a parse-resolved FLAG on the node" no longer holds") is the reason the
 trigger is moot [r50 A9 f]. None other.
 
-PROPOSED ROWS (register columns; status "riding [REQ-LOOKAROUND]" until landed):
+PROPOSED ROWS (register columns; status "riding [REQ-LOOKAROUND]" until landed). ENTERED at landing, 2026-11-18, as register rows: P1 = 23, P2 = 24, P3 = 25, P4 = 26, P5 = 27 (P1 here is not the dense-hit note's P1, which is row 21); P6 NOT entered (conditional on D-9; left for the manager):
 
 | # | remodel | shape (rule) | where (verified by command) | event that carries it | size, gate | deletes | status |
 |---|---|---|---|---|---|---|---|
@@ -187,7 +187,7 @@ PROPOSED ROWS (register columns; status "riding [REQ-LOOKAROUND]" until landed):
 
 NOTED DEVIATIONS on touched sites: row 6c only (above, not carried).
 
-PROPOSED noted deviations (contingent; each lands in the register only if its condition holds):
+PROPOSED noted deviations (contingent; each lands in the register only if its condition holds). ENTERED at landing, 2026-11-18, marked CONTINGENT: ND-1 = register row 28, ND-2 = register row 29:
 - **ND-1 two producers of the per-offset context sets, by layer** (contingent on the owner ruling
   **context-producer-home** "by layer", i.e. [CTX-FACTS-NEG] builds its machine producer for fixed
   lookbehinds at negative offsets while L1's item produces the same sets at AST level) [r50 A4].

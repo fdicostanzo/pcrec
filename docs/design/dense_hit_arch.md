@@ -248,7 +248,7 @@ TRIGGER line.
 
 Noted deviations on touched sites: one, 6c, disposed above. This note recommends no deviation, so it proposes none.
 
-ROWS THIS NOTE PROPOSES (register columns; PROPOSALS, the manager decides at acceptance):
+ROWS THIS NOTE PROPOSES (register columns; PROPOSALS, the manager decides at acceptance). ENTERED at landing, 2026-11-18: P1 as register row 21, P2 (one family) as register row 22:
 
 | # | remodel | shape (rule) | where | event that carries it | size, gate | deletes | status |
 |---|---|---|---|---|---|---|---|
