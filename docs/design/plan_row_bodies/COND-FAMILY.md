@@ -3190,3 +3190,19 @@ RUN BY THE MANAGER (python `re`, 2026-11-18, a control for part (2), not his wor
 alternations `(?P<x>\d|\d\d)(?P<y>\d|\d\d)` on whole `123` gives x = `1`, y = `23`, the same as the four written-out
 copies in first-slowest order; with each alternation written longest first it gives x = `12`, y = `3`. So first
 slowest is the order regex itself gives a sequence of alternations, and his "order the values" works as he says.
+
+**2026-11-18 OWNER, on the cartesian idea and "legal" (Frank, to session 139, morning).** HIS WORDS, in full:
+"Cartesian: Oh interesting. A subtle consequence of the parentheses group around concatenated elements.
+The other advantage of cartesian() is they you could sort them by length
+Legal: yes legal sql.
+"Copies that differ only in a group name are joined as plain alternatives." Spell this out for me"
+RECORD. (1) OBSERVATION (his, on the manager's run that a sequence of two alternations is the product in
+first-slowest order): it is a consequence of the group around each concatenated element. (2) AN ADDITION TO THE
+IDEA (predicates_future item 27): a second use of an explicit `cartesian()` is that its result can be sorted by
+length. (3) "Legal: yes legal sql.": taken as RULED YES to the draft reading put to him ("'Legal' means legal in
+this language, so two groups sharing a name is fine"). THE MANAGER'S READING OF THE LAST WORD: "sql" is read as a
+phone autocorrection, not as a reference to SQL; the sentence is read as plain agreement that a combination is
+judged legal by this language's rules (so a copy with two groups of one name is legal and is not removed). If he
+meant something by the word, this entry is wrong and he will say. (4) A REQUEST, answered in the session: spell
+out the draft reading "copies that differ only in a group name are joined as plain alternatives" (not agreed to;
+the product for a group-name position is OPEN by his scope correction of the same morning).

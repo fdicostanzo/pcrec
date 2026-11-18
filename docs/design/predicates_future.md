@@ -563,6 +563,8 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   slowest; the first-slowest order is the same whether three arrays are given at once or two are combined and then
   the third, PROVIDED a combination of a combination flattens to one tuple (otherwise the nested form yields pairs
   of pairs).
+- ADDED BY THE OWNER the same morning: "The other advantage of cartesian() is they you could sort them by length";
+  and his observation on (a): "A subtle consequence of the parentheses group around concatenated elements."
 - QUESTIONS IT RAISES (none asked yet): what an element of the result is (a tuple of values, or the parts already
   joined in sequence); whether arrays of counts and arrays of rx can be mixed; whether an illegal combination is
   dropped or an error there.
