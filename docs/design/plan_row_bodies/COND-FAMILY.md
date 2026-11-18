@@ -3283,3 +3283,27 @@ a label's values per pass ("an array of such values is its own type"); a pairwis
 only as an explicit function (predicates_future item 27's family). WITHDRAWN: the manager's "adding two patterns
 is an ordinary type error" as a general sentence; what `+` does on operands that are not numbers is still to be
 stated by the next revision (the manager's lean: a type error for non-numbers, addition being arithmetic).
+
+**2026-11-18 OWNER RULING — hole-in-filter: the filter error; fill the holes first (Frank, to session 139,
+morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run witness
+`/\d+/ & /${num}/`, num := `/\b\d+\b/`, three readings each whole / searched / find-all; the manager's leaning:
+the filter error, the two rulings applied in order: "First the hole is filled, with its assertions free to cross
+the hole's border into the pattern around it. Then the finished operand is judged as a filter operand like any
+other"). HIS WORDS, in full: "hole-in-filter: I agree filter error. Also, your assessment that they are compatible
+if the holes are filled first is my understanding
+In practice, there will be general rx and filter rx. Filter rx will be general and small and used to generate
+other filters or conditions. It's not that filter rx would never have outward looking elements, it's that it's
+difficult to figure out now what that means so the conservative route is to ban it. The example general rx we use
+with multiple groups, etc would likely not ever be directly filtered as it would be too complicated but will use
+conditions instead."
+RECORD. (1) RULED: a hole whose inserted pattern carries an edge assertion, inside a filter operand, is the
+FILTER ERROR, exactly as if the operand had been written out. (2) RULED, the order: holes are filled FIRST (the
+inserted pattern's assertions may cross the hole's border into the pattern around it, hole-reading); the finished
+operand is THEN judged as a filter operand; the two rulings are compatible in that order ("is my understanding").
+(3) HIS PICTURE OF USE, recorded as his description, not as rules: there will be GENERAL rx and FILTER rx; filter
+rx will be small and general, used to generate other filters or conditions; the ban on outward-looking elements
+in a filter is the CONSERVATIVE route because what they would mean is hard to work out now, not a statement that
+a filter could never have them (so: a candidate to relax later, with a definition); the large example patterns
+with several groups would likely never be filtered directly (too complicated) and would use CONDITIONS instead.
+For the user documentation list (predicates_future item 24): where to put a word-boundary check (on the pattern
+being filtered, not in the filter).
