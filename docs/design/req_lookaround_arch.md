@@ -1,6 +1,6 @@
 # [REQ-LOOKAROUND] positive lookarounds in the run and the span check: architecture note
 
-STATUS: DRAFT rev 2 (after review r50). Rev 1: lane archlook, opus, 2026-11-18, the [ARCH-STEP] pilot on a real
+STATUS: ACCEPTED rev 2.1 (the manager, 2026-11-18: rev 2 after review r50, confirm critic conf-archlook "accept after small edits", its ten edits applied by lane landarch; OPEN: the owner questions context-producer-home and remodel-go; the register proposals are accepted as proposals and entered in the register at this note's landing). Rev 1: lane archlook, opus, 2026-11-18, the [ARCH-STEP] pilot on a real
 feature. Review `docs/dev/reviews/2026-11-18-r50-archlook.md` (verdict RULED: NOT ACCEPTED as is; REVISE, then one
 confirm critic). Rev 2: lane archlook2, opus, 2026-11-18, a FRESH architect applying findings A1-A18 as the manager
 ruled them (`docs/dev/reviews/2026-11-18-r50-archlook/dispositions.md`). Each changed passage carries its tag `[r50 An]`.
@@ -34,7 +34,7 @@ LOCATION, not by an identifier grep [r50 A13].
   cross-file reader of a `Ctx` field (`lb_max`: site 20), which takes an accessor (register row 6a
   rides). `ReqRun`'s direct field reads by gen are covered by the facts module's MODULE-level
   declaration (facts.h:4-5, C36: "A consumer of a pattern fact reads it through this header and
-  nothing else: value types, accessors and renderers"), so the 39 `whole_len`/`whole_maxoff` reads
+  nothing else: value types, accessors and renderers - never a derivation"), so the 39 `whole_len`/`whole_maxoff` reads
   need no row; the NEW fields (`omin`, the consumed extent) are declared part of that interface in
   facts.h when added (D-5; the owner, ARCH-STEP.md 2026-11-18: "The rules are stronger moving
   forwards and sympathetic looking back") [r50 A3].
@@ -43,8 +43,9 @@ LOCATION, not by an identifier grep [r50 A13].
   an unbounded K by name, `MF_HEAD_MAX_UNBOUNDED` (site 16) [r50 A1]. Every other crossing is a
   LAYER handoff downward (facts to gen), unchanged in direction.
 - **High-level rule 4 (remodels ride along).** Five small answer-identical units land first
-  (section "Remodels that land first"); two of them (RM-2, and RM-4's consumed-extent half) are
-  already inside the L3 text D191.1 gave its go [r50 A5].
+  (section "Remodels that land first"); one of them (RM-2) and the consumed-extent accessor that rides with L2/L3 (not an RM unit) are
+  already inside the L3 text D191.1 gave its go; the other four (RM-1, RM-3, RM-5 and RM-4's one
+  shared pick primitive) are new [r50 A5].
 - **TRADED AGAINST: the gate's speed half.** L3's scan begins before the start offset, a per-call
   cost in a find-all regime (span_arms §5.5, §11 point 1). The gate's allowances it relies on: a
   cost the user can turn off (`-fno-req-run`, bit 31, re-specified at L3, span_arms §5.8) and
@@ -59,7 +60,7 @@ LOCATION, not by an identifier grep [r50 A13].
 | D191 (decisions.md, the owner 2026-11-08/09) | 57fcb5737 | 1: "**BUILD GO** (Frank 2026-11-09, "Go on build") for the units of docs/design/span_arms.md rev 2.2 §8: E1, R1, E2, L1 and L3; L2 after the kit's delivery of R-38 plus one readiness critic on its changed text ... a unit whose census finds NO mover anywhere stops and reports." 2 (§12a): "the scan byte may come from ANY run position; the kit picks the scan position and the verify extent; the run crosses as ONE uncut span ...; nothing about consumption crosses the seam; `<PREFIX>_REQ_BYTE` keeps its meaning (a byte every match consumes), chosen by pcrec; the pcrec/kit agreement check retires." 3 (§12b): "a run outside the match is ONE run value, every reader raised together ...; the lookbehind step back is capped at the declared lookbehind length; L3 builds now, ahead of A-POSDOM, its two sites in that table's shape (§8.1)" |
 | D172 (decisions.md, the owner 2026-10-21) | 57fcb5737 | "spans, each with a start offset (negative allowed), a set per position ...", and "Fixed lookbehinds and post-span lookaheads longer than 1 come with it, sourced from main's D168 producer" [r50 A4] |
 | span_arms §12c (review 2026-11-09 r2, ruled) | 8a27e2e0b | "validate the entire span and finish" needs SUFFICIENT and OUTPUTS-DETERMINED as pcrec facts |
-| span_arms review r3 READY-5, "FIX-NOW (the manager's form)" (span_arms.md §R3 disposition table and §3.7's listing text, C38) | 8a27e2e0b | "`dead` and `harness:<source>` are WHY VALUES, one per run, first match `dead` > `harness:` > the existing reasons; no second field"; "`dead` sits on `req_whole_run` only. A dead `req_whole_run` is `derived` ...", `pf_done_why` takes `dead` and `harness:` out of its `decl` list, `run_facts_checks.sh`'s status/why pairs gain the two. REVISED for the fact's HOME by the manager's r50 A8 ruling (see site 21); its LISTING consequences are KEPT [r50 A8] |
+| span_arms review r3 READY-5, "FIX-NOW (the manager's form)" (span_arms.md §R3 disposition table and §3.7's listing text, C38) | 8a27e2e0b | "`dead` and `harness:<source>` are WHY VALUES, one per run, first match `dead` > `harness:` > the existing reasons; no second field"; "`dead` sits on `req_whole_run` only. A dead `req_whole_run` is `derived` ...", ... `pf_done_why` (`facts.c:169-182`) takes `dead` and `harness:` out of its `decl` list, `run_facts_checks.sh`'s status/why pairs gain the two. REVISED for the fact's HOME by the manager's r50 A8 ruling (see site 21); its LISTING consequences are KEPT [r50 A8] |
 | review `docs/dev/reviews/2026-11-08-r1-spanarms.md` | dd2fe2de9 | L NOT READY at rev 0 (F1 the lookahead never meets its right neighbour; F2 guard propagation; F8 reader census; F9 the BACK bound; F15 D168) |
 | `docs/dev/lanes/spanarms2_report.md` | fbcb4819c | rev 1's dispositions; the four unlocks filed as plan rows |
 | `docs/design/plan_row_bodies/POSTFACT.md`, 2026-11-08 entries | 934ccc63d | span intersection (lookahead removal; lookahead to DFA) as "a general form of this row"; lookbehind removal by `\K` with an earlier scan and a floor; the end-of-match mark |
@@ -122,8 +123,8 @@ run computes; sites marked `REQ-OPEN context-producer-home` depend on it.
 | 19 | the run pin: `pcrec_run_pin` (kset.c:302-339) and its gen readers in emit_dfa.c, `walk_proves` :6872, `pf_window_of` :6880, `us_run_pin` :7428, `pf_run_applies_common` :7438, `ofs_test_of` :7469, `ofs_test_verifies_run` :7582 (span_arms A5 names them) | C18, C34 | picks over the whole run's exact positions and pins the maximal exact stretch; the gen readers align run position `i` with consumed offset `w + i` | ACCESSOR: the pin and its readers read the consumed extent (span_arms A5: "`pcrec_run_pin` reads `cons`"), through the accessor that lands with the unit that gives it a value (RM-4, A18) [r50 A14, A18] | accessors |
 | 20 | `Ctx.lb_max` (internal.h:4115): one writer accessor `pcrec_lb_raise` (:4467-4470), one direct reader emit_dfa.c:3643-3644 (`_VALID_LB`) | C19 | the parse-time running max of lookbehind widths, characters | ACCESSOR: L3's `lb_bytes` walk parameter adds a SECOND cross-file reader (facts.c); register row 6a rides. D189's revisit trigger ([VLOOKBEHIND] stage 2, build go 2026-11-10, ordered before this feature in S4) touches this site: whether stage 2 moves what `lb_max` holds is SUSPECTED, D-11 [r50 A9 e] | A structure is read and written through its owner's accessors |
 | 21 | the NEVER FAMILY ("this run or pattern can never match"): `never_matches` (`PfNever`, facts.h:285; derived kset.c:537-548 from `pcrec_dfa_accepts_nowhere`; read compile.c:3303, :3332 to emit the empty artifact); derive.c's PRUNE (derive.c header: "a `CAT` with a never item is never; an `ALT` drops never arms; ... a positive `LOOK` of never is never, a negative one EMPTY", the never leaf the empty class `never_node` :146); mrl.c's `PCREC_MINW_MAX` ("`minw == PCREC_MINW_MAX` MEANS THE CALLEE MATCHES NOTHING", read by the `ceiling` start row, emit_dfa.c:10403); the `empty` LOCATE row (`locate_empty_applies`, emit_dfa.c:4864, row :10549) | C20, C35 | three built propagations/tests of one fact, at the AST (derive.c), the minimum-width pass (mrl.c) and the final machine (`PfNever`, `empty`) | SHARED, by the MANAGER'S r50 A8 RULING (which revises his own READY-5 form of span_arms review r3, cited as such): the FACT "this run can never match" (span_arms §5.2's DEAD, `foo(?=bar)baz`) has ONE home, the never family: one propagation, taken from a primitive shared with derive.c's prune (the design names it), or a PROPOSED register row (P6) carries the merge with [DESC-DEAD]/[NEVER-MATCH] as its event. READY-5's caller-visible LISTING consequences are KEPT: the why listing on `req_whole_run` RENDERS that fact (a rendering of the one fact, never a second fact). Binding checks for the design, from READY-5: `dead` > `harness:` > the existing reasons, one why per run, no second field; `dead` on `req_whole_run` only; a dead `req_whole_run` is `derived`; `pf_done_why` takes `dead` and `harness:` out of its `decl` list; `run_facts_checks.sh`'s status/why pairs gain the two; `dead` is not `decline:dead-start` [r50 A8] | One question, one primitive; Notice siblings |
-| 22 | D168's context producer: its built home, the span slice (`span_facts`, `pcrec_span_walk` in kset.c), is DELETED (C19: 0 hits); the cover's per-offset context at −1 and `k` is now `known.c`'s anchored-machine walk (`MkEnd.ctx_before`/`ctx_after`, known.h:24-25); kset's frontier still passes `N_CTX` (kset.c:141). Readers named by the record: D172's window site ("Fixed lookbehinds and post-span lookaheads longer than 1 ... sourced from main's D168 producer"); [CTX-FACTS-NEG] plans a MACHINE-level producer of the same per-offset sets, triggered by this feature | C19, C21 | no AST-level producer of a positive context node's per-offset sets exists | NEW-SEAM: the ITEM, writer in the description module (`src/facts/desc.c`), called by the run walk (reader 1, L1); later readers D172's window site, [LOOK-LOCATE], [CTX-SIDES-PRODUCER], [DD-11.5] part 1 (re-scoped). Whether [CTX-FACTS-NEG] is re-scoped to READ the item (one producer) or builds its machine producer (two producers by layer, with the contingent noted-deviation row below) is `REQ-OPEN context-producer-home` [r50 A4] | One home per question |
-| 23 | the description module (`desc.h`: `pcrec_pd_unit/zero/none/pos/cat/alt/pow`; the adjacency head `PdHead`/`pcrec_ph_*`, "the module's second column": "the positions every match consumes FIRST, at offsets 0..h-1"); the module is alphabet-generic ("The alphabet is a PARAMETER (`PdAlpha`)") with two callers (req.c byte level, altnf.c code-point level); the head's repeat wall "waits for [REPEAT-RUN]" (altnf.c:183-184), whose R1 is in the code at T (req.c:732, :993) | C22, C43 | width groups of exact position sets, keeping the LAST positions; a head column keeping the FIRST | A lookahead's item at offsets `0..` is the question `PdHead` answers; a lookbehind's is the description's suffix. TWO FORMS (the design decides, ruled A17): (a) SHARED: the item reads the head column for AHEAD and the description's suffix for BEHIND (the run walk gains the head column over the byte alphabet); (b) a third operation family in desc.c with a NOTED DEVIATION row whose correcting event is L1 or L2. LEANING: (a), because the two reasons for keeping two at rev 1 (different layers, different walls) are a parameter the module already takes and a wall whose trigger has fired; the item is built in the description's own area either way (the owner: such functionality "can be built in the AST area") [r50 A17, A9 b] | One question, one primitive, from the second caller |
+| 22 | D168's context producer: its built home, the span slice (`span_facts`, `pcrec_span_walk` in kset.c), is DELETED (C19: 0 hits); the cover's per-offset context at −1 and `k` is now `known.c`'s anchored-machine walk (`MkEnd.ctx_before`/`ctx_after`, known.h:24-25); kset's frontier still passes `N_CTX` (kset.c:141). Readers named by the record: D172's window site ("Fixed lookbehinds and post-span lookaheads longer than 1 ... sourced from main's D168 producer"); [CTX-FACTS-NEG] plans a MACHINE-level producer of the same per-offset sets, triggered by this feature | C19, C21 | no AST-level producer of a positive context node's per-offset sets exists | NEW-SEAM: the ITEM, writer in `src/facts/desc.c` under form (a), called by the run walk (reader 1, L1); later readers D172's window site, [LOOK-LOCATE], [CTX-SIDES-PRODUCER], [DD-11.5] part 1 (re-scoped). Whether [CTX-FACTS-NEG] is re-scoped to READ the item (one producer) or builds its machine producer (two producers by layer, with the contingent noted-deviation row below) is `REQ-OPEN context-producer-home` [r50 A4] | One home per question |
+| 23 | the description module (`desc.h`: `pcrec_pd_unit/zero/none/pos/cat/alt/pow`; the adjacency head `PdHead`/`pcrec_ph_*`, "the module's second column": "the positions every match consumes FIRST, at offsets 0..h-1"); the module is alphabet-generic ("The alphabet is a PARAMETER (`PdAlpha`)") with two callers (req.c byte level, altnf.c code-point level); the head's repeat wall "waits for [REPEAT-RUN]" (altnf.c:183-184), whose R1 is in the code at T (req.c:732, :993) | C22, C43 | width groups of exact position sets, keeping the LAST positions; a head column keeping the FIRST | A lookahead's item at offsets `0..` is the question `PdHead` answers; a lookbehind's is the description's suffix. TWO FORMS (the design decides, ruled A17): (a) SHARED: the item reads the head column for AHEAD and the description's suffix for BEHIND (the run walk gains the head column over the byte alphabet); (b) a third operation family in desc.c with a NOTED DEVIATION row whose correcting event is L1 or L2. LEANING: (a), because the two reasons for keeping two at rev 1 (different layers, different walls) are a parameter the module already takes and a wall whose trigger has fired; under form (a) the item is built in the description's own area (the owner's words permit that: such functionality "can be built in the AST area"; the home is D-10's) [r50 A17, A9 b] | One question, one primitive, from the second caller |
 | 24 | `ctxnode.c` (`pcrec_look_t3`'s `ctx-node` row: a one-character lookaround becomes `A_CTX`, ctxnode.c:96-97) | C23 | two lowerings of one construct | AS-IS: both reach T3's one predicate (`rb_zero_look_pos`, req.c:1059-1063); the ITEM row must read both, so the run is the same under `-fno-ctx-node` (span_arms §5.1) | Build the general form |
 | 25 | `pcrec_emit_start_zero` calls after the moves (emit_dfa.c:1112, :7930) | C14 | `PCREC_START0_ROUNDUP` | AS-IS by ruling: no new call, no new mode, the two calls stay in their callers (span_arms §8.1: "L3 adds no mode and no call site"; D191.3) | — |
 | 26 | VM route: `emit_vm.c` reads the moves only through the exported emitters (`pcrec_emit_req_attempt_reentry`, `pcrec_emit_req_byte_check`) | C24 | — | AS-IS (no VM file changes; the VM text moves with sites 14-15) | Layering at the call level |
@@ -220,7 +221,8 @@ anywhere stops and reports") [r50 A5].
 half is the remodel ONLY if D-2 places the guards in `RbRuns`; if D-2 chooses `RbVal`, the
 generic writers are a different list (`rb_init`, `rb_cat_into`/`rb_alt_into`/`rb_gap_into`,
 `rb_assert_into`, `rb_zero_unit_into`, the `rb_rep_*_val` builders, `*v = *b`) and the unit is
-re-scoped to them) [r50 A18].
+re-scoped to them); the `ReqRun` half is conditional on D-5 (whether the new fields are declared part
+of facts.h's interface) [r50 A18].
 - What changes shape: `rr_unit`, `rr_pos`, `rr_cat` and `rr_alt` start from a stated value (a
   designated initialiser or `rr_unit()`), and each `rr_alt_rows` row writes a complete value, so a
   field added later is either written or defaulted to its stated empty value; the two `ReqRun`
@@ -254,10 +256,10 @@ span_arms L3 "K carries a stated/none bit, the −1 sentinel retired at every §
 - Gate: no-mover. Streams: the `.c` gate AND the facts listing (the listing prints `none` as today,
   facts.c:868; the design names the tool) [r50 A13].
 - Size: S. Binding checks (the anchor map, RM2e ranges and the K tests, C37): S467 (:8990),
-  S476 (:8992), S529 (:8991), S1706 (:9085, stays with L3), S1957 (:9360), S1956 (:9113), S811
+  S476 (:8992), S529 (:8991), S1706 (:9085, stays with L3), S1957 (:9360), S1956 (:9113, stays with L3 like S1706), S811
   (:9293), S1707 (:9313), S1712 (:9315); plus S463 (`handoff_k_minus_one`) and S809 from RM-3's
   list where the bodies overlap; facts.c ranges: no anchor at T.
-- Separable: yes, every K is non-negative today.
+- Separable: yes, every STATED K is non-negative today (none is -1).
 - Deletes: the −1 sentinel (four sites: facts.c:106, :355, :868, emit_dfa.c:9174) and the hand
   re-statements of K's state the predicate replaces.
 
@@ -283,13 +285,13 @@ recommended form).
 - Deletes: one of two copies of the move arithmetic.
 
 **RM-4 (P4) the scan member `req_byte` answers, asked once** (before L2 or L3, whichever lands
-first; the consumed-extent half is inside L3's go'd text: span_arms L3 "`cons` and the kit-member
+first; the consumed-extent ACCESSOR (not part of RM-4, below) is inside L3's go'd text: span_arms L3 "`cons` and the kit-member
 read (A13, A5) ... built by whichever lands first") [r50 A2, A5, A18].
 - What changes shape: one facts-layer primitive answers the question `req_byte` answers ("the
   run position pcrec picks for the byte every match consumes", today `pcrec_find_run_scan_index`
   over every position), called by `pcrec_req_pick` (req.c:1284) and, at T, by the trace shadow
   (emit_dfa.c:11345). The CONSUMED-EXTENT accessor ("which positions does every match consume")
-  is NOT part of RM-4: it has no value until L2/L3 (D77) and lands with the unit that gives it one;
+  is NOT part of RM-4: it has no value until L2/L3 (D77) and lands with the unit that gives it one, and is conditional on D-5;
   its readers are `pcrec_req_pick` and `pcrec_run_pin` (with the pin's gen readers, site 19), never
   the trace shadow, which follows the kit's whole-run P4 (D-6) [r50 A2, A18].
 - Gate: no-mover. Streams: the `.c` gate, the facts listing (`req_byte` rows), AND the trace
@@ -369,7 +371,7 @@ U-exactwidth, ...), each with its trigger and plan row; this note adds none.
 
 | seam | writer | readers | facts down | facts up | new calls, layer direction | text round trip |
 |---|---|---|---|---|---|---|
-| the description module (desc.c) ← the run walk (req.c) | desc.c's ITEM (form (a): its head column and description suffix; form (b): a third family; site 23) | the run walk (L1); later the readers of site 22 | the body's description, the cursor side | the item: terms `{off, set}`, form, absent cell | req.c → desc.c (same layer, facts; already a caller of `pcrec_pd_*`) | an item is per-offset 256-bit sets at signed offsets: printable (a design choice whether `--emit-facts` lists it; span_arms §5.3 says no stored item until a second reader) |
+| the description module (desc.c) ← the run walk (req.c) | desc.c's ITEM (writer in desc.c under form (a): its head column and description suffix; form (b): a third family; site 23) | the run walk (L1); later the readers of site 22 | the body's description, the cursor side | the item: terms `{off, set}`, form, absent cell | req.c → desc.c (same layer, facts; already a caller of `pcrec_pd_*`) | an item is per-offset 256-bit sets at signed offsets: printable (a design choice whether `--emit-facts` lists it; span_arms §5.3 says no stored item until a second reader) |
 | facts record → gen (`ReqRun`, `req_landmark_maxoff`, `req_byte`, `run_pin`) | facts.c `pf_derive_req_walk` and its derived rows | emit_dfa.c (39 `ReqRun` `whole_len`/`whole_maxoff` reads, C9; five direct `pos` reads, C36), kset.c | `omin`, the consumed extent (through its accessor, at L2/L3), K of either sign (RM-2) | none | none new; a LAYER handoff, one way (facts → gen), unchanged; the new fields declared in facts.h's interface when added (D-5) | yes: `--emit-facts` lists every row (`req_run_omin` new) |
 | walk parameters (facts.c → req.c) | `pf_derive_req_walk` | `pcrec_req_walk` | `lb_bytes` (and `reach`, or TOP rows with an arm column: D-4) | none | facts.c → internal.h accessor (RM-5): parse-written `Ctx`, read downstream; one way | the `harness:<arms>` why token lists the restored arms (`look`) |
 | pcrec → kit presence site (MODULE seam; API `memfn.h` `mf_site`/`mf_pred`; contract `memfn.h` MF_SITE_ABI 29 + `docs/design/memfn/span_runs_sheet.md`; tests `tests/memfn/site_manifest.tsv`, `tests/memfn/run_presence.sh`, `tests/memfn/run_pres_picks.sh`) | `req_pres_spans`, `req_site_define` | the kit's PRES rows and run decision | the run span's `omin` (negative under L3), `head_max` signed, an unbounded K as `MF_HEAD_MAX_UNBOUNDED`; NO consumption fact (D191.2) | `mf_class.run` (scan position, verified extent) | no new call; no new field (all exist at T) [r50 A1] | yes: the MFPRES manifest line carries `head_max` (memfn_sites.c:747-765) |
@@ -435,18 +437,21 @@ contract admits.
    lookaheads, D172's window site reads it, and [CTX-FACTS-NEG] is re-scoped to the facts the item
    cannot state (`\b`, past-the-end, thread context), or (b) TWO producers by layer: L1's item for
    AST readers and [CTX-FACTS-NEG]'s machine producer as filed, recorded as a noted deviation
-   (ND-1) against "one home per question" with its correcting event. Example: `(?<=foo)bar` gives
+   (a recorded exception to one-home-per-question) against "one home per question" with its correcting event. Example: `(?<=foo)bar` gives
    `foo` at −3..−1 from the item under (a); under (b) the same three sets also come from the
    machine, for the window site. Leaning: (a), one producer; the machine keeps only what the item
    cannot know. Either way L1 files the D168 addendum that replaces span_arms §12's text naming
    the deleted slice.
 2. **remodel-go** — Does your build go of 2026-11-09 (D191: L1, L3) cover the five small
-   no-change refactors this note says land first? Two of them are already inside the L3 text you
-   gave the go: stating K as none/bounded/unbounded instead of −1 (RM-2) and reading the consumed
-   positions for `req_byte` and the run pin (RM-4's consumed-extent half). Three are new: every
+   no-change refactors this note says land first? One of them is already inside the L3 text you
+   gave the go: stating K as none/bounded/unbounded instead of −1 (RM-2). Four are new: every
    run-record builder starting from a stated value (RM-1), one emitter for the landmark move's
-   arithmetic (RM-3, the rounding calls staying where they are), and a read accessor for the
-   lookbehind length (RM-5). Each changes no answer and no emitted byte (e.g. `(?<=foo)bar(\w)\1`
+   arithmetic (RM-3, the rounding calls staying where they are), a read accessor for the
+   lookbehind length (RM-5), and one shared pick primitive for the byte `req_byte` answers
+   (RM-4). Reading the consumed positions for `req_byte` and the run pin rides with L2/L3 and is
+   not one of the five. The standing rule already answers part of this (high-level rule 4,
+   architecture.md: remodels are "built ... FIRST, as its own answer-identical unit"), so the open
+   part is only: does D191's go reach these units, which did not exist when it was given? Each changes no answer and no emitted byte (e.g. `(?<=foo)bar(\w)\1`
    compiles to identical C after RM-3); each exists so the lookaround change touches one place
    instead of two. Current behaviour: none is built; the two copies of the move both assume the
    landmark is never before the search position, which a lookbehind run breaks. Leaning: they ride
@@ -470,7 +475,7 @@ All at `T=57fcb5737`; `G='git grep -n -E'`. Counts are hit lines at T. Rev 1's o
 - C6 `$G "pcrec_req_walk|ReqWalkParams" $T -- src` (10); `git show $T:src/facts/req.c | sed -n '1235,1249p'`; `grep -n rn_choice_rows` on the same; `git show $T:src/facts/req.c | sed -n '417,423p'` (`rn_scan_mass`)
 - C7 `git grep -n "WALK_ARM(" $T -- src/facts/walk_arms.def` (7)
 - C8 `$G "\} RbRun;|\} ReqRun;|long long whole_maxoff" $T -- src/facts` (3); `git show $T:src/facts/facts.h | sed -n '60,77p'`
-- C9 `git grep -c -E "whole_len|whole_maxoff" $T -- src` (emit_dfa.c 39, facts.c 14, facts.h 9, kset.c 3, req.c 2)
+- C9 `git grep -c -E "whole_len|whole_maxoff" $T -- src` (emit_dfa.c 39, facts.c 14, facts.h 9, kset.c 3, req.c 2, src/opt/NOTES.md 1)
 - C10 `$G "req_run\.(whole_len|whole_maxoff|pos)" $T -- src/facts/facts.c` (16: :98-100, :254-263, :354, :835-836, :891, :925-926; rev 1 said 8) [r50 A14]; `git show $T:src/facts/facts.c | sed -n '92,110p;225,262p'`
 - C11 `git show $T:src/facts/facts.def | grep -n "REQ_"` (6)
 - C12 `$G '_k\(cx\) >= PCREC_W_UNBOUNDED|k >= PCREC_W_UNBOUNDED\)|k < 0 \|\||k >= 0 &&|whole_maxoff >= PCREC_W_UNBOUNDED|req_landmark_maxoff (= -1|< 0|>= PCREC)|head < 0 \? -1|req_byte\] : -1' $T -- src/gen/emit_dfa.c src/facts/facts.c` (14: facts.c :106, :355, :356, :868, :869; emit_dfa.c :1099, :1644, :7926, :7961, :8990, :9085, :9113, :9174, :9360) [r50 A7]; `$G "k > 0" $T -- src/gen/emit_dfa.c` (6; the move chains :1115, :1125, :7933; :9293 the margin; :5436, :5438 unrelated); `$G '"handoff-attempts-(entry|unbounded)"' $T -- src/gen/emit_dfa.c` (rows :10725, :10734)
