@@ -3550,3 +3550,20 @@ in sequence and a condition inside an rx literal as a hole alike (`${c}?` in rx 
 that contains a condition together with pattern text is not this case (it quantifies a pattern). The manager's
 earlier "a quantifier on a condition is a type error" is thus the ruled outcome after all, on his reason, not on
 the manager's.
+
+**2026-11-18 OWNER RULING — lookahead-labels: visible, as in PCRE (Frank, to session 139, morning).** ASKED AS A
+RULING (the /q presentation; the example `/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/ & (l: > f)`, its pattern part run in
+python `re` (whole `1234`: l = `4`, f = `1`; find-all `1234 4321 77`: three matches with l/f `4`/`1`, `1`/`4`,
+`7`/`7`; a negative lookahead leaves its group unset), the condition's effect hand-worked; the manager's leaning:
+"visible, as in PCRE. A positive lookahead's labels are set like any others and are read by the usual rules (last
+mention, public unless `_`). A negative lookahead's labels are never set"; with the documentation line that a
+label set in a lookahead may lie outside the matched text). HIS WORDS: "lookahead-labels: agree." RECORD: RULED,
+"agree" taken as the leaning as quoted: a positive lookahead's labels are visible after it and read by the usual
+rules; a negative lookahead's labels are never set; a lookahead is not a branching and resets nothing. The
+sorted-list example of pass-start-read (2026-11-17) now rests on a ruling. For predicates_future item 24: a label
+set in a lookahead may lie outside the matched text. THE MANAGER'S READING, not asked: the same holds for a
+lookbehind's labels.
+ALSO CLOSED THE SAME MORNING, by entailment, told to him and not objected to in his reply: label-mark (is a
+binding's name automatically a label): NO, by label-flow ("paths through a part's label, never a binding") and
+export-rule (the binding is the scope, the part label the way in); what remains of it is the spelling of the label
+form, for the single spellings review.
