@@ -6,7 +6,8 @@
 # sabotage s16; C3: CS3's `&` arm built by an independent FILTER model and drilled inside a loop; C4: `hole_ok` gives
 # a backreference position its compile error and the count position its kind split, P6 rows added), and NEW PARTS:
 #   R47  the review's answer-level and design-level witnesses (A1-A6, B1-B6), each re-run here;
-#   COND the conditional (the guarded form; when-default; when-test; when-peek; when-alone), every mode.
+#   COND the conditional (the guarded form; when-default; when-test; when-peek; rev 26's form as its special case;
+#        when-alone as HISTORY; the call forms; `when(NOT c, z)`, `when(NOT peek(x), z)`, not-test), every mode.
 #
 # CONTROLS: as predspec26 (libpcre2-8 through ../rxmodel_evidence/pcre2h.py, run, never read: D181; Python `re`),
 # plus: PCRE2's own conditional group `(?(?=A)B|C)` for the peek form; a direct Python semantic function (split
@@ -16,7 +17,7 @@
 #
 # Run (W = the worktree; from $PCREC_TMPDIR/scratch/predspec261; one process, seconds):
 #   timeout 900 python3 -I -B W/docs/dev/lanes/predspec261_evidence/predspec261_model.py > fwd.out
-#   PREDSPEC261_SABOTAGE=1 (all) or a comma list of s1..s28: deliberately wrong rules; the checks must fail:
+#   PREDSPEC261_SABOTAGE=1 (all) or a comma list of s1..s29: deliberately wrong rules; the checks must fail:
 #     s1 hit-carry OFF; s2 the count-hole product FIRST HOLE FASTEST; s3 removal of the PIECE; s4 a filter judged
 #     BEFORE its holes are filled; s5 dynamic scoping of references; s6 the `_` prefix ignored; s7 a number allowed on
 #     a composed pattern; s8 array arithmetic PAIRWISE; s9 a value REINTERPRETED as regex; s10 a lone complement
@@ -36,7 +37,8 @@
 #     s25 count-hole copies lowered as a SEQUENCE of per-hole alternations (B1);
 #     s26 a class member hole read as more characters in BOTH arms (B6);
 #     s27 the program's `anything` replaced by a non-nullable operand (A6);
-#     s28 one array bound ONCE for all its mentions (B2).
+#     s28 one array bound ONCE for all its mentions (B2);
+#     s29 `then` OPTIONAL (his superseded spelling lean): `when(x, else = z)` accepted.
 import os, sys, re, itertools
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -44,7 +46,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "rxmodel_evidence"))
 import pcre2h as P                                           # noqa: E402
 
 _sv = os.environ.get("PREDSPEC261_SABOTAGE", "")
-SABS = set("s%d" % i for i in range(1, 29)) if _sv == "1" else set(x for x in _sv.split(",") if x)
+SABS = set("s%d" % i for i in range(1, 30)) if _sv == "1" else set(x for x in _sv.split(",") if x)
 def sab(k): return k in SABS
 
 CHECKS = []
@@ -226,6 +228,8 @@ print("    `0` = the part's own match%s: %d / %d / %d differ ; `0` = the compose
       % (" (SABOTAGED s15: composed)" if sab("s15") else "", d_own[0], d_own[1], d_own[2], d_comp[0], d_comp[1], d_comp[2], f_comp))
 print("    the composed reading never matches: %s ; %s" % (all(S(nz_comp, t) is None for t in NZPOOL),
       check("NZ zero inside a part = the part's own match", nz_law_py == 0 and d_own == [0, 0, 0] and d_comp[0] > 0)))
+print("    own: %s" % show(nz_own, "x3y", "ax34y x7y", "x3y x7y x35y", ("p",)))
+print("    composed: %s" % show(nz_comp, "x3y", "ax34y x7y", "x3y x7y x35y", ("p",)))
 print("    (r47 V2 printed 0/0/0 and 15/470/470; the `&` row's `0` and the HOLE row's `0` now say where the `0` is WRITTEN)")
 
 # N4: THE MANAGER'S READING (2): inside a loop body or a hit-list argument, 0 written in that part's own condition is
@@ -1114,6 +1118,26 @@ b5pm = P.Pcre(r'(?:(?<y>\d)?-(?<v>[\s\S]*?)(?C"eq");)*', {"eq": lambda c: c.get(
 dpk, _ = diff3(b5pm, b5pk, pool("37-;", 7))
 print("B5(a) an optional label in a loop `/(?:(?<y>\\d)?-${$y};)*/`: the callout model (PCRE's capture) vs `\\k<y>`: %d / %d / %d of %d (the anchor \"the backreference's own behaviour\") ; the label (one rule, pass-start-read) parts from both: A4 witness 1, WHOLE `3-3;-3;` ; %s"
       % (dpk[0], dpk[1], dpk[2], len(pool("37-;", 7)), check("B5 loop anchors part", dpk == [0, 0, 0] and d1_[0] > 0)))
+# B13 caller-ambiguous: `A & B`, A := /(?<h>\d)\d/, B := /\d(?<h>\d)/, both public h, never referenced.  The `&`
+# matched by its filter model (each operand on the stretch as its own pattern, rev 24.1's model), the two values of h
+# read out per candidate: the left side's (rev 25.1's withdrawn (e)), the right side's; or none / an error.
+CA_A, CA_B = P.Pcre(r'(?<h>\d)\d'), P.Pcre(r'\d(?<h>\d)')
+class AndAB:
+    def __init__(self, side): self.side = side
+    def match(self, s_, pos, opts=0):
+        anch = bool(opts & P.PCRE2_ANCHORED); endanch = bool(opts & P.PCRE2_ENDANCHORED); ne = bool(opts & NOTEMPTY_ATSTART)
+        for st in ([pos] if anch else range(pos, len(s_) + 1)):
+            for e in range(len(s_), st - 1, -1):
+                if endanch and e != len(s_):
+                    continue
+                if ne and st == e == pos:
+                    continue
+                ra, rb = W(CA_A, s_[st:e]), W(CA_B, s_[st:e])
+                if ra is not None and rb is not None:
+                    return (st, e, {"h": (ra if self.side == "left" else rb)[2]["h"]})
+        return None
+for side in ("left", "right"):
+    print("B13 caller-ambiguous `A & B`, h read from the %-5s side: %s" % (side, show(AndAB(side), "12", "x12", "12 34", ("h",))))
 # B6: a class MEMBER hole once the literal has other parts
 more_ = P.Pcre(r'(?<g>\w*)[xy]')
 cop_ = P.Pcre(r'(?<g>\w*)[xy]') if sab("s26") else P.Pcre(r'(?|(?<g>\w*)x|(?<g>\w*)y)')
@@ -1242,14 +1266,78 @@ print("     WH1 (printed): %s ; conditional-spelling row (printed `5;1;9` FAILS,
       % (show(new2, "5;1;9", "5;1;9", "3;0;5 5;1;9"), fW(new3, "5;1;9"), fS(new3, "1;0;9"),
          check("COND old when = guarded with a condition test", d2 == [0, 0, 0] and d3 == [0, 0, 0] and W(new2, "5;1;9") is not None
                and [(a, b) for a, b, _ in F(new2, "3;0;5 5;1;9")] == [(0, 5), (6, 11)] and W(new3, "5;1;9") is None and S(new3, "1;0;9")[:2] == (0, 5))))
-# when-alone: "when(x) is the same as x" (his lean's words) vs when-default applied to both missing branches
-wa = [("`x` (his words: when(x) is the same as x)", P.Pcre(r'\d')),
-      ("peek, both branches defaulted `(?=x)|(?!x)`", P.Pcre(r'(?=\d)|(?!\d)')),
-      ("bare (consumed), both defaulted `x|(?!x)`", P.Pcre(r'\d|(?!\d)'))]
+# when-alone (HISTORY: the owner withdrew "the when(x) form is the same as x" as his interpretation; the manager's
+# derivation `when(x)` = `x | (not x)` was then superseded by his RULING that a single argument is a compile error).
+# The runs below show only what the derivation would have given (the record), not a meaning.
+wa = [("`x` (his withdrawn sentence: when(x) is the same as x)", P.Pcre(r'\d')),
+      ("the derivation, peek `(?=x)|(?!x)` (withdrawn)", P.Pcre(r'(?=\d)|(?!\d)')),
+      ("the derivation, bare `x|(?!x)` (withdrawn)", P.Pcre(r'\d|(?!\d)'))]
 for desc, rx in wa:
-    print("COND when-alone %-48s WHOLE `` %s ; %s" % (desc, fW(rx, ""), show(rx, "a", "a1", "1a2")))
+    print("COND when-alone HISTORY %-52s WHOLE `` %s ; %s" % (desc, fW(rx, ""), show(rx, "a", "a1", "1a2")))
 print("     (x := rx.digit; the subjects use `a` for a non-digit)")
-check("COND when-alone readings differ", W(wa[0][1], "") is None and W(wa[1][1], "") is not None and W(wa[2][1], "") is not None)
+check("COND when-alone history readings differ", W(wa[0][1], "") is None and W(wa[1][1], "") is not None and W(wa[2][1], "") is not None)
+# THE CALL FORMS (RULED: a single argument is a compile error; `then` is required; the else-only form is `when(NOT x, z)`).
+# RULE-AS-CODE: the signature `when(cond, then, else = null)` with parameters given by position or by name (THE MANAGER'S
+# READING of his signature; whether parameters may be passed by name is the draft's ONE INPUT RULE, a record).
+def when_call(args):
+    """args: list of ('pos', v) | ('kw', name, v); returns (cond, then, else) or 'COMPILE ERROR'"""
+    params, bound = ["cond", "then", "else"], {}
+    i = 0
+    for a in args:
+        if a[0] == "pos":
+            if i >= 3:
+                return "COMPILE ERROR"
+            bound[params[i]] = a[1]; i += 1
+        else:
+            if a[1] in bound or a[1] not in params:
+                return "COMPILE ERROR"
+            bound[a[1]] = a[2]
+    if "cond" not in bound or ("then" not in bound and not sab("s29")) or (sab("s29") and len(bound) == 1):
+        return "COMPILE ERROR"                       # a parameter without a default must be supplied
+    return (bound["cond"], bound.get("then"), bound.get("else"))
+CALLS = [("when(x)", [("pos", "x")], "COMPILE ERROR"), ("when(x, else = z)", [("pos", "x"), ("kw", "else", "z")], "COMPILE ERROR"),
+         ("when(x, y)", [("pos", "x"), ("pos", "y")], ("x", "y", None)), ("when(x, y, z)", [("pos", "x"), ("pos", "y"), ("pos", "z")], ("x", "y", "z")),
+         ("when(x, then = y)", [("pos", "x"), ("kw", "then", "y")], ("x", "y", None)),
+         ("when(x, then = y, else = z)", [("pos", "x"), ("kw", "then", "y"), ("kw", "else", "z")], ("x", "y", "z")),
+         ("when(x, y, else = z)", [("pos", "x"), ("pos", "y"), ("kw", "else", "z")], ("x", "y", "z"))]
+for desc, args, want in CALLS:
+    got = when_call(args)
+    print("COND CALL RULE-AS-CODE %-30s -> %-22s ; %s" % (desc, got if isinstance(got, str) else "cond, then, else = %s" % (got,), check("COND call " + desc, got == want)))
+# the legal calls, run: x := peek(\d), y := \d\d, z := \w (the two forms; every legal call is one of them)
+for desc, rx in (("when(peek(x), y) / when(peek(x), then = y)", guarded(CA, CB, None, False)),
+                 ("when(peek(x), y, z) / (.., then = y, else = z) / (.., y, else = z)", guarded(CA, CB, CC, False))):
+    print("COND LEGAL %-70s %s" % (desc, show(rx, "12", "x123", "12 x 123 1x 7")))
+# the ELSE-ONLY behaviour by NOT (RULED: "Use NOT to get else behavior"): when(NOT c, z) for a condition c, and
+# when(NOT peek(x), z); each against a semantic model ("if the test holds: z; otherwise nothing more") and, for the
+# peek, PCRE2's own conditional group.
+cn = P.Pcre(r'(?<h>\d)(?:(?C"n")\w|(?C"c"))', {"n": lambda c: not lt5(c), "c": lt5})
+class SemNotCond(SemCond):
+    def at(self, s, st):
+        if not re.match(r'\d', s[st:]):
+            return []
+        p = st + 1
+        if not (int(s[st]) < 5):
+            return [e for e in range(len(s), p - 1, -1) if re.fullmatch(r'\w', s[p:e])]
+        return [p]
+POOLN = pool("17x", 5)
+d, _ = diff3(cn, SemNotCond(None, None, None, False), POOLN)
+print("COND `[h = rx.digit] SEQ when(NOT (h: <5), /\\w/)` regex `(?<h>\\d)(?:(?C not c)\\w|(?C c))`: vs semantic %d / %d / %d of %d ; %s ; %s"
+      % (d[0], d[1], d[2], len(POOLN), show(cn, "7x", "x17x", "7x 1x 17 7"), check("COND when(NOT c, z)", d == [0, 0, 0])))
+npk = P.Pcre(r'(?!\d)\w|(?=\d)') if not sab("s21") else P.Pcre(r'(?!\d)\w')
+class SemNotPeek(SemCond):
+    def at(self, s, st):
+        if re.match(r'\d', s[st:]) is None:
+            return [e for e in range(len(s), st - 1, -1) if re.fullmatch(r'\w', s[st:e])]
+        return [st]
+d, _ = diff3(npk, SemNotPeek(None, None, None, False), CPOOL)
+dn, _ = diff3(npk, P.Pcre(r'(?(?!\d)\w|)'), CPOOL)
+print("COND `when(NOT peek(x), z)`, x := \\d, z := \\w, regex `%s`: vs semantic %d / %d / %d, vs PCRE2's `(?(?!\\d)\\w|)` %d / %d / %d of %d ; %s ; %s"
+      % (npk.pattern, d[0], d[1], d[2], dn[0], dn[1], dn[2], len(CPOOL), show(npk, "x", "1x", "x1 y 12"), check("COND when(NOT peek(x), z)", d == [0, 0, 0] and dn == [0, 0, 0])))
+# not-test (ASKED): a BARE pattern under NOT in a test position, `when(NOT x, z)`: (a) complement-place: NOT x is a
+# filter-only value and a test is a use: the compile error; (b) when-peek's reading: a negative peek, the same as
+# `when(NOT peek(x), z)` above; (c) THE MANAGER'S NOTE names no third.  (b)'s answers are the line above; (a) REJECTED.
+print("COND not-test `when(NOT x, z)`, x bare: (a) complement-place: a COMPILE ERROR (REJECTED in every mode) ; (b) a negative peek: as the line above (WHOLE `x` %s, SEARCHED `1x` %s, FIND-ALL `x1 y 12` %s)"
+      % (fW(npk, "x"), fS(npk, "1x"), fF(npk, "x1 y 12")))
 
 # =====================================================================================================================
 print("\n== CHECKS: %d of %d OK%s" % (sum(ok for _, ok in CHECKS), len(CHECKS),
