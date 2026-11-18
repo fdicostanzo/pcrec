@@ -1,7 +1,9 @@
 # covs2land report
 
 ## STATE AT HANDOFF
-Rulings file: empty (no R-n applied). Merged tip: see CLOUD RUNS DISPATCHED for the exact sha the cloud runs test (the merge commit is c774d15c05585e0665373377cb19ec83907c4dc2; the report commit a88871a19 on top of it is the tip the cloud runs test). OWED: none.
+Rulings file: empty (no R-n applied).
+OWED: none.
+Merged tip: see CLOUD RUNS DISPATCHED for the exact sha the cloud runs test (the merge commit is c774d15c05585e0665373377cb19ec83907c4dc2; the report commit a88871a19 on top of it is the tip the cloud runs test).
 Premise test: lane/memfn-forms = 105bf8ef412d92bcae7ce3567f41ef107a1767b8; merge-base with lane/covs2b = 60c2958ae, an ancestor of main (yes to both).
 
 ## MERGE AND CONFLICTS
