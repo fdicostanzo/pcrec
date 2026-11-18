@@ -24,6 +24,7 @@ below fires, not before.
 | message the kit, the bench or a running lane; relay a ruling; wait on a peer | `peers.md` |
 | brief a lane | §3 below + `docs/dev/lanes/BRIEF_TEMPLATE.md` |
 | run a test suite or the full battery | the `pcrec-test` skill |
+| plan a new feature, or charter its design | `docs/dev/guide/architecture.md` FIRST: the four goals, the judgement section, and part 3 (which register rows and noted deviations the feature touches); above the size trigger, an ARCHITECTURE NOTE comes BEFORE the design: launch the `pcrec-architect` skill as a lane (note at `docs/design/<topic>_arch.md`), then a `pcrec-critic` round in mode `arch`; the design brief cites the accepted note ([ARCH-STEP], Frank 2026-11-17) |
 | send a design to build, or land major code | the `pcrec-critic` skill (§5) |
 | plan a timing run, a bench window, anything in 20:00-01:00 | memories pcrec-box-evening-hold, pcrec-box-shared-with-frank, pcrec-bench-status; docs/dev/lanes/RUNS.md "TIMING WINDOWS"; run `scripts/loadshame` about 30 min before the window and tell Frank by name what is loading the box (Frank 2026-11-16); `scripts/loadshame --present` lists the watched trouble makers (Steam, VS Code) by PRESENCE, however idle, window or not: remind him to close each one listed, 30 min before and at the start (Frank 2026-11-17; memory pcrec-timing-troublemakers) |
 | end or pause the session; Frank types /close or /idle | §6; the `close` / `idle` skills |
@@ -45,6 +46,7 @@ Always on, whatever the situation:
   example in EVERY mode the language has, and a several-match subject. Before presenting any finding as a new
   decision, grep the design of record for the plan that already covers it (cover_cap.md 11.3 held the owner's
   inline-head-then-loops plan while I asked him to choose around its absence).
+- **The ride-along register is kept at every landing** (Frank 2026-11-17, [ARCH-STEP]): a landing that opens, rides or closes a row of `docs/dev/guide/architecture.md` part 3 updates the row in the same change; a small change made AGAINST a goal lands only with its "noted deviation" row (his judgement point: note it, correct it at the next larger change; do not remodel with every change).
 - **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
   run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
 - **Purpose over wording** (Frank 2026-11-07: "too literal with exact

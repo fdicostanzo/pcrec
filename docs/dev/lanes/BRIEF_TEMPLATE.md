@@ -42,6 +42,11 @@ A field with nothing to say is written "none", never dropped.
     ledgers (decisions.md; memfn/docs/requests.md and responses.md). A
     lane takes no id outside its range.>
 
+    ARCHITECTURE NOTE: <path of the ACCEPTED note (docs/design/<topic>_arch.md) and its critic round, for a
+    design or build lane of a feature above the size trigger; "below the trigger: <the one-paragraph form,
+    pasted>" otherwise; "none: not a feature" for a fix, a measurement or a doc lane. The lane's design stays
+    inside the note's site map and lands the note's first units first ([ARCH-STEP], 2026-11-17).>
+
     BUILD GO: <the owner's words and date, quoted verbatim>
       -- or --
     NO BUILD GO: design/measure only. (Required for any lane that edits
