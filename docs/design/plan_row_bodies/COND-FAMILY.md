@@ -2640,3 +2640,20 @@ match of the pattern to its left (the filter sentence); standing alone in a sear
 SPELLING (`hits`, and every other spelling) is NOT settled: to be reviewed with all the other spellings. MINE: the
 standalone case needs no compile error (it reads the whole subject, as `\A...\z` would); the draft's noted
 exception "all hits of a search" becomes "has a regex model; values need the captures level".
+
+**2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world (Frank, to session 138,
+evening).** Asked what `0` names inside a nested place (the inner pattern's own match, or PCRE's group 0; the
+manager's lean: the inner match). HIS WORDS: "zero-place: oh boy, that was illustrative to use 0. But it might be
+useful so we can add it. It opens the can of worms of other numbers. For A & B: from the perspective of B, the
+subject is now whatever A matched. There is no outside subject (unless we allow context, etc). That's its whole
+world. So all numbers are labels of groups in that world. Also, not recommended to use group numbers as it's
+confusing on bound values you can't see".
+RECORD: (1) His `0:` of the morning was an illustration; it MAY be added, as useful. (2) THE PRINCIPLE: for `A & B`,
+B's subject is what A matched: "that's its whole world", with no outside subject unless context is one day allowed
+(the filter sentence, from B's side). (3) NUMBERS are labels of groups IN THAT WORLD: `0` is the whole match of the
+pattern it is written on, and any other number is that pattern's own group of that number: so zero-place is
+answered as the INNER reading, never PCRE's overall group 0. (4) Using group numbers is NOT RECOMMENDED: on a bound
+value the reader cannot see which group a number names. MINE: the law `A & B` = `A & (0: B)` then holds in every
+place; the draft already gives each literal its own group namespace (numbered groups do not leak), which is (3);
+(4) becomes a line in the documentation list (predicates_future item 24) and a candidate WARNING when a numbered
+label is read on a pattern that is not written at that place (a proposal, his to accept).

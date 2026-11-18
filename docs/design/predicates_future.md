@@ -438,5 +438,10 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
      has a boundary (plain regex behaviour; the condition adds nothing to it).
   9. ATOMIC DOES NOT STOP A SEARCH FROM MOVING ON; the "judge the first match, then skip past it" behaviour is a
      backtracking verb's (`(*SKIP)` in PCRE), not atomic's.
+  10. NUMBERS NAME GROUPS IN THE PATTERN'S OWN WORLD, AND ARE NOT RECOMMENDED. `0` is the whole match of the
+      pattern it is written on; another number is that pattern's own group. Prefer names: on a bound pattern the
+      reader cannot see which group a number means (the owner, zero-place, 2026-11-17).
+  11. THE HIT LIST IS FIND-THEN-JUDGE: atomic and anchored to its text; a search written as part of the pattern
+      is re-entered by a rejecting test and will cut `1234` into `12` and `34` to satisfy "under 100".
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
