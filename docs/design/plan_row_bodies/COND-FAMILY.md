@@ -2983,3 +2983,12 @@ the shared-label ruling so revised); a part's own label is reached through a lab
 `aa.h`); a binding's name is not a path. THE MANAGER'S NOTE for the next revision and the documentation list
 (mine): in a sequence two parts from different authors that both surface `h` merge silently (last mention), as
 two groups of one name do in a literal; labelling the parts is how one of them is picked.
+ADDENDUM (label-flow), HIS WORDS: "A · B & (h: …): yes, i adjust to say its the last mention. an interesting point
+is if its the last match. some A and B could be written such that the h in A is the last match". RECORD: CONFIRMED:
+across the sequence operator a name both parts surface is one label, the LAST MENTION. His observation: "last
+mention" is not "last match": A's `h` can be the last one that actually matched. THE MANAGER'S ANSWER (mine, from
+rulings already made): last mention is the last in the pattern's own order along the path taken, whatever
+matched and wherever in the text it lies: (i) when B's `h` sits in an optional part that is skipped, B's branching
+was entered and reset the name, so `h` is UNSET, not A's value (the two-copy separated list on one item, accepted
+by him earlier the same evening); (ii) when a lookaround makes A's `h` name text that lies after B's, B's is still
+the label. To keep A's value in such a case its part is labelled (`[aa = A]`, `aa.h`), or the array form is used.
