@@ -3591,3 +3591,17 @@ subset of the other. THE MANAGER'S ILLUSTRATION (mine): filter-only: a complemen
 outward-looking edge assertion (`/\b\d+\b/`, refused as a filter operand by operand-context); both: `/\d+/`. The
 next revision states the two kinds once and gives each position (an `&` operand, a sequence operand, a hole, an
 `occurrences` argument, the program itself) the kind it needs.
+
+**2026-11-18 OWNER, discussing complement-place further (Frank, to session 139, late morning; DISCUSSION, nothing
+ruled by this entry; the ruling above stands).** HIS WORDS: "complement-place: discussion: one interpretation of a
+complement is as a filter on anything.
+any := /.*/
+any & not seven". RECORD: DISCUSSION: a complement read as a filter on "anything", the anything written as a
+bound pattern. The manager's contribution (in the session): written out like this the program is ALREADY LEGAL
+under the ruling above (a positive pattern stands beside the complement) and means what he says; what the ruling
+refuses is only the IMPLIED form (a lone complement with no pattern written). The manager's small simulation
+(python, his own script, a model of "the any-pattern's first candidate that the filter accepts", find-all; NOT a
+lane run and not libpcre2): `any := /.*/`: on `712` the hits are an empty match at 0, `12` at 1, an empty match at
+3; on `x712 55` the whole text at 0 and an empty match at 7; with a lazy `any := /.*?/` every hit is empty. So
+which "anything" is written decides the searched answers, which is the manager's reason to keep it written by the
+user and not implied; as a whole value every spelling of "anything" agrees.
