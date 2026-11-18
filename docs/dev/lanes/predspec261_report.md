@@ -7,6 +7,8 @@ cut from main @ b230287c2; not merged, not pushed.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Draft rev 26.1 complete: every r47 finding A1..E1 handled per the dispositions; every COND-FAMILY entry from "2026-11-18
   MANAGER CORRECTION — three of the manager's readings of this morning were NOT supported by the runs" to the end of the
   branch's file folded, plus main's three later entries named by the rulings file (R1-R3).
