@@ -1,5 +1,13 @@
 # The `rx` module: building patterns without rx literals (design note, rev 0)
 
+**SUPERSEDED (2026-11-18, review r43 F): the owner RULED this note's questions on 2026-11-17 (COND-FAMILY, the entries
+from "OWNER RULINGS — the rx module: sequence-precedence and sequence-operator" to "OWNER RULING — quantifier
+operators"); `predicates_draft.md` R.1.14 (rev 25, rev 25.1) is the current text, and its §5.4 the one operator table.
+Read nothing here as current: under the ruled order (postfix, then the sequence operator, then `&`, then `|`) this
+note's `rx.loop([h = rx.digit] & (h: <5) € ";", min = 1)` parses as `[h = rx.digit] & ((h: <5) € ";")`, and its
+rows citing the hole edge-assertion error cite an error hole-reading WITHDREW. Kept unedited below as the record of
+the proposal.**
+
 **STATUS: PROPOSED, rev 0 (lane rxlib, 2026-11-17). Material for a discussion with the owner. It proposes; it rules
 nothing.** Every choice that decides what a program means is laid out in section 7 as a question with candidates and
 worked examples; none is chosen. Source: the owner's proposal of 2026-11-17 (`plan_row_bodies/COND-FAMILY.md`, the
