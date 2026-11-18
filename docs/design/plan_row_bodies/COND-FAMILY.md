@@ -2722,3 +2722,13 @@ match is a mention that leaves its name UNSET; a group whose start is never reac
 still begins with its body's names unset (ruled earlier). Under it: `3;` in the first example gives h UNSET; the
 one-item list gives h = `7`; an alternation's untaken branch is unset whichever order the branches are written in
 (both starts are reached).
+DISCUSSION CONTINUED (nothing ruled). To the manager's "two sources of unset: a pass beginning, and a group reached
+but empty", HIS WORDS: "I think they are the same. Labels: (x)* Think of it like this: the loop is an outlet
+structure that sets up the loop the hits the labeled group each time. It's the entering of that group that causes
+the label to unset. The loop merely causes it to start repeatedly". RECORD: his proposal: ONE source: ENTERING a
+labelled group unsets its label (and matching sets it); a loop only makes the group be entered again. THE
+MANAGER'S COUNTER-CASE put to him (mine): when the group sits behind something else in the loop body, a pass can
+begin without the group being entered: the times list `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/` on `9:45,10,`: in the
+item `10` there is no colon, the minutes group is never entered, so under "entering only" `m` stays `45` and
+`((h, m): == (10, 45))` HOLDS, the stale tuple he rejected earlier the same evening (and the default `m = 00`
+would not fire). So either two sources, or one stated as "entering a loop pass enters everything in its body".
