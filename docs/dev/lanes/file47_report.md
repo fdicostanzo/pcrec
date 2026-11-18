@@ -1,6 +1,7 @@
 # file47 report: filing review r47 (predspec26)
 
 ## STATE AT HANDOFF
+OWED: none
 Rulings file `file47_rulings.md`: empty (no R-n applied). Committed on lane/file47; not merged, not pushed. Nothing owed.
 
 ## FILED
