@@ -3081,3 +3081,9 @@ since a sequence needs its explicit mark, "A+ then B" cannot be written as `A + 
 and no "did you mean" message of the manager's kind; adding two patterns is an ordinary type error. MINE, for the
 next revision: the operators are read longest first (`++` is the possessive, not two pluses), stated with one
 example each.
+ADDENDUM (quantifier operators: precedence), HIS WORDS: "also, operator precedence. i'm thinking fairly tight with
+parenthesis otherwise. right?" RECORD: RULED (the manager agreeing): a postfix quantifier operator binds TIGHTLY,
+to the single operand before it (a name, a literal, a call, a labelled part, a parenthesised expression), as a
+regex quantifier binds to the atom before it; anything larger is parenthesised. The order, tightest first: a
+postfix quantifier; the sequence operator; `&`; `|` (the last three as ruled the same evening). So `A SEQ B+` is A
+then one or more B; `(A SEQ B)+` repeats the pair; `rx.digit+` is the digit repeated.
