@@ -3820,3 +3820,23 @@ clarification "it should be the last reference as labels" to WHICH GROUP a name 
 capture's; (m2) in a pattern that inserts a part exporting `h`, `\k<h>` reads that group's capture as PCRE would for
 the one group; (m3) two groups of one name inside ONE literal (the `(?J)` case, PART REF REF4) is NOT settled by
 "capture": PCRE refuses the literal without `(?J)` and reads the first set group with it; to be put to him.
+
+**2026-11-18 OWNER, discussing value-hole (Frank, to session 140, afternoon; DISCUSSION, nothing ruled by this
+entry).** Asked **value-hole** by /q. HIS WORDS, in order: (1) "before we answer, what is the difference between a
+value and a label in the +1 example? My understanding is you could use the label and get the same thing." (2) "so
+the $v is how you reference a label outside of a condition. It is in scope, in a hole of that rx ?" (3) "/../ &
+(x,y): (y+1, ..) Would this say the same as $y + 1" (his spelling a placeholder; under colon-scope the value side
+reads the label as `$y`). (4) "I understand. To restate, $y is a regex but of an anchored plain string that is a
+backreference. If a hole has its own case, aren't all matches then case sensitive? Can i use @y there and what
+does that mean?" (5) "by $y as a regex I'm thinking the that you can manipulate it like a regex. But given that
+most of our operations reduce the string set and $y is only the one, you are limited. No conditions. No &. But
+$y | "other" / $y + 2 / left($y, 2) / upperStart($y) / $y . "End" / ??? if($y & (0: 1492), "Columbus", $y)".
+THE MANAGER'S ANSWERS (the manager's, to be tested by the next revision lane): `$y` is the label READ (no second
+thing; the `$` tells a label from a binding in a hole); in scope in a hole of the rx that defines it, read where
+written; a WITHDRAWN manager reading: "the plain hole reads PCRE's capture so `${$y}` equals `\k<y>`" contradicts
+his ruling "an unqualified `$x` reads the label": `\k<y>` reads the capture (backref-label, today), `$y` the label,
+and they part only where the label and the capture part; the draft's control "`${$y}` equals `\k<y>`" must be
+narrowed. Case: the options in force AT THE HOLE decide (python `re`, `a-A`: plain fails; `(?i)` holds; only the
+reference caseless holds; only the group caseless fails). `${@y}`: undefined in the draft; the manager's idea
+"any earlier setting, as an alternation" (hand-worked, slug array-in-hole), not folded in. On (5): see the
+session's reply (a hole takes a value EXPRESSION; the test in his `if` meets dollar-condition).
