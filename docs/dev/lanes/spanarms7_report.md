@@ -5,6 +5,8 @@ memfn/, tests/ or scripts/ was touched.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - STATE: done. Branch `lane/spanarms7`, cut from main `8993b8f82` (= T for every code statement).
 - Rulings file `docs/dev/lanes/spanarms7_rulings.md`: empty at every read (before the WIP commit, before
   this report). Last R-n applied: none.
