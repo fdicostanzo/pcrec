@@ -1,0 +1,13 @@
+s1: == CHECKS: 104 of 106 OK ; FAILED: H1 carries, H3 carried != plain
+s2: == CHECKS: 104 of 106 OK ; FAILED: P1 first slowest x=1 y=23, P3 seq-of-alts = first slowest
+s3: == CHECKS: 104 of 106 OK ; FAILED: P4 whole copy removed: never matches, P4b never matches
+s4: == CHECKS: 105 of 106 OK ; FAILED: HF1 `/\d+/ & /${num}/`, num := `/\b\d+\b/`
+s5: == CHECKS: 105 of 106 OK ; FAILED: REF1 B := `/\k<h>/` after A
+s6: == CHECKS: 104 of 106 OK ; FAILED: EX1 pdate _y.v outside, EX1 priv _t outside
+s7: == CHECKS: 100 of 106 OK ; FAILED: N2 one literal, shared name `/(?<h>\d)(?:,(?<h>\d))*/`, 1, N2 a sequence `A SEQ B`, 1, N2 an inserted pattern `/${A},(\d)/`, 1, N2 an alternation of patterns `(A | B)`, 1, N2 a repeat's operand `A+`, 1, N2 an `&` chain with two patterns `A & B & (1: ..)`, 1
+s8: == CHECKS: 102 of 106 OK ; FAILED: AL1 [2, 4] + [1, 10], AL1 [2, 4] * [1, 10], AL1 1 + [2, 4], AL1 [1, 2] + [10, 20, 30]
+s9: == CHECKS: 105 of 106 OK ; FAILED: VH3 literal text
+s10: == CHECKS: 102 of 106 OK ; FAILED: CX1 not_seven run alone (whole or searched), CX1 digits SEQ not_seven, CX1 occurrences(not_seven), CX1 /x${not_seven}y/ (THE MANAGER'S READING, agreed)
+s11: == CHECKS: 105 of 106 OK ; FAILED: CS4 cond
+s12: == CHECKS: 105 of 106 OK ; FAILED: LA2 visible
+s13: == CHECKS: 105 of 106 OK ; FAILED: CS1 shown (fails / holds)
