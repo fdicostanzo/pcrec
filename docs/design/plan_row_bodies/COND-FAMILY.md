@@ -3130,3 +3130,22 @@ chain with more than one pattern operand, 0 is still allowed, since every operan
 same matched stretch, so "the entire match" is one thing there too; (2) inside a loop body or a hit-list argument,
 0 written in that part's own condition is that part's own match for the current pass or hit, by "the entire match
 of the rx" read for the rx the condition is attached to; he spoke to neither.
+
+**2026-11-18 OWNER RULING — hit-carry: it carries, because `occurrences` is a rewrite (Frank, to session 139,
+morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run witness
+`occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5), on `73` whole and searched and `3x73` find-all; the
+manager's leaning: it carries). HIS WORDS: "hit-carry: occurrences is a simple regex rewrite ? So what the user
+provides gets inserted into a template hole like usual? If this is so, then the user is creating this scenario
+themselves. They can simply put the condition after the label to get the normal behavior. In cases where the user
+puts the condition before the label, they are expecting carries behavior". THE PREMISE HE ASKS ABOUT, checked by
+the manager against the record: YES. `occurrences` is his own one-pattern model of 2026-11-17 ("It's essentially
+/(.*(${rx}))*.*/ So not global"; revision 25.1 R.1.9), the user's pattern inserted into the hole of a loop
+template. RECORD: RULED, on that premise: a condition inside an `occurrences` / `hits` argument reads the labels
+as they stand where it is written, exactly as in any loop body (pass-start-read): written AFTER its label's group
+it reads its own hit; written BEFORE it, it reads the previous hit's value. No scope rule and no exception for hit
+lists; where the user wants the per-hit behaviour, the condition goes after the label. CONSEQUENCES (the
+manager's, to be checked by the next revision): R.1.9's "its hits are those of a plain search" holds only for an
+argument with no condition before its group; the hits-pass and some-own readings are narrowed to match; section
+2.6's second refusal (its reason "find-all starts each hit with the group unset") goes; this is one more entry
+for the user-documentation list (predicates_future item 24). NOT ANSWERED, still open: the rider asked with it
+(is refusing a nullable argument an error or a warning; the manager leans a warning, as he ruled the empty search).
