@@ -3567,3 +3567,27 @@ ALSO CLOSED THE SAME MORNING, by entailment, told to him and not objected to in 
 binding's name automatically a label): NO, by label-flow ("paths through a part's label, never a binding") and
 export-rule (the binding is the scope, the part label the way in); what remains of it is the spelling of the label
 form, for the single spellings review.
+
+**2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx (Frank, to session 139,
+morning).** HOW IT WENT: the manager first leaned "a lone `!B` is a compile error in every mode". HIS WORDS:
+"complement-place: is this legal?
+not_seven := not seven
+It stands alone. I think it's the use that is the problem". The manager agreed and restated the rule around use,
+as put to him: "A complement is a filter-only value. It may be bound, named, passed around and combined with
+other complements. It may be used as an operand of `&` in a chain that has at least one positive pattern. Any use
+that needs it to produce a match by itself is a compile error at that use"; with the hand-worked table (`digits
+:= /\d+/`, `seven := /7\d*/`): `not_seven := not seven` legal; `digits & not_seven` legal (whole `123` holds,
+`712` fails); `neither := not seven & not eight` legal; running `not_seven` alone, whole or searched, an error at
+that use; `digits SEQ not_seven` an error; `occurrences(not_seven)` an error; and two edges named as the manager's
+readings: a complement in a pattern hole (`/x${not_seven}y/`) is the same error; a lone complement as a
+whole-value validator stays an error for now (write `/[\s\S]*/ & not_seven`). HIS WORDS: "complement-place: I
+agree with your interpretation
+That means for rx:
+There is rx that can match. There is rx that can filter. Neither is wholly a subset of the other". RECORD: RULED:
+the rule as restated (binding a complement is legal; the error is at any use that needs it to produce a match),
+"your interpretation" taken as the restated rule with its table and its two edges. AND HIS STATEMENT OF WHAT
+FOLLOWS, a principle in his words: there is rx that can MATCH and rx that can FILTER, and neither is wholly a
+subset of the other. THE MANAGER'S ILLUSTRATION (mine): filter-only: a complement; match-only: a pattern with an
+outward-looking edge assertion (`/\b\d+\b/`, refused as a filter operand by operand-context); both: `/\d+/`. The
+next revision states the two kinds once and gives each position (an `&` operand, a sequence operand, a hole, an
+`occurrences` argument, the program itself) the kind it needs.
