@@ -3790,3 +3790,18 @@ THE MANAGER'S NOTE (mine, for the next revision to run): with a bare PATTERN as 
 when-peek), `when(NOT x, z)` needs NOT of a pattern in a test position, which by complement-place is a filter-only
 value and by when-peek's reading would have to be a negative peek; the forms `when(NOT peek(x), z)` and a
 condition under NOT are clear; the bare-pattern case is to be stated or asked.
+
+**2026-11-18 OWNER PROPOSAL — arrays are written with `|` only, not with `[ , ]` (Frank, to session 139,
+afternoon; a PROPOSAL in his word, nothing ruled).** HIS WORDS: "Predicate proposal: arrays are defined using |
+form only and not [,,] form. It's consistent and unifies syntax". RECORD: PROPOSAL: the user writes an array as an
+alternation (`2 | 4`), and the bracketed list form (`[2, 4]`) is dropped. His reason: it is consistent and unifies
+the syntax. It follows the same day's array-lift ruling ("arrays are alternations") and the earlier "a constant is
+an rx where the count of the enumeration is 1". THE MANAGER'S ASSESSMENT (in the session; his to weigh): in
+favour: one notion instead of two (array-lift becomes ordinary algebra over `|`; a membership test reads `(h: 2 |
+4)`); the word "array" is left to the MATCH-TIME list of a label's values per pass, which he ruled "its own
+type", ending the collision review r43 found between the two; `[ ]` keeps only the part-label form, the index and
+the regex class. To settle with it: the EMPTY array has no `|` spelling (the draft writes `[]` in 10 places; the
+natural reading is the never-matching alternation); precedence (`|` binds loosest, so `(2 | 4) + 1` needs its
+parentheses and `2 | 4 + 1` is `2 | 5`); long lists (the draft binds 12 bracketed lists, among them the month and
+day names and the alphabets, where `"Jan" | "Feb" | ...` is the same length); 4 nested bracket forms to read
+case by case. Counts by grep on revision 26 (`grep -c -E ':= *\[[^]=]*,'` = 12; `'\[\]'` = 10; `'\[ *\['` = 4).
