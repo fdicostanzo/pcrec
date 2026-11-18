@@ -471,3 +471,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-17 299d43c27 none — lane archtiers: architecture document in five tiers (docs, skills)
 - 2026-11-17 b8dac2188 none — review r42 filed (predicates_draft.md rev 24.2), critic-skill process changes (docs)
 - 2026-11-17 6a9a1afe7 none — predicates_draft.md rev 24.3 (review r42 fixes) (docs)
+- 2026-11-17 0cf299152 none — predicates_draft.md rev 24.4 (one label rule; the evening's rulings) (docs)
