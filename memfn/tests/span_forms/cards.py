@@ -9,7 +9,8 @@
 # r41's L9, L5, L6: the layout pools replace the twins, the strict arguments and the keyed G2 record;
 # lane formsfixl, review r44's A-L: the variant x regime interaction void, the per-head layout floor,
 # the pool refusal's 32-B half, the confirm's rounds, a fresh run id, the compiler-keyed exe cache,
-# K6's placed win, the power line's bracket, the checked power pins, the fixed axes named).
+# K6's placed win, the power line's bracket, the checked power pins, the fixed axes named; lane formsfixm,
+# review r45's FORMS8-1..5: the interaction test per text, winsorized, the POOL_SIZE refusal, the docs).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
 identity check (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
@@ -61,7 +62,8 @@ THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR o
                            11's rows (r39: per-exe offsets, reading B's power, R0 over the
                            confirm, one owed list) and rev 12's (r41: the layout pools under
                            each layout model, GAP_K under layout bimodality, the power rows;
-                           r44: the interaction and noisy-loser drills, each with its control);
+                           r44: the interaction and noisy-loser drills, each with its control;
+                           r45: heterogeneous noise under layout, the POOL_SIZE refusal);
                            --rev11 / --rev12 run those rows alone
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
