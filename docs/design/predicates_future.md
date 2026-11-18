@@ -575,3 +575,20 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   (COND-FAMILY.md, 2026-11-17); revision 25.1's hole-position table (R.1.14).
 - SOURCE: COND-FAMILY.md, "OWNER RULING — product-order", 2026-11-18. TRIGGER: the next revision's hole-position
   table (it must say which positions take an implicit product), or the first library needing a product of parts.
+
+## 28. A count given as a filter over all numbers ("even numbers through modulus")
+
+- WHAT (the owner, 2026-11-18, ruling that a count hole must have values that produce counts): "Interesting is
+  the concept of say, "even numbers through modulus". Under that interpretation, the set of numbers used is the
+  set of all numbers filtered by the argument". An IDEA, not a ruling.
+- THE MANAGER'S READING (mine, unchecked): where a count is expected, the user gives a CONDITION on a number
+  instead of a number or an array of numbers; the counts used are all the numbers the condition accepts. "An even
+  number of digits" would be the regex `(?:\d\d)*`; in general the set is infinite, so it cannot be a product of
+  copies and needs its own lowering (a period and a remainder for a modulus; a range for a comparison).
+- QUESTIONS IT RAISES (none asked yet): which conditions are allowed (a modulus and comparisons lower to regex;
+  an arbitrary condition does not); how it meets lazy and possessive repeats; whether a finite array is then just
+  the filter "is one of these".
+- MEETS: the count ruling and the one `repeat` construct (COND-FAMILY.md, 2026-11-17); item 26 (a condition with
+  a parameter); item 27 (operations over arrays).
+- SOURCE: COND-FAMILY.md, "OWNER on value-is-pattern", 2026-11-18. TRIGGER: the rx module's `repeat` being
+  designed past a number and an array, or a user asking for a parity or step count.

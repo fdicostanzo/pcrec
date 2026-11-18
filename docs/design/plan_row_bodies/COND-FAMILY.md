@@ -3234,3 +3234,32 @@ the piece holding the hole. THE MANAGER'S READINGS (mine, to be checked by the n
 removed the program can never match, and the can-never-match warning reports it; "legal" is judged by this
 language's rules (ruled the same morning); the rule is the count hole's own (each hole position has its own
 rules).
+
+**2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea (Frank, to session 139, morning).** ASKED
+(the /q presentation of revision 25.1's section R.8 row in three cases: 1 adding to an array of numbers, `n + 1`
+with n := [2, 4]; 2 a non-number in a count hole, `/\d{${n}}/` with n := ["2", "x"]; 3 a matched value in a
+pattern position, `/(?<y>\d{4})-${$y + 1}/`, hand-worked). HIS WORDS, in full: "value-is-pattern:
+In general, I did not anticipate these ideas and took the conservative route that eg repeat took a single decimal.
+If we are saying that alternation arrays create alteration patterns via counts, then some of these follow.
+1. I like these sort of things. What is needed is a consistent, general rule about it and not something specific
+to adding to arrays for example. What happens to array + array ?
+2. for sanity sake, a count whole must have values that produce counts (and not convert to rx)
+Interesting is the concept of say, "even numbers through modulus". Under that interpretation, the set of numbers
+used is the set of all numbers filtered by the argument
+3.  I didn't even think this was legal. I love it if it works. It needs to be fleshed out"
+RECORD, by part ("alteration" and "whole" are read as "alternation" and "hole", phone autocorrections).
+(0) OBSERVATION: he had not anticipated these forms; his own picture was the conservative one (a repeat takes a
+single decimal number); given that arrays of counts make alternation patterns, "some of these follow".
+(1) LEAN, not a ruling: he likes arithmetic over arrays, ON CONDITION of "a consistent, general rule about it and
+not something specific to adding to arrays". He asks what array + array gives. The manager's proposed general rule
+is put to him as **array-lift** (below in the session); nothing is ruled until he answers it.
+(2) RULED: a count hole must have values that PRODUCE COUNTS; a value there is never converted to rx text. THE
+MANAGER'S READING: a member that is not a count is a COMPILE ERROR (his "must"), neither removed silently nor kept
+as PCRE's literal text. AN IDEA beside it, not ruled ("Interesting is the concept"): a count given as a FILTER
+over all numbers ("even numbers through modulus": the set of counts used is the set of all numbers that pass the
+argument); filed as docs/design/predicates_future.md item 28.
+(3) LEAN, not a ruling: a matched value in a pattern position (the generalized backreference `${$y + 1}`): "I
+didn't even think this was legal. I love it if it works. It needs to be fleshed out". So it is NOT settled as
+legal: the next revision FLESHES IT OUT (what text the value becomes, numerals and width, an unset label, loops and
+hit lists, every mode, what an engine must do at match time, a libpcre2 control where one can be built) and brings
+it back to him. The eleven uses in the draft are marked as resting on an unruled form until then.
