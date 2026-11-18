@@ -2421,6 +2421,9 @@ else
     fail "config --memfn= did not win silently (rc $wrc)" "$werr"
 fi
 
+# [MEMFN] R-45 (review r36 G10): the span-head lever's strict value-parse rows live in
+# tests/compound/run_shell_checks.sh (4) (the lever fence allows its spelling only there).
+
 # D172 S3 (job 600): `(?i)cat` is a fixed-width window, a `cover` artifact by
 # default, which carries no reqrun helper at all; every compile in this block
 # therefore carries the cover row's deny `--memfn=no-window-search` (folded into the

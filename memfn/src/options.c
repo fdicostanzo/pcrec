@@ -49,38 +49,56 @@ static int opt_refuse(char *err, size_t n, const char *why, const char *tok,
     return -1;
 }
 
+/* THE ONE TOKENIZER of a `--memfn=` string (review r35 F29): the token at
+ * *p, its length in *len, *p moved past its comma (NULL after the last
+ * token); NULL once *p is NULL. Every reader of the string walks it here. */
+static const char *opt_next(const char **p, size_t *len)
+{
+    const char *t = *p;
+    if (!t) return NULL;
+    const char *end = strchr(t, ',');
+    *len = end ? (size_t)(end - t) : strlen(t);
+    *p = end ? end + 1 : NULL;
+    return t;
+}
+
 int mf_opts_check(const char *str, char *err, size_t n)
 {
     if (err && n) err[0] = '\0';
     if (!str || !*str) return 0;
-    for (const char *p = str;;) {
-        const char *end = strchr(p, ',');
-        size_t len = end ? (size_t)(end - p) : strlen(p);
+    size_t len;
+    for (const char *p = str, *t; (t = opt_next(&p, &len));) {
         if (len == 0)
             return opt_refuse(err, n, "empty option in", str, strlen(str));
-        int deny = len > 3 && memcmp(p, "no-", 3) == 0;
-        const mf_option *o = deny ? opt_find(p + 3, len - 3) : opt_find(p, len);
+        int deny = len > 3 && memcmp(t, "no-", 3) == 0;
+        const mf_option *o = deny ? opt_find(t + 3, len - 3) : opt_find(t, len);
         if (!o)
-            return opt_refuse(err, n, "unknown option", p, len);
+            return opt_refuse(err, n, "unknown option", t, len);
         if (!deny && o->kind != MF_OPT_PAIR)
             return opt_refuse(err, n, "option can only be denied (no-NAME):",
-                              p, len);
-        if (!end) return 0;
-        p = end + 1;
+                              t, len);
     }
+    return 0;
+}
+
+/* 1 iff `--memfn=` string `opts` holds exactly the token `prefix``name`. */
+static int opt_has(const char *opts, const char *prefix, const char *name)
+{
+    size_t pl = strlen(prefix), nl = strlen(name), len;
+    for (const char *p = opts, *t; (t = opt_next(&p, &len));)
+        if (len == pl + nl && memcmp(t, prefix, pl) == 0 && memcmp(t + pl, name, nl) == 0)
+            return 1;
+    return 0;
 }
 
 int kit_opt_denied(const char *opts, const char *name)
 {
+    return opts && name && opt_has(opts, "no-", name);
+}
+
+int kit_opt_state(const char *opts, const char *name)
+{
     if (!opts || !name) return 0;
-    size_t nl = strlen(name);
-    for (const char *p = opts; *p;) {
-        const char *end = strchr(p, ',');
-        size_t len = end ? (size_t)(end - p) : strlen(p);
-        if (len == nl + 3 && memcmp(p, "no-", 3) == 0 && memcmp(p + 3, name, nl) == 0)
-            return 1;
-        if (!end) break;
-        p = end + 1;
-    }
-    return 0;
+    if (opt_has(opts, "no-", name)) return -1;
+    return opt_has(opts, "", name);
 }

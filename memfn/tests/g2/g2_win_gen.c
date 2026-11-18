@@ -28,7 +28,11 @@
  *
  *   g2_win_gen SEED NSITES OUTDIR   (env G2W_S3_SITES: the dense sites, 400;
  *                                    G2W_C1_SITES: the caseless sites, 300;
- *                                    G2W_R2_SITES: the two-byte sites, 300)
+ *                                    G2W_R2_SITES: the two-byte sites, 300;
+ *                                    the span forms' streams: G2W_RC_SITES,
+ *                                    G2W_ST_SITES, G2W_WR_SITES; G2W_SPAN_HEAD=N
+ *                                    the lever on every art; G2W_FORMS_ONLY=1
+ *                                    those streams and the long rows alone)
  */
 #include <stdarg.h>
 #include <stddef.h>
@@ -38,6 +42,18 @@
 
 #include "memfn.h"
 #include "g2_win.h"
+
+/* positions per span G2 states: r45_reply's 128, or the kit's span bound
+ * where that is less (32 before the [COVER-CAP] stage 2 raise). DERIVED, so a
+ * tree carrying the raise runs the promised value with no edit (lane
+ * formsfixb ruling R1); printed in the runtime record (`g2_win_gen: twins`). */
+#define G2W_MAXPOS  (MF_WSPAN_POS < 128 ? MF_WSPAN_POS : 128)
+
+/* The twins held to the kit's own bounds (g2_win.h; review r35 F12): a twin
+ * past its bound would state what the kit refuses. */
+_Static_assert(G2W_MAXPOS <= MF_WSPAN_POS, "G2W_MAXPOS is past the kit's span (MF_WSPAN_POS)");
+_Static_assert(G2W_REACH <= MF_WREACH, "G2W_REACH is past the kit's reach (MF_WREACH)");
+_Static_assert(G2W_LO == -MF_MAX_BACK, "G2W_LO is not the kit's least offset (-MF_MAX_BACK)");
 
 /* ---- text ------------------------------------------------------------------- */
 
@@ -155,11 +171,16 @@ static int class_same(const mf_class *a, const mf_class *b)
 /* Every art G2 begins states its target (unit U2): the portable one unless a
  * caller wants SIMD (g2_gen's odd batches state the host's own): an unstated
  * art is refused at its first define. */
+/* R-45: the lever every art takes (`span-head=N`, from G2W_SPAN_HEAD), or
+ * empty */
+static char g_span_lever[32];
+
 static mf_art *g2_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
                             const mf_measures *ms, const mf_analysis *an)
 {
     mf_art *art = mf_art_begin(a, prefix, denies, ms, an);
     if (art && mf_art_target(art, mf_portable_target())) return NULL;
+    if (art && g_span_lever[0] && mf_lever(art, g_span_lever)) return NULL;
     return art;
 }
 
@@ -203,7 +224,8 @@ static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
  * stream of their own, so every site the space generated before S3 is
  * generated unchanged (S2's floors were measured on it). */
 static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull,
-                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull, rng7 = 0x3822E3ull;
+                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull, rng7 = 0x3822E3ull,
+                          rng8 = 0x5A45F0125ull, rng9 = 0x57AD1E35ull, rng10 = 0x3E9A12BEull;
 static unsigned long long *rngp = &rng;
 static int s3_dense;                    /* generating S3's dense sites */
 /* THE CASELESS SITES (code review r1 C1/C13, after the dense ones, from a
@@ -240,6 +262,41 @@ static int h2_below;
  * narrowed to a member, so the run decision over the meet differs from one
  * over R's own sets). */
 static int k3_inrun;
+/* THE REPEATED-CLASS SITES (R-45 r45_reply rev 6 §3 "Answers, controlled by
+ * G2"; after the in-run ones, from a stream of their own): a REPORT window
+ * whose positions carry ONE multi-member set (three or four of the subject
+ * alphabet's bytes, the span forms' kind 2) over a stretch of h - 1 .. h + 3
+ * positions for a finite grid head h (RC_HEADS, the cards' grid less 0),
+ * stated as consecutive spans of RC_CHUNK positions (a loop runs across span
+ * boundaries), one in four with a lone position of another set inside or
+ * after it, so the stretch straddles every finite grid head. One in three
+ * is MIXED (review r35 F16): a second WIDE class takes the stretch from
+ * h + 1 or h + 2 on, so at head h a loop meets the boundary of two sets.
+ * Under the lever G2W_SPAN_HEAD=N every art renders H(N), and the loops are
+ * counted per family (K35). */
+static int rc_rep;
+static const int RC_HEADS[] = { 1, 2, 4, 8, 16, 24, 32, 64 };
+#define NRC_HEADS (sizeof RC_HEADS / sizeof RC_HEADS[0])
+enum { RC_CHUNK = 32 };     /* stated span length: a loop crosses span boundaries */
+/* THE STRADDLE SITES (r45_reply rev 6 §3, "The other families"; review r35
+ * F12/F13; after the repeated-class ones, from a stream of their own): every
+ * family's own facts (gen_facts), each alternative given a one-class stretch
+ * from offset 0..2 to h + 1 .. h + 4 for a finite grid head h, family and
+ * head taken in turn, so that every (family, head) pair has sites whose text
+ * loops past the head (the counted line, K35). */
+static int st_rep;
+/* THE WIDE REPORT SITES (r45_reply rev 6 §3: FAM_REPORT draws k in
+ * 1 .. 128, its G2W_MAXPOS; review r35 F12; from a stream of their own, so
+ * the REPORT sites before them keep their draws): REPORT windows of a random
+ * stretch of up to WR_MAXK positions, stated as spans of G2W_MAXPOS (the
+ * kit's span bound until its raise, g2_win.h). */
+static int wr_rep;
+static int g_wr_k;                       /* the stretch the wide REPORT site drew */
+static long wr_rendered, wr_past64;      /* the wide REPORT stream's own population (K35, r36 G9) */
+enum { WR_MAXK = 128 };     /* r45_reply's G2W_MAXPOS: stated as spans of G2W_MAXPOS */
+/* The stretch the site's generator stated (g2_win.h g2w_site.st_*), and
+ * whether it is mixed; reset per site. */
+static int g_st_lo, g_st_mid, g_st_end, g_mixed;
 static const uint8_t TWOB[] = { 'a', 'b', 'c', '0', '1', '\n', 'x', 0xC4 };
 #define NTWOB (sizeof TWOB / sizeof TWOB[0])
 static unsigned rnd(unsigned n)
@@ -413,6 +470,80 @@ static void inrun_alt(galt *a)
     }
 }
 
+/* A WIDE class (the span forms' kind 2): three or four distinct bytes of
+ * the subject alphabet, other than `not` where given. */
+static void wide_class(uint8_t cls[32], const uint8_t *not)
+{
+    do {
+        memset(cls, 0, 32);
+        for (unsigned m = 3 + rnd(2), i = 0; i < m;) {
+            int b = ALPHA[rnd(NALPHA)];
+            if (!(cls[b >> 3] >> (b & 7) & 1)) { set_add(cls, b); i++; }
+        }
+    } while (not && !memcmp(cls, not, 32));
+}
+
+/* Appends to `a` the stretch [lo, end) of verify-YES core positions, class
+ * `ca` below `mid` and `cb` from it, as spans of RC_CHUNK positions, and
+ * records it (g_st_*). */
+static void stretch(galt *a, int lo, int mid, int end, const uint8_t ca[32], const uint8_t cb[32])
+{
+    for (int start = lo; start < end && a->nspan < G2W_MAXSPAN - 1;) {
+        gspan *sp = &a->span[a->nspan++];
+        memset(sp, 0, sizeof *sp);
+        sp->start = start;
+        sp->len = end - start > RC_CHUNK ? RC_CHUNK : end - start;
+        sp->verify = G2W_YES;
+        sp->core_lo = 0;
+        sp->core_len = sp->len;
+        for (int j = 0; j < sp->len; j++) memcpy(sp->set[j], start + j < mid ? ca : cb, 32);
+        start += sp->len;
+    }
+    g_st_lo = lo;
+    g_st_mid = mid;
+    g_st_end = end;
+}
+
+/* A repeated-class site's alternative (rc_rep, above). */
+static void rc_alt(galt *a)
+{
+    int h = RC_HEADS[rnd(NRC_HEADS)];
+    uint8_t ca[32], cb[32];
+    wide_class(ca, NULL);
+    int k;
+    if (rnd(3) == 0) {      /* MIXED: a second class from h + 1 or h + 2 */
+        wide_class(cb, ca);
+        int mid = h + 1 + (int)rnd(2);
+        k = mid + 2 + (int)rnd(3);
+        stretch(a, 0, mid, k, ca, cb);
+        g_mixed = 1;
+    } else {
+        k = h - 1 + (int)rnd(5);
+        if (k < 2) k = 2;
+        stretch(a, 0, k, k, ca, ca);
+    }
+    if (rnd(4) == 0) {      /* a lone position of another set, inside or just after */
+        gspan *q = &a->span[a->nspan++];
+        memset(q, 0, sizeof *q);
+        q->start = (int)rnd((unsigned)k + 1);
+        q->len = 1;
+        q->verify = G2W_YES;
+        q->core_lo = 0;
+        q->core_len = 1;
+        set_add(q->set[0], ALPHA[rnd(NALPHA)]);
+    }
+}
+
+/* A straddle site's stretch (st_rep, above) for head `h`, on every
+ * alternative of `x` (one class, so whichever the decision takes loops). */
+static void straddle(gfacts *x, int h)
+{
+    uint8_t ca[32];
+    wide_class(ca, NULL);
+    int lo = (int)rnd((unsigned)(h < 3 ? h : 3)), end = h + 1 + (int)rnd(4);
+    for (int ai = 0; ai < x->nalt; ai++) stretch(&x->alt[ai], lo, end, end, ca, ca);
+}
+
 static void gen_facts(int fam, gfacts *x)
 {
     memset(x, 0, sizeof *x);
@@ -475,10 +606,19 @@ static void gen_facts(int fam, gfacts *x)
     case FAM_REPORT: {
         galt *a = &x->alt[0];
         a->entry = G2W_E_NONE;
-        int k = c1_caseless ? 2 + (int)rnd(7) : r2_two ? 1 + (int)rnd(8) : 1 + (int)rnd(5);
-        rand_span(&a->span[a->nspan++], 0, k, G2W_YES, 0);
-        a->span[0].core_lo = 0;
-        a->span[0].core_len = k;
+        if (rc_rep) {
+            rc_alt(a);
+            break;
+        }
+        int k = c1_caseless ? 2 + (int)rnd(7) : r2_two ? 1 + (int)rnd(8)
+              : wr_rep ? 1 + (int)rnd(WR_MAXK) : 1 + (int)rnd(5);
+        g_wr_k = k;
+        for (int start = 0; start < k; start += G2W_MAXPOS) {   /* one span but on the wide sites */
+            gspan *sp = &a->span[a->nspan++];
+            rand_span(sp, start, k - start > G2W_MAXPOS ? G2W_MAXPOS : k - start, G2W_YES, 0);
+            sp->core_lo = 0;
+            sp->core_len = sp->len;
+        }
         if (c1_caseless) {  /* every position a cube, or (mixed) three in four */
             x->assign = 1;
             int mixed = (int)rnd(2);
@@ -689,13 +829,18 @@ static int hy_of(const galt *a)
 
 /* ---- the hooks ------------------------------------------------------------------- */
 
-typedef struct { int id; char names[8][48]; int nn; } hctx;
+/* The names the hooks hand out, each kept for the site's whole render (the
+ * kit may hold one across later hook calls): a ring of HNAMES, more than a
+ * site of WR_MAXK offered positions asks (a ring of 8 handed a wide site's
+ * function the name of its ninth table, review r35 F12's wide sites). */
+enum { HNAMES = 512 };
+typedef struct { int id; char names[HNAMES][48]; int nn; } hctx;
 
 static const char *h_fn_name(void *u, uint32_t ref)
 {
     hctx *h = u;
     (void)ref;
-    char *p = h->names[h->nn++ % 8];
+    char *p = h->names[h->nn++ % HNAMES];
     snprintf(p, 48, "g2w_f%d", h->id);
     return p;
 }
@@ -703,7 +848,7 @@ static const char *h_fn_name(void *u, uint32_t ref)
 static const char *h_table_name(void *u, uint32_t ref)
 {
     hctx *h = u;
-    char *p = h->names[h->nn++ % 8];
+    char *p = h->names[h->nn++ % HNAMES];
     snprintf(p, 48, "g2w_t%d_%u", h->id, ref);
     return p;
 }
@@ -740,7 +885,7 @@ static mf_finder_listing g_rows;
    G2's decision `d` tests at `off` (its tset). Where spans overlap, the
    tested set is their meet, which an offering span's set need not equal:
    that offer is withheld (counted, `tn_meet`) and the position is OWN */
-static uint32_t offer_at(const g2w_site *x, const g2w_dec *d, int alt, int off)
+static uint32_t offer_of(const g2w_site *x, const g2w_dec *d, int alt, int off, long *withheld)
 {
     const g2w_alt *a = &x->alt[alt];
     const uint8_t *ts = NULL;
@@ -750,9 +895,14 @@ static uint32_t offer_at(const g2w_site *x, const g2w_dec *d, int alt, int off)
         const g2w_span *g = &a->span[i];
         if (off < g->start || off >= g->start + g->len || !g->table[off - g->start]) continue;
         if (ts && !memcmp(g->set[off - g->start], ts, 32)) return g->table[off - g->start];
-        tn_meet++;
+        if (withheld) (*withheld)++;
     }
     return 0;
+}
+
+static uint32_t offer_at(const g2w_site *x, const g2w_dec *d, int alt, int off)
+{
+    return offer_of(x, d, alt, off, &tn_meet);
 }
 
 static int marker_read(int id, uint32_t ref, const char *t, const char *ft)
@@ -983,6 +1133,26 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
     return 0;
 }
 
+/* THE LEVER'S STRICT VALUE PARSE (review r36 G10), mf_lever's own (the CLI's rows are
+ * tests/compound/run_shell_checks.sh section (4)): `span-head=N` is plain decimal digits, 0..MF_SPAN_HEAD_MAX;
+ * a sign, a space, an empty value, a trailing byte and one past the top are refused. */
+static long lever_ok, lever_n;          /* counted APART (r37 H6): the call's deletion reads 0 of 8 */
+static void lever_controls(long *ok)
+{
+    static const struct { const char *name; int refused; } c[] = {
+        { "span-head=-0", 1 }, { "span-head=+8", 1 }, { "span-head= 8", 1 }, { "span-head=4096", 1 },
+        { "span-head=", 1 }, { "span-head=8x", 1 }, { "span-head=08", 0 }, { "span-head=4095", 0 },
+    };
+    lever_n = (long)(sizeof c / sizeof c[0]);
+    for (unsigned i = 0; i < sizeof c / sizeof c[0]; i++) {
+        mf_art *art = mf_art_begin(&g_arena, "g2wl", 0, NULL, NULL);
+        if (!art || mf_art_target(art, mf_portable_target())) { fail(-1, "lever control", "no art"); continue; }
+        int rc = mf_lever(art, c[i].name);
+        if (!!rc != c[i].refused) fail(-1, "lever control", c[i].name);
+        else { (*ok)++; lever_ok++; }
+    }
+}
+
 static void s3_controls(long *ok)
 {
     const char *fid = "";
@@ -1024,6 +1194,289 @@ static void emit_set(buf *b, const uint8_t s[32])
     bputs(b, "}");
 }
 
+/* ---- THE SPAN FORMS' LOOPS (R-45 r45_reply rev 6 §3 "The forms"; review r35
+ * F14, F16, F17) ------------------------------------------------------------------ */
+
+enum { MAXLOOP = 96 };
+static int g_head = -1;                 /* the pass's lever head; -1 the default */
+/* The SHIPPED head, a G2 LITERAL (review r36 G1; never read from window.c): the default
+ * pass's loops are pinned (exactly, and none below it) at this head, so a wrong shipped
+ * constant is red here. */
+enum { G2W_SHIPPED_HEAD = 64 };
+static int pin_head(void) { return g_head < 0 ? G2W_SHIPPED_HEAD : g_head; }
+static long pin_sites, pin_loops, mixed_sites, mixed_looped, legit_loops;
+
+/* The loops text `t` renders (wf_loop's `size_t <J> = LO; for (; <J> < END;`):
+ * appends their [lo, end) to lo[]/end[] from *n (at most MAXLOOP); 0, or -1
+ * where a loop head does not read so (the text's shape moved: a FAIL). */
+static int parse_loops(const char *t, int *lo, int *end, int *n)
+{
+    for (const char *p = t; (p = strstr(p, "_j = "));) {
+        int a, b, used = 0;
+        if (sscanf(p, "_j = %d; for (; %n", &a, &used) != 1 || !used) return -1;
+        const char *q = strstr(p + used, "_j < ");
+        if (!q || sscanf(q, "_j < %d;", &b) != 1) return -1;
+        if (*n < MAXLOOP) { lo[*n] = a; end[*n] = b; }
+        ++*n;
+        p = q;
+    }
+    return 0;
+}
+
+static int count_of(const char *t, const char *w)
+{
+    int k = 0;
+    for (const char *p = t; (p = strstr(p, w)); p += strlen(w)) k++;
+    return k;
+}
+
+/* G2's own reading of kind 2 (r45_reply §3 "The forms"): a set no run
+ * compare (kind 1, one member or a one-bit cube) can take: three or more
+ * members, two that are no cube, or none (an empty meet: its loop, like its
+ * lone test, never holds). */
+static int wide_set(const uint8_t s[32])
+{
+    int m[3], k = 0;
+    for (int b = 0; b < 256 && k < 3; b++) if (s[b >> 3] >> (b & 7) & 1) m[k++] = b;
+    return k != 1 && !(k == 2 && __builtin_popcount((unsigned)(m[0] ^ m[1])) == 1);
+}
+
+/* One tested entry as the forms read it. */
+typedef struct { int off, core; const uint8_t *set; uint32_t offer; } ent;
+
+/* THE LOOPS THE TEXT MUST RENDER at head `h` over entries e[0..n) (ascending
+ * offsets; the entry at offset `skip` excluded, INT32_MIN: none): every
+ * maximal stretch of two or more entries at consecutive offsets, each at or
+ * past h, core, WIDE, one set and one offer, is ONE loop; anything else is a
+ * lone test. Writes [lo, end) pairs; their count. */
+static int expect_loops(const ent *e, int n, int skip, int h, int *lo, int *end)
+{
+    int m = 0;
+    for (int i = 0; i < n;) {
+        if (e[i].off < h || e[i].off == skip || !e[i].core || !wide_set(e[i].set)) { i++; continue; }
+        int j = i + 1;
+        while (j < n && e[j].off != skip && e[j].off == e[j - 1].off + 1 && e[j].core &&
+               !memcmp(e[j].set, e[i].set, 32) && e[j].offer == e[i].offer)
+            j++;
+        if (j - i >= 2 && m < MAXLOOP) { lo[m] = e[i].off; end[m] = e[j - 1].off + 1; m++; }
+        i = j - i >= 2 ? j : i + 1;
+    }
+    return m;
+}
+
+static void sort_pairs(int *lo, int *end, int n)
+{
+    for (int i = 1; i < n; i++)
+        for (int j = i; j > 0 && lo[j - 1] > lo[j]; j--) {
+            int t = lo[j]; lo[j] = lo[j - 1]; lo[j - 1] = t;
+            t = end[j]; end[j] = end[j - 1]; end[j - 1] = t;
+        }
+}
+
+/* Site `id`'s loops against G2's own reading. Every loop: at or past the
+ * head (where the pass names one), over consecutive TESTED entries (G2's
+ * decision `d`: the plan and the stop) that are core and carry one WIDE set
+ * and one offer (`ok`: a loop over anything else tests a byte against the
+ * wrong set, S3277's class). Where `pin` (the form's skipped entry is known:
+ * `skip`), the loops are EXACTLY G2's expectation, start and end (F14, F17:
+ * a loop starting late, ending short or missing is red at the text). */
+static void loops_check(int id, const g2w_site *x, const g2w_dec *d, const char *t, const char *ft,
+                        int h, int pin, int skip)
+{
+    int lo[MAXLOOP], end[MAXLOOP], n = 0;
+    char m[200];
+    if (parse_loops(t, lo, end, &n) || parse_loops(ft, lo, end, &n) || n > MAXLOOP) {
+        fail(id, "span loop", "a loop's head does not read `<J> = LO; for (; <J> < END;`");
+        return;
+    }
+    if (n != count_of(t, "_j == ") + count_of(ft, "_j == ")) {
+        fail(id, "span loop", "the loop heads and their tails `<J> == END` disagree");
+        return;
+    }
+    static ent e[G2W_NOFF + 1];
+    int ne = 0;
+    for (int k = 0; k < d->ntest; k++) {
+        int tested = d->has_stop && d->toff[k] == d->stop;
+        for (int i = 0; i < d->nplan && !tested; i++) tested = d->plan[i] == d->toff[k];
+        if (!tested) continue;      /* a bound-only position: C-bound's, never an entry */
+        e[ne++] = (ent){ d->toff[k], d->tcore[k], d->tset[k], offer_of(x, d, d->alt, d->toff[k], NULL) };
+    }
+    sort_pairs(lo, end, n);
+    for (int l = 0; l < n; l++) {
+        if (h >= 0 && lo[l] < h) {
+            snprintf(m, sizeof m, "a loop from offset %d, below the head %d", lo[l], h);
+            fail(id, "span loop", m);
+            return;
+        }
+        int i = 0;
+        while (i < ne && e[i].off != lo[l]) i++;
+        int ok = end[l] - lo[l] >= 2 && i + (end[l] - lo[l]) <= ne;
+        for (int j = i; ok && j < i + (end[l] - lo[l]); j++)
+            ok = e[j].off == lo[l] + (j - i) && e[j].core && wide_set(e[j].set) &&
+                 !memcmp(e[j].set, e[i].set, 32) && e[j].offer == e[i].offer;
+        if (!ok) {
+            snprintf(m, sizeof m, "the loop [%d, %d) is not one WIDE core set over tested entries", lo[l], end[l]);
+            fail(id, "span loop", m);
+            return;
+        }
+        legit_loops++;
+    }
+    if (!pin || h < 0) return;
+    int xlo[MAXLOOP], xend[MAXLOOP];
+    int xn = expect_loops(e, ne, skip, h, xlo, xend);
+    int same = xn == n;
+    for (int l = 0; same && l < n; l++) same = xlo[l] == lo[l] && xend[l] == end[l];
+    if (!same) {
+        int w = snprintf(m, sizeof m, "head %d: loops", h);
+        for (int l = 0; l < n && w < 120; l++) w += snprintf(m + w, sizeof m - (size_t)w, " [%d,%d)", lo[l], end[l]);
+        w += snprintf(m + w, sizeof m - (size_t)w, "; G2's");
+        for (int l = 0; l < xn && w < 180; l++) w += snprintf(m + w, sizeof m - (size_t)w, " [%d,%d)", xlo[l], xend[l]);
+        fail(id, "span loop pin", m);
+        return;
+    }
+    pin_sites += xn > 0;
+    pin_loops += xn;
+}
+
+/* ---- THE LONG ROWS (r45_reply rev 6 §3 "Long cases"; review r35 F12, F15) ------- */
+
+/* k = 500 and the longest stretch one alternative states (g2_win.h: 1024
+ * here, 4095 from MF_WSPAN_POS's raise): a fixed handful each, not part of
+ * the random space. Each in two site kinds (a
+ * REPORT site, E-find's, and a DFA_SCAN one), one class or two (mixed from
+ * k / 2 + 1), and, in the default pass, three option states: the shipped
+ * head, the DENY `no-span-loop` (I: no loop anywhere, the deny's witness at
+ * a width past 64, F15) and the FORCE `span-loop` (L); in a head pass, the
+ * pass's head. */
+static const int LONG_K[] = { 500, G2W_MAXSPAN * G2W_MAXPOS < 4095 ? G2W_MAXSPAN * G2W_MAXPOS : 4095 };
+static const char *const LONG_A = "abc", *const LONG_B = "01x\n";
+static long long_rendered, long_deny, long_looped, long_pinned, long_pinned_def, long_pinned_force;
+
+static void long_rows(buf *defs, buf *ld, long *nl)
+{
+    static uint8_t lset[MF_WREACH][32];
+    _Static_assert(G2W_MAXSPAN <= MF_WMAX_SPAN, "G2W_MAXSPAN is past the kit's MF_WMAX_SPAN");
+    static uint32_t ltab[MF_WREACH];
+    static mf_wspan lsp[G2W_MAXSPAN];
+    static const char *const stn[3] = { "head", "deny", "force" };
+    int nstates = g_head < 0 ? 3 : 1;
+    for (unsigned ki = 0; ki < sizeof LONG_K / sizeof LONG_K[0]; ki++)
+        for (int rep = 0; rep < 2; rep++)
+            for (int mixed = 0; mixed < 2; mixed++)
+                for (int st = 0; st < nstates; st++) {
+                    int k = LONG_K[ki], mid = mixed ? k / 2 + 1 : k, id = 900000 + (int)*nl;
+                    uint8_t a[32] = { 0 }, b[32] = { 0 };
+                    for (const char *c = LONG_A; *c; c++) set_add(a, (unsigned char)*c);
+                    for (const char *c = LONG_B; *c; c++) set_add(b, (unsigned char)*c);
+                    memset(lset, 0, sizeof lset);
+                    for (int j = 0; j < k; j++) memcpy(lset[j], j < mid ? a : b, 32);
+                    mf_walt al;
+                    memset(&al, 0, sizeof al);
+                    al.entry = MF_ENTRY_NONE;
+                    for (int start = 0; start < k; start += G2W_MAXPOS) {
+                        mf_wspan *w = &lsp[al.nspan++];
+                        memset(w, 0, sizeof *w);
+                        w->start = start;
+                        w->len = (uint16_t)(k - start > G2W_MAXPOS ? G2W_MAXPOS : k - start);
+                        w->verify = MF_VERIFY_YES;
+                        w->core = MF_CORE_STATED;
+                        w->core_lo = 0;
+                        w->core_len = w->len;
+                        w->set = (const uint8_t (*)[32])lset[start];
+                        w->table_ref = ltab + start;
+                    }
+                    al.spans = lsp;
+                    mf_site s;
+                    memset(&s, 0, sizeof s);
+                    s.abi = MF_SITE_ABI;
+                    s.form = MF_FORM_STMT;
+                    s.op = MF_OP_FIND;
+                    s.handoff = MF_H_ASSIGN;
+                    s.empty = MF_EMPTY_MISS;
+                    s.use = MF_USE_POSITION;
+                    s.body = MF_BODY_ONESHOT;
+                    s.site_kind = rep ? MF_SK_REPORT : MF_SK_DFA_SCAN;
+                    s.span_hi = MF_SPAN_UNBOUNDED;
+                    s.opts = st == 1 ? "no-span-loop" : st == 2 ? "span-loop" : NULL;
+                    s.pred.fn_ref = 1;
+                    s.nalt = 1;
+                    s.alts = &al;
+                    s.wfloor = MF_WFLOOR_SUBJECT;
+                    char pfx[24];
+                    snprintf(pfx, sizeof pfx, "g2l%d", (int)*nl);
+                    mf_art *art = g2_art_begin(&g_arena, pfx, 0, NULL, NULL);
+                    mf_wreply r;
+                    if (!art || mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r, rows_for(&s, RW_NONE))) {
+                        fail(id, "long row: mf_wdecide refused", art ? mf_art_error(art) : NULL);
+                        continue;
+                    }
+                    hctx hc = { id, { { 0 } }, 0 };
+                    mf_hooks h;
+                    memset(&h, 0, sizeof h);
+                    h.s = "s"; h.n = "n"; h.lo = "lo"; h.result = "r"; h.miss = "((size_t)-1)";
+                    h.indent = "    ";
+                    h.fn_name = h_fn_name; h.table_name = h_table_name; h.u = &hc;
+                    buf body = { 0 }, file = { 0 };
+                    mf_sink sb = mk_sink(&body), sf = mk_sink(&file);
+                    mf_result res;
+                    memset(&res, 0, sizeof res);
+                    if (mf_emit(art, &s, &h, &sb, &sf, &res) || mf_art_end(art, NULL)) {
+                        fail(id, "long row: render refused", mf_art_error(art));
+                        free(body.p); free(file.p);
+                        continue;
+                    }
+                    long_rendered++;
+                    const char *t = body.p ? body.p : "", *ft = file.p ? file.p : "";
+                    int lo[MAXLOOP], end[MAXLOOP], n = 0;
+                    if (parse_loops(t, lo, end, &n) || parse_loops(ft, lo, end, &n) || n > MAXLOOP)
+                        fail(id, "long row", "a loop's head does not read `<J> = LO; for (; <J> < END;`");
+                    int hh = st == 2 ? 0 : st == 1 ? -1 : g_head;
+                    int hp = st == 2 ? 0 : st == 1 ? -1 : pin_head();   /* the checks' head: the shipped literal by default */
+                    if (st == 1) {
+                        if (n) fail(id, "long row", "the deny `no-span-loop` renders a loop (I has none)");
+                        else long_deny++;
+                    } else if (!n) {
+                        fail(id, "long row", "no loop past the head on a stretch of 500 or more positions");
+                    } else {
+                        long_looped++;
+                        sort_pairs(lo, end, n);
+                        if (hp >= 0 && lo[0] < hp) fail(id, "long row", "a loop below the head");
+                        /* the exact pin: entries 0..k-1, the stop skipped
+                           where C-stop dropped it from the plan (E-find) */
+                        int skip = INT32_MIN, inplan = 0;
+                        for (int i = 0; i < (int)r.nplan; i++) inplan |= r.plan[i] == r.stop;
+                        if (r.has_stop && !inplan && !strcmp(res.form_id, "window-search")) skip = r.stop;
+                        if (hp >= 0 && !strstr(ft, "_sh[256]") && !strstr(ft, "_ofsskip__body(")) {
+                            static ent e[MF_WREACH];
+                            for (int j = 0; j < k; j++) e[j] = (ent){ j, 1, lset[j], 0 };
+                            int xlo[MAXLOOP], xend[MAXLOOP];
+                            int xn = expect_loops(e, k, skip, hp, xlo, xend);
+                            int same = xn == n;
+                            for (int l = 0; same && l < n; l++) same = xlo[l] == lo[l] && xend[l] == end[l];
+                            char m[160];
+                            snprintf(m, sizeof m, "k %d mid %d head %d (%s): first loop [%d,%d), G2's [%d,%d), %d vs %d loops",
+                                     k, mid, hp, res.form_id, lo[0], end[0], xn ? xlo[0] : -1, xn ? xend[0] : -1, n, xn);
+                            if (!same) fail(id, "long row pin", m);
+                            else { long_pinned++; long_pinned_def += st == 0; long_pinned_force += st == 2; }
+                        }
+                    }
+                    bputs(defs, ft);
+                    bprintf(defs, "static size_t g2wl_call%ld(const unsigned char *s, size_t n, size_t lo, "
+                                  "size_t fl, int *wrote, int *missed)\n{\n    (void)fl; (void)s; (void)n;\n"
+                                  "    *missed = 0;\n    size_t r = G2W_UNWRITTEN;\n%s    *wrote = r != G2W_UNWRITTEN;\n"
+                                  "    return r;\n}\n\n", *nl, t);
+                    bprintf(ld, "    { \"long%d-%s-%s-%s\", %d, %d, %d, %d, %d, %d, ", k, rep ? "report" : "scan",
+                            mixed ? "mixed" : "one", stn[st], k, mid, hh, st, rep, r.has_stop ? r.stop : -1);
+                    emit_set(ld, a);
+                    bputs(ld, ", ");
+                    emit_set(ld, b);
+                    bprintf(ld, ", g2wl_call%ld },\n", *nl);
+                    ++*nl;
+                    free(body.p);
+                    free(file.p);
+                }
+}
+
 int main(int argc, char **argv)
 {
     if (argc != 4) { fprintf(stderr, "usage: g2_win_gen SEED NSITES OUTDIR\n"); return 2; }
@@ -1040,6 +1493,24 @@ int main(int argc, char **argv)
     int n6 = h2n ? atoi(h2n) : 100;
     const char *k3n = getenv("G2W_K3_SITES");
     int n7 = k3n ? atoi(k3n) : 200;
+    const char *rcn = getenv("G2W_RC_SITES");
+    int n8 = rcn ? atoi(rcn) : 150;
+    const char *stn = getenv("G2W_ST_SITES");
+    int n9 = stn ? atoi(stn) : 448;     /* ~7 per (family, head) pair, the pairs   */
+                                        /* the floors hold (224 left 2 at head 64) */
+    const char *wrn = getenv("G2W_WR_SITES");
+    int n10 = wrn ? atoi(wrn) : 60;
+    const char *shn = getenv("G2W_SPAN_HEAD");
+    if (shn && *shn) {
+        snprintf(g_span_lever, sizeof g_span_lever, "span-head=%s", shn);
+        g_head = atoi(shn);
+    }
+    /* the head passes (run_g2_win.sh): the span forms' streams and the long
+       rows alone, the S2..K3 populations (which state no stretch) left out */
+    const char *fo = getenv("G2W_FORMS_ONLY");
+    if (fo && *fo == '1') nsites = n3 = n4 = n5 = n6 = n7 = 0;
+    const int base8 = nsites + n3 + n4 + n5 + n6 + n7, ntotal = base8 + n8 + n9 + n10;
+    long loops[FAM_N + 1] = { 0 };      /* sites whose text loops, per family (+ the repeated-class) */
     long k3_lever = 0;
     long k3_rendered = 0, k3_agree = 0, k3_filt = 0;   /* in-run sites rendered; library stop == reference's; the in-run filter decides */
     buf defs = { 0 }, table = { 0 }, data = { 0 };
@@ -1076,11 +1547,12 @@ int main(int argc, char **argv)
         if (strcmp(res.form_id, "") == 0) fail(-1, "control", "a spans-only site named no form");
         else refused_ok++;
         s3_controls(&refused_ok);
+        lever_controls(&refused_ok);
     }
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                  "#include \"g2_win.h\"\n#define G2W_UNWRITTEN ((size_t)-2)\n\n");
-    for (int id = 0; id < nsites + n3 + n4 + n5 + n6 + n7; id++) {
+    for (int id = 0; id < ntotal; id++) {
         if (id == nsites) {             /* D172 S3's dense sites: their own stream */
             rngp = &rng3;
             s3_dense = 1;
@@ -1105,10 +1577,30 @@ int main(int argc, char **argv)
             h2_below = 0;
             k3_inrun = 1;
         }
-        int fam = k3_inrun ? FAM_MASS : s3_dense || c1_caseless || r2_two || h2_below ? FAM_REPORT
+        if (id == base8) {              /* the repeated-class sites: theirs */
+            rngp = &rng8;
+            k3_inrun = 0;
+            rc_rep = 1;
+        }
+        if (id == base8 + n8) {         /* the straddle sites: theirs */
+            rngp = &rng9;
+            rc_rep = 0;
+            st_rep = 1;
+        }
+        if (id == base8 + n8 + n9) {    /* the wide REPORT sites: theirs */
+            rngp = &rng10;
+            st_rep = 0;
+            wr_rep = 1;
+        }
+        int sti = id - base8 - n8;      /* a straddle site's family, then head, in turn */
+        int fam = st_rep ? sti % FAM_N
+                : k3_inrun ? FAM_MASS : s3_dense || c1_caseless || r2_two || h2_below || rc_rep || wr_rep ? FAM_REPORT
                 : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
         gfacts gf;
+        g_st_lo = g_st_mid = g_st_end = g_mixed = 0;
         gen_facts(fam, &gf);
+        if (st_rep) straddle(&gf, RC_HEADS[(sti / FAM_N) % (int)NRC_HEADS]);
+        mixed_sites += g_mixed;
         if (!k3_inrun) famn[fam]++;
         /* TWO SPANS OF R'S SHAPE in one alternative are REFUSED (F-8 ruling;
            wf_check): count it on a preview art, then state one R */
@@ -1387,6 +1879,26 @@ int main(int argc, char **argv)
             }
         }
         x.pair = strstr(body.p ? body.p : "", "_ha < ") || strstr(file.p ? file.p : "", "ha < pos");
+        /* a span form's loop (window.c wf_loop: `<J> == <end>; })`), counted
+           per family, the repeated-class sites apart (K35) */
+        if (strstr(body.p ? body.p : "", "_j == ") || strstr(file.p ? file.p : "", "_j == ")) {
+            loops[rc_rep ? FAM_N : fam]++;
+            mixed_looped += g_mixed;
+        }
+        if (wr_rep) { wr_rendered++; wr_past64 += g_wr_k > G2W_SHIPPED_HEAD; }
+        /* the loops against G2's own reading; pinned exactly where the
+           form's skipped entry is known (E-find: the stop C-stop dropped from
+           the plan; the floor: none; D-hors's probe and B-fn's function are
+           not read, their loops held by the reading alone) */
+        {
+            const char *t = body.p ? body.p : "", *ft = file.p ? file.p : "";
+            int efind = !strcmp(res.form_id, "window-search"), floor_ = !strcmp(res.form_id, "wf-floor");
+            int inplan = 0;
+            for (int i = 0; i < ref.nplan; i++) inplan |= ref.plan[i] == ref.stop;
+            int pin = (efind || floor_) && !strstr(ft, "_sh[256]") && !strstr(ft, "_ofsskip__body(");
+            int skip = efind && ref.has_stop && !inplan ? ref.stop : INT32_MIN;
+            loops_check(id, &x, &ref, t, ft, pin_head(), pin, skip);
+        }
         /* the define-time query agrees with a define over the SAME phases
            (§4.5 rule 2: mf_ask answers mf_define's selection, MF_PH_DEFINE;
            mf_emit's also reads the use hooks, so it may choose otherwise) */
@@ -1512,12 +2024,15 @@ int main(int argc, char **argv)
                 x.reply.stream, x.reply.fused);
         for (int i = 0; i < r.nplan; i++) bprintf(&data, "%s%d", i ? "," : "", x.reply.plan_test[i]);
         if (!r.nplan) bputs(&data, "0");
-        bprintf(&data, "}, %d }, %u, g2w_pv%d, \"%s\", \"%s\", %d, %d },\n", x.reply.stop_test, def.cls.proof_n, id,
-                res.form_id, res.row, x.pair, x.run_left);
+        bprintf(&data, "}, %d }, %u, g2w_pv%d, \"%s\", \"%s\", %d, %d, %d, %d, %d, %d },\n", x.reply.stop_test,
+                def.cls.proof_n, id, res.form_id, res.row, x.pair, x.run_left, g_head, g_st_lo, g_st_mid, g_st_end);
         bprintf(&table, "    g2w_call%d,\n", id);
         free(body.p);
         free(file.p);
     }
+    buf ldata = { 0 };
+    long nlong = 0;
+    long_rows(&defs, &ldata, &nlong);
     char path[4096];
     snprintf(path, sizeof path, "%s/g2w_sites.c", argv[3]);
     FILE *f = fopen(path, "w");
@@ -1526,11 +2041,14 @@ int main(int argc, char **argv)
     fprintf(f, "const g2w_site g2w_sites[] = {\n%s};\n", data.p ? data.p : "");
     fprintf(f, "const g2w_fn g2w_fns[] = {\n%s};\n", table.p ? table.p : "");
     fprintf(f, "const unsigned g2w_nsites = %ld;\n", rendered);
+    fprintf(f, "const g2w_long_site g2w_longs[] = {\n%s    { NULL, 0, 0, 0, 0, 0, 0, { 0 }, { 0 }, NULL }\n};\n",
+            ldata.p ? ldata.p : "");
+    fprintf(f, "const unsigned g2w_nlong = %ld;\n", nlong);
     fclose(f);
     printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d, "
            "below-window %d, in-run %d, %ld of them under run-tie-left); in-run rendered %ld, "
            "filter-decisive %ld, stop agreeing with the reference %ld; families:", rendered,
-           nsites + n3 + n4 + n5 + n6 + n7, n3, n4, n5, n6, n7, k3_lever, k3_rendered, k3_filt, k3_agree);
+           ntotal, n3, n4, n5, n6, n7, k3_lever, k3_rendered, k3_filt, k3_agree);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],
@@ -1546,6 +2064,17 @@ int main(int argc, char **argv)
            "table %ld own %ld noffer %ld meet %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld stop_run %ld\n", fc_fn,
            fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below,
            tn_stop_own, af_walk, af_other, tn_stop_run);
+    printf("g2_win_gen: twins maxpos=%d long=%d,%d reach=%d (MF_WSPAN_POS %d, MF_WMAX_SPAN %d)\n",
+           (int)G2W_MAXPOS, LONG_K[0], LONG_K[1], G2W_REACH, (int)MF_WSPAN_POS, (int)MF_WMAX_SPAN);
+    printf("g2_win_gen: loops head=%s", g_span_lever[0] ? g_span_lever + 10 : "default");
+    for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], loops[i]);
+    printf(" repeated=%ld (of %d repeated-class sites) mixed=%ld (of %ld mixed sites)\n", loops[FAM_N], n8,
+           mixed_looped, mixed_sites);
+    printf("g2_win_gen: span loops legit=%ld pinned_sites=%ld pinned_loops=%ld; long rendered=%ld looped=%ld "
+           "deny_witness=%ld pinned=%ld pinned_def=%ld pinned_force=%ld\n", legit_loops, pin_sites, pin_loops, long_rendered,
+           long_looped, long_deny, long_pinned, long_pinned_def, long_pinned_force);
+    printf("g2_win_gen: lever controls ok=%ld of %ld\n", lever_ok, lever_n);
+    printf("g2_win_gen: wide-report rendered=%ld past64=%ld\n", wr_rendered, wr_past64);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

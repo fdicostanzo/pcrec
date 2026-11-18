@@ -1207,7 +1207,14 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     if (!row) return -1;
     /* every refusal before the first write to `rows` (review r27 SEAM-1): the
        presence decision and the layout read no proof row, so they are held
-       on the class's verdict first; only then is the proof written */
+       on the class's verdict first; only then is the proof written.
+       UNREACHED today (review r28 R28-2, recorded by lane forms): kit_class
+       writes a proof only on a FIND site, fd_pres refuses only in its PRES
+       scope (an ALL_PRESENT site stating pspans, fd_scope) and the layout
+       check runs only with npspan, which site_check refuses on every
+       non-ALL_PRESENT site (kit_presence_check); so no site both writes a
+       proof and is refused after it. The order is kept for the day a
+       presence-stating FIND exists; a witness is owed then */
     const kit_proof_st verdict = { NULL, 0, NULL };
     if (kit_class(row, s, out, &verdict) ||
         fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ||
@@ -1623,11 +1630,39 @@ static const struct {
     { "mfind",        KIT_LEVER_MFIND },
 };
 
+/* THE VALUED LEVER (R-45 r45_reply rev 6 §3 "The head lever"): `span-head=N`,
+ * N in 0..MF_SPAN_HEAD_MAX decimal, sets the span forms' inline head h on
+ * the art (window.c wf_span_head), so the form cards time every H(h) on one
+ * binary. 1 iff `name` is that lever (*bad set where N is malformed). */
+static int lever_span_head(mf_art *art, const char *name, int *bad)
+{
+    const char *key = "span-head=";
+    size_t kl = strlen(key);
+    if (!name || strncmp(name, key, kl)) return 0;
+    const char *v = name + kl;
+    unsigned long n = 0;
+    *bad = !*v;
+    for (; *v && !*bad; v++) {
+        if (*v < '0' || *v > '9') *bad = 1;
+        else if ((n = n * 10 + (unsigned long)(*v - '0')) > MF_SPAN_HEAD_MAX) *bad = 1;
+    }
+    if (!*bad) {
+        art->levers |= KIT_LEVER_SPAN_HEAD;
+        art->span_head = (unsigned)n;
+    }
+    return 1;
+}
+
 int mf_lever(mf_art *art, const char *name)
 {
     if (art->err[0]) return -1;
     if (art->nsites)
         return kit_fail(art, "mf_lever: called after the first define");
+    int bad = 0;
+    if (lever_span_head(art, name, &bad))
+        return bad ? kit_fail(art, "mf_lever: `%s` wants a head of 0..%u positions", name,
+                              (unsigned)MF_SPAN_HEAD_MAX)
+                   : 0;
     for (size_t i = 0; i < sizeof kit_levers / sizeof kit_levers[0]; i++)
         if (name && !strcmp(name, kit_levers[i].name)) {
             art->levers |= kit_levers[i].bit;

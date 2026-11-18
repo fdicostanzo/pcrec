@@ -1327,14 +1327,24 @@ if [ -z "$AXES" ] || printf ' %s ' "$AXES" | grep -q -- ' --memfn' ; then
         echo "run_axes.sh: FATAL: derived ZERO rows from --list-axes' memfn section (docs/dev/learnings.md §3: hard-fail on empty, never silently measure nothing)" >&2
         exit 1
     fi
-    while IFS=$'\t' read -r _mname _mspell; do
-        if [ -n "$AXES" ]; then
-            case " $AXES " in (*" --memfn "*|*" $_mspell "*) ;; (*) continue ;; esac
-        fi
-        for _mlayer in default simd; do
-            _mflags="$_mspell"
-            [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"
-            memfn_cell_name+=("$_mname"); memfn_cell_layer+=("$_mlayer"); memfn_cell_flags+=("$_mflags")
+    # A `pair` row's spelling column is `--memfn=no-NAME|--memfn=NAME` (registry.md
+    # §6¶8a): its deny is the row's cell, NAME, and its force a second cell,
+    # NAME=force (R-45 `span-loop`: L over the whole corpus), each selected by its
+    # own spelling.
+    while IFS=$'\t' read -r _mname _mspells; do
+        IFS='|' read -r -a _mspl <<< "$_mspells"
+        for _mi in "${!_mspl[@]}"; do
+            _mspell="${_mspl[$_mi]}"
+            _mcell="$_mname"
+            [ "$_mi" -gt 0 ] && _mcell="$_mname=force"
+            if [ -n "$AXES" ]; then
+                case " $AXES " in (*" --memfn "*|*" $_mspell "*) ;; (*) continue ;; esac
+            fi
+            for _mlayer in default simd; do
+                _mflags="$_mspell"
+                [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"
+                memfn_cell_name+=("$_mcell"); memfn_cell_layer+=("$_mlayer"); memfn_cell_flags+=("$_mflags")
+            done
         done
     done < <(paste -d '\t' <(printf '%s\n' "$memfn_names") <(printf '%s\n' "$memfn_spells"))
 fi

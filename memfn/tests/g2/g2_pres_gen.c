@@ -66,6 +66,14 @@
 #include "memfn.h"
 #include "g2_pres.h"
 
+/* The twin held to the kit's own bound (review r35 F12; r45_reply rev 6 §3
+ * names 64, which waits on MF_WSPAN_POS's raise past 32: g2_pres.h). */
+/* the longest generated run: G2P_RUNCAP (r45_reply's 64), or the kit's span
+   bound where that is less (32 before the [COVER-CAP] stage 2 raise);
+   DERIVED (lane formsfixb ruling R1), printed in the runtime record */
+#define G2P_MAXRUN  (MF_WSPAN_POS < G2P_RUNCAP ? MF_WSPAN_POS : G2P_RUNCAP)
+_Static_assert(G2P_MAXRUN <= MF_WSPAN_POS, "G2P_MAXRUN is past the kit's span (MF_WSPAN_POS)");
+
 /* ---- text ------------------------------------------------------------------- */
 
 typedef struct { char *p; size_t len, cap; } buf;
@@ -1273,6 +1281,7 @@ int main(int argc, char **argv)
            g_nobg, g_f24, g_f24_3, g_scan_findable, g_route_sites[G2P_PD], g_declines, g_dec_member,
            g_dec_assign, g_dec_twin, g_dec_untested, g_dec_refused, g_dec_rendered, g_dec_noprecheck,
            g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one, g_r41, g_r41_flip);
+    printf("g2_pres_gen: twins maxrun=%d (MF_WSPAN_POS %d)\n", (int)G2P_MAXRUN, (int)MF_WSPAN_POS);
     printf("g2_pres_gen failures: %d\n", g_fails);
     return g_fails ? 1 : 0;
 }

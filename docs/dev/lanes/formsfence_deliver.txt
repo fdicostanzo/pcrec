@@ -1,0 +1,5 @@
+report=docs/dev/lanes/formsfence_report.md
+sections: Summary; Fix; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

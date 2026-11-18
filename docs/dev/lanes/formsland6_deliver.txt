@@ -1,0 +1,6 @@
+report=docs/dev/lanes/formsland6_report.md
+sections: STATE AT HANDOFF; CHECKS RUN; FOR THE MANAGER
+nonempty: all
+commit: yes
+files: docs/dev/lanes/formsland6_report.md
+owed: none

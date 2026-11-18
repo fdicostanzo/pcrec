@@ -120,7 +120,12 @@ the split client's `.rxt` corpus (G1) arrives with B4.
     places; each check against a planted input that must fail it.
   - **run_shell_checks.sh** — the call-site rows (a DFA part's calls get rows
     1, 2, 8 only), the namespace table's two rows, and `drop-compound` under
-    a cap between the compiler's own plain and compound sizes.
+    a cap between the compiler's own plain and compound sizes; (4) the
+    span-head lever's strict value parse (R-45 G10, moved from the CLI
+    tests for the fence; sabotage S3286) and the forwarded value's
+    absolute anchor (r37 H8: head 8 renders a `_j = 8; for (` loop;
+    sabotages S3302, S3303; S3312, the CLI's stored head + 2, r38 J5;
+    S3321, the largest head refused by a MAX - 1 bound, r39 K10).
 - **run_part_measures.sh** — [MEASURE-SET] (lane partmeas;
   docs/spec/measures.md §5¶8, §4¶3): a compound's parts read P's
   measurement set, and the shell's `MEASURES` is the union over P and the

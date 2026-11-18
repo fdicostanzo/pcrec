@@ -200,6 +200,19 @@ MEMFN_CLASS = {
     **{("run-verify-wide", ly): ("DIFFER",
         {("byte", "c-default"): 72, ("byte", "c-vm"): 134, ("utf8", "c-default"): 113, ("utf8", "c-vm"): 198},
         [(e, st, b"(?i:select)\\d+x") for e in ("byte", "utf8") for st in ("c-default", "c-vm")]) for ly in ("default", "simd")},
+    # span-loop (R-45 plan A, memfn/src/options.def; the kit's first PAIR row, two cells:
+    # the deny `span-loop` and the force `span-loop=force`, run_axes.sh). MEASURED by lane
+    # forms (2026-11-17, lane/memfn-forms, `--measure` over the four cells, 5516 distinct
+    # corpus patterns, both layers identical): the deny is ASSERT_ZERO in every cell (the
+    # shipped head, 64, is past every offset pcrec states at its default width 32, so the
+    # default IS the deny's all-inline text); the force (L, head 0) differs at 14 corpus
+    # patterns per encoding on the default engine (`...`, `.{3}cat`, `[-a]{3}-b`: a window's
+    # stretch of one wide set) and none on the VM engine (no window site). Floors AT the
+    # measured value; witness `[0-9a-f]{32}` (witness-only: the cover's 31 looped offsets).
+    **{("span-loop", ly): ("ASSERT_ZERO", {}, []) for ly in ("default", "simd")},
+    **{("span-loop=force", ly): ("DIFFER",
+        {("byte", "c-default"): 14, ("byte", "c-vm"): 0, ("utf8", "c-default"): 14, ("utf8", "c-vm"): 0},
+        [(e, "c-default", b"[0-9a-f]{32}") for e in ("byte", "utf8")]) for ly in ("default", "simd")},
     # The five vrun rows' utf8 witnesses (lane s2axes, 2026-11-13). [RUN-POS-SET] stage 3
     # (the S2 joint landing) states a utf8 caseless `s` or `k` as a WIDE position (`[Ss\xbf]`,
     # the last byte of U+017F; `k` likewise with U+212A), so a run through one is no single RUN
@@ -331,7 +344,14 @@ def main():
     rows = read_memfn_section(a.pcrec)
     if not rows:
         die("the `memfn` section of --list-axes has ZERO rows (K35: hard-fail on empty)")
-    spelling = {r[0]: r[3] for r in rows}
+    # a `pair` row's spelling column is `--memfn=no-NAME|--memfn=NAME`: its deny
+    # is the row's own cell, its force a second cell `NAME=force` (run_axes.sh)
+    spelling = {}
+    for r in rows:
+        sps = r[3].split("|")
+        spelling[r[0]] = sps[0]
+        if len(sps) > 1:
+            spelling[r[0] + "=force"] = sps[1]
     layer_of = {r[0]: r[2] for r in rows}
 
     cells = {}

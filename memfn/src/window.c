@@ -1419,6 +1419,10 @@ struct wf_plan {
                                            probe offset and the shift table
                                            sh[] over its window                */
     uint8_t  sh[256];
+    int32_t  head;                      /* THE SPAN FORMS' inline head h
+                                           (wf_span_head): a one-class repeat
+                                           loops from offset h on; INT32_MAX
+                                           is I, 0 is L                        */
 };
 
 /* C-table's offer at offset `off`: a covering span's table whose own set is
@@ -1434,11 +1438,57 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
     return 0;
 }
 
+/* ---- THE SPAN FORMS (R-45 r45_reply rev 8 §3 "The forms") ----------------
+ *
+ * Over the existing segmenter, the plan's tested positions in offset order
+ * (each the meet `merge` computed) fall into segments of one KIND, first
+ * match:
+ *   1. a LITERAL or cube stretch: C-run's run compare (find_groups), in EVERY
+ *      form; the head never splits one;
+ *   2. a ONE-CLASS REPEAT: a maximal stretch of two or more consecutive
+ *      offsets, every position core, carrying one byte-identical set kind 1
+ *      can never take (KIT_POS_WIDE: three or more members, or two that are
+ *      no cube; WIDE includes the empty set, so an empty-meet stretch loops
+ *      too, answer-neutral: no subject byte passes it either way) and one test (the same C-table offer, or none), across stated
+ *      span boundaries (the meet is per offset); from offset h on it renders
+ *      as ONE LOOP over its offsets, before h as today's lone tests;
+ *   3. a LONE test: anything else (a non-core position keeps its three-way
+ *      guard, so it never joins a loop).
+ * The forms are the one knob h: I = H(h >= every offset: today's text), L =
+ * H(0), H(h). A periodic segment, such as `(ab){500}`, is NOT built (r45_reply
+ * §3: UNMEASURED; its trigger is a census row with a periodic span of 36 or
+ * more positions).
+ *
+ * THE DEFAULT HEAD. UNMEASURED DEFAULT: 64, CHOSEN (the cards' grid top; the
+ * build's interim, the kit manager's launch ruling for lane forms, r45_reply
+ * rev 8 §3 "Scope"; review r36 G14): the form cards have not run. Until the
+ * cards C1-C2 run and rule R1 picks h*, the kit ships 64, so that at pcrec's
+ * default window width (32: its largest stated offset is 32) no span loops
+ * and nothing moves. The cards' script (memfn/tests/span_forms/cards.py)
+ * then gives h* and its label, and the build that compiles h* in replaces
+ * this constant. */
+enum { WF_SPAN_HEAD = 64 };
+#define WF_LOOP_ID "span-loop"
+
+/* The inline head h of the forms for site `s` on `art`: the option row
+ * `span-loop` first (its deny `no-span-loop` is I, today's text, and wins;
+ * its force is L, h = 0), else the test-only lever `span-head=N` (the form
+ * cards' instrument, never a shipped compile), else WF_SPAN_HEAD. */
+static int32_t wf_span_head(const mf_art *art, const mf_site *s)
+{
+    int st = kit_opt_state(s->opts, WF_LOOP_ID);
+    if (st < 0) return INT32_MAX;
+    if (st > 0) return 0;
+    if (art && (art->levers & KIT_LEVER_SPAN_HEAD)) return (int32_t)art->span_head;
+    return WF_SPAN_HEAD;
+}
+
 static int plan_of(const wf_dec *d, const mf_hooks *def, mf_arena *al, struct wf_plan *w)
 {
     const wf_alt *m = &d->a[d->ch];
     memset(w, 0, sizeof *w);
     w->wfloor = d->s->wfloor;
+    w->head = wf_span_head(d->art, d->s);
     w->row = &wf_floor_arm;
     w->stop_ix = -1;
     /* the plan's entries and the stop: d->np + 1 at most */
@@ -2815,6 +2865,12 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
            SEAM-1/HOUSE-1): a refused ask writes nothing to `rows` */
         int ok = fp->plan_test && !wf_frame_of(art, def, gphases, r, d, w, fx, L, fp);
         if (ok && use && emit_use_refused(fp->ren, site, def)) ok = 0;
+        /* `!art->err[0]`: UNREACHED by a sound site (review r28 R28-3,
+           recorded by lane forms): wf_plan_site sets the art's error only on
+           a kit invariant failure (run_bytes' unspelled position, run_rank's
+           non-strict tie row, the pinned rank's first position), each a
+           fenced defect no stated input reaches; a witness needs a planted
+           defect beside the conjunct's own plant */
         if (ok && !art->err[0] && rows_hold(d, rows, 1)) {
             reply_of(d, out, rows);
             reply_frame(fp, out, rows);
@@ -3296,6 +3352,7 @@ struct wf_rc {
                                            their look-ahead widths and a
                                            look-ahead's end (kit.h ofs_pair) */
     const char           *FN;           /* B-fn's offset-skip function       */
+    const char           *J;            /* a span loop's offset (wf_loop)     */
     unsigned              used;     /* PARAM_* the text reads                  */
 };
 
@@ -3329,6 +3386,7 @@ static void wf_rc_init(wf_rc *rc, mf_art *art, uint32_t handle, const mf_hooks *
     rc->WB = wf_nm(art, handle, "_wb");
     rc->E = wf_nm(art, handle, "_e");
     rc->FN = wf_nm(art, handle, "_ofsskip");
+    rc->J = wf_nm(art, handle, "_j");
 }
 
 /* Writes `b`'s text to sink `o`: 0, or -1 (out of memory) recorded. */
@@ -3429,6 +3487,45 @@ static int wf_pos_test(wf_rc *rc, kb *t, unsigned i)
     return 0;
 }
 
+/* The ONE-CLASS REPEAT's loop at tested entry `i` (kind 2 of THE SPAN
+ * FORMS): the number of entries from `i` on that one loop tests, at least 2 (the minimum
+ * of two is DERIVED, r45_reply rev 7 §3 "The forms": a one-entry loop is a lone
+ * test plus loop overhead, and gcc unrolls two trips),
+ * or 0 where entry `i` starts none (its offset is below the head, it is not
+ * a kind-2 position, or fewer than two such entries follow at consecutive
+ * offsets). Entry `skip` (the position E-find's search proved) and a C-run
+ * compare's entries end a stretch: neither is tested here. */
+static unsigned wf_loop_len(const struct wf_plan *w, unsigned i, int skip)
+{
+    if (w->off[i] < w->head) return 0;
+    unsigned j = i;
+    for (; j < w->n; j++) {
+        if ((int)j == skip || w->grp[j] >= 0 || !w->core[j] ||
+            kit_pos_class_of(w->set[j]) != KIT_POS_WIDE)
+            break;
+        if (j > i && (w->off[j] != w->off[j - 1] + 1 || w->table[j] != w->table[i] ||
+                      memcmp(w->set[j], w->set[i], 32)))
+            break;
+    }
+    return j - i >= 2 ? j - i : 0;
+}
+
+/* The loop over tested entries `i` .. `i + len - 1` into `t`: one statement
+ * expression whose value is 1 iff every byte `S[C + J]`, J over the
+ * stretch's offsets, is a member (the stretch is core: the hoisted bound
+ * placed every byte inside the subject, as a run compare's). */
+static int wf_loop(wf_rc *rc, kb *t, unsigned i, unsigned len)
+{
+    int32_t lo = rc->w->off[i], end = lo + (int32_t)len;
+    kb byte;
+    kb_init(&byte, rc->art->a);
+    kb_printf(&byte, "%s[%s + %s]", rc->S, rc->C, rc->J);
+    kb_printf(t, "({ size_t %s = %d; for (; %s < %d; %s++) if (!", rc->J, lo, rc->J, end, rc->J);
+    if (wf_member_of(rc, t, i, byte.p ? byte.p : "0")) return -1;
+    kb_printf(t, ") break; %s == %d; })", rc->J, end);
+    return 0;
+}
+
 /* THE CANDIDATE TEST at C into `t`: the bound's lower half (where `lower`;
  * E-find raises C past it once, before its loop: wf_raise), then every plan
  * position but the lone index `skip` (-1: none) in ascending offset, a C-run
@@ -3447,6 +3544,12 @@ static int wf_test_to(wf_rc *rc, kb *t, mf_sink *o, int skip, int lower)
         if (w->grp[i] >= 0 && i && w->grp[i - 1] == w->grp[i]) continue;
         if (!first) kb_puts(t, " && ");
         first = 0;
+        unsigned len = w->grp[i] < 0 ? wf_loop_len(w, i, skip) : 0;
+        if (len) {
+            if (wf_loop(rc, t, i, len)) return -1;
+            i += len - 1;
+            continue;
+        }
         if (w->grp[i] < 0) {
             if (wf_pos_test(rc, t, i)) return -1;
             continue;

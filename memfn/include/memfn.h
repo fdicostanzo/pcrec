@@ -1710,9 +1710,22 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * (`mf_wreply`'s frame part), though the rendered text is a MASK stream;
  * pcrec reads neither field. The form is an unpicked measuring instrument
  * only (D197): no selection table picks it, so a caller must not read those
- * two reply fields under this lever. Called before the first define;
- * refused after it, or for a name the kit does not list. */
+ * two reply fields under this lever. Or it SETS a value the cards measure
+ * (lane forms, R-45 plan A): "span-head=N", N in 0..MF_SPAN_HEAD_MAX,
+ * plain decimal digits only (no sign, no space), the window family's span
+ * forms loop from head N instead of the shipped head (the cards' only way
+ * to set h). The option row `span-loop` overrides the lever: its force
+ * (`span-loop`) sets the head to 0 and its deny (`no-span-loop`) renders
+ * every position inline, and given both the deny wins (review r36 G14).
+ * Called before the first
+ * define; refused after it, for a name the kit does not list, or for a
+ * value outside its range or spelling. */
 #define mf_lever          MF_NS(lever)
+/* The valued lever's range top (`span-head=N`), for a caller that parses N
+ * before the art exists (pcrec's harness option, review r35 F23): a head at
+ * the last offset a window statement can reach loops nothing (a loop takes
+ * two positions), so it renders exactly the always-inline form. */
+#define MF_SPAN_HEAD_MAX  (MF_WREACH - 1)
 int      mf_lever(mf_art *, const char *name);
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *

@@ -203,6 +203,13 @@ typedef struct {
      * mfind-w32 helpers) instead of fn-memchr, an unpicked measuring
      * instrument (D197). Off on every shipped compile. */
     unsigned mfind : 1;
+    /* [MEMFN] R-45 (r45_reply rev 6 §3 "The head lever"): the twelfth,
+     * `--harness=span-head=N`, the kit's VALUED test-only lever
+     * (mf_lever(art, "span-head=N")): the span forms' inline head h on the
+     * art, so the form cards time every H(h) on one binary and the identity
+     * check compares the lever at h* with the rebuilt default. span_head is
+     * N + 1 (0: unset, every shipped compile). */
+    unsigned span_head;
     /* [RUN-POS-SET] stage 2a: the ninth, `run-pos-sets`, and the tenth,
      * `alt-union-run`, both RETIRED (lanes s2land, r1on) when what they
      * turned on became the default; the tenth's restore is the walk arm
