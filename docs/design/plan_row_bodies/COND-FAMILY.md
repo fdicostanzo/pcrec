@@ -3720,3 +3720,20 @@ started); `when(A, B, else = C)` with a bare pattern A is the CONSUMED form, `(A
 B continuing after A, plus the warning; a condition as the test consumes nothing and draws no warning. In the
 python `re` table of the when-test entry these are its two columns ("A as a peek", "A consumed"). The warning is
 the compiler's (a `pcrec.` name, to be chosen); `peek()` is a spelling for the single review.
+
+**2026-11-18 OWNER, a spelling LEAN for the conditional, and a check he asked for (Frank, to session 139,
+afternoon; a LEAN in his word, nothing ruled).** HIS WORDS, in full: "When spelling lean: when() has one required
+positional args and two optional arg named "then and else". So the form can just use three positional, or one
+else , or when(x, then = y, else = z). The when(x) form is the same as x
+Secondary, check if the option setting form for macro calls requires the commas between optional keyword arcs.
+when(c then = y else = z)" ("arcs" read as "args"). RECORD: (1) SPELLING LEAN, for the single spellings review:
+`when()` takes ONE required positional argument (the test) and TWO optional arguments named `then` and `else`; so
+`when(x, y, z)` (three positional), `when(x, else = z)` (the else alone), `when(x, then = y, else = z)` are all
+the one construct; and "the when(x) form is the same as x". (2) THE CHECK, done by the manager against revision
+26: a call's argument list is ONE record laid against the macro's parameters (section 3's ONE INPUT RULE; the
+record form is marked RULED there), and the draft's mark table gives `,` one meaning: "only between ENTRIES inside
+`[ ]` or `( )` (a call's parentheses are a `( )`)", "next entry". A keyword argument is an entry. So TODAY THE
+COMMAS ARE REQUIRED: `when(c, then = y, else = z)` parses; `when(c then = y else = z)` does not. (3) NOTED BY THE
+MANAGER, asked in the session as **when-alone**: "when(x) is the same as x" differs from applying when-default to
+both missing branches (which would give `x | (not x)`, always holding); either `when(x)` is its own stated case,
+or the missing `then` and the missing `else` default differently.
