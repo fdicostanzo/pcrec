@@ -25,7 +25,7 @@
   §R.9 (13 rows); §R.10; §R.11 (rows 77-107); §0.1 L33, L53, L62, L1, L39; §2.2; §2.5; §2.6 (THE TWO ARGUMENT
   REFUSALS withdrawn as errors); §4.1; §5.4 (two operator rows); §8; §11; §13 (O27, O34, the captures-level lean, O53's
   block). `predicates_future.md` item 24 gains entries 21-29. STOP RULE: nothing stopped. 8,256 lines (1,009,611 bytes)
-  before, 8,750 lines (1,073,125 bytes) after.
+  before, 8,750 lines (1,073,336 bytes) after.
 
 - **rev 25.1: review r43's fixes; NOT STABLE pending the owner's answers (lane predspec251, 2026-11-18).** Applies the
   manager's RULED dispositions of review r43 (2026-11-17-r43, predspec25), groups A-J, and nothing else (group K and
@@ -1227,7 +1227,7 @@ that pass, or no pass, set it). `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;` HOLDS h =
   So not global", R.1.9), the argument inserted into a loop template's hole. No scope rule, no exception for hit
   lists. Rev 25.1's text, as asked:] [REV 25.1: the ruling was shown and made for a
   LOOP BODY; its reach into an `occurrences`/`hits` argument (before its group, the PREVIOUS HIT's value) is THE
-  DRAFT'S READING, asked as **hit-carry** (§R.8; review r43 C). It decides answers: `occurrences(/${c}(?<h>\d)/, min =
+  DRAFT'S READING, asked as **hit-carry** (§R.8; review r43 C) [REV 26: RULED, it carries]. It decides answers: `occurrences(/${c}(?<h>\d)/, min =
   2)`, c := NOT (h: >= 5), against the own-hit reading (c always holds before its group): WHOLE `73` FAILS against
   HOLDS h = `3`; over 364 texts (alphabet `37x`, length <= 5) WHOLE 84 differ, SEARCHED 84 by stretch and 134 with
   label h, FIND-ALL 84 / 134 (rev 25.1's PART C C2; the engine equals libpcre2 with the condition as a callout, 0 rows
@@ -1291,7 +1291,7 @@ list: atomic and anchored"; written `hits(r)` here, `all_matches(rx)` his placeh
 single review, §R.8). His question, "hits-text: so hits is atomic ( and anchored ?)", and on being asked to confirm
 "`hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to", HIS WORDS: "hits-text:
 yes but spelling to be reviewed with all other spellings." So: (1) THE HIT LIST IS THE ONE-PATTERN SEARCH MADE ATOMIC:
-once it has matched, nothing re-enters it; its hits are those of a plain search (of the argument with its own
+once it has matched, nothing re-enters it; its hits are those of a plain search [REV 26: only with no condition before its group, hit-carry] (of the argument with its own
 conditions; [REV 26] where a condition precedes its group it reads the previous hit, **hit-carry**, RULED, so the hits
 are then not a plain search's), and tests on them judge a fixed list
 (**hits-committed**, RULED). (2) IT IS ANCHORED TO THE TEXT IT IS APPLIED TO, covering it from end to end: a whole
@@ -3835,7 +3835,7 @@ THE DEFINITION'S REQUIREMENTS (CF:918-921, accepted at CF:905), and how the text
 3. THE EMPTY-MATCH ADVANCE: the first of THE TWO ARGUMENT REFUSALS below.
 4. THE LOOK-ALIKE ROW: "`(g: x)` on a search result means ALL hits" is §0.1 L52 (BY DESIGN).
 
-THE TWO ARGUMENT REFUSALS (stated once; review r10 SIM-1, the two are siblings). PCRE's LOOP over the body agrees
+THE TWO ARGUMENT REFUSALS [REV 26: WITHDRAWN as errors: the nullable argument a WARNING, the carry RULED; kept below as the record] (stated once; review r10 SIM-1, the two are siblings). PCRE's LOOP over the body agrees
 with find-all hit for hit EXCEPT where one iteration can see another, and there are exactly two ways it can [REV 26: BOTH
 REFUSALS BELOW ARE WITHDRAWN as compile errors. hit-carry RULED 2026-11-18 ("occurrences is a simple regex rewrite
 ... In cases where the user puts the condition before the label, they are expecting carries behavior"): the argument
@@ -3848,7 +3848,7 @@ second refusal is THE MANAGER'S CONSEQUENCE in the record, checked here: it rest
 removes. The text below is rev 25.1's, kept as the record of what the loop and find-all differ
 on (§0.1 L53, L62 still describe the difference; their verdicts move, §R.7)] [REV 25.1:
 THREE under rev 25's R.1.7 text: a CONDITION inside the argument written before its label's group reads the previous
-hit's value (pass-start-read carried into `occurrences`, THE DRAFT'S READING, asked as **hit-carry**, §R.8; review r43
+hit's value (pass-start-read carried into `occurrences`, THE DRAFT'S READING, asked as **hit-carry** [REV 26: RULED], §R.8; review r43
 C). If hit-carry is answered yes, the second refusal's reason ("find-all starts each hit with the group unset") no
 longer fits the one-pattern model and that refusal goes; if no, a scope rule is needed. Both refusals' ground below,
 "the empty-match rule's kind of refusal (§7)", names an ERROR rev 25 WITHDREW (empty-search-error: a warning, §R.2);
