@@ -1,3 +1,0 @@
-# docs/dev/reviews/2026-11-18-r48-archdense/ — critic texts for review r48
-
-The five critics' findings (AGGREGATION, SITEMAP with its derive-first `SITEMAP_step1_sites.md`, REGISTER, FIRSTUNIT, RULING), the verifier's `verify.md`, the round's `COMMON.md`, the coordinator's `process.md`, and the manager's `dispositions.md` for `../2026-11-18-r48-archdense.md` (the first ARCHITECTURE-mode round: docs/design/dense_hit_arch.md at 5dcc98dfc, tree T 57fcb5737; the round dir is `crit-archdense`). Records only; the review file holds the rulings. Copied unchanged except one plan line cite in `verify.md` rewritten as the row tag (PL14).
