@@ -25,8 +25,8 @@ Seconds. `PREDSPEC251_SABOTAGE=s1|s2|s3|s4|1` (one, a comma list, or all): s1 th
 differing in a group name joined by branch reset; s3 the parse rule without the record's clause "the sequence mark
 is explicit"; s4 predspec25's operator-order sabotage on PART J's parser.
 
-Verdicts (2026-11-18): forward 24 of 24 OK. Sabotage: s1 23 of 24 (D1 FAILED); s2 23 of 24 (D5); s3 23 of 24 (J9
-`(item SEQ ",")* SEQ item`); s4 21 of 24 (J9 `x+ | y`, `x + y`, `x * y`); all four 19 of 24 (s4's order replaces
+Verdicts (2026-11-18): forward 25 of 25 OK. Sabotage: s1 24 of 25 (D1 FAILED); s2 24 of 25 (D5); s3 24 of 25 (J9
+`(item SEQ ",")* SEQ item`); s4 22 of 25 (J9 `x+ | y`, `x + y`, `x * y`); all four 20 of 25 (s4's order replaces
 the parser s3 sabotages, so s3 shows only alone). Every sabotage caught.
 
 ## The tokenizer and parser predicates (review r43 lesson 1), beside the draft sentence that states each

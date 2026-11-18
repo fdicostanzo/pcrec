@@ -32,6 +32,8 @@ C2 `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5), one-pattern model
 C2   condition reads the PREVIOUS hit's h) vs the own-hit reading (R.1.9, hits-pass: c always holds before the group, `/(?:.*?(?<h>\d)){2,}.*/`):
 C2   WHOLE `73` FAILS / HOLDS h = `3` ; SEARCHED `73` FAILS / `73`@0 h = `3` ; FIND-ALL `73 33` [`73 33`@0] / [`73 33`@0]
 C2   over 364 texts (alphabet `37x`, length <= 5): stretch only 84 / 84 / 84 of 364 (first W `73`) ; with label h 134 / 134 / 134 of 364 (first W `73`) ; engine (A) vs libpcre2 (A): 0 rows differ ; OK
+C3 a several-match FIND-ALL, `3x73`: hit-carry (A) [`3x73`@0 h = `7`] ; own-hit (B) [`3x73`@0 h = `3`] ; SEARCHED `3x73`@0 h = `7` / `3x73`@0 h = `3`
+C3 a several-match FIND-ALL, `37x73`: hit-carry (A) [`37x73`@0 h = `7`] ; own-hit (B) [`37x73`@0 h = `3`] ; SEARCHED `37x73`@0 h = `7` / `37x73`@0 h = `3`
 
 == PART D (group D, owner question product-order): the cartesian product's order, legality, the removal unit, the join.
 D1 `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2], the draft's order (first hole slowest) -> `/(?|(?<x>\d{1})(?<y>\d{1})|(?<x>\d{2})(?<y>\d{1})|(?<x>\d{1})(?<y>\d{2})|(?<x>\d{2})(?<y>\d{2}))/`:
@@ -57,6 +59,7 @@ I1 `(?J)(?:(?<x>a)|(?<x>b))+\k<x>` (a backreference to a name two groups share):
 I1   it reads the FIRST SET group of the name (`a`), not the last-set `b` ; OK
 I1 A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`, `A SEQ B` spliced (with (?J)): WHOLE `733` FAILS, `737` HOLDS ; SEARCHED `1733 737` `737`@5 ; FIND-ALL `737 733 747` [`737`@0, `747`@8]
 I1   B alone: WHOLE `33` HOLDS, `37` FAILS ; the splice without (?J): REFUSED: two named subpatterns have the same name (PCRE2_DUPNAMES not set) ; OK
+I1 the same splice with B's backreference reading B's OWN group (A's group renamed): WHOLE `733` HOLDS, `737` FAILS ; SEARCHED `1733 737` `733`@1 ; FIND-ALL `737 733 747` [`733`@4] ; OK
 I2 PART H's FIRST TRY `\A(?:.*?(?>(?<n>\d+))(?C"rec"))*\D*\z(?C"judge")`, 'every number under 100':
 I2   the int() judge (rev 25's print) HOLDS hits ['34'] ; HOLDS hits ['12', '34'] ; HOLDS hits ['12', '45'] ; HOLDS hits ['00', '12']
 I2   the CANONICAL-numeral judge (NUMERALS: no leading zeros) HOLDS hits ['34'] ; HOLDS hits ['12', '34'] ; HOLDS hits ['12', '45'] ; HOLDS hits ['0', '12'] ; OK
@@ -71,4 +74,4 @@ J9 `(item SEQ ",")* SEQ item` tokens ['(', 'item', 'SEQ', '","', ')', '*', 'SEQ'
 J9 `x + y` tokens ['x', '+', 'y'] -> PARSE FAILED ('trailing', 'x + y', ['y']) ; THE DRAFT'S READING (open: value-is-pattern, which folds plus-operands): binary `+` on two patterns is a type error ; FAILED
 J9 `x * y` tokens ['x', '*', 'y'] -> PARSE FAILED ('trailing', 'x * y', ['y']) ; THE DRAFT'S READING, as `x + y` ; FAILED
 
-== CHECKS: 19 of 24 OK ; FAILED: D1 product order (the discriminating witness), D5 joined copies compile, J9 x+ | y, J9 x + y, J9 x * y
+== CHECKS: 20 of 25 OK ; FAILED: D1 product order (the discriminating witness), D5 joined copies compile, J9 x+ | y, J9 x + y, J9 x * y

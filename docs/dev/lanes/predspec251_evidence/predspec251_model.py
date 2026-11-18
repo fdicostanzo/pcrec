@@ -151,6 +151,8 @@ print("C2   WHOLE `73` %s / %s ; SEARCHED `73` %s / %s ; FIND-ALL `73 33` %s / %
 print("C2   over %d texts (alphabet `37x`, length <= 5): stretch only %s ; with label h %s ; engine (A) vs libpcre2 (A): %d rows differ ; %s" % (
     len(POOL), fmt3(dS), fmt3(dA), dL, check("C2 hit-carry decides answers (WHOLE 84, SEARCHED 84 by stretch and 134 with labels)", dS[0][:2] == [84, 84] and dA[0][1] == 134)))
 check("C2 engine = libpcre2", dL == 0)
+for t in ("3x73", "37x73"):
+    print("C3 a several-match FIND-ALL, `%s`: hit-carry (A) %s ; own-hit (B) %s ; SEARCHED %s / %s" % (t, F_(ea, t, ("h",)), F_(eb, t, ("h",)), S_(ea, t, ("h",)), S_(eb, t, ("h",))))
 print()
 
 # ======================================================================================================== PART D
@@ -223,6 +225,9 @@ print("I1 A := `/(?<h>\\d)/`, B := `/(?<h>\\d)\\k<h>/`, `A SEQ B` spliced (with 
 print("I1   B alone: WHOLE `33` %s, `37` %s ; the splice without (?J): %s ; %s" % (pW(bo, "33"), pW(bo, "37"),
       "REFUSED: " + (compiles(r"(?:(?P<h>\d))(?:(?P<h>\d)\k<h>)") or "compiles"),
       check("I1 splice changes B's backreference", pW(sp, "733") == "FAILS" and pW(sp, "737") == "HOLDS" and pW(bo, "33") == "HOLDS")))
+own = LRx(r"(?:(?<a1>\d))(?:(?<h>\d)\k<h>)")
+print("I1 the same splice with B's backreference reading B's OWN group (A's group renamed): WHOLE `733` %s, `737` %s ; SEARCHED `1733 737` %s ; FIND-ALL `737 733 747` %s ; %s" % (
+    pW(own, "733"), pW(own, "737"), pS(own, "1733 737"), pF(own, "737 733 747"), check("I1 own-part reading differs", pW(own, "733") == "HOLDS" and pW(own, "737") == "FAILS")))
 def hitrun(pat, s, judge_ok):
     hits, judged = [], {}
     def rec(c):
