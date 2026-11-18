@@ -3157,3 +3157,36 @@ at section 2.6 for a reason he has since withdrawn; error or warning, the manage
 checked by the next revision): the program keeps PCRE's meaning for the empty hit, as the empty search does under
 his 2026-11-17 ruling; the warning is the compiler's, so its name carries the `pcrec.` prefix; this makes it the
 fifth "probably a mistake" candidate settled as a warning.
+
+**2026-11-18 OWNER RULING — product-order: first slowest; and a correction of the product's scope (Frank, to
+session 139, morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run
+witness `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2], whole `123`; the manager's leaning: "first hole slowest,
+in written order, with each hole's values in the order given"; a rider on what is removed; three draft readings
+listed "unless you object"). HIS WORDS, in full: "product-order: first, the ruling was for counting holes which
+duplicate the pattern. It doesn't apply for rx holes. Idk for others
+Otherwise I agree with lean. It's predictable and the user can order the values themselves to get different
+results (eg longest first)
+Consider: user has x and y as two rx. They apply the arrays above individually and now they have xx/yy which are
+an alternation/array of two. Provide cartesian(xx,yy) which takes arrays and applies them together Cartesian
+product.
+Also, chainable to 3 arguments?"
+RECORD, in three parts.
+(1) CORRECTION OF SCOPE, his: the ruling that several values in a hole DUPLICATE the pattern (one copy per value,
+the cartesian product over several holes, illegal versions removed) was made for COUNT holes. It does NOT apply to
+rx (pattern) holes. For the other hole positions (a group name, a character class, any other) he says "Idk": OPEN,
+not ruled either way. Revision 25.1's hole-position table, which applies the product to every position, overstates
+the ruling and is corrected by the next revision.
+(2) RULED, on the order: "I agree with lean" is taken as the leaning's main sentence: the FIRST hole varies
+SLOWEST, holes in written order, each hole's values in the order given. His reasons: it is predictable, and the
+user can order the values to get a different result (longest first).
+(3) AN IDEA TO CONSIDER, not a ruling ("Consider:"; it ends on a question to the manager): a function, placeholder
+spelling `cartesian(xx, yy)`, that takes arrays and applies them together as a cartesian product, so that two
+patterns each expanded on its own can be combined explicitly; and whether it chains to three arguments. Filed as
+docs/design/predicates_future.md item 27 with the manager's answer.
+NOT TAKEN AS ANSWERED (the manager's caution on a bare "agree"): the rider (what is removed when a combination is
+illegal: the whole copy of the pattern, or only the piece holding the hole) and the three draft readings listed
+with it. They stay the draft's readings, to be asked again in the next revision's question list.
+RUN BY THE MANAGER (python `re`, 2026-11-18, a control for part (2), not his words): the sequence of two
+alternations `(?P<x>\d|\d\d)(?P<y>\d|\d\d)` on whole `123` gives x = `1`, y = `23`, the same as the four written-out
+copies in first-slowest order; with each alternation written longest first it gives x = `12`, y = `3`. So first
+slowest is the order regex itself gives a sequence of alternations, and his "order the values" works as he says.

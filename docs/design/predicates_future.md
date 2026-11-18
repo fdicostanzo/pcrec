@@ -546,3 +546,27 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   (an ambiguous reference across `&` is the error); docs/design/rx_module.md.
 - SOURCE: the owner's message, 2026-11-17. TRIGGER: the library discussion (items 12, 20, 23, 25), or the first
   revision of the draft after rev 25 that takes up reusable conditions. NOT in lane predspec25's scope.
+
+## 27. An explicit product of arrays: `cartesian(xx, yy, ...)` (spelling a placeholder)
+
+- WHAT (the owner, 2026-11-18, answering product-order; an IDEA, "Consider:"): "user has x and y as two rx. They
+  apply the arrays above individually and now they have xx/yy which are an alternation/array of two. Provide
+  cartesian(xx,yy) which takes arrays and applies them together Cartesian product. Also, chainable to 3 arguments?"
+- CONTEXT: the same message corrects the product ruling's scope: the implicit product (several values in a hole
+  duplicate the pattern) is ruled for COUNT holes only, not for rx holes, open for the other positions. An
+  explicit function is how a user would ask for a product anywhere else.
+- THE MANAGER'S ANSWER (mine, unchecked by a lane): (a) for PATTERNS the product already exists: a sequence of two
+  alternations is the product, and regex tries it first-slowest (python `re`: `(?P<x>\d|\d\d)(?P<y>\d|\d\d)` on
+  whole `123` gives x = `1`, y = `23`, the ruled order), so `cartesian` adds nothing a sequence does not, unless the
+  result is wanted as an ARRAY of separate combinations (to index, count, filter, reorder, or feed to count holes
+  pairwise); that is its use. (b) Chaining: yes, if it is defined for any number of arguments with the first
+  slowest; the first-slowest order is the same whether three arrays are given at once or two are combined and then
+  the third, PROVIDED a combination of a combination flattens to one tuple (otherwise the nested form yields pairs
+  of pairs).
+- QUESTIONS IT RAISES (none asked yet): what an element of the result is (a tuple of values, or the parts already
+  joined in sequence); whether arrays of counts and arrays of rx can be mixed; whether an illegal combination is
+  dropped or an error there.
+- MEETS: item 26 (a condition with a label parameter); the count ruling and the two-kinds-of-hole ruling
+  (COND-FAMILY.md, 2026-11-17); revision 25.1's hole-position table (R.1.14).
+- SOURCE: COND-FAMILY.md, "OWNER RULING — product-order", 2026-11-18. TRIGGER: the next revision's hole-position
+  table (it must say which positions take an implicit product), or the first library needing a product of parts.
