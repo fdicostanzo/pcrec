@@ -28344,3 +28344,16 @@ Next
   record is tested by the next revision lane. plan.md: COVER-CAP and COND-FAMILY status lines brought to today
   (my first wording failed plan lint PL10, a 300-character limit; caught before the commit).
 - NEXT: wake.md. The startup-context comparison is owed at the next wake before any lane is briefed.
+
+## 2026-11-18 (session 140, in flight) — cover-cap line frozen for the night
+
+- Wake at 13:53. The kit's fix (lane/memfn-g2pcap @ d5c41db37) GREEN in its cloud test (run 44370476761); the old
+  tip's axes run (44359029554) GREEN. Merged it into lane/covs2land as 33fec79b3 (merge alone; make strict and
+  test-plan-lint green in the worktree). Cloud test on 33fec79b3 GREEN 14:39 (run 44375150539,
+  cloud/main/test/covs2freeze2-test). FROZEN 33fec79b3; sent to pcrec-memfn 14:40 for set 2 (keys 700-704).
+- MISTAKE: `scripts/cloudrun --ref HEAD` run from a subshell cd'd into the worktree pushed MAIN's tip (ce47501bb)
+  as cloud/main/test/covs2freeze-test: the script resolves HEAD in its own checkout. Caught on the DONE line's
+  sha; re-dispatched with `--ref 33fec79b3`. Rule for me: always pass cloudrun an explicit sha and read the sha
+  on its DONE line. The stray run was left to finish (green; means nothing).
+- Startup-context measurement: asked Frank for /context (he is AFK); no lane briefed yet.
+- Alarm re-created for 00:27 on 11-19 (loadshame before the 01:00 window).
