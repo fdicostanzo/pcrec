@@ -2781,3 +2781,13 @@ before its label's group, the previous pass's value (unset in the first pass); a
 "a pass begins" rule is added: the one rule (a branching resets the labels inside it on ENTRY; within the branch
 taken the copies of the body are in sequence; the last mention wins) stands alone. The sorted-list pattern relies
 also on a label set inside a lookahead being visible to the condition (the draft's reading, not ruled).
+
+**2026-11-17 OWNER RULING — shared-label: keep the compile error (Frank, to session 138, evening).** Asked what a
+label named on both sides of `&` holds (revision 24.4's row: `/(?<h>\d)\d/ & /\d(?<h>\d)/ & (h: <2)`; the left
+side's, the last mention, or the error; the manager's lean: keep the error). HIS WORDS: "shared-label: keep the
+compiler error. It does cause problems for library writers. It's the typical macro variable problem".
+RECORD: RULED: one label name on both sides of `&` is a COMPILE ERROR (the draft's existing rule stands). NOTED by
+him as a COST: it is the macro-variable (hygiene) problem for LIBRARY writers: a library pattern's label names can
+collide with the names of the pattern it is combined with, and the user cannot see the library's names. Filed as
+predicates_future.md item 25 (label hygiene for libraries); it meets the rx-module note's open question on how a
+part's labels reach the whole.

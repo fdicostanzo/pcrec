@@ -475,3 +475,19 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
       reports the sorted run `3;7;`). Most people should write the array form with `sorted`.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
+
+## 25. Label hygiene for libraries (the macro-variable problem)
+
+- WHAT (the owner, 2026-11-17, ruling shared-label as a compile error): "It does cause problems for library
+  writers. It's the typical macro variable problem". One label name on both sides of `&` is refused. A library
+  pattern's labels are names the USER cannot see; combined with the user's own pattern, or with another library's,
+  a collision is an error the user did not write and cannot fix without renaming their own labels.
+- DIRECTIONS (the manager's first list; none ruled): (a) a pattern EXPOSES only the labels it declares (the black
+  box: "an rx is a black box that exposes labels"; anything not exposed is private and cannot collide); (b) labels
+  reached through the pattern's own name (`t.h`), so two patterns' `h` never meet unqualified (the draft already
+  has navigable parts for `join`); (c) a rename at the point of use; (d) the error stays for names both sides
+  genuinely expose. They combine; (a) and (b) are the same idea seen from the writer and from the user.
+- MEETS: docs/design/rx_module.md's open question on label flow (flat or nested); predicates_future item 20 (what a
+  library declares about itself: levels, strictness) and the ruled sentence that a library element beyond the
+  user's level is a compile error.
+- SOURCE: COND-FAMILY.md, 2026-11-17. TRIGGER: the rx-module discussion, or the first library file with labels.
