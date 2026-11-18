@@ -488,6 +488,13 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
       (`[aa = A]`, then `aa.h`) or use the array form. Parts from different authors that share a label name merge
       this way silently. Across `&` there is no order: a name both sides surface is an error where it is
       REFERENCED (not for merely existing). A binding's name is not a path.
+  16. `${}` IS NOT A STRING INSERT (ruled 2026-11-17: "i visualize ${} as a string insert but in this case it is
+      not, it is a context aware rx insert"; "the kinds are all the various places it can be inserted"). What a
+      hole inserts depends on WHERE it stands: where a pattern can stand, the pattern as a whole in a group,
+      matched in place; in a count, a number; in a group name, a name; in a character class, characters. A value
+      with several members there makes one copy of the literal per member (several holes: every combination), and
+      a combination that is not a legal pattern is removed: `repeat(x, min = n, max = n)` with n := `[2, 4]` is
+      two to four, NOT "exactly 2 or exactly 4" (that is the one-argument form).
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 

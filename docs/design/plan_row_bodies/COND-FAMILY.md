@@ -3051,3 +3051,10 @@ CARTESIAN PRODUCT of the combinations, and a combination that is not a legal pat
 above its maximum) is REMOVED from the product (not a compile error of the whole). `repeat` is therefore a
 library definition, not a primitive. MINE, proposed, not ruled: a structural warning when a combination is
 removed, and the existing can-never-match warning when all of them are.
+ADDENDUM, HIS WORDS: "and its more than two kinds. the kinds are all the various places it can be inserted".
+RECORD: CORRECTS "two kinds of hole": there is ONE insert whose meaning is given by its POSITION, and there are as
+many kinds as positions (the draft names: an atom, a character class, a count, a group name). MINE, for the next
+revision: ONE declared table of hole positions: per position, what it accepts (a pattern; a finite set of plain
+strings; a number; a name), how one member is written in, what several members mean (the cartesian product, by
+the ruling above), and what makes a combination illegal there (removed). A position with no row is a compile
+error.
