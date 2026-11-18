@@ -3737,3 +3737,13 @@ COMMAS ARE REQUIRED: `when(c, then = y, else = z)` parses; `when(c then = y else
 MANAGER, asked in the session as **when-alone**: "when(x) is the same as x" differs from applying when-default to
 both missing branches (which would give `x | (not x)`, always holding); either `when(x)` is its own stated case,
 or the missing `then` and the missing `else` default differently.
+
+**2026-11-18 MANAGER CORRECTION — the nullable argument's meaning, again (session 139, afternoon; no owner words
+in this entry).** Review r47 (the critic round on revision 26, finding A1, three lenses, verified) shows that the
+manager's correction entry of this afternoon ("a nullable argument gives the LOOP's one empty hit") is itself an
+over-generalization, as is the draft's "at most one hit, the first, possibly empty": under the loop rewrite
+`occurrences(/\d*/)` on `1a` gives TWO hits (`1`, then an empty one) and on `12a3` gives `12` and an empty hit
+(`3` is never a hit), and `min = k` HOLDS on any digit-free text through k empty hits. The verified statement: the
+hits are the plain search's hits up to AND INCLUDING the first empty hit, which ends the loop; the first `min` are
+always taken and may all be empty. The owner's ruling (a warning, not an error) is untouched; what the warning's
+documentation must say is this.
