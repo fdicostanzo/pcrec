@@ -467,5 +467,11 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   15. A HIT LIST STANDING ALONE READS THE WHOLE TEXT, EVEN IN A SEARCH: it is anchored to the text it is applied to,
       so in a searched program with nothing to its left it is the whole subject's list (the hit-list ruling,
       2026-11-17; `x300 12`: hits `300`, `12`).
+  13. A CONDITION BEFORE ITS GROUP IN A LOOP BODY READS THE PREVIOUS PASS (pass-start-read, ruled 2026-11-17).
+      After the group it reads the current pass. Before it, the program "NOT (h: >=5)" means "every item except
+      the LAST is under 5" (each item is tested by the pass after it): easy to get backwards. Its proper use is
+      comparing an item with its predecessor: the sorted list, `/(?:(?=(?<n>\d))${c}(?<h>\d);)*/` with c :=
+      "there is no previous item, or n >= $h" (run on libpcre2: `3;4;7;` holds, `3;7;4;` fails, searched it
+      reports the sorted run `3;7;`). Most people should write the array form with `sorted`.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.

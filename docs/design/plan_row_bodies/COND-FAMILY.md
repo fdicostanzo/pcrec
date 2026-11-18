@@ -2764,3 +2764,20 @@ per-pass label, "reached and empty", the outermost view for nested loops, the al
 times-list `m = 00` table all follow from (2) and need no rule of their own; before-and-inside is DISSOLVED; two
 groups of one name are not an error (a deliberate difference from PCRE, which refuses duplicate names by default
 and otherwise reads the first group set).
+
+**2026-11-17 OWNER RULING — pass-start-read (Frank, to session 138, evening).** Revision 24.4 found the one place
+where the one label rule and the old per-pass rule part: a condition written in a loop body BEFORE its label's
+group (`/(?:${c}(?<h>\d);)*/`, c := NOT (h: >=5), on `7;3;`: the one rule FAILS, the condition of the second pass
+reading the first pass's 7; the old rule HOLDS). He asked whether it is because the reference stands before the
+group (yes: after the group it reads the current pass's value), restated the program (corrected by the manager to
+"fail if anything besides the LAST matches C": each item is tested by the pass after it), and asked to see a
+sorted list matched by comparing with the previous item. Shown, RUN on libpcre2 10.46 with the condition as a
+callout: `/(?:(?=(?<n>\d))(?C)(?<h>\d);)*/`, the callout "h unset, or n >= h": `3;4;7;` and `3;3;9;` HOLD, `3;7;4;`
+FAILS (SEARCHED `3;7;`), `9;1;` FAILS (SEARCHED `9;`), `7;` and the empty text HOLD; in the draft's forms (the
+manager's spelling, not run through the model): c := when((h: /\d/), (n: >= $h)). Asked: keep the one rule's
+answer? HIS WORDS: "pass-start-read: yes keep it".
+RECORD: RULED: inside a loop body a condition reads the labels as they stand AT THE POINT WHERE IT IS WRITTEN:
+before its label's group, the previous pass's value (unset in the first pass); after it, the current pass's. No
+"a pass begins" rule is added: the one rule (a branching resets the labels inside it on ENTRY; within the branch
+taken the copies of the body are in sequence; the last mention wins) stands alone. The sorted-list pattern relies
+also on a label set inside a lookahead being visible to the condition (the draft's reading, not ruled).
