@@ -1,6 +1,6 @@
 # The predicate language ([COND-FAMILY] #6): a preliminary specification for critical analysis
 
-**rev 24.3: review r42's fixes; NOT STABLE pending the owner's answers** (§R.8).
+**rev 24.4: one label rule (branchings reset), the hit list atomic and anchored, the filter sentence, join order (the owner, 2026-11-17 evening); NOT STABLE pending the owner's answers** (§R.8).
 
 ## Changelog
 
@@ -470,7 +470,7 @@
   ruling and the adopted parts of `docs/dev/lanes/predx_report.md`.
 - **rev 0 (lane predspec, 2026-11-14).** First consolidation of the notes through the outer-layer note.
 
-## R. Rev 24.3: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
+## R. Rev 24.4: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
 
 Rev 24 (lane predspec24) applied the owner's rulings of 2026-11-17 (COND-FAMILY.md, the entries from "OWNER LEAN —
 branch-scope" to the end of the file); REV 24.1 (lane predspec241, 2026-11-17) applies the fixes of review r40
@@ -496,11 +496,19 @@ disagreed with libpcre2 at the edge of the per-pass rule (a trailing empty itera
 a label two loops deep read the outer passes; FIND-ALL is PCRE2's global loop), the structural-unrolling model made
 the control of the per-pass label, four questions closed as the manager's readings by entailment, the owner's
 2026-11-15 ruling on contextual constructs in a filter applied (§R.6), and §R.8 split into what is TOLD and what is
-still ASKED. Rev 23.2's §R is the record at `git show 9b61e41e9:docs/design/predicates_draft.md`
-(§16.7); rev 24.1's and rev 24.2's §R at the commits before their successors.
+still ASKED. REV 24.4 (lane predspec244, 2026-11-17) applies the owner's rulings of the rest of that evening
+(COND-FAMILY, the entries from "OWNER RULING — operand-context" to the end of the file): ONE LABEL RULE, "branchings
+reset the labels inside them" ("Yes. Let's keep it"), which REPLACES rev 24.2-24.3's per-pass label rules and from
+which they now follow, RUN, not assumed (R.1.7); an unqualified `$x` reads the label, with a carried-capture form and
+an array form required (R.1.7); the hit list atomic and anchored, with a regex model (R.1.9); the FILTER SENTENCE and
+the refusal of any piece that might look outside (R.1.4); join order, the left side decides (R.1.4); zero-place, a
+pattern's numbers name its own groups (R.1.4); and §R.8 re-cut around what is left, with ONE list of the spellings put
+off to a single review. Rev 23.2's §R is the record at `git show 9b61e41e9:docs/design/predicates_draft.md` (§16.7);
+rev 24.1's, rev 24.2's and rev 24.3's §R at the commits before their successors.
 SPELLINGS ARE PLACEHOLDERS (D193 addendum 4): `!`, `NOT`, `h = v`, `some`, `occurs.none`, `hits`, `atomic`, `when`
 name meanings, not syntax. Every answer below is a line of `docs/dev/lanes/predspec243_evidence/predspec243_model.out`
-(PART and tag named). That file holds lane predspec242b's whole output re-run under rev 24.3's engine (its PARTS 0-Q,
+(PART and tag named) or, where rev 24.4 changed the text or added an answer, of
+`docs/dev/lanes/predspec244_evidence/predspec244_model.out` (named "rev 24.4's PART x"; §R.10). That file holds lane predspec242b's whole output re-run under rev 24.3's engine (its PARTS 0-Q,
 in its own format; inside it, the PARTs rev 24.1 named are printed with the prefix `0 NOW`), then rev 24.3's own
 PARTS (0, X1-X4, U, K, Y, Z). Its PART 0 lists every line of rev 24.2's answer file that moved, WAS and NOW. It is
 produced by
@@ -552,8 +560,9 @@ product).
 ### R.1 The definition
 
 PLAIN WORDS. A program is a pattern with conditions written into it. A condition is ONE MORE PIECE OF THE PATTERN
-(branch-scope, 11:35, RECORD (1)): it sits at a place in the pattern, reads the labels set so far (inside a loop
-body, only those its own pass has set: a pass has its own labels, R.1.7), and either lets the match go on or rejects; when it rejects, the pattern does what a regex does when any piece
+(branch-scope, 11:35, RECORD (1)): it sits at a place in the pattern, reads the labels set so far (a label is a NAME
+whose value is its last setting, every branching resetting the names inside it when it is entered: R.1.7, rev 24.4),
+and either lets the match go on or rejects; when it rejects, the pattern does what a regex does when any piece
 fails: it goes back to its most recent choice and tries the next path, in PCRE's own preference order, into another
 branch of `|` as into any other choice, whether the condition is written inside the `|` or after it. The answer is
 the first path that gets through every piece. Nothing is "unknown": a test either passes or fails, as a regex piece
@@ -601,8 +610,8 @@ matches: a stretch, the value of every label, and for a loop the passes it ran),
 PLACES (review r40 C6; the full table is the NEXT revision's skeleton, `predicates_future.md` item 22, after item
 16): what this section still states place by place and the table would state once, per place: its TEXT (stretch,
 hit, label text, subject, file), its MODE, whether a condition outside RE-ENTERS it (a loop and `occurrences`: yes;
-a lookahead and an atomic part: no; a `records` item and a `hits(r)` list: no), what `0` names there (**zero-place**,
-§R.8), which labels it EXPORTS (a loop, an `occurrences` argument and an atomic part: every label set inside, the
+a lookahead and an atomic part: no; a `records` item and a `hits(r)` list: no), what `0` names there (RULED rev 24.4, zero-place: the
+whole match of the pattern `0` is written on, R.1.4), which labels it EXPORTS (a loop, an `occurrences` argument and an atomic part: every label set inside, the
 last pass's own, at the outermost view, R.1.7) and where adding a condition can ADMIT (R.1.3).
 
 R.1.2 THE TABLE AND ITS ORDER. The table of a program on a text holds EVERY PATH of the pattern, ordered by PCRE's
@@ -652,14 +661,35 @@ some-parse rule again").
 
 R.1.4 THE OPERATORS ON PATTERNS.
 - `P & Q`: the paths of P whose stretch Q also matches WHOLE, Q run on the stretch's OWN text (one stretch, 11-15
-  20:43, STANDS; its `$`, `\b` and lookarounds read the stretch, §11). Rev 24's engine ran Q in the subject with a
+  20:43, STANDS). THE FILTER SENTENCE (rev 24.4; RULED, COND-FAMILY "OWNER RULING — operand-context" and its
+  ADDENDUM: "operand-context: yes to that interpretation. Also, then the start of subject and end of subject need the
+  same interpretation"): A FILTER IS MATCHED AGAINST THE STRETCH AS IF THE STRETCH WERE THE WHOLE TEXT. From it: `^`
+  and `$` at the operand's edges are redundant (`anchor.whole` warns, §7.1) and elsewhere (inside an alternation;
+  after a newline under multi-line mode) mean the stretch's ends; `\A`, `\z` and `\Z` likewise (his addendum: "the
+  start of subject and end of subject need the same interpretation"). The sentence REPLACES the 11-15 anchor wording
+  ("^...$ meant the start and end of the filtered condition") as the rule; no answer changes (rev 24.4's PART F:
+  `/\d+/ & /^\d$/` SEARCHED `a12 1` -> `1`@1, `/\d+/ & /\d+$/` -> `12`@1, the anchors read the stretch). ITS
+  EXCEPTION, RULED (his words: "I would say at this point that any piece that might look outside is a compiler error.
+  Then if we discover later we can relax it we can review"): ANY PIECE THAT MIGHT LOOK OUTSIDE THE STRETCH IS A
+  COMPILE ERROR, deliberately conservative. WHICH pieces "might look outside" is THE DRAFT'S READING (the manager's
+  conservative reading in the record, not his words): `\b` and `\B` where the position can be an edge of the operand;
+  a lookbehind that can reach before the operand's start; a lookahead that can reach past its end; `\G` and `\K`
+  (they speak about the search, not the string, and the stretch has no search start). Pieces that stay inside are
+  fine: `1\b2`, `\d(?<=1)\d`, `\d(?=2)\d` are ALLOWED and run on the stretch (rev 24.4's PART F: each refused or
+  allowed by a classifier over the operand, 14 operands, the refused six printed with their reason). It covers every
+  filter place (a side of `&`, a `label:` set, a hole in a set position: §11's EDGE-ASSERTION ERROR is this refusal).
+  B'S WORLD (zero-place, RULED, below): "from the perspective of B, the subject is now whatever A matched. There is no
+  outside subject (unless we allow context, etc). That's its whole world". Rev 24's engine ran Q in the subject with a
   tied end, so an anchored Q read past the stretch: `/\d/ & /\d$/` on `12` SEARCHED reported `2`@1 where this text
   gives `1`@0 (1,344 of 1,365 SEARCHED differed from `A & (0: B)`, review r40 A3). Rev 24.1's engine: the anchored,
   lookahead, `\b` and lookbehind operands of D5 agree with the LAW on 0 / 0 / 0 of 1,365 (reported row), and their
   libpcre2 models, which run Q as its own pattern on the extracted stretch, agree with the engine (PART C V23-V25).
-  The row's labels are both sides'. JOIN ORDER (**join-order**, THE DRAFT'S READING, asked; the manager's "left side
-  first", told at 13:45, is WITHDRAWN as a told rule): P's paths are the outer loop (P's first path with every path
-  of Q, then P's next). It decides WHICH LABELS a reported row carries (left vs right outer: 117 / 414 / 414 of 1,365,
+  The row's labels are both sides' (one name in both: **shared-label**, §R.8). JOIN ORDER, RULED (rev 24.4;
+  COND-FAMILY "OWNER RULING — join-order: the left side decides"): "join-order: left side decides. That's always how I
+  thought of it. In concedes the logical purity that you seemed to be going for for the reality that regex is not
+  pure" ("In concedes" reads "It concedes": the record's autocorrect NOTE, confirmed by him). So `&` is SYMMETRIC for
+  whether a program holds and LEFT TO RIGHT for what is reported: P's paths are the outer loop (P's first path with
+  every path of Q, then P's next). It decides WHICH LABELS a reported row carries (left vs right outer: 117 / 414 / 414 of 1,365,
   reported row, labels compared, first `111`; PART E E5) AND, with a lazy operand, WHICH STRETCH is reported: `G &
   L` vs `L & G`, G := `/(?<a>\d+)/`, L := `/(?<c>\d+?)/`, 0 / 1,008 / 1,197 of 1,365 (first `11`: `11`@0 vs `1`@0;
   PART Q join-order). Rev 24 said it moves "never whether a program holds or the stretch it reports"; that is false
@@ -668,20 +698,28 @@ R.1.4 THE OPERATORS ON PATTERNS.
   other order (V19 117 / 414 / 414; V21, V22 0 / 1,008 / 1,197).
 - THE LAW (the owner's question, 12:25, "is A & B The same as (new) A & (0: B) Where 0: is the whole match"; the
   11-15 `&` ruling stands and this is a law about it, not a language change): `A & B` holds exactly when `A & (0: B)`
-  holds, on the same stretch; `&` also joins B's labels. Checked (PART D D5, holds and stretch, reported row without
+  holds, on the same stretch; `&` also joins B's labels. Under the ruled join order the LAW covers the reported match
+  (rev 24.4's PART J re-runs `G & L` on `11`: `11`@0, and `L & G`: `1`@0). Checked (PART D D5, holds and stretch, reported row without
   labels): over eight pairs (a lazy B, a conditioned B, `t2` and `q`, an anchored, a lookahead, a `\b` and a
   lookbehind B) 0 texts differ in any mode, and `A & !B` = `A & NOT (0: B)` likewise 0; the labels part shows the
   one difference: `(/\d+/ & P) & (a: "1")` vs `(/\d+/ & (0: P)) & (a: "1")` differ on 84 / 180 / 180 of 341 (first
   `10`), since only `&` gives the outer row P's label a. THE LAW'S PLACES: it is checked at the top of a program
   (where `0` is the stretch). Inside a nested place it holds when `0` names the INNERMOST stretch (`occurrences(/\d+/
   & /1\d*/)` vs `occurrences(/\d+/ & (0: /1\d*/))`, 0 of 1,365) and fails when `0` is PCRE's group 0 (the program's
-  match start to here: 738 / 738 / 738 of 1,365, hit lists compared, first ` 1`); what `0` names there is
-  **zero-place** (§R.8). The LAW holds under the draft's join order only: with the right side outer and a lazy B it
-  fails on 0 / 1,008 / 1,197 of 1,365 (PART Q join-order).
+  match start to here: 738 / 738 / 738 of 1,365, hit lists compared, first ` 1`). ZERO-PLACE, RULED (rev 24.4;
+  COND-FAMILY "OWNER RULING — zero-place"): "For A & B: from the perspective of B, the subject is now whatever A
+  matched. There is no outside subject (unless we allow context, etc). That's its whole world. So all numbers are
+  labels of groups in that world. Also, not recommended to use group numbers as it's confusing on bound values you
+  can't see". So `0` (which "might be useful so we can add it") is the whole match of the pattern it is written on,
+  any other number that pattern's own group (the draft already gives each literal its own group namespace), never
+  PCRE's overall group 0: the INNERMOST reading above, and the LAW holds in every place. Numbers are NOT RECOMMENDED
+  (a point for the user documentation, `predicates_future.md` item 24 entry 10; a warning is the manager's proposal,
+  **numbered-label-warning**, §R.8). The LAW holds under the ruled join order: with the right side outer and a lazy B
+  it fails on 0 / 1,008 / 1,197 of 1,365 (PART Q join-order).
 - `P | Q`: regex's alternation; a condition anywhere after a choice can send the pattern into the next branch.
   `&` DISTRIBUTES over a `|` on its LEFT: `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))`: 0 / 0 / 0 of
   341 (PART D D1; rev 23.2's reading (iii) differed on 12 / 252 / 300), and `(B | A) & X` vs `(B & X) | (A & X)` 0 /
-  0 / 0 of 1,365. Over a `|` on its RIGHT it does NOT, under the draft's join order: `X & (B | A)` vs `(X & B) | (X &
+  0 / 0 of 1,365. Over a `|` on its RIGHT it does NOT, under the ruled join order (the left side decides): `X & (B | A)` vs `(X & B) | (X &
   A)`, X := `/\d+/`, B := `/\d/`, A := `/\d\d/`: 0 / 1,008 / 1,197 of 1,365 (first `11`: `11`@0 vs `1`@0); with the
   right side outer the mirror holds (PART Q join-order; review r40 A5 (b)). With A := `/(?<l>\d)\d/`, B :=
   `/(?<l>\d\d)/`: `(B | A) & (l: <20)` on `25` HOLDS / `25`@0 l = `2` / on `25 13` [`25`@0, `13`@3] (PART A B1;
@@ -740,62 +778,155 @@ polarity: `NOT (h = 9: <5)` vs `NOT (h: <5)` on `/(?<h>\d)?x/` 0 / 0 / 0 of 341 
 23.2's rules: 1 / 175 / 185; PART D D15; review r40 A9). With NOT two-valued, "present and not under 5" is `(h:
 !<5)` (the set complement holds only on a present value) or a default chosen outside the set: `(h = "x": !<5)`.
 
-R.1.7 LOOPS: A PASS HAS ITS OWN LABELS (rev 24.2: the owner's rulings of the evening of 2026-11-17, COND-FAMILY
-entries "OWNER RULING — after-loop-read" and "OWNER RULING — nested-pass"; PART S, A, J, N of the evidence).
-THE RULE. (1) ALL IS WRITTEN ON THE ITEM: a condition written INSIDE a loop, on the item, is a piece of every pass and
-is judged in every pass. His words (the entry reconsidering "labels match every pass"): "what you should do is assign
-the condition inside the loop to get the all behavior"; and his phrase "Then the rx is "a loop of (times after 9:30)"", which the after-loop-read
-entry's PREAMBLE records as his words, the manager rendering it as `late := time & ((h, m): >= (9, 30))`,
-`/(?:${late},)*/` (his reply in that entry is only "after-loop-read: ok I see it. Last pass own label makes sense";
-review r42 RULING-14). It is R.1's regex model (a
-condition is a piece where it is written). (2) AFTER THE PATTERN, THE LAST PASS'S OWN LABEL: a bare condition written
-after the pattern reads, for a label set inside a loop, the value the LAST pass itself set; when that pass did not set
-it the label is unset, the test fails, and a per-test default applies. His words: "after-loop-read: ok I see it. Last
-pass own label makes sense". (3) A PASS HAS ITS OWN LABELS: a group that took no part in a pass is unset in it ("I
-think the expectation is that each loop has its own ... most would expect that a missing group would unset", OWNER
-LEAN of the same evening, now relied on by (2)). (4) THE OUTERMOST VIEW: a label two loops deep is seen from outside
-at the outermost level: every enclosing loop's pass starts with the labels inside it unset, so a bare condition reads
-the label only when the last pass of EACH enclosing loop set it; an inner view is written by nesting the condition at
-the level it speaks about (nested-pass, RULED: "The view of the labels on an rx is the outermost view. To get inner
-views you nest the labels and condition"). A quantifier with upper bound 1 is not a loop (optional-as-loop, 11-16
-15:23, the manager's reading of how). (4a) THE EMPTY PASS (rev 24.3, review r42 A1; regex by default,
-exception-rule; TOLD to the owner, **empty-pass**; his observation: ""A loop's empty last pass counts as a pass": makes
-sense as the entire rx is optional", "not so much a ruling as an observation"): PCRE's trailing EMPTY iteration IS a pass. When an iteration of
-a loop past its minimum matches the empty string, PCRE keeps it and then leaves the loop; it is the LAST pass, and
-its own labels are those it set (none, unless a group in it matched the empty string). libpcre2:
-`/(?:(?<h>\d)?)*/` WHOLE on `3` matches with h = `3` (the capture, carried), `/(?:a|(?<e>))*/` on `a` sets e = ``
-in the empty last pass (PART X1). So `/(?:(?<h>\d)?)*/ & NOT (h: <5)` on `3` HOLDS with h unset (the last pass is
-the empty one, which set no h) / SEARCHED `3`@0 / FIND-ALL [`3`@0, ``@1]; rev 24.2's engine dropped the empty pass
-and gave FAILS / ``@0 / [``@0, ``@1]; the positive `& (h: <5)` HOLDS h = `3` either way (the condition fails on the
-empty pass and PCRE backtracks to the path without it). The literal's loop, the hole loop (`/(?:${x})*/`, x :=
-`/(?<h>\d)?/`) and `occurrences` agree with each other and with the structural-unrolling model (R.6) on every
-nullable-body row (PART X1: two bodies, NL and NL2, each 0 / 0 / 0 of 121; rev 24.2's engine 30 / 80 / 116 and 80 /
-80 / 80 against libpcre2 for `& NOT (h: <5)`; `occurrences(/(?<h>\d)?/)` 0 of 63). No printed answer of rev 24.2
-moved: every loop body in its pools consumes a character (PART 0: 0 changed lines). (4b) THE PASS FORMS AT THE
-OUTERMOST VIEW (rev 24.3, review r42 A2; THE MANAGER'S READING, ENTAILED by nested-pass, "The view of the labels on
-an rx is the outermost view. To get inner views you nest the labels and condition"; TOLD; his words on being told:
-""pass tests on a label two loops deep read the outer passes" this is how i expected"): `some`, `occurs.*` and a
-literal index `h[k]` over a label two loops deep range over the OUTERMOST loop's passes, each pass's label read at
-the outermost view (the last value after the last start of every loop enclosing it within that pass). NEST :=
-`/(?:(?:(?<h>\d)?;)*,)*/`: `NEST & occurs.none(NOT (h: <5))` WHOLE on `,` FAILS (its one outer pass ran no inner
-pass, so its h is unset and NOT holds there), `3;7;,` FAILS (h = `7`), `7;3;,` HOLDS; `NEST & (h[2]: <5)` on `,3;,`
-HOLDS h = `3` (the second outer pass). The literal and its spelling through holes, `/(?:${inner},)*/`, now agree (0 of
-1,365 for `some`, `occurs.none(NOT ..)` and `h[2]`; rev 24.2's literal keyed the passes on the INNER loop and
-differed on 6 / 11 / 11, 13 / 353 / 973 and 7 / 17 / 17), and both equal an independent evaluator built from the
-text alone (0 of 1,365; PART X2). A JOINT across depths reads each label at the outermost view of the same outer
-pass: `/(?:(?<k>\d)(?:(?<h>\d);)*,)*/ & some(((h, k): h > k))` on `37;,51;,` HOLDS (the second outer pass, k = `5`, h
-= `1`, fails; the first, k = `3`, h = `7`, passes; PART X3). A pass form whose labels sit in SIBLING loops (no one
-loop encloses both: `/(?:(?<k>\d);)*(?:(?<h>\d),)*/ & some(((h, k): h > k))`) has no pass table to range over: it
-is UNSPECIFIED, NOT RUN (the engine refuses it, PART X3), and asked only if a use appears (review r42 A3); the bare
-joint over sibling loops reads each loop's last pass's own label (`3;7,` HOLDS h = `7`, k = `3`). (5) THE GROUND: "that logic might be justified if you differentiate between a
+R.1.7 LABELS: ONE RULE, BRANCHINGS RESET (rev 24.4; COND-FAMILY "OWNER RULING — branchings reset the labels inside
+them (closes the before-and-inside discussion)"; it REPLACES rev 24.2-24.3's per-pass label rules, which now FOLLOW
+from it, each RUN below; rev 24.4's PARTS A, B, C, L, M, N).
+THE RULE. Asked "Is "entering a branching resets every label inside it" the rule, with the one-item list coming out
+unset?", HIS WORDS: "Yes. Let's keep it". On his declarative account (the discussion that ruling closes): "It's not
+a loop. Like alternation, the "loop" is a branching of every possible number of passes simultaneously ... "Loops"
+reset all labels inside them because you don't know which branch will eventually get chosen"; and "Summary the
+labels bubble up. Last pass and last mention." So:
+(1) A LABEL IS A NAME: every group of one name sets the same label; two groups of one name are NOT an error (a
+deliberate difference from PCRE, below).
+(2) ONE RULE FOR EVERY BRANCHING (an alternation; an optional; a loop, which is a branching over its number of
+passes): ENTERING it resets every label whose group lies inside it; the branch taken then sets what it sets.
+(3) IN A SEQUENCE THE LAST MENTION WINS: a group's close sets its name; a reset is a mention. Nothing else resets a
+label.
+THE DRAFT'S READING where his list stops: a counted repeat `{n}` with n >= 2 is a loop (it resets; with one count it
+has one branch, so it changes an answer only for a name set before it); `{1}` is no branching.
+THE WORKED EXAMPLE: THE SEPARATED LIST (the owner: "Use the list example in the docs as part of the label
+explanation", lane rulings R2; his question, R1: "How would one write the list of items separated by commas to get
+the array of results and handle single item lists. list(item)|item"). Rev 24.4's PART L, WHOLE, the label after the
+pattern and the ARRAY form (every setting of the name, in order):
+
+| form | on `7` | on `7,3,5` |
+|---|---|---|
+| (a) ITEMS-THEN-LAST `/(?:(?<h>\d),)*(?<h>\d)/` | label `7`; array [`7`] | label `5`; array [`7`, `3`, `5`] |
+| (b) FIRST-THEN-REST `/(?<h>\d)(?:,(?<h>\d))*/` | label UNSET; array [`7`] | label `5`; array [`7`, `3`, `5`] |
+
+Why (b) leaves the label unset on `7`: the loop `(?:,(?<h>\d))*` is a branching over its number of passes; entering
+it resets the name h, which the first group had set; it takes its zero-pass branch, which sets nothing; the reset is
+the last mention. In (a) the loop comes first (on `7` it is entered, resets nothing that was set, and takes zero
+passes) and the group after it is the last mention. Both arrays hold every item. The owner ACCEPTED (b)'s unset with
+the rule (ruling RECORD (3)): "the two-copy separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7` leaves h UNSET". With
+a CONDITIONED item (the condition `(h: <5)` inside the item, every item): (a) `3` HOLDS label `3`, `3,1,4` HOLDS label
+`4`, `3,7,1` FAILS; (b) `3` HOLDS label UNSET, `3,1,4` HOLDS label `4`. His sketch "list(item)|item": over (a),
+`/(?:(?:(?<h>\d),)*(?<h>\d)|(?<h>\d))/`, gives (a)'s answers (the single-item branch is never reached: redundant);
+over (b) the first branch takes `7` and the label is unset (the single-item branch is again never reached); with a
+list of TWO or more, `/(?:(?<h>\d)(?:,(?<h>\d))+|(?<h>\d))/`, label `7` on `7` and `5` on `7,3,5` (the alternative
+works, at the cost of writing the item three times). THE DRAFT'S PROPOSAL (R1; the manager's lean, not ruled): §5.3's
+`list_of(X, sep = S)` is DEFINED as form (a), `(?:X S)*X`, so that the label (the last item) and the array (every
+item) are right at every length. Against the rx-module note's **separator-label** question (`rx_module.md`, "WHERE A
+SEPARATOR GOES"): its two-copy definition is form (b), and under the one rule its trouble is no longer PCRE's
+duplicate-name rule but the one-item unset; form (a) needs no conditional group.
+WHAT FOLLOWS FROM THE ONE RULE (each RUN). PART A: 82 answer-lines rev 24.3 printed that read a label (the shown
+tables S1-S5 and the `late` lines, the nested loops and both inner views, the pass forms two loops deep, the joint
+across depths and over sibling loops, the empty pass, LAST-PASS-DEFAULT, §R.7's REP lines, value-point, some-own,
+pass-list-read, U1, a duplicate name in a loop, the exported `occurrences` label): the one rule gives every one as
+printed (0 of 82 differ), and so does the SWITCH BACK to rev 24.3's rules (a loop resets on entry and at every pass
+start). PART B: the one rule against rev 24.3's rules over 16 programs on their pools (reported row, labels compared,
+WHOLE / SEARCHED / FIND-ALL): 0 / 0 / 0 each; and PCRE's capture against the rule reproduces the counts rev 24.3
+printed, under both rule sets: 28 / 40 / 40 (S1, 1,365 texts), 8 / 33 / 33 (REP, 364), 5 / 34 / 34 (the item, 364),
+4 / 7 / 11 (`late`, 156), 10 / 20 / 20 (NEST, 1,365). The derivations:
+- (i) THE LAST PASS'S OWN LABEL (rev 24.2's "after the pattern, the last pass's own", after-loop-read: "Last pass own
+  label makes sense"): a group is skipped in a pass only through a branching inside the body (an optional, an
+  alternation), and entering that branching reset its name; a group outside every inner branching is set in every
+  pass. So at the end of each pass the label is that pass's own: `/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)` on `3qxx`
+  FAILS (the last pass, `q`, entered the alternation, which reset a); REP `& (h: <5)` on `3;;` FAILS.
+- (ii) ZERO PASSES: entering the loop resets; no pass sets; the label is unset (as rev 24.2 said: "no value when
+  that pass, or no pass, set it").
+- (iii) THE EMPTY LAST PASS (rev 24.3 (4a), **empty-pass**, told): the empty pass enters the body's optional, which
+  resets: `/(?:(?<h>\d)?)*/ & NOT (h: <5)` on `3` HOLDS h unset / `3`@0 / [`3`@0, ``@1].
+- (iv) THE OUTERMOST VIEW for nested loops and for pass tests (nested-pass; (4b), **outer-pass-forms**, told): an
+  inner loop is a branching entered anew in each outer pass, so a label two loops deep is reset there; NEST :=
+  `/(?:(?:(?<h>\d)?;)*,)*/`: `3;,,` FAILS, `7;,3;,` HOLDS h = `3`; `NEST & occurs.none(NOT (h: <5))` on `,` FAILS;
+  `NEST & (h[2]: <5)` on `,3;,` HOLDS h = `3`; the joint across depths on `37;,51;,` HOLDS.
+- (v) INSIDE THE BODY after the group (**value-point**, told): the item `/(?<h>\d)?;/ & (h: <5)` in `/(?:${item})+/`
+  on `3;;` FAILS (the second pass's optional reset h).
+- (vi) REACHED AND EMPTY: an alternation's untaken branch is unset in either order, since entering the alternation
+  reset it (PART N: `/(?<h>\d);(?:(?<h>\d)|x)/` and `/(?<h>\d);(?:x|(?<h>\d))/` on `3;x` both h UNSET).
+- (vii) THE TABLES HE WAS SHOWN (below) and the times-list `m = 00` table: each line as shown (PART A S1-S5).
+WHERE THE ONE RULE AND REV 24.3'S RULES PART (rev 24.4's PART C; no line rev 24.3 printed sits there, and no table he
+was shown): a condition inside a loop body written BEFORE its label's group, with no branching around that group.
+Rev 24.3's (3) "a pass has its own labels" unset h at every pass start; the one rule resets only on entering the loop
+(and on entering a branching inside the body), so the pass sees the PREVIOUS pass's h until its own group closes.
+`/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5): WHOLE `3;7;` HOLDS, `7;3;` FAILS (the second pass sees h = `7`; rev
+24.3: HOLDS), SEARCHED `7;3;` `7;`@0 (rev 24.3: `7;3;`@0), FIND-ALL `7;3; 3;3;` [`7;`@0, `3;`@2, ``@4, `3;3;`@5,
+``@9]; 2 / 8 / 14 of 364 differ; with the group OPTIONAL (the condition before the optional) 15 / 29 / 47 of 364;
+inside an alternation in the body (`/(?:(?:${c}(?<h>\d);|x))*/`) 0 of 1,365, the alternation resetting before c.
+Here the one rule gives PCRE's capture's answers. The ruling's literal text decides it as above (THE DRAFT'S READING);
+whether a pass also resets the names of its body is asked as **pass-start-read** (§R.8).
+TWO GROUPS OF ONE NAME (rev 24.4's PART N; NEW answers, WHOLE, the label h):
+
+| program | text | the one rule | rev 24.3's rules | the capture, the name's last setting (rule carry) | libpcre2 by name, under `(?J)` |
+|---|---|---|---|---|---|
+| `/(?<h>\d)?;(?<h>\d)?/` | `3;` | UNSET (the second optional is entered) | `3` | `3` | `3` |
+| | `3;4` | `4` | `4` | `4` | `3` (the lowest-numbered SET group) |
+| `/(?<h>\d)?(?:;(?<h>\d)?)*/` | `3;` | UNSET | unset | `3` | `3` |
+| | `7;3;` | UNSET (the last pass's optional) | unset | `3` | `7` |
+| | `7;3` | `3` | `3` | `3` | `7` |
+| | `3` | UNSET (the loop is entered, zero passes) | unset | `3` | `3` |
+| `/(?<h>\d)(?:,(?<h>\d))*/` | `7` | UNSET (accepted, ruling (3)) | unset | `7` | `7` |
+| | `7,3` | `3` | `3` | `3` | `7` |
+| `/(?<h>\d);(?:(?<h>\d)\|x)/` | `3;x` | UNSET | `3` | `3` | `3` |
+| `/(?<h>\d);(?:x\|(?<h>\d))/` | `3;x` | UNSET | `3` | `3` | `3` |
+
+The record names two of these as CHANGED by the ruling, and both come out so: the one-item separated list (unset,
+accepted) and the manager's earlier hand answer "`3` -> h = 3" for a loop that makes no pass (now unset). PCRE:
+without `(?J)` libpcre2 REFUSES every program in the table at compile time ("two named subpatterns have the same name
+(PCRE2_DUPNAMES not set)"); under `(?J)` reading the name gives the lowest-numbered group that is set, and a
+backreference `\k<h>` likewise (rev 24.3's PART Z). The language's label is the one rule's, a deliberate difference
+from PCRE (ruling RECORD: "two groups of one name are not an error (a deliberate difference from PCRE, which refuses
+duplicate names by default and otherwise reads the first group set)"). A name set before a loop and inside it does
+not survive the loop (ruling RECORD (3)); **before-and-inside** is DISSOLVED.
+THE THREE READS OF A NAME (COND-FAMILY "OWNER RULING — what an unqualified `$x` reads"; "So THREE values, THREE
+spellings"): (a) THE LABEL, read by `x:` and by an unqualified `$x` alike, RULED: "I do want that. It makes sense
+and frankly pcre is wrong on this" (to: "Is that the variation you want for `$x`: the last pass's value, not
+preserved from earlier passes?"), so `$x` and `x:` never disagree, and the pass-list-read entry's "unqualified it is
+the last pass as standard pcre" holds wherever the group takes part in the last pass and is superseded where it does
+not; (b) THE CARRIED-CAPTURE FORM, REQUIRED ("I agree but! We need a way to get the pcre behavior even if ugly"):
+PCRE's capture, the value from the last time a group of the name was SET (inside rx text a backreference already reads
+it); a visibly different spelling, put off to the spellings review (§R.8); (c) THE ARRAY FORM, REQUIRED (pass-list-read:
+"I would like a form that allows other passes but it should be clear that that is what is requested. Specifically, it
+should have different spelling. Eg Perl uses @x. An array of such values is its own type"): every SETTING of the name
+in order, the one outside the loop included (ruling RECORD (4); his before-and-inside words "The array takes all h
+including the one outside the group"). ITS TYPE RULE (pass-list-read RECORD (3)): an array is its own type, so a
+comparison of an array with a single value does NOT TYPECHECK until the author says SOME or EVERY (a compile error
+naming the two); `sorted` and `distinct` take the array. Rev 24.4's PART N: on REP `/(?:(?<h>\d)?;)*/`, `3;;7;` the
+label `7`, the array [`3`, `7`]; on `/(?<h>\d)?(?:;(?<h>\d)?)*/`, `7;3;` the label UNSET, the array [`7`, `3`].
+Whether a setting that a branching later reset leaves an EMPTY SLOT in the array (`7;;3;`: [`7`, `3`] or [`7`, -,
+`3`, -]) is asked as **array-slot** (§R.8). On `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/` and `9:45,10,45` the three
+reads are: label m UNSET, carried capture `45` (`\k<m>` matches it) (rev 24.3's PART L, unchanged).
+THE CONTROL (rev 24.4's PART M; libpcre2-8 10.46): THE MARKER MODEL, which shares no construction with the engine:
+each label group renamed (h1, h2, ...), an empty capture written just before every branching that contains a group of
+the name; PCRE2 restores captures on backtracking, so at the final callout each marker holds where its branching was
+LAST ENTERED on the path and each copy where it was LAST SET; the label is the copy set last unless a marker of the
+name was entered at or after it. Equal to the engine (reported row, labels compared, every mode) on 10 programs: S1
+(1,365 texts), REP (364), NEST (1,365), CLOSE (85), the four duplicate-name programs above (364, 364, 364, 341, 341)
+and U1 (341): 0 differ each. THE ORDER CHECK: the same patterns WITHOUT the markers (PCRE's capture) DIFFER on 9 of the
+10 (28 / 40 / 40 on S1 ... 2 / 286 / 326 on the separated list), and agree on U1, where no branching resets a set
+name. PCRE's capture itself (rule "carry") equals plain libpcre2 on REP (0 of 364 x 3). A LIMIT, stated: the model
+compares positions, exact when every label group consumes a character (no row here has an empty label group).
+THE GROUND (rev 24.2's (5), unchanged): "that logic might be justified if you differentiate between a
 label and a capture" (ADDENDUM to the lean). The CAPTURE stays regex's: PCRE's carried value, read inside rx text
-(`\k<m>`, a conditional group, a callout). The LABEL is the language's: what a condition, a default, a joint, `$x`,
-`some` and `occurs` read. §R.6 states the per-pass label as the language's own feature on this ground. ONE TEXT,
-TWO ANSWERS (PART L, libpcre2): `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/` MATCHES `9:45,10,45` WHOLE (`\k<m>` reads
-the capture, `45`, carried from the first pass), while the program `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m:
-"45")` FAILS there (the label m, the last pass's own, is unset; the structural-unrolling model), and HOLDS on `9:45,10:45,45`;
-under rev 24.1's carry (label = capture) it HOLDS on both.
-THE TABLES HE WAS SHOWN (PART S; WHOLE unless named; "carry" = rev 24.1's draft reading, PCRE's capture state):
+(`\k<m>`, a conditional group, a callout), and now by the carried-capture form. The LABEL is the language's: what a
+condition, a default, a joint, `$x`, `some` and `occurs` read. ONE TEXT, TWO ANSWERS (PART L, libpcre2):
+`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/` MATCHES `9:45,10,45` WHOLE (`\k<m>` reads the capture, `45`, carried from
+the first pass), while the program `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")` FAILS there (the label m is
+unset), and HOLDS on `9:45,10:45,45`; under rev 24.1's carry (label = capture) it HOLDS on both.
+ALL IS WRITTEN ON THE ITEM (rev 24.2's (1), not a label rule and unchanged): a condition written INSIDE a loop, on
+the item, is a piece of every pass and is judged in every pass. His words: "what you should do is assign the
+condition inside the loop to get the all behavior"; `late := time & ((h, m): >= (9, 30))`, `/(?:${late},)*/`. An
+inner view is written by nesting the condition at the level it speaks about (nested-pass, RULED: "The view of the
+labels on an rx is the outermost view. To get inner views you nest the labels and condition"). Rev 24.2-24.3's
+numbered rules (2) the last pass's own, (3) a pass has its own labels, (4) the outermost view, (4a) the empty pass,
+(4b) the pass forms at the outermost view are the derivations (i)-(iv) above; their witnesses below stand. Rev
+24.3's "a quantifier with upper bound 1 is not a loop" (optional-as-loop) stands for what counts as a LOOP (the pass
+forms, repeatedness); an optional IS a branching. Pass forms whose labels sit in SIBLING loops stay UNSPECIFIED, NOT RUN
+(rev 24.3, review r42 A3); the bare joint over sibling loops `/(?:(?<k>\d);)*(?:(?<h>\d),)*/` on `3;7,` HOLDS h = `7`,
+k = `3` under the one rule as before (PART A X3s).
+THE TABLES HE WAS SHOWN (PART S; WHOLE unless named; "carry" = rev 24.1's draft reading, PCRE's capture state; rev
+24.4: every line reproduced by the one rule, rev 24.4's PART A S1-S5, so nothing STOPPED):
 - `/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)`: `3qxx` FAILS (the last pass, `q`, set only b), `q3xx` HOLDS a = `3`,
   `7q3xx` HOLDS a = `3`; SEARCHED on `3qxx` FAILS; FIND-ALL on `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10]. Carry: HOLDS
   on all three. Over 1,365 texts (alphabet `37qx`, length <= 5; reported row, labels compared) plain libpcre2 (the
@@ -828,8 +959,9 @@ that pass, or no pass, set it). `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;` HOLDS h =
 [`7;3;`@0, `3;`@5] (PART A L1; with a mandatory label nothing moves: 0 of 364). With REP := `/(?:(?<h>\d)?;)*/`, `REP
 & (h: <5)` on `3;;` FAILS / SEARCHED `3;`@0 h = `3` (R13;;; rev 24.1: HOLDS h = `3` carried from the first pass;
 8 / 33 / 33 of 364 move). Every moved catalogue line is in §R.7.
-- INSIDE THE BODY. A condition inside the loop body (§11's hole rule) or inside an `occurrences` argument reads the
-  labels its own pass has set so far; an earlier pass's value is not visible. item := `/(?<h>\d)?;/ & (h: <5)`,
+- INSIDE THE BODY. A condition inside the loop body (§11's hole rule) or inside an `occurrences` argument, AFTER its
+  label's group or after a branching around it, reads the labels its own pass has set so far (rev 24.4: before them,
+  the previous pass's value, **pass-start-read**, above). item := `/(?<h>\d)?;/ & (h: <5)`,
   `/(?:${item})+/` on `3;;` FAILS (the second pass has no h; rev 24.1: HOLDS, h read from the first pass; 5 / 34 / 34
   of 364). So rev 24's first spelling of W1c is right as first written (§R.4). When a label takes its value inside
   the pass (at its group's close) is THE MANAGER'S READING, CLOSED by entailment (**value-point**, §R.8 (a)).
