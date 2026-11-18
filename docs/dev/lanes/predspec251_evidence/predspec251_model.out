@@ -1,0 +1,74 @@
+predspec251 evidence over predspec25's engine (loaded in memory); libpcre2-8 10.46 2025-08-27
+
+== PART A (review r43 group A, owner question number-names): what a NUMBER names on a composed pattern.
+   A condition that reads an unset label FAILS here (the draft's unset rule, R.1.3). libpcre2, hand-written regex.
+A1 `(A | B) & (1: <5)`, A := `/(\d)x/`, B := `/(\d)y/`, DISTRIBUTED over `|` (R.1.4's law: `A & c | B & c`, each branch its own group 1): WHOLE `3x` HOLDS, `3y` HOLDS ; SEARCHED `7x 3y 3x` `3y`@3 ; FIND-ALL `7x 3y 3x` [`3y`@3, `3x`@6]
+A1 `(A | B) & (1: <5)`, A := `/(\d)x/`, B := `/(\d)y/`, (a) 1 = A's group (the written-out numbering): WHOLE `3x` HOLDS, `3y` FAILS ; SEARCHED `7x 3y 3x` `3x`@6 ; FIND-ALL `7x 3y 3x` [`3x`@6]
+A1 `(A | B) & (1: <5)`, A := `/(\d)x/`, B := `/(\d)y/`, (c) 1 = B's group (the nearest literal to the left): WHOLE `3x` FAILS, `3y` HOLDS ; SEARCHED `7x 3y 3x` `3y`@3 ; FIND-ALL `7x 3y 3x` [`3y`@3]
+A1   the distribution law against both readings of a number: OK
+A2 the literal `/(\d),(\d)/ & (1: <5)`: WHOLE `3,7` HOLDS, `7,3` FAILS ; SEARCHED `7,3 3,7` `3,7`@4 ; FIND-ALL `7,3 3,7` [`3,7`@4]
+A2 `/${A},(\d)/ & (1: <5)`, A := `/(\d)/`, the hole keeping its own numbering (1 = the outer literal's group): WHOLE `3,7` FAILS, `7,3` HOLDS ; SEARCHED `7,3 3,7` `7,3`@0 ; FIND-ALL `7,3 3,7` [`7,3`@0]
+A2   composed = literal fails for numbers through a hole: OK
+A3 `A & B & (1: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`: the manager's consequence (1 = B's group h, not subject to the
+A3   ambiguous-reference error): WHOLE `12` FAILS, `21` HOLDS ; SEARCHED `21 12` `21`@0 ; FIND-ALL `12 21 10` [`21`@3, `10`@6] ; name = number (TWO NAMES OF
+A3   ONE LABEL) with label-flow (4): `1` is h, which both sides surface: the AMBIGUOUS-REFERENCE compile error (no answer) ; OK
+
+== PART B (group B, owner question hole-in-filter): an `&` operand stays a filter role (both sides; 'an `&` operand').
+B1 `/x${/^a/ & /(?s).*/}/`, both `&` operands FILTER ROLES over the text the hole takes (`^` = that text's start; the draft's
+B1   row 2 and §0.1 L71, kept): WHOLE `xa` HOLDS ; SEARCHED `zxa` `xa`@1 ; FIND-ALL `xa xa xb` [`xa`@0, `xa`@3]
+B1 the same with the left operand SPLICED as a non-filter (libpcre2 `x(?:^a)(?:(?s).*)`): WHOLE `xa` FAILS ; SEARCHED `zxa` FAILS ; FIND-ALL `xa xa xb` [] ; OK
+B2 `/\d+/ & /${num}/`, num := `/\b\d+\b/`: (i) THE DRAFT'S READING, the operand classified AFTER expansion: the operand-context
+B2   compile ERROR, as `/\d+/ & num` (no answer in any mode)
+B2   (ii) the assertion CROSSES the border (hole-reading's rule carried into the operand): WHOLE `12` HOLDS ; SEARCHED `a12 34` `34`@4 ; FIND-ALL `12 a34 56` [`12`@0, `56`@7]
+B2   (iii) the operand over the stretch's own text (the string-set reading without its error): WHOLE `12` HOLDS ; SEARCHED `a12 34` `12`@1 ; FIND-ALL `12 a34 56` [`12`@0, `34`@4, `56`@7] ; OK
+
+== PART C (group C, owner question hit-carry): pass-start-read at two depths, and inside an `occurrences` argument.
+C1 `/(?:(?:(?=(?<n>\d))${c}(?<h>\d);)*,)*/`, c := 'h unset or n >= h', `7;,3;,`: engine (the one rule) WHOLE HOLDS, SEARCHED `7;,3;,`@0 ; libpcre2 WHOLE FAILS, SEARCHED `7;,`@0 ; intent 'items non-decreasing' False
+C1 `/(?:(?:(?=(?<n>\d))${c}(?<h>\d);)*,)*/`, c := 'h unset or n >= h', `3;4;,1;2;,`: engine (the one rule) WHOLE HOLDS, SEARCHED `3;4;,1;2;,`@0 ; libpcre2 WHOLE FAILS, SEARCHED `3;4;,`@0 ; intent 'items non-decreasing' False
+C1 `/(?:(?:(?=(?<n>\d))${c}(?<h>\d);)*,)*/`, c := 'h unset or n >= h', `3;,7;,`: engine (the one rule) WHOLE HOLDS, SEARCHED `3;,7;,`@0 ; libpcre2 WHOLE HOLDS, SEARCHED `3;,7;,`@0 ; intent 'items non-decreasing' True
+C1 `/(?:(?:(?=(?<n>\d))${c}(?<h>\d);)*,)*/`, c := 'h unset or n >= h', `7;3;,`: engine (the one rule) WHOLE FAILS, SEARCHED ``@0 ; libpcre2 WHOLE FAILS, SEARCHED ``@0 ; intent 'items non-decreasing' False
+C1   at two depths the one rule and PCRE's capture part (entering the inner loop resets h): OK
+C2 `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5), one-pattern model `/(?:.*?(?C"c")(?<h>\d)){2,}.*/` (R.1.7's text: before its group the
+C2   condition reads the PREVIOUS hit's h) vs the own-hit reading (R.1.9, hits-pass: c always holds before the group, `/(?:.*?(?<h>\d)){2,}.*/`):
+C2   WHOLE `73` FAILS / HOLDS h = `3` ; SEARCHED `73` FAILS / `73`@0 h = `3` ; FIND-ALL `73 33` [`73 33`@0] / [`73 33`@0]
+C2   over 364 texts (alphabet `37x`, length <= 5): stretch only 84 / 84 / 84 of 364 (first W `73`) ; with label h 134 / 134 / 134 of 364 (first W `73`) ; engine (A) vs libpcre2 (A): 0 rows differ ; OK
+
+== PART D (group D, owner question product-order): the cartesian product's order, legality, the removal unit, the join.
+D1 `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2], the draft's order (first hole slowest) -> `/(?|(?<x>\d{1})(?<y>\d{1})|(?<x>\d{1})(?<y>\d{2})|(?<x>\d{2})(?<y>\d{1})|(?<x>\d{2})(?<y>\d{2}))/`:
+D1   WHOLE `123` HOLDS x = `1`, y = `23` ; SEARCHED `a123` `12`@1 x = `1`, y = `2` ; FIND-ALL `123 45 6789` [`12`@0 x = `1`, y = `2`, `45`@4 x = `4`, y = `5`, `67`@7 x = `6`, y = `7`, `89`@9 x = `8`, y = `9`]
+D1   first slowest WHOLE `123` HOLDS x = `1`, y = `23` ; first fastest WHOLE `123` HOLDS x = `12`, y = `3`
+D1   slowest vs fastest, labels x, y: 8 / 0 / 0 of 364 (first W `111`) ; OK
+D2 rev 25's witness `[r = repeat(rx.digit, n, n)] & (r: length in L)`, n := [2, 3, 4], every length rejected, lengths tried at 0 of `123456`:
+D2   slowest [2, 3, 2, 4, 3, 2, 3, 4, 3, 4] ; fastest [2, 3, 2, 3, 4, 3, 2, 4, 3, 4] ; first occurrence of each length [2, 3, 4] / [2, 3, 4]: a length test cannot tell the orders apart ; OK
+D3 `(?|(?<a>\d)|(?<b>\d))` (the GROUP NAME row's branch-reset join): libpcre2 REFUSED: different names for subpatterns of the same number are not allowed
+D3 `(?J)(?|(?<a>\d)|(?<b>\d))` (the same under (?J)): libpcre2 REFUSED: different names for subpatterns of the same number are not allowed
+D3 `(?:(?<a>\d)|(?<b>\d))` (the name copies joined by a plain alternation, renumbered (rev 25.1's reading)): libpcre2 compiles
+D3 `(?<h>\d)(?<h>\d)` (a duplicate-name copy (R.1.7 makes two groups of one name legal)): libpcre2 REFUSED: two named subpatterns have the same name (PCRE2_DUPNAMES not set)
+D3 `(?<=(?:\d))x` (PATTERN row, one member `\d` in a lookbehind): libpcre2 compiles
+D3 `(?<=(?:\d+))x` (PATTERN row, one member `\d+` in a lookbehind): libpcre2 REFUSED: length of lookbehind assertion is not limited
+D3 `(?<=(?:\d|\d+))x` (PATTERN row, members [`\d`, `\d+`] as ONE inner alternation): libpcre2 REFUSED: length of lookbehind assertion is not limited
+D3 `a|\d{5,2}` (COUNT row, min above max): libpcre2 REFUSED: numbers out of order in {} quantifier
+D4 `/a|\d{${m},${M}}/`, m := [5], M := [2]: the LITERAL's copy removed (the draft's unit) -> `(?!)`: WHOLE `a` FAILS ; SEARCHED `xa` FAILS ; FIND-ALL `a xa` []
+D4   the hole's construct removed (the library spelling through `repeat`) -> `a|(?:(?!))`: WHOLE `a` HOLDS ; SEARCHED `xa` `a`@1 ; FIND-ALL `a xa` [`a`@0, `a`@3] ; OK
+D5 the JOINED copies compile (libpcre2), 5 sets: all ; name join -> `/(?:(?<a>\d)|(?<b>\d))/` ; OK
+
+== PART I: SIMULATE-4 (owner question backref-across-parts) and SIMULATE-7 (the printed hit list)
+I1 `(?J)(?:(?<x>a)|(?<x>b))+\k<x>` (a backreference to a name two groups share): WHOLE `abba` HOLDS, `abbb` FAILS ; SEARCHED `abbbab` `abbba`@0 ; FIND-ALL `aba abb bbaa` [`aba`@0, `bb`@5, `bbaa`@8]
+I1   it reads the FIRST SET group of the name (`a`), not the last-set `b` ; OK
+I1 A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`, `A SEQ B` spliced (with (?J)): WHOLE `733` FAILS, `737` HOLDS ; SEARCHED `1733 737` `737`@5 ; FIND-ALL `737 733 747` [`737`@0, `747`@8]
+I1   B alone: WHOLE `33` HOLDS, `37` FAILS ; the splice without (?J): REFUSED: two named subpatterns have the same name (PCRE2_DUPNAMES not set) ; OK
+I2 PART H's FIRST TRY `\A(?:.*?(?>(?<n>\d+))(?C"rec"))*\D*\z(?C"judge")`, 'every number under 100':
+I2   the int() judge (rev 25's print) HOLDS hits ['34'] ; HOLDS hits ['12', '34'] ; HOLDS hits ['12', '45'] ; HOLDS hits ['00', '12']
+I2   the CANONICAL-numeral judge (NUMERALS: no leading zeros) HOLDS hits ['34'] ; HOLDS hits ['12', '34'] ; HOLDS hits ['12', '45'] ; HOLDS hits ['0', '12'] ; OK
+
+== PART J (group J): the PARSE RULE, checked. Readings marked: the parse rule is MINE in the record; longest-first is MINE.
+J9 `x++` tokens ['x', '++'] -> (?:(?:a))++ ; longest first (MINE): `++` one operator ; OK
+J9 `x+?` tokens ['x', '+?'] -> (?:(?:a))+? ; longest first ; OK
+J9 `x*+` tokens ['x', '*+'] -> (?:(?:a))*+ ; longest first ; OK
+J9 `x??` tokens ['x', '??'] -> (?:(?:a))?? ; longest first ; OK
+J9 `x+ | y` tokens ['x', '+', '|', 'y'] -> (?:(?:(?:a))+|(?:b)) ; the parse rule: `|` cannot begin an operand, so `+` is postfix ; OK
+J9 `(item SEQ ",")* SEQ item` tokens ['(', 'item', 'SEQ', '","', ')', '*', 'SEQ', 'item'] -> (?:(?:(?:(?:(?<h>\d)))(?:,))*)(?:(?:(?<h>\d))) ; the record's clause 'the sequence mark is explicit': a sequence mark cannot begin an operand, so `*` is postfix ; OK
+J9 `x + y` tokens ['x', '+', 'y'] -> TYPE ERROR (binary `+` on patterns: arithmetic, not a quantifier) ; THE DRAFT'S READING (open: value-is-pattern, which folds plus-operands): binary `+` on two patterns is a type error ; OK
+J9 `x * y` tokens ['x', '*', 'y'] -> TYPE ERROR (binary `*` on patterns: arithmetic, not a quantifier) ; THE DRAFT'S READING, as `x + y` ; OK
+
+== CHECKS: 24 of 24 OK
