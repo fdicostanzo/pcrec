@@ -38,8 +38,9 @@ H1 `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5): WHOLE `73` FAILS 
 H2 the condition AFTER its label (his "put the condition after the label to get the normal behavior"): WHOLE `73` FAILS ; `33` HOLDS h = `3` ; `37` FAILS (before its group, carried: `37` HOLDS h = `7`) ; OK
 H3 THE MANAGER'S CONSEQUENCE (R.1.9's "its hits are those of a plain search" holds only with no condition before its group): carried vs the argument's plain hits (rev 25.1's NO candidate: c before its group reads nothing set, so it always holds), WHOLE 84 of 364 texts differ ; OK
    SUPPORTED: rev 25.1's PART C C2 printed WHOLE 84 of 364 for the same pair; here 84
-H4 the nullable argument `/\d*/` (a warning, ruled): PCRE's find-all of it on `a1b` [``@0, `1`@1, ``@2, ``@3] (the empty hits are PCRE's meaning, kept)
-   THE MANAGER'S READING (the meaning kept as the empty search's): RUNNABLE only as the statement that PCRE gives the list above; the `pcrec.` name: NOT RUNNABLE (a name)
+H4 the nullable argument `/\d*/` (a warning, ruled): PCRE's FIND-ALL of it on `a1b` [``@0, `1`@1, ``@2, ``@3]
+H5 the same argument under the REWRITE (the one-pattern loop, hit-carry's premise), WHOLE `a1b`: HOLDS ; hits recorded by a callout [((0, 0), '')] (one empty hit at 0: PCRE ends a loop on an empty iteration; §2.6's first refusal's fact)
+   THE MANAGER'S READING ("the program keeps PCRE's meaning for the empty hit, as the empty search does"): AMBIGUOUS on the run: PCRE's LOOP (the rewrite) gives ONE hit, PCRE's find-all (the empty search's meaning) gives FOUR; NOT SUPPORTED as worded; the ruled premise (a rewrite) ENTAILS the loop's one hit (told, not asked); the `pcrec.` name: NOT RUNNABLE (a name)
 
 == PART P: product-order (count holes only; first slowest), removal (the whole copy), name-hole (an error)
 P1 `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2], the copies in product order: (?|(?<x>\d{1})(?<y>\d{1})|(?<x>\d{1})(?<y>\d{2})|(?<x>\d{2})(?<y>\d{1})|(?<x>\d{2})(?<y>\d{2})) ; WHOLE `123` HOLDS x = `1`, y = `23` ; OK
@@ -83,6 +84,13 @@ REF2 `A SEQ B`, B's own group (renamed apart `(?<h>\d)(?<h2>\d)\k<h2>`): WHOLE `
      the written-out regex under PCRE's duplicate names `(?J)(?P<h>\d)(?P<h>\d)(?P=h)` (= `(?J)(?<h>\d)(?<h>\d)\k<h>`): WHOLE `733` FAILS, `737` HOLDS (the reverse, as shown) ; OK
 REF3 B := `/\k<h>(?<h>\d)/` after A, B's own h unset at its reference (renamed `(?<h>\d)\k<h2>(?<h2>\d)`): matches on no text of `3779` length <= 4: OK ; with PCRE's MATCH_UNSET_BACKREF it would match `37`: HOLDS
    the manager's "(its h, unset at that point on a first pass)": SUPPORTED; what the reference then DOES (fail, as PCRE's default) is THE DRAFT'S READING (regex by default)
+REF4 a backreference INSIDE ONE literal with two groups of one name, `/(?<h>\d);(?:(?<h>\d)|x)\k<h>/` (read "as labels are"): three readings
+     THE LABEL (the one rule: entering the alternation resets h)    WHOLE `3;x3` FAILS, `3;77` HOLDS, `3;73` FAILS ; SEARCHED `3;x3 3;77` `3;77`@5
+     the last-SET group's capture                                   WHOLE `3;x3` HOLDS, `3;77` HOLDS, `3;73` FAILS ; SEARCHED `3;x3 3;77` `3;x3`@0
+     PCRE `(?J)` (first set group)                                  WHOLE `3;x3` HOLDS, `3;77` FAILS, `3;73` HOLDS ; SEARCHED `3;x3 3;77` `3;x3`@0
+     label vs last set: 2 / 2 / 2 of 341 differ, first ('W', '3;x3')
+     label vs (?J): 6 / 6 / 6 of 341 differ, first ('W', '3;73')
+     last set vs (?J): 4 / 4 / 4 of 341 differ, first ('W', '3;73')
 
 == PART EX: the export rule (public unless `_`; a binding shows its own public labels and its public part labels)
 EX1 RULE-AS-CODE date   m.v    outside -> visible (path)           ; OK
@@ -166,4 +174,9 @@ RS1 nested-complement: `contains(/\d+/ & !/7\d*/)` WHOLE, the one-pattern model 
     hit-carry's premise (a rewrite into a template hole) ENTAILS the one-pattern answer: the question is ENTAILED, not open ; OK
 RS2 group-truth / pass-table: the pass forms read each pass's OWN labels after the loop (some-own); hit-carry concerns a condition INSIDE a pass before its group, which the pass forms are not: the 11-18 rulings do NOT entail an answer to whether `occurs.none(NOT c)` and `NOT some(c)` should agree; it stays asked (re-stated in §R.8; its counts are rev 24.x's E12, NOT re-run here)
 
-== CHECKS: 106 of 106 OK
+== PART OQ: the new owner questions' witnesses (other-holes, zero-in-sequence)
+OQ1 other-holes, a class MEMBER `/[${c}x]/`, c := [a, b]: more characters `[abx]` vs one copy per member `(?:[ax]|[bx])`: [0, 0, 0] of 259 differ (whole / searched / find-all, python `re`)
+OQ2 other-holes, a RANGE END `/[${lo}-z]/`, lo := [a, x]: one copy per member `(?:[a-z]|[x-z])` vs the members as more characters `[ax-z]`: [1, 51, 103] of 259 differ
+OQ3 zero-in-sequence `[h = rx.digit] SEQ (0: "7") SEQ rx.digit`, `0` read as the match SO FAR (a callout's start to here): WHOLE `73` HOLDS ; SEARCHED `373` `73`@1 ; FIND-ALL `73 77 37` [`73`@0, `77`@3] ; the other reading (the entire match, unknown at that point) is a compile error
+
+== CHECKS: 111 of 111 OK

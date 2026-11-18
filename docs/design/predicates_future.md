@@ -510,6 +510,36 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   20. THE ARRAY HOLDS ONLY WHAT WAS SET (ruled 2026-11-17: "only what was set"). A loop pass whose optional label
       was not set adds nothing: on `7;;3;` the array of `h` in `/(?:(?<h>\d)?;)*/` is [`7`, `3`], so positions in
       the array are not pass numbers; to keep one entry per pass, label something every pass sets (the whole item).
+  21. A CONDITION BEFORE ITS GROUP IN AN `occurrences` ARGUMENT READS THE PREVIOUS HIT (hit-carry, ruled 2026-11-18:
+      "In cases where the user puts the condition before the label, they are expecting carries behavior").
+      `occurrences(/${c}(?<h>\d)/, min = 2)` with c := NOT (h: >= 5) FAILS on `73` (the second hit's test reads
+      `7`); written after the label it reads its own hit. Added by lane predspec26.
+  22. PUT A WORD-BOUNDARY CHECK ON THE PATTERN BEING FILTERED, NOT IN THE FILTER (hole-in-filter, ruled 2026-11-18):
+      a filter sees only the matched text, so `/\d+/ & /\b\d+\b/` is a compile error, and so is the same through a
+      hole (`/\d+/ & /${num}/`, num := `/\b\d+\b/`): holes are filled first, then the filter is judged. Write
+      `/\b\d+\b/` as the pattern. Added by lane predspec26.
+  23. A LABEL SET IN A LOOKAHEAD MAY LIE OUTSIDE THE MATCHED TEXT (lookahead-labels, ruled 2026-11-18):
+      `/(?=\d*(?<l>\d)\b)(?<f>\d)/` searched in `1234` matches `1` and sets l = `4`. Added by lane predspec26.
+  24. NUMBERS ONLY ON ONE WRITTEN LITERAL; `0` EVERYWHERE (number-names, ruled 2026-11-18). `(1: ..)` on a sequence,
+      an inserted pattern, an alternation of patterns, a repeat or a chain of two patterns is a compile error saying
+      "name the group"; so is a number on a group whose name is shared. `0` is always the entire match. Added by
+      lane predspec26.
+  25. A NAME IS PRIVATE WHEN IT STARTS WITH `_`, AND `[_ = A]` HIDES ALL OF A's NAMES (export-rule, ruled
+      2026-11-18). Outside a binding a reader sees only its own public labels and its parts' public labels by path:
+      with `date := [y = year] SEQ "-" SEQ [m = month]`, write `m.v`, not `v`. Spellings are placeholders. Added by
+      lane predspec26.
+  26. A PART CANNOT REFER TO A NAME IT DOES NOT DEFINE (free-name, ruled 2026-11-18: "Catastrophic. The rx should
+      export the group."). `B := /\k<h>/` used after a part that sets h is a compile error, not a reference to that
+      part's h. Added by lane predspec26.
+  27. A QUANTIFIER ON A CONDITION IS AN ERROR, ON PURPOSE (quantified-condition, ruled 2026-11-18, "a formal punt"):
+      `(h: <5)?` is refused although regex would accept the shape. Added by lane predspec26.
+  28. A COMPLEMENT CANNOT MATCH BY ITSELF (complement-place, lone-complement-match, ruled 2026-11-18): bind it
+      freely (`not_seven := not seven`), but to match write it beside a pattern, `anything & not_seven`. Added by
+      lane predspec26.
+  29. SEVERAL VALUES IN A COUNT HOLE COPY THE WHOLE PATTERN, FIRST HOLE SLOWEST, AND AN ILLEGAL COPY GOES WHOLE
+      (product-order, removal, ruled 2026-11-18): `/a|\d{${m},${M}}/` with m := [5], M := [2] never matches, not
+      even `a`; written through `repeat` (its own literal) the `a` survives. Order the values to change which copy
+      is tried first (longest first). Added by lane predspec26.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 

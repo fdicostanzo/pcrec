@@ -13,8 +13,8 @@ nothing. Historical after merge; never edited after.
   hole-in-filter; REF the reference rule (free-name); EX the export rule's visibility table; CS condition-in-sequence
   and quantified-condition; LA lookahead-labels; CX complement-place, lone-complement-match, `anything`; VH the value
   hole fleshed out (a callout model, controlled against `\k<y>`); RS the two held-back questions re-stated.
-- `predspec26_model.out` — the forward run (committed): CHECKS 106 of 106 OK.
-- `predspec26_sabotage.out` — all thirteen sabotages at once: 78 of 106. `predspec26_sabotage_each.out` — each alone.
+- `predspec26_model.out` — the forward run (committed): CHECKS 111 of 111 OK.
+- `predspec26_sabotage.out` — all thirteen sabotages at once: 83 of 111. `predspec26_sabotage_each.out` — each alone.
 
 ## Run (one process; no make; nothing under /tmp)
 

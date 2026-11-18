@@ -261,8 +261,13 @@ print("   SUPPORTED: rev 25.1's PART C C2 printed WHOLE 84 of 364 for the same p
 # the nullable argument: a WARNING, PCRE's meaning kept (THE MANAGER'S READING): occurrences(/\d*/) on `a1`, the
 # one-pattern loop with the empty hit, and the plain find-all of the argument
 NU = P.Pcre(r'\d*')
-print("H4 the nullable argument `/\\d*/` (a warning, ruled): PCRE's find-all of it on `a1b` %s (the empty hits are PCRE's meaning, kept)" % fF(NU, "a1b"))
-print("   THE MANAGER'S READING (the meaning kept as the empty search's): RUNNABLE only as the statement that PCRE gives the list above; the `pcrec.` name: NOT RUNNABLE (a name)")
+print("H4 the nullable argument `/\\d*/` (a warning, ruled): PCRE's FIND-ALL of it on `a1b` %s" % fF(NU, "a1b"))
+TR = []
+NUL = P.Pcre(r'\A(?:[\s\S]*?(?<hit>\d*)(?C"r"))*[\s\S]*\z', {"r": lambda c: TR.append((c.span("hit"), c.get("hit"))) or True})
+okn = W(NUL, "a1b") is not None
+print("H5 the same argument under the REWRITE (the one-pattern loop, hit-carry's premise), WHOLE `a1b`: %s ; hits recorded by a callout %s (one empty hit at 0: PCRE ends a loop on an empty iteration; §2.6's first refusal's fact)" % ("HOLDS" if okn else "FAILS", TR))
+print("   THE MANAGER'S READING (\"the program keeps PCRE's meaning for the empty hit, as the empty search does\"): AMBIGUOUS on the run: PCRE's LOOP (the rewrite) gives ONE hit, PCRE's find-all (the empty search's meaning) gives FOUR; NOT SUPPORTED as worded; the ruled premise (a rewrite) ENTAILS the loop's one hit (told, not asked); the `pcrec.` name: NOT RUNNABLE (a name)")
+check("H5 loop gives one empty hit", TR == [((0, 0), "")])
 check("H4 nullable meaning exists", [(a, b) for a, b, _ in F(NU, "a1b")] == [(0, 0), (1, 2), (2, 2), (3, 3)])
 
 # =====================================================================================================================
@@ -414,6 +419,18 @@ fw = P.Pcre(r"(?<h>\d)\k<h2>(?<h2>\d)")
 print("REF3 B := `/\\k<h>(?<h>\\d)/` after A, B's own h unset at its reference (renamed `(?<h>\\d)\\k<h2>(?<h2>\\d)`): matches on no text of `3779` length <= 4: %s ; with PCRE's MATCH_UNSET_BACKREF it would match `37`: %s"
       % (check("REF3 forward ref never matches", all(S(fw, s) is None for s in pool("37", 4))), fW(P.Pcre(r"(?<h>\d)\k<h2>(?<h2>\d)", opts=PCRE2_MATCH_UNSET_BACKREF), "37")))
 print("   the manager's \"(its h, unset at that point on a first pass)\": SUPPORTED; what the reference then DOES (fail, as PCRE's default) is THE DRAFT'S READING (regex by default)")
+
+print("REF4 a backreference INSIDE ONE literal with two groups of one name, `/(?<h>\\d);(?:(?<h>\\d)|x)\\k<h>/` (read \"as labels are\"): three readings")
+bl = P.Pcre(r'(?<h1>\d);(?:(?<h2>\d)|x)(?(<h2>)\k<h2>|(?!))')
+bc = P.Pcre(r'(?<h1>\d);(?:(?<h2>\d)|x)(?(<h2>)\k<h2>|\k<h1>)')
+bj = P.Pcre(r'(?J)(?P<h>\d);(?:(?P<h>\d)|x)(?P=h)')
+for nm_, rx in (("THE LABEL (the one rule: entering the alternation resets h)", bl), ("the last-SET group's capture", bc), ("PCRE `(?J)` (first set group)", bj)):
+    print("     %-62s WHOLE `3;x3` %s, `3;77` %s, `3;73` %s ; SEARCHED `3;x3 3;77` %s" % (nm_, fW(rx, "3;x3"), fW(rx, "3;77"), fW(rx, "3;73"), fS(rx, "3;x3 3;77")))
+POOLB = pool("37;x", 4)
+for (n1, r1_), (n2, r2_) in (((("label", bl)), ("last set", bc)), (("label", bl), ("(?J)", bj)), (("last set", bc), ("(?J)", bj))):
+    d, first = diff3(r1_, r2_, POOLB)
+    print("     %s vs %s: %d / %d / %d of %d differ, first %s" % (n1, n2, d[0], d[1], d[2], len(POOLB), first))
+check("REF4 three readings differ", W(bl, "3;x3") is None and W(bc, "3;x3") is not None and W(bj, "3;73") is not None and W(bl, "3;73") is None)
 
 # =====================================================================================================================
 print("\n== PART EX: the export rule (public unless `_`; a binding shows its own public labels and its public part labels)")
@@ -694,6 +711,24 @@ def some_own(s):
     vals = [g for g in re.findall(r'(\d)?;', s)]
     return any(v != "" and int(v) < 5 for v in vals)
 print("RS2 group-truth / pass-table: the pass forms read each pass's OWN labels after the loop (some-own); hit-carry concerns a condition INSIDE a pass before its group, which the pass forms are not: the 11-18 rulings do NOT entail an answer to whether `occurs.none(NOT c)` and `NOT some(c)` should agree; it stays asked (re-stated in §R.8; its counts are rev 24.x's E12, NOT re-run here)")
+
+# =====================================================================================================================
+print("\n== PART OQ: the new owner questions' witnesses (other-holes, zero-in-sequence)")
+POOLC2 = pool("abxyz-", 3)
+def d1(a, b):
+    ra, rb = re.compile(a), re.compile(b)
+    out = []
+    for f in (lambda r, t: r.fullmatch(t) is not None, lambda r, t: (lambda m: m and m.span())(r.search(t)), lambda r, t: [m.span() for m in r.finditer(t)]):
+        out.append(sum(1 for t in POOLC2 if f(ra, t) != f(rb, t)))
+    return out
+print("OQ1 other-holes, a class MEMBER `/[${c}x]/`, c := [a, b]: more characters `[abx]` vs one copy per member `(?:[ax]|[bx])`: %s of %d differ (whole / searched / find-all, python `re`)" % (d1(r"[abx]", r"(?:[ax]|[bx])"), len(POOLC2)))
+print("OQ2 other-holes, a RANGE END `/[${lo}-z]/`, lo := [a, x]: one copy per member `(?:[a-z]|[x-z])` vs the members as more characters `[ax-z]`: %s of %d differ" % (d1(r"(?:[a-z]|[x-z])", r"[ax-z]"), len(POOLC2)))
+check("OQ1 member readings agree", d1(r"[abx]", r"(?:[ax]|[bx])") == [0, 0, 0])
+check("OQ2 range readings differ", d1(r"(?:[a-z]|[x-z])", r"[ax-z]") != [0, 0, 0])
+zs = P.Pcre(r'(?<h>\d)(?C"t")\d', {"t": lambda c: c.stretch() == "7"})
+print("OQ3 zero-in-sequence `[h = rx.digit] SEQ (0: \"7\") SEQ rx.digit`, `0` read as the match SO FAR (a callout's start to here): %s ; the other reading (the entire match, unknown at that point) is a compile error"
+      % show(zs, "73", "373", "73 77 37"))
+check("OQ3 so-far reading runs", W(zs, "73") is not None and W(zs, "37") is None)
 
 # =====================================================================================================================
 print("\n== CHECKS: %d of %d OK%s" % (sum(ok for _, ok in CHECKS), len(CHECKS),
