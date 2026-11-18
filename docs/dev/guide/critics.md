@@ -305,3 +305,9 @@ Round 2026-11-17 r43, predspec25 design re-check (`docs/dev/reviews/2026-11-17-r
 2. **A record's RESTATEMENT of an agreed question can narrow it.** "The right side of `&`" existed only in the manager's record; the agreed question and the locked rule say an `&` operand. Ruling lens: diff each record restatement against the question the owner agreed to, list by list.
 3. **Fold marks show where a lane looked.** Eight or more unmarked readers of withdrawn or changed rules were found by grepping the withdrawn rule's TERMS over the whole subject, not by the marked list. Fix-induced lens: that grep is a standing step for a re-check that withdraws rules.
 
+
+Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r47-predspec26.md`); lessons ruled 2026-11-18.
+1. **A claim proved on ONE witness whose first item is already the special case cannot tell the claim from its rivals.** H5's `a1b` has an empty first hit; the nullable argument's meaning was false under the loop rewrite. Drill the special case in SECOND place, and at `min >= 2` (A1, three lenses).
+2. **A place/position table cell about a fact written INSIDE a nested place must say where it is written.** Drill each row's `0` / label / reference cell with the row nested inside the `&`, loop and hole rows (A2, A5).
+3. **For every CHECK the subject cites as "supported", mutate one arm.** If no mutation of the cited arm can move the count, the check shares its source (N3, CS3).
+4. **A 0/0/0 at a short pool length is not evidence when the witness needs a longer text.** A4 needed length 7, A5 needed `min = 1`: critics state the minimum witness length they reached.

@@ -63,3 +63,8 @@
 - `2026-10-23-r2-iter-code.md` (+ dir) — first round of the critic skill (now `pcrec-critic`): the find-all iterators on lane/iterland.
 - `2026-11-15-r7-memfn-mcfixb.md` (+ dir) — light CODE round on the r6 fix diff: the CLI `--second` parse (RULE-1), absent cells pin (RULE-2), FF__COUNT assert (CHECKS-2); ruled, FIX-NOW items applied by lane mcfixc; RULE-3 doc, RULE-4 pin table planned.
 - `2026-11-15-r8-memfn-mcfixc.md` (+ dir) — light CODE round on the r7 fix diff (adequacy of the changed sabotage rows, timed_form, CLI parse, absent-pin NOTE): ADQ-3 (absent cells pin priced on a windowed record) and ADQ-2 (no job reaches second-ness) ruled FIX-NOW, applied by lane pinfix; ADQ-1/ADQ-4 planned.
+
+## Index entries moved out of CLAUDE.md (file47, 2026-11-18; size limit)
+
+- `2026-11-15-r9-memfn-pinfix.md` — single-critic CODE round on lane pinfix (r8 fixes: windowed records refuse a missing pin; 609/610 second-run wiring): LAND; ADQ-2-1 (common.sh inherited FIRST_RUNDIR from the caller env) fixed by the kit manager in the timing jobs; ADQ-3-3 (no plant for the manifest pin) owed after the window.
+- `2026-11-15-r13-covs2d.md` (+ dir) — DESIGN round on cover_cap.md rev 5 §11 (counted seam, width limit): 5 critics + verifier, F1-F29; all dispositions accepted, FIX-NOW in rev 5.1, per-compile valued option (F21) ruled now; kit request waits on a readiness re-check.
