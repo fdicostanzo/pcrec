@@ -2894,3 +2894,7 @@ opening parenthesis from left to right; `(?: )`, lookarounds, atomic groups and 
 named group has both its name and its number (`(a)(?:b)(?<n>c)(?=d)((d)e)` on `abcde`: 1 = `a`, 2 = `c` (also n),
 3 = `de`, 4 = `d`, 0 = the whole match; run on a regex engine); numbers are local to each pattern literal (a hole
 or a bound pattern keeps its own numbering and does not shift the outer one's).
+ADDENDUM (the label-number trial), HIS WORDS: "So the error for conditions with the same name twice would apply to
+n and 2 above". RECORD: his consequence, agreed by the manager: a group's NAME and its NUMBER are two names of ONE
+label, so a condition that names both (`(n: ..., 2: ...)` on `(a)(?:b)(?<n>c)...`) names a label twice and is the
+label-twice ERROR (ruled 11-16, kept 11-17). The compiler knows the aliasing from the pattern alone.
