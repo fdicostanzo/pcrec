@@ -28391,3 +28391,14 @@ Next
   ACCEPTED; dispositions ruled (r50_archlook_dispositions.md: A8 the never fact has ONE home, READY-5's listing
   kept as its rendering; A6 arithmetic-only merge; U-negctx declined); fix lane archlook2. Coordinators stopped.
   Lesson (pilot): two coordinators the same day need the manager to ASSIGN review numbers in the launch prompt.
+- 17:45-18:15: fix lanes delivered (archdense2 with R-1's r49 rename verified; archlook2; predspec271). Confirm
+  critics conf-archdense and conf-archlook (sonnet): both ACCEPT AFTER SMALL EDITS; dense-hit's four edits applied
+  by me (5a1f23d3a), the lookaround's ten by lane landarch. Both architecture notes ACCEPTED rev 2.1 and LANDED by
+  landarch (merges e90e282b9, 453643836; register rows 21-29; design + reviews CLAUDE.md size moves; ledger line);
+  predicates rev 27.1 MERGED 8b2d71186 (review r48 filed). main pushed at 6ff641f7f (CI on 84610b4fd was green).
+  NOT entered by landarch, mine to decide: F-6 (does register row 19 absorb RB_ROW_SCAN) and lookaround P6
+  (conditional on D-9). My errors: deliver files' `files:` separated by a space (lanecheck wants `;`), fixed in
+  all three; review numbers left to the coordinators. lookahead-home asked by /q at 18:05.
+- OWED: [LANDWALK] plan tag (stage 1 is built; the tag reads not-started); the pilot write-up of the architecture
+  step (process logs in docs/dev/reviews/2026-11-18-r49-archdense/process.md, r50's, r48's; the two architect
+  lanes' SKILL FRICTION sections; coordinators' proposed changes HELD); wtprune of today's delivered worktrees.
