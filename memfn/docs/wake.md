@@ -27,9 +27,9 @@ Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows
   record INCONCLUSIVE-AT-NOISE with both nights' figures (zen4-3 + zen4-4) and stop. 609 CONFIRM -> CONFIRM_CELLS, 610.
 - CALIBRATION (Frank via main 11-18): set mfcal 800-809 re-times the green set 1 cards at load ~3 (RUN_ID
   mfcard-zen4-4L, MF_QUIET_LOAD=4.0 env only, tree worktrees/mfcal @ 77871a33e, jobs scratch/memfn/mfcal/jobs/),
-  after sets 2+1, must end by 07:00, spinners hard end 07:15. Critic found CAL-1..8 (CAL-1 CRITICAL: spinners inherit
-  the box-lock fd). Lane mfcalfix (sonnet) fixing + smoke jobs 431/432-kit-mfcalsmoke, deadline 15:30. THEN: review
-  its report, queue 800-809 AFTER set 2 is queued, send main the keys; if not proven by 17:00, DROP and tell main.
+  after sets 2+1, must end by 07:00, spinners hard end 07:15. CAL-1..8 FIXED (mfcalfix; CAL-1 proven by smoke 433/434),
+  FROZEN = lane/memfn-mfcal HEAD (report/deliver commits only), 809 exempt from the 07:00 cut. QUEUED 800-809 12:4x, keys
+  sent to main (ACKED).
   Morning: a lane writes the loaded-vs-quiet comparison (809's compare.txt) for main/Frank.
 - Owed later (after the night): r46 PLAN/DOC items (INTER_CLIP held-out, R0 counted apart, heavy-tail rows); r44 M
   [LAYOUT-DRAW] filed by main; prune worktrees (formsfixk..m, formsland*, gatebudget, crit trees) with scripts/wtprune;
