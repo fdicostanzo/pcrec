@@ -71,8 +71,15 @@
 /* the longest generated run: G2P_RUNCAP (r45_reply's 64), or the kit's span
    bound where that is less (32 before the [COVER-CAP] stage 2 raise);
    DERIVED (lane formsfixb ruling R1), printed in the runtime record */
-#define G2P_MAXRUN  (MF_WSPAN_POS < G2P_RUNCAP ? MF_WSPAN_POS : G2P_RUNCAP)
+/* ... and also by MF_MAX_TERM: window.c's run_part_terms refuses a derived
+   run part of more than MF_MAX_TERM terms at define time (review r27 READ-1),
+   so a run longer than that is outside the kit's admissible domain (lane
+   g2pcap: the raise of MF_WSPAN_POS to 4095 made the span bound alone too
+   loose, 58 "FAIL g2p" in cloud run 44358945125). */
+#define G2P_MAXRUN_SPAN (MF_WSPAN_POS < G2P_RUNCAP ? MF_WSPAN_POS : G2P_RUNCAP)
+#define G2P_MAXRUN  (MF_MAX_TERM < G2P_MAXRUN_SPAN ? MF_MAX_TERM : G2P_MAXRUN_SPAN)
 _Static_assert(G2P_MAXRUN <= MF_WSPAN_POS, "G2P_MAXRUN is past the kit's span (MF_WSPAN_POS)");
+_Static_assert(G2P_MAXRUN <= MF_MAX_TERM, "G2P_MAXRUN is past the kit's term bound (MF_MAX_TERM; window.c run_part_terms, review r27 READ-1)");
 
 /* ---- text ------------------------------------------------------------------- */
 
@@ -1281,7 +1288,7 @@ int main(int argc, char **argv)
            g_nobg, g_f24, g_f24_3, g_scan_findable, g_route_sites[G2P_PD], g_declines, g_dec_member,
            g_dec_assign, g_dec_twin, g_dec_untested, g_dec_refused, g_dec_rendered, g_dec_noprecheck,
            g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one, g_r41, g_r41_flip);
-    printf("g2_pres_gen: twins maxrun=%d (MF_WSPAN_POS %d)\n", (int)G2P_MAXRUN, (int)MF_WSPAN_POS);
+    printf("g2_pres_gen: twins maxrun=%d (MF_WSPAN_POS %d, MF_MAX_TERM %d)\n", (int)G2P_MAXRUN, (int)MF_WSPAN_POS, (int)MF_MAX_TERM);
     printf("g2_pres_gen failures: %d\n", g_fails);
     return g_fails ? 1 : 0;
 }
