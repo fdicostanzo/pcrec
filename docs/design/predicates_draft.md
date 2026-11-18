@@ -1,9 +1,26 @@
 # The predicate language ([COND-FAMILY] #6): a preliminary specification for critical analysis
 
-**rev 26.1: review r47's fixes and the conditional; NOT STABLE pending the owner's answers** (§R.8). (Rev 26: the owner's 2026-11-18 rulings folded; §R rebuilt on ONE PLACE TABLE, R.1.0. Rev 25.1: review r43's fixes. Rev 25: labels across parts, the warnings set, the rx module, the owner 2026-11-17 evening.)
+**rev 27: ONE TYPE (a match is an rx; two forms of each operation) and backref-label = capture; NOT STABLE pending the owner's answers** (§R.8). (Rev 26.1: review r47's fixes and the conditional. Rev 26: the owner's 2026-11-18 rulings folded; §R rebuilt on ONE PLACE TABLE, R.1.0. Rev 25.1: review r43's fixes. Rev 25: labels across parts, the warnings set, the rx module, the owner 2026-11-17 evening.)
 
 ## Changelog
 
+- **rev 27: ONE TYPE (a match is an rx; two forms of each operation) and backref-label = capture; NOT STABLE pending
+  the owner's answers (lane predspec27, 2026-11-18).** A FOLD (no restructuring; review r47's E1 stays the next full
+  revision): COND-FAMILY's five entries of the 2026-11-18 afternoon, session 140 (backref-label RULED: capture;
+  the value-hole DISCUSSION; value-hole "yes but"; match-is-rx RULED: the types unified, "Change my answers to
+  match"; read-is-constant RULED: a read is a single value at run time, two forms of each operation, the other
+  direction UNDER CONSTRUCTION; §R.11 rows 120-124). NEW R.1.16 ONE TYPE: the type statement, THE TYPE TABLE (one
+  declared row per operation and per hole position: what it needs, its compile-time and run-time forms, BUILT NOW or
+  UNDER CONSTRUCTION, a named error class distinct from "illegal"), and ANSWERS CHANGED (every earlier ruling the
+  unification changes or re-grounds, his words, where, what it becomes, ruled or a reading). R.1.15 rewritten (RULED
+  where ruled; the control "`${$y}` equals `\k<y>`" NARROWED to where the label and the capture agree, with the count
+  where they part); R.1.13 REFERENCES and R.1.7 (b) for backref-label; R.1.0's MATCH VALUE row; §R.2's dollar-condition
+  row; §R.6 (three rows); §R.7; §R.8 (value-hole and backref-label ANSWERED; NEW questions **numeral-width**,
+  **unset-in-hole**, **dollar-warning**, **same-name-twice**, **array-in-hole**, **value-test**, **lift-order**,
+  **construction-line**; plus-operands kept open); §R.9; §R.11; §4.1; §0.1 L28, L33; the seven live `${$..}` uses
+  re-marked. Every MANAGER'S READING of the five entries TESTED (the lane's report, MANAGER READINGS TESTED).
+  Evidence `docs/dev/lanes/predspec27_evidence/` (21 of 21; 8 sabotages, each caught; all at once 13 of 21). STOP RULE: nothing stopped. 9,094 lines
+  (1,134,743 bytes) before, about 9,330 lines after (the lane's report has the final count).
 - **rev 26.1: review r47's fixes and the conditional; NOT STABLE pending the owner's answers (lane predspec261,
   2026-11-18).** (I) Review r47 (`docs/dev/reviews/2026-11-18-r47-predspec26.md`) as the manager disposed it: A1 the
   nullable argument's meaning restated (R.1.9, §R.8 (a), §2.6, §13 O53); A2 the place table's `0` cells per place, the
@@ -559,7 +576,7 @@
   ruling and the adopted parts of `docs/dev/lanes/predx_report.md`.
 - **rev 0 (lane predspec, 2026-11-14).** First consolidation of the notes through the outer-layer note.
 
-## R. Rev 26.1: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
+## R. Rev 27: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
 
 Rev 24 (lane predspec24) applied the owner's rulings of 2026-11-17 (COND-FAMILY.md, the entries from "OWNER LEAN —
 branch-scope" to the end of the file); REV 24.1 (lane predspec241, 2026-11-17) applies the fixes of review r40
@@ -638,7 +655,15 @@ could not fail rebuilt (§R.10); new owner questions **number-in-loop**, **hit-c
 whole draft and every reader fixed or marked "[REV 26.1]" (the lane's report, WHAT MOVED). Answers cited "rev 26.1's
 PART x" are lines of `docs/dev/lanes/predspec261_evidence/predspec261_model.out`. Rev 23.2's §R is the record at `git show
 9b61e41e9:docs/design/predicates_draft.md` (§16.7); rev 24.1's, rev 24.2's, rev 24.3's and rev 24.4's §R at the commits
-before their successors.
+before their successors. [REV 27] REV 27 (lane predspec27, 2026-11-18) folds the owner's five entries of the same
+afternoon (COND-FAMILY, from "2026-11-18 OWNER RULING — backref-label: capture" to the end of the file; §R.11 rows
+120-124), and nothing else: a backreference in a literal reads PCRE's CAPTURE (backref-label, RULED); a hole may hold a
+value EXPRESSION (value-hole, "yes"), under ONE TYPE: "A match is a regex", "Change my answers to match"
+(match-is-rx, RULED), a label read being "a single value read at run time" and "semantically ... a regex of a single
+string", each operation having a compile-time form on general regex and a run-time form on single values, the other
+direction (single-value functions on general regex) UNDER CONSTRUCTION (read-is-constant, RULED). NEW R.1.16 states
+the type as ONE DECLARED TABLE and lists every earlier answer the unification changes (ANSWERS CHANGED). Answers cited
+"rev 27's PART x" are lines of `docs/dev/lanes/predspec27_evidence/predspec27_model.out`.
 SPELLINGS ARE PLACEHOLDERS (D193 addendum 4): `!`, `NOT`, `h = v`, `some`, `occurs.none`, `hits`, `atomic`, `when`
 name meanings, not syntax; so do rev 25's `SEQ` (the sequence operator; his placeholders were `€` and `¥`),
 `rx.repeat`, `rx.digit`, the part path `aa.h` and the warning names (one list, §R.8). Every answer below is a line of `docs/dev/lanes/predspec243_evidence/predspec243_model.out`
@@ -670,7 +695,7 @@ CROSS-REFERENCES: a `§R.n` cite in text written for rev 23-23.2 (outside this s
 paragraph or a §13 block) names REV 23.2's §R (§16.7); a cite in a "[REV 24]" or "[REV 24.1]" mark or this section
 names this section.
 
-### R.0 Goals of rev 24.1, kept by rev 24.2 through rev 26.1 (ranked; the highest wins a conflict)
+### R.0 Goals of rev 24.1, kept by rev 24.2 through rev 27 (ranked; the highest wins a conflict)
 
 | # | goal | who benefits | measurable form |
 |---|---|---|---|
@@ -806,7 +831,7 @@ for the count split). [REV 26.1, review r47 B10] A POSITION WITH NO ROW HERE IS 
 | a BACKREFERENCE's name or number (`\k<${n}>`) | none: THE DRAFT'S READING (rev 25.1), a compile error [REV 26.1, review r47 C4: RULE-AS-CODE now says so, rev 26.1's PART P P6 row `backreference`; rev 26's classifier returned OPEN] | | | | rev 25.1 |
 | inside `\Q..\E` | none: the hole is not a hole there (THE DRAFT'S READING, rev 25.1) | | | | rev 25.1 |
 | ZERO values (`${[]}`) | [REV 26.1, review r47 B7: ONE CELL PER POSITION, the per-position principle; rev 26 kept "as every copy removed, `(?!)`" for every position] PATTERN: an alternation of no members, `(?!)` (THE DRAFT'S READING, rev 25.1); COUNT: every copy removed, that literal never matches, the can-never-match warning (as the COUNT row); NAME: a compile error (not exactly one name, name-hole); CLASS: OPEN (the member reading would make `[${[]}x]` the class `[x]`, not `(?!)`); OPTION: OPEN; CLASS and OPTION asked under **other-holes** | | | | rev 25.1; name-hole |
-| a MATCH VALUE in a pattern position (`${$y + 1}`, the generalized backreference) | UNRULED: his LEAN ("I didn't even think this was legal. I love it if it works. It needs to be fleshed out"); fleshed out in R.1.15 and asked as **value-hole** | literal text, never regex syntax (R.1.15) | per mention, as `$y` reads (R.1.15) | | **value-hole** |
+| a MATCH VALUE in a pattern position (`${$y + 1}`, the generalized backreference) | [REV 27: RULED, value-hole "yes" under match-is-rx: an EXPRESSION over label reads and constants (a read is a one-string rx known at run time, R.1.16); rev 26.1: UNRULED, his LEAN] | its strings as LITERAL TEXT under the options in force at the hole; nothing = the position fails (R.1.15) | per mention, as `$y` reads (R.1.15); an array `${@y}`: NOT DEFINED, **array-in-hole** | | **value-hole** (RULED); width and unset: **numeral-width**, **unset-in-hole**; a read in a typed position: R.1.16 T13-T16 |
 
 R.1.1 PLACES AND MODES. The subject is the search text (row-is-match, 11-16 23:46, STANDS). A nested program stands
 in a PLACE that fixes its text and mode: either side of `&`, and a `label:` set, are WHOLE-value places (the text is
@@ -1174,7 +1199,9 @@ reference uses the namespace of the rx it is WRITTEN in, read as labels are (the
 `\k<h>` reads B's own group; "inside one literal a backreference is regex's, untouched" now MEETS that rule where a
 literal has two groups of one name [REV 26.1, review r47 A4: and with ONE group name wherever the label and PCRE's
 capture part (an optional group in a loop; a group two loops deep), on plain PCRE patterns], a case the record does not
-name: asked as **backref-label** (§R.8)]; a visibly different spelling, put off to the spellings review (§R.8); (c) THE ARRAY FORM, REQUIRED (pass-list-read:
+name: asked as **backref-label** (§R.8)] [REV 27: backref-label RULED: "capture": inside rx text `\k<h>` reads PCRE's
+capture, so "inside one literal a backreference is regex's, untouched" HOLDS again for one name; two groups of one
+name are **same-name-twice**; the carried-capture form stays REQUIRED where a `$` reads (R.1.16 ANSWERS CHANGED A10)]; a visibly different spelling, put off to the spellings review (§R.8); (c) THE ARRAY FORM, REQUIRED (pass-list-read:
 "I would like a form that allows other passes but it should be clear that that is what is requested. Specifically, it
 should have different spelling. Eg Perl uses @x. An array of such values is its own type"): every SETTING of the name
 in order, the one outside the loop included (ruling RECORD (4); his before-and-inside words "The array takes all h
@@ -1656,8 +1683,24 @@ capture keeps `3`), the label FAILS (entering the optional resets h): 2 / 2 / 2 
 <= 7; the shortest witness has length 7); `/(?:(?:(?<h>\d);)*,)*=\k<h>/` WHOLE `3;,,=3`: PCRE HOLDS, the label FAILS
 (the second outer pass enters the inner loop and resets h): 1 / 1 / 1 of 5,461 (`3;,=`, length <= 6); the control, no
 optional and one depth, 0 / 0 / 0 of 1,365 (rev 26.1's PART R47 A4; sabotage s24 caught). The record's clarification
-"a backreference reads as labels do" therefore has a compatibility cost the question now shows.] Per place:
-R.1.0's REFERENCE column.
+"a backreference reads as labels do" therefore has a compatibility cost the question now shows.] [REV 27:
+backref-label RULED (COND-FAMILY "2026-11-18 OWNER RULING — backref-label: capture"), HIS WORDS: "backref-label:
+capture. Plain rx in particular should work like pcre when we can. The behavior is pcre but is the scope still local
+to the literal?" A backreference written in a literal reads PCRE's CAPTURE, not the label: the witnesses above keep
+PCRE's answers (`/(?:(?<h>\d)?-\k<h>;)*/` WHOLE `3-3;-3;` HOLDS; rev 27's PART BL BL1, every mode, R.1.15 (10)). His
+question on scope was answered from the record (the manager, in the session): yes, unchanged: the ruling changes
+WHICH VALUE a reference reads, not WHERE the name is looked up ((1)-(3) above). THE MANAGER'S READINGS, TESTED: (m1)
+the clarification "it should be the last reference as labels" now decides WHICH GROUP a name resolves to, the value
+being the capture's: SUPPORTED (A := `/(?<h>\d)/`, B := `/(?<h>\d)?-\k<h>/`, `A SEQ B`: B's own group's capture FAILS
+`7-7` and HOLDS `77-7`; PCRE's written-out splice under `(?J)` reads A's group and HOLDS `7-7`: 6 / 66 / 66 of 364
+texts part; here B's capture and the label agree, 0 / 0 / 0); (m2) in a pattern that inserts a part exporting `h`,
+`\k<h>` reads that group's capture as PCRE would for the one group: SUPPORTED (`/(?:${X}-\k<h>;)*/`, X :=
+`/(?<h>\d)?/`, written out, equals the plain literal on 0 / 0 / 0 of 21,845); (m3) two groups of ONE name in ONE
+literal is NOT settled by "capture": SUPPORTED (libpcre2 REFUSES the literal without `(?J)`, "two named subpatterns
+have the same name (PCRE2_DUPNAMES not set)"; the language allows it; the first-set, last-set and label readings part
+on 2 to 6 of 341 texts): asked **same-name-twice** (§R.8). REF4's three readings are that question's. ("Plain rx ...
+should work like pcre when we can" is said of rx text; a NUMBER in a condition, **number-in-loop**, is a condition's
+read and stays asked.)] Per place: R.1.0's REFERENCE column.
 SETTING A LABEL (COND-FAMILY "OWNER, three points on labels"). HIS WORDS: "1. did we decide on a way to set labels in
 predicate language? And what does it mean? 2. setting labels is just the label using the group-label-not-capture
 syntax 3. if A & B & (1: blah) which A and B are rx literals, do we define the groups as coming from on B? Makes
@@ -1991,63 +2034,181 @@ WHAT `rx_module.md`'S QUESTIONS BECAME:
 | quantifier-grammar | RULED: `+`/`*` binary are arithmetic (on arrays by **array-lift**), `?` is the optional, counts by `repeat`, a lazy or possessive mark is regex's on the whole operand, binding tight; a quantifier on a CONDITION a compile error (rev 26) | above; **plus-operands** (the operand kinds of `+`, rev 26) |
 | every-pass-home | OPEN, as **every-pass-spelling** (the conditioned item inside `repeat` is the item form) | §R.8 remaining |
 
-R.1.15 THE VALUE HOLE, FLESHED OUT (rev 26; UNRULED; asked as **value-hole**, §R.8). HIS WORDS on a matched value in a
-pattern position, `/(?<y>\d{4})-${$y + 1}/` (COND-FAMILY "2026-11-18 OWNER on value-is-pattern", part (3)): "I didn't
-even think this was legal. I love it if it works. It needs to be fleshed out". So it is a LEAN, NOT settled as legal.
-EVERY USE of the form in this draft RESTS ON AN UNRULED FORM and is marked "[REV 26: **value-hole**]": §0.1 L33, §2.5,
-§4.1, §11 (generalized backreferences), §13 (O27, O34 and the captures-level lean); §16's copies are the record (the grep, the
-report's EXAMPLES THAT MOVED). Every answer below is rev 26's PART VH unless marked hand-worked; the model is a
-libpcre2 CALLOUT MODEL: at the hole, the value's text L is known (the label is read where the hole is written), and
-matching L there is modelled by a lazy capture `(?<v>[\s\S]*?)` plus a callout that accepts only v = L (the lazy
-capture tries every length; exactly one equals L). CONTROL: for the plain value `${$y}` the model equals PCRE's own
-backreference `\k<y>` on 0 / 0 / 0 of 364 texts (VH0), so the model is honest where PCRE has the construct.
-(1) WHAT TEXT THE VALUE BECOMES: the value's TEXT, inserted as LITERAL TEXT, never re-read as regex syntax (THE DRAFT'S
-READING; it is the backreference's own behaviour, which `${$y}` must equal). The two differ: `/(?<y>[\d.]+)-${$y}/` on
-`1.5-1x5`: as literal text FAILS, as regex syntax HOLDS (VH3; sabotage s9 caught). So a value is NOT a one-member
-pattern in a pattern position; it is a STRING, matched literally.
-(2) NUMERALS AND THEIR WIDTH: `$y + 1` is arithmetic on a NUMBER; its text is a numeral. Two candidates, both run
-(VH2): CANONICAL (§2.4's variable-width numerals, no leading zeros): `0099` + 1 is `100`, so `0099-100` HOLDS and
-`0099-0100` FAILS; WIDTH KEPT (the operand's width, zero-padded): `0099-0100` HOLDS and `0099-100` FAILS; `9999` + 1
-is `10000` under both (the width grows: `9999-10000` HOLDS under both). THE DRAFT'S READING: canonical (§2.4's
-numeral rule; §13 O27 asked the same question in rev 11 and was never ruled).
-(3) AN UNSET LABEL: `/(?<y>\d{4})?-${$y + 1}/` on `-`: FAIL (as PCRE's backreference to an unset group: WHOLE `-`
-FAILS) or EMPTY (as PCRE's MATCH_UNSET_BACKREF: WHOLE `-` HOLDS) or a COMPILE ERROR where the label can be unset (the
-`label.unset` family, §7.1) (VH4). THE DRAFT'S READING: FAIL (regex by default, exception-rule); `y + 1` of nothing is
-not a number.
-(4) IN A LOOP: the value is read where the hole is written (pass-start-read): after its group, the current pass's own
-value: `/(?:(?<y>\d{4})-${$y + 1};)*/` WHOLE `2025-2026;2030-2031;` HOLDS, `2025-2026;2030-2032;` FAILS (SEARCHED
-`2025-2026;`@0) (VH5); written before its group, the previous pass's.
-(5) IN A HIT-LIST ARGUMENT: **hit-carry** now applies: written after its group, the hit's own value; BEFORE it, the
-PREVIOUS HIT's: `occurrences(/${$y + 1}-(?<y>\d{4})/, min = 2)` (the unset value read as EMPTY for this run only, so the
-first hit can start) WHOLE `-2025 2026-2030` HOLDS, `-2025 2027-2030` FAILS (VH6).
-(6) EVERY MODE: WHOLE, SEARCHED and FIND-ALL as for any pattern; the draft's example `/(?<y>\d{4})-${$y + 1}/`: WHOLE
-`2025-2026` HOLDS / SEARCHED `x2025-2026` `2025-2026`@1 / FIND-ALL `2025-2026 2030-2032 2030-2031` [`2025-2026`@0,
-`2030-2031`@20] (VH1; the draft's hand-worked answers REPRODUCED). A several-match subject: the third member shows a
-later match being found after a failing one.
-(7) WHAT AN ENGINE MUST DO: the inserted text is known only at MATCH TIME, so the program is NOT a fixed regex: it is a
-generalized BACKREFERENCE (a computed string compared at the current position), at least the level of `\k<y>` (the VM
-with backreferences; not DFA-able in general); for a FINITE label (a label whose values are a known finite set, e.g.
-`\d{4}`) it can be ENUMERATED at compile time into an alternation of copies (`2025-2026|...`, 10,000 copies here):
-regular, but priced by its size (R.1.12, "a constant is an rx where the count of the enumeration is 1").
-(8) THE LIBPCRE2 CONTROL: the callout model above (VH0 shows it equals `\k<y>` where PCRE has the construct); no plain
-PCRE pattern expresses `$y + 1`.
-(9) WHAT IT MEETS: dollar-condition's ruled ground ("$x is not a pattern but a match"): (1) above is consistent with it,
-a value is inserted as TEXT, not as a pattern; R.1.12's "a constant is an rx where the count of the enumeration is 1"
-(a compile-time constant), which a match-time value is not; array-lift (arrays the user writes; a match-time value is
-one string); the hole positions (R.1.0): a match value in a COUNT position (`\d{${$n}}`) would make the count known only
-at match time, which the count ruling's "finite enumeration" excludes unless the label is finite: NOT STATED, part of
-**value-hole**.
-(10) [REV 26.1, review r47 B5] TWO GAPS IN THE MODEL AND ITS CONTROL: (a) THE TWO ANCHORS PART: "the backreference's own
-behaviour" follows PCRE's CAPTURE, pass-start-read ((4) above) follows the LABEL; with an optional label in a loop,
-`/(?:(?<y>\d)?-${$y};)*/`, the callout model reading PCRE's capture equals `\k<y>` on 0 / 0 / 0 of 21,845 texts (`37-;`,
-length <= 7), while the label (the one rule) parts from both on `3-3;-3;` (**backref-label**'s first witness); VH0's
-control (no optional, one depth) could not reach this. (b) UNDER `(?i)`, `\k<y>` is CASELESS and rev 26's exact-equality
-model is not: `/(?i)(?<y>[a-b])-${$y}/` vs `\k<y>` 4 / 336 / 336 of 3,906 texts (`aAbB-`, length <= 5; WHOLE `a-A`: `\k`
-HOLDS, the exact model FAILS), a caseless-equality model 0 / 0 / 0 (sabotage s23, exact equality, caught); VH0's
-alphabet `12-` has no cased pair. So (1)'s "literal text" is literal text matched UNDER THE OPTIONS IN FORCE where the
-hole stands (THE DRAFT'S READING: as a literal written there would be; python `re` with the value escaped inside the
-`(?i)` pattern agrees with `\k<y>` on all 3,906 whole values, review r47 V5). Both asked under **value-hole**; (a) also
-under **backref-label**. Rev 26.1's PART R47 B5.
+R.1.15 THE VALUE HOLE [REV 27: REWRITTEN. The FORM is RULED (value-hole "yes", under match-is-rx); each detail below
+says RULED or UNRULED; rev 26.1's text, "FLESHED OUT (rev 26; UNRULED)", is the record at commit 84610b4fd]. HIS
+WORDS, in order: the lean (COND-FAMILY "2026-11-18 OWNER on value-is-pattern", part (3)), on `/(?<y>\d{4})-${$y + 1}/`:
+"I didn't even think this was legal. I love it if it works. It needs to be fleshed out"; the ruling ("OWNER on
+value-hole — "yes but""): "value-hole: yes but. This is either different than regex logic and the separation should
+be clear OR the types unified. Eg A match is a regex"; its condition settled ("OWNER RULING — match-is-rx"):
+"value-hole: let's use the unifying idea for it. Change my answers to match." RULED: a hole may hold an EXPRESSION
+over label reads and constants; it matches the strings the expression yields, as LITERAL TEXT, at the hole; an
+expression that yields nothing FAILS there (the form as asked him; the record: "RULED yes to the form"). The record
+keeps "the numeral width and unset details" NOT ruled, and the manager read the bare "yes" as "the form as asked, the
+details still to be confirmed": so (2) and (3) below stay questions. The type the form rests on is R.1.16's. EVERY
+USE of the form in this draft is marked "[REV 27: **value-hole** RULED ...]" (§0.1 L33, §2.5, §4.1, §11, §13 O27,
+O34, the captures-level lean); §16's copies are the record. THE MODEL (rev 26's, kept): a libpcre2 CALLOUT MODEL; at
+the hole the value's text L is known (the label read where the hole is written), and matching L there is a lazy
+capture `(?<v>[\s\S]*?)` plus a callout that accepts only v = L. Answers are rev 26's PART VH unless marked.
+(1) WHAT TEXT THE VALUE BECOMES: RULED in substance (read-is-constant: "Semantically, $y is a regex of a single
+string"): a read is a ONE-STRING RX, and a one-string rx in a pattern position matches its one string, LITERALLY (the
+string is the member; it is never re-read as regex syntax). [REV 27: rev 26's sentence "So a value is NOT a
+one-member pattern in a pattern position; it is a STRING, matched literally" is CHANGED: it IS a one-member rx, and
+that is WHY it matches literally (R.1.16 ANSWERS CHANGED, row 3). No answer moves: `/(?<y>[\d.]+)-${$y}/` on `1.5-1x5`
+FAILS (VH3; the syntax reading HOLDS; rev 27's sabotage s7, the syntax reading of `$y . "E"`, caught, PART UT UT4).]
+(2) NUMERALS AND THEIR WIDTH: UNRULED, asked **numeral-width** (§R.8). `$y + 1` is arithmetic on a NUMBER; its text is
+a numeral. Two candidates, both run (VH2): CANONICAL (§2.4's variable-width numerals): `0099` + 1 is `100`, so
+`0099-100` HOLDS and `0099-0100` FAILS; WIDTH KEPT (zero-padded to the operand's width): `0099-0100` HOLDS and
+`0099-100` FAILS; `9999` + 1 is `10000` under both. THE DRAFT'S READING: canonical (§2.4; §13 O27, never ruled).
+(3) AN UNSET LABEL: UNRULED, asked **unset-in-hole** (§R.8). `/(?<y>\d{4})?-${$y + 1}/` on `-`: FAIL (as PCRE's
+backreference to an unset group: WHOLE `-` FAILS), EMPTY (as MATCH_UNSET_BACKREF: WHOLE `-` HOLDS) or a COMPILE ERROR
+where the label can be unset (the `label.unset` family, §7.1) (VH4). THE DRAFT'S READING: FAIL. [REV 27: its ground is
+now the type: an unset read has NO string (§5.4's `$` row: "unset: no entry"), so it is the rx of no strings, an
+expression "that yields nothing", which the ruled form FAILS; whether an unset read is no string or the empty string
+is the question.]
+(4) IN A LOOP: the value is read where the hole is written (pass-start-read, RULED): after its group, the current
+pass's own value: `/(?:(?<y>\d{4})-${$y + 1};)*/` WHOLE `2025-2026;2030-2031;` HOLDS, `2025-2026;2030-2032;` FAILS
+(SEARCHED `2025-2026;`@0) (VH5); written before its group, the previous pass's. The value is the LABEL ("an unqualified
+`$x` reads the label", unchanged by today's rulings).
+(5) IN A HIT-LIST ARGUMENT: **hit-carry** (RULED) applies: written after its group, the hit's own value; BEFORE it, the
+PREVIOUS HIT's: `occurrences(/${$y + 1}-(?<y>\d{4})/, min = 2)` (the unset value read as EMPTY for this run only)
+WHOLE `-2025 2026-2030` HOLDS, `-2025 2027-2030` FAILS (VH6).
+(6) EVERY MODE: `/(?<y>\d{4})-${$y + 1}/`: WHOLE `2025-2026` HOLDS / SEARCHED `x2025-2026` `2025-2026`@1 / FIND-ALL
+`2025-2026 2030-2032 2030-2031` [`2025-2026`@0, `2030-2031`@20] (VH1; REPRODUCED by rev 27's PART UT UT3). A
+several-match subject: the third member shows a later match found after a failing one.
+(7) WHAT AN ENGINE MUST DO [REV 27: re-grounded by read-is-constant]: `$y + 1` is the RUN-TIME FORM of `+` ("the
+runtime version that, while compiled, works on single value strings at run time"), BUILT NOW (R.1.16): a computed
+string compared at the current position, at least the level of `\k<y>` (the VM with backreferences; not DFA-able in
+general). For a FINITE label (`\d{4}`) the same program has a compile-time spelling (an alternation of 10,000 copies,
+regular, priced by its size, R.1.12); that is a choice of the compiler, no answer moves.
+(8) THE CONTROL, NARROWED [REV 27: rev 26 said "for the plain value `${$y}` the model equals PCRE's own backreference
+`\k<y>` on 0 / 0 / 0 of 364 texts (VH0), so the model is honest where PCRE has the construct"; the value-hole
+discussion's answer (the manager's) narrows it, SUPPORTED]: under backref-label (RULED) `\k<y>` reads PCRE's CAPTURE
+and `${$y}` reads the LABEL, so `${$y}` EQUALS `\k<y>` ONLY WHERE THE LABEL AND THE CAPTURE AGREE: they part where the
+label is UNSET at the hole while the capture is set: an optional group in a loop, `(?:(?<y>\d)?-..;)*`, 2 / 2 / 2 of
+21,845 texts (`37-;`, length <= 7; WHOLE `3-3;-3;`); a group two loops deep, `(?:(?:(?<y>\d);)*,)*=..`, 1 / 1 / 1 of
+5,461 (`3;,=`, length <= 6; WHOLE `3;,,=3`); no optional and one depth 0 / 0 / 0 of 5,461; and the model "the label
+where it is set, else the capture" equals `\k<y>` on both pools, 0 / 0 / 0 (rev 27's PART VD VD2; sabotage s2, the
+label replaced by the capture, caught). VH0 (no optional, one depth) stands as the control where they agree.
+(9) WHAT IT MEETS [REV 27: re-grounded]: dollar-condition's ground "$x is not a pattern but a match" is SUPERSEDED by
+"A match is a regex" (R.1.16 ANSWERS CHANGED); R.1.12's "a constant is an rx where the count of the enumeration is 1"
+now has a run-time twin, a read (a one-string rx known at run time); array-lift's meaning extends to general regex,
+its build beyond constants UNDER CONSTRUCTION (R.1.16); a read in a COUNT position (`\d{${$n}}`): UNDER CONSTRUCTION,
+THE DRAFT'S READING (R.1.16's COUNT row; **construction-line**).
+(10) THE TWO GAPS OF REV 26.1 [REV 27: (a) SETTLED, (b) SUPPORTED]: (a) THE TWO ANCHORS: rev 26.1 found "the
+backreference's own behaviour" following PCRE's capture and pass-start-read following the label. backref-label
+(RULED: "capture. Plain rx in particular should work like pcre when we can") settles which is which: `\k<y>` the
+CAPTURE, `${$y}` the LABEL; they part as (8) counts. The ruled witness, every mode (rev 27's PART BL BL1):
+`/(?:(?<y>\d)?-\k<y>;)*/` WHOLE `3-3;-3;` HOLDS / SEARCHED `3-3;-3;`@0 / FIND-ALL `3-3;-3; 7-7;` [`3-3;-3;`@0,
+``@7, `7-7;`@8, ``@12]; the label read in the same place, `/(?:(?<y>\d)?-${$y};)*/`: WHOLE FAILS / SEARCHED `3-3;`@0
+/ FIND-ALL [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12]. (b) CASE: THE OPTIONS IN FORCE AT THE HOLE DECIDE (the
+manager's answer in the discussion; SUPPORTED: on `a-A`, plain FAILS, `(?i)` HOLDS, only the reference caseless HOLDS,
+only the group caseless FAILS, python `re` and libpcre2 agreeing on all four; the literal-at-the-hole model equals
+`\k<y>` for all four placements, 0 / 0 / 0 of 3,906 texts each, `aAbB-`, length <= 5; rev 27's PART VD VD1, VD1b;
+sabotage s3, the group's options, caught). It is "as a literal written there would be".
+(11) [REV 27] THE `$` IN A HOLE (the discussion's answers, the manager's; SUPPORTED by the draft's marks, not by a
+ruling): `${y}` inserts the BINDING y (a pattern), `${$y}` the LABEL read (§5.4: `$` "before a label PATH"); `$y` is
+the label read, no second thing (R.1.7, THE THREE READS (a)). SCOPE: a `$y` in a hole is in scope in the rx that
+defines y and is read where written; in an rx that does not define y it is free-name's COMPILE ERROR (R.1.0's
+REFERENCE column lists `$h` beside `\k<h>`; free-name: "The rx should export the group").
+(12) [REV 27] AN EXPRESSION IN A HOLE, in its run-time form, each against the plain PCRE pattern that writes the same
+strings, 0 / 0 / 0 of 3,906 texts (`37x-E`, length <= 5; rev 27's PART UT UT4): `/(?<y>\d)-${$y | "x"}/` (the read
+first, then `x`) WHOLE `3-x` HOLDS / SEARCHED `7-3 3-3` `3-3`@4 / FIND-ALL `3-3 4-x 5-6 7-7` [`3-3`@0, `4-x`@4,
+`7-7`@12]; `/(?<y>\d)-${$y & <5}/` (the read or NOTHING; nothing = the position fails) WHOLE `3-3` HOLDS / SEARCHED
+`7-7 3-3` `3-3`@4 / FIND-ALL `3-3 7-7 4-4` [`3-3`@0, `4-4`@8]; `/(?<y>\d)-${$y . "E"}/` (`.` his JOINING placeholder;
+whether joining is `+` or its own mark is **plus-operands**) WHOLE `3-3E` HOLDS / SEARCHED `x7-7E` `7-7E`@1 / FIND-ALL
+`3-3E 4-4x 7-7E` [`3-3E`@0, `7-7E`@10]. A `when` choosing the inserted text, his `if($y & (0: 1492), "Columbus", $y)`:
+the ruled `when` gives his intent ONLY with a CONDITION test, `when((y: 1492), "Columbus", else = $y)`; his test
+written as an rx is, by when-peek (RULED), a bare pattern and CONSUMED: asked **value-test** (§R.8; rev 27's PART UT
+UT2).
+(13) [REV 27] AN ARRAY IN A HOLE, `${@y}`: NOT DEFINED. The manager's idea in the discussion ("any earlier setting,
+as an alternation", hand-worked) is NOT folded; asked as an idea, **array-in-hole** (§R.8).
+
+R.1.16 ONE TYPE [REV 27: NEW; match-is-rx and read-is-constant, RULED 2026-11-18 afternoon]. HIS WORDS, in full, are
+COND-FAMILY's two entries (quoted in §R.11 rows 123-124); the load-bearing sentences: "value-hole: let's use the
+unifying idea for it. Change my answers to match. The following can be delayed in build. That means both directions:
+\d + 1 matches the digits 1 through 10. left(2) is the leftmost two digits of an rx." ... "We can create functions
+like left() and restrict them to constants now. I'd like to consider that unbuilt territory however and the error is
+an "under construction" sign."; and "Yes $y is a single value read at run time. At runtime, it is manipulated by
+left() et al using string manipulation built for simple strings. Semantically, $y is a regex of a single string. So
+operations that work on regex should work on it. That means, in practice, that there are two forms for each of them:
+the compile time version that works on general regex, and the runtime version that,while compiled, works on single
+value strings at run time. So $y + 1 and \d + 1 look the same, the first one happens at run time, and the second at
+compile time. My point was that we were applying & to $y but you could also go the other way and apply "single
+value" functions like x + 1 and left() to normal regex as well. The "under construction" remark is that this is hard
+and we shouldn't get bogged down with it now but acknowledge the direction."
+THE TYPE STATEMENT. (T1) ONE TYPE for values: the RX, a set of strings offered in an order (§2.1's rx kind, with its
+arity; R.1.2's order). A constant (`5`, `"a"`) is a one-string rx known at COMPILE time (§2.1, unchanged); a label
+READ (`$y`) is a one-string rx known at RUN time (read-is-constant (1), (2)); an array the user writes is an
+alternation (array-lift). The record unifies a MATCH with an rx; the condition and the macro stay their own kinds
+(§2.1, rev 23.1): THE LANE'S READING (no line of today's entries names them). (T2) PROPERTIES, NOT TYPES: an operation
+or a position may require its operand to be SINGLE (exactly one string), FINITE (finitely many, enumerable within
+R.1.12's budget) or ANY, and KNOWN AT COMPILE TIME or allowed at RUN TIME; complement-place's CAN MATCH / CAN FILTER
+(R.1.0 KIND) are two more such properties. (T3) TWO FORMS of each operation: the COMPILE-TIME form, on general regex,
+and the RUN-TIME form, compiled, on single values at run time; `$y + 1` (run time) and `\d + 1` (compile time) are
+written alike (RULED). (T4) BUILT NOW and UNDER CONSTRUCTION: the run-time form on a single value is BUILT NOW
+(read-is-constant (1)); a single-value function applied to "normal regex" is UNDER CONSTRUCTION (read-is-constant (4)).
+"BUILT NOW" here means "in the first build's scope when a build go comes" (no build go exists; §0). UNDER
+CONSTRUCTION IS ITS OWN ERROR CLASS: the meaning is DEFINED (this table states it, and answers are run where a model
+exists), the build is not there; the compiler says so with an "under construction" error, never "illegal", never
+"requires module" (D26's module error refuses a construct pcrec does not implement; this one names a meaning the
+language HAS); its name, the proposal `pcrec.under.construction` (spellings 28, §R.8). A program whose meaning is
+refused stays a COMPILE ERROR. (T5) THE LINE between the two (THE MANAGER'S READING m1 of read-is-constant,
+SUPPORTED by "restrict them to constants now" and "Yes $y is a single value"): a SINGLE-VALUE FUNCTION applied to an
+rx that is NOT A SINGLE STRING is UNDER CONSTRUCTION; its consequence, that arithmetic over a user-written array
+(array-lift, RULED in meaning) falls on the UNDER CONSTRUCTION side, and the build status of the REGEX operations on a
+read (m2) and of a read in a typed position, are asked as **construction-line** (§R.8). RULE-AS-CODE: rev 27's PART
+TT (`status(op, kind)`, 10 rows; sabotage s8 caught).
+
+THE TYPE TABLE (one row per operation and per hole position the draft has; first match by row; a cell that rests on
+a reading says so; spellings are placeholders, §R.8). NEEDS = what the operand must be (SINGLE / FINITE / ANY; CAN
+MATCH / CAN FILTER); STATUS = BUILT NOW / UNDER CONSTRUCTION / COMPILE ERROR, per operand.
+
+| # | operation or position | NEEDS | compile-time form (general regex) | run-time form (a single value, compiled) | STATUS | ground |
+|---|---|---|---|---|---|---|
+| T1 | `\|` alternation | ANY | PCRE's alternation, in order (R.1.4) | the read's string, then the others, in order: `$y \| "x"` (R.1.15 (12)) | compile: BUILT NOW; on a read: BUILT NOW, THE MANAGER'S READING (m2), asked **construction-line** | R.1.4; read-is-constant (2) |
+| T2 | `&` (both operands filters) | operands CAN FILTER, one CAN MATCH (R.1.0) | the filter chain (R.1.4) | on a read: the read or nothing (`$y & <5`; as an `&` operand, `$x & <5` holds where the stretch is x's text and x < 5) | compile: BUILT NOW; on a read: BUILT NOW, m2 (as T1) | R.1.4; "we were applying & to $y" |
+| T3 | prefix `!`, `not` (complement) | ANY; the result CAN FILTER only | the complement (R.1.4, complement-place) | `!$y`: every text but the read's string, a filter | as T1 | complement-place; read-is-constant (2) |
+| T4 | `NOT` on a condition | a CONDITION (not a value) | n/a | n/a | BUILT NOW (unchanged) | R.1.5 |
+| T5 | `SEQ` (sequence; a splice) | operands CAN MATCH (or a condition, condition-in-sequence) | regex concatenation | a read as an operand matches its string in place (as T12) | compile: BUILT NOW; on a read: as T1 | R.1.14 |
+| T6 | postfix quantifiers (`+ * ?` and kin) | ANY that CAN MATCH; never a condition (quantified-condition) | the regex quantifier | `(${$y})+`: the read's string repeated (a repeated backreference) | compile: BUILT NOW; on a read: as T1 | R.1.14 |
+| T7 | comparisons `< <= > >= ==` | one atom: SINGLE (a numeral or a tuple) | the comparison set (an rx, §2.4) | a run-time bound `x: <$y` is §4.6's relation (unchanged) | BUILT NOW (unchanged) | §2.4, §4.6 |
+| T8 | arithmetic `+ - * %` (numbers) | SINGLE numerals for the BUILT form | the image set: `\d + 1` = the numerals 1..10 (`(?:1\|2\|...\|10)`, the values' order: **lift-order**); `2025 + 1` FOLDED to `2026` | `$y + 1` (R.1.15) | a constant: BUILT NOW (folded, m3); a read: BUILT NOW; a FINITE or ANY rx (`\d + 1`; and by m1 an array the user writes): UNDER CONSTRUCTION, **construction-line** | match-is-rx (3); read-is-constant (3), (4); array-lift |
+| T9 | string functions `left(rx, n)`, `upperStart(rx)` and kin (his placeholders) | rx SINGLE for the BUILT form; `n` a SINGLE compile-time numeral | "the leftmost two characters of an rx's strings" (graph manipulation, `predicates_future.md` item 30, his idea, not designed here) | string manipulation built for simple strings | a constant or a read: BUILT NOW; any other rx: UNDER CONSTRUCTION | match-is-rx (3), (4); read-is-constant (1), (4) |
+| T10 | JOINING two strings (`.` in his examples; `+` in rev 26's candidates) | as T8 | on general regex it is the sequence (T5) | `$y . "End"` (R.1.15 (12)) | the MARK is OPEN, **plus-operands** (his `.` is an observation, not a ruling; `.` is already §5.4's field mark); the meaning on single values as T8 | plus-operands |
+| T11 | `when(A, then = B, else = C)` | A a TEST (R.1.0's TEST row); B, C ANY | the guarded form (R.1.10) | as a hole's value it chooses the inserted text (R.1.15 (12)) | BUILT NOW (R.1.10); a value-rx as the test: **value-test** | R.1.10 |
+| T12 | a PATTERN hole `${X}` (and a MATCH VALUE there, `${$y + 1}`) | X CAN MATCH | `(?:X)`, edge assertions crossing the border | the expression's strings as LITERAL TEXT, under the options at the hole; nothing = the position fails (R.1.15) | BUILT NOW, both forms (value-hole RULED) | hole-reading; value-hole |
+| T13 | a COUNT hole | FINITE counts known at COMPILE time (never converted to rx text) | one copy of the literal per combination, first hole slowest; illegal copies removed | a read, `\d{${$n}}`: UNDER CONSTRUCTION (THE DRAFT'S READING; the count rulings name no run-time count; R.1.15 (9)) | compile: BUILT NOW; a read: UNDER CONSTRUCTION, **construction-line** | the count ruling; product-order; removal |
+| T14 | a GROUP-NAME hole | exactly one name, SINGLE, compile time | the name | a read: a COMPILE ERROR (THE DRAFT'S READING: every reference needs the name at compile time, free-name) | BUILT NOW / COMPILE ERROR | name-hole; free-name |
+| T15 | a CLASS member or range-end hole | OPEN (**other-holes**) | R.1.0's CLASS row | a read: NOT STATED (**construction-line**) | OPEN | other-holes |
+| T16 | an OPTION-value hole | OPEN (**other-holes**) | R.1.0's OPTION row | a read: NOT STATED (**construction-line**) | OPEN | other-holes |
+| T17 | a BACKREFERENCE-name hole; a hole inside `\Q..\E` | none | COMPILE ERROR; not a hole (THE DRAFT'S READINGS, rev 25.1) | n/a | COMPILE ERROR | R.1.0 |
+| T18 | `occurrences`, `contains`, `hits` | an argument that CAN MATCH | R.1.9 | on a read: NOT STATED (no use found) | BUILT NOW | R.1.9 |
+| T19 | a condition `x: S` | S ANY (a set) | the condition (§4.1) | `x: <$y` (§4.6) | BUILT NOW (unchanged); `$x & S` is now T2, not a condition | §4.1, dollar-condition (changed) |
+| T20 | the READS: `$x` (the label), the carried-capture form, `\k<h>` in rx text (the capture, backref-label) | n/a | n/a | each yields a SINGLE string at run time, or none when unset | BUILT NOW | R.1.7; backref-label |
+| T21 | the ARRAY form `@x` | n/a | n/a | every setting in order; "its own type" (pass-list-read, unchanged; whether it is an rx under one type is NOT STATED: **array-in-hole**) | as ruled | R.1.7 (c) |
+
+ANSWERS CHANGED ("Change my answers to match"; the list he asked for, built by grep, not from the manager's m1-m6: the
+lane's report names the commands). FOLLOWS = from his words of today, quoted; READING = the lane's or the manager's,
+named; every row also in §R.9.
+
+| # | his earlier words (the entry) | where the draft states it | what it becomes | follows or reading |
+|---|---|---|---|---|
+| A1 | "But for: $x & <5 How is that not an error?$x is not a pattern but a match" (dollar-condition, §R.11 row 62) | §R.2's dollar-condition row; §4.1 RULE; §0.1 L28; §R.8 RULED rev 25 | `$x & <5` is LEGAL: an rx, x's text when x < 5, else nothing. As an `&` operand it filters the stretch: on `/(?<x>\d+)/` it equals `(x: <5)` (0 / 0 / 0 of 364); on `/(?<x>\d+)-/` it never holds and parts from `(x: <5)` on 1 / 132 / 132 of 364 (WHOLE `3-`) (rev 27's PART UT UT1) | FOLLOWS ("My point was that we were applying & to $y"; "operations that work on regex should work on it"); the manager's m1 SUPPORTED; whether a "did you mean `x: <5`" warning stays is UNRULED: **dollar-warning** |
+| A2 | "$x is not a pattern but a match" (the type ground of A1) | §R.2; R.1.15 (9); §4.1's REV 25 mark | SUPERSEDED: a match is an rx, a read a one-string rx known at run time | FOLLOWS ("Eg A match is a regex"; "Semantically, $y is a regex of a single string"); m2 SUPPORTED |
+| A3 | the value-hole lean's elaboration (rev 26's text, the draft's: "So a value is NOT a one-member pattern in a pattern position; it is a STRING") | R.1.15 (1) | it IS a one-member rx; matched literally because its one string is the member; no answer moves | FOLLOWS (as A2) |
+| A4 | "I didn't even think this was legal. I love it if it works. It needs to be fleshed out" (value-is-pattern part 3, a LEAN) | R.1.15; §R.8 value-hole; §R.8 RULED rev 26 (value-is-pattern) | RULED legal ("value-hole: yes"), the form as asked; width and unset still open | FOLLOWS |
+| A5 | value-filter (`&` on a read), asked in the record | the record only (no draft line by that slug); §R.2 | ANSWERED: legal (T2) | FOLLOWS ("we were applying & to $y"); m3 SUPPORTED |
+| A6 | array-lift: "alternations combine on the product" (arrays the user writes) | R.1.14; §2.5; §5.4's `+` row | its MEANING extends to general regex (`\d + 1` = the numerals 1..10, WHOLE 0 of 1,111 differ; rev 27's PART UT UT3); its BUILD beyond constants is UNDER CONSTRUCTION (T8) | the meaning FOLLOWS ("both directions: \d + 1 matches the digits 1 through 10"); the manager's m4 ("to any FINITE rx") NOT SUPPORTED as a limit: his words say "general regex"; the order of the lifted strings is a NEW question, **lift-order**; that a user-written array is UNDER CONSTRUCTION is a READING (m1's consequence), **construction-line** |
+| A7 | "a constant is an rx where the count of the enumeration is 1" (12:15) | R.1.12; R.1.15 (7), (9); §6 | kept, with a RUN-TIME twin: a read is a one-string rx known at run time | FOLLOWS ("Yes $y is a single value read at run time") |
+| A8 | "adding two patterns is an ordinary type error" (the record, the manager's; withdrawn in rev 26 as a general sentence) and plus-operands' TYPE ERROR lean | R.1.14; §R.8 plus-operands | the TYPE ground is gone (one type); `"a" + "b"` is a single-value function on one-string rxs, its meaning depends on whether `+` is defined beyond numerals: still OPEN, **plus-operands** | READING (the lane's): the error, if kept, is one of DOMAIN, not of type |
+| A9 | free-name's clarification "it should be the last reference as labels" (backref-across-parts) | R.1.13 REFERENCES; R.1.7 (b); §R.6 | NARROWED to WHICH GROUP a name resolves to (the part's own, the last mention); the VALUE is the capture (backref-label, RULED) | the value FOLLOWS (backref-label); the narrowing is the manager's m1, SUPPORTED: `A SEQ B`, B := `/(?<h>\d)?-\k<h>/`, B's own group's capture vs PCRE's written-out `(?J)` 6 / 66 / 66 of 364 (WHOLE `7-7`: FAILS against HOLDS; rev 27's PART BL) |
+| A10 | "I agree but! We need a way to get the pcre behavior even if ugly" (the carried-capture form) | R.1.7 THE THREE READS (b); §R.8 spellings 3 | inside rx text `\k<h>` now IS PCRE's capture (backref-label); the carried-capture form is still REQUIRED where a `$` reads (outside rx text, and in a hole) | READING (the lane's): his requirement stands; only its reach inside literals is now met by `\k` |
+| A11 | a computed label "is a value of the match that is not a substring" / "a VALUE, not a pattern" | §4.4 RULE; §11 (the computed-label sentence) | a computed value is a one-string rx known at run time, like a read | READING (the lane's; "Semantically, $y is a regex of a single string" names reads, not computed labels) |
+| A12 | his `if($y & (0: 1492), "Columbus", $y)` (the discussion, part (5)) | new (R.1.15 (12)) | the ruled `when` with a CONDITION test gives his intent; his test as written is a bare pattern, CONSUMED (when-peek) and gives other answers (rev 27's PART UT UT2) | the manager's m5 ("is the one `when`") NOT SUPPORTED as written: **value-test** |
+| A13 | "Values that produce counts (and not convert to rx)" (the count ruling); the `${ }` row's "from a finite compile-time set" | R.1.0 COUNT row; R.1.14; §5.4 `${ }` row | UNCHANGED in meaning: a count is an rx of numerals, never inserted as rx TEXT; a READ in a count is UNDER CONSTRUCTION (T13) | m6 (UNCHANGED) a READING, the manager's; SUPPORTED by absence (no line of today's entries names counts) |
+| A14 | backref-label's state (the draft's reading: `\k<h>` reads the label) and the §R.6 row "NOT requested: it would change the answers of plain PCRE patterns" | R.1.13; §R.6; §R.8 backref-label | RULED: the capture; no exception remains; plain PCRE patterns keep PCRE's answers | FOLLOWS ("backref-label: capture") |
+| A15 | the LOOK-ALIKE L28 (`$x & S` as a condition vs `(x: S)`: DIFFERENT, ERROR) | §0.1 L28 | DIFFERENT: both legal, different meanings (A1) | FOLLOWS (as A1) |
+| A16 | "an unqualified $x reads the label" (pass-list-read); the scope rulings (free-name, backref-across-parts); the "two kinds of rx" (complement-place) | R.1.7; R.1.13; R.1.0 | UNCHANGED (m6 SUPPORTED: today's entries name none of them); the two kinds are PROPERTIES under one type (T2) | READING for "unchanged"; the PROPERTIES wording the lane's |
 
 ### R.2 Compile checks under two-valued logic
 
@@ -2089,7 +2250,7 @@ longer applies to HOLES (hole-reading, R.1.14).
 | **empty-search-error** | a WARNING, `pcrec.empty.search`: "empty-search-error: warning". A searched pattern that can match nothing behaves as PCRE does (its empty matches) in a predicate program as for a plain literal; an error only where a strictness setting selects it. The draft's error for predicate programs (§7) is WITHDRAWN | `/(?<h>\d*)/ & NOT (h: <5)`: WHOLE `` HOLDS h = ``; SEARCHED `a7` ``@0; FIND-ALL `7a3` [`7`@0, ``@1, ``@2, ``@3] (as shown; the engine equals libpcre2 with the global loop on 0 / 0 / 0 of 121) |
 | **label-twice-warn** | the ERROR stays: "Agree with all three" (label-twice, 11-16, stands); extended by the label-number trial: a name and its number are one label (R.1.13) | `/(?<h>\d+)/ & (h: >2, h: <5)` REJECTED |
 | **min-values** | AT LEAST n hits for any n, no warning ("Agree with all three"); §2.6's error for n other than 0 or 1 is WITHDRAWN | `occurrences(/\d/, min = 2)`: WHOLE `1a2` HOLDS hits [`1`, `2`]; SEARCHED `1 a2 3` `1 a2 3`@0; FIND-ALL `12 3 45` one match, hits [`1`, `2`, `3`, `4`, `5`] (as shown) |
-| **dollar-condition** | the ERROR stays, and his reason is the TYPE: "But for: $x & <5 How is that not an error?$x is not a pattern but a match". `$x` is a value, not a pattern, so it cannot stand where a condition on a label is expected | `/(?<x>\d+)/ & ($x & <5)` REJECTED |
+| **dollar-condition** | [REV 27: CHANGED by match-is-rx ("A match is a regex", "Change my answers to match") and read-is-constant ("My point was that we were applying & to $y"): `$x & <5` is LEGAL, an rx, x's text when x < 5, else nothing; as an `&` operand a filter on the stretch: `/(?<x>\d+)/ & ($x & <5)` WHOLE `3` HOLDS / SEARCHED `73 3` `3`@1 / FIND-ALL `3 7 33` [`3`@0, `3`@4, `3`@5], equal to `(x: <5)` (0 / 0 / 0 of 364); `/(?<x>\d+)-/ & ($x & <5)` never holds, while `(x: <5)` there gives WHOLE `3-` HOLDS / SEARCHED `7-3-` `3-`@2 / FIND-ALL `3- 7- 3-` [`3-`@0, `3-`@6] (1 / 132 / 132 of 364 part; rev 27's PART UT UT1); a "did you mean `x: <5`?" WARNING is UNRULED, **dollar-warning**; R.1.16 A1. REV 25's text, the record:] the ERROR stays, and his reason is the TYPE: "But for: $x & <5 How is that not an error?$x is not a pattern but a match". `$x` is a value, not a pattern, so it cannot stand where a condition on a label is expected | `/(?<x>\d+)/ & ($x & <5)` REJECTED |
 
 WHICH "AT LEAST n" (min-values; THE DRAFT'S READING, RUN, not asked: the readings agree): §2.6 kept the limit because
 the quantifier `{n,}` RE-CUTS the hits to reach n (`x := /aab|a/` on `aab`: one hit `aab`, or two, `a`, `a`). Under
@@ -2270,11 +2431,11 @@ the engine's (PART Q), reported row, labels compared.
 | a positive lookahead's labels | visible after it | the same | regex; "never visible outside" would be an exception: **lookahead-labels** [REV 26: RULED, visible: regex, no exception] |
 | [REV 26] a postfix QUANTIFIER on a CONDITION (`(h: <5)?`, `${c}*`; [REV 26.1] a group of conditions only, `((h: <5))?`, THE DRAFT'S READING, review r47 B4) | regex would quantify the piece (`?` never fails, `+` as the bare test) | a COMPILE ERROR | ALLOWED, requested by the owner as an explicit exception: quantified-condition, "an error. This is a formal punt because we may find a better meaning for it in the future and this keeps that from breaking current code" (R.1.14) |
 | [REV 26] a BACKREFERENCE to a name the rx it is written in does not define (`B := /\k<h>/` used after A) | the written-out splice reads A's group | a COMPILE ERROR | ALLOWED: free-name, "Catastrophic. The rx should export the group." (R.1.13 REFERENCES) |
-| [REV 26] a backreference inside a part whose name another part also sets | `(?J)`'s first set group (the reverse answer) | the part's own group | ALLOWED: backref-across-parts (R.1.13); inside ONE literal with two groups of one name: **backref-label** (asked) |
+| [REV 26] a backreference inside a part whose name another part also sets | `(?J)`'s first set group (the reverse answer) | the part's own group | ALLOWED: backref-across-parts (R.1.13); inside ONE literal with two groups of one name: **backref-label** (asked) [REV 27: backref-label RULED, capture; two groups of one name: **same-name-twice**] |
 | [REV 26] a NUMBER on a composed pattern (`A SEQ B & (1: ..)`) | the written-out regex's group 1 | a COMPILE ERROR "name the group" (except `0`) | ALLOWED: number-names, "Only when there is no ambiguity" (R.1.13) |
 | [REV 26.1] a NUMBER on ONE literal whose group is OPTIONAL IN A LOOP (`/(?:(\d)?;)*/ & (1: <5)`; review r47 A3) | regex's capture: WHOLE `3;;` HOLDS (group 1 keeps `3`) | THE DRAFT'S READING: the label, WHOLE `3;;` FAILS (8 / 33 / 33 of 364) | NOT requested by any ruling; asked **number-in-loop** (§R.8) |
-| [REV 26.1] a BACKREFERENCE `\k<h>` in ONE literal with ONE group name where the one label rule and PCRE's capture part (an optional group in a loop; a group two loops deep; review r47 A4) | PCRE's capture: `/(?:(?<h>\d)?-\k<h>;)*/` WHOLE `3-3;-3;` HOLDS | THE DRAFT'S READING (free-name's "read as labels are"): the label, FAILS (2 / 2 / 2 of 21,845) | NOT requested: it would change the answers of plain PCRE patterns; asked **backref-label** (§R.8) |
-| [REV 26.1] a VALUE HOLE `${$y}` under `(?i)` (review r47 B5) | `\k<y>` is caseless | rev 26's model compared exactly; THE DRAFT'S READING now: matched under the options in force, as `\k<y>` (0 / 0 / 0 of 3,906) | no exception once so read; **value-hole** (§R.8) |
+| [REV 26.1; REV 27: RULED, NO EXCEPTION] a BACKREFERENCE `\k<h>` in ONE literal with ONE group name where the one label rule and PCRE's capture part (an optional group in a loop; a group two loops deep; review r47 A4) | PCRE's capture: `/(?:(?<h>\d)?-\k<h>;)*/` WHOLE `3-3;-3;` HOLDS | THE DRAFT'S READING (free-name's "read as labels are"): the label, FAILS (2 / 2 / 2 of 21,845) | [REV 27] RULED regex: backref-label, "capture. Plain rx in particular should work like pcre when we can"; the draft's label reading is WITHDRAWN (rev 26.1: NOT requested, asked) |
+| [REV 26.1] a VALUE HOLE `${$y}` under `(?i)` (review r47 B5) | `\k<y>` is caseless | rev 26's model compared exactly; THE DRAFT'S READING now: matched under the options in force, as `\k<y>` (0 / 0 / 0 of 3,906) | no exception once so read [REV 27: SUPPORTED, the options AT THE HOLE decide, 0 / 0 / 0 for four placements, R.1.15 (10)(b)]; **value-hole** RULED |
 | [REV 26.1] the CONDITIONAL with a pattern test (R.1.10) | PCRE's conditional group tests by an assertion, `(?(?=A)B\|C)` | `when(peek(A), B, else = C)`: the same (0 / 0 / 0 of 364); a BARE A consumes, with a warning (`AB\|(?!A)C`, a sequence) | regex in both: the peek form IS PCRE's conditional; the consumed form is regex concatenation; no exception |
 | [REV 26] a COUNT hole given a non-count (`\d{${n}}`, n := ["x"]) | PCRE reads `\d{x}` as literal text [REV 26.1, review r47 B3: and `\d{-1}` likewise; a count too large for a copy, `\d{70000}`, PCRE refuses, and the copy is removed, THE DRAFT'S READING] | a COMPILE ERROR (THE MANAGER'S READING of "must") | ALLOWED: "a count whole must have values that produce counts (and not convert to rx)" (R.1.14) |
 | a label named in both `&` operands | PCRE accepts duplicate names under `(?J)` | rev 25: an AMBIGUOUS REFERENCE, a compile error where a condition or a `$` references it, not for existing; a part's own label by a label on the part, `[aa = A]` then `aa.h` (R.1.13) | RULED (label-flow, revising shared-label's "keep the compiler error"): "it is an error to ambigously reference a label ... this is different than "its an error for labels of the same name to exist at all in A & B"" |
@@ -2352,6 +2513,16 @@ MOVED; every live hit fixed in place or marked "[REV 26]"):
   error); now RULED `(?|\d{3}|\d{5})`, the distributed answer (WHOLE `123` HOLDS; rev 26's PART AL AL2).
 - A VALUE IN A PATTERN POSITION (value-hole): 12 lines with `${$`; 7 live uses MARKED as resting on an unruled form
   (§0.1 L33, §2.5, §4.1, §11, and three in §13: O27, O34 and the captures-level lean), §R.8's row replaced, §16's two the record. [REV 26.1, review r47 D5: that count was wrong (and the record's "eleven uses", the manager's, too): `grep -n '\${\$'` found 22 lines in rev 26 (26 in rev 26.1: R.1.15 (10) adds two, §R.6 and §R.9 one each): 8 in R.1.15 (the form's own text), one each in R.1.0's HOLE POSITIONS, this list and §R.8's question, 2 in §16 (the record), 1 in §5.4's PAUSED `^` row (kept as rev 19 wrote it; now marked), and 8 lines of the 7 live uses (§0.1 L33, §2.5, §4.1, §11, §13 O27, O34 (two lines) and the captures-level lean), every one marked.]
+
+REV 27 (lane predspec27; one type and backref-label; each category grepped over rev 26.1's whole draft, the commands
+and counts in the lane's report, WHAT MOVED): BACKREFERENCES IN ONE LITERAL (backref-label): the draft's label reading
+of `\k<h>` is WITHDRAWN, so rev 26.1's two witnesses MOVE back to PCRE's answers (`/(?:(?<h>\d)?-\k<h>;)*/` WHOLE
+`3-3;-3;` FAILS -> HOLDS; `/(?:(?:(?<h>\d);)*,)*=\k<h>/` WHOLE `3;,,=3` FAILS -> HOLDS; 2 / 2 / 2 of 21,845 and 1 / 1 /
+1 of 5,461); the label reading stays the answer of `${$y}` (R.1.15 (8)). `$x & S` (dollar-condition): `/(?<x>\d+)/ &
+($x & <5)` MOVES from REJECTED to legal (WHOLE `3` HOLDS, equal to `(x: <5)`); §0.1 L28 moves from ERROR to DIFFERENT,
+both legal. THE VALUE HOLE: no printed answer moves (rev 26's PART VH reproduced: VH1 by rev 27's UT3; the `(?i)`
+reading by VD1b); its status moves from UNRULED to RULED (the form) on the seven live uses and R.1.0. NEW printed
+answers: R.1.15 (12), R.1.16 and §R.8's eight new rows.
 
 REV 26.1 (lane predspec261; the conditional and review r47's fixes): THE CONDITIONAL: every run of R.1.10's 2026-11-17
 form KEEPS its answer (the guarded form with a condition test is the same program: 0 / 0 / 0 of 5,461, R.1.10 (6));
@@ -2467,7 +2638,8 @@ the file; removed from the questions, each applied where named):
   REFERENCE; across the sequence operator one label, the last mention; a part's label by `aa.h`) (R.1.13, R.1.4).
 - **array-slot**: "only what was set" (R.1.7).
 - **empty-search-error**: "warning"; **label-twice-warn**, **min-values**, **dollar-condition**: "Agree with all
-  three" (the error kept; at least n; the error kept, "$x is not a pattern but a match") (§R.2).
+  three" (the error kept; at least n; the error kept, "$x is not a pattern but a match") (§R.2) [REV 27: dollar-condition
+  CHANGED by match-is-rx: `$x & <5` legal (R.1.16 A1); its warning **dollar-warning**].
 - **numbered-label-warning**: ADOPTED, "Agree. Good warning" (§R.2).
 - **looped-warning**: WITHDRAWN by the manager, to the next review with `compare.looped` (§R.2; rev 25's PART W).
 - the warnings set: structural or a library's ("Warnings should be structural or definable by a library option"); a
@@ -2527,6 +2699,29 @@ LEANS, SUGGESTIONS, IDEAS of the same entries (the spellings review; not rules):
 operator "to be considered"; `when()`'s argument shape (superseded in part by `then` required); the signature
 `when(cond, then, else = null)` as the way; `@assert` (`predicates_future.md` item 29, on main).
 
+RULED BY THE OWNER, rev 27 (COND-FAMILY, the five entries of the 2026-11-18 afternoon, session 140, from "OWNER
+RULING — backref-label: capture" to the end of the file; §R.11 rows 120-124; removed from the questions):
+- **backref-label**: "backref-label: capture. Plain rx in particular should work like pcre when we can." A
+  backreference in a literal reads PCRE's capture (R.1.13 REFERENCES, R.1.15 (10)(a)); his scope question answered from
+  the record (unchanged); two groups of one name in one literal split off as **same-name-twice** (asked, below).
+- **value-hole**: "value-hole: yes but. This is either different than regex logic and the separation should be clear
+  OR the types unified. Eg A match is a regex": the form RULED (R.1.15), its condition settled by match-is-rx; the
+  numeral width and an unset label split off as **numeral-width** and **unset-in-hole** (asked, below).
+- **match-is-rx**: "value-hole: let's use the unifying idea for it. Change my answers to match. The following can be
+  delayed in build. That means both directions: \d + 1 matches the digits 1 through 10. left(2) is the leftmost two
+  digits of an rx." ... "We can create functions like left() and restrict them to constants now. I'd like to consider
+  that unbuilt territory however and the error is an "under construction" sign." (R.1.16; ANSWERS CHANGED A1-A16).
+- **read-is-constant**: "Yes $y is a single value read at run time. ... Semantically, $y is a regex of a single string.
+  So operations that work on regex should work on it. That means, in practice, that there are two forms for each of
+  them ... The "under construction" remark is that this is hard and we shouldn't get bogged down with it now but
+  acknowledge the direction." (R.1.16 T3-T5, THE TYPE TABLE).
+- ANSWERED BY THEM: **value-filter** (the record's slug: `&` on a read is legal, A5); **dollar-condition**'s error
+  CHANGED (A1; its hint asked, **dollar-warning**). IDEA, cited and not designed: string-level manipulation of an rx
+  as GRAPH manipulation (`predicates_future.md` item 30). NOT APPLIED: his `|`-only arrays PROPOSAL (COND-FAMILY
+  "OWNER PROPOSAL — arrays are written with `|` only", "a PROPOSAL in his word, nothing ruled").
+- OBSERVATION, not a ruling: in his examples he wrote `.` for joining and `+` for adding (`$y . "End"`, `$y + 2`);
+  **plus-operands** stays OPEN, and `.` is §5.4's FIELD mark today.
+
 REV 24.3 SPLITS THE REST IN TWO (review r42; the manager's dispositions): (a) what the manager TELLS the owner, each a
 reading the rulings entail, with its witness; (b) the QUESTIONS still asked. Every answer below is from rev 24.3's
 engine (PART Q unless named; its whole PART Q re-ran under rev 24.3 with 0 changed lines, PART 0, so rev 24.2's
@@ -2554,11 +2749,11 @@ the texts that differ, and the rulings it touches, RE-RUN.
 
 | slug | the question | THE DRAFT'S READING (current) | WHOLE / SEARCHED / several matches, per candidate | the texts that differ from the draft's reading | what each costs; the earlier rulings it touches, RE-RUN |
 |---|---|---|---|---|---|
-| **value-hole** (rev 26; REPLACES the third part of **value-is-pattern**) | may a MATCHED VALUE stand in a pattern position (`/(?<y>\d{4})-${$y + 1}/`, the generalized backreference)? If yes: what text it becomes, a numeral's width, an unset label, its level. DENOTES: whether such a program compiles and what it matches | his LEAN, "I love it if it works. It needs to be fleshed out" (not settled as legal); R.1.15's readings: LITERAL TEXT, never regex syntax; CANONICAL numerals; an unset label FAILS; read where written (loops: pass-start-read; hit lists: hit-carry); the VM level (a generalized backreference) unless the label is finite | [REV 26.1, review r47 B5: two gaps added: (a) the two anchors part, `\k<y>` follows PCRE's capture and pass-start-read the label: `/(?:(?<y>\d)?-${$y};)*/` WHOLE `3-3;-3;`: the callout model and `\k<y>` HOLD (0 / 0 / 0 of 21,845), the label FAILS; (b) under `(?i)` the value matches CASELESSLY as `\k<y>` does (THE DRAFT'S READING now): `/(?i)(?<y>[a-b])-${$y}/` WHOLE `a-A` HOLDS, rev 26's exact model FAILS (4 / 336 / 336 of 3,906); R.1.15 (10)] (rev 26's PART VH) LEGAL, the draft's readings: WHOLE `2025-2026` HOLDS / SEARCHED `x2025-2026` `2025-2026`@1 / FIND-ALL `2025-2026 2030-2032 2030-2031` [`2025-2026`@0, `2030-2031`@20]; width kept: `0099-0100` HOLDS where canonical FAILS (`0099-100` the reverse); unset as EMPTY: WHOLE `-` HOLDS where FAIL gives FAILS; reinterpreted as regex: `1.5-1x5` HOLDS where literal FAILS; NOT LEGAL: REJECTED x3 | legal vs not: every program using `${$..}` (7 live uses on 8 lines, now every one marked; 22 lines in all, review r47 D5, §R.7); canonical vs width: every padded value; fail vs empty: every text where the label is unset at the hole | legal: the generalized backreference keeps its meaning, the VM level; not legal: `\k<y>` stays the only spelling and `$y + 1` needs a condition (`(z: == $y + 1)` on a following group). Touches dollar-condition ("$x is not a pattern but a match"), R.1.12, the count ruling, array-lift |
+| [REV 27: ANSWERED, value-hole RULED (the form; R.1.15); its open details are **numeral-width** and **unset-in-hole** below; the row is the record] **value-hole** (rev 26; REPLACES the third part of **value-is-pattern**) | may a MATCHED VALUE stand in a pattern position (`/(?<y>\d{4})-${$y + 1}/`, the generalized backreference)? If yes: what text it becomes, a numeral's width, an unset label, its level. DENOTES: whether such a program compiles and what it matches | his LEAN, "I love it if it works. It needs to be fleshed out" (not settled as legal); R.1.15's readings: LITERAL TEXT, never regex syntax; CANONICAL numerals; an unset label FAILS; read where written (loops: pass-start-read; hit lists: hit-carry); the VM level (a generalized backreference) unless the label is finite | [REV 26.1, review r47 B5: two gaps added: (a) the two anchors part, `\k<y>` follows PCRE's capture and pass-start-read the label: `/(?:(?<y>\d)?-${$y};)*/` WHOLE `3-3;-3;`: the callout model and `\k<y>` HOLD (0 / 0 / 0 of 21,845), the label FAILS; (b) under `(?i)` the value matches CASELESSLY as `\k<y>` does (THE DRAFT'S READING now): `/(?i)(?<y>[a-b])-${$y}/` WHOLE `a-A` HOLDS, rev 26's exact model FAILS (4 / 336 / 336 of 3,906); R.1.15 (10)] (rev 26's PART VH) LEGAL, the draft's readings: WHOLE `2025-2026` HOLDS / SEARCHED `x2025-2026` `2025-2026`@1 / FIND-ALL `2025-2026 2030-2032 2030-2031` [`2025-2026`@0, `2030-2031`@20]; width kept: `0099-0100` HOLDS where canonical FAILS (`0099-100` the reverse); unset as EMPTY: WHOLE `-` HOLDS where FAIL gives FAILS; reinterpreted as regex: `1.5-1x5` HOLDS where literal FAILS; NOT LEGAL: REJECTED x3 | legal vs not: every program using `${$..}` (7 live uses on 8 lines, now every one marked; 22 lines in all, review r47 D5, §R.7); canonical vs width: every padded value; fail vs empty: every text where the label is unset at the hole | legal: the generalized backreference keeps its meaning, the VM level; not legal: `\k<y>` stays the only spelling and `$y + 1` needs a condition (`(z: == $y + 1)` on a following group). Touches dollar-condition ("$x is not a pattern but a match"), R.1.12, the count ruling, array-lift |
 | **other-holes** (rev 26; the product-order correction's "Idk for others") | what SEVERAL values do in a CHARACTER-CLASS hole and in an OPTION hole (the product is ruled for COUNT holes only, "each target area of the hole is a different thing with its own rules") | class: THE DRAFT'S READING (stated in the record, not put to him), more characters of the class, no copies; a range end: none; option: none [REV 26.1, review r47: COUNT, B3 (THE DRAFT'S READING): a member that is not a count (`-1`, which PCRE reads as literal text `\d{-1}`) is a KIND ERROR, a count PCRE refuses (`70000`; 65,535 is the largest PCRE accepts) an ILLEGAL COPY, removed; ZERO values, B7: per position (count: every copy removed, the literal never matches, with the warning; name: an error; class: `[${[]}x]` = `[x]` by the class reading; option: none); CLASS, B6: the class reading is unsafe once the literal has other parts, below] | CLASS MEMBER `/[${c}x]/`, c := [a, b]: more characters `[abx]` and one copy per member `(?:[ax]\|[bx])` agree (0 / 0 / 0 of 259, python `re`, PART OQ OQ1); RANGE END `/[${lo}-z]/`, lo := [a, x]: one copy per member `(?:[a-z]\|[x-z])` vs the members as characters `[ax-z]` differ on 1 / 51 / 103 of 259 (OQ2; WHOLE `b` HOLDS against FAILS); an error: REJECTED x3. OPTION (hand-worked): `/(?${o})abc/`, o := [i, ""]: copies `(?i)abc\|abc` WHOLE `ABC` HOLDS; an error REJECTED | members: none (the readings agree) [REV 26.1, review r47 B6: on a class-only literal only: with other parts, `/(\w*)[${c}]/`, c := [x, y], more characters `(\w*)[xy]` vs one copy per member differ on 0 / 32 / 32 of 121 (alphabet `xya`, length <= 4; SEARCHED `xy`: `xy`@0 g = `x` against `x`@0 g = ``, the copies try one member first; rev 26.1's PART R47 B6)]; count -1 vs 70000: kind error vs removal changes whether the program compiles; range ends: the texts above; options: every text an option changes | per-position rules keep each position simple; an error now and a rule later changes no answer (his "conservative now, relax later") |
-| **plus-operands** (rev 25's slug, REUSED; the record: "what `+` does on operands that are not numbers is still to be stated") | `+` (and `*`) between operands that are NOT numbers: two patterns, two strings, a string and a number | a TYPE ERROR (the manager's lean in the record: addition is arithmetic); arrays of numbers combine by array-lift (RULED) | HAND-WORKED: `"a" + "b"`: type error REJECTED x3; as string concatenation `"ab"`: WHOLE `ab` HOLDS / SEARCHED `xab` `ab`@1 / FIND-ALL `ab ab` [`ab`@0, `ab`@3]; `x + y` on patterns: the sequence is `SEQ`, so a second spelling of it would be a type error or a synonym | every program that writes `+` between non-numbers | type error: one meaning per mark, `SEQ` keeps sequencing; concatenation: a second spelling of the sequence operator. Touches the quantifier operators ("the two argument form of + is addition"), array-lift |
+| [REV 27: STILL OPEN. Under ONE TYPE the TYPE-ERROR ground is gone (R.1.16 A8): an error would be of DOMAIN; he WROTE `.` for joining and `+` for adding in his examples (`$y . "End"`, `$y + 2`), an OBSERVATION, not a ruling; `.` is §5.4's field mark today; asked as before] **plus-operands** (rev 25's slug, REUSED; the record: "what `+` does on operands that are not numbers is still to be stated") | `+` (and `*`) between operands that are NOT numbers: two patterns, two strings, a string and a number | a TYPE ERROR (the manager's lean in the record: addition is arithmetic); arrays of numbers combine by array-lift (RULED) | HAND-WORKED: `"a" + "b"`: type error REJECTED x3; as string concatenation `"ab"`: WHOLE `ab` HOLDS / SEARCHED `xab` `ab`@1 / FIND-ALL `ab ab` [`ab`@0, `ab`@3]; `x + y` on patterns: the sequence is `SEQ`, so a second spelling of it would be a type error or a synonym | every program that writes `+` between non-numbers | type error: one meaning per mark, `SEQ` keeps sequencing; concatenation: a second spelling of the sequence operator. Touches the quantifier operators ("the two argument form of + is addition"), array-lift |
 | **anything-text** (rev 26; lone-complement-match "provide "anything"") | what the provided `anything` matches; it decides SEARCHED answers beside a complement | THE MANAGER'S READING: any text INCLUDING newlines (`/[\s\S]*/`, greedy), in the rx module [REV 26.1, review r47 D4: his own example `any := /.*/` is one of the failing spellings (90 of 121, a multi-line value), and the false "every spelling agrees" was told to him as the reason for his lean] | (PART CX) WHOLE: `/[\s\S]*/` and `/(?s).*/` agree with each other (0 of 121); `/.*/` without dot-all differs on 90 (every text with a newline). FIND-ALL `anything & not seven`, greedy, `712`: [``@0, `12`@1, ``@3]; `x712 55`: [`x712 55`@0, ``@7]; LAZY on `712`: [``@0, ``@1, `1`@1, ``@2, `2`@2, ``@3] (PCRE2's global loop; the manager's simulation "with a lazy any every hit is empty" is NOT reproduced: it stepped one character after an empty match) | greedy vs lazy: every searched text; newline vs not: every text with a newline | greedy and newline-matching: the whole-value point holds for every text; lazy: empty hits. [REV 26.1, review r47 A6: NO candidate fixes searching: every spelling is nullable, so `anything & not_seven` HOLDS on 364 of 364 texts SEARCHED and FIND-ALL (an empty stretch at 0); WHOLE 363 of 364 (a working validator); the advice is therefore WHOLE only, searched use wants a non-nullable positive operand (`digits & not_seven`: WHOLE 4, SEARCHED 106 of 364; rev 26.1's PART R47 A6; R.1.0's PROGRAM row).] Touches complement-place, the empty-search warning (a lone `anything` is nullable) |
-| **backref-label** (rev 26; a gap of free-name's "read as labels are") | a backreference INSIDE ONE literal after two groups of one name: does it read the LABEL (the one rule: a branching resets), the last group that was SET, or PCRE's `(?J)` first set group? [REV 26.1, review r47 A4: WIDENED: with ONE group name too, wherever the label and PCRE's capture part, reading `\k<h>` "as labels are" CHANGES THE ANSWERS OF PLAIN PCRE PATTERNS (D26's exact tier): does `\k<h>` read the label or PCRE's capture?] | THE LABEL (free-name's state: "read as labels are (the last mention)"); rev 25.1 said "inside one literal a backreference is regex's, untouched" | `/(?<h>\d);(?:(?<h>\d)\|x)\k<h>/` (PART REF REF4, libpcre2): LABEL WHOLE `3;x3` FAILS, `3;77` HOLDS, `3;73` FAILS / SEARCHED `3;x3 3;77` `3;77`@5; LAST SET `3;x3` HOLDS, `3;77` HOLDS, `3;73` FAILS / `3;x3`@0; `(?J)` `3;x3` HOLDS, `3;77` FAILS, `3;73` HOLDS / `3;x3`@0 | [REV 26.1] WITNESS 1, an optional group in a loop: `/(?:(?<h>\d)?-\k<h>;)*/`: PCRE (the capture) WHOLE `3-3;-3;` HOLDS / SEARCHED `3-3;-3;` `3-3;-3;`@0 / FIND-ALL `3-3;-3; 7-7;` [`3-3;-3;`@0, ``@7, `7-7;`@8]; the label WHOLE FAILS / SEARCHED `3-3;`@0 / FIND-ALL [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12] (PCRE's full list [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12]); 2 / 2 / 2 of 21,845 (`37-;`, length <= 7; shortest witness 7 characters). WITNESS 2, two loops deep: `/(?:(?:(?<h>\d);)*,)*=\k<h>/` WHOLE `3;,,=3`: PCRE HOLDS, the label FAILS / SEARCHED PCRE `3;,,=3`@0, the label FAILS / FIND-ALL `3;,,=3 3;,=3` PCRE [`3;,,=3`@0, `3;,=3`@7], the label [`3;,=3`@7]; 1 / 1 / 1 of 5,461 (`3;,=`, length <= 6). Control (no optional, one depth): 0 / 0 / 0 of 1,365 (rev 26.1's PART R47 A4) | label vs last set 2 / 2 / 2 of 341; label vs `(?J)` 6 / 6 / 6; last set vs `(?J)` 4 / 4 / 4 | label: one reading for a name everywhere (conditions and references), but plain PCRE patterns change answer (witnesses 1, 2) [REV 26.1]; capture: PCRE's answers kept, a reference and a condition on one name can then disagree inside one literal; `(?J)`: PCRE's, but PCRE refuses the literal without `(?J)`. Touches the one label rule, the carried-capture form, free-name |
+| [REV 27: ANSWERED, RULED "capture" (R.1.13); the two-groups case is **same-name-twice** below; the row is the record] **backref-label** (rev 26; a gap of free-name's "read as labels are") | a backreference INSIDE ONE literal after two groups of one name: does it read the LABEL (the one rule: a branching resets), the last group that was SET, or PCRE's `(?J)` first set group? [REV 26.1, review r47 A4: WIDENED: with ONE group name too, wherever the label and PCRE's capture part, reading `\k<h>` "as labels are" CHANGES THE ANSWERS OF PLAIN PCRE PATTERNS (D26's exact tier): does `\k<h>` read the label or PCRE's capture?] | THE LABEL (free-name's state: "read as labels are (the last mention)"); rev 25.1 said "inside one literal a backreference is regex's, untouched" | `/(?<h>\d);(?:(?<h>\d)\|x)\k<h>/` (PART REF REF4, libpcre2): LABEL WHOLE `3;x3` FAILS, `3;77` HOLDS, `3;73` FAILS / SEARCHED `3;x3 3;77` `3;77`@5; LAST SET `3;x3` HOLDS, `3;77` HOLDS, `3;73` FAILS / `3;x3`@0; `(?J)` `3;x3` HOLDS, `3;77` FAILS, `3;73` HOLDS / `3;x3`@0 | [REV 26.1] WITNESS 1, an optional group in a loop: `/(?:(?<h>\d)?-\k<h>;)*/`: PCRE (the capture) WHOLE `3-3;-3;` HOLDS / SEARCHED `3-3;-3;` `3-3;-3;`@0 / FIND-ALL `3-3;-3; 7-7;` [`3-3;-3;`@0, ``@7, `7-7;`@8]; the label WHOLE FAILS / SEARCHED `3-3;`@0 / FIND-ALL [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12] (PCRE's full list [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12]); 2 / 2 / 2 of 21,845 (`37-;`, length <= 7; shortest witness 7 characters). WITNESS 2, two loops deep: `/(?:(?:(?<h>\d);)*,)*=\k<h>/` WHOLE `3;,,=3`: PCRE HOLDS, the label FAILS / SEARCHED PCRE `3;,,=3`@0, the label FAILS / FIND-ALL `3;,,=3 3;,=3` PCRE [`3;,,=3`@0, `3;,=3`@7], the label [`3;,=3`@7]; 1 / 1 / 1 of 5,461 (`3;,=`, length <= 6). Control (no optional, one depth): 0 / 0 / 0 of 1,365 (rev 26.1's PART R47 A4) | label vs last set 2 / 2 / 2 of 341; label vs `(?J)` 6 / 6 / 6; last set vs `(?J)` 4 / 4 / 4 | label: one reading for a name everywhere (conditions and references), but plain PCRE patterns change answer (witnesses 1, 2) [REV 26.1]; capture: PCRE's answers kept, a reference and a condition on one name can then disagree inside one literal; `(?J)`: PCRE's, but PCRE refuses the literal without `(?J)`. Touches the one label rule, the carried-capture form, free-name |
 | **zero-in-sequence** (rev 26; a gap of the zero addendum) | what `0` names in a CONDITION standing as a SEQUENCE OPERAND (condition-in-sequence), where the entire match is not yet known | none stated [REV 26.1, review r47 A2: and a `0` written INSIDE a part (a sequence operand, a hole, an `&` operand) is that part's own match, THE DRAFT'S READING (R.1.0): `x(?<p>(?=3)\d+)y`-shaped `0` read as the part's own: 0 / 0 / 0 of 5,461 vs python `re`; read as the composed rx's entire match: 15 / 470 / 470, and never matches (rev 26.1's PART N NZ); asked here too] | `[h = rx.digit] SEQ (0: "7") SEQ rx.digit`: `0` = the match SO FAR (PCRE's callout start to here): WHOLE `73` HOLDS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (PART OQ OQ3); `0` = the entire match: a COMPILE ERROR there (REJECTED x3) | so far vs error: every program with `0` in a sequenced condition | so far: regex's (a callout sees the match so far); error: the addendum's "entire match" kept literal. Touches number-names' addendum, condition-in-sequence |
 | **group-truth / pass-table** (re-stated, rev 26) | ASKED NOW: after a loop, do the group questions over the pass table, `NOT some(c)` and `occurs.none(c)`, agree with `occurs.none(NOT c)` read per pass? hit-carry (a condition INSIDE a pass, before its group, reads the previous pass) does NOT reach them: the pass forms judge the finished passes, each with its OWN labels (**some-own**) | each pass's own labels, two-valued | (rev 24.x's E12, not re-run) REP & `NOT some((h: <5))`: `;` HOLDS / on `7;;` `7;;`@0 / on `; 3;7;; 3;` eight | `= occurs.none((h: <5))` 0 / 0 / 0; `occurs.none(NOT (h: <5))` differs 21 / 201 / 301 of 364 (E12) | the 11-18 rulings do not entail an answer (rev 26's PART RS RS2): it stays asked |
 | **number-in-loop** (rev 26.1; review r47 A3) | a NUMBER on ONE literal whose group is OPTIONAL IN A LOOP (`/(?:(\d)?;)*/ & (1: <5)`): does `1` read regex's capture ("ONE WRITTEN LITERAL, with the regex meaning") or the LABEL (the one rule, which the trial ran), or is the number refused there under "Only when there is no ambiguity"? | THE LABEL (R.1.13; the KEPT example, §R.7) | (rev 26.1's PART R47 A3, libpcre2) LABEL: WHOLE `3;;` FAILS / SEARCHED `3;;` `3;`@0 / FIND-ALL `3;; 7;3;` [`3;`@0, `7;3;`@4]; CAPTURE (equal to python `re` group(1) on every WHOLE value): WHOLE `3;;` HOLDS / SEARCHED `3;;`@0 / FIND-ALL [`3;;`@0, `7;3;`@4]; REFUSED: a compile error, REJECTED x3 | label vs capture 8 / 33 / 33 of 364 (alphabet `37;`, length <= 5; python control 0); refused vs either: every such program | label: numbers and names read alike; capture: "with the regex meaning" literal; refused: the shared-name refusal's own test applied. Touches number-names, the one label rule |
@@ -2567,6 +2762,14 @@ the texts that differ, and the rulings it touches, RE-RUN.
 | **not-test** (rev 26.1; the manager's note in "2026-11-18 OWNER RULING — `then` is required; NOT gives the else-only behaviour") | the ruled else-only form `when(NOT x, z)` with a BARE PATTERN x: is `NOT x` in the test a complement (filter-only, so a compile error by complement-place) or a NEGATIVE PEEK (when-peek's reading)? | none: the two rulings collide (R.1.10 (8)) | (rev 26.1's PART COND, x := `\d`, z := `\w`) NEGATIVE PEEK `(?!\d)\w\|(?=\d)`: WHOLE `x` HOLDS / SEARCHED `1x` ``@0 / FIND-ALL `x1 y 12` [`x`@0, ``@1, `y`@3, ``@5, ``@6] (= PCRE2's `(?(?!\d)\w\|)`, 0 / 0 / 0 of 364); COMPLEMENT: a compile error, REJECTED x3; the clear forms run: `when(NOT peek(x), z)` as the negative peek, a condition `when(NOT (h: <5), /\w/)` WHOLE `7x` HOLDS / SEARCHED `x17x` `1`@1 / FIND-ALL `7x 1x 17 7` [`7x`@0, `1`@3, `1`@6] | every program with NOT on a bare pattern in a test | peek: the user's evident meaning, but `NOT x` then means two things by place; error: complement-place kept uniform, the user writes `NOT peek(x)`. Touches complement-place, when-peek, item 19 |
 | **condition-group** (rev 26.1; review r47 B4, a NEW slug: THE DRAFT'S READING decides answers) | is a GROUP holding ONLY conditions (`((h: <5))?`, `((h: <5) SEQ (h: <5))*`) a condition for quantified-condition's error, or a group quantified as regex? | a condition: the same COMPILE ERROR (R.1.14, §R.6) | (rev 26.1's PART R47 B4 and PART CS CS4) ERROR: REJECTED x3; REGEX: `[h = rx.digit] SEQ ((h: <5))?` WHOLE `7` HOLDS (run) / SEARCHED `x7` `7`@1 / FIND-ALL `7 3` [`7`@0, `3`@2] (SEARCHED and FIND-ALL HAND-WORKED from the run: the test vanishes, so the program is `rx.digit`); unquantified WHOLE `7` FAILS | every quantified group of conditions | error: the punt's purpose kept (a quantified test is never silently dropped); regex: his "formal punt" scoped to a bare condition only |
 | **product-order** (RE-LISTED, rev 26.1; review r47 B11) | the record: product-order's draft readings "stay the draft's readings, to be asked again in the next revision's question list": the member-list reading of a hole's values (R.1.14) | the member list in its written order, first hole slowest (RULED for the holes' order) | no witness found where the member-list reading decides an answer the ruled order does not (rev 26's P runs; rev 26.1 found none) | none found | listed for his confirmation only |
+| **numeral-width** (rev 27; the value-hole ruling leaves it: "NOT ruled: ... the numeral width") | the text of a computed numeral in a hole: CANONICAL (no leading zeros, §2.4) or WIDTH KEPT (zero-padded to the operand's width) | CANONICAL (§2.4; §13 O27, never ruled) | `/(?<y>\d{4})-${$y + 1}/`: CANONICAL WHOLE `0099-100` HOLDS / SEARCHED `x0099-0100 0099-100` `0099-100`@11 / FIND-ALL `0099-100 0099-0100 9999-10000` [`0099-100`@0, `9999-10000`@19]; WIDTH KEPT WHOLE `0099-100` FAILS / SEARCHED `0099-0100`@1 / FIND-ALL [`0099-0100`@9, `9999-10000`@19] (rev 27's PART Q) | 4 / 7 / 7 of 28 texts (four years x seven tails) | canonical: one numeral rule everywhere (§2.4); width kept: dates and padded ids keep their shape |
+| **unset-in-hole** (rev 27; "NOT ruled: ... unset details") | an UNSET label read in a hole: FAIL (an rx of no strings; PCRE's unset backreference), EMPTY (PCRE's MATCH_UNSET_BACKREF), or a COMPILE ERROR where the label can be unset | FAIL (R.1.15 (3); its ground now the type: an unset read has no string) | `/(?<y>\d{4})?-${$y + 1}/`: FAIL WHOLE `-` FAILS / SEARCHED `x-1 2025-2026` `2025-2026`@4 / FIND-ALL `- 2025-2026 -` [`2025-2026`@2]; EMPTY WHOLE `-` HOLDS / SEARCHED `-`@1 / FIND-ALL [`-`@0, `2025-2026`@2, `-`@12]; ERROR: REJECTED x3 (rev 27's PART Q) | FAIL vs EMPTY 1 / 301 / 301 of 364 (`12-`, length <= 5) | FAIL: regex's default (exception-rule), the ruled "yields nothing fails"; EMPTY: a later hit can start (rev 26's VH6 needed it); ERROR: the `label.unset` family |
+| **dollar-warning** (rev 27; the manager's m1: "whether a "did you mean `x: <5`" warning stays is unruled") | `$x & <5` is legal (A1); does the compiler WARN where it is written as an `&` operand ("did you mean `x: <5`?"), structurally (polarity-rule's kind of warning) | none: the error is gone; no warning stated | `/(?<x>\d+)-/ & ($x & <5)` (legal, never holds) WHOLE `3-` FAILS / SEARCHED `7-3-` FAILS / FIND-ALL `3- 7- 3-` []; the hinted `(x: <5)` WHOLE `3-` HOLDS / SEARCHED `3-`@2 / FIND-ALL [`3-`@0, `3-`@6]; on `/(?<x>\d+)/` the two agree (0 / 0 / 0 of 364) (rev 27's PART UT UT1) | 1 / 132 / 132 of 364 where the stretch is not x's text | a warning moves no answer; it would be structural (the stretch is not x's text: decidable from the pattern), so it meets "Warnings should be structural" |
+| **same-name-twice** (rev 27; the manager's m3 of backref-label) | two groups of ONE name in ONE literal (allowed by the language, a deliberate difference from PCRE) and a backreference after them: which group's capture? PCRE refuses the literal without `(?J)` and reads the first SET group with it | none since backref-label (rev 26's draft reading, the label, is withdrawn for `\k`) | `/(?<h>\d);(?:(?<h>\d)\|x)\k<h>/`: FIRST SET (`(?J)`) WHOLE `3;x3` HOLDS / SEARCHED `3;x3 3;77` `3;x3`@0 / FIND-ALL `3;x3 3;77 3;73` [`3;x3`@0, `3;73`@10]; LAST SET HOLDS / `3;x3`@0 / [`3;x3`@0, `3;77`@5]; the LABEL FAILS / `3;77`@5 / [`3;77`@5]; or a COMPILE ERROR as PCRE without `(?J)` (rev 27's PART BL m3) | first vs last 4 / 4 / 4; label vs last 2 / 2 / 2; label vs first 6 / 6 / 6 of 341 | first set: PCRE's `(?J)` ("work like pcre when we can"); error: PCRE's default; last set: what "the last mention" would say for values |
+| **array-in-hole** (rev 27; an IDEA, his question "Can i use @y there and what does that mean?") | `${@y}` in a hole: undefined; the manager's idea: any earlier setting, as an alternation in setting order | NOT DEFINED (a hole takes `$`-reads; the array form is "its own type", T21) | HAND-WORKED, the idea: `/(?:(?<y>\d),)*-${@y}/`: WHOLE `3,7,-3` HOLDS (the label read `${$y}` FAILS: it is `7`), `3,7,-5` FAILS / SEARCHED `x3,7,-7` `3,7,-7`@1 / FIND-ALL `3,-3 4,-5` [`3,-3`@0] (at 7 no setting, an alternation of no members never matches); undefined: a COMPILE ERROR, every mode | every text where a hole would read a setting other than the last | an idea for the spellings review and a later revision; nothing decides an answer today |
+| **value-test** (rev 27; the manager's m5, NOT SUPPORTED as written) | his `if($y & (0: 1492), "Columbus", $y)`: under the ruled `when`, is a VALUE rx as the TEST a bare pattern (consumed, when-peek), or is a value test its own case (it holds when the rx is non-empty)? | when-peek's rule: a bare rx test is CONSUMED | `/(?<y>\d{4}):${when(TEST, "Columbus", else = $y)}/`: (a) TEST = the condition `(y: 1492)` WHOLE `1492:Columbus` HOLDS, `2025:2025` HOLDS / SEARCHED `x1492:Columbus` `1492:Columbus`@1 / FIND-ALL `1492:Columbus 2025:2025 1492:1492` [`1492:Columbus`@0, `2025:2025`@14]; (b) his test CONSUMED: `1492:Columbus` FAILS, `1492:1492Columbus` HOLDS / SEARCHED FAILS / [`2025:2025`@14]; (c) PEEKED: `1492:Columbus` FAILS / FAILS / [`2025:2025`@14] (rev 27's PART UT UT2, each equal to its semantic function, 0 of 14) | (a) vs (b): every text with y = 1492 | (a) needs only the spelling `(y: 1492)`; a value-test case would be a second meaning for a bare rx test |
+| **lift-order** (rev 27; a NEW question from match-is-rx's "\d + 1 matches the digits 1 through 10") | the ORDER of the strings of a lifted rx (`\d + 1`), which decides SEARCHED and FIND-ALL: the operand's order (array-lift's "in the values' order") or another (longest first) | the values' order: `\d` gives 0..9, so `(?:1\|2\|...\|10)` | the values' order WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6]; longest first WHOLE `10` HOLDS / SEARCHED `10`@1 / FIND-ALL [`10`@0, `3`@3, `1`@5, `1`@6] (rev 27's PART UT UT3; WHOLE equals "1..10" on 1,111 of 1,111) | 0 / 12 / 21 of 1,111 (`0-9`, length <= 3) | the values' order is the one rule array-lift already has; longest first is what "the numerals 1 through 10" suggests to a reader |
+| **construction-line** (rev 27; the manager's m1 and m2 of read-is-constant) | where exactly UNDER CONSTRUCTION begins: (a) arithmetic over a user-written ARRAY (array-lift, RULED in meaning): built (finite, enumerable) or under construction (not a single string, m1)? (b) the REGEX operations on a read (`$y \| "x"`, `$y & S`, `!$y`, quantifiers): built in their run-time form now (m2) or not? (c) a READ in a typed position (count, class, option): under construction or an error? | (a) UNDER CONSTRUCTION (m1); (b) BUILT (m2); (c) count UNDER CONSTRUCTION, name an ERROR, class and option NOT STATED (R.1.16 T8, T1-T6, T13-T16) | (a) `/\d{${n + 1}}/`, n := [2, 4]: BUILT `(?\|\d{3}\|\d{5})` WHOLE `12345` HOLDS / SEARCHED `x12345` `123`@1 / FIND-ALL `123 12345` [`123`@0, `123`@4]; UNDER CONSTRUCTION: the error in every mode (rev 27's PART Q); (b) as R.1.15 (12) (each 0 / 0 / 0 against PCRE) or the error | no answer differs where both compile; the line decides which programs compile in the first build | the line is a BUILD question (D77: build under measurement); the meanings are defined either way |
 
 (Rev 25.1's rows for **number-names**, **hole-in-filter**, **hit-carry**, **product-order**, **value-is-pattern**,
 **path-and-ambiguity**, **backref-across-parts** and **quantified-condition**, each now RULED or split above, are at the
@@ -2622,6 +2825,8 @@ all other spellings".
 | 25 | [REV 26.1] `when`'s ARGUMENT SHAPE (his lean: "one required positional args and two optional arg named "then and else""; his signature `when(cond, then, else = null)` as the way a single argument is refused) | a single argument a compile error; `then` REQUIRED (both RULED, R.1.10 (8)); whether a parameter may be given BY NAME at a call (THE DRAFT'S READING from the ONE INPUT RULE: yes; asked in the remaining table's **conditional-spelling** row); `null` a placeholder for "nothing required" (the manager's reading) |
 | 26 | [REV 26.1] a `when` OPERATOR ("a when operator should be considered") | TO BE CONSIDERED, his words; no meaning beyond `when`'s |
 | 27 | [REV 26.1] the COMMA-FREE keyword form (`when(c then = y else = z)`; his check) | NOT LEGAL TODAY: §5.4's `,` row and §3's ONE INPUT RULE require the commas between entries (R.1.10 (7)); a change would be a call-syntax change for every macro |
+| 28 | [REV 27] the UNDER-CONSTRUCTION error's name (`pcrec.under.construction` here) | a meaning the language defines whose build is not there; never "illegal" (match-is-rx: "the error is an "under construction" sign"; R.1.16 T4) |
+| 29 | [REV 27] the STRING FUNCTIONS (`left`, `upperStart`, his placeholders) and the JOINING mark (his `.`; **plus-operands**) | the two forms of each (read-is-constant; R.1.16 T9, T10) |
 
 THE LABEL AND THE RX MODULE (rev 24.1's ramification (e), kept): `docs/design/rx_module.md` spells a labelled part
 `[h = X]` and, by §3.1, that IS `(?<h>X)`: the form gives a capture (regex's, carried) and a label (the language's,
@@ -2676,6 +2881,12 @@ complement-place ruling and when-peek's reading under the ruled `when(NOT x, z)`
 (**not-test**). Three of the record's manager readings did not survive review r47 as worded (the nullable meaning's
 "LOOP's one empty hit", R.1.9; the `&`-chain `0` support, R.1.13; "with the regex meaning" for a number, R.1.13) and
 are corrected or asked.
+REV 27: the ruled witness (`3-3;-3;`) REPRODUCES as the record states it (PCRE HOLDS, the label FAILS; rev 27's PART
+BL BL1), the case table the manager gave him REPRODUCES (PART VD VD1), and his two examples of match-is-rx are
+consistent with the runs (`\d + 1` WHOLE equals the numerals 1..10; `$y + 1` reproduces VH1; PART UT UT3). Nothing
+STOPPED: no two rulings decide an answer differently. Two manager readings did NOT survive as worded: m4 ("array-lift
+extends to any FINITE rx": his words say "general regex") and m5 (his `if(...)` "is the one `when`": with his test
+written as an rx, when-peek consumes it); both are corrected in R.1.16 and asked (**lift-order** is new; **value-test**).
 
 ### R.9 Reversed, narrowed and reopened rulings; marked sections
 
@@ -2730,7 +2941,7 @@ REVERSED, NARROWED OR REOPENED (each marked where it stood):
 | [REV 26] "adding two patterns is an ordinary type error" (the record, the manager's) as a general sentence | R.1.14, §R.8 | WITHDRAWN by array-lift's record; `+` on non-numbers asked **plus-operands** |
 | [REV 26] rev 25.1's "a value in a pattern position is legal only if a value is a one-member pattern" (value-is-pattern) | R.1.14, §R.8, §0.1 L33, §2.5, §4.1, §11, §13 | REPLACED by **value-hole** (his lean; R.1.15: a value is inserted as LITERAL TEXT); every use marked |
 | [REV 26] rev 25.1's "complement-place: OPEN" and the lone `!B`'s whole-value reading (E9) | §R.8 remaining, §2.2 | RULED: the error is at the use; lone-complement-match keeps it an error and provides `anything` |
-| [REV 26] "inside one literal a backreference is regex's, untouched" (rev 25.1, R.1.7 (b)) | R.1.7 | MEETS free-name's "read as labels are": asked **backref-label** |
+| [REV 26] "inside one literal a backreference is regex's, untouched" (rev 25.1, R.1.7 (b)) | R.1.7 | MEETS free-name's "read as labels are": asked **backref-label** [REV 27: RULED, capture; the sentence HOLDS again for one name (R.1.7 (b))] |
 | [REV 26.1] rev 26's `when(c, p)` := `x & (NOT c \| p)` as THE definition | R.1.10, §8, §5.4, spellings 7 | NARROWED to a special case: "When: yes guarded form."; the test a peek ("I agree peek A"), a bare pattern consumed ("A test pattern does consume and warns that it is") |
 | [REV 26.1] the owner's spelling lean "two optional arg named "then and else"" and "or one else" | R.1.10 (7) | SUPERSEDED: "When: start with required then. Use NOT to get else behavior" |
 | [REV 26.1] the owner's "The when(x) form is the same as x" | R.1.10 (7) | WITHDRAWN by him: "that wasn't my ruling but my interpretation"; then "single arg has no value and should be an error" |
@@ -2739,6 +2950,12 @@ REVERSED, NARROWED OR REOPENED (each marked where it stood):
 | [REV 26.1] the `&`-chain `0` "SUPPORTED (N3)" | R.1.13, R.1.0 | WITHDRAWN as support (N3 could not fail); NOT RUNNABLE independently |
 | [REV 26.1] the PROGRAM row's advice "`anything & not_seven` in every mode" | R.1.0 | NARROWED to WHOLE (vacuous searched) |
 | [REV 26.1] three of the manager's entailments listed among the owner's rulings (the read-out closure, filter-captures, label-mark) | §R.8 RULED, R.1.13 | MOVED to "CLOSED BY THE MANAGER'S ENTAILMENT" (told, not objected to) |
+| [REV 27] dollar-condition's ERROR ("$x is not a pattern but a match") | §R.2, §4.1, §0.1 L28, §R.8 RULED rev 25 | REVERSED by match-is-rx ("A match is a regex"; "Change my answers to match"): `$x & <5` is legal (R.1.16 A1); its hint asked **dollar-warning** |
+| [REV 27] the draft's reading "`\k<h>` reads the label" (free-name's "read as labels are"; rev 26.1's §R.6 row) | R.1.13, R.1.7 (b), §R.6, §R.8 | REVERSED by backref-label: "capture. Plain rx in particular should work like pcre when we can"; the clarification NARROWED to which group (R.1.16 A9) |
+| [REV 27] value-is-pattern's third part, a LEAN ("I love it if it works. It needs to be fleshed out") | R.1.15, R.1.0, the seven live uses | RULED by value-hole ("yes") under match-is-rx (R.1.16 A4) |
+| [REV 27] R.1.15 (1) "a value is NOT a one-member pattern ... it is a STRING" (the draft's) | R.1.15 | CHANGED by read-is-constant ("Semantically, $y is a regex of a single string"); no answer moves (A3) |
+| [REV 27] R.1.15 (8) "`${$y}` equals `\k<y>`" as the control | R.1.15, R.1.0 | NARROWED to where the label and the capture agree (2 / 2 / 2 and 1 / 1 / 1 where they part) |
+| [REV 27] array-lift's reach (arrays the user writes) | R.1.14, §2.5, §5.4 | WIDENED in meaning to general regex ("\d + 1 matches the digits 1 through 10"); the build beyond constants UNDER CONSTRUCTION (A6) |
 
 MARKED SECTIONS (each carries a "[REV 24]" or "[REV 24.1]" mark at its head or inline, naming what is superseded):
 rev 24's: §0 status; §0.1 (rows L16, L30, L34, L36, L52, L55, L59, L60, L82, L83, L88); §0.2; §0.3 (pass, PCRE's
@@ -2770,9 +2987,26 @@ R.1.0 (place table, HOLE POSITIONS); R.1.7, R.1.9, R.1.10 (rewritten), R.1.13, R
 §2.6 (the find-all-order sentences and the LEAN ledger, D2); §4.1 (the chain lookup, B13); §5.3 (caller-visible
 captures, B13); §5.4 (the `+ - * %` and `${ }` rows, D1; the `^` row's `${$h}`, D5); §8 (`when`); §11 (the `+` row);
 §13 O53, and the live value-hole uses (D5).
+Rev 27's (each "[REV 27]"; one type and backref-label): the head and changelog; §R's preamble and R.0's title; R.1.0
+(the MATCH VALUE row); R.1.7 (b); R.1.13 REFERENCES; R.1.15 (rewritten); R.1.16 (new); §R.2 (dollar-condition);
+§R.6 (three rows); §R.7; §R.8 (the rev 27 RULED list, two rows answered, plus-operands, eight new rows, spellings 28-29,
+the STOP RULE); this section; §R.10; §R.11 rows 120-124; §0.1 L28, L33; §4.1; and the seven live value-hole uses (§2.5,
+§4.1, §11, §13 O27, O34, the captures-level lean, §0.1 L33).
 §16 and the changelog are the record and are not marked.
 
 ### R.10 Evidence
+
+REV 27 (lane predspec27, 2026-11-18): `docs/dev/lanes/predspec27_evidence/` (its CLAUDE.md). `predspec27_model.py`, a
+standalone script whose helpers are copied from predspec261's: PART BL (backref-label: the ruled witness in every mode;
+m1 against PCRE's written-out `(?J)` splice; m2 against the plain literal; m3 against libpcre2's refusal), PART VD (the
+case table in python `re` and libpcre2; the literal-at-the-hole model against `\k<y>` for four option placements; the
+narrowed control with the "label where set, else capture" model), PART UT (one type: `$x & <5` against `(x: <5)`; the
+three test readings of his `if` against direct semantic functions; `\d + 1` lifted against "a canonical numeral 1..10"
+in python `re`; `$y | "x"`, `$y & <5`, `$y . "E"` against plain PCRE patterns of the same strings), PART Q (the new
+questions' candidates in every mode), PART TT (the type table as RULE-AS-CODE). Controls: libpcre2-8 10.46 (run, never
+read: D181), python `re`. CHECKS 21 of 21 OK; 8 sabotages (s1 `\k` as the label, s2 the label as the capture, s3 the
+group's options, s4 `$x & <5` as a condition, s5 a peeked bare test, s6 longest-first lifting, s7 a value as syntax, s8
+the type table's line), each alone failing at least one check.
 
 REV 26.1 (lane predspec261, 2026-11-18): `docs/dev/lanes/predspec261_evidence/` (its CLAUDE.md). `predspec261_model.py`
 is predspec26's engine copied (not imported) with review r47's evidence fixes IN PLACE: N3, whose two arms were the same
@@ -2965,7 +3199,7 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
 | 59 | a principle for warnings: "Warnings should be structural or definable by a library option"; MINE: the sorting, looped-warning = `label.unset` | PRINCIPLE; MINE's equality NOT supported by the run (PART W) | §R.2 |
 | 60 | warnings: the list accepted; library warnings by library path; suppression by a pattern over names; ADDENDUM: "compiler errors and warnings are prefixed with "pcrec."" (point 1 an observation) | RULED; observation recorded with the manager's answer | §R.2, §7.1 |
 | 61 | empty-search-error RULED: "warning" | RULED; §7's error withdrawn | §R.2, §7 |
-| 62 | the three candidates: "Agree with all three. But for: $x & <5 How is that not an error?$x is not a pattern but a match" | RULED: label-twice kept, min = n at least n, dollar-condition kept (by type) | §R.2, §2.6, §4.1 |
+| 62 | the three candidates: "Agree with all three. But for: $x & <5 How is that not an error?$x is not a pattern but a match" | RULED: label-twice kept, min = n at least n, dollar-condition kept (by type) | §R.2, §2.6, §4.1 [REV 27: dollar-condition CHANGED by row 123 (match-is-rx): `$x & <5` legal, R.1.16 A1] |
 | 63 | numbered-label warning: "Agree. Good warning" | ADOPTED | §R.2, §7.1 |
 | 64 | three points on labels: setting a label is the group form read as a label; numbers name B's groups in `A & B & (1: ..)` ("Makes sense") | his position recorded; the manager's consequence run, a reading IN CONFLICT (rev 25.1); asked as **number-names** | R.1.13, §R.8 |
 | 65 | label numbers: "Let's see how label numbers work and try it"; ADDENDUM: name and number one label | TRIED, not ruled; the label-twice extension agreed; two gaps asked | R.1.13, §R.8 |
@@ -3025,6 +3259,11 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
 | 117 | [REV 26.1] 2026-11-18 OWNER RULING — a `when` with a single argument is an error | RULED; the signature HIS SUGGESTION OF HOW (spellings 25); `@assert` an IDEA (`predicates_future.md` item 29, on main); MINE (`then` required by the signature) became row 118's ruling | R.1.10 (8) |
 | 118 | [REV 26.1] 2026-11-18 OWNER RULING — `then` is required; NOT gives the else-only behaviour | RULED; the call forms RULE-AS-CODE and RUN; `when(NOT c, z)` and `when(NOT peek(x), z)` RUN; MINE (bare pattern under NOT) asked **not-test** | R.1.10 (8), §R.8 |
 | 119 | [REV 26.1] 2026-11-18 MANAGER CORRECTION — the nullable argument's meaning, again (no owner words) | applied: the verified statement (R.1.9, §R.8 (a)), REPRODUCED (63 of 63, min 0-3) | R.1.9, §R.8 |
+| 120 | [REV 27] 2026-11-18 OWNER RULING — backref-label: capture (session 140, afternoon) | RULED: "backref-label: capture. Plain rx in particular should work like pcre when we can."; his scope question answered from the record (unchanged); MINE m1, m2, m3 SUPPORTED (rev 27's PART BL); m3's case asked **same-name-twice** | R.1.13, R.1.7 (b), R.1.15 (10), §R.6, §R.8 |
+| 121 | [REV 27] 2026-11-18 OWNER, discussing value-hole (DISCUSSION, nothing ruled) | the manager's answers: `$` marks a label against a binding SUPPORTED by §5.4; scope and the free-name extension SUPPORTED by R.1.0's REFERENCE column; case at the hole SUPPORTED (VD1, VD1b); "`${$y}` equals `\k<y>`" NARROWED (VD2); `${@y}` asked **array-in-hole** | R.1.15 (8), (10), (11), (13) |
+| 122 | [REV 27] 2026-11-18 OWNER on value-hole — "yes but" | RULED yes to the form, on condition (settled by row 123); width and unset NOT ruled: **numeral-width**, **unset-in-hole** | R.1.15, R.1.0 |
+| 123 | [REV 27] 2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match" | RULED: one type; answers changed (R.1.16 A1-A16); both directions; build delayed, the "under construction" sign; IDEA `predicates_future.md` item 30 (not designed); MINE m1, m2, m3, m6 SUPPORTED; m4 NOT SUPPORTED as a limit (**lift-order** new); m5 NOT SUPPORTED as written (**value-test**) | R.1.16, R.1.15, §R.2, §4.1 |
+| 124 | [REV 27] 2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation | RULED: a read is a single value at run time, built now; semantically a one-string rx; two forms; the other direction UNDER CONSTRUCTION; MINE m1 SUPPORTED (its array consequence asked), m2 NOT SUPPORTED by a record line (asked), m3 SUPPORTED: all under **construction-line** | R.1.16 T3-T5, THE TYPE TABLE |
 
 ## 0. Status, goals, standing questions
 
@@ -3392,12 +3631,12 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L25 | `/a\|b/` vs `/b\|a/` | DIFFERENT: BY DESIGN | SAME under `& \| !` as MEMBERSHIP (one language); differ under `[]`, `.index`, PCRE priority and a CONDITION on a label of the operand (§3.4 and §4.5: structural tools and conditions read the spelling; L60); whether a documented structural difference also needs a diagnostic: §13 O38 | §3.4 [REV 24.1: a rejecting condition now sends the pattern to the next branch in PCRE's order (branch-scope 11:35), so the order decides which path is REPORTED, never whether a single match holds where no atomic part or lookahead stands (§R.1.3)] |
 | L26 | `enumerate(/[-\/.]/)` vs `enumerate(/[.\/-]/)` | SAME | class members in codepoint order (§5.5) | OWN-10 |
 | L27 | `X[<4]` vs `X[1\|2\|3]` | SAME | numeric filters range over positions 1..n (§3.2) | RUL-9 |
-| L28 | `$x & S` as a condition vs `(x: S)` | DIFFERENT: ERROR [REV 25: the error KEPT by dollar-condition, its ground the TYPE: "$x is not a pattern but a match"; §R.2] | the first is an ERROR "did you mean `x: ...`?" (§4.1) | §4.1 |
+| L28 | `$x & S` as a condition vs `(x: S)` | DIFFERENT: ERROR [REV 25: the error KEPT by dollar-condition, its ground the TYPE: "$x is not a pattern but a match"; §R.2] [REV 27: DIFFERENT, BOTH LEGAL: match-is-rx changes dollar-condition; `$x & S` is an rx (x's text or nothing), as an `&` operand a filter on the stretch; it equals `(x: S)` only where the stretch is x's text (R.1.16 A1, A15; rev 27's PART UT UT1); the warning **dollar-warning**] | the first is an ERROR "did you mean `x: ...`?" (§4.1) [REV 27: legal, the hint UNRULED] | §4.1 |
 | L29 | `a := 256` vs `b := "256"` under `<a` / `<b` | DIFFERENT: GAP | GAP; OPEN (§13 O27) | OWN-3 |
 | L30 | `!(x: S)` vs `(x: !S)` | SAME on a set-once label (answers and, rev 23.1, compile verdict); DIFFERENT: BY DESIGN on a repeated label (rev 23) | REV 23 (**condition-not**, 23:48): `!(x: S)` is the three-valued NOT, legal. On an absent x both are UNKNOWN (dropped); on a set-once x they are one question; on a repeated x NOT is "not every pass", the set complement "every pass in !S" (on `/(?:(?<h>\d)?;)*/` WHOLE: 20 of 364 differ, first `7;;`). The pattern difference `P & !(P & (x: S))` is the third spelling, keeping absent rows (§R.3; `predspec23_model.out` PART 2). THE EDGES (rev 23.1, review r33 F8, the manager's disposition; rev 23.2: the draft's reading, **polarity-rule**): at an EMPTY S (`NOT (x: <0)` vs `(x: !<0)` on a digit label) both mean "x is present" ON A SET-ONCE LABEL and both are legal (on an always-set label both are constant TRUE and warn, §R.2 POLARITY; on a REPEATED label they part: "some pass sets x" vs "every pass sets x", 30 of 364 WHOLE, first `3;;`, 0 SEARCHED, `predspec23d_model.out` PART Y, rev 23.2, review r34 D2); at a FULL S (`NOT (x: <10)` vs `(x: !<10)`) both can never keep a row and both are the §5.2 error (the error judged after polarity and default, §R.2); answers 0 of 341 differ at both edges on the set-once pool, both modes (`predspec23c_model.out` PART 9) | condition-not 23:48 [REV 24.1: two-valued (13:25): NOT holds on an ABSENT label, `!S` fails there, so the pair is DIFFERENT on an optional label; on a looped label both read the last setting; rules rev 24.1, reported row: set-once optional label, empty S 1 / 130 / 148 and full S 1 / 220 / 220 of 341; REP, empty S 6 / 248 / 364 of 364 (PART D D16; rev 23.2: 0, 0, 30 / 94 / 94); §R.3] |
 | L31 | `some((g: "x", h: 1))` vs `some((g: "x")) & some((h: 1))` over a repeated label (`occurrences` hits included) | DIFFERENT: BY DESIGN | SAME HIT BY RECORD: one record = all its entries on the SAME iteration; two `some` calls may be met by different iterations (§4.3; on hits `x2 y1` of `/(?<g>[xy])(?<h>\d)/`: the first false, the second true). Replaces rev 7's GAP row (two `occurs.some` vs one `some(s)`); §13 O29 RESOLVED | CF:915-917 (accepted at CF:905) |
 | L32 | `/${q}/m` vs the inlined text of `q` | DIFFERENT: GAP | GAP; `flag.hole` (proposed); OPEN (§13 O32) | Q1R-11 |
-| L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) [REV 26: **value-hole**, an UNRULED form, R.1.15] | RUL-7 |
+| L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) [REV 27: **value-hole** RULED (the form, under match-is-rx; R.1.15, R.1.16); its width and unset details UNRULED, **numeral-width**, **unset-in-hole**; rev 26 marked it an UNRULED form] | RUL-7 |
 | L34 | `(a: <5) & (b: <5)` on an ambiguous two-label pattern (`/(?<a>\d+)(?<b>\d+)/` on `123`): default level vs `vm` | SAME | ONE READING (§4.5, CF:953-955): both levels read PCRE's one parse (a = `12`, b = `3`), so on the WHOLE SPAN `123` the program is false at both; SEARCHED in the subject `123` it reports `12` at both (a = `1`, b = `2` on that span; D196 tries the shorter end, §4.5); the default level may pay states for it (cost owed, §13 O57). `label.ambiguous` still names the label, as the POINTER to the author's validation (§5.6, CF:959), not as a report of a difference. Rev 8: DIFFERENT: WARNING (some-parse at default) | CF:953-955; rev 8 RUL-3 |
 | L35 | `(?J)` duplicate label vs a repeated label, under `x: S` | DIFFERENT: GAP | GAP; OPEN (§13 O35) | RUL-16 |
 | L36 | `(x: S)` vs `(x = d: S)` (d in S) on a repeated label (rev 23; rev 22's row compared `all((x: S))`, retired 23:18) | DIFFERENT: BY DESIGN | the default spells "every pass, possibly none": on zero passes and on a pass lacking x the default reads d (§R.1.7; `(n: <5)` vs `(n = 0: <5)` on the empty text: FAILS / HOLDS in both modes, `predspec23_model.out` PART 5) | all-question 23:18 |
@@ -4065,14 +4304,14 @@ O27); no warning between the orders: the manager's reading (CF 11:20).
 **RULE.** The expression language has no concatenation operator: sequencing is written inside a literal
 (`/${a}-${b}/`) or by `join`. `+ - * %` are arithmetic only, on numbers (§2.1): subject numbers can be added and
 filtered through a computed label (`s := $x + $y`, then `P & (s: <50)`, §4.4; `$y + 1` in a hole; day differences).
-`($x + $y) & <50` used as a condition is the "did you mean `x: ...`?" error (§4.1, §0.1 L28). Value concatenation is insertion or a library name
+`($x + $y) & <50` used as a condition is the "did you mean `x: ...`?" error (§4.1, §0.1 L28) [REV 27: CHANGED by match-is-rx: `($x + $y) & <50` is a legal rx (the sum's numeral when it is below 50, else nothing), a filter where an `&` operand stands (R.1.16 A1); the hint is **dollar-warning**]. Value concatenation is insertion or a library name
 (`concat(x, y)`).
 
 **REASONING.** Avoids the overload trap (`"12" + "34"` = 46 or "1234"?); with no juxtaposition, a name after an
 expression always starts a binding (one-token look-ahead, §5.1).
 
 **STATUS.** No concatenation operator: LEAN (CF:69). Arithmetic on subject numbers: RULED (CF:782 (1): "\d+ numbers can
-be added, filtered <256"). Arithmetic result width (`${$y + 1}` on `0099`): §13 O27. [REV 26: **value-hole**, an UNRULED form, R.1.15]
+be added, filtered <256"). Arithmetic result width (`${$y + 1}` on `0099`): §13 O27. [REV 27: **value-hole** RULED (the form, under match-is-rx; R.1.15, R.1.16); its width and unset details UNRULED, **numeral-width**, **unset-in-hole**; rev 26 marked it an UNRULED form]
 
 ### 2.6 `occurrences` and `contains` are transforms
 
@@ -4627,8 +4866,8 @@ filters" as the `[ ]` any-one reading: RULED (CF:863); "filter" read as the role
 record, a macro awaiting the pattern that defines x). `$x` = the CAPTURED STRING of this match (a one-string set,
 context-free, §11) for a set-once label; for a REPEATED label, one captured string per iteration, read through the
 array interface (§5.4 `$` row, §4.3). `x:` is ALWAYS the
-constrained side; `$x` is ALWAYS a value used (operand, insertion `${$x}` [REV 26: **value-hole**, an UNRULED form, R.1.15], output). Capture-vs-capture is `x: <$y`
-(§4.6). `$x & ...` used AS A CONDITION is an ERROR: "did you mean `x: ...`?" [REV 25: KEPT, by its type: "$x is not a pattern but a match" (dollar-condition, §R.2); a label name surfaced by both sides of `&` is an error only where REFERENCED (label-flow, R.1.13)]. The left of `:` is a label PATH
+constrained side; `$x` is ALWAYS a value used (operand, insertion `${$x}` [REV 27: **value-hole** RULED (the form, under match-is-rx; R.1.15, R.1.16); its width and unset details UNRULED, **numeral-width**, **unset-in-hole**; rev 26 marked it an UNRULED form], output). Capture-vs-capture is `x: <$y`
+(§4.6). `$x & ...` used AS A CONDITION is an ERROR: "did you mean `x: ...`?" [REV 27: CHANGED: one type (match-is-rx), so `$x & S` is an rx, x's text or nothing, legal wherever an rx stands; as an `&` operand it filters the stretch (R.1.16 A1); whether the hint stays as a WARNING is **dollar-warning**] [REV 25: KEPT, by its type: "$x is not a pattern but a match" (dollar-condition, §R.2); a label name surfaced by both sides of `&` is an error only where REFERENCED (label-flow, R.1.13)]. The left of `:` is a label PATH
 (`d.year: <2000`), never an expression: a computed value is constrained through a computed label (§4.4).
 REV 20: NO EXCEPTION. Rev 19's one exception (a macro parameter bound to a FIELD REFERENCE standing on the left of
 `:`) is PAUSED with the sigil (RULED, **retire-paused**, CF 12:51; its text is the record in §16.2). The left of `:`
@@ -6228,7 +6467,7 @@ when the rx-`&` switch is ON: `(\d+)&${ <256 }` (with it OFF, the whole rx in th
 after an atom WITHOUT `&` is a FOLLOWING item (`(\d+)${ <256 }` = digits followed by a numeral below 256). The guard
 covers the whole concatenation on each side of its `&` within the alternative (D196 precedence, above): inside a
 longer literal group the guarded atom, `/port=(?:(\d+)&${<256})/`, since `/port=(\d+)&${<256}/` is empty (§0.1 L67;
-review r12 CENSUS-5). Generalized backreferences (`(?<y>\d{4})-${$y + 1}`) [REV 26: **value-hole**, an UNRULED form, R.1.15]; holes are order-free; holes in typed SYNTAX
+review r12 CENSUS-5). Generalized backreferences (`(?<y>\d{4})-${$y + 1}`) [REV 27: **value-hole** RULED (the form, under match-is-rx; R.1.15, R.1.16); its width and unset details UNRULED, **numeral-width**, **unset-in-hole**; rev 26 marked it an UNRULED form]; holes are order-free; holes in typed SYNTAX
 POSITIONS (`\d{${n}}`, `{${min},}`, `[${a}-${b}]`, a group name `(?<${x.label}>...)`, an option's value `(?i=${ci})`,
 boolean, CF:86-87, rev 18) supply that position's value
 from a finite compile-time set; holes never change structure seen outside: an atom hole is one entry, and a
@@ -7054,7 +7293,7 @@ review's proposed lean, in plain words, NOT resolved):
   negated numeric comparison meets a target with non-canonical members (`0150`, `abc`).
 - **O27. Does quoting a constant decide how it compares?** (OWN-3.) `a := 256` and `b := "256"` are the same set, yet
   `x & <a` compares numbers and `x & <b` compares text (`1000` out vs in), and `@assert.same(a, b)` passes. The same
-  question covers arithmetic results (does `${$y + 1}` on `0099` insert `100` or `0100`?) [REV 26: **value-hole**, an UNRULED form, R.1.15] and leading-zero bounds
+  question covers arithmetic results (does `${$y + 1}` on `0099` insert `100` or `0100`?) [REV 27: **value-hole** RULED (the form, under match-is-rx; R.1.15, R.1.16); its width and unset details UNRULED, **numeral-width**, **unset-in-hole**; rev 26 marked it an UNRULED form] and leading-zero bounds
   (does `between(01, 12)` admit `1`, `05`?). Lean: make numeric vs text a property of the comparison you write, not
   of how the constant is quoted; arithmetic yields canonical numerals; width is set with the padding modifier.
 - **O28. One rule for conditions on optional, repeated and never-entered labels?** (OWN-4.) On `1,7,` with a
@@ -7130,7 +7369,7 @@ review's proposed lean, in plain words, NOT resolved):
   RESOLVED list): both conditions read PCRE's one parse, so the example is false at every level. Rev 8's lean
   (per-condition some-parse) is SUPERSEDED with the some-parse rule.
 - **O34. Same text twice: one level for every spelling?** (RUL-7.) `\k<s>` on a 3-valued finite group needs `vm`,
-  the value hole `${$s}` [REV 26: **value-hole**, an UNRULED form, R.1.15] on the same label is default-level, and `each(..., enumerate(...))` is a third spelling.
+  the value hole `${$s}` [REV 27: **value-hole** RULED (the form, under match-is-rx; R.1.15, R.1.16); its width and unset details UNRULED, **numeral-width**, **unset-in-hole**; rev 26 marked it an UNRULED form] on the same label is default-level, and `each(..., enumerate(...))` is a third spelling.
   Lean: one rule keyed by whether the referenced language is finite, for all three spellings (links
   [BACKREF-FINITE]; if Q10 keeps the engine rule out of #6, the predicate front end must still lower `\k` on a finite
   label as it lowers `${$x}` [REV 26.1, review r47 D5: the same UNRULED form, **value-hole**], or refuse both).
@@ -7390,7 +7629,7 @@ here):
   that loop. (2) A literal index as a TEST (`(x[2]: S)`): by CF:62 (the 11-13 `s.nth(i)` rule: "YES if i is bounded",
   a countdown of ~k states) it is regular and needs no captures, while the transform record puts `d[2]` at a higher
   level (CF:924-926; rev 10: RULED for READING one hit, CF:977, which does not say whether a test reads it). Lean: a TEST on iteration i is a group question at the default level (it
-  reads no text out); READING iteration i's text (`$x[2]`, `${$x[2]}` [REV 26: **value-hole**, an UNRULED form, R.1.15]) is the `captures` level. Both leans are this
+  reads no text out); READING iteration i's text (`$x[2]`, `${$x[2]}` [REV 27: **value-hole** RULED (the form, under match-is-rx; R.1.15, R.1.16); its width and unset details UNRULED, **numeral-width**, **unset-in-hole**; rev 26 marked it an UNRULED form]) is the `captures` level. Both leans are this
   document's. REV 20: (1) RULED, through **joint-loops** (CF 11:17: per-pass pairing), **record-is-product** (CF
   11:35) and **pairing-loop** (CF 13:29, his words: "pairing-loop: I agree part 1"; the wording: "the pairing loop
   is the DEEPEST loop that encloses any named label; every other named label lies in the same pass of it or outside
