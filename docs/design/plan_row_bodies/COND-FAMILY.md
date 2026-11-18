@@ -3340,3 +3340,13 @@ withdrawn reading would refuse an unknown name; B := `/\k<h>(?<h>\d)/` after A: 
 mention at that point), the withdrawn reading would read B's own, still unset. So under his rule a part that
 refers to a name it does not set reads the surrounding pattern's label, like a parameter (meets predicates_future
 item 26); a part that sets a name before referring to it always reads its own.
+
+**2026-11-18 OWNER, reopening backref-across-parts for DISCUSSION (Frank, to session 139, morning; discussion,
+nothing ruled by this entry).** HIS WORDS: "backref-across-parts: let's discuss. I do like your idea. The trouble
+comes if the reference is to something not defined in that rx". RECORD: DISCUSSION. "Your idea" is taken as the
+manager's first reading (names inside a part are resolved in that part, so a part keeps its meaning wherever it is
+used), which the entry just above withdrew in favour of "the last mention at the point of reference" read over the
+whole spliced pattern. So the two entries above are NOT the final state: what stands firm is the witness's answer
+(B's own group, both readings agree) and his principle's words; what is OPEN is the case he names, a reference
+inside a part to a name that part does not define. The manager's contribution to the discussion is in the session
+and is put to him as **free-name**; the state is whatever closes that question.
