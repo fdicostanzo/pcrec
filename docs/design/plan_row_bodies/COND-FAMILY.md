@@ -2810,3 +2810,22 @@ eleven named warnings and both proposals are structural except `compare.width`, 
 and so belongs with the library that provides it (predicates_future item 12: a warning a macro raises about its
 own arguments); the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a
 condition reads a label that can be unset where it is read, with no default) seen under the one label rule.
+
+**2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path (Frank, to
+session 138, evening).** Shown the warning table of revision 24.4 sorted as structural or library, and asked
+whether that matches his principle and whether `compare.width` should move to the library. HIS WORDS: "Warnings:
+yes, that is my definition of structural and these warnings are good. Naming: library warnings/errors should be
+id'd by the library path if a width macro in a compare library had a warning it should be
+compare.width.variable_width The suppression could be @config.warn.off(/compare\.width\..*/) Or with concat
+@config.warn.off("compare.width."¥wildcard)".
+RECORD: RULED: (1) "structural" is as the manager sorted it (decided from the program's own structure), and the
+listed warnings are good. (2) A LIBRARY's warnings and errors are IDENTIFIED BY THE LIBRARY PATH: the library, the
+element, then the warning (his example: a width macro in a compare library -> `compare.width.variable_width`). So
+`compare.width` as a compiler-built warning becomes a warning the compare library defines, under that naming. (3)
+Suppression selects by a pattern over those names (his examples, placeholders for the spellings review:
+`@config.warn.off(/compare\.width\..*/)`, or the name built with a concatenation and a wildcard,
+`"compare.width." ¥ wildcard`; `¥` stands for a sequence operator, as `€` did in the rx-module proposal). MINE:
+the structural warnings keep short compiler-side names (`test.never`, `label.unset`); a library's names can never
+collide with them if the first component is the library's own path: to state in the next revision; the mechanism
+by which a library DEFINES a warning is predicates_future item 12; `compare.looped` and the manager's withdrawn
+looped-warning go to the next review as told.
