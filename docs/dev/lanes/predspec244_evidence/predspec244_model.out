@@ -142,6 +142,22 @@ N N3' items-then-last `/(?:(?<h>\d),)*(?<h>\d)/` (the last item outside the loop
 N array form on N2 `7;;3;`: settings in order ['7', '3'] ; with a slot for each reset after a setting ['7', None, '3', None] (the open question **array-slot**)
 N array form on N2 `7;3;`: ['7', '3'] (label: unset) ; on REP `3;;7;`: ['3', '7'] (label: `7`)
 
+== PART L: THE SEPARATED LIST (rulings file R1, R2: the worked example of the label rule), each form on `7`, `7,3,5`
+   and `7,3,` (no last item), WHOLE: the label after the pattern and the ARRAY form (every setting of the name, in
+   order); then with a CONDITIONED item (item := (?<h>\d) & (h: <5), the condition inside the item, every item)
+L (a) items-then-last                          244 `/(?:(?<h>\d),)*(?<h>\d)/`: `7` label `7`, array ['7'] OK ; `7,3,5` label `5`, array ['7', '3', '5'] OK ; `7,3,` FAILS
+L (a) items-then-last                          243 `/(?:(?<h>\d),)*(?<h>\d)/`: `7` label `7`, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (b) first-then-rest                          244 `/(?<h>\d)(?:,(?<h>\d))*/`: `7` label unset, array ['7'] OK ; `7,3,5` label `5`, array ['7', '3', '5'] OK ; `7,3,` FAILS
+L (b) first-then-rest                          243 `/(?<h>\d)(?:,(?<h>\d))*/`: `7` label unset, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (c1) his sketch over (a): list | item        244 `/(?:(?:(?<h>\d),)*(?<h>\d)|(?<h>\d))/`: `7` label `7`, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (c1) his sketch over (a): list | item        243 `/(?:(?:(?<h>\d),)*(?<h>\d)|(?<h>\d))/`: `7` label `7`, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (c2) his sketch over (b): list | item        244 `/(?:(?<h>\d)(?:,(?<h>\d))*|(?<h>\d))/`: `7` label unset, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (c2) his sketch over (b): list | item        243 `/(?:(?<h>\d)(?:,(?<h>\d))*|(?<h>\d))/`: `7` label unset, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (c3) his sketch, list of two or more | item  244 `/(?:(?<h>\d)(?:,(?<h>\d))+|(?<h>\d))/`: `7` label `7`, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (c3) his sketch, list of two or more | item  243 `/(?:(?<h>\d)(?:,(?<h>\d))+|(?<h>\d))/`: `7` label `7`, array ['7'] ; `7,3,5` label `5`, array ['7', '3', '5'] ; `7,3,` FAILS
+L (a) items-then-last, conditioned item (every item < 5): `3` HOLDS label `3`, array ['3'] ; `3,1,4` HOLDS label `4`, array ['3', '1', '4'] ; `3,7,1` FAILS ; `7` FAILS ; SEARCHED `7,3,1` `3,1`@2 h = `1` ; FIND-ALL `3,7,1 2` [`3`@0 h = `3`, `1`@4 h = `1`, `2`@6 h = `2`]
+L (b) first-then-rest, conditioned item (every item < 5): `3` HOLDS label unset, array ['3'] ; `3,1,4` HOLDS label `4`, array ['3', '1', '4'] ; `3,7,1` FAILS ; `7` FAILS ; SEARCHED `7,3,1` `3,1`@2 h = `1` ; FIND-ALL `3,7,1 2` [`3`@0 h = unset, `1`@4 h = unset, `2`@6 h = unset]
+
 == PART M: the MARKER MODEL on libpcre2 (labels under the one rule) vs the engine's rule 244, reported row with labels;
    and the ORDER CHECK: the same pattern with NO markers (PCRE's capture) must DIFFER where a branching resets
 M S1    model `(?<e1>)(?:(?<e2>)(?:(?<a1>\d)|(?<b1>[a-z])))*xx(?C"t")` vs engine 244: 0 / 0 / 0 of 1365 ; without markers (the capture) 28 / 40 / 40 (expected to differ) ; OK
@@ -203,4 +219,4 @@ D duplicate name across a loop 244: W `3` HOLDS h = unset ; W `3;` HOLDS h = uns
 D duplicate name across a loop 243: W `3` HOLDS h = unset ; W `3;` HOLDS h = unset ; W `3;4` FAILS
 D anchored / \b / lookahead operand: PART F (refused or allowed, by THE DRAFT'S READING)
 
-== CHECKS: 124 of 124 OK
+== CHECKS: 128 of 128 OK

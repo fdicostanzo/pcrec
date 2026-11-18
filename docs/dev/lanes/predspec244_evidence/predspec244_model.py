@@ -542,6 +542,36 @@ print("N array form on N2 `7;3;`: %s (label: unset) ; on REP `3;;7;`: %s (label:
     View(None, "", 0, 0, st).array("h"), View(None, "", 0, 0, mk(REP).whole("3;;7;")[2]).array("h")))
 print()
 
+# ======================================================================================================== PART L
+print("== PART L: THE SEPARATED LIST (rulings file R1, R2: the worked example of the label rule), each form on `7`, `7,3,5`")
+print("   and `7,3,` (no last item), WHOLE: the label after the pattern and the ARRAY form (every setting of the name, in")
+print("   order); then with a CONDITIONED item (item := (?<h>\\d) & (h: <5), the condition inside the item, every item)")
+LFORMS = [("(a) items-then-last", r"(?:(?<h>\d),)*(?<h>\d)"), ("(b) first-then-rest", r"(?<h>\d)(?:,(?<h>\d))*"),
+          ("(c1) his sketch over (a): list | item", r"(?:(?:(?<h>\d),)*(?<h>\d)|(?<h>\d))"),
+          ("(c2) his sketch over (b): list | item", r"(?:(?<h>\d)(?:,(?<h>\d))*|(?<h>\d))"),
+          ("(c3) his sketch, list of two or more | item", r"(?:(?<h>\d)(?:,(?<h>\d))+|(?<h>\d))")]
+LEXP = {("(a) items-then-last", "7"): ("`7`", ["7"]), ("(a) items-then-last", "7,3,5"): ("`5`", ["7", "3", "5"]),
+        ("(b) first-then-rest", "7"): ("unset", ["7"]), ("(b) first-then-rest", "7,3,5"): ("`5`", ["7", "3", "5"])}
+for nm, pat in LFORMS:
+    for rule in ("244", "243"):
+        p = mk(pat, {}, rule); cells = []
+        for t in ("7", "7,3,5", "7,3,"):
+            ok, labs, st = p.whole(t)
+            if not ok: cells.append("`%s` FAILS" % t); continue
+            lab = "`%s`" % labs["h"] if labs["h"] is not None else "unset"; arr = View(p, t, 0, len(t), st).array("h")
+            e = LEXP.get((nm, t)) if rule == "244" else None
+            cells.append("`%s` label %s, array %s%s" % (t, lab, arr, "" if e is None else " " + check("L %s %s" % (nm, t), (lab, arr) == e)))
+        print("L %-44s %s `/%s/`: %s" % (nm, rule, pat, " ; ".join(cells)))
+for nm, pat in LFORMS[:2]:
+    cpat = pat.replace(r"(?<h>\d)", r'(?<h>\d)(?C"c")')
+    p = mk(cpat, h5)
+    cells = []
+    for t in ("3", "3,1,4", "3,7,1", "7"):
+        ok, labs, st = p.whole(t)
+        cells.append("`%s` %s" % (t, ("HOLDS label %s, array %s" % ("`%s`" % labs["h"] if labs["h"] is not None else "unset", View(p, t, 0, len(t), st).array("h"))) if ok else "FAILS"))
+    print("L %s, conditioned item (every item < 5): %s ; SEARCHED `7,3,1` %s ; FIND-ALL `3,7,1 2` %s" % (nm, " ; ".join(cells), S_(p, "7,3,1", ("h",)), F_(p, "3,7,1 2", ("h",))))
+print()
+
 # ======================================================================================================== PART M
 print("== PART M: the MARKER MODEL on libpcre2 (labels under the one rule) vs the engine's rule 244, reported row with labels;")
 print("   and the ORDER CHECK: the same pattern with NO markers (PCRE's capture) must DIFFER where a branching resets")
