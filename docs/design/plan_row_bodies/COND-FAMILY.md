@@ -3411,3 +3411,16 @@ larger than the corner it answers (it touches the symmetric `&`, label-flow's am
 conditions that read a label set on a filter operand), the manager asks it as a ruling, **filter-captures**, with
 what "the filter" is in a chain and what a condition outside the filter may read; the read-out corner is settled
 by whatever closes that.
+
+**2026-11-18 OWNER PROPOSAL — labels are seen only if exported; a literal's labels are exported in its scope
+(Frank, to session 139, morning; a PROPOSAL in his word, nothing ruled by this entry).** Made in answer to the
+question filter-captures (strict or loose). HIS WORDS, in full: "path-and-ambiguity: proposal:
+1. the labels of an rx can only be seen if they are exported (spelling not defined)
+2. all literal rx labels are exported in that scope". RECORD: PROPOSAL. (1) An rx's labels are visible outside it
+only if it EXPORTS them (the spelling of an export is not defined). (2) Every label of a LITERAL rx is exported in
+the scope the literal is written in. It is a visibility rule by EXPORT, not by the operand's role, so it is a
+different cut from his lean of the entry above ("a filter can never produce captures") and from the manager's
+strict / loose; which of them stands is part of what closes it. The manager's assessment and the two points the
+proposal leaves to define (what "that scope" is; whether it replaces the filter lean) are in the session, asked as
+**export-scope**. Meets: "The rx should export the group" (free-name, the same morning); predicates_future item 25
+(label hygiene for libraries: its direction (a), a pattern exposes only what it declares).
