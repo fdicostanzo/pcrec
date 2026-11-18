@@ -8,11 +8,11 @@ after. `../predspec27_evidence/` stays as committed (the helpers here are copies
 
 ## Files
 
-- `predspec271_model.py` — STANDALONE. PARTS B, C, D, K, J, H, A, I, TT (the header names the review finding of
+- `predspec271_model.py` — STANDALONE. PARTS B, C, D, K, J, H, A, CL, I, TT (the header names the review finding of
   each). Controls: libpcre2-8 10.46 through `../rxmodel_evidence/pcre2h.py` (run, never read: D181), python `re`
   (PART J), direct semantic functions.
-- `predspec271_model.out` — forward run: CHECKS 15 of 15 OK.
-- `predspec271_sabotage.out` — all 9 sabotages at once: 7 of 15. `predspec271_sabotage_each.out` — each alone;
+- `predspec271_model.out` — forward run: CHECKS 16 of 16 OK.
+- `predspec271_sabotage.out` — all 9 sabotages at once: 8 of 16. `predspec271_sabotage_each.out` — each alone;
   every one fails exactly one check.
 
 ## Run (one process; no make; nothing under /tmp)

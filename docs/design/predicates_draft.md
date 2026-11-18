@@ -2275,7 +2275,10 @@ written in an `&` chain stands AFTER every pattern operand of that chain"), and 
 backtrack into P reads it again: `($x & <5) & P` is `P & ($x & <5)`.
 
 THE TYPE TABLE (one row per operation and per hole position the draft has; first match by row WITHIN the operation rows and within
-the position rows, the two composed by THE COMPOSITION RULE above [REV 27.1, review r48 I]; a cell that rests on
+the position rows, the two composed by THE COMPOSITION RULE above [REV 27.1, review r48 I; and review r48 O, PLAN: this is at least
+the SIXTH declared table on the same keys (R.1.0's place table and HOLE POSITIONS, R.1.14's operator table, §5.4's
+MARK TABLE, §11's ROLE TABLE); the general form, one POSITION table and one OPERATION table with property columns and a
+DERIVED status, joins review r47's E1 for the next FULL revision]; a cell that rests on
 a reading says so; spellings are placeholders, §R.8). NEEDS = what the operand must be (SINGLE / FINITE / ANY; CAN
 MATCH / CAN FILTER); STATUS = BUILT NOW / UNDER CONSTRUCTION / COMPILE ERROR, per operand.
 
