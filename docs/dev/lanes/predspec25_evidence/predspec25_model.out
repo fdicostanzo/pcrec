@@ -96,6 +96,7 @@ RX9 tokens `x * y` -> ['x', '*', 'y'] -> TYPE ERROR (binary `*` on patterns: ari
 RXQ `[h = rx.digit] SEQ (h: <5)?` as regex (`(?<h>\d)(?:(?C))?`, optional): libpcre2 WHOLE `7` HOLDS, `3` HOLDS ; SEARCHED `73` `7`@0 ; FIND-ALL `7 3` [`7`@0, `3`@2]
 RXQ `[h = rx.digit] SEQ (h: <5)+` as regex (`(?<h>\d)(?:(?C))+`, one or more): libpcre2 WHOLE `7` FAILS, `3` HOLDS ; SEARCHED `73` `3`@1 ; FIND-ALL `7 3` [`3`@2]
 RXQ `[h = rx.digit] SEQ (h: <5)*` as regex (`(?<h>\d)(?:(?C))*`, any number): libpcre2 WHOLE `7` HOLDS, `3` HOLDS ; SEARCHED `73` `7`@0 ; FIND-ALL `7 3` [`7`@0, `3`@2]
+RXL label-mark L3, `ip2 := octet SEQ "." SEQ octet` with octet a label, `& (octet: <10)` (label-flow (3): the last mention): WHOLE `5.200` FAILS, `200.5` HOLDS octet = `5` ; SEARCHED `5.200 20.5` `5.2`@0 octet = `2` ; FIND-ALL `1.2 5.200 20.5` [`1.2`@0 octet = `2`, `5.2`@4 octet = `2`, `20.5`@10 octet = `5`]
 RXA `rx.repeat(rx.digit, n + 1)`, n := [2, 4], read as distribution per mention (3 | 5): `/(?|\d{3}|\d{5})/`: WHOLE `123` HOLDS ; SEARCHED `123456` `123`@0 ; FIND-ALL `12345 678` [`123`@0, `678`@6] ; read as 'adding patterns is a type error': REJECTED
 
 == PART E: the error-or-warning rulings, their shown rows re-run (empty-search-error: warning; min-values: at least n)

@@ -495,6 +495,21 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
       with several members there makes one copy of the literal per member (several holes: every combination), and
       a combination that is not a legal pattern is removed: `repeat(x, min = n, max = n)` with n := `[2, 4]` is
       two to four, NOT "exactly 2 or exactly 4" (that is the one-argument form).
+  17. WARNING NAMES SAY WHOSE THEY ARE (ruled 2026-11-17: "library warnings/errors should be id'd by the library
+      path"; "compiler errors and warnings are prefixed with "pcrec.""). A compiler warning is `pcrec.something`; a
+      library's is its path (`compare.width.variable_width`). Suppression selects by a PATTERN over the names, so a
+      broad pattern can switch off a compiler warning and a library's of the same last part together, and ones added
+      later (the owner: "Not sure if that's helpful or dangerous"); list what a selector matches before using it.
+  18. `?` IS THE OPTIONAL AND `A + B` IS ADDITION (ruled 2026-11-17). The postfix marks are regex's quantifiers on the
+      operand as a whole (`+ +? ++ * *? *+ ? ?? ?+`); the same `+` or `*` between two operands is arithmetic, never
+      "one or more, then". So `x+ y` and `x + y` differ by a space in meaning, not just in style (the spelling is
+      the review's; the trap is the reader's).
+  19. A POSTFIX OPERATOR BINDS TO ONE OPERAND (ruled 2026-11-17: "fairly tight with parenthesis otherwise"). `"a"
+      SEQ "b"+` is `ab+`, not `(?:ab)+`; write the parentheses for the whole sequence. The order, tightest first: a
+      postfix quantifier, the sequence operator, `&`, `|`.
+  20. THE ARRAY HOLDS ONLY WHAT WAS SET (ruled 2026-11-17: "only what was set"). A loop pass whose optional label
+      was not set adds nothing: on `7;;3;` the array of `h` in `/(?:(?<h>\d)?;)*/` is [`7`, `3`], so positions in
+      the array are not pass numbers; to keep one entry per pass, label something every pass sets (the whole item).
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
   documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 

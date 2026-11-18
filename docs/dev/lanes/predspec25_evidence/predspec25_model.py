@@ -510,6 +510,10 @@ for op, name in (("?", "optional"), ("+", "one or more"), ("*", "any number")):
     erq = mk(r'(?<h>\d)(?:(?C"c"))%s' % ("{1,2}" if op == "+" else "?" if op == "?" else "{0,2}"), {"c": lambda v: lt(5)(v.lab("h"))})
     print("RXQ `[h = rx.digit] SEQ (h: <5)%s` as regex (`(?<h>\\d)(?:(?C))%s`, %s): libpcre2 WHOLE `7` %s, `3` %s ; SEARCHED `73` %s ; FIND-ALL `7 3` %s" % (
         op, op, name, pW(lrq, "7"), pW(lrq, "3"), pS(lrq, "73"), pF(lrq, "7 3")))
+# label-mark L3 (a binding's name is a label): ip2 := octet SEQ "." SEQ octet, one label `octet`, the last mention
+ipl = mk(r'(?:(?<octet>\d{1,3}))(?:\.)(?:(?<octet>\d{1,3}))(?C"c")', {"c": lambda v: lt(10)(v.lab("octet"))})
+print("RXL label-mark L3, `ip2 := octet SEQ \".\" SEQ octet` with octet a label, `& (octet: <10)` (label-flow (3): the last mention): WHOLE `5.200` %s, `200.5` %s ; SEARCHED `5.200 20.5` %s ; FIND-ALL `1.2 5.200 20.5` %s" % (
+    W_(ipl, "5.200", ("octet",)), W_(ipl, "200.5", ("octet",)), S_(ipl, "5.200 20.5", ("octet",)), F_(ipl, "1.2 5.200 20.5", ("octet",))))
 # (9) arithmetic beside patterns: a count from `n + 1` with n := [2, 4]
 p1, _ = instantiate(r"\d{{{0}}}", [["3", "5"]])
 print("RXA `rx.repeat(rx.digit, n + 1)`, n := [2, 4], read as distribution per mention (3 | 5): `/%s/`: %s ; read as 'adding patterns is a type error': REJECTED" % (
