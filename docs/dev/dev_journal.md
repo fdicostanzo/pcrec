@@ -28231,3 +28231,42 @@ Next
   lane on "I thought we said"; pushed while CI ran (twice more); committed after a failed plan-lint, leaving two
   wiring files uncommitted for four hours while I told the owner they were in force; showed him a hand-worked
   example the draft's numeral rule falsifies, and paraphrased that rule wrongly in a critic brief.
+
+## 2026-11-18 (session 139 wake, box clock 23:20 on 11-17 onward; a note on STARTUP CONTEXT, at the owner's request)
+
+- WHAT THE WAKE READ before the first useful act (bytes on disk; roughly four bytes to a token): injected with no
+  act of mine: root CLAUDE.md 18.3 KB, the memory index 25.7 KB (OVER its 24.4 KB limit: the last two lines were
+  cut, one of them the timing-troublemakers memory the skill cites; one line is duplicated), the manager skill
+  18.9 KB, the harness's own skill list and tool schemas (large, not ours). Read by the wake procedure:
+  monitoring.md 8.4 KB (only to copy the heartbeat prompt), wake.md 7.3 KB, owner.md 5.9 KB, a 5 KB journal tail
+  (which repeats wake.md's first section), BRIEF_TEMPLATE.md 5.9 KB, three directory CLAUDE.md files injected by
+  those reads (7.8 KB), landing.md (grepped). Tool output: the wtprune dry run prints one KEEP line per worktree
+  (216 kept); the bare `grep STATE:started` the skill names also hits prose. About 100 KB of standing text, plus
+  output, before the first lane was briefed.
+- IDEAS TO REDUCE IT (none built; ranked by my guess at the saving, largest first):
+  1. MEMORY INDEX: cut each line to a title and under ~100 characters (the hook is in the file, not the index);
+     merge memories that became skill rules or CLAUDE.md rows into those and delete them (critics on all work, no
+     question UI, check-then-act, merge permission, many others are now stated two or three times); remove the
+     duplicate line. Target under 12 KB. This also un-cuts the two lost lines.
+  2. ONE WAKE SCRIPT (`scripts/wakeup main`): session role, CI on the tip, monread, a ONE-line queue summary, `git
+     status --short`, the anchored started-rows grep, and the heartbeat prompt printed ready to paste; silent
+     where normal, like gestalt. Removes the monitoring.md read at wake and five commands' raw output.
+  3. HEARTBEAT PROMPT in a file the cron names in one line ("HEARTBEAT main: do scripts/heartbeat.md"), or better a
+     script that does steps 0-2 and prints only what needs acting on: the prompt is re-read every tick today.
+  4. OWNER.MD: answered questions leave the file at the close that follows the answer (about half of it tonight
+     was the history of answered slugs; the record is COND-FAMILY.md and ARCH-STEP.md).
+  5. WAKE.MD is the hand-off; the journal tail is read only when wake.md points at it (the two overlapped fully).
+  6. MANAGER SKILL: the "always on" list grew to eleven dated paragraphs; keep each rule as one line and move the
+     incident history to a NOTES file beside it. Same split for BRIEF_TEMPLATE.md (the field list is 30 lines,
+     the rest is why).
+  7. wtprune and branchprune: print only REMOVE and UNMANAGED lines by default with a kept count (`-v` for the
+     KEEP lines); a `--check NAME..` that prints merged-into and the dirty file list per name (I hand-wrote that
+     loop tonight).
+  8. ROOT CLAUDE.md: the build-and-test prose and "where things are" are a contributor's orientation the manager
+     session never uses at wake; the situation index is the part that earns its place. A candidate for a split,
+     with the owner's say (it is his file's shape).
+  9. The skill's wake step 3 should carry plan.md's own anchored grep, and wake.md should give the close time from
+     `date` (it said 23:30; the box read 23:23 at wake).
+- ALSO at this wake: lane predspec25 (opus) launched for revision 25 of the predicates draft; 26 delivered
+  worktrees and 20 merged branches pruned; the owner's idea of a condition with a label parameter filed as
+  predicates_future item 26 (an idea, not a ruling).

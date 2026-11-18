@@ -513,3 +513,21 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   library declares about itself: levels, strictness) and the ruled sentence that a library element beyond the
   user's level is a compile error.
 - SOURCE: COND-FAMILY.md, 2026-11-17. TRIGGER: the rx-module discussion, or the first library file with labels.
+
+## 26. A condition with a label parameter, bound where it is used
+
+- WHAT (the owner, 2026-11-17 late evening box clock, to session 139; an IDEA to save, not a ruling): "binding a
+  condition cond(x:) := (x: < 256) used like A & cond(y). spelling not final."
+- THE MANAGER'S READING (mine, unchecked): a condition is DEFINED once over a placeholder label (`x:`) and USED
+  with a real label in its place (`cond(y)` reads `y` of the pattern it is joined to, here `A`), so one condition
+  serves many patterns whose labels are named differently. Every spelling in his sentence is a placeholder
+  (`cond`, `x:` in the parameter list, `:=`, the call form).
+- QUESTIONS IT RAISES (listed, none asked yet): what a parameter may be bound to (a label only, or a number, a
+  path through a part's label, an array of what was set); whether the body may also read labels that are NOT
+  parameters; whether a call is checked where it is written (a bound label the joined pattern does not have);
+  several parameters.
+- MEETS: item 25 (label hygiene for libraries: a library condition that names no label of its own cannot collide,
+  which is direction (c), a rename at the point of use, seen from the condition's side); the label-flow ruling
+  (an ambiguous reference across `&` is the error); docs/design/rx_module.md.
+- SOURCE: the owner's message, 2026-11-17. TRIGGER: the library discussion (items 12, 20, 23, 25), or the first
+  revision of the draft after rev 25 that takes up reusable conditions. NOT in lane predspec25's scope.
