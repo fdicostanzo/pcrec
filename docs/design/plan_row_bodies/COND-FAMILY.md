@@ -3434,3 +3434,23 @@ file or library region, the manager's reading of the entry above, which is there
 not be explicit when the rx is given a part label where it is used (`[aa = A]`): the label is a way to its labels.
 The manager's worked model built on these two points, and the choices it leaves, are in the session; the state is
 whatever ruling closes the discussion.
+
+**2026-11-18 OWNER, continuing the export-scope discussion (Frank, to session 139, morning; DISCUSSION, nothing
+ruled by this entry).** The manager had put four statements of a model (inside a binding everything written there
+is visible; outside it a bare name is visible only if exported; a part label is a way in that needs no export; an
+explicit export surfaces a label bare) and four details to decide. HIS WORDS, in full: "export-scope: discuss.
+"Does a part label reach every label of the part, or only some?" Every. Private labels prefix with _. That may be
+a way to determine "exported"
+"Does a part label reach every label of the part, or only some?" Agree. Not exported by default. Would need
+reexport language if using _
+"Inserting through a hole."  Agree". RECORD: DISCUSSION, his positions in it. (a) A part label reaches EVERY
+label of the part. (b) AN IDEA: private labels are spelled with a leading `_`, and that prefix "may be a way to
+determine 'exported'" (a label without it is exported, with it private); a placeholder like every spelling. (c)
+His second paragraph repeats the first question's words as its heading but answers the manager's SECOND detail
+(do exports pass through a second binding; the manager leaning no, unless the second binding exports too); it is
+read as that: "Agree. Not exported by default", with his remark that re-export language would then be needed if
+the `_` convention is used. (d) Inserting through a hole: he agrees with the manager's lean (for labels, only the
+inserted part's exported names flow into the outer pattern; "behaves like a literal" stays true for matching).
+NOT YET CLEAR, asked in the session: whether "every" in (a) includes `_` labels through a part label. The
+manager's response (the `_` idea removes the need for an export spelling and, he argues, for re-export language
+too) is in the session; nothing here is the state until a ruling closes it.
