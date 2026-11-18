@@ -3024,3 +3024,13 @@ written as THE DRAFT'S READING and confirmed. His question answered by the manag
 min = 1)` is `(?:(?<a>\d))+`: by the one label rule `a` after the repeat is the last item, the array form holds
 every item, and a condition on the labelled item inside the repeat is judged for every item; labelling the REPEAT
 instead (`[run = rx.repeat(rx.digit, min = 1)]`) names the whole run.
+
+**2026-11-17 OWNER RULING — the count proposal (the rx module's count-argument) (Frank, to session 138,
+evening).** HIS WORDS: "i agree with the count proposal. i'm curious how the repeat functionality would work
+however. is it a primative?" RECORD: RULED: (1) a construct given an ALTERNATION where it expects a single value
+DISTRIBUTES over it, once per mention (`n := [2, 4]`: an exact count of n is `\d{2}|\d{4}`, in the alternation's
+order; two count arguments each given n range over the pairs); (2) a count must have a FINITE enumeration (one
+member is a constant; an unbounded count pattern is a compile error); (3) an unbounded repeat is written by giving
+NO MAXIMUM. count-argument is closed. His question (is repeat a primitive) answered by the manager from the draft:
+see the next lines of the chat record; in short NOT a primitive: a library definition over a hole in the
+quantifier position.
