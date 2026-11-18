@@ -2914,3 +2914,22 @@ with a different meaning, the no-re-entry sequence). (3) JUXTAPOSITION (`A B`, n
 and judges unworkable in the grammar; the manager agrees and gives the collisions (mine): a parenthesised
 condition after a pattern (`A (h: <5)`), a call's argument list (`f (x)`), array entries, a prefix `!`, and two
 bindings on consecutive lines would each read as a sequence.
+
+**2026-11-17 OWNER RULING — sequence-reading: splice; and the hole reopened (Frank, to session 138, evening).**
+Asked whether a part of a sequence can see the text next to it (the note's example `wb SEQ digits SEQ wb` with wb
+:= `/\b/`: a compile error under the hole rule, `\b\d+\b` if spliced; the manager's lean: splice, and let holes
+follow). HIS WORDS: "sequence-reading: splice. But opening up the hole again, what was our rationale? I'm wondering
+if it would be ok if we declared that /xxx${/foo/}yyy/ was /xxx(?:foo)yyy/. Do we need the same logic for splice et
+al ie an rx is viewed as a whole. That way a naive optional(rx) := /${}?/ would operate on the whole rx".
+RECORD: (1) RULED: the sequence operator SPLICES: "A followed by B" is regex concatenation, an assertion at a
+part's edge sees its neighbours. (2) ASKED BY HIM, not yet ruled (slug hole-reading): the rationale of the hole
+rule, and whether a hole can simply BE the inserted pattern in a non-capturing group (`/xxx${/foo/}yyy/` =
+`/xxx(?:foo)yyy/`), with the same "an rx is viewed as a WHOLE" for the sequence operator, so that
+`optional(rx) := /${rx}?/` applies to the whole rx. THE MANAGER'S ANSWER given to him (from the record): the
+rationale is the 2026-11-14 Q1 ruling ("1. agree" to a review's proposal): foundation = string sets; in a SET
+POSITION, "a hole's set" among them, an edge assertion is a compile error; values are context-free. The draft
+ALREADY makes a hole one atom with its own flags and its own group numbering (its text says a hand splice must
+write `(?:x)`), so `/${rx}?/` already applies to the whole rx; his proposal changes ONE thing: the edge-assertion
+error for holes goes, and a hole (like a sequence part) becomes a PATTERN position, matched in place; the SET
+positions keep the rule (a filter operand, a label condition, a compile-time set), where tonight's "any piece that
+might look outside is a compiler error" is the same rule.
