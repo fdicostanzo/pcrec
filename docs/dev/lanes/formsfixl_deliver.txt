@@ -2,5 +2,5 @@ report=docs/dev/lanes/formsfixl_report.md
 sections: STATE AT HANDOFF; FIXES BY ID; CHECKS RUN; FOR THE MANAGER
 nonempty: all
 commit: yes
-files: memfn/tests/span_forms/cards.py docs/design/memfn/r45_reply.md docs/dev/reviews/2026-11-18-r44-memfn-forms7.md docs/dev/lanes/formsfixk_rulings.md
-owed: 420-kit-formsfixl-dry
+files: memfn/tests/span_forms/cards.py; docs/design/memfn/r45_reply.md; docs/dev/reviews/2026-11-18-r44-memfn-forms7.md; docs/dev/lanes/formsfixk_rulings.md
+owed: kit-formsfixl-dry

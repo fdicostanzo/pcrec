@@ -12,7 +12,7 @@ report, the lanes history index line. No file under `memfn/src/`, `src/`, `cli/`
 ## STATE AT HANDOFF
 
 DONE. Committed tip: the branch head (`git -C worktrees/formsfixl log -1`). Rulings file `docs/dev/lanes/formsfixl_rulings.md`: empty at every read (start, each
-commit, before the report): no entry to apply. OWED: the box-queue job `420-kit-formsfixl-dry`
+commit, before the report): no entry to apply. OWED: the box-queue job `kit-formsfixl-dry` (queue key; job file `420-kit-formsfixl-dry`, queued at 04:48 and running at hand-back)
 (`cards.py dry` over all 1374 cells at WIDTH_FLAG=none on this branch; script
 `/var/tmp/pcrec-pcrec/scratch/memfn/formsfixl/jobs/420-kit-formsfixl-dry`, output
 `/var/tmp/pcrec-pcrec/scratch/memfn/formsfixl/dryjob/`, completion line `^formsfixl-dry: DONE rc=0$`;
@@ -109,7 +109,8 @@ The previous lanes' set (formsfixk report, "Validation"), all under `nice` + `ti
   nothing; no spec cited by line.
 - **0 movers**: `git diff --name-only 27b18e75c..HEAD -- memfn/src src cli lib` prints nothing (only
   cards.py and doc files changed); no measured kit code moved, so no abi event.
-- **dry** over all cells: OWED, box-queue job `420-kit-formsfixl-dry` (STATE AT HANDOFF).
+- **dry** over all cells: OWED, box-queue job `kit-formsfixl-dry` (STATE AT HANDOFF).
+- **Deliver file**: two format edits so lanecheck can read it: `owed:` names the queue key `kit-formsfixl-dry` (the brief said to replace `none`), and the `files:` paths are now `;`-separated (lanecheck splits on `;`; the space-separated list read as one missing path). The paths themselves are unchanged.
 
 ## FOR THE MANAGER
 
