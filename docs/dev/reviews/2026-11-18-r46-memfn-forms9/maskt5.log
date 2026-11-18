@@ -1,0 +1,3 @@
+onereg hd tau 0.03 + t(5)                    N=200 | von/pt: fl 184 h8 0 P!=64 0.015 | voff/pt: fl 189 h8 10 P!=64 0.205 | von/pool: fl 200 h8 0 P!=64 0.040
+onereg hd tau 0.05 + t(5)                    N=200 | von/pt: fl 200 h8 0 P!=64 0.025 | voff/pt: fl 200 h8 0 P!=64 0.220 | von/pool: fl 200 h8 0 P!=64 0.010
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

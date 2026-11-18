@@ -1,0 +1,4 @@
+per-ROW sigma x3 on 5% of arm cells, phase 1% N=200 | von/pt: fl 7 h8 96 P!=64 0.490 | voff/pt: fl 16 h8 95 P!=64 0.485 | von/pool: fl 188 h8 9 P!=64 0.055
+per-ROW sigma x2 on 20% of arm cells, phase 1% N=200 | von/pt: fl 6 h8 76 P!=64 0.385 | voff/pt: fl 4 h8 82 P!=64 0.410 | von/pool: fl 79 h8 43 P!=64 0.215
+per-ROW sigma x4 on 2% of arm cells, phase 1% N=200 | von/pt: fl 19 h8 83 P!=64 0.425 | voff/pt: fl 11 h8 94 P!=64 0.485 | von/pool: fl 198 h8 1 P!=64 0.005
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

@@ -1,0 +1,4 @@
+onereg hit-dense all heads tau 0.02          N=200 | von/pt: fl 81 h8 0 P!=64 0.010 | voff/pt: fl 78 h8 1 P!=64 0.015 | von/pool: fl 200 h8 0 P!=64 0.000
+onereg hit-dense all heads tau 0.03          N=200 | von/pt: fl 191 h8 0 P!=64 0.005 | voff/pt: fl 189 h8 5 P!=64 0.110 | von/pool: fl 200 h8 0 P!=64 0.035
+onereg hit-dense all heads tau 0.05          N=200 | von/pt: fl 200 h8 0 P!=64 0.010 | voff/pt: fl 200 h8 1 P!=64 0.170 | von/pool: fl 200 h8 0 P!=64 0.010
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000
