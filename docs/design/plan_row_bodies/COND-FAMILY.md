@@ -2697,3 +2697,16 @@ review. (3) Unchanged from the entry above: the other passes by their own spelli
 is its own type. So THREE values, THREE spellings: the label (`$x`, `x:`), the carried capture (ugly form, to be
 spelled), the array of passes (to be spelled). MINE: inside rx text the backreference already is PCRE's carried
 capture; the per-pass label joins the draft's list of deliberate differences from regex with his words.
+
+**2026-11-17 OWNER, discussing before-and-inside (Frank, to session 138, evening; marked by him "discussion", not a
+ruling).** Asked what a label holds when one group of that name stands before a loop and another inside it
+(`/(?<h>\d)?(?:;(?<h>\d)?)*/`; the manager's lean: refuse, as PCRE refuses duplicate names). HIS WORDS:
+"before-and-inside: discussion: Looking purely at labels / h h* / The loop takes the last pass / h h / We take the
+last setting of h which in this case is unset / The array takes all h including the one outside the group".
+RECORD (his reasoning, at the level of LABELS, not groups): write the pattern as its labels in order (`h h*`);
+a loop reduces to its last pass (`h h`); the label is its LAST SETTING, and the last pass's "unset" counts as a
+setting, so here the label is unset; the ARRAY form takes every setting of the name in order, the one outside the
+loop included. The manager's restatement put to him (MINE): a label is a NAME; its value is the name's last
+setting along the match; each loop pass begins by unsetting the names its body can set; the array lists every
+setting of the name in order. Cases put to him to confirm: zero passes (the outside value stands); two groups of
+one name with no loop between them (the second, not taking part, makes no setting, so the first stands).
