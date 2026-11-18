@@ -2800,3 +2800,13 @@ the empty values." RECORD: RULED: the array form is the list of the name's SETTI
 nothing; its length is the number of times the name was set. Empty values are available by writing the pattern so
 that the labelled group is always set (possibly to the empty text). CORRECTS the manager's hand tables of the same
 evening that showed "an empty slot" in an array.
+
+**2026-11-17 OWNER — a principle for warnings (Frank, to session 138, evening).** Asking for the list of all
+warnings, HIS WORDS: "What are all the warning items? Warnings should be structural or definable by a library
+option." RECORD: PRINCIPLE: every warning is either STRUCTURAL (decided from the structure of the program) or
+DEFINABLE BY A LIBRARY through an option; no third kind (no warning hard-wired in the compiler for one library
+form's misuse). The manager's first sorting of revision 24.4's warning table against it (mine, given to him): all
+eleven named warnings and both proposals are structural except `compare.width`, which is about one library form
+and so belongs with the library that provides it (predicates_future item 12: a warning a macro raises about its
+own arguments); the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a
+condition reads a label that can be unset where it is read, with no default) seen under the one label rule.
