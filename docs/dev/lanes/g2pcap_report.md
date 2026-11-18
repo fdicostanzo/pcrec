@@ -1,6 +1,7 @@
 # g2pcap report
 
 ## STATE AT HANDOFF
+OWED: none
 Fix committed on lane/memfn-g2pcap; all checks green; no rulings entries beyond the brief applied; nothing owed.
 
 ## FIX
