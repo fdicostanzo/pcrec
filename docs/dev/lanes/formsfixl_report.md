@@ -11,7 +11,7 @@ report, the lanes history index line. No file under `memfn/src/`, `src/`, `cli/`
 
 ## STATE AT HANDOFF
 
-DONE__STATE__. Rulings file `docs/dev/lanes/formsfixl_rulings.md`: empty at every read (start, each
+DONE. Committed tip: the branch head (`git -C worktrees/formsfixl log -1`). Rulings file `docs/dev/lanes/formsfixl_rulings.md`: empty at every read (start, each
 commit, before the report): no entry to apply. OWED: the box-queue job `420-kit-formsfixl-dry`
 (`cards.py dry` over all 1374 cells at WIDTH_FLAG=none on this branch; script
 `/var/tmp/pcrec-pcrec/scratch/memfn/formsfixl/jobs/420-kit-formsfixl-dry`, output
@@ -91,7 +91,7 @@ on the new rows' inputs; log `failbefore.log`), `failbefore_j.py` (K6's gate wit
 - **L** (pins checked). `check(got == POWER_RECORD[tau])` at tau 1 and 2 %. It fired on its first
   run, because B moved the power:
   - before (first run after B): `FAIL (R2 D, r44 L) POWER_RECORD pin, tau 1 % the drill reads (204, 296, 179), POWER_RECORD pins (170, 299, 176)`; tau 2 %: `reads (25, 271, 18), POWER_RECORD pins (7, 260, 5)`
-  - re-pinned (b0e620826); after: __L_AFTER__
+  - re-pinned (b0e620826); after: `ok   (R2 D, r44 L) POWER_RECORD pin, tau 1 % the drill reads (204, 296, 179), POWER_RECORD pins (204, 296, 179)`; tau 2 %: `reads (25, 271, 18), POWER_RECORD pins (25, 271, 18)` (full selftest)
 
 ## CHECKS RUN
 
@@ -99,7 +99,7 @@ The previous lanes' set (formsfixk report, "Validation"), all under `nice` + `ti
 
 - **selftest (full)** on b0e620826 (= HEAD's cards.py, cmp-identical copy
   `scratch/memfn/formsfixl/cards_full_b0e620826.py`, PCREC_TREE = this worktree), log
-  `scratch/memfn/formsfixl/selftest_full.log`: __FULL__
+  `scratch/memfn/formsfixl/selftest_full.log`: `selftest: 217 checks, 0 failed`, rc 0 (03:42-04:47; formsfixk's tip read 205). Class drill worst arm row `(r38) noise at arm: H(8), every cell, tau 2 % P(h* != 64) = 0.017` (accept <= 0.05); F2 0.000 / 0.000; every r44 row and control as quoted in FIXES BY ID.
 - **selftest --rev12** (`st12_a.log`, before the re-pin): `selftest --rev12: 28 checks, 2 failed`
   (the two L pins, above; re-pinned). **--rev11** (`st11_a.log`): `selftest --rev11: 5 checks, 0 failed`.
 - **make strict** (-j4): rc 0, "strict: whole tree compiles clean with -Werror -Wshadow; the kit's
