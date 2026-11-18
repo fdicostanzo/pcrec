@@ -396,6 +396,30 @@ for o, k, e in tt:
     print("TT %-10s on %-6s -> %s" % (o, k, status(o, k)))
 print("TT %d rows ; %s" % (len(tt), check("TT the table's cells", okt)))
 
+# =====================================================================================================================
+print("\n== PART Q: the questions left (every mode, a several-match subject)")
+def plus1w(c):
+    y = c.get("y")
+    return None if y is None else str(int(y) + 1).zfill(len(y))
+qc = P.Pcre(r'(?<y>\d{4})-' + VQ, {"eq": lambda c: (lambda L: L is not None and c.get("v") == L)(plus1(c))})
+qw = P.Pcre(r'(?<y>\d{4})-' + VQ, {"eq": lambda c: (lambda L: L is not None and c.get("v") == L)(plus1w(c))})
+print("Q numeral-width CANONICAL  %s" % show(qc, "0099-100", "x0099-0100 0099-100", "0099-100 0099-0100 9999-10000"))
+print("Q numeral-width WIDTH KEPT %s" % show(qw, "0099-100", "x0099-0100 0099-100", "0099-100 0099-0100 9999-10000"))
+NWP = [a + "-" + b for a in ("0099", "0999", "9999", "0100") for b in ("100", "0100", "1000", "01000", "10000", "101", "0101")]
+dnw, _ = diff3(qc, qw, NWP)
+print("Q numeral-width the two part on %d / %d / %d of %d texts (four years x seven tails)" % (dnw[0], dnw[1], dnw[2], len(NWP)))
+qf = P.Pcre(r'(?:(?<y>\d{4}))?-' + VQ, {"eq": lambda c: (lambda L: L is not None and c.get("v") == L)(plus1(c))})
+qe = P.Pcre(r'(?:(?<y>\d{4}))?-' + VQ, {"eq": lambda c: c.get("v") == ("" if c.get("y") is None else str(int(c.get("y")) + 1))})
+print("Q unset-in-hole FAIL  %s" % show(qf, "-", "x-1 2025-2026", "- 2025-2026 -"))
+print("Q unset-in-hole EMPTY %s" % show(qe, "-", "x-1 2025-2026", "- 2025-2026 -"))
+UP = pool("12-", 5)
+due, _ = diff3(qf, qe, UP)
+print("Q unset-in-hole FAIL vs EMPTY on %d texts (`12-`, length <= 5; `\\d{4}` never set there, so every text is the unset case): %d / %d / %d" % (len(UP), due[0], due[1], due[2]))
+# construction-line (a): `/\d{${n + 1}}/`, n := [2, 4]: BUILT (array-lift's ruled meaning) = `(?|\d{3}|\d{5})`; or UNDER CONSTRUCTION
+cl = P.Pcre(r'(?|\d{3}|\d{5})')
+print("Q construction-line (a) `/\\d{${n + 1}}/`, n := [2, 4], as BUILT: %s ; as UNDER CONSTRUCTION: the error, in every mode" % show(cl, "12345", "x12345", "123 12345"))
+check("Q numeral-width / unset-in-hole readings part", dnw[0] > 0 and due[0] > 0)
+
 print("\n== CHECKS: %d of %d OK" % (sum(ok for _, ok in CHECKS), len(CHECKS)))
 for n, ok in CHECKS:
     if not ok:

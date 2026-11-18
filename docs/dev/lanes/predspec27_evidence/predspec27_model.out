@@ -72,4 +72,13 @@ TT count-hole on finite -> BUILT
 TT count-hole on read   -> UNDER CONSTRUCTION
 TT 10 rows ; OK
 
-== CHECKS: 20 of 20 OK
+== PART Q: the questions left (every mode, a several-match subject)
+Q numeral-width CANONICAL  WHOLE `0099-100` HOLDS ; SEARCHED `x0099-0100 0099-100` `0099-100`@11 ; FIND-ALL `0099-100 0099-0100 9999-10000` [`0099-100`@0, `9999-10000`@19]
+Q numeral-width WIDTH KEPT WHOLE `0099-100` FAILS ; SEARCHED `x0099-0100 0099-100` `0099-0100`@1 ; FIND-ALL `0099-100 0099-0100 9999-10000` [`0099-0100`@9, `9999-10000`@19]
+Q numeral-width the two part on 4 / 7 / 7 of 28 texts (four years x seven tails)
+Q unset-in-hole FAIL  WHOLE `-` FAILS ; SEARCHED `x-1 2025-2026` `2025-2026`@4 ; FIND-ALL `- 2025-2026 -` [`2025-2026`@2]
+Q unset-in-hole EMPTY WHOLE `-` HOLDS ; SEARCHED `x-1 2025-2026` `-`@1 ; FIND-ALL `- 2025-2026 -` [`-`@0, `2025-2026`@2, `-`@12]
+Q unset-in-hole FAIL vs EMPTY on 364 texts (`12-`, length <= 5; `\d{4}` never set there, so every text is the unset case): 1 / 301 / 301
+Q construction-line (a) `/\d{${n + 1}}/`, n := [2, 4], as BUILT: WHOLE `12345` HOLDS ; SEARCHED `x12345` `123`@1 ; FIND-ALL `123 12345` [`123`@0, `123`@4] ; as UNDER CONSTRUCTION: the error, in every mode
+
+== CHECKS: 21 of 21 OK

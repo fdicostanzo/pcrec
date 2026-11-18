@@ -10,10 +10,10 @@ committed (the helpers here are copies, not imports).
 - `predspec27_model.py` — STANDALONE. PARTS BL (backref-label: the ruled witness, m1-m3), VD (the value-hole
   discussion: case at the hole; the narrowed `${$y}` / `\k<y>` control), UT (one type: `$x & <5`; his `if` under the
   ruled `when`, three test readings; `\d + 1` lifted at compile time and its order; `$y + 1` at run time; `|`, `&`,
-  `.` on a read), TT (the type table as RULE-AS-CODE). Controls: libpcre2-8 10.46 through
+  `.` on a read), Q (the new questions' candidates, every mode), TT (the type table as RULE-AS-CODE). Controls: libpcre2-8 10.46 through
   `../rxmodel_evidence/pcre2h.py` (run, never read: D181), python `re`, direct semantic functions.
-- `predspec27_model.out` — forward run: CHECKS 20 of 20 OK.
-- `predspec27_sabotage.out` — all 8 sabotages at once: 12 of 20. `predspec27_sabotage_each.out` — each alone; every
+- `predspec27_model.out` — forward run: CHECKS 21 of 21 OK.
+- `predspec27_sabotage.out` — all 8 sabotages at once: 13 of 21. `predspec27_sabotage_each.out` — each alone; every
   one fails at least one check.
 
 ## Run (one process; no make; nothing under /tmp)

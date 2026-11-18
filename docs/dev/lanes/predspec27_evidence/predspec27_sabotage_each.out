@@ -1,8 +1,8 @@
-s1: == CHECKS: 19 of 20 OK FAILED: BL1 ruled witness: `\k` HOLDS, `${$y}` FAILS, 2/2/2 
-s2: == CHECKS: 18 of 20 OK FAILED: BL1 ruled witness: `\k` HOLDS, `${$y}` FAILS, 2/2/2 FAILED: VD2 they part only where the label is unset and the capture set 
-s3: == CHECKS: 19 of 20 OK FAILED: VD1b options at the hole = backreference's 
-s4: == CHECKS: 19 of 20 OK FAILED: UT1 legal; agrees on /(?<x>\d+)/, parts on /(?<x>\d+)-/ 
-s5: == CHECKS: 19 of 20 OK FAILED: UT2 three readings = their semantic functions 
-s6: == CHECKS: 19 of 20 OK FAILED: UT3 compile-time form: WHOLE = 1..10, order decides SEARCHED 
-s7: == CHECKS: 19 of 20 OK FAILED: UT4 regex operations on a read: run-time model = PCRE 
-s8: == CHECKS: 19 of 20 OK FAILED: TT the table's cells 
+s1: == CHECKS: 20 of 21 OK FAILED: BL1 ruled witness: `\k` HOLDS, `${$y}` FAILS, 2/2/2 
+s2: == CHECKS: 19 of 21 OK FAILED: BL1 ruled witness: `\k` HOLDS, `${$y}` FAILS, 2/2/2 FAILED: VD2 they part only where the label is unset and the capture set 
+s3: == CHECKS: 20 of 21 OK FAILED: VD1b options at the hole = backreference's 
+s4: == CHECKS: 20 of 21 OK FAILED: UT1 legal; agrees on /(?<x>\d+)/, parts on /(?<x>\d+)-/ 
+s5: == CHECKS: 20 of 21 OK FAILED: UT2 three readings = their semantic functions 
+s6: == CHECKS: 20 of 21 OK FAILED: UT3 compile-time form: WHOLE = 1..10, order decides SEARCHED 
+s7: == CHECKS: 20 of 21 OK FAILED: UT4 regex operations on a read: run-time model = PCRE 
+s8: == CHECKS: 20 of 21 OK FAILED: TT the table's cells 
