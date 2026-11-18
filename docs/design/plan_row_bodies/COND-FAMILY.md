@@ -3098,3 +3098,24 @@ record's "right side" is therefore read as "an `&` operand" everywhere, and the 
 it so. NOT settled by this correction, and asked of the owner as **hole-in-filter**: a hole whose inserted pattern
 carries an edge assertion, standing INSIDE a filter operand (is the operand classified after expansion, so the
 string-set error applies, or does the hole's assertion cross the border there too).
+
+**2026-11-18 OWNER RULING — number-names (Frank, to session 139, morning).** ASKED AS A RULING (the /q
+presentation, with the runs of revision 25.1's section R.8 row: the sequence, the hole, the alternation and the
+shared-name witnesses, each whole / searched / find-all): on a pattern built from parts, which group does a number
+(`(1: <5)`, `$1`) name? The three readings shown: written-out numbering, per-literal numbering, an error. THE
+MANAGER'S LEANING, as put to him: "the conservative cut. A number is allowed only where nothing can be in doubt:
+the condition's pattern is one written literal, and the group it points at has no shared name. There it means
+exactly what regex means. Everywhere else it is a compile error saying 'name the group': on a sequence, an
+inserted pattern, an alternation of patterns, a repeat's operand, or an `&` chain with more than one pattern."
+HIS WORDS: "number-names: exactly. Only when there is no ambiguity." RECORD: RULED. The rule is his second
+sentence: a number names a group only when there is no ambiguity; the leaning's list is the first statement of
+where there is none (one written literal) and where there is (every composed form listed, and more than one
+pattern operand in an `&` chain), refused at compile time with a message that says to name the group.
+THE MANAGER'S READING (mine, not his words; to be checked by the next revision): the sub-point asked with it, a
+number on a group whose NAME is shared inside one literal (`/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)`, where "the label
+h" and "group 1's own capture" differ on 7 of 364 texts whole and 277 searched), falls under "only when there is
+no ambiguity" and is REFUSED too. He answered the question as a whole and did not speak to the sub-point
+separately. CLOSES: his position of 2026-11-17 ("do we define the groups as coming from on B? Makes sense") is now
+this ruling; the manager's "nearest pattern to its left" and "numbers are not subject to the ambiguous-reference
+error" are WITHDRAWN (review r43 group A); "label numbers: try them" is answered for the composed forms. Relaxing
+any refused form later changes no existing answer.
