@@ -3518,3 +3518,20 @@ cloud the namespace". RECORD: RULED, the reading confirmed: `[_ = A]` makes A's 
 outside A; its purpose in his words: to use a part as a filter without clouding the namespace. (This is the form
 his earlier lean "a filter can never produce captures" takes under the export rule: not a property of filters,
 but something the user asks for per part.)
+
+**2026-11-18 OWNER RULING — condition-in-sequence: yes, and `&` stays (Frank, to session 139, morning).** HOW IT
+AROSE: presented with quantified-condition (`[h = rx.digit] SEQ (h: <5)?`), he first asked: "quantified-condition:
+First, the idea that conditions could be sequenced in is new to me. How is it different than &". THE MANAGER'S
+ANSWER (in the session): the same as `&` when the condition comes last (a condition in an `&` chain stands after
+every pattern operand); different when it stands earlier, because it is tested where it stands, with the labels
+as they are there (hand-worked: `([h = rx.digit] SEQ (h: <5) SEQ ";")*` fails on `7;3;`, the test running each
+pass; `([h = rx.digit] SEQ ";")* & (h: <5)` holds, the test running once on the last mention). And the disclosure:
+he HAD ruled on a condition standing inside a pattern as a hole in rx text (pass-start-read's witness
+`/(?:${c}(?<h>\d);)*/`; hit-carry), but had NOT been shown it as an operand of the sequence operator in the rx
+module; that spelling was the revision lane's extension. ASKED AS A RULING (slug condition-in-sequence; the
+manager leaning yes): may a condition be an operand of the sequence operator, standing at a point in the pattern?
+HIS WORDS: "condition-in-sequence: yes and it's probably more natural than & but allow both." RECORD: RULED: YES,
+a condition may be an operand of the sequence operator; and BOTH forms are allowed: the condition in sequence and
+the condition attached with `&`. His remark, an observation: the sequenced form is "probably more natural than
+&". quantified-condition (what a postfix quantifier does to a condition) is thereby still a live question and
+remains OPEN.
