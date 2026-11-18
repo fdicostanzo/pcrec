@@ -3614,3 +3614,17 @@ search returns); it stays as the manager's own note, of use only for its last cl
 spelling of "anything" gives the same answer. Whether a lone complement may then be allowed when matching (the
 "anything" implied) is put to him as **lone-complement-match**; until he rules, the complement-place ruling
 stands as recorded (a lone complement is an error at a use that needs it to produce a match).
+
+**2026-11-18 OWNER RULING — lone-complement-match: it stays an error; provide "anything" (Frank, to session 139,
+late morning; closes the complement-place discussion).** ASKED AS A RULING (slug lone-complement-match; the manager
+had changed his lean to: legal when a program is matched against a whole value, "any text that the pattern does
+not match", an error when searched; the alternative named: keep it explicit, the user writes the any-text pattern,
+and "the rx module could then offer a ready-made `any`"). HIS WORDS: "lone-complement-match: let's keep it an
+error and provide "anything". "Any" sounds like some()". RECORD: RULED, against the manager's changed lean: a lone
+complement stays a compile error in every mode (the complement-place ruling stands unchanged); the language
+PROVIDES a ready-made any-text pattern for the user to write beside it. ON THE NAME, his: it is to be called
+"anything", not "any", because "any" reads like `some()` (the quantifier over passes). The name is still a
+spelling for the single spellings review, with his preference recorded. THE MANAGER'S READINGS (mine, for the next
+revision): `anything` lives in the rx module; what it matches (any text including newlines, so that as a whole
+value it accepts every text) is to be stated there and shown to him, since in a search its spelling decides the
+answers (the manager's note two entries above).
