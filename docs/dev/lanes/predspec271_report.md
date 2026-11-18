@@ -9,7 +9,8 @@ after.
 
 ## STATE AT HANDOFF
 
-STATE: complete. OWED: none.
+STATE: complete.
+OWED: none
 
 - PART 1 (filing): `docs/dev/reviews/2026-11-18-r48-predspec27.md` = the coordinator's draft with r48 FINAL, verdict
   RULED, and after every PROPOSED disposition a "RULED (manager, 2026-11-18):" line taken verbatim from
