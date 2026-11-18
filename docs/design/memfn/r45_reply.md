@@ -1,6 +1,12 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 12 (lane formsfixk, 2026-11-17): rev 12 applies review r41
+Status: DRAFT rev 13 (lane formsfixl, 2026-11-18): rev 13 applies review r44
+(`docs/dev/reviews/2026-11-18-r44-memfn-forms7.md`, its RULINGS section): the night reads each
+text's variant x regime interaction and voids its cells above a line (A), the layout term per
+(cell, head) (B), the pool refusal's 32-B half (C), the confirm's rounds and what it controls (D),
+a fresh run id (E), the fixed axes and the odd pair named (F, H), the stratification text (G), the
+compiler in the exe key (I), K6's placed win (J), the power line's bracket (K), the checked pins (L)
+(read "Changes in rev 13" first). Rev 12 (lane formsfixk, 2026-11-17): rev 12 applies review r41
 (`docs/dev/reviews/2026-11-17-r41-memfn-forms6.md`, its RULED section): the layout twins are
 REPLACED by layout POOLS (setup randomization of every arm's layout, L9), the strict arguments and
 the keyed G2 record (L6), the confirm's arm list from one source (L5); and the kit manager's
@@ -67,6 +73,36 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
 
+## Changes in rev 13 (by r44 finding id)
+
+Review r44 re-checked rev 12 (`lane/memfn-forms` 27b18e75c; answer-safe, no answer-level finding).
+The kit manager's RULINGS bind; M (the shared layout-draw module) is the manager's (PLAN, filed for
+main). Script: `memfn/tests/span_forms/cards.py`; drill (xxiii) is `cards.py selftest --rev12` (28
+checks), K6 is in `--rev11`. Each new or changed row was shown failing on the pre-fix code or with
+its control switch off (lane formsfixl's report, FIXES BY ID).
+
+| id | change | where |
+|---|---|---|
+| A | The VARIANT x REGIME interaction: `rule` reads it per text from its own launches (`text_interaction`: a lack-of-fit test of the per-text fit, one effect a variant in every regime, against the (row, variant) cell means; the launch noise from launches repeating a variant inside one row, pooled per regime over the night) and PRINTS the share sI2 / (sI2 + sL2) (median, max, the texts flagged). A text whose share exceeds `INTER_SHARE` 0.5 AND whose lack of fit is beyond launch noise at `INTER_ALPHA` 0.01 family-wise (both UNMEASURED DEFAULTs) has its C1-C2 cells VOIDED (no pick there; a void keeps the grid top). Drill (xxiii) gains the interaction model ("regime": an effect per (text, regime, variant), nothing common), GATED: heads only τ 2 % P(h\* != 64) 0.000, τ 3 % 0.000 (accept <= 0.05; r44 V1 read 0.073 / 0.193); every text τ 2 % 0.000 (RECORD). Control (`INTERACTION_VOID` off, rev 12's rule), heads only τ 3 %: 0.373 (accept > 0.10). The first-void rate under this model stays high (0.92 / 0.94 heads only: RECORD; the variant-aware bimodal test cannot hold this shape). False interaction voids on the models without interaction: 0-6 nights of 300 per row (phase τ 1 % 5, the largest phase/heads count; rho rows 2-6). PLAN: a per-(text, regime) fit with its own upper bound, trigger: the first night's measured interaction share above the line | `cards.py` `text_effects` (stats), `text_interaction`, `analyse`; drill (xxiii) |
+| B | The layout term per (cell, head): H(h) against I is floored at max(the base floor, exp(z sqrt(V_I + V_h)) - 1) (`f_hI`: wins, the confirm, E's tolerance, R2's dial lines, R4); H(g) against H(h) at exp(z sqrt(V_g + V_h)) - 1 (`f_pair`: dominance). E's tolerance per head: the largest of its own floors against I and the minimum's. The cell max over heads (`cell_floor`) remains only in the agreement gate. Drill: a NEVER-PICKED NOISY LOSER (H(1) 20 % slower, layout τ 4 % on its texts only) beside one 5 % winner H(8): 281 of 300, GATED (accept >= 270; r44 V2 read 151); control (`PER_HEAD_FLOOR` off) 159. Cost: the heads-only τ 3 % row (RECORD since R2 B) reads 0.067 (rev 12: 0.000), τ 2 % 0.010 (gated, accept 0.05); the power RECORD rows rose (below) | `cards.py` `analyse`, `r1` (`fh`, `fp`); drill (xxiii) |
+| C | The pool refusal reads the 32-B phases: refused when two variants of ONE relative layout share their per-loop 32-B phase vector, or when the pool holds fewer than `POOL_SIZE` distinct built layouts (a duplicate also shares its 32-B phases, so that clause never fires alone). Selftest: each clause's plant fires its own clause only; a construction row (each alignment pair's preludes 16 B apart mod 32, 2000 texts) reads 0 bad pairs and 4000 under rev 11's PHASE_ORDER (0, 1, 2, 3) | `cards.py` `pool_refusal`; drill (xxiii) |
+| D | Text (§3 "Confirm by re-run"): the confirm re-times the SAME 4-exe pools step 1 timed, so the pool-mean offset replicates; the confirm is not an exe-level control; the exe level rests on the per-text term. Each confirm ROUND writes its own file (`results_confirm.tsv`, then `results_confirm_r<K>.tsv`): its draws are salted by the name, and a head's confirm reads the I row of its own round. Selftest: rounds 1 / 2 draw differently; H(8)'s round-1 confirm with a 15 % faster I in round 2 keeps h\* = 8 (the pre-fix one-file reading: 64). PLAN a fresh confirm pool, trigger: a confirmed win whose margin over its floor is under the pool-mean offset's sd | `cards.py` `confirm_name`, `cmd_rerun`, `analyse`, `synth_night` |
+| E | `run` (`start_timing`) keeps the RUNDIR's run id unless that id already TIMED a night (`run_id.timed`), then mints a fresh one; a G2 record keyed to another id refuses (exit 2). Job 701's record written before the first `run` is kept | `cards.py` `start_timing`, `run_id`; drill (xxiii) |
+| F | R2 A's scope: the pool moves code only; the data tables, `main` and the subject buffer (16 mod 64 for the whole-buffer and not-warm regimes) are fixed, so a share common to every variant includes this harness's data placement. `rule` prints the fixed axes. PLAN a per-launch subject-offset draw (recorded), trigger: any SIMD-on win at h\*, or a bench report naming subject alignment | §3 "The layout pools", `cards.py` header comment, `rule` |
+| G | The stratification text says what is built: the PRELUDES span the four 16-B classes; each relative layout is timed at two 64-B classes 16 B apart; odd variants' entries are off the 16-B grid | `cards.py` comments; the L9 row above |
+| H | The odd pair is the same instruction stream with other padding, a relative layout one default `gcc -O2` does not ship (R2 A's scope). `rule` prints per text the even-pair vs odd-pair contrast and each win re-read on even draws only (records). PLAN changing the pool, trigger: that contrast above the floor for a winning head | §3 "The layout pools", `rule` |
+| I | The exe cache name hashes CC and `$CC --version` (`cc_ident`, `variant_key`) | `cards.py` `build_cell` |
+| J | K6's win is placed BY CONSTRUCTION at the midpoint of each night's own band (f with G2 = {16}, f without; UNMEASURED DEFAULT: the midpoint), over 16 seeds; gated on a RATE: at least 12 placed, main rows stalled 0, control stalled on >= 80 % of placed nights. Read: 16 of 16 placed, stalled 0, control 16 of 16. Rev 12's fixed wins under the same gate: 0.953 control 6 of 16, 0.955 0 of 16 (FAIL) | `cards.py` `selftest_rev11` (`k6_place`) |
+| K | The power line corrects the sigma read for its bias (`SIGMA_READ_BIAS` 0.88, MEASURED r44 V11) and names the two RECORD rows that BRACKET it, the power log-interpolated between them (above the largest row: an upper bound) | `cards.py` `power_line`; drill (xxiii) |
+| L | `POWER_RECORD` is CHECKED at τ 1 and 2 %; it caught r44 B's move (rev 12's pins (170, 299, 176) / (7, 260, 5) against the drill's (204, 296, 179) / (25, 271, 18)) and is re-pinned | `cards.py` `POWER_RECORD`; drill (xxiii) |
+
+**Drill (xxiii) after r44** (`selftest --rev12`, 300 nights a row; P(h\* != 64), voids = nights with a
+first void): phase τ 1 / 2 / 3 %: 0.000 / 0.000 / 0.000, voids 0 / 0 / 0; heads only 0.000 / 0.010 /
+0.067 (τ 3 % RECORD), voids 0; rho 0.8 0.017 / 0.277 / 0.350; rho 0.95 0.110 / 0.577 / 0.627
+(RECORD, R2 A). Controls: per-text term off, heads τ 3 % 0.443; raw bimodal test, phase τ 2 %, voids
+0.263. Power (H(8) in hit-dense), layout τ 0 (G) / 1 % / 2 % (RECORD, pinned): one 5 % winner 281 /
+204 / 25, one 10 % winner 300 / 296 / 271, multi 279 / 179 / 18 (rev 11's lines 270 / 270 / 255).
+
 ## Changes in rev 12 (by r41 finding id, then the rulings R2 A-D)
 
 Review r41 re-checked rev 11 (`lane/memfn-forms` 42fd4b33e): the layout twin was a whole-.text shift
@@ -78,14 +114,14 @@ manager ruled R2 A-D; with them every gated row holds (the second table).
 
 | id | change | where |
 |---|---|---|
-| L9 (closes L1, L2, L4's layout half, L7) | LAYOUT POOLS: every arm's text (I, each head, aa, the engine route, C3's arms) is linked as a pool of `POOL_SIZE` = 4 variants (UNMEASURED DEFAULT), each its own compile of the TU with an IN-TU prelude (a top-level `.skip 16 j` ahead of every function; j drawn mod 256, stratified so the four variants take the four 16-B phase classes mod 64 and each alignment's two variants differ by 16 B mod 32) and an alignment variant (odd variants: gcc's code alignment off, x86's tight-loop alignment too); every launch draws a variant (a hash of the run id, the results file, the cell and the round), recorded per launch (`variants` column); every variant answer-gated (`dry`, and `prepare_cell` before timing); `dry` prints each pool's per-hot-loop 64-B and 32-B phases and relative layouts (nm + objdump of `rxa_search`'s backward-branch targets) and REFUSES a pool with one 64-B phase vector or one relative layout. Dry run (WIDTH_FLAG=none, --quick): 80 timed texts x 4 = 320 exes, 1374 cells built and gated, 0 failures, 64-B phase vectors per pool 3-4, 32-B 3-4, relative layouts 2-3, 0 refused. DELETED: `I.lt`, `aa-twin` (the A/A pair is `aa` and `aa.b`, two arms of aa's pool), the layout twin term and `layout_sigma`, the switches LAYOUT_TERM / LAYOUT_TWIN_ARM / LAYOUT_TWINS, the pad objects, the confirm's fresh twins `I.cf` / `h<N>.cf` (the confirm re-times I and the head on fresh pool draws). `rule` prints the night's layout reading (between-variant sigma from I's pools, a RECORD). Drill rows: see "STOP" below | §3 "The layout pools", "Confirm by re-run", "The floor `f`", night order step 1, §6 |
+| L9 (closes L1, L2, L4's layout half, L7) | LAYOUT POOLS: every arm's text (I, each head, aa, the engine route, C3's arms) is linked as a pool of `POOL_SIZE` = 4 variants (UNMEASURED DEFAULT), each its own compile of the TU with an IN-TU prelude (a top-level `.skip 16 j` ahead of every function; j drawn mod 256, stratified so the four variants' PRELUDES take the four 16-B phase classes mod 64 and each alignment's two variants differ by 16 B mod 32 [rev 13, r44 G: as built, each relative layout is timed at TWO 64-B classes 16 B apart (the even pair at r, r + 1; the odd at r + 2, r + 3), never all four per hot loop; the odd variants' function entries are off the 16-B grid]) and an alignment variant (odd variants: gcc's code alignment off, x86's tight-loop alignment too); every launch draws a variant (a hash of the run id, the results file, the cell and the round), recorded per launch (`variants` column); every variant answer-gated (`dry`, and `prepare_cell` before timing); `dry` prints each pool's per-hot-loop 64-B and 32-B phases and relative layouts (nm + objdump of `rxa_search`'s backward-branch targets) and REFUSES a pool with one 64-B phase vector or one relative layout. Dry run (WIDTH_FLAG=none, --quick): 80 timed texts x 4 = 320 exes, 1374 cells built and gated, 0 failures, 64-B phase vectors per pool 3-4, 32-B 3-4, relative layouts 2-3, 0 refused. DELETED: `I.lt`, `aa-twin` (the A/A pair is `aa` and `aa.b`, two arms of aa's pool), the layout twin term and `layout_sigma`, the switches LAYOUT_TERM / LAYOUT_TWIN_ARM / LAYOUT_TWINS, the pad objects, the confirm's fresh twins `I.cf` / `h<N>.cf` (the confirm re-times I and the head on fresh pool draws). `rule` prints the night's layout reading (between-variant sigma from I's pools, a RECORD). Drill rows: see "STOP" below | §3 "The layout pools", "Confirm by re-run", "The floor `f`", night order step 1, §6 |
 | L5 | The drills build their confirm rows from `confirm_cells` (the command's own arm list), never their own spelling | `cards.py` `confirm_only` |
 | L6 | Strict arguments for `plan`, `dry`, `run`, `rerun`, `rule`, `c3`, `selftest`: an unknown or mistyped option, a valueless `--g2`, a missing or extra positional refuse (exit 2); `--g2 FILE` and `--g2=FILE` both read. `rule_g2.json` is keyed by the RUNDIR's run id (written once, by the first command that needs it) and the G2 file's sha-256: another run's record, a moved file, or a second different list refuse (exit 2); `run` refuses a RUNDIR holding any results file | `cards.py` `parse_args`, `night_g2`, `run_id` |
 | L3 | The power rows at layout τ 0 and 1 % gated (accept lines as rev 11's), RECORD at 2 % | drill (xxiii) |
 | L4 | Its layout half is deleted with the twins (no layout term remains); its fresh-twin half is deleted with them (the confirm draws from the pools): nothing left to control per half. The pool refusal itself has one control per half (a selftest row) | drill (xxiii) |
 | L7 | Deleted with the twins: no `h<N>.cf`; every exe's cache name carries its variant's prelude bytes and flags | `cards.py` `build_cell` |
 | L8 | S3320 and S3321 named in memfn/tests/NOTES.md, tests/compound/CLAUDE.md (4) and run_shell_checks.sh's header | doc lines |
-| R2 A | The correlated-layout (rho) rows are RECORD: a layout share common to every variant of a text is a property of that BODY's own internal layout, which is what ships, so it IS the text's speed, not noise. `rule` prints the share the night measures (per text, the between-variant sigma; median and max). No data prelude | §3 "The layout pools", drill (xxiii) |
+| R2 A | The correlated-layout (rho) rows are RECORD: a layout share common to every variant of a text is a property of that BODY's own internal layout, which is what ships, so it IS the text's speed, not noise [rev 13, r44 F, H: of THIS harness's link: the data tables, `main` and the subject buffer (16 mod 64 for the whole-buffer and not-warm regimes) are fixed in every variant, so the common share includes their placement; and a share common to the odd pair is not what a default gcc -O2 ships]. `rule` prints the share the night measures (per text, the between-variant sigma; median and max). No data prelude | §3 "The layout pools", drill (xxiii) |
 | R2 B | A per-TEXT layout term: each text's launches grouped by recorded variant (`text_effects`: a two-way fit, row level + variant effect, over every row of the text in every file read, each file's row its own level), its between-variant variance less its estimation noise, turned into the variance of one median of LAUNCHES draws plus the finite pool's mean offset (`text_var`); per cell the floor is max(the rev 11 floor, exp(z sqrt(V_I + V_h)) - 1) over the heads compared there (`layout_text_term`). Control: the term off | `cards.py` `analyse`; drill (xxiii) |
 | R2 C | A variant-aware bimodal test: each row's launches with its text's per-variant effect removed (`adjusted`), against the pool sigma of the adjusted launches; GAP_K stays 4.5; its false-split rate re-derived under the new test (`gapk_rate`, texts of 6 rows, the fit as `analyse` makes it). Control: the raw test | `cards.py` `is_void`; drill (xxiii) |
 | R2 D | Power RECORD at layout τ >= 1 % (a missed win keeps 64: speed only, never an answer); `POWER_RECORD` pins the drill's rows and `rule` prints the night's power at its own MEASURED layout sigma and whether it is below rev 11's accept lines. LAUNCHES and the 3 h cap unchanged | `cards.py` `power_line`; drill (xxiii) |
@@ -106,8 +142,11 @@ term off, heads only, τ 3 % 0.423 (gated > 0.15; τ 2 % 0.143, printed); the ra
 τ 2 %: voids 0.263 (gated > 0.10). GAP_K 4.5's per-arm false-split rate under the variant-aware
 test: 0 at τ 0/1/2/3 % (sigma read 0.0093-0.0094), against the raw test's 0 / 0 / 2.5e-4 / 1.25e-3
 (0.3 and 1.5 false voids a night of ~1,200 arms at τ 2 / 3 %). F3's control arm keeps its rev 11
-line (the full `selftest`: 48 of 50). Drill K6's win moves 0.955 -> 0.953 so its control still
-reaches the floor's band under the `aa`/`aa.b` A/A pair (control 4 of 12 stalls). Power (H(8) in hit-dense; multi = every head <= 16 5 % faster), layout
+line (the full `selftest`: 48 of 50). Drill K6's win moves 0.955 -> 0.953 [rev 13, r44 J: the
+stated mechanism was wrong: the control's stalls are non-monotone in the win over those 12 seeds (4 /
+0 / 0 / 2 of 12 at 0.953 / 0.954 / 0.955 / 0.958, r44 V10), so 0.953 was seed-tuned. Rev 13 places
+each night's win INSIDE its own band by construction and gates the control on a stall rate; see
+"Changes in rev 13"]. Power (H(8) in hit-dense; multi = every head <= 16 5 % faster), layout
 τ 0 (G, rev 11's lines) / 1 % / 2 % (RECORD, pinned in `POWER_RECORD`): one 5 % winner 281 / 170 /
 7 of 300 (rev 11's line 270), one 10 % winner 300 / 299 / 260 (270), multi 279 / 176 / 5 (255).
 The per-text term is what buys the heads-only rows and costs power: a 5 % win is seen about half
@@ -875,7 +914,17 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       lists every (cell, head) win and owes ONE confirming re-run of each (`cards.py rerun`),
       **timed on fresh POOL DRAWS [rev 12, r41 L9: I and the head, each launch a new draw of
       its text's pool, from `confirm_cells`; the text below about `I.cf` / `h<N>.cf` is rev 11's,
-      superseded]:** ~~**timed on FRESH LAYOUT TWINS [rev 11, RULED r39 K1]:**~~ `I.cf` (I's object code behind a second
+      superseded]. [rev 13, r44 D: the draws are fresh, the EXES are not: the confirm re-times the
+      same 4-exe pools step 1 timed (the cache returns them), so the pool's mean offset
+      (`text_var`'s sL2 / `POOL_SIZE` term) replicates between the night and the confirm, and across
+      nights on one build. The confirm is NOT an exe-level control: the exe level rests on the
+      per-text layout term in the floor (R2 B, per head since r44 B); the confirm retires a
+      launch-level transient that does not recur. Each confirm ROUND writes its own file
+      (`results_confirm.tsv`, then `results_confirm_r<K>.tsv`), which salts its draws, and a head's
+      confirm reads the I row of its OWN round: a later round owed for another head in the same cell
+      re-times I into its own file, never over the earlier round's I. A fresh pool for the confirm
+      (run-id-salted preludes, 4 more compiles per confirmed arm) is PLANned, trigger: a confirmed
+      win whose margin over its floor is under the pool-mean offset's sd.]** ~~**timed on FRESH LAYOUT TWINS [rev 11, RULED r39 K1]:**~~ `I.cf` (I's object code behind a second
       padding, 2,080 bytes: shifts of 2,080-2,112 bytes measured) and `h<N>.cf` for each winning head, in rounds, into
       `results_confirm.tsv`; never step 1's exes, so an offset an exe carries cannot replicate.
       **The confirm's reading of a head's win is `t(I.cf) / t(h<N>.cf)`; an `I.cf` or `h<N>.cf`
@@ -1016,7 +1065,25 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     so it IS the text's speed, not noise; no pool averages it and the rule does not try; `rule`
     prints the share the night measures (per text, median and max). R2 D: power at layout τ >= 1 %
     is a RECORD (a missed win keeps 64, speed only); `rule` prints the night's power at its measured
-    layout sigma against rev 11's accept lines.
+    layout sigma against rev 11's accept lines. [rev 13, r44:] **R2 A's scope (F, H):** a pool moves
+    CODE placement only; the matcher's data tables (.rodata/.data/.bss), the driver's `main` and the
+    subject buffer (16 mod 64 in the whole-buffer and not-warm regimes on this box's glibc;
+    short-subject record starts vary by record, not by variant) are FIXED in every variant, so a
+    share common to every variant of a text holds THIS harness's data placement as well as the
+    body's, and a user's binary does not share it. The odd pair is the same instruction stream with
+    other alignment padding, a relative layout one default `gcc -O2` does not ship, so a share common
+    to the odd pair is not "what ships"; `rule` prints, per text, the even-pair vs odd-pair contrast
+    and each win re-read on even draws only (records; a subject-offset draw and a pool change are
+    PLANned, triggers in "Changes in rev 13"). **The per-head floor (B):** the layout term is per
+    (cell, head): H(h) against I is floored at exp(z sqrt(V_I + V_h)) - 1 (wins, the confirm, W/E,
+    R2's dial lines, R4), H(g) against H(h) at exp(z sqrt(V_g + V_h)) - 1 (dominance); the cell's
+    max over heads remains only in the agreement gate (I's arms against each other; a noisy head can
+    only loosen it there). **The interaction (A):** the per-text fit holds one effect per variant in
+    every regime; `rule` reads each text's variant x regime interaction from its own launches (a
+    lack-of-fit test of the per-text fit against the (row, variant) cell means, the launch noise from
+    launches repeating a variant inside one row, pooled per regime over the night), prints the share,
+    and VOIDS the C1-C2 cells of a text whose share exceeds 0.5 and whose lack of fit is beyond launch
+    noise at 0.01 family-wise (both UNMEASURED DEFAULTs; a void keeps the grid top).
     - ~~**The layout twin term [rev 11, RULED r39 K1].**~~ [SUPERSEDED by rev 12, r41 L9: `I.lt`, `aa-twin` and the term are deleted.] Every estimator above is a contrast INSIDE
     ONE EXE: I's pools are hash-equal artifacts run as one cached exe, the twin terms and the gate
     read them, and rev 10's A/A pair was one exe too. A head against I is TWO exes, so an offset
