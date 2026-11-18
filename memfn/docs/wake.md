@@ -35,7 +35,18 @@ and the R-45 reply block (rev 6). 4. D197 (the mfind instrument; one-sided timin
   formsfixj into lane/memfn-forms; round 6 (sized) + cloud on that tip; job-set update (700 runs G2 head passes on FROZEN ->
   G2 file; 701 calls `cards.py rule RUNDIR --g2 FILE` once before its loop; dry checks the file); by 14:00 11-18 deliver to
   main. Main accepted both critic-skill proposals (each pooled level; comparison kinds).
-- Sabotage ids: next free S3330. Main accepted the critic-skill change (simulate drills each pooled level + order step).
+- 19:05 ADD (supersedes the 14:25 NEXT): round 6 (r41) ruled: L9 SETUP RANDOMIZATION replaced the layout twins (pools of 4
+  layout variants per text, per-launch draws; R2 per-text layout term + variant-aware bimodal test; power is RECORD: a 5 %
+  win is seen 170/300 at tau 1 %, 7 at 2 %; a missed win keeps 64). lane/memfn-forms FAST-FORWARDED to 27b18e75c = the
+  frozen candidate (formsfixk report docs/dev/lanes/formsfixk_report.md); cloud test+axes on it in flight. fcards jobs
+  UNCHANGED and updated earlier for G2 (700 runs G2 head passes -> g2_heads.txt; 701 one `rule --g2` first; total cap 9,672 s).
+  MORNING ORDER: (1) set 1's verdict (rules above); (2) when the box is free of set 1, round 7 (sized, 2 critics, both
+  simulate rules + perturbation lens) on 27b18e75c; judge K6's drill win re-centring 0.955->0.953; (3) BY 10:00 tell main
+  whether 14:00 holds (else the cards move a night); (4) by 14:00 the delivery package (tip, done line, moving readers by
+  grep, conflicts vs covs2b: docs + BOTH cloud shard tables, the mech table REGENERATED wholesale -> main regenerates after
+  merging; h=64 UNMEASURED; known limits incl. power RECORD). Main accepted both lens changes (comparison kinds; by
+  perturbation) and will check cover_cap §11.4's A/A floor with the kit before its width cells (pool is arm-generic).
+- Sabotage ids: next free S3335. Main accepted the critic-skill change (simulate drills each pooled level + order step).
 ## CURRENT STATE (2026-11-16 17:30)
 - TIMING TONIGHT: jobs 600-609 QUEUED (box queue, not-before 2026-11-17T01:00, RUN_ID mfcard-zen4-2, FROZEN f6274c11b =
   lane/memfn-scanrow, merged on main as c9ff8b53d; worktrees/mfind fast-forwarded and pinned in .wtprune.keep). Job set
