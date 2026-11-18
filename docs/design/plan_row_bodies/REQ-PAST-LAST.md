@@ -16,3 +16,16 @@ hit; after a failed attempt it re-asks, from its own attempt position, only once
 hit; "none" answers no match. Put back to him as **starts-or-occurrences**: does "find reasonable starts" mean the
 kit's answer becomes the next attempt START (the kit folds in the offset K and the stop), or stays "an occurrence
 of the required text" from which pcrec derives the start (today; tuning.md 2.41 para 7a keeps the origin pcrec's).
+
+## 2026-11-18 OWNER on starts-or-occurrences: a search loop is fine now; kit-found starts a possible later request (Frank, to session 140, evening)
+
+ASKED (slug starts-or-occurrences: does the kit's answer stay "an occurrence of the required text", pcrec deriving
+the start, or become the next attempt START). HIS WORDS, in full: "lookahead-home: why do you prefer occurances? My
+thought was the case where the overshoot was high \d{1,1000}foobar. Kit finds the span foobar then jumps back 1000
+bytes for the occurrence. It could then scan forward for the set of potential starts \d. That said, that could be
+a specific request in the future from pcrec so using a search loop is fine right now."
+RECORD: RULED for now: occurrences (pcrec's search loop stays; the request to the kit is R-46 as the accepted note
+drafted it). IDEA, his, NOT scheduled: for a run far behind a long variable head (`\d{1,1000}foobar`), the kit
+finds the run, steps back the head's maximum, and scans forward for the SET OF POTENTIAL STARTS (the head's first
+set, `\d`); "a specific request in the future from pcrec". TRIGGER (the manager's wording): a measured cell where
+attempts between (hit - K) and the true start are a measurable share of a search with a large K.
