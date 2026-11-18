@@ -14,6 +14,7 @@ directory `docs/dev/lanes/predspec251_evidence/`.
 - STOPS: none. Every verifier-confirmed witness reproduced (EVIDENCE AND COMMANDS); the premise held; no fix needed a
   choice between two readings the dispositions did not settle (each new reading is marked THE DRAFT'S READING and, where
   it decides an answer, listed under an owner question).
+OWED: none.
 - RUNS NOT RUN: none. All runs were small single-process scripts done before the 01:00 timing window
   (`scripts/boxqueue status`: box free, the kit's jobs not before 01:00).
 - Draft size: 8,020 lines (967,407 bytes) before, 8,256 lines (1,009,611 bytes) after (`wc -lc`).
