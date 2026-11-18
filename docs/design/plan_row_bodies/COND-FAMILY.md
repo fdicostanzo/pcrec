@@ -2791,3 +2791,12 @@ him as a COST: it is the macro-variable (hygiene) problem for LIBRARY writers: a
 collide with the names of the pattern it is combined with, and the user cannot see the library's names. Filed as
 predicates_future.md item 25 (label hygiene for libraries); it meets the rx-module note's open question on how a
 part's labels reach the whole.
+
+**2026-11-17 OWNER RULING — array-slot: only what was set (Frank, to session 138, evening).** Asked whether a reset
+leaves an empty place in the array form (revision 24.4's row: `/(?<h>\d)?(?:;(?<h>\d)?)*/` on `7;;3;`: [`7`, `3`]
+or [`7`, -, `3`, -]; the manager's lean: only what was set; positions, when wanted, by labelling the whole item,
+which is always set and possibly empty). HIS WORDS: "array-slot: only what was set. As you say, someone could get
+the empty values." RECORD: RULED: the array form is the list of the name's SETTINGS, in order; a reset contributes
+nothing; its length is the number of times the name was set. Empty values are available by writing the pattern so
+that the labelled group is always set (possibly to the empty text). CORRECTS the manager's hand tables of the same
+evening that showed "an empty slot" in an array.
