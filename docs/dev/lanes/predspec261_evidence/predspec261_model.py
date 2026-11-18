@@ -1104,6 +1104,11 @@ dcf, _ = diff3(b5c, b5k, B5POOL, ("y",))
 print("B5(b) `(?i)` `/(?<y>[a-b])-${$y}/`, %d texts over `aAbB-` length <= 5: the exact-equality model (rev 26's VH) vs `\\k<y>`: %d / %d / %d differ, first %s ; a CASELESS-equality model%s vs `\\k<y>`: %d / %d / %d ; %s"
       % (len(B5POOL), dx[0], dx[1], dx[2], fx, " (SABOTAGED s23: exact)" if sab("s23") else "", dcf[0], dcf[1], dcf[2], check("B5 caseless control", dx[0] > 0 and dcf == [0, 0, 0])))
 print("    WHOLE `a-A`: `\\k` %s, exact model %s" % (fW(b5k, "a-A"), fW(b5x, "a-A")))
+def lit_whole(t):
+    m = re.fullmatch(r'(?i)([a-b])-(.*)', t)
+    return m is not None and re.fullmatch(r'(?i)' + re.escape(m.group(1)), m.group(2)) is not None
+b5py = sum(1 for t in B5POOL if (W(b5k, t) is not None) != lit_whole(t))
+print("    python `re`, the value escaped as a literal inside the `(?i)` pattern, vs `\\k<y>`, WHOLE: %d of %d differ ; %s" % (b5py, len(B5POOL), check("B5 literal under (?i) = backreference", b5py == 0)))
 b5pk = P.Pcre(r'(?:(?<y>\d)?-\k<y>;)*')
 b5pm = P.Pcre(r'(?:(?<y>\d)?-(?<v>[\s\S]*?)(?C"eq");)*', {"eq": lambda c: c.get("y") is not None and c.get("v") == c.get("y")})
 dpk, _ = diff3(b5pm, b5pk, pool("37-;", 7))
@@ -1217,6 +1222,26 @@ class SemCondLabel(SemCond):
 d, first = diff3(cnd, SemCondLabel(None, None, None, False), pool("17x", 5))
 print("COND `[h = rx.digit] SEQ when((h: <5), rx.digit{2}, else = rx.word)` (a condition as the test: consumes nothing), regex vs semantic %d / %d / %d of %d ; %s ; %s"
       % (d[0], d[1], d[2], len(pool("17x", 5)), show(cnd, "112", "x7x", "112 7x 17"), check("COND condition test consumes nothing", d == [0, 0, 0])))
+# THE OLD FORM AS A SPECIAL CASE (r47's FREEZE DRIFT map): rev 26's `when(c, p)` := `x & (NOT c | p)` and its else form
+# `x & ((c & p) | (NOT c & q))`, with c, p, q CONDITIONS, against the guarded form with a condition test (callouts in
+# branches), KH := `/(?<k>\d)(?:;(?<h>\d))*/`, c := (h: <5), p := (k: between(3, 7)), q := (k: <3); the printed answers
+# of R.1.10 (WH1) and of §R.8's conditional-spelling row re-checked.
+def kc(c): return lt5(c)
+def kp(c): return num(c.get("k")) and 3 <= int(c.get("k")) <= 7
+def kq(c): return num(c.get("k")) and int(c.get("k")) < 3
+KHT = r'(?<k>\d)(?:;(?<h>\d))*'
+old2 = P.Pcre(KHT + r'(?C"o")', {"o": lambda c: (not kc(c)) or kp(c)})
+new2 = P.Pcre(KHT + (r'(?:(?C"c")(?C"p"))' if sab("s21") else r'(?:(?C"c")(?C"p")|(?C"n"))'), {"c": kc, "p": kp, "n": lambda c: not kc(c)})
+old3 = P.Pcre(KHT + r'(?C"o")', {"o": lambda c: (kc(c) and kp(c)) or ((not kc(c)) and kq(c))})
+new3 = P.Pcre(KHT + (r'(?:(?C"c")(?C"p")|(?C"q"))' if sab("s19") else r'(?:(?C"c")(?C"p")|(?C"n")(?C"q"))'), {"c": kc, "p": kp, "q": kq, "n": lambda c: not kc(c)})
+KHPOOL = pool("15;9", 6)
+d2, f2 = diff3(old2, new2, KHPOOL, ("k", "h")); d3, f3 = diff3(old3, new3, KHPOOL, ("k", "h"))
+print("COND rev 26's `KH & when((h: <5), (k: between(3, 7)))` = `x & (NOT c | p)` vs the guarded form with a condition test, %d texts over `15;9` length <= 6: %d / %d / %d ; the else form `when(.., .., (k: <3))` vs guarded: %d / %d / %d"
+      % (len(KHPOOL), d2[0], d2[1], d2[2], d3[0], d3[1], d3[2]))
+print("     WH1 (printed): %s ; conditional-spelling row (printed `5;1;9` FAILS, `1;0;9` `1;0;9`@0): WHOLE `5;1;9` %s, SEARCHED `1;0;9` %s ; %s"
+      % (show(new2, "5;1;9", "5;1;9", "3;0;5 5;1;9"), fW(new3, "5;1;9"), fS(new3, "1;0;9"),
+         check("COND old when = guarded with a condition test", d2 == [0, 0, 0] and d3 == [0, 0, 0] and W(new2, "5;1;9") is not None
+               and [(a, b) for a, b, _ in F(new2, "3;0;5 5;1;9")] == [(0, 5), (6, 11)] and W(new3, "5;1;9") is None and S(new3, "1;0;9")[:2] == (0, 5))))
 # when-alone: "when(x) is the same as x" (his lean's words) vs when-default applied to both missing branches
 wa = [("`x` (his words: when(x) is the same as x)", P.Pcre(r'\d')),
       ("peek, both branches defaulted `(?=x)|(?!x)`", P.Pcre(r'(?=\d)|(?!\d)')),
