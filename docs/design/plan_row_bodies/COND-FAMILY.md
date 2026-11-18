@@ -2881,3 +2881,16 @@ exists only inside pattern text. (3) RECORD, his position ("Makes sense"), the m
 this is zero-place's rule ("numbers are labels of groups in that world") applied to a chain; so numbers never
 collide across `&` (every pattern has its own group 1) and are not subject to the shared-label error; a group of
 A is tested by writing the condition next to A, or by naming it.
+
+**2026-11-17 OWNER — label numbers: try them (Frank, to session 138, evening).** After "What do group numbers refer
+to? Labels or capture groups? Those can be different. Can you $1" (the manager: by zero-place a number is another
+NAME for a group's label, read by the label rule; the capture is regex's and differs where a named label and its
+capture differ; `$1` could read label 1 on the same terms as a name, tied to the pattern it is written on, never a
+global), HIS WORDS: "Let's see how label numbers work and try it. Does (?: ) have a label number? All () forms or
+just groups?" RECORD: label numbers are to be TRIED (a trial in the next revision, not a final ruling); `$1` on
+the manager's terms is part of the trial. THE MANAGER'S ANSWER to his question (mine; PCRE's numbering kept, by
+exception-rule): only CAPTURING groups get a number, plain `( )` and named `(?<n> )` alike, counted by their
+opening parenthesis from left to right; `(?: )`, lookarounds, atomic groups and the other `(?` forms get none; a
+named group has both its name and its number (`(a)(?:b)(?<n>c)(?=d)((d)e)` on `abcde`: 1 = `a`, 2 = `c` (also n),
+3 = `de`, 4 = `d`, 0 = the whole match; run on a regex engine); numbers are local to each pattern literal (a hole
+or a bound pattern keeps its own numbering and does not shift the outer one's).
