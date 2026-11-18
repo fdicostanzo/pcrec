@@ -14,7 +14,11 @@ R-1 (the review number is r49: files `git mv`ed, the review header, its director
 line and the note's header read r49; the copied `dispositions.md` is unchanged and its directory CLAUDE.md says its
 "r48" names this review). Premise test passed (the note's last commit was 5dcc98dfc; 12 groups A-L in the draft).
 STOP RULE: did not fire; no ruled disposition was contradicted by the tree or the record. Process changes C-1..C-7
-were HELD by the manager and not applied. OWED: none.
+were HELD by the manager and not applied.
+OWED: none
+DELIVER FILE: its `files:` line separates the two paths with a space, and lanecheck splits on `;`, so it reads them
+as one missing path. Both paths exist and are committed (`git ls-files` lists each); the deliver file was not edited
+(manager-owned).
 
 Filing (part 1): `docs/dev/reviews/2026-11-18-r49-archdense.md` is the coordinator's draft at its current text (N =
 49) with a RULED line after each group's PROPOSED disposition, verbatim from the dispositions file (K and L share
