@@ -2732,3 +2732,18 @@ begin without the group being entered: the times list `/(?:(?<h>\d+)(?::(?<m>\d\
 item `10` there is no colon, the minutes group is never entered, so under "entering only" `m` stays `45` and
 `((h, m): == (10, 45))` HOLDS, the stale tuple he rejected earlier the same evening (and the default `m = 00`
 would not fire). So either two sources, or one stated as "entering a loop pass enters everything in its body".
+DISCUSSION CONTINUED (nothing ruled). HIS WORDS: "These are good questions. I know more than I ever thought
+possible about rx logic. I think the hobgoblin here is imperative thinking again. It's not a loop. Like
+alternation, the "loop" is a branching of every possible number of passes simultaneously. Some set of those
+branches matches and those are continued from prioritized by greedy/lazy. Given that, once you enter that
+branching, any labels inside have different values depending upon which branches match. Practically speaking,
+"Loops" reset all labels inside them because you don't know which branch will eventually get chosen."
+RECORD: his DECLARATIVE account: a "loop" is a BRANCHING over every number of passes (as an alternation is a
+branching over its alternatives), the surviving branches ordered by greedy or lazy; a label inside takes its value
+from the branch chosen; so a loop RESETS the labels inside it. THE MANAGER'S GENERALISATION put to him (mine, hand
+worked, unrun): ONE rule for every branching (an alternation, an optional, a loop): entering it resets every
+label inside it; the branch taken then sets what it sets; in a sequence the last mention wins. Under it the
+per-pass label, the outermost view for nested loops and "reached and empty" all FOLLOW (a group is skipped in a
+pass only through a branching inside the body, which resets it). The one consequence he was asked about: the
+two-copy separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7` gives h UNSET (the loop is entered and takes its
+zero-pass branch), against his earlier "the group is never checked".
