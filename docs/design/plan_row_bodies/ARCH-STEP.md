@@ -192,3 +192,21 @@ WORDS: "tier-placement: yes. But it is a live document for you to adjust going f
 stands; docs/dev/guide/architecture.md is a LIVE document, and the MANAGER adjusts it going forward (tiers,
 placement, register rows) without asking each time; what stays the owner's: the four high-level rules and their
 order, the gate, the judgement section's quoted words, and any rule whose Source is his ruling (its wording).
+
+## 2026-11-18, the owner rules ast-accessors
+
+ASKED AS A RULING (the /q presentation: does high-level rule 2, data with its code and accessors for everyone
+else, cover the syntax tree every stage reads directly; the manager's leaning: reads of the finished tree stay
+direct, writes go through the pass that owns them). HIS WORDS, in full: "ast-accessors: the key is having a
+defined interface vs representation. Reading a field can be part of that interface. Every time the interface is
+also the representation, it locks the representation and makes it harder to change.
+AST I view as grandfathered in. I'm not going to do a major rewrite to protect against a potential rewrite.
+The rules are stronger moving forwards and sympathetic looking back." RECORD: RULED, three things. (1) What rule 2
+is FOR: a defined INTERFACE as distinct from the REPRESENTATION; a field read can be part of the interface; the
+harm is the interface being the representation, which locks it. (2) The AST is GRANDFATHERED: no rewrite to
+protect against a potential rewrite; its direct reads are not a deviation. (3) A principle for all the rules: they
+are stronger moving forwards and sympathetic looking back. THE MANAGER'S READINGS (mine): the manager's lean
+"writes go through the owning pass" was NOT taken up by him and is not recorded as a rule for the AST; a NEW
+structure declares its interface (which fields, if any, are part of it) when it is introduced; (3) is the
+judgement section's point stated for time. Applied to docs/dev/guide/architecture.md under high-level rule 2 in
+the same change; the open-question line is removed there.

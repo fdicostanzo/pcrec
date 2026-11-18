@@ -24,7 +24,6 @@ and what must change shape first ([ARCH-STEP]); its template and procedure are t
 # Tier 1. High-level rules (the goals; 2026-11-17, the owner's review and order applied; DRAFT only where marked)
 
 STILL DRAFT, open with the owner (each a word slug he can cite; everything else in tier 1 is his, or agreed by him):
-- ast-accessors: whether goal 2 covers the AST (leaning: sealed-AST reads stay direct, writes go through the owning pass).
 - ctx-owner: who owns `Job`/`Ctx` under goal 2 (leaning: split by writer as areas migrate, the driver owns the rest).
 - accessor-grain: one accessor per question or a getter/setter per field (leaning: per question, as `coding.md` §1.10).
 
@@ -84,7 +83,16 @@ rules below, in the register and in older notes means high-level rule N (the num
    reads of the flags word in 15 files behind four accessors); A1 entry 6 (D62 to A_CTX) and entry 13 ([VMREC],
    two descriptions of one VM statement until the record became the only writer); A2 "Seams without a contract"
    item 1 (the `Job`/`Ctx` blackboard: "No accessor layer, no declared writer/reader per field"), with the facts
-   layer as the in-tree model (A2 contrast C1: `pf_enter`/ask accessors). DISTANCE TODAY: tier 5. A rule serves this goal for what a structure may hold:
+   layer as the in-tree model (A2 contrast C1: `pf_enter`/ask accessors). THE OWNER ON WHAT THE RULE IS FOR
+   (2026-11-18, ruling ast-accessors; ARCH-STEP.md): "the key is having a defined interface vs representation.
+   Reading a field can be part of that interface. Every time the interface is also the representation, it locks
+   the representation and makes it harder to change." So an accessor is a DEFINED INTERFACE, and a field read may
+   be part of one when the unit declares it so; what the rule forbids is an undeclared reach into a
+   representation. THE AST IS GRANDFATHERED ("AST I view as grandfathered in. I'm not going to do a major rewrite
+   to protect against a potential rewrite."): its direct reads are not a deviation and need no register row.
+   HOW THE RULES APPLY IN TIME, his: "The rules are stronger moving forwards and sympathetic looking back." (new
+   structures and new seams meet the rule in full; existing code is judged with sympathy and corrected when a
+   larger change reaches it, as the judgement section says). DISTANCE TODAY: tier 5. A rule serves this goal for what a structure may hold:
    "A shape states the inputs it covers" (tier 2; a goal until the owner's "shape-goal: I agree", 2026-11-17).
 3. **High-level rule 3: Seams: a module seam is an API with a contract; a layer hands data one way.** The goal's purpose, in the
    owner's words: "to isolate responsibility to better organize change. Each module has its api and contract."
