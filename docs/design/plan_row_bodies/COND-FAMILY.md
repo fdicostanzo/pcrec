@@ -3008,3 +3008,19 @@ reasoning, unrun): yes: `n` is a pattern, and each mention of a pattern stands f
 two to four digits. So the note's "union" reading (`\d{2}|\d{4}`) silently assumed the SAME member in both
 places, which a pattern mentioned twice does not give; "exactly n" for a several-member n needs ONE argument (a
 one-argument exact-count form), which then distributes to `\d{2}|\d{4}`.
+
+**2026-11-17 OWNER — the rx module: one repeat construct; plurals as conveniences (Frank, to session 138,
+evening).** After the count-argument discussion (a construct given an alternation where it expects one value
+distributes over it, once per mention; two count arguments range over pairs; a count must have a finite
+enumeration; unbounded = no maximum) and his questions "how would infinity or \d+ look?" and "you have digits. then
+there are alphanumerics and other plurals. do we have this behavior for all or a wrapper over digit ?", the manager
+proposed: singular character constructs (`rx.digit`, `rx.alnum`, ...), ONE repeat construct that does all the
+counting for any pattern (exact with one argument, a range with min and max, no maximum = unbounded), plurals only
+as one-line library definitions over it. HIS WORDS: "i agree with repeat. i agree with plurals, why not. can i name
+the item inside the repeat with [ a = rx.digit ]". RECORD: AGREED: one repeat construct carries the counting;
+plurals exist as conveniences defined through it. The count rules of the discussion (distribution per mention; a
+finite count; no maximum for unbounded) are the manager's proposal he engaged with and did not object to: to be
+written as THE DRAFT'S READING and confirmed. His question answered by the manager: yes, `rx.repeat([a = rx.digit],
+min = 1)` is `(?:(?<a>\d))+`: by the one label rule `a` after the repeat is the last item, the array form holds
+every item, and a condition on the labelled item inside the repeat is judged for every item; labelling the REPEAT
+instead (`[run = rx.repeat(rx.digit, min = 1)]`) names the whole run.
