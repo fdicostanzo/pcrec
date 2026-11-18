@@ -2967,3 +2967,19 @@ literal, two groups of one name are still ONE label (the one label rule: last me
 example); the ambiguity is between labels of DIFFERENT composed patterns; (b) the SAME bound pattern used twice in
 one expression (`(item SEQ ",")* SEQ item`): one label (last mention, the array takes all) or an ambiguous
 reference.
+
+**2026-11-17 OWNER RULING — label-flow (closes the proposal above) (Frank, to session 138, evening).** To the
+manager's two points. HIS WORDS: "a. yes. a label from an rx is whatever label is surfaced by that rx. b. thats a
+good point but list here is one rx so exposes one h. i adjust my rules to be such that a compose and a literal rx
+have the same label behavior".
+RECORD: RULED: (1) A label from a pattern is whatever label that pattern SURFACES. (2) A COMPOSED pattern (the
+sequence operator, a hole, a loop of a part) and a LITERAL have the SAME label behaviour: the one label rule (a
+label is a name; a branching resets the labels inside it; the last mention wins; the array takes every setting).
+So `list := (item SEQ ",")* SEQ item` surfaces ONE `h`, as the one-literal list does. (3) HIS ADJUSTMENT withdraws
+point 2 of his proposal: across the SEQUENCE operator a name set by both parts is not an ambiguous reference; it
+is one label, last mention, exactly as in a literal. (4) STANDING from the proposal: across `&`, a name that both
+sides surface is an AMBIGUOUS REFERENCE and an error where it is referenced (not an error for merely existing:
+the shared-label ruling so revised); a part's own label is reached through a label given to the part (`[aa = A]`,
+`aa.h`); a binding's name is not a path. THE MANAGER'S NOTE for the next revision and the documentation list
+(mine): in a sequence two parts from different authors that both surface `h` merge silently (last mention), as
+two groups of one name do in a literal; labelling the parts is how one of them is picked.
