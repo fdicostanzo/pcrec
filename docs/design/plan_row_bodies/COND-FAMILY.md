@@ -2710,3 +2710,15 @@ loop included. The manager's restatement put to him (MINE): a label is a NAME; i
 setting along the match; each loop pass begins by unsetting the names its body can set; the array lists every
 setting of the name in order. Cases put to him to confirm: zero passes (the outside value stands); two groups of
 one name with no loop between them (the second, not taking part, makes no setting, so the first stands).
+DISCUSSION CONTINUED (before-and-inside; nothing ruled). HIS WORDS: "Discussion: Summary the labels bubble up. Last
+pass and last mention. "Two groups of one name with no loop between them". This one I might disagree. ? Is either
+an alternation or a 0-1 loop. The answer depends on which it is." Then, to the manager's pair of examples
+(`/(?<h>\d)?;(?<h>\d)?/` on `3;`; the separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7`): "Those examples are a
+touch different. In the first one, the ; matched then the second group is checked. In second example, there is no
+comma so the group is never checked". RECORD: his summary: LABELS BUBBLE UP: the last pass, and the last mention.
+His distinction: a group the match REACHED and found absent is not the same as a group it NEVER REACHED. The
+manager's restatement put to him (MINE, to be confirmed): a group whose START the match reaches but which does not
+match is a mention that leaves its name UNSET; a group whose start is never reached makes no mention; a loop pass
+still begins with its body's names unset (ruled earlier). Under it: `3;` in the first example gives h UNSET; the
+one-item list gives h = `7`; an alternation's untaken branch is unset whichever order the branches are written in
+(both starts are reached).
