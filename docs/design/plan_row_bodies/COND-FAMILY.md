@@ -3263,3 +3263,23 @@ didn't even think this was legal. I love it if it works. It needs to be fleshed 
 legal: the next revision FLESHES IT OUT (what text the value becomes, numerals and width, an unset label, loops and
 hit lists, every mode, what an engine must do at match time, a libpcre2 control where one can be built) and brings
 it back to him. The eleven uses in the draft are marked as resting on an unruled form until then.
+
+**2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product (Frank, to session 139,
+morning).** ASKED AS A RULING (slug array-lift; the manager's proposed general rule, as put to him: "An array is
+an alternation of values, and a single value is a one-member array. Any operation defined on single values
+applies to arrays by taking every combination of members, first operand slowest, values in the order given";
+hand-worked `[2, 4] + 1` = `[3, 5]`, `[2, 4] + [1, 10]` = `[3, 12, 5, 14]`, `[2, 4] * [1, 10]` = `[2, 20, 4, 40]`;
+pairwise named as the alternative). HIS WORDS: first "array-lift: pairwise as default", a message he INTERRUPTED
+and replaced at once with: "array-lift: I meant, alternations as you suggested. It's consistent that alternations
+combine on the product and multiply the rx and produce more alternations". RECORD: RULED, by the second message
+(the first is his own slip, corrected by him): the general rule as proposed. Arrays are alternations; an operation
+on arrays applies to every combination of members (the product), the first operand slowest, values in the order
+given; a single value is a one-member array, so `n + 1` needs no rule of its own. His reason: it is consistent
+that alternations combine on the product, multiply the rx and produce more alternations. This is the "consistent,
+general rule" his lean on arithmetic over arrays asked for, so that lean is now settled with it. STATED WITH THE
+QUESTION AND NOT OBJECTED TO (the manager's, to be checked by the next revision): a repeated result is harmless
+(as alternatives the first occurrence wins); the rule is about arrays the user writes, not the match-time array of
+a label's values per pass ("an array of such values is its own type"); a pairwise combination could exist later
+only as an explicit function (predicates_future item 27's family). WITHDRAWN: the manager's "adding two patterns
+is an ordinary type error" as a general sentence; what `+` does on operands that are not numbers is still to be
+stated by the next revision (the manager's lean: a type error for non-numbers, addition being arithmetic).
