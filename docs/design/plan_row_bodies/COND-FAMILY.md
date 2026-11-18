@@ -2846,3 +2846,13 @@ WORDS: "empty-search-error: warning". RECORD: RULED: a searched pattern that can
 (its empty matches) in a predicate program as for a plain pattern, with the WARNING (`pcrec.empty.search` under
 the naming ruled the same evening); an error only where a strictness setting selects it. The draft's error for
 predicate programs is withdrawn.
+
+**2026-11-17 OWNER RULING — the three remaining error-or-warning candidates (Frank, to session 138, evening).**
+Asked together, each with the manager's lean: label-twice-warn (keep the 11-16 error), min-values (allow
+`occurrences(.., min = n)` to mean at least n hits, no warning), dollar-condition (keep the error for `$x & <5`
+written where `(x: <5)` is meant). HIS WORDS: "Agree with all three. But for: $x & <5 How is that not an error?$x is
+not a pattern but a match". RECORD: RULED: (1) a label named twice in one condition stays an ERROR (label-twice,
+11-16, stands). (2) `min = n` on a search means AT LEAST n hits for any n; the draft's error for n other than 0 or
+1 is withdrawn; no warning. (3) `$x & S` in a condition position stays an ERROR, and his reason is the type: `$x`
+is a MATCH (a value), not a pattern, so it cannot stand where a condition on a label is expected. With
+empty-search-error (a warning, ruled just before) all four candidates of revision 24.4's list are settled.
