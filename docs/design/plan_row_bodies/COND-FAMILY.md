@@ -3397,3 +3397,17 @@ no need for `list1`, `list2`). (2) NOT RULED: on the read-out he gives two insti
 right, because the right side overrides the left; then the left, because the right is just a filter), and asks
 what "reports" means. ANSWERED IN THE SESSION: it means the captures a caller reads from the match result. The
 question stays open as **read-out**.
+
+**2026-11-18 OWNER on the read-out — a lean: a filter never produces captures (Frank, to session 139, morning;
+recorded as a LEAN, to be closed by the question filter-captures).** The manager had offered, as a form of his
+second instinct, "a filter's captures are never exported at all", saying he would want it chosen deliberately.
+HIS WORDS, in full: "path-and-ambiguity: I was thinking the same that a filter can never produce captures.
+One reason i had is that you could produce overlapping captures where the span of one partially overlaps the span
+of another. At first I thought this was an error but i think it could be done with look around." RECORD: A LEAN,
+not yet a ruling: he was thinking the same, that a filter can never produce captures. One of his reasons
+(overlapping captures, one span partly over another) he WITHDRAWS himself as a reason in the same message: he
+first thought such captures an error, then that lookaround can already produce them. Because the statement is
+larger than the corner it answers (it touches the symmetric `&`, label-flow's ambiguous-reference error, and
+conditions that read a label set on a filter operand), the manager asks it as a ruling, **filter-captures**, with
+what "the filter" is in a chain and what a condition outside the filter may read; the read-out corner is settled
+by whatever closes that.
