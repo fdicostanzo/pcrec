@@ -3034,3 +3034,20 @@ member is a constant; an unbounded count pattern is a compile error); (3) an unb
 NO MAXIMUM. count-argument is closed. His question (is repeat a primitive) answered by the manager from the draft:
 see the next lines of the chat record; in short NOT a primitive: a library definition over a hole in the
 quantifier position.
+
+**2026-11-17 OWNER RULING — two kinds of hole; illegal combinations are removed (Frank, to session 138, evening).**
+He pressed the manager's account of `repeat` ("really? because 2|4 is an rx so wouldn't it look like
+/(x){2|4,2|4}/"): under the hole ruling of the same evening taken literally, yes. The manager's answer: the draft
+has TWO kinds of hole by position: where a pattern can stand, the inserted pattern as a whole in a non-capturing
+group, matched in place (hole-reading); where only a piece of pattern syntax can stand (inside a count's braces, a
+group's name, a character class), a compile-time VALUE, a finite set of plain strings, written in once per member
+(the count ruling). HIS WORDS: "if thats what it is then ok. i visualize ${} as a string insert but in this case it
+is not, it is a context aware rx insert. then the solution to the illegal version is to remove illegal versions
+from the cartesion product."
+RECORD: RULED: (1) both kinds of hole stand: `${}` is a CONTEXT-AWARE insert, not a string insert: in a pattern
+position it inserts a pattern as a whole; in a count, group-name or class position it inserts a value and the
+literal is instantiated per member. (2) When several holes each hold several members the literal stands for the
+CARTESIAN PRODUCT of the combinations, and a combination that is not a legal pattern (a count with its minimum
+above its maximum) is REMOVED from the product (not a compile error of the whole). `repeat` is therefore a
+library definition, not a primitive. MINE, proposed, not ruled: a structural warning when a combination is
+removed, and the existing can-never-match warning when all of them are.
