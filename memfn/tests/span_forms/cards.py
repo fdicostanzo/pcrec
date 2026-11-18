@@ -6,7 +6,10 @@
 # lane formsfixg, review r38's J1, J2, J7, J8: the per-pattern twin term, the launch rounds, the
 # class drill, the identity reach per source; lane formsfixi, review r39's K1-K6, K8, K12: the layout
 # twins, R0 over the confirm, reading B, one owed list, the checked controls; lane formsfixk, review
-# r41's L9, L5, L6: the layout pools replace the twins, the strict arguments and the keyed G2 record).
+# r41's L9, L5, L6: the layout pools replace the twins, the strict arguments and the keyed G2 record;
+# lane formsfixl, review r44's A-L: the variant x regime interaction void, the per-head layout floor,
+# the pool refusal's 32-B half, the confirm's rounds, a fresh run id, the compiler-keyed exe cache,
+# K6's placed win, the power line's bracket, the checked power pins, the fixed axes named).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
 identity check (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
@@ -57,7 +60,8 @@ THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR o
                            CLASS drill (r38: noise, a step and a drift at every level) and rev
                            11's rows (r39: per-exe offsets, reading B's power, R0 over the
                            confirm, one owed list) and rev 12's (r41: the layout pools under
-                           each layout model, GAP_K under layout bimodality, the power rows);
+                           each layout model, GAP_K under layout bimodality, the power rows;
+                           r44: the interaction and noisy-loser drills, each with its control);
                            --rev11 / --rev12 run those rows alone
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
@@ -1662,10 +1666,12 @@ def adjusted(r, te, t):
 
 
 # THE NIGHT'S POWER AGAINST ITS OWN LAYOUT SIGMA (rev 12, RULED R2 D): `selftest --rev12`'s power rows
-# (300 nights each, the "phase" layout model, 1 % launch noise), RECORDED here by hand from lane formsfixk's
-# run (a RECORD: re-pin when the rule or the drill moves): {layout tau: (one 5 % winner, one 10 % winner,
-# every head <= 16 5 % faster), each of 300}; rev 11's accept lines 270 / 270 / 255.
-POWER_RECORD = {0.0: (281, 300, 279), 0.01: (170, 299, 176), 0.02: (7, 260, 5)}
+# (300 nights each, the "phase" layout model, 1 % launch noise), pinned by hand from the drill (re-pin when
+# the rule or the drill moves; r44 L: `selftest --rev12` CHECKS the pins at tau 1 and 2 %, so a stale pin is
+# red): {layout tau: (one 5 % winner, one 10 % winner, every head <= 16 5 % faster), each of 300}; rev 11's
+# accept lines 270 / 270 / 255. Re-pinned by lane formsfixl (r44 B's per-head floor moved them: rev 12 read
+# (170, 299, 176) / (7, 260, 5)).
+POWER_RECORD = {0.0: (281, 300, 279), 0.01: (204, 296, 179), 0.02: (25, 271, 18)}
 POWER_ACCEPT = (270, 270, 255)
 
 
