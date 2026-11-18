@@ -643,3 +643,26 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   table's KIND column (revision 26).
 - SOURCE: COND-FAMILY.md, "OWNER RULING — a `when` with a single argument is an error", 2026-11-18. TRIGGER: the
   library discussion, or the second construct that needs an argument rule a signature cannot express.
+
+## 30. String-level manipulation of an rx, as graph manipulation (`left(rx, 2)`, `\d + 1`; phase two)
+
+- THE OWNER'S WORDS (2026-11-18, ruling match-is-rx): "We have ways to restrict matches, we can take an rx apart
+  over alternation, we can grow it, but not manipulate it at the string level. Here's the thought for left(rx,2):
+  you build the dfa graph then put the match state at the second character. (Byte ideally). It's certainly a phase
+  two project. But, we've discussed ideas like using proven spans to start the dfa later. The idea is play it
+  forward then put the start states there. This is another form of graph manipulation. We can create functions
+  like left() and restrict them to constants now. I'd like to consider that unbuilt territory however and the
+  error is an "under construction" sign." And: "\d + 1 matches the digits 1 through 10".
+- WHAT IS RULED (COND-FAMILY, "OWNER RULING — match-is-rx"): the MEANING exists for any rx (the types are unified);
+  the BUILD today is constants only; past that the compiler says UNDER CONSTRUCTION (a distinct error class: the
+  meaning is defined, the build is not there), never "illegal".
+- THE MANAGER'S READING (mine, unchecked): two families. PREFIX/SUFFIX/SLICE functions are transformations of the
+  automaton (truncate at depth n; the mirror for `right`; kin to starting the DFA after a proven span).
+  ARITHMETIC and case functions on a FINITE rx are a rewrite of its enumerated members (`\d + 1` = `1|2|..|10`);
+  on an infinite rx they need a transducer or stay under construction.
+- QUESTIONS IT RAISES (none asked yet): characters or bytes under `-e utf8` (his "Byte ideally"); what `left(rx, 2)`
+  yields for members shorter than 2; whether labels inside the rx survive the manipulation.
+- MEETS: array-lift, "a constant is an rx where the count of the enumeration is 1", the hole positions table,
+  [RUN-POS-SET] / required-run handoffs (starting an engine later), item 27.
+- SOURCE: COND-FAMILY.md, "OWNER RULING — match-is-rx", 2026-11-18. TRIGGER: phase two of the predicate build, or
+  the first user program that needs a string function on a non-constant rx.

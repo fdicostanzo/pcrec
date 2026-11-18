@@ -3851,3 +3851,33 @@ separation is made clear, or (B) the types are unified (his example: a match is 
 two; value-filter; the numeral width and unset details. The manager's reading of the bare "yes": the form as
 asked, the details still to be confirmed. The manager put the fork back to him as **match-is-rx** with a lean
 (B, one type with stated properties); see the session's reply.
+
+**2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match" (Frank, to session 140,
+afternoon).** ASKED AS A RULING (slug match-is-rx: a label read `$y` is a one-string rx known at match time; ONE
+type; each operation states whether it needs a finite rx and whether it needs one known at compile time; with the
+manager's note that dollar-condition's ground goes). HIS WORDS, in full: "value-hole: let's use the unifying idea
+for it. Change my answers to match. The following can be delayed in build. That means both directions: \d + 1
+matches the digits 1 through 10. left(2) is the leftmost two digits of an rx. I was thinking about this. We have
+ways to restrict matches, we can take an rx apart over alternation, we can grow it, but not manipulate it at the
+string level. Here's the thought for left(rx,2): you build the dfa graph then put the match state at the second
+character. (Byte ideally). It's certainly a phase two project. But, we've discussed ideas like using proven spans
+to start the dfa later. The idea is play it forward then put the start states there. This is another form of
+graph manipulation. We can create functions like left() and restrict them to constants now. I'd like to consider
+that unbuilt territory however and the error is an "under construction" sign."
+RULED: (1) the types are UNIFIED: a match is an rx. (2) His earlier answers are to be CHANGED to match. (3) Both
+directions: an operation on values applies to an rx (`\d + 1` matches the numerals 1 through 10; `left(rx, 2)` is
+the leftmost two characters of an rx's strings). (4) BUILD may be delayed: functions like `left()` are created now
+and RESTRICTED TO CONSTANTS; anything past that is UNBUILT TERRITORY whose error is an "under construction" sign
+(not a refusal of the meaning). IDEA, his (filed `predicates_future.md` item 30): string-level manipulation of an
+rx as GRAPH manipulation (build the DFA, move the match state to the second character, bytes ideally; kin to
+starting the DFA later after a proven span: play it forward, put the start states there); "certainly a phase two
+project".
+THE MANAGER'S READINGS of "Change my answers to match" (the manager's, NOT his words; put to him as a list the
+same hour and to be tested by the next revision lane): (m1) dollar-condition: `$x & <5` is no longer an error BY
+TYPE; it denotes x's text or nothing; whether a "did you mean `x: <5`" warning stays is unruled. (m2) "$x is not a
+pattern but a match" is superseded by "a match is an rx" (a one-string rx known at match time). (m3) value-filter
+is answered: `&` on a read is legal. (m4) array-lift extends from arrays the user writes to any FINITE rx. (m5)
+his `if($y & (0: 1492), "Columbus", $y)` is the one `when`. (m6) UNCHANGED: backref-label (capture), `$x` reads
+the label, the scope rulings, the count-hole rulings (a count hole needs values known at compile time: the
+manager's wording). OPEN, asked as **read-is-constant**: whether a label read (`$y + 1`, `left($y, 2)`) is inside
+"restricted to constants now" or under construction.
