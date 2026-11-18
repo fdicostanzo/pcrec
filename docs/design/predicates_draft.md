@@ -4,6 +4,23 @@
 
 ## Changelog
 
+- **rev 24.4: one label rule (branchings reset), the hit list atomic and anchored, the filter sentence, join order
+  (the owner, 2026-11-17 evening); NOT STABLE pending the owner's answers (lane predspec244, 2026-11-17).** Applies
+  COND-FAMILY's entries from "OWNER RULING — operand-context" to the end of the file. EVIDENCE FIRST
+  (`docs/dev/lanes/predspec244_evidence/`, a new engine with three label rules and libpcre2 controls): the one rule
+  RUN against every label line rev 24.3 printed (82 lines, 0 differ; the switch back to rev 24.3's rules 0 differ;
+  16 programs on their pools 0 / 0 / 0; the carry-vs-rule counts reproduced), its own libpcre2 control (the MARKER
+  MODEL, 10 programs, 0 differ; without markers 9 of 10 DIFFER), the sabotage caught (SABN checks OK), checks 128 of
+  128. TEXT: R.1.7 REWRITTEN around the one rule (the separated list as its worked example, rulings file R1-R2; the
+  derivations (i)-(vii), each run; two groups of one name, with libpcre2 under `(?J)`; THE THREE READS of a name: the
+  label, the carried-capture form, the array form and its type rule; the marker model); R.1.4 the filter sentence and
+  its refusal (THE DRAFT'S READING of the refused set), join order RULED, zero-place RULED; R.1.9 the hit list atomic
+  and anchored, its regex model re-run with the failed first try; §R.6 rows; §R.8 seven questions ruled and removed,
+  shared-label re-examined (still asked: not entailed), three new questions (pass-start-read, array-slot,
+  numbered-label-warning), ONE list of eleven spellings put off to a single review; §R.9 eight rows; §R.10; §R.11
+  rows 44-55; marks in §4.3 and §11; `predicates_future.md` item 24. STOP RULE: nothing stopped (no shown answer
+  moved). SIZE_LINE
+
 - **rev 24.3: review r42's fixes; NOT STABLE pending the owner's answers (lane predspec243, 2026-11-17).** Applies
   the manager's dispositions of review r42 (`docs/dev/reviews/2026-11-17-r42-predspec242.md`). EVIDENCE FIRST
   (`docs/dev/lanes/predspec243_evidence/`): predspec242b's engine run in memory with three fixes, each against
@@ -1005,21 +1022,31 @@ with the hits `12`, `34` (H1; V16). A bare condition after it reads the LAST hit
 pattern backs off until its last hit is under 100; H2; rev 23.2: FAILS). The hits are re-split whenever a condition
 rejects (PART D D3: 810 of 1,365 FIND-ALL texts for `(l: <100)` on `/(?<l>\d+)/` report a hit the plain pattern
 never does).
-THE HIT LIST (an ALLOWED EXCEPTION, requested by its own feature, §R.6; 13:20: "being able to access all the hits of a search is helpful. It's an
-exception that should be noted but no excluded for purity"; written `hits(r)` here, `all_matches(rx)` his
-placeholder at 13:30; admitted without a regularity proof by **exception-rule**): the committed hits of a GLOBAL search, hit by hit. WHOSE search is THE DRAFT'S READING,
-asked (**hits-text**, review r40 A4): the global search of the MATCHED STRETCH, re-run inside each stretch the
-pattern tries, so in SEARCHED and FIND-ALL the hits ARE re-split by the stretch: `hits(/(?<n>\d+)/) &
-occurs.none(NOT (n: <100))` on `x300 12` SEARCHED reports `x30`@0 with the hit `30`, which no search of the subject
-gives, and FIND-ALL on `1234 5 300` reports hits `12`, then `34`, `5`, `30` (PART Q hits-text). "Never re-split by a
-later condition" holds in WHOLE only. A group question over the list reads that committed list (**hits-committed**,
-THE DRAFT'S READING, asked; told at 13:45 / 14:35): `hits(/(?<n>\d+)/) & occurs.none(NOT (n: <100))` on `1234`
-FAILS (the one hit `1234`), where the one-pattern form HOLDS (H3; E4: 56 / 56 / 56 of 341, reported row, hit lists
-compared, first `111`; UNCHANGED under rev 24.2, PART Q). An optional label over the hits moves under rev 24.2:
-`occurrences(/a(?<g>x)?/) & (g: "x")` on `axa` HOLDS with the hits [`ax`] (the last hit's own g; the rest is gap),
-where rev 24.1 gave [`ax`, `a`] (g carried); `hits(/a(?<g>x)?/) & (g: "x")` on `axa` FAILS (the committed last hit
-`a` has no g; rev 24.1 HOLDS), SEARCHED `ax`@0; each 42 / 42 / 42 of 364 (PART Q hits-committed). That `hits` exists at all is settled by **exception-rule** (RULED, the evening of 11-17:
-"Exceptions should be requested by using those features explicitly").
+THE HIT LIST (rev 24.4: RULED, atomic and anchored; COND-FAMILY "OWNER on what `hits` is" and "OWNER RULING — the hit
+list: atomic and anchored"; written `hits(r)` here, `all_matches(rx)` his placeholder at 13:30, the spelling to the
+single review, §R.8). His question, "hits-text: so hits is atomic ( and anchored ?)", and on being asked to confirm
+"`hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to", HIS WORDS: "hits-text:
+yes but spelling to be reviewed with all other spellings." So: (1) THE HIT LIST IS THE ONE-PATTERN SEARCH MADE ATOMIC:
+once it has matched, nothing re-enters it; its hits are those of a plain search, and tests on them judge a fixed list
+(**hits-committed**, RULED). (2) IT IS ANCHORED TO THE TEXT IT IS APPLIED TO, covering it from end to end: a whole
+value; the match of the pattern to its left (the filter sentence, R.1.4); standing alone in a searched program, the
+WHOLE SUBJECT (**hits-text**, RULED; no compile error is needed there: it reads the whole subject as `\A...\z`
+would). (3) ITS REGEX MODEL: an atomic group around the WHOLE one-pattern loop, anchored at both ends, the list judged
+after it. Rev 24.4's PART H re-runs the manager's libpcre2 run of the evening (whole values; "every number under
+100"; the hits recorded by a callout as a stack): the search as part of the pattern, each hit judged inside,
+`\A(?:.*?(?<n>\d+)(?C))*\D*\z`: `1234`, `12 34`, `12 345`, `x300 12` all HOLD (a long number is cut into short
+ones); THE MODEL `\A(?>(?:.*?(?<n>\d+)(?C record))*\D*)\z(?C judge)`: `1234` FAILS with hits [`1234`], `12 34` HOLDS
+[`12`, `34`], `12 345` FAILS [`12`, `345`], `x300 12` FAILS [`300`, `12`] (the same with the general tail
+`[\s\S]*`); THE FAILED FIRST TRY, each hit atomic but not the loop, `\A(?:.*?(?>(?<n>\d+))(?C record))*\D*\z(?C
+judge)`: all four HOLD, with hits [`34`], [`12`, `34`], [`12`, `45`], [`00`, `12`] (the lazy gap is re-entered
+and swallows the start of a long number): so the atomic group must enclose the whole loop. The engine (the one
+rule, an atomic group and the pass table) gives the model's answers on the four texts, and SEARCHED on `x300 12`
+FAILS (standing alone the list is the whole subject's: [`300`, `12`]); rev 24.3 printed SEARCHED `x30`@0 with the
+hit [`30`] under the stretch reading (asked then), which no longer stands. With an optional label,
+`hits(/a(?<g>x)?/) & (g: "x")` on `axa` FAILS (the last hit `a`'s own g is unset), on `aax` HOLDS g = `x`; SEARCHED on
+`axa` FAILS (rev 24.3: `ax`@0, the stretch's hits). (4) Reading the hits out as VALUES stays the captures-level part.
+The hit list therefore LEAVES the list of things with no regex model (§R.6). Its being requested by its own feature
+stays **exception-rule**'s ("Exceptions should be requested by using those features explicitly").
 
 R.1.10 `when` (when-meaning: "when-meaning: agree", the entry stamped 13:55 that follows the 14:25 questions):
 `when(c, p)` is a LIBRARY DEFINITION, `x & (NOT c | p)`, with x written once and ONE `|`; no primitive. Its regex
@@ -1193,7 +1220,7 @@ ALLOWED EXCEPTIONS (each requested by its own feature):
 
 | exception | its feature | what it gives | what regex alone gives | allowed by | its level (a fact) |
 |---|---|---|---|---|---|
-| the HIT LIST | `hits(r)` (`all_matches(rx)` his placeholder) | every committed hit of a global search, in order (whose search: **hits-text**) | the last pass of the one-pattern loop (R.1.9) | 13:20 ("being able to access all the hits of a search is helpful"), exception-rule | `captures` to read a hit; its tests regular for `ab[xy]` (0 of 85 as a plain regex, lane lastpass), otherwise unproven and no longer required |
+| the HIT LIST (rev 24.4: it HAS a regex model; it stays a requested feature) | `hits(r)` (`all_matches(rx)` his placeholder; spelling to the review, §R.8) | every hit of the one-pattern search made ATOMIC and ANCHORED to its text (RULED, R.1.9) | the same, as an atomic group around the anchored one-pattern loop (R.1.9; rev 24.4's PART H); the VALUES read out need the captures level | 13:20 ("being able to access all the hits of a search is helpful"), exception-rule; hits-text and hits-committed RULED ("hits-text: yes but spelling to be reviewed with all other spellings") | `captures` to read a hit's value; its tests regular for `ab[xy]` (0 of 85 as a plain regex, lane lastpass), otherwise unproven and no longer required |
 | the PASS TABLE of a loop | the group questions (`some`, `occurs.*`), a literal index `h[2]`, `$h[2]` | every pass's values | the last pass's own only | 14:30 ("the method of achieving the alternative meanings defined and tested"), exception-rule | regular for the group questions and a literal-index test; `captures` for `$h[2]` (W10) |
 | WHOLE-TEXT | `J & C & occurrences(M)` matched WHOLE, reading M's hit list | M's matches when C holds, none otherwise | (reads the hit list) | 14:05 ("adopt it if it's legal"), exception-rule | the gate regular (lane rxmodel); the list at `captures` |
 
@@ -1208,23 +1235,25 @@ the engine's (PART Q), reported row, labels compared.
 
 | the place | regex's behaviour | the draft's | status |
 |---|---|---|---|
-| `^`/`$` in an `&` operand or a `label:` set | the ends of the whole subject searched | the ends of the stretch (the scoped match, §11) | ALLOWED: "^ $ refer to the scoped match" (CF:1005); "&: both sides filter and warn if anchor" (CF:1059-1060) |
-| `\b` and edge lookarounds in a filter operand (a side of `&`, a `label:` set) | they see the subject around the stretch | the EDGE-ASSERTION ERROR where they would read past the span being filtered (§11, unchanged); `^`/`$` mean the span's ends | ALLOWED BY THE OWNER, 2026-11-15 (COND-FAMILY, the entry holding "disallow certain contextual rx"): "the rulling was to say again that ^...$ meant the start and end of the filtered condition and to disallow certain contextual rx like \b in a filter rx that would exceed the span rx that it was filtering"; its RECORD (3): "assertions that would read beyond the filtered span (`\b` named by Frank) are disallowed in a filter rx"; "edge lookarounds" in the same class is the manager's reading recorded with the entry. Still asked: WHICH further constructs "certain contextual rx" covers, **operand-context** (narrowed, §R.8 (b)) |
-| a label set inside a loop, read after the pattern or inside a later pass that did not set it; and a duplicate name in a loop (A6) | the CAPTURE: the earlier pass's value (PCRE's capture state); under `(?J)` the first SET group of the name | the LABEL: the pass's own, unset when the pass did not set it; at the outermost view (R.1.7); with duplicate names, whichever group the last pass set | RULED (after-loop-read, nested-pass); a LANGUAGE FEATURE, not regex behaving otherwise (below) |
+| `^`/`$` (and, rev 24.4, `\A`, `\z`, `\Z`) in an `&` operand or a `label:` set | the ends of the whole subject searched | the ends of the stretch: THE FILTER SENTENCE, "the filter is matched against the stretch as if the stretch were the whole text" (R.1.4) | ALLOWED: "^ $ refer to the scoped match" (CF:1005); "&: both sides filter and warn if anchor" (CF:1059-1060); rev 24.4, the sentence RULED: "operand-context: yes to that interpretation. Also, then the start of subject and end of subject need the same interpretation" |
+| any piece of a filter operand (a side of `&`, a `label:` set) that MIGHT LOOK OUTSIDE the stretch | it sees the subject around the stretch | a COMPILE ERROR (rev 24.4; R.1.4); WHICH pieces: THE DRAFT'S READING, `\b`/`\B` that can sit at an edge, a lookbehind reaching before the start, a lookahead reaching past the end, `\G`, `\K` (rev 24.4's PART F) | RULED, operand-context (rev 24.4): "I would say at this point that any piece that might look outside is a compiler error. Then if we discover later we can relax it we can review"; it widens the 2026-11-15 ruling ("disallow certain contextual rx like \b in a filter rx that would exceed the span rx that it was filtering") from `\b` to every such piece |
+| a label set inside a loop or any branching and read after it; and two groups of one name (A6; rev 24.4 PART N) | the CAPTURE: the value from the last time the group was set (PCRE's capture state); duplicate names a COMPILE ERROR without `(?J)`, under it the lowest-numbered SET group | the LABEL: a NAME, its last setting, every branching resetting the names inside it when entered (R.1.7): the last pass's own, at the outermost view; two groups of one name allowed | RULED (after-loop-read, nested-pass; rev 24.4: "branchings reset the labels inside them", "Yes. Let's keep it"); a LANGUAGE FEATURE (below); PCRE's carried value stays readable through the carried-capture form (required, spelling to the review) |
 | atomic in a search | PCRE's atomic group, the search moves on | the same | regex (atomic-search CLOSED by the owner: "Atomic as used by say atomic() would provide pcre behavior"); item 14's reading is a backtracking verb, item 19 |
 | a positive lookahead's labels | visible after it | the same | regex; "never visible outside" would be an exception: **lookahead-labels** |
-| a label named in both `&` operands | PCRE accepts duplicate names under `(?J)` | a compile ERROR (§4.1, as rev 24's §R.5 cites it); its ruling not located by this lane | NOT YET ALLOWED: asked, **shared-label** |
+| a label named in both `&` operands | PCRE accepts duplicate names under `(?J)` | a compile ERROR (§4.1, as rev 24's §R.5 cites it); its ruling not located; rev 24.4: re-examined under "a label is a name", still asked (§R.8) | NOT YET ALLOWED: asked, **shared-label** |
 
 THE 2026-11-15 ENTRY APPLIED LITERALLY (rev 24.3, review r42 C5, the manager's disposition: neither of rev 24.2's
 two candidates as put). The DIFFERENCE, listed: rev 24.2's row said the draft READS lookarounds and `\b` in an `&`
 operand on the stretch's text (`/\d+/ & /\b\d+/` on `a1` SEARCHED `1`@1) and asked whether that was allowed; §11
 already made them the edge-assertion error, and the entry DISALLOWS them; the entry wins, so the row's stretch
-reading is gone and §11 stands. What remains open is only how far "certain contextual rx" reaches (PART K, one example
-each, both ways, §R.8 (b) **operand-context**).
+reading is gone and §11 stands. REV 24.4: how far it reaches is RULED (operand-context: "any piece that might look
+outside is a compiler error"), with THE DRAFT'S READING of the refused set (R.1.4); rev 24.3's PART K answers for the
+"not covered" candidate are the record.
 | a test no value can pass (§5.2's empty intersection), at any polarity | regex compiles a piece that can never match | it compiles, with the warning `test.never` (rev 24.2) | regex, plus a diagnostic (polarity-rule RULED, §R.2) |
 | FIND-ALL after an empty match | PCRE2 retries at the same place for a non-empty match, then advances | the same (rev 24.3, R.1.2: PCRE2's global loop is the definition; the engine and every libpcre2 model run it, PART X4) | regex (the default); rev 24.2's one-character step differed on the lazy `/(?:(?<h>\d)?;)*?/ & NOT (h: <5)`, 301 of 364 FIND-ALL texts (review r42 A4) |
 
-THE PER-PASS LABEL (rev 24.2), two views, one sentence each: AS A LANGUAGE FEATURE (the draft's statement, on his
+THE PER-PASS LABEL (rev 24.2; rev 24.4: a CONSEQUENCE of the one rule, R.1.7, whose own control is the MARKER MODEL,
+rev 24.4's PART M), two views, one sentence each: AS A LANGUAGE FEATURE (the draft's statement, on his
 ground "differentiate between a label and a capture"), a label is read only by the language's conditions, defaults,
 joints, `$x`, `some` and `occurs`, so its lifetime (the pass's own, seen at the outermost view) defines a feature
 of the language and regex's captures stay untouched, inside rx text (`\k<m>` on `9:45,10,45` reads `45` where the
@@ -1248,9 +1277,9 @@ WHAT A CONDITION CAN OBSERVE OF A PATTERN BESIDES ITS LABELS AND ITS RESULTS' OR
 box that exposes labels"; nothing chosen): each is an explicit request (its feature named) or a slugged question.
 | observed | through | status |
 |---|---|---|
-| the STRETCH (a result's own text) | the right operand of `&` and `!B`, run on it (R.1.4); `0:` ("the whole match", 12:25) | requested by writing `&` / `0:`; what `0` names in a nested place is **zero-place**; whether an operand's lookarounds see past it is **operand-context** |
-| the HIT LIST | `hits(r)` | requested (§R.6 above); whose hits **hits-text**, which list **hits-committed**, a hit as a pass **hits-pass** |
-| the PASS FORMS (every pass's values) | `some`, `occurs.*`, `h[2]`, `$h[2]` | requested (the PASS TABLE row above); they tell same-result patterns apart (PART P SAME-1: `(h[2]: <5)` 2 / 14 / 14 of 364), so **same-results** states the principle for label conditions; whether they read each pass's own labels is **some-own**; a bare `$h` is **pass-list-read** |
+| the STRETCH (a result's own text) | the right operand of `&` and `!B`, run on it (R.1.4); `0:` ("the whole match", 12:25) | requested by writing `&` / `0:`; rev 24.4: `0` is the whole match of the pattern it is written on (zero-place RULED); an operand sees nothing past the stretch, any piece that might is refused (operand-context RULED) |
+| the HIT LIST | `hits(r)` | requested (§R.6 above); rev 24.4: atomic and anchored (hits-text, hits-committed RULED); a hit as a pass **hits-pass** |
+| the PASS FORMS (every pass's values) | `some`, `occurs.*`, `h[2]`, `$h[2]` | requested (the PASS TABLE row above); they tell same-result patterns apart (PART P SAME-1: `(h[2]: <5)` 2 / 14 / 14 of 364), so **same-results** states the principle for label conditions; whether they read each pass's own labels is **some-own**; rev 24.4: a bare `$h` reads the label (RULED), the other passes by the array form |
 | a lookahead's labels | the outer path's labels | PCRE's; **lookahead-labels** |
 | an INNER view (a label inside an inner loop) | a condition nested at that level (R.1.7) | RULED (nested-pass): by nesting, not observed from outside |
 
@@ -1335,6 +1364,24 @@ behavior"; item 14's reading is a backtracking verb, R.1.4).
 MANAGER'S READINGS WITH A REGEX MODEL, closed by the 12:55 direction (the model entails them): **three-valued**
 (retired: E1, V5), **record-under-not** (dissolved: E2), **condition-or** (deleted: E3, V13).
 
+RULED BY THE OWNER the rest of the evening (rev 24.4; COND-FAMILY, the entries from "OWNER RULING — operand-context"
+to the end of the file; removed from the questions, each applied where named):
+- **before-and-inside**: DISSOLVED by the one label rule ("branchings reset the labels inside them": "Yes. Let's keep
+  it"): a name set before a loop and inside it does not survive the loop (R.1.7; rev 24.4's PART N). Its three
+  candidates of rev 24.3 are the record; the one rule gives "last pass's own" on its texts (`3;` and `7;3;` unset).
+- **joint-last-pass** stays DISSOLVED (a bare joint reads the last pass's own tuple; R.1.7 (i)).
+- **pass-list-read**: an unqualified `$x` reads the LABEL, as `x:` ("I do want that. It makes sense and frankly pcre is
+  wrong on this"); the carried-capture form and the array form REQUIRED, each a visibly different spelling, the array
+  its own type (R.1.7, THE THREE READS).
+- **hits-text** and **hits-committed**: the hit list is the one-pattern search made ATOMIC and ANCHORED to its text
+  ("hits-text: yes but spelling to be reviewed with all other spellings"; R.1.9).
+- **join-order**: the LEFT side decides ("join-order: left side decides. That's always how I thought of it"; R.1.4).
+- **zero-place**: a pattern's numbers are labels of its own groups; `0` its whole match ("That's its whole world. So
+  all numbers are labels of groups in that world"; R.1.4).
+- **operand-context**: any piece of a filter that might look outside is a compile error ("Then if we discover later we
+  can relax it we can review"); THE FILTER SENTENCE replaces the 11-15 anchor wording (R.1.4; the refused set is THE
+  DRAFT'S READING, listed there).
+
 REV 24.3 SPLITS THE REST IN TWO (review r42; the manager's dispositions): (a) what the manager TELLS the owner, each a
 reading the rulings entail, with its witness; (b) the QUESTIONS still asked. Every answer below is from rev 24.3's
 engine (PART Q unless named; its whole PART Q re-ran under rev 24.3 with 0 changed lines, PART 0, so rev 24.2's
@@ -1360,19 +1407,15 @@ the texts that differ, and the rulings it touches, RE-RUN.
 
 | slug | the question | THE DRAFT'S READING (current) | WHOLE / SEARCHED / several matches, per candidate | the texts that differ from the draft's reading | what each costs; the earlier rulings it touches, RE-RUN |
 |---|---|---|---|---|---|
-| **before-and-inside** (new) | a label set BEFORE a loop and again inside it (duplicate names, `/(?<h>\d)?(?:;(?<h>\d)?)*/ & (h: <5)`): does a pass that sets none unset the outside value too, or does the outside setting stand? DENOTES: which group's value the one label denotes after the loop | not stated (no ruling; R.1.7 speaks of labels set inside a loop) | WHOLE (direct evaluator): `3;` CARRY HOLDS, LAST PASS'S OWN FAILS (the pass `;` set none), KEEP-OUTSIDE HOLDS (the outside `3`); `7;3;` HOLDS / FAILS / FAILS. libpcre2 models: SEARCHED `7;3;` CARRY `7;3;`@0, LAST PASS'S OWN `7;3`@0, KEEP-OUTSIDE `7;3`@0; FIND-ALL `3; 7;3;` CARRY [`3;`@0, `7;3;`@3], LAST PASS'S OWN [`3`@0, `7;3`@3], KEEP-OUTSIDE [`3;`@0, `7;3`@3] | last pass's own vs keep-outside 10 of 364 (holds; WHOLE, a direct evaluator); carry vs last pass's own 18, carry vs keep-outside 14 | last pass's own: one rule (the label is the last pass's own); keep-outside: the outside group is not in the loop, so a pass cannot unset it. Each has a libpcre2 model (the outside group renamed h0; 0 of 364 differ, holds). Touches label-twice (11-16, STANDS) |
-| **looped-warning** (the manager's proposal, 14:30 and the evening; NAME proposed `label.looped`) | WARN (`label.looped`) when a bare condition after a pattern reads a label set inside a loop? DENOTES nothing (a diagnostic) | no warning (rev 24's text); the manager proposes one | bare `/(?:(?<h>\d);)*/ & (h: <5)` (warns): `7;3;` HOLDS h = `3` / `3;7; 7;3;` -> `3;`@0 / `7;3; 3;7;` [`7;3;`@0, `3;`@5]; the item form `/(?:${item})*/`, item := `/(?<h>\d);/ & (h: <5)` (silent): FAILS / `3;`@0 / [``@0, ``@1, `3;`@2, ``@4, `3;`@5, ..] | no answer moves (a warning); the item form it would point at differs from the bare form on 2 / 324 / 364 of 364 (holds and stretch) | warning: a reader who means "every pass" is pointed at the item form; it would flag 28 of this file's programs (PART Q lists them). ITS COSTS (review r42 C2): it fires on the meaning he RULED ("Last pass own label makes sense"), so every correct use warns; it SEPARATES the same-results pair SAME-1 (`/(?:(?<h>\d);)*/` warns, `/(?:(?:\d;)*(?<h>\d);)?/` does not), against the black box; under a strictness setting selecting every warning (`@options.strict(/.*/)`) those correct programs become ERRORS. None: last-pass-default as ruled, silent |
-| **hits-text** (A4; UNCHANGED, PART Q H3 0 / 0 / 0 of 341) | "all the hits of a search": the hits of the MATCHED STRETCH or of the SUBJECT? | the stretch: the hits of a global search of the text each reported stretch spans (procedure in rev 24.1: "re-run inside each stretch the pattern tries"; DENOTES: the hits within the stretch) | H3 `hits(/(?<n>\d+)/) & occurs.none(NOT (n: <100))`: STRETCH `1234` FAILS / `x300 12` -> `x30`@0 hits [`30`] / `1234 5 300` -> [`12`@0 [`12`], `34 5 30`@2 [`34`,`5`,`30`], `0`@9 [`0`], ``@10]; SUBJECT FAILS / `x30`@0 hits [] / [`123`@0 [], `4 5 30`@3 [`5`], `0`@9 [], ``@10]; WHOLE-ONLY FAILS / REJECTED / REJECTED | subject 0 / 56 / 56 of 341 (first `111`: hits [`11`] vs []); WHOLE-only 0 / 341 / 341 | stretch: hits no search of the subject gives (`30` in `x300`); subject: needs the missing subject-level piece of §R.5 (b) (`text.none`); WHOLE-only: `hits` gone from searched programs. RE-RUN W8: 0 (stretch) vs 0 / 56 / 56 (subject); W9 0 vs 0 |
-| **hits-committed** (B1; RESTATED: its hits are passes, **hits-pass**) | a group question over the named hit list reads the committed list, or the one-pattern hits? DENOTES: which list of hits `hits(r)` names | the committed list | every hit of `/(?<n>\d+)/` under 100: COMMITTED `1234` FAILS / `x300 12` -> `x30`@0 [`30`] / three matches; ONE PATTERN HOLDS hits [`12`, `34`] / ... (E4); UNCHANGED (0 / 0 / 0 of 341). With an optional label it MOVES under rev 24.2: `occurrences(/a(?<g>x)?/) & (g: "x")` on `axa` HOLDS hits [`ax`] (rev 24.1 [`ax`, `a`]); `hits(/a(?<g>x)?/) & (g: "x")` FAILS (the last committed hit `a` has no g; rev 24.1 HOLDS) / `ax`@0 / `axa ax` [`axa ax`@0] | 56 / 56 / 56 of 341 rr (first `111`); the optional-label pair 42 / 42 / 42 of 364 each, rev 24.1 vs rev 24.2 | committed: W8, W9 hold at 0; one pattern: drops the hit list's reason to exist (W9's old meaning differs 20 / 20 / 20 of 85) |
-| **join-order** (A5, B1; UNCHANGED, 0 of 1,365) | `P & Q`: whose paths are the outer loop? DENOTES: which pair of paths is FIRST among the pairs both sides admit (procedure in rev 24.1: "goes first") | the LEFT side's | `G & L`: LEFT `11` HOLDS a = c = `11` / `11`@0 / `11 123` [`11`@0, `123`@3]; RIGHT HOLDS / `1`@0 / [`1`@0, `1`@1, `1`@3, `2`@4, `3`@5] | `G & L` 0 / 1,008 / 1,197 of 1,365 rr; `(P & Q) & ((a: "1") \| (c: "1"))` 117 / 414 / 414 (E5) | either order has its PCRE2 model (V19, V21, V22). RE-RUN, left / right: `X & (B \| A)` distributes 0 / 1,008 / 1,197 vs 0; `(B \| A) & X` 0 vs 0 / 1,008 / 1,197; the LAW with a lazy B 0 vs 0 / 1,008 / 1,197 (the LAW holds only with the left outer) |
-| **pass-list-read** (B9; RESTATED: "last" is the last pass's own, no longer the capture) | a bare `$h` on a value side when h is looped: the last pass's own value or the pass list? | the pass list (§R.4's `sorted`/`distinct` read it); a scalar comparison with a list has no stated meaning | `/(?:(?<h>\d);)*(?<k>\d)/ & (k: == $h)`: PASS LIST REJECTED; LAST `3;7;7` HOLDS h = k = `7` / `3;7;3` FAILS / `3;7;7 7;3;3` [`3;7;7`@0, `7;3;3`@6] (UNCHANGED, 0 of 364); with an OPTIONAL h, `/(?:(?<h>\d)?;)*(?<k>\d)/`: LAST `7;;7` FAILS / FAILS / `7;;7 3;3` [`3;3`@5] (rev 24.1 HOLDS on `3;;3`: 6 / 16 / 16 of 364 move); SOME PASS HOLDS / `3;7;3`@0 / two; EVERY PASS FAILS / FAILS / [`7;7`@2, `3;3`@8] | every candidate vs REJECTED: all 364 | last: with a mandatory h and ONE group named h it equals libpcre2's backreference `\k<h>` (0 of 364; with duplicate names `\k<h>` reads the first SET group, not the last pass's: §R.6, PART Z, review r42 A6); with an optional h the label and the capture part (R.1.7 (5), PART L), so `\k<h>` is no longer its model. Pass list: `sorted($h)` stays as written; a scalar comparison needs a rule (some / every). RE-RUN U6 (`$a` set once): unchanged under every candidate |
-| **zero-place** (C4; UNCHANGED, 0 of 1,365) | what `0` ("the whole match", 12:25) names inside a nested place: the INNERMOST stretch, or PCRE's group 0? | not stated (rev 24 stated the LAW at the top level only) | `occurrences(/\d+/ & (0: /1\d*/), min = 1)`: INNERMOST ` 1` HOLDS hits [`1`] / ` 1`@0 / [` 1 12`@0 hits [`1`, `12`]]; GROUP 0 FAILS / `1`@1 / [`1 12`@1 hits [`1`]] | innermost 0 of 1,365 from `occurrences(/\d+/ & /1\d*/)`; group 0 738 / 738 / 738 rr WITH HIT LISTS compared, 660 / 660 / 660 on holds and stretch only (78 texts differ only in the hit list; PART Z, review r42 D1; the hit-list part has no libpcre2 control) | innermost: the LAW holds in every place, and `0` is the label the innermost box exposes (rulings R2); group 0: libpcre2's group 0 at a callout (equal to the engine, holds and stretch, 0 of 1,365), the LAW a top-level law only. RE-RUN D5 (top level): one reading, 0 |
-| **operand-context** (NARROWED, rev 24.3: the owner RULED `\b` on 2026-11-15, §R.6) | which constructs does "certain contextual rx like \b in a filter rx that would exceed the span" cover, beyond `\b` (ruled) and edge lookarounds (the manager's reading recorded with the entry)? COVERED = the edge-assertion ERROR in a filter operand; NOT COVERED = it runs on the span (the stretch) | `\b` and edge lookarounds covered (§11); `\B`, `\G`, `\K` and lookarounds INSIDE the operand that reach past the span: not stated | `/\d+/ & X` (PART K): `\B\d+` COVERED: REJECTED; NOT COVERED: `1` FAILS / `a1` FAILS / `a11 1a1` [] (the subject reading, excluded by the ruling: FAILS / `1`@1 / [`11`@1, `1`@6]); `(?<=a)\d+` (lookbehind) REJECTED vs FAILS / FAILS / []; `\d+(?![a-z])` (lookahead) REJECTED vs `1` HOLDS / `1a` -> `1`@0 / `11a 1a1` [`11`@0, `1`@4, `1`@6]; `\G\d+` REJECTED vs HOLDS / `a1` -> `1`@1 / [`11`@1, `1`@4, `1`@6]; `\d\K\d*` REJECTED vs HOLDS / `1`@1 / the same three | covered vs not: every text the operand applies to (REJECTED is a compile error); stretch vs the excluded subject reading, of 121: `\B` 0 / 52 / 52, lookbehind 0 / 33 / 33, lookahead 0 / 32 / 33, `\G` and `\K` 0 / 0 / 0 (the harness's subject model puts `\G` at the stretch's start, not PCRE2's search start: a stated limit) | covered: one rule (anything that can read past the span is refused; the author writes it in the pattern that places the operand); not covered: the construct runs on the stretch and the LAW `A & B` = `A & (0: B)` holds (D5). `\B`, a lookbehind and a lookahead read the character next to the span as `\b` does; `\G` and `\K` read no character. RE-RUN: the 2026-11-15 ruling (anchors mean the span) unchanged; D5's lookaround pairs 0 under the stretch |
-| **shared-label** (ELEVENTH: R1 (c); UNCHANGED, not run) | a label named in both `&` operands: an error (the draft), or PCRE's duplicate-name reading under `(?J)`? | the error (§4.1, as rev 24's §R.5 cites it; no ruling located) | not run (the engine has no duplicate-name join; §R.5's F2 renames to avoid it) | not run | error: one value per label; PCRE's reading: which operand's value a condition reads needs a rule (join-order decides the outer row) |
+| **looped-warning** (the manager's proposal, 14:30 and the evening; NAME proposed `label.looped`) | WARN (`label.looped`) when a bare condition after a pattern reads a label set inside a loop? DENOTES nothing (a diagnostic) | no warning (rev 24's text); the manager proposes one | bare `/(?:(?<h>\d);)*/ & (h: <5)` (warns): `7;3;` HOLDS h = `3` / `3;7; 7;3;` -> `3;`@0 / `7;3; 3;7;` [`7;3;`@0, `3;`@5]; the item form `/(?:${item})*/`, item := `/(?<h>\d);/ & (h: <5)` (silent): FAILS / `3;`@0 / [``@0, ``@1, `3;`@2, ``@4, `3;`@5, ..] | no answer moves (a warning); the item form it would point at differs from the bare form on 2 / 324 / 364 of 364 (holds and stretch) | warning: a reader who means "every pass" is pointed at the item form; it would flag 28 of this file's programs (PART Q lists them). ITS COSTS (review r42 C2): it fires on the meaning he RULED ("Last pass own label makes sense"), so every correct use warns; it SEPARATES the same-results pair SAME-1 (`/(?:(?<h>\d);)*/` warns, `/(?:(?:\d;)*(?<h>\d);)?/` does not), against the black box; under a strictness setting selecting every warning (`@options.strict(/.*/)`) those correct programs become ERRORS. None: last-pass-default as ruled, silent. REV 24.4: the one rule moves none of these answers (rev 24.4's PART B, the bare form 0 / 0 / 0 against rev 24.3's rules); it widens the question: a label read after an OPTIONAL or an ALTERNATION is now reset by the same rule, so a warning "for a label set inside a loop" names one kind of branching out of three |
+| **shared-label** (re-examined under the one rule, rev 24.4) | a label named in BOTH operands of `&`: an error, or one name (a label is a name, R.1.7) read as its LAST MENTION, or the LEFT operand's? DENOTES: which operand's value the one label denotes. NOT ENTAILED by the one rule: "last mention" needs an ORDER of mentions, and `&` is symmetric for holding (join-order); the ruled left-to-right order is the order of what is REPORTED, and reading it as the order of mentions is a further step nobody ruled; so still a question, not a manager's reading to be told | the ERROR (§4.1, as rev 24's §R.5 cites it; no ruling located) | rev 24.4's PART S, `/(?<h>\d)\d/ & /\d(?<h>\d)/ & (h: <2)`: ERROR REJECTED x3; LEFT WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` -> `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6]; LAST MENTION (the right operand's) `12` FAILS, `21` HOLDS / `21`@0 / [`21`@3, `10`@6]; with a right operand whose own optional resets it, `/(?<h>\d)\d/ & /\d(?<h>[a-z])?\d/`: LEFT as before, LAST MENTION FAILS everywhere (h unset) | LEFT vs LAST MENTION 4 / 134 / 150 of 341 (holds and stretch; first `02`); either vs ERROR every text | error: one value per name per `&` chain; last mention: one rule with sequences, the right operand's own branchings reset it; left: the reporting side's value. Touches join-order (RULED; re-run: unchanged, PART J) and label-twice (STANDS) |
 | **label-twice-warn** (R5) | a label named twice in one condition: the ERROR (RULED, **label-twice**, 11-16 13:16) or a meaning, the `&` of the two tests, with a warning? | the error (ruled) | `/(?<h>\d+)/ & (h: >2, h: <5)` (PART Y): ERROR REJECTED / REJECTED / REJECTED; THE `&`: `3` HOLDS h = `3` / `x7 3` -> `3`@3 / `3 4 7` [`3`@0, `4`@2] | every text (REJECTED vs a meaning) | error: as ruled; the meaning: polarity-rule's treatment applied to another "probably a mistake". Touches label-twice (STANDS until he says otherwise) |
 | **empty-search-error** (R5) | a NULLABLE final pattern SEARCHED in a predicate program (§7 THE EMPTY-MATCH HAZARD): an ERROR, or PCRE's empty matches with the warning `empty.search`? | the error for a predicate program (a warning for a plain literal) | `/(?<h>\d*)/ & NOT (h: <5)` (PART Y): ERROR REJECTED x3; PCRE'S `` HOLDS h = `` / `a7` -> ``@0 / `7a3` [`7`@0, ``@1, ``@2, ``@3] | every text | error: no empty-match surprise; PCRE's: one rule with the plain literal (regex, the default), FIND-ALL by PCRE2's global loop (R.1.2) |
 | **min-values** (R5) | `occurrences(.., min = n)` with n other than 0 or 1: an ERROR (§2.6, LEAN) or at least n hits? | the error | `occurrences(/\d/, min = 2)` (PART Y): ERROR REJECTED x3; AT LEAST n `1a2` HOLDS hits [`1`, `2`] / `1 a2 3` -> `1 a2 3`@0 / `12 3 45` [one match, five hits] | every text | error: one spelling (`occurs.at_least`); at least n: the obvious meaning, two spellings |
-| **dollar-condition** (R5) | `$x & S` used as a condition (§4.1, L28): an ERROR ("did you mean `x: ...`?") or `(x: S)`? | the error | `/(?<x>\d+)/ & ($x & <5)` (PART Y): ERROR REJECTED x3; AS `(x: <5)` `3` HOLDS / `7 3` -> `3`@2 / `3 9 4` [`3`@0, `4`@4] | every text | error: `$x` keeps its one meaning (a value); the reading: two spellings of one test |
+| **dollar-condition** (R5) | `$x & S` used as a condition (§4.1, L28): an ERROR ("did you mean `x: ...`?") or `(x: S)`? | the error | `/(?<x>\d+)/ & ($x & <5)` (PART Y): ERROR REJECTED x3; AS `(x: <5)` `3` HOLDS / `7 3` -> `3`@2 / `3 9 4` [`3`@0, `4`@4] | every text | error: `$x` keeps its one meaning (a value); the reading: two spellings of one test. REV 24.4: an unqualified `$x` reads the LABEL exactly as `x:` (RULED), so the reading candidate gives `(x: S)`'s answers on every text, a looped x included |
+| **pass-start-read** (new, rev 24.4) | a condition inside a loop body written BEFORE its label's group, with no branching around that group: does it read the PREVIOUS pass's value (the one rule as worded: the loop resets only when entered), or unset (each pass also resets the names of its body, as rev 24.3's "a pass has its own labels" did)? DENOTES: whether a pass is itself a branching entered anew | the previous pass's value: the ruling's literal text (R.1.7); not chosen | rev 24.4's PART C, `/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5): ONE RULE AS WORDED WHOLE `3;7;` HOLDS, `7;3;` FAILS / SEARCHED `7;3;` -> `7;`@0 / FIND-ALL `7;3; 3;3;` [`7;`@0, `3;`@2, ``@4, `3;3;`@5, ``@9]; EACH PASS RESETS (rev 24.3) `3;7;` HOLDS, `7;3;` HOLDS / `7;3;`@0 / [`7;3;`@0, ``@4, `3;3;`@5, ``@9] | 2 / 8 / 14 of 364 rr; with the group optional 15 / 29 / 47 of 364; inside an alternation in the body 0 of 1,365 | as worded: one rule, no per-pass reset, the same answers as PCRE's capture here; each pass resets: rev 24.3's answers, a pass's labels its own everywhere in the pass. RE-RUN: every line rev 24.3 printed is the same under both (PART A, 82 of 82; PART B, 16 programs 0), since none places a condition before its group |
+| **array-slot** (new, rev 24.4) | the ARRAY form takes every setting of the name in order (ruled); does a setting that a later branching RESET leave an EMPTY SLOT, or is it left out? DENOTES: the array's length and positions | left out (the ruling lists settings; a reset is not a setting): THE DRAFT'S READING | rev 24.4's PART N, `/(?<h>\d)?(?:;(?<h>\d)?)*/` on `7;;3;` WHOLE: LEFT OUT [`7`, `3`]; SLOTS [`7`, -, `3`, -] (each reset after a setting); the array decides no match: SEARCHED and several-match subjects report the same stretches under both, only the arrays differ | every text where a branching resets a set name | left out: the array is "every h" as he said; slots: an index `@h[k]` lines up with the pass that set it (the pass table's view) |
+| **numbered-label-warning** (new, rev 24.4; the manager's proposal in the zero-place RECORD, MINE) | WARN when a NUMBERED label is read on a pattern not written at that place (a bound pattern whose groups the reader cannot see)? DENOTES nothing (a diagnostic) | no warning | `t := /(\d+):(\d\d)/` then `t & (2: >= 30)` (warns) against `/(\d+):(\d\d)/ & (2: >= 30)` (silent); the answers are the same in every mode (a warning) | no answer moves | warning: the owner's "not recommended to use group numbers as it's confusing on bound values you can't see" said where it applies; none: the documentation entry alone (item 24 entry 10) |
 
 REMAINING (open, not owner questions here, or already asked):
 
@@ -1390,6 +1433,24 @@ REMAINING (open, not owner questions here, or already asked):
 | **every-pass-spelling** | OPEN (14:30); the owner the evening: "assign the condition inside the loop to get the all behavior" | a named shorthand for `some(c) & occurs.none(NOT c)` | §R.4 W1a, W1b | candidates: W1a's hole loop (the item form, his evening words), W1b's group questions, his `loop` over a conditioned item (item 21). THE MANAGER'S INPUT, not a ruling (the kind-of-language entry's MINE; his words "it looks like functions and predicates and loops but it's not"): a name should not invite the imperative or set reading (review r42 RULING-15) |
 | **rx-module** | FILED (item 21) | an `rx` module and a concatenation operator; reopens §2.5's lean; one more reason (rulings R1 (d)): a condition between an inner loop and the rest of the outer body (R.1.7, inner view (ii)) is written today only by a hole in a literal; its naming ("loop") carries the kind-of-language MINE as the manager's input (names should not invite the imperative reading; review r42 RULING-15) | none | design note (lane rxlib) |
 
+THE SPELLINGS PUT OFF TO ONE REVIEW (rev 24.4; one list; each with the MEANING already ruled; NO proposal here; D193
+addendum 4: every spelling in this file is a placeholder). The owner: "hits-text: yes but spelling to be reviewed with
+all other spellings".
+
+| # | the thing to spell | the meaning already ruled (where) |
+|---|---|---|
+| 1 | the HIT LIST (`hits(r)` here; his `all_matches(rx)`) | the one-pattern search made atomic and anchored to its text (hits-text, hits-committed; R.1.9) |
+| 2 | the ARRAY FORM (his example: Perl's `@x`) | every setting of the name in order, the one outside the loop included; its own type, compared with a single value only through some or every (pass-list-read; R.1.7) |
+| 3 | the CARRIED-CAPTURE FORM ("even if ugly") | PCRE's capture: the value from the last time a group of the name was set (the `$x` ruling; R.1.7) |
+| 4 | ATOMIC (`atomic(...)` here; the manager's `(?>...)` not adopted) | PCRE's atomic group (regex-settles (5); atomic-search closed; R.1.4) |
+| 5 | the NO-RE-ENTRY SEQUENCE (his `A :: B`) | "match A then B but don't go back into A", `(?>A)B` (an idea, `predicates_future.md` item 19) |
+| 6 | the SKIP-PAST VERB ("(*prune) or similar") | judge the first match, then resume the search after it; on his text the behaviour is PCRE's (*SKIP) (THE MANAGER'S READING of his words; item 19) |
+| 7 | the CONDITIONAL (`when(c, p)` here; `?` not assumed: "? Has a meaning in regex") | `x & (NOT c \| p)`, the else form `x & ((c & p) \| (NOT c & q))` (when-meaning; R.1.10) |
+| 8 | an EVERY-PASS SHORTHAND | `some(c) & occurs.none(NOT c)`; his evening form: the condition on the item (R.1.7; **every-pass-spelling**) |
+| 9 | OPTIONS AND STRICTNESS (his `@config.strict()`, `@options.strict(/no-fail/)`) | warnings become errors under a strictness setting, selectable by name (polarity-rule; §R.2; item 20, item 23) |
+| 10 | WARNING NAMES (the draft's dotted names `test.never`, `anchor.whole`, `label.looped` proposed) | a named warning per "probably a mistake" (polarity-rule; §7.1) |
+| 11 | the RX-MODULE OPERATORS (a concatenation operator, `rx.loop`, a quantifier operator) | patterns without rx literals (item 21; `rx_module.md`; its own questions there) |
+
 THE LABEL AND THE RX MODULE (rev 24.1's ramification (e), kept): `docs/design/rx_module.md` spells a labelled part
 `[h = X]` and, by §3.1, that IS `(?<h>X)`: the form gives a capture (regex's, carried) and a label (the language's,
 the pass's own) from one group; R.1.7 (5) needs no new form, only the two lifetimes.
@@ -1402,6 +1463,12 @@ are reproduced (PART S S1-S4, each equal to its helper-group model and, rev 24.3
 PART U S1, V29, S4). REV 24.3: no fix moved an answer the owner was shown (PART 0: 0 changed lines of rev 24.2's
 answer file, PART S included); nothing stopped under the STOP RULE. One manager's restatement conflicts with a
 ruling: sql-picture's atomic clause against regex-settles (5); the ruling wins, the clause is flagged above.
+REV 24.4: the one label rule REPLACES the per-pass rules, so every answer the owner was shown was re-run under it
+(rev 24.4's PART A: the `3qxx` table S1, the `m = 00` table S2-S4, the `late` lines on `10:00` and `10:15` texts S5,
+the nested `3;,` lines; the hit-list run in PART H): 0 of 82 printed lines differ; nothing STOPPED. The two answers
+the record names as CHANGED by the ruling come out changed as named (the one-item separated list: unset; the
+manager's earlier "`3` -> h = 3" for a loop that makes no pass: unset). One place where the one rule and rev 24.3's
+rules part is NEW (no shown or printed line sits there): **pass-start-read** above.
 
 ### R.9 Reversed, narrowed and reopened rulings; marked sections
 
@@ -1423,6 +1490,13 @@ REVERSED, NARROWED OR REOPENED (each marked where it stood):
 | §2.5's 2026-11-13 LEAN against a concatenation operator (the manager's) | §2.5, §2.2 | REOPENED by his 14:30 proposal and the 14:55 addendum (item 21) |
 | §2.6 THE ITERATION'S OWN VALUES (rev 10 LEAN) | §2.6, §4.3 | rev 24.1: SUPERSEDED by PCRE's capture state; rev 24.2: RULED in substance by after-loop-read and nested-pass (a pass has its own labels; the outermost view), R.1.7 |
 | 13:30's two alternatives ("prove itself" / "requested by name") | rev 24's §R.6, §R.8 | SETTLED by exception-rule (evening): "Exceptions should be requested by using those features explicitly"; regularity is not the bar |
+| rev 24.2-24.3's per-pass label rules (2) the last pass's own, (3) "a pass has its own labels", (4) the outermost view, (4a), (4b) | rev 24.3's R.1.7 | REPLACED by ONE rule (rev 24.4), "branchings reset the labels inside them": "Yes. Let's keep it"; (2), (4), (4a), (4b) and (3) at the pass's end FOLLOW (R.1.7, run); (3) before a group inside a pass does not: **pass-start-read** |
+| the manager's restatement "each loop pass begins by unsetting the names its body can set" and "a group whose START the match reaches but which does not match is a mention" (before-and-inside discussion, MINE) | COND-FAMILY only | SUPERSEDED by the one rule (entering a BRANCHING resets) |
+| the pass-list-read entry's "unqualified it is the last pass as standard pcre" | rev 24.3's §R.8 pass-list-read row | NARROWED by the `$x` ruling: "I do want that. It makes sense and frankly pcre is wrong on this": `$x` reads the label (true of PCRE wherever the group takes part in the last pass) |
+| the 11-15 anchor wording ("^...$ meant the start and end of the filtered condition") | §R.6, §11 | REPLACED by the FILTER SENTENCE: "operand-context: yes to that interpretation"; no answer changes |
+| the 2026-11-15 refusal of "certain contextual rx like \b" | §R.6, §11 | WIDENED by operand-context: "any piece that might look outside is a compiler error" (the refused set THE DRAFT'S READING, R.1.4) |
+| rev 24.1-24.3's hits-text reading (the hits of the MATCHED STRETCH, re-run in each stretch) | R.1.9, §R.8 | REPLACED by the hit-list ruling: atomic and anchored to the text it is applied to; standing alone in a searched program, the whole subject (`x300 12` SEARCHED: `x30`@0 -> FAILS) |
+| the manager's "left side first" told at 13:45, then WITHDRAWN (rev 24.1) | R.1.4 | RULED by join-order: "left side decides" |
 
 MARKED SECTIONS (each carries a "[REV 24]" or "[REV 24.1]" mark at its head or inline, naming what is superseded):
 rev 24's: §0 status; §0.1 (rows L16, L30, L34, L36, L52, L55, L59, L60, L82, L83, L88); §0.2; §0.3 (pass, PCRE's
@@ -1437,7 +1511,9 @@ the rule); §4.2 (absence in a pass); §4.3 THE PAIRING RULE (the bare joint pai
 never-passing test is the WARNING `test.never`); §7.1 (THE WARNING TABLE, labelled "(rev 24.2 ...)" rather than
 bracketed; review r42 RULING-11). Rev 24.3's (each "[REV 24.3]"): §2.6 (the kept `abb` example HOLDS g = `a`,
 RULING-12); §4.3 (the `\k<x>` sentence: the capture, not the label, and a duplicate name's first set group, A6);
-§7.1 (the unsettable label is the warning `test.never`, C4; `label.looped` proposed, C2).
+§7.1 (the unsettable label is the warning `test.never`, C4; `label.looped` proposed, C2). Rev 24.4's (each "[REV
+24.4]"): §4.3 (duplicate labels: the one rule, R.1.7); §11 (the filter sentence and the refusal of any piece that
+might look outside, R.1.4).
 §16 and the changelog are the record and are not marked.
 
 ### R.10 Evidence
@@ -1475,6 +1551,25 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
   as on), nor is any line of PARTS 0-Q (no pool has a nullable body); predspec242b's own sabotage keeps its reach
   (PART B, the S4 line and the nullable bodies unreached; SAME-1 and SAME-4 absent from its CHECKS line). The critics'
   scripts re-run against rev 24.3's engine (lane scratch; report EVIDENCE AND COMMANDS) agree with PARTS X and U.
+- REV 24.4 (lane predspec244, `docs/dev/lanes/predspec244_evidence/predspec244_model.py`): a NEW, small path
+  enumerator (no patch of the earlier engines; a regex subset parsed in the file; conditions are callout nodes), with
+  three label rules: 244 (the one rule: entering any branching resets the names inside it), 243 (rev 24.3's: a loop
+  resets on entry and at every pass start) and carry (PCRE's capture). Its control: libpcre2-8 10.46, plain for the
+  capture (equal on REP, 0 of 364 x 3) and THE MARKER MODEL for the one rule (R.1.7; 10 programs, 0 differ each).
+  Forward run (`predspec244_model.out`, committed; from `$PCREC_TMPDIR/scratch/predspec244`, `timeout 1800 python3 -I
+  -B <worktree>/docs/dev/lanes/predspec244_evidence/predspec244_model.py`, well under a minute): PART A 82 printed
+  label lines of rev 24.3, 0 differ under the one rule and 0 under the switch back (rule 243); PART B 16 programs,
+  the one rule vs rev 24.3's rules 0 / 0 / 0 each, and the carry-vs-rule counts rev 24.3 printed reproduced (28 / 40
+  / 40, 8 / 33 / 33, 5 / 34 / 34, 4 / 7 / 11, 10 / 20 / 20): the new engine agrees with the old one where they
+  overlap; PART C where the rules part (pass-start-read); PART L the separated list; PART M the marker model and the
+  ORDER CHECK (without markers 9 of 10 programs DIFFER); PART N two groups of one name, with libpcre2 under `(?J)`;
+  PART H the hit list on libpcre2 (the model and the failed first try); PART F the filter sentence's refusals; PART J
+  join order and zero-place; PART S shared-label's candidates; PART D the review drills. CHECKS 128 of 128 OK. The
+  SABOTAGE (`PREDSPEC244_SABOTAGE=1`: the one rule resets only on entering a LOOP, not an alternation or an optional):
+  checks SABN OK (the printed lines on S1-S5, REP, NEST, the empty pass, the marker-model comparisons and the
+  duplicate-name lines FAILED): caught. The SWITCH (`PREDSPEC244_RULES=243`) changes the default rule of the parts
+  that take one (H, F, J); PART A runs both rule sets on every line in every run. PREMISE: predspec243's engine
+  re-ran byte-identical to its committed .out (its checks 37 of 37).
 - LIMITS, stated: the engine has no backreference node (PART L, label against capture, is libpcre2 only, its label
   side the helper-group model); a label set before a loop and again inside it (duplicate names) is run by rev 24.1's
   direct WHOLE evaluator and by libpcre2 models with the outside group renamed; rev 24.1's limit on a condition
@@ -1527,6 +1622,18 @@ its capture starts at or after every helper; plain PCRE2 is the CAPTURE's readin
 | 41 | CORRECTIONS (the manager, review r42 B3, C1): the atomic-search run's fragments were a toy rule's; "(*SKIP), not (*PRUNE)" is the manager's reading; the ADDENDUM's "(the end of each pass)" SUPERSEDED | applied | R.1.4, R.1.7, §R.8 |
 | 42 | OWNER — empty-pass confirmed, and its CORRECTION: ""A loop's empty last pass counts as a pass": makes sense as the entire rx is optional"; "It's not so much a ruling as an observation" | an OBSERVATION, not a ruling: empty-pass stays THE MANAGER'S READING, told | R.1.7 (4a), §R.8 (a) |
 | 43 | OWNER, on pass tests over nested loops: ""pass tests on a label two loops deep read the outer passes" this is how i expected" | his confirmation of THE MANAGER'S READING (entailed by nested-pass); not asked as a ruling | R.1.7 (4b), §R.8 (a) |
+| 44 | operand-context RULED: "any piece that might look outside is a compiler error ... if we discover later we can relax it we can review"; MINE: the conservative refused set | RULED; the refused set THE DRAFT'S READING | R.1.4, §R.6, §11 mark |
+| 45 | its ADDENDUM: "operand-context: yes to that interpretation. Also, then the start of subject and end of subject need the same interpretation" | RULED: the FILTER SENTENCE replaces the 11-15 anchor wording; `\A`, `\z`, `\Z` the same; MINE: `\G` stays refused | R.1.4, §R.6 |
+| 46 | join-order RULED: "left side decides. That's always how I thought of it" | RULED | R.1.4, §R.8 |
+| 47 | NOTE: autocorrect ("In concedes" = "It concedes"; "makes inlet into" = "makes it into"), confirmed: "Your interpretation was correct" | applied (quotes kept as received) | R.1.4 |
+| 48 | OWNER on what `hits` is: "hits-text: so hits is atomic ( and anchored ?)"; the manager's libpcre2 run | a question; its run re-run here | R.1.9 (rev 24.4's PART H) |
+| 49 | the hit list RULED: "hits-text: yes but spelling to be reviewed with all other spellings" | RULED: atomic and anchored; a regex model; spelling to the review | R.1.9, §R.6, §R.8 spellings 1 |
+| 50 | zero-place RULED: "That's its whole world. So all numbers are labels of groups in that world. Also, not recommended to use group numbers" | RULED; `0` MAY be added; MINE: a warning proposed (**numbered-label-warning**) | R.1.4, §R.8 |
+| 51 | pass-list-read RULED: "unqualified it is the last pass as standard pcre ... Eg Perl uses @x. An array of such values is its own type" | (1) NARROWED by row 53; (2), (3) RULED | R.1.7 |
+| 52 | pass-list-read REOPENED: "Then there at least 4 accesses" | discussion; closed by row 53 | history |
+| 53 | what an unqualified `$x` reads RULED: "I do want that. It makes sense and frankly pcre is wrong on this. I agree but! We need a way to get the pcre behavior even if ugly" | RULED: `$x` = `x:`; the carried-capture form REQUIRED | R.1.7 THE THREE READS, §R.8 spellings 3 |
+| 54 | before-and-inside, the owner's discussion in four parts ("The array takes all h including the one outside the group"; "the labels bubble up. Last pass and last mention"; "It's the entering of that group that causes the label to unset"; "It's not a loop. Like alternation, the "loop" is a branching") | discussion (his words); its array sentence RULED in row 55 (4) | R.1.7 |
+| 55 | branchings reset the labels inside them RULED: "Yes. Let's keep it" | RULED: ONE label rule; the one-item list unset ACCEPTED; before-and-inside DISSOLVED; duplicate names not an error | R.1.7, §R.6, §R.8 |
 | - | STAND from 11-15 / 11-16: row-is-match, default-scope, default-value, drop-mark, label-twice, optional-as-loop, the 11-15 `&` (one stretch), not-is-complement's first half | STAND | R.1.1, R.1.4, R.1.6 |
 | - | repeated-means (the manager's ruling, owner told 11-16 22:58 (4)) | MANAGER'S RULING | R.1.8 |
 
@@ -3246,6 +3353,8 @@ label in the ONE test that writes it, any text; `$a` reads the real label). In s
 
 ### 4.3 Repeated and duplicate labels: the general home of the group questions
 
+[REV 24.4 (§R.9): a label is a NAME and every branching resets the names inside it when entered (R.1.7, "branchings reset the labels inside them"); two groups of one name are ONE label and are NOT an error (a deliberate difference from PCRE); where a sentence below reads a duplicate name or a looped label otherwise, R.1.7 wins.]
+
 [REV 24 (§R.9): REVERSED here, 2026-11-14 Q4 ("`x:` = all iterations") by last-pass-default (2026-11-17 14:30, "last-pass-default: regex."): a bare condition on a looped label reads the LAST pass. Every sentence below giving a plain condition the every-pass meaning, the nested PASS TABLE as that meaning and its Kleene AND, is SUPERSEDED; each old meaning has its rev 24 spelling, run at 0 differences, in §R.4.]
 
 Rev 8's CONFLICT MARK (§13 C36: the priority parse vs the some-parse rule) is GONE: the ONE READING (§4.5, CF:953-955)
@@ -4446,6 +4555,8 @@ matcher (§11); self-describing files are a demonstration, not a driver.
 **STATUS.** LEAN (an idea, late in #6; CF:430 runtime eval + addendum).
 
 ## 11. The outer layer
+
+[REV 24.4 (§R.9): THE FILTER SENTENCE (R.1.4) replaces the anchor wording below as the rule: a filter is matched against the stretch as if the stretch were the whole text (`^`, `$`, `\A`, `\z`, `\Z` follow); the EDGE-ASSERTION ERROR is widened to ANY piece that might look outside (operand-context, RULED; the refused set THE DRAFT'S READING, R.1.4). No answer below changes.]
 
 **RULE.** The expression language is the OUTER layer: an rx is a LITERAL inside it, so a program that is just
 `/(a|b)+c/` is valid and every PCRE pattern is a one-literal program (no separate PCRE mode). A ONE-LITERAL PROGRAM
