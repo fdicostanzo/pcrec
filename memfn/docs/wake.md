@@ -17,6 +17,10 @@ Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows
 - R-45 plan A DELIVERED 12:17: lane/memfn-forms @ 105bf8ef4, done line [responses] 7f655c9e3; cloud test + axes GREEN.
   Reviews r44 r45 (on the forms branch), r46 (no FIX-NOW, on lane/memfn-k1108 4e2649fd5). Main's landing lane merges it
   into a branch off lane/covs2b @ 28af649c9 and sends the FROZEN sha (by 20:00).
+- MERGE RED (13:00): main's cloud test on the forms merged into the cover-cap line red in G2 presence (58 x more than
+  MF_MAX_TERM terms). Lane g2pcap (lane/memfn-g2pcap off lane/covs2land 4d56a2537): G2P_MAXRUN = min(64, MF_WSPAN_POS,
+  MF_MAX_TERM); re-pins; checks; dispatches cloud test as last act by 15:30. Main needs the tip GREEN by 18:00 (word by
+  15:00 if slipping); then main freezes the combined line for set 2.
 - SET 2 (form cards, 700-704; jobs /var/tmp/pcrec-pcrec/scratch/memfn/fcards/jobs/README.md): when main sends the frozen
   sha: `worktrees/fcards-night` at FROZEN, clean, pinned in .wtprune.keep; window.vars RUN_ID=fcards-zen4-1,
   FROZEN=<sha>; DRY-RUN the job set against it first (r44/r45 changed cards.py's run id + confirm rounds); queue 700-704
