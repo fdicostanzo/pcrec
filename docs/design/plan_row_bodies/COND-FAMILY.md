@@ -3535,3 +3535,18 @@ a condition may be an operand of the sequence operator; and BOTH forms are allow
 the condition attached with `&`. His remark, an observation: the sequenced form is "probably more natural than
 &". quantified-condition (what a postfix quantifier does to a condition) is thereby still a live question and
 remains OPEN.
+
+**2026-11-18 OWNER RULING — quantified-condition: an error, as a formal punt (Frank, to session 139, morning).**
+ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run witness `[h = rx.digit] SEQ
+(h: <5)?` against the bare test and the `+` form, whole / searched / find-all; the manager's leaning: regex's
+meaning with a warning; a compile error named as the stricter alternative). HIS WORDS: "quantified-condition: an
+error. This is a formal punt because we may find a better meaning for it in the future and this keeps that from
+breaking current code". RECORD: RULED, against the manager's leaning: a postfix quantifier on a CONDITION is a
+COMPILE ERROR. His reason, kept: it is a formal punt; a better meaning may be found later, and refusing the form
+now means that meaning can be given without breaking existing programs. This is an EXPLICIT EXCEPTION to "what
+looks like regex behaves like regex", requested by him as the exception-rule requires. THE MANAGER'S READINGS
+(mine, to be checked by the next revision): it covers all nine postfix quantifier operators, a condition standing
+in sequence and a condition inside an rx literal as a hole alike (`${c}?` in rx text); a quantifier on a GROUP
+that contains a condition together with pattern text is not this case (it quantifies a pattern). The manager's
+earlier "a quantifier on a condition is a type error" is thus the ruled outcome after all, on his reason, not on
+the manager's.
