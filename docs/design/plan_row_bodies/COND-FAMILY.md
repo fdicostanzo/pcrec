@@ -3307,3 +3307,19 @@ a filter could never have them (so: a candidate to relax later, with a definitio
 with several groups would likely never be filtered directly (too complicated) and would use CONDITIONS instead.
 For the user documentation list (predicates_future item 24): where to put a word-boundary check (on the pattern
 being filtered, not in the filter).
+
+**2026-11-18 OWNER RULING — backref-across-parts: the part's own group; a reference uses the namespace at its
+point (Frank, to session 139, morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8
+row, with the run witness A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`, `A SEQ B`: B's own group, whole `733` holds
+and `737` fails; the written-out regex under PCRE's duplicate names, the reverse; the manager's leaning: "B's own
+group. A backreference inside a part is resolved inside that part, before the splice, so a part's text keeps its
+meaning wherever it is used"). HIS WORDS: "backref-across-parts: I agree but also, a reference should use the
+namespace as it is defined at the point of reference". RECORD: RULED. (1) A backreference inside a part reads the
+part's OWN group; names inside a part are resolved in that part, before the splice. (2) THE PRINCIPLE, his: a
+reference uses the namespace AS IT IS DEFINED AT THE POINT OF REFERENCE. THE MANAGER'S READINGS (mine, to be
+checked by the next revision): (a) (1) is (2) applied inside B: at the point of B's `\k<h>` the namespace is B's,
+which holds B's `h` only; (b) (2) is the same shape as pass-start-read ("a condition reads the labels as they stand
+where it is written"), stated for names instead of values; (c) a reference written OUTSIDE the parts, on the
+composition, sees the namespace defined there: the parts' surfaced labels, by label-flow (last mention; an
+ambiguous reference across `&` is the error; paths through a part's label); (d) the evidence models (1) by
+renaming groups apart before splicing.
