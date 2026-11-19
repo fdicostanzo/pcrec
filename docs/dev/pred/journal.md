@@ -54,3 +54,9 @@
   regex (sibling of "anything"; naming trap: the record's `when` ruling uses "matches nothing" for the EMPTY
   string). Rulings gathered for rev 28: hole-reads-capture, number-domain, padded-width, hole-flags,
   flags-propagate, unset-in-hole. Next asked: construction-line, part (a).
+- Frank RULED construction-line: enumerate (after his clarification that "under construction" was not about
+  arrays, and his two options; the enumerate line was my candidate, §5.5 "Enumerate go."). lift-order read as
+  answered by consequence; under-construction-class closed as an answer-free manager's call (own class).
+  Rulings gathered for rev 28 (seven): hole-reads-capture, number-domain, padded-width, hole-flags,
+  flags-propagate, unset-in-hole, construction-line. Ideas recorded, not ruled: the label-only group
+  `(?<:x>...)`, `padded(rx, length =, pad =)` names, the never-matching constant.
