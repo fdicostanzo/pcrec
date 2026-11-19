@@ -4305,3 +4305,6 @@ Main ruled on the four kit findings (D186 add. 2):
   g 1..64 x 5 arms; correctness 84 subjects / 1,260 runs, 0 failing; ~15 min; --ready after 708 ends). Lane blockspan stopped. Tonight:
   708 01:00 -> ~06:00, then 709. Owed by day 11-19 (still open): set 1 INCONCLUSIVE-AT-NOISE record, the calibration loaded-vs-quiet
   summary, R-46 form reply (~17:00).
+- 12:3x Frank cleared tonight (via main): "yes the box is clear after 1am and possibly earlier as usual"; nothing STARTS at or after
+  07:00. 709's --ready now refuses (77) at or after 2026-11-20T07:00 (backup 709...bak-1230); 708 starts at 01:00 (~4.8 h). Main runs
+  the load check ~00:30.
