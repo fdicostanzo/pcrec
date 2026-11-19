@@ -4184,3 +4184,37 @@ nothing" = it matches the EMPTY string), so the constant must not be confusable 
 also the natural meaning of the EMPTY array under his "arrays are written with `|` only" proposal (the
 alternation of no members); (m4) the "previous value" forms (a read written before its group) need the optional
 lead under this ruling: R.1.15 (5)'s first form is vacuous, its second witness stands.
+
+**2026-11-18 OWNER, what "under construction" was about (Frank, to the predicate manager, evening; a
+CLARIFICATION of his own match-is-rx / read-is-constant rulings, given in answer to construction-line; not an
+answer by slug).** Asked **construction-line** (part (a): arithmetic and string functions over an array the user
+writes: built by copying, or under construction; the manager's leaning: built for a finite list). HIS WORDS, in
+full: "so the "under construction" was not about arrays but about regexes used on macros that you would think
+expect a constant. illustrative: length($y) returns the length of the match. it makes sense for $y because it is a
+runtime string match and therefore has a single match. but my point was that many of these functions that work on
+constants length("frank") or fixed strings like length($y) might also work on regex. they require thought and are
+probably not easy to do, therefore, restrict them to constants or matches like $y and if any other regex is used,
+throw a compiler error. example: left($y,2) when $y is "foobar" would return "fo". easy. what would it return for
+left(/\d+/, 2) ? it might return /\d|\d\d/. determining that for an arbitrary rx is hard or at least it involves
+dfa graph manipulation that may not be worth it. so we say left(/\d+/,2) is a compile error when enumerate() != 1"
+RECORD: CLARIFICATION, his: (1) "under construction" was NOT about arrays; it is about a REGEX given to a function
+"that you would think expect[s] a constant". (2) Such functions (`length`, `left`; his examples, spellings
+placeholders) work on constants (`length("frank")`) and on matches like `$y` (a run-time string, a single match):
+`left($y, 2)` with `$y` = `foobar` is `fo`. (3) They "might also work on regex" (`left(/\d+/, 2)` "might return
+/\d|\d\d/"), which is hard (DFA graph manipulation, perhaps not worth it): so RESTRICT them to constants or
+matches like `$y`, and "if any other regex is used, throw a compiler error"; his test: a compile error "when
+enumerate() != 1". CHECKED: `left(/\d+/, 2)` = `\d|\d\d` on a small sample (python: the first two characters of
+every string over `07` up to length 4 all match `\d|\d\d`); the general statement hand-worked.
+THE MANAGER'S READINGS (mine, to be tested by the next revision lane, and (m1) put back to him): (m1) his test
+read LITERALLY ("enumerate() != 1") would refuse an array of two strings, while his first sentence takes arrays
+out and the morning's array-lift ruling ("Any operation defined on single values applies to arrays by taking
+every combination of members") has them built; the reading that keeps all three: the test applies PER MEMBER: an
+array is lifted member by member, and each member must be a single string (a constant or a read); a member that
+is a regex of more than one string is the compile error; (m2) then `\d + 1` (his own "both directions" example)
+is a compile error in the first build, its meaning (the numerals 1 through 10) acknowledged: consistent with "The
+following can be delayed in build"; (m3) construction-line (a) is answered on that reading: arrays the user
+writes are BUILT; (m4) "throw a compiler error" does not choose between its own error class and the "requires
+module" wording (**under-construction-class** stays open); (m5) NOT settled: whether a regex LITERAL with a
+finite set (`/a|b/`, `/[ab]c/`) counts as an array of its strings or as "any other regex" (it meets his proposal
+that arrays are written with `|` only); (m6) `length` on a read is a new example of a single-value function; what
+it yields (a numeral) follows the number-domain ruling.
