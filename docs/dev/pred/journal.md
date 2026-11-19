@@ -189,3 +189,9 @@ LAUNCHED lane predspec291 (opus): rev 29.1 + files the review; deliver/rulings f
 The rulings made during the round (other-holes, option hole, negated-class-hole, anything-text, zero-in-sequence,
 bare condition in a hole) are REV 30's fold. Frank also discussed a condition without parentheses: checked, the
 draft makes `A & 0: digit` an error (a lean); my call: parentheses stay required for now.
+
+## 2026-11-19 (evening) — padded-lazy-sparse RULED; limited(); a direction on macros
+Frank: "padded-lazy-sparse: stated behavior"; padded's default is `0*`, the width argument suspect; a `limited(rx, n)`
+macro (ideas item 36); DIRECTION: no deep dives into one macro unless it raises a language point (memory saved).
+Validated his examples on request: with digits := \d+ padding is a no-op as a set; "00000 through 99999" (exact)
+vs "limited" (at most) not settled. Sent to the running fix lane as R1 (the confirm question becomes a ruling).

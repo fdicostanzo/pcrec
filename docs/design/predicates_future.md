@@ -743,3 +743,14 @@ its trigger (build under measurement, D77).
 - HIS ELABORATION (COND-FAMILY, "2026-11-19 OWNER, discussing the base idea"): the order is digits then letters "as
   per normal"; "probably" spans without gaps; a number is a string over an ORDERED SET OF SYMBOLS, and `"a" + "b"`
   has a meaning when the operands are typed as members of such a set, not as bare written strings.
+
+## 36. `limited(rx, n)`: a length limit as a macro, composed with `padded` (his proposal 2026-11-19; spelling a placeholder)
+
+- SOURCE: COND-FAMILY, "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited`
+  macro". His uses: `limited(padded(digits), 5)`, `padded(limited(digits, 5))`; `padded`'s default is `0*`.
+- NOT SETTLED: "at most n" or "exactly n" (his "00000 through 99999" reads exact; the name reads at most); whether
+  `padded`'s width argument stays (padded-width ruled its meaning when given; he suspects it is "always broken for
+  some use case").
+- THE LANGUAGE POINT (the manager's reading): a body that is one filter or one sequence keeps the argument's order;
+  a body that is an alternation of filtered copies imposes its own.
+- TRIGGER: the library's macro list being specified; not before (his direction: no deep dives into one macro).

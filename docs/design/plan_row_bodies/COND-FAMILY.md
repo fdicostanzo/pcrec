@@ -5130,3 +5130,48 @@ same, by the law recorded with zero-place ("the law `A & B` = `A & (0: B)`", the
 a label; the draft makes that an error ("the `(major: 1 & minor: >=4)` error", C22). So the unparenthesised form
 would be harmless after `0:` and a trap after a named label; this supports keeping the parentheses required for
 now (the manager's call above). For the next lane to test by run: the `0` case in every mode.
+
+### 2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros
+
+His words, verbatim: "padded-lazy-sparse: stated behavior. also: we can use a second argument to padded but i
+suspect it will always be broken for some use case and 0* will be default. we need a limited(rx, 5) macro so
+limited(padded(digits), 5) which would cover all digits 00000 through 99999 which i think the way it would work
+mostly in the field. the idea that it could be 0-99999 but only padded to 3 does not sound useful. you could also
+say padded(limited(digits,5)) and the padding could be infinite. ALSO: i don't at this junction want to go too
+deeply into any one macro UNLESS it raises interesting points about the language. padded does to some degree
+because i had not thought as much about order. validate"
+
+Class, by part: (1) RULING (a slug answer to padded-lazy-sparse): STATED BEHAVIOUR: the padded-order ruling
+stands as it is; on a lazy or shortest-first argument the any-length-first body prefers the longer unpadded
+string (`padded(/(?:\d\d)+?/, 3)` SEARCHED `x0123`: `0123`@1; per-string fill `012`@1; 0 / 810 / 810 of 5,461,
+`$PCREC_TMPDIR/scratch/pred/padlazy.py`), documented, not an error. The padded-order CONDITION is thereby closed
+by his ruling, not by the lane's run. (2) OBSERVATION / LEAN on `padded`'s second argument: it can exist, he
+suspects it "will always be broken for some use case", and the DEFAULT is `0*` (no width: any number of zeros).
+Not a reversal of padded-width ("minimum", 2026-11-18), which rules what the width means WHEN given; "padded to 3
+of 0-99999 does not sound useful" is his doubt about that use. (3) an IDEA / PROPOSAL: a macro `limited(rx, 5)`
+(spelling a placeholder), composed either way round with `padded`. (4) a DIRECTION for the work: do not go deeply
+into any one macro unless it raises interesting points about the LANGUAGE (padded did: order). (5) "validate": a
+request to check the above; done in this entry.
+
+VALIDATED (`$PCREC_TMPDIR/scratch/pred/limited.py`, python; `digits := /\d+/` as the draft has it; `limited(rx, n)`
+modelled as the FILTER `rx & /(?s:.){0,n}/`, "at most n", the manager's reading of "limited"):
+- `limited(padded(digits), 5)`: WHOLE `00000`, `99999`, `7`, `007` HOLD, `123456` FAILS / SEARCHED `x1234567`
+  `12345`@1 / FIND-ALL `00042 7 1234567` [`00042`@0, `7`@6, `12345`@8, `67`@13]. It DOES cover `00000` through
+  `99999`, and ALSO every shorter digit string (`7`, `007`).
+- INCONSISTENCY 1, told to him: with `digits := /\d+/`, `padded(digits)` (the `0*` default) is the SAME SET as
+  `digits` (0 differences: `\d+` already admits leading zeros), so `limited(padded(digits), 5)` =
+  `limited(digits, 5)` (identical answers above). Padding adds strings only to an argument that EXCLUDES leading
+  zeros (a canonical numeral, an arithmetic result).
+- INCONSISTENCY 2, told to him: "00000 through 99999" reads as EXACTLY five wide; "limited" as AT MOST five. With
+  "exactly 5": WHOLE `7`, `007` FAIL; FIND-ALL [`00042`@0, `12345`@8]. Which he means is NOT settled by his words.
+- `padded(limited(digits, 5))` = `0*` then one to five digits: as above, and WHOLE `000000123` HOLDS ("the padding
+  could be infinite": SUPPORTED).
+- SEARCHED / FIND-ALL: a length limit cuts a longer run (`1234567` gives `12345` then `67`); that is the plain
+  regex `\d{1,5}`; "a number of at most five digits" in a search needs its edges stated by the writer.
+
+The manager's readings (the LANGUAGE point, for a later lane to test): (a) a macro whose body is ONE filter
+(`limited`: `rx & S`) or ONE sequence (`padded` with no width: `0*` then rx) keeps the ARGUMENT'S order, greedy or
+lazy; a macro whose body is an ALTERNATION of filtered copies (`padded` with a width) imposes the body's order,
+which is where padded-order and padded-lazy-sparse came from: his suspicion about the second argument is this
+fact. (b) the width form is then the composition he wrote, with no alternation needed where the argument's
+lengths are bounded.
