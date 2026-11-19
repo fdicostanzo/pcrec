@@ -4136,3 +4136,19 @@ one rule that keeps both of this evening's rulings meaningful is propagation wit
 STARTS with the flags in force at the hole; a flag the inserted rx WRITES for itself (`/blah/i`, `(?-i)` inside)
 wins; "its own flags" then means the flags it writes; (m2) the read `$y` is the same rule's case with nothing
 written (the options in force at the hole, as ruled).
+
+**2026-11-18 OWNER RULING — flags-propagate: yes (Frank, to the predicate manager, evening).** ASKED AS A RULING
+(slug flags-propagate, restated after his argument as propagation with override: what is inserted in a hole starts
+with the flags in force at the hole; a flag the inserted regex writes for itself wins; "each regex literal has its
+own flags" means the flags it writes; a read is the same rule with nothing written; with `/(?i)${"blah"}/` and
+`/(?i)${/blah/}/` matching `BLAH` (the propagation runs of the question) and `/(?i)${/(?-i)blah/}/` only `blah`
+(hand-worked)). HIS WORDS, in full: "flags-propagate: yes".
+RULED: flags PROPAGATE DOWN into a hole, in the form asked: the inserted rx starts with the flags in force at the
+hole; flags it writes for itself win. The draft's NO INHERITED FLAGS (§11; §13 O32; "a hole keeps its own flags",
+the draft's own rule) is REVERSED. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) the
+rule covers every flag a literal can carry, not only case (he and the examples spoke of `(?i)`; `m`, `s`, `x`
+under the same sentence is a reading); (m2) propagation is INTO HOLES; an `&` operand, a condition's set and a
+macro ARGUMENT in a filter role are separate literals, not holes, and the ruling does not speak of them; (m3)
+`any_case(rx) := /(?i:${rx})/` now holds for a plain pattern argument (the draft's §2.7 test to be re-run under
+the new rule; its filter-role failures expected to stay); (m4) rev 27.1's PART J answers for `/(?i)(?<y>a)-${q}/`,
+q := /a/ MOVE (WHOLE `a-A` FAILS becomes HOLDS).
