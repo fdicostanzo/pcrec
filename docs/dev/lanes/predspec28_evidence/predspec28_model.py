@@ -332,6 +332,12 @@ da = [t for t in QP if (re.fullmatch(fr_a, t) is not None) != prim(Sq, t)]
 db = [t for t in QP if (re.fullmatch(fr_b, t) is not None) != prim(Sq, t)]
 print("AC a FILTER-ROLE argument `any_case(quoted(\"ho\"))` over %d texts (`hHoO\"`, length <= 4): (a) an `&` operand keeps its own flags (the manager's m2): %d differ %s ; (b) propagation into the `&` operand too: %d differ"
       % (len(QP), len(da), da[:3], len(db)))
+def pyshow(rx, w, s_, f_):
+    m = re.search(rx, s_)
+    return "WHOLE `%s` %s ; SEARCHED `%s` %s ; FIND-ALL `%s` [%s]" % (w, "HOLDS" if re.fullmatch(rx, w) else "FAILS", s_,
+        "FAILS" if m is None else "`%s`@%d" % (m.group(0), m.start()), f_, ", ".join("`%s`@%d" % (x.group(0), x.start()) for x in re.finditer(rx, f_)))
+print("AC (a) `any_case(quoted(\"ho\"))` as the body: %s" % pyshow(fr_a, '"HO"', 'x "HO" "ho"', '"ho" "HO" "Ho"'))
+print("AC (b) the same, propagation into the `&` operand: %s" % pyshow(fr_b, '"HO"', 'x "HO" "ho"', '"ho" "HO" "Ho"'))
 print("AC %s" % check("AC plain arguments pass, filter role fails under (a)", all(n == 0 for n in acd.values()) and len(da) > 0 and len(db) == 0))
 
 # =====================================================================================================================

@@ -56,6 +56,8 @@ AC plain argument `/ho/`: the body vs the primitive 0 of 781 differ (under the r
 AC plain argument `/h[o1]+/`: the body vs the primitive 0 of 781 differ (under the reversed rule: 64)
 AC plain argument `/(?:ho|1h)/`: the body vs the primitive 0 of 781 differ (under the reversed rule: 4)
 AC a FILTER-ROLE argument `any_case(quoted("ho"))` over 781 texts (`hHoO"`, length <= 4): (a) an `&` operand keeps its own flags (the manager's m2): 3 differ ['"hO"', '"Ho"', '"HO"'] ; (b) propagation into the `&` operand too: 0 differ
+AC (a) `any_case(quoted("ho"))` as the body: WHOLE `"HO"` FAILS ; SEARCHED `x "HO" "ho"` `"ho"`@7 ; FIND-ALL `"ho" "HO" "Ho"` [`"ho"`@0]
+AC (b) the same, propagation into the `&` operand: WHOLE `"HO"` HOLDS ; SEARCHED `x "HO" "ho"` `"HO"`@2 ; FIND-ALL `"ho" "HO" "Ho"` [`"ho"`@0, `"HO"`@5, `"Ho"`@10]
 AC OK
 
 == PART UN: unset-in-hole (RULED: no string, a regex that matches nothing)

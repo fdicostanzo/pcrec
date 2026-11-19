@@ -1,6 +1,6 @@
 # docs/dev/lanes/predspec28_evidence/ — rev 28 of predicates_draft.md (the owner's 2026-11-18 evening rulings), its evidence
 
-Lane predspec28 (2026-11-18), DESIGN EVIDENCE for the fold of nine rulings (hole-reads-capture, number-domain,
+Lane predspec28 (2026-11-18), DESIGN EVIDENCE for the fold of nine rulings (and array-in-hole, no run) (hole-reads-capture, number-domain,
 padded-width, hole-flags, flags-propagate, unset-in-hole, construction-line, value-test, same-name-twice) and the
 manager's readings in those record entries. Rules nothing. Historical after merge; never edited after.
 `../predspec271_evidence/` stays as committed (the helpers here are copies, not imports).
