@@ -96,3 +96,7 @@
   `%`; domain-components is not a gap; the outside-domain clause is ruled). Coordinator TaskStopped.
 - LAUNCHED fix lane predspec281 (opus): rev 28.1 + filing the review. Deliver/rulings files written first;
   lanewatch armed. owner.md and wake.md refreshed.
+- Frank asked whether `padded()` fixes the `10-09` case (answered with a four-row model table), then RULED
+  numeral-width: canonical. ELEVEN rulings tonight. Sent to the running fix lane as R1 in
+  worktrees/predspec281/docs/dev/lanes/predspec281_rulings.md (it changes disposition F: VERIFY in its STATE AT
+  HANDOFF).
