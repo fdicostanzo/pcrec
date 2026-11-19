@@ -264,7 +264,10 @@ Measured before queueing:
     firstunit_anchors_l1.py, anchor_map_base.txt and wclass_heads.txt.
 - **Rulings file:** last applied **R1** (manager, 2026-11-19: proceed with the three remodels; the census
   verdict stated as above).
-- **OWED box-queue jobs** (owner `l1build`; scripts in `$PCREC_TMPDIR/scratch/l1build/jobs/`, outputs under
+OWED: none (as the deliver file declares); the queued box-queue jobs below are this lane's gate runs,
+listed for the manager to adjust per the brief.
+
+- **Queued box-queue jobs** (owner `l1build`; scripts in `$PCREC_TMPDIR/scratch/l1build/jobs/`, outputs under
   `$PCREC_TMPDIR/scratch/l1build/`):
 
   | key | what | pass line or verdict |
