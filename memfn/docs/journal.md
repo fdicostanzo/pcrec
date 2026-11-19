@@ -4238,3 +4238,8 @@ Main ruled on the four kit findings (D186 add. 2):
   independent of the width (F12); no C3 cell at H(32), C3's arms are I/h0/h*. KEY FACT: on the near-miss cells today's I is
   130.5/130.4/675.6/668.2 ns/B vs H(64) 82.1/81.9/243.8/250.4 vs h0 ~41.6/41.1/143.3/169.1. So H(64) is 1.6-2.8x FASTER than
   today; R5's "loss" is a smaller gain than the pure loop's, not a regression. Why inline-64 trails all-loop on near-miss: UNMEASURED.
+- 09:0x main misread h* as pcrec's width default (its lane stopped, nothing lands). Facts sent: WF_SPAN_HEAD = 64 already
+  (memfn/src/window.c:1470, labelled UNMEASURED DEFAULT); REBUILT_BUILD = a comment-only relabel; the width stays 32 (F12; §11.4
+  part B is main's). Main said GO: lane relabel64 (sonnet), worktree worktrees/relabel64 on lane/memfn-relabel64 off 33fec79b3;
+  one comment hunk, build + strict under the box lock; its build/ is REBUILT_BUILD. 704's --ready now waits on
+  kit-fcards-c3rerun, not kit-fcards-c3 (703 is rc 1 by design); backup fcards/jobs.bak-0905. Queue 704 once the lane delivers.
