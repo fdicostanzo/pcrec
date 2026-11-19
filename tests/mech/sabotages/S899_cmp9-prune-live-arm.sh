@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # S899 ([COMPOUND] B4, lane cpb4; docs/design/compound.md §E.4 CMP-9) -- the split derivation's prune also drops the LAST arm of every alternation, live or not, so Q loses an end-pinned arm P matches through.
+# What it binds (review r53 F2, 2026-11-19): the PER-ARM DROP in `q_alt`, the line RM-6 kept verbatim (span_arms §14.3 D-9); it does NOT bind the NEVER column itself (kindrow.def, read through `pcrec_never_by_row`): S3356 is the row on the column's A_CAT cell.
 SAB_ID='S899-cmp9-prune-live-arm'
 SAB_FILE='src/opt/derive.c'
 SAB_SUITES='compound harness'
