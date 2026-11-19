@@ -1,0 +1,5 @@
+report: docs/dev/lanes/l1ffix_report.md
+sections: Summary; Merges in; Fixes per finding; D27 findings dispositions; Compare and pins; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: 200-l1ffix-b202611191530161591938.ident 201-l1ffix-b202611191530161591938.mechA 202-l1ffix-b202611191530161591938.mechB 203-l1ffix-b202611191530161591938.axes 204-l1ffix-b202611191530161591938.test
