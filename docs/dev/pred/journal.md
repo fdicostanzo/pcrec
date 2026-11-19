@@ -375,3 +375,17 @@ names, 25 rejected), parked rulings items, `defined:` into doc_format.md, files 
 THEN: merge, ask main for a re-check review number, re-check round (same five lenses), deliver (P-11).
 Owner questions named by preddoc4: zero-in-loop, caller-ambiguous (a) vs (e), every-pass-spelling,
 condition-group, flags-in-filter, operators-as-bodies, macro-warning. WAITING on: preddoc5.
+
+## 2026-11-19 (midnight) — preddoc5 merged; r59 filed; re-check round r60 running
+
+preddoc5 merged and stopped (tip d8634250a after merge; lint 4,850 / 0): rulings 33 rows (20 homed, 8
+superseded, 5 already), slugs 59 (50 homed, 9 already), names 36 (24 homed, 9 already, 3 not names), rejected 25
+(24 homed, 1 not); no status rose to ruled; no contradiction met; r59 filed RULED and indexed; doc_format.md has
+`defined:`. Main gave r60 and reminded: evening hold, light work only (told to the coordinator). Coordinator
+crit-preddoc5 (opus) launched: fix-verification per r59 finding, list re-count from the appendices, ruling lens
+on the added text with the same-day-later-entry check, a cold read-whole, new-damage. Verdict asked: READY /
+READY WITH NAMED RESIDUALS / NOT READY.
+THEN: rule its dispositions; if a fix lane is needed, run it; deliver to main as P-11 (documents converted,
+reviews r59 + r60); retire predicates_future.md (my call, pending: all 38 items are parked pieces); send main the
+skill text for the new layout (sections 0, 1, 3, 4, 5 name the draft as the working document). At pause:
+REWRITE wake.md from scratch (it still describes the first session). WAITING on: crit-preddoc5.
