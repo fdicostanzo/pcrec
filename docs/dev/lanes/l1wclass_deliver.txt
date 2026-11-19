@@ -1,4 +1,4 @@
-report: docs/dev/lanes/l1tri_report.md
+report: docs/dev/lanes/l1wclass_report.md
 sections: Summary; Diagnosis; Fix; Re-validation; STATE AT HANDOFF
 nonempty: all
 commit: yes
