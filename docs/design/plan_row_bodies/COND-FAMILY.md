@@ -4467,3 +4467,24 @@ the reading as SOUND (it fires on 3 programs that never hold and is silent on 2 
 §5.2 would need is printed in the **dollar-diagnostic** row and NOT made: it is the owner's to confirm. A fact
 for **padded-order**: for an INFINITE argument no single body keeps the argument's order (a greedy argument
 needs the two-case body reversed, a lazy one the body as written; §2.7).
+
+### 2026-11-18 OWNER, discussing padded-order (not a ruling)
+
+His words, verbatim, two messages: "putting the length in front would help order" and then "i meant, putting any length".
+
+Class: OBSERVATION / IDEA (no slug answer; padded-order stays open).
+
+The manager's reading (told to him as a reading): of the two branches of the body given for `padded(rx, n)`, put the
+branch that accepts ANY length of at least n (`rx & /(?s:.){n,}/`) in front of the exact-width branch
+(`/0*${rx}/ & /(?s:.){n}/`). Another reading is possible (a length test written first in every filter); not taken.
+
+RUN (`$PCREC_TMPDIR/scratch/pred/padfront.py`, python `re`, n = 2, every subject of length 1..5 over `0159x`, four
+continuations, FIND-ALL, compared with "fill each string in the argument's order"):
+- greedy `\d{1,3}`: exact-first wrong on 2,800; any-length-first wrong on 0.
+- lazy `\d{1,3}?`: exact-first wrong on 0; any-length-first wrong on 0.
+- mixed order `\d|\d\d\d|\d\d`: exact-first wrong on 2,292 (`100` gives `10`, fill gives `100`); any-length-first
+  wrong on 700 (`000` gives `000`, fill gives `00`).
+
+For the next lane to test: (a) the manager's reading "any-length-first equals fill-each-string for every argument
+whose order is by length (longest first or shortest first)"; (b) lane predspec281's statement that a lazy INFINITE
+argument needs the exact-first order, which this finite run does not show (lazy `\d{1,3}?` is right under both).
