@@ -4868,3 +4868,29 @@ whose ends are out of order: a compile error" stands for a range WRITTEN with si
 removal is for members of an alternation, his words. (f) an option hole with ONE value is unchanged. (g) the
 count-hole details filed under other-holes (a member that is not a count: a kind error; a count PCRE refuses: its
 copy removed) are NOT touched by his words and stay the draft's readings.
+
+### 2026-11-19 OWNER, after other-holes: a zero count, and the option hole's values
+
+His words, verbatim: "previous: "No values, or every value dropped": (I miss-read the statement. for counts, no
+iterations, iterated object disappears. useful semantic).  for options: the empty {?${""}} would simply be no options
+are added. also, options restricted to legal set or error"
+
+Class, by part: (1) on the manager's reading (c) of the other-holes entry ("no values, or every value dropped: the
+never-matching rx"): he says he MISREAD the statement, and adds an OBSERVATION about COUNTS: with no iterations the
+iterated object disappears, a useful meaning. The reading taken, and told to him: this is the count VALUE zero
+(`x{${n}}`, n := 0, is `x{0}`: the object is absent and the rest matches; plain regex, already the draft's), not an
+array of ZERO VALUES; no objection to reading (c) is recorded, and reading (c) stays the manager's, to be tested.
+If he meant that a hole given NO values makes its object disappear, that is a different rule and he will say so.
+(2) RULING, a refinement of other-holes place 3 (options), in his words: an EMPTY option value (`(?${""})`; he wrote
+`{?${""}}`, read as the option group) "would simply be no options are added"; an option hole's values are
+"restricted to legal set or error".
+
+RUN (python `re`): `xa{0}y` WHOLE `xy` HOLDS, `xay` FAILS; `x(?:ab){0}y` SEARCHED `-xy xaby` `xy`@1; FIND-ALL
+`xy xaby xy` [`xy`@0, `xy`@8].
+
+The manager's readings, for the next lane to test: (a) "the legal set" is the inline option letters PCRE accepts in
+`(?...)` that this language admits there (the lane lists them from §11 and runs each through libpcre2); a value
+outside it is a COMPILE ERROR, never text; (b) the empty value gives the pattern with no option group at all
+(whether PCRE itself accepts a written `(?)` is to be RUN, not assumed; our rule does not depend on it); (c) with
+the other-holes ruling the option hole's cell is complete: exactly one value, legal or empty; several values an
+error; zero values (`${[]}`) an error too (not exactly one value: the manager's call, as the name hole).
