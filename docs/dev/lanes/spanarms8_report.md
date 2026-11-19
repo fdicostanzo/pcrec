@@ -5,6 +5,8 @@ code, no make beyond `make -s test-plan-lint`, no suite, no queue job.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - STATE: complete. Rulings file `docs/dev/lanes/spanarms8_rulings.md`: empty at every check (before each commit
   and before this report); last R-n applied: none.
 - Premise test held: `git log -1 --format=%h -- docs/design/span_arms.md` printed 3b7d1508e at start; the scratch
