@@ -47,6 +47,7 @@ FL x  `/(?x)${/a b/}/`: propagate WHOLE `ab` HOLDS, `a b` FAILS ; no propagation
 FL PART J MOVES `/(?i)(?<y>a)-${q}/`, q := /a/ (rev 28): WHOLE `a-A` HOLDS ; SEARCHED `x a-A` `a-A`@2 ; FIND-ALL `a-A a-a A-a` [`a-A`@0, `a-a`@4, `A-a`@8]
 FL PART J as rev 27.1 printed it (own flags):         WHOLE `a-A` FAILS ; SEARCHED `x a-A` FAILS ; FIND-ALL `a-A a-a A-a` [`a-a`@4, `A-a`@8]
 FL the read `${$y}` at the same hole (nothing written: the options at the hole) vs `\k<y>` 0 / 0 / 0 ; vs the binding `${q}` 0 / 0 / 0 of 1365 (`aA-x`)
+FL §13 O32 / L32 `/${q}/m`, q := /^\{.*\}$/: FIND-ALL `{a}\n{b}` propagate [`{a}`@0, `{b}`@4] ; the text inlined [`{a}`@0, `{b}`@4] ; own flags (rev 27.1) []
 FL python `re` agrees on the i cases (propagate HOLDS, override FAILS on BLAH): True
 FL OK
 
