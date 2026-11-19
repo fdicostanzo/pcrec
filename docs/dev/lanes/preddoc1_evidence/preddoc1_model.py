@@ -489,10 +489,16 @@ print("  after a NAMED label (`A & (h: digit & (b: blah))`): b is not a label of
 check("R12", dd == [0, 0, 0])
 
 # ------------------------------------------------------------------ LT
-print("\n== PART LT: every `rulings:` title the lint cannot find is a TWO-LINE bold opener of the record (rulings file R1)")
+print("\n== PART LT: the lint's L4 failures are exactly two lint limits, every title true (rulings file R1)")
+# Two classes, predicted here line by line, then compared with the lint's own output:
+#  Q  a title holding a `"`: the lint's (record: "[^"]+") cannot hold it -> 'rulings item without (record: ...)';
+#  T  a title whose bold opener spans two lines: the lint's record_titles cannot see it -> 'record title ... not found'.
+# Every cited title, read up to its closing `")`, must be a TRUE record title (a heading or opener, joined across lines).
+import subprocess
 W = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(HERE))))
 rec_lines = open(os.path.join(W, "docs/design/plan_row_bodies/COND-FAMILY.md"), encoding="utf-8").read().split("\n")
-lint_titles, joined = set(), {}
+def norm(t): return " ".join(t.split()).rstrip(".")
+lint_titles, joined, heads = set(), {}, {}
 for i, ln in enumerate(rec_lines):
     full = None
     if ln.startswith("### "): full = ln[4:]
@@ -502,26 +508,56 @@ for i, ln in enumerate(rec_lines):
         elif ln.startswith("**20"):
             t, k = ln[2:], i
             while "**" not in t and k + 1 < len(rec_lines): k += 1; t += " " + rec_lines[k]
-            j = " ".join(t.split("**")[0].split()).rstrip(".")
-            joined[j] = i + 1; joined[j.split(" (")[0]] = i + 1
+            j = norm(t.split("**")[0]); joined[j] = i + 1; joined[j.split(" (")[0]] = i + 1
     if full is not None:
-        f = " ".join(full.split()).rstrip("."); lint_titles.add(f); lint_titles.add(f.split(" (")[0])
-cited = []
+        f = norm(full); lint_titles.add(f); lint_titles.add(f.split(" (")[0])
+        heads.setdefault(f, i + 1); heads.setdefault(f.split(" (")[0], i + 1)
+LINT_RE = re.compile(r'\(record:\s*"([^"]+)"\)')
+OUR_RE = re.compile(r'\(record:\s*"(.*?)"\)')
+pred, faults, ncited, shown = set(), [], 0, {}
 for fn in ("predicates_details.md", "predicates_library_details.md", "predicates_parked_details.md"):
     p = os.path.join(W, "docs/design", fn)
     if not os.path.isfile(p): continue
-    for ln in open(p, encoding="utf-8"):
-        for m in re.finditer(r'\(record:\s*"(.+?)"\)\s*$', ln.rstrip("\n")):
-            cited.append((fn, m.group(1)))
-if sab("s14") and cited: cited[0] = (cited[0][0], cited[0][1] + "x")
-missing = [(fn, t) for fn, t in cited if " ".join(t.split()) not in lint_titles]
-uniq = sorted(set(t for _, t in missing))
-bad = [t for t in uniq if " ".join(t.split()) not in joined]
-print("  cited titles %d (items); not seen by the lint %d items, %d distinct titles; of those NOT a two-line opener: %d"
-      % (len(cited), len(missing), len(uniq), len(bad)))
-for t in uniq: print("    record line %s: %s" % (joined.get(" ".join(t.split()), "??"), t))
-for t in bad: print("    NOT A TWO-LINE OPENER (a real fault): %s" % t)
-check("LT", len(cited) > 0 and not bad)
+    inrul = False
+    for n, ln in enumerate(open(p, encoding="utf-8"), 1):
+        ln = ln.rstrip("\n")
+        if ln.startswith("rulings:"): inrul = True; continue
+        if not ln.startswith("- "): inrul = False if ln and not ln.startswith(" ") else inrul; continue
+        if not inrul: continue
+        m = OUR_RE.search(ln)
+        if not m: faults.append("%s:%d no (record: ...) at all" % (fn, n)); continue
+        t = norm(m.group(1)); ncited += 1
+        if sab("s14") and ncited == 1: t += "x"
+        if t not in lint_titles and t not in joined: faults.append("%s:%d NOT A RECORD TITLE: %s" % (fn, n, t)); continue
+        lm = LINT_RE.search(ln)
+        if not lm:
+            if '"' not in t: faults.append("%s:%d lint misses a quote-free title: %s" % (fn, n, t)); continue
+            pred.add(("Q", fn, n)); shown[t] = ("Q", joined.get(t) or heads.get(t))
+        elif norm(lm.group(1)) not in lint_titles:
+            if t not in joined: faults.append("%s:%d unseen but not two-line: %s" % (fn, n, t)); continue
+            pred.add(("T", fn, n)); shown[t] = ("T", joined[t])
+out = subprocess.run([sys.executable, "-I", os.path.join(W, "scripts/pred_doc_lint.py")], cwd=W,
+                     capture_output=True, text=True).stdout
+got, other = set(), []
+for ln in out.splitlines():
+    m = re.match(r"^(L\d+) docs/design/(\S+?):(\d+): (.*)$", ln)
+    if not m: continue
+    rule, fn, n, msg = m.group(1), m.group(2), int(m.group(3)), m.group(4)
+    if rule == "L4" and msg.startswith("rulings item without"): got.add(("Q", fn, n))
+    elif rule == "L4" and msg.startswith("record title") and "not found" in msg: got.add(("T", fn, n))
+    else: other.append(ln)
+nq, nt = sum(1 for x in got if x[0] == "Q"), sum(1 for x in got if x[0] == "T")
+print("  cited title items %d; lint L4 failures: %d 'not found' (two-line), %d 'without (record:' (a quote in the title)"
+      % (ncited, nt, nq))
+print("  distinct titles in the two classes: %d" % len(shown))
+for t in sorted(shown, key=lambda x: (shown[x][1] or 0)):
+    k, ln = shown[t]; print("    %s record line %s: %s" % ("two-line" if k == "T" else "quote   ", ln, t))
+print("  quote titles that are also two-line openers: %s" % ", ".join(t for t in shown if shown[t][0] == "Q" and t in joined) )
+for f in faults: print("    FAULT: " + f)
+for ln in other: print("    OTHER LINT FAILURE: " + ln)
+if got != pred:
+    print("    predicted, not reported: %s" % sorted(pred - got)); print("    reported, not predicted: %s" % sorted(got - pred))
+check("LT", ncited > 0 and not faults and not other and got == pred)
 
 print("\nSUMMARY: %d checks, %d failed: %s" % (len(RESULTS), sum(1 for _, k in RESULTS if not k),
       ", ".join(n for n, k in RESULTS if not k) or "none"))
