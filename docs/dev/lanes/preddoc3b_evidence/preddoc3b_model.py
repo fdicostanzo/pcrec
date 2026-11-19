@@ -293,9 +293,10 @@ def ex_lift():
                     ["12", "4"], "x14", "3 12 5 14")
     line = fmt(res, "`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`")
     pair = modes_rx(alt(["3", "14"]), ["12", "4"], "x14", "3 12 5 14")
-    check("EXlift", al1 and res[0] == [("12", True), ("4", False)] and res != pair and in_core(line),
-          line + " | AL1 printed [3, 12, 5, 14]: %s; the pairwise rival differs: %s" % (al1, res != pair))
-    del sem
+    check("EXlift", al1 and same(res, sem) and res[0] == [("12", True), ("4", False)] and res != pair
+          and in_core(line),
+          line + " | AL1 printed [3, 12, 5, 14]: %s; the direct model agrees: %s; the pairwise rival differs: %s"
+          % (al1, same(res, sem), res != pair))
 
 
 # ------------------------------------------------------------------ EXenum (core/arrays/enumerate)
@@ -338,7 +339,6 @@ def ex_enum():
         if s not in lst:
             lst.append(s)
     if sab("s8"):
-        lst = sorted(lst, key=lambda s: -len(s[:2]) if False else 0)
         lst = ["aa", "aab", "aba", "abab", "a", "ab"]
     printed_ok = lst == ["aa", "aab", "a", "aba", "abab", "ab"]
     joined = alt(lst)
