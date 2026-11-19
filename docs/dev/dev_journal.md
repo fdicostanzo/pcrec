@@ -28017,3 +28017,444 @@ Next
   three questions in a row are corners of one rule, ask for the rule. (2) A lean stated with "it rests on X" let
   Frank and me drop it cleanly when X fell, twice. (3) An options lane that runs every candidate over the same
   populations (the spelling test above all) turned a two-hour argument into one table; do that before leaning.
+
+## 2026-11-16 (session 136, first part, box clock 15:10-17:53; manager = fable; written IN FLIGHT, context near compaction)
+
+- PREDICATES (design only), three revisions and two critic rounds in one afternoon. Review r28 (round absfold on
+  joint_condition.md §4G) ruled: all accepted; lane absfix (opus) applied it (§4H) and ran the three candidate domains
+  for the mark's "some value" (any text / the group's own text / the values the label can take): only the third
+  passes all four tests. Lane predspec20 (opus) wrote rev 20 of predicates_draft.md from the note's 73-row change
+  list; review r29 (round predspec20, 50 findings in 17 groups) ruled; lane predspec21 wrote rev 21; lane predspec22
+  (rev 22) is RUNNING at this entry. Filing lanes file28, file29 (sonnet) filed r28 and r29 and their process changes.
+- OWNER RULINGS today (all in docs/design/plan_row_bodies/COND-FAMILY.md's tail, his words quoted): optional-as-loop
+  (`x?` and `(?:x|)` answer alike); mark-domain as a PRINCIPLE (semantics follow what the pattern means, never its
+  spelling), wording provisional with an asterisk ("two patterns that match the same subjects and set their labels
+  the same way answer every condition alike" (*)); match-context: anywhere; zero-pass-empty: agreed (the mark's one
+  meaning); domain-scope, AGAINST my lean: a pattern narrowed by a condition is a different pattern, the value set is
+  read from the PROGRAM; mark-narrows: my variant (unmarked conditions narrow; a marked one only where its label is
+  present); not-is-complement: `!` applies to a pattern or a set of strings, never a condition; mark-in-none: LEFT AS
+  IS, against my lean (none is a macro, no special error). default-reaches-dollar closed by MY derivation from the
+  record/joint unification (0 of 12,546 differ, lane predspec21).
+- MY READINGS THAT FELL today: "any text" (the complement trap); "the mark inside some/count is an error"; "regex
+  only" for the domain's scope; "DOM over matches where every named label is present" (empty on two labels that never
+  co-occur); "conditions only ever narrow" (FALSE under negative polarity: a mark under a not/none lets an added
+  condition admit a subject; 22 program pairs, 0 with a default). LESSON: a domain read per program makes a marked
+  condition depend on its neighbours; I accepted domain-scope without naming that cost and the owner had to ask
+  "do you have reservations?". State the costs of a ruling you lost when it is made, not when asked.
+- Owner remarks PARKED in docs/design/predicates_future.md: item 10 (a debugger/explainer for writing conditions),
+  11 (restricting a default to the label's possible values; my judgment: no), 12 (a warning a macro raises about its
+  own arguments, `@compiler.warn(cond, ...)`; his follow-up: the condition as a PROPERTY OF THE SET).
+- [COVER-CAP] STAGE 2: the kit DELIVERED plan B (lane/memfn-span4k @ 60c2958ae + the held raise
+  lane/memfn-span4k-raise @ 9d4907a16; its cloud test and axes green). Owner: "Cover-build-go: go" (~17:30). Lane
+  covs2b (opus) RUNNING: the combined branch (lane/covs2afix + main + the kit's branch + the raise), the inventory of
+  r45read W1-W27 / r45chk P1-P9 against the merged tree, the core items, the ONE abi event; cloud test as its last
+  act; S3260-S3275 reserved. Follow-up units, a code round, then the timing nights.
+- Housekeeping: 7 worktrees pruned by file28; owed (quiet gate): jcfix, revjc, ledg1116, absent, absimpact, absfold,
+  file28, absfix, predspec20, file29, predspec21. Kit timing window 01:00 on 11-17 (10 jobs queued); a one-shot load
+  check at 00:27. main pushed through 62fbef5ab, CI green on 13c13efde.
+
+## 2026-11-16 (session 136, second part and CLOSE, box clock 17:55-19:50; manager = fable)
+
+- PREDICATES: rev 22 of predicates_draft.md delivered and merged (lane predspec22: 51 `!`-on-a-condition sites
+  rewritten after the owner's not-is-complement; marks under "none" documented, his mark-in-none LEFT AS IS). Its
+  re-check round (review r30, coordinator crit-predspec22, 35 findings) says NOT STABLE: the mark-narrows variant has
+  no stated unit and, as the scripts filled it, splits equal-behaviour programs (54 of 1,210; the report I promised
+  the owner, made); a complemented pattern is sealed while the same text used positively is merged; `when` is not
+  writable as a macro; `(a = 0: <10, b: >$a)` and its `&` spelling differ (9 of 110). Dispositions written
+  (/var/tmp/pcrec-pcrec/scratch/crit-predspec22/dispositions.md); r30 NOT yet filed.
+- THE TURN: instead of more corner rulings I proposed one design question; the owner went to the fundamentals ("What is
+  the exact definition of a condition?") and gave a DIRECTION: conditions are "the bastard child of macros and
+  patterns. What they need is to be themselves. Then we define them mathematically", then the SQL parallel ("the same
+  problems as SQL wrt null field"; "A condition in sql is wrapping a sql statement select * from (...) t where
+  condition. Not on the condition there is well defined"). Recorded in COND-FAMILY.md's last three entries with my
+  sketch (a pattern = a set of labelled matches = the table; a condition = a test of one match = the WHERE clause;
+  three-valued logic for absence; two nots: predicate negation and pattern difference; the optional mark as ruled is
+  the one construct that is not a test of one match). NO rev 23 and no corner rulings until that definition is ruled.
+- LESSONS. (1) Ten rulings in one afternoon each fixed a corner and opened another: when a ruling makes the NEXT
+  question appear within the hour, stop and ask what the object IS (the wake.md lesson "three corners of one rule"
+  applied too late, by the owner). (2) I asked him about "`!` on a condition" without showing that the draft already
+  defined it pointwise ("A & !B = A minus B"); a question to the owner about changing X shows X's CURRENT definition
+  first. (3) Counts from an evidence script whose answer depends on the order conditions were written in were reported
+  to him as facts (the variant "passed every test"): an engine written for one lane's question must be order-swapped
+  before its counts are quoted (now a critic-skill process change, r30).
+- [COVER-CAP] STAGE 2: lane/covs2b @ 3ec992759 = the combined branch + covs2e (cover_cap.md rev 5.3) + covs2c (W5/B1,
+  witness row S3263, the MFWSTMT trace record). abi 109 on the branch, 0 default bytes moved. Cloud: covs2b-test,
+  covs2c-test, covs2c-rows GREEN; covs2b-axes in flight at close. READ-3 reproduced and NOT fixed (width 4095 on
+  [0-9a-f]{4095} fails at 612,696 B of code; no ladder rung drops the cover; limits.md 3.12 vs 8.4): to be filed as a
+  plan row and designed before the joint landing. Remaining: covs2d (checks past 32), the code round, the nights.
+- Kit told: the combined branch is cut; ids from S3276. Kit timing window 01:00 (its jobs are queued; this session's
+  00:27 load check dies with the session: Frank told).
+
+## 2026-11-16 (session 137, box clock 20:04-23:25, IN FLIGHT; manager = fable)
+
+- [COVER-CAP] STAGE 2, branch lane/covs2b now @ 28af649c9. The red axes run (43979627350) was a dead GitHub runner
+  (lane axtri1116; its re-run GREEN). Lane covs2g (opus, tests only): the checks past 32 (47 kitproof rows, S3264-
+  S3266, the axes width arm at 4095, run_cover.sh under the sanitizers, the predictor re-pointed). Its test run was
+  RED on one unbounded `--list-limits` call (K37; lane covs2gtri, one line). covs2g REPORTED four cloud runs but only
+  one reached GitHub: the manager dispatched the missing two (covs2g2-rows, covs2g2-asan). All four kinds GREEN on
+  ad6f4cb56. CODE REVIEW r32 (round covs2code, filed by lane file32): 208 pairs 0 movers, answers = libpcre2, 17
+  plants caught; F1 = the code-size cap (plan row [COVER-SIZE-LADDER], filed by lane read3file); F2 the near-miss
+  O(n*k) cost unstated; small items. Lane covs2fix applied every FIX-NOW but F1 (268 compiles 0 movers) and filed
+  eight plan rows on the branch; its four cloud runs at 02ec70f9d are IN FLIGHT at this entry.
+- MY ERROR on F1: I asked the owner to choose a ladder rung or a spec fix, then proposed a "new" kit request for a
+  looped check. He remembered the plan of record: his 11-15 14:35 direction (cover_cap.md 11.3: a measured inline
+  head, then loops; three forms measured) and "forms now" (11-16). The branch has the kit's limit raise WITHOUT the
+  forms (every window still unrolled, 139 bytes of C per position: measured on `[0-9a-f]{40}`/`{80}`), which alone
+  is why the 500 KB code cap binds. Both questions withdrawn; re-test F1 once the forms are in. LESSON (already a
+  memory, pcrec-grep-plan-before-chartering): grep the design of record before presenting a finding as a new
+  decision, also when the finding comes from a blinded critic round.
+- PREDICATES (design only; docs/design/condition_kind.md, Parts I-IV, four exploration lanes condkind, condkind2,
+  defscope, searchrow; review r31 by round condkind, filed by lane file31; r30 filed by lane file30). OWNER tonight
+  (all quoted in COND-FAMILY.md's tail): the model ("a pattern is a SQL statement. The table is the source of
+  matches. Like the text for a pattern"; complement = his best guess, the source rows not matched); drop-mark YES;
+  default-value YES (any text); source-row YES (the whole subject); default-scope "yes per test"; all-question
+  "retire". MINE: repeated-means (the operand regex), condition-not told twice. My lean for a whole-statement default
+  was REFUTED by lane defscope (adding a condition admits, 1,666 of 68,328). Review r31: sound on whole values, NOT
+  READY for rev 23: source-row's wording collides with the 11-15 same-stretch ruling in SEARCHED mode. Part IV:
+  a complement that removes MATCHES gives both rulings their answers, with a three-way trade (his `9:30` answer,
+  D196's retry, "adding a condition never admits"). Asked: complement-per-match (with the retry choice),
+  nested-complement. No rev 23 until answered.
+- Process changes landed with r30/r31/r32 (critic skill: order-swap rule, mode-closure lens, ruling table, the
+  contract lens runs a new range's top through every compile cap).
+
+## 2026-11-17 (session 137, second part, box clock 23:25-04:15; manager = fable; no lane alive at this entry)
+
+- PREDICATES. OWNER (COND-FAMILY.md tail, his words): row-is-match ("a row from the table represents a single
+  potential match"; the subject is the search text: SUPERSEDES my source-row wording, which he had answered on one
+  example of my framing); condition-not ALLOWED (three-valued NOT); all-question RETIRE; item 14 of
+  predicates_future.md filed at his request (the pattern returns its match first, then the condition judges it);
+  whole-text PARKED ("Let's not answer now") after he asked whether one regex can already ask it. Lanes: searchrow
+  (Part IV), predspec23 + predspec23b (rev 23 and its body), predspec23c (rev 23.1), predspec23d (rev 23.2).
+  Reviews: r31 (the note), r33 (rev 23: NOT STABLE; re-allowing NOT broke rules that assumed it absent; three
+  unwritten rules), r34 (rev 23.1: NOT STABLE; the evidence compared numbers by value against the draft's
+  canonical-numeral rule, e.g. 371 -> 281; my branch-order ruling broke `&` over `|`). All filed (lanes file31,
+  file33, file34). Rev 23.2 is merged, NOT STABLE BY DESIGN: it ends section R.8 with one table of 14 open or
+  told-not-ruled items; no critic round until the owner answers branch-scope and record-under-not.
+- MY ERRORS, same shape twice more: (1) source-row: I asked a ruling on ONE whole-value-like example of my own
+  framing; the owner undid it two hours later. (2) branch-order: a manager "ruling" derived from his words, told
+  not asked; the next round showed it breaks distribution and admits. (3) I told him a lookahead cannot hold a
+  conditioned pattern; the draft's own hole rule allows it. RULE now in wake.md: a rule that decides ANSWERS and
+  is not word for word in his record is ASKED, with examples in BOTH modes and a several-match subject.
+- [COVER-CAP]. Review r32's fixes are on lane/covs2b @ 28af649c9, all four cloud kinds GREEN on the fixed tip. The
+  kit's timing night (D197's mfind cards, not the span forms) ended INCONCLUSIVE: the deciding card failed the
+  quiet gate twice (load 2.0-2.5 vs 2.0; Steam and desktop sessions; idle baseline ~1.9); ruled by precedent: not
+  the one re-run. Owner question quiet-gate. The kit's FORMS (inline head 64, then loops) are built on
+  lane/memfn-forms @ 7506bca30 (its round r35: land after fixes); the F1 probe is 24,024 B with them (510,342
+  before). Mine, told: F1 becomes a corrected spec sentence on the branch, no ladder rung (D77).
+- Process changes landed with r33/r34: re-run every rule whose reason assumed an operator absent when a revision
+  re-allows it; diff the previous round's verifier numbers against the published ones; mode closure covers
+  find-all places; a ruling stated as a derivation is read literally.
+
+## 2026-11-17 (session 137 CLOSE, box clock 10:30, at the owner's /close; no lane alive, nothing in flight)
+
+- After 04:15: the kit's forms stayed in its own fix rounds (code stable through three rounds; its cards' pick rule
+  still being fixed; delivery to main expected 11-18 morning after a short final round); nothing of main's ran.
+- Rules moved into the manager skill at close ("a rule that decides ANSWERS is asked, never told", with the
+  grep-the-design-of-record clause; "a lane's cloud runs dispatched is a claim") and into BRIEF_TEMPLATE.md (cloud
+  runs proved by an ls-remote line). [COVER-CAP]'s plan status brought to today.
+- OPEN with the owner: branch-scope, record-under-not (both block rev 24 of the predicate draft), pass-table,
+  group-truth, quiet-gate (blocks the kit's next timing night); whole-text parked by him.
+
+## 2026-11-17 (session 138, box clock 10:45-14:20, IN FLIGHT; manager = fable; lane predspec24 alive at this entry)
+
+- WAKE: 26 merged lane worktrees + branches pruned (wtprune --force by name after an ancestry check each). CI green.
+- OWNER, quiet-gate: "Track the trouble makers like steam and code and remind me to close them if you see them open,
+  including stealth open". Lane loadwatch: `scripts/loadshame` lists a WATCH table (Steam, VS Code) by presence,
+  `--present` (merged; a light critic, one fix). Manager skill's timing-window row and memory pcrec-timing-troublemakers.
+  Timing nights CLEARED by him: tonight from 01:00 (kit set 1, mfcard-zen4-3, keys 600-609 queued) and 11-18/19 from
+  01:00 (kit set 2, the span form cards; the kit's reviewed forms tip reaches me by 14:00 on 11-18, I merge it into
+  lane/covs2b and FREEZE that tip by 20:00). One-shot alarms at 00:27 on both nights (session-only).
+- PREDICATES, a foundation day. All in docs/design/plan_row_bodies/COND-FAMILY.md's tail, his words quoted:
+  branch-scope RULED (ii) (a condition is one more piece of the pattern; rejecting, it backtracks the pattern, `|`
+  included; my lean (i) was WRONG, it contradicted row-is-match on `9:30`); "regex behavior ... should be the
+  general behavior"; DIRECTION: decide open choices by a REGEX MODEL where one exists; regex-settles RULED (unknown
+  test fails and backtracks; `!B` = no path survives; lookaheads not re-entered; occurrences = his one-pattern
+  lazy-gap model; atomic = PCRE's atomic group, spelling open); absent-under-not RULED ("use regex rules": two-valued
+  NOT; reverses 11-16 23:48's absence clause; record-under-not dissolves, mine); when-meaning RULED (a library
+  definition, the pattern then "not c, or p"; ONE `|`); whole-text RULED "adopt it if it's legal" (his J / C / M
+  model; no `fail`); last-pass-default RULED regex, with "the method of achieving the alternative meanings defined
+  and tested". Ideas filed (predicates_future 19-21): atomic spelling, options declared in the source (a library
+  element beyond the user's level is a compile error: RULED), the rx module + a sequence operator + quantifier
+  operators. Evidence lanes, all merged: pathimpact (30 lines move under (ii)), rxmodel (each choice as PCRE2 text
+  with callouts on libpcre2 10.46), lastpass (16 of 104 looped-label lines move), rxlib (docs/design/rx_module.md,
+  25 constructs, 11 owner questions). Lane predspec24 (opus) is writing REVISION 24; a full critic round follows.
+- [ARCH-STEP] filed at his request (requirements -> architecture -> design -> build, each reviewed): A1 history
+  survey (archhist), A2 tree review (archreview), A3 the live goals document (archgoals: docs/dev/guide/
+  architecture.md, five DRAFT goals, 17 rules kept + 8 new DRAFT, a 22-row ride-along register), all merged. With
+  him: goals-review (ranking, shape-goal, new-rules, register-keeper, speed-gate) and critic-home.
+- KIT: two critic-skill changes accepted into docs/dev/guide/critics.md (drill a pooled noise estimator at each
+  level; drill comparison kinds). Its forms delivery holds for 14:00 on 11-18.
+- MY ERRORS: pushed twice while CI ran on the previous tip (cancelled runs; the check and the push are now separate
+  commands); filed the rx-module proposal without grepping the draft (`join`, `list_of` and an 11-13 lean against a
+  concatenation operator were already there; the lane's premise test caught it); two lanes cited plan rows by line
+  number (PL14; rule added to BOILERPLATE.md); a lane's helpers handed back to ME, not to it (briefs now say helpers
+  write to a file); the append-only lanes history index conflicts on every second merge (keep both lines).
+
+## 2026-11-17 (session 138 CLOSE, box clock 14:20-23:30, at the owner's /close; no lane alive, nothing of main's in flight)
+
+- PREDICATES (design only), the rest of the day. Revisions 24 (lane predspec24), 24.1 (predspec241), 24.2
+  (predspec242b), 24.3 (predspec243), 24.4 (predspec244), all merged; critic rounds r40 (on 24: NOT STABLE; the
+  model disagreed with the text and with libpcre2 in four places) and r42 (on 24.2: NOT STABLE, narrowly), both
+  filed (lanes file40, file42) with process changes. THE OWNER'S RULINGS, all quoted in
+  docs/design/plan_row_bodies/COND-FAMILY.md's tail: exception-rule (looks like regex behaves like regex unless he
+  allows; exceptions requested explicitly); the label rules, reached through four stages in one evening and
+  settled as ONE rule (a label is a name; a branching, i.e. an alternation, an optional or a loop, resets the
+  labels inside it on entry; the last mention wins; a condition reads labels as they stand where it is written;
+  the array is only what was set); `$x` reads the label like `x:` ("pcre is wrong on this"), with a required ugly
+  way to PCRE's carried value; captures stay regex; the hit list = his one-pattern search made atomic and
+  anchored; the filter sentence + "any piece that might look outside is a compiler error"; join order = left;
+  numbers = labels of the pattern's own groups (label numbers and `$1` to be tried); warnings structural or
+  library-defined, compiler ones prefixed `pcrec.`, a library's by its path, strictness selective by name; empty
+  search a warning; `min = n` allowed; atomic-search closed (his other reading is a backtracking verb, (*SKIP) by
+  my libpcre2 run). RX MODULE (docs/design/rx_module.md, lane rxlib): all eleven questions answered: a sequence
+  operator that splices and binds tighter than `&` and `|`; a hole is the inserted pattern as a whole and
+  assertions may cross the border (narrows the 11-14 string-set ruling to set positions); `${}` is a
+  context-aware insert with a kind per position; counts distribute over an alternation per mention, illegal
+  combinations removed; one `repeat` construct, plurals as conveniences; nine postfix quantifier operators
+  binding tightly; label-flow: a composed pattern behaves like a literal, an ambiguous reference across `&` is
+  the error, paths through a part's label, never a binding. His framing: declarative; "a matching language not a
+  finding language"; "an rx is a black box that exposes labels". predicates_future.md items 19-25 (item 24 = the
+  list of sixteen points the user documentation must explain).
+- NOT YET FOLDED into the draft: everything ruled after rev 24.4's brief (pass-start-read onward, and the whole
+  rx module). NEXT: one revision, then a critic round; a spellings review (about fifteen entries); two parked
+  discussions.
+- [ARCH-STEP] A3-A5 done: the goals document reviewed by the owner and restructured into his five tiers (four
+  high-level rules in his order: decisions in one place; data with its code, accessors; seams, module vs layer;
+  remodels ride along; the gate "no existing regex gets slower" with three allowances; his judgement section);
+  skill pcrec-architect; mode arch in pcrec-critic; wiring in the manager skill and BRIEF_TEMPLATE; the stream
+  manifesto's principle 7 scoped by him; emitter-backflow ruled (a one-way hand-off, size gates in plan units;
+  register row 6c, a noted deviation; facts in docs/dev/lanes/archbackflow_facts.md).
+- KIT: three critic-skill changes accepted (pooled noise per level; comparison kinds; drill by perturbation). Its
+  set 1 (mfcard-zen4-3, keys 600-609) is queued for 01:00 on 11-18; at close the box read QUIET (load 0.93) with
+  no watched application present; its forms tip is due to me by 14:00 on 11-18.
+- MY ERRORS, now rules in the manager skill: recorded a remark as a ruling (corrected twice), launched a revision
+  lane on "I thought we said"; pushed while CI ran (twice more); committed after a failed plan-lint, leaving two
+  wiring files uncommitted for four hours while I told the owner they were in force; showed him a hand-worked
+  example the draft's numeral rule falsifies, and paraphrased that rule wrongly in a critic brief.
+
+## 2026-11-18 (session 139 wake, box clock 23:20 on 11-17 onward; a note on STARTUP CONTEXT, at the owner's request)
+
+- WHAT THE WAKE READ before the first useful act (bytes on disk; roughly four bytes to a token): injected with no
+  act of mine: root CLAUDE.md 18.3 KB, the memory index 25.7 KB (OVER its 24.4 KB limit: the last two lines were
+  cut, one of them the timing-troublemakers memory the skill cites; one line is duplicated), the manager skill
+  18.9 KB, the harness's own skill list and tool schemas (large, not ours). Read by the wake procedure:
+  monitoring.md 8.4 KB (only to copy the heartbeat prompt), wake.md 7.3 KB, owner.md 5.9 KB, a 5 KB journal tail
+  (which repeats wake.md's first section), BRIEF_TEMPLATE.md 5.9 KB, three directory CLAUDE.md files injected by
+  those reads (7.8 KB), landing.md (grepped). Tool output: the wtprune dry run prints one KEEP line per worktree
+  (216 kept); the bare `grep STATE:started` the skill names also hits prose. About 100 KB of standing text, plus
+  output, before the first lane was briefed.
+- IDEAS TO REDUCE IT (none built; ranked by my guess at the saving, largest first):
+  1. MEMORY INDEX: cut each line to a title and under ~100 characters (the hook is in the file, not the index);
+     merge memories that became skill rules or CLAUDE.md rows into those and delete them (critics on all work, no
+     question UI, check-then-act, merge permission, many others are now stated two or three times); remove the
+     duplicate line. Target under 12 KB. This also un-cuts the two lost lines.
+  2. ONE WAKE SCRIPT (`scripts/wakeup main`): session role, CI on the tip, monread, a ONE-line queue summary, `git
+     status --short`, the anchored started-rows grep, and the heartbeat prompt printed ready to paste; silent
+     where normal, like gestalt. Removes the monitoring.md read at wake and five commands' raw output.
+  3. HEARTBEAT PROMPT in a file the cron names in one line ("HEARTBEAT main: do scripts/heartbeat.md"), or better a
+     script that does steps 0-2 and prints only what needs acting on: the prompt is re-read every tick today.
+  4. OWNER.MD: answered questions leave the file at the close that follows the answer (about half of it tonight
+     was the history of answered slugs; the record is COND-FAMILY.md and ARCH-STEP.md).
+  5. WAKE.MD is the hand-off; the journal tail is read only when wake.md points at it (the two overlapped fully).
+  6. MANAGER SKILL: the "always on" list grew to eleven dated paragraphs; keep each rule as one line and move the
+     incident history to a NOTES file beside it. Same split for BRIEF_TEMPLATE.md (the field list is 30 lines,
+     the rest is why).
+  7. wtprune and branchprune: print only REMOVE and UNMANAGED lines by default with a kept count (`-v` for the
+     KEEP lines); a `--check NAME..` that prints merged-into and the dirty file list per name (I hand-wrote that
+     loop tonight).
+  8. ROOT CLAUDE.md: the build-and-test prose and "where things are" are a contributor's orientation the manager
+     session never uses at wake; the situation index is the part that earns its place. A candidate for a split,
+     with the owner's say (it is his file's shape).
+  9. The skill's wake step 3 should carry plan.md's own anchored grep, and wake.md should give the close time from
+     `date` (it said 23:30; the box read 23:23 at wake).
+- ALSO at this wake: lane predspec25 (opus) launched for revision 25 of the predicates draft; 26 delivered
+  worktrees and 20 merged branches pruned; the owner's idea of a condition with a label parameter filed as
+  predicates_future item 26 (an idea, not a ruling).
+
+## 2026-11-17 (session 139, 23:40 box clock; the MEASURED startup context, correcting the note above)
+
+- The owner ran /context about 20 minutes after wake: 111.6k tokens. Messages 71.1k; memory files (root and user
+  CLAUDE.md plus the memory index) 18.7k; system tools 9.4k; skills list 7.2k; system prompt 4.2k; MCP 0.7k
+  (deferred tool schemas are listed at 26.4k but are not loaded). My estimate above was wrong in its split: the
+  fixed harness load is about 21k, not 20-25k plus skills, and the bulk (71k) is MESSAGES: the manager skill body,
+  the wake reads, tool output and my own writing (the lane brief, the journal note). Files read in full were four
+  (monitoring.md, wake.md, owner.md, BRIEF_TEMPLATE.md, about 27 KB); the large files were grepped only.
+- OWED (the owner: "lets look next session too and see if there are patterns"): at the NEXT wake, ask him for
+  /context (or note the figure he gives) right after the wake procedure and BEFORE any lane brief, so the wake's
+  own cost is separated from the session's work; record both sessions side by side here before building any of
+  the nine ideas.
+
+## 2026-11-18 (session 139, in flight at 13:45 box clock; written while the owner is away)
+
+- PREDICATES (design only), three revisions in fourteen hours. Rev 25 (lane predspec25) folded the 11-17 evening
+  rulings and the rx module; review r43 (48 findings, none refuted; NOT STABLE) -> rev 25.1 (predspec251). The
+  owner then answered questions through the morning by /q, ALL in docs/design/plan_row_bodies/COND-FAMILY.md, the
+  2026-11-18 entries: number-names (only when there is no ambiguity; 0 always the entire match); hit-carry (it
+  carries: occurrences is a rewrite) and nullable (a warning); product-order (first hole slowest), with his
+  correction that the product was ruled for COUNT holes only; name-hole (an array is an error; each hole position
+  has its own rules); removal (the whole copy); a count hole takes counts; array-lift (operations on arrays
+  combine on the product); hole-in-filter (the filter error; fill, then judge); the reference rule and free-name
+  (a reference resolves in the namespace of the rx it is written in; a name that rx does not define is an error;
+  "The rx should export the group"); export-rule (public unless `_`; a binding shows its own public labels and its
+  public part labels; `[_a = A]`, `[_ = A]`); condition-in-sequence (yes, and `&` stays); quantified-condition (an
+  error, a formal punt); lookahead-labels (visible); complement-place (the error is at the use; "rx that can match
+  and rx that can filter") and lone-complement-match (an error; provide "anything"); then, afternoon, the
+  conditional: the guarded form, when-default, when-test and when-peek (`peek()` tests; a bare pattern consumes,
+  with a warning), a single-argument `when` an error, `then` required, NOT for else-only. Ideas filed:
+  predicates_future items 26 (a condition with a label parameter), 27 (cartesian), 28 (a count as a filter), 29
+  (@assert). Rev 26 (predspec26: the fold + section R on ONE place table) -> review r47 (NOT STABLE; the fold
+  faithful, six answer-level findings in the extensions) -> rev 26.1 IN FLIGHT (lane predspec261, with three late
+  rulings sent through its rulings file: VERIFY R1-R3 in the delivery).
+- ARCH-STEP: ast-accessors ruled (interface vs representation; the AST grandfathered; "the rules are stronger
+  moving forwards and sympathetic looking back"); accessor-grain closed; functionality wholly dependent on a
+  structure lives in its area. Applied under high-level rule 2 of docs/dev/guide/architecture.md.
+- COVER-CAP (set S3): the kit delivered its forms early (lane/memfn-forms @ 105bf8ef4); lane covs2land merged them
+  onto the cover-cap line (merge c774d15c0, tested tip a88871a19, branch lane/covs2land); cloud: mechrows GREEN,
+  asan GREEN, axes running, TEST RED on ONE failure (the kit's g2 presence generator emits runs up to 64 terms
+  once the span cap is 4095; window.c refuses over 32: each side green alone). Triage lane covs2tri diagnosed, did
+  not fix; the KIT fixes on lane/memfn-g2pcap (the generator's cap follows MF_MAX_TERM), tip due ~15:30, green
+  ~17:00; my freeze by 20:00 depends on it.
+- KIT TIMING: set 1 (mfcard-zen4-3) INCONCLUSIVE on the night of 11-18 (the JMH card timed out at the quiet gate a
+  third night: a whole-job wait budget against an idle load of about 2.0; the avx2libc arm missed two byte floors
+  at the 3% noise gate). I ruled a per-launch wait (threshold unchanged); the full set re-runs on the 11-19 night
+  after set 2 as its LAST night. The owner ruled quiet-threshold: try again, then run the green cards with the
+  load held near 3 and compare within noise: calibration set mfcal queued (keys 800-809, run mfcard-zen4-4L),
+  after both sets, no start after 07:00, spinners dead by 07:15.
+- THE OWNER ON THE SETS: S2 (required-runs stage 3 + the kit's part), S3, S4 "either order is fine. I just don't
+  want them dropped"; they are in owner.md's Next section. S2 has had no work since its go of 11-11.
+- STARTUP CONTEXT: measured 111.6k at +20 min (entries above); the comparison at the next wake is owed.
+- MY ERRORS: told the owner "every spelling of anything agrees as a whole value" (false: `/.*/` stops at a
+  newline) and that the export rule settled the caller's read-out (undefined: r47 B13); corrected the nullable
+  meaning wrongly once before getting it right; recorded "nearest pattern to the left" and "the right side of &"
+  as his (both corrected in the record); narrowed his reference principle to "resolved in the part" and had to
+  withdraw it. A critic reported the coordinator "stopped" when it had not (nested replies never deliver).
+
+## 2026-11-18 (session 139 CLOSE, about 14:00 box clock, at the owner's /close; no lane of main's alive)
+
+- Since the in-flight entry above: review r47 filed (lane file47, merged); rev 26.1 of the predicates draft
+  (lane predspec261: r47's fixes, the conditional, and three late rulings sent as R1-R3 through its rulings file,
+  each verified in the delivery) MERGED as 1e53bddb3; NOT reviewed, by choice, until the owner answers its
+  questions (about a dozen; the first to bring is backref-label, which changes plain PCRE answers). The owner's
+  afternoon rulings (the conditional: guarded form, when-default, when-test, when-peek, a single-argument `when`
+  an error, `then` required, NOT for else-only) and his proposal of arrays written with `|` only are in the record.
+- OPEN AT CLOSE, time-critical, in wake.md items 2 and 3: the cover-cap FREEZE before 20:00 (waits on the kit's
+  cloud test of lane/memfn-g2pcap @ d5c41db37; axes on a88871a19 still running), and tonight's three kit timing
+  sets from 01:00 with the 00:27 load check.
+- A rule added to the manager skill: a reason given to the owner is run too, and every manager reading in the
+  record is tested by the next revision lane. plan.md: COVER-CAP and COND-FAMILY status lines brought to today
+  (my first wording failed plan lint PL10, a 300-character limit; caught before the commit).
+- NEXT: wake.md. The startup-context comparison is owed at the next wake before any lane is briefed.
+
+## 2026-11-18 (session 140, in flight) — cover-cap line frozen for the night
+
+- Wake at 13:53. The kit's fix (lane/memfn-g2pcap @ d5c41db37) GREEN in its cloud test (run 44370476761); the old
+  tip's axes run (44359029554) GREEN. Merged it into lane/covs2land as 33fec79b3 (merge alone; make strict and
+  test-plan-lint green in the worktree). Cloud test on 33fec79b3 GREEN 14:39 (run 44375150539,
+  cloud/main/test/covs2freeze2-test). FROZEN 33fec79b3; sent to pcrec-memfn 14:40 for set 2 (keys 700-704).
+- MISTAKE: `scripts/cloudrun --ref HEAD` run from a subshell cd'd into the worktree pushed MAIN's tip (ce47501bb)
+  as cloud/main/test/covs2freeze-test: the script resolves HEAD in its own checkout. Caught on the DONE line's
+  sha; re-dispatched with `--ref 33fec79b3`. Rule for me: always pass cloudrun an explicit sha and read the sha
+  on its DONE line. The stray run was left to finish (green; means nothing).
+- Startup-context measurement: asked Frank for /context (he is AFK); no lane briefed yet.
+- Alarm re-created for 00:27 on 11-19 (loadshame before the 01:00 window).
+- STARTUP-CONTEXT reading (Frank's /context, session 140, about 15:00, +65 min after wake and AFTER the freeze work,
+  no lane briefed): 112.3k total; messages 69.3k, memory files 18.7k, system tools 11.9k, skills 7.2k, deferred
+  system tools 18.2k, deferred MCP tools 5.6k, system prompt 4.2k. Session 139's figure: 111.6k at +20 min
+  (messages 71.1k, memory files 18.7k). Not like for like (this one includes an hour of work); the fixed part
+  (memory files 18.7k) is identical. No reduction idea built.
+- 15:10-17:35: owner rulings by /q, all in COND-FAMILY.md (his words): backref-label = capture; value-hole yes
+  under match-is-rx (types unified; both directions; built for constants and reads, the rest UNDER CONSTRUCTION);
+  read-is-constant (two forms of each operation). predicates_future item 30 filed (rx string manipulation as graph
+  manipulation). Lane predspec27 (opus) folds them as rev 27 and tests every manager reading.
+- CORRECTION of my 11-18 hand-off: set S2 ([RUN-POS-SET] stage 3 + the kit's Part D) LANDED 11-14 (9cecc3caa) and
+  closed 11-14/15; wake.md, owner.md and the plan row said "GO given, no work since" (the row's 11-11 status line
+  was stale and I copied it without reading the journal). Plan row fixed 57fcb5737. Lesson: a "not started" claim
+  about a GO'd set is checked against the journal and `git log`, never against a status line alone.
+- Frank 17:30: "Start both. Can we try the architecture process on these?" (start-lookaround, start-densehit).
+  Lanes archlook and archdense (opus, architecture notes only, the [ARCH-STEP] pilot A6); critic rounds in mode
+  arch follow each note.
+- 17:15-17:50: predspec27 delivered and MERGED (b22285a36; rev 27; 14 of 18 manager readings supported, 2 not, 2
+  untestable); critic round crit-predspec27 (design) launched. archdense and archlook delivered their architecture
+  notes (lane/archdense @ 5dcc98dfc, 13 sites; lane/archlook @ e7c814fcf, 28 rows, five refactors first); critic
+  rounds crit-archdense and crit-archlook (mode arch, its first uses). crit-archdense drafted in about 30 min:
+  NOT ACCEPTED, revise (12 groups, 0 answer / 0 speed, 8 design); dispositions ruled (scratch/mgr140/
+  r48_dispositions.md: cadence register row proposed with the counter-argument; A-PLAN trigger not fired by U1;
+  owner questions triaged 5 -> 1); fix lane archdense2 files it as r48 and revises the note.
+- SECOND stale plan row found by an architect lane: [REQ-LOOKAROUND] said not-started / rev 1 / no go; span_arms is
+  at rev 2.2 and D191 (11-09) gave L1 and L3 the build go. Row corrected and moved to Active (2843924a1). The
+  [LANDWALK] tag reads not-started while its stage 1 is BUILT (review r48 group A): a third; to fix at r48's landing.
+- 17:55-18:10: the coordinators settled review numbers among themselves: r48 predspec27, r49 archdense, r50
+  archlook (archdense2 was briefed r48: R-1 in its rulings file + a message; verify the rename at delivery).
+  crit-predspec27 (46 ids, 0 refuted; 5 answer / 9 design / 7 doc): NOT STABLE; dispositions ruled
+  (scratch/mgr140/r48_predspec27_dispositions.md: my m1 consequence on user arrays WITHDRAWN; `left` collision =
+  my spelling call; O to PLAN); fix lane predspec271. crit-archlook (36 raised, 17 groups, 0 answer): NOT
+  ACCEPTED; dispositions ruled (r50_archlook_dispositions.md: A8 the never fact has ONE home, READY-5's listing
+  kept as its rendering; A6 arithmetic-only merge; U-negctx declined); fix lane archlook2. Coordinators stopped.
+  Lesson (pilot): two coordinators the same day need the manager to ASSIGN review numbers in the launch prompt.
+- 17:45-18:15: fix lanes delivered (archdense2 with R-1's r49 rename verified; archlook2; predspec271). Confirm
+  critics conf-archdense and conf-archlook (sonnet): both ACCEPT AFTER SMALL EDITS; dense-hit's four edits applied
+  by me (5a1f23d3a), the lookaround's ten by lane landarch. Both architecture notes ACCEPTED rev 2.1 and LANDED by
+  landarch (merges e90e282b9, 453643836; register rows 21-29; design + reviews CLAUDE.md size moves; ledger line);
+  predicates rev 27.1 MERGED 8b2d71186 (review r48 filed). main pushed at 6ff641f7f (CI on 84610b4fd was green).
+  NOT entered by landarch, mine to decide: F-6 (does register row 19 absorb RB_ROW_SCAN) and lookaround P6
+  (conditional on D-9). My errors: deliver files' `files:` separated by a space (lanecheck wants `;`), fixed in
+  all three; review numbers left to the coordinators. lookahead-home asked by /q at 18:05.
+- OWED: [LANDWALK] plan tag (stage 1 is built; the tag reads not-started); the pilot write-up of the architecture
+  step (process logs in docs/dev/reviews/2026-11-18-r49-archdense/process.md, r50's, r48's; the two architect
+  lanes' SKILL FRICTION sections; coordinators' proposed changes HELD); wtprune of today's delivered worktrees.
+- 18:25-18:55: Frank ruled lookahead-home (the kit's method; a search loop for now; kit-found starts filed as his
+  idea, docs/design/plan_row_bodies/REQ-PAST-LAST.md); request R-46 filed (603154be1) and acked by the kit (form
+  due about 17:00 on 11-19); the dense-hit design lane waits for the form. Frank on context-producer-home: "I do
+  feel like we've covered this ground several times" + the span `foobar` at index -3: ONE producer (recorded in
+  docs/design/plan_row_bodies/REQ-LOOKAROUND.md; register row 28 withdrawn; [CTX-FACTS-NEG] re-scoped; 8993b8f82).
+  MY ERROR: I relayed a question D168/D172/D191.2-3 already answered; the architect, five critics and my triage
+  all missed D191.3. remodel-go taken as the manager's call (answer-identical refactors). Lane spanarms7 (opus):
+  span_arms rev 3, the L units re-based on the accepted note; its brief requires a record grep before any owner
+  question is listed.
+- 18:45-19:10: spanarms7 delivered (span_arms rev 3; order L1, L3, L2; my reading m2 NOT supported: the cover
+  route does not take `(?<=foo)bar` today, so the owner's "proved, search over" ending is a later reader, told to
+  him); critic round crit-spanarms7 = review r51 (number ASSIGNED by me in the launch prompt). Frank: "Please
+  create a new manager skill: /pcrec-predicate-manager ... Managed by the pcrec manager like the kit manager is.
+  an interface for me discuss predicate work." Written: .claude/skills/pcrec-predicate-manager/SKILL.md,
+  docs/dev/pred/ (CLAUDE.md, the hand-over wake.md, journal.md, from_main.md M-1, to_main.md), /q and the manager
+  skill wired, .gitignore (72f4274d0). Lane predrole (sonnet) adds the role word `pred` to session_role and the
+  two hooks. From the first predicate session on, main writes none of the draft, COND-FAMILY.md or
+  predicates_future.md.
+- 19:05-19:25: predrole MERGED (cab590dcf; role `pred`; hookrole 22 of 22; push owed after CI on 0430a8929).
+  crit-spanarms7 = review r51: 47 findings, 18 verified, 0 refuted; L1 / L3 / L2 READY WITH LISTED TEXT FIXES;
+  READYL3-1 an ANSWER bug in the design (a kept guard means a K<0 move is never emitted under byte:
+  `(?<=a)a(\w)\1` from 3 gives (2,5), oracle (3,6)), READYL3-4 and -6 safety. Ruled (scratch/mgr140/
+  r51_spanarms7_dispositions.md): `++ rg` moves to L2; the never rows are a kindrow.def NEVER column (RM-6, rides
+  L1); the census stop reads the model's prediction (my reading of D191.1, to tell Frank); F-7 a noted deviation
+  with A-POSDOM as its correcting event; READYL2 discharges L2's readiness critic once the confirm critic passes.
+  Fix lane spanarms8. The build lanes wait for 11-19 by day (evening hold from 20:00).
+- 19:25-19:35 (CLOSE of session 140, Frank's /close): spanarms8 delivered (lane/spanarms8 @ 0720014bc, UNMERGED:
+  review r51 filed with ruled dispositions; span_arms rev 3.1, 47 of 47 findings applied; lanecheck DONE). Its
+  calls for the confirm critic: the "whole run" pick spec hunks placed in L3's row; an L1 remodel of the head's
+  per-kind rule under register row 27's event (outside RM-1..RM-6: does my remodel-go call reach it); register
+  rows 5, 19 and the F-7 deviation as PROPOSALS. FACT (RULING-5): [CTX-SIDES-PRODUCER]'s trigger (cover B1) FIRED
+  on 2026-10-23 (bc675b020), before the row was filed 11-08; the row reads not-started and is the row that owes
+  the owner's "proved, search over" ending for `(?<=foo)bar` (today: unanchored/hybrid; `(?<=f)bar` and `foobar`
+  take the cover). Frank asked which of (2,5) / (3,6) is right for `(?<=a)a(\w)\1` on `-aaaaaq-b`: both, run in
+  python `re` and libpcre2: (2,5) from offset 0, (3,6) from offset 3; the design bug is the missing clamp at a
+  non-zero start offset. The predicate manager session came up (branch lane/pred-rev28; P-1 acks M-1; r52
+  reserved for its first critic round). Manager skill: two always-on bullets added (f9ee6814e).
+- Lessons of the session (the rules are in the skill): status lines lie, the journal and git log do not (three
+  stale rows); the architecture step's first real use found both stale rows that mattered, an aggregation of 10
+  hand tests, and, at the design round, an answer bug before any code; its RULING lens was the most productive in
+  every round and still missed D191.3 against an owner question; my own readings failed at about one in nine.
+
+## 2026-11-18 session 141 (in flight, 20:30) — manager opus 5.5
+
+- Woke 20:00 (evening hold: light work only). Pushed main 0430a8929..62bbdcc3e (CI green on the prior tip). Night load check armed for 00:27.
+- conf-spanarms8 (sonnet, read-only): span_arms.md rev 3.1 vs r51 CONFIRMED WITH FIXES: 47/47 applied; gating witness `(?<=a)a(\w)\1` on `-aaaaaq-b` RE-RUN: (2,5) from 0, (3,6) from 3 (python re + build/pcrec). Four text defects D1-D4; judgement calls (a)(c) sound, (b) sound and mine to confirm (CONFIRMED). Findings: $PCREC_TMPDIR/scratch/conf-spanarms8/findings.keep.md. L2's readiness critic discharged once D3 is fixed.
+- spanarms9 (sonnet) launched: rev 3.2 with D1-D4 + register rows 5, 19, 27, 29 and a NOTED DEVIATION row for F-7. The D168 addendum stays with L1's build (the design says so; wake.md's "file it at merge" was wrong).
+- recs1118 merged: [LANDWALK] started + moved to Active (stage 1 landed dc6a40dfb); [CTX-SIDES-PRODUCER] trigger-fired note; D199 (cover-cap "Go on all stages" + the manager's other-sites-at-32). Pruned 15 merged worktrees, 13 branches.
+- Asked Frank proved-ending-scope (route check RUN: `(?<=f)bar` -> cover, `(?<=foo)bar` -> unanchored); my lean: a fourth lookaround unit after L1 and L3.
+
+## 2026-11-19 session 141 (in flight, 00:30) — owner rulings of the evening; night handed to the kit
+
+- Merged: spanarms9 (span_arms.md rev 3.2 on main 054c9cdf7: r51 47/47 + confirm D1-D4; register rows 5, 19, 27, 29 status, row 30 NOTED F-7); archpilot ([ARCH-STEP] A6 write-up in ARCH-STEP.md; critic skill K1-K11, architect skill A1-A10). Pushed to 482a50440.
+- OWNER RULINGS (verbatim in the records): pilot-verdict + size-trigger-final -> D200 (step kept, trigger as is); census-stop -> D191 add. 1 (a fail-fast census, ~1 h, BEFORE any build, facts or performance; my derived consequences marked there); remodel-go -> D191 add. 2 (small refactors ride the go, listed in every pre-go briefing; manager skill trigger row); proved-ending-scope -> [CTX-SIDES-PRODUCER] scheduled after L1-L3 land (REQ-LOOKAROUND.md body).
+- Night: load checks 00:06 and 00:27 QUIET (load 1.3-1.5, no trouble makers); kit 700-703 queued for 01:00; 704 cancelled (by day).
+- NEXT by day: read the night's verdicts (`scripts/monread main`); L1 build lane (opus): census first (stop on no predicted mover), then remodel commits (RM-1, RM-6, remodel 3), then the feature; the D168 addendum in the same change; D27 witnesses; code critic before landing. Cover-cap rebuild on h*. Dense-hit design when the kit's R-46 form arrives (~17:00). A6 retro test owed.

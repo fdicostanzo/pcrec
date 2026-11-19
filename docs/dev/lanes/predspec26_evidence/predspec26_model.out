@@ -1,0 +1,182 @@
+predspec26 evidence; libpcre2-8 10.46 2025-08-27
+selfcheck: NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3) ; OK
+selfcheck: NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried) ; OK
+selfcheck: MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match) ; OK
+selfcheck: callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F) ; OK
+selfcheck: callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T) ; OK
+selfcheck: ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False ; OK
+pools: `37,` length <= 5: 364 texts
+
+== PART N: number-names (only when there is no ambiguity) and its addendum (0 is always the entire match)
+N1 `/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)`: (a) the label h vs (b) group 1's own: 7 / 277 / 284 of 364 (holds and stretch), first ('W', '3')
+   (a) WHOLE `3,7` FAILS ; SEARCHED `7,3` `7,3`@0 ; FIND-ALL `3,7 7,3` [`7,3`@4]
+   (b) WHOLE `3,7` HOLDS ; SEARCHED `7,3` `3`@2 ; FIND-ALL `3,7 7,3` [`3,7`@0, `3`@6]
+   the record (shown): "differ on 7 of 364 texts whole and 277 searched" ; OK
+   THE MANAGER'S READING (the sub-point falls under "only when there is no ambiguity" and is REFUSED): the two meanings a reader
+   can give `1` there DIFFER on the run above, so the number is ambiguous there: SUPPORTED (the run shows the ambiguity the rule refuses)
+N2 RULE-AS-CODE one literal `/(\d),(\d)/`, 1                                           -> allowed  ; OK
+N2 RULE-AS-CODE one literal, shared name `/(?<h>\d)(?:,(?<h>\d))*/`, 1                 -> REFUSED (name the group) ; OK
+N2 RULE-AS-CODE a sequence `A SEQ B`, 1                                                -> REFUSED (name the group) ; OK
+N2 RULE-AS-CODE an inserted pattern `/${A},(\d)/`, 1                                   -> REFUSED (name the group) ; OK
+N2 RULE-AS-CODE an alternation of patterns `(A | B)`, 1                                -> REFUSED (name the group) ; OK
+N2 RULE-AS-CODE a repeat's operand `A+`, 1                                             -> REFUSED (name the group) ; OK
+N2 RULE-AS-CODE an `&` chain with two patterns `A & B & (1: ..)`, 1                    -> REFUSED (name the group) ; OK
+N2 RULE-AS-CODE an `&` chain with one pattern `A & (1: ..)`, 1                         -> allowed  ; OK
+N2 RULE-AS-CODE 0 on a sequence                                                        -> allowed  ; OK
+N2 RULE-AS-CODE 0 on an inserted pattern                                               -> allowed  ; OK
+N2 RULE-AS-CODE 0 on an alternation of patterns                                        -> allowed  ; OK
+N2 RULE-AS-CODE 0 on a repeat's operand                                                -> allowed  ; OK
+N2 RULE-AS-CODE 0 on an `&` chain with two patterns (THE MANAGER'S READING (1))        -> allowed  ; OK
+N3 `A & B & (0: /3.*/)`, A := `/\d+(?:,\d)?/`, B := `/\d+,?\d?/`: 0 read as A's whole match vs the stretch B is matched on: 0 / 0 / 0 of 364 ; OK
+   THE MANAGER'S READING (1) SUPPORTED: by the filter sentence B is matched on A's stretch, so A's 0 and B's 0 are one text
+N4 every number a hit (gaps without digits): `occurrences(/\d+/ & (0: /3\d*/))` vs `occurrences(/\d+/ & /3\d*/)` (the LAW inside a hit), WHOLE over 364 texts: 0 = the hit's own match 0 differ ; 0 = PCRE's group 0 81 differ ; OK
+   THE MANAGER'S READING (2) SUPPORTED: only the part's-own reading keeps the LAW in that place (as rev 24.4's zero-place run found at the top)
+
+== PART H: hit-carry (it carries: `occurrences` is a rewrite) and the nullable argument (a warning)
+H1 `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5): WHOLE `73` FAILS ; SEARCHED `73` FAILS ; FIND-ALL `3x73` [`3x73`@0 h = `7`]
+   the record's witness under "it carries" (shown with the leaning, rev 25.1's PART C C2): WHOLE `73` FAILS / SEARCHED FAILS / FIND-ALL [`3x73`@0 h = `7`] ; OK
+H2 the condition AFTER its label (his "put the condition after the label to get the normal behavior"): WHOLE `73` FAILS ; `33` HOLDS h = `3` ; `37` FAILS (before its group, carried: `37` HOLDS h = `7`) ; OK
+H3 THE MANAGER'S CONSEQUENCE (R.1.9's "its hits are those of a plain search" holds only with no condition before its group): carried vs the argument's plain hits (rev 25.1's NO candidate: c before its group reads nothing set, so it always holds), WHOLE 84 of 364 texts differ ; OK
+   SUPPORTED: rev 25.1's PART C C2 printed WHOLE 84 of 364 for the same pair; here 84
+H4 the nullable argument `/\d*/` (a warning, ruled): PCRE's FIND-ALL of it on `a1b` [``@0, `1`@1, ``@2, ``@3]
+H5 the same argument under the REWRITE (the one-pattern loop, hit-carry's premise), WHOLE `a1b`: HOLDS ; hits recorded by a callout [((0, 0), '')] (one empty hit at 0: PCRE ends a loop on an empty iteration; §2.6's first refusal's fact)
+   THE MANAGER'S READING ("the program keeps PCRE's meaning for the empty hit, as the empty search does"): AMBIGUOUS on the run: PCRE's LOOP (the rewrite) gives ONE hit, PCRE's find-all (the empty search's meaning) gives FOUR; NOT SUPPORTED as worded; the ruled premise (a rewrite) ENTAILS the loop's one hit (told, not asked); the `pcrec.` name: NOT RUNNABLE (a name)
+
+== PART P: product-order (count holes only; first slowest), removal (the whole copy), name-hole (an error)
+P1 `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2], the copies in product order: (?|(?<x>\d{1})(?<y>\d{1})|(?<x>\d{1})(?<y>\d{2})|(?<x>\d{2})(?<y>\d{1})|(?<x>\d{2})(?<y>\d{2})) ; WHOLE `123` HOLDS x = `1`, y = `23` ; OK
+P2 python `re` (the manager's run, shown): `(?P<x>\d|\d\d)(?P<y>\d|\d\d)` whole `123` x = `1`, y = `23` ; longest first x = `12`, y = `3` ; OK
+P3 libpcre2: the sequence of two alternations vs the first-slowest copies, labels x, y: 0 / 0 / 0 of 364 ; OK
+   THE MANAGER'S READING ("first slowest is the order regex itself gives a sequence of alternations"): SUPPORTED
+P4 removal `/a|\d{${m},${M}}/`, m := [5], M := [2]: (?!) ; WHOLE `a` FAILS ; SEARCHED `xa` FAILS ; FIND-ALL `a xa` [] ; OK
+   the record (shown): the whole copy removed, "the program never matches, not even `a`" REPRODUCED
+   THE MANAGER'S READING (every copy removed -> the can-never-match warning reports it): RULE-AS-CODE only; the program above matches nothing on any text: OK
+P5 the joining reading he was shown (WITHDRAWN): `(?:(?<a>\d)|(?<b>\d))` on `7`: a = 7, b = None (the second copy dead) ; OK
+P6 RULE-AS-CODE a name    hole given ['a', 'b']   -> COMPILE ERROR ; OK
+P6 RULE-AS-CODE a name    hole given ['a']        -> accepted ; OK
+P6 RULE-AS-CODE a count   hole given [2, 4]       -> accepted ; OK
+P6 RULE-AS-CODE a count   hole given ['2', 'x']   -> COMPILE ERROR ; OK
+P6 RULE-AS-CODE a count   hole given [2, 'x']     -> COMPILE ERROR ; OK
+P6 RULE-AS-CODE a class   hole given ['a', 'b']   -> OPEN (no ruling) ; OK
+P7 a count hole must produce counts (ruled): PCRE itself accepts `\d{x}` as text (WHOLE `1{x}` HOLDS), so the refusal is the language's rule, not PCRE's ; OK
+
+== PART AL: array-lift (operations on arrays combine on the product, first operand slowest)
+AL1 [2, 4] + 1             = [3, 5]                     ; OK
+AL1 [2, 4] + [1, 10]       = [3, 12, 5, 14]             ; OK
+AL1 [2, 4] * [1, 10]       = [2, 20, 4, 40]             ; OK
+AL1 1 + [2, 4]             = [3, 5]                     ; OK
+AL1 [1, 2] + [10, 20, 30]  = [11, 21, 31, 12, 22, 32]   ; OK
+   the three hand-worked arrays he was shown REPRODUCED (rows 1-3); rows 4-5 extend the rule (a single value first; unequal lengths)
+AL2 `rx.repeat(rx.digit, n + 1)`, n := [2, 4]: n + 1 = [3, 5], copies (?|\d{3}|\d{5}) ; WHOLE `123` HOLDS ; SEARCHED `123456` `123`@0 ; FIND-ALL `12345 678` [`123`@0, `678`@6] ; OK
+AL3 a repeated result is harmless (THE MANAGER'S READING): [1, 2] + [2, 1] = [3, 2, 4, 3] ; as count copies the first occurrence wins: `(?|\d{3}|\d{2}|\d{4}|\d{3})` vs without the repeat: 0 / 0 / 0 of 364 differ
+
+== PART HF: hole-in-filter (fill the holes first, then judge the operand as a filter)
+HF1 RULE-AS-CODE `/\d+/ & /${num}/`, num := `/\b\d+\b/`                         -> FILTER ERROR ; OK
+HF1 RULE-AS-CODE `/\d+/ & num` (written out)                                    -> FILTER ERROR ; OK
+HF1 RULE-AS-CODE `/\d+/ & /${d}/`, d := `/\d+/`                                 -> accepted     ; OK
+HF1 RULE-AS-CODE `/\d+/ & /1${e}2/`, e := `/\b/` (inside, both sides digits)    -> accepted     ; OK
+   the record's witness (shown): the leaning "the filter error" -> REJECTED in every mode, as written out
+
+== PART REF: a reference uses the namespace of the rx it is written in (the last mention there); a name that rx does not define is a compile error
+REF1 RULE-AS-CODE B := `/(?<h>\d)\k<h>/` after A := `/(?<h>\d)/`     -> B's own `h`                              ; OK
+REF1 RULE-AS-CODE B := `/\k<h>/` after A                             -> COMPILE ERROR (`h` not defined in B)     ; OK
+REF1 RULE-AS-CODE B := `/\k<h>(?<h>\d)/` after A                     -> B's own `h`                              ; OK
+REF2 `A SEQ B`, B's own group (renamed apart `(?<h>\d)(?<h2>\d)\k<h2>`): WHOLE `733` HOLDS ; SEARCHED `1733 737` `733`@1 ; FIND-ALL `737 733 747` [`733`@4] ; OK
+     the written-out regex under PCRE's duplicate names `(?J)(?P<h>\d)(?P<h>\d)(?P=h)` (= `(?J)(?<h>\d)(?<h>\d)\k<h>`): WHOLE `733` FAILS, `737` HOLDS (the reverse, as shown) ; OK
+REF3 B := `/\k<h>(?<h>\d)/` after A, B's own h unset at its reference (renamed `(?<h>\d)\k<h2>(?<h2>\d)`): matches on no text of `3779` length <= 4: OK ; with PCRE's MATCH_UNSET_BACKREF it would match `37`: HOLDS
+   the manager's "(its h, unset at that point on a first pass)": SUPPORTED; what the reference then DOES (fail, as PCRE's default) is THE DRAFT'S READING (regex by default)
+REF4 a backreference INSIDE ONE literal with two groups of one name, `/(?<h>\d);(?:(?<h>\d)|x)\k<h>/` (read "as labels are"): three readings
+     THE LABEL (the one rule: entering the alternation resets h)    WHOLE `3;x3` FAILS, `3;77` HOLDS, `3;73` FAILS ; SEARCHED `3;x3 3;77` `3;77`@5
+     the last-SET group's capture                                   WHOLE `3;x3` HOLDS, `3;77` HOLDS, `3;73` FAILS ; SEARCHED `3;x3 3;77` `3;x3`@0
+     PCRE `(?J)` (first set group)                                  WHOLE `3;x3` HOLDS, `3;77` FAILS, `3;73` HOLDS ; SEARCHED `3;x3 3;77` `3;x3`@0
+     label vs last set: 2 / 2 / 2 of 341 differ, first ('W', '3;x3')
+     label vs (?J): 6 / 6 / 6 of 341 differ, first ('W', '3;73')
+     last set vs (?J): 4 / 4 / 4 of 341 differ, first ('W', '3;73')
+
+== PART EX: the export rule (public unless `_`; a binding shows its own public labels and its public part labels)
+EX1 RULE-AS-CODE date   m.v    outside -> visible (path)           ; OK
+EX1 RULE-AS-CODE date   y.v    outside -> visible (path)           ; OK
+EX1 RULE-AS-CODE date   v      outside -> ERROR (not visible)      ; OK
+EX1 RULE-AS-CODE year   v      outside -> visible                  ; OK
+EX1 RULE-AS-CODE date   v      inside  -> visible (last mention)   ; OK
+EX1 RULE-AS-CODE date   y.v    inside  -> visible (path)           ; OK
+EX1 RULE-AS-CODE pdate  _y.v   inside  -> visible (path)           ; OK
+EX1 RULE-AS-CODE pdate  _y.v   outside -> ERROR (not visible)      ; OK
+EX1 RULE-AS-CODE pdate  m.v    outside -> visible (path)           ; OK
+EX1 RULE-AS-CODE hdate  v      inside  -> visible (last mention)   ; OK
+EX1 RULE-AS-CODE hdate  _.v    inside  -> ERROR (not visible)      ; OK
+EX1 RULE-AS-CODE hdate  m.v    outside -> visible (path)           ; OK
+EX1 RULE-AS-CODE priv   _t     inside  -> visible (last mention)   ; OK
+EX1 RULE-AS-CODE priv   _t     outside -> ERROR (not visible)      ; OK
+EX1 RULE-AS-CODE priv   v      outside -> visible                  ; OK
+EX1 RULE-AS-CODE outer  d.m.v  outside -> visible (path)           ; OK
+EX1 RULE-AS-CODE outer  m.v    outside -> ERROR (not visible)      ; OK
+EX1 RULE-AS-CODE outer  x      outside -> visible                  ; OK
+   bindings: year := /(?<v>\d{4})/ ; month := /(?<v>\d\d)/ ; date := [y = year] SEQ "-" SEQ [m = month] ; pdate := [_y = year] SEQ .. ; hdate := [_ = year] SEQ .. [m = month] ;
+   priv := /(?<_t>\d)(?<v>\d)/ ; outer := [d = date] SEQ /(?<x>.)/  (hdate's inside `v` is month's: year's is closed by `[_ = ..]`)
+EX2 `year & (v: >= 2000)`: WHOLE `2025` HOLDS ; SEARCHED `x1999 2001` `2001`@6 ; FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] ; OK
+EX3 `date & (m.v: <= 12)` (paths as renamed groups): WHOLE `2025-11` HOLDS y_v = `2025`, m_v = `11` ; SEARCHED `2025-13 2025-12` `2025-12`@8 y_v = `2025`, m_v = `12` ; FIND-ALL `2025-13 2025-12 2026-01` [`2025-12`@8 y_v = `2025`, m_v = `12`, `2026-01`@16 y_v = `2026`, m_v = `01`] ; OK
+   THE MANAGER'S READINGS: "pass-through is answered by statement 3" (outer: `d.m.v` by path, bare `m.v` not): RULE-AS-CODE, consistent; NOT RUNNABLE independently (visibility has no regex model)
+
+== PART CS: condition-in-sequence (yes; `&` stays): the condition tested where it stands
+CS1 `([h = rx.digit] SEQ (h: <5) SEQ ";")*` on `7;3;` WHOLE FAILS ; `([h = rx.digit] SEQ ";")* & (h: <5)` WHOLE HOLDS h = `3` ; OK
+    the manager's hand-worked answer (shown): the sequenced form FAILS (each pass tested), the `&` form HOLDS (the last mention) REPRODUCED
+CS2 the two forms over 364 texts (labels compared): 2 / 324 / 364 differ, first ('W', '')
+CS3 the condition LAST in a sequence and the `&` form are one regex model: OK
+CS4 RULE-AS-CODE a postfix quantifier (all nine) on a cond                            -> COMPILE ERROR ; OK
+CS4 RULE-AS-CODE a postfix quantifier (all nine) on a seqcond-in-group-with-pattern   -> accepted ; OK
+CS4 RULE-AS-CODE a postfix quantifier (all nine) on a pattern                         -> accepted ; OK
+CS5 the witness he was shown, read as regex (NOT adopted): `[h = rx.digit] SEQ (h: <5)?` WHOLE `7` HOLDS h = `7` ; SEARCHED `73` `7`@0 h = `7` ; FIND-ALL `7 3` [`7`@0 h = `7`, `3`@2 h = `3`]
+
+== PART LA: lookahead-labels (visible, as in PCRE)
+LA1 python `re` (shown): whole `1234` l = `4`, f = `1` ; find-all `1234 4321 77` l/f ['4/1', '1/4', '7/7'] ; OK
+    a negative lookahead leaves its group unset: l = None ; OK
+LA2 `/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/ & (l: > f)` (the condition's effect, hand-worked in the record, RUN): WHOLE `1234` HOLDS l = `4`, f = `1` ; SEARCHED `4321 1234` `1234`@5 l = `4`, f = `1` ; FIND-ALL `1234 4321 77` [`1234`@0 l = `4`, f = `1`] ; OK
+LA3 a label set in a lookahead may lie outside the matched text (for item 24): SEARCHED `1234` `1`@0 l = `4`, f = `1`
+LA4 THE MANAGER'S READING (the same for a lookbehind): `(?<=(?<b>\d))x` SEARCHED `a7x` `x`@2 b = `7` ; SUPPORTED as regex behaviour ; OK
+
+== PART CX: complement-place (the error is at the USE; rx that can match, rx that can filter) and lone-complement-match
+CX1 RULE-AS-CODE not_seven := not seven (bound)                     -> legal              ; OK
+CX1 RULE-AS-CODE digits & not_seven                                 -> legal              ; OK
+CX1 RULE-AS-CODE neither := not seven & not eight (bound)           -> legal              ; OK
+CX1 RULE-AS-CODE not_seven run alone (whole or searched)            -> ERROR at that use  ; OK
+CX1 RULE-AS-CODE digits SEQ not_seven                               -> ERROR at that use  ; OK
+CX1 RULE-AS-CODE occurrences(not_seven)                             -> ERROR at that use  ; OK
+CX1 RULE-AS-CODE /x${not_seven}y/ (THE MANAGER'S READING, agreed)   -> ERROR at that use  ; OK
+CX1 RULE-AS-CODE anything & not_seven                               -> legal              ; OK
+CX1 RULE-AS-CODE `/\b\d+\b/` as an `&` operand (match-only)         -> ERROR at that use  ; OK
+CX1 RULE-AS-CODE `/\b\d+\b/` as a program (match-only)              -> legal              ; OK
+CX2 `digits & not_seven` (shown): WHOLE `123` HOLDS, `712` FAILS ; OK
+CX3 the manager's simulation, RUN on libpcre2 with PCRE2's global loop: `any := /.*/`: FIND-ALL `712` [``@0, `12`@1, ``@3] ; `x712 55` [`x712 55`@0, ``@7]
+    the record: "on `712` the hits are an empty match at 0, `12` at 1, an empty match at 3" ; OK
+    lazy `any := /.*?/`: FIND-ALL `712` [``@0, ``@1, `1`@1, ``@2, `2`@2, ``@3] ; the record: "with a lazy any every hit is empty" -> NOT REPRODUCED under PCRE2's global loop (the retry after an empty match takes a non-empty hit; the manager's script stepped one character)
+CX4 `/.*/ & not seven` as a WHOLE value vs `[\s\S]* & not seven`, 121 texts over `7a\n`: 90 differ
+CX4 `/.*?/ & not seven` as a WHOLE value vs `[\s\S]* & not seven`, 121 texts over `7a\n`: 90 differ
+CX4 `/(?s).*/ & not seven` as a WHOLE value vs `[\s\S]* & not seven`, 121 texts over `7a\n`: 0 differ
+CX4 `/[\s\S]*/ & not seven` as a WHOLE value vs `[\s\S]* & not seven`, 121 texts over `7a\n`: 0 differ
+    THE MANAGER'S CLAUSE "as a whole value every spelling of anything agrees": NOT SUPPORTED for `/.*/` without dot-all (90 texts with a newline differ); SUPPORTED for spellings that match a newline ; OK
+    so `anything` must be defined to match newlines (THE MANAGER'S READING for the rx module: any text including newlines) for his whole-value point to hold
+
+== PART VH: the value hole fleshed out (`/(?<y>\d{4})-${$y + 1}/`; UNRULED)
+VH0 CONTROL: the callout model of `${$y}` vs PCRE's `\k<y>` on `(?<y>\d{1,2})-..`: 0 / 0 / 0 of 364 differ ; OK
+VH1 `/(?<y>\d{4})-${$y + 1}/` (canonical numeral): WHOLE `2025-2026` HOLDS y = `2025` ; SEARCHED `x2025-2026` `2025-2026`@1 y = `2025` ; FIND-ALL `2025-2026 2030-2032 2030-2031` [`2025-2026`@0 y = `2025`, `2030-2031`@20 y = `2030`]
+    the hand-worked answer of the draft (HOLDS / `2025-2026`@1 / [`2025-2026`@0]) ; OK
+VH2 width: `0099-100` canonical HOLDS ; width kept FAILS
+VH2 width: `0099-0100` canonical FAILS ; width kept HOLDS
+VH2 width: `9999-10000` canonical HOLDS ; width kept HOLDS
+VH2 width: `0999-1000` canonical HOLDS ; width kept HOLDS
+VH3 literal vs reinterpreted: `/(?<y>[\d.]+)-${$y}/` on `1.5-1x5`: as literal text FAILS ; as regex syntax HOLDS ; OK
+VH4 unset label `/(?<y>\d{4})?-${$y + 1}/`: FAIL reading (as PCRE's unset backreference) WHOLE `-` FAILS, `2025-2026` HOLDS ; EMPTY reading (as MATCH_UNSET_BACKREF) WHOLE `-` HOLDS
+VH5 in a loop `/(?:(?<y>\d{4})-${$y + 1};)*/`: WHOLE `2025-2026;2030-2031;` HOLDS y = `2030` ; SEARCHED `2025-2026;2030-2032;` `2025-2026;`@0 y = `2025` ; FIND-ALL `2025-2026;2030-2032;` [`2025-2026;`@0 y = `2025`, ``@10 y = unset, ``@11 y = unset, ``@12 y = unset, ``@13 y = unset, ``@14 y = unset, ``@15 y = unset, ``@16 y = unset, ``@17 y = unset, ``@18 y = unset, ``@19 y = unset, ``@20 y = unset]
+VH6 in an `occurrences` argument BEFORE its group `/${$y + 1}-(?<y>\d{4})/`, min = 2, the unset value read as EMPTY: WHOLE `-2025 2026-2030` HOLDS y = `2030` ; `-2025 2027-2030` FAILS
+
+== PART RS: the two questions held back (nested-complement; group-truth / pass-table), re-stated under hit-carry
+RS1 nested-complement: `contains(/\d+/ & !/7\d*/)` WHOLE, the one-pattern model (libpcre2) vs the committed hits (python `re` find-all, then judged): 81 of 364 texts differ, first `71` (one-pattern HOLDS, committed FAILS)
+    hit-carry's premise (a rewrite into a template hole) ENTAILS the one-pattern answer: the question is ENTAILED, not open ; OK
+RS2 group-truth / pass-table: the pass forms read each pass's OWN labels after the loop (some-own); hit-carry concerns a condition INSIDE a pass before its group, which the pass forms are not: the 11-18 rulings do NOT entail an answer to whether `occurs.none(NOT c)` and `NOT some(c)` should agree; it stays asked (re-stated in §R.8; its counts are rev 24.x's E12, NOT re-run here)
+
+== PART OQ: the new owner questions' witnesses (other-holes, zero-in-sequence)
+OQ1 other-holes, a class MEMBER `/[${c}x]/`, c := [a, b]: more characters `[abx]` vs one copy per member `(?:[ax]|[bx])`: [0, 0, 0] of 259 differ (whole / searched / find-all, python `re`)
+OQ2 other-holes, a RANGE END `/[${lo}-z]/`, lo := [a, x]: one copy per member `(?:[a-z]|[x-z])` vs the members as more characters `[ax-z]`: [1, 51, 103] of 259 differ
+OQ3 zero-in-sequence `[h = rx.digit] SEQ (0: "7") SEQ rx.digit`, `0` read as the match SO FAR (a callout's start to here): WHOLE `73` HOLDS ; SEARCHED `373` `73`@1 ; FIND-ALL `73 77 37` [`73`@0, `77`@3] ; the other reading (the entire match, unknown at that point) is a compile error
+
+== CHECKS: 111 of 111 OK

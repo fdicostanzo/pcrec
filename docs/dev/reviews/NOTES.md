@@ -59,3 +59,64 @@
 - `2026-11-17-r35-memfn-forms.md` (+ dir) — CODE round on R-45 plan A (lane/memfn-forms 7506bca30; 6 opus lenses: answers, emit, contract, simulate, checks, verify): forms answer-correct and zero-mover; LAND AFTER LISTED FIXES: the cards rule/script F2-F11 (noise picks, void test, C3 at h*, gate fails), G2 coverage F12-F17/F20, the deny refused past ~3,330 wide positions (F1); ruled by the kit manager (fixes: lanes formsfixa, formsfixb).
 - `2026-11-17-r36-memfn-forms2.md` — CODE re-check of the r35 fixes on R-45 plan A (lane/memfn-forms 31f98f49b; 3 opus lenses + verify: simulate, checks, fixind): zero mover held; LAND AFTER LISTED FIXES: the rule's heterogeneous-noise floor (G2), median-moving splits (G3, superseded by rulings R1: I's reading pooled), the pick's win (G4), labels (G5, G6), the deny check's step (G7), the shipped head unpinned (G1); ruled by the kit manager (fixes: lanes formsfixc, formsfixd).
 - `2026-11-17-r37-memfn-forms3.md` — CODE re-check of the r36 fixes (lane/memfn-forms e7584a7fd; simulate, checks, verify): LAND AFTER LISTED FIXES: between-run noise and 2-arm pools (H1, H2: twin contrasts), checks H3-H8; fixes formsfixe, formsfixf.
+
+
+## Index entries moved out of CLAUDE.md (lane file31, 2026-11-16; size limit)
+
+- `2026-11-12-r2-reqpast.md` (+ dir) — CODE round on lane/reqpast ([REQ-PAST-LAST] unbounded handoff row): no answer-level finding; FILEPIN left at abi 103 (CON-1), run_prechecks 5.12b/c false red (CHK-4), re-ask-not-kept unguarded (CHK-1), stop/landmark witnesses thin (CHK-2/3); FIX-NOW items applied by lane rpfix.
+- `2026-11-15-r5-covcap-r2.md` (+ dir) — DESIGN round on docs/design/cover_cap.md rev 2 ([COVER-CAP] straight walk): 5 opus critics + verifier, C-1..C-25; stage 1 ready with text fixes, rev 3 + readiness re-check; dispositions ruled (manager); rev 3 reads the stretch from the anchored machine.
+- `2026-11-15-r6-covcap-r3.md` (+ dir) — DESIGN re-check on docs/design/cover_cap.md rev 3 (anchored-machine reading): 3 opus critics + verifier, R-1..R-14; core reading held; the new span limit could never bind (the anchored state ceiling binds first), deleted in rev 4; dispositions ruled (manager).
+- `2026-11-15-r7-covcap-r4.md` (+ dir) — DESIGN last re-check on docs/design/cover_cap.md rev 4: 2 opus critics + verifier, FI-1..FI-6, READY-1..READY-5; READY WITH LISTED TEXT FIXES for stage 1 (FI-3: C9 must read the rows at k); applied as rev 4.1; dispositions ruled (manager).
+- `2026-11-15-r4-fixposts2c.md` (+ dir) — CODE round on lane/fixposts2 after its r3 fixes (+ lane/s486re): no answer/byte finding (450 pairs SAME); FIX-NOW spec example (RESPELL-1), double-evaluated scan row (RESPELL-2/3), S711 stale reach witness (SABROWS-1), comments; applied by lane fixposts2d.
+
+
+## Index entries moved out of CLAUDE.md (lane file32, 2026-11-16; size limit)
+
+- `2026-11-15-r8-predspec6.md` (+ dir) — DESIGN round on predicates_draft.md rev 6 (type picture): comma held 200/200; P6-1..P6-18; applied in rev 7.
+- `2026-11-15-r10-predspec9.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 9 (one reading): FIXB-1..9, SIM-1..6, CENSUS-1..17, FIXA-1..11; ruled, applied in rev 10.
+- `2026-11-15-r12-predspec10.md` (+ dir) — confirming re-check of predicates_draft.md rev 10: SIMULATE-1..3, CENSUS-1..12; ruled, applied in rev 11.
+- `2026-11-15-r5-memfn-mfindcomb.md` (+ dir) — CODE round on the mfind combined tip (fused mfind instrument, G2 window checks, draft sets, emitted/contract/fidelity lenses); ruled, fixes by lanes mcfixa (A-C) and mcfixd (D-E).
+- `2026-11-15-r6-memfn-mcfix.md` (+ dir) — light CODE round on the r5 fix diff (slot timing harness, D197 rule table): rule pins/confirm guards, TIMED-SHAPE callee gaps, enum-keyed asserts; ruled, FIX-NOW items applied by lane mcfixb.
+
+## Index entries moved out of CLAUDE.md (file43, 2026-11-18; size limit)
+
+- `2026-10-23-r2-iter-code.md` (+ dir) — first round of the critic skill (now `pcrec-critic`): the find-all iterators on lane/iterland.
+- `2026-11-15-r7-memfn-mcfixb.md` (+ dir) — light CODE round on the r6 fix diff: the CLI `--second` parse (RULE-1), absent cells pin (RULE-2), FF__COUNT assert (CHECKS-2); ruled, FIX-NOW items applied by lane mcfixc; RULE-3 doc, RULE-4 pin table planned.
+- `2026-11-15-r8-memfn-mcfixc.md` (+ dir) — light CODE round on the r7 fix diff (adequacy of the changed sabotage rows, timed_form, CLI parse, absent-pin NOTE): ADQ-3 (absent cells pin priced on a windowed record) and ADQ-2 (no job reaches second-ness) ruled FIX-NOW, applied by lane pinfix; ADQ-1/ADQ-4 planned.
+
+## Index entries moved out of CLAUDE.md (file47, 2026-11-18; size limit)
+
+- `2026-11-15-r9-memfn-pinfix.md` — single-critic CODE round on lane pinfix (r8 fixes: windowed records refuse a missing pin; 609/610 second-run wiring): LAND; ADQ-2-1 (common.sh inherited FIRST_RUNDIR from the caller env) fixed by the kit manager in the timing jobs; ADQ-3-3 (no plant for the manifest pin) owed after the window.
+- `2026-11-15-r13-covs2d.md` (+ dir) — DESIGN round on cover_cap.md rev 5 §11 (counted seam, width limit): 5 critics + verifier, F1-F29; all dispositions accepted, FIX-NOW in rev 5.1, per-compile valued option (F21) ruled now; kit request waits on a readiness re-check.
+
+## Index entries moved out of CLAUDE.md (predspec271, archdense2 and archlook2, 2026-11-18; size limit)
+
+- `2026-11-15-r14-predspec12.md` (+ dir) — short DESIGN re-check of predicates_draft.md rev 12 (anchoring): SIMULATE-1/2, CENSUS-1..8; F1 (filter side of `rx & rx`) to the owner, rest FIX-NOW/DOC in rev 13; general `anchored` form agreed.
+
+## Index entries moved out of CLAUDE.md (landarch, 2026-11-18; size limit)
+
+- `2026-11-15-r15-covs2e.md` (+ dir) — readiness re-check of cover_cap.md rev 5.1 (stage 2): 3 opus critics, FIND-1..FIND-20 + DRIFT-1 (D198 addendum 1 landed mid-round); every unit READY WITH LISTED TEXT FIXES; all accepted, applied in rev 5.2 (lane covs2f); kit request files as R-45.
+- `2026-11-15-r10-memfn-d3wire.md` — single-critic CODE round on lane d3wire (the D3 floor gate wiring): D3W-1/2 (floors 20-31 loose; deleting Part D witnesses stayed green) FIX-NOW with D3W-5/6/9, D3W-4 (cloud axes shard) and DOC D3W-7; fixed by lane d3fix; D3W-8 (floor-table family) noted.
+- `2026-11-15-r11-memfn-d3fix.md` — single-critic CODE round on lane d3fix (D3 floor gate): D3F-1 (dead bands; a gain reds through the plants with a wrong reason) FIX-NOW, D3F-2 (counts pinned, a membership swap is green) -> census as a set; fixed by lane d3fix2.
+- `2026-11-15-r16-predspec14.md` (+ dir) — confirming DESIGN re-check of predicates_draft.md rev 14 (3 opus critics): the `anchor.whole` warning gets ONE edge criterion (W1/W2), W3 to the owner (warn-in-macro-body), macro-body claims (FIXIND-1..3: two transforms lack a body), role lists, provenance, words; all accepted, applied in rev 15 (lane predspec15).
+
+## Index entries moved out of CLAUDE.md (spanarms8, 2026-11-18; size limit)
+
+- `2026-11-15-r12-memfn-d3fix2.md` — single-critic CODE round on lane d3fix2 (set census pin, REPIN): D3G-1 (set plants test set_why, not main's wiring), D3G-2 (REPIN pins an empty/short census), D3G-3 (REPIN does not write d3_floor.tsv), D3G-4 (scratch leak), D3G-6 (remedy text) FIX-NOW, D3G-5 (dirty provenance) noted; fixed by lane d3fix3.
+
+## Index entries moved from CLAUDE.md in the covland merge (2026-11-19; size limit)
+
+- `2026-11-15-r18-covs2a.md` (+ dir) — CODE round on lane/covs2a ([COVER-CAP] stage 2 unit A: counted MkEnd seam, `--window-search-width`): 4 opus critics; route identity held (412 compiles, 0 emitted-C diffs), answers held; 17 ids, none answer- or speed-level; CONTRACT-2, CHECKS-2/3, CONFORM-1..7 FIX-NOW (lane covs2afix), CONTRACT-1/3 NOTED, CHECKS-1/4, CONFORM-8, EMITTED-1 PLAN.
+- `2026-11-15-r17-predspec17.md` (+ dir) — confirming DESIGN re-check of predicates_draft.md revs 16-17 (3 opus critics: simulate, fix-induced, ruling): strict tuple forms invert on an unset or non-digit label (F1), unset/leading-zero/repeated labels (F2-F4), searched mode, the wrong-length error's mechanism, readings (a)/(b) and a premise labelled RULED (F7/F8), look-alike rows, the recursion general form (F11), label-section scope, doc batch F13-F22; all accepted, applied in rev 18 (lane predspec18).
+- `2026-11-16-r19-predspec19.md` (+ dir) — short DESIGN re-check of predicates_draft.md rev 19 (field reference / other-side sigil; census + simulate; the fix-induced lens NOT COVERED, its relayed headlines are UNVERIFIED): CENSUS-1..10, SIMULATE-1..6; the owner paused that direction, so every finding is moot while paused except the evidence-honesty (CENSUS-5/SIMULATE-1) and provenance (CENSUS-4, -8) ones, carried to rev 20; manager rulings 2026-11-16.
+- 2026-11-15/16 r12, r21 (D3 floor gate) and r20/r22/r23/r25 (the kit's R-45 reply revs 1-5): entries in NOTES.md.
+- `2026-11-16-r26-jointcond.md` (+ dir) — DESIGN round on docs/design/joint_condition.md (lane jcfold2 22e97d977; 5 critics: owner, simulate, census, ruling, rev20 completeness): 37 ids, ZERO-EMPTY / GROUP-ZERO / UNREACHED-PAIRING / DICT-DOMAIN / TUPLE-BINDING / MIXED-RECORD, a §9 table missing ~45 draft lines; all FIX-NOW/DOC/PLAN ruled 2026-11-16 (fixes: lane jcfix), owner questions zero-pass-empty (new) and pairing-loop (extended); 4 process changes accepted.
+- `2026-11-16-r28-absfold.md` (+ dir) — DESIGN re-check of joint_condition.md §4G, the absent-label rule (lane absfold 3b478ee2d; 5 critics: simulate, fix-induced, change-table, ruling, criteria): 12 items A-L, MARK-DOMAIN (owner question mark-domain) / (AR) record cell / all() / optional-as-loop (owner question) / mark inside some-count / 14:50 readings / negation over a marked label; ruled by the manager 2026-11-16 (fix lane works from the rulings); 3 process changes accepted.
+- `2026-11-16-r29-predspec20.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 20 (fold of joint_condition.md §9; 5 critics: changetab, fixind, simulate, ruling, census + opus verifier; 50 ids in groups A-Q): DOM scope (owner question domain-scope, ANSWERED 16:31: the PROGRAM, against the manager's lean), one-witness not relayed, all() CHANGED not restated, loop-ness by behaviour, approximation tier; ruled by the manager 2026-11-16 (rev 21 works from the rulings); 5 process changes + 4 guide lessons accepted.
+- `2026-11-16-r27-memfn-span4k.md` (+ dir) — CODE round on R-45 plan B (a9d13217c) + the held raise: plan B lands after fixes (MEM-1, SEAM-1, CHECK-2/3/4, EMIT-1, SEAM-2, HOUSE-*); the raise NOT READY (READ-1/2, CHECK-1); fixes: lane span4kfix.
+- 2026-11-17 r35-r37 (R-45 plan A, the span forms: the code round and its re-checks; fixes formsfixa-f): entries in NOTES.md.
+- `2026-11-17-r38-memfn-forms4.md` — CODE re-check of the r37 fixes (lane/memfn-forms 5d2a98710; simulate, checks, verify): LAND AFTER LISTED FIXES: the twin term's granularity (J1, per pattern) and the launch order (J2, interleaved rounds), closed as a CLASS by a drill at every level; checks J5-J7; fixes formsfixg, formsfixh.
+- `2026-11-17-r39-memfn-forms5.md` — CODE re-check of the r38 fixes (lane/memfn-forms 1aec5d4d3): LAND AFTER LISTED FIXES: the exe level (K1, layout twins), the confirm's readers (K2-K4), one owed list (K6); fixes formsfixi, formsfixj.
+- `2026-11-17-r41-memfn-forms6.md` — CODE re-check of the r39 fixes (lane/memfn-forms 42fd4b33e): LAND AFTER LISTED FIXES; RULED: layout POOLS (setup randomization, L9) replace the layout twins; strict args + keyed G2 record (L6); fix formsfixk.
+- `2026-11-18-r44-memfn-forms7.md` (+ dir) — CODE round on rev 12 (layout pools, 27b18e75c): answer-safe; FIX-NOW A-L (interaction drill, per-head floor, 32-B guard); fix formsfixl.
+- `2026-11-18-r45-memfn-forms8.md` (+ dir) — CODE re-check of the r44 fixes (3fd31c86d): interaction line per text (FORMS8-1), POOL_SIZE refusal (-2), docs (-3..-5); fix formsfixm.

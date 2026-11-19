@@ -1,0 +1,7 @@
+### RULING-15 — the language-kind MINE on names is not carried into the rows it names (CONFIRMED; doc, low; effort trivial; blast: §R.8 every-pass-spelling and rx-module rows)
+The kind-of-language entry's MINE (CF 2505-2508) says names should not invite the imperative or set reading, and that
+this is "an input to the rx-module naming ("loop") and to the spellings still open". His words: "it looks like
+functions and predicates and loops but it's not". §R.8's every-pass-spelling row (line 1129) offers "his `loop`
+construct over a conditioned item" as a candidate, and the rx-module row (line 1130) does not mention the naming
+hazard. Both rows should carry the MINE as the manager's input. It is not a ruling: the record files the entry as
+"principles for the draft's framing, not rulings on any answer".

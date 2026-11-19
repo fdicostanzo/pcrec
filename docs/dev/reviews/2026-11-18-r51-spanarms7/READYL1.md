@@ -1,0 +1,91 @@
+# READYL1 findings — round r51 spanarms7
+
+## Findings
+
+
+### READYL1-1 — E-5i's arm is `look` alone, so `--harness=restore=zero` stops restoring positive lookarounds: the existing [facts-arm] check goes red and the `zero` arm's readers are not listed
+CONFIRMED by hand-derivation against req.c at B (I could not build). D-1's table puts E-5i (arm `look`) ahead of E-5 (arm `zero`). `RB_ROW_SCAN` passes over a row only when `row.arm & restored` is set (req.c:388-393), so under `restore=zero` alone E-5i still answers every positive lookaround. §5.8 says so in words ("`zero` restores E-4's cut only"), but that changes the meaning of an arm that already ships. Its readers are not listed:
+- `tests/codegen/run_facts_checks.sh:713-731` (ZP=`xyz(?<=yz)ab\Bcd`) expects `zr req_whole_run 78797a harness:zero`. At L1 under restore=zero, `(?<=yz)` is E-5i, with lg `yz` (the unit) meeting `xyz`'s tail, and `\B` is the default cut. That gives run `xyzab` = `78797a6162`. The check's own comment names that value as the failure ("`78797a6162` (E-5's)"), so it is RED at L1.
+- `walk_arms.def`'s `zero` row comment ("T3 rows E-4 and E-5 ... a lookaround of either lowering, back to the old CUT").
+- facts_listing.md §4.1.3¶4a's `zero` text ("... or a lookaround, in its old form, a cut").
+- run_axes.sh:1776's comment, and req.c's T3 header ("E-4 and E-5 under `zero`").
+
+Expected: either (a) E-5i carries `PCREC_WALK_ARM(LOOK) | PCREC_WALK_ARM(ZERO)`, so `zero` keeps E2's meaning and `look` alone isolates L1, which is the simplest option and leaves every reader true; or (b) §5.8's re-spelling stays, and L1 lists and rewrites the five readers above.
+Severity: maintenance/test (a gate is red at landing; no answer moves). Effort: one sentence plus a mask, or five edits. Blast radius: the harness lever and its check. Location: span_arms.md §14.3 D-1 table, §5.8; req.c:1072-1087 at B.
+
+
+### READYL1-2 — the `look` arm's fact mask is mis-stated, and D-13's L1 spec row misses facts_listing §4.1.3¶4a
+CONFIRMED by reading.
+- **The mask.** §14.4 L1 gives `look`'s `walk_arm_facts` as "naming `req_whole_run` and the facts derived from it". The table's own rule (walk_arms.def header) is that the column lists the walk OUTPUTS the arm can change. Derived facts inherit the token through `pf_ask` (facts.c:385-390), so "only the walk's own facts are listed here". L1's TOP set step (D-3 CAT-SET) writes the walk's SET output: `req_set` gains 113 on `x(?=qr)[pq]r` by §14.2's own row, and it writes at an offset, which moves `req_set_maxoff`. Both are walk outputs, stored by pf_derive_req_walk (facts.c:240-251), and neither is derived from `req_whole_run`. So `look` must name PF_REQ_WHOLE_RUN, PF_REQ_SET and PF_REQ_SET_MAXOFF. It should not name PF_REQ_PIECES: D-1 keeps the parent's description at `pcrec_pd_zero()`. With the text as written, `--harness=restore=look` lists a moved `req_set` with no `harness:` token. The same check shape as run_facts_checks.sh:727 (`zr req_set - <empty why>`) would then be written against the wrong mask.
+- **The spec.** facts_listing.md §4.1.3¶4a enumerates the arms and the facts each token sits on: "(`req_whole_run` and `req_pieces` for the arms `empty`, `zero`, `rep`, `tie` and `alt`)", plus one advisory description per arm. Adding `look` (and `req_set`/`req_set_maxoff` for it) is a caller-visible listing change. D-13's L1 row lists only ¶1 and the new `dead` paragraph, and its "checked unchanged" column does not mention ¶4a, so this is a D80 gap.
+
+Severity: doc/maintenance (listing truth, D80). Effort: two text lines. Location: §14.4 L1 "Feature" and D-13's L1 row; walk_arms.def; facts_listing.md at B.
+
+
+### READYL1-3 — the existing S-L plant S1925 stops being reached once E-5i answers positive lookarounds; the feature commit's anchors are not listed
+CONFIRMED by reading the plant against D-1. S1925 (`tests/mech/sabotages/S1925_lookaround_body_walked_consumed.sh`, SAB_EXPECT=DETECTED, harness target `tests/litscan/spanarms.rxt`) is S-L's plant. It sits in rb_zero_into's `case RB_ZERO_UNIT:` and fires only when a positive `A_LOOK` reaches that case. After L1, E-5i, a new row with its own action placed before E-5, answers every positive lookaround. RB_ZERO_UNIT then sees them only under `restore=look`, so at default flags the plant is never executed: SURVIVED, and the mech row is red. S-L is listed in L1's Tests as a witness of E2, L1 and L3, but no re-aim of S1925 onto E-5i's action is listed. Only L3 names re-aims (S1887, S3076).
+
+More generally, §14.4's binding rule ("a remodel's binding sabotages are the anchor map's") covers the remodels only. L1's FEATURE commit edits the T3 table, `rb_zero_into`/`rb_row_into` (signature: walk mutable plus `t`) and `pcrec_req_walk`. I extended the anchor map (kit tool, same matcher) to req.c 1040-1250 and 400-500 at B. That gave 11 anchors: S1925@1097, S1926@1097, S1927@1110, S1653@1110, S1928@1083, S1929@1078, S1887@1203, S1907@1241, S465@1143, S474@490, S1930@478. Each needs re-checking for reach after the feature, and S1925 needs re-aiming.
+
+Severity: test (a mech row red at landing; a witness silently loses its plant if "fixed" by deleting it). Effort: one listed re-aim plus the anchor list. Location: §14.4 L1 "Tests"; req.c:1094-1102 at B.
+
+
+### READYL1-4 — the never-rows remodel gate omits run_cpset_structure.sh, whose allowlist names derive.c's `is_never_leaf`; its binding sabotage is not named
+CONFIRMED by reading. D-9 extracts derive.c's prune rows, including "leaf: the empty class (`is_never_leaf`)", into the AST's own area (the kind rows live in src/core/internal.h). `is_never_leaf` is the one `u.cls` read in derive.c. tests/codegen/run_cpset_structure.sh:457 allowlists it BY FUNCTION (`ALLOW_FN='... src/opt/derive.c:is_never_leaf ...'`), and :479-491 turns a missing or read-less allowed function into `STALE: ...`, which lands in OFFENDERS and fails the check (`bad "[2b] ..."`). So moving the leaf makes the remodel commit's tree red under `make test`. The commit's listed gate ("the .c streams; the derivation's tests ... compound_drive.c ... the anchor map over derive.c's moved ranges") does not run or name that check.
+The run walk's reading of the same leaf also matters. That walk runs on the LOWERED tree, req.c being outside both allowlists, while the allowance's comment (:390-394) justifies the interval count as "asked ABOVE the lowering". The shared primitive's home must be inside `ALLOW` (internal.h qualifies), or req.c must test the rendered set (`rn_count(ps) == 0` in rb_class_into's out-of-domain branch, req.c:841-851) and say why both spellings mean the same leaf.
+Binding sabotage: the kit's anchor map has no derive.c group. The derive.c plants at B are S893, S1189 and S1190 (KILL, not moved), S904 (keep rule, stays) and **S899** (`if (it[i].never && !it[i].keeps)` in q_alt, the ALT never row). S899 is the one whose line the extraction rewrites, and it should be named.
+Severity: test/maintenance. Effort: three text lines. Location: §14.4 L1 remodel 2; §14.3 D-9.
+
+
+### READYL1-5 — §14.2's L1 column and the census's expected movers under-predict: the TOP set step also moves `req_set` and `req_byte`/`RX_REQ_BYTE` on four rows
+CONFIRMED (today measured at B; the L1 values are each pattern's literal spelling measured at B, where the spelling is the L1 run D-3 gives by hand). Command: `timeout 60 build/pcrec -p rx --features all --emit-facts --pattern P` (scratch `p/probe_B.out`).
+
+| pattern | today `req_set` / `req_byte` | L1 run (§14.2) | the spelling's `req_set` / `req_byte` | movers §14.2 does not state |
+|---|---|---|---|---|
+| `x(?=qr)[pq]r` | 114,120 / 120 | `xqr` | `xqr`: 113,114,120 / **113** | `req_byte` 120→113, `RX_REQ_BYTE` |
+| `ab[xy][xy](?=(?<=xx)y)[xy]` | 97,98 / 98 | `abxxy` | `abxxy`: 97,98,120,121 / **120** | `req_set` +120,+121; `req_byte` 98→120 |
+| `xy(?=bc)[bc]c` | 99,120,121 / 120 | `xybc` | `xybc`: 98,99,120,121 / 120 | `req_set` +98 |
+| `[ac][ac]cc(?<=acc)(?<=cc)d` | 99,100 / 99 | `[ac]accd` | `[ac]accd`: 97,99,100 / 99 | `req_set` +97 |
+| `a(?=b)[bc]` | 97 / 97 | `ab` | `ab`: 97,98 / **98** | `req_set` +98; `req_byte` 97→98 (an emitted stamp, not only the listing) |
+
+The census observes these facts two-sided, but its model predicts only "the reach-0 run and whether the root is never", and its expected-mover list names `req_set` for `x(?=qr)[pq]r` alone. A build lane will see five unpredicted fact movers and three unpredicted `RX_REQ_BYTE` stamp movers in the .c streams (allowed by "abi: ... RX_REQ_BYTE", but unpredicted). Fix: add these cells to §14.2, and give the census model the set step (every exact consumed run position joins the set), so `req_set`/`req_byte` are predicted rather than only observed. Applied by hand, every prediction holds: each new byte is a byte the matched string consumes at that run position (oracle: all five patterns M on their witness subjects, see PROBED).
+Severity: doc (prediction completeness). Effort: table cells. Location: §14.2 L1 column; §14.4 L1 Census.
+
+
+### READYL1-6 — D-10 names the head column's combinators but not where its PER-KIND rules live, nor the RbVal field and writers that thread it; a second per-kind head spelling beside altnf.c's `anf_head` is the likely build
+SUSPECTED (design under-specified; this would be confirmed by the build's diff). D-10: "The head column runs over the byte alphabet ... its combinators are unchanged. It is computed for a subtree exactly when the subtree lies inside a positive lookahead's body (E-5i turns it on for its body walk)"; "the one new desc.c function is that READER". The combinators (`pcrec_ph_unit/pos/wall/cat/alt`, desc.c:198-251) are only half of a head. The other half is the per-kind table (class → pos; EMPTY/EOL/CTX/GSTART/KRESET/check callout/LOOK → unit, read THROUGH; REP, BREF, VAR, CALL, consuming callout → wall). Today that table is spelled once, at code-point level, in altnf.c:187-249 (`anf_head`), where `A_WCLASS` is a wall and `A_CLASS` passes the Ast node as the position. The run walk is post-lowering and byte-level, and there `A_WCLASS` is transparent (req.c:1140). So L1 must either:
+- thread a `PdHead` through `RbVal`, touching every writer: `rb_init`, `rb_cat_into`, `rb_alt_into`, `rb_gap_into` (a class out of the run's domain must still be `ph_pos`, not a wall, or `(?=a.b)` loses its tail terms), `rb_class_into`, `rb_assert_into` (the restored cut must still read THROUGH, or a restored arm changes the item), `rb_zero_unit_into`, the five `rb_rep_*_val` and the kind-row gap; or
+- add a second per-kind head walk.
+
+Either is a second spelling of `anf_head`'s rules. Neither the field nor that list is in D-2/D-10/§14.4, so (b)'s "every reader of what it changes" is incomplete for `RbVal`. Related: src/facts/CLAUDE.md:36 says the head description `pcrec_ph_*` is read "only by the alternation owner (`src/opt/altnf.c`); one reader of both is design G-1". L1 makes req.c a reader of both, so that orientation line and the G-1 pointer move with L1 (a convention reader). Expected text: state the home of the byte-level per-kind head rule (shared with `anf_head` via an alphabet/position callback, or a noted deviation per A17's either/or), and list `RbVal`'s writers.
+Severity: design/maintenance. Effort: one paragraph. Location: §14.3 D-10, §14.4 L1 Feature.
+
+
+### READYL1-7 — CAT-SET's offset is spelled through `whole_maxoff`, a facts.c field that does not exist at the step's site and is zeroed below the run floor
+CONFIRMED by reading. D-3 "CAT-SET, re-spelled": the step runs "at the walk's exit, after TOP" and puts each one-byte consumed position into the set "at its offset (the run's `whole_maxoff` plus its index)". The walk's exit is `pcrec_req_walk` (req.c:1235-1250), which holds an `RbRun` (`.off`, long long, possibly `PCREC_W_UNBOUNDED`) and an `RbSet` (`.off[]` uint32_t, saturating at `RB_OFF_UNBOUNDED`, req.c:211-216). `whole_maxoff` is `ReqRun`'s, written later in facts.c:253-262 and only when the run passes the 16-bit floor, else 0. Read literally, a run below the floor (`(?=q)[pq]`, one narrowed position) would join the set at offset 0+i whatever its true bound. The set step is sound only on `RbRun.off`, saturated as `rb_union` does. Fix: "at `run.off + i`, saturating to `RB_OFF_UNBOUNDED` as `rb_union` does, before the floor".
+Also unstated: `RbSet.pick` (the threaded rightmost) is not updated by the step. That is sound but should be said, since `pcrec_find_set_pick` falls back to it under NONE.
+Severity: answer-risk if built as worded (an offset bound that is too small feeds `req_set_maxoff` → K where no run ships); doc as a fix. Effort: one sentence. Location: §14.3 D-3 "CAT-SET, re-spelled".
+
+
+### READYL1-8 — three small completeness gaps in the RbRuns/ReqRun reader list (`never` under the restored `rep` form, RM-1's ReqRun half, W-T1's stale window text)
+CONFIRMED by reading; each is low.
+(a) **`rb_rep_best_val` (req.c:921-927, T2's restored form at `m >= 1`) builds `rr_none(...)` and copies only `.best`.** D-3 says it "carries no guard" but says nothing about `never`. D-9's row "REP, `m >= 1`: the body never" is then broken under `--harness=restore=rep`: `(?:foo(?=bar)baz)+` lists NOT dead there and dead by default, in the listing only. Either copy `never` or say that the restored form drops it. `rb_rep_unit_val` (`*v = *b`) and `rr_rep_split`/`rr_pow` (through `rr_cat`) do carry it, and the m = 0 rows give `never` false, which is correct.
+(b) **RM-1's `ReqRun` half has no reader at L1.** D-5 adds `cons_lo`/`cons_hi` and their accessor at L3 (§14.4 L3 Feature), and L1 adds no `ReqRun` field, yet L1's remodel 1 makes both `ReqRun` writers (facts.c:97-100, :253-262; the only two, by grep at B) start from a stated empty `ReqRun`. That is a remodel landed ahead of its consumer (D77). It is harmless, but it belongs with L3's feature, or L1 should say why it rides early. Note: my anchor-map extension over facts.c 86-110 and 235-280 finds 0 sabotage anchors, so the "facts.c writers' anchors by the anchor map" clause binds nothing.
+(c) **W-T1's §5.7 text still argues from the retired 8-position window** ("both stamp `RX_REQ_RUN "6262626262626262@7"` (the 8-position window ...)"), and §14.1's stale table does not list it. At B, W-T1's pattern stamps the whole 32-position run (`RX_REQ_RUN "6161...6262@31/fdfd...fefe"`, measured). The flag `--memfn=no-fd-pres-pick` still means "tests every member and the whole run" (tuning.md §2.29¶1), so the L1 test row stays valid. Only its stated reason for needing the flag is stale: add W-T1 to §14.1 item 4, and say whether its default-flag answer now moves.
+Location: §14.3 D-3, D-5; §14.4 L1 remodel 1; §5.7 W-T1; §14.1.
+
+VERDICT L1: READY WITH LISTED TEXT FIXES (READYL1-1, READYL1-2, READYL1-3, READYL1-4, READYL1-5, READYL1-6, READYL1-7, READYL1-8)
+
+## PROBED-AND-HELD
+
+- **Code cites at B (= T for code; `git diff --stat 8993b8f82 1403873df` prints only docs/dev/dev_journal.md).** C-R1: 7 lines at :477, :732, :991, :993, :1077, :1080, :1082, as the design lists. C-R3: 0. C-R8: req.c:905-914 is `rb_rep_split_val` with `pcrec_pd_none()`. facts.c:97-100 and :253-262 are the two `ReqRun` writers (grep finds no third). `RbRuns` at req.c:174, with 5 fields. `rb_walk_at` holds `t`. `rb_row_into`/`rb_zero_into` take `const RbWalk *` today. `rb_zero_look_pos` covers `A_LOOK` positive and `A_CTX` NEXT/PREV. The `pcrec_derive_split_q` grep in tests gives compound_drive.c. derive.c's prune header matches D-9's quoted rows, and `is_never_leaf` is derive.c:154. desc.h/desc.c: `PdHead`, `pcrec_ph_cat` (copies up to `max_pos` per step, as D-10 says), and `pcrec_ph_alt` (per-offset union over min(h)), so the reversed-group reader is sound for groups that store LAST positions contiguous to the end (pd_cat_group keeps that). Census tools exist at B: census_e1.py, census_e2.py (the `look-*-pos` classes), emit_sweep.py, ident_check.py, bench_patterns.txt, reqcube_check.py `WIT` (now at :276-292, not §5.7's :226-239: a stale cite, harmless), tests/lib/p2probe.c.
+- **C-R0 at B prints NOTHING**, not "one file, memfn/docs/requests.md" (that path is outside its pathspecs). The conclusion (no code drift) holds. C-R5 prints one doc hit (src/opt/NOTES.md:42), no code.
+- **RM-1 binding list = the kit's anchor map exactly:** the 15 ids in anchors_at_B.out's RM1 row (S268, S446, S466, S807, S1910, S1915-S1919, S1923, S3129-S3132).
+- **§14.2 "today" column, 22 patterns measured at B** (p/probe_B.out). Every run, K, WHY and HANDOFF value matches. `foo(?=bar)baz` today is already `666f6f62617a` (only the why moves at L1), and `x[^\x00-\xff]y` today is `never_matches empty-machine`, run none.
+- **L1 run predictions re-derived by hand from D-3/D-9 (8):** `xy(?=bc)[bc]c`→`xybc`; `ab[xy][xy](?=(?<=xx)y)[xy]`→`abxxy`; `[ac][ac]cc(?<=acc)(?<=cc)d`→`[ac]accd`; `[ac][ac](?<=ac(?=cc))cc`→`accc`; `x(?=ab|ac)a.`→`xa`; `(?<=ab)(?<=cb)c`→none + dead (a∩c empty at −2); `foo(?=bar)baz`→`foobaz` + dead; W-T1→`a^15 b^17 @2`. All agree with §14.2/§5.7. Non-movers confirmed by measuring today's run, which already equals the L1 value: W-F5 `[ac]bc`, W-L2 `abcd`, W-L7 `yxz`, W-L8 `abc`, W-A1 `xy[ac]b[bc]`, `xyz(?<=yz)abc`.
+- **Oracle (libpcre2-8 p2probe), 24 witness cells, all as §5.7 states:** W-L2, W-F5, W-L6, W-L7, W-L8 (from 1), W-L5 (M/N), W-A1 (M/N), W-S1 (M/N), W-N1 (M/N), W-N2 (M/N), W-F4, W-RG (M/N), W-C1, W-E1, W-D1 N N, W-D2 N N, W-D3/D4/D5/D6 M, W-S4 (M/N), W-D8 N, W-T1 M 0 35, and `a(?=b)[bc]` (M, N, M 3 5). Longest witness subject reached: 35 bytes (W-T1). Shortest: 1 byte (W-D4 `q`).
+- **The census STOP rule can fire:** it is two-sided over facts the observed stream lists. Expected movers exist at B: 5 run movers plus 2 why-only movers among §14.2's rows. I could not run it over the corpus.
+- **`dead` reaches no answer:** the only reader of `why[PF_REQ_WHOLE_RUN]` in src is facts.c:265 (the listing). `never_matches` stays keyed on machines.
+- **walk_arms readers:** facts.c (name/fact tables, `_Static_assert` N<=8: 6 arms fit), facts.h's enum, cli/main.c's parse, and run_axes.sh, which reads the .def directly so `look` is swept automatically. The ones not listed are in READYL1-1 and READYL1-2.
+
+CRITIC COMPLETE READYL1 2026-11-18 19:01

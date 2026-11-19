@@ -1,0 +1,25 @@
+B `/[\d;a]*/ & B & (h: <5)`, B `$` := /(?:(?P<h>\d)?;)*$/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & B & NOT (h: <5)`, B `$` := /(?:(?P<h>\d)?;)*$/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & !(B & (h: <5))`, B `$`: engine vs model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B LAW `A & (B & (h: <5))` vs `A & (0: B & (h: <5))`, B `$` (holds, stretch): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B nested `occurrences((/[\d;]+/ & B) & (h: <5), min = 1)`, B `$`: WHOLE `3;a 7;3;a` (('h', '3'),) ; SEARCHED `7;;a3;a` (0, 7, (('h', '3'),)) ; FIND-ALL `3;a 7;a` ((0, 7, (('h', '3'),)),)
+B `/[\d;a]*/ & B & (h: <5)`, B `^` := /^(?:(?P<h>\d)?;)*/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & B & NOT (h: <5)`, B `^` := /^(?:(?P<h>\d)?;)*/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & !(B & (h: <5))`, B `^`: engine vs model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B LAW `A & (B & (h: <5))` vs `A & (0: B & (h: <5))`, B `^` (holds, stretch): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B nested `occurrences((/[\d;]+/ & B) & (h: <5), min = 1)`, B `^`: WHOLE `3;a 7;3;a` (('h', '3'),) ; SEARCHED `7;;a3;a` (0, 7, (('h', '3'),)) ; FIND-ALL `3;a 7;a` ((0, 7, (('h', '3'),)),)
+B `/[\d;a]*/ & B & (h: <5)`, B `\b` := /(?:(?P<h>\d)?;)*a\b/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & B & NOT (h: <5)`, B `\b` := /(?:(?P<h>\d)?;)*a\b/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & !(B & (h: <5))`, B `\b`: engine vs model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B LAW `A & (B & (h: <5))` vs `A & (0: B & (h: <5))`, B `\b` (holds, stretch): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B nested `occurrences((/[\d;]+/ & B) & (h: <5), min = 1)`, B `\b`: WHOLE `3;a 7;3;a` None ; SEARCHED `7;;a3;a` None ; FIND-ALL `3;a 7;a` ()
+B `/[\d;a]*/ & B & (h: <5)`, B lookahead := /(?=(?:(?P<h>\d)?;)*a)[\d;a]*/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & B & NOT (h: <5)`, B lookahead := /(?=(?:(?P<h>\d)?;)*a)[\d;a]*/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & !(B & (h: <5))`, B lookahead: engine vs model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B LAW `A & (B & (h: <5))` vs `A & (0: B & (h: <5))`, B lookahead (holds, stretch): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B nested `occurrences((/[\d;]+/ & B) & (h: <5), min = 1)`, B lookahead: WHOLE `3;a 7;3;a` None ; SEARCHED `7;;a3;a` None ; FIND-ALL `3;a 7;a` ()
+B `/[\d;a]*/ & B & (h: <5)`, B lookbehind := /(?:(?P<h>\d)?;)*(?<=3;)/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & B & NOT (h: <5)`, B lookbehind := /(?:(?P<h>\d)?;)*(?<=3;)/: engine vs libpcre2 operand model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B `/[\d;a]*/ & !(B & (h: <5))`, B lookbehind: engine vs model: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B LAW `A & (B & (h: <5))` vs `A & (0: B & (h: <5))`, B lookbehind (holds, stretch): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+B nested `occurrences((/[\d;]+/ & B) & (h: <5), min = 1)`, B lookbehind: WHOLE `3;a 7;3;a` (('h', '3'),) ; SEARCHED `7;;a3;a` (0, 7, (('h', '3'),)) ; FIND-ALL `3;a 7;a` ((0, 7, (('h', '3'),)),)

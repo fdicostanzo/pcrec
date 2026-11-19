@@ -1,0 +1,4 @@
+record twin occurs.none(NOT (h: <10, m: <30)) WHOLE holds 40
+  I1 differ 25 first 3,
+  I2a differ 45 first 12,
+  I2b differ 0 first None

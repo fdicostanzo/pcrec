@@ -42,6 +42,11 @@ A field with nothing to say is written "none", never dropped.
     ledgers (decisions.md; memfn/docs/requests.md and responses.md). A
     lane takes no id outside its range.>
 
+    ARCHITECTURE NOTE: <path of the ACCEPTED note (docs/design/<topic>_arch.md) and its critic round, for a
+    design or build lane of a feature above the size trigger; "below the trigger: <the one-paragraph form,
+    pasted>" otherwise; "none: not a feature" for a fix, a measurement or a doc lane. The lane's design stays
+    inside the note's site map and lands the note's first units first ([ARCH-STEP], 2026-11-17).>
+
     BUILD GO: <the owner's words and date, quoted verbatim>
       -- or --
     NO BUILD GO: design/measure only. (Required for any lane that edits
@@ -57,6 +62,9 @@ A field with nothing to say is written "none", never dropped.
     covcap-r2, 2026-11-15: "`[ab]{1000}` lists 24" was false on one
     compile).
 
+    (A lane that dispatches CLOUD runs proves each one in its report with the matching
+    `git ls-remote origin 'refs/heads/cloud/OWNER/*/NAME*'` line; lanecheck knows only box-queue
+    keys, so its report says `OWED: none` and names the cloud runs in their own section; 2026-11-16.)
     OWED RUNS: queue every owed stage as a box-queue job (RUNS.md), name
     their keys in STATE AT HANDOFF, run lanecheck, SendMessage, then END.
     Do NOT wait for the jobs or for any notification: a fresh agent reads

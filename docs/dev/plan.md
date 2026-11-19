@@ -38,6 +38,10 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 **Rules.** Update the STATE tag and the `status` line in place when a step changes state; expand a milestone into substeps only when work on it begins. Process policy (lanes, boxes, closing a session) lives in decisions.md (D86), the root CLAUDE.md and the pcrec-manager skill, not here.
 
 ## Active
+- [ARCH-STEP] STATE:started — an ARCHITECTURE step between requirements and design, with its own review
+  filed: 2026-11-17 Frank ("we discover over time that the feature is aggregated onto existing code and then have to go through a lengthy refactor ... requirements -> architecture-> design -> build Each with its own review and goals"; "I'd like to set up a plan with this"); manager wrote the row
+  status (2026-11-18): A1-A5 DONE; A6 pilot ran (r49/r50, design r51), write-up in the body file, skill edits applied; owner KEPT the step and the size trigger (D200); A6 retro test owed
+  next: the A6 blinded retro test; open with the owner: speed-gate, new-rules; units: docs/design/plan_row_bodies/ARCH-STEP.md
 - [XARCH-DEV] STATE:started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
   filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
   status (2026-11-10): BUILD GO 2026-11-07; kit K0 d9df92c0d, pcrec P1 bfecd6143, U2+U3 (joint per-CPU SIMD) cf578177e landed 2026-11-09 (abi 98, MF_SITE_ABI 26); order: target_seam_units.md
@@ -229,8 +233,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Stage-2 note (2026-11-10, review r3 vlb2, ruled; supersedes the 2026-11-07 note): a backreference reached THROUGH A CALL is NOT a wording-tier item: libpcre2 ACCEPTS the bounded case (`(a)(\1)(?<=(?2))x` lb 1, `(a)(?(DEFINE)(?<g>\1b))(?<=(?&g))x` lb 2), so it is in stage 2's accept set (F2 (a), vlookbehind.md §6.2.1). `(a+)(?<=\1)x` moves from rule 0 (shape 5) to the unbounded refusal (shape 7, err 125 on both sides). Design: vlookbehind.md rev 5 §6.2 (lane vlbrev5); D27 extract docs/design/vlb_d27_extract.md; owner build go 2026-11-10; build lane after rev 5's fixes are checked.
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
-  status (2026-11-11): stages 1, 2p, 2b LANDED (merge f77ed1130, abi 97, lane altland); stage 3 + the kit's R-38 Part D GO'd by Frank 2026-11-11 to start when the kit's K38-2 lands, as set S2; 2a census-first and 3m follow
-  waits: (S2 STARTED 2026-11-13 07:00) lane rps3 (stage 3, lane/rps3) and the kit's lane partd (Part D + R-41, lane/memfn-partd); one joint landing by the manager
+  status (2026-11-18): stages 1, 2p, 2b LANDED (f77ed1130, abi 97); stage 3 + the kit's R-38 Part D + R-41 LANDED 2026-11-14 as set S2 (merge 9cecc3caa, abi 106; closed 11-14/15 with rule (1) on, abi 107); 2a census-first and 3m follow
+  waits: nothing in flight; the follow-ups (2a, 3m, the post-S2 measurement set in the body file) are not started
   trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the span_pick unit 1e gate is DISCHARGED ([MEASURE-SET]: stage 1 complete at 1e); build go given 2026-11-11 (above)
   refs: docs/design/alt_normal_form.md; docs/dev/lanes/altdesign_report.md; docs/dev/lanes/altthink_report.md; docs/dev/lanes/rpsurvey_report.md (its derived москва/αβγ numbers corrected by altthink); D187; D186; D153; src/facts/req.c (rr_alt); src/opt/lower_enc.c (lower_class_utf8); src/opt/altcls.c; [POS-ONE-DETECTOR]; [SEQ-FOLD]; [DFA-ALPHA-MERGE]
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
@@ -289,9 +293,19 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, Frank: "Queue that fix"): QUEUED the dense-hit remedy for the handoff rows (bounded and unbounded): after the FIRST failed attempt, obtain the LAST occurrence of the required run at or after (known hit start + 1) ONCE (a kit request R-n stating that FACT only, D157: the kit chooses the method; a backward scan is cheap in RAM but defeats kernel readahead on cold mmapped subjects, a forward keep-latest pass reads in readahead order with no per-hit call; our timing covers warm data only, the cold case is argued, not measured), then each attempt compares its position with that number instead of re-asking the presence site. Expected: the dense-hit loss (1.38 vs 0.81 ms; bounded row 1.56 vs 0.71) goes away, after which the rows may move from the public -fno-req-handoff deny to a test lever (D195 / FLAG-DEMOTE) ONLY IF the method has no losing case (next NOTE).
   NOTE (2026-11-12, no-loss condition): no case slower than the plain loop (Frank 2026-11-12 on cold mmapped subjects): a backward scan loses on cold mapped tails, a forward keep-latest pass loses when a match comes early in a long subject with hits to its end; a lazy re-ask with doubling look-ahead ("any occurrence >= d bytes ahead?", d doubling on yes) reads forward, near the loop, with O(log) calls on dense hits, is the candidate with no constructed losing case. The request states the fact + the no-loss requirement; otherwise the public bit stays. Order: after reqpast lands, K38-2 and set S2; needs a measurement card (new method).
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
+  NOTE (2026-11-18): architecture note docs/design/dense_hit_arch.md ACCEPTED (reviews r49); Frank ruled lookahead-home = the kit's method; his words and the open starts-or-occurrences question: docs/design/plan_row_bodies/REQ-PAST-LAST.md
+- [REQ-LOOKAROUND] STATE:started — runs and span checks see through POSITIVE lookarounds into their fixed part
+  filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
+  status (2026-11-18): span_arms.md rev 3.2 MERGED (054c9cdf7; r51 applied, confirm critic passed); D191 build go: L1, L3; L2 after the kit's R-38 delivery (its readiness critic discharged by the confirm); NOT built
+  next: build L1 (opus lane: census, remodel commits, feature; D27 witnesses; code critic before landing), then L3 (abi event), then L2
+  refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
+  Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
+  Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
+  Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
+  NOTE (2026-11-18): architecture note docs/design/req_lookaround_arch.md ACCEPTED (review r50); Frank ruled context-producer-home (ONE span, one producer); remodel-go is the manager's call; both in docs/design/plan_row_bodies/REQ-LOOKAROUND.md
 - [COVER-CAP] STATE:started — lift the cover route's 24-position cap (long exact literals and fixed shapes finish in the engine)
   filed: 2026-11-11 manager (lane paper), from the skipmeas measurement; set S3
-  status (2026-11-15): stage 1 landed (abi 108, merge fff636eda); stage 2 design closed (cover_cap.md rev 5.2, reviews r13 + r15, D198 addendum 1: the limit bounds the route); kit request R-45 filed, its reply owed before any build
+  status (2026-11-18): stage 1 landed (abi 108); stage 2 + the kit's forms MERGED on lane/covs2land (c774d15c0, abi 109); cloud: mechrows, asan green, test RED on a kit test bound, fix lane/memfn-g2pcap in its cloud run; next: freeze, form cards' night, width cells, landing
   trigger: FIRED 2026-11-11 (D77, lane skipmeas): ~12 of 356 bench patterns still finish in the engine, 85-88% of instructions on l31/l40 (measurement body below)
   refs: [EARNED-SKIP] (measurement block); [REQ-LOOKAROUND] waits for set S4 ([EARNED-SKIP] and [MATCH-KNOWN] are PARKED, Frank 2026-11-11 evening); decisions D77
   Measurement (skipmeas): exact fixed patterns <= 24 positions skip the engine through the cover route (bench 78, corpus ~890). Still finish-bearing: long literals l31/l40, hex32/dig32/uuid, 4 lookaround, `$` tails. Stubbing the finish: lit-l31 match 30.0M -> 4.4M instructions:u, l40 28.6M -> 3.5M. Cause: the 24-position span cap.
@@ -309,7 +323,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the decisions-why section of cover_cap.md §3.3 NOTED (R-14) is built, which would list the kind once
     refs: docs/design/cover_cap.md §3.1, §3.3; docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-6; [ROWCONJ]
     The NFA-provenance facts are read by more than one conjunct table separately: the cover's kept `erased`/`island` guards (rev 4.1) and lmwalk.c's own copy of `nfa->erased`; `split_conj[]` is the third table. One shared row kind, read by `cover_conj[]`, `lmwalk_conj[]` and `split_conj[]`, replaces the per-table copies.
-
   - [COVER-NEARMISS-SKIP] STATE:not-started — the kit's near-miss skip for the long cover (O(n*k) on a dense near miss)
     filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
     status (2026-11-16): filed; nothing built
@@ -352,68 +365,17 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the next edit to tests/kitproof/answers.tsv or its generator (gen_answers.sh)
     refs: review r32 (2026-11-16, round covs2code) F22; tests/kitproof/run_cover.sh, cases.tsv, answers.tsv
     run_cover.sh reads answers.tsv only; cases.tsv's answer rows (140, in sync today) are unchecked. Compare the FLAGS/PATTERN/SUBJECT triples in run_cover.sh; no libpcre2 needed.
-## Candidates ([OPTLOOP])
-- [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
-  filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
-  status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped
-  next: when scheduled: census the fit_rungs[] firings since S2 (which patterns lose a handoff they could keep); decide the order or a re-add step after drop-islands; measure
-- [FLOORS-REMEASURE] STATE:not-started — re-measure the run-verify-wide floors and pin the corpus-only floors from a measure
-  filed: 2026-11-15 manager (review 2026-11-15-r3-fixposts2 CHECKS-4, PLAN half; FLOORS-2 of 2026-11-15-r1-posts2 rides with it)
-  status (2026-11-15): filed, unscheduled; the corpus-only floors (FLOORS-3) bound exactly as loosely as before (old 15 == new 11 on the corpus); the run-verify-wide floors (58/117/99/181) were measured before rule (1) went ON
-  next: when a box job is cheap: `memfn_arm.py --measure` with the cloud suite already owed on 65551ae98; pin the corpus-only floors from the recorded counts (12/13, pad 10/12) if the corpus has not moved, else from the measure; re-check the run-verify-wide floors for movers rule (1) added
-  refs: docs/dev/reviews/2026-11-15-r3-fixposts2.md (CHECKS-4); docs/dev/reviews/2026-11-15-r1-posts2.md (FLOORS-2, FLOORS-4); [RULE1-ROUTE]
-- [RULE1-ROUTE] STATE:not-started — measure the route change rule (1) alt_union made (S2 leftover; speed unmeasured)
-  filed: 2026-11-15 manager (2026-11-15 audit; mech row S486 UNREACHED on cloud suite 2275777e0)
-  status (2026-11-15): filed, unscheduled; rule (1) alt_union (13f46ea50, abi 107) moved `\b((?:A3T[A-Z0-9]|AKIA|AGPA)[A-Z0-9]{16})\b`: RX_DFA_PREFILTER first-memchr-bounded -> handoff, RX_REQ_WHY dominated -> emitted, RX_REQ_HANDOFF none -> 0, RX_MEMFN_LIBC memchr -> memchr,memcmp; no answer changed; speed UNMEASURED
-  next: count how many corpus/bench patterns moved the same way (stamp sweep abi 106 vs 107), then time before/after in a night window, one variable
-  refs: docs/dev/reviews/2026-11-15-r3-fixposts2.md; [RUN-POS-SET]; [FLOORS-REMEASURE]
-- [PREFLIGHT] STATE:not-started — fast checks on what a change touches, run BEFORE queuing heavy runs
-  filed: 2026-11-14 Frank ("File it but I don't want to invest more than we save: let's spend hours not days and strive for tweaks or general fixes ie cost related to benefit")
-  status (2026-11-14): filed, after S2 close; budget hours not days; reuse checks on the diff. Catchable reds today: duplicated arm floor, --emit-pins ignored under --arms, rxt keyword COLLISION, verify_rxt hang (K145), VRUN_U8 vocabulary; execution-only: S686 no-op plant
-  next: cheapest first: one source per floor; tools refuse ignored flags; rxt + vocabulary checks on changed files; mechrows on edited files; review test-code diffs too (Frank); lever-name grep (G7 fence: a comment spelling a test-only lever flag trips it)
-  refs: lane/s2land s2tri_report.md (test-island row); docs/spec/limits.md §8.4¶2b; [RUN-POS-SET] (set runs add handoff/verify bytes)
-- [BACKREF-FINITE] STATE:not-started — a backreference to a FINITE group is regular: enumerate and substitute instead of the VM
-  filed: 2026-11-14 Frank (agreed lean on predx_report.md §11 Q10: a general engine question, not #6)
-  status (2026-11-14): filed, unscheduled; e.g. `(\d\d)\1` or `(a|b)x\1` could leave the VM; budget by the group's finite language size; changes engine choice, so answers must stay identical
-  next: when scheduled: census corpus patterns whose every backreferenced group is finite and small; measure VM vs enumerated DFA speed; design the budget
-- [PRED-SPLIT] STATE:not-started — automatically demote an exploding predicate to a verify step; DFA keeps the rest
-  filed: 2026-11-13 manager (Frank: "isolate expensive operations ... DFA for most of it but this one check is VM ... a non-manual method?"; "file away for later optimization")
-  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); waits for the predicate base ([COND-FAMILY])
-  next: when scheduled: product build under a state budget, growth attributed per operand; the culprit is relaxed in the DFA (dropped: an over-approximation) and checked by a verify step (prefilter + verify, FINISH verify); left-chooses fallback to the VM per match
-  refs: [COND-FAMILY] row body ("AUTOMATIC SPLIT"); [COST-EXPLAIN] (the manual tool); D196 (left chooses)
-- [COST-EXPLAIN] STATE:not-started — a regex cost explainer: per-construct marginal cost by ablation (swap a node, recompile)
-  filed: 2026-11-13 manager (Frank: "That suggests a tool for looking at regex dfa cost by repeated modify/compile")
-  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); idea from the predicate cost-surfacing discussion ([COND-FAMILY] row body)
-  next: when scheduled: a driver over existing compiles; per node a stand-in variant ({n,m} -> +, class -> ., drop lookaround/alternative, capture -> non-capturing, predicate -> its type); report delta bytes/states/compile ms/engine route, ranked; bounded by the compile timeout
-  refs: [DFA-MIN-FAST] (its long-compile census can use it); [COND-FAMILY] (predicate marginal cost is one node kind); [LOOP-FIXW]
-  A stand-in changes meaning: the report says what a part COSTS, never 'rewrite it so'; equivalent cheaper forms are a separate, harder feature. Users get 'why is my matcher huge/slow' pointed at the construct.
-- [AUTOMATON-KIT] STATE:not-started — a plain automaton toolkit layer: generic graph algorithms over one simple automaton
-  filed: 2026-11-13 manager (Frank: "the predicate section is likely to need a bunch of graph transformation work ... is the graph setup for it ... generic helpers ... as simple and generic as it could be ... am I off base?"; survey: not off base)
-  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); PREREQUISITE of the [COND-FAMILY] predicate base; first client [DFA-MIN-FAST]
-  next: when scheduled: a plain automaton (byte-class transitions, accept tags, special conditions as symbols); shared worklist, state-set hash, bitset, ONE partition refinement; generic reachability, SCC, product, complement, reversal, Hopcroft; emission DFA derived after
-  refs: [DFA-MIN-FAST]; [COND-FAMILY]; D196 add. 2 (internal Boolean operators, lookaround lowering); D153 remodel-first; survey facts in the row's charter text below
-  Survey 2026-11-13: no product/intersection/complement/dominators/graph reversal; 3 epsilon-closure walks (dfa.c clo_walk, kset.c wdrain, nfa.c cstart_check_omission), 4 hand-written hash tables, per-file seen[] arrays, 2 callgraph cycle detections, partition refinement twice (dfa.c refine_by static, minimize.c Moore); ~350 lines of context/island special cases inline in dfa.c, minimize declines islands; lookaround lowered to epsilon (a sound superset, UNSOUND under complement: &! needs exact operands); only direction (sides_of) and context-as-atoms are generic today.
-  Unlock (Frank 2026-11-13, "a pure dfa graph could be used to randomly generate matchable strings"): uniform sampling by path counting; uses: subjects not from the author's alphabet (transition-covering sets; near misses via complement; oracle still checks), example strings in messages (ambiguity witness, cost tool, D196 --compare counterexample), library test data. Caveat: today's DFA is a lookaround superset (filter by the real matcher, or sample the exact automaton). Trigger: the kit exists AND the equivalence tool or a coverage push wants it.
-- [DFA-MIN-FAST] STATE:not-started — DFA minimization is quadratic on large counted repeats; make it n log n
-  filed: 2026-11-13 manager (Frank: "It should be microseconds or at least under a second ... running some check nonlinearly"; "Agree" to filing it separately)
-  status (2026-11-13): MEASURED on main: (?:a|b){1,n} compiles in 0.08/0.31/0.80/3.10/12.2 s at n = 1875/3750/7500/15000/30000 (x4 per doubling), 99.9% in pcrec_minimize_dfa; n = 60000 skips the DFA (VM) in 0.04 s
-  next: after S2: (1) census EVERY long compile (compile_time_census.py, corpus + stress shapes): per-phase profile and growth vs size, naming each nonlinear phase; (2) fix minimization; others filed per cause; zero movers
-  refs: [LOOP-FIXW] (the counted-repeat shape itself); src/ir (pcrec_minimize_dfa); lane rps3c report (the dTLB/memcmp finding)
-  Frank 2026-11-13: "Have the row look at other long compiles as well". Compile time should be microseconds, at worst under a second; each slow phase gets a compile-time witness in tests/resource.
-- [LOOP-FIXW] STATE:not-started — fixed-width loops by pointer arithmetic; survey of related loop ideas
-  filed: 2026-11-13 manager (Frank: "for long counts like that in vm: 1. pointer arithmetic instead of frames ... fixed width 2. set the capture after the loop runs and on fallback"; "Have the item look at other general loop ideas related")
-  status (2026-11-13): filed; context = (a|b){1,30000} (S2 cloud red, ~12.5 s compile on main at BOTH engines, so the time is pre-engine analysis, a separate anomaly)
-  next: (1) census: corpus loops with a fixed-width body, the rung each takes today, VM frames/size; (2) design the fixed-width step as a SPECIAL CASE of the reverse-deterministic rung (no parallel mechanism); (3) survey related general loop ideas with triggers
-  refs: [ENG-BREP], RUNG-SELECT (plan_completed: src/opt/revdet.c, vm_revdet_rep: O(1) frames, last-iteration capture walk); [REPEAT-RUN]; D47.1; memory pcrec-general-mechanisms-not-special-cases
-  Body: docs/design/plan_row_bodies/LOOP-FIXW.md
-- [LITSCAN-SIZEFLOOR] STATE:not-started — a size-aware F5 floor: chain 2-byte runs only where the collapsed form would not overflow the cap
-  filed: 2026-11-10 closea (the residual witness of the closed [OPT-LITSCAN], bench O-78 filed 2026-09-30)
-  status (2026-11-10): filed, nothing scheduled; D127's floor of 3 re-refuses wild-datetime-datefinder-alternation at --engine=vm under the default 500,000-byte code cap (vm_program_bytes 508,413 -> 605,083); not a bug
-  trigger: the next [OPTLOOP] round selects it by measurement; its before/after witness is bench/capability/patterns/wild-datetime-datefinder-alternation.rx
-  refs: plan_completed.md [OPT-LITSCAN]; decisions D127
-- [LANDWALK] STATE:not-started — P1 landmark walk: one LOCATE row seeding a reverse machine at each landmark hit
+  - [COVER-SIZE-LADDER] STATE:not-started — a legal --window-search-width fails at the code-size cap; no ladder rung drops the cover
+    filed: 2026-11-16 manager (lane read3file; finding r27 READ-3, reproduced by lane covs2c)
+    status (2026-11-16): filed; UNRULED, record only; exists on lane/covs2b (stage 2), not on main
+    trigger: must be DECIDED before the [COVER-CAP] stage-2 joint landing (it exists only on lane/covs2b, not on main)
+    refs: docs/dev/lanes/covs2c_report.md (LEFT OPEN, r27 READ-3) and covs2b_report.md (LEFT OPEN), both on lane/covs2b; docs/spec/limits.md section 3.12 para 4 (stage-2 branch only) and section 8.4; src/core/compile.c fit_rungs[]
+    Manager's lean (not a ruling): a drop-cover rung in the size ladder, as its own small unit with a design critic round.
+    Finding: `build/pcrec --features all -p rx --window-search-width=4095 -o X.c --pattern '[0-9a-f]{4095}'` exits 1 with "pattern too large: 612696 bytes of emitted code (limit 500000)". The cover's code grows with k: at width 4095 `[0-9a-f]{k}` fits up to k = 3,328 and fails from k = 3,329 (500,093 bytes); `a{4095}` (a literal cover) fits; at `--window-search-width=4094` the same pattern declines the cover and the engine route fits (rc 0, RX_DFA_SCAN "unanchored", RX_ENGINE_SEL "selected"); `--max-emit-code-bytes=700000` ships the 4095 cover (612,708 bytes). `fit_rungs[]` has no row that declines the cover, so the ladder reaches `refuse`. limits.md section 3.12 para 4 (stage-2 branch only) promises the engine "through the size-cap ladder (section 8.4), stamped size-cap-retry", but section 8.4's table has no such rung: the spec contradicts itself as well as the code.
+    Options (covs2c report): (a) a `drop-cover` ladder row: a new FitAct, an `applies` on "this artifact's scan is the cover", a Ctx bit `cc_fits` reads (like end_mark_dropped), its fit_seq_legal pairs, a facts `why` for the decline, the section 8.4 table row ("all ten" becomes eleven) and its order (a cost claim nothing has measured: suspect constant), plus the rung-table readers (pcrec_fit_table_row's dump, S237/S238/S420-shaped rows) and a witness row; general, moves no default byte, but touches the ladder, a dump and two spec sections. (b) Decline the cover in C15 when its code would pass the cap: needs a size estimate that does not exist. (c) Change section 3.12 para 4 to today's behaviour (a width whose cover passes the cap fails the compile; raise --max-emit-code-bytes): a contract change for the manager/owner. The lane's leaning: (a), as a small unit after the landing.
+- [LANDWALK] STATE:started — P1 landmark walk: one LOCATE row seeding a reverse machine at each landmark hit
   filed: 2026-10-29 lane p1dsg2
-  status (2026-11-02): stage 1 landing prepared as abi 95 (D184, lane p1land, merge f5de088bf on lane/p1build); make test queued as 830-p1land-test; the manager merges on its verdict; child rows stay open
+  status (2026-11-18): stage 1 LANDED on main at dc6a40dfb (abi 95, D184); the child rows stay open
   trigger: the manager's check of rev 2, then Frank's build go (the measured mover is bench 5b mask-email: x70 instructions, x44 cycles on acc-main)
   refs: docs/dev/lanes/p1dsg3_report.md; docs/dev/lanes/p1dsg2_report.md; docs/dev/lanes/p1dsg_report.md; docs/dev/reviews/2026-10-29-r1-landwalk.md; docs/dev/reviews/2026-10-29-r5-landwalk2.md; docs/dev/optloop/primed_2026-10-29.md; decisions D151 D156 D161
   The later rows below are the review's PLAN items and the general form's unlocks (r1 U1-U5); U3 (one walk emitter for rev-end and the landmark walk) is stage 1's own form (rev 1 D10), so it has no row. The admission sub-table's family unification is [ROWCONJ]; the VM hat's GIVEUP1 check is [GIVEUP-DIFF].
@@ -480,6 +442,66 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the next counterfactual reader (stage 2's VM walk, a second deep `under` read) or the next toggle site
     refs: docs/dev/reviews/2026-10-29-r7-landwalk3.md; docs/dev/lanes/p1build_report.md; src/gen/emit_dfa.c (pcrec_cand_lmwalk_next_cf)
     Reentrant and longjmp-safe, lets `under` propagate as the static walk assumes, and unifies the ladder's shrink test, the memo and the facts hook (forest-for-trees: the family's third member, so proposed, not built).
+
+## Candidates ([OPTLOOP])
+- [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
+  filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
+  status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped
+  next: when scheduled: census the fit_rungs[] firings since S2 (which patterns lose a handoff they could keep); decide the order or a re-add step after drop-islands; measure
+- [FLOORS-REMEASURE] STATE:not-started — re-measure the run-verify-wide floors and pin the corpus-only floors from a measure
+  filed: 2026-11-15 manager (review 2026-11-15-r3-fixposts2 CHECKS-4, PLAN half; FLOORS-2 of 2026-11-15-r1-posts2 rides with it)
+  status (2026-11-15): filed, unscheduled; the corpus-only floors (FLOORS-3) bound exactly as loosely as before (old 15 == new 11 on the corpus); the run-verify-wide floors (58/117/99/181) were measured before rule (1) went ON
+  next: when a box job is cheap: `memfn_arm.py --measure` with the cloud suite already owed on 65551ae98; pin the corpus-only floors from the recorded counts (12/13, pad 10/12) if the corpus has not moved, else from the measure; re-check the run-verify-wide floors for movers rule (1) added
+  refs: docs/dev/reviews/2026-11-15-r3-fixposts2.md (CHECKS-4); docs/dev/reviews/2026-11-15-r1-posts2.md (FLOORS-2, FLOORS-4); [RULE1-ROUTE]
+- [RULE1-ROUTE] STATE:not-started — measure the route change rule (1) alt_union made (S2 leftover; speed unmeasured)
+  filed: 2026-11-15 manager (2026-11-15 audit; mech row S486 UNREACHED on cloud suite 2275777e0)
+  status (2026-11-15): filed, unscheduled; rule (1) alt_union (13f46ea50, abi 107) moved `\b((?:A3T[A-Z0-9]|AKIA|AGPA)[A-Z0-9]{16})\b`: RX_DFA_PREFILTER first-memchr-bounded -> handoff, RX_REQ_WHY dominated -> emitted, RX_REQ_HANDOFF none -> 0, RX_MEMFN_LIBC memchr -> memchr,memcmp; no answer changed; speed UNMEASURED
+  next: count how many corpus/bench patterns moved the same way (stamp sweep abi 106 vs 107), then time before/after in a night window, one variable
+  refs: docs/dev/reviews/2026-11-15-r3-fixposts2.md; [RUN-POS-SET]; [FLOORS-REMEASURE]
+- [PREFLIGHT] STATE:not-started — fast checks on what a change touches, run BEFORE queuing heavy runs
+  filed: 2026-11-14 Frank ("File it but I don't want to invest more than we save: let's spend hours not days and strive for tweaks or general fixes ie cost related to benefit")
+  status (2026-11-14): filed, after S2 close; budget hours not days; reuse checks on the diff. Catchable reds today: duplicated arm floor, --emit-pins ignored under --arms, rxt keyword COLLISION, verify_rxt hang (K145), VRUN_U8 vocabulary; execution-only: S686 no-op plant
+  next: cheapest first: one source per floor; tools refuse ignored flags; rxt + vocabulary checks on changed files; mechrows on edited files; review test-code diffs too (Frank); lever-name grep (G7 fence: a comment spelling a test-only lever flag trips it)
+  refs: lane/s2land s2tri_report.md (test-island row); docs/spec/limits.md §8.4¶2b; [RUN-POS-SET] (set runs add handoff/verify bytes)
+- [BACKREF-FINITE] STATE:not-started — a backreference to a FINITE group is regular: enumerate and substitute instead of the VM
+  filed: 2026-11-14 Frank (agreed lean on predx_report.md §11 Q10: a general engine question, not #6)
+  status (2026-11-14): filed, unscheduled; e.g. `(\d\d)\1` or `(a|b)x\1` could leave the VM; budget by the group's finite language size; changes engine choice, so answers must stay identical
+  next: when scheduled: census corpus patterns whose every backreferenced group is finite and small; measure VM vs enumerated DFA speed; design the budget
+- [PRED-SPLIT] STATE:not-started — automatically demote an exploding predicate to a verify step; DFA keeps the rest
+  filed: 2026-11-13 manager (Frank: "isolate expensive operations ... DFA for most of it but this one check is VM ... a non-manual method?"; "file away for later optimization")
+  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); waits for the predicate base ([COND-FAMILY])
+  next: when scheduled: product build under a state budget, growth attributed per operand; the culprit is relaxed in the DFA (dropped: an over-approximation) and checked by a verify step (prefilter + verify, FINISH verify); left-chooses fallback to the VM per match
+  refs: [COND-FAMILY] row body ("AUTOMATIC SPLIT"); [COST-EXPLAIN] (the manual tool); D196 (left chooses)
+- [COST-EXPLAIN] STATE:not-started — a regex cost explainer: per-construct marginal cost by ablation (swap a node, recompile)
+  filed: 2026-11-13 manager (Frank: "That suggests a tool for looking at regex dfa cost by repeated modify/compile")
+  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); idea from the predicate cost-surfacing discussion ([COND-FAMILY] row body)
+  next: when scheduled: a driver over existing compiles; per node a stand-in variant ({n,m} -> +, class -> ., drop lookaround/alternative, capture -> non-capturing, predicate -> its type); report delta bytes/states/compile ms/engine route, ranked; bounded by the compile timeout
+  refs: [DFA-MIN-FAST] (its long-compile census can use it); [COND-FAMILY] (predicate marginal cost is one node kind); [LOOP-FIXW]
+  A stand-in changes meaning: the report says what a part COSTS, never 'rewrite it so'; equivalent cheaper forms are a separate, harder feature. Users get 'why is my matcher huge/slow' pointed at the construct.
+- [AUTOMATON-KIT] STATE:not-started — a plain automaton toolkit layer: generic graph algorithms over one simple automaton
+  filed: 2026-11-13 manager (Frank: "the predicate section is likely to need a bunch of graph transformation work ... is the graph setup for it ... generic helpers ... as simple and generic as it could be ... am I off base?"; survey: not off base)
+  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); PREREQUISITE of the [COND-FAMILY] predicate base; first client [DFA-MIN-FAST]
+  next: when scheduled: a plain automaton (byte-class transitions, accept tags, special conditions as symbols); shared worklist, state-set hash, bitset, ONE partition refinement; generic reachability, SCC, product, complement, reversal, Hopcroft; emission DFA derived after
+  refs: [DFA-MIN-FAST]; [COND-FAMILY]; D196 add. 2 (internal Boolean operators, lookaround lowering); D153 remodel-first; survey facts in the row's charter text below
+  Survey 2026-11-13: no product/intersection/complement/dominators/graph reversal; 3 epsilon-closure walks (dfa.c clo_walk, kset.c wdrain, nfa.c cstart_check_omission), 4 hand-written hash tables, per-file seen[] arrays, 2 callgraph cycle detections, partition refinement twice (dfa.c refine_by static, minimize.c Moore); ~350 lines of context/island special cases inline in dfa.c, minimize declines islands; lookaround lowered to epsilon (a sound superset, UNSOUND under complement: &! needs exact operands); only direction (sides_of) and context-as-atoms are generic today.
+  Unlock (Frank 2026-11-13, "a pure dfa graph could be used to randomly generate matchable strings"): uniform sampling by path counting; uses: subjects not from the author's alphabet (transition-covering sets; near misses via complement; oracle still checks), example strings in messages (ambiguity witness, cost tool, D196 --compare counterexample), library test data. Caveat: today's DFA is a lookaround superset (filter by the real matcher, or sample the exact automaton). Trigger: the kit exists AND the equivalence tool or a coverage push wants it.
+- [DFA-MIN-FAST] STATE:not-started — DFA minimization is quadratic on large counted repeats; make it n log n
+  filed: 2026-11-13 manager (Frank: "It should be microseconds or at least under a second ... running some check nonlinearly"; "Agree" to filing it separately)
+  status (2026-11-13): MEASURED on main: (?:a|b){1,n} compiles in 0.08/0.31/0.80/3.10/12.2 s at n = 1875/3750/7500/15000/30000 (x4 per doubling), 99.9% in pcrec_minimize_dfa; n = 60000 skips the DFA (VM) in 0.04 s
+  next: after S2: (1) census EVERY long compile (compile_time_census.py, corpus + stress shapes): per-phase profile and growth vs size, naming each nonlinear phase; (2) fix minimization; others filed per cause; zero movers
+  refs: [LOOP-FIXW] (the counted-repeat shape itself); src/ir (pcrec_minimize_dfa); lane rps3c report (the dTLB/memcmp finding)
+  Frank 2026-11-13: "Have the row look at other long compiles as well". Compile time should be microseconds, at worst under a second; each slow phase gets a compile-time witness in tests/resource.
+- [LOOP-FIXW] STATE:not-started — fixed-width loops by pointer arithmetic; survey of related loop ideas
+  filed: 2026-11-13 manager (Frank: "for long counts like that in vm: 1. pointer arithmetic instead of frames ... fixed width 2. set the capture after the loop runs and on fallback"; "Have the item look at other general loop ideas related")
+  status (2026-11-13): filed; context = (a|b){1,30000} (S2 cloud red, ~12.5 s compile on main at BOTH engines, so the time is pre-engine analysis, a separate anomaly)
+  next: (1) census: corpus loops with a fixed-width body, the rung each takes today, VM frames/size; (2) design the fixed-width step as a SPECIAL CASE of the reverse-deterministic rung (no parallel mechanism); (3) survey related general loop ideas with triggers
+  refs: [ENG-BREP], RUNG-SELECT (plan_completed: src/opt/revdet.c, vm_revdet_rep: O(1) frames, last-iteration capture walk); [REPEAT-RUN]; D47.1; memory pcrec-general-mechanisms-not-special-cases
+  Body: docs/design/plan_row_bodies/LOOP-FIXW.md
+- [LITSCAN-SIZEFLOOR] STATE:not-started — a size-aware F5 floor: chain 2-byte runs only where the collapsed form would not overflow the cap
+  filed: 2026-11-10 closea (the residual witness of the closed [OPT-LITSCAN], bench O-78 filed 2026-09-30)
+  status (2026-11-10): filed, nothing scheduled; D127's floor of 3 re-refuses wild-datetime-datefinder-alternation at --engine=vm under the default 500,000-byte code cap (vm_program_bytes 508,413 -> 605,083); not a bug
+  trigger: the next [OPTLOOP] round selects it by measurement; its before/after witness is bench/capability/patterns/wild-datetime-datefinder-alternation.rx
+  refs: plan_completed.md [OPT-LITSCAN]; decisions D127
 - [LANG-DIAG-WORDING] STATE:not-started — refusal wording and blame offsets from the language fixes (D26 tier)
   filed: 2026-10-22 lane landlang
   status (2026-10-22): not started; collected from the langfix reports, all diagnostic position or wording, none a match answer
@@ -894,6 +916,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: a client that needs the facts: the S4 [REQ-LOOKAROUND] work or kit_proof UL-0
   refs: [DD-11.5] (part (a) stays there); [COVER-CAP]; [REQ-LOOKAROUND]; decisions D168; kit_proof UL-0; docs/design/ctx_span.md
   The D168 context facts at negative offsets / past the end (per-offset sets {set, includes-absent, exact}: `\b`, fixed positive lookbehind, width-1 negative lookbehind), to be produced from the anchored DFA the cover route reads, shared with kit_proof UL-0.
+  NOTE (2026-11-18): RE-SCOPED by Frank's context-producer-home ruling ([REQ-LOOKAROUND] body file): fixed lookbehinds come from the lookaround item (one producer); this row keeps only what the item cannot state (`\b`, past the end, thread context)
 - [RX-NOT] STATE:not-started — negation inside a normal rx (`!` in `/!foo/`): LATER item, not scheduled, in no set
   filed: 2026-11-15 Frank (answer on COND-FAMILY scope), written by the manager
   status (2026-11-15): filed, NOT SCHEDULED; parked until the owner clarifies what `!` covers; the predicate design ([COND-FAMILY]) does not depend on it
@@ -960,14 +983,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-07): not started; UNSCHEDULED
   trigger: a THIRD encoding
   refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c
-- [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
-  filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
-  status (2026-11-08): designed as units L1-L3 of docs/design/span_arms.md; review 2026-11-08 r1 ruled L NOT READY at rev 0; rev 1 written (lane spanarms2: guards met in rr_cat, the item as D168's producer's first member); the span_pick 1e gate is discharged
-  next: the re-check round on span_arms.md rev 1 (fix-induced + readiness lenses), then Frank's build go per unit
-  refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
-  Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
-  Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
-  Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
 - [LOOK-LOCATE] STATE:not-started — a positive lookaround's fixed part as a LOCATE window span at its signed offset
   filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN; U-locate)
   status (2026-11-08): not started; a reader of the lookaround item (docs/design/span_arms.md §5.3: the first member of D168's producer), not of U-G1
@@ -976,7 +991,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   The item, placed at its negative offset, joins the one find-the-span choice set as a window span (Frank 2026-11-06: `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). The kit honours the span's verify flag (D172); no new kit mechanism.
 - [CTX-SIDES-PRODUCER] STATE:not-started — the cover's MkEnd ctx_before/ctx_after read from D168's signed-offset producer
   filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
-  status (2026-11-08): not started; today the cover's one-position context sides are a machine reading of the anchored DFA (src/gen/known.h, MkEnd)
+  status (2026-11-18): SCHEDULED by the owner (proved-ending-scope): next after [REQ-LOOKAROUND] L1-L3 land, as its own step; delivers his `(?<=foo)bar` "proved, search over" ending; trigger fired 2026-10-23 (bc675b020)
   trigger: a second machine-side consumer of a context side, or cover B1 (kit_proof.md §7)
   refs: docs/design/span_arms.md §5.3, §10; docs/design/ctx_span.md §3.10; D168; [DD-11.5]
   One producer of subject sets at signed offsets (D168); the machine reading becomes its control (ctx_span.md's UL-8 shape).
@@ -1000,8 +1015,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   alt_normal_form FIX-8's general form, taken by span_arms rev 1: a fact's deny admits a harness source, the restorable arms are rows of one declared table. The cli levers are the family's other members; the kit's mf_lever list is a sibling to compare at that build.
 - [COND-FAMILY] STATE:not-started — umbrella: the conditions / predicates / intersection family, planned together
   filed: 2026-11-10 Frank (to the kit, relayed by main); lane condsurv wrote the row and the survey
-  status (2026-11-10): survey delivered (docs/design/cond_family.md rev 0): 17 PCRE2 + 11 pcrec members; on no row before: script runs, scan_substring, pattern-variable and template set-tests; 12 machinery rows; first piece + 6 owner questions (§5, §7)
-  next: first piece: re-count the lookaround censuses (docs/dev/eng_look_census.md and ctx_prefilter_census.md predate [UCP] U2), then [ENG-LOOK]'s checker product for capture-free lookarounds; D77 and D153 (remodel overlap with [STREAM] A-REV) still gate it
+  status (2026-11-18): DESIGN ONLY: predicates_draft.md rev 26.1 (not stable; reviews r40, r42, r43, r47); the owner's rulings through 2026-11-18 in plan_row_bodies/COND-FAMILY.md; a dozen questions open (predspec261_report.md), his `|`-arrays proposal, the spellings review
+  next: one revision folding the rulings made after rev 24.4 (incl. the rx module's), then a critic round; no build go; the 2026-11-10 first piece (lookaround censuses, [ENG-LOOK]) stays gated by D77 and D153
   refs: docs/design/cond_family.md; docs/dev/lanes/condsurv_report.md; decisions D26 D62 D67 D77 D153 D168 D189 D193; [ENGINE-WHY] (reads the survey's DFA-reason column)
   2026-11-10 (owner, D193): the six §7 questions are answered (docs/design/cond_family.md §7): SPEED leads; one checker product with (start, read) rows is the family's named core; script runs and `(*scan_substring:..)` are members (script runs a spelling of predicates; both with no row until a use appears); honour-on-close is built with the first predicate build; this row owns the order of the shared pieces (node, name table, product). Ordering is not rework: the product (DFA) and the condition node (VM) are separate machinery, the name table is the only shared piece, whichever comes first builds it; speed-first only keeps conditionals and branch reset refused longer. The group-0 rule (X9) is ruled (D193).
   Frank 2026-11-10: "Yes. Let's start or designate a master to all these. Perhaps others were missing? It should look at the machinery needed to satisfy and the common elements. Then we can plan them all together."
@@ -1962,6 +1977,13 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   sections and long-section UNITS (one axis of `make test-axes`; one sanitizer sub-suite of `make san`/`make asan`/`make ubsan`; one mech sabotage row) record a completion marker keyed by (tree SHA, section/unit identifier, flags, box) on success; a re-run of the same suite at the same key SKIPS units already marked green, so a kill or timeout loses one unit rather than the whole run. WITNESSES (2026-09-25/26, docs/testing.md's own entry): the killed unbatched `make test-axes` sweep discarded 26 of 28 already-green axes when it hit its 5-hour cap in bit 27; the killed Mac `make asan` run (exit 124 past 3 hours) discarded whatever sub-suites it had already cleared, with no artifact recording which those were.
   PRECEDENT: `run_axes.sh`'s own `AXES=` env var is the existing MANUAL form of this idea (a human names the subset to re-run); this row is that mechanism made automatic and keyed rather than hand-invoked. MUST NOT WEAKEN THE GATE: a marker is invalid — and its unit re-runs — on a dirty tree, or on ANY flag/toolchain change (compiler version, `CC`, `GENCFLAGS`, `HARNESS_BATCH`, the sanitizer flag set) even if the tree SHA is unchanged, per the check-design lesson that a control sharing a source with what it controls is no control at all (docs/dev/learnings.md §3). D77: this needs [TEST-METRICS]'s trailer-widening mechanism (or an equivalent) to land first, or on Frank's word — the marker format should share a home with that log's own row rather than invent a third file. UNSCHEDULED (Frank 2026-09-26: "don't schedule yet.
   Let's close tickets before we open more") — no lane until the open queue closes, on his word.
+- [LAYOUT-DRAW] STATE:not-started — one shared layout-draw module for the layout-control family (harness tooling, low priority)
+  filed: 2026-11-18 kit manager's proposal (kit critic round r44 on lane/memfn-forms, finding A), accepted by the main manager 2026-11-18
+  status (2026-11-18): filed, NOT SCHEDULED; harness tooling, low priority; waits on its trigger; no build, no design beyond this row
+  trigger: (D77) the next harness needing layout control, or any sibling in the family changing how it draws a code layout
+  refs: docs/dev/optloop/k87twin_align.sh; docs/dev/optloop/rewtwin/timing_pad.py; studies/artrev/timing.py; docs/design/memfn/span_cards/slot/link.py; memfn/tests/span_forms/cards.py (branch lane/memfn-forms only); docs/dev/reviews/ (kit round r44); decisions D77
+  The members of the layout-control family each draw code layouts their own way; the row is ONE shared draw module they all use. Members as named by the kit, found on main unless noted: k87twin_align.sh (docs/dev/optloop/k87twin_align.sh); rewtwin/timing_pad.py (docs/dev/optloop/rewtwin/timing_pad.py); studies/artrev/timing.py; span_cards/slot/link.py (docs/design/memfn/span_cards/slot/link.py); the pools in cards.py (memfn/tests/span_forms/cards.py, present on lane/memfn-forms, absent from main at ae57a8e06); the bench's auto-align64 (in the sibling pcrec-bench repo, not looked up here).
+  UNLOCK: paired draws (the same layout draw applied to both sides of a comparison); trigger: the power rows below accept at tau 1 %.
 - [FEAT-GLOBAL-RETIRE] STATE:not-started — retire pcrec_enabled_set_spec's process-global enabled set
   filed: 2026-10-12 (first appearance in plan.md, git; author unrecorded)
   status (2026-09-21): from [REL-1.11]

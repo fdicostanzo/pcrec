@@ -1,0 +1,132 @@
+ORDER: forward
+
+PART 1: THE BATTERY, EACH OPTION ON THE SAME PROGRAMS (h-absent witnesses; counts over the pool)
+   (1a) two conditions on one label, pool A (21 subjects, h absent on 11): holds-count; answer on `c`
+      (h = 0: <5) & (h = 0: >7)  [same default]          LOCAL 0 FAILS; COLUMN 0 FAILS; POS 0 FAILS; DOLLAR 0 FAILS; DECL 0 FAILS
+      (h = 0: <5) & (h = 9: >7)  [different defaults]    LOCAL 11 HOLDS; COLUMN ERROR ERROR; POS 0 FAILS; DOLLAR 11 HOLDS; DECL ERROR ERROR
+      (h = 0: <5) & (h: <3)      [one with, one without] LOCAL 3 FAILS; COLUMN 14 HOLDS; POS 14 HOLDS; DOLLAR 3 FAILS; DECL 14 HOLDS
+      (h: <3) & (h = 0: <5)      [the same, swapped]     LOCAL 3 FAILS; COLUMN 14 HOLDS; POS 3 FAILS; DOLLAR 3 FAILS; DECL 14 HOLDS
+      POS: the written `h = 9` in the second condition changes 0 answers (it is DEAD: the first default already filled h)
+   (1b) record `(a = 0: <10, b: >$a)` (the record is ONE condition: LOCAL under every option) holds on 54; its `&` spelling `(a = 0: <10) & (b: >$a)`:
+      LOCAL   holds 45, on `-1` FAILS; vs the record differ 9 (smallest '-1')
+      COLUMN  holds 54, on `-1` HOLDS; vs the record differ 0
+      POS     holds 54, on `-1` HOLDS; vs the record differ 0
+      DOLLAR  holds 54, on `-1` HOLDS; vs the record differ 0
+      DECL    holds 54, on `-1` HOLDS; vs the record differ 0
+   (1b') PER-ENTRY: the record `(a = 0: <10, b: >$a)` = its `&` spelling, holds 45 (on `-1` FAILS); the joint `((a = 0, b): a < 10 & b > a)` holds 54 (on `-1` HOLDS), vs the per-condition record differ 0
+        DOLLAR, one statement, two values for a: `(b: >$a) & (a: <10) & (a = 0: <10)` holds 45; on `-1` FAILS (`(b: >$a)` reads a as 0, `(a: <10)` reads it as absent)
+   (1c) computed label `w := $a + 1`, `(a = 0: <10) & (w: >=1)`, LOCAL   holds 100, on `-1` FAILS
+   (1c) computed label `w := $a + 1`, `(a = 0: <10) & (w: >=1)`, COLUMN  holds 110, on `-1` HOLDS
+   (1c) computed label `w := $a + 1`, `(a = 0: <10) & (w: >=1)`, POS     holds 110, on `-1` HOLDS
+   (1c) computed label `w := $a + 1`, `(a = 0: <10) & (w: >=1)`, DOLLAR  holds 110, on `-1` HOLDS
+   (1c) computed label `w := $a + 1`, `(a = 0: <10) & (w: >=1)`, DECL    holds 110, on `-1` HOLDS
+        COLUMN with w computed from the RAW a (SQL's select list: an alias is not visible to its sibling items) holds 100: the column reading must say which a a computed label reads
+   (1d) the order of `&`: (2-condition program, controls) cases over rev 22's pools A, B, P, LST (+ condkind's EXTRA), each mark replaced by nothing or `= 0/4/5/9/"x"`: the answer moves when the two are swapped:
+      LOCAL   0 of 6300
+      COLUMN  0 of 6300
+      POS     771 of 6300; first: pool A `(h: <5) [None] & (h?: <5) [('c', '0')]` at 'c'
+      DOLLAR  0 of 6300
+      DECL    0 of 6300
+      POS on AB: `(a = 0: <10) & (b: >$a)` holds 54, `(b: >$a) & (a = 0: <10)` holds 45: differ 9 (smallest '-1')
+   (1e) adding a condition turns a FAIL into a HOLD: (program of 1-2 conditions, added condition) pairs, each condition's marks replaced by one control (nothing or `= 0/4/5/9/"x"`), pools A, B, P, LST (+ EXTRA):
+      LOCAL   0 of 68328 admit (and 0 pairs are a compile ERROR: two defaults for one label)
+      COLUMN  1666 of 68328 admit (and 15460 pairs are a compile ERROR: two defaults for one label); first: `(h: <5) [[None]]` + `(h?: <5) [('c', '0')]` admits 11 on pool A, smallest 'c'
+      POS     0 of 68328 admit (and 0 pairs are a compile ERROR: two defaults for one label)
+      DOLLAR  0 of 68328 admit (and 0 pairs are a compile ERROR: two defaults for one label)
+      DECL    0 of 68328 admit (and 0 pairs are a compile ERROR: two defaults for one label)
+      POS with the added condition written FIRST: 3421 of 68328 admit; first: `(h?: <5) [('c', '0')]` & `(h: <5) [[None]]` on pool A admits 11, smallest 'c'
+      LOCAL   pool A `(h: <5)` holds 5; + `(h = 0: <9)` holds 5 (admits 0)
+      COLUMN  pool A `(h: <5)` holds 5; + `(h = 0: <9)` holds 16 (admits 11)
+      POS     pool A `(h: <5)` holds 5; + `(h = 0: <9)` holds 5 (admits 0)
+      DOLLAR  pool A `(h: <5)` holds 5; + `(h = 0: <9)` holds 5 (admits 0)
+      DOLLAR  AB `(b: >$a)` holds 45; + `(a = 0: <10)` holds 54 (admits 9, smallest '-1')
+   (1f) RZ (1,110; 10 zero-pass subjects): a default written INSIDE a group question, a plain condition beside it
+      occurs.none((h = 0: >7)) & (h: <5)       LOCAL 300 (zero-pass 0, `3` FAILS); COLUMN 310 (zero-pass 10, `3` HOLDS); POS 310 (zero-pass 10, `3` HOLDS); DOLLAR 300 (zero-pass 0, `3` FAILS); DECL 310 (zero-pass 10, `3` HOLDS); COLUMN-noLJ 300 (zero-pass 0, `3` FAILS)
+      some((h = 0: <5)) & (h: <5)              LOCAL 300 (zero-pass 0, `3` FAILS); COLUMN 300 (zero-pass 0, `3` FAILS); POS 300 (zero-pass 0, `3` FAILS); DOLLAR 300 (zero-pass 0, `3` FAILS); DECL 300 (zero-pass 0, `3` FAILS); COLUMN-noLJ 300 (zero-pass 0, `3` FAILS)
+      (h = 0: <5) alone                        LOCAL 310 (zero-pass 10, `3` HOLDS); COLUMN 310 (zero-pass 10, `3` HOLDS); POS 310 (zero-pass 10, `3` HOLDS); DOLLAR 310 (zero-pass 10, `3` HOLDS); DECL 310 (zero-pass 10, `3` HOLDS); COLUMN-noLJ 300 (zero-pass 0, `3` FAILS)
+      (h = 0: <5) & (k: 3..7)                  LOCAL 155 (zero-pass 5, `3` HOLDS); COLUMN 155 (zero-pass 5, `3` HOLDS); POS 155 (zero-pass 5, `3` HOLDS); DOLLAR 155 (zero-pass 5, `3` HOLDS); DECL 155 (zero-pass 5, `3` HOLDS); COLUMN-noLJ 150 (zero-pass 0, `3` FAILS)
+      zero-pass-record `(h = 0: <5, k: 3..7)` LOCAL       holds 155; on `9` FAILS, on `3` HOLDS
+      zero-pass-record `(h = 0: <5, k: 3..7)` COLUMN      holds 155; on `9` FAILS, on `3` HOLDS
+      zero-pass-record `(h = 0: <5, k: 3..7)` COLUMN-noLJ holds 150; on `9` FAILS, on `3` FAILS
+   (1g) named programs and the complement, pool A (h absent on 11: b0-b9, c)
+      LOCAL   q & (h: <3): 3 FAILS | q & (h = 9: >7): 11 HOLDS | A & !q: 5 FAILS
+      COLUMN  q & (h: <3): 14 HOLDS | q & (h = 9: >7): ERROR ERROR | A & !q: 5 FAILS
+      POS     q & (h: <3): 14 HOLDS | q & (h = 9: >7): 0 FAILS | A & !q: 5 FAILS
+      DOLLAR  q & (h: <3): 3 FAILS | q & (h = 9: >7): 11 HOLDS | A & !q: 5 FAILS
+      DECL    q & (h: <3): 14 HOLDS | q & (h = 9: >7): ERROR ERROR | A & !q: 5 FAILS
+      LOCAL     S & q1 holds 5, S & !q1 holds 15: BOTH on 0 (`c`: FAILS / HOLDS); S & (h: !(<5)) holds 4: vs S & !q1 differ 11 (smallest 'c')
+      COLUMN    S & q1 holds 16, S & !q1 holds 15: BOTH on 11 (`c`: HOLDS / HOLDS); S & (h: !(<5)) holds 4: vs S & !q1 differ 11 (smallest 'c')
+      POS       S & q1 holds 16, S & !q1 holds 15: BOTH on 11 (`c`: HOLDS / HOLDS); S & (h: !(<5)) holds 4: vs S & !q1 differ 11 (smallest 'c')
+      DOLLAR    S & q1 holds 5, S & !q1 holds 15: BOTH on 0 (`c`: FAILS / HOLDS); S & (h: !(<5)) holds 4: vs S & !q1 differ 11 (smallest 'c')
+      DECL      S & q1 holds 16, S & !q1 holds 4: BOTH on 0 (`c`: HOLDS / FAILS); S & (h: !(<5)) holds 4: vs S & !q1 differ 0
+      COLUMN-b2 S & q1 holds 16, S & !q1 holds 4: BOTH on 0 (`c`: HOLDS / FAILS); S & (h: !(<5)) holds 4: vs S & !q1 differ 0
+   (1h) when((a = 0: <10), (b: >$a)) on AB, LOCAL   holds 45; on `-1` FAILS
+   (1h) when((a = 0: <10), (b: >$a)) on AB, COLUMN  holds 54; on `-1` HOLDS
+   (1h) when((a = 0: <10), (b: >$a)) on AB, POS     holds 54; on `-1` HOLDS
+   (1h) when((a = 0: <10), (b: >$a)) on AB, DOLLAR  holds 54; on `-1` HOLDS
+   (1h) when((a = 0: <10), (b: >$a)) on AB, DECL    holds 54; on `-1` HOLDS
+   (1i) LOCAL   `(h = 0: <10)` admits 21 of 21 alone; `(h = 0: <10) & (h: <5)` vs `(h: <5)` differ 0
+   (1i) COLUMN  `(h = 0: <10)` admits 21 of 21 alone; `(h = 0: <10) & (h: <5)` vs `(h: <5)` differ 11 (smallest 'c')
+   (1i) POS     `(h = 0: <10)` admits 21 of 21 alone; `(h = 0: <10) & (h: <5)` vs `(h: <5)` differ 11 (smallest 'c')
+   (1i) DOLLAR  `(h = 0: <10)` admits 21 of 21 alone; `(h = 0: <10) & (h: <5)` vs `(h: <5)` differ 0
+   (1j) review r30 RULING-2 (P & C1' vs Q & C1', same rows, then & (j = w: <5)) and RULING-7 (product joint vs its record = `&` beside (j = w: <5)), v, w over nothing, 0-9, "", "x", "99":
+      LOCAL   RULING-2 196 (v, w) pairs with the same rows, differ 0; RULING-7 differ 0
+      COLUMN  RULING-2 196 (v, w) pairs with the same rows, differ 0; RULING-7 differ 0
+      POS     RULING-2 196 (v, w) pairs with the same rows, differ 0; RULING-7 differ 0
+      DOLLAR  RULING-2 196 (v, w) pairs with the same rows, differ 0; RULING-7 differ 0
+      DECL    RULING-2 196 (v, w) pairs with the same rows, differ 0; RULING-7 differ 0
+   (1k) reading a condition ALONE vs inside its statement (2-3 conditions, controls nothing / `= 0` / `= 9`): the condition's own answer moves in COLUMN 5618 of 44946 (program, condition) cases, POS 4682 of 44946; LOCAL 0 by construction
+
+PART 2: THE REWRITE RUN UNDER EACH OPTION (condkind2's 339 marked programs; target = rev 22's answers)
+   conditions in the 339 programs whose `$` reads one of their OWN labels (the only place PER ENTRY can differ from PER CONDITION): 0
+   [REV22] 314 programs; rewrite exactly (constant or a never-absent `$x` default): LOCAL 314, COLUMN 314, POS 314, DOLLAR 314, POS in some order 314
+   [WORKED] 21 programs; rewrite exactly (constant or a never-absent `$x` default): LOCAL 20, COLUMN 19, POS 19, DOLLAR 20, POS in some order 19
+   [PROBE] 4 programs; rewrite exactly (constant or a never-absent `$x` default): LOCAL 2, COLUMN 1, POS 1, DOLLAR 2, POS in some order 1
+   LOCAL: rewrites that write a default for one label in two or more conditions (the author repeats it): 35; with two DIFFERENT values: 15; first: H5 `((h?, k): h < k) & ((h?, k): h + 3 > k)` -> h='0' | h='4'
+   programs that do NOT rewrite under COLUMN (best one-default-per-label: subjects off, smallest), with LOCAL's rewrite:
+      PROBE  H5   ((h?, k): h < k) & ((h?, k): h + 3 > k)            COLUMN off 4 at '-3'; LOCAL h='0' | h='4'
+      PROBE  H5   ((h?, k): h == k), h [0-4], k \d                   COLUMN off 4 at '-1'; LOCAL None
+      PROBE  H5   ((h?, k): k - 3 < h < k)                           COLUMN off 4 at '-3'; LOCAL None
+      WORKED J    (h?: <$k) & (h?: >$j)                              COLUMN off 44 at '02'; LOCAL h='1' | h='8'
+      WORKED J    (h?: >$j & <$k)                                    COLUMN off 16 at '02'; LOCAL None
+   programs that do NOT rewrite under LOCAL:
+      PROBE  H5   ((h?, k): h == k), h [0-4], k \d                   off 4 at '-1'
+      PROBE  H5   ((h?, k): k - 3 < h < k)                           off 4 at '-3'
+      WORKED J    (h?: >$j & <$k)                                    off 16 at '02'
+   programs that rewrite under LOCAL but not POS in the written order (and whether some order works):
+      PROBE  H5   ((h?, k): h < k) & ((h?, k): h + 3 > k)            POS-any None
+      WORKED J    (h?: <$k) & (h?: >$j)                              POS-any None
+   LOCAL   of its 336 rewrites, 0 need a value the label never holds (a sentinel)
+   COLUMN  of its 334 rewrites, 0 need a value the label never holds (a sentinel)
+   DECL (one declared default per label per POOL, every condition reads it): the best declaration per pool
+      PROBE  B9     1 programs: best declaration `h=$k` reproduces 1
+      PROBE  H5     3 programs: best declaration `h=$k` reproduces 0
+      REV22  A    115 programs: best declaration `h='' k=''` reproduces 99
+      REV22  B    115 programs: best declaration `h='0' k='9'` reproduces 75
+      REV22  LST   62 programs: best declaration `m='2'` reproduces 55
+      REV22  P     22 programs: best declaration `h='8' k=''` reproduces 21
+      WORKED BR     3 programs: best declaration `h=$k` reproduces 2
+      WORKED J      3 programs: best declaration `h='0'` reproduces 1
+      WORKED LST    2 programs: best declaration `m='2'` reproduces 1
+      WORKED MN     2 programs: best declaration `mnum='1'` reproduces 2
+      WORKED R2P    1 programs: best declaration `h='0' j='0'` reproduces 1
+      WORKED R2Q    1 programs: best declaration `h=$k j=''` reproduces 1
+      WORKED R7     2 programs: best declaration `h=$k j=$k` reproduces 1
+      WORKED RZ     2 programs: best declaration `h='0'` reproduces 2
+      WORKED S9     1 programs: best declaration `h='0' j='0'` reproduces 1
+      WORKED T2     3 programs: best declaration `m='00'` reproduces 2
+      WORKED ZE     1 programs: best declaration `h='0'` reproduces 1
+   DECL total: 266 of 339 programs reproduced by one declaration per pool
+
+PART 3: "ALL" WITHOUT THE MARK
+   OCC (127 strings): intent holds on 33
+      A1 = plain (g: "a")                vs the intent differ 7 (smallest '')
+      A2 all((g: "a")), vacuous          vs the intent differ 0
+      occurs.none((g = "": !"a"))        vs the intent differ 0
+      occurs.none((g: !"a"))             vs the intent differ 94 (smallest 'b')
+      A2 all((g = "a": "a"))             vs the intent differ 94 (smallest 'b')
+   RZ (1,110): `(h: <5)` holds 300, A2 `all((h: <5))` holds 310: differ 10 (smallest '0') (zero-pass subjects in the difference: 10)
+   RZ (1,110): `(h = 0: <5)` holds 310, A2 `all((h = 0: <5))` holds 310: differ 0 (zero-pass subjects in the difference: 0)
+   RZ (1,110): `(h = 9: <5)` holds 300, A2 `all((h = 9: <5))` holds 310: differ 10 (smallest '0') (zero-pass subjects in the difference: 10)
+
+END

@@ -1,0 +1,21 @@
+being able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for purity
+However, it is in line with regex behavior so I do like it and think it should be the general behavior
+can we come up with a regex model for each and use that to explain it. At least, where it is able to
+It's an exception that should be noted but no excluded for purity
+the pattern returns 9:30. done.
+Then, instead, the not late time is applied to the pattern. Now the pattern returns nothing.
+It's essentially /(.*(${rx}))*.*/ So not global
+the lazy-gap loop over the span
+"J & C ? J & M : fail"
+J & C ? J & M : fail
+the table holds EVERY path of the pattern
+and 'first row' is taken AFTER the conditions filter
+with no test left UNKNOWN, three-valued logic is retired everywhere
+the 2026-11-14 some-parse rule again
+Then the rx is "a loop of (times after 9:30)"
+atomic MEANS what PCRE's atomic group means
+the complement `!B` holds when NO path of B survives over the stretch
+? Has a meaning in regex
+is A & B The same as (new) A & (0: B) Where 0: is the whole match
+a constant is an rx where the count of the enumeration is 1
+&: both sides filter and warn if anchor

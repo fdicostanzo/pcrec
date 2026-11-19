@@ -1,0 +1,6 @@
+rules 24.2, ref vs group-0, full (holds/stretch + hit lists): WHOLE 738 (first ` 1`) / SEARCHED 738 (first ` 1`) / FIND-ALL 738 (first ` 1`) of 1365 ; ref vs innermost: 0
+rules 24.2, ref vs group-0, stretch only (no hit lists): WHOLE 660 (first ` 1`) / SEARCHED 660 (first ` 1`) / FIND-ALL 660 (first ` 1`) of 1365 ; ref vs innermost: 0
+rules 24.2, ref vs group-0, holds only: WHOLE 660 (first ` 1`) / SEARCHED 0 / FIND-ALL 0 of 1365 ; ref vs innermost: 0
+rules 24, ref vs group-0, full (holds/stretch + hit lists): WHOLE 738 (first ` 1`) / SEARCHED 738 (first ` 1`) / FIND-ALL 738 (first ` 1`) of 1365 ; ref vs innermost: 0
+rules 24, ref vs group-0, stretch only (no hit lists): WHOLE 660 (first ` 1`) / SEARCHED 660 (first ` 1`) / FIND-ALL 660 (first ` 1`) of 1365 ; ref vs innermost: 0
+rules 24, ref vs group-0, holds only: WHOLE 660 (first ` 1`) / SEARCHED 0 / FIND-ALL 0 of 1365 ; ref vs innermost: 0

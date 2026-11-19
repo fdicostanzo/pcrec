@@ -3,7 +3,7 @@
 First version; the 2026-10-23 S3 code-review round will refine it.
 
 The procedure for running a round (freeze, blind, pick lenses, verify, compile)
-is the `pcrec-critic` skill (`.claude/skills/pcrec-critic/SKILL.md`; design, code or both, run by a coordinator agent);
+is the `pcrec-critic` skill (`.claude/skills/pcrec-critic/SKILL.md`; design, code or both, or an architecture note, run by a coordinator agent);
 this page holds the rules it reviews against. Lenses are chosen per change from
 the skill's lens table; no lens set is standard because an earlier round used it.
 
@@ -71,6 +71,54 @@ applies, beyond `architecture.md`:
 ## Lessons from review rounds
 
 Round 2026-11-15 r18, covs2a code round (`docs/dev/reviews/2026-11-15-r18-covs2a.md`); process changes ruled 2026-11-15 (manager): (1) **plants for a REACH-using row are built with `build/pcrec build/pcrec-harness`** (reach.sh read REACH-FAILED on every compiler-only plant); (2) **for a staged subject COMMON quotes every interim wrongness the design accepts for the stage** (CONTRACT-1 rediscovered 'wrong there until B').
+2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **simulate lens: "for every grouping a pooled estimator COLLAPSES, drill with an interaction term at that grouping; a synthetic model keyed like the fit cannot fail it"**.
+
+2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **perturbation lens: "name what each control holds FIXED (data sections, the driver's allocations, entry points outside the moved section) beside what it moves, and say which of those ships"**.
+
+2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **"a max-over-candidates term gets the never-picked drill with a NOISY loser, not only a slow one"**.
+
+2026-11-17 r40, predicates_draft.md rev 24 (`docs/dev/reviews/2026-11-17-r40-predspec24.md`), accepted 2026-11-17 (manager): **drill every "matches whole on the stretch" operator with an anchored, a `\b` and a lookahead operand, and treat a model built from the engine's own construction as no control** (A3: `&` matched the operand in the SUBJECT, so every anchor-free check passed and the LAW failed 1,344 of 1,365; PART C's PCRE2 models shared the construction).
+
+2026-11-17 r40, same round (accepted 2026-11-17, manager): **a mode-closure lens adds a CAPTURE-STATE drill to every regex-model claim: an optional label inside a looped place, a label looped at two depths read from outside, a place inside a place** (A1/A2: 5/34, 300 and 693 differ; every top-level model set its labels on every path and could not see carry-over).
+
+2026-11-17 r40, same round (accepted 2026-11-17, manager): **when evidence prints "(labels compared)", check each MODE's comparison key carries the labels; and name the evidence's ORDER/SWAP switch in COMMON and ask whether it can fail** (A5: a WHOLE key that is a bool compared holding only, 0 printed, 117 real; C1: SWAP reversed nothing that carries meaning in rev 24).
+
+2026-11-17 r42, predicates_draft.md rev 24.2 (`docs/dev/reviews/2026-11-17-r42-predspec242.md`), accepted 2026-11-17 (manager): **COMMON states a document rule by QUOTING the subject's sentence with its line, never by the launcher's paraphrase** (B1: the brief's "unless spelled padded" sent the simulate critic to a refuted consequence; section 2.4 says "unless the literal has them"; the launcher's error).
+
+2026-11-17 r42, same round (accepted 2026-11-17, manager): **a per-pass rule gets a NULLABLE-BODY drill (PCRE runs and keeps a final empty iteration) and its pass forms are drilled at TWO DEPTHS, literal vs hole spelling of one pattern** (A1/A2: two lenses reached the empty pass by two controls; 6 / 11 / 11 and 13 / 353 / 973 differ).
+
+2026-11-17 r42, same round (accepted 2026-11-17, manager): **a callout model of a TEMPORAL rule is drilled with a group set by a lookaround inside a pass** (A5: a positional helper-group construction passed 16 of 16 and failed 9 / 33 / 33 on the lookaround class).
+
+2026-11-17 r34, predicates_draft.md rev 23.1 (`docs/dev/reviews/2026-11-17-r34-predspec231.md`), accepted 2026-11-17 (manager): **on a re-check, diff every count the previous round's VERIFIER printed against the number the revision publishes, and quote the verifier's number beside the critic's in the fix-lane brief** (A1: r33's verifier printed 281 for L83 searched; rev 23.1 published the engine's 371, which read values where the draft's own section 2.2 reads canonical numerals).
+
+2026-11-17 r34, same round (applied by file34 as plain additions to the lens rows): **a manager ruling stated as a DERIVATION is read literally everywhere its premise applies (it can reverse a kept ruling, so it was a scope rule), and find-all places are a mode of their own in the mode-closure lens** (MODECLOSURE-4, A3).
+
+2026-11-17 r33, predicates_draft.md rev 23 (`docs/dev/reviews/2026-11-17-r33-predspec23.md`), accepted 2026-11-17 (manager): **when a revision RE-ALLOWS an operator, re-run every SAME row, warning and compile error whose stated reason assumed the operator absent** (F1, F7, F8: rev 22's "UNKNOWN and FALSE drop the same rows" silently underwrote L83, the `default.unused` (b) warning and the §5.2 error once NOT on conditions was legal again).
+
+2026-11-17, proposed by the kit after its round r41 (a "layout twin" was a whole-text shift that kept every hot loop's 64-byte phase, so it did not stand in for another head's different body: the sixth level of the same family), accepted 2026-11-17 (manager): **simulate lens: drill a comparison kind by its PERTURBATION, what actually differs between the two objects compared (inspect with `nm` / `readelf`: which symbols moved, which loop alignments changed), not by the count of executables; a control that does not vary what the real comparison varies is not a control.**
+
+2026-11-17, proposed by the kit after its round r39 (every noise estimator compared runs of ONE executable while the quantity judged, a head length against another, compares TWO executables: a per-binary layout offset was invisible to every estimator and to the confirm re-run), accepted 2026-11-17 (manager): **simulate lens: also drill COMPARISON KINDS: for each ratio, which physical object each side is (the same executable, two executables, two builds, two boxes), and whether the noise estimate was taken over the same kind of pair** (the apples-to-apples rule, memory pcrec-speed-compare-apples-to-apples, applied to the noise model).
+
+2026-11-17, proposed by the kit after its review rounds through r38 on the form cards' pick rule (three rounds in a row found the defect exactly one level below the drills), accepted 2026-11-17 (manager): **simulate lens: a POOLED noise estimator is drilled with the noise confined to EACH level it pools over (one drill per level, not one for the estimator), plus a launch-order step (the same data presented in another run order).**
+
+2026-11-17 r33, same round (applied by file33 as a plain addition to the simulate lens): **when the evidence engine and the text agree on every number, read the engine's header for the readings it implements and check each is a sentence of the subject** (F2, F4: fallthrough over filtered `|` and find-all hits were the engine's own choices).
+
+2026-11-16 r32, [COVER-CAP] stage 2 (`docs/dev/reviews/2026-11-16-r32-covs2code.md`), accepted 2026-11-16 (manager): **a spec sentence that promises a fallback ("the compile does not fail") needs its witness at the EXTREME of the newly legal range before the hunk lands: run the range's top through every cap in limits.def's `compile budget` class, not only the cap the design names** (F1: three lenses found the refusal from three sides; the design priced one of two size caps).
+
+2026-11-16 r31, condition_kind.md Parts I-III (`docs/dev/reviews/2026-11-16-r31-condkind.md`), accepted 2026-11-16 (manager): **a DEFINITION note (a model replacing a foundation) gets a MODE-CLOSURE drill: every operator run in every mode the language has (whole value, searched, inside a nested filter role), whatever modes the subject's evidence ran** (finding A: the evidence was whole-only by design; three lenses found the searched-mode splits by three routes).
+
+2026-11-16 r31, same round, accepted 2026-11-16 (manager): **when the record closes with a summary ("STATE OF THE MODEL"), the ruling lens builds the next revision's RULING TABLE (every ruling and reading: stands / retired / reversed / open, by entry) instead of checking the summary alone**; that table was the round's most directly usable output.
+
+2026-11-16 r31, same round, accepted 2026-11-16 (manager): **a "MINE, to be checked" restatement that changes answers on a locked rule's territory is an owner question, not a manager restatement: the ruling lens tests each such item against every LOCKED rule** (RULING-2: the restated `all` against absent-rule (1)).
+
+2026-11-16 r30, predicates_draft.md rev 22 re-check (`docs/dev/reviews/2026-11-16-r30-predspec22.md`), accepted 2026-11-16 (manager): **when the evidence engine implements a rule by TRAPPING a poisoned value (a DOM "consulted"), swap the operand order inside every lambda and re-run; quote a count only after the swap leaves it unchanged** (SIMULATE-9: 30 of 355 by fn order alone).
+
+2026-11-16 r30, same round, accepted 2026-11-16 (manager): **when a fold introduces a NESTED program (a complemented pattern, a named program under an operator), drill every "adding X never ..." claim at three insertion points: the outer chain, inside the nested program, and through a binding both share** (SIMULATE-6, FIXIND-2: two lenses, two sides).
+
+2026-11-16 r30, same round, accepted 2026-11-16 (manager): **recompute every worked count with the DOCUMENT's own set-membership rules (literal domains, canonical numerals), never the check script's lambda** (SIMULATE-2: `int()` against the canonical-numeral rule).
+
+2026-11-16 r30, same round, accepted 2026-11-16 (manager): **grep every "CF hh:mm" citation of an owner quote: each must resolve to a record entry** (RULING-1/-3: two remarks quoted with no entry, one quoted differently in a parked-list file). Also: build a runnable read-only copy (`R/tree/`) when lane scripts read each other by relative path, and add the ruling lens on a re-check whenever the record hands the manager's readings to the round.
+
 2026-11-16 r29, predicates_draft.md rev 20 re-check (`docs/dev/reviews/2026-11-16-r29-predspec20.md`), ruled 2026-11-16 (manager): **a revision that WITHDRAWS a manager's reading must re-check every KEPT reading whose stated equivalence rested on it** (V4: 14:50 (b) "same as satisfied" was true only under (c) "any text", withdrawn in the same revision).
 
 2026-11-16 r29, same round, ruled 2026-11-16 (manager): **"apply each acceptance case in its REAL MODE" extends to every NEW worked table the revision adds, not only the acceptance cases** (SIMULATE-1/6: both new tables stated whole-value answers that move when searched).
@@ -252,3 +300,15 @@ Round 2026-11-07 r12, memfn-planframe1 design (`docs/dev/reviews/2026-11-07-r12-
 1. **A design that SPLITS a row table lists every per-row branch in the consuming function** (`if (w->bren == B_PAIR)`), not only the table's columns: three critics found the same uncolumned piece (F2), and the floor's different skeleton (F3).
 2. **A design that re-labels what an accessor returns greps the accessor's readers** (F1, found independently by three critics, would have turned the correct build red).
 3. **A ruling held only in a denied ledger is quoted verbatim in COMMON**, with a ready plain-grep exclude string (a plain grep leaked one denied journal line).
+
+Round 2026-11-17 r43, predspec25 design re-check (`docs/dev/reviews/2026-11-17-r43-predspec25.md`); lessons ruled 2026-11-18.
+1. **An evidence engine's PARSER predicates are readings too.** The engine's `starts_operand` excluded the sequence mark, a clause the draft had dropped; the evidence passed because the code restored what the text lost. Simulate lens: diff the evidence's tokenizer/parser predicates against the subject's parse-rule sentences; a predicate with no sentence is a finding.
+2. **A record's RESTATEMENT of an agreed question can narrow it.** "The right side of `&`" existed only in the manager's record; the agreed question and the locked rule say an `&` operand. Ruling lens: diff each record restatement against the question the owner agreed to, list by list.
+3. **Fold marks show where a lane looked.** Eight or more unmarked readers of withdrawn or changed rules were found by grepping the withdrawn rule's TERMS over the whole subject, not by the marked list. Fix-induced lens: that grep is a standing step for a re-check that withdraws rules.
+
+
+Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r47-predspec26.md`); lessons ruled 2026-11-18.
+1. **A claim proved on ONE witness whose first item is already the special case cannot tell the claim from its rivals.** H5's `a1b` has an empty first hit; the nullable argument's meaning was false under the loop rewrite. Drill the special case in SECOND place, and at `min >= 2` (A1, three lenses).
+2. **A place/position table cell about a fact written INSIDE a nested place must say where it is written.** Drill each row's `0` / label / reference cell with the row nested inside the `&`, loop and hole rows (A2, A5).
+3. **For every CHECK the subject cites as "supported", mutate one arm.** If no mutation of the cited arm can move the count, the check shares its source (N3, CS3).
+4. **A 0/0/0 at a short pool length is not evidence when the witness needs a longer text.** A4 needed length 7, A5 needed `min = 1`: critics state the minimum witness length they reached.

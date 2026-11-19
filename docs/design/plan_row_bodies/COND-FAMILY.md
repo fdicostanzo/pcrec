@@ -1813,3 +1813,2093 @@ with both rulings no added condition turns a FAIL into a HOLD (the 22 pairs re-r
 owner wrote: "mark-in-none: sorry, I meant, explain this one". His "yes agree" on mark-in-none is WITHDRAWN by him;
 the entry above stands for **not-is-complement** only. mark-in-none is an OPEN owner question; the manager's lean
 (a compile error) and readings (3)-(4) above apply to it only if he rules it so.
+
+**2026-11-16 OWNER RULING — mark-in-none: LEFT AS IS (Frank, to session 136, box clock 17:42).** After the manager's
+explanation (the `6,` example: `occurs.none(((h, m?): m < h))` FAILS on `6,`, and HOLDS once `(m?: >5)` is added)
+and his question "how would you write this as 'm is absent or if present, it is m < h'" (the manager:
+`occurs.none(((h, m): m >= h))`, unmarked, the complement on the set; under "none" an item lacking the label is
+simply not counted), his words: "mark-in-none: I'd leave it. It's obscure and there are ways to get the intended
+question. The issue with your compiler error is that it treats the none as a special item instead of a macro. If
+there was a structural reason I might agree like ! on a condition. You could also use defaults m = 0 then the test
+would be true whenever m is absent." RECORD: RULED against the manager's lean: NO compile error and no special rule
+for a mark inside `none` or a count; `none` is a macro like any other. CONSEQUENCE, the manager's statement (his;
+for rev 22 to state plainly, with the table): with a mark inside a group question that can turn true when fewer
+passes satisfy it, an added condition can admit a subject (3 program pairs in lane predspec21's run; 0 with a
+default; 0 unmarked); the draft documents it as a known property and names the two spellings that avoid it: the
+unmarked question with the complement on the set, and a default. The 14:50/r28 reading "a marked absence is COUNTED by
+the mark's one meaning" stands unchanged.
+
+**2026-11-16 OWNER DIRECTION — conditions are their own kind (Frank, to session 136, box clock 19:31).** After review
+r30 (rev 22 not stable) the manager proposed one design question (**mark-design**) in place of corner rulings; the
+owner asked for one corner (the sealed-vs-merged complemented pattern), then "What's the when issue?", then "Let's
+start from the fundamentals. What is the exact definition of a condition?". The manager answered from the draft (two
+kinds, rx and macro; a condition is a macro with an open subject slot filled by `&`; filter-role macros combine
+pointwise; prefix `!B` a macro, `A & !B` = A minus B) and named the clash: pointwise combination vs domain-scope
+for a marked condition. HIS WORDS: "History: you described conditions as macros because they look like them. It makes
+sense but is mathematically difficult. A \"regex & macro\" is not really a defined thing. That form is interpreted
+as: the macro is converted into a regex then those are intersected. The macro is just a convenience. So I think the
+issue is that conditions are the bastard child of macros and patterns. What they need is to be themselves. Then we
+define them mathematically, whatever that means." RECORD: DIRECTION (not a detailed ruling): a condition is to be
+its OWN KIND, neither macro nor pattern, with a mathematical definition; the 2026-11-15 "a condition is a macro"
+(CF:858) is superseded as the foundation once that definition is ruled. NO rev 23 of predicates_draft.md and no
+further corner rulings until it is. THE MANAGER'S SKETCH given to him (his, unrun, a starting point only): a pattern
+denotes a set of MATCHES (a subject with its labelling, pass by pass), not only strings; a condition denotes a set
+of labelled matches (a predicate on one match); `P & c` is then plain intersection, `!c` plain complement among
+matches, a record the intersection of its entries; unmarked conditions and defaults fit as predicates on one match;
+the optional mark's "a value the label could have had" is NOT a predicate on one match (it quantifies over the
+pattern's other matches), which is the precise sense in which it broke pointwise combination: the definition must
+either give the mark a one-match meaning or name it as the one construct that reads the pattern. Today's rulings
+(absent-rule, optional-as-loop, the spelling principle, match-context, zero-pass-empty, domain-scope, mark-narrows,
+not-is-complement, mark-in-none) stand as recorded and are INPUTS to that definition; each is re-read under it, and
+any that the definition cannot keep comes back to him by name.
+
+**2026-11-16 OWNER REMARK — the SQL NULL parallel (Frank, to session 136, box clock 19:44; a remark, an INPUT to the
+condition-kind definition, not a ruling).** His words: "This is the same problems as SQL wrt null field." THE
+MANAGER'S MAPPING given to him (his, unrun): an absent label is NULL; SQL's answer is three-valued logic (a test on
+NULL is UNKNOWN; AND/OR/NOT are Kleene's; a WHERE keeps only TRUE). Under it: absent-rule = WHERE keeps TRUE only;
+"a set never contains absence" = NULL is not a member of any IN list; a default = COALESCE(m, v); "an item lacking
+the label is not counted" = aggregates skip NULL; `!` on a condition is DEFINED (NOT UNKNOWN = UNKNOWN, so a
+negated condition on an absent label still fails: the old "holds when absent" trap does not exist); the optional
+mark = "IS NULL OR ...", i.e. UNKNOWN counts as TRUE, a test of ONE match with no value set. CANDIDATE for the
+definition lane, to be laid beside the per-program value set: it would make domain-scope and mark-narrows
+unnecessary and would change zero-pass-empty's corner (a marked absent label against an empty set would HOLD) and
+not-is-complement (`!` on a condition would have a meaning); each such change goes back to him by name.
+
+**2026-11-16 OWNER REMARK, continued — the condition as a WHERE clause (Frank, box clock 19:49; an INPUT to the
+condition-kind definition).** His words: "A condition in sql is wrapping a sql statement \"select * from (...) t
+where condition\". Not on the condition there is well defined". THE MANAGER'S READING (his): the pattern is the
+table (its rows are the matches, the labels the columns); a condition is the WHERE predicate, a test of ONE row;
+`P & c` is `select * from P where c`. So there are TWO different "nots", both well defined: NOT on a condition
+(the predicate's negation, three-valued, inside the WHERE) and the complement / difference of patterns (EXCEPT on
+tables). His 17:29 ruling not-is-complement ("! takes an rx ... no meaning on a condition") was made while a
+condition had no definition of its own; under this model its first half stands (`!` on a pattern is a complement)
+and its second half is to be RE-ASKED by the definition lane, by name, with examples.
+
+**2026-11-16 OWNER REMARK — a default restricted to the values the label could hold (Frank, to session 136, box clock
+17:02; filed late by lane file30 from `predicates_future.md` item 11, review r30 RULING-3; this entry PREDATES the
+three entries before it, 19:31-19:49, and is appended here only because the file is append-only; a remark, not a
+ruling).** His words, as item 11 quotes them: "One interesting point is if the default should be restricted to the set
+of values it could have if it were there". `predicates_draft.md` (§0 table, the line dated 17:02 rev 21; §4.2 THE MARK
+IS EXISTENTIAL, THE DEFAULT CLASSICAL) quotes a second sentence of the same hour on the marked pair both holding:
+"This makes sense however. It's not the complementary condition that's making them hold. It's the mark. Logic aside,
+the default value provides the correct result". RECORD: nothing ruled; item 11 holds the manager's judgment given to
+him and parks the remark.
+
+**2026-11-16 OWNER REMARK — a macro raising its own warning (Frank, to session 136, box clock 17:46; filed late by
+lane file30 from `predicates_future.md` item 12, review r30 RULING-1; this entry PREDATES the three entries before it,
+19:31-19:49, and is appended here only because the file is append-only; a remark, not a ruling).** After ruling
+**mark-in-none** (LEFT AS IS, 17:42) his words, as item 12 quotes them: "If there is a way to describe it, we might
+put together @compiler.warn(cond, ...)"; the sketch (a placeholder spelling, D193 add. 4): `@compiler.warn(cond, "! In
+none")` (so `predicates_draft.md` §0 quotes it). THE FOLLOW-UP, same hour, his words as item 12 quotes them: "It might
+be a property of the sets. <200 is a fixed set of strings but !<200 is an infinite set". RECORD: nothing ruled,
+nothing designed; item 12 holds the manager's notes and parks it.
+
+**2026-11-16 OWNER ANSWER — condition-kind, adjusted (Frank, to session 137, box clock 20:36).** Asked
+**condition-kind** ("go" or adjust) with the manager's wording "a pattern is a table: each match a row, each label a
+column", HIS WORDS: "condition-kind: a pattern is a SQL statement. The table is the set of matches". RECORD: the
+adjustment replaces the manager's "a pattern is a table": the PATTERN is the STATEMENT (the query), the TABLE is what
+it produces, the set of matches; a condition wraps the statement (his 19:49 form, "select * from (...) t where
+condition"). THE MANAGER'S READING OF THE ANSWER (his, said to the owner in the same reply): an adjustment to the
+question "go or adjust" is taken as the go for the ONE design lane (design only), starting from this version.
+CONSEQUENCES THE MANAGER DERIVES (his, unrun, to be checked by the definition lane and its critic round, none ruled):
+(1) a condition reads the table's ROWS, never the statement's text, so the spelling principle (15:29) is the
+statement that two statements with the same table answer every condition alike; (2) "a pattern narrowed by a
+condition is a different pattern" (domain-scope, 16:32) reads as: `P & c` is a NEW statement whose table is the
+filtered one; (3) the optional mark as ruled ("some value the label could have had") is not a test of one row but
+is expressible as a SUBQUERY over the statement's table, so the model has an honest place for BOTH candidate marks
+(the one-row "IS NULL OR ..." and the subquery over the value set), to be laid side by side.
+
+**2026-11-16 OWNER ANSWER, CORRECTED BY HIM — condition-kind (Frank, to session 137, box clock 20:41; he interrupted
+the manager's turn to restate; this entry SUPERSEDES the wording of the entry before it, whose quote was his first
+message).** HIS WORDS: "condition-kind: a pattern is a SQL statement. The table is the source of matches. Like the
+text for a pattern. I'm not sure what a complement of a sql statement is. Best guess: it is all the matches from the
+table that didn't get matched by the uncomplemented sql". RECORD: (a) the PATTERN is the STATEMENT; (b) the TABLE is
+the SOURCE the statement runs over, the counterpart of the TEXT a pattern runs over (NOT the set of matches, as his
+first message and the manager's entry above had it); (c) the complement of a statement, HIS BEST GUESS, not a
+ruling: the rows of the source that the uncomplemented statement did not match. The manager's three derived
+consequences in the entry above were derived under the first wording and are NOT carried: the definition lane
+re-derives them. NOT taken as a go: the manager's reading "an adjustment is the go" is withdrawn; the lane waits for
+his word (**definition-lane**). THE MANAGER'S JUDGMENT given to him in the same reply (his, unrun): the guess is
+SQL's EXCEPT (source minus result); it makes a complemented pattern carry NO labels (the result's label columns do
+not exist on unmatched source rows); it defines both nots and they differ exactly on unmatched and absent-label
+rows; the one thing it leaves undefined is WHAT A ROW OF THE SOURCE IS (a whole subject, or a place in the text).
+
+**2026-11-16 OWNER GO — definition-lane (Frank, to session 137, box clock 20:44).** Asked **definition-lane** (may the
+one design lane start from his model as it stands), HIS WORDS: "Go. Purely exploration". RECORD: lane condkind
+(opus, design only) starts; its output is an EXPLORATION document, rules nothing, edits neither predicates_draft.md
+nor any ruling; what it finds comes back to him as named questions.
+
+**2026-11-16 OWNER REMARK — drop the optional mark? (Frank, to session 137, box clock 21:16; a question to the manager
+after the exploration docs/design/condition_kind.md and its **mark-range** question; not a ruling).** HIS WORDS:
+"What if we got rid of the mark? I think it's a large source of issues. Absence is a \"null\" which never matches.
+Use the default to get past it. Thoughts?" THE MANAGER'S JUDGMENT given to him (his, unrun): in favour. The mark is
+an existential ("some value would do") and so the one construct that is not a test of one row; a default is the
+same thing with the AUTHOR supplying the witness, a one-row test (COALESCE). Dropping the mark retires mark-range,
+mark-narrows, mark-in-none, zero-pass-empty's corner, one-witness, not-of-marked and the value set's use by a mark
+(domain-scope as far as it served the mark), none reversed; absent-rule stands minus its mark clause. Named costs:
+(1) a condition against a value not known when written (`< $k`) may have no fixed default that passes; (2) the
+default's scope (dollar-across-and; one default per label or per condition) becomes the load-bearing open item;
+(3) a default that stops satisfying an edited condition fails silently. Asked as **drop-mark**.
+
+**2026-11-16 OWNER GO — drop-mark, as an exploration (Frank, to session 137, box clock 21:19).** Asked **drop-mark**,
+HIS WORDS: "drop-mark: another exploration on these ideas". RECORD: not a ruling to drop the mark; lane condkind2
+(opus, design only) explores the model WITHOUT the mark (absence never matches; the default gets past it), rules
+nothing, edits neither predicates_draft.md nor any ruling.
+
+**2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane (Frank, to session 137,
+box clock 21:49; after docs/design/condition_kind.md Parts I-II).** HIS WORDS, whole: "Drop-mark: yes / Default-scope:
+is that oddity the only thing against it? I'd like a lane to consider the options. See if either choice has
+problems. / Default-value: yes / Source-row: yes". RECORD, each as asked to him in the same hour:
+- **drop-mark: YES.** The optional mark is OUT of the language: an absent label is a null that never matches; the
+  author gets past it with a default. As put to him: this RETIRES (they lose their subject; none is reversed)
+  zero-pass-empty, match-context, domain-scope, mark-narrows and mark-in-none, and absent-rule loses its clause
+  offering the mark (LOCKED 14:31; the clause removed by this ruling, the rest stands). The cost named to him: the
+  domain-scope answers are no longer automatic (`(h?: <5) & (k: <5)` on `b3`: rev 22 FAILS, without the mark
+  HOLDS unless the author picks another default; 45 of 680 program pairs). **mark-range** is withdrawn with it. The
+  manager's readings one-witness and not-of-marked retire. MINE, to restate and have checked: the "all" group
+  question, the other reader of the per-program value set (Part II.5).
+- **default-value: YES.** A default may be any text, including one the label can never hold; a warning only on a
+  default that can never be used.
+- **source-row: YES.** A row of the source is the whole subject; a searched pattern gives several result rows per
+  subject; the complement is per subject.
+- **default-scope: NOT RULED.** He asks whether the one-witness oddity is the only thing against the per-test
+  reading and wants a lane to consider the options and find the problems of each: lane defscope (opus,
+  exploration). The manager's answer given to him (from Part II's run): no; the per-test reading also splits a
+  record from its `&` spelling where one entry reads another's `$a` (9 of 110), and the whole-statement reading
+  has its own costs (the default reaches conditions that did not write it; a second default is an error; 333 of 335
+  programs rewrite under it).
+No rev 23 until default-scope is ruled and a critic round has run on the note.
+
+**2026-11-16 OWNER RULING — default-scope: per test (Frank, to session 137, box clock 22:30; after
+docs/design/condition_kind.md Part III).** Asked "**default-scope**: per test, with `$a` reading the real label:
+yes, or do you want another option?", HIS WORDS: "default-scope: yes per test". RECORD: a default is a stand-in for
+its label in the ONE test that writes it (COALESCE inside that test), not the label's value for the statement. THE
+READING THE MANAGER TOOK of "yes per test" (his; said to the owner in the same reply): the per-ENTRY form the
+question named (Part III's (a2)): a `$a` always reads the real label (absent stays absent), so a record is
+exactly the AND of its entries; the author who wants one entry to see another's default writes one joint
+condition. As put to him before he answered: two different defaults on one label stay legal (`(h = 0: <5) & (h =
+9: >7)` holds on the h-absent subjects; in SQL, `coalesce(h,0) < 5 and coalesce(h,9) > 7`); the manager's
+earlier reading default-reaches-dollar (16:23) REVERSES. MINE, restated without his word and to be checked by the
+critic round: "all" = every pass passes the condition, and there may be none (Part III.3, A2).
+STATE OF THE MODEL after this evening: a pattern is a statement; the source row is the whole subject; a condition
+is a three-valued test of one result row; absent is null and never matches; no optional mark; a default is per
+test and may be any text; the complement of a statement is the source rows it did not match; `!` on a condition
+stays an error. NEXT: a critic round on condition_kind.md (Parts I-III), then rev 23 of predicates_draft.md.
+
+**2026-11-16 RECORD after review r31 (round condkind on docs/design/condition_kind.md; session 137, box clock 22:58;
+the manager's entries, no owner word in this entry).** (1) WITHDRAWN: the 22:30 entry's "MINE ... \"all\" = every
+pass passes, and there may be none" as a restatement needing no owner word: the round showed it answers two causes
+of absence oppositely, on the LOCKED absent-rule's ground; asked of the owner as **all-question**. (2) CORRECTION
+to the 21:49 entry's cost sentence: `(h?: <5) & (k: <5)` on `b3` with the mark merely DELETED still FAILS; it
+HOLDS only once the author writes `h = 0`; and the 20:36 entry's "16:32" is the 16:31 entry. (3)
+**condition-not**, told to the owner twice this evening (after Part I; in the model summary) with no objection, is
+recorded as TOLD, NOT RULED: `!` on a condition stays a compile error (his 17:29 not-is-complement), its reason
+restated as "one spelling per question" since his 19:49 words give a condition's NOT a meaning. (4) MANAGER RULING,
+told to the owner by name (**repeated-means**): a label is "repeated" when the REGEX that defines it can set it
+more than once in a match, not "in some match of the program" (rev 22 section 4.3 rested on the retired
+domain-scope). (5) Asked of the owner: **searched-complement** (review r31 finding A: source-row YES makes a
+complement per subject, which in a SEARCHED program contradicts the ruled same-stretch tie of 11-15 20:43:
+`/\d+/ & !/0+/` on `0 7`).
+
+**2026-11-16 OWNER RULING — all-question: retire (Frank, to session 137, box clock 23:18; after review r31 finding C).**
+Asked "should the \"all\" group question be retired, or kept with a new meaning?" with the list example
+(`/(?:(?<h>\d);)*/`: the plain condition fails on the empty list; `(h = 0: <5)` holds; `all` read as "every
+pass passes, none needed" holds), HIS WORDS: "all-question: retire". RECORD: the `all` group question is OUT of
+the language. "Every pass, possibly none" is written as a plain condition with a default; the narrower question
+("zero passes are fine, a pass lacking the label is not") is written as none-of-the-opposite with a sentinel
+default. As put to him: this keeps ONE kind of absence (a loop that never ran and a pass that did not set the
+label are treated alike) and does not bring back "an empty list holds" (reversed 14:31). Rev 22's closing example
+that used `all` to accept incomplete items is rewritten with a default in rev 23. Review r31 finding C is closed
+by this ruling.
+
+**2026-11-16 OWNER REMARKS — what a row is; negating a condition; the value of a complemented pattern (Frank, to
+session 137, box clock 23:31; in reply to the question complement-per-match; remarks and questions, not rulings).** HIS
+WORDS, whole: "\"Tonight you ruled that a row of the source is the whole subject and \"the complement is per
+subject\" \". Let's look at this. If you are talking analogous from the SQL example, I think what I said the table
+is the set of possible matches so a row from the table represents a single potential match. Regardless of said,
+that is the idea. My understanding of subject is that it's the search text. I'm not sure the table and search text
+are exactly equivalent here. Backing up, you said that conditions can't be complemented although they are the where
+clause in the analogy. I'd said earlier they couldn't be complemented under the idea that they were not sets of
+strings but now if they are where clauses by analogy, it would seem straightforward to negate them although the
+meaning is specific to them. What is your position? What I'm trying to understand also is the value of the
+complemented pattern. Or the meaning." RECORD: (1) THE IDEA, his: a row of the table is ONE POTENTIAL MATCH; the
+subject is the search text, not a row. The wording "a row of the source is the whole subject; the complement is
+per subject" (source-row, 21:49) was the MANAGER's framing of the question, answered on one example; the manager
+WITHDRAWS it as the model's statement and asks him to confirm (**row-is-match**). (2) THE MANAGER'S POSITION given
+to him (his, changed from "keep the error"): NOT on a condition should be ALLOWED, as the where-clause's
+three-valued NOT (an absent label stays failing; a default gets past it), because it asks a question no other
+spelling asks exactly; asked as **condition-not**. (3) THE MANAGER'S ACCOUNT of the complemented pattern given to
+him: its meaning is the potential matches the pattern does not match; its value is pattern DIFFERENCE (`A & !B`:
+an A that is not a B), which regex spells only through lookahead tricks; once conditions have their own NOT, a
+complement of a program that carries conditions is needed only for "the condition is not true, absence included".
+
+**2026-11-16 OWNER RULING — row-is-match (Frank, to session 137, box clock 23:46).** After the walk-through on the
+text `9:30` (the table of the time pattern's potential matches: `9:30`, `9`, `30`, `3`, `0`; the question
+"a row is one potential match, and \"a time that is not a late time\" searched on `9:30` holds through `9`. Is
+that the model you mean?"), HIS WORDS: "row-is-match: yes I agree." RECORD: a ROW of the table is ONE POTENTIAL
+MATCH (a stretch of the text with the labels it sets); the SUBJECT is the search text, not a row. A condition, an
+`&` and a complement after `&` all filter potential matches; the search reports the preferred surviving row
+(D196's retry is that choice). SUPERSEDES the 21:49 source-row wording ("a row of the source is the whole subject;
+the complement is per subject"), which was the manager's framing: `t2 & !q` searched on `9:30` HOLDS reporting
+`9` (as rev 22), and agrees with the 11-15 20:43 same-stretch ruling (`/\d+/ & !/0+/` on `0 7` reports
+`7`). WITHDRAWN as questions: complement-per-match, complement-retry (Part IV's three-way trade came from mixing
+the two framings; under this ruling it is candidate R22, with "adding a condition never admits" at 0 in the lane's
+run). MINE, following from it, to be checked by the rev 23 round: nested-complement = a `contains` argument
+filters potential matches like a program; "the text contains no B anywhere" is a separate, whole-text question
+needing its own spelling (a complement with nothing on its left, or not-contains), to be stated in rev 23 and
+shown to him. Review r31 finding A is closed by this ruling (A2-A5's text items follow it). STILL OPEN:
+**condition-not** (the manager's position: allow the three-valued NOT).
+
+**2026-11-16 OWNER RULING — condition-not: allowed (Frank, to session 137, box clock 23:48).** Asked "allow NOT on a
+condition as the three-valued where-clause NOT, reversing the second half of your 17:29 ruling?", HIS WORDS:
+"condition-not : yes allow not". RECORD: `!` on a condition is LEGAL and means the where-clause's NOT, three-valued:
+a condition on an absent label is unknown, its NOT is unknown, the row is dropped (absence never matches, negated
+or not; a default gets past it). REVERSES the second half of not-is-complement (17:29, "no meaning on a
+condition"; its first half, `!` on a pattern is a complement, stands) and the manager's told-not-ruled "stays an
+error" (23:0x entry, item 3). As shown to him: on one single-valued label NOT c equals the set complement
+`(h: !S)`; on a repeated label they part ("not every pass" vs "every pass in the complement"); the pattern
+difference `P & !(P & c)` differs from both on absent rows (it keeps them). STATE OF THE MODEL for rev 23: a
+pattern is a statement; a row is one potential match (the subject is the search text); a condition is a
+three-valued test of one row, with `&`, NOT; absent never matches; no optional mark; a default is per test, any
+text; no `all`; a complement of a pattern is the potential matches it does not match, used after `&` as pattern
+difference; `|` is PCRE's one parse; "repeated" is read from the operand regex (the manager's, told).
+
+**2026-11-17 RECORD (session 137, box clock 03:01; filed late after review r33 F14; the first two items are the
+owner's words, the rest the manager's).** (1) **whole-text**, 2026-11-17 about 00:10-00:25: asked whether to add a
+text-level test (placeholder `text.none(B)`) for "the text contains no B anywhere", HIS WORDS in turn: "whole-text:
+explain"; "whole-text: I'm still not sure what scope you're talking about. Are you saying do two searches across
+the entire subject. If the first search matches then return no searches for the second match?" (the manager: yes,
+exactly that: a gate over the whole subject); "whole-text: could you ask this now in a single rx?" (the manager:
+yes for a B without conditions by a lookahead at the start of the text, first match only; CORRECTED later by lane
+predspec23b: the draft's hole rule already lets a lookahead hold a pattern with conditions; it then means "no B
+from here on"); "Let's not answer now." RECORD: whole-text is PARKED by the owner, not ruled; rev 23 section R.8
+lays out both routes. (2) 2026-11-16 about 23:55, HIS WORDS, filed at his request as predicates_future.md item 14:
+"I want to file in the future directions file a potential other interpretation for the record. In your example,
+the pattern returns 9:30. done. Then the late time condition could be added and no change, still returns 9:30
+because it's a late time. Then, instead, the not late time is applied to the pattern. Now the pattern returns
+nothing." (3) MANAGER RULING after review r33 F2, told to the owner by name (**branch-order**): a branch of `|`
+whose own condition rejects its rows falls through to the next branch, in PCRE's own preference order (every row
+of the first branch before any row of the second); derived from row-is-match ("the preferred surviving row") and
+"`|` is PCRE's one parse"; the evidence engine's other order is corrected and the moved counts re-run. (4) OPEN
+with the owner at this entry: pass-table, group-truth, quiet-gate (the kit's), whole-text (parked);
+lookahead-labels arises only if the lookahead route is stated.
+
+**2026-11-17 RECORD after review r34 (round predspec231 on rev 23.1; session 137, box clock 03:47; the manager's
+entries, no owner word).** (1) WITHDRAWN: the manager's ruling **branch-order** (03:01 item 3). The round showed
+what it was told without: with A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`, `(B | A) & (l: <20)` on `25`
+FAILS while `(B & (l: <20)) | (A & (l: <20))` HOLDS (`&` no longer distributes over `|`, against the ruled
+`t & [f, g]` = `(t & f) | (t & g)`); adding a positive condition inside a branch can ADMIT a subject; and its
+"derivation" is a scope rule (a condition inside a branch sends the search to the next branch, one outside does
+not). It goes to the owner as **branch-scope**, three readings: (i) no fallthrough; (ii) fallthrough for conditions
+inside AND outside (reverses the ruled reject of `(B | A) & (l: "a")` on `aa`); (iii) rev 23.1's scope rule. Rev
+23.2 keeps (iii) as the draft's text, labelled OPEN. (2) Asked of the owner as **record-under-not**: review r33's
+fix made "a record is exactly the AND of its entries" hold only WITHOUT a NOT around it; that narrows his 11:35
+record-is-product ("absolutely") and was not returned to him. (3) LESSON, the same one as 11-16: two manager
+rulings in one night (the whole-statement default lean; branch-order) fell to the next round; a rule that decides
+ANSWERS and is not word for word in his record is asked, not told.
+
+**2026-11-17 OWNER LEAN — branch-scope: reading (ii), and an ATOMIC form (Frank, to session 138, box clock about
+11:30; a LEAN in his words, confirmation asked, NOT yet a ruling).** Asked **branch-scope** with the manager's lean
+(i) ("the pattern picks the match, conditions judge it"). HIS WORDS: "I don't remember this discussion. A lot of
+decisions are \"rule A under narrow example does something sensible, do you agree\" then wider examples provide
+different perspective. The condition question from last night took a path that suggests a different choice. It was
+the \"9:30\" question. There, a condition on a pattern reject caused the pattern to backtrack and take a different
+path that satisfied the condition. Your suggestion implies no backtracking and atomic behavior. 1. I think I lean
+number ii. It's more regex 2. it does suggest we should support atomic. An atomic transform would change both
+answers to get the no backtracking behavior". MANAGER (mine): he is right and my lean (i) was wrong: it contradicts
+row-is-match (23:46 on 11-16: on `9:30` the rejected row `9:30` gives way to `9`, another path of the SAME pattern
+through its optional part), and it would make `|` the one choice point a condition cannot send the pattern back
+into (`(?:x)?` and `(?:x|)` would part). Reading (ii) taken generally REVERSES two recorded rulings of 11-15, shown
+to him for confirmation before any revision: the one-parse reject `(B | A) & (l: "a")` on `aa` (CF:953-955, L60) and
+note (a) (`/(?<a>\d+)(?<b>\d+)/ & (a: 1)` on `123` fails); for whether a value holds it is the 2026-11-14 some-parse
+rule again, with PCRE's preference order choosing the reported row. His item 14 of predicates_future.md (the
+pattern returns `9:30`, done; the condition then rejects) is the ATOMIC form.
+
+**2026-11-17 OWNER RULING — branch-scope: reading (ii); atomic wanted, its spelling OPEN (Frank, to session 138, box
+clock about 11:35).** Asked to confirm (ii) "everywhere, reversing the two 11-15 answers above, with atomic as the
+opt-out" (the table shown: `(B | A) & (l: "a")` on `aa` holds through the second branch; `/(?<a>\d+)(?<b>\d+)/ &
+(a: 1)` on `123` holds with a = 1, b = 23; `(B | A) & (l: <20)` on `25 13`, find-all, reports `25` then `13`).
+HIS WORDS: "branch-scope: yes. I like that. Also, that makes me like 9:30 choice from yesterday more as well because
+if we have atomic, you can get the alternative I mentioned. I don't like your spelling for atomic as it opens a bunch
+of questions about rx grammar in predicate language but I don't know what it should be. Perl 6 was going to use :::
+colons as backtracking stops. We might consider similar language as well as atomic() transforms but that's for the
+start of a different discussion". RECORD: (1) a condition is ONE MORE PIECE of the pattern: when it rejects, the
+pattern backtracks in PCRE's own preference order, into another branch of `|` as into any other choice point, for
+conditions inside and outside the `|`; the reported row is the first path that satisfies the conditions. (2)
+REVERSED by it: the 11-15 one-parse reject (CF:953-955, L60) and note (a) of the 11-15 entry (a condition on a label
+set once judges PCRE's one parse); the manager's readings (i) and (iii) are dead. (3) row-is-match (11-16 23:46)
+stands and is liked more for it. (4) ATOMIC (no backtracking into the pattern once it has matched) is WANTED as the
+way to get his other reading (predicates_future.md item 14); its SPELLING is not chosen and is a separate
+discussion: the manager's `(?>...)` is NOT adopted (it opens the question of regex grammar inside the predicate
+language); candidates he named: backtracking-stop marks like Perl 6's colons, and an `atomic()` transform. Filed as
+predicates_future.md item 19. MINE, derived, to be checked by the next revision and its round (NOT his words):
+whether a value holds = some path satisfies the conditions (the 2026-11-14 some-parse rule again for holding, with
+PCRE's order choosing the report); `&` distributes over `|`; for a single match adding a condition never admits;
+in find-all places hits can re-split; the cost he asked for on 11-15 is expected lower, UNMEASURED.
+
+**2026-11-17 OWNER, on the model after branch-scope (Frank, to session 138, box clock about 11:50).** HIS WORDS:
+"Notably: this is a break from the SQL model we were using. A encapsulating where clause in sql does not cause the
+inner sql to reconsider. However, it is in line with regex behavior so I do like it and think it should be the
+general behavior". RECORD: backtracking on a rejecting condition is THE GENERAL BEHAVIOUR; where the SQL picture and
+regex behaviour part, regex behaviour wins. MANAGER'S FRAMING offered in reply (MINE, not his words, to be checked
+by lane pathimpact and the next round): the SQL picture survives if the table holds EVERY path of the pattern (two
+paths over one stretch with different labels are two rows), ordered by PCRE's preference, and "first row" is taken
+AFTER the conditions filter (WHERE, then the first row); ATOMIC is "first row" taken BEFORE the filter (an inner
+statement limited to one row). What changed from 11-15 is then only where the limit sits, not that the inner
+statement reconsiders.
+
+**2026-11-17 OWNER IDEA — options written in the language (Frank, to session 138, box clock about 12:05; an idea,
+NOT a ruling).** After the manager verified that atomic is a VM feature in pcrec today (`(?>ab|a)c` and `a*+a` are
+refused under `--engine=dfa`; `a++b` is discharged and accepted). HIS WORDS: "The predicate form does not preclude
+non-dfa operations but it restricts by default. Perhaps there should be an @options() in the language". RECORD: it
+restates the 2026-11-14 capability levels (default = automaton code only; independent opt-ins `functions`,
+`captures`, `vm`, `eval`; draft §6) and adds the idea that the opt-ins are DECLARED IN THE SOURCE, in the `@` family
+(`@export`, `@check`, `@each`). Filed as predicates_future.md item 20; the spelling is a placeholder (his examples
+are not syntax, D193 add. 4).
+
+**2026-11-17 OWNER — a library element beyond the user's level is an ERROR (Frank, to session 138, box clock about
+12:10).** To the manager's three points on options written in the source (scope; libraries: the importer's options
+are the ceiling; a host cap). HIS WORDS: "Those are good ideas wrt options. I may want pure dfa but it's not always
+clear what library element supports that. So if I use a li library element that causes non-dfa behavior then it
+should error out". RECORD: RULED for libraries: using a library element that needs more than the level the user
+asked for (the default, automaton code only, included) is a COMPILE ERROR, never a silent lift; it is the
+2026-11-14 levels rule applied through an import. The other two points (scope, host cap) are "good ideas", not
+ruled. MINE, following from "it's not always clear what library element supports that": the error names the
+ELEMENT, the construct inside it and the opt-in, and a library's listing shows each export's needed level.
+
+**2026-11-17 OWNER — a constant is an rx whose enumeration has one member (Frank, to session 138, box clock about
+12:15).** To the manager's case "an element whose level depends on how it is used (an automaton against a constant,
+`functions` against a run-time value)". HIS WORDS: "Ref options: a constant is an rx where the count of the
+enumeration is 1". RECORD: "constant" is not a separate kind of argument; it is the count-1 end of ONE scale, the
+number of values the argument's rx can take. MINE, following from it (to be checked when item 20 is designed): an
+element's needed level is then a function of its arguments' enumerations (one value, twelve values and an unbounded
+or run-time value sit on one scale; the automaton's size grows with the count, the draft's own "the relation `d`
+has ~3.65M classes" message is the far end), and the line between the default level and `functions` is the SIZE
+BUDGET (§4.6), not a constant-or-not test; a listing states an element's level as that dependence.
+
+**2026-11-17 OWNER QUESTION, no ruling — is `A & B` the same as `A & (0: B)` (Frank, to session 138, about 12:25).**
+HIS WORDS: "Question on simplifying semantics (no ruling): is A & B The same as (new) A & (0: B) Where 0: is the
+whole match". MANAGER'S ANSWER (mine, a claim handed to lane pathimpact as R2 to test): the same in whether the
+program holds and in the stretch reported; `A & !B` = `A & NOT (0: B)` (label 0 is never absent, so the
+three-valued NOT is two-valued there); they part only in that `&` brings B's labels into the row. If it holds,
+pattern-`&` and the complement after `&` can be DEFINED through the condition on 0, and the open items
+complement-place, nested-complement and polarity-rule may reduce to the rules for conditions.
+
+**2026-11-17 OWNER DIRECTION — decide the open choices by a REGEX MODEL where one exists (Frank, to session 138,
+box clock about 12:55).** After lane pathimpact listed six points the branch-scope ruling does not decide. HIS
+WORDS: "Predicates: rather than I make arbitrary decisions on various choices that have difficult to predict
+ramification, can we come up with a regex model for each and use that to explain it. At least, where it is able
+to". RECORD: for each open choice, find the plain-regex construct the predicate construct corresponds to, and let
+what regex does there EXPLAIN (and, where it is unambiguous, decide) the choice; where no regex model exists, or it
+contradicts something he ruled, say so and bring that to him as the real question. Lane rxmodel does it against
+real PCRE2 answers. MANAGER'S FIRST PASS given to him in chat is MINE and unverified until that lane reports.
+
+**2026-11-17 OWNER — a regex model for occurrences (Frank, to session 138, box clock about 13:10; a model offered
+with "Correct?", not a ruling).** HIS WORDS: "Occurances(rx) can be run as a search within a span. It's essentially
+/(.*(${rx}))*.*/ So not global Correct?" MANAGER'S ANSWER (mine; handed to lane rxmodel as R1 to run on PCRE2): yes
+as a model, ONE pattern over the span, with the gap made LAZY (as written, greedy, the first pass takes the
+rightmost hit); being one pattern, a rejecting condition re-enters it under the branch-scope ruling (pathimpact's
+reading H2), which a global search (hits committed one by one, H1) does not; regex keeps only the last pass's
+capture, so a test on EVERY hit is a piece inside the loop body.
+ADDENDUM, same day about 13:15, HIS WORDS: "Formatting lost some operators". So the pattern text quoted above is
+NOT as he typed it (his message's formatting dropped characters); the manager reads the intended pattern as the
+lazy-gap form (`(.*?(${rx}))*.*`), and the "fix" in the manager's answer is then his own pattern, not a correction.
+Unconfirmed character for character; the meaning (one pattern over the span, the loop walks the hits in order) is
+what is recorded.
+
+**2026-11-17 OWNER — the regex model explains; it does not exclude useful features (Frank, to session 138, box
+clock about 13:20).** After the manager noted that regex keeps only a loop's last capture, so "the list of hits"
+is not a regex notion. HIS WORDS: "That said, we are also attempting to make a useful language. In that way, being
+able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for
+purity". RECORD: access to ALL the hits of a search STAYS. Where the language offers something regex has no model
+for, that is a NOTED EXCEPTION (stated as such, with what regex alone would give), never a reason to drop it. MINE,
+following from it: the draft keeps one short list of these exceptions (the hit list first; the loop's pass table,
+records and defaults are candidates for the same list, each still the owner's to confirm), and the rule for how a
+condition on such a value interacts with backtracking is asked for each, since regex cannot answer it.
+
+**2026-11-17 OWNER — an exception proves itself, or is asked for by name (Frank, to session 138, box clock about
+13:30; refines the 13:20 entry; two alternatives in his words, not yet a choice between them).** HIS WORDS: "An
+exception should have to prove itself. And be converted to regular language. Alternatively, the default might be
+regex behavior and the exception explicitly requested all_matches(rx)". RECORD: (A) a feature beyond the regex
+model must EARN its place and have a REGULAR-LANGUAGE form (the manager reads "converted to regular language" as:
+what it computes is shown to be expressible as, and compiled to, a regular language; his to correct); or (B) the
+DEFAULT everywhere is regex behaviour and the beyond-regex value is REQUESTED EXPLICITLY by a named form
+(`all_matches(rx)` is his example; a placeholder spelling, D193 add. 4). MINE: the two combine (regex behaviour by
+default; a named request for the exception; the named form admitted only with its regular-language account or its
+capability level stated), and the 11-15 ruling already has this shape for hits ("reading ONE hit needs captures, a
+higher level with its cost shown; count/some/all in phase 1", CF:972-980): count, some and all over the hits are
+regular; holding the hits as values is the level-gated part.
+
+**2026-11-17 OWNER RULINGS — regex-settles; absent-under-not (Frank, to session 138, box clock about 13:25).** Lane
+rxmodel (docs/dev/lanes/rxmodel_report.md; every model run on libpcre2 10.46 with callouts) was summarised to him
+with two questions. HIS WORDS: "regex-settles: yes settled" and "Absent under not: use regex rules."
+RECORD, regex-settles (the five points shown to him, each an exact match of one candidate): (1) a test on an
+ABSENT label fails and the pattern tries its next path (pathimpact E6, U1); (2) the complement `!B` holds when NO
+path of B survives over the stretch (E3, C1); (3) an outer condition never re-enters a lookahead, and a negative
+lookahead tries every inner path before it succeeds (E4 LA1, E4' NA1); (4) occurrences is his ONE-PATTERN model
+(the lazy-gap loop over the span): its first path has the global search's hits and a condition inside it
+re-enters (E5, H2); (5) atomic MEANS what PCRE's atomic group means (spelling still open, predicates_future 19).
+RECORD, absent-under-not: NOT follows regex: a NOT around a test of an absent label HOLDS (two-valued, a negative
+lookahead). REVERSES the absence clause of condition-not (2026-11-16 23:48: "absence never matches, negated or
+not"); NOT itself stays allowed.
+MINE, derived, to be checked by the next revision and its round (NOT his words): with no test left UNKNOWN,
+three-valued logic is retired everywhere (the told items three-valued-throughout, pass-and's Kleene AND and
+condition-or's Kleene OR fall to plain two-valued forms); record-under-not DISSOLVES (a record is the AND of its
+entries with or without a NOT; predicates_future item 18 is moot); "present and not under 5" is written with a
+per-test default or an explicit presence test; polarity-rule has no regex model and, under regex behaviour, no
+error or warning (still his to confirm). NOT ruled, still open with him: last-pass-default (a bare loop label
+reads the last pass; every pass asked for by name), which decides pass-table, group-truth and loop-condition;
+when-meaning; whole-text (parked); the atomic and options spellings. The manager takes join-order as left side
+first (reported labels only; told to him 13:45, no objection asked for).
+
+**2026-11-17 OWNER — whole-text as two questions on one parse (Frank, to session 138, box clock about 13:55; a
+model offered, confirmation asked by the manager; whole-text had been PARKED by him on 11-16).** HIS WORDS:
+"whole-text. This is not regex in the single pattern sense. I didn't fully understand your examples. If we had a
+larger parser like the json parser configured J, then used two paths: check C the overall fail against the json
+then search for the match M  J & C ? J & M : fail". RECORD: the whole-text question is NOT one pattern: a parser J
+of the whole text; a check C against J's result that can fail the whole thing; then a search M for the matches;
+the matches are reported only when the check holds. `? :` and `fail` are placeholders (D193 add. 4). MANAGER'S
+READING given to him (MINE, to be checked by the next revision): it is rev 23's route (ii) (a text-level test: a
+find-all keeps all its matches or none), and it needs no new semantics: J is a WHOLE-value pattern over the text, C
+a condition on J's row, M a search inside J's span (his one-pattern occurrences model), so it is `J & C` with the
+hits of M requested by name (the all-hits exception); lane rxmodel found the gate REGULAR (no stored values) and
+PCRE2 unable to spell it in one pattern (no unbounded lookbehind), which agrees with "not regex in the single
+pattern sense". The positional one-pattern form ("no B from here on", route (i)) remains what a lookahead means.
+
+**2026-11-17 OWNER RULING — whole-text: adopted if legal (Frank, to session 138, box clock about 14:05).** HIS
+WORDS: "Whole text: adopt it if it's legal. Not sure about the "fail" part". RECORD: whole-text is UN-PARKED and
+ADOPTED as his model of 13:55 (a whole-text check is a condition on a whole-value parse; the search runs inside
+it), ON CONDITION that the next revision shows it is legal, i.e. written with the language's ruled pieces and no
+new rule; if that check fails it comes back to him. The lookahead keeps its positional meaning. The `fail` branch
+is NOT adopted: he is unsure of it. MINE: the gate form needs no `fail` at all (a failing condition fails the
+program), and a general two-branch conditional is `(C & M1) | (NOT C & M2)`; should an always-failing piece ever
+be wanted, regex has one (PCRE's `(*FAIL)`, the empty negative lookahead), so it would be a regex notion, not an
+invention; not proposed now.
+
+**2026-11-17 OWNER IDEA — a two- or three-argument conditional as a rewrite (Frank, to session 138, box clock
+about 14:15; an idea, not a ruling).** HIS WORDS: "We might adopt something like a rewrite from 2 or 3 argument ?:
+to make writing easier". RECORD: a conditional form (`c ? p` and `c ? p : q`; the spelling is a placeholder) that
+REWRITES to pieces already ruled, as a writing convenience. MANAGER'S POINTS given to him (MINE): (1) regex already
+has this construct: PCRE's conditional group `(?(c)yes|no)`, whose two-argument form PASSES when c is false (an
+absent no-branch matches empty), so the two-argument form is "if c then p" (the draft's `when`), NOT the whole-text
+gate (which is plain `c & m`); (2) lane rxmodel ran it: the conditional group equals `when`'s FILTER form exactly,
+while the alternation rewrite `(x & c & p) | (x & NOT c)` is a different, also well-defined thing (they differ on
+125 of 1,110 texts: `5;1;9` searched reports `5;1;9` against `5;1`, because in the alternation the first branch
+may send x back to a shorter match before the second branch is tried); (3) so "rewrite to what" IS the open
+when-meaning question, now asked as: the conditional means PCRE's conditional group. Filed with when-meaning; no
+new item.
+ADDENDUM, same day about 14:20, HIS WORDS: "Although I don't know the spelling. ? Has a meaning in regex". RECORD:
+the conditional's SPELLING is open; `?` is not to be assumed (it is a quantifier, the lazy mark and the group
+prefix in regex). MINE: the draft already spells the two-argument form as a call, `when(c, p)`; a third argument
+(`when(c, p, q)`) would add the else branch with no new mark; a later syntax step decides.
+
+**2026-11-17 OWNER QUESTIONS on when-meaning (Frank, to session 138, box clock about 14:25; questions, no ruling).**
+HIS WORDS: "when-meaning: are pcre conditions dfa? Is adopting this when definition dfa and is it a primitive or
+could it be defined in the language?" MANAGER'S ANSWERS (checked on the built compiler where stated; the rest
+MINE, for the next revision's model to confirm): (1) PCRE's conditional group is NOT BUILT in pcrec (`(?(1)b|c)`,
+`(?(?=a)ab|cd)` and `(?(<h>)b)` are refused: "module 'conditionals' is enabled but (?(...) is not implemented
+yet") and the registry plans it VM-only; the regular spelling of a conditional on a lookahead, `(?=a)ab|(?!a)cd`,
+compiles under `--engine=dfa`. (2) The MEANING needs no such group: with c and p conditions on the match in hand,
+"if c then p" is the condition `NOT c | p` (OR between CONDITIONS, tested once; not an alternation of patterns),
+a boolean combination of tests, which is automaton work at the default level. (3) So `when` is NOT a primitive:
+`when(c, p)` := `NOT c | p`, and a three-argument form := `(c & p) | (NOT c & q)`, definable in the language; this
+became possible with absent-under-not (NOT is two-valued, so "not c" is exactly "c is not true"). PCRE's
+conditional group stays the regex MODEL of the meaning, not the mechanism. UNVERIFIED: that `x & (NOT c | p)`
+equals the conditional-group model on the 1,110 texts (rev 24's model must run it).
+
+**2026-11-17 OWNER RULING — when-meaning (Frank, to session 138, box clock about 13:55).** After his objection
+("Here | is "or" between conditions": but that means we're not defining when in regex unless we provide this
+logical or) the manager corrected its own wording: there is ONE `|`, regex's alternation; between conditions it is
+an alternation of two zero-width tests at one position (lane rxmodel ran it so: callouts in an alternation, 0 of
+156 differ), NOT is a negative lookahead, and what separates the two bodies of `when` is only where the pattern is
+written (once, outside the alternation; or repeated inside each branch, where the first branch can re-match it).
+Asked: "`when(c, p)` is defined in the language as the pattern followed by "not c, or p", with x written once.
+Agreed?" HIS WORDS: "when-meaning: agree". RECORD: `when(c, p)` is a LIBRARY DEFINITION, `x & (NOT c | p)`; no
+primitive; its regex model is the pattern followed by an alternation of two tests (equal to PCRE's conditional
+group); an optional else is `(c & p) | (NOT c & q)` in the same position. The spelling of a conditional stays open
+(`?` not assumed). MINE, for the next revision: the draft's separate rule for OR between conditions is deleted (one
+`|`); the equality of `x & (NOT c | p)` with the conditional-group model on the 1,110 texts is still to be run.
+
+**2026-11-17 OWNER RULING — last-pass-default: regex (Frank, to session 138, box clock about 14:30).** Shown lane
+lastpass's evidence (docs/dev/lanes/lastpass_report.md: `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;` FAILS today, HOLDS
+under regex with h = 3; 16 of 104 draft lines move) and, at his question "if regex, which is my lean, how would one
+write "every pass < 5"", three ways (a condition on the item with the loop over the conditioned item;
+`occurs.none(NOT (h: <5))` after the loop, plus `some(...)` for at least one; a named every-pass form as
+shorthand). HIS WORDS: "last-pass-default: regex. I want to have the method of achieving the alternative meanings
+defined and tested so we don't lose that functionality." RECORD: a bare label set in a loop, read by a condition
+written after the loop, means what regex means: the LAST pass that set it (a pass that sets nothing keeps the
+earlier value; no value when none did). REQUIRED WITH IT: every meaning the draft could express before (lane
+lastpass's table "what the named request must cover": every pass with and without at-least-one, the per-pass joint
+or record, not-every, some / count / occurs, a literal index, the committed hit list) has its way of being written
+DEFINED in the draft and TESTED against the old reading (0 differences shown), so no functionality is lost.
+REVERSES for bare conditions: 2026-11-14 Q4 ("`x:` = all iterations ... SUPERSEDES `$x` = last iteration") and the
+2026-11-15 search record (2) ("a plain condition = ALL hits"); the 11-16 retirement of `all` is revisited by the
+named every-pass form (spelling open). MINE, not ruled: a compile WARNING when a bare condition reads a looped
+label (proposed to him twice, not answered: carried as the manager's proposal in the next revision's open table);
+hits-committed and join-order as told at 13:45 / 14:35.
+
+**2026-11-17 OWNER PROPOSAL — building patterns without rx literals: an "rx" module and a concatenation operator
+(Frank, to session 138, same message; "Unrelated").** HIS WORDS: "this discussion is showing me that we need to
+support building rx without rx literals. Propose: an "rx" module that has "digits", "loop", and other constructs.
+Further, a concatenation operator so that A € B means A followed by B". RECORD: a library module of named pattern
+constructs (his examples: digits, loop) and an operator for "A followed by B" (`€` is a placeholder, D193 add. 4),
+so a pattern can be composed, and its parts conditioned, without writing regex text. Filed as predicates_future.md
+item 21; a design note is the next step (lane rxlib), separate from revision 24.
+ADDENDUM to the rx-module proposal, same day about 14:55. (1) Lane rxlib's premise check: the draft already has
+`join([...], sep = s)` (a sequence of labelled parts), `list_of(X, sep = ...)` and `capture(x)`, and §2.5 records a
+LEAN of 2026-11-13 AGAINST a concatenation operator (the owner had offered "put it into an rx
+/(?&year)(?&mon)(?&day)/ or we have a concatenation operator"; the lean was the manager's). The proposal's
+operator reopens that lean; told to the owner. (2) HIS WORDS, a further idea: "Rx module: ? Operator could mean
+regex ?. So /\d+/ ? Becomes /(?:\d+)?/ Then /\d*/ Effectively". RECORD: quantifier operators on a pattern value,
+each meaning the regex quantifier on the grouped pattern; an idea for the design note (lane rxlib, its R2), not a
+ruling.
+CORRECTION (2026-11-17, the manager; review round predspec24 finding B4): the "OWNER RULING — when-meaning" entry
+above is stamped "about 13:55"; it FOLLOWS and answers the 14:25 questions entry, so its true time is after 14:25
+(the manager's box-clock notes drifted that afternoon; order in this file is the order of events). In that entry
+"there is ONE `|`, regex's alternation" is the MANAGER'S wording, which he agreed to ("when-meaning: agree"), not
+his words. The 11:50 entry's sentence in full, for anyone quoting it: "However, it is in line with regex behavior so
+I do like it and think it should be the general behavior" (its subject is the backtracking on a rejecting
+condition). The SQL picture's "each row remembers its branch" is lane pathimpact's finding, not in his words.
+
+**2026-11-17 OWNER RULING — exception-rule (Frank, to session 138, evening; settles the two alternatives of the
+"an exception proves itself, or is asked for by name" entry above, which review r40 finding B2 showed were never
+chosen between).** Asked with the manager's lean ("both: by name decides visibility, prove-itself decides the
+level"). HIS WORDS: "exception-rule: everything that looks like regex should behave like regex unless we explicitly
+allow. This is the prove itself portion in that an exception has to be either so useful or the "expected
+understanding" whereas the actual regex behavior is obscure so as to be useless. Exceptions should be requested by
+using those features explicitly. If requested (and optioned in if needed), they don't have to be regular regex or
+even legal regex."
+RECORD: (1) THE DEFAULT: anything that looks like regex behaves like regex, unless an exception is explicitly
+allowed. (2) "PROVE ITSELF" is the bar for ALLOWING an exception, and it is about WORTH, not about regularity: the
+exception is either so useful, or it is what a reader would expect where the real regex behaviour is so obscure as
+to be useless. (3) Exceptions are REQUESTED by using their own explicit features (and opted in where a capability
+level requires it); a requested exception need not be a regular language, nor even something legal regex can say.
+CORRECTS the manager: "converted to regular language" (13:30) was read by the manager as "must reduce to an
+automaton" and the lean tied the proof to the capability level; that reading is superseded: regularity is NOT the
+bar, and the levels are a separate, existing rule (11-14). CONSEQUENCES, MINE, for the revision to check: whole-text
+as he modelled it is legal as a requested feature; the hit list is admitted as an explicit request without a
+regularity proof (its level is whatever its reads need); every place where the draft makes something that LOOKS
+like plain regex behave otherwise is a candidate exception that must either be allowed by him under (2) or revert
+to regex behaviour: the revision lists them.
+
+**2026-11-17 OWNER LEAN — a loop pass has its own labels (Frank, to session 138, evening; a lean with a request,
+NOT yet a ruling).** Asked **joint-last-pass** (a joint over a loop reads each label's last pass, so `((h, m): ==
+(10, 45))` on `9:45,10,` HOLDS under PCRE2, the minutes stale from the first item), then at his question "could you
+use defaults m=00" shown that a default cannot help while regex carries the earlier pass's value, and asked
+**pass-own-labels** (does a loop pass start with its body's labels unset; the manager's lean changed to yes, as an
+allowed exception under his exception-rule). HIS WORDS: "joint-last-pass: I think the expectation is that each loop
+has its own. The ramifications should be determined. Implementation details aside, I think most would expect that
+a missing group would unset". RECORD: his LEAN: each pass of a loop has its own labels; a group that does not take
+part in a pass is UNSET for that pass (against PCRE2, which keeps the earlier value). CONDITION: "the
+ramifications should be determined" before it is ruled: what moves in the draft, what it does to last-pass-default
+(the record's "a pass that sets nothing keeps the earlier value" was the manager's account of the regex model),
+to the every-pass spelling, to defaults and joints in loops, and to the regex models (PCRE2 has no direct model;
+an exception in his sense). Lane predspec241 writes both candidates out (its R2, R3); the ruling waits for that.
+ADDENDUM, same evening, HIS WORDS: "joint-last-pass: that logic might be justified if you differentiate between a
+label and a capture". RECORD: a possible GROUND for the lean above: a CAPTURE is regex's (inside rx text, a
+backreference to it reads what PCRE holds, the earlier pass's value included); a LABEL is the predicate language's
+own (what a condition reads), and may have its own lifetime (a pass's labels are its own; unset when the group took
+no part). Under his exception-rule this is then not "something that looks like regex behaving otherwise": the
+capture still behaves like regex; the label is an explicit feature of the language. MINE, to be worked out by lane
+predspec241 (its R4) before he rules: one named group gives both; the two can disagree on one text (`\k<m>` inside
+the literal against `(m: ...)` outside it); where a label takes its value from the capture (the end of each pass);
+what the draft's existing sentences on `\k<x>`, `capture(x)` and the `captures` level say today.
+
+**2026-11-17 OWNER on pass-own-labels after the ramifications (Frank, to session 138, evening; leans and a remark,
+not yet a ruling).** Shown revision 24.1's ramifications block (17 of 68 lines move; nested loops: the innermost
+loop's pass unsets, or every enclosing loop's; an alternation in a loop body, `/(?:(?<a>\d)|(?<b>[a-z]))*/ & (a:
+<5)` on `3x`, holds under PCRE's carry and fails under per-pass labels). HIS WORDS: "pass-own-labels: On the inner
+versus outer: which would be easier to get to if we chose the other? I am thinking we chose the outer pass because
+if someone composed them they'd see the labels at "their level"" and ""An alternation in a loop body is affected
+too". I would expect this under "all must pass" otherwise use some()".
+RECORD: (1) nested loops: his LEAN is the OUTER reading (every enclosing loop's pass unsets a label set inside it),
+for composition: whoever wraps a loop in another sees, in each of their passes, only the labels set in that pass.
+(2) the alternation case failing is what he EXPECTS, in his words "under all must pass"; for the other meaning one
+writes `some()`. MANAGER'S NOTE (mine, put to him as a question, slug bare-loop-label): "all must pass" is not the
+rule he ruled at 14:30 (last-pass-default: a bare looped label reads the LAST pass). Both readings fail `3x`; they
+part on `x3` and `73` (last pass HOLDS, every pass FAILS). And his label-versus-capture ground removes the regex
+reason for "last pass" (a label is the language's own, so its bare reading is a language choice again).
+
+**2026-11-17 OWNER RULING — labels match every pass, captures match the last (Frank, to session 138, evening).**
+Asked **bare-loop-label** twice (on `x3` with `/(?:(?<a>\d)|(?<b>[a-z]))*/ & (a: <5)`: every pass FAILS, last pass
+HOLDS). HIS WORDS, in order: "The alternation case: the outer loop is labels a | b. The first loop the a is matched
+and exists. Good. The second loop the b matches then the condition fails." and then "The alternation case: I
+thought we said labels match every pass but captures match the last".
+RECORD: (1) A condition on a LABEL set in a loop is judged on EVERY PASS (each pass with its own labels, a group
+that took no part being unset in that pass: his lean of the same evening); (2) a CAPTURE, regex's, holds the LAST
+value, as PCRE does. This is his statement of the label-versus-capture distinction. THE RECORD DID NOT SAY IT
+BEFORE: the 14:30 entry ruled a bare looped label reads the LAST pass ("last-pass-default: regex"), and the
+label-versus-capture addendum recorded only a difference of LIFETIME. So this REVERSES last-pass-default for
+LABELS (the last-pass reading stays, as what a capture is) and RESTORES for labels the 2026-11-14 Q4 ruling ("`x:`
+= all iterations") and the 2026-11-15 "a plain condition = ALL hits" reading, which 14:30 had reversed. His 14:30
+requirement carries over turned around: the LAST-pass meaning, and `some`, must each have a way of being written,
+defined and tested. Nested loops: his lean is the OUTER reading (every enclosing loop's pass). MINE, for the next
+revision to run and for him to confirm where it decides answers: on `x3` the program above FAILS (the first pass
+has no `a`, and a test on an absent label fails); whether zero passes holds (the 11-16 absent-rule said "at least
+one"); how NOT composes with "every pass"; that the bare joint is then per pass (joint-last-pass dissolves); how
+the last-pass meaning is spelled (through the capture, or a named form).
+
+**2026-11-17 OWNER, reconsidering the entry above within minutes (Frank, to session 138, evening).** HIS WORDS: "I
+guess, as always, the devil is in the details. It works because the top level item is a loop. But if an "xx" were
+added as a terminal after the loop it wouldn't work. Thinking about it, what you should do is assign the condition
+inside the loop to get the all behavior".
+RECORD: the "labels match every pass" entry above is NOT SETTLED: he sees that a condition written after the whole
+pattern cannot be "per pass" once the pattern is more than the loop (a terminal after it), and that the "all"
+meaning is got by putting the condition INSIDE the loop, on the item (which is the regex model of the afternoon: a
+condition is a piece at the place it is written). What a bare condition written AFTER such a pattern reads from a
+looped label is therefore OPEN again (asked: after-loop-read). The manager had launched a revision lane
+(predspec242) on the entry above; it was stopped at once, nothing written. LESSON (mine): "I thought we said" was
+a recollection, not a ruling; the settle-before-launch rule applies to it.
+
+**2026-11-17 OWNER RULING — after-loop-read: the last pass's own label (Frank, to session 138, evening).** After
+his reconsideration above, shown that the ALL meaning is the condition on the item ("Then the rx is "a loop of
+(times after 9:30)", his words, to `late := time & ((h, m): >= (9, 30))`, `/(?:${late},)*/`), and asked what a
+bare condition written after the whole pattern reads from a label set inside a loop, with the table on
+`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)` (`3qxx`: regex's carried value HOLDS, the last pass's own label FAILS, a
+compile error refuses; `q3xx`, `7q3xx`: both readings HOLD) and the manager's lean (the compile error). HIS WORDS:
+"after-loop-read: ok I see it. Last pass own label makes sense".
+RECORD, the settled state of the evening: (1) a condition written INSIDE a loop, on the item, is judged in every
+pass: that is how "all" is written (the regex model of a condition as a piece where it stands). (2) A bare
+condition written AFTER the pattern reads, for a label set inside a loop, THE LAST PASS'S OWN LABEL: unset when
+that pass did not set it (the test then fails; a per-test default then applies). (3) So a loop pass has its own
+labels and a group that took no part in a pass is unset in it (his lean of the evening, now relied on by (2)); the
+CAPTURE stays regex's (the carried value, read inside rx text). (4) SUPERSEDED the same evening: "labels match
+every pass" as the meaning of a bare condition after the loop. (5) last-pass-default (14:30) STANDS, with its edge
+changed: the record's "a pass that sets nothing keeps the earlier value" was the manager's account of the regex
+model and is true of the capture only. Nested loops: his lean is the OUTER reading (every enclosing loop's pass
+unsets), not yet ruled. MINE: joint-last-pass dissolves (a bare joint reads the last pass's own tuple); the
+manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the
+manager's proposal.
+
+**2026-11-17 OWNER RULING — nested-pass: the outermost view (Frank, to session 138, evening).** HIS WORDS: "The view
+of the labels on an rx is the outermost view. To get inner views you nest the labels and condition". RECORD: seen
+from outside a pattern, a label is what the OUTERMOST level sees: every enclosing loop's pass starts with the
+labels inside it unset, so a bare condition after the pattern reads the label only if the last pass of each
+enclosing loop set it (the "every enclosing loop" candidate of revision 24.1's ramifications; his lean of earlier
+the same evening, now ruled). An INNER view (every inner pass; the inner loop's last pass within each outer pass)
+is written by nesting: the condition, with its label, is placed inside, at the level it speaks about. Example
+(rev 24.1's lines, `/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)`): `3;,,` and `3;;,` FAIL from outside.
+ADDENDUM, same evening, HIS WORDS: "Then from the perspective of the condition, an rx is a black box that exposes
+labels". RECORD: the PRINCIPLE behind the evening's rulings: to a condition a pattern is opaque; what it offers is
+its labels (at the outermost view), and a condition reads nothing else of it. MINE, for the revision to state and
+test: (a) the box offers its results IN ORDER (its paths, PCRE's preference), each with its labels; a rejecting
+condition takes the next result (branch-scope (ii) said from the outside); (b) captures, passes and inner labels
+are INSIDE the box: reached only by writing the condition inside, or by an explicit request (the hit list, the pass
+forms); (c) the spelling principle becomes: two patterns that offer the same results in the same order with the
+same labels answer every condition alike (review r40's A6 counterexample differs in its paths, so it is not a
+counterexample to this form); (d) it is the same shape as the architecture goals ruled today (a structure is read
+through what its owner exposes).
+
+**2026-11-17 OWNER, on what kind of language this is (Frank, to session 138, evening; reflections, recorded as
+principles for the draft's framing, not rulings on any answer).** HIS WORDS: "I like this language because it's in
+terms no normal imperative language is." Then: "It's a bit deceptive in that it looks like functions and
+predicates and loops but it's not. Also, I and try to keep this in mind, it's a matching language not a finding
+language. That's where the SQL analogy breaks down because I expect the filter over times loop to return a set but
+it's not".
+RECORD: (1) the language is DECLARATIVE: an expression says what a match is, never how it is found. (2) Its forms
+LOOK like functions, predicates and loops and are not: a reader's imperative expectations are a known hazard. (3) It
+is a MATCHING language, not a FINDING language: a loop of conditioned items MATCHES a run (it stops at the first
+item that fails); it does not RETURN the set of items that pass. The set-returning expectation (the SQL picture)
+belongs to the explicit FINDING forms (a search, find-all, the hit list by name). Checked the same evening on
+libpcre2: on `10:00,11:00,9:00,12:00,` the loop of (time & "10:00 or later") matches `10:00,11:00,` (WHOLE fails),
+while find-all on the conditioned time gives `10:00`, `11:00`, `12:00`. MINE: names and the draft's framing should
+not invite the imperative or set reading (D174: names describe behaviour): an input to the rx-module naming
+("loop") and to the spellings still open; open questions are to be asked as "what does this expression denote",
+and one that can only be answered by describing a procedure is either mis-asked or an explicit exception.
+
+**2026-11-17 OWNER on atomic-search (Frank, to session 138, evening).** Asked whether an atomic pattern in a search
+should stop the search going on to later positions (PCRE's atomic group does not: `atomic(t2) & !q` SEARCHED on
+`9:30` reports `30`; his item-14 reading "returns nothing"), with the manager's lean (atomic stays PCRE's; his other
+reading is a FINDING form on the first hit). HIS WORDS: "atomic: I think what I was looking for was more akin to
+(*prune) or similar. Atomic as used by say atomic() would provide pcre behavior. We might have other forms like
+A :: B which might be a concatenation which says match A then B but don't go back into A".
+RECORD: (1) `atomic()` (spelling a placeholder) means PCRE's atomic group, as ruled in regex-settles (5): no change.
+(2) The reading he filed as predicates_future item 14 is NOT atomic: it is a BACKTRACKING-CONTROL VERB in PCRE's
+sense, "(*prune) or similar". (3) An idea: a sequence form that does not go back into its left side (`A :: B`:
+match A, then B, never re-enter A; a placeholder spelling). All three belong to the parked atomic / backtracking
+discussion (predicates_future item 19); atomic-search is closed as a question. THE MANAGER'S RUN the same evening
+on libpcre2 10.46 (a time pattern, then the verb, then a callout "not late"; find-all): plain `9:30` -> `9`, `3`,
+`0`; the atomic group and (*PRUNE) both -> `0` (the search goes on to later starts; on this shape the two agree);
+(*SKIP) -> nothing on `9:30`, `8:15` on `9:30 8:15`, `8:15` and `7:00` on `8:15 9:30 7:00` (the search resumes
+AFTER the rejected match); (*COMMIT) -> nothing, and no later match either (`8:15 9:30 7:00` -> `8:15` only). So
+the verb that gives his item-14 words ("Now the pattern returns nothing", with later matches still found) is
+(*SKIP), which he also named on 2026-11-13 ("resume after a rejecting callout via a backtracking verb like
+(*SKIP)"); (*PRUNE) does not. `A :: B` as described is `(?>A)B`.
+
+**2026-11-17 OWNER RULING — polarity-rule (Frank, to session 138, evening).** Asked what the compiler reports when
+a test can never pass (`(h: <0)` on `\d+`: an ERROR in the draft) or can never fail (`NOT (h: <0)`: silent in
+revision 24), with the manager's lean (a warning in both directions, an error in neither). HIS WORDS:
+"polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()".
+RECORD: (1) a test that can never pass and a test that can never fail each get a WARNING naming the test; neither
+is an error by default (the draft's §5.2 error becomes a warning; no answer of any program changes). (2) NEW,
+general: WARNINGS BECOME ERRORS under a strictness setting declared in the source; `@config.strict()` is his
+example and a placeholder spelling (D193 add. 4). It joins the options-in-the-source idea (predicates_future item
+20: capability opt-ins declared in the source). MINE: the setting covers every warning the language has (the
+proposed warning on a bare condition over a looped label included), and its scope and a host's ability to impose
+it are the same questions item 20 already lists.
+ADDENDUM, same evening. To the manager's reading "the setting covers every warning the language has", HIS WORDS:
+""One reading of mine: the setting covers...": @options.strict(/no-fail/)". RECORD: strictness is SELECTIVE: the
+setting takes a pattern over WARNING NAMES, and the warnings whose names it matches become errors (his example
+selects a warning named `no-fail`); it sits in the same `@options` family as the capability opt-ins. Spelling a
+placeholder. CORRECTS the manager's reading (not "every warning" by default). MINE: so every warning needs a
+stable NAME (the draft already names its diagnostics: `empty.search`, `label.ambiguous`, `default.unused`,
+`anchor.whole`); "all warnings" is then the pattern that matches every name; the two polarity warnings need names.
+CORRECTIONS (2026-11-17, the manager; review round predspec242, findings B3 and C1). (1) The libpcre2 run quoted in
+the "OWNER on atomic-search" entry used the manager's OWN test for "not late" (a bare hour counted late from 10
+on) and the hour pattern `\d{1,2}`; the fragments it lists (`9`, `3`, `0`; `0`) are that toy rule's and do not
+reproduce under the draft's `late`; the entry's conclusion stands (the search goes on after an atomic group and
+after (*PRUNE); it resumes past the rejected match after (*SKIP); it ends after (*COMMIT)), and "(*SKIP), not
+(*PRUNE)" is THE MANAGER'S READING of his "(*prune) or similar": on his one text `9:30`, (*SKIP) and (*COMMIT)
+both give nothing. (2) In the label-versus-capture ADDENDUM, the manager's "(the end of each pass)" for where a
+label takes its value is SUPERSEDED: by after-loop-read's own example (the condition on the item, "a loop of (times
+after 9:30)") a condition inside the pass reads the labels set so far in that pass.
+
+**2026-11-17 OWNER — empty-pass confirmed (Frank, to session 138, evening).** Told (review r42 finding A1) that
+when a loop's body can match nothing PCRE runs and keeps one final EMPTY pass, so after `/(?:(?<h>\d)?)*/` on `3`
+the last pass is the empty one and the label `h` is unset, and that the draft follows PCRE there. HIS WORDS: ""A
+loop's empty last pass counts as a pass": makes sense as the entire rx is optional." RECORD: RULED: the empty
+last pass of a loop with a nullable body IS a pass (regex behaviour kept; no exception wanted).
+CORRECTION, minutes later, HIS WORDS: "It's not so much a ruling as an observation". So the entry above is NOT a
+ruling: empty-pass stays THE MANAGER'S READING (regex behaviour kept, by exception-rule), TOLD to the owner, with
+his OBSERVATION on it ("makes sense as the entire rx is optional"). The manager over-recorded; "RULED" in that
+entry is withdrawn.
+
+**2026-11-17 OWNER, on pass tests over nested loops (Frank, to session 138, evening).** Told (review r42 finding
+A2) that `some(...)`, `occurs` and an index on a label two loops deep read the OUTER loop's passes, each at its
+outermost view (`/(?:(?:(?<h>\d)?;)*,)*/` on `3;7;,`: `some((h: <5))` FAILS, the group's `h` being 7; the inner
+view is written by nesting the test on the group), as following from nested-pass. HIS WORDS: ""pass tests on a
+label two loops deep read the outer passes" this is how i expected." RECORD: the manager's reading stands with his
+confirmation that it is what he expected (his words; not asked as a ruling).
+
+**2026-11-17 OWNER RULING — operand-context (Frank, to session 138, evening).** Asked which constructs besides
+`\b` are refused on the right side of `&` because they look past the matched text (revision 24.3 §R.8's row;
+the manager's lean: all of `\B`, edge lookarounds, `\G`, `\K`). HIS WORDS: "operand-context: ^ $ should be
+redundant as the filter is anchored. Does that mean that interpretation is unnecessary? I would say at this point
+that any piece that might look outside is a compiler error. Then if we discover later we can relax it we can
+review."
+RECORD: (1) RULED: in a filter operand, ANY piece that MIGHT look outside the matched text is a COMPILE ERROR;
+deliberately conservative ("if we discover later we can relax it we can review"). (2) His question on `^` / `$`:
+since a filter must match the whole stretch, `^` and `$` at its edges are redundant; is the 11-15 interpretation
+("^...$ meant the start and end of the filtered condition") then needed at all? THE MANAGER'S ANSWER (mine, given
+to him): at the edges yes, redundant (the draft already warns there, `anchor.whole`); the interpretation is still
+needed for an anchor that is NOT at the edge (inside an alternation, or under multi-line mode after a newline
+inside the stretch), and it need not be a rule of its own: it is the consequence of ONE sentence, "the filter is
+matched against the stretch as if the stretch were the whole text"; the refusal in (1) is then the explicit
+exception to that sentence for pieces that would otherwise silently see nothing outside. MINE, the conservative
+reading of "might look outside" for the next revision: `\b` and `\B` where the position can be an edge of the
+operand, a lookbehind that can reach before its start, a lookahead that can reach past its end, and `\G` and `\K`
+(they speak about the search, not the string); pieces that stay inside the operand are fine.
+ADDENDUM, minutes later. To the manager's proposal (replace the separate anchor rule by ONE sentence: "the filter
+is matched against the stretch as if the stretch were the whole text"; `^` / `$` at the edges redundant, elsewhere
+the ends of the stretch as a consequence; the refusal of pieces that might look outside as the explicit exception),
+HIS WORDS: "operand-context: yes to that interpretation. Also, then the start of subject and end of subject need
+the same interpretation". RECORD: RULED: (1) the one-sentence interpretation replaces the 11-15 anchor wording as
+the rule (no answer changes); (2) the START-OF-SUBJECT and END-OF-SUBJECT assertions (`\A`, `\z`, `\Z`) in a
+filter take the same interpretation: the subject, to the filter, is the stretch. MINE: `\G` stays refused (it
+names the search's start, which the stretch has none of); the next revision states the sentence once in R.1.4 and
+derives the anchors and the subject assertions from it.
+
+**2026-11-17 OWNER RULING — join-order: the left side decides (Frank, to session 138, evening).** Asked, with
+revision 24.3's row and its `G & L` example (`11` SEARCHED: `11` if the left side decides, `1` if the right; 0 /
+1,008 / 1,197 of 1,365 differ; holding never differs) and the manager's lean (left). HIS WORDS: "join-order: left
+side decides. That's always how I thought of it. In concedes the logical purity that you seemed to be going for for
+the reality that regex is not pure." RECORD: RULED: in `P & Q` the LEFT side's order decides which match is
+reported and which labels come with it; `&` stays symmetric for whether a program holds. His remark: this gives up
+the logical purity (a symmetric `&`) for the reality that regex is not pure (order matters in regex). The LAW
+`A & B` = `A & (0: B)` holds for the reported match with the left side deciding; `&` distributes over `|` with the
+`|` on the left.
+NOTE on the join-order entry above (2026-11-17, the manager, confirmed by the owner the same evening: "This phone is
+autocorrecting my words to gibberish"; "Your interpretation was correct"): in his quoted sentence "In concedes"
+reads "It concedes"; in the documentation request quoted in predicates_future.md item 24, "makes inlet into" reads
+"makes it into". The quotes are kept as received.
+
+**2026-11-17 OWNER on what `hits` is (Frank, to session 138, evening; questions, not yet a ruling).** Asked
+hits-text, he first walked `1234` as a search re-entered by the test ("I'd expect it to grab all then fail lt ...
+then look back at subject 123 and repeat, but then subject 12 succeeds..."), which is the one-pattern occurrences
+model, not `hits`. Told that `hits(r)` finds with a plain search first and judges the fixed list after, HIS WORDS:
+"hits-text: so hits is atomic ( and anchored ?)". THE MANAGER'S ANSWER (mine), with a run on libpcre2 10.46 the
+same evening (whole values; "every number under 100"): the search as part of the pattern, each hit judged inside
+(`\A(?:.*?(?<n>\d+)(?C))*\D*\z`): `1234`, `12 34`, `12 345`, `x300 12` all HOLD (a long number is cut into short
+ones); the SAME loop inside an ATOMIC group, anchored at both ends of its text, the list judged after it
+(`\A(?>(?:.*?(?<n>\d+)(?C record))*\D*)\z(?C judge)`): `1234` FAILS with hits [`1234`], `12 34` HOLDS [`12`,
+`34`], `12 345` FAILS [`12`, `345`], `x300 12` FAILS [`300`, `12`]. So YES to both words: `hits(r)` is his
+one-pattern search made ATOMIC (nothing re-enters it once it has matched: hits-committed) and ANCHORED to the text
+it is applied to (it covers that text from end to end, so no outer search can shrink or shift it: hits-text). That
+gives `hits` a REGEX MODEL (an atomic group around the one-pattern search); a first try with only each hit atomic
+did NOT work (the lazy gap was re-entered), so the atomic group must enclose the whole loop.
+
+**2026-11-17 OWNER RULING — the hit list: atomic and anchored (hits-committed and hits-text together) (Frank, to
+session 138, evening).** Asked to confirm as one ruling: "`hits(r)` is the one-pattern search made atomic and
+anchored to the text it is applied to". HIS WORDS: "hits-text: yes but spelling to be reviewed with all other
+spellings." RECORD: RULED: (1) the named hit list is the one-pattern search (his lazy-gap loop) made ATOMIC: once it
+has matched, nothing re-enters it; its hits are those of a plain search, and tests on them judge a fixed list
+(hits-committed). (2) It is ANCHORED to the text it is applied to, covering it from end to end: a whole value; the
+match of the pattern to its left (the filter sentence); standing alone in a searched program, the whole subject
+(hits-text). (3) Its regex model is an atomic group around the whole one-pattern loop, anchored at both ends
+(run on libpcre2 in the entry above); reading the hits out as VALUES remains the captures-level part. (4) The
+SPELLING (`hits`, and every other spelling) is NOT settled: to be reviewed with all the other spellings. MINE: the
+standalone case needs no compile error (it reads the whole subject, as `\A...\z` would); the draft's noted
+exception "all hits of a search" becomes "has a regex model; values need the captures level".
+
+**2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world (Frank, to session 138,
+evening).** Asked what `0` names inside a nested place (the inner pattern's own match, or PCRE's group 0; the
+manager's lean: the inner match). HIS WORDS: "zero-place: oh boy, that was illustrative to use 0. But it might be
+useful so we can add it. It opens the can of worms of other numbers. For A & B: from the perspective of B, the
+subject is now whatever A matched. There is no outside subject (unless we allow context, etc). That's its whole
+world. So all numbers are labels of groups in that world. Also, not recommended to use group numbers as it's
+confusing on bound values you can't see".
+RECORD: (1) His `0:` of the morning was an illustration; it MAY be added, as useful. (2) THE PRINCIPLE: for `A & B`,
+B's subject is what A matched: "that's its whole world", with no outside subject unless context is one day allowed
+(the filter sentence, from B's side). (3) NUMBERS are labels of groups IN THAT WORLD: `0` is the whole match of the
+pattern it is written on, and any other number is that pattern's own group of that number: so zero-place is
+answered as the INNER reading, never PCRE's overall group 0. (4) Using group numbers is NOT RECOMMENDED: on a bound
+value the reader cannot see which group a number names. MINE: the law `A & B` = `A & (0: B)` then holds in every
+place; the draft already gives each literal its own group namespace (numbered groups do not leak), which is (3);
+(4) becomes a line in the documentation list (predicates_future item 24) and a candidate WARNING when a numbered
+label is read on a pattern that is not written at that place (a proposal, his to accept).
+
+**2026-11-17 OWNER RULING — pass-list-read (Frank, to session 138, evening).** Asked what `$h` reads after the
+pattern when h is set in a loop (the last pass's own value, or the list of passes), with the draft's example
+`/(?:(?<h>\d);)*(?<k>\d)/ & (k: == $h)` and the manager's lean (the last pass's own; the list an explicit request).
+HIS WORDS: "pass-list-read: unqualified it is the last pass as standard pcre. I would like a form that allows other
+passes but it should be clear that that is what is requested. Specifically, it should have different spelling. Eg
+Perl uses @x. An array of such values is its own type."
+RECORD: RULED: (1) UNQUALIFIED, a label's value is the LAST PASS's, "as standard pcre". (2) A form for the OTHER
+passes is wanted, and it must be VISIBLY a different request: a DIFFERENT SPELLING (his example: Perl's `@x`; a
+placeholder, to the spellings review). (3) An array of such values is ITS OWN TYPE (not a scalar that happens to
+hold several): so a comparison of the array with a single value is a type matter, not a silent choice of
+"some" or "every". MINE, to be checked by the next revision: under tonight's per-pass labels "the last pass" is the
+last pass's OWN value (unset if that pass set none), which equals standard PCRE's capture wherever the group takes
+part in every pass and differs only where it does not: a point to put to him when the revision shows it;
+`sorted` and `distinct` take the array form; the array type is the same type as the hit list's values.
+REOPENED for discussion, minutes later (pass-list-read, point (1) only). To the manager's flag (the last pass's OWN
+value against standard PCRE's carried capture, where the last pass skipped the group), HIS WORDS: "pass-list-read:
+let's discuss because I thought $x and x: did have different values. Then there at least 4 accesses. $x like pcre
+behavior / $x like x: behavior / $x as array / x:". RECORD: what an unqualified `$x` reads is UNDER DISCUSSION (the
+PCRE capture, or the label as `x:` reads it); points (2) and (3) of the entry above stand (the other passes by a
+visibly different spelling; an array is its own type). Background the manager brought to the discussion: the
+2026-11-14 ruling had `x:` = all iterations and `$x` = last iteration, which is where "different values" comes
+from; tonight's after-loop-read made `x:` after the pattern the last pass's own label.
+
+**2026-11-17 OWNER RULING — what an unqualified `$x` reads (closes the discussion reopened above) (Frank, to session
+138, evening).** After the table on `3;;` (the PCRE capture is `3`, carried; the label is unset) and his
+restatement ("So the variation is that $x does not preserve its value from the last time it was set"), asked: "Is
+that the variation you want for `$x`: the last pass's value, not preserved from earlier passes?" HIS WORDS: "I do
+want that. It makes sense and frankly pcre is wrong on this. I agree but! We need a way to get the pcre behavior
+even if ugly".
+RECORD: RULED: (1) an unqualified `$x` reads the LABEL, exactly as `x:` does: the last pass's own value, NOT
+preserved from an earlier pass when the last pass did not set the group. `$x` and `x:` never disagree. This is a
+deliberate difference from PCRE ("frankly pcre is wrong on this"), the same one as the per-pass label; it
+supersedes the literal reading of "as standard pcre" in the pass-list-read entry above (true wherever the group
+takes part in the last pass). (2) REQUIRED: a way to get PCRE's behaviour (the value carried from the last time the
+group was set) from the expression side, "even if ugly": a distinct, visibly different spelling, to the spellings
+review. (3) Unchanged from the entry above: the other passes by their own spelling (his example `@x`); an array
+is its own type. So THREE values, THREE spellings: the label (`$x`, `x:`), the carried capture (ugly form, to be
+spelled), the array of passes (to be spelled). MINE: inside rx text the backreference already is PCRE's carried
+capture; the per-pass label joins the draft's list of deliberate differences from regex with his words.
+
+**2026-11-17 OWNER, discussing before-and-inside (Frank, to session 138, evening; marked by him "discussion", not a
+ruling).** Asked what a label holds when one group of that name stands before a loop and another inside it
+(`/(?<h>\d)?(?:;(?<h>\d)?)*/`; the manager's lean: refuse, as PCRE refuses duplicate names). HIS WORDS:
+"before-and-inside: discussion: Looking purely at labels / h h* / The loop takes the last pass / h h / We take the
+last setting of h which in this case is unset / The array takes all h including the one outside the group".
+RECORD (his reasoning, at the level of LABELS, not groups): write the pattern as its labels in order (`h h*`);
+a loop reduces to its last pass (`h h`); the label is its LAST SETTING, and the last pass's "unset" counts as a
+setting, so here the label is unset; the ARRAY form takes every setting of the name in order, the one outside the
+loop included. The manager's restatement put to him (MINE): a label is a NAME; its value is the name's last
+setting along the match; each loop pass begins by unsetting the names its body can set; the array lists every
+setting of the name in order. Cases put to him to confirm: zero passes (the outside value stands); two groups of
+one name with no loop between them (the second, not taking part, makes no setting, so the first stands).
+DISCUSSION CONTINUED (before-and-inside; nothing ruled). HIS WORDS: "Discussion: Summary the labels bubble up. Last
+pass and last mention. "Two groups of one name with no loop between them". This one I might disagree. ? Is either
+an alternation or a 0-1 loop. The answer depends on which it is." Then, to the manager's pair of examples
+(`/(?<h>\d)?;(?<h>\d)?/` on `3;`; the separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7`): "Those examples are a
+touch different. In the first one, the ; matched then the second group is checked. In second example, there is no
+comma so the group is never checked". RECORD: his summary: LABELS BUBBLE UP: the last pass, and the last mention.
+His distinction: a group the match REACHED and found absent is not the same as a group it NEVER REACHED. The
+manager's restatement put to him (MINE, to be confirmed): a group whose START the match reaches but which does not
+match is a mention that leaves its name UNSET; a group whose start is never reached makes no mention; a loop pass
+still begins with its body's names unset (ruled earlier). Under it: `3;` in the first example gives h UNSET; the
+one-item list gives h = `7`; an alternation's untaken branch is unset whichever order the branches are written in
+(both starts are reached).
+DISCUSSION CONTINUED (nothing ruled). To the manager's "two sources of unset: a pass beginning, and a group reached
+but empty", HIS WORDS: "I think they are the same. Labels: (x)* Think of it like this: the loop is an outlet
+structure that sets up the loop the hits the labeled group each time. It's the entering of that group that causes
+the label to unset. The loop merely causes it to start repeatedly". RECORD: his proposal: ONE source: ENTERING a
+labelled group unsets its label (and matching sets it); a loop only makes the group be entered again. THE
+MANAGER'S COUNTER-CASE put to him (mine): when the group sits behind something else in the loop body, a pass can
+begin without the group being entered: the times list `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/` on `9:45,10,`: in the
+item `10` there is no colon, the minutes group is never entered, so under "entering only" `m` stays `45` and
+`((h, m): == (10, 45))` HOLDS, the stale tuple he rejected earlier the same evening (and the default `m = 00`
+would not fire). So either two sources, or one stated as "entering a loop pass enters everything in its body".
+DISCUSSION CONTINUED (nothing ruled). HIS WORDS: "These are good questions. I know more than I ever thought
+possible about rx logic. I think the hobgoblin here is imperative thinking again. It's not a loop. Like
+alternation, the "loop" is a branching of every possible number of passes simultaneously. Some set of those
+branches matches and those are continued from prioritized by greedy/lazy. Given that, once you enter that
+branching, any labels inside have different values depending upon which branches match. Practically speaking,
+"Loops" reset all labels inside them because you don't know which branch will eventually get chosen."
+RECORD: his DECLARATIVE account: a "loop" is a BRANCHING over every number of passes (as an alternation is a
+branching over its alternatives), the surviving branches ordered by greedy or lazy; a label inside takes its value
+from the branch chosen; so a loop RESETS the labels inside it. THE MANAGER'S GENERALISATION put to him (mine, hand
+worked, unrun): ONE rule for every branching (an alternation, an optional, a loop): entering it resets every
+label inside it; the branch taken then sets what it sets; in a sequence the last mention wins. Under it the
+per-pass label, the outermost view for nested loops and "reached and empty" all FOLLOW (a group is skipped in a
+pass only through a branching inside the body, which resets it). The one consequence he was asked about: the
+two-copy separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7` gives h UNSET (the loop is entered and takes its
+zero-pass branch), against his earlier "the group is never checked".
+
+**2026-11-17 OWNER RULING — branchings reset the labels inside them (closes the before-and-inside discussion)
+(Frank, to session 138, evening).** Asked: "Is "entering a branching resets every label inside it" the rule, with
+the one-item list coming out unset?" HIS WORDS: "Yes. Let's keep it".
+RECORD: RULED, on his declarative account above ("It's not a loop. Like alternation, the "loop" is a branching of
+every possible number of passes simultaneously ... "Loops" reset all labels inside them because you don't know
+which branch will eventually get chosen"): (1) a LABEL is a NAME; labels BUBBLE UP ("last pass and last mention").
+(2) ONE RULE for every BRANCHING (an alternation; an optional; a loop, which is a branching over its number of
+passes): ENTERING it resets every label inside it; the branch taken then sets what it sets; in a sequence the LAST
+MENTION wins. (3) ACCEPTED with it: the two-copy separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7` leaves h UNSET
+(the loop is entered and takes its zero-pass branch); a name used before a loop and inside it does not survive the
+loop. (4) The ARRAY form takes every setting of the name in order, the one outside the loop included (his words in
+the discussion). FOLLOWING FROM IT (the manager's derivations, hand worked, for the next revision to RUN): the
+per-pass label, "reached and empty", the outermost view for nested loops, the alternation-in-a-loop table and the
+times-list `m = 00` table all follow from (2) and need no rule of their own; before-and-inside is DISSOLVED; two
+groups of one name are not an error (a deliberate difference from PCRE, which refuses duplicate names by default
+and otherwise reads the first group set).
+
+**2026-11-17 OWNER RULING — pass-start-read (Frank, to session 138, evening).** Revision 24.4 found the one place
+where the one label rule and the old per-pass rule part: a condition written in a loop body BEFORE its label's
+group (`/(?:${c}(?<h>\d);)*/`, c := NOT (h: >=5), on `7;3;`: the one rule FAILS, the condition of the second pass
+reading the first pass's 7; the old rule HOLDS). He asked whether it is because the reference stands before the
+group (yes: after the group it reads the current pass's value), restated the program (corrected by the manager to
+"fail if anything besides the LAST matches C": each item is tested by the pass after it), and asked to see a
+sorted list matched by comparing with the previous item. Shown, RUN on libpcre2 10.46 with the condition as a
+callout: `/(?:(?=(?<n>\d))(?C)(?<h>\d);)*/`, the callout "h unset, or n >= h": `3;4;7;` and `3;3;9;` HOLD, `3;7;4;`
+FAILS (SEARCHED `3;7;`), `9;1;` FAILS (SEARCHED `9;`), `7;` and the empty text HOLD; in the draft's forms (the
+manager's spelling, not run through the model): c := when((h: /\d/), (n: >= $h)). Asked: keep the one rule's
+answer? HIS WORDS: "pass-start-read: yes keep it".
+RECORD: RULED: inside a loop body a condition reads the labels as they stand AT THE POINT WHERE IT IS WRITTEN:
+before its label's group, the previous pass's value (unset in the first pass); after it, the current pass's. No
+"a pass begins" rule is added: the one rule (a branching resets the labels inside it on ENTRY; within the branch
+taken the copies of the body are in sequence; the last mention wins) stands alone. The sorted-list pattern relies
+also on a label set inside a lookahead being visible to the condition (the draft's reading, not ruled).
+
+**2026-11-17 OWNER RULING — shared-label: keep the compile error (Frank, to session 138, evening).** Asked what a
+label named on both sides of `&` holds (revision 24.4's row: `/(?<h>\d)\d/ & /\d(?<h>\d)/ & (h: <2)`; the left
+side's, the last mention, or the error; the manager's lean: keep the error). HIS WORDS: "shared-label: keep the
+compiler error. It does cause problems for library writers. It's the typical macro variable problem".
+RECORD: RULED: one label name on both sides of `&` is a COMPILE ERROR (the draft's existing rule stands). NOTED by
+him as a COST: it is the macro-variable (hygiene) problem for LIBRARY writers: a library pattern's label names can
+collide with the names of the pattern it is combined with, and the user cannot see the library's names. Filed as
+predicates_future.md item 25 (label hygiene for libraries); it meets the rx-module note's open question on how a
+part's labels reach the whole.
+
+**2026-11-17 OWNER RULING — array-slot: only what was set (Frank, to session 138, evening).** Asked whether a reset
+leaves an empty place in the array form (revision 24.4's row: `/(?<h>\d)?(?:;(?<h>\d)?)*/` on `7;;3;`: [`7`, `3`]
+or [`7`, -, `3`, -]; the manager's lean: only what was set; positions, when wanted, by labelling the whole item,
+which is always set and possibly empty). HIS WORDS: "array-slot: only what was set. As you say, someone could get
+the empty values." RECORD: RULED: the array form is the list of the name's SETTINGS, in order; a reset contributes
+nothing; its length is the number of times the name was set. Empty values are available by writing the pattern so
+that the labelled group is always set (possibly to the empty text). CORRECTS the manager's hand tables of the same
+evening that showed "an empty slot" in an array.
+
+**2026-11-17 OWNER — a principle for warnings (Frank, to session 138, evening).** Asking for the list of all
+warnings, HIS WORDS: "What are all the warning items? Warnings should be structural or definable by a library
+option." RECORD: PRINCIPLE: every warning is either STRUCTURAL (decided from the structure of the program) or
+DEFINABLE BY A LIBRARY through an option; no third kind (no warning hard-wired in the compiler for one library
+form's misuse). The manager's first sorting of revision 24.4's warning table against it (mine, given to him): all
+eleven named warnings and both proposals are structural except `compare.width`, which is about one library form
+and so belongs with the library that provides it (predicates_future item 12: a warning a macro raises about its
+own arguments); the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a
+condition reads a label that can be unset where it is read, with no default) seen under the one label rule.
+
+**2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path (Frank, to
+session 138, evening).** Shown the warning table of revision 24.4 sorted as structural or library, and asked
+whether that matches his principle and whether `compare.width` should move to the library. HIS WORDS: "Warnings:
+yes, that is my definition of structural and these warnings are good. Naming: library warnings/errors should be
+id'd by the library path if a width macro in a compare library had a warning it should be
+compare.width.variable_width The suppression could be @config.warn.off(/compare\.width\..*/) Or with concat
+@config.warn.off("compare.width."¥wildcard)".
+RECORD: RULED: (1) "structural" is as the manager sorted it (decided from the program's own structure), and the
+listed warnings are good. (2) A LIBRARY's warnings and errors are IDENTIFIED BY THE LIBRARY PATH: the library, the
+element, then the warning (his example: a width macro in a compare library -> `compare.width.variable_width`). So
+`compare.width` as a compiler-built warning becomes a warning the compare library defines, under that naming. (3)
+Suppression selects by a pattern over those names (his examples, placeholders for the spellings review:
+`@config.warn.off(/compare\.width\..*/)`, or the name built with a concatenation and a wildcard,
+`"compare.width." ¥ wildcard`; `¥` stands for a sequence operator, as `€` did in the rx-module proposal). MINE:
+the structural warnings keep short compiler-side names (`test.never`, `label.unset`); a library's names can never
+collide with them if the first component is the library's own path: to state in the next revision; the mechanism
+by which a library DEFINES a warning is predicates_future item 12; `compare.looped` and the manager's withdrawn
+looped-warning go to the next review as told.
+ADDENDUM, minutes later, HIS WORDS: "1. if there was a warning like blah.unused, the library could define
+mod.fn.unused and both could be ignored. Not sure if that's helpful or dangerous. 2. compiler errors and warnings
+are prefixed with "pcrec."". RECORD: (2) RULED: the compiler's own errors and warnings carry the prefix `pcrec.`
+(so `pcrec.test.never`, `pcrec.label.unset`); a library's carry its own path; `pcrec` is therefore not available as
+a library's first path component. (1) An OBSERVATION, not ruled: a pattern over names can select a compiler warning
+and a library's warning of the same last component together ("helpful or dangerous"). The manager's answer given
+to him (mine): helpful for making a whole kind strict, risky for switching things OFF (a broad pattern also
+silences warnings the user never saw, and ones added later); the draft's existing whole-name matching and
+`warn.unused` limit accidents; a listing of what a selector currently matches would remove the rest.
+
+**2026-11-17 OWNER RULING — empty-search-error: a warning (Frank, to session 138, evening).** Asked whether a
+nullable final pattern SEARCHED in a predicate program is a compile error (the draft) or behaves as regex does with
+the warning (revision 24.4's row: `/(?<h>\d*)/ & NOT (h: <5)`; the manager's lean: the warning everywhere). HIS
+WORDS: "empty-search-error: warning". RECORD: RULED: a searched pattern that can match nothing behaves as PCRE does
+(its empty matches) in a predicate program as for a plain pattern, with the WARNING (`pcrec.empty.search` under
+the naming ruled the same evening); an error only where a strictness setting selects it. The draft's error for
+predicate programs is withdrawn.
+
+**2026-11-17 OWNER RULING — the three remaining error-or-warning candidates (Frank, to session 138, evening).**
+Asked together, each with the manager's lean: label-twice-warn (keep the 11-16 error), min-values (allow
+`occurrences(.., min = n)` to mean at least n hits, no warning), dollar-condition (keep the error for `$x & <5`
+written where `(x: <5)` is meant). HIS WORDS: "Agree with all three. But for: $x & <5 How is that not an error?$x is
+not a pattern but a match". RECORD: RULED: (1) a label named twice in one condition stays an ERROR (label-twice,
+11-16, stands). (2) `min = n` on a search means AT LEAST n hits for any n; the draft's error for n other than 0 or
+1 is withdrawn; no warning. (3) `$x & S` in a condition position stays an ERROR, and his reason is the type: `$x`
+is a MATCH (a value), not a pattern, so it cannot stand where a condition on a label is expected. With
+empty-search-error (a warning, ruled just before) all four candidates of revision 24.4's list are settled.
+
+**2026-11-17 OWNER — the numbered-label warning accepted (Frank, to session 138, evening).** The manager's proposal
+(from his "not recommended to use group numbers as it's confusing on bound values you can't see"): a compiler
+WARNING when a condition or a `$` reads a label by NUMBER on a pattern that is not written at that place (a bound
+name or an imported element): `t := /(\d\d?):(\d\d)/` ... `t & (1: <13)` warns; the same test on the inline
+literal does not; `0` (the whole match) is exempt; structural; an error only under a strictness setting; a
+compiler warning, so named under `pcrec.` (the name, e.g. `pcrec.label.numbered`, to the spellings review). HIS
+WORDS: "Agree. Good warning". RECORD: ADOPTED.
+
+**2026-11-17 OWNER, three points on labels (Frank, to session 138, evening).** HIS WORDS: "My issues: 1. did we
+decide on a way to set labels in predicate language? And what does it mean? 2. setting labels is just the label
+using the group-label-not-capture syntax 3. if A & B & (1: blah) which A and B are rx literals, do we define the
+groups as coming from on B? Makes sense".
+THE MANAGER'S ANSWERS (from the draft, cited): (1) Yes, two spellings of ONE thing exist: inside pattern text a
+named group; in the expression layer the labelled part `[x = R]`, which the draft defines as that same group
+(§3.1: a one-entry labelled array IS the rx `(?<x>R)`). Its MEANING, after tonight: the label is the NAME for
+the text that part matched on the path taken, under the one label rule; TESTING it is free at the default level;
+reading its text OUT needs the `captures` level; `capture(x)` (§5.3) is the library macro for a caller-visible
+capture. Which single form the rx module offers for it is that note's open question (label-mark). (2) AGREED and
+recorded as his: setting a label is the group form read as a LABEL, not as a capture; the capture is regex's and
+exists only inside pattern text. (3) RECORD, his position ("Makes sense"), the manager agreeing: in `A & B & (1:
+...)` the NUMBER names a group of B, the pattern the condition is written on (the nearest pattern to its left);
+this is zero-place's rule ("numbers are labels of groups in that world") applied to a chain; so numbers never
+collide across `&` (every pattern has its own group 1) and are not subject to the shared-label error; a group of
+A is tested by writing the condition next to A, or by naming it.
+
+**2026-11-17 OWNER — label numbers: try them (Frank, to session 138, evening).** After "What do group numbers refer
+to? Labels or capture groups? Those can be different. Can you $1" (the manager: by zero-place a number is another
+NAME for a group's label, read by the label rule; the capture is regex's and differs where a named label and its
+capture differ; `$1` could read label 1 on the same terms as a name, tied to the pattern it is written on, never a
+global), HIS WORDS: "Let's see how label numbers work and try it. Does (?: ) have a label number? All () forms or
+just groups?" RECORD: label numbers are to be TRIED (a trial in the next revision, not a final ruling); `$1` on
+the manager's terms is part of the trial. THE MANAGER'S ANSWER to his question (mine; PCRE's numbering kept, by
+exception-rule): only CAPTURING groups get a number, plain `( )` and named `(?<n> )` alike, counted by their
+opening parenthesis from left to right; `(?: )`, lookarounds, atomic groups and the other `(?` forms get none; a
+named group has both its name and its number (`(a)(?:b)(?<n>c)(?=d)((d)e)` on `abcde`: 1 = `a`, 2 = `c` (also n),
+3 = `de`, 4 = `d`, 0 = the whole match; run on a regex engine); numbers are local to each pattern literal (a hole
+or a bound pattern keeps its own numbering and does not shift the outer one's).
+ADDENDUM (the label-number trial), HIS WORDS: "So the error for conditions with the same name twice would apply to
+n and 2 above". RECORD: his consequence, agreed by the manager: a group's NAME and its NUMBER are two names of ONE
+label, so a condition that names both (`(n: ..., 2: ...)` on `(a)(?:b)(?<n>c)...`) names a label twice and is the
+label-twice ERROR (ruled 11-16, kept 11-17). The compiler knows the aliasing from the pattern alone.
+
+**2026-11-17 OWNER RULINGS — the rx module: sequence-precedence and sequence-operator (Frank, to session 138,
+evening).** From docs/design/rx_module.md's question list. HIS WORDS: "sequence-precedence: binds tighter than &
+and | / sequence-operator: is there a reason why not? I expect rx construction and concatenation is common enough
+there. I'd do operator-less if I thought I could get away with it A B but I don't think it would work in the
+grammar."
+RECORD: RULED: (1) the SEQUENCE operator ("A followed by B") binds TIGHTER than `&` and `|` (the order pattern text
+already has, D196: sequence, then `&`, then `|`): `"x" SEQ "1" | "2"` is (x then 1) or 2; `A SEQ B & c` is (A then
+B) with the condition c on the whole; a condition on B alone is written `A SEQ (B & c)`. (2) There IS a sequence
+operator (the manager's 2026-11-13 lean against one is withdrawn; its reasons were the manager's: the layers
+argument no longer holds, since the expression language already writes patterns; the `+` overload is avoided by
+not using `+`). Its SPELLING goes to the spellings review (`€`, `¥`, `::` have appeared as his placeholders, `::`
+with a different meaning, the no-re-entry sequence). (3) JUXTAPOSITION (`A B`, no mark) is what he would prefer
+and judges unworkable in the grammar; the manager agrees and gives the collisions (mine): a parenthesised
+condition after a pattern (`A (h: <5)`), a call's argument list (`f (x)`), array entries, a prefix `!`, and two
+bindings on consecutive lines would each read as a sequence.
+
+**2026-11-17 OWNER RULING — sequence-reading: splice; and the hole reopened (Frank, to session 138, evening).**
+Asked whether a part of a sequence can see the text next to it (the note's example `wb SEQ digits SEQ wb` with wb
+:= `/\b/`: a compile error under the hole rule, `\b\d+\b` if spliced; the manager's lean: splice, and let holes
+follow). HIS WORDS: "sequence-reading: splice. But opening up the hole again, what was our rationale? I'm wondering
+if it would be ok if we declared that /xxx${/foo/}yyy/ was /xxx(?:foo)yyy/. Do we need the same logic for splice et
+al ie an rx is viewed as a whole. That way a naive optional(rx) := /${}?/ would operate on the whole rx".
+RECORD: (1) RULED: the sequence operator SPLICES: "A followed by B" is regex concatenation, an assertion at a
+part's edge sees its neighbours. (2) ASKED BY HIM, not yet ruled (slug hole-reading): the rationale of the hole
+rule, and whether a hole can simply BE the inserted pattern in a non-capturing group (`/xxx${/foo/}yyy/` =
+`/xxx(?:foo)yyy/`), with the same "an rx is viewed as a WHOLE" for the sequence operator, so that
+`optional(rx) := /${rx}?/` applies to the whole rx. THE MANAGER'S ANSWER given to him (from the record): the
+rationale is the 2026-11-14 Q1 ruling ("1. agree" to a review's proposal): foundation = string sets; in a SET
+POSITION, "a hole's set" among them, an edge assertion is a compile error; values are context-free. The draft
+ALREADY makes a hole one atom with its own flags and its own group numbering (its text says a hand splice must
+write `(?:x)`), so `/${rx}?/` already applies to the whole rx; his proposal changes ONE thing: the edge-assertion
+error for holes goes, and a hole (like a sequence part) becomes a PATTERN position, matched in place; the SET
+positions keep the rule (a filter operand, a label condition, a compile-time set), where tonight's "any piece that
+might look outside is a compiler error" is the same rule.
+
+**2026-11-17 OWNER RULING — hole-reading (Frank, to session 138, evening).** Asked: "declare that a hole is the
+inserted pattern as a whole, in a non-capturing group, matched in place, with holes leaving the list of set
+positions and the dead-assertion case becoming a warning?" HIS WORDS: "hole-reading: agree and explicitly then,
+assertions become ok to cross the border". RECORD: RULED: (1) a HOLE is the inserted pattern as a WHOLE, in a
+non-capturing group, matched where it stands (`/xxx${/foo/}yyy/` = `/xxx(?:foo)yyy/`; the inserted pattern keeps
+its own flags and its own group numbering, as before); a quantifier after a hole applies to the whole inserted
+pattern. (2) EXPLICITLY: an assertion at the inserted pattern's edge may CROSS THE BORDER: it reads the text of
+its neighbours, as in the written-out regex. The EDGE-ASSERTION ERROR for holes (the draft's L8) is WITHDRAWN. (3)
+The sequence operator and a hole are one reading (pattern positions). (4) NARROWS the 2026-11-14 Q1 ruling: "a
+hole's set" leaves its list of set positions; the string-set rule and its error stay for the right side of `&`, a
+condition on a label, a filter body and a compile-time set (2026-11-17: "any piece that might look outside is a
+compiler error"). (5) An inserted pattern's edge assertion that can never hold beside its neighbour (the draft's
+`/x${num}/`, num := `/\b\d+\b/`) is a structural WARNING of the can-never-match kind, not an error (the manager's
+proposal inside the question he agreed to).
+
+**2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error (Frank, to session 138, evening; he
+writes "propose"; two points put back to him before it is recorded as ruled).** Asked label-flow (flat, nested, or
+flat with the path available). HIS WORDS: "label-flow: 1. propose: it is an error to ambigously reference a label.
+so if A & B & (h: blah) and A and B both use label h, it is an error. this is different than "its an error for
+labels of the same name to exist at all in A & B" 2. A . B & (h: blah) (concatenation. i don't have your dot) if A
+and B have h, the condition is ambigous and an error. 3. [aa = A] . B & (aa.h: blah). ok. 4. A . B & (A.h: blah)
+error. A is a binding not a label and could be ambigous if its used multiple times in an expression".
+RECORD (his proposal): (1) labels are reached FLAT by name; the error is an AMBIGUOUS REFERENCE (a name that more
+than one composed pattern sets), at the place it is referenced, across `&` and across the sequence operator alike;
+two patterns merely HAVING a label of the same name is not an error. This REVISES the shared-label ruling of the
+same evening from an error of existence to an error of reference (which also eases the library hygiene problem:
+a collision nobody references is harmless). (2) A part's labels are reached through a LABEL given to the part
+(`[aa = A]`, then `aa.h`). (3) A BINDING's name is not a path (`A.h` is an error): a binding can be used several
+times in one expression. PUT BACK TO HIM by the manager (mine) before recording as ruled: (a) inside ONE pattern
+literal, two groups of one name are still ONE label (the one label rule: last mention; the separated-list
+example); the ambiguity is between labels of DIFFERENT composed patterns; (b) the SAME bound pattern used twice in
+one expression (`(item SEQ ",")* SEQ item`): one label (last mention, the array takes all) or an ambiguous
+reference.
+
+**2026-11-17 OWNER RULING — label-flow (closes the proposal above) (Frank, to session 138, evening).** To the
+manager's two points. HIS WORDS: "a. yes. a label from an rx is whatever label is surfaced by that rx. b. thats a
+good point but list here is one rx so exposes one h. i adjust my rules to be such that a compose and a literal rx
+have the same label behavior".
+RECORD: RULED: (1) A label from a pattern is whatever label that pattern SURFACES. (2) A COMPOSED pattern (the
+sequence operator, a hole, a loop of a part) and a LITERAL have the SAME label behaviour: the one label rule (a
+label is a name; a branching resets the labels inside it; the last mention wins; the array takes every setting).
+So `list := (item SEQ ",")* SEQ item` surfaces ONE `h`, as the one-literal list does. (3) HIS ADJUSTMENT withdraws
+point 2 of his proposal: across the SEQUENCE operator a name set by both parts is not an ambiguous reference; it
+is one label, last mention, exactly as in a literal. (4) STANDING from the proposal: across `&`, a name that both
+sides surface is an AMBIGUOUS REFERENCE and an error where it is referenced (not an error for merely existing:
+the shared-label ruling so revised); a part's own label is reached through a label given to the part (`[aa = A]`,
+`aa.h`); a binding's name is not a path. THE MANAGER'S NOTE for the next revision and the documentation list
+(mine): in a sequence two parts from different authors that both surface `h` merge silently (last mention), as
+two groups of one name do in a literal; labelling the parts is how one of them is picked.
+ADDENDUM (label-flow), HIS WORDS: "A · B & (h: …): yes, i adjust to say its the last mention. an interesting point
+is if its the last match. some A and B could be written such that the h in A is the last match". RECORD: CONFIRMED:
+across the sequence operator a name both parts surface is one label, the LAST MENTION. His observation: "last
+mention" is not "last match": A's `h` can be the last one that actually matched. THE MANAGER'S ANSWER (mine, from
+rulings already made): last mention is the last in the pattern's own order along the path taken, whatever
+matched and wherever in the text it lies: (i) when B's `h` sits in an optional part that is skipped, B's branching
+was entered and reset the name, so `h` is UNSET, not A's value (the two-copy separated list on one item, accepted
+by him earlier the same evening); (ii) when a lookaround makes A's `h` name text that lies after B's, B's is still
+the label. To keep A's value in such a case its part is labelled (`[aa = A]`, `aa.h`), or the array form is used.
+CONFIRMED by him ("yes, i agree with those points"): last mention is not last match, with the two cases and the
+two ways to keep A's value as the manager stated them. Added to predicates_future.md item 24 (entry 15).
+
+**2026-11-17 OWNER, discussing count-argument (the rx module) (Frank, to session 138, evening; discussion, nothing
+ruled).** Asked what a count means when its pattern has several members (the note's `rx.digits(n, n)`, n := `[2,
+4]`). HIS WORDS: "please clarify: an array of rx is an rx and i thought [2,4] would be an array of two rx. an array
+of rx is interpreted as an alternation of the member so this would be 2|4. an enumeration of that would be 2
+elements, 2 and 4. what am i missing here?" (the manager: nothing; the question is whether a construct given an
+alternation where it expects one value DISTRIBUTES over it); then: "it hadn't occured to me to define this this
+way but it is interesting. what does the n,n option then mean? the cartesian?" THE MANAGER'S ANSWER (mine, hand
+reasoning, unrun): yes: `n` is a pattern, and each mention of a pattern stands for all its members independently
+(as `n SEQ n` matches `24` and `42`), so two arguments each given `2|4` range over the PAIRS: (2,2), (2,4), (4,2),
+(4,4); the pair with min above max matches nothing; together `\d{2}|\d{2,4}|\d{4}`, which as a set of strings is
+two to four digits. So the note's "union" reading (`\d{2}|\d{4}`) silently assumed the SAME member in both
+places, which a pattern mentioned twice does not give; "exactly n" for a several-member n needs ONE argument (a
+one-argument exact-count form), which then distributes to `\d{2}|\d{4}`.
+
+**2026-11-17 OWNER — the rx module: one repeat construct; plurals as conveniences (Frank, to session 138,
+evening).** After the count-argument discussion (a construct given an alternation where it expects one value
+distributes over it, once per mention; two count arguments range over pairs; a count must have a finite
+enumeration; unbounded = no maximum) and his questions "how would infinity or \d+ look?" and "you have digits. then
+there are alphanumerics and other plurals. do we have this behavior for all or a wrapper over digit ?", the manager
+proposed: singular character constructs (`rx.digit`, `rx.alnum`, ...), ONE repeat construct that does all the
+counting for any pattern (exact with one argument, a range with min and max, no maximum = unbounded), plurals only
+as one-line library definitions over it. HIS WORDS: "i agree with repeat. i agree with plurals, why not. can i name
+the item inside the repeat with [ a = rx.digit ]". RECORD: AGREED: one repeat construct carries the counting;
+plurals exist as conveniences defined through it. The count rules of the discussion (distribution per mention; a
+finite count; no maximum for unbounded) are the manager's proposal he engaged with and did not object to: to be
+written as THE DRAFT'S READING and confirmed. His question answered by the manager: yes, `rx.repeat([a = rx.digit],
+min = 1)` is `(?:(?<a>\d))+`: by the one label rule `a` after the repeat is the last item, the array form holds
+every item, and a condition on the labelled item inside the repeat is judged for every item; labelling the REPEAT
+instead (`[run = rx.repeat(rx.digit, min = 1)]`) names the whole run.
+
+**2026-11-17 OWNER RULING — the count proposal (the rx module's count-argument) (Frank, to session 138,
+evening).** HIS WORDS: "i agree with the count proposal. i'm curious how the repeat functionality would work
+however. is it a primative?" RECORD: RULED: (1) a construct given an ALTERNATION where it expects a single value
+DISTRIBUTES over it, once per mention (`n := [2, 4]`: an exact count of n is `\d{2}|\d{4}`, in the alternation's
+order; two count arguments each given n range over the pairs); (2) a count must have a FINITE enumeration (one
+member is a constant; an unbounded count pattern is a compile error); (3) an unbounded repeat is written by giving
+NO MAXIMUM. count-argument is closed. His question (is repeat a primitive) answered by the manager from the draft:
+see the next lines of the chat record; in short NOT a primitive: a library definition over a hole in the
+quantifier position.
+
+**2026-11-17 OWNER RULING — two kinds of hole; illegal combinations are removed (Frank, to session 138, evening).**
+He pressed the manager's account of `repeat` ("really? because 2|4 is an rx so wouldn't it look like
+/(x){2|4,2|4}/"): under the hole ruling of the same evening taken literally, yes. The manager's answer: the draft
+has TWO kinds of hole by position: where a pattern can stand, the inserted pattern as a whole in a non-capturing
+group, matched in place (hole-reading); where only a piece of pattern syntax can stand (inside a count's braces, a
+group's name, a character class), a compile-time VALUE, a finite set of plain strings, written in once per member
+(the count ruling). HIS WORDS: "if thats what it is then ok. i visualize ${} as a string insert but in this case it
+is not, it is a context aware rx insert. then the solution to the illegal version is to remove illegal versions
+from the cartesion product."
+RECORD: RULED: (1) both kinds of hole stand: `${}` is a CONTEXT-AWARE insert, not a string insert: in a pattern
+position it inserts a pattern as a whole; in a count, group-name or class position it inserts a value and the
+literal is instantiated per member. (2) When several holes each hold several members the literal stands for the
+CARTESIAN PRODUCT of the combinations, and a combination that is not a legal pattern (a count with its minimum
+above its maximum) is REMOVED from the product (not a compile error of the whole). `repeat` is therefore a
+library definition, not a primitive. MINE, proposed, not ruled: a structural warning when a combination is
+removed, and the existing can-never-match warning when all of them are.
+ADDENDUM, HIS WORDS: "and its more than two kinds. the kinds are all the various places it can be inserted".
+RECORD: CORRECTS "two kinds of hole": there is ONE insert whose meaning is given by its POSITION, and there are as
+many kinds as positions (the draft names: an atom, a character class, a count, a group name). MINE, for the next
+revision: ONE declared table of hole positions: per position, what it accepts (a pattern; a finite set of plain
+strings; a number; a name), how one member is written in, what several members mean (the cartesian product, by
+the ruling above), and what makes a combination illegal there (removed). A position with no row is a compile
+error.
+
+**2026-11-17 OWNER RULING — quantifier operators (the rx module's last question) (Frank, to session 138,
+evening).** Asked whether to have postfix quantifier operators beside the named repeat, with the manager's lean
+(`?`, `*`, `+`, always greedy; lazy and counted repeats by the named construct). HIS WORDS: "so the two argument
+form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? *
+*? ? ??". RECORD: RULED: SIX postfix quantifier operators on a pattern: `+`, `+?`, `*`, `*?`, `?`, `??`, each
+meaning the regex quantifier of that spelling applied to the pattern as a whole (grouped), the lazy forms
+included, with regex's own behaviour (so `(X)??` prefers nothing, then X's own first choice, as PCRE does; the
+note's lazy-binding difference from a plain lazy quantifier is regex behaving as regex). The SAME marks with two
+operands are arithmetic: a binary `+` is addition; the postfix form has no right operand. `?` is thereby the
+optional, and a conditional is spelled otherwise (spellings review). NOT in his list, so by the named repeat
+construct only (the manager's reading): possessive forms and counts in braces. MINE, for the next revision: the
+parse rule (after `+` or `*`, a token that can begin an operand makes it binary, otherwise it is postfix; the
+sequence mark is explicit, so `A+ SEQ B` is unambiguous), and the message when a binary `+` is given patterns ("a
+sum of two patterns: did you mean A+ followed by B?").
+ADDENDUM (quantifier operators), HIS WORDS: "lets include the possessive forms but the brace counts are repeat.
+"did you mean A+ followed by B" A B isn't legal so its the addition form." RECORD: RULED: (1) the POSSESSIVE forms
+are included: NINE postfix quantifier operators, `+ +? ++`, `* *? *+`, `? ?? ?+`, each regex's own. (2) COUNTS IN
+BRACES are not operators: a counted repeat is the named `repeat` construct. (3) `A + B` is simply ADDITION:
+since a sequence needs its explicit mark, "A+ then B" cannot be written as `A + B`, so there is nothing to guess
+and no "did you mean" message of the manager's kind; adding two patterns is an ordinary type error. MINE, for the
+next revision: the operators are read longest first (`++` is the possessive, not two pluses), stated with one
+example each.
+ADDENDUM (quantifier operators: precedence), HIS WORDS: "also, operator precedence. i'm thinking fairly tight with
+parenthesis otherwise. right?" RECORD: RULED (the manager agreeing): a postfix quantifier operator binds TIGHTLY,
+to the single operand before it (a name, a literal, a call, a labelled part, a parenthesised expression), as a
+regex quantifier binds to the atom before it; anything larger is parenthesised. The order, tightest first: a
+postfix quantifier; the sequence operator; `&`; `|` (the last three as ruled the same evening). So `A SEQ B+` is A
+then one or more B; `(A SEQ B)+` repeats the pair; `rx.digit+` is the digit repeated.
+
+**2026-11-18 MANAGER CORRECTION — "the right side of `&`" was the manager's slip (session 139; no owner words in
+this entry).** Review r43 (the critic round on revision 25) found that this record twice restates the set positions
+as "the right side of `&`" (in the hole-reading entry of 2026-11-17, and in one earlier restatement of the
+revision 24.3 row). Neither is the owner's wording. What he ruled and agreed to: the 2026-11-14 string-set ruling
+says "an `&` operand", and the locked rule is that BOTH operands of `&` are filter roles (the operator stays
+symmetric); the hole-reading question he answered said only that holes leave the list of set positions. The
+record's "right side" is therefore read as "an `&` operand" everywhere, and the next revision of the draft writes
+it so. NOT settled by this correction, and asked of the owner as **hole-in-filter**: a hole whose inserted pattern
+carries an edge assertion, standing INSIDE a filter operand (is the operand classified after expansion, so the
+string-set error applies, or does the hole's assertion cross the border there too).
+
+**2026-11-18 OWNER RULING — number-names (Frank, to session 139, morning).** ASKED AS A RULING (the /q
+presentation, with the runs of revision 25.1's section R.8 row: the sequence, the hole, the alternation and the
+shared-name witnesses, each whole / searched / find-all): on a pattern built from parts, which group does a number
+(`(1: <5)`, `$1`) name? The three readings shown: written-out numbering, per-literal numbering, an error. THE
+MANAGER'S LEANING, as put to him: "the conservative cut. A number is allowed only where nothing can be in doubt:
+the condition's pattern is one written literal, and the group it points at has no shared name. There it means
+exactly what regex means. Everywhere else it is a compile error saying 'name the group': on a sequence, an
+inserted pattern, an alternation of patterns, a repeat's operand, or an `&` chain with more than one pattern."
+HIS WORDS: "number-names: exactly. Only when there is no ambiguity." RECORD: RULED. The rule is his second
+sentence: a number names a group only when there is no ambiguity; the leaning's list is the first statement of
+where there is none (one written literal) and where there is (every composed form listed, and more than one
+pattern operand in an `&` chain), refused at compile time with a message that says to name the group.
+THE MANAGER'S READING (mine, not his words; to be checked by the next revision): the sub-point asked with it, a
+number on a group whose NAME is shared inside one literal (`/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)`, where "the label
+h" and "group 1's own capture" differ on 7 of 364 texts whole and 277 searched), falls under "only when there is
+no ambiguity" and is REFUSED too. He answered the question as a whole and did not speak to the sub-point
+separately. CLOSES: his position of 2026-11-17 ("do we define the groups as coming from on B? Makes sense") is now
+this ruling; the manager's "nearest pattern to its left" and "numbers are not subject to the ambiguous-reference
+error" are WITHDRAWN (review r43 group A); "label numbers: try them" is answered for the composed forms. Relaxing
+any refused form later changes no existing answer.
+
+**2026-11-18 OWNER RULING, addendum to number-names — zero is the exception (Frank, to session 139, morning).**
+HIS WORDS: "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is
+composed." RECORD: RULED (an addendum he volunteered to the question ruled just above). The number 0 is never
+refused: on one written literal and on every composed form (a sequence, an inserted pattern, an alternation of
+patterns, a repeat's operand) it names the entire match of the rx. Every other number keeps the rule above (only
+when there is no ambiguity). THE MANAGER'S READINGS (mine, to be checked by the next revision): (1) in an `&`
+chain with more than one pattern operand, 0 is still allowed, since every operand of the chain holds on the one
+same matched stretch, so "the entire match" is one thing there too; (2) inside a loop body or a hit-list argument,
+0 written in that part's own condition is that part's own match for the current pass or hit, by "the entire match
+of the rx" read for the rx the condition is attached to; he spoke to neither.
+
+**2026-11-18 OWNER RULING — hit-carry: it carries, because `occurrences` is a rewrite (Frank, to session 139,
+morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run witness
+`occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5), on `73` whole and searched and `3x73` find-all; the
+manager's leaning: it carries). HIS WORDS: "hit-carry: occurrences is a simple regex rewrite ? So what the user
+provides gets inserted into a template hole like usual? If this is so, then the user is creating this scenario
+themselves. They can simply put the condition after the label to get the normal behavior. In cases where the user
+puts the condition before the label, they are expecting carries behavior". THE PREMISE HE ASKS ABOUT, checked by
+the manager against the record: YES. `occurrences` is his own one-pattern model of 2026-11-17 ("It's essentially
+/(.*(${rx}))*.*/ So not global"; revision 25.1 R.1.9), the user's pattern inserted into the hole of a loop
+template. RECORD: RULED, on that premise: a condition inside an `occurrences` / `hits` argument reads the labels
+as they stand where it is written, exactly as in any loop body (pass-start-read): written AFTER its label's group
+it reads its own hit; written BEFORE it, it reads the previous hit's value. No scope rule and no exception for hit
+lists; where the user wants the per-hit behaviour, the condition goes after the label. CONSEQUENCES (the
+manager's, to be checked by the next revision): R.1.9's "its hits are those of a plain search" holds only for an
+argument with no condition before its group; the hits-pass and some-own readings are narrowed to match; section
+2.6's second refusal (its reason "find-all starts each hit with the group unset") goes; this is one more entry
+for the user-documentation list (predicates_future item 24). NOT ANSWERED, still open: the rider asked with it
+(is refusing a nullable argument an error or a warning; the manager leans a warning, as he ruled the empty search).
+
+**2026-11-18 OWNER RULING — nullable argument: a warning (Frank, to session 139, morning).** The rider asked with
+hit-carry: a hit pattern that can match empty (the argument of `occurrences` / `hits`), which the draft refuses
+at section 2.6 for a reason he has since withdrawn; error or warning, the manager leaning a warning. HIS WORDS:
+"hit-carry: warning on nullable". RECORD: RULED: it is a WARNING, not an error. THE MANAGER'S READINGS (mine, to be
+checked by the next revision): the program keeps PCRE's meaning for the empty hit, as the empty search does under
+his 2026-11-17 ruling; the warning is the compiler's, so its name carries the `pcrec.` prefix; this makes it the
+fifth "probably a mistake" candidate settled as a warning.
+
+**2026-11-18 OWNER RULING — product-order: first slowest; and a correction of the product's scope (Frank, to
+session 139, morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run
+witness `/(?<x>\d{${a}})(?<y>\d{${b}})/`, a, b := [1, 2], whole `123`; the manager's leaning: "first hole slowest,
+in written order, with each hole's values in the order given"; a rider on what is removed; three draft readings
+listed "unless you object"). HIS WORDS, in full: "product-order: first, the ruling was for counting holes which
+duplicate the pattern. It doesn't apply for rx holes. Idk for others
+Otherwise I agree with lean. It's predictable and the user can order the values themselves to get different
+results (eg longest first)
+Consider: user has x and y as two rx. They apply the arrays above individually and now they have xx/yy which are
+an alternation/array of two. Provide cartesian(xx,yy) which takes arrays and applies them together Cartesian
+product.
+Also, chainable to 3 arguments?"
+RECORD, in three parts.
+(1) CORRECTION OF SCOPE, his: the ruling that several values in a hole DUPLICATE the pattern (one copy per value,
+the cartesian product over several holes, illegal versions removed) was made for COUNT holes. It does NOT apply to
+rx (pattern) holes. For the other hole positions (a group name, a character class, any other) he says "Idk": OPEN,
+not ruled either way. Revision 25.1's hole-position table, which applies the product to every position, overstates
+the ruling and is corrected by the next revision.
+(2) RULED, on the order: "I agree with lean" is taken as the leaning's main sentence: the FIRST hole varies
+SLOWEST, holes in written order, each hole's values in the order given. His reasons: it is predictable, and the
+user can order the values to get a different result (longest first).
+(3) AN IDEA TO CONSIDER, not a ruling ("Consider:"; it ends on a question to the manager): a function, placeholder
+spelling `cartesian(xx, yy)`, that takes arrays and applies them together as a cartesian product, so that two
+patterns each expanded on its own can be combined explicitly; and whether it chains to three arguments. Filed as
+docs/design/predicates_future.md item 27 with the manager's answer.
+NOT TAKEN AS ANSWERED (the manager's caution on a bare "agree"): the rider (what is removed when a combination is
+illegal: the whole copy of the pattern, or only the piece holding the hole) and the three draft readings listed
+with it. They stay the draft's readings, to be asked again in the next revision's question list.
+RUN BY THE MANAGER (python `re`, 2026-11-18, a control for part (2), not his words): the sequence of two
+alternations `(?P<x>\d|\d\d)(?P<y>\d|\d\d)` on whole `123` gives x = `1`, y = `23`, the same as the four written-out
+copies in first-slowest order; with each alternation written longest first it gives x = `12`, y = `3`. So first
+slowest is the order regex itself gives a sequence of alternations, and his "order the values" works as he says.
+
+**2026-11-18 OWNER, on the cartesian idea and "legal" (Frank, to session 139, morning).** HIS WORDS, in full:
+"Cartesian: Oh interesting. A subtle consequence of the parentheses group around concatenated elements.
+The other advantage of cartesian() is they you could sort them by length
+Legal: yes legal sql.
+"Copies that differ only in a group name are joined as plain alternatives." Spell this out for me"
+RECORD. (1) OBSERVATION (his, on the manager's run that a sequence of two alternations is the product in
+first-slowest order): it is a consequence of the group around each concatenated element. (2) AN ADDITION TO THE
+IDEA (predicates_future item 27): a second use of an explicit `cartesian()` is that its result can be sorted by
+length. (3) "Legal: yes legal sql.": taken as RULED YES to the draft reading put to him ("'Legal' means legal in
+this language, so two groups sharing a name is fine"). THE MANAGER'S READING OF THE LAST WORD: "sql" is read as a
+phone autocorrection, not as a reference to SQL; the sentence is read as plain agreement that a combination is
+judged legal by this language's rules (so a copy with two groups of one name is legal and is not removed). If he
+meant something by the word, this entry is wrong and he will say. (4) A REQUEST, answered in the session: spell
+out the draft reading "copies that differ only in a group name are joined as plain alternatives" (not agreed to;
+the product for a group-name position is OPEN by his scope correction of the same morning).
+
+**2026-11-18 OWNER RULING — name-hole: an array in a group-name hole is a compile error (Frank, to session 139,
+morning).** ASKED AS A RULING (slug name-hole, after the manager spelled out revision 25.1's reading "copies that
+differ only in a group name are joined as plain alternatives": `/(?<${n}>\d)/`, n := [a, b], joined as
+`(?:(?<a>\d)|(?<b>\d))`; python `re` on `7`: a = `7`, b unset, the second copy dead; the manager's leaning: a
+group-name hole takes exactly one name, several is a compile error). HIS WORDS, in full: "Name-hole: this is why
+each target area of the hole is a different thing with its own rules.
+I agree that arrays in names are a compiler error.
+I could also see them in the future being alternation as an interim product that is then further manipulated
+like Cartesian or join-per-element"
+RECORD. (1) PRINCIPLE, his, restating his 2026-11-17 ruling that the insert's kinds are its positions: each target
+area of a hole is a different thing with its OWN rules; no rule for one position (the count hole's product)
+carries to another by default. (2) RULED: an array (several values) in a group-name hole is a COMPILE ERROR; a
+name hole takes one name. Revision 25.1's joining reading for name copies is WITHDRAWN (nothing is joined). (3) A
+FUTURE POSSIBILITY, not ruled ("I could also see them in the future"): an array of names giving an alternation as
+an INTERIM product, to be manipulated further (a cartesian product, a join per element); added to
+predicates_future item 27. STILL THE DRAFT'S READING, not put to him as a question: several members in a
+character-class hole are simply more characters of the class (no copies).
+
+**2026-11-18 OWNER RULING — removal: the whole copy (Frank, to session 139, morning).** ASKED AS A RULING (slug
+removal; the run witness `/a|\d{${m},${M}}/`, m := [5], M := [2]: removing the whole copy of the pattern, the
+program never matches, not even `a`; removing only the piece holding the hole, `a` still matches; the manager's
+leaning: the whole copy, by his words "remove illegal versions from the cartesion product"). HIS WORDS: "removal:
+whole copy". RECORD: RULED: an illegal combination of count-hole values removes the WHOLE COPY of the pattern, not
+the piece holding the hole. THE MANAGER'S READINGS (mine, to be checked by the next revision): when every copy is
+removed the program can never match, and the can-never-match warning reports it; "legal" is judged by this
+language's rules (ruled the same morning); the rule is the count hole's own (each hole position has its own
+rules).
+
+**2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea (Frank, to session 139, morning).** ASKED
+(the /q presentation of revision 25.1's section R.8 row in three cases: 1 adding to an array of numbers, `n + 1`
+with n := [2, 4]; 2 a non-number in a count hole, `/\d{${n}}/` with n := ["2", "x"]; 3 a matched value in a
+pattern position, `/(?<y>\d{4})-${$y + 1}/`, hand-worked). HIS WORDS, in full: "value-is-pattern:
+In general, I did not anticipate these ideas and took the conservative route that eg repeat took a single decimal.
+If we are saying that alternation arrays create alteration patterns via counts, then some of these follow.
+1. I like these sort of things. What is needed is a consistent, general rule about it and not something specific
+to adding to arrays for example. What happens to array + array ?
+2. for sanity sake, a count whole must have values that produce counts (and not convert to rx)
+Interesting is the concept of say, "even numbers through modulus". Under that interpretation, the set of numbers
+used is the set of all numbers filtered by the argument
+3.  I didn't even think this was legal. I love it if it works. It needs to be fleshed out"
+RECORD, by part ("alteration" and "whole" are read as "alternation" and "hole", phone autocorrections).
+(0) OBSERVATION: he had not anticipated these forms; his own picture was the conservative one (a repeat takes a
+single decimal number); given that arrays of counts make alternation patterns, "some of these follow".
+(1) LEAN, not a ruling: he likes arithmetic over arrays, ON CONDITION of "a consistent, general rule about it and
+not something specific to adding to arrays". He asks what array + array gives. The manager's proposed general rule
+is put to him as **array-lift** (below in the session); nothing is ruled until he answers it.
+(2) RULED: a count hole must have values that PRODUCE COUNTS; a value there is never converted to rx text. THE
+MANAGER'S READING: a member that is not a count is a COMPILE ERROR (his "must"), neither removed silently nor kept
+as PCRE's literal text. AN IDEA beside it, not ruled ("Interesting is the concept"): a count given as a FILTER
+over all numbers ("even numbers through modulus": the set of counts used is the set of all numbers that pass the
+argument); filed as docs/design/predicates_future.md item 28.
+(3) LEAN, not a ruling: a matched value in a pattern position (the generalized backreference `${$y + 1}`): "I
+didn't even think this was legal. I love it if it works. It needs to be fleshed out". So it is NOT settled as
+legal: the next revision FLESHES IT OUT (what text the value becomes, numerals and width, an unset label, loops and
+hit lists, every mode, what an engine must do at match time, a libpcre2 control where one can be built) and brings
+it back to him. The eleven uses in the draft are marked as resting on an unruled form until then.
+
+**2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product (Frank, to session 139,
+morning).** ASKED AS A RULING (slug array-lift; the manager's proposed general rule, as put to him: "An array is
+an alternation of values, and a single value is a one-member array. Any operation defined on single values
+applies to arrays by taking every combination of members, first operand slowest, values in the order given";
+hand-worked `[2, 4] + 1` = `[3, 5]`, `[2, 4] + [1, 10]` = `[3, 12, 5, 14]`, `[2, 4] * [1, 10]` = `[2, 20, 4, 40]`;
+pairwise named as the alternative). HIS WORDS: first "array-lift: pairwise as default", a message he INTERRUPTED
+and replaced at once with: "array-lift: I meant, alternations as you suggested. It's consistent that alternations
+combine on the product and multiply the rx and produce more alternations". RECORD: RULED, by the second message
+(the first is his own slip, corrected by him): the general rule as proposed. Arrays are alternations; an operation
+on arrays applies to every combination of members (the product), the first operand slowest, values in the order
+given; a single value is a one-member array, so `n + 1` needs no rule of its own. His reason: it is consistent
+that alternations combine on the product, multiply the rx and produce more alternations. This is the "consistent,
+general rule" his lean on arithmetic over arrays asked for, so that lean is now settled with it. STATED WITH THE
+QUESTION AND NOT OBJECTED TO (the manager's, to be checked by the next revision): a repeated result is harmless
+(as alternatives the first occurrence wins); the rule is about arrays the user writes, not the match-time array of
+a label's values per pass ("an array of such values is its own type"); a pairwise combination could exist later
+only as an explicit function (predicates_future item 27's family). WITHDRAWN: the manager's "adding two patterns
+is an ordinary type error" as a general sentence; what `+` does on operands that are not numbers is still to be
+stated by the next revision (the manager's lean: a type error for non-numbers, addition being arithmetic).
+
+**2026-11-18 OWNER RULING — hole-in-filter: the filter error; fill the holes first (Frank, to session 139,
+morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run witness
+`/\d+/ & /${num}/`, num := `/\b\d+\b/`, three readings each whole / searched / find-all; the manager's leaning:
+the filter error, the two rulings applied in order: "First the hole is filled, with its assertions free to cross
+the hole's border into the pattern around it. Then the finished operand is judged as a filter operand like any
+other"). HIS WORDS, in full: "hole-in-filter: I agree filter error. Also, your assessment that they are compatible
+if the holes are filled first is my understanding
+In practice, there will be general rx and filter rx. Filter rx will be general and small and used to generate
+other filters or conditions. It's not that filter rx would never have outward looking elements, it's that it's
+difficult to figure out now what that means so the conservative route is to ban it. The example general rx we use
+with multiple groups, etc would likely not ever be directly filtered as it would be too complicated but will use
+conditions instead."
+RECORD. (1) RULED: a hole whose inserted pattern carries an edge assertion, inside a filter operand, is the
+FILTER ERROR, exactly as if the operand had been written out. (2) RULED, the order: holes are filled FIRST (the
+inserted pattern's assertions may cross the hole's border into the pattern around it, hole-reading); the finished
+operand is THEN judged as a filter operand; the two rulings are compatible in that order ("is my understanding").
+(3) HIS PICTURE OF USE, recorded as his description, not as rules: there will be GENERAL rx and FILTER rx; filter
+rx will be small and general, used to generate other filters or conditions; the ban on outward-looking elements
+in a filter is the CONSERVATIVE route because what they would mean is hard to work out now, not a statement that
+a filter could never have them (so: a candidate to relax later, with a definition); the large example patterns
+with several groups would likely never be filtered directly (too complicated) and would use CONDITIONS instead.
+For the user documentation list (predicates_future item 24): where to put a word-boundary check (on the pattern
+being filtered, not in the filter).
+
+**2026-11-18 OWNER RULING — backref-across-parts: the part's own group; a reference uses the namespace at its
+point (Frank, to session 139, morning).** ASKED AS A RULING (the /q presentation of revision 25.1's section R.8
+row, with the run witness A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`, `A SEQ B`: B's own group, whole `733` holds
+and `737` fails; the written-out regex under PCRE's duplicate names, the reverse; the manager's leaning: "B's own
+group. A backreference inside a part is resolved inside that part, before the splice, so a part's text keeps its
+meaning wherever it is used"). HIS WORDS: "backref-across-parts: I agree but also, a reference should use the
+namespace as it is defined at the point of reference". RECORD: RULED. (1) A backreference inside a part reads the
+part's OWN group; names inside a part are resolved in that part, before the splice. (2) THE PRINCIPLE, his: a
+reference uses the namespace AS IT IS DEFINED AT THE POINT OF REFERENCE. THE MANAGER'S READINGS (mine, to be
+checked by the next revision): (a) (1) is (2) applied inside B: at the point of B's `\k<h>` the namespace is B's,
+which holds B's `h` only; (b) (2) is the same shape as pass-start-read ("a condition reads the labels as they stand
+where it is written"), stated for names instead of values; (c) a reference written OUTSIDE the parts, on the
+composition, sees the namespace defined there: the parts' surfaced labels, by label-flow (last mention; an
+ambiguous reference across `&` is the error; paths through a part's label); (d) the evidence models (1) by
+renaming groups apart before splicing.
+
+**2026-11-18 OWNER, clarifying backref-across-parts — a backreference reads as labels do: the last mention at its
+point (Frank, to session 139, morning).** HIS WORDS: "backref-across-parts: which is to say, it should be the last
+reference as labels". RECORD: RULED (his own restatement of the principle ruled just above, "a reference should
+use the namespace as it is defined at the point of reference"): a backreference reads a name the way a label is
+read: the LAST MENTION of that name as things stand at the point of the reference; not PCRE's first-set group
+under duplicate names. On the witness (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`) this is B's group,
+the answer already ruled, because B's group is the last mention before B's `\k<h>`.
+THE MANAGER'S CORRECTION OF HIS OWN READINGS IN THE ENTRY ABOVE: reading (a), "names inside a part are resolved in
+that part, before the splice", and (d), "renaming groups apart before splicing", are NARROWER than his rule and
+are WITHDRAWN as the rule; they give the same answer only when the part sets the name before it refers to it.
+WHERE THEY DIFFER (hand-worked by the manager, not run, not put to him; the next revision runs them and brings
+back any that surprises): B := `/\k<h>/` (B refers to a name it never sets) after A: his rule reads A's `h`, the
+withdrawn reading would refuse an unknown name; B := `/\k<h>(?<h>\d)/` after A: his rule reads A's `h` (the last
+mention at that point), the withdrawn reading would read B's own, still unset. So under his rule a part that
+refers to a name it does not set reads the surrounding pattern's label, like a parameter (meets predicates_future
+item 26); a part that sets a name before referring to it always reads its own.
+
+**2026-11-18 OWNER, reopening backref-across-parts for DISCUSSION (Frank, to session 139, morning; discussion,
+nothing ruled by this entry).** HIS WORDS: "backref-across-parts: let's discuss. I do like your idea. The trouble
+comes if the reference is to something not defined in that rx". RECORD: DISCUSSION. "Your idea" is taken as the
+manager's first reading (names inside a part are resolved in that part, so a part keeps its meaning wherever it is
+used), which the entry just above withdrew in favour of "the last mention at the point of reference" read over the
+whole spliced pattern. So the two entries above are NOT the final state: what stands firm is the witness's answer
+(B's own group, both readings agree) and his principle's words; what is OPEN is the case he names, a reference
+inside a part to a name that part does not define. The manager's contribution to the discussion is in the session
+and is put to him as **free-name**; the state is whatever closes that question.
+
+**2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error (closes the
+backref-across-parts discussion) (Frank, to session 139, morning).** ASKED AS A RULING (slug free-name, after the
+manager laid out three meanings of a reference inside a part to a name that part does not set: it reads the
+surroundings; a compile error where the part is defined; a declared parameter; the manager's leaning: "the error
+now, with the declared parameter as the planned way to relax it"; and the manager's joining of his two sentences:
+the namespace is that of the rx the reference is WRITTEN in, read as labels are, the last mention at that point).
+HIS WORDS, in full: "backref-across-parts: I agree with error. It is like if a function in C were defined then
+references a variable it doesn't have defined so it looks up the call stack to the previous definition.
+Catastrophic. The rx should export the group.
+This also points to a label as something that can be manipulated and referenced. I almost wrote "first class type"
+but that might be too far"
+RECORD. (1) RULED: a reference inside an rx to a name that rx does not define is a COMPILE ERROR. His reason:
+reading the surroundings would be dynamic scoping, a function reaching up the call stack for a variable it never
+defined: "Catastrophic". (2) RULED WITH IT: "The rx should export the group": a name crosses from one rx to
+another by the DEFINING rx exporting it, never by the referring part reaching outward. (3) THE STATE OF
+backref-across-parts, closing the discussion (the manager's statement of what his answers now fix, to be checked
+by the next revision): a reference is resolved in the namespace of the rx it is WRITTEN in, as that namespace
+stands at the point of reference, read as labels are (the last mention); inside a part that namespace is the
+part's own names; in a pattern that inserts or joins parts it also holds the labels those parts export; a name
+not in it is the error of (1). The manager's two "where they differ" cases of the clarification entry are thereby
+settled the other way from that entry: B := `/\k<h>/` after A is the ERROR (not A's `h`); B := `/\k<h>(?<h>\d)/`
+reads B's own namespace (its `h`, unset at that point on a first pass). A declared parameter as the later way to
+let a part take a name from outside is the manager's proposal, NOT ruled (predicates_future item 26).
+(4) OBSERVATION, his, not a ruling: this "points to a label as something that can be manipulated and referenced.
+I almost wrote "first class type" but that might be too far". Added to predicates_future item 26.
+
+**2026-11-18 OWNER on path-and-ambiguity: the part label used twice is RULED; the read-out is open (Frank, to
+session 139, morning).** ASKED (the /q presentation of revision 25.1's section R.8 row in two corners, all
+examples hand-worked: 1 a part label mentioned twice, `[aa = A] SEQ "," SEQ [aa = A] & (aa.h: <5)`, the manager
+leaning the last mention; 2 what the match "reports" for a name both sides of `&` set and nothing references,
+`A & B`, the manager leaning that the name is not exported). HIS WORDS, in full: "path-and-ambiguity:
+1. in your specific example, what use is this ? How is it not simply an error? I mean, harmless I guess. If you
+repeated the condition after the first A as well then I can see it. For instance, if A was a list so you use
+"list" as a label then referenced it immediately after each label it would see that specific A and you wouldn't
+have to call it list1, list2, etc. so I agree the last reference
+2. my first instinct says right reference as the right side overrides the left. Then my second instinct says left
+as the right is just a filter.
+My confusion "reports". Do you mean captures?"
+RECORD. (1) RULED: a path through a part label mentioned more than once names the LAST mention as things stand
+where the reference is written ("so I agree the last reference"). His reasoning, kept: the manager's example (one
+condition after both) has little use and he first read it as an error, "harmless I guess"; the USE is a condition
+written right after each mention (a label such as `list` reused, each condition seeing that specific part, with
+no need for `list1`, `list2`). (2) NOT RULED: on the read-out he gives two instincts and settles on neither (the
+right, because the right side overrides the left; then the left, because the right is just a filter), and asks
+what "reports" means. ANSWERED IN THE SESSION: it means the captures a caller reads from the match result. The
+question stays open as **read-out**.
+
+**2026-11-18 OWNER on the read-out — a lean: a filter never produces captures (Frank, to session 139, morning;
+recorded as a LEAN, to be closed by the question filter-captures).** The manager had offered, as a form of his
+second instinct, "a filter's captures are never exported at all", saying he would want it chosen deliberately.
+HIS WORDS, in full: "path-and-ambiguity: I was thinking the same that a filter can never produce captures.
+One reason i had is that you could produce overlapping captures where the span of one partially overlaps the span
+of another. At first I thought this was an error but i think it could be done with look around." RECORD: A LEAN,
+not yet a ruling: he was thinking the same, that a filter can never produce captures. One of his reasons
+(overlapping captures, one span partly over another) he WITHDRAWS himself as a reason in the same message: he
+first thought such captures an error, then that lookaround can already produce them. Because the statement is
+larger than the corner it answers (it touches the symmetric `&`, label-flow's ambiguous-reference error, and
+conditions that read a label set on a filter operand), the manager asks it as a ruling, **filter-captures**, with
+what "the filter" is in a chain and what a condition outside the filter may read; the read-out corner is settled
+by whatever closes that.
+
+**2026-11-18 OWNER PROPOSAL — labels are seen only if exported; a literal's labels are exported in its scope
+(Frank, to session 139, morning; a PROPOSAL in his word, nothing ruled by this entry).** Made in answer to the
+question filter-captures (strict or loose). HIS WORDS, in full: "path-and-ambiguity: proposal:
+1. the labels of an rx can only be seen if they are exported (spelling not defined)
+2. all literal rx labels are exported in that scope". RECORD: PROPOSAL. (1) An rx's labels are visible outside it
+only if it EXPORTS them (the spelling of an export is not defined). (2) Every label of a LITERAL rx is exported in
+the scope the literal is written in. It is a visibility rule by EXPORT, not by the operand's role, so it is a
+different cut from his lean of the entry above ("a filter can never produce captures") and from the manager's
+strict / loose; which of them stands is part of what closes it. The manager's assessment and the two points the
+proposal leaves to define (what "that scope" is; whether it replaces the filter lean) are in the session, asked as
+**export-scope**. Meets: "The rx should export the group" (free-name, the same morning); predicates_future item 25
+(label hygiene for libraries: its direction (a), a pattern exposes only what it declares).
+
+**2026-11-18 OWNER, discussing export-scope (Frank, to session 139, morning; DISCUSSION, nothing ruled by this
+entry).** HIS WORDS, in full: "export-scope: lets work out the details before settling this. Discuss.
+My visual was the scope was the binding.
+Export may not be explicit if the rx is named [aa = A]". RECORD: DISCUSSION. Two points of his picture, neither a
+ruling: (1) the scope of his proposal's "all literal rx labels are exported in that scope" is the BINDING (not a
+file or library region, the manager's reading of the entry above, which is thereby set aside); (2) an export need
+not be explicit when the rx is given a part label where it is used (`[aa = A]`): the label is a way to its labels.
+The manager's worked model built on these two points, and the choices it leaves, are in the session; the state is
+whatever ruling closes the discussion.
+
+**2026-11-18 OWNER, continuing the export-scope discussion (Frank, to session 139, morning; DISCUSSION, nothing
+ruled by this entry).** The manager had put four statements of a model (inside a binding everything written there
+is visible; outside it a bare name is visible only if exported; a part label is a way in that needs no export; an
+explicit export surfaces a label bare) and four details to decide. HIS WORDS, in full: "export-scope: discuss.
+"Does a part label reach every label of the part, or only some?" Every. Private labels prefix with _. That may be
+a way to determine "exported"
+"Does a part label reach every label of the part, or only some?" Agree. Not exported by default. Would need
+reexport language if using _
+"Inserting through a hole."  Agree". RECORD: DISCUSSION, his positions in it. (a) A part label reaches EVERY
+label of the part. (b) AN IDEA: private labels are spelled with a leading `_`, and that prefix "may be a way to
+determine 'exported'" (a label without it is exported, with it private); a placeholder like every spelling. (c)
+His second paragraph repeats the first question's words as its heading but answers the manager's SECOND detail
+(do exports pass through a second binding; the manager leaning no, unless the second binding exports too); it is
+read as that: "Agree. Not exported by default", with his remark that re-export language would then be needed if
+the `_` convention is used. (d) Inserting through a hole: he agrees with the manager's lean (for labels, only the
+inserted part's exported names flow into the outer pattern; "behaves like a literal" stays true for matching).
+NOT YET CLEAR, asked in the session: whether "every" in (a) includes `_` labels through a part label. The
+manager's response (the `_` idea removes the need for an export spelling and, he argues, for re-export language
+too) is in the session; nothing here is the state until a ruling closes it.
+
+**2026-11-18 OWNER, export-scope discussion, third exchange (Frank, to session 139, morning; DISCUSSION; the
+manager then asks the whole as ONE ruling, export-rule).** The manager had asked three things: does a part label
+reach private labels (leaning no); may public labels flow through a second binding (the manager now proposing
+yes, the underscore doing the hiding); do the caller's captures follow the same rule. HIS WORDS, in full: ""Does a
+part label reach private labels?" Naming [x = A] only disambiguates scope, it doesn't give additional access
+Pass-through: idk. This was my reexport concern.
+
+The caller's captures: agree". RECORD: (1) HIS POSITION, plain: naming a part (`[x = A]`) only DISAMBIGUATES
+scope; it gives NO additional access. So a private label is not reachable through a part label either. (2)
+PASS-THROUGH: OPEN ("idk"); it is the re-export concern he raised. (3) THE CALLER'S CAPTURES: he AGREES with the
+statement put to him: the caller sees the public labels of the top-level program plus paths through its part
+labels, never a private one. That settles the read-out corner of path-and-ambiguity in substance (a name two
+parts both make public is an ambiguous reference for the caller as for the program), pending the one ruling that
+closes the discussion.
+
+**2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public
+part labels (closes the export-scope discussion and path-and-ambiguity) (Frank, to session 139, morning).** ASKED
+AS A RULING, the whole as one statement, as put to him: "1. A label is public unless its name begins with `_`; a
+private label is visible only inside the binding it is written in. 2. Inside a binding, the public labels of
+everything written or used there are visible, read as labels are (last mention; an ambiguous reference is the
+error). 3. Outside a binding, what is visible is the public labels written in its own literals, and its public
+part labels; a part's public labels are reached by path through its part label. 4. A part label only
+disambiguates; it gives no access to anything private. 5. The caller's captures are what is visible from the
+top-level program by these rules." With the worked example (hand-worked): `year := /(?<v>\d{4})/`, `month :=
+/(?<v>\d\d)/`, `date := [y = year] SEQ "-" SEQ [m = month]`: outside `date`, `m.v` and `y.v` are reachable, a bare
+`v` is an error; `year & (v: >= 2000)` works. HIS WORDS: "export-rule: Agee and add [_a = A] is a private
+reference that wouldn't export at all" ("Agee" read as "Agree"). RECORD: RULED: the five statements, and his
+addition as a sixth: (6) a PART LABEL that begins with `_` (`[_a = A]`) is a private reference: it is usable
+inside its binding and exports nothing at all (neither itself nor a path to the part's labels). The `_` prefix is
+a spelling, a placeholder like the others, for the single spellings review; the RULE is public-by-default with a
+marked private.
+WHAT THIS CLOSES (the manager's statement of the state, to be checked by the next revision): path-and-ambiguity's
+second corner, the read-out (by statement 5: a name that two parts both make public is an ambiguous reference for
+the caller as for the program; label the parts and read by path); his proposal of the same morning ("the labels
+of an rx can only be seen if they are exported"; "all literal rx labels are exported in that scope", the scope
+being the binding) is this ruling's statements 1 and 3; pass-through, which he had left open ("idk. This was my
+reexport concern"), is answered by statement 3: the part label is the re-export, no re-export language is needed,
+and a bare re-export spelling could be added later without changing an answer. NOT CARRIED (the manager's
+reading, said to him in the session and not objected to): his lean "a filter can never produce captures" is not
+adopted as a rule; visibility goes by export, not by an operand's role. MEETS: free-name ("The rx should export
+the group"); label-flow (statement 2 keeps it inside a binding); predicates_future item 25 (label hygiene for
+libraries: answered in substance by statements 1, 3 and 6) and item 26.
+
+**2026-11-18 OWNER, clarifying export-rule's sixth statement, and adding a form: `[_ = A]` closes all exports
+(Frank, to session 139, morning).** HIS WORDS: "I meant it wouldn't export outside the binding. To close all
+exports use [_ = A]". RECORD: RULED, two parts. (1) CLARIFICATION of his addition: a part label that begins with
+`_` (`[_a = A]`) does not export OUTSIDE the binding; inside the binding it is an ordinary part label. (The entry
+above says the same: "usable inside its binding and exports nothing at all"; "at all" there is to be read as
+"outside the binding".) (2) A NEW FORM, his: the part label that is the bare underscore, `[_ = A]`, CLOSES ALL of
+A's exports. THE MANAGER'S READING of (2) (mine, to be checked by the next revision and confirmed with him if a
+run shows it matters): with `[_ = A]` none of A's labels is visible to anything outside A, neither outside the
+binding nor inside it, neither bare nor by path (`_` is not a name a path can go through); A still matches as it
+always does. Its use: dropping a part in without its public labels entering the binding's names, so they cannot
+make a reference ambiguous. Spellings are placeholders as everywhere (the single spellings review).
+
+**2026-11-18 OWNER confirms the reading of `[_ = A]` (Frank, to session 139, morning).** The manager's reading,
+as put to him: "with `[_ = A]`, none of A's labels is visible to anything outside A — neither outside the binding
+nor inside it, neither bare nor by path ... A still matches exactly as before"; asked whether he meant something
+narrower. HIS WORDS: "That's exactly right. It makes its labels invisible so you can use it to filter but not
+cloud the namespace". RECORD: RULED, the reading confirmed: `[_ = A]` makes A's labels invisible everywhere
+outside A; its purpose in his words: to use a part as a filter without clouding the namespace. (This is the form
+his earlier lean "a filter can never produce captures" takes under the export rule: not a property of filters,
+but something the user asks for per part.)
+
+**2026-11-18 OWNER RULING — condition-in-sequence: yes, and `&` stays (Frank, to session 139, morning).** HOW IT
+AROSE: presented with quantified-condition (`[h = rx.digit] SEQ (h: <5)?`), he first asked: "quantified-condition:
+First, the idea that conditions could be sequenced in is new to me. How is it different than &". THE MANAGER'S
+ANSWER (in the session): the same as `&` when the condition comes last (a condition in an `&` chain stands after
+every pattern operand); different when it stands earlier, because it is tested where it stands, with the labels
+as they are there (hand-worked: `([h = rx.digit] SEQ (h: <5) SEQ ";")*` fails on `7;3;`, the test running each
+pass; `([h = rx.digit] SEQ ";")* & (h: <5)` holds, the test running once on the last mention). And the disclosure:
+he HAD ruled on a condition standing inside a pattern as a hole in rx text (pass-start-read's witness
+`/(?:${c}(?<h>\d);)*/`; hit-carry), but had NOT been shown it as an operand of the sequence operator in the rx
+module; that spelling was the revision lane's extension. ASKED AS A RULING (slug condition-in-sequence; the
+manager leaning yes): may a condition be an operand of the sequence operator, standing at a point in the pattern?
+HIS WORDS: "condition-in-sequence: yes and it's probably more natural than & but allow both." RECORD: RULED: YES,
+a condition may be an operand of the sequence operator; and BOTH forms are allowed: the condition in sequence and
+the condition attached with `&`. His remark, an observation: the sequenced form is "probably more natural than
+&". quantified-condition (what a postfix quantifier does to a condition) is thereby still a live question and
+remains OPEN.
+
+**2026-11-18 OWNER RULING — quantified-condition: an error, as a formal punt (Frank, to session 139, morning).**
+ASKED AS A RULING (the /q presentation of revision 25.1's section R.8 row, with the run witness `[h = rx.digit] SEQ
+(h: <5)?` against the bare test and the `+` form, whole / searched / find-all; the manager's leaning: regex's
+meaning with a warning; a compile error named as the stricter alternative). HIS WORDS: "quantified-condition: an
+error. This is a formal punt because we may find a better meaning for it in the future and this keeps that from
+breaking current code". RECORD: RULED, against the manager's leaning: a postfix quantifier on a CONDITION is a
+COMPILE ERROR. His reason, kept: it is a formal punt; a better meaning may be found later, and refusing the form
+now means that meaning can be given without breaking existing programs. This is an EXPLICIT EXCEPTION to "what
+looks like regex behaves like regex", requested by him as the exception-rule requires. THE MANAGER'S READINGS
+(mine, to be checked by the next revision): it covers all nine postfix quantifier operators, a condition standing
+in sequence and a condition inside an rx literal as a hole alike (`${c}?` in rx text); a quantifier on a GROUP
+that contains a condition together with pattern text is not this case (it quantifies a pattern). The manager's
+earlier "a quantifier on a condition is a type error" is thus the ruled outcome after all, on his reason, not on
+the manager's.
+
+**2026-11-18 OWNER RULING — lookahead-labels: visible, as in PCRE (Frank, to session 139, morning).** ASKED AS A
+RULING (the /q presentation; the example `/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/ & (l: > f)`, its pattern part run in
+python `re` (whole `1234`: l = `4`, f = `1`; find-all `1234 4321 77`: three matches with l/f `4`/`1`, `1`/`4`,
+`7`/`7`; a negative lookahead leaves its group unset), the condition's effect hand-worked; the manager's leaning:
+"visible, as in PCRE. A positive lookahead's labels are set like any others and are read by the usual rules (last
+mention, public unless `_`). A negative lookahead's labels are never set"; with the documentation line that a
+label set in a lookahead may lie outside the matched text). HIS WORDS: "lookahead-labels: agree." RECORD: RULED,
+"agree" taken as the leaning as quoted: a positive lookahead's labels are visible after it and read by the usual
+rules; a negative lookahead's labels are never set; a lookahead is not a branching and resets nothing. The
+sorted-list example of pass-start-read (2026-11-17) now rests on a ruling. For predicates_future item 24: a label
+set in a lookahead may lie outside the matched text. THE MANAGER'S READING, not asked: the same holds for a
+lookbehind's labels.
+ALSO CLOSED THE SAME MORNING, by entailment, told to him and not objected to in his reply: label-mark (is a
+binding's name automatically a label): NO, by label-flow ("paths through a part's label, never a binding") and
+export-rule (the binding is the scope, the part label the way in); what remains of it is the spelling of the label
+form, for the single spellings review.
+
+**2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx (Frank, to session 139,
+morning).** HOW IT WENT: the manager first leaned "a lone `!B` is a compile error in every mode". HIS WORDS:
+"complement-place: is this legal?
+not_seven := not seven
+It stands alone. I think it's the use that is the problem". The manager agreed and restated the rule around use,
+as put to him: "A complement is a filter-only value. It may be bound, named, passed around and combined with
+other complements. It may be used as an operand of `&` in a chain that has at least one positive pattern. Any use
+that needs it to produce a match by itself is a compile error at that use"; with the hand-worked table (`digits
+:= /\d+/`, `seven := /7\d*/`): `not_seven := not seven` legal; `digits & not_seven` legal (whole `123` holds,
+`712` fails); `neither := not seven & not eight` legal; running `not_seven` alone, whole or searched, an error at
+that use; `digits SEQ not_seven` an error; `occurrences(not_seven)` an error; and two edges named as the manager's
+readings: a complement in a pattern hole (`/x${not_seven}y/`) is the same error; a lone complement as a
+whole-value validator stays an error for now (write `/[\s\S]*/ & not_seven`). HIS WORDS: "complement-place: I
+agree with your interpretation
+That means for rx:
+There is rx that can match. There is rx that can filter. Neither is wholly a subset of the other". RECORD: RULED:
+the rule as restated (binding a complement is legal; the error is at any use that needs it to produce a match),
+"your interpretation" taken as the restated rule with its table and its two edges. AND HIS STATEMENT OF WHAT
+FOLLOWS, a principle in his words: there is rx that can MATCH and rx that can FILTER, and neither is wholly a
+subset of the other. THE MANAGER'S ILLUSTRATION (mine): filter-only: a complement; match-only: a pattern with an
+outward-looking edge assertion (`/\b\d+\b/`, refused as a filter operand by operand-context); both: `/\d+/`. The
+next revision states the two kinds once and gives each position (an `&` operand, a sequence operand, a hole, an
+`occurrences` argument, the program itself) the kind it needs.
+
+**2026-11-18 OWNER, discussing complement-place further (Frank, to session 139, late morning; DISCUSSION, nothing
+ruled by this entry; the ruling above stands).** HIS WORDS: "complement-place: discussion: one interpretation of a
+complement is as a filter on anything.
+any := /.*/
+any & not seven". RECORD: DISCUSSION: a complement read as a filter on "anything", the anything written as a
+bound pattern. The manager's contribution (in the session): written out like this the program is ALREADY LEGAL
+under the ruling above (a positive pattern stands beside the complement) and means what he says; what the ruling
+refuses is only the IMPLIED form (a lone complement with no pattern written). The manager's small simulation
+(python, his own script, a model of "the any-pattern's first candidate that the filter accepts", find-all; NOT a
+lane run and not libpcre2): `any := /.*/`: on `712` the hits are an empty match at 0, `12` at 1, an empty match at
+3; on `x712 55` the whole text at 0 and an empty match at 7; with a lazy `any := /.*?/` every hit is empty. So
+which "anything" is written decides the searched answers, which is the manager's reason to keep it written by the
+user and not implied; as a whole value every spelling of "anything" agrees.
+
+**2026-11-18 OWNER, clarifying the entry above (Frank, to session 139, late morning; DISCUSSION).** He stopped
+the manager while the entry above was being written and said: "I mean in the context of a match". RECORD: his
+point about a complement as "a filter on anything" (`any := /.*/`, `any & not seven`) is about a MATCH (a whole
+value), not about a search. The manager's simulation in the entry above answers a question he did not ask (what a
+search returns); it stays as the manager's own note, of use only for its last clause: as a whole value every
+spelling of "anything" gives the same answer. Whether a lone complement may then be allowed when matching (the
+"anything" implied) is put to him as **lone-complement-match**; until he rules, the complement-place ruling
+stands as recorded (a lone complement is an error at a use that needs it to produce a match).
+
+**2026-11-18 OWNER RULING — lone-complement-match: it stays an error; provide "anything" (Frank, to session 139,
+late morning; closes the complement-place discussion).** ASKED AS A RULING (slug lone-complement-match; the manager
+had changed his lean to: legal when a program is matched against a whole value, "any text that the pattern does
+not match", an error when searched; the alternative named: keep it explicit, the user writes the any-text pattern,
+and "the rx module could then offer a ready-made `any`"). HIS WORDS: "lone-complement-match: let's keep it an
+error and provide "anything". "Any" sounds like some()". RECORD: RULED, against the manager's changed lean: a lone
+complement stays a compile error in every mode (the complement-place ruling stands unchanged); the language
+PROVIDES a ready-made any-text pattern for the user to write beside it. ON THE NAME, his: it is to be called
+"anything", not "any", because "any" reads like `some()` (the quantifier over passes). The name is still a
+spelling for the single spellings review, with his preference recorded. THE MANAGER'S READINGS (mine, for the next
+revision): `anything` lives in the rx module; what it matches (any text including newlines, so that as a whole
+value it accepts every text) is to be stated there and shown to him, since in a search its spelling decides the
+answers (the manager's note two entries above).
+
+**2026-11-18 MANAGER CORRECTION — three of the manager's readings of this morning were NOT supported by the runs
+(session 139, afternoon; no owner words in this entry).** Revision 26's lane tested the 24 passages marked as the
+manager's in the 2026-11-18 entries (its report's MANAGER READINGS CHECKED; evidence docs/dev/lanes/
+predspec26_evidence/). Three failed. (1) In "OWNER RULING — nullable argument: a warning": "the program keeps
+PCRE's meaning for the empty hit, as the empty search does" is wrong in its comparison: `occurrences` being a
+rewrite into a loop (hit-carry), a nullable argument gives the LOOP's one empty hit, not a find-all's; the warning
+ruling itself stands. (2) and (3) In "OWNER, discussing complement-place further" and the session's presentation
+of lone-complement-match: "as a whole value every spelling of 'anything' agrees" is FALSE: `/.*/` does not cross a
+newline, so as a whole value it differs from `/[\s\S]*/` on every text with a newline (90 of 121 texts in the
+lane's pool), and the lazy clause of the manager's `any` simulation was wrong too. The owner WAS TOLD the false
+sentence as the reason a lone complement could be legal when matching; he ruled against that lean anyway
+(lone-complement-match: an error, provide "anything"), so no ruling rests on it; what it does change: what the
+provided `anything` matches is a real choice, asked as **anything-text**, and his own example `any := /.*/` would
+not accept a multi-line value.
+
+**2026-11-18 OWNER, a question on the conditional form (Frank, to session 139, afternoon; a QUESTION, nothing
+ruled).** HIS WORDS: "Predicate:
+For the
+A? B: C
+form we can't spell, is it the same as
+(A|B|fail)|C". RECORD: a question about the parked conditional (conditional-spelling; `?` is taken by the postfix
+quantifier). THE MANAGER'S READING OF THE FORMULA: "(A then B, or fail), or else C"; as typed, with `|` between A
+and B, it would be a plain alternation of all four. THE MANAGER'S ANSWER (in the session; a run in python `re`,
+A := "a digit is next" `(?=\d)`, B := `\d\d`, C := `\w`): NOT the same with an ordinary `fail`, because `X | fail`
+is just X, so the form is `A B | C` and falls through to C when A holds and B does not (whole `1`: the naive form
+HOLDS through C; an if-then-else must FAIL; find-all on `1x 12 a`: naive [`1`, `x`, `12`, `a`], guarded [`x`, `12`,
+`a`]). The same thing IS expressible without a new spelling as `(A then B) | (not A, then C)` (the guarded form
+above, `(?=\d)\d\d|(?!\d)\w`), or with a `fail` that COMMITS (ends the alternation), which is the backtracking-verb
+family parked as predicates_future item 19.
+
+**2026-11-18 OWNER, on spelling the conditional (Frank, to session 139, afternoon; a SUGGESTION on a spelling,
+nothing ruled).** After the manager's answer above (the conditional is the guarded form `(A then B) | (not A, then
+C)`; a `when(A, B, C)` convenience would expand to it). HIS WORDS: "when(A, B, else = C) would allow the two
+arguments form". RECORD: a spelling suggestion for the single spellings review (conditional-spelling): the else
+branch as a NAMED, optional argument, `when(A, B, else = C)`, so that `when(A, B)` is the same construct with the
+else left out. NOT SAID BY HIM, asked in the session as **when-default**: what `when(A, B)` denotes when A does
+not hold (the manager's lean: it holds and matches nothing, i.e. the guarded form `(A then B) | (not A)`; the
+other reading, that it fails, makes `when(A, B)` just `A then B`).
+
+**2026-11-18 OWNER RULING — when-default: the missing else requires nothing; and a `when` operator to be
+considered (Frank, to session 139, afternoon).** ASKED AS A RULING (slug when-default: what `when(A, B)` denotes
+when A does not hold; the two readings as put to him, the first: "It holds and matches nothing. 'If A then B;
+otherwise nothing is required.' In guarded form: `(A then B) | (not A)`", hand-worked with A := a digit is next,
+B := two digits: whole `12` holds, whole `1` fails, on text with no digit next the form holds without consuming
+anything; the second: it fails; the manager leaning the first). HIS WORDS: "When default: yes first example. Also,
+a when operator should be considered". RECORD: (1) RULED: the two-argument conditional, the else left out, HOLDS
+and matches nothing when its test does not hold: `(A then B) | (not A)`. The spelling stays a placeholder (his
+suggestion of the same afternoon: `when(A, B, else = C)`). (2) TO BE CONSIDERED, his, not a ruling: a `when`
+OPERATOR (an infix or postfix form of the conditional beside, or instead of, the function form); for the single
+spellings review, with the constraint that `?` is taken by the postfix quantifier. Still as the manager stated it
+and unruled: that the conditional is DEFINED as the guarded form (A written once through a binding; A a test: a
+condition, or a pattern used as a lookahead).
+
+**2026-11-18 OWNER RULING — the conditional is the guarded form; and his question on its test (Frank, to session
+139, afternoon).** He first asked: "When: what do you mean by guarded form? The OR NOT part?"; the manager:
+yes: each branch begins with its own test, `(A then B) | (not A, then C)`, the `not A` being what blocks the
+fall-through to C when A holds and B fails; the two-argument form is `(A then B) | (not A)`; and two consequences
+named: A is tested, not consumed; A is evaluated once per branch in principle. HIS WORDS: "When: yes guarded form.
+Does the A have to be a cond or look around ?" RECORD: (1) RULED: the conditional, however spelled, is DEFINED as
+the guarded form `(A then B) | (not A, then C)`. (2) A QUESTION, his, answered in the session and put back to him
+as **when-test**: must A be a condition or a lookaround. THE MANAGER'S ANSWER: the user need not write a
+lookaround; A may be any pattern, but two guarded forms then differ and one must be chosen: A as a PEEK (tested,
+not consumed; B starts where A started) or A CONSUMED (B continues after A; the guard on the else branch is still
+"A cannot match here"). Run in python `re`, A := `\d`, B := `\d\d`, C := `\w`, whole value: peek `(?=\d)\d\d|(?!\d)\w`:
+`12` holds, `123` fails, `x` holds, `1` fails; consumed `\d\d\d|(?!\d)\w`: `12` fails, `123` holds, `x` holds, `1`
+fails; and a label set by a peeked A is readable in B (`(?=(?<d>\d))\d\d` on `37`: d = `3`), by lookahead-labels.
+The manager's lean: A is always a TEST (a condition, or a pattern read as a peek).
+
+**2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced (Frank, to session
+139, afternoon).** ASKED AS A RULING (slug when-test: a pattern as the conditional's test is a PEEK, tested and
+not consumed, B starting where A started, or CONSUMED; the python `re` table of the entry above; the manager
+leaning the peek: "A is always a test, never consumed"). HIS WORDS: "When: I agree peek A. Automatic or enforced?
+peek() transform". RECORD: (1) RULED: the conditional's test A is a PEEK: tested at the position, not consumed; B
+starts where A started. (2) A QUESTION, his, with a form he names: is the peek AUTOMATIC (a pattern given as A is
+peeked without the user writing anything) or ENFORCED (A must already be a test; a pattern is made one by an
+explicit transform, his placeholder `peek()`); answered in the session and put back to him as **when-peek**. The
+`peek()` transform is his suggestion of a form, for the single spellings review.
+
+**2026-11-18 OWNER RULING — when-peek: a bare pattern as the test CONSUMES, with a warning; `peek()` makes it a
+peek (Frank, to session 139, afternoon).** ASKED AS A RULING (slug when-peek: automatic, a pattern given as the
+test is silently peeked; or enforced, the test must be a condition or an explicit `peek(A)` and a bare pattern is
+a compile error; the manager leaning enforced; "automatic with a warning" named as a middle). HIS WORDS: "When
+peek: warn. A test pattern does consume and warns that it is." RECORD: RULED, a third answer, neither of the
+manager's two: a pattern written bare as the conditional's test DOES CONSUME (it behaves as a pattern does), and
+the compiler WARNS that it is consuming; to test without consuming the user writes the `peek()` transform. THE
+MANAGER'S READING OF HOW THIS SITS WITH when-test, ruled minutes earlier ("I agree peek A"), stated back to him in
+the session for correction: the two together say: `when(peek(A), B, else = C)` is the peek form (B starts where A
+started); `when(A, B, else = C)` with a bare pattern A is the CONSUMED form, `(A then B) | (not peek(A), then C)`,
+B continuing after A, plus the warning; a condition as the test consumes nothing and draws no warning. In the
+python `re` table of the when-test entry these are its two columns ("A as a peek", "A consumed"). The warning is
+the compiler's (a `pcrec.` name, to be chosen); `peek()` is a spelling for the single review.
+
+**2026-11-18 OWNER, a spelling LEAN for the conditional, and a check he asked for (Frank, to session 139,
+afternoon; a LEAN in his word, nothing ruled).** HIS WORDS, in full: "When spelling lean: when() has one required
+positional args and two optional arg named "then and else". So the form can just use three positional, or one
+else , or when(x, then = y, else = z). The when(x) form is the same as x
+Secondary, check if the option setting form for macro calls requires the commas between optional keyword arcs.
+when(c then = y else = z)" ("arcs" read as "args"). RECORD: (1) SPELLING LEAN, for the single spellings review:
+`when()` takes ONE required positional argument (the test) and TWO optional arguments named `then` and `else`; so
+`when(x, y, z)` (three positional), `when(x, else = z)` (the else alone), `when(x, then = y, else = z)` are all
+the one construct; and "the when(x) form is the same as x". (2) THE CHECK, done by the manager against revision
+26: a call's argument list is ONE record laid against the macro's parameters (section 3's ONE INPUT RULE; the
+record form is marked RULED there), and the draft's mark table gives `,` one meaning: "only between ENTRIES inside
+`[ ]` or `( )` (a call's parentheses are a `( )`)", "next entry". A keyword argument is an entry. So TODAY THE
+COMMAS ARE REQUIRED: `when(c, then = y, else = z)` parses; `when(c then = y else = z)` does not. (3) NOTED BY THE
+MANAGER, asked in the session as **when-alone**: "when(x) is the same as x" differs from applying when-default to
+both missing branches (which would give `x | (not x)`, always holding); either `when(x)` is its own stated case,
+or the missing `then` and the missing `else` default differently.
+
+**2026-11-18 MANAGER CORRECTION — the nullable argument's meaning, again (session 139, afternoon; no owner words
+in this entry).** Review r47 (the critic round on revision 26, finding A1, three lenses, verified) shows that the
+manager's correction entry of this afternoon ("a nullable argument gives the LOOP's one empty hit") is itself an
+over-generalization, as is the draft's "at most one hit, the first, possibly empty": under the loop rewrite
+`occurrences(/\d*/)` on `1a` gives TWO hits (`1`, then an empty one) and on `12a3` gives `12` and an empty hit
+(`3` is never a hit), and `min = k` HOLDS on any digit-free text through k empty hits. The verified statement: the
+hits are the plain search's hits up to AND INCLUDING the first empty hit, which ends the loop; the first `min` are
+always taken and may all be empty. The owner's ruling (a warning, not an error) is untouched; what the warning's
+documentation must say is this.
+
+**2026-11-18 OWNER on when-alone: his sentence was an interpretation; go with what is right (Frank, to session
+139, afternoon).** The manager had asked (slug when-alone) how "the when(x) form is the same as x" squares with
+when-default applied to both missing branches (`x | (not x)`). HIS WORDS: "when-alone: that wasn't my ruling but
+my interpretation. If it's wrong let's go with what's right." RECORD: his sentence "the when(x) form is the same
+as x" is WITHDRAWN by him as an interpretation; he asks for what follows from the rules. WHAT FOLLOWS (the
+manager's derivation from the two rulings of the same afternoon, the guarded form and when-default; his to
+overrule): a missing branch requires nothing, so `when(x)` is `(x) | (not x)`: with a condition or a `peek()` as
+x it always holds and tests nothing; with a bare pattern as x (which consumes, when-peek) it takes x where x can
+match and nothing where it cannot. It is therefore NOT the same as x. THE MANAGER'S PROPOSAL beside it, a draft
+reading: a `when` with neither branch draws a compiler warning (it is almost certainly unfinished).
+
+**2026-11-18 OWNER RULING — a `when` with a single argument is an error (Frank, to session 139, afternoon).** After
+the manager's derivation of the entry above (`when(x)` would be `x | (not x)`: vacuous for a test; proposed: a
+warning). HIS WORDS, in full: "When: regardless, single arg has no value and should be an error. Ideally an
+@assert of some sort. If we said that
+when(cond, then, else = null) := ....
+Meant that the args could be options then it's handled syntactically". RECORD: (1) RULED: `when` with a single
+argument (the test alone) is a COMPILE ERROR: "single arg has no value". This replaces the manager's derivation
+and his proposed warning of the entry above. (2) HOW, his, two thoughts, neither a ruling on mechanism: "ideally
+an @assert of some sort" (a way for a definition to assert something about its arguments at compile time; an
+IDEA, filed in docs/design/predicates_future.md item 29); and the SIGNATURE doing it: if the definition is written
+`when(cond, then, else = null) := ...`, with `then` a parameter that has no default and `else` one that has, and
+if parameters may be given as options (by name) at the call, then the single-argument call is refused by the
+ordinary rule that a parameter without a default must be supplied: "handled syntactically". THE MANAGER'S READINGS
+(mine; stated back to him in the session): this signature makes `then` REQUIRED, which revises his spelling lean
+of the same afternoon ("two optional arg named then and else"; "or one else"): under it `when(x, else = z)` is
+refused too, and the legal calls are `when(x, y)`, `when(x, y, z)`, `when(x, then = y)`, `when(x, then = y, else
+= z)`, `when(x, y, else = z)`; `null` as the default of `else` is a placeholder for "nothing required" (the
+when-default ruling), not a new value he has ruled into the language; whether any parameter may be passed by
+name is a call-syntax point the next revision states from the draft's ONE INPUT RULE or asks.
+
+**2026-11-18 OWNER RULING — `then` is required; NOT gives the else-only behaviour (Frank, to session 139,
+afternoon).** The manager had stated back that the signature `when(cond, then, else = null)` makes `then` required
+and so refuses `when(x, else = z)`, revising his earlier spelling lean, and asked whether "else alone" should stay
+legal. HIS WORDS: "When: start with required then. Use NOT to get else behavior". RECORD: RULED: `then` is
+REQUIRED ("start with": conservative now, it can be relaxed later); the else-only form is not provided: the user
+negates the test, `when(NOT x, z)`, to get "if x does not hold, z; otherwise nothing more". The legal calls are
+therefore those of the entry above; his earlier lean that both branches are optional is superseded by this.
+THE MANAGER'S NOTE (mine, for the next revision to run): with a bare PATTERN as the test (which consumes,
+when-peek), `when(NOT x, z)` needs NOT of a pattern in a test position, which by complement-place is a filter-only
+value and by when-peek's reading would have to be a negative peek; the forms `when(NOT peek(x), z)` and a
+condition under NOT are clear; the bare-pattern case is to be stated or asked.
+
+**2026-11-18 OWNER PROPOSAL — arrays are written with `|` only, not with `[ , ]` (Frank, to session 139,
+afternoon; a PROPOSAL in his word, nothing ruled).** HIS WORDS: "Predicate proposal: arrays are defined using |
+form only and not [,,] form. It's consistent and unifies syntax". RECORD: PROPOSAL: the user writes an array as an
+alternation (`2 | 4`), and the bracketed list form (`[2, 4]`) is dropped. His reason: it is consistent and unifies
+the syntax. It follows the same day's array-lift ruling ("arrays are alternations") and the earlier "a constant is
+an rx where the count of the enumeration is 1". THE MANAGER'S ASSESSMENT (in the session; his to weigh): in
+favour: one notion instead of two (array-lift becomes ordinary algebra over `|`; a membership test reads `(h: 2 |
+4)`); the word "array" is left to the MATCH-TIME list of a label's values per pass, which he ruled "its own
+type", ending the collision review r43 found between the two; `[ ]` keeps only the part-label form, the index and
+the regex class. To settle with it: the EMPTY array has no `|` spelling (the draft writes `[]` in 10 places; the
+natural reading is the never-matching alternation); precedence (`|` binds loosest, so `(2 | 4) + 1` needs its
+parentheses and `2 | 4 + 1` is `2 | 5`); long lists (the draft binds 12 bracketed lists, among them the month and
+day names and the alphabets, where `"Jan" | "Feb" | ...` is the same length); 4 nested bracket forms to read
+case by case. Counts by grep on revision 26 (`grep -c -E ':= *\[[^]=]*,'` = 12; `'\[\]'` = 10; `'\[ *\['` = 4).
+
+**2026-11-18 OWNER RULING — backref-label: capture (Frank, to session 140, afternoon).** ASKED AS A RULING (slug
+backref-label, by /q, with the witness `(?:(?<h>\d)?-\k<h>;)*` WHOLE `3-3;-3;`: PCRE holds (run under python `re`
+this session; the draft's libpcre2 run agrees), the label reading fails (the draft's model)). HIS WORDS, in full:
+"backref-label: capture. Plain rx in particular should work like pcre when we can. The behavior is pcre but is the
+scope still local to the literal?" RULED: a backreference written in a literal reads PCRE's CAPTURE, not the label.
+His QUESTION (a question, not a ruling): is the scope still local to the literal. THE MANAGER'S ANSWER to him, from
+the record (free-name and backref-across-parts, the same morning, unchanged by this ruling): yes; the ruling changes
+WHICH VALUE a reference reads (the capture, where the capture and the label part), not WHERE the name is looked
+up (the rx the reference is written in; a name that rx does not define is a compile error; a part's reference reads
+the part's own group). MANAGER'S READINGS, to be tested by the next revision lane: (m1) this narrows the morning
+clarification "it should be the last reference as labels" to WHICH GROUP a name resolves to, the value being the
+capture's; (m2) in a pattern that inserts a part exporting `h`, `\k<h>` reads that group's capture as PCRE would for
+the one group; (m3) two groups of one name inside ONE literal (the `(?J)` case, PART REF REF4) is NOT settled by
+"capture": PCRE refuses the literal without `(?J)` and reads the first set group with it; to be put to him.
+
+**2026-11-18 OWNER, discussing value-hole (Frank, to session 140, afternoon; DISCUSSION, nothing ruled by this
+entry).** Asked **value-hole** by /q. HIS WORDS, in order: (1) "before we answer, what is the difference between a
+value and a label in the +1 example? My understanding is you could use the label and get the same thing." (2) "so
+the $v is how you reference a label outside of a condition. It is in scope, in a hole of that rx ?" (3) "/../ &
+(x,y): (y+1, ..) Would this say the same as $y + 1" (his spelling a placeholder; under colon-scope the value side
+reads the label as `$y`). (4) "I understand. To restate, $y is a regex but of an anchored plain string that is a
+backreference. If a hole has its own case, aren't all matches then case sensitive? Can i use @y there and what
+does that mean?" (5) "by $y as a regex I'm thinking the that you can manipulate it like a regex. But given that
+most of our operations reduce the string set and $y is only the one, you are limited. No conditions. No &. But
+$y | "other" / $y + 2 / left($y, 2) / upperStart($y) / $y . "End" / ??? if($y & (0: 1492), "Columbus", $y)".
+THE MANAGER'S ANSWERS (the manager's, to be tested by the next revision lane): `$y` is the label READ (no second
+thing; the `$` tells a label from a binding in a hole); in scope in a hole of the rx that defines it, read where
+written; a WITHDRAWN manager reading: "the plain hole reads PCRE's capture so `${$y}` equals `\k<y>`" contradicts
+his ruling "an unqualified `$x` reads the label": `\k<y>` reads the capture (backref-label, today), `$y` the label,
+and they part only where the label and the capture part; the draft's control "`${$y}` equals `\k<y>`" must be
+narrowed. Case: the options in force AT THE HOLE decide (python `re`, `a-A`: plain fails; `(?i)` holds; only the
+reference caseless holds; only the group caseless fails). `${@y}`: undefined in the draft; the manager's idea
+"any earlier setting, as an alternation" (hand-worked, slug array-in-hole), not folded in. On (5): see the
+session's reply (a hole takes a value EXPRESSION; the test in his `if` meets dollar-condition).
+
+**2026-11-18 OWNER on value-hole — "yes but": legal, on condition the type question is settled (Frank, to session
+140, afternoon).** ASKED AS A RULING (slug value-hole: a hole may hold an expression over label reads and
+constants; it matches any string the expression yields, as literal text, under the options in force at the hole;
+an expression that yields nothing fails). HIS WORDS, in full: "value-hole: yes but. This is either different than
+regex logic and the separation should be clear OR the types unified. Eg A match is a regex". RECORD: RULED yes to
+the form; with a CONDITION that is OPEN: either (A) value logic is a different logic from regex logic and the
+separation is made clear, or (B) the types are unified (his example: a match is a regex). NOT ruled: which of the
+two; value-filter; the numeral width and unset details. The manager's reading of the bare "yes": the form as
+asked, the details still to be confirmed. The manager put the fork back to him as **match-is-rx** with a lean
+(B, one type with stated properties); see the session's reply.
+
+**2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match" (Frank, to session 140,
+afternoon).** ASKED AS A RULING (slug match-is-rx: a label read `$y` is a one-string rx known at match time; ONE
+type; each operation states whether it needs a finite rx and whether it needs one known at compile time; with the
+manager's note that dollar-condition's ground goes). HIS WORDS, in full: "value-hole: let's use the unifying idea
+for it. Change my answers to match. The following can be delayed in build. That means both directions: \d + 1
+matches the digits 1 through 10. left(2) is the leftmost two digits of an rx. I was thinking about this. We have
+ways to restrict matches, we can take an rx apart over alternation, we can grow it, but not manipulate it at the
+string level. Here's the thought for left(rx,2): you build the dfa graph then put the match state at the second
+character. (Byte ideally). It's certainly a phase two project. But, we've discussed ideas like using proven spans
+to start the dfa later. The idea is play it forward then put the start states there. This is another form of
+graph manipulation. We can create functions like left() and restrict them to constants now. I'd like to consider
+that unbuilt territory however and the error is an "under construction" sign."
+RULED: (1) the types are UNIFIED: a match is an rx. (2) His earlier answers are to be CHANGED to match. (3) Both
+directions: an operation on values applies to an rx (`\d + 1` matches the numerals 1 through 10; `left(rx, 2)` is
+the leftmost two characters of an rx's strings). (4) BUILD may be delayed: functions like `left()` are created now
+and RESTRICTED TO CONSTANTS; anything past that is UNBUILT TERRITORY whose error is an "under construction" sign
+(not a refusal of the meaning). IDEA, his (filed `predicates_future.md` item 30): string-level manipulation of an
+rx as GRAPH manipulation (build the DFA, move the match state to the second character, bytes ideally; kin to
+starting the DFA later after a proven span: play it forward, put the start states there); "certainly a phase two
+project".
+THE MANAGER'S READINGS of "Change my answers to match" (the manager's, NOT his words; put to him as a list the
+same hour and to be tested by the next revision lane): (m1) dollar-condition: `$x & <5` is no longer an error BY
+TYPE; it denotes x's text or nothing; whether a "did you mean `x: <5`" warning stays is unruled. (m2) "$x is not a
+pattern but a match" is superseded by "a match is an rx" (a one-string rx known at match time). (m3) value-filter
+is answered: `&` on a read is legal. (m4) array-lift extends from arrays the user writes to any FINITE rx. (m5)
+his `if($y & (0: 1492), "Columbus", $y)` is the one `when`. (m6) UNCHANGED: backref-label (capture), `$x` reads
+the label, the scope rulings, the count-hole rulings (a count hole needs values known at compile time: the
+manager's wording). OPEN, asked as **read-is-constant**: whether a label read (`$y + 1`, `left($y, 2)`) is inside
+"restricted to constants now" or under construction.
+
+**2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation (Frank, to session 140, afternoon).**
+ASKED AS A RULING (slug read-is-constant: is a label read inside "restricted to constants now"; described to him
+at his request with the table one string / a set, compile time / match time). HIS WORDS, in full: "read-is-constant:
+I see the issue. Yes $y is a single value read at run time. At runtime, it is manipulated by left() et al using
+string manipulation built for simple strings. Semantically, $y is a regex of a single string. So operations that
+work on regex should work on it. That means, in practice, that there are two forms for each of them: the compile
+time version that works on general regex, and the runtime version that,while compiled, works on single value
+strings at run time. So $y + 1 and \d + 1 look the same, the first one happens at run time, and the second at
+compile time. My point was that we were applying & to $y but you could also go the other way and apply "single
+value" functions like x + 1 and left() to normal regex as well. The "under construction" remark is that this is
+hard and we shouldn't get bogged down with it now but acknowledge the direction."
+RULED: (1) `$y` is a single value read at run time; `left()` and its kin manipulate it at run time with string
+manipulation built for simple strings: BUILT NOW. (2) Semantically `$y` is a regex of a single string; operations
+that work on regex work on it. (3) Each operation has TWO FORMS: the compile-time form on general regex and the
+run-time form (compiled) on single-value strings; `$y + 1` (run time) and `\d + 1` (compile time) look the same.
+(4) The other direction (single-value functions such as `x + 1` and `left()` applied to normal regex) is the
+UNDER CONSTRUCTION part: hard, not to get bogged down in now, the direction acknowledged. THE MANAGER'S READINGS
+(mine, to be tested): (m1) the under-construction line is "a single-value function applied to an rx that is not
+a single string"; (m2) the regex operations on a read (`$y | "other"`, `$y & S`, `$y . "End"`, `when`) are built
+in their run-time form now; (m3) a compile-time constant (`left("Columbus", 2)`, `2025 + 1`) is folded at compile
+time.

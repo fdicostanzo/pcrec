@@ -1,0 +1,6 @@
+report=docs/dev/lanes/file43_report.md
+sections: STATE AT HANDOFF; FILED; PROCESS CHANGES APPLIED; CHECKS RUN
+nonempty: all
+commit: yes
+files: docs/dev/reviews/2026-11-17-r43-predspec25.md
+owed: none

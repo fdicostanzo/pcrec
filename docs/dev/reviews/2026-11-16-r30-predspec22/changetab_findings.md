@@ -1,0 +1,72 @@
+# Critic changetab: round predspec22 (r30)
+
+## Findings
+
+
+### CHANGETAB-1  (CONFIRMED)  severity: doc
+- where: rev 22 §0.3 Words, rows `section` (copy line 1028) and `field reference` (line 1029).
+- claim: the table-shape defect r29 CENSUS-10 fixed for L56 persists at two other rows: the `section` row has 2 cells where its table has 3, the `field reference` row 4 (an unescaped `|` or a missing column). Repro: /var/tmp/pcrec-pcrec/scratch/crit-predspec22/changetab/cells.py (splits on unescaped `|`, compares to the header's count) over rev 22: lines 1028, 1029 only; the same two in rev 20/21 (so rev 21 did not touch them; not an r29 row, a sibling of CENSUS-10).
+- effort: one-line fix each; blast radius: rendering of §0.3 only.
+
+### CHANGETAB-2  (CONFIRMED)  severity: doc
+- where: rev 22 §13 O38 "Look-alike rows with no diagnostic" (copy lines 4647-4670), against §0.1 L30 (line 705) and the changelog (rev 22 (A): "L30 (ERROR ...)").
+- claim: rev 22 moves L30 from GAP to ERROR (and gives L102 an ERROR, L95 BY DESIGN), but O38, the register of rows with no diagnostic, still lists "L30" among the GAP rows and its closing sentence ("DIFFERENT with no named diagnostic, so G0's acceptance fails on them today") covers it; rev 21 added a "REV 20-21 (review r29 RULING-9)" tail for L97/L100 to this item, rev 22 added no tail saying L30 left the list. Repro: `grep -n 'L30' ` over rev 22: the §13 hit at 4647 is the only O38 mention; no "REV 22" text inside lines 4647-4670. Same register-not-updated shape as r29 RULING-9's "L97 not in O38".
+- effort: one sentence in O38 ("rev 22: L30 is an ERROR, not a GAP; L102 ERROR"); blast radius: the G0 acceptance count only.
+
+### CHANGETAB-3  (CONFIRMED)  severity: doc
+- where: rev 22 §4.2 "NEGATION OVER A MARKED LABEL" (copy lines 2234-2260).
+- claim: the paragraph opens with the rev 22 reading and one sentence "The rest of this paragraph is the record of rev 20-21", then carries ~14 further lines in the PRESENT TENSE as live language: "On an UNMARKED absent label, `(x: !S)` FAILS ... and `!(x: S)` HOLDS (the plain complement)", "`!((h, m?): R)` FAILS (the manager's reading (14:31): `!` of a marked condition is the plain complement)", "`!` outside and `!R` inside are two conditions", "`/(?<h>\d)?x/ & !(h?: <5)` on `x` HOLDS ...". Four of these are `!` on a condition (spans at lines 2237, 2246, 2248, 2249, 2254, 2257), the exact residue the rulings ask to be gone as live language; only the single "record" sentence marks them as history, and it sits before an interleaved passage that is still live ("THE MARK IS EXISTENTIAL, THE DEFAULT CLASSICAL", its `((h, m = 0): !R)` equalities are legal and current). A reader scanning the paragraph from the middle gets the withdrawn rule. Contrast §0.1 L30/L95, §2.6, §4.3 and §8 `when`, which write "rev 20-21 wrote ..., now an ERROR" at each span.
+- effort: prefix the three affected sentences (or move them under a "RECORD OF REV 20-21" run-in); blast radius: reader comprehension of the one section that states the rule.
+
+### CHANGETAB-4  (CONFIRMED)  severity: doc
+- where: rev 22 §4.2 THE CANDIDATES RUN SIDE BY SIDE (copy lines 2166-2184), table counts and the "Smallest programs" paragraph.
+- claim: the table's counts (i)-(iv) (114/112, 110/110, 111/111 ...) and the sentence "the literal form and the variant, 156 programs, smallest `!(h?: <5)` on `c` of A" are over rev 21's pools, which include programs with `!` on a condition; in rev 22 those programs are compile ERRORS. Only the sentence after the table carries the caveat ("rev 21's pools, where a `!` on a condition is now an ERROR"); the table itself, which is cited as the evidence for the ruled rule ("evidence, the rule above is ruled"), has no such label, and the caption says "over the populations of rev 20's tables and review r29's drills" with no word that a part of them is now illegal. Whether the rows (LITERAL vs VARIANT parting, the fixed-point rows) still part on LEGAL programs only is not stated (the smallest LITERAL/VARIANT witness is the illegal `!(h?: <5)`). SUSPECTED as to the substance (the lane may have re-run it: `predspec22_check.out` was not found to re-run this table), CONFIRMED as to the missing label.
+- what would confirm: re-run the candidates table with the pool filtered to programs without `!` on a condition; if (i)-(iii) counts differ or the LITERAL/VARIANT part vanishes, the rule's evidence table is stale.
+- effort: caption sentence, plus one filtered run; blast radius: the justification of mark-narrows, ruled (the table is evidence, not the ruling).
+
+### CHANGETAB-5  (CONFIRMED)  severity: doc
+- where: joint_condition.md pointer (copy lines 1969-1971, head of §4H) vs the sites it should cover; rev 22 changelog claims "joint_condition.md §4H pointer".
+- claim: the bracket "the `!` on a condition used below (§4H.4's closing example, §4H.8) was later ruled out" lands only on §4H. The same `!`-on-a-condition spans occur in 9 other sections of the note with no pointer: Item 3 (line 405, 5 spans), Item 8 (595, 2), §4A.4 (877), §4B.2 (1316, 3), §4B.7 (1442), §4D (1563, 2), §4G.3 (1858), and §9's change table (2578-2638, 8 spans, e.g. row 58 L16, row 61 `when(c, p)` "the body is unchanged ... `!c`", row 62 O28), and the note's STATUS block (lines 1-25) still ends at "RULED ... through 14:31" with no rev 22 line. Also §4H.4's own rev 21 amendment (line 2131-2137) still names `occurs.none(!((h, m): R))` as THE worked spelling, with the pointer two hundred lines above it; the rev 22 per-intent spellings (`occurs.none(((h, m = 99): !R))` etc.) are not carried into §4H.4. Repro: scan of jc for `!` followed by `(( ` / `(x:` / `some(` per section (my script, /var/tmp/pcrec-pcrec/scratch/crit-predspec22/changetab/ inline).
+- Mitigation: the note is a derivation record (each layer bracketed by section); rev 22 does not claim to edit §9. Still, §9 is "what rev 20 must change in predicates_draft.md", read by someone building from the note. At LIVE HEAD 7e22f7efe the §4H pointer is the same (no other pointer added).
+- effort: a one-line STATUS addition and "see the §4H note" pointer in §9; blast radius: derivation-note readers.
+
+### CHANGETAB-6  (CONFIRMED)  severity: maintenance
+- where: rev 22 §4.3 / changelog citation of `predicates_future.md` item 12 (copy lines 20, 611, 2528, 5458) vs the frozen commit.
+- claim: at the SUBJECT commit 8defc5d66 `predicates_future.md` ends at item 11 (`git show 8defc5d66:docs/design/predicates_future.md | grep '^## '` last is "## 11"); item 12 ("A warning a macro raises about its own arguments") arrives in b4a62a75f and its follow-up in 62fbef5ab, both after the subject, so the rev 22 text cites an item that does not exist AT ITS OWN COMMIT. At main HEAD 7e22f7efe item 12 is present and covers what rev 22 cites (the owner's 17:46 remark, `@compiler.warn(cond, ...)`, no mechanism designed; plus the 17:5x follow-up on set properties, which rev 22 does not mention, harmlessly). The critics' frozen copy of predicates_future.md lacks it. So the pointer lands on its whole item at HEAD only.
+- effort: none to the draft; note for the landing/merge order (the pointer was valid at merge time, dangling at the subject commit); blast radius: the frozen subject.
+
+### CHANGETAB-7  (CONFIRMED)  severity: maintenance
+- where: lane check PART G ("every `!` in a code span", `predspec22_check.py` lines 480-511 in the copy).
+- claim: the census is single-line and regex-bound: `re.findall("`([^`\n]*)`", text)` drops code spans that wrap across a source line, and CONDRX matches only `!((`, `!(label:`, `!some(`, `!c`. My own paragraph-joined scan of rev 22 finds one wrapped condition span the script cannot see (`!(x:` / ` S)` at §13 O28, line 4593-4594) and no other missed condition span (the 57 counted + 1 = 58; every other wrapped span (lines 7, 15, 1937, 3170) is a set/pattern `!`). I re-ran both revs with the lane's regex: rev 21 = 51 condition spans, rev 22 = 57 (the script's own rev 21 line is empty in the critics' copy because its `git show 03a2ce715` needs the repo; in the repo it gives 51/57). The count of `!` on a condition therefore ROSE by 6 from rev 21 to rev 22 while the rulings remove the form from the language; every one is explained below, but the census as printed ("57") is not the number of live uses and the script has no check that the 57 are all labelled.
+- effort: extend the script with a "labelled as history/error" classifier (a span is acceptable only inside a sentence naming rev 21 / ERROR / not-is-complement); blast radius: the lane's completeness evidence.
+
+## PROBED-AND-HELD
+
+PART (a), rev 21 vs r29 dispositions (rev 21 text found in rev 22 as unchanged by rev 22; section cited; every group re-read in rev 22):
+- A (DOM over the PROGRAM, 16:31 addendum): APPLIED, §4.2 THE DOMAIN (2077-2099), §0.3 DOM row, §0 row 602 (gloss CORRECTED, "per program"), §5.4 `h?` row, §6.1; no site still reads DOM from "the pattern"/"defining operand" (grep 0 live hits; "any text" only as WITHDRAWN, 2081/2395). Rev 22 did not undo it.
+- B (point (3) under F1; label no match can set): APPLIED, §4.2 (2044-2047, `(mnum?: >5)`, `50;`), §4.2 A LABEL NO MATCH CAN SET (2302, "requires" tier).
+- C (`all` CHANGED; "every, possibly none"): APPLIED, §4.2 2232, §4.3 2453-2464, §2.6 1508, L16 (691), §8 note 4409; rev 22 re-spelled the "every, possibly none" form (`(g = d: !S)`), consistent at all 8 sites (grep "possibly none": 13 hits, 0 stale).
+- D (constant empty set = §5.2 ERROR): APPLIED, §4.2 (d) 2326-2333 (rev 20 wrote FAILS).
+- E (loop-ness by behaviour): APPLIED, §4.3 2564 and the repeated-label definition 2438-2443; PARTIAL only in §0.3 `set once / repeated` row (line 1050, still leads with "a loop with an upper bound of 2 or more"; the behaviour clause is also there; not counted).
+- F (whole value vs searched; no warning): APPLIED, §4.2 WHOLE VALUE, NOT SEARCHED (2058-2064), §0.1 MODE.
+- G (exact DOM, `aaba` FAILS, UNDER): APPLIED, §4.2 (a) table 2291-2297, 2186 WHAT COMPUTING THE RULE TAKES, §6 owed line.
+- H (closing example; jc §4H.4 amended): APPLIED in rev 21; SUPERSEDED BY DESIGN in rev 22 (§4.3 THE CLOSING EXAMPLE per intent, table, R = `(<10, <30)`, marked form kept as DOM-dependence line with R' and the `all` 11-of-259 line, 2470-2494); jc §4H.4 amended (2131-2137), but see CHANGETAB-5.
+- I (`all` through the general form; `label.unset`; `some` on zero passes): APPLIED, §4.2 2228-2232, §4.3 row 2454 ("zero passes are no pass"), §7.1 3212.
+- J (one absence mechanism): APPLIED, L6 (681), §2.3 1295, §4.2 2219 (no "DROPPED" left: grep 0).
+- K (`$a`, `$` defaults; carried jc error): APPLIED, §4.2 (e2)/(e2.1)/(e2.2) 2354-2372, §4.1 ERRORS 1925.
+- L (macro parameter left of `:` ERROR): APPLIED, L98 (773), §4.1 ERRORS (1934).
+- M ("same values on every pass"; `(?<n>\d)+` vs `\d*(?<n>\d)`): APPLIED, §4.2 2201.
+- N (ERRORS block; `=` binds tighter than `:`): APPLIED, §4.1 1923-1940 (rev 22 added the `!` entry), 1939, §5.4 2940.
+- O, P (PLAN/NOTED): APPLIED, §0.2 996, §7.1 3243, §13 5484-5488.
+- Q (all 18 rows): CHANGETAB-1 (4 sites 2021/2443 pointers fixed), -2 (REV 17 paragraph annotated 902), -5 (2051), -6 (1918), -7 (2956 LIFTING), -8 (807 and the three others carry [REV 20 ...] brackets; "per-match" grep 7 hits all labelled), -9 (727), -10 NOTED, FIXIND-9 (2415 "NOT superseded: they are the rule again"), RULING-5 (2396), -6, -8 (660 TEST OF THE LANGUAGE; "his criteria" grep 0), -9 (4666 L97 GAP), CENSUS-1 (720), -2, -3 (2930), -4, -10 (cell check: L56 now 5 cells; the two sibling rows in §0.3 not fixed, CHANGETAB-1 of this round). 0 MISSING, 0 CONTRADICTED among A-Q; 1 PARTIAL (E, §0.3 wording, low).
+- Rev 22 undoing a rev 21 disposition: none found (mark-narrows, program DOM, L98-L101 (L100 reworded, kept BY DESIGN), ERRORS block, zero-pass-empty all stand; the `!`-dependent rev 21 worked rows were re-spelled, see below).
+
+PART (b), rev 22 fold of not-is-complement / mark-in-none, site list re-derived by grep:
+- every `!` in a code span of rev 22 (single-line 57 via the lane's regex; 60 under my paragraph-joined scan, one wrapped span the lane cannot see). Classification of the condition `!`s by section (all UNAFFECTED = labelled history/error/rewrite, except where a finding says so): changelog 2 (rev 21 spelling named as such); §0 row 598 1 (history); §0.1 13 (L16, L30 x5, L95 x2, L102 x3 as the ERROR example, the re-applied-under-rev-21 paragraphs 932-948: dated history); §2.2 5 (ERROR examples/rewrites); §2.6 1 ("rev 21 wrote"); §4.1 4 (ERRORS block); §4.2 15 (2135-2183 before/after tables and rev 21 pool: UNAFFECTED except CHANGETAB-4's missing table label; 2237-2257 record paragraph: AFFECTED, CHANGETAB-3); §4.3 5 (rev 21 spellings named as errors); §8 `when` 3 (body rewritten `(x & !q)`; the `!c` spans are the labelled record); §13 11 (O28's layered record, closed by "REV 22 ... RESOLVED" at 4597; UNAFFECTED); 0 `!` on a condition in §12, §5.4, §7, §3.
+- `!` on non-matching forms (`!count(`, `!all(`, `!m(x)`, `!(...)` with `:`): scanned all 336 `!` spans; the only other `!`+call forms are `!contains/occurrences/startsWith/padded` (sets/filters, UNAFFECTED).
+- terms: "mark-under-not", "N1/N2", "negative polarity" (11 hits; each in a rev 22 rewrite or labelled rev 21 record, 1254 "MOOT"); "mark-in-none"/"mark inside" (29 hits; none still states the withdrawn compile-error lean as live; line 610 records it as the manager's withdrawn lean); "one-witness" (7 hits, §4.2 (e2), L104, §13 closed list consistent; stated as the manager's reading, not ruled, at every site); "none = count is 0" (2456, L102); "when" (§8, 2164, E-example 1638/3501 unchanged and legal); "holds when h is absent" trap (1225 "is gone with the spelling").
+- changelog claims vs sites: §2.2 WHAT `!` TAKES, §2.1 typing (1137), §4.1 ERRORS (1936-1938), §5.4 (2949), §0.1 L30/L95/L102-L104 (705, 770, 777-779, 942-949), §4.2 ADDING A CONDITION (2124), §4.3 MARK INSIDE A GROUP QUESTION (2496-2528), §13 (5452-5458), §15 row (5529): all present and mutually consistent. L-row count: L102-L104 exist, §0.1 intro/changelog name them.
+- cross-file: predicates_future.md item 12 lands on its WHOLE item at main HEAD (CHANGETAB-6: absent at the subject commit); joint_condition.md §4H pointer lands but is partial (CHANGETAB-5).
+- 1 unescaped-`|` scan over rev 20/21/22 (cells.py): rev 22 differs only at the two §0.3 rows (CHANGETAB-1).
+
+CRITIC COMPLETE

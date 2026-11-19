@@ -1,8 +1,7 @@
 # docs/design/ — living design documents
 
-Documents that describe a design AND the process/learning of building it
-(panel-outcome blocks and refutations recorded inline rather than edited
-away). Living: revised as the design is reviewed and built, unlike
+Documents that describe a design AND the learning of building it (panel
+outcomes and refutations inline, not edited away). Living: revised as the design is reviewed and built, unlike
 docs/dev/'s append-only or historical records. Each note's status (PROPOSED /
 PANELED / RULED / BUILT / SUPERSEDED) is in its own header; read a note's
 PANEL OUTCOME / "REVISION n" / "§R" block before any section.
@@ -75,7 +74,7 @@ Option sets, selection, cost
 Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
 - `compound.md` — [COMPOUND] compound artifact (rev 2.2), first client [MATCH-SPLIT]; `compound/` — twin; `compound_callout_alignment.md` — compound/callout seams (D163 add. 5); `compound_entries.md` — every entry as a compound controller; `compound_entries/` — probes.
-- `inline_c_requirements.md` — [INLINE-C] REQUIREMENTS (no build go): user C inside pattern `(?C{...})` and template `${{ }}`/`${( )}`; use cases and draft tests, R-P/R-T/R-S rows, post-match predicate analysis, prior art, trust gate, open questions (rev 0).
+- `inline_c_requirements.md` — [INLINE-C] REQUIREMENTS (no build go; full entry in NOTES.md).
 - `inline_c.md` — [INLINE-C] DESIGN, pattern side: one `A_CALLOUT` node, the trust gate, stages 0-5 (full entry in NOTES.md).
 - `match_split_requirements.md` — [MATCH-SPLIT] requirements; `match_split_pinonly.md` — SUPERSEDED (D163) by `compound.md`.
 - `findall_iter.md` — [FINDALL-NEXT] find-all iterator; `findall_iter/` — probes.
@@ -91,10 +90,11 @@ Search, start, scan and engine optimization notes
 - `reqbyte_freq_pick.md`, `reqpos_2b.md` — [OPTLOOP.2] cycle-2 notes.
 - `premultiplied_dfa_table.md` [OPT-3], `offset_k_skip.md` [OPT-K], `artifact_size_term.md` [ART-SIZE] (+ `artsize_impl/`), `prefilter_count_independence.md` [OPT-4] (+ `opt4_impl/`), `opt5_step2_twopass.md` [OPT-5], `two_tier_entry.md` [OPT-1] step 2, `emitter_form.md` [ENG-FORM] (D82).
 - `alt_dispatch_study.md` — [ENG-ISL.S0] alternation-dispatch study (`studies/alt_dispatch/`).
-- `alt_normal_form.md` — [RUN-POS-SET] one rewrite owner for alternations and one description per fixed-width piece for facts; positions as sets at the seam; `run_pos_set_stage3_readiness.md` — its stage 3 + R-38 Part D readiness (S2); `span_arms.md` — its REP, EMPTY, LOOKAROUND arms.
-- `stream/` — "one instruction stream" end state: `manifesto.md` (STABLE: goals, end state, principles; changes only with the owner), `roadmap.md` (LIVING: migration areas by code, hubs, provisional admission table, the ratchet), `approach.md` (rev 3, the design record of rounds 1-3), `arev.md` (A-REV: one automaton-run record, PROPOSED rev 2; first client the lookbehind hand-off as a proof step); `round1/` keeps the round-1 drafts.
+- `alt_normal_form.md` — [RUN-POS-SET] one rewrite owner for alternations and one description per fixed-width piece for facts; positions as sets at the seam; `run_pos_set_stage3_readiness.md` — stage 3 readiness (S2); `span_arms.md` — its REP, EMPTY, LOOKAROUND arms; `req_lookaround_arch.md` — L1-L3's arch note.
+- `stream/` — "one instruction stream" end state: `manifesto.md`, `roadmap.md`, `approach.md`, `arev.md`, `round1/` (full entry in NOTES.md).
 - `emit_backends_notes.md` — FORWARD NOTES only (Frank 2026-10-30, nothing scheduled): record-level cleanups, other code targets, a bytecode VM, a matcher IR with backend libraries, memfn on the backend side.
 - `cls_tree_design.md` — [CLS-TREE]; `poss_arms.md` — [ART-POSS-ARMS] (+ `poss_arms_measurements/`); `altcls_pinned_impl/` — [OPT-ALTCLS] pinned instrument.
+- `dense_hit_arch.md` — [REQ-PAST-LAST] dense-hit remedy: architecture note.
 - `c3_three_way.md` — C3 tier narrowing (built); `tt4m_harness_batching.md` — [TT-4M] step 2b.
 
 Engines, bounded repeat, budgets
@@ -105,9 +105,10 @@ Engines, bounded repeat, budgets
 
 Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
-- `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlookbehind_pieces.md`; `subroutines_design.md` + `subroutines_measurements/`; `frame_buffer_design.md`.
+- `assertions_design.md`, `atomic_groups_design.md`, `backrefs_design.md`, `lookaround_design.md` (each + `*_measurements/`), `vlookbehind.md` + `vlookbehind_pieces.md`, `subroutines_design.md`, `frame_buffer_design.md` (full entry in NOTES.md).
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
-- `cond_family.md` — [COND-FAMILY] survey: members, machinery, first piece; `cond_family_syntax_survey.md` — spelling survey; `predicates_draft.md` — predicate spec (DRAFT); `joint_condition.md` — (RULED); `predicates_future.md` — parked ideas; `fact_consumers_inventory.md` — [FACT-READS].
+- `cond_family.md` — [COND-FAMILY] survey; `cond_family_syntax_survey.md` — spellings; `predicates_draft.md` — spec (DRAFT); `joint_condition.md` — (RULED); `condition_kind.md` — condition as its own kind (EXPLORATION); `predicates_future.md` — parked ideas; `fact_consumers_inventory.md` — [FACT-READS].
+- `rx_module.md` — patterns without rx literals: an `rx` construct module, a sequence operator (item 21; PROPOSED).
 - `dfa_captures_research.md` — [ENG-TDFA] captures without the VM.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).

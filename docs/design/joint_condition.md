@@ -1,5 +1,14 @@
 # The joint condition: a condition over several labels at once (RULED)
 
+SUPERSEDED IN PART, 2026-11-17 (lane predspec23b; a note, the text below not rewritten): read `predicates_draft.md`
+rev 23 §R and the COND-FAMILY entries 19:31-23:48 first (§R.11 is the ruling table). The joint condition itself STANDS
+(R.1.5: any part absent makes it UNKNOWN; over loops, one test per pass of the pairing loop). What this note says of
+the OPTIONAL MARK (out, drop-mark 21:49), of the per-program value set DOM and its rulings (match-context,
+domain-scope, mark-narrows, zero-pass-empty, mark-in-none: retired), of `all` (retired, all-question 23:18), of `!`
+on a condition (now the three-valued NOT, condition-not 23:48) and of default-reaches-dollar / (e2.1) (reversed,
+default-scope 22:30: a default is per test, `$a` reads the real label) is superseded by §R; record-is-product holds for
+product records only (a record with a cross-entry `$` is the AND of its entries, §R.5 E).
+
 STATUS: RULED, design only, no build go. The owner has answered every question put to him through 14:31, in the
 COND-FAMILY entries of 2026-11-16 from 00:31 to 14:31 (CF:1336-1680; `grep -c '^\*\*2026-11-16'
 docs/design/plan_row_bodies/COND-FAMILY.md` = 35, the first three, 00:06-00:09, the paused field-reference direction)
@@ -1965,6 +1974,10 @@ lane's check of every 2026-11-16 entry and CF:933, CF:997-1000, the L-rows' ruli
 among the manager's sub-choices and the rule, or reader surprises.
 
 ## 4H. Corrections after round absfold (review r28; lane absfix)
+
+[2026-11-16, lane predspec22: the `!` on a condition used below (§4H.4's closing example, §4H.8) was later ruled out:
+`!` takes a pattern or a set, never a condition (COND-FAMILY **not-is-complement**, CF 17:29); the rewrites are in
+predicates_draft.md rev 22 §2.2 and §4.3.]
 
 Lane absfix (2026-11-16), applying the manager's dispositions of critic round absfold (review r28,
 `docs/dev/reviews/2026-11-16-r28-absfold.md`, findings A-L; the dispositions, session 136, are the MANAGER'S rulings

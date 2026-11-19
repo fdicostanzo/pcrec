@@ -1,0 +1,120 @@
+predspec25 engine over predspec244's (loaded in memory, rule 244); libpcre2-8 10.46 2025-08-27
+
+== PART PS: pass-start-read (RULED: 'pass-start-read: yes keep it'). A condition in a loop body reads the labels
+   AT THE POINT WHERE IT IS WRITTEN: before its label's group the previous pass's value. The sorted list shown to
+   the owner (COND-FAMILY), re-run: `/(?:(?=(?<n>\d))(?C)(?<h>\d);)*/`, the callout 'h unset, or n >= h'
+PS W `3;4;7;`: shown HOLDS ; libpcre2 HOLDS ; engine (the one rule) HOLDS ; rev 24.3's per-pass reset HOLDS ; OK
+PS W `3;3;9;`: shown HOLDS ; libpcre2 HOLDS ; engine (the one rule) HOLDS ; rev 24.3's per-pass reset HOLDS ; OK
+PS W `3;7;4;`: shown FAILS ; libpcre2 FAILS ; engine (the one rule) FAILS ; rev 24.3's per-pass reset HOLDS ; OK
+PS S `3;7;4;`: shown `3;7;`@0 ; libpcre2 `3;7;`@0 ; engine (the one rule) `3;7;`@0 ; rev 24.3's per-pass reset `3;7;4;`@0 ; OK
+PS W `9;1;`: shown FAILS ; libpcre2 FAILS ; engine (the one rule) FAILS ; rev 24.3's per-pass reset HOLDS ; OK
+PS S `9;1;`: shown `9;`@0 ; libpcre2 `9;`@0 ; engine (the one rule) `9;`@0 ; rev 24.3's per-pass reset `9;1;`@0 ; OK
+PS W `7;`: shown HOLDS ; libpcre2 HOLDS ; engine (the one rule) HOLDS ; rev 24.3's per-pass reset HOLDS ; OK
+PS W ``: shown HOLDS ; libpcre2 HOLDS ; engine (the one rule) HOLDS ; rev 24.3's per-pass reset HOLDS ; OK
+PS engine vs libpcre2 over 1365 texts (alphabet `139;`, length <= 5), reported row, labels h and n: 0 / 0 / 0 of 1365 ; OK
+PS ORDER CHECK: rev 24.3's per-pass reset vs libpcre2: 3 / 15 / 27 of 1365 (first W `3;1;`) (must differ)
+PS the manager's spelling `when((h: /\d/), (n: >= $h))` = `NOT (h: /\d/) | (n: >= $h)` (the record: 'not run through
+   the model'), run as an alternation of two tests at the condition's place: vs the single callout 0 / 0 / 0 of 1365 ; OK
+PS WHOLE vs the intent 'the items are in non-decreasing order' (Python): 0 of 1365 differ ; OK
+PS `/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5), WHOLE vs 'every item except the LAST is under 5' (the manager's
+   corrected restatement, Python): 0 of 1093 differ ; OK
+PS the record's other line, WHOLE `7;3;` FAILS (the second pass reads the first pass's 7) ; SEARCHED `7;3;` `7;`@0
+
+== PART AS: array-slot (RULED: 'only what was set'): the array is the name's SETTINGS in order; a reset adds nothing
+AS `/(?<h>\d)?(?:;(?<h>\d)?)*/` on `7;;3;`: array ['7', '3'] (the shown row: [`7`, `3`] against [`7`, -, `3`, -]) ; OK
+AS the manager's lean, run: label the WHOLE item (always set, possibly empty), `/(?<it>(?<h>\d)?)(?:;(?<it>(?<h>\d)?))*/`
+   on `7;;3;`: array of it ['7', '', '3', ''] (positions kept), array of h ['7', '3'] ; OK
+
+== PART LF: label-flow (RULED): a composed pattern surfaces labels as a literal does; across SEQ one label, the LAST
+   MENTION; across `&` a name both sides surface is an ambiguous reference (an error where referenced); a part's
+   own label through a label on the part (`[aa = A]`, `aa.h`). Control: the STATIC-ORDER model on libpcre2.
+LF A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`; `A SEQ B` expands to `/(?:(?:(?<h>\d)))(?:(?:(?:,(?<h>\d))?))/`
+LF   WHOLE `7`: engine HOLDS h = unset ; static-order HOLDS h = unset (item 24 entry 15: h UNSET) ; OK
+LF   WHOLE `7,3`: engine HOLDS h = `3` ; SEARCHED `x7 7,3`: `7`@1 h = unset ; FIND-ALL `7 7,3`: [`7`@0 h = unset, `7,3`@2 h = `3`]
+LF   engine vs static-order over 364 texts, labels compared: 0 / 0 / 0 of 364 ; OK
+LF (ii) a lookahead makes A's h name LATER text than B's: AL := `/\d(?=,\d,(?<h>\d))/`, BL := `/,(?<h>\d)/`, `AL SEQ BL`:
+LF   SEARCHED `1,2,3`: engine `1,2`@0 h = `2` ; static-order `1,2`@0 h = `2` (B's, the last mention, though A's `3` lies later in the text) ; OK
+LF the composed list `(item SEQ ",")* SEQ item` -> `/(?:(?:(?:(?:(?<h>\d)))(?:,))*)(?:(?:(?<h>\d)))/` vs the literal items-then-last `/(?:(?<h>\d),)*(?<h>\d)/`:
+LF   0 / 0 / 0 of 364 ; on `7` label 7 array ['7'] ; on `7,3,5` label 5 array ['7', '3', '5'] ; OK
+LF `[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)`: WHOLE `12` HOLDS, `21` FAILS ; SEARCHED `21 12` `12`@3 ; FIND-ALL `12 21 10` [`12`@0, `10`@6]
+LF   = rev 24.4's PART S line LEFT, shown to the owner with shared-label ; `(h: <2)` there: the AMBIGUOUS-REFERENCE error ; OK
+
+== PART NUM: label numbers, TRIED (not ruled): a number is another name of a group's label, read by the one rule;
+   only capturing groups are numbered, by opening parenthesis; local to each pattern literal
+NUM `(a)(?:b)(?<n>c)(?=d)((d)e)` on `abcde`, libpcre2 groups 0..4: ['abcde', 'a', 'c', 'de', 'd'] (the manager's answer: 1 = a, 2 = c (n), 3 = de, 4 = d) ; OK
+NUM the trial's numbering of the same literal: `(?<_1>a)(?:b)(?<n>c)(?=d)(?<_3>(?<_4>d)e)`, aliases {1: '_1', 2: 'n', 3: '_3', 4: '_4'} (2 is n: `(n: .., 2: ..)` names one label twice: the label-twice error)
+NUM `/(?:(\d)?;)*/ & (1: <5)` vs REP `& (h: <5)` (an unnamed group read by number = a named one): 0 / 0 / 0 of 364 ; OK ; WHOLE `3;;` FAILS
+NUM `/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)` (a) ALIAS (1 names the label h): WHOLE `3,7` FAILS, `7,3` HOLDS ; SEARCHED `7,3` `7,3`@0 ; FIND-ALL `3,7 7,3` [`7,3`@4]
+NUM `/(?<h>\d)(?:,(?<h>\d))*/ & (1: <5)` (b) OWN (1 names group 1's own label): WHOLE `3,7` HOLDS, `7,3` FAILS ; SEARCHED `7,3` `3`@2 ; FIND-ALL `3,7 7,3` [`3,7`@0, `3`@6]
+NUM   (a) vs (b), holds and stretch: 7 / 277 / 284 of 364 (first W `3`) ; libpcre2 under (?J): group 1 on `3,7` = 3 (PCRE's `$1` is group 1's capture)
+NUM `/(\d)\d/ & /\d(\d)/ & (1: <2)` (1 = B's group): WHOLE `12` FAILS, `21` HOLDS ; SEARCHED `21 12` `21`@0 ; FIND-ALL `12 21 10` [`21`@3, `10`@6] ; OK
+NUM `A SEQ B & (1: <5)`, A := `/(\d)/`, B := `/,(\d)/`, (a) WRITTEN-OUT (1 = A's group): WHOLE `3,7` HOLDS, `7,3` FAILS ; SEARCHED `7,3 3,7` `3,7`@4 ; FIND-ALL `7,3 3,7` [`3,7`@4]
+NUM `A SEQ B & (1: <5)`, A := `/(\d)/`, B := `/,(\d)/`, (c) NEAREST LITERAL (1 = B's group): WHOLE `3,7` FAILS, `7,3` HOLDS ; SEARCHED `7,3 3,7` `7,3`@0 ; FIND-ALL `7,3 3,7` [`7,3`@0]
+NUM   (a) vs (c): 2 / 14 / 14 of 121 (first W `3,7`) ; (b) a composed pattern has no numbers of its own: `1` is the unknown-label error
+NUM `$1` tried as a value: `/(\d):(\d)/ & (2: > $1)`: WHOLE `3:5` HOLDS, `5:3` FAILS ; SEARCHED `5:3 3:5` `3:5`@4 ; FIND-ALL `5:3 3:5 4:9` [`3:5`@4, `4:9`@8]
+
+== PART RX: the rx module's forms (RULED), expanded by code and run against HAND-WRITTEN regex on libpcre2
+RX1 `wb SEQ digits SEQ wb` -> `/(?:(?:\b))(?:(?:\d+))(?:(?:\b))/`: WHOLE `12` HOLDS ; SEARCHED `x12 34` `34`@4 ; FIND-ALL `12 x34 56` [`12`@0, `56`@7]
+RX1   the note's answers: WHOLE `12` HOLDS ; SEARCHED `x12 34` `34`@4 ; FIND-ALL `12 x34 56` `12`@0, `56`@7 ; vs hand `\b\d+\b` 0 / 0 / 0 of 364 ; OK
+RX2 `"x" SEQ "1" | "2"` -> `/(?:(?:x)(?:1)|2)/`: WHOLE `2` HOLDS ; SEARCHED `y2` `2`@1 ; FIND-ALL `x1 2 x2` [`x1`@0, `2`@3, `2`@6] ; vs hand `x1|2` 0 / 0 / 0 of 781 ; OK
+RX2   the other order (`|` tighter, the note's P3) `x(?:1|2)`: WHOLE `2` FAILS ; SEARCHED `y2` FAILS ; FIND-ALL `x1 2 x2` [`x1`@0, `x2`@5]
+RX2 `[h = rx.digit] SEQ (";" SEQ [m = rx.digit])? & (h: <5)` -> `/(?:(?:(?<h>(?:\d)))(?:(?:(?:;)(?:(?<m>(?:\d))))?))(?C"c")/` (the condition on the WHOLE sequence):
+RX2   WHOLE `7;3` FAILS, `3;7` HOLDS h = `3`, m = `7` ; SEARCHED `7;3` `3`@2 h = `3`, m = unset ; vs hand `(?<h>\d)(?:;(?<m>\d))?` then c: 0 / 0 / 0 of 364 ; OK
+RX3 hole-reading: `/x${num}/`, num := `/\b\d+\b/`, is `/x(?:\b\d+\b)/` (the assertion crosses the border): texts with a match 0 of 364 ; OK (can-never-match: the warning)
+RX3 `/${/ab/}?c/` = `/(?:ab)?c/`: WHOLE `ac` FAILS ; SEARCHED `bc` `c`@1 ; FIND-ALL `c abc ac` [`c`@0, `abc`@2, `c`@7] ; a STRING insert `ab?c`: WHOLE `ac` HOLDS ; SEARCHED `bc` FAILS ; FIND-ALL `c abc ac` [`abc`@2, `ac`@6] ; OK
+RX4 a count position, n := [2, 4]: `/(\d+?)\d{${n}}/` copied per member -> `/(?|(\d+?)\d{2}|(\d+?)\d{4})/`: WHOLE `123456` group 1 = 1234 ;
+RX4   one copy with an inner alternation `/(\d+?)(?:\d{2}|\d{4})/` (NOT the ruling: 'the literal is instantiated per member'): group 1 = 12 ; OK
+RX4 a group-name position, nm := ["a", "b"]: `/(?<${nm}>\d)/` -> `/(?|(?<a>\d)|(?<b>\d))/` (one copy per member)
+RX5 `rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4]: the product (2,2) (2,4) (4,2) (4,4); removed: \d{4,2} (libpcre2: numbers out of order in {} quantifier) ; -> `/(?|\d{2,2}|\d{2,4}|\d{4,4})/`
+RX5   WHOLE `123` HOLDS ; SEARCHED `12345` `12`@0 ; FIND-ALL `12345 6` [`12`@0, `34`@2]
+RX5   the one-argument exact count `rx.repeat(rx.digit, n)` -> `/(?|\d{2}|\d{4})/`: WHOLE `123` FAILS ; SEARCHED `12345` `12`@0 ; FIND-ALL `12345 6` [`12`@0, `34`@2]
+RX5   WHOLE vs Python `\d{2,4}` (two to four digits, item 24 entry 16): 0 of 364 differ ; OK
+RX5   one-argument vs Python `\d{2}|\d{4}`: 0 of 364 differ ; OK
+RX5 every combination illegal (min := [5], max := [2, 3]): removed 2 of 2 -> `/(?!)/`: matches nothing (the can-never-match warning)
+RXK a member of the wrong kind in a count position, n := ["2", "x"]: by libpcre2 legality `\d{x}` is a LEGAL pattern (literal
+    braces), removed: 0 -> `/(?|\d{2}|\d{x})/`: WHOLE `1{x}` HOLDS ; SEARCHED `a1{x}` `1{x}`@1 ; FIND-ALL `12 3{x}` [`12`@0, `3{x}`@3] ; with the member refused by the position's kind -> `/(?:\d{2})/`: WHOLE `1{x}` FAILS ; SEARCHED `a1{x}` FAILS ; FIND-ALL `12 3{x}` [`12`@0]
+RX5 the ORDER of the product (THE DRAFT'S READING: first hole slowest) against first hole fastest, n := [2, 3, 4],
+   `[r = repeat(rx.digit, n, n)] & (r: length in L)` for all 7 sets L, reported row with r: 0 / 0 / 0 texts summed (364 texts each) (answer-free here)
+RX6 `rx.repeat([a = rx.digit] & (a: <5), min = 1)` -> `/(?:(?:(?<a>(?:\d)))(?C"c"))+/`: WHOLE `3417` FAILS, `341` HOLDS a = `1` (array ['3', '4', '1']) ; SEARCHED `3417` `341`@0 a = `1` ; FIND-ALL `3417 82` [`341`@0 a = `1`, `2`@6 a = `2`]
+RX6 bare after the repeat, `rx.repeat([a = rx.digit], min = 1) & (a: <5)`: WHOLE `73` HOLDS a = `3`, `37` FAILS (the last item) ; OK
+RX6 labelling the repeat, `[run = rx.repeat(rx.digit, min = 1)]` -> `/(?<run>(?:(?:\d))+)/`: on `341` run = 341
+RX6 the plural `digits := rx.repeat(rx.digit, min = 1)` -> `/(?:(?:\d))+/` vs `\d+`: 0 / 0 / 0 of 364 ; OK
+RX7 X := `\d`, the ends `X op` tries on `123` at 0 (libpcre2; the engine, possessive as atomic): ++ 3 ; +? 1,2,3 ; *+ 3 ; *? 0,1,2,3 ; ?+ 1 ; ?? 0,1 ; + 3,2,1 ; * 3,2,1,0 ; ? 1,0
+RX7 X := `\d+`, the ends `X op` tries on `123` at 0 (libpcre2; the engine, possessive as atomic): ++ 3 ; +? 3,2,3,1,3,2,3 ; *+ 3 ; *? 0,3,2,3,1,3,2,3 ; ?+ 3 ; ?? 0,3,2,1 ; + 3,3,2,3,3,2,1 ; * 3,3,2,3,3,2,1,0 ; ? 3,2,1,0
+RX7 18 operator rows, libpcre2 = the engine: 18 ; OK ; `(?:\d+)??` 0,3,2,1 against `\d*?` 0,1,2,3 (regex behaving as regex)
+RX8 `"a" SEQ "b"+` -> `/(?:a)(?:(?:b)+)/`: WHOLE `abb` HOLDS ; SEARCHED `abbab` `abb`@0 ; FIND-ALL `abbab` [`abb`@0, `ab`@3] ; vs hand `ab+` 0 / 0 / 0 of 364 ; OK
+RX8 `("a" SEQ "b")+` -> `/(?:(?:a)(?:b))+/`: WHOLE `abb` FAILS ; SEARCHED `abbab` `ab`@0 ; FIND-ALL `abbab` [`ab`@0, `ab`@3] ; vs hand `(?:ab)+` 0 / 0 / 0 of 364 ; OK
+RX8 `rx.digit+` -> `/(?:(?:\d))+/`: WHOLE `abb` FAILS ; SEARCHED `abbab` FAILS ; FIND-ALL `abbab` [] ; vs hand `\d+` 0 / 0 / 0 of 364 ; OK
+RX8 the whole order, `"a" SEQ "1"+ & c | "2"` -> `/(?:(?:(?:a)(?:(?:1)+))(?C"c")|2)/` ; OK
+RX9 tokens `x++` -> ['x', '++'] -> (?:(?:a))++
+RX9 tokens `x+?` -> ['x', '+?'] -> (?:(?:a))+?
+RX9 tokens `x*+` -> ['x', '*+'] -> (?:(?:a))*+
+RX9 tokens `x??` -> ['x', '??'] -> (?:(?:a))??
+RX9 tokens `x+ | y` -> ['x', '+', '|', 'y'] -> (?:(?:(?:a))+|(?:b))
+RX9 tokens `x + y` -> ['x', '+', 'y'] -> TYPE ERROR (binary `+` on patterns: arithmetic, not a quantifier)
+RX9 tokens `x * y` -> ['x', '*', 'y'] -> TYPE ERROR (binary `*` on patterns: arithmetic, not a quantifier)
+RXQ `[h = rx.digit] SEQ (h: <5)?` as regex (`(?<h>\d)(?:(?C))?`, optional): libpcre2 WHOLE `7` HOLDS, `3` HOLDS ; SEARCHED `73` `7`@0 ; FIND-ALL `7 3` [`7`@0, `3`@2]
+RXQ `[h = rx.digit] SEQ (h: <5)+` as regex (`(?<h>\d)(?:(?C))+`, one or more): libpcre2 WHOLE `7` FAILS, `3` HOLDS ; SEARCHED `73` `3`@1 ; FIND-ALL `7 3` [`3`@2]
+RXQ `[h = rx.digit] SEQ (h: <5)*` as regex (`(?<h>\d)(?:(?C))*`, any number): libpcre2 WHOLE `7` HOLDS, `3` HOLDS ; SEARCHED `73` `7`@0 ; FIND-ALL `7 3` [`7`@0, `3`@2]
+RXL label-mark L3, `ip2 := octet SEQ "." SEQ octet` with octet a label, `& (octet: <10)` (label-flow (3): the last mention): WHOLE `5.200` FAILS, `200.5` HOLDS octet = `5` ; SEARCHED `5.200 20.5` `5.2`@0 octet = `2` ; FIND-ALL `1.2 5.200 20.5` [`1.2`@0 octet = `2`, `5.2`@4 octet = `2`, `20.5`@10 octet = `5`]
+RXA `rx.repeat(rx.digit, n + 1)`, n := [2, 4], read as distribution per mention (3 | 5): `/(?|\d{3}|\d{5})/`: WHOLE `123` HOLDS ; SEARCHED `123456` `123`@0 ; FIND-ALL `12345 678` [`123`@0, `678`@6] ; read as 'adding patterns is a type error': REJECTED
+
+== PART E: the error-or-warning rulings, their shown rows re-run (empty-search-error: warning; min-values: at least n)
+E `/(?<h>\d*)/ & NOT (h: <5)` (PCRE's empty matches, with the warning `pcrec.empty.search`): WHOLE `` HOLDS h = `` ; SEARCHED `a7` ``@0 ; FIND-ALL `7a3` [`7`@0, ``@1, ``@2, ``@3] ; OK
+E   engine vs libpcre2 (global loop): 0 / 0 / 0 of 121 ; OK
+E `occurrences(/\d/, min = 2)` (the one-pattern model with `{2,}`): WHOLE `1a2` HOLDS hits ['1', '2'] ; SEARCHED `1 a2 3` `1 a2 3`@0 ; FIND-ALL `12 3 45` 1 match(es), hits ['1', '2', '3', '4', '5'] ; OK
+E min = 2 on x := `/aab|a/`, (C) the quantifier `{2,}`: WHOLE `aab` HOLDS hits ['a', 'a'] ; SEARCHED `xaab` `xaab`@0 ; FIND-ALL `aab a` [`aab a`@0]
+E min = 2 on x := `/aab|a/`, (B) `occurrences(x) & occurs.at_least(2, ..)`, the condition re-entering: WHOLE `aab` HOLDS hits ['a', 'a'] ; SEARCHED `xaab` `xaab`@0 ; FIND-ALL `aab a` [`aab a`@0]
+E min = 2 on x := `/aab|a/`, (B') over the atomic hit list, `hits(x) & occurs.at_least(2, ..)`: WHOLE `aab` FAILS ; SEARCHED `xaab` FAILS ; FIND-ALL `aab a` [`aab a`@0]
+E   (C) vs (B) 0 / 0 / 0 of 364 ; (C) vs (B') 17 / 17 / 17 of 364 (first W `aab`) (holds and stretch)
+
+== PART W: the manager's reading 'the withdrawn looped-warning is the existing label.unset under the one rule'.
+   looped-warning's trigger: a bare condition after the pattern reads a label whose group is inside a loop;
+   label.unset's: the label CAN BE UNSET where the condition reads it (here: some path reaching it, over the pool)
+W `/(?:(?<h>\d);)*/ & (h: <5)`: looped-warning fires ; label.unset fires
+W `/(?:(?<h>\d);)+/ & (h: <5)`: looped-warning fires ; label.unset silent   <- they differ
+W `/(?:(?<h>\d)?;)+/ & (h: <5)`: looped-warning fires ; label.unset fires
+W `/(?<h>\d)?;/ & (h: <5)`: looped-warning silent ; label.unset fires   <- they differ
+W `/(?<h>\d);/ & (h: <5)`: looped-warning silent ; label.unset silent
+
+== CHECKS: 42 of 42 OK
