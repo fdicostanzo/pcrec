@@ -1,6 +1,7 @@
 # The predicate documents: base + details, linked by tags (the format)
 
-STATUS: PROPOSED by the predicate manager 2026-11-19 on the owner's request and delegation (COND-FAMILY, "housekeeping:
+STATUS: PILOTED 2026-11-19 (lane preddoc1: the skeleton, `core/principles` and `core/holes` in full; lint clean,
+1,828 checks). PROPOSED by the predicate manager 2026-11-19 on the owner's request and delegation (COND-FAMILY, "housekeeping:
 organize the predicate documentation" and its two addenda: "keep, modify, or reject these instructions as you reason
 it better"). Not built: the pilot (the skeleton and the holes section) follows revision 29.1. Modelled on the tracker
 pair ([DOC-INDEX], D192, `docs/dev/doc_format.md`); the facts it rests on are in the census
@@ -107,6 +108,17 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   `needs:` or `by:` into a skipped pair is not a failure without `--require-all`.
 - THE READER is `scripts/entry` (the house accessor): the pairs are an entry profile that calls the lint's parser;
   the lint has no reader surface of its own.
+
+### Changes ruled after the pilot (lane preddoc1's FORMAT PROBLEMS; the predicate manager, 2026-11-19; lint not yet changed)
+
+- A status `principle`, legal only under `core/principles/`: the owner STATED it (a principle, a direction, a
+  standing instruction), which is not always a slug ruling; its `rulings:` line carries the record's own class.
+- A body line `skeleton: yes` on a piece whose statement is verified but whose body is not yet converted: exempt
+  from L8, counted by the ratchet beside `?` pieces. It replaces "modes: n/a (skeleton ...)", which claimed the
+  wrong thing.
+- One piece, one status: a piece whose cells differ in status is SPLIT into sub-pieces (a fourth tag word), one per
+  position (`core/holes/zero-values/<position>`).
+- The date of a `?` or `skeleton` piece is its conversion date.
 
 ## Migration (after revision 29.1)
 
