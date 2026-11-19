@@ -5309,7 +5309,7 @@ THE MANAGER'S DESIGN for 1, 4 and 5 (form, the manager's call; `docs/dev/pred/do
   where they are (hundreds of evidence and review pointers name those paths).
 
 ### 2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Asked **import-symbols** with the manager's leaning (the left side is the selection, by name, no rx:
 `(left, right) := import("blah")`). HIS WORDS, whole:
@@ -5331,7 +5331,7 @@ of `=` is the name being defined. `(l = left, r = right) := import("blah")` bind
 always marked by `=`. Not tested by any run (no matching is involved; modes: n/a).
 
 ### 2026-11-19 OWNER, import-symbols: a LEAN, explicitly not confirmed
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Asked to confirm (1) "`=left` is shorthand for `left = left`, with `l = left` as the rename" and (2) whether the
 form applies to any map or only to `import`. HIS WORDS, whole:
@@ -5353,7 +5353,7 @@ needs an ORDERED right side, which the language does not clearly have (an array 
 for import.
 
 ### 2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Given the manager's implications (the entry above, (a)-(f)) and asked for his view on the macro-call shorthand.
 HIS WORDS, whole:
@@ -5385,7 +5385,7 @@ The manager's readings of the addition, FOR A LANE TO CHECK against the record (
 - The default-imported set is then `(=) := import(<the default module>)`.
 
 ### 2026-11-19 OWNER RULING — import-symbols, addition: the bare `=` is first; names after it override
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 HIS WORDS, whole: "import-symbol: bare "=" must be first but one can override names after (=,l = left) := ... to
 handle conflicts"
@@ -5401,7 +5401,7 @@ The manager's readings (told to him; for a lane to list, no matching involved):
   the same member. Neither is asked now.
 
 ### 2026-11-19 OWNER, import-symbols: leaving a member out (`(=,left=)`, `(=, left=_)`)
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 On the manager's "NOT STATED: how to leave a member out altogether". HIS WORDS, whole:
 
@@ -5421,7 +5421,7 @@ draft's unnamed part), where `_` stands on the left. Offered to him as the spell
 way.
 
 ### 2026-11-19 OWNER RULING — import-symbols: a member is left out with `(=, _ = left)`
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Offered `(=, _ = left)` in place of his `(=, left=_)` (the entry above: the ruled direction, the new name left of
 `=`). HIS WORDS, whole: "import-symbol: yes, that correction is good"
@@ -5431,7 +5431,7 @@ member `left` to the unusable name `_`, so it is left out and the name `left` st
 later"). The spelling remains a placeholder for the spellings review.
 
 ### 2026-11-19 OWNER, import-symbols: several modules in one import; a conflict is a compile error
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 HIS WORDS, whole: "import-symbol: (=) := import("pcrec"|"numbers"). conflicts are a compiler error, import
 separately."
@@ -5449,7 +5449,7 @@ compile error, and zero matches stays an error. Open as the question **import-se
 the 2026-11-14 "exactly one file" is reversed.
 
 ### 2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Asked **import-several**: does `import("pcrec"|"numbers")` reverse the 2026-11-14 "must resolve to EXACTLY ONE
 file", and does it hold for `m := import("pcrec"|"numbers")` too. HIS WORDS, whole:
