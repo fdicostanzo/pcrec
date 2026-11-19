@@ -1,0 +1,1143 @@
+# l1d27: D27 goal-level witnesses for lookaround L1 (spec-first, blinded author).
+# Every expectation below is libpcre2-8 10.46 (ctypes), never pcrec. The listing
+# half of each witness (req_whole_run value / dead) is not expressible in .rxt and
+# lives in l1d27_listing.tsv beside this file, keyed by the WITNESS id comment.
+description D27 lookaround L1 witnesses: lookaround bytes joining the run, contradicted lookarounds (dead), look-alike controls
+oracle pcre2/10.46
+
+# WITNESS A01 kind=A
+pattern (?=kev)...
+features lookaround,classes,modifiers
+m "xkevykevz" 1 4
+ms 4 "xkevykevz" 5 8
+ns 8 "xkevykevz"
+mc "xkevykevz" 2
+n "kekv"
+mc "kekv" 0
+m "kevkevkev" 0 3
+ms 3 "kevkevkev" 3 6
+ms 6 "kevkevkev" 6 9
+ns 9 "kevkevkev"
+mc "kevkevkev" 3
+
+# WITNESS A02 kind=A
+pattern ...(?<=kev)
+features lookaround,classes,modifiers
+m "xkevykevz" 1 4
+ms 4 "xkevykevz" 5 8
+ns 8 "xkevykevz"
+mc "xkevykevz" 2
+n "kek"
+mc "kek" 0
+m "kevkev" 0 3
+ms 3 "kevkev" 3 6
+ns 6 "kevkev"
+mc "kevkev" 2
+
+# WITNESS A03 kind=A
+pattern jo(?=wl)..
+features lookaround,classes,modifiers
+m "jowl jowx jowljowl" 0 4
+ms 4 "jowl jowx jowljowl" 10 14
+ms 14 "jowl jowx jowljowl" 14 18
+ns 18 "jowl jowx jowljowl"
+mc "jowl jowx jowljowl" 3
+n "jo"
+mc "jo" 0
+m "jjowl" 1 5
+ns 5 "jjowl"
+mc "jjowl" 1
+
+# WITNESS A04 kind=A
+pattern ..(?<=jo)wl
+features lookaround,classes,modifiers
+m "jowl jowx jowljowl" 0 4
+ms 4 "jowl jowx jowljowl" 10 14
+ms 14 "jowl jowx jowljowl" 14 18
+ns 18 "jowl jowx jowljowl"
+mc "jowl jowx jowljowl" 3
+n "xowl"
+mc "xowl" 0
+m "ajowl" 1 5
+ns 5 "ajowl"
+mc "ajowl" 1
+
+# WITNESS A05 kind=A
+pattern m(?=pq)[a-z][a-z]r
+features lookaround,classes,modifiers
+m "mpqr mpqs mpqrmpqr" 0 4
+ms 4 "mpqr mpqs mpqrmpqr" 10 14
+ms 14 "mpqr mpqs mpqrmpqr" 14 18
+ns 18 "mpqr mpqs mpqrmpqr"
+mc "mpqr mpqs mpqrmpqr" 3
+n "mxqr"
+mc "mxqr" 0
+m "mmpqr" 1 5
+ns 5 "mmpqr"
+mc "mmpqr" 1
+
+# WITNESS A06 kind=A
+pattern [a-z][a-z](?<=hz)!
+features lookaround,classes,modifiers
+m "hz! az! hz!hz!" 0 3
+ms 3 "hz! az! hz!hz!" 8 11
+ms 11 "hz! az! hz!hz!" 11 14
+ns 14 "hz! az! hz!hz!"
+mc "hz! az! hz!hz!" 3
+n "hz"
+mc "hz" 0
+m "ahz!" 1 4
+ns 4 "ahz!"
+mc "ahz!" 1
+
+# WITNESS A07 kind=A
+pattern (?=uv).{4}
+features lookaround,classes,modifiers
+m "uvwxuvyz" 0 4
+ms 4 "uvwxuvyz" 4 8
+ns 8 "uvwxuvyz"
+mc "uvwxuvyz" 2
+n "uvw"
+mc "uvw" 0
+m "xuv12uv34" 1 5
+ms 5 "xuv12uv34" 5 9
+ns 9 "xuv12uv34"
+mc "xuv12uv34" 2
+
+# WITNESS A08 kind=A
+pattern .{4}(?<=gh)
+features lookaround,classes,modifiers
+m "12gh34gh" 0 4
+ms 4 "12gh34gh" 4 8
+ns 8 "12gh34gh"
+mc "12gh34gh" 2
+n "1gh"
+mc "1gh" 0
+m "xxxghyygh" 1 5
+ms 5 "xxxghyygh" 5 9
+ns 9 "xxxghyygh"
+mc "xxxghyygh" 2
+
+# WITNESS A09 kind=A
+pattern ..(?<=ws)(?=tk)..
+features lookaround,classes,modifiers
+m "wstk wstx wstkwstk" 0 4
+ms 4 "wstk wstx wstkwstk" 10 14
+ms 14 "wstk wstx wstkwstk" 14 18
+ns 18 "wstk wstx wstkwstk"
+mc "wstk wstx wstkwstk" 3
+n "wst"
+mc "wst" 0
+m "awstkb" 1 5
+ns 5 "awstkb"
+mc "awstkb" 1
+
+# WITNESS A10 kind=A
+pattern (?=r(?=ne))...
+features lookaround,classes,modifiers
+m "rne rnx rnerne" 0 3
+ms 3 "rne rnx rnerne" 8 11
+ms 11 "rne rnx rnerne" 11 14
+ns 14 "rne rnx rnerne"
+mc "rne rnx rnerne" 3
+n "rn"
+mc "rn" 0
+m "xrnez" 1 4
+ns 4 "xrnez"
+mc "xrnez" 1
+
+# WITNESS A11 kind=A
+pattern (?=..(?<=xy))..z
+features lookaround,classes,modifiers
+m "xyz xyw xyzxyz" 0 3
+ms 3 "xyz xyw xyzxyz" 8 11
+ms 11 "xyz xyw xyzxyz" 11 14
+ns 14 "xyz xyw xyzxyz"
+mc "xyz xyw xyzxyz" 3
+n "yz"
+mc "yz" 0
+m "axyzb" 1 4
+ns 4 "axyzb"
+mc "axyzb" 1
+
+# WITNESS A12 kind=A
+pattern (?=[pq]x)[o-r][w-z]y
+features lookaround,classes,modifiers
+m "pxy qxy rxy oxy pxyqxy" 0 3
+ms 3 "pxy qxy rxy oxy pxyqxy" 4 7
+ms 7 "pxy qxy rxy oxy pxyqxy" 16 19
+ms 19 "pxy qxy rxy oxy pxyqxy" 19 22
+ns 22 "pxy qxy rxy oxy pxyqxy"
+mc "pxy qxy rxy oxy pxyqxy" 4
+n "pwy"
+mc "pwy" 0
+m "zqxyz" 1 4
+ns 4 "zqxyz"
+mc "zqxyz" 1
+
+# WITNESS A13 kind=A
+pattern (?=fgh)\w{3}
+features lookaround,classes,modifiers
+m "fgh fgx fghfgh" 0 3
+ms 3 "fgh fgx fghfgh" 8 11
+ms 11 "fgh fgx fghfgh" 11 14
+ns 14 "fgh fgx fghfgh"
+mc "fgh fgx fghfgh" 3
+n "fg"
+mc "fg" 0
+m "_fgh_" 1 4
+ns 4 "_fgh_"
+mc "_fgh_" 1
+
+# WITNESS A14 kind=A
+pattern (?:(?=ln)..){2}
+features lookaround,classes,modifiers
+m "lnln lnlx lnlnlnln" 0 4
+ms 4 "lnln lnlx lnlnlnln" 10 14
+ms 14 "lnln lnlx lnlnlnln" 14 18
+ns 18 "lnln lnlx lnlnlnln"
+mc "lnln lnlx lnlnlnln" 3
+n "ln"
+mc "ln" 0
+m "xlnlnx" 1 5
+ns 5 "xlnlnx"
+mc "xlnlnx" 1
+
+# WITNESS A15 kind=A
+pattern (?i)(?=dov)\w\w\w
+features lookaround,classes,modifiers
+m "dov DOV dOv dox" 0 3
+ms 3 "dov DOV dOv dox" 4 7
+ms 7 "dov DOV dOv dox" 8 11
+ns 11 "dov DOV dOv dox"
+mc "dov DOV dOv dox" 3
+n "do"
+mc "do" 0
+m "xDoVx" 1 4
+ns 4 "xDoVx"
+mc "xDoVx" 1
+
+# WITNESS A16 kind=A
+# pcre2-only
+pattern (?i)...(?-i)(?<=dov)
+features lookaround,classes,modifiers
+m "dov DOV dOv dov" 0 3
+ms 3 "dov DOV dOv dov" 12 15
+ns 15 "dov DOV dOv dov"
+mc "dov DOV dOv dov" 2
+n "DOV"
+mc "DOV" 0
+m "xdovy" 1 4
+ns 4 "xdovy"
+mc "xdovy" 1
+
+# WITNESS A17 kind=A
+pattern (?=47)\d\d-\d
+features lookaround,classes,modifiers
+m "47-1 48-1 47-947-0" 0 4
+ms 4 "47-1 48-1 47-947-0" 10 14
+ms 14 "47-1 48-1 47-947-0" 14 18
+ns 18 "47-1 48-1 47-947-0"
+mc "47-1 48-1 47-947-0" 3
+n "47-"
+mc "47-" 0
+m "x47-5x" 1 5
+ns 5 "x47-5x"
+mc "x47-5x" 1
+
+# WITNESS A18 kind=A
+pattern bu..(?<=ck)
+features lookaround,classes,modifiers
+m "buck bucx buckbuck" 0 4
+ms 4 "buck bucx buckbuck" 10 14
+ms 14 "buck bucx buckbuck" 14 18
+ns 18 "buck bucx buckbuck"
+mc "buck bucx buckbuck" 3
+n "buc"
+mc "buc" 0
+m "abucky" 1 5
+ns 5 "abucky"
+mc "abucky" 1
+
+# WITNESS A19 kind=A
+pattern t(?=[o])\w
+features lookaround,classes,modifiers
+m "to ta toto" 0 2
+ms 2 "to ta toto" 6 8
+ms 8 "to ta toto" 8 10
+ns 10 "to ta toto"
+mc "to ta toto" 3
+n "t"
+mc "t" 0
+m "atob" 1 3
+ns 3 "atob"
+mc "atob" 1
+
+# WITNESS A20 kind=A
+pattern \w(?<=q)u
+features lookaround,classes,modifiers
+m "qu au ququ" 0 2
+ms 2 "qu au ququ" 6 8
+ms 8 "qu au ququ" 8 10
+ns 10 "qu au ququ"
+mc "qu au ququ" 3
+n "q"
+mc "q" 0
+m "squid" 1 3
+ns 3 "squid"
+mc "squid" 1
+
+# WITNESS A21 kind=A
+pattern ..(?=wvz)..
+features lookaround,classes,modifiers
+m "abwvz abwvy cdwvzwvz" 0 4
+ms 4 "abwvz abwvy cdwvzwvz" 12 16
+ns 16 "abwvz abwvy cdwvzwvz"
+mc "abwvz abwvy cdwvzwvz" 2
+n "abwv"
+mc "abwv" 0
+m "wvwvz" 0 4
+ns 4 "wvwvz"
+mc "wvwvz" 1
+
+# WITNESS A22 kind=A
+pattern (?<=nop)st
+features lookaround,classes,modifiers
+m "nopst xopst nopstnopst" 3 5
+ms 5 "nopst xopst nopstnopst" 15 17
+ms 17 "nopst xopst nopstnopst" 20 22
+ns 22 "nopst xopst nopstnopst"
+mc "nopst xopst nopstnopst" 3
+n "st"
+mc "st" 0
+m "anopstb" 4 6
+ns 6 "anopstb"
+mc "anopstb" 1
+
+# WITNESS A23 kind=A
+pattern .m(?<=jm)k
+features lookaround,classes,modifiers
+m "jmk xmk jmkjmk" 0 3
+ms 3 "jmk xmk jmkjmk" 8 11
+ms 11 "jmk xmk jmkjmk" 11 14
+ns 14 "jmk xmk jmkjmk"
+mc "jmk xmk jmkjmk" 3
+n "mk"
+mc "mk" 0
+m "ajmkb" 1 4
+ns 4 "ajmkb"
+mc "ajmkb" 1
+
+# WITNESS A24 kind=A
+# pcre2-only
+pattern (?=\x{e9}).e
+features lookaround,classes,modifiers
+encoding utf8
+m "\xC3\xA9e ee \xC3\xA9e\xC3\xA9e" 0 3
+ms 3 "\xC3\xA9e ee \xC3\xA9e\xC3\xA9e" 7 10
+ms 10 "\xC3\xA9e ee \xC3\xA9e\xC3\xA9e" 10 13
+ns 13 "\xC3\xA9e ee \xC3\xA9e\xC3\xA9e"
+mc "\xC3\xA9e ee \xC3\xA9e\xC3\xA9e" 3
+n "\xC3\xA9"
+mc "\xC3\xA9" 0
+m "x\xC3\xA9ex" 1 4
+ns 4 "x\xC3\xA9ex"
+mc "x\xC3\xA9ex" 1
+
+# WITNESS A25 kind=A
+pattern (?:x|y)(?=cb)..z
+features lookaround,classes,modifiers
+m "xcbz ycbz zcbz xcbzycbz" 0 4
+ms 4 "xcbz ycbz zcbz xcbzycbz" 5 9
+ms 9 "xcbz ycbz zcbz xcbzycbz" 15 19
+ms 19 "xcbz ycbz zcbz xcbzycbz" 19 23
+ns 23 "xcbz ycbz zcbz xcbzycbz"
+mc "xcbz ycbz zcbz xcbzycbz" 4
+n "xcb"
+mc "xcb" 0
+m "axcbza" 1 5
+ns 5 "axcbza"
+mc "axcbza" 1
+
+# WITNESS A26 kind=A
+pattern (?=go)(?=.o.)(?=..l)...f
+features lookaround,classes,modifiers
+m "golf gol golfgolf" 0 4
+ms 4 "golf gol golfgolf" 9 13
+ms 13 "golf gol golfgolf" 13 17
+ns 17 "golf gol golfgolf"
+mc "golf gol golfgolf" 3
+n "goof"
+mc "goof" 0
+m "xgolfx" 1 5
+ns 5 "xgolfx"
+mc "xgolfx" 1
+
+# WITNESS B01 kind=B
+pattern qx(?=mn)mp
+features lookaround,classes,modifiers
+n "qxmp qxmn qxmnmp"
+mc "qxmp qxmn qxmnmp" 0
+n "qxmpqxmp"
+mc "qxmpqxmp" 0
+n "mnmp"
+mc "mnmp" 0
+
+# WITNESS B02 kind=B
+pattern (?=ab)ac
+features lookaround,classes,modifiers
+n "ab ac abac"
+mc "ab ac abac" 0
+n "acac"
+mc "acac" 0
+n "abc"
+mc "abc" 0
+
+# WITNESS B03 kind=B
+pattern ab(?<=xb)
+features lookaround,classes,modifiers
+n "ab xb abxb"
+mc "ab xb abxb" 0
+n "xbab"
+mc "xbab" 0
+n "aab"
+mc "aab" 0
+
+# WITNESS B04 kind=B
+pattern (?<=a)(?<=b)c
+features lookaround,classes,modifiers
+n "ac bc abc"
+mc "ac bc abc" 0
+n "acbc"
+mc "acbc" 0
+n "c"
+mc "c" 0
+
+# WITNESS B05 kind=B
+pattern (?=xy)(?=xz)\w+
+features lookaround,classes,modifiers
+n "xy xz xyz"
+mc "xy xz xyz" 0
+n "xyxz"
+mc "xyxz" 0
+n "x"
+mc "x" 0
+
+# WITNESS B06 kind=B
+pattern (?=[ab])[cd]x
+features lookaround,classes,modifiers
+n "cx dx acx"
+mc "cx dx acx" 0
+n "bdx"
+mc "bdx" 0
+n "ax"
+mc "ax" 0
+
+# WITNESS B07 kind=B
+# pcre2-only
+pattern (?i)(?=k)(?-i)[^kK]z
+features lookaround,classes,modifiers
+n "kz Kz az"
+mc "kz Kz az" 0
+n "kzKz"
+mc "kzKz" 0
+n "z"
+mc "z" 0
+
+# WITNESS B08 kind=B
+pattern (?i)(?=ab)ac
+features lookaround,classes,modifiers
+n "ab AC Ab ac"
+mc "ab AC Ab ac" 0
+n "abAC"
+mc "abAC" 0
+n "acab"
+mc "acab" 0
+
+# WITNESS B09 kind=B
+pattern (?=a(?=c))ab
+features lookaround,classes,modifiers
+n "ab ac abc"
+mc "ab ac abc" 0
+n "acab"
+mc "acab" 0
+n "abab"
+mc "abab" 0
+
+# WITNESS B10 kind=B
+pattern [0-4]q(?<=[5-9]q)
+features lookaround,classes,modifiers
+n "1q 6q 16q"
+mc "1q 6q 16q" 0
+n "4q9q"
+mc "4q9q" 0
+n "q"
+mc "q" 0
+
+# WITNESS B11 kind=B
+pattern (?:(?=z)a){3}
+features lookaround,classes,modifiers
+n "aaa zzz azaz"
+mc "aaa zzz azaz" 0
+n "aaaa"
+mc "aaaa" 0
+n "za"
+mc "za" 0
+
+# WITNESS B12 kind=B
+pattern aab(?<=bb)
+features lookaround,classes,modifiers
+n "aab abb aabb"
+mc "aab abb aabb" 0
+n "bbaab"
+mc "bbaab" 0
+n "ab"
+mc "ab" 0
+
+# WITNESS B13 kind=B
+# pcre2-only
+pattern (?=\x{e9})e.
+features lookaround,classes,modifiers
+encoding utf8
+n "e\xC3\xA9 \xC3\xA9e ee"
+mc "e\xC3\xA9 \xC3\xA9e ee" 0
+n "\xC3\xA9\xC3\xA9"
+mc "\xC3\xA9\xC3\xA9" 0
+n "e"
+mc "e" 0
+
+# WITNESS B14 kind=B
+pattern a(?=.{2}z)bcy
+features lookaround,classes,modifiers
+n "abcy abcz abcyz"
+mc "abcy abcz abcyz" 0
+n "abczabcy"
+mc "abczabcy" 0
+n "a"
+mc "a" 0
+
+# WITNESS B15 kind=B
+pattern abc(?<=x..)
+features lookaround,classes,modifiers
+n "abc xbc abcxbc"
+mc "abc xbc abcxbc" 0
+n "xabc"
+mc "xabc" 0
+n "bc"
+mc "bc" 0
+
+# WITNESS B16 kind=B
+pattern \d(?<=[a-z])
+features lookaround,classes,modifiers
+n "1 a 1a a1"
+mc "1 a 1a a1" 0
+n "9z"
+mc "9z" 0
+n "0"
+mc "0" 0
+
+# WITNESS B17 kind=B
+pattern (?=xyz)xy[^z]
+features lookaround,classes,modifiers
+n "xyz xya xyzxya"
+mc "xyz xya xyzxya" 0
+n "xyxy"
+mc "xyxy" 0
+n "xy"
+mc "xy" 0
+
+# WITNESS B18 kind=B
+pattern (?<=ro)(?<=.p)t
+features lookaround,classes,modifiers
+n "rot rpt ropt"
+mc "rot rpt ropt" 0
+n "pt"
+mc "pt" 0
+n "rpot"
+mc "rpot" 0
+
+# WITNESS C01 kind=C
+pattern (?:qx(?=mn)mp)?r
+features lookaround,classes,modifiers
+m "r qxmpr qxr r" 0 1
+ms 1 "r qxmpr qxr r" 6 7
+ms 7 "r qxmpr qxr r" 10 11
+ms 11 "r qxmpr qxr r" 12 13
+ns 13 "r qxmpr qxr r"
+mc "r qxmpr qxr r" 4
+m "qxmnr" 4 5
+ns 5 "qxmnr"
+mc "qxmnr" 1
+n "x"
+mc "x" 0
+
+# WITNESS C02 kind=C
+pattern (?=ab)ac|ab
+features lookaround,classes,modifiers
+m "ab ac abab" 0 2
+ms 2 "ab ac abab" 6 8
+ms 8 "ab ac abab" 8 10
+ns 10 "ab ac abab"
+mc "ab ac abab" 3
+n "ac"
+mc "ac" 0
+m "aab" 1 3
+ns 3 "aab"
+mc "aab" 1
+
+# WITNESS C03 kind=C
+pattern (?!ab)ac
+features lookaround,classes,modifiers
+m "ac ab acac" 0 2
+ms 2 "ac ab acac" 6 8
+ms 8 "ac ab acac" 8 10
+ns 10 "ac ab acac"
+mc "ac ab acac" 3
+n "ab"
+mc "ab" 0
+m "aac" 1 3
+ns 3 "aac"
+mc "aac" 1
+
+# WITNESS C04 kind=C
+pattern (?:(?=z)a){0}b
+features lookaround,classes,modifiers
+m "b ab bb" 0 1
+ms 1 "b ab bb" 3 4
+ms 4 "b ab bb" 5 6
+ms 6 "b ab bb" 6 7
+ns 7 "b ab bb"
+mc "b ab bb" 4
+n "a"
+mc "a" 0
+m "zab" 2 3
+ns 3 "zab"
+mc "zab" 1
+
+# WITNESS C05 kind=C
+pattern (?:(?=z)a)*b
+features lookaround,classes,modifiers
+m "b ab bb" 0 1
+ms 1 "b ab bb" 3 4
+ms 4 "b ab bb" 5 6
+ms 6 "b ab bb" 6 7
+ns 7 "b ab bb"
+mc "b ab bb" 4
+n "a"
+mc "a" 0
+m "zab" 2 3
+ns 3 "zab"
+mc "zab" 1
+
+# WITNESS C06 kind=C
+pattern (?i)(?=K)k
+features lookaround,classes,modifiers
+m "k K kk" 0 1
+ms 1 "k K kk" 2 3
+ms 3 "k K kk" 4 5
+ms 5 "k K kk" 5 6
+ns 6 "k K kk"
+mc "k K kk" 4
+n "x"
+mc "x" 0
+m "aKa" 1 2
+ns 2 "aKa"
+mc "aKa" 1
+
+# WITNESS C07 kind=C
+pattern (?<=a)(?<=[ab])c
+features lookaround,classes,modifiers
+m "ac bc acac" 1 2
+ms 2 "ac bc acac" 7 8
+ms 8 "ac bc acac" 9 10
+ns 10 "ac bc acac"
+mc "ac bc acac" 3
+n "c"
+mc "c" 0
+n "abc"
+mc "abc" 0
+
+# WITNESS C08 kind=C
+pattern (?:(?=ab)ac|(?=ad)ad)x
+features lookaround,classes,modifiers
+m "adx acx adxadx" 0 3
+ms 3 "adx acx adxadx" 8 11
+ms 11 "adx acx adxadx" 11 14
+ns 14 "adx acx adxadx"
+mc "adx acx adxadx" 3
+n "abx"
+mc "abx" 0
+m "aadx" 1 4
+ns 4 "aadx"
+mc "aadx" 1
+
+# WITNESS C09 kind=C
+pattern (?<!x)ab(?<!xb)
+features lookaround,classes,modifiers
+m "ab xab abab" 0 2
+ms 2 "ab xab abab" 7 9
+ms 9 "ab xab abab" 9 11
+ns 11 "ab xab abab"
+mc "ab xab abab" 3
+n "x"
+mc "x" 0
+m "cab" 1 3
+ns 3 "cab"
+mc "cab" 1
+
+# WITNESS C10 kind=C
+pattern (?=ab|ac)ac
+features lookaround,classes,modifiers
+m "ac ab acac" 0 2
+ms 2 "ac ab acac" 6 8
+ms 8 "ac ab acac" 8 10
+ns 10 "ac ab acac"
+mc "ac ab acac" 3
+n "a"
+mc "a" 0
+m "aac" 1 3
+ns 3 "aac"
+mc "aac" 1
+
+# WITNESS A01k kind=A
+pattern (?=kev)[a-z]{3}
+features lookaround,classes,modifiers
+m "xkevykevz" 1 4
+ms 4 "xkevykevz" 5 8
+ns 8 "xkevykevz"
+mc "xkevykevz" 2
+n "kekv"
+mc "kekv" 0
+m "kevkevkev" 0 3
+ms 3 "kevkevkev" 3 6
+ms 6 "kevkevkev" 6 9
+ns 9 "kevkevkev"
+mc "kevkevkev" 3
+
+# WITNESS A02k kind=A
+pattern [a-z]{3}(?<=kev)
+features lookaround,classes,modifiers
+m "xkevykevz" 1 4
+ms 4 "xkevykevz" 5 8
+ns 8 "xkevykevz"
+mc "xkevykevz" 2
+n "kek"
+mc "kek" 0
+m "kevkev" 0 3
+ms 3 "kevkev" 3 6
+ns 6 "kevkev"
+mc "kevkev" 2
+
+# WITNESS A03k kind=A
+pattern jo(?=wl)[a-z][a-z]
+features lookaround,classes,modifiers
+m "jowl jowx jowljowl" 0 4
+ms 4 "jowl jowx jowljowl" 10 14
+ms 14 "jowl jowx jowljowl" 14 18
+ns 18 "jowl jowx jowljowl"
+mc "jowl jowx jowljowl" 3
+n "jo"
+mc "jo" 0
+m "jjowl" 1 5
+ns 5 "jjowl"
+mc "jjowl" 1
+
+# WITNESS A04k kind=A
+pattern [a-z][a-z](?<=jo)wl
+features lookaround,classes,modifiers
+m "jowl jowx jowljowl" 0 4
+ms 4 "jowl jowx jowljowl" 10 14
+ms 14 "jowl jowx jowljowl" 14 18
+ns 18 "jowl jowx jowljowl"
+mc "jowl jowx jowljowl" 3
+n "xowl"
+mc "xowl" 0
+m "ajowl" 1 5
+ns 5 "ajowl"
+mc "ajowl" 1
+
+# WITNESS A07k kind=A
+pattern (?=uv)[0-9a-z]{4}
+features lookaround,classes,modifiers
+m "uvwxuvyz" 0 4
+ms 4 "uvwxuvyz" 4 8
+ns 8 "uvwxuvyz"
+mc "uvwxuvyz" 2
+n "uvw"
+mc "uvw" 0
+m "xuv12uv34" 1 5
+ms 5 "xuv12uv34" 5 9
+ns 9 "xuv12uv34"
+mc "xuv12uv34" 2
+
+# WITNESS A08k kind=A
+pattern [0-9a-z]{4}(?<=gh)
+features lookaround,classes,modifiers
+m "12gh34gh" 0 4
+ms 4 "12gh34gh" 4 8
+ns 8 "12gh34gh"
+mc "12gh34gh" 2
+n "1gh"
+mc "1gh" 0
+m "xxxghyygh" 1 5
+ms 5 "xxxghyygh" 5 9
+ns 9 "xxxghyygh"
+mc "xxxghyygh" 2
+
+# WITNESS A09k kind=A
+pattern [a-z]{2}(?<=ws)(?=tk)[a-z]{2}
+features lookaround,classes,modifiers
+m "wstk wstx wstkwstk" 0 4
+ms 4 "wstk wstx wstkwstk" 10 14
+ms 14 "wstk wstx wstkwstk" 14 18
+ns 18 "wstk wstx wstkwstk"
+mc "wstk wstx wstkwstk" 3
+n "wst"
+mc "wst" 0
+m "awstkb" 1 5
+ns 5 "awstkb"
+mc "awstkb" 1
+
+# WITNESS A10k kind=A
+pattern (?=r(?=ne))[a-z]{3}
+features lookaround,classes,modifiers
+m "rne rnx rnerne" 0 3
+ms 3 "rne rnx rnerne" 8 11
+ms 11 "rne rnx rnerne" 11 14
+ns 14 "rne rnx rnerne"
+mc "rne rnx rnerne" 3
+n "rn"
+mc "rn" 0
+m "xrnez" 1 4
+ns 4 "xrnez"
+mc "xrnez" 1
+
+# WITNESS A11k kind=A
+pattern (?=[a-z]{2}(?<=xy))[a-z]{2}z
+features lookaround,classes,modifiers
+m "xyz xyw xyzxyz" 0 3
+ms 3 "xyz xyw xyzxyz" 8 11
+ms 11 "xyz xyw xyzxyz" 11 14
+ns 14 "xyz xyw xyzxyz"
+mc "xyz xyw xyzxyz" 3
+n "yz"
+mc "yz" 0
+m "axyzb" 1 4
+ns 4 "axyzb"
+mc "axyzb" 1
+
+# WITNESS A14k kind=A
+pattern (?:(?=ln)[a-z]{2}){2}
+features lookaround,classes,modifiers
+m "lnln lnlx lnlnlnln" 0 4
+ms 4 "lnln lnlx lnlnlnln" 10 14
+ms 14 "lnln lnlx lnlnlnln" 14 18
+ns 18 "lnln lnlx lnlnlnln"
+mc "lnln lnlx lnlnlnln" 3
+n "ln"
+mc "ln" 0
+m "xlnlnx" 1 5
+ns 5 "xlnlnx"
+mc "xlnlnx" 1
+
+# WITNESS A18k kind=A
+pattern bu[a-z]{2}(?<=ck)
+features lookaround,classes,modifiers
+m "buck bucx buckbuck" 0 4
+ms 4 "buck bucx buckbuck" 10 14
+ms 14 "buck bucx buckbuck" 14 18
+ns 18 "buck bucx buckbuck"
+mc "buck bucx buckbuck" 3
+n "buc"
+mc "buc" 0
+m "abucky" 1 5
+ns 5 "abucky"
+mc "abucky" 1
+
+# WITNESS A21k kind=A
+pattern [a-z]{2}(?=wvz)[a-z]{2}
+features lookaround,classes,modifiers
+m "abwvz abwvy cdwvzwvz" 0 4
+ms 4 "abwvz abwvy cdwvzwvz" 12 16
+ns 16 "abwvz abwvy cdwvzwvz"
+mc "abwvz abwvy cdwvzwvz" 2
+n "abwv"
+mc "abwv" 0
+m "wvwvz" 0 4
+ns 4 "wvwvz"
+mc "wvwvz" 1
+
+# WITNESS A23k kind=A
+pattern [a-z]m(?<=jm)k
+features lookaround,classes,modifiers
+m "jmk xmk jmkjmk" 0 3
+ms 3 "jmk xmk jmkjmk" 8 11
+ms 11 "jmk xmk jmkjmk" 11 14
+ns 14 "jmk xmk jmkjmk"
+mc "jmk xmk jmkjmk" 3
+n "mk"
+mc "mk" 0
+m "ajmkb" 1 4
+ns 4 "ajmkb"
+mc "ajmkb" 1
+
+# WITNESS A24k kind=A
+# pcre2-only
+pattern (?=\x{e9})[\x{e0}-\x{ff}]e
+features lookaround,classes,modifiers
+encoding utf8
+m "\xC3\xA9e \xC3\xA8e \xC3\xA9e\xC3\xA9e" 0 3
+ms 3 "\xC3\xA9e \xC3\xA8e \xC3\xA9e\xC3\xA9e" 8 11
+ms 11 "\xC3\xA9e \xC3\xA8e \xC3\xA9e\xC3\xA9e" 11 14
+ns 14 "\xC3\xA9e \xC3\xA8e \xC3\xA9e\xC3\xA9e"
+mc "\xC3\xA9e \xC3\xA8e \xC3\xA9e\xC3\xA9e" 3
+n "\xC3\xA9"
+mc "\xC3\xA9" 0
+m "x\xC3\xA9ex" 1 4
+ns 4 "x\xC3\xA9ex"
+mc "x\xC3\xA9ex" 1
+
+# WITNESS A25k kind=A
+pattern (?:x|y)(?=cb)[a-c]{2}z
+features lookaround,classes,modifiers
+m "xcbz ycbz zcbz xcbzycbz" 0 4
+ms 4 "xcbz ycbz zcbz xcbzycbz" 5 9
+ms 9 "xcbz ycbz zcbz xcbzycbz" 15 19
+ms 19 "xcbz ycbz zcbz xcbzycbz" 19 23
+ns 23 "xcbz ycbz zcbz xcbzycbz"
+mc "xcbz ycbz zcbz xcbzycbz" 4
+n "xcb"
+mc "xcb" 0
+m "axcbza" 1 5
+ns 5 "axcbza"
+mc "axcbza" 1
+
+# WITNESS A26k kind=A
+pattern (?=go)(?=[a-z]o)(?=[a-z]{2}l)[a-z]{3}f
+features lookaround,classes,modifiers
+m "golf gol golfgolf" 0 4
+ms 4 "golf gol golfgolf" 9 13
+ms 13 "golf gol golfgolf" 13 17
+ns 17 "golf gol golfgolf"
+mc "golf gol golfgolf" 3
+n "goof"
+mc "goof" 0
+m "xgolfx" 1 5
+ns 5 "xgolfx"
+mc "xgolfx" 1
+
+# WITNESS A27k kind=A
+pattern (?i)(?=dov)[a-z]{3}
+features lookaround,classes,modifiers
+m "dov DOV dOv dox" 0 3
+ms 3 "dov DOV dOv dox" 4 7
+ms 7 "dov DOV dOv dox" 8 11
+ns 11 "dov DOV dOv dox"
+mc "dov DOV dOv dox" 3
+n "do"
+mc "do" 0
+m "xDoVx" 1 4
+ns 4 "xDoVx"
+mc "xDoVx" 1
+
+# WITNESS A28k kind=A
+pattern (?=wo)[\w]{2}[!?]
+features lookaround,classes,modifiers
+m "wo! wo? wox! wo!wo?" 0 3
+ms 3 "wo! wo? wox! wo!wo?" 4 7
+ms 7 "wo! wo? wox! wo!wo?" 13 16
+ms 16 "wo! wo? wox! wo!wo?" 16 19
+ns 19 "wo! wo? wox! wo!wo?"
+mc "wo! wo? wox! wo!wo?" 4
+n "w!"
+mc "w!" 0
+m "awo!" 1 4
+ns 4 "awo!"
+mc "awo!" 1
+
+# WITNESS A29 kind=A
+pattern (?=kev)[\x01-\x80]{3}
+features lookaround,classes,modifiers
+m "xkevykevz" 1 4
+ms 4 "xkevykevz" 5 8
+ns 8 "xkevykevz"
+mc "xkevykevz" 2
+n "kekv"
+mc "kekv" 0
+m "kevkevkev" 0 3
+ms 3 "kevkevkev" 3 6
+ms 6 "kevkevkev" 6 9
+ns 9 "kevkevkev"
+mc "kevkevkev" 3
+
+# WITNESS A30 kind=A
+pattern (?=kev)[\x00-\x80]{3}
+features lookaround,classes,modifiers
+m "xkevykevz" 1 4
+ms 4 "xkevykevz" 5 8
+ns 8 "xkevykevz"
+mc "xkevykevz" 2
+n "kekv"
+mc "kekv" 0
+m "kevkevkev" 0 3
+ms 3 "kevkevkev" 3 6
+ms 6 "kevkevkev" 6 9
+ns 9 "kevkevkev"
+mc "kevkevkev" 3
+
+# WITNESS B14k kind=B
+pattern a(?=[a-z]{2}z)bcy
+features lookaround,classes,modifiers
+n "abcy abcz abcyz"
+mc "abcy abcz abcyz" 0
+n "abczabcy"
+mc "abczabcy" 0
+n "a"
+mc "a" 0
+
+# WITNESS B15k kind=B
+pattern abc(?<=x[a-z]{2})
+features lookaround,classes,modifiers
+n "abc xbc abcxbc"
+mc "abc xbc abcxbc" 0
+n "xabc"
+mc "xabc" 0
+n "bc"
+mc "bc" 0
+
+# WITNESS B17k kind=B
+pattern (?=xyz)xy[a-y]
+features lookaround,classes,modifiers
+n "xyz xya xyzxya"
+mc "xyz xya xyzxya" 0
+n "xyxy"
+mc "xyxy" 0
+n "xy"
+mc "xy" 0
+
+# WITNESS B19 kind=B
+pattern [a-p](?<=q)
+features lookaround,classes,modifiers
+n "qa qq aqb"
+mc "qa qq aqb" 0
+n "qp"
+mc "qp" 0
+n "a"
+mc "a" 0
+
+# WITNESS B07k kind=B
+# pcre2-only
+pattern (?i)(?=k)(?-i)[a-jl-z]z
+features lookaround,classes,modifiers
+n "kz Kz az"
+mc "kz Kz az" 0
+n "kzKzaz"
+mc "kzKzaz" 0
+n "z"
+mc "z" 0
+
+# WITNESS B20 kind=B
+pattern a(?=[a-z][a-z]z)bcy
+features lookaround,classes,modifiers
+n "abcy abcz abcyz"
+mc "abcy abcz abcyz" 0
+n "abczabcy"
+mc "abczabcy" 0
+n "a"
+mc "a" 0
+
+# WITNESS B21 kind=B
+pattern abc(?<=x[a-y]c)
+features lookaround,classes,modifiers
+n "abc xbc abcxbc"
+mc "abc xbc abcxbc" 0
+n "xabc"
+mc "xabc" 0
+n "bc"
+mc "bc" 0
+
+# WITNESS B22 kind=B
+pattern abc(?<=x[^z]c)
+features lookaround,classes,modifiers
+n "abc xbc abcxbc"
+mc "abc xbc abcxbc" 0
+n "xabc"
+mc "xabc" 0
+n "bc"
+mc "bc" 0
+
+# WITNESS B23 kind=B
+pattern (?=xy)(?=xz)\w\w
+features lookaround,classes,modifiers
+n "xy xz xyz"
+mc "xy xz xyz" 0
+n "xyxz"
+mc "xyxz" 0
+n "x"
+mc "x" 0
+
+# WITNESS B24 kind=B
+pattern (?=xy)(?=xz)
+features lookaround,classes,modifiers
+n "xy xz xyz"
+mc "xy xz xyz" 0
+n "xyxz"
+mc "xyxz" 0
+n "x"
+mc "x" 0
+
+# WITNESS A16k kind=A
+# pcre2-only
+pattern (?i)[a-z]{3}(?-i)(?<=dov)
+features lookaround,classes,modifiers
+m "dov DOV dOv dov" 0 3
+ms 3 "dov DOV dOv dov" 12 15
+ns 15 "dov DOV dOv dov"
+mc "dov DOV dOv dov" 2
+n "DOV"
+mc "DOV" 0
+m "xdovy" 1 4
+ns 4 "xdovy"
+mc "xdovy" 1
+
+# WITNESS A11w kind=A
+pattern (?=[a-z][a-z](?<=xy))[a-z]{2}z
+features lookaround,classes,modifiers
+m "xyz xyw xyzxyz" 0 3
+ms 3 "xyz xyw xyzxyz" 8 11
+ms 11 "xyz xyw xyzxyz" 11 14
+ns 14 "xyz xyw xyzxyz"
+mc "xyz xyw xyzxyz" 3
+n "yz"
+mc "yz" 0
+m "axyzb" 1 4
+ns 4 "axyzb"
+mc "axyzb" 1
+
+# WITNESS A31 kind=A
+pattern (?=a[a-z]{2}l)[a-z]{4}
+features lookaround,classes,modifiers
+m "axyl axyz abclazzl" 0 4
+ms 4 "axyl axyz abclazzl" 10 14
+ms 14 "axyl axyz abclazzl" 14 18
+ns 18 "axyl axyz abclazzl"
+mc "axyl axyz abclazzl" 3
+n "axl"
+mc "axl" 0
+m "xaqql" 1 5
+ns 5 "xaqql"
+mc "xaqql" 1
+
+# WITNESS A32 kind=A
+pattern (?=a[a-z][a-z]l)[a-z]{4}
+features lookaround,classes,modifiers
+m "axyl axyz abclazzl" 0 4
+ms 4 "axyl axyz abclazzl" 10 14
+ms 14 "axyl axyz abclazzl" 14 18
+ns 18 "axyl axyz abclazzl"
+mc "axyl axyz abclazzl" 3
+n "axl"
+mc "axl" 0
+m "xaqql" 1 5
+ns 5 "xaqql"
+mc "xaqql" 1
