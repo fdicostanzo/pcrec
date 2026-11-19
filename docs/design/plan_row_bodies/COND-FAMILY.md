@@ -4689,3 +4689,20 @@ outer program see a label defined inside a pattern inserted through a hole) is a
 and 3 and the draft's R.1.13 line on holes (only the inserted pattern's exported, public, labels are visible); it is
 NOT asked. To test: `$h` after a hole whose pattern has a public `h`, beside an outer `h` (last mention), with the
 backreference `\k<h>` reading the outer group (same-name-count).
+
+### 2026-11-19 OWNER, on building rx from many bindings: use the label rules as defined, watch for a problem
+
+His words, verbatim: "i think it will be common to build up rx using multiple bindings. what will happen is that as
+the exported space will get more filled. if i use isodate 3 times, then i have year,month,day 3 times. i bind
+[ start_date = isodate ] . ":" . [ end_date = isodate ] so i can get a path to them... i say the strategy is to use
+labels as they are defined and see if there is a problem."
+
+Class: an OBSERVATION (the exported space fills as bindings compose; part labels give the path) and a DIRECTION for
+the work, his: no change to the label rules now; use them as defined and see if a problem appears. Nothing ruled.
+Spellings (`.` between parts, `[ start_date = isodate ]`, `":"`) are placeholders (D193 addendum 4).
+
+For the next lane (the manager's task list, not a rule): work his example as a test of the rules AS DEFINED: one
+binding `isodate` with public `year`, `month`, `day`, used three times, two of them under part labels `start_date`
+and `end_date`; state what bare `year`, `start_date.year` and `end_date.year` read under export-rule (2)-(4) (last
+mention; an ambiguous reference is the error), in every mode; plus two or three examples where a PRIVATE label does
+real work. Report any place the rules as defined give a surprising answer; propose no rule change.
