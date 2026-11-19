@@ -28458,3 +28458,39 @@ Next
 - OWNER RULINGS (verbatim in the records): pilot-verdict + size-trigger-final -> D200 (step kept, trigger as is); census-stop -> D191 add. 1 (a fail-fast census, ~1 h, BEFORE any build, facts or performance; my derived consequences marked there); remodel-go -> D191 add. 2 (small refactors ride the go, listed in every pre-go briefing; manager skill trigger row); proved-ending-scope -> [CTX-SIDES-PRODUCER] scheduled after L1-L3 land (REQ-LOOKAROUND.md body).
 - Night: load checks 00:06 and 00:27 QUIET (load 1.3-1.5, no trouble makers); kit 700-703 queued for 01:00; 704 cancelled (by day).
 - NEXT by day: read the night's verdicts (`scripts/monread main`); L1 build lane (opus): census first (stop on no predicted mover), then remodel commits (RM-1, RM-6, remodel 3), then the feature; the D168 addendum in the same change; D27 witnesses; code critic before landing. Cover-cap rebuild on h*. Dense-hit design when the kit's R-46 form arrives (~17:00). A6 retro test owed.
+
+## 2026-11-19 session 141 (in flight, 12:45) — night verdicts, L1 census + remodels, cover-cap landing prep
+
+- NIGHT (kit): form cards h* = 64 (702; grid top; the kit's span head WF_SPAN_HEAD, ALREADY 64, NOT pcrec's width);
+  C3 re-run 705 by day (Frank: "run it when available"; I should have run it inside the cleared night, memory
+  pcrec-use-the-cleared-window); set 1 INCONCLUSIVE-AT-NOISE (last night; libc byte quiet gate 3.1 % vs 3 %);
+  calibration 800-809 GREEN; 704 identity GREEN on the kit's comment-only relabel (lane/memfn-relabel64 0df533a85).
+- MY ERROR: lane covcap64 briefed to set PCREC_DEFAULT_WINDOW_SEARCH_WIDTH 32 -> 64 from h*; stopped after one
+  commit, never landed; its gate job cancelled. The width stays 32 until cover_cap.md §11.4 part B is timed (owed,
+  a night window). Memory pcrec-name-the-constant-before-briefing.
+- Frank's "why" (kit 706): inline loses to the loop on long near-miss spans by BRANCH MISPREDICTION (3.5 -> 14.3 ->
+  27.5 misses/byte), not op-cache. 707: whole-span BLOCK forms win widely (hex500 near-miss ns/B: loop 39, head-64
+  84, SWAR 11, AVX2 2.8). Frank to the kit: widen it; if blocks "more or less always improve" they REPLACE inline.
+  708 (block test, ~4.8 h) + 709 (hit-spacing sweep, candidate N) queued for 01:00; night CLEARED by Frank
+  ("yes the box is clear after 1am and possibly earlier as usual"). Load-check one-shot at 00:27.
+- Frank DISCUSSION dense-not-target: super dense (hits within N bytes) is not a target (users turn the kit off);
+  dense = 2+ hits per block; N to be measured (709). Frank OBSERVATION: "this is the census idea in play" (D191
+  add. 1's first evidence: the block result and L1's census).
+- L1 ([REQ-LOOKAROUND]): lane l1build: census_l1.py (~15 min): 54 predicted movers, all corpus (51 dead fixtures,
+  3 narrowings), 0 bench; the 8 bench lookarounds are L3/L2 shapes. RULING l1-enabler (Frank 12:40): "proceed to
+  development" (row body). Remodels RM-1 a4230e01e, RM-6 e7bb64748, remodel 3 7581123e4: identity x3 GREEN, mech
+  GREEN (mech-bound split in 4: one job's dry run over 20 rows exceeds the queue's 30 s start cap). Red
+  test-cpset-structure: wclass census [5b] (shared label run) fixed by lane l1tri (renamed l1wclass: the name
+  collided with a 2026-10-11 lane and overwrote its report; restored 66abad615). Review r53 (code): coordinator
+  drafted 09:19 then idled on its own job; found 12:14; 14 findings, 11 FIX-NOW ruled; filed edec6b7f5 on the
+  branch; critic skill amended 3693e5c1f. F11 answered: the 11-18 remodel-go question listed both RM-6 and the
+  head rule. Lane l1fix applying the FIX-NOWs (9 commits so far, identity GREEN on F6, F8/F9).
+- COVER-CAP landing prep: lane covland merged the relabel + main (6 doc conflicts) and STOPPED correctly: a lowered
+  -D cap FAILS a 4095 cover compile ("pattern too large"), against limits.md 3.12¶4. Ruled R1: correct the
+  sentence (no ladder rung, D77); covland2 wrote it; cloud suite on 52afb3a81: ubsan, asan, recidentity, axes
+  GREEN; reds triaged by covtri1119 (none a regression): g2 shard timeout (g2 +34 %, limit 35 -> 50 min), S526 and
+  S1138 plants outdated by the line's own fixes. Fix tip ab7e87c02; cloud re-runs in flight.
+- Merged lane/pred-rev28 (predicates rev 28.1 + r52); pred's next round is r54. Pushed main e99273ff3.
+- NEXT: l1fix delivers -> L1 feature lane (opus) on lane/l1build; cover-cap re-runs green -> landing (register
+  rows, plan status, D177 ledger line, merge); dense-hit design when R-46's form arrives; read 708/709 in the
+  morning (N, the block verdict).
