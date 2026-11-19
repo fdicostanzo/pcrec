@@ -4623,3 +4623,18 @@ The manager's readings, for the next lane to test, and the manager's to settle a
 here): (a) the warning fires wherever the form is written, including where it is right (`/(?<x>\d+)/ & ($x & <5)`
 equals `(x: <5)` on 0 / 0 / 0 of 364, so the suggestion is harmless there); (b) it is a warning, never an error;
 (c) whether it can be silenced, and its wording, are the manager's call.
+
+### 2026-11-19 OWNER RULING — number-edges
+
+His words, verbatim: "number-edge: nothing"
+
+Class: RULING (a slug answer to number-edges; "number-edge" read as the slug).
+
+The rule as asked: `% 0` and a NEGATIVE result are outside the number domain and yield NOTHING, everywhere (a
+constant case removed at compile time, a run-time case does not match), as a non-numeral read does. No signed
+numeral; no compile error of its own for a written `% 0`. The draft's reading (rev 28.1, R.1.16 NUMBER EDGES) becomes
+the ruling; its runs stand (`/(?<y>\d+)-${$y - 10}/` WHOLE `5--5` FAILS; `/(?<y>\d+)-${$y % 0}/` never holds).
+
+The manager's reading, for the next lane to test: a divisor written as a literal `0` makes a program that can never
+match, and the existing "can never match" diagnostics speak there if their wording reaches it (told to him as the
+manager's leaning inside the question; no new rule).
