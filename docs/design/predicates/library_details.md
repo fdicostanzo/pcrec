@@ -3,22 +3,108 @@
 One entry per tag of `library.md`, in the same order (fields as in `core_details.md`). The record
 is `docs/design/plan_row_bodies/COND-FAMILY.md`; a skeleton entry's source is `predicates_draft.md` revision 29.1.
 
+## lib/builtin/enumerate — Enumerate
+was: core/arrays/enumerate (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+slugs:
+rulings:
+- 2026-11-14 "I love it. Enumerate go." (record: "2026-11-14 RULINGS on the predx gaps"); design adoption, with its rules: the budget, PCRE priority order, a built-in
+rejected:
+- widest first (one more copy first everywhere) as the order — by review r52 D (TABLES-4): it parts from PCRE priority on `(?:a|ab){1,2}` (SEARCHED `aba` `aba`@0 against `a`@0); preddoc3b sabotage s8 caught.
+- codepoint order for a class's members in a lift — by owner ruling — class-order (core/arrays/class-order).
+readings:
+- the enumerator's ORDER equals PCRE's own pattern on re-joining — SUPPORTED (preddoc3b EXenum: 0 / 0 / 0 of 63 texts; PART PR of predspec281 on libpcre2).
+- an interior lookaround or a backreference in the argument: NOT STATED (PART PR of predspec281).
+evidence: preddoc3b EXenum.
+history:
+- 2026-11-14: "Enumerate go"; the draft §5.5. 2026-11-18: construction-line made it the line of single-value functions. 2026-11-19: class-order replaced the codepoint lean for lifts.
+- 2026-11-19 (lane preddoc3b): converted from `?`.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
+## lib/builtin/enumerate/class-index — The order of a class in enumerate
+was: core/arrays/class-index (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+slugs: class-index
+rulings:
+rejected:
+readings:
+- (a) is the draft's reading (rev 29's narrowing of the codepoint lean, not the ruling's words) — the record says the lean "is replaced", with no carve-out; (a) vs (b) 0 / 250 / 570 of 3,906; (a) vs (c) 0 / 0 / 0 (PART CO of predspec291).
+evidence: preddoc3b EXclassindex; PART CO of predspec291 (P29-10).
+history:
+- 2026-11-19: new with class-order; re-worded by review r54 P29-10.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
+## lib/builtin/import — import
+was: core/modules/import (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+was: parked/import-symbols/import (2026-11-19, ruled by the owner: it is in the language)
+slugs: import-several
+rulings:
+- 2026-11-19 "import-several: yes. if you can bind multiple arguments simultaneously, thent this is more expressive. before you could only bind one so what did multiple files mean? although, good point, if the binding is just 1 symbol, then its a map of all the values of the files combined." (record: "2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map")
+- 2026-11-14 "import(...)'s argument is a set of names (an rx over file names, consistent with export)" (record: "2026-11-14 — import/export as functions"); the addendum, the manager's wording of his words
+rejected:
+- it must resolve to EXACTLY ONE file; several matches a compile error (the 2026-11-14 addendum; the draft §7) — by owner ruling — import-several ("before you could only bind one so what did multiple files mean?").
+- `import weekday as wd` for a clash (the manager's 2026-11-14 lean) — by owner ruling — no alphabetic keywords; the rename is now `(wd = weekday) := ...` (core/modules/binding-list).
+readings:
+- zero files matched stays a compile error (the manager's reading of import-several) — UNTESTED (a refusal).
+- compile time only, pinned by `sha256`, configured directories only (the manager's 2026-11-13 design; the draft §7, LEAN) — UNTESTED.
+evidence:
+history:
+- 2026-11-13: `d := import("isodate")`; 2026-11-14: import/export as functions, its follow-up and addendum; 2026-11-19: several modules in one import, then import-several.
+- 2026-11-19 (lane preddoc3b): the parked placeholder parked/import-symbols/import is retired into this section (the owner ruled import-symbols); its slug `import-symbols` is on core/modules/binding-list.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
+## lib/builtin/import/filter — A filter inside the import
+was: core/modules/import-filter (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+slugs:
+rulings:
+- 2026-11-19 "one could filter but it would have to be inside the import("file1"|"file2", search(string))" (record: "2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map"); an IDEA in the ruling's answer
+rejected:
+readings:
+- NOT STATED: the filter before or after the conflict check.
+evidence:
+history:
+- 2026-11-19: his first instinct already filtered inside the import (`import("blah", /left|right/)`); the idea in import-several.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
+## lib/builtin/pattern — pattern
+slugs:
+rulings:
+rejected:
+- a coercion inside a macro body (`pattern(arg)` turning a caller's `$x` into the group's shape) — by the record (the manager's leaning, "no silent conversions") — a parameter kind `pure` marks the need instead (parked with typed parameters).
+readings:
+- the built-in `pattern($x)`, the group's static pattern, PURE although it mentions a label; union of duplicate definitions; flags as compiled in place; inner named groups as fields; "not self-contained" an error — the manager's leaning in the record's 2026-11-14 00:10 notes (his question: how to get the group's PATTERN without its match); LEAN in the draft (§13 O48), OUT of phase 1 (the draft's census, CF:889).
+- `/(?<x>\d+),${pattern($x)}/` is `(?<x>\d+),(?:\d+)`: WHOLE `12,345` HOLDS / SEARCHED `1,2`@1 / FIND-ALL [`1,22`@0, `3,4`@5] — SUPPORTED (preddoc4 PART PT; sabotage s12, the backreference, caught).
+evidence: docs/dev/lanes/preddoc4_evidence/ PART PT.
+history:
+- 2026-11-19 (lane preddoc4): a new piece: a name on the closed built-in list with no piece (review r59 COMPB-3).
+
+## lib/builtin/eval — eval
+slugs:
+rulings:
+rejected:
+readings:
+- the record's "2026-11-14 — runtime eval (Frank: with the dynamic automaton and pcrec as a library, `x := eval(...)` for a dynamic rx; restriction DFA; opaque; effectively a callout)": an IDEA; only as an explicit MODULE ("requires module 'eval'" otherwise) with a BUDGET; the same automaton code as compile-time `records()` — named, not defined: `under-construction`.
+evidence:
+history:
+- 2026-11-19 (lane preddoc4): a new piece: a name on the closed built-in list with no piece (review r59 COMPB-3).
+
 ## lib/modifiers/padded — padded
+was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs: padded-width padded-order padded-lazy-sparse
 rulings:
 - 2026-11-15 "padded(rx) := /0*${rx}/" (record: "2026-11-15 RULING — `padded` is the plain macro `padded(rx) := /0*${rx}/`")
 - 2026-11-18 "padded-width: minimum" (record: "2026-11-18 OWNER RULING — padded-width: minimum")
 - 2026-11-19 "i agree with your lean" (record: "2026-11-19 OWNER RULING — padded-order")
 - 2026-11-19 "padded-lazy-sparse: stated behavior." (record: "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros")
+- 2026-11-15 "cut-unpadded: agree" (record: "2026-11-15 RULING — `unpadded` is cut from the first spec")
 rejected:
 - exact width (a value longer than n is nothing) — by owner ruling — padded-width; the run: `9999-10000` FAILS under it (preddoc3c PART PW, sabotage s3 caught).
-- the exact-width branch first, `(/0*${rx}/ & /(?s:.){n}/) | (rx & /(?s:.){n,}/)` — by owner ruling — padded-order (the lean taken: any-length first); it differs SEARCHED on `x0129` (`012`@1) (PART PW, sabotage s1 caught).
+- the exact-width branch first, `(/0*${rx}/ & /(?s:.){${n}}/) | (rx & /(?s:.){${n},}/)` — by owner ruling — padded-order (the lean taken: any-length first); it differs SEARCHED on `x0129` (`012`@1) (PART PW, sabotage s1 caught).
 - the argument's own order (each member zero-filled to at least n, in enumerate's order) as the definition — by owner ruling — padded-order replaced it by the body's order; no single body keeps it for an infinite argument (the draft's rev 28.1 PART PO).
 - an error for a lazy or shortest-first argument — by owner ruling — padded-lazy-sparse.
 - a modifier's argument as a filter matched whole of its own (the draft's old row L13: `padded(/^5/)` = `padded("5")`) — by owner ruling — the plain macro: the argument is spliced into a hole, so `^` forbids the zeros (PART PA).
 - `0?` for the zeros arm — by run — `2025-002026` would fail (the draft's rev 28.1 PART PW; preddoc3c PART PW, sabotage s2 caught).
+- `unpadded` as a provided name (it read the subject as if zero-padded, `9:00` tested as `09:00`: text the subject does not contain, so no body in the language says it) — by owner ruling — cut-unpadded; a time range is written with split fields and number conditions, `/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: padded(between(9, 10)))` with the minute condition its end needs.
 readings:
-- the two-argument body `padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)` reproduces every printed answer of the width form: five argument orders (`(?:\d\d)+?` n = 3, `\d{2,3}`, `1|0123`, `\d|\d\d\d|\d\d`, `\d+?` n = 2) and the two value-hole programs — SUPPORTED (preddoc3c PART PW; sabotages s1, s2, s3 caught).
+- the two-argument body `padded(rx, n) := (rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)` reproduces every printed answer of the width form: five argument orders (`(?:\d\d)+?` n = 3, `\d{2,3}`, `1|0123`, `\d|\d\d\d|\d\d`, `\d+?` n = 2) and the two value-hole programs — SUPPORTED (preddoc3c PART PW; sabotages s1, s2, s3 caught).
 - the one-argument body reproduces `5`, `05`, `005`; `padded(/^5/)` only `5`; `/1|2/` on `02`; `padded(between(0, 255))` on `000`; `padded(between(1, 12))` rejects `00` — SUPPORTED (PART PA; sabotage s4, the raw paste without the hole's group, caught).
 - "a macro whose body is one filter or one sequence keeps the argument's order; an alternation of filtered copies imposes its own" (the manager's reading in the padded-lazy-sparse entry) — UNTESTED here as a general law; it is what PART PW shows for `padded`.
 - his remark "i suspect it will always be broken for some use case and 0* will be default" is an OBSERVATION: the default (no width) is `0*`, as ruled; nothing reversed — the base says so.
@@ -29,26 +115,21 @@ history:
 - 2026-11-18: the width form, minimum (rev 28); the exact-first body as the draft's reading.
 - 2026-11-19: padded-order (any length first); padded-lazy-sparse (stated behaviour); `limited` proposed the same day (lib/modifiers/limited, parked/ideas/limited).
 - 2026-11-19 (lane preddoc3c): the skeleton converted in full.
-
-## lib/modifiers/unpadded — unpadded
-slugs:
-rulings:
-- 2026-11-15 "cut-unpadded: agree" (record: "2026-11-15 RULING — `unpadded` is cut from the first spec")
-rejected:
-- `unpadded(n, S)` as a provided transform — by owner ruling — cut-unpadded: it was never a plain macro (the zeros are not in the text, nothing to splice; the draft's pullback did the work), and it was the draft's addition.
-readings:
-- his reason: "The issue is numbers compare right aligned and strings left." The natural-order range he filed instead (digit runs compared as numbers, a way of comparing chosen where the range is written) is a later item with its trigger in the same entry ("a real example where splitting fields is too clumsy"); not an ideas-file item.
-evidence: the draft §2.7's bodies table and §9.
-history:
-- 2026-11-15: cut (rev 14); the time-range example rewritten with split fields.
-- 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided".
+- 2026-11-19 (lane preddoc4): the body's counts written as holes, `{${n},}` and `{${n}}` (record: "2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body", item 2); built from its text the old body never matches (`{n,}` is literal text): preddoc4 PART PD, sabotage s1. `by: core/principles/stated-behaviour` dropped (review r59 RULING-1: the principle was coined from this piece).
+- (from lib/modifiers/unpadded) his reason: "The issue is numbers compare right aligned and strings left." The natural-order range he filed instead (digit runs compared as numbers, a way of comparing chosen where the range is written) is a later item with its trigger in the same entry ("a real example where splitting fields is too clumsy"); not an ideas-file item.
+- (from lib/modifiers/unpadded) 2026-11-15: cut (rev 14); the time-range example rewritten with split fields.
+- (from lib/modifiers/unpadded) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided".
+- 2026-11-19 (lane preddoc4): the piece `lib/modifiers/unpadded` deleted, its content moved here (review r59 READ-13).
 
 ## lib/modifiers/quoted — quoted
+was: lib/modifiers/json-quoted (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs:
 rulings:
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
+- 2026-11-15 "cut-json-quoted: agree. It would necessitate a callout or similar? We have unrelated plans for dfa compatible callouts and that could be one" (record: "2026-11-15 RULING — `json.quoted` is cut from the first spec")
 rejected:
 - the plain splice `quoted(S) := /"(?:${S})"/` — by run — its `^` reads the stretch before the quote, so `quoted(/^a\w*/)` never matches (0 of 121 texts over `"ab`; preddoc3c PART QU, sabotage s13 caught).
+- `json.quoted` as a provided name (it tested S against the DECODED string, `\u0041` read as `A`, which is not in the text) — by owner ruling — cut-json-quoted; the `json` module keeps `json.string`, the literal's rx.
 readings:
 - the body `/"${S & /[^"]*/}"/` while the quoted text holds no escape (the draft's LEAN, §2.7 bodies table) — SUPPORTED for its one printed claim (PART QU).
 - the names `padded`, `any_case`, `quoted`, `length`, `month_numbered` are ruled (OWN-1's list); the bodies are the draft's.
@@ -56,6 +137,10 @@ evidence: preddoc3c PART QU.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 14): the body with `&` inside the hole (the draft).
 - 2026-11-19 (lane preddoc3c): converted.
+- (from lib/modifiers/json-quoted) a DFA-compatible callout (his pointer) or a finite-state decoding rewrite could bring it back (the manager's answer in the entry); a follow-up with `any_case`'s basis.
+- (from lib/modifiers/json-quoted) 2026-11-15: cut (rev 16).
+- (from lib/modifiers/json-quoted) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided"; `module: json` from the draft ("the `json` module keeps `json.string`").
+- 2026-11-19 (lane preddoc4): the piece `lib/modifiers/json-quoted` deleted, its content moved here (review r59 READ-13).
 
 ## lib/modifiers/any-case — any_case
 slugs: any-case-body
@@ -75,19 +160,6 @@ history:
 - 2026-11-15: a primitive for now, the basis a follow-up ([PRED-REREAD], the draft §13 O70).
 - 2026-11-18 (rev 28): flags-propagate re-ran the candidate body; rev 28.1: the `(?-i)` difference; rev 29: T-c, equal for plain and positive filter-role arguments; rev 29.1: the negated operand differs; any-case-body named as a gap, not asked.
 - 2026-11-19 (lane preddoc3c): converted, `open any-case-body`.
-
-## lib/modifiers/json-quoted — json.quoted
-slugs:
-rulings:
-- 2026-11-15 "cut-json-quoted: agree. It would necessitate a callout or similar? We have unrelated plans for dfa compatible callouts and that could be one" (record: "2026-11-15 RULING — `json.quoted` is cut from the first spec")
-rejected:
-- `json.quoted(S)` as a provided transform — by owner ruling — cut-json-quoted: its filter tests the decoded string, not in the text.
-readings:
-- a DFA-compatible callout (his pointer) or a finite-state decoding rewrite could bring it back (the manager's answer in the entry); a follow-up with `any_case`'s basis.
-evidence: the draft §2.7 and §9.
-history:
-- 2026-11-15: cut (rev 16).
-- 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided"; `module: json` from the draft ("the `json` module keeps `json.string`").
 
 ## lib/modifiers/limited — limited
 slugs:
@@ -114,6 +186,7 @@ history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body (review r16 FIXIND-3).
 - 2026-11-18: his `length($y)` (an image) is written `strlen($y)` (the draft's A26), so this filter keeps its name.
 - 2026-11-19 (lane preddoc3c): a new piece (a provided name the library lacked: census row `length`).
+- 2026-11-19 (lane preddoc4): `needs:` the computed-label piece and lib/counting/count, the two names its body uses (review r59 READ-8).
 
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
@@ -126,6 +199,7 @@ evidence: preddoc3c PART MN.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body.
 - 2026-11-19 (lane preddoc3c): a new piece (not in the census's 61 rows; a provided name of the draft §2.7).
+- 2026-11-19 (lane preddoc4): `join([...])` removed from `months` (join is one string, the members joined; an array is already the alternation); `needs:` the computed-label and metadata pieces; answers unchanged: preddoc3c PART MN built the body as the alternation (review r59 READ-5).
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive)
@@ -173,6 +247,7 @@ history:
 - 2026-11-17: `when(c, p)` := `x & (NOT c | p)`, "a LIBRARY DEFINITION, no primitive" (when-meaning).
 - 2026-11-18: the guarded form; when-default; when-alone; a single argument an error; `then` required (the draft R.1.10 (1), (2), (8)).
 - 2026-11-19: moved from the core to the library with its body (lane preddoc2; the owner's recommendation 1).
+- 2026-11-19 (lane preddoc4): `needs: core/filters/negation` (the body's `NOT peek(test)` is legal by that piece) and `see: lib/control/when-test` (review r59 NEGATION, READ-17).
 
 ## lib/control/when-test — The test of `when`
 was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive)
@@ -204,6 +279,19 @@ history:
 - 2026-11-18: the manager's note in the record ("`then` is required; NOT gives the else-only behaviour"): complement-place and when-peek's reading collide here; asked as not-test.
 - 2026-11-19 (lane preddoc2): split from the test piece (one piece, one status: the test is ruled, this is open).
 
+## lib/control/atomic — atomic
+slugs:
+rulings:
+- 2026-11-17 "Atomic as used by say atomic() would provide pcre behavior." (record: "2026-11-17 OWNER on atomic-search")
+rejected:
+readings:
+- the body `atomic(X) := /(?>${X})/` reproduces its example: `atomic(/a|ab/) SEQ "c"` WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac` [`ac`@0, `ac`@7] — SUPPORTED (preddoc4 PART AT, built from the body's text; sabotage: the group not atomic).
+- `atomic(...)` was the core's placeholder spelling for its atomic part (core/patterns/atomic); a name that is a body over a hole is a library piece (doc_format's rule; review r59 PLACE-2 (a)).
+evidence: docs/dev/lanes/preddoc4_evidence/ PART AT.
+history:
+- 2026-11-17: atomic-search; `atomic(...)` the core's spelling of an atomic part.
+- 2026-11-19 (lane preddoc4): a new piece: the name moved out of core/patterns/atomic, which keeps the rule (review r59 PLACE-2 (a)).
+
 ## lib/search/occurrences — occurrences
 formerly: ?.search (2026-11-15, the owner renamed `search` to `occurrences` under his naming rule)
 slugs: hit-carry hit-carry-depth min-values
@@ -214,6 +302,7 @@ rulings:
 - 2026-11-17 "Agree with all three." (record: "2026-11-17 OWNER RULING — the three remaining error-or-warning candidates")
 - 2026-11-18 "hit-carry: occurrences is a simple regex rewrite ? So what the user provides gets inserted into a template hole like usual? If this is so, then the user is creating this scenario themselves. They can simply put the condition after the label to get the normal behavior. In cases where the user puts the condition before the label, they are expecting carries behavior" (record: "2026-11-18 OWNER RULING — hit-carry: it carries, because `occurrences` is a rewrite")
 - 2026-11-18 "hit-carry: warning on nullable" (record: "2026-11-18 OWNER RULING — nullable argument: a warning")
+- 2026-11-15 "occurrences(x, label = \"foo\")" (record: "2026-11-15 RULINGS — a per-call hit name; no count warning; the hole is the scope an `&` in it anchors to")
 rejected:
 - the name `search` (a verb acting on the subject) — by owner ruling — renamed `occurrences`.
 - `min` 0 or 1 only, another value a compile error naming `occurs.at_least` — by owner ruling — min-values: any n, at least n hits.
@@ -223,7 +312,7 @@ rejected:
 - "the program keeps PCRE's meaning for the empty hit, as the empty search does" — by run — NOT SUPPORTED: PCRE's find-all of `/\d*/` on `a1b` gives four hits, the loop fewer (the draft R.1.9, PART H H4, H5).
 readings:
 - the body reproduces R.1.9's printed hits (`/\d*/` on `1a` and `12a3`; `min = 2` on the empty text, two empty hits; `min = 3` on `ab`, three) and `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with [`12`, `34`] — SUPPORTED (preddoc3c PART OC; sabotages s9, s10 caught).
-- the loop's priority equals python's own reading of the body text `(?:(?s:.*?)(?<hit>\d+)){min,}(?s:.*)`, min 0, 1, 2: 0 / 0 / 0 of 31 texts over `1a` — SUPPORTED (PART OC).
+- the loop's priority equals python's own reading of the body text `(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)` with x := `\d+` and min 0, 1, 2: 0 / 0 / 0 of 31 texts over `1a` — SUPPORTED (PART OC).
 - the hits of a nullable argument: up to and including the first empty hit (the manager's second correction, review r47 V1) — the told reading, SUPPORTED as the draft printed it (PART OC).
 - hit-carry's witness `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5) (WHOLE `73` FAILS, SEARCHED `73` FAILS, FIND-ALL `3x73` [`3x73`@0 h = `7`]) — UNTESTED here (a condition before its group reads the previous hit: it needs the label engine; the draft's rev 26 PART H ran it on libpcre2).
 - hit-carry-depth (how deep the carry reaches) — asked in the draft's open table, not answered; not a library question.
@@ -233,6 +322,8 @@ history:
 - 2026-11-17: regex-settles (his one-pattern lazy-gap model, "It's essentially /(.*(${rx}))*.*/ So not global"); min-values.
 - 2026-11-18: hit-carry; the nullable argument a warning; the hits of a nullable argument corrected twice by the manager.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-19 (lane preddoc4): the whole-text idiom `J & C & occurrences(M)` moved here from core/model/modes, whose ruling (whole-text, "adopt it if it's legal") stays cited there (review r59 PLACE-2 (b)).
+- 2026-11-19 (lane preddoc4): the ruled per-call hit name added to the base (review r59 COMPB-8); its spelling stays a placeholder.
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass some-own
@@ -356,6 +447,7 @@ readings:
 evidence: preddoc3c PART AN.
 history:
 - 2026-11-19: anything-text ("anthing-text" read as the slug); the skeleton converted in full (lane preddoc3c).
+- 2026-11-19 (lane preddoc4): `anything & NOT X` written `anything & !X` (the complement is `!`; review r59 NEGATION).
 
 ## lib/sets/between — between
 slugs:
@@ -384,6 +476,39 @@ history:
 - 2026-11-15 (rev 15): `left/right/mid` with a body; 2026-11-18 (rev 27.1): renamed.
 - 2026-11-19 (lane preddoc3c): converted.
 
+## lib/counting/some — some
+slugs: all-question
+rulings:
+- 2026-11-15 "3. could you use some() to get some hits?" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
+- 2026-11-15 "Do it" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
+- 2026-11-16 "all-question: retire" (record: "2026-11-16 OWNER RULING — all-question: retire")
+- 2026-11-17 "after-loop-read: ok I see it. Last pass own label makes sense" (record: "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label")
+rejected:
+- `all` as a group question — by owner ruling — all-question: retire.
+- `occurs.some` — by the draft (rev 7's, removed, not aliased) — `some(c)` is the one spelling.
+readings:
+- false on zero passes, each pass judged with its own labels (the draft §4.3's group-questions table) — the draft's reading; SUPPORTED for its example (preddoc4 PART SO; sabotage s8, "every pass", caught).
+- `some` is native to the language: it walks a pass table no body can reach (review r59 PLACE-3) — the lane's reading under R-1 (`defined: native`).
+evidence: docs/dev/lanes/preddoc4_evidence/ PART SO; the draft §4.3, R.4.
+history:
+- 2026-11-19 (lane preddoc4): a new piece: ruled pieces used `some` with no piece (review r59 PRIMITIVES-MISSING, READ-6).
+
+## lib/counting/count — count
+slugs: count-budget
+rulings:
+- 2026-11-15 "counts: perhaps the solution is both. you can use count() until you can't then you can use 'occurs' as a fallback" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING (lean) — counts: `count()` first, `occurs` as the fallback"
+- 2026-11-15 "i would refuse count() on budget or as a recommended way to reduce states rather than rules" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule"
+- 2026-11-15 "4. agree. Allows "even()" or other checks for count." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — the five open items"
+- 2026-11-15 "Predicate count/occurs issue: it would be a later optimization plan item that if pcrec could show no change in semantics that it convert count() into occurs" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 OWNER NOTE — `count()` -> `occurs` as a LATER OPTIMIZATION"
+rejected:
+- `count()` refused in a set position by rule (the manager's "until you can't" reading) — by owner ruling — "by BUDGET, not by rule" (the reading WITHDRAWN in the record).
+readings:
+- `n := count((d: "7"))`, `/(?:(?<d>\d),)+/ & (n: ==2)`: WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL [`7,7,`@0, `1,7,7,`@7] — SUPPORTED (preddoc4 PART CO; sabotage s9, every pass counted, caught).
+- the budget is one measured quantity, named with the "too many classes" budget (the five open items, (3)); no number stated.
+evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS].
+history:
+- 2026-11-19 (lane preddoc4): a new piece: `count(c)` was the body helper of `length` with no piece (review r59 PRIMITIVES-MISSING, READ-6). The slug count-budget is the lane's name for the budget ruling.
+
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:
 rulings:
@@ -399,6 +524,17 @@ evidence: the draft §8, §4.3, R.4.
 history:
 - 2026-11-14: agreed as a library family (all, some, none, exactly, at_least, at_most); 2026-11-15 (rev 8): counts only.
 - 2026-11-19 (lane preddoc3c): converted; the heading drops `.some` (withdrawn).
+
+## lib/counting/every-pass — Every pass, named
+slugs: every-pass-spelling
+rulings:
+rejected:
+readings:
+- OPEN in the draft (§R.8, row every-pass-home: "the conditioned item inside `repeat` is the item form"; the draft R.4's W1a, W1b); the owner, the evening of 2026-11-16 as the draft quotes him: "assign the condition inside the loop to get the all behavior" — the item form, today's way; whether a name exists is not asked.
+- `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, not re-run here.
+evidence: the draft R.4, §R.8.
+history:
+- 2026-11-19 (lane preddoc4): a new open piece: the slug every-pass-spelling had no home (review r59 PRIMITIVES-MISSING).
 
 ## lib/strings/join — join
 slugs:
@@ -451,6 +587,20 @@ evidence:
 history:
 - 2026-11-18: his placeholder beside `left(rx, n)` (match-is-rx).
 - 2026-11-19 (lane preddoc3c): converted.
+
+## lib/assert/assert — assert.some, assert.none, assert.same
+slugs:
+rulings:
+- 2026-11-14 "I agree with both excepting the spelling ... no alpha operators ... with, check, in ... check is not `x := ...` ... don't want to go into new grammar lightly" (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
+- 2026-11-15 "If someone is writing ambiguous rx they need to think about what that means and validate it with @check()" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — ONE reading everywhere (PCRE's); ambiguity is the author's to validate; no `max` on search for now"
+rejected:
+- `check` as a keyword or statement form, `x := check ...` — by owner ruling — "no alpha operators", "check is not `x := ...`" (Q9).
+readings:
+- the CONCEPT (compile-time assertions) is agreed (Q6 + Q9); the spelling `@assert.some/none/same`, a module's effect calls, is the manager's lean after his `assert := import("assert")`, `assert.some("2024" & leap)` (record "2026-11-14 — import/export as functions") and the draft §5.6 (LEAN) — a placeholder spelling.
+- the set position and the edge-assertion error in its argument: the draft §5.6 — not run here.
+evidence: the draft §5.6.
+history:
+- 2026-11-19 (lane preddoc4): a new piece and section: the ruled assert module had no piece (review r59 COMPB-2).
 
 ## lib/records/records — records
 slugs:
@@ -510,13 +660,16 @@ history:
 
 ## lib/rx/repeat — rx.repeat
 was: core/patterns/repeat (2026-11-19, a library definition over count holes: the core holds primitives only)
+was: lib/rx/optional-loop (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs: count-argument
 rulings:
 - 2026-11-17 "i agree with the count proposal. i'm curious how the repeat functionality would work however. is it a primative?" (record: "2026-11-17 OWNER RULING — the count proposal")
 - 2026-11-17 "i agree with repeat. i agree with plurals, why not. can i name the item inside the repeat with [ a = rx.digit ]" (record: "2026-11-17 OWNER — the rx module: one repeat construct; plurals as conveniences")
+- 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
 rejected:
 - `repeat` as a primitive — by the two-kinds entry — "`repeat` is therefore a library definition" (the draft R.1.14).
 - one binding of an array for every mention (`n` the same member in both places) — by run — `repeat(digit, n, n + 1)`, n := [2, 5], WHOLE `1234` HOLDS only through the cross copy (2,6) (rev 26.1's PART R47 B2; preddoc2 PART RB, sabotage s9 caught).
+- `rx.optional` and `rx.loop` as provided names — by owner ruling — the quantifier operators (`x?`, `x??`, `x?+`, `x*`, `x+` and their lazy and possessive forms are the core's operators; counts are `rx.repeat`; a separated list is `list_of`).
 readings:
 - the three bodies, one per call form, reproduce every ruled example: RX5 (min = n, max = n), the one-argument exact count, every copy illegal, AL2 (`n + 1`), B2 (per mention), RX6 (a labelled item, a condition after it and inside it), the plural `digits` — SUPPORTED (preddoc2 PARTS RX, RB, R6; WHOLE against python's `\d{2,4}`, `\d{2}|\d{4}`, `\d+` on 63 texts, 0 differing).
 - "no maximum" written as a second body with the bound left out (the draft's reading; answer-free) — SUPPORTED as a lowering (PART R6, sabotage s11 caught).
@@ -525,19 +678,10 @@ evidence: PARTS RX4-RX6 of predspec25; rev 26's PART AL; preddoc2 PARTS RX, RB, 
 history:
 - 2026-11-17: the count proposal and the one repeat construct (the draft R.1.14, COUNTS, ONE REPEAT CONSTRUCT).
 - 2026-11-19 (lane preddoc2): the core piece `core/patterns/repeat` (a skeleton) and this `?` piece made one, converted in full in the library; `module: rx` from the record's "the rx module".
-
-## lib/rx/optional-loop — rx.optional and rx.loop
-slugs:
-rulings:
-- 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
-rejected:
-- `rx.optional(x, mode = ...)` and `rx.loop(x, min, max, sep, mode)` as constructs (the rx-module note's rows 11-13) — by owner ruling — the postfix operators and the one `repeat`; a `mode =` setting has no typed position.
-readings:
-- the note's `rx.loop` with `sep` is `list_of`; `every-pass-spelling` (his loop construct over a conditioned item) stays OPEN in the draft §R.8.
-evidence: `docs/design/rx_module.md` §2.
-history:
-- 2026-11-17: proposed in the rx-module note; the quantifier operators ruled the same evening.
-- 2026-11-19 (lane preddoc3c): written as "not provided".
+- (from lib/rx/optional-loop) the note's `rx.loop` with `sep` is `list_of`; `every-pass-spelling` (his loop construct over a conditioned item) stays OPEN in the draft §R.8.
+- (from lib/rx/optional-loop) 2026-11-17: proposed in the rx-module note; the quantifier operators ruled the same evening.
+- (from lib/rx/optional-loop) 2026-11-19 (lane preddoc3c): written as "not provided".
+- 2026-11-19 (lane preddoc4): the piece `lib/rx/optional-loop` deleted, its content moved here (review r59 READ-13).
 
 ## lib/structural/capture — capture
 slugs:
