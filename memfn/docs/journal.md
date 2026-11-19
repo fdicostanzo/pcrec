@@ -4288,3 +4288,8 @@ Main ruled on the four kit findings (D186 add. 2):
   59beb8b9eaf4d4ec); correctness re-run 96.0M + 28,176 runs, 0 wrong; 4,892 cells, ~3.9 h; NOT_BEFORE 2026-11-20T01:00. Critic
   crit-blockspan (sonnet, read-only) checks the rule's code, the baseline, coverage, loop-vs-unrolled fairness and a best-of-N
   selection bias BEFORE 708 is queued.
+- 11:2x crit-blockspan (findings scratch/memfn/crit-blockspan/findings.md): the rule is coded exactly (3 hand drills agree); 3 FIX
+  items ruled: the verdict is read from a FIXED form per layer (scalar swar-loop, SIMD avx2-loop; the best-form oracle is info only,
+  selection-biased 3-9 %); a span-dense subset S is declared before data (>= 1500 calls/MiB AND (mean fail idx >= 4 OR full >= 2 %)),
+  REPLACES = no LOSS over non-N/A AND a WIN majority in S; a LOSS is re-timed on fresh variants 3-5 and stands only if repeated; an
+  h64@avx2 / I@avx2 target control; block vs min(today, L) as info; C5/C6 caveats in the header. Sent to blockspan.
