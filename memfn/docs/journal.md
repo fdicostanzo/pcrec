@@ -4211,3 +4211,9 @@ Main ruled on the four kit findings (D186 add. 2):
   R1 waits for the re-run), and 703 exits 1 by design unless the verdict is complete:64 (common.sh:109). h*=64 stands; C3's
   R2/R5 owed after the re-run. OWED: a C3 re-run job (cards.py rerun, then rule) in a quiet window main clears (703 itself
   refuses a repeat: results_c3_h64.tsv exists); 704 waits on it. Optional: give "rerun owed" its own exit class.
+- 02:53 SET 1 (mfcard-zen4-4) done: 600-609 all GREEN as jobs. 609's verdict: INCONCLUSIVE for both mfind-w16 (x86-64) and
+  mfind-w32 (x86-64-v3): every cell is a win beyond its floor (w16 16 win/2 tie, w32 18/18), but both arms' records were
+  REFUSED "run-refused: floor:byte.libc". The byte row kit.find_byte.libc gate FAILED (value 38455, noise 1193 = 3.1 %, over
+  the 3 % floor); every other byte row passed. Per main's last-night rule this is INCONCLUSIVE-AT-NOISE: no 610, no re-run.
+  OWED by day: the record with both nights' figures (zen4-3 + zen4-4). Job log
+  worktrees/.boxqueue/done/20261119T025228.524574978-609-kit-mfcard-time/job.log. Calibration 800 started 02:52.
