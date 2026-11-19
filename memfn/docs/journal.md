@@ -4284,3 +4284,7 @@ Main ruled on the four kit findings (D186 add. 2):
   regime with the miss inside the span (today's window-site near-miss is degenerate for k <= 128: 52 of 360 cells never call the
   span); never-called cells are N/A, excluded from both the win majority and the loss check. KIT DEFECT noted: cards.py not-warm expect
   ignores 4 KiB chunking (hex4 2026 vs 2025); fix later. A critic reviews the harness before 01:00.
+- 11:1x blockspan changes in: a near-miss-in regime (32 patterns, failing index mean ~k/2); never-called cells are N/A (rule sha
+  59beb8b9eaf4d4ec); correctness re-run 96.0M + 28,176 runs, 0 wrong; 4,892 cells, ~3.9 h; NOT_BEFORE 2026-11-20T01:00. Critic
+  crit-blockspan (sonnet, read-only) checks the rule's code, the baseline, coverage, loop-vs-unrolled fairness and a best-of-N
+  selection bias BEFORE 708 is queued.
