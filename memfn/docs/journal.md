@@ -4201,3 +4201,6 @@ Main ruled on the four kit findings (D186 add. 2):
   the real pass in g2_dry now needs FCARDS_G2_DRY_REAL=1; the job itself still runs g2_run and refuses a bad record. Dry run
   0.15 s rc=0; 700 re-queued 01:01, 701-703 still chain on its key; set 1 still holds behind set 2. Cause read from the queue's
   status reason (no log read), so no triage lane.
+- 01:18 set 2: 700 GREEN (495 s), 701 GREEN (452 s), 702 GREEN 01:17: h* = 64 (grid top; 64 cells void twice by method, the cells
+  read picked 64; R2(C3)/R5 not computed at 64). "h* frozen" + value sent to main. 703 running; set 1 next. 704 by day needs
+  REBUILT_BUILD only (identity at h*=64, no MOVERS).
