@@ -4077,3 +4077,15 @@ text, `padded($y + 1, 4) & <=9999`: `0043` is not a canonical numeral, so `43` g
 check of the canonical rule this session: `43`: `0043` against nothing; `10000`: nothing under both); (m2) so of
 the three bounds (rightmost 4, `& /\d{4}/`, `<=9999`) only the last is order-sensitive, a point for the draft's
 look-alike table.
+
+**2026-11-18 OWNER RULING — padded-width: minimum (Frank, to the predicate manager, evening).** ASKED AS A RULING
+(slug padded-width: when the value is longer than the width, nothing (exact) or the value unpadded (minimum); put
+back to him by slug twice). HIS WORDS, in full: "padded-width: minimum".
+RULED: the width of `padded(rx, n)` is a MINIMUM: zeros reach out to n characters; a value already n or longer is
+matched unpadded (`padded($y + 1, 4)`: value `43` is `0043`, value `10000` is `10000`). His ground, from the
+entries above: "i meant the length = 4 to speak to how far out the 0 would go"; a writer who wants a bound
+composes it ("restrict it to the rightmost 4", "you could also <=9999"). NOT ruled: the spelling and the parameter
+names (`length`, `pad`: placeholders, to the spellings review); the keyword-parameter rule (the 2026-11-13 lean,
+pending). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) the body is the two-case
+macro of the clarification entry's (m2) (no computed count); (m2) with no width, `padded(rx)` stays the ruled
+2026-11-15 body (any number of zeros).
