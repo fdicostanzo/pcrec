@@ -45,4 +45,5 @@ make rc 0; make strict, make test-codegen, tests/registry/limits_check.sh, make 
 `scripts/cloudrun --suite --owner main --ref 52afb3a81a779029b814bfee6dbe4f6daa4559a3` (the tip before this report commit; the tested tree differs from the final branch tip only in docs/dev/lanes/covland_report.md). DONE line: `cloudrun: SUITE rc=0 6 kind(s) (test axes ubsan asan mech recidentity) for 52afb3a81`. Proved by `git ls-remote origin 'refs/heads/cloud/main/*/suite-52afb3a'`: six branches cloud/main/{test,axes,ubsan,asan,mech,recidentity}/suite-52afb3a, all at 52afb3a81a779029b814bfee6dbe4f6daa4559a3 (the covland* glob matches none: branches are named suite-<sha7>). Verdicts arrive as CLOUD-DONE via queuewatch; not read.
 
 ## STATE AT HANDOFF
-Branch lane/covland, rulings applied: R1, R2 (last: R2). R1 and R2 applied (last entry R2). OWED: none (the cloud suite is dispatched, its verdict arrives via queuewatch as CLOUD-DONE for cloud/main/*/suite-52afb3a; named in the Cloud suite section).
+Branch lane/covland, rulings applied: R1, R2 (last: R2). R1 and R2 applied (last entry R2).
+OWED: none (the cloud suite is dispatched, its verdict arrives via queuewatch as CLOUD-DONE for cloud/main/*/suite-52afb3a; named in the Cloud suite section).
