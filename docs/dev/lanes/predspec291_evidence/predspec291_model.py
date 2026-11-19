@@ -635,18 +635,18 @@ tx["a"] = (fS(ua, "xaaa"), fS(up, "xaaa"))
 print("TX (a) `/(?U)x${/a+/}/` parsed alone (MODEL `%s`): %s" % (ua.pattern, show(ua, "xaaa", "xaaa", "xaa xa")))
 print("TX     the `(?^...)` spelling alone, `(?U)x(?^:a+)` (`(?^)` does not reset `U`): %s" % show(up, "xaaa", "xaaa", "xaa xa"))
 # (b) a written `(?x)` with a `#` comment
-bb = P.Pcre("x" + alone("", "(?x)a #c", 0))
+bb, bb_err = compiles("x" + alone("", "(?x)a #c", 0))
 bp, berr = compiles("x(?^:(?x)a #c)")
 _, berr_alone = compiles("(?x)a #c")
-tx["b"] = (fW(bb, "xa"), berr is not None, berr_alone is None)
+tx["b"] = (fW(bb, "xa") if bb else "REJECTED", berr is not None, berr_alone is None)
 print("TX (b) `/x${/(?x)a #c/}/` parsed alone: %s ; the literal alone compiles: %s ; the text paste `x(?^:(?x)a #c)`: %s"
-      % (show(bb, "xa", "z xa xb", "xa xa"), berr_alone is None, "COMPILE ERROR (%s)" % berr if berr else "compiles"))
+      % (show(bb, "xa", "z xa xb", "xa xa") if bb else "MODEL REJECTED (%s)" % bb_err, berr_alone is None, "COMPILE ERROR (%s)" % berr if berr else "compiles"))
 # (c) an unterminated \Q
-cc = P.Pcre("x" + alone("", "a\\Qb", 0))
+cc, cc_err = compiles("x" + alone("", "a\\Qb", 0))
 cp, cerr = compiles("x(?^:a\\Qb)")
-tx["c"] = (fW(cc, "xab"), cerr is not None)
+tx["c"] = (fW(cc, "xab") if cc else "REJECTED", cerr is not None)
 print("TX (c) `/x${/a\\Qb/}/` parsed alone: %s ; the text paste `x(?^:a\\Qb)`: %s"
-      % (show(cc, "xab", "z xab", "xab xab"), "COMPILE ERROR (%s)" % cerr if cerr else "compiles"))
+      % (show(cc, "xab", "z xab", "xab xab") if cc else "MODEL REJECTED (%s)" % cc_err, "COMPILE ERROR (%s)" % cerr if cerr else "compiles"))
 # (d) recursion: (?R) and (?1) are the inserted literal's own
 dd_ = P.Pcre("x" + alone("", "a(?R)?b", 0))
 dp = P.Pcre("x(?^:a(?R)?b)")

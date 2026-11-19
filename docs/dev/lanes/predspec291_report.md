@@ -7,7 +7,7 @@ code, no make beyond `make -s test-plan-lint`.
 
 - Rulings file `docs/dev/lanes/predspec291_rulings.md`: empty at the start (13:30); ONE entry, R1 (the owner's
   padded-lazy-sparse ruling, "stated behavior"), seen at 13:55 and APPLIED (the last entry applied: R1). Re-read
-  before each commit and before this report (STAMP_RULINGS).
+  before each commit and before this report (last read 14:34; still R1 only, 931 bytes).
 - PREMISE TEST: (1) the draft's line 3 started "**rev 29:" — HELD; (2) `predspec29_model.py` re-ran byte-identical
   to its committed .out (`cmp`), and so did `predspec281_model.py` — HELD; (3) review.md lists P29-1..16 — HELD.
 - STOP RULE: nothing STOPPED. No record line contradicts the brief; the fold range (record lines up to the
@@ -151,7 +151,9 @@ look-alike, so a hint is drilled per place).
 ## EVIDENCE AND COMMANDS
 
 - `docs/dev/lanes/predspec291_evidence/`: `predspec291_model.py` (standalone), `predspec291_model.out` (CHECKS 41
-  of 41 OK), `predspec291_sabotage.out` (SAB_SUMMARY), `CLAUDE.md` (PARTS, RULE-AS-CODE, LIMITS).
+  of 41 OK), `predspec291_sabotage.out` (t1-t35 each alone CAUGHT, no traceback; t23 first raised a traceback, the drill's compile
+  failing under the sabotage, so the TX drills now compile through a guard and t23 was re-run: CAUGHT; the guard
+  changes no forward line, the forward output byte-identical before and after it; no all-at-once run), `CLAUDE.md` (PARTS, RULE-AS-CODE, LIMITS).
 - Forward: `(cd $PCREC_TMPDIR/scratch/predspec291 && timeout 900 python3 -I -B <worktree>/docs/dev/lanes/predspec291_evidence/predspec291_model.py > fwd.out)`.
 - Sabotage: the same with `PREDSPEC291_SABOTAGE=tN`, N = 1..35, one process each.
 - Premise: predspec29's and predspec281's models re-run, `cmp` against their committed .out: IDENTICAL.
@@ -159,5 +161,5 @@ look-alike, so a hint is drilled per place).
 - Review filed: `docs/dev/reviews/2026-11-19-r54-predspec29.md` (DISPOSITIONS RULED; header FINAL) and
   `docs/dev/reviews/2026-11-19-r54-predspec29/` (five critic texts, `verify.md`, `process.md`, `CLAUDE.md`;
   `COMMON.md` not copied: the shared brief, not a critic text); index line in `docs/dev/reviews/NOTES.md`.
-- Draft size: 10,160 lines (1,364,919 bytes) before; SIZE_AFTER after (`wc -lc`).
+- Draft size: 10,160 lines (1,364,919 bytes) before; 10,275 lines (1,409,475 bytes) after (`wc -lc`).
 - `make -s test-plan-lint`: passed.

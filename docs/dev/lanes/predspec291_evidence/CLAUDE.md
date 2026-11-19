@@ -15,7 +15,8 @@ extended (that directory stays as committed).
   (hole-export), PL (one warning trigger), AC (a negated filter operand). Header names sabotages t1-t35. Controls:
   libpcre2-8 10.46 via `../rxmodel_evidence/pcre2h.py` (run, never read: D181), python `re`.
 - `predspec291_model.out` — forward run: CHECKS 41 of 41 OK.
-- `predspec291_sabotage.out` — each of t1-t35 alone: every one CAUGHT, no traceback.
+- `predspec291_sabotage.out` — each of t1-t35 alone: every one CAUGHT, no traceback (its header says which runs
+  predate the TX-drill compile guard; t23 re-run after it).
 
 ## Run (one process; no make; nothing under /tmp)
 
