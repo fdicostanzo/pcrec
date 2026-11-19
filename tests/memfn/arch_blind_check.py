@@ -257,7 +257,69 @@ def scan_tree(root):
     return hits
 
 
+# TEST-CORPUS DATA IS NOT ARCHITECTURE VOCABULARY (manager ruling 2026-11-19,
+# lane c4scope: the third allowlist patch for the 3-letter test subject "adx"
+# made it a scope question). ONE rule, applied by file shape, not by path:
+#   .rxt  a content line whose first token is a DATA directive (a pattern line
+#         or a case line, rxt_format.md §1.5) has everything after that token
+#         blanked, and so do the indented lines of a `pattern |` opaque
+#         region. A `#` comment (column 1; comments are whole-line only,
+#         §1.5 p1), a `description` line and every other directive stay IN
+#         scope, so a planted ISA name in prose is still a hit.
+#   .tsv  (under tests/) a corpus listing whose header row names a column
+#         `pattern` or `...subject...` has those columns blanked in every
+#         later row; the header and every other column stay in scope.
+# Every other file type is scanned whole. Line numbers are preserved.
+RXT_DATA_KW = frozenset(('pattern', 'pattern-esc', 'm', 'n', 'ms', 'ns', 'mc', 'mg',
+                         'gu', 'var', 'under'))
+
+
+def mask_rxt(text):
+    out, region = [], None      # region: indent of the opening `pattern ... |`
+    for line in text.split('\n'):
+        if region is not None:
+            indent = len(line) - len(line.lstrip(' '))
+            if line.strip() and not line.startswith('#') and indent > region:
+                out.append('')
+                continue
+            region = None
+        if not line or line.startswith('#'):
+            out.append(line)
+            continue
+        body = line.lstrip(' ')
+        kw = body.split(None, 1)[0] if body.strip() else ''
+        if kw in RXT_DATA_KW:
+            out.append(line[:len(line) - len(body)] + kw)
+            if kw in ('pattern', 'pattern-esc') and body.rstrip().endswith('|'):
+                region = len(line) - len(body)
+        else:
+            out.append(line)
+    return '\n'.join(out)
+
+
+def mask_tsv(text):
+    lines = text.split('\n')
+    cols = {i for i, h in enumerate(lines[0].split('\t'))
+            if h.strip().lower() == 'pattern' or 'subject' in h.lower()} if lines else set()
+    if not cols:
+        return text
+    out = [lines[0]]
+    for line in lines[1:]:
+        f = line.split('\t')
+        out.append('\t'.join('' if i in cols else v for i, v in enumerate(f)))
+    return '\n'.join(out)
+
+
+def mask_data(scope, rel, text):
+    if scope == 'tests' and rel.endswith('.rxt'):
+        return mask_rxt(text)
+    if scope == 'tests' and rel.endswith('.tsv'):
+        return mask_tsv(text)
+    return text
+
+
 def scan_text(hits, scope, rel, text, structural):
+    text = mask_data(scope, rel, text)
     for n, line in enumerate(text.split('\n'), 1):
         for cls, (_name, rx) in CLASSES.items():
             if cls == 7 and scope != 'code':
@@ -457,7 +519,7 @@ def scratch_controls(cc, tmpbase):
             expect.append((cls, rel, ps, synthetic))
         # negative control: a hex escape is not an ISA word
         with open(os.path.join(root, 'tests/x/neg.rxt'), 'w') as fh:
-            fh.write('ms 0 "\\x86\\xc5\\x86" 0 3\n')
+            fh.write('ms 0 "\\x86\\xc5\\x86" 0 3\ndescription \\x86\\xc5\\x86\n')
         with open(os.path.join(root, 'src/gen/neg.c'), 'w') as fh:
             fh.write('static const char *s = "\\x86\\xAV";\n')
         # file-scope control for DATA_EXEMPT: the same box name planted in an
@@ -470,6 +532,42 @@ def scratch_controls(cc, tmpbase):
                                         'tests/ci/fixtures/run_s7.green.txt', 'tests/ci/fixtures/notes.md']:
             with open(os.path.join(root, rel), 'w') as fh:
                 fh.write('/* zen4-grid1 */\n')
+        # data-scope controls (the c4scope rule: test-corpus DATA is out of
+        # scope, prose and every other file type stay in). The word planted is
+        # the first compiler-derived class-1 plant, so no author chooses it.
+        w = (plants.get(1) or [None])[0]
+        if w:
+            os.makedirs(os.path.join(root, 'tests/ds'))
+            with open(os.path.join(root, 'tests/ds/data.rxt'), 'w') as fh:
+                fh.write('# comment line %s\n'                           # 1 hit
+                         'description a prose field %s\n'                 # 2 hit
+                         'pattern a%sb\n'                                 # 3 data
+                         'features std1\n'                                # 4 -
+                         'm "%s" 0 3\n'                                   # 5 data
+                         'ms 1 "%s" 0 3\n'                                # 6 data
+                         'pattern |\n'                                    # 7 data
+                         '  a%s\n'                                        # 8 region
+                         '  b\n'                                          # 9 region
+                         '# after the region %s\n'                        # 10 hit
+                         'oracle %s\n'                                    # 11 hit (not a data directive)
+                         % ((w,) * 8))
+            for fn, body in (('t.sh', '# %s\n'), ('t.py', 'x = "%s"\n'), ('t.c', 'int %s;\n')):
+                with open(os.path.join(root, 'tests/ds', fn), 'w') as fh:
+                    fh.write(body % w)
+            with open(os.path.join(root, 'tests/ds/listing.tsv'), 'w') as fh:
+                fh.write('id\tpattern\toracle_subject_spans\tfinding\n'
+                         'A1\ta%sb\t%s=>0-3\tfine\n'                   # data columns
+                         'A2\tab\tx=>0-1\tnote %s\n' % (w, w, w))      # finding column: hit
+            hits = scan_tree(root)
+            got = lambda f: sorted(h[2] for h in hits if h[1] == 'tests/ds/' + f and h[3] == 1)
+            for fn, want in (('data.rxt', [1, 2, 10, 11]), ('t.sh', [1]), ('t.py', [1]),
+                             ('t.c', [1]), ('listing.tsv', [3])):
+                if got(fn) == want:
+                    ok('data-scope control %s: class-1 hits at lines %s' % (fn, want))
+                else:
+                    bad('data-scope control %s: class-1 hits at %s, want %s (pattern/subject data '
+                        'out of scope; comment, description, other directives and other file '
+                        'types in scope)' % (fn, got(fn), want))
         hits = scan_tree(root)
         exempt_hit = [h for h in hits if data_exempt(h[1])]
         if exempt_hit:
