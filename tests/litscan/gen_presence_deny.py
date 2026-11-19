@@ -36,7 +36,9 @@ _spec = importlib.util.spec_from_file_location("gen_handoff", os.path.join(HERE,
 gh = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(gh)
 
-# (pattern, encoding, subjects, why)
+# (pattern, encoding, subjects, why[, routes]): `routes` the engine lines a
+# block is written for, one block each ("" the default route, "vm" adds
+# `engine vm`); absent, the default route alone.
 CASES = [
  ("a.?b", "byte",
   ["bbbbab", "bbbbbbbbbbbbaxb", "bxbxbab", "zbzbzbazb", "ab", "aab", "ba", "bbbb",
@@ -81,6 +83,14 @@ CASES = [
   ["abz", "a1234z", "a123456z", "xaz", "azz", "abbbbbz az", "z a.z zz", "aaaaaz", "a\nz"],
   "the emit_sweep DIFFER_PINS manifest of the `--memfn=no-fd-pres-pick` arms: the pick "
   "deny moves this pattern's bytes, so the pin needs it in the corpus (pinfix_report.md)"),
+ ("[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).", "byte",
+  ["caaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd", "aaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd",
+   "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"],
+  "W-T1 (span_arms §5.7, span arms L1): under --memfn=no-fd-pres-pick "
+  "(tests/memfn/run_presence.sh [deny-answers]) the pre-check tests the WHOLE run "
+  "`a^15 b^17`; a guard that kept its first 32 positions instead narrows the run to a "
+  "string absent from the subject and answers NOMATCH",
+  ("", "vm")),
 ]
 
 
@@ -98,7 +108,9 @@ def main():
         "# runs it in the corpus; tests/memfn/run_presence.sh [deny-answers] runs it under",
         "# --memfn=no-fd-pres-pick / no-fd-pres-g1 / no-pres-set-lead.",
         ""]
-    for pat, enc, subjects, why in CASES:
+    for case in CASES:
+        pat, enc, subjects, why = case[:4]
+        routes = case[4] if len(case) > 4 else ("",)
         cells = []
         for s in subjects:
             b = gh.bsubj(s, enc)
@@ -109,19 +121,22 @@ def main():
                     if py.get(p) != v:
                         sys.exit(f"ORACLES DISAGREE: {pat!r} {b!r} @{p}: pcre2 {v} python {py.get(p)}")
             cells.append((b, pc))
-        if enc == "utf8" or gh.pcre2_only(pat):
-            out.append("# pcre2-only")
-        out.append("# " + why)
-        out.append("pattern " + pat)
-        out.append("features all")
-        out.append("encoding " + enc)
-        for b, pc in cells:
-            for p, v in sorted(pc.items()):
-                if v:
-                    out.append('ms %d "%s" %d %d' % (p, gh.esc(b), v[0], v[1]))
-                else:
-                    out.append('ns %d "%s"' % (p, gh.esc(b)))
-        out.append("")
+        for route in routes:
+            if enc == "utf8" or gh.pcre2_only(pat):
+                out.append("# pcre2-only")
+            out.append("# " + why + (" [engine %s]" % route if route else ""))
+            out.append("pattern " + pat)
+            out.append("features all")
+            out.append("encoding " + enc)
+            if route:
+                out.append("engine " + route)
+            for b, pc in cells:
+                for p, v in sorted(pc.items()):
+                    if v:
+                        out.append('ms %d "%s" %d %d' % (p, gh.esc(b), v[0], v[1]))
+                    else:
+                        out.append('ns %d "%s"' % (p, gh.esc(b)))
+            out.append("")
     text = "\n".join(out)
     open(os.path.join(HERE, "presence_deny.rxt"), "w", encoding="utf-8",
          errors="surrogateescape").write(text)
