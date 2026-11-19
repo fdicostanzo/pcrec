@@ -1048,11 +1048,15 @@ A filter over the imported names, written inside the import (`import("file1"|"fi
 needs: core/modules/import
 - Not stated: whether it applies before the conflict check (so that it can remove a conflict).
 
-### A positional binding   [core/modules/positional]   under-construction 2026-11-19
-A bare positional `(a, b) := X` is not defined for now: under construction, not illegal.
+### A positional binding   [core/modules/positional]   ruled 2026-11-16
+A positional list on the left of a binding takes a TUPLE apart: after `lo := (9, 0)`, `(a, b) := lo` binds `a` and `b` to its parts.
 needs: core/modules/binding-list
 see: parked/ideas/tuple-apart
-- By-name selection is always marked by `=`; a positional form needs an ORDERED right side.
+- This is how a tuple's parts are reached: no index and no new operator.
+- By-name selection from a map is always marked by `=` (the binding list); an entry without `=` is positional.
+- NOT STATED: a positional list against a MAP (a module, an import), which has no order; and taking apart a SET
+  of tuples that is not one tuple or a plain product.
+modes: n/a (no matching involved)
 
 ### Export   [core/modules/export]   reading 2026-11-19
 A library file exports with `@export(names)`: every binding whose name is in the rx `names`; a file that exports nothing is a compile error.

@@ -1422,13 +1422,14 @@ history:
 ## core/modules/positional — A positional binding
 slugs:
 rulings:
-- 2026-11-19 "import-symbols: agree with all your statements including macro call." (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols"); statement 7, left undefined for now, under construction, not illegal
+- 2026-11-16 "Yes" (record: "2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"); shown: a colon-less tuple stands on either side of a binding: on the right its entries are values, `lo := (9, 0)`; on the left they are names being bound, `(a, b) := lo`
 rejected:
+- "a bare positional `(a, b) := X` is left undefined for now" (statement 7 told to the owner under import-symbols) — by the record — the manager said it without grepping the record; the 2026-11-16 confirmation already defines it for a tuple (record: "2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN (the positional binding list)")
 readings:
-- MEETS 2026-11-16 (record "2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"): his "Yes" to "`(a, b) := lo` ... is how the parts are reached" for a TUPLE value; and 2026-11-15 (the type picture) kept a record on the left of `:=` in the design. The 2026-11-19 statement (f) says the language "does not clearly have" an ordered right side, which a tuple is. Read here as not contradicting (a tuple's parts are a defined meaning whose build is not there: under construction), the tuple idea parked (parked/ideas/tuple-apart); asked of the manager (report, OWNER QUESTIONS LEFT) — UNTESTED.
+- his "agree with all your statements" under import-symbols did not reverse the 2026-11-16 confirmation (he was shown a false premise) — UNTESTED (the manager's reading, told to him)
 evidence:
 history:
-- 2026-11-15: `(x, y) := rx ~ /.../` kept in the design; 2026-11-16: a tuple taken apart, confirmed; 2026-11-19: statement 7.
+- `(x, y) := rx ~ /.../` kept in the design (the type picture); then a tuple taken apart, confirmed; then statement 7, said and withdrawn the same day.
 
 ## core/modules/export — Export
 slugs:
