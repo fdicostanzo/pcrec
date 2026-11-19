@@ -4283,3 +4283,16 @@ draws a STRUCTURAL warning pointing at `(x: <5)` where the stretch is not x's te
 standing words: the look-alike criterion (every look-alike pair gets one class, no gap) and "Warnings should be
 structural". The draft's reading (§0.1 L28: WARNING) is kept; the warning's name is the compiler's to choose.
 Closed unless he objects.
+
+**2026-11-18 OWNER, a question on the `$x & <5` warning (Frank, to the predicate manager, evening; a QUESTION,
+written under the slug value-test, about the manager's dollar-warning call).** HIS WORDS, in full: "value-test:
+that warning was originally because $y was not considered a regex. is it still needed?"
+RECORD: QUESTION, with an OBSERVATION: the diagnostic on `$x & <5` came from `$x` not being a regex (his
+dollar-condition words of 2026-11-17: "$x is not a pattern but a match"); that ground is gone (match-is-rx).
+MANAGER'S CALL REVISED the same hour (answer-free; told to him): the dedicated "did you mean `x: <5`" warning is
+WITHDRAWN. Reasons: its original ground was the type, which no longer exists; `$x & <5` is now an ordinary regex
+operation with a defined meaning; where such an operand can never hold, the GENERAL diagnostics already ruled
+(the empty-intersection diagnostic, 2026-11-13; `test.never`) are the mechanism, with no rule keyed on `$`. The
+look-alike pair `$x & S` against `(x: S)` is classed DIFFERENT, BY DESIGN in the draft's table (not a gap). THE
+MANAGER'S READING (mine, to be tested by the next revision lane): whether the general diagnostics actually fire
+on `/(?<x>\d+)-/ & ($x & <5)` (a run-time read in an intersection) is to be shown, not assumed.
