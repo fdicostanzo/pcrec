@@ -1048,14 +1048,17 @@ A filter over the imported names, written inside the import (`import("file1"|"fi
 needs: core/modules/import
 - Not stated: whether it applies before the conflict check (so that it can remove a conflict).
 
-### A positional binding   [core/modules/positional]   ruled 2026-11-16
-A positional list on the left of a binding takes a TUPLE apart: after `lo := (9, 0)`, `(a, b) := lo` binds `a` and `b` to its parts.
+### A positional binding   [core/modules/positional]   open tuple-parts 2026-11-19
+Is a positional list on the left of a binding, `(a, b) := lo`, a way to take ONE tuple apart, or is a tuple only ever used whole?
 needs: core/modules/binding-list
 see: parked/ideas/tuple-apart
-- This is how a tuple's parts are reached: no index and no new operator.
-- By-name selection from a map is always marked by `=` (the binding list); an entry without `=` is positional.
-- NOT STATED: a positional list against a MAP (a module, an import), which has no order; and taking apart a SET
-  of tuples that is not one tuple or a plain product.
+- The two candidates: (A) a tuple is used whole, its parts not reachable; (B1) one tuple is taken apart on the
+  left of a binding, with no index and no new operator.
+- The reason against access, the owner's: the SET makes the pairing, so breaking a set of tuples apart changes
+  its meaning (`9:30`, `10:00` apart are `9, 10` and `30, 00`).
+- Nothing uses either answer while the first/rest binding is parked.
+- By-name selection from a map is always marked by `=` (the binding list) and is not part of this question; a
+  positional list against a MAP, which has no order, is not stated.
 modes: n/a (no matching involved)
 
 ### Export   [core/modules/export]   reading 2026-11-19

@@ -5483,3 +5483,28 @@ apart (confirmed 2026-11-16); the named list (`l = left`, `=left`) selects from 
 2026-11-19). NOT STATED by either entry, and the only part still open: a positional list against a MAP (a module,
 an import), where there is no order. His "agree with all your statements" is NOT read as having reversed the
 2026-11-16 confirmation: he was shown a false premise. Told to him the same hour.
+
+### 2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body
+tags: core/modules/positional lib/modifiers/padded
+
+Found by review r59 (TUPLE-PARTS, PADDED-BODY). Two corrections of the manager's own text, told to the owner the
+same hour.
+
+1. The entry "2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN" said "a
+positional list on the left takes a TUPLE apart (confirmed 2026-11-16)". That stopped one entry short. EIGHT
+MINUTES after his "Yes", the record has "2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the
+'use it whole' case heard": "Nothing is set in stone. I'd like to hear it out. So It's the set that makes it an
+item so you can't break it apart without changing its meaning. Like 9:30, 10:00 broken apart is 9,10 and 30, 00
+which is gibberish. Makes sense". The frozen draft carries it as the OPEN question **tuple-parts**: (A) a tuple
+used whole, or (B1) ONE tuple taken apart on the left of a binding; no user while first/rest is parked. WHAT
+STANDS NOW: the positional list `(a, b) := X` is OPEN under tuple-parts, for a tuple and for a map alike;
+statement 7 of import-symbols ("left undefined for now") was nearer the record than its withdrawal, though its
+stated reason (no ordered right side) remains wrong: tuples exist. The named list from a map (`l = left`,
+`=left`) is ruled and not touched by any of this.
+
+2. The body the manager wrote in the padded-order leaning, which his "i agree with your lean" accepted:
+`padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)`. The parameter `n` stands OUTSIDE a hole, so
+by the language's own rule the text `{n,}` is literal regex text, not a count of n. The body meant, and every run
+made for him used, a count of n: written with count holes it is
+`(rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)`. A correction of the manager's SPELLING; his ruling (a
+plain macro, the any-length branch first) and every printed answer are unchanged.

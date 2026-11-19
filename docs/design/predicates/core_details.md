@@ -1420,16 +1420,18 @@ history:
 - 2026-11-19: his first instinct already filtered inside the import (`import("blah", /left|right/)`); the idea in import-several.
 
 ## core/modules/positional — A positional binding
-slugs:
+slugs: tuple-parts
 rulings:
-- 2026-11-16 "Yes" (record: "2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"); shown: a colon-less tuple stands on either side of a binding: on the right its entries are values, `lo := (9, 0)`; on the left they are names being bound, `(a, b) := lo`
+- 2026-11-16 "Yes" (record: "2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"); a confirmation REOPENED the same morning, see the next item
+- 2026-11-16 "Nothing is set in stone. I'd like to hear it out. So It's the set that makes it an item so you can't break it apart without changing its meaning. Like 9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish. Makes sense" (record: "2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the "use it whole" case heard")
 rejected:
-- "a bare positional `(a, b) := X` is left undefined for now" (statement 7 told to the owner under import-symbols) — by the record — the manager said it without grepping the record; the 2026-11-16 confirmation already defines it for a tuple (record: "2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN (the positional binding list)")
+- "a bare positional `(a, b) := X` is left undefined ... the language does not clearly have an ordered right side" (the manager, told to the owner under import-symbols) — by the record — tuples exist; the question is open, not undefined (record: "2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN (the positional binding list)")
+- "a positional list takes a tuple apart: confirmed" (the manager's withdrawal entry) — by review r59 — it missed the reopening eight minutes after the confirmation (record: "2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body")
 readings:
-- his "agree with all your statements" under import-symbols did not reverse the 2026-11-16 confirmation (he was shown a false premise) — UNTESTED (the manager's reading, told to him)
+- his "agree with all your statements" under import-symbols neither closed nor reopened tuple-parts (he was shown a false premise) — UNTESTED (the manager's reading, told to him)
 evidence:
 history:
-- `(x, y) := rx ~ /.../` kept in the design (the type picture); then a tuple taken apart, confirmed; then statement 7, said and withdrawn the same day.
+- `(x, y) := rx ~ /.../` kept in the design (the type picture); a tuple taken apart confirmed, then reopened; the lean in the frozen draft: (B1) on record, (A) in practice, asked again when a use appears.
 
 ## core/modules/export — Export
 slugs:
