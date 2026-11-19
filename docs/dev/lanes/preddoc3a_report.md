@@ -6,6 +6,8 @@ and its history-index line. No product code, no scripts, no `doc_ratchet.tsv`, n
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Rulings file `docs/dev/lanes/preddoc3a_rulings.md`: empty (0 bytes) at every commit and at this report.
 - Acceptance:
   - no `?` and no `skeleton: yes` piece left in the five sections: MEASURED, preddoc3a_model.py DONE: "33 pieces in
@@ -171,4 +173,4 @@ statement (history line in its entry; no `was:`, the tag did not change).
   its failing checks; every wanted check among them).
 - `timeout 120 python3 -I scripts/pred_doc_lint.py` -> "checks passed 2850, failed 0".
 - `make -s test-plan-lint` -> "checks passed: 2, checks failed: 0".
-- `scripts/lanecheck` -> see the reply (run last).
+- `scripts/lanecheck` -> "lanecheck: DONE rc=0" (run last, on the report commit).
