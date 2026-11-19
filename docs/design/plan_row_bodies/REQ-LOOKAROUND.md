@@ -31,3 +31,7 @@ with identical answers and equal cost is the manager's (Frank 2026-10-09). CALL:
 needs them, in the order D191.1 requires: the unit's CENSUS first ("a unit whose census finds NO mover anywhere
 stops and reports"), then its remodel commits, then the feature; a unit stopped at its census lands no remodel
 commit. Told to the owner the same hour; his to overrule.
+
+## 2026-11-18 evening, OWNER RULING proved-ending-scope
+
+Asked whether his `(?<=foo)bar` "the match is proved and search is over" ending ([CTX-SIDES-PRODUCER]: the cover reads its context sides from the one signed-offset producer) joins L1-L3. HIS WORDS: "proved-ending-scope: i want to get there but i acknowledge that we are doing it in steps. i don't want any one step to get too complicated. so lets schedule it as an item to do after this lands". RECORD: not in L1-L3; scheduled as the next step after L1-L3 land (the manager read "this" as the three go'd units, said so to him), with its own fail-fast census and pre-go briefing (D191 add. 1, 2); it needs its own build go.

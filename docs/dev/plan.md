@@ -949,7 +949,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   The item, placed at its negative offset, joins the one find-the-span choice set as a window span (Frank 2026-11-06: `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). The kit honours the span's verify flag (D172); no new kit mechanism.
 - [CTX-SIDES-PRODUCER] STATE:not-started — the cover's MkEnd ctx_before/ctx_after read from D168's signed-offset producer
   filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
-  status (2026-11-18): trigger FIRED (cover B1 = bc675b020, 2026-10-23, before this row was filed); row unstarted; owner question open: bring it into the lookaround set (proved-ending scope)?
+  status (2026-11-18): SCHEDULED by the owner (proved-ending-scope): next after [REQ-LOOKAROUND] L1-L3 land, as its own step; delivers his `(?<=foo)bar` "proved, search over" ending; trigger fired 2026-10-23 (bc675b020)
   trigger: a second machine-side consumer of a context side, or cover B1 (kit_proof.md §7)
   refs: docs/design/span_arms.md §5.3, §10; docs/design/ctx_span.md §3.10; D168; [DD-11.5]
   One producer of subject sets at signed offsets (D168); the machine reading becomes its control (ctx_span.md's UL-8 shape).
