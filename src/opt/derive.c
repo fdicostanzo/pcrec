@@ -19,7 +19,11 @@
  *  2. PRUNE, bottom-up: a `CAT` with a never item is never; an `ALT` drops
  *     never arms; `REP{m>=1}` of never is never and `REP{0,...}` of never is
  *     EMPTY; a positive `LOOK` of never is never, a negative one EMPTY; a
- *     group, an atomic group or a lookahead of never is never.
+ *     group, an atomic group or a lookahead of never is never. Which node is
+ *     never is the kind row's NEVER column (src/core/kindrow.def, read through
+ *     `pcrec_never_by_row`; span_arms RM-6), the never family's one
+ *     propagation; the NODE answers stay here (`is_never_leaf`, REP's `m`),
+ *     and so do the rewrites (the never node, EMPTY) and the group-keep rule.
  *     THE GROUP-KEEP RULE: a capture group anything can still reach (a call
  *     target, a backreference target -- `refs[]` read as a SET, so every
  *     group a duplicate name names) is never DELETED: the construct holding
@@ -168,6 +172,14 @@ static Ast *with_child(Ctx *cx, const Ast *a, Ast *l)
 
 static QRes q_rewrite(QDer *q, Ast *a, bool lb);
 
+/* Whether one-body node `a` is never, its body rewritten to `b`: the kind
+ * row's NEVER column (a group, an atomic group, a positive lookaround: the
+ * body's; a negative lookaround: never not). */
+static bool q_never_body(const Ast *a, QRes b)
+{
+    return pcrec_never_by_row(pcrec_ast_row(a).never, b.never, b.never);
+}
+
 /* An `A_CAT` spine: never if any item is never -- unless a kept group sits
  * in it, when the spine stays as a never arm (the group-keep rule). */
 static QRes q_cat(QDer *q, Ast *a, bool lb)
@@ -179,8 +191,11 @@ static QRes q_cat(QDer *q, Ast *a, bool lb)
     Ast *t = a;
     for (; t->k == A_CAT; t = t->l) it[--i] = q_rewrite(q, t->r, lb);
     it[--i] = q_rewrite(q, t, lb);
-    bool never = false, keeps = false;
-    for (i = 0; i < n; i++) { never |= it[i].never; keeps |= it[i].keeps; }
+    bool any = false, every = true, keeps = false;
+    for (i = 0; i < n; i++) {
+        any |= it[i].never; every &= it[i].never; keeps |= it[i].keeps;
+    }
+    bool never = pcrec_never_by_row(pcrec_ast_row(a).never, any, every);
     if (never && !keeps) return (QRes){ never_node(q->cx), true, false };
     Ast *r = it[0].a;
     for (i = 1; i < n; i++) {
@@ -203,11 +218,12 @@ static QRes q_alt(QDer *q, Ast *a, bool lb)
     for (; t->k == A_ALT; t = t->l) it[--i] = q_rewrite(q, t->r, lb);
     it[--i] = q_rewrite(q, t, lb);
     Ast *r = NULL;
-    bool never = true, keeps = false;
+    bool any = false, every = true, keeps = false;
+    for (i = 0; i < n; i++) { any |= it[i].never; every &= it[i].never; }
+    bool never = pcrec_never_by_row(pcrec_ast_row(a).never, any, every);
     for (i = 0; i < n; i++) {
         if (it[i].never && !it[i].keeps) { q->pruned_arms++; continue; }
         if (it[i].never) q->kept_never++;
-        never &= it[i].never;
         keeps |= it[i].keeps;
         if (!r) { r = it[i].a; continue; }
         Ast *c = pcrec_arena_alloc(&q->cx->arena, sizeof *c);
@@ -262,11 +278,11 @@ static QRes q_rewrite(QDer *q, Ast *a, bool lb)
         const bool inlb = lb || (no >= 0 && no <= q->f->ncap && q->f->lb_called[no]);
         QRes b = q_rewrite(q, a->l, inlb);
         bool keeps = b.keeps || (no >= 0 && no <= q->f->ncap && q->f->kept[no]);
-        return (QRes){ with_child(cx, a, b.a), b.never, keeps };
+        return (QRes){ with_child(cx, a, b.a), q_never_body(a, b), keeps };
     }
     case A_ATOMIC: {
         QRes b = q_rewrite(q, a->l, lb);
-        return (QRes){ with_child(cx, a, b.a), b.never, b.keeps };
+        return (QRes){ with_child(cx, a, b.a), q_never_body(a, b), b.keeps };
     }
     case A_REP: {
         QRes b = q_rewrite(q, a->l, lb);
@@ -281,7 +297,7 @@ static QRes q_rewrite(QDer *q, Ast *a, bool lb)
     case A_LOOK: {
         QRes b = q_rewrite(q, a->l, lb || a->u.look.behind);
         if (!b.never) return (QRes){ with_child(cx, a, b.a), false, b.keeps };
-        if (!a->u.look.neg)
+        if (q_never_body(a, b))
             return b.keeps ? (QRes){ with_child(cx, a, b.a), true, true }
                            : (QRes){ never_node(cx), true, false };
         /* a negative lookaround of never always holds */

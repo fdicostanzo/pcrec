@@ -5,7 +5,7 @@
  *
  * ROW SHAPE:
  *
- *   KIND_ROW(KIND, TEXT, PATH, READS, ERASE)
+ *   KIND_ROW(KIND, TEXT, PATH, READS, ERASE, NEVER)
  *
  * TEXT is what the kind adds to a matched TEXT, for the language and width
  * readers (the prefilter lowering, a captured text's first set, the required
@@ -42,6 +42,21 @@
  * (a backreference, a variable: the engine selector declines the prefilter
  * first) writes 0, and nothing reads it.
  *
+ * NEVER is how the kind's "this subtree can never match" bit follows from
+ * its children's (docs/design/span_arms.md §14.3 D-9, the never family's ONE
+ * propagation; register row 5): read by the derivation's prune
+ * (src/opt/derive.c) through `pcrec_never_by_row` (internal.h).
+ *   NO     never not (a leaf that can match, a negative lookaround: a
+ *          negative lookaround of a never body always holds)
+ *   ANY    never if ANY child is (a concatenation)
+ *   EVERY  never if EVERY child is (an alternation)
+ *   BODY   never if its one body is (a group, an atomic group, a positive
+ *          lookaround)
+ *   NODE   the answer depends on the node, so its reader keeps the code (a
+ *          repeat by its minimum; a class by its set: the empty class)
+ * A_LOOK's row is BODY; a NEGATIVE lookaround's NO is picked per node by
+ * `pcrec_ast_row` (internal.h), as A_CALLOUT's `consume` TEXT is.
+ *
  * A row states the KIND-LEVEL answer only. An answer that depends on the
  * node or on context keeps its code in the reader and reads the row for the
  * kind-level part: A_CTX's pins (its row class), possessify's arm B on a
@@ -53,29 +68,29 @@
  * two) fails to compile in every translation unit
  * (tests/core/kindrow_check.sh). */
 
-KIND_ROW(A_CLASS,   OWN,  TRANSPARENT, NONE,   0)
-KIND_ROW(A_CAT,     OWN,  TRANSPARENT, NONE,   0)
-KIND_ROW(A_ALT,     OWN,  TRANSPARENT, NONE,   0)
+KIND_ROW(A_CLASS,   OWN,  TRANSPARENT, NONE,   0, NODE)
+KIND_ROW(A_CAT,     OWN,  TRANSPARENT, NONE,   0, ANY)
+KIND_ROW(A_ALT,     OWN,  TRANSPARENT, NONE,   0, EVERY)
 /* the counted-repeat collapse is a per-node decision (`NFA_ERASED_COUNT`) */
-KIND_ROW(A_REP,     OWN,  TRANSPARENT, NONE,   0)
-KIND_ROW(A_EMPTY,   ZERO, TRANSPARENT, NONE,   0)
-KIND_ROW(A_EOL,     ZERO, TRANSPARENT, NONE,   0)
-KIND_ROW(A_CTX,     ZERO, TRANSPARENT, NONE,   0)
-KIND_ROW(A_GSTART,  ZERO, TRANSPARENT, NONE,   0)
+KIND_ROW(A_REP,     OWN,  TRANSPARENT, NONE,   0, NODE)
+KIND_ROW(A_EMPTY,   ZERO, TRANSPARENT, NONE,   0, NO)
+KIND_ROW(A_EOL,     ZERO, TRANSPARENT, NONE,   0, NO)
+KIND_ROW(A_CTX,     ZERO, TRANSPARENT, NONE,   0, NO)
+KIND_ROW(A_GSTART,  ZERO, TRANSPARENT, NONE,   0, NO)
 /* `\K` moves the reported start and adds nothing to the language: exact */
-KIND_ROW(A_KRESET,  ZERO, TRANSPARENT, NONE,   0)
-KIND_ROW(A_CAP,     OWN,  TRANSPARENT, NONE,   0)
+KIND_ROW(A_KRESET,  ZERO, TRANSPARENT, NONE,   0, NO)
+KIND_ROW(A_CAP,     OWN,  TRANSPARENT, NONE,   0, BODY)
 /* lowered transparently: the cut is erased, a superset (nfa.c's arm) */
-KIND_ROW(A_ATOMIC,  OWN,  TRANSPARENT, NONE,   NFA_ERASED_ATOMIC)
-KIND_ROW(A_BREF,    ANY,  OPAQUE,      REFS,   0)
+KIND_ROW(A_ATOMIC,  OWN,  TRANSPARENT, NONE,   NFA_ERASED_ATOMIC, BODY)
+KIND_ROW(A_BREF,    ANY,  OPAQUE,      REFS,   0, NO)
 /* lowered to epsilon, body and all: the filter is erased, a superset */
-KIND_ROW(A_LOOK,    ZERO, GATE,        NONE,   NFA_ERASED_LOOK)
-KIND_ROW(A_CALL,    OWN,  OPAQUE,      TARGET, 0)
-KIND_ROW(A_VAR,     ANY,  OPAQUE,      NONE,   0)
-KIND_ROW(A_WCLASS,  OWN,  TRANSPARENT, NONE,   0)
+KIND_ROW(A_LOOK,    ZERO, GATE,        NONE,   NFA_ERASED_LOOK, BODY)
+KIND_ROW(A_CALL,    OWN,  OPAQUE,      TARGET, 0, NO)
+KIND_ROW(A_VAR,     ANY,  OPAQUE,      NONE,   0, NO)
+KIND_ROW(A_WCLASS,  OWN,  TRANSPARENT, NONE,   0, NO)
 /* [INLINE-C] 1b a callout site, as a CHECK (the default width class): no
  * text (`A_LOOK`'s analog for the text readers), OPAQUE to a path reader
  * (`A_VAR`'s: a vetoing site sees every path, so none may be pruned), and it
  * reads EVERY group. A `consume` site's TEXT is ANY, picked per node by
  * `pcrec_ast_row` (internal.h). Lowered by its width class, a relaxation. */
-KIND_ROW(A_CALLOUT, ZERO, OPAQUE,      ALL,    NFA_ERASED_CALLOUT)
+KIND_ROW(A_CALLOUT, ZERO, OPAQUE,      ALL,    NFA_ERASED_CALLOUT, NO)
