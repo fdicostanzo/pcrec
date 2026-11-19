@@ -64,3 +64,9 @@
   slug answer, told to him). dollar-warning closed as an answer-free manager's call (the warning stays). Eight
   rulings for rev 28. Next asked: same-name-twice (libpcre2 by ctypes: without `(?J)` error 143; with it `\k<h>`
   reads the first group: `12-1` holds, `12-2` fails).
+- Frank RULED same-name-twice ("i agree with your lean": error at the backreference unless `(?J)`). On his
+  question the dollar-warning call was WITHDRAWN. NINE rulings.
+- LAUNCHED lane predspec28 (opus; worktree worktrees/predspec28, branch lane/predspec28 from c32e93bc6): the rev
+  28 fold. Deliver + empty rulings file written first; `lanewatch --follow predspec28` armed. Brief: nine rulings
+  quoted; NOT RULED list; every (m) reading of the folded entries to test; premise test = predspec271 evidence
+  re-runs byte-identical; not the full restructuring. wake.md rewritten in flight.
