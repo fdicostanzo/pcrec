@@ -28411,3 +28411,12 @@ Next
   all missed D191.3. remodel-go taken as the manager's call (answer-identical refactors). Lane spanarms7 (opus):
   span_arms rev 3, the L units re-based on the accepted note; its brief requires a record grep before any owner
   question is listed.
+- 18:45-19:10: spanarms7 delivered (span_arms rev 3; order L1, L3, L2; my reading m2 NOT supported: the cover
+  route does not take `(?<=foo)bar` today, so the owner's "proved, search over" ending is a later reader, told to
+  him); critic round crit-spanarms7 = review r51 (number ASSIGNED by me in the launch prompt). Frank: "Please
+  create a new manager skill: /pcrec-predicate-manager ... Managed by the pcrec manager like the kit manager is.
+  an interface for me discuss predicate work." Written: .claude/skills/pcrec-predicate-manager/SKILL.md,
+  docs/dev/pred/ (CLAUDE.md, the hand-over wake.md, journal.md, from_main.md M-1, to_main.md), /q and the manager
+  skill wired, .gitignore (72f4274d0). Lane predrole (sonnet) adds the role word `pred` to session_role and the
+  two hooks. From the first predicate session on, main writes none of the draft, COND-FAMILY.md or
+  predicates_future.md.
