@@ -7,7 +7,7 @@ the syntax and meaning that is not a name and refers here as needed. Ideas not i
 Details per tag: `library_details.md`. Every name is a placeholder spelling. Names an example program binds with
 `:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. Names the worked
 examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned content of the standard
-library (core/modules/standard-library).
+library (lib/planned/standard, core/modules/standard-library).
 
 ## Built-in names   [lib/builtin]
 
@@ -475,6 +475,14 @@ defined: native (a compile-time check of a set's emptiness, not a pattern)
 - Not the group question `some(c)` (lib/counting/some): that one asks about a loop's passes in a match.
 modes: n/a (compile-time checks; no matching involved)
 
+### assert.each   [lib/assert/each]   under-construction 2026-11-19
+A per-entry assertion over an array, one assertion for each entry, is named and not defined; its spelling is open (`@each(...)`, the lean `@assert.each(...)`).
+needs: lib/assert/assert
+module: assert
+defined: ?
+- `@each(...)` would reuse the name of the structural macro `each` (lib/structural/each); hence the lean, a member of
+  the assert module.
+
 ## Records   [lib/records]
 
 ### records   [lib/records/records]   reading 2026-11-19
@@ -511,6 +519,21 @@ module: ?
 defined: native (it reads a file at compile time)
 - Used with `records` (`records(file_text("w.txt", sha256 = ...), lines)`).
 modes: n/a (a compile-time string; it matches no subject)
+
+### any_order   [lib/records/any-order]   under-construction 2026-11-19
+`any_order(a, sep = ...)` is candidate sugar for a fixed set of parts written in any order; nothing defines it.
+see: lib/records/list-of lib/strings/join
+module: ?
+defined: ?
+- The family it would complete: in order and fixed, `join`; in order and repeated, `list_of`; in any order and
+  fixed, today the `&` of labelled parts.
+
+### file_literals   [lib/records/file-literals]   under-construction 2026-11-19
+`file_literals(p)` is library sugar over `records` with a NAMED item rx, no hidden default; its body is not written.
+needs: lib/records/records lib/records/file-text
+module: ?
+defined: ?
+- Its use in the record: `file_literals("w.txt")[!startsWith("#") & length(<=20)]`, an array filtered by indexing.
 
 ## The rx parts   [lib/rx]
 
@@ -567,3 +590,40 @@ defined: native (compile-time tools over spelled arrays; no expression of the la
 - `each_group` zips by label; `where_group` and `each_group` return an rx (an array in group order).
 - An ordinal is passed by name (`ordinal = "i"`, starting at `start =`, default 1).
 modes: n/a (compile-time tools that build an rx from arrays)
+
+### sort, unique   [lib/structural/sort]   under-construction 2026-11-19
+`sort(alts, by = "length", order = "desc")` reorders an array's alternatives, only as the deliberate leftmost-longest choice; `unique` keeps each entry's first occurrence.
+needs: core/patterns/alternation
+module: ?
+defined: ?
+- Alternation order is PCRE's priority (`ab|abc` against `abc|ab` on `abcd`), so reordering changes which match is
+  reported: a sort is a meaning, never a speed-up (priority-preserving tries need none).
+
+### sorted, distinct   [lib/structural/sorted]   under-construction 2026-11-19
+`sorted` and `distinct` would take the ARRAY form of a read (the other passes, his `@x`); they are named, not defined.
+needs: core/values/reads
+module: ?
+defined: ?
+- The array is its own type: comparing it with one value is not a silent choice of some or every.
+
+## JSON   [lib/json]
+
+The `json` module's members, as the draft's JSONL example uses them.
+
+### json.row, json.string   [lib/json/members]   under-construction 2026-11-19
+The `json` module provides `json.row(key, filter)` and `json.string`, the rx of a JSON string literal read as its raw text; neither body is written.
+module: json
+defined: ?
+- The example's use: `json.row("msg", json.string & contains("timeout"))`, rows joined by `&` in any key order.
+- `json.string` reads the RAW literal (escapes not decoded); the decoding filter was cut (lib/modifiers/quoted).
+
+## Names the worked examples call   [lib/planned]
+
+### days, weekday_of, days_in, luhn   [lib/planned/standard]   under-construction 2026-11-19
+`days`, `weekday_of`, `days_in` and `luhn` are called by the worked examples and defined nowhere: planned content of the standard library.
+see: core/modules/standard-library
+module: ?
+defined: ?
+- The uses: `d := days($b) - days($a)`, `wd := weekday_of($rest.year, $rest.month, $rest.day)`,
+  `dim := days_in($year, $month)` (computed labels), `card := /\d{4}( ?\d{4}){3}/ & luhn & startsWith("4")`.
+- A REGULAR TWIN (an automaton form beside a callout) is the lean for `luhn`, `weekday` and `days_in`.

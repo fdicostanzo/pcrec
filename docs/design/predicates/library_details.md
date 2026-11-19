@@ -566,6 +566,7 @@ rejected:
 readings:
 - built for an rx `enumerate` accepts, under construction otherwise (construction-line, core/values/functions): `left(/foobar|bazqux/, 2)` = `fo|ba` — SUPPORTED (preddoc3c PART LF).
 - string-level manipulation of any rx (`left(/\d+/, 2)`) is parked/ideas/string-level-rx.
+- its kin `right` and `mid`: the owner's question "What about string operators like left, right, mid?" (record bullet STRING OPERATIONS, 2026-11-13) and the draft R.1.16 T9's "and kin" name them; neither is defined; their FILTER names are rejected under lib/sets/prefix-in — named, not defined (no piece of their own: they would be pieces of this kind once one is wanted).
 evidence: preddoc3c PART LF; the draft R.1.16 T9.
 history:
 - 2026-11-18: match-is-rx; construction-line.
@@ -609,6 +610,16 @@ evidence: the draft §5.6.
 history:
 - 2026-11-19 (lane preddoc4): a new piece and section: the ruled assert module had no piece (review r59 COMPB-2).
 
+## lib/assert/each — assert.each
+slugs:
+rulings:
+rejected:
+readings:
+- the per-entry assertion spelling is OPEN in the draft (§13 O22, "the `@each(...)` per-entry assertion spelling (both OPEN by ruling)"); the lean `@assert.each(...)` is review r10 CENSUS-16's (the draft §5.5) — UNTESTED; no new question is opened here.
+evidence:
+history:
+- 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-2, COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+
 ## lib/records/records — records
 slugs:
 rulings:
@@ -651,6 +662,26 @@ evidence: the draft §7, §12.8.
 history:
 - 2026-11-19 (lane preddoc3c): converted.
 
+## lib/records/any-order — any_order
+slugs:
+rulings:
+rejected:
+readings:
+- "candidate sugar" in the draft (§5.3) and in the record's join entry ("candidate sugar `any_order(a, sep:)`", record: "2026-11-14 — join"); graded in the draft's own provided-macro audit (§13 O61) — a lean, UNTESTED.
+evidence:
+history:
+- 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+
+## lib/records/file-literals — file_literals
+slugs:
+rulings:
+rejected:
+readings:
+- the record's lean ("2026-11-14 — literals from a file", the owner asked for `alts := file_literals("...")`), then "`file_literals` becomes library sugar `records(file_text(p), lines)` where `lines` is a NAMED record rx" (record: "2026-11-14 — file_text + records"); the draft §7 keeps it — a lean, UNTESTED; `defined: ?` because no body names its item rx.
+evidence:
+history:
+- 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-10); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+
 ## lib/rx/classes — Character parts: rx.digit, rx.digits, rx.letter, rx.any_of, rx.range, rx.none_of, ...
 slugs:
 rulings:
@@ -660,6 +691,7 @@ rejected:
 readings:
 - the bodies are the rx-module note's construct list (rows 2-8), "definable today"; `rx.letter`'s class follows the program's UCP setting (row 4: "a question of meaning, minor") — the note's, not run.
 - `rx.digits := rx.repeat(rx.digit, min = 1)` equals `\d+`: 0 / 0 / 0 of 63 texts (`1a`, length <= 5) — SUPPORTED (preddoc3c PART RC; the draft's PART RX6 on 364).
+- `rx.alnum` is one of the singular character parts the draft names (R.1.14, "`rx.digit`, `rx.alnum`, ..."), written "..." in the heading; its body, `[[:alnum:]]` beside `rx.letter`'s `[[:alpha:]]`, is the lane's reading — UNTESTED.
 evidence: preddoc3c PART RC; `docs/design/rx_module.md` §2 (the note is SUPERSEDED by the draft R.1.14 for what is ruled).
 history:
 - 2026-11-17: the rx module proposed (his), the one repeat construct agreed.
@@ -713,3 +745,44 @@ readings:
 evidence: the draft §5.3.
 history:
 - 2026-11-19 (lane preddoc3c): a new piece (census rows `each`, `each_group`, `where`).
+
+## lib/structural/sort — sort, unique
+slugs:
+rulings:
+rejected:
+readings:
+- SORT IS SEMANTICS: the record's lean ("`sort(alts, by: length, desc)` exists only as the deliberate leftmost-longest choice. `unique` keeps the first occurrence", record: "2026-11-14 — literals from a file"); the draft §7 — a lean, UNTESTED.
+evidence:
+history:
+- 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+
+## lib/structural/sorted — sorted, distinct
+slugs:
+rulings:
+rejected:
+readings:
+- "`sorted` and `distinct` take the array form" is the MANAGER's text in the pass-list-read entry ("MINE, to be checked", record: "2026-11-17 OWNER RULING — pass-list-read"), carried by the draft (R.1.7) — UNTESTED; the array as its own type is the owner's point (3), cited on core/values/reads.
+evidence:
+history:
+- 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+
+## lib/json/members — json.row, json.string
+slugs:
+rulings:
+rejected:
+readings:
+- `json.row` is a module member reached by the one `.` (the draft §3.2 tool 4, §7) and E-JSONL's (the draft §12.1); `json.string` stays in the `json` module after `json.quoted`'s cut (the draft §9, "the `json` module keeps `json.string`, the literal's rx") — UNTESTED; no body is written in the draft.
+evidence:
+history:
+- 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+
+## lib/planned/standard — days, weekday_of, days_in, luhn
+slugs:
+rulings:
+rejected:
+readings:
+- called, never bound with `:=`, in the draft (§4.4, §4.6 "the library's `days_in`", §5.1's library-name list, §6.1, §12) — the lane's reading: planned standard-library content (core/modules/standard-library).
+- the regular twin: the record's lean ("2026-11-14 — a standard library of blessed callouts (Frank)", lean ADOPT, plan row [BLESSED-CALLOUTS]) — a lean, UNTESTED.
+evidence:
+history:
+- 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-9); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
