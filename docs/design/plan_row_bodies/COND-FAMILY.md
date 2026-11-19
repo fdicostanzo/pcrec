@@ -4906,3 +4906,27 @@ STRING `""`, which he ruled in the entry above adds no options. An option hole g
 The manager's reading, for the next lane to test: a value known only at RUN time cannot stand in an option hole at
 all (options are fixed at compile time), so the error is always a compile-time one; if the draft allows a read
 there, that is construction-line (b)'s question, not this one.
+
+### 2026-11-19 OWNER RULING — negated-class-hole
+
+His words, verbatim: "negated-class-hole: [^${join(c)}]"
+
+Class: RULING (a slug answer to negated-class-hole, with an answer outside the two offered).
+
+The reading taken, and told to him: "none of these" is WRITTEN by the user, by joining the array into ONE value:
+`[^${join(c)}]`, c := [x, y], is `[^xy]`. So the other-holes rule is NOT changed for a negated class: several
+values in `[^${c}]` stay the alternation of the class, one per value (`[^x]|[^y]`, which accepts every character
+when two values differ), and the manager's leaning (one class built from all the values) is NOT taken. `join` is
+his placeholder spelling (D193 addendum 4): a function from an array to one string, its members in order.
+
+RUN (python `re`, `otherholes2.py`): `a[^xy]`: WHOLE `ax` FAILS, `ab` HOLDS / SEARCHED `ax ab` `ab`@3 / FIND-ALL
+`ax ay ab` [`ab`@6]; `a(?:[^x]|[^y])`: `ax` HOLDS / `ax`@0 / all three.
+
+The manager's readings, for the next lane to test: (a) ONE value in a class hole may hold SEVERAL characters, each
+a member of the class (his example needs it; the place table's cell said "the character"); characters special
+inside a class (`^` first, `-`, `]`, `\`) in a value are literal members (hole values are text): to run. (b) for a
+NON-negated class `[${join(c)}]` equals `[${c}]` (0 / 0 / 0 expected: the collapse). (c) `[^${c}]` written with an
+array of two or more different values accepts every character: a WARNING pointing at `join` (the manager's call,
+form-keyed, as the dollar warning; minimal). (d) `join` is a string function on arrays (T9's family; built now
+where `enumerate` works); it is the only joining so far that is not the sequence operator; its name goes to the
+spellings review. (e) the same for a negated range end: `[^${lo}-z]` with several values is the alternation.
