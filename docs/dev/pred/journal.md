@@ -278,3 +278,16 @@ doc_format.md gained "Changes after the owner read the pilot" (`see:`, `was:`, `
 `default: yes`, the directory). Lane preddoc2 (opus) launched for: lint and reader changes, the move, the
 post-pilot format changes, macros to the library with a model run per moved body. Watcher armed. P-9 to main (asks
 the code-round number). New owner questions queued: import-symbols, default-set. WAITING on: preddoc2.
+
+## 2026-11-19 (late afternoon) — preddoc2 merged; import-symbols ruled; code round r57 running
+
+Lane preddoc2 delivered and merged (tip cd5ddeb70): the six files are `docs/design/predicates/*.md`; lint 2,168
+checks, 0 failed (new L12 module/default); mutation 212 / 196 killed / 16 equivalent / 0 survived; peek, when,
+when-test and repeat moved to the library, each body run against every ruled example (25 checks, 17 sabotages);
+the consuming-test warning stays core; `scripts/entry core/conditional/peek` resolves to `lib/control/peek`.
+My readings 1-4 SUPPORTED (2 except the warning). Confirmed by me: no-absence and exact-wording take status
+`principle`. Lane stopped. Critic coordinator crit-preddoc2 launched for r57 (small code round, main's number).
+Owner, same hours: import-symbols RULED in steps (named binding list, `=x` shorthand also in a macro call, any map,
+`(=)` first for all public names, later entries override, `_ = left` leaves a member out, a conflict between two
+modules in one import is a compile error). OPEN: import-several (his `import("pcrec"|"numbers")` meets the
+2026-11-14 "exactly one file" ruling). WAITING on: crit-preddoc2; his answer on import-several.
