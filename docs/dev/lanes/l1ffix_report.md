@@ -137,7 +137,7 @@ The tail can reach Frank's 20:00 evening hold; the manager may want to hold it (
 
 - Branch `lane/l1ffix` committed; nothing uncommitted of the lane's.
 - Rulings file `l1ffix_rulings.md`: empty at every checkpoint. Last ruling: none.
-- OWED: 200-l1ffix-b202611191530161591938.ident 201-l1ffix-b202611191530161591938.mechA 202-l1ffix-b202611191530161591938.mechB 203-l1ffix-b202611191530161591938.axes 204-l1ffix-b202611191530161591938.test
+- OWED: l1ffix-b202611191530161591938.ident l1ffix-b202611191530161591938.mechA l1ffix-b202611191530161591938.mechB l1ffix-b202611191530161591938.axes l1ffix-b202611191530161591938.test (queue keys; the job files carry prefixes 200-204)
 - For the manager:
   - File the D168 addendum (span_arms §12 rev 3 text, as fixed per TABLE-3).
   - Note the 48 non-lookaround pin gains (B's general rule; a performance mover the census did not predict).
