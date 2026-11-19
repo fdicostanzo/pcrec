@@ -1,11 +1,13 @@
 # The predicate language: details (core)
 
-One entry per tag of `predicates.md`, in the same order: the question slugs asked about the piece, the owner's
+One entry per tag of `core.md`, in the same order: the question slugs asked about the piece, the owner's
 rulings verbatim with their record entry, the candidates not taken and why, the readings with their state, the
 evidence, and the history. The record is `docs/design/plan_row_bodies/COND-FAMILY.md` (the only source of
 rulings); the frozen source of every skeleton piece is `docs/design/predicates_draft.md` revision 29.1 (cited "the
 draft", by its section). Evidence directories are under `docs/dev/lanes/`; "PART X of predspecNN" is a block of
 that lane's committed `predspecNN_model.out`. The pilot's own runs are `preddoc1_evidence/` (PART EX, R1-R12, LT).
+
+shared: when-peek
 
 ## core/principles/regex-default — Regex behaviour wins
 slugs: branch-scope branch-order sql-picture
@@ -47,7 +49,7 @@ history:
 ## core/principles/no-absence — A set never contains absence
 slugs: absent-rule
 rulings:
-- 2026-11-16 "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set" (record: "2026-11-16 OWNER PRINCIPLE — a set never contains absence")
+- 2026-11-16 (class: PRINCIPLE) "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set" (record: "2026-11-16 OWNER PRINCIPLE — a set never contains absence")
 - 2026-11-16 the absent-rule LOCKED on this principle (record: "2026-11-16 OWNER RULING — absent-rule: LOCKED")
 rejected:
 readings:
@@ -73,7 +75,7 @@ history:
 ## core/principles/general-rules — One consistent, general rule
 slugs:
 rulings:
-- 2026-11-18 "1. I like these sort of things. What is needed is a consistent, general rule about it and not something specific to adding to arrays for example. What happens to array + array ?" (record: "2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea")
+- 2026-11-18 (class: LEAN, with its condition) "1. I like these sort of things. What is needed is a consistent, general rule about it and not something specific to adding to arrays for example. What happens to array + array ?" (record: "2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea")
 - 2026-11-18 "array-lift: I meant, alternations as you suggested. It's consistent that alternations combine on the product and multiply the rx and produce more alternations" (record: "2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product")
 rejected:
 readings:
@@ -84,7 +86,7 @@ history:
 ## core/principles/rx-owns-flags — An rx sets the flags it needs
 slugs:
 rulings:
-- 2026-11-19 "lets talk about the flags issue and make sure we understand it. if i write a binding A with a bunch of rx. then i use A like /(?i)${A}/ does A inherit or only direct // literals. i'd say it does. if the flag status is important to an rx, its that rx's responsibility to set them the way it wants and not assume. so if one builds up an rx, they inherit the flags of the surrounding. we might consider that on a flag by flag basis but that would be my expectation" (record: "2026-11-19 OWNER, discussing flags and a binding used in a hole")
+- 2026-11-19 (class: a PRINCIPLE stated, in a DISCUSSION) "lets talk about the flags issue and make sure we understand it. if i write a binding A with a bunch of rx. then i use A like /(?i)${A}/ does A inherit or only direct // literals. i'd say it does. if the flag status is important to an rx, its that rx's responsibility to set them the way it wants and not assume. so if one builds up an rx, they inherit the flags of the surrounding. we might consider that on a flag by flag basis but that would be my expectation" (record: "2026-11-19 OWNER, discussing flags and a binding used in a hole")
 rejected:
 readings:
 evidence: PART FF of predspec29 (flags-scope), PART TX of predspec291.
@@ -139,7 +141,7 @@ history:
 ## core/principles/structural-warnings — Warnings are structural or library-defined
 slugs:
 rulings:
-- 2026-11-17 "What are all the warning items? Warnings should be structural or definable by a library option." (record: "2026-11-17 OWNER — a principle for warnings")
+- 2026-11-17 (class: PRINCIPLE) "What are all the warning items? Warnings should be structural or definable by a library option." (record: "2026-11-17 OWNER — a principle for warnings")
 rejected:
 readings:
 evidence:
@@ -160,12 +162,12 @@ history:
 ## core/principles/matching-language — A matching language
 slugs:
 rulings:
-- 2026-11-17 "I like this language because it's in terms no normal imperative language is." Then: "It's a bit deceptive in that it looks like functions and predicates and loops but it's not. Also, I and try to keep this in mind, it's a matching language not a finding language. That's where the SQL analogy breaks down because I expect the filter over times loop to return a set but it's not" (record: "2026-11-17 OWNER, on what kind of language this is")
+- 2026-11-17 (class: reflections, principles for the draft's framing) "I like this language because it's in terms no normal imperative language is." Then: "It's a bit deceptive in that it looks like functions and predicates and loops but it's not. Also, I and try to keep this in mind, it's a matching language not a finding language. That's where the SQL analogy breaks down because I expect the filter over times loop to return a set but it's not" (record: "2026-11-17 OWNER, on what kind of language this is")
 rejected:
 readings:
 evidence:
 history:
-- 2026-11-17: the record classes these "reflections, recorded as principles for the draft's framing, not rulings on any answer" (status `ruled` here for want of a status for the owner's own principle: FORMAT PROBLEMS, the pilot report).
+- 2026-11-17: the record classes these "reflections, recorded as principles for the draft's framing, not rulings on any answer". The pilot gave it `ruled` for want of a status (its FORMAT PROBLEMS); status `principle` since 2026-11-19.
 
 ## core/principles/left-decides — The left side decides
 slugs: join-order
@@ -214,7 +216,7 @@ history:
 ## core/principles/exact-wording — Exact wording
 slugs:
 rulings:
-- 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now." (record: "2026-11-19 OWNER RULING — zero-in-sequence")
+- 2026-11-19 (class: a remark on the manager's method) "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now." (record: "2026-11-19 OWNER RULING — zero-in-sequence")
 rejected:
 readings:
 evidence:
@@ -224,7 +226,7 @@ history:
 ## core/principles/check-his-regex — Check his regex
 slugs:
 rulings:
-- 2026-11-19 "in general: be suspicious of my regex and confirm contemporaneously if you see inconsistencies." (record: "2026-11-19 OWNER RULING — anything-text; and a standing instruction on his regex")
+- 2026-11-19 (class: STANDING INSTRUCTION) "in general: be suspicious of my regex and confirm contemporaneously if you see inconsistencies." (record: "2026-11-19 OWNER RULING — anything-text; and a standing instruction on his regex")
 rejected:
 readings:
 evidence: applied the same day: `/${(0: digit)}/` never holds (zerohole.py); `limited(padded(digits), 5)` = `limited(digits, 5)` (limited.py).
@@ -234,7 +236,7 @@ history:
 ## core/principles/language-over-macros — The language, not one macro
 slugs:
 rulings:
-- 2026-11-19 "ALSO: i don't at this junction want to go too deeply into any one macro UNLESS it raises interesting points about the language. padded does to some degree because i had not thought as much about order." (record: "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros")
+- 2026-11-19 (class: DIRECTION) "ALSO: i don't at this junction want to go too deeply into any one macro UNLESS it raises interesting points about the language. padded does to some degree because i had not thought as much about order." (record: "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros")
 rejected:
 readings:
 evidence:
@@ -244,7 +246,7 @@ history:
 ## core/principles/labels-as-defined — Use the rules as defined
 slugs:
 rulings:
-- 2026-11-19 "i think it will be common to build up rx using multiple bindings. what will happen is that as the exported space will get more filled. ... i say the strategy is to use labels as they are defined and see if there is a problem." (record: "2026-11-19 OWNER, on building rx from many bindings: use the label rules as defined, watch for a problem")
+- 2026-11-19 (class: DIRECTION) "i think it will be common to build up rx using multiple bindings. what will happen is that as the exported space will get more filled. ... i say the strategy is to use labels as they are defined and see if there is a problem." (record: "2026-11-19 OWNER, on building rx from many bindings: use the label rules as defined, watch for a problem")
 rejected:
 readings:
 evidence: PART TA of predspec291 (isodate three times).
@@ -325,15 +327,6 @@ rejected:
 readings:
 evidence: PARTS RX7-RX9 of predspec25.
 history: skeleton; the draft R.1.14 (THE POSTFIX QUANTIFIER OPERATORS).
-
-## core/patterns/repeat — Counted repeats
-slugs: count-argument
-rulings:
-- 2026-11-17 "i agree with the count proposal. i'm curious how the repeat functionality would work however. is it a primative?" (record: "2026-11-17 OWNER RULING — the count proposal")
-rejected:
-readings:
-evidence: PARTS RX4-RX6 of predspec25.
-history: skeleton; the draft R.1.14 (COUNTS, ONE REPEAT CONSTRUCT).
 
 ## core/patterns/atomic — Atomic parts
 slugs:
@@ -749,18 +742,67 @@ history:
 ## core/holes/zero-values — Zero values in a hole
 slugs:
 rulings:
-- 2026-11-19 "a nothing in an option would have to be an error. i can think of no useful semantic" (record: "2026-11-19 OWNER, on the option hole: nothing there is an error")
 rejected:
-- the class cell `[${[]}x]` = `[x]` (the draft's reading) — by the manager's reading 3 (other-holes (c)), run — it differs from the alternation of no members on 1 / 6 / 7 of 40 (preddoc1 PART R3, first `ax`; sabotage s3 caught).
 - "every copy removed, `(?!)`" for every position (the draft revision 26) — by review r47 B7 — one cell per position.
 readings:
-- class or range end with zero values or every member removed: the never-matching rx (the manager's reading 3) — SUPPORTED (preddoc1 PART R3).
-- pattern: an alternation of no members, `(?!)` (the draft's, revision 25.1) — UNTESTED here.
-- name: a compile error, not exactly one name (the manager's call) — UNTESTED (a refusal).
 - his "for counts, no iterations, iterated object disappears" is the count VALUE zero, not zero values (the manager's reading, told to him, no objection recorded) — UNTESTED as to his intent; `x{0}` RUN (EX-count-zero).
-evidence: preddoc1 EX-zero-values, PART R3.
+evidence: preddoc1 EX-zero-values, PART R3; preddoc2 PART ZV (one example per sub-piece).
 history:
 - 2026-11-19: the other-holes entry's reading (c); "I miss-read the statement" (his) and the count observation.
+- 2026-11-19 (lane preddoc2): split into one sub-piece per position (one piece, one status: the option cell is ruled, the rest are readings); the pilot's one table and its class-member example went to the sub-pieces.
+
+## core/holes/zero-values/pattern — Zero values in a pattern hole
+slugs:
+rulings:
+rejected:
+- the empty string (an alternation of no members read as matching empty) — by run — it differs from `(?!)` on WHOLE `a` (preddoc2 PART ZV, rival plant xZV-pattern caught).
+readings:
+- pattern: an alternation of no members, `(?!)` (the draft's, revision 25.1) — RUN, consistent (preddoc2 PART ZV; a run of the reading's lowering, not an independent control of the reading).
+evidence: preddoc2 PART ZV.
+history:
+- 2026-11-19: the pattern cell of the pilot's zero-values table.
+
+## core/holes/zero-values/count — Zero values in a count hole
+slugs:
+rulings:
+rejected:
+- zero values read as the count value zero (`a{0}`, the object absent) — by run — it differs on WHOLE `` (preddoc2 PART ZV, rival plant xZV-count caught); the count value zero is the parent's last line.
+readings:
+- count: every copy removed, that literal never matches, with the can-never-match warning (the draft's, the count row) — RUN, consistent (preddoc2 PART ZV); the warning NOT RUNNABLE (a diagnostic).
+evidence: preddoc2 PART ZV.
+history:
+- 2026-11-19: the count cell of the pilot's zero-values table.
+
+## core/holes/zero-values/name — Zero values in a group-name hole
+slugs:
+rulings:
+rejected:
+readings:
+- name: a compile error, not exactly one name (the manager's call) — UNTESTED (a refusal).
+evidence:
+history:
+- 2026-11-19: the group-name cell of the pilot's zero-values table.
+
+## core/holes/zero-values/class — Zero values in a class hole
+slugs:
+rulings:
+rejected:
+- the class cell `[${[]}x]` = `[x]` (the draft's reading) — by the manager's reading 3 (other-holes (c)), run — it differs from the alternation of no members on 1 / 6 / 7 of 40 (preddoc1 PART R3, first `ax`; sabotage s3 caught).
+readings:
+- class or range end with zero values or every member removed: the never-matching rx (the manager's reading 3) — SUPPORTED (preddoc1 PART R3).
+evidence: preddoc1 EX-zero-values, PART R3; preddoc2 PART ZV.
+history:
+- 2026-11-19: the class-member and range-end cell of the pilot's zero-values table, with the pilot's example.
+
+## core/holes/zero-values/option — Zero values in an option hole
+slugs:
+rulings:
+- 2026-11-19 "a nothing in an option would have to be an error. i can think of no useful semantic" (record: "2026-11-19 OWNER, on the option hole: nothing there is an error")
+rejected:
+readings:
+evidence:
+history:
+- 2026-11-19: the option cell of the pilot's zero-values table (the one ruled cell).
 
 ## core/holes/value — The value hole
 slugs: value-hole unset-in-hole hole-reads-capture value-test
@@ -905,30 +947,6 @@ evidence: preddoc1 EX-quoted.
 history:
 - revision 25.1: both rows; kept in R.1.0 since.
 
-## core/conditional/when — The guarded form
-slugs: when-meaning when-default when-alone
-rulings:
-rejected:
-readings:
-evidence:
-history: not converted; the draft R.1.10.
-
-## core/conditional/test — The test of a conditional
-slugs: when-test not-test
-rulings:
-rejected:
-readings:
-evidence:
-history: not converted; the draft R.1.10.
-
-## core/conditional/peek — Peek
-slugs: when-peek
-rulings:
-rejected:
-readings:
-evidence:
-history: not converted; the draft R.1.10.
-
 ## core/operators/precedence — Precedence
 slugs:
 rulings:
@@ -988,6 +1006,20 @@ readings:
 evidence:
 history: skeleton.
 
+
+## core/diagnostics/consuming-test — A consuming test
+slugs: when-peek
+rulings:
+- 2026-11-18 "When peek: warn. A test pattern does consume and warns that it is." (record: "2026-11-18 OWNER RULING — when-peek: a bare pattern as the test CONSUMES, with a warning; `peek()` makes it a peek")
+rejected:
+- enforced (a bare pattern test a compile error) — by owner ruling — when-peek ("warn"; the manager had leaned enforced).
+- automatic (a bare pattern silently peeked) — by owner ruling — when-peek (a bare pattern "does consume").
+readings:
+- the warning is the COMPILER's, a `pcrec.` name not yet chosen (the draft R.1.10 (5)(a), spellings 24): a body cannot know that an argument is a bare pattern — NOT RUNNABLE (a diagnostic).
+- a condition or a peek as the test draws no warning (the manager's reading stated back with when-peek) — NOT RUNNABLE.
+evidence: the draft R.1.10 (4); preddoc2 PART WT (the consumed form itself).
+history:
+- 2026-11-19 (lane preddoc2): split from the old core/conditional/test when `when`, its test and `peek` moved to the library: the warning is the one part of when-peek a body does not produce, so it stays a core diagnostic, beside core/diagnostics/nullable-hit (a warning on a library name's argument, kept in the core the same way).
 ## core/spellings/placeholders — Every placeholder spelling
 slugs: atomic-spelling options-spelling conditional-spelling every-pass-spelling
 rulings:

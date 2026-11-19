@@ -26,8 +26,14 @@ LINT = os.path.join(SCRIPTS, "pred_doc_lint.py")
 M = []
 
 
-def m(name, old, new):
-    M.append((name, old, new))
+def m(name, old, new, target="pred_doc_lint.py", test="pred_doc_lint.py.test"):
+    """A mutant of SCRIPTS/TARGET, run through scripts/tests/TEST (default: the lint's own test)."""
+    M.append((name, old, new, target, test))
+
+
+def me(name, old, new, target="entry"):
+    """A mutant of the reader side (scripts/entry, doc_profiles.py, or the lint's reader functions), run through entry_pieces.test."""
+    m(name, old, new, target, "entry_pieces.test")
 
 
 # --- L1
@@ -37,15 +43,24 @@ m("L1 tag uniqueness per file", "seen_tags = {}\n    for word, P in pairs.items(
 # --- L2
 m("L2 malformed piece fail off", 'rep.fail("L2", where, p["malformed"])', "pass")
 m("L2 TAG_RE off", "if not TAG_RE.match(tag):", "if False:")
-m("L2 tag file word off", 'if tag.split("/")[0] != word:', "if False:")
 m("L2 tag-in-section off", 'if secname != "/".join(tag.split("/")[:2]):', "if False:")
 m("L2 section grammar and word off", "if not SECTION_RE.match(sec) or sec.split(\"/\")[0] != word:", "if False:")
 m("L2 section grammar only", "if not SECTION_RE.match(sec) or", "if")
 m("L2 section word only", ' or sec.split("/")[0] != word:', ":")
 m("L2 malformed section fail off", 'rep.fail("L2", "%s:%d" % (b, ln), msg)', "pass")
-m("L2 was: excuses everything", "if p[\"was\"] is None:\n                    if secname", "if True:\n                    if secname")
-m("L2 was: section check off", 'elif secname is None or "/".join(p["was"].split("/")[:2]) != secname:', "elif False:")
-m("L2 was: parse off", 'mm = re.match(r"^was:\\s*(\\S+)", lines[j])', "mm = None")
+m("L2 was: grammar: match only", 'if not m or not TAG_RE.match(m.group("what")) or not valid_date(m.group("date")):', "if not m:")
+m("L2 was: date unchecked", 'if not m or not TAG_RE.match(m.group("what")) or not valid_date(m.group("date")):', 'if not m or not TAG_RE.match(m.group("what")):')
+m("L2 was: tag grammar unchecked", 'if not m or not TAG_RE.match(m.group("what")) or not valid_date(m.group("date")):', 'if not m or not valid_date(m.group("date")):')
+m("L2 formerly: off", 'if not m or not formerly_ok(m.group("what")) or not valid_date(m.group("date")):', "if False:")
+m("L2 formerly: name unchecked", 'if not m or not formerly_ok(m.group("what")) or not valid_date(m.group("date")):', 'if not m or not valid_date(m.group("date")):')
+m("L2 formerly: date unchecked", 'if not m or not formerly_ok(m.group("what")) or not valid_date(m.group("date")):', 'if not m or not formerly_ok(m.group("what")):')
+m("L2 was/formerly: why optional", ",\\s*(?P<why>\\S.*)\\)", "(?:,\\s*(?P<why>\\S.*))?\\)")
+m("L2 was/formerly lines not parsed", "mv = None if mask[i] else MOVE_RE.match(ln)", "mv = None")
+m("L2 was/formerly fenced lines parsed", "mv = None if mask[i] else MOVE_RE.match(ln)", "mv = MOVE_RE.match(ln)")
+m("L1 was: live tag allowed", "if w in index:", "if False:")
+m("L1 was: retired twice allowed", "if w in retired:", "if False:")
+m("L1 was: retired per file", "    retired = {}\n    for word, P in pairs.items():\n        if not P[\"dp\"]:\n            continue\n        d = P[\"details\"]",
+  "    for word, P in pairs.items():\n        retired = {}\n        if not P[\"dp\"]:\n            continue\n        d = P[\"details\"]")
 m("L2 4th segment not allowed", "(?:/%s)?$\" % (SEG, SEG, SEG))\nSECTION_RE", "$\" % (SEG, SEG))\nSECTION_RE")
 m("L2 unterminated fence (base) off", 'rep.fail("L2", b, "code fence opened', 'pass  # (')
 # --- L3
@@ -76,7 +91,10 @@ m("L4 title blank-normalise off", 'if " ".join(m.group(1).split()) not in titles
 m("L4 record absent off", 'rep.fail("L4", d, "record %s absent or unreadable: cannot check titles" % RECORD)', "pass")
 m("L4 only ruled pieces' items cited", "        for e in dp[\"entries\"]:\n            for ln, t in ruling_items(e):",
   "        for e in [x for x in dp[\"entries\"] if x[\"tag\"] in {p['tag'] for p in bp['pieces'] if p['status'] == 'ruled'}]:\n            for ln, t in ruling_items(e):")
-m("L4 non-ruled pieces need rulings", 'if p["status"] != "ruled" or e is None:', "if e is None:")
+m("L4 non-ruled pieces need rulings", 'if p["status"] not in ("ruled", "principle") or e is None:', "if e is None:")
+m("L4 principle pieces need no rulings", 'if p["status"] not in ("ruled", "principle") or e is None:', 'if p["status"] != "ruled" or e is None:')
+m("L4 principle anywhere", 'elif st == "principle" and not tag.startswith("core/principles/"):', "elif False:")
+m("L4 principle not a status", 'STATUSES = ("ruled", "principle", "reading"', 'STATUSES = ("ruled", "reading"')
 m("L4 title: dot strip off", 'full = " ".join(full.split()).rstrip(".")', 'full = " ".join(full.split())')
 m("L4 title: part before ( off", 'titles.add(full.split(" (")[0])', "pass")
 m("L4 title: whole title off", "        titles.add(full)\n", "        pass\n")
@@ -95,13 +113,16 @@ m("L5 later in file off", "elif tw == word and own and tn >= own[1]:", "elif Fal
 m("L5 self-needs allowed", "tn >= own[1]", "tn > own[1]")
 m("L5 skipped-pair excuse off", "continue  # its pair was skipped (pilot mode): unresolvable, not a fault", "pass")
 m("L5 skipped-pair excuse under require-all", "if tw in RANK and tw not in pairs and not require_all:", "if tw in RANK and tw not in pairs:")
-m("L5 by: not checked", 'for kind in ("needs", "by"):', 'for kind in ("needs",):')
+m("L5 by: not checked", 'for kind in ("needs", "by", "see"):', 'for kind in ("needs", "see"):')
+m("L5 see: not checked", 'for kind in ("needs", "by", "see"):', 'for kind in ("needs", "by"):')
+m("L5 see: not parsed", 'REF_RE = re.compile(r"^(needs|by|see):(.*)$")', 'REF_RE = re.compile(r"^(needs|by):(.*)$")')
+m("L5 see: itself allowed", 'if kind == "see" and t == p["tag"]:', "if False:")
 m("L5 only first tag of a list", 'p[mm.group(1)] += [x for x in re.split(r"[\\s,]+", mm.group(2)) if x]',
   'p[mm.group(1)] += [x for x in re.split(r"[\\s,]+", mm.group(2)) if x][:1]')
 m("L5 comma separators off", 'p[mm.group(1)] += [x for x in re.split(r"[\\s,]+", mm.group(2)) if x]',
   'p[mm.group(1)] += [x for x in re.split(r"\\s+", mm.group(2)) if x]')
 m("L5 ordinal always 0", "index[tag] = (word, len(index))", "index[tag] = (word, 0)")
-m("L5 fenced needs: parsed", "            if mask[j]:\n                continue\n            mm = re.match(r\"^(needs|by):", "            mm = re.match(r\"^(needs|by):")
+m("L5 fenced needs: parsed", "            if mask[j]:\n                continue\n            mm = REF_RE.match", "            mm = REF_RE.match")
 # --- L6
 for w in ("withdrawn", "reversed", "superseded", "rev \\d+", "revision \\d+", "review r\\d+", "r\\d+"):
     m("L6 word %s removed" % w, "|%s" % w if w != "withdrawn" else "(?:withdrawn|", "" if w != "withdrawn" else "(?:")
@@ -116,6 +137,7 @@ m("L6 code span exemption off", "t = CODE_SPAN_RE.sub(\"\", line)", "t = line")
 m("L6 fence exemption off", "            if bp[\"mask\"][i]:\n                continue\n            rep.ok(\"L6\")", "            rep.ok(\"L6\")")
 m("L6 whole check off", 'rep.fail("L6", "%s:%d" % (b, i + 1)', 'print("", ')
 m("L6 first 30 lines only", 'for i, ln in enumerate(bp["lines"]):', 'for i, ln in enumerate(bp["lines"][:30]):')
+m("L6 base was/formerly allowed", 'rep.fail("L6", "%s:%d" % (b, ln), "a \'%s:\' line in a base file', 'pass  # (')
 m("L6 last 2 lines skipped", 'for i, ln in enumerate(bp["lines"]):', 'for i, ln in enumerate(bp["lines"][:-2]):')
 # --- L7
 m("L7 PIECE_MAX 41", "STATEMENT_MAX, PIECE_MAX = 200, 40", "STATEMENT_MAX, PIECE_MAX = 200, 41")
@@ -138,11 +160,16 @@ m("L7 statement cap off", "elif len(p[\"statement\"]) > STATEMENT_MAX:", "elif F
 m("L7 piece cap off", "if nlines > PIECE_MAX:", "if False:")
 # --- L8
 m("L8 fail off", 'rep.fail("L8", where,', 'print("", ')
-m("L8 ? exemption off", "if not is_q and st not in", "if st not in")
+m("L8 ? exemption off", "if not is_q and not skel and st not in", "if not skel and st not in")
+m("L8 skeleton exemption off", "if not is_q and not skel and st not in", "if not is_q and st not in")
+m("L8 skeleton value unchecked", 'if v != "yes" or is_q:', "if is_q:")
+m("L8 skeleton on a ? piece allowed", 'if v != "yes" or is_q:', 'if v != "yes":')
+m("L8 old skeleton marker allowed", 'rep.fail("L8", "%s:%d" % (b, ln), "\'modes: n/a (skeleton', 'pass  # (')
+m("L8 skeleton line not parsed", "(skeleton|module|default):(.*)$", "(module|default):(.*)$")
 m("L8 parked exemption off", 'st not in ("parked", "under-construction")', 'st not in ("under-construction",)')
 m("L8 under-construction exemption off", 'st not in ("parked", "under-construction")', 'st not in ("parked",)')
-m("L8 principles exemption off", ' and not tag.startswith("core/principles/")', "")
-m("L8 exemption widened to core", 'not tag.startswith("core/principles/")', 'not tag.startswith("core/")')
+m("L8 principles exemption off", ' and not tag.startswith("core/principles/"):\n                rep.ok("L8")', ':\n                rep.ok("L8")')
+m("L8 exemption widened to core", 'under-construction") and not tag.startswith("core/principles/")', 'under-construction") and not tag.startswith("core/")')
 m("L8 all modes -> any", 'all(w in t for w in ("WHOLE", "SEARCHED", "FIND-ALL"))', 'any(w in t for w in ("WHOLE", "SEARCHED", "FIND-ALL"))')
 m("L8 FIND-ALL not required", '("WHOLE", "SEARCHED", "FIND-ALL"))', '("WHOLE", "SEARCHED"))')
 m("L8 SEARCHED not required", '("WHOLE", "SEARCHED", "FIND-ALL"))', '("WHOLE", "FIND-ALL"))')
@@ -161,21 +188,36 @@ m("L9 owners reset per file", "for P in pairs.values():\n        if not P[\"dp\"
 m("L9 same tag twice counts", "tags = {t for t, _ in os_}", "tags = [t for t, _ in os_]")
 # --- L10
 m("L10 fail off", 'rep.fail("L10", P["base"],', 'print("", ')
-m("L10 equality fails", 'elif P["qcount"] > rat[word]:', 'elif P["qcount"] >= rat[word]:')
-m("L10 slack of one", 'elif P["qcount"] > rat[word]:', 'elif P["qcount"] > rat[word] + 1:')
+m("L10 equality fails", "elif n > rat[key]:", "elif n >= rat[key]:")
+m("L10 slack of one", "elif n > rat[key]:", "elif n > rat[key] + 1:")
+m("L10 skcount zero", 'P["skcount"] = sum(1 for p in bp["pieces"] if p["skeleton"] and p["status"] != "?")', 'P["skcount"] = 0')
+m("L10 skcount counts ? pieces", 'if p["skeleton"] and p["status"] != "?")', 'if p["skeleton"])')
+m("L10 skeleton row not checked", '((word, P["qcount"], "\'?\'"), (word + SKEL, P["skcount"], "skeleton"))', '((word, P["qcount"], "\'?\'"),)')
+m("L10 write: skeleton row not written", '((word, P["qcount"]), (word + SKEL, P["skcount"]))', '((word, P["qcount"]),)')
 m("L10 qcount zero", 'P["qcount"] = sum(1 for p in bp["pieces"] if p["status"] == "?")', 'P["qcount"] = 0')
 m("L10 absent ratchet silent under require-all", 'if require_all:\n            rep.fail("L10", RATCHET, "ratchet file absent (--require-all)")', "if False:\n            pass")
 m("L10 absent ratchet note off", 'rep.notes.append("L10: %s absent: ratchet not checked" % RATCHET)', "pass")
-m("L10 missing row passes", 'if not writing:\n                    rep.fail("L10", RATCHET, "no ratchet row for %s" % word)', "pass")
+m("L10 missing row passes", 'if not writing:\n                        rep.fail("L10", RATCHET, "no ratchet row for %s" % key)', "pass")
 m("L10 malformed line ignored", 'rep.fail("L10", "%s:%d" % (RATCHET, ln), msg)', "pass")
 m("L10 duplicate row: last wins", 'elif f[0] in out:\n            errs.append((n, "duplicate ratchet row for %s" % f[0]))\n        else:', "else:")
-m("L10 unknown word accepted", "or f[0] not in RANK or", "or")
+m("L10 unknown word accepted", "or f[0] not in RATCHET_KEYS or", "or")
 m("L10 non-number accepted", "or not f[1].isdigit():", ":")
 m("L10 field count not checked", "if len(f) != 2 or f[0]", "if f[0]")
-m("L10 write: raises instead of lowers", "new[word] = min(old.get(word, P[\"qcount\"]), P[\"qcount\"])", "new[word] = max(old.get(word, P[\"qcount\"]), P[\"qcount\"])")
-m("L10 write: ignores old", "new[word] = min(old.get(word, P[\"qcount\"]), P[\"qcount\"])", "new[word] = P[\"qcount\"]")
+m("L10 write: raises instead of lowers", "new[key] = min(old.get(key, n), n)", "new[key] = max(old.get(key, n), n)")
+m("L10 write: ignores old", "new[key] = min(old.get(key, n), n)", "new[key] = n")
 m("L10 write: after a failing lint", "    if rep.fails:\n        out(\"pred_doc_lint: --write-ratchet refused", "    if False:\n        out(\"pred_doc_lint: --write-ratchet refused")
 m("L10 write: not-writing mode off", "rep, pairs = lint(root, writing=True)", "rep, pairs = lint(root)")
+# --- L12
+m("L12 module required off", 'if not is_q:\n                        rep.fail("L12"', 'if False:\n                        rep.fail("L12"')
+m("L12 module required on ? too", 'if not is_q:\n                        rep.fail("L12"', 'if True:\n                        rep.fail("L12"')
+m("L12 module grammar off", 'elif not MODULE_RE.match(p["module"][0][1]):', "elif False:")
+m("L12 module grammar any non-blank", 'MODULE_RE = re.compile(r"^(?:\\?|[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*)$")', 'MODULE_RE = re.compile(r"^(?:\\?|[a-z].*)$")')
+m("L12 module twice allowed", 'if len(p["module"]) > 1:', "if False:")
+m("L12 default value unchecked", 'if v != "yes":\n                        rep.fail("L12"', 'if False:\n                        rep.fail("L12"')
+m("L12 library-only off", 'if p[key] and word != "lib":', "if False:")
+m("L12 default anywhere", 'for key in ("module", "default"):', 'for key in ("module",):')
+m("L12 module anywhere", 'for key in ("module", "default"):', 'for key in ("default",):')
+m("L12 module/default not parsed", "(skeleton|module|default):(.*)$", "(skeleton):(.*)$")
 # --- L11
 m("L11 no pieces off", 'rep.fail("L11", b, "no pieces (a base file with none is vacuous)")', "pass")
 m("L11 no entries off", 'rep.fail("L11", P["details"], "no entries (a details file with none is vacuous)")', "pass")
@@ -211,14 +253,117 @@ m("ST covered-all off", 'expect(r in covered, "rule %s has no detected plant" % 
 m("ST constants off", 'expect(CAPS == {"core": 65536', 'expect(True or CAPS == {"core": 65536')
 m("ST plant text count check off", 'raise SystemExit("selftest: plant text', "pass  # (")
 m("ST soft cap control off", 'expect(not rep.fails and any(w.startswith("L7") for w in rep.warns)', "expect(True or any(w.startswith(\"L7\") for w in rep.warns)")
-m("ST write-ratchet lowers off", 'expect(read_ratchet(os.path.join(d, RATCHET))[0].get("core") == 1', 'expect(True or read_ratchet(os.path.join(d, RATCHET))[0].get("core") == 1')
+m("ST write-ratchet lowers off", 'expect(got.get("core") == 1 and', 'expect(True or got.get("core") == 1 and')
 m("ST write-ratchet raise off", 'expect(read_ratchet(os.path.join(d, RATCHET))[0].get("core") == 0', 'expect(True or read_ratchet(os.path.join(d, RATCHET))[0].get("core") == 0')
-m("ST load_pieces off", 'expect(len(got) == 9 and', 'expect(True or len(got) == 9 and')
+m("ST load_pieces off", 'expect(len(got) == 10 and', 'expect(True or len(got) == 10 and')
 # --- the parser the reader calls
 m("RD level 2 omits details", "if level >= 2:", "if level >= 3:")
 m("RD level 0 omits statement", '+ ([p["statement"]] if p["statement"] else [])', "")
 m("RD slugs: none not dropped", 'if s and s not in ("none", "-")]', "if s]")
+m("RD was: not returned", '"slugs": entry_slugs(e), "was": entry_was(e)}', '"slugs": entry_slugs(e), "was": []}')
 m("RD first entry of a tag wins", "by_tag.setdefault(e[\"tag\"], e)\n        for p in bp[\"pieces\"]:\n            if p[\"tag\"]:", "by_tag[e[\"tag\"]] = e\n        for p in bp[\"pieces\"]:\n            if p[\"tag\"]:")
+
+# --- review r57: the field-looking lines, the move line, the new fields (lane predlint3)
+META = r'META_RE = re.compile(r"^(needs|by|see|was|modes|skeleton|module|default):")'
+for _w in ("needs", "by", "see", "was", "modes", "skeleton", "module", "default"):
+    m("META_RE without %s" % _w, META, META.replace(_w + "|", "", 1) if _w == "needs" else META.replace("|" + _w, "", 1))
+FL = r'FIELDLIKE_RE = re.compile(r"^\s*(needs|by|see|was|formerly|skeleton|module|default)\s*:", re.I)'
+m("FIELDLIKE case-sensitive", FL, FL.replace(", re.I)", ")"))
+m("FIELDLIKE not indented", FL, FL.replace(r"^\s*(", r"^("))
+m("FIELDLIKE no blank before the colon", FL, FL.replace(r")\s*:", "):"))
+for _w in ("needs", "by", "see", "was", "formerly", "skeleton", "module", "default"):
+    m("FIELDLIKE without %s" % _w, FL, FL.replace(_w + "|", "", 1) if _w == "needs" else FL.replace("|" + _w, "", 1))
+OS = r'OLD_SKEL_RE = re.compile(r"^modes\s*:\s*n/a\s*\(\s*skeleton", re.I)'
+m("OLD_SKEL case-sensitive", OS, OS.replace(", re.I)", ")"))
+m("OLD_SKEL one blank after modes:", OS, OS.replace(r":\s*n/a", ": n/a"))
+m("OLD_SKEL no blank before (", OS, OS.replace(r"n/a\s*\(", "n/a("))
+m("OLD_SKEL no blank after (", OS, OS.replace(r"\(\s*skeleton", "(skeleton"))
+m("OLD_SKEL no blank before :", OS, OS.replace(r"modes\s*:", "modes:"))
+m("L6 base fieldlines: was/formerly branch off", 'if name in ("was", "formerly"):\n                rep.fail("L6"', 'if False:\n                rep.fail("L6"')
+m("L2 base fieldlines: spelling check off", 'elif not exact:\n                rep.fail("L2", "%s:%d" % (b, ln)', 'elif False:\n                rep.fail("L2", "%s:%d" % (b, ln)')
+m("L2 base fieldlines: placement check off", 'elif not inside:\n                rep.fail("L2", "%s:%d" % (b, ln)', 'elif False:\n                rep.fail("L2", "%s:%d" % (b, ln)')
+m("base fieldlines: every line inside a piece", "bool(FIELD_EXACT_RE.match(ln)), i in in_piece))", "bool(FIELD_EXACT_RE.match(ln)), True))")
+m("base fieldlines: first body line outside", 'in_piece.update(range(p["line"], p["end"]))', 'in_piece.update(range(p["line"] + 1, p["end"]))')
+m("base fieldlines: last body line outside", 'in_piece.update(range(p["line"], p["end"]))', 'in_piece.update(range(p["line"], p["end"] - 1))')
+m("base fieldlines: counter off", 'for ln, name, exact, inside in bp["fieldlines"]:\n            rep.ok("L2")', 'for ln, name, exact, inside in bp["fieldlines"]:\n            pass')
+m("base fieldlines: fenced lines scanned", "fm = None if mask[i] else FIELDLIKE_RE.match(ln)\n        if fm:\n            out[\"fieldlines\"].append((i + 1, fm.group(1).lower(), bool(FIELD_EXACT_RE.match(ln)), i in in_piece))",
+  "fm = FIELDLIKE_RE.match(ln)\n        if fm:\n            out[\"fieldlines\"].append((i + 1, fm.group(1).lower(), bool(FIELD_EXACT_RE.match(ln)), i in in_piece))")
+m("details fieldlines: placement always inside", "bool(FIELD_EXACT_RE.match(ln)), cur is not None))", "bool(FIELD_EXACT_RE.match(ln)), True))")
+m("details fieldlines: fenced lines scanned", 'fm = None if mask[i] else FIELDLIKE_RE.match(ln)\n        if fm:  # (line', 'fm = FIELDLIKE_RE.match(ln)\n        if fm:  # (line')
+m("details fieldlines: a field-looking line joins the open field", "        if fm:\n            continue\n        mm = None if mask[i] else FIELD_RE.match(ln)", "        mm = None if mask[i] else FIELD_RE.match(ln)")
+m("L12 details module/default off", 'if name in ("module", "default"):\n                rep.fail("L12", w', 'if False:\n                rep.fail("L12", w')
+m("L3 details base-field off", 'elif name not in ("was", "formerly"):\n                rep.fail("L3", w', 'elif False:\n                rep.fail("L3", w')
+m("L2 details was/formerly spelling and placement off", 'elif not exact or not inside:\n                rep.fail("L2", w', 'elif False:\n                rep.fail("L2", w')
+m("L2 details was/formerly spelling only", "elif not exact or not inside:", "elif not exact:")
+m("L2 details was/formerly placement only", "elif not exact or not inside:", "elif not inside:")
+m("move line keeps field closed", "cur[mv.group(1)].append((i + 1, mv.group(2)))\n            continue", "cur[mv.group(1)].append((i + 1, mv.group(2)))\n            field = None\n            continue")
+m("L4 principle class check off", 'elif p["status"] == "principle" and not any(CLASS_RE.search(t) for _, t in ruling_items(e)):', "elif False:")
+m("L4 principle class: all items", "not any(CLASS_RE.search(t) for _, t in ruling_items(e))", "not all(CLASS_RE.search(t) for _, t in ruling_items(e))")
+m("L4 principle class may be empty", r'CLASS_RE = re.compile(r"\(class:\s*[^)\s][^)]*\)")', r'CLASS_RE = re.compile(r"\(class:\s*[^)][^)]*\)")')
+m("L4 principle class: no colon blank tolerance", r'CLASS_RE = re.compile(r"\(class:\s*[^)\s][^)]*\)")', r'CLASS_RE = re.compile(r"\(class: [^)\s][^)]*\)")')
+m("L2 formerly: module not checked", "return bool(MODULE_RE.match(mod)) and bool(IDENT_RE.match(name))", "return bool(IDENT_RE.match(name))")
+m("L2 formerly: name not checked", "return bool(MODULE_RE.match(mod)) and bool(IDENT_RE.match(name))", "return bool(MODULE_RE.match(mod))")
+m("L2 formerly: split at the first dot", 'w.rpartition(".")', 'w.partition(".")')
+IDENT = r'IDENT = r"[A-Za-z_][A-Za-z0-9_]*"'
+m("IDENT lower case only", IDENT, 'IDENT = r"[a-z_][a-z0-9_]*"')
+m("IDENT without digits", IDENT, 'IDENT = r"[A-Za-z_][A-Za-z_]*"')
+m("IDENT may start with a digit", IDENT, 'IDENT = r"[A-Za-z0-9_]+"')
+m("IDENT without underscore", IDENT, 'IDENT = r"[A-Za-z][A-Za-z0-9]*"')
+MODRE = r'MODULE_RE = re.compile(r"^(?:\?|[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)$")'
+m("MODULE_RE without ?", MODRE, MODRE.replace(r"\?|", ""))
+m("MODULE_RE digit first", MODRE, MODRE.replace("[a-z][a-z0-9_]*(?:", "[a-z0-9][a-z0-9_]*(?:").replace(r"\.[a-z][a-z0-9_]*", r"\.[a-z0-9][a-z0-9_]*"))
+m("MODULE_RE without underscore", MODRE, MODRE.replace("_", ""))
+m("MODULE_RE one word only", MODRE, MODRE.replace(r"(?:\.[a-z][a-z0-9_]*)*", ""))
+m("L2 fourth-word parent check off", "if TAG_RE.match(tag) and parent not in index:", "if False:")
+m("L2 fourth-word check skipped", 'if tag.count("/") == 3:', "if False:")
+m("L2 fourth-word parent is the section", 'parent = tag.rsplit("/", 1)[0]', 'parent = tag.rsplit("/", 2)[0]')
+m("L5 record tags check off", "    if os.path.isfile(rec):\n        try:\n            rl = read_lines(rec)", "    if False:\n        try:\n            rl = read_lines(rec)")
+m("L5 record tags: live tags not accepted", "if t in index or t in retired or t in sections or (", "if t in retired or t in sections or (")
+m("L5 record tags: previous tags not accepted", "if t in index or t in retired or t in sections or (", "if t in index or t in sections or (")
+m("L5 record tags: sections not accepted", "if t in index or t in retired or t in sections or (", "if t in index or t in retired or (")
+m("L5 record tags: skipped pair not excused", "or (tw in RANK and tw not in pairs and not require_all):\n                    continue", "or False:\n                    continue")
+m("L5 record tags: skipped pair excused under require-all", "(tw in RANK and tw not in pairs and not require_all):\n                    continue", "(tw in RANK and tw not in pairs):\n                    continue")
+m("L5 record tags: fenced lines read", "mm = None if rmask[i] else RECORD_TAGS_RE.match(ln)", "mm = RECORD_TAGS_RE.match(ln)")
+m("L5 record tags: indented lines read", r'RECORD_TAGS_RE = re.compile(r"^tags:(.*)$")', r'RECORD_TAGS_RE = re.compile(r"^\s*tags:(.*)$")')
+m("L5 record tags: no comma separator", 'for t in (re.split(r"[\\s,]+", mm.group(1).strip()) if mm else []):', 'for t in (re.split(r"\\s+", mm.group(1).strip()) if mm else []):')
+m("L5 record tags: counter off", 'rep.ok("L5")\n                tw = t.split("/")[0]', 'pass\n                tw = t.split("/")[0]')
+m("L5 record tags: only the first tag of a line", 'for t in (re.split(r"[\\s,]+", mm.group(1).strip()) if mm else []):', 'for t in (re.split(r"[\\s,]+", mm.group(1).strip())[:1] if mm else []):')
+m("L12 default twice allowed", 'if len(p["default"]) > 1:', "if False:")
+m("L8 skeleton twice allowed", 'if len(p["skeleton"]) > 1:', "if False:")
+m("L8 skeleton: three allowed", 'if len(p["skeleton"]) > 1:', 'if len(p["skeleton"]) > 2:')
+m("L5 see: forward restricted like needs", 'if kind == "needs":\n                        tw, tn = index[t]', 'if kind in ("needs", "see"):\n                        tw, tn = index[t]')
+m("L8 skeleton never exempts", 'skel = bool(p["skeleton"])', "skel = False")
+m("L10 skeleton row always core (check)", '(word + SKEL, P["skcount"], "skeleton"))', '("core" + SKEL, P["skcount"], "skeleton"))')
+m("L10 skeleton row always core (write)", '(word + SKEL, P["skcount"]))', '("core" + SKEL, P["skcount"]))')
+m("L2 was: bad grammar falls through", "got 'was:%s'\" % t)\n                    continue", "got 'was:%s'\" % t)\n                    pass")
+m("valid_date always true", "except ValueError:\n        return False", "except ValueError:\n        return True")
+m("module/default value not stripped", "p[mm.group(1)].append((j + 1, mm.group(2).strip()))", "p[mm.group(1)].append((j + 1, mm.group(2)))")
+m("L12 library rules for every file", 'if word == "lib":\n                if len(p["module"])', 'if True:\n                if len(p["module"])')
+m("L2 was: only first per entry", 'for ln, t in e["was"]:', 'for ln, t in e["was"][:1]:')
+m("L2 formerly: only first per entry", 'for ln, t in e["formerly"]:', 'for ln, t in e["formerly"][:1]:')
+m("L8 old marker only first per piece", 'for ln in p["old_skeleton"]:', 'for ln in p["old_skeleton"][:1]:')
+m("L8 skeleton values only first per piece", 'for ln, v in p["skeleton"]:', 'for ln, v in p["skeleton"][:1]:')
+m("L12 default values only first per piece", 'for ln, v in p["default"]:', 'for ln, v in p["default"][:1]:')
+m("L10 parked skeleton pieces not counted", 'if p["skeleton"] and p["status"] != "?")', 'if p["skeleton"] and p["status"] not in ("?", "parked"))')
+m("L1 was: counter off", 'rep.ok("L1")\n                if w in index', 'pass\n                if w in index')
+m("L2 was: counter off", 'rep.ok("L2")\n                m = WAS_RE.match(t)\n                if not m or not TAG_RE', 'pass\n                m = WAS_RE.match(t)\n                if not m or not TAG_RE')
+m("L2 formerly: counter off", 'rep.ok("L2")\n                m = WAS_RE.match(t)\n                if not m or not formerly_ok', 'pass\n                m = WAS_RE.match(t)\n                if not m or not formerly_ok')
+m("L12 counter off", 'rep.ok("L12")\n', "pass\n")
+m("L8 skeleton counter off", 'rep.ok("L8")\n                if v != "yes" or is_q', 'pass\n                if v != "yes" or is_q')
+m("L10 counter off", 'rep.ok("L10")\n                if key not in rat', 'pass\n                if key not in rat')
+m("L1 section counter off", 'rep.ok("L1")\n            if sec in seen_secs:', 'pass\n            if sec in seen_secs:')
+# the reader side (scripts/entry and the lint's reader functions), through entry_pieces.test
+me("RD entry_was: an entry-less piece", '(e or {}).get("was", [])', 'e["was"]', "pred_doc_lint.py")
+me("RD entry_was: an ungrammatical line falls back to its first word", 'w = m.group("what") if m else (t.split() or [""])[0]', 'w = m.group("what") if m else ""', "pred_doc_lint.py")
+me("RD entry_was: only the first was: line", 'for _, t in (e or {}).get("was", []):', 'for _, t in (e or {}).get("was", [])[:1]:', "pred_doc_lint.py")
+me("entry: a live tag on two pieces answers rc 0", "return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0)\n        # a previous tag", "return Result(hits)\n        # a previous tag")
+me("entry: a previous tag on two pieces answers rc 0", 'return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0, first="entry: was', 'return Result(hits, 0, first="entry: was')
+me("entry: the was line names one owner only", '", ".join(i.id for i in hits)))\n    # 6', '", ".join(i.id for i in hits[:1])))\n    # 6')
+me("entry: the previous-tag arm off", 'if k in i.was]', 'if False]')
+me("entry: the previous-tag arm matches by prefix", 'if k in i.was]', 'if any(w.startswith(k) for w in i.was)]')
+me("entry: -g does not see a previous tag", 'list(it.was))  # a previous tag', '[])  # a previous tag')
+me("entry: a previous tag is not part of the id", '(it.id, it.slug, *it.was)', '(it.id, it.slug)')
+me("entry: items carry no previous tags", "it.was = g[\"was\"]", "it.was = ()")
 
 # Survivors that are NOT bugs: each with the reason it changes nothing observable.
 ASSERT_WEAKENED = ("an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; "
@@ -239,21 +384,22 @@ EQUIVALENT = {
     "ST write-ratchet lowers off": ASSERT_WEAKENED,
     "ST write-ratchet raise off": ASSERT_WEAKENED,
     "ST load_pieces off": ASSERT_WEAKENED,
-    "L1 tag uniqueness per file": "tags carry their file word and L2 fails a tag in the wrong file, so a cross-file duplicate always also fails L2; "
-                                  "within one file the per-file reset is the same dict. Equivalent except under an L2 failure already reported.",
 }
 
 
-def run_one(i, name, old, new, src):
+def run_one(i, name, old, new, target, test, src):
     d = tempfile.mkdtemp(prefix="m%d_" % i, dir=SCRATCH)
     try:
-        os.makedirs(d + "/scripts/tests")
-        shutil.copy(os.path.join(SCRIPTS, "tmpdir.sh"), d + "/scripts/")
-        shutil.copy(os.path.join(SCRIPTS, "tests", "pred_doc_lint.py.test"), d + "/scripts/tests/")
-        shutil.copytree(os.path.join(SCRIPTS, "tests", "pred_doc"), d + "/scripts/tests/pred_doc", ignore=shutil.ignore_patterns("mut.py", "__pycache__"))
-        with open(d + "/scripts/pred_doc_lint.py", "w", encoding="utf-8") as f:
+        if test == "entry_pieces.test":  # the reader side: the whole scripts/ tree (entry imports its neighbours)
+            shutil.copytree(SCRIPTS, d + "/scripts", ignore=shutil.ignore_patterns("mut.py", "__pycache__", "*.testreport", "worktrees"))
+        else:
+            os.makedirs(d + "/scripts/tests")
+            shutil.copy(os.path.join(SCRIPTS, "tmpdir.sh"), d + "/scripts/")
+            shutil.copy(os.path.join(SCRIPTS, "tests", test), d + "/scripts/tests/")
+            shutil.copytree(os.path.join(SCRIPTS, "tests", "pred_doc"), d + "/scripts/tests/pred_doc", ignore=shutil.ignore_patterns("mut.py", "__pycache__"))
+        with open(d + "/scripts/" + target, "w", encoding="utf-8") as f:
             f.write(src.replace(old, new))
-        r = subprocess.run(["bash", d + "/scripts/tests/pred_doc_lint.py.test"], capture_output=True, text=True, timeout=120,
+        r = subprocess.run(["bash", d + "/scripts/tests/" + test], capture_output=True, text=True, timeout=240,
                            env=dict(os.environ, PCREC_TMPDIR=SCRATCH))
         return i, r.returncode, (r.stdout + r.stderr)[-300:]
     except subprocess.TimeoutExpired:
@@ -269,21 +415,24 @@ def main():
     base = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % os.environ.get("USER", "x")
     os.makedirs(os.path.join(base, "scratch"), exist_ok=True)
     SCRATCH = tempfile.mkdtemp(prefix="mut", dir=os.path.join(base, "scratch"))
-    src = open(LINT, encoding="utf-8").read()
+    srcs = {}
     todo, nomatch = [], []
-    for i, (name, old, new) in enumerate(M):
+    for i, (name, old, new, target, test) in enumerate(M):
         if only and not any(o in name for o in only):
             continue
-        if src.count(old) != 1:
-            nomatch.append("%s (matches %d)" % (name, src.count(old)))
+        if target not in srcs:
+            srcs[target] = open(os.path.join(SCRIPTS, target), encoding="utf-8").read()
+        if srcs[target].count(old) != 1:
+            nomatch.append("%s (matches %d)" % (name, srcs[target].count(old)))
         else:
-            todo.append((i, name, old, new))
+            todo.append((i, name, old, new, target, test, srcs[target]))
     killed = survived = equiv = 0
     bad = []
     try:
         with concurrent.futures.ThreadPoolExecutor(8) as ex:
-            futs = [ex.submit(run_one, i, name, old, new, src) for i, name, old, new in todo]
-            for (i, name, _, _), fu in zip(todo, futs):
+            futs = [ex.submit(run_one, *t) for t in todo]
+            for t, fu in zip(todo, futs):
+                name = t[1]
                 _, rc, tail = fu.result()
                 if rc != 0:
                     killed += 1

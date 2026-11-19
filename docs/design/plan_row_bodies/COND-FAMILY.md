@@ -5255,3 +5255,218 @@ order NEITHER body equals fill (ruled 0 / 168 / 168, dropped 0 / 2,520 / 2,520).
 does not rest on either count. Draft = REVISION 29.1, the LAST revision in the old shape; the rulings since its
 fold (other-holes, the option hole, negated-class-hole, anything-text, zero-in-sequence, the bare condition in a
 hole) and the lane's list of nine draft sentences they contradict go into the reorganized documents.
+
+### 2026-11-19 OWNER, after reading the pilot documents (doc-shape): macros live in the library; a default-imported set; importing symbols; moving and renaming; a directory
+tags: core/conditional/peek core/conditional/when lib/modifiers/padded core/principles/language-over-macros
+
+Asked **doc-shape** ("read the Principles and Holes sections of `docs/design/predicates.md` ... and tell me whether
+this is the shape"). HIS WORDS, whole:
+
+"i've read through the documents: 1. i recommend that core document macros be defined in the library unless they are
+primitive. the core can reference the library for, for example, peek(), but the definition details should be tracked
+there. there is nothing particular about peek() other than its a useful transform. 2. there can be a special
+imported by default set which includes peek(). 3. (aside: we need to discuss a way to import symbols into the space
+so that everything isn't sys.peek(). my instinct is a (left,right) := import("blah", /left|right/) 4. the library
+sections for various elements include the name and module of the element. this is fine, however we need a standard
+way to move and/or rename the functions so some sort of previous_tags|replacement_tag field in history. 5. suggest
+files placed in docs/design/predicates/ as docs/design has a bunch of files."
+
+Class, item by item:
+1. A RECOMMENDATION on the documents' form (the form is the manager's by his delegation, "keep, modify, or reject";
+   ADOPTED), carrying an OBSERVATION about the language: "there is nothing particular about peek() other than its a
+   useful transform". The earlier record agrees ("The library is a PRELUDE OF MACROS written in the predicate
+   language", 2026-11-13).
+2. A LEAN about the language ("there can be"): a default-imported set, `peek()` in it. Not asked as a question; not
+   a ruling. Which other names are in the set is NOT stated.
+3. An ASIDE and an IDEA, to be DISCUSSED ("we need to discuss"): importing chosen symbols into the bare space, so a
+   call is not `sys.peek()`; "my instinct": `(left,right) := import("blah", /left|right/)`. Spelling is a
+   placeholder. `sys` as a module name is his example, not a ruling. Earlier record on the same ground: 2026-11-13
+   `d := import("isodate")`; 2026-11-14 "import/export as functions" (import returns a namespace, a map; "its
+   argument is a set of names (an rx ...)"; the lean `import weekday as wd` for clashes). New here: SEVERAL names
+   bound at once into the bare space, chosen by an rx. Queued as the owner question **import-symbols**.
+4. A REQUEST on the documents' form: a standard way to move or rename a function, with a previous-tags /
+   replacement-tag field in the history. ADOPTED (the manager's design below).
+5. A SUGGESTION on the documents' form: the files under `docs/design/predicates/`. ADOPTED.
+
+The reading taken: he read the pilot and answered with changes to it and no objection to its shape, so
+**doc-shape is read as ANSWERED: this shape, with these five changes**; the conversion of the remaining sections
+goes ahead in the changed shape. If that reading is wrong he says so.
+
+THE MANAGER'S DESIGN for 1, 4 and 5 (form, the manager's call; `docs/dev/pred/doc_format.md` carries it):
+- A piece whose definition is a BODY written in the core language is a LIBRARY piece; the core keeps only
+  primitives. A core piece may point at a library name with a `see:` line (a forward pointer; `needs:` stays
+  strictly backward, so the core still reads whole without the library).
+- The manager's reading, FOR THE LANE TO TEST: `peek` and `when` (with the test of a conditional) each have a body
+  in the core language that reproduces every ruled example in all three modes, so both move to the library; if a
+  body does not reproduce a ruled example, that piece stays core and the run comes back.
+- A library piece states `module:` and, for the default-imported set, `default: yes` (today: `peek` only, by his
+  words; the rest of the set is a question for him, **default-set**, not asked now).
+- A tag MAY be renamed or moved. The details entry carries `was: <previous tag> (<date>, <why>)`, one line per
+  previous tag; a retired tag is never reused; the reader resolves a previous tag to its current piece, which is
+  the replacement pointer. A function's NAME or MODULE change is recorded the same way (`formerly: <module.name>`).
+- The six files move to `docs/design/predicates/` as `core.md`, `core_details.md`, `library.md`,
+  `library_details.md`, `parked.md`, `parked_details.md`. The frozen draft, the ideas file and this record stay
+  where they are (hundreds of evidence and review pointers name those paths).
+
+### 2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`
+tags: parked/import-symbols
+
+Asked **import-symbols** with the manager's leaning (the left side is the selection, by name, no rx:
+`(left, right) := import("blah")`). HIS WORDS, whole:
+
+"import-symbols: double name is a weakness. the binding form is a consistency. something that is a constructed
+binding like C++. your form might work but it has implications for the rest of the language. it might also be
+(=left, =right) := ... which looks odd but is a degenerate form of macro parameter binding"
+
+Class: DISCUSSION, not a ruling. In it: an OBSERVATION conceding the weakness of his first form ("double name is a
+weakness"); an OBSERVATION on why he wrote it ("the binding form is a consistency ... a constructed binding like
+C++"); a CAUTION on the manager's form ("it has implications for the rest of the language"); an IDEA, a second
+candidate: `(=left, =right) := ...`, "a degenerate form of macro parameter binding". Spellings are placeholders.
+
+The manager's reading of the idea (told to him, to be confirmed): the left side is a parameter list in the
+named form `name = value`, as a macro call binds `else = C` and a part label is written `[x = A]`: the name left
+of `=` is the name being defined. `(l = left, r = right) := import("blah")` binds `l` to the member `left`;
+`=left` is the degenerate case with the new name omitted, the same as `left = left`. Under that reading a bare
+`(a, b) := X` stays free for a POSITIONAL binding (the C++ structured binding he names), and by-name selection is
+always marked by `=`. Not tested by any run (no matching is involved; modes: n/a).
+
+### 2026-11-19 OWNER, import-symbols: a LEAN, explicitly not confirmed
+tags: parked/import-symbols
+
+Asked to confirm (1) "`=left` is shorthand for `left = left`, with `l = left` as the rename" and (2) whether the
+form applies to any map or only to `import`. HIS WORDS, whole:
+
+"import-symbols: lean =left is left=left and l=left. don't confirm yet because i want to understand the
+implications to the larger language"
+
+Class: a LEAN on (1), and an INSTRUCTION that it is NOT a ruling ("don't confirm yet"). (2) is not answered.
+import-symbols stays OPEN. Owed to him: the implications for the larger language.
+
+The manager's implications, given to him in the same turn (hand-reasoned; no matching involved; each a READING):
+(a) defined as sugar, `(l = left, =right) := X` is exactly `l := X.left` and `right := X.right`, so it adds a
+binding-list position left of `:=` and no new semantics; (b) the existing rule on a binding hiding a label
+(2026-11-13, "Warn (or error) on hiding label") applies to each bound name unchanged; (c) only what `.` can reach
+is selectable, so the public/private label rule decides what can be imported; (d) the default-imported set
+becomes an ordinary implicit line of this form, not a special mechanism; (e) the same degenerate `=name` in a
+macro CALL (`f(=x)` for `f(x = x)`) is the consistency question it raises; (f) a bare positional `(a, b) := X`
+needs an ORDERED right side, which the language does not clearly have (an array is an alternation): not needed
+for import.
+
+### 2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols
+tags: parked/import-symbols
+
+Given the manager's implications (the entry above, (a)-(f)) and asked for his view on the macro-call shorthand.
+HIS WORDS, whole:
+
+"import-symbols: agree with all your statements including macro call. further, special form (=) := ... imports all
+symbols"
+
+The reading taken, and told to him: a RULING. It answers the slug, after the implications he said he wanted
+before confirming ("don't confirm yet because i want to understand the implications"). What "all your statements"
+covers is the list he was shown, no wider:
+1. `(l = left, =right) := X` means exactly `l := X.left` and `right := X.right`; `=left` is `left = left`.
+2. The rule on a binding hiding a label applies to each bound name unchanged.
+3. Only what `.` reaches is selectable (the public/private label rule decides).
+4. It works on ANY map, not only `import`.
+5. The default-imported set is an ordinary implicit line of this form.
+6. "including macro call": `f(=x)` means `f(x = x)`.
+7. A bare positional `(a, b) := X` is left undefined for now (not needed for import; under construction, not
+   illegal).
+8. The shape left of `:=` goes to the spellings review. All spellings here are placeholders.
+HIS ADDITION, part of the same answer: "special form (=) := ... imports all symbols".
+
+The manager's readings of the addition, FOR A LANE TO CHECK against the record (no matching involved):
+- "all symbols" = every member `.` can reach, so public names only (statement 3).
+- The hide-label rule (statement 2) still fires per name, because the compiler knows the imported names; a name a
+  library ADDS later can therefore start a warning or error in a program that used `(=)`. The 2026-11-14 lean
+  already accepts that shape ("a later library member of the same name breaks the build, never silently rebinds").
+- With `(=)` a reader can no longer tell from the file alone whether a bare name is a label or an import ("If a
+  symbol is undeclared it must be an rx label", 2026-11-13). Told to him as the cost of the form, not an objection.
+- The default-imported set is then `(=) := import(<the default module>)`.
+
+### 2026-11-19 OWNER RULING — import-symbols, addition: the bare `=` is first; names after it override
+tags: parked/import-symbols
+
+HIS WORDS, whole: "import-symbol: bare "=" must be first but one can override names after (=,l = left) := ... to
+handle conflicts"
+
+Class: a RULING, an addition to his own `(=) :=` form of the entry above. Stated by him: the bare `=` stands
+FIRST in the list; entries after it override names, "to handle conflicts". Spellings are placeholders.
+
+The manager's readings (told to him; for a lane to list, no matching involved):
+- In `(=, l = left) := X` the member `left` is bound as `l` and NOT also as `left`: an entry after the bare `=`
+  REPLACES that member's default binding (otherwise the conflict it is there to handle would remain).
+- A bare `=` anywhere but first is a compile error.
+- NOT STATED: how to leave a member out altogether without binding it to any name; whether two entries may name
+  the same member. Neither is asked now.
+
+### 2026-11-19 OWNER, import-symbols: leaving a member out (`(=,left=)`, `(=, left=_)`)
+tags: parked/import-symbols
+
+On the manager's "NOT STATED: how to leave a member out altogether". HIS WORDS, whole:
+
+"import-symbol: (=,left=) whould simply unbind left. better might be (=, left=_) where _ is the unusable symbol.
+left could be bound later"
+
+Class: a LEAN with two candidate spellings ("would", "better might be"); the MEANING is stated: a member can be
+left out of a `(=)` import, and the name stays free ("left could be bound later"); `_` is "the unusable symbol".
+Spellings are placeholders.
+
+An INCONSISTENCY the manager flagged to him in the same turn: in the ruled form the name LEFT of `=` is the name
+being defined and the member is on the RIGHT (`l = left` binds `l` to the member `left`; `=left` is `left =
+left`). Both candidates put the MEMBER on the left (`left=`, `left=_`): read by the ruled direction, `left = _`
+binds a new name `left` to a member called `_`. In the ruled direction "leave the member `left` out" is
+`(=, _ = left)`: the member bound to the unusable name. That also matches the part label written `[_ = A]` (the
+draft's unnamed part), where `_` stands on the left. Offered to him as the spelling; the meaning is his either
+way.
+
+### 2026-11-19 OWNER RULING — import-symbols: a member is left out with `(=, _ = left)`
+tags: parked/import-symbols
+
+Offered `(=, _ = left)` in place of his `(=, left=_)` (the entry above: the ruled direction, the new name left of
+`=`). HIS WORDS, whole: "import-symbol: yes, that correction is good"
+
+The reading taken: a RULING on the meaning with the corrected direction: in a `(=)` import, `_ = left` binds the
+member `left` to the unusable name `_`, so it is left out and the name `left` stays free ("left could be bound
+later"). The spelling remains a placeholder for the spellings review.
+
+### 2026-11-19 OWNER, import-symbols: several modules in one import; a conflict is a compile error
+tags: parked/import-symbols
+
+HIS WORDS, whole: "import-symbol: (=) := import("pcrec"|"numbers"). conflicts are a compiler error, import
+separately."
+
+Class: a RULING on the conflict ("conflicts are a compiler error, import separately": two modules imported in one
+`(=)` that both carry a name is a compile error; the user imports them in separate lines, where the override
+entries handle it). `pcrec` and `numbers` as module names are his examples, not rulings.
+
+It MEETS AN EARLIER RULING, flagged to him in the same turn: 2026-11-14 addendum, "`import(...)`'s argument is a
+set of names (an rx over file names, consistent with export); it must resolve to EXACTLY ONE file; zero or
+several matches = compile error listing the candidates." By that rule `import("pcrec"|"numbers")` is itself a
+compile error (two files). The manager's reading of what he now means, ASKED, not applied: the argument set may
+resolve to SEVERAL files, the result is the union of their maps, a member name carried by two of them is a
+compile error, and zero matches stays an error. Open as the question **import-several** until he confirms that
+the 2026-11-14 "exactly one file" is reversed.
+
+### 2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map
+tags: parked/import-symbols
+
+Asked **import-several**: does `import("pcrec"|"numbers")` reverse the 2026-11-14 "must resolve to EXACTLY ONE
+file", and does it hold for `m := import("pcrec"|"numbers")` too. HIS WORDS, whole:
+
+"import-several: yes. if you can bind multiple arguments simultaneously, thent this is more expressive. before you
+could only bind one so what did multiple files mean? although, good point, if the binding is just 1 symbol, then
+its a map of all the values of the files combined. one could filter but it would have to be inside the
+import("file1"|"file2", search(string))"
+
+Class: a RULING ("yes"), REVERSING the 2026-11-14 addendum's "exactly one file; ... several matches = compile
+error", with his reason (that rule belonged to a time when only one name could be bound). Ruled: the argument may
+resolve to several files; bound to ONE name, the value is "a map of all the values of the files combined". An
+IDEA in the same answer ("one could filter"): a filter over the imported names is written INSIDE the import, as a
+further argument (`import("file1"|"file2", search(string))`; spelling a placeholder).
+
+The manager's readings (told to him; for a lane to list):
+- ZERO files matched stays a compile error (the part of the 2026-11-14 rule his "yes" does not touch).
+- A name carried by two of the files is a compile error in the one-name form as in the `(=)` form (his "conflicts
+  are a compiler error, import separately" was said of `(=)`; extended here by the manager, NOT his words).
+- NOT STATED: whether the filter is applied before the conflict check (so a filter can remove a conflict).

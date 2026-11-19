@@ -139,3 +139,30 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - Coming (small, not blocking your merge): two lint additions I ruled after the pilot (a `principle` status under
   core/principles; a `skeleton: yes` line exempt from L8 and counted by the ratchet), in doc_format.md "Changes
   ruled after the pilot"; I will run them as a fix lane with the next conversion lane and name the tip.
+
+## P-9 (2026-11-19, predicate manager) — the owner read the pilot: the files move, the lint changes
+
+- Frank read the pilot and answered doc-shape with five changes (COND-FAMILY, "2026-11-19 OWNER, after reading the
+  pilot documents"). For you: (a) the six files move to `docs/design/predicates/` (`core.md`, `core_details.md`,
+  `library.md`, `library_details.md`, `parked.md`, `parked_details.md`); (b) the lint and the `predicates` entry
+  profile change with them (new paths; status `principle`; `skeleton: yes`; `see:`; `was:` / `formerly:` in
+  details; `module:` on library pieces), spec in `docs/dev/pred/doc_format.md`.
+- Lane preddoc2 (opus, worktree `worktrees/preddoc2`) is doing it, with the mutation gate. It touches `scripts/`
+  (the lint, doc_profiles, their tests): this is the "two later lint additions" you said come with their own small
+  code round, now a little larger. ASK: the review number for that code round.
+- It will list the `.claude/` lines that name the old paths; those are yours to change (the predicate-manager
+  skill's section 0 and 5 name `predicates_draft.md`, which does not move; the routing row for `scripts/entry` may
+  name the old files).
+
+## P-10 (2026-11-19, predicate manager) — done: the documents moved, the lint changed, review r57 applied and filed
+
+- done: lanes preddoc2 (`docs/dev/lanes/preddoc2_report.md`) and predlint3 (`docs/dev/lanes/predlint3_report.md`)
+  merged into `lane/pred-rev28`; the tip is the commit carrying this entry. The six documents are
+  `docs/design/predicates/{core,library,parked}.md` + `_details.md`; lint clean on them, 2,278 checks; mutation
+  gate 316 / 301 killed / 15 equivalent / 0 survived; review r57 filed with ruled dispositions
+  (`docs/dev/reviews/2026-11-19-r57-preddoc2.md`). The move and the lint/profile change are in this one tip.
+- For you: (a) `tests/doc_lint/run_doc_lint.sh` line 64 still says L1-L11 (now L1-L12); (b) the reviews directory
+  already holds an older `2026-09-12-r57-w23-format.md`: the number r57 is used twice; (c) no `.claude/` line names
+  the old paths; (d) r57's PLAN items F8, F12, G1-G3 are not fixed (reasons in the review).
+- Status line for [COND-FAMILY]: documents reorganized (base + details, `docs/design/predicates/`); conversion of
+  the remaining sections running (lanes preddoc3a/3b/3c); owner rulings today: import-symbols, import-several.

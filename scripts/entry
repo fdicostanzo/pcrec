@@ -16,9 +16,14 @@
     scripts/entry --lint-scripts             scripts/INDEX.md covers every script, every line names a file (make test-doc-lint)
     scripts/entry --selftest                 planted fixtures: one per routing row, dormant, over-cap, --rev
     Levels: 0 the index line(s); 1 + the working fields; 2 + the full entry (a script: its header comment).
-    Profiles (-p): plan, completed (the archive), decisions, known, upstream (dormant until their unit), scripts.
+    Profiles (-p): plan, completed (the archive), decisions, known, upstream (dormant until their unit), scripts,
+    predicates (the predicate documents under docs/design/predicates/, one item per piece; its KEY is a piece tag
+    `core/holes/class`, a PREVIOUS tag from a details `was:` line (the first output line is `entry: was OLD -> NEW`;
+    exit 2 when two pieces retired the same tag), or a details `slugs:` word; levels 0 heading + statement, 1 the piece,
+    2 + the details entry; `-g` also matches a previous tag; `--state open` lists the open pieces).
     Examples:  entry D26 | entry D26 -l 0 | entry D47.a2 | entry LANECHECK -l 1 | entry boxqueue | entry hooks/pre-push
                entry -g kill -p scripts | entry -g 'trigger.*gate' -in 2 | entry --work -s backlog
+               entry core/holes/class -l 0 | entry core/holes/word (a previous tag) | entry hole-class (a slug)
     Output ends `entry: <n> items (profile <p>, level <l>)`; exit 0 found, 1 none, 2 ambiguous.
 
 The profile table is scripts/doc_profiles.py; the plan grammar is scripts/plan_lint.py's (imported, never a
@@ -73,6 +78,7 @@ class Item:
     def __init__(self, profile, id_, head, section=None, state=None, indent=0):
         self.profile, self.id, self.head, self.section, self.state, self.indent = profile, id_, head, section, state, indent
         self.own, self.children, self.slug, self.index_line = [], [], None, head
+        self.was = ()  # the previous tags of a predicate piece (details `was:` lines)
 
     def attr_lines(self, keys=None):
         out = []
@@ -299,6 +305,7 @@ def pieces_items(src, profile):
         it = Item(profile, p["tag"], "\n".join(pred_doc_lint.piece_text(p, e, 0)), section=p["section"][0] if p["section"] else None,
                   state=(p["status"] or "").split(" ")[0])
         it.piece, it.entry, it.slugs, it.slug = p, e, g["slugs"], " ".join(g["slugs"])
+        it.was = g["was"]
         out.append(it)
     return out
 
@@ -400,8 +407,9 @@ class Ctx:
 
 
 class Result:
-    def __init__(self, items=None, rc=0, note=None, level=None):
+    def __init__(self, items=None, rc=0, note=None, level=None, first=None):
         self.items, self.rc, self.note, self.level = items or [], rc, note, level
+        self.first = first  # a line printed BEFORE the items (a previous tag's resolution)
 
 
 def dormant_result(p, note=None):
@@ -472,7 +480,11 @@ def route(ctx, key):
     if PIECE_TAG.fullmatch(k):
         hits = [i for p in ctx.profiles if p["form"] == "pieces" for i in (ctx.items(p) or []) if i.id == k]
         if hits:
-            return Result(hits)
+            return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0)
+        # a previous tag (a details `was:` line) resolves to the current piece, and says so first
+        hits = [i for p in ctx.profiles if p["form"] == "pieces" for i in (ctx.items(p) or []) if k in i.was]
+        if hits:
+            return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0, first="entry: was %s -> %s" % (k, ", ".join(i.id for i in hits)))
     # 6 a lower-case kebab slug: every live pair profile's index, and every `pieces` profile's details slugs
     if re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", k):
         hits = []
@@ -622,6 +634,8 @@ def run(argv, out, root=ROOT, profiles=None):
         out.write(res.note + "\n")
         return res.rc
     lines = render(res.items, level)
+    if res.first:
+        lines.insert(0, res.first)
     if res.note:
         lines.append("entry: " + res.note if not res.note.startswith("entry:") else res.note)
     emit(out, lines, res.items, level)
@@ -657,7 +671,7 @@ def list_items(ctx, a, out):
                 continue
             if a["work"] and (p["form"] != "single" or it.state not in WORK_ORDER):
                 continue
-            blob = "\n".join(it.text(a["in"] if a["in"] is not None else 0))
+            blob = "\n".join(it.text(a["in"] if a["in"] is not None else 0) + list(it.was))  # a previous tag is part of the id
             if rx is not None and not rx.search(blob):
                 continue
             if a["k"] and a["k"].lower() not in "\n".join(it.text(1)).lower():
@@ -718,7 +732,7 @@ def fields(it):
     kw = KEYWORDS.search(head)
     l0, l1, l2 = it.text(0), it.text(1), it.text(2)
     return {
-        "id": "\n".join(x for x in (it.id, it.slug) if x),
+        "id": "\n".join(x for x in (it.id, it.slug, *it.was) if x),
         "statement": head[:kw.start()] if kw else head,
         "keywords": kw.group(0) if kw else "",
         "working": "\n".join(l1[len(l0):]),

@@ -6,9 +6,12 @@ set -u
 here=$(cd "$(dirname "$0")/.." && pwd)
 . "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
 TO=${TIMEOUT_BIN:-timeout}
-$TO 120 python3 -I - "$here" <<'PY' || { echo "FAIL: entry_pieces"; exit 1; }
-import importlib.machinery, importlib.util, io, os, sys
-here = sys.argv[1]
+. "$here/tmpdir.sh"
+scratch=$(mktemp -d -p "$PCREC_TMPDIR" entry_pieces.XXXXXX) || { echo "FAIL: no scratch"; exit 1; }
+trap 'rm -rf "$scratch"' EXIT
+$TO 120 python3 -I - "$here" "$scratch" <<'PY' || { echo "FAIL: entry_pieces"; exit 1; }
+import importlib.machinery, importlib.util, io, os, shutil, sys
+here, scratch = sys.argv[1], sys.argv[2]
 sys.path.insert(0, here)
 loader = importlib.machinery.SourceFileLoader("entry_mod", os.path.join(here, "entry"))
 spec = importlib.util.spec_from_loader("entry_mod", loader)
@@ -32,7 +35,7 @@ rc, o = run(["core/holes/class", "-l", "0"])
 check("tag level 0", rc == 0 and o == ["### Class   [core/holes/class]   reading 2026-11-02",
       "A hole stands for one pattern fragment of the named class.", "entry: 1 items (profile predicates, level 0)"])
 rc, o = run(["core/holes/class", "-l", "1"])
-check("tag level 1 is the base piece (6 lines + trailer)", rc == 0 and len(o) == 7 and o[5].startswith("modes: n/a"))
+check("tag level 1 is the base piece (7 lines + trailer)", rc == 0 and len(o) == 8 and o[6].startswith("modes: n/a"))
 rc, o = run(["core/holes/class"])
 check("default level 2 adds the details entry", rc == 0 and "## core/holes/class — Class" in o and "slugs: hole-class shared-q" in o)
 rc, o = run(["hole-class", "-l", "0"])
@@ -43,8 +46,62 @@ rc, o = run(["no-such-slug"])
 check("unknown slug exits 1", rc == 1)
 rc, o = run(["core/holes/nowhere"])
 check("unknown tag exits 1", rc == 1)
+LD = "docs/design/predicates/library_details.md"
+LB = "docs/design/predicates/library.md"
+
+
+def variant(name, *edits):
+    """A copy of the sample root with (path, old, new) edits applied (each OLD occurs once)."""
+    d = os.path.join(scratch, name)
+    shutil.copytree(root, d)
+    for path, old, new in edits:
+        f = os.path.join(d, path)
+        t = open(f, encoding="utf-8").read()
+        assert t.count(old) == 1, (name, path, old)
+        open(f, "w", encoding="utf-8").write(t.replace(old, new))
+    return d
+
+
+WAS = "was: core/holes/word (2026-11-05, moved to the library)\n"
+rc, o = run(["core/holes/word", "-l", "0"])
+check("a previous tag resolves to its piece, the first line says so", rc == 0 and o[0] == "entry: was core/holes/word -> lib/names/word"
+      and o[1] == "### Word   [lib/names/word]   ?  2026-11-05" and o[-1] == "entry: 1 items (profile predicates, level 0)")
+rc, o = run(["core/holes/word"])
+check("a previous tag at level 2 shows the details entry with its was: line",
+      rc == 0 and o[0].startswith("entry: was ") and "was: core/holes/word (2026-11-05, moved to the library)" in o)
+rc, o = run(["core/holes/wor", "-l", "0"])
+check("a previous tag is matched whole, never by prefix", rc == 1)
+rc, o = run(["lib/names/word", "-l", "0"])
+check("the current tag prints no was line", rc == 0 and o[0].startswith("### Word"))
+rc, o = run(["-g", "core/holes/word", "-p", "predicates", "-l", "0"])
+check("-g finds a piece by a previous tag", rc == 0 and o[0].startswith("### Word") and o[-1].startswith("entry: 1 items"))
+v = variant("rank", (LB, "A trimmed name removes leading and trailing blanks.", "A trimmed name is not core/holes/word."))
+rc, o = run(["-g", "core/holes/word", "-p", "predicates", "-l", "0"], rt=v)
+check("a hit by previous tag (an id match) ranks before a hit in a statement",
+      rc == 0 and o[0].startswith("### Word") and sum(1 for x in o if x.startswith("### ")) == 2)
+v = variant("noentry", (LD, "\n## lib/names/word — Word\n" + WAS + "slugs:\n", ""))
+rc, o = run(["lib/names/padded", "-l", "0"], rt=v)
+check("a piece with no details entry resolves (its was list is empty)", rc == 0 and o[0].startswith("### Padded"))
+rc, o = run(["core/holes/word", "-l", "0"], rt=v)
+check("a previous tag whose entry is gone resolves to nothing, rc 1", rc == 1)
+v = variant("twowas", (LD, WAS, WAS + "was: parked/ideas/old (2026-11-05, merged)\n"))
+rc, o = run(["parked/ideas/old", "-l", "0"], rt=v)
+check("a second was: line of an entry resolves too", rc == 0 and o[0] == "entry: was parked/ideas/old -> lib/names/word")
+v = variant("badwas", (LD, WAS, "was: core/holes/word nodate\n"))
+rc, o = run(["core/holes/word", "-l", "0"], rt=v)
+check("an ungrammatical was: line still resolves by its first word", rc == 0 and o[0] == "entry: was core/holes/word -> lib/names/word")
+v = variant("twoowners", (LD, "## lib/names/trimmed — Trimmed\n", "## lib/names/trimmed — Trimmed\n" + WAS))
+rc, o = run(["core/holes/word", "-l", "0"], rt=v)
+check("a previous tag retired by two entries is ambiguous (2), the first line names both",
+      rc == 2 and o[0] in ("entry: was core/holes/word -> lib/names/trimmed, lib/names/word",
+                           "entry: was core/holes/word -> lib/names/word, lib/names/trimmed"))
+v = variant("dup", (LB, "[lib/names/trimmed]", "[lib/names/padded]"))
+rc, o = run(["lib/names/padded", "-l", "0"], rt=v)
+check("a live tag on two pieces is ambiguous (2) as a previous tag is", rc == 2 and sum(1 for x in o if x.startswith("### ")) == 2)
 rc, o = run(["-g", ".", "-p", "predicates", "--state", "open"])
 check("--state open lists the open pieces", rc == 0 and o[0].startswith("### Trimmed") and o[-1].startswith("entry: 1 items"))
+rc, o = run(["-g", ".", "-p", "predicates", "--state", "principle"])
+check("--state principle lists the principle pieces", rc == 0 and o[0].startswith("### Stated") and o[-1].startswith("entry: 1 items"))
 rc, o = run(["-g", "regex", "-p", "predicates"])
 check("-g finds a piece by its text", rc == 0 and any("regex-default" in x for x in o))
 rc, o = run(["-g", ".", "-p", "predicates"], rt="/nonexistent-root-for-entry-test")

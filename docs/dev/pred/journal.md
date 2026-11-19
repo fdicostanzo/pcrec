@@ -261,3 +261,44 @@ parts (an answer against a compile error): NEW owner question bare-condition-lab
 (doc_format.md): a `principle` status; `skeleton: yes`; one piece one status (split zero-values); the `?` date.
 to_main P-8 names the tip. NEXT: show Frank the holes section; on his look, the conversion of the remaining sections
 (lanes per section group) with the two lint additions; then the completeness critic round.
+
+## 2026-11-19 (evening) — main merged the pilot; the lint is in make test
+Main merged the pilot (main fceff8f98) and wired the lint into make test (section test-doc-lint, 76024ee9e): a
+document change that breaks the lint turns make test red, so RUN THE LINT BEFORE NAMING A TIP. Main merged back
+into my branch (plan-lint and document lint clean). My two later lint additions get their own small code round from
+main. Waiting on Frank: doc-shape (his look at the pilot). Nothing running.
+
+## 2026-11-19 (afternoon) — the owner answered doc-shape; lane preddoc2 launched
+
+Frank read the pilot: macros that have a body go to the library (core = primitives; `peek` "a useful transform");
+a default-imported set with `peek`; an aside to discuss importing symbols (`(left,right) := import("blah",
+/left|right/)`); a standard move/rename with previous tags in the history; the files under
+`docs/design/predicates/`. Recorded verbatim; doc-shape read as answered (this shape with these changes).
+doc_format.md gained "Changes after the owner read the pilot" (`see:`, `was:`, `formerly:`, `module:`,
+`default: yes`, the directory). Lane preddoc2 (opus) launched for: lint and reader changes, the move, the
+post-pilot format changes, macros to the library with a model run per moved body. Watcher armed. P-9 to main (asks
+the code-round number). New owner questions queued: import-symbols, default-set. WAITING on: preddoc2.
+
+## 2026-11-19 (late afternoon) — preddoc2 merged; import-symbols ruled; code round r57 running
+
+Lane preddoc2 delivered and merged (tip cd5ddeb70): the six files are `docs/design/predicates/*.md`; lint 2,168
+checks, 0 failed (new L12 module/default); mutation 212 / 196 killed / 16 equivalent / 0 survived; peek, when,
+when-test and repeat moved to the library, each body run against every ruled example (25 checks, 17 sabotages);
+the consuming-test warning stays core; `scripts/entry core/conditional/peek` resolves to `lib/control/peek`.
+My readings 1-4 SUPPORTED (2 except the warning). Confirmed by me: no-absence and exact-wording take status
+`principle`. Lane stopped. Critic coordinator crit-preddoc2 launched for r57 (small code round, main's number).
+Owner, same hours: import-symbols RULED in steps (named binding list, `=x` shorthand also in a macro call, any map,
+`(=)` first for all public names, later entries override, `_ = left` leaves a member out, a conflict between two
+modules in one import is a compile error). OPEN: import-several (his `import("pcrec"|"numbers")` meets the
+2026-11-14 "exactly one file" ruling). WAITING on: crit-preddoc2; his answer on import-several.
+
+## 2026-11-19 (evening) — review r57 drafted and ruled; fix lane predlint3 launched; import-several ruled
+
+r57 (small code round on preddoc2's lint changes): 16 items, 8 where the lint passes a forbidden document (worst:
+a `was:`/`formerly:` line closes the open details field so later rulings items go unchecked, a regression; a
+retired tag can be reused once its `was:` line is deleted; a principle item without its class passes). Dispositions
+ruled as proposed: FIX NOW F1-F7, F9-F11, F13-F15; DOC F16 and the fold of doc_format.md's three late sub-sections
+into its upper half; PLAN F8, F12, G1-G3. Coordinator stopped; draft committed (ebeeaf3d3). Lane predlint3
+(sonnet, worktrees/predlint3) applies and files it; watcher armed. NOTE for main: an older file
+2026-09-12-r57-w23-format.md already carries the number r57. Owner: import-several RULED (several files; one name
+= the combined map; reverses 2026-11-14 "exactly one file"). WAITING on: predlint3.
