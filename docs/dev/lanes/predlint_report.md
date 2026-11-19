@@ -3,7 +3,7 @@
 ## STATE AT HANDOFF
 OWED: none
 
-Complete incl. ruling R1 (L8 exemptions, applied); branch lane/predlint, committed. The rulings file predlint_rulings.md was empty (no entry applied). No owed runs. Not wired into make (see WHAT WAS NOT BUILT).
+Complete incl. ruling R1 (L8 exemptions, applied); branch lane/predlint, committed. Rulings file: R1 applied. No owed runs. Not wired into make (see WHAT WAS NOT BUILT).
 
 ## WHAT WAS BUILT
 - `scripts/pred_doc_lint.py` (stdlib only, runs under `python3 -I`): the L1-L11 structure lint, a planted-fault `--selftest`, `--write-ratchet`, and the reader (`--show`, `--list`). Paths follow the spec defaults, `--root DIR` (default: the repo), `--require-all`.
