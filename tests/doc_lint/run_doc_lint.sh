@@ -61,7 +61,7 @@ done
 budget "all profiles -g span -in 2 -l 2" -g span -in 2 -l 2
 budget "all profiles -g ." -g .
 
-# 6. the predicate-document lint (scripts/pred_doc_lint.py, rules L1-L11 of docs/dev/pred/doc_format.md; review r56):
+# 6. the predicate-document lint (scripts/pred_doc_lint.py, rules L1-L12 of docs/dev/pred/doc_format.md; review r56):
 #    its planted-fault selftest, its .test (the CLI failure path), and the lint over the REAL predicate documents.
 LINT="$ROOT_DIR/scripts/pred_doc_lint.py"
 out="$(python3 -I "$LINT" --selftest 2>&1)"; rc=$?
