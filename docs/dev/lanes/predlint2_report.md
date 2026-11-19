@@ -4,6 +4,7 @@
 
 STATE: delivered. Rulings file `docs/dev/lanes/predlint2_rulings.md`: last entry applied = R1 (a record title may contain a quote; the cited title runs to the LAST `")` of the item, an item may wrap: applied, with a positive control for the inner quote, one for the wrapped item, and the missing-`(record:` plant kept). Nothing owed.
 Premise tests: (1) the review file exists, ends in MANAGER RULINGS: held. (2) the unchanged lint's selftest ended "0 failures": I did not run it before editing (I read it and went straight to the rewrite). (3) the harness mut.py against the unchanged lint: NOT re-run; the critic's out.txt (checks_harness/out.txt) lists the survivors and my reading of the code agreed with it. Reported, not hidden.
+OWED: none
 Branch tip: see `git -C worktrees/predlint2 log -1`. Never pushed or merged.
 
 ## FINDINGS APPLIED
