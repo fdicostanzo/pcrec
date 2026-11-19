@@ -47,7 +47,7 @@ line, with the count. A paragraph-form note that finds two sites converts itself
 2. REQUIREMENTS: the files and rulings named by the brief, each with the commit you read it at. If the
    requirements are not stable (a design-of-record marked NOT STABLE, open owner questions that change WHAT the
    feature does), say so in the header; the note may still be written, but every site that depends on an open
-   requirement is marked `REQ-OPEN <slug>`.
+   requirement is marked `REQ-OPEN <slug>`. RULINGS CROSSED: plain `grep` decisions.md (`scripts/entry D###` is dormant for decisions) and the plan row bodies for every D-row or ruling citing the feature or its files, and list them on a "Rulings this note crosses" line; then a pass "what of the design-of-record is already built or superseded at `$T`" (`git log --grep` the tags; name the superseded text) [pilot 2026-11-18, friction 1, 2; r50 5a]. A plan STATE tag is not evidence of either.
 3. The register: `docs/dev/guide/architecture.md`'s ride-along register at `$T` (`git show $T:docs/dev/guide/architecture.md`).
 
 ## 4. Procedure (architect)
@@ -71,7 +71,9 @@ line, with the count. A paragraph-form note that finds two sites converts itself
      (a module seam: API and contract; a layer handoff: its direction);
    - `ACCESSOR` a direct field access to another unit's structure that the feature would add or extend (goal 2;
      rule "A structure is read and written through its owner's accessors"): the structure, its owning file, and
-     the accessor that exists or must be added;
+     the accessor that exists or must be added. The owner's grain (accessor-grain, 2026-11-18): an accessor answers a
+     QUESTION the caller has; a plain field read is fine where the unit declares that field part of its interface
+     [pilot 2026-11-18, friction 6];
    - `WIDEN` a data shape the feature needs inputs outside of (goal 2; rule "A shape states the inputs it covers"):
      the shape, what it covers today, what the feature and the planned rows need, AND every GENERIC writer or
      copier of the shape (whole-struct copies, memsets, field writes that do not test the kind or variant): each
@@ -79,20 +81,29 @@ line, with the count. A paragraph-form note that finds two sites converts itself
      `revbody`/`possessive` writes into a clobber of another kind's bytes);
    - `AS-IS` the site takes the feature with no change of shape (say why in one clause).
    A site the feature would join by adding a branch to a chain, a second mechanism beside a first, or a private
-   copy of a declared table is NEVER `AS-IS`: that is the aggregation this step exists to stop.
+   copy of a declared table is NEVER `AS-IS`: that is the aggregation this step exists to stop. Nor is a site whose
+   line the feature deletes or rewrites [pilot, r50 5d]. A site may carry a PRIMARY and a SECONDARY class, and a
+   CONDITIONAL class "X if the design chooses Y" is allowed [pilot, friction 4]. A `SHARED` site already shared is
+   written "SHARED, already satisfied" and needs no remodel or row [pilot, friction 16]. Grep the family by the
+   question's SYNONYMS, not only its names [pilot, r50 5b]; every population sentence carries its command C-n
+   [pilot, r50 5c]; "today" numbers come from a binary built at `$T` (say which build) [pilot, friction 13].
 3. REGISTER LOOKUP (goal 4; the register's HOW TO USE IT). Grep the register for every file and function in the site map and for
-   the feature's plan tag. Each matching row: RIDES FIRST, JOINS <abi event in flight>, or NOT CARRIED with the
+   the feature's plan tag, and re-verify each matched row's WHERE column at `$T`; report drift [pilot, friction 7]. Each matching row: RIDES FIRST, JOINS <abi event in flight>, or NOT CARRIED with the
    reason. A site classified `CHAIN->TABLE`, `SHARED`, `ACCESSOR` or `WIDEN` with no row PROPOSES a row in the register's own
    columns. Noted-deviation rows on touched sites are looked up the same way (corrected first, like any riding
    remodel); a note that recommends going against a goal for now PROPOSES a noted-deviation row (tier 1 "Judgement"). Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files,
-   and the "Revisit when" triggers of every D-row that names a site in the map (`scripts/entry -g` on the file or
-   function): a trigger the feature meets is looked up like a register row (the register is newer than most of
+   and the "Revisit when" triggers of every D-row that names a site in the map (grep `docs/dev/decisions.md` for the file or
+   function; `scripts/entry` is dormant for decisions) [pilot, friction 8]: a trigger the feature meets is looked up like a register row (the register is newer than most of
    those triggers; D62's "a fifth AST analysis" was the D70 union's).
 4. REMODELS THAT LAND FIRST. Each `CHAIN->TABLE`, `SHARED`, `ACCESSOR` or `WIDEN` site the feature needs now becomes one unit:
-   what changes shape, its GATE (no-mover with byte identity / abi event / kit seam event, D146), its SIZE (S/M/L as
+   what changes shape, its GATE (no-mover with byte identity / abi event / kit seam event / kit ROW event, D146), its SIZE (S/M/L as
    the register), the CHECKS THAT BIND the code it moves (sabotage anchors in `tests/mech/`, pins and manifests, found by
    grep; critics.md rule A3), and the test that it is SEPARABLE: it lands, answer-identical, without the feature. A remodel the feature
    does not need yet is not a unit: it becomes a register row with its trigger (rule "Build under measurement").
+   A unit that lands first gets no proposed register row too, unless it stays open after the feature [pilot, friction 15]. A WIDEN that
+   weakens a reply contract lists as hazards the checks asserting the stronger contract [pilot, r49 C-5]. The feature's own
+   new seam fact is a unit of the feature, not a remodel (no deletes-list demand) [pilot, friction 17].
+   A goal TRADED has a noted-deviation row or the declaration's cite [pilot, r50 5e].
 5. GENERAL FORM AND SIBLINGS. Name the general form of what the feature adds (rule "Build the general form"); its
    siblings already in the tree (the decision family it joins); the plan rows that will extend the same shape
    next (grep `docs/dev/plan.md` by tag and vocabulary: rule "A shape states the inputs it covers", its BEFORE DESIGN); and the unlocks, each with its trigger.
@@ -104,7 +115,10 @@ line, with the count. A paragraph-form note that finds two sites converts itself
 7. DELETED. What each remodel and the feature delete (rule "Simplification is a benefit on its own"); a remodel with
    an empty list names another reason or is dropped.
 8. HAND-OFFS. What the design step must decide (algorithms, field layouts, limits, tests: handed on, not decided
-   here) and OPEN QUESTIONS FOR THE OWNER (each a word slug; plain words; a leaning).
+   here) and OPEN QUESTIONS FOR THE OWNER (each a word slug; plain words; a leaning). Each question line carries
+   TODAY (current behaviour), an EXAMPLE (run, or marked hand-worked), the LEANING, and cites every record bearing
+   on it; where the record already answers, state it as a CONFIRM; quote owner words only as the record quotes
+   them [pilot, friction 11, r49 C-6: 4 of 5 questions were already answered].
 
 ## 5. The note (template)
 
@@ -170,7 +184,7 @@ command) and its class; the register rows matched (or "none", with the grep); an
 - Every site-map row has a command, a class and a goal/rule; every command re-runs at `$T` and prints what the row
   says (re-run them all once, last).
 - Every vocabulary term was grepped; a term with zero hits is listed as such (it is a `NEW-SEAM` or a new shape).
-- Every `CHAIN->TABLE`/`SHARED`/`ACCESSOR`/`WIDEN` row appears either under "Remodels that land first" or as a register row
+- Every `CHAIN->TABLE`/`SHARED`/`ACCESSOR`/`WIDEN` row (except "SHARED, already satisfied") appears either under "Remodels that land first" or as a register row
   (matched or proposed) with its trigger.
 - No algorithm, field layout, schedule or test design appears outside "What the design step must decide".
 - Plan rows cited by TAG, spec sections by `§`, never by line (`make test-plan-lint` PL14, `make test-spec-history`).

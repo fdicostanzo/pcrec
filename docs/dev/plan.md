@@ -40,7 +40,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 ## Active
 - [ARCH-STEP] STATE:started — an ARCHITECTURE step between requirements and design, with its own review
   filed: 2026-11-17 Frank ("we discover over time that the feature is aggregated onto existing code and then have to go through a lengthy refactor ... requirements -> architecture-> design -> build Each with its own review and goals"; "I'd like to set up a plan with this"); manager wrote the row
-  status (2026-11-17): A1-A5 DONE: history survey, tree review, docs/dev/guide/architecture.md (five tiers: 4 high-level rules, sub-rules, corollaries, considerations, evidence; judgement; the register), skill pcrec-architect + critic mode arch, wiring
+  status (2026-11-18): A1-A5 DONE; A6 pilot ran (two notes r49/r50, design r51), write-up in the body file, skill edits applied; retro test owed; owner questions size-trigger-final and pilot-verdict open
   next: A6 pilot on the next feature to reach a build go, and a blinded retro test; open with the owner: the size trigger, speed-gate, new-rules; units: docs/design/plan_row_bodies/ARCH-STEP.md
 - [XARCH-DEV] STATE:started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
   filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
