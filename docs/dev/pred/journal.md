@@ -302,3 +302,18 @@ into its upper half; PLAN F8, F12, G1-G3. Coordinator stopped; draft committed (
 (sonnet, worktrees/predlint3) applies and files it; watcher armed. NOTE for main: an older file
 2026-09-12-r57-w23-format.md already carries the number r57. Owner: import-several RULED (several files; one name
 = the combined map; reverses 2026-11-14 "exactly one file"). WAITING on: predlint3.
+
+## 2026-11-19 (evening, later) — predlint3 merged; delivered to main (P-10); conversion lanes 3a/3b/3c launched
+
+predlint3 merged (lint 2,278 / 0; mutation 316 / 301 / 15 / 0; r57 filed RULED; doc_format.md folded, each rule
+once). Accepted its calls: F2 "at least one principle item names its class"; the record `tags:` check accepts a
+live piece, a section or a previous tag. Delivered tip 3c0042d1c to main (P-10, message sent). Decided: import is
+RULED, so it is a CORE section (`core/modules`), not parked; the parked `?` piece is retired by `was:`.
+Launched, opus, watchers armed, disjoint: preddoc3a (core model, patterns, labels, conditions, filters),
+preddoc3b (core values, arrays, operators, diagnostics, spellings + new core/modules with today's import
+rulings), preddoc3c (library in full with proved bodies, `capture`, the 72 census names; parked against the 38
+ideas-file items; deletes parked/import-symbols). None edits the ratchet: I lower it after the merges. A known
+transient: 3b and 3c each may show ONE lint failure on the retired parked tag until both are merged.
+AFTER THEM: merge 3a, 3b, 3c (each ALONE), lower the ratchet, lint; ask main for a review number; a critic round
+with a COMPLETENESS lens (census lists: 155 ruling entries, slugs, 72 names each land on a tag); retire
+predicates_future.md; send main the skill text for the new layout. WAITING on: the three lanes; main's merge.
