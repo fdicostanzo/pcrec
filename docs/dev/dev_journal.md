@@ -28451,3 +28451,10 @@ Next
 - spanarms9 (sonnet) launched: rev 3.2 with D1-D4 + register rows 5, 19, 27, 29 and a NOTED DEVIATION row for F-7. The D168 addendum stays with L1's build (the design says so; wake.md's "file it at merge" was wrong).
 - recs1118 merged: [LANDWALK] started + moved to Active (stage 1 landed dc6a40dfb); [CTX-SIDES-PRODUCER] trigger-fired note; D199 (cover-cap "Go on all stages" + the manager's other-sites-at-32). Pruned 15 merged worktrees, 13 branches.
 - Asked Frank proved-ending-scope (route check RUN: `(?<=f)bar` -> cover, `(?<=foo)bar` -> unanchored); my lean: a fourth lookaround unit after L1 and L3.
+
+## 2026-11-19 session 141 (in flight, 00:30) — owner rulings of the evening; night handed to the kit
+
+- Merged: spanarms9 (span_arms.md rev 3.2 on main 054c9cdf7: r51 47/47 + confirm D1-D4; register rows 5, 19, 27, 29 status, row 30 NOTED F-7); archpilot ([ARCH-STEP] A6 write-up in ARCH-STEP.md; critic skill K1-K11, architect skill A1-A10). Pushed to 482a50440.
+- OWNER RULINGS (verbatim in the records): pilot-verdict + size-trigger-final -> D200 (step kept, trigger as is); census-stop -> D191 add. 1 (a fail-fast census, ~1 h, BEFORE any build, facts or performance; my derived consequences marked there); remodel-go -> D191 add. 2 (small refactors ride the go, listed in every pre-go briefing; manager skill trigger row); proved-ending-scope -> [CTX-SIDES-PRODUCER] scheduled after L1-L3 land (REQ-LOOKAROUND.md body).
+- Night: load checks 00:06 and 00:27 QUIET (load 1.3-1.5, no trouble makers); kit 700-703 queued for 01:00; 704 cancelled (by day).
+- NEXT by day: read the night's verdicts (`scripts/monread main`); L1 build lane (opus): census first (stop on no predicted mover), then remodel commits (RM-1, RM-6, remodel 3), then the feature; the D168 addendum in the same change; D27 witnesses; code critic before landing. Cover-cap rebuild on h*. Dense-hit design when the kit's R-46 form arrives (~17:00). A6 retro test owed.
