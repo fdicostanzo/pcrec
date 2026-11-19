@@ -1086,7 +1086,7 @@ history:
 - 2026-11-19 (lane preddoc3c): the base piece states that no trigger is recorded.
 
 ## parked/ideas/other-side-sigil — The other-side sigil
-slugs: label-section reference-index bound-reference macro-arguments
+slugs: label-section reference-index bound-reference
 rulings:
 - 2026-11-15 (class: RULING + IDEA) "definitely not a bare reference. it might shadow a binding and it wouldn't be clear where it was coming from. if we are building new syntax, what about a symbol that represents the other side of the intersection. ^.h or something like that." (record: "2026-11-15 RULING + OWNER IDEA — no bare field reference; a mark for the other side of the intersection"); the refusal is RULED (core/conditions/form carries it as a rejected candidate), the mark his IDEA
 - 2026-11-16 (class: RULING) "label-section: i think the sigil mark is better. i like a lot about the section but its re-using a syntax for a different purpose. the save would be if the section syntax were defined in such a way that that worked. but i don't see it." (record: "2026-11-16 RULING — a compare names its fields with the other-side sigil"); PAUSED within the half hour (next item)
@@ -1095,7 +1095,7 @@ rulings:
 rejected:
 - the section `[(h:), (m:)]` naming the compared fields — by owner ruling — label-section ("its re-using a syntax for a different purpose").
 readings:
-- macro-arguments (macros as arguments, indexed and called) WITHDRAWN as unneeded by the sigil ruling (the manager's consequence (2) in that entry, not his words) — UNTESTED.
+- macro-arguments (macros as arguments, indexed and called), the question this direction raised: answered NO by his direction (core/arrays/lift), and withdrawn by the manager after the sigil ruling — SUPPORTED by the record.
 evidence: the draft §16 (rev 19, the direction's record); review r19 (CENSUS, SIMULATE).
 history:
 - not an ideas-file item: the paused direction of the draft's rev 16-19 (§16), homed here by lane preddoc5 (2026-11-19, review r59 COMPA-6, COMPB-5). Its one use parked separately is parked/ideas/field-count.

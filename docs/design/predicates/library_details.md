@@ -105,6 +105,7 @@ rejected:
 - a modifier's argument as a filter matched whole of its own (the draft's old row L13: `padded(/^5/)` = `padded("5")`) — by owner ruling — the plain macro: the argument is spliced into a hole, so `^` forbids the zeros (PART PA).
 - `0?` for the zeros arm — by run — `2025-002026` would fail (the draft's rev 28.1 PART PW; preddoc3c PART PW, sabotage s2 caught).
 - `unpadded` as a provided name (it read the subject as if zero-padded, `9:00` tested as `09:00`: text the subject does not contain, so no body in the language says it) — by owner ruling — cut-unpadded; a time range is written with split fields and number conditions, `/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: padded(between(9, 10)))` with the minute condition its end needs.
+- rev 2's `pad(n)` (the filter reads a subject as if zero-padded to width n) — by the draft (it became `unpadded(n, S)`, then cut-unpadded) — its zeros are not in the text; it was the draft's addition, not his ruling (the draft §9).
 readings:
 - the two-argument body `padded(rx, n) := (rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)` reproduces every printed answer of the width form: five argument orders (`(?:\d\d)+?` n = 3, `\d{2,3}`, `1|0123`, `\d|\d\d\d|\d\d`, `\d+?` n = 2) and the two value-hole programs — SUPPORTED (preddoc3c PART PW; sabotages s1, s2, s3 caught).
 - the one-argument body reproduces `5`, `05`, `005`; `padded(/^5/)` only `5`; `/1|2/` on `02`; `padded(between(0, 255))` on `000`; `padded(between(1, 12))` rejects `00` — SUPPORTED (PART PA; sabotage s4, the raw paste without the hole's group, caught).
@@ -132,6 +133,7 @@ rulings:
 rejected:
 - the plain splice `quoted(S) := /"(?:${S})"/` — by run — its `^` reads the stretch before the quote, so `quoted(/^a\w*/)` never matches (0 of 121 texts over `"ab`; preddoc3c PART QU, sabotage s13 caught).
 - `json.quoted` as a provided name (it tested S against the DECODED string, `\u0041` read as `A`, which is not in the text) — by owner ruling — cut-json-quoted; the `json` module keeps `json.string`, the literal's rx.
+- rev 2's `jstr(p)` (a JSON string literal read as its decoded text) — by the draft (it became `json.quoted`, then cut-json-quoted) — the decoded string is not in the text (the draft §9).
 readings:
 - the body `/"${S & /[^"]*/}"/` while the quoted text holds no escape (the draft's LEAN, §2.7 bodies table) — SUPPORTED for its one printed claim (PART QU).
 - the names `padded`, `any_case`, `quoted`, `length`, `month_numbered` are ruled (OWN-1's list); the bodies are the draft's.
@@ -603,6 +605,8 @@ rulings:
 - 2026-11-15 "If someone is writing ambiguous rx they need to think about what that means and validate it with @check()" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — ONE reading everywhere (PCRE's); ambiguity is the author's to validate; no `max` on search for now"
 rejected:
 - `check` as a keyword or statement form, `x := check ...` — by owner ruling — "no alpha operators", "check is not `x := ...`" (Q9).
+- the `assert_some(...)` built-ins and `check A == B` — by owner ruling — the assertion library form (`assert := import("assert")`, `assert.some(...)`; the draft §5.6 STATUS: "SUPERSEDES `check A == B` and the `assert_some(...)` built-ins").
+- a library assertion on the searched mode (a critic's "search assertion", `@assert.finds(p, "256.1.1.1", ...)`-shaped) — by review (Q1X-5, NOTED) — not adopted (the draft §13 O36).
 readings:
 - the CONCEPT (compile-time assertions) is agreed (Q6 + Q9); the spelling `@assert.some/none/same`, a module's effect calls, is the manager's lean after his `assert := import("assert")`, `assert.some("2024" & leap)` (record "2026-11-14 — import/export as functions") and the draft §5.6 (LEAN) — a placeholder spelling.
 - the set position and the edge-assertion error in its argument: the draft §5.6 — not run here.

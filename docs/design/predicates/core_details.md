@@ -55,6 +55,8 @@ rulings:
 - 2026-11-16 (class: PRINCIPLE) "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set" (record: "2026-11-16 OWNER PRINCIPLE — a set never contains absence")
 - 2026-11-16 "absent-rule: lock" (record: "2026-11-16 OWNER RULING — absent-rule: LOCKED"); the absent rule rests on this principle (its item (4)); its clause offering the optional mark was removed by drop-mark (core/conditions/defaults)
 rejected:
+- absent-rule's clause (2), "over several values it holds when every value is in the set and there is at least one", for a bare condition after a loop — by owner ruling — last-pass-default, then after-loop-read: a bare condition reads the last pass's own label; "every value" is written on the item (the draft R.9, R.1.7).
+- absent-rule's clause (3), the optional mark as one of the two author controls — by owner ruling — drop-mark (core/conditions/defaults).
 readings:
 evidence:
 history:
@@ -380,6 +382,7 @@ rulings:
 rejected:
 - juxtaposition as the sequence (`A B`) — by owner — "A B isn't legal so its the addition form" (core/patterns/quantifiers).
 - a string paste of the operands — by owner ruling — sequence-reading, splice.
+- no concatenation operator (the manager's 2026-11-13 lean, the draft §2.5: sequencing only inside a literal or by `join`), with `concat(x, y)` as the library name for value concatenation — by owner ruling — sequence-operator ("is there a reason why not? I expect rx construction and concatenation is common enough there"), after his rx-module proposal reopened it (the draft R.9).
 readings:
 - the sequence mark cannot begin an operand (the draft R.1.14) — UNTESTED.
 evidence: preddoc3a_model.py SEQ (the draft's PART RX1 line; `\b\d+\b` agrees; the printed answers reproduced). PART RX of predspec25.
@@ -393,6 +396,7 @@ rulings:
 - 2026-11-17 "join-order: left side decides. That's always how I thought of it." (record: "2026-11-17 OWNER RULING — join-order: the left side decides")
 rejected:
 - reading (i) of branch-scope: a condition after a `|` judges only the branch the pattern chose first — by owner ruling — branch-scope (ii).
+- rev 23.2's reading (iii) of branch-scope and its scope rule — by owner ruling — branch-scope, reading (ii) ("branch-scope: yes. I like that."; the draft R.9).
 readings:
 - `c | d` between conditions is the one `|` (the draft R.1.5; condition-or deleted as a separate construct) — SUPPORTED by the regex model (an alternation of two zero-width tests).
 evidence: preddoc3a_model.py ALT (the draft's PART A B1 line; printed answers reproduced; `\d\d` agrees).
@@ -451,6 +455,7 @@ rejected:
 - regex's carried value for a bare looped label (last-pass-default: regex) — by owner ruling — after-loop-read and the `$x` ruling ("frankly pcre is wrong on this"); the carried value stays reachable as the capture.
 - a compile error for a bare condition after a loop (the manager's lean) — by owner ruling — after-loop-read.
 - pass-and (a Kleene AND over passes) and joint-last-pass — dissolved by the two-valued model and after-loop-read (a joint reads the last pass's own tuple).
+- per-pass pairing for a BARE joint condition, by the loop enclosing its labels (joint-loops (1), its wording pairing-loop part 1) — by owner ruling — after-loop-read: a bare joint reads the last pass's own tuple; per-pass pairing is the joint written on the item (the draft R.9, R.1.7).
 readings:
 - the array form's index counts settings (the draft R.1.7) — UNTESTED.
 evidence: preddoc3a_model.py CAPT, CAPT2 (the draft's PART L: `\k<m>` reads the capture `45` while the label m is unset; python `re` agrees on the regex half); sabotage s9 caught.
@@ -489,6 +494,7 @@ rulings:
 - 2026-11-17 "label-flow: 1. propose: it is an error to ambigously reference a label. so if A & B & (h: blah) and A and B both use label h, it is an error. this is different than "its an error for labels of the same name to exist at all in A & B"" (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error")
 rejected:
 - across the sequence operator a name both parts set is ambiguous (point 2 of his proposal) — by owner — withdrawn by his adjustment ("a compose and a literal rx have the same label behavior").
+- the manager's readings (a) "names inside a part are resolved in that part, before the splice" and (d) "renaming groups apart before splicing" as the RULE — by owner — his clarification "it should be the last reference as labels" and free-name; renaming stays the evidence's model (the draft R.9).
 readings:
 - a chain `A & B` with h on both sides, used as a part, still surfaces h ambiguously (the manager's) — UNTESTED.
 - label-mark (the single labelling form the rx module offers) is closed by entailment; its spelling stays in core/spellings — not a run question.
@@ -554,6 +560,7 @@ rulings:
 rejected:
 - a backreference that reads the label (reset on entry) — by owner ruling — backref-label: capture.
 - the written-out regex's reading (one namespace for the whole composition) — by owner ruling — backref-across-parts.
+- rev 27's three candidates for `\k<h>` after two groups of one name — by owner ruling — same-name-twice: a compile error unless `(?J)` (the draft R.9, A25).
 readings:
 - a reference to a name unset at its point fails, as regex's does (the manager's) — UNTESTED.
 evidence: preddoc3a_model.py BREF (the draft's PART REF REF2 line; printed answers reproduced; `\d(\d)\1` agrees); sabotage s10 caught.
@@ -568,6 +575,7 @@ rulings:
 - 2026-11-17 "For A & B: from the perspective of B, the subject is now whatever A matched. There is no outside subject (unless we allow context, etc). That's its whole world. So all numbers are labels of groups in that world." (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 - 2026-11-17 "Also, not recommended to use group numbers as it's confusing on bound values you can't see" (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 rejected:
+- "numbers name the groups of the nearest pattern to their left" and "numbers are not subject to the ambiguous-reference error" (the manager's readings, rev 25.1-26) — by owner ruling — number-names ("Only when there is no ambiguity"; the draft R.9).
 readings:
 - a number on a group whose name is shared inside one literal is refused (the draft R.1.13) — UNTESTED.
 - the numbered-label warning (the manager's proposal from his "not recommended", accepted: record "2026-11-17 OWNER — the numbered-label warning accepted") — the wording is core/diagnostics'.
@@ -976,12 +984,15 @@ history:
 - 2026-11-18: match-is-rx (4), read-is-constant (4), the clarification, construction-line; `length($y)` written `strlen($y)` (THE MANAGER'S CALL 6, A26).
 
 ## core/arrays/lift — Arrays are alternations; operations lift
-slugs: array-lift lift-order
+slugs: array-lift lift-order macro-arguments
 rulings:
 - 2026-11-18 "array-lift: I meant, alternations as you suggested. It's consistent that alternations combine on the product and multiply the rx and produce more alternations" (record: "2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product")
 - 2026-11-18 "What is needed is a consistent, general rule about it and not something specific to adding to arrays for example. What happens to array + array ?" (record: "2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea"); a LEAN, settled by array-lift
+- 2026-11-16 (class: DIRECTION) "macro-arguments: the general path is that an array of something is that something. i feel like this is creating a bunch of mechanism for very specific use. what otherwise is an array of macros?" (record: "2026-11-16 OWNER DIRECTION — arrays of macros: the general path, no special mechanism"); NO to the special mechanism; an array of macros is a macro, nothing more
 rejected:
 - pairwise as default — by owner ruling — his own first message, replaced at once by him; run: `[2, 4] + [1, 10]` pairwise is `[3, 14]`, `12` FAILS (preddoc3b sabotage s7 caught).
+- macros as arguments, an array of them indexed and the entry called (macro-arguments, for the tuple compare) — by owner direction — "the general path is that an array of something is that something".
+- rev 18's readings (a) and (b) of the tuple compare's body (a macro passed, indexed and applied in a body) — by owner direction — macro-arguments: not adopted (the draft §16).
 readings:
 - a repeated result is harmless (stated with the question, not objected to) — SUPPORTED (AL3 of predspec26: 0 / 0 / 0 of 364).
 - the rule is about arrays the user writes, not a label's settings — UNTESTED (a scope statement).
@@ -1271,6 +1282,7 @@ rejected:
 - every flag propagates (`n`, `U`, `xx`, `J`; the draft revision 28.1's reading) — by owner ruling — flags-scope; `/(?U)x${/a+/}/` SEARCHED `xaaa` gives `xaaa`@0, the text paste `xa`@0 (preddoc1 EX-flags-U, sabotage xEX-flags-U caught).
 - the inserted literal spelt `(?^ims:...)` as "the" text — by review r54 P29-1 — `(?^)` does not reset `U`, a paste is no parse of its own (PART TX of predspec291).
 - the hole's flags over a flag the literal writes — by owner ruling — flags-propagate, the override as asked (preddoc1 EX-flags-written, sabotage xEX-flags-written caught).
+- hole-flags' split, "plain text with no flags of its own (a read, a string constant, a number)" against "pattern text written with flags" (the manager's, in the question) — by owner — "under one type there is no "plain text" kind" (the draft R.9, R.1.15).
 readings:
 - "only i" inherited: his OBSERVATION, a possible narrowing, not ruled — UNTESTED.
 - the not-inherited flags are the inserted rx's own defaults at any depth; `m`, `s` stay inherited until he rules the narrowing (the manager's) — UNTESTED here.
@@ -1458,6 +1470,7 @@ rulings:
 - 2026-11-15 "3. this leans into the idea of an interface to a type over the type. Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created. So what import is is less important than that its interface is a map. 4. agree." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — answers to the four questions of review r8"
 rejected:
 - a module as a third value kind, a namespace (the manager's 2026-11-14 lean (1)) — by owner ruling — the follow-up (MODULE = MAP) and "what import is is less important than that its interface is a map".
+- DECLARED TYPES (`type(...)`, `isodate: date`), TYPE MEMBERS declared with a type, SCOPE-LIMITED UFCS (`d.weekday` resolving to a scoped macro), `types()` (and the record's `kind()`) in the first spec — by owner ruling — the §9 cut (predx Q8, the draft §9 STATUS "RULED (CF:583, predx Q8)"); declared types may return as library packaging after a build.
 readings:
 - members travel WITH THE TYPE (record "2026-11-14 — namespaces for type members", a LEAN) — UNTESTED; not contradicted by the 2026-11-19 rulings (they bind names into the bare space; dot lookup into a type is untouched).
 - a module is never passed, stored, returned or used whole as a pattern (the draft §7's phase-1 lean) — UNTESTED.
@@ -1659,6 +1672,7 @@ rejected:
 - a "modifier argument" clause or a library name in the anchor warning's rule (`padded(/^5/)` on the manager's list) — by owner ruling — the warning keys off the ROLE ("padded is a simple macro so the warning shouldn't key off of the name").
 - an exemption for anchors written inside a macro's own body — by owner ruling — warn-in-macro-body.
 - a never-used default as a compile error — by owner ruling — default-unused (a warning).
+- warning names without a prefix (`empty.search`, `label.unset`, the 2026-11-14 list) — by owner ruling — the ADDENDUM ("compiler errors and warnings are prefixed with "pcrec."", cited above).
 readings:
 - every name is the manager's placeholder (the draft §7.1; his `no-fail` an example) — SUPPORTED by the record ("the names ... to the spellings review").
 - `match.never` (an inserted pattern's edge that can never hold; a product with every copy removed) and the `[^${c}]` -> join warning are the draft's, not in the accepted list — UNTESTED.
@@ -1677,6 +1691,7 @@ rulings:
 rejected:
 - the form an ERROR (dollar-condition, 2026-11-17) — by owner ruling — match-is-rx made it legal; dollar-diagnostic gave it a warning.
 - no dedicated warning, the emptiness diagnostics with "a read stands for its group's rx" (the manager's, rev 28) — by owner ruling — dollar-diagnostic ("should just get a warning").
+- rev 29's lexical trigger for the `$x & S` warning and its place-blind hint — by the manager's calls (review r54 P29-11, P29-12): the form is defined on the PARSE, the hint only at an `&` operand (the draft R.9, §R.2).
 readings:
 evidence: PART DD of predspec291.
 history: skeleton; the hint printed only where it is a drop-in (THE MANAGER'S CALL, review r54 P29-12).
