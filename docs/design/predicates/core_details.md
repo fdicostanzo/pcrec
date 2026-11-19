@@ -1015,18 +1015,210 @@ history:
 ## core/operators/precedence — Precedence
 slugs:
 rulings:
+- 2026-11-17 "sequence-precedence: binds tighter than & and |" (record: "2026-11-17 OWNER RULINGS — the rx module: sequence-precedence and sequence-operator")
+- 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
 rejected:
+- `&` right-associative as a pipeline (`x & unpad & between(1, 12)`; the manager's 2026-11-14 lean) — by owner ruling — OWN-1 (record "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS"): a transform is a macro on its filter argument, `&` is pure and grouping-free.
+- `|` tighter than the sequence operator (`x(?:1|2)`) — by owner ruling — sequence-precedence; run: `2` FAILS, `x2` HOLDS under it (preddoc3b EXprec; sabotage s12 caught).
+- juxtaposition (`A B`) as the sequence operator — by owner ruling — "I don't think it would work in the grammar" (sequence-operator).
 readings:
-evidence:
-history: not converted; the draft §5.4 (THE ONE OPERATOR TABLE).
+- levels 1, 3, 4, 5, 9, the statement end and the call/index rule (the draft's readings, rev 25.1, review r43 F) — UNTESTED (they decide parses; spellings review item 19).
+- the parse rule for `+`/`*` binary or postfix (the manager's, "MINE" in the quantifier-operators entry) — UNTESTED.
+evidence: preddoc3b EXprec.
+history:
+- 2026-11-14: OWN-1 replaced the right-associative lean. 2026-11-17: sequence-precedence, quantifier operators; the draft §5.4 THE ONE OPERATOR TABLE (rev 25.1) replaced the fragmentary statements (§2.2, R.1.14, §5.1, the entry extent).
+- 2026-11-19 (lane preddoc3b): converted from `?`; a `reading` piece because the table as a whole is the draft's, its ruled rows pointing at their pieces.
 
 ## core/operators/bindings — Bindings and macros
 slugs:
 rulings:
+- 2026-11-13 "Then macro binding is m(x) := /.../ & x" (record: "2026-11-13 evening: macro bindings `m(x) := …`")
+- 2026-11-15 "Agree with mapping" (record: "2026-11-14 RULINGS on rev 3's contradictions"); the operand is never an argument; positional, keyword and by-name parameters; sections
+- 2026-11-15 "1. start with & and then we'll see. 2. start no, 3. agree" (record: "2026-11-14 RULINGS on rev 3's contradictions"); sections start with `&`; no partial application
+- 2026-11-15 "I'm liking your ideas" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — the type picture"; a call is the macro applied to one record; the record is never a value
+- 2026-11-15 "2. yes keep out of phase 1. I like the idea of types but they need more thinking." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — answers to the four questions of review r8"
+- 2026-11-14 "I agree with both excepting the spelling ... no alpha operators ... with, check, in ..." (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
+- 2026-11-19 ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/" (record: "2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A")
+rejected:
+- `p(x)` = `x & p` (application as a call, C20/C30) — by owner ruling — "Agree with mapping": application has one spelling, `x & f`.
+- calling a pattern with conditions, `isodate(year: S)` — by owner ruling (the same entry): "write `isodate & (year: ...)`".
+- typed parameters `m(x: T)` in the first build — by owner ruling — "keep out of phase 1"; the idea stays (parked/ideas/restricted-parameter).
+- a macro in a hole is always the unapplied-macro error (`${(x: digit)}`; the draft §2.3, §5.1) — by owner ruling — a bare condition in a hole is legal.
+- a hole read as a backreference to its first mention (`(\d),\1` for `pair(/\d/)`) — by run — `1,2` FAILS under it (preddoc3b EXpair; sabotage s13 caught).
+readings:
+- the nested-record error (`f((x = 1, y = 2))`) and a condition argument passing a macro (the draft's LEAN, §13 O45) — UNTESTED.
+- `name = default` in a head, a `:` in a head an error (LEAN, review r10 CENSUS-4) — UNTESTED.
+- macros expand per use, cost per use (the manager's, 2026-11-13) — UNTESTED.
+evidence: preddoc3b EXpair.
+history:
+- 2026-11-13: macro bindings; 2026-11-14/15: the C20/C30/C33/C34 rulings, mapping by sections, the type picture; currying DEFERRED, not dropped (record "2026-11-15 CLARIFICATION — currying is DEFERRED from phase 1, not dropped").
+- FINDING for the manager (rule 5): the draft §5.3's `capture(x) := /(?<${x.label}>${x})/`, `each`, `each_group`, `where_group` are structural macros with no piece; `capture` is a BODY in the core language (a library piece), the others compile-time tools.
+- 2026-11-19 (lane preddoc3b): converted from `?`; the statements part split off as core/operators/statements (a different status).
+
+## core/operators/statements — Program shape and statements
+slugs:
+rulings:
+- 2026-11-13 "If a symbol is undeclared it must be an rx label. If a symbol is bound := it becomes that binding. Warn (or error) on hiding label. $x is always label. There is no other way to introduce a label" (record: "2026-11-12 (later): owner discussion, informal, before the formal start (Frank: "continue the discussion now but not begin formally until the current threads are run out")")
+rejected:
+- reserved scope labels `$&`, `$_` (rev 9) — by review r10 CENSUS-8 — no stated meaning and no case (D77).
+readings:
+- `@` statements, the unused-pattern error, the bare-statement error (the manager's LEAN, CF:619) — UNTESTED (refusals).
+- the closed built-in list and the two effect built-ins (LEAN, review r10 CENSUS-7) — UNTESTED.
+- string option values (LEAN, review OWN-7) — UNTESTED.
+evidence:
+history:
+- 2026-11-19 (lane preddoc3b): new piece, split from core/operators/bindings: the draft §5.1's program shape and statements hold rules no other tag homes, and their status (LEAN) differs from the bindings' (RULED).
+
+## core/modules/map — A module is a map
+slugs:
+rulings:
+- 2026-11-15 "3. this leans into the idea of an interface to a type over the type. Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created. So what import is is less important than that its interface is a map. 4. agree." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — answers to the four questions of review r8"
+rejected:
+- a module as a third value kind, a namespace (the manager's 2026-11-14 lean (1)) — by owner ruling — the follow-up (MODULE = MAP) and "what import is is less important than that its interface is a map".
+readings:
+- members travel WITH THE TYPE (record "2026-11-14 — namespaces for type members", a LEAN) — UNTESTED; not contradicted by the 2026-11-19 rulings (they bind names into the bare space; dot lookup into a type is untouched).
+- a module is never passed, stored, returned or used whole as a pattern (the draft §7's phase-1 lean) — UNTESTED.
+evidence:
+history:
+- 2026-11-14: import/export as functions, its follow-up (module = map); 2026-11-15: the interface ruled; the draft §7 MODULES.
+
+## core/modules/import — import
+was: parked/import-symbols/import (2026-11-19, ruled by the owner: it is in the language)
+slugs: import-several
+rulings:
+- 2026-11-19 "import-several: yes. if you can bind multiple arguments simultaneously, thent this is more expressive. before you could only bind one so what did multiple files mean? although, good point, if the binding is just 1 symbol, then its a map of all the values of the files combined." (record: "2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map")
+- 2026-11-14 "import(...)'s argument is a set of names (an rx over file names, consistent with export)" (record: "2026-11-14 — import/export as functions"); the addendum, the manager's wording of his words
+rejected:
+- it must resolve to EXACTLY ONE file; several matches a compile error (the 2026-11-14 addendum; the draft §7) — by owner ruling — import-several ("before you could only bind one so what did multiple files mean?").
+- `import weekday as wd` for a clash (the manager's 2026-11-14 lean) — by owner ruling — no alphabetic keywords; the rename is now `(wd = weekday) := ...` (core/modules/binding-list).
+readings:
+- zero files matched stays a compile error (the manager's reading of import-several) — UNTESTED (a refusal).
+- compile time only, pinned by `sha256`, configured directories only (the manager's 2026-11-13 design; the draft §7, LEAN) — UNTESTED.
+evidence:
+history:
+- 2026-11-13: `d := import("isodate")`; 2026-11-14: import/export as functions, its follow-up and addendum; 2026-11-19: several modules in one import, then import-several.
+- 2026-11-19 (lane preddoc3b): the parked placeholder parked/import-symbols/import is retired into this section (the owner ruled import-symbols); its slug `import-symbols` is on core/modules/binding-list.
+
+## core/modules/binding-list — The named binding list
+slugs: import-symbols
+rulings:
+- 2026-11-19 "import-symbols: agree with all your statements including macro call. further, special form (=) := ... imports all symbols" (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols")
+- 2026-11-19 "it might also be (=left, =right) := ... which looks odd but is a degenerate form of macro parameter binding" (record: "2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`"); the idea he then ruled
+rejected:
+- `(left,right) := import("blah", /left|right/)` (his first instinct) — by owner ruling — "double name is a weakness".
+- `(left, right) := import("blah")`, selection by bare name (the manager's leaning) — by owner ruling — "it has implications for the rest of the language"; bare `(a, b)` stays for a positional form (core/modules/positional).
+readings:
+- the eight statements he agreed to are the manager's list, "no wider" — SUPPORTED by the record entry.
+evidence:
+history:
+- 2026-11-19: his aside after the pilot, the discussion, his lean "don't confirm yet", the manager's implications (a)-(f), the ruling.
+
+## core/modules/call-shorthand — The shorthand in a call
+slugs:
+rulings:
+- 2026-11-19 "import-symbols: agree with all your statements including macro call." (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols"); statement 6, `f(=x)` means `f(x = x)`
 rejected:
 readings:
 evidence:
-history: not converted; the draft §5.1-§5.3.
+history:
+- 2026-11-19: the manager's implication (e), agreed.
+
+## core/modules/all-symbols — All symbols
+slugs:
+rulings:
+- 2026-11-19 "further, special form (=) := ... imports all symbols" (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols")
+- 2026-11-19 "import-symbol: bare "=" must be first but one can override names after (=,l = left) := ... to handle conflicts" (record: "2026-11-19 OWNER RULING — import-symbols, addition: the bare `=` is first; names after it override")
+rejected:
+readings:
+- an entry after `=` REPLACES the member's default binding (the manager's, told to him) — UNTESTED.
+- a bare `=` not first is a compile error (the manager's) — UNTESTED.
+- "all symbols" = the public members (the manager's) — UNTESTED.
+- a later library name can start a warning in a `(=)` program; the 2026-11-14 lean accepts that shape ("a later library member of the same name breaks the build, never silently rebinds") — UNTESTED.
+- the default set is `(=) := import(<the default module>)` (the manager's) — see core/modules/default-set.
+evidence:
+history:
+- 2026-11-19: the ruling's addition, then the addition on `=` first.
+
+## core/modules/leave-out — Leaving a member out
+slugs:
+rulings:
+- 2026-11-19 "import-symbol: yes, that correction is good" (record: "2026-11-19 OWNER RULING — import-symbols: a member is left out with `(=, _ = left)`")
+- 2026-11-19 "left could be bound later" (record: "2026-11-19 OWNER, import-symbols: leaving a member out")
+rejected:
+- `(=,left=)` (his first candidate) and `(=, left=_)` (his second) — by owner ruling — the correction: both put the member on the left, against the ruled direction; read by it `left = _` binds a new name `left` to a member `_`.
+readings:
+- `_` matches the part label `[_ = A]`, where `_` stands on the left too (the manager's) — UNTESTED.
+evidence:
+history:
+- 2026-11-19: his lean with two spellings, the manager's flagged inconsistency, the correction accepted.
+
+## core/modules/conflicts — Conflicts between files
+slugs:
+rulings:
+- 2026-11-19 "import-symbol: (=) := import("pcrec"|"numbers"). conflicts are a compiler error, import separately." (record: "2026-11-19 OWNER, import-symbols: several modules in one import; a conflict is a compile error")
+rejected:
+readings:
+- the same error in the one-name form (the manager's extension, NOT his words) — UNTESTED.
+- `pcrec` and `numbers` as module names are his examples, not rulings.
+evidence:
+history:
+- 2026-11-19: it met the 2026-11-14 "exactly one file", settled by import-several (core/modules/import).
+
+## core/modules/default-set — The default-imported set
+slugs:
+rulings:
+- 2026-11-19 "import-symbols: agree with all your statements including macro call." (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols"); statement 5, the set is an ordinary implicit line of the form
+rejected:
+readings:
+- "there can be a special imported by default set which includes peek()" (record "2026-11-19 OWNER, after reading the pilot documents", item 2) is a LEAN, not asked: so the piece is a `reading`.
+evidence:
+history:
+- 2026-11-19: his lean after the pilot; statement 5 of import-symbols.
+
+## core/modules/default-set/members — Which names are in the default set
+slugs: default-set
+rulings:
+rejected:
+readings:
+- `peek` only, today, by his words (the doc-shape entry's item 2) — the rest NOT STATED.
+evidence:
+history:
+- 2026-11-19: queued by the manager as **default-set**, not asked (the doc-shape entry).
+
+## core/modules/import-filter — A filter inside the import
+slugs:
+rulings:
+- 2026-11-19 "one could filter but it would have to be inside the import("file1"|"file2", search(string))" (record: "2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map"); an IDEA in the ruling's answer
+rejected:
+readings:
+- NOT STATED: the filter before or after the conflict check.
+evidence:
+history:
+- 2026-11-19: his first instinct already filtered inside the import (`import("blah", /left|right/)`); the idea in import-several.
+
+## core/modules/positional — A positional binding
+slugs:
+rulings:
+- 2026-11-19 "import-symbols: agree with all your statements including macro call." (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols"); statement 7, left undefined for now, under construction, not illegal
+rejected:
+readings:
+- MEETS 2026-11-16 (record "2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"): his "Yes" to "`(a, b) := lo` ... is how the parts are reached" for a TUPLE value; and 2026-11-15 (the type picture) kept a record on the left of `:=` in the design. The 2026-11-19 statement (f) says the language "does not clearly have" an ordered right side, which a tuple is. Read here as not contradicting (a tuple's parts are a defined meaning whose build is not there: under construction), the tuple idea parked (parked/ideas/tuple-apart); asked of the manager (report, OWNER QUESTIONS LEFT) — UNTESTED.
+evidence:
+history:
+- 2026-11-15: `(x, y) := rx ~ /.../` kept in the design; 2026-11-16: a tuple taken apart, confirmed; 2026-11-19: statement 7.
+
+## core/modules/export — Export
+slugs:
+rulings:
+rejected:
+- `export([leap])`, an array of names (`[leap, weekday]` is `leap | weekday`, names lost) — by the manager's 2026-11-14 analysis, (3).
+- `export(leap, weekday)` receiving names (a macro seeing argument expressions) — by the manager's 2026-11-14 analysis ("a meta feature; avoid").
+readings:
+- `@export(names)` and the no-export error (the manager's lean on his `export(["leap", !startsWith("_")])`; the draft §7, LEAN; "Export choice PENDING Frank", never answered) — UNTESTED.
+- what `.` reaches is decided by the public/private rule (import-symbols statement 3, RULED; export-rule) — SUPPORTED by the record.
+evidence:
+history:
+- 2026-11-14: import/export as functions (options (a)-(c), lean (b): every top-level binding exported unless `_`), its follow-up (lean `@export(names)`); 2026-11-18: export-rule (labels); 2026-11-19: statement 3.
 
 ## core/diagnostics/errors — Compile errors
 slugs:

@@ -588,9 +588,159 @@ WHOLE `a${x}b` HOLDS, `ab` FAILS / SEARCHED `-a${x}b` `a${x}b`@1 / FIND-ALL `a${
 
 ## Operators   [core/operators]
 
-### Precedence   [core/operators/precedence]   ?  2026-11-19
+### Precedence   [core/operators/precedence]   reading 2026-11-19
+Tightest first: field, call and index; postfix quantifiers; prefix `!`, `NOT` and comparisons; `* %`; `+ -`; the sequence operator; `&`; `|`; then the entry marks and `:=`.
+needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/values/arithmetic
+| level | operator | fix, associativity | ground |
+|---|---|---|---|
+| 1 | `.` field, call `f(..)`, index `X[..]` | postfix after an OPERAND, left | a reading |
+| 2 | `+ +? ++ * *? *+ ? ?? ?+` on a pattern | postfix, stacking left to right | postfix and tightest of the four: ruled (core/patterns/quantifiers); stacking a reading |
+| 3 | prefix `!`, `NOT`, `< <= > >= ==` | prefix, on ONE atom with its postfix operators | a reading |
+| 4 | `* %` on numbers | binary, left | a reading |
+| 5 | `+ -` on numbers | binary, left | a reading |
+| 6 | the sequence operator | binary, n-ary | tighter than `&` and `|`: ruled (core/patterns/sequence) |
+| 7 | `&` | binary, a chain; the left side decides | ruled (core/filters/and) |
+| 8 | `|` | binary, n-ary | ruled |
+| 9 | `=` then `:` inside an entry | `p = v: S` is `(p = v): S` | a reading |
+| statement | `:=` | a statement ends before `NAME :=` | a reading |
+- After `+` or `*`, a token that can begin an operand makes it binary; otherwise it is postfix (a reading). The
+  sequence mark cannot begin an operand, so `A+ SEQ B` is unambiguous.
+- A `(` or `[` is a call or an index only after an operand; after an operator it begins an operand (a reading).
+- Inside an entry (`[ ... ]`, a call, a condition) `&` and `|` bind tighter than `=` and `:`, so
+  `(x: <200 | >900)` holds ONE entry.
+- Inside `/.../` none of this applies: rx text has PCRE's meaning, a hole `${...}` excepted.
+WHOLE `2` HOLDS, `x2` FAILS / SEARCHED `x2` `2`@1 / FIND-ALL `x1 2 x2` [`x1`@0, `2`@3, `2`@6] (`"x" SEQ "1" | "2"` is `(?:x1)|2`)
 
-### Bindings and macros   [core/operators/bindings]   ?  2026-11-19
+### Bindings and macros   [core/operators/bindings]   ruled 2026-11-15
+`name := expression` binds a name to whatever the expression is, an rx or a macro; `m(p1, p2) := body` makes a macro, and a call is the macro applied to one record.
+needs: core/values/one-type core/filters/and
+see: core/modules/call-shorthand core/holes/bare-condition
+- THE OPERAND IS NEVER AN ARGUMENT: it arrives by `&` or by a condition. Every argument is a PARAMETER: positional
+  arguments are the required parameters in declared order (`between(1, 12)`); keyword arguments are optional
+  settings with defaults (`join(a, sep = ".")`); any parameter may be passed by name (`between(low = 1, high = 12)`).
+- A pattern takes no arguments (calling one is a compile error: "write `isodate & (year: ...)`"); a parameterised
+  pattern is a macro: `date_in(years) := isodate & (year: years)`.
+- NO PARTIAL APPLICATION: a call binds every required parameter or is a compile error naming the missing one. A
+  SECTION, `(& f)`, is the one way to leave the operand open; sections start with `&` only and compose.
+- Typed parameters are not in the first build: a definition head declares names and, as `name = default`, the
+  defaults of optional settings (the `=` form a reading); a `:` in a head is a compile error (a reading).
+- No alphabetic operators or statement keywords: a word is always a NAME (a function, a label, a binding).
+- A RECORD (the parentheses of a call or a condition) is never a value: it is laid against fields only.
+- Macros expand at compile time, inlined per use; cost is per use. No lambda until an example needs one.
+- A macro in a hole is the unapplied-macro error, except a condition: a bare condition in a hole is legal
+  (core/holes/bare-condition).
+WHOLE `1,2` HOLDS / SEARCHED `x1,2` `1,2`@1 / FIND-ALL `1,2 3,3` [`1,2`@0, `3,3`@4] (`pair(p) := /${p},${p}/`, `pair(/\d/)` is `(?:\d),(?:\d)`)
+
+### Program shape and statements   [core/operators/statements]   reading 2026-11-19
+A program is bindings, expressions, calls and `@` statements with ONE final expression, its pattern; a bare rx anywhere else is a compile error.
+needs: core/operators/bindings
+- Newlines are layout; long logic goes in `:=` definitions. A statement ends before `NAME :=`.
+- Only `@` forms (compile-time EFFECTS) stand alone; a bare statement without `@` is a compile error ("unused
+  pattern: bind it or make it the result"). Macros cannot take `@`; effects cannot drop it.
+- The BUILT-INS are a closed list, reserved in CALL position only: `import`, `enumerate`, `pattern`, `param`,
+  `file_text`, `records`, `eval`; the effects `@warn` and `@export` after `@` only. A label named like one still
+  works. Every other name is a library name.
+- An undeclared name that is not a label is a compile error with a suggestion; a binding that hides a label
+  draws a warning, and `$x` still reaches the label.
+- A binding that mentions a match label is match-dependent (a computed label); otherwise it is pure (compile time).
+- Option values in a call are strings, not bare words (`gaps = "allow"`).
+modes: n/a (the program's shape; no matching involved)
+
+## Modules   [core/modules]
+
+A module is reached by `import` and described by its map interface. Every spelling in this section is a
+placeholder (core/spellings/placeholders).
+
+### A module is a map   [core/modules/map]   ruled 2026-11-15
+A module is described by its map interface: its members are its fields, reached by the one `.`; what kind of thing a module is is not ruled.
+needs: core/operators/bindings
+- `.` has one meaning: a field of the map interface of the thing on its left (a label, a module member, metadata).
+- A map interface is not a created value: no map value is passed around.
+- Only what `.` reaches is reachable from outside: the public names (core/labels/export decides).
+- Members of a TYPE travel with the type (`d.weekday` works with no further import); a bare `weekday(d)` needs its
+  name imported (a lean of the owner's, not ruled).
+modes: n/a (no matching involved)
+
+### import   [core/modules/import]   ruled 2026-11-19
+`import(names)` takes a constant set of names, an rx over file names; it may resolve to several files, and bound to one name its value is their combined map.
+needs: core/modules/map
+see: core/modules/conflicts core/modules/import-filter
+- `m := import("isodate")` binds a module to a name; members are `m.year`. Two modules' `year` never collide.
+- The argument is a set of names, as `@export`'s is; several files: `import("pcrec"|"numbers")`.
+- No file matched is a compile error (a reading).
+- Imports are COMPILE TIME only (the artifact is self-contained), PINNED (`sha256 = ...`), and resolved only from
+  configured library directories, never an arbitrary path (a reading).
+modes: n/a (no matching involved)
+
+### The named binding list   [core/modules/binding-list]   ruled 2026-11-19
+`(l = left, =right) := X` binds `l` to `X.left` and `right` to `X.right`, on any map; `=left` is `left = left`.
+needs: core/modules/map
+- The name LEFT of `=` is the name being defined; the member is on the right. It is sugar: no new meaning beyond
+  `:=` and `.`, so a rename for a clash is `(wd = weekday) := import("dates")`.
+- Only what `.` reaches can be bound (public names).
+- The rule on a binding that hides a label applies to each bound name.
+modes: n/a (no matching involved)
+
+### The shorthand in a call   [core/modules/call-shorthand]   ruled 2026-11-19
+In a macro call `f(=x)` is `f(x = x)`, the same degenerate form as in a binding list.
+needs: core/modules/binding-list core/operators/bindings
+modes: n/a (no matching involved)
+
+### All symbols   [core/modules/all-symbols]   ruled 2026-11-19
+`(=) := X` binds every member `.` reaches on X under its own name; the bare `=` stands first, and named entries after it override.
+needs: core/modules/binding-list
+- `(=, l = left) := X` binds the member `left` as `l` and not also as `left` (a reading).
+- A bare `=` anywhere but first is a compile error (a reading).
+- "Every member" is every public member (a reading). The hide-label rule fires per name, so a name a library adds
+  later can start a warning in a program that used `(=)` (a reading).
+- With `(=)` a reader cannot tell from the file alone whether a bare name is a label or an imported name.
+modes: n/a (no matching involved)
+
+### Leaving a member out   [core/modules/leave-out]   ruled 2026-11-19
+In a `(=)` binding, `_ = left` binds the member `left` to the unusable name `_`: it is left out and the name `left` stays free to bind later.
+needs: core/modules/all-symbols
+modes: n/a (no matching involved)
+
+### Conflicts between files   [core/modules/conflicts]   ruled 2026-11-19
+A member name carried by two files of one `(=) := import(...)` is a compile error; such files are imported in separate bindings.
+needs: core/modules/import core/modules/all-symbols
+- In separate bindings the override entries handle a shared name.
+- The same compile error in the one-name form, `m := import("a"|"b")` (a reading).
+modes: n/a (no matching involved)
+
+### The default-imported set   [core/modules/default-set]   reading 2026-11-19
+A default-imported set, holding `peek`, is an ordinary implicit `(=) := import(...)` line before the program, so its names are written bare.
+needs: core/modules/all-symbols
+see: lib/control/peek
+- That it is an ordinary implicit line of the `(=)` form, no special mechanism: ruled.
+- That the set exists and holds `peek`: his lean. Library pieces in it carry `default: yes`.
+modes: n/a (no matching involved)
+
+### Which names are in the default set   [core/modules/default-set/members]   open default-set 2026-11-19
+Which names besides `peek` are in the default-imported set is a question for the owner.
+needs: core/modules/default-set
+- Today only `lib/control/peek` carries `default: yes`. Candidates: `peek` alone; every name the core's own pieces
+  point at (`when`, `occurrences`, `some`, ...); a named prelude module.
+modes: n/a (no matching involved)
+
+### A filter inside the import   [core/modules/import-filter]   under-construction 2026-11-19
+A filter over the imported names, written inside the import (`import("file1"|"file2", search(string))`), is a direction acknowledged, not defined.
+needs: core/modules/import
+- Not stated: whether it applies before the conflict check (so that it can remove a conflict).
+
+### A positional binding   [core/modules/positional]   under-construction 2026-11-19
+A bare positional `(a, b) := X` is not defined for now: under construction, not illegal.
+needs: core/modules/binding-list
+see: parked/ideas/tuple-apart
+- By-name selection is always marked by `=`; a positional form needs an ORDERED right side.
+
+### Export   [core/modules/export]   reading 2026-11-19
+A library file exports with `@export(names)`: every binding whose name is in the rx `names`; a file that exports nothing is a compile error.
+needs: core/modules/map
+- `@export("leap")`, `@export(["leap", /[^_].*/])`, `@export(/[^_].*/)`: the names a set of strings, not a filter
+  with no target; an edge assertion in it is the edge-assertion error.
+- What `.` reaches on a module is its public names (core/labels/export); `@export` selects among them (a reading).
+modes: n/a (no matching involved)
 
 ## Diagnostics   [core/diagnostics]
 
