@@ -1,0 +1,113 @@
+predspec28 evidence; libpcre2-8 10.46 2025-08-27
+selfcheck: NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3) ; OK
+selfcheck: NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried) ; OK
+selfcheck: MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match) ; OK
+selfcheck: callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F) ; OK
+selfcheck: callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T) ; OK
+selfcheck: ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False ; OK
+
+== PART PW: padded (number-domain, padded-width entries): EXACT models (no lookahead approximation)
+PW A `/(?<y>\d{4})-${padded($y + 1)}/` [canonical] WHOLE 2025-2026 HOLDS, 2025-02026 HOLDS, 0099-0100 FAILS, 0099-100 FAILS ; SEARCHED `0099-0100 2025-2026` `2025-2026`@10 ; FIND-ALL `0099-0100 2025-2026 0100-0101` [`2025-2026`@10]
+PW B `/(?<y>\d{4})-${padded($y + 1) & /\d{4}/}/` [canonical] WHOLE 2025-2026 HOLDS, 2025-02026 FAILS, 0099-0100 FAILS, 0099-100 FAILS, 9999-10000 FAILS ; SEARCHED `0099-0100 2025-2026` `2025-2026`@10 ; FIND-ALL `0099-0100 2025-2026 0100-0101` [`2025-2026`@10]
+PW C `/0*(?<y>[1-9]\d*)-${padded($y + 1) & /\d\d/}/` [canonical] WHOLE 05-06 HOLDS, 09-10 HOLDS, 05-6 FAILS, 99-100 FAILS ; SEARCHED `12-14 05-06` `05-06`@6 ; FIND-ALL `05-06 09-10 11-13 01-02` [`05-06`@0, `09-10`@6, `01-02`@18]
+PW A `/(?<y>\d{4})-${padded($y + 1)}/` [parsed] WHOLE 2025-2026 HOLDS, 2025-02026 HOLDS, 0099-0100 HOLDS, 0099-100 HOLDS ; SEARCHED `0099-0100 2025-2026` `0099-0100`@0 ; FIND-ALL `0099-0100 2025-2026 0100-0101` [`0099-0100`@0, `2025-2026`@10, `0100-0101`@20]
+PW B `/(?<y>\d{4})-${padded($y + 1) & /\d{4}/}/` [parsed] WHOLE 2025-2026 HOLDS, 2025-02026 FAILS, 0099-0100 HOLDS, 0099-100 FAILS, 9999-10000 FAILS ; SEARCHED `0099-0100 2025-2026` `0099-0100`@0 ; FIND-ALL `0099-0100 2025-2026 0100-0101` [`0099-0100`@0, `2025-2026`@10, `0100-0101`@20]
+PW C `/0*(?<y>[1-9]\d*)-${padded($y + 1) & /\d\d/}/` [parsed] WHOLE 05-06 HOLDS, 09-10 HOLDS, 05-6 FAILS, 99-100 FAILS ; SEARCHED `12-14 05-06` `05-06`@6 ; FIND-ALL `05-06 09-10 11-13 01-02` [`05-06`@0, `09-10`@6, `01-02`@18]
+PW C canonical vs parsed over 3906 texts (`0159-`, length <= 5): 0 / 0 / 0
+PW the record's runs (A, B, C) OK
+PW macro vs "zero-filled to at least 4": 12003 values (0..11,999, 99999, 100000, 123456), up to six candidate texts each (v, filled, one zero more, filled to 5, one char less, `00` + v): 47112 checks, 0 differ
+PW macro vs definition, an rx of SEVERAL strings, over 137257 texts (`0123457`, length <= 6) + the members' own fills: 7|123|12345 0 ; 007|5 0 ; 0|00 0 ; 123456|42 0 ; abc|x 0
+PW OK
+PW what each member gives at n = 4: 7|123|12345 -> 0007|0123|12345 ; 007|5 -> 0005|0007 ; 0|00 -> 0000 ; 123456|42 -> 0042|123456 ; abc|x -> 000x|0abc
+PW `/(?<y>\d+)-${padded($y + 1, 4)}/` MINIMUM (RULED): 42-0043 HOLDS, 42-43 FAILS, 9999-10000 HOLDS, 2025-2026 HOLDS ; SEARCHED `9999-10000 42-0043` `9999-10000`@0 ; FIND-ALL `9999-10000 42-0043 7-0008` [`9999-10000`@0, `42-0043`@11, `7-0008`@19]
+PW the same, EXACT (the manager's withdrawn leaning): 42-0043 HOLDS, 42-43 FAILS, 9999-10000 FAILS, 2025-2026 HOLDS ; SEARCHED `999-1000`@1 ; FIND-ALL [`999-1000`@1, `42-0043`@11, `7-0008`@19]
+PW OK
+PW bounds on value 43: rightmost-4 image `0043` ; `& /\d{4}/` 0043 ; `<=9999` on the value 0043 ; `<=9999` on the padded text nothing
+PW bounds on value 2026: rightmost-4 image `2026` ; `& /\d{4}/` 2026 ; `<=9999` on the value 2026 ; `<=9999` on the padded text 2026
+PW bounds on value 10000: rightmost-4 image `0000` ; `& /\d{4}/` nothing ; `<=9999` on the value nothing ; `<=9999` on the padded text nothing
+PW OK
+
+== PART NW: number-domain m1: numeral-width's two candidates on CANONICAL operands
+NW `$y + 1` over canonical y 0..9999: canonical vs WIDTH KEPT differ on 0 (first [])
+NW `$y - 1` over canonical y 1..9999: canonical vs WIDTH KEPT differ on 3 (first ['10', '100', '1000'])
+NW `/(?<y>\d+)-${$y - 1}/` CANONICAL: WHOLE 10-9 HOLDS, 10-09 FAILS ; SEARCHED `10-09 10-9` `10-9`@6 ; FIND-ALL `10-9 100-99 100-099` [`10-9`@0, `100-99`@5]
+NW the same, WIDTH KEPT: WHOLE 10-9 FAILS, 10-09 HOLDS ; SEARCHED `10-09 10-9` `10-09`@0 ; FIND-ALL `10-9 100-99 100-099` [`100-099`@12]
+NW OK
+
+== PART FL: hole-flags + flags-propagate (RULED): what is inserted STARTS with the flags at the hole; its own written flags win
+FL i  PROPAGATE `/(?i)id-${/blah/}/`: WHOLE `id-BLAH` HOLDS ; SEARCHED `x ID-BLAH` `ID-BLAH`@2 ; FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0, `ID-BLAH`@8, `Id-blah`@16]
+FL i  (no propagation, the reversed rule, for the record): WHOLE `id-BLAH` FAILS ; SEARCHED `x ID-BLAH` FAILS ; FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0, `Id-blah`@16]
+FL i  `/(?i)${"blah"}/`: WHOLE `BLAH` HOLDS ; SEARCHED `x BLAH` `BLAH`@2 ; FIND-ALL `blah BLAH Blah` [`blah`@0, `BLAH`@5, `Blah`@10]
+FL i  `/(?i)${/blah/}/`: WHOLE `BLAH` HOLDS ; SEARCHED `x BLAH` `BLAH`@2 ; FIND-ALL `blah BLAH Blah` [`blah`@0, `BLAH`@5, `Blah`@10]
+FL override `/(?i)${/(?-i)blah/}/` (the record's hand-worked case, RUN): WHOLE `BLAH` FAILS ; SEARCHED `BLAH blah` `blah`@5 ; FIND-ALL `blah BLAH Blah blah` [`blah`@0, `blah`@15]
+FL a binding `q := /blah/i` in a CASEFUL hole `/x${q}/`: WHOLE `xBLAH` HOLDS ; SEARCHED `XBLAH xBlah` `xBlah`@6 ; FIND-ALL `xblah XBLAH xBLAH` [`xblah`@0, `xBLAH`@12]
+FL m  `/(?m)a\n${/^x/}/`: propagate WHOLE `a\nx` HOLDS ; no propagation FAILS
+FL s  `/(?s)a${/./}b/`: propagate WHOLE `a\nb` HOLDS ; no propagation FAILS
+FL x  `/(?x)${/a b/}/`: propagate WHOLE `ab` HOLDS, `a b` FAILS ; no propagation `ab` FAILS, `a b` HOLDS
+FL PART J MOVES `/(?i)(?<y>a)-${q}/`, q := /a/ (rev 28): WHOLE `a-A` HOLDS ; SEARCHED `x a-A` `a-A`@2 ; FIND-ALL `a-A a-a A-a` [`a-A`@0, `a-a`@4, `A-a`@8]
+FL PART J as rev 27.1 printed it (own flags):         WHOLE `a-A` FAILS ; SEARCHED `x a-A` FAILS ; FIND-ALL `a-A a-a A-a` [`a-a`@4, `A-a`@8]
+FL the read `${$y}` at the same hole (nothing written: the options at the hole) vs `\k<y>` 0 / 0 / 0 ; vs the binding `${q}` 0 / 0 / 0 of 1365 (`aA-x`)
+FL python `re` agrees on the i cases (propagate HOLDS, override FAILS on BLAH): True
+FL OK
+
+== PART AC: any_case(rx) := /(?i:${rx})/ under flags-propagate, against the primitive (a member up to letter case)
+AC plain argument `/ho/`: the body vs the primitive 0 of 781 differ (under the reversed rule: 3)
+AC plain argument `/h[o1]+/`: the body vs the primitive 0 of 781 differ (under the reversed rule: 64)
+AC plain argument `/(?:ho|1h)/`: the body vs the primitive 0 of 781 differ (under the reversed rule: 4)
+AC a FILTER-ROLE argument `any_case(quoted("ho"))` over 781 texts (`hHoO"`, length <= 4): (a) an `&` operand keeps its own flags (the manager's m2): 3 differ ['"hO"', '"Ho"', '"HO"'] ; (b) propagation into the `&` operand too: 0 differ
+AC OK
+
+== PART UN: unset-in-hole (RULED: no string, a regex that matches nothing)
+UN the never-matching rx `(?!)`: finds nothing in `abc` (and not the empty string) / `(?:(?!)|x)` holds on `x` / `a(?:(?!))?` holds on `a`: python [True, True, True, True] ; libpcre2 [True, True, True, True]
+UN `/(?<y>\d)?-${$y | "x"}/` (the unset read = the rx of no strings): WHOLE `-x` HOLDS ; SEARCHED `-x` `-x`@0 ; FIND-ALL `3-3 -x` [`3-3`@0, `-x`@4] ; vs PCRE `(?:\k<y>|x)` 0 / 0 / 0 of 1365
+UN R.1.15 (5) hit list on `-2025 2026-2030`: []
+UN R.1.15 (5) hit list on `-2025 2027-2030`: []
+UN R.1.15 (5) hit list on `2025 2026-2030`: [`2025`@0, `2026-2030`@5]
+UN R.1.15 (5) hit list on `2025 2027-2030`: [`2025`@0, `2027`@5, `2030`@10]
+UN OK
+
+== PART CN: construction-line (RULED: enumerate) as RULE-AS-CODE; lift-order by consequence
+CN left("foobar", 2)            = fo ; enumerate's SET = python `re`'s on a brute-force pool: True
+CN left(/foobar|bazqux/, 2)     = fo | ba ; enumerate's SET = python `re`'s on a brute-force pool: True
+CN left("foobar" | "bazqux", 2) = fo | ba ; enumerate's SET = python `re`'s on a brute-force pool: True
+CN \d + 1                       = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 ; enumerate's SET = python `re`'s on a brute-force pool: True
+CN left(/\d+/, 2)               : COMPILE ERROR, UNDER CONSTRUCTION (enumerate refuses: infinite)
+CN left(/(?<=x)ab/, 1)          : COMPILE ERROR, UNDER CONSTRUCTION (enumerate refuses: an assertion looking outside)
+CN [1, 2] + [10, 20]            = 11 | 21 | 12 | 22
+CN `/${left(/foobar|bazqux/, 2)}/` as a pattern: WHOLE `fo` HOLDS ; SEARCHED `xba fo` `ba`@1 ; FIND-ALL `fo ba fofo` [`fo`@0, `ba`@3, `fo`@6, `fo`@8]
+CN `/${\d + 1}/` (ten strings, enumerate's order): WHOLE `10` HOLDS ; SEARCHED `x10` `1`@1 ; FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6]
+CN `/(?<y>\d{1,2})${$y + 1}/` run time vs its compile-time copies in ENUMERATE's order: 0 / 0 / 0 of 1365 (`0123`, length <= 5)
+CN `length` on a read, `/(?<y>\w+)-${length($y)}/` (a canonical numeral): WHOLE `abc-3` HOLDS ; SEARCHED `ab-3 abc-3` `abc-3`@5 ; FIND-ALL `a-1 ab-3 abcdefghij-10` [`a-1`@0, `abcdefghij-10`@9]
+CN OK
+
+== PART HR: hole-reads-capture (RULED: the label); the capture way in rx text; the label-only group's spelling
+HR LABEL `/(?:(?<y>\d)?-${$y};)*/`: WHOLE `3-3;-3;` FAILS ; SEARCHED `3-3;-3;` `3-3;`@0 ; FIND-ALL `3-3;-3; 7-7;` [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12]
+HR CAPTURE `/(?:(?<y>\d)?-\k<y>;)*/`: WHOLE `3-3;-3;` HOLDS ; SEARCHED `3-3;-3;` `3-3;-3;`@0 ; FIND-ALL `3-3;-3; 7-7;` [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12]
+HR label vs capture over 21845 texts (`37-;`, length <= 7): 2 / 2 / 2
+HR libpcre2 `(?<:x>foo)`: REJECTED (subpattern name expected)
+HR libpcre2 `(?':x'foo)`: REJECTED (subpattern name expected)
+HR libpcre2 `(<:x>foo)`: COMPILES ; WHOLE `<:x>foo` HOLDS
+HR OK
+
+== PART SN: same-name-twice (RULED: an error at the backreference unless `(?J)`, then PCRE's first set group)
+SN libpcre2 `(?<h>\d)(?<h>\d)-\k<h>` without `(?J)`: REJECTED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
+SN `(?J)(?<h>\d)(?<h>\d)-\k<h>`: WHOLE `12-1` HOLDS ; SEARCHED `x12-2 34-3` `34-3`@6 ; FIND-ALL `12-1 34-4 56-5` [`12-1`@0, `56-5`@10]
+SN libpcre2 under `(?J)` vs "the FIRST group's text" WHOLE over 121 texts (`12-`, length <= 4): 0 differ
+SN the numbered form `(?J)(?<h>\d)(?<h>\d)-\2` (the second group): WHOLE `12-2` HOLDS ; SEARCHED `x12-1 34-4` `34-4`@6 ; FIND-ALL `12-2 34-3 56-6` [`12-2`@0, `56-6`@10]
+SN rev 27's PART BL m3 witness under `(?J)` `/(?<h>\d);(?:(?<h>\d)|x)\k<h>/`: WHOLE `3;x3` HOLDS ; SEARCHED `3;x3 3;77` `3;x3`@0 ; FIND-ALL `3;x3 3;77 3;73` [`3;x3`@0, `3;73`@10]
+SN OK
+
+== PART DW: dollar-warning (the manager's call: the dedicated warning WITHDRAWN): what the program does
+DW `/(?<x>\d+)-/ & ($x & <5)`: WHOLE `3-` FAILS ; SEARCHED `7-3-` FAILS ; FIND-ALL `3- 7- 3-` [] ; texts with a hit over 364 (`37-`, length <= 5): 0 / 0 / 0
+DW `/(?<x>\d+)-/ & (x: <5)`: WHOLE `3-` HOLDS ; SEARCHED `7-3-` `3-`@2 ; FIND-ALL `3- 7- 3-` [`3-`@0, `3-`@6] ; texts with a hit: 1 / 132 / 132
+DW OK
+
+== PART TT: the TYPE TABLE of rev 28 as RULE-AS-CODE (the rows the rulings move; unstated -> NOT-MODELLED)
+TT +          const BUILT ; read BUILT ; readfin BUILT ; array BUILT ; finite BUILT ; rx UNDER CONSTRUCTION ; matchonly ERROR
+TT left       const BUILT ; read BUILT ; readfin BUILT ; array BUILT ; finite BUILT ; rx UNDER CONSTRUCTION ; matchonly ERROR
+TT .          const OPEN ; read OPEN ; readfin OPEN ; array NOT-MODELLED ; finite NOT-MODELLED ; rx NOT-MODELLED ; matchonly ERROR
+TT count-hole const BUILT ; read UNDER CONSTRUCTION ; readfin OPEN ; array BUILT ; finite BUILT ; rx NOT-MODELLED ; matchonly NOT-MODELLED
+TT composition `\d{${n + 1}}`, n := [2, 4]: T8 on an array BUILT, T13 on its finite result BUILT -> BUILT
+TT 63 cells ; OK
+
+== CHECKS: 19 of 19 OK
