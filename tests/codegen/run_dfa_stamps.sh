@@ -951,7 +951,9 @@ fi
 # [LOOK-L1] (lane l1ttri, 2026-11-19): the last 10 entries are zero-width-assertion patterns the
 # lookaround L1 feature (lane/l1feat + review r55) now PROVES never-match (a lookahead/lookbehind whose
 # set is disjoint from the consuming step's, or from the preceding step's, or a byte-universe-empty
-# set); each is a never-match pattern by construction, so the empty artifact is correct. Bucket +10.
+# set); each is a never-match pattern under the byte encoding this census compiles at (two of them
+# match under UTF, e.g. `(?i)(?=k)(?-i)[^kK]z` on U+212A + `z` and `x[^\x00-\xff]y`, and the last
+# has no zero-width assertion), so the empty artifact is correct here. Bucket +10.
 EMPTY_MANIFEST='\B\b
 \b\B
 abcd(?:\b)+efgh

@@ -259,54 +259,84 @@ def scan_tree(root):
 
 # TEST-CORPUS DATA IS NOT ARCHITECTURE VOCABULARY (manager ruling 2026-11-19,
 # lane c4scope: the third allowlist patch for the 3-letter test subject "adx"
-# made it a scope question). ONE rule, applied by file shape, not by path:
-#   .rxt  a content line whose first token is a DATA directive (a pattern line
-#         or a case line, rxt_format.md §1.5) has everything after that token
-#         blanked, and so do the indented lines of a `pattern |` opaque
-#         region. A `#` comment (column 1; comments are whole-line only,
-#         §1.5 p1), a `description` line and every other directive stay IN
-#         scope, so a planted ISA name in prose is still a hit.
-#   .tsv  (under tests/) a corpus listing whose header row names a column
-#         `pattern` or `...subject...` has those columns blanked in every
-#         later row; the header and every other column stay in scope.
+# made it a scope question; docs/dev/reviews/2026-11-19-r58-l1tail.md,
+# MANAGER RULINGS, homes it). ONE rule, applied by file shape, not by path:
+#   .rxt  a content line whose first token is a DATA directive (a pattern line,
+#         a case line or a `var` value, rxt_format.md §1.5) has everything after
+#         that token blanked. Not data, so IN scope: a `#` comment (column 1,
+#         §1.4.1), every other directive, and every line of an OPAQUE PROSE
+#         REGION (§1.4.4: a prose-kind line whose value is exactly `|`, to the
+#         first line indented <= the opener, blank or comment) or an OPEN
+#         SUBTREE (§1.4.5: an `ext` line and everything attached below it),
+#         whatever that line's first word is: prose and aux text are not
+#         data, even when it starts with `m` or `pattern`.
+#   .tsv  (under tests/) a corpus listing's header (the first line, comment or
+#         not, among the leading `#` lines and the first content line, with
+#         >= 2 tab cells one of which is exactly a declared data column) has
+#         those columns blanked in every later non-`#` row; the header, `#`
+#         comments and every other column stay in scope.
 # Every other file type is scanned whole. Line numbers are preserved.
 RXT_DATA_KW = frozenset(('pattern', 'pattern-esc', 'm', 'n', 'ms', 'ns', 'mc', 'mg',
                          'gu', 'var', 'under'))
+# the schema's prose-region openers (value: prose AND children: prose,
+# `pcrec --list-schema`) and open-subtree roots (children: tree)
+RXT_PROSE_KW = frozenset(('description', 'vocabulary', 'license-note', 'adaptation',
+                          'attribution', 'note'))
+RXT_TREE_KW = frozenset(('ext',))
+TSV_DATA_COLS = frozenset(('pattern', 'subject', 'oracle_subject_spans',
+                           'oracle_matches(subject=>spans)'))
 
 
 def mask_rxt(text):
-    out, region = [], None      # region: indent of the opening `pattern ... |`
+    out, mode = [], None        # mode: (indent of the opener) while inside a region or subtree
     for line in text.split('\n'):
-        if region is not None:
-            indent = len(line) - len(line.lstrip(' '))
-            if line.strip() and not line.startswith('#') and indent > region:
-                out.append('')
-                continue
-            region = None
+        if mode is not None:
+            if line and not line.startswith('#'):
+                if not line.strip():
+                    out.append(line)        # whitespace-only: inert / region bytes
+                    continue
+                if len(line) - len(line.lstrip(' ')) > mode:
+                    out.append(line)        # inside: prose / aux text, in scope
+                    continue
+            mode = None
         if not line or line.startswith('#'):
             out.append(line)
             continue
         body = line.lstrip(' ')
-        kw = body.split(None, 1)[0] if body.strip() else ''
+        parts = body.split(None, 1)
+        kw = parts[0] if parts else ''
+        indent = len(line) - len(body)
         if kw in RXT_DATA_KW:
-            out.append(line[:len(line) - len(body)] + kw)
-            if kw in ('pattern', 'pattern-esc') and body.rstrip().endswith('|'):
-                region = len(line) - len(body)
+            out.append(line[:indent] + kw)
         else:
             out.append(line)
+            if kw in RXT_TREE_KW:
+                mode = indent
+            elif kw in RXT_PROSE_KW and len(parts) == 2 and parts[1].strip(' \t') == '|':
+                mode = indent
     return '\n'.join(out)
 
 
 def mask_tsv(text):
     lines = text.split('\n')
-    cols = {i for i, h in enumerate(lines[0].split('\t'))
-            if h.strip().lower() == 'pattern' or 'subject' in h.lower()} if lines else set()
-    if not cols:
+    cols, hdr = set(), None
+    for i, line in enumerate(lines):
+        cells = [c.lstrip('#').strip().lower() if j == 0 else c.strip().lower()
+                 for j, c in enumerate(line.split('\t'))] if line.startswith('#') or line.strip() else None
+        if cells is not None and len(cells) >= 2 and any(c in TSV_DATA_COLS for c in cells):
+            cols, hdr = {j for j, c in enumerate(cells) if c in TSV_DATA_COLS}, i
+            break
+        if line.strip() and not line.startswith('#'):
+            break                   # the first content line is not a header: no header
+    if hdr is None:
         return text
-    out = [lines[0]]
-    for line in lines[1:]:
+    out = lines[:hdr + 1]
+    for line in lines[hdr + 1:]:
+        if line.startswith('#') or not line:
+            out.append(line)
+            continue
         f = line.split('\t')
-        out.append('\t'.join('' if i in cols else v for i, v in enumerate(f)))
+        out.append('\t'.join('' if j in cols else v for j, v in enumerate(f)))
     return '\n'.join(out)
 
 
@@ -485,6 +515,108 @@ def plant_lines(cls, p):
     return '/* %s */' % p
 
 
+# The data-scope controls (r58 SCOPE-4: every plant is a form the UNMASKED scan
+# would report, so a masking clause that stops working turns a hit into a miss
+# or a miss into a hit; the word is the first compiler-derived class-1 plant,
+# written with word boundaries because class 1 needs them). Each file is a list
+# of (line, True if the scan must report it); the expectation is read off it.
+def data_scope_files(w):
+    x = 'a %s b' % w
+    H, N = True, False
+    return {
+        'tests/ds/data.rxt': [
+            ('# comment %s' % w, H),
+            ('description prose %s' % x, H),
+            ('pattern %s' % x, N), ('pattern-esc %s' % x, N),
+            ('m "%s" 0 3' % x, N), ('n "%s"' % x, N), ('ms 1 "%s" 0 3' % x, N),
+            ('ns 1 "%s"' % x, N), ('mc "%s" 0 3 2' % x, N), ('mg "%s" 2' % x, N),
+            ('gu "%s" 1' % x, N), ('var v %s' % x, N),
+            ('under pcre2-auto-possess m "%s" 0 3' % x, N),
+            ('  m "%s" 0 3' % x, N),                         # indented directive
+            ('oracle %s' % x, H), ('features %s' % x, H),    # other directives
+            ('pattern a|', N), ('  %s' % x, H),              # `|` ending a pattern opens nothing
+            ('description |', N), ('  prose', N),
+            ('  m %s' % x, H), ('  pattern %s' % x, H),     # prose region lines
+            ('   ', N), ('  more %s' % x, H),                # whitespace-only line: inert, region goes on
+            ('m "%s" 0 3' % x, N),                           # indent <= opener closes the region
+            ('description |', N), ('  prose', N), ('', N),
+            ('  m "%s" 0 3' % x, N),                         # a blank closes it
+            ('description |', N), ('  prose', N), ('# end %s' % w, H),
+            ('  m "%s" 0 3' % x, N),                         # so does a comment
+            ('vocabulary |', N), ('  m %s' % x, H),        # every prose-kind opener
+            ('provenance', N),
+            ('  license-note |', N), ('    m %s' % x, H),
+            ('  adaptation |', N), ('    m %s' % x, H),
+            ('  attribution |', N), ('    m %s' % x, H),
+            ('variant t', N), ('  note |', N), ('    m %s' % x, H),
+            ('', N),
+            ('description foo', N), ('  m "%s" 0 3' % x, N),        # not a bare `|`: no region
+            ('description foo |', N), ('  m "%s" 0 3' % x, N),       # ends in `|`, is not `|`
+            ('description |  ', N), ('  m %s' % x, H),              # trailing spaces trimmed
+            ('description |', N), ('\t', N), ('  m %s' % x, H),      # a whitespace-only line is inert
+            ('ext aux', N), ('  m %s' % x, H), ('    pattern %s' % x, H),   # open subtree
+            ('', N), ('m "%s" 0 3' % x, N),
+        ],
+        'tests/ds/listing.tsv': [
+            ('# every subject %s of the listing' % w, H),    # a comment naming "subject" is no header
+            ('id\tpattern\tsubject_notes\toracle_subject_spans\tfinding %s' % w, H),
+            ('A1\t%s\tn\tx\tfine' % x, N),               # pattern column
+            ('A2\tab\tn %s\tx\tfine' % x, H),            # subject_notes is no data column
+            ('A3\tab\tn\t%s=>0-3\tfine' % x, N),         # spans column
+            ('A4\tab\tn\tx\tnote %s' % x, H),
+            ('# c\t%s' % x, H),                             # a comment row is prose
+        ],
+        'tests/ds/subj.tsv': [
+            ('id\tsubject\tpattern', N),
+            ('1\t%s\tq' % x, N), ('2\tq\t%s' % x, N),
+        ],
+        'tests/ds/chdr.tsv': [
+            ('# id\tpattern\tfinding', N),
+            ('1\t%s\tn' % x, N), ('2\tab\tn %s' % x, H),
+        ],
+        'tests/ds/noheader.tsv': [('%s\tx' % x, H), ('q\t%s' % x, H)],
+        'tests/ds/late.tsv': [('1\t%s' % x, H), ('id\tpattern', N), ('2\t%s' % x, H)],
+        'tests/ds/chdr2.tsv': [('#pattern\tfinding', N), ('%s\tq' % x, N), ('ab\tn %s' % x, H)],
+        'tests/ds/oneword.tsv': [('# pattern', N), ('%s\tx' % x, H)],
+        'tests/ds/t.sh': [('# %s' % w, H)],
+        'tests/ds/t.py': [('x = "%s"' % x, H)],
+        'tests/ds/t.c': [('int %s;' % x, H)],
+        # out of the tests scope the masks do not apply: the same shapes are hits
+        'src/gen/plant.rxt': [('pattern %s' % x, H), ('m "%s" 0 3' % x, H)],
+        'src/gen/plant.tsv': [('id\tpattern', N), ('1\t%s' % x, H)],
+    }
+
+
+def data_scope_controls(root, w):
+    files = data_scope_files(w)
+    for rel, lines in files.items():
+        os.makedirs(os.path.dirname(os.path.join(root, rel)), exist_ok=True)
+        with open(os.path.join(root, rel), 'w') as fh:
+            fh.write('\n'.join(l for l, _ in lines) + '\n')
+    hits = scan_tree(root)
+    for rel, lines in files.items():
+        want = [i for i, (_, h) in enumerate(lines, 1) if h]
+        got = sorted(h[2] for h in hits if h[1] == rel and h[3] == 1)
+        if got == want:
+            ok('data-scope control %s: class-1 hits at lines %s' % (rel, want))
+        else:
+            bad('data-scope control %s: class-1 hits at %s, want %s (pattern/case/var/subject '
+                'data out of scope; comments, prose regions, ext subtrees, other directives, '
+                'other columns and other scopes in scope)' % (rel, got, want))
+    # the blanking keeps the keyword and every line number (a mask that blanks the
+    # whole line, or drops one, would still pass the hit counts above)
+    src = 'm "x" 0 1\n  pattern y\n# k\ndescription |\n  m z\n'
+    if mask_rxt(src) != 'm\n  pattern\n# k\ndescription |\n  m z\n':
+        bad('mask_rxt: a data line did not keep exactly its keyword (or a prose line moved): %r'
+            % mask_rxt(src))
+    else:
+        ok('mask_rxt keeps each data line\'s keyword and every line number')
+    if mask_data('code', 'x.rxt', src) != src or mask_data('tests', 'x.txt', src) != src:
+        bad('mask_data: a mask applied outside tests/.rxt|.tsv')
+    else:
+        ok('mask_data masks only tests .rxt and .tsv')
+
+
 def scratch_controls(cc, tmpbase):
     """Positive controls (per class) and the negative control, in a scratch tree."""
     plants, notes = derive_plants(cc)
@@ -537,37 +669,7 @@ def scratch_controls(cc, tmpbase):
         # the first compiler-derived class-1 plant, so no author chooses it.
         w = (plants.get(1) or [None])[0]
         if w:
-            os.makedirs(os.path.join(root, 'tests/ds'))
-            with open(os.path.join(root, 'tests/ds/data.rxt'), 'w') as fh:
-                fh.write('# comment line %s\n'                           # 1 hit
-                         'description a prose field %s\n'                 # 2 hit
-                         'pattern a%sb\n'                                 # 3 data
-                         'features std1\n'                                # 4 -
-                         'm "%s" 0 3\n'                                   # 5 data
-                         'ms 1 "%s" 0 3\n'                                # 6 data
-                         'pattern |\n'                                    # 7 data
-                         '  a%s\n'                                        # 8 region
-                         '  b\n'                                          # 9 region
-                         '# after the region %s\n'                        # 10 hit
-                         'oracle %s\n'                                    # 11 hit (not a data directive)
-                         % ((w,) * 8))
-            for fn, body in (('t.sh', '# %s\n'), ('t.py', 'x = "%s"\n'), ('t.c', 'int %s;\n')):
-                with open(os.path.join(root, 'tests/ds', fn), 'w') as fh:
-                    fh.write(body % w)
-            with open(os.path.join(root, 'tests/ds/listing.tsv'), 'w') as fh:
-                fh.write('id\tpattern\toracle_subject_spans\tfinding\n'
-                         'A1\ta%sb\t%s=>0-3\tfine\n'                   # data columns
-                         'A2\tab\tx=>0-1\tnote %s\n' % (w, w, w))      # finding column: hit
-            hits = scan_tree(root)
-            got = lambda f: sorted(h[2] for h in hits if h[1] == 'tests/ds/' + f and h[3] == 1)
-            for fn, want in (('data.rxt', [1, 2, 10, 11]), ('t.sh', [1]), ('t.py', [1]),
-                             ('t.c', [1]), ('listing.tsv', [3])):
-                if got(fn) == want:
-                    ok('data-scope control %s: class-1 hits at lines %s' % (fn, want))
-                else:
-                    bad('data-scope control %s: class-1 hits at %s, want %s (pattern/subject data '
-                        'out of scope; comment, description, other directives and other file '
-                        'types in scope)' % (fn, got(fn), want))
+            data_scope_controls(root, w)
         hits = scan_tree(root)
         exempt_hit = [h for h in hits if data_exempt(h[1])]
         if exempt_hit:
