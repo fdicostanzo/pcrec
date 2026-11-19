@@ -4206,3 +4206,8 @@ Main ruled on the four kit findings (D186 add. 2):
   REBUILT_BUILD only (identity at h*=64, no MOVERS).
 - 01:2x main ACKED h*=64; OWED by day 11-19: a note for main on whether h*=64 is a ceiling pick (grid top; the 64 cells void
   twice): was any cell above 64 ever readable? (fcards-zen4-1 rule_702.txt / results*.tsv). 704 re-queue = REBUILT_BUILD only.
+- 01:21 703-kit-fcards-c3 RED (rc=1, 184 s). Triage lane triage703 (report scratch/memfn/triage703/report.md): NOT a defect.
+  cards.py c3 rc 0, the deny check passed, C3 was timed at H(64); the rule says "rerun" (6 cells of results_c3_h64.tsv void ONCE,
+  R1 waits for the re-run), and 703 exits 1 by design unless the verdict is complete:64 (common.sh:109). h*=64 stands; C3's
+  R2/R5 owed after the re-run. OWED: a C3 re-run job (cards.py rerun, then rule) in a quiet window main clears (703 itself
+  refuses a repeat: results_c3_h64.tsv exists); 704 waits on it. Optional: give "rerun owed" its own exit class.
