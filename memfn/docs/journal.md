@@ -4301,3 +4301,7 @@ Main ruled on the four kit findings (D186 add. 2):
   the H64@avx2 control), subset S, LOSS re-timed on variants 3-5, oracle labelled; correctness 96.0M + ~60k runs, 0 wrong; 5,284
   cells, ~4.8 h. 708 QUEUED (kit-fcards-blockspan, NOT_BEFORE 2026-11-20T01:00, cap 35036 s). The hit-spacing sweep is a SEPARATE
   job 709 (kit-fcards-blockspace, <= 40 min, after 708 ends), being built by blockspan.
+- 12:2x 709 QUEUED (kit-fcards-blockspace; blockspan/space/blockspace.py reads 708's exes; 420 cells = hex/word/nonl x k 8..64 x
+  g 1..64 x 5 arms; correctness 84 subjects / 1,260 runs, 0 failing; ~15 min; --ready after 708 ends). Lane blockspan stopped. Tonight:
+  708 01:00 -> ~06:00, then 709. Owed by day 11-19 (still open): set 1 INCONCLUSIVE-AT-NOISE record, the calibration loaded-vs-quiet
+  summary, R-46 form reply (~17:00).
