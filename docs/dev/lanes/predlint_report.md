@@ -3,7 +3,7 @@
 ## STATE AT HANDOFF
 OWED: none
 
-Complete; branch lane/predlint, committed. The rulings file predlint_rulings.md was empty (no entry applied). No owed runs. Not wired into make (see WHAT WAS NOT BUILT).
+Complete incl. ruling R1 (L8 exemptions, applied); branch lane/predlint, committed. The rulings file predlint_rulings.md was empty (no entry applied). No owed runs. Not wired into make (see WHAT WAS NOT BUILT).
 
 ## WHAT WAS BUILT
 - `scripts/pred_doc_lint.py` (stdlib only, runs under `python3 -I`): the L1-L11 structure lint, a planted-fault `--selftest`, `--write-ratchet`, and the reader (`--show`, `--list`). Paths follow the spec defaults, `--root DIR` (default: the repo), `--require-all`.
@@ -23,12 +23,12 @@ Each plant is asserted to fail exactly its own rule (the set of failed rule ids 
 | L5 | `needs:`/`by:` exist; needs earlier (file order, then position); by under core/principles | missing target; later in file; later file; by not a principle | yes x4 |
 | L6 | history words outside code fences | `WITHDRAWN`; `Rev 29` | yes, yes |
 | L7 | statement <= 200, piece <= 40 lines, statement present (WARN: file size over soft cap) | 201-char statement; 45-line piece | yes, yes |
-| L8 | non-`?` piece has an example naming WHOLE, SEARCHED, FIND-ALL, or `modes: n/a` | example names only WHOLE | yes |
+| L8 | piece (not `?`, parked, under-construction, or under core/principles/) has an example naming WHOLE, SEARCHED, FIND-ALL, or `modes: n/a` | example names only WHOLE | yes |
 | L9 | a slug on 2+ tags must be listed `shared:` | the `shared:` line removed | yes |
 | L10 | `?` count not above the ratchet file's | ratchet lowered below the count | yes |
 | L11 | an existing base (or details) file has pieces (entries); `--require-all` makes an absent base fail | base and details with no pieces | yes |
 
-Positive controls (all pass in the selftest): `was:` excuses the path check; a history word inside a fenced block is exempt; an absent pair is skipped with a note, and fails L11 under `--require-all`; an absent ratchet is one note; a soft-cap overrun is a WARN with exit 0; `--write-ratchet` lowers and never raises. Clean-sample per-rule floors (hand-written): L1 9, L2 12, L3 3, L4 9, L5 4, L6 30, L7 9, L8 6, L9 4, L10 3, L11 3; the clean run reads `L1=13 L2=13 L3=3 L4=13 L5=4 L6=49 L7=9 L8=6 L9=7 L10=3 L11=3`.
+Positive controls (all pass in the selftest): `was:` excuses the path check; a history word inside a fenced block is exempt; an absent pair is skipped with a note, and fails L11 under `--require-all`; an absent ratchet is one note; a soft-cap overrun is a WARN with exit 0; `--write-ratchet` lowers and never raises. Clean-sample per-rule floors (hand-written): L1 9, L2 12, L3 3, L4 9, L5 4, L6 30, L7 9, L8 3, L9 4, L10 3, L11 3; the clean run reads `L1=13 L2=13 L3=3 L4=13 L5=4 L6=49 L7=9 L8=3 L9=7 L10=3 L11=3`.
 
 Selftest output:
 
@@ -70,7 +70,7 @@ selftest: 22 runs, 11 rules with a detected plant of 11, 0 failures
 ## SPEC AMBIGUITIES (stricter reading taken)
 1. The spec's example tag `lib/padded` has two segments; its grammar says `<file>/<section>/<piece>`. The lint requires 3 or 4 segments, so `lib/padded` fails L2.
 2. "Listed shared" (L9) has no syntax: chosen a `shared: slug ...` line in any details file before its first entry.
-3. L8's scope: applied to every non-`?` piece, parked ones included (they write `modes: n/a (...)`).
+3. L8's scope (R1, ruled by the predicate manager): every piece except status `?`, `parked`, `under-construction` and pieces under `core/principles/`; one positive control per exemption (an exempt piece with no example line passes).
 4. A record title: matched against a `### ` heading or a `**...**` opener, exactly or the part before the first ` (`; every `rulings:` item must carry a record title and it must exist, not only a ruled piece's. A ruled piece with no items fails.
 5. A non-`?` piece with no statement line fails (filed under L7); every heading needs a date; `parked` status outside the parked file fails L4.
 6. A `needs:`/`by:` whose pair is skipped (absent) is not a failure, unless `--require-all`.

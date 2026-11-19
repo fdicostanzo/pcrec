@@ -16,7 +16,7 @@ Standard library only; run with `python3 -I`.
 
 Readings the spec leaves open (the stricter was taken; see the lane report):
   - the "listed shared" of L9 is a line `shared: <slug> ...` in any details file;
-  - L8 applies to every piece whose status is not `?`; L4 requires a date on
+  - L8 applies to every piece except status `?`, `parked`, `under-construction` and core/principles/ pieces (R1); L4 requires a date on
     every heading and `parked` only in the parked file;
   - a non-`?` piece without a statement line fails under L7;
   - a record title matches a `### ` heading or a `**...**` opener exactly, or
@@ -304,7 +304,7 @@ def lint(root, require_all=False, caps=None):
                 rep.fail("L7", "%s:%d" % (b, p["statement_line"]), "statement is %d characters (hard cap %d)"
                          % (len(p["statement"]), STATEMENT_MAX))
             # L8 example line
-            if not is_q:
+            if not is_q and st not in ("parked", "under-construction") and not tag.startswith("core/principles/"):
                 rep.ok("L8")
                 body = p["text"][1:]
                 if not any(t.startswith("modes: n/a") or all(w in t for w in ("WHOLE", "SEARCHED", "FIND-ALL"))
@@ -696,7 +696,7 @@ def selftest():
         c = fresh("clean")
         rep, _ = lint(c)
         expect(not rep.fails, "clean sample fails: %r" % rep.fails)
-        floors = {"L1": 9, "L2": 12, "L3": 3, "L4": 9, "L5": 4, "L6": 30, "L7": 9, "L8": 6, "L9": 4, "L10": 3, "L11": 3}
+        floors = {"L1": 9, "L2": 12, "L3": 3, "L4": 9, "L5": 4, "L6": 30, "L7": 9, "L8": 3, "L9": 4, "L10": 3, "L11": 3}
         for r, f in floors.items():
             expect(rep.checked[r] >= f, "clean sample: rule %s checked %d, floor %d (a rule that checks nothing)" % (r, rep.checked[r], f))
         n += 1
@@ -725,6 +725,19 @@ def selftest():
         sub(d, CB, "Definition sentence.", "```\nWITHDRAWN rev 3 [REV\n```\nDefinition sentence.")
         rep, _ = lint(d)
         expect(not rep.fails, "a fenced history word was not exempt: %r" % rep.fails)
+        for label, f, old, new in (
+                ("parked", XB, "Skipping is not in the language until a measured need names it.\nmodes: n/a (an idea, no mode defined)",
+                 "Skipping is not in the language until a measured need names it."),
+                ("under-construction", CB, "reading 2026-11-02", "under-construction 2026-11-02"),
+                ("principles", CB, "WHOLE: /a/ matches; SEARCHED: /a/ finds; FIND-ALL: /a/g iterates.", "")):
+            d = fresh("l8" + label)
+            if label == "under-construction":
+                sub(d, f, old, new)
+                sub(d, f, "modes: n/a (a hole is not matched on its own)", "")
+            else:
+                sub(d, f, old, new)
+            rep, _ = lint(d)
+            expect(not rep.fails, "L8 exemption for a %s piece without an example: %r" % (label, rep.fails))
         d = fresh("skip")
         os.remove(os.path.join(d, XB))
         os.remove(os.path.join(d, XD))
