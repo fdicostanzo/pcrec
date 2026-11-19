@@ -34,7 +34,8 @@ new entry gains a line `tags: <tag> <tag>`. Evidence directories and filed revie
 ## Tags, pieces, status
 
 - A TAG is a path of lower-case kebab words: `<file>/<section>/<piece>[/<sub>]`, file one of `core`, `lib`, `parked`
-  (`core/holes/class`, `core/principles/regex-default`, `lib/padded`). Tags are never renamed; a moved piece keeps its
+  (`core/holes/class`, `core/principles/regex-default`, `lib/modifiers/padded`); three or four words, so every piece
+  sits in a section. Tags are never renamed; a moved piece keeps its
   tag and the lint's path check reads a `was:` line. Cross-references are bare tags, never line numbers or § numbers.
 - A base PIECE:
 
@@ -76,7 +77,8 @@ piece's details has at least one `rulings:` line whose record title EXISTS in th
 `by:` tag exists, and a `needs:` target is earlier in the read order (core before lib before parked); L6 no history
 in a base file (the word list above; `[REV`); L7 caps: statement 200 characters and piece 40 lines HARD; base file
 SOFT (core 64 KB, library 24 KB, parked 16 KB: reported, never refused); L8 an example line names the three modes or
-says `modes: n/a`; L9 every slug in a details `slugs:` line is unique to one tag or listed as shared; L10 the `?`
+says `modes: n/a` (not asked of a `parked` or `under-construction` piece, nor of a principle); L9 every slug in a details `slugs:` line is unique to one tag or listed on a `shared:` line at the head of a
+details file; L10 the `?`
 ratchet only shrinks; L11 a non-vacuity floor (a file with no pieces fails). A planted-fault selftest, one plant per
 rule. Reader: the files registered as a profile of `scripts/entry` (`entry core/holes/class`: level 0 the heading and
 statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by slug).
