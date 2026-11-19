@@ -226,3 +226,10 @@ predspec291 DELIVERED (lanewatch DONE after the wake message; R1 applied), MERGE
 Draft = REVISION 29.1 (10,275 lines), review r54 filed. Record entry "after lane predspec291" (the fill-reference
 fact on padded-lazy-sparse). Ideas items 37, 38 (the round's two general forms). to_main P-6 (done lines, status
 line, proposed skill edits); main messaged. NEXT: the pilot lane of the reorganized documents.
+
+## 2026-11-19 (evening) — pilot lane launched; main's code round on the lint is r56
+LAUNCHED lane preddoc1 (opus; worktrees/preddoc1): the skeleton of the three base/details pairs, core/principles and
+core/holes in full (with the rulings made since rev 29's fold), twelve readings to test, a completeness control from
+the census, FORMAT PROBLEMS as a report section; no background jobs (brief says so); lanewatch armed. Main: got P-6;
+the lint's code round is r56 (running); it merges lane/pred-rev28 (draft + lint) when r56's fixes are in, at
+whichever tip I name; decides the entry profile / make target and answers the skill edits at that merge.
