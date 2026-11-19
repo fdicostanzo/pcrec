@@ -1459,14 +1459,14 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
  * §3: UNMEASURED; its trigger is a census row with a periodic span of 36 or
  * more positions).
  *
- * THE DEFAULT HEAD. UNMEASURED DEFAULT: 64, CHOSEN (the cards' grid top; the
- * build's interim, the kit manager's launch ruling for lane forms, r45_reply
- * rev 8 §3 "Scope"; review r36 G14): the form cards have not run. Until the
- * cards C1-C2 run and rule R1 picks h*, the kit ships 64, so that at pcrec's
- * default window width (32: its largest stated offset is 32) no span loops
- * and nothing moves. The cards' script (memfn/tests/span_forms/cards.py)
- * then gives h* and its label, and the build that compiles h* in replaces
- * this constant. */
+ * THE DEFAULT HEAD. MEASURED: 64, label "grid top, CHOSEN". The form cards
+ * ran (run fcards-zen4-1, frozen 33fec79b3, Zen 4, 2026-11-19): rule R1
+ * picked h* = 64, and card C3 is complete at H(64) after its re-run of the
+ * void-once cells. At pcrec's default window width (32: its largest stated
+ * offset is 32) no span loops, so nothing moves. R5 records near-miss long
+ * spans where H(64) loses to L (h0) on C3: hex500 near-miss, about 82 against
+ * 41 ns/B, while today's text I is about 130 there. The cards' script is
+ * memfn/tests/span_forms/cards.py; its record is cited by run id. */
 enum { WF_SPAN_HEAD = 64 };
 #define WF_LOOP_ID "span-loop"
 
