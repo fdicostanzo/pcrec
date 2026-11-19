@@ -249,3 +249,78 @@ PdHead pcrec_ph_alt(Ctx *cx, const PdCfg *c, PdHead l, PdHead r)
                      l.writes || r.writes, l.minw < r.minw ? l.minw : r.minw,
                      bounded ? (l.maxw > r.maxw ? l.maxw : r.maxw) : 0, p };
 }
+
+/* `x * k` for a head width, saturating: past it the width is unbounded. */
+static bool ph_wmul(long long x, int k, long long *out)
+{
+    if (k != 0 && x > (1LL << 40) / k) return false;
+    *out = x * k;
+    return true;
+}
+
+/* THE HEAD'S PER-KIND RULE (span_arms §14.3 D-10, register row 27): node
+ * `a`'s adjacency head, given its body's head `body` (NULL for a leaf) and
+ * the caller's position reader `pos` for a leaf that consumes one symbol
+ * (NULL from it = no position here: a wall). A zero-width node is read
+ * THROUGH; a repeat contributes no head (FIX-1: `rmin >= 1` included, a REP
+ * head waits for [REPEAT-RUN] R2) but its widths; a backreference, a
+ * variable, a `consume` callout and a call have no head and unknown writes;
+ * a call reads no cached field (FIX-3: unset before the call graph). The
+ * caller walks: it folds a CAT or ALT spine itself with `pcrec_ph_cat` /
+ * `pcrec_ph_alt`, so those two kinds never reach here. Which leaf is a
+ * position is the ALPHABET's fact, `pos`'s answer (`A_WCLASS`: a wall at
+ * code-point level, a position at byte level). */
+PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
+                     PhLeafPos pos, void *env)
+{
+    switch (a->k) {
+    case A_CLASS:
+    case A_WCLASS: {
+        const void *p = pos(env, a);
+        return p ? pcrec_ph_pos(cx, p) : pcrec_ph_wall(0, false, 0, true);
+    }
+    case A_EMPTY:
+    case A_EOL:
+    case A_CTX:
+    case A_GSTART:
+        return pcrec_ph_unit();
+    case A_KRESET: {
+        PdHead u = pcrec_ph_unit();
+        u.writes = true;
+        return u;
+    }
+    case A_CALLOUT:
+        if (pcrec_ast_row(a).text == KTEXT_ANY)
+            return pcrec_ph_wall(0, false, 0, true);
+        return pcrec_ph_unit();
+    case A_LOOK: {
+        PdHead u = pcrec_ph_unit();
+        u.writes = body->writes;
+        return u;
+    }
+    case A_BREF:
+    case A_VAR:
+    case A_CALL:
+        return pcrec_ph_wall(0, false, 0, true);
+    case A_CAP: {
+        PdHead b = *body;
+        b.writes = true;
+        return b;
+    }
+    case A_ATOMIC:
+        return *body;
+    case A_REP: {
+        long long lo = 0, hi = 0;
+        if (!ph_wmul(body->minw, a->u.rep.rmin, &lo)) lo = 1LL << 40;
+        bool bounded = body->bounded && a->u.rep.rmax >= 0 &&
+                       ph_wmul(body->maxw, a->u.rep.rmax, &hi);
+        return pcrec_ph_wall(lo, bounded, hi, body->writes);
+    }
+    case A_CAT:
+    case A_ALT:
+        pcrec_ctx_fail(cx, 0, "internal error: a %s spine reached the head's "
+                       "per-kind rule; its walker folds it with pcrec_ph_%s",
+                       a->k == A_CAT ? "CAT" : "ALT", a->k == A_CAT ? "cat" : "alt");
+    }
+    return pcrec_ph_wall(0, false, 0, true);   /* unreachable under -Wswitch */
+}

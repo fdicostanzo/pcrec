@@ -77,4 +77,13 @@ PdHead pcrec_ph_wall(long long minw, bool bounded, long long maxw, bool writes);
 PdHead pcrec_ph_cat(Ctx *cx, const PdCfg *c, PdHead l, PdHead r);
 PdHead pcrec_ph_alt(Ctx *cx, const PdCfg *c, PdHead l, PdHead r);
 
+/* The head's PER-KIND RULE (D-10, register row 27): one rule, read by every
+ * head walker (today the alternation owner; the run walk's lookahead item
+ * from span_arms L1). `PhLeafPos` is the caller's alphabet: the position a
+ * one-symbol leaf stands for, or NULL where it is no position (a wall). The
+ * caller walks, folding CAT/ALT spines with `pcrec_ph_cat`/`pcrec_ph_alt`. */
+typedef const void *(*PhLeafPos)(void *env, const Ast *a);
+PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
+                     PhLeafPos pos, void *env);
+
 #endif
