@@ -4435,3 +4435,14 @@ width needs the read's own length as the width, `padded($y - 1, strlen($y))`: `1
 `100-099` HOLDS, `100-99` FAILS: the one form that needs a READ as `padded`'s width (construction-line (b), not
 built). THE MANAGER'S READING: with these, numeral-width needs no WIDTH KEPT rule; put to him as "numeral-width:
 canonical".
+
+**2026-11-18 OWNER RULING — numeral-width: canonical (Frank, to the predicate manager, night).** ASKED AS A RULING
+(slug numeral-width, after the table of the bare result and three `padded` wrappings on `10-9`, `10-09`,
+`10-009`, `100-099`: "the language needs no separate "width kept" rule for results. The result is canonical, and
+padding is the writer's request"). HIS WORDS, in full: "numeral-width: canonical".
+RULED: the result of arithmetic is the CANONICAL numeral, for every operation and whatever the width of what was
+read (`10 - 1` is `9`); there is no WIDTH KEPT rule; padding is the writer's request through `padded(...)`. THE
+MANAGER'S READINGS (mine, to be tested): (m1) this covers two reads (`$a - $b`) and intermediate results
+(`($y - 1) + 1`), which WIDTH KEPT left undefined: canonical at every step; (m2) "as wide as what was read" on a
+field of any width stays the composition `padded($y - 1, strlen($y))`, which waits on a read as `padded`'s width
+(construction-line (b)); (m3) **number-edges** (`% 0`, a negative result) is NOT settled by this ruling.
