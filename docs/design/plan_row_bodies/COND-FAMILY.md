@@ -3903,3 +3903,31 @@ UNDER CONSTRUCTION part: hard, not to get bogged down in now, the direction ackn
 a single string"; (m2) the regex operations on a read (`$y | "other"`, `$y & S`, `$y . "End"`, `when`) are built
 in their run-time form now; (m3) a compile-time constant (`left("Columbus", 2)`, `2025 + 1`) is folded at compile
 time.
+
+**2026-11-18 OWNER, discussing hole-reads-capture (Frank, to the predicate manager's first session, evening;
+DISCUSSION, nothing ruled: "this is all me just talking and i'm not sure how much of this is agreed").** Asked
+**hole-reads-capture** as a confirm (the label, with the 2026-11-17 ruling "what an unqualified `$x` reads" quoted;
+the witness `/(?:(?<y>\d)?-${$y};)*/`, WHOLE `3-3;-3;`, SEARCHED, FIND-ALL `3-3;-3; 7-7;`; the capture column re-run
+under python `re` this session, the label column the draft's model). HIS WORDS, in full: "hole-reads-capture: my
+understanding of $y is that it represents the captured value at the labeled group. some things to answer for me:
+does that mean it only works at capture groups? i'd think no. we separate the idea of capture and label. some
+groups can be labeled and not be "capture" in that they return capture groups. so they can be used to say that two
+groups agree as your example above but not actually return the y group above unless it is also a capture group for
+the regex. this is all me just talking and i'm not sure how much of this is agreed. the subject of $y has only
+today been detailed".
+RECORD: DISCUSSION. (1) OBSERVATION, his understanding: `$y` "represents the captured value at the labeled group"
+(the text the labelled group matched; it does not choose between the pass's own value and PCRE's carried one, the
+point the question asks). (2) His QUESTION and LEAN: does `$y` work only at capture groups; "i'd think no". (3)
+OBSERVATION: capture and label are separate ideas; a group can be labelled without being a "capture" in the sense
+of being RETURNED to the caller; such a label can still say that two groups agree; the group is returned only if
+it is "also a capture group for the regex". hole-reads-capture is NOT answered by this entry.
+THE MANAGER'S ANSWER to him, from the record: the separation is his own of 2026-11-17 ("joint-last-pass: that logic
+might be justified if you differentiate between a label and a capture"), and the draft's §6.2 (RULED, CF:583, Q11:
+default output = span + accept-class values, named spans need `captures`) already has a label TESTED for free and
+its text REPORTED only under the `captures` opt-in. THE MANAGER'S READINGS (mine, to be tested by the next revision
+lane): (m1) his (3) is consistent with §6.2 and R.1.13's "setting a label is the group form read as a LABEL, not as
+a capture"; (m2) what the record does NOT have is a PER-GROUP way to say "labelled, not returned" against
+"labelled and returned": today the choice is the program-level `captures` opt-in (and the draft's `_` private
+label, a visibility rule); (m3) a `$y` read in a hole needs the group's TEXT kept during the match (as a
+backreference does) whether or not the group is returned to the caller: "not returned" is a statement about the
+output, not about what the matcher remembers (hand-reasoned, not run).
