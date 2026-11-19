@@ -5470,3 +5470,16 @@ The manager's readings (told to him; for a lane to list):
 - A name carried by two of the files is a compile error in the one-name form as in the `(=)` form (his "conflicts
   are a compiler error, import separately" was said of `(=)`; extended here by the manager, NOT his words).
 - NOT STATED: whether the filter is applied before the conflict check (so a filter can remove a conflict).
+
+### 2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN (the positional binding list)
+tags: core/modules/binding-list
+
+Statement 7 of the import-symbols ruling above ("A bare positional `(a, b) := X` is left undefined for now"), and
+the reason the manager gave him for it ("needs an ordered right side, which the language does not clearly have"),
+were WRONG against the record, which the manager did not grep before saying them: "2026-11-16 OWNER CONFIRMATION
+— a tuple on the left of a binding takes it apart" has his "Yes" to `lo := (9, 0)` and `(a, b) := lo`. Found by
+lane preddoc3b. WITHDRAWN: statement 7 and its reason. What stands: a positional list on the left takes a TUPLE
+apart (confirmed 2026-11-16); the named list (`l = left`, `=left`) selects from a MAP by name (ruled
+2026-11-19). NOT STATED by either entry, and the only part still open: a positional list against a MAP (a module,
+an import), where there is no order. His "agree with all your statements" is NOT read as having reversed the
+2026-11-16 confirmation: he was shown a false premise. Told to him the same hour.
