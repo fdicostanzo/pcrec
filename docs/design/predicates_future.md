@@ -694,7 +694,7 @@ its trigger (build under measurement, D77).
   PCRE cannot express. TRIGGER: a user program needing a length-prefixed field.
 - SOURCE: `docs/dev/reviews/2026-11-18-r48-predspec27.md` (NOTED) and its `PREMISE.md` (PREMISE-12).
 
-## 32. The label-only group: labelled, not a capture (`(?<:x>...)`, spelling a placeholder)
+## 32. The label-only group: labelled, not a capture (`(?<:x>...)`, his stated form 2026-11-18; a placeholder)
 
 - The owner's PROPOSAL of 2026-11-09 (POSTFACT.md, "Label spelling", "Names are labels, numbers are captures"),
   recalled by him 2026-11-18 evening (COND-FAMILY, "a RECOLLECTION ... the label-only group"): a group's name and

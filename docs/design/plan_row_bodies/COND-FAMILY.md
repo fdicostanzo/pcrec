@@ -3955,3 +3955,10 @@ an unruled proposal of 2026-11-09; (m2) a label-only group has NO PCRE capture, 
 elsewhere) can only be the LABEL: a force toward "label" in hole-reads-capture, and `\k<y>` naming a label-only
 group is a new point (an error, or the label); (m3) how the label-only group sits with §6.2's `captures` opt-in
 (does `(?<x>...)` return by default once the label-only form exists) is not stated anywhere.
+
+**2026-11-18 OWNER, correcting his spelling of the label-only group (Frank, to the predicate manager, evening; a
+CORRECTION of the entry above, nothing ruled).** Shown the libpcre2 table (`(?<:x>foo)` rejected, `(?':x'foo)`
+rejected, `(<:x>foo)` compiles). HIS WORDS, in full: "oops. yes, i missed the ?. it should look like the top row".
+RECORD: the form he meant is `(?<:x>foo)` (the table's top row); `(<:x>foo)` was a slip. The label-only group
+remains a PROPOSAL; its spelling remains a placeholder for the spellings review, now with his stated form.
+hole-reads-capture is still not answered.
