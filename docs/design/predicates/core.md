@@ -109,72 +109,341 @@ A regex in his example or ruling is run before it is recorded; a mismatch with h
 
 ## The model   [core/model]
 
-### What a match is   [core/model/match]   ?  2026-11-19
+### What a match is   [core/model/match]   ruled 2026-11-17
+A program is a pattern with conditions written into it; a condition is one more piece of the pattern, and when it rejects, the pattern goes on to its next path in PCRE's order.
+by: core/principles/regex-default core/principles/matching-language
+see: core/conditions/two-valued
+- A PATH is one complete way the pattern matches: a stretch of the subject (its text), the value of every label, and
+  for a loop the passes it ran, PCRE's trailing empty pass included (a reading).
+- A condition sits at a place in the pattern, reads the labels set so far, and either lets the match go on or
+  rejects; on a reject the pattern returns to its most recent choice and tries the next one, a branch of `|` as any
+  other, whether the condition is written inside the `|` or after it.
+- The answer is the first path that gets through every piece. Nothing is unknown: a test passes or fails.
+- A ROW is one potential match, a stretch with the labels it sets; the subject is the search text, not a row.
+- To a condition a pattern is a black box that exposes labels; an inner view is written by nesting the condition.
+WHOLE `123` HOLDS (a = `1`, b = `23`), `23` FAILS / SEARCHED `x23 123` `123`@4 (a = `1`, b = `23`) / FIND-ALL `123 213 1` [`123`@0, `13`@5] (`/(?<a>\d+)(?<b>\d+)/ & (a: "1")`)
 
-### The three modes   [core/model/modes]   ?  2026-11-19
+### The three modes   [core/model/modes]   ruled 2026-11-17
+A program is matched WHOLE (some surviving path spans the whole text), SEARCHED (the first surviving path at the leftmost start) or FIND-ALL (PCRE2's global loop over it).
+needs: core/model/match
+by: core/principles/regex-default
+- The subject is the search text. The program's final pattern is SEARCHED, or WHOLE when the caller matches a
+  whole value; a nested place fixes its own text and mode (core/model/places).
+- FIND-ALL is PCRE2's global loop: the first surviving path at the leftmost start, again from the reported end;
+  after an EMPTY report, a retry at the same place for the first surviving non-empty path starting there, and only
+  then a step of one character (a reading: regex's loop, by the default of explicit-exceptions).
+- A searched pattern that can match the empty text behaves as PCRE's does (its empty matches), with a warning.
+- A check of the whole text is written with ruled pieces and matched WHOLE: `J & C & occurrences(M)`, a parse J of
+  the whole text, a check C on it, M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED
+  shape (each match of M reported as a match of the program) has no ruled spelling.
+see: lib/search/occurrences lib/search/hits
+WHOLE `1` HOLDS, `12` FAILS / SEARCHED `a12 1` `1`@1 / FIND-ALL `12 3` [`1`@0, `2`@1, `3`@3] (`/\d+/ & /^\d$/`)
 
-### The table of paths and its order   [core/model/table]   ?  2026-11-19
+### The table of paths and its order   [core/model/table]   reading 2026-11-19
+The table of a program on a text holds every path of the pattern in PCRE's preference order, each remembering the branch it took at every `|`; conditions filter it and the first survivor is reported.
+needs: core/model/match core/model/modes
+- The order: the leftmost start first; at one start, the order PCRE tries its choices.
+- Two paths over one stretch with different labels are two rows.
+- A label takes its value inside a pass at its group's close; a condition placed after the group reads it.
+- An atomic part is the one place where the first row is taken BEFORE the conditions outside it filter
+  (core/patterns/atomic); a condition written INSIDE the atomic part is a piece of it and filters first.
+WHOLE `73` HOLDS (l = `3`), `77` FAILS / SEARCHED `x737` `73`@1 (l = `3`) / FIND-ALL `37 73 77` [`37`@0, `73`@3] (`/(?<l>\d)\d|\d(?<l>\d)/ & (l: "3")`)
 
-### The place table   [core/model/places]   ?  2026-11-19
+### Group questions over the pass table   [core/model/table/group-truth]   open group-truth 2026-11-19
+After a loop, do the group questions over the passes, `NOT some(c)` and `occurs.none(c)`, agree with `occurs.none(NOT c)` read pass by pass?
+needs: core/model/table
+see: lib/counting/occurs
+The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads
+the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the
+finished passes. Candidates: (a) `NOT some(c)` = `occurs.none(c)` (they agree on every text run); (b) `occurs.none(NOT
+c)` is a different question (it also holds with no pass, and parts from (a) on a pass lacking the label).
+modes: n/a (a question over library names; the runs are cited in the details entry)
+
+### The place table   [core/model/places]   reading 2026-11-19
+Each place a program or a part can stand in fixes its text and mode, the kind of rx it needs, and whether a condition outside it re-enters it.
+needs: core/model/match core/model/modes
+by: core/principles/operand-world
+| place | its text and mode | the kind it needs | re-entered from outside | piece |
+|---|---|---|---|---|
+| the program | the subject; WHOLE, SEARCHED or FIND-ALL | can match | n/a | core/model/modes |
+| an `&` operand (either side) | the stretch's own text, whole | can filter | yes | core/filters/and |
+| a sequence operand | spliced in place | can match | yes | core/patterns/sequence |
+| a condition as a sequence operand | zero width at its point | a test | n/a | core/conditions/in-sequence |
+| a loop body, a postfix operand | each pass, in place | can match | yes, pass by pass | core/labels/one-rule |
+| an atomic part | in place | can match | no | core/patterns/atomic |
+| a positive lookahead or lookbehind | from its point, consuming nothing | can match | no | core/patterns/lookaround |
+| a pattern hole `${X}` | in place, `(?:X)` | can match | yes | core/holes/pattern |
+| a `label:` set | the label's text, whole | can filter | no | core/conditions/form |
+| the operand of a complement | the stretch's own text, whole | can filter | no | core/filters/complement |
+| a binding `name := X` | none of its own (X where `name` is used) | any: the error is at a use | n/a | core/labels/export |
+| a part label `[x = A]` | A in place | as the place it stands in | as A's place | core/labels/paths |
+| an `occurrences` argument; a hit list | its stretch; the hit list atomic | can match | yes; the hit list no | lib/search/occurrences |
+| the test of a conditional | at the conditional's point | a test | no for a peek | lib/control/when-test |
+| a `records` item | a compile-time find-all | can match, condition-free | no | lib/records/records |
+- A place with no row here is not a place a program or a part can stand in.
+modes: n/a (the table of places; each place's piece has its example)
+
+### The outermost view   [core/model/places/outermost-view]   ruled 2026-11-17
+A condition outside a pattern sees its labels at the outermost view; an inner view is written by nesting the condition at the level it speaks about.
+needs: core/model/places core/model/match
+- Every enclosing loop's pass enters its body anew, so a bare condition after the pattern reads a label only where
+  the last pass of each enclosing loop set it.
+- Pass tests (`some`, `occurs`, `h[k]`) on a label two loops deep range over the outermost loop's passes (a reading).
+WHOLE `3;,` HOLDS, `3;,,` FAILS, `3;;,` FAILS / SEARCHED `3;,,` `3;,`@0 / FIND-ALL `3;, 3;;, 4;,` [`3;,`@0, `4;,`@9] (`/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)`)
 
 ## Patterns   [core/patterns]
 
-### Literals and regex text   [core/patterns/literals]   ?  2026-11-19
+### Literals and regex text   [core/patterns/literals]   ruled 2026-11-14
+An rx literal `/.../` is full PCRE and means exactly what PCRE means; the predicate language adds only two marks inside it, the hole `${` and, under its switch, the operator `&`.
+needs: core/model/match
+- `\/` escapes the delimiter. A one-literal program is a valid program: every PCRE pattern is one (a reading: no
+  strict subset, no level beyond today's engine choice).
+- Crossings: from rx text to the expression language only by `${...}`; from the expression language to rx only by
+  `/.../`.
+- `${` always opens a hole in rx text, in every position; a literal `$` then `{` is written `$\{` (a reading).
+- `&` in rx text is all or nothing, by a module or option: ON, `&` is the operator exactly where `|` means
+  alternation, PCRE's reading standing everywhere else; OFF, `&` is PCRE's literal. `\&` and `[&]` are a literal
+  `&` under both settings. Off by default (a reading).
+- Inside a larger program a literal starts from a strict subset: `\K`, `(*ACCEPT)`, `\G`, the backtracking verbs and
+  callouts are refused until their predicate meaning is defined.
+see: core/holes/insert core/holes/no-hole
+WHOLE `a b` HOLDS, `ab` FAILS / SEARCHED `xa b` `a b`@1 / FIND-ALL `c a b ab` [`c`@0, `a b`@2] (`/a b|c/`)
 
-### Flags in a literal   [core/patterns/flags]   ?  2026-11-19
+### Flags in a literal   [core/patterns/flags]   ruled 2026-11-18
+A literal's flags are the ones it writes (`(?x)`, `(?i)`, `/.../x`), with PCRE's scope; the predicate opt-in implies none, and a literal standing on its own inherits none.
+needs: core/patterns/literals
+by: core/principles/rx-owns-flags
+- No implicit extended mode: `/foo bar/` keeps its space and `#` is literal text.
+- Built up inside another rx, an rx inherits the flags of what surrounds it: for a hole, core/holes/flags.
+- An `&` written at program level has no surrounding rx: each side keeps its own flags (a reading); so does a
+  sequence operand at program level (a reading).
+see: core/holes/flags
+WHOLE `aB` HOLDS, `AB` FAILS / SEARCHED `AB aB` `aB`@3 / FIND-ALL `ab aB Ab` [`ab`@0, `aB`@3] (`/a(?i)b/`)
 
 ### The sequence operator   [core/patterns/sequence]   ruled 2026-11-17
 `A SEQ B` is regex concatenation, A's text then B's, an assertion at a part's edge seeing its neighbours; it binds tighter than `&` and `|`.
-skeleton: yes
+needs: core/patterns/literals
+- Each operand is spliced in as one non-capturing group: a quantifier after an operand applies to all of it.
+- There is one sequence operator ("A followed by B"); juxtaposition is not used. Its mark cannot begin an operand
+  (a reading), so `A+ SEQ B` is a postfix `+` then the sequence.
+- A sequence and a hole in a pattern position are one reading (core/holes/pattern).
+- Labels across the operator: core/labels/flow. A condition as an operand: core/conditions/in-sequence.
+- The flags of an operand: core/patterns/flags.
+see: core/labels/flow core/conditions/in-sequence core/holes/pattern
+WHOLE `12` HOLDS, `x12` FAILS / SEARCHED `x12 34` `34`@4 / FIND-ALL `12 x34 56` [`12`@0, `56`@7] (`wb SEQ digits SEQ wb`, wb := `/\b/`, digits := `/\d+/`)
 
-### Alternation   [core/patterns/alternation]   ?  2026-11-19
+### Alternation   [core/patterns/alternation]   ruled 2026-11-17
+`P | Q` is regex's alternation: a condition anywhere after the choice that rejects sends the pattern into the next branch.
+needs: core/model/match core/patterns/sequence
+- `&` distributes over a `|` on its LEFT: `(B | A) & X` = `(B & X) | (A & X)`. Over a `|` on its right it does not,
+  the left side deciding which stretch is reported (core/filters/and).
+- Between conditions `c | d` is this same `|`: an alternation of two zero-width tests at one place.
+- Entering an alternation resets the labels inside it (core/labels/one-rule).
+see: core/filters/and core/labels/one-rule core/arrays/lift
+WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 (l = `2`) / FIND-ALL `25 13` [`25`@0, `13`@3] (`(B | A) & (l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-17
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` are regex's quantifiers on the operand before them; counts in braces are `repeat`; binary `+` is addition.
-see: lib/rx/repeat
-skeleton: yes
+needs: core/patterns/sequence
+see: lib/rx/repeat core/values/arithmetic
+- Each is the regex quantifier of that spelling on the operand as a whole, with regex's behaviour (`(?:X)??` tries
+  nothing first, then X's own first choice).
+- A postfix operator binds tightly, to the single operand before it (a name, a literal, a call, a labelled part, a
+  parenthesised expression); anything larger is parenthesised. Tightest first: a postfix quantifier; the sequence
+  operator; `&`; `|`.
+- The same marks with two operands are arithmetic; nothing is guessed and there is no "did you mean" message. `?` is
+  the optional, so a conditional is spelled otherwise.
+- Read longest first: `x++` is the possessive, `x+?` the lazy; after `+` or `*` a token that can begin an operand
+  makes it binary; postfix operators stack (readings).
+- On a condition a quantifier is a compile error (core/conditions/quantified).
+see: core/conditions/quantified
+WHOLE `abab` HOLDS, `abb` FAILS / SEARCHED `abbab` `ab`@0 / FIND-ALL `abab x ab` [`abab`@0, `ab`@7] (`("a" SEQ "b")+` is `(?:ab)+`)
 
-### Atomic parts   [core/patterns/atomic]   ?  2026-11-19
+### Atomic parts   [core/patterns/atomic]   ruled 2026-11-17
+An atomic part means what PCRE's atomic group means: no path inside it is retried once it has matched, while a condition written inside it is a piece of it and is tried before it commits.
+needs: core/model/match core/model/table
+- A condition outside an atomic part never re-enters it.
+- In a search an atomic part does not stop the search going on to later starts.
+- Its spelling (`atomic(...)` here) is a placeholder; the backtracking verbs and a no-re-entry sequence are ideas
+  (parked).
+see: parked/ideas/atomic
+WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(B | A) & (l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
 Labels set inside a lookahead are visible after it, read by the usual label rules, as in PCRE.
-skeleton: yes
+needs: core/model/match
+- A condition outside a lookahead never re-enters it: it reads the labels of the lookahead's first path only.
+- A negative lookahead tries every inner path before it succeeds, and its labels are never set.
+- A label set in a lookahead may lie outside the matched text.
+- A lookbehind's labels are visible the same way (a reading).
+- In a filter operand a lookaround that can reach outside the stretch is the compile error (core/filters/operand-context).
+see: core/filters/operand-context
+WHOLE `1234` HOLDS (l = `4`, f = `1`), `4321` FAILS / SEARCHED `4321 1234` `1234`@5 (l = `4`, f = `1`) / FIND-ALL `1234 4321 77` [`1234`@0] (`/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/ & (l: > $f)`)
 
 ## Labels   [core/labels]
 
 ### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-17
-A label matches every pass; a capture is PCRE's last value; `$x` and `x:` read the label.
-skeleton: yes
+A label read after a loop is the last pass's own value, unset where that pass did not set it; a capture is PCRE's carried value; `$x` and `x:` read the label.
+needs: core/model/match
+see: core/labels/one-rule
+- The LABEL is the language's: what a condition, a default, a joint, `$x`, `some` and `occurs` read. `$x` and
+  `x:` never disagree.
+- The CAPTURE is regex's: the value from the last time a group of the name was set, read inside rx text (`\k<x>`, a
+  conditional group, a callout) and by the carried-capture form, a visibly different spelling (spelling open).
+- The ARRAY form reads every setting of the name in order, the one outside the loop included; a reset contributes
+  nothing; it is its own type, compared with a single value only through some or every; its index `h[k]` counts
+  settings (a reading).
+- "All passes" is written with the condition inside the loop, on the item.
+WHOLE `9:45,10:45,45` HOLDS, `9:45,10,45` FAILS / SEARCHED `9:45,10,45 1:45,45` `1:45,45`@11 / FIND-ALL `9:45,10,45 1:45,45` [`1:45,45`@11] (`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")`)
 
-### One label rule: branchings reset   [core/labels/one-rule]   ?  2026-11-19
+### One label rule: branchings reset   [core/labels/one-rule]   ruled 2026-11-17
+A label is a name; entering a branching (an alternation, an optional, a loop) resets every label whose group lies inside it, and in a sequence the last mention wins.
+needs: core/model/match core/labels/labels-vs-captures
+- Every group of one name sets the same label; two groups of one name are not an error (unlike PCRE).
+- A group's close sets its name; a reset is a mention; nothing else resets a label.
+- A loop is a branching over its number of passes: entering it resets; zero passes leave its labels unset; the
+  empty last pass enters the body's optional, which resets.
+- An inner loop is entered anew in each outer pass, so a label two loops deep is reset there.
+- A counted repeat `{n}` with n of 2 or more is a loop; `{1}` is no branching (readings).
+- A name set before a loop and inside it does not survive the loop: the separated list `/(?<h>\d)(?:,(?<h>\d))*/`
+  on `7` leaves h unset; `/(?:(?<h>\d),)*(?<h>\d)/` gives `7`.
+- Repeated means set in a loop by its operand regex (a reading).
+- A label no match can set draws a warning, not an error (core/diagnostics/warnings).
+see: core/diagnostics/warnings
+WHOLE `3qxx` FAILS, `q3xx` HOLDS (a = `3`), `7q3xx` HOLDS (a = `3`) / SEARCHED `3qxx` FAILS / FIND-ALL `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10] (`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)`)
 
 ### Labels across composed parts   [core/labels/flow]   ruled 2026-11-17
 A label from a pattern is whatever label it surfaces; a composed pattern and a literal have the same label behaviour (the last mention wins).
-skeleton: yes
+needs: core/labels/one-rule core/patterns/sequence
+- Across the sequence operator a name both parts surface is one label, the last mention, which is not always the
+  last match.
+- Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$`
+  references it, not for existing; a part's own label is reached through a label given to the part.
+- A binding's name is not a path (`A.h` is an error where a label is referenced).
+- A chain `A & B` whose sides both surface h, itself used as a part, still surfaces h ambiguously (a reading).
+see: core/labels/paths
+WHOLE `7` HOLDS (h unset), `7,3` HOLDS (h = `3`) / SEARCHED `x7 7,3` `7`@1 (h unset) / FIND-ALL `7 7,3` [`7`@0, `7,3`@2] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`)
 
 ### Export and private labels   [core/labels/export]   ruled 2026-11-18
 A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible.
-skeleton: yes
+needs: core/labels/flow
+by: core/principles/namespace-at-reference
+1. A private label is visible only inside the binding it is written in.
+2. Inside a binding, the public labels of everything written or used there are visible, read as labels are (last
+   mention; an ambiguous reference is the error).
+3. Outside a binding, what is visible is the public labels written in its own literals and its public part labels;
+   a part's public labels are reached by path through its part label.
+4. A part label only disambiguates; it gives no access to anything private.
+5. The caller's captures are what is visible from the top-level program by these rules.
+6. A part label beginning with `_` (`[_a = A]`) is an ordinary part label inside its binding and exports nothing
+   outside it.
+7. `[_ = A]` makes none of A's labels visible anywhere outside A; A matches as before.
+- A reference inside an rx to a name that rx does not define is a compile error (core/labels/backreferences).
+- A filter operand's labels are visible like any others (a reading: visibility goes by export, not by role).
+WHOLE `2025` HOLDS, `1999` FAILS / SEARCHED `x1999 2001` `2001`@6 / FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] (`year := /(?<_v>\d{4})/ & (_v: >= 2000)`)
 
-### Part labels and paths   [core/labels/paths]   ?  2026-11-19
+### What the caller gets for an unreferenced shared label   [core/labels/export/caller-ambiguous]   open caller-ambiguous 2026-11-19
+What does the caller get for a public label two parts both set and the program never references: a compile error, the label absent, the last mention's value, or an error when read?
+needs: core/labels/export
+The reading today: not defined (an ambiguous reference is an error where it is referenced; the caller references
+nothing at compile time). Candidates: (a) a compile error; (b) h absent from the captures; (c) the last mention's
+value (the right side's); (d) the left side's value; (e) an error when read. The match is the same under every one;
+h parts: from the left `1`, from the right `2`.
+WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34` [`12`@0, `34`@3] (`A & B`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
+
+### Part labels and paths   [core/labels/paths]   ruled 2026-11-18
+A part label `[x = A]` names part A; `x.h` is the label h as part A surfaces it, and a part label mentioned more than once names its last mention where the reference is written.
+needs: core/labels/flow core/labels/export
+- `[x = A]` is the group form `(?<x>A)` read as a label; inside pattern text a named group is the same thing.
+- `x.h` is read under the one label rule inside A (a branching inside A resets `x.h`) (a reading).
+- A reference is ambiguous when the last mention of the name among the patterns it can see is not unique; the two
+  sides of `&` are not ordered, across the sequence operator the later part's is the last (a reading).
+- An ambiguity is judged where the reference is written: `A & (B & (h: ..))` reads B's h only (a reading).
+- In a value position `alt.x[1]` stays legal (a reading).
+WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)`)
+A part label used twice: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)`)
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
-skeleton: yes
+needs: core/labels/labels-vs-captures core/labels/flow
+by: core/principles/namespace-at-reference
+- A reference uses the namespace as it is defined at the point of reference, read as labels are (the last
+  mention); inside a part, the part's own names: a backreference inside a part reads the part's own group.
+- A reference inside an rx to a name that rx does not define is a compile error, never a look into the
+  surroundings; a name crosses from one rx to another only by the defining rx exporting it.
+- Under `(?J)` the backreference reads PCRE's first set group of the name.
+- A reference to a name unset at that point fails, as regex's does (a reading).
+- Through a hole: core/holes/same-name.
+see: core/holes/same-name
+WHOLE `733` HOLDS, `737` FAILS / SEARCHED `x737 733` `733`@5 / FIND-ALL `733 737 455` [`733`@0, `455`@8] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`)
 
 ### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-18
 A number names a group only when there is no ambiguity; `0` is always the entire match of the rx however it is composed.
-skeleton: yes
+needs: core/labels/one-rule core/labels/flow
+by: core/principles/operand-world
+- A number names a group of the condition's pattern only when that pattern is ONE written literal (or an `&` chain
+  with one pattern operand) and the group's name is not shared; elsewhere (a sequence, an inserted pattern, an
+  alternation of patterns, a repeat's operand, a chain of several patterns) it is the compile error "name the group".
+- Only capturing groups are numbered, plain `( )` and named alike, by their opening parenthesis; numbers are local
+  to each literal. A group's name and its number are two names of one label (naming both is the label-twice error).
+- `$1` reads label 1 as `$x` reads a name.
+- Inside a part, `0` written in that part's own condition is that part's own match (inside a loop body, the pass's)
+  (readings).
+- A number on a group whose name is shared inside one literal is refused too (a reading).
+- A number in a condition draws the numbered-label warning.
+- Relaxing a refused form later changes no existing answer.
+see: core/conditions/match-so-far core/diagnostics/warnings
+WHOLE `3:5` HOLDS, `5:3` FAILS / SEARCHED `5:3 3:5` `3:5`@4 / FIND-ALL `5:3 3:5 4:9` [`3:5`@4, `4:9`@8] (`/(\d):(\d)/ & (2: > $1)`)
+
+### A number on a group optional in a loop   [core/labels/numbers/in-loop]   open number-in-loop 2026-11-19
+On one literal whose group is optional in a loop, does a number read regex's capture, the label, or is it refused?
+needs: core/labels/numbers
+The reading today: THE LABEL (numbers and names read alike). Candidates: (a) the label; (b) regex's capture ("ONE
+WRITTEN LITERAL, with the regex meaning"); (c) refused, under "only when there is no ambiguity". They part: WHOLE
+`3;;`: the label FAILS, the capture HOLDS (group 1 keeps `3`).
+WHOLE `3;;` FAILS, `3;` HOLDS / SEARCHED `3;;` `3;`@0 / FIND-ALL `3;; 7;3;` [`3;`@0, `7;3;`@4] (`/(?:(\d)?;)*/ & (1: <5)`, the label reading)
 
 ## Conditions   [core/conditions]
 
-### The condition form   [core/conditions/form]   ?  2026-11-19
+### The condition form   [core/conditions/form]   ruled 2026-11-16
+A condition is a record `(label: S, ...)` laid against the labels of the pattern it meets; it holds when every entry's label text is in its set.
+needs: core/model/match core/labels/paths
+- An entry is `p: S`, p a label path, never an expression; `(h, m): R` is a joint entry (the tuple of the labels'
+  texts in the tuple set R); a record is the product of its entries: `(h: A, m: B)` = `((h, m): (A, B))`.
+- An entry runs to the next comma or the closing parenthesis; inside an entry `&` and `|` bind tighter than `:`.
+- Left of `:` names are labels; on the value side a bare name is a binding and a label is read `$x`.
+- A label named twice in one condition is a compile error.
+- `NOT c` is legal on a condition (core/conditions/two-valued).
+- `$x & S` is an rx (x's text or nothing), legal where an rx stands, with a warning on the form.
+- A condition keeps its parentheses (core/spellings/condition-parentheses); `P & x: S` and `[x: S]` are errors.
+- A condition is a value of its own kind: it may be bound, passed or put in an array; the record is its body.
+see: core/values/number-domain core/diagnostics/dollar-form core/spellings/condition-parentheses
+WHOLE `10:15` HOLDS, `9:15` FAILS, `10:45` FAILS / SEARCHED `9:15 10:15` `10:15`@5 / FIND-ALL `10:15 9:15 11:20` [`10:15`@0, `11:20`@11] (`/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: >= 10, m: <30)`)
 
-### Conditions are two-valued   [core/conditions/two-valued]   ?  2026-11-19
+### Conditions are two-valued   [core/conditions/two-valued]   ruled 2026-11-17
+A test on an absent label fails and the pattern tries its next path; `NOT c` holds exactly when c fails, an absent label included.
+needs: core/conditions/form core/model/match
+- `NOT c` is regex's negative lookahead around the test.
+- `c | d` between conditions is regex's one `|` (core/patterns/alternation).
+- A record `(h: S, m: T)` is the `&` of its entries, with or without NOT.
+- `NOT (h: <5)`, `(h: !<5)` (h present and in the complement set) and `P & !(P & (h: <5))` are three meanings:
+  | spelling | on `/(?<h>\d)?x/`: `x` / `3x` / `7x` (WHOLE) |
+  |---|---|
+  | `NOT (h: <5)` | HOLDS / FAILS / HOLDS |
+  | `(h: !<5)` | FAILS / FAILS / HOLDS |
+  | `P & !(P & (h: <5))` | HOLDS / FAILS / HOLDS |
+- A test that can never pass and one that can never fail each draw a warning.
+see: core/filters/complement core/diagnostics/warnings
+WHOLE `12` HOLDS (a = `2`, b = `1`), `1` FAILS / SEARCHED `12` `12`@0 (a = `2`, b = `1`) / FIND-ALL `12 1 19 3` [`12`@0] (`/(?<b>\d+)(?<a>\d)?/ & (a: <5)`)
 
 ### A condition as a sequence operand   [core/conditions/in-sequence]   ruled 2026-11-18
 A condition may be an operand of the sequence operator, tested where it stands; `&` stays beside it.
-skeleton: yes
+needs: core/conditions/form core/patterns/sequence
+- Zero width at its point, reading the labels as they stand there (core/conditions/pass-start-read).
+- Written last, the sequenced condition and `&` give the same answers; earlier, it is tested where it stands (in a
+  loop, each pass).
+- A condition written inside a loop, on the item, is a piece of every pass: that is how "every pass" is written.
+WHOLE `3;4;` HOLDS, `7;3;` FAILS / SEARCHED `7;3;` `3;`@2 / FIND-ALL `3;7;4; 2;` [`3;`@0, `4;`@4, `2;`@7] (`(/(?<h>\d)/ SEQ (h: <5) SEQ ";")+`)
 
 ### A quantifier on a condition   [core/conditions/quantified]   ruled 2026-11-18
 A postfix quantifier on a condition is a compile error.
@@ -182,30 +451,81 @@ modes: n/a (a compile error)
 
 ### The match so far   [core/conditions/match-so-far]   ruled 2026-11-19
 In a condition standing as a sequence operand, `0` names the match so far: the text from the start of the rx it is written in to its point.
+needs: core/conditions/in-sequence core/labels/numbers
 by: core/principles/composed-at-point
-skeleton: yes
+- After a complete pattern (`A & (0: S)`) the match so far is the entire match; a condition written last in a
+  sequence reads the entire match.
+- In `${A & (0: S)}` the `0` is only A; a bare condition in a hole sees the surrounding rx (core/holes/bare-condition).
+- Inside a loop the match so far starts at the rx's start, not the pass's (a reading).
+see: core/holes/bare-condition
+WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`)
 
 ### Labels as they stand   [core/conditions/pass-start-read]   ruled 2026-11-17
 A condition reads the labels as they stand where it is written: after its group the current pass's, before it the previous pass's.
-skeleton: yes
+needs: core/conditions/in-sequence core/labels/one-rule
+- In the first pass, before its group, the label is unset. No "a pass begins" rule is added.
+- Its use: comparing an item with its predecessor.
+- A bare condition after the pattern reads the last pass's own value (core/labels/labels-vs-captures).
+WHOLE `3;4;7;` HOLDS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL `3;7;4; 9;1;` [`3;7;`@0, `4;`@4, ``@6, `9;`@7, `1;`@9, ``@11] (`/(?:(?=(?<n>\d))${c}(?<h>\d);)*/`, c := `NOT (h: /\d/) | (n: >= $h)`)
 
-### Defaults and absent labels   [core/conditions/defaults]   ?  2026-11-19
+### Defaults and absent labels   [core/conditions/defaults]   ruled 2026-11-16
+A default `h = v` written in a test stands in for an absent h in that one test only; `$h` reads the real label.
+needs: core/conditions/two-valued
+- A default is one string; a default of several strings is a compile error.
+- Two tests may give one label different defaults.
+- A default outside the test's set reads exactly as no default at every polarity.
+- "Present and not under 5" is `(h: !<5)`, or a default chosen outside the set: `(h = "x": !<5)`.
+- A default's regex model is PCRE's conditional group on the label, `(?(<h>)test-h|test-v)` (a model, not the mechanism).
+WHOLE `x` HOLDS, `3x` FAILS, `7x` HOLDS / SEARCHED `3x x` `x`@1 / FIND-ALL `7x 3x x` [`7x`@0, `x`@4, `x`@6] (`/(?<h>\d)?x/ & (h = "x": !<5)`)
 
 ## Filters   [core/filters]
 
-### The `&` operator   [core/filters/and]   ?  2026-11-19
+### The `&` operator   [core/filters/and]   ruled 2026-11-17
+`P & Q` keeps the paths of P whose stretch Q also matches whole, Q matched against the stretch as if it were the whole text; P's paths are tried first, the left side deciding.
+needs: core/model/match core/model/modes
+by: core/principles/left-decides core/principles/operand-world
+- Both sides match the same stretch whole; where it sits is decided by what surrounds the `&`.
+- `^`, `$`, `\A`, `\z`, `\Z` in an operand mean the stretch's ends; at the operand's edges they are redundant (a
+  warning).
+- `&` is symmetric for whether a program holds and left to right for what is reported: P's first path with every
+  path of Q, then P's next; so the order decides which labels and, with a lazy operand, which stretch are reported.
+- `A & B` holds exactly when `A & (0: B)` holds, on the same stretch; `&` also joins B's labels.
+- A condition written in an `&` chain stands after every pattern operand of that chain: `(a: "1") & P` = `P & (a: "1")`.
+- A hole inside an operand is filled first, then the operand judged (core/holes/in-filter).
+see: core/holes/in-filter
+WHOLE `1` HOLDS, `12` FAILS / SEARCHED `a12 1` `1`@1 / FIND-ALL `12 3` [`1`@0, `2`@1, `3`@3] (`/\d+/ & /^\d$/`)
 
 ### What a filter operand may contain   [core/filters/operand-context]   ruled 2026-11-17
 In a filter operand, any piece that might look outside the matched text is a compile error.
 by: core/principles/conservative-first
 modes: n/a (a compile error)
 
-### Complement   [core/filters/complement]   ?  2026-11-19
+### Complement   [core/filters/complement]   ruled 2026-11-17
+`!B` holds on a stretch where no path of B matches it whole; it takes a pattern or a set and is filter-only, its labels never visible outside it.
+needs: core/filters/and core/conditions/two-valued
+- `A & !B` is pattern difference: the paths of A whose stretch B does not match whole. `!B & A` = `A & !B`.
+- After `label:` the label's text is its left operand (`(x: !B)`); on a set, the complement over every text.
+- `!<200` and `>=200` differ on a target with non-canonical numerals.
+- `!` in rx text keeps PCRE's meaning (`/!foo/` matches `!foo`).
+- A complement inside an `occurrences` argument rejects a path like any piece; the loop tries the next (a reading).
+- Where it may stand: core/filters/kinds.
+see: core/filters/kinds lib/sets/anything
+WHOLE `123` HOLDS, `712` FAILS / SEARCHED `a7 12` `12`@3 / FIND-ALL `7 12 77 37` [`12`@2, `37`@8] (`/\d+/ & !/7\d*/`)
 
 ### Can match, can filter   [core/filters/kinds]   ruled 2026-11-18
 An rx can match when it produces a match by itself and can filter when it judges a stretch as its whole world; the error is at the use that needs the other kind.
+needs: core/filters/and core/filters/complement
 by: core/principles/match-and-filter
-skeleton: yes
+- A complement is filter-only: it may be bound, named, passed around and combined with other complements, and used
+  as an operand of `&` in a chain that has at least one positive pattern.
+- An `&` chain can match when every operand can filter and at least one can match.
+- Any use that needs it to produce a match by itself is a compile error at that use: a lone complement as a program
+  in every mode, a sequence operand, a pattern hole, an `occurrences` argument.
+- An rx with an outward-looking edge assertion can match and not filter (core/filters/operand-context).
+- The any-text pattern `anything` is provided to write beside a complement (lib/sets/anything).
+- The place table's kind column: core/model/places.
+see: lib/sets/anything
+WHOLE `123` HOLDS, `812` FAILS / SEARCHED `7 8 12` `12`@4 / FIND-ALL `12 7 8 93` [`12`@0, `93`@7] (`/\d+/ & neither`, neither := `not /7\d*/ & not /8\d*/`)
 
 ## Values   [core/values]
 

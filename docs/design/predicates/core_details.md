@@ -254,52 +254,121 @@ history:
 - 2026-11-19: a DIRECTION: no change to the label rules now.
 
 ## core/model/match — What a match is
-slugs: pass-and joint-last-pass empty-pass outer-pass-forms
+slugs:
 rulings:
+- 2026-11-17 "branch-scope: yes. I like that. Also, that makes me like 9:30 choice from yesterday more as well because if we have atomic, you can get the alternative I mentioned." (record: "2026-11-17 OWNER RULING — branch-scope: reading")
+- 2026-11-17 "However, it is in line with regex behavior so I do like it and think it should be the general behavior" (record: "2026-11-17 OWNER, on the model after branch-scope")
+- 2026-11-16 "row-is-match: yes I agree." (record: "2026-11-16 OWNER RULING — row-is-match")
+- 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
+- 2026-11-17 "Then from the perspective of the condition, an rx is a black box that exposes labels" (record: "2026-11-17 OWNER RULING — nested-pass: the outermost view")
 rejected:
+- the SQL model, an enclosing condition that does not make the inner pattern reconsider — by owner — "this is a break from the SQL model we were using ... However, it is in line with regex behavior so I do like it" (record: "2026-11-17 OWNER, on the model after branch-scope").
+- three-valued tests (an absent label UNKNOWN) — by owner ruling — regex-settles (1), a test on an absent label fails.
 readings:
-evidence:
-history: not converted; the draft §R.1 head and R.1.1.
+- a loop's passes include PCRE's trailing empty pass (by the default of exception-rule; his observation "makes sense as the entire rx is optional", not a ruling) — SUPPORTED (the draft R.1.7 (4a): the literal loop, the hole loop and `occurrences` agree with libpcre2).
+evidence: preddoc3a_model.py MATCH (the record's own example: WHOLE `123` a = `1`, b = `23`; the python `re` lowering `1\d+` gives the same spans in all three modes).
+history:
+- 2026-11-16: row-is-match; a row was a row of the pass table before it.
+- 2026-11-17: branch-scope (reading (ii)) made a condition a piece of the pattern; the SQL reading went; regex-settles closed the five points; the nested-pass addendum gave the black-box principle.
+- the slugs pass-and and joint-last-pass moved to core/labels/labels-vs-captures, empty-pass to core/labels/one-rule, outer-pass-forms to core/model/places/outermost-view (lane preddoc3a): each is answered there.
 
 ## core/model/modes — The three modes
-slugs: whole-text atomic-search empty-search-error caller-ambiguous
+slugs: whole-text empty-search-error
 rulings:
+- 2026-11-17 "exception-rule: everything that looks like regex should behave like regex unless we explicitly allow." (record: "2026-11-17 OWNER RULING — exception-rule")
+- 2026-11-17 "empty-search-error: warning" (record: "2026-11-17 OWNER RULING — empty-search-error: a warning")
+- 2026-11-17 "Whole text: adopt it if it's legal. Not sure about the "fail" part" (record: "2026-11-17 OWNER RULING — whole-text: adopted if legal")
 rejected:
+- a compile error for a searched pattern that can match the empty text (the draft's) — by owner ruling — empty-search-error, "warning".
+- a `fail` branch for the whole-text check — by owner — "Not sure about the "fail" part"; the check needs none.
 readings:
-evidence:
-history: not converted; the draft R.1.1, R.1.11, §R.5.
+- FIND-ALL is PCRE2's global loop, the non-empty retry after an empty report included (the draft's R.1.11, by the default of exception-rule) — SUPPORTED (preddoc3a_model.py: every FIND-ALL line of the five sections agrees with python `re.finditer` where a lowering exists; PSR shows the empty reports).
+- whole-text is legal with the ruled pieces (`J & C & occurrences(M)`; the condition "adopt it if it's legal") — the draft's R.1.11 writes it with ruled pieces only — UNTESTED here (no run of `occurrences`; see lib/search/occurrences).
+evidence: preddoc3a_model.py AND (the example line).
+history:
+- 2026-11-17: whole-text UN-PARKED and adopted if legal; empty-search-error ruled a warning.
+- the slug atomic-search moved to core/patterns/atomic, caller-ambiguous to core/labels/export/caller-ambiguous (lane preddoc3a).
 
 ## core/model/table — The table of paths and its order
-slugs: pass-table group-truth hit-list value-point
+slugs: pass-table hit-list value-point
+rulings:
+rejected:
+- the pass table as the meaning of a bare condition (pass-table) — by owner ruling — last-pass-default and after-loop-read; a pass's own labels survive only inside the group questions (core/model/table/group-truth).
+readings:
+- the table, its order and a row per labelling (the manager's restatement of branch-scope and row-is-match) — SUPPORTED (preddoc3a_model.py TABLE: the second branch is reached when the first one's label is rejected; the lowering `3\d|\d3` agrees).
+- a label takes its value at its group's close, a condition placed after the group reads it (value-point, the manager's reading, closed by entailment) — SUPPORTED (pass-start-read's run, preddoc3a_model.py PSR).
+- an atomic part takes its first row before an outside condition filters (regex-settles (5)) — SUPPORTED (preddoc3a_model.py ATOM).
+- a filtered argument's hits are its own rows (hit-list; regex-settles (4), the one-pattern model) — UNTESTED here (lib/search/hits).
+evidence: preddoc3a_model.py TABLE; the example is invented (no printed answer).
+history:
+- the draft R.1.2; the pass table was the model's centre before last-pass-default (2026-11-17).
+
+## core/model/table/group-truth — Group questions over the pass table
+slugs: group-truth
 rulings:
 rejected:
 readings:
-evidence:
-history: not converted; the draft R.1.2.
+- (a) `NOT some(c)` = `occurs.none(c)` — SUPPORTED by the draft's E12 (0 / 0 / 0), not re-run here.
+- (b) `occurs.none(NOT c)` differs from both (21 / 201 / 301 of 364, E12) — not re-run here.
+evidence: the draft §R.8 row group-truth / pass-table (E12).
+history:
+- new piece (lane preddoc3a): the slug was on core/model/table, whose statement does not answer it; the draft keeps it asked ("the 11-18 rulings do not entail an answer").
 
 ## core/model/places — The place table
-slugs: nested-pass
+slugs:
 rulings:
 rejected:
 readings:
+- the table (the draft R.1.0's, restated by the manager): each row follows from the piece it names — UNTESTED as a table; each place's piece carries its own run.
+- a place with no row is not a place a part can stand in — UNTESTED (a statement of scope).
 evidence:
-history: not converted; the draft R.1.0 (the place table). `predicates_future.md` items 16 and 22 are this piece (in the documents, not parked).
+history:
+- the draft R.1.0 (the place table). `predicates_future.md` items 16 and 22 are this piece (in the documents, not parked).
+- the outermost view split off as core/model/places/outermost-view (lane preddoc3a): it is ruled, the table is not.
+
+## core/model/places/outermost-view — The outermost view
+slugs: nested-pass outer-pass-forms
+rulings:
+- 2026-11-17 "The view of the labels on an rx is the outermost view. To get inner views you nest the labels and condition" (record: "2026-11-17 OWNER RULING — nested-pass: the outermost view")
+rejected:
+- the innermost or per-inner-pass view for a bare condition — by owner ruling — nested-pass.
+readings:
+- pass tests on a label two loops deep range over the outermost loop's passes (outer-pass-forms; told, his confirmation "this is how i expected", not asked as a ruling) — SUPPORTED by the draft R.1.7 (4b), not re-run here.
+evidence: the draft R.1.7 (4b): `/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)` on `3;,,` and `3;;,` FAIL.
+history:
+- new piece (lane preddoc3a), split from core/model/places.
 
 ## core/patterns/literals — Literals and regex text
 slugs:
 rulings:
+- 2026-11-14 "I agree... I was mostly thinking about multi line predicate syntax" (record: "2026-11-14 RULINGS on predicates_draft.md §13")
+- 2026-11-15 "agree. Limited to where | is used to mean alternation. Also, \& should work as escape. Why not?" (record: "2026-11-15 RULINGS — `anchored` has exact ends; which `&` is the operator in rx text")
 rejected:
+- implicit extended mode under the predicate opt-in — by owner ruling — C2.
+- `&` an operator in rx text only right before a `${` hole — by owner — "5. no. I thought we were going to add & to pcre but conditionally with a module or option? Also, fully yes or no." (the record's 2026-11-15 entry "the five open items", a bold opener inside a paragraph, so not a citable title; ruled there: `&` in rx text is all or nothing, by a module or option).
 readings:
-evidence:
-history: not converted; the draft §11.
+- a one-literal program is today's PCRE pattern, no strict subset (a lean of review OWN-14, the draft §11) — UNTESTED.
+- the strict subset inside a larger program (`\K`, `(*ACCEPT)`, `\G`, verbs, callouts refused) — the draft §11 STATUS: "Literal leanings incl. the strict subset: RULED" on an informal 2026-11-13 entry ("I like your suggestions") that has no title of its own — UNTESTED.
+- `&` OFF by default (the manager's lean, the draft §13 O60) — UNTESTED.
+- `${` opens a hole in every position, `$\{` is a literal (the draft §11) — UNTESTED.
+evidence: preddoc3a_model.py LIT (`/a b|c/` keeps its space; python `re` agrees).
+history:
+- 2026-11-14: C2 superseded "the predicate opt-in implies x-mode".
+- 2026-11-15: `&` in rx text all or nothing; which `&` under ON.
 
 ## core/patterns/flags — Flags in a literal
 slugs:
 rulings:
+- 2026-11-14 "I agree... I was mostly thinking about multi line predicate syntax" (record: "2026-11-14 RULINGS on predicates_draft.md §13")
+- 2026-11-18 "a hole takes the flags in force at the hole. each regex literal has its own flags." (record: "2026-11-18 OWNER RULING — hole-flags: a hole takes the flags in force at the hole; each regex literal has its own flags; and his question, do flags propagate down")
+- 2026-11-18 "flags-propagate: yes" (record: "2026-11-18 OWNER RULING — flags-propagate: yes")
 rejected:
 readings:
-evidence:
-history: not converted; the draft §11 and R.1.15; flags at a hole are core/holes/flags.
+- an `&` written at program level keeps each side's own flags; flags-in-filter as "reach" (the manager's reading after "by "flags propagate" i thought we decided that rx inherits the flags of the surrounding rx", a recollection) — UNTESTED here (core/holes/flags carries the hole case).
+- a sequence operand at program level has no surrounding rx and starts from its own flags (the same reading) — UNTESTED.
+evidence: preddoc3a_model.py FLAGS (`/a(?i)b/`: the flag applies from where it is written; python `re` `a(?i:b)` agrees).
+history:
+- 2026-11-18: hole-flags and flags-propagate; 2026-11-19: flags-scope (which flags an inserted rx inherits) is core/holes/flags.
 
 ## core/patterns/sequence — The sequence operator
 slugs: sequence-operator sequence-precedence sequence-reading rx-module
@@ -307,131 +376,250 @@ rulings:
 - 2026-11-17 "sequence-reading: splice." (record: "2026-11-17 OWNER RULING — sequence-reading: splice; and the hole reopened")
 - 2026-11-17 "sequence-precedence: binds tighter than & and | / sequence-operator: is there a reason why not? I expect rx construction and concatenation is common enough there." (record: "2026-11-17 OWNER RULINGS — the rx module: sequence-precedence and sequence-operator")
 rejected:
+- juxtaposition as the sequence (`A B`) — by owner — "A B isn't legal so its the addition form" (core/patterns/quantifiers).
+- a string paste of the operands — by owner ruling — sequence-reading, splice.
 readings:
-evidence: PART RX of predspec25.
-history: skeleton; the draft R.1.14. `predicates_future.md` item 21 (the rx module) is this section's (in the language, not parked).
+- the sequence mark cannot begin an operand (the draft R.1.14) — UNTESTED.
+evidence: preddoc3a_model.py SEQ (the draft's PART RX1 line; `\b\d+\b` agrees; the printed answers reproduced). PART RX of predspec25.
+history:
+- the draft R.1.14. `predicates_future.md` item 21 (the rx module) is this section's (in the language, not parked).
 
 ## core/patterns/alternation — Alternation
 slugs:
 rulings:
+- 2026-11-17 "branch-scope: yes. I like that." (record: "2026-11-17 OWNER RULING — branch-scope: reading")
+- 2026-11-17 "join-order: left side decides. That's always how I thought of it." (record: "2026-11-17 OWNER RULING — join-order: the left side decides")
 rejected:
+- reading (i) of branch-scope: a condition after a `|` judges only the branch the pattern chose first — by owner ruling — branch-scope (ii).
 readings:
-evidence:
-history: not converted; the draft R.1.4.
+- `c | d` between conditions is the one `|` (the draft R.1.5; condition-or deleted as a separate construct) — SUPPORTED by the regex model (an alternation of two zero-width tests).
+evidence: preddoc3a_model.py ALT (the draft's PART A B1 line; printed answers reproduced; `\d\d` agrees).
+history:
+- 2026-11-17: branch-scope (ii); join-order gave the distribution over a `|` on the left.
 
 ## core/patterns/quantifiers — Postfix quantifier operators
 slugs:
 rulings:
+- 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
 - 2026-11-17 "lets include the possessive forms but the brace counts are repeat. "did you mean A+ followed by B" A B isn't legal so its the addition form." (record: "2026-11-17 OWNER RULING — quantifier operators")
+- 2026-11-17 "also, operator precedence. i'm thinking fairly tight with parenthesis otherwise. right?" (record: "2026-11-17 OWNER RULING — quantifier operators")
 rejected:
+- a "did you mean" message for `A+ B` — by owner ruling — "A B isn't legal so its the addition form".
+- brace counts as postfix operators — by owner ruling — "the brace counts are repeat".
 readings:
-evidence: PARTS RX7-RX9 of predspec25.
-history: skeleton; the draft R.1.14 (THE POSTFIX QUANTIFIER OPERATORS).
+- the longest-first token reading, binary after `+`/`*` when an operand follows, stacking (the draft R.1.14) — UNTESTED.
+evidence: preddoc3a_model.py QUANT (the draft's PART RX8 line; printed answers reproduced; `(?:ab)+` agrees); sabotage s8 (a text paste) caught. PARTS RX7-RX9 of predspec25.
+history:
+- the draft R.1.14 (THE POSTFIX QUANTIFIER OPERATORS).
 
 ## core/patterns/atomic — Atomic parts
-slugs:
+slugs: atomic-search
 rulings:
+- 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
+- 2026-11-17 "Atomic as used by say atomic() would provide pcre behavior." (record: "2026-11-17 OWNER on atomic-search")
 rejected:
+- an atomic pattern stopping the search at later starts (his item-14 reading "returns nothing") — by owner — atomic-search: "what I was looking for was more akin to (*prune) or similar".
 readings:
-evidence:
-history: not converted; the draft R.1.4; its spelling is parked/ideas/atomic.
+evidence: preddoc3a_model.py ATOM (the draft's B8 / V17 line; printed answers reproduced; `1\d` agrees); sabotage s7 caught.
+history:
+- 2026-11-17: regex-settles (5); atomic-search moved the other reading to the backtracking verbs (parked/ideas/atomic). The slug came from core/model/modes (lane preddoc3a).
 
 ## core/patterns/lookaround — Lookaround
 slugs: lookahead-labels
 rulings:
 - 2026-11-18 "lookahead-labels: agree" (record: "2026-11-18 OWNER RULING — lookahead-labels: visible, as in PCRE")
+- 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 rejected:
 readings:
-evidence: PART LA of predspec26.
-history: skeleton; the draft R.1.0 lookaround row.
+- a lookbehind's labels are visible the same way (the manager's) — UNTESTED.
+evidence: preddoc3a_model.py LOOK (the draft's PART LA line; printed answers reproduced; no plain-`re` lowering: the condition compares two labels); sabotage s6 caught. PART LA of predspec26.
+history:
+- the draft R.1.0 lookaround row.
 
 ## core/labels/labels-vs-captures — Labels and captures
-slugs: pass-own-labels
+slugs: pass-own-labels pass-and joint-last-pass
 rulings:
-- 2026-11-17 the entry "labels match every pass, captures match the last" (record: "2026-11-17 OWNER RULING — labels match every pass, captures match the last")
+- 2026-11-17 "after-loop-read: ok I see it. Last pass own label makes sense" (record: "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label")
+- 2026-11-17 "I do want that. It makes sense and frankly pcre is wrong on this. I agree but! We need a way to get the pcre behavior even if ugly" (record: "2026-11-17 OWNER RULING — what an unqualified `$x` reads")
+- 2026-11-18 "backref-label: capture" (record: "2026-11-18 OWNER RULING — backref-label: capture")
 rejected:
+- "labels match every pass, captures match the last" for a bare condition — by owner — reconsidered within minutes: "what you should do is assign the condition inside the loop to get the all behavior" (record: "2026-11-17 OWNER, reconsidering the entry above within minutes"); closed by after-loop-read.
+- regex's carried value for a bare looped label (last-pass-default: regex) — by owner ruling — after-loop-read and the `$x` ruling ("frankly pcre is wrong on this"); the carried value stays reachable as the capture.
+- a compile error for a bare condition after a loop (the manager's lean) — by owner ruling — after-loop-read.
+- pass-and (a Kleene AND over passes) and joint-last-pass — dissolved by the two-valued model and after-loop-read (a joint reads the last pass's own tuple).
 readings:
-evidence:
-history: skeleton; the draft R.1.7; his words not yet copied here (to be converted).
+- the array form's index counts settings (the draft R.1.7) — UNTESTED.
+evidence: preddoc3a_model.py CAPT, CAPT2 (the draft's PART L: `\k<m>` reads the capture `45` while the label m is unset; python `re` agrees on the regex half); sabotage s9 caught.
+history:
+- 2026-11-17: last-pass-default (regex), then "labels match every pass", reconsidered within minutes, then after-loop-read and the `$x` ruling (the settled state of the evening).
+- 2026-11-18: backref-label (capture).
+- the skeleton's statement "A label matches every pass; a capture is PCRE's last value" (the superseded entry) replaced by the after-loop-read statement (lane preddoc3a).
 
 ## core/labels/one-rule — One label rule: branchings reset
-slugs: bare-loop-label before-and-inside array-slot shared-label repeated-means unsettable-label
+slugs: bare-loop-label before-and-inside array-slot shared-label repeated-means unsettable-label empty-pass
 rulings:
+- 2026-11-17 "Yes. Let's keep it" (record: "2026-11-17 OWNER RULING — branchings reset the labels inside them")
+- 2026-11-17 "array-slot: only what was set. As you say, someone could get the empty values." (record: "2026-11-17 OWNER RULING — array-slot: only what was set")
+- 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule")
 rejected:
+- one label name on both sides of `&` an error for existing (shared-label: "keep the compiler error") — by owner — revised by label-flow: an ambiguous REFERENCE is the error (core/labels/flow).
+- empty places for resets in the array form — by owner ruling — array-slot.
+- before-and-inside as its own rule — dissolved by the one rule.
+- bare-loop-label "labels match every pass" — by owner — reconsidered (core/labels/labels-vs-captures).
 readings:
-evidence:
-history: not converted; the draft R.1.7.
+- a counted repeat `{n}` with n >= 2 is a loop, `{1}` no branching (the manager's) — UNTESTED.
+- repeated means set in a loop by its operand regex (the manager's ruling, owner told) — SUPPORTED by the draft's E11 (0 / 0 / 0 of 364 against set-once).
+- the empty last pass is a pass (empty-pass; told, his observation) — SUPPORTED by the draft R.1.7 (4a).
+evidence: preddoc3a_model.py ONE (the table he was shown with after-loop-read: `3qxx` FAILS, `q3xx` and `7q3xx` HOLD a = `3`; printed answers reproduced); sabotage s2 caught.
+history:
+- 2026-11-17: the one label rule ("branchings reset"), array-slot, shared-label (then revised by label-flow); polarity-rule made the unsettable label a warning.
+- the slug empty-pass came from core/model/match (lane preddoc3a).
 
 ## core/labels/flow — Labels across composed parts
 slugs: label-flow label-mark
 rulings:
 - 2026-11-17 "a. yes. a label from an rx is whatever label is surfaced by that rx. b. thats a good point but list here is one rx so exposes one h. i adjust my rules to be such that a compose and a literal rx have the same label behavior" (record: "2026-11-17 OWNER RULING — label-flow")
+- 2026-11-17 "label-flow: 1. propose: it is an error to ambigously reference a label. so if A & B & (h: blah) and A and B both use label h, it is an error. this is different than "its an error for labels of the same name to exist at all in A & B"" (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error")
 rejected:
+- across the sequence operator a name both parts set is ambiguous (point 2 of his proposal) — by owner — withdrawn by his adjustment ("a compose and a literal rx have the same label behavior").
 readings:
-evidence:
-history: skeleton; the draft R.1.13.
+- a chain `A & B` with h on both sides, used as a part, still surfaces h ambiguously (the manager's) — UNTESTED.
+- label-mark (the single labelling form the rx module offers) is closed by entailment; its spelling stays in core/spellings — not a run question.
+evidence: preddoc3a_model.py FLOW (the draft R.1.13 (3)(i) line; printed answers reproduced; `\d(?:,\d)?` agrees on the spans).
+history:
+- 2026-11-17: the proposal, then the ruling with his adjustment; shared-label's error revised to the reference.
 
 ## core/labels/export — Export and private labels
 slugs: export-rule export-scope free-name
 rulings:
 - 2026-11-18 "export-rule: Agee and add [_a = A] is a private reference that wouldn't export at all" (record: "2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels")
+- 2026-11-18 "I meant it wouldn't export outside the binding. To close all exports use [_ = A]" (record: "2026-11-18 OWNER, clarifying export-rule's sixth statement, and adding a form: `[_ = A]` closes all exports")
+- 2026-11-18 "backref-across-parts: I agree with error. It is like if a function in C were defined then references a variable it doesn't have defined so it looks up the call stack to the previous definition. Catastrophic. The rx should export the group." (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error")
+rejected:
+- "a filter can never produce captures" (his lean, filter-captures) — closed by export-rule: visibility goes by export, not by the operand's role.
+- an explicit export spelling — by owner ruling — export-rule: the `_` prefix decides.
+readings:
+- a filter operand's labels are visible like any others (the draft R.1.13, filter-captures not adopted) — UNTESTED.
+- his remark of 2026-11-19 ("it might be more that private labels are only visible in a binding scope") — already ruled as statement 1 (recorded as a recollection, nothing new).
+evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers reproduced; `[2-9]\d{3}` agrees). PARTS TA, TB of predspec291.
+history:
+- 2026-11-18: the proposal (labels seen only if exported), the export-scope discussion, the ruling, the clarification of statement 6 and `[_ = A]`.
+
+## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared label
+slugs: caller-ambiguous
+rulings:
 rejected:
 readings:
-evidence: PARTS TA, TB of predspec291.
-history: skeleton; the draft R.1.13 (EXPORT AND VISIBILITY).
+- the record's export-rule discussion: "a name two parts both make public is an ambiguous reference for the caller as for the program", pending a ruling (the manager's reading of "The caller's captures: agree") — favours (a) or (e); not ruled.
+evidence: preddoc3a_model.py CALL (the spans; the draft's PART R47 B13 printed the same spans under every candidate, reproduced).
+history:
+- new piece (lane preddoc3a): the slug was on core/model/modes; the draft R.1.13 leaves it "NOT DEFINED".
 
 ## core/labels/paths — Part labels and paths
 slugs: path-and-ambiguity
 rulings:
+- 2026-11-18 "so I agree the last reference" (record: "2026-11-18 OWNER on path-and-ambiguity: the part label used twice is RULED; the read-out is open")
+- 2026-11-18 "Naming [x = A] only disambiguates scope, it doesn't give additional access" (record: "2026-11-18 OWNER, export-scope discussion, third exchange")
+- 2026-11-17 "label-flow: 1. propose: it is an error to ambigously reference a label." (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error")
 rejected:
+- a part label used twice is an error — by owner — "I mean, harmless I guess ... so I agree the last reference".
 readings:
-evidence:
-history: not converted; the draft R.1.0 PART LABEL row, R.1.13.
+- `x.h` follows the one label rule inside A; an ambiguity judged where the reference is written; `alt.x[1]` legal (the draft R.1.13) — UNTESTED.
+- the read-out corner (what a caller gets) — core/labels/export/caller-ambiguous.
+evidence: preddoc3a_model.py PATH (the draft's PART LF line; printed answers reproduced; `[01]\d` agrees) and PATH2 (his corner 1: the last mention); sabotage s18 caught.
+history:
+- 2026-11-18: corner 1 ruled; corner 2 (the read-out) went to filter-captures, export-scope, export-rule.
 
 ## core/labels/backreferences — Backreferences
 slugs: backref-label backref-across-parts same-name-twice
 rulings:
 - 2026-11-18 "backref-label: capture" (record: "2026-11-18 OWNER RULING — backref-label: capture")
 - 2026-11-18 "same-name-twice: i agree with your lean." (record: "2026-11-18 OWNER RULING — same-name-twice: an error at the backreference unless `(?J)`")
+- 2026-11-18 "backref-across-parts: I agree but also, a reference should use the namespace as it is defined at the point of reference" (record: "2026-11-18 OWNER RULING — backref-across-parts: the part's own group; a reference uses the namespace at its point")
+- 2026-11-18 "backref-across-parts: which is to say, it should be the last reference as labels" (record: "2026-11-18 OWNER, clarifying backref-across-parts — a backreference reads as labels do: the last mention at its point")
+- 2026-11-18 "backref-across-parts: I agree with error." (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error")
 rejected:
+- a backreference that reads the label (reset on entry) — by owner ruling — backref-label: capture.
+- the written-out regex's reading (one namespace for the whole composition) — by owner ruling — backref-across-parts.
 readings:
-evidence:
-history: skeleton; the draft R.1.13, R.1.15.
+- a reference to a name unset at its point fails, as regex's does (the manager's) — UNTESTED.
+evidence: preddoc3a_model.py BREF (the draft's PART REF REF2 line; printed answers reproduced; `\d(\d)\1` agrees); sabotage s10 caught.
+history:
+- 2026-11-18: backref-across-parts, its clarification, free-name, backref-label, same-name-twice.
 
 ## core/labels/numbers — Numbers name groups only without ambiguity
 slugs: number-names zero-place numbered-label-warning
 rulings:
 - 2026-11-18 "number-names: exactly. Only when there is no ambiguity." (record: "2026-11-18 OWNER RULING — number-names")
 - 2026-11-18 "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is composed." (record: "2026-11-18 OWNER RULING, addendum to number-names — zero is the exception")
+- 2026-11-17 "For A & B: from the perspective of B, the subject is now whatever A matched. There is no outside subject (unless we allow context, etc). That's its whole world. So all numbers are labels of groups in that world." (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
+- 2026-11-17 "Also, not recommended to use group numbers as it's confusing on bound values you can't see" (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 rejected:
 readings:
-evidence: PART N of predspec26.
-history: skeleton; the draft R.1.13 (NUMBERS).
+- a number on a group whose name is shared inside one literal is refused (the draft R.1.13) — UNTESTED.
+- the numbered-label warning (the manager's proposal from his "not recommended", accepted: record "2026-11-17 OWNER — the numbered-label warning accepted") — the wording is core/diagnostics'.
+evidence: preddoc3a_model.py NUM (the draft's PART NUM (2) line; printed answers reproduced).
+history:
+- 2026-11-17: zero-place, label numbers tried, the warning accepted; 2026-11-18: number-names and its addendum.
+
+## core/labels/numbers/in-loop — A number on a group optional in a loop
+slugs: number-in-loop
+rulings:
+rejected:
+readings:
+- (a) the label (the draft R.1.13's reading) — the run: preddoc3a_model.py NUML, the printed LABEL answers reproduced.
+- (b) the capture — NUML2: WHOLE `3;;` HOLDS under python `re`; label vs capture 8 / 33 / 33 of 364 (the draft's PART R47 A3, not re-run).
+evidence: preddoc3a_model.py NUML, NUML2.
+history:
+- new piece (lane preddoc3a): the slug was on core/conditions/match-so-far, whose ruled statement does not answer it.
 
 ## core/conditions/form — The condition form
 slugs: condition-not condition-or dollar-condition label-twice-warn
 rulings:
+- 2026-11-16 "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." (record: "2026-11-16 OWNER RULING — record-is-product: yes")
+- 2026-11-16 "label-twice: agree an error. And that means it's also unofficially parked in case some other meaning becomes valuable" (record: "2026-11-16 OWNER RULING — label-twice: an error")
+- 2026-11-17 "Agree with all three." (record: "2026-11-17 OWNER RULING — the three remaining error-or-warning candidates")
+- 2026-11-16 "colon-scope: yes with refinement: (a, b = c): ... the 'c' is a binding et al" (record: "2026-11-16 OWNER RULING — colon-scope: yes, with a refinement for a default")
+- 2026-11-16 "condition-not : yes allow not" (record: "2026-11-16 OWNER RULING — condition-not: allowed")
+- 2026-11-14 "is somewhat structural because it's combined with the comma. & binds tighter" (record: "2026-11-14 RULING — C22, condition binding")
 rejected:
+- the diagonal reading of a label named twice — by owner ruling — label-twice ("unofficially parked").
+- `|` between conditions as a Kleene OR (condition-or) — deleted with the three-valued model (regex-settles).
 readings:
-evidence:
-history: not converted; the draft §4.1, R.1.4.
+- a condition is a value of its own kind (bound, passed, put in an array) (the draft §4.1) — UNTESTED.
+- `P & x: S` and `[x: S]` are errors; parentheses kept (the manager's call on "a condition without its parentheses") — see core/spellings/condition-parentheses.
+evidence: preddoc3a_model.py FORM (invented; the lowering `[1-9]\d:[1-2]\d` agrees).
+history:
+- 2026-11-14 C22; 2026-11-16 colon-scope, record-is-product, label-twice, condition-not; 2026-11-17 the three candidates (label-twice-warn kept the error).
+- 2026-11-19: dollar-diagnostic answered dollar-condition (the form `$x & S` stays legal and gets a warning); the warning's wording is core/diagnostics/dollar-form's.
 
 ## core/conditions/two-valued — Conditions are two-valued
 slugs: three-valued polarity-rule record-under-not
 rulings:
+- 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
+- 2026-11-17 "Absent under not: use regex rules." (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
+- 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule")
+- 2026-11-16 "not-is-complement: yes agree" (record: "2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none")
 rejected:
+- "absence never matches, negated or not" (condition-not's absence clause) — by owner ruling — absent-under-not.
+- three-valued logic (three-valued) — retired: the regex model entails it (the manager's reading, closed by regex-settles).
+- record-under-not as a question — dissolved (a record is the `&` of its entries with or without NOT).
+- a never-pass test as an error (the draft §5.2) — by owner ruling — polarity-rule.
 readings:
-evidence:
-history: not converted; the draft R.1.5, §R.3.
+evidence: preddoc3a_model.py TV (the draft's PART A U1 line; printed answers reproduced; the lowering agrees), TV2 (U2: `NOT (a: <5)` on `1` HOLDS); the three-spellings table is the draft §R.3's (N1-N4), reproduced by DEF for `(h = "x": !<5)`; sabotage s5 caught.
+history:
+- 2026-11-16: condition-not with "absence never matches"; 2026-11-17: regex-settles and absent-under-not reversed the absence clause; polarity-rule.
 
 ## core/conditions/in-sequence — A condition as a sequence operand
 slugs: condition-in-sequence
 rulings:
 - 2026-11-18 "condition-in-sequence: yes and it's probably more natural than & but allow both." (record: "2026-11-18 OWNER RULING — condition-in-sequence: yes, and `&` stays")
+- 2026-11-17 "pass-start-read: yes keep it" (record: "2026-11-17 OWNER RULING — pass-start-read")
 rejected:
 readings:
-evidence: PART CS of predspec26 and predspec261.
-history: skeleton; the draft R.1.14 (A CONDITION IN SEQUENCE).
+evidence: preddoc3a_model.py INSEQ (the condition tested each pass; `(?:[0-4];)+` agrees; the draft's CS1 `7;3;` FAILS reproduced); sabotage s15 caught. PART CS of predspec26 and predspec261.
+history:
+- the draft R.1.14 (A CONDITION IN SEQUENCE).
 
 ## core/conditions/quantified — A quantifier on a condition
 slugs: quantified-condition condition-group
@@ -444,40 +632,63 @@ evidence: PART CS CS4 of predspec26.
 history: skeleton; condition-group (a group holding only conditions) is open in the draft §R.8.
 
 ## core/conditions/match-so-far — The match so far
-slugs: zero-in-sequence number-in-loop
+slugs: zero-in-sequence
 rulings:
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence")
+- 2026-11-19 ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/ but not /${A & (0: digit)}/ where it is only the A" (record: "2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A")
+- 2026-11-19 "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing" (record: "2026-11-19 OWNER, confirming: a bare condition last in an rx equals the condition on the whole")
 rejected:
 - the error for now (the manager's leaning) — by owner ruling — zero-in-sequence.
+- a bare condition's `0` in a hole as the inserted part's own (the draft's reading, PART N NZ) — by owner — "for a condition bare, yes".
 readings:
 - inside a loop the match so far includes the earlier passes (the manager's reading 9) — SUPPORTED by the callout model (preddoc1 PART R9: the match's start, not the pass's; the two differ on 4 / 16 / 28 of 364, first `3;3;`).
-evidence: preddoc1 PARTS R8, R9; zeroseq.py (the record's run).
-history: skeleton (one ruled statement); the draft's R.1.0 CONDITION row cell is answered by it (predspec291 report, sentence 3).
+evidence: preddoc3a_model.py ZERO (the record's zeroseq.py answers reproduced; `7\d` agrees); sabotage s11 caught. preddoc1 PARTS R8, R9.
+history:
+- 2026-11-19: zero-in-sequence; the bare condition in a hole; the confirmation. The slug number-in-loop moved to core/labels/numbers/in-loop (lane preddoc3a).
 
 ## core/conditions/pass-start-read — Labels as they stand
 slugs: pass-start-read pass-list-read looped-warning
 rulings:
-- 2026-11-17 the entry pass-start-read (record: "2026-11-17 OWNER RULING — pass-start-read")
+- 2026-11-17 "pass-start-read: yes keep it" (record: "2026-11-17 OWNER RULING — pass-start-read")
+- 2026-11-17 "I do want that. It makes sense and frankly pcre is wrong on this." (record: "2026-11-17 OWNER RULING — what an unqualified `$x` reads")
 rejected:
+- a "pass begins" reset rule — by owner ruling — pass-start-read (keep the previous pass's value before the group).
+- `$x` "as standard pcre" (pass-list-read's literal reading) — by owner ruling — the `$x` ruling: `$x` reads the label.
+- a warning on a bare condition over a looped label (looped-warning) — withdrawn by the manager (the draft §R.2, with `compare.looped`).
 readings:
-evidence:
-history: skeleton; the draft R.1.7; his words not yet copied here (to be converted).
+evidence: preddoc3a_model.py PSR (the draft's PART PS line; printed answers reproduced) and PSR2 (WHOLE equals "the items are non-decreasing" on 1,365 texts over `139;`); sabotage s12 caught.
+history:
+- the draft R.1.7; 2026-11-17 pass-start-read and the `$x` ruling.
 
 ## core/conditions/defaults — Defaults and absent labels
 slugs: nullable-meaning
 rulings:
+- 2026-11-16 "default-scope: yes per test" (record: "2026-11-16 OWNER RULING — default-scope: per test")
+- 2026-11-16 "colon-scope: yes with refinement: (a, b = c): ... the 'c' is a binding et al" (record: "2026-11-16 OWNER RULING — colon-scope: yes, with a refinement for a default")
 rejected:
+- a default reaching past its own test (per program) — by owner ruling — default-scope.
 readings:
-evidence:
-history: not converted; the draft R.1.6, §4.2.
+- a default outside the test's set reads as no default at every polarity (the draft R.1.6) — SUPPORTED (preddoc3a_model.py DEF: `x` HOLDS as with no default).
+- nullable-meaning (a nullable `occurrences` argument) is lib/search/occurrences' fact, not this piece's — the slug stays here (see the report).
+evidence: preddoc3a_model.py DEF (the draft §R.3 N4 line; printed answers reproduced; `[5-9]?x` agrees); sabotage s13 caught.
+history:
+- 2026-11-16: default-scope (a lane considered both), then ruled per test.
 
 ## core/filters/and — The `&` operator
 slugs:
 rulings:
+- 2026-11-15 "That's a good clarification" (record: "2026-11-15 RULING — the sides of `&` "match the same stretch whole"; the word "anchored" is kept for the macro")
+- 2026-11-17 "operand-context: yes to that interpretation. Also, then the start of subject and end of subject need the same interpretation" (record: "2026-11-17 OWNER RULING — operand-context")
+- 2026-11-17 "join-order: left side decides. That's always how I thought of it. In concedes the logical purity that you seemed to be going for for the reality that regex is not pure." (record: "2026-11-17 OWNER RULING — join-order: the left side decides")
+- 2026-11-17 "For A & B: from the perspective of B, the subject is now whatever A matched." (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 rejected:
+- the right side deciding — by owner ruling — join-order.
+- a separate anchor rule for filters — by owner ruling — operand-context (one sentence: the stretch as the whole text).
 readings:
-evidence:
-history: not converted; the draft R.1.4, §2.2.
+- a condition in an `&` chain stands after every pattern operand (the draft R.1.4) — UNTESTED here.
+evidence: preddoc3a_model.py AND (the draft's PART F line; printed answer reproduced; `\d` agrees), AND2 (join order: `G & L` vs `L & G` on `11`); sabotages s3, s4 caught.
+history:
+- 2026-11-15: "match the same stretch whole"; 2026-11-17: operand-context's one sentence, join-order, zero-place.
 
 ## core/filters/operand-context — What a filter operand may contain
 slugs: operand-context
@@ -491,19 +702,31 @@ history: skeleton; the draft R.1.4.
 ## core/filters/complement — Complement
 slugs: nested-complement
 rulings:
+- 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
+- 2026-11-16 "not-is-complement: yes agree" (record: "2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none")
+- 2026-11-18 "complement-place: is this legal? not_seven := not seven It stands alone. I think it's the use that is the problem" (record: "2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx")
 rejected:
+- `!` on a condition — by owner ruling — not-is-complement (a compile error naming the two rewrites).
 readings:
-evidence:
-history: not converted; the draft §R.3, R.1.0 COMPLEMENT row.
+- a complement inside an `occurrences` argument rejects a path (nested-complement, entailed by hit-carry's premise) — SUPPORTED by the draft's PART RS RS1 (81 of 364 differ from the committed reading), not re-run here.
+- `!` in rx text keeps PCRE's meaning (the 2026-11-15 correction: `!` inside a normal rx is parked) — UNTESTED.
+evidence: preddoc3a_model.py COMP (`(?!7)\d+` agrees; the draft's `712` FAILS reproduced); sabotage s14 caught.
+history:
+- 2026-11-16 not-is-complement; 2026-11-17 regex-settles (2); 2026-11-18 complement-place.
 
 ## core/filters/kinds — Can match, can filter
 slugs: complement-place lone-complement-match filter-captures
 rulings:
 - 2026-11-18 "That means for rx: There is rx that can match. There is rx that can filter. Neither is wholly a subset of the other" (record: "2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx")
+- 2026-11-18 "lone-complement-match: let's keep it an error and provide "anything"" (record: "2026-11-18 OWNER RULING — lone-complement-match: it stays an error; provide "anything"")
 rejected:
+- the error at the binding (`not_seven := not seven`) — by owner — "It stands alone. I think it's the use that is the problem".
+- a lone complement matching `anything & !B` implicitly — by owner ruling — lone-complement-match.
 readings:
-evidence: PART CX of predspec26.
-history: skeleton; the draft R.1.0 head (THE TWO KINDS OF RX).
+- filter-captures is not adopted as a rule: visibility goes by export (core/labels/export) — the draft R.1.13.
+evidence: preddoc3a_model.py KINDS (`(?![78])\d+` agrees); sabotage s14 caught. PART CX of predspec26.
+history:
+- the draft R.1.0 head (THE TWO KINDS OF RX); 2026-11-19 anything-text ruled `anything` (lib/sets/anything).
 
 ## core/values/reads — Reading a label
 slugs: value-filter
