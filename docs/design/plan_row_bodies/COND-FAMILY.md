@@ -3962,3 +3962,17 @@ rejected, `(<:x>foo)` compiles). HIS WORDS, in full: "oops. yes, i missed the ?.
 RECORD: the form he meant is `(?<:x>foo)` (the table's top row); `(<:x>foo)` was a slip. The label-only group
 remains a PROPOSAL; its spelling remains a placeholder for the spellings review, now with his stated form.
 hole-reads-capture is still not answered.
+
+**2026-11-18 OWNER RULING — hole-reads-capture: the label; and a way to get the PCRE capture value (Frank, to the
+predicate manager, evening).** ASKED AS A RULING (slug hole-reads-capture, restated with the witness
+`/(?:(?<y>\d)?-${$y};)*/` on `3-3;-3;`: label, unset on the pass that skips the group, the whole text fails;
+carried capture, holds as `\k<y>` does; the manager's leaning the label). HIS WORDS, in full: "what i want is that
+$y works like label. however, there is a way to get the pcre capture value".
+RULED: (1) `$y` reads the LABEL, in a hole as everywhere (`${$y}` is the label read; the draft's reading R.1.15
+(8), (11) is confirmed; the 2026-11-17 ruling "`$x` and `x:` never disagree" extends to holes). (2) REQUIRED: a way
+to get PCRE's capture value. This restates his 2026-11-17 requirement ("We need a way to get the pcre behavior
+even if ugly"). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) inside rx text the way
+exists and is ruled: `\k<y>` reads the capture (backref-label); (m2) where a `$` reads (outside rx text, and in a
+hole's expression) the carried-capture form is still to be SPELLED (the draft's spellings item 3; R.1.16 A10);
+(2) adds no new requirement beyond that; (m3) for a label-only group `(?<:y>...)` (a proposal) there is no
+capture, so the carried-capture form has nothing to read there: a point for that proposal, not for this ruling.
