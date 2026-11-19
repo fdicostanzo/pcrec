@@ -5399,3 +5399,23 @@ The manager's readings (told to him; for a lane to list, no matching involved):
 - A bare `=` anywhere but first is a compile error.
 - NOT STATED: how to leave a member out altogether without binding it to any name; whether two entries may name
   the same member. Neither is asked now.
+
+### 2026-11-19 OWNER, import-symbols: leaving a member out (`(=,left=)`, `(=, left=_)`)
+tags: parked/import-symbols
+
+On the manager's "NOT STATED: how to leave a member out altogether". HIS WORDS, whole:
+
+"import-symbol: (=,left=) whould simply unbind left. better might be (=, left=_) where _ is the unusable symbol.
+left could be bound later"
+
+Class: a LEAN with two candidate spellings ("would", "better might be"); the MEANING is stated: a member can be
+left out of a `(=)` import, and the name stays free ("left could be bound later"); `_` is "the unusable symbol".
+Spellings are placeholders.
+
+An INCONSISTENCY the manager flagged to him in the same turn: in the ruled form the name LEFT of `=` is the name
+being defined and the member is on the RIGHT (`l = left` binds `l` to the member `left`; `=left` is `left =
+left`). Both candidates put the MEMBER on the left (`left=`, `left=_`): read by the ruled direction, `left = _`
+binds a new name `left` to a member called `_`. In the ruled direction "leave the member `left` out" is
+`(=, _ = left)`: the member bound to the unusable name. That also matches the part label written `[_ = A]` (the
+draft's unnamed part), where `_` stands on the left. Offered to him as the spelling; the meaning is his either
+way.
