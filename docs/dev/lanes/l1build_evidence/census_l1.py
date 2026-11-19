@@ -49,6 +49,10 @@ quantified `{n}` copy). Under-approximations, COUNTED (never predicted as a
 move): guard terms dropped at a repeat's edge, at an alternation group's
 edge, or at a non-cube hull (the model meets exact sets, see the report).
 
+The verdict is machine-readable (review r53 F12): a `CENSUS-VERDICT: STOP|PROCEED (...)` line
+read from the population's predicted movers (an empty population is a STOP), and the exit code:
+0 = PROCEED with every EXPECT row agreeing; 1 = an EXPECT disagreement; 2 = STOP; 3 = both.
+
 usage: census_l1.py PCREC TREE BENCH_FILE OUT_DIR [--model-only] [--jobs N]
   PCREC  the unit's BASE build (lists the corpus; with no --model-only it
          also compiles the spellings and the lookaround items alone)
@@ -766,12 +770,24 @@ def main():
     el, bad = check_expect(ref, compile_)
     lines.append("§14.4 expected movers / non-movers (%d rows, %d disagreements):" % (len(EXPECT), bad))
     lines += el
+    # THE VERDICT (review r53 F12): read from the POPULATION's predicted movers, never from the
+    # hand-typed EXPECT rows (they always run, so a STOP that read them could not fire). STOP when
+    # the population has no positive-lookaround text the model READ (K35: an empty population
+    # proves nothing) or the model predicts no mover in it (D191.1 / RULING-4).
+    if not read:
+        verdict = "STOP (empty population: no positive-lookaround text read by the model)"
+    elif not movers:
+        verdict = "STOP (0 predicted movers in %d texts read)" % len(read)
+    else:
+        verdict = "PROCEED (%d predicted movers: %s)" % (len(movers), cnt(movers, lambda r: True))
+    lines.append("CENSUS-VERDICT: " + verdict)
     lines.append("== census COMPLETE: %d predicted movers (%s), %d expectation disagreements, %.0f s"
                  % (len(movers), "model+reference" if compile_ else "model only", bad, time.time() - t0))
     with open(os.path.join(out, "summary.txt"), "w") as h:
         h.write("\n".join(lines) + "\n")
     print("\n".join(lines))
-    return 0
+    # rc: 0 PROCEED with every EXPECT row agreeing; bit 1 an EXPECT disagreement; bit 2 STOP.
+    return (1 if bad else 0) | (2 if verdict.startswith("STOP") else 0)
 
 
 if __name__ == "__main__":
