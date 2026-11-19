@@ -5044,3 +5044,42 @@ content, so a condition alone in a hole needs no parentheses of its own. Nothing
 the spellings review, with this argument attached. The manager's note (a reading): the argument covers a
 condition that is the hole's WHOLE content (`${0: digit}`); inside a larger expression in a hole
 (`${A & (0: digit)}`) the condition's parentheses still delimit it from the `&`.
+
+### 2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)
+
+Round r54 (design, topic predspec29; five lenses and a verifier; 34 findings in 16 items P29-1..16; NO printed
+RULED answer found wrong). The predicate manager RULES: every item FIX-NOW as proposed (rev 29.1), the two general
+forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file),
+with these calls:
+- P29-6 (padded-order's CONDITION): the lane "confirmed" it on `\d+?`, a witness on which the DROPPED body agrees
+  too. A SPARSE lazy argument separates them: `(?:\d\d)+?` at n = 3: the ruled any-length-first body differs from
+  per-string fill on 0 / 2,688 / 2,688 of 19,531 texts, the dropped exact-first body equals fill. CALL: the
+  ruling's text ("a shorter string listed before a longer one ... the body's stated behaviour") covers a lazy
+  quantifier, which lists the shorter first; but the condition as told to him ("holds if the lazy case is
+  confirmed") was tested on a case that could not fail, so the run GOES BACK TO HIM as a confirm,
+  **padded-lazy-sparse**; the ruling is not stretched meanwhile (the draft says "confirmed on the dense `\d+?`
+  only"). The record line "The padded-order CONDITION is CONFIRMED" (entry "after lane predspec29") is NARROWED to
+  that.
+- P29-7 (the arithmetic warning's trigger): THE MANAGER'S CALL: ONE trigger: an arithmetic result KNOWN at compile
+  time to be nothing, whatever the cause (a non-numeral constant operand, a written `% 0`, a constant negative
+  result), draws the warning; a member list warns only when EVERY member's result is nothing. This closes the
+  `% 0` GAP the same way (number-edges ruled "no compile error of its own"; a warning is not an error) and
+  replaces reading 17's two-branch wording.
+- P29-12 (the dollar warning's hint): the warning fires on the form everywhere, as ruled; the `(x: S)` HINT is
+  printed only where it is a drop-in (an `&` operand); in a hole the hint is omitted. THE MANAGER'S CALL (wording).
+- P29-11: the form is defined on the PARSE: an `&` one of whose operands is a label read or a path read,
+  parenthesised or not, either side. THE MANAGER'S CALL.
+- Owner questions to add or re-word (asked by the manager, never picked): P29-2 the `r` and `a`-family flags
+  under flags-scope (THE DRAFT'S READING: inherited, as flags that change which texts an atom matches);
+  P29-3 the flags of a SEQUENCE operand (THE DRAFT'S READING: each operand its own inherited start, nothing passes
+  sideways), asked together with the flags-in-filter confirm; P29-9 class-first nesting inside class-positions;
+  P29-10 class-index re-worded with `enumerate(/\d/) + 1`; P29-13 **hole-export** (does a hole re-export the
+  inserted pattern's public labels where an unlabelled sequence part does not).
+- FREEZE DRIFT: the owner's rulings made DURING the round (other-holes, the option hole, negated-class-hole,
+  anything-text, zero-in-sequence, the bare condition in a hole) are NOT folded by rev 29.1; they are revision 30's
+  fold, with its own round. Rev 29.1 only NOTES, at §2.3's "`${(x: digit)}`" error sentence, that a later record
+  entry reverses it.
+WITHDRAWN readings of the manager's (refuted or narrowed by the round): "the padded-order CONDITION is CONFIRMED"
+(narrowed, above); reading 16's "the suggestion is harmless there" as a statement about every place (it changes
+the answer in a value hole: 2 / 132 / 132 of 364); T-c's "equal for filter-role arguments" (false for a negated
+operand: 4 / 168 / 216 of 781).
