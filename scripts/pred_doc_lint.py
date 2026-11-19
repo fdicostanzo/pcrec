@@ -228,6 +228,18 @@ def record_titles(lines):
     return titles
 
 
+def ruling_items(e):
+    """The `rulings:` items of a details entry: [(first line number, text)]; an item starts at a line beginning `-` and
+    runs over its continuation lines (joined with a blank)."""
+    items = []
+    for ln, t in e["fields"].get("rulings", []):
+        if t.strip().startswith("-"):
+            items.append([ln, t.strip()])
+        elif items and t.strip():
+            items[-1][1] += " " + t.strip()
+    return [(ln, t) for ln, t in items]
+
+
 def piece_text(p, e, level):
     """A piece at an entry level: 0 heading + statement, 1 the base piece, 2 + the details entry."""
     if level == 0:
@@ -446,14 +458,12 @@ def lint(root, require_all=False, caps=None, writing=False):
             if p["status"] != "ruled" or e is None:
                 continue
             rep.ok("L4")
-            if not any(t.strip().startswith("-") for _, t in e["fields"].get("rulings", [])):
+            if not ruling_items(e):
                 rep.fail("L4", "%s:%d" % (d, e["line"]), "ruled piece %s has no 'rulings:' item" % p["tag"])
         for e in dp["entries"]:
-            for ln, t in e["fields"].get("rulings", []):
-                if not t.strip().startswith("-"):
-                    continue
+            for ln, t in ruling_items(e):
                 rep.ok("L4")
-                m = re.search(r'\(record:\s*"([^"]+)"\)', t)
+                m = re.search(r'\(record:\s*"(.+)"\)', t)  # greedy: a title may contain a quote
                 if not m:
                     rep.fail("L4", "%s:%d" % (d, ln), 'rulings item without (record: "<entry title>")')
                     continue
@@ -794,6 +804,8 @@ CONTROLS = [  # (label, mutator, lint kwargs, expected failing rules after the m
     ("prev 2 is not a revision", l6_word("prev 2"), {}, set()),
     ("the piece's own status date in its body", l6_word("on 2026-11-02"), {}, set()),
     ("a fenced needs: line is not a reference", lambda r: sub(r, CB, DEF, "```\nneeds: core/holes/nowhere\n```\n" + DEF), {}, set()),
+    ("a record title containing a quote", lambda r: rec_cite(r, '2026-11-08 OWNER, on x: what "flags propagate" meant'), {}, set()),
+    ("a rulings item wrapped onto a second line", lambda r: sub(r, LD, ' (record: "2026-11-02 bold words")', '\n  (record: "2026-11-02 bold words")'), {}, set()),
     ("a fence inside a details field", lambda r: sub(r, CD, "- hole as a token — UNTESTED (none)", "- hole as a token — UNTESTED (none)\n```\n## not an entry\nslugs: Bad_Slug\n```"), {}, set()),
     ("a ~~~ fence is not closed by ```", lambda r: sub(r, CB, DEF, "~~~\n```\nWITHDRAWN\n~~~\n" + DEF), {}, set()),
     ("CRLF line ends", lambda r: put(r, CB, open(os.path.join(r, CB), encoding="utf-8").read().replace("\n", "\r\n")), {}, set()),

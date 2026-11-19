@@ -32,6 +32,8 @@ killed   L4 open: space half off
 killed   L4 status set off
 killed   L4 parked only in parked off
 killed   L4 ruled needs a rulings item off
+killed   L4 title: greedy quote match off
+killed   L4 items: no continuation joining
 killed   L4 item without record off
 killed   L4 title not found off
 killed   L4 title blank-normalise off
@@ -172,4 +174,4 @@ killed   RD level 2 omits details
 killed   RD level 0 omits statement
 killed   RD slugs: none not dropped
 killed   RD first entry of a tag wins
-mut: total 174, killed 158, equivalent 16, SURVIVED 0, NOMATCH 0
+mut: total 176, killed 160, equivalent 16, SURVIVED 0, NOMATCH 0

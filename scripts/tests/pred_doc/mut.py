@@ -67,13 +67,15 @@ m("L4 open: kebab half off", 'if not st.startswith("open ") or not SLUG_RE.match
 m("L4 open: space half off", 'if not st.startswith("open ") or not SLUG_RE.match(st[4:].strip()):', "if not SLUG_RE.match(st[4:].strip()):")
 m("L4 status set off", "elif st not in STATUSES:", "elif False:")
 m("L4 parked only in parked off", 'elif st == "parked" and word != "parked":', "elif False:")
-m("L4 ruled needs a rulings item off", 'if not any(t.strip().startswith("-") for _, t in e["fields"].get("rulings", [])):', "if False:")
+m("L4 ruled needs a rulings item off", "if not ruling_items(e):", "if False:")
+m("L4 title: greedy quote match off", '(record:\\s*"(.+)"\\)', '(record:\\s*"([^"]+)"\\)')
+m("L4 items: no continuation joining", 'items[-1][1] += " " + t.strip()', "pass")
 m("L4 item without record off", 'rep.fail("L4", "%s:%d" % (d, ln), \'rulings item without', "pass  # (")
 m("L4 title not found off", 'if " ".join(m.group(1).split()) not in titles:', "if False:")
 m("L4 title blank-normalise off", 'if " ".join(m.group(1).split()) not in titles:', "if m.group(1) not in titles:")
 m("L4 record absent off", 'rep.fail("L4", d, "record %s absent or unreadable: cannot check titles" % RECORD)', "pass")
-m("L4 only ruled pieces' items cited", "for e in dp[\"entries\"]:\n            for ln, t in e[\"fields\"].get(\"rulings\", []):",
-  "for e in [x for x in dp[\"entries\"] if x[\"tag\"] in {p['tag'] for p in bp['pieces'] if p['status'] == 'ruled'}]:\n            for ln, t in e[\"fields\"].get(\"rulings\", []):")
+m("L4 only ruled pieces' items cited", "        for e in dp[\"entries\"]:\n            for ln, t in ruling_items(e):",
+  "        for e in [x for x in dp[\"entries\"] if x[\"tag\"] in {p['tag'] for p in bp['pieces'] if p['status'] == 'ruled'}]:\n            for ln, t in ruling_items(e):")
 m("L4 non-ruled pieces need rulings", 'if p["status"] != "ruled" or e is None:', "if e is None:")
 m("L4 title: dot strip off", 'full = " ".join(full.split()).rstrip(".")', 'full = " ".join(full.split())')
 m("L4 title: part before ( off", 'titles.add(full.split(" (")[0])', "pass")

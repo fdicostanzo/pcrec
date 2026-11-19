@@ -20,3 +20,6 @@ A line of prose.
 ```
 ### 2026-11-07 fenced title
 ```
+
+### 2026-11-08 OWNER, on x: what "flags propagate" meant
+Text.
