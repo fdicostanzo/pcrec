@@ -4031,3 +4031,22 @@ the result of arithmetic is the canonical numeral and padding is the explicit `p
 of this evening; the width form is asked as **padded-width**); (m3) the draft's "outside the domain: removed at
 compile time, nothing (the position fails) at run time" was in the question's quoted definition and is taken as
 ruled with it.
+
+**2026-11-18 OWNER, what he meant by the width of `padded` (Frank, to the predicate manager, evening; a
+CLARIFICATION of his idea in the padded-width discussion, nothing ruled).** Asked **padded-width** (exact, or a
+minimum as printf's; the manager's leaning exact). HIS WORDS, in full: "i meant the length = 4 to speak to how far
+out the 0 would go. so 0{min(0, length - strlen($y-1))} but i see now that that is tricky".
+RECORD: CLARIFICATION, his intent: `length` says how far the zeros reach: the number of zeros is the width less
+the length of the value, never below none. That is the MINIMUM reading of padded-width (a value longer than the
+width is matched unpadded). His sketch is a COUNT computed from the read; his own remark: "tricky". THE MANAGER'S
+READING OF THE SKETCH'S SLIPS (phone-typed; mine): `min(0, ...)` is meant as "at least zero" (`max`), and `$y-1`
+as the padded value (`$y + 1` in the running example). NOT a ruling: he stated what he meant and that it is
+tricky, he did not choose. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) as he wrote
+it, it is a count hole holding a run-time read, which the draft has UNDER CONSTRUCTION (R.1.16 T13, THE DRAFT'S
+READING); (m2) the same meaning needs NO computed count: `padded(rx, n) := (/0*${rx}/ & /(?s:.){${n}}/) | (rx &
+/(?s:.){${n},}/)` (padded to exactly n, or n and longer unpadded), over ruled pieces with a compile-time n;
+CHECKED this session in python `re`: for every value 0..11,999 and 99999, 100000, 123456, with six candidate texts
+each (36,119 checks), that form accepts a text exactly when the text is the value zero-filled to 4: 0 differences;
+(m3) the EXACT reading already has a spelling without the width parameter (`padded(rx) & /\d{4}/`, run earlier
+this evening), so a width parameter adds something only under the minimum reading; the manager's leaning moves
+from exact to MINIMUM on (m2) and (m3).
