@@ -20,3 +20,13 @@
 - owner.md written. Waiting on Frank's answer to hole-reads-capture.
 - Main ACKed the hand-over (cross-session message): review number r52 is RESERVED for the rev 28 critic round;
   main's session is closing, the next one reads to_main.md at wake.
+- Frank RULED hole-reads-capture: the label ("what i want is that $y works like label. however, there is a way to
+  get the pcre capture value"). On the way: his discussion (label and capture separate; a labelled group need not be
+  returned) and his recollection of the label-only group, CONFIRMED in POSTFACT.md 2026-11-09 (not in the predicate
+  record until now); `(?<:x>foo)` and `(?':x'foo)` rejected by libpcre2 (error 162), run by ctypes; his typed
+  `(<:x>foo)` a slip, corrected by him. Four record entries; predicates_future item 32. A reading of mine withdrawn
+  the same hour ("the record lacks a per-group form").
+- LESSON (case): his "I proposed" was true but lived in ANOTHER row body (POSTFACT.md). The record grep before
+  answering covers docs/design/plan_row_bodies/, not COND-FAMILY.md alone.
+- Next asked: number-domain (the record's 2026-11-15 confirmation, "numeric ranges are string sets; padding is an
+  explicit transform", answers the comparison half; the arithmetic half is what is asked).
