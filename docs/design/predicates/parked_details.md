@@ -4,8 +4,10 @@ One entry per tag of `parked.md`, in the same order. `history:` names the ideas-
 source, the sketch and the trigger are there).
 
 ## parked/ideas/first-rest — First/rest binding with recursion
-slugs: 
+slugs: first-rest
 rulings:
+- 2026-11-16 (class: IDEA) "I don't know if this helps but an idea I had last night was functional style first/ rest binding with recursion" (record: "2026-11-16 OWNER IDEA (offered, not a ruling) — first/rest binding with recursion (Frank, to session 134, box clock 09:52)")
+- 2026-11-16 (class: RULING) "Let's park first/rest but keep it in the wings in case we find a problem that needs a different way of composing" (record: "2026-11-16 OWNER RULING — first-rest: PARKED, kept in the wings"); the trigger is his
 rejected:
 readings:
 evidence:
@@ -27,6 +29,7 @@ history:
 ## parked/ideas/partial-transforms — Finer-grained transforms
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING) "modifier-lift: yes. Add this as another item like first/last to a 'predicate future consideration' document to consider finer grain transforms. However the form is 'do everything to both' so the logic makes sense" (record: "2026-11-16 OWNER RULING — modifier-lift: yes; a "future consideration" document"); the per-part transform is recorded for later, not designed
 rejected:
 readings:
 evidence:
@@ -52,6 +55,7 @@ history:
 ## parked/ideas/default-set — A default that is a set of several strings
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING + IDEA) "We can punt, as you say, and throw an error. Perhaps a reason will open to reconsider. Then there is a = some(between(...))" (record: "2026-11-16 OWNER RULING — default-set: a default of several strings is an error, for now; idea: `some(...)`"); the error is ruled, the `some(...)` default is the idea
 rejected:
 readings:
 evidence:
@@ -73,10 +77,12 @@ history:
   - TRIGGER: a problem where a missing field means "any of these" or "does not matter" and the explicit alternative
     (`| (h: 10)`) is not enough.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says `all` is retired and the mark is out.
 
 ## parked/ideas/tuple-apart — Taking one tuple apart in a binding
 slugs: 
 rulings:
+- 2026-11-16 (class: OWNER, reopening) "Nothing is set in stone. I'd like to hear it out. So It's the set that makes it an item so you can't break it apart without changing its meaning. Like 9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish. Makes sense" (record: "2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the "use it whole" case heard"); nothing ruled on the parked item
 rejected:
 readings:
 evidence:
@@ -93,6 +99,8 @@ history:
 ## parked/ideas/unset-member — An "unset" member in a value set
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING; the question told, not quoted) "zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from themselves' category that tools need to realistically consider" (record: "2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested"); the entry names his question on an "unset"/empty value in the set; the item's quoted words are the ideas file's
+- 2026-11-16 (class: REMARK) "is this the same issue we were just talking about? The inner loop runs so it's 'set' but to nothing. Then the 'or epsilon' logic makes it pass" (record: "2026-11-16 OWNER RULING — pairing-loop, part 1: the wording confirmed; his remark on optionals")
 rejected:
 readings:
 evidence:
@@ -115,6 +123,7 @@ history:
 ## parked/ideas/empty-value — An author-written "ran but no value" value
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING; the question told, not quoted) "zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from themselves' category that tools need to realistically consider" (record: "2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested"); his "ran but no value" sentence is the ideas file's quote, not in the record
 rejected:
 readings:
 evidence:
@@ -138,10 +147,12 @@ history:
     conditions; a one-word form is not added without examples.
   - TRIGGER: an example where the empty case must be singled out and `+`, `some`, `count` do not serve.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the mark is out.
 
 ## parked/ideas/zero-loop-default — A default read when a reached loop runs zero times
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING; the question told, not quoted) "zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from themselves' category that tools need to realistically consider" (record: "2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested"); the entry names his question on "a default undoing the `*`"; his sentence is the ideas file's quote
 rejected:
 readings:
 evidence:
@@ -161,10 +172,13 @@ history:
     adds is "read an empty list as the one value v". The owner's frame: "saving people from themselves".
   - TRIGGER: an example where an empty list should be read as one stated value.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the default now does this.
 
 ## parked/ideas/field-count — `count` / `some` over a field reference
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING; the question told, not quoted) "zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from themselves' category that tools need to realistically consider" (record: "2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested"); the entry names his question on `count(^)`
+- 2026-11-16 (class: RULING) "retire-paused: agree to split. But the pause on ^ is indefinite and requires real value other than 'override a users own *'" (record: "2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite"); the field reference this item counts over is paused (parked/ideas/other-side-sigil)
 rejected:
 readings:
 evidence:
@@ -186,10 +200,12 @@ history:
   - TRIGGER: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in
     the draft's `length(S)` body, is a candidate to be argued, not a trigger met).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the field reference is the paused sigil.
 
 ## parked/ideas/label-twice — A meaning for a label named twice in one condition
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING) "label-twice: agree an error. And that means it's also unofficially parked in case some other meaning becomes valuable" (record: "2026-11-16 OWNER RULING — label-twice: an error"); the error is ruled (core/conditions/form), the other meaning parked
 rejected:
 readings:
 evidence:
@@ -207,6 +223,7 @@ history:
 ## parked/ideas/explainer — A debugger (explainer) for writing conditions
 slugs: 
 rulings:
+- 2026-11-16 (class: RULING + REMARK) "match-context: anywhere. This does need some sort of debugger for writing these." (record: "2026-11-16 OWNER RULING — match-context"); "His second sentence is a REMARK, not a directive" (the entry's words)
 rejected:
 readings:
 evidence:
@@ -228,6 +245,7 @@ history:
 ## parked/ideas/default-range — Restricting a default to the values the label could hold
 slugs: 
 rulings:
+- 2026-11-16 (class: REMARK) "One interesting point is if the default should be restricted to the set of values it could have if it were there" (record: "2026-11-16 OWNER REMARK — a default restricted to the values the label could hold"); nothing ruled
 rejected:
 readings:
 evidence:
@@ -249,10 +267,12 @@ history:
     fires on every deliberate sentinel.
   - TRIGGER: an example of an author bitten by an out-of-range default.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says it is answered in part (default-value).
 
 ## parked/ideas/macro-warning — A warning a macro raises about its own arguments
 slugs: 
 rulings:
+- 2026-11-16 (class: REMARK) "If there is a way to describe it, we might put together @compiler.warn(cond, ...)" (record: "2026-11-16 OWNER REMARK — a macro raising its own warning"); nothing ruled, nothing designed
 rejected:
 readings:
 evidence:
@@ -286,6 +306,7 @@ history:
     satisfied on absence: vacuous), NONE of it (already the empty-intersection error) or a proper part (a real test);
     finite vs infinite alone does not catch the `6,` flip (its set, `m < h`, is finite).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the mark-in-none diagnostic left with the mark.
 
 ## parked/ideas/nested-relation — One nested-relation statement for spans, passes and occurrence hits
 slugs: 
@@ -309,10 +330,13 @@ history:
   - TRIGGERS (any one): (1) a LIST INSIDE A LIST ITEM wanted (a nested loop); (2) a request to COUNT REPORTED MATCHES
     (a span-level count); (3) **condition-not** re-asked (NOT on a condition, recorded as told-not-ruled in COND-FAMILY).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r31 (A6), parked by the manager; nothing for rulings:.
 
 ## parked/ideas/match-then-judge — Another reading of a searched condition
 slugs: 
 rulings:
+- 2026-11-16 (class: OWNER, a request to file) "I want to file in the future directions file a potential other interpretation for the record. In your example, the pattern returns 9:30. done." (record: "2026-11-17 RECORD (session 137, box clock 03:01; filed late after review r33 F14; the first two items are the owner's words, the rest the manager's)"); recorded, not ruled
+- 2026-11-17 (class: OWNER) "atomic: I think what I was looking for was more akin to (*prune) or similar." (record: "2026-11-17 OWNER on atomic-search"); his reading is a backtracking-control verb, not atomic (parked/ideas/atomic)
 rejected:
 readings:
 evidence:
@@ -369,6 +393,7 @@ history:
     spelling still decides (which the owner's asterisk anticipates).
   - TRIGGER: the next revision of predicates_draft.md that touches repeatedness, or the first predicate build go.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r33 (F13), a PLAN item by the manager; nothing for rulings:.
 
 ## parked/ideas/place-table — One place table for nested programs
 slugs:
@@ -396,6 +421,7 @@ history:
   - TRIGGER (any one): the owner unparks **whole-text**; a second nested place gains conditions (a positive
     lookahead's labels, a `records` item with NOT); the per-place prose drifts again.
 - 2026-11-19 (lane preddoc3c): a new parked piece (the ideas-file item had none); its trigger and source in the base piece.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r33 (MODECLOSURE-9), a PLAN item by the manager; nothing for rulings:.
 
 ## parked/ideas/ordered-table — An ordered table
 slugs: 
@@ -421,6 +447,7 @@ history:
   - TRIGGER (any one): the owner's answer to **branch-scope**; the next library body that puts a FILTERED argument in a
     hole; **when-meaning** answered "its body".
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r34 (D1), a PLAN item by the manager; nothing for rulings:.
 
 ## parked/ideas/kleene-completion — The Kleene completion rule for a joint condition with an absent part
 slugs: 
@@ -444,10 +471,13 @@ history:
   - TRIGGER: the owner's answer to **record-under-not** (predicates_draft.md §R.8 item 7), if it asks for the record to
     equal the AND of its entries under NOT.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r34 (A4), a PLAN item by the manager; nothing for rulings:.
 
 ## parked/ideas/atomic — Atomic: not backtracked into once matched, and its spelling
 slugs: 
 rulings:
+- 2026-11-17 (class: RULING; the spelling OPEN) "branch-scope: yes. I like that. Also, that makes me like 9:30 choice from yesterday more as well because if we have atomic, you can get the alternative I mentioned. I don't like your spelling for atomic as it opens a bunch of questions about rx grammar in predicate language but I don't know what it should be." (record: "2026-11-17 OWNER RULING — branch-scope: reading (ii); atomic wanted, its spelling OPEN (Frank, to session 138, box clock about 11:35)")
+- 2026-11-17 (class: OWNER; RULED part (1), IDEA part (3)) "Atomic as used by say atomic() would provide pcre behavior. We might have other forms like A :: B which might be a concatenation which says match A then B but don't go back into A" (record: "2026-11-17 OWNER on atomic-search")
 rejected:
 readings:
 evidence:
@@ -482,6 +512,9 @@ history:
 ## parked/ideas/capability-optins — Capability opt-ins declared in the source
 slugs: 
 rulings:
+- 2026-11-17 (class: IDEA) "The predicate form does not preclude non-dfa operations but it restricts by default. Perhaps there should be an @options() in the language" (record: "2026-11-17 OWNER IDEA — options written in the language")
+- 2026-11-17 (class: OWNER, ruled for libraries) "So if I use a li library element that causes non-dfa behavior then it should error out" (record: "2026-11-17 OWNER — a library element beyond the user's level is an ERROR"); homed on lib/builtin/import
+- 2026-11-17 (class: RULING) "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule")
 rejected:
 readings:
 evidence:
@@ -519,8 +552,9 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 
 ## parked/ideas/rx-module — Building patterns without rx literals
-slugs:
+slugs: rx-module
 rulings:
+- 2026-11-17 (class: PROPOSAL) "this discussion is showing me that we need to support building rx without rx literals." (record: "2026-11-17 OWNER PROPOSAL — building patterns without rx literals: an "rx" module and a concatenation operator"); its parts ruled later are core/patterns/sequence and lib/rx
 rejected:
 readings:
 - its ruled parts: the sequence operator (core/patterns/sequence), the one `rx.repeat` and the plurals (lib/rx), the postfix quantifiers (lib/rx/optional-loop); the item carries no TRIGGER line (the base says so).
@@ -544,6 +578,7 @@ history:
     loops; separators and counts as arguments.
   - SOURCE: COND-FAMILY.md, 2026-11-17. NEXT: a design note (lane rxlib), then the owner.
 - 2026-11-19 (lane preddoc3c): a new parked piece (the ideas-file item had none); its trigger and source in the base piece.
+- 2026-11-19 (lane preddoc5, review r59 PLACE-2): the slug rx-module moved here from core/patterns/sequence (it names the proposal); the base line's "taken up" now names the owner-ruled parts.
 
 ## parked/ideas/place-table-skeleton — One place table as the definition's skeleton
 slugs:
@@ -570,6 +605,8 @@ history:
   - TRIGGER: the owner's answers to rev 24.1's §R.8 questions (the table's open cells), or the next full revision of
     §R, whichever comes first.
 - 2026-11-19 (lane preddoc3c): a new parked piece (the ideas-file item had none); its trigger and source in the base piece.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r40 (C6), the manager's disposition; nothing for rulings:.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-3): the base Trigger line restored to the ideas file's words (it had been reworded).
 
 ## parked/ideas/severity-table — One severity-by-selector table for the warning controls
 slugs: 
@@ -592,10 +629,13 @@ history:
   - TRIGGER: the next design step on warnings or on `@options` (item 20), or any build of one of the three controls,
     whichever comes first.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r42 (C3), the manager's disposition; nothing for rulings:.
 
 ## parked/ideas/user-doc-traps — For the user documentation: the things a reader will get wrong
 slugs: 
 rulings:
+- 2026-11-17 (class: PRINCIPLE, reflections) "Also, I and try to keep this in mind, it's a matching language not a finding language." (record: "2026-11-17 OWNER, on what kind of language this is")
+- 2026-11-17 (class: RULING; the trap a remark) "if there was a warning like blah.unused, the library could define mod.fn.unused and both could be ignored. Not sure if that's helpful or dangerous." (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path")
 rejected:
 readings:
 evidence:
@@ -739,6 +779,7 @@ history:
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
 rulings:
+- 2026-11-17 (class: RULING) "shared-label: keep the compiler error. It does cause problems for library writers. It's the typical macro variable problem" (record: "2026-11-17 OWNER RULING — shared-label: keep the compile error"); the error is ruled, the hygiene idea parked
 rejected:
 readings:
 evidence:
@@ -790,10 +831,13 @@ history:
   - SOURCE: the owner's message, 2026-11-17. TRIGGER: the library discussion (items 12, 20, 23, 25), or the first
     revision of the draft after rev 25 that takes up reusable conditions. NOT in lane predspec25's scope.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): the owner's message (2026-11-17, late evening) is not in the record; the ideas file's quote is its only text, so nothing for rulings:.
+- 2026-11-19 (lane preddoc5, review r59 EXAMPLE-3): the base Trigger line restored to the ideas file's words (it had been reworded).
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 
 rulings:
+- 2026-11-18 (class: RULING + IDEA, "Consider:") "Consider: user has x and y as two rx. They apply the arrays above individually and now they have xx/yy which are an alternation/array of two. Provide cartesian(xx,yy) which takes arrays and applies them together Cartesian product. Also, chainable to 3 arguments?" (record: "2026-11-18 OWNER RULING — product-order: first slowest; and a correction of the product's scope"); the order is ruled, `cartesian` the idea
 rejected:
 readings:
 evidence:
@@ -831,6 +875,7 @@ history:
 ## parked/ideas/count-filter — A count given as a filter over all numbers
 slugs: 
 rulings:
+- 2026-11-18 (class: IDEA) "Under that interpretation, the set of numbers used is the set of all numbers filtered by the argument" (record: "2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea"); its ruled part, "a count whole must have values that produce counts", is core/holes/count's
 rejected:
 readings:
 evidence:
@@ -856,6 +901,7 @@ history:
 ## parked/ideas/assert — A compile-time assertion inside a definition
 slugs: 
 rulings:
+- 2026-11-18 (class: RULING + IDEA) "When: regardless, single arg has no value and should be an error. Ideally an @assert of some sort." (record: "2026-11-18 OWNER RULING — a `when` with a single argument is an error"); the error is ruled, the assertion the idea
 rejected:
 readings:
 evidence:
@@ -880,6 +926,7 @@ history:
 ## parked/ideas/string-level-rx — String-level manipulation of an rx, as graph manipulation
 slugs: 
 rulings:
+- 2026-11-18 (class: RULING) "It's certainly a phase two project." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match""); and "I'd like to consider that unbuilt territory however and the error is an "under construction" sign." from the same entry
 rejected:
 readings:
 evidence:
@@ -942,10 +989,13 @@ history:
     PCRE cannot express. TRIGGER: a user program needing a length-prefixed field.
   - SOURCE: `docs/dev/reviews/2026-11-18-r48-predspec27.md` (NOTED) and its `PREMISE.md` (PREMISE-12).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r48 (PREMISE-12), a critic's notes; nothing for rulings:.
 
 ## parked/ideas/label-only-group — The label-only group
 slugs: 
 rulings:
+- 2026-11-18 (class: RECOLLECTION of a PROPOSAL; nothing ruled) "for capture group regex: i proposed /(<:x>foo)/ would be regex for a labeled group that is not a" (record: "2026-11-18 OWNER, a RECOLLECTION in the hole-reads-capture discussion: the label-only group")
+- 2026-11-18 (class: CORRECTION of the entry above, nothing ruled) "oops. yes, i missed the ?. it should look like the top row" (record: "2026-11-18 OWNER, correcting his spelling of the label-only group"); the spelling quoted above, `(<:x>foo)`, was a slip for `(?<:x>foo)`
 rejected:
 readings:
 evidence:
@@ -964,6 +1014,8 @@ history:
 ## parked/ideas/array-in-hole — The array form in a hole, `${@y}`
 slugs: array-in-hole
 rulings:
+- 2026-11-18 (class: REQUEST + LEAN) "if we cannot find value, i'd rather not build it but keep it in a future direction until we can" (record: "2026-11-18 OWNER, on `${@y}`: a proposal with examples first; otherwise a future direction")
+- 2026-11-18 (class: RULING) "${@y} stays as a future direction item and is not built or defined now" (record: "2026-11-18 OWNER RULING — `${@y}` is a future direction: not built, not defined now")
 rejected:
 readings:
 evidence:
@@ -988,6 +1040,7 @@ history:
 ## parked/ideas/restricted-parameter — A parameter restricted by `&` in a definition's head
 slugs: 
 rulings:
+- 2026-11-19 (class: IDEA, "some handwaving") "i was thinking of an alternative which is example(g & /\d+/) := blah. There is some handwaving there but the idea is that there has to be some value in the intersection for the macro to match." (record: "2026-11-19 OWNER, asked plus-operands: a parameter restriction written `m(g & /\d+/)`, and the same for arithmetic")
 rejected:
 readings:
 evidence:
@@ -1007,6 +1060,8 @@ history:
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 
 rulings:
+- 2026-11-19 (class: IDEA) "also, one alternative is that /(?i)[\da-f]/ number operations run over a base of the class provided to it." (record: "2026-11-19 OWNER, on plus-operands: `+` is for numbers only; a class as the base")
+- 2026-11-19 (class: DISCUSSION) "if i allowed letters, the + would define the order as digits followed by letters as per normal." (record: "2026-11-19 OWNER, discussing the base idea: numbers are strings over an ordered set of symbols")
 rejected:
 readings:
 evidence:
@@ -1028,6 +1083,7 @@ history:
 ## parked/ideas/limited — `limited(rx, n)`: a length limit as a macro
 slugs: 
 rulings:
+- 2026-11-19 (class: REMARK, in a ruling's message) "we need a limited(rx, 5) macro so limited(padded(digits), 5) which would cover all digits 00000 through 99999 which i think the way it would work mostly in the field." (record: "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros")
 rejected:
 readings:
 evidence:
@@ -1047,6 +1103,7 @@ history:
 ## parked/ideas/known-nothing — One cause-free "known nothing" warning
 slugs: 
 rulings:
+- 2026-11-19 (class: MANAGER, no owner words) "the two general forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file)" (record: "2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)")
 rejected:
 readings:
 evidence:
@@ -1062,6 +1119,7 @@ history:
 ## parked/ideas/warning-rows — Warnings as rows: form, places, look-alike
 slugs: 
 rulings:
+- 2026-11-19 (class: MANAGER, no owner words) "the two general forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file)" (record: "2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)")
 rejected:
 readings:
 evidence:
@@ -1078,9 +1136,25 @@ history:
 ## parked/ideas/never-constant — A constant for the regex that matches nothing
 slugs:
 rulings:
+- 2026-11-18 (class: RULING + IDEA) "its a regex that matches nothing. that would be a good constant to provide" (record: "2026-11-18 OWNER RULING — unset-in-hole: no string, a regex that matches nothing; and an idea, a constant for it"); the ruling is core/holes/value's, the constant the idea
 rejected:
 readings:
 evidence:
 history:
 - not an ideas-file item; the record's "2026-11-18 OWNER RULING — unset-in-hole" entry, his words "that would be a good constant to provide".
 - 2026-11-19 (lane preddoc3c): the base piece states that no trigger is recorded.
+
+## parked/ideas/other-side-sigil — The other-side sigil
+slugs: label-section reference-index bound-reference
+rulings:
+- 2026-11-15 (class: RULING + IDEA) "definitely not a bare reference. it might shadow a binding and it wouldn't be clear where it was coming from. if we are building new syntax, what about a symbol that represents the other side of the intersection. ^.h or something like that." (record: "2026-11-15 RULING + OWNER IDEA — no bare field reference; a mark for the other side of the intersection"); the refusal is RULED (core/conditions/form carries it as a rejected candidate), the mark his IDEA
+- 2026-11-16 (class: RULING) "label-section: i think the sigil mark is better. i like a lot about the section but its re-using a syntax for a different purpose. the save would be if the section syntax were defined in such a way that that worked. but i don't see it." (record: "2026-11-16 RULING — a compare names its fields with the other-side sigil"); PAUSED within the half hour (next item)
+- 2026-11-16 (class: DIRECTION) "i want to pause this direction and consider a different one that is more inline with existing concepts." (record: "2026-11-16 OWNER DIRECTION — PAUSE the field-reference direction; consider a condition over several labels at once"); paused, not reversed; the joint condition came from it
+- 2026-11-16 (class: RULING) "retire-paused: agree to split. But the pause on ^ is indefinite and requires real value other than 'override a users own *'" (record: "2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite"); the sigil PAUSED INDEFINITELY; reference-index and bound-reference stay suspended with it
+rejected:
+- the section `[(h:), (m:)]` naming the compared fields — by owner ruling — label-section ("its re-using a syntax for a different purpose").
+readings:
+- macro-arguments (macros as arguments, indexed and called), the question this direction raised: answered NO by his direction (core/arrays/lift), and withdrawn by the manager after the sigil ruling — SUPPORTED by the record.
+evidence: the draft §16 (rev 19, the direction's record); review r19 (CENSUS, SIMULATE).
+history:
+- not an ideas-file item: the paused direction of the draft's rev 16-19 (§16), homed here by lane preddoc5 (2026-11-19, review r59 COMPA-6, COMPB-5). Its one use parked separately is parked/ideas/field-count.

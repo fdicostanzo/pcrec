@@ -7,12 +7,12 @@ record `docs/design/plan_row_bodies/COND-FAMILY.md` (the only source of rulings)
 
 ## Files (read in this order; a file uses only what is before it, except `see:` pointers)
 
-- `core.md` — the core language, PRIMITIVES only: section `principles` first (the owner's method), then the
+- `core.md` — the core language, its syntax and meaning (every call-form name is a library piece): section `principles` first (the owner's method), then the
   model, patterns, labels, conditions, filters, values, arrays, holes, operators, diagnostics, spellings.
 - `core_details.md` — per core tag: slugs, rulings verbatim with their record title, rejected candidates,
   readings, evidence, history.
-- `library.md` — every PROVIDED name: a body written in the core language (`module:` on each; `default: yes` for
-  the default-imported set), by kind.
+- `library.md` — every PROVIDED call-form name, by kind (`module:` on each; `default: yes` for the default-imported
+  set; `defined: language | native (<why>) | ?`).
 - `library_details.md` — per library tag, as above; a moved piece's previous tag on a `was:` line.
 - `parked.md` — ideas and directions NOT in the language, each with its trigger.
 - `parked_details.md` — per parked tag, as above.

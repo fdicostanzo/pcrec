@@ -632,6 +632,8 @@ see: core/modules/positional parked/ideas/tuple-apart
 - Two orders, both legal: `>= (9, 30)` compares the whole tuple in DICTIONARY ORDER (the first components, then the
   next only where every earlier one is equal; each component read by its literal, in its literal's domain);
   `(>= 9, >= 30)` compares each part on its own. `10:15` is in the first and not the second.
+- A modifier around a set of tuples acts on every part: `padded(>= (9, 30))` reads h and m both padded; a per-part
+  modifier is parked (parked/ideas/partial-transforms).
 - Taking ONE tuple apart (`(a, b) := lo`) is open (core/modules/positional); a first/rest walk is parked.
 - A tuple is not a RECORD: the parentheses of a call or a condition are never a value (core/operators/bindings).
 WHOLE `9:45` HOLDS, `9:15` FAILS, `10:15` HOLDS / SEARCHED `9:15 10:30` `10:30`@5 / FIND-ALL `9:30 9:15 12:45` [`9:30`@0, `12:45`@10] (`time & ((h, m): >= (9, 30))`, time := `/(?<h>\d{1,2}):(?<m>\d{2})/`)
@@ -1057,7 +1059,8 @@ A module is described by its map interface: its members are its fields, reached 
 needs: core/operators/bindings
 - `.` has one meaning: a field of the map interface of the thing on its left (a label, a module member, metadata).
 - A map interface is not a created value: no map value is passed around.
-- Only what `.` reaches is reachable from outside: the public names (core/labels/export decides).
+- Only what `.` reaches is reachable from outside: the public names, decided by the `_` rule (core/labels/export);
+  `@export`'s selection among them is core/modules/export's reading.
 modes: n/a (no matching involved)
 
 ### The named binding list   [core/modules/binding-list]   ruled 2026-11-19
@@ -1105,7 +1108,7 @@ see: lib/control/peek
 - That the set exists and holds `peek`: his lean. Library pieces in it carry `default: yes`.
 modes: n/a (no matching involved)
 
-### Which names are in the default set   [core/modules/default-set/members]   open default-set 2026-11-19
+### Which names are in the default set   [core/modules/default-set/members]   open default-imports 2026-11-19
 Which names besides `peek` are in the default-imported set is a question for the owner.
 needs: core/modules/default-set
 - Today only `lib/control/peek` carries `default: yes`. Candidates: `peek` alone; every name the core's own pieces
@@ -1168,7 +1171,7 @@ needs: core/values/functions core/operators/statements core/modules/conflicts
 | an rx where the other kind is needed (can match, can filter) | core/filters/kinds |
 | `\k<h>` to a name two groups of one literal carry, without `(?J)`; a number naming a group ambiguously | core/labels/backreferences, core/labels/numbers |
 | a hole position with no rule; an array in a group-name hole; a member that is not a count; a range written out of order; an option hole that is not one legal value; a backreference name or number from a hole | core/holes/insert and its position pieces |
-| `${@y}`, not defined | parked/ideas/array-in-hole |
+| `${@y}`, not defined | core/holes/value (the idea: parked/ideas/array-in-hole) |
 | an edge assertion in `enumerate`'s argument; an infinite or over-budget argument | lib/builtin/enumerate |
 | a single-value function on an operand with an assertion looking outside | core/values/functions |
 | no file matched by `import`; one member name from two files of one `(=)` import; a bare `=` not first | lib/builtin/import, core/modules/conflicts, core/modules/all-symbols |
@@ -1200,11 +1203,11 @@ see: parked/ideas/known-nothing parked/ideas/warning-rows parked/ideas/severity-
 | `pcrec.test.never`, `pcrec.test.always` | a test that can never pass; one that can never fail; at any polarity | polarity-rule |
 | `pcrec.empty.search` | a searched final pattern that can report an empty find | empty-search-error |
 | `pcrec.dead.branch` | an alternative of a narrowing site that can never match | the accepted list |
-| `pcrec.label.unset` | a label a condition names can be absent where it is read, with no default | the accepted list |
-| `pcrec.default.unused` | a default that can never be used | the accepted list |
+| `pcrec.label.unset` | a label a condition names can be absent where it is read, with no default | the accepted list; core/conditions/two-valued |
+| `pcrec.default.unused` | a default that can never be used | default-unused; core/conditions/defaults |
 | `pcrec.label.ambiguous` | an ambiguous label in the author's own pattern text | the accepted list |
-| `pcrec.anchor.whole` | an explicit anchor that provably sits at the edge of a filter role's stretch | the accepted list |
-| `pcrec.warn.unused` | an `@warn.off` that suppresses nothing | the accepted list |
+| `pcrec.anchor.whole` | an explicit anchor that provably sits at the edge of a filter role's stretch | anchor-warn-scope; core/filters/and |
+| `pcrec.warn.unused` | an `@warn.off` that suppresses nothing | the accepted list; the selector rule above |
 | `pcrec.label.numbered` | a label read by number on a pattern not written there (core/labels/numbers) | accepted |
 | (hide) | a binding that hides a label | name resolution |
 | `pcrec.match.never` | an inserted pattern's edge that can never hold beside its neighbour; every copy of a product removed | a reading |
@@ -1242,8 +1245,8 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the nine POSTFIX QUANTIFIERS; the parse readings that decide what a program says | core/patterns/quantifiers, core/operators/precedence |
 | ATOMIC (`atomic(...)`); the no-re-entry sequence (his `A :: B`); the skip-past verb | core/patterns/atomic, parked/ideas/atomic |
 | the RX parts (`rx.repeat`, `rx.digit`, the plurals) | lib/rx/repeat, lib/rx/classes |
-| the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, core/labels/one-rule |
-| the ARRAY FORM of a read (his `@x`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/one-rule |
+| the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, lib/counting/every-pass |
+| the ARRAY FORM of a read (his `@x`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/labels-vs-captures, core/values/reads |
 | the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
 | a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]` | core/labels/paths, core/labels/export |
 | the CONDITIONAL (`when(A, B, else = C)`), its argument shape, a `when` operator, the comma-free keyword form; `peek(A)` | lib/control/when, lib/control/peek |

@@ -22,12 +22,13 @@ the core reads whole without the library; `see:` is not an ordering claim):
 
 | base (current definition) | details (history, reasoning) | holds |
 |---|---|---|
-| `core.md` | `core_details.md` | section `principles` first (his method), then the core language: primitives only, every provided name that is primitive |
-| `library.md` | `library_details.md` | every PROVIDED name whose definition is a BODY written in the core language |
+| `core.md` | `core_details.md` | section `principles` first (his method), then the core language: its syntax and meaning; a core piece points at a call-form name's library piece with `see:` |
+| `library.md` | `library_details.md` | every PROVIDED call-form name (`x(...)`, `m.x(...)`), each marked defined in the language or not |
 | `parked.md` | `parked_details.md` | ideas and directions not in the language, each with a trigger |
 
-CORE HOLDS PRIMITIVES ONLY: a piece whose definition is a body in the core language is a LIBRARY piece ("there is nothing
-particular about peek() other than its a useful transform"). A core piece points at a library name with `see:`.
+THE CORE HOLDS SYNTAX AND MEANING; EVERY CALL-FORM NAME IS A LIBRARY PIECE, whether its definition is a body in the core
+language or native ("there is nothing particular about peek() other than its a useful transform"; the owner's
+refinement of 2026-11-19, History below). A core piece points at a library name with `see:`.
 
 Not converted, on purpose (the tracker design's own rule: an append-only raw log keeps its shape):
 `docs/design/plan_row_bodies/COND-FAMILY.md` stays THE RECORD, one chronological log, the only source of rulings; each
@@ -62,6 +63,7 @@ are. The old draft `predicates_draft.md` is FROZEN at its last revision; the det
       see: <tag> ...              (a pointer, a core piece to a library name; any file, forward allowed; optional)
       module: <name> | ?          (library file only; exactly once on every library piece that is not `?`)
       default: yes                (library file only, at most once: a member of the default-imported set)
+      defined: language | native (<why>) | ?   (library file only: a body in the language, or not and why)
       skeleton: yes               (at most once: the statement is verified, the body is not yet converted)
       <the definition: rule sentences, a table where the piece is one; no history>
       <one example naming WHOLE, SEARCHED and FIND-ALL, or "modes: n/a (<why>)">
@@ -69,6 +71,9 @@ are. The old draft `predicates_draft.md` is FROZEN at its last revision; the det
   The field lines are exactly these spellings, in lower case at the start of a line, inside a piece body. `needs:`,
   `by:`, `see:` take blank- or comma-separated tags. SCANNING the base = the heading and statement lines only; READING it
   whole = everything. The date is the status date; a `?` or `skeleton` piece's date is its conversion date.
+  Every library piece of a call-form name carries one `defined:` line: `language` (a body in the core language),
+  `native (<why>)` (it needs support the language cannot write), or `?` on an open or under-construction piece (no lint
+  rule checks it yet).
 - STATUS (one per piece): `ruled` (the owner ruled it) | `principle` (the owner STATED it: a principle, a direction, a
   standing instruction, which is not always a slug ruling; legal only under `core/principles/`) | `reading` (the draft's
   or the manager's, not ruled) | `open <slug>` (a question for him: the body is the current definition labelled as a
@@ -191,10 +196,13 @@ the open pieces.
 - Review r56 (lane predlint2): the lint's readings made the spec ("What the lint checks beyond the rule sentences"): every
   rulings item cites a record title, the record title form, L6's word list, the fenced blocks, pilot mode, the reader.
 - The owner after reading the pilot (COND-FAMILY "2026-11-19 OWNER, after reading the pilot documents", lane preddoc2): the
-  directory `docs/design/predicates/`, core holds primitives only (the library, `see:`), `module:` and `default:`,
+  directory `docs/design/predicates/`, the core holds syntax and meaning (the library, `see:`), `module:` and `default:`,
   move and rename (`was:`, `formerly:`, the previous-tag reader key).
 - Review r57 (lane predlint3, 2026-11-19; the manager's rulings): field-looking lines (misplaced, misspelled, doubled), a
   move line does not close a field, `was:`/`formerly:` anywhere in a base file, `module:`/`default:` never in a details file,
   a principle's class item, the `formerly:` module grammar, a fourth tag word's hub parent, the record's `tags:` check
   (L5), `entry -g` and the ambiguity exit of the live-tag arm; this fold of the three post-pilot sub-sections into the
   rules above, so each rule is said once.
+- 2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or
+  not (COND-FAMILY, that entry; lanes preddoc4 and preddoc5, review r59 PLACE-1 replaced by it): the core holds syntax
+  and meaning, every call-form name is a library piece with its `defined:` line.

@@ -23,7 +23,9 @@ Source: the ideas file item 2 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
 ### A default that is a set of several strings   [parked/ideas/default-set]   parked 2026-11-19
-A default written `some(...)` / `all(...)`: a missing field means any of these, or does not matter.
+A default written `some(...)` (or an every-value form): a missing field means any of these, or does not matter.
+- `all` is retired (lib/counting/some) and there is no optional mark: a one-string default is the author's one
+  control on an absent label today (core/conditions/defaults).
 Trigger: a problem where a missing field means "any of these" or "does not matter" and the explicit alternative (`|
   (h: 10)`) is not enough.
 Source: the ideas file item 3 (its whole text in the details entry).
@@ -43,18 +45,23 @@ modes: n/a (parked: not in the language)
 
 ### An author-written "ran but no value" value   [parked/ideas/empty-value]   parked 2026-11-19
 An empty value an author writes for an `x*` loop that ran zero times.
+- There is no optional mark: the author's control over an empty loop is the default alone (core/conditions/defaults).
 Trigger: an example where the empty case must be singled out and `+`, `some`, `count` do not serve.
 Source: the ideas file item 6 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
 ### A default read when a reached loop runs zero times   [parked/ideas/zero-loop-default]   parked 2026-11-19
 One stated value read when a reached loop ran zero times.
+- The label's default now does this: a default is read wherever its label is absent, a loop that ran zero times
+  included (core/conditions/defaults).
 Trigger: an example where an empty list should be read as one stated value.
 Source: the ideas file item 7 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
 ### `count` / `some` over a field reference   [parked/ideas/field-count]   parked 2026-11-19
 `count(^h)`, `some(^h)`: counting or testing over a field reference.
+- The field reference is the paused sigil (parked/ideas/other-side-sigil); `some` and `count` over a condition stay
+  (lib/counting/some, lib/counting/count).
 Trigger: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in the
   draft's `length(S)` body, is a candidate to be argued, not a trigger met).
 Source: the ideas file item 8 (its whole text in the details entry).
@@ -74,6 +81,8 @@ modes: n/a (parked: not in the language)
 
 ### Restricting a default to the values the label could hold   [parked/ideas/default-range]   parked 2026-11-19
 A default restricted to the values its label could hold.
+- Answered in part: a default may be any text, with a warning only on a default that can never be used
+  (core/conditions/defaults, core/diagnostics/warnings).
 Trigger: an example of an author bitten by an out-of-range default.
 Source: the ideas file item 11 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
@@ -83,6 +92,8 @@ A library macro raising a warning on a property of its arguments' constant sets.
 Trigger: a second library-macro diagnostic wanted beside the mark-in-none one, or the first predicate build go (the
   diagnostics list is then designed as a whole, item 10's explainer with it).
 Source: the ideas file item 12 (its whole text in the details entry).
+- The mark-in-none diagnostic the trigger names left the language with the optional mark; the ideas file's note
+  reads the trigger as a first library-macro diagnostic wanted (details).
 modes: n/a (parked: not in the language)
 
 ### One nested-relation statement for spans, passes and occurrence hits   [parked/ideas/nested-relation]   parked 2026-11-19
@@ -141,7 +152,7 @@ Source: the ideas file item 20 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
 ### Building patterns without rx literals   [parked/ideas/rx-module]   parked 2026-11-19
-An `rx` module of named pattern constructs and a sequence operator; taken up as core/patterns/sequence and lib/rx.
+An `rx` module of named pattern constructs and a sequence operator; its parts the owner ruled are core/patterns/sequence and lib/rx.
 see: core/patterns/sequence lib/rx/repeat lib/rx/classes
 Trigger: none recorded in the ideas file (the item names its next step, a design note then the owner, not a trigger).
 Source: the ideas file item 21 (its whole text in the details entry); the owner's request in the record.
@@ -150,8 +161,8 @@ modes: n/a (parked: the idea; its ruled parts are the core and library pieces)
 ### One place table as the definition's skeleton   [parked/ideas/place-table-skeleton]   parked 2026-11-19
 The definition's nested-place sections rewritten around ONE table of places, the general form of item 16.
 see: core/model/places parked/ideas/place-table
-Trigger: the owner's answers to the place table's open cells, or the next full revision of the nested-place
-  sections, whichever comes first.
+Trigger (the ideas file's words): `the owner's answers to rev 24.1's §R.8 questions (the table's open cells),`
+  `or the next full revision of §R, whichever comes first`.
 Source: the ideas file item 22 (its whole text in the details entry); a review finding, filed by the manager.
 modes: n/a (parked: the idea; the core piece is the table)
 
@@ -176,8 +187,8 @@ modes: n/a (parked: not in the language)
 
 ### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-19
 A condition with a label parameter, bound where it is used.
-Trigger: the library discussion (items 12, 20, 23, 25), or the first revision of the definition that takes up reusable
-  conditions.
+Trigger (the ideas file's words): `the library discussion (items 12, 20, 23, 25), or the first revision of the draft`
+  `after rev 25 that takes up reusable conditions`.
 Source: the ideas file item 26 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
@@ -271,4 +282,12 @@ modes: n/a (parked: not in the language)
 A provided constant naming the regex that matches nothing (his idea with unset-in-hole).
 Trigger: none recorded (the owner's remark in the record, not an ideas-file item).
 Source: the record, the owner's unset-in-hole ruling (details).
+modes: n/a (parked: not in the language)
+
+### The other-side sigil   [parked/ideas/other-side-sigil]   parked 2026-11-19
+A mark before a label path meaning "this label, of the other side of the `&`" (placeholder `^h`), paused indefinitely by the owner.
+Trigger: a use with "real value other than 'override a users own *'" (his words); rejecting the empty case of the
+  author's own `*` loop (`some(^h)`) is not one.
+Source: the record, the field-reference entries and retire-paused (details).
+see: parked/ideas/field-count core/values/tuples
 modes: n/a (parked: not in the language)
