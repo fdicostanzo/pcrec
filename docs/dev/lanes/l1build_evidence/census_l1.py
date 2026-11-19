@@ -587,9 +587,16 @@ def one(args):
                     rec["spell_fail"] = True
                 else:
                     pr = {f: fval(rs, f) for f in FACTS}
+                    # THE TOP SET STEP: an exact one-byte consumed position of the
+                    # chosen run joins the set; the walk applies it BEFORE the run
+                    # floor (READYL1-7), so a below-floor run (`a` alone, never
+                    # listed as req_whole_run) still joins: read as the narrowed
+                    # one-byte positions the spelling's own set keeps, plus the
+                    # listed run's exact positions.
                     tset = set_members(rec["today"]["req_set"])
-                    joined = run_singles(pr["req_whole_run"]) - tset
-                    pr["req_set_step"] = ",".join(str(x) for x in sorted(tset | run_singles(pr["req_whole_run"]))) if joined else rec["today"]["req_set"]
+                    narrow1 = {next(iter(n)) for _, _, n in m["narrowed"] if len(n) == 1}
+                    step = (run_singles(pr["req_whole_run"]) | (narrow1 & set_members(pr["req_set"])))
+                    pr["req_set_step"] = ",".join(str(x) for x in sorted(tset | step)) if step - tset else rec["today"]["req_set"]
                     rec["pred"] = pr
             moved = []
             if m["never"]:
@@ -628,12 +635,15 @@ def item_lowerings(ref, pat):
 # ---------------------------------------------------------------- expectations (§14.2, §14.4 L1)
 
 EXPECT = [
-    # pattern, expected: set of moved facts (model's names), or set() for a non-mover
-    (b"xy(?=bc)[bc]c", {"req_whole_run", "req_set"}),
-    (b"a(?=b)[bc]", {"req_whole_run", "req_set", "req_byte"}),
-    (b"ab[xy][xy](?=(?<=xx)y)[xy]", {"req_whole_run", "req_set", "req_byte"}),
-    (b"[ac][ac]cc(?<=acc)(?<=cc)d", {"req_whole_run", "req_set"}),
-    (b"x(?=qr)[pq]r", {"req_whole_run", "req_set", "req_byte"}),
+    # pattern, expected: set of moved facts (model's names), or set() for a non-mover.
+    # req_set_maxoff is ADDED to §14.4's list on every req_set mover: a byte
+    # that joins the set joins its offset table (`req_set_maxoff`, one row per
+    # member), so the two move together (l1build_report.md, Census, finding 1).
+    (b"xy(?=bc)[bc]c", {"req_whole_run", "req_set", "req_set_maxoff"}),
+    (b"a(?=b)[bc]", {"req_whole_run", "req_set", "req_byte", "req_set_maxoff"}),
+    (b"ab[xy][xy](?=(?<=xx)y)[xy]", {"req_whole_run", "req_set", "req_byte", "req_set_maxoff"}),
+    (b"[ac][ac]cc(?<=acc)(?<=cc)d", {"req_whole_run", "req_set", "req_set_maxoff"}),
+    (b"x(?=qr)[pq]r", {"req_whole_run", "req_set", "req_byte", "req_set_maxoff"}),
     (b"foo(?=bar)baz", {"dead"}),
     (b"(?<=ab)(?<=cb)c", {"dead"}),
     (b"xyz(?<=yz)abc", set()),
@@ -732,8 +742,13 @@ def main():
         lines.append("PREDICTED MOVERS (a fact moves, or dead): %s" % cnt(movers, lambda r: True))
         for f in ("dead", "req_whole_run", "req_set", "req_byte", "req_set_maxoff"):
             lines.append("  %-16s %s" % (f, cnt(movers, lambda r, f=f: f in r["moved"])))
+        lines.append("  model movers the base compiler REFUSES (not a pattern pcrec compiles): %s"
+                     % cnt(mm, lambda r: not r.get("compiled")))
         lines.append("  narrowed but no fact moves (the narrowed position is not in the chosen run): %s"
-                     % cnt(mm, lambda r: not r.get("moved")))
+                     % cnt(mm, lambda r: r.get("compiled") and not r.get("moved")))
+        for r in sorted(mm, key=lambda r: r["src"]):
+            if not r.get("moved"):
+                lines.append("  NOT-MOVED %s %s compiled=%s" % (r["src"], esc(r["pat"]), r.get("compiled")))
         lines.append("  item lowerings among movers: " + ", ".join(
             "%s %d" % (k, sum(1 for r in movers if k in r.get("lowerings", [])))
             for k in sorted({k for r in movers for k in r.get("lowerings", [])})))

@@ -1,0 +1,105 @@
+population: 7460 rows (7071 corpus, 389 bench), 5815 distinct texts; with a positive lookaround: 675
+abstained: 97 (corpus 96, bench 1)
+read by the model: 578 (corpus 571, bench 7)
+model narrows a consumed position or proves never: 60 (corpus 60, bench 0)
+  of them never (dead): 56 (corpus 56, bench 0)
+  of them narrowing: 4 (corpus 4, bench 0) (unspellable narrowings, not predicted: 0 texts)
+PREDICTED MOVERS (a fact moves, or dead): 54 (corpus 54, bench 0)
+  dead             51 (corpus 51, bench 0)
+  req_whole_run    0 (corpus 0, bench 0)
+  req_set          3 (corpus 3, bench 0)
+  req_byte         3 (corpus 3, bench 0)
+  req_set_maxoff   3 (corpus 3, bench 0)
+  model movers the base compiler REFUSES (not a pattern pcrec compiles): 5 (corpus 5, bench 0)
+  narrowed but no fact moves (the narrowed position is not in the chosen run): 1 (corpus 1, bench 0)
+  NOT-MOVED corpus:tests/lookaround/gated.rxt (?=a\\K)x compiled=False
+  NOT-MOVED corpus:tests/lookaround/refused.rxt (?=(a\\K))x compiled=False
+  NOT-MOVED corpus:tests/lookaround/refused.rxt (?=a(?:\\K))x compiled=False
+  NOT-MOVED corpus:tests/lookaround/refused.rxt (?=\\Ka)x compiled=False
+  NOT-MOVED corpus:tests/lookaround/refused.rxt (?=(?<=a*)b)x compiled=False
+  NOT-MOVED corpus:tests/ucp/ctxnode.rxt (?=a|bc)\\w compiled=True
+  item lowerings among movers: look-ahead-pos:ctx 16, look-ahead-pos:look 22, look-behind-pos:ctx 5, look-behind-pos:look 12
+model limits met (under-approximation, texts): alternation group edge 122, quantified lookaround 42, repeat edge 53
+abstentions by reason: (?x) or (?i) 13, callout 1, conditional 16, group head 2, group head (?* 2, recursion 4, subroutine call 55, unbalanced 2, verb or (*...) 2
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?=a)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?=a)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt ((?=a)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?>(?=a)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?=[ab])z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?=[ab])z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt ((?=[ab])z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?>(?=[ab])z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?=abc)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?=abc)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt ((?=abc)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?>(?=abc)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?=ab|cd)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?=ab|cd)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt ((?=ab|cd)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?>(?=ab|cd)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?=a|bc)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?=a|bc)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt ((?=a|bc)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?>(?=a|bc)z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?=(a))z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?=(a))z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt ((?=(a))z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?>(?=(a))z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?=a(?!b))z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?=a(?!b))z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt ((?=a(?!b))z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt (?>(?=a(?!b))z) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt z(?<=a) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?<=a)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt z(?<=[ab]) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?<=[ab])z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt z(?<=abc) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?<=abc)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt z(?<=ab|cd) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?<=ab|cd)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt z(?<=a|bc) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?<=a|bc)z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt z(?<=(a)) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?<=(a))z moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt z(?<=a(?!b)) moved=dead
+  MOVER corpus:tests/lookaround/d27/matrix.rxt y(?<=a(?!b))z moved=dead
+  MOVER corpus:tests/lookaround/gated.rxt (?=a)b moved=dead
+  MOVER corpus:tests/lookaround/lookahead.rxt (?=a)\\Kb moved=dead
+  MOVER corpus:tests/lookaround/lookahead.rxt a(?=b)\\Kc moved=dead
+  MOVER corpus:tests/lookaround/lookbehind.rxt (?<=a(?=b))ab moved=dead
+  MOVER corpus:tests/lookaround/lookbehind.rxt (?<=a)(?<=ab)c moved=dead
+  MOVER corpus:tests/possessify/composition_d27.rxt \\w*(?=a)\\w moved=req_set,req_byte,req_set_maxoff
+  MOVER corpus:tests/possessify/composition_d27.rxt [a-]{1,3}(?=\\w)- moved=dead
+  MOVER corpus:tests/possessify/composition_d27.rxt ((?:\\b)?)?(?=a)x\\1 moved=dead
+  MOVER corpus:tests/possessify/composition_d27.rxt (\\B)+(?=a)x\\1 moved=dead
+  MOVER corpus:tests/possessify/composition_d27.rxt (?=a(b)?)\\w\\1? moved=req_set,req_byte,req_set_maxoff
+  MOVER corpus:tests/possessify/composition_d27.rxt (?=(a))A\\1 moved=dead
+  MOVER corpus:tests/possessify/composition_d27.rxt A*(?=a)\\w moved=req_set,req_byte,req_set_maxoff
+§14.4 expected movers / non-movers (26 rows, 0 disagreements):
+  EXPECT xy(?=bc)[bc]c                      ok   expected=req_set,req_set_maxoff,req_whole_run model=req_set,req_set_maxoff,req_whole_run pred run=78796263 set=98,99,120,121 byte=120 maxoff=98:2,99:3,120:0,121:1; today run=78796263/fffffeff set=99,120,121 byte=120
+  EXPECT a(?=b)[bc]                         ok   expected=req_byte,req_set,req_set_maxoff,req_whole_run model=req_byte,req_set,req_set_maxoff,req_whole_run pred run=6162 set=97,98 byte=98 maxoff=97:0,98:1; today run=none set=97 byte=97
+  EXPECT ab[xy][xy](?=(?<=xx)y)[xy]         ok   expected=req_byte,req_set,req_set_maxoff,req_whole_run model=req_byte,req_set,req_set_maxoff,req_whole_run pred run=6162787879 set=97,98,120,121 byte=120 maxoff=97:0,98:1,120:2,121:4; today run=6162787878/fffffefefe set=97,98 byte=98
+  EXPECT [ac][ac]cc(?<=acc)(?<=cc)d         ok   expected=req_set,req_set_maxoff,req_whole_run model=req_set,req_set_maxoff,req_whole_run pred run=6161636364/fdffffffff set=97,99,100 byte=99 maxoff=97:1,99:2,100:4; today run=6161636364/fdfdffffff set=99,100 byte=99
+  EXPECT x(?=qr)[pq]r                       ok   expected=req_byte,req_set,req_set_maxoff,req_whole_run model=req_byte,req_set,req_set_maxoff,req_whole_run pred run=787172 set=113,114,120 byte=113 maxoff=113:1,114:2,120:0; today run=787072/fffeff set=114,120 byte=120
+  EXPECT foo(?=bar)baz                      ok   expected=dead model=dead
+  EXPECT (?<=ab)(?<=cb)c                    ok   expected=dead model=dead
+  EXPECT xyz(?<=yz)abc                      ok   expected=- model=-
+  EXPECT xy[ac]b(?:(?<=ab)b|c)              ok   expected=- model=-
+  EXPECT x(?=ab|ac)a.                       ok   expected=- model=-
+  EXPECT (?<=foo)bar                        ok   expected=- model=-
+  EXPECT bar(?=baz)                         ok   expected=- model=-
+  EXPECT (?<=ab|b)c                         ok   expected=- model=-
+  EXPECT (?<=fo{1,3})bar                    ok   expected=- model=-
+  EXPECT (?<=ab)ab[a-z]*q                   ok   expected=- model=-
+  EXPECT (?<=qz)ab                          ok   expected=- model=-
+  EXPECT (?<=e{10})eeeeeqzx                 ok   expected=- model=-
+  EXPECT [a-z]?[a-z]a(?=bc)                 ok   expected=- model=-
+  EXPECT y*(?:ab(?<=xab)c)                  ok   expected=- model=-
+  EXPECT foo(?!x)bar                        ok   expected=- model=-
+  EXPECT x(?!ab)ac                          ok   expected=- model=-
+  EXPECT (?<=foo)bar(?=baz)                 ok   expected=- model=-
+  EXPECT x(?:foo(?=bar)baz)?y               ok   expected=- model=-
+  EXPECT (?:foo(?=bar)baz|q)                ok   expected=- model=-
+  EXPECT (?:foo(?=bar)baz){0}x              ok   expected=- model=-
+  EXPECT x[^\x00-\xff]y                     ok   expected=dead model=dead
+== census COMPLETE: 54 predicted movers (model+reference), 0 expectation disagreements, 0 s

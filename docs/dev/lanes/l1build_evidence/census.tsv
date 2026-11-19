@@ -1,0 +1,354 @@
+#src	pattern	never	narrowed	moved	lowerings	today(run;set;byte;maxoff)	predicted(run;set+step;byte;maxoff)	spelled	limits	abstain
+bench:309	(?x)\n# pcrec scanner for the C (?{ ... }) segment: docs/design/inline_c.md 2.3.\n# S = phase-2 splices (backslash-newline), skipped between any two characters.\n\\G \\(\\?\\{ (?<body> (?&items) (?&sp) ) (?: \\} | % (?&sp) > ) (?&sp) \\)\n\n  (?<sp> (?: \\\\ \\n )*+ ){0}\n\n  # a run of tokens, stopping (without consuming) at the closing } or %> of the current depth\n  (?<items> (?:\n      (?&sp) (?:\n          # identifier: an encoding prefix (L u U u8) is ordinary identifier text\n          [A-Za-z_$\\x80-\\xff] (?: (?&sp) [\\w$\\x80-\\xff] )*+\n          # pp-number: a ' followed by an identifier character is a C23 digit separator\n        | (?: \\d | \\. (?&sp) \\d ) (?: (?&sp) (?: [eEpP][+-] | [\\w.$\\x80-\\xff] | ' (?= (?&sp) \\w ) ) )*+\n          # string and character literals, backslash escapes, a raw newline never inside\n        | " (?: [^"\\\\\\n]++ | \\\\ \\n | \\\\ (?&sp) [^\\n] )*+ "\n        | ' (?: [^'\\\\\\n]++ | \\\\ \\n | \\\\ (?&sp) [^\\n] )*+ '\n          # block comment, line comment (a spliced newline continues it)\n        | / (?&sp) \\* (?: [^*]++ | \\* (?! (?&sp) / ) )*+ \\* (?&sp) /\n        | / (?&sp) / (?: [^\\\\\\n]++ | \\\\ \\n | \\\\ )*+\n          # a nested block: { ... } or <% ... %>\n        | (?: \\{ | < (?&sp) % ) (?&items) (?&sp) (?: \\} | % (?&sp) > )\n          # everything else, one byte; < and % are plain unless they open a digraph\n        | [^\\w$\\x80-\\xff"'/{}<%] | / (?! (?&sp) [*/] ) | < (?! (?&sp) % ) | % (?! (?&sp) > )\n      )\n  )*+ ){0}									(?x) or (?i)
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(?:ab|ac|a{1,2}))x	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=x(?:abc|abd|aed)|y{1,2})z	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(?:abc|abde|ab))z	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(?:cat|bat|at){1,2})s	False							alternation group edge,repeat edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(a{1,2})(?:bc|bd|b{1,2}e))x	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=((?:ab|ac)c?|a))d	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?i)(?<=\xce\xb2|b{1,2})x									(?x) or (?i)
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=a{1,2})(?:foo|fob|fox)	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?:cat|bat)(?<=[cb]at|a{1,3}t)s	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?:ab|ac)(?<=b|c{1,2})d	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?<=x{1,2})(?:ab|a\\Kd|ad)	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?:ab(?<=b{1,2})c|ab(?<=ab|a)d)	False							alternation group edge	
+corpus:tests/altcls/altnf_lookbehind.rxt	(?i)(?<=\xc3\xa9{1,2})(?:\xce\xb2a|\xce\xb2b)									(?x) or (?i)
+corpus:tests/altcls/altnf_rules.rxt	(?:ab|(?=ad)a|ad)	False							alternation group edge	
+corpus:tests/altcls/altnf_rules.rxt	(?:ab|(?=(a))ad|ad)	False							alternation group edge	
+corpus:tests/assertions/rev_end.rxt	(\\w{1,2})(?:(?=)|)$	False							alternation group edge	
+corpus:tests/callouts/shapes.rxt	a(?=b(?C"atend"))									callout
+corpus:tests/captures/empty_iteration.rxt	(?:(?=(a))|a)+?b	False							alternation group edge,repeat edge	
+corpus:tests/compound/split.rxt	(?:\\A|(?<=\\n)(?!\\z))x	False							alternation group edge	
+corpus:tests/compound/split.rxt	(?(?=^)a|ab)c									conditional
+corpus:tests/litscan/handoff.rxt	(?:\\Gab|x)(cat)(?=dog)	False							alternation group edge	
+corpus:tests/litscan/handoff_vm.rxt	(https://www\\.(?:acme|globex|initech|umbrella|hooli)\\.(com|de|fr|nl|org)/[^"?\\s]*)(?:(\\?(?:[^"\\s]*&)?tld=)(?!\\2\\b)[a-z]+|(?!\\?(?:[^"\\s]*&)?tld=)(\\?[^"\\s]*)?(?="))	False							alternation group edge,repeat edge	
+corpus:tests/litscan/reqcube.rxt	(?<=ab)(?i:cdef)									(?x) or (?i)
+corpus:tests/litscan/spanarms.rxt	xy(?:(?=a))*abzw	False							repeat edge	
+corpus:tests/lookaround/captures.rxt	(?:(?=(a))x|(a))	False							alternation group edge	
+corpus:tests/lookaround/captures.rxt	^(?=(a))*a$	False							quantified lookaround	
+corpus:tests/lookaround/captures.rxt	^(?=(a))*b$	False							quantified lookaround	
+corpus:tests/lookaround/d27/adversarial.rxt	((?=(a+))a)+	False							repeat edge	
+corpus:tests/lookaround/d27/adversarial.rxt	(?:(a)(?=(b))|(c)(?=(d)))+	False							alternation group edge,repeat edge	
+corpus:tests/lookaround/d27/expansions.rxt	a(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))b	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	(?=a)z	True		dead	look-ahead-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?=a)z	True		dead	look-ahead-pos:ctx	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=a)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=a)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	((?=a)z)	True		dead	look-ahead-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?>(?=a)z)	True		dead	look-ahead-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?=[ab])z	True		dead	look-ahead-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?=[ab])z	True		dead	look-ahead-pos:ctx	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=[ab])z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=[ab])*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	((?=[ab])z)	True		dead	look-ahead-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?>(?=[ab])z)	True		dead	look-ahead-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?=abc)z	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?=abc)z	True		dead	look-ahead-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=abc)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=abc)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	((?=abc)z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?>(?=abc)z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?=ab|cd)z	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?=ab|cd)z	True		dead	look-ahead-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=ab|cd)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=ab|cd)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	((?=ab|cd)z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?>(?=ab|cd)z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?=a|bc)z	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?=a|bc)z	True		dead	look-ahead-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=a|bc)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=a|bc)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	((?=a|bc)z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?>(?=a|bc)z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?=(a))z	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?=(a))z	True		dead	look-ahead-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=(a))z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=(a))*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	((?=(a))z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?>(?=(a))z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?=a(?!b))z	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?=a(?!b))z	True		dead	look-ahead-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?=a(?!b))z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?=a(?!b))*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	((?=a(?!b))z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?>(?=a(?!b))z)	True		dead	look-ahead-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	(a)(?:(?=\\1)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(a)(?=\\1)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?<=)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?<=)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	z(?<=a)	True		dead	look-behind-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?<=a)z	True		dead	look-behind-pos:ctx	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?<=a)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	z(?<=[ab])	True		dead	look-behind-pos:ctx	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?<=[ab])z	True		dead	look-behind-pos:ctx	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?<=[ab])*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	z(?<=abc)	True		dead	look-behind-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?<=abc)z	True		dead	look-behind-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?<=abc)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?<=abc)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	z(?<=ab|cd)	True		dead	look-behind-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?<=ab|cd)z	True		dead	look-behind-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?<=ab|cd)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?<=ab|cd)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	z(?<=a|bc)	True		dead	look-behind-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?<=a|bc)z	True		dead	look-behind-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?<=a|bc)z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?<=a|bc)*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	z(?<=(a))	True		dead	look-behind-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?<=(a))z	True		dead	look-behind-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?<=(a))z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?<=(a))*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/matrix.rxt	z(?<=a(?!b))	True		dead	look-behind-pos:look	none;122;122:0;122				
+corpus:tests/lookaround/d27/matrix.rxt	y(?<=a(?!b))z	True		dead	look-behind-pos:look	797a;121,122;121:0,122:1;122				
+corpus:tests/lookaround/d27/matrix.rxt	(?:(?<=a(?!b))z|w)	False							alternation group edge	
+corpus:tests/lookaround/d27/matrix.rxt	(?<=a(?!b))*z	False							quantified lookaround	
+corpus:tests/lookaround/d27/spellings.rxt	(?<=(a|ba))c	False							alternation group edge	
+corpus:tests/lookaround/d27/spellings.rxt	(?=a)*+	False							quantified lookaround	
+corpus:tests/lookaround/d27/spellings.rxt	(?=a)*	False							quantified lookaround	
+corpus:tests/lookaround/d27/spellings.rxt	(?=a)+	False							quantified lookaround	
+corpus:tests/lookaround/d27/spellings.rxt	(?=a){2}	False							quantified lookaround	
+corpus:tests/lookaround/gated.rxt	(?=a)b	True		dead	look-ahead-pos:ctx	none;98;98:0;98				
+corpus:tests/lookaround/gated.rxt	(?<=(a|bc))x	False							alternation group edge	
+corpus:tests/lookaround/gated.rxt	(?=a\\K)x	True								
+corpus:tests/lookaround/lookahead.rxt	(?=(a|ab))a	False							alternation group edge	
+corpus:tests/lookaround/lookahead.rxt	(?=(a|ab))\\1$	False							alternation group edge	
+corpus:tests/lookaround/lookahead.rxt	(?=a)\\Kb	True		dead	look-ahead-pos:ctx	none;98;98:0;98				
+corpus:tests/lookaround/lookahead.rxt	a(?=b)\\Kc	True		dead	look-ahead-pos:ctx	6163;97,99;97:0,99:1;99				
+corpus:tests/lookaround/lookahead.rxt	(?=(?:aa|a)b)a+b	False							alternation group edge	
+corpus:tests/lookaround/lookbehind.rxt	(?<=(?:ab){2})x	False							repeat edge	
+corpus:tests/lookaround/lookbehind.rxt	(?<=a(?=b))ab	True		dead	look-behind-pos:look	6162;97,98;97:0,98:1;98				
+corpus:tests/lookaround/lookbehind.rxt	((?<=a)b)+	False							repeat edge	
+corpus:tests/lookaround/lookbehind.rxt	(?<=a)*b	False							quantified lookaround	
+corpus:tests/lookaround/lookbehind.rxt	(?<=a)(?<=ab)c	True		dead	look-behind-pos:ctx,look-behind-pos:look	none;99;99:0;99				
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd|ef))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd)|e)x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=e|(?:ab|cd))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:(a)|(b)))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?i:ab|cd))x									(?x) or (?i)
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a{2}|bc))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a(?:b|c)|d(?:e|f)))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a|bc))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?i:a|bc))x									(?x) or (?i)
+corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a|bc)|d)x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_variable.rxt	(?<=(?:a|bc)d)x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_variable.rxt	(?<=((a|bc)d))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a|aa))c	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a|ab)(b|))x	False							alternation group edge	
+corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(?:a{1000}){65})x	False							repeat edge	
+corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(?:a{1000}){66})x	False							repeat edge	
+corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?i)(?<=(k{1,2})|(b))x									(?x) or (?i)
+corpus:tests/lookaround/lookbehind_widths.rxt	(?<=a|bc)*x	False							quantified lookaround	
+corpus:tests/lookaround/nonatomic_ahead.rxt	(?=(?*a)a)ab									group head (?*
+corpus:tests/lookaround/nonatomic_ahead.rxt	(?*(?=a)a)ab									group head (?*
+corpus:tests/lookaround/nonatomic_behind.rxt	(?<=(?<*a)b)c									group head
+corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(?<=a)b)c									group head
+corpus:tests/lookaround/prefilter.rxt	(?:a(?=c)|ab)c?	False							alternation group edge	
+corpus:tests/lookaround/quantified.rxt	^(?=a)*a$	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	^(?:(?=a))*a$	False							repeat edge	
+corpus:tests/lookaround/quantified.rxt	^(?:(?=a)|b)*a$	False							alternation group edge,repeat edge	
+corpus:tests/lookaround/quantified.rxt	^(?:(?=(a)))*a$	False							repeat edge	
+corpus:tests/lookaround/quantified.rxt	(?=a)*a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	(?=a)+a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	(?=a)?a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	(?=a){2}a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	(?=a){0,3}a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	(?=a)*+a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	(?=a)*?a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	((?=a)*)a	False							quantified lookaround	
+corpus:tests/lookaround/quantified.rxt	(?:(?=a)a)+	False							repeat edge	
+corpus:tests/lookaround/refused.rxt	(?=(a\\K))x	True								
+corpus:tests/lookaround/refused.rxt	(?=a(?:\\K))x	True								
+corpus:tests/lookaround/refused.rxt	(?=\\Ka)x	True								
+corpus:tests/lookaround/refused.rxt	(a|bc)(?<=\\1)x	False							alternation group edge	
+corpus:tests/lookaround/refused.rxt	(?=(?<=a*)b)x	True								
+corpus:tests/lookaround/refused.rxt	(?=a									unbalanced
+corpus:tests/lookaround/refused.rxt	(?<=a									unbalanced
+corpus:tests/modifiers/optrun_group.rxt	(?=(?m))+a	False							quantified lookaround	
+corpus:tests/possessify/composition_d27.rxt	[a-]*(?=a)?-	False							quantified lookaround	
+corpus:tests/possessify/composition_d27.rxt	\\s+(?:(?=\\w)|(?<=\\w))\\b	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[ab]{0,}?(?:(?=\\w)|(?<=\\w))$	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[ab]{1,3}?(?:(?<=a)|)\\B	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[a-c]+(?:(?=a)|)\\b	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	\\W*?(?:(?<=a)|)	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[ab]+(?:(?<=a)|)A	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	a{0,2}?(?:(?<=a)|)A	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	a{1,2}(?:(?=\\w)|(?<=\\w))A	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	\\s*?(?:(?<=a)|)\\B	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[a-c]*?(?:(?=)|)	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	-+?(?:(?=\\w)|(?<=\\w))$	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[a-]{1,2}(?:(?=\\w)|(?<=\\w))b	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	.{1,3}(?:(?=\\w)|(?<=\\w))-	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	\\w+(?:(?=a)|)\\w	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[ab]{1,2}(?:(?=)|)A	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	-+(?:(?=a)|)A	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	.*(?=a)?\\W	False							quantified lookaround	
+corpus:tests/possessify/composition_d27.rxt	-?(?:(?=)|)$	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	\\W+?(?:(?=\\w)|(?<=\\w))	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[a-c]{1,2}(?:(?=)|)\\B	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[ab]?(?:(?<=a)|)$	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	-+?(?=a)?b	False							quantified lookaround	
+corpus:tests/possessify/composition_d27.rxt	\\w{1,2}(?:(?=)|)$	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	a{1,3}?(?=a)?\\w	False							quantified lookaround	
+corpus:tests/possessify/composition_d27.rxt	\\s+(?:(?=)|)\\b	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	\\W{2,}(?:(?=a)|)$	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[ab]{2}(?:(?=a)|)\\B	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[^a]+?(?:(?=a)|)\\W	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[a-c]*(?:(?=)|)\\W	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[a-]{2,}(?:(?=)|)\\w	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	[ab]{1,3}(?:(?=a)|)b	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	\\w*(?=a)\\w	False	8:[\\x30\\x31\\x32\\x33\\x34\\x35\\x36\\x37\\x38\\x39\\x41\\x42\\x43\\x44\\x45\\x46\\x47\\x48\\x49\\x4a\\x4b\\x4c\\x4d\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x56\\x57\\x58\\x59\\x5a\\x5f\\x61\\x62\\x63\\x64\\x65\\x66\\x67\\x68\\x69\\x6a\\x6b\\x6c\\x6d\\x6e\\x6f\\x70\\x71\\x72\\x73\\x74\\x75\\x76\\x77\\x78\\x79\\x7a]->\\x61	req_set,req_byte,req_set_maxoff	look-ahead-pos:ctx	none;none;none;none	none;97;97;97:unbounded	\\w*(?=a)\\x61		
+corpus:tests/possessify/composition_d27.rxt	[a-]{1,3}(?=\\w)-	True		dead	look-ahead-pos:ctx	none;45;45:3;45				
+corpus:tests/possessify/composition_d27.rxt	((?=\\w)\\w){2}(?=a)(?:\\1|b)	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(\\b\\w)*?(?=a)\\1??a	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?<=a)){2,3}-\\1*	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?:\\b)?)?(?=a)x\\1	True		dead	look-ahead-pos:ctx	none;120;120:0;120			repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(\\w{0,2})*?(?=a)\\g{1}	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(\\B)+(?=a)x\\1	True		dead	look-ahead-pos:ctx	none;120;120:0;120			repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a))*?\\1\\b	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a))+(?=a)\\1??a	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?<=a))+a\\1+?	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=\\w)\\w){2}x(?:\\1|b)	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a))+\\w*\\1+?	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(\\w{0,2}){1,2}?(?=a)\\1{2}	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?:a|\\B))*(?=a)\\1??a	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a))+?\\B\\g{-1}	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a))*x\\b\\1	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(a?)*(?=a)\\1?	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(|a)+?(?=a)\\1	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(x*)*?(?=a)\\g{1}	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?<=a)){2,3}(?=a)(?:\\1|b)	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(a?){1,2}?(?=a)\\1??a	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a)){2,3}\\B\\b\\1	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a)){0,2}\\w*x\\1	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?<n>a*\\b)?(?=a)\\k{n}	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?<n>(?<=a))?\\w*\\k<n>\\b	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?<n>a|){1,2}?(?=a)\\k<n>\\b	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?<n>(?<=a))*?\\B\\k<n>*	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?:(?=(a))|b)+\\1	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	((?=a)|b)*\\1c	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?=(a|))\\1a	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	(?=(a))?\\1	False							quantified lookaround	
+corpus:tests/possessify/composition_d27.rxt	(?:(?=(\\w))\\w)+\\1	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?:(?=(\\w))\\w)*?\\1\\b	False							repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?=a(b)?)\\w\\1?	False	9:[\\x30\\x31\\x32\\x33\\x34\\x35\\x36\\x37\\x38\\x39\\x41\\x42\\x43\\x44\\x45\\x46\\x47\\x48\\x49\\x4a\\x4b\\x4c\\x4d\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x56\\x57\\x58\\x59\\x5a\\x5f\\x61\\x62\\x63\\x64\\x65\\x66\\x67\\x68\\x69\\x6a\\x6b\\x6c\\x6d\\x6e\\x6f\\x70\\x71\\x72\\x73\\x74\\x75\\x76\\x77\\x78\\x79\\x7a]->\\x61	req_set,req_byte,req_set_maxoff	look-ahead-pos:look	none;none;none;none	none;97;97;97:0	(?=a(b)?)\\x61\\1?	repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?=(?:(a)|b))\\w\\1?	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	(?=((?:\\b|a)*))\\1b	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?=(a*))(?1)b									subroutine call
+corpus:tests/possessify/composition_d27.rxt	(?<g>(?=a)a|b)+(?&g)									subroutine call
+corpus:tests/possessify/composition_d27.rxt	(?:(?<=a)|b(?R))c									recursion
+corpus:tests/possessify/composition_d27.rxt	((?=a)\\w|b(?1)c)+									subroutine call
+corpus:tests/possessify/composition_d27.rxt	(a*)(?=(?1))\\1b									subroutine call
+corpus:tests/possessify/composition_d27.rxt	(?:(?=a)a|b)*\\b	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?:a(?=b)|b(?=a))*\\b	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?:(?<=a)b|a)*\\b	False							alternation group edge,repeat edge	
+corpus:tests/possessify/composition_d27.rxt	(?=(a))A\\1	True		dead	look-ahead-pos:look	none;65;65:0;65				
+corpus:tests/possessify/composition_d27.rxt	A*(?=a)\\w	False	7:[\\x30\\x31\\x32\\x33\\x34\\x35\\x36\\x37\\x38\\x39\\x41\\x42\\x43\\x44\\x45\\x46\\x47\\x48\\x49\\x4a\\x4b\\x4c\\x4d\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x56\\x57\\x58\\x59\\x5a\\x5f\\x61\\x62\\x63\\x64\\x65\\x66\\x67\\x68\\x69\\x6a\\x6b\\x6c\\x6d\\x6e\\x6f\\x70\\x71\\x72\\x73\\x74\\x75\\x76\\x77\\x78\\x79\\x7a]->\\x61	req_set,req_byte,req_set_maxoff	look-ahead-pos:ctx	none;none;none;none	none;97;97;97:unbounded	A*(?=a)\\x61		
+corpus:tests/possessify/composition_d27.rxt	a{1,3}?(?:(?=a)|)$	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	a??(?:(?=a)|)a	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	\\w+?(?:(?=a)|)b	False							alternation group edge	
+corpus:tests/possessify/composition_d27.rxt	.{0,2}?(?:(?=a)|)$	False							alternation group edge	
+corpus:tests/possessify/possessify.rxt	[a-c]+(?:(?=x)|)	False							alternation group edge	
+corpus:tests/possessify/possessify.rxt	[a-c]++(?:(?=x)|)	False							alternation group edge	
+corpus:tests/possessify/possessify.rxt	(?:((?=a))a)?b+\\1b	False							repeat edge	
+corpus:tests/possessify/possessify.rxt	(?:((?=a))a)?b++\\1b	False							repeat edge	
+corpus:tests/possessify/possessify.rxt	(?:((?=a))a|)b+\\1b	False							alternation group edge	
+corpus:tests/possessify/possessify.rxt	(?:((?=a))a|)b++\\1b	False							alternation group edge	
+corpus:tests/recursion/bothlinkage.rxt	^(?:(\\((?=.)[^()]*(?1)?\\))(x(?1)y)){0}(?2)$									subroutine call
+corpus:tests/recursion/cscan.rxt	(?x)\n# pcrec scanner for the C (?{ ... }) segment: docs/design/inline_c.md 2.3.\n# S = phase-2 splices (backslash-newline), skipped between any two characters.\n\\G \\(\\?\\{ (?<body> (?&items) (?&sp) ) (?: \\} | % (?&sp) > ) (?&sp) \\)\n\n(?(DEFINE)\n  (?<sp> (?: \\\\ \\n )*+ )\n\n  # a run of tokens, stopping (without consuming) at the closing } or %> of the current depth\n  (?<items> (?:\n      (?&sp) (?:\n          # identifier: an encoding prefix (L u U u8) is ordinary identifier text\n          [A-Za-z_$\\x80-\\xff] (?: (?&sp) [\\w$\\x80-\\xff] )*+\n          # pp-number: a ' followed by an identifier character is a C23 digit separator\n        | (?: \\d | \\. (?&sp) \\d ) (?: (?&sp) (?: [eEpP][+-] | [\\w.$\\x80-\\xff] | ' (?= (?&sp) \\w ) ) )*+\n          # string and character literals, backslash escapes, a raw newline never inside\n        | " (?: [^"\\\\\\n]++ | \\\\ \\n | \\\\ (?&sp) [^\\n] )*+ "\n        | ' (?: [^'\\\\\\n]++ | \\\\ \\n | \\\\ (?&sp) [^\\n] )*+ '\n          # block comment, line comment (a spliced newline continues it)\n        | / (?&sp) \\* (?: [^*]++ | \\* (?! (?&sp) / ) )*+ \\* (?&sp) /\n        | / (?&sp) / (?: [^\\\\\\n]++ | \\\\ \\n | \\\\ )*+\n          # a nested block: { ... } or <% ... %>\n        | (?: \\{ | < (?&sp) % ) (?&items) (?&sp) (?: \\} | % (?&sp) > )\n          # everything else, one byte; < and % are plain unless they open a digraph\n        | [^\\w$\\x80-\\xff"'/{}<%] | / (?! (?&sp) [*/] ) | < (?! (?&sp) % ) | % (?! (?&sp) > )\n      )\n  )*+ )\n)									(?x) or (?i)
+corpus:tests/recursion/d27/sr_captures.rxt	^(a)(?1)(?<=(a))\\1$									subroutine call
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>a\\Kb))(?=(?&g))ab$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>a\\Kb))ab(?<=(?&g))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?:(a\\Kb)){0}(?=(?1))ab$									subroutine call
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>b))a\\K(?=(?&g))b$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>ab))ab(?<=(?&g))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>ab))(?(DEFINE)(?<h>(?&g)))ab(?<=(?&h))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>ab))(?(DEFINE)(?<h>cd))abcd(?<=(?&g)|(?&h))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>ab))(?(DEFINE)(?<h>cde))abcde(?<=(?&g)|(?&h))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>a(?&g)?b))aabb(?<=(?&g))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>a+))aa(?<=(?&g))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>a{1,300}))aaaa(?<=(?&g))$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>(?<=x)ab))x(?&g)$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	^(?(DEFINE)(?<g>a|ab))(?=(?&g))ab$									conditional
+corpus:tests/recursion/d27/sr_interactions.rxt	(?<=x)(a|b)(?1)									subroutine call
+corpus:tests/recursion/d27/sr_wrapped.rxt	^(?(DEFINE)(?<g>ab))(?=(?&g))(?&g)$									conditional
+corpus:tests/recursion/d27/sr_wrapped.rxt	^ab(?<=(a(?1)?b))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>ab)){0}ab(?<=(?&g))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>ab)){0}zab(?<=z(?&g))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>a)){0}(?:(?<h>bc)){0}xbc(?<=(?&g)|(?&h))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>a)){0}(?:(?<h>bc)){0}xa(?<=(?&g)|(?&h))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<h>bc)){0}xbc(?<=a|b|(?&h))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<h>bc)){0}xa(?<=a|b|(?&h))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<h>bc)){0}xz(?<=a|b|(?&h))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>a)){0}(?:(?<h>aa)){0}aa(?<=((?&g))|((?&h)))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<h>aa)){0}(?:(?<g>a)){0}aa(?<=((?&h))|((?&g)))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>b)){0}ab(?<=a(?=(?&g))b)$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>a|ab)){0}ab(?<=(?&g))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>a(?&h)?b)){0}(?:(?<h>(?&g))){0}aabb(?<=(?&g))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<h>a(?&h)?b)){0}(?:(?<g>(?&h)x)){0}abx(?<=(?&g))$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?:(?<g>ab)){0}(?=(?&g))ab$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^ab(?<=(ab))(?1)$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^(?=(a|ab))..(?1)$									subroutine call
+corpus:tests/recursion/inlookaround.rxt	^((?=(b))|a)+(?2)$									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	(?<=(?R))x									recursion
+corpus:tests/recursion/inlookaround_self.rxt	x(?<=(?R))									recursion
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?1))a)									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2))a)(b|(?1))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	(a(?=(?<=(?1))))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?1){0})x)									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?>(?1)))x)									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	(?<=(?R)|b)x									recursion
+corpus:tests/recursion/inlookaround_self.rxt	(?(DEFINE)(?<g>a(?<=(?&g))))x(?&g)									conditional
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2)))(a(?<=(?1)))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2)))(a(?<!(?1)))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2)))(a(?<=b(?1)))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	(?<=(?1)|(?2))(a)(b(?<=(?3)))(c(?<=(?2)))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	(?<=(?1))(a)									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	(a)(?<=(?1))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2))a)(b(?=(?1)))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2)))(a(?=(?1)))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2)))(a(?!(?1)))									subroutine call
+corpus:tests/recursion/inlookaround_self.rxt	((?<=(?2)))(?2)(a)									subroutine call
+corpus:tests/recursion/k93.rxt	(a+)b(?=(?1)a)									subroutine call
+corpus:tests/recursion/kreset.rxt	(?=(?1))(a\\Kb)									subroutine call
+corpus:tests/recursion/kreset.rxt	(?=(?1))(a\\Kb)c									subroutine call
+corpus:tests/recursion/kreset.rxt	x(?=(?1))(a\\Kb)									subroutine call
+corpus:tests/recursion/kreset.rxt	^(?:((?:a)\\Kb)){0}(?=(?1))ab$									subroutine call
+corpus:tests/recursion/slotfamilies.rxt	^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$									subroutine call
+corpus:tests/startset/dfahat.rxt	(?:(?<=a)z|w)	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	(?:(?<=[ab])z|w)	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	(?:(?<=a)z|(?<=b)y|w)	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	\\b(?:(?<=bc)d|w)	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	(?:(?<=b(?<=ab)c)d|\\bw)	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	(?:(?<=b(?<=ab)c)d|(?<=a)z)	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	\\b(?:ab|cd)\\b|(?<=x)z	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	(?:(?<=\\r)a|w)	False							alternation group edge	
+corpus:tests/startset/dfahat.rxt	(?:(?<=\xc3\xa9)a|\\bw)	False							alternation group edge	
+corpus:tests/startset/dfahat_f1.rxt	(?<=\\w) *(?:and|or)\\b	False							alternation group edge	
+corpus:tests/startset/giveup.rxt	(?=(?:a|b|x)*c)x	False							alternation group edge,repeat edge	
+corpus:tests/startset/reseed.rxt	(?:abz|x(?<=[ab])|\\bz)y	False							alternation group edge	
+corpus:tests/ucp/ctxnode.rxt	(?<=\\$)\\d+(?:\\.\\d{2})?\\b	False							repeat edge	
+corpus:tests/ucp/ctxnode.rxt	(?=a)*b	False							quantified lookaround	
+corpus:tests/ucp/ctxnode.rxt	(?<=a)+b	False							quantified lookaround	
+corpus:tests/ucp/ctxnode.rxt	(?=(?>a|b))\\w	False							alternation group edge	
+corpus:tests/ucp/ctxnode.rxt	(?i)(?<=a)b									(?x) or (?i)
+corpus:tests/ucp/ctxnode.rxt	(?=a|bc)\\w	False	8:[\\x30\\x31\\x32\\x33\\x34\\x35\\x36\\x37\\x38\\x39\\x41\\x42\\x43\\x44\\x45\\x46\\x47\\x48\\x49\\x4a\\x4b\\x4c\\x4d\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x56\\x57\\x58\\x59\\x5a\\x5f\\x61\\x62\\x63\\x64\\x65\\x66\\x67\\x68\\x69\\x6a\\x6b\\x6c\\x6d\\x6e\\x6f\\x70\\x71\\x72\\x73\\x74\\x75\\x76\\x77\\x78\\x79\\x7a]->[\\x61\\x62]			none;none;none;none	none;none;none;none	(?=a|bc)[\\x61\\x62]		
+corpus:tests/ucp/ctxnode.rxt	(*UCP)(?<=\\w)x									verb or (*...)
+corpus:tests/ucp/ctxnode.rxt	(?m)^ERROR(?:(?=\\n)|\\z)	False							alternation group edge	
+corpus:tests/ucp/ctxnode.rxt	(?m)(?:\\A|(?<=\\n)(?!\\z))ERROR$	False							alternation group edge	
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>[a\\x{3b1}])(?<=(?&g))x									subroutine call
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>.)(?<=(?&g))x									subroutine call
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>[^a])(?<=(?&g))x									subroutine call
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>\\w)(?<=(?&g))x									subroutine call
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>\\p{L})(?<=(?&g))x									subroutine call
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>[\\x{0}-\\x{10FFFF}])(?<=(?&g))x									subroutine call
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<=(?i)s)x									(?x) or (?i)
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>(?i)s)(?<=(?&g))x									(?x) or (?i)
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<=(?i)[a-z])x									(?x) or (?i)
+corpus:tests/utf8/axis08_lookbehind_varwidth.rxt	(?<g>(?i)[a-z])(?<=(?&g))x									(?x) or (?i)
+corpus:tests/utf8/island_illformed.rxt	(*UCP)(?<=\\$)\\d+\\b									verb or (*...)
