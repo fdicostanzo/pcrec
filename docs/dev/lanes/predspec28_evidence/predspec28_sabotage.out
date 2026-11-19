@@ -1,0 +1,16 @@
+predspec28 sabotage: each sabotage ALONE (PREDSPEC28_SABOTAGE=sN), then all at once (=1); a sabotage is CAUGHT when its run fails at least one check
+s1: == CHECKS: 18 of 19 OK ; failed: PW A B C as recorded, both domains ; CAUGHT
+s2: == CHECKS: 17 of 19 OK ; failed: PW two-case macro = minimum;PW minimum hole program ; CAUGHT
+s3: == CHECKS: 18 of 19 OK ; failed: PW minimum hole program ; CAUGHT
+s4: == CHECKS: 18 of 19 OK ; failed: PW bounds ; CAUGHT
+s5: == CHECKS: 18 of 19 OK ; failed: NW the candidates part on canonical operands under `-` ; CAUGHT
+s6: == CHECKS: 18 of 19 OK ; failed: FL propagation with override, every flag ; CAUGHT
+s7: == CHECKS: 18 of 19 OK ; failed: AC plain arguments pass, filter role fails under (a) ; CAUGHT
+s8: == CHECKS: 18 of 19 OK ; failed: UN never-matching rx, ALGEBRA, (5) vacuous first form ; CAUGHT
+s9: == CHECKS: 18 of 19 OK ; failed: CN enumerate line, the hand-worked table, lift-order ; CAUGHT
+s10: == CHECKS: 18 of 19 OK ; failed: CN enumerate line, the hand-worked table, lift-order ; CAUGHT
+s11: == CHECKS: 18 of 19 OK ; failed: HR label differs from capture; the spellings ; CAUGHT
+s12: == CHECKS: 18 of 19 OK ; failed: SN error without J, first set with J, numbered form ; CAUGHT
+s13: == CHECKS: 18 of 19 OK ; failed: DW the `$` form never holds, the condition does ; CAUGHT
+s14: == CHECKS: 18 of 19 OK ; failed: TT rev 28's changed rows ; CAUGHT
+all: == CHECKS: 6 of 19 OK

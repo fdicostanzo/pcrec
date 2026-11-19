@@ -1,83 +1,73 @@
 # Predicate-language manager: wake-up brief
 
-Written by MAIN at the hand-over, 2026-11-18 about 19:00 box clock (session 140), for the FIRST predicate
-manager session. Committed docs win on any disagreement. No lane or critic round of the predicate work is alive.
+Rewritten 2026-11-19 early (box clock), at /close of the first predicate-manager session. Committed docs win on any
+disagreement.
 
-## What happened up to the hand-over
+## State
 
-- The language is DESIGN ONLY. The draft is `docs/design/predicates_draft.md` at REVISION 27.1 (merged to main
-  8b2d71186, 2026-11-18; status NOT STABLE). Reviews filed: r43 (rev 25), r47 (rev 26), r48 (rev 27; its fixes ARE
-  rev 27.1). Rev 27.1 itself has had NO critic round.
-- The record of the owner's words is `docs/design/plan_row_bodies/COND-FAMILY.md`. The last entry folded into the
-  draft is "2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation". Nothing on predicates
-  has been said since (two later rulings of that evening are about other features).
-- The 2026-11-18 afternoon changed the ground: backref-label = CAPTURE (`\k<h>` in a literal reads PCRE's capture;
-  `$y` still reads the label); match-is-rx (ONE type: a match is a regex of a single string; "Change my answers
-  to match"); operations go both ways (`\d + 1` matches the numerals 1 through 10; `left(rx, 2)`); each operation
-  has a compile-time form on general regex and a run-time form on single strings; functions are built for
-  constants and reads now, the rest is UNDER CONSTRUCTION (a direction acknowledged, never "illegal"). The draft's
-  R.1.16 holds the type table and the ANSWERS CHANGED table (his earlier answers that moved): he has NOT yet
-  checked that table. Offer it.
+- Branch `lane/pred-rev28` (worktree `worktrees/pred`). Draft = REVISION 28.1, NOT STABLE; review r52 filed
+  (`docs/dev/reviews/2026-11-18-r52-predspec28.md`); lanes predspec28 / predspec281 merged and stopped; evidence 28 of
+  28. DELIVERED to main as P-2 in `to_main.md`; P-3 (the close notice) follows it. At close main had NOT merged yet:
+  check `from_main.md` and `git log main`; after its merge cut `lane/pred-rev29` from main (or merge main in).
+- NOTHING running. No crons of mine.
+- SEVENTEEN owner rulings since rev 27.1. Eleven (2026-11-18 evening) are folded in rev 28.1. SIX of 2026-11-19 are
+  in the record ONLY and are the fold for REVISION 29.
 
 ## READ, IN THIS ORDER
 
-1. The skill (`.claude/skills/pcrec-predicate-manager/SKILL.md`), section 2 above all.
-2. COND-FAMILY.md from "2026-11-18 OWNER RULING — backref-label: capture" to the end (five entries).
-3. The draft: header/history block; R.1.15 (the value hole), R.1.16 (one type; the tables); section R.8 (the
-   question list, each with runs in every mode).
-4. `docs/dev/reviews/2026-11-18-r48-predspec27.md` (ruled dispositions; finding O and review r47's E1 are PLAN
-   for the next FULL revision) and `docs/dev/lanes/predspec271_report.md`.
-5. `docs/design/predicates_future.md` items 26-31 (his ideas since 11-17; item 30 is his graph idea for
-   `left(rx, n)`; item 31 the unlocks review r48 noted).
+1. The skill, section 2. 2. COND-FAMILY.md from "2026-11-18 OWNER, discussing padded-order" (the first entry after
+   rev 28.1's fold point, "MANAGER — after lane predspec281") to the end. 3. `journal.md` (2026-11-19 entries).
+4. The draft's §R.8. 5. `owner.md`.
 
-## The question queue (none blocks a build: nothing is being built)
+## Revision 29: the fold brief's contents (first entry "2026-11-18 OWNER, discussing padded-order"; last "2026-11-19 OWNER, on building rx from many bindings")
 
-In the order main would take them; each is in the draft's R.8 with its runs:
-1. **hole-reads-capture**: a quick confirm. The draft says `${$y}` reads the LABEL (his "$x reads the label");
-   on 11-18 he restated the hole as "a backreference", and main answered "it reads the label, so it parts from
-   `\k<y>` only in the corner"; he went on without objecting, which is NOT a ruling. They differ on 2 of 21,845
-   texts.
-2. **number-domain** (is `0099` a number), then **numeral-width** (canonical `100` or width kept `0100`).
-3. **hole-flags**: under `(?i)` a binding with its own flags FAILS on `a-A` where a label read HOLDS.
-4. **unset-in-hole** (re-cut: four candidates; under "fails" every read-before-the-group example is vacuous).
-5. **construction-line**: is arithmetic on an array HE WRITES built now (the ruled array-lift answers stay ruled
-   and printed) and where exactly UNDER CONSTRUCTION begins; **under-construction-class** (its own error class or
-   "requires module" wording).
-6. **value-test** (his `if($y & (0: 1492), "Columbus", $y)`: as written the test is consumed; only a condition
-   test gives his intent), **dollar-warning** (does `$x & <5` warn "did you mean `x: <5`"), **same-name-twice**
-   (two groups of one name in one literal; PCRE needs `(?J)`), **lift-order**, **array-in-hole** (`${@y}`: main's
-   idea "any earlier value, as an alternation", hand-worked).
-7. Open since rev 26.1: plus-operands (he WROTE `.` for joining and `+` for adding: an observation, not a
-   ruling), other-holes, anything-text, zero-in-sequence, group-truth / pass-table, number-in-loop,
-   hit-carry-depth, caller-ambiguous, not-test, condition-group, product-order's re-listed readings,
-   conditional-spelling.
-NOT RULED, his PROPOSAL: arrays written with `|` only, never `[ , ]` (COND-FAMILY, "OWNER PROPOSAL — arrays are
-written with `|` only"; main's assessment in favour, with the empty array, precedence and the long lists to
-settle). THE SPELLINGS REVIEW (one sitting, items 1-29 in the draft: `_`, `[_ = A]`, `anything`, `cartesian`,
-`peek()`, `when(...)`, a `when` operator, the two `left`s: main renamed the older filter `prefix_in`, a
-placeholder).
+RULINGS (quote each from the record):
+- padded-order: "i agree with your lean" = plain macro, ANY-LENGTH branch first; CONDITION: holds if the unbounded
+  lazy case (`\d+?`) is confirmed; if not, back to him with the run. Mixed-order alternation differs from fill: stated
+  behaviour.
+- flags-scope: inherit `i`, `m`, `s`; NOT `U`, `x`, `xx`, `n`. REVERSES rev 28.1's draft reading (all propagate).
+- class-order: longest first, CLASS POSITIONS ONLY; replaces the codepoint lean.
+- dollar-diagnostic: "the form $x & .. should just get a warning": the dedicated warning is BACK (my withdrawal
+  reversed); the read-stands-for-its-group proposal DROPPED; wording / silencing are my call.
+- number-edges: nothing, everywhere.
+- same-name-count: scoped, BACKREFERENCES ONLY (my "(and `$h`)" was withdrawn in the record).
+NOT RULINGS, recorded: "rx inherits the flags of the surrounding rx" (his statement of flags-propagate; flags-in-filter
+closed as "reach" by MY reading); a binding in a hole inherits (lean, equals the draft); "only i should be inherited"
+(observation); export/private labels (recollection; export-rule of 2026-11-18 already rules BINDING scope);
+"use labels as they are defined and see if there is a problem" (direction).
+MY READINGS TO TEST (each listed in its record entry): any-length-first = fill for length-ordered arguments; the
+unbounded lazy case vs predspec281's statement; flags reach an `&`, a condition's set and a filter-role argument
+inside a hole; inheritance is transitive; a binding has no fixed string set; not-inherited flags are the inserted
+rx's own defaults at any depth; class-order needs no tie rule; nesting `(3|9) + \d`; TWO classes in one lift and a
+class under a quantifier (NOT covered by his words: if readings part, ASK); equal results are one; `J` has no effect
+across a hole (rev 28.1's `(?J)` run flips); numbered references are the inserted literal's own; literal `% 0` under
+the never-match diagnostics; `$h` vs `\k<h>` across a hole (public label flows out, capture does not); the warning
+fires wherever `$x & S` is written.
+TASKS (not rules): his isodate example (three uses, part labels `start_date`, `end_date`; bare `year` and the paths,
+every mode) under the label rules AS DEFINED; two or three examples where a PRIVATE label does real work;
+any-case-body re-run under the flags rulings (if `/(?i:${rx})/` equals the primitive everywhere it is my
+answer-free call, else ask).
+Then a critic round: ask main for the review number FIRST.
 
-## Next units (yours to order with him)
+## The question queue after rev 29
 
-- After a batch of answers: ONE fold revision (rev 28), then a critic round (ask main for the review number).
-- The next FULL revision restructures: one table per hole position, one table per operation (reviews r47 E1 and
-  r48 O). Do not start it inside a fold.
-- The draft is about 9,400 lines; revision lanes read sections, never the whole file at once.
+plus-operands, other-holes, anything-text, zero-in-sequence, group-truth / pass-table, number-in-loop,
+hit-carry-depth, caller-ambiguous, not-test, condition-group, conditional-spelling; construction-line (b) (a READ in a
+count / class / option position); any-case-body if the run leaves it open. NOT RULED, his PROPOSALS: arrays written
+with `|` only; the label-only group `(?<:x>...)`. THE SPELLINGS REVIEW (one sitting): also the carried-capture form,
+`padded`'s parameter names, the never-matching constant's name. He has NOT checked the ANSWERS CHANGED table (R.1.16).
 
-## Standing facts
+## Lessons (cases; the rules among them are proposed skill edits in to_main.md)
 
-- Evidence: `docs/dev/lanes/predspec26_evidence/`, `predspec261_evidence/`, `predspec27_evidence/`,
-  `predspec271_evidence/` (each re-runs byte-identical; libpcre2 through a callout model; one sabotage per check).
-- Readings of main's that FAILED their test and are withdrawn in the record: array-lift "limited to finite rx";
-  "his `if` is simply the one `when`"; "array-lift on user arrays falls under construction"; "every spelling of
-  anything agrees as a whole value" (`/.*/` stops at a newline); "the export rule settles the caller's read-out".
-- The channel with main: `docs/dev/pred/from_main.md` (M-1 is the hand-over) and `to_main.md`.
-
-## Lessons (the rules are in the skill; these are the cases)
-
-- 2026-11-18: main asked him a question three earlier rulings answered ("we've covered this ground several
-  times"). Grep the record first, and quote it.
-- 2026-11-18: three critics separately found that a new status table contradicted printed RULED answers; a fold
-  that adds a table runs every ruled example through it.
-- He interrupts and corrects fast; a `/q` presentation is ONE question. When he asks "what is the difference
-  between X and Y", the answer is often that there is one thing (label vs value): say so plainly.
+- A recollection of his ("I proposed", "I thought we decided") was RIGHT each time and lived in the record, twice
+  in a place I had not grepped (POSTFACT.md; the export-rule entry). Grep `docs/design/plan_row_bodies/` AND the
+  draft's ruled lists before answering, and before queueing a question (inner-label-read was already ruled).
+- I stretched a slug ruling past what was asked (same-name-count onto `$h`); he caught it in one line. A ruling
+  covers the example and runs it was asked with; anything wider is a reading, written as one.
+- He prefers a simple form-keyed rule to machinery when the subject is a warning ("i don't want to spend too much
+  time on the warning"); he improves a question with a better candidate (longest-first) when the offered ones are
+  arbitrary: say "no natural answer" plainly and leave room.
+- He argues from the type ("everything is a regex") and from responsibility ("its that rx's responsibility to set
+  them"): test a proposed rule against both before proposing.
+- A body offered as EQUAL to a meaning is run in SEARCHED and FIND-ALL, with a mixed-order argument, before it is said.
+- The `no_cd_worktree` hook blocks any `cd` chained with another command: `git -C` and absolute paths only.

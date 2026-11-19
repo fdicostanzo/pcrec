@@ -3903,3 +3903,806 @@ UNDER CONSTRUCTION part: hard, not to get bogged down in now, the direction ackn
 a single string"; (m2) the regex operations on a read (`$y | "other"`, `$y & S`, `$y . "End"`, `when`) are built
 in their run-time form now; (m3) a compile-time constant (`left("Columbus", 2)`, `2025 + 1`) is folded at compile
 time.
+
+**2026-11-18 OWNER, discussing hole-reads-capture (Frank, to the predicate manager's first session, evening;
+DISCUSSION, nothing ruled: "this is all me just talking and i'm not sure how much of this is agreed").** Asked
+**hole-reads-capture** as a confirm (the label, with the 2026-11-17 ruling "what an unqualified `$x` reads" quoted;
+the witness `/(?:(?<y>\d)?-${$y};)*/`, WHOLE `3-3;-3;`, SEARCHED, FIND-ALL `3-3;-3; 7-7;`; the capture column re-run
+under python `re` this session, the label column the draft's model). HIS WORDS, in full: "hole-reads-capture: my
+understanding of $y is that it represents the captured value at the labeled group. some things to answer for me:
+does that mean it only works at capture groups? i'd think no. we separate the idea of capture and label. some
+groups can be labeled and not be "capture" in that they return capture groups. so they can be used to say that two
+groups agree as your example above but not actually return the y group above unless it is also a capture group for
+the regex. this is all me just talking and i'm not sure how much of this is agreed. the subject of $y has only
+today been detailed".
+RECORD: DISCUSSION. (1) OBSERVATION, his understanding: `$y` "represents the captured value at the labeled group"
+(the text the labelled group matched; it does not choose between the pass's own value and PCRE's carried one, the
+point the question asks). (2) His QUESTION and LEAN: does `$y` work only at capture groups; "i'd think no". (3)
+OBSERVATION: capture and label are separate ideas; a group can be labelled without being a "capture" in the sense
+of being RETURNED to the caller; such a label can still say that two groups agree; the group is returned only if
+it is "also a capture group for the regex". hole-reads-capture is NOT answered by this entry.
+THE MANAGER'S ANSWER to him, from the record: the separation is his own of 2026-11-17 ("joint-last-pass: that logic
+might be justified if you differentiate between a label and a capture"), and the draft's §6.2 (RULED, CF:583, Q11:
+default output = span + accept-class values, named spans need `captures`) already has a label TESTED for free and
+its text REPORTED only under the `captures` opt-in. THE MANAGER'S READINGS (mine, to be tested by the next revision
+lane): (m1) his (3) is consistent with §6.2 and R.1.13's "setting a label is the group form read as a LABEL, not as
+a capture"; (m2) what the record does NOT have is a PER-GROUP way to say "labelled, not returned" against
+"labelled and returned": today the choice is the program-level `captures` opt-in (and the draft's `_` private
+label, a visibility rule); (m3) a `$y` read in a hole needs the group's TEXT kept during the match (as a
+backreference does) whether or not the group is returned to the caller: "not returned" is a statement about the
+output, not about what the matcher remembers (hand-reasoned, not run).
+
+**2026-11-18 OWNER, a RECOLLECTION in the hole-reads-capture discussion: the label-only group (Frank, to the
+predicate manager, evening; a recollection of an earlier PROPOSAL, nothing ruled).** HIS WORDS, in full: "for
+capture group regex: i proposed /(<:x>foo)/ would be regex for a labeled group that is not a "capture group" that
+returns values. it has the normal label syntax and i added the (?: ) colon of a non-capture group".
+CHECKED AGAINST THE RECORD (the same hour): CONFIRMED, outside this file: `docs/design/plan_row_bodies/POSTFACT.md`,
+the entry "2026-11-09 — Frank: where-operator concerns ...", bullets "Label spelling (Frank 2026-11-09):
+`(?':name' ...)`" (name and capture status are orthogonal; "the missing fourth cell, named+non-capturing = the
+label"; "the `<...>` twin is `(?<:name>...)`") and "Names are labels, numbers are captures (Frank 2026-11-09)".
+Those are manager notes of his proposals, marked there "not ruled". 0 hits for either spelling in this file, the
+draft or `predicates_future.md` before today: the predicate draft never carried the label-only group; it has the
+named group as the label and the program-level `captures` opt-in (§6.2). RECORD: his PROPOSAL stands as a proposal:
+a group that is LABELLED and NOT a capture (returns no value to the caller); the spelling is the label syntax plus
+the colon of `(?:`. SPELLING (a placeholder, D193 addendum 4, to the spellings review): he wrote `(<:x>foo)`; the
+2026-11-09 forms are `(?<:x>foo)` and `(?':x'foo)`. RUN this session against libpcre2 (pcre2_compile through
+ctypes): `(?<:x>foo)` REJECTED (error 162, subpattern name expected, offset 3); `(?':x'foo)` REJECTED (162, offset
+3): no valid PCRE pattern changes meaning (the confirmation the 11-09 note asked for); `(<:x>foo)` as typed
+COMPILES in PCRE (an ordinary capture group around the literal text `<:x>foo`), so that exact spelling would
+collide. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) this is the per-group way to
+say "labelled, not returned" that the previous entry's (m2) said the record lacked: withdrawn as "lacking", it is
+an unruled proposal of 2026-11-09; (m2) a label-only group has NO PCRE capture, so a `$y` read of it (in a hole or
+elsewhere) can only be the LABEL: a force toward "label" in hole-reads-capture, and `\k<y>` naming a label-only
+group is a new point (an error, or the label); (m3) how the label-only group sits with §6.2's `captures` opt-in
+(does `(?<x>...)` return by default once the label-only form exists) is not stated anywhere.
+
+**2026-11-18 OWNER, correcting his spelling of the label-only group (Frank, to the predicate manager, evening; a
+CORRECTION of the entry above, nothing ruled).** Shown the libpcre2 table (`(?<:x>foo)` rejected, `(?':x'foo)`
+rejected, `(<:x>foo)` compiles). HIS WORDS, in full: "oops. yes, i missed the ?. it should look like the top row".
+RECORD: the form he meant is `(?<:x>foo)` (the table's top row); `(<:x>foo)` was a slip. The label-only group
+remains a PROPOSAL; its spelling remains a placeholder for the spellings review, now with his stated form.
+hole-reads-capture is still not answered.
+
+**2026-11-18 OWNER RULING — hole-reads-capture: the label; and a way to get the PCRE capture value (Frank, to the
+predicate manager, evening).** ASKED AS A RULING (slug hole-reads-capture, restated with the witness
+`/(?:(?<y>\d)?-${$y};)*/` on `3-3;-3;`: label, unset on the pass that skips the group, the whole text fails;
+carried capture, holds as `\k<y>` does; the manager's leaning the label). HIS WORDS, in full: "what i want is that
+$y works like label. however, there is a way to get the pcre capture value".
+RULED: (1) `$y` reads the LABEL, in a hole as everywhere (`${$y}` is the label read; the draft's reading R.1.15
+(8), (11) is confirmed; the 2026-11-17 ruling "`$x` and `x:` never disagree" extends to holes). (2) REQUIRED: a way
+to get PCRE's capture value. This restates his 2026-11-17 requirement ("We need a way to get the pcre behavior
+even if ugly"). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) inside rx text the way
+exists and is ruled: `\k<y>` reads the capture (backref-label); (m2) where a `$` reads (outside rx text, and in a
+hole's expression) the carried-capture form is still to be SPELLED (the draft's spellings item 3; R.1.16 A10);
+(2) adds no new requirement beyond that; (m3) for a label-only group `(?<:y>...)` (a proposal) there is no
+capture, so the carried-capture form has nothing to read there: a point for that proposal, not for this ruling.
+
+**2026-11-18 OWNER, a question in answer to number-domain (Frank, to the predicate manager, evening; a QUESTION /
+suggestion, nothing ruled).** Asked **number-domain** (the comparison half quoted as settled by his 2026-11-15
+confirmation; the arithmetic half asked; candidates canonical everywhere, parsed everywhere, two domains; the
+witness `/(?<y>\d{4})-${$y + 1}/` in the three modes; the manager's leaning canonical, with the cost named: a
+padded month `05` is not a number, "next month" needs an unpad step). HIS WORDS, in full: "cant we wrap
+padded($y + 1)".
+RECORD: his SUGGESTION: wrap the arithmetic in `padded(...)` (ruled 2026-11-15: `padded(rx) := /0*${rx}/`).
+RUN this session (a small python model, `$PCREC_TMPDIR/scratch/pred/padwrap.py`; to be re-run by the next revision
+lane's evidence): (A) `/(?<y>\d{4})-${padded($y + 1)}/`: under BOTH domains WHOLE `2025-2026` HOLDS and
+`2025-02026` HOLDS (any number of zeros); under CANONICAL `0099-0100` FAILS and `0099-100` FAILS (the read `0099`
+is no number, so there is nothing to pad); under PARSED both HOLD; FIND-ALL `0099-0100 2025-2026 0100-0101`:
+canonical [`2025-2026`@10], parsed [`0099-0100`@0, `2025-2026`@10, `0100-0101`@20]. (B) the width held with `&`:
+`${padded($y + 1) & /\d{4}/}`: `2025-02026` FAILS under both; parsed `0099-0100` HOLDS, `0099-100` FAILS;
+`9999-10000` FAILS under both. (C) the zeros written OUTSIDE the label, `/0*(?<y>[1-9]\d*)-${padded($y + 1) &
+/\d\d/}/`: the SAME under both domains: WHOLE `05-06` HOLDS, `09-10` HOLDS, `05-6` FAILS, `99-100` FAILS; FIND-ALL
+`05-06 09-10 11-13 01-02` [`05-06`@0, `09-10`@6, `01-02`@18].
+THE MANAGER'S READINGS (mine, to be tested): (m1) `padded()` pads the RESULT; it does not make a padded READ a
+number, so by itself it answers numeral-width (the result is canonical; padding is the explicit wrap; the width is
+held with `& /\d{n}/`), not number-domain; (m2) under canonical the padded read is handled by where the label is
+written (zeros outside the labelled group, (C)), with no new transform; (m3) under "the result of arithmetic is
+canonical, pad by wrapping", numeral-width's WIDTH KEPT candidate is not needed under any domain.
+
+**2026-11-18 OWNER, a form for padding to a width (Frank, to the predicate manager, evening; an IDEA in the
+number-domain discussion, nothing ruled).** After the runs of his wrap (`padded($y + 1)`; the width held with
+`& /\d{4}/`). HIS WORDS, in full: "padded($y + 1, 4) or even padded($y + 1, length = 4, pad = "0")".
+RECORD: IDEA: `padded` takes the WIDTH as a second parameter, and in the longer form named parameters `length` and
+`pad` (the pad character, `"0"` in his example). Spellings and parameter names are placeholders (D193 addendum 4;
+to the spellings review). FROM THE RECORD: the one-parameter body is RULED (2026-11-15: "padded(rx) := /0*${rx}/",
+"Give or take details."); the parameter rule his long form uses is the 2026-11-13 LEAN, still pending
+("positional = required parameters in declared order ... keywords = optional settings with defaults (`sep =
+"."`); ANY parameter may also be passed by name"). THE MANAGER'S READINGS (mine, to be tested by the next revision
+lane): (m1) the width form is a PLAIN MACRO over ruled pieces, for instance `padded(rx, n) := /0*${rx}/ &
+/(?s:.){${n}}/` and with a pad character `/(?:${pad})*${rx}/ & ...`: nothing new in the engine; (m2) it is one
+macro with optional parameters (no width = any number of pad characters, the ruled body), not an overload
+(overloading: 2026-11-13, "NOT phase one"); (m3) NOT decided by his words: whether the width is EXACT (a result
+that does not fit yields nothing: `9999 + 1` under width 4 fails) or a MINIMUM (printf's: `10000`); a small python
+check this session: result `2026` text `2026` both hold; result `43` text `0043` both hold, `43` and `00043` both
+fail; result `10000` text `10000`: exact FAILS, minimum HOLDS. To be asked as **padded-width**.
+
+**2026-11-18 OWNER RULING — number-domain: canonical (Frank, to the predicate manager, evening).** ASKED AS A
+RULING (slug number-domain; the closing form of the question: "Does number-domain: canonical stand, with the width
+question settled as 'the result is canonical, pad by wrapping'?"). HIS WORDS, in full: "number-domain: canonical".
+RULED: ONE number domain for every number operation (the comparisons, `+ - * %`, counts): the CANONICAL numerals
+(no leading zeros, sign or point unless the literal has them); a read such as `0099` is NOT a number for `+` as it
+is none for `<` (the draft's reading R.1.16 THE NUMBER DOMAIN is confirmed; rev 27's two domains stay withdrawn).
+WHICH READING OF THE BARE ANSWER THE MANAGER TOOK: the slug only. The second half of the closing question (the
+width) was NOT named in his answer and is NOT recorded as ruled. THE MANAGER'S READINGS (mine, to be tested by the
+next revision lane): (m1) **numeral-width** is no longer a question: the draft asks it "only if the domain admits
+padded numerals", and under canonical a padded numeral never reaches `+`, so WIDTH KEPT has no case to act on
+(supported in the draft: R.1.15 (2), "the two candidates part only if the domain admits padded numerals"); (m2)
+the result of arithmetic is the canonical numeral and padding is the explicit `padded(...)` wrap (his suggestion
+of this evening; the width form is asked as **padded-width**); (m3) the draft's "outside the domain: removed at
+compile time, nothing (the position fails) at run time" was in the question's quoted definition and is taken as
+ruled with it.
+
+**2026-11-18 OWNER, what he meant by the width of `padded` (Frank, to the predicate manager, evening; a
+CLARIFICATION of his idea in the padded-width discussion, nothing ruled).** Asked **padded-width** (exact, or a
+minimum as printf's; the manager's leaning exact). HIS WORDS, in full: "i meant the length = 4 to speak to how far
+out the 0 would go. so 0{min(0, length - strlen($y-1))} but i see now that that is tricky".
+RECORD: CLARIFICATION, his intent: `length` says how far the zeros reach: the number of zeros is the width less
+the length of the value, never below none. That is the MINIMUM reading of padded-width (a value longer than the
+width is matched unpadded). His sketch is a COUNT computed from the read; his own remark: "tricky". THE MANAGER'S
+READING OF THE SKETCH'S SLIPS (phone-typed; mine): `min(0, ...)` is meant as "at least zero" (`max`), and `$y-1`
+as the padded value (`$y + 1` in the running example). NOT a ruling: he stated what he meant and that it is
+tricky, he did not choose. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) as he wrote
+it, it is a count hole holding a run-time read, which the draft has UNDER CONSTRUCTION (R.1.16 T13, THE DRAFT'S
+READING); (m2) the same meaning needs NO computed count: `padded(rx, n) := (/0*${rx}/ & /(?s:.){${n}}/) | (rx &
+/(?s:.){${n},}/)` (padded to exactly n, or n and longer unpadded), over ruled pieces with a compile-time n;
+CHECKED this session in python `re`: for every value 0..11,999 and 99999, 100000, 123456, with six candidate texts
+each (36,119 checks), that form accepts a text exactly when the text is the value zero-filled to 4: 0 differences;
+(m3) the EXACT reading already has a spelling without the width parameter (`padded(rx) & /\d{4}/`, run earlier
+this evening), so a width parameter adds something only under the minimum reading; the manager's leaning moves
+from exact to MINIMUM on (m2) and (m3).
+
+**2026-11-18 OWNER, on restricting a minimum-width `padded` (Frank, to the predicate manager, evening; an
+OBSERVATION in the padded-width discussion, not asked as a ruling and not answered by slug).** After the manager's
+form of the minimum reading without a computed count, and its note that a "four-wide" field can then match five
+characters. HIS WORDS, in full: "someone could use padded(blah, 4) to get a minimum 4 then restrict it to the
+rightmost 4 if they wanted".
+RECORD: OBSERVATION: with `padded(blah, 4)` meaning a MINIMUM of 4, a writer who wants no more than 4 composes a
+restriction to the rightmost 4 on top of it. It presupposes the minimum reading and answers the overflow concern;
+padded-width itself is put back to him by slug. THE MANAGER'S READINGS (mine, to be tested): (m1) "restrict it to
+the rightmost 4" has two spellings with DIFFERENT answers on overflow, his words do not choose: the IMAGE
+`right(padded(blah, 4), 4)` (value `10000` gives `0000`: it wraps) and the FILTER `padded(blah, 4) & /\d{4}/`
+(value `10000` gives nothing: it fails); for values that fit both give the padded value (python this session:
+`43` gives `0043`, `2026` gives `2026` under both); (m2) either is a composition over the minimum form, which is
+the ground for taking minimum as the base meaning.
+
+**2026-11-18 OWNER, a third way to bound a minimum-width `padded` (Frank, to the predicate manager, evening; an
+OBSERVATION, continuing the entry above; padded-width was put to him by slug and this is not an answer by
+slug).** HIS WORDS, in full: "i mean, you could also <=9999".
+RECORD: OBSERVATION: the overflow can also be bounded with a comparison, `<=9999`. With the two entries above his
+LEAN on padded-width is the MINIMUM reading (recorded as a LEAN, the manager's classing: three remarks in a row
+presuppose it, none says the slug). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1)
+under number-domain (RULED canonical this evening) WHERE the comparison is written matters: on the VALUE, before
+padding, `padded(($y + 1) & <=9999, 4)`: value `43` gives `0043`, value `10000` gives nothing; on the PADDED
+text, `padded($y + 1, 4) & <=9999`: `0043` is not a canonical numeral, so `43` gives NOTHING too (a small python
+check of the canonical rule this session: `43`: `0043` against nothing; `10000`: nothing under both); (m2) so of
+the three bounds (rightmost 4, `& /\d{4}/`, `<=9999`) only the last is order-sensitive, a point for the draft's
+look-alike table.
+
+**2026-11-18 OWNER RULING — padded-width: minimum (Frank, to the predicate manager, evening).** ASKED AS A RULING
+(slug padded-width: when the value is longer than the width, nothing (exact) or the value unpadded (minimum); put
+back to him by slug twice). HIS WORDS, in full: "padded-width: minimum".
+RULED: the width of `padded(rx, n)` is a MINIMUM: zeros reach out to n characters; a value already n or longer is
+matched unpadded (`padded($y + 1, 4)`: value `43` is `0043`, value `10000` is `10000`). His ground, from the
+entries above: "i meant the length = 4 to speak to how far out the 0 would go"; a writer who wants a bound
+composes it ("restrict it to the rightmost 4", "you could also <=9999"). NOT ruled: the spelling and the parameter
+names (`length`, `pad`: placeholders, to the spellings review); the keyword-parameter rule (the 2026-11-13 lean,
+pending). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) the body is the two-case
+macro of the clarification entry's (m2) (no computed count); (m2) with no width, `padded(rx)` stays the ruled
+2026-11-15 body (any number of zeros).
+
+**2026-11-18 OWNER RULING — hole-flags: a hole takes the flags in force at the hole; each regex literal has its
+own flags; and his question, do flags propagate down (Frank, to the predicate manager, evening).** ASKED AS A
+RULING (slug hole-flags; the proposed rule: "flags belong to pattern text that was written with them (a binding
+like `q := /a/` keeps its own, as a PCRE group call does); plain text with no flags of its own (a read, a string
+constant, a number) takes the options in force at the hole (as a PCRE backreference does)"; with libpcre2 runs of
+the two PCRE analogues on `a-A` under `(?i)`: the backreference HOLDS, the call to a group defined caseful FAILS;
+and `/(?i)(?<y>a)-${$y | "x"}/` in the three modes under python `re`). HIS WORDS, in full: "hole-flags: i have
+heard you say both that the ${} gets the flags in force and also that a hole has its own flags. i agree with your
+interpretation of flags and holes. a hole takes the flags in force at the hole. each regex literal has its own
+flags. do the flags propagate down though? /(?i)${/blah/}/ is blah case insensitive?"
+RULED: (1) a hole takes the flags in force at the hole; (2) each regex literal has its own flags. WHICH READING OF
+"i agree with your interpretation" THE MANAGER TOOK: the proposed rule as quoted above (plain text in a hole, a
+read or a string constant, takes the hole's options; a pattern written as a literal carries its own). OBSERVATION,
+his: he has heard both "the `${}` gets the flags in force" and "a hole has its own flags" (the draft says both:
+the value-hole form, and §11 NO INHERITED FLAGS / §13 O32, the latter the draft's own rule, never his). His
+QUESTION (a question, NOT ruled): do the flags propagate DOWN: in `/(?i)${/blah/}/` is `blah` case insensitive.
+Put back to him as **flags-propagate**. RUN this session (python `re`): no propagation, `(?i)id-(?-i:blah)`: WHOLE
+`id-BLAH` FAILS, `ID-blah` HOLDS, SEARCHED `x ID-BLAH` no match, FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0,
+`Id-blah`@16]; propagation, `(?i)id-(?:blah)`: HOLDS, HOLDS, `ID-BLAH`@2, [`id-blah`@0, `ID-BLAH`@8,
+`Id-blah`@16]. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) his 2026-11-17
+hole-reading ruling ("a HOLE is the inserted pattern as a WHOLE, in a non-capturing group, matched in place";
+his own example `/xxx${/foo/}yyy/` = `/xxx(?:foo)yyy/`) read as TEXT gives propagation (`(?i)(?:blah)` is
+caseless in PCRE), while PCRE's group CALL keeps the definition's flags: the two PCRE analogues disagree, so the
+record does not settle it; (m2) under propagation the rule becomes ONE sentence for everything in a hole (the
+flags in force at the hole are the starting flags of what is inserted; flags a literal writes itself win), and
+the candidate body `any_case(rx) := /(?i:${rx})/` (the draft's §2.7: not expressible under NO INHERITED FLAGS)
+would hold for a plain pattern argument, not for arguments holding a filter role (the draft's own earlier test).
+
+**2026-11-18 OWNER, discussing flags-propagate (Frank, to the predicate manager, evening; DISCUSSION, an argument,
+not an answer by slug).** Asked **flags-propagate** (`/(?i)id-${/blah/}/` in the three modes under both readings;
+the manager's leaning: propagate, the literal's own written flags winning). HIS WORDS, in full: "heres the thing,
+if they don't propagate down, they effectively do not take effect at the hole. /(?i)${"blah"}/ blah is a regex.
+therefore it has its own flags. pretty much everything is a regex or a macro that uses a regex literal template
+contruct more regex."
+RECORD: DISCUSSION, his ARGUMENT: under one type ("a match is an rx") a string constant such as `"blah"` IS a
+regex, so "each regex literal has its own flags" would apply to it too; pretty much everything that can stand in a
+hole is a regex or a macro building more regex; so WITHOUT propagation the flags in force at a hole would take
+effect on nothing, and this evening's ruling "a hole takes the flags in force at the hole" would be empty. A LEAN
+toward propagation (the manager's classing; he did not say the slug). WITHDRAWN, a reading of the manager's: the
+split in the hole-flags question between "plain text with no flags of its own (a read, a string constant, a
+number)" and "pattern text written with flags" does not survive his argument: under one type there is no "plain
+text" kind for the rule to key on. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) the
+one rule that keeps both of this evening's rulings meaningful is propagation with override: what is inserted
+STARTS with the flags in force at the hole; a flag the inserted rx WRITES for itself (`/blah/i`, `(?-i)` inside)
+wins; "its own flags" then means the flags it writes; (m2) the read `$y` is the same rule's case with nothing
+written (the options in force at the hole, as ruled).
+
+**2026-11-18 OWNER RULING — flags-propagate: yes (Frank, to the predicate manager, evening).** ASKED AS A RULING
+(slug flags-propagate, restated after his argument as propagation with override: what is inserted in a hole starts
+with the flags in force at the hole; a flag the inserted regex writes for itself wins; "each regex literal has its
+own flags" means the flags it writes; a read is the same rule with nothing written; with `/(?i)${"blah"}/` and
+`/(?i)${/blah/}/` matching `BLAH` (the propagation runs of the question) and `/(?i)${/(?-i)blah/}/` only `blah`
+(hand-worked)). HIS WORDS, in full: "flags-propagate: yes".
+RULED: flags PROPAGATE DOWN into a hole, in the form asked: the inserted rx starts with the flags in force at the
+hole; flags it writes for itself win. The draft's NO INHERITED FLAGS (§11; §13 O32; "a hole keeps its own flags",
+the draft's own rule) is REVERSED. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) the
+rule covers every flag a literal can carry, not only case (he and the examples spoke of `(?i)`; `m`, `s`, `x`
+under the same sentence is a reading); (m2) propagation is INTO HOLES; an `&` operand, a condition's set and a
+macro ARGUMENT in a filter role are separate literals, not holes, and the ruling does not speak of them; (m3)
+`any_case(rx) := /(?i:${rx})/` now holds for a plain pattern argument (the draft's §2.7 test to be re-run under
+the new rule; its filter-role failures expected to stay); (m4) rev 27.1's PART J answers for `/(?i)(?<y>a)-${q}/`,
+q := /a/ MOVE (WHOLE `a-A` FAILS becomes HOLDS).
+
+**2026-11-18 OWNER, a question on unset-in-hole (Frank, to the predicate manager, evening; a QUESTION, nothing
+ruled).** Asked **unset-in-hole** (the draft's "an unset read has NO string" against the EMPTY readings; the
+manager's leaning: no string). HIS WORDS, in full: "unset-in-hole: "no string" means auto fail to anything that
+touches it?"
+RECORD: QUESTION. THE MANAGER'S ANSWER (from the draft's R.1.15 (3) and runs of the PCRE spellings under python
+`re` this session): no: the unset read is the rx that matches nothing, and each operation does what it does to
+that rx: followed by text or joined (`$y . "E"`), nothing (`(?<y>\d)?-\k<y>E` WHOLE `-E` FAILS); arithmetic or
+`&` on it, nothing; an ALTERNATIVE beside it survives (`(?<y>\d)?-(?:\k<y>|x)` WHOLE `-x` HOLDS); an OPTIONAL
+around it lets the path go on (`(?<y>\d)?-(?:\k<y>)?` WHOLE `-` HOLDS); another branch of the pattern is still
+tried. "Auto fail to anything that touches it" is the WHOLE-HOLE candidate, which the draft does not take.
+
+**2026-11-18 OWNER RULING — unset-in-hole: no string, a regex that matches nothing; and an idea, a constant for it
+(Frank, to the predicate manager, evening).** ASKED AS A RULING (slug unset-in-hole: no string, the manager's
+leaning, or empty; then his question "auto fail to anything that touches it?" answered with the table of what each
+operation does to an unset read). HIS WORDS, in full: "unset-in-hole: i meant what you describe "no string" as.
+its a regex that matches nothing. that would be a good constant to provide".
+WHICH READING THE MANAGER TOOK: a RULING for the "no string" candidate (he answers by slug, names the candidate and
+states it in his own words); told to him as the reading taken, his to correct. RULED (on that reading): an UNSET
+label read in a hole is the regex that matches nothing (never matches); each operation does to it what it does to
+that regex (the draft's reading R.1.15 (3), ALGEBRA, confirmed: an alternative beside it survives, an optional
+around it is skipped, text after it or arithmetic on it fails that path). The EMPTY readings, WHOLE-HOLE and the
+compile error are not taken. IDEA, his (not asked, not ruled; a LEAN in his words "would be a good constant to
+provide"): a provided CONSTANT for the regex that matches nothing. THE MANAGER'S READINGS (mine, to be tested by
+the next revision lane): (m1) the constant is the sibling of the ruled "anything" (lone-complement-match:
+"provide "anything""); in PCRE text it is `(?!)` (python `re` this session: `(?!)` finds nothing in `abc`;
+`(?:(?!)|x)` holds on `x`; `a(?!)?` holds on `a`); (m2) its NAME is a spelling for the review, with a trap to
+avoid: this record already uses "matches nothing" in the OTHER sense (the `when` ruling: "It holds and matches
+nothing" = it matches the EMPTY string), so the constant must not be confusable with the empty string; (m3) it is
+also the natural meaning of the EMPTY array under his "arrays are written with `|` only" proposal (the
+alternation of no members); (m4) the "previous value" forms (a read written before its group) need the optional
+lead under this ruling: R.1.15 (5)'s first form is vacuous, its second witness stands.
+
+**2026-11-18 OWNER, what "under construction" was about (Frank, to the predicate manager, evening; a
+CLARIFICATION of his own match-is-rx / read-is-constant rulings, given in answer to construction-line; not an
+answer by slug).** Asked **construction-line** (part (a): arithmetic and string functions over an array the user
+writes: built by copying, or under construction; the manager's leaning: built for a finite list). HIS WORDS, in
+full: "so the "under construction" was not about arrays but about regexes used on macros that you would think
+expect a constant. illustrative: length($y) returns the length of the match. it makes sense for $y because it is a
+runtime string match and therefore has a single match. but my point was that many of these functions that work on
+constants length("frank") or fixed strings like length($y) might also work on regex. they require thought and are
+probably not easy to do, therefore, restrict them to constants or matches like $y and if any other regex is used,
+throw a compiler error. example: left($y,2) when $y is "foobar" would return "fo". easy. what would it return for
+left(/\d+/, 2) ? it might return /\d|\d\d/. determining that for an arbitrary rx is hard or at least it involves
+dfa graph manipulation that may not be worth it. so we say left(/\d+/,2) is a compile error when enumerate() != 1"
+RECORD: CLARIFICATION, his: (1) "under construction" was NOT about arrays; it is about a REGEX given to a function
+"that you would think expect[s] a constant". (2) Such functions (`length`, `left`; his examples, spellings
+placeholders) work on constants (`length("frank")`) and on matches like `$y` (a run-time string, a single match):
+`left($y, 2)` with `$y` = `foobar` is `fo`. (3) They "might also work on regex" (`left(/\d+/, 2)` "might return
+/\d|\d\d/"), which is hard (DFA graph manipulation, perhaps not worth it): so RESTRICT them to constants or
+matches like `$y`, and "if any other regex is used, throw a compiler error"; his test: a compile error "when
+enumerate() != 1". CHECKED: `left(/\d+/, 2)` = `\d|\d\d` on a small sample (python: the first two characters of
+every string over `07` up to length 4 all match `\d|\d\d`); the general statement hand-worked.
+THE MANAGER'S READINGS (mine, to be tested by the next revision lane, and (m1) put back to him): (m1) his test
+read LITERALLY ("enumerate() != 1") would refuse an array of two strings, while his first sentence takes arrays
+out and the morning's array-lift ruling ("Any operation defined on single values applies to arrays by taking
+every combination of members") has them built; the reading that keeps all three: the test applies PER MEMBER: an
+array is lifted member by member, and each member must be a single string (a constant or a read); a member that
+is a regex of more than one string is the compile error; (m2) then `\d + 1` (his own "both directions" example)
+is a compile error in the first build, its meaning (the numerals 1 through 10) acknowledged: consistent with "The
+following can be delayed in build"; (m3) construction-line (a) is answered on that reading: arrays the user
+writes are BUILT; (m4) "throw a compiler error" does not choose between its own error class and the "requires
+module" wording (**under-construction-class** stays open); (m5) NOT settled: whether a regex LITERAL with a
+finite set (`/a|b/`, `/[ab]c/`) counts as an array of its strings or as "any other regex" (it meets his proposal
+that arrays are written with `|` only); (m6) `length` on a read is a new example of a single-value function; what
+it yields (a numeral) follows the number-domain ruling.
+
+**2026-11-18 OWNER, the two options for a function over a regex (Frank, to the predicate manager, evening;
+DISCUSSION, options laid out, none chosen).** After the manager put back the PER MEMBER reading of his test (an
+array lifted member by member; `left(/\d+/, 2)` and `\d + 1` compile errors). HIS WORDS, in full: "left(A, n) for
+any A,n is tricky. there are circumstances like "foobar" or /\d+/ or /foobar|bazqux/ where it looks easy. but its
+hard in the arbitrary sense. so the options are to say enumerate = 1 only, or "i'll give it a try" and return it
+for arrays or other specific forms but then fail on other crazy stuff like lookbacks, etc".
+RECORD: DISCUSSION: `left(A, n)` for ANY A is hard in the arbitrary sense though some cases look easy (`"foobar"`,
+`/\d+/`, `/foobar|bazqux/`). TWO OPTIONS, his: (i) "enumerate = 1 only"; (ii) "i'll give it a try": return it for
+arrays "or other specific forms" and fail on the rest ("lookbacks, etc"). No choice made. THE MANAGER'S READINGS
+(mine, to be tested by the next revision lane; (m1) put to him): (m1) option (ii) can be given a DECLARED line
+with a mechanism already ruled as design: `enumerate(rx)` (the draft's §5.5, "Enumerate go."): "a FINITE rx's
+strings one per entry", "an infinite or over-budget rx is a compile error giving the count", an edge assertion in
+its argument an error. THE CANDIDATE: a single-value function accepts A exactly where `enumerate(A)` is accepted,
+and is applied to each enumerated string in enumerate's order; a read `$y` is the run-time one-string case.
+Under it (HAND-WORKED from §5.5's rule): `left(/foobar|bazqux/, 2)` = `fo|ba`; `left("foobar" | "bazqux", 2)` the
+same (one answer for two spellings of one set); `\d + 1` = the numerals 1 through 10 (his own "both directions"
+example compiles); `left(/\d+/, 2)` a compile error (infinite); a lookbehind at the edge the error enumerate
+already gives. (m2) this is array-lift (RULED) with "array" read as "what enumerate lists"; (m3) option (i) is
+the most conservative and would refuse the morning's ruled array examples; "specific forms" without a declared
+line would make which programs compile a property of the compiler's effort.
+
+**2026-11-18 OWNER RULING — construction-line: enumerate (Frank, to the predicate manager, evening).** ASKED AS A
+RULING (slug construction-line, with three choices: one string only; try specific forms; "`left(A, n)` works
+exactly where `enumerate(A)` works": the function applied to each string `enumerate` lists, in its order;
+anything `enumerate` refuses a compile error; a read `$y` the one-string case at run time; the manager's leaning
+the enumerate line). HIS WORDS, in full: "construction-line: enumerate".
+RULED: a single-value function (`left`, `length`, arithmetic; his examples) accepts an rx exactly where
+`enumerate` accepts it (a finite rx within the budget, no assertion looking outside): it is applied to each
+enumerated string, in enumerate's order; any other rx is a COMPILE ERROR, its meaning acknowledged (UNDER
+CONSTRUCTION); a read is the one-string case, at run time. This places the line of match-is-rx (4) and
+read-is-constant (4). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) construction-
+line (a) is answered: arithmetic over an array the user writes is BUILT (the morning's array-lift examples stand);
+(m2) **lift-order** is answered by consequence: the order is enumerate's (§5.5: PCRE priority order, class
+members in codepoint order, the latter a LEAN there); with several operands array-lift's "first operand slowest"
+(RULED) orders the product; (m3) `\d + 1` compiles (ten strings); `left(/\d+/, 2)` does not; (m4) `/a|b/` and
+`"a" | "b"` get one answer (the question (m5) of the clarification entry is closed by this ruling); (m5)
+construction-line (b), a READ in a count / class / option position, is NOT touched by this ruling and stays as
+the draft has it; (m6) the hand-worked table put to him is to be RUN by the revision lane.
+MANAGER'S CALL (an answer-free choice: no text and no compiled program differs; told to him, not asked):
+**under-construction-class**: the error keeps ITS OWN class, worded as under construction (the draft's reading),
+on his words "the error is an "under construction" sign"; closed unless he objects.
+
+**2026-11-18 OWNER RULING — value-test: the `if` was illustrative; the `when` forms work on `$y` (Frank, to the
+predicate manager, evening).** ASKED AS A RULING (slug value-test: a special case for a test built from a read
+(holds when the expression yields a string, consumes nothing), or the one rule (a condition tests, a bare pattern
+consumes and warns; his intent written `when((y: 1492), "Columbus", else = $y)`); the manager's leaning: one
+rule). HIS WORDS, in full: "value-test: that "if" statement was purely illustrative. i was thinking at the time
+that $y was NOT a regex and so when() wouldn't work on it. the idea was to query how far runtime manipulation
+could go. we have since ruled that $y is a regex of a single enumeration at runtime, so the when forms would work
+on it."
+WHICH READING THE MANAGER TOOK: the ONE RULE, no special case (told to him as the reading taken). RULED (on that
+reading): his `if($y & (0: 1492), "Columbus", $y)` was an ILLUSTRATION (written while he took `$y` not to be a
+regex), not a form to honour as written; `$y` is a regex of a single enumeration at run time, so the ruled `when`
+forms apply to it as to any regex: a condition as the test tests; a bare rx as the test consumes and warns
+(when-peek); `peek()` peeks. No value-test case is added. The draft's reading (R.1.15 (12); R.1.16 A12) is
+confirmed; A12's "his test as written ... gives other answers" stays as a printed look-alike, no longer a
+question.
+
+**2026-11-18 MANAGER'S CALL — dollar-warning: the warning stays (the predicate manager, evening; no owner words;
+an answer-free choice, told to him, not asked).** `$x & <5` written as an `&` operand is legal (match-is-rx) and
+draws a STRUCTURAL warning pointing at `(x: <5)` where the stretch is not x's text. No answer moves. Grounds, his
+standing words: the look-alike criterion (every look-alike pair gets one class, no gap) and "Warnings should be
+structural". The draft's reading (§0.1 L28: WARNING) is kept; the warning's name is the compiler's to choose.
+Closed unless he objects.
+
+**2026-11-18 OWNER, a question on the `$x & <5` warning (Frank, to the predicate manager, evening; a QUESTION,
+written under the slug value-test, about the manager's dollar-warning call).** HIS WORDS, in full: "value-test:
+that warning was originally because $y was not considered a regex. is it still needed?"
+RECORD: QUESTION, with an OBSERVATION: the diagnostic on `$x & <5` came from `$x` not being a regex (his
+dollar-condition words of 2026-11-17: "$x is not a pattern but a match"); that ground is gone (match-is-rx).
+MANAGER'S CALL REVISED the same hour (answer-free; told to him): the dedicated "did you mean `x: <5`" warning is
+WITHDRAWN. Reasons: its original ground was the type, which no longer exists; `$x & <5` is now an ordinary regex
+operation with a defined meaning; where such an operand can never hold, the GENERAL diagnostics already ruled
+(the empty-intersection diagnostic, 2026-11-13; `test.never`) are the mechanism, with no rule keyed on `$`. The
+look-alike pair `$x & S` against `(x: S)` is classed DIFFERENT, BY DESIGN in the draft's table (not a gap). THE
+MANAGER'S READING (mine, to be tested by the next revision lane): whether the general diagnostics actually fire
+on `/(?<x>\d+)-/ & ($x & <5)` (a run-time read in an intersection) is to be shown, not assumed.
+
+**2026-11-18 OWNER RULING — same-name-twice: an error at the backreference unless `(?J)` (Frank, to the predicate
+manager, evening).** ASKED AS A RULING (slug same-name-twice: two groups of one name in one literal, what `\k<h>`
+reads: the first group always (PCRE under `(?J)`); the last group; or an error at the backreference unless the
+literal says `(?J)`, then PCRE's first-group reading; libpcre2 run this session: without `(?J)`
+`(?<h>\d)(?<h>\d)-\k<h>` is compile error 143; with it WHOLE `12-1` HOLDS, `12-2` FAILS; the first/last columns
+in the three modes under python `re`). The manager's stated leaning: "the error at the backreference, with `(?J)`
+as the opt-in to PCRE's first-group reading". HIS WORDS, in full: "same-name-twice: i agree with your lean."
+WHICH READING OF "agree" THE MANAGER TOOK: the leaning as quoted. RULED: a literal with two groups of one name
+stays LEGAL (the label rule, unchanged); a BACKREFERENCE `\k<h>` to a name carried by two groups of that literal
+is a COMPILE ERROR at the backreference, unless the literal says `(?J)`, under which it reads exactly as PCRE
+does (the first set group). The label is read with `$h` (the last mention). THE MANAGER'S READINGS (mine, to be
+tested by the next revision lane): (m1) "two groups of that literal" counts groups WRITTEN in the literal; what a
+group arriving through a hole or a part does to the count is not stated (R.1.16 A9's part case reads the part's
+own group); (m2) the numbered form `\2` is untouched; (m3) R.1.16 A10's "FOR ONE GROUP OF THE NAME" note and the
+draft's PART BL m3 row become this rule's printed cases.
+
+**2026-11-18 OWNER, on `${@y}`: a proposal with examples first; otherwise a future direction (Frank, to the
+predicate manager, evening; a REQUEST and a LEAN, nothing ruled).** Told that what `${@y}` means in a hole is the
+next small question. HIS WORDS, in full: "for ${@y}, i would like a proposal with examples of where it might be
+used. if we cannot find value, i'd rather not build it but keep it in a future direction until we can".
+RECORD: REQUEST: a proposal with examples of use. LEAN: without found value, not built; kept as a future
+direction. **array-in-hole** is NOT asked as a ruling. THE MANAGER'S PROPOSAL (mine; `predicates_future.md` item
+33; model `$PCREC_TMPDIR/scratch/pred/arrayhole.py`, a hand-written model of two fixed shapes, python): MEANING:
+`${@y}` matches ONE of the values the label y has taken in the passes so far, tried in pass order. USE 1, a
+repeated item, `/(?:(?<v>[ab]+),)+${@v}/`: WHOLE `a,b,a` HOLDS, `a,b,ab` FAILS; FIND-ALL `a,b,a b,ab,ab a,b,`
+[`a,b,a`@0, `b,ab,ab`@6]; NO VALUE FOUND there: the plain regex `(?:[ab]+,)*?([ab]+),(?:[ab]+,)*\1` gives the
+same WHOLE answer on 0 differences of 9,841 strings (all strings over `a b ,` up to length 8). USE 2, declared
+then used many times, `/(?:(?<v>[ab]+),)+;(?:${@v}=\d;)*/` (every key one of the declared names): WHOLE
+`a,b,;a=1;b=2;a=3;` HOLDS, `a,b,;ab=1;` FAILS; SEARCHED `x a,b,;b=1;ab=2;` `a,b,;b=1;`@2; here a backreference
+cannot follow (one capture holds one name; each use may be a different name), the manager's judgement, not run
+against a PCRE spelling. COSTS named: the matcher must keep EVERY pass's value (beyond PCRE's capture model; the
+backtracking engine only); the order of the alternatives decides answers where one value is a prefix of another.
+THE MANAGER'S RECOMMENDATION: a future direction (its meaning proposed, not built), trigger: a user program of
+the declared-then-used shape.
+
+**2026-11-18 OWNER, a question on `${@y}` and a CSV header (Frank, to the predicate manager, evening; a QUESTION,
+nothing ruled).** After the manager's proposal (value only for "declared, then used many times"; recommendation: a
+future direction). HIS WORDS, in full: "could it be used to keep the header of a csv file ? or is that too much
+runtime getting in the way of compile time".
+RECORD: QUESTION. THE MANAGER'S ANSWER (mine; model `$PCREC_TMPDIR/scratch/pred/csvhead.py`, python `re`): TWO
+different jobs. (a) KEEPING the header's names as a list (to hand back, or to require that later keys are among
+them) is the array form's own job and is run-time only: nothing about the names is known at compile time (the
+declared-then-used case of the proposal). (b) Letting the header decide what the rest MEANS ("the column named
+price is below 100 in every row") done through `@y` would need the name's POSITION at run time and then a
+run-time count, which is the under-construction side (a read in a count, R.1.16 T13): that is run time getting
+in the way. But (b) does not need `@y`: for a bounded number of columns it is a COMPILE-TIME alternation, one
+alternative per column position, each ordinary regex. RUN (six positions, plain python `re`): WHOLE
+`id,price,name / 1,20,x / 2,99,y` HOLDS; with a row `2,100,y` FAILS; price first HOLDS; price fourth HOLDS; no
+price column FAILS; a padded `07` FAILS (canonical); FIND-ALL over two tables (`id,price / 1,5` then
+`price,id / 100,1`): [the first table @0, the header line `price,id` alone @14 (its row does not qualify)].
+THE MANAGER'S READINGS (to be tested if this is ever folded): how the language would WRITE the per-position
+alternation (one binding used in two count holes of one literal: do the holes vary together) is not checked
+against the draft.
+
+**2026-11-18 OWNER RULING — `${@y}` is a future direction: not built, not defined now (Frank, to the predicate
+manager, evening).** After the proposal, the CSV-header answer and "array-in-hole: future" offered as the slug.
+HIS WORDS, in full: "${@y} stays as a future direction item and is not built or defined now".
+RULED: the array form in a hole, `${@y}`, is a FUTURE DIRECTION: not built and NOT DEFINED now. The draft states
+no meaning for it; **array-in-hole** leaves the question list; `predicates_future.md` item 33 holds the idea (its
+"meaning proposed" is the manager's sketch for that day, not a definition). THE MANAGER'S READINGS (mine, to be
+tested): (m1) written today, `${@y}` is the under-construction class of error (a direction acknowledged), not
+"illegal": his standing wording for what is hard and not needed now; (m2) the array form OUTSIDE a hole
+(pass-list-read: "An array of such values is its own type") is untouched by this ruling.
+
+**2026-11-18 MANAGER CORRECTION — readings of this evening NOT supported by the runs of lane predspec28 (the
+predicate manager, late evening; no owner words).** Lane predspec28 (rev 28; `docs/dev/lanes/predspec28_report.md`,
+MANAGER READINGS TESTED; evidence `docs/dev/lanes/predspec28_evidence/`) tested every reading of the entries from
+"discussing hole-reads-capture" to the `${@y}` ruling. WITHDRAWN: (1) number-domain ruling, m1, and the padded-wrap
+entry's m3: "numeral-width is no longer a question" / "WIDTH KEPT is not needed under any domain": NOT SUPPORTED.
+The draft's sentence "the two candidates part only if the domain admits padded numerals" holds for `+` only;
+under SUBTRACTION a result can be narrower than its canonical operand: `/(?<y>\d+)-${$y - 1}/`: CANONICAL WHOLE
+`10-9` HOLDS, `10-09` FAILS; WIDTH KEPT the reverse; 3 of 9,999 operands differ (`10`, `100`, `1000`); under
+`+ 1` 0 of 10,000 (PART NW). The manager TOLD the owner the width question "falls away": that was wrong and is
+corrected to him; **numeral-width** stays a question, narrowed to "a result narrower than its operand". (2) The
+clarification entry's m2 ("`\d + 1` is a compile error in the first build"): overtaken by construction-line:
+enumerate (`\d + 1` compiles, ten strings; PART CN). (3) The revised dollar-warning call's premise ("the general
+diagnostics already ruled are the mechanism"): NOT SUPPORTED: by the draft's §5.2 ("nothing when emptiness is
+match- or parameter-dependent") and T19 no diagnostic fires on `/(?<x>\d+)-/ & ($x & <5)`, which never holds
+(0 / 0 / 0 of 364; PART DW). The dedicated warning stays withdrawn (his question stands); what remains is a GAP,
+to be put to him as **dollar-diagnostic**. (4) The `${@y}` ruling's m1 ("written today it is the
+under-construction class"): NOT SUPPORTED: the draft's T4 says under construction "needs a DEFINED meaning" and
+he ruled "not ... defined now". MANAGER'S CALL (answer-free): a plain "not defined" compile error. (5) The
+"36,119 checks" count of the width-clarification entry is NOT REPRODUCIBLE as stated (the six candidate texts
+were not listed); the lane's own set gives 47,112 checks, 0 differences, and 137,257 for several-string
+arguments, 0 differences: the claim stands on the lane's counts. UNTESTABLE, kept as open points: a duplicate
+name arriving through a hole or a part (**same-name-count**); "outside the domain: removed at compile time,
+nothing at run time" as ruled text. NEW GAPS the lane found (for the question queue): **any-case-body** (the
+macro body equals the primitive on plain arguments, 0 of 781, not on a filter-role argument, 3 of 781);
+**domain-components** (§2.4's lean "a `$` component is read by its VALUE, leading zeros ignored" conflicts with
+number-domain).
+
+**2026-11-18 MANAGER — review r52 of rev 28: readings withdrawn or corrected, and calls made (the predicate
+manager, night; no owner words).** Review r52 (five lenses; filed as
+`docs/dev/reviews/2026-11-18-r52-predspec28.md` by lane predspec281) attacked rev 28 and the MANAGER CORRECTION
+entry above. CORRECTED in that entry: (a) "the draft's sentence holds for `+` only" is WRONG both ways: CANONICAL
+and WIDTH KEPT part wherever a result is narrower than its operand: `- 1` 3 of 10,000 operands, `- 10` 30, `* 0`
+9,990, `% 7` 9,990; `+ k` and `* k` (k >= 1) 0. numeral-width is a FULL question for `%`, not a narrowed one; it
+is undefined for two reads (`$a - $b`) and for intermediate results. (b) "UNTESTABLE ... outside the domain:
+removed at compile time, nothing at run time": WRONG: that clause is RULED (the number-domain entry's RULED
+sentence confirms the paragraph that holds it). (c) "NEW GAP domain-components": WITHDRAWN: number-domain names
+"the comparisons", so §2.4's rev 18 LEAN (a `$` bound read "by its VALUE, leading zeros ignored") is RETIRED by
+the ruling, not a question for the owner. (d) same-name-count "UNTESTABLE" is overstated: R.1.16 A9 answers the
+part case; the hole case stays open. WITHDRAWN, a reading of the padded-width entries: the two-case body
+`(/0*${rx}/ & /(?s:.){${n}}/) | (rx & /(?s:.){${n},}/)` equals "zero-filled to at least n" in WHOLE only: in
+SEARCHED and FIND-ALL it tries every exactly-n string before every longer one (`/${padded(/\d{2,3}/, 2)}/`
+SEARCHED `x123`: `12`@1 where a per-member fill gives `123`@1; 0 / 1,344 / 1,344 of 1,365); the 47,112 and
+137,257 "0 differ" counts are WHOLE-only. The ruling (minimum) stands; the BODY and the ORDER are open.
+MANAGER'S CALLS (answer-free unless marked; told to the owner the same night): (1) T8/T9: one class per operand,
+by ordered clauses: an assertion looking outside is enumerate's ruled COMPILE ERROR first; infinite or over
+budget is UNDER CONSTRUCTION. (2) `${@y}` written today: a plain "not defined" compile error. (3) product-order
+is closed by consequence of the enumerate line (the product of enumerate(operand_i), first slowest). (4)
+dollar-warning: the dedicated warning stays withdrawn; THE DRAFT'S READING (to be shown to him as
+**dollar-diagnostic**, a confirm): for the emptiness diagnostics a read stands for ITS GROUP'S rx, under which
+the ruled empty-intersection diagnostic fires on `/(?<x>\d+)-/ & ($x & <5)` with no rule keyed on `$`. (5) the
+unset rule's phrase becomes "the never-matching rx" (the `when` ruling keeps "matches nothing" for the empty
+string). (6) his `length($y)` (an image) is written with the placeholder `strlen` (his own word in the padded
+sketch), leaving §2.7's ruled filter `length(S)` its name; the collision goes to the spellings review.
+ANSWER-DECIDING READINGS marked THE DRAFT'S READING and queued for him, NOT called: **padded-order** (a padded
+result keeps the argument's order: per-member fill); **class-order** (class members in codepoint order: §5.5's
+LEAN now decides `\d + 1`'s answers); **flags-in-filter** (do a hole's flags reach an `&` written inside the
+hole); **flags-scope** (which flags propagate; `x` changes how an inserted literal is parsed); **number-edges**
+(`% 0`, a negative result); **numeral-width** (full scope; with the observation that WIDTH KEPT is the
+composition `padded($y - 1, strlen($y))`, which needs a read as `padded`'s width: construction-line (b)).
+
+**2026-11-18 OWNER, on the narrower result (Frank, to the predicate manager, night; a QUESTION with a LEAN, not
+an answer by slug).** Told that numeral-width does not fall away (results narrower than the read: `10 - 1`).
+HIS WORDS, in full: "/(?<y>\d+)-${$y - 1}/ again this could be fixed with padded() no? i mean the 10-09 case".
+RECORD: QUESTION, with a LEAN (the manager's classing; his second remark of this shape tonight, after "cant we
+wrap padded($y + 1)"): the `10-09` case is the writer's to get with `padded()`, the result itself staying the
+plain numeral. THE MANAGER'S ANSWER (a small python model this session, to be re-run by the next revision lane):
+yes, three ways, with different reach. `/(?<y>\d+)-${$y - 1}/` (bare, canonical): WHOLE `10-9` HOLDS, `10-09`
+FAILS. `${padded($y - 1)}` (no width; the 2026-11-15 body): `10-9`, `10-09`, `10-009` all HOLD; FIND-ALL
+`10-09 10-9 100-099 25-24` finds all four. A FIXED-width field, `/(?<y>\d\d)-${padded($y - 1, 2)}/`: `10-09`
+HOLDS, `10-9` FAILS; FIND-ALL [`10-09`@0, `25-24`@19]. "Exactly the width that was read" on a field of ANY
+width needs the read's own length as the width, `padded($y - 1, strlen($y))`: `10-09` HOLDS, `10-9` FAILS,
+`100-099` HOLDS, `100-99` FAILS: the one form that needs a READ as `padded`'s width (construction-line (b), not
+built). THE MANAGER'S READING: with these, numeral-width needs no WIDTH KEPT rule; put to him as "numeral-width:
+canonical".
+
+**2026-11-18 OWNER RULING — numeral-width: canonical (Frank, to the predicate manager, night).** ASKED AS A RULING
+(slug numeral-width, after the table of the bare result and three `padded` wrappings on `10-9`, `10-09`,
+`10-009`, `100-099`: "the language needs no separate "width kept" rule for results. The result is canonical, and
+padding is the writer's request"). HIS WORDS, in full: "numeral-width: canonical".
+RULED: the result of arithmetic is the CANONICAL numeral, for every operation and whatever the width of what was
+read (`10 - 1` is `9`); there is no WIDTH KEPT rule; padding is the writer's request through `padded(...)`. THE
+MANAGER'S READINGS (mine, to be tested): (m1) this covers two reads (`$a - $b`) and intermediate results
+(`($y - 1) + 1`), which WIDTH KEPT left undefined: canonical at every step; (m2) "as wide as what was read" on a
+field of any width stays the composition `padded($y - 1, strlen($y))`, which waits on a read as `padded`'s width
+(construction-line (b)); (m3) **number-edges** (`% 0`, a negative result) is NOT settled by this ruling.
+
+**2026-11-18 OWNER, a question on padded-order (Frank, to the predicate manager, night; a QUESTION, nothing
+ruled).** Asked **padded-order** by /q (padding keeps the pattern's order, the manager's leaning, or
+"exact-width strings first", the two-case body's order; `padded(/\d{1,3}/, 2)` in the three modes, python `re`:
+WHOLE agree; SEARCHED `x123`: `123`@1 against `12`@1; FIND-ALL `123 07 12345`: [`123`@0, `07`@4, `123`@7,
+`45`@10] against [`12`@0, `07`@4, `12`@7, `34`@9]). HIS WORDS, in full: "padded-order: whats the exact width rx".
+RECORD: QUESTION (what the "exact width" part is). THE MANAGER'S ANSWER: it is the FIRST branch of the two-case
+body, `/0*${rx}/ & /(?s:.){${n}}/`: zeros then a string of rx, kept only when the whole is exactly n characters;
+for `padded(/\d{1,3}/, 2)` it is the two-character strings `\d\d` and `0\d`; the second branch, `rx &
+/(?s:.){${n},}/`, is rx's strings already n or longer (`\d\d`, `\d\d\d`); written out as plain regex the body is
+`(?:\d{2}|0\d)|\d{3}`, and an alternation tries its first branch first, which is where the reordering comes from.
+
+**2026-11-18 MANAGER — after lane predspec281 (rev 28.1): one reading NOT supported (the predicate manager,
+night; no owner words).** Lane predspec281 (`docs/dev/lanes/predspec281_report.md`; evidence 28 of 28, 22
+sabotages caught) applied review r52's ruled dispositions and the numeral-width ruling. NOT SUPPORTED: call (4)
+of the "review r52" entry (for the emptiness diagnostics a read stands for its group's rx) against the draft's
+§5.2 WORDING: "an empty intersection from pure parts" at NARROWING SITES excludes a read. The lane's run supports
+the reading as SOUND (it fires on 3 programs that never hold and is silent on 2 that hold); the wording change
+§5.2 would need is printed in the **dollar-diagnostic** row and NOT made: it is the owner's to confirm. A fact
+for **padded-order**: for an INFINITE argument no single body keeps the argument's order (a greedy argument
+needs the two-case body reversed, a lazy one the body as written; §2.7).
+
+### 2026-11-18 OWNER, discussing padded-order (not a ruling)
+
+His words, verbatim, two messages: "putting the length in front would help order" and then "i meant, putting any length".
+
+Class: OBSERVATION / IDEA (no slug answer; padded-order stays open).
+
+The manager's reading (told to him as a reading): of the two branches of the body given for `padded(rx, n)`, put the
+branch that accepts ANY length of at least n (`rx & /(?s:.){n,}/`) in front of the exact-width branch
+(`/0*${rx}/ & /(?s:.){n}/`). Another reading is possible (a length test written first in every filter); not taken.
+
+RUN (`$PCREC_TMPDIR/scratch/pred/padfront.py`, python `re`, n = 2, every subject of length 1..5 over `0159x`, four
+continuations, FIND-ALL, compared with "fill each string in the argument's order"):
+- greedy `\d{1,3}`: exact-first wrong on 2,800; any-length-first wrong on 0.
+- lazy `\d{1,3}?`: exact-first wrong on 0; any-length-first wrong on 0.
+- mixed order `\d|\d\d\d|\d\d`: exact-first wrong on 2,292 (`100` gives `10`, fill gives `100`); any-length-first
+  wrong on 700 (`000` gives `000`, fill gives `00`).
+
+For the next lane to test: (a) the manager's reading "any-length-first equals fill-each-string for every argument
+whose order is by length (longest first or shortest first)"; (b) lane predspec281's statement that a lazy INFINITE
+argument needs the exact-first order, which this finite run does not show (lazy `\d{1,3}?` is right under both).
+
+### 2026-11-19 OWNER RULING — padded-order
+
+His words, verbatim: "i agree with your lean"
+
+Class: RULING (it answers the slug question padded-order, asked with three answers and a stated leaning).
+
+The reading of "agree" taken, and told to him: the leaning in the manager's message just before, namely
+`padded(rx, n)` is a plain macro whose body tries the ANY-LENGTH branch first:
+`padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)` (spellings are placeholders). The exact-width-first
+body is dropped. Where the argument lists a shorter string before a longer one (`\d|\d\d\d|\d\d`), the body's answer
+differs from "fill each string in the argument's order" (`000` gives `000`, fill gives `00`, RUN in the entry above);
+that difference is the body's stated behaviour, not an error.
+
+The leaning carried a CONDITION, stated to him: it holds if the next lane confirms the unbounded lazy case. The
+manager's readings for the next lane to test: (a) any-length-first equals fill-each-string for every argument ordered
+by length; (b) an unbounded lazy argument (`\d+?`) under any-length-first, against lane predspec281's statement that
+it needs exact-first. If (b) fails, the question returns to him with the run; the ruling is not stretched to cover it.
+
+### 2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant
+
+His words, verbatim: "by "flags propagate" i thought we decided that rx inherits the flags of the surrounding rx"
+
+Class: a RECOLLECTION, checked against the record: SUPPORTED. The ruling "flags-propagate: yes" (2026-11-18) answered
+his own question "do the flags propagate down though? /(?i)${/blah/}/ is blah case insensitive?", argued from "blah is a
+regex. therefore it has its own flags. pretty much everything is a regex". His statement of it now is wider than the
+draft's rev 28 wording ("what is INSERTED in a hole starts with the flags in force at the hole"): ANY rx inherits the
+flags of the rx that surrounds it.
+
+The manager's reading (told to him as a reading, for the next lane to test): flags-in-filter follows as "reach": the two
+sides of an `&` written inside a hole are rx surrounded by the outer rx, so each starts with the flags in force at the
+hole, a flag it writes for itself winning (candidate (b) of the draft's flags-in-filter row: 0 / 0 / 0 of 1,555 against
+the plain hole). An `&` written at program level has no surrounding rx and its sides keep their own flags. Also to
+test: a condition's set and a filter-role argument inside a hole (draft row 138, reading m2) under the same sentence;
+`any_case` against `/(?i:${rx})/` for filtered arguments.
+
+### 2026-11-19 OWNER, discussing flags and a binding used in a hole
+
+His words, verbatim: "lets talk about the flags issue and make sure we understand it. if i write a binding A with a
+bunch of rx. then i use A like /(?i)${A}/ does A inherit or only direct // literals. i'd say it does. if the flag
+status is important to an rx, its that rx's responsibility to set them the way it wants and not assume. so if one
+builds up an rx, they inherit the flags of the surrounding. we might consider that on a flag by flag basis but that
+would be my expectation"
+
+Class: DISCUSSION with a LEAN ("i'd say it does", "that would be my expectation"); a PRINCIPLE stated: an rx that cares
+about a flag sets it itself and does not assume. "flag by flag" is left open by him (the question flags-scope).
+
+Against the draft: rev 28 already gives a binding in a hole the hole's flags (`q := /a/` at `/(?i)(?<y>a)-${q}/`,
+R.1.14, run in rev 28's PART FL), so his expectation and the draft agree.
+
+The manager's readings, for the next lane to test: (a) inheritance is transitive: `A := /x${B}/`, `B := /ab/`, used at
+`/(?i)${A}/`, gives B the outer flags through A; (b) a binding therefore has no fixed set of strings: what A matches
+is settled where A is used, and anything computed from A alone (a count, an enumerate, a `when` test) reads A under
+A's own flags.
+
+### 2026-11-19 OWNER RULING — flags-scope
+
+His words, verbatim: "i agree with your inherit table excepting that U should also not be inherited. one could make a
+case that only i should be inherited"
+
+Class: RULING for the first sentence (it answers the slug question flags-scope, asked with a split table and
+"move individual flags between the two groups"); OBSERVATION for the second ("one could make a case that only i
+should be inherited": not ruled, kept as a possible narrowing).
+
+The reading of "agree" taken, and told to him: the manager's split table with `U` moved. An rx inserted in a hole
+(a direct literal or a binding) INHERITS `i`, `m`, `s` from the flags in force at the hole; it does NOT inherit `U`,
+`x`, `xx`, `n`; `J` is left to the question same-name-count. A flag the inserted rx writes for itself wins, as ruled.
+
+What this changes in rev 28.1 (THE DRAFT'S READING there was "`n`, `U`, `xx` and `J` propagate like `i`", and the
+manager's reading m1 had `x` propagate): `/(?n)x${/(a)\1/}/` is no longer a compile error; `/(?U)x${/a+/}/` SEARCHED
+`xaaa` gives `xaaa`@0 (rev 28.1's PART FF printed both candidates); a binding `/a b/` in a `(?x)` hole keeps its
+space. The manager's readings, for the next lane to test: (a) the not-inherited flags are simply the inserted rx's
+own defaults (off unless it writes them), at any depth; (b) `m` and `s` stay inherited until he rules the narrowing.
+
+### 2026-11-19 OWNER, discussing class-order: longest first
+
+His words, verbatim: "can we sort by length, longest first?"
+
+Class: a QUESTION carrying an IDEA (no slug answer; class-order stays open).
+
+RUN (`$PCREC_TMPDIR/scratch/pred/classlong.py`, python `re`; the ten results of `\d + 1`; 3,905 subjects over `0123x`,
+length <= 5; alone and followed by `0` or `x`): longest-first against codepoint order differs on 0 WHOLE, 250
+SEARCHED, 570 FIND-ALL (alone); 0 / 83 / 86 (followed by `0`); 0 / 0 / 0 (followed by `x`). Longest-first against
+descending: 0 everywhere. Longest-first with the equal-length results shuffled 20 ways: 0 differing everywhere.
+`x10` SEARCHED: codepoint `1`, longest `10`; `10 3 11` FIND-ALL: codepoint [`1`,`3`,`1`,`1`], longest [`10`,`3`,`1`,`1`].
+
+The manager's reading (told to him as a reading, for the next lane to test): (a) two different strings of the same
+length cannot both match at one position, so under longest-first the order among equal lengths is never observable
+and the rule is complete with no tie rule; (b) the rule is stated per CLASS POSITION ("a class's members have no
+order, as in PCRE; where a lift gives results of different lengths the longer is tried first"), nested inside the
+order of everything else: alternations, quantifiers and arrays the user writes keep their own order (enumerate's
+order, PCRE priority); (c) it makes the answer independent of how the class is spelled and of codepoint order.
+
+### 2026-11-19 OWNER, discussing class-order: what "class only" means
+
+His words, verbatim: "what do you mean class only? like \d ?"
+
+Class: a QUESTION about the manager's wording (class-order stays open). Answered: yes, a character class is one
+position that takes one character from a set (`\d`, `[0-9]`, `[90]`, `\w`, `.`); the manager's reading (b) of the
+entry above limits longest-first to the members of such a position.
+
+### 2026-11-19 OWNER RULING — class-order
+
+His words, verbatim: "class-order: longest"
+
+Class: RULING (a slug answer to class-order, asked with "class-order: longest" defined as the class-only version and
+"class-order: longest everywhere" as the other).
+
+The rule as asked: a character class's members (`\d`, `[90]`, `\w`, `.`: one position, one character from a set) have
+NO order, as in PCRE; where a lift gives results of different lengths from one class position, the LONGER is tried
+first. Alternations, quantifiers and arrays the user writes keep their own order (enumerate's order, PCRE priority);
+nothing else is re-sorted. The draft's CODEPOINT lean (§5.5) is replaced.
+
+The manager's readings, for the next lane to test (from the two entries above): (a) no tie rule is needed (equal-length
+different strings never both match at one position; RUN for `\d + 1`, 20 shuffles, 0 differing); (b) nesting:
+`(3|9) + \d` sorts the class's results inside each choice of the first operand; (c) what "one class position" means
+when the same lift holds TWO classes (`\d + \d`, `\d\d + 1`) and when a class sits under a quantifier (`\d{1,2} + 1`):
+NOT covered by his words; if the readings part, it is asked; (d) results that are equal strings from different members
+(`\d * 0`) are one result.
+
+### 2026-11-19 OWNER RULING — dollar-diagnostic (the form gets a warning)
+
+His words, verbatim: "i don't want to spend too much time on the warning. the form $x & .. should just get a warning"
+
+Class: RULING (it answers the question dollar-diagnostic, with an answer outside the two offered).
+
+The reading taken, and told to him: the form `$x & S` (a read filtered by a set) gets a WARNING keyed on the FORM,
+pointing at `(x: S)`; the proposal "for emptiness diagnostics a read stands for its group's rx" is DROPPED (no §5.2
+wording change); the manager's withdrawal of the dedicated warning (2026-11-18, "dollar-warning", on his question "is
+it still needed?") is REVERSED by this ruling. `$x & S` stays LEGAL and keeps its meaning (match-is-rx).
+
+The manager's readings, for the next lane to test, and the manager's to settle as detail (he does not want time spent
+here): (a) the warning fires wherever the form is written, including where it is right (`/(?<x>\d+)/ & ($x & <5)`
+equals `(x: <5)` on 0 / 0 / 0 of 364, so the suggestion is harmless there); (b) it is a warning, never an error;
+(c) whether it can be silenced, and its wording, are the manager's call.
+
+### 2026-11-19 OWNER RULING — number-edges
+
+His words, verbatim: "number-edge: nothing"
+
+Class: RULING (a slug answer to number-edges; "number-edge" read as the slug).
+
+The rule as asked: `% 0` and a NEGATIVE result are outside the number domain and yield NOTHING, everywhere (a
+constant case removed at compile time, a run-time case does not match), as a non-numeral read does. No signed
+numeral; no compile error of its own for a written `% 0`. The draft's reading (rev 28.1, R.1.16 NUMBER EDGES) becomes
+the ruling; its runs stand (`/(?<y>\d+)-${$y - 10}/` WHOLE `5--5` FAILS; `/(?<y>\d+)-${$y % 0}/` never holds).
+
+The manager's reading, for the next lane to test: a divisor written as a literal `0` makes a program that can never
+match, and the existing "can never match" diagnostics speak there if their wording reaches it (told to him as the
+manager's leaning inside the question; no new rule).
+
+### 2026-11-19 OWNER RULING — same-name-count
+
+His words, verbatim: "same-name-count: scoped"
+
+Class: RULING (a slug answer to same-name-count).
+
+The rule as asked: a group that arrives through a HOLE is the inserted pattern's own and does NOT count as a second
+group of its name in the outer literal. `q := /(?<h>b)/` at `/(?<h>a)-${q}\k<h>/`: `\k<h>` (and `$h`) mean the OUTER
+group; WHOLE `a-ba` HOLDS / SEARCHED `x a-bb a-ba` `a-ba`@7 / FIND-ALL `a-ba a-bb a-ba` [`a-ba`@0, `a-ba`@10] (rev
+28.1's PART SN). The 2026-11-13 summary line "inserted patterns' groups stay scoped" is now his ruling.
+
+The manager's readings, for the next lane to test: (a) `J` has no effect across a hole (the `J` item left by
+flags-scope is closed by consequence: `J` is not inherited and an outer `(?J)` does not make an inserted name
+collide); rev 28.1's run `/(?J)(?<h>a)-${/(?<h>b)\k<h>/}/` then has the INNER `\k<h>` mean the inner group (WHOLE
+`a-bb` HOLDS), the reverse of what rev 28.1 printed; (b) an inserted literal's NUMBERED references are its own too;
+(c) how the outer program READS a label defined inside an inserted pattern is NOT settled here: its own question.
+
+### 2026-11-19 OWNER, on same-name-count: backreferences, not labels? — and a MANAGER CORRECTION
+
+His words, verbatim: "same-name-count: this is only about backreferences, not labels ?"
+
+Class: a QUESTION about the scope of the ruling just made.
+
+MANAGER CORRECTION: the question same-name-count was asked on the BACKREFERENCE (does an inserted group count as a
+second group of the name for same-name-twice's error at `\k<h>`), and its example and runs used `\k<h>` only. The
+entry above ("OWNER RULING — same-name-count") then wrote "`\k<h>` (and `$h`) mean the OUTER group", and the manager
+told him "the outer `\k<h>` and `$h` see only the outer group". The words "(and `$h`)" are WITHDRAWN: they were the
+manager's extension, not asked and not ruled. The ruling covers what `\k<h>` (the PCRE capture side) counts and
+reads. What a LABEL defined inside an inserted pattern does (whether `$h` after the hole reads it as "the last
+mention", the label rule of same-name-twice; whether a condition `(h: S)` sees it) is OPEN: the question
+inner-label-read.
+
+### 2026-11-19 OWNER, on exported and private labels (after same-name-count)
+
+His words, verbatim: "labels are "exported" from an rx if the label does not begin with _ which indicates private.
+private labels are only available in the rx. what exactly that means probably needs some exploration to be useful.
+the limited case of a single rx literal is what i believe is currently the scope of private labels may not be a
+viable definition. it might be more that private labels are only visible in a binding scope."
+
+Class: a RECOLLECTION plus a LEAN, checked against the record: the scope he leans to is ALREADY RULED. The record's
+"2026-11-18 OWNER RULING — export-rule" (statement 1, put to him and agreed): "A label is public unless its name
+begins with `_`; a private label is visible only inside the binding it is written in." So the scope of a private
+label is the BINDING, not the single literal; his belief that the current scope is one literal is not the record's
+state. Nothing new is ruled by this remark.
+
+Consequence for the queue (the manager's reading, for the next lane to test): the item inner-label-read (does the
+outer program see a label defined inside a pattern inserted through a hole) is answered by export-rule statements 2
+and 3 and the draft's R.1.13 line on holes (only the inserted pattern's exported, public, labels are visible); it is
+NOT asked. To test: `$h` after a hole whose pattern has a public `h`, beside an outer `h` (last mention), with the
+backreference `\k<h>` reading the outer group (same-name-count).
+
+### 2026-11-19 OWNER, on building rx from many bindings: use the label rules as defined, watch for a problem
+
+His words, verbatim: "i think it will be common to build up rx using multiple bindings. what will happen is that as
+the exported space will get more filled. if i use isodate 3 times, then i have year,month,day 3 times. i bind
+[ start_date = isodate ] . ":" . [ end_date = isodate ] so i can get a path to them... i say the strategy is to use
+labels as they are defined and see if there is a problem."
+
+Class: an OBSERVATION (the exported space fills as bindings compose; part labels give the path) and a DIRECTION for
+the work, his: no change to the label rules now; use them as defined and see if a problem appears. Nothing ruled.
+Spellings (`.` between parts, `[ start_date = isodate ]`, `":"`) are placeholders (D193 addendum 4).
+
+For the next lane (the manager's task list, not a rule): work his example as a test of the rules AS DEFINED: one
+binding `isodate` with public `year`, `month`, `day`, used three times, two of them under part labels `start_date`
+and `end_date`; state what bare `year`, `start_date.year` and `end_date.year` read under export-rule (2)-(4) (last
+mention; an ambiguous reference is the error), in every mode; plus two or three examples where a PRIVATE label does
+real work. Report any place the rules as defined give a surprising answer; propose no rule change.
