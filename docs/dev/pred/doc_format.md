@@ -92,11 +92,14 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   record title that exists. RULED by the predicate manager (the form is his by the owner's delegation): "every",
   because a quote that points at no record entry is the failure the rule exists to catch (a misattributed ruling);
   "at least one" alone would let a second, wrong citation ride on a first, right one.
-- A RECORD TITLE is the text of a `### ` heading of the record, or of a bold opener `**...**` at the start of a
-  paragraph, JOINED across lines up to its closing `**`; a citation matches the whole title or the part before its
+- A RECORD TITLE is the text of a `## ` or `### ` heading of the record, or of a bold opener `**...**` that starts
+  a paragraph AND begins with a date (`**YYYY-MM-DD ...`), JOINED across lines up to its closing `**`; a citation matches the whole title or the part before its
   first ` (`.
 - Slugs are lower-case kebab words. A details file with no entries fails L11 as a base file with no pieces does.
-- L6's history words also include `SUPERSEDED` and `rev <digits>`.
+- L6's history words, matched case-insensitively and on word boundaries: `[REV`, `withdrawn`, `reversed`,
+  `superseded`, `rev <digits>`, `revision <digits>`, `review r<digits>`, a bare `r<digits>` review id, and any ISO
+  date other than the heading's status date. Text inside a fenced block or an inline code span (backticks) is
+  exempt, so an example may use a date as its subject.
 - L8 is not asked of a `?` piece either (nor, as above, of `parked`, `under-construction` and principle pieces).
 - A `by:` target is a piece under `core/principles/`.
 - PILOT MODE: a pair whose base file does not exist is SKIPPED with one line; `--require-all` makes it a failure. A
