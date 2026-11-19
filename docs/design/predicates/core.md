@@ -2,14 +2,16 @@
 
 The pure current definition of the predicate language ([COND-FAMILY]; DESIGN ONLY), one piece per tag. Read it
 whole, or scan the heading and statement lines. Every piece's rulings, rejected candidates, readings, evidence and
-history are in `predicates_details.md` under the same tag; the owner's words are in the record
+history are in `core_details.md` (this directory) under the same tag; the owner's words are in the record
 (`docs/design/plan_row_bodies/COND-FAMILY.md`). Format: `docs/dev/pred/doc_format.md`. Then read
-`predicates_library.md` (the provided names) and `predicates_parked.md` (ideas, not in the language).
+`library.md` (the provided names) and `parked.md` (ideas, not in the language).
 
-Status words: `ruled` (the owner ruled it), `reading` (the draft's or the manager's, not ruled), `open <slug>` (a
+Status words: `ruled` (the owner ruled it), `principle` (under `core/principles` only: the owner STATED it outside a
+slug ruling; its details name the record's class), `reading` (the draft's or the manager's, not ruled), `open <slug>` (a
 question for him: the body is a reading or a summary, with the candidates), `under-construction`, `?` (not yet
-converted from `predicates_draft.md`, which stays the source until its section is converted). Every spelling is a
-placeholder (`core/spellings/placeholders`). Examples are run: WHOLE (the whole value), SEARCHED (the first match),
+converted from `docs/design/predicates_draft.md`, which stays the source until its section is converted). Every spelling is a
+placeholder (`core/spellings/placeholders`). A body line `skeleton: yes` marks a piece whose statement is verified
+and whose body is not yet converted. A `see:` line points at a library name the piece mentions (not needed to read it). Examples are run: WHOLE (the whole value), SEARCHED (the first match),
 FIND-ALL (every match, again from the end).
 
 ## Principles   [core/principles]
@@ -33,7 +35,7 @@ by: core/principles/regex-default
 The wording he agreed to, with his asterisk (*): "two patterns that match the same subjects and set their labels the
 same way answer every condition alike" (*).
 
-### A set never contains absence (the manager's name)   [core/principles/no-absence]   ruled 2026-11-16
+### A set never contains absence (the manager's name)   [core/principles/no-absence]   principle 2026-11-16
 "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set".
 Sets are sets of strings; absence is never a member of one.
 
@@ -43,12 +45,12 @@ The same stance, his words elsewhere: "it's difficult to figure out now what tha
 to ban it"; "took the conservative route that eg repeat took a single decimal"; "When: start with required then".
 A refused form can be allowed later without changing any existing answer.
 
-### One consistent, general rule (the manager's name)   [core/principles/general-rules]   ruled 2026-11-18
+### One consistent, general rule (the manager's name)   [core/principles/general-rules]   principle 2026-11-18
 "What is needed is a consistent, general rule about it and not something specific to adding to arrays for example."
 His reason when the rule came: "It's consistent that alternations combine on the product and multiply the rx and
 produce more alternations".
 
-### An rx sets the flags it needs (the manager's name)   [core/principles/rx-owns-flags]   ruled 2026-11-19
+### An rx sets the flags it needs (the manager's name)   [core/principles/rx-owns-flags]   principle 2026-11-19
 "if the flag status is important to an rx, its that rx's responsibility to set them the way it wants and not assume."
 "so if one builds up an rx, they inherit the flags of the surrounding."
 
@@ -67,13 +69,13 @@ bound values you can't see".
 "this is why each target area of the hole is a different thing with its own rules."
 No rule of one hole position carries to another by default.
 
-### Warnings are structural or library-defined (the manager's name)   [core/principles/structural-warnings]   ruled 2026-11-17
+### Warnings are structural or library-defined (the manager's name)   [core/principles/structural-warnings]   principle 2026-11-17
 "Warnings should be structural or definable by a library option."
 
 ### Rx that can match, rx that can filter (the manager's name)   [core/principles/match-and-filter]   ruled 2026-11-18
 "There is rx that can match. There is rx that can filter. Neither is wholly a subset of the other"
 
-### A matching language (the manager's name)   [core/principles/matching-language]   ruled 2026-11-17
+### A matching language (the manager's name)   [core/principles/matching-language]   principle 2026-11-17
 "I like this language because it's in terms no normal imperative language is." ... "it's a matching language not a finding language"
 "It's a bit deceptive in that it looks like functions and predicates and loops but it's not."
 
@@ -91,18 +93,18 @@ An operation outside its domain yields no match, at compile time as at run time.
 "The following can be delayed in build." ... "I'd like to consider that unbuilt territory however and the error is an "under construction" sign."
 A meaning can be acknowledged and its build deferred: the program is refused with the under-construction error.
 
-### Exact wording (the manager's name)   [core/principles/exact-wording]   ruled 2026-11-19
+### Exact wording (the manager's name)   [core/principles/exact-wording]   principle 2026-11-19
 "you are a lawyer in your exact wording. this is what is needed now."
 On the manager's method: rules are stated exactly.
 
-### Check his regex (the manager's name)   [core/principles/check-his-regex]   ruled 2026-11-19
+### Check his regex (the manager's name)   [core/principles/check-his-regex]   principle 2026-11-19
 "be suspicious of my regex and confirm contemporaneously if you see inconsistencies."
 A regex in his example or ruling is run before it is recorded; a mismatch with his words is told the same turn.
 
-### The language, not one macro (the manager's name)   [core/principles/language-over-macros]   ruled 2026-11-19
+### The language, not one macro (the manager's name)   [core/principles/language-over-macros]   principle 2026-11-19
 "i don't at this junction want to go too deeply into any one macro UNLESS it raises interesting points about the language."
 
-### Use the rules as defined (the manager's name)   [core/principles/labels-as-defined]   ruled 2026-11-19
+### Use the rules as defined (the manager's name)   [core/principles/labels-as-defined]   principle 2026-11-19
 "i say the strategy is to use labels as they are defined and see if there is a problem."
 
 ## The model   [core/model]
@@ -123,50 +125,46 @@ A regex in his example or ruling is run before it is recorded; a mismatch with h
 
 ### The sequence operator   [core/patterns/sequence]   ruled 2026-11-17
 `A SEQ B` is regex concatenation, A's text then B's, an assertion at a part's edge seeing its neighbours; it binds tighter than `&` and `|`.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Alternation   [core/patterns/alternation]   ?  2026-11-19
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-17
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` are regex's quantifiers on the operand before them; counts in braces are `repeat`; binary `+` is addition.
-modes: n/a (skeleton: the section's examples come with its conversion)
-
-### Counted repeats   [core/patterns/repeat]   ruled 2026-11-17
-One `repeat` construct does all counting (one argument exact, min and max a range, no maximum unbounded); it is a library definition over count holes.
-needs: core/patterns/quantifiers
-modes: n/a (skeleton: the section's examples come with its conversion)
+see: lib/rx/repeat
+skeleton: yes
 
 ### Atomic parts   [core/patterns/atomic]   ?  2026-11-19
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
 Labels set inside a lookahead are visible after it, read by the usual label rules, as in PCRE.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Labels   [core/labels]
 
 ### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-17
 A label matches every pass; a capture is PCRE's last value; `$x` and `x:` read the label.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### One label rule: branchings reset   [core/labels/one-rule]   ?  2026-11-19
 
 ### Labels across composed parts   [core/labels/flow]   ruled 2026-11-17
 A label from a pattern is whatever label it surfaces; a composed pattern and a literal have the same label behaviour (the last mention wins).
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Export and private labels   [core/labels/export]   ruled 2026-11-18
 A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Part labels and paths   [core/labels/paths]   ?  2026-11-19
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-18
 A number names a group only when there is no ambiguity; `0` is always the entire match of the rx however it is composed.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Conditions   [core/conditions]
 
@@ -176,7 +174,7 @@ modes: n/a (skeleton: the section's examples come with its conversion)
 
 ### A condition as a sequence operand   [core/conditions/in-sequence]   ruled 2026-11-18
 A condition may be an operand of the sequence operator, tested where it stands; `&` stays beside it.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### A quantifier on a condition   [core/conditions/quantified]   ruled 2026-11-18
 A postfix quantifier on a condition is a compile error.
@@ -185,11 +183,11 @@ modes: n/a (a compile error)
 ### The match so far   [core/conditions/match-so-far]   ruled 2026-11-19
 In a condition standing as a sequence operand, `0` names the match so far: the text from the start of the rx it is written in to its point.
 by: core/principles/composed-at-point
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Labels as they stand   [core/conditions/pass-start-read]   ruled 2026-11-17
 A condition reads the labels as they stand where it is written: after its group the current pass's, before it the previous pass's.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Defaults and absent labels   [core/conditions/defaults]   ?  2026-11-19
 
@@ -207,52 +205,52 @@ modes: n/a (a compile error)
 ### Can match, can filter   [core/filters/kinds]   ruled 2026-11-18
 An rx can match when it produces a match by itself and can filter when it judges a stretch as its whole world; the error is at the use that needs the other kind.
 by: core/principles/match-and-filter
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Values   [core/values]
 
 ### Reading a label   [core/values/reads]   ruled 2026-11-18
 `$y` reads the label, everywhere, holes included; a read is a one-string rx known at match time.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### One type: a match is an rx   [core/values/one-type]   ruled 2026-11-18
 A match is an rx; an operation on values applies to an rx; what cannot be built yet is the under-construction error.
 by: core/principles/build-later
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### The number domain   [core/values/number-domain]   ruled 2026-11-18
 Every number operation reads the canonical decimal numerals only (no leading zeros); a read such as `0099` is not a number.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Arithmetic   [core/values/arithmetic]   ruled 2026-11-19
 `+ - * %` take the decimal numerals only; any other operand, `% 0` or a negative result yields nothing, with a warning where known at compile time.
 by: core/principles/nothing-outside-domain
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Single-value functions   [core/values/functions]   ruled 2026-11-18
 A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Arrays   [core/arrays]
 
 ### Arrays are alternations; operations lift   [core/arrays/lift]   ruled 2026-11-18
 An array is an alternation of values; an operation on arrays applies to every combination of members, the first operand slowest, values in the order given.
 by: core/principles/general-rules
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Enumerate   [core/arrays/enumerate]   ?  2026-11-19
 
 ### The order of a class's results   [core/arrays/class-order]   ruled 2026-11-19
 A class's members have no order; where a lift gives results of different lengths from one class position, the longer is tried first.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Two class positions in one lift   [core/arrays/class-positions]   open class-positions 2026-11-19
 The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### The order of a class in enumerate   [core/arrays/class-index]   open class-index 2026-11-19
 The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Holes   [core/holes]
 
@@ -292,7 +290,8 @@ WHOLE `ac` FAILS, `abc` HOLDS / SEARCHED `bc` `c`@1 / FIND-ALL `c abc ac` [`c`@0
 
 ### The count hole   [core/holes/count]   ruled 2026-11-18
 A count hole takes values that produce counts; several values make one copy of the literal per combination, first hole slowest, an illegal copy removed whole.
-needs: core/patterns/repeat core/arrays/lift
+needs: core/arrays/lift
+see: lib/rx/repeat
 by: core/principles/positions-own-rules
 - A member that is not a count (text, a negative number) is a compile error (a reading of "must"); a count is
   never converted to rx text. A count PCRE refuses as too large is a count whose copy is illegal (a reading).
@@ -347,7 +346,7 @@ by: core/principles/positions-own-rules
 - `[${lo}-z]`, lo := [a, x], is `[a-z]|[x-z]`, which collapses to `[a-z]`.
 - A range WRITTEN with single values out of order (`[z-a]`) stays a compile error, as PCRE has it; removal
   applies only to members of an alternation (a reading, run).
-- Every member removed: the never-matching rx (core/holes/zero-values).
+- Every member removed: the never-matching rx (core/holes/zero-values/class).
 WHOLE `b` HOLDS, `x` FAILS, `n` FAILS / SEARCHED `-xb` `b`@2 / FIND-ALL `b x n a` [`b`@0, `a`@6] (`/[${lo}-m]/`, lo := [a, x]: the member `x-m` removed)
 
 ### The option hole   [core/holes/option]   ruled 2026-11-19
@@ -363,17 +362,43 @@ by: core/principles/positions-own-rules core/principles/conservative-first
 WHOLE `AB` HOLDS, `ab` HOLDS / SEARCHED `x AB` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})ab/`, o := "i"; with o := "" WHOLE `AB` FAILS)
 
 ### Zero values in a hole   [core/holes/zero-values]   reading 2026-11-19
-An empty array `${[]}` has one meaning per position: pattern and class, the never-matching rx; count, every copy removed; name and option, a compile error.
-needs: core/holes/pattern core/holes/count core/holes/name core/holes/class core/holes/option
-| position | zero values |
+An empty array `${[]}` has one meaning per position, each stated by its own sub-piece below; the count VALUE zero is not this case.
+needs: core/holes/insert
+by: core/principles/positions-own-rules
+| position | sub-piece |
 |---|---|
-| pattern | an alternation of no members, the never-matching rx `(?!)` (a reading) |
-| count | every copy removed: that literal never matches, with the can-never-match warning (a reading) |
-| group name | a compile error: not exactly one name (a reading) |
-| class member, range end | an alternation of no members, the never-matching rx (a reading, run) |
-| option | a compile error (ruled: "a nothing in an option would have to be an error") |
-The count VALUE zero is not this case: `x{0}` drops its object (core/holes/count).
+| pattern | core/holes/zero-values/pattern |
+| count | core/holes/zero-values/count |
+| group name | core/holes/zero-values/name |
+| class member, range end | core/holes/zero-values/class |
+| option | core/holes/zero-values/option |
+The count VALUE zero, `x{0}`, drops its object (core/holes/count).
+modes: n/a (the table of positions; each sub-piece has its example)
+
+### Zero values in a pattern hole   [core/holes/zero-values/pattern]   reading 2026-11-19
+In a pattern position zero values are an alternation of no members: the never-matching rx `(?!)`.
+needs: core/holes/zero-values core/holes/pattern
+WHOLE `a` FAILS, `b` HOLDS / SEARCHED `ab` `b`@1 / FIND-ALL `a b ab` [`b`@2, `b`@5] (`/a${[]}|b/` is `a(?!)|b`)
+
+### Zero values in a count hole   [core/holes/zero-values/count]   reading 2026-11-19
+In a count position zero values remove every copy: that literal never matches, with the can-never-match warning.
+needs: core/holes/zero-values core/holes/count
+WHOLE `` FAILS, `b` HOLDS / SEARCHED `ab` `b`@1 / FIND-ALL `a b` [`b`@2] (`/a{${n}}/ | /b/`, n := `[]`: the literal `/a{${n}}/` never matches)
+
+### Zero values in a group-name hole   [core/holes/zero-values/name]   reading 2026-11-19
+In a group-name position zero values are a compile error: not exactly one name.
+needs: core/holes/zero-values core/holes/name
+modes: n/a (a compile error)
+
+### Zero values in a class hole   [core/holes/zero-values/class]   reading 2026-11-19
+In a class-member or range-end position zero values, or every member removed, are an alternation of no members: the never-matching rx.
+needs: core/holes/zero-values core/holes/class core/holes/range-end
 WHOLE `ax` FAILS, `b` HOLDS / SEARCHED `axb` `b`@2 / FIND-ALL `ax b` [`b`@3] (`/a[${[]}x]|b/` is `a(?!)|b`)
+
+### Zero values in an option hole   [core/holes/zero-values/option]   ruled 2026-11-19
+In an option position zero values are a compile error.
+needs: core/holes/zero-values core/holes/option
+modes: n/a (a compile error)
 
 ### The value hole   [core/holes/value]   ruled 2026-11-18
 A hole may hold an expression over label reads and constants; it matches the strings the expression yields as literal text, under the options in force at the hole.
@@ -459,14 +484,6 @@ A backreference's name or number takes no hole (a compile error), and inside `\Q
 needs: core/holes/insert
 WHOLE `a${x}b` HOLDS, `ab` FAILS / SEARCHED `-a${x}b` `a${x}b`@1 / FIND-ALL `a${x}b a${x}b` [`a${x}b`@0, `a${x}b`@7] (`/a\Q${x}\Eb/`)
 
-## The conditional   [core/conditional]
-
-### The guarded form   [core/conditional/when]   ?  2026-11-19
-
-### The test of a conditional   [core/conditional/test]   ?  2026-11-19
-
-### Peek   [core/conditional/peek]   ?  2026-11-19
-
 ## Operators   [core/operators]
 
 ### Precedence   [core/operators/precedence]   ?  2026-11-19
@@ -491,6 +508,13 @@ modes: n/a (a warning)
 
 ### A nullable hit argument   [core/diagnostics/nullable-hit]   ruled 2026-11-18
 A hit pattern that can match empty (the argument of `occurrences` / `hits`) draws a warning, not an error.
+modes: n/a (a warning)
+
+### A consuming test   [core/diagnostics/consuming-test]   ruled 2026-11-18
+A bare pattern given as the test of the conditional `when` draws a warning that it consumes; a condition or a `peek(A)` as the test draws none.
+by: core/principles/structural-warnings
+see: lib/control/when-test
+The warning is keyed on the form (an argument written as a bare pattern), which no macro body can see.
 modes: n/a (a warning)
 
 ## Spellings   [core/spellings]

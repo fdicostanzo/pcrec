@@ -10,6 +10,11 @@ rejected:
 history:
 - 2026-11-01 first written.
 
+## core/principles/stated — Stated
+slugs:
+rulings:
+- 2026-11-01 (class: a principle) "stated" (record: "2026-11-03 second words")
+
 ## core/holes/class — Class
 slugs: hole-class shared-q
 readings:

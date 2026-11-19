@@ -1,7 +1,8 @@
 # The predicate documents: base + details, linked by tags (the format)
 
 STATUS: PILOTED 2026-11-19 (lane preddoc1: the skeleton, `core/principles` and `core/holes` in full; lint clean,
-1,828 checks). PROPOSED by the predicate manager 2026-11-19 on the owner's request and delegation (COND-FAMILY, "housekeeping:
+1,828 checks); the owner's five changes and the post-pilot changes APPLIED 2026-11-19 (lane preddoc2: the files in
+`docs/design/predicates/`, the macros `peek`, `when` and `repeat` moved to the library; lint L1-L12). PROPOSED by the predicate manager 2026-11-19 on the owner's request and delegation (COND-FAMILY, "housekeeping:
 organize the predicate documentation" and its two addenda: "keep, modify, or reject these instructions as you reason
 it better"). Not built: the pilot (the skeleton and the holes section) follows revision 29.1. Modelled on the tracker
 pair ([DOC-INDEX], D192, `docs/dev/doc_format.md`); the facts it rests on are in the census
@@ -23,9 +24,9 @@ reason field).
 
 | base (current definition) | details (history, reasoning) | holds |
 |---|---|---|
-| `docs/design/predicates.md` | `predicates_details.md` | section `principles` first (his method), then the core language |
-| `docs/design/predicates_library.md` | `predicates_library_details.md` | every PROVIDED name: a body in the core language, or "primitive" |
-| `docs/design/predicates_parked.md` | `predicates_parked_details.md` | ideas and directions not in the language, each with a trigger |
+| `docs/design/predicates/core.md` | `core_details.md` | section `principles` first (his method), then the core language: primitives only |
+| `docs/design/predicates/library.md` | `library_details.md` | every PROVIDED name: a body in the core language, or "primitive" |
+| `docs/design/predicates/parked.md` | `parked_details.md` | ideas and directions not in the language, each with a trigger |
 
 Not converted, on purpose (the tracker design's own rule: an append-only raw log keeps its shape):
 `docs/design/plan_row_bodies/COND-FAMILY.md` stays THE RECORD, one chronological log, the only source of rulings; each
@@ -72,7 +73,7 @@ new entry gains a line `tags: <tag> <tag>`. Evidence directories and filed revie
 
 ## Lint (structure; requested from main, which owns `scripts/`)
 
-L1 tags unique; L2 tag grammar, and the tag's path equals the piece's file and section (or a `was:` line); L3 base
+L1 tags unique; L2 tag grammar, and the tag's path equals the piece's file and section (always: a moved piece takes a new tag, below); L3 base
 pieces and details entries are in bijection, same order; L4 status in the set, `open` carries a slug, a `ruled`
 piece's details has at least one `rulings:` line whose record title EXISTS in the record; L5 every `needs:` and
 `by:` tag exists, and a `needs:` target is earlier in the read order (core before lib before parked); L6 no history
@@ -109,7 +110,7 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
 - THE READER is `scripts/entry` (the house accessor): the pairs are an entry profile that calls the lint's parser;
   the lint has no reader surface of its own.
 
-### Changes ruled after the pilot (lane preddoc1's FORMAT PROBLEMS; the predicate manager, 2026-11-19; lint not yet changed)
+### Changes ruled after the pilot (lane preddoc1's FORMAT PROBLEMS; the predicate manager, 2026-11-19; in the lint since lane preddoc2)
 
 - A status `principle`, legal only under `core/principles/`: the owner STATED it (a principle, a direction, a
   standing instruction), which is not always a slug ruling; its `rulings:` line carries the record's own class.
@@ -120,7 +121,7 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   position (`core/holes/zero-values/<position>`).
 - The date of a `?` or `skeleton` piece is its conversion date.
 
-### Changes after the owner read the pilot (COND-FAMILY "2026-11-19 OWNER, after reading the pilot documents"; lint not yet changed)
+### Changes after the owner read the pilot (COND-FAMILY "2026-11-19 OWNER, after reading the pilot documents"; in the lint since lane preddoc2)
 
 - DIRECTORY: the six files live in `docs/design/predicates/` as `core.md`, `core_details.md`, `library.md`,
   `library_details.md`, `parked.md`, `parked_details.md` (his suggestion 5). This supersedes the paths in the table
@@ -137,6 +138,25 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   under one entry only (a retired tag is never reused); the base heading may NOT carry a `was:` line any more (it
   is history). Reader: `scripts/entry <previous tag>` resolves to the current piece and says so. This replaces
   "Tags are never renamed" above.
+
+
+### How the lint checks the changes above (lane preddoc2, 2026-11-19; the form, the manager's by delegation)
+
+- `principle` (L4): legal only on a tag under `core/principles/`; a `principle` piece, as a `ruled` one, needs at least
+  one `rulings:` item citing a record title. Its item names the record's class: `- <date> (class: <the record's
+  word>) "<his words>" (record: "<title>")`.
+- `skeleton: yes` (L8): the only value; never on a `?` piece; the old line `modes: n/a (skeleton ...)` FAILS. The
+  ratchet file gains one row per file, `<word>-skeleton<TAB><count>`, beside the `?` row `<word><TAB><count>`; each
+  row only shrinks, and `--write-ratchet` lowers both. A `?` piece turned into a skeleton piece raises the skeleton
+  row: that is a hand edit of the ratchet, visible in the diff (a conversion should go from `?` to full instead).
+- `see:` (L5): every tag exists in ANY file (forward allowed), never the piece's own tag; in pilot mode a `see:` into a
+  skipped pair is skipped as a `needs:` is.
+- `was:` and `formerly:` (details only): `was: <tag> (<YYYY-MM-DD>, <why>)`, `formerly: <module>.<name> (<YYYY-MM-DD>,
+  <why>)` with `<module>` a name or `?` (L2 grammar, the date a real date, the why non-empty); a `was:` tag equals no
+  live tag and is retired under one entry in all three files (L1). A `was:` line in a BASE file fails L6 (history).
+- Library fields, a new rule L12: every library piece that is not `?` has exactly one `module: <name>` (a dotted
+  lower-case name) or `module: ?`; `module:` and `default:` appear only in the library file; `default:` takes the one
+  value `yes`.
 
 ## Migration (after revision 29.1)
 

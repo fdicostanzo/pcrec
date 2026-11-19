@@ -1,5 +1,5 @@
 #!/usr/bin/env -S python3 -I
-"""pred_doc_lint.py -- structure lint (L1-L11) for the predicate documents, and their one parser.
+"""pred_doc_lint.py -- structure lint (L1-L12) for the predicate documents, and their one parser.
 
 The format is docs/dev/pred/doc_format.md (the spec; this file implements it, and its section "What the lint checks
 beyond the rule sentences" is the list of the checks no rule sentence names).
@@ -22,6 +22,19 @@ Readings the spec leaves open (the stricter was taken):
   - the statement is the first non-blank line after a piece's heading; it must not be a metadata line;
   - a `rulings:` item is a line starting `-`; its `(record: "<title>")` must be on that line;
   - a fence is ``` or ~~~ closed only by the same mark; an unterminated fence is a failure (L2 base, L3 details).
+
+Where the post-pilot changes (doc_format.md, its last two sub-sections) are checked, by rule:
+  L1  a details `was:` tag equals no live tag and is retired under one entry only;
+  L2  a tag's path equals its file and section, always; `was: <tag> (<date>, <why>)` and
+      `formerly: <module.name> (<date>, <why>)` grammar (module an identifier or `?`);
+  L4  status `principle` only under core/principles/; a `principle` piece, as a `ruled` one, has a rulings item;
+  L5  every `see:` tag exists in ANY file (forward allowed; pilot mode's skip rule as `needs:`), never the piece itself;
+  L6  a `was:` line in a BASE file (history);
+  L8  `skeleton: yes` exempts a piece from L8 (the value is `yes`, never on a `?` piece); the old marker
+      `modes: n/a (skeleton ...)` fails;
+  L10 the ratchet has a row `<word>-skeleton` per file beside the `?` row; both only shrink;
+  L12 (library fields) `module: <dotted lower-case name>|?` exactly once on every non-`?` library piece;
+      `module:` and `default:` only in the library file; `default:`'s one value is `yes`.
 """
 import argparse
 import datetime
@@ -33,17 +46,18 @@ import sys
 import tempfile
 
 PAIRS = [  # (file word, base, details)
-    ("core", "docs/design/predicates.md", "docs/design/predicates_details.md"),
-    ("lib", "docs/design/predicates_library.md", "docs/design/predicates_library_details.md"),
-    ("parked", "docs/design/predicates_parked.md", "docs/design/predicates_parked_details.md"),
+    ("core", "docs/design/predicates/core.md", "docs/design/predicates/core_details.md"),
+    ("lib", "docs/design/predicates/library.md", "docs/design/predicates/library_details.md"),
+    ("parked", "docs/design/predicates/parked.md", "docs/design/predicates/parked_details.md"),
 ]
 RECORD = "docs/design/plan_row_bodies/COND-FAMILY.md"
 RATCHET = "docs/dev/pred/doc_ratchet.tsv"
 RANK = {"core": 0, "lib": 1, "parked": 2}
 CAPS = {"core": 64 * 1024, "lib": 24 * 1024, "parked": 16 * 1024}
 STATEMENT_MAX, PIECE_MAX = 200, 40
-RULES = ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11"]
-STATUSES = ("ruled", "reading", "under-construction", "parked", "?")
+RULES = ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12"]
+STATUSES = ("ruled", "principle", "reading", "under-construction", "parked", "?")
+SKEL = "-skeleton"  # the ratchet row of a file's skeleton pieces is `<word>-skeleton`
 
 SEG = r"[a-z0-9]+(?:-[a-z0-9]+)*"
 TAG_RE = re.compile(r"^(core|lib|parked)/%s/%s(?:/%s)?$" % (SEG, SEG, SEG))
@@ -54,7 +68,14 @@ SECTION_HEAD_RE = re.compile(r"^## (?P<name>.+?)\s+\[(?P<tag>[^\]\s]*)\]\s*$")
 ENTRY_RE = re.compile(r"^## (?P<tag>\S+) — (?P<name>.+?)\s*$")
 DATE_RE = re.compile(r"^(?P<st>.*?)\s*(?P<date>\d{4}-\d{2}-\d{2})$")
 FIELD_RE = re.compile(r"^(slugs|rulings|rejected|readings|evidence|history):(.*)$")
-META_RE = re.compile(r"^(needs|by|was|modes):")
+META_RE = re.compile(r"^(needs|by|see|was|modes|skeleton|module|default):")
+REF_RE = re.compile(r"^(needs|by|see):(.*)$")
+# details-only lines: `was: <previous tag> (<date>, <why>)`, `formerly: <module.name> (<date>, <why>)`
+MOVE_RE = re.compile(r"^(was|formerly):(.*)$")
+WAS_RE = re.compile(r"^\s*(?P<what>\S+)\s+\((?P<date>\d{4}-\d{2}-\d{2}),\s*(?P<why>\S.*)\)\s*$")
+IDENT = r"[A-Za-z_][A-Za-z0-9_]*"
+FORMERLY_NAME_RE = re.compile(r"^(?:[a-z][a-z0-9_]*|\?)(?:\.%s)+$" % IDENT)
+MODULE_RE = re.compile(r"^(?:\?|[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)$")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 BOLD_OPEN_RE = re.compile(r"^\*\*\d{4}-\d{2}-\d{2}\b")
 ISO_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
@@ -135,7 +156,8 @@ def parse_base(lines):
             body_end -= 1
         p = {"line": i + 1, "end": body_end, "text": lines[i:body_end], "section": cur_sec,
              "tag": None, "name": None, "status": None, "date": None, "malformed": None,
-             "statement": None, "statement_line": None, "needs": [], "by": [], "was": None}
+             "statement": None, "statement_line": None, "needs": [], "by": [], "see": [], "was": [],
+             "skeleton": [], "module": [], "default": [], "old_skeleton": []}
         m = PIECE_RE.match(ln)
         if not m:
             p["malformed"] = "malformed piece heading (want '### name   [tag]   status date')"
@@ -152,12 +174,14 @@ def parse_base(lines):
         for j in range(i + 1, body_end):
             if mask[j]:
                 continue
-            mm = re.match(r"^(needs|by):(.*)$", lines[j])
+            mm = REF_RE.match(lines[j])
             if mm:
                 p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x]
-            mm = re.match(r"^was:\s*(\S+)", lines[j])
+            mm = re.match(r"^(was|skeleton|module|default):(.*)$", lines[j])
             if mm:
-                p["was"] = mm.group(1)
+                p[mm.group(1)].append((j + 1, mm.group(2).strip()))
+            if lines[j].startswith("modes: n/a (skeleton"):
+                p["old_skeleton"].append(j + 1)
         out["pieces"].append(p)
     return out
 
@@ -174,7 +198,7 @@ def parse_details(lines):
                 out["bad"].append((i + 1, "malformed entry heading (want '## <tag> — <name>')"))
                 cur = None
                 continue
-            cur = {"tag": m.group("tag"), "line": i + 1, "start": i, "end": len(lines), "fields": {}}
+            cur = {"tag": m.group("tag"), "line": i + 1, "start": i, "end": len(lines), "fields": {}, "was": [], "formerly": []}
             if out["entries"]:
                 out["entries"][-1]["end"] = i
             out["entries"].append(cur)
@@ -184,6 +208,11 @@ def parse_details(lines):
             mm = None if mask[i] else re.match(r"^shared:(.*)$", ln)
             if mm:
                 out["shared"] += [x for x in re.split(r"[\s,]+", mm.group(1)) if x]
+            continue
+        mv = None if mask[i] else MOVE_RE.match(ln)
+        if mv:
+            cur[mv.group(1)].append((i + 1, mv.group(2)))
+            field = None
             continue
         mm = None if mask[i] else FIELD_RE.match(ln)
         if mm:
@@ -275,7 +304,18 @@ def load_pieces(read):
         for p in bp["pieces"]:
             if p["tag"]:
                 e = by_tag.get(p["tag"])
-                out.append({"word": word, "piece": p, "entry": e, "slugs": entry_slugs(e)})
+                out.append({"word": word, "piece": p, "entry": e, "slugs": entry_slugs(e), "was": entry_was(e)})
+    return out
+
+
+def entry_was(e):
+    """The previous tags a details entry names on its `was:` lines (the reader resolves them to the entry's piece)."""
+    out = []
+    for _, t in (e or {}).get("was", []):
+        m = WAS_RE.match(t)
+        w = m.group("what") if m else (t.split() or [""])[0]
+        if w:
+            out.append(w)
     return out
 
 
@@ -305,6 +345,14 @@ def load(root, require_all, rep):
             continue
         pairs[word] = {"base": b, "details": d, "bp": bparse, "dp": dparse, "size": os.path.getsize(bp)}
     return pairs
+
+
+def valid_date(s):
+    try:
+        datetime.date.fromisoformat(s)
+        return True
+    except ValueError:
+        return False
 
 
 def history_hit(line, allowed_date):
@@ -367,13 +415,11 @@ def lint(root, require_all=False, caps=None, writing=False):
             if not TAG_RE.match(tag):
                 rep.fail("L2", where, "tag '%s' breaks the grammar <file>/<section>/<piece>[/<sub>] (lower-case kebab)" % tag)
             else:
-                if tag.split("/")[0] != word:
-                    rep.fail("L2", where, "tag '%s' is not in file '%s' (a 'was:' line does not excuse the file)" % (tag, word))
-                if p["was"] is None:
-                    if secname != "/".join(tag.split("/")[:2]):
-                        rep.fail("L2", where, "tag '%s' is not in its section %s (add a 'was:' line if moved)" % (tag, secname))
-                elif secname is None or "/".join(p["was"].split("/")[:2]) != secname:
-                    rep.fail("L2", where, "'was: %s' does not name the section path %s" % (p["was"], secname))
+                # the section tag carries the file word (checked above), so this also puts the tag in its file
+                if secname != "/".join(tag.split("/")[:2]):
+                    rep.fail("L2", where, "tag '%s' is not in its section %s (a moved piece takes a new tag)" % (tag, secname))
+            for ln, _ in p["was"]:
+                rep.fail("L6", "%s:%d" % (b, ln), "a 'was:' line in a base file is history (it belongs in the details entry)")
             rep.ok("L1")
             if tag in seen_tags:
                 rep.fail("L1", where, "duplicate tag %s (first at %s)" % (tag, seen_tags[tag]))
@@ -385,19 +431,43 @@ def lint(root, require_all=False, caps=None, writing=False):
             st, date = p["status"], p["date"]
             if date is None:
                 rep.fail("L4", where, "no status date (want '<status> YYYY-MM-DD')")
-            else:
-                try:
-                    datetime.date.fromisoformat(date)
-                except ValueError:
-                    rep.fail("L4", where, "bad status date %s" % date)
+            elif not valid_date(date):
+                rep.fail("L4", where, "bad status date %s" % date)
             if st.startswith("open"):
                 if not st.startswith("open ") or not SLUG_RE.match(st[4:].strip()):
                     rep.fail("L4", where, "status 'open' needs one question slug (got '%s')" % st)
             elif st not in STATUSES:
-                rep.fail("L4", where, "status '%s' not in ruled|reading|open <slug>|under-construction|parked|?" % st)
+                rep.fail("L4", where, "status '%s' not in ruled|principle|reading|open <slug>|under-construction|parked|?" % st)
             elif st == "parked" and word != "parked":
                 rep.fail("L4", where, "status 'parked' only in the parked file")
+            elif st == "principle" and not tag.startswith("core/principles/"):
+                rep.fail("L4", where, "status 'principle' only under core/principles/")
             is_q = st == "?"
+            # L12 library fields: module: on every non-? library piece, default: yes only in the library file
+            rep.ok("L12")
+            for key in ("module", "default"):
+                if p[key] and word != "lib":
+                    rep.fail("L12", "%s:%d" % (b, p[key][0][0]), "'%s:' only on a library piece" % key)
+            if word == "lib":
+                if len(p["module"]) > 1:
+                    rep.fail("L12", "%s:%d" % (b, p["module"][1][0]), "more than one 'module:' line")
+                if not p["module"]:
+                    if not is_q:
+                        rep.fail("L12", where, "library piece without 'module: <name>' (or 'module: ?')")
+                elif not MODULE_RE.match(p["module"][0][1]):
+                    rep.fail("L12", "%s:%d" % (b, p["module"][0][0]), "module '%s' is not a dotted lower-case name or '?'"
+                             % p["module"][0][1])
+                for ln, v in p["default"]:
+                    if v != "yes":
+                        rep.fail("L12", "%s:%d" % (b, ln), "'default: %s' (the only value is 'yes')" % v)
+            # skeleton: yes (statement verified, body not converted): exempt from L8, counted by the ratchet
+            skel = bool(p["skeleton"])
+            for ln, v in p["skeleton"]:
+                rep.ok("L8")
+                if v != "yes" or is_q:
+                    rep.fail("L8", "%s:%d" % (b, ln), "'skeleton: %s' (want 'skeleton: yes', never on a '?' piece)" % v)
+            for ln in p["old_skeleton"]:
+                rep.fail("L8", "%s:%d" % (b, ln), "'modes: n/a (skeleton ...)' is replaced by the line 'skeleton: yes'")
             # L7 statement / piece caps
             rep.ok("L7")
             nlines = p["end"] - p["line"] + 1
@@ -410,12 +480,13 @@ def lint(root, require_all=False, caps=None, writing=False):
                 rep.fail("L7", "%s:%d" % (b, p["statement_line"]), "statement is %d characters (hard cap %d)"
                          % (len(p["statement"]), STATEMENT_MAX))
             # L8 example line
-            if not is_q and st not in ("parked", "under-construction") and not tag.startswith("core/principles/"):
+            if not is_q and not skel and st not in ("parked", "under-construction") and not tag.startswith("core/principles/"):
                 rep.ok("L8")
                 if not any(t.startswith("modes: n/a") or all(w in t for w in ("WHOLE", "SEARCHED", "FIND-ALL"))
                            for t in p["text"][1:]):
                     rep.fail("L8", where, "no example line naming WHOLE, SEARCHED and FIND-ALL (or 'modes: n/a (<why>)')")
         P["qcount"] = sum(1 for p in bp["pieces"] if p["status"] == "?")
+        P["skcount"] = sum(1 for p in bp["pieces"] if p["skeleton"] and p["status"] != "?")
         if P["size"] > caps[word]:
             rep.warns.append("L7 %s: base file is %d bytes, over its soft cap %d" % (b, P["size"], caps[word]))
         rep.ok("L11")
@@ -455,11 +526,11 @@ def lint(root, require_all=False, caps=None, writing=False):
             by_tag.setdefault(e["tag"], e)
         for p in bp["pieces"]:
             e = by_tag.get(p["tag"])
-            if p["status"] != "ruled" or e is None:
+            if p["status"] not in ("ruled", "principle") or e is None:
                 continue
             rep.ok("L4")
             if not ruling_items(e):
-                rep.fail("L4", "%s:%d" % (d, e["line"]), "ruled piece %s has no 'rulings:' item" % p["tag"])
+                rep.fail("L4", "%s:%d" % (d, e["line"]), "%s piece %s has no 'rulings:' item" % (p["status"], p["tag"]))
         for e in dp["entries"]:
             for ln, t in ruling_items(e):
                 rep.ok("L4")
@@ -478,13 +549,40 @@ def lint(root, require_all=False, caps=None, writing=False):
                     break
                 if " ".join(m.group(1).split()) not in titles:
                     rep.fail("L4", "%s:%d" % (d, ln), 'record title "%s" not found in %s' % (m.group(1), RECORD))
+    # L1/L2 moves and renames: details `was:` and `formerly:` lines
+    retired = {}
+    for word, P in pairs.items():
+        if not P["dp"]:
+            continue
+        d = P["details"]
+        for e in P["dp"]["entries"]:
+            for ln, t in e["was"]:
+                where = "%s:%d" % (d, ln)
+                rep.ok("L2")
+                m = WAS_RE.match(t)
+                if not m or not TAG_RE.match(m.group("what")) or not valid_date(m.group("date")):
+                    rep.fail("L2", where, "want 'was: <previous tag> (<YYYY-MM-DD>, <why>)', got 'was:%s'" % t)
+                    continue
+                w = m.group("what")
+                rep.ok("L1")
+                if w in index:
+                    rep.fail("L1", where, "was: %s is a live tag (a retired tag is never reused)" % w)
+                if w in retired:
+                    rep.fail("L1", where, "was: %s is already retired under %s" % (w, retired[w]))
+                else:
+                    retired[w] = "%s (%s)" % (e["tag"], where)
+            for ln, t in e["formerly"]:
+                rep.ok("L2")
+                m = WAS_RE.match(t)
+                if not m or not FORMERLY_NAME_RE.match(m.group("what")) or not valid_date(m.group("date")):
+                    rep.fail("L2", "%s:%d" % (d, ln), "want 'formerly: <module.name> (<YYYY-MM-DD>, <why>)', got 'formerly:%s'" % t)
     # L5 references
     for word, P in pairs.items():
         for p in P["bp"]["pieces"]:
             if p["malformed"]:
                 continue
             where = "%s:%d" % (P["base"], p["line"])
-            for kind in ("needs", "by"):
+            for kind in ("needs", "by", "see"):
                 for t in p[kind]:
                     rep.ok("L5")
                     if t not in index:
@@ -493,6 +591,8 @@ def lint(root, require_all=False, caps=None, writing=False):
                             continue  # its pair was skipped (pilot mode): unresolvable, not a fault
                         rep.fail("L5", where, "%s: %s names no piece" % (kind, t))
                         continue
+                    if kind == "see" and t == p["tag"]:
+                        rep.fail("L5", where, "see: %s names the piece itself" % t)
                     if kind == "by" and not t.startswith("core/principles/"):
                         rep.fail("L5", where, "by: %s is not under core/principles/" % t)
                     if kind == "needs":
@@ -541,24 +641,26 @@ def lint(root, require_all=False, caps=None, writing=False):
             rep.ok("L10")
             rep.fail("L10", "%s:%d" % (RATCHET, ln), msg)
         for word, P in pairs.items():
-            rep.ok("L10")
-            if word not in rat:
-                if not writing:
-                    rep.fail("L10", RATCHET, "no ratchet row for %s" % word)
-            elif P["qcount"] > rat[word]:
-                rep.fail("L10", P["base"], "%d '?' pieces, ratchet allows %d (it only shrinks)" % (P["qcount"], rat[word]))
+            for key, n, what in ((word, P["qcount"], "'?'"), (word + SKEL, P["skcount"], "skeleton")):
+                rep.ok("L10")
+                if key not in rat:
+                    if not writing:
+                        rep.fail("L10", RATCHET, "no ratchet row for %s" % key)
+                elif n > rat[key]:
+                    rep.fail("L10", P["base"], "%d %s pieces, ratchet row %s allows %d (it only shrinks)" % (n, what, key, rat[key]))
     return rep, pairs
 
 
 def read_ratchet(path):
-    """-> ({word: int}, [(line, message)]): every non-blank line is `<core|lib|parked><TAB><digits>`, once."""
+    """-> ({key: int}, [(line, message)]): every non-blank line is `<key><TAB><digits>`, once; a key is a file word
+    (`core`, its '?' pieces) or a file word and `-skeleton` (`core-skeleton`, its skeleton pieces)."""
     out, errs = {}, []
     for n, ln in enumerate(read_lines(path), 1):
         if not ln.strip():
             continue
         f = ln.split("\t")
-        if len(f) != 2 or f[0] not in RANK or not f[1].isdigit():
-            errs.append((n, "bad ratchet line %r (want '<core|lib|parked><TAB><count>')" % ln))
+        if len(f) != 2 or f[0] not in RATCHET_KEYS or not f[1].isdigit():
+            errs.append((n, "bad ratchet line %r (want '<core|lib|parked>[-skeleton]<TAB><count>')" % ln))
         elif f[0] in out:
             errs.append((n, "duplicate ratchet row for %s" % f[0]))
         else:
@@ -566,8 +668,11 @@ def read_ratchet(path):
     return out, errs
 
 
+RATCHET_KEYS = [k for w in RANK for k in (w, w + SKEL)]
+
+
 def write_ratchet(root, out=print):
-    """Lower the ratchet to the current '?' counts. Only after a clean lint; never creates the root."""
+    """Lower the ratchet to the current '?' and skeleton counts. Only after a clean lint; never creates the root."""
     rep, pairs = lint(root, writing=True)
     if rep.fails:
         out("pred_doc_lint: --write-ratchet refused: the lint fails (%d failures); fix them first" % len(rep.fails))
@@ -576,13 +681,14 @@ def write_ratchet(root, out=print):
     old = read_ratchet(rp)[0] if os.path.isfile(rp) else {}
     new = dict(old)
     for word, P in pairs.items():
-        new[word] = min(old.get(word, P["qcount"]), P["qcount"])
+        for key, n in ((word, P["qcount"]), (word + SKEL, P["skcount"])):
+            new[key] = min(old.get(key, n), n)
     os.makedirs(os.path.dirname(rp), exist_ok=True)
     with open(rp, "w", encoding="utf-8") as f:
-        for w in RANK:
+        for w in RATCHET_KEYS:
             if w in new:
                 f.write("%s\t%d\n" % (w, new[w]))
-    out("pred_doc_lint: wrote %s: %s" % (rp, ", ".join("%s=%d" % (w, new[w]) for w in RANK if w in new)))
+    out("pred_doc_lint: wrote %s: %s" % (rp, ", ".join("%s=%d" % (w, new[w]) for w in RATCHET_KEYS if w in new)))
     return 0
 
 
@@ -641,12 +747,16 @@ def lined(n):
 
 
 def class_lines(r, n):
-    """Make the Class piece exactly N lines (heading, statement, needs, by, DEF block, modes)."""
-    sub(r, CB, DEF, lined(n - 5))
+    """Make the Class piece exactly N lines (heading, statement, needs, by, see, DEF block, modes)."""
+    sub(r, CB, DEF, lined(n - 6))
 
 
 def rec_cite(r, title):
     sub(r, LD, '(record: "2026-11-02 bold words")', '(record: "%s")' % title)
+
+
+RAT = "core\t1\ncore-skeleton\t0\nlib\t1\nlib-skeleton\t1\nparked\t1\nparked-skeleton\t0\n"  # the sample's own ratchet
+SAMPLE_COUNTS = {"core": 1, "core-skeleton": 0, "lib": 1, "lib-skeleton": 1, "parked": 1, "parked-skeleton": 0}
 
 
 def set_ratchet(r, text):
@@ -698,20 +808,31 @@ PLANTS = [
     ("L1", "duplicate piece tag", lambda r: (sub(r, CB, "[core/holes/name]", "[core/holes/class]"),
                                              sub(r, CD, "## core/holes/name —", "## core/holes/class —"))),
     ("L1", "duplicate section tag", lambda r: put(r, CB, "\n## Holes again   [core/holes]\n", "a")),
+    ("L1", "was: names a live tag", lambda r: sub(r, LD, "was: core/holes/word (", "was: core/holes/name (")),
+    ("L1", "was: retired in two FILES", lambda r: sub(r, XD, "## parked/ideas/zip — Zip\n", "## parked/ideas/zip — Zip\nwas: core/holes/word (2026-11-07, again)\n")),
+    ("L1", "was: retired under two entries",
+     lambda r: sub(r, LD, "## lib/names/trimmed — Trimmed\n", "## lib/names/trimmed — Trimmed\nwas: core/holes/word (2026-11-04, again)\n")),
     ("L2", "tag grammar (upper case)", lambda r: rename_name(r, "core/holes/Name")),
     ("L2", "tag grammar (five segments)", lambda r: rename_name(r, "core/holes/name/sub/more")),
     ("L2", "tag in another section", lambda r: rename_name(r, "core/principles/name")),
-    ("L2", "tag in another FILE, excused by a was: line",
-     lambda r: (rename_name(r, "lib/holes/name"), sub(r, CB, NAME_HEAD.replace("core/holes/name", "lib/holes/name"),
-                                                      NAME_HEAD.replace("core/holes/name", "lib/holes/name") + "\nwas: core/holes/name"))),
-    ("L2", "was: names another section", lambda r: (rename_name(r, "core/principles/name"),
-                                                  sub(r, CB, "[core/principles/name]   ?  2026-11-03", "[core/principles/name]   ?  2026-11-03\nwas: core/other/name"))),
+    ("L2", "tag in another FILE", lambda r: rename_name(r, "lib/holes/name")),
+    ("L2", "a moved piece's section is not excused by a details was: line",
+     lambda r: (rename_name(r, "core/principles/name"),
+                sub(r, CD, "## core/principles/name — Name\n", "## core/principles/name — Name\nwas: core/holes/name (2026-11-03, moved)\n"))),
+    ("L2", "was: tag grammar", lambda r: sub(r, LD, "was: core/holes/word (", "was: Core/Holes (")),
+    ("L2", "was: without a date", lambda r: sub(r, LD, "(2026-11-05, moved to the library)", "(moved to the library)")),
+    ("L2", "was: with an impossible date", lambda r: sub(r, LD, "(2026-11-05, moved to the library)", "(2026-13-40, moved to the library)")),
+    ("L2", "was: without a why", lambda r: sub(r, LD, "(2026-11-05, moved to the library)", "(2026-11-05)")),
+    ("L2", "formerly: name grammar", lambda r: sub(r, LD, "formerly: text.pad (", "formerly: Text pad (")),
+    ("L2", "formerly: a bare name, no module", lambda r: sub(r, LD, "formerly: text.pad (", "formerly: pad (")),
+    ("L2", "formerly: with an impossible date", lambda r: sub(r, LD, "(2026-11-02, renamed)", "(2026-02-30, renamed)")),
+    ("L2", "formerly: without a why", lambda r: sub(r, LD, "(2026-11-02, renamed)", "(2026-11-02)")),
     ("L2", "malformed piece heading", plant_malformed_piece),
     ("L2", "malformed section heading", lambda r: put(r, CB, "\n## Extra   core/extra\n", "a")),
     ("L2", "section tag grammar", lambda r: put(r, CB, "\n## Extra   [core/Extra]\n", "a")),
     ("L2", "section tag in another file", lambda r: put(r, CB, "\n## Extra   [lib/extra]\n", "a")),
     ("L2", "unterminated fence in a base file", lambda r: put(r, CB, "\n```\nopen forever\n", "a")),
-    ("L3", "base piece with no details entry", lambda r: sub(r, LD, "\n## lib/names/word — Word\nslugs:\n", "")),
+    ("L3", "base piece with no details entry", lambda r: sub(r, LD, "\n## lib/names/word — Word\nwas: core/holes/word (2026-11-05, moved to the library)\nslugs:\n", "")),
     ("L3", "details entry with no base piece", lambda r: put(r, LD, "\n## lib/names/extra — Extra\nslugs:\n", "a")),
     ("L3", "duplicate details entry", lambda r: put(r, LD, "\n## lib/names/word — Word\nslugs:\n", "a")),
     ("L3", "details entries out of order", swap_entries),
@@ -724,6 +845,9 @@ PLANTS = [
     ("L4", "open with a non-kebab slug", lambda r: sub(r, LB, "open lib-trim-q 2026-11-04", "open Lib_Trim 2026-11-04")),
     ("L4", "'openfoo' for open", lambda r: sub(r, LB, "open lib-trim-q 2026-11-04", "openlib 2026-11-04")),
     ("L4", "parked outside the parked file", lambda r: sub(r, CB, "reading 2026-11-02", "parked 2026-11-02")),
+    ("L4", "principle outside core/principles (a piece with a rulings item)", lambda r: sub(r, LB, "ruled 2026-11-02", "principle 2026-11-02"), {}, 1),
+    ("L4", "principle piece with no rulings item",
+     lambda r: sub(r, CD, '- 2026-11-01 (class: a principle) "stated" (record: "2026-11-03 second words")\n', "")),
     ("L4", "no status date", lambda r: sub(r, CB, "reading 2026-11-02", "reading")),
     ("L4", "impossible status date", lambda r: sub(r, CB, "reading 2026-11-02", "reading 2026-13-45")),
     ("L4", "ruled piece with no rulings item",
@@ -747,6 +871,9 @@ PLANTS = [
         r, CB, "[core/principles/regex-default]   ruled 2026-11-01\nA bare slash form is a regex unless the owner says otherwise.\n",
         "[core/principles/regex-default]   ruled 2026-11-01\nA bare slash form is a regex unless the owner says otherwise.\nneeds: core/holes/class\n")),
     ("L5", "needs: target in a later file", lambda r: sub(r, CB, "needs: core/principles/regex-default", "needs: lib/names/padded")),
+    ("L5", "see: names no piece", lambda r: sub(r, CB, "see: lib/names/word", "see: lib/names/nowhere")),
+    ("L5", "see: second tag of a list names no piece", lambda r: sub(r, CB, "see: lib/names/word", "see: lib/names/word lib/names/nowhere")),
+    ("L5", "see: the piece itself", lambda r: sub(r, CB, "see: lib/names/word", "see: core/holes/class")),
     ("L5", "by: names no piece", lambda r: sub(r, CB, "by: core/principles/regex-default", "by: core/principles/nowhere")),
     ("L5", "by: target not a principle", lambda r: sub(r, CB, "by: core/principles/regex-default", "by: core/holes/class")),
     ("L6", "WITHDRAWN", l6_word("WITHDRAWN")),
@@ -763,6 +890,7 @@ PLANTS = [
     ("L6", "a date other than the status date", l6_word("on 2026-12-31")),
     ("L6", "another piece's status date", l6_word("on 2026-11-03")),
     ("L6", "a history word on the last line of a long file", lambda r: put(r, CB, "\n## Extra   [core/extra]\n" + "\n" * 40 + "Withdrawn last line.\n", "a")),
+    ("L6", "a was: line in a base file", lambda r: sub(r, CB, NAME_HEAD, NAME_HEAD + "\nwas: core/holes/old")),
     ("L6", "a history word in a section heading", lambda r: sub(r, CB, "## Holes   [core/holes]", "## Holes withdrawn   [core/holes]")),
     ("L7", "statement of 201 characters", lambda r: sub(r, CB, "A hole stands for one pattern fragment of the named class.", "S" * 201)),
     ("L7", "piece of 41 lines", lambda r: class_lines(r, PIECE_MAX + 1)),
@@ -773,29 +901,51 @@ PLANTS = [
     ("L8", "example line names WHOLE and FIND-ALL only", l8_two("SEARCHED")),
     ("L8", "example line names SEARCHED and FIND-ALL only", l8_two("WHOLE")),
     ("L8", "no example on a core piece", no_example),
+    ("L8", "skeleton: no", lambda r: sub(r, LB, "skeleton: yes", "skeleton: no")),
+    ("L8", "skeleton: yes on a '?' piece", lambda r: sub(r, LB, "### Word   [lib/names/word]   ?  2026-11-05", "### Word   [lib/names/word]   ?  2026-11-05\nskeleton: yes")),
+    ("L8", "the old 'modes: n/a (skeleton ...)' marker", lambda r: sub(r, CB, "modes: n/a (a hole is not matched on its own)", "modes: n/a (skeleton: later)")),
+    ("L8", "skeleton line removed: the piece owes its example", lambda r: sub(r, LB, "skeleton: yes\n", "")),
     ("L8", "the heading names the modes, no example", lambda r: (no_example(r), sub(r, CB, "### Class ", "### WHOLE SEARCHED FIND-ALL "))),
     ("L9", "slug on two tags, not shared", lambda r: sub(r, CD, "shared: shared-q\n", "")),
     ("L9", "slug on two tags in two files", lambda r: sub(r, LD, "slugs: shared-q", "slugs: shared-q regex-q")),
     ("L9", "slug not kebab", lambda r: sub(r, LD, "slugs: lib-trim-q", "slugs: Lib_Trim")),
-    ("L10", "more '?' pieces than the ratchet", lambda r: set_ratchet(r, "core\t0\nlib\t1\nparked\t1\n")),
-    ("L10", "ratchet row with three fields", lambda r: set_ratchet(r, "core\t1\textra\nlib\t1\nparked\t1\n")),
-    ("L10", "ratchet row space-separated", lambda r: set_ratchet(r, "core 1\nlib\t1\nparked\t1\n")),
-    ("L10", "ratchet count not a number", lambda r: set_ratchet(r, "core\tone\nlib\t1\nparked\t1\n")),
-    ("L10", "ratchet row duplicated", lambda r: set_ratchet(r, "core\t1\nlib\t1\nparked\t1\ncore\t99\n")),
-    ("L10", "ratchet word unknown", lambda r: set_ratchet(r, "core\t1\nlib\t1\nparked\t1\nextra\t1\n")),
-    ("L10", "ratchet lacks a file's row", lambda r: set_ratchet(r, "core\t1\nlib\t1\n")),
+    ("L10", "more '?' pieces than the ratchet", lambda r: set_ratchet(r, RAT.replace("core\t1", "core\t0"))),
+    ("L10", "ratchet row with three fields", lambda r: set_ratchet(r, RAT.replace("core\t1", "core\t1\textra"))),
+    ("L10", "ratchet row space-separated", lambda r: set_ratchet(r, RAT.replace("core\t1", "core 1"))),
+    ("L10", "ratchet count not a number", lambda r: set_ratchet(r, RAT.replace("core\t1", "core\tone"))),
+    ("L10", "ratchet row duplicated", lambda r: set_ratchet(r, RAT + "core\t99\n")),
+    ("L10", "ratchet word unknown", lambda r: set_ratchet(r, RAT + "extra\t1\n")),
+    ("L10", "ratchet lacks a file's row", lambda r: set_ratchet(r, RAT.replace("parked\t1\n", ""))),
+    ("L10", "more skeleton pieces than the ratchet", lambda r: set_ratchet(r, RAT.replace("lib-skeleton\t1", "lib-skeleton\t0"))),
+    ("L10", "ratchet lacks a skeleton row", lambda r: set_ratchet(r, RAT.replace("core-skeleton\t0\n", ""))),
+    ("L10", "ratchet skeleton key misspelt", lambda r: set_ratchet(r, RAT.replace("core-skeleton", "core-skel"))),
     ("L10", "ratchet absent under --require-all", lambda r: os.remove(os.path.join(r, RATCHET)), {"require_all": True}),
     ("L11", "base and details with no pieces and no entries", empty_parked, {}, 2),
     ("L11", "base file absent under --require-all",
      lambda r: (os.remove(os.path.join(r, XB)), os.remove(os.path.join(r, XD))), {"require_all": True}),
+    ("L12", "module: missing on a non-'?' library piece", lambda r: sub(r, LB, "module: ?\n", "")),
+    ("L12", "module: not a dotted lower-case name", lambda r: sub(r, LB, "module: text", "module: Text")),
+    ("L12", "module: with a blank inside", lambda r: sub(r, LB, "module: text", "module: te xt")),
+    ("L12", "module: twice", lambda r: sub(r, LB, "module: text\n", "module: text\nmodule: other\n")),
+    ("L12", "default: no", lambda r: sub(r, LB, "default: yes", "default: no")),
+    ("L12", "default: in the core file", lambda r: sub(r, CB, "see: lib/names/word\n", "see: lib/names/word\ndefault: yes\n")),
+    ("L12", "module: in the core file", lambda r: sub(r, CB, "see: lib/names/word\n", "see: lib/names/word\nmodule: ?\n")),
+    ("L12", "module: in the parked file", lambda r: sub(r, XB, "Swapping is not in the language until a measured need names it.\n",
+                                                      "Swapping is not in the language until a measured need names it.\nmodule: ?\n")),
     ("L11", "no pair at all", lambda r: [os.remove(os.path.join(r, f)) for f in (CB, CD, LB, LD, XB, XD)]),
     ("L11", "a base file that is not UTF-8", plant_unreadable),
     ("L11", "a details file that is not UTF-8", lambda r: put(r, XD, "# Parked \udcff\n") if False else open(os.path.join(r, XD), "wb").write(b"\xff\xfe\n")),
 ]
 
 CONTROLS = [  # (label, mutator, lint kwargs, expected failing rules after the mutation)
-    ("was: excuses a moved piece's section", lambda r: (rename_name(r, "core/principles/name"),
-        sub(r, CB, "[core/principles/name]   ?  2026-11-03", "[core/principles/name]   ?  2026-11-03\nwas: core/holes/name")), {}, set()),
+    ("a details was: of a tag retired to another file, and a 'formerly: ?.name'",
+     lambda r: (sub(r, LD, "formerly: text.pad (", "formerly: ?.pad.inner ("),
+                sub(r, CD, "## core/holes/name — Name\n", "## core/holes/name — Name\nwas: parked/ideas/name (2026-11-03, promoted)\n")), {}, set()),
+    ("a 'module: a.b' dotted name, 'module: ?' on a '?' piece",
+     lambda r: (sub(r, LB, "module: text", "module: rx.sub"), sub(r, LB, "### Word   [lib/names/word]   ?  2026-11-05", "### Word   [lib/names/word]   ?  2026-11-05\nmodule: ?")), {}, set()),
+    ("a fenced was: line in a details entry is not a move",
+     lambda r: sub(r, CD, "- hole as a token — UNTESTED (none)", "- hole as a token — UNTESTED (none)\n```\nwas: core/holes/name (2026-11-02, x)\nwas: bad\n```"), {}, set()),
+    ("see: into a skipped pair, pilot mode", lambda r: (os.remove(os.path.join(r, LB)), os.remove(os.path.join(r, LD))), {}, set()),
     ("a four-segment tag", lambda r: rename_name(r, "core/holes/name/sub"), {}, set()),
     ("a statement of exactly 200 characters", lambda r: sub(r, CB, "A hole stands for one pattern fragment of the named class.", "S" * 200), {}, set()),
     ("a piece of exactly 40 lines, trailing blank trimmed", lambda r: class_lines(r, PIECE_MAX), {}, set()),
@@ -862,7 +1012,7 @@ def selftest():
         c = fresh("clean")
         rep, _ = lint(c)
         expect(not rep.fails, "clean sample fails: %r" % rep.fails)
-        floors = {"L1": 10, "L2": 13, "L3": 3, "L4": 10, "L5": 5, "L6": 40, "L7": 9, "L8": 3, "L9": 5, "L10": 3, "L11": 4}
+        floors = {"L1": 11, "L2": 15, "L3": 3, "L4": 12, "L5": 6, "L6": 50, "L7": 10, "L8": 3, "L9": 5, "L10": 6, "L11": 4, "L12": 10}
         for r, f in floors.items():
             expect(rep.checked[r] >= f, "clean sample: rule %s visited %d, floor %d (a rule that checks nothing)" % (r, rep.checked[r], f))
         n += 1
@@ -901,14 +1051,15 @@ def selftest():
         expect(not rep.warns, "soft cap: a warning under the cap")
         # --write-ratchet: only lowers, only after a clean lint, never creates a root
         d = fresh("wr")
-        set_ratchet(d, "core\t5\nlib\t1\nparked\t1\n")
+        set_ratchet(d, RAT.replace("core\t1", "core\t5").replace("lib-skeleton\t1", "lib-skeleton\t7"))
         write_ratchet(d, out=lambda s: None)
-        expect(read_ratchet(os.path.join(d, RATCHET))[0].get("core") == 1, "--write-ratchet did not lower 5 to 1")
-        set_ratchet(d, "core\t0\nlib\t1\nparked\t1\n")
+        got = read_ratchet(os.path.join(d, RATCHET))[0]
+        expect(got.get("core") == 1 and got.get("lib-skeleton") == 1, "--write-ratchet did not lower 5 to 1 and 7 to 1: %r" % got)
+        set_ratchet(d, RAT.replace("core\t1", "core\t0"))
         write_ratchet(d, out=lambda s: None)
         expect(read_ratchet(os.path.join(d, RATCHET))[0].get("core") == 0, "--write-ratchet raised 0")
         d = fresh("wr2")
-        set_ratchet(d, "core\t5\nlib\t1\nparked\t1\n")
+        set_ratchet(d, RAT.replace("core\t1", "core\t5"))
         put(d, CB, "", "w")
         expect(write_ratchet(d, out=lambda s: None) == 1 and read_ratchet(os.path.join(d, RATCHET))[0].get("core") == 5,
                "--write-ratchet ratcheted down after a failing lint")
@@ -918,22 +1069,23 @@ def selftest():
                "--write-ratchet rewrote a malformed ratchet")
         d = fresh("wr5")
         set_ratchet(d, "core\t5\n")
-        expect(write_ratchet(d, out=lambda s: None) == 0 and read_ratchet(os.path.join(d, RATCHET))[0] == {"core": 1, "lib": 1, "parked": 1},
+        expect(write_ratchet(d, out=lambda s: None) == 0 and read_ratchet(os.path.join(d, RATCHET))[0] == SAMPLE_COUNTS,
                "--write-ratchet refused a ratchet that only lacks rows")
         d = fresh("wr4")
         os.remove(os.path.join(d, RATCHET))
-        expect(write_ratchet(d, out=lambda s: None) == 0 and read_ratchet(os.path.join(d, RATCHET))[0] == {"core": 1, "lib": 1, "parked": 1},
+        expect(write_ratchet(d, out=lambda s: None) == 0 and read_ratchet(os.path.join(d, RATCHET))[0] == SAMPLE_COUNTS,
                "--write-ratchet did not create the first ratchet from the counts")
         # the parser the reader uses (scripts/entry), hand-written expectations
         got = load_pieces(lambda p: open(os.path.join(sample, p), encoding="utf-8").read() if os.path.isfile(os.path.join(sample, p)) else None)
         by = {g["piece"]["tag"]: g for g in got}
-        expect(len(got) == 9 and by["core/holes/class"]["slugs"] == ["hole-class", "shared-q"]
+        expect(len(got) == 10 and by["core/holes/class"]["slugs"] == ["hole-class", "shared-q"]
+               and by["lib/names/word"]["was"] == ["core/holes/word"] and by["core/holes/name"]["was"] == []
                and piece_text(by["core/holes/class"]["piece"], by["core/holes/class"]["entry"], 0)
                == ["### Class   [core/holes/class]   reading 2026-11-02", "A hole stands for one pattern fragment of the named class."],
                "load_pieces / piece_text level 0: %d pieces" % len(got))
         cp, ce = by["core/holes/class"]["piece"], by["core/holes/class"]["entry"]
         l1, l2 = piece_text(cp, ce, 1), piece_text(cp, ce, 2)
-        expect(len(l1) == 6 and l1[-1].startswith("modes: n/a") and l2[:6] == l1 and "## core/holes/class — Class" in l2
+        expect(len(l1) == 7 and l1[-1].startswith("modes: n/a") and l2[:7] == l1 and "## core/holes/class — Class" in l2
                and "slugs: hole-class shared-q" in l2, "piece_text levels 1 and 2: %r" % l2)
 
         def rd(edit):
@@ -947,7 +1099,8 @@ def selftest():
         g3 = {g["piece"]["tag"]: g for g in load_pieces(rd(lambda p, t: t + "\n## parked/ideas/skip — Again\nslugs: other\n" if p == XD else t))}
         expect(g3["parked/ideas/skip"]["slugs"] == ["skip-q"], "the first details entry of a tag must win")
         g4 = load_pieces(rd(lambda p, t: t.replace("\n", "\r\n")))
-        expect(piece_text(g4[1]["piece"], g4[1]["entry"], 0) == ["### Class   [core/holes/class]   reading 2026-11-02",
+        g4 = {g["piece"]["tag"]: g for g in g4}["core/holes/class"]
+        expect(piece_text(g4["piece"], g4["entry"], 0) == ["### Class   [core/holes/class]   reading 2026-11-02",
                "A hole stands for one pattern fragment of the named class."], "CRLF files: level 0 carries a carriage return")
     finally:
         shutil.rmtree(scratch, ignore_errors=True)

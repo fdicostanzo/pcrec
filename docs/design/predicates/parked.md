@@ -1,8 +1,8 @@
 # The predicate language: parked ideas (base file)
 
-Ideas that are NOT in the language: one piece per item of `predicates_future.md` that is still an idea, plus the
-owner's ideas recorded since. A parked piece defines nothing. Its trigger, source and sketch are in
-`predicates_parked_details.md` and in `predicates_future.md` under the item number. Items 16 and 22 (the place
+Ideas that are NOT in the language: one piece per item of `docs/design/predicates_future.md` that is still an idea,
+plus the owner's ideas recorded since. A parked piece defines nothing. Its trigger, source and sketch are in
+`parked_details.md` and in `docs/design/predicates_future.md` under the item number. Items 16 and 22 (the place
 table) are core/model/places, and item 21 (the rx module) is core/patterns/sequence: they are in the language.
 
 ## Ideas   [parked/ideas]

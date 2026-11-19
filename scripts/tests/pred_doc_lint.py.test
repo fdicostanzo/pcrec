@@ -14,10 +14,10 @@ trap 'rm -rf "$scratch"' EXIT
 $TO 120 python3 -I "$lint" --selftest || { echo "FAIL: selftest"; exit 1; }
 $TO 60 python3 -I "$lint" --root "$sample" --require-all || { echo "FAIL: sample"; exit 1; }
 cp -r "$sample" "$scratch/bad"
-sed -i 's/reading 2026-11-02/blessed 2026-11-02/' "$scratch/bad/docs/design/predicates.md"
+sed -i 's/reading 2026-11-02/blessed 2026-11-02/' "$scratch/bad/docs/design/predicates/core.md"
 out=$($TO 60 python3 -I "$lint" --root "$scratch/bad" --require-all); rc=$?
 [ "$rc" -eq 1 ] || { echo "FAIL: planted fault gave rc $rc, want 1"; exit 1; }
-echo "$out" | grep -Eq '^L4 docs/design/predicates\.md:[0-9]+: ' || { echo "FAIL: no 'L4 file:line:' line: $out"; exit 1; }
+echo "$out" | grep -Eq '^L4 docs/design/predicates/core\.md:[0-9]+: ' || { echo "FAIL: no 'L4 file:line:' line: $out"; exit 1; }
 $TO 60 python3 -I "$lint" --root "$scratch/none" >/dev/null 2>&1; rc=$?
 [ "$rc" -eq 2 ] || { echo "FAIL: a missing --root gave rc $rc, want 2"; exit 1; }
 [ ! -e "$scratch/none" ] || { echo "FAIL: a missing --root was created"; exit 1; }
