@@ -5,6 +5,8 @@ code, no make beyond `make -s test-plan-lint`.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Rulings file `docs/dev/lanes/predspec291_rulings.md`: empty at the start (13:30); ONE entry, R1 (the owner's
   padded-lazy-sparse ruling, "stated behavior"), seen at 13:55 and APPLIED (the last entry applied: R1). Re-read
   before each commit and before this report (last read 14:34; still R1 only, 931 bytes).
