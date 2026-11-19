@@ -5022,3 +5022,13 @@ of length <= 4): 0 / 0 / 0 of 121 for each set; with the set `7`: WHOLE `7` HOLD
 the manager's reading (a) of the zero-in-sequence entry ("a condition written LAST in a sequence reads the entire
 match") in his own example, now SUPPORTED by his statement. Not addressed by his words, still the manager's
 reading to test: what LABELS a bare condition in a hole reads.
+
+### 2026-11-19 OWNER, correcting his spelling of the example
+
+His words, verbatim: "oh right /\d${0: digit}/"
+
+Class: a CORRECTION of the SPELLING in the entry above (his `(&(0:digit))` becomes `${0: digit}`): the bare
+condition written in the hole WITHOUT its own parentheses. Nothing ruled; the meaning recorded above is unchanged
+(the equality with `/\d/ & (0: digit)` was checked on the meaning). For the spellings review (D193 addendum 4):
+whether a condition in a hole keeps its parentheses (`${(0: digit)}`) or the hole's braces may stand for them
+(`${0: digit}`); the manager's note: the draft writes a condition with its parentheses everywhere today.
