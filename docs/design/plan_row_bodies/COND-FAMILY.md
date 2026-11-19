@@ -4742,3 +4742,28 @@ definition on a restriction DISJOINT from the first (the 2026-11-13 per-string d
 on non-numbers without changing any answer that is something today, only answers that are nothing. (d) Per-string
 filtering of an ARRAY or class operand (`\w + 1`: the digits give results, the letters drop) follows from (b) and
 construction-line; NOT his words.
+
+### 2026-11-19 OWNER, on plus-operands: `+` is for numbers only; a class as the base (an idea)
+
+His words, verbatim: "i'm not sure what you mean your take is. i don't think + should be used for anything that isn't
+numbers in one form or another. i don't have a hard answer on how g & /\d+/ exact semantics work but it seems like it
+could work with tweaking. also, one alternative is that /(?i)[\da-f]/ number operations run over a base of the class
+provided to it."
+
+Class, sentence by sentence: (1) a QUESTION about the manager's wording (answered: the manager's take was "`+` is
+arithmetic only; an operand that is not a number gives nothing, with no error of its own; joining is the sequence
+operator"). (2) "i don't think + should be used for anything that isn't numbers in one form or another": his answer
+to the JOIN candidate of plus-operands, asked as a question: `+` does NOT join strings or patterns. The reading
+taken: this closes the join candidate ONLY; what a non-number operand yields (nothing, or an error) is NOT in his
+words and stays the open half of plus-operands; "numbers in one form or another" leaves room for number forms beyond
+the canonical decimal numeral (his next sentence). (3) the `g & /\d+/` restriction: "could work with tweaking", no
+semantics fixed (OBSERVATION; ideas file item 34). (4) an IDEA: number operations take their BASE from a class given
+to them (`/(?i)[\da-f]/` = base 16). Nothing ruled by (3) or (4).
+
+Against the record: (4) meets the 2026-11-12 line GENERAL GENERATORS, USER-ADDABLE TYPES (his "I could let say add
+hexadecimal if it didn't exist in the primitive types"; the manager's `numeral(radix:16, digits:[0-9a-fA-F], ...)`
+declaration) and LITERALS DECIDE (`0x100` hex). The manager's readings (told to him as readings): a class alone names
+the digit SET but not each digit's VALUE or the case of a RESULT (class-order, ruled today: "a character class's
+members have NO order"); for `[\da-f]` under `i` codepoint order happens to give the right values, for other
+alphabets it does not; so the class would be one field of a numeral declaration, or the order must come from
+somewhere stated. Ideas file item 35.

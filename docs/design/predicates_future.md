@@ -730,3 +730,13 @@ its trigger (build under measurement, D77).
   error, fixed by an explicit conversion); overloading on disjoint restrictions (per-string dispatch); whether the
   arithmetic operators are stated this way (`+` on numbers; joining as a later second definition).
 - TRIGGER: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
+
+## 35. Number operations over a base given by a class (`/(?i)[\da-f]/` = base 16; his idea 2026-11-19)
+
+- SOURCE: COND-FAMILY, "2026-11-19 OWNER, on plus-operands: `+` is for numbers only; a class as the base"; the
+  2026-11-12 lines GENERAL GENERATORS, USER-ADDABLE TYPES and LITERALS DECIDE.
+- THE IDEA (his): the number operations run over a base taken from a class provided to them.
+- NOT SETTLED (the manager's notes): a class has no member order (class-order), so the digit VALUES and the case of a
+  RESULT need a stated source; how the base is attached (a restriction on the operand, item 34; a declaration; a
+  literal prefix); the canonical numeral of each base (number-domain).
+- TRIGGER: a user program needing hex or another base in arithmetic or a comparison; or item 34 taken up.
