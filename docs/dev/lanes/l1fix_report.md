@@ -107,8 +107,8 @@ changed, are queued (STATE AT HANDOFF).
   | key | what | pass |
   |---|---|---|
   | `200-l1fix-ident-f6`, `200-l1fix-ident-f89` | the identity gates | DONE, both GREEN (above) |
-  | `200-l1fix-mechA` | S893 S899 S904 S1187 S1189 S1190 S3355 S3356 (the compound-arm rows) | each at its declared expectation |
-  | `200-l1fix-mechB` | S236 S1340 S1440 S1480 S1638-S1641 S1886 S1888-S1891 S1920 S3357 | the same |
-  | `200-l1fix-test` | `make test` through perfrun on the tip: the new `.rxt` block moves corpus populations, and this covers test-compound, test-altcls, test-core and test-cpset-structure | no `*** [... test-X] Error` line |
+  | `200-l1fix-b202611191316002982870.mechA` | S893 S899 S904 S1187 S1189 S1190 S3355 S3356 (the compound-arm rows) | each at its declared expectation |
+  | `201-l1fix-b202611191316002982870.mechB` | S236 S1340 S1440 S1480 S1638-S1641 S1886 S1888-S1891 S1920 S3357 | the same |
+  | `202-l1fix-b202611191316002982870.test` (chained: each waits for the one before to go green) | `make test` through perfrun on the tip: the new `.rxt` block moves corpus populations, and this covers test-compound, test-altcls, test-core and test-cpset-structure | no `*** [... test-X] Error` line |
 
   Nothing may be committed in the worktree while the mech jobs run: the runner archives HEAD per row.
