@@ -4670,3 +4670,22 @@ manager's extension, not asked and not ruled. The ruling covers what `\k<h>` (th
 reads. What a LABEL defined inside an inserted pattern does (whether `$h` after the hole reads it as "the last
 mention", the label rule of same-name-twice; whether a condition `(h: S)` sees it) is OPEN: the question
 inner-label-read.
+
+### 2026-11-19 OWNER, on exported and private labels (after same-name-count)
+
+His words, verbatim: "labels are "exported" from an rx if the label does not begin with _ which indicates private.
+private labels are only available in the rx. what exactly that means probably needs some exploration to be useful.
+the limited case of a single rx literal is what i believe is currently the scope of private labels may not be a
+viable definition. it might be more that private labels are only visible in a binding scope."
+
+Class: a RECOLLECTION plus a LEAN, checked against the record: the scope he leans to is ALREADY RULED. The record's
+"2026-11-18 OWNER RULING — export-rule" (statement 1, put to him and agreed): "A label is public unless its name
+begins with `_`; a private label is visible only inside the binding it is written in." So the scope of a private
+label is the BINDING, not the single literal; his belief that the current scope is one literal is not the record's
+state. Nothing new is ruled by this remark.
+
+Consequence for the queue (the manager's reading, for the next lane to test): the item inner-label-read (does the
+outer program see a label defined inside a pattern inserted through a hole) is answered by export-rule statements 2
+and 3 and the draft's R.1.13 line on holes (only the inserted pattern's exported, public, labels are visible); it is
+NOT asked. To test: `$h` after a hole whose pattern has a public `h`, beside an outer `h` (last mention), with the
+backreference `\k<h>` reading the outer group (same-name-count).
