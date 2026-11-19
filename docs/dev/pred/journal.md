@@ -60,3 +60,7 @@
   Rulings gathered for rev 28 (seven): hole-reads-capture, number-domain, padded-width, hole-flags,
   flags-propagate, unset-in-hole, construction-line. Ideas recorded, not ruled: the label-only group
   `(?<:x>...)`, `padded(rx, length =, pad =)` names, the never-matching constant.
+- Frank RULED value-test (the `if` was illustrative; `when` applies to `$y`; no special case: my reading of his
+  slug answer, told to him). dollar-warning closed as an answer-free manager's call (the warning stays). Eight
+  rulings for rev 28. Next asked: same-name-twice (libpcre2 by ctypes: without `(?J)` error 143; with it `\k<h>`
+  reads the first group: `12-1` holds, `12-2` fails).
