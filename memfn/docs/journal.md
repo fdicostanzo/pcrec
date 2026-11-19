@@ -4233,3 +4233,8 @@ Main ruled on the four kit findings (D186 add. 2):
   hex1000 hit-dense +3-5 %. Void twice, unchecked: hex1000/near-miss/on, a1000/miss-heavy/on. Ceiling: W {0 1.47, 1 1.40, 2 1.38,
   4 1.44, 8 1.37, 16 1.54, 24 1.29, 32 1.25, 64 1.0}: the grid stops at 64, nothing above was timed. Sent to main with the question
   whether the 64 build goes ahead with the near-miss loss on record.
+- 08:5x main asked 3 questions before taking the near-miss loss to Frank (the 64 BUILD goes ahead, the LANDING waits for Frank).
+  Answered: h0 = the pure loop form (head 0, test-only lever), not the engine and not today's tree (today = arm I); h is a kit constant
+  independent of the width (F12); no C3 cell at H(32), C3's arms are I/h0/h*. KEY FACT: on the near-miss cells today's I is
+  130.5/130.4/675.6/668.2 ns/B vs H(64) 82.1/81.9/243.8/250.4 vs h0 ~41.6/41.1/143.3/169.1. So H(64) is 1.6-2.8x FASTER than
+  today; R5's "loss" is a smaller gain than the pure loop's, not a regression. Why inline-64 trails all-loop on near-miss: UNMEASURED.
