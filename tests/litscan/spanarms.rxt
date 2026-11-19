@@ -951,3 +951,183 @@ engine vm
 m "caaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 0 35
 n "aaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
 m "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 2 37
+
+# W-L2 (span_arms §5.7, CAT-EDGE): the lookahead's leftover `cd` past `ab` meets the consumed `cd` at equal offsets; the run is `abcd`. A leftover materialized as head bytes with `all` kept claims `abcdcd` and deletes the match
+pattern (?:(?=abcd)ab)cd
+features all
+m "abcd" 0 4
+m "abcdcd" 0 4
+n "abce"
+m "xabcd" 1 5
+
+# W-L2 (span_arms §5.7, CAT-EDGE): the lookahead's leftover `cd` past `ab` meets the consumed `cd` at equal offsets; the run is `abcd`. A leftover materialized as head bytes with `all` kept claims `abcdcd` and deletes the match [engine vm]
+pattern (?:(?=abcd)ab)cd
+features all
+engine vm
+m "abcd" 0 4
+m "abcdcd" 0 4
+n "abce"
+m "xabcd" 1 5
+
+# W-F5 (span_arms §5.7, ITEM + CAT-L): the lookbehind's two branches `ab|b` share only `b` at -1, so `[ac]` stays `[ac]`: the run is `[ac]bc`; the item taken from the FIRST branch narrows it to `abc` and deletes `cbc`
+pattern [ac]b(?<=ab|b)c
+features all
+m "cbc" 0 3
+m "abc" 0 3
+n "bbc"
+
+# W-F5 (span_arms §5.7, ITEM + CAT-L): the lookbehind's two branches `ab|b` share only `b` at -1, so `[ac]` stays `[ac]`: the run is `[ac]bc`; the item taken from the FIRST branch narrows it to `abc` and deletes `cbc` [engine vm]
+pattern [ac]b(?<=ab|b)c
+features all
+engine vm
+m "cbc" 0 3
+m "abc" 0 3
+n "bbc"
+
+# W-L6 (span_arms §5.7, CAT-EDGE across a non-`all` neighbour): `a.?` is not `all`, so the lookahead's leftover is dropped, never shifted by its `maxw`; a carried leftover narrows `[bc]` and deletes `abc`
+pattern (?:(?=abc)a.?)[bc]c
+features all
+m "abc" 0 3
+n "abbc"
+n "acc"
+m "xabcc" 1 5
+
+# W-L6 (span_arms §5.7, CAT-EDGE across a non-`all` neighbour): `a.?` is not `all`, so the lookahead's leftover is dropped, never shifted by its `maxw`; a carried leftover narrows `[bc]` and deletes `abc` [engine vm]
+pattern (?:(?=abc)a.?)[bc]c
+features all
+engine vm
+m "abc" 0 3
+n "abbc"
+n "acc"
+m "xabcc" 1 5
+
+# W-L7 (span_arms §5.7, CAT-EDGE): the lookbehind's leftover `y` before `x` meets the consumed `y`; the run is `yxz`. A leftover materialized as head bytes claims `yyxz` and deletes `yxz`
+pattern y(?:x(?<=yx))z
+features all
+m "yxz" 0 3
+m "yyxz" 1 4
+n "xz"
+
+# W-L7 (span_arms §5.7, CAT-EDGE): the lookbehind's leftover `y` before `x` meets the consumed `y`; the run is `yxz`. A leftover materialized as head bytes claims `yyxz` and deletes `yxz` [engine vm]
+pattern y(?:x(?<=yx))z
+features all
+engine vm
+m "yxz" 0 3
+m "yyxz" 1 4
+n "xz"
+
+# W-L8 (span_arms §5.7, CAT-EDGE): `y*` is not `all`, so the lookbehind's `x` is dropped there; the run is `abc`. A leftover kept as consumed claims `xabc` at reach 0 and a search from 1 finds none
+pattern y*(?:ab(?<=xab)c)
+features all
+ms 1 "xabc" 1 4
+m "xabc" 1 4
+n "yabc"
+
+# W-L8 (span_arms §5.7, CAT-EDGE): `y*` is not `all`, so the lookbehind's `x` is dropped there; the run is `abc`. A leftover kept as consumed claims `xabc` at reach 0 and a search from 1 finds none [engine vm]
+pattern y*(?:ab(?<=xab)c)
+features all
+engine vm
+ms 1 "xabc" 1 4
+m "xabc" 1 4
+n "yabc"
+
+# W-A1 (span_arms §5.7, ALT): only one branch carries the lookbehind `ab`, so the alternation keeps no guard; the run is `xy[ac]b[bc]`. A one-branch guard kept narrows `[ac]` to `a` and deletes `xycbc`
+pattern xy[ac]b(?:(?<=ab)b|c)
+features all
+m "xycbc" 0 5
+m "xyabb" 0 5
+n "xycbb"
+
+# W-A1 (span_arms §5.7, ALT): only one branch carries the lookbehind `ab`, so the alternation keeps no guard; the run is `xy[ac]b[bc]`. A one-branch guard kept narrows `[ac]` to `a` and deletes `xycbc` [engine vm]
+pattern xy[ac]b(?:(?<=ab)b|c)
+features all
+engine vm
+m "xycbc" 0 5
+m "xyabb" 0 5
+n "xycbb"
+
+# W-S1 stacking (span_arms §5.7, CAT-EDGE): two stacked lookbehind leftovers MEET at equal offsets (`acc` with `cc`), never concatenate; concatenated, `acccc` narrows the left positions and deletes `caccd`
+pattern [ac][ac]cc(?<=acc)(?<=cc)d
+features all
+m "caccd" 0 5
+n "ccccd"
+
+# W-S1 stacking (span_arms §5.7, CAT-EDGE): two stacked lookbehind leftovers MEET at equal offsets (`acc` with `cc`), never concatenate; concatenated, `acccc` narrows the left positions and deletes `caccd` [engine vm]
+pattern [ac][ac]cc(?<=acc)(?<=cc)d
+features all
+engine vm
+m "caccd" 0 5
+n "ccccd"
+
+# W-N2 (span_arms §5.7, ITEM, a lookahead nested in a lookbehind): the lookbehind's guard is its body's tail `ac`, without the inner lookahead's bytes; the run is `accc`. The tail taken with the inner guard appended narrows to `cccc` and deletes `accc`
+pattern [ac][ac](?<=ac(?=cc))cc
+features all
+m "accc" 0 4
+n "cccc"
+n "aacc"
+
+# W-N2 (span_arms §5.7, ITEM, a lookahead nested in a lookbehind): the lookbehind's guard is its body's tail `ac`, without the inner lookahead's bytes; the run is `accc`. The tail taken with the inner guard appended narrows to `cccc` and deletes `accc` [engine vm]
+pattern [ac][ac](?<=ac(?=cc))cc
+features all
+engine vm
+m "accc" 0 4
+n "cccc"
+n "aacc"
+
+# W-F4 (span_arms §5.7, REP row 1): a min-0 repeat of a lookahead is the unit and keeps NO guard; the run is `xa[bc]`. A guard kept narrows `[bc]` to `b` and deletes `xac`
+pattern x(?=ab)?a[bc]
+features all
+m "xac" 0 3
+m "xab" 0 3
+n "xbc"
+
+# W-F4 (span_arms §5.7, REP row 1): a min-0 repeat of a lookahead is the unit and keeps NO guard; the run is `xa[bc]`. A guard kept narrows `[bc]` to `b` and deletes `xac` [engine vm]
+pattern x(?=ab)?a[bc]
+features all
+engine vm
+m "xac" 0 3
+m "xab" 0 3
+n "xbc"
+
+# W-RG (span_arms §5.7, REP through CAT): each copy's lookahead guard meets the NEXT copy's first bytes; the run is `abcabc`. A copy's guard laid end to end with the next copy claims `abcababc` and deletes the match
+pattern (?:abc(?=ab)){2}
+features all
+m "abcabcab" 0 6
+n "abcabcac"
+n "abcabc"
+
+# W-RG (span_arms §5.7, REP through CAT): each copy's lookahead guard meets the NEXT copy's first bytes; the run is `abcabc`. A copy's guard laid end to end with the next copy claims `abcababc` and deletes the match [engine vm]
+pattern (?:abc(?=ab)){2}
+features all
+engine vm
+m "abcabcab" 0 6
+n "abcabcac"
+n "abcabc"
+
+# W-C1 (span_arms §5.7, ITEM, a context node): `(?<=b)` lowers to a context node whose PREV set is `b` at -1, already the consumed `b`; the run is `ab[bc]d`. PREV read as NEXT narrows `[bc]` to `b` and deletes `abcde`
+pattern ab(?<=b)[bc]d\w*e
+features all
+m "abcde" 0 5
+m "abbde" 0 5
+n "acde"
+
+# W-C1 (span_arms §5.7, ITEM, a context node): `(?<=b)` lowers to a context node whose PREV set is `b` at -1, already the consumed `b`; the run is `ab[bc]d`. PREV read as NEXT narrows `[bc]` to `b` and deletes `abcde` [engine vm]
+pattern ab(?<=b)[bc]d\w*e
+features all
+engine vm
+m "abcde" 0 5
+m "abbde" 0 5
+n "acde"
+
+# W-E1 (span_arms §4.5, §5.7): a NEGATIVE lookahead is no item; the run is `xa[bc]`. Its body read as a positive item narrows `[bc]` to `b` and deletes `xac`
+pattern x(?!ab)a[bc]
+features all
+m "xac" 0 3
+n "xab"
+
+# W-E1 (span_arms §4.5, §5.7): a NEGATIVE lookahead is no item; the run is `xa[bc]`. Its body read as a positive item narrows `[bc]` to `b` and deletes `xac` [engine vm]
+pattern x(?!ab)a[bc]
+features all
+engine vm
+m "xac" 0 3
+n "xab"

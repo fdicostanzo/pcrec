@@ -843,6 +843,7 @@ fi
 #     set; under `--harness=restore=look` the plain unit again (the set and
 #     the masked run of the base, `harness:look` on all three walk facts);
 #   - `a(?=b)[bc]` (W-S1's row): the byte moves from `a` to `b`;
+#   - W-L4 `bar(?=baz)`: at reach 0 TOP keeps no guard, the run stays `bar`;
 #   - W-D1 `foo(?=bar)baz`, W-D2 `(?<=ab)(?<=cb)c`, W-D8 `x[^\x00-\xff]y`
 #     list `dead` (`dead` ranks above `harness:`); W-D3, W-D4, W-D5, W-D6 and
 #     W-D7 (the contradiction is optional, one branch, negated, repeated zero
@@ -866,6 +867,7 @@ else
         [ "$gwhy" = "$wwhy" ] || lbad="$lbad '$pat'${arm:+ restore=$arm} $fact why [$gwhy], want [$wwhy];"
     done <<'LKEOF'
 p	-	xy(?=bc)[bc]c	req_whole_run	78796263	rate:builtin-prior
+p	-	bar(?=baz)	req_whole_run	626172	rate:builtin-prior
 p	-	xy(?=bc)[bc]c	req_set	98,99,120,121	-
 p	-	xy(?=bc)[bc]c	req_set_maxoff	98:2,99:3,120:0,121:1	-
 h	look	xy(?=bc)[bc]c	req_whole_run	78796263/fffffeff	harness:look

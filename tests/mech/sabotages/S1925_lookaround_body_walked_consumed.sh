@@ -3,9 +3,11 @@
 # docs/design/span_arms.md §4.1 S16 and §5.7) -- A POSITIVE LOOKAROUND'S BODY
 # IS WALKED AS CONSUMED.
 #
-# T3 row E-5 of the necessary-run walk (src/facts/req.c `rb_zero_rows`) makes
-# a positive lookaround CAT's width-0 unit: the run joins ACROSS it and reads
-# nothing of its body. This plant walks the body as if the subject consumed it
+# T3 row E-5i of the necessary-run walk (src/facts/req.c `rb_zero_rows`; span
+# arms L1, re-aimed by lane l1feat 2026-11-19 from E2's E-5, which L1's E-5i
+# row now precedes for every positive lookaround) makes a positive lookaround
+# CAT's width-0 unit carrying its ITEM: the run joins ACROSS it and reads its
+# body only as guards at their own offsets. This plant walks the body as if the subject consumed it
 # there, so `xyz(?<=yz)abc` claims `xyzyzabc` and `(?<=foo)bar` claims
 # `foobar` at offset 0; the pre-check then deletes their matches (a search of
 # `foobar` from 3 finds no attempt). Detector: the harness on
@@ -20,5 +22,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "xyz(?<=y
 SAB_REACH_EXPECT="REACH-SL-RUN-JOINED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    case RB_ZERO_UNIT:  rb_zero_unit_into(w, acc, pcrec_pd_zero()); return;'
-SAB_AFTER='    case RB_ZERO_UNIT:  if (a->k == A_LOOK && !a->u.look.neg) { RbVal *v = pcrec_arena_alloc(&w->cx->arena, sizeof *v); rb_walk(w, a->l, v); rb_cat_into(w, acc, v); return; } rb_zero_unit_into(w, acc, pcrec_pd_zero()); return;   /* SABOTAGE S1925 */'
+SAB_BEFORE='    case RB_ZERO_ITEM:  rb_zero_item_into(w, acc, a, t);           return;'
+SAB_AFTER='    case RB_ZERO_ITEM:  if (a->k == A_LOOK) { RbVal *v = pcrec_arena_alloc(&w->cx->arena, sizeof *v); rb_walk(w, a->l, v); rb_cat_into(w, acc, v); return; } rb_zero_item_into(w, acc, a, t); return;   /* SABOTAGE S1925 */'
