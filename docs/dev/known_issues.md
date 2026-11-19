@@ -11,6 +11,14 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K146 — OPEN (found by review 2026-11-19 r58 l1tail IDENT-1, pre-existing; plan row [K146-VMCOST-DEPTH]; not scheduled) — quantified nested lookarounds overflow the compile thread's stack in vm_cost
+
+**Witness:** `(?=a|b` repeated N times, then `c`, then `)*+` repeated N times: `pcrec_compile` dies with SIGSEGV (rc 139) at N=180 and N=250 on the 442,368-byte compile thread; N=179 compiles. Re-run by the r58 coordinator at lane/c4scope 3a707deaa (and present before L1: not introduced by it).
+
+**Cause (as found, not yet confirmed by a fix):** `vm_cost` / `vm_cost_rep` (src/gen/emit_vm.c about :3031 and :2440) recurse about 2 KB of frame per nesting level; tests/thread's DEPTH_FAMILIES has no family of this shape, so test-stackdepth never reached it.
+
+**Fix shape (proposed by r58):** the same split L1 applied to `rb_zero_item_into` (l1ttri 2e9e86126: keep the descent frame small, move the per-level work into off-path leaves), plus a DEPTH_FAMILIES row for this shape so the bound is checked.
+
 ## K145 — OPEN (TOOLING; found by lane s2d27land, 2026-11-14; filed by lane s2d27fix; not scheduled) — `tests/litscan/verify_rxt.py` hangs on a block carrying an `oracle none` line
 
 **Witness:** `tests/litscan/d27/partd_required.rxt` block F4 (`(x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1`, subject with no byte 0-7) carried `oracle none python re backtracks exponentially ...`; verify_rxt.py hung on it (python `re` backtracks 2^37 partitions). The landing lane worked around it with a `# pcre2-only` annotation line and kept the `oracle none` line; the keyword census then refused the line (`oracle` is a word the grown grammar wants as a keyword, a COLLISION), so the line was removed and the reason moved into the comment. **Not fixed:** verify_rxt.py should honour a not-python-judgeable marker without ever evaluating the pattern in `re`. Tooling only; no answer moves.

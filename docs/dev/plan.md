@@ -2409,6 +2409,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: starts only on Frank's word; no row-specific trigger recorded
   BOONIES (Frank, 2026-10-09: "File it in boonies"). Fold a caseless backreference's/variable's capture ONCE (canonical case-set representatives, bounded buffer) and compare only the subject side, keyed on the capture span. Pays only when the capture holds still across many compares (`(?i)^(\w+).*\1`), and mostly under utf8. It loses when backtracking is inside the capture. NOT TRIGGERED; no measurement chartered.
 
+- [K146-VMCOST-DEPTH] STATE:not-started — quantified nested lookarounds overflow the compile thread's stack in vm_cost (K146)
+  filed: 2026-11-19 manager, from review r58 IDENT-1 (pre-existing; found while reviewing L1's stackdepth fix)
+  status (2026-11-19): not started; a compile crash (SIGSEGV) on a hostile pattern at nesting 180
+  next: a small lane: split vm_cost/vm_cost_rep's descent frame (the shape of l1ttri 2e9e86126) and add a DEPTH_FAMILIES row; after the lookaround L1 landing
+  refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md
 - [CLS-FOLD-WAF744] STATE:not-started — research why the caseless class fold loses on waf744 (x86)
   filed: 2026-09-30 Frank (decisions D138 addendum)
   status (2026-10-12): not started; re-filed as its own row after [FORM-CHAR2] was archived (it had been merged into that row by [PLAN-LINT] step 2)
