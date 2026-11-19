@@ -105,3 +105,8 @@
   (my dollar-diagnostic reading against §5.2's wording) recorded; the question row prints the wording change.
 - DELIVERED to main: P-2 in to_main.md (done line, [COND-FAMILY] status line, the coordinator's four process
   changes and two proposed edits of my own skill). /q asked padded-order; he asked what the exact-width part is.
+
+## 2026-11-19 (just after midnight) — padded-order ruled
+Frank: "putting the length in front would help order" / "i meant, putting any length" (observation; run padfront.py),
+then "i agree with your lean" = RULING: plain macro, any-length branch first. Two readings for the rev 29 lane
+(length-ordered arguments equal fill; unbounded lazy). Next question in the queue: flags-in-filter. Nothing running.

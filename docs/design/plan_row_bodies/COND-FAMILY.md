@@ -4488,3 +4488,21 @@ continuations, FIND-ALL, compared with "fill each string in the argument's order
 For the next lane to test: (a) the manager's reading "any-length-first equals fill-each-string for every argument
 whose order is by length (longest first or shortest first)"; (b) lane predspec281's statement that a lazy INFINITE
 argument needs the exact-first order, which this finite run does not show (lazy `\d{1,3}?` is right under both).
+
+### 2026-11-19 OWNER RULING — padded-order
+
+His words, verbatim: "i agree with your lean"
+
+Class: RULING (it answers the slug question padded-order, asked with three answers and a stated leaning).
+
+The reading of "agree" taken, and told to him: the leaning in the manager's message just before, namely
+`padded(rx, n)` is a plain macro whose body tries the ANY-LENGTH branch first:
+`padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)` (spellings are placeholders). The exact-width-first
+body is dropped. Where the argument lists a shorter string before a longer one (`\d|\d\d\d|\d\d`), the body's answer
+differs from "fill each string in the argument's order" (`000` gives `000`, fill gives `00`, RUN in the entry above);
+that difference is the body's stated behaviour, not an error.
+
+The leaning carried a CONDITION, stated to him: it holds if the next lane confirms the unbounded lazy case. The
+manager's readings for the next lane to test: (a) any-length-first equals fill-each-string for every argument ordered
+by length; (b) an unbounded lazy argument (`\d+?`) under any-length-first, against lane predspec281's statement that
+it needs exact-first. If (b) fails, the question returns to him with the run; the ruling is not stretched to cover it.
