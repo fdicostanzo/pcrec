@@ -1,0 +1,26 @@
+# preddoc3a sabotage battery, 2026-11-19: PREDDOC3A_SABOTAGE=sN, one at a time; each wants its named checks FAILED.
+# command: (cd $PCREC_TMPDIR/scratch/preddoc3a && PREDDOC3A_SABOTAGE=sN timeout 300 python3 -I -B /home/pcrec/projects/pcrec/worktrees/preddoc3a/docs/dev/lanes/preddoc3a_evidence/preddoc3a_model.py)
+rc=0
+preddoc3a_model: 40 checks, 0 failed
+s1 want [MATCH, ALT, TV]: caught | preddoc3a_model: 40 checks, 8 failed: MATCH TABLE NEST ALT NUML TV INSEQ PSR
+s2 want [ONE, FLOW, CAPT]: caught | preddoc3a_model: 40 checks, 6 failed: NEST CAPT ONE FLOW NUML NUML2
+s3 want [AND, AND2]: caught | preddoc3a_model: 40 checks, 2 failed: AND AND2
+s4 want [AND3]: caught | preddoc3a_model: 40 checks, 1 failed: AND3
+s5 want [TV, TV2, ONE]: caught | preddoc3a_model: 40 checks, 7 failed: NEST CAPT ONE NUML NUML2 TV TV2
+s6 want [LOOK2]: caught | preddoc3a_model: 40 checks, 1 failed: LOOK2
+s7 want [ATOM]: caught | preddoc3a_model: 40 checks, 1 failed: ATOM
+s8 want [QUANT]: caught | preddoc3a_model: 40 checks, 1 failed: QUANT
+s9 want [CAPT2]: caught | preddoc3a_model: 40 checks, 1 failed: CAPT2
+s10 want [BREF]: caught | preddoc3a_model: 40 checks, 1 failed: BREF
+s11 want [ZERO]: caught | preddoc3a_model: 40 checks, 1 failed: ZERO
+s12 want [PSR, PSR2]: caught | preddoc3a_model: 40 checks, 2 failed: PSR PSR2
+s13 want [DEF]: caught | preddoc3a_model: 40 checks, 1 failed: DEF
+s14 want [COMP, KINDS]: caught | preddoc3a_model: 40 checks, 2 failed: COMP KINDS
+s15 want [INSEQ]: caught | preddoc3a_model: 40 checks, 1 failed: INSEQ
+s16 want [LIT]: caught | preddoc3a_model: 40 checks, 1 failed: LIT
+s17 want [FLAGS]: caught | preddoc3a_model: 40 checks, 1 failed: FLAGS
+s18 want [PATH2]: caught | preddoc3a_model: 40 checks, 1 failed: PATH2
+s19 want [SL]: caught | preddoc3a_model: 40 checks, 1 failed: SL
+s20 want [R2]: caught | preddoc3a_model: 40 checks, 1 failed: R2
+s21 want [R1]: caught | preddoc3a_model: 40 checks, 1 failed: R1
+sabotage: 21 of 21 caught
