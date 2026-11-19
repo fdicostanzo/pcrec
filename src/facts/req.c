@@ -74,8 +74,10 @@
  * necessary conditions on the same subject byte), never adds one. An empty
  * meet is a contradiction, the never bit (`RbRuns.never`, the never family's
  * rows, kindrow.def's NEVER column), listed as `req_whole_run`'s why `dead`.
- * At the walk's exit TOP drops whatever guard is left (reach 0: no candidate
- * row yet) and the SET STEP puts each narrowed one-byte position in the set.
+ * Each meet that narrows a consumed position to one byte puts that byte in
+ * the set where it meets (CAT-SET, `rr_cat`), whatever run TOP later
+ * chooses, so the set stays a CORE fact. At the walk's exit TOP drops
+ * whatever guard is left (reach 0: no candidate row yet).
  *
  * WHAT THE RUN DECLINES BEYOND THAT, each with its reason rather than a
  * shared "be careful" (reqpos_2b.md §2.4): an alternation contributes only
@@ -742,6 +744,29 @@ static long long rr_rep_w(int rmax, long long body)
                          PCREC_W_UNBOUNDED);
 }
 
+/* CAT-SET (span_arms §5.2's row as first written; review r55 A): each
+ * position of the CONSUMED run `after` that a meet narrowed from `before`'s
+ * (a new set: `rn_meet_pos` hands back an operand it did not narrow) to ONE
+ * byte puts that byte in the concatenation's necessary set `set` at offset
+ * `base + i`, if the set lacks it. Every match holds the byte there (the
+ * position is consumed, and both conditions are necessary). `*last` takes the
+ * byte joined, so the caller can thread the pick. A member the set already has
+ * keeps its offset (lowering it is review r55 EMITTED-1's own row). */
+static void rr_cat_set_side(RbSet *set, const RbRun *before, const RbRun *after,
+                            long long base, int *last)
+{
+    for (int i = 0; i < after->n; i++) {
+        if (after->pos[i] == before->pos[i] || rn_count(after->pos[i]) != 1) continue;
+        int b = 0;
+        while (!((after->pos[i][b >> 3] >> (b & 7)) & 1)) b++;
+        *last = b;
+        if (rb_has(set, b)) continue;
+        long long o = pcrec_sat_add(base, i, PCREC_W_UNBOUNDED);
+        set->off[b] = o >= RB_OFF_UNBOUNDED ? RB_OFF_UNBOUNDED : (uint32_t)o;
+        set->bits[b >> 3] |= (unsigned char)(1u << (b & 7));
+    }
+}
+
 /* CONCATENATION of runs: `l` is to the LEFT of `r` in subject order.
  *
  * The JOIN is the whole point of carrying head and tail runs — `l`'s
@@ -749,15 +774,36 @@ static long long rr_rep_w(int rmax, long long body)
  * concatenation is a guaranteed contiguous run even when neither factor is
  * literal on its own. `best` is the longest of the two factors' bests, that
  * join, and the resulting head and tail (which a `\z`-free literal makes the
- * same string, and which is what makes `rr_unit` a real identity). */
-static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
+ * same string, and which is what makes `rr_unit` a real identity).
+ *
+ * `set` is the concatenation's necessary set (both factors' already, in
+ * `o`'s frame), which CAT-SET adds to; NULL where the caller's factor has no
+ * consumed position a guard can meet (a gap, a cut, the unit), and a meet
+ * that narrows one anyway is an internal error, never a dropped byte. Its
+ * pick, where the set had none, becomes the rightmost byte joined, so the
+ * pick is -1 exactly when the set is empty (`pcrec_find_set_pick`'s
+ * premise); a set that had a pick keeps it (a joined byte is a necessary
+ * byte, so the pick is still one). */
+static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r, RbSet *set)
 {
     RbRuns o = rr_unit();
     bool empty = false;
-    /* span_arms L1 (§14.3 D-3), FIXED STEPS in this order: CAT-R, CAT-L, the
-     * consumed join, CAT-EDGE, never. */
+    RbRun lt0 = l.tail, rh0 = r.head;
+    int last = -1;
+    /* span_arms L1 (§14.3 D-3), FIXED STEPS in this order: CAT-R, CAT-L,
+     * CAT-SET, the consumed join, CAT-EDGE, never. */
     RbRun rleft = rn_guard_onto_head(w, &r, l.rg, &empty);   /* CAT-R */
     RbRun lleft = rn_guard_onto_tail(w, &l, r.lg, &empty);   /* CAT-L */
+    if (set) {                                                /* CAT-SET */
+        rr_cat_set_side(set, &lt0, &l.tail, lt0.off, &last);
+        rr_cat_set_side(set, &rh0, &r.head, l.maxw, &last);
+        if (set->pick < 0) set->pick = last;
+    } else if (memcmp(lt0.pos, l.tail.pos, sizeof lt0.pos) ||
+               memcmp(rh0.pos, r.head.pos, sizeof rh0.pos)) {
+        pcrec_ctx_fail(w->cx, 0, "internal error: a guard narrowed a consumed "
+                       "run position where no necessary set was handed in "
+                       "(src/facts/req.c rr_cat)");
+    }
     RbRun rb = r.best, join = rn_app(l.tail, r.head);
     o.maxw = pcrec_sat_add(l.maxw, r.maxw, PCREC_W_UNBOUNDED);
     o.head = l.all ? rn_app(l.head, r.head) : l.head;
@@ -893,7 +939,7 @@ static PCREC_OWN_FRAME void rb_cat_into(const RbWalk *w, RbVal *acc,
                                         const RbVal *r)
 {
     acc->set  = rb_union(r->set, acc->set, r->runs.maxw);
-    acc->runs = rr_cat(w, r->runs, acc->runs);
+    acc->runs = rr_cat(w, r->runs, acc->runs, &acc->set);
     acc->desc = pcrec_pd_cat(w->cx, &w->pd, r->desc, acc->desc);
     if (w->ahead) acc->head = pcrec_ph_cat(w->cx, &w->pd, r->head, acc->head);
 }
@@ -914,7 +960,7 @@ static PCREC_OWN_FRAME void rb_gap_into(const RbWalk *w, RbVal *acc,
                                         long long maxw)
 {
     acc->set  = rb_union(rb_empty(), acc->set, maxw);
-    acc->runs = rr_cat(w, rr_none(maxw), acc->runs);
+    acc->runs = rr_cat(w, rr_none(maxw), acc->runs, NULL);
     acc->desc = pcrec_pd_none();
 }
 
@@ -965,12 +1011,21 @@ static int rr_pow_count(const RbRuns *b, int m)
     return m < sat ? m : sat;
 }
 
-/* `X^c`: `c` copies of the body with runs `b`, through the CAT step (the
- * join between two copies is `rr_cat`'s; 0 copies is the unit). */
-static RbRuns rr_pow(const RbWalk *w, RbRuns b, int c)
+/* `X^c`: `c` copies of the body with runs `b` and set `bs`, through the CAT
+ * step (the join between two copies is `rr_cat`'s; 0 copies is the unit),
+ * and into `*set` the copies' necessary set, as `rb_cat_into` builds a
+ * concatenation's: each copy's members at their offsets (the first copy's
+ * are the nearest), plus every byte CAT-SET joins where one copy's guard
+ * narrows the next copy's consumed position (`(?:(?=ln)..){2}`). */
+static RbRuns rr_pow(const RbWalk *w, RbRuns b, int c, const RbSet *bs,
+                     RbSet *set)
 {
     RbRuns o = rr_unit();
-    for (int i = 0; i < c; i++) o = rr_cat(w, b, o);
+    *set = rb_empty();
+    for (int i = 0; i < c; i++) {
+        *set = rb_union(*bs, *set, b.maxw);
+        o = rr_cat(w, b, o, set);
+    }
     return o;
 }
 
@@ -979,10 +1034,11 @@ static RbRuns rr_pow(const RbWalk *w, RbRuns b, int c)
  * from it; `all` only when every copy was unrolled (`c < m` stored a prefix
  * of a longer literal) or the body is width 0 (its copies store nothing, so
  * `X^1` is `X^m`). `m = 0` gives the unit: `xy(?:ab){0}zw` is `xyzw`. */
-static RbRuns rr_rep_exact(const RbWalk *w, RbRuns b, int m)
+static RbRuns rr_rep_exact(const RbWalk *w, RbRuns b, int m, const RbSet *bs,
+                           RbSet *set)
 {
     int c = rr_pow_count(&b, m);
-    RbRuns o = rr_pow(w, b, c);
+    RbRuns o = rr_pow(w, b, c, bs, set);
     o.all = o.all && (c == m || b.maxw == 0);
     o.maxw = rr_rep_w(m, b.maxw);
     o.tail.off = rn_tail_off(o.maxw, o.tail.n);
@@ -995,11 +1051,12 @@ static RbRuns rr_rep_exact(const RbWalk *w, RbRuns b, int m)
  * run), so `all` is false and at `m = 0` this is today's gap. The best is
  * the first decomposition's: its offsets are the smaller bounds, and the
  * second's best is the same bytes further in. */
-static RbRuns rr_rep_split(const RbWalk *w, RbRuns b, int m, int n)
+static RbRuns rr_rep_split(const RbWalk *w, RbRuns b, int m, int n,
+                           const RbSet *bs, RbSet *set)
 {
-    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m));
+    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m), bs, set);
     RbRuns gap = rr_none(rr_rep_w(n < 0 ? -1 : n - m, b.maxw));
-    RbRuns o = rr_cat(w, p, gap), tl = rr_cat(w, gap, p);
+    RbRuns o = rr_cat(w, p, gap, NULL), tl = rr_cat(w, gap, p, NULL);
     o.tail = tl.tail;
     o.rg = tl.rg;   /* span_arms L1 (D-3): from the decomposition ending in `X^c` */
     o.maxw = rr_rep_w(n, b.maxw);
@@ -1074,7 +1131,7 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
     /* Only a single byte is a member of the necessary SET; a wider position is
      * one the RUN carries (litscan_s4.md §2.3.1). */
     acc->set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc->set, 1);
-    acc->runs = rr_cat(w, rr_pos(w, ps), acc->runs);
+    acc->runs = rr_cat(w, rr_pos(w, ps), acc->runs, &acc->set);
     acc->desc = desc;
 }
 
@@ -1082,7 +1139,7 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
  * and a broken run (T3's last row, the form a restored arm runs). */
 static PCREC_OWN_FRAME void rb_assert_into(const RbWalk *w, RbVal *acc)
 {
-    acc->runs = rr_cat(w, rr_none(0), acc->runs);
+    acc->runs = rr_cat(w, rr_none(0), acc->runs, NULL);
     acc->desc = pcrec_pd_none();   /* a CUT, as in the run (§3.4) */
 }
 
@@ -1093,7 +1150,7 @@ static PCREC_OWN_FRAME void rb_assert_into(const RbWalk *w, RbVal *acc)
 static PCREC_OWN_FRAME void rb_zero_unit_into(const RbWalk *w, RbVal *acc,
                                               PdDesc d)
 {
-    acc->runs = rr_cat(w, rr_unit(), acc->runs);
+    acc->runs = rr_cat(w, rr_unit(), acc->runs, NULL);
     acc->desc = pcrec_pd_cat(w->cx, &w->pd, d, acc->desc);
 }
 
@@ -1121,8 +1178,7 @@ static PCREC_OWN_FRAME void rb_rep_unit_val(RbVal *v, const RbVal *b, int m)
 static PCREC_OWN_FRAME void rb_rep_exact_val(const RbWalk *w, RbVal *v,
                                              const RbVal *b, int m)
 {
-    v->set  = m >= 1 ? b->set : rb_empty();
-    v->runs = rr_rep_exact(w, b->runs, m);
+    v->runs = rr_rep_exact(w, b->runs, m, &b->set, &v->set);
     v->desc = pcrec_pd_pow(w->cx, &w->pd, b->desc, m);
 }
 
@@ -1131,8 +1187,7 @@ static PCREC_OWN_FRAME void rb_rep_exact_val(const RbWalk *w, RbVal *v,
 static PCREC_OWN_FRAME void rb_rep_split_val(const RbWalk *w, RbVal *v,
                                              const RbVal *b, int m, int n)
 {
-    v->set  = m >= 1 ? b->set : rb_empty();
-    v->runs = rr_rep_split(w, b->runs, m, n);
+    v->runs = rr_rep_split(w, b->runs, m, n, &b->set, &v->set);
     v->desc = pcrec_pd_none();
 }
 
@@ -1390,7 +1445,7 @@ static void rb_zero_item_into(RbWalk *w, RbVal *acc, const Ast *a, RbVal *t)
     RbRuns u = rr_unit();
     if (a->k == A_LOOK) rb_look_item(w, a, &t[0], &u);
     else rb_ctx_item(w, a, &u);
-    acc->runs = rr_cat(w, u, acc->runs);
+    acc->runs = rr_cat(w, u, acc->runs, &acc->set);
     acc->desc = pcrec_pd_cat(w->cx, &w->pd, pcrec_pd_zero(), acc->desc);
 }
 
@@ -1572,35 +1627,6 @@ static RbRun rb_top(const RbWalk *w, const RbRuns *root)
     return best;
 }
 
-/* THE TOP SET STEP (§14.3 D-3's CAT-SET, re-spelled): every CONSUMED position
- * of the chosen run `run` that is ONE byte is a byte every match holds at
- * `run.off + i` at most, so it joins the necessary set there if the set
- * lacks it. Without a guard it adds nothing (every exact run position came
- * from a one-byte class, an alternation union both branches carry or a copy
- * of a body whose set the repeat keeps); it moves the set exactly where a
- * meet narrowed a position, inside a repeat's copies too. Applied to the
- * walk's own run, before the run floor, so a below-floor run still joins
- * (READYL1-7). The set's pick stays the member it was (a joined byte is a
- * necessary byte, so the pick is still one); where the set was EMPTY it has
- * no pick, and the last joined byte, the rightmost, becomes it, so the pick
- * is -1 exactly when the set is empty (`pcrec_find_set_pick`'s premise). */
-static void rb_top_set_step(RbSet *set, const RbRun *run)
-{
-    int last = -1;
-    for (int i = 0; i < run->n; i++) {
-        int b = -1;
-        if (rn_count(run->pos[i]) != 1) continue;
-        for (int x = 0; x < 256 && b < 0; x++)
-            if ((run->pos[i][x >> 3] >> (x & 7)) & 1) b = x;
-        if (rb_has(set, b)) continue;
-        long long o = pcrec_sat_add(run->off, i, PCREC_W_UNBOUNDED);
-        set->off[b] = o >= RB_OFF_UNBOUNDED ? RB_OFF_UNBOUNDED : (uint32_t)o;
-        set->bits[b >> 3] |= (unsigned char)(1u << (b & 7));
-        last = b;
-    }
-    if (set->pick < 0) set->pick = last;
-}
-
 /* THE WALK'S FACTS, from ONE walk: the whole necessary SET (with its threaded
  * rightmost member, `RbSet.pick`) and the most informative guaranteed
  * contiguous RUN (`RbRun`, at most `PCREC_MAX_REQ_RUN_SCAN` positions
@@ -1625,7 +1651,6 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     rb_walk(w, root, v);
     *set = v->set;
     *run = rb_top(w, &v->runs);
-    rb_top_set_step(set, run);
     *pieces = v->desc;
     *never = v->runs.never;
 }
