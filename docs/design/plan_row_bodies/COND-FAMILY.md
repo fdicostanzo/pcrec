@@ -4930,3 +4930,24 @@ array of two or more different values accepts every character: a WARNING pointin
 form-keyed, as the dollar warning; minimal). (d) `join` is a string function on arrays (T9's family; built now
 where `enumerate` works); it is the only joining so far that is not the sequence operator; its name goes to the
 spellings review. (e) the same for a negated range end: `[^${lo}-z]` with several values is the alternation.
+
+### 2026-11-19 OWNER RULING — anything-text; and a standing instruction on his regex
+
+His words, verbatim: "anthing-text: agree anything := [\s\S]*. in general: be suspicious of my regex and confirm
+contemporaneously if you see inconsistencies."
+
+Class: RULING for the first sentence (a slug answer to anything-text, "anthing-text" read as the slug; asked with the
+leaning "every character including newlines, greedy, and it sets that itself"); a STANDING INSTRUCTION for the
+second (how the manager works with him, not a language rule).
+
+The reading of "agree" taken: the leaning, in his spelling: the provided `anything` is `[\s\S]*`: every character,
+newlines included, greedy; written so that no flag changes it (RUN, python `re`: `[\s\S]*` alone and under `(?s)`,
+`(?i)`, `(?m)`, `(?x)` each holds WHOLE on ``, `12`, `a⏎b`, `A b⏎`). His 2026-11-18 example `any := /.*/` is
+replaced by it (it was one of the failing spellings on a multi-line value). Unchanged, and not asked: `anything` is
+nullable, so `anything & not X` SEARCHED or FIND-ALL holds on an empty stretch; it is a whole-value tool (the
+draft's R.1.0 PROGRAM row).
+
+The standing instruction, as the manager takes it: a regex he writes in an example or a ruling is CHECKED (run)
+before it is recorded as the rule; where it does not do what his words around it say, or disagrees with an earlier
+ruling, the manager says so in the SAME turn, with the run, and does not fold it silently or fix it silently.
+Sent to main as a proposed edit of the predicate-manager skill (section 2).
