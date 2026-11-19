@@ -110,3 +110,9 @@
 Frank: "putting the length in front would help order" / "i meant, putting any length" (observation; run padfront.py),
 then "i agree with your lean" = RULING: plain macro, any-length branch first. Two readings for the rev 29 lane
 (length-ordered arguments equal fill; unbounded lazy). Next question in the queue: flags-in-filter. Nothing running.
+
+## 2026-11-19 (early) — flags and class-order
+Frank: flags-propagate meant "rx inherits the flags of the surrounding rx" (flags-in-filter closed as "reach" by
+consequence, my reading); a binding in a hole inherits (lean, matches the draft); flags-scope RULED (inherit i, m, s;
+not U, x, xx, n; J with same-name-count; "only i" an observation); class-order RULED: longest first, class positions
+only (his idea; run classlong.py). Fourteen rulings wait for rev 29. Next question: dollar-diagnostic. Nothing running.

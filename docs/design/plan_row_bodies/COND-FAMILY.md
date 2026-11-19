@@ -4588,3 +4588,22 @@ His words, verbatim: "what do you mean class only? like \d ?"
 Class: a QUESTION about the manager's wording (class-order stays open). Answered: yes, a character class is one
 position that takes one character from a set (`\d`, `[0-9]`, `[90]`, `\w`, `.`); the manager's reading (b) of the
 entry above limits longest-first to the members of such a position.
+
+### 2026-11-19 OWNER RULING — class-order
+
+His words, verbatim: "class-order: longest"
+
+Class: RULING (a slug answer to class-order, asked with "class-order: longest" defined as the class-only version and
+"class-order: longest everywhere" as the other).
+
+The rule as asked: a character class's members (`\d`, `[90]`, `\w`, `.`: one position, one character from a set) have
+NO order, as in PCRE; where a lift gives results of different lengths from one class position, the LONGER is tried
+first. Alternations, quantifiers and arrays the user writes keep their own order (enumerate's order, PCRE priority);
+nothing else is re-sorted. The draft's CODEPOINT lean (§5.5) is replaced.
+
+The manager's readings, for the next lane to test (from the two entries above): (a) no tie rule is needed (equal-length
+different strings never both match at one position; RUN for `\d + 1`, 20 shuffles, 0 differing); (b) nesting:
+`(3|9) + \d` sorts the class's results inside each choice of the first operand; (c) what "one class position" means
+when the same lift holds TWO classes (`\d + \d`, `\d\d + 1`) and when a class sits under a quantifier (`\d{1,2} + 1`):
+NOT covered by his words; if the readings part, it is asked; (d) results that are equal strings from different members
+(`\d * 0`) are one result.
