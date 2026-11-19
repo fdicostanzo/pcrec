@@ -5447,3 +5447,26 @@ compile error (two files). The manager's reading of what he now means, ASKED, no
 resolve to SEVERAL files, the result is the union of their maps, a member name carried by two of them is a
 compile error, and zero matches stays an error. Open as the question **import-several** until he confirms that
 the 2026-11-14 "exactly one file" is reversed.
+
+### 2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map
+tags: parked/import-symbols
+
+Asked **import-several**: does `import("pcrec"|"numbers")` reverse the 2026-11-14 "must resolve to EXACTLY ONE
+file", and does it hold for `m := import("pcrec"|"numbers")` too. HIS WORDS, whole:
+
+"import-several: yes. if you can bind multiple arguments simultaneously, thent this is more expressive. before you
+could only bind one so what did multiple files mean? although, good point, if the binding is just 1 symbol, then
+its a map of all the values of the files combined. one could filter but it would have to be inside the
+import("file1"|"file2", search(string))"
+
+Class: a RULING ("yes"), REVERSING the 2026-11-14 addendum's "exactly one file; ... several matches = compile
+error", with his reason (that rule belonged to a time when only one name could be bound). Ruled: the argument may
+resolve to several files; bound to ONE name, the value is "a map of all the values of the files combined". An
+IDEA in the same answer ("one could filter"): a filter over the imported names is written INSIDE the import, as a
+further argument (`import("file1"|"file2", search(string))`; spelling a placeholder).
+
+The manager's readings (told to him; for a lane to list):
+- ZERO files matched stays a compile error (the part of the 2026-11-14 rule his "yes" does not touch).
+- A name carried by two of the files is a compile error in the one-name form as in the `(=)` form (his "conflicts
+  are a compiler error, import separately" was said of `(=)`; extended here by the manager, NOT his words).
+- NOT STATED: whether the filter is applied before the conflict check (so a filter can remove a conflict).
