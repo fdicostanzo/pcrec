@@ -1779,7 +1779,9 @@ done
 # predecessor's choice (information, then the first run). [RUN-POS-SET]
 # stage 2a's `restore=alt` (lane r1on) runs an alternation as its common head
 # and tail alone, never `all` (alt_normal_form.md §6 row 2 without row 1).
-# A later span arms unit adds its row to walk_arms.def. [FIND-MINW]
+# Span arms L1's `restore=look` runs a positive lookaround as E2's plain
+# unit again (no item, no guard, no `dead`). A later span arms unit adds its
+# row to walk_arms.def. [FIND-MINW]
 # `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
 # a change with no public deny; its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
