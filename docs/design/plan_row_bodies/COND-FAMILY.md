@@ -4506,3 +4506,20 @@ The leaning carried a CONDITION, stated to him: it holds if the next lane confir
 manager's readings for the next lane to test: (a) any-length-first equals fill-each-string for every argument ordered
 by length; (b) an unbounded lazy argument (`\d+?`) under any-length-first, against lane predspec281's statement that
 it needs exact-first. If (b) fails, the question returns to him with the run; the ruling is not stretched to cover it.
+
+### 2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant
+
+His words, verbatim: "by "flags propagate" i thought we decided that rx inherits the flags of the surrounding rx"
+
+Class: a RECOLLECTION, checked against the record: SUPPORTED. The ruling "flags-propagate: yes" (2026-11-18) answered
+his own question "do the flags propagate down though? /(?i)${/blah/}/ is blah case insensitive?", argued from "blah is a
+regex. therefore it has its own flags. pretty much everything is a regex". His statement of it now is wider than the
+draft's rev 28 wording ("what is INSERTED in a hole starts with the flags in force at the hole"): ANY rx inherits the
+flags of the rx that surrounds it.
+
+The manager's reading (told to him as a reading, for the next lane to test): flags-in-filter follows as "reach": the two
+sides of an `&` written inside a hole are rx surrounded by the outer rx, so each starts with the flags in force at the
+hole, a flag it writes for itself winning (candidate (b) of the draft's flags-in-filter row: 0 / 0 / 0 of 1,555 against
+the plain hole). An `&` written at program level has no surrounding rx and its sides keep their own flags. Also to
+test: a condition's set and a filter-role argument inside a hole (draft row 138, reading m2) under the same sentence;
+`any_case` against `/(?i:${rx})/` for filtered arguments.
