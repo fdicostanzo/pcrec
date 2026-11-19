@@ -5104,3 +5104,14 @@ with `&` would belong to the SET (`digit & ...`), not to the chain.
 The manager's call (syntax; told to him): the condition KEEPS its parentheses everywhere for now, in a hole too
 (`${(0: digit)}`); the unparenthesised trailing form (`A & 0: digit`, `${0: digit}`) stays the draft's error
 with its meaning acknowledged, and is an item of the spellings review, where allowing it later changes no answer.
+
+### 2026-11-19 OWNER, the same remark in full (the message above was cut short)
+
+His words, verbatim: "i'm not sure on you alone in a hole argument. i know outside a hole this is ok: A & 0: digit
+but parenthesis are better because you can't add more to the chain as A & 0: digit & b:blah would be A & (0:
+digit & (b: blah))"
+
+Class: as the entry above (DOUBT, RECOLLECTION, OBSERVATION with a LEAN); the fuller text gives his PARSE of the
+unparenthesised chain. CHECKED: his parse IS the ruled entry extent (CF:698, C22: inside an entry `&` and `|` bind
+tighter than `:`), and under the draft the result is an existing error ("the `(major: 1 & minor: >=4)` error": a
+label inside a value). The manager's call of the entry above is unchanged.
