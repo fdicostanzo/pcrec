@@ -84,3 +84,4 @@
 
 - `2026-11-15-r12-memfn-d3fix2.md` — single-critic CODE round on lane d3fix2 (set census pin, REPIN): D3G-1 (set plants test set_why, not main's wiring), D3G-2 (REPIN pins an empty/short census), D3G-3 (REPIN does not write d3_floor.tsv), D3G-4 (scratch leak), D3G-6 (remedy text) FIX-NOW, D3G-5 (dirty provenance) noted; fixed by lane d3fix3.
 - `2026-11-18-r52-predspec28.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 28 (5 opus critics + verifier; A-K): NOT STABLE; padded's order, T8/T9 classes, flags, numeral-width; fixes in lane predspec281 (rev 28.1).
+- `2026-11-19-r54-predspec29.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 29 (5 opus critics + verifier; P29-1..16, no RULED answer wrong): flags text/unlisted/sequence, padded's condition, warning trigger and form, class order; fixes in lane predspec291 (rev 29.1).

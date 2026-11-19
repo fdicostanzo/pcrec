@@ -1,0 +1,3 @@
+# docs/dev/reviews/2026-11-19-r54-predspec29/ — critic texts for review r54
+
+The five critics' findings (RULING, READERS, EXAMPLES-FLAGS, EXAMPLES-ARITH, GENERAL: `ruling.md`, `readers.md`, `examples-flags.md`, `examples-arith.md`, `general.md`), the verifier's `verify.md` and the coordinator's process notes `process.md` (from the round's `.coord/process.md`) for `../2026-11-19-r54-predspec29.md` (predicates_draft.md rev 29 design re-check; the round dir is `crit-predspec29`). Records only; the review file holds the rulings (the predicate manager's, COND-FAMILY "2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled"). Copied unchanged. The round's `COMMON.md` (the critics' shared brief, not a critic text) is not copied.
