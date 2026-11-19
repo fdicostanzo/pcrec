@@ -4271,3 +4271,10 @@ Main ruled on the four kit findings (D186 add. 2):
 - 10:24 707 GREEN (205 s), plus a critic (no FIX-BEFORE-READING; caveats: layout noise ~15 %, the full-block arms are not head-vs-head,
   class generality reasoned not tested). FINDING: whole-span BLOCK forms win big (hex500 near-miss: AVX2-full 2.8 vs loop 39 ns/B,
   SWAR-full 11); SIMD heads + scalar tail only ~1.8x. Logged in ideas.md as a D77 trigger candidate. Reported to Frank and main.
+- 10:3x FRANK (direct): "expand the block idea test to other classes and make sure it holds on low density (it should) and other
+  scenarios. if it more or less always improves, then it should replace the inline form. then the relationship between the 'inline'
+  and loop portion needs to be re-examined. it might all be loops over blocks + tail". Lane blockspan (opus) extends the spike to
+  7 classes x k 4..1000 x every cards regime x forms (scalar: I, L, H64, SWAR-unrolled, SWAR-loop; SIMD: SSE/AVX2 unrolled + loop;
+  AVX-512 info). DECISION TABLE fixed before the data: per layer, the best block form vs today's shipped form at that k (I k<=64,
+  H64 k>64), floor max(15 %, the cell spread); REPLACES = no LOSS cell and a majority of WINs, every loss listed; SIMD vs the best
+  scalar; block-loop vs unrolled per cell. Job 708 (kit-fcards-blockspan); a critic on the harness BEFORE the timing.
