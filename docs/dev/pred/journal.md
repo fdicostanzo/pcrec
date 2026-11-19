@@ -127,3 +127,13 @@ After same-name-count: his scope question (backreferences only; my `$h` extensio
 private labels (export-rule already rules binding scope; inner-label-read not asked), his direction "use labels as
 they are defined and see if there is a problem" (isodate example to the rev 29 lane). wake.md rewritten with the
 rev 29 fold brief's contents; owner.md refreshed; P-3 in to_main.md. Nothing running. Main had not merged P-2.
+
+## 2026-11-19 (midday) — second session up; rev 29 fold lane launched
+Registered (session_role pred). Main MERGED lane/pred-rev28 (P-2, P-3 done; its e99273ff3 moved the r52 index line to
+reviews/NOTES.md); main merged back into my branch (plan-lint clean). Review number for the rev 29 round: r54 (r53
+taken). LAUNCHED lane predspec29 (opus, worktree worktrees/predspec29, branch lane/predspec29): folds the six
+2026-11-19 rulings, tests 16 manager's readings, works the isodate / private-label / any-case-body tasks; deliver and
+rulings files written first; lanewatch armed. On DONE: read the report, merge, then critic round r54 (design, topic
+predspec29). Meanwhile asking Frank plus-operands: the record (number-domain "nothing" outside the domain; the
+sequence operator ruled 2026-11-17; number-edges "no compile error of its own") appears to answer it; asked as a
+confirmation with a run (scratch/pred/plusops.py).
