@@ -36,3 +36,9 @@
   `& /\d{n}/` uses a lookahead approximation, exact only for the subjects printed). numeral-width read as moot (m1).
 - Next asked: padded-width (exact or minimum). Rulings gathered for rev 28 so far: hole-reads-capture,
   number-domain.
+- Frank RULED padded-width: minimum (after three remarks recorded as clarification / observations; my leaning
+  moved from exact to minimum on the two-case macro body, 36,119 python checks, 0 differences). Rulings gathered
+  for rev 28: hole-reads-capture, number-domain, padded-width.
+- Next asked: hole-flags. Pre-check run with libpcre2 (ctypes): a subroutine call to a group defined caseful
+  stays caseful under a later `(?i)` (`a-A` fails), a backreference takes the options in force (`a-A` holds): PCRE's
+  own two analogues agree with the draft's "as ruled for each"; what is asked is the string constant in a hole.
