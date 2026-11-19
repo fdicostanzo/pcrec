@@ -195,3 +195,13 @@ Frank: "padded-lazy-sparse: stated behavior"; padded's default is `0*`, the widt
 macro (ideas item 36); DIRECTION: no deep dives into one macro unless it raises a language point (memory saved).
 Validated his examples on request: with digits := \d+ padding is a no-op as a set; "00000 through 99999" (exact)
 vs "limited" (at most) not settled. Sent to the running fix lane as R1 (the confirm question becomes a ruling).
+
+## 2026-11-19 (evening) — documentation organization: requested, delegated, format proposed
+Frank asked for an organization of the predicate documents (base + details files, path tags with status, lint;
+modelled on the plan split), then delegated the form ("keep, modify, or reject these instructions as you reason it
+better"; design it from how I use the files; rejected-and-why; analogy search by subagents). Census agent predcensus
+(sonnet, read-only; facts in scratch/predcensus/facts.md; stopped): 155 ruling entries, ~100 slugs, 72 candidate
+names, 17 principles, 36 parked items; what [DOC-INDEX] rejected. WROTE docs/dev/pred/doc_format.md (PROPOSED):
+three base/details pairs (core with a principles section, library, parked); the record stays one log with `tags:`
+lines; a `rejected:` block and `by:` principle links per piece; lint L1-L11 asked of main (to_main P-5). The
+library-document request is absorbed (no separate lane). NEXT: pilot after rev 29.1 (skeleton + core/holes).
