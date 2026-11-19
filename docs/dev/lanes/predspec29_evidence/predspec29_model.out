@@ -1,0 +1,169 @@
+predspec29 evidence; libpcre2-8 10.46 2025-08-27
+selfcheck: NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3) ; OK
+selfcheck: NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried) ; OK
+selfcheck: MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match) ; OK
+selfcheck: callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F) ; OK
+selfcheck: callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T) ; OK
+selfcheck: ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False ; OK
+
+== PART PO: padded-order RULED ("i agree with your lean"): padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)
+PO LONGEST FIRST `\d{1,3}`            n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `\d{1,3}`            n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `\d\d\d|\d\d|\d`     n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `\d\d\d|\d\d|\d`     n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `\d{2,4}`            n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `\d{2,4}`            n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `\d+`                n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `\d+`                n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `0123|1`             n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO LONGEST FIRST `0123|1`             n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `\d{1,3}?`          n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `\d{1,3}?`          n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `\d|\d\d|\d\d\d`    n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `\d|\d\d|\d\d\d`    n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `\d+?`              n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `\d+?`              n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `1|0119`            n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 10 / 10 (first ('S', '0119'))
+PO SHORTEST FIRST `1|0119`            n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `1|01|011`          n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO SHORTEST FIRST `1|01|011`          n=3 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 0 / 0 (first None)
+PO `/${padded(/1|0123/, 2)}/` the RULED body: WHOLE `0123` HOLDS ; SEARCHED `x0123` `0123`@1 ; FIND-ALL `0123 01 0123` [`0123`@0, `01`@5, `0123`@8]
+PO the same, fill each string in the argument's order (`01|0123`): WHOLE `0123` HOLDS ; SEARCHED `x0123` `01`@1 ; FIND-ALL `0123 01 0123` [`01`@0, `01`@5, `01`@8]
+PO OK
+PO reading 2 (the CONDITION): `\d+?` and `\d+` under the RULED body (above): lazy [0, 0, 0] ; greedy [0, 0, 0]
+PO `/${padded(/\d+?/, 2)}/` the RULED body: WHOLE `0123` HOLDS ; SEARCHED `x0123` `01`@1 ; FIND-ALL `0123 7 01 9` [`01`@0, `23`@2, `01`@7]
+PO the same, fill each string (`\d+?` members shortest first, each filled; truncated to the subjects' digits 0-3, 7, 9 and length 4: HAND-WORKED): WHOLE `0123` HOLDS ; SEARCHED `x0123` `01`@1 ; FIND-ALL `0123 7 01 9` [`01`@0, `23`@2, `01`@7]
+PO lazy `[01]+?` at n = 2 over 364 texts (`01x`, length <= 5): the RULED body RUN as written 0 / 0 / 0 ; rev 28.1's reduction `(?:[01]{2,}|[01]{2})` 0 / 160 / 160 (its `{2,}` is GREEDY: the reduction dropped the argument's `?`) ; the reduction with the `?` kept `(?:[01]{2,}?|[01]{2})` 0 / 0 / 0
+PO OK
+PO MIXED `\d|\d\d\d|\d\d`             n=2 any-length-first vs fill-each-string over 1365 texts x 2 continuations (`019x`, length <= 5): 0 / 96 / 96 (first ('S', '000'))
+PO MIXED `/${padded(/\d|\d\d\d|\d\d/, 2)}/` the RULED body: WHOLE `000` HOLDS ; SEARCHED `x000` `000`@1 ; FIND-ALL `000 100 10` [`000`@0, `100`@4, `10`@8]
+PO MIXED, fill each string in the argument's order: WHOLE `000` HOLDS ; SEARCHED `x000` `00`@1 ; FIND-ALL `000 100 10` [`00`@0, `100`@4, `10`@8]
+PO PREFIX PAIR `/${padded(/\d{2,3}/, 2)}/` the RULED body: WHOLE `123` HOLDS ; SEARCHED `x123` `123`@1 ; FIND-ALL `123 12345` [`123`@0, `123`@4, `45`@7]
+PO PREFIX PAIR, rev 28's exact-width-first body (dropped): WHOLE `123` HOLDS ; SEARCHED `x123` `12`@1 ; FIND-ALL `123 12345` [`12`@0, `12`@4, `34`@6]
+PO OK
+
+== PART FF: flags-scope RULED ("i agree with your inherit table excepting that U should also not be inherited")
+FF the spelling's mechanics (libpcre2): `(?x)x(?^:a b)` WHOLE `xa b` HOLDS ; `(?n)x(?^:(a)\1)` WHOLE `xaa` HOLDS ; `(?U)x(?-U:(?^:a+))` SEARCHED `xaaa` `xaaa`@0 ; `(?xx)x(?^:[a b])` WHOLE `x ` HOLDS ; `(?i)x(?^i:ab)` WHOLE `XAB` HOLDS
+FF plain hole, i                        `/(?i)x${/ab/}/`: WHOLE `XAB` HOLDS ; SEARCHED `x XaB` `XaB`@2 ; FIND-ALL `xab XAB` [`xab`@0, `XAB`@4]
+FF plain hole, m                        `/(?m)x${/a$/}\nb/`: WHOLE `xa\nb` HOLDS ; SEARCHED `zxa\nb` `xa\nb`@1 ; FIND-ALL `xa\nb xa\nb` [`xa\nb`@0, `xa\nb`@5]
+FF plain hole, s                        `/(?s)x${/a./}/`: WHOLE `xa\n` HOLDS ; SEARCHED `zxa\n` `xa\n`@1 ; FIND-ALL `xa\n xab` [`xa\n`@0, `xab`@4]
+FF plain hole, x (a space)              `/(?x)x${/a b/}/`: WHOLE `xa b` HOLDS ; SEARCHED `z xab xa b` `xa b`@6 ; FIND-ALL `xa b xab` [`xa b`@0]
+FF plain hole, x (a `#`)                `/(?x)x${/a#b/}/`: WHOLE `xa#b` HOLDS ; SEARCHED `z xa#b` `xa#b`@2 ; FIND-ALL `xa#b xa` [`xa#b`@0]
+FF plain hole, xx                       `/(?xx)x${/[a b]/}/`: WHOLE `x ` HOLDS ; SEARCHED `zx xa` `x `@1 ; FIND-ALL `x  xb` [`x `@0, `xb`@3]
+FF plain hole, n                        `/(?n)x${/(a)\1/}/`: WHOLE `xaa` HOLDS ; SEARCHED `x xaa` `xaa`@2 ; FIND-ALL `xaa xa xaa` [`xaa`@0, `xaa`@7]
+FF plain hole, U                        `/(?U)x${/a+/}/`: WHOLE `xaaa` HOLDS ; SEARCHED `xaaa` `xaaa`@0 ; FIND-ALL `xaa xa` [`xaa`@0, `xa`@4]
+FF plain hole, a written `(?-i)` wins   `/(?i)x${/(?-i)ab/}/`: WHOLE `XAB` FAILS ; SEARCHED `XAB Xab` `Xab`@4 ; FIND-ALL `xab XAB Xab` [`xab`@0, `Xab`@8]
+FF plain hole, a written `(?U)` wins    `/x${/(?U)a+/}/`: WHOLE `xaaa` HOLDS ; SEARCHED `xaaa` `xa`@0 ; FIND-ALL `xaa xa` [`xa`@0, `xa`@4]
+FF plain hole, branch carry             `/(?:a(?i)b|${/c/})/`: WHOLE `C` HOLDS ; SEARCHED `xC` `C`@1 ; FIND-ALL `c C aB` [`c`@0, `C`@2, `aB`@4]
+FF OK
+FF J                                              /(?J)(?<h>a)-${/(?<h>b)\k<h>/}/ (spelt `(?J)(?<h>a)-(?:(?<g>b)\k<g>)`): WHOLE `a-bb` HOLDS, `a-ba` FAILS ; SEARCHED `x a-ba a-bb` `a-bb`@7 ; FIND-ALL `a-bb a-ba a-bb` [`a-bb`@0, `a-bb`@10]
+FF J, PCRE's text paste (rev 28.1's draft reading)  (spelt `(?J)(?'h'a)-(?:(?'h'b)\k<h>)`): WHOLE `a-bb` FAILS, `a-ba` HOLDS ; SEARCHED `x a-ba a-bb` `a-ba`@2 ; FIND-ALL `a-bb a-ba a-bb` [`a-ba`@5]
+FF numbered                                       /(a)-${/(b)\1/}/ (spelt `(a)-(?:(b)\2)`): WHOLE `a-bb` HOLDS, `a-ba` FAILS ; SEARCHED `x a-ba a-bb` `a-bb`@7 ; FIND-ALL `a-bb a-ba a-bb` [`a-bb`@0, `a-bb`@10]
+FF numbered, the text paste                        (spelt `(a)-(?:(b)\1)`): WHOLE `a-bb` FAILS, `a-ba` HOLDS ; SEARCHED `x a-ba a-bb` `a-ba`@2 ; FIND-ALL `a-bb a-ba a-bb` [`a-ba`@5]
+FF `&` in a hole, i: `/(?i)x${/ab/ & /a./}/` REACH (reading 3): WHOLE `XAB` HOLDS ; SEARCHED `z XAB` `XAB`@2 ; FIND-ALL `xab XAb` [`xab`@0, `XAb`@4]
+FF   the same, the operands' OWN flags: WHOLE `XAB` FAILS ; SEARCHED `z XAB` FAILS ; FIND-ALL `xab XAb` [`xab`@0]
+FF `&` in a hole, m: `/(?m)x${/a\nb/ & /a$\nb/}/` REACH (reading 3): WHOLE `xa\nb` HOLDS ; SEARCHED `zxa\nb` `xa\nb`@1 ; FIND-ALL `xa\nb` [`xa\nb`@0]
+FF   the same, the operands' OWN flags: WHOLE `xa\nb` FAILS ; SEARCHED `zxa\nb` FAILS ; FIND-ALL `xa\nb` []
+FF `&` in a hole, s: `/(?s)x${/a[\s\S]/ & /a./}/` REACH (reading 3): WHOLE `xa\n` HOLDS ; SEARCHED `zxa\n` `xa\n`@1 ; FIND-ALL `xa\n xab` [`xa\n`@0, `xab`@4]
+FF   the same, the operands' OWN flags: WHOLE `xa\n` FAILS ; SEARCHED `zxa\n` FAILS ; FIND-ALL `xa\n xab` [`xab`@4]
+FF `&` in a hole, x: `/(?x)x${/a\ b/ & /a b/}/` REACH (reading 3): WHOLE `xa b` HOLDS ; SEARCHED `zxa b` `xa b`@1 ; FIND-ALL `xa b` [`xa b`@0]
+FF   the same, the operands' OWN flags: WHOLE `xa b` HOLDS ; SEARCHED `zxa b` `xa b`@1 ; FIND-ALL `xa b` [`xa b`@0]
+FF `&` in a hole, n: `/(?n)x${/(a)\g{-1}/ & /(a)\1/}/` REACH (reading 3): WHOLE `xaa` HOLDS ; SEARCHED `x xaa` `xaa`@2 ; FIND-ALL `xaa xaa` [`xaa`@0, `xaa`@4]
+FF   the same, the operands' OWN flags: WHOLE `xaa` HOLDS ; SEARCHED `x xaa` `xaa`@2 ; FIND-ALL `xaa xaa` [`xaa`@0, `xaa`@4]
+FF `&` in a hole, U: `/(?U)x${/a+/ & /a+/}/` REACH (reading 3): WHOLE `xaaa` HOLDS ; SEARCHED `xaaa` `xaaa`@0 ; FIND-ALL `xaa xa` [`xaa`@0, `xa`@4]
+FF   the same, the operands' OWN flags: WHOLE `xaaa` HOLDS ; SEARCHED `xaaa` `xaaa`@0 ; FIND-ALL `xaa xa` [`xaa`@0, `xa`@4]
+FF `/(?i)x${/ab/ & /a./}/` against the plain hole `/(?i)x${/ab/}/` over 1555 texts (`xXaAbB`, length <= 4): REACH 0 / 0 / 0 ; OWN 4 / 52 / 52
+FF `&` at PROGRAM level `/(?i)ab/ & /a./` (each side its own flags): WHOLE `AB` FAILS ; SEARCHED `AB ab` `ab`@3 ; FIND-ALL `ab AB aB` [`ab`@0, `aB`@6]
+FF OK
+FF a CONDITION'S SET in a hole `/(?i)x${/(?<w>\w\w)/ & (w: /ab/)}/` REACH: WHOLE `XAB` HOLDS ; SEARCHED `z XAB` `XAB`@2 ; FIND-ALL `xab XAb` [`xab`@0, `XAb`@4]
+FF   the same, the set its OWN flags: WHOLE `XAB` FAILS ; SEARCHED `z XAB` FAILS ; FIND-ALL `xab XAb` [`xab`@0]
+FF a FILTER-ROLE argument in a hole `/(?i)x${quoted(/ab/)}/` REACH (transitive): WHOLE `x"AB"` HOLDS ; SEARCHED `z x"AB"` `x"AB"`@2 ; FIND-ALL `x"ab" x"Ab"` [`x"ab"`@0, `x"Ab"`@6]
+FF   the same, the operand its OWN flags (the manager's m2 of 2026-11-18): WHOLE `x"AB"` FAILS ; SEARCHED `z x"AB"` FAILS ; FIND-ALL `x"ab" x"Ab"` [`x"ab"`@0]
+FF OK
+FF transitive (reading 5/7) i: B := /ab/, A := /x${B}/, `/(?i)${A}/`: WHOLE `XAB` HOLDS ; SEARCHED `z XAB` `XAB`@2 ; FIND-ALL `xab XAb` [`xab`@0, `XAb`@4]
+FF transitive (reading 5/7) x (not inherited): B := /a b/, A := /x${B}/, `/(?x)${A}/`: WHOLE `xa b` HOLDS ; SEARCHED `z xa b` `xa b`@2 ; FIND-ALL `xa b xab` [`xa b`@0]
+FF transitive (reading 5/7) U (not inherited): B := /a+/, A := /x${B}/, `/(?U)${A}/`: WHOLE `xaaa` HOLDS ; SEARCHED `xaaa` `xaaa`@0 ; FIND-ALL `xaa xa` [`xaa`@0, `xa`@4]
+FF OK
+FF reading 6: A := /ab/: enumerate(A) (A alone, its own flags) = ['ab'] ; the strings `/(?i)${A}/` matches (over `aAbB`, length <= 2) = ['AB', 'Ab', 'aB', 'ab']
+FF   `/(?i)(?<y>\w+)=${count_of(enumerate(A))}/` (count_of a placeholder: a value computed from A ALONE): WHOLE `ab=1` HOLDS ; SEARCHED `x ab=4 ab=1` `ab=1`@7 ; FIND-ALL `ab=1 AB=1 ab=4` [`ab=1`@0, `AB=1`@5]
+FF OK
+FF OK
+
+== PART CO: class-order RULED ("class-order: longest"): a class position's lifted results, the LONGER first
+CO `/${\d + 1}/` = 10|1|2|3|4|5|6|7|8|9: WHOLE `10` HOLDS ; SEARCHED `x10` `10`@1 ; FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6]
+CO reading 8: equal-length results shuffled 20 ways, over 3906 texts (`0123x`, length <= 5): `\d + 1` 0 / 0 / 0 ; `(1|9) + \d` 0 / 0 / 0
+CO `\d + 1` LONGEST against the replaced CODEPOINT lean (`1|...|10`): 0 / 250 / 570 ; codepoint: WHOLE `10` HOLDS ; SEARCHED `x10` `1`@1 ; FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6]
+CO OK
+CO reading 9 `/${(1|9) + \d}/` NESTED (the alternation's order kept, each choice's class results longest first) = 10|1|2|3|4|5|6|7|8|9|11|12|13|14|15|16|17|18: WHOLE `11` HOLDS ; SEARCHED `x11` `1`@1 ; FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6]
+CO   the same sorted longest first ACROSS the alternation: WHOLE `11` HOLDS ; SEARCHED `x11` `11`@1 ; FIND-ALL `11 1 18` [`11`@0, `1`@3, `18`@5] ; nested vs across 0 / 750 / 1404
+CO   the record's `(3|9) + \d`: nested vs across 0 / 0 / 0 (no result of one length is a prefix of one of the other at a shared start)
+CO OK
+CO reading 10 `/${\d + \d}/` C1: WHOLE `13` HOLDS ; SEARCHED `x13` `13`@1 ; FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5]
+CO reading 10 `/${\d + \d}/` C2: WHOLE `13` HOLDS ; SEARCHED `x13` `1`@1 ; FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6]
+CO reading 10 `/${\d + \d}/` C3: WHOLE `13` HOLDS ; SEARCHED `x13` `13`@1 ; FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5]
+CO   C1 vs C2 0 / 776 / 1816 ; C1 vs C3 0 / 0 / 0
+CO reading 10 `/${\d\d + 1}/` P1 (one position): WHOLE `100` HOLDS ; SEARCHED `x100` `100`@1 ; FIND-ALL `100 12 99` [`100`@0, `12`@4, `99`@7] ; P1 vs P2 (first class slowest, ascending) 0 / 0 / 0 ; P1 vs P3 (descending) 0 / 0 / 0
+CO reading 10 `/${\d{1,2} + 1}/` Q1 (quantifier order kept): WHOLE `100` HOLDS ; SEARCHED `x100` `100`@1 ; FIND-ALL `100 10 9` [`100`@0, `10`@4, `9`@7] ; Q2 (one position): WHOLE `100` HOLDS ; SEARCHED `x100` `100`@1 ; FIND-ALL `100 10 9` [`100`@0, `10`@4, `9`@7] ; Q1 vs Q2 0 / 0 / 0
+CO reading 10 `/${\d{1,2}? + 1}/` Q1 (quantifier order kept): WHOLE `100` HOLDS ; SEARCHED `x100` `10`@1 ; FIND-ALL `100 10 9` [`10`@0, `10`@4, `9`@7] ; Q2 (one position): WHOLE `100` HOLDS ; SEARCHED `x100` `100`@1 ; FIND-ALL `100 10 9` [`100`@0, `10`@4, `9`@7] ; Q1 vs Q2 0 / 2797 / 3230
+CO OK
+CO reading 11 `/${\d * 0}/`: the results ['0'] ; vs `/0/` 0 / 0 / 0 ; WHOLE `0` HOLDS ; SEARCHED `x0` `0`@1 ; FIND-ALL `0 00` [`0`@0, `0`@2, `0`@3]
+CO OK
+CO enumerate(/[-\/.]/) as an ARRAY (§5.5's example, codepoint): ['-', '.', '/'] ; `.index` of `/` = 3 ; in DESCENDING order it would be 1 (no match answer differs: equal lengths)
+
+== PART NE: number-edges RULED ("number-edge: nothing"); reading 14
+NE `/(?<y>\d+)-${$y % 0}/`: WHOLE 5-0 FAILS, 5-5 FAILS ; SEARCHED `x5-0 5-5` FAILS ; FIND-ALL `5-0 7-7 0-0` []
+NE `/(?<y>\d+)-${$y - 10}/`: WHOLE 15-5 HOLDS, 5--5 FAILS ; SEARCHED `5--5 15-5` `15-5`@5 ; FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `10-0`@10]
+NE `/(?<y>\d+)-${$y % 0}/` hits over 3906 texts (`0157-`, length <= 5), every mode: 0 ; the compile-time lift `\d % 0` keeps 0 of 10 results (every one removed: the hole has ZERO values)
+NE OK
+
+== PART DD: dollar-diagnostic RULED ("the form $x & .. should just get a warning"); reading 16
+DD /(?<x>\d+)-/ & ($x & <5)           the warning: FIRES (points at `(x: S)`)
+DD /(?<x>\d+)/ & ($x & <5)            the warning: FIRES (points at `(x: S)`)
+DD /(?<x>\d+)/ & (x: <5)              the warning: silent
+DD /(?<y>\d+)-${$y & <5}/             the warning: FIRES (points at `(x: S)`)
+DD /(?<x>\d+)/                        the warning: silent
+DD `/(?<x>\d+)/ & ($x & <5)` vs `/(?<x>\d+)/ & (x: <5)` over 364 texts (`37-`, length <= 5): 0 / 0 / 0 ; WHOLE `3` HOLDS ; SEARCHED `x7 3` `3`@3 ; FIND-ALL `3 7 33 4` [`3`@0, `3`@4, `3`@5, `4`@7]
+DD OK
+
+== PART SC: same-name-count RULED ("same-name-count: scoped"); reading 15 (`$h` the last mention)
+SC `/(?<h>a)-${q};${$h}\k<h>/`, q := /(?<h>b)/: `$h` the last mention (q's), `\k<h>` the outer: WHOLE `a-b;ba` HOLDS ; SEARCHED `x a-b;aa a-b;ba` `a-b;ba`@9 ; FIND-ALL `a-b;ba a-b;bb a-b;ba` [`a-b;ba`@0, `a-b;ba`@14]
+SC   the same with `$h` read as the OUTER group (not the rules as defined): WHOLE `a-b;ba` FAILS ; SEARCHED `x a-b;aa a-b;ba` `a-b;aa`@2 ; FIND-ALL `a-b;ba a-b;bb a-b;ba` []
+SC the ruling's own example `/(?<h>a)-${q}\k<h>/`: WHOLE `a-ba` HOLDS ; SEARCHED `x a-bb a-ba` `a-ba`@7 ; FIND-ALL `a-ba a-bb a-ba` [`a-ba`@0, `a-ba`@10]
+SC OK
+
+== PART TA: task T-a: isodate three times, two under part labels, the label rules AS DEFINED
+TA his order: [start_date = isodate] SEQ ":" SEQ [end_date = isodate] SEQ " " SEQ isodate
+TA   year             inside the program reads group tyear  WHOLE `2021-01-02:2022-03-04 2023-05-06` 2023 ; SEARCHED `x 2021-01-02:2022-03-04 2023-05-06 y` 2023 ; FIND-ALL `2021-01-02:2022-03-04 2023-05-06 2024-07-08:2025-09-10 2026-11-12` ['2023', '2026']
+TA   year             outside a binding of it: ERROR (not visible outside: no literal of the binding writes it, no path)
+TA   start_date.year  inside the program reads group syear  WHOLE `2021-01-02:2022-03-04 2023-05-06` 2021 ; SEARCHED `x 2021-01-02:2022-03-04 2023-05-06 y` 2021 ; FIND-ALL `2021-01-02:2022-03-04 2023-05-06 2024-07-08:2025-09-10 2026-11-12` ['2021', '2024']
+TA   start_date.year  outside a binding of it reads group syear  WHOLE `2021-01-02:2022-03-04 2023-05-06` 2021 ; SEARCHED `x 2021-01-02:2022-03-04 2023-05-06 y` 2021 ; FIND-ALL `2021-01-02:2022-03-04 2023-05-06 2024-07-08:2025-09-10 2026-11-12` ['2021', '2024']
+TA   end_date.year    inside the program reads group eyear  WHOLE `2021-01-02:2022-03-04 2023-05-06` 2022 ; SEARCHED `x 2021-01-02:2022-03-04 2023-05-06 y` 2022 ; FIND-ALL `2021-01-02:2022-03-04 2023-05-06 2024-07-08:2025-09-10 2026-11-12` ['2022', '2025']
+TA   end_date.year    outside a binding of it reads group eyear  WHOLE `2021-01-02:2022-03-04 2023-05-06` 2022 ; SEARCHED `x 2021-01-02:2022-03-04 2023-05-06 y` 2022 ; FIND-ALL `2021-01-02:2022-03-04 2023-05-06 2024-07-08:2025-09-10 2026-11-12` ['2022', '2025']
+TA the unlabelled use FIRST: isodate SEQ " " SEQ [start_date = isodate] SEQ ":" SEQ [end_date = isodate]
+TA   year             inside the program reads group eyear  WHOLE `2023-05-06 2021-01-02:2022-03-04` 2022 ; SEARCHED `x 2023-05-06 2021-01-02:2022-03-04 y` 2022 ; FIND-ALL `2023-05-06 2021-01-02:2022-03-04 2026-11-12 2024-07-08:2025-09-10` ['2022', '2025']
+TA   year             outside a binding of it: ERROR (not visible outside: no literal of the binding writes it, no path)
+TA   start_date.year  inside the program reads group syear  WHOLE `2023-05-06 2021-01-02:2022-03-04` 2021 ; SEARCHED `x 2023-05-06 2021-01-02:2022-03-04 y` 2021 ; FIND-ALL `2023-05-06 2021-01-02:2022-03-04 2026-11-12 2024-07-08:2025-09-10` ['2021', '2024']
+TA   start_date.year  outside a binding of it reads group syear  WHOLE `2023-05-06 2021-01-02:2022-03-04` 2021 ; SEARCHED `x 2023-05-06 2021-01-02:2022-03-04 y` 2021 ; FIND-ALL `2023-05-06 2021-01-02:2022-03-04 2026-11-12 2024-07-08:2025-09-10` ['2021', '2024']
+TA   end_date.year    inside the program reads group eyear  WHOLE `2023-05-06 2021-01-02:2022-03-04` 2022 ; SEARCHED `x 2023-05-06 2021-01-02:2022-03-04 y` 2022 ; FIND-ALL `2023-05-06 2021-01-02:2022-03-04 2026-11-12 2024-07-08:2025-09-10` ['2022', '2025']
+TA   end_date.year    outside a binding of it reads group eyear  WHOLE `2023-05-06 2021-01-02:2022-03-04` 2022 ; SEARCHED `x 2023-05-06 2021-01-02:2022-03-04 y` 2022 ; FIND-ALL `2023-05-06 2021-01-02:2022-03-04 2026-11-12 2024-07-08:2025-09-10` ['2022', '2025']
+TA   with the third use INSERTED THROUGH A HOLE (`.. SEQ /${isodate}/`): outside a binding, bare `year` = the hole's year (R.1.0 PATTERN HOLE: its public names flow into the outer pattern; THE DRAFT'S READING); as an unlabelled SEQ part: the ERROR above
+TA OK
+
+== PART TB: task T-b: private labels doing real work under the binding scope (export-rule (1))
+TB (1) `date := /\d{4}(?<_s>[-\/])\d\d${$_s}\d\d/`; `range := [a = date] SEQ ".." SEQ [b = date]`: WHOLE `2025-11-19..2025/12/01` HOLDS ; SEARCHED `x 2025-11/19..2025-12-01 2025-11-19..2025/12/01` `2025-11-19..2025/12/01`@25 ; FIND-ALL `2025-11-19..2025/12/01 2025/11-19..2025-12-01 2026/01/01..2026-02-02` [`2025-11-19..2025/12/01`@0, `2026/01/01..2026-02-02`@46]
+TB     each use's `_s` is its own; what `date` shows outside: [] (so `range` sees no `_s`: nothing to collide, nothing for the caller)
+TB (2) `year := /(?<_v>\d{4})/ & (_v: >= 2000)`: WHOLE `2025` HOLDS ; SEARCHED `x1999 2001` `2001`@6 ; FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] ; exported: []
+TB (3) `qstr := /(?<_q>["'])[^"']*${$_q}/`; `[k = qstr] SEQ "=" SEQ [v = qstr]`: WHOLE `'a'="b"` HOLDS ; SEARCHED `x 'a"="b" 'a'="b"` `'a'="b"`@10 ; FIND-ALL `'a'="b" "c"='d' 'e"='f'` [`'a'="b"`@0, `"c"='d'`@8] ; the caller's labels: k, v (and their public paths: none, qstr exports [])
+TB OK
+
+== PART AC: task T-c: any_case(rx) against the body /(?i:${rx})/ under flags-scope (and flags-in-filter REACH, reading 3)
+AC plain `ho`: body vs primitive over 781 texts (`hHoO1`, length <= 4): 0 / 0 / 0
+AC plain `h[o1]{1,2}`: body vs primitive over 781 texts (`hHoO1`, length <= 4): 0 / 0 / 0
+AC plain `ho|1h`: body vs primitive over 781 texts (`hHoO1`, length <= 4): 0 / 0 / 0
+AC `any_case(/(?-i)ho/)`: body WHOLE `HO` FAILS ; SEARCHED `x HO ho` `ho`@5 ; FIND-ALL `ho HO Ho` [`ho`@0] ; vs primitive 3 / 246 / 249
+AC `any_case(/[ho1]{1,3}/ & /h\w*/)`: body under REACH vs primitive 0 / 0 / 0 ; with the operands' OWN flags 31 / 330 / 355
+AC   REACH: WHOLE `HO1` HOLDS ; SEARCHED `x HO1 ho` `HO1`@2 ; FIND-ALL `ho1 HO 1h` [`ho1`@0, `HO`@4, `h`@8]
+AC `any_case(quoted("ho"))` under REACH: WHOLE `"HO"` HOLDS ; SEARCHED `x "HO" "ho"` `"HO"`@2 ; FIND-ALL `"ho" "HO" "Ho"` [`"ho"`@0, `"HO"`@5, `"Ho"`@10] ; vs primitive over 781 texts (`hHoO"`, length <= 4) 0 / 0 / 0
+AC OK
+
+== CHECKS: 25 of 25 OK
