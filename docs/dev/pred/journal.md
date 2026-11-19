@@ -81,3 +81,9 @@
   the general diagnostics do not fire on `$x & <5` (gap: dollar-diagnostic); `${@y}` is a plain not-defined
   error, not under construction. New question slugs: numeral-width (narrowed), dollar-diagnostic, any-case-body,
   domain-components, same-name-count. Next: critic round r52 on rev 28.
+- predspec28 TaskStopped (told: `${@y}` = a plain "not defined" error). LAUNCHED critic round r52 on rev 28:
+  coordinator `crit-predspec28` (opus, background), design mode, round dir
+  `$PCREC_TMPDIR/scratch/crit-predspec28/`; standing lenses named (ruling; ruled examples through the status
+  tables in every mode; general form + unlocks); denylist given; no known result told. On hand-back: read
+  review.md + .coord/process.md, rule dispositions, a FIX lane (rev 28.1, files the review as
+  docs/dev/reviews/2026-11-18-r52-predspec28.md), merge, `done:` to main.

@@ -22,15 +22,15 @@ on any disagreement.
 
 ## In flight
 
-- LANE predspec28 (opus), worktree `worktrees/predspec28`, branch `lane/predspec28` (cut from lane/pred-rev28 at
-  c32e93bc6): the rev 28 FOLD of the nine rulings, with evidence `docs/dev/lanes/predspec28_evidence/` and report
-  `docs/dev/lanes/predspec28_report.md`. Deliver file and empty rulings file are in its worktree. Watch:
-  `scripts/lanewatch --follow predspec28`. A lane launched by a session dies with it: if this session ended before
-  DONE, check `scripts/lanewatch predspec28`, and relaunch from the brief (journal) if it is not DONE.
-- On DONE: read the report (MANAGER READINGS TESTED: withdraw in the record any reading NOT SUPPORTED), merge
-  `lane/predspec28` into `lane/pred-rev28` (merge ALONE, `make -s test-plan-lint`), TaskStop the lane, then the
-  critic round r52 (pcrec-critic, design mode, one opus coordinator; standing lenses in the skill), rule the
-  dispositions, a FIX lane (rev 28.1, files the review), merge, `done:` line to main.
+- Lane predspec28 DELIVERED and MERGED (e51e9a965): the draft on `lane/pred-rev28` is REVISION 28 (ten rulings
+  folded incl. `${@y}` = future direction; evidence 19 of 19, 14 sabotages caught). Its unsupported readings are
+  the record's "MANAGER CORRECTION" entry (numeral-width NOT moot; dollar-diagnostic gap; `${@y}` not-defined).
+- CRITIC ROUND r52 running: coordinator `crit-predspec28` (opus), round dir
+  `$PCREC_TMPDIR/scratch/crit-predspec28/` (draft `review.md`, `.coord/process.md`). A coordinator launched by a
+  session dies with it: if no review.md exists, relaunch with a NEW topic name (the round dir must be empty).
+- After hand-back: rule every disposition; FIX lane rev 28.1 (opus; files the review as
+  `docs/dev/reviews/2026-11-18-r52-predspec28.md`; also states `${@y}` as a plain not-defined error); merge;
+  `done:` line in to_main.md + SendMessage to main.
 
 ## READ, IN THIS ORDER
 
@@ -38,6 +38,10 @@ on any disagreement.
 3. `docs/dev/pred/journal.md` (this session's entries). 4. The draft's §R.8 and R.1.16. 5. `owner.md`.
 
 ## The question queue (after rev 28)
+
+0. NEW, from predspec28 (in owner.md, each with runs in its report): **numeral-width** narrowed (`10 - 1`: `9` or
+   `09`; I told him it fell away: CORRECT that to him first), **dollar-diagnostic**, **any-case-body**,
+   **domain-components**, **same-name-count**.
 
 1. (array-in-hole RULED 2026-11-18: a future direction; sent to predspec28 as R1: verify it in the delivery.)
    @y there and what does that mean?"). Possibly an ideas-file item, not a question.
