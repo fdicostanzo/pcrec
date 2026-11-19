@@ -5220,3 +5220,24 @@ His words, verbatim: "addendum: the two parts of the files are two different fil
 Class: a CLARIFICATION of the request above (a REQUIREMENT): the base (current definition) and the history /
 discussion are two separate FILES per document, not two parts of one file. The proposal put to him already has
 this (`<name>.md` and `<name>_details.md`, linked by tag); nothing changes in it.
+
+### 2026-11-19 OWNER, second addendum to the documentation request: design it for the manager's own use
+
+His words, verbatim: "addendum addendum: at least two files. use more as needed. heres the concept: i want you to
+think about how you would use these files. you should be able to start with an understanding of the language and
+libraries and parked. then, as we discuss, you should be able to access reasoning and history. see what was
+rejected and why. use subagents to search for analogies in history. base it on that. my instructions are the base
+idea for you to use to build it towards the goal of us designing and building the predicate language. keep,
+modify, or reject these instructions as you reason it better"
+
+Class: a DIRECTION and a DELEGATION. The CONCEPT, his: the files are designed from how the MANAGER uses them:
+(1) start a session with an understanding of the language, the libraries and what is parked; (2) during
+discussion, reach the reasoning and history of a piece; (3) see what was REJECTED and why; (4) have subagents
+search the history for ANALOGIES. The number of files is free ("at least two ... more as needed"). His earlier
+instructions are "the base idea"; the manager may "keep, modify, or reject" them with reasons. The GOAL: "us
+designing and building the predicate language".
+
+The reading taken, and told to him: this is his go to BUILD the documentation organization (documents and their
+lint; no product code), the manager deciding its form; "use subagents to search for analogies in history" is
+read as a USE the files must serve (item 4), and the manager also applies it once now, to the design itself
+(what this project's own document splits rejected and why: [DOC-INDEX], D192).
