@@ -2514,7 +2514,8 @@ enum {
  * One row of kind-level facts per `AKind`, read by the pass families that
  * used to decide them arm by arm: the text/width readers read `text`, the
  * path-pruning readers `path`, the marked set `reads`, the prefilter
- * lowering `erase`. The column meanings are kindrow.def's header. A reader
+ * lowering `erase`, the never propagation `never` (`pcrec_never_by_row`
+ * below; today the split derivation, src/opt/derive.c). The column meanings are kindrow.def's header. A reader
  * whose answer depends on the node or its context keeps its code and reads
  * the row for the kind-level part; the arm inventory of which readers read
  * which column is docs/dev/lanes/ic1a_report.md. */
