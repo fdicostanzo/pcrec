@@ -4117,3 +4117,22 @@ record does not settle it; (m2) under propagation the rule becomes ONE sentence 
 flags in force at the hole are the starting flags of what is inserted; flags a literal writes itself win), and
 the candidate body `any_case(rx) := /(?i:${rx})/` (the draft's §2.7: not expressible under NO INHERITED FLAGS)
 would hold for a plain pattern argument, not for arguments holding a filter role (the draft's own earlier test).
+
+**2026-11-18 OWNER, discussing flags-propagate (Frank, to the predicate manager, evening; DISCUSSION, an argument,
+not an answer by slug).** Asked **flags-propagate** (`/(?i)id-${/blah/}/` in the three modes under both readings;
+the manager's leaning: propagate, the literal's own written flags winning). HIS WORDS, in full: "heres the thing,
+if they don't propagate down, they effectively do not take effect at the hole. /(?i)${"blah"}/ blah is a regex.
+therefore it has its own flags. pretty much everything is a regex or a macro that uses a regex literal template
+contruct more regex."
+RECORD: DISCUSSION, his ARGUMENT: under one type ("a match is an rx") a string constant such as `"blah"` IS a
+regex, so "each regex literal has its own flags" would apply to it too; pretty much everything that can stand in a
+hole is a regex or a macro building more regex; so WITHOUT propagation the flags in force at a hole would take
+effect on nothing, and this evening's ruling "a hole takes the flags in force at the hole" would be empty. A LEAN
+toward propagation (the manager's classing; he did not say the slug). WITHDRAWN, a reading of the manager's: the
+split in the hole-flags question between "plain text with no flags of its own (a read, a string constant, a
+number)" and "pattern text written with flags" does not survive his argument: under one type there is no "plain
+text" kind for the rule to key on. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) the
+one rule that keeps both of this evening's rulings meaningful is propagation with override: what is inserted
+STARTS with the flags in force at the hole; a flag the inserted rx WRITES for itself (`/blah/i`, `(?-i)` inside)
+wins; "its own flags" then means the flags it writes; (m2) the read `$y` is the same rule's case with nothing
+written (the options in force at the hole, as ruled).
