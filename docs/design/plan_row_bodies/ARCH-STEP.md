@@ -226,3 +226,66 @@ structure (walks, searches, folds), so callers ask it to walk and do not each re
 representation; for the grandfathered AST it is the sympathetic way forward: new traversals written once in the
 AST area as work reaches them, no rewrite of the existing ones. Applied to docs/dev/guide/architecture.md under
 high-level rule 2 in the same change.
+
+## 2026-11-18, A6 pilot result (manager's write-up, for the owner)
+
+Sources: the pilot's reviews r49, r50, r51 and their process logs, the two architect reports, the journal. No token
+figures were recorded; the cost section says so. Every sentence marked "(manager's reading)" is judgement, not record.
+
+**What ran.** After his "Start both. Can we try the architecture process on these?" two notes were written and
+reviewed: one for the dense-hit search feature, one for lookaround. Each got one critic round (five critics and a
+verifier), one fix revision by a fresh architect, and one confirm critic; both were accepted after small edits and
+landed. The lookaround design was then written against its accepted note and got its own design round (r51).
+
+**What it caught before design or build.**
+- Remodels named up front: the lookaround note listed five refactors to land first; the feature would otherwise have
+  grown onto the same code. The critics' round corrected several of them (one remodel read a field it should not; one
+  was internally inconsistent) before any design existed.
+- Stale plan rows: the lookaround architect found the row, two sibling tags and the design's revision number out of
+  date; the dense-hit round found a sibling feature already built that its plan row called not started.
+- Already-built siblings: the walk stage the dense-hit note treated as planned was in the tree; the cadence family
+  had four slots, not three.
+- Records that already answered the owner's questions: the dense-hit note's five owner questions became one; four were
+  settled by the record. Fewer questions for the owner is a catch in itself.
+- Binding checks: critics found sabotage anchors the note's lists missed.
+
+**What it missed.**
+- A sixth remodel (the never-rows extraction) was found a round later, by the design round (r51), not by the note's round.
+- Anchors outside the note's ranges surfaced again in r51: the same kind of miss as in r50.
+- A trigger that had already fired (the context-producer row, fired 2026-10-23) was not noticed until r51.
+- A ruling (D191.3) that already answered a question the manager then relayed to the owner: the architect, five
+  critics and the manager's own triage all missed it. This was the manager's error as much as the process's.
+- The one answer-level bug (r51) sat in the design's own pseudo-code, outside anything a note covers; the note step
+  designs no algorithm and could not have caught it. (Two safety findings were in the same place.)
+
+**Cost, recorded figures only.** Each arch critic round took about 21-23 minutes wall (r49 ~23, r50 ~21, no manager turns
+between launch and hand-back); the design round r51 took 27. Individual critics ran 3 to 14 minutes. Lanes per step:
+one note lane, one critic round, one fix lane, one confirm critic, one landing lane (sonnet). No token figures were
+recorded anywhere, and no wall time for the architect lanes themselves; a cost per feature in tokens cannot be
+stated from the record.
+
+**Skill changes.** Accepted (manager's ruling, 2026-11-18): the critic skill got 11 changes (the launcher numbers rounds;
+the ruling lens is standard on notes; anchors found by location; freeze from git not the live tree; plan tags are not
+evidence; roadmap triggers quoted; pseudo-code hand-executed; status-table examples; premise reads definitions; the
+base census on readiness; arch mode builds no worktree). The architect skill got 10 (rulings crossed and
+superseded design text; primary/secondary/conditional class; the accessor-grain wording; register WHERE re-verified;
+decisions.md grepped directly; owner questions carry today, example, leaning and every record; build-time numbers;
+remodel vs register row; gate vocabulary and hazards; family and traded-goal rules).
+Deferred (listed, not edited): a class for new tables inside a function; the definition of a decision site (the size
+trigger is still provisional); trigger wider than shape; whether remodels need their own go; the feature's own gate
+exposure; bounding a large read; requirements that name a method; a goals section in the design directory notes.
+
+**Open for the owner.**
+- **size-trigger-final**: the size trigger (full note at two or more decision sites, else one paragraph) was ruled
+  provisional until the pilot. Both pilot features were full notes, so the pilot did not test the paragraph form. Keep it
+  as is? Two friction reports said "decision site" was ambiguous in practice (manager's reading: keep, and clarify).
+- **pilot-verdict**: is the step worth its cost? (manager's reading: keep it, because the refactors it was meant to
+  avoid were found before design both times, and its cost was two roughly 25-minute review rounds per feature.)
+  The owner has given no verdict on the pilot.
+- Still owed: the A6 retro test (a note written for one past refactor from its pre-refactor commit, by a blinded author).
+
+## 2026-11-18, the owner on the pilot (answer to pilot-verdict; it also answers size-trigger-final)
+
+HIS WORDS: "pilot-verdict: it seems successful to me. the 20 minutes spent is days not refactoring later. i say keep it. also, keep it at the current size trigger. its easier to back that off then wonder later if we missed something"
+
+RECORD: the architecture step is KEPT as standing process above the size trigger; the size trigger (a full note at two or more decision sites) is CONFIRMED as is, no longer provisional; the bias is to over-apply and back off later. Decision D200.

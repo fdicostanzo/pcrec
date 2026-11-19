@@ -25,7 +25,7 @@ below fires, not before.
 | brief a lane | §3 below + `docs/dev/lanes/BRIEF_TEMPLATE.md` |
 | run a test suite or the full battery | the `pcrec-test` skill |
 | plan a new feature, or charter its design | `docs/dev/guide/architecture.md` FIRST: the four goals, the judgement section, and part 3 (which register rows and noted deviations the feature touches); above the size trigger, an ARCHITECTURE NOTE comes BEFORE the design: launch the `pcrec-architect` skill as a lane (note at `docs/design/<topic>_arch.md`), then a `pcrec-critic` round in mode `arch`; the design brief cites the accepted note ([ARCH-STEP], Frank 2026-11-17) |
-| send a design to build, or land major code | the `pcrec-critic` skill (§5) |
+| send a design to build, or land major code | the `pcrec-critic` skill (§5); a BUILD-GO request to the owner LISTS the design's small answer-identical refactors (they need no go of their own: D191 add. 2, Frank 2026-11-18) and names its fail-fast census (D191 add. 1) |
 | plan a timing run, a bench window, anything in 20:00-01:00 | memories pcrec-box-evening-hold, pcrec-box-shared-with-frank, pcrec-bench-status; docs/dev/lanes/RUNS.md "TIMING WINDOWS"; run `scripts/loadshame` about 30 min before the window and tell Frank by name what is loading the box (Frank 2026-11-16); `scripts/loadshame --present` lists the watched trouble makers (Steam, VS Code) by PRESENCE, however idle, window or not: remind him to close each one listed, 30 min before and at the start (Frank 2026-11-17; memory pcrec-timing-troublemakers) |
 | end or pause the session; Frank types /close or /idle | §6; the `close` / `idle` skills |
 | anything in root CLAUDE.md's situation index | that row |
