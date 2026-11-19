@@ -995,6 +995,7 @@ history:
 slugs: 
 rulings:
 - 2026-11-18 (class: RECOLLECTION of a PROPOSAL; nothing ruled) "for capture group regex: i proposed /(<:x>foo)/ would be regex for a labeled group that is not a" (record: "2026-11-18 OWNER, a RECOLLECTION in the hole-reads-capture discussion: the label-only group")
+- 2026-11-18 (class: CORRECTION of the entry above, nothing ruled) "oops. yes, i missed the ?. it should look like the top row" (record: "2026-11-18 OWNER, correcting his spelling of the label-only group"); the spelling quoted above, `(<:x>foo)`, was a slip for `(?<:x>foo)`
 rejected:
 readings:
 evidence:
