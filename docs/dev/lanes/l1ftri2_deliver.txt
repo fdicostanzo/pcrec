@@ -1,0 +1,5 @@
+report: docs/dev/lanes/l1ftri2_report.md
+sections: Summary; Why 64 unexplained; The C movers; Bench patterns 166 168 273; Fixes; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
