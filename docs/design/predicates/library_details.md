@@ -90,7 +90,7 @@ history:
 
 ## lib/modifiers/padded — padded
 was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
-slugs: padded-width padded-order padded-lazy-sparse
+slugs: padded-width padded-order padded-lazy-sparse cut-unpadded
 rulings:
 - 2026-11-15 "padded(rx) := /0*${rx}/" (record: "2026-11-15 RULING — `padded` is the plain macro `padded(rx) := /0*${rx}/`")
 - 2026-11-18 "padded-width: minimum" (record: "2026-11-18 OWNER RULING — padded-width: minimum")
@@ -125,7 +125,7 @@ history:
 
 ## lib/modifiers/quoted — quoted
 was: lib/modifiers/json-quoted (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
-slugs:
+slugs: cut-json-quoted
 rulings:
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
 - 2026-11-15 "cut-json-quoted: agree. It would necessitate a callout or similar? We have unrelated plans for dfa compatible callouts and that could be one" (record: "2026-11-15 RULING — `json.quoted` is cut from the first spec")
@@ -145,7 +145,7 @@ history:
 - 2026-11-19 (lane preddoc4): the piece `lib/modifiers/json-quoted` deleted, its content moved here (review r59 READ-13).
 
 ## lib/modifiers/any-case — any_case
-slugs: any-case-body
+slugs: any-case-body primitive-transforms
 rulings:
 - 2026-11-15 "primitive-transforms: I understand why any_case is currently a primitive. I'd like to look for more fundamental ways of reducing that like some option setting primitive that any_case is built on or something else. I am ok with that being a followup." (record: "2026-11-15 RULINGS — tuple compare in the first library; `any_case` stays a primitive for now, a more fundamental basis is a FOLLOW-UP")
 rejected:
@@ -296,7 +296,7 @@ history:
 
 ## lib/search/occurrences — occurrences
 formerly: ?.search (2026-11-15, the owner renamed `search` to `occurrences` under his naming rule)
-slugs: hit-carry hit-carry-depth min-values
+slugs: hit-carry hit-carry-depth min-values nullable-meaning
 rulings:
 - 2026-11-15 "1. if I understand this question, it's asking if the search rx follows non-pcre matching behavior? If that's the question, then the answer is it should always follow it if for no other reason than that's what's expected." (record: "2026-11-14 RULINGS on rev 3's contradictions")
 - 2026-11-15 "1 occurances." (record: "2026-11-15 RULING — the provided transform `search` is renamed `occurrences`")
@@ -326,9 +326,10 @@ history:
 - 2026-11-19 (lane preddoc3c): converted.
 - 2026-11-19 (lane preddoc4): the whole-text idiom `J & C & occurrences(M)` moved here from core/model/modes, whose ruling (whole-text, "adopt it if it's legal") stays cited there (review r59 PLACE-2 (b)).
 - 2026-11-19 (lane preddoc4): the ruled per-call hit name added to the base (review r59 COMPB-8); its spelling stays a placeholder.
+- 2026-11-19 (lane preddoc5): the slug nullable-meaning moved here from core/conditions/defaults, which named it this piece's fact (review r59 COMPA-13).
 
 ## lib/search/hits — hits
-slugs: hits-committed hits-text hits-pass
+slugs: hits-committed hits-text hits-pass hit-list
 rulings:
 - 2026-11-17 "hits-text: yes but spelling to be reviewed with all other spellings." (record: "2026-11-17 OWNER RULING — the hit list: atomic and anchored")
 rejected:
@@ -342,6 +343,7 @@ evidence: preddoc3c PART HI; the draft R.1.9, rev 24.4 PART H.
 history:
 - 2026-11-17: "OWNER on what `hits` is" (questions), then the ruling: atomic and anchored (hits-committed, hits-text).
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-19 (lane preddoc5): the slug hit-list moved here from core/model/table, whose reading named this piece as the one deciding it (review r59 PLACE-4).
 
 ## lib/search/contains — contains
 slugs:
@@ -480,7 +482,7 @@ history:
 - 2026-11-19 (lane preddoc3c): converted.
 
 ## lib/counting/some — some
-slugs: all-question
+slugs: all-question some-own
 rulings:
 - 2026-11-15 "3. could you use some() to get some hits?" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
 - 2026-11-15 "Do it" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
@@ -495,6 +497,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PART SO; the draft §4.3, R.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: ruled pieces used `some` with no piece (review r59 PRIMITIVES-MISSING, READ-6).
+- 2026-11-19 (lane preddoc5): the slug some-own (the draft's, closed by entailment) moved here from lib/search/hits; there was no `some` piece when it was homed (review r59 PLACE-4).
 
 ## lib/counting/count — count
 slugs: count-budget

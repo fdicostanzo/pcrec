@@ -7,7 +7,7 @@ rulings); the frozen source of every skeleton piece is `docs/design/predicates_d
 draft", by its section). Evidence directories are under `docs/dev/lanes/`; "PART X of predspecNN" is a block of
 that lane's committed `predspecNN_model.out`. The pilot's own runs are `preddoc1_evidence/` (PART EX, R1-R12, LT).
 
-shared: when-peek
+shared: when-peek other-holes
 
 ## core/principles/regex-default — Regex behaviour wins
 slugs: branch-scope branch-order sql-picture regex-settles
@@ -512,6 +512,7 @@ readings:
 evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers reproduced; `[2-9]\d{3}` agrees). PARTS TA, TB of predspec291.
 history:
 - 2026-11-18: the proposal (labels seen only if exported), the export-scope discussion, the ruling, the clarification of statement 6 and `[_ = A]`.
+- 2026-11-19 (lane preddoc5): the slug filter-captures moved here from core/filters/kinds: it is closed by export-rule, which this piece states (review r59 PLACE-4).
 
 ## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared label
 slugs: caller-ambiguous read-out
@@ -587,7 +588,7 @@ history:
 - new piece (lane preddoc3a): the slug was on core/conditions/match-so-far, whose ruled statement does not answer it.
 
 ## core/conditions/form — The condition form
-slugs: condition-not condition-or dollar-condition label-twice-warn
+slugs: condition-not condition-or dollar-condition label-twice-warn colon-scope label-twice
 rulings:
 - 2026-11-16 "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." (record: "2026-11-16 OWNER RULING — record-is-product: yes")
 - 2026-11-16 "label-twice: agree an error. And that means it's also unofficially parked in case some other meaning becomes valuable" (record: "2026-11-16 OWNER RULING — label-twice: an error")
@@ -719,10 +720,10 @@ rejected:
 - default-reaches-dollar (the manager's derivation, 16:23: a default fills an own-label `$a`) — by owner ruling — default-scope (`$h` reads the real label; the draft §R.5 E).
 readings:
 - a default outside the test's set reads as no default at every polarity (the draft R.1.6) — SUPPORTED (preddoc3a_model.py DEF: `x` HOLDS as with no default).
-- nullable-meaning (a nullable `occurrences` argument) is lib/search/occurrences' fact, not this piece's — the slug stays here (see the report).
 evidence: preddoc3a_model.py DEF (the draft §R.3 N4 line; printed answers reproduced; `[5-9]?x` agrees); sabotage s13 caught.
 history:
 - 2026-11-16: default-scope (a lane considered both), then ruled per test.
+- 2026-11-19 (lane preddoc5): the slug nullable-meaning moved to lib/search/occurrences (review r59 COMPA-13).
 - 2026-11-16, the optional mark's rulings, each RETIRED by drop-mark (cited above), none reversed: "match-context: anywhere. This does need some sort of debugger for writing these." (record: "2026-11-16 OWNER RULING — match-context"); "zero-pass-empty: agree. If nothing could pass then some absent value of present couldn't either. I agree with your reading." (record: "2026-11-16 OWNER RULING — zero-pass-empty"); "P & (k: \"b\") In my mind this is a different regex than P. It only includes the \"b\" track" (record: "2026-11-16 OWNER RULING — domain-scope"); "I agree with your variant. I'm assuming such logic is possible" (record: "2026-11-16 OWNER RULING — mark-narrows"); "mark-in-none: I'd leave it. It's obscure and there are ways to get the intended question." (record: "2026-11-16 OWNER RULING — mark-in-none: LEFT AS IS"; his 17:29 "yes agree" on it was withdrawn by him minutes later, record "2026-11-16 CORRECTION — mark-in-none is NOT ruled"). With the mark went mark-range (withdrawn in the drop-mark entry), the manager's one-witness and not-of-marked readings, and the draft's question mark-under-not (closed with the mark).
 - 2026-11-16: default-set (one string, for now), unset-component, drop-mark and default-value (homed here by lane preddoc5: review r59 COMPA-2, COMPA-3, COMPB-6).
 
@@ -803,11 +804,12 @@ history:
 - 2026-11-19 (lane preddoc4): a new piece: the one home of the negation spellings (review r59 NEGATION); the kinds example's undefined `not` replaced by `!`; the `when` body's `NOT peek(...)` stated legal here.
 
 ## core/values/reads — Reading a label
-slugs: value-filter
+slugs: value-filter pass-list-read
 rulings:
 - 2026-11-18 "what i want is that $y works like label. however, there is a way to get the pcre capture value" (record: "2026-11-18 OWNER RULING — hole-reads-capture: the label; and a way to get the PCRE capture value")
 - 2026-11-18 "Yes $y is a single value read at run time. At runtime, it is manipulated by left() et al using string manipulation built for simple strings. Semantically, $y is a regex of a single string. So operations that work on regex should work on it." (record: "2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation")
 - 2026-11-18 "unset-in-hole: i meant what you describe "no string" as. its a regex that matches nothing. that would be a good constant to provide" (record: "2026-11-18 OWNER RULING — unset-in-hole: no string, a regex that matches nothing; and an idea, a constant for it")
+- 2026-11-17 "pass-list-read: unqualified it is the last pass as standard pcre. I would like a form that allows other passes but it should be clear that that is what is requested. Specifically, it should have different spelling. Eg Perl uses @x. An array of such values is its own type." (record: "2026-11-17 OWNER RULING — pass-list-read"); point (1), what an unqualified `$x` reads, was REOPENED by him minutes later in the same entry and settled by the `$x` ruling (core/labels/labels-vs-captures); points (2), the other passes by a visibly different spelling (`@x`), and (3), an array is its own type, STAND
 rejected:
 - a read is PCRE's capture (`${$y}` = `\k<y>`) — by owner ruling — hole-reads-capture; run: the capture gives `3-3;-3;` HOLDS / `3-3;-3;`@0 / [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12] against the label's FAILS / `3-3;`@0 (preddoc3b EXreads; the draft's PART HR of rev 28, 2 / 2 / 2 of 21,845; sabotage s1 caught).
 - "No conditions. No &." on a read (his own discussion, part (5)) — by owner ruling — read-is-constant ("we were applying & to $y"): value-filter answered legal (the draft's A5).
@@ -819,6 +821,7 @@ history:
 - 2026-11-18: hole-reads-capture and read-is-constant; the draft R.1.15 (3), (11), R.1.16 T20, A2, A5, A23. His recollection of the label-only group (parked/ideas/label-only-group) is not folded.
 - 2026-11-19 (lane preddoc3b): converted from the skeleton; the example is the ruled witness.
 - 2026-11-19 (lane preddoc4): "a read of a name the rx it is written in does not define is a compile error" restated as the one scope rule for `$` (a reading, tied to open bare-condition-labels): read literally it made the core's own examples (`$x` in an `&` operand, `${$y + 1}`) errors (review r59 READ-7).
+- 2026-11-19 (lane preddoc5): the slug pass-list-read moved here from core/conditions/pass-start-read: it asks what `$h` reads after the pattern, which this piece states (review r59 COMPA-13).
 
 ## core/values/one-type — One type: a match is an rx
 slugs: match-is-rx read-is-constant value-is-pattern
@@ -1128,7 +1131,7 @@ history:
 - 2026-11-19 (lane preddoc4): the definition of `join` left this piece for lib/strings/join (review r59 PLACE-2 (c)).
 
 ## core/holes/range-end — The range-end hole
-slugs:
+slugs: other-holes
 rulings:
 - 2026-11-19 "2.  range end: again, alternation [a-z]|[x-z] which collapses to [a-z]. remove range errors from alternations" (record: "2026-11-19 OWNER RULING — other-holes")
 rejected:
@@ -1142,7 +1145,7 @@ history:
 - 2026-11-18: the draft had no reading for a range end (review r47 B6) and "a range whose ends are out of order: a compile error" (THE DRAFT'S READING, revision 25.1 had removal).
 
 ## core/holes/option — The option hole
-slugs:
+slugs: other-holes
 rulings:
 - 2026-11-19 "3. options: error. no clear semantics" (record: "2026-11-19 OWNER RULING — other-holes")
 - 2026-11-19 "for options: the empty {?${""}} would simply be no options are added. also, options restricted to legal set or error" (record: "2026-11-19 OWNER, after other-holes: a zero count, and the option hole's values")

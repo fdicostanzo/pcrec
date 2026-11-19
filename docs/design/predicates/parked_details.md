@@ -519,7 +519,7 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 
 ## parked/ideas/rx-module — Building patterns without rx literals
-slugs:
+slugs: rx-module
 rulings:
 rejected:
 readings:
