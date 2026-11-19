@@ -79,3 +79,7 @@
 - `2026-11-15-r10-memfn-d3wire.md` — single-critic CODE round on lane d3wire (the D3 floor gate wiring): D3W-1/2 (floors 20-31 loose; deleting Part D witnesses stayed green) FIX-NOW with D3W-5/6/9, D3W-4 (cloud axes shard) and DOC D3W-7; fixed by lane d3fix; D3W-8 (floor-table family) noted.
 - `2026-11-15-r11-memfn-d3fix.md` — single-critic CODE round on lane d3fix (D3 floor gate): D3F-1 (dead bands; a gain reds through the plants with a wrong reason) FIX-NOW, D3F-2 (counts pinned, a membership swap is green) -> census as a set; fixed by lane d3fix2.
 - `2026-11-15-r16-predspec14.md` (+ dir) — confirming DESIGN re-check of predicates_draft.md rev 14 (3 opus critics): the `anchor.whole` warning gets ONE edge criterion (W1/W2), W3 to the owner (warn-in-macro-body), macro-body claims (FIXIND-1..3: two transforms lack a body), role lists, provenance, words; all accepted, applied in rev 15 (lane predspec15).
+
+## Index entries moved out of CLAUDE.md (spanarms8, 2026-11-18; size limit)
+
+- `2026-11-15-r12-memfn-d3fix2.md` — single-critic CODE round on lane d3fix2 (set census pin, REPIN): D3G-1 (set plants test set_why, not main's wiring), D3G-2 (REPIN pins an empty/short census), D3G-3 (REPIN does not write d3_floor.tsv), D3G-4 (scratch leak), D3G-6 (remedy text) FIX-NOW, D3G-5 (dirty provenance) noted; fixed by lane d3fix3.

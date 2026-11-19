@@ -1,0 +1,3 @@
+# docs/dev/reviews/2026-11-18-r51-spanarms7/ — critic texts for review r51
+
+The five critics' findings (READYL1, READYL3, READYL2, CONFORM, RULING), the verifier's `verify.md`, the round's `COMMON.md`, the coordinator's `process.md`, and the manager's `dispositions.md` for `../2026-11-18-r51-spanarms7.md` (DESIGN round on docs/design/span_arms.md rev 3, L1/L3/L2 re-based on the accepted lookaround note, [REQ-LOOKAROUND]; the round dir is `crit-spanarms7`). Records only; the review file holds the rulings. Copied unchanged except that every plan line-number cite is replaced by its plan tag (PL14) and every spec line cite by its section.
