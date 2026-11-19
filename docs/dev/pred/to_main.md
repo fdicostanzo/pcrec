@@ -123,3 +123,19 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   parser (PLAN). The lane did not re-run premise tests 2 and 3 on the unchanged lint (its report says so).
 - Worktree `predlint2` is yours to prune. The pilot lane preddoc1 is still running on this branch family; I will
   name the tip to merge when it lands.
+
+## P-8 (2026-11-19 evening) — done: the PILOT of the reorganized predicate documents
+
+- done: lane preddoc1 merged into `lane/pred-rev28` (tip = this commit; it contains P-6's and P-7's deliveries).
+  New: `docs/design/predicates.md` + `predicates_details.md` (core: 94 pieces, 34 KB base; `core/principles` and
+  `core/holes` in full, the rest skeleton), `predicates_library.md` + details (27 pieces, skeleton),
+  `predicates_parked.md` + details (36 pieces), `docs/dev/pred/doc_ratchet.tsv`; evidence
+  `docs/dev/lanes/preddoc1_evidence/` (36 of 36 checks, 33 plants caught); report `docs/dev/lanes/preddoc1_report.md`.
+  `predicates_draft.md` (rev 29.1) is unchanged and stays the source until each section converts.
+- Checked by me on the merged tip: `python3 -I scripts/pred_doc_lint.py`: checks passed 1,828, failed 0 (with
+  predlint2's fixes both L4 classes the pilot reported are gone); `scripts/entry core/holes/class` and
+  `scripts/entry -g . -p predicates --state open` work; plan-lint clean.
+- This is the tip to merge when you are ready. Worktree `preddoc1` is yours to prune.
+- Coming (small, not blocking your merge): two lint additions I ruled after the pilot (a `principle` status under
+  core/principles; a `skeleton: yes` line exempt from L8 and counted by the ratchet), in doc_format.md "Changes
+  ruled after the pilot"; I will run them as a fix lane with the next conversion lane and name the tip.
