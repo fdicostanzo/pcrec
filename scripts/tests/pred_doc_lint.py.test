@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# pred_doc_lint.py self-test: its planted-fault selftest (plants, controls, constants), the committed sample linted
+# through the CLI (rc 0), and the CLI FAILURE path (a planted fault: rc 1 and an `Ln file:line:` line; a missing
+# --root: rc 2). A `main` that always returns 0 fails the last two. Mutation gate: pred_doc/mut.py.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+. "$here/tmpdir.sh"
+lint="$here/pred_doc_lint.py"
+sample="$here/tests/pred_doc/root"
+scratch=$(mktemp -d -p "$PCREC_TMPDIR" predlint_test.XXXXXX) || { echo "FAIL: no scratch"; exit 1; }
+trap 'rm -rf "$scratch"' EXIT
+$TO 120 python3 -I "$lint" --selftest || { echo "FAIL: selftest"; exit 1; }
+$TO 60 python3 -I "$lint" --root "$sample" --require-all || { echo "FAIL: sample"; exit 1; }
+cp -r "$sample" "$scratch/bad"
+sed -i 's/reading 2026-11-02/blessed 2026-11-02/' "$scratch/bad/docs/design/predicates.md"
+out=$($TO 60 python3 -I "$lint" --root "$scratch/bad" --require-all); rc=$?
+[ "$rc" -eq 1 ] || { echo "FAIL: planted fault gave rc $rc, want 1"; exit 1; }
+echo "$out" | grep -Eq '^L4 docs/design/predicates\.md:[0-9]+: ' || { echo "FAIL: no 'L4 file:line:' line: $out"; exit 1; }
+$TO 60 python3 -I "$lint" --root "$scratch/none" >/dev/null 2>&1; rc=$?
+[ "$rc" -eq 2 ] || { echo "FAIL: a missing --root gave rc $rc, want 2"; exit 1; }
+[ ! -e "$scratch/none" ] || { echo "FAIL: a missing --root was created"; exit 1; }
+$TO 60 python3 -I "$lint" --write-ratchet --root "$scratch/none" >/dev/null 2>&1; rc=$?
+[ "$rc" -eq 2 ] && [ ! -e "$scratch/none" ] || { echo "FAIL: --write-ratchet on a missing --root: rc $rc, or the root was created"; exit 1; }
+$TO 60 python3 -I "$lint" --selftest --require-all >/dev/null 2>&1; rc=$?
+[ "$rc" -eq 2 ] || { echo "FAIL: --selftest with another option gave rc $rc, want 2"; exit 1; }
+echo "PASS: pred_doc_lint"

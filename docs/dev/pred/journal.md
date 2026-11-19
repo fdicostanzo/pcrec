@@ -127,3 +127,126 @@ After same-name-count: his scope question (backreferences only; my `$h` extensio
 private labels (export-rule already rules binding scope; inner-label-read not asked), his direction "use labels as
 they are defined and see if there is a problem" (isodate example to the rev 29 lane). wake.md rewritten with the
 rev 29 fold brief's contents; owner.md refreshed; P-3 in to_main.md. Nothing running. Main had not merged P-2.
+
+## 2026-11-19 (midday) — second session up; rev 29 fold lane launched
+Registered (session_role pred). Main MERGED lane/pred-rev28 (P-2, P-3 done; its e99273ff3 moved the r52 index line to
+reviews/NOTES.md); main merged back into my branch (plan-lint clean). Review number for the rev 29 round: r54 (r53
+taken). LAUNCHED lane predspec29 (opus, worktree worktrees/predspec29, branch lane/predspec29): folds the six
+2026-11-19 rulings, tests 16 manager's readings, works the isodate / private-label / any-case-body tasks; deliver and
+rulings files written first; lanewatch armed. On DONE: read the report, merge, then critic round r54 (design, topic
+predspec29). Meanwhile asking Frank plus-operands: the record (number-domain "nothing" outside the domain; the
+sequence operator ruled 2026-11-17; number-edges "no compile error of its own") appears to answer it; asked as a
+confirmation with a run (scratch/pred/plusops.py).
+
+## 2026-11-19 (midday) — his idea on parameter restrictions, in answer to plus-operands
+Asked plus-operands (as a confirmation). Frank answered with an IDEA, not the slug: a macro parameter restricted by
+`&` in the head (`example(g & /\d+/)`), "some value in the intersection for the macro to match", and the same logic to
+limit / overload arithmetic. Recorded verbatim with the 2026-11-13 typed-parameter entries it meets (intersection as
+the meaning; his "type must equal" lean the other way); ideas file item 34. plus-operands stays OPEN; my reading is
+that his idea is the "nothing" answer. Lane predspec29 still running.
+
+## 2026-11-19 (afternoon) — plus-operands RULED
+After two discussion turns (his ideas: a parameter restricted by `&`; a class as the number base; numbers as strings
+over an ordered symbol set: ideas file items 34, 35), Frank RULED plus-operands: for now arithmetic is digits only,
+anything else is nothing, a warning if known; `+` never joins; a literal mismatch becomes an error once types exist
+(direction). Sent to the running lane predspec29 as R1 in its rulings file (verify in STATE AT HANDOFF). Next
+question: other-holes.
+
+## 2026-11-19 (afternoon) — rev 29 delivered and merged; critic round r54 launched
+predspec29 DELIVERED (lanewatch DONE; R1 applied per STATE AT HANDOFF), MERGED (80c912aa5; plan-lint clean),
+TaskStopped. Draft = rev 29 (10,160 lines). Readings 1, 14, 17 not supported (record entry "after lane predspec29");
+new owner questions class-positions, class-index; T-a's two surprises and T-c to tell him. other-holes is ASKED in
+chat (three places, runs in scratch/pred/otherholes.py). LAUNCHED coordinator crit-predspec29 (opus, background),
+design mode, review r54. On hand-back: rule dispositions, FIX lane predspec291 (rev 29.1 + files the review), merge,
+`done:` to main.
+
+## 2026-11-19 (afternoon) — other-holes RULED
+Frank: class member and range end = an alternation of the class, one per value (collapses to one class; range
+errors removed from the alternation); option hole with several values = error. Place 2 differs from my leaning.
+Recorded with runs and seven readings; a negated class is not covered (`[^x]|[^y]` vs `[^xy]` part): asked as
+negated-class-hole. NOT in rev 29 (round r54 frozen on it): goes to the fix lane (rev 29.1) with r54's dispositions.
+
+## 2026-11-19 (afternoon) — option-hole details and negated-class-hole RULED
+Frank: an empty option value adds no options; values from the legal set or an error; nothing there is an error;
+his count remark read as the count value 0 (`{0}`), my zero-values reading stands untested. negated-class-hole:
+"[^${join(c)}]" = the user joins; the alternation rule is unchanged (my one-class leaning not taken). All for rev
+29.1. Next asked: anything-text. Round r54 still running.
+
+## 2026-11-19 (late afternoon) — anything-text and zero-in-sequence RULED
+anything := [\s\S]* (his spelling, run under every flag); standing instruction "be suspicious of my regex and confirm
+contemporaneously" (memory + proposed skill edit, to_main P-4). zero-in-sequence: "the condition is always sees the
+regex composed at the point it is used. so the 0: is the match so far" (not my leaning, the error). I had glossed
+the slug wrongly in chat (as the never-matching rx) and corrected it in the question. Both for rev 29.1. Next:
+group-truth / pass-table. Round r54 still running.
+
+## 2026-11-19 (evening) — review r54 ruled; fix lane predspec291 launched
+Round r54 handed back (16 items, none finds a printed RULED answer wrong). I RULED the dispositions (record entry
+"review r54 of rev 29"): all FIX-NOW; calls on P29-6 (the padded condition was checked on a witness that could not
+fail: back to Frank as the confirm padded-lazy-sparse), P29-7 (one warning trigger: any known-nothing arithmetic
+result), P29-11/12 (the dollar form on the parse; the hint only where it is a drop-in); owner questions added
+(r/a flags, sequence-operand flags, class-first, class-index reworded, hole-export). Coordinator TaskStopped.
+LAUNCHED lane predspec291 (opus): rev 29.1 + files the review; deliver/rulings files first; lanewatch armed.
+The rulings made during the round (other-holes, option hole, negated-class-hole, anything-text, zero-in-sequence,
+bare condition in a hole) are REV 30's fold. Frank also discussed a condition without parentheses: checked, the
+draft makes `A & 0: digit` an error (a lean); my call: parentheses stay required for now.
+
+## 2026-11-19 (evening) — padded-lazy-sparse RULED; limited(); a direction on macros
+Frank: "padded-lazy-sparse: stated behavior"; padded's default is `0*`, the width argument suspect; a `limited(rx, n)`
+macro (ideas item 36); DIRECTION: no deep dives into one macro unless it raises a language point (memory saved).
+Validated his examples on request: with digits := \d+ padding is a no-op as a set; "00000 through 99999" (exact)
+vs "limited" (at most) not settled. Sent to the running fix lane as R1 (the confirm question becomes a ruling).
+
+## 2026-11-19 (evening) — documentation organization: requested, delegated, format proposed
+Frank asked for an organization of the predicate documents (base + details files, path tags with status, lint;
+modelled on the plan split), then delegated the form ("keep, modify, or reject these instructions as you reason it
+better"; design it from how I use the files; rejected-and-why; analogy search by subagents). Census agent predcensus
+(sonnet, read-only; facts in scratch/predcensus/facts.md; stopped): 155 ruling entries, ~100 slugs, 72 candidate
+names, 17 principles, 36 parked items; what [DOC-INDEX] rejected. WROTE docs/dev/pred/doc_format.md (PROPOSED):
+three base/details pairs (core with a principles section, library, parked); the record stays one log with `tags:`
+lines; a `rejected:` block and `by:` principle links per piece; lint L1-L11 asked of main (to_main P-5). The
+library-document request is absorbed (no separate lane). NEXT: pilot after rev 29.1 (skeleton + core/holes).
+
+## 2026-11-19 (evening) — lint lane launched at main's instruction
+Main answered P-5: "write it yourself in a lane on your branch ... I'll review it, run a code critic round sized to
+it, and land it with your branch after rev 29.1." LAUNCHED lane predlint (sonnet; worktrees/predlint): scripts/
+pred_doc_lint.py (L1-L11, planted-fault selftest, a minimal reader --show/--list); the scripts/entry profile only if
+declaration-only. Two lanes running: predspec291 (rev 29.1 + files r54), predlint. Watchers armed on both.
+
+## 2026-11-19 (evening) — lint lane merged; fix lane found idle and woken
+predlint DELIVERED twice (first cut; then R1: L8 exempts parked / under-construction / principles pieces), lanewatch
+DONE, selftest re-run by me (22 runs, 11 of 11 rules, 0 failures), MERGED into lane/pred-rev28 (plan-lint clean),
+TaskStopped. Not built: a scripts/entry profile (needs new accessor code: main decides) and a make target; the lint's
+own --show/--list reader covers the need. doc_format.md corrected (tag depth, `shared:` line, L8 exemptions).
+predspec291: its watcher exited QUIET (25 min, rc 10): the lane had idled "waiting" on its own background sabotage
+run, which had finished 20 min earlier. Woken by message; watcher re-armed. LESSON (already a rule for critic
+coordinators, r53): a lane brief must say "no background jobs: run checks in the foreground under timeout".
+
+## 2026-11-19 (evening) — rev 29.1 delivered to main
+predspec291 DELIVERED (lanewatch DONE after the wake message; R1 applied), MERGED (plan-lint clean), TaskStopped.
+Draft = REVISION 29.1 (10,275 lines), review r54 filed. Record entry "after lane predspec291" (the fill-reference
+fact on padded-lazy-sparse). Ideas items 37, 38 (the round's two general forms). to_main P-6 (done lines, status
+line, proposed skill edits); main messaged. NEXT: the pilot lane of the reorganized documents.
+
+## 2026-11-19 (evening) — pilot lane launched; main's code round on the lint is r56
+LAUNCHED lane preddoc1 (opus; worktrees/preddoc1): the skeleton of the three base/details pairs, core/principles and
+core/holes in full (with the rulings made since rev 29's fold), twelve readings to test, a completeness control from
+the census, FORMAT PROBLEMS as a report section; no background jobs (brief says so); lanewatch armed. Main: got P-6;
+the lint's code round is r56 (running); it merges lane/pred-rev28 (draft + lint) when r56's fixes are in, at
+whichever tip I name; decides the entry profile / make target and answers the skill edits at that merge.
+
+## 2026-11-19 (evening) — main's review r56 of the lint ruled; fix lane predlint2 launched
+Main ruled r56 (code round on scripts/pred_doc_lint.py): the FIX-NOW list, the mutation harness as acceptance gate,
+ONE reader = a scripts/entry profile calling the lint's parser, the review to be filed on my branch. MY rulings
+(form, delegated): CONTRACT-10(d) "every rulings item cites an existing title"; the DOC hunks written into
+doc_format.md (record-title shape, L6 word list with code spans exempt, pilot mode, L8 exemptions, one reader).
+LAUNCHED lane predlint2 (sonnet; worktrees/predlint2); lanewatch armed. RETURNED to main: the critic-skill process
+changes (I do not edit files under .claude/skills at a peer's request). The pilot preddoc1 found the lint's L4
+two-line-opener bug (ruled R1 in its rulings file: cite true titles, accept those failures only); it is in
+predlint2's fix list. Two lanes running: preddoc1 (pilot), predlint2.
+
+## 2026-11-19 (evening) — lint fixes merged (r56 gate passed)
+predlint2 DELIVERED (lanewatch DONE; R1 applied), gate RE-RUN by me (176 mutants, 160 killed, 16 equivalent, 0
+survived; .test PASS; entry selftest 75/0), MERGED, plan-lint clean, TaskStopped. Reader = scripts/entry profile
+`predicates`. to_main P-7. The pilot's two lint questions were ruled R1/R2 in its rulings file (cite true titles;
+both L4 classes are now fixed in the lint, so the pilot's remaining L4 failures should vanish after it merges this).
+One lane running: preddoc1.

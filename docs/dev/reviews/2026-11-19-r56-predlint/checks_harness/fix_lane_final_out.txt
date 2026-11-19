@@ -1,0 +1,177 @@
+killed   L1 dup tag off
+killed   L1 dup section off
+equivalent L1 tag uniqueness per file: tags carry their file word and L2 fails a tag in the wrong file, so a cross-file duplicate always also fails L2; within one file the per-file reset is the same dict. Equivalent except under an L2 failure already reported.
+killed   L2 malformed piece fail off
+killed   L2 TAG_RE off
+killed   L2 tag file word off
+killed   L2 tag-in-section off
+killed   L2 section grammar and word off
+killed   L2 section grammar only
+killed   L2 section word only
+killed   L2 malformed section fail off
+killed   L2 was: excuses everything
+killed   L2 was: section check off
+killed   L2 was: parse off
+killed   L2 4th segment not allowed
+killed   L2 unterminated fence (base) off
+killed   L3 base without entry off
+killed   L3 entry without base off
+killed   L3 duplicate entry off
+killed   L3 order off
+killed   L3 details absent off
+killed   L3 malformed entry heading off
+killed   L3 orphan details off
+killed   L3 unterminated fence (details) off
+killed   L3 fence ignored in details headings
+killed   L3 fence ignored in details fields
+killed   L4 no date off
+killed   L4 bad date off
+killed   L4 open slug off
+killed   L4 open: kebab half off
+killed   L4 open: space half off
+killed   L4 status set off
+killed   L4 parked only in parked off
+killed   L4 ruled needs a rulings item off
+killed   L4 title: greedy quote match off
+killed   L4 items: no continuation joining
+killed   L4 item without record off
+killed   L4 title not found off
+killed   L4 title blank-normalise off
+killed   L4 record absent off
+killed   L4 only ruled pieces' items cited
+killed   L4 non-ruled pieces need rulings
+killed   L4 title: dot strip off
+killed   L4 title: part before ( off
+killed   L4 title: whole title off
+killed   L4 title: ### off
+killed   L4 title: ## off
+killed   L4 title: bold opener off
+killed   L4 title: any bold paragraph
+killed   L4 title: no joining across lines
+killed   L4 title: paragraph start not required
+killed   L4 title: fences not skipped
+killed   L5 names-no-piece off
+killed   L5 by not principle off
+killed   L5 later file off
+killed   L5 later in file off
+killed   L5 self-needs allowed
+killed   L5 skipped-pair excuse off
+killed   L5 skipped-pair excuse under require-all
+killed   L5 by: not checked
+killed   L5 only first tag of a list
+killed   L5 comma separators off
+killed   L5 ordinal always 0
+killed   L5 fenced needs: parsed
+killed   L6 word withdrawn removed
+killed   L6 word reversed removed
+killed   L6 word superseded removed
+killed   L6 word rev \d+ removed
+killed   L6 word revision \d+ removed
+equivalent L6 word review r\d+ removed: 'review r56' also matches the bare review-id alternative r\d+; the named alternative is kept for the text's sake
+killed   L6 word r\d+ removed
+killed   L6 [REV removed
+killed   L6 case-insensitivity off
+killed   L6 word boundary off
+killed   L6 trailing boundary off
+killed   L6 date check off
+killed   L6 any date allowed
+killed   L6 allowed date from nowhere
+killed   L6 code span exemption off
+killed   L6 fence exemption off
+killed   L6 whole check off
+killed   L6 first 30 lines only
+killed   L6 last 2 lines skipped
+killed   L7 PIECE_MAX 41
+killed   L7 PIECE_MAX 39
+killed   L7 STATEMENT_MAX 201
+killed   L7 STATEMENT_MAX 199
+killed   L7 piece line miscount
+killed   L7 trailing blanks counted
+killed   L7 no-statement fail off
+killed   L7 ? may lack off (all may lack)
+killed   L7 ? must have a statement
+killed   L7 statement is first non-meta line
+killed   L7 statement may be fenced
+killed   L7 soft cap warn off
+killed   L7 soft cap becomes hard
+killed   L7 CAPS core 1K
+killed   L7 CAPS lib 1K
+killed   L7 CAPS parked 1K
+killed   L7 statement cap off
+killed   L7 piece cap off
+killed   L8 fail off
+killed   L8 ? exemption off
+killed   L8 parked exemption off
+killed   L8 under-construction exemption off
+killed   L8 principles exemption off
+killed   L8 exemption widened to core
+killed   L8 all modes -> any
+killed   L8 FIND-ALL not required
+killed   L8 SEARCHED not required
+killed   L8 WHOLE not required
+killed   L8 modes: n/a off
+killed   L8 heading line scanned
+killed   L8 first body line only
+killed   L9 kebab check off
+killed   L9 shared always
+killed   L9 shared never
+killed   L9 shared per file only
+killed   L9 none/- skip off
+killed   L9 two tags -> three
+killed   L9 owners reset per file
+killed   L9 same tag twice counts
+killed   L10 fail off
+killed   L10 equality fails
+killed   L10 slack of one
+killed   L10 qcount zero
+killed   L10 absent ratchet silent under require-all
+killed   L10 absent ratchet note off
+killed   L10 missing row passes
+killed   L10 malformed line ignored
+killed   L10 duplicate row: last wins
+killed   L10 unknown word accepted
+killed   L10 non-number accepted
+killed   L10 field count not checked
+killed   L10 write: raises instead of lowers
+equivalent L10 write: ignores old: write_ratchet writes only after a clean lint, and a clean lint means count <= ratchet, so min(old, count) == count
+killed   L10 write: after a failing lint
+killed   L10 write: not-writing mode off
+killed   L11 no pieces off
+killed   L11 no entries off
+killed   L11 require-all absent off
+killed   L11 nothing present silent
+killed   L11 unreadable base off
+killed   L11 unreadable details off
+killed   L11 non-UTF-8 crashes
+killed   L11 BOM not stripped
+killed   L11 CRLF not split
+killed   fence: ~~~ closed by ```
+killed   fence: unterminated not reported
+killed   fence: lines inside not masked
+killed   fence: ~~~ not a fence
+killed   base heads: fence not skipped
+killed   CLI exit code on fails -> 0
+killed   CLI main always 0
+killed   CLI main always 0 (whole)
+killed   CLI fails not printed
+killed   CLI missing root accepted
+killed   CLI selftest takes other options
+killed   CLI write-ratchet creates the root
+equivalent ST exact rule -> contains: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST exact rule -> any failure: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST plant count ignored: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST controls off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST clean control off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST floors off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST covered-all off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST constants off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST plant text count check off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST soft cap control off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST write-ratchet lowers off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST write-ratchet raise off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+equivalent ST load_pieces off: an assertion of the selftest weakened or removed: it holds on the unmutated lint, so the test cannot go red; it is killed only in combination with a lint mutant, and each such lint mutant is a row above
+killed   RD level 2 omits details
+killed   RD level 0 omits statement
+killed   RD slugs: none not dropped
+killed   RD first entry of a tag wins
+mut: total 176, killed 160, equivalent 16, SURVIVED 0, NOMATCH 0

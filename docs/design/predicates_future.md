@@ -719,3 +719,53 @@ its trigger (build under measurement, D77).
   answers when one value is a prefix of another; the same need might be met on the CONDITION side (a membership
   test of a label against the array form), which is not defined either.
 - TRIGGER: a user program of the declared-then-used shape; or the array form's type being defined for conditions.
+
+## 34. A parameter restricted by `&` in a definition's head (`example(g & /\d+/) := ...`, his placeholder 2026-11-19); the same to limit or overload operators
+
+- SOURCE: COND-FAMILY, "2026-11-19 OWNER, asked plus-operands: a parameter restriction written `m(g & /\d+/)`"; the
+  2026-11-13 entries on typed parameters and overloading (typed parameters are OUT of phase 1, his words).
+- THE IDEA (his): the argument is intersected with the restriction; "there has to be some value in the intersection
+  for the macro to match". The `(g: S)` spelling is the condition's today, so the restriction gets its own.
+- NOT SETTLED: filter (what is outside drops) against his 2026-11-13 lean "the type must equal" (a mismatch is an
+  error, fixed by an explicit conversion); overloading on disjoint restrictions (per-string dispatch); whether the
+  arithmetic operators are stated this way (`+` on numbers; joining as a later second definition).
+- TRIGGER: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
+
+## 35. Number operations over a base given by a class (`/(?i)[\da-f]/` = base 16; his idea 2026-11-19)
+
+- SOURCE: COND-FAMILY, "2026-11-19 OWNER, on plus-operands: `+` is for numbers only; a class as the base"; the
+  2026-11-12 lines GENERAL GENERATORS, USER-ADDABLE TYPES and LITERALS DECIDE.
+- THE IDEA (his): the number operations run over a base taken from a class provided to them.
+- NOT SETTLED (the manager's notes): a class has no member order (class-order), so the digit VALUES and the case of a
+  RESULT need a stated source; how the base is attached (a restriction on the operand, item 34; a declaration; a
+  literal prefix); the canonical numeral of each base (number-domain).
+- TRIGGER: a user program needing hex or another base in arithmetic or a comparison; or item 34 taken up.
+- HIS ELABORATION (COND-FAMILY, "2026-11-19 OWNER, discussing the base idea"): the order is digits then letters "as
+  per normal"; "probably" spans without gaps; a number is a string over an ORDERED SET OF SYMBOLS, and `"a" + "b"`
+  has a meaning when the operands are typed as members of such a set, not as bare written strings.
+
+## 36. `limited(rx, n)`: a length limit as a macro, composed with `padded` (his proposal 2026-11-19; spelling a placeholder)
+
+- SOURCE: COND-FAMILY, "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited`
+  macro". His uses: `limited(padded(digits), 5)`, `padded(limited(digits, 5))`; `padded`'s default is `0*`.
+- NOT SETTLED: "at most n" or "exactly n" (his "00000 through 99999" reads exact; the name reads at most); whether
+  `padded`'s width argument stays (padded-width ruled its meaning when given; he suspects it is "always broken for
+  some use case").
+- THE LANGUAGE POINT (the manager's reading): a body that is one filter or one sequence keeps the argument's order;
+  a body that is an alternation of filtered copies imposes its own.
+- TRIGGER: the library's macro list being specified; not before (his direction: no deep dives into one macro).
+
+## 37. One cause-free "known nothing" warning (review r54 GENERAL-2; nothing scheduled)
+
+- SOURCE: review r54 item P29-7; COND-FAMILY "2026-11-19 MANAGER — review r54 of rev 29".
+- THE IDEA (the critic's): every compile-time "this rx can never match" (a count hole emptied, an edge that cannot
+  hold, zero values, an out-of-domain operand or result) is ONE warning with one name, the cause in its text.
+- TRIGGER: naming the arithmetic warning and the dollar warning (the manager's owed call), or a fourth such case.
+
+## 38. Warnings as rows: form, places, look-alike (review r54 GENERAL-7; nothing scheduled)
+
+- SOURCE: review r54 item P29-12; the `$x & S` warning, the arithmetic warning, the `[^${c}]` warning (negated-class-hole).
+- THE IDEA (the critic's): each structural warning is a table row: the FORM it keys on, the PLACES it fires, the
+  LOOK-ALIKE it points at and where that hint is a drop-in.
+- TRIGGER: a third form-keyed warning with a hint (reached: the `join` warning); fold when the diagnostics section
+  of the reorganized core file is written.

@@ -4706,3 +4706,552 @@ binding `isodate` with public `year`, `month`, `day`, used three times, two of t
 and `end_date`; state what bare `year`, `start_date.year` and `end_date.year` read under export-rule (2)-(4) (last
 mention; an ambiguous reference is the error), in every mode; plus two or three examples where a PRIVATE label does
 real work. Report any place the rules as defined give a surprising answer; propose no rule change.
+
+### 2026-11-19 OWNER, asked plus-operands: a parameter restriction written `m(g & /\d+/)`, and the same for arithmetic
+
+His words, verbatim: "so we had an idea that macros might have type like example(g: /\d+/) := blah. but then we used
+the (g: ) syntax for conditions. I don't _think_ the semantics are the same although they are spooky close. anyway, if
+that didn't work, i was thinking of an alternative which is example(g & /\d+/) := blah. There is some handwaving there
+but the idea is that there has to be some value in the intersection for the macro to match. this logic might be used
+for the arithmetic as a consistent way to limit/ overload operators as well"
+
+Class: a RECOLLECTION (typed parameters `m(g: T)`; SUPPORTED: the 2026-11-13 entries "macro bindings", "`m(x: d2) :=
+x & d2 & m`", "equality checks on typed parameters", "overloading (NOT phase one)"; kept out of phase 1 by his "yes
+keep out of phase 1. I like the idea of types but they need more thinking"), an OBSERVATION (the `(g: S)` form is now
+the condition's; "spooky close", not the same), and an IDEA / PROPOSAL (a parameter restricted by `&` in the
+definition's head; "there has to be some value in the intersection for the macro to match"; the same logic to limit
+or overload the arithmetic operators). NOT a slug answer: plus-operands stays OPEN. Nothing ruled. The spelling
+`example(g & /\d+/)` is a placeholder (D193 addendum 4); the meaning recorded is "the argument is intersected with
+the restriction; an empty intersection means the macro does not match".
+
+Against the record: (1) 2026-11-13, his own meaning for a typed parameter was already intersection ("applying a
+pattern binding `m` to an argument `x` of type `d2` means `x & d2 & m`"). (2) The same evening he leaned the OTHER
+way on a mismatch: "We could just say the type must equal. m(right(year,2)) would be explicit." (no silent filtering;
+the manager's adjustment "the type removes nothing from the argument"). Today's idea is the FILTER reading (what is
+outside the restriction drops; nothing left = no match); the two are different rules on a partly overlapping
+argument, and neither is ruled.
+
+The manager's readings (told to him as readings; for a later lane to test): (a) why the two colons are "spooky
+close": for an argument that is ONE string (a read, a constant) "the intersection is not empty" and "the value is in
+the set" are the same test; they part when the argument has many strings (the restriction narrows a set at compile
+time, a condition tests one value per match) and on an absent label (a condition has the absent rule, a parameter is
+always given). (b) Applied to arithmetic, `+` is "defined on (number, number)": an operand's strings outside the
+number domain drop, nothing left yields nothing; that is the candidate "plus-operands: nothing", and it is what
+number-domain and number-edges already rule for a read that is not a numeral. (c) Overloading then is one more
+definition on a restriction DISJOINT from the first (the 2026-11-13 per-string dispatch): joining could later be `+`
+on non-numbers without changing any answer that is something today, only answers that are nothing. (d) Per-string
+filtering of an ARRAY or class operand (`\w + 1`: the digits give results, the letters drop) follows from (b) and
+construction-line; NOT his words.
+
+### 2026-11-19 OWNER, on plus-operands: `+` is for numbers only; a class as the base (an idea)
+
+His words, verbatim: "i'm not sure what you mean your take is. i don't think + should be used for anything that isn't
+numbers in one form or another. i don't have a hard answer on how g & /\d+/ exact semantics work but it seems like it
+could work with tweaking. also, one alternative is that /(?i)[\da-f]/ number operations run over a base of the class
+provided to it."
+
+Class, sentence by sentence: (1) a QUESTION about the manager's wording (answered: the manager's take was "`+` is
+arithmetic only; an operand that is not a number gives nothing, with no error of its own; joining is the sequence
+operator"). (2) "i don't think + should be used for anything that isn't numbers in one form or another": his answer
+to the JOIN candidate of plus-operands, asked as a question: `+` does NOT join strings or patterns. The reading
+taken: this closes the join candidate ONLY; what a non-number operand yields (nothing, or an error) is NOT in his
+words and stays the open half of plus-operands; "numbers in one form or another" leaves room for number forms beyond
+the canonical decimal numeral (his next sentence). (3) the `g & /\d+/` restriction: "could work with tweaking", no
+semantics fixed (OBSERVATION; ideas file item 34). (4) an IDEA: number operations take their BASE from a class given
+to them (`/(?i)[\da-f]/` = base 16). Nothing ruled by (3) or (4).
+
+Against the record: (4) meets the 2026-11-12 line GENERAL GENERATORS, USER-ADDABLE TYPES (his "I could let say add
+hexadecimal if it didn't exist in the primitive types"; the manager's `numeral(radix:16, digits:[0-9a-fA-F], ...)`
+declaration) and LITERALS DECIDE (`0x100` hex). The manager's readings (told to him as readings): a class alone names
+the digit SET but not each digit's VALUE or the case of a RESULT (class-order, ruled today: "a character class's
+members have NO order"); for `[\da-f]` under `i` codepoint order happens to give the right values, for other
+alphabets it does not; so the class would be one field of a numeral declaration, or the order must come from
+somewhere stated. Ideas file item 35.
+
+### 2026-11-19 OWNER, discussing the base idea: numbers are strings over an ordered set of symbols
+
+His words, verbatim: "if i allowed letters, the + would define the order as digits followed by letters as per normal.
+also, it would probably require spans without gaps. my point is that this is numbers but it is also strings which are
+basically symbols. if i have an ordered set of symbols, i can do the arithmetic on them and "a" + "b" makes sense
+when those types are defined as part of an ordered set of symbols (ie. not as written)"
+
+Class: DISCUSSION / IDEA (it elaborates ideas-file item 35; no slug answer; nothing ruled). What he states: (1) with
+letters allowed, the order of the symbols is digits then letters, "as per normal"; (2) "probably" the class must be
+spans without gaps; (3) a number is a string over an ORDERED SET OF SYMBOLS, and arithmetic is defined on such a set;
+(4) `"a" + "b"` has a meaning WHEN its operands are typed as members of such a set, and not as bare written strings
+("not as written").
+
+The manager's readings (told to him as readings; for a later lane to test): (a) this is a generalization of the
+number domain, not a second meaning of `+`: the domain is "canonical numerals over an ordered symbol set", the
+decimal digits being the set in force when none is given; number-domain's and number-edges' rulings are its decimal
+case. (b) it is consistent with his sentence of the entry above (`+` is for "numbers in one form or another") and
+with the join candidate staying closed: `"a" + "b"` under digits-then-letters is `15` in base 16 and `l` in base 36
+(RUN, python), never `ab`. (c) with no symbol set given, `"a" + "b"` is outside the decimal domain; whether that
+yields nothing or an error is the still-open half of plus-operands. (d) open under the idea, his to settle when it is
+taken up: how the set is attached to an operand or an operator (item 34's restriction; a declaration); the case of a
+RESULT under `i`; what "spans without gaps" excludes; a set with no zero symbol (letters only).
+
+### 2026-11-19 OWNER RULING — plus-operands
+
+His words, verbatim: "literal "a" + "b" is an error because there is no compatible type defined and they are not in
+the default type (if that works). for now, as you say, we are restricting arithmetic to digits and anything else is
+nothing (for runtime compatibility) and a warning if known"
+
+Class: RULING for the second sentence (it answers the remaining half of plus-operands, asked as "plus-operands:
+nothing or plus-operands: error", with "for now"); a DIRECTION, hedged by him ("if that works"), for the first.
+
+The reading taken, and told to him: FOR NOW arithmetic (`+ - * %`) is restricted to the decimal numerals (the ruled
+number domain); an operand that is anything else yields NOTHING, at run time and at compile time alike ("for runtime
+compatibility": the constant case behaves as the run-time case does), and where the compiler KNOWS it (a constant
+operand such as `"a" + "b"` or `"a" + 1`) there is a WARNING, not an error. With the entry "on plus-operands: `+` is
+for numbers only" (join closed), plus-operands is CLOSED; the draft's TYPE ERROR lean (the manager's) is dropped.
+His first sentence is the LATER state: once operand types (ordered symbol sets; ideas file items 34, 35) exist, a
+LITERAL `"a" + "b"` with no compatible type defined, and not in the default type, is an ERROR; not in force now.
+
+The manager's readings, for the lane to test: (a) "a warning if known" is the existing "can never match" diagnostics
+where their wording reaches the case, else a plain warning at the operator (the manager's call, as for `% 0` under
+number-edges; no new rule); (b) the same holds for `-`, `*`, `%` and for an array or class operand member by member
+(`\w + 1`: the digit members give results, the others nothing; whether the warning speaks when only SOME members are
+outside the domain is the manager's call: no, only when the whole result is known to be nothing); (c) joining stays
+the sequence operator's (T10's mark is no longer tied to plus-operands; its spelling is in the spellings review).
+
+### 2026-11-19 MANAGER — after lane predspec29 (rev 29): readings not supported, one statement withdrawn (no owner words)
+
+Lane predspec29 (`docs/dev/lanes/predspec29_report.md`; evidence 28 of 28, 22 sabotages caught) folded the six
+2026-11-19 rulings and, by its rulings file R1, plus-operands. The padded-order CONDITION is CONFIRMED (`\d+?` under
+any-length-first equals fill, 0 / 0 / 0): the ruling holds. WITHDRAWN: lane predspec281's statement that a lazy
+infinite argument needs exact-first (its hand reduction dropped the `?`). NOT SUPPORTED, and withdrawn as the
+manager's readings: (1) "any-length-first equals fill for every argument ordered by length": a SPARSE shortest-first
+argument parts (`padded(/1|0123/, 2)` SEARCHED `x0123`: body `0123`@1, fill `01`@1); the draft states it as the
+body's behaviour, which his ruling already allows ("stated behaviour"). (14) "the can-never-match diagnostics reach a
+literal `% 0`": their wording does not; a GAP, no rule made. (17) the same for a constant non-number operand: the
+warning is a plain warning at the operator. NEW QUESTIONS for him: class-positions (two class positions in one lift;
+a class under a lazy quantifier), class-index (the order of a class's members in `enumerate`'s array). To tell him:
+T-a's two surprises under the label rules as defined (a bare `year` reads a labelled part's when the unlabelled use
+comes first; an unlabelled sequence part exports nothing outside its binding while the same pattern through a hole
+does); T-c (any-case-body: `/(?i:${rx})/` equals the primitive except for an argument that writes `(?-i)`).
+
+### 2026-11-19 OWNER RULING — other-holes
+
+His words, verbatim: "other holes: 1. classes should be alternations on the class like [x] | [y] like patterns. in
+practice, that means [xy] 2.  range end: again, alternation [a-z]|[x-z] which collapses to [a-z]. remove range errors
+from alternations 3. options: error. no clear semantics"
+
+Class: RULING (a slug answer to other-holes, asked with three places and "you can answer the three places
+separately"). On place 2 his answer is NOT the manager's leaning (which was "one value; an array is a compile error").
+
+The rule as ruled: (1) several values in a CLASS MEMBER hole are an ALTERNATION OF THE CLASS, one class per value, as
+a pattern hole is an alternation ("like patterns"): `[${c}]`, c := [x, y], is `[x] | [y]`, "in practice" `[xy]`.
+(2) several values in a RANGE END are again an alternation of the class, one per value: `[${lo}-z]`, lo := [a, x], is
+`[a-z]|[x-z]`, which collapses to `[a-z]`; a member whose range is an error (ends out of order) is REMOVED from the
+alternation, not a compile error. (3) several values in an OPTION hole: a compile ERROR ("no clear semantics").
+
+RUN (`$PCREC_TMPDIR/scratch/pred/otherholes.py`, `otherholes2.py`, python `re`): `(\w*)(?:[x]|[y])` against
+`(\w*)[xy]`, capture included: 0 / 0 / 0 of 341 texts over `xya-`, length <= 4 (WHOLE / SEARCHED / FIND-ALL);
+`[${c}q]` as `(?:[xq]|[yq])` against `[xyq]`: WHOLE `x` `y` `q` HOLD, `a` FAILS / SEARCHED `-ayq` `y`@2 / FIND-ALL
+`x y q a` [`x`@0, `y`@2, `q`@4], equal; range end `(?:[a-z]|[x-z])`: WHOLE `b` HOLDS / SEARCHED `-b y` `b`@1 /
+FIND-ALL `b a y` [`b`@0, `a`@2, `y`@4]; `[${lo}-m]`, lo := [a, x] with `x-m` removed: `[a-m]`, WHOLE `b` HOLDS, `x`
+FAILS / SEARCHED `-xb` `b`@2 / FIND-ALL `b x n a` [`b`@0, `a`@6].
+
+The manager's readings, for the next lane to test: (a) the alternation is of the CLASS, not of the literal holding
+it (no copies: the count-hole product is not used here), so a class alternation never reorders the rest of the
+pattern; one-character alternatives at one position cannot both match, so the alternation's order is unobservable
+and the collapse to one class is exact for a NON-NEGATED class. (b) A NEGATED class is NOT covered by his example
+and the two spellings part: `/a[^${c}]/`, c := [x, y]: the alternation `[^x]|[^y]` accepts every character (WHOLE
+`ax` HOLDS; SEARCHED `ax ab` `ax`@0; FIND-ALL `ax ay ab` all three), the one class `[^xy]` does not (`ax` FAILS;
+`ab`@3; [`ab`@6]). ASKED as **negated-class-hole**; the ruling is not stretched over it. (c) every member removed
+(or ZERO values, `[${[]}x]`): an alternation of no members, the never-matching rx, as the pattern hole's cell; this
+REPLACES the draft's class cell for zero values (`[${[]}x]` = `[x]`, a draft reading); with the can-never-match
+warning where its wording reaches. (d) two holes in one class (`[${a}${b}]`, `[${lo}-${hi}]`): the alternation over
+every combination, in product-order's order (unobservable for a non-negated class). (e) the draft's reading "a range
+whose ends are out of order: a compile error" stands for a range WRITTEN with single values (as PCRE has it); the
+removal is for members of an alternation, his words. (f) an option hole with ONE value is unchanged. (g) the
+count-hole details filed under other-holes (a member that is not a count: a kind error; a count PCRE refuses: its
+copy removed) are NOT touched by his words and stay the draft's readings.
+
+### 2026-11-19 OWNER, after other-holes: a zero count, and the option hole's values
+
+His words, verbatim: "previous: "No values, or every value dropped": (I miss-read the statement. for counts, no
+iterations, iterated object disappears. useful semantic).  for options: the empty {?${""}} would simply be no options
+are added. also, options restricted to legal set or error"
+
+Class, by part: (1) on the manager's reading (c) of the other-holes entry ("no values, or every value dropped: the
+never-matching rx"): he says he MISREAD the statement, and adds an OBSERVATION about COUNTS: with no iterations the
+iterated object disappears, a useful meaning. The reading taken, and told to him: this is the count VALUE zero
+(`x{${n}}`, n := 0, is `x{0}`: the object is absent and the rest matches; plain regex, already the draft's), not an
+array of ZERO VALUES; no objection to reading (c) is recorded, and reading (c) stays the manager's, to be tested.
+If he meant that a hole given NO values makes its object disappear, that is a different rule and he will say so.
+(2) RULING, a refinement of other-holes place 3 (options), in his words: an EMPTY option value (`(?${""})`; he wrote
+`{?${""}}`, read as the option group) "would simply be no options are added"; an option hole's values are
+"restricted to legal set or error".
+
+RUN (python `re`): `xa{0}y` WHOLE `xy` HOLDS, `xay` FAILS; `x(?:ab){0}y` SEARCHED `-xy xaby` `xy`@1; FIND-ALL
+`xy xaby xy` [`xy`@0, `xy`@8].
+
+The manager's readings, for the next lane to test: (a) "the legal set" is the inline option letters PCRE accepts in
+`(?...)` that this language admits there (the lane lists them from §11 and runs each through libpcre2); a value
+outside it is a COMPILE ERROR, never text; (b) the empty value gives the pattern with no option group at all
+(whether PCRE itself accepts a written `(?)` is to be RUN, not assumed; our rule does not depend on it); (c) with
+the other-holes ruling the option hole's cell is complete: exactly one value, legal or empty; several values an
+error; zero values (`${[]}`) an error too (not exactly one value: the manager's call, as the name hole).
+
+### 2026-11-19 OWNER, on the option hole: nothing there is an error
+
+His words, verbatim: "a nothing in an option would have to be an error. i can think of no useful semantic"
+
+Class: RULING by his own statement ("would have to be"), on the option hole's zero-values cell, which the entry
+above had as the manager's call. The reading taken, and told to him: "a nothing" is NO VALUE (an empty array
+`${[]}`, or a value that is nothing, such as an unset read or an out-of-domain result), distinct from the EMPTY
+STRING `""`, which he ruled in the entry above adds no options. An option hole given nothing is a COMPILE ERROR.
+The manager's reading, for the next lane to test: a value known only at RUN time cannot stand in an option hole at
+all (options are fixed at compile time), so the error is always a compile-time one; if the draft allows a read
+there, that is construction-line (b)'s question, not this one.
+
+### 2026-11-19 OWNER RULING — negated-class-hole
+
+His words, verbatim: "negated-class-hole: [^${join(c)}]"
+
+Class: RULING (a slug answer to negated-class-hole, with an answer outside the two offered).
+
+The reading taken, and told to him: "none of these" is WRITTEN by the user, by joining the array into ONE value:
+`[^${join(c)}]`, c := [x, y], is `[^xy]`. So the other-holes rule is NOT changed for a negated class: several
+values in `[^${c}]` stay the alternation of the class, one per value (`[^x]|[^y]`, which accepts every character
+when two values differ), and the manager's leaning (one class built from all the values) is NOT taken. `join` is
+his placeholder spelling (D193 addendum 4): a function from an array to one string, its members in order.
+
+RUN (python `re`, `otherholes2.py`): `a[^xy]`: WHOLE `ax` FAILS, `ab` HOLDS / SEARCHED `ax ab` `ab`@3 / FIND-ALL
+`ax ay ab` [`ab`@6]; `a(?:[^x]|[^y])`: `ax` HOLDS / `ax`@0 / all three.
+
+The manager's readings, for the next lane to test: (a) ONE value in a class hole may hold SEVERAL characters, each
+a member of the class (his example needs it; the place table's cell said "the character"); characters special
+inside a class (`^` first, `-`, `]`, `\`) in a value are literal members (hole values are text): to run. (b) for a
+NON-negated class `[${join(c)}]` equals `[${c}]` (0 / 0 / 0 expected: the collapse). (c) `[^${c}]` written with an
+array of two or more different values accepts every character: a WARNING pointing at `join` (the manager's call,
+form-keyed, as the dollar warning; minimal). (d) `join` is a string function on arrays (T9's family; built now
+where `enumerate` works); it is the only joining so far that is not the sequence operator; its name goes to the
+spellings review. (e) the same for a negated range end: `[^${lo}-z]` with several values is the alternation.
+
+### 2026-11-19 OWNER RULING — anything-text; and a standing instruction on his regex
+
+His words, verbatim: "anthing-text: agree anything := [\s\S]*. in general: be suspicious of my regex and confirm
+contemporaneously if you see inconsistencies."
+
+Class: RULING for the first sentence (a slug answer to anything-text, "anthing-text" read as the slug; asked with the
+leaning "every character including newlines, greedy, and it sets that itself"); a STANDING INSTRUCTION for the
+second (how the manager works with him, not a language rule).
+
+The reading of "agree" taken: the leaning, in his spelling: the provided `anything` is `[\s\S]*`: every character,
+newlines included, greedy; written so that no flag changes it (RUN, python `re`: `[\s\S]*` alone and under `(?s)`,
+`(?i)`, `(?m)`, `(?x)` each holds WHOLE on ``, `12`, `a⏎b`, `A b⏎`). His 2026-11-18 example `any := /.*/` is
+replaced by it (it was one of the failing spellings on a multi-line value). Unchanged, and not asked: `anything` is
+nullable, so `anything & not X` SEARCHED or FIND-ALL holds on an empty stretch; it is a whole-value tool (the
+draft's R.1.0 PROGRAM row).
+
+The standing instruction, as the manager takes it: a regex he writes in an example or a ruling is CHECKED (run)
+before it is recorded as the rule; where it does not do what his words around it say, or disagrees with an earlier
+ruling, the manager says so in the SAME turn, with the run, and does not fold it silently or fix it silently.
+Sent to main as a proposed edit of the predicate-manager skill (section 2).
+
+### 2026-11-19 OWNER RULING — zero-in-sequence
+
+His words, verbatim: "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the
+condition is always sees the regex composed at the point it is used. so the 0: is the match so far"
+
+Class: RULING (a slug answer to zero-in-sequence, asked with three candidates; NOT the manager's leaning, which was
+the error for now), with its PRINCIPLE in his words: a condition always sees the regex composed at the point it is
+used. Also a remark on the manager's method ("a lawyer in your exact wording. this is what is needed now"): exact
+wording is wanted; no change asked.
+
+The rule as ruled: in a condition standing as a SEQUENCE OPERAND, `0` names THE MATCH SO FAR: the text matched from
+the start of the rx the condition is written in up to the condition's point. RUN (`$PCREC_TMPDIR/scratch/pred/
+zeroseq.py`, a python model; digit, `(0: S)`, digit): S = `/7/`: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373`
+`73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3]; S = `/7\d/`: never holds (the match so far is one digit). The
+draft's PART OQ OQ3 printed the same answers for this reading.
+
+The manager's readings, for the next lane to test: (a) number-names' "0 ... is always the entire match of the rx
+however it is composed" and this ruling are ONE rule under his principle: the rx "as composed at the point it is
+used": after a complete pattern (`A & (0: S)`) that is the entire match; mid-sequence it is the match so far; a
+condition written LAST in a sequence reads the entire match. (b) "so far" starts at the start of the rx the
+condition is written in (zero-place: "that's its whole world"), so a `0` inside a part inserted through a hole or
+standing as an `&` operand stays that part's own (the draft's reading, rev 26.1's PART N NZ); NOT his words today.
+(c) inside a loop the match so far includes the earlier passes (from the rx's start, not the pass's): to run.
+(d) the same principle already holds for labels in a sequenced condition ("reading the labels as they stand
+there", pass-start-read): `0` is now no exception. (e) its regex model is a callout at that point, which sees the
+match start and the current position: runnable on libpcre2.
+
+### 2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A
+
+His words, verbatim: ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/ but not /${A & (0:
+digit)}/ where it is only the A"
+
+Class: RULING by his own statement, on the edge the manager had listed as NOT his words (reading (b) of the
+zero-in-sequence entry: "a `0` inside a part inserted through a hole or standing as an `&` operand stays that
+part's own"). The reading of "yes ... but not" taken, and told to him: the match-so-far rule applies INSIDE an
+inserted part for a BARE condition: a condition inserted through a hole by itself (`/${(0: digit)}/`) has no
+pattern of its own, so it sees the regex composed at the point the hole stands, and its `0` is the SURROUNDING
+rx's match so far; where the inserted thing is `A & (0: digit)`, the `0` is "only the A" (zero-place: B's world is
+what A matched). Reading (b) is therefore CORRECTED for the bare condition and CONFIRMED for the `&` operand.
+
+CHECKED CONTEMPORANEOUSLY (his standing instruction), and told to him: his first example exactly as written,
+`/${(0: digit)}/`, has nothing before the hole, so the match so far is EMPTY and the program NEVER holds (model
+`$PCREC_TMPDIR/scratch/pred/zerohole.py`: WHOLE ``, `7` FAIL / SEARCHED `a7` nothing / FIND-ALL `7 8` []); taken
+as an illustration of the FORM, not of an answer. With a part before the hole, `/\d${(0: digit)}x/`: WHOLE `7x`
+HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7]. `/x${A & (0: digit)}y/`,
+A := `/\d+/`, `0` = A: WHOLE `x3y` HOLDS, `x37y` FAILS / SEARCHED `x37y x3y` `x3y`@5 / FIND-ALL `x3y x37y x5y`
+[`x3y`@0, `x5y`@9]; with `0` = the surrounding match so far the same program never holds (`x3` is not a digit).
+
+The manager's readings, for the next lane to test: (a) the same for a bare condition's LABELS: it reads the
+surrounding rx's labels as they stand at the hole (against the place table's hole row, "inside X, X's own
+namespace": a bare condition has no namespace of its own; NOT his words: if the draft's rows part, ASK); (b) a
+binding whose whole body is a bare condition, used in a hole or as a sequence operand, behaves the same (the
+condition is "used" where the binding is used); (c) a bare condition inserted at the very START of an rx tests the
+empty match so far: a candidate for the can-never-match diagnostics when its set cannot hold on the empty string.
+
+### 2026-11-19 OWNER, confirming: a bare condition last in an rx equals the condition on the whole
+
+His words, verbatim: "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing"
+
+Class: a CONFIRMATION ("yes, thanks") of the reading taken in the entry above (a bare condition in a hole reads the
+surrounding match so far; `A & (0: ..)` reads only A), and a STATEMENT of an equality, his: a digit followed by a
+hole holding a bare condition equals the digit with the condition on the whole. The spelling `(&(0:digit))` is a
+placeholder (D193 addendum 4; read as the bare condition `(0: digit)`).
+
+CHECKED CONTEMPORANEOUSLY: the equality HOLDS under the ruled readings: after `\d` the match so far IS the whole
+match of `/\d/`. Model (python; the two programs written out separately, sets `\d` and `7`, every text over `37x`
+of length <= 4): 0 / 0 / 0 of 121 for each set; with the set `7`: WHOLE `7` HOLDS, `3` FAILS, both programs. It is
+the manager's reading (a) of the zero-in-sequence entry ("a condition written LAST in a sequence reads the entire
+match") in his own example, now SUPPORTED by his statement. Not addressed by his words, still the manager's
+reading to test: what LABELS a bare condition in a hole reads.
+
+### 2026-11-19 OWNER, correcting his spelling of the example
+
+His words, verbatim: "oh right /\d${0: digit}/"
+
+Class: a CORRECTION of the SPELLING in the entry above (his `(&(0:digit))` becomes `${0: digit}`): the bare
+condition written in the hole WITHOUT its own parentheses. Nothing ruled; the meaning recorded above is unchanged
+(the equality with `/\d/ & (0: digit)` was checked on the meaning). For the spellings review (D193 addendum 4):
+whether a condition in a hole keeps its parentheses (`${(0: digit)}`) or the hole's braces may stand for them
+(`${0: digit}`); the manager's note: the draft writes a condition with its parentheses everywhere today.
+
+### 2026-11-19 OWNER, on the hole's implied group (why `${0: digit}` needs no parentheses)
+
+His words, verbatim: "i believe that ${} implies (?:${})"
+
+Class: a RECOLLECTION, checked against the record: SUPPORTED. "2026-11-17 OWNER RULING — hole-reading": "a HOLE is
+the inserted pattern as a WHOLE, in a non-capturing group, matched where it stands (`/xxx${/foo/}yyy/` =
+`/xxx(?:foo)yyy/`)". Offered by him as the ground for the spelling of the entry above: the hole already groups its
+content, so a condition alone in a hole needs no parentheses of its own. Nothing new ruled; the spelling stays in
+the spellings review, with this argument attached. The manager's note (a reading): the argument covers a
+condition that is the hole's WHOLE content (`${0: digit}`); inside a larger expression in a hole
+(`${A & (0: digit)}`) the condition's parentheses still delimit it from the `&`.
+
+### 2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)
+
+Round r54 (design, topic predspec29; five lenses and a verifier; 34 findings in 16 items P29-1..16; NO printed
+RULED answer found wrong). The predicate manager RULES: every item FIX-NOW as proposed (rev 29.1), the two general
+forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file),
+with these calls:
+- P29-6 (padded-order's CONDITION): the lane "confirmed" it on `\d+?`, a witness on which the DROPPED body agrees
+  too. A SPARSE lazy argument separates them: `(?:\d\d)+?` at n = 3: the ruled any-length-first body differs from
+  per-string fill on 0 / 2,688 / 2,688 of 19,531 texts, the dropped exact-first body equals fill. CALL: the
+  ruling's text ("a shorter string listed before a longer one ... the body's stated behaviour") covers a lazy
+  quantifier, which lists the shorter first; but the condition as told to him ("holds if the lazy case is
+  confirmed") was tested on a case that could not fail, so the run GOES BACK TO HIM as a confirm,
+  **padded-lazy-sparse**; the ruling is not stretched meanwhile (the draft says "confirmed on the dense `\d+?`
+  only"). The record line "The padded-order CONDITION is CONFIRMED" (entry "after lane predspec29") is NARROWED to
+  that.
+- P29-7 (the arithmetic warning's trigger): THE MANAGER'S CALL: ONE trigger: an arithmetic result KNOWN at compile
+  time to be nothing, whatever the cause (a non-numeral constant operand, a written `% 0`, a constant negative
+  result), draws the warning; a member list warns only when EVERY member's result is nothing. This closes the
+  `% 0` GAP the same way (number-edges ruled "no compile error of its own"; a warning is not an error) and
+  replaces reading 17's two-branch wording.
+- P29-12 (the dollar warning's hint): the warning fires on the form everywhere, as ruled; the `(x: S)` HINT is
+  printed only where it is a drop-in (an `&` operand); in a hole the hint is omitted. THE MANAGER'S CALL (wording).
+- P29-11: the form is defined on the PARSE: an `&` one of whose operands is a label read or a path read,
+  parenthesised or not, either side. THE MANAGER'S CALL.
+- Owner questions to add or re-word (asked by the manager, never picked): P29-2 the `r` and `a`-family flags
+  under flags-scope (THE DRAFT'S READING: inherited, as flags that change which texts an atom matches);
+  P29-3 the flags of a SEQUENCE operand (THE DRAFT'S READING: each operand its own inherited start, nothing passes
+  sideways), asked together with the flags-in-filter confirm; P29-9 class-first nesting inside class-positions;
+  P29-10 class-index re-worded with `enumerate(/\d/) + 1`; P29-13 **hole-export** (does a hole re-export the
+  inserted pattern's public labels where an unlabelled sequence part does not).
+- FREEZE DRIFT: the owner's rulings made DURING the round (other-holes, the option hole, negated-class-hole,
+  anything-text, zero-in-sequence, the bare condition in a hole) are NOT folded by rev 29.1; they are revision 30's
+  fold, with its own round. Rev 29.1 only NOTES, at §2.3's "`${(x: digit)}`" error sentence, that a later record
+  entry reverses it.
+WITHDRAWN readings of the manager's (refuted or narrowed by the round): "the padded-order CONDITION is CONFIRMED"
+(narrowed, above); reading 16's "the suggestion is harmless there" as a statement about every place (it changes
+the answer in a value hole: 2 / 132 / 132 of 364); T-c's "equal for filter-role arguments" (false for a negated
+operand: 4 / 168 / 216 of 781).
+
+### 2026-11-19 OWNER, on a condition without its parentheses
+
+His words, verbatim: "i'm not sure on you alone in a hole argument. i know outside a hole this is ok: A & 0: digit
+but parenthesis are better because you can't add more to the chain as A & 0"
+
+Class: a DOUBT about the manager's note of the entry above (a condition "alone in a hole" needing no
+parentheses), a RECOLLECTION ("outside a hole this is ok: A & 0: digit") and an OBSERVATION with a LEAN
+(parentheses are better: an unparenthesised condition cannot be followed by more of the chain). Nothing ruled.
+
+The recollection CHECKED against the record and the draft: NOT the draft's state. (1) 2026-11-14 01:00 (the
+manager's line in that discussion): "`name:` takes ONE operand term ..., tighter than `&`", under which
+`A & 0: digit` was legal and the chain could continue; (2) SUPERSEDED by the RULED entry extent (CF:698, C22):
+inside an entry `&` and `|` bind tighter than `:`; (3) the draft's consequence of that, a LEAN and not a ruling
+(§13, "New consequences: `:` outside a record is an error (`P & x: S`, `[x: S]`)"): today the draft makes
+`A & 0: digit` a COMPILE ERROR. His observation agrees with the ruled extent: after `A & 0: digit` anything added
+with `&` would belong to the SET (`digit & ...`), not to the chain.
+
+The manager's call (syntax; told to him): the condition KEEPS its parentheses everywhere for now, in a hole too
+(`${(0: digit)}`); the unparenthesised trailing form (`A & 0: digit`, `${0: digit}`) stays the draft's error
+with its meaning acknowledged, and is an item of the spellings review, where allowing it later changes no answer.
+
+### 2026-11-19 OWNER, the same remark in full (the message above was cut short)
+
+His words, verbatim: "i'm not sure on you alone in a hole argument. i know outside a hole this is ok: A & 0: digit
+but parenthesis are better because you can't add more to the chain as A & 0: digit & b:blah would be A & (0:
+digit & (b: blah))"
+
+Class: as the entry above (DOUBT, RECOLLECTION, OBSERVATION with a LEAN); the fuller text gives his PARSE of the
+unparenthesised chain. CHECKED: his parse IS the ruled entry extent (CF:698, C22: inside an entry `&` and `|` bind
+tighter than `:`), and under the draft the result is an existing error ("the `(major: 1 & minor: >=4)` error": a
+label inside a value). The manager's call of the entry above is unchanged.
+
+### 2026-11-19 OWNER, on his own parse of the unparenthesised chain
+
+His words, verbatim: "maybe thats the same."
+
+Class: an OBSERVATION, tentative ("maybe"), on the entry above: that `A & 0: digit & b:blah` read as
+`A & (0: digit & (b: blah))` may mean the same as the chain `A & (0: digit) & (b: blah)`. Nothing ruled.
+
+The manager's reading (HAND-WORKED from the record, not run; told to him as such): for the label `0` it IS the
+same, by the law recorded with zero-place ("the law `A & B` = `A & (0: B)`", the manager's, 2026-11-17): the set
+`digit & (b: blah)` is applied to the whole match, whose labels are A's, so the inner `(b: blah)` reads the same
+`b`. For any OTHER label it is not: in `A & (h: digit & (b: blah))` the set's world is h's text, where `b` is not
+a label; the draft makes that an error ("the `(major: 1 & minor: >=4)` error", C22). So the unparenthesised form
+would be harmless after `0:` and a trap after a named label; this supports keeping the parentheses required for
+now (the manager's call above). For the next lane to test by run: the `0` case in every mode.
+
+### 2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros
+
+His words, verbatim: "padded-lazy-sparse: stated behavior. also: we can use a second argument to padded but i
+suspect it will always be broken for some use case and 0* will be default. we need a limited(rx, 5) macro so
+limited(padded(digits), 5) which would cover all digits 00000 through 99999 which i think the way it would work
+mostly in the field. the idea that it could be 0-99999 but only padded to 3 does not sound useful. you could also
+say padded(limited(digits,5)) and the padding could be infinite. ALSO: i don't at this junction want to go too
+deeply into any one macro UNLESS it raises interesting points about the language. padded does to some degree
+because i had not thought as much about order. validate"
+
+Class, by part: (1) RULING (a slug answer to padded-lazy-sparse): STATED BEHAVIOUR: the padded-order ruling
+stands as it is; on a lazy or shortest-first argument the any-length-first body prefers the longer unpadded
+string (`padded(/(?:\d\d)+?/, 3)` SEARCHED `x0123`: `0123`@1; per-string fill `012`@1; 0 / 810 / 810 of 5,461,
+`$PCREC_TMPDIR/scratch/pred/padlazy.py`), documented, not an error. The padded-order CONDITION is thereby closed
+by his ruling, not by the lane's run. (2) OBSERVATION / LEAN on `padded`'s second argument: it can exist, he
+suspects it "will always be broken for some use case", and the DEFAULT is `0*` (no width: any number of zeros).
+Not a reversal of padded-width ("minimum", 2026-11-18), which rules what the width means WHEN given; "padded to 3
+of 0-99999 does not sound useful" is his doubt about that use. (3) an IDEA / PROPOSAL: a macro `limited(rx, 5)`
+(spelling a placeholder), composed either way round with `padded`. (4) a DIRECTION for the work: do not go deeply
+into any one macro unless it raises interesting points about the LANGUAGE (padded did: order). (5) "validate": a
+request to check the above; done in this entry.
+
+VALIDATED (`$PCREC_TMPDIR/scratch/pred/limited.py`, python; `digits := /\d+/` as the draft has it; `limited(rx, n)`
+modelled as the FILTER `rx & /(?s:.){0,n}/`, "at most n", the manager's reading of "limited"):
+- `limited(padded(digits), 5)`: WHOLE `00000`, `99999`, `7`, `007` HOLD, `123456` FAILS / SEARCHED `x1234567`
+  `12345`@1 / FIND-ALL `00042 7 1234567` [`00042`@0, `7`@6, `12345`@8, `67`@13]. It DOES cover `00000` through
+  `99999`, and ALSO every shorter digit string (`7`, `007`).
+- INCONSISTENCY 1, told to him: with `digits := /\d+/`, `padded(digits)` (the `0*` default) is the SAME SET as
+  `digits` (0 differences: `\d+` already admits leading zeros), so `limited(padded(digits), 5)` =
+  `limited(digits, 5)` (identical answers above). Padding adds strings only to an argument that EXCLUDES leading
+  zeros (a canonical numeral, an arithmetic result).
+- INCONSISTENCY 2, told to him: "00000 through 99999" reads as EXACTLY five wide; "limited" as AT MOST five. With
+  "exactly 5": WHOLE `7`, `007` FAIL; FIND-ALL [`00042`@0, `12345`@8]. Which he means is NOT settled by his words.
+- `padded(limited(digits, 5))` = `0*` then one to five digits: as above, and WHOLE `000000123` HOLDS ("the padding
+  could be infinite": SUPPORTED).
+- SEARCHED / FIND-ALL: a length limit cuts a longer run (`1234567` gives `12345` then `67`); that is the plain
+  regex `\d{1,5}`; "a number of at most five digits" in a search needs its edges stated by the writer.
+
+The manager's readings (the LANGUAGE point, for a later lane to test): (a) a macro whose body is ONE filter
+(`limited`: `rx & S`) or ONE sequence (`padded` with no width: `0*` then rx) keeps the ARGUMENT'S order, greedy or
+lazy; a macro whose body is an ALTERNATION of filtered copies (`padded` with a width) imposes the body's order,
+which is where padded-order and padded-lazy-sparse came from: his suspicion about the second argument is this
+fact. (b) the width form is then the composition he wrote, with no alternation needed where the argument's
+lengths are bounded.
+
+### 2026-11-19 OWNER, on a library document
+
+His words, verbatim: "i believe we have (or should have) a library document covering all the provided library
+functions like padded."
+
+Class: a RECOLLECTION with a REQUEST ("or should have"). CHECKED: there is NO separate library document. The
+provided names are spread over the draft: §8 "Libraries" (`startsWith`, `endsWith`, `contains`, `anchored`,
+`between`, `when`), §2.6 (`occurrences`, `contains`), §2.7's bodies table (`padded`, `quoted`, `any_case`), §R.1
+(`anything`, `peek`, `enumerate`, the string functions), `docs/design/rx_module.md` (`rx.digit`, `rx.repeat`),
+and today's record entries (`join`, `limited`, `anything := [\s\S]*`). Taken as a request, the manager's to carry
+out: ONE library document, `docs/design/predicates_library.md`, one row per provided name (what it is: a macro
+with its body, or a primitive; its status: ruled / the draft's reading / idea, with the record entry; whether it
+keeps its argument's order; the language point it raised, if any), EXTRACTED from the draft and the record, no
+new rules; the draft then points at it. To be written by a lane after revision 29.1 merges (so it reads the
+fixed draft), with the rows today's later rulings will change marked as waiting for revision 30.
+
+### 2026-11-19 OWNER, housekeeping: organize the predicate documentation (a request for a proposal)
+
+His words, verbatim: "housekeeping: we need to organize our documentation. please consider an organization.
+consider first the files and what they should contain, the ordering and relationship between the files (the
+library file depends on knowledge from the core language). there might only be a few files. each file is
+organized by sections then pieces hierarchically. each of those has a name and a tag. the tag is a path. then
+split the files into two parts. the first is the pure current definition if the pieces if it exists or an summary
+of the standing discussion. the second file contains the history and discussion and they are linked by the tags.
+the tags have status like plan items. organize it such that the base file can be read whole or scanned to
+understand the current idea of the predicate language. the details can be searched for in the discussion/history
+file based on tags or grep as needed and the individual sections read easily. model on the plan items split.
+include lint for structure."
+
+Class: a REQUEST for a proposal ("please consider an organization"), with REQUIREMENTS in his words: few files,
+ordered, the library depending on the core; sections then pieces, each with a name and a TAG that is a PATH; each
+file split in two: a BASE (the pure current definition of each piece, or a summary of the standing discussion)
+and a HISTORY / DISCUSSION file, linked by the tags; tags carry a STATUS as plan items do; the base readable
+whole or scanned; details found by tag or grep; modelled on the plan items split ([DOC-INDEX], D192,
+`docs/dev/doc_format.md`); a LINT for the structure. Not a go to restructure: the proposal is put to him first.
+The library-document request of the entry above becomes one file of this organization (no separate lane).
+
+### 2026-11-19 OWNER, addendum to the documentation request
+
+His words, verbatim: "addendum: the two parts of the files are two different files"
+
+Class: a CLARIFICATION of the request above (a REQUIREMENT): the base (current definition) and the history /
+discussion are two separate FILES per document, not two parts of one file. The proposal put to him already has
+this (`<name>.md` and `<name>_details.md`, linked by tag); nothing changes in it.
+
+### 2026-11-19 OWNER, second addendum to the documentation request: design it for the manager's own use
+
+His words, verbatim: "addendum addendum: at least two files. use more as needed. heres the concept: i want you to
+think about how you would use these files. you should be able to start with an understanding of the language and
+libraries and parked. then, as we discuss, you should be able to access reasoning and history. see what was
+rejected and why. use subagents to search for analogies in history. base it on that. my instructions are the base
+idea for you to use to build it towards the goal of us designing and building the predicate language. keep,
+modify, or reject these instructions as you reason it better"
+
+Class: a DIRECTION and a DELEGATION. The CONCEPT, his: the files are designed from how the MANAGER uses them:
+(1) start a session with an understanding of the language, the libraries and what is parked; (2) during
+discussion, reach the reasoning and history of a piece; (3) see what was REJECTED and why; (4) have subagents
+search the history for ANALOGIES. The number of files is free ("at least two ... more as needed"). His earlier
+instructions are "the base idea"; the manager may "keep, modify, or reject" them with reasons. The GOAL: "us
+designing and building the predicate language".
+
+The reading taken, and told to him: this is his go to BUILD the documentation organization (documents and their
+lint; no product code), the manager deciding its form; "use subagents to search for analogies in history" is
+read as a USE the files must serve (item 4), and the manager also applies it once now, to the design itself
+(what this project's own document splits rejected and why: [DOC-INDEX], D192).
+
+### 2026-11-19 MANAGER — after lane predspec291 (rev 29.1): review r54 applied and filed (no owner words)
+
+Lane predspec291 (`docs/dev/lanes/predspec291_report.md`; evidence 41 of 41, sabotages t1-t35 each caught)
+applied P29-1..16 as ruled and folded padded-lazy-sparse ("stated behavior") by its rulings file R1; review r54 is
+filed (`docs/dev/reviews/2026-11-19-r54-predspec29.md`, dispositions ruled). The manager's four readings of the
+brief: all SUPPORTED. No printed RULED answer moved. A FACT the lane added on padded-lazy-sparse, recorded so the
+manager's words to the owner are not left wider than the runs: the comparison "the dropped body equals per-string
+fill" depends on the fill reference: with the members taken SHORTEST FIRST (the review's and the manager's
+`padlazy.py` reference) ruled 0 / 2,688 / 2,688, dropped 0 / 0 / 0; with the members in `enumerate`'s priority
+order NEITHER body equals fill (ruled 0 / 168 / 168, dropped 0 / 2,520 / 2,520). His ruling ("stated behavior")
+does not rest on either count. Draft = REVISION 29.1, the LAST revision in the old shape; the rulings since its
+fold (other-holes, the option hole, negated-class-hole, anything-text, zero-in-sequence, the bare condition in a
+hole) and the lane's list of nine draft sentences they contradict go into the reorganized documents.

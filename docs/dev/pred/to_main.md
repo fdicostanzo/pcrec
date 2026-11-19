@@ -52,3 +52,74 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - PROPOSED EDIT to the pcrec-predicate-manager skill, section 2 (a lesson that is a rule): "A slug ruling covers the
   example and the runs it was asked with; a wider statement of it in the record is marked the manager's reading
   (same-name-count was stretched onto `$h` and corrected on his question, 2026-11-19)."
+
+## P-4 (2026-11-19 afternoon) — up; rev 29 in review r54; a proposed skill edit
+
+- ack: M-1 and your live message (lane/pred-rev28 merged; review number r54).
+- status: draft REVISION 29 on `lane/pred-rev28` (lane predspec29 merged; report `docs/dev/lanes/predspec29_report.md`);
+  critic round r54 (design, topic predspec29) running. NOT a delivery yet: the `done:` line follows rev 29.1.
+- Owner rulings today, record only so far (for rev 29.1): other-holes, the option hole's values, negated-class-hole,
+  anything-text. plus-operands is folded in rev 29.
+- PROPOSED EDIT to the pcrec-predicate-manager skill, section 2 (Frank 2026-11-19, verbatim: "in general: be suspicious
+  of my regex and confirm contemporaneously if you see inconsistencies."): add "A regex HE writes in an example or a
+  ruling is RUN before it is recorded as the rule; where it does not do what his words say, or disagrees with an
+  earlier ruling, say so in the same turn with the run; never fold or fix it silently."
+
+## P-5 (2026-11-19 evening) — the owner asked for a documentation organization; a lint request for you
+
+- Frank asked me to organize the predicate documentation (his words in COND-FAMILY, "housekeeping: organize the
+  predicate documentation" and two addenda), modelled on the plan-items split, "include lint for structure", and
+  delegated the form to me. The format I propose: `docs/dev/pred/doc_format.md` (on `lane/pred-rev28`). Not built;
+  the pilot follows rev 29.1.
+- REQUEST (yours: `scripts/` is main's): (a) the three base/details pairs registered as a profile of
+  `scripts/entry` (key = a path tag such as `core/holes/class`, or a question slug; levels 0/1/2 as doc_format.md
+  says); (b) a structure lint, rules L1-L11 of that file with a planted-fault selftest, runnable by me as a single
+  process (like `make -s test-plan-lint`). No hurry: nothing to lint exists until the pilot lands; tell me if you
+  would rather I write the lint in a lane on my branch for you to review and land.
+- New files this will create on my branch (none exists yet): `docs/design/predicates.md`, `predicates_details.md`,
+  `predicates_library.md`, `predicates_library_details.md`, `predicates_parked.md`, `predicates_parked_details.md`;
+  `predicates_draft.md` then FROZEN; `predicates_future.md` absorbed into the parked pair.
+
+## P-6 (2026-11-19 evening) — done: revision 29.1 + review r54; the document lint
+
+- done: predicates draft REVISION 29.1 with review r54 filed. Branch `lane/pred-rev28`, tip = this commit. Reports:
+  `docs/dev/lanes/predspec29_report.md` (the fold), `docs/dev/lanes/predspec291_report.md` (the fixes);
+  review `docs/dev/reviews/2026-11-19-r54-predspec29.md` (+ its directory; dispositions ruled by me; indexed in
+  reviews/NOTES.md). Evidence dirs `predspec29_evidence/`, `predspec291_evidence/`. `predicates_future.md` items 34-38.
+- done (for YOUR review and code critic round, as you asked): `scripts/pred_doc_lint.py` (rules L1-L11 of
+  `docs/dev/pred/doc_format.md`, selftest 22 runs / 11 of 11 rules, a reader `--show KEY -l N` / `--list`), its sample
+  under `scripts/tests/pred_doc/`, `scripts/tests/pred_doc_lint.py.test`, the INDEX / CLAUDE / NOTES lines. Report
+  `docs/dev/lanes/predlint_report.md`. NOT built, yours to decide: a `scripts/entry` profile (needs new accessor code:
+  three pairs, path-tag keys, slug lookup) and a `make` target (three lists to touch).
+- Lane branches merged into mine, worktrees yours to prune (wtprune): `lane/predspec29`, `lane/predspec291`,
+  `lane/predlint`.
+- [COND-FAMILY] plan-row status line, replacing P-3's: "2026-11-19: draft rev 29.1 (NOT STABLE; reviews r52, r54
+  filed), the last revision in the old shape; the owner ruled fifteen more questions on 2026-11-19 (eight folded;
+  other-holes, the option hole, negated-class-hole, anything-text, zero-in-sequence, the bare condition in a hole
+  wait); at his request the documents are being reorganized into base + details files with a structure lint
+  (docs/dev/pred/doc_format.md), pilot next; design only, no build go."
+- PROPOSED EDITS to the pcrec-critic skill, from the r54 coordinator (verbatim in
+  `docs/dev/lanes/predspec291_report.md`, STATE AT HANDOFF, items 1-4; I accept 1-3): a ruling's CONDITION check must
+  be able to fail (mutate the dropped rival into its witness); a lexical RULE-AS-CODE trigger gets a parse drill; a
+  form-keyed diagnostic's HINT is drilled at every place the form can stand.
+- PROPOSED EDITS to the pcrec-predicate-manager skill: (a) section 4, lane briefs: "no background jobs: a lane runs
+  its checks in the FOREGROUND under timeout; a lane that waits on its own background run idles and is not woken
+  (predspec291 sat 25 minutes, 2026-11-19)"; (b) section 5 / the files it names: after the reorganization the draft
+  is `docs/design/predicates.md` + pairs, read whole at wake; I will send the exact text when the pilot lands.
+
+## P-7 (2026-11-19 evening) — done: review r56 applied to the document lint; the entry profile
+
+- done: lane predlint2 merged into `lane/pred-rev28` (tip = this commit). Report `docs/dev/lanes/predlint2_report.md`;
+  review filed `docs/dev/reviews/2026-11-19-r56-predlint.md` (+ directory; your MANAGER RULINGS verbatim, my rulings
+  in their own section; indexed in reviews/NOTES.md).
+- GATE (re-run by me after the lane): `python3 -I scripts/tests/pred_doc/mut.py`: total 176, killed 160, equivalent
+  16 (each named with its reason), SURVIVED 0; `bash scripts/tests/pred_doc_lint.py.test` PASS (124 checks);
+  `scripts/entry --selftest` 75 checks, 0 failures; plan-lint clean.
+- The reader: profile `predicates` (form `pieces`) in scripts/doc_profiles.py; KEY routing row 6a (a tag
+  `(core|lib|parked)/seg/seg[/seg]`), the shape added to KEY_SHAPES for PL18; a details `slugs:` word routes by the
+  slug row; `entry -g . -p predicates --state open` lists open pieces; `--work` not wired. The lint's own
+  `--show/--list` is gone; it exposes `load_pieces` / `piece_text` to entry.
+- NOT done, yours: the critic-skill process changes (returned to you); `make` wiring; CONTRACT-13 and the shared
+  parser (PLAN). The lane did not re-run premise tests 2 and 3 on the unchanged lint (its report says so).
+- Worktree `predlint2` is yours to prune. The pilot lane preddoc1 is still running on this branch family; I will
+  name the tip to merge when it lands.
