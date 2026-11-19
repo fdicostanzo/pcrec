@@ -4204,3 +4204,5 @@ Main ruled on the four kit findings (D186 add. 2):
 - 01:18 set 2: 700 GREEN (495 s), 701 GREEN (452 s), 702 GREEN 01:17: h* = 64 (grid top; 64 cells void twice by method, the cells
   read picked 64; R2(C3)/R5 not computed at 64). "h* frozen" + value sent to main. 703 running; set 1 next. 704 by day needs
   REBUILT_BUILD only (identity at h*=64, no MOVERS).
+- 01:2x main ACKED h*=64; OWED by day 11-19: a note for main on whether h*=64 is a ceiling pick (grid top; the 64 cells void
+  twice): was any cell above 64 ever readable? (fcards-zen4-1 rule_702.txt / results*.tsv). 704 re-queue = REBUILT_BUILD only.
