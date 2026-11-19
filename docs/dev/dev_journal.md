@@ -28428,3 +28428,18 @@ Next
   L1); the census stop reads the model's prediction (my reading of D191.1, to tell Frank); F-7 a noted deviation
   with A-POSDOM as its correcting event; READYL2 discharges L2's readiness critic once the confirm critic passes.
   Fix lane spanarms8. The build lanes wait for 11-19 by day (evening hold from 20:00).
+- 19:25-19:35 (CLOSE of session 140, Frank's /close): spanarms8 delivered (lane/spanarms8 @ 0720014bc, UNMERGED:
+  review r51 filed with ruled dispositions; span_arms rev 3.1, 47 of 47 findings applied; lanecheck DONE). Its
+  calls for the confirm critic: the "whole run" pick spec hunks placed in L3's row; an L1 remodel of the head's
+  per-kind rule under register row 27's event (outside RM-1..RM-6: does my remodel-go call reach it); register
+  rows 5, 19 and the F-7 deviation as PROPOSALS. FACT (RULING-5): [CTX-SIDES-PRODUCER]'s trigger (cover B1) FIRED
+  on 2026-10-23 (bc675b020), before the row was filed 11-08; the row reads not-started and is the row that owes
+  the owner's "proved, search over" ending for `(?<=foo)bar` (today: unanchored/hybrid; `(?<=f)bar` and `foobar`
+  take the cover). Frank asked which of (2,5) / (3,6) is right for `(?<=a)a(\w)\1` on `-aaaaaq-b`: both, run in
+  python `re` and libpcre2: (2,5) from offset 0, (3,6) from offset 3; the design bug is the missing clamp at a
+  non-zero start offset. The predicate manager session came up (branch lane/pred-rev28; P-1 acks M-1; r52
+  reserved for its first critic round). Manager skill: two always-on bullets added (f9ee6814e).
+- Lessons of the session (the rules are in the skill): status lines lie, the journal and git log do not (three
+  stale rows); the architecture step's first real use found both stale rows that mattered, an aggregation of 10
+  hand tests, and, at the design round, an answer bug before any code; its RULING lens was the most productive in
+  every round and still missed D191.3 against an owner question; my own readings failed at about one in nine.
