@@ -5329,3 +5329,25 @@ of `=` is the name being defined. `(l = left, r = right) := import("blah")` bind
 `=left` is the degenerate case with the new name omitted, the same as `left = left`. Under that reading a bare
 `(a, b) := X` stays free for a POSITIONAL binding (the C++ structured binding he names), and by-name selection is
 always marked by `=`. Not tested by any run (no matching is involved; modes: n/a).
+
+### 2026-11-19 OWNER, import-symbols: a LEAN, explicitly not confirmed
+tags: parked/import-symbols
+
+Asked to confirm (1) "`=left` is shorthand for `left = left`, with `l = left` as the rename" and (2) whether the
+form applies to any map or only to `import`. HIS WORDS, whole:
+
+"import-symbols: lean =left is left=left and l=left. don't confirm yet because i want to understand the
+implications to the larger language"
+
+Class: a LEAN on (1), and an INSTRUCTION that it is NOT a ruling ("don't confirm yet"). (2) is not answered.
+import-symbols stays OPEN. Owed to him: the implications for the larger language.
+
+The manager's implications, given to him in the same turn (hand-reasoned; no matching involved; each a READING):
+(a) defined as sugar, `(l = left, =right) := X` is exactly `l := X.left` and `right := X.right`, so it adds a
+binding-list position left of `:=` and no new semantics; (b) the existing rule on a binding hiding a label
+(2026-11-13, "Warn (or error) on hiding label") applies to each bound name unchanged; (c) only what `.` can reach
+is selectable, so the public/private label rule decides what can be imported; (d) the default-imported set
+becomes an ordinary implicit line of this form, not a special mechanism; (e) the same degenerate `=name` in a
+macro CALL (`f(=x)` for `f(x = x)`) is the consistency question it raises; (f) a bare positional `(a, b) := X`
+needs an ORDERED right side, which the language does not clearly have (an array is an alternation): not needed
+for import.
