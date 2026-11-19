@@ -83,3 +83,4 @@
 ## Index entries moved out of CLAUDE.md (spanarms8, 2026-11-18; size limit)
 
 - `2026-11-15-r12-memfn-d3fix2.md` — single-critic CODE round on lane d3fix2 (set census pin, REPIN): D3G-1 (set plants test set_why, not main's wiring), D3G-2 (REPIN pins an empty/short census), D3G-3 (REPIN does not write d3_floor.tsv), D3G-4 (scratch leak), D3G-6 (remedy text) FIX-NOW, D3G-5 (dirty provenance) noted; fixed by lane d3fix3.
+- `2026-11-19-r53-l1remodels.md` (+ dir) — CODE round on lane/l1build (span_arms L1 remodel commits RM-1, RM-6, remodel 3 + census_l1.py): all three byte-identical; 14 findings on bindings, RM-6 completeness, house rules, the census STOP; dispositions ruled by the manager (11 FIX-NOW).
