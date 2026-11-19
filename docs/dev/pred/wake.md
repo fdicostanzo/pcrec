@@ -22,15 +22,17 @@ on any disagreement.
 
 ## In flight
 
-- Lane predspec28 DELIVERED and MERGED (e51e9a965): the draft on `lane/pred-rev28` is REVISION 28 (ten rulings
-  folded incl. `${@y}` = future direction; evidence 19 of 19, 14 sabotages caught). Its unsupported readings are
-  the record's "MANAGER CORRECTION" entry (numeral-width NOT moot; dollar-diagnostic gap; `${@y}` not-defined).
-- CRITIC ROUND r52 running: coordinator `crit-predspec28` (opus), round dir
-  `$PCREC_TMPDIR/scratch/crit-predspec28/` (draft `review.md`, `.coord/process.md`). A coordinator launched by a
-  session dies with it: if no review.md exists, relaunch with a NEW topic name (the round dir must be empty).
-- After hand-back: rule every disposition; FIX lane rev 28.1 (opus; files the review as
-  `docs/dev/reviews/2026-11-18-r52-predspec28.md`; also states `${@y}` as a plain not-defined error); merge;
-  `done:` line in to_main.md + SendMessage to main.
+- Rev 28 MERGED (e51e9a965). Review r52 DONE (coordinator stopped; draft at
+  `$PCREC_TMPDIR/scratch/crit-predspec28/review.md`, 22 items A-K, all verified; one ANSWER-level: A, padded's
+  two-case body reorders a search). Dispositions RULED: the record's last entry ("MANAGER — review r52 of rev 28").
+- FIX LANE predspec281 (opus) running: worktree `worktrees/predspec281`, branch `lane/predspec281` from
+  9b7503b6c: rev 28.1 + files the review as `docs/dev/reviews/2026-11-18-r52-predspec28.md`. Watch
+  `scripts/lanewatch --follow predspec281`. A lane dies with its session: if not DONE, relaunch from the brief
+  (dispositions = the record's last entry + the review draft).
+- On DONE: read its report (readings NOT SUPPORTED -> withdraw in the record), merge into `lane/pred-rev28`
+  (ALONE; `make -s test-plan-lint`), TaskStop, then DELIVER: a `done:` line in `to_main.md` (branch tip, report
+  path, the [COND-FAMILY] status line, the coordinator's accepted process changes for the critic skill: listed in
+  the lane's STATE AT HANDOFF) and a SendMessage to main.
 
 ## READ, IN THIS ORDER
 
@@ -39,10 +41,9 @@ on any disagreement.
 
 ## The question queue (after rev 28)
 
-0. NEW, from predspec28 (in owner.md, each with runs in its report): **numeral-width** narrowed (`10 - 1`: `9` or
-   `09`; I told him it fell away: CORRECT that to him first), **dollar-diagnostic**, **any-case-body**,
-   **domain-components**, **same-name-count**.
-
+0. NEW (owner.md has each in plain words; the runs are in the predspec281 report): padded-order,
+   numeral-width (full scope; tell him it was corrected twice), flags-in-filter, flags-scope, class-order,
+   dollar-diagnostic (a confirm), number-edges, any-case-body, same-name-count, construction-line (b) finite half.
 1. (array-in-hole RULED 2026-11-18: a future direction; sent to predspec28 as R1: verify it in the delivery.)
    @y there and what does that mean?"). Possibly an ideas-file item, not a question.
 2. construction-line (b): a READ in a count / class / option position.

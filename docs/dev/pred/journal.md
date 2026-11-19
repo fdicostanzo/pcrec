@@ -87,3 +87,12 @@
   tables in every mode; general form + unlocks); denylist given; no known result told. On hand-back: read
   review.md + .coord/process.md, rule dispositions, a FIX lane (rev 28.1, files the review as
   docs/dev/reviews/2026-11-18-r52-predspec28.md), merge, `done:` to main.
+- Review r52 handed back (five opus lenses, 56 raw findings, 22 items, none refuted). I RULED every disposition
+  (record entry "MANAGER — review r52 of rev 28"): A FIX-NOW (padded's body reorders a search: my two-case macro
+  reading withdrawn as an "equals"; padded-order queued for Frank); B-K FIX-NOW/PLAN as proposed, with calls:
+  ordered clauses in T8/T9, `${@y}` not-defined, product-order closed by consequence, dollar-warning re-ruled (a
+  read stands for its group's rx in emptiness diagnostics: a reading, to confirm), "the never-matching rx",
+  `strlen` placeholder. The r52 attack also corrected my correction entry (numeral-width is a full question for
+  `%`; domain-components is not a gap; the outside-domain clause is ruled). Coordinator TaskStopped.
+- LAUNCHED fix lane predspec281 (opus): rev 28.1 + filing the review. Deliver/rulings files written first;
+  lanewatch armed. owner.md and wake.md refreshed.
