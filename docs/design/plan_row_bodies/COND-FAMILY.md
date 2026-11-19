@@ -5115,3 +5115,18 @@ Class: as the entry above (DOUBT, RECOLLECTION, OBSERVATION with a LEAN); the fu
 unparenthesised chain. CHECKED: his parse IS the ruled entry extent (CF:698, C22: inside an entry `&` and `|` bind
 tighter than `:`), and under the draft the result is an existing error ("the `(major: 1 & minor: >=4)` error": a
 label inside a value). The manager's call of the entry above is unchanged.
+
+### 2026-11-19 OWNER, on his own parse of the unparenthesised chain
+
+His words, verbatim: "maybe thats the same."
+
+Class: an OBSERVATION, tentative ("maybe"), on the entry above: that `A & 0: digit & b:blah` read as
+`A & (0: digit & (b: blah))` may mean the same as the chain `A & (0: digit) & (b: blah)`. Nothing ruled.
+
+The manager's reading (HAND-WORKED from the record, not run; told to him as such): for the label `0` it IS the
+same, by the law recorded with zero-place ("the law `A & B` = `A & (0: B)`", the manager's, 2026-11-17): the set
+`digit & (b: blah)` is applied to the whole match, whose labels are A's, so the inner `(b: blah)` reads the same
+`b`. For any OTHER label it is not: in `A & (h: digit & (b: blah))` the set's world is h's text, where `b` is not
+a label; the draft makes that an error ("the `(major: 1 & minor: >=4)` error", C22). So the unparenthesised form
+would be harmless after `0:` and a trap after a named label; this supports keeping the parentheses required for
+now (the manager's call above). For the next lane to test by run: the `0` case in every mode.
