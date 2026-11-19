@@ -72,7 +72,7 @@ new entry gains a line `tags: <tag> <tag>`. Evidence directories and filed revie
 
 ## Lint (structure; requested from main, which owns `scripts/`)
 
-L1 tags unique; L2 tag grammar, and the tag's path equals the piece's file and section (or a `was:` line); L3 base
+L1 tags unique; L2 tag grammar, and the tag's path equals the piece's file and section (always: a moved piece takes a new tag, below); L3 base
 pieces and details entries are in bijection, same order; L4 status in the set, `open` carries a slug, a `ruled`
 piece's details has at least one `rulings:` line whose record title EXISTS in the record; L5 every `needs:` and
 `by:` tag exists, and a `needs:` target is earlier in the read order (core before lib before parked); L6 no history
@@ -109,7 +109,7 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
 - THE READER is `scripts/entry` (the house accessor): the pairs are an entry profile that calls the lint's parser;
   the lint has no reader surface of its own.
 
-### Changes ruled after the pilot (lane preddoc1's FORMAT PROBLEMS; the predicate manager, 2026-11-19; lint not yet changed)
+### Changes ruled after the pilot (lane preddoc1's FORMAT PROBLEMS; the predicate manager, 2026-11-19; in the lint since lane preddoc2)
 
 - A status `principle`, legal only under `core/principles/`: the owner STATED it (a principle, a direction, a
   standing instruction), which is not always a slug ruling; its `rulings:` line carries the record's own class.
@@ -120,7 +120,7 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   position (`core/holes/zero-values/<position>`).
 - The date of a `?` or `skeleton` piece is its conversion date.
 
-### Changes after the owner read the pilot (COND-FAMILY "2026-11-19 OWNER, after reading the pilot documents"; lint not yet changed)
+### Changes after the owner read the pilot (COND-FAMILY "2026-11-19 OWNER, after reading the pilot documents"; in the lint since lane preddoc2)
 
 - DIRECTORY: the six files live in `docs/design/predicates/` as `core.md`, `core_details.md`, `library.md`,
   `library_details.md`, `parked.md`, `parked_details.md` (his suggestion 5). This supersedes the paths in the table
@@ -137,6 +137,25 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   under one entry only (a retired tag is never reused); the base heading may NOT carry a `was:` line any more (it
   is history). Reader: `scripts/entry <previous tag>` resolves to the current piece and says so. This replaces
   "Tags are never renamed" above.
+
+
+### How the lint checks the changes above (lane preddoc2, 2026-11-19; the form, the manager's by delegation)
+
+- `principle` (L4): legal only on a tag under `core/principles/`; a `principle` piece, as a `ruled` one, needs at least
+  one `rulings:` item citing a record title. Its item names the record's class: `- <date> (class: <the record's
+  word>) "<his words>" (record: "<title>")`.
+- `skeleton: yes` (L8): the only value; never on a `?` piece; the old line `modes: n/a (skeleton ...)` FAILS. The
+  ratchet file gains one row per file, `<word>-skeleton<TAB><count>`, beside the `?` row `<word><TAB><count>`; each
+  row only shrinks, and `--write-ratchet` lowers both. A `?` piece turned into a skeleton piece raises the skeleton
+  row: that is a hand edit of the ratchet, visible in the diff (a conversion should go from `?` to full instead).
+- `see:` (L5): every tag exists in ANY file (forward allowed), never the piece's own tag; in pilot mode a `see:` into a
+  skipped pair is skipped as a `needs:` is.
+- `was:` and `formerly:` (details only): `was: <tag> (<YYYY-MM-DD>, <why>)`, `formerly: <module>.<name> (<YYYY-MM-DD>,
+  <why>)` with `<module>` a name or `?` (L2 grammar, the date a real date, the why non-empty); a `was:` tag equals no
+  live tag and is retired under one entry in all three files (L1). A `was:` line in a BASE file fails L6 (history).
+- Library fields, a new rule L12: every library piece that is not `?` has exactly one `module: <name>` (a dotted
+  lower-case name) or `module: ?`; `module:` and `default:` appear only in the library file; `default:` takes the one
+  value `yes`.
 
 ## Migration (after revision 29.1)
 

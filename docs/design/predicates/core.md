@@ -123,50 +123,50 @@ A regex in his example or ruling is run before it is recorded; a mismatch with h
 
 ### The sequence operator   [core/patterns/sequence]   ruled 2026-11-17
 `A SEQ B` is regex concatenation, A's text then B's, an assertion at a part's edge seeing its neighbours; it binds tighter than `&` and `|`.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Alternation   [core/patterns/alternation]   ?  2026-11-19
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-17
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` are regex's quantifiers on the operand before them; counts in braces are `repeat`; binary `+` is addition.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Counted repeats   [core/patterns/repeat]   ruled 2026-11-17
 One `repeat` construct does all counting (one argument exact, min and max a range, no maximum unbounded); it is a library definition over count holes.
 needs: core/patterns/quantifiers
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Atomic parts   [core/patterns/atomic]   ?  2026-11-19
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
 Labels set inside a lookahead are visible after it, read by the usual label rules, as in PCRE.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Labels   [core/labels]
 
 ### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-17
 A label matches every pass; a capture is PCRE's last value; `$x` and `x:` read the label.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### One label rule: branchings reset   [core/labels/one-rule]   ?  2026-11-19
 
 ### Labels across composed parts   [core/labels/flow]   ruled 2026-11-17
 A label from a pattern is whatever label it surfaces; a composed pattern and a literal have the same label behaviour (the last mention wins).
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Export and private labels   [core/labels/export]   ruled 2026-11-18
 A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Part labels and paths   [core/labels/paths]   ?  2026-11-19
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-18
 A number names a group only when there is no ambiguity; `0` is always the entire match of the rx however it is composed.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Conditions   [core/conditions]
 
@@ -176,7 +176,7 @@ modes: n/a (skeleton: the section's examples come with its conversion)
 
 ### A condition as a sequence operand   [core/conditions/in-sequence]   ruled 2026-11-18
 A condition may be an operand of the sequence operator, tested where it stands; `&` stays beside it.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### A quantifier on a condition   [core/conditions/quantified]   ruled 2026-11-18
 A postfix quantifier on a condition is a compile error.
@@ -185,11 +185,11 @@ modes: n/a (a compile error)
 ### The match so far   [core/conditions/match-so-far]   ruled 2026-11-19
 In a condition standing as a sequence operand, `0` names the match so far: the text from the start of the rx it is written in to its point.
 by: core/principles/composed-at-point
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Labels as they stand   [core/conditions/pass-start-read]   ruled 2026-11-17
 A condition reads the labels as they stand where it is written: after its group the current pass's, before it the previous pass's.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Defaults and absent labels   [core/conditions/defaults]   ?  2026-11-19
 
@@ -207,52 +207,52 @@ modes: n/a (a compile error)
 ### Can match, can filter   [core/filters/kinds]   ruled 2026-11-18
 An rx can match when it produces a match by itself and can filter when it judges a stretch as its whole world; the error is at the use that needs the other kind.
 by: core/principles/match-and-filter
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Values   [core/values]
 
 ### Reading a label   [core/values/reads]   ruled 2026-11-18
 `$y` reads the label, everywhere, holes included; a read is a one-string rx known at match time.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### One type: a match is an rx   [core/values/one-type]   ruled 2026-11-18
 A match is an rx; an operation on values applies to an rx; what cannot be built yet is the under-construction error.
 by: core/principles/build-later
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### The number domain   [core/values/number-domain]   ruled 2026-11-18
 Every number operation reads the canonical decimal numerals only (no leading zeros); a read such as `0099` is not a number.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Arithmetic   [core/values/arithmetic]   ruled 2026-11-19
 `+ - * %` take the decimal numerals only; any other operand, `% 0` or a negative result yields nothing, with a warning where known at compile time.
 by: core/principles/nothing-outside-domain
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Single-value functions   [core/values/functions]   ruled 2026-11-18
 A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Arrays   [core/arrays]
 
 ### Arrays are alternations; operations lift   [core/arrays/lift]   ruled 2026-11-18
 An array is an alternation of values; an operation on arrays applies to every combination of members, the first operand slowest, values in the order given.
 by: core/principles/general-rules
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Enumerate   [core/arrays/enumerate]   ?  2026-11-19
 
 ### The order of a class's results   [core/arrays/class-order]   ruled 2026-11-19
 A class's members have no order; where a lift gives results of different lengths from one class position, the longer is tried first.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### Two class positions in one lift   [core/arrays/class-positions]   open class-positions 2026-11-19
 The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ### The order of a class in enumerate   [core/arrays/class-index]   open class-index 2026-11-19
 The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-modes: n/a (skeleton: the section's examples come with its conversion)
+skeleton: yes
 
 ## Holes   [core/holes]
 

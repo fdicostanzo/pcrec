@@ -299,6 +299,7 @@ def pieces_items(src, profile):
         it = Item(profile, p["tag"], "\n".join(pred_doc_lint.piece_text(p, e, 0)), section=p["section"][0] if p["section"] else None,
                   state=(p["status"] or "").split(" ")[0])
         it.piece, it.entry, it.slugs, it.slug = p, e, g["slugs"], " ".join(g["slugs"])
+        it.was = g["was"]
         out.append(it)
     return out
 
@@ -400,8 +401,9 @@ class Ctx:
 
 
 class Result:
-    def __init__(self, items=None, rc=0, note=None, level=None):
+    def __init__(self, items=None, rc=0, note=None, level=None, first=None):
         self.items, self.rc, self.note, self.level = items or [], rc, note, level
+        self.first = first  # a line printed BEFORE the items (a previous tag's resolution)
 
 
 def dormant_result(p, note=None):
@@ -473,6 +475,10 @@ def route(ctx, key):
         hits = [i for p in ctx.profiles if p["form"] == "pieces" for i in (ctx.items(p) or []) if i.id == k]
         if hits:
             return Result(hits)
+        # a previous tag (a details `was:` line) resolves to the current piece, and says so first
+        hits = [i for p in ctx.profiles if p["form"] == "pieces" for i in (ctx.items(p) or []) if k in i.was]
+        if hits:
+            return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0, first="entry: was %s -> %s" % (k, ", ".join(i.id for i in hits)))
     # 6 a lower-case kebab slug: every live pair profile's index, and every `pieces` profile's details slugs
     if re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", k):
         hits = []
@@ -622,6 +628,8 @@ def run(argv, out, root=ROOT, profiles=None):
         out.write(res.note + "\n")
         return res.rc
     lines = render(res.items, level)
+    if res.first:
+        lines.insert(0, res.first)
     if res.note:
         lines.append("entry: " + res.note if not res.note.startswith("entry:") else res.note)
     emit(out, lines, res.items, level)

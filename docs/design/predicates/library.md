@@ -13,7 +13,8 @@ tag: `predicates_library_details.md`. Every name is a placeholder spelling. A `?
 A value already longer than n stands unpadded (minimum width); a shorter string listed before a longer one, or a
 lazy argument, is the body's stated behaviour, not an error.
 by: core/principles/stated-behaviour
-modes: n/a (skeleton: the section's examples come with its conversion)
+module: ?
+skeleton: yes
 
 ### unpadded   [lib/modifiers/unpadded]   ?  2026-11-19
 
@@ -43,7 +44,8 @@ modes: n/a (skeleton: the section's examples come with its conversion)
 
 ### anything   [lib/sets/anything]   ruled 2026-11-19
 `anything` is `[\s\S]*`: any text, newlines included.
-modes: n/a (skeleton: the section's examples come with its conversion)
+module: ?
+skeleton: yes
 
 ### between   [lib/sets/between]   ?  2026-11-19
 
