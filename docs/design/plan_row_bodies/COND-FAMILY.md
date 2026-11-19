@@ -5307,3 +5307,25 @@ THE MANAGER'S DESIGN for 1, 4 and 5 (form, the manager's call; `docs/dev/pred/do
 - The six files move to `docs/design/predicates/` as `core.md`, `core_details.md`, `library.md`,
   `library_details.md`, `parked.md`, `parked_details.md`. The frozen draft, the ideas file and this record stay
   where they are (hundreds of evidence and review pointers name those paths).
+
+### 2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`
+tags: parked/import-symbols
+
+Asked **import-symbols** with the manager's leaning (the left side is the selection, by name, no rx:
+`(left, right) := import("blah")`). HIS WORDS, whole:
+
+"import-symbols: double name is a weakness. the binding form is a consistency. something that is a constructed
+binding like C++. your form might work but it has implications for the rest of the language. it might also be
+(=left, =right) := ... which looks odd but is a degenerate form of macro parameter binding"
+
+Class: DISCUSSION, not a ruling. In it: an OBSERVATION conceding the weakness of his first form ("double name is a
+weakness"); an OBSERVATION on why he wrote it ("the binding form is a consistency ... a constructed binding like
+C++"); a CAUTION on the manager's form ("it has implications for the rest of the language"); an IDEA, a second
+candidate: `(=left, =right) := ...`, "a degenerate form of macro parameter binding". Spellings are placeholders.
+
+The manager's reading of the idea (told to him, to be confirmed): the left side is a parameter list in the
+named form `name = value`, as a macro call binds `else = C` and a part label is written `[x = A]`: the name left
+of `=` is the name being defined. `(l = left, r = right) := import("blah")` binds `l` to the member `left`;
+`=left` is the degenerate case with the new name omitted, the same as `left = left`. Under that reading a bare
+`(a, b) := X` stays free for a POSITIONAL binding (the C++ structured binding he names), and by-name selection is
+always marked by `=`. Not tested by any run (no matching is involved; modes: n/a).
