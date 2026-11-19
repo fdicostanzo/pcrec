@@ -6,6 +6,8 @@ and ruling R-1 (docs/dev/lanes/preddoc4_rulings.md). Sections A/B and the append
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Tip: the commit that adds this report (above 79729024c). Commits: c3752d738 (G1), 0d6526ac4 (G1b, R-1 restore),
   d096fefb1 (G2, R-1 moves and `defined:`), 79729024c (G3, everything else), then the report commit.
 - Rulings file read before each commit and before this report; the last entry is **R-1** (no later R-n).
