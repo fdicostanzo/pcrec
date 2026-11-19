@@ -1,0 +1,149 @@
+predspec281 evidence; libpcre2-8 10.46 2025-08-27
+selfcheck: NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3) ; OK
+selfcheck: NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried) ; OK
+selfcheck: MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match) ; OK
+selfcheck: callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F) ; OK
+selfcheck: callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T) ; OK
+selfcheck: ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False ; OK
+
+== PART PR: enumerate in PCRE PRIORITY order (§5.5), checked against libpcre2 itself
+PR `(?:a|ab){1,2}`: 6 strings, first aa | aab | a | aba | abab | ab ; SET = python `re`'s by brute force over the members' characters, one longer than the longest: True ; the alternation in enumerate's order vs libpcre2's own `(?:a|ab){1,2}` over 63 texts (`ab`, length <= 5): 0 / 0 / 0
+PR `\d{1,2}`: 110 strings, first 00 | 01 | 02 | 03 | 04 | 05 ; SET = python `re`'s by brute force over the members' characters, one longer than the longest: True ; the alternation in enumerate's order vs libpcre2's own `\d{1,2}` over 341 texts (`0123`, length <= 4): 0 / 0 / 0
+PR `(?:ab|a)(?:c|bc)?`: 6 strings, first abc | abbc | ab | ac | abc | a ; SET = python `re`'s by brute force over the members' characters, one longer than the longest: True ; the alternation in enumerate's order vs libpcre2's own `(?:ab|a)(?:c|bc)?` over 121 texts (`abc`, length <= 4): 0 / 0 / 0
+PR `a{0,2}?b`: 3 strings, first b | ab | aab ; SET = python `re`'s by brute force over the members' characters, one longer than the longest: True ; the alternation in enumerate's order vs libpcre2's own `a{0,2}?b` over 31 texts (`ab`, length <= 4): 0 / 0 / 0
+PR `(?:x|xy)(?:yz|y)?`: 6 strings, first xyz | xy | x | xyyz | xyy | xy ; SET = python `re`'s by brute force over the members' characters, one longer than the longest: True ; the alternation in enumerate's order vs libpcre2's own `(?:x|xy)(?:yz|y)?` over 121 texts (`xyz`, length <= 4): 0 / 0 / 0
+PR `[ba]x|b`: 3 strings, first ax | bx | b ; SET = python `re`'s by brute force over the members' characters, one longer than the longest: True ; the alternation in enumerate's order vs libpcre2's own `[ba]x|b` over 121 texts (`abx`, length <= 4): 0 / 0 / 0
+PR rev 28's model order (more copies first) for `(?:a|ab){1,2}`: aa | aab | aba | abab | a | ab ; vs libpcre2 0 / 11 / 12 of 63 (first ('S', 'aba'))
+PR `(?:a|ab){1,2}` in PRIORITY order: WHOLE `aba` HOLDS ; SEARCHED `aba` `a`@0 ; FIND-ALL `aba ab` [`a`@0, `a`@2, `a`@4] ; rev 28's order: WHOLE `aba` HOLDS ; SEARCHED `aba` `aba`@0 ; FIND-ALL `aba ab` [`aba`@0, `a`@4]
+PR OK
+PR `[1, 2] + [10, 20]` through the enumerator: 11|21|12|22 ; the pair order 110|120|210|220 = enumerate(`(?:1|2)(?:10|20)`) 110|120|210|220 ; the pair alternation vs libpcre2's concatenation 0 / 0 / 0 of 364 (`012`, length <= 5)
+PR OK
+PR enumerate(`(?<=x)ab`): REFUSED (an edge assertion: the edge-assertion error (§5.5))
+PR enumerate(`ab\b`): REFUSED (an edge assertion: the edge-assertion error (§5.5))
+PR enumerate(`a(?=b)b`): REFUSED (NOT STATED: an assertion inside the rx (§5.5 names only edge assertions); the model refuses it)
+PR enumerate(`\d+`): REFUSED (infinite)
+PR enumerate(`(\d)\1`): REFUSED (NOT STATED: a backreference (non-regular); the model refuses it)
+PR enumerate(`[0-9]{5}`): REFUSED (over budget)
+PR OK
+
+== PART CO: class-order (§5.5's LEAN: class members in codepoint order) decides lifted answers
+CO `\d + 1` CODEPOINT (the LEAN) = 1|2|3|4|5|6|7|8|9|10: WHOLE `10` HOLDS ; SEARCHED `x10` `1`@1 ; FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6]
+CO `\d + 1` DESCENDING = 10|9|8|7|6|5|4|3|2|1: WHOLE `10` HOLDS ; SEARCHED `x10` `10`@1 ; FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6]
+CO `[90] + 1` CODEPOINT (the LEAN) = 1|10: WHOLE `10` HOLDS ; SEARCHED `x10` `1`@1 ; FIND-ALL `10 3 11` [`1`@0, `1`@5, `1`@6]
+CO `[90] + 1` WRITTEN order = 10|1: WHOLE `10` HOLDS ; SEARCHED `x10` `10`@1 ; FIND-ALL `10 3 11` [`10`@0, `1`@5, `1`@6]
+CO `\d + 1` codepoint vs descending over 781 texts (`0123x`, length <= 4): 0 / 47 / 85
+CO OK
+
+== PART PO: padded-order: `padded(rx, n)`'s ORDER (padded-width RULED minimum; the order NOT ruled)
+PO `/${padded(/\d{2,3}/, 2)}/` TWO-CASE body (as `(?:\d{2}|\d{2,3})`): WHOLE `123` HOLDS ; SEARCHED `x123` `12`@1 ; FIND-ALL `123 12345` [`12`@0, `12`@4, `34`@6]
+PO the same, PER-MEMBER fill in the argument's order (T5): WHOLE `123` HOLDS ; SEARCHED `x123` `123`@1 ; FIND-ALL `123 12345` [`123`@0, `123`@4, `45`@7]
+PO   SETS equal (the body's WHOLE set over digits up to 3 = the fills of enumerate's members): True ; the two ORDERS over 9331 texts (`0123x `, length <= 5): 0 / 4416 / 4416 (first ('S', '000'))
+PO `/${padded(/\d{1,3}/, 2)}/` TWO-CASE body (as `(?:\d{2}|\d{2,3})`): WHOLE `123` HOLDS ; SEARCHED `x123` `12`@1 ; FIND-ALL `123 12345` [`12`@0, `12`@4, `34`@6]
+PO the same, PER-MEMBER fill in the argument's order (T5): WHOLE `123` HOLDS ; SEARCHED `x123` `123`@1 ; FIND-ALL `123 12345` [`123`@0, `123`@4, `45`@7]
+PO   SETS equal (the body's WHOLE set over digits up to 3 = the fills of enumerate's members): True ; the two ORDERS over 9331 texts (`0123x `, length <= 5): 0 / 4416 / 4416 (first ('S', '000'))
+PO per-member `padded(/\d{2,3}/, 2)` vs the argument `\d{2,3}` itself (no member is padded at n = 2): 0 / 0 / 0
+PO infinite argument greedy `[01]+` at n = 2, against its per-member fill (argument order) over 364 texts (`01x`, length <= 5): TWO-CASE body 0 / 160 / 160 ; REVERSED body (unpadded case first) 0 / 0 / 0 ; per-member WHOLE `011` HOLDS ; SEARCHED `x011` `011`@1 ; FIND-ALL `011 0110` [`011`@0, `0110`@4]
+PO infinite argument lazy `[01]+?` at n = 2, against its per-member fill (argument order) over 364 texts (`01x`, length <= 5): TWO-CASE body 0 / 0 / 0 ; REVERSED body (unpadded case first) 0 / 160 / 160 ; per-member WHOLE `011` HOLDS ; SEARCHED `x011` `01`@1 ; FIND-ALL `011 0110` [`01`@0, `01`@4, `10`@6]
+PO OK
+PO OK
+
+== PART FF: flags in a hole: an `&` inside the hole; x and #; n, U, xx, J; branch carry; the caseful hole
+FF flags-in-filter `/(?i)x${/ab/ & /a./}/` (a) operands own flags: WHOLE `XAB` FAILS ; SEARCHED `x XAB xab` `xab`@6 ; FIND-ALL `xab XAB xAb` [`xab`@0]
+FF flags-in-filter (b) the hole's flags reach the operands: WHOLE `XAB` HOLDS ; SEARCHED `x XAB xab` `XAB`@2 ; FIND-ALL `xab XAB xAb` [`xab`@0, `XAB`@4, `xAb`@8]
+FF against `/(?i)x${/ab/}/` (the filter admits every member) over 1555 texts (`xXaAbB`, length <= 4): (a) 6 / 78 / 78 ; (b) 0 / 0 / 0
+FF OK
+FF x `/(?x)a${/b c/}d/` PROPAGATE (text): WHOLE `abcd` HOLDS ; SEARCHED `x ab cd abcd` `abcd`@8 ; FIND-ALL `abcd ab cd` [`abcd`@0]
+FF x `/(?x)a${/b c/}d/` NOT PROPAGATED: WHOLE `abcd` FAILS ; SEARCHED `x ab cd abcd` `ab cd`@2 ; FIND-ALL `abcd ab cd` [`ab cd`@5]
+FF # `/(?x)a${/b#c/}d/` TEXT PASTE `(?x)a(?:b#c)d`: REJECTED (missing closing parenthesis)
+FF # `/(?x)a${/b#c/}d/` x REACHES THE LITERAL, its comment ends at the literal's end `(?x)a(?:b)d`: WHOLE `abd` HOLDS ; SEARCHED `x ab#cd abd` `abd`@8 ; FIND-ALL `abd ab#cd` [`abd`@0]
+FF # `/(?x)a${/b#c/}d/` NOT PROPAGATED `(?x)a(?-x:b#c)d`: WHOLE `abd` FAILS ; SEARCHED `x ab#cd abd` `ab#cd`@2 ; FIND-ALL `abd ab#cd` [`ab#cd`@4]
+FF OK
+FF n `/(?n)x${/(a)\1/}/` PROPAGATE / PCRE's own: REJECTED (reference to non-existent subpattern)
+FF n `/(?n)x${/(a)\1/}/` NOT PROPAGATED / no carry: WHOLE `xaa` HOLDS ; SEARCHED `x xaa` `xaa`@2 ; FIND-ALL `xaa xa xaa` [`xaa`@0, `xaa`@7]
+FF U `/(?U)x${/a+/}/` PROPAGATE / PCRE's own: WHOLE `xaaa` HOLDS ; SEARCHED `xaaa` `xa`@0 ; FIND-ALL `xaa xa` [`xa`@0, `xa`@4]
+FF U `/(?U)x${/a+/}/` NOT PROPAGATED / no carry: WHOLE `xaaa` HOLDS ; SEARCHED `xaaa` `xaaa`@0 ; FIND-ALL `xaa xa` [`xaa`@0, `xa`@4]
+FF xx `/(?xx)${/[a b]/}/` PROPAGATE / PCRE's own: WHOLE ` ` FAILS ; SEARCHED `x a` `a`@2 ; FIND-ALL `a b` [`a`@0, `b`@2]
+FF xx `/(?xx)${/[a b]/}/` NOT PROPAGATED / no carry: WHOLE ` ` HOLDS ; SEARCHED `x a` ` `@1 ; FIND-ALL `a b` [`a`@0, ` `@1, `b`@2]
+FF J `/(?J)(?<h>a)-${/(?<h>b)\k<h>/}/` PROPAGATE / PCRE's own: WHOLE `a-ba` HOLDS ; SEARCHED `a-bb a-ba` `a-ba`@5 ; FIND-ALL `a-ba a-bb` [`a-ba`@0]
+FF J `/(?J)(?<h>a)-${/(?<h>b)\k<h>/}/` OUTER BINDING NOT REACHED (own namespace): WHOLE `a-ba` FAILS ; SEARCHED `a-bb a-ba` `a-bb`@0 ; FIND-ALL `a-ba a-bb` [`a-bb`@5]
+FF branch carry `/(?:a(?i)b|${/c/})/` PROPAGATE / PCRE's own: WHOLE `C` HOLDS ; SEARCHED `xC` `C`@1 ; FIND-ALL `c C aB` [`c`@0, `C`@2, `aB`@4]
+FF branch carry `/(?:a(?i)b|${/c/})/` NOT PROPAGATED / no carry: WHOLE `C` FAILS ; SEARCHED `xC` FAILS ; FIND-ALL `c C aB` [`c`@0, `aB`@4]
+FF OK
+FF the CASEFUL hole `/x${/ab/}/` (no flag anywhere): WHOLE `xAB` FAILS ; SEARCHED `xAB xab` `xab`@4 ; FIND-ALL `xab xAB XAB` [`xab`@0]
+FF OK
+FF `any_case(/(?-i)ho/)`: the body `/(?i:${rx})/` vs the primitive over 85 texts (`hHoO`, length <= 3): 3 differ ['hO', 'Ho', 'HO']
+FF OK
+
+== PART NW: numeral-width at its full scope (number-domain RULED canonical; WIDTH KEPT = zero-padded to the operand's width)
+NW `$y - 1` over the canonical y 0..9999 (10,000 operands): CANONICAL vs WIDTH KEPT differ on 3 ; results narrower than the operand 3 (first ['10', '100', '1000'])
+NW `$y - 10` over the canonical y 0..9999 (10,000 operands): CANONICAL vs WIDTH KEPT differ on 30 ; results narrower than the operand 30 (first ['10', '11', '12'])
+NW `$y * 0` over the canonical y 0..9999 (10,000 operands): CANONICAL vs WIDTH KEPT differ on 9990 ; results narrower than the operand 9990 (first ['10', '11', '12'])
+NW `$y % 7` over the canonical y 0..9999 (10,000 operands): CANONICAL vs WIDTH KEPT differ on 9990 ; results narrower than the operand 9990 (first ['10', '11', '12'])
+NW `$y + 1` over the canonical y 0..9999 (10,000 operands): CANONICAL vs WIDTH KEPT differ on 0 ; results narrower than the operand 0 (first [])
+NW `$y * 3` over the canonical y 0..9999 (10,000 operands): CANONICAL vs WIDTH KEPT differ on 0 ; results narrower than the operand 0 (first [])
+NW `/(?<y>\d+)-${$y - 1}/` CANONICAL: WHOLE 10-9 HOLDS, 10-09 FAILS ; SEARCHED `10-09 10-9` `10-9`@6 ; FIND-ALL `10-9 100-99 100-099` [`10-9`@0, `100-99`@5]
+NW the same, WIDTH KEPT: WHOLE 10-9 FAILS, 10-09 HOLDS ; SEARCHED `10-09 10-9` `10-09`@0 ; FIND-ALL `10-9 100-99 100-099` [`100-099`@12]
+NW `/(?<y>\d+)-${$y % 7}/` CANONICAL: WHOLE 10-3 HOLDS, 10-03 FAILS ; SEARCHED `10-03 10-3` `0-0`@1 ; FIND-ALL `10-3 100-2 100-002` [`10-3`@0, `100-2`@5, `0-0`@13]
+NW the same, WIDTH KEPT: WHOLE 10-3 FAILS, 10-03 HOLDS ; SEARCHED `10-03 10-3` `10-03`@0 ; FIND-ALL `10-3 100-2 100-002` [`100-002`@11]
+NW OK
+NW two reads `$a - $b` over a >= b in 0..299 (45150 pairs): CANONICAL vs a's width 20900 ; vs b's width 15950 ; a's vs b's 4995
+NW `/(?<a>\d+)-(?<b>\d+)=${$a - $b}/` CANONICAL: WHOLE 100-1=99 HOLDS, 100-1=099 FAILS ; SEARCHED `100-1=099 100-1=99` `100-1=99`@10 ; FIND-ALL `100-1=99 100-1=099 5-5=0` [`100-1=99`@0, `5-5=0`@19]
+NW `/(?<a>\d+)-(?<b>\d+)=${$a - $b}/` WIDTH KEPT (a's): WHOLE 100-1=99 FAILS, 100-1=099 HOLDS ; SEARCHED `100-1=099 100-1=99` `100-1=099`@0 ; FIND-ALL `100-1=99 100-1=099 5-5=0` [`100-1=099`@9, `5-5=0`@19]
+NW `/(?<a>\d+)-(?<b>\d+)=${$a - $b}/` WIDTH KEPT (b's): WHOLE 100-1=99 HOLDS, 100-1=099 FAILS ; SEARCHED `100-1=099 100-1=99` `100-1=99`@10 ; FIND-ALL `100-1=99 100-1=099 5-5=0` [`100-1=99`@0, `5-5=0`@19]
+NW `${($y - 1) + 1}` over 0..9999: WIDTH KEPT on EVERY result vs CANONICAL 3 differ ; WIDTH KEPT on the hole's result only 0
+NW `/(?<y>\d+)-${($y - 1) + 1}/` CANONICAL: WHOLE `10-10` HOLDS ; SEARCHED `x10-10` `10-10`@1 ; FIND-ALL `10-10 9-9 100-100` [`10-10`@0, `9-9`@6, `100-100`@10]
+NW `/(?<y>\d+)-${($y - 1) + 1}/` WIDTH KEPT on every result: WHOLE `10-10` FAILS ; SEARCHED `x10-10` FAILS ; FIND-ALL `10-10 9-9 100-100` [`9-9`@6]
+NW `/(?<y>\d+)-${($y - 1) + 1}/` WIDTH KEPT on the hole's result: WHOLE `10-10` HOLDS ; SEARCHED `x10-10` `10-10`@1 ; FIND-ALL `10-10 9-9 100-100` [`10-10`@0, `9-9`@6, `100-100`@10]
+NW OK
+NW WIDTH KEPT vs the composition `padded($y op k, strlen($y))` (padded-width RULED minimum): `- 1` 0 ; `- 10` 0 ; `* 0` 0 ; `% 7` 0 ; `+ 1` 0 ; `* 3` 0 ; total 0 of 60000
+NW OK
+NE `/(?<y>\d+)-${$y % 0}/` THE DRAFT'S READING (outside the domain: nothing): WHOLE 5-0 FAILS, 5-5 FAILS ; SEARCHED `x5-0 5-5` FAILS ; FIND-ALL `5-0 7-7 0-0` []
+NE `/(?<y>\d+)-${$y - 10}/` THE DRAFT'S READING (outside the domain: nothing): WHOLE 15-5 HOLDS, 5--5 FAILS ; SEARCHED `5--5 15-5` `15-5`@5 ; FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `10-0`@10]
+NE the same `- 10`, a SIGNED result (the other candidate): WHOLE `5--5` HOLDS ; SEARCHED `5--5 15-5` `5--5`@0 ; FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `5--5`@5, `10-0`@10]
+NE `$y % 0` the other candidate: a COMPILE ERROR (the divisor is a compile-time constant): every mode refused (HAND-WORKED; no model needed)
+NE OK
+
+== PART SN: same-name-twice at the LANGUAGE level (RULED: the literal LEGAL; `\k<h>` to a name two groups carry a COMPILE ERROR at the backreference unless `(?J)`)
+SN `(?<h>a)(?<h>b)`: the LANGUAGE LEGAL: WHOLE `ab` HOLDS ; SEARCHED `xab` `ab`@1 ; FIND-ALL `ab ab` [`ab`@0, `ab`@3] ; libpcre2 on the literal as written: REJECTED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
+SN `(?<h>\d)(?<h>\d)-\k<h>`: the LANGUAGE ERROR at the backreference (offset 17) ; libpcre2 on the literal as written: REJECTED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
+SN `(?<h>\d)(?<h>\d)-\2`: the LANGUAGE LEGAL: WHOLE `12-2` HOLDS ; SEARCHED `x12-1 34-4` `34-4`@6 ; FIND-ALL `12-2 34-3 56-6` [`12-2`@0, `56-6`@10] ; libpcre2 on the literal as written: REJECTED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
+SN `(?J)(?<h>\d);(?:(?<h>\d)|x)\k<h>`: the LANGUAGE LEGAL: WHOLE `3;x3` HOLDS ; SEARCHED `3;x3 3;77` `3;x3`@0 ; FIND-ALL `3;x3 3;77 3;73` [`3;x3`@0, `3;73`@10] ; libpcre2 on the literal as written: COMPILES
+SN `(?<h>\d);(?:(?<h>\d)|x)\k<h>`: the LANGUAGE ERROR at the backreference (offset 23) ; libpcre2 on the literal as written: REJECTED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
+SN same-name-count `/(?<h>a)-${q}\k<h>/`, q := /(?<h>b)/: SCOPED (the record's "inserted patterns' groups stay scoped": q's group is not a second h): WHOLE `a-ba` HOLDS ; SEARCHED `x a-bb a-ba` `a-ba`@7 ; FIND-ALL `a-ba a-bb a-ba` [`a-ba`@0, `a-ba`@10] ; COUNTED: a COMPILE ERROR at the backreference, every mode
+SN OK
+
+== PART DD: dollar-diagnostic: for the emptiness diagnostics a read stands for ITS GROUP'S rx (the manager's call 4, THE DRAFT'S READING)
+DD `/(?<x>\d+)-/ & ($x & <5)`: the diagnostic FIRES ; texts with a hit over 485: 0 / 0 / 0
+DD `/(?<x>\d+)/ & ($x & <5)`: the diagnostic silent ; texts with a hit over 485: 3 / 417 / 417
+DD `/(?<x>\d)/ & ($x & >100)`: the diagnostic FIRES ; texts with a hit over 485: 0 / 0 / 0
+DD `/(?<x>\d\d)-?/ & ($x & <5)`: the diagnostic FIRES ; texts with a hit over 485: 0 / 0 / 0
+DD `/(?<x>\d+)-?/ & ($x & <5)`: the diagnostic silent ; texts with a hit over 485: 3 / 417 / 417
+DD OK
+
+== PART RC: read COMPOUNDS lifted per member (THE DRAFT'S READING: each member a constant or a read, in the compound's order)
+RC `/(?<y>\d)-${($y | "9") + 1}/`: WHOLE `3-10` HOLDS ; SEARCHED `x0-10` `0-1`@1 ; FIND-ALL `3-4 3-10 0-10` [`3-4`@0, `3-10`@4, `0-1`@9] ; vs the compile-time copies `(?:0-(?:1|10)|...|9-(?:10|10))` in libpcre2 0 / 0 / 0
+RC `/(?<y>\d)-${($y & <5) + 1}/`: WHOLE `3-4` HOLDS ; SEARCHED `7-8 3-4` `3-4`@4 ; FIND-ALL `3-4 7-8 4-5` [`3-4`@0, `4-5`@8]
+RC `/(?<y>\d)-${($y . "E") + 1}/` (`3E` is no numeral: nothing): WHOLE `3-4` FAILS ; SEARCHED `3-4` FAILS ; FIND-ALL `3-4 3-3E` []
+RC OK
+
+== PART TT: T8/T9 as ONE class per operand, by an ORDERED clause list (the manager's call 1)
+TT `left(/(?<=x)ab/, 2)` / `/(?<=x)ab/ + 1`: COMPILE ERROR (enumerate's edge-assertion error)
+TT `left(/(?<=x)\d+/, 2)` / `/(?<=x)\d+/ + 1`: COMPILE ERROR (enumerate's edge-assertion error)
+TT `left(/\b\d+\b/, 2)` / `/\b\d+\b/ + 1`: COMPILE ERROR (enumerate's edge-assertion error)
+TT `left(/\d+/, 2)` / `/\d+/ + 1`: UNDER CONSTRUCTION
+TT `left(/[0-9]{5}/, 2)` / `/[0-9]{5}/ + 1`: UNDER CONSTRUCTION
+TT `left(/foobar|bazqux/, 2)` / `/foobar|bazqux/ + 1`: BUILT NOW
+TT `left(/\d/, 2)` / `/\d/ + 1`: BUILT NOW
+TT OK
+
+== PART UN: the never-matching rx as a PCRE spelling of the unset read; a value hole in a lookbehind
+UN `/(?<y>\d)?-${$y | "x"}/` (callout model) vs the PCRE spelling `(?<y>\d)?-(?:(?(y)\k<y>|(?!))|x)` over 1365 texts: 0 / 0 / 0 (first None)
+UN libpcre2 `(?<y>\d+)-(?<=\k<y>-)x` (the PCRE analogue of a value hole in a lookbehind): REJECTED (length of lookbehind assertion is not limited)
+UN libpcre2 `(?<y>\d)-(?<=\k<y>-)x` (the PCRE analogue of a value hole in a lookbehind): WHOLE `3-x` HOLDS ; SEARCHED `x3-x` `3-x`@1 ; FIND-ALL `3-x 7-x` [`3-x`@0, `7-x`@4]
+UN OK
+
+== PART PW: padded's `0*` arm (FIXIND-14: a witness that separates `0*` from `0?`)
+PW `/(?<y>\d{4})-${padded($y + 1)}/`: WHOLE `2025-002026` HOLDS ; SEARCHED `x2025-002026` `2025-002026`@1 ; FIND-ALL `2025-002026 2025-02026 2025-2026` [`2025-002026`@0, `2025-02026`@12, `2025-2026`@23]
+PW OK
+
+== CHECKS: 27 of 27 OK
