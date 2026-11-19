@@ -5429,3 +5429,21 @@ Offered `(=, _ = left)` in place of his `(=, left=_)` (the entry above: the rule
 The reading taken: a RULING on the meaning with the corrected direction: in a `(=)` import, `_ = left` binds the
 member `left` to the unusable name `_`, so it is left out and the name `left` stays free ("left could be bound
 later"). The spelling remains a placeholder for the spellings review.
+
+### 2026-11-19 OWNER, import-symbols: several modules in one import; a conflict is a compile error
+tags: parked/import-symbols
+
+HIS WORDS, whole: "import-symbol: (=) := import("pcrec"|"numbers"). conflicts are a compiler error, import
+separately."
+
+Class: a RULING on the conflict ("conflicts are a compiler error, import separately": two modules imported in one
+`(=)` that both carry a name is a compile error; the user imports them in separate lines, where the override
+entries handle it). `pcrec` and `numbers` as module names are his examples, not rulings.
+
+It MEETS AN EARLIER RULING, flagged to him in the same turn: 2026-11-14 addendum, "`import(...)`'s argument is a
+set of names (an rx over file names, consistent with export); it must resolve to EXACTLY ONE file; zero or
+several matches = compile error listing the candidates." By that rule `import("pcrec"|"numbers")` is itself a
+compile error (two files). The manager's reading of what he now means, ASKED, not applied: the argument set may
+resolve to SEVERAL files, the result is the union of their maps, a member name carried by two of them is a
+compile error, and zero matches stays an error. Open as the question **import-several** until he confirms that
+the 2026-11-14 "exactly one file" is reversed.
