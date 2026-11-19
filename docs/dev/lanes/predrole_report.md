@@ -1,7 +1,8 @@
 # predrole report
 
 ## STATE AT HANDOFF
-Branch lane/predrole, committed. Rulings file empty: last R-n applied: none. Validation complete, nothing owed.
+Branch lane/predrole, committed. Rulings file empty: last R-n applied: none.
+OWED: none
 
 ## WHAT CHANGED
 - scripts/session_role: registers and `--get` returns role `pred` (usage 64 for others, as before); header updated. Premise test: `session_role pred abc123` with a scratch HOOK_ROLES_DIR registered after the change.
