@@ -34,4 +34,5 @@ Control on main e121371b2 is clean for all three (g2 passes, S526 DETECTED, S113
 - Cleanup: the control worktree worktrees/covtri1119-ctl was removed (wtprune --apply --force covtri1119-ctl).
 
 ## STATE AT HANDOFF
-Rulings applied: R1, R2 (the two mech rows; R2's "more may follow": none other found in 89 of 90 shards). OWED: none. Fix commit a2e89e6d0 (+ report commit) on lane/covtri1119. Cloud runs: see the branch names in the DONE line.
+OWED: none
+Rulings applied: R1, R2 (the two mech rows; R2's "more may follow": none other found in 89 of 90 shards). Fix commit a2e89e6d0 (+ report commit) on lane/covtri1119. Cloud runs: see the branch names in the DONE line.
