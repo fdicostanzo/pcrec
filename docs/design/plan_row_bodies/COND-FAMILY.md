@@ -5175,3 +5175,19 @@ lazy; a macro whose body is an ALTERNATION of filtered copies (`padded` with a w
 which is where padded-order and padded-lazy-sparse came from: his suspicion about the second argument is this
 fact. (b) the width form is then the composition he wrote, with no alternation needed where the argument's
 lengths are bounded.
+
+### 2026-11-19 OWNER, on a library document
+
+His words, verbatim: "i believe we have (or should have) a library document covering all the provided library
+functions like padded."
+
+Class: a RECOLLECTION with a REQUEST ("or should have"). CHECKED: there is NO separate library document. The
+provided names are spread over the draft: §8 "Libraries" (`startsWith`, `endsWith`, `contains`, `anchored`,
+`between`, `when`), §2.6 (`occurrences`, `contains`), §2.7's bodies table (`padded`, `quoted`, `any_case`), §R.1
+(`anything`, `peek`, `enumerate`, the string functions), `docs/design/rx_module.md` (`rx.digit`, `rx.repeat`),
+and today's record entries (`join`, `limited`, `anything := [\s\S]*`). Taken as a request, the manager's to carry
+out: ONE library document, `docs/design/predicates_library.md`, one row per provided name (what it is: a macro
+with its body, or a primitive; its status: ruled / the draft's reading / idea, with the record entry; whether it
+keeps its argument's order; the language point it raised, if any), EXTRACTED from the draft and the record, no
+new rules; the draft then points at it. To be written by a lane after revision 29.1 merges (so it reads the
+fixed draft), with the rows today's later rulings will change marked as waiting for revision 30.
