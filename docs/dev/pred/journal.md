@@ -261,3 +261,9 @@ parts (an answer against a compile error): NEW owner question bare-condition-lab
 (doc_format.md): a `principle` status; `skeleton: yes`; one piece one status (split zero-values); the `?` date.
 to_main P-8 names the tip. NEXT: show Frank the holes section; on his look, the conversion of the remaining sections
 (lanes per section group) with the two lint additions; then the completeness critic round.
+
+## 2026-11-19 (evening) — main merged the pilot; the lint is in make test
+Main merged the pilot (main fceff8f98) and wired the lint into make test (section test-doc-lint, 76024ee9e): a
+document change that breaks the lint turns make test red, so RUN THE LINT BEFORE NAMING A TIP. Main merged back
+into my branch (plan-lint and document lint clean). My two later lint additions get their own small code round from
+main. Waiting on Frank: doc-shape (his look at the pilot). Nothing running.
