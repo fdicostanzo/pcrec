@@ -4542,3 +4542,22 @@ The manager's readings, for the next lane to test: (a) inheritance is transitive
 `/(?i)${A}/`, gives B the outer flags through A; (b) a binding therefore has no fixed set of strings: what A matches
 is settled where A is used, and anything computed from A alone (a count, an enumerate, a `when` test) reads A under
 A's own flags.
+
+### 2026-11-19 OWNER RULING — flags-scope
+
+His words, verbatim: "i agree with your inherit table excepting that U should also not be inherited. one could make a
+case that only i should be inherited"
+
+Class: RULING for the first sentence (it answers the slug question flags-scope, asked with a split table and
+"move individual flags between the two groups"); OBSERVATION for the second ("one could make a case that only i
+should be inherited": not ruled, kept as a possible narrowing).
+
+The reading of "agree" taken, and told to him: the manager's split table with `U` moved. An rx inserted in a hole
+(a direct literal or a binding) INHERITS `i`, `m`, `s` from the flags in force at the hole; it does NOT inherit `U`,
+`x`, `xx`, `n`; `J` is left to the question same-name-count. A flag the inserted rx writes for itself wins, as ruled.
+
+What this changes in rev 28.1 (THE DRAFT'S READING there was "`n`, `U`, `xx` and `J` propagate like `i`", and the
+manager's reading m1 had `x` propagate): `/(?n)x${/(a)\1/}/` is no longer a compile error; `/(?U)x${/a+/}/` SEARCHED
+`xaaa` gives `xaaa`@0 (rev 28.1's PART FF printed both candidates); a binding `/a b/` in a `(?x)` hole keeps its
+space. The manager's readings, for the next lane to test: (a) the not-inherited flags are simply the inserted rx's
+own defaults (off unless it writes them), at any depth; (b) `m` and `s` stay inherited until he rules the narrowing.
