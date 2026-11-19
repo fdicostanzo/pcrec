@@ -4523,3 +4523,22 @@ hole, a flag it writes for itself winning (candidate (b) of the draft's flags-in
 the plain hole). An `&` written at program level has no surrounding rx and its sides keep their own flags. Also to
 test: a condition's set and a filter-role argument inside a hole (draft row 138, reading m2) under the same sentence;
 `any_case` against `/(?i:${rx})/` for filtered arguments.
+
+### 2026-11-19 OWNER, discussing flags and a binding used in a hole
+
+His words, verbatim: "lets talk about the flags issue and make sure we understand it. if i write a binding A with a
+bunch of rx. then i use A like /(?i)${A}/ does A inherit or only direct // literals. i'd say it does. if the flag
+status is important to an rx, its that rx's responsibility to set them the way it wants and not assume. so if one
+builds up an rx, they inherit the flags of the surrounding. we might consider that on a flag by flag basis but that
+would be my expectation"
+
+Class: DISCUSSION with a LEAN ("i'd say it does", "that would be my expectation"); a PRINCIPLE stated: an rx that cares
+about a flag sets it itself and does not assume. "flag by flag" is left open by him (the question flags-scope).
+
+Against the draft: rev 28 already gives a binding in a hole the hole's flags (`q := /a/` at `/(?i)(?<y>a)-${q}/`,
+R.1.14, run in rev 28's PART FL), so his expectation and the draft agree.
+
+The manager's readings, for the next lane to test: (a) inheritance is transitive: `A := /x${B}/`, `B := /ab/`, used at
+`/(?i)${A}/`, gives B the outer flags through A; (b) a binding therefore has no fixed set of strings: what A matches
+is settled where A is used, and anything computed from A alone (a count, an enumerate, a `when` test) reads A under
+A's own flags.
