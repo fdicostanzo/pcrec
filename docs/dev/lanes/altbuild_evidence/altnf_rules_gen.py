@@ -56,6 +56,7 @@ CELLS = [
  ("S-w: its capture twin", "byte", "(?:ab|(a)d|ad)\\1?", [b"ada", b"ad", b"ab"]),
  ("S-h: row 1 must not read a head past a missing position", "byte", "(?:ab|a(?:x)?|ad)", [b"ad", b"ax", b"ab"]),
  ("S-h control: a repeat contributes no head, row 3 refuses", "byte", "(?:ab|ax+|ad)", [b"ad", b"axx", b"ab"]),
+ ("S-b (review r53 F3): a backreference is a WALL in the head rule; read as a unit, ad merges past \\1dd", "byte", "(a)(?:ab|\\1dd|ad)", [b"aadd", b"aab", b"aad"]),
  ("row 2 reads the CONSUMED width, never a lookahead's (r7 SND-4)", "byte", "(?:ab|(?=ad)a|ad)", [b"ad", b"ab"]),
  ("a lookahead holding a capture writes (row 3)", "byte", "(?:ab|(?=(a))ad|ad)", [b"ad", b"ab"]),
  ("P never keys through \\K (r7 SND-3)", "byte", "(?:x\\Kac|xab)", [b"xac", b"xab"]),

@@ -75,6 +75,17 @@ m "ad" 0 2
 m "axx" 0 3
 m "ab" 0 2
 
+# S-b (review r53 F3): a backreference is a WALL in the head rule; read as a unit, ad merges past \1dd
+# pcre2-only
+pattern (a)(?:ab|\1dd|ad)
+features all
+m "aadd" 0 4
+g 1 0 1
+m "aab" 0 3
+g 1 0 1
+m "aad" 0 3
+g 1 0 1
+
 # row 2 reads the CONSUMED width, never a lookahead's (r7 SND-4)
 # pcre2-only
 pattern (?:ab|(?=ad)a|ad)
