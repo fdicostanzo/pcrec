@@ -6,10 +6,12 @@ history are in `core_details.md` (this directory) under the same tag; the owner'
 (`docs/design/plan_row_bodies/COND-FAMILY.md`). Format: `docs/dev/pred/doc_format.md`. Then read
 `library.md` (the provided names) and `parked.md` (ideas, not in the language).
 
-Status words: `ruled` (the owner ruled it), `reading` (the draft's or the manager's, not ruled), `open <slug>` (a
+Status words: `ruled` (the owner ruled it), `principle` (under `core/principles` only: the owner STATED it outside a
+slug ruling; its details name the record's class), `reading` (the draft's or the manager's, not ruled), `open <slug>` (a
 question for him: the body is a reading or a summary, with the candidates), `under-construction`, `?` (not yet
 converted from `docs/design/predicates_draft.md`, which stays the source until its section is converted). Every spelling is a
-placeholder (`core/spellings/placeholders`). Examples are run: WHOLE (the whole value), SEARCHED (the first match),
+placeholder (`core/spellings/placeholders`). A body line `skeleton: yes` marks a piece whose statement is verified
+and whose body is not yet converted. A `see:` line points at a library name the piece mentions (not needed to read it). Examples are run: WHOLE (the whole value), SEARCHED (the first match),
 FIND-ALL (every match, again from the end).
 
 ## Principles   [core/principles]
@@ -33,7 +35,7 @@ by: core/principles/regex-default
 The wording he agreed to, with his asterisk (*): "two patterns that match the same subjects and set their labels the
 same way answer every condition alike" (*).
 
-### A set never contains absence (the manager's name)   [core/principles/no-absence]   ruled 2026-11-16
+### A set never contains absence (the manager's name)   [core/principles/no-absence]   principle 2026-11-16
 "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set".
 Sets are sets of strings; absence is never a member of one.
 
@@ -43,12 +45,12 @@ The same stance, his words elsewhere: "it's difficult to figure out now what tha
 to ban it"; "took the conservative route that eg repeat took a single decimal"; "When: start with required then".
 A refused form can be allowed later without changing any existing answer.
 
-### One consistent, general rule (the manager's name)   [core/principles/general-rules]   ruled 2026-11-18
+### One consistent, general rule (the manager's name)   [core/principles/general-rules]   principle 2026-11-18
 "What is needed is a consistent, general rule about it and not something specific to adding to arrays for example."
 His reason when the rule came: "It's consistent that alternations combine on the product and multiply the rx and
 produce more alternations".
 
-### An rx sets the flags it needs (the manager's name)   [core/principles/rx-owns-flags]   ruled 2026-11-19
+### An rx sets the flags it needs (the manager's name)   [core/principles/rx-owns-flags]   principle 2026-11-19
 "if the flag status is important to an rx, its that rx's responsibility to set them the way it wants and not assume."
 "so if one builds up an rx, they inherit the flags of the surrounding."
 
@@ -67,13 +69,13 @@ bound values you can't see".
 "this is why each target area of the hole is a different thing with its own rules."
 No rule of one hole position carries to another by default.
 
-### Warnings are structural or library-defined (the manager's name)   [core/principles/structural-warnings]   ruled 2026-11-17
+### Warnings are structural or library-defined (the manager's name)   [core/principles/structural-warnings]   principle 2026-11-17
 "Warnings should be structural or definable by a library option."
 
 ### Rx that can match, rx that can filter (the manager's name)   [core/principles/match-and-filter]   ruled 2026-11-18
 "There is rx that can match. There is rx that can filter. Neither is wholly a subset of the other"
 
-### A matching language (the manager's name)   [core/principles/matching-language]   ruled 2026-11-17
+### A matching language (the manager's name)   [core/principles/matching-language]   principle 2026-11-17
 "I like this language because it's in terms no normal imperative language is." ... "it's a matching language not a finding language"
 "It's a bit deceptive in that it looks like functions and predicates and loops but it's not."
 
@@ -91,18 +93,18 @@ An operation outside its domain yields no match, at compile time as at run time.
 "The following can be delayed in build." ... "I'd like to consider that unbuilt territory however and the error is an "under construction" sign."
 A meaning can be acknowledged and its build deferred: the program is refused with the under-construction error.
 
-### Exact wording (the manager's name)   [core/principles/exact-wording]   ruled 2026-11-19
+### Exact wording (the manager's name)   [core/principles/exact-wording]   principle 2026-11-19
 "you are a lawyer in your exact wording. this is what is needed now."
 On the manager's method: rules are stated exactly.
 
-### Check his regex (the manager's name)   [core/principles/check-his-regex]   ruled 2026-11-19
+### Check his regex (the manager's name)   [core/principles/check-his-regex]   principle 2026-11-19
 "be suspicious of my regex and confirm contemporaneously if you see inconsistencies."
 A regex in his example or ruling is run before it is recorded; a mismatch with his words is told the same turn.
 
-### The language, not one macro (the manager's name)   [core/principles/language-over-macros]   ruled 2026-11-19
+### The language, not one macro (the manager's name)   [core/principles/language-over-macros]   principle 2026-11-19
 "i don't at this junction want to go too deeply into any one macro UNLESS it raises interesting points about the language."
 
-### Use the rules as defined (the manager's name)   [core/principles/labels-as-defined]   ruled 2026-11-19
+### Use the rules as defined (the manager's name)   [core/principles/labels-as-defined]   principle 2026-11-19
 "i say the strategy is to use labels as they are defined and see if there is a problem."
 
 ## The model   [core/model]
@@ -347,7 +349,7 @@ by: core/principles/positions-own-rules
 - `[${lo}-z]`, lo := [a, x], is `[a-z]|[x-z]`, which collapses to `[a-z]`.
 - A range WRITTEN with single values out of order (`[z-a]`) stays a compile error, as PCRE has it; removal
   applies only to members of an alternation (a reading, run).
-- Every member removed: the never-matching rx (core/holes/zero-values).
+- Every member removed: the never-matching rx (core/holes/zero-values/class).
 WHOLE `b` HOLDS, `x` FAILS, `n` FAILS / SEARCHED `-xb` `b`@2 / FIND-ALL `b x n a` [`b`@0, `a`@6] (`/[${lo}-m]/`, lo := [a, x]: the member `x-m` removed)
 
 ### The option hole   [core/holes/option]   ruled 2026-11-19
@@ -363,17 +365,43 @@ by: core/principles/positions-own-rules core/principles/conservative-first
 WHOLE `AB` HOLDS, `ab` HOLDS / SEARCHED `x AB` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})ab/`, o := "i"; with o := "" WHOLE `AB` FAILS)
 
 ### Zero values in a hole   [core/holes/zero-values]   reading 2026-11-19
-An empty array `${[]}` has one meaning per position: pattern and class, the never-matching rx; count, every copy removed; name and option, a compile error.
-needs: core/holes/pattern core/holes/count core/holes/name core/holes/class core/holes/option
-| position | zero values |
+An empty array `${[]}` has one meaning per position, each stated by its own sub-piece below; the count VALUE zero is not this case.
+needs: core/holes/insert
+by: core/principles/positions-own-rules
+| position | sub-piece |
 |---|---|
-| pattern | an alternation of no members, the never-matching rx `(?!)` (a reading) |
-| count | every copy removed: that literal never matches, with the can-never-match warning (a reading) |
-| group name | a compile error: not exactly one name (a reading) |
-| class member, range end | an alternation of no members, the never-matching rx (a reading, run) |
-| option | a compile error (ruled: "a nothing in an option would have to be an error") |
-The count VALUE zero is not this case: `x{0}` drops its object (core/holes/count).
+| pattern | core/holes/zero-values/pattern |
+| count | core/holes/zero-values/count |
+| group name | core/holes/zero-values/name |
+| class member, range end | core/holes/zero-values/class |
+| option | core/holes/zero-values/option |
+The count VALUE zero, `x{0}`, drops its object (core/holes/count).
+modes: n/a (the table of positions; each sub-piece has its example)
+
+### Zero values in a pattern hole   [core/holes/zero-values/pattern]   reading 2026-11-19
+In a pattern position zero values are an alternation of no members: the never-matching rx `(?!)`.
+needs: core/holes/zero-values core/holes/pattern
+WHOLE `a` FAILS, `b` HOLDS / SEARCHED `ab` `b`@1 / FIND-ALL `a b ab` [`b`@2, `b`@5] (`/a${[]}|b/` is `a(?!)|b`)
+
+### Zero values in a count hole   [core/holes/zero-values/count]   reading 2026-11-19
+In a count position zero values remove every copy: that literal never matches, with the can-never-match warning.
+needs: core/holes/zero-values core/holes/count
+WHOLE `` FAILS, `b` HOLDS / SEARCHED `ab` `b`@1 / FIND-ALL `a b` [`b`@2] (`/a{${n}}/ | /b/`, n := `[]`: the literal `/a{${n}}/` never matches)
+
+### Zero values in a group-name hole   [core/holes/zero-values/name]   reading 2026-11-19
+In a group-name position zero values are a compile error: not exactly one name.
+needs: core/holes/zero-values core/holes/name
+modes: n/a (a compile error)
+
+### Zero values in a class hole   [core/holes/zero-values/class]   reading 2026-11-19
+In a class-member or range-end position zero values, or every member removed, are an alternation of no members: the never-matching rx.
+needs: core/holes/zero-values core/holes/class core/holes/range-end
 WHOLE `ax` FAILS, `b` HOLDS / SEARCHED `axb` `b`@2 / FIND-ALL `ax b` [`b`@3] (`/a[${[]}x]|b/` is `a(?!)|b`)
+
+### Zero values in an option hole   [core/holes/zero-values/option]   ruled 2026-11-19
+In an option position zero values are a compile error.
+needs: core/holes/zero-values core/holes/option
+modes: n/a (a compile error)
 
 ### The value hole   [core/holes/value]   ruled 2026-11-18
 A hole may hold an expression over label reads and constants; it matches the strings the expression yields as literal text, under the options in force at the hole.
