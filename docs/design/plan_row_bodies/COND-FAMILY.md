@@ -4457,3 +4457,13 @@ body, `/0*${rx}/ & /(?s:.){${n}}/`: zeros then a string of rx, kept only when th
 for `padded(/\d{1,3}/, 2)` it is the two-character strings `\d\d` and `0\d`; the second branch, `rx &
 /(?s:.){${n},}/`, is rx's strings already n or longer (`\d\d`, `\d\d\d`); written out as plain regex the body is
 `(?:\d{2}|0\d)|\d{3}`, and an alternation tries its first branch first, which is where the reordering comes from.
+
+**2026-11-18 MANAGER — after lane predspec281 (rev 28.1): one reading NOT supported (the predicate manager,
+night; no owner words).** Lane predspec281 (`docs/dev/lanes/predspec281_report.md`; evidence 28 of 28, 22
+sabotages caught) applied review r52's ruled dispositions and the numeral-width ruling. NOT SUPPORTED: call (4)
+of the "review r52" entry (for the emptiness diagnostics a read stands for its group's rx) against the draft's
+§5.2 WORDING: "an empty intersection from pure parts" at NARROWING SITES excludes a read. The lane's run supports
+the reading as SOUND (it fires on 3 programs that never hold and is silent on 2 that hold); the wording change
+§5.2 would need is printed in the **dollar-diagnostic** row and NOT made: it is the owner's to confirm. A fact
+for **padded-order**: for an INFINITE argument no single body keeps the argument's order (a greedy argument
+needs the two-case body reversed, a lazy one the body as written; §2.7).
