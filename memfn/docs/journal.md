@@ -4297,3 +4297,7 @@ Main ruled on the four kit findings (D186 add. 2):
   in a single block if we use blocks. Super dense might be hits within some low N like 8. I don't know N". TAKEN for 708 (info beside
   the fixed rule): a HIT-SPACING sweep, gaps 1/2/4/8/16/32/64 B + 2+ hits per block -> the crossover spacing per form vs today and
   vs the loop = the candidate N. Goes to blockspan as a follow-up after its critic fixes.
+- 12:0x blockspan critic fixes applied (rule sha 21c941b4a719af0f): fixed-form verdict (swar-loop / avx2-loop vs H64, H64@on and
+  the H64@avx2 control), subset S, LOSS re-timed on variants 3-5, oracle labelled; correctness 96.0M + ~60k runs, 0 wrong; 5,284
+  cells, ~4.8 h. 708 QUEUED (kit-fcards-blockspan, NOT_BEFORE 2026-11-20T01:00, cap 35036 s). The hit-spacing sweep is a SEPARATE
+  job 709 (kit-fcards-blockspace, <= 40 min, after 708 ends), being built by blockspan.
