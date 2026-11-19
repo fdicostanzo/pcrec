@@ -10,7 +10,9 @@
  * one walk serves the run and the description alike (FIX-4: the combinator
  * interface, not a whole-subtree call). Two callers: the run walk (byte
  * level, src/facts/req.c) and the alternation owner (code-point level,
- * src/opt/altnf.c, the adjacency head below).
+ * src/opt/altnf.c, the adjacency head below); since span_arms L1 the run
+ * walk also reads the head (a lookahead's item) and the description read
+ * from its end (a lookbehind's item).
  *
  * Not a sealed-fact derivation: it reads no fact and no option, only the
  * positions its caller hands it (src/facts/CLAUDE.md's node-grain carve-out).
@@ -85,5 +87,13 @@ PdHead pcrec_ph_alt(Ctx *cx, const PdCfg *c, PdHead l, PdHead r);
 typedef const void *(*PhLeafPos)(void *env, const Ast *a);
 PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
                      PhLeafPos pos, void *env);
+
+/* THE DESCRIPTION READ FROM ITS END (span_arms §14.3 D-10, the BEHIND half
+ * of the lookaround item): the positions EVERY match of the described
+ * subtree consumes LAST, nearest its end first (`pos[0]` is the last
+ * position), as a head. Each width group read backwards IS a head of the
+ * reversed string, and `pcrec_ph_alt` unites them over the offsets every
+ * group reaches. A dropped description has none (`h` 0). */
+PdHead pcrec_pd_tail_head(Ctx *cx, const PdCfg *c, PdDesc d);
 
 #endif

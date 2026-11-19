@@ -346,3 +346,25 @@ PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
     }
     return pcrec_ph_wall(0, false, 0, true);   /* unreachable under -Wswitch */
 }
+
+/* A described subtree's LAST positions as a head (desc.h): every width group
+ * reversed, the groups united by `pcrec_ph_alt`. A group stores its last
+ * positions (`max_pos` at most) contiguous to its end, so reading it backwards
+ * from its end is exact whatever it stores; `closed` where it stores its
+ * whole width. */
+PdHead pcrec_pd_tail_head(Ctx *cx, const PdCfg *c, PdDesc d)
+{
+    if (d.ng < 1) return pcrec_ph_wall(0, false, 0, false);
+    PdHead o = pcrec_ph_unit();
+    for (int i = 0; i < d.ng; i++) {
+        const PdGroup *g = &d.g[i];
+        const void **p = NULL;
+        if (g->n > 0) {
+            p = pcrec_arena_alloc(&cx->arena, (size_t)g->n * sizeof *p);
+            for (int k = 0; k < g->n; k++) p[k] = g->pos[g->n - 1 - k];
+        }
+        PdHead h = { g->n, g->n == g->w, true, false, g->w, g->w, p };
+        o = i == 0 ? h : pcrec_ph_alt(cx, c, o, h);
+    }
+    return o;
+}
