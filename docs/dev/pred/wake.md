@@ -22,17 +22,14 @@ on any disagreement.
 
 ## In flight
 
-- Rev 28 MERGED (e51e9a965). Review r52 DONE (coordinator stopped; draft at
-  `$PCREC_TMPDIR/scratch/crit-predspec28/review.md`, 22 items A-K, all verified; one ANSWER-level: A, padded's
-  two-case body reorders a search). Dispositions RULED: the record's last entry ("MANAGER — review r52 of rev 28").
-- FIX LANE predspec281 (opus) running: worktree `worktrees/predspec281`, branch `lane/predspec281` from
-  9b7503b6c: rev 28.1 + files the review as `docs/dev/reviews/2026-11-18-r52-predspec28.md`. Watch
-  `scripts/lanewatch --follow predspec281`. A lane dies with its session: if not DONE, relaunch from the brief
-  (dispositions = the record's last entry + the review draft).
-- On DONE: read its report (readings NOT SUPPORTED -> withdraw in the record), merge into `lane/pred-rev28`
-  (ALONE; `make -s test-plan-lint`), TaskStop, then DELIVER: a `done:` line in `to_main.md` (branch tip, report
-  path, the [COND-FAMILY] status line, the coordinator's accepted process changes for the critic skill: listed in
-  the lane's STATE AT HANDOFF) and a SendMessage to main.
+- NOTHING running. The draft on `lane/pred-rev28` is REVISION 28.1 (review r52 filed at
+  `docs/dev/reviews/2026-11-18-r52-predspec28.md`; lanes predspec28 and predspec281 merged and stopped; evidence
+  28 of 28). DELIVERED to main as P-2 in `to_main.md` (status line, proposed skill edits). Check `from_main.md`
+  and `git log main` for the merge; after it, cut the next branch (`lane/pred-rev29`) from main, or merge main in.
+- padded-order is ASKED and mid-discussion: he asked what the "exact width" part is (answered). New fact from
+  predspec281: for an INFINITE argument no single body keeps the argument's order (§2.7), so "keeps order" means
+  `padded(rx, n)` is a provided function, not a plain macro.
+- ELEVEN owner rulings on 2026-11-18 evening (the record has each); the last, numeral-width: canonical.
 
 ## READ, IN THIS ORDER
 

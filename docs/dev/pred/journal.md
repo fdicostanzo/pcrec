@@ -100,3 +100,8 @@
   numeral-width: canonical. ELEVEN rulings tonight. Sent to the running fix lane as R1 in
   worktrees/predspec281/docs/dev/lanes/predspec281_rulings.md (it changes disposition F: VERIFY in its STATE AT
   HANDOFF).
+- predspec281 DELIVERED (lanewatch DONE; R1 applied per STATE AT HANDOFF), MERGED (7f175758f; plan-lint clean),
+  TaskStopped. Draft = rev 28.1 (9,973 lines); review r52 filed with my ruled dispositions. Its one NOT SUPPORTED
+  (my dollar-diagnostic reading against §5.2's wording) recorded; the question row prints the wording change.
+- DELIVERED to main: P-2 in to_main.md (done line, [COND-FAMILY] status line, the coordinator's four process
+  changes and two proposed edits of my own skill). /q asked padded-order; he asked what the exact-width part is.
