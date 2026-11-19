@@ -301,6 +301,10 @@ kref = P.Pcre(r'(?i)(?<y>a)-\k<y>')
 dj, _ = diff3(hm, kref, pool("aA-x", 5)); dqj, _ = diff3(pj, hm, pool("aA-x", 5))
 print("FL the read `${$y}` at the same hole (nothing written: the options at the hole) vs `\\k<y>` %d / %d / %d ; vs the binding `${q}` %d / %d / %d of %d (`aA-x`)"
       % (dj[0], dj[1], dj[2], dqj[0], dqj[1], dqj[2], len(pool("aA-x", 5))))
+p32 = P.Pcre(r'(?m)' + ins(r'^\{.*\}$')); p32o = P.Pcre(r'(?m)(?-m:^\{.*\}$)'); p32i = P.Pcre(r'(?m)^\{.*\}$')
+print("FL §13 O32 / L32 `/${q}/m`, q := /^\\{.*\\}$/: FIND-ALL `{a}\\n{b}` propagate %s ; the text inlined %s ; own flags (rev 27.1) %s"
+      % (fF(p32, "{a}\n{b}"), fF(p32i, "{a}\n{b}"), fF(p32o, "{a}\n{b}")))
+fl += [fF(p32, "{a}\n{b}") == fF(p32i, "{a}\n{b}") == "[`{a}`@0, `{b}`@4]", F(p32o, "{a}\n{b}") == []]
 okpy = re.fullmatch(r'(?i)id-(?:blah)', "id-BLAH") is not None and re.fullmatch(r'(?i)(?:(?-i:blah))', "BLAH") is None
 print("FL python `re` agrees on the i cases (propagate HOLDS, override FAILS on BLAH): %s" % okpy)
 fl += [W(pj, "a-A") is not None, W(pjo, "a-A") is None, dj == [0, 0, 0], dqj == [0, 0, 0], okpy]
