@@ -59,9 +59,24 @@ two restores. Two classes for the route rows:
                  so the movement is L1's item and nothing else; the row's
                  kind and its model disagreement stay listed beside the class.
 
-MODEL-ONLY rows are never explained here (the model predicted a move the
-build does not make): each is UNEXPLAINED unless the subject equals BASE on
-every byte fact AND the model abstains on the spelling (rare; listed).
+Three classes for the model disagreements (DIFFER, MODEL-ONLY), each tested:
+
+  dead-both      DIFFER: model and build both list the pattern `dead` (no
+                 match exists, the dead claim tested above); the run VALUE
+                 of a dead pattern is the walk's own, advisory, and differs
+                 by the order the guards meet (D27 F5, span_arms §10 U-assoc).
+  offset-looser  DIFFER: the observed set equals the model's and every byte
+                 whose `req_set_maxoff` differs has a LARGER (looser, sound)
+                 observed offset: a member keeps the offset it first joined
+                 at (r55 EMITTED-1, ruled PLAN).
+  d27-limit      MODEL-ONLY: the pattern is a D27 witness the author judged
+                 FAIL and tests/lookaround/d27_l1/l1d27_limits.tsv names its
+                 stated limit (checked by `make test-lookaround`).
+  route-row      OBSERVED-ONLY whose moved byte facts are route facts only
+                 (`run_pin`, `req_landmark_maxoff`): its own PIN-*/LANDMARK-*
+                 row, which must be present, carries the verdict.
+Any other MODEL-ONLY row is UNEXPLAINED (the model predicts a move the build
+does not make).
 
 usage: explain_l1.py COMPARE_TXT BASE_PCREC WORK_PCREC WORK_HARNESS OUT_FILE [P2PROBE]
 rc 0 when every row is explained.
@@ -85,7 +100,43 @@ ROWS = [(k, re.compile(r"\s+(%s) (\S+) (.*?) %s" % (k, tail))) for k, tail in (
     ("OBSERVED-ONLY", "observed="), ("UTF8-ONLY", "utf8-facts="), ("DIFFER", "observed="),
     ("MODEL-ONLY", "model="),
     ("PIN-LOST|PIN-GAIN|PIN-MOVED", r"run_pin base \["),
-    ("LANDMARK-LOOSER|LANDMARK-TIGHTER", r"req_landmark_maxoff base \["))]
+    ("LANDMARK-LOST|LANDMARK-LOOSER|LANDMARK-GAIN|LANDMARK-TIGHTER", r"req_landmark_maxoff base \["))]
+D27 = os.path.join(HERE, "../../../../tests/lookaround/d27_l1")
+
+
+def d27_limited():
+    """the D27 listing's FAIL patterns that name a declared limit."""
+    import csv
+    lim = {}
+    for line in open(os.path.join(D27, "l1d27_limits.tsv")):
+        if line.strip() and not line.startswith("#"):
+            rid, keys = line.rstrip("\n").split("\t")
+            lim[rid] = keys
+    out = {}
+    for r in csv.DictReader(open(os.path.join(D27, "l1d27_listing.tsv")), delimiter="\t"):
+        if r["verdict"] == "FAIL" and r["id"] in lim:
+            out[r["pattern"].encode("utf-8", "surrogateescape")] = r["id"] + ":" + lim[r["id"]]
+    return out
+
+
+MAXOFF_ONLY = re.compile(r".*model=\S+ req_set_maxoff observed \[([^\]]*)\] model \[([^\]]*)\]\s*$")
+
+
+def offset_looser(raw, w):
+    """the DIFFER row's only value disagreement is req_set_maxoff, over the
+    same members, and every differing offset is LARGER as observed."""
+    m = MAXOFF_ONLY.match(raw)
+    if not m:
+        return False
+    om, mm = maxoffs(m.group(1)), maxoffs(m.group(2))
+    if set(om) != set(mm) or maxoffs(w[("byte", "req_set_maxoff")][0]) != om:
+        return False
+    diff = [k for k in om if om[k] != mm[k]]
+    return bool(diff) and all(int(om[k]) > int(mm[k]) for k in diff)
+
+
+def maxoffs(v):
+    return dict(x.split(":") for x in v.split(",") if ":" in x) if v not in ("", "none") else {}
 REWRITE = [(rb"(*non_atomic_positive_lookahead:", b"(?="), (rb"(*non_atomic_positive_lookbehind:", b"(?<="),
            (rb"(*positive_lookahead:", b"(?="), (rb"(*positive_lookbehind:", b"(?<="),
            (rb"(*napla:", b"(?="), (rb"(*naplb:", b"(?<="), (rb"(*pla:", b"(?="), (rb"(*plb:", b"(?<="),
@@ -201,6 +252,7 @@ def main():
                 pat = m.group(3).encode("latin-1", "surrogateescape").decode("unicode_escape").encode("latin-1")
                 rows.append((m.group(1), m.group(2), pat, l.strip()))
                 break
+    routed = {pat for kind, _, pat, _ in rows if kind.startswith(("PIN-", "LANDMARK-"))}
     cls = {}; lines = []; bad = 0
     for kind, src, pat, raw in rows:
         b, w = byte_facts(base, pat), byte_facts(work, pat)
@@ -217,8 +269,18 @@ def main():
             pass
         elif b is None or w is None:
             verdict = "UNEXPLAINED (a build refused)"
+        elif kind == "OBSERVED-ONLY" and pat in routed and \
+                set(re.search(r"byte-facts=(\S*)", raw).group(1).split(",")) <= set(CMP.ROUTE):
+            verdict = "route-row"
         elif kind == "MODEL-ONLY":
-            verdict = "UNEXPLAINED (model-only: the model predicts a move the build does not make)"
+            lim = d27_limited().get(pat)
+            verdict = ("d27-limit " + lim) if lim else \
+                "UNEXPLAINED (model-only: the model predicts a move the build does not make)"
+        elif kind == "DIFFER" and "model=" in raw and "dead" in raw.split("model=")[1].split()[0].split(",") \
+                and is_dead(w, "byte"):
+            verdict = "dead-both"
+        elif kind == "DIFFER" and offset_looser(raw, w):
+            verdict = "offset-looser"
         elif kind == "PIN-GAIN" and b.get(("byte", "run_pin"), ("none",))[0] == "none":
             pw = w[("byte", "run_pin")][0]; pp = pin_parts(pw)
             h = byte_facts(harn, pat, ["--harness=restore=look"])

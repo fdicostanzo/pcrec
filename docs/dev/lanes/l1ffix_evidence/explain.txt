@@ -1,0 +1,424 @@
+rows read: 412
+  d27-limit B14k:rep-wall: 1
+  dead-both: 1
+  leaf-dead: 192
+  look-item: 20
+  offset-looser: 2
+  pin-substretch: 48
+  rep-copy: 49
+  route-row: 48
+  spelling: 48
+  utf8-only: 3
+  d27-limit B14k:rep-wall MODEL-ONLY       corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt a(?=[a-z]{2}z)bcy
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt ((?*(a))z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt ((?*[ab])z) [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt ((?*a(?!b))z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt ((?*a)z) [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt ((?*abc)z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt ((?*ab|cd)z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt ((?*a|bc)z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  look-item      OBSERVED-ONLY    corpus:tests/possessify/possessify.rxt ((?=a))x++\\1x [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  look-item      OBSERVED-ONLY    corpus:tests/possessify/possessify.rxt ((?=a))x+\\1x [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  route-row      OBSERVED-ONLY    corpus:tests/base/groups.rxt ((ab)+c)+
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/alpha_spellings.rxt (*napla:a)b [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/alpha_spellings.rxt (*non_atomic_positive_lookahead:a)b [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/alpha_spellings.rxt (*pla:a)b [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/alpha_spellings.rxt (*positive_lookahead:a)b [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?*(a))z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?*[ab])z [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?*a(?!b))z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/ucp/ctxnode.rxt (?*a)b [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?*a)z [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?*abc)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?*ab|cd)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?*a|bc)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/nonatomic_ahead.rxt (?*x)a [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?:(?=ln)[a-z]{2}){2}
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/d27/atomic_in_quantifiers.rxt (?:(?>aa|a))+ab
+  route-row      OBSERVED-ONLY    corpus:tests/assertions/kreset.rxt (?:a\\K){2,}b
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?:aa|a)++ab
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?:aa|a){1,3}+ab
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?:aa|a){8,12}+ab
+  route-row      OBSERVED-ONLY    corpus:tests/assertions/kreset.rxt (?:ab)+\\Kc
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/spanarms.rxt (?:ab){1,2}cd(?:ef){1,2}
+  route-row      OBSERVED-ONLY    corpus:tests/mrl/05_multibyte_body.rxt (?:ab){3,6}c
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/litrun.rxt (?:abc)+d
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/spanarms.rxt (?:abc){20}
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?:a|aa)++ab
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?:x|y)(?=cb)[a-c]{2}z
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z][a-z]l)[a-z]{4}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z]{2}l)[a-z]{4}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=fgh)\\w{3}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=go)(?=[a-z]o)(?=[a-z]{2}l)[a-z]{3}f
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[\\x01-\\x80]{3}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[a-z]{3}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=r(?=ne))[a-z]{3}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=uv)[0-9a-z]{4}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=wo)[\\w]{2}[!?]
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w+
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?>(?*(a))z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?>(?*[ab])z) [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?>(?*a(?!b))z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?>(?*a)z) [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?>(?*abc)z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?>(?*ab|cd)z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt (?>(?*a|bc)z) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+)ab
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)ab
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)b
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt (?>a(?:aa|a)+)ab
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/atomic_quant.rxt (?>ab)+c
+  look-item      OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=ab)ac [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)[a-z]{3}
+  look-item      OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)\\w\\w\\w
+  look-item      OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=k)(?-i)[a-jl-z]z [byte dead-machine: empty-machine] [utf8 dead-sampled: 400 subjects]
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)[a-z]{3}(?-i)(?<=dov)
+  route-row      OBSERVED-ONLY    corpus:tests/base/vm_lazy_rmin_prefix.rxt (a)(?:ab){2,}?ac
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_large_counts.rxt (ab){300}
+  route-row      OBSERVED-ONLY    corpus:tests/mrl/09_captures.rxt (a{2,3})(b{2,3})
+  route-row      OBSERVED-ONLY    corpus:tests/possessify/possessify.rxt (a{3,}c)
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcde
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [0-9a-z]{4}(?<=gh)
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt [\\p{Age=2.1}\\p{Age=6.1}] [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt [\\p{Age=6.0}\\p{Age=6.1}] [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt [\\p{Block=Cyrillic}\\p{Block=Hebrew}] [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt [\\p{bc=R}\\p{bc=AL}] [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt [^\\p{Age=1.1}] [byte dead-machine: empty-machine]
+  rep-copy       OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt [a-]{1,3}(?<=a|bc)\\b
+  rep-copy       OBSERVED-ONLY    corpus:tests/landwalk/landwalk.rxt [a-z]+(?<=a)@x
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?<=ws)(?=tk)[a-z]{2}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?=wvz)[a-z]{2}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{3}(?<=kev)
+  rep-copy       OBSERVED-ONLY    corpus:tests/litscan/presence_deny.rxt [ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\P{Age=1.1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/emoji.rxt \\P{^Emoji_Modifier_Base} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/misc.rxt \\P{^Prepended_Concatenation_Mark} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/cjk.rxt \\P{^Radical} [byte dead-machine: empty-machine]
+  rep-copy       OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt \\b(?=a)\\w+\\b
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{AGE=6.1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Age:V10_0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=10.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=11.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=12.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=13.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=14.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=15.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=16.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=2.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=2.1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=3.1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=5.1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=6.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=6.1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=6.2} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=8.0} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=NA} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=Unassigned} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{Age=V6_1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{BC=AL} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{BIDI_CLASS=AL} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{BLK=Greek} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bc:al} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:AL} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:AN} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:FSI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:LRE} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:LRI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:LRO} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:NSM} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:PDF} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:PDI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:RLE} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:RLI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:RLO} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:R} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{Bidi_Control} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{Bidi_C} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block:Cyrillic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Arabic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Box_Drawing} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=CJK_Unified_Ideographs_Extension_A} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=CJK_Unified_Ideographs} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Currency_Symbols} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Cyrillic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Block=Cyrillic}+ [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Dingbats} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Emoticons} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=GREEK_AND_COPTIC} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=General_Punctuation} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Greek And Coptic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Greek-And-Coptic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Block=Greek_And_Coptic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Greek_and_Coptic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{Block=Greek} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Hangul_Syllables} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Hebrew} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Hiragana} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Katakana} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Mathematical_Alphanumeric_Symbols} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Miscellaneous_Symbols_and_Pictographs} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=No_Block} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Private_Use_Area} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Specials} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Supplemental_Symbols_and_Pictographs} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Supplementary_Private_Use_Area_A} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Supplementary_Private_Use_Area_B} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Tags} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=Variation_Selectors} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{Block=greekandcoptic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Cn} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Co} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Cs} [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    bench:377 \\p{Cyrillic}+ [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/byte.rxt \\p{Deprecated} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{Dep} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{EBase} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/spelling.rxt \\p{EMOJI_PRESENTATION} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{EMod} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{EPres} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/spelling.rxt \\p{Emoji Presentation} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/spelling.rxt \\p{EmojiPresentation} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/emoji.rxt \\p{Emoji_Modifier_Base} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{Emoji_Modifier} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{Emoji_Presentation} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{Gr_Ext} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/unsure_names.rxt \\p{Gr_Link} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/byte.rxt \\p{Grapheme_Extend} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/unsure_names.rxt \\p{Grapheme_Link} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{IDSB} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{IDST} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/unsure_names.rxt \\p{IDSU} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/cjk.rxt \\p{IDS_Binary_Operator} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/cjk.rxt \\p{IDS_Trinary_Operator} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/unsure_names.rxt \\p{IDS_Unary_Operator} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{ID_Compat_Math_Start} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{Ideographic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{Ideo} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/byte.rxt \\p{Join_Control} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{Join_C} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{LOE} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Lm} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/byte.rxt \\p{Logical_Order_Exception} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Lt} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{MCM} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Mc} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Me} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Mn} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/unsure_names.rxt \\p{Modifier_Combining_Mark} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{M} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{NChar} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Nl} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/invisible.rxt \\p{Noncharacter_Code_Point} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/alias.rxt \\p{PCM} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/misc.rxt \\p{Prepended_Concatenation_Mark} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{Qaai} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{RI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/cjk.rxt \\p{Radical} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/byte.rxt \\p{Regional_Indicator} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{Script:Greek} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{Thaana} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{UIdeo} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/byte.rxt \\p{Unified_Ideograph} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{Unknown} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{VS} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/byte.rxt \\p{Variation_Selector} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Zl} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis04_p_categories.rxt \\p{Zp} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{Zzzz} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/age.rxt \\p{age:6.1} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{age=Unassigned} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{bc:AL} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{bc=AL} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{bc=AN} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{bc=FSI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=LRE} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=LRI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=LRO} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{bc=NSM} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=PDF} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=PDI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=RLE} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=RLI} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=RLO} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_more.rxt \\p{bc=R} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bidi_class:aL} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/bidiclass.rxt \\p{bidiclass=AL} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{blk:Greek_and-Coptic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Arabic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Box_Drawing} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=CJK_Ext_A} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=CJK} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=Currency_Symbols} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Cyrillic} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Dingbats} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=Emoticons} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=Greek} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Hangul} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Hebrew} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Hiragana} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Katakana} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Math_Alphanum} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Misc_Pictographs} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=NB} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=PUA} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Punctuation} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Specials} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Sup_PUA_A} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Sup_PUA_B} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Sup_Symbols_And_Pictographs} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=Tags} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{blk=VS} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/block.rxt \\p{block=greek} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/spelling.rxt \\p{emoji-presentation} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/spelling.rxt \\p{emoji_presentation} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Greek} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Grek} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Thaana} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Unknown} [byte dead-machine: empty-machine]
+  leaf-dead      OBSERVED-ONLY    corpus:tests/utf8/axis12_scripts.rxt \\p{scx=Unknown} [byte dead-machine: empty-machine]
+  look-item      OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt \\s+(?<=a)b [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  rep-copy       OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt \\w+(?<=a)
+  rep-copy       OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt \\w+(?<=a)b?
+  rep-copy       OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt \\w+?(?<=a)
+  rep-copy       OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt \\w{1,3}(?<=a)b
+  leaf-dead      OBSERVED-ONLY    corpus:tests/uprops/d27/context.rxt ^\\p{Emoji_Presentation}{2}$ [byte dead-machine: empty-machine]
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt a++ab
+  route-row      OBSERVED-ONLY    bench:273 a+ab
+  route-row      OBSERVED-ONLY    bench:166 abcdefghijklmnopqrstuvwxyzABCDE
+  route-row      OBSERVED-ONLY    bench:168 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/possessive.rxt a{2,3}+b
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,4}+b
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_forms.rxt a{2,4}?b
+  route-row      OBSERVED-ONLY    corpus:tests/assertions/kreset.rxt a{2,4}\\Kb
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/presence_deny.rxt a{2,4}\\Kb.c
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_forms.rxt a{2,4}b
+  route-row      OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt a{2,}(?<!\\B)-
+  route-row      OBSERVED-ONLY    corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,}+b
+  route-row      OBSERVED-ONLY    corpus:tests/possessify/composition_d27.rxt a{2,}?(?:\\b|)b
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_forms.rxt a{2,}?b
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_forms.rxt a{2,}b
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_large_counts.rxt a{200,500}
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_large_counts.rxt a{200,500}?
+  route-row      OBSERVED-ONLY    corpus:tests/mrl/07_partial_and_startpos.rxt a{3,5}b
+  route-row      OBSERVED-ONLY    corpus:tests/mrl/08_nomatch.rxt a{3,6}b
+  route-row      OBSERVED-ONLY    corpus:tests/possessify/possessify.rxt a{3,}c
+  route-row      OBSERVED-ONLY    corpus:tests/mrl/08_nomatch.rxt a{5,10}b{5,10}$
+  route-row      OBSERVED-ONLY    corpus:tests/base/long_subjects.rxt a{50,60}
+  route-row      OBSERVED-ONLY    corpus:tests/base/d27_large_counts.rxt a{500}
+  rep-copy       OBSERVED-ONLY    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt bu[a-z]{2}(?<=ck)
+  leaf-dead      OBSERVED-ONLY    corpus:tests/litscan/spanarms.rxt x[^\\x00-\\xff]y [byte dead-machine: empty-machine]
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/spanarms.rxt xy(?:ab){1,2}zw
+  route-row      OBSERVED-ONLY    corpus:tests/litscan/spanarms.rxt xy(?:ab){1,3}zw
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?*(a))z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?*[ab])z [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?*a(?!b))z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?*a)z [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?*abc)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?*ab|cd)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?*a|bc)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?<*(a))z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?<*[ab])z [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?<*a(?!b))z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?<*a)z [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?<*abc)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?<*ab|cd)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt y(?<*a|bc)z [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt z(?<*(a)) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt z(?<*[ab]) [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt z(?<*a(?!b)) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt z(?<*a) [byte dead-machine: empty-machine] [utf8 dead-machine: empty-machine]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt z(?<*abc) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt z(?<*ab|cd) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  spelling       OBSERVED-ONLY    corpus:tests/lookaround/d27/matrix.rxt z(?<*a|bc) [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  dead-both      DIFFER           corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w\\w [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  offset-looser  DIFFER           corpus:tests/litscan/spanarms.rxt [ac][ac](?<=ac(?=cc))cc
+  offset-looser  DIFFER           corpus:tests/litscan/spanarms.rxt ab[xy][xy](?=(?<=xx)y)[xy]
+  pin-substretch PIN-GAIN         corpus:tests/base/groups.rxt ((ab)+c)+
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?:(?=ln)[a-z]{2}){2}
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/d27/atomic_in_quantifiers.rxt (?:(?>aa|a))+ab
+  pin-substretch PIN-GAIN         corpus:tests/assertions/kreset.rxt (?:a\\K){2,}b
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?:aa|a)++ab
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?:aa|a){1,3}+ab
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?:aa|a){8,12}+ab
+  pin-substretch PIN-GAIN         corpus:tests/assertions/kreset.rxt (?:ab)+\\Kc
+  pin-substretch PIN-GAIN         corpus:tests/litscan/spanarms.rxt (?:ab){1,2}cd(?:ef){1,2}
+  pin-substretch PIN-GAIN         corpus:tests/mrl/05_multibyte_body.rxt (?:ab){3,6}c
+  pin-substretch PIN-GAIN         corpus:tests/litscan/litrun.rxt (?:abc)+d
+  pin-substretch PIN-GAIN         corpus:tests/litscan/spanarms.rxt (?:abc){20}
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?:a|aa)++ab
+  look-item      LANDMARK-TIGHTER corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=\\x{e9})[\\x{e0}-\\x{ff}]e
+  look-item      LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt (?=a(b)?)\\w\\1?
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z][a-z]l)[a-z]{4}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z]{2}l)[a-z]{4}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=fgh)\\w{3}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[\\x01-\\x80]{3}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[a-z]{3}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=r(?=ne))[a-z]{3}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=uv)[0-9a-z]{4}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=wo)[\\w]{2}[!?]
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w+
+  look-item      LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w\\w [byte dead-sampled: 400 subjects] [utf8 dead-sampled: 400 subjects]
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+)ab
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)ab
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)b
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt (?>a(?:aa|a)+)ab
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/atomic_quant.rxt (?>ab)+c
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)[a-z]{3}
+  look-item      LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)\\w\\w\\w
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)[a-z]{3}(?-i)(?<=dov)
+  pin-substretch PIN-GAIN         corpus:tests/base/vm_lazy_rmin_prefix.rxt (a)(?:ab){2,}?ac
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_large_counts.rxt (ab){300}
+  pin-substretch PIN-GAIN         corpus:tests/mrl/09_captures.rxt (a{2,3})(b{2,3})
+  pin-substretch PIN-GAIN         corpus:tests/possessify/possessify.rxt (a{3,}c)
+  look-item      LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt A*(?=a)\\w
+  pin-substretch PIN-GAIN         corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcde
+  pin-substretch PIN-GAIN         corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [0-9a-z]{4}(?<=gh)
+  rep-copy       LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt [a-]{1,3}(?<=a|bc)\\b
+  look-item      LANDMARK-TIGHTER corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z][a-z](?<=hz)!
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?<=ws)(?=tk)[a-z]{2}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?=wvz)[a-z]{2}
+  rep-copy       LANDMARK-GAIN    corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{3}(?<=kev)
+  rep-copy       LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt \\b(?=a)\\w+\\b
+  look-item      LANDMARK-TIGHTER corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt \\w(?<=q)u
+  look-item      LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt \\w*(?=a)\\w
+  rep-copy       LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt \\w+(?<=a)
+  rep-copy       LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt \\w+(?<=a)b?
+  rep-copy       LANDMARK-GAIN    corpus:tests/possessify/composition_d27.rxt \\w+?(?<=a)
+  rep-copy       LANDMARK-TIGHTER corpus:tests/possessify/composition_d27.rxt \\w{1,3}(?<=a)b
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt a++ab
+  pin-substretch PIN-GAIN         bench:273 a+ab
+  pin-substretch PIN-GAIN         bench:166 abcdefghijklmnopqrstuvwxyzABCDE
+  pin-substretch PIN-GAIN         bench:168 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/possessive.rxt a{2,3}+b
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,4}+b
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_forms.rxt a{2,4}?b
+  pin-substretch PIN-GAIN         corpus:tests/assertions/kreset.rxt a{2,4}\\Kb
+  pin-substretch PIN-GAIN         corpus:tests/litscan/presence_deny.rxt a{2,4}\\Kb.c
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_forms.rxt a{2,4}b
+  pin-substretch PIN-GAIN         corpus:tests/possessify/composition_d27.rxt a{2,}(?<!\\B)-
+  pin-substretch PIN-GAIN         corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,}+b
+  pin-substretch PIN-GAIN         corpus:tests/possessify/composition_d27.rxt a{2,}?(?:\\b|)b
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_forms.rxt a{2,}?b
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_forms.rxt a{2,}b
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_large_counts.rxt a{200,500}
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_large_counts.rxt a{200,500}?
+  pin-substretch PIN-GAIN         corpus:tests/mrl/07_partial_and_startpos.rxt a{3,5}b
+  pin-substretch PIN-GAIN         corpus:tests/mrl/08_nomatch.rxt a{3,6}b
+  pin-substretch PIN-GAIN         corpus:tests/possessify/possessify.rxt a{3,}c
+  pin-substretch PIN-GAIN         corpus:tests/mrl/08_nomatch.rxt a{5,10}b{5,10}$
+  pin-substretch PIN-GAIN         corpus:tests/base/long_subjects.rxt a{50,60}
+  pin-substretch PIN-GAIN         corpus:tests/base/d27_large_counts.rxt a{500}
+  pin-substretch PIN-GAIN         corpus:tests/litscan/spanarms.rxt xy(?:ab){1,2}zw
+  pin-substretch PIN-GAIN         corpus:tests/litscan/spanarms.rxt xy(?:ab){1,3}zw
+  look-item      UTF8-ONLY        corpus:tests/base/vm_lazy_rmin_prefix.rxt (b)(a){200,}?b
+  utf8-only      UTF8-ONLY        corpus:tests/possessify/composition_d27.rxt [a-c]{0,}?(?=a)\\W [utf8 dead-machine: empty-machine]
+  utf8-only      UTF8-ONLY        corpus:tests/possessify/composition_d27.rxt \\w{1,3}(?=a)\\W [utf8 dead-machine: empty-machine]
+  look-item      UTF8-ONLY        corpus:tests/litscan/spanarms.rxt ab(?<=b)[bc]d\\w*e
+  utf8-only      UTF8-ONLY        corpus:tests/possessify/composition_d27.rxt a{1,3}?(?=\\w)\\W [utf8 dead-machine: empty-machine]
+  look-item      UTF8-ONLY        corpus:tests/litscan/spanarms.rxt x(?:a[bc]){2}y
+  look-item      UTF8-ONLY        corpus:tests/utf8/wclass_illformed.rxt x([\\x{e0}-\\x{ff}])y
+  look-item      UTF8-ONLY        corpus:tests/utf8/wclass_illformed.rxt x[\\x{e0}-\\x{ff}]y
+  look-item      UTF8-ONLY        corpus:tests/litscan/spanarms.rxt xy[ac]b(?:(?<=ab)b|c)
+== explain COMPLETE: 0 unexplained

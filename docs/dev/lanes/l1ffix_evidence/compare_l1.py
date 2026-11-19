@@ -7,7 +7,8 @@ from l1feat_evidence/compare_l1.py: (1) it JUDGES `run_pin` and
 `req_landmark_maxoff` (a route-level mover is a mover, r55 lesson 2): a
 pattern whose BASE pin is lost or shortened is a PIN-LOST disagreement
 (r55 B's landing condition: none), a raised landmark offset is a
-LANDMARK-LOOSER one; pin gains and tighter landmarks are listed for
+LANDMARK-LOOSER one and a lost landmark a LANDMARK-LOST one; pin gains,
+landmark gains (`none` -> a value) and tighter landmarks are listed for
 explain_l1.py; (2) a text with a positive lookaround in ANOTHER spelling
 (`(?*`, `(*pla:`, the alpha names) is labelled so, not "outside the model's
 scope" (r55 TABLE-7: 34 such rows).
@@ -83,7 +84,8 @@ def offnum(v):
 def route_verdicts(rec):
     """r55 H: the byte `run_pin` and `req_landmark_maxoff` of BASE vs SUBJECT,
     as (kind, text) pairs: PIN-LOST / LANDMARK-LOOSER are disagreements,
-    PIN-GAIN / PIN-MOVED / LANDMARK-TIGHTER are movers to explain."""
+    PIN-GAIN / PIN-MOVED / LANDMARK-GAIN / LANDMARK-TIGHTER are movers to
+    explain, LANDMARK-LOST / LANDMARK-LOOSER disagreements."""
     a, b = rec.get("base"), rec.get("work")
     out = []
     if not a or not b:
@@ -98,7 +100,9 @@ def route_verdicts(rec):
     mb = b.get(("byte", "req_landmark_maxoff"), ("", "", ""))[1]
     if ma != mb:
         x, y = offnum(ma), offnum(mb)
-        kind = "LANDMARK-LOOSER" if x is None or y is None or y > x else "LANDMARK-TIGHTER"
+        kind = "LANDMARK-GAIN" if x is None and y is not None else \
+               "LANDMARK-LOST" if y is None else \
+               "LANDMARK-LOOSER" if y > x else "LANDMARK-TIGHTER"
         out.append((kind, "req_landmark_maxoff base [%s] subject [%s]" % (ma, mb)))
     return out
 
@@ -219,12 +223,13 @@ def main():
         else:
             agree += 1
     # (4) r55 H: the route facts, judged on every observed mover
-    route = {"PIN-LOST": 0, "PIN-GAIN": 0, "PIN-MOVED": 0, "LANDMARK-LOOSER": 0, "LANDMARK-TIGHTER": 0}
+    route = {"PIN-LOST": 0, "PIN-GAIN": 0, "PIN-MOVED": 0, "LANDMARK-LOST": 0, "LANDMARK-LOOSER": 0,
+             "LANDMARK-GAIN": 0, "LANDMARK-TIGHTER": 0}
     for p in sorted(obs_mov):
         for kind, text in route_verdicts(obs_mov[p]):
             route[kind] += 1
             lines.append("  %s %s %s %s" % (kind, obs_mov[p]["src"], C.esc(p), text))
-            if kind in ("PIN-LOST", "LANDMARK-LOOSER"):
+            if kind in ("PIN-LOST", "LANDMARK-LOST", "LANDMARK-LOOSER"):
                 bad += 1
     for p in sorted(utf8_only):
         r = utf8_only[p]
