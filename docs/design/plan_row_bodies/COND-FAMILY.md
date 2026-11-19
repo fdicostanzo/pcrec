@@ -4580,3 +4580,11 @@ and the rule is complete with no tie rule; (b) the rule is stated per CLASS POSI
 order, as in PCRE; where a lift gives results of different lengths the longer is tried first"), nested inside the
 order of everything else: alternations, quantifiers and arrays the user writes keep their own order (enumerate's
 order, PCRE priority); (c) it makes the answer independent of how the class is spelled and of codepoint order.
+
+### 2026-11-19 OWNER, discussing class-order: what "class only" means
+
+His words, verbatim: "what do you mean class only? like \d ?"
+
+Class: a QUESTION about the manager's wording (class-order stays open). Answered: yes, a character class is one
+position that takes one character from a set (`\d`, `[0-9]`, `[90]`, `\w`, `.`); the manager's reading (b) of the
+entry above limits longest-first to the members of such a position.
