@@ -18,3 +18,5 @@
   that ruling quoted, not as a fresh question. The capture side of the example re-run under python `re`
   (`3-3;-3;` WHOLE holds; FIND-ALL on `3-3;-3; 7-7;` = [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12]), equal to the draft's row.
 - owner.md written. Waiting on Frank's answer to hole-reads-capture.
+- Main ACKed the hand-over (cross-session message): review number r52 is RESERVED for the rev 28 critic round;
+  main's session is closing, the next one reads to_main.md at wake.
