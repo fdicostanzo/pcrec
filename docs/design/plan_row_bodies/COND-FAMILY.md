@@ -5006,3 +5006,19 @@ namespace": a bare condition has no namespace of its own; NOT his words: if the 
 binding whose whole body is a bare condition, used in a hole or as a sequence operand, behaves the same (the
 condition is "used" where the binding is used); (c) a bare condition inserted at the very START of an rx tests the
 empty match so far: a candidate for the can-never-match diagnostics when its set cannot hold on the empty string.
+
+### 2026-11-19 OWNER, confirming: a bare condition last in an rx equals the condition on the whole
+
+His words, verbatim: "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing"
+
+Class: a CONFIRMATION ("yes, thanks") of the reading taken in the entry above (a bare condition in a hole reads the
+surrounding match so far; `A & (0: ..)` reads only A), and a STATEMENT of an equality, his: a digit followed by a
+hole holding a bare condition equals the digit with the condition on the whole. The spelling `(&(0:digit))` is a
+placeholder (D193 addendum 4; read as the bare condition `(0: digit)`).
+
+CHECKED CONTEMPORANEOUSLY: the equality HOLDS under the ruled readings: after `\d` the match so far IS the whole
+match of `/\d/`. Model (python; the two programs written out separately, sets `\d` and `7`, every text over `37x`
+of length <= 4): 0 / 0 / 0 of 121 for each set; with the set `7`: WHOLE `7` HOLDS, `3` FAILS, both programs. It is
+the manager's reading (a) of the zero-in-sequence entry ("a condition written LAST in a sequence reads the entire
+match") in his own example, now SUPPORTED by his statement. Not addressed by his words, still the manager's
+reading to test: what LABELS a bare condition in a hole reads.
