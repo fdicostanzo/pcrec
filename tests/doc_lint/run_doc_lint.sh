@@ -8,6 +8,7 @@
 #   3. scripts/entry --lint-scripts over the real tree: scripts/INDEX.md covers every script, every line names a file.
 #   4. the same lint over a scratch COPY of scripts/ with a planted new script (no index line) and, separately, a
 #      planted dangling index line: each must fail naming the plant (T1b, design §8.2 item 2).
+#   6. scripts/pred_doc_lint.py: selftest, its .test, and the lint over the real predicate documents (review r56).
 # Unit 1 adds doc_lint.py's decisions profile here; T2 folds plan_lint in. Reads text only (no compiler).
 # ROOT_DIR is overridable (the mech arm points it at a scratch tree).
 set -u
@@ -59,6 +60,21 @@ for prof in plan completed scripts; do
 done
 budget "all profiles -g span -in 2 -l 2" -g span -in 2 -l 2
 budget "all profiles -g ." -g .
+
+# 6. the predicate-document lint (scripts/pred_doc_lint.py, rules L1-L11 of docs/dev/pred/doc_format.md; review r56):
+#    its planted-fault selftest, its .test (the CLI failure path), and the lint over the REAL predicate documents.
+LINT="$ROOT_DIR/scripts/pred_doc_lint.py"
+out="$(python3 -I "$LINT" --selftest 2>&1)"; rc=$?
+printf '%s\n' "$out" | tail -n 3
+if [ "$rc" -eq 0 ]; then pass=$((pass+1)); echo "PASS: pred_doc_lint --selftest"; else fail=$((fail+1)); echo "FAIL: pred_doc_lint --selftest rc=$rc"; fi
+out="$(bash "$ROOT_DIR/scripts/tests/pred_doc_lint.py.test" 2>&1)"; rc=$?
+printf '%s\n' "$out" | tail -n 3
+if [ "$rc" -eq 0 ]; then pass=$((pass+1)); echo "PASS: pred_doc_lint.py.test"; else fail=$((fail+1)); echo "FAIL: pred_doc_lint.py.test rc=$rc"; fi
+out="$(cd "$ROOT_DIR" && python3 -I "$LINT" 2>&1)"; rc=$?
+printf '%s\n' "$out" | tail -n 3
+if [ "$rc" -eq 0 ] && printf '%s\n' "$out" | grep -q '^pred_doc_lint: checks passed [0-9]*, failed 0'; then
+    pass=$((pass+1)); echo "PASS: pred_doc_lint over the real predicate documents"
+else fail=$((fail+1)); echo "FAIL: pred_doc_lint over the real documents rc=$rc"; fi
 
 echo "checks passed: $pass"
 echo "checks failed: $fail"
