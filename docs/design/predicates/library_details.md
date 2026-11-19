@@ -38,18 +38,20 @@ was: parked/import-symbols/import (2026-11-19, ruled by the owner: it is in the 
 slugs: import-several
 rulings:
 - 2026-11-19 "import-several: yes. if you can bind multiple arguments simultaneously, thent this is more expressive. before you could only bind one so what did multiple files mean? although, good point, if the binding is just 1 symbol, then its a map of all the values of the files combined." (record: "2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map")
-- 2026-11-14 "import(...)'s argument is a set of names (an rx over file names, consistent with export)" (record: "2026-11-14 — import/export as functions"); the addendum, the manager's wording of his words
+- 2026-11-17 "So if I use a li library element that causes non-dfa behavior then it should error out" (record: "2026-11-17 OWNER — a library element beyond the user's level is an ERROR"); RULED for libraries (the record): a library element that needs more than the level the user asked for is a compile error, never a silent lift; his "good ideas" on scope and a host cap are not ruled
 rejected:
 - it must resolve to EXACTLY ONE file; several matches a compile error (the 2026-11-14 addendum; the draft §7) — by owner ruling — import-several ("before you could only bind one so what did multiple files mean?").
 - `import weekday as wd` for a clash (the manager's 2026-11-14 lean) — by owner ruling — no alphabetic keywords; the rename is now `(wd = weekday) := ...` (core/modules/binding-list).
 readings:
 - zero files matched stays a compile error (the manager's reading of import-several) — UNTESTED (a refusal).
+- the argument is a set of names, an rx over file names, consistent with export: the 2026-11-14 addendum as the record paraphrases it ("Addendum (Frank)", record: "2026-11-14 — import/export as functions"), not his verbatim words; its "exactly one file" half reversed by import-several — SUPPORTED by import-several's ruling, which keeps the set of names.
 - compile time only, pinned by `sha256`, configured directories only (the manager's 2026-11-13 design; the draft §7, LEAN) — UNTESTED.
 evidence:
 history:
 - 2026-11-13: `d := import("isodate")`; 2026-11-14: import/export as functions, its follow-up and addendum; 2026-11-19: several modules in one import, then import-several.
 - 2026-11-19 (lane preddoc3b): the parked placeholder parked/import-symbols/import is retired into this section (the owner ruled import-symbols); its slug `import-symbols` is on core/modules/binding-list.
 - 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane preddoc5): the level bullet added with its ruling (review r59 COMPA-8); the 2026-11-14 addendum item ("import(...)'s argument is a set of names ...", the record's paraphrase, not his words) moved from `rulings:` to the readings (review r59 RULING-4).
 
 ## lib/builtin/import/filter — A filter inside the import
 was: core/modules/import-filter (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
@@ -326,7 +328,7 @@ history:
 - 2026-11-19 (lane preddoc4): the ruled per-call hit name added to the base (review r59 COMPB-8); its spelling stays a placeholder.
 
 ## lib/search/hits — hits
-slugs: hits-committed hits-text hits-pass some-own
+slugs: hits-committed hits-text hits-pass
 rulings:
 - 2026-11-17 "hits-text: yes but spelling to be reviewed with all other spellings." (record: "2026-11-17 OWNER RULING — the hit list: atomic and anchored")
 rejected:
@@ -408,11 +410,12 @@ history:
 - 2026-11-19 (lane preddoc3c): split from `endsWith`.
 
 ## lib/search/anchored — anchored
-slugs:
+slugs: anchored-in-hole
 rulings:
 - 2026-11-15 "Ok I agree." (record: "2026-11-14 RULINGS on rev 3's contradictions")
-- 2026-11-15 "Anchored def: agree." (record: "2026-11-15 RULINGS — `anchored` has exact ends; which `&` is the operator in rx text")
+- 2026-11-15 "Anchored def: agree." (record: "2026-11-15 RULINGS — `anchored` has exact ends; which `&` is the operator in rx text"); CORRECTED by the 21:20 entry (the item below): it answered the earlier `\A`/`\z` lean
 - 2026-11-15 "anchored-in-hole: agree" (record: "2026-11-15 RULINGS — no anchored-specific error in a hole; the anchor warning covers every whole-match place")
+- 2026-11-15 "The anchored comment was to a previous statement. What does new anchored suggestion mean." (record: "2026-11-15 CORRECTION and RULING"); part (a): his "Anchored def: agree" answered the manager's EARLIER statement (the `\A`/`\z` lean): RULED = `anchored` has EXACT ends; defining `anchored(P)` as "P in filter role on the enclosing scope" is NOT ruled
 rejected:
 - his placeholder `anchored(rx) := /^${rx}$/` — by owner ruling — exact ends: its `$` also holds before a final newline (preddoc3c PART AC, sabotage s6 caught).
 - an error specific to `anchored` in a hole — by owner ruling — anchored-in-hole.
@@ -528,6 +531,7 @@ history:
 ## lib/counting/every-pass — Every pass, named
 slugs: every-pass-spelling
 rulings:
+- 2026-11-17 "last-pass-default: regex. I want to have the method of achieving the alternative meanings defined and tested so we don't lose that functionality." (record: "2026-11-17 OWNER RULING — last-pass-default: regex"); the standing instruction: every meaning the draft could express before (every pass with and without at-least-one, not-every, some / count / occurs, ...) has its spelling DEFINED and TESTED
 rejected:
 readings:
 - OPEN in the draft (§R.8, row every-pass-home: "the conditioned item inside `repeat` is the item form"; the draft R.4's W1a, W1b); the owner, the evening of 2026-11-16 as the draft quotes him: "assign the condition inside the loop to get the all behavior" — the item form, today's way; whether a name exists is not asked.

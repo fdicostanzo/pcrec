@@ -632,6 +632,8 @@ see: core/modules/positional parked/ideas/tuple-apart
 - Two orders, both legal: `>= (9, 30)` compares the whole tuple in DICTIONARY ORDER (the first components, then the
   next only where every earlier one is equal; each component read by its literal, in its literal's domain);
   `(>= 9, >= 30)` compares each part on its own. `10:15` is in the first and not the second.
+- A modifier around a set of tuples acts on every part: `padded(>= (9, 30))` reads h and m both padded; a per-part
+  modifier is parked (parked/ideas/partial-transforms).
 - Taking ONE tuple apart (`(a, b) := lo`) is open (core/modules/positional); a first/rest walk is parked.
 - A tuple is not a RECORD: the parentheses of a call or a condition are never a value (core/operators/bindings).
 WHOLE `9:45` HOLDS, `9:15` FAILS, `10:15` HOLDS / SEARCHED `9:15 10:30` `10:30`@5 / FIND-ALL `9:30 9:15 12:45` [`9:30`@0, `12:45`@10] (`time & ((h, m): >= (9, 30))`, time := `/(?<h>\d{1,2}):(?<m>\d{2})/`)
@@ -1105,7 +1107,7 @@ see: lib/control/peek
 - That the set exists and holds `peek`: his lean. Library pieces in it carry `default: yes`.
 modes: n/a (no matching involved)
 
-### Which names are in the default set   [core/modules/default-set/members]   open default-set 2026-11-19
+### Which names are in the default set   [core/modules/default-set/members]   open default-imports 2026-11-19
 Which names besides `peek` are in the default-imported set is a question for the owner.
 needs: core/modules/default-set
 - Today only `lib/control/peek` carries `default: yes`. Candidates: `peek` alone; every name the core's own pieces

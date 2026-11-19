@@ -272,3 +272,11 @@ A provided constant naming the regex that matches nothing (his idea with unset-i
 Trigger: none recorded (the owner's remark in the record, not an ideas-file item).
 Source: the record, the owner's unset-in-hole ruling (details).
 modes: n/a (parked: not in the language)
+
+### The other-side sigil   [parked/ideas/other-side-sigil]   parked 2026-11-19
+A mark before a label path meaning "this label, of the other side of the `&`" (placeholder `^h`), paused indefinitely by the owner.
+Trigger: a use with "real value other than 'override a users own *'" (his words); rejecting the empty case of the
+  author's own `*` loop (`some(^h)`) is not one.
+Source: the record, the field-reference entries and retire-paused (details).
+see: parked/ideas/field-count core/values/tuples
+modes: n/a (parked: not in the language)

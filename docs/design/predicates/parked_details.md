@@ -1084,3 +1084,18 @@ evidence:
 history:
 - not an ideas-file item; the record's "2026-11-18 OWNER RULING — unset-in-hole" entry, his words "that would be a good constant to provide".
 - 2026-11-19 (lane preddoc3c): the base piece states that no trigger is recorded.
+
+## parked/ideas/other-side-sigil — The other-side sigil
+slugs: label-section reference-index bound-reference macro-arguments
+rulings:
+- 2026-11-15 (class: RULING + IDEA) "definitely not a bare reference. it might shadow a binding and it wouldn't be clear where it was coming from. if we are building new syntax, what about a symbol that represents the other side of the intersection. ^.h or something like that." (record: "2026-11-15 RULING + OWNER IDEA — no bare field reference; a mark for the other side of the intersection"); the refusal is RULED (core/conditions/form carries it as a rejected candidate), the mark his IDEA
+- 2026-11-16 (class: RULING) "label-section: i think the sigil mark is better. i like a lot about the section but its re-using a syntax for a different purpose. the save would be if the section syntax were defined in such a way that that worked. but i don't see it." (record: "2026-11-16 RULING — a compare names its fields with the other-side sigil"); PAUSED within the half hour (next item)
+- 2026-11-16 (class: DIRECTION) "i want to pause this direction and consider a different one that is more inline with existing concepts." (record: "2026-11-16 OWNER DIRECTION — PAUSE the field-reference direction; consider a condition over several labels at once"); paused, not reversed; the joint condition came from it
+- 2026-11-16 (class: RULING) "retire-paused: agree to split. But the pause on ^ is indefinite and requires real value other than 'override a users own *'" (record: "2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite"); the sigil PAUSED INDEFINITELY; reference-index and bound-reference stay suspended with it
+rejected:
+- the section `[(h:), (m:)]` naming the compared fields — by owner ruling — label-section ("its re-using a syntax for a different purpose").
+readings:
+- macro-arguments (macros as arguments, indexed and called) WITHDRAWN as unneeded by the sigil ruling (the manager's consequence (2) in that entry, not his words) — UNTESTED.
+evidence: the draft §16 (rev 19, the direction's record); review r19 (CENSUS, SIMULATE).
+history:
+- not an ideas-file item: the paused direction of the draft's rev 16-19 (§16), homed here by lane preddoc5 (2026-11-19, review r59 COMPA-6, COMPB-5). Its one use parked separately is parked/ideas/field-count.

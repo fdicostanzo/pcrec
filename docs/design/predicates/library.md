@@ -54,6 +54,8 @@ defined: native (it reads library files at compile time)
 - `m := import("isodate")` binds a module to a name; members are `m.year`. Two modules' `year` never collide.
 - The argument is a set of names, as `@export`'s is; several files: `import("pcrec"|"numbers")`.
 - No file matched is a compile error (a reading).
+- A library element that needs more than the level the user asked for (automaton code only, by default) is a
+  compile error naming the element, never a silent lift.
 - Imports are COMPILE TIME only (the artifact is self-contained), PINNED (`sha256 = ...`), and resolved only from
   configured library directories, never an arbitrary path (a reading).
 modes: n/a (no matching involved)
