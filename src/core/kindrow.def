@@ -55,7 +55,12 @@
  *   NODE   the answer depends on the node, so its reader keeps the code (a
  *          repeat by its minimum; a class by its set: the empty class)
  * A_LOOK's row is BODY; a NEGATIVE lookaround's NO is picked per node by
- * `pcrec_ast_row` (internal.h), as A_CALLOUT's `consume` TEXT is.
+ * `pcrec_ast_row` (internal.h), as A_CALLOUT's `consume` TEXT is. A NODE row
+ * never reaches `pcrec_never_by_row` (a loud internal error there).
+ * The column is the LANGUAGE-LEVEL answer: whether the kind's own text can
+ * match, given its children's. A reader's rewrite is its own: the split
+ * derivation's KILL turns a floor `\G` or `^` into the never node, so A_GSTART
+ * and A_CTX read NO here though that reader makes them never.
  *
  * A row states the KIND-LEVEL answer only. An answer that depends on the
  * node or on context keeps its code in the reader and reads the row for the

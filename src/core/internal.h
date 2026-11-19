@@ -2580,19 +2580,27 @@ static inline KindRow pcrec_ast_row(const Ast *a)
     return r;
 }
 
+/* `pcrec_ctx_fail` is declared with the other Ctx entries further down;
+ * repeated here because `pcrec_never_by_row` below calls it. */
+void pcrec_ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
+     __attribute__((noreturn, format(printf, 3, 4)));
+
 /* Whether a node can NEVER match, from its row's NEVER column and its
  * children's never bits: `any` (some child is never) and `every` (every child
- * is; a one-child kind passes its body's bit as both). The never family's ONE
- * propagation (span_arms §14.3 D-9). A NODE row's answer is its reader's own
- * code, which it passes as both. */
-static inline bool pcrec_never_by_row(KindNever n, bool any, bool every)
+ * is; a one-child kind passes its body's bit as both; a leaf passes false
+ * for both). The never family's ONE propagation (span_arms §14.3 D-9). A
+ * NODE row has no row answer: its reader keeps the node's own code and never
+ * asks here, so reaching here with one is a loud internal error. */
+static inline bool pcrec_never_by_row(Ctx *cx, KindNever n, bool any, bool every)
 {
     switch (n) {
     case KNEVER_NO:    return false;
     case KNEVER_ANY:   return any;
     case KNEVER_EVERY: return every;
     case KNEVER_BODY:  return every;
-    case KNEVER_NODE:  return every;
+    case KNEVER_NODE:
+        pcrec_ctx_fail(cx, 0, "internal error: a NODE row reached the never "
+                       "propagation; its reader keeps the node's own code");
     }
     return every;   /* unreachable: -Wswitch */
 }
