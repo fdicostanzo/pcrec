@@ -28420,3 +28420,11 @@ Next
   skill wired, .gitignore (72f4274d0). Lane predrole (sonnet) adds the role word `pred` to session_role and the
   two hooks. From the first predicate session on, main writes none of the draft, COND-FAMILY.md or
   predicates_future.md.
+- 19:05-19:25: predrole MERGED (cab590dcf; role `pred`; hookrole 22 of 22; push owed after CI on 0430a8929).
+  crit-spanarms7 = review r51: 47 findings, 18 verified, 0 refuted; L1 / L3 / L2 READY WITH LISTED TEXT FIXES;
+  READYL3-1 an ANSWER bug in the design (a kept guard means a K<0 move is never emitted under byte:
+  `(?<=a)a(\w)\1` from 3 gives (2,5), oracle (3,6)), READYL3-4 and -6 safety. Ruled (scratch/mgr140/
+  r51_spanarms7_dispositions.md): `++ rg` moves to L2; the never rows are a kindrow.def NEVER column (RM-6, rides
+  L1); the census stop reads the model's prediction (my reading of D191.1, to tell Frank); F-7 a noted deviation
+  with A-POSDOM as its correcting event; READYL2 discharges L2's readiness critic once the confirm critic passes.
+  Fix lane spanarms8. The build lanes wait for 11-19 by day (evening hold from 20:00).
