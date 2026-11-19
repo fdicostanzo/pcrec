@@ -723,7 +723,7 @@ if [ -x "$HBIN" ] && [ -z "$abad" ]; then
             'zr	req_whole_run	78797a	harness:zero' \
             'zr	req_byte	-	harness:zero' \
             'zr	req_pieces	-	harness:zero' \
-            'zr	req_set	-	' > "$WORKDIR/zw"
+            'zr	req_set	-	harness:zero' > "$WORKDIR/zw"
         while IFS=$'\t' read -r side fact wval wwhy; do
             r="$(arow "$fact" "$WORKDIR/$side.f")"
             gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
@@ -831,6 +831,75 @@ if [ "$nrw" -eq 0 ] || [ -n "$rbad" ]; then
     bad "[facts-rep] the power arm's listing is wrong:${rbad:- no cell was read}"
 else
     ok "[facts-rep] $nrw cells: an exact repeat lists its copies (run and pieces), the storage bound's 32 positions at W-R5, and --harness=restore=rep the old form"
+fi
+
+# [facts-look] span arms L1 (span_arms.md §14.4 L1, §5.2, §5.7): a positive
+# lookaround's bytes NARROW the consumed run positions they overlap, the TOP
+# set step adds every one-byte run position to the necessary set, and a walk
+# that proves no attempt can match lists `req_whole_run`'s why `dead`
+# (facts_listing.md §4.1.3¶1a). Expectations by hand from §14.2's L1 rows,
+# every answer libpcre2's (tests/litscan/spanarms.rxt):
+#   - `xy(?=bc)[bc]c`: `[bc]` meets `b`, the run is `xybc` and `b` joins the
+#     set; under `--harness=restore=look` the plain unit again (the set and
+#     the masked run of the base, `harness:look` on all three walk facts);
+#   - `a(?=b)[bc]` (W-S1's row): the byte moves from `a` to `b`;
+#   - W-D1 `foo(?=bar)baz`, W-D2 `(?<=ab)(?<=cb)c`, W-D8 `x[^\x00-\xff]y`
+#     list `dead` (`dead` ranks above `harness:`); W-D3, W-D4, W-D5, W-D6 and
+#     W-D7 (the contradiction is optional, one branch, negated, repeated zero
+#     times; W-T1's live pattern) do NOT;
+#   - the run is equal with and without `-fno-ctx-node` where the lowering
+#     can differ (`a(?=b)[bc]`, `ab[xy](?=(?<=x)y)[xy]`: the item is the
+#     lookaround's body or its context node, one answer, §14.4 L1 Tests).
+lbad=""; nlk=0
+if [ ! -x "$HBIN" ]; then
+    lbad=" $HBIN is missing (make builds it);"
+else
+    while IFS=$'\t' read -r bin arm pat fact want wwhy; do
+        nlk=$((nlk + 1))
+        b="$PCREC"
+        [ "$bin" = h ] && b="$HBIN"
+        [ "$arm" = - ] && arm=""
+        got="$(rget "$b" "$arm" "$pat" "$fact")"
+        gval="${got%%$'\t'*}"; gwhy="${got#*$'\t'}"
+        [ "$wwhy" = - ] && wwhy=""
+        [ "$gval" = "$want" ] || lbad="$lbad '$pat'${arm:+ restore=$arm} $fact value [$gval], want [$want];"
+        [ "$gwhy" = "$wwhy" ] || lbad="$lbad '$pat'${arm:+ restore=$arm} $fact why [$gwhy], want [$wwhy];"
+    done <<'LKEOF'
+p	-	xy(?=bc)[bc]c	req_whole_run	78796263	rate:builtin-prior
+p	-	xy(?=bc)[bc]c	req_set	98,99,120,121	-
+p	-	xy(?=bc)[bc]c	req_set_maxoff	98:2,99:3,120:0,121:1	-
+h	look	xy(?=bc)[bc]c	req_whole_run	78796263/fffffeff	harness:look
+h	look	xy(?=bc)[bc]c	req_set	99,120,121	harness:look
+h	look	xy(?=bc)[bc]c	req_set_maxoff	99:3,120:0,121:1	harness:look
+p	-	a(?=b)[bc]	req_byte	98	rate:builtin-prior
+p	-	foo(?=bar)baz	req_whole_run	666f6f62617a	dead
+h	look	foo(?=bar)baz	req_whole_run	666f6f62617a	harness:look
+p	-	(?<=ab)(?<=cb)c	req_whole_run	none	dead
+p	-	x[^\x00-\xff]y	req_whole_run	none	dead
+h	look	x[^\x00-\xff]y	req_whole_run	none	dead
+p	-	x(?:foo(?=bar)baz)?y	req_whole_run	none	-
+p	-	(?:foo(?=bar)baz|q)	req_whole_run	none	-
+p	-	x(?!foo(?=bar)baz)y	req_whole_run	7879	rate:builtin-prior
+p	-	(?:foo(?=bar)baz){0}x	req_whole_run	none	-
+p	-	[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).	req_whole_run	6161616161616161616161616161616161626262626262626262626262626262/fdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff	rate:builtin-prior
+LKEOF
+    for pat in 'a(?=b)[bc]' 'ab[xy](?=(?<=x)y)[xy]'; do
+        nlk=$((nlk + 1))
+        for side in on off; do
+            fl=(); [ "$side" = off ] && fl=(-fno-ctx-node)
+            "$TIMEOUT_BIN" 120 "$PCREC" --features all "${fl[@]}" --emit-facts --pattern "$pat" > "$WORKDIR/lk.l" 2> /dev/null ||
+                { lbad="$lbad '$pat' refused ($side);"; continue; }
+            sect "$WORKDIR/lk.l" facts | grep -F "$(printf 'encoding=byte\t')" | arow req_whole_run /dev/stdin | col value > "$WORKDIR/lk.$side"
+        done
+        cmp -s "$WORKDIR/lk.on" "$WORKDIR/lk.off" && [ -s "$WORKDIR/lk.on" ] && ! grep -qx none "$WORKDIR/lk.on" ||
+            lbad="$lbad '$pat' run [$(cat "$WORKDIR/lk.on")] with the context node, [$(cat "$WORKDIR/lk.off")] under -fno-ctx-node;"
+    done
+fi
+echo "REACH: $nlk [facts-look] listing cell(s)"
+if [ "$nlk" -eq 0 ] || [ -n "$lbad" ]; then
+    bad "[facts-look] the lookaround item's listing is wrong:${lbad:- no cell was read}"
+else
+    ok "[facts-look] $nlk cells: a lookaround narrows the run and joins the set, --harness=restore=look restores the unit, dead is listed exactly where no attempt can match, and the run is the same under -fno-ctx-node"
 fi
 
 # [REPEAT-RUN] the lever's REACH on a `.rxt` FILE compile (sar1mrg pairb,

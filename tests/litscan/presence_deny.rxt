@@ -718,3 +718,18 @@ ns 0 "a\x0az"
 ns 1 "a\x0az"
 ns 2 "a\x0az"
 ns 3 "a\x0az"
+
+# W-T1 (span_arms §5.7, span arms L1): under --memfn=no-fd-pres-pick (tests/memfn/run_presence.sh [deny-answers]) the pre-check tests the WHOLE run `a^15 b^17`; a guard that kept its first 32 positions instead narrows the run to a string absent from the subject and answers NOMATCH (libpcre2-8 10.46: (0,35))
+pattern [ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).
+features all
+m "caaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 0 35
+n "aaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
+m "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 2 37
+
+# W-T1 (span_arms §5.7, span arms L1): under --memfn=no-fd-pres-pick (tests/memfn/run_presence.sh [deny-answers]) the pre-check tests the WHOLE run `a^15 b^17`; a guard that kept its first 32 positions instead narrows the run to a string absent from the subject and answers NOMATCH (libpcre2-8 10.46: (0,35)) [engine vm]
+pattern [ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).
+features all
+engine vm
+m "caaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 0 35
+n "aaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
+m "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 2 37

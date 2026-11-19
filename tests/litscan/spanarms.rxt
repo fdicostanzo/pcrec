@@ -693,3 +693,261 @@ engine vm
 m "xyabczw" 0 7
 m "xyabzw" 0 6
 n "xyacbzw"
+
+# Unit L1 (span_arms.md rev 3.2 §14.4 L1, the feature; lane l1feat, 2026-11-19): a
+# POSITIVE LOOKAROUND IS AN ITEM. Its body's fixed bytes (the head for a lookahead, the
+# description read reversed for a lookbehind, a one-character body as its context node)
+# meet the consumed run positions they overlap; every one-byte run position joins the
+# necessary set; a meet that empties proves no attempt can match (`dead`, a listing
+# fact, run_facts_checks.sh [facts-look]). Every expectation is libpcre2-8 10.46's
+# (tests/lib/p2probe.c, lane l1feat, 2026-11-19), on the default route and under `engine vm`.
+
+# W-L1 (span_arms §14.2 L1): a lookahead's head `bc` meets the consumed `[bc]` at the same place, so the run is `xybc` and `b` joins the necessary set (TOP set step); a meet that kept `[bc]` and added `c` would delete `xybc`
+pattern xy(?=bc)[bc]c
+features all
+m "xybc" 0 4
+n "xycc"
+n "xybb"
+m "zzxybcz" 2 6
+n "xyb"
+
+# W-L1 (span_arms §14.2 L1): a lookahead's head `bc` meets the consumed `[bc]` at the same place, so the run is `xybc` and `b` joins the necessary set (TOP set step); a meet that kept `[bc]` and added `c` would delete `xybc` [engine vm]
+pattern xy(?=bc)[bc]c
+features all
+engine vm
+m "xybc" 0 4
+n "xycc"
+n "xybb"
+m "zzxybcz" 2 6
+n "xyb"
+
+# W-S1 (span_arms §5.7, §14.2): the lookahead `b` narrows `[bc]` to `b`, so the necessary byte moves from `a` to `b`; a set step that joined `c` would delete every match
+pattern a(?=b)[bc]
+features all
+m "ab" 0 2
+n "ac"
+m "xxab" 2 4
+n "a"
+n "bb"
+
+# W-S1 (span_arms §5.7, §14.2): the lookahead `b` narrows `[bc]` to `b`, so the necessary byte moves from `a` to `b`; a set step that joined `c` would delete every match [engine vm]
+pattern a(?=b)[bc]
+features all
+engine vm
+m "ab" 0 2
+n "ac"
+m "xxab" 2 4
+n "a"
+n "bb"
+
+# W-L2 (span_arms §5.7): a lookbehind nested in a lookahead reads its guard at the outer item's offset, so `xx` meets the two `[xy]` before the lookahead's `y`: the run is `abxxy`; a nested guard read at the wrong offset narrows the wrong positions
+pattern ab[xy][xy](?=(?<=xx)y)[xy]
+features all
+m "abxxy" 0 5
+n "abxyy"
+n "abyxy"
+n "abxxx"
+m "zabxxyz" 1 6
+
+# W-L2 (span_arms §5.7): a lookbehind nested in a lookahead reads its guard at the outer item's offset, so `xx` meets the two `[xy]` before the lookahead's `y`: the run is `abxxy`; a nested guard read at the wrong offset narrows the wrong positions [engine vm]
+pattern ab[xy][xy](?=(?<=xx)y)[xy]
+features all
+engine vm
+m "abxxy" 0 5
+n "abxyy"
+n "abyxy"
+n "abxxx"
+m "zabxxyz" 1 6
+
+# W-L5 (span_arms §5.7): two lookbehinds meet the consumed `[ac][ac]cc`: `acc` narrows the second `[ac]` to `a`, `cc` adds nothing; the run is `[ac]accd`
+pattern [ac][ac]cc(?<=acc)(?<=cc)d
+features all
+m "aaccd" 0 5
+m "caccd" 0 5
+n "acccd"
+n "ccccd"
+n "aacc"
+
+# W-L5 (span_arms §5.7): two lookbehinds meet the consumed `[ac][ac]cc`: `acc` narrows the second `[ac]` to `a`, `cc` adds nothing; the run is `[ac]accd` [engine vm]
+pattern [ac][ac]cc(?<=acc)(?<=cc)d
+features all
+engine vm
+m "aaccd" 0 5
+m "caccd" 0 5
+n "acccd"
+n "ccccd"
+n "aacc"
+
+# W-S4 (span_arms §5.7, reqcube_check.py WIT): `(?=qr)` narrows `[pq]` to `q`, so `q` joins the set and the run is `xqr`; a set step that joined `p` deletes every match
+pattern x(?=qr)[pq]r
+features all
+m "xqr" 0 3
+n "xpr"
+m "axqrb" 1 4
+n "xq"
+
+# W-S4 (span_arms §5.7, reqcube_check.py WIT): `(?=qr)` narrows `[pq]` to `q`, so `q` joins the set and the run is `xqr`; a set step that joined `p` deletes every match [engine vm]
+pattern x(?=qr)[pq]r
+features all
+engine vm
+m "xqr" 0 3
+n "xpr"
+m "axqrb" 1 4
+n "xq"
+
+# W-D1 (span_arms §5.2 (g), §5.7): the lookahead `bar` contradicts the consumed `baz`, so no attempt can match; the walk lists the pattern dead (the listing check, run_facts_checks.sh [facts-look]), the answer is libpcre2's NOMATCH
+pattern foo(?=bar)baz
+features all
+n "foobaz"
+n "foobar"
+n "foobarbaz"
+
+# W-D1 (span_arms §5.2 (g), §5.7): the lookahead `bar` contradicts the consumed `baz`, so no attempt can match; the walk lists the pattern dead (the listing check, run_facts_checks.sh [facts-look]), the answer is libpcre2's NOMATCH [engine vm]
+pattern foo(?=bar)baz
+features all
+engine vm
+n "foobaz"
+n "foobar"
+n "foobarbaz"
+
+# W-D2 (span_arms §5.7): two lookbehinds `ab` and `cb` disagree on the byte before `b` (guard against guard): dead, NOMATCH everywhere
+pattern (?<=ab)(?<=cb)c
+features all
+n "abc"
+n "cbc"
+n "abcbc"
+
+# W-D2 (span_arms §5.7): two lookbehinds `ab` and `cb` disagree on the byte before `b` (guard against guard): dead, NOMATCH everywhere [engine vm]
+pattern (?<=ab)(?<=cb)c
+features all
+engine vm
+n "abc"
+n "cbc"
+n "abcbc"
+
+# W-D8 (span_arms §14.4 L1): a class that admits no byte under `byte` is the empty class leaf: dead
+pattern x[^\x00-\xff]y
+features all
+n "xy"
+n "xay"
+
+# W-D8 (span_arms §14.4 L1): a class that admits no byte under `byte` is the empty class leaf: dead [engine vm]
+pattern x[^\x00-\xff]y
+features all
+engine vm
+n "xy"
+n "xay"
+
+# W-D3 (span_arms §5.7): the contradiction is optional, so the pattern lives and is NOT listed dead; a walk-level DEAD flag would list it dead
+pattern x(?:foo(?=bar)baz)?y
+features all
+m "xy" 0 2
+n "xfoobazy"
+
+# W-D3 (span_arms §5.7): the contradiction is optional, so the pattern lives and is NOT listed dead; a walk-level DEAD flag would list it dead [engine vm]
+pattern x(?:foo(?=bar)baz)?y
+features all
+engine vm
+m "xy" 0 2
+n "xfoobazy"
+
+# W-D4 (span_arms §5.7): the contradiction is one branch of two: NOT dead
+pattern (?:foo(?=bar)baz|q)
+features all
+m "q" 0 1
+n "foobaz"
+m "aq" 1 2
+
+# W-D4 (span_arms §5.7): the contradiction is one branch of two: NOT dead [engine vm]
+pattern (?:foo(?=bar)baz|q)
+features all
+engine vm
+m "q" 0 1
+n "foobaz"
+m "aq" 1 2
+
+# W-D5 (span_arms §5.2 (g)): a contradiction inside a negative lookahead holds vacuously: NOT dead
+pattern x(?!foo(?=bar)baz)y
+features all
+m "xy" 0 2
+n "xfooy"
+
+# W-D5 (span_arms §5.2 (g)): a contradiction inside a negative lookahead holds vacuously: NOT dead [engine vm]
+pattern x(?!foo(?=bar)baz)y
+features all
+engine vm
+m "xy" 0 2
+n "xfooy"
+
+# W-D6 (span_arms §5.7): the contradiction is repeated zero times: NOT dead
+pattern (?:foo(?=bar)baz){0}x
+features all
+m "x" 0 1
+m "ax" 1 2
+
+# W-D6 (span_arms §5.7): the contradiction is repeated zero times: NOT dead [engine vm]
+pattern (?:foo(?=bar)baz){0}x
+features all
+engine vm
+m "x" 0 1
+m "ax" 1 2
+
+# span_arms §14.2 L1 (TOP set step, empty pick): `(?=a)` narrows `\w` to `a`, so the set is `a` where it was empty; every match holds an `a`
+pattern \w*(?=a)\w
+features all
+m "a" 0 1
+m "bba" 0 3
+n "bbb"
+m "ccab" 0 3
+
+# span_arms §14.2 L1 (TOP set step, empty pick): `(?=a)` narrows `\w` to `a`, so the set is `a` where it was empty; every match holds an `a` [engine vm]
+pattern \w*(?=a)\w
+features all
+engine vm
+m "a" 0 1
+m "bba" 0 3
+n "bbb"
+m "ccab" 0 3
+
+# span_arms §14.2 L1 non-mover: the lookbehind `yz` is the bytes already consumed, the run stays `xyzabc`
+pattern xyz(?<=yz)abc
+features all
+m "xyzabc" 0 6
+n "xyzab"
+
+# span_arms §14.2 L1 non-mover: the lookbehind `yz` is the bytes already consumed, the run stays `xyzabc` [engine vm]
+pattern xyz(?<=yz)abc
+features all
+engine vm
+m "xyzabc" 0 6
+n "xyzab"
+
+# span_arms §14.2 L1 non-mover: an alternation body's head is `a` alone (common head of `ab|ac`), so the run is `xa` as before
+pattern x(?=ab|ac)a.
+features all
+m "xab" 0 3
+m "xac" 0 3
+n "xad"
+
+# span_arms §14.2 L1 non-mover: an alternation body's head is `a` alone (common head of `ab|ac`), so the run is `xa` as before [engine vm]
+pattern x(?=ab|ac)a.
+features all
+engine vm
+m "xab" 0 3
+m "xac" 0 3
+n "xad"
+
+# W-T1 (span_arms §5.7, r3 READY-1): a growing lookbehind guard keeps its LAST 32 positions; the run is `a^15 b^17` two places in. At default flags the 8-position window cannot tell a keep-first sabotage apart (both stamp `b`s); tests/litscan/presence_deny.rxt carries the same block, run under `--memfn=no-fd-pres-pick` (the whole-run test) by tests/memfn/run_presence.sh [deny-answers]
+pattern [ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).
+features all
+m "caaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 0 35
+n "aaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
+m "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 2 37
+
+# W-T1 (span_arms §5.7, r3 READY-1): a growing lookbehind guard keeps its LAST 32 positions; the run is `a^15 b^17` two places in. At default flags the 8-position window cannot tell a keep-first sabotage apart (both stamp `b`s); tests/litscan/presence_deny.rxt carries the same block, run under `--memfn=no-fd-pres-pick` (the whole-run test) by tests/memfn/run_presence.sh [deny-answers] [engine vm]
+pattern [ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).
+features all
+engine vm
+m "caaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 0 35
+n "aaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
+m "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd" 2 37
