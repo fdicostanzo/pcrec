@@ -4258,3 +4258,7 @@ Main ruled on the four kit findings (D186 add. 2):
 - 09:5x main: the near-miss result does NOT block the landing (H(64) is 1.6-2.8x faster than today; the "loss" is only against the
   pure loop); main told Frank it is not a ruling item. Main plans the cover-cap joint landing (lane/covs2land + relabel 0df533a85)
   and sends the plan.
+- 09:52 706 GREEN (228 s): the near-miss profile (Frank's ask). FINDING: H(h) vs the loop on long near-miss spans is BRANCH
+  MISPREDICTION (misses/B rise 3.5 -> 14.3 from h0 to h64, ~22 cyc each), not footprint (op-cache 100 % for every head <= 64); the
+  all-inline text I adds footprint at length (hex1000: 29.7 KB, op-cache 58.9 %). Hit-dense flat. Logged in ideas.md with the
+  branchless-block idea (UNMEASURED). Table: scratch/memfn/formperf/run-20261119T095049/results.md.

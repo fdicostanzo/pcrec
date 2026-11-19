@@ -818,3 +818,17 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
 - 2026-11-15 OWNER DIRECTION (Frank via main, for [COVER-CAP] stage 2; NOT a build go), verbatim: "we have a performance dial for pcrec. it could include some options for the kit. Also, I would default to sub span loops (excepting the measured head inline ) then measure if inline was faster than the other way around. Measure three: all inline, all loops, header inline then loops. Then the speed dial option can be always inline should it prove that is faster". Kit reading: for long exact spans the DEFAULT is loops over repeated sub-spans with a measured inline head; three forms each get a card (all inline / all loops / inline head then loops); all-inline, if measured faster, becomes a performance-dial option, not the default. Context: main's cover_cap.md rev 4.1 reads the exact stretch from the anchored DFA; the stage-2 request will ask for spans up to 4095 positions; a user-settable per-artifact span limit (shorter default) is a stage-2 item. Relates to the long-exact-span entries (1)-(4) above.
 
 - 2026-11-15 FACT (main, from code review r9 of lane/covs1, finding EMITTED-2; docs/dev/reviews/2026-11-15-r9-covs1.md): the emitted cover form for a 32-position class span (32 digits) on a dense-near-miss subject (31 digits then a letter, repeated): instructions:u 230.7 M on the base build (DFA route) vs 1,534.8 M on the cover route, x6.65; on a plain-miss subject +14 %. Observed: after a failed check the form resumes one byte later, and the statement tells every position's set. The same form serves spans up to 24 on main today. Owner: stage 1 lands, then a night timing including this regime; it will be part of the [COVER-CAP] stage-2 request. (Kit observation, unevaluated: a near-miss regime is where a skip distance from the failing position, not one byte, would matter; logged, not proposed.)
+
+- 2026-11-19 MEASURED (job 706, formperf, perf stat :u on Zen 4, the C3 artifacts of run fcards-zen4-1; table
+  scratch/memfn/formperf/run-20261119T095049/results.md): on long one-class spans with NEAR-MISS subjects (most of the span matches,
+  then the attempt fails and restarts a byte later), the cost of the inline head is BRANCH MISPREDICTION, not instruction footprint.
+  hex500 near-miss, per byte: h0 (loop) 221 cyc, 3.5 branch misses; h8 240/4.5; h16 260/6.1; h32 335/9.1; h64 458/14.3; all-inline
+  I 707/27.5. Op-cache hit stays 100 % for every head <= 64 (code 1.2-2.9 KB), so footprint does not separate h0 from h64: about 22
+  extra cycles per extra miss, which is a mispredict's price. Footprint does bite the ALL-INLINE text at length: hex1000 I is 29.7 KB of
+  code, op-cache hit 58.9 %, 1.6 L1i misses and 127 branch misses per byte, 3,587 cyc/B. Hit-dense subjects show none of it (every
+  head about 2 ns/B; attempts end early). Reading: each inline position is its own conditional branch whose exit point varies per
+  attempt, so the predictor misses several times per attempt; a loop concentrates that into one branch with one exit miss.
+  IDEA (UNMEASURED, D77, no build): a BRANCHLESS inline block (a SWAR or vector compare of 8/16/32 positions against the class,
+  one branch per block) might keep the inline head's short-span win without its per-position mispredicts; trigger = a census of
+  long one-class spans on near-miss-shaped real subjects worth the work. Also relevant to any other kit form that unrolls a
+  data-dependent compare chain (verify, run pre-check).
