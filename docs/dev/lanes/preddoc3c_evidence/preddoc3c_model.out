@@ -1,0 +1,25 @@
+PA     ok   padded("5") ['5', '05', '005']; padded(/^5/) ['5']; /1|2/ on 02 True; between(0,255) on 000 True; between(1,12) on 00 False, accepts ['05', '5', '12']
+PW     ok   7 printed rows of the width form (5 argument orders, 2 value holes): 0 differ []
+AN     ok   [\s\S]* alone and under (?s) (?i) (?m) (?x) holds WHOLE on '', 12, a\nb, 'A b\n'
+AC     ok   the nine printed rows (a|b on ab; a|ab; foo on foo\n and foo; foo$; (?m)^a$; /x${anchored(/a/)}/; /${anchored(/a/)}b/; /\w+/ & anchored(/foo/) on xfoo 1-4): True
+SW     ok   startsWith(5) on 57 True (sketch /^5/ False); contains(/^err/) vs startsWith(err) WHOLE 0 of 1365 differ; contains(/err$/) on xerr\n True; gap crosses a newline True; endsWith n lazy ['123'] greedy ['3']
+SWocc  ok   contains(ab) vs occurrences(ab, min = 1): 0 / 0 / 0 of 121 differ (WHOLE must be 0)
+OC     ok   R.1.9's printed hits (\d* on 1a, 12a3; min 2 on ''; min 3 on ab; (n: <100) on 1234) True; the loop vs the body's regex text, min 0/1/2: [(0, 0, 0), (0, 0, 0), (0, 0, 0)]
+HI     ok   the hit list (atomic loop) on 1234, 12 34, 12 345, x300 12: 0 differ; the failed first try [['34'], ['12', '34'], ['12', '45'], ['0', '12']] (printed [34] [12,34] [12,45] [0,12]); the optional label axa / aax [False, True]
+HIline ok   the hits example line's verdicts
+BE     ok   /\d\d/ & between(1, 12) accepts ['10', '11', '12'] (printed {10, 11, 12}); padded(between(1, 12)) ['05', '5', '12']
+QU     ok   quoted(/^a\w*/) on "ab" True; the plain splice matches 0 texts of 121 (draft: never)
+LE     ok   length(S) counts the loop's passes: ==0 '', ==3 a\nb, ==20, ==21, <=20 rejects 21, even holds ab
+MN     ok   month_numbered(between(1, 6)) accepts ['Jan', 'June', 'Jun', 'January']
+PI     ok   prefix_in(2, /abc|xy/) on xyz / abc [True, False]; prefix_in(2, "Columbus") never holds True
+JO     ok   `[^${join(c)}]`, c := [x, y]: printed WHOLE ax FAILS, ab HOLDS / ab@3 / [ab@6]
+LF     ok   left(/foobar|bazqux/, 2) = fo|ba (printed fo|ba)
+SL     ok   /(?<y>\w+)-${strlen($y)}/ printed WHOLE abc-3 HOLDS / abc-3@5 / [a-1@0, abcdefghij-10@9]
+LO     ok   list_of(/(?<h>\d)/, sep = ","): h = 7 on 7, 5 on 7,3,5 (form (a)); the empty text FAILS: True
+CP     ok   capture names the group by x.label
+RC     ok   rx.digits := rx.repeat(rx.digit, min = 1) vs \d+: 0 / 0 / 0 of 63
+CA     ok   any_case(/(?-i)ho/): primitive vs the candidate body 3 / 246 / 249 of 781 (printed 3 / 246 / 249); a plain argument /ho/: (0, 0, 0)
+CAneg  ok   any_case(/[abAB]{2}/ & !/ab/): 4 / 168 / 216 of 781 (printed 4 / 168 / 216)
+DOC    ok   23 example lines, each verbatim in library.md; missing []
+checks 23, failed 0
+rc=0

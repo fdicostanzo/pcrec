@@ -407,7 +407,7 @@ rulings:
 rejected:
 - one class built from all the values of `[^${c}]` (the manager's leaning at negated-class-hole) — by owner ruling — the user writes `join`.
 readings:
-- `[^${join(c)}]`, c := [x, y], is `[^xy]`: WHOLE `ax` FAILS, `ab` HOLDS / `ab`@3 / [`ab`@6] (the record's run) — SUPPORTED (preddoc3c PART JO; sabotage s14, join as the alternation, caught).
+- `[^${join(c)}]`, c := [x, y], is `[^xy]`: WHOLE `ax` FAILS, `ab` HOLDS / `ab`@3 / [`ab`@6] (the record's run) — SUPPORTED (preddoc3c PART JO; sabotage s14, `[^${c}]` with no join read as the alternation of negated classes, caught).
 - "a function from an array to one string, its members in order" — the manager's reading, told to him; `sep` is the draft's §5.3 (LEAN); `join` over a spelled array of PATTERNS is the n-ary sequence (the rx-module note).
 - for a NON-negated class `[${join(c)}]` equals `[${c}]`; a value with several characters is a class member each; `[^${c}]` with two or more values warns, pointing at `join` — the manager's readings (the negated-class-hole entry), UNTESTED here.
 evidence: preddoc3c PART JO.

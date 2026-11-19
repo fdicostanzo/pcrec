@@ -29,7 +29,7 @@
 #   s11 hits: the loop NOT atomic (each hit atomic only: the failed first try)  -> HI
 #   s12 between EXCLUSIVE of its bounds                                          -> BE
 #   s13 quoted as the plain splice `/"(?:${S})"/`                                -> QU
-#   s14 join(c) read as the alternation of c's members                          -> JO
+#   s14 `[^${c}]` without join: the alternation of negated classes          -> JO
 #   s15 list_of as the two-copy form (b) `(?:X(?:SX)*)?`... the item optional    -> LO
 #   s16 strlen counting bytes of the UTF-8 text +1 (a wrong length)            -> SL
 #   s17 any_case's candidate body without the scoped `(?i:)` (case kept)        -> CA
@@ -358,7 +358,7 @@ def quoted(s_node):                # quoted(S) := /"${S & /[^"]*/}"/
 
 
 def join(vals):                    # join(c): one string, the members in order
-    return "|".join(vals) if sab("s14") else "".join(vals)
+    return "".join(vals)
 
 
 def list_of(x, sep):               # list_of(X, sep = S) := /(?:${X}${S})*${X}/
@@ -544,6 +544,11 @@ def part_HI():
         ok, h = hit_list(hits(R(r"\d+")), t)
         if not ok or [x for x, _ in h] != hl or under(h) != v:
             bad.append(t)
+        # the condition judged AFTER the list, with backtracking into it: an atomic list offers one list only
+        later = any(e == len(t) and under([(t[x:y], x) for k, x, y in c if k == "hit"])
+                    for e, c in hits(R(r"\d+")).ends(t, 0))
+        if later != v:
+            bad.append(t + " (judged after)")
     # the failed first try (each hit atomic, not the loop), the list judged after it: printed hits [34] [12,34] [12,45] [0,12]
     fft = SEQ(LOOP(SEQ(R("(?s:.*?)"), CAP("hit", ATOMIC(R(r"\d+"))))), R(r"\D*"))
     ff = []
@@ -635,6 +640,8 @@ def part_PI():
 def part_JO():
     c = ["x", "y"]
     node = R("a[^%s]" % join(c))
+    if sab("s14"):   # several values in `[^${c}]` without join: the alternation of the negated classes
+        node = R("a(?:%s)" % "|".join("[^%s]" % v for v in c))
     res = modes(node, ["ax", "ab"], "ax ab", "ax ay ab")
     ok = [v for _, v, _ in res[0]] == [False, True] and res[1][1] == ("ab", 3) and res[2][1] == [("ab", 6)]
     check("JO", ok, "`[^${join(c)}]`, c := [x, y]: printed WHOLE ax FAILS, ab HOLDS / ab@3 / [ab@6]")
