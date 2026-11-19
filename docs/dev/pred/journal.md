@@ -49,3 +49,8 @@
   number-domain, padded-width, hole-flags, flags-propagate.
 - Next asked: unset-in-hole (ALGEBRA against the EMPTY readings; ALGEBRA equals PCRE on every run of rev 27.1's
   PART B).
+- Frank RULED unset-in-hole: no string (I took his slug answer "i meant what you describe "no string" as. its a
+  regex that matches nothing" as the ruling and told him so). His idea: a provided constant for the never-matching
+  regex (sibling of "anything"; naming trap: the record's `when` ruling uses "matches nothing" for the EMPTY
+  string). Rulings gathered for rev 28: hole-reads-capture, number-domain, padded-width, hole-flags,
+  flags-propagate, unset-in-hole. Next asked: construction-line, part (a).
