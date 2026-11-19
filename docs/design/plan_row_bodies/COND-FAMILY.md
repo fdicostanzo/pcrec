@@ -4360,3 +4360,30 @@ no meaning for it; **array-in-hole** leaves the question list; `predicates_futur
 tested): (m1) written today, `${@y}` is the under-construction class of error (a direction acknowledged), not
 "illegal": his standing wording for what is hard and not needed now; (m2) the array form OUTSIDE a hole
 (pass-list-read: "An array of such values is its own type") is untouched by this ruling.
+
+**2026-11-18 MANAGER CORRECTION — readings of this evening NOT supported by the runs of lane predspec28 (the
+predicate manager, late evening; no owner words).** Lane predspec28 (rev 28; `docs/dev/lanes/predspec28_report.md`,
+MANAGER READINGS TESTED; evidence `docs/dev/lanes/predspec28_evidence/`) tested every reading of the entries from
+"discussing hole-reads-capture" to the `${@y}` ruling. WITHDRAWN: (1) number-domain ruling, m1, and the padded-wrap
+entry's m3: "numeral-width is no longer a question" / "WIDTH KEPT is not needed under any domain": NOT SUPPORTED.
+The draft's sentence "the two candidates part only if the domain admits padded numerals" holds for `+` only;
+under SUBTRACTION a result can be narrower than its canonical operand: `/(?<y>\d+)-${$y - 1}/`: CANONICAL WHOLE
+`10-9` HOLDS, `10-09` FAILS; WIDTH KEPT the reverse; 3 of 9,999 operands differ (`10`, `100`, `1000`); under
+`+ 1` 0 of 10,000 (PART NW). The manager TOLD the owner the width question "falls away": that was wrong and is
+corrected to him; **numeral-width** stays a question, narrowed to "a result narrower than its operand". (2) The
+clarification entry's m2 ("`\d + 1` is a compile error in the first build"): overtaken by construction-line:
+enumerate (`\d + 1` compiles, ten strings; PART CN). (3) The revised dollar-warning call's premise ("the general
+diagnostics already ruled are the mechanism"): NOT SUPPORTED: by the draft's §5.2 ("nothing when emptiness is
+match- or parameter-dependent") and T19 no diagnostic fires on `/(?<x>\d+)-/ & ($x & <5)`, which never holds
+(0 / 0 / 0 of 364; PART DW). The dedicated warning stays withdrawn (his question stands); what remains is a GAP,
+to be put to him as **dollar-diagnostic**. (4) The `${@y}` ruling's m1 ("written today it is the
+under-construction class"): NOT SUPPORTED: the draft's T4 says under construction "needs a DEFINED meaning" and
+he ruled "not ... defined now". MANAGER'S CALL (answer-free): a plain "not defined" compile error. (5) The
+"36,119 checks" count of the width-clarification entry is NOT REPRODUCIBLE as stated (the six candidate texts
+were not listed); the lane's own set gives 47,112 checks, 0 differences, and 137,257 for several-string
+arguments, 0 differences: the claim stands on the lane's counts. UNTESTABLE, kept as open points: a duplicate
+name arriving through a hole or a part (**same-name-count**); "outside the domain: removed at compile time,
+nothing at run time" as ruled text. NEW GAPS the lane found (for the question queue): **any-case-body** (the
+macro body equals the primitive on plain arguments, 0 of 781, not on a filter-role argument, 3 of 781);
+**domain-components** (§2.4's lean "a `$` component is read by its VALUE, leading zeros ignored" conflicts with
+number-domain).

@@ -75,3 +75,9 @@
   header-named column check = a compile-time per-position alternation, run), then RULED: "${@y} stays as a future
   direction item and is not built or defined now". TEN rulings. Sent to the running lane as R1 in
   worktrees/predspec28/docs/dev/lanes/predspec28_rulings.md (VERIFY in its STATE AT HANDOFF). Future item 33.
+- predspec28 DELIVERED (tip 15af8217e; lanewatch DONE; R1 applied per STATE AT HANDOFF) and MERGED (e51e9a965;
+  plan-lint clean). Draft is rev 28 (9,755 lines). Readings NOT SUPPORTED recorded as a MANAGER CORRECTION entry:
+  numeral-width is NOT moot (subtraction: 10, 100, 1000) -- I had told Frank it fell away, corrected to him;
+  the general diagnostics do not fire on `$x & <5` (gap: dollar-diagnostic); `${@y}` is a plain not-defined
+  error, not under construction. New question slugs: numeral-width (narrowed), dollar-diagnostic, any-case-body,
+  domain-components, same-name-count. Next: critic round r52 on rev 28.
