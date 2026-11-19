@@ -5351,3 +5351,35 @@ becomes an ordinary implicit line of this form, not a special mechanism; (e) the
 macro CALL (`f(=x)` for `f(x = x)`) is the consistency question it raises; (f) a bare positional `(a, b) := X`
 needs an ORDERED right side, which the language does not clearly have (an array is an alternation): not needed
 for import.
+
+### 2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols
+tags: parked/import-symbols
+
+Given the manager's implications (the entry above, (a)-(f)) and asked for his view on the macro-call shorthand.
+HIS WORDS, whole:
+
+"import-symbols: agree with all your statements including macro call. further, special form (=) := ... imports all
+symbols"
+
+The reading taken, and told to him: a RULING. It answers the slug, after the implications he said he wanted
+before confirming ("don't confirm yet because i want to understand the implications"). What "all your statements"
+covers is the list he was shown, no wider:
+1. `(l = left, =right) := X` means exactly `l := X.left` and `right := X.right`; `=left` is `left = left`.
+2. The rule on a binding hiding a label applies to each bound name unchanged.
+3. Only what `.` reaches is selectable (the public/private label rule decides).
+4. It works on ANY map, not only `import`.
+5. The default-imported set is an ordinary implicit line of this form.
+6. "including macro call": `f(=x)` means `f(x = x)`.
+7. A bare positional `(a, b) := X` is left undefined for now (not needed for import; under construction, not
+   illegal).
+8. The shape left of `:=` goes to the spellings review. All spellings here are placeholders.
+HIS ADDITION, part of the same answer: "special form (=) := ... imports all symbols".
+
+The manager's readings of the addition, FOR A LANE TO CHECK against the record (no matching involved):
+- "all symbols" = every member `.` can reach, so public names only (statement 3).
+- The hide-label rule (statement 2) still fires per name, because the compiler knows the imported names; a name a
+  library ADDS later can therefore start a warning or error in a program that used `(=)`. The 2026-11-14 lean
+  already accepts that shape ("a later library member of the same name breaks the build, never silently rebinds").
+- With `(=)` a reader can no longer tell from the file alone whether a bare name is a label or an import ("If a
+  symbol is undeclared it must be an rx label", 2026-11-13). Told to him as the cost of the form, not an objection.
+- The default-imported set is then `(=) := import(<the default module>)`.
