@@ -10,6 +10,10 @@ The questions live in `docs/dev/owner.md`, section "Questions for you"
 `docs/dev/CLAUDE.md`). This skill only presents and records; maintaining the
 file is the manager skill's job.
 
+In a PREDICATE-MANAGER session (the `pcrec-predicate-manager` skill) the
+questions live in `docs/dev/pred/owner.md` instead, and an answer is recorded
+in `docs/design/plan_row_bodies/COND-FAMILY.md` by that skill's section 2.
+
 ## Which question
 
 - No arg: the oldest open question that BLOCKS something; if none blocks,

@@ -65,6 +65,10 @@ Always on, whatever the situation:
   the record is listed for the next revision lane to test and report as supported or not.
 - **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
   run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
+- **Predicate-language work belongs to the predicate manager session** (Frank 2026-11-18; the
+  `pcrec-predicate-manager` skill; managed as the kit is): once it is up, main writes none of the draft, COND-FAMILY.md
+  or predicates_future.md; a predicate remark Frank makes to main goes VERBATIM into `docs/dev/pred/from_main.md`
+  (an `M-n`, single-file `[pred-in]` commit); main assigns review numbers, merges its branch and keeps the plan row.
 - **Purpose over wording** (Frank 2026-11-07: "too literal with exact
   wording compliance"): when a rule's wording and its evident purpose
   diverge, follow the purpose and say so in one line.

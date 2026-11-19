@@ -35,6 +35,7 @@ tests/fuzz/failures/
 # a tool enforces beats a rule a comment states.
 /docs/dev/wake.md
 /docs/dev/owner.md
+/docs/dev/pred/owner.md
 worktrees/
 scripts/tests/*.testreport
 build-ccache/
