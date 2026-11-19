@@ -4978,3 +4978,31 @@ standing as an `&` operand stays that part's own (the draft's reading, rev 26.1'
 (d) the same principle already holds for labels in a sequenced condition ("reading the labels as they stand
 there", pass-start-read): `0` is now no exception. (e) its regex model is a callout at that point, which sees the
 match start and the current position: runnable on libpcre2.
+
+### 2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A
+
+His words, verbatim: ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/ but not /${A & (0:
+digit)}/ where it is only the A"
+
+Class: RULING by his own statement, on the edge the manager had listed as NOT his words (reading (b) of the
+zero-in-sequence entry: "a `0` inside a part inserted through a hole or standing as an `&` operand stays that
+part's own"). The reading of "yes ... but not" taken, and told to him: the match-so-far rule applies INSIDE an
+inserted part for a BARE condition: a condition inserted through a hole by itself (`/${(0: digit)}/`) has no
+pattern of its own, so it sees the regex composed at the point the hole stands, and its `0` is the SURROUNDING
+rx's match so far; where the inserted thing is `A & (0: digit)`, the `0` is "only the A" (zero-place: B's world is
+what A matched). Reading (b) is therefore CORRECTED for the bare condition and CONFIRMED for the `&` operand.
+
+CHECKED CONTEMPORANEOUSLY (his standing instruction), and told to him: his first example exactly as written,
+`/${(0: digit)}/`, has nothing before the hole, so the match so far is EMPTY and the program NEVER holds (model
+`$PCREC_TMPDIR/scratch/pred/zerohole.py`: WHOLE ``, `7` FAIL / SEARCHED `a7` nothing / FIND-ALL `7 8` []); taken
+as an illustration of the FORM, not of an answer. With a part before the hole, `/\d${(0: digit)}x/`: WHOLE `7x`
+HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7]. `/x${A & (0: digit)}y/`,
+A := `/\d+/`, `0` = A: WHOLE `x3y` HOLDS, `x37y` FAILS / SEARCHED `x37y x3y` `x3y`@5 / FIND-ALL `x3y x37y x5y`
+[`x3y`@0, `x5y`@9]; with `0` = the surrounding match so far the same program never holds (`x3` is not a digit).
+
+The manager's readings, for the next lane to test: (a) the same for a bare condition's LABELS: it reads the
+surrounding rx's labels as they stand at the hole (against the place table's hole row, "inside X, X's own
+namespace": a bare condition has no namespace of its own; NOT his words: if the draft's rows part, ASK); (b) a
+binding whose whole body is a bare condition, used in a hole or as a sequence operand, behaves the same (the
+condition is "used" where the binding is used); (c) a bare condition inserted at the very START of an rx tests the
+empty match so far: a candidate for the can-never-match diagnostics when its set cannot hold on the empty string.
