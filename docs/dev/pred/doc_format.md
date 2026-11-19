@@ -80,8 +80,29 @@ SOFT (core 64 KB, library 24 KB, parked 16 KB: reported, never refused); L8 an e
 says `modes: n/a` (not asked of a `parked` or `under-construction` piece, nor of a principle); L9 every slug in a details `slugs:` line is unique to one tag or listed on a `shared:` line at the head of a
 details file; L10 the `?`
 ratchet only shrinks; L11 a non-vacuity floor (a file with no pieces fails). A planted-fault selftest, one plant per
-rule. Reader: the files registered as a profile of `scripts/entry` (`entry core/holes/class`: level 0 the heading and
+rule. Reader (one, review r56 ROBUST-11): the files registered as a profile of `scripts/entry` (`entry core/holes/class`: level 0 the heading and
 statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by slug).
+
+### What the lint checks beyond the rule sentences (review r56, CONTRACT-4 and CONTRACT-10; ruled 2026-11-19)
+
+- A SECTION heading is `## <name>   [<file>/<section>]`; section tags are unique (L1).
+- Every piece heading carries an ISO date (`YYYY-MM-DD`), a `?` piece included; every piece except a `?` piece has
+  a statement line (reported under L7).
+- L4, `rulings:` items: a `ruled` piece's details entry has AT LEAST ONE item, and EVERY item, on any piece, cites a
+  record title that exists. RULED by the predicate manager (the form is his by the owner's delegation): "every",
+  because a quote that points at no record entry is the failure the rule exists to catch (a misattributed ruling);
+  "at least one" alone would let a second, wrong citation ride on a first, right one.
+- A RECORD TITLE is the text of a `### ` heading of the record, or of a bold opener `**...**` at the start of a
+  paragraph, JOINED across lines up to its closing `**`; a citation matches the whole title or the part before its
+  first ` (`.
+- Slugs are lower-case kebab words. A details file with no entries fails L11 as a base file with no pieces does.
+- L6's history words also include `SUPERSEDED` and `rev <digits>`.
+- L8 is not asked of a `?` piece either (nor, as above, of `parked`, `under-construction` and principle pieces).
+- A `by:` target is a piece under `core/principles/`.
+- PILOT MODE: a pair whose base file does not exist is SKIPPED with one line; `--require-all` makes it a failure. A
+  `needs:` or `by:` into a skipped pair is not a failure without `--require-all`.
+- THE READER is `scripts/entry` (the house accessor): the pairs are an entry profile that calls the lint's parser;
+  the lint has no reader surface of its own.
 
 ## Migration (after revision 29.1)
 
