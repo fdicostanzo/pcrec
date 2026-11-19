@@ -150,3 +150,7 @@ modes: n/a (parked: not in the language)
 ### A constant for the regex that matches nothing   [parked/ideas/never-constant]   parked 2026-11-19
 A provided constant naming the regex that matches nothing (his idea with unset-in-hole).
 modes: n/a (parked: not in the language)
+
+## Import symbols   [parked/import-symbols]
+
+### Importing symbols by name so a call is not qualified   [parked/import-symbols/import]   ?  2026-11-19

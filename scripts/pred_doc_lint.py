@@ -69,13 +69,21 @@ ENTRY_RE = re.compile(r"^## (?P<tag>\S+) — (?P<name>.+?)\s*$")
 DATE_RE = re.compile(r"^(?P<st>.*?)\s*(?P<date>\d{4}-\d{2}-\d{2})$")
 FIELD_RE = re.compile(r"^(slugs|rulings|rejected|readings|evidence|history):(.*)$")
 META_RE = re.compile(r"^(needs|by|see|was|modes|skeleton|module|default):")
+# a line that LOOKS like a field line (any case, any indent, blanks before the colon): it must be a known field,
+# exactly spelled (lower case, column 0) and where that field lives, or it fails (r57 F5); FIELD_EXACT_RE is the one
+# spelling that is accepted
+FIELDLIKE_RE = re.compile(r"^\s*(needs|by|see|was|formerly|skeleton|module|default)\s*:", re.I)
+FIELD_EXACT_RE = re.compile(r"^(needs|by|see|was|formerly|skeleton|module|default):")
+OLD_SKEL_RE = re.compile(r"^modes\s*:\s*n/a\s*\(\s*skeleton", re.I)
 REF_RE = re.compile(r"^(needs|by|see):(.*)$")
 # details-only lines: `was: <previous tag> (<date>, <why>)`, `formerly: <module.name> (<date>, <why>)`
 MOVE_RE = re.compile(r"^(was|formerly):(.*)$")
 WAS_RE = re.compile(r"^\s*(?P<what>\S+)\s+\((?P<date>\d{4}-\d{2}-\d{2}),\s*(?P<why>\S.*)\)\s*$")
 IDENT = r"[A-Za-z_][A-Za-z0-9_]*"
-FORMERLY_NAME_RE = re.compile(r"^(?:[a-z][a-z0-9_]*|\?)(?:\.%s)+$" % IDENT)
+IDENT_RE = re.compile(r"^%s$" % IDENT)
 MODULE_RE = re.compile(r"^(?:\?|[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)$")
+RECORD_TAGS_RE = re.compile(r"^tags:(.*)$")
+CLASS_RE = re.compile(r"\(class:\s*[^)\s][^)]*\)")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 BOLD_OPEN_RE = re.compile(r"^\*\*\d{4}-\d{2}-\d{2}\b")
 ISO_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
@@ -135,7 +143,7 @@ def fence_mask(lines):
 def parse_base(lines):
     """-> dict(lines, mask, unterminated, sections=[(tag,line,name)], pieces=[...], bad=[(line,msg)])."""
     mask, unterminated = fence_mask(lines)
-    out = {"lines": lines, "mask": mask, "unterminated": unterminated, "sections": [], "pieces": [], "bad": []}
+    out = {"lines": lines, "mask": mask, "unterminated": unterminated, "sections": [], "pieces": [], "bad": [], "fieldlines": []}
     heads = [(i, "p" if ln.startswith("### ") else "s") for i, ln in enumerate(lines)
              if not mask[i] and (ln.startswith("### ") or ln.startswith("## "))]
     cur_sec = None
@@ -156,7 +164,7 @@ def parse_base(lines):
             body_end -= 1
         p = {"line": i + 1, "end": body_end, "text": lines[i:body_end], "section": cur_sec,
              "tag": None, "name": None, "status": None, "date": None, "malformed": None,
-             "statement": None, "statement_line": None, "needs": [], "by": [], "see": [], "was": [],
+             "statement": None, "statement_line": None, "needs": [], "by": [], "see": [],
              "skeleton": [], "module": [], "default": [], "old_skeleton": []}
         m = PIECE_RE.match(ln)
         if not m:
@@ -177,19 +185,27 @@ def parse_base(lines):
             mm = REF_RE.match(lines[j])
             if mm:
                 p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x]
-            mm = re.match(r"^(was|skeleton|module|default):(.*)$", lines[j])
+            mm = re.match(r"^(skeleton|module|default):(.*)$", lines[j])
             if mm:
                 p[mm.group(1)].append((j + 1, mm.group(2).strip()))
-            if lines[j].startswith("modes: n/a (skeleton"):
+            if OLD_SKEL_RE.match(lines[j]):
                 p["old_skeleton"].append(j + 1)
         out["pieces"].append(p)
+    # every field-looking line outside a fence: (line, name lower-cased, exactly spelled, inside a piece body)
+    in_piece = set()
+    for p in out["pieces"]:
+        in_piece.update(range(p["line"], p["end"]))  # 0-based indexes of the body lines
+    for i, ln in enumerate(lines):
+        fm = None if mask[i] else FIELDLIKE_RE.match(ln)
+        if fm:
+            out["fieldlines"].append((i + 1, fm.group(1).lower(), bool(FIELD_EXACT_RE.match(ln)), i in in_piece))
     return out
 
 
 def parse_details(lines):
     """-> dict(lines, unterminated, entries=[{tag,line,fields,text}], bad=[(line,msg)], shared=[slug])."""
     mask, unterminated = fence_mask(lines)
-    out = {"lines": lines, "unterminated": unterminated, "entries": [], "bad": [], "shared": []}
+    out = {"lines": lines, "unterminated": unterminated, "entries": [], "bad": [], "shared": [], "fieldlines": []}
     cur, field = None, None
     for i, ln in enumerate(lines):
         if not mask[i] and ln.startswith("## "):
@@ -204,15 +220,19 @@ def parse_details(lines):
             out["entries"].append(cur)
             field = None
             continue
+        fm = None if mask[i] else FIELDLIKE_RE.match(ln)
+        if fm:  # (line, name, exactly spelled, inside an entry); the line is never text of the open field
+            out["fieldlines"].append((i + 1, fm.group(1).lower(), bool(FIELD_EXACT_RE.match(ln)), cur is not None))
         if cur is None:
             mm = None if mask[i] else re.match(r"^shared:(.*)$", ln)
             if mm:
                 out["shared"] += [x for x in re.split(r"[\s,]+", mm.group(1)) if x]
             continue
         mv = None if mask[i] else MOVE_RE.match(ln)
-        if mv:
+        if mv:  # a move line is not field text, and it does not close the open field either (r57 F1)
             cur[mv.group(1)].append((i + 1, mv.group(2)))
-            field = None
+            continue
+        if fm:
             continue
         mm = None if mask[i] else FIELD_RE.match(ln)
         if mm:
@@ -347,6 +367,12 @@ def load(root, require_all, rep):
     return pairs
 
 
+def formerly_ok(w):
+    """`<module>.<name>`: the name is the LAST dotted word (an identifier), the rest is a module (the L12 grammar)."""
+    mod, _, name = w.rpartition(".")  # no dot: the module is empty and fails MODULE_RE
+    return bool(MODULE_RE.match(mod)) and bool(IDENT_RE.match(name))
+
+
 def valid_date(s):
     try:
         datetime.date.fromisoformat(s)
@@ -404,6 +430,16 @@ def lint(root, require_all=False, caps=None, writing=False):
             hit = history_hit(ln, allowed.get(i))
             if hit:
                 rep.fail("L6", "%s:%d" % (b, i + 1), "history word or foreign date '%s' in a base file" % hit)
+        # field-looking lines (r57 F3, F5): was:/formerly: anywhere is history (L6); any other field must be exactly
+        # spelled and inside a piece body
+        for ln, name, exact, inside in bp["fieldlines"]:
+            rep.ok("L2")
+            if name in ("was", "formerly"):
+                rep.fail("L6", "%s:%d" % (b, ln), "a '%s:' line in a base file is history (it belongs in the details entry)" % name)
+            elif not exact:
+                rep.fail("L2", "%s:%d" % (b, ln), "'%s:' line is not spelled exactly (lower case, at the line start)" % name)
+            elif not inside:
+                rep.fail("L2", "%s:%d" % (b, ln), "'%s:' line outside a piece body" % name)
         for p in bp["pieces"]:
             where = "%s:%d" % (b, p["line"])
             rep.ok("L2")
@@ -418,8 +454,10 @@ def lint(root, require_all=False, caps=None, writing=False):
                 # the section tag carries the file word (checked above), so this also puts the tag in its file
                 if secname != "/".join(tag.split("/")[:2]):
                     rep.fail("L2", where, "tag '%s' is not in its section %s (a moved piece takes a new tag)" % (tag, secname))
-            for ln, _ in p["was"]:
-                rep.fail("L6", "%s:%d" % (b, ln), "a 'was:' line in a base file is history (it belongs in the details entry)")
+            if tag.count("/") == 3:  # a fourth word: a split keeps its parent piece, earlier in the file (r57 F7)
+                parent = tag.rsplit("/", 1)[0]
+                if TAG_RE.match(tag) and parent not in index:
+                    rep.fail("L2", where, "tag '%s' has a fourth word: its parent piece %s must exist earlier in the file" % (tag, parent))
             rep.ok("L1")
             if tag in seen_tags:
                 rep.fail("L1", where, "duplicate tag %s (first at %s)" % (tag, seen_tags[tag]))
@@ -457,6 +495,8 @@ def lint(root, require_all=False, caps=None, writing=False):
                 elif not MODULE_RE.match(p["module"][0][1]):
                     rep.fail("L12", "%s:%d" % (b, p["module"][0][0]), "module '%s' is not a dotted lower-case name or '?'"
                              % p["module"][0][1])
+                if len(p["default"]) > 1:
+                    rep.fail("L12", "%s:%d" % (b, p["default"][1][0]), "more than one 'default:' line")
                 for ln, v in p["default"]:
                     if v != "yes":
                         rep.fail("L12", "%s:%d" % (b, ln), "'default: %s' (the only value is 'yes')" % v)
@@ -466,6 +506,8 @@ def lint(root, require_all=False, caps=None, writing=False):
                 rep.ok("L8")
                 if v != "yes" or is_q:
                     rep.fail("L8", "%s:%d" % (b, ln), "'skeleton: %s' (want 'skeleton: yes', never on a '?' piece)" % v)
+            if len(p["skeleton"]) > 1:
+                rep.fail("L8", "%s:%d" % (b, p["skeleton"][1][0]), "more than one 'skeleton:' line")
             for ln in p["old_skeleton"]:
                 rep.fail("L8", "%s:%d" % (b, ln), "'modes: n/a (skeleton ...)' is replaced by the line 'skeleton: yes'")
             # L7 statement / piece caps
@@ -506,6 +548,14 @@ def lint(root, require_all=False, caps=None, writing=False):
             rep.fail("L3", d, "code fence opened at line %d is never closed" % dp["unterminated"])
         for ln, msg in dp["bad"]:
             rep.fail("L3", "%s:%d" % (d, ln), msg)
+        for ln, name, exact, inside in dp["fieldlines"]:  # (r57 F4, F5): details fields are only was:/formerly:, in an entry
+            w = "%s:%d" % (d, ln)
+            if name in ("module", "default"):
+                rep.fail("L12", w, "'%s:' only in the library file, on a piece" % name)
+            elif name not in ("was", "formerly"):
+                rep.fail("L3", w, "'%s:' is a base-file field, not a details field" % name)
+            elif not exact or not inside:
+                rep.fail("L2", w, "'%s:' line is not spelled exactly (lower case, at the line start) inside an entry" % name)
         bt = [p["tag"] for p in bp["pieces"] if p["tag"]]
         dt = [e["tag"] for e in dp["entries"]]
         sb, sd = set(bt), set(dt)
@@ -531,6 +581,8 @@ def lint(root, require_all=False, caps=None, writing=False):
             rep.ok("L4")
             if not ruling_items(e):
                 rep.fail("L4", "%s:%d" % (d, e["line"]), "%s piece %s has no 'rulings:' item" % (p["status"], p["tag"]))
+            elif p["status"] == "principle" and not any(CLASS_RE.search(t) for _, t in ruling_items(e)):
+                rep.fail("L4", "%s:%d" % (d, e["line"]), "principle piece %s: no rulings item names the record's class '(class: <word>)'" % p["tag"])
         for e in dp["entries"]:
             for ln, t in ruling_items(e):
                 rep.ok("L4")
@@ -574,8 +626,27 @@ def lint(root, require_all=False, caps=None, writing=False):
             for ln, t in e["formerly"]:
                 rep.ok("L2")
                 m = WAS_RE.match(t)
-                if not m or not FORMERLY_NAME_RE.match(m.group("what")) or not valid_date(m.group("date")):
+                if not m or not formerly_ok(m.group("what")) or not valid_date(m.group("date")):
                     rep.fail("L2", "%s:%d" % (d, ln), "want 'formerly: <module.name> (<YYYY-MM-DD>, <why>)', got 'formerly:%s'" % t)
+    # the record's `tags:` lines: every tag names a live piece or a previous tag (r57 F9)
+    sections = {sec for P in pairs.values() for sec, _, _ in P["bp"]["sections"]}
+    rec = os.path.join(root, RECORD)
+    if os.path.isfile(rec):
+        try:
+            rl = read_lines(rec)
+        except Unreadable:
+            rl = []
+        rmask, _ = fence_mask(rl)
+        for i, ln in enumerate(rl):
+            mm = None if rmask[i] else RECORD_TAGS_RE.match(ln)
+            for t in (re.split(r"[\s,]+", mm.group(1).strip()) if mm else []):
+                if not t:
+                    continue
+                rep.ok("L5")
+                tw = t.split("/")[0]
+                if t in index or t in retired or t in sections or (tw in RANK and tw not in pairs and not require_all):
+                    continue
+                rep.fail("L5", "%s:%d" % (RECORD, i + 1), "record tags: %s names no piece, section or previous tag" % t)
     # L5 references
     for word, P in pairs.items():
         for p in P["bp"]["pieces"]:
@@ -755,8 +826,8 @@ def rec_cite(r, title):
     sub(r, LD, '(record: "2026-11-02 bold words")', '(record: "%s")' % title)
 
 
-RAT = "core\t1\ncore-skeleton\t0\nlib\t1\nlib-skeleton\t1\nparked\t1\nparked-skeleton\t0\n"  # the sample's own ratchet
-SAMPLE_COUNTS = {"core": 1, "core-skeleton": 0, "lib": 1, "lib-skeleton": 1, "parked": 1, "parked-skeleton": 0}
+RAT = "core\t1\ncore-skeleton\t0\nlib\t1\nlib-skeleton\t1\nparked\t1\nparked-skeleton\t1\n"  # the sample's own ratchet
+SAMPLE_COUNTS = {"core": 1, "core-skeleton": 0, "lib": 1, "lib-skeleton": 1, "parked": 1, "parked-skeleton": 1}
 
 
 def set_ratchet(r, text):
@@ -802,6 +873,91 @@ def plant_unreadable(r):
         f.write(b"# Parked \xff\xfe\n")
 
 
+
+HOLES = "## Holes   [core/holes]"
+FIELD_LINES = {  # field -> (value, the file whose piece body takes it, an existing line of that body to put it after)
+    "needs": ("core/principles/regex-default", CB, "see: lib/names/word"),
+    "by": ("core/principles/regex-default", CB, "see: lib/names/word"),
+    "see": ("lib/names/word", CB, "see: lib/names/word"),
+    "skeleton": ("yes", LB, "module: text"),
+    "module": ("text", LB, "module: text"),
+    "default": ("yes", LB, "module: text"),
+}
+
+
+def after(r, path, anchor, line):
+    """Insert LINE (which may span lines) after the one line ANCHOR."""
+    sub(r, path, anchor + "\n", anchor + "\n" + line + "\n")
+
+
+def swap(r, path, old, new):
+    sub(r, path, old, new)
+
+
+def meta_statement(r, path, statement, meta, later):
+    """Make the META line the piece's first body line (its statement slot); LATER is the original line that moves away."""
+    sub(r, path, later + "\n", "")
+    sub(r, path, statement, meta)
+
+
+def append_pair(r, parent_first):
+    """Append two core holes pieces (and their details entries): a 4-word tag and its 3-word parent, in either order."""
+    body = "A statement.\nWHOLE: t; SEARCHED: t; FIND-ALL: t.\n"
+    subp = "\n### Late sub   [core/holes/late/sub]   reading 2026-11-08\n" + body
+    par = "\n### Late parent   [core/holes/late]   reading 2026-11-08\n" + body
+    ents = {"s": "\n## core/holes/late/sub — Late sub\nslugs:\n", "p": "\n## core/holes/late — Late parent\nslugs:\n"}
+    order = "ps" if parent_first else "sp"
+    put(r, CB, "".join(par if c == "p" else subp for c in order), "a")
+    put(r, CD, "".join(ents[c] for c in order), "a")
+
+
+def two_old_markers(r):
+    sub(r, CB, "modes: n/a (a hole is not matched on its own)", "modes: n/a (skeleton: a)\nmodes: n/a (skeleton: b)")
+
+
+GENERATED = []
+for _f, (_v, _file, _anchor) in FIELD_LINES.items():
+    GENERATED.append(("L2", "%s: in a section preamble" % _f,
+                      lambda r, f=_f, v=_v, fl=_file: after(r, fl, "## Holes   [core/holes]" if fl == CB else "## Names   [lib/names]", "%s: %s" % (f, v))))
+    for _kind, _spell in (("capitalised", _f.capitalize() + ":"), ("indented", "  " + _f + ":")):
+        GENERATED.append(("L2", "%s: %s in a piece body" % (_f, _kind),
+                          lambda r, sp=_spell, v=_v, fl=_file, an=_anchor: after(r, fl, an, "%s %s" % (sp, v))))
+for _f in ("was", "formerly"):
+    _val = "core/holes/old (2026-11-03, moved)" if _f == "was" else "text.pad (2026-11-03, x)"
+    GENERATED.append(("L6", "%s: in a section preamble of a base file" % _f,
+                      lambda r, f=_f, v=_val: after(r, CB, "## Holes   [core/holes]", "%s: %s" % (f, v))))
+    GENERATED.append(("L6", "%s: in a piece body of a base file" % _f,
+                      lambda r, f=_f, v=_val: after(r, LB, "module: text", "%s: %s" % (f, v))))
+    GENERATED.append(("L6", "%s: capitalised in a base file" % _f,
+                      lambda r, f=_f, v=_val: after(r, LB, "module: text", "%s: %s" % (f.capitalize(), v))))
+    GENERATED.append(("L6", "%s: indented in a base file" % _f,
+                      lambda r, f=_f, v=_val: after(r, LB, "module: text", "  %s: %s" % (f, v))))
+    GENERATED.append(("L2", "%s: before the first details entry" % _f,
+                      lambda r, f=_f, v=_val: after(r, CD, "shared: shared-q", "%s: %s" % (f, v))))
+    GENERATED.append(("L2", "%s: capitalised in a details entry" % _f,
+                      lambda r, f=_f, v=_val: after(r, CD, "- 2026-11-01 first written.", "%s: %s" % (f.capitalize(), v))))
+    GENERATED.append(("L2", "%s: indented in a details entry" % _f,
+                      lambda r, f=_f, v=_val: after(r, CD, "- 2026-11-01 first written.", "  %s: %s" % (f, v))))
+for _f, _v in (("module", "Bad Name"), ("default", "no"), ("Module", "x"), ("  default", "yes")):
+    GENERATED.append(("L12", "'%s:' inside a details history field" % _f.strip(),
+                      lambda r, f=_f, v=_v: after(r, CD, "- 2026-11-01 first written.", "%s: %s" % (f, v))))
+    GENERATED.append(("L12", "'%s:' inside a details slugs field" % _f.strip(),
+                      lambda r, f=_f, v=_v: after(r, LD, "slugs: lib-trim-q", "%s: %s" % (f, v))))
+for _f in ("needs", "by", "see", "skeleton"):
+    GENERATED.append(("L3", "'%s:' in a details file" % _f,
+                      lambda r, f=_f: after(r, CD, "- 2026-11-01 first written.", "%s: yes" % f)))
+for _w in ("needs", "by", "see", "skeleton", "module", "default", "modes"):
+    _val = {"needs": "core/principles/regex-default", "by": "core/principles/regex-default", "see": "lib/names/word",
+            "modes": "n/a (x)"}.get(_w, "yes" if _w != "module" else "text")
+    if _w in ("skeleton", "module", "default"):
+        GENERATED.append(("L7", "a piece whose first body line is '%s:' has no statement" % _w,
+                          lambda r, w=_w, v=_val: meta_statement(r, LB, "A padded name is the body with fixed-width padding applied.",
+                                                                 "%s: %s" % (w, v), "%s: %s" % (w, v))))
+    else:
+        GENERATED.append(("L7", "a piece whose first body line is '%s:' has no statement" % _w,
+                          lambda r, w=_w, v=_val: sub(r, CB, "A hole stands for one pattern fragment of the named class.", "%s: %s" % (w, v))))
+
+
 # (rule, label, mutator, lint kwargs, expected count of that rule's failures or None for 'at least one').
 # Every plant breaks ONE clause of ONE rule and must fail exactly that rule (and, where a count is given, that often).
 PLANTS = [
@@ -845,7 +1001,7 @@ PLANTS = [
     ("L4", "open with a non-kebab slug", lambda r: sub(r, LB, "open lib-trim-q 2026-11-04", "open Lib_Trim 2026-11-04")),
     ("L4", "'openfoo' for open", lambda r: sub(r, LB, "open lib-trim-q 2026-11-04", "openlib 2026-11-04")),
     ("L4", "parked outside the parked file", lambda r: sub(r, CB, "reading 2026-11-02", "parked 2026-11-02")),
-    ("L4", "principle outside core/principles (a piece with a rulings item)", lambda r: sub(r, LB, "ruled 2026-11-02", "principle 2026-11-02"), {}, 1),
+    ("L4", "principle outside core/principles (a piece with a rulings item)", lambda r: (sub(r, LB, "ruled 2026-11-02", "principle 2026-11-02"), sub(r, LD, '"pad it"', '(class: x) "pad it"')), {}, 1),
     ("L4", "principle piece with no rulings item",
      lambda r: sub(r, CD, '- 2026-11-01 (class: a principle) "stated" (record: "2026-11-03 second words")\n', "")),
     ("L4", "no status date", lambda r: sub(r, CB, "reading 2026-11-02", "reading")),
@@ -939,14 +1095,14 @@ PLANTS = [
 
 CONTROLS = [  # (label, mutator, lint kwargs, expected failing rules after the mutation)
     ("a details was: of a tag retired to another file, and a 'formerly: ?.name'",
-     lambda r: (sub(r, LD, "formerly: text.pad (", "formerly: ?.pad.inner ("),
+     lambda r: (sub(r, LD, "formerly: text.pad (", "formerly: ?.pad ("),
                 sub(r, CD, "## core/holes/name — Name\n", "## core/holes/name — Name\nwas: parked/ideas/name (2026-11-03, promoted)\n")), {}, set()),
     ("a 'module: a.b' dotted name, 'module: ?' on a '?' piece",
      lambda r: (sub(r, LB, "module: text", "module: rx.sub"), sub(r, LB, "### Word   [lib/names/word]   ?  2026-11-05", "### Word   [lib/names/word]   ?  2026-11-05\nmodule: ?")), {}, set()),
     ("a fenced was: line in a details entry is not a move",
      lambda r: sub(r, CD, "- hole as a token — UNTESTED (none)", "- hole as a token — UNTESTED (none)\n```\nwas: core/holes/name (2026-11-02, x)\nwas: bad\n```"), {}, set()),
     ("see: into a skipped pair, pilot mode", lambda r: (os.remove(os.path.join(r, LB)), os.remove(os.path.join(r, LD))), {}, set()),
-    ("a four-segment tag", lambda r: rename_name(r, "core/holes/name/sub"), {}, set()),
+    ("a four-segment tag whose parent is a live piece earlier in the file", lambda r: rename_name(r, "core/holes/class/sub"), {}, set()),
     ("a statement of exactly 200 characters", lambda r: sub(r, CB, "A hole stands for one pattern fragment of the named class.", "S" * 200), {}, set()),
     ("a piece of exactly 40 lines, trailing blank trimmed", lambda r: class_lines(r, PIECE_MAX), {}, set()),
     ("a fenced history word and date", lambda r: sub(r, CB, DEF, "```\nWITHDRAWN rev 3 [REV 2026-12-31\n```\n" + DEF), {}, set()),
@@ -983,6 +1139,62 @@ CONTROLS = [  # (label, mutator, lint kwargs, expected failing rules after the m
     ("citation with doubled blanks", lambda r: rec_cite(r, "2026-11-02  bold   words"), {}, set()),
 ]
 
+PLANTS += GENERATED + [
+    # a move line closes no field: the block's existing items AFTER it are still checked (r57 F1)
+    ("L4", "a rulings item after a formerly: line is still cited",
+     lambda r: after(r, LD, "formerly: text.pad (2026-11-02, renamed)", '- 2026-11-09 "never said" (record: "2026-11-09 NO SUCH ENTRY")')),
+    ("L4", "a rulings item after a was: line is still cited",
+     lambda r: swap(r, LD, "slugs: lib-trim-q", 'rulings:\n- 2026-11-02 "x" (record: "2026-11-02 bold words")\nwas: parked/ideas/old (2026-11-04, moved)\n'
+                    '- 2026-11-09 "y" (record: "2026-11-09 NO SUCH ENTRY")\nslugs: lib-trim-q'), {}, 1),
+    ("L9", "a slug continuation after a was: line is still a slug",
+     lambda r: after(r, LD, "slugs: lib-trim-q", "was: parked/ideas/old (2026-11-04, moved)\n  regex-q")),
+    # principle items name the record's class (r57 F2)
+    ("L4", "a principle piece with no item naming the class", lambda r: sub(r, CD, "(class: a principle) ", ""), {}, 1),
+    ("L4", "a principle piece whose class is empty", lambda r: sub(r, CD, "(class: a principle)", "(class: )"), {}, 1),
+    # formerly: module and name (r57 F6)
+    ("L2", "formerly: a module with an upper-case word", lambda r: sub(r, LD, "formerly: text.pad (", "formerly: text.Foo.Pad (")),
+    ("L2", "formerly: a name starting with a digit", lambda r: sub(r, LD, "formerly: text.pad (", "formerly: text.2pad (")),
+    ("L2", "formerly: an empty module", lambda r: sub(r, LD, "formerly: text.pad (", "formerly: .pad (")),
+    ("L2", "a second formerly: line is checked too", lambda r: after(r, LD, "formerly: text.pad (2026-11-02, renamed)", "formerly: Bad (2026-11-02, x)")),
+    ("L2", "a second was: line is checked too", lambda r: after(r, LD, "was: core/holes/word (2026-11-05, moved to the library)", "was: parked/ideas/old (no date)")),
+    # a fourth tag word needs its parent piece, earlier in the file (r57 F7)
+    ("L2", "a four-segment tag with no parent piece", lambda r: rename_name(r, "core/holes/nothing/name")),
+    ("L2", "a four-segment tag whose parent comes later in the file", lambda r: append_pair(r, False)),
+    # the record's tags: lines (r57 F9)
+    ("L5", "a record tags: word names no piece",
+     lambda r: sub(r, REC, "tags: core/principles/regex-default", "tags: core/principles/regex-default core/holes/nowhere")),
+    ("L5", "a was: line lost: the record still cites the previous tag",
+     lambda r: (sub(r, REC, "tags: core/principles/regex-default", "tags: core/principles/regex-default core/holes/word"),
+                sub(r, LD, "was: core/holes/word (2026-11-05, moved to the library)\n", ""))),
+    # one skeleton:/default: line, and every old marker (r57 F5, F13)
+    ("L8", "skeleton: yes twice", lambda r: after(r, LB, "skeleton: yes", "skeleton: yes"), {}, 1),
+    ("L8", "skeleton: yes then skeleton: no (the second is checked too)", lambda r: after(r, LB, "skeleton: yes", "skeleton: no"), {}, 2),
+    ("L12", "default: yes twice", lambda r: after(r, LB, "default: yes", "default: yes"), {}, 1),
+    ("L12", "default: yes then default: no (the second is checked too)", lambda r: after(r, LB, "default: yes", "default: no"), {}, 2),
+    ("L8", "two old 'modes: n/a (skeleton ...)' markers", two_old_markers, {}, 2),
+    ("L8", "the old marker, capitalised", lambda r: sub(r, CB, "modes: n/a (a hole is not matched on its own)", "modes: n/a (Skeleton, later)")),
+    ("L8", "the old marker, blanks inside", lambda r: sub(r, CB, "modes: n/a (a hole is not matched on its own)", "modes:  n/a  ( skeleton, later)")),
+    ("L12", "module: with a digit first", lambda r: sub(r, LB, "module: text", "module: 2d")),
+]
+
+CONTROLS += [
+    ("formerly: a dotted module, an upper-case name with a digit and an underscore",
+     lambda r: sub(r, LD, "formerly: text.pad (", "formerly: text.sub.Pad_2 ("), {}, set()),
+    ("module: a dotted name with an underscore and a digit", lambda r: sub(r, LB, "module: text", "module: text_utils.v2"), {}, set()),
+    ("two was: lines on one entry (a merge) both valid",
+     lambda r: after(r, LD, "was: core/holes/word (2026-11-05, moved to the library)", "was: parked/ideas/old (2026-11-05, merged)"), {}, set()),
+    ("a was: line as the first body line of a piece is history and no statement",
+     lambda r: meta_statement(r, CB, "A hole stands for one pattern fragment of the named class.", "was: core/holes/old (2026-11-02, moved)", "see: lib/names/word"),
+     {}, {"L6", "L7"}),
+    ("a cross-file duplicate tag reports L1 as well as L2, L3 and L5", lambda r: sub(r, LB, "[lib/names/trimmed]", "[core/holes/class]"), {}, {"L1", "L2", "L3", "L5"}),
+    ("a record tags: word naming a previous tag", lambda r: sub(r, REC, "tags: core/principles/regex-default", "tags: core/principles/regex-default core/holes/word"), {}, set()),
+    ("a record tags: word naming a section", lambda r: sub(r, REC, "tags: core/principles/regex-default", "tags: core/principles/regex-default core/holes"), {}, set()),
+    ("a record tags: line in a fence or indented is not a tags: line",
+     lambda r: sub(r, REC, "tags: core/principles/regex-default",
+                   "tags: core/principles/regex-default\n  tags: core/holes/nowhere\n```\ntags: core/holes/nowhere\n```"), {}, set()),
+    ("a four-segment tag whose parent comes first in the file", lambda r: append_pair(r, True), {}, set()),
+]
+
 
 def selftest():
     here = os.path.dirname(os.path.abspath(__file__))
@@ -1012,7 +1224,7 @@ def selftest():
         c = fresh("clean")
         rep, _ = lint(c)
         expect(not rep.fails, "clean sample fails: %r" % rep.fails)
-        floors = {"L1": 11, "L2": 15, "L3": 3, "L4": 12, "L5": 6, "L6": 50, "L7": 10, "L8": 3, "L9": 5, "L10": 6, "L11": 4, "L12": 10}
+        floors = {"L1": 15, "L2": 27, "L3": 3, "L4": 16, "L5": 8, "L6": 58, "L7": 10, "L8": 4, "L9": 7, "L10": 6, "L11": 4, "L12": 10}  # = the sample's counts
         for r, f in floors.items():
             expect(rep.checked[r] >= f, "clean sample: rule %s visited %d, floor %d (a rule that checks nothing)" % (r, rep.checked[r], f))
         n += 1
