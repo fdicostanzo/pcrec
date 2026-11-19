@@ -1,0 +1,20 @@
+# preddoc3b sabotage: each plant run ALONE (PREDDOC3B_SABOTAGE=sN); its named check (the model's header) must FAIL.
+# s5 and s9 also fail the checks that share the planted rule (plus, the class order); each target check failed.
+# The unsabotaged run: preddoc3b_model.out, 17 checks, 0 failed. Run 2026-11-19.
+s1: preddoc3b_model: 17 checks, 1 failed: EXreads
+s2: preddoc3b_model: 17 checks, 1 failed: EXonetype
+s3: preddoc3b_model: 17 checks, 1 failed: EXdomain
+s4: preddoc3b_model: 17 checks, 1 failed: EXedges
+s5: preddoc3b_model: 17 checks, 5 failed: EXplus EXlift EXclassorder EXclasspos EXclassindex
+s6: preddoc3b_model: 17 checks, 1 failed: EXleft
+s7: preddoc3b_model: 17 checks, 1 failed: EXlift
+s8: preddoc3b_model: 17 checks, 1 failed: EXenum
+s9: preddoc3b_model: 17 checks, 2 failed: EXclassorder EXclassindex
+s10: preddoc3b_model: 17 checks, 1 failed: EXclasspos
+s11: preddoc3b_model: 17 checks, 1 failed: EXclassindex
+s12: preddoc3b_model: 17 checks, 1 failed: EXprec
+s13: preddoc3b_model: 17 checks, 1 failed: EXpair
+s14: preddoc3b_model: 17 checks, 1 failed: M1
+s15: preddoc3b_model: 17 checks, 1 failed: M2
+s16: preddoc3b_model: 17 checks, 1 failed: SL
+s17: preddoc3b_model: 17 checks, 1 failed: NOQ
