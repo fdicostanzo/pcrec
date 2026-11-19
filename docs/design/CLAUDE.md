@@ -108,6 +108,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `assertions_design.md`, `atomic_groups_design.md`, `backrefs_design.md`, `lookaround_design.md` (each + `*_measurements/`), `vlookbehind.md` + `vlookbehind_pieces.md`, `subroutines_design.md`, `frame_buffer_design.md` (full entry in NOTES.md).
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
 - `cond_family.md` — [COND-FAMILY] survey; `cond_family_syntax_survey.md` — spellings; `predicates_draft.md` — spec (DRAFT); `joint_condition.md` — (RULED); `condition_kind.md` — condition as its own kind (EXPLORATION); `predicates_future.md` — parked ideas; `fact_consumers_inventory.md` — [FACT-READS].
+- `predicates.md` + `predicates_details.md` (core), `predicates_library.md` + `_details`, `predicates_parked.md` + `_details` — the predicate language as base + details pairs (PILOT, lane preddoc1: principles and holes converted, the rest skeleton; `predicates_draft.md` stays the source until a section converts); format `docs/dev/pred/doc_format.md`, lint `scripts/pred_doc_lint.py`.
 - `rx_module.md` — patterns without rx literals: an `rx` construct module, a sequence operator (item 21; PROPOSED).
 - `dfa_captures_research.md` — [ENG-TDFA] captures without the VM.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.

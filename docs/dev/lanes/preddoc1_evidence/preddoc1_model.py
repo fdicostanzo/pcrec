@@ -41,6 +41,7 @@
 #     s13 EX:  a count copy that is illegal kept as PCRE text instead of removed
 #     s14 LT:  a typo planted in one cited title (the class check must then fail)
 #     s15 R11: the binding judged as its own rx (an empty match so far)
+#     xEX-and-in-hole: the `&` sides judged on a PREFIX of the hole's text (not whole)
 #     x<EX-tag>: the example's RIVAL reading (the candidate not taken) run in place; its EX check must fail
 import os, sys, re, itertools
 
@@ -169,6 +170,28 @@ def flags_hole(outer_flags, inner):
     off = "".join(f for f in "ims" if f not in inh) + "U"
     return "(?%s-%s:%s)" % (inh, off, inner)
 
+# ------------------------------------------------------------------ the guarded runner
+def run_guarded():
+    """Run each PART below in the module's globals, one at a time: an exception in a part is a FAILED check
+    `P<part>` (so a plant that crashes a part is CAUGHT by a check, and the later parts still run)."""
+    text = open(os.path.abspath(__file__), encoding="utf-8").read()
+    body = text.split("\n" + MARK, 1)[1]
+    for seg in re.split(r'(?m)^(?=print\("(?:\\n)?== PART )', body):
+        if not seg.strip(): continue
+        m = re.search(r"== PART (\w+)", seg)
+        tag = m.group(1) if m else "PRE"
+        try: exec(compile(seg, __file__ + ":PART " + tag, "exec"), globals())
+        except Exception as e:
+            print("  PART %s RAISED %s: %s" % (tag, type(e).__name__, str(e)[:200]))
+            check("P" + tag, False, "the part raised")
+    bad = [n for n, k in RESULTS if not k]
+    print("\nSUMMARY: %d checks, %d failed: %s" % (len(RESULTS), len(bad), ", ".join(bad) or "none"))
+    sys.exit(1 if bad else 0)
+
+MARK = '# ==== PARTS: run one by one by run_guarded() above; a part that raises is a FAILED check P<part> ====\n'
+if __name__ == "__main__": run_guarded()
+
+# ==== PARTS: run one by one by run_guarded() above; a part that raises is a FAILED check P<part> ====
 # ------------------------------------------------------------------ PART EX
 print("== PART EX: one example per full core/holes piece (libpcre2 answers; python `re` must agree)")
 
@@ -198,7 +221,7 @@ check("EXcls", ok and pc == ([("ax", True), ("ay", True), ("aq", True), ("ab", F
 
 p = "a(?:" + "|".join("[%s%s]" % (x, y) for x in "xy" for y in "pq") + ")"
 pc, ok = example("EX-two-holes", "/a[${a}${b}]/, a := [x, y], b := [p, q]", p, ["ap", "ab"], "-ab aq", "ax ab ap",
-                 rival=("a(?:[xp]|[xq])",))
+                 rival=("a(?:[xp]|[yp])",))
 check("EX2h", ok and pc == ([("ap", True), ("ab", False)], ("aq", 4), [("ax", 0), ("ap", 6)]))
 p = "a" + class_hole("", [], "x") + "|b"
 pc, ok = example("EX-zero-values", "/a[${[]}x]|b/", p, ["ax", "b"], "axb", "ax b")
@@ -270,6 +293,15 @@ pc, ok = example("EX-in-filter", "/\\d+/ & /${/[1-5]+/}/  (holes filled, then th
                  rival=(r'\d+(?C"q")', {"q": lambda c: bool(re.match(r"[1-5]+", c.stretch()))}))
 check("EXflt", pc == ([("123", True), ("1239", False)], ("34", 3), [("12", 0), ("45", 5)]))
 
+
+def lt100(c):
+    """`<100`: the canonical positive numerals below 100 (absence is not a member); judged on the HOLE's text whole."""
+    h = c.get("H") if not sab("xEX-and-in-hole") else (re.match(r"[1-9]\d?", c.get("H") or "") or [None])[0]
+    return h is not None and re.fullmatch(r"[1-9]\d?", h) is not None
+pc, ok = example("EX-and-in-hole", "/999${/\\d+/ & <100}999/  (both sides match the hole's stretch whole)",
+                 r'999(?<H>\d+)(?C"q")999', ["99945999", "999450999"], "x99945999", "99945999 999450999 9997999",
+                 {"q": lt100}, py=False)
+check("EXaih", pc == ([("99945999", True), ("999450999", False)], ("99945999", 1), [("99945999", 0), ("9997999", 19)]))
 r = P.Pcre(r"a\Q${x}\Eb" if not sab("xEX-quoted") else r"a(?:x)b")
 nq = [r.whole("a${x}b"), r.whole("ab")]
 print("EX-quoted  /a\\Q${x}\\Eb/ (no hole inside \\Q..\\E: literal text)\n    WHOLE `a${x}b` %s, `ab` %s / SEARCHED `-a${x}b` %s / FIND-ALL `a${x}b a${x}b` %s"
@@ -559,5 +591,3 @@ if got != pred:
     print("    predicted, not reported: %s" % sorted(pred - got)); print("    reported, not predicted: %s" % sorted(got - pred))
 check("LT", ncited > 0 and not faults and not other and got == pred)
 
-print("\nSUMMARY: %d checks, %d failed: %s" % (len(RESULTS), sum(1 for _, k in RESULTS if not k),
-      ", ".join(n for n, k in RESULTS if not k) or "none"))

@@ -281,6 +281,7 @@ by: core/principles/positions-own-rules
 - `/xxx${/foo/}yyy/` is `/xxx(?:foo)yyy/`; a quantifier after the hole applies to the whole inserted pattern.
 - An assertion at the inserted pattern's edge crosses the border and reads its neighbours' text; one that can
   never hold beside its neighbour draws the can-never-match warning.
+- `anchored` in a hole has no error of its own: `x${anchored(/a/)}` never matches, as PCRE's `/x\Aa\z/`.
 - The hole and the sequence operator are one reading (pattern positions).
 - X must be an rx that can match: a filter-only rx (a complement) here is the compile error.
 - Several values, `${[a, b]}`: an ALTERNATION inside the one group, in the values' order; the literal is not copied.
@@ -447,6 +448,11 @@ by: core/principles/conservative-first
 A hole whose inserted pattern carries an edge assertion, inside a filter operand, is the filter error, as if the
 operand had been written out (`/\d+/ & /${num}/`, num := `/\b\d+\b/`).
 WHOLE `123` HOLDS, `1239` FAILS / SEARCHED `x9 34` `34`@3 / FIND-ALL `12 9 45 7` [`12`@0, `45`@5] (`/\d+/ & /${/[1-5]+/}/`)
+
+### An `&` inside a hole   [core/holes/and-in-hole]   ruled 2026-11-15
+An `&` written inside a hole is judged on the stretch the hole consumes: both of its sides match that stretch whole; where it sits is decided by what surrounds the hole.
+needs: core/holes/pattern
+WHOLE `99945999` HOLDS, `999450999` FAILS / SEARCHED `x99945999` `99945999`@1 / FIND-ALL `99945999 999450999 9997999` [`99945999`@0, `9997999`@19] (`/999${/\d+/ & <100}999/`)
 
 ### Where a hole is not a hole   [core/holes/no-hole]   reading 2026-11-19
 A backreference's name or number takes no hole (a compile error), and inside `\Q..\E` a `${...}` is literal text.

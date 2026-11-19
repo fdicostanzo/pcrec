@@ -616,7 +616,6 @@ rejected:
 readings:
 - a position with no row is a compile error (the manager's, revision 25.1, "MINE") — UNTESTED (a statement of scope).
 evidence:
-by: core/principles/positions-own-rules
 history:
 - 2026-11-17: two kinds, then "more than two kinds"; the draft revision 25.1 had one table with one product column for every position; revision 26 split it (R.1.0 HOLE POSITIONS).
 
@@ -626,6 +625,7 @@ rulings:
 - 2026-11-17 "hole-reading: agree and explicitly then, assertions become ok to cross the border" (record: "2026-11-17 OWNER RULING — hole-reading")
 - 2026-11-18 "product-order: first, the ruling was for counting holes which duplicate the pattern. It doesn't apply for rx holes. Idk for others" (record: "2026-11-18 OWNER RULING — product-order: first slowest; and a correction of the product's scope")
 - 2026-11-17 "sequence-reading: splice. But opening up the hole again, what was our rationale? I'm wondering if it would be ok if we declared that /xxx${/foo/}yyy/ was /xxx(?:foo)yyy/." (record: "2026-11-17 OWNER RULING — sequence-reading: splice; and the hole reopened")
+- 2026-11-15 "anchored-in-hole: agree" (record: "2026-11-15 RULINGS — no anchored-specific error in a hole; the anchor warning covers every whole-match place")
 rejected:
 - the edge-assertion error for holes (the draft's L8) — by owner ruling — hole-reading ("assertions become ok to cross the border").
 - one copy of the literal per value — by owner ruling — product-order (1), "It doesn't apply for rx holes".
@@ -881,6 +881,18 @@ readings:
 evidence: preddoc1 EX-in-filter; PART HF of predspec261 (the reach classifier).
 history:
 - 2026-11-18: "the right side of `&`" was the manager's slip (record correction), read as "an `&` operand"; then hole-in-filter.
+
+## core/holes/and-in-hole — An `&` inside a hole
+slugs:
+rulings:
+- 2026-11-15 "so the match span that the & expression creates anchors for is the ${} hole. 999${/\d+/ & <100}999 matches 99945999" (record: "2026-11-15 RULINGS — a per-call hit name; no count warning; the hole is the scope an `&` in it anchors to")
+- 2026-11-15 "That's a good clarification" (the sides of `&` "match the same stretch whole") (record: "2026-11-15 RULING — the sides of `&` "match the same stretch whole"; the word "anchored" is kept for the macro")
+rejected:
+- the sides judged on a prefix of the hole's text — by run — the rival holds on `999450999` (preddoc1 sabotage xEX-and-in-hole caught).
+readings:
+evidence: preddoc1 EX-and-in-hole (the record's acceptance row).
+history:
+- 2026-11-15: part (c) of the entry; the wording "match the same stretch whole" adopted the same evening (the word "anchored" kept for the macro and for `\A`/`\z`).
 
 ## core/holes/no-hole — Where a hole is not a hole
 slugs:

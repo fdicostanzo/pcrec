@@ -1,0 +1,177 @@
+== PART EX: one example per full core/holes piece (libpcre2 answers; python `re` must agree)
+EX-pattern  /${/ab/}?c/  ==  (?:ab)?c
+    WHOLE `ac` FAILS, `abc` HOLDS / SEARCHED `bc` `c`@1 / FIND-ALL `c abc ac` [`c`@0, `abc`@2, `c`@7]
+  CHECK EXpat  PASS
+EX-pattern-array  /x${[/a/, /ab/]}y/  ==  x(?:a|ab)y
+    WHOLE `xay` HOLDS, `xaby` HOLDS / SEARCHED `-xaby` `xaby`@1 / FIND-ALL `xay xaby` [`xay`@0, `xaby`@4]
+  CHECK EXarr  PASS
+EX-count  rx.repeat(rx.digit, min = n, max = n), n := [2, 4]  ==  (?|\d{2,2}|\d{2,4}|\d{4,4})
+    WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12`@0, `34`@2]
+  CHECK EXcnt  PASS
+EX-count-zero  /xa{${n}}y/, n := 0  ==  xa{0}y
+    WHOLE `xy` HOLDS, `xay` FAILS / SEARCHED `-xy xaby` `xy`@1 / FIND-ALL `xy xay xy` [`xy`@0, `xy`@7]
+  CHECK EXcz   PASS
+EX-name  /(?<${n}>\d)x/, n := "d"  ==  (?<d>\d)x
+    WHOLE `7x` HOLDS, `x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 8x` [`7x`@0, `8x`@3]
+    name hole [a, b]: name hole: an array of names (a compile error)
+  CHECK EXname PASS
+EX-class  /a[${c}q]/, c := [x, y]  ==  a(?:[xq]|[yq])
+    WHOLE `ax` HOLDS, `ay` HOLDS, `aq` HOLDS, `ab` FAILS / SEARCHED `-ab ay` `ay`@4 / FIND-ALL `ax ab aq` [`ax`@0, `aq`@6]
+  CHECK EXcls  PASS
+EX-two-holes  /a[${a}${b}]/, a := [x, y], b := [p, q]  ==  a(?:[xp]|[xq]|[yp]|[yq])
+    WHOLE `ap` HOLDS, `ab` FAILS / SEARCHED `-ab aq` `aq`@4 / FIND-ALL `ax ab ap` [`ax`@0, `ap`@6]
+  CHECK EX2h   PASS
+EX-zero-values  /a[${[]}x]|b/  ==  a(?!)|b
+    WHOLE `ax` FAILS, `b` HOLDS / SEARCHED `axb` `b`@2 / FIND-ALL `ax b` [`b`@3]
+  CHECK EX0v   PASS
+EX-negated-join  /a[^${join(c)}]/, c := [x, y]  ==  a(?:[^xy])
+    WHOLE `ax` FAILS, `ay` FAILS, `ab` HOLDS / SEARCHED `ax ab` `ab`@3 / FIND-ALL `ax ay ab` [`ab`@6]
+EX-negated-array  /a[^${c}]/, c := [x, y]  ==  a(?:[^x]|[^y])
+    WHOLE `ax` HOLDS, `ay` HOLDS, `ab` HOLDS / SEARCHED `ax ab` `ax`@0 / FIND-ALL `ax ay ab` [`ax`@0, `ay`@3, `ab`@6]
+  CHECK EXneg  PASS
+EX-range  /[${lo}-m]/, lo := [a, x] (x-m removed)  ==  (?:[a-m])
+    WHOLE `b` HOLDS, `x` FAILS, `n` FAILS / SEARCHED `-xb` `b`@2 / FIND-ALL `b x n a` [`b`@0, `a`@6]
+  CHECK EXrng  PASS
+EX-option  /(?${o})ab/, o := "i"  ==  (?i)ab
+    WHOLE `AB` HOLDS, `ab` HOLDS / SEARCHED `x AB` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6]
+EX-option-empty  /(?${o})ab/, o := ""  ==  ab
+    WHOLE `AB` FAILS, `ab` HOLDS / SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB` [`ab`@0]
+    option hole ['i', 's']: option hole: not exactly one value (a compile error)
+    option hole []: option hole: not exactly one value (a compile error)
+    option hole ['q']: option hole: 'q' outside the legal set (a compile error)
+  CHECK EXopt  PASS
+EX-value  /(?<y>\d)-${$y | "x"}/  ==  (?<y>\d)-(?:\k<y>|x)
+    WHOLE `3-x` HOLDS, `3-3` HOLDS, `3-4` FAILS / SEARCHED `7-3 3-3` `3-3`@4 / FIND-ALL `3-3 4-x 5-6 7-7` [`3-3`@0, `4-x`@4, `7-7`@12]
+  CHECK EXval  PASS
+EX-value-unset  /(?<y>\d)?-${$y | "x"}/ (unset read: the never-matching rx)  ==  (?<y>\d)?-(?:(?(y)\k<y>|(?!))|x)
+    WHOLE `-x` HOLDS, `-` FAILS, `3-3` HOLDS / SEARCHED `a-x` `-x`@1 / FIND-ALL `-x 3-3 -` [`-x`@0, `3-3`@3]
+  CHECK EXuns  PASS
+EX-bare-condition  /\d${(0: digit)}x/  ==  \d(?C"z")x
+    WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7]   (libpcre2 only)
+  CHECK EXbare PASS
+EX-bare-and  /x${A & (0: digit)}y/, A := /\d+/  (0 = A only)  ==  x(?<A>\d+)(?C"a")y
+    WHOLE `x3y` HOLDS, `x37y` FAILS / SEARCHED `x37y x3y` `x3y`@5 / FIND-ALL `x3y x37y x5y` [`x3y`@0, `x5y`@9]   (libpcre2 only)
+  CHECK EXand  PASS
+EX-flags  /(?i)id-${/blah/}/  ==  (?i)id-(?i-msU:blah)
+    WHOLE `id-BLAH` HOLDS, `ID-blah` HOLDS / SEARCHED `x ID-BLAH` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0, `ID-BLAH`@8, `Id-blah`@16]
+  CHECK EXflg  PASS
+EX-flags-written  /(?i)id-${/(?-i)blah/}/  ==  (?i)id-(?i-msU:(?-i:blah))
+    WHOLE `id-BLAH` FAILS, `ID-blah` HOLDS / SEARCHED `x ID-BLAH id-blah` `id-blah`@10 / FIND-ALL `id-blah ID-BLAH` [`id-blah`@0]
+  CHECK EXflw  PASS
+EX-flags-U  /(?U)x${/a+/}/  (U not inherited)  ==  (?U)x(?-imsU:a+)
+    WHOLE `xaaa` HOLDS / SEARCHED `xaaa` `xaaa`@0 / FIND-ALL `xaa xa` [`xaa`@0, `xa`@4]   (libpcre2 only)
+    the text paste `(?U)x(?:a+)` (U reaching the hole): WHOLE `xaaa` HOLDS / SEARCHED `xaaa` `xa`@0 / FIND-ALL `xaa xa` [`xa`@0, `xa`@4]
+  CHECK EXflU  PASS
+EX-labels  /${year}-x/ & (v: >= 2000), year := /(?<v>\d{4})/  ==  (?<v>\d{4})-x(?C"v")
+    WHOLE `2025-x` HOLDS, `1999-x` FAILS / SEARCHED `1999-x 2025-x` `2025-x`@7 / FIND-ALL `2025-x 1999-x 2001-x` [`2025-x`@0, `2001-x`@14]   (libpcre2 only)
+  CHECK EXlab  PASS
+EX-same-name  /(?<h>a)-${q}\k<h>/, q := /(?<h>b)/  (the inner group renamed: scoped)  ==  (?<h>a)-(?:(?<h_q>b))\k<h>
+    WHOLE `a-ba` HOLDS, `a-bb` FAILS / SEARCHED `x a-bb a-ba` `a-ba`@7 / FIND-ALL `a-ba a-bb a-ba` [`a-ba`@0, `a-ba`@10]
+  CHECK EXsnm  PASS
+EX-in-filter  /\d+/ & /${/[1-5]+/}/  (holes filled, then the operand judged)  ==  \d+(?C"q")
+    WHOLE `123` HOLDS, `1239` FAILS / SEARCHED `x9 34` `34`@3 / FIND-ALL `12 9 45 7` [`12`@0, `45`@5]   (libpcre2 only)
+  CHECK EXflt  PASS
+EX-and-in-hole  /999${/\d+/ & <100}999/  (both sides match the hole's stretch whole)  ==  999(?<H>\d+)(?C"q")999
+    WHOLE `99945999` HOLDS, `999450999` FAILS / SEARCHED `x99945999` `99945999`@1 / FIND-ALL `99945999 999450999 9997999` [`99945999`@0, `9997999`@19]   (libpcre2 only)
+  CHECK EXaih  PASS
+EX-quoted  /a\Q${x}\Eb/ (no hole inside \Q..\E: literal text)
+    WHOLE `a${x}b` HOLDS, `ab` FAILS / SEARCHED `-a${x}b` (1, 7) / FIND-ALL `a${x}b a${x}b` [(0, 6), (7, 13)]
+  CHECK EXq    PASS
+
+== PART R1: a class-hole alternation is of the CLASS (no copies); non-negated it collapses to one class
+  alternation (?<g>\w*)(?:[x]|[y]) vs one class (?<g>\w*)[xy]: [0, 0, 0] of 341 (WHOLE / SEARCHED / FIND-ALL, span + g)
+  the COPY reading (one copy of the literal per value) (?:(?<g>\w*)[x]|(?<h>\w*)[y]) vs one class: [0, 53, 55] of 341, first `xy`
+  `[${c}q]` vs `[xyq]`: [0, 0, 0] of 341
+  CHECK R1     PASS
+
+== PART R2: two holes in one class: the alternation over every combination (first hole slowest)
+  `[${a}${b}]`, a := [x, y], b := [p, q]: (?<g>\w*)(?:[xp]|[xq]|[yp]|[yq]) vs `[xypq]` [0, 0, 0] of 781; first-slowest vs first-fastest [0, 0, 0]
+  `[${lo}-${hi}]`, lo := [a, c], hi := [e, b]: (?<g>\w*)(?:[a-e]|[a-b]|[c-e]) (c-b removed) vs `[a-e]` [0, 0, 0] of 400
+  CHECK R2     PASS
+
+== PART R3: zero values (or every member removed) in a class hole: the never-matching rx
+  `/a[${[]}x]|b/` = a(?!)|b: vs `a(?!)|b` [0, 0, 0] of 40; vs the draft's `[x]` reading [1, 6, 7] (first `ax`); `[${lo}-a]`, lo := [x, z]: (?!)
+  CHECK R3     PASS
+
+== PART R4: a range WRITTEN with single values out of order is a compile error (libpcre2)
+  `[z-a]`: ERROR: compile '[z-a]' at 3: range out of order in character class;  the alternation member `[x-m]` of `[${lo}-m]`, lo := [a, x]: removed -> (?:[a-m])
+  CHECK R4     PASS
+
+== PART R5: one value may hold several characters; class-special characters in a value are literal members
+  value 'xy'  -> [xy]      every character of the value a member: True; `y` HOLDS (the text paste [xy]     : HOLDS)
+  value '^a'  -> [\^a]     every character of the value a member: True; `^` HOLDS (the text paste [^a]     : HOLDS)
+  value 'a-c' -> [a\-c]    every character of the value a member: True; `b` FAILS (the text paste [a-c]    : HOLDS)
+  value ']'   -> [\]]      every character of the value a member: True; `]` HOLDS (the text paste []]      : HOLDS)
+  value '\\d' -> [\\d]     every character of the value a member: True; `7` FAILS (the text paste [\d]     : HOLDS)
+  CHECK R5     PASS
+
+== PART R6: `[${join(c)}]` = `[${c}]` (non-negated); `[^${c}]`, two different values, accepts every character
+  `a[${join(c)}]` vs `a[${c}]`, c := [x, y]: [0, 0, 0] of 341;  `a[^${c}]` accepts 592 of 592 characters U+0000..U+024F
+  CHECK R6     PASS
+
+== PART R7: the option hole's legal set (the letters the draft admits), each through libpcre2; and `(?)`
+  libpcre2 version 10.46 2025-08-27
+  (?i)ok  (?m)ok  (?s)ok  (?x)ok  (?xx)ok  (?n)ok  (?U)ok  (?J)ok  (?r)ok  (?a)ok  (?aD)ok  (?aS)ok  (?aW)ok  (?aP)ok  (?aT)ok  (?)ok  (?^)ok  (?B)ERR  (?u)ERR  (?X)ERR  (?q)ERR
+  PCRE accepts a written `(?)`: True; the empty value gives `ab`; `(?)ab` and `ab` answer alike on ['ab', 'AB', 'xab', 'aB']: True
+  CHECK R7     PASS
+
+== PART R8: `0` in a condition LAST in a sequence (the match so far) = `A & (0: S)` (the entire match)
+  three (A, S) pairs (greedy A, so a filter's first path is its longest that passes): [0, 0] WHOLE/SEARCHED of 363
+  NOTE the filter model is greedy-longest-first only for these A; the callout (match so far at the end) is PCRE's path order.
+  mid-sequence `digit SEQ (0: /7/) SEQ digit`: WHOLE `73` True, `37` False / SEARCHED `373` (1, 3) / FIND-ALL `73 77 37` [(0, 2), (3, 5)]
+  CHECK R8     PASS
+
+== PART R9: inside a loop the match so far includes the earlier passes
+  `(digit SEQ (0: digit) SEQ ";")*` (digit one character, so a match so far longer than one pass fails):
+  from the rx's start (the callout's start) vs from the pass's start: [4, 16, 28] of 364; first `3;3;`: False vs True
+  CHECK R9     PASS
+
+== PART R10: a bare condition in a hole: the SURROUNDING labels at the hole, or the inserted part's own namespace
+  `/(?<h>\d)${(h: <5)}x/` SURROUNDING reading: WHOLE `3x` True, `7x` False / SEARCHED `7x 3x` (3, 5) / FIND-ALL `3x 7x 4x` [(0, 2), (6, 8)]
+  OWN-NAMESPACE reading (the place table's hole row, "inside X, X's own namespace"): compile error: `h` is not a name of the inserted part (free-name)
+  the two readings PART (an answer against a compile error): an OWNER QUESTION, bare-condition-labels
+  CHECK R10    PASS
+
+== PART R11: c := (0: digit) used as `/\d${c}x/` against the record's printed answers for `/\d${(0: digit)}x/`
+  binding-in-hole: (True, False, (1, 3), [(0, 2), (4, 6), (7, 9)]) ; the record's (zero-in-sequence entry `0` inside an inserted part): (True, False, (1, 3), [(0, 2), (4, 6), (7, 9)]) ; equal: True
+  the rival (the binding judged as its own rx, an empty match so far): `7x` False
+  CHECK R11    PASS
+
+== PART R12: `A & (0: digit & (b: blah))` = `A & (0: digit) & (b: blah)`, A := /(?<b>\d)\d*x?/, digit := /\d+/, blah := /[0-4]/
+  the nested set vs the chain: [0, 0, 0] of 364 (span + b); e.g. WHOLE `27` True, `72` False / SEARCHED `x72 23` (2, 3) / FIND-ALL `2x 27 7 3` [(0, 1), (3, 5), (8, 9)]
+  after a NAMED label (`A & (h: digit & (b: blah))`): b is not a label of h's world: the draft's existing error (not runnable)
+  CHECK R12    PASS
+
+== PART LT: the lint's L4 failures are exactly two lint limits, every title true (rulings file R1)
+  cited title items 109; lint L4 failures: 31 'not found' (two-line), 6 'without (record:' (a quote in the title)
+  distinct titles in the two classes: 26
+    two-line record line 1068: 2026-11-15 RULINGS — a per-call hit name; no count warning; the hole is the scope an `&` in it anchors to
+    quote    record line 1083: 2026-11-15 RULING — the sides of `&` "match the same stretch whole"; the word "anchored" is kept for the macro
+    two-line record line 1093: 2026-11-15 RULINGS — no anchored-specific error in a hole; the anchor warning covers every whole-match place
+    two-line record line 2364: 2026-11-17 OWNER RULING — exception-rule
+    two-line record line 2493: 2026-11-17 OWNER, on what kind of language this is
+    two-line record line 2644: 2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world
+    two-line record line 2902: 2026-11-17 OWNER RULINGS — the rx module: sequence-precedence and sequence-operator
+    two-line record line 3028: 2026-11-17 OWNER RULING — the count proposal
+    two-line record line 3062: 2026-11-17 OWNER RULING — quantifier operators
+    two-line record line 3161: 2026-11-18 OWNER RULING — product-order: first slowest; and a correction of the product's scope
+    two-line record line 3210: 2026-11-18 OWNER RULING — name-hole: an array in a group-name hole is a compile error
+    two-line record line 3267: 2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product
+    two-line record line 3287: 2026-11-18 OWNER RULING — hole-in-filter: the filter error; fill the holes first
+    two-line record line 3311: 2026-11-18 OWNER RULING — backref-across-parts: the part's own group; a reference uses the namespace at its point
+    two-line record line 3438: 2026-11-18 OWNER, continuing the export-scope discussion
+    two-line record line 3473: 2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels
+    two-line record line 3571: 2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx
+    two-line record line 3782: 2026-11-18 OWNER RULING — `then` is required; NOT gives the else-only behaviour
+    quote    record line 3844: 2026-11-18 OWNER on value-hole — "yes but": legal, on condition the type question is settled
+    quote    record line 3855: 2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match"
+    two-line record line 3966: 2026-11-18 OWNER RULING — hole-reads-capture: the label; and a way to get the PCRE capture value
+    two-line record line 4093: 2026-11-18 OWNER RULING — hole-flags: a hole takes the flags in force at the hole; each regex literal has its own flags; and his question, do flags propagate down
+    two-line record line 4167: 2026-11-18 OWNER RULING — unset-in-hole: no string, a regex that matches nothing; and an idea, a constant for it
+    two-line record line 4300: 2026-11-18 OWNER RULING — same-name-twice: an error at the backreference unless `(?J)`
+    two-line record line 4354: 2026-11-18 OWNER RULING — `${@y}` is a future direction: not built, not defined now
+    quote    record line 4510: 2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant
+  quote titles that are also two-line openers: 2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match", 2026-11-18 OWNER on value-hole — "yes but": legal, on condition the type question is settled, 2026-11-15 RULING — the sides of `&` "match the same stretch whole"; the word "anchored" is kept for the macro
+  CHECK LT     PASS
+
+SUMMARY: 36 checks, 0 failed: none
