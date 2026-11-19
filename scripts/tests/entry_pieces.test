@@ -69,10 +69,16 @@ check("a previous tag resolves to its piece, the first line says so", rc == 0 an
 rc, o = run(["core/holes/word"])
 check("a previous tag at level 2 shows the details entry with its was: line",
       rc == 0 and o[0].startswith("entry: was ") and "was: core/holes/word (2026-11-05, moved to the library)" in o)
+rc, o = run(["core/holes/wor", "-l", "0"])
+check("a previous tag is matched whole, never by prefix", rc == 1)
 rc, o = run(["lib/names/word", "-l", "0"])
 check("the current tag prints no was line", rc == 0 and o[0].startswith("### Word"))
 rc, o = run(["-g", "core/holes/word", "-p", "predicates", "-l", "0"])
 check("-g finds a piece by a previous tag", rc == 0 and o[0].startswith("### Word") and o[-1].startswith("entry: 1 items"))
+v = variant("rank", (LB, "A trimmed name removes leading and trailing blanks.", "A trimmed name is not core/holes/word."))
+rc, o = run(["-g", "core/holes/word", "-p", "predicates", "-l", "0"], rt=v)
+check("a hit by previous tag (an id match) ranks before a hit in a statement",
+      rc == 0 and o[0].startswith("### Word") and sum(1 for x in o if x.startswith("### ")) == 2)
 v = variant("noentry", (LD, "\n## lib/names/word — Word\n" + WAS + "slugs:\n", ""))
 rc, o = run(["lib/names/padded", "-l", "0"], rt=v)
 check("a piece with no details entry resolves (its was list is empty)", rc == 0 and o[0].startswith("### Padded"))
