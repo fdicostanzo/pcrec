@@ -4,7 +4,7 @@ One entry per tag of `parked.md`, in the same order. `history:` names the ideas-
 source, the sketch and the trigger are there).
 
 ## parked/ideas/first-rest — First/rest binding with recursion
-slugs: 
+slugs: first-rest
 rulings:
 - 2026-11-16 (class: IDEA) "I don't know if this helps but an idea I had last night was functional style first/ rest binding with recursion" (record: "2026-11-16 OWNER IDEA (offered, not a ruling) — first/rest binding with recursion (Frank, to session 134, box clock 09:52)")
 - 2026-11-16 (class: RULING) "Let's park first/rest but keep it in the wings in case we find a problem that needs a different way of composing" (record: "2026-11-16 OWNER RULING — first-rest: PARKED, kept in the wings"); the trigger is his

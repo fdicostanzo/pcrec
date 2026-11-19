@@ -50,7 +50,7 @@ history:
 - 2026-11-16: ruled as a principle with his qualifier "if it is possible"; the sentence (*) is provisional wording, the principle is ruled.
 
 ## core/principles/no-absence — A set never contains absence
-slugs: absent-rule
+slugs: absent-rule absent-holds
 rulings:
 - 2026-11-16 (class: PRINCIPLE) "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set" (record: "2026-11-16 OWNER PRINCIPLE — a set never contains absence")
 - 2026-11-16 "absent-rule: lock" (record: "2026-11-16 OWNER RULING — absent-rule: LOCKED"); the absent rule rests on this principle (its item (4)); its clause offering the optional mark was removed by drop-mark (core/conditions/defaults)
@@ -596,7 +596,7 @@ history:
 - new piece (lane preddoc3a): the slug was on core/conditions/match-so-far, whose ruled statement does not answer it.
 
 ## core/conditions/form — The condition form
-slugs: condition-not condition-or dollar-condition label-twice-warn colon-scope label-twice
+slugs: condition-not condition-or dollar-condition label-twice-warn colon-scope label-twice joint-condition
 rulings:
 - 2026-11-16 "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." (record: "2026-11-16 OWNER RULING — record-is-product: yes")
 - 2026-11-16 "label-twice: agree an error. And that means it's also unofficially parked in case some other meaning becomes valuable" (record: "2026-11-16 OWNER RULING — label-twice: an error")
@@ -711,7 +711,7 @@ history:
 - 2026-11-16 looped-compare ("looped-compare: warn", record "2026-11-16 RULING — a compare over looped labels warns"): the warning on a compare over looped labels was MOVED by joint-loops (3) onto a `|` of conditions over labels that can repeat (record "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); after after-loop-read (core/labels/labels-vs-captures) a bare condition reads the last pass's own label and the draft withdrew `compare.looped` with looped-warning (§R.2, rejected above). The slug is homed here with that rejected line (lane preddoc5).
 
 ## core/conditions/defaults — Defaults and absent labels
-slugs: default-set unset-component drop-mark default-value match-context zero-pass-empty domain-scope mark-narrows mark-in-none mark-range mark-under-not one-witness default-reaches-dollar default-scope
+slugs: default-set unset-component drop-mark default-value match-context zero-pass-empty domain-scope mark-narrows mark-in-none mark-range mark-under-not one-witness default-reaches-dollar default-scope mark-design
 rulings:
 - 2026-11-16 "default-scope: yes per test" (record: "2026-11-16 OWNER RULING — default-scope: per test")
 - 2026-11-16 "colon-scope: yes with refinement: (a, b = c): ... the 'c' is a binding et al" (record: "2026-11-16 OWNER RULING — colon-scope: yes, with a refinement for a default")
@@ -763,7 +763,7 @@ evidence:
 history: skeleton; the draft R.1.4.
 
 ## core/filters/complement — Complement
-slugs: nested-complement source-row
+slugs: nested-complement source-row searched-complement
 rulings:
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-16 "not-is-complement: yes agree" (record: "2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none")
