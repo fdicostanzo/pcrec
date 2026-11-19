@@ -948,6 +948,10 @@ fi
 # under --engine=auto they are now the DFA engine's empty artifact rather than a VM program behind a
 # prefilter that returned 0. Each is a never-match pattern (all ran green in their .rxt files); bucket
 # 254 + 16 = 270, the census's count of `RX_DFA_SCAN "empty"` artifacts before and after (270 both).
+# [LOOK-L1] (lane l1ttri, 2026-11-19): the last 10 entries are zero-width-assertion patterns the
+# lookaround L1 feature (lane/l1feat + review r55) now PROVES never-match (a lookahead/lookbehind whose
+# set is disjoint from the consuming step's, or from the preceding step's, or a byte-universe-empty
+# set); each is a never-match pattern by construction, so the empty artifact is correct. Bucket +10.
 EMPTY_MANIFEST='\B\b
 \b\B
 abcd(?:\b)+efgh
@@ -1217,6 +1221,16 @@ x\G
 (a)\b(b)
 (a+)\b(?1)
 a(?=b)\Kc
+(?:(?=z)a){3}
+(?<=a)(?<=b)c
+(?=[ab])[cd]x
+(?=\x{e9})e.
+(?i)(?=k)(?-i)[^kK]z
+(?i)(?=k)(?-i)[a-jl-z]z
+[a-p](?<=q)
+\d(?<=[a-z])
+x(?=[^\x00-\xff])y
+x[^\x00-\xff]y
 a\K\bb'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"

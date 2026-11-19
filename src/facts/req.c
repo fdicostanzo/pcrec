@@ -1406,12 +1406,10 @@ static RbRun rb_guard_of_head(const RbWalk *w, const PdHead *h)
  * `rg` is the body's own. Nothing else leaves the body: its set, its
  * description and its consumed runs stay in `b` (D-1). Its never bit is the
  * body's, by the kind row's NEVER column (BODY for a positive lookaround). */
-static void rb_look_item(RbWalk *w, const Ast *a, RbVal *b, RbRuns *u)
+static PCREC_OWN_FRAME void rb_look_item(RbWalk *w, const Ast *a, RbVal *b,
+                                         RbRuns *u)
 {
     bool behind = a->u.look.behind;
-    if (!behind) w->ahead++;
-    rb_walk(w, a->l, b);
-    if (!behind) w->ahead--;
     const RbRuns *br = &b->runs;
     u->never = pcrec_never_by_row(w->cx, pcrec_ast_row(a).never, br->never, br->never);
     if (!behind) {
@@ -1456,13 +1454,31 @@ static void rb_ctx_item(const RbWalk *w, const Ast *a, RbRuns *u)
  * (E2's: no byte, `all`, width 0, desc.c `zero`) carrying the item `u`,
  * whose guards meet `acc`'s positions in `rr_cat`. `t` is the walk level's
  * child slots; the body's value goes to `t[0]` and stays there. */
-static void rb_zero_item_into(RbWalk *w, RbVal *acc, const Ast *a, RbVal *t)
+static PCREC_OWN_FRAME void rb_zero_item_fin(RbWalk *w, RbVal *acc,
+                                             const Ast *a, RbVal *t)
 {
     RbRuns u = rr_unit();
     if (a->k == A_LOOK) rb_look_item(w, a, &t[0], &u);
     else rb_ctx_item(w, a, &u);
     acc->runs = rr_cat(w, u, acc->runs, &acc->set);
     acc->desc = pcrec_pd_cat(w->cx, &w->pd, pcrec_pd_zero(), acc->desc);
+}
+
+/* THE DESCENT AND THE ITEM IN SEPARATE FRAMES ([DD-10], l1ttri): the body's
+ * walk is the one recursive step of a nested lookaround, so the frame that
+ * makes it holds only pointers; the item's runs (`RbRuns`, several KB with
+ * `rr_cat`'s temporaries) live in `rb_zero_item_fin`, entered after the
+ * descent returns. In one frame, a lookaround nested 250 deep cost 6.8 KB a
+ * level and overflowed limits.md §3.10's compile-thread budget. */
+static void rb_zero_item_into(RbWalk *w, RbVal *acc, const Ast *a, RbVal *t)
+{
+    if (a->k == A_LOOK) {
+        bool behind = a->u.look.behind;
+        if (!behind) w->ahead++;
+        rb_walk(w, a->l, &t[0]);
+        if (!behind) w->ahead--;
+    }
+    rb_zero_item_fin(w, acc, a, t);
 }
 
 /* `acc` := the zero-width node `a` followed by `acc`, by the first row of T3
