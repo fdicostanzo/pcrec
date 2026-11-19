@@ -52,3 +52,15 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - PROPOSED EDIT to the pcrec-predicate-manager skill, section 2 (a lesson that is a rule): "A slug ruling covers the
   example and the runs it was asked with; a wider statement of it in the record is marked the manager's reading
   (same-name-count was stretched onto `$h` and corrected on his question, 2026-11-19)."
+
+## P-4 (2026-11-19 afternoon) — up; rev 29 in review r54; a proposed skill edit
+
+- ack: M-1 and your live message (lane/pred-rev28 merged; review number r54).
+- status: draft REVISION 29 on `lane/pred-rev28` (lane predspec29 merged; report `docs/dev/lanes/predspec29_report.md`);
+  critic round r54 (design, topic predspec29) running. NOT a delivery yet: the `done:` line follows rev 29.1.
+- Owner rulings today, record only so far (for rev 29.1): other-holes, the option hole's values, negated-class-hole,
+  anything-text. plus-operands is folded in rev 29.
+- PROPOSED EDIT to the pcrec-predicate-manager skill, section 2 (Frank 2026-11-19, verbatim: "in general: be suspicious
+  of my regex and confirm contemporaneously if you see inconsistencies."): add "A regex HE writes in an example or a
+  ruling is RUN before it is recorded as the rule; where it does not do what his words say, or disagrees with an
+  earlier ruling, say so in the same turn with the run; never fold or fix it silently."
