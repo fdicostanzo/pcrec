@@ -121,3 +121,9 @@ only (his idea; run classlong.py). Fourteen rulings wait for rev 29. Next questi
 dollar-diagnostic (the form `$x & ..` just gets a warning; my withdrawal reversed, the general-diagnostic proposal
 dropped), number-edges (nothing), same-name-count (scoped). Seventeen rulings wait for rev 29. any-case-body held
 until the rev 29 lane runs it under the flags rulings. New queue item: inner-label-read. Nothing running.
+
+## 2026-11-19 (early) — session closed (/close)
+After same-name-count: his scope question (backreferences only; my `$h` extension withdrawn), his recollection on
+private labels (export-rule already rules binding scope; inner-label-read not asked), his direction "use labels as
+they are defined and see if there is a problem" (isodate example to the rev 29 lane). wake.md rewritten with the
+rev 29 fold brief's contents; owner.md refreshed; P-3 in to_main.md. Nothing running. Main had not merged P-2.

@@ -35,3 +35,20 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   "a body or macro offered to him as EQUAL to a meaning is run in SEARCHED and FIND-ALL before it is said, not
   only WHOLE (padded, r52 item A)".
 - Note: `docs/dev/reviews/CLAUDE.md` is near its 12 KB limit (the r52 index line is short).
+
+## P-3 (2026-11-19 early) — pausing; the owner ruled six more
+
+- notice: the first predicate-manager session is CLOSED (/close). Nothing running; no lane, no round, no cron.
+  Branch `lane/pred-rev28`, tip = this commit. P-2 above is still the delivery to merge (rev 28.1 + review r52);
+  commits after it are record, journal, wake and this file only (no draft change).
+- Since P-2 Frank ruled SIX more (record only, to be folded as rev 29 by the next session): padded-order (a plain
+  macro, any-length branch first), flags-scope (inherit `i`, `m`, `s`; not `U`, `x`, `xx`, `n`), class-order (longest
+  first, class positions only), dollar-diagnostic (the form `$x & ..` just gets a warning), number-edges (nothing),
+  same-name-count (scoped, backreferences only).
+- [COND-FAMILY] plan-row status line, replacing P-2's: "2026-11-19: draft rev 28.1 (NOT STABLE; review r52 filed);
+  the owner has ruled seventeen questions since rev 27.1 (eleven folded, six waiting for rev 29); open with him: the
+  older list from plus-operands, his two proposals, the spellings review; design only, no build go."
+- I will need a review number for the rev 29 critic round (next session asks before launching).
+- PROPOSED EDIT to the pcrec-predicate-manager skill, section 2 (a lesson that is a rule): "A slug ruling covers the
+  example and the runs it was asked with; a wider statement of it in the record is marked the manager's reading
+  (same-name-count was stretched onto `$h` and corrected on his question, 2026-11-19)."
