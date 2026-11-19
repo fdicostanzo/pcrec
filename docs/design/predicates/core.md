@@ -211,46 +211,148 @@ skeleton: yes
 
 ### Reading a label   [core/values/reads]   ruled 2026-11-18
 `$y` reads the label, everywhere, holes included; a read is a one-string rx known at match time.
-skeleton: yes
+needs: core/labels/labels-vs-captures core/labels/backreferences core/conditions/pass-start-read
+see: core/holes/value core/diagnostics/dollar-form
+- `$y` is the label `y` as it stands where the read is written, in a hole as in a condition: `$x` and `x:` never
+  disagree.
+- A read yields at most one string: the label's text when it is set; when it is unset, the rx that never matches.
+- A read is an rx (core/values/one-type): every operation on rx applies to it, at match time. `$x & <5` is x's text
+  when x < 5 and nothing otherwise; the form draws a warning (core/diagnostics/dollar-form).
+- PCRE's capture (the last value a group of the name set) is `\k<y>` inside rx text; where a `$` reads, the form
+  that reads the capture is still to be spelled (core/spellings/placeholders).
+- A read of a name the rx it is written in does not define is a compile error (a reading).
+- The array form (every setting of the name, in order) is its own spelling; in a hole it is not defined
+  (parked/ideas/array-in-hole).
+WHOLE `3-3;-3;` FAILS / SEARCHED `3-3;-3;` `3-3;`@0 / FIND-ALL `3-3;-3; 7-7;` [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12] (`/(?:(?<y>\d)?-${$y};)*/`)
 
 ### One type: a match is an rx   [core/values/one-type]   ruled 2026-11-18
 A match is an rx; an operation on values applies to an rx; what cannot be built yet is the under-construction error.
 by: core/principles/build-later
-skeleton: yes
+see: core/diagnostics/under-construction
+- ONE type for values, the rx: a set of strings offered in an order. A constant (`5`, `"a"`) is a one-string rx
+  known at compile time; a label read is a one-string rx known at match time; an array the user writes is an
+  alternation (core/arrays/lift). A condition and a macro stay their own kinds (a reading).
+- PROPERTIES, not types: an operation or a position may need its operand SINGLE (at most one string), FINITE
+  (enumerable within the budget) or ANY; known at COMPILE time or allowed at MATCH time; able to MATCH or to FILTER
+  (core/filters/kinds).
+- TWO FORMS of each operation: the compile-time form on general regex, and the match-time form, compiled, on one
+  string. `$y + 1` (match time) and `\d + 1` (compile time) are written alike: `\d + 1` is the numerals 1 to 10.
+- A meaning the language defines whose build is not there is the under-construction error, never "illegal".
+- An operation written inside a position meets both: the operation's rule on its operands, then the position's on
+  the result; the stricter wins: compile error, then under construction, then built (a reading).
+WHOLE `3` HOLDS, `37` FAILS / SEARCHED `x7 3` `3`@3 / FIND-ALL `3 7 33 4` [`3`@0, `3`@4, `3`@5, `4`@7] (`/(?<x>\d+)/ & ($x & <5)`, equal to `(x: <5)` here)
 
 ### The number domain   [core/values/number-domain]   ruled 2026-11-18
 Every number operation reads the canonical decimal numerals only (no leading zeros); a read such as `0099` is not a number.
-skeleton: yes
+see: lib/modifiers/padded parked/ideas/class-base
+- ONE domain for every number operation: the comparisons, `+ - * %`, the counts.
+- Canonical: no leading zeros (`0` itself is one), no sign or point unless the literal writes them.
+- A member outside the domain is removed at compile time and yields nothing at match time (the position fails).
+- Every arithmetic result is the canonical numeral, whatever the width of what was read (`10 - 1` is `9`);
+  padding is the writer's request, through `padded`.
+- Numbers over another ordered set of symbols (a base given by a class) are an idea (parked/ideas/class-base).
+WHOLE `0099-100` FAILS / SEARCHED `0099-100 2025-2026` `2025-2026`@9 / FIND-ALL `0099-100 2025-2026 0100-101` [`2025-2026`@9] (`/(?<y>\d{4})-${$y + 1}/`)
 
 ### Arithmetic   [core/values/arithmetic]   ruled 2026-11-19
 `+ - * %` take the decimal numerals only; any other operand, `% 0` or a negative result yields nothing, with a warning where known at compile time.
+needs: core/values/number-domain core/values/one-type
 by: core/principles/nothing-outside-domain
-skeleton: yes
+see: core/arrays/lift core/operators/precedence core/diagnostics/warnings lib/strings/join
+- Binary `+ - * %`: addition, subtraction, multiplication, remainder, on numerals; a constant expression folds
+  (`2025 + 1` is `2026`). Their levels: core/operators/precedence.
+- An operand of many strings (an array, a class, any rx `enumerate` accepts) applies member by member, over the
+  product of the operands (core/arrays/lift); a member outside the domain gives nothing and the others their
+  results: `\w + 1` is `\d + 1` (a reading, run).
+- `% 0` and a negative result are outside the domain: nothing, at compile time as at match time. There is no
+  signed numeral, and a written `% 0` is no compile error of its own.
+- A result known at compile time to be nothing draws a warning, never an error (core/diagnostics/warnings).
+- `+` never joins strings or patterns. Joining is the sequence operator, or `join` over an array (lib/strings/join).
+WHOLE `8` HOLDS / SEARCHED `x42 8` `42`@1 / FIND-ALL `8 x 42` [`8`@0, `42`@4] (`/${["7", "x", "41"] + 1}/` is `(?:8|42)`: the member `x` gives nothing)
+WHOLE `15-5` HOLDS, `5--5` FAILS / SEARCHED `5--5 15-5` `15-5`@5 / FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `10-0`@10] (`/(?<y>\d+)-${$y - 10}/`: a negative result is nothing)
 
 ### Single-value functions   [core/values/functions]   ruled 2026-11-18
 A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction.
-skeleton: yes
+needs: core/values/one-type
+see: core/arrays/enumerate core/arrays/lift lib/strings/left lib/strings/strlen
+- A single-value function (`left`, `strlen`, the arithmetic operators; placeholder names) is defined on one string.
+  On a read it runs at match time on the read's one string.
+- On any other rx the first clause that applies decides (the order is a reading):
+  1. an assertion looking outside the operand (`left(/(?<=x)ab/, 1)`, `\b\d+\b`): `enumerate`'s compile error;
+  2. an infinite or over-budget rx (`left(/\d+/, 2)`): under construction;
+  3. a constant, a read, an array, a finite rx `enumerate` accepts: built, the function applied to each string.
+- `left(rx, n)` is the IMAGE (the first n characters of each string); a filter on the texts whose first n
+  characters are in a set is another function (lib/sets/prefix-in).
+- An expression over reads and constants alone (`($y | "9") + 1`) is applied member by member at match time, in
+  its written order (a reading, run).
+WHOLE `fo` HOLDS / SEARCHED `xba fo` `ba`@1 / FIND-ALL `fo ba fofo` [`fo`@0, `ba`@3, `fo`@6, `fo`@8] (`/${left(/foobar|bazqux/, 2)}/` is `(?:fo|ba)`)
 
 ## Arrays   [core/arrays]
 
 ### Arrays are alternations; operations lift   [core/arrays/lift]   ruled 2026-11-18
 An array is an alternation of values; an operation on arrays applies to every combination of members, the first operand slowest, values in the order given.
+needs: core/values/one-type
 by: core/principles/general-rules
-skeleton: yes
+see: core/holes/count parked/ideas/cartesian
+- A single value is a one-member array, so `n + 1` over an array needs no rule of its own:
+  `[2, 4] + [1, 10]` is `[3, 12, 5, 14]`.
+- An array mentioned twice is independent per mention (a reading).
+- A repeated result is harmless: as alternatives the first occurrence wins (a reading, run).
+- The rule is about arrays the user writes and the rxs `enumerate` accepts, not about the match-time array of a
+  label's settings, which is its own type (a reading).
+- A pairwise combination could exist only as an explicit function (parked/ideas/cartesian).
+WHOLE `12` HOLDS, `4` FAILS / SEARCHED `x14` `14`@1 / FIND-ALL `3 12 5 14` [`3`@0, `12`@2, `5`@5, `14`@7] (`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`)
 
-### Enumerate   [core/arrays/enumerate]   ?  2026-11-19
+### Enumerate   [core/arrays/enumerate]   ruled 2026-11-14
+`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order; an edge assertion in it, or an infinite or over-budget rx, is a compile error.
+needs: core/arrays/lift
+- A built-in. PRIORITY ORDER: at each choice point the first alternative first, and for a greedy repeat one more
+  copy first (a lazy repeat one fewer); so re-joining the entries reports the match the rx itself reports.
+- A class's members have no PCRE order; for a lift see core/arrays/class-order, for the entries'
+  own order core/arrays/class-index. Equal strings from two paths are one entry (a reading).
+- Its argument is a compile-time set position: an assertion at its edge is the edge-assertion error
+  (`enumerate(/(?<=a)[bc]/)`). A BUDGET bounds it: an infinite or over-budget rx is a compile error giving the
+  count; no number is stated for the budget. An interior lookaround or a backreference: not stated.
+- It is the line single-value functions follow (core/values/functions). Uses: finite backreferences made
+  regular, matched delimiters, which alternative matched (`.index`).
+WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a`@6] (`/${enumerate(/(?:a|ab){1,2}/)}/` is `(?:aa|aab|a|aba|abab|ab)`)
 
 ### The order of a class's results   [core/arrays/class-order]   ruled 2026-11-19
 A class's members have no order; where a lift gives results of different lengths from one class position, the longer is tried first.
-skeleton: yes
+needs: core/arrays/lift core/arrays/enumerate
+- A class is one position taking one character from a set (`\d`, `[90]`, `\w`, `.`). Alternations, quantifiers and
+  arrays the user writes keep their own order; nothing else is sorted.
+- No tie rule is needed: two different strings of one length cannot both match at one position (a reading, run).
+- Nesting, the alternation first: `(1|9) + \d` keeps the alternation's order and sorts each choice's class
+  results (a reading, run). The class first, or two class positions: core/arrays/class-positions.
+- Equal strings from different members are one result: `\d * 0` is `0` (a reading, run).
+WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:10|1|2|3|4|5|6|7|8|9)`)
 
 ### Two class positions in one lift   [core/arrays/class-positions]   open class-positions 2026-11-19
-The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-skeleton: yes
+The order of a lift's results with two class positions (`\d + \d`), a class under a lazy quantifier, or a class first beside an alternation is a question for the owner.
+needs: core/arrays/class-order
+- The ruled words cover one class position; the readings part where a lift holds more.
+- Two classes, `\d + \d`: C1, the lift as one position, its results longest first; C2, the first class slowest
+  in ascending order, the second's results longest first within each; C3, the first descending (= C1's answers).
+- A lazy quantifier, `\d{1,2}? + 1`: Q1, the quantifier's order kept, each count's results longest first
+  (SEARCHED `x100` `10`@1); Q2, the quantified class as one position (`100`@1). The greedy `\d{1,2} + 1` agrees.
+- The class first, `\d + (1|9)`: A, the alternation's order outermost, each choice's class results longest
+  first (SEARCHED `x11` `1`@1); B, the class position's results longest first across the lift (`11`@1).
+- No candidate is the reading; it is asked.
+WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (C1, `/${\d + \d}/`: the lift's results longest first)
+WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (C2: the first class slowest, ascending)
 
 ### The order of a class in enumerate   [core/arrays/class-index]   open class-index 2026-11-19
-The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-skeleton: yes
+The order of a class's members in `enumerate`'s array (`.index`, `each`, a lift of `enumerate(X)`) is a question for the owner.
+needs: core/arrays/enumerate core/arrays/class-order
+- The reading (a): codepoint order for the ARRAY interface (`enumerate(/[-\/.]/)` is [`-`, `.`, `/`], `/` at
+  index 3); a lift of `enumerate(X)` lifts an rx, so the class order applies: `enumerate(/\d/) + 1` = `\d + 1`.
+- (b): the array's codepoint order everywhere, lifts included.
+- (c): one order wherever a class's member order is observable, the longer result first, ties by codepoint;
+  equal to (a) on this lift.
+- Codepoint gives one array for every spelling of a class; leaving it undefined makes `.index` of a class member
+  an error.
+WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] ((a), `/${enumerate(/\d/) + 1}/` as the class)
+WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] ((b): the array's codepoint order)
 
 ## Holes   [core/holes]
 

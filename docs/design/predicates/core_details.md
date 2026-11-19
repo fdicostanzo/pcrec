@@ -509,19 +509,37 @@ history: skeleton; the draft R.1.0 head (THE TWO KINDS OF RX).
 slugs: value-filter
 rulings:
 - 2026-11-18 "what i want is that $y works like label. however, there is a way to get the pcre capture value" (record: "2026-11-18 OWNER RULING — hole-reads-capture: the label; and a way to get the PCRE capture value")
+- 2026-11-18 "Yes $y is a single value read at run time. At runtime, it is manipulated by left() et al using string manipulation built for simple strings. Semantically, $y is a regex of a single string. So operations that work on regex should work on it." (record: "2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation")
+- 2026-11-18 "unset-in-hole: i meant what you describe "no string" as. its a regex that matches nothing. that would be a good constant to provide" (record: "2026-11-18 OWNER RULING — unset-in-hole: no string, a regex that matches nothing; and an idea, a constant for it")
 rejected:
+- a read is PCRE's capture (`${$y}` = `\k<y>`) — by owner ruling — hole-reads-capture; run: the capture gives `3-3;-3;` HOLDS / `3-3;-3;`@0 / [`3-3;-3;`@0, ``@7, `7-7;`@8, ``@12] against the label's FAILS / `3-3;`@0 (preddoc3b EXreads; the draft's PART HR of rev 28, 2 / 2 / 2 of 21,845; sabotage s1 caught).
+- "No conditions. No &." on a read (his own discussion, part (5)) — by owner ruling — read-is-constant ("we were applying & to $y"): value-filter answered legal (the draft's A5).
 readings:
-evidence:
-history: skeleton; the draft R.1.15, R.1.16.
+- a `$y` in an rx that does not define y is free-name's compile error (the draft R.1.15 (11), the manager's, SUPPORTED by the marks, not by a ruling) — UNTESTED (a refusal).
+- a read in a hole needs the group's TEXT kept during the match whether or not the group is returned (the manager's m3, hand-worked) — UNTESTED.
+evidence: preddoc3b EXreads; PART HR of predspec28.
+history:
+- 2026-11-18: hole-reads-capture and read-is-constant; the draft R.1.15 (3), (11), R.1.16 T20, A2, A5, A23. His recollection of the label-only group (parked/ideas/label-only-group) is not folded.
+- 2026-11-19 (lane preddoc3b): converted from the skeleton; the example is the ruled witness.
 
 ## core/values/one-type — One type: a match is an rx
 slugs: match-is-rx read-is-constant value-is-pattern
 rulings:
 - 2026-11-18 "value-hole: let's use the unifying idea for it. Change my answers to match." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match"")
+- 2026-11-18 "That means, in practice, that there are two forms for each of them: the compile time version that works on general regex, and the runtime version that,while compiled, works on single value strings at run time. So $y + 1 and \d + 1 look the same, the first one happens at run time, and the second at compile time." (record: "2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation")
+- 2026-11-18 "We can create functions like left() and restrict them to constants now. I'd like to consider that unbuilt territory however and the error is an "under construction" sign." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match"")
 rejected:
+- "$x is not a pattern but a match" (his ground for keeping `$x & <5` an error, 2026-11-17) — by owner ruling — match-is-rx ("Change my answers to match"): `$x & <5` is legal (the draft's A1, A2); run: equal to `(x: <5)` on the digit run (preddoc3b EXonetype; sabotage s2, the chain not re-entering `\d+`, caught).
+- a value in a pattern position is a STRING, not a one-member pattern (the draft rev 26's text) — by owner ruling — match-is-rx (A3); no answer moves.
+- "adding two patterns is an ordinary type error" (the manager's) — by owner ruling — match-is-rx removes the type ground; plus-operands rules nothing (core/values/arithmetic).
 readings:
-evidence:
-history: skeleton; the draft R.1.16.
+- the condition and the macro stay their own kinds (the lane predspec27's reading; no line of the rulings names them) — UNTESTED.
+- the composition rule, the stricter status wins (the draft's reading, review r48 FIXIND-10) — SUPPORTED as rule-as-code (PART TT of predspec28, sabotage s14).
+- a computed value is a one-string rx known at run time, like a read (the draft's A11) — UNTESTED.
+evidence: preddoc3b EXonetype; PARTS UT, TT of predspec27, predspec28.
+history:
+- 2026-11-18: value-is-pattern (one ruling, two leans, one idea), then value-hole "yes but", then match-is-rx and read-is-constant; the draft R.1.16 ONE TYPE, THE TYPE TABLE, ANSWERS CHANGED A1-A36.
+- 2026-11-19 (lane preddoc3b): converted from the skeleton; the type table's rows are homed by position and operation (core/holes/*, core/values/*, core/arrays/*), not copied.
 
 ## core/values/number-domain — The number domain
 slugs: number-domain domain-components numeral-width
@@ -529,73 +547,120 @@ rulings:
 - 2026-11-18 "number-domain: canonical" (record: "2026-11-18 OWNER RULING — number-domain: canonical")
 - 2026-11-18 "numeral-width: canonical" (record: "2026-11-18 OWNER RULING — numeral-width: canonical")
 rejected:
+- two domains (`+` reading `0099` as 99 while `<` excludes it; the draft rev 27) — by owner ruling — number-domain; run: `0099-100` HOLDS under it (preddoc3b sabotage s3 caught; PART H of predspec271).
+- WIDTH KEPT (a result as wide as what was read) — by owner ruling — numeral-width: canonical; the composition `padded($y - 1, strlen($y))` gives it (not built).
 readings:
-evidence: PART NW of predspec28.
-history: skeleton; the draft R.1.16 (THE NUMBER DOMAIN), R.1.15 (2).
+- "removed at compile time, nothing at match time" was in the definition quoted to him and is ruled with it (the manager's m3; confirmed review r52 H) — SUPPORTED by the record.
+- canonical at every step of an intermediate result (`($y - 1) + 1`) and for two reads (the manager's m1 of numeral-width) — UNTESTED.
+evidence: preddoc3b EXdomain (against the 10,000-copy lowering, 0 differing); PART NW of predspec28, PART H of predspec271.
+history:
+- 2026-11-18: his question on number-domain, then number-domain and numeral-width; the draft R.1.16 THE NUMBER DOMAIN, R.1.15 (2), A27.
+- 2026-11-19: the base-class idea (parked/ideas/class-base) generalizes the domain; not in force.
 
 ## core/values/arithmetic — Arithmetic
 slugs: plus-operands number-edges
 rulings:
 - 2026-11-19 "literal "a" + "b" is an error because there is no compatible type defined and they are not in the default type (if that works). for now, as you say, we are restricting arithmetic to digits and anything else is nothing (for runtime compatibility) and a warning if known" (record: "2026-11-19 OWNER RULING — plus-operands")
 - 2026-11-19 "number-edge: nothing" (record: "2026-11-19 OWNER RULING — number-edges")
+- 2026-11-19 "i don't think + should be used for anything that isn't numbers in one form or another." (record: "2026-11-19 OWNER, on plus-operands: `+` is for numbers only; a class as the base")
 rejected:
 - a TYPE ERROR for a non-number operand (the manager's lean) — by owner ruling — plus-operands.
+- `+` joins strings or patterns (`"7" + 1` is `71`) — by owner ruling — "i don't think + should be used for anything that isn't numbers"; run: preddoc3b sabotage s5 caught (EXplus).
+- a signed numeral for a negative result — by owner ruling — number-edges; run: `5--5` HOLDS under it (preddoc3b sabotage s4; PART NE of predspec281).
+- `% 0` a compile error of its own (a constant divisor) — by owner ruling — number-edges.
 readings:
-evidence: PARTS PL, NE of predspec291.
-history: skeleton; the draft R.1.14 (the `+` paragraph), R.1.16 NUMBER EDGES.
+- a member list (array, class) is filtered member by member: `\w + 1` = `\d + 1` (the manager's (d)) — SUPPORTED (PART PL of predspec29: 0 / 0 / 0 of 3,906; preddoc3b EXplus).
+- "(joining is the sequence operator)" (the manager's (c) of plus-operands) — NOT SUPPORTED as complete: negated-class-hole's `join(c)` is a joining that is not the sequence operator; the piece names both.
+- his first sentence (a literal `"a" + "b"` an ERROR once operand types exist) is a DIRECTION, "if that works", not in force (the draft's reading) — UNTESTED; ideas parked/ideas/restricted-parameter, parked/ideas/class-base.
+evidence: preddoc3b EXplus, EXedges; PARTS PL, NE of predspec29, predspec291.
+history:
+- 2026-11-18: array-lift's arrays; value-is-pattern part 1.
+- 2026-11-19: his restriction idea `m(g & /\d+/)`, "`+` is for numbers only", the base idea, plus-operands, number-edges; the warning's one trigger is the manager's call (core/diagnostics/warnings).
 
 ## core/values/functions — Single-value functions
 slugs: construction-line
 rulings:
 - 2026-11-18 "construction-line: enumerate" (record: "2026-11-18 OWNER RULING — construction-line: enumerate")
+- 2026-11-18 "so the "under construction" was not about arrays but about regexes used on macros that you would think expect a constant." (record: "2026-11-18 OWNER, what "under construction" was about")
 rejected:
+- one string only (`enumerate = 1`) — by owner ruling — construction-line (his first option, not taken).
+- "may hold more than one string" as the line (the draft rev 27, 27.1) — by owner ruling — construction-line: a finite rx of many strings is built.
+- §2.7's preimage filter called `left(n, S)` — by the manager's spelling call (A17): renamed `prefix_in(n, S)`; `left` is his image function.
+- `left` taking the last characters — by run — preddoc3b sabotage s6 caught (EXleft).
 readings:
-evidence:
-history: skeleton; the draft R.1.16 T5.
+- the three clauses in order (the assertion error first) (THE MANAGER'S CALL 1, review r52 B, answer-free) — SUPPORTED as rule-as-code (PART TT of predspec281).
+- read compounds applied per member (the draft's reading, review r52 K) — SUPPORTED (PART RC of predspec281: equal to the compile-time copies in libpcre2, 0 / 0 / 0).
+- characters or bytes for `left` (his "(Byte ideally)") — UNTESTED; parked/ideas/string-level-rx.
+evidence: preddoc3b EXleft; PARTS CN, TT, RC of predspec28, predspec281.
+history:
+- 2026-11-18: match-is-rx (4), read-is-constant (4), the clarification, construction-line; `length($y)` written `strlen($y)` (THE MANAGER'S CALL 6, A26).
 
 ## core/arrays/lift — Arrays are alternations; operations lift
 slugs: array-lift lift-order
 rulings:
 - 2026-11-18 "array-lift: I meant, alternations as you suggested. It's consistent that alternations combine on the product and multiply the rx and produce more alternations" (record: "2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product")
+- 2026-11-18 "What is needed is a consistent, general rule about it and not something specific to adding to arrays for example. What happens to array + array ?" (record: "2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea"); a LEAN, settled by array-lift
 rejected:
-- pairwise as default — by owner ruling — his own first message, replaced at once by him.
+- pairwise as default — by owner ruling — his own first message, replaced at once by him; run: `[2, 4] + [1, 10]` pairwise is `[3, 14]`, `12` FAILS (preddoc3b sabotage s7 caught).
 readings:
-evidence: PART AL of predspec26.
-history: skeleton; the draft R.1.14 (ARRAYS UNDER OPERATIONS).
+- a repeated result is harmless (stated with the question, not objected to) — SUPPORTED (AL3 of predspec26: 0 / 0 / 0 of 364).
+- the rule is about arrays the user writes, not a label's settings — UNTESTED (a scope statement).
+- one array mentioned twice is independent per mention (the draft, review r47 D1) — SUPPORTED (preddoc2 PART RB).
+- lift-order is enumerate's order (the manager's m2 of construction-line) — SUPPORTED (PART CN of predspec28); for a class, class-order.
+evidence: preddoc3b EXlift; PART AL of predspec26.
+history:
+- 2026-11-18: array-lift; the draft R.1.14 (ARRAYS UNDER OPERATIONS), AL1/AL2.
 
 ## core/arrays/enumerate — Enumerate
 slugs:
 rulings:
+- 2026-11-14 "I love it. Enumerate go." (record: "2026-11-14 RULINGS on the predx gaps"); design adoption, with its rules: the budget, PCRE priority order, a built-in
 rejected:
+- widest first (one more copy first everywhere) as the order — by review r52 D (TABLES-4): it parts from PCRE priority on `(?:a|ab){1,2}` (SEARCHED `aba` `aba`@0 against `a`@0); preddoc3b sabotage s8 caught.
+- codepoint order for a class's members in a lift — by owner ruling — class-order (core/arrays/class-order).
 readings:
-evidence:
-history: not converted; the draft §5.5.
+- the enumerator's ORDER equals PCRE's own pattern on re-joining — SUPPORTED (preddoc3b EXenum: 0 / 0 / 0 of 63 texts; PART PR of predspec281 on libpcre2).
+- an interior lookaround or a backreference in the argument: NOT STATED (PART PR of predspec281).
+evidence: preddoc3b EXenum.
+history:
+- 2026-11-14: "Enumerate go"; the draft §5.5. 2026-11-18: construction-line made it the line of single-value functions. 2026-11-19: class-order replaced the codepoint lean for lifts.
+- 2026-11-19 (lane preddoc3b): converted from `?`.
 
 ## core/arrays/class-order — The order of a class's results
 slugs: class-order
 rulings:
 - 2026-11-19 "class-order: longest" (record: "2026-11-19 OWNER RULING — class-order")
+- 2026-11-19 "can we sort by length, longest first?" (record: "2026-11-19 OWNER, discussing class-order: longest first"); a question carrying the idea
 rejected:
-- codepoint order (the draft's lean, §5.5) — by owner ruling — class-order.
+- codepoint order (the draft's lean, §5.5) — by owner ruling — class-order; run: SEARCHED `x10` `1`@1 against `10`@1 (0 / 250 / 570 of 3,906, PART CO of predspec291; preddoc3b sabotage s9 caught).
+- "longest everywhere" (sorting alternations and arrays too) — by owner ruling — the class-only version was the one he took.
 readings:
-evidence: PART CO of predspec291.
-history: skeleton.
+- no tie rule (the manager's 8) — SUPPORTED (20 shuffles, 0 differing; PART CO of predspec29).
+- nesting with the alternation first (the manager's 9) — SUPPORTED (0 / 750 / 1,404 against sorting across).
+- equal strings are one result (the manager's 11) — SUPPORTED (PART CO of predspec29).
+evidence: preddoc3b EXclassorder; PART CO of predspec29, predspec291.
+history:
+- 2026-11-19: his question, "what do you mean class only?", then the ruling.
 
 ## core/arrays/class-positions — Two class positions in one lift
 slugs: class-positions
 rulings:
 rejected:
 readings:
-evidence: PART CO of predspec291 (P29-9).
-history: open; the draft §R.8.
+- C1 vs C2 0 / 776 / 1,816, C1 vs C3 0 of 3,906; Q1 vs Q2 0 / 2,797 / 3,230; A vs B 0 / 750 / 1,404 (PART CO of predspec29, predspec291) — the candidates part, so asked.
+evidence: preddoc3b EXclasspos (C1, C2 re-run); PART CO of predspec291 (P29-9).
+history:
+- 2026-11-19: the manager's reading (c) of class-order; widened by review r54 P29-9 with the class first.
 
 ## core/arrays/class-index — The order of a class in enumerate
 slugs: class-index
 rulings:
 rejected:
 readings:
-evidence: PART CO of predspec291 (P29-10).
-history: open; the draft §R.8.
+- (a) is the draft's reading (rev 29's narrowing of the codepoint lean, not the ruling's words) — the record says the lean "is replaced", with no carve-out; (a) vs (b) 0 / 250 / 570 of 3,906; (a) vs (c) 0 / 0 / 0 (PART CO of predspec291).
+evidence: preddoc3b EXclassindex; PART CO of predspec291 (P29-10).
+history:
+- 2026-11-19: new with class-order; re-worded by review r54 P29-10.
 
 ## core/holes/insert — One insert, its meaning by position
 slugs:
