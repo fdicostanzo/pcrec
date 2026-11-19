@@ -5212,3 +5212,11 @@ and a HISTORY / DISCUSSION file, linked by the tags; tags carry a STATUS as plan
 whole or scanned; details found by tag or grep; modelled on the plan items split ([DOC-INDEX], D192,
 `docs/dev/doc_format.md`); a LINT for the structure. Not a go to restructure: the proposal is put to him first.
 The library-document request of the entry above becomes one file of this organization (no separate lane).
+
+### 2026-11-19 OWNER, addendum to the documentation request
+
+His words, verbatim: "addendum: the two parts of the files are two different files"
+
+Class: a CLARIFICATION of the request above (a REQUIREMENT): the base (current definition) and the history /
+discussion are two separate FILES per document, not two parts of one file. The proposal put to him already has
+this (`<name>.md` and `<name>_details.md`, linked by tag); nothing changes in it.
