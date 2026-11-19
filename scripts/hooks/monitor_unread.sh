@@ -4,9 +4,9 @@
 # cursor advances). Output shape (Claude Code hooks reference, https://code.claude.com/docs/en/hooks, "Add context for Claude"):
 #   {"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}   (same with "SessionStart")
 # capped at 10000 characters; plain stdout on exit 0 would also be added as context for these two events.
-# WHICH OWNER: the input's `session_id` looked up with scripts/session_role --get (main or kit, registered by the
+# WHICH OWNER: the input's `session_id` looked up with scripts/session_role --get (main, kit or pred, registered by the
 # manager skill at wake). A session with NO role gets a one-line notice and consumes NOTHING (it must not eat
-# another manager's lines). The input JSON carries a top-level `agent_id` only inside a subagent/teammate (see
+# another manager's lines). Role pred (the predicate-language manager) queues no box jobs: nothing is read or printed. The input JSON carries a top-level `agent_id` only inside a subagent/teammate (see
 # lane_writes_in_worktree.sh); then this hook prints nothing and leaves the cursor alone. Never blocks: always exit 0.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 in=$(cat)
@@ -23,11 +23,12 @@ aid=$(printf '%s\n' "$ids" | sed -n 1p); sid=$(printf '%s\n' "$ids" | sed -n 2p)
 role=$(bash "$here/../session_role" --get "$sid" 2>/dev/null)
 if [ -z "$role" ]; then
     # no registered role: say so (one short line per event), read nothing
-    msg="no session role registered; if you are the pcrec manager run: scripts/session_role main -- if you are the memfn kit manager run: scripts/session_role kit (the hooks then serve your own monitor lines and wake file)"
+    msg="no session role registered; if you are the pcrec manager run: scripts/session_role main -- if you are the memfn kit manager run: scripts/session_role kit -- if you are the predicate-language manager run: scripts/session_role pred (the hooks then serve your own monitor lines and wake file)"
     python3 -I -c 'import sys,json
 print(json.dumps({"hookSpecificOutput": {"hookEventName": sys.argv[1], "additionalContext": sys.argv[2]}}))' "$ev" "$msg" 2>/dev/null
     exit 0
 fi
+[ "$role" != pred ] || exit 0   # no monitor journal for pred; monread is never called
 out=$(bash "$here/../monread" "$role" 2>/dev/null | cut -c1-600 | head -c 9000)
 [ -n "$out" ] || exit 0
 printf '%s' "$out" | python3 -I -c 'import sys,json

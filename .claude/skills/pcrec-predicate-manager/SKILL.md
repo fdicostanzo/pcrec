@@ -51,8 +51,8 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
 
 ## 1. Wake up (in order)
 
-1. `scripts/session_role pred` (if the script refuses the role, the plumbing has not landed: go on;
-   the hooks then inject nothing for you).
+1. **Register this session**: `scripts/session_role pred` (the post-compact hook serves you your own wake and owner
+   files by session id; the monitor hook is silent for you; unregistered, they inject nothing).
 2. Read `docs/dev/pred/wake.md` (your branch's copy if `worktrees/pred` exists), then
    `docs/dev/pred/from_main.md` (every entry after the last one your `to_main.md` acknowledges).
 3. Read the END of `docs/design/plan_row_bodies/COND-FAMILY.md` back to the last revision's fold point
