@@ -237,6 +237,8 @@ add:
 
 ## 8. Hand back (coordinator)
 
+Never go idle waiting on your OWN background job before hand-back (2026-11-19 r53: the coordinator idled at 09:20 on a verify run that had finished, and the draft sat unseen for three hours): poll it to its end, or write `.coord/HANDBACK-PENDING` (what you wait for) and hand back with the placeholder named. The launcher reads the round dir at each heartbeat while a round is open.
+
 One SendMessage to the launcher, at most 15 lines: the draft path, the
 answer-level and speed-level findings, proposed FIX-NOW ids, and the top
 proposed process change. Then END.
