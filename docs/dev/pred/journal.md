@@ -267,3 +267,14 @@ Main merged the pilot (main fceff8f98) and wired the lint into make test (sectio
 document change that breaks the lint turns make test red, so RUN THE LINT BEFORE NAMING A TIP. Main merged back
 into my branch (plan-lint and document lint clean). My two later lint additions get their own small code round from
 main. Waiting on Frank: doc-shape (his look at the pilot). Nothing running.
+
+## 2026-11-19 (afternoon) — the owner answered doc-shape; lane preddoc2 launched
+
+Frank read the pilot: macros that have a body go to the library (core = primitives; `peek` "a useful transform");
+a default-imported set with `peek`; an aside to discuss importing symbols (`(left,right) := import("blah",
+/left|right/)`); a standard move/rename with previous tags in the history; the files under
+`docs/design/predicates/`. Recorded verbatim; doc-shape read as answered (this shape with these changes).
+doc_format.md gained "Changes after the owner read the pilot" (`see:`, `was:`, `formerly:`, `module:`,
+`default: yes`, the directory). Lane preddoc2 (opus) launched for: lint and reader changes, the move, the
+post-pilot format changes, macros to the library with a model run per moved body. Watcher armed. P-9 to main (asks
+the code-round number). New owner questions queued: import-symbols, default-set. WAITING on: preddoc2.
