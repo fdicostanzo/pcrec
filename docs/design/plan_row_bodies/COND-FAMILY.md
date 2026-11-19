@@ -4561,3 +4561,22 @@ manager's reading m1 had `x` propagate): `/(?n)x${/(a)\1/}/` is no longer a comp
 `xaaa` gives `xaaa`@0 (rev 28.1's PART FF printed both candidates); a binding `/a b/` in a `(?x)` hole keeps its
 space. The manager's readings, for the next lane to test: (a) the not-inherited flags are simply the inserted rx's
 own defaults (off unless it writes them), at any depth; (b) `m` and `s` stay inherited until he rules the narrowing.
+
+### 2026-11-19 OWNER, discussing class-order: longest first
+
+His words, verbatim: "can we sort by length, longest first?"
+
+Class: a QUESTION carrying an IDEA (no slug answer; class-order stays open).
+
+RUN (`$PCREC_TMPDIR/scratch/pred/classlong.py`, python `re`; the ten results of `\d + 1`; 3,905 subjects over `0123x`,
+length <= 5; alone and followed by `0` or `x`): longest-first against codepoint order differs on 0 WHOLE, 250
+SEARCHED, 570 FIND-ALL (alone); 0 / 83 / 86 (followed by `0`); 0 / 0 / 0 (followed by `x`). Longest-first against
+descending: 0 everywhere. Longest-first with the equal-length results shuffled 20 ways: 0 differing everywhere.
+`x10` SEARCHED: codepoint `1`, longest `10`; `10 3 11` FIND-ALL: codepoint [`1`,`3`,`1`,`1`], longest [`10`,`3`,`1`,`1`].
+
+The manager's reading (told to him as a reading, for the next lane to test): (a) two different strings of the same
+length cannot both match at one position, so under longest-first the order among equal lengths is never observable
+and the rule is complete with no tie rule; (b) the rule is stated per CLASS POSITION ("a class's members have no
+order, as in PCRE; where a lift gives results of different lengths the longer is tried first"), nested inside the
+order of everything else: alternations, quantifiers and arrays the user writes keep their own order (enumerate's
+order, PCRE priority); (c) it makes the answer independent of how the class is spelled and of codepoint order.
