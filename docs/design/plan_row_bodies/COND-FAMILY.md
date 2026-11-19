@@ -5383,3 +5383,19 @@ The manager's readings of the addition, FOR A LANE TO CHECK against the record (
 - With `(=)` a reader can no longer tell from the file alone whether a bare name is a label or an import ("If a
   symbol is undeclared it must be an rx label", 2026-11-13). Told to him as the cost of the form, not an objection.
 - The default-imported set is then `(=) := import(<the default module>)`.
+
+### 2026-11-19 OWNER RULING — import-symbols, addition: the bare `=` is first; names after it override
+tags: parked/import-symbols
+
+HIS WORDS, whole: "import-symbol: bare "=" must be first but one can override names after (=,l = left) := ... to
+handle conflicts"
+
+Class: a RULING, an addition to his own `(=) :=` form of the entry above. Stated by him: the bare `=` stands
+FIRST in the list; entries after it override names, "to handle conflicts". Spellings are placeholders.
+
+The manager's readings (told to him; for a lane to list, no matching involved):
+- In `(=, l = left) := X` the member `left` is bound as `l` and NOT also as `left`: an entry after the bare `=`
+  REPLACES that member's default binding (otherwise the conflict it is there to handle would remain).
+- A bare `=` anywhere but first is a compile error.
+- NOT STATED: how to leave a member out altogether without binding it to any name; whether two entries may name
+  the same member. Neither is asked now.
