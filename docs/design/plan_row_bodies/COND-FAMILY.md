@@ -4296,3 +4296,19 @@ operation with a defined meaning; where such an operand can never hold, the GENE
 look-alike pair `$x & S` against `(x: S)` is classed DIFFERENT, BY DESIGN in the draft's table (not a gap). THE
 MANAGER'S READING (mine, to be tested by the next revision lane): whether the general diagnostics actually fire
 on `/(?<x>\d+)-/ & ($x & <5)` (a run-time read in an intersection) is to be shown, not assumed.
+
+**2026-11-18 OWNER RULING — same-name-twice: an error at the backreference unless `(?J)` (Frank, to the predicate
+manager, evening).** ASKED AS A RULING (slug same-name-twice: two groups of one name in one literal, what `\k<h>`
+reads: the first group always (PCRE under `(?J)`); the last group; or an error at the backreference unless the
+literal says `(?J)`, then PCRE's first-group reading; libpcre2 run this session: without `(?J)`
+`(?<h>\d)(?<h>\d)-\k<h>` is compile error 143; with it WHOLE `12-1` HOLDS, `12-2` FAILS; the first/last columns
+in the three modes under python `re`). The manager's stated leaning: "the error at the backreference, with `(?J)`
+as the opt-in to PCRE's first-group reading". HIS WORDS, in full: "same-name-twice: i agree with your lean."
+WHICH READING OF "agree" THE MANAGER TOOK: the leaning as quoted. RULED: a literal with two groups of one name
+stays LEGAL (the label rule, unchanged); a BACKREFERENCE `\k<h>` to a name carried by two groups of that literal
+is a COMPILE ERROR at the backreference, unless the literal says `(?J)`, under which it reads exactly as PCRE
+does (the first set group). The label is read with `$h` (the last mention). THE MANAGER'S READINGS (mine, to be
+tested by the next revision lane): (m1) "two groups of that literal" counts groups WRITTEN in the literal; what a
+group arriving through a hole or a part does to the count is not stated (R.1.16 A9's part case reads the part's
+own group); (m2) the numbered form `\2` is untouched; (m3) R.1.16 A10's "FOR ONE GROUP OF THE NAME" note and the
+draft's PART BL m3 row become this rule's printed cases.
