@@ -131,11 +131,7 @@ skeleton: yes
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-17
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` are regex's quantifiers on the operand before them; counts in braces are `repeat`; binary `+` is addition.
-skeleton: yes
-
-### Counted repeats   [core/patterns/repeat]   ruled 2026-11-17
-One `repeat` construct does all counting (one argument exact, min and max a range, no maximum unbounded); it is a library definition over count holes.
-needs: core/patterns/quantifiers
+see: lib/rx/repeat
 skeleton: yes
 
 ### Atomic parts   [core/patterns/atomic]   ?  2026-11-19
@@ -294,7 +290,8 @@ WHOLE `ac` FAILS, `abc` HOLDS / SEARCHED `bc` `c`@1 / FIND-ALL `c abc ac` [`c`@0
 
 ### The count hole   [core/holes/count]   ruled 2026-11-18
 A count hole takes values that produce counts; several values make one copy of the literal per combination, first hole slowest, an illegal copy removed whole.
-needs: core/patterns/repeat core/arrays/lift
+needs: core/arrays/lift
+see: lib/rx/repeat
 by: core/principles/positions-own-rules
 - A member that is not a count (text, a negative number) is a compile error (a reading of "must"); a count is
   never converted to rx text. A count PCRE refuses as too large is a count whose copy is illegal (a reading).
@@ -487,14 +484,6 @@ A backreference's name or number takes no hole (a compile error), and inside `\Q
 needs: core/holes/insert
 WHOLE `a${x}b` HOLDS, `ab` FAILS / SEARCHED `-a${x}b` `a${x}b`@1 / FIND-ALL `a${x}b a${x}b` [`a${x}b`@0, `a${x}b`@7] (`/a\Q${x}\Eb/`)
 
-## The conditional   [core/conditional]
-
-### The guarded form   [core/conditional/when]   ?  2026-11-19
-
-### The test of a conditional   [core/conditional/test]   ?  2026-11-19
-
-### Peek   [core/conditional/peek]   ?  2026-11-19
-
 ## Operators   [core/operators]
 
 ### Precedence   [core/operators/precedence]   ?  2026-11-19
@@ -519,6 +508,13 @@ modes: n/a (a warning)
 
 ### A nullable hit argument   [core/diagnostics/nullable-hit]   ruled 2026-11-18
 A hit pattern that can match empty (the argument of `occurrences` / `hits`) draws a warning, not an error.
+modes: n/a (a warning)
+
+### A consuming test   [core/diagnostics/consuming-test]   ruled 2026-11-18
+A bare pattern given as the test of the conditional `when` draws a warning that it consumes; a condition or a `peek(A)` as the test draws none.
+by: core/principles/structural-warnings
+see: lib/control/when-test
+The warning is keyed on the form (an argument written as a bare pattern), which no macro body can see.
 modes: n/a (a warning)
 
 ## Spellings   [core/spellings]

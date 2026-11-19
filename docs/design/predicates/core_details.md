@@ -7,6 +7,8 @@ rulings); the frozen source of every skeleton piece is `docs/design/predicates_d
 draft", by its section). Evidence directories are under `docs/dev/lanes/`; "PART X of predspecNN" is a block of
 that lane's committed `predspecNN_model.out`. The pilot's own runs are `preddoc1_evidence/` (PART EX, R1-R12, LT).
 
+shared: when-peek
+
 ## core/principles/regex-default — Regex behaviour wins
 slugs: branch-scope branch-order sql-picture
 rulings:
@@ -325,15 +327,6 @@ rejected:
 readings:
 evidence: PARTS RX7-RX9 of predspec25.
 history: skeleton; the draft R.1.14 (THE POSTFIX QUANTIFIER OPERATORS).
-
-## core/patterns/repeat — Counted repeats
-slugs: count-argument
-rulings:
-- 2026-11-17 "i agree with the count proposal. i'm curious how the repeat functionality would work however. is it a primative?" (record: "2026-11-17 OWNER RULING — the count proposal")
-rejected:
-readings:
-evidence: PARTS RX4-RX6 of predspec25.
-history: skeleton; the draft R.1.14 (COUNTS, ONE REPEAT CONSTRUCT).
 
 ## core/patterns/atomic — Atomic parts
 slugs:
@@ -954,30 +947,6 @@ evidence: preddoc1 EX-quoted.
 history:
 - revision 25.1: both rows; kept in R.1.0 since.
 
-## core/conditional/when — The guarded form
-slugs: when-meaning when-default when-alone
-rulings:
-rejected:
-readings:
-evidence:
-history: not converted; the draft R.1.10.
-
-## core/conditional/test — The test of a conditional
-slugs: when-test not-test
-rulings:
-rejected:
-readings:
-evidence:
-history: not converted; the draft R.1.10.
-
-## core/conditional/peek — Peek
-slugs: when-peek
-rulings:
-rejected:
-readings:
-evidence:
-history: not converted; the draft R.1.10.
-
 ## core/operators/precedence — Precedence
 slugs:
 rulings:
@@ -1037,6 +1006,20 @@ readings:
 evidence:
 history: skeleton.
 
+
+## core/diagnostics/consuming-test — A consuming test
+slugs: when-peek
+rulings:
+- 2026-11-18 "When peek: warn. A test pattern does consume and warns that it is." (record: "2026-11-18 OWNER RULING — when-peek: a bare pattern as the test CONSUMES, with a warning; `peek()` makes it a peek")
+rejected:
+- enforced (a bare pattern test a compile error) — by owner ruling — when-peek ("warn"; the manager had leaned enforced).
+- automatic (a bare pattern silently peeked) — by owner ruling — when-peek (a bare pattern "does consume").
+readings:
+- the warning is the COMPILER's, a `pcrec.` name not yet chosen (the draft R.1.10 (5)(a), spellings 24): a body cannot know that an argument is a bare pattern — NOT RUNNABLE (a diagnostic).
+- a condition or a peek as the test draws no warning (the manager's reading stated back with when-peek) — NOT RUNNABLE.
+evidence: the draft R.1.10 (4); preddoc2 PART WT (the consumed form itself).
+history:
+- 2026-11-19 (lane preddoc2): split from the old core/conditional/test when `when`, its test and `peek` moved to the library: the warning is the one part of when-peek a body does not produce, so it stays a core diagnostic, beside core/diagnostics/nullable-hit (a warning on a library name's argument, kept in the core the same way).
 ## core/spellings/placeholders — Every placeholder spelling
 slugs: atomic-spelling options-spelling conditional-spelling every-pass-spelling
 rulings:

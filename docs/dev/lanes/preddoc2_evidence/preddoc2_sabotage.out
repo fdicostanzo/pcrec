@@ -1,0 +1,17 @@
+s1 rc=1 CAUGHT failing: PE W1 W1doc WT WD 
+s2 rc=1 CAUGHT failing: W1 W1doc WT WTdoc WN WC WCnot WV 
+s3 rc=1 CAUGHT failing: W1 WD WN WCnot W8 
+s4 rc=1 CAUGHT failing: W1 WT WTdoc WV 
+s5 rc=1 CAUGHT failing: PE 
+s6 rc=1 CAUGHT failing: WS 
+s7 rc=1 CAUGHT failing: WC 
+s8 rc=1 CAUGHT failing: WV 
+s9 rc=1 CAUGHT failing: RB 
+s10 rc=1 CAUGHT failing: RXnone 
+s11 rc=1 CAUGHT failing: R6 
+s12 rc=1 CAUGHT failing: ZVpattern 
+s13 rc=1 CAUGHT failing: ZVcount 
+s14 rc=1 CAUGHT failing: M4 
+s15 rc=1 CAUGHT failing: M3 
+s16 rc=1 CAUGHT failing: W8 
+s17 rc=1 CAUGHT failing: SL 
