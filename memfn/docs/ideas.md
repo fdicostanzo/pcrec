@@ -832,3 +832,14 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
   one branch per block) might keep the inline head's short-span win without its per-position mispredicts; trigger = a census of
   long one-class spans on near-miss-shaped real subjects worth the work. Also relevant to any other kit form that unrolls a
   data-dependent compare chain (verify, run pre-check).
+
+- 2026-11-19 MEASURED (job 707, spike simdhead, Frank's ask; table scratch/memfn/simdhead/run-20261119T102012/results.md; critic
+  crit-simdhead: no FIX-BEFORE-READING, layout noise ~15 %, calibration vs the cards within 2 % (hex1000 near-miss -17 %)). BLOCK
+  compares of the WHOLE span (no per-position branches, one overlapping tail block) beat every head/loop split by far. Near-miss ns/B,
+  hex500 / hex1000: loop h0 39 / 166, scalar-h64 84 / 238, SWAR-h64 23 / 88, AVX2-h64 21 / 87, SWAR-full 11 / 57 (SIMD-off layer),
+  SSE-full 4.6 / 16, AVX2-full 2.8 / 9.4, AVX-512-full 2.5 / 6.2 (info only). Hit-dense: ~2 ns/B for every head form, but the full block
+  forms run 0.02-0.23. A SIMD/SWAR HEAD followed by the scalar loop tail gains only ~1.7-1.9x: the tail dominates, and the block width
+  of the head barely matters. Block forms bring branch misses down to the loop's level or below. SWAR-full is unrolled (11.8 / 24.6 KB;
+  hex1000 op-cache 75 %): a block LOOP (UNMEASURED) would keep the code small. The classes are general (pshufb nibble test; SWAR by
+  ranges, cost linear in the ranges). One class (hex), one near-miss depth profile. D77 TRIGGER CANDIDATE for a span block form at
+  both layers; NOT a build go (owner direction first; design + critic round before any build).

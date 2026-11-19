@@ -4268,3 +4268,6 @@ Main ruled on the four kit findings (D186 add. 2):
   cards' hex500/hex1000 near-miss + hit-dense subjects. General class tests (pshufb nibble), else labelled. Calibration control:
   the scalar/h0/inline ratios must reproduce the cards' within ~25 %, else stated unfaithful. Correctness vs a byte loop first. A
   sized critic round (apples-to-apples) on the harness before it is timed.
+- 10:24 707 GREEN (205 s), plus a critic (no FIX-BEFORE-READING; caveats: layout noise ~15 %, the full-block arms are not head-vs-head,
+  class generality reasoned not tested). FINDING: whole-span BLOCK forms win big (hex500 near-miss: AVX2-full 2.8 vs loop 39 ns/B,
+  SWAR-full 11); SIMD heads + scalar tail only ~1.8x. Logged in ideas.md as a D77 trigger candidate. Reported to Frank and main.
