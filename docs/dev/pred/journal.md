@@ -358,3 +358,20 @@ PLAN: lane preddoc4 (opus, launched, watcher armed): the design-bearing findings
 primitives move to a new core/builtins; missing primitives added; READ-18 stage 1). THEN lane preddoc5: the
 mechanical lists from the critics' appendices (citations, slugs, rejected, names). THEN a re-check round (ask main
 for a number), file r59, deliver. Not delivered to main since P-10. WAITING on: preddoc4.
+
+## 2026-11-19 (near midnight) — preddoc4 merged; the owner refined "primitive"; preddoc5 launched
+
+Owner: "all macros "x()" should be in the library document ... marked as to whether they are defined in the
+language or not"; "my 'primitive' designation doesn't work"; library = "provides the symbols"; then "I agree with
+your take" (split by what a thing is; `import` the call in the library, the binding list in the core). Recorded;
+sent to the running lane as R-1, which it applied (verified in the merge: no core/builtins; 46 library pieces all
+with `defined:`, 15 native; enumerate and import in lib/builtin).
+preddoc4 merged and stopped: lint 4,575 / 0; core 119 pieces, library 46; padded body with count holes built
+mechanically from its text; ZERO, NEGATION, the missing primitives (comparisons, tuples, computed labels,
+metadata, some/count, assert, pattern, eval), condition-group as an open sub-piece. Soft caps: core.md 100.6 KB,
+library 38.2 KB (grew with the new pieces; READ-18 stage 2, generated indexes, is PLAN).
+preddoc5 (opus, launched, watcher armed): the appendices' four lists row by row (27 rulings, 49 + 10 slugs, 27
+names, 25 rejected), parked rulings items, `defined:` into doc_format.md, files r59 as RULED.
+THEN: merge, ask main for a re-check review number, re-check round (same five lenses), deliver (P-11).
+Owner questions named by preddoc4: zero-in-loop, caller-ambiguous (a) vs (e), every-pass-spelling,
+condition-group, flags-in-filter, operators-as-bodies, macro-warning. WAITING on: preddoc5.
