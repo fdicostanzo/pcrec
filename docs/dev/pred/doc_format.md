@@ -94,7 +94,8 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   "at least one" alone would let a second, wrong citation ride on a first, right one.
 - A RECORD TITLE is the text of a `## ` or `### ` heading of the record, or of a bold opener `**...**` that starts
   a paragraph AND begins with a date (`**YYYY-MM-DD ...`), JOINED across lines up to its closing `**`; a citation matches the whole title or the part before its
-  first ` (`.
+  first ` (`. In a `rulings:` item the cited title is the text from `(record: "` to the last `")` of the item (a
+  title may itself contain a `"`; an item may wrap onto continuation lines).
 - Slugs are lower-case kebab words. A details file with no entries fails L11 as a base file with no pieces does.
 - L6's history words, matched case-insensitively and on word boundaries: `[REV`, `withdrawn`, `reversed`,
   `superseded`, `rev <digits>`, `revision <digits>`, `review r<digits>`, a bare `r<digits>` review id, and any ISO
