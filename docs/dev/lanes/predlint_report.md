@@ -1,6 +1,8 @@
 # predlint report: scripts/pred_doc_lint.py
 
 ## STATE AT HANDOFF
+OWED: none
+
 Complete; branch lane/predlint, committed. The rulings file predlint_rulings.md was empty (no entry applied). No owed runs. Not wired into make (see WHAT WAS NOT BUILT).
 
 ## WHAT WAS BUILT
