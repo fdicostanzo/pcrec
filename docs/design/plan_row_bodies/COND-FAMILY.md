@@ -4814,3 +4814,19 @@ number-edges; no new rule); (b) the same holds for `-`, `*`, `%` and for an arra
 (`\w + 1`: the digit members give results, the others nothing; whether the warning speaks when only SOME members are
 outside the domain is the manager's call: no, only when the whole result is known to be nothing); (c) joining stays
 the sequence operator's (T10's mark is no longer tied to plus-operands; its spelling is in the spellings review).
+
+### 2026-11-19 MANAGER — after lane predspec29 (rev 29): readings not supported, one statement withdrawn (no owner words)
+
+Lane predspec29 (`docs/dev/lanes/predspec29_report.md`; evidence 28 of 28, 22 sabotages caught) folded the six
+2026-11-19 rulings and, by its rulings file R1, plus-operands. The padded-order CONDITION is CONFIRMED (`\d+?` under
+any-length-first equals fill, 0 / 0 / 0): the ruling holds. WITHDRAWN: lane predspec281's statement that a lazy
+infinite argument needs exact-first (its hand reduction dropped the `?`). NOT SUPPORTED, and withdrawn as the
+manager's readings: (1) "any-length-first equals fill for every argument ordered by length": a SPARSE shortest-first
+argument parts (`padded(/1|0123/, 2)` SEARCHED `x0123`: body `0123`@1, fill `01`@1); the draft states it as the
+body's behaviour, which his ruling already allows ("stated behaviour"). (14) "the can-never-match diagnostics reach a
+literal `% 0`": their wording does not; a GAP, no rule made. (17) the same for a constant non-number operand: the
+warning is a plain warning at the operator. NEW QUESTIONS for him: class-positions (two class positions in one lift;
+a class under a lazy quantifier), class-index (the order of a class's members in `enumerate`'s array). To tell him:
+T-a's two surprises under the label rules as defined (a bare `year` reads a labelled part's when the unlabelled use
+comes first; an unlabelled sequence part exports nothing outside its binding while the same pattern through a hole
+does); T-c (any-case-body: `/(?i:${rx})/` equals the primitive except for an argument that writes `(?-i)`).

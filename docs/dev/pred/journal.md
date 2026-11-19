@@ -151,3 +151,11 @@ over an ordered symbol set: ideas file items 34, 35), Frank RULED plus-operands:
 anything else is nothing, a warning if known; `+` never joins; a literal mismatch becomes an error once types exist
 (direction). Sent to the running lane predspec29 as R1 in its rulings file (verify in STATE AT HANDOFF). Next
 question: other-holes.
+
+## 2026-11-19 (afternoon) — rev 29 delivered and merged; critic round r54 launched
+predspec29 DELIVERED (lanewatch DONE; R1 applied per STATE AT HANDOFF), MERGED (80c912aa5; plan-lint clean),
+TaskStopped. Draft = rev 29 (10,160 lines). Readings 1, 14, 17 not supported (record entry "after lane predspec29");
+new owner questions class-positions, class-index; T-a's two surprises and T-c to tell him. other-holes is ASKED in
+chat (three places, runs in scratch/pred/otherholes.py). LAUNCHED coordinator crit-predspec29 (opus, background),
+design mode, review r54. On hand-back: rule dispositions, FIX lane predspec291 (rev 29.1 + files the review), merge,
+`done:` to main.
