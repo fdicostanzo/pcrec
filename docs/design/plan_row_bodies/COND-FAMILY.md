@@ -5032,3 +5032,15 @@ condition written in the hole WITHOUT its own parentheses. Nothing ruled; the me
 (the equality with `/\d/ & (0: digit)` was checked on the meaning). For the spellings review (D193 addendum 4):
 whether a condition in a hole keeps its parentheses (`${(0: digit)}`) or the hole's braces may stand for them
 (`${0: digit}`); the manager's note: the draft writes a condition with its parentheses everywhere today.
+
+### 2026-11-19 OWNER, on the hole's implied group (why `${0: digit}` needs no parentheses)
+
+His words, verbatim: "i believe that ${} implies (?:${})"
+
+Class: a RECOLLECTION, checked against the record: SUPPORTED. "2026-11-17 OWNER RULING — hole-reading": "a HOLE is
+the inserted pattern as a WHOLE, in a non-capturing group, matched where it stands (`/xxx${/foo/}yyy/` =
+`/xxx(?:foo)yyy/`)". Offered by him as the ground for the spelling of the entry above: the hole already groups its
+content, so a condition alone in a hole needs no parentheses of its own. Nothing new ruled; the spelling stays in
+the spellings review, with this argument attached. The manager's note (a reading): the argument covers a
+condition that is the hole's WHOLE content (`${0: digit}`); inside a larger expression in a hole
+(`${A & (0: digit)}`) the condition's parentheses still delimit it from the `&`.
