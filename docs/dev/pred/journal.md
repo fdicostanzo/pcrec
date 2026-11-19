@@ -243,3 +243,10 @@ LAUNCHED lane predlint2 (sonnet; worktrees/predlint2); lanewatch armed. RETURNED
 changes (I do not edit files under .claude/skills at a peer's request). The pilot preddoc1 found the lint's L4
 two-line-opener bug (ruled R1 in its rulings file: cite true titles, accept those failures only); it is in
 predlint2's fix list. Two lanes running: preddoc1 (pilot), predlint2.
+
+## 2026-11-19 (evening) — lint fixes merged (r56 gate passed)
+predlint2 DELIVERED (lanewatch DONE; R1 applied), gate RE-RUN by me (176 mutants, 160 killed, 16 equivalent, 0
+survived; .test PASS; entry selftest 75/0), MERGED, plan-lint clean, TaskStopped. Reader = scripts/entry profile
+`predicates`. to_main P-7. The pilot's two lint questions were ruled R1/R2 in its rulings file (cite true titles;
+both L4 classes are now fixed in the lint, so the pilot's remaining L4 failures should vanish after it merges this).
+One lane running: preddoc1.
