@@ -4064,3 +4064,16 @@ the rightmost 4" has two spellings with DIFFERENT answers on overflow, his words
 (value `10000` gives nothing: it fails); for values that fit both give the padded value (python this session:
 `43` gives `0043`, `2026` gives `2026` under both); (m2) either is a composition over the minimum form, which is
 the ground for taking minimum as the base meaning.
+
+**2026-11-18 OWNER, a third way to bound a minimum-width `padded` (Frank, to the predicate manager, evening; an
+OBSERVATION, continuing the entry above; padded-width was put to him by slug and this is not an answer by
+slug).** HIS WORDS, in full: "i mean, you could also <=9999".
+RECORD: OBSERVATION: the overflow can also be bounded with a comparison, `<=9999`. With the two entries above his
+LEAN on padded-width is the MINIMUM reading (recorded as a LEAN, the manager's classing: three remarks in a row
+presuppose it, none says the slug). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1)
+under number-domain (RULED canonical this evening) WHERE the comparison is written matters: on the VALUE, before
+padding, `padded(($y + 1) & <=9999, 4)`: value `43` gives `0043`, value `10000` gives nothing; on the PADDED
+text, `padded($y + 1, 4) & <=9999`: `0043` is not a canonical numeral, so `43` gives NOTHING too (a small python
+check of the canonical rule this session: `43`: `0043` against nothing; `10000`: nothing under both); (m2) so of
+the three bounds (rightmost 4, `& /\d{4}/`, `<=9999`) only the last is order-sensitive, a point for the draft's
+look-alike table.
