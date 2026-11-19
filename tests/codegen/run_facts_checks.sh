@@ -789,9 +789,9 @@ fi
 #     repeat stays `not-fixed-width`.
 RP='xy(?:ab){2}zw'
 rbad=""; nrw=0
-rget() { # rget <bin> <arm-or-empty> <pattern> <fact> -> "value<TAB>why" (byte)
-    local arm=()
-    [ -n "$2" ] && arm=("--harness=restore=$2")
+rget() { # rget <bin> <arm-or-flag-or-empty> <pattern> <fact> -> "value<TAB>why" (byte)
+    local arm=()   # an arm name is a --harness=restore= arm; a `-f...` is a compiler flag
+    case "$2" in "") ;; -*) arm=("$2") ;; *) arm=("--harness=restore=$2") ;; esac
     "$TIMEOUT_BIN" 120 "$1" --features all "${arm[@]}" --emit-facts --pattern "$3" > "$WORKDIR/rp.l" 2> "$WORKDIR/rp.err" ||
         { printf 'REFUSED\t%s\n' "$(head -1 "$WORKDIR/rp.err")"; return; }
     sect "$WORKDIR/rp.l" facts | grep -F "$(printf 'encoding=byte\t')" | arow "$4" /dev/stdin > "$WORKDIR/rp.r"
@@ -834,8 +834,11 @@ else
 fi
 
 # [facts-look] span arms L1 (span_arms.md §14.4 L1, §5.2, §5.7): a positive
-# lookaround's bytes NARROW the consumed run positions they overlap, the TOP
-# set step adds every one-byte run position to the necessary set, and a walk
+# lookaround's bytes NARROW the consumed run positions they overlap, CAT-SET
+# puts every position a meet narrows to one byte in the necessary set
+# whatever run TOP chooses (review r55 A: `restore=tie` moves no set), the
+# run pin claims only what the k-set walk proves (r55 B: a narrowed run keeps
+# its base pin), and a walk
 # that proves no attempt can match lists `req_whole_run`'s why `dead`
 # (facts_listing.md §4.1.3¶1a). Expectations by hand from §14.2's L1 rows,
 # every answer libpcre2's (tests/litscan/spanarms.rxt):
@@ -845,7 +848,9 @@ fi
 #   - `a(?=b)[bc]` (W-S1's row): the byte moves from `a` to `b`;
 #   - W-L4 `bar(?=baz)`: at reach 0 TOP keeps no guard, the run stays `bar`;
 #   - W-D1 `foo(?=bar)baz`, W-D2 `(?<=ab)(?<=cb)c`, W-D8 `x[^\x00-\xff]y`
-#     list `dead` (`dead` ranks above `harness:`); W-D3, W-D4, W-D5, W-D6 and
+#     and W-D9 `x(?=[^\x00-\xff])y` (the empty position as an `A_CTX` item,
+#     r55 C; under `-fno-ctx-node` too) list `dead` (`dead` ranks above
+#     `harness:`); W-D3, W-D4, W-D5, W-D6 and
 #     W-D7 (the contradiction is optional, one branch, negated, repeated zero
 #     times; W-T1's live pattern) do NOT;
 #   - the run is equal with and without `-fno-ctx-node` where the lowering
@@ -878,6 +883,13 @@ p	-	foo(?=bar)baz	req_whole_run	666f6f62617a	dead
 h	look	foo(?=bar)baz	req_whole_run	666f6f62617a	harness:look
 p	-	(?<=ab)(?<=cb)c	req_whole_run	none	dead
 p	-	x[^\x00-\xff]y	req_whole_run	none	dead
+p	-	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
+p	-fno-ctx-node	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
+h	look	x(?=[^\x00-\xff])y	req_whole_run	7879	harness:look
+p	-	y(?=q)[pq].e(?=e)[ae]	req_set	101,113,121	-
+h	tie	y(?=q)[pq].e(?=e)[ae]	req_set	101,113,121	-
+p	-	xy(?=bc)[bc]c	run_pin	0:0+2	-
+p	-	foo(?=b)[bc]{2,4}	run_pin	0:0+3	-
 h	look	x[^\x00-\xff]y	req_whole_run	none	dead
 p	-	x(?:foo(?=bar)baz)?y	req_whole_run	none	-
 p	-	(?:foo(?=bar)baz|q)	req_whole_run	none	-

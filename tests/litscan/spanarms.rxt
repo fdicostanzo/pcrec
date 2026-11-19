@@ -838,6 +838,21 @@ engine vm
 n "xy"
 n "xay"
 
+# W-D9 (span_arms §14.4 L1, review r55 C): the empty position as an A_CTX item (the one-character lookahead's default lowering) is the same never leaf as the class: dead (the listing check, run_facts_checks.sh [facts-look]); libpcre2's NOMATCH
+pattern x(?=[^\x00-\xff])y
+features all
+n "xy"
+n "xay"
+n "x\xffy"
+
+# W-D9 (span_arms §14.4 L1, review r55 C): the empty position as an A_CTX item is the never leaf: dead [engine vm]
+pattern x(?=[^\x00-\xff])y
+features all
+engine vm
+n "xy"
+n "xay"
+n "x\xffy"
+
 # W-D3 (span_arms §5.7): the contradiction is optional, so the pattern lives and is NOT listed dead; a walk-level DEAD flag would list it dead
 pattern x(?:foo(?=bar)baz)?y
 features all
