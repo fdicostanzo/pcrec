@@ -39,7 +39,7 @@ on any disagreement.
 
 ## The question queue (after rev 28)
 
-1. **array-in-hole** (`${@y}`; main's idea "any earlier value, as an alternation", hand-worked; he asked "Can i use
+1. (array-in-hole RULED 2026-11-18: a future direction; sent to predspec28 as R1: verify it in the delivery.)
    @y there and what does that mean?"). Possibly an ideas-file item, not a question.
 2. construction-line (b): a READ in a count / class / option position.
 3. Open since rev 26.1: plus-operands, other-holes, anything-text, zero-in-sequence, group-truth / pass-table,

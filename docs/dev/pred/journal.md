@@ -70,3 +70,8 @@
   28 fold. Deliver + empty rulings file written first; `lanewatch --follow predspec28` armed. Brief: nine rulings
   quoted; NOT RULED list; every (m) reading of the folded entries to test; premise test = predspec271 evidence
   re-runs byte-identical; not the full restructuring. wake.md rewritten in flight.
+- Frank asked for a proposal on `${@y}` (given: value only for declared-then-used; models arrayhole.py,
+  csvhead.py in scratch), asked about a CSV header (answered: keeping names = the array form, run time; a
+  header-named column check = a compile-time per-position alternation, run), then RULED: "${@y} stays as a future
+  direction item and is not built or defined now". TEN rulings. Sent to the running lane as R1 in
+  worktrees/predspec28/docs/dev/lanes/predspec28_rulings.md (VERIFY in its STATE AT HANDOFF). Future item 33.
