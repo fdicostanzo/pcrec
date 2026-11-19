@@ -4308,3 +4308,8 @@ Main ruled on the four kit findings (D186 add. 2):
 - 12:3x Frank cleared tonight (via main): "yes the box is clear after 1am and possibly earlier as usual"; nothing STARTS at or after
   07:00. 709's --ready now refuses (77) at or after 2026-11-20T07:00 (backup 709...bak-1230); 708 starts at 01:00 (~4.8 h). Main runs
   the load check ~00:30.
+- 13:xx main: [COVER-CAP] LANDED on main 77edff7ae (pushed): stage 2 + the kit's span forms (R-45 plan A, abi 109) + the relabel
+  0df533a85 (WF_SPAN_HEAD 64 MEASURED) + the size-cliff spec sentence. Cloud suite green after main's triage covtri1119 (g2 shard
+  limit 35 -> 50 min: g2 --quick grew 1807 -> 2423 s, window checks 11,269 -> 27,376; S526 re-aimed; S1138's plant fixed).
+  lane/covs2land and lane/memfn-relabel64 are merged: prune relabel64 (unpin) at the next prune pass; keep fcards-night until 708/709
+  end. OWED: merge main into lane/memfn-k1108 at a natural point (merge alone, make strict).
