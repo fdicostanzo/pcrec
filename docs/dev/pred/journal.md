@@ -171,3 +171,10 @@ Frank: an empty option value adds no options; values from the legal set or an er
 his count remark read as the count value 0 (`{0}`), my zero-values reading stands untested. negated-class-hole:
 "[^${join(c)}]" = the user joins; the alternation rule is unchanged (my one-class leaning not taken). All for rev
 29.1. Next asked: anything-text. Round r54 still running.
+
+## 2026-11-19 (late afternoon) — anything-text and zero-in-sequence RULED
+anything := [\s\S]* (his spelling, run under every flag); standing instruction "be suspicious of my regex and confirm
+contemporaneously" (memory + proposed skill edit, to_main P-4). zero-in-sequence: "the condition is always sees the
+regex composed at the point it is used. so the 0: is the match so far" (not my leaning, the error). I had glossed
+the slug wrongly in chat (as the never-matching rx) and corrected it in the question. Both for rev 29.1. Next:
+group-truth / pass-table. Round r54 still running.

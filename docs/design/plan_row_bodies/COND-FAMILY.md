@@ -4951,3 +4951,30 @@ The standing instruction, as the manager takes it: a regex he writes in an examp
 before it is recorded as the rule; where it does not do what his words around it say, or disagrees with an earlier
 ruling, the manager says so in the SAME turn, with the run, and does not fold it silently or fix it silently.
 Sent to main as a proposed edit of the predicate-manager skill (section 2).
+
+### 2026-11-19 OWNER RULING — zero-in-sequence
+
+His words, verbatim: "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the
+condition is always sees the regex composed at the point it is used. so the 0: is the match so far"
+
+Class: RULING (a slug answer to zero-in-sequence, asked with three candidates; NOT the manager's leaning, which was
+the error for now), with its PRINCIPLE in his words: a condition always sees the regex composed at the point it is
+used. Also a remark on the manager's method ("a lawyer in your exact wording. this is what is needed now"): exact
+wording is wanted; no change asked.
+
+The rule as ruled: in a condition standing as a SEQUENCE OPERAND, `0` names THE MATCH SO FAR: the text matched from
+the start of the rx the condition is written in up to the condition's point. RUN (`$PCREC_TMPDIR/scratch/pred/
+zeroseq.py`, a python model; digit, `(0: S)`, digit): S = `/7/`: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373`
+`73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3]; S = `/7\d/`: never holds (the match so far is one digit). The
+draft's PART OQ OQ3 printed the same answers for this reading.
+
+The manager's readings, for the next lane to test: (a) number-names' "0 ... is always the entire match of the rx
+however it is composed" and this ruling are ONE rule under his principle: the rx "as composed at the point it is
+used": after a complete pattern (`A & (0: S)`) that is the entire match; mid-sequence it is the match so far; a
+condition written LAST in a sequence reads the entire match. (b) "so far" starts at the start of the rx the
+condition is written in (zero-place: "that's its whole world"), so a `0` inside a part inserted through a hole or
+standing as an `&` operand stays that part's own (the draft's reading, rev 26.1's PART N NZ); NOT his words today.
+(c) inside a loop the match so far includes the earlier passes (from the rx's start, not the pass's): to run.
+(d) the same principle already holds for labels in a sequenced condition ("reading the labels as they stand
+there", pass-start-read): `0` is now no exception. (e) its regex model is a callout at that point, which sees the
+match start and the current position: runnable on libpcre2.
