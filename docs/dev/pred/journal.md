@@ -116,3 +116,8 @@ Frank: flags-propagate meant "rx inherits the flags of the surrounding rx" (flag
 consequence, my reading); a binding in a hole inherits (lean, matches the draft); flags-scope RULED (inherit i, m, s;
 not U, x, xx, n; J with same-name-count; "only i" an observation); class-order RULED: longest first, class positions
 only (his idea; run classlong.py). Fourteen rulings wait for rev 29. Next question: dollar-diagnostic. Nothing running.
+
+## 2026-11-19 (early, later) — three more rulings
+dollar-diagnostic (the form `$x & ..` just gets a warning; my withdrawal reversed, the general-diagnostic proposal
+dropped), number-edges (nothing), same-name-count (scoped). Seventeen rulings wait for rev 29. any-case-body held
+until the rev 29 lane runs it under the flags rulings. New queue item: inner-label-read. Nothing running.

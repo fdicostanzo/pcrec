@@ -4638,3 +4638,20 @@ the ruling; its runs stand (`/(?<y>\d+)-${$y - 10}/` WHOLE `5--5` FAILS; `/(?<y>
 The manager's reading, for the next lane to test: a divisor written as a literal `0` makes a program that can never
 match, and the existing "can never match" diagnostics speak there if their wording reaches it (told to him as the
 manager's leaning inside the question; no new rule).
+
+### 2026-11-19 OWNER RULING — same-name-count
+
+His words, verbatim: "same-name-count: scoped"
+
+Class: RULING (a slug answer to same-name-count).
+
+The rule as asked: a group that arrives through a HOLE is the inserted pattern's own and does NOT count as a second
+group of its name in the outer literal. `q := /(?<h>b)/` at `/(?<h>a)-${q}\k<h>/`: `\k<h>` (and `$h`) mean the OUTER
+group; WHOLE `a-ba` HOLDS / SEARCHED `x a-bb a-ba` `a-ba`@7 / FIND-ALL `a-ba a-bb a-ba` [`a-ba`@0, `a-ba`@10] (rev
+28.1's PART SN). The 2026-11-13 summary line "inserted patterns' groups stay scoped" is now his ruling.
+
+The manager's readings, for the next lane to test: (a) `J` has no effect across a hole (the `J` item left by
+flags-scope is closed by consequence: `J` is not inherited and an outer `(?J)` does not make an inserted name
+collide); rev 28.1's run `/(?J)(?<h>a)-${/(?<h>b)\k<h>/}/` then has the INNER `\k<h>` mean the inner group (WHOLE
+`a-bb` HOLDS), the reverse of what rev 28.1 printed; (b) an inserted literal's NUMBERED references are its own too;
+(c) how the outer program READS a label defined inside an inserted pattern is NOT settled here: its own question.
