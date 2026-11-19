@@ -4655,3 +4655,18 @@ flags-scope is closed by consequence: `J` is not inherited and an outer `(?J)` d
 collide); rev 28.1's run `/(?J)(?<h>a)-${/(?<h>b)\k<h>/}/` then has the INNER `\k<h>` mean the inner group (WHOLE
 `a-bb` HOLDS), the reverse of what rev 28.1 printed; (b) an inserted literal's NUMBERED references are its own too;
 (c) how the outer program READS a label defined inside an inserted pattern is NOT settled here: its own question.
+
+### 2026-11-19 OWNER, on same-name-count: backreferences, not labels? — and a MANAGER CORRECTION
+
+His words, verbatim: "same-name-count: this is only about backreferences, not labels ?"
+
+Class: a QUESTION about the scope of the ruling just made.
+
+MANAGER CORRECTION: the question same-name-count was asked on the BACKREFERENCE (does an inserted group count as a
+second group of the name for same-name-twice's error at `\k<h>`), and its example and runs used `\k<h>` only. The
+entry above ("OWNER RULING — same-name-count") then wrote "`\k<h>` (and `$h`) mean the OUTER group", and the manager
+told him "the outer `\k<h>` and `$h` see only the outer group". The words "(and `$h`)" are WITHDRAWN: they were the
+manager's extension, not asked and not ruled. The ruling covers what `\k<h>` (the PCRE capture side) counts and
+reads. What a LABEL defined inside an inserted pattern does (whether `$h` after the hole reads it as "the last
+mention", the label rule of same-name-twice; whether a condition `(h: S)` sees it) is OPEN: the question
+inner-label-read.
