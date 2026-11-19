@@ -178,3 +178,14 @@ contemporaneously" (memory + proposed skill edit, to_main P-4). zero-in-sequence
 regex composed at the point it is used. so the 0: is the match so far" (not my leaning, the error). I had glossed
 the slug wrongly in chat (as the never-matching rx) and corrected it in the question. Both for rev 29.1. Next:
 group-truth / pass-table. Round r54 still running.
+
+## 2026-11-19 (evening) — review r54 ruled; fix lane predspec291 launched
+Round r54 handed back (16 items, none finds a printed RULED answer wrong). I RULED the dispositions (record entry
+"review r54 of rev 29"): all FIX-NOW; calls on P29-6 (the padded condition was checked on a witness that could not
+fail: back to Frank as the confirm padded-lazy-sparse), P29-7 (one warning trigger: any known-nothing arithmetic
+result), P29-11/12 (the dollar form on the parse; the hint only where it is a drop-in); owner questions added
+(r/a flags, sequence-operand flags, class-first, class-index reworded, hole-export). Coordinator TaskStopped.
+LAUNCHED lane predspec291 (opus): rev 29.1 + files the review; deliver/rulings files first; lanewatch armed.
+The rulings made during the round (other-holes, option hole, negated-class-hole, anything-text, zero-in-sequence,
+bare condition in a hole) are REV 30's fold. Frank also discussed a condition without parentheses: checked, the
+draft makes `A & 0: digit` an error (a lean); my call: parentheses stay required for now.
