@@ -233,3 +233,13 @@ core/holes in full (with the rulings made since rev 29's fold), twelve readings 
 the census, FORMAT PROBLEMS as a report section; no background jobs (brief says so); lanewatch armed. Main: got P-6;
 the lint's code round is r56 (running); it merges lane/pred-rev28 (draft + lint) when r56's fixes are in, at
 whichever tip I name; decides the entry profile / make target and answers the skill edits at that merge.
+
+## 2026-11-19 (evening) — main's review r56 of the lint ruled; fix lane predlint2 launched
+Main ruled r56 (code round on scripts/pred_doc_lint.py): the FIX-NOW list, the mutation harness as acceptance gate,
+ONE reader = a scripts/entry profile calling the lint's parser, the review to be filed on my branch. MY rulings
+(form, delegated): CONTRACT-10(d) "every rulings item cites an existing title"; the DOC hunks written into
+doc_format.md (record-title shape, L6 word list with code spans exempt, pilot mode, L8 exemptions, one reader).
+LAUNCHED lane predlint2 (sonnet; worktrees/predlint2); lanewatch armed. RETURNED to main: the critic-skill process
+changes (I do not edit files under .claude/skills at a peer's request). The pilot preddoc1 found the lint's L4
+two-line-opener bug (ruled R1 in its rulings file: cite true titles, accept those failures only); it is in
+predlint2's fix list. Two lanes running: preddoc1 (pilot), predlint2.
