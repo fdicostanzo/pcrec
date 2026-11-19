@@ -538,7 +538,9 @@ tests/litscan/handoff_vm.rxt:400	--features all --encoding=utf8 --engine=vm	283f
 tests/litscan/handoff_vm.rxt:435	--features all --encoding=byte --engine=vm	283f692973747261
 tests/litscan/handoff_vm.rxt:460	--features all --encoding=byte --engine=vm	61625c4b6364
 # alttri (2026-11-07, 171 triage of the alternation branch): +6/-1 rows; every added row a block of tests/altcls/altnf_rules.rxt, tests/utf8/altnf_lowering.rxt, tests/counterk/counterk.rxt or tests/uprops/size_ladder_prefilter_drop.rxt (new files, shifted ids, a re-aimed block); rows taken from test-startset's own mover list (vmhat_checks.py).
+# l1tri2 (2026-11-19): r53 F3 0c42988cf inserted an 11-line pcre2-only block at altnf_rules.rxt:78: +1 row (:80, a correct mover), later rows of that file shifted +11 (same text and options); no other row moved.
 tests/altcls/altnf_rules.rxt:53	--features all	283f3a61627c286129647c6164295c313f
+tests/altcls/altnf_rules.rxt:80	--features all	286129283f3a61627c5c3164647c616429
 tests/utf8/altnf_lowering.rxt:113	--features all --encoding=utf8 --engine=vm	5c707b4e647d2b
 tests/utf8/altnf_lowering.rxt:44	--encoding=utf8 --engine=vm	283f6929ceb2
 tests/utf8/altnf_lowering.rxt:63	--encoding=utf8 --engine=vm	283f69296b
