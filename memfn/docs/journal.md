@@ -4262,3 +4262,9 @@ Main ruled on the four kit findings (D186 add. 2):
   MISPREDICTION (misses/B rise 3.5 -> 14.3 from h0 to h64, ~22 cyc each), not footprint (op-cache 100 % for every head <= 64); the
   all-inline text I adds footprint at length (hex1000: 29.7 KB, op-cache 58.9 %). Hit-dense flat. Logged in ideas.md with the
   branchless-block idea (UNMEASURED). Table: scratch/memfn/formperf/run-20261119T095049/results.md.
+- 10:0x FRANK (direct): "I am interested in the simd form. Can we measure? Table above but swar and simd out to 64 as well." ->
+  a MEASUREMENT SPIKE in scratch (not kit code): lane simdhead (opus) writes job 707-kit-fcards-simdhead. Head forms are scalar
+  per-position, SWAR-8, SSE-16, AVX2-32 and AVX-512-64 (info only, not filed) at heads 8/16/32/64, plus h0 and full inline, on the
+  cards' hex500/hex1000 near-miss + hit-dense subjects. General class tests (pshufb nibble), else labelled. Calibration control:
+  the scalar/h0/inline ratios must reproduce the cards' within ~25 %, else stated unfaithful. Correctness vs a byte loop first. A
+  sized critic round (apples-to-apples) on the harness before it is timed.
