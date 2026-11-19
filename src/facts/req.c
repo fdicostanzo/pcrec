@@ -1103,6 +1103,18 @@ static const unsigned char *rb_pos_set(RbWalk *w, const Ast *a, int b)
     return s;
 }
 
+/* THE NEVER LEAF (span_arms §14.3 D-9; review r55 C): a node that becomes
+ * the EMPTY position matches no character, so the runs of the node alone are
+ * never, and CAT's never row (`rr_cat`) carries that to whatever it is
+ * concatenated with. The one leaf, asked where the walk turns a node into a
+ * position: a lowered class (`rb_class_into`) and the `A_CTX` item
+ * (`rb_ctx_item`), so the two lowerings of a one-character lookaround agree
+ * (`x(?=[^\x00-\xff])y` under `byte`, with and without `-fno-ctx-node`). */
+static bool rb_never_pos(const unsigned char *p)
+{
+    return rn_count(p) == 0;
+}
+
 /* `acc` := the lowered class `a`, followed by `acc`. */
 static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
                                           const Ast *a)
@@ -1119,13 +1131,14 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
          * also BREAKS contiguity for everything around it — which
          * `rr_none`'s cleared `all` is exactly what says. One byte wide: the
          * tree is lowered. */
-        rb_gap_into(w, acc, 1);
+        RbRuns g = rr_none(1);
+        /* span_arms L1 (D-9) the never family's leaf: the class's row is
+         * NODE, the answer the set's, read here at byte level after lowering
+         * (as derive.c's `is_never_leaf` reads the class before it) */
+        g.never = rb_never_pos(ps);
+        acc->set = rb_union(rb_empty(), acc->set, 1);
+        acc->runs = rr_cat(w, g, acc->runs, NULL);
         acc->desc = desc;
-        /* span_arms L1 (D-9) the never family's leaf: an EMPTY class matches
-         * no byte, so nothing concatenated with it matches (its row is NODE:
-         * the answer is the set's, read here at byte level after lowering,
-         * as derive.c's `is_never_leaf` reads the class before it). */
-        if (rn_count(ps) == 0) acc->runs.never = true;
         return;
     }
     /* Only a single byte is a member of the necessary SET; a wider position is
@@ -1422,7 +1435,9 @@ static void rb_look_item(RbWalk *w, const Ast *a, RbVal *b, RbRuns *u)
  * PREV) into `u`: its set at offset 0 (NEXT, an `rg`) or −1 (PREV, an `lg`),
  * where the set reads exactly as bytes (every member within the encoding's
  * one-byte repertoire, `ReqWalkParams.onebyte_max`) and the run's domain
- * admits it; else no item. It walks no body. */
+ * admits it; else no item. An EMPTY set (no character at all: the parser
+ * complements within the encoding's repertoire) is the never leaf
+ * (`rb_never_pos`). It walks no body. */
 static void rb_ctx_item(const RbWalk *w, const Ast *a, RbRuns *u)
 {
     unsigned char *s = pcrec_arena_alloc(&w->cx->arena, 32);
@@ -1431,6 +1446,7 @@ static void rb_ctx_item(const RbWalk *w, const Ast *a, RbRuns *u)
         for (unsigned c = a->u.ctx.iv[i].lo; c <= a->u.ctx.iv[i].hi; c++)
             s[c >> 3] |= (unsigned char)(1u << (c & 7));
     }
+    u->never = rb_never_pos(s);
     if (!rn_admits(w, s)) return;
     if (a->u.ctx.fn == CTXFN_NEXT) u->rg = rn_pos(w, s);
     else u->lg = rn_pos(w, s);
