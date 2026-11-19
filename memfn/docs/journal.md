@@ -4293,3 +4293,7 @@ Main ruled on the four kit findings (D186 add. 2):
   selection-biased 3-9 %); a span-dense subset S is declared before data (>= 1500 calls/MiB AND (mean fail idx >= 4 OR full >= 2 %)),
   REPLACES = no LOSS over non-N/A AND a WIN majority in S; a LOSS is re-timed on fresh variants 3-5 and stands only if repeated; an
   h64@avx2 / I@avx2 target control; block vs min(today, L) as info; C5/C6 caveats in the header. Sent to blockspan.
+- 11:3x main relayed Frank's DENSITY discussion (not a ruling): "we should not try to optimize for super dense"; "Dense ... two+ hits
+  in a single block if we use blocks. Super dense might be hits within some low N like 8. I don't know N". TAKEN for 708 (info beside
+  the fixed rule): a HIT-SPACING sweep, gaps 1/2/4/8/16/32/64 B + 2+ hits per block -> the crossover spacing per form vs today and
+  vs the loop = the candidate N. Goes to blockspan as a follow-up after its critic fixes.
