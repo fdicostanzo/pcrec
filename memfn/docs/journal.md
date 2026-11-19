@@ -4252,3 +4252,6 @@ Main ruled on the four kit findings (D186 add. 2):
   code). window.vars REBUILT_BUILD=worktrees/relabel64/build (pinned in .wtprune.keep); 704 QUEUED (key kit-fcards-identity),
   706 kit-fcards-perf queued behind it (lane formperf: profile.py reuses cards.py build_cell/DRIVER; I/h0/h64 exes copied from the
   run dir; 2 five-event perf passes, refuses multiplexed counts). Keys sent to main.
+- 09:48 704 GREEN (12 s): identity head 64, 1,092 patterns (cards 17 + census 1,075 covered of 5,516; movers 0) x 2 enc x 2 layers,
+  0 differ: frozen 33fec79b3 == relabel 0df533a85. SET 2 COMPLETE (h*=64). Landing waits on Frank's near-miss ruling (main). 706
+  (perf profile) running.
