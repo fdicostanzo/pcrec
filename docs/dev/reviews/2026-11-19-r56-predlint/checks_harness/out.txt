@@ -1,0 +1,103 @@
+  0 st=red1 sample=GREEN L1 dup tag off
+  1 st=GREEN sample=GREEN L1 dup section off
+  2 st=GREEN sample=GREEN L2 malformed piece fail off
+  3 st=red1 sample=GREEN L2 TAG_RE off
+  4 st=GREEN sample=GREEN L2 tag-file-word mismatch off
+  5 st=red1 sample=GREEN L2 tag-in-section off
+  6 st=GREEN sample=GREEN L2 section tag grammar/word off
+  7 st=GREEN sample=GREEN L2 malformed section heading fail off
+  8 st=red1 sample=GREEN L2 was: always excuses
+  9 st=GREEN sample=GREEN L2 sub-tag 4th level not allowed (grammar)
+ 10 st=red1 sample=GREEN L3 base w/o entry off
+ 11 st=GREEN sample=GREEN L3 entry w/o base off
+ 12 st=red1 sample=GREEN L3 order off
+ 13 st=GREEN sample=GREEN L3 details absent off
+ 14 st=GREEN sample=GREEN L3 malformed entry heading off
+ 15 st=GREEN sample=GREEN L4 no date off
+ 16 st=GREEN sample=GREEN L4 bad date off
+ 17 st=red1 sample=GREEN L4 open slug off
+ 18 st=GREEN sample=GREEN L4 open: drop SLUG_RE half
+ 19 st=GREEN sample=GREEN L4 open: drop 'open ' half
+ 20 st=red1 sample=GREEN L4 status set off
+ 21 st=GREEN sample=GREEN L4 parked only in parked off
+ 22 st=red1 sample=GREEN L4 ruled no rulings off
+ 23 st=GREEN sample=GREEN L4 item w/o record off
+ 24 st=GREEN sample=GREEN L4 record absent file off
+ 25 st=red1 sample=GREEN L4 title not found off
+ 26 st=GREEN sample=GREEN L4 title whitespace-normalise off
+ 27 st=red1 sample=red1 L4 non-ruled pieces also need rulings
+ 28 st=red1 sample=GREEN L5 names-no-piece off
+ 29 st=red1 sample=GREEN L5 by not principle off
+ 30 st=red1 sample=GREEN L5 later file off
+ 31 st=red1 sample=GREEN L5 later in file off
+ 32 st=GREEN sample=GREEN L5 self-needs allowed (>= to >)
+ 33 st=GREEN sample=GREEN L5 skipped-pair excuse removed
+ 34 st=GREEN sample=GREEN L5 skipped-pair excuse always
+ 35 st=red1 sample=red1 L5 by: tag missing => treated ok when in index but non-principle later
+ 36 st=red1 sample=GREEN L6 word WITHDRAWN removed
+ 37 st=GREEN sample=GREEN L6 word REVERSED removed
+ 38 st=GREEN sample=GREEN L6 word SUPERSEDED removed
+ 39 st=GREEN sample=GREEN L6 [REV removed
+ 40 st=GREEN sample=GREEN L6 review rN removed
+ 41 st=red1 sample=GREEN L6 rev N removed
+ 42 st=red1 sample=GREEN L6 case-insensitivity off
+ 43 st=red1 sample=GREEN L6 fence exempt off
+ 44 st=red1 sample=red1 L6 whole check off
+ 45 st=GREEN sample=GREEN L7 PIECE_MAX 40->41
+ 46 st=GREEN sample=GREEN L7 PIECE_MAX 40->39
+ 47 st=red1 sample=GREEN L7 STATEMENT_MAX 200->201
+ 48 st=GREEN sample=GREEN L7 STATEMENT_MAX 200->199
+ 49 st=GREEN sample=GREEN L7 piece lines off-by-one (+1 miscount)
+ 50 st=GREEN sample=GREEN L7 no-statement fail off
+ 51 st=GREEN sample=GREEN L7 '?' exempt widened (all may lack)
+ 52 st=red1 sample=GREEN L7 soft cap warn off
+ 53 st=GREEN sample=GREEN L7 CAPS core 64K->1K
+ 54 st=GREEN sample=GREEN L7 CAPS lib 24K->1K
+ 55 st=GREEN sample=GREEN L7 CAPS parked 16K->1K
+ 56 st=red1 sample=GREEN L7 soft cap becomes hard
+ 57 st=red1 sample=GREEN L8 fail off
+ 58 st=red1 sample=red1 L8 exempt '?' removed
+ 59 st=red1 sample=GREEN L8 exempt parked removed
+ 60 st=red1 sample=GREEN L8 exempt under-construction removed
+ 61 st=red1 sample=GREEN L8 exempt principles removed
+ 62 st=red1 sample=GREEN L8 principles exemption widened to all core
+ 63 st=red1 sample=GREEN L8 all->any modes
+ 64 st=GREEN sample=GREEN L8 drop FIND-ALL requirement
+ 65 st=GREEN sample=GREEN L8 drop SEARCHED requirement
+ 66 st=red1 sample=red1 L8 modes: n/a without why accepted/no startswith
+ 67 st=GREEN sample=GREEN L8 example searched in heading line too
+ 68 st=GREEN sample=GREEN L9 kebab slug check off
+ 69 st=red1 sample=GREEN L9 shared exemption always
+ 70 st=red1 sample=red1 L9 shared exemption never
+ 71 st=red1 sample=red1 L9 shared only from same file (cross-file)
+ 72 st=GREEN sample=GREEN L9 none/- skip removed
+ 73 st=red1 sample=GREEN L9 tags>1 -> >2
+ 74 st=red1 sample=GREEN L10 ratchet fail off
+ 75 st=red1 sample=red1 L10 > to >= (equality fails)
+ 76 st=red1 sample=GREEN L10 > to >+1 slack
+ 77 st=red1 sample=GREEN L10 qcount counts nothing
+ 78 st=red1 sample=GREEN L10 absent ratchet is fatal->silent (note removed)
+ 79 st=red1 sample=GREEN L10 ratchet per-word lookup (only core)
+ 80 st=red1 sample=GREEN L10 write_ratchet raises (min -> max)
+ 81 st=red1 sample=GREEN L10 write_ratchet ignores old
+ 82 st=GREEN sample=GREEN L11 no pieces off
+ 83 st=GREEN sample=GREEN L11 no entries off
+ 84 st=red1 sample=GREEN L11 require-all absent off
+ 85 st=GREEN sample=GREEN L11 whole-run nothing present silent
+ 86 st=red1 sample=GREEN L11 count of 'checked' not incremented
+ 87 st=GREEN sample=GREEN ST plant exact-rule -> 'rule in got'
+ 88 st=GREEN sample=GREEN ST plant: any failure counts
+ 89 st=GREEN sample=GREEN ST clean control off
+ 90 st=GREEN sample=GREEN ST floors off
+ 91 st=GREEN sample=GREEN ST covered-all check off
+ 92 st=GREEN sample=GREEN ST plant text sub no count check
+ 93 st=GREEN sample=GREEN ST was: control off
+ 94 st=GREEN sample=GREEN ST fence control off
+ 95 st=GREEN sample=GREEN ST L8 exemptions control off
+ 96 st=GREEN sample=GREEN ST skip control off
+ 97 st=GREEN sample=GREEN ST require-all control off
+ 98 st=GREEN sample=GREEN ST noratchet control off
+ 99 st=GREEN sample=GREEN ST soft control off
+100 st=GREEN sample=GREEN ST write-ratchet controls off
+101 st=GREEN sample=GREEN ST write-ratchet raise control off
+102 st=GREEN sample=GREEN ST committed sample control off

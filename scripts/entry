@@ -34,6 +34,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)  # -I drops the script directory; emit_sweep.py does the same
 import doc_profiles  # noqa: E402
 import plan_lint  # noqa: E402
+import pred_doc_lint  # noqa: E402  (the predicate documents' ONE parser; the `predicates` profile calls it)
 
 ROOT = os.path.dirname(HERE)
 ARCH_HEAD = re.compile(r"^( *)- \[([^\]\n]+)\] STATE:(\S+)")  # the archive's states vary (completed, done, ...)
@@ -101,6 +102,8 @@ class Item:
             return [self.head] + self.own
         if form == "pair":
             return pair_text(self, level)
+        if form == "pieces":
+            return pred_doc_lint.piece_text(self.piece, self.entry, level)
         if form == "list":
             return [self.head] + (["    " + ln if ln else "" for ln in self.header()] if level >= 2 else [])
         kids = [c.head for c in self.children]
@@ -281,6 +284,28 @@ def pair_entries(text):
     return ents
 
 
+# ---------------------------------------------------------------- the pieces form (the predicate documents)
+
+def pieces_items(src, profile):
+    """Items of the predicate documents: pred_doc_lint's parser over the three base/details pairs (an absent file
+    contributes nothing). id = the tag (core/holes/class); slug = the details `slugs:` words."""
+    try:
+        got = pred_doc_lint.load_pieces(src.read)
+    except ValueError:
+        sys.exit("entry: a predicate document is not valid UTF-8 (run scripts/pred_doc_lint.py)")
+    out = []
+    for g in got:
+        p, e = g["piece"], g["entry"]
+        it = Item(profile, p["tag"], "\n".join(pred_doc_lint.piece_text(p, e, 0)), section=p["section"][0] if p["section"] else None,
+                  state=(p["status"] or "").split(" ")[0])
+        it.piece, it.entry, it.slugs, it.slug = p, e, g["slugs"], " ".join(g["slugs"])
+        out.append(it)
+    return out
+
+
+PIECE_TAG = re.compile(doc_profiles.PIECE_TAG_SHAPE)
+
+
 def later_cites(it, ents):
     """`later: D49* D58`: entries (other than IT) that mention IT's id; `*` = a line with a supersede/amend verb."""
     verb = re.compile(r"supersed|amend|replac|revers|overrid|retir|struck|settl|re-open|withdraw", re.I)
@@ -352,13 +377,15 @@ class Ctx:
         """All Items of profile P (None = unreadable)."""
         if p["name"] in self._cache:
             return self._cache[p["name"]]
-        text = self.src.read(p["index"])
+        text = self.src.read(p["index"]) if p["form"] != "pieces" else ""  # pieces: absent files = no items (pilot mode)
         if text is None:
             res = None
         elif p["form"] in ("single", "archive"):
             res = parse_single(text, p)
         elif p["form"] == "list":
             res = list_index(text, p, self.src)
+        elif p["form"] == "pieces":
+            res = pieces_items(self.src, p)
         else:
             res = pair_index(text, p)
             dt = self.src.read(p["details"]) if p["details"] else None
@@ -441,12 +468,19 @@ def route(ctx, key):
             it = Item(p, k, "\n".join(blk))
             it.fixed = blk
             return Result([it])
-    # 6 a lower-case kebab slug: every live pair profile's index
+    # 6a a predicate-document tag (core/holes/class): the `pieces` profiles
+    if PIECE_TAG.fullmatch(k):
+        hits = [i for p in ctx.profiles if p["form"] == "pieces" for i in (ctx.items(p) or []) if i.id == k]
+        if hits:
+            return Result(hits)
+    # 6 a lower-case kebab slug: every live pair profile's index, and every `pieces` profile's details slugs
     if re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", k):
         hits = []
         for p in ctx.profiles:
             if p["form"] == "pair":
                 hits += [i for i in (ctx.items(p) or []) if i.slug == k]
+            elif p["form"] == "pieces":
+                hits += [i for i in (ctx.items(p) or []) if k in i.slugs]
         if hits:
             return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0,
                           "slug %s names %s" % (k, ", ".join(i.id for i in hits)) if len(hits) > 1 else None)
@@ -552,7 +586,7 @@ def sel_profiles(ctx, name):
     if name:
         ps = [p for p in ctx.profiles if p["name"] == name]
         return ps
-    return [p for p in ctx.profiles if p["form"] in ("single", "pair")]
+    return [p for p in ctx.profiles if p["form"] in ("single", "pair", "pieces")]
 
 
 def levels_table(ctx, name, out):

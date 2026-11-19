@@ -1,0 +1,39 @@
+/var/tmp/pcrec-pcrec/scratch/crit-predlint/checks/h/mut2.py:11: SyntaxWarning: "\*" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\*"? A raw string is also an option.
+  m("RT title: ** opener removed", 'm = re.match(r"^\*\*(.+?)\*\*", ln)', 'm = None')
+/var/tmp/pcrec-pcrec/scratch/crit-predlint/checks/h/mut2.py:16: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
+  m("needs split: whitespace only (no comma)", 'p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x]', 'p[mm.group(1)] += [x for x in re.split(r"\s+", mm.group(2)) if x]')
+/var/tmp/pcrec-pcrec/scratch/crit-predlint/checks/h/mut2.py:16: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
+  m("needs split: whitespace only (no comma)", 'p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x]', 'p[mm.group(1)] += [x for x in re.split(r"\s+", mm.group(2)) if x]')
+/var/tmp/pcrec-pcrec/scratch/crit-predlint/checks/h/mut2.py:17: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
+  m("needs: only first tag kept", 'p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x]', 'p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x][:1]')
+/var/tmp/pcrec-pcrec/scratch/crit-predlint/checks/h/mut2.py:17: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
+  m("needs: only first tag kept", 'p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x]', 'p[mm.group(1)] += [x for x in re.split(r"[\s,]+", mm.group(2)) if x][:1]')
+/var/tmp/pcrec-pcrec/scratch/crit-predlint/checks/h/mut2.py:21: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
+  m("was: parse off", 'mm = re.match(r"^was:\s*(\S+)", t)', 'mm = None')
+  0 st=GREEN sample=GREEN RT title: rstrip('.') removed
+  1 st=red1 sample=red1 RT title: split ' (' removed
+  2 st=red1 sample=red1 RT title: ** opener removed
+  3 st=red1 sample=red1 RT title: ### form removed
+  4 st=GREEN sample=GREEN PB fence skip in parse_base heads removed
+  5 st=GREEN sample=GREEN PD fence guard on details heading removed
+  6 st=GREEN sample=GREEN PD fence guard on FIELD_RE removed
+  7 st=GREEN sample=GREEN needs split: whitespace only (no comma)
+  8 st=GREEN sample=GREEN needs: only first tag kept
+  9 st=red1 sample=GREEN rulings item marker '-' not required
+ 10 st=red1 sample=GREEN rulings item loop: skip L4 item check
+ 11 st=GREEN sample=GREEN statement = first non-meta line -> first line
+ 12 st=red1 sample=GREEN was: parse off
+ 13 st=red1 sample=GREEN L7 piece end trims blanks off
+ 14 st=GREEN sample=GREEN L1 uniqueness per file not whole run
+ 15 st=red1 sample=GREEN L9 owners reset per file
+ 16 st=GREEN sample=GREEN L9 same-tag twice counts
+ 17 st=GREEN sample=GREEN L6 checks only first 30 lines
+ 18 st=GREEN sample=GREEN L6 skips last 2 lines
+ 19 st=red1 sample=red1 L8 only first body line scanned
+ 20 st=red1 sample=red1 L5 ordinal always 0
+ 21 st=red1 sample=GREEN RD ambiguity rc 2 off
+ 22 st=red1 sample=GREEN RD list status uses full status
+ 23 st=red1 sample=GREEN RD show level 2 omits details
+ 24 st=GREEN sample=GREEN CLI exit code on fails -> 0
+ 25 st=GREEN sample=GREEN report: fails not printed
+ 26 st=red1 sample=red1 no-date accepted (DATE_RE off)
