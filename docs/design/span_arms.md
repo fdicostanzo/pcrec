@@ -1,6 +1,6 @@
 # Span arms: the REP, EMPTY and positive-LOOKAROUND arms of the one fixed-width description
 
-**Status: PROPOSED rev 3.1** `[REV 3.1]` (lane spanarms8, opus, 2026-11-18: applies every finding of review r51,
+**Status: PROPOSED rev 3.2** `[REV 3.2]` (lane spanarms9, sonnet, 2026-11-18: applies the manager's rulings on the confirm critic of rev 3.1, `/var/tmp/pcrec-pcrec/scratch/conf-spanarms8/findings.keep.md` (conf-spanarms8 D1-D4); text only; each changed passage carries `[REV 3.2, conf-spanarms8 Dn: ...]`; D1 the `zero` arm's facts (§14.3 D-1), D2 the head-rule remodel named in §14.0 and D-10, D3 the BACK row's `++ rg` clause in the L2-first order (§14.4 L2, §8), D4 §14.5's durable pointer). Rev 3.1: **PROPOSED rev 3.1** `[REV 3.1]` (lane spanarms8, opus, 2026-11-18: applies every finding of review r51,
 `docs/dev/reviews/2026-11-18-r51-spanarms7.md`, AS RULED by the manager that day; each changed passage carries
 `[REV 3.1, review r51 <id>: ...]`; §14 stays the design of record for L1, L3, L2. Verdict as ruled: all three units
 READY WITH THE LISTED TEXT FIXES; none builds before a confirm critic has checked this revision, and L3's answer/safety
@@ -999,7 +999,7 @@ first unit built of 2a, E1, R1, E2 and L1** `[r2 S13]`; that unit's gate names t
 | L3 `[r4 READY3-1..9]` | TOP's BACK candidate (`omin < 0`, `t <= lb_bytes`); A3's move at a signed K of either sign and the margin's `max(K, 0)`; A8's two VM attempt-loop rows admitted at signed K; `req_run_omin` (the whole run's); and, if L3 lands before L2, `cons` and the kit-member read (A13, A5), which L2 then reads: one mechanism, built by whichever lands first | L1; L2's `cons` or its own build of it (above) `[r4 READY3-6]`; the kit's delivery of §8.2 parts A and B (one request, filed with L2's) | `[r4 READY3-7, RULED: BUILD NOW]` A-POSDOM (`docs/design/stream/roadmap.md`; [DEC-POSDOM] `STATE:not-started`, prerequisite A-SEAM unscheduled): L3 builds now and states its sites in the shape A-POSDOM's declared table will take (§8.1), adding no `PCREC_START0_*` mode and no call site, so R08 does not grow and the remodel step inherits the rows byte-identically; the stream ruling (areas migrate riding along with the optimizations that touch them) applies. A-REV (ownership ruling 1: `vlookbehind.md` holds the lookbehind admission rows; arev S3 the lookbehind hand-off): L3's item reads the body's description, the hoist the branches' (§5.2), and neither moves the other's rows | fact change | the plan row's census (corpus + bench compiles whose rarest bytes sit inside a positive lookbehind) | §5.4's A1-A3, A5, A8, A9, A12, A13 changed in the same unit (A10 re-grepped: no change, READY3-5), A3's sentinel split before any negative K; `emit_req_handoff_rest` and `emit_req_landmark_move` moved to `max(posvar, c − K)` with no `size_t` wrap at EITHER sign of K `[r2 S1]` `[r4 READY3-3]`; the margin reads `max(K, 0)` `[r4 READY3-2]`; K carries a stated/none bit, the −1 sentinel retired at every §9 site (`omin`/`maxoff` already have a none state; `head_max`'s is the kit's `handoff` field) `[r4 READY3-8]`; spec hunks BY PARAGRAPH `[r2 S11]` `[r4 READY3-4]`: match_api §6.3.7¶10 (a negative `<PREFIX>_REQ_HANDOFF`), §6.3.7¶11 (the search block returns the least occurrence at or after `max(0, startpos + omin)`; `max(startpos, that − K)` kept, said to hold for signed K; its attempt-loop clause "a whole run with a finite `K`" kept, K now of either sign), tuning §2.41¶1 (the same two sentences), tuning §2.41¶8b (the attempt-loop rows: `K` the whole run's offset of either sign; the entry's `c` the least occurrence at or after `max(0, startpos + omin)`, the re-entry's at or after `max(0, attempt position + omin)`), tuning §2.28¶1 (bit 31: the deny also removes a scan that begins before the start offset), `facts_listing.md` §4.1.2¶8 and ¶8b (negative values) and a new paragraph for `req_run_omin`; the L2 hunks' BACK half; witnesses S-L, W-L1 (the kit's), W-L3, W-L8, W-L10, W-L11, W-L12, W-L13, W-L14 (W-L14's sabotage is a hang the gate's timeout reports), W-T3a (answers), W-T3 (listing, `req_whole_run`, at R1), W-S4c with `(?<=qz)ab` ADDED to `WIT`; each with §5.7's WHY/HANDOFF precondition `[r4 READY3-9]` |
 | R2 | the REP adjacency head (`altnf.c:223-230`'s wall becomes `X^m`'s head, `closed` iff m = n) | R1 | [REWRITE-ADJ] (both read T2) | fact change (tree movers) | a census of owner refusals whose intervening branch's head is a REP: `(?:ab\|ax{2}\|ad)` has `RX_ALTCLS_MERGES` 0 against 1 for `(?:ab\|axx\|ad)` (measured, rev 0's `owner_rep.out`); `[REV 3.1, review r51 CONFORM-9]` plus the positive LOOKAHEAD bodies whose head walls at a repeat (`(?=(?:ab){2}c)`: no AHEAD item at L1/L2), since the head's per-kind rule is one rule for both readers (§14.3 D-10) | the parent's S-d/S-k shapes re-run with a REP branch; R2's own witness is designed at its design pass, where it names the reader of EXACT if it needs one (F16) |
 
-Order: E1 → (R1, E2 independent) → L1 (after R1 for its REP row) → L2 and L3 in either order, both
+Order: E1 → (R1, E2 independent) → L1 (after R1 for its REP row) → L2 and L3 in either order `[REV 3.2, conf-spanarms8 D3: the BACK row's `++ rg` clause lands with whichever of L2 and the BACK row (L3's) comes second: with L3 first it is L2's addition, with L2 first it is part of the BACK row L3 then builds, §14.4 L2]`, both
 after the kit delivers §8.2 (`[r4 READY2-7, READY3-6]`: the first of them to land builds `cons` and
 the kit-member read, the other reads them); R2 after R1 when its census fires. As ruled, L3 goes to
 Frank with rev 2.2's text; L2 goes after the kit's answer plus one readiness critic on its changed
@@ -1374,8 +1374,16 @@ pointing here. E1, R1 and E2 are not this revision's: they are cited only as bui
   rows as a NEVER column of `src/core/kindrow.def` (D-9). It RIDES L1 as its own answer-identical commit after
   RM-1 (the manager's ruling, confirming the spanarms7 report's F-3: covered by the remodel-go call's reasoning,
   answer-identical and gated alone). It carries register row 5, whose event "per pass, when the pass is next
-  touched" fires at this commit for derive.c; PROPOSED register row 5 status: "riding [REQ-LOOKAROUND] L1 (RM-6: the
-  NEVER column; derive.c's `q_*` and the run walk its first readers)" (the manager edits the register).
+  touched" fires at this commit for derive.c. `[REV 3.2, conf-spanarms8 (register proposal), RULED: row 5 is a per-pass row, so "riding" for the
+  whole row misstated it]` Register row 5's status, ENTERED 2026-11-18: "open (per pass); derive.c's never pass rides L1
+  (RM-6, span_arms.md)".
+- `[REV 3.2, conf-spanarms8 D2]` **An L1 remodel outside the RM-n series, the head-rule extraction ("remodel 3" in §14.4 L1), outside the
+  RM-n series:** READYL1-6's move of the per-kind head rule from altnf.c's `anf_head` into desc.c with a position
+  callback (D-10) IS a remodel commit of L1, listed here beside RM-1..RM-6 as an L1 remodel that carries no RM number.
+  It rides register row 27's own event (L1: "one per-offset-head primitive for the description and the item", row 27's
+  form (a)). Confirmed by the manager 2026-11-18 (conf-spanarms8 D2); it rides the owner's 11-09 build go under the
+  manager's remodel-go reading, which the owner may overrule. Its answer- and byte-identity is a BUILD-LANE GATE, the
+  remodel commit's own identity check (§14.4 L1 remodel 3), not a claim made at design time.
 
 ### 14.1 What in rev 2.2 is STALE at T, and what replaces it
 
@@ -1456,7 +1464,18 @@ lookaround of either lowering back to the old CUT). With `look` alone, restore=z
 run_facts_checks.sh's [facts-arm] ZP expectation (`xyz(?<=yz)ab\Bcd` → `78797a harness:zero`) would read
 `78797a6162` and go red, and five readers of `zero`'s meaning (walk_arms.def's `zero` row comment, facts_listing
 §4.1.3¶4a's `zero` text, run_axes.sh's comment, req.c's T3 header, that check) would turn false. With the mask
-every one stays true; `look` alone still isolates L1 (§5.8).]` What leaves the body: ONLY the item (§D-10), the body's own `lg`/`rg` and its
+every one stays true; `look` alone still isolates L1 (§5.8).]`
+`[REV 3.2, conf-spanarms8 D1: the mask has a consequence the five readers did not name. Passing over E-5i under `zero` also
+moves `req_set` and `req_set_maxoff`, for the very reason READYL1-2 gives for `look`: the TOP set step writes the walk's SET
+outputs from the item's guards, and a cut lookaround carries none. CHOICE: form (a), the ZERO row of walk_arms.def gains
+`PF_REQ_SET` and `PF_REQ_SET_MAXOFF` at L1, `(1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES) | (1u << PF_REQ_SET) |
+(1u << PF_REQ_SET_MAXOFF)`, so `zero`'s tokens appear on those two facts too and `[facts-arm]` gains their expectations
+(`harness:zero` on `req_set`/`req_set_maxoff` of a lookaround pattern the TOP set step moves). WHY (a): the code makes
+it true (walk_arms.def's rule is "the walk OUTPUTS the arm can change", and under restore=zero these two outputs
+change at L1, none before it); form (b), splitting the arm so `zero` keeps its fact set, would un-do READYL1-1's own
+reasoning (the mask exists so that `zero` keeps E2's shipped meaning, a lookaround cut) by leaving `zero` without the
+token on a fact it moves. Readers moved with it: D-13's L1 row (below) and §14.4 L1's Feature bullet.]`
+What leaves the body: ONLY the item (§D-10), the body's own `lg`/`rg` and its
 never bit. The body's set, description and consumed runs stay in `t[0]` and are never joined into `acc`
 (the action calls `rb_zero_unit_into(w, acc, pcrec_pd_zero())`, so the parent's description is E2's,
 unchanged). An `A_CTX` NEXT/PREV item is its node's set at offset 0/−1; it walks no body.
@@ -1532,9 +1551,10 @@ reaches past the consumed end, so D191.1's gating of L2 ("L2 after ... one readi
 `[REV 3.1, review r51 CONFORM-2]` TOP is walked by an ALL-ROWS sibling of `RB_ROW_SCAN` beside it in req.c
 (`RB_ROW_EACH(i, w, TAB, TEST)`: the same arm filter, every row whose test holds, no `break`), not by a loop of
 its own. Register row 19's event, "the next new declared table", FIRES at TOP's landing (L1, with no rows; its
-first row at L3); PROPOSED register row 19 status: "riding [REQ-LOOKAROUND] L1 (TOP's combining walker beside
-`RB_ROW_SCAN`); the one walker for every table type stays row 19's" (the manager edits the register; whether the
-row also absorbs `RB_ROW_SCAN`, the note's F-6, stays the manager's). `reach` is NOT a
+first row at L3). `[REV 3.2, conf-spanarms8 (register proposal), RULED]` Register row 19's status, ENTERED 2026-11-18: "open;
+event fired by span_arms L1's `RB_ROW_EACH` (an all-rows walker, not the first-row one)" (row 19 is a FIRST-row walker, so
+`RB_ROW_EACH` is a further local walker, not an instance of it; whether the row also absorbs `RB_ROW_SCAN`, the note's F-6,
+stays the manager's). `reach` is NOT a
 walk parameter (§14.1 item 8): at L1 the table has no rows, so TOP is "guards dropped". `lb_bytes` IS a walk
 parameter row (`ReqWalkParams.lb_bytes`, filled in `pf_derive_req_walk` from RM-5's accessor, D-11), read
 only by the BACK row.
@@ -1653,7 +1673,7 @@ column) are A-POSDOM's INPUT: its declared table takes them as rows when it land
 here.
 `[REV 3.1, review r51, the manager's ruling on the spanarms7 report's F-7: ACCEPTED as a NOTED DEVIATION]` The
 emitters re-testing K's state through one predicate instead of acting through a start-table row is a noted
-deviation. PROPOSED register row (the register's own columns; the manager files it):
+deviation. `[REV 3.2, conf-spanarms8 (register proposal), RULED]` ENTERED 2026-11-18 as register row 30, in the register's own columns and wording (status "noted, lands with L3": the code does not exist yet; the table below is the proposal it was entered from):
 
 | # | remodel | shape (rule) | where | event that carries it | size, gate | deletes | status |
 |---|---|---|---|---|---|---|---|
@@ -1742,7 +1762,7 @@ code-point level; the run walk passes its byte set; `A_WCLASS`, a wall in `anf_h
 byte-level walk, is the callback's answer, an alphabet fact), read by `anf_head` and by the walk. This is
 register row 27's own move ("One per-offset-head primitive for the description and the item ... from the second
 caller", event L1), so it rides L1 as an answer- and byte-identical commit before the feature (§14.4 L1 remodel
-3), not a sixth remodel. The walk threads the head as `RbVal.head` (a `PdHead`), written only while E-5i walks a
+3). `[REV 3.2, conf-spanarms8 D2]` It IS a remodel commit of L1, numbered "remodel 3" in §14.4 and listed in §14.0 beside RM-1..RM-6 as an L1 remodel outside the RM-n series (the earlier "not a sixth remodel" is withdrawn). Confirmed by the manager 2026-11-18 (conf-spanarms8 D2); it rides the owner's 11-09 build go under the manager's remodel-go reading, which the owner may overrule. Its answer- and byte-identity is a build-lane gate (the remodel commit's own identity check, §14.4 L1 remodel 3). The form chosen is register row 27's (the shared per-kind head rule in desc.c with a position callback), so row 29 (form (b), the noted deviation) is not taken. The walk threads the head as `RbVal.head` (a `PdHead`), written only while E-5i walks a
 positive lookahead's body, by every `RbVal` writer: `rb_init`, `rb_cat_into`, `rb_alt_into`, `rb_gap_into` (a class
 outside the run's domain is still a POSITION, not a wall, or `(?=a.b)` loses its tail terms), `rb_class_into`,
 `rb_assert_into` (a restored cut still reads THROUGH, or a restored arm changes the item), `rb_zero_unit_into`,
@@ -1790,7 +1810,7 @@ match_api §6.3.7¶6 and tuning §2.28¶1's run definition ("every successful at
 
 | unit | changes | checked unchanged |
 |---|---|---|
-| L1 | `facts_listing.md` §4.1.3¶1 (the order gains `dead` first) and a new ¶ for `dead` (the walk proved no attempt can match; on `req_whole_run` only; status `derived`); `[REV 3.1, review r51 READYL1-2]` `facts_listing.md` §4.1.3¶4a: the arm list gains `look` and its tokens, on `req_whole_run`, `req_set` and `req_set_maxoff` (the TOP set step writes the walk's SET outputs), not `req_pieces` (D-1 keeps the parent's description); `zero`'s text stays true (E-5i's `look \| zero` mask, D-1) | match_api §6.3.7¶4, ¶5, ¶6, ¶7; tuning §2.27¶4, §2.28¶1 (the run's values move, not its definition; the TOP set step keeps ¶4/¶5 true) |
+| L1 | `facts_listing.md` §4.1.3¶1 (the order gains `dead` first) and a new ¶ for `dead` (the walk proved no attempt can match; on `req_whole_run` only; status `derived`); `[REV 3.1, review r51 READYL1-2]` `facts_listing.md` §4.1.3¶4a: the arm list gains `look` and its tokens, on `req_whole_run`, `req_set` and `req_set_maxoff` (the TOP set step writes the walk's SET outputs), not `req_pieces` (D-1 keeps the parent's description); `zero`'s CUT text stays true (E-5i's `look \| zero` mask, D-1) `[REV 3.2, conf-spanarms8 D1]` but `zero` gains `req_set` and `req_set_maxoff` in the same ¶ (walk_arms.def's ZERO row gains PF_REQ_SET and PF_REQ_SET_MAXOFF at L1, D-1) | match_api §6.3.7¶4, ¶5, ¶6, ¶7; tuning §2.27¶4, §2.28¶1 (the run's values move, not its definition; the TOP set step keeps ¶4/¶5 true) |
 | L3 | match_api §6.3.7¶10 (a negative `<PREFIX>_REQ_HANDOFF`), ¶11 (the least occurrence at or after `max(0, startpos + omin)`, `omin = min(0, K)`; `max(startpos, that − K)` holds for signed K); tuning §2.41¶1, ¶8b (the attempt-loop rows at K of either sign); tuning §2.28¶1 (bit 31 also removes a scan that begins before the start offset); `facts_listing.md` §4.1.2¶8b (`req_landmark_maxoff` may be negative). `[REV 3.1, review r51 READYL3-3 / READYL2-4 / CONFORM-4]` THE RUN'S DEFINITION, BEFORE SIDE (L3 lands before L2, so it owns this side): match_api §6.3.7¶6 (a successful attempt consumes the run "between that position and the end of its match": the run may BEGIN up to the declared lookbehind length, −K bytes, before the attempt start, inside a positive lookbehind; its consumed part is unchanged); tuning §2.28¶1's definition sentence (the same); `facts_listing.md` §4.1.2¶8 ("at or after the attempt start": the run may begin −K bytes before it; "No byte of it lies inside a lookbehind" is dropped); tuning §2.41¶8c's "at or after its attempt start" (the past-last stop's premise restated for a run that begins before the attempt). THE PICK'S STRETCH (READYL2-4 named these in L2's row; they are false from the first unit that gives the consumed extent a value, L3 in this order (D-6: `(?<=qz)ab`'s `req_byte` stays in `ab` while the whole run's least-mass byte may be `q` or `z`); if L2 lands first they move with L2): match_api §6.3.7¶5, tuning §2.27¶4 and §2.28¶7, each "the least-mass exact position of the whole run" → "of the run's consumed positions" | match_api §6.3.7¶4, ¶7 (`req_byte` stays consumed: D-6). `[REV 3.1, review r51 READYL3-9 (5)]` ¶7's `@idx` is the KIT's scan position, which D191.2 lets the kit place on any run position, lookbehind bytes included: ¶7's TEXT is checked unchanged, D-6 is not its reason, and no check tests "`@idx` inside the consumed extent"; `findings.md` §4 |
 | L2 | match_api §6.3.7¶6 and tuning §2.28¶1: the AFTER side, the clause "which may extend past the attempt's consumed end" (E2 owns the rest of the sentence, L3 its BEFORE side); `[REV 3.1, review r51 READYL2-4]` `facts_listing.md` §4.1.2¶8's "The run occurs inside every match" (it may extend past the match end); tuning §2.41¶8c's "occurs inside every match" (the stop stays sound: the run still begins at or after the attempt start on an AHEAD run, e.g. `x*foo(?=bar)` with unbounded K); the BACK row's `++ rg` clause (READYL2-5) is covered by the same AFTER-side hunks | ¶4, ¶7, ¶11; `findings.md` §4 (the member row's text is already the kit's, K38-2) |
 
@@ -1865,10 +1885,14 @@ rows take ids from the manager's range.
      pcrec_derive_split_q 8993b8f82 -- tests`: `tests/compound/compound_drive.c`, with the compound suite) and
      `tests/codegen/run_cpset_structure.sh` (its `[2b]` allowlist, D-9). Binding: S899 (re-aimed if its line
      moves, shown red), S893, S1189, S1190, S904 checked; the anchor map gains a derive.c range group.
-  3. `[REV 3.1, review r51 READYL1-6]` The head's per-kind rule moved from altnf.c's `anf_head` into desc.c with a
+  3. `[REV 3.2, conf-spanarms8 D2]` (an L1 remodel outside the RM-n series, §14.0; confirmed by the manager 2026-11-18)
+     `[REV 3.1, review r51 READYL1-6]` The head's per-kind rule moved from altnf.c's `anf_head` into desc.c with a
      position callback (D-10; register row 27's own move, event L1), `anf_head` its first caller. Gate: the .c
      streams (altnf's rewrites move no byte); binding: the anchor map over altnf.c's `anf_head` range (a range group
-     the build adds), each anchor re-aimed and shown red.
+     the build adds), each anchor re-aimed and shown red. `[REV 3.2, conf-spanarms8 D2]` Answer- and byte-identity is a
+     BUILD-LANE GATE, this commit's own identity check (the manager's remodel-go reading: each remodel gated alone), not
+     a design-time claim; the sweep should include patterns with `\w`-class heads, where `A_WCLASS` is a wall in altnf
+     and transparent in the byte-level walk (conf-spanarms8 judgement (b)).
   4. (none else: RM-5 rides with L3; P5's discharge, register row 27, completes with L1's feature, D-10.)
   `[REV 3.1, review r51 CONFORM-5]` REMODEL OVERLAP: register row 14 records [RUN-POS-SET]'s stages 2a and 3m
   (still to follow) editing the same alternation fold, `rr_alt`'s rows and `rr_alt_affix`. L1's ALT guard rule is
@@ -1879,8 +1903,9 @@ rows take ids from the manager's range.
 - **Feature (sites 1-9, 21, 23).** E-5i and the `look` arm (D-1; `walk_arms.def` gains `look`, its
   `walk_arm_facts` naming ~~`req_whole_run` and the facts derived from it~~ `[REV 3.1, review r51 READYL1-2: the
   walk OUTPUTS the arm can change, by walk_arms.def's own rule (derived facts inherit the token through `pf_ask`):
-  PF_REQ_WHOLE_RUN, PF_REQ_SET and PF_REQ_SET_MAXOFF, not PF_REQ_PIECES]`; E-5i's arm mask `look | zero`,
-  READYL1-1); `RbRuns.lg/rg/never` (D-2); T4's
+  PF_REQ_WHOLE_RUN, PF_REQ_SET and PF_REQ_SET_MAXOFF, not PF_REQ_PIECES]`; E-5i's arm mask `look | zero`
+  `[REV 3.1, review r51 READYL1-1]` `[REV 3.2, conf-spanarms8 D1: and the ZERO row gains PF_REQ_SET and PF_REQ_SET_MAXOFF in the
+  same commit (D-1); D4: the stray close paren after READYL1-1 is removed]`; `RbRuns.lg/rg/never` (D-2); T4's
   steps and ALT's post-step (D-3); the item: the head column for lookahead bodies and the description's
   reversed-head reader (D-10, desc.c); TOP's table with no rows (D-4: guards dropped at reach 0); the TOP set
   step (D-3); the never rows' run reading and the `dead` why (D-9). The D168 addendum (§12 rev 3) is filed by
@@ -2044,7 +2069,14 @@ rows take ids from the manager's range.
   of these move to it: RM-4 (L3's remodel 4), the `rn_cmp` split (L3's remodel 5, which AHEAD's candidates need
   to keep their extents), the `ReqRun` extent with `pcrec_run_cons` and the empty-extent rule (D-5, D-6), and
   `rn_scan_mass`'s comment (D-4: `req_byte` and the ranking diverge at AHEAD too); and D-13's "pick's stretch"
-  hunks.
+  hunks. `[REV 3.2, conf-spanarms8 D3]` WHERE THE BACK ROW'S `++ rg` CLAUSE LIVES IF L2 LANDS FIRST: the clause is a part of the
+  BACK row (D-4's table), and the BACK row is L3's, so with L2 first there is no row to host it: L2 does not carry it and
+  ships the AHEAD row alone (no BACK candidate exists, so `(?<=foo)bar(?=baz)`'s `foobarbaz` at −3 does not move at L2); L3,
+  landing second, adds the BACK row WITH the clause (the clause is the part of the row that needs the `rg` guard and the
+  extent L2 already built), and the census row and test row for `(?<=foo)bar(?=baz)` (W-L9's neighbour, below) move from L2 to
+  L3 in that order. In the ruled order (L3 first) it is as written: L3 ships the BACK row without the clause, L2 adds it. The
+  rule in one line: the clause lands with whichever of {L2, the BACK row} comes second. D-13's AFTER-side hunks follow the
+  clause, so they land with L2 in either order (they cover AHEAD's own reach); the BACK clause adds no hunk of its own.
 - **Feature.** TOP's AHEAD row (D-4) `[REV 3.1, review r51 READYL2-5]` and the BACK row's `where all, lg ++ head
   ++ rg` clause; the pin reads the consumed extent (already, from L3). An AHEAD candidate's K can be negative only
   under W-L9's plant (`rn_tail_off` from the EXTENDED length gives K −1 and `pcrec_run_omin` −1 on a lookahead
@@ -2079,8 +2111,8 @@ the cover take a wider lookbehind is a READER of L1's item ([CTX-SIDES-PRODUCER]
 `[REV 3.1, review r51 RULING-5]` L1-L3 DO NOT DELIVER that ending: they build the item and the presence span
 it reads and nothing more, and the owner is not to be told that L3 delivers it. The row that owes it is
 [CTX-SIDES-PRODUCER] (the cover's `MkEnd` `ctx_before`/`ctx_after` read from the one producer instead of the
-anchored machine's one-position reading); whether its trigger has fired is the manager's, from the facts in
-the spanarms8 report.
+anchored machine's one-position reading); ~~whether its trigger has fired is the manager's, from the facts in
+the spanarms8 report~~ `[REV 3.2, conf-spanarms8 D4: the transient report pointer is replaced by the durable record, the [CTX-SIDES-PRODUCER] plan row's status line (main): "trigger FIRED (cover B1 = bc675b020, 2026-10-23, before this row was filed); row unstarted; owner question open"]`.
 "Otherwise, the kit reports back the 0 span subject offset and pcrec does the match": the existing presence
 pre-check and the signed move (D-8). `[REV 3.1, review r51 RULING-6]` The two "0"s: in the owner's indexing span
 index 0 is the attempt start (`b`, the `foo` at −3..−1); the kit, told only offsets (D157, D191.2), reports the
