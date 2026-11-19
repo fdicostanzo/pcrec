@@ -4313,3 +4313,6 @@ Main ruled on the four kit findings (D186 add. 2):
   limit 35 -> 50 min: g2 --quick grew 1807 -> 2423 s, window checks 11,269 -> 27,376; S526 re-aimed; S1138's plant fixed).
   lane/covs2land and lane/memfn-relabel64 are merged: prune relabel64 (unpin) at the next prune pass; keep fcards-night until 708/709
   end. OWED: merge main into lane/memfn-k1108 at a natural point (merge alone, make strict).
+
+## 2026-11-19 18:15 — R-46 slipped
+The R-46 reply form was due ~17:00 and has not been started: the span-form timing work (formperf, simdhead, the blockspan design and its critic) took the day. Main asked for status; the reply gave a new target. A design lane starts 08:00 11-20, after 708/709, then a critic round, with the responses.md entry by 14:00 11-20. It is not started tonight because the critic builds would load the box near the 01:00 timing start of 708.
