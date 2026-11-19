@@ -4790,3 +4790,27 @@ with the join candidate staying closed: `"a" + "b"` under digits-then-letters is
 yields nothing or an error is the still-open half of plus-operands. (d) open under the idea, his to settle when it is
 taken up: how the set is attached to an operand or an operator (item 34's restriction; a declaration); the case of a
 RESULT under `i`; what "spans without gaps" excludes; a set with no zero symbol (letters only).
+
+### 2026-11-19 OWNER RULING — plus-operands
+
+His words, verbatim: "literal "a" + "b" is an error because there is no compatible type defined and they are not in
+the default type (if that works). for now, as you say, we are restricting arithmetic to digits and anything else is
+nothing (for runtime compatibility) and a warning if known"
+
+Class: RULING for the second sentence (it answers the remaining half of plus-operands, asked as "plus-operands:
+nothing or plus-operands: error", with "for now"); a DIRECTION, hedged by him ("if that works"), for the first.
+
+The reading taken, and told to him: FOR NOW arithmetic (`+ - * %`) is restricted to the decimal numerals (the ruled
+number domain); an operand that is anything else yields NOTHING, at run time and at compile time alike ("for runtime
+compatibility": the constant case behaves as the run-time case does), and where the compiler KNOWS it (a constant
+operand such as `"a" + "b"` or `"a" + 1`) there is a WARNING, not an error. With the entry "on plus-operands: `+` is
+for numbers only" (join closed), plus-operands is CLOSED; the draft's TYPE ERROR lean (the manager's) is dropped.
+His first sentence is the LATER state: once operand types (ordered symbol sets; ideas file items 34, 35) exist, a
+LITERAL `"a" + "b"` with no compatible type defined, and not in the default type, is an ERROR; not in force now.
+
+The manager's readings, for the lane to test: (a) "a warning if known" is the existing "can never match" diagnostics
+where their wording reaches the case, else a plain warning at the operator (the manager's call, as for `% 0` under
+number-edges; no new rule); (b) the same holds for `-`, `*`, `%` and for an array or class operand member by member
+(`\w + 1`: the digit members give results, the others nothing; whether the warning speaks when only SOME members are
+outside the domain is the manager's call: no, only when the whole result is known to be nothing); (c) joining stays
+the sequence operator's (T10's mark is no longer tied to plus-operands; its spelling is in the spellings review).

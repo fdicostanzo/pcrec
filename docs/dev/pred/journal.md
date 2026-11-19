@@ -144,3 +144,10 @@ Asked plus-operands (as a confirmation). Frank answered with an IDEA, not the sl
 limit / overload arithmetic. Recorded verbatim with the 2026-11-13 typed-parameter entries it meets (intersection as
 the meaning; his "type must equal" lean the other way); ideas file item 34. plus-operands stays OPEN; my reading is
 that his idea is the "nothing" answer. Lane predspec29 still running.
+
+## 2026-11-19 (afternoon) — plus-operands RULED
+After two discussion turns (his ideas: a parameter restricted by `&`; a class as the number base; numbers as strings
+over an ordered symbol set: ideas file items 34, 35), Frank RULED plus-operands: for now arithmetic is digits only,
+anything else is nothing, a warning if known; `+` never joins; a literal mismatch becomes an error once types exist
+(direction). Sent to the running lane predspec29 as R1 in its rulings file (verify in STATE AT HANDOFF). Next
+question: other-holes.
