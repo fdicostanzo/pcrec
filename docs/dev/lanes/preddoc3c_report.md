@@ -14,6 +14,8 @@
 - No `?` piece and no `skeleton: yes` piece is left in library.md, library_details.md, parked.md or parked_details.md.
 - The ratchet file was not edited. The manager lowers it.
 
+OWED: none
+
 ## PIECES CONVERTED
 
 Library: 38 pieces. By status: ruled 15, reading 18, open 2, under-construction 3.
