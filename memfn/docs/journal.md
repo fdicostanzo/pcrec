@@ -4255,3 +4255,6 @@ Main ruled on the four kit findings (D186 add. 2):
 - 09:48 704 GREEN (12 s): identity head 64, 1,092 patterns (cards 17 + census 1,075 covered of 5,516; movers 0) x 2 enc x 2 layers,
   0 differ: frozen 33fec79b3 == relabel 0df533a85. SET 2 COMPLETE (h*=64). Landing waits on Frank's near-miss ruling (main). 706
   (perf profile) running.
+- 09:5x main: the near-miss result does NOT block the landing (H(64) is 1.6-2.8x faster than today; the "loss" is only against the
+  pure loop); main told Frank it is not a ruling item. Main plans the cover-cap joint landing (lane/covs2land + relabel 0df533a85)
+  and sends the plan.
