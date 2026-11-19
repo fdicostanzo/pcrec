@@ -42,3 +42,10 @@
 - Next asked: hole-flags. Pre-check run with libpcre2 (ctypes): a subroutine call to a group defined caseful
   stays caseful under a later `(?i)` (`a-A` fails), a backreference takes the options in force (`a-A` holds): PCRE's
   own two analogues agree with the draft's "as ruled for each"; what is asked is the string constant in a hole.
+- Frank RULED hole-flags (a hole takes the flags in force at the hole; each regex literal has its own flags) and,
+  on his own question, flags-propagate: yes (propagation with override; the draft's NO INHERITED FLAGS reversed).
+  His argument (under one type `"blah"` is a regex, so without propagation the hole's flags reach nothing) refuted
+  my "plain text vs pattern text" split: withdrawn in the record. Rulings gathered for rev 28: hole-reads-capture,
+  number-domain, padded-width, hole-flags, flags-propagate.
+- Next asked: unset-in-hole (ALGEBRA against the EMPTY readings; ALGEBRA equals PCRE on every run of rev 27.1's
+  PART B).
