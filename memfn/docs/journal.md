@@ -4247,3 +4247,8 @@ Main ruled on the four kit findings (D186 add. 2):
   on long near-miss spans (hypothesis: instruction-footprint / op-cache pressure; near-miss = most of the span matches, so every
   attempt walks deep into the unrolled body). Lane formperf (sonnet) writes job 706-kit-fcards-perf (perf stat :u, icache/op-cache,
   IPC, code bytes; C3 hex500/hex1000 near-miss + hit-dense; arms I, h0, h8, h16, h32, h64), queued after 704. Main told.
+- 09:42 relabel64 DELIVERED: lane/memfn-relabel64 @ 0df533a85 (window.c comment-only 9c90d78e9 on 33fec79b3: WF_SPAN_HEAD 64
+  MEASURED, run fcards-zen4-1; make + strict rc 0; lanecheck DONE). Code round sized to a manager review (one comment block, no
+  code). window.vars REBUILT_BUILD=worktrees/relabel64/build (pinned in .wtprune.keep); 704 QUEUED (key kit-fcards-identity),
+  706 kit-fcards-perf queued behind it (lane formperf: profile.py reuses cards.py build_cell/DRIVER; I/h0/h64 exes copied from the
+  run dir; 2 five-event perf passes, refuses multiplexed counts). Keys sent to main.
