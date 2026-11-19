@@ -704,7 +704,7 @@ its trigger (build under measurement, D77).
   opt-in (§6.2); the 11-09 "numbers are captures" against number-names (RULED 2026-11-18).
 - TRIGGER: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
 
-## 33. The array form in a hole, `${@y}`: one of the earlier values (spelling a placeholder; NOT built)
+## 33. The array form in a hole, `${@y}`: one of the earlier values (spelling a placeholder; RULED 2026-11-18: a future direction, not built, NOT DEFINED now; the meaning below is a sketch)
 
 - SOURCE: his question 2026-11-18 ("Can i use @y there and what does that mean?") and his request of that evening
   (COND-FAMILY, "on `${@y}`: a proposal with examples first; otherwise a future direction").

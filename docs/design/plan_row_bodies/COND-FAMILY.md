@@ -4350,3 +4350,13 @@ price column FAILS; a padded `07` FAILS (canonical); FIND-ALL over two tables (`
 THE MANAGER'S READINGS (to be tested if this is ever folded): how the language would WRITE the per-position
 alternation (one binding used in two count holes of one literal: do the holes vary together) is not checked
 against the draft.
+
+**2026-11-18 OWNER RULING — `${@y}` is a future direction: not built, not defined now (Frank, to the predicate
+manager, evening).** After the proposal, the CSV-header answer and "array-in-hole: future" offered as the slug.
+HIS WORDS, in full: "${@y} stays as a future direction item and is not built or defined now".
+RULED: the array form in a hole, `${@y}`, is a FUTURE DIRECTION: not built and NOT DEFINED now. The draft states
+no meaning for it; **array-in-hole** leaves the question list; `predicates_future.md` item 33 holds the idea (its
+"meaning proposed" is the manager's sketch for that day, not a definition). THE MANAGER'S READINGS (mine, to be
+tested): (m1) written today, `${@y}` is the under-construction class of error (a direction acknowledged), not
+"illegal": his standing wording for what is hard and not needed now; (m2) the array form OUTSIDE a hole
+(pass-list-read: "An array of such values is its own type") is untouched by this ruling.
