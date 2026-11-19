@@ -203,7 +203,7 @@ modes: n/a (parked: not in the language)
 
 ### String-level manipulation of an rx, as graph manipulation   [parked/ideas/string-level-rx]   parked 2026-11-19
 `left(rx, 2)`, `\d + 1` on any rx: string operations as graph manipulation (phase two).
-see: core/builtins/left
+see: lib/strings/left
 Trigger: phase two of the predicate build, or the first user program that needs a string function on a non-constant
   rx.
 Source: the ideas file item 30 (its whole text in the details entry).

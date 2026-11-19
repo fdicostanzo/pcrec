@@ -58,6 +58,25 @@ history:
 - (from lib/modifiers/json-quoted) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided"; `module: json` from the draft ("the `json` module keeps `json.string`").
 - 2026-11-19 (lane preddoc4): the piece `lib/modifiers/json-quoted` deleted, its content moved here (review r59 READ-13).
 
+## lib/modifiers/any-case — any_case
+slugs: any-case-body
+rulings:
+- 2026-11-15 "primitive-transforms: I understand why any_case is currently a primitive. I'd like to look for more fundamental ways of reducing that like some option setting primitive that any_case is built on or something else. I am ok with that being a followup." (record: "2026-11-15 RULINGS — tuple compare in the first library; `any_case` stays a primitive for now, a more fundamental basis is a FOLLOW-UP")
+rejected:
+- one "reading primitive" for `any_case` and `json.quoted` ("S matched whole on what the transform reads") — by owner ruling — not adopted (the same entry).
+- `any_case(S) := each(folded, enumerate(S))` over a spelled lowers/uppers table — not taken as the definition (the draft §13; it needs a finite S).
+readings:
+- the candidate body `/(?i:${rx})/` equals the primitive for an argument writing no case flag: `/ho/` 0 / 0 / 0 of 781 texts (`hHoO1`, length <= 4) — SUPPORTED (preddoc3c PART CA; sabotage s17 caught).
+- it differs for an argument writing `(?-i)`: `any_case(/(?-i)ho/)` 3 / 246 / 249 of 781 (the draft's printed counts) — SUPPORTED, reproduced (PART CA).
+- it differs for a NEGATED filter operand: `any_case(/[abAB]{2}/ & !/ab/)` 4 / 168 / 216 of 781 (`aAbB `), the primitive WHOLE `aB` HOLDS / SEARCHED `x aB ab` `aB`@2 / FIND-ALL `ab aB AB` [`ab`@0, `aB`@3, `AB`@6], the body (the `(?i)` reaching `!/ab/`) FAILS / FAILS / [] — SUPPORTED, reproduced (PART CAneg).
+- the primitive's argument is a whole-match role on the CASE-FOLDED reading of the stretch (the manager's LEAN, §2.7) — UNTESTED (no row rests on it).
+- status: held `open any-case-body` by the manager (the brief of lane preddoc3c); the question was never put to the owner.
+evidence: preddoc3c PARTS CA, CAneg; the draft's rev 28 PART AC, rev 28.1 PART FF, rev 29 PART AC, rev 29.1 PART AC.
+history:
+- 2026-11-15: a primitive for now, the basis a follow-up ([PRED-REREAD], the draft §13 O70).
+- 2026-11-18 (rev 28): flags-propagate re-ran the candidate body; rev 28.1: the `(?-i)` difference; rev 29: T-c, equal for plain and positive filter-role arguments; rev 29.1: the negated operand differs; any-case-body named as a gap, not asked.
+- 2026-11-19 (lane preddoc3c): converted, `open any-case-body`.
+
 ## lib/modifiers/limited — limited
 slugs:
 rulings:
@@ -317,6 +336,16 @@ history:
 - 2026-11-15: added (the one anchoring rule); exact ends (rev 13); anchored-in-hole and anchor-warn-scope (rev 14); the tie with `&` (rev 15, warn-in-macro-body).
 - 2026-11-19 (lane preddoc3c): converted.
 
+## lib/search/within — within
+slugs:
+rulings:
+rejected:
+readings:
+- `within(15, of = ...)` appears only in the worked example E-NEAR (the draft §12.7) and §5.1's list of library names; no body, no definition — the conversion's reading: `under-construction`.
+evidence: the draft §12.7.
+history:
+- 2026-11-19 (lane preddoc3c): converted.
+
 ## lib/sets/anything — anything
 slugs: anything-text
 rulings:
@@ -357,6 +386,84 @@ history:
 - 2026-11-15 (rev 15): `left/right/mid` with a body; 2026-11-18 (rev 27.1): renamed.
 - 2026-11-19 (lane preddoc3c): converted.
 
+## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
+slugs:
+rulings:
+- 2026-11-14 "more obscure but valuable" (record: "2026-11-14 RULING — counting occurrences")
+rejected:
+- `occurs.some` and `occurs.all` — by the draft (rev 7's, removed, not aliased; LEAN) — `some(c)` is the one spelling; `all` was retired (all-question).
+- a namespace `label` (`label.exactly(1, ...)`) — by the record — it clashes with element metadata `x.label`.
+readings:
+- the family is RULED as a library (2026-11-14); the name `occurs` ruled in use (the draft §8 STATUS).
+- `NOT some(c)` = `occurs.none(c)`; the every-pass form `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, not re-run here.
+- `count(c)` first, `occurs` the fallback (LEAN); `count()` refused only on budget (RULED) — the core's group questions, which have no core piece yet.
+evidence: the draft §8, §4.3, R.4.
+history:
+- 2026-11-14: agreed as a library family (all, some, none, exactly, at_least, at_most); 2026-11-15 (rev 8): counts only.
+- 2026-11-19 (lane preddoc3c): converted; the heading drops `.some` (withdrawn).
+
+## lib/strings/join — join
+slugs:
+rulings:
+- 2026-11-19 "negated-class-hole: [^${join(c)}]" (record: "2026-11-19 OWNER RULING — negated-class-hole")
+rejected:
+- one class built from all the values of `[^${c}]` (the manager's leaning at negated-class-hole) — by owner ruling — the user writes `join`.
+readings:
+- `[^${join(c)}]`, c := [x, y], is `[^xy]`: WHOLE `ax` FAILS, `ab` HOLDS / `ab`@3 / [`ab`@6] (the record's run) — SUPPORTED (preddoc3c PART JO; sabotage s14, `[^${c}]` with no join read as the alternation of negated classes, caught).
+- "a function from an array to one string, its members in order" — the manager's reading, told to him; `sep` is the draft's §5.3 (LEAN); `join` over a spelled array of PATTERNS is the n-ary sequence (the rx-module note).
+- for a NON-negated class `[${join(c)}]` equals `[${c}]`; a value with several characters is a class member each; `[^${c}]` with two or more values warns, pointing at `join` — the manager's readings (the negated-class-hole entry), UNTESTED here.
+evidence: preddoc3c PART JO.
+history:
+- 2026-11-12/13: `join([name = rx, ...], sep = ...)` in the draft (§5.3); 2026-11-19: his `join(c)` in a negated class.
+- 2026-11-19 (lane preddoc3c): converted.
+
+## lib/strings/left — left
+slugs:
+rulings:
+- 2026-11-18 "left(2) is the leftmost two digits of an rx." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match"")
+rejected:
+readings:
+- built for an rx `enumerate` accepts, under construction otherwise (construction-line, core/values/functions): `left(/foobar|bazqux/, 2)` = `fo|ba` — SUPPORTED (preddoc3c PART LF).
+- string-level manipulation of any rx (`left(/\d+/, 2)`) is parked/ideas/string-level-rx.
+evidence: preddoc3c PART LF; the draft R.1.16 T9.
+history:
+- 2026-11-18: match-is-rx; construction-line.
+- 2026-11-19 (lane preddoc3c): converted.
+
+## lib/strings/strlen — strlen
+slugs:
+rulings:
+- 2026-11-18 "illustrative: length($y) returns the length of the match." (record: "2026-11-18 OWNER, what "under construction" was about")
+rejected:
+readings:
+- `/(?<y>\w+)-${strlen($y)}/`: WHOLE `abc-3` HOLDS / `abc-3`@5 / [`a-1`@0, `abcdefghij-10`@9] (the draft's rev 28 PART CN) — SUPPORTED (preddoc3c PART SL; sabotage s16 caught).
+- the spelling `strlen` is the manager's call 6 (his own word in the padded sketch, "strlen($y-1)"), so the filter `length(S)` keeps its name.
+evidence: preddoc3c PART SL.
+history:
+- 2026-11-18: his `length($y)`; rev 28.1: written `strlen($y)` (the draft's A26).
+- 2026-11-19 (lane preddoc3c): converted.
+
+## lib/strings/upper-start — upperStart
+slugs:
+rulings:
+rejected:
+readings:
+- three mentions in the draft (R.1.16 T9, the spellings list), no definition — the conversion's reading: `under-construction`.
+evidence:
+history:
+- 2026-11-18: his placeholder beside `left(rx, n)` (match-is-rx).
+- 2026-11-19 (lane preddoc3c): converted.
+
+## lib/records/records — records
+slugs:
+rulings:
+rejected:
+readings:
+- the draft §7 (file_text and records; the names placeholders colliding with RECORD, §13 O44) — the draft's text, not run.
+evidence: the draft §7, §12.8 (E-FILE).
+history:
+- 2026-11-19 (lane preddoc3c): converted.
+
 ## lib/records/list-of — list_of
 slugs:
 rulings:
@@ -367,6 +474,26 @@ readings:
 evidence: preddoc3c PART LO.
 history:
 - 2026-11-17 (rev 24.4): defined as form (a), a proposal; separator-label dissolved.
+- 2026-11-19 (lane preddoc3c): converted.
+
+## lib/records/param — param
+slugs:
+rulings:
+rejected:
+readings:
+- a run-time input (the draft §0.3, §11; E-NEAR (b)); what it is: OPEN (the draft §13 O46, no owner slug) — the draft's.
+evidence: the draft §0.3, §12.7.
+history:
+- 2026-11-19 (lane preddoc3c): converted.
+
+## lib/records/file-text — file_text
+slugs:
+rulings:
+rejected:
+readings:
+- the draft §7: a pinned compile-time file; what moves when the file changes is the `sha256` pin (the draft's standing question 3).
+evidence: the draft §7, §12.8.
+history:
 - 2026-11-19 (lane preddoc3c): converted.
 
 ## lib/rx/classes — Character parts: rx.digit, rx.digits, rx.letter, rx.any_of, rx.range, rx.none_of, ...
@@ -419,3 +546,15 @@ readings:
 evidence: preddoc3c PART CP.
 history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
+
+## lib/structural/each — each, each_group, where_group
+slugs:
+rulings:
+- 2026-11-15 "Agree with mapping" (record: "2026-11-14 RULINGS on rev 3's contradictions")
+rejected:
+- the ordinal as "the second argument when the macro takes one" (rev 9) — by review r10 CENSUS-15 — a two-parameter macro's slot 2 had two claimants.
+readings:
+- §5.3's rules (the draft's LEAN; mapping a filter by a section RULED): fenced compile-time tools over spelled arrays — not run (no subject).
+evidence: the draft §5.3.
+history:
+- 2026-11-19 (lane preddoc3c): a new piece (census rows `each`, `each_group`, `where`).

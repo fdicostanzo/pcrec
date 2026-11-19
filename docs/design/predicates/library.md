@@ -1,10 +1,11 @@
 # The predicate language: the provided names (base file, library)
 
-One piece per name the language provides as a library definition (a macro or function whose BODY is written in the
-core language), by kind; a provided name that is primitive is a core piece (`core.md`, section `core/builtins`). Ideas
-not in the language are `parked.md`. Details per tag: `library_details.md`. Every name is a placeholder spelling.
-Names an example program binds with `:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have
-no piece. Names the worked examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned
+One piece per name the language PROVIDES, wherever it comes from: every name written as a call `x(...)` or a module
+member `m.x(...)`, by kind. Each piece says how the name is defined: `defined: language` (a body written in the language,
+stated and run) or `defined: native (<why no body exists>)` (support outside the language). The core (`core.md`) holds
+the syntax and meaning that is not a name and refers here as needed. Ideas not in the language are `parked.md`.
+Details per tag: `library_details.md`. Every name is a placeholder spelling. Names an example program binds with
+`:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. Names the worked examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned
 content of the standard library (core/modules/standard-library).
 
 ## Modifiers   [lib/modifiers]
@@ -39,6 +40,18 @@ module: ?
   on `"ab"`; the plain splice `/"(?:${S})"/` would never match it (its `^` would read the stretch before the quote).
 - A quoted text holding an escaped quote is not covered by this body.
 WHOLE `"ab"` HOLDS, `"ba"` FAILS / SEARCHED `x "ab"` `"ab"`@2 / FIND-ALL `"a" "b" "ax"` [`"a"`@0, `"ax"`@8] (`quoted(/^a\w*/)`)
+
+### any_case   [lib/modifiers/any-case]   open any-case-body 2026-11-19
+Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay the primitive (a string equal, up to letter case, to a member of rx)?
+needs: core/holes/flags core/filters/and
+module: ?
+- Today (ruled): `any_case` is a PRIMITIVE for now; a more fundamental basis is a follow-up.
+- The standing reading: under the flags rulings the body equals the primitive in every mode except (1) for an
+  argument writing its own `(?-i)` (its own flag wins) and (2) for a NEGATED filter operand in the argument
+  (`any_case(/[abAB]{2}/ & !/ab/)`), where the `(?i)` reaches the negated side.
+- Candidates: (a) the body is the definition, those two arguments its stated behaviour; (b) the primitive stays,
+  the body a lowering where it agrees.
+WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho`@0, `HO`@3] (the candidate body on `any_case("ho")`, `(?i:ho)`)
 
 ### limited   [lib/modifiers/limited]   under-construction 2026-11-19
 `limited(rx, n)` is a length limit the owner wants as a macro, composed either way round with `padded`; it is not defined.
@@ -218,6 +231,14 @@ module: ?
   fires there.
 WHOLE `a` HOLDS, `ab` FAILS / SEARCHED `ab` FAILS / FIND-ALL `b` [`b`@0] (`anchored(/a|b/)` is `\A(?:a|b)\z`)
 
+### within   [lib/search/within]   under-construction 2026-11-19
+`within(n, of = d)` (a placeholder) is a date within n days of a date d; the worked example names it and nothing defines it.
+module: ?
+- Its use: `isodate & within(15, of = c)` with c a compile-time date, and `within(15, of = ref)` with
+  `ref := param(isodate)` (a run-time input).
+- A day difference is a function of the fields, out of reach of a set written in the language: a computed label
+  or a blessed callout.
+
 ## Sets   [lib/sets]
 
 ### anything   [lib/sets/anything]   ruled 2026-11-19
@@ -245,10 +266,68 @@ module: ?
 - `suffix_in(n, S)` and `slice_in(i, n, S)` alike; positions are characters per the encoding mode; out of range is
   not stated.
 - A PREIMAGE filter: `prefix_in(2, "Columbus")` never holds (no 2-character member), while his `left(rx, n)` is an
-  IMAGE (core/builtins/left).
+  IMAGE (lib/strings/left).
 WHOLE `xyz` HOLDS, `abc` FAILS / SEARCHED `abxyq` `xyq`@2 / FIND-ALL `xy ab` [`xy ab`@0] (`prefix_in(2, /abc|xy/)`)
 
+## Counting   [lib/counting]
+
+### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-14
+The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
+module: occurs
+- Primitive: a count over the passes of a loop; no body in the core language writes it. A capped counter
+  (n + 2 states) multiplied in.
+- `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`); one record is
+  one pass; n is a constant or a caller parameter.
+- These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form.
+- The module is reached by `occurs := import("occurs")`.
+modes: n/a (a count over a loop's pass table; no example of the draft is printed in the three modes)
+
+## Strings   [lib/strings]
+
+### join   [lib/strings/join]   reading 2026-11-19
+`join(a, sep = s)` is one value: the members of a finite array in their order, s between them; with no `sep`, nothing between.
+needs: core/arrays/enumerate core/holes/class
+module: ?
+- Primitive: a function over an array's members; the core language has no body that walks an array.
+- "None of these" is written with it: `[^${join(c)}]`, c := [x, y], is `[^xy]` (several values in `[^${c}]` stay
+  the alternation of the class).
+- Joined parts stay reachable by their labels (`c.A`). Ordered, fixed: `join`; ordered, repeated: `list_of`.
+WHOLE `ax` FAILS, `ab` HOLDS / SEARCHED `ax ab` `ab`@3 / FIND-ALL `ax ay ab` [`ab`@6] (`/a[^${join(c)}]/`, c := [x, y], is `a[^xy]`)
+
+### left   [lib/strings/left]   reading 2026-11-19
+`left(rx, n)` is the IMAGE: the first n characters of each string of rx, applied to each enumerated string in enumerate's order.
+needs: core/values/functions core/arrays/enumerate
+module: ?
+- Primitive: a string function; the core language has no slicing.
+- Built for an rx `enumerate` accepts (`left(/foobar|bazqux/, 2)` is `fo|ba`); on any other rx (`left(/\d+/, 2)`)
+  it is under construction.
+- Characters or bytes is not settled (his "(Byte ideally)").
+WHOLE `fo` HOLDS, `foo` FAILS / SEARCHED `xba` `ba`@1 / FIND-ALL `fo ba` [`fo`@0, `ba`@3] (`left(/foobar|bazqux/, 2)` is `fo|ba`)
+
+### strlen   [lib/strings/strlen]   reading 2026-11-19
+`strlen(rx)` is the length of each enumerated string of rx, a canonical numeral: his `length($y)`, the length of the match.
+needs: core/values/functions core/holes/value core/values/number-domain
+module: ?
+- Primitive: a string function. On a read it is computed at run time.
+- The spelling `strlen` keeps the filter `length(S)` (a preimage) apart from this image.
+WHOLE `abc-3` HOLDS / SEARCHED `ab-3 abc-3` `abc-3`@5 / FIND-ALL `a-1 ab-3 abcdefghij-10` [`a-1`@0, `abcdefghij-10`@9] (`/(?<y>\w+)-${strlen($y)}/`)
+
+### upperStart   [lib/strings/upper-start]   under-construction 2026-11-19
+`upperStart(rx)` is his placeholder for a string function of the `left` kind; nothing defines what it returns.
+see: lib/strings/left
+module: ?
+- It falls under the rule of single-value functions (core/values/functions) once defined.
+
 ## Records   [lib/records]
+
+### records   [lib/records/records]   reading 2026-11-19
+`records(text, rx)` is an rx whose array has one item per compile-time match of the item rx over a compile-time text.
+needs: core/arrays/enumerate
+module: ?
+- Primitive: a compile-time search over a text. The item rx is SEARCHED in the text (its `^`/`$` read the text);
+  each item is the item rx narrowed to that one match, its labels reachable by the map interface (`r.word`).
+- The names are placeholders.
+modes: n/a (a compile-time tool over a file's text; it builds an array, it matches no subject)
 
 ### list_of   [lib/records/list-of]   reading 2026-11-19
 `list_of(X, sep = S)` is the separated list `/(?:${X}${S})*${X}/`: its label is the last item, its array every item.
@@ -258,6 +337,19 @@ module: ?
   the loop would leave the label unset on one item).
 - Its minimum (zero items) is not stated.
 WHOLE `7,3,5` HOLDS (5) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`)
+
+### param   [lib/records/param]   reading 2026-11-19
+`param(rx)` is a run-time input: an rx whose string the caller fixes per match, read-only, validated against rx.
+module: ?
+- Primitive: the caller supplies it (`limit := param(/\d{1,4}/)`, `ref := param(isodate)`).
+- What kind of value it is and how it is passed are not settled.
+modes: n/a (a caller's input; no subject example)
+
+### file_text   [lib/records/file-text]   reading 2026-11-19
+`file_text(path, sha256 = ...)` is the whole file as one compile-time string, pinned by its hash.
+module: ?
+- Primitive: it reads a file at compile time. Used with `records` (`records(file_text("w.txt", sha256 = ...), lines)`).
+modes: n/a (a compile-time string; it matches no subject)
 
 ## The rx parts   [lib/rx]
 
@@ -291,7 +383,7 @@ WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12
 
 ## Structural   [lib/structural]
 
-The macro that names a capture.
+The compile-time tools over spelled arrays and the macro that names a capture.
 
 ### capture   [lib/structural/capture]   reading 2026-11-19
 `capture(x)` names a capture after its argument: `capture(x) := /(?<${x.label}>${x})/`, the hole in a group-name position.
@@ -300,3 +392,13 @@ module: ?
 - A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture.
 - With `each`: `join(each(capture, a), sep = ".")`.
 WHOLE `12` HOLDS (12) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture(x)`, x := `[d = /\d+/]`)
+
+### each, each_group, where_group   [lib/structural/each]   reading 2026-11-19
+`each(f, A)` applies a macro or filter f to every entry of a spelled array A, keeping labels and order; several arrays zip by position.
+needs: core/arrays/enumerate core/operators/bindings
+module: ?
+- Primitive: compile-time structural tools over spelled arrays, never over a loop's passes.
+- f is a macro whose parameters the entries fill, or a filter passed as a section (`each((& isodate), dates)`).
+- `each_group` zips by label; `where_group` and `each_group` return an rx (an array in group order).
+- An ordinal is passed by name (`ordinal = "i"`, starting at `start =`, default 1).
+modes: n/a (compile-time tools that build an rx from arrays)
