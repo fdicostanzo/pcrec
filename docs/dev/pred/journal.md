@@ -30,3 +30,9 @@
   answering covers docs/design/plan_row_bodies/, not COND-FAMILY.md alone.
 - Next asked: number-domain (the record's 2026-11-15 confirmation, "numeric ranges are string sets; padding is an
   explicit transform", answers the comparison half; the arithmetic half is what is asked).
+- Frank RULED number-domain: canonical. On the way: his suggestion "cant we wrap padded($y + 1)" and his idea
+  `padded($y + 1, 4)` / `padded($y + 1, length = 4, pad = "0")` (both recorded, not ruled). Runs: scratch models
+  `$PCREC_TMPDIR/scratch/pred/padwrap.py`, `padwidth.py` (to be re-made as evidence by the rev 28 lane; padwrap's
+  `& /\d{n}/` uses a lookahead approximation, exact only for the subjects printed). numeral-width read as moot (m1).
+- Next asked: padded-width (exact or minimum). Rulings gathered for rev 28 so far: hole-reads-capture,
+  number-domain.
