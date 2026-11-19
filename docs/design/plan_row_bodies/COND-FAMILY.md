@@ -4607,3 +4607,19 @@ different strings never both match at one position; RUN for `\d + 1`, 20 shuffle
 when the same lift holds TWO classes (`\d + \d`, `\d\d + 1`) and when a class sits under a quantifier (`\d{1,2} + 1`):
 NOT covered by his words; if the readings part, it is asked; (d) results that are equal strings from different members
 (`\d * 0`) are one result.
+
+### 2026-11-19 OWNER RULING — dollar-diagnostic (the form gets a warning)
+
+His words, verbatim: "i don't want to spend too much time on the warning. the form $x & .. should just get a warning"
+
+Class: RULING (it answers the question dollar-diagnostic, with an answer outside the two offered).
+
+The reading taken, and told to him: the form `$x & S` (a read filtered by a set) gets a WARNING keyed on the FORM,
+pointing at `(x: S)`; the proposal "for emptiness diagnostics a read stands for its group's rx" is DROPPED (no §5.2
+wording change); the manager's withdrawal of the dedicated warning (2026-11-18, "dollar-warning", on his question "is
+it still needed?") is REVERSED by this ruling. `$x & S` stays LEGAL and keeps its meaning (match-is-rx).
+
+The manager's readings, for the next lane to test, and the manager's to settle as detail (he does not want time spent
+here): (a) the warning fires wherever the form is written, including where it is right (`/(?<x>\d+)/ & ($x & <5)`
+equals `(x: <5)` on 0 / 0 / 0 of 364, so the suggestion is harmless there); (b) it is a warning, never an error;
+(c) whether it can be silenced, and its wording, are the manager's call.
