@@ -20,21 +20,30 @@ piece_text() below, so this module is the ONE parser. This file has no reader co
 Readings the spec leaves open (the stricter was taken):
   - the "listed shared" of L9 is a line `shared: <slug> ...` before the first entry of any details file;
   - the statement is the first non-blank line after a piece's heading; it must not be a metadata line;
-  - a `rulings:` item is a line starting `-`; its `(record: "<title>")` must be on that line;
-  - a fence is ``` or ~~~ closed only by the same mark; an unterminated fence is a failure (L2 base, L3 details).
+  - a `rulings:` item is a line starting `-` and runs over its continuation lines; its `(record: "<title>")` may be on
+    any of them (the cited title is the text to the LAST `")` of the item);
+  - a fence is ``` or ~~~ closed only by the same mark; an unterminated fence is a failure (L2 base, L3 details);
+  - a FIELD-LOOKING line (a field name, any case, any indent, blanks before the colon; outside a fence) must be a known
+    field, spelled exactly, in the place that field lives, or it fails (L2 base, L3/L12/L2 details; `was:`/`formerly:`
+    anywhere in a base file is L6);
+  - one status per piece, so a principle piece needs ONE `(class: ...)` item (not every item).
 
-Where the post-pilot changes (doc_format.md, its last two sub-sections) are checked, by rule:
+The checks of doc_format.md's sections "What the lint checks beyond the rule sentences" and "The post-pilot changes", by rule:
   L1  a details `was:` tag equals no live tag and is retired under one entry only;
-  L2  a tag's path equals its file and section, always; `was: <tag> (<date>, <why>)` and
-      `formerly: <module.name> (<date>, <why>)` grammar (module an identifier or `?`);
-  L4  status `principle` only under core/principles/; a `principle` piece, as a `ruled` one, has a rulings item;
+  L2  a tag's path equals its file and section, always; a fourth tag word has its parent piece earlier in the file;
+      `was: <tag> (<date>, <why>)` and `formerly: <module>.<name> (<date>, <why>)` grammar (module the L12 grammar or
+      `?`; the name the last dotted word, an identifier);
+  L4  status `principle` only under core/principles/; a `principle` piece, as a `ruled` one, has a rulings item, and a
+      principle piece has an item naming `(class: <word>)`;
   L5  every `see:` tag exists in ANY file (forward allowed; pilot mode's skip rule as `needs:`), never the piece itself;
-  L6  a `was:` line in a BASE file (history);
-  L8  `skeleton: yes` exempts a piece from L8 (the value is `yes`, never on a `?` piece); the old marker
-      `modes: n/a (skeleton ...)` fails;
+      every tag on a `tags:` line of the record (docs/design/plan_row_bodies/COND-FAMILY.md) is a live piece, a section
+      or a previous tag;
+  L6  a `was:` or `formerly:` line in a BASE file, anywhere;
+  L8  `skeleton: yes` (once) exempts a piece from L8 (the value is `yes`, never on a `?` piece); the old marker
+      `modes: n/a (skeleton ...)` (any case or blanks) fails;
   L10 the ratchet has a row `<word>-skeleton` per file beside the `?` row; both only shrink;
   L12 (library fields) `module: <dotted lower-case name>|?` exactly once on every non-`?` library piece;
-      `module:` and `default:` only in the library file; `default:`'s one value is `yes`.
+      `module:` and `default:` only on a library piece (never in a details file); `default:` once, its value `yes`.
 """
 import argparse
 import datetime
@@ -923,9 +932,9 @@ for _f, (_v, _file, _anchor) in FIELD_LINES.items():
         GENERATED.append(("L2", "%s: %s in a piece body" % (_f, _kind),
                           lambda r, sp=_spell, v=_v, fl=_file, an=_anchor: after(r, fl, an, "%s %s" % (sp, v))))
 for _f in ("was", "formerly"):
-    _val = "core/holes/old (2026-11-03, moved)" if _f == "was" else "text.pad (2026-11-03, x)"
-    GENERATED.append(("L6", "%s: in a section preamble of a base file" % _f,
-                      lambda r, f=_f, v=_val: after(r, CB, "## Holes   [core/holes]", "%s: %s" % (f, v))))
+    _val = "core/holes/old (2026-11-02, moved)" if _f == "was" else "text.pad (2026-11-02, x)"  # the status date of lib/names/padded
+    GENERATED.append(("L6", "%s: in a section preamble of a base file (no date to catch it)" % _f,
+                      lambda r, f=_f: after(r, CB, "## Holes   [core/holes]", "%s: %s" % (f, "core/other" if f == "was" else "text.pad"))))
     GENERATED.append(("L6", "%s: in a piece body of a base file" % _f,
                       lambda r, f=_f, v=_val: after(r, LB, "module: text", "%s: %s" % (f, v))))
     GENERATED.append(("L6", "%s: capitalised in a base file" % _f,
