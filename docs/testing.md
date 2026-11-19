@@ -1071,7 +1071,7 @@ on a push of `cloud/OWNER/KIND/NAME`). Its plan job reads the kind from `tests/c
 run `make test-shard CISHARD=K/17` over the declared table `tests/ci/cloud_test_shards.tsv`; its gather job builds
 the ONE verdict (green only if every expected shard reported rc 0; a missing/timed-out shard is red by name).
 Expected wall ~18 min per push (the old 3-shard form: 52-68 min); the per-shard limit is the kinds table's `limit_min`
-(35). The table is held to `TEST_SECTIONS` exactly by `make test-ci-shards` (a `TEST_SECTIONS` member; a new section
+(50; was 35 until 2026-11-19, when the cover-cap line grew the window family and shard 1 = test-memfn-g2 alone ran 23-36+ min by runner CPU). The table is held to `TEST_SECTIONS` exactly by `make test-ci-shards` (a `TEST_SECTIONS` member; a new section
 with no row turns it red, so it can never silently not run in CI) and by `make cloud-check`. Per-run knobs come from
 the call's inputs (`kind`, `owner` default `ci`, `name`, `ref`). Forks: a `pull_request` from a fork runs the same
 workflows with no secrets (none are used; the default read-only token uploads artifacts). A superseded run of a PR/main
