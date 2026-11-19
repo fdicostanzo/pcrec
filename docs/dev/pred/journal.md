@@ -340,3 +340,21 @@ Owner questions now open in the documents: any-case-body, bare-condition-labels,
 class-positions, default-set, group-truth, hole-export, not-test, number-in-loop; named by lanes, not pieces:
 condition-group, export-choice, limited (at most / exactly), between's body, list_of, param, within, upperStart.
 WAITING on: main's review number; then one opus critic coordinator (design mode, completeness lens).
+
+## 2026-11-19 (late night) — review r59: NOT ready; my tuple statement wrong a second time; fix lane preddoc4 launched
+
+r59 (main's number; five critics; draft committed c331717a6): examples 92 run, 0 differ, but: rulings 144
+expected / 27 missing; slugs 188 / 49 unhomed + 10 misplaced; provided names 98 / 27 missing; rejected candidates
+100 / 25 missing; core primitives with no piece (comparisons, some/every/count, tuples, computed labels, .index /
+.label, assert); three definitions of `0`; negation undefined in places; 11 primitive pieces in the library;
+core.md does not read front to back. Verdict: not ready as the wake base. ALL proposed dispositions accepted.
+MY ERRORS: (1) my withdrawal of statement 7 stopped one record entry short: his "Yes" on taking a tuple apart was
+REOPENED eight minutes later ("Nothing is set in stone"); the question is the draft's open tuple-parts. Record
+corrected again, piece rewritten `open tuple-parts`, to be told to him. (2) the padded width body I wrote and he
+agreed to has `n` outside a hole (`{n,}` is literal text); corrected to count holes in the record; answers
+unchanged. LESSONS: read the SAME-DAY entries after any entry cited as confirmed; an evidence model must build the
+regex from the body's TEXT, not its intent (three rounds missed the padded slip that way).
+PLAN: lane preddoc4 (opus, launched, watcher armed): the design-bearing findings (sections C, D, RULING-n;
+primitives move to a new core/builtins; missing primitives added; READ-18 stage 1). THEN lane preddoc5: the
+mechanical lists from the critics' appendices (citations, slugs, rejected, names). THEN a re-check round (ask main
+for a number), file r59, deliver. Not delivered to main since P-10. WAITING on: preddoc4.
