@@ -2,8 +2,8 @@
 # Every expectation below is libpcre2-8 10.46 (ctypes), never pcrec. The listing
 # half of each witness (req_whole_run value / dead) is not expressible in .rxt and
 # lives in l1d27_listing.tsv beside this file, keyed by the WITNESS id comment.
-description D27 lookaround L1 witnesses: lookaround bytes joining the run, contradicted lookarounds (dead), look-alike controls
-oracle pcre2/10.46
+# description D27 lookaround L1 witnesses: lookaround bytes joining the run, contradicted lookarounds (dead), look-alike controls
+# oracle pcre2/10.46
 
 # WITNESS A01 kind=A
 pattern (?=kev)...

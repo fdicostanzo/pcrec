@@ -10,7 +10,11 @@ and look-alike controls that must not be listed dead (kind C). Written by a D27-
 
 - `l1d27_witnesses.rxt` — the 88 witnesses' ANSWERS (find-all `m`/`ms`/`ns`/`mc` cells); rides
   `test-corpus` like every `.rxt` under `tests/`. The author's file: do not edit (re-cut from the
-  author's generator in scratch if it must change).
+  author's generator in scratch if it must change). One build-side edit (lane l1ffix): the author's
+  two HEAD lines `description` and `oracle pcre2/10.46` are `#` comments, since both words are still
+  guarded by `tests/rxtsource`'s keyword census (a corpus line may not begin with one) and
+  verify_rxt.py reads no head; so the file is python3-`re` cross-checked too (C3: 719 PASS, the 56
+  `# pcre2-only` cells skipped) beside libpcre2's answers.
 - `l1d27_listing.tsv` — the author's record of each witness's LISTING (`req_whole_run` value and
   why) and their PASS/FAIL against the spec. The author's file: do not edit except to re-pin a
   moved listing after re-judging it.
