@@ -5255,3 +5255,55 @@ order NEITHER body equals fill (ruled 0 / 168 / 168, dropped 0 / 2,520 / 2,520).
 does not rest on either count. Draft = REVISION 29.1, the LAST revision in the old shape; the rulings since its
 fold (other-holes, the option hole, negated-class-hole, anything-text, zero-in-sequence, the bare condition in a
 hole) and the lane's list of nine draft sentences they contradict go into the reorganized documents.
+
+### 2026-11-19 OWNER, after reading the pilot documents (doc-shape): macros live in the library; a default-imported set; importing symbols; moving and renaming; a directory
+tags: core/conditional/peek core/conditional/when lib/modifiers/padded core/principles/language-over-macros
+
+Asked **doc-shape** ("read the Principles and Holes sections of `docs/design/predicates.md` ... and tell me whether
+this is the shape"). HIS WORDS, whole:
+
+"i've read through the documents: 1. i recommend that core document macros be defined in the library unless they are
+primitive. the core can reference the library for, for example, peek(), but the definition details should be tracked
+there. there is nothing particular about peek() other than its a useful transform. 2. there can be a special
+imported by default set which includes peek(). 3. (aside: we need to discuss a way to import symbols into the space
+so that everything isn't sys.peek(). my instinct is a (left,right) := import("blah", /left|right/) 4. the library
+sections for various elements include the name and module of the element. this is fine, however we need a standard
+way to move and/or rename the functions so some sort of previous_tags|replacement_tag field in history. 5. suggest
+files placed in docs/design/predicates/ as docs/design has a bunch of files."
+
+Class, item by item:
+1. A RECOMMENDATION on the documents' form (the form is the manager's by his delegation, "keep, modify, or reject";
+   ADOPTED), carrying an OBSERVATION about the language: "there is nothing particular about peek() other than its a
+   useful transform". The earlier record agrees ("The library is a PRELUDE OF MACROS written in the predicate
+   language", 2026-11-13).
+2. A LEAN about the language ("there can be"): a default-imported set, `peek()` in it. Not asked as a question; not
+   a ruling. Which other names are in the set is NOT stated.
+3. An ASIDE and an IDEA, to be DISCUSSED ("we need to discuss"): importing chosen symbols into the bare space, so a
+   call is not `sys.peek()`; "my instinct": `(left,right) := import("blah", /left|right/)`. Spelling is a
+   placeholder. `sys` as a module name is his example, not a ruling. Earlier record on the same ground: 2026-11-13
+   `d := import("isodate")`; 2026-11-14 "import/export as functions" (import returns a namespace, a map; "its
+   argument is a set of names (an rx ...)"; the lean `import weekday as wd` for clashes). New here: SEVERAL names
+   bound at once into the bare space, chosen by an rx. Queued as the owner question **import-symbols**.
+4. A REQUEST on the documents' form: a standard way to move or rename a function, with a previous-tags /
+   replacement-tag field in the history. ADOPTED (the manager's design below).
+5. A SUGGESTION on the documents' form: the files under `docs/design/predicates/`. ADOPTED.
+
+The reading taken: he read the pilot and answered with changes to it and no objection to its shape, so
+**doc-shape is read as ANSWERED: this shape, with these five changes**; the conversion of the remaining sections
+goes ahead in the changed shape. If that reading is wrong he says so.
+
+THE MANAGER'S DESIGN for 1, 4 and 5 (form, the manager's call; `docs/dev/pred/doc_format.md` carries it):
+- A piece whose definition is a BODY written in the core language is a LIBRARY piece; the core keeps only
+  primitives. A core piece may point at a library name with a `see:` line (a forward pointer; `needs:` stays
+  strictly backward, so the core still reads whole without the library).
+- The manager's reading, FOR THE LANE TO TEST: `peek` and `when` (with the test of a conditional) each have a body
+  in the core language that reproduces every ruled example in all three modes, so both move to the library; if a
+  body does not reproduce a ruled example, that piece stays core and the run comes back.
+- A library piece states `module:` and, for the default-imported set, `default: yes` (today: `peek` only, by his
+  words; the rest of the set is a question for him, **default-set**, not asked now).
+- A tag MAY be renamed or moved. The details entry carries `was: <previous tag> (<date>, <why>)`, one line per
+  previous tag; a retired tag is never reused; the reader resolves a previous tag to its current piece, which is
+  the replacement pointer. A function's NAME or MODULE change is recorded the same way (`formerly: <module.name>`).
+- The six files move to `docs/design/predicates/` as `core.md`, `core_details.md`, `library.md`,
+  `library_details.md`, `parked.md`, `parked_details.md`. The frozen draft, the ideas file and this record stay
+  where they are (hundreds of evidence and review pointers name those paths).

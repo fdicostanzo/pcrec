@@ -120,6 +120,24 @@ statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by s
   position (`core/holes/zero-values/<position>`).
 - The date of a `?` or `skeleton` piece is its conversion date.
 
+### Changes after the owner read the pilot (COND-FAMILY "2026-11-19 OWNER, after reading the pilot documents"; lint not yet changed)
+
+- DIRECTORY: the six files live in `docs/design/predicates/` as `core.md`, `core_details.md`, `library.md`,
+  `library_details.md`, `parked.md`, `parked_details.md` (his suggestion 5). This supersedes the paths in the table
+  above. The record, the frozen draft and the ideas file do not move.
+- CORE HOLDS PRIMITIVES ONLY (his recommendation 1): a piece whose definition is a BODY written in the core language
+  is a LIBRARY piece ("there is nothing particular about peek() other than its a useful transform"). A core piece
+  points at a library name with a line `see: <tag> ...`: the tag must exist, in ANY file; it is not an ordering
+  claim. `needs:` stays strictly backward (L5 unchanged), so the core reads whole without the library.
+- A LIBRARY piece carries `module: <name>` (or `module: ?` while not stated) and, for a member of the
+  default-imported set, `default: yes` (his lean 2; `peek` today).
+- MOVE AND RENAME (his request 4): a tag MAY change. The details entry carries one line per previous tag,
+  `was: <previous tag> (<date>, <why>)`; a function whose name or module changed carries
+  `formerly: <module.name> (<date>, <why>)`. Lint: a `was:` tag has the tag grammar, equals no live tag and appears
+  under one entry only (a retired tag is never reused); the base heading may NOT carry a `was:` line any more (it
+  is history). Reader: `scripts/entry <previous tag>` resolves to the current piece and says so. This replaces
+  "Tags are never renamed" above.
+
 ## Migration (after revision 29.1)
 
 1. PILOT: the skeleton of all three base files (every section and tag with its status and statement, `?` where not yet
