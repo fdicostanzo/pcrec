@@ -1,7 +1,8 @@
 # The predicate documents: base + details, linked by tags (the format)
 
 STATUS: PILOTED 2026-11-19 (lane preddoc1: the skeleton, `core/principles` and `core/holes` in full; lint clean,
-1,828 checks). PROPOSED by the predicate manager 2026-11-19 on the owner's request and delegation (COND-FAMILY, "housekeeping:
+1,828 checks); the owner's five changes and the post-pilot changes APPLIED 2026-11-19 (lane preddoc2: the files in
+`docs/design/predicates/`, the macros `peek`, `when` and `repeat` moved to the library; lint L1-L12). PROPOSED by the predicate manager 2026-11-19 on the owner's request and delegation (COND-FAMILY, "housekeeping:
 organize the predicate documentation" and its two addenda: "keep, modify, or reject these instructions as you reason
 it better"). Not built: the pilot (the skeleton and the holes section) follows revision 29.1. Modelled on the tracker
 pair ([DOC-INDEX], D192, `docs/dev/doc_format.md`); the facts it rests on are in the census
@@ -23,9 +24,9 @@ reason field).
 
 | base (current definition) | details (history, reasoning) | holds |
 |---|---|---|
-| `docs/design/predicates.md` | `predicates_details.md` | section `principles` first (his method), then the core language |
-| `docs/design/predicates_library.md` | `predicates_library_details.md` | every PROVIDED name: a body in the core language, or "primitive" |
-| `docs/design/predicates_parked.md` | `predicates_parked_details.md` | ideas and directions not in the language, each with a trigger |
+| `docs/design/predicates/core.md` | `core_details.md` | section `principles` first (his method), then the core language: primitives only |
+| `docs/design/predicates/library.md` | `library_details.md` | every PROVIDED name: a body in the core language, or "primitive" |
+| `docs/design/predicates/parked.md` | `parked_details.md` | ideas and directions not in the language, each with a trigger |
 
 Not converted, on purpose (the tracker design's own rule: an append-only raw log keeps its shape):
 `docs/design/plan_row_bodies/COND-FAMILY.md` stays THE RECORD, one chronological log, the only source of rulings; each

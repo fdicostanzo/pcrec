@@ -1,6 +1,6 @@
 # The predicate language: details (parked)
 
-One entry per tag of `predicates_parked.md`, in the same order. `history:` names the ideas-file item (the
+One entry per tag of `parked.md`, in the same order. `history:` names the ideas-file item (the
 source, the sketch and the trigger are there).
 
 ## parked/ideas/first-rest — First/rest binding with recursion

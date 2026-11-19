@@ -1,9 +1,9 @@
 # The predicate language: the provided names (base file, library)
 
 One piece per name the language provides as a library definition (a macro or function written in the language
-itself), by kind. The core is `predicates.md`; ideas not in the language are `predicates_parked.md`. Details per
-tag: `predicates_library_details.md`. Every name is a placeholder spelling. A `?` piece is not yet converted from
-`predicates_draft.md`, which stays its source. Worked-example bindings of the draft (`isodate`, `weekday_of`,
+itself), by kind. The core is `core.md`; ideas not in the language are `parked.md`. Details per
+tag: `library_details.md`. Every name is a placeholder spelling. A `?` piece is not yet converted from
+`docs/design/predicates_draft.md`, which stays its source. Worked-example bindings of the draft (`isodate`, `weekday_of`,
 `days_in`, `luhn`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece.
 
 ## Modifiers   [lib/modifiers]

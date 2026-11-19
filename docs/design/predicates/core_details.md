@@ -1,6 +1,6 @@
 # The predicate language: details (core)
 
-One entry per tag of `predicates.md`, in the same order: the question slugs asked about the piece, the owner's
+One entry per tag of `core.md`, in the same order: the question slugs asked about the piece, the owner's
 rulings verbatim with their record entry, the candidates not taken and why, the readings with their state, the
 evidence, and the history. The record is `docs/design/plan_row_bodies/COND-FAMILY.md` (the only source of
 rulings); the frozen source of every skeleton piece is `docs/design/predicates_draft.md` revision 29.1 (cited "the

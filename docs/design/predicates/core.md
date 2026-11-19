@@ -2,13 +2,13 @@
 
 The pure current definition of the predicate language ([COND-FAMILY]; DESIGN ONLY), one piece per tag. Read it
 whole, or scan the heading and statement lines. Every piece's rulings, rejected candidates, readings, evidence and
-history are in `predicates_details.md` under the same tag; the owner's words are in the record
+history are in `core_details.md` (this directory) under the same tag; the owner's words are in the record
 (`docs/design/plan_row_bodies/COND-FAMILY.md`). Format: `docs/dev/pred/doc_format.md`. Then read
-`predicates_library.md` (the provided names) and `predicates_parked.md` (ideas, not in the language).
+`library.md` (the provided names) and `parked.md` (ideas, not in the language).
 
 Status words: `ruled` (the owner ruled it), `reading` (the draft's or the manager's, not ruled), `open <slug>` (a
 question for him: the body is a reading or a summary, with the candidates), `under-construction`, `?` (not yet
-converted from `predicates_draft.md`, which stays the source until its section is converted). Every spelling is a
+converted from `docs/design/predicates_draft.md`, which stays the source until its section is converted). Every spelling is a
 placeholder (`core/spellings/placeholders`). Examples are run: WHOLE (the whole value), SEARCHED (the first match),
 FIND-ALL (every match, again from the end).
 

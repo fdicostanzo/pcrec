@@ -1,6 +1,6 @@
 # The predicate language: details (library)
 
-One entry per tag of `predicates_library.md`, in the same order (fields as in `predicates_details.md`). The record
+One entry per tag of `library.md`, in the same order (fields as in `core_details.md`). The record
 is `docs/design/plan_row_bodies/COND-FAMILY.md`; a skeleton entry's source is `predicates_draft.md` revision 29.1.
 
 ## lib/modifiers/padded — padded

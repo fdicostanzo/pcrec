@@ -15,8 +15,9 @@ of the owner's words, the only source of rulings), `docs/design/predicates_futur
   main). Requests, review numbers, and any predicate remark the owner made to main, verbatim.
 - `to_main.md` — predicate manager -> main. ONE writer: the predicate manager (single-file `[pred]`
   commits on its branch). `done:` lines, plan-row status to record, decision text to file.
-- `doc_format.md` — the PROPOSED format of the predicate documents (base + details files linked by path tags
-  with a status; the lint rules asked of main); the owner's request of 2026-11-19. Not built until its pilot.
+- `doc_format.md` — the format of the predicate documents (`docs/design/predicates/`: base + details files
+  linked by path tags with a status; the lint rules); the owner's request of 2026-11-19. Piloted, in use.
+- `doc_ratchet.tsv` — the lint's ratchet: per file, the `?` pieces and the skeleton pieces (rows only shrink).
 - `owner.md` — the owner's view of the predicate work (GITIGNORED; `/q` reads it in that session).
 
 ## Rules
