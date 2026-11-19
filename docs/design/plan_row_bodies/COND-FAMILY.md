@@ -3976,3 +3976,25 @@ exists and is ruled: `\k<y>` reads the capture (backref-label); (m2) where a `$`
 hole's expression) the carried-capture form is still to be SPELLED (the draft's spellings item 3; R.1.16 A10);
 (2) adds no new requirement beyond that; (m3) for a label-only group `(?<:y>...)` (a proposal) there is no
 capture, so the carried-capture form has nothing to read there: a point for that proposal, not for this ruling.
+
+**2026-11-18 OWNER, a question in answer to number-domain (Frank, to the predicate manager, evening; a QUESTION /
+suggestion, nothing ruled).** Asked **number-domain** (the comparison half quoted as settled by his 2026-11-15
+confirmation; the arithmetic half asked; candidates canonical everywhere, parsed everywhere, two domains; the
+witness `/(?<y>\d{4})-${$y + 1}/` in the three modes; the manager's leaning canonical, with the cost named: a
+padded month `05` is not a number, "next month" needs an unpad step). HIS WORDS, in full: "cant we wrap
+padded($y + 1)".
+RECORD: his SUGGESTION: wrap the arithmetic in `padded(...)` (ruled 2026-11-15: `padded(rx) := /0*${rx}/`).
+RUN this session (a small python model, `$PCREC_TMPDIR/scratch/pred/padwrap.py`; to be re-run by the next revision
+lane's evidence): (A) `/(?<y>\d{4})-${padded($y + 1)}/`: under BOTH domains WHOLE `2025-2026` HOLDS and
+`2025-02026` HOLDS (any number of zeros); under CANONICAL `0099-0100` FAILS and `0099-100` FAILS (the read `0099`
+is no number, so there is nothing to pad); under PARSED both HOLD; FIND-ALL `0099-0100 2025-2026 0100-0101`:
+canonical [`2025-2026`@10], parsed [`0099-0100`@0, `2025-2026`@10, `0100-0101`@20]. (B) the width held with `&`:
+`${padded($y + 1) & /\d{4}/}`: `2025-02026` FAILS under both; parsed `0099-0100` HOLDS, `0099-100` FAILS;
+`9999-10000` FAILS under both. (C) the zeros written OUTSIDE the label, `/0*(?<y>[1-9]\d*)-${padded($y + 1) &
+/\d\d/}/`: the SAME under both domains: WHOLE `05-06` HOLDS, `09-10` HOLDS, `05-6` FAILS, `99-100` FAILS; FIND-ALL
+`05-06 09-10 11-13 01-02` [`05-06`@0, `09-10`@6, `01-02`@18].
+THE MANAGER'S READINGS (mine, to be tested): (m1) `padded()` pads the RESULT; it does not make a padded READ a
+number, so by itself it answers numeral-width (the result is canonical; padding is the explicit wrap; the width is
+held with `& /\d{n}/`), not number-domain; (m2) under canonical the padded read is handled by where the label is
+written (zeros outside the labelled group, (C)), with no new transform; (m3) under "the result of arithmetic is
+canonical, pad by wrapping", numeral-width's WIDTH KEPT candidate is not needed under any domain.
