@@ -4163,3 +4163,24 @@ that rx: followed by text or joined (`$y . "E"`), nothing (`(?<y>\d)?-\k<y>E` WH
 `&` on it, nothing; an ALTERNATIVE beside it survives (`(?<y>\d)?-(?:\k<y>|x)` WHOLE `-x` HOLDS); an OPTIONAL
 around it lets the path go on (`(?<y>\d)?-(?:\k<y>)?` WHOLE `-` HOLDS); another branch of the pattern is still
 tried. "Auto fail to anything that touches it" is the WHOLE-HOLE candidate, which the draft does not take.
+
+**2026-11-18 OWNER RULING — unset-in-hole: no string, a regex that matches nothing; and an idea, a constant for it
+(Frank, to the predicate manager, evening).** ASKED AS A RULING (slug unset-in-hole: no string, the manager's
+leaning, or empty; then his question "auto fail to anything that touches it?" answered with the table of what each
+operation does to an unset read). HIS WORDS, in full: "unset-in-hole: i meant what you describe "no string" as.
+its a regex that matches nothing. that would be a good constant to provide".
+WHICH READING THE MANAGER TOOK: a RULING for the "no string" candidate (he answers by slug, names the candidate and
+states it in his own words); told to him as the reading taken, his to correct. RULED (on that reading): an UNSET
+label read in a hole is the regex that matches nothing (never matches); each operation does to it what it does to
+that regex (the draft's reading R.1.15 (3), ALGEBRA, confirmed: an alternative beside it survives, an optional
+around it is skipped, text after it or arithmetic on it fails that path). The EMPTY readings, WHOLE-HOLE and the
+compile error are not taken. IDEA, his (not asked, not ruled; a LEAN in his words "would be a good constant to
+provide"): a provided CONSTANT for the regex that matches nothing. THE MANAGER'S READINGS (mine, to be tested by
+the next revision lane): (m1) the constant is the sibling of the ruled "anything" (lone-complement-match:
+"provide "anything""); in PCRE text it is `(?!)` (python `re` this session: `(?!)` finds nothing in `abc`;
+`(?:(?!)|x)` holds on `x`; `a(?!)?` holds on `a`); (m2) its NAME is a spelling for the review, with a trap to
+avoid: this record already uses "matches nothing" in the OTHER sense (the `when` ruling: "It holds and matches
+nothing" = it matches the EMPTY string), so the constant must not be confusable with the empty string; (m3) it is
+also the natural meaning of the EMPTY array under his "arrays are written with `|` only" proposal (the
+alternation of no members); (m4) the "previous value" forms (a read written before its group) need the optional
+lead under this ruling: R.1.15 (5)'s first form is vacuous, its second witness stands.
