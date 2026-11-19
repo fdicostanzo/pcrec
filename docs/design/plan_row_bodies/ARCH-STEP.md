@@ -283,3 +283,9 @@ exposure; bounding a large read; requirements that name a method; a goals sectio
   avoid were found before design both times, and its cost was two roughly 25-minute review rounds per feature.)
   The owner has given no verdict on the pilot.
 - Still owed: the A6 retro test (a note written for one past refactor from its pre-refactor commit, by a blinded author).
+
+## 2026-11-18, the owner on the pilot (answer to pilot-verdict; it also answers size-trigger-final)
+
+HIS WORDS: "pilot-verdict: it seems successful to me. the 20 minutes spent is days not refactoring later. i say keep it. also, keep it at the current size trigger. its easier to back that off then wonder later if we missed something"
+
+RECORD: the architecture step is KEPT as standing process above the size trigger; the size trigger (a full note at two or more decision sites) is CONFIRMED as is, no longer provisional; the bias is to over-apply and back off later. Decision D200.

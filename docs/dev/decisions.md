@@ -10247,3 +10247,10 @@ D196 addendum 2 (2026-11-12, Frank): MECHANISM AND SYNTAX ARE UNTETHERED. "The &
 - **Decision (2, the manager's ruling, 2026-11-16, recorded in `memfn/docs/requests.md` "RULINGS ON THE REPLY" on the kit's span-4095 ask):** "other-sites-at-32 YES": the existing 32-position / 64-reach bounds stay for every window site other than the cover's own (the ask's question (1)); the assert that enforces it (r27 READ-2) is on lane/covs2b (commit 8eca79baf), not yet on main. The ruling is the manager's, not the owner's; the same entry's owner words ("agree with your leans on all three", 2026-11-16) cover the three forms/short-spans/near-miss questions only, not this one.
 - **Consequences:** the build go and the seam bound now have a decisions record; no code or spec changes.
 - **Revisit when:** the owner restates the go, or a non-cover window site is proposed to carry spans past 32 positions.
+
+## D200 — [ARCH-STEP] the architecture step is kept; the size trigger stays (Frank 2026-11-18, after the A6 pilot)
+
+- **Context:** the A6 pilot ran the step on two features (reviews r49, r50; the lookaround design r51); write-up in docs/design/plan_row_bodies/ARCH-STEP.md, "A6 pilot result". The size trigger was ruled provisional until the pilot (2026-11-17).
+- **Decision (owner, verbatim):** "pilot-verdict: it seems successful to me. the 20 minutes spent is days not refactoring later. i say keep it. also, keep it at the current size trigger. its easier to back that off then wonder later if we missed something"
+- **Consequences:** a feature above the size trigger gets an accepted architecture note before its design (manager skill trigger table, pcrec-architect skill section 2, no longer marked provisional). The A6 retro test is still owed. Step costs are recorded per lane from now so a later revisit has numbers.
+- **Revisit when:** the step's recorded cost or a run of notes that find nothing argues for raising the trigger (the owner's "easier to back that off").

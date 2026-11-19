@@ -31,7 +31,7 @@ this skill does not restate them. When the guide and this skill disagree, the gu
 The writer and the critic are ALWAYS different agents (owner, 2026-11-17: "or a single expert but then it's
 reviewing its own design"). A fix round on the note is a FRESH architect lane briefed from the review.
 
-## 2. When the step applies (the size trigger: RULED by the owner 2026-11-17, "size-trigger: agree"; PROVISIONAL until the pilot shows whether two sites is the right number)
+## 2. When the step applies (the size trigger: RULED by the owner 2026-11-17, "size-trigger: agree"; CONFIRMED after the pilot 2026-11-18, "keep it at the current size trigger. its easier to back that off then wonder later if we missed something")
 
 FULL NOTE when the feature touches TWO OR MORE existing decision sites, or adds a mechanism (a new table, record,
 pass, seam, AST kind, entry kind or option family). Otherwise the ONE-PARAGRAPH FORM (section 5, last part).
