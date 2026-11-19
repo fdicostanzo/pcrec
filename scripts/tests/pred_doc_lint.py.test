@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# pred_doc_lint.py self-test: its own planted-fault selftest (one plant per rule L1-L11, each detected by
+# exactly its rule, plus the clean-fixture and reader checks), then the committed sample linted through the CLI.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+python3 -I "$here/pred_doc_lint.py" --selftest || { echo "FAIL: selftest"; exit 1; }
+python3 -I "$here/pred_doc_lint.py" --root "$here/tests/pred_doc/root" --require-all || { echo "FAIL: sample"; exit 1; }
+echo "PASS: pred_doc_lint"
