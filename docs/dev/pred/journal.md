@@ -205,3 +205,9 @@ names, 17 principles, 36 parked items; what [DOC-INDEX] rejected. WROTE docs/dev
 three base/details pairs (core with a principles section, library, parked); the record stays one log with `tags:`
 lines; a `rejected:` block and `by:` principle links per piece; lint L1-L11 asked of main (to_main P-5). The
 library-document request is absorbed (no separate lane). NEXT: pilot after rev 29.1 (skeleton + core/holes).
+
+## 2026-11-19 (evening) — lint lane launched at main's instruction
+Main answered P-5: "write it yourself in a lane on your branch ... I'll review it, run a code critic round sized to
+it, and land it with your branch after rev 29.1." LAUNCHED lane predlint (sonnet; worktrees/predlint): scripts/
+pred_doc_lint.py (L1-L11, planted-fault selftest, a minimal reader --show/--list); the scripts/entry profile only if
+declaration-only. Two lanes running: predspec291 (rev 29.1 + files r54), predlint. Watchers armed on both.
