@@ -317,3 +317,26 @@ transient: 3b and 3c each may show ONE lint failure on the retired parked tag un
 AFTER THEM: merge 3a, 3b, 3c (each ALONE), lower the ratchet, lint; ask main for a review number; a critic round
 with a COMPLETENESS lens (census lists: 155 ruling entries, slugs, 72 names each land on a tag); retire
 predicates_future.md; send main the skill text for the new layout. WAITING on: the three lanes; main's merge.
+
+## 2026-11-19 (night) — the conversion is merged: no unconverted piece left; asked main for the review number
+
+Main merged P-10 (main 892553b58). Lanes preddoc3a, 3b, 3c delivered, merged (index conflicts: both sides kept)
+and stopped. State: core 113 pieces, library 38, parked 39; no `?`, no skeleton; ratchet set to zero; lint 4,056
+checks, 0 failed; three soft-cap warnings (core.md 93.7 KB against 64; library 28.2 against 24; parked 17.7
+against 16: the caps were my guesses; decide after the review whether to raise them or split core).
+MY ERROR, found by 3b: statement 7 of import-symbols ("positional `(a, b) := X` left undefined") was wrong against
+"2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"; withdrawn in the record, told to
+Frank, core/modules/positional rewritten by hand as ruled. LESSON (again): grep the record before giving him a
+list of "implications".
+By hand: the eight record `tags: parked/import-symbols` lines repointed to core/modules (tags lines are my
+metadata, not his words); parked head paragraph.
+OPEN CALLS OF MINE for the fix lane after the review: (1) his words put PRIMITIVE names in the core, the library
+lane left the primitive provided names in the library (any_case, occurs, param, file_text, ...): move them to a
+core section, or amend the format with a reason; (2) the census has 61 names, not 72: 11 unaccounted; (3)
+nullable-meaning sits on a core piece and belongs to lib/search/occurrences; (4) condition-group (open) sits on a
+ruled piece; (5) bold openers glued to a paragraph cannot be cited; (6) some/count/none/same/all have no core
+piece; (7) retire predicates_future.md (all 38 items now have parked pieces).
+Owner questions now open in the documents: any-case-body, bare-condition-labels, caller-ambiguous, class-index,
+class-positions, default-set, group-truth, hole-export, not-test, number-in-loop; named by lanes, not pieces:
+condition-group, export-choice, limited (at most / exactly), between's body, list_of, param, within, upperStart.
+WAITING on: main's review number; then one opus critic coordinator (design mode, completeness lens).
