@@ -4050,3 +4050,17 @@ each (36,119 checks), that form accepts a text exactly when the text is the valu
 (m3) the EXACT reading already has a spelling without the width parameter (`padded(rx) & /\d{4}/`, run earlier
 this evening), so a width parameter adds something only under the minimum reading; the manager's leaning moves
 from exact to MINIMUM on (m2) and (m3).
+
+**2026-11-18 OWNER, on restricting a minimum-width `padded` (Frank, to the predicate manager, evening; an
+OBSERVATION in the padded-width discussion, not asked as a ruling and not answered by slug).** After the manager's
+form of the minimum reading without a computed count, and its note that a "four-wide" field can then match five
+characters. HIS WORDS, in full: "someone could use padded(blah, 4) to get a minimum 4 then restrict it to the
+rightmost 4 if they wanted".
+RECORD: OBSERVATION: with `padded(blah, 4)` meaning a MINIMUM of 4, a writer who wants no more than 4 composes a
+restriction to the rightmost 4 on top of it. It presupposes the minimum reading and answers the overflow concern;
+padded-width itself is put back to him by slug. THE MANAGER'S READINGS (mine, to be tested): (m1) "restrict it to
+the rightmost 4" has two spellings with DIFFERENT answers on overflow, his words do not choose: the IMAGE
+`right(padded(blah, 4), 4)` (value `10000` gives `0000`: it wraps) and the FILTER `padded(blah, 4) & /\d{4}/`
+(value `10000` gives nothing: it fails); for values that fit both give the padded value (python this session:
+`43` gives `0043`, `2026` gives `2026` under both); (m2) either is a composition over the minimum form, which is
+the ground for taking minimum as the base meaning.
