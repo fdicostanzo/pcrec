@@ -4276,3 +4276,10 @@ forms apply to it as to any regex: a condition as the test tests; a bare rx as t
 (when-peek); `peek()` peeks. No value-test case is added. The draft's reading (R.1.15 (12); R.1.16 A12) is
 confirmed; A12's "his test as written ... gives other answers" stays as a printed look-alike, no longer a
 question.
+
+**2026-11-18 MANAGER'S CALL — dollar-warning: the warning stays (the predicate manager, evening; no owner words;
+an answer-free choice, told to him, not asked).** `$x & <5` written as an `&` operand is legal (match-is-rx) and
+draws a STRUCTURAL warning pointing at `(x: <5)` where the stretch is not x's text. No answer moves. Grounds, his
+standing words: the look-alike criterion (every look-alike pair gets one class, no gap) and "Warnings should be
+structural". The draft's reading (§0.1 L28: WARNING) is kept; the warning's name is the compiler's to choose.
+Closed unless he objects.
