@@ -4227,3 +4227,9 @@ Main ruled on the four kit findings (D186 add. 2):
   cmd_rerun :1273-1300) QUEUED, key kit-fcards-c3rerun: `cards.py rerun RUNDIR` (rule_703's NEXT line) then `rule` -> rule_705.txt;
   a freshness guard on results_c3_h64_rerun.tsv (time_cells appends); a confirm-instead path ends rc=1 "manager rules". 704
   HELD for main's REBUILT_BUILD (main's cover-cap rebuild lane, h*=64 compiled in).
+- 08:39 705 GREEN (169 s): re-timed 6 cells (18 arm cells) of results_c3_h64.tsv; rule_705.txt verdict complete:64; NEXT = the
+  build compiles h*=64, then cards.py identity 64 (704). R5 (record-only, cards.py:2452) shows 6 C3 long-span losses at H(64) vs
+  h0: hex500/near-miss off 82.11 vs 41.56 and on 81.87 vs 41.07 (~2x), hex1000/near-miss/off 243.80 vs 143.26 (1.7x), and hex500/
+  hex1000 hit-dense +3-5 %. Void twice, unchecked: hex1000/near-miss/on, a1000/miss-heavy/on. Ceiling: W {0 1.47, 1 1.40, 2 1.38,
+  4 1.44, 8 1.37, 16 1.54, 24 1.29, 32 1.25, 64 1.0}: the grid stops at 64, nothing above was timed. Sent to main with the question
+  whether the 64 build goes ahead with the near-miss loss on record.
