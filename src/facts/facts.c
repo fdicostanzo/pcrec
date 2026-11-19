@@ -250,8 +250,9 @@ static void pf_derive_req_walk(Ctx *cx)
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
         pf->req_set.rightmost = set.pick;
         pf_done(pf, PF_REQ_SET);
-        /* span_arms L1: the TOP set step moves the set where a guard
-         * narrowed a run position, so `zero` and `look` name it */
+        /* span_arms L1: `rr_cat`'s CAT-SET moves the set where a guard
+         * narrowed a run position, so the arms that can take the guard or
+         * its neighbour away (`zero`, `look`, `rep`, `empty`) name it */
         pf->why[PF_REQ_SET].arms = pf_walk_arms_of(p.restored, PF_REQ_SET);
     }
     if (pf_enter(cx, PF_REQ_SET_MAXOFF, false)) {

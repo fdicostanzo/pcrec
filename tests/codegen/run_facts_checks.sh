@@ -621,7 +621,8 @@ fi
 # alone (the lever is not a caller's): under the `empty` arm the walk runs T2
 # row 1's old form, so the witness's run is cut in two again, and the walk
 # facts the arm can change (walk_arms.def) plus every fact derived from them
-# name the arm; a fact it cannot change (`req_set`) keeps its plain why; the
+# name the arm; a fact it cannot change (`kset_walk`; `req_set` until L1's
+# CAT-SET, review r55 A, made the set movable by `empty`) keeps its plain why; the
 # default build lists the unit's run and no token; an unknown arm is refused.
 # The value under the lever is what shows the arm ACTS (a lever the walk
 # ignored lists the token over the new run, S1907); the derived rows show the
@@ -648,7 +649,7 @@ else
         'ar	req_whole_run	61626364	harness:empty' \
         'ar	req_byte	-	harness:empty' \
         'ar	req_pieces	-	harness:empty' \
-        'ar	req_set	-	' > "$WORKDIR/aw"
+        'ar	kset_walk	-	' > "$WORKDIR/aw"
     while IFS=$'\t' read -r side fact wval wwhy; do
         r="$(arow "$fact" "$WORKDIR/$side.f")"
         gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
@@ -769,9 +770,10 @@ fi
 #   - `xy(?:ab){2}zw` is `xyababzw`; under `--harness=restore=rep` (build/
 #     pcrec-harness) today's best-only copy again, whose three 2-byte runs
 #     `xy`, `ab`, `zw` tie on information and go to the rarest scan byte
-#     (`rn_choice_rows`: `z`, 498 ppm), with the token on the walk facts and
-#     none on `req_set` (S1921: a row that the arm no longer passes over keeps
-#     the new run); the same for T2 row 3, `xy(?:ab){1,2}zw` (`abzw` by
+#     (`rn_choice_rows`: `z`, 498 ppm), with the token on the walk facts,
+#     `req_set` included since L1's CAT-SET (review r55 A: a restored copy
+#     can drop a guard's narrowing; the set's VALUE is unmoved here) (S1921:
+#     a row that the arm no longer passes over keeps the new run); the same for T2 row 3, `xy(?:ab){1,2}zw` (`abzw` by
 #     default, the `xyab`/`abzw` tie to the rarer `z`; `zw` restored; S1922);
 #   - a body that is not `all` saturates at TWO copies (`rr_pow_count`):
 #     `(?:ab.cd){3}` is the join `cdab` (S1923 stops at one copy: `ab`);
@@ -814,7 +816,7 @@ else
 p	-	$RP	req_whole_run	7879616261627a77	rate:builtin-prior
 h	rep	$RP	req_whole_run	7a77	harness:rep
 h	rep	$RP	req_pieces	none	harness:rep
-h	rep	$RP	req_set	97,98,119,120,121,122	-
+h	rep	$RP	req_set	97,98,119,120,121,122	harness:rep
 p	-	(?:abc){20}	req_whole_run	6162636162636162636162636162636162636162636162636162636162636162	rate:builtin-prior
 p	-	xy(?:ab){1,2}zw	req_whole_run	61627a77	rate:builtin-prior
 h	rep	xy(?:ab){1,2}zw	req_whole_run	7a77	harness:rep
@@ -888,6 +890,12 @@ p	-fno-ctx-node	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
 h	look	x(?=[^\x00-\xff])y	req_whole_run	7879	harness:look
 p	-	y(?=q)[pq].e(?=e)[ae]	req_set	101,113,121	-
 h	tie	y(?=q)[pq].e(?=e)[ae]	req_set	101,113,121	-
+p	-	x(?:[ab](?=b)){2}	req_set	98,120	-
+h	rep	x(?:[ab](?=b)){2}	req_set	120	harness:rep
+p	-	x[ab](?=b)()[ab]	req_set	98,120	-
+h	empty	x[ab](?=b)()[ab]	req_set	120	harness:empty
+h	rep	x(?:ab){2}(?=c)d	req_whole_run	6162	dead
+h	rep	x(?:ab){2}(?=c)d	req_byte	98	harness:rep
 p	-	xy(?=bc)[bc]c	run_pin	0:0+2	-
 p	-	foo(?=b)[bc]{2,4}	run_pin	0:0+3	-
 h	look	x[^\x00-\xff]y	req_whole_run	none	dead

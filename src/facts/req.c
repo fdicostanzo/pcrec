@@ -1577,15 +1577,15 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
          * width-0 body joins, `(?:\b)+` included, by the E1 ruling). The
          * ruled arm for the bare cuts is `zero` (E2); it restores only these.
          *
-         * Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
-         * is not descended into, and the header says why that is a
-         * CORRECTNESS decline rather than a missed opportunity.
+         * Consumes nothing, so it makes no byte necessary BY ITSELF: a
+         * positive lookaround's body bytes never join the run or the set as
+         * consumed bytes, and the header says why that is a CORRECTNESS rule.
          *
          * FOR THE RUN EACH IS T3's ROW (`rb_zero_rows`): the bytes on either
          * side of a node that consumes nothing ARE adjacent in the subject,
-         * so the run joins ACROSS it (the unit); that reads nothing of a
-         * lookaround's body, whose bytes stay unread until span_arms L1's
-         * item. */
+         * so the run joins ACROSS it (the unit); a POSITIVE lookaround is
+         * E-5i's ITEM (span_arms L1), whose body is walked and whose guards
+         * narrow the consumed positions beside it (`rb_zero_item_into`). */
         case A_EMPTY:
         case A_EOL:
         case A_CTX:
