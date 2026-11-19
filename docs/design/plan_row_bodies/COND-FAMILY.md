@@ -3931,3 +3931,27 @@ a capture"; (m2) what the record does NOT have is a PER-GROUP way to say "labell
 label, a visibility rule); (m3) a `$y` read in a hole needs the group's TEXT kept during the match (as a
 backreference does) whether or not the group is returned to the caller: "not returned" is a statement about the
 output, not about what the matcher remembers (hand-reasoned, not run).
+
+**2026-11-18 OWNER, a RECOLLECTION in the hole-reads-capture discussion: the label-only group (Frank, to the
+predicate manager, evening; a recollection of an earlier PROPOSAL, nothing ruled).** HIS WORDS, in full: "for
+capture group regex: i proposed /(<:x>foo)/ would be regex for a labeled group that is not a "capture group" that
+returns values. it has the normal label syntax and i added the (?: ) colon of a non-capture group".
+CHECKED AGAINST THE RECORD (the same hour): CONFIRMED, outside this file: `docs/design/plan_row_bodies/POSTFACT.md`,
+the entry "2026-11-09 — Frank: where-operator concerns ...", bullets "Label spelling (Frank 2026-11-09):
+`(?':name' ...)`" (name and capture status are orthogonal; "the missing fourth cell, named+non-capturing = the
+label"; "the `<...>` twin is `(?<:name>...)`") and "Names are labels, numbers are captures (Frank 2026-11-09)".
+Those are manager notes of his proposals, marked there "not ruled". 0 hits for either spelling in this file, the
+draft or `predicates_future.md` before today: the predicate draft never carried the label-only group; it has the
+named group as the label and the program-level `captures` opt-in (§6.2). RECORD: his PROPOSAL stands as a proposal:
+a group that is LABELLED and NOT a capture (returns no value to the caller); the spelling is the label syntax plus
+the colon of `(?:`. SPELLING (a placeholder, D193 addendum 4, to the spellings review): he wrote `(<:x>foo)`; the
+2026-11-09 forms are `(?<:x>foo)` and `(?':x'foo)`. RUN this session against libpcre2 (pcre2_compile through
+ctypes): `(?<:x>foo)` REJECTED (error 162, subpattern name expected, offset 3); `(?':x'foo)` REJECTED (162, offset
+3): no valid PCRE pattern changes meaning (the confirmation the 11-09 note asked for); `(<:x>foo)` as typed
+COMPILES in PCRE (an ordinary capture group around the literal text `<:x>foo`), so that exact spelling would
+collide. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) this is the per-group way to
+say "labelled, not returned" that the previous entry's (m2) said the record lacked: withdrawn as "lacking", it is
+an unruled proposal of 2026-11-09; (m2) a label-only group has NO PCRE capture, so a `$y` read of it (in a hole or
+elsewhere) can only be the LABEL: a force toward "label" in hole-reads-capture, and `\k<y>` naming a label-only
+group is a new point (an error, or the label); (m3) how the label-only group sits with §6.2's `captures` opt-in
+(does `(?<x>...)` return by default once the label-only form exists) is not stated anywhere.

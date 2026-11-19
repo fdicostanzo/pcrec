@@ -693,3 +693,13 @@ its trigger (build under measurement, D77).
   with T13's run-time meaning stated it costs the VM support T6 already needs; the netstring shape `(\d+):.{n}`, which
   PCRE cannot express. TRIGGER: a user program needing a length-prefixed field.
 - SOURCE: `docs/dev/reviews/2026-11-18-r48-predspec27.md` (NOTED) and its `PREMISE.md` (PREMISE-12).
+
+## 32. The label-only group: labelled, not a capture (`(?<:x>...)`, spelling a placeholder)
+
+- The owner's PROPOSAL of 2026-11-09 (POSTFACT.md, "Label spelling", "Names are labels, numbers are captures"),
+  recalled by him 2026-11-18 evening (COND-FAMILY, "a RECOLLECTION ... the label-only group"): a group's name and
+  its capture status are orthogonal; the fourth cell, named and non-capturing, sets a label and returns nothing.
+- Checked: libpcre2 rejects `(?<:x>foo)` and `(?':x'foo)` (error 162), so neither changes a valid PCRE pattern.
+- Open with it: what `\k<x>` on a label-only group means; whether `(?<x>...)` then returns without the `captures`
+  opt-in (§6.2); the 11-09 "numbers are captures" against number-names (RULED 2026-11-18).
+- TRIGGER: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
