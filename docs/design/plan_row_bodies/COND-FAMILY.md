@@ -4894,3 +4894,15 @@ outside it is a COMPILE ERROR, never text; (b) the empty value gives the pattern
 (whether PCRE itself accepts a written `(?)` is to be RUN, not assumed; our rule does not depend on it); (c) with
 the other-holes ruling the option hole's cell is complete: exactly one value, legal or empty; several values an
 error; zero values (`${[]}`) an error too (not exactly one value: the manager's call, as the name hole).
+
+### 2026-11-19 OWNER, on the option hole: nothing there is an error
+
+His words, verbatim: "a nothing in an option would have to be an error. i can think of no useful semantic"
+
+Class: RULING by his own statement ("would have to be"), on the option hole's zero-values cell, which the entry
+above had as the manager's call. The reading taken, and told to him: "a nothing" is NO VALUE (an empty array
+`${[]}`, or a value that is nothing, such as an unset read or an out-of-domain result), distinct from the EMPTY
+STRING `""`, which he ruled in the entry above adds no options. An option hole given nothing is a COMPILE ERROR.
+The manager's reading, for the next lane to test: a value known only at RUN time cannot stand in an option hole at
+all (options are fixed at compile time), so the error is always a compile-time one; if the draft allows a read
+there, that is construction-line (b)'s question, not this one.
