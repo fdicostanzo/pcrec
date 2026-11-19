@@ -290,3 +290,7 @@ rejected:
 readings:
 evidence:
 history: not an ideas-file item; the record's "2026-11-18 OWNER RULING — unset-in-hole" entry, his words "that would be a good constant to provide".
+
+## parked/import-symbols/import — Importing symbols by name so a call is not qualified
+slugs: import-symbols
+history: the record's entries tagged `parked/import-symbols` (2026-11-19, the owner discussing import-symbols); the piece is a `?` placeholder, its statement not yet written (lane predlint3: it makes the record's tag resolve).
