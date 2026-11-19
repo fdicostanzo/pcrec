@@ -4278,3 +4278,9 @@ Main ruled on the four kit findings (D186 add. 2):
   AVX-512 info). DECISION TABLE fixed before the data: per layer, the best block form vs today's shipped form at that k (I k<=64,
   H64 k>64), floor max(15 %, the cell spread); REPLACES = no LOSS cell and a majority of WINs, every loss listed; SIMD vs the best
   scalar; block-loop vs unrolled per cell. Job 708 (kit-fcards-blockspan); a critic on the harness BEFORE the timing.
+- 11:xx blockspan harness BUILT and checked (report scratch/memfn/blockspan/report.md): 6 classes (hex, dig, \w, [aeiou], [^\n],
+  [\x80-\xbf]; `a{k}` dropped, pcrec emits a literal) x k 4..1000 x regimes x forms; correctness 96.0M unit calls + 27,000 gate runs,
+  0 wrong; sabotage 16/16; 4,500 cells, est 3.6 h -> RUNS TONIGHT 01:00. Manager rulings before any data: ADD a short-k near-miss
+  regime with the miss inside the span (today's window-site near-miss is degenerate for k <= 128: 52 of 360 cells never call the
+  span); never-called cells are N/A, excluded from both the win majority and the loss check. KIT DEFECT noted: cards.py not-warm expect
+  ignores 4 KiB chunking (hex4 2026 vs 2025); fix later. A critic reviews the harness before 01:00.
