@@ -65,17 +65,35 @@ module: ?
 defined: ?
 - Not stated: whether it applies before the conflict check (so that it can remove a conflict).
 
+### pattern   [lib/builtin/pattern]   reading 2026-11-19
+`pattern($x)` is the static pattern of the group the label x names, inserted where it is used; it reads no match, so it is a compile-time value.
+needs: core/values/reads core/holes/pattern
+module: ?
+defined: native (it reads a group's written pattern, which no expression of the language reaches)
+- `/(?<x>\d+),${pattern($x)}/` reuses x's pattern; `\k<x>` would repeat x's text instead.
+- Two groups of the name give the union of their patterns; the flags in force where the group is written come
+  along; a group that refers outside itself (a backreference, a call) is the error "not self-contained".
+- It stands out of the first build (the draft's reading).
+WHOLE `12,345` HOLDS, `12,` FAILS / SEARCHED `a1,2` `1,2`@1 / FIND-ALL `1,22 3,4` [`1,22`@0, `3,4`@5] (`/(?<x>\d+),${pattern($x)}/` is `(?<x>\d+),(?:\d+)`)
+
+### eval   [lib/builtin/eval]   under-construction 2026-11-19
+`eval(...)`, an rx built at match time from a text, is an idea on record: an opaque filter, effectively a callout, that only a named module would provide.
+module: eval
+defined: ?
+- The output would stop being self-contained (it links a pcrec runtime): only as the explicit module `eval`, with a
+  budget, never by default.
+
 ## Modifiers   [lib/modifiers]
 
 ### padded   [lib/modifiers/padded]   ruled 2026-11-19
 `padded(rx)` is the plain macro `/0*${rx}/`; `padded(rx, n)` reaches width n at least, the longer unpadded value tried first.
-needs: core/holes/pattern core/filters/and core/patterns/alternation
-by: core/principles/stated-behaviour
+needs: core/holes/pattern core/holes/count core/filters/and core/patterns/alternation
 see: lib/sets/between lib/modifiers/limited
 module: ?
 defined: language
 - The bodies: `padded(rx) := /0*${rx}/`, the argument in a hole (one entry: `/0*(?:${rx})/` writes out the same);
-  `padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)`, the any-length branch first.
+  `padded(rx, n) := (rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)`, the any-length branch first; n reaches
+  the counts through count holes (a bare `n` inside the literal would be the text `n`).
 - The width is a MINIMUM: zeros reach out to n characters; a value already n or longer stands unpadded.
 - With no width the zeros are any number (`0*`): the default.
 - The argument is part of the body's rx: a `^` in it reads the body's stretch, after the zeros, so `padded(/^5/)`
@@ -106,11 +124,10 @@ needs: core/holes/flags core/filters/and
 module: ?
 defined: native (for now, by the owner's ruling; whether the body defines it is the open question)
 - Today (ruled): `any_case` is native for now; a more fundamental basis is a follow-up.
-- The standing reading: under the flags rulings the body equals the native definition in every mode except (1) for an
-  argument writing its own `(?-i)` (its own flag wins) and (2) for a NEGATED filter operand in the argument
-  (`any_case(/[abAB]{2}/ & !/ab/)`), where the `(?i)` reaches the negated side.
-- Candidates: (a) the body is the definition, those two arguments its stated behaviour; (b) the native definition stays,
-  the body a lowering where it agrees.
+- The standing reading: the body equals the native definition in every mode except for an argument writing its
+  own `(?-i)` and for a NEGATED filter operand in the argument (`any_case(/[abAB]{2}/ & !/ab/)`).
+- Candidates: (a) the body is the definition, those two its stated behaviour; (b) the native definition stays, the
+  body a lowering where it agrees.
 WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho`@0, `HO`@3] (the candidate body on `any_case("ho")`, `(?i:ho)`)
 
 ### limited   [lib/modifiers/limited]   under-construction 2026-11-19
@@ -123,7 +140,8 @@ defined: ?
 
 ### length   [lib/modifiers/length]   reading 2026-11-19
 `length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one loop pass per character, its count tested by S.
-needs: core/filters/and core/values/reads
+needs: core/filters/and core/values/reads core/values/computed-labels
+see: lib/counting/count
 module: ?
 defined: language
 - The helpers: `chars := /(?:(?<ch>(?s:.)))*/`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral.
@@ -133,10 +151,11 @@ WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`a
 
 ### month_numbered   [lib/modifiers/month-numbered]   reading 2026-11-19
 `month_numbered(S)` reads a month name as its number: `months & (mnum: S)`, `mnum` the 1-based index of the name matched.
-needs: core/filters/and core/values/reads
+needs: core/filters/and core/values/reads core/values/computed-labels core/values/metadata
 module: ?
 defined: language
-- `months := join([mname = [/Jan(?:uary)?/, ..., /Dec(?:ember)?/]])`, `mnum := $mname.index`.
+- `months := [mname = [/Jan(?:uary)?/, ..., /Dec(?:ember)?/]]` (an array is an alternation), `mnum :=
+  $mname.index` (a computed label over the member's 1-based index).
 - The name is ruled; the body is a reading. The label `mname` is visible in the result.
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
@@ -152,14 +171,15 @@ default: yes
 defined: language
 - The body: `peek(A) := /(?=${A})/`. Nothing in it is particular to `peek`: it is a useful transform.
 - Labels A sets are readable after it, as after any lookahead and through any hole (only A's public labels).
-- `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (a reading, run).
+- `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (core/filters/negation).
 - A condition given as A is zero width already: `peek(c)` tests c where it stands, as c does (a reading).
 - `default: yes`: in the default-imported set, so written bare, not `module.peek` (the owner's lean).
 WHOLE `37` HOLDS (d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`)
 
 ### when   [lib/control/when]   ruled 2026-11-18
 The conditional is the guarded form, `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)`: else is never tried where the test holds.
-needs: lib/control/peek core/patterns/sequence core/conditions/in-sequence
+needs: lib/control/peek core/patterns/sequence core/conditions/in-sequence core/filters/negation
+see: lib/control/when-test
 module: ?
 defined: language
 - `then` has no default: `when(x)` and `when(x, else = z)` are compile errors. The legal calls: `when(x, y)`,
@@ -197,7 +217,7 @@ The two clear forms, `when(NOT peek(x), z)` and a condition under NOT, are not i
 modes: n/a (a question; the runs are cited in the details entry)
 
 ### atomic   [lib/control/atomic]   reading 2026-11-19
-`atomic(X)` is the macro `/(?>${X})/`: PCRE's atomic group around a pattern hole, so X keeps PCRE's atomic meaning.
+`atomic(X) := /(?>${X})/`: PCRE's atomic group around a pattern hole, so X keeps PCRE's atomic meaning.
 needs: core/patterns/atomic core/holes/pattern
 module: ?
 defined: language
@@ -225,6 +245,8 @@ defined: language
   to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
   empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
 - A bare condition after it reads the LAST hit's own labels.
+- A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
+  metadata); two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix.
 - A check of the whole text: `J & C & occurrences(M)` matched WHOLE, a parse J of the whole text, a check C on it,
   M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED shape (each match of M reported as
   a match of the program) has no ruled spelling.
@@ -323,7 +345,7 @@ needs: core/patterns/literals core/patterns/flags
 module: ?
 defined: language
 - It holds WHOLE on the empty text, `12` and a multi-line text, alone and under `(?s)`, `(?i)`, `(?m)`, `(?x)`.
-- It is nullable: `anything & NOT X` SEARCHED or FIND-ALL holds on an empty stretch; it is a whole-value tool.
+- It is nullable: `anything & !X` SEARCHED or FIND-ALL holds on an empty stretch; it is a whole-value tool.
 WHOLE `` HOLDS, `a b` HOLDS / SEARCHED `ab` `ab`@0 / FIND-ALL `ab` [`ab`@0, ``@2] (`anything` is `[\s\S]*`)
 
 ### between   [lib/sets/between]   reading 2026-11-19
@@ -350,6 +372,30 @@ WHOLE `xyz` HOLDS, `abc` FAILS / SEARCHED `abxyq` `xyq`@2 / FIND-ALL `xy ab` [`x
 
 ## Counting   [lib/counting]
 
+### some   [lib/counting/some]   ruled 2026-11-15
+`some(c)` holds when at least one pass of a loop meets the condition c, each pass judged with its own labels; it is false where the loop made no pass.
+needs: core/model/table core/conditions/form
+see: core/model/table/group-truth lib/assert/assert
+module: ?
+defined: native (a question over a loop's passes; no expression of the language walks the passes)
+- `some` is the one spelling of "at least one pass"; `all` is retired: every pass is written with the condition
+  inside the loop, on the item (core/conditions/in-sequence).
+- `NOT some(c)` and `occurs.none(c)` are the same question (core/model/table/group-truth asks the next step).
+- It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
+WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
+
+### count   [lib/counting/count]   ruled 2026-11-15
+`count(c)` is the number of passes of a loop that meet c, a canonical numeral used with the ordinary comparisons; it is refused only over the budget, the refusal naming `occurs`.
+needs: lib/counting/some core/values/comparisons
+module: ?
+defined: native (a count over a loop's passes; no expression of the language counts passes)
+- A count is a numeral string, so every filter applies to it (`even()` on a count); it may be bound and read
+  like a label: `n := count((d: "7"))`, then `(n: ==2)`.
+- No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
+  and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
+- A later optimisation may turn `count()` into `occurs` where the answers provably do not change.
+WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (n: ==2)`, n := `count((d: "7"))`)
+
 ### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-14
 The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
 module: occurs
@@ -357,9 +403,20 @@ defined: native (a count over the passes of a loop, a capped counter; no express
 - Its states: a capped counter (n + 2 states) multiplied in.
 - `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`); one record is
   one pass; n is a constant or a caller parameter.
-- These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form.
+- These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form
+  (lib/counting/count).
 - The module is reached by `occurs := import("occurs")`.
 modes: n/a (a count over a loop's pass table; no example of the draft is printed in the three modes)
+
+### Every pass, named   [lib/counting/every-pass]   open every-pass-spelling 2026-11-19
+Is there a named group question for "every pass meets c", equal to `some(c) & occurs.none(NOT c)`, or is every pass written only with the condition on the item?
+needs: lib/counting/some lib/counting/occurs
+module: ?
+defined: ?
+- Today: the condition is written inside the loop, on the item (core/conditions/in-sequence).
+- Candidates: (a) no name, the item form; (b) a named group question equal to `some(c) & occurs.none(NOT c)`;
+  (c) a loop construct over a conditioned item.
+modes: n/a (a question; the draft's runs are cited in the details entry)
 
 ## Strings   [lib/strings]
 
@@ -398,6 +455,23 @@ see: lib/strings/left
 module: ?
 defined: ?
 - It falls under the rule of single-value functions (core/values/functions) once defined.
+
+## Assertions   [lib/assert]
+
+Compile-time checks over sets, written as `@` statements.
+
+### assert.some, assert.none, assert.same   [lib/assert/assert]   ruled 2026-11-14
+The `assert` module checks sets at compile time: `@assert.some(X)` X has a string, `@assert.none(X)` X is empty, `@assert.same(A, B)` A and B are the same set.
+needs: core/filters/and core/filters/complement core/operators/statements
+module: assert
+defined: native (a compile-time check of a set's emptiness, not a pattern)
+- Membership is `&` (`"2024" & leap` is {`2024`} or empty); inclusion is `A & !B` empty; `same` is both
+  differences empty.
+- The argument is a compile-time set position: an edge assertion in it is the edge-assertion error.
+- Reached by `assert := import("assert")`; a failed assertion is a compile error naming it.
+- It is how an author validates what an ambiguous rx means under PCRE's one reading.
+- Not the group question `some(c)` (lib/counting/some): that one asks about a loop's passes in a match.
+modes: n/a (compile-time checks; no matching involved)
 
 ## Records   [lib/records]
 
