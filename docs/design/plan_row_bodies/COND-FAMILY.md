@@ -4260,3 +4260,19 @@ the draft has it; (m6) the hand-worked table put to him is to be RUN by the revi
 MANAGER'S CALL (an answer-free choice: no text and no compiled program differs; told to him, not asked):
 **under-construction-class**: the error keeps ITS OWN class, worded as under construction (the draft's reading),
 on his words "the error is an "under construction" sign"; closed unless he objects.
+
+**2026-11-18 OWNER RULING — value-test: the `if` was illustrative; the `when` forms work on `$y` (Frank, to the
+predicate manager, evening).** ASKED AS A RULING (slug value-test: a special case for a test built from a read
+(holds when the expression yields a string, consumes nothing), or the one rule (a condition tests, a bare pattern
+consumes and warns; his intent written `when((y: 1492), "Columbus", else = $y)`); the manager's leaning: one
+rule). HIS WORDS, in full: "value-test: that "if" statement was purely illustrative. i was thinking at the time
+that $y was NOT a regex and so when() wouldn't work on it. the idea was to query how far runtime manipulation
+could go. we have since ruled that $y is a regex of a single enumeration at runtime, so the when forms would work
+on it."
+WHICH READING THE MANAGER TOOK: the ONE RULE, no special case (told to him as the reading taken). RULED (on that
+reading): his `if($y & (0: 1492), "Columbus", $y)` was an ILLUSTRATION (written while he took `$y` not to be a
+regex), not a form to honour as written; `$y` is a regex of a single enumeration at run time, so the ruled `when`
+forms apply to it as to any regex: a condition as the test tests; a bare rx as the test consumes and warns
+(when-peek); `peek()` peeks. No value-test case is added. The draft's reading (R.1.15 (12); R.1.16 A12) is
+confirmed; A12's "his test as written ... gives other answers" stays as a printed look-alike, no longer a
+question.
