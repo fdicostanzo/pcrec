@@ -65,6 +65,17 @@ Always on, whatever the situation:
   the record is listed for the next revision lane to test and report as supported or not.
 - **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
   run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
+- **A status claim about a set or a row is READ from the journal and `git log`, never from a plan status line**
+  (2026-11-18, session 140, three stale rows in one day: I told Frank a GO'd set had "no work since" when it had
+  landed four days earlier; [REQ-LOOKAROUND] read not-started with a nine-day-old build go; [LANDWALK] not-started
+  with its stage 1 built). Before saying "not started" or "waiting": `grep -n TAG docs/dev/dev_journal.md | tail`
+  and `git log --oneline --grep=TAG main | head`.
+- **Lane-launch mechanics that each cost a round trip on 2026-11-18**: a deliver file's `files:` paths are separated
+  by `;` (lanecheck splits on it); `scripts/lanewatch --follow` takes ONE name; `scripts/cloudrun` gets an explicit
+  sha in `--ref` and the sha on its DONE line is read (a `--ref HEAD` from a worktree subshell pushed main's tip);
+  the manager ASSIGNS the review number in every critic coordinator's launch prompt (two coordinators negotiated
+  theirs and a filed review had to be renamed); a subagent cannot Write outside a worktree, so a read-only critic
+  writes its findings file with a Bash heredoc and its brief says so.
 - **Predicate-language work belongs to the predicate manager session** (Frank 2026-11-18; the
   `pcrec-predicate-manager` skill; managed as the kit is): once it is up, main writes none of the draft, COND-FAMILY.md
   or predicates_future.md; a predicate remark Frank makes to main goes VERBATIM into `docs/dev/pred/from_main.md`
