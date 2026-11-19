@@ -5419,3 +5419,13 @@ binds a new name `left` to a member called `_`. In the ruled direction "leave th
 `(=, _ = left)`: the member bound to the unusable name. That also matches the part label written `[_ = A]` (the
 draft's unnamed part), where `_` stands on the left. Offered to him as the spelling; the meaning is his either
 way.
+
+### 2026-11-19 OWNER RULING — import-symbols: a member is left out with `(=, _ = left)`
+tags: parked/import-symbols
+
+Offered `(=, _ = left)` in place of his `(=, left=_)` (the entry above: the ruled direction, the new name left of
+`=`). HIS WORDS, whole: "import-symbol: yes, that correction is good"
+
+The reading taken: a RULING on the meaning with the corrected direction: in a `(=)` import, `_ = left` binds the
+member `left` to the unusable name `_`, so it is left out and the name `left` stays free ("left could be bound
+later"). The spelling remains a placeholder for the spellings review.
