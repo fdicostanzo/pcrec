@@ -4420,3 +4420,18 @@ LEAN now decides `\d + 1`'s answers); **flags-in-filter** (do a hole's flags rea
 hole); **flags-scope** (which flags propagate; `x` changes how an inserted literal is parsed); **number-edges**
 (`% 0`, a negative result); **numeral-width** (full scope; with the observation that WIDTH KEPT is the
 composition `padded($y - 1, strlen($y))`, which needs a read as `padded`'s width: construction-line (b)).
+
+**2026-11-18 OWNER, on the narrower result (Frank, to the predicate manager, night; a QUESTION with a LEAN, not
+an answer by slug).** Told that numeral-width does not fall away (results narrower than the read: `10 - 1`).
+HIS WORDS, in full: "/(?<y>\d+)-${$y - 1}/ again this could be fixed with padded() no? i mean the 10-09 case".
+RECORD: QUESTION, with a LEAN (the manager's classing; his second remark of this shape tonight, after "cant we
+wrap padded($y + 1)"): the `10-09` case is the writer's to get with `padded()`, the result itself staying the
+plain numeral. THE MANAGER'S ANSWER (a small python model this session, to be re-run by the next revision lane):
+yes, three ways, with different reach. `/(?<y>\d+)-${$y - 1}/` (bare, canonical): WHOLE `10-9` HOLDS, `10-09`
+FAILS. `${padded($y - 1)}` (no width; the 2026-11-15 body): `10-9`, `10-09`, `10-009` all HOLD; FIND-ALL
+`10-09 10-9 100-099 25-24` finds all four. A FIXED-width field, `/(?<y>\d\d)-${padded($y - 1, 2)}/`: `10-09`
+HOLDS, `10-9` FAILS; FIND-ALL [`10-09`@0, `25-24`@19]. "Exactly the width that was read" on a field of ANY
+width needs the read's own length as the width, `padded($y - 1, strlen($y))`: `10-09` HOLDS, `10-9` FAILS,
+`100-099` HOLDS, `100-99` FAILS: the one form that needs a READ as `padded`'s width (construction-line (b), not
+built). THE MANAGER'S READING: with these, numeral-width needs no WIDTH KEPT rule; put to him as "numeral-width:
+canonical".
