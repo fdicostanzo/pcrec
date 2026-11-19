@@ -4015,3 +4015,19 @@ macro with optional parameters (no width = any number of pad characters, the rul
 that does not fit yields nothing: `9999 + 1` under width 4 fails) or a MINIMUM (printf's: `10000`); a small python
 check this session: result `2026` text `2026` both hold; result `43` text `0043` both hold, `43` and `00043` both
 fail; result `10000` text `10000`: exact FAILS, minimum HOLDS. To be asked as **padded-width**.
+
+**2026-11-18 OWNER RULING — number-domain: canonical (Frank, to the predicate manager, evening).** ASKED AS A
+RULING (slug number-domain; the closing form of the question: "Does number-domain: canonical stand, with the width
+question settled as 'the result is canonical, pad by wrapping'?"). HIS WORDS, in full: "number-domain: canonical".
+RULED: ONE number domain for every number operation (the comparisons, `+ - * %`, counts): the CANONICAL numerals
+(no leading zeros, sign or point unless the literal has them); a read such as `0099` is NOT a number for `+` as it
+is none for `<` (the draft's reading R.1.16 THE NUMBER DOMAIN is confirmed; rev 27's two domains stay withdrawn).
+WHICH READING OF THE BARE ANSWER THE MANAGER TOOK: the slug only. The second half of the closing question (the
+width) was NOT named in his answer and is NOT recorded as ruled. THE MANAGER'S READINGS (mine, to be tested by the
+next revision lane): (m1) **numeral-width** is no longer a question: the draft asks it "only if the domain admits
+padded numerals", and under canonical a padded numeral never reaches `+`, so WIDTH KEPT has no case to act on
+(supported in the draft: R.1.15 (2), "the two candidates part only if the domain admits padded numerals"); (m2)
+the result of arithmetic is the canonical numeral and padding is the explicit `padded(...)` wrap (his suggestion
+of this evening; the width form is asked as **padded-width**); (m3) the draft's "outside the domain: removed at
+compile time, nothing (the position fails) at run time" was in the question's quoted definition and is taken as
+ruled with it.
