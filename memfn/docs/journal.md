@@ -4217,3 +4217,9 @@ Main ruled on the four kit findings (D186 add. 2):
   the 3 % floor); every other byte row passed. Per main's last-night rule this is INCONCLUSIVE-AT-NOISE: no 610, no re-run.
   OWED by day: the record with both nights' figures (zen4-3 + zen4-4). Job log
   worktrees/.boxqueue/done/20261119T025228.524574978-609-kit-mfcard-time/job.log. Calibration 800 started 02:52.
+- 04:04 CALIBRATION (mfcard-zen4-4L) done: 800-809 all GREEN (800 950 s; cards 81 s-20 min; 809 56 s). Finished at 04:04, well
+  inside the 07:00 cut. compare.txt (3,458 lines) = scratch/memfn/mfcal/run/mfcard-zen4-4L/compare.txt: loaded run vs BOTH quiet
+  runs zen4-3 and zen4-4, plan.tsv sha identical across all six; every card window flagged ok (mean load1 2.65-3.15, all >= 2.5).
+  Morning lane owed: the loaded-vs-quiet summary for main/Frank. Night queue empty; no kit job pending.
+- NIGHT TOTAL: set 2 700-702 GREEN (h*=64), 703 C3 re-run owed (day window, main asks Frank by 10:00), 704 after it
+  (REBUILT_BUILD only); set 1 INCONCLUSIVE-AT-NOISE (record owed); calibration GREEN (summary owed); h*=64 ceiling note owed.
