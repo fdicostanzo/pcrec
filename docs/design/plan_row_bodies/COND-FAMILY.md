@@ -4218,3 +4218,24 @@ module" wording (**under-construction-class** stays open); (m5) NOT settled: whe
 finite set (`/a|b/`, `/[ab]c/`) counts as an array of its strings or as "any other regex" (it meets his proposal
 that arrays are written with `|` only); (m6) `length` on a read is a new example of a single-value function; what
 it yields (a numeral) follows the number-domain ruling.
+
+**2026-11-18 OWNER, the two options for a function over a regex (Frank, to the predicate manager, evening;
+DISCUSSION, options laid out, none chosen).** After the manager put back the PER MEMBER reading of his test (an
+array lifted member by member; `left(/\d+/, 2)` and `\d + 1` compile errors). HIS WORDS, in full: "left(A, n) for
+any A,n is tricky. there are circumstances like "foobar" or /\d+/ or /foobar|bazqux/ where it looks easy. but its
+hard in the arbitrary sense. so the options are to say enumerate = 1 only, or "i'll give it a try" and return it
+for arrays or other specific forms but then fail on other crazy stuff like lookbacks, etc".
+RECORD: DISCUSSION: `left(A, n)` for ANY A is hard in the arbitrary sense though some cases look easy (`"foobar"`,
+`/\d+/`, `/foobar|bazqux/`). TWO OPTIONS, his: (i) "enumerate = 1 only"; (ii) "i'll give it a try": return it for
+arrays "or other specific forms" and fail on the rest ("lookbacks, etc"). No choice made. THE MANAGER'S READINGS
+(mine, to be tested by the next revision lane; (m1) put to him): (m1) option (ii) can be given a DECLARED line
+with a mechanism already ruled as design: `enumerate(rx)` (the draft's §5.5, "Enumerate go."): "a FINITE rx's
+strings one per entry", "an infinite or over-budget rx is a compile error giving the count", an edge assertion in
+its argument an error. THE CANDIDATE: a single-value function accepts A exactly where `enumerate(A)` is accepted,
+and is applied to each enumerated string in enumerate's order; a read `$y` is the run-time one-string case.
+Under it (HAND-WORKED from §5.5's rule): `left(/foobar|bazqux/, 2)` = `fo|ba`; `left("foobar" | "bazqux", 2)` the
+same (one answer for two spellings of one set); `\d + 1` = the numerals 1 through 10 (his own "both directions"
+example compiles); `left(/\d+/, 2)` a compile error (infinite); a lookbehind at the edge the error enumerate
+already gives. (m2) this is array-lift (RULED) with "array" read as "what enumerate lists"; (m3) option (i) is
+the most conservative and would refuse the morning's ruled array examples; "specific forms" without a declared
+line would make which programs compile a property of the compiler's effort.
