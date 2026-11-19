@@ -258,6 +258,13 @@ static bool ph_wmul(long long x, int k, long long *out)
     return true;
 }
 
+/* A leaf that consumes one symbol: the caller's position, or a wall. */
+static PdHead ph_leaf(Ctx *cx, const Ast *a, PhLeafPos pos, void *env)
+{
+    const void *p = pos(env, a);
+    return p ? pcrec_ph_pos(cx, p) : pcrec_ph_wall(0, false, 0, true);
+}
+
 /* THE HEAD'S PER-KIND RULE (span_arms §14.3 D-10, register row 27): node
  * `a`'s adjacency head, given its body's head `body` (NULL for a leaf) and
  * the caller's position reader `pos` for a leaf that consumes one symbol
@@ -275,10 +282,9 @@ PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
 {
     switch (a->k) {
     case A_CLASS:
-    case A_WCLASS: {
-        const void *p = pos(env, a);
-        return p ? pcrec_ph_pos(cx, p) : pcrec_ph_wall(0, false, 0, true);
-    }
+        return ph_leaf(cx, a, pos, env);
+    case A_WCLASS:    /* its own arm: never shares A_CLASS's (wclass census [5b]) */
+        return ph_leaf(cx, a, pos, env);
     case A_EMPTY:
     case A_EOL:
     case A_CTX:

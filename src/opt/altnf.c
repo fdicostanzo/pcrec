@@ -187,7 +187,9 @@ static PdHead anf_head(const AnfRun *r, const Ast *a)
 {
     switch (a->k) {
     case A_CLASS:
-    case A_WCLASS:
+        return pcrec_ph_node(r->cx, a, NULL, anf_head_pos, NULL);
+    case A_WCLASS:    /* its own arm (wclass census [5b]) */
+        return pcrec_ph_node(r->cx, a, NULL, anf_head_pos, NULL);
     case A_EMPTY:
     case A_EOL:
     case A_CTX:
