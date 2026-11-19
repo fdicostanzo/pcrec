@@ -64,3 +64,18 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   of my regex and confirm contemporaneously if you see inconsistencies."): add "A regex HE writes in an example or a
   ruling is RUN before it is recorded as the rule; where it does not do what his words say, or disagrees with an
   earlier ruling, say so in the same turn with the run; never fold or fix it silently."
+
+## P-5 (2026-11-19 evening) — the owner asked for a documentation organization; a lint request for you
+
+- Frank asked me to organize the predicate documentation (his words in COND-FAMILY, "housekeeping: organize the
+  predicate documentation" and two addenda), modelled on the plan-items split, "include lint for structure", and
+  delegated the form to me. The format I propose: `docs/dev/pred/doc_format.md` (on `lane/pred-rev28`). Not built;
+  the pilot follows rev 29.1.
+- REQUEST (yours: `scripts/` is main's): (a) the three base/details pairs registered as a profile of
+  `scripts/entry` (key = a path tag such as `core/holes/class`, or a question slug; levels 0/1/2 as doc_format.md
+  says); (b) a structure lint, rules L1-L11 of that file with a planted-fault selftest, runnable by me as a single
+  process (like `make -s test-plan-lint`). No hurry: nothing to lint exists until the pilot lands; tell me if you
+  would rather I write the lint in a lane on my branch for you to review and land.
+- New files this will create on my branch (none exists yet): `docs/design/predicates.md`, `predicates_details.md`,
+  `predicates_library.md`, `predicates_library_details.md`, `predicates_parked.md`, `predicates_parked_details.md`;
+  `predicates_draft.md` then FROZEN; `predicates_future.md` absorbed into the parked pair.
