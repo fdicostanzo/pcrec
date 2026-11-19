@@ -250,3 +250,14 @@ survived; .test PASS; entry selftest 75/0), MERGED, plan-lint clean, TaskStopped
 `predicates`. to_main P-7. The pilot's two lint questions were ruled R1/R2 in its rulings file (cite true titles;
 both L4 classes are now fixed in the lint, so the pilot's remaining L4 failures should vanish after it merges this).
 One lane running: preddoc1.
+
+## 2026-11-19 (evening) — the pilot landed on my branch
+preddoc1 DELIVERED (lanewatch DONE; R1, R2 applied), MERGED (plan-lint clean), TaskStopped. With predlint2's fixed
+lint the merged tree lints CLEAN (1,828 checks, 0 failures). Core: 94 pieces (ruled 61, ? 24, reading 5, open 4),
+34 KB base, largest piece 15 lines; holes 20 pieces (15 ruled, 3 reading, 2 open); principles 22; library 27
+(skeleton), parked 36. Completeness: 124 of 124 slugs homed; two 2026-11-15 hole rulings the draft's R section had
+not carried were found and folded (anchored-in-hole, and-in-hole). My readings 1-9, 11, 12 SUPPORTED; reading 10
+parts (an answer against a compile error): NEW owner question bare-condition-labels. FORMAT rulings after the pilot
+(doc_format.md): a `principle` status; `skeleton: yes`; one piece one status (split zero-values); the `?` date.
+to_main P-8 names the tip. NEXT: show Frank the holes section; on his look, the conversion of the remaining sections
+(lanes per section group) with the two lint additions; then the completeness critic round.
