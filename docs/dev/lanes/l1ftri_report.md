@@ -35,3 +35,4 @@ The 378 facts movers are the 306 census movers plus per-source/utf8 duplicates; 
 
 ## STATE AT HANDOFF
 Rulings file: none present. RERUN of the fixed script by hand: ident_check "0 unexplained", rc=0, scripts/verdict GREEN (log scratch/l1ftri/rerun.log). Not yet re-queued: main runs `boxqueue retry`.
+OWED: none
