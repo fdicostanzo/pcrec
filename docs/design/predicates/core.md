@@ -592,7 +592,7 @@ WHOLE `15-5` HOLDS, `5--5` FAILS / SEARCHED `5--5 15-5` `15-5`@5 / FIND-ALL `15-
 ### Single-value functions   [core/values/functions]   ruled 2026-11-18
 A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction.
 needs: core/values/one-type
-see: core/arrays/enumerate core/arrays/lift lib/strings/left lib/strings/strlen
+see: lib/builtin/enumerate core/arrays/lift lib/strings/left lib/strings/strlen
 - A single-value function (`left`, `strlen`, the arithmetic operators; placeholder names) is defined on one string.
   On a read it runs at match time on the read's one string.
 - On any other rx the first clause that applies decides (the order is a reading):
@@ -621,23 +621,10 @@ see: core/holes/count parked/ideas/cartesian
 - A pairwise combination could exist only as an explicit function (parked/ideas/cartesian).
 WHOLE `12` HOLDS, `4` FAILS / SEARCHED `x14` `14`@1 / FIND-ALL `3 12 5 14` [`3`@0, `12`@2, `5`@5, `14`@7] (`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`)
 
-### Enumerate   [core/arrays/enumerate]   ruled 2026-11-14
-`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order; an edge assertion in it, or an infinite or over-budget rx, is a compile error.
-needs: core/arrays/lift
-- A built-in. PRIORITY ORDER: at each choice point the first alternative first, and for a greedy repeat one more
-  copy first (a lazy repeat one fewer); so re-joining the entries reports the match the rx itself reports.
-- A class's members have no PCRE order; for a lift see core/arrays/class-order, for the entries'
-  own order core/arrays/class-index. Equal strings from two paths are one entry (a reading).
-- Its argument is a compile-time set position: an assertion at its edge is the edge-assertion error
-  (`enumerate(/(?<=a)[bc]/)`). A BUDGET bounds it: an infinite or over-budget rx is a compile error giving the
-  count; no number is stated for the budget. An interior lookaround or a backreference: not stated.
-- It is the line single-value functions follow (core/values/functions). Uses: finite backreferences made
-  regular, matched delimiters, which alternative matched (`.index`).
-WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a`@6] (`/${enumerate(/(?:a|ab){1,2}/)}/` is `(?:aa|aab|a|aba|abab|ab)`)
-
 ### The order of a class's results   [core/arrays/class-order]   ruled 2026-11-19
 A class's members have no order; where a lift gives results of different lengths from one class position, the longer is tried first.
-needs: core/arrays/lift core/arrays/enumerate
+needs: core/arrays/lift
+see: lib/builtin/enumerate
 - A class is one position taking one character from a set (`\d`, `[90]`, `\w`, `.`). Alternations, quantifiers and
   arrays the user writes keep their own order; nothing else is sorted.
 - No tie rule is needed: two different strings of one length cannot both match at one position (a reading, run).
@@ -659,19 +646,6 @@ needs: core/arrays/class-order
 - No candidate is the reading; it is asked.
 WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (C1, `/${\d + \d}/`: the lift's results longest first)
 WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (C2: the first class slowest, ascending)
-
-### The order of a class in enumerate   [core/arrays/class-index]   open class-index 2026-11-19
-The order of a class's members in `enumerate`'s array (`.index`, `each`, a lift of `enumerate(X)`) is a question for the owner.
-needs: core/arrays/enumerate core/arrays/class-order
-- The reading (a): codepoint order for the ARRAY interface (`enumerate(/[-\/.]/)` is [`-`, `.`, `/`], `/` at
-  index 3); a lift of `enumerate(X)` lifts an rx, so the class order applies: `enumerate(/\d/) + 1` = `\d + 1`.
-- (b): the array's codepoint order everywhere, lifts included.
-- (c): one order wherever a class's member order is observable, the longer result first, ties by codepoint;
-  equal to (a) on this lift.
-- Codepoint gives one array for every spelling of a class; leaving it undefined makes `.index` of a class member
-  an error.
-WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] ((a), `/${enumerate(/\d/) + 1}/` as the class)
-WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] ((b): the array's codepoint order)
 
 ## Holes   [core/holes]
 
@@ -958,7 +932,7 @@ needs: core/operators/bindings
   pattern: bind it or make it the result"). Macros cannot take `@`; effects cannot drop it.
 - The BUILT-INS are a closed list, reserved in CALL position only: `import`, `enumerate`, `pattern`, `param`,
   `file_text`, `records`, `eval`; the effects `@warn` and `@export` after `@` only. A label named like one still
-  works. Every other name is a library name.
+  works. Every provided name written as a call has its piece in the library (`library.md`), these included.
 - An undeclared name that is not a label is a compile error with a suggestion; a binding that hides a label
   draws a warning, and `$x` still reaches the label.
 - A binding that mentions a match label is match-dependent (a computed label); otherwise it is pure (compile time).
@@ -978,17 +952,6 @@ needs: core/operators/bindings
 - Only what `.` reaches is reachable from outside: the public names (core/labels/export decides).
 - Members of a TYPE travel with the type (`d.weekday` works with no further import); a bare `weekday(d)` needs its
   name imported (a lean of the owner's, not ruled).
-modes: n/a (no matching involved)
-
-### import   [core/modules/import]   ruled 2026-11-19
-`import(names)` takes a constant set of names, an rx over file names; it may resolve to several files, and bound to one name its value is their combined map.
-needs: core/modules/map
-see: core/modules/conflicts core/modules/import-filter
-- `m := import("isodate")` binds a module to a name; members are `m.year`. Two modules' `year` never collide.
-- The argument is a set of names, as `@export`'s is; several files: `import("pcrec"|"numbers")`.
-- No file matched is a compile error (a reading).
-- Imports are COMPILE TIME only (the artifact is self-contained), PINNED (`sha256 = ...`), and resolved only from
-  configured library directories, never an arbitrary path (a reading).
 modes: n/a (no matching involved)
 
 ### The named binding list   [core/modules/binding-list]   ruled 2026-11-19
@@ -1022,7 +985,8 @@ modes: n/a (no matching involved)
 
 ### Conflicts between files   [core/modules/conflicts]   ruled 2026-11-19
 A member name carried by two files of one `(=) := import(...)` is a compile error; such files are imported in separate bindings.
-needs: core/modules/import core/modules/all-symbols
+needs: core/modules/all-symbols
+see: lib/builtin/import
 - In separate bindings the override entries handle a shared name.
 - The same compile error in the one-name form, `m := import("a"|"b")` (a reading).
 modes: n/a (no matching involved)
@@ -1041,11 +1005,6 @@ needs: core/modules/default-set
 - Today only `lib/control/peek` carries `default: yes`. Candidates: `peek` alone; every name the core's own pieces
   point at (`when`, `occurrences`, `some`, ...); a named prelude module.
 modes: n/a (no matching involved)
-
-### A filter inside the import   [core/modules/import-filter]   under-construction 2026-11-19
-A filter over the imported names, written inside the import (`import("file1"|"file2", search(string))`), is a direction acknowledged, not defined.
-needs: core/modules/import
-- Not stated: whether it applies before the conflict check (so that it can remove a conflict).
 
 ### A positional binding   [core/modules/positional]   open tuple-parts 2026-11-19
 Is a positional list on the left of a binding, `(a, b) := lo`, a way to take ONE tuple apart, or is a tuple only ever used whole?
@@ -1072,7 +1031,7 @@ modes: n/a (no matching involved)
 
 ### Compile errors   [core/diagnostics/errors]   reading 2026-11-19
 A program whose meaning is refused is a compile error, and no setting disables one; what is only probably a mistake is a warning instead (core/diagnostics/warnings).
-needs: core/values/functions core/arrays/enumerate core/operators/statements core/modules/conflicts
+needs: core/values/functions core/operators/statements core/modules/conflicts
 - Each error below is ruled or read in its own piece; this piece is the index.
 | fires on | piece |
 |---|---|
@@ -1085,9 +1044,9 @@ needs: core/values/functions core/arrays/enumerate core/operators/statements cor
 | `\k<h>` to a name two groups of one literal carry, without `(?J)`; a number naming a group ambiguously | core/labels/backreferences, core/labels/numbers |
 | a hole position with no rule; an array in a group-name hole; a member that is not a count; a range written out of order; an option hole that is not one legal value; a backreference name or number from a hole | core/holes/insert and its position pieces |
 | `${@y}`, not defined | parked/ideas/array-in-hole |
-| an edge assertion in `enumerate`'s argument; an infinite or over-budget argument | core/arrays/enumerate |
+| an edge assertion in `enumerate`'s argument; an infinite or over-budget argument | lib/builtin/enumerate |
 | a single-value function on an operand with an assertion looking outside | core/values/functions |
-| no file matched by `import`; one member name from two files of one `(=)` import; a bare `=` not first | core/modules/import, core/modules/conflicts, core/modules/all-symbols |
+| no file matched by `import`; one member name from two files of one `(=)` import; a bare `=` not first | lib/builtin/import, core/modules/conflicts, core/modules/all-symbols |
 | a library file that exports nothing | core/modules/export |
 | a recursion through a parameterised definition other than one integer literal parameter strictly decreasing to a literal base case | (a reading; no piece) |
 - UNDER CONSTRUCTION is a class of its own: the meaning is defined, the build is not there
@@ -1171,7 +1130,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the LABEL-ONLY group (his `(?<:x>foo)`) | parked/ideas/label-only-group |
 | OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | core/diagnostics/warnings, parked/ideas/capability-optins |
 | every WARNING name (`pcrec.test.never`, `pcrec.dollar.filter`, ...) and the under-construction error's name | core/diagnostics/warnings, core/diagnostics/under-construction |
-| `import(...)`, `@export(...)`, the filter inside the import | core/modules/import, core/modules/export, core/modules/import-filter |
+| `import(...)`, `@export(...)`, the filter inside the import | lib/builtin/import, core/modules/export, lib/builtin/import/filter |
 | the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
 | a positional binding `(a, b) := X` | core/modules/positional |
 modes: n/a (spellings)

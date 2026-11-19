@@ -5,8 +5,65 @@ member `m.x(...)`, by kind. Each piece says how the name is defined: `defined: l
 stated and run) or `defined: native (<why no body exists>)` (support outside the language). The core (`core.md`) holds
 the syntax and meaning that is not a name and refers here as needed. Ideas not in the language are `parked.md`.
 Details per tag: `library_details.md`. Every name is a placeholder spelling. Names an example program binds with
-`:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. Names the worked examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned
-content of the standard library (core/modules/standard-library).
+`:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. Names the worked
+examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned content of the standard
+library (core/modules/standard-library).
+
+## Built-in names   [lib/builtin]
+
+The names reserved in call position by the program shape (core/operators/statements) that are not filed under a
+kind below. `param`, `file_text` and `records` are under lib/records.
+
+### Enumerate   [lib/builtin/enumerate]   ruled 2026-11-14
+`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order; an edge assertion in it, or an infinite or over-budget rx, is a compile error.
+needs: core/arrays/lift
+module: ?
+defined: native (it lists an rx's strings; no expression of the language walks an rx)
+- A built-in. PRIORITY ORDER: at each choice point the first alternative first, and for a greedy repeat one more
+  copy first (a lazy repeat one fewer); so re-joining the entries reports the match the rx itself reports.
+- A class's members have no PCRE order; for a lift see core/arrays/class-order, for the entries'
+  own order lib/builtin/enumerate/class-index. Equal strings from two paths are one entry (a reading).
+- Its argument is a compile-time set position: an assertion at its edge is the edge-assertion error
+  (`enumerate(/(?<=a)[bc]/)`). A BUDGET bounds it: an infinite or over-budget rx is a compile error giving the
+  count; no number is stated for the budget. An interior lookaround or a backreference: not stated.
+- It is the line single-value functions follow (core/values/functions). Uses: finite backreferences made
+  regular, matched delimiters, which alternative matched (`.index`).
+WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a`@6] (`/${enumerate(/(?:a|ab){1,2}/)}/` is `(?:aa|aab|a|aba|abab|ab)`)
+
+### The order of a class in enumerate   [lib/builtin/enumerate/class-index]   open class-index 2026-11-19
+The order of a class's members in `enumerate`'s array (`.index`, `each`, a lift of `enumerate(X)`) is a question for the owner.
+needs: lib/builtin/enumerate core/arrays/class-order
+module: ?
+defined: ?
+- The reading (a): codepoint order for the ARRAY interface (`enumerate(/[-\/.]/)` is [`-`, `.`, `/`], `/` at
+  index 3); a lift of `enumerate(X)` lifts an rx, so the class order applies: `enumerate(/\d/) + 1` = `\d + 1`.
+- (b): the array's codepoint order everywhere, lifts included.
+- (c): one order wherever a class's member order is observable, the longer result first, ties by codepoint;
+  equal to (a) on this lift.
+- Codepoint gives one array for every spelling of a class; leaving it undefined makes `.index` of a class member
+  an error.
+WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] ((a), `/${enumerate(/\d/) + 1}/` as the class)
+WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] ((b): the array's codepoint order)
+
+### import   [lib/builtin/import]   ruled 2026-11-19
+`import(names)` takes a constant set of names, an rx over file names; it may resolve to several files, and bound to one name its value is their combined map.
+needs: core/modules/map
+see: core/modules/conflicts lib/builtin/import/filter
+module: ?
+defined: native (it reads library files at compile time)
+- `m := import("isodate")` binds a module to a name; members are `m.year`. Two modules' `year` never collide.
+- The argument is a set of names, as `@export`'s is; several files: `import("pcrec"|"numbers")`.
+- No file matched is a compile error (a reading).
+- Imports are COMPILE TIME only (the artifact is self-contained), PINNED (`sha256 = ...`), and resolved only from
+  configured library directories, never an arbitrary path (a reading).
+modes: n/a (no matching involved)
+
+### A filter inside the import   [lib/builtin/import/filter]   under-construction 2026-11-19
+A filter over the imported names, written inside the import (`import("file1"|"file2", search(string))`), is a direction acknowledged, not defined.
+needs: lib/builtin/import
+module: ?
+defined: ?
+- Not stated: whether it applies before the conflict check (so that it can remove a conflict).
 
 ## Modifiers   [lib/modifiers]
 
@@ -16,6 +73,7 @@ needs: core/holes/pattern core/filters/and core/patterns/alternation
 by: core/principles/stated-behaviour
 see: lib/sets/between lib/modifiers/limited
 module: ?
+defined: language
 - The bodies: `padded(rx) := /0*${rx}/`, the argument in a hole (one entry: `/0*(?:${rx})/` writes out the same);
   `padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)`, the any-length branch first.
 - The width is a MINIMUM: zeros reach out to n characters; a value already n or longer stands unpadded.
@@ -35,6 +93,7 @@ WHOLE `0129` HOLDS / SEARCHED `x0129` `0129`@1 / FIND-ALL `0129 0000 12` [`0129`
 `quoted(S)` reads only the text inside double quotes: the body `/"${S & /[^"]*/}"/`, S matched whole on that text.
 needs: core/holes/pattern core/filters/and
 module: ?
+defined: language
 - The name is ruled (a filter modifier named for what it reads); the body is a reading.
 - S stands in a filter role over the quoted text: a `^` in S reads that text's start, so `quoted(/^a\w*/)` holds
   on `"ab"`; the plain splice `/"(?:${S})"/` would never match it (its `^` would read the stretch before the quote).
@@ -42,14 +101,15 @@ module: ?
 WHOLE `"ab"` HOLDS, `"ba"` FAILS / SEARCHED `x "ab"` `"ab"`@2 / FIND-ALL `"a" "b" "ax"` [`"a"`@0, `"ax"`@8] (`quoted(/^a\w*/)`)
 
 ### any_case   [lib/modifiers/any-case]   open any-case-body 2026-11-19
-Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay the primitive (a string equal, up to letter case, to a member of rx)?
+Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay native (a string equal, up to letter case, to a member of rx)?
 needs: core/holes/flags core/filters/and
 module: ?
-- Today (ruled): `any_case` is a PRIMITIVE for now; a more fundamental basis is a follow-up.
-- The standing reading: under the flags rulings the body equals the primitive in every mode except (1) for an
+defined: native (for now, by the owner's ruling; whether the body defines it is the open question)
+- Today (ruled): `any_case` is native for now; a more fundamental basis is a follow-up.
+- The standing reading: under the flags rulings the body equals the native definition in every mode except (1) for an
   argument writing its own `(?-i)` (its own flag wins) and (2) for a NEGATED filter operand in the argument
   (`any_case(/[abAB]{2}/ & !/ab/)`), where the `(?i)` reaches the negated side.
-- Candidates: (a) the body is the definition, those two arguments its stated behaviour; (b) the primitive stays,
+- Candidates: (a) the body is the definition, those two arguments its stated behaviour; (b) the native definition stays,
   the body a lowering where it agrees.
 WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho`@0, `HO`@3] (the candidate body on `any_case("ho")`, `(?i:ho)`)
 
@@ -57,6 +117,7 @@ WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho
 `limited(rx, n)` is a length limit the owner wants as a macro, composed either way round with `padded`; it is not defined.
 see: lib/modifiers/padded
 module: ?
+defined: ?
 - His uses: `limited(padded(digits), 5)` and `padded(limited(digits, 5))` ("the padding could be infinite").
 - Whether the limit is "at most n" or "exactly n" is not settled by his words.
 
@@ -64,6 +125,7 @@ module: ?
 `length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one loop pass per character, its count tested by S.
 needs: core/filters/and core/values/reads
 module: ?
+defined: language
 - The helpers: `chars := /(?:(?<ch>(?s:.)))*/`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral.
 - The name is ruled; the body is a reading. The label `ch` is visible in the result.
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
@@ -73,20 +135,21 @@ WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`a
 `month_numbered(S)` reads a month name as its number: `months & (mnum: S)`, `mnum` the 1-based index of the name matched.
 needs: core/filters/and core/values/reads
 module: ?
+defined: language
 - `months := join([mname = [/Jan(?:uary)?/, ..., /Dec(?:ember)?/]])`, `mnum := $mname.index`.
 - The name is ruled; the body is a reading. The label `mname` is visible in the result.
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
 
-The conditional, the transform that makes its test a peek, and the name of the atomic part. None is a primitive:
-each is a body over the core's lookahead, atomic group, pattern hole, sequence and alternation.
+The conditional, the transform that makes its test a peek, and the name of the atomic part. Each is a body over the core's lookahead, atomic group, pattern hole, sequence and alternation.
 
 ### peek   [lib/control/peek]   ruled 2026-11-18
 `peek(A)` tests A where it stands without consuming it: the macro `/(?=${A})/`, a lookahead around a pattern hole.
 needs: core/patterns/lookaround core/holes/pattern core/holes/labels
 module: ?
 default: yes
+defined: language
 - The body: `peek(A) := /(?=${A})/`. Nothing in it is particular to `peek`: it is a useful transform.
 - Labels A sets are readable after it, as after any lookahead and through any hole (only A's public labels).
 - `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (a reading, run).
@@ -98,6 +161,7 @@ WHOLE `37` HOLDS (d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 5
 The conditional is the guarded form, `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)`: else is never tried where the test holds.
 needs: lib/control/peek core/patterns/sequence core/conditions/in-sequence
 module: ?
+defined: language
 - `then` has no default: `when(x)` and `when(x, else = z)` are compile errors. The legal calls: `when(x, y)`,
   `when(x, y, z)`, `when(x, then = y)`, `when(x, then = y, else = z)`, `when(x, y, else = z)`.
 - The missing else is `//`, the empty pattern: where the test does not hold, `when` holds and matches nothing.
@@ -112,6 +176,7 @@ WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [
 A condition or a `peek(A)` as the test consumes nothing and then starts where the test stands; a bare pattern as the test is consumed and then continues after it.
 needs: lib/control/when
 module: ?
+defined: language
 - These are when's body read per kind of test: `test SEQ then` consumes what the test consumes. The else guard,
   `NOT peek(test)`, is "the test cannot match here" for every kind.
 - A bare pattern A: `when(A, B, else = C)` is `AB|(?!A)C`, a sequence, not an `&` over a stretch.
@@ -125,6 +190,7 @@ WHOLE `12` FAILS, `123` HOLDS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7`
 In `when(NOT x, z)` with x a bare pattern, is `NOT x` a complement, so a compile error, or a negative peek, as `when(NOT peek(x), z)`?
 needs: lib/control/when-test
 module: ?
+defined: ?
 Candidates: (a) a compile error (a complement in a test position, complement-place kept uniform; the user writes
 `when(NOT peek(x), z)`); (b) a negative peek (the user's evident meaning; `NOT x` then means two things by place).
 The two clear forms, `when(NOT peek(x), z)` and a condition under NOT, are not in question.
@@ -134,6 +200,7 @@ modes: n/a (a question; the runs are cited in the details entry)
 `atomic(X)` is the macro `/(?>${X})/`: PCRE's atomic group around a pattern hole, so X keeps PCRE's atomic meaning.
 needs: core/patterns/atomic core/holes/pattern
 module: ?
+defined: language
 - The rule an atomic part follows (a condition inside it is tried before it commits; one outside never re-enters
   it) is the core's (core/patterns/atomic); this piece is only the name.
 - The name and its spelling are placeholders.
@@ -146,6 +213,7 @@ WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac`
 needs: core/holes/pattern core/holes/count core/patterns/quantifiers
 see: core/diagnostics/nullable-hit
 module: ?
+defined: language
 - A rewrite: x goes into the hole of the loop template, like any hole. Its first path has a plain search's hits,
   leftmost and non-overlapping, along PCRE's own parse.
 - `min = n` means at least n hits, for any n; there is no `max`.
@@ -166,6 +234,7 @@ WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `
 `hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to: a fixed list of hits, judged after it.
 needs: lib/search/occurrences core/patterns/atomic
 module: ?
+defined: language
 - The body: `hits(r) := /\A(?>(?:(?s:.*?)(?<hit>${r}))*[\s\S]*)\z/`: an atomic group around the WHOLE loop.
 - Once it has matched nothing re-enters it: its hits are a plain search's (with no condition before the group),
   and tests on them judge a fixed list.
@@ -179,6 +248,7 @@ WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hi
 `contains(s)` is the plain gap body `/(?s:.*)(?:${s})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s.
 needs: core/holes/pattern core/filters/and
 module: ?
+defined: language
 - The gaps cross line breaks. Inside the argument `^` and `$` are the ends of the value filtered:
   `contains(/^err/)` is "starts with `err`" (WHOLE, 0 of 1,365 texts differ from `startsWith("err")`).
 - The negated test is `!contains(x)`.
@@ -188,6 +258,7 @@ WHOLE `xerrx` HOLDS, `er` FAILS / SEARCHED `a err b` `a err b`@0 / FIND-ALL `err
 `contains(x)` is written `occurrences(x, min = 1)`: the same set, and x's labels read leftmost, as a hit.
 needs: lib/search/contains lib/search/occurrences
 module: ?
+defined: language
 - The one-hit test of the occurrences family, one definition; where no question reads x's labels the compiler may
   build it as the plain set.
 - Against the gap body: WHOLE, SEARCHED and FIND-ALL 0 / 0 / 0 of 121 texts differ (`ab` over `abx`); only the
@@ -198,6 +269,7 @@ WHOLE `xabx` HOLDS, `ba` FAILS / SEARCHED `x ab` `x ab`@0 / FIND-ALL `ab ab` [`a
 `startsWith(s)` is the plain gap body `/(?:${s})(?s:.*)/`, no anchors of its own.
 needs: core/holes/pattern
 module: ?
+defined: language
 - In a filter role it accepts a value starting with s (`startsWith("5")` accepts `57`); `/^${s}/` would not
   (in a filter it means exactly s).
 - Outside a filter it is unanchored, as any rx.
@@ -207,6 +279,7 @@ WHOLE `errx` HOLDS, `xerr` FAILS / SEARCHED `x err!` `err!`@2 / FIND-ALL `err1 e
 `endsWith(s)` is the plain gap body `/(?s:.*)(?:${s})/`, no anchors of its own.
 needs: core/holes/pattern
 module: ?
+defined: language
 - The gap is greedy as the owner wrote it: the argument starts as far RIGHT as it can (`endsWith(/(?<n>\d+)/)`
   on `ab123`: n = `3`).
 WHOLE `ab123` HOLDS (3) / SEARCHED `x12 34` `x12 34`@0 / FIND-ALL `a1 b2` [`a1 b2`@0] (`endsWith(/(?<n>\d+)/)` is `(?s:.*)(?:(?<n>\d+))`)
@@ -215,6 +288,7 @@ WHOLE `ab123` HOLDS (3) / SEARCHED `x12 34` `x12 34`@0 / FIND-ALL `a1 b2` [`a1 b
 `endsWith(s)` is written with a LAZY gap, `/(?s:.*?)(?:${s})/`, so its argument starts as far LEFT as it can.
 needs: lib/search/ends-with
 module: ?
+defined: language
 - The same set as the greedy body; the labels and the searched stretch differ (`endsWith(/(?<n>\d+)/)` on
   `ab123`: n = `123`).
 WHOLE `ab123` HOLDS (123) / SEARCHED `x12 34` `x12`@0 / FIND-ALL `a1 b2` [`a1`@0, ` b2`@2] (`(?s:.*?)(?:(?<n>\d+))`)
@@ -223,6 +297,7 @@ WHOLE `ab123` HOLDS (123) / SEARCHED `x12 34` `x12`@0 / FIND-ALL `a1 b2` [`a1`@0
 `anchored(s)` is the plain macro `/\A(?:${s})\z/`: s matched whole on its scoped match, with exact ends.
 needs: core/holes/pattern
 module: ?
+defined: language
 - Exact ends: `anchored(/foo/)` as a final pattern does not match `foo` followed by a newline.
 - No special case anywhere: in a hole it never matches (`/x${anchored(/a/)}/` on `xa`, as `/x\Aa\z/`), with no
   error specific to it.
@@ -234,6 +309,7 @@ WHOLE `a` HOLDS, `ab` FAILS / SEARCHED `ab` FAILS / FIND-ALL `b` [`b`@0] (`ancho
 ### within   [lib/search/within]   under-construction 2026-11-19
 `within(n, of = d)` (a placeholder) is a date within n days of a date d; the worked example names it and nothing defines it.
 module: ?
+defined: ?
 - Its use: `isodate & within(15, of = c)` with c a compile-time date, and `within(15, of = ref)` with
   `ref := param(isodate)` (a run-time input).
 - A day difference is a function of the fields, out of reach of a set written in the language: a computed label
@@ -245,6 +321,7 @@ module: ?
 `anything` is `[\s\S]*`: any text, newlines included, greedy, and no flag changes it.
 needs: core/patterns/literals core/patterns/flags
 module: ?
+defined: language
 - It holds WHOLE on the empty text, `12` and a multi-line text, alone and under `(?s)`, `(?i)`, `(?m)`, `(?x)`.
 - It is nullable: `anything & NOT X` SEARCHED or FIND-ALL holds on an empty stretch; it is a whole-value tool.
 WHOLE `` HOLDS, `a b` HOLDS / SEARCHED `ab` `ab`@0 / FIND-ALL `ab` [`ab`@0, ``@2] (`anything` is `[\s\S]*`)
@@ -253,6 +330,7 @@ WHOLE `` HOLDS, `a b` HOLDS / SEARCHED `ab` `ab`@0 / FIND-ALL `ab` [`ab`@0, ``@2
 `between(lo, hi)` is the comparison set `>= lo & <= hi`: inclusive, over canonical numerals, so padded text needs `padded`.
 needs: core/filters/and core/values/number-domain
 module: ?
+defined: language
 - `/\d\d/ & between(1, 12)` is {`10`, `11`, `12`}: the `\d\d` means two digits; months are
   `/\d\d/ & padded(between(1, 12))` or `/\d{1,2}/ & between(1, 12)`.
 - Its bounds may be tuples (dictionary order, every component read).
@@ -263,6 +341,7 @@ WHOLE `12` HOLDS, `05` FAILS / SEARCHED `x05 11` `11`@4 / FIND-ALL `10 3 12 13` 
 `prefix_in(n, S)` accepts a text whose first n characters are a member of S: `/${S & /(?s:.){${n}}/}(?s:.*)/`.
 needs: core/holes/pattern core/holes/count core/filters/and
 module: ?
+defined: language
 - `suffix_in(n, S)` and `slice_in(i, n, S)` alike; positions are characters per the encoding mode; out of range is
   not stated.
 - A PREIMAGE filter: `prefix_in(2, "Columbus")` never holds (no 2-character member), while his `left(rx, n)` is an
@@ -274,8 +353,8 @@ WHOLE `xyz` HOLDS, `abc` FAILS / SEARCHED `abxyq` `xyq`@2 / FIND-ALL `xy ab` [`x
 ### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-14
 The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
 module: occurs
-- Primitive: a count over the passes of a loop; no body in the core language writes it. A capped counter
-  (n + 2 states) multiplied in.
+defined: native (a count over the passes of a loop, a capped counter; no expression of the language counts passes)
+- Its states: a capped counter (n + 2 states) multiplied in.
 - `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`); one record is
   one pass; n is a constant or a caller parameter.
 - These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form.
@@ -286,9 +365,9 @@ modes: n/a (a count over a loop's pass table; no example of the draft is printed
 
 ### join   [lib/strings/join]   reading 2026-11-19
 `join(a, sep = s)` is one value: the members of a finite array in their order, s between them; with no `sep`, nothing between.
-needs: core/arrays/enumerate core/holes/class
+needs: lib/builtin/enumerate core/holes/class
 module: ?
-- Primitive: a function over an array's members; the core language has no body that walks an array.
+defined: native (a function over an array's members; no expression of the language walks an array)
 - "None of these" is written with it: `[^${join(c)}]`, c := [x, y], is `[^xy]` (several values in `[^${c}]` stay
   the alternation of the class).
 - Joined parts stay reachable by their labels (`c.A`). Ordered, fixed: `join`; ordered, repeated: `list_of`.
@@ -296,9 +375,9 @@ WHOLE `ax` FAILS, `ab` HOLDS / SEARCHED `ax ab` `ab`@3 / FIND-ALL `ax ay ab` [`a
 
 ### left   [lib/strings/left]   reading 2026-11-19
 `left(rx, n)` is the IMAGE: the first n characters of each string of rx, applied to each enumerated string in enumerate's order.
-needs: core/values/functions core/arrays/enumerate
+needs: core/values/functions lib/builtin/enumerate
 module: ?
-- Primitive: a string function; the core language has no slicing.
+defined: native (a string function; the language has no slicing)
 - Built for an rx `enumerate` accepts (`left(/foobar|bazqux/, 2)` is `fo|ba`); on any other rx (`left(/\d+/, 2)`)
   it is under construction.
 - Characters or bytes is not settled (his "(Byte ideally)").
@@ -308,7 +387,8 @@ WHOLE `fo` HOLDS, `foo` FAILS / SEARCHED `xba` `ba`@1 / FIND-ALL `fo ba` [`fo`@0
 `strlen(rx)` is the length of each enumerated string of rx, a canonical numeral: his `length($y)`, the length of the match.
 needs: core/values/functions core/holes/value core/values/number-domain
 module: ?
-- Primitive: a string function. On a read it is computed at run time.
+defined: native (a string function; the language has no length of a string as a value)
+- On a read it is computed at run time.
 - The spelling `strlen` keeps the filter `length(S)` (a preimage) apart from this image.
 WHOLE `abc-3` HOLDS / SEARCHED `ab-3 abc-3` `abc-3`@5 / FIND-ALL `a-1 ab-3 abcdefghij-10` [`a-1`@0, `abcdefghij-10`@9] (`/(?<y>\w+)-${strlen($y)}/`)
 
@@ -316,15 +396,17 @@ WHOLE `abc-3` HOLDS / SEARCHED `ab-3 abc-3` `abc-3`@5 / FIND-ALL `a-1 ab-3 abcde
 `upperStart(rx)` is his placeholder for a string function of the `left` kind; nothing defines what it returns.
 see: lib/strings/left
 module: ?
+defined: ?
 - It falls under the rule of single-value functions (core/values/functions) once defined.
 
 ## Records   [lib/records]
 
 ### records   [lib/records/records]   reading 2026-11-19
 `records(text, rx)` is an rx whose array has one item per compile-time match of the item rx over a compile-time text.
-needs: core/arrays/enumerate
+needs: lib/builtin/enumerate
 module: ?
-- Primitive: a compile-time search over a text. The item rx is SEARCHED in the text (its `^`/`$` read the text);
+defined: native (a compile-time search over a text)
+- The item rx is SEARCHED in the text (its `^`/`$` read the text);
   each item is the item rx narrowed to that one match, its labels reachable by the map interface (`r.word`).
 - The names are placeholders.
 modes: n/a (a compile-time tool over a file's text; it builds an array, it matches no subject)
@@ -333,6 +415,7 @@ modes: n/a (a compile-time tool over a file's text; it builds an array, it match
 `list_of(X, sep = S)` is the separated list `/(?:${X}${S})*${X}/`: its label is the last item, its array every item.
 needs: core/holes/pattern core/labels/one-rule
 module: ?
+defined: language
 - One item or more; written this way the label and the array are right at every length (one copy of X before
   the loop would leave the label unset on one item).
 - Its minimum (zero items) is not stated.
@@ -341,14 +424,16 @@ WHOLE `7,3,5` HOLDS (5) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `
 ### param   [lib/records/param]   reading 2026-11-19
 `param(rx)` is a run-time input: an rx whose string the caller fixes per match, read-only, validated against rx.
 module: ?
-- Primitive: the caller supplies it (`limit := param(/\d{1,4}/)`, `ref := param(isodate)`).
+defined: native (the caller supplies it at run time)
+- The caller supplies it (`limit := param(/\d{1,4}/)`, `ref := param(isodate)`).
 - What kind of value it is and how it is passed are not settled.
 modes: n/a (a caller's input; no subject example)
 
 ### file_text   [lib/records/file-text]   reading 2026-11-19
 `file_text(path, sha256 = ...)` is the whole file as one compile-time string, pinned by its hash.
 module: ?
-- Primitive: it reads a file at compile time. Used with `records` (`records(file_text("w.txt", sha256 = ...), lines)`).
+defined: native (it reads a file at compile time)
+- Used with `records` (`records(file_text("w.txt", sha256 = ...), lines)`).
 modes: n/a (a compile-time string; it matches no subject)
 
 ## The rx parts   [lib/rx]
@@ -358,6 +443,7 @@ The rx module's singular character parts are one-line bodies over literals and h
 needs: core/patterns/literals core/holes/class core/holes/range-end
 see: lib/rx/repeat
 module: rx
+defined: language
 - `rx.digit := /\d/`; `rx.word_char`, `rx.space`, `rx.any`, `rx.any_but_newline` are `\w`, `\s`, `(?s:.)`, `.`.
 - `rx.letter`: `[[:alpha:]]`, following the program's UCP setting as a literal does.
 - `rx.range(a, b) := /[${a}-${b}]/` (range ends are a typed position); `rx.none_of(S)` is `rx.any & !S`.
@@ -370,6 +456,7 @@ WHOLE `123` HOLDS, `12a` FAILS / SEARCHED `ab12` `12`@2 / FIND-ALL `1 23` [`1`@0
 One `repeat` construct does all counting (one argument exact, min and max a range, no maximum unbounded); it is a library definition over count holes.
 needs: core/patterns/quantifiers core/holes/count core/arrays/lift
 module: rx
+defined: language
 - The bodies, one per call form: `repeat(x, n) := /(?:${x}){${n}}/`; `repeat(x, min, max) :=
   /(?:${x}){${min},${max}}/`; `repeat(x, min) := /(?:${x}){${min},}/` ("no maximum" is a second body with the bound
   left out, a reading).
@@ -389,15 +476,17 @@ The compile-time tools over spelled arrays and the macro that names a capture.
 `capture(x)` names a capture after its argument: `capture(x) := /(?<${x.label}>${x})/`, the hole in a group-name position.
 needs: core/holes/name core/holes/pattern core/labels/export
 module: ?
+defined: language
 - A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture.
 - With `each`: `join(each(capture, a), sep = ".")`.
 WHOLE `12` HOLDS (12) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture(x)`, x := `[d = /\d+/]`)
 
 ### each, each_group, where_group   [lib/structural/each]   reading 2026-11-19
 `each(f, A)` applies a macro or filter f to every entry of a spelled array A, keeping labels and order; several arrays zip by position.
-needs: core/arrays/enumerate core/operators/bindings
+needs: lib/builtin/enumerate core/operators/bindings
 module: ?
-- Primitive: compile-time structural tools over spelled arrays, never over a loop's passes.
+defined: native (compile-time tools over spelled arrays; no expression of the language walks an array)
+- They work over spelled arrays, never over a loop's passes.
 - f is a macro whose parameters the entries fill, or a filter passed as a section (`each((& isodate), dates)`).
 - `each_group` zips by label; `where_group` and `each_group` return an rx (an array in group order).
 - An ordinal is passed by name (`ordinal = "i"`, starting at `start =`, default 1).

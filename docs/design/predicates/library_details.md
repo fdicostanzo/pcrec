@@ -3,6 +3,67 @@
 One entry per tag of `library.md`, in the same order (fields as in `core_details.md`). The record
 is `docs/design/plan_row_bodies/COND-FAMILY.md`; a skeleton entry's source is `predicates_draft.md` revision 29.1.
 
+## lib/builtin/enumerate — Enumerate
+was: core/arrays/enumerate (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+slugs:
+rulings:
+- 2026-11-14 "I love it. Enumerate go." (record: "2026-11-14 RULINGS on the predx gaps"); design adoption, with its rules: the budget, PCRE priority order, a built-in
+rejected:
+- widest first (one more copy first everywhere) as the order — by review r52 D (TABLES-4): it parts from PCRE priority on `(?:a|ab){1,2}` (SEARCHED `aba` `aba`@0 against `a`@0); preddoc3b sabotage s8 caught.
+- codepoint order for a class's members in a lift — by owner ruling — class-order (core/arrays/class-order).
+readings:
+- the enumerator's ORDER equals PCRE's own pattern on re-joining — SUPPORTED (preddoc3b EXenum: 0 / 0 / 0 of 63 texts; PART PR of predspec281 on libpcre2).
+- an interior lookaround or a backreference in the argument: NOT STATED (PART PR of predspec281).
+evidence: preddoc3b EXenum.
+history:
+- 2026-11-14: "Enumerate go"; the draft §5.5. 2026-11-18: construction-line made it the line of single-value functions. 2026-11-19: class-order replaced the codepoint lean for lifts.
+- 2026-11-19 (lane preddoc3b): converted from `?`.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
+## lib/builtin/enumerate/class-index — The order of a class in enumerate
+was: core/arrays/class-index (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+slugs: class-index
+rulings:
+rejected:
+readings:
+- (a) is the draft's reading (rev 29's narrowing of the codepoint lean, not the ruling's words) — the record says the lean "is replaced", with no carve-out; (a) vs (b) 0 / 250 / 570 of 3,906; (a) vs (c) 0 / 0 / 0 (PART CO of predspec291).
+evidence: preddoc3b EXclassindex; PART CO of predspec291 (P29-10).
+history:
+- 2026-11-19: new with class-order; re-worded by review r54 P29-10.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
+## lib/builtin/import — import
+was: core/modules/import (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+was: parked/import-symbols/import (2026-11-19, ruled by the owner: it is in the language)
+slugs: import-several
+rulings:
+- 2026-11-19 "import-several: yes. if you can bind multiple arguments simultaneously, thent this is more expressive. before you could only bind one so what did multiple files mean? although, good point, if the binding is just 1 symbol, then its a map of all the values of the files combined." (record: "2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map")
+- 2026-11-14 "import(...)'s argument is a set of names (an rx over file names, consistent with export)" (record: "2026-11-14 — import/export as functions"); the addendum, the manager's wording of his words
+rejected:
+- it must resolve to EXACTLY ONE file; several matches a compile error (the 2026-11-14 addendum; the draft §7) — by owner ruling — import-several ("before you could only bind one so what did multiple files mean?").
+- `import weekday as wd` for a clash (the manager's 2026-11-14 lean) — by owner ruling — no alphabetic keywords; the rename is now `(wd = weekday) := ...` (core/modules/binding-list).
+readings:
+- zero files matched stays a compile error (the manager's reading of import-several) — UNTESTED (a refusal).
+- compile time only, pinned by `sha256`, configured directories only (the manager's 2026-11-13 design; the draft §7, LEAN) — UNTESTED.
+evidence:
+history:
+- 2026-11-13: `d := import("isodate")`; 2026-11-14: import/export as functions, its follow-up and addendum; 2026-11-19: several modules in one import, then import-several.
+- 2026-11-19 (lane preddoc3b): the parked placeholder parked/import-symbols/import is retired into this section (the owner ruled import-symbols); its slug `import-symbols` is on core/modules/binding-list.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
+## lib/builtin/import/filter — A filter inside the import
+was: core/modules/import-filter (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+slugs:
+rulings:
+- 2026-11-19 "one could filter but it would have to be inside the import("file1"|"file2", search(string))" (record: "2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map"); an IDEA in the ruling's answer
+rejected:
+readings:
+- NOT STATED: the filter before or after the conflict check.
+evidence:
+history:
+- 2026-11-19: his first instinct already filtered inside the import (`import("blah", /left|right/)`); the idea in import-several.
+- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+
 ## lib/modifiers/padded — padded
 was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs: padded-width padded-order padded-lazy-sparse
