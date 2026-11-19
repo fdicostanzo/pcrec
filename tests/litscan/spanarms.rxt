@@ -838,6 +838,36 @@ engine vm
 n "xy"
 n "xay"
 
+# W-L2b (span_arms §5.7 W-L2, review r55 CHECK-4): S3366's OWN witness; the group is a right operand, so the walk reads it as its own value and its `rg` leftover `cd` reaches CAT-EDGE (W-L2's leftmost group flattens into the spine and never does); a leftover materialized as head bytes claims `xabcdcd`; libpcre2's answers
+pattern x(?:(?=abcd)ab)cd
+features all
+m "xabcd" 0 5
+m "zxabcdz" 1 6
+m "xabcdcd" 0 5
+
+# W-L2b (review r55 CHECK-4): S3366's own witness [engine vm]
+pattern x(?:(?=abcd)ab)cd
+features all
+engine vm
+m "xabcd" 0 5
+m "zxabcdz" 1 6
+m "xabcdcd" 0 5
+
+# W-L6b (span_arms §5.7 W-L6, review r55 CHECK-3): S3368's OWN witness; the group's leftover `pq` sits past a variable-width `a.?`, and the `.?`-empty path (`xapqzz`) puts `p`, not `q`, right after the group: a leftover carried across the non-`all` neighbour narrows `[pq]` to `q` and deletes it (W-L6's own pattern narrows to a byte the set already holds and the run loses the tie, so it cannot fail); libpcre2's answers
+pattern [xy](?:(?=apq)a.?)[pq][qz]zz
+features all
+m "xapqzz" 0 6
+m "xapqqzz" 0 7
+m "wyapqzzw" 1 7
+
+# W-L6b (review r55 CHECK-3): S3368's own witness [engine vm]
+pattern [xy](?:(?=apq)a.?)[pq][qz]zz
+features all
+engine vm
+m "xapqzz" 0 6
+m "xapqqzz" 0 7
+m "wyapqzzw" 1 7
+
 # W-D9 (span_arms §14.4 L1, review r55 C): the empty position as an A_CTX item (the one-character lookahead's default lowering) is the same never leaf as the class: dead (the listing check, run_facts_checks.sh [facts-look]); libpcre2's NOMATCH
 pattern x(?=[^\x00-\xff])y
 features all

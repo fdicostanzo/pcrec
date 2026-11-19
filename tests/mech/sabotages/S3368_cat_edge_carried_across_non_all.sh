@@ -8,11 +8,16 @@ SAB_ID="S3368-cat-edge-carried-across-non-all"
 SAB_FILE="src/facts/req.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/litscan/spanarms.rxt"
-SAB_DESC='CAT-EDGE carries a lookahead'\''s leftover across a right factor that is not `all`, shifted by its width, so `(?:(?=abc)a.?)[bc]c` narrows `[bc]` to `c` and deletes `abc`'
+SAB_DESC='CAT-EDGE carries a lookahead'\''s leftover across a right factor that is not `all`, shifted by its width, so `[xy](?:(?=apq)a.?)[pq][qz]zz` (W-L6b) narrows `[pq]` to `q` and deletes `xapqzz`'
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/l1feat_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3368."
-SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''(?:(?=abc)a.?)[bc]c'\'' | grep -qP '\''^byte\treq_set_maxoff\t([^\t]*\t){4}97:0,99:3\t'\'' && echo REACH-WL6'
+SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''[xy](?:(?=apq)a.?)[pq][qz]zz'\'' | grep -qP '\''^byte\treq_whole_run\t([^\t]*\t){4}\[7071\]\[717a\]7a7a\t'\'' && echo REACH-WL6'
 SAB_REACH_EXPECT="REACH-WL6"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    o.rg = r.all && rleft.n ? rn_guard_meet_first(w, r.rg, rleft, &empty) : r.rg;'
 SAB_AFTER='    o.rg = r.all && rleft.n ? rn_guard_meet_first(w, r.rg, rleft, &empty) : rleft.n && r.maxw - r.head.n >= 0 && r.maxw - r.head.n < rleft.n ? rn_slice(&rleft, (int)(r.maxw - r.head.n), rleft.n) : r.rg;   /* SABOTAGE S3368 */'
+# RE-AIMED 2026-11-19 (lane l1ffix, review r55 CHECK-3): the plant was INERT on W-L6's own pattern (the narrowed `c`
+# is already a set member and the narrowed run loses the run choice) and on its variants. The new witness W-L6b
+# `[xy](?:(?=apq)a.?)[pq][qz]zz` (spanarms.rxt, both engines): MEASURED with the full plant, the run moves
+# [7071][717a]7a7a -> 71[717a]7a7a and 2 of its 3 cells go red; the subject passes all 3. The reach greps the
+# subject's run, which the plant changes, so the reach also tells the plant from the subject.

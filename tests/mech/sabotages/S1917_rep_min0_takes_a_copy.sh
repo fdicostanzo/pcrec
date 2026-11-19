@@ -15,8 +15,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "ab(?:cd)
 SAB_REACH_EXPECT="REACH-WR3-RUN"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m));'
-SAB_AFTER='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m > 1 ? m : 1));   /* SABOTAGE S1917 */'
+SAB_BEFORE='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m), bs, set);'
+SAB_AFTER='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m > 1 ? m : 1), bs, set);   /* SABOTAGE S1917 */'
 # RE-AIMED REACH (lane sar1fix, 2026-11-09, review r5): the two 2-byte runs
 # `ab` and `ef` tie on information and the run choice takes the rarer scan
 # byte (`b`, 9886 ppm, over `f`, 14787), so the clean run is `ab`.
@@ -27,3 +27,5 @@ SAB_AFTER='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m > 1 ? m : 1));   /* SA
 # (`RX_REQ_WHY "dominated"`, no run part rendered) and emits the hex alone, so the old reach, which
 # required an `@`, read UNREACHED (cloud run 43239936557 shard 17). The `@` is now optional; the run it asserts, the site and
 # the intent are unchanged.
+# RE-ANCHORED 2026-11-19 (lane l1ffix, review r55 A): `rr_pow` threads the copies' necessary set (CAT-SET
+# as a step of `rr_cat`, choice-free); the call gained `bs, set`, same plant on the count.

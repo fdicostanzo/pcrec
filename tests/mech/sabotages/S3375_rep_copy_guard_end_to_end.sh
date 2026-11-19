@@ -13,5 +13,7 @@ SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''(?:abc(?=ab)){2}'\
 SAB_REACH_EXPECT="REACH-WRG"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    for (int i = 0; i < c; i++) o = rr_cat(w, b, o);'
-SAB_AFTER='    for (int i = 0; i < c; i++) { RbRuns bb = b; if (i && b.all && b.rg.n) { bb.head = bb.tail = bb.best = rn_app(b.head, b.rg); bb.rg = rn_none(); } o = rr_cat(w, bb, o); }   /* SABOTAGE S3375 */'
+SAB_BEFORE='        o = rr_cat(w, b, o, set);'
+SAB_AFTER='        { RbRuns bb = b; if (i && b.all && b.rg.n) { bb.head = bb.tail = bb.best = rn_app(b.head, b.rg); bb.rg = rn_none(); } o = rr_cat(w, bb, o, set); }   /* SABOTAGE S3375 */'
+# RE-ANCHORED 2026-11-19 (lane l1ffix, review r55 A): `rr_pow`'s loop threads the copies' set; the plant
+# sits on the per-copy `rr_cat` call inside it, same materialization of the guard.
