@@ -4243,3 +4243,7 @@ Main ruled on the four kit findings (D186 add. 2):
   part B is main's). Main said GO: lane relabel64 (sonnet), worktree worktrees/relabel64 on lane/memfn-relabel64 off 33fec79b3;
   one comment hunk, build + strict under the box lock; its build/ is REBUILT_BUILD. 704's --ready now waits on
   kit-fcards-c3rerun, not kit-fcards-c3 (703 is rc 1 by design); backup fcards/jobs.bak-0905. Queue 704 once the lane delivers.
+- 09:1x FRANK (direct): "Do the timing. Let's learn this detail as it may inform other work" -> profile WHY inline loses to the loop
+  on long near-miss spans (hypothesis: instruction-footprint / op-cache pressure; near-miss = most of the span matches, so every
+  attempt walks deep into the unrolled body). Lane formperf (sonnet) writes job 706-kit-fcards-perf (perf stat :u, icache/op-cache,
+  IPC, code bytes; C3 hex500/hex1000 near-miss + hit-dense; arms I, h0, h8, h16, h32, h64), queued after 704. Main told.
