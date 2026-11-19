@@ -211,3 +211,12 @@ Main answered P-5: "write it yourself in a lane on your branch ... I'll review i
 it, and land it with your branch after rev 29.1." LAUNCHED lane predlint (sonnet; worktrees/predlint): scripts/
 pred_doc_lint.py (L1-L11, planted-fault selftest, a minimal reader --show/--list); the scripts/entry profile only if
 declaration-only. Two lanes running: predspec291 (rev 29.1 + files r54), predlint. Watchers armed on both.
+
+## 2026-11-19 (evening) — lint lane merged; fix lane found idle and woken
+predlint DELIVERED twice (first cut; then R1: L8 exempts parked / under-construction / principles pieces), lanewatch
+DONE, selftest re-run by me (22 runs, 11 of 11 rules, 0 failures), MERGED into lane/pred-rev28 (plan-lint clean),
+TaskStopped. Not built: a scripts/entry profile (needs new accessor code: main decides) and a make target; the lint's
+own --show/--list reader covers the need. doc_format.md corrected (tag depth, `shared:` line, L8 exemptions).
+predspec291: its watcher exited QUIET (25 min, rc 10): the lane had idled "waiting" on its own background sabotage
+run, which had finished 20 min earlier. Woken by message; watcher re-armed. LESSON (already a rule for critic
+coordinators, r53): a lane brief must say "no background jobs: run checks in the foreground under timeout".
