@@ -5508,3 +5508,30 @@ by the language's own rule the text `{n,}` is literal regex text, not a count of
 made for him used, a count of n: written with count holes it is
 `(rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)`. A correction of the manager's SPELLING; his ruling (a
 plain macro, the any-length branch first) and every printed answer are unchanged.
+
+### 2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or not
+tags: core/principles/language-over-macros
+
+Told the manager intended to move the primitive provided names from the library to the core "per your words"
+("macros in the library unless they are primitive"). HIS WORDS, whole:
+
+"Primitive names: primitive  was defined as not able to be written in the language: requiring other coding support.
+Let me refine: all macros "x()" should be in the library document. They should be marked as to whether they are
+defined in the language or not. The code should refer to them in that doc as needed. Reason: I was visualizing
+"primitive" as building block macros that the rest of the language was built on. They could. It be defined in the
+language. However there are now macros like file_text that are not base level like that but also require non
+language support. Therefore my "primitive" designation doesn't work. Library meant macros loaded in to use. I think
+now it means "provides the symbols" wherever they come from. Thoughts?"
+
+Read for the intended words (phone): "The code should refer" = "the CORE should refer"; "They could. It be
+defined" = "they could NOT be defined".
+
+Class: a REFINEMENT of his recommendation 1 of this afternoon on the documents' form (the form is the manager's by
+delegation; ADOPTED), with a DEFINITION and its withdrawal: "primitive was defined as not able to be written in
+the language: requiring other coding support"; "my 'primitive' designation doesn't work". And a statement of what
+LIBRARY now means, offered for discussion ("I think now ... Thoughts?"): "'provides the symbols' wherever they
+come from". Not a ruling on the language.
+
+Applied: lane preddoc4's rulings file R-1 (no move of native names to the core; every call-form name, including
+those now in the core such as `enumerate` and `import`, has its piece in the library; each marked
+`defined: language` or `defined: native (<why>)`).
