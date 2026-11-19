@@ -367,7 +367,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     run_cover.sh reads answers.tsv only; cases.tsv's answer rows (140, in sync today) are unchecked. Compare the FLAGS/PATTERN/SUBJECT triples in run_cover.sh; no libpcre2 needed.
   - [COVER-SIZE-LADDER] STATE:not-started — a legal --window-search-width fails at the code-size cap; no ladder rung drops the cover
     filed: 2026-11-16 manager (lane read3file; finding r27 READ-3, reproduced by lane covs2c)
-    status (2026-11-16): filed; UNRULED, record only; exists on lane/covs2b (stage 2), not on main
+    status (2026-11-19): sentence corrected (R1); premise holds only under a lowered -D cap; trigger: a builder reports a lowered cap, or a cover grows past the shipped cap
     trigger: must be DECIDED before the [COVER-CAP] stage-2 joint landing (it exists only on lane/covs2b, not on main)
     refs: docs/dev/lanes/covs2c_report.md (LEFT OPEN, r27 READ-3) and covs2b_report.md (LEFT OPEN), both on lane/covs2b; docs/spec/limits.md section 3.12 para 4 (stage-2 branch only) and section 8.4; src/core/compile.c fit_rungs[]
     Manager's lean (not a ruling): a drop-cover rung in the size ladder, as its own small unit with a design critic round.

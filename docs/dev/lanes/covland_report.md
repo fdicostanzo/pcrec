@@ -28,6 +28,17 @@ make, make strict, test-plan-lint: green (above). make test-codegen NOT run, clo
 ## Ready to land
 Not ready. Open: the spec sentence (above). Reviews/register/plan-row/ledger lists not compiled because of the stop; [COVER-SIZE-LADDER] plan row stays not-started and applies.
 
+## Spec sentence (part 2)
+R1 applied. Probes re-run on tip 337e1ced8 (all matched R1): `build/pcrec -p rx --window-search-width=4095 -o X.c --pattern '[0-9a-f]{4095}'` rc 0, 23,830 B, DFA_SCAN "cover". Scratch build `make BUILD_DIR=$PCREC_TMPDIR/scratch/covland/b20k CFLAGS='-O2 -g -DPCREC_MAX_EMIT_BYTES=20000' .../pcrec`: same command rc 1 "pattern too large: 28577 bytes of emitted C source (limit 20000 ...)"; without the width flag rc 0, ENGINE_SEL "size-cap-retry".
+- limits.md [3.12P4]: "The emitted-size cap (8.1) is not a second cliff at the shipped value: no legal width reaches PCREC_MAX_EMIT_BYTES (1,000,000) ... a builder who lowers the cap by -D below a cover's size gets a FAILED compile ... no rung of the size-cap ladder (8.4) drops the cover ... A route that is not a cover and exceeds a lowered cap still retries through the ladder, stamped size-cap-retry."
+- tuning.md 2.56P2: last sentence replaced by the same facts, pointing at limits.md 3.12P4.
+- plan.md [COVER-SIZE-LADDER]: status line only (2026-11-19, sentence corrected, trigger stated).
+
+## Validation (part 2)
+make rc 0; make strict, make test-codegen, tests/registry/limits_check.sh, make -s test-plan-lint: all rc 0 (log scratch/covland/val2.log).
+
+## Cloud suite
+Dispatched as the last act; branch and sha in STATE AT HANDOFF.
+
 ## STATE AT HANDOFF
-Branch lane/covland tip = merge 8c4cbc89e plus the report commit. Rulings file empty: no R-n applied (none). Scratch: /var/tmp/pcrec-pcrec/scratch/covland/ (b20k build, probe outputs).
-OWED: none (the full cloud suite was not dispatched because of the stop; it is a to-do after the spec decision, not an owed run)
+Branch lane/covland, rulings applied: R1. OWED: the cloud suite verdict (see Cloud suite section).
