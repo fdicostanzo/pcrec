@@ -6,11 +6,11 @@ Historical after merge; never edited after. `../predspec28_evidence/` stays as c
 
 ## Files
 
-- `predspec281_model.py` — STANDALONE. PARTS PR, CO, PO, FF, NW (with NE), SN, DD, RC, TT, UN, PW (the header names
-  the review item of each and the sabotages t1-t21). Controls: libpcre2-8 10.46 through `../rxmodel_evidence/pcre2h.py`
+- `predspec281_model.py` — STANDALONE. PARTS PR, CO, PO, FF, NW (with NE), NC, SN, DD, RC, TT, UN, PW (the header names
+  the review item of each and the sabotages t1-t22). Controls: libpcre2-8 10.46 through `../rxmodel_evidence/pcre2h.py`
   (run, never read: D181), python `re`, direct semantic functions.
-- `predspec281_model.out` — forward run: CHECKS 27 of 27 OK (6 are the helper's selfchecks).
-- `predspec281_sabotage.out` — each of t1-t21 alone (every one CAUGHT), then all at once (6 of 27: the selfchecks).
+- `predspec281_model.out` — forward run: CHECKS 28 of 28 OK (6 are the helper's selfchecks).
+- `predspec281_sabotage.out` — each of t1-t22 alone (every one CAUGHT), then all at once (6 of 28: the selfchecks).
 
 ## Run (one process; no make; nothing under /tmp)
 

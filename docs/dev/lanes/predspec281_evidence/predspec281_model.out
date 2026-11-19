@@ -103,6 +103,13 @@ NE the same `- 10`, a SIGNED result (the other candidate): WHOLE `5--5` HOLDS ; 
 NE `$y % 0` the other candidate: a COMPILE ERROR (the divisor is a compile-time constant): every mode refused (HAND-WORKED; no model needed)
 NE OK
 
+== PART NC: numeral-width RULED ("numeral-width: canonical"): the bare result and three `padded` wrappings
+NC `/(?<y>\d+)-${$y - 1}/` (the bare result, RULED canonical): WHOLE `10-9` HOLDS, `10-09` FAILS, `10-009` FAILS, `100-099` FAILS, `100-99` HOLDS ; SEARCHED `x10-09 10-9` `10-9`@7 ; FIND-ALL `10-09 10-9 100-099 25-24` [`10-9`@6, `25-24`@19]
+NC `/(?<y>\d+)-${padded($y - 1)}/`: WHOLE `10-9` HOLDS, `10-09` HOLDS, `10-009` HOLDS, `100-099` HOLDS, `100-99` HOLDS ; SEARCHED `x10-09 10-9` `10-09`@1 ; FIND-ALL `10-09 10-9 100-099 25-24` [`10-09`@0, `10-9`@6, `100-099`@11, `25-24`@19]
+NC `/(?<y>\d\d)-${padded($y - 1, 2)}/`: WHOLE `10-9` FAILS, `10-09` HOLDS, `10-009` FAILS, `100-099` FAILS, `100-99` FAILS ; SEARCHED `x10-09 10-9` `10-09`@1 ; FIND-ALL `10-09 10-9 100-099 25-24` [`10-09`@0, `25-24`@19]
+NC `/(?<y>\d+)-${padded($y - 1, strlen($y))}/` (NOT BUILT: a read as the width; its meaning if built): WHOLE `10-9` FAILS, `10-09` HOLDS, `10-009` FAILS, `100-099` HOLDS, `100-99` FAILS ; SEARCHED `x10-09 10-9` `10-09`@1 ; FIND-ALL `10-09 10-9 100-099 25-24` [`10-09`@0, `100-099`@11, `25-24`@19]
+NC OK
+
 == PART SN: same-name-twice at the LANGUAGE level (RULED: the literal LEGAL; `\k<h>` to a name two groups carry a COMPILE ERROR at the backreference unless `(?J)`)
 SN `(?<h>a)(?<h>b)`: the LANGUAGE LEGAL: WHOLE `ab` HOLDS ; SEARCHED `xab` `ab`@1 ; FIND-ALL `ab ab` [`ab`@0, `ab`@3] ; libpcre2 on the literal as written: REJECTED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
 SN `(?<h>\d)(?<h>\d)-\k<h>`: the LANGUAGE ERROR at the backreference (offset 17) ; libpcre2 on the literal as written: REJECTED (two named subpatterns have the same name (PCRE2_DUPNAMES not set))
@@ -146,4 +153,4 @@ UN OK
 PW `/(?<y>\d{4})-${padded($y + 1)}/`: WHOLE `2025-002026` HOLDS ; SEARCHED `x2025-002026` `2025-002026`@1 ; FIND-ALL `2025-002026 2025-02026 2025-2026` [`2025-002026`@0, `2025-02026`@12, `2025-2026`@23]
 PW OK
 
-== CHECKS: 27 of 27 OK
+== CHECKS: 28 of 28 OK

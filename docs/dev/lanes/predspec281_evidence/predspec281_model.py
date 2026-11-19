@@ -21,6 +21,8 @@
 #   TT  T8/T9 as ONE class per operand by an ORDERED clause list (B); its expected table written by hand.
 #   UN  the never-matching rx `(?!)` as a PCRE spelling of the unset read; a value hole in a lookbehind (J).
 #   PW  padded's `0*` arm (FIXIND-14): a witness that separates `0*` from `0?`.
+#   NC  numeral-width RULED canonical (the lane's rulings file R1, after the brief): the ruling's worked example, the
+#       bare result and three `padded` wrappings, every mode.
 #
 # CONTROLS: libpcre2-8 through ../rxmodel_evidence/pcre2h.py (run, never read: D181); python `re`; direct python
 # semantic functions.  Rule-as-code is named as such where it is used.
@@ -48,7 +50,8 @@
 #     t18 RC: a compound's members tried in REVERSE order;
 #     t19 TT: the clause order reversed (UNDER CONSTRUCTION before the assertion error);
 #     t20 UN: the never-matching rx spelled `(?:)` in the PCRE spelling of the unset read;
-#     t21 PW: padded's arm `0?` instead of `0*`.
+#     t21 PW: padded's arm `0?` instead of `0*`;
+#     t22 NC: the bare result of `$y - 1` given the operand's width (the candidate the owner did not take).
 import os, sys, re, itertools
 import re._parser as SRE
 import re._constants as SC
@@ -58,7 +61,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "rxmodel_evidence"))
 import pcre2h as P                                           # noqa: E402
 
 _sv = os.environ.get("PREDSPEC281_SABOTAGE", "")
-SABS = set("t%d" % i for i in range(1, 22)) if _sv == "1" else set(x for x in _sv.split(",") if x)
+SABS = set("t%d" % i for i in range(1, 23)) if _sv == "1" else set(x for x in _sv.split(",") if x)
 def sab(k): return k in SABS
 
 CHECKS = []
@@ -543,6 +546,37 @@ print("NE the same `- 10`, a SIGNED result (the other candidate): %s" % show(hs,
 print("NE `$y % 0` the other candidate: a COMPILE ERROR (the divisor is a compile-time constant): every mode refused (HAND-WORKED; no model needed)")
 print("NE %s" % check("NE `% 0` never holds; a negative result yields nothing", ne["`% 0`"] == ("FAILS", "FAILS", "FAILS", "[]")
       and ne["`- 10`"][0] == "HOLDS" and ne["`- 10`"][1] == "FAILS" and ne["`- 10`"][2] == "`15-5`@5" and W(hs, "5--5") is not None))
+
+# =====================================================================================================================
+print("\n== PART NC: numeral-width RULED (\"numeral-width: canonical\"): the bare result and three `padded` wrappings")
+NCW = ("10-9", "10-09", "10-009", "100-099", "100-99")
+def nc_bare(c, v):
+    r = arith(c.get("y"), "-", 1)
+    if r is not None and sab("t22"):
+        r = r.zfill(len(c.get("y")))
+    return v is not None and v == r
+def nc_pad(c, v):                                     # padded(rx) := /0*${rx}/ (RULED 2026-11-15)
+    r = arith(c.get("y"), "-", 1)
+    return r is not None and v is not None and re.fullmatch(r"0*" + re.escape(r), v) is not None
+def nc_pad2(c, v):                                    # padded(rx, 2): padded-width RULED minimum
+    r = arith(c.get("y"), "-", 1)
+    return r is not None and v == zfill_min(r, 2)
+def nc_strlen(c, v):                                  # padded(rx, strlen($y)): a read as the width (NOT BUILT)
+    r = arith(c.get("y"), "-", 1)
+    return r is not None and v == zfill_min(r, len(c.get("y")))
+nc = {}
+for nm, pre, f in (("`/(?<y>\\d+)-${$y - 1}/` (the bare result, RULED canonical)", r'(?<y>\d+)-', nc_bare),
+                   ("`/(?<y>\\d+)-${padded($y - 1)}/`", r'(?<y>\d+)-', nc_pad),
+                   ("`/(?<y>\\d\\d)-${padded($y - 1, 2)}/`", r'(?<y>\d\d)-', nc_pad2),
+                   ("`/(?<y>\\d+)-${padded($y - 1, strlen($y))}/` (NOT BUILT: a read as the width; its meaning if built)", r'(?<y>\d+)-', nc_strlen)):
+    h = hole(pre, f)
+    nc[nm[:12] + str(len(nc))] = [fW(h, t) for t in NCW] + [fS(h, "x10-09 10-9"), fF(h, "10-09 10-9 100-099 25-24")]
+    print("NC %s: WHOLE %s ; SEARCHED `x10-09 10-9` %s ; FIND-ALL `10-09 10-9 100-099 25-24` %s"
+          % (nm, ", ".join("`%s` %s" % (t, fW(h, t)) for t in NCW), fS(h, "x10-09 10-9"), fF(h, "10-09 10-9 100-099 25-24")))
+ncv = list(nc.values())
+print("NC %s" % check("NC the ruling's worked example", [v[:5] for v in ncv] == [
+      ["HOLDS", "FAILS", "FAILS", "FAILS", "HOLDS"], ["HOLDS", "HOLDS", "HOLDS", "HOLDS", "HOLDS"],
+      ["FAILS", "HOLDS", "FAILS", "FAILS", "FAILS"], ["FAILS", "HOLDS", "FAILS", "HOLDS", "FAILS"]]))
 
 # =====================================================================================================================
 print("\n== PART SN: same-name-twice at the LANGUAGE level (RULED: the literal LEGAL; `\\k<h>` to a name two groups carry a COMPILE ERROR at the backreference unless `(?J)`)")
