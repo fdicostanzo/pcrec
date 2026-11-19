@@ -4387,3 +4387,36 @@ nothing at run time" as ruled text. NEW GAPS the lane found (for the question qu
 macro body equals the primitive on plain arguments, 0 of 781, not on a filter-role argument, 3 of 781);
 **domain-components** (§2.4's lean "a `$` component is read by its VALUE, leading zeros ignored" conflicts with
 number-domain).
+
+**2026-11-18 MANAGER — review r52 of rev 28: readings withdrawn or corrected, and calls made (the predicate
+manager, night; no owner words).** Review r52 (five lenses; filed as
+`docs/dev/reviews/2026-11-18-r52-predspec28.md` by lane predspec281) attacked rev 28 and the MANAGER CORRECTION
+entry above. CORRECTED in that entry: (a) "the draft's sentence holds for `+` only" is WRONG both ways: CANONICAL
+and WIDTH KEPT part wherever a result is narrower than its operand: `- 1` 3 of 10,000 operands, `- 10` 30, `* 0`
+9,990, `% 7` 9,990; `+ k` and `* k` (k >= 1) 0. numeral-width is a FULL question for `%`, not a narrowed one; it
+is undefined for two reads (`$a - $b`) and for intermediate results. (b) "UNTESTABLE ... outside the domain:
+removed at compile time, nothing at run time": WRONG: that clause is RULED (the number-domain entry's RULED
+sentence confirms the paragraph that holds it). (c) "NEW GAP domain-components": WITHDRAWN: number-domain names
+"the comparisons", so §2.4's rev 18 LEAN (a `$` bound read "by its VALUE, leading zeros ignored") is RETIRED by
+the ruling, not a question for the owner. (d) same-name-count "UNTESTABLE" is overstated: R.1.16 A9 answers the
+part case; the hole case stays open. WITHDRAWN, a reading of the padded-width entries: the two-case body
+`(/0*${rx}/ & /(?s:.){${n}}/) | (rx & /(?s:.){${n},}/)` equals "zero-filled to at least n" in WHOLE only: in
+SEARCHED and FIND-ALL it tries every exactly-n string before every longer one (`/${padded(/\d{2,3}/, 2)}/`
+SEARCHED `x123`: `12`@1 where a per-member fill gives `123`@1; 0 / 1,344 / 1,344 of 1,365); the 47,112 and
+137,257 "0 differ" counts are WHOLE-only. The ruling (minimum) stands; the BODY and the ORDER are open.
+MANAGER'S CALLS (answer-free unless marked; told to the owner the same night): (1) T8/T9: one class per operand,
+by ordered clauses: an assertion looking outside is enumerate's ruled COMPILE ERROR first; infinite or over
+budget is UNDER CONSTRUCTION. (2) `${@y}` written today: a plain "not defined" compile error. (3) product-order
+is closed by consequence of the enumerate line (the product of enumerate(operand_i), first slowest). (4)
+dollar-warning: the dedicated warning stays withdrawn; THE DRAFT'S READING (to be shown to him as
+**dollar-diagnostic**, a confirm): for the emptiness diagnostics a read stands for ITS GROUP'S rx, under which
+the ruled empty-intersection diagnostic fires on `/(?<x>\d+)-/ & ($x & <5)` with no rule keyed on `$`. (5) the
+unset rule's phrase becomes "the never-matching rx" (the `when` ruling keeps "matches nothing" for the empty
+string). (6) his `length($y)` (an image) is written with the placeholder `strlen` (his own word in the padded
+sketch), leaving §2.7's ruled filter `length(S)` its name; the collision goes to the spellings review.
+ANSWER-DECIDING READINGS marked THE DRAFT'S READING and queued for him, NOT called: **padded-order** (a padded
+result keeps the argument's order: per-member fill); **class-order** (class members in codepoint order: §5.5's
+LEAN now decides `\d + 1`'s answers); **flags-in-filter** (do a hole's flags reach an `&` written inside the
+hole); **flags-scope** (which flags propagate; `x` changes how an inserted literal is parsed); **number-edges**
+(`% 0`, a negative result); **numeral-width** (full scope; with the observation that WIDTH KEPT is the
+composition `padded($y - 1, strlen($y))`, which needs a read as `padded`'s width: construction-line (b)).
