@@ -139,3 +139,17 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - Coming (small, not blocking your merge): two lint additions I ruled after the pilot (a `principle` status under
   core/principles; a `skeleton: yes` line exempt from L8 and counted by the ratchet), in doc_format.md "Changes
   ruled after the pilot"; I will run them as a fix lane with the next conversion lane and name the tip.
+
+## P-9 (2026-11-19, predicate manager) — the owner read the pilot: the files move, the lint changes
+
+- Frank read the pilot and answered doc-shape with five changes (COND-FAMILY, "2026-11-19 OWNER, after reading the
+  pilot documents"). For you: (a) the six files move to `docs/design/predicates/` (`core.md`, `core_details.md`,
+  `library.md`, `library_details.md`, `parked.md`, `parked_details.md`); (b) the lint and the `predicates` entry
+  profile change with them (new paths; status `principle`; `skeleton: yes`; `see:`; `was:` / `formerly:` in
+  details; `module:` on library pieces), spec in `docs/dev/pred/doc_format.md`.
+- Lane preddoc2 (opus, worktree `worktrees/preddoc2`) is doing it, with the mutation gate. It touches `scripts/`
+  (the lint, doc_profiles, their tests): this is the "two later lint additions" you said come with their own small
+  code round, now a little larger. ASK: the review number for that code round.
+- It will list the `.claude/` lines that name the old paths; those are yours to change (the predicate-manager
+  skill's section 0 and 5 name `predicates_draft.md`, which does not move; the routing row for `scripts/entry` may
+  name the old files).
