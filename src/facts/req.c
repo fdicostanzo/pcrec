@@ -531,14 +531,14 @@ static RbRun rn_common_tail(const RbWalk *w, RbRun a, RbRun b)
 
 /* The identity of run concatenation: the EMPTY STRING, which is entirely
  * literal, so `all` is TRUE. That is not a trick — it is what makes an
- * accumulator seeded with it behave like the concatenation of nothing. */
+ * accumulator seeded with it behave like the concatenation of nothing.
+ * It is also THE STATED VALUE every builder below starts from (span_arms
+ * RM-1, req_lookaround_arch.md P1): a field added to `RbRuns` is defaulted
+ * here once, never silently left unwritten by a field-by-field builder. */
 static RbRuns rr_unit(void)
 {
-    RbRuns r;
-    r.best = r.head = r.tail = rn_none();
-    r.all = true;
-    r.maxw = 0;
-    return r;
+    return (RbRuns){ .best = rn_none(), .head = rn_none(), .tail = rn_none(),
+                     .all = true, .maxw = 0 };
 }
 
 /* Everything declined: no run, and no permission to join across this
@@ -555,9 +555,8 @@ static RbRuns rr_none(long long maxw)
  * byte wide. */
 static RbRuns rr_pos(const RbWalk *w, const unsigned char *p)
 {
-    RbRuns r;
+    RbRuns r = rr_unit();
     r.best = r.head = r.tail = rn_pos(w, p);
-    r.all = true;
     r.maxw = 1;
     return r;
 }
@@ -590,7 +589,7 @@ static long long rr_rep_w(int rmax, long long body)
  * same string, and which is what makes `rr_unit` a real identity). */
 static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
 {
-    RbRuns o;
+    RbRuns o = rr_unit();
     RbRun rb = r.best, join = rn_app(l.tail, r.head);
     o.maxw = pcrec_sat_add(l.maxw, r.maxw, PCREC_W_UNBOUNDED);
     o.head = l.all ? rn_app(l.head, r.head) : l.head;
@@ -612,7 +611,8 @@ static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
  * declared first-match table (`rr_alt_rows`, alt_normal_form.md §6); each row
  * answers whether it applies and, if so, fills `*o`; a row that does not
  * apply leaves `*o` untouched, so the scan hands `*o` to every row and the
- * applying row's answer is the outcome (RB_ROW_SCAN's capture). */
+ * applying row's answer is the outcome (RB_ROW_SCAN's capture). An applying
+ * row writes a COMPLETE value, from `rr_unit` (RM-1). */
 typedef bool (*RrAltRow)(const RbWalk *w, const RbRuns *l, const RbRuns *r,
                          RbRuns *o);
 
@@ -631,6 +631,7 @@ static bool rr_alt_union(const RbWalk *w, const RbRuns *l, const RbRuns *r,
         return false;
     RbRun u = rn_common_head(w, l->head, r->head);
     if (u.n != n) return false;
+    *o = rr_unit();
     o->maxw = n;
     o->head = o->tail = o->best = u;
     o->all = true;
@@ -642,6 +643,7 @@ static bool rr_alt_union(const RbWalk *w, const RbRuns *l, const RbRuns *r,
 static bool rr_alt_affix(const RbWalk *w, const RbRuns *l, const RbRuns *r,
                          RbRuns *o)
 {
+    *o = rr_unit();
     o->maxw = l->maxw > r->maxw ? l->maxw : r->maxw;
     o->head = rn_common_head(w, l->head, r->head);
     o->head.off = 0;
@@ -664,7 +666,7 @@ static const struct {
 static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
     size_t i;
-    RbRuns o;
+    RbRuns o = rr_unit();
     RB_ROW_SCAN(i, w, rr_alt_rows, rr_alt_rows[i].row(w, &l, &r, &o));
     if (i == RB_ROWS(rr_alt_rows)) rr_alt_affix(w, &l, &r, &o);
     return o;

@@ -69,6 +69,15 @@ static const uint32_t walk_arm_facts[PCREC_WALK_ARM_N] = {
 };
 _Static_assert(PCREC_WALK_ARM_N <= 8, "PfWhy.arms is one byte of arm bits");
 
+/* The run record with NO run: no position, length 0, offset 0. THE STATED
+ * VALUE both `ReqRun` writers (the deny's empty value and the derivation)
+ * start from (span_arms RM-1), so a field added to `ReqRun` is defaulted
+ * here once, never silently left unwritten by one of them. */
+static ReqRun pf_req_run_none(void)
+{
+    return (ReqRun){ .pos = { NULL }, .whole_len = 0, .whole_maxoff = 0 };
+}
+
 /* Stores fact `f`'s EMPTY VALUE — the answer for a pattern with nothing to
  * find, which every consumer already handles because real patterns produce
  * it. The switch has no `default:` so a new row is a compile error here. */
@@ -94,11 +103,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_REQ_SET_MAXOFF:
         memset(pf->req_set.maxoff, 0, sizeof pf->req_set.maxoff);
         break;
-    case PF_REQ_WHOLE_RUN:
-        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
-        pf->req_run.whole_len = 0;
-        pf->req_run.whole_maxoff = 0;
-        break;
+    case PF_REQ_WHOLE_RUN: pf->req_run = pf_req_run_none(); break;
     case PF_REQ_PIECES:
         pf->req_pieces = (PdDesc){ -1, PD_WALL, NULL };
         break;
@@ -251,9 +256,7 @@ static void pf_derive_req_walk(Ctx *cx)
         pf_done(pf, PF_REQ_SET_MAXOFF);
     }
     if (pf_enter(cx, PF_REQ_WHOLE_RUN, false)) {
-        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
-        pf->req_run.whole_len = 0;
-        pf->req_run.whole_maxoff = 0;
+        pf->req_run = pf_req_run_none();
         if (bits >= PCREC_MIN_REQ_RUN_BITS) {
             memcpy(pf->req_run.pos, run.pos, (size_t)run.n * sizeof run.pos[0]);
             pf->req_run.whole_len = run.n;
