@@ -4193,3 +4193,11 @@ Main ruled on the four kit findings (D186 add. 2):
 - 14:46 fcardsq DONE: set 2 QUEUED (700-704, RUN_ID fcards-zen4-1, FROZEN 33fec79b3, worktrees/fcards-night built+clean); no job edits needed vs rev 13.1; dry 5/5 rc 0, ready 75. Note: 700's dry-run takes ~190 s on a built tree (real G2 head passes) > boxqueue's 30 s add-time dry bound; the lane added 700 with build/ moved aside (canned-only dry), then restored. 704 needs main's REBUILT_BUILD (+ MOVERS if h*<64) in window.vars after 702. Keys sent to main.
 - 14:47 main: DROP 704 tonight (rebuilt h* build is a reviewed code change on main's side; identity runs by day 11-19 after 'h* frozen' + REBUILT_BUILD from main's lane). 704 CANCELLED; set 1/mfcal gates read pending/running only, so they start after 703. Script kept.
 - 18:23 main filed R-46 (603154be1 on main, local): the dense-hit pre-check question at the presence site; REPLY with a form only, no build go. ACKED in responses.md; design lane by day 11-19 after the night's verdicts.
+
+### 2026-11-19 01:02 — kit mgr: 700 RED at start (dry-run rc=124), fixed, re-queued
+- 00:37 setup checks clean (queue, trees, watcher). 01:00:37 700-kit-fcards-prep failed "DRY-RUN-FAILED rc=124 at START": the
+  runner re-runs a job's --dry-run at start under its 30 s bound, and 700's g2_dry ran G2's REAL head passes (~150 s) once
+  build/libpcrec.a existed (the queue-time add dodged it by moving build/ aside). Fix (scratch job set, backup jobs.bak-0102):
+  the real pass in g2_dry now needs FCARDS_G2_DRY_REAL=1; the job itself still runs g2_run and refuses a bad record. Dry run
+  0.15 s rc=0; 700 re-queued 01:01, 701-703 still chain on its key; set 1 still holds behind set 2. Cause read from the queue's
+  status reason (no log read), so no triage lane.
