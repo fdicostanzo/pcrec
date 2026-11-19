@@ -719,3 +719,14 @@ its trigger (build under measurement, D77).
   answers when one value is a prefix of another; the same need might be met on the CONDITION side (a membership
   test of a label against the array form), which is not defined either.
 - TRIGGER: a user program of the declared-then-used shape; or the array form's type being defined for conditions.
+
+## 34. A parameter restricted by `&` in a definition's head (`example(g & /\d+/) := ...`, his placeholder 2026-11-19); the same to limit or overload operators
+
+- SOURCE: COND-FAMILY, "2026-11-19 OWNER, asked plus-operands: a parameter restriction written `m(g & /\d+/)`"; the
+  2026-11-13 entries on typed parameters and overloading (typed parameters are OUT of phase 1, his words).
+- THE IDEA (his): the argument is intersected with the restriction; "there has to be some value in the intersection
+  for the macro to match". The `(g: S)` spelling is the condition's today, so the restriction gets its own.
+- NOT SETTLED: filter (what is outside drops) against his 2026-11-13 lean "the type must equal" (a mismatch is an
+  error, fixed by an explicit conversion); overloading on disjoint restrictions (per-string dispatch); whether the
+  arithmetic operators are stated this way (`+` on numbers; joining as a later second definition).
+- TRIGGER: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.

@@ -4706,3 +4706,39 @@ binding `isodate` with public `year`, `month`, `day`, used three times, two of t
 and `end_date`; state what bare `year`, `start_date.year` and `end_date.year` read under export-rule (2)-(4) (last
 mention; an ambiguous reference is the error), in every mode; plus two or three examples where a PRIVATE label does
 real work. Report any place the rules as defined give a surprising answer; propose no rule change.
+
+### 2026-11-19 OWNER, asked plus-operands: a parameter restriction written `m(g & /\d+/)`, and the same for arithmetic
+
+His words, verbatim: "so we had an idea that macros might have type like example(g: /\d+/) := blah. but then we used
+the (g: ) syntax for conditions. I don't _think_ the semantics are the same although they are spooky close. anyway, if
+that didn't work, i was thinking of an alternative which is example(g & /\d+/) := blah. There is some handwaving there
+but the idea is that there has to be some value in the intersection for the macro to match. this logic might be used
+for the arithmetic as a consistent way to limit/ overload operators as well"
+
+Class: a RECOLLECTION (typed parameters `m(g: T)`; SUPPORTED: the 2026-11-13 entries "macro bindings", "`m(x: d2) :=
+x & d2 & m`", "equality checks on typed parameters", "overloading (NOT phase one)"; kept out of phase 1 by his "yes
+keep out of phase 1. I like the idea of types but they need more thinking"), an OBSERVATION (the `(g: S)` form is now
+the condition's; "spooky close", not the same), and an IDEA / PROPOSAL (a parameter restricted by `&` in the
+definition's head; "there has to be some value in the intersection for the macro to match"; the same logic to limit
+or overload the arithmetic operators). NOT a slug answer: plus-operands stays OPEN. Nothing ruled. The spelling
+`example(g & /\d+/)` is a placeholder (D193 addendum 4); the meaning recorded is "the argument is intersected with
+the restriction; an empty intersection means the macro does not match".
+
+Against the record: (1) 2026-11-13, his own meaning for a typed parameter was already intersection ("applying a
+pattern binding `m` to an argument `x` of type `d2` means `x & d2 & m`"). (2) The same evening he leaned the OTHER
+way on a mismatch: "We could just say the type must equal. m(right(year,2)) would be explicit." (no silent filtering;
+the manager's adjustment "the type removes nothing from the argument"). Today's idea is the FILTER reading (what is
+outside the restriction drops; nothing left = no match); the two are different rules on a partly overlapping
+argument, and neither is ruled.
+
+The manager's readings (told to him as readings; for a later lane to test): (a) why the two colons are "spooky
+close": for an argument that is ONE string (a read, a constant) "the intersection is not empty" and "the value is in
+the set" are the same test; they part when the argument has many strings (the restriction narrows a set at compile
+time, a condition tests one value per match) and on an absent label (a condition has the absent rule, a parameter is
+always given). (b) Applied to arithmetic, `+` is "defined on (number, number)": an operand's strings outside the
+number domain drop, nothing left yields nothing; that is the candidate "plus-operands: nothing", and it is what
+number-domain and number-edges already rule for a read that is not a numeral. (c) Overloading then is one more
+definition on a restriction DISJOINT from the first (the 2026-11-13 per-string dispatch): joining could later be `+`
+on non-numbers without changing any answer that is something today, only answers that are nothing. (d) Per-string
+filtering of an ARRAY or class operand (`\w + 1`: the digits give results, the letters drop) follows from (b) and
+construction-line; NOT his words.

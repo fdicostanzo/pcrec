@@ -137,3 +137,10 @@ rulings files written first; lanewatch armed. On DONE: read the report, merge, t
 predspec29). Meanwhile asking Frank plus-operands: the record (number-domain "nothing" outside the domain; the
 sequence operator ruled 2026-11-17; number-edges "no compile error of its own") appears to answer it; asked as a
 confirmation with a run (scratch/pred/plusops.py).
+
+## 2026-11-19 (midday) — his idea on parameter restrictions, in answer to plus-operands
+Asked plus-operands (as a confirmation). Frank answered with an IDEA, not the slug: a macro parameter restricted by
+`&` in the head (`example(g & /\d+/)`), "some value in the intersection for the macro to match", and the same logic to
+limit / overload arithmetic. Recorded verbatim with the 2026-11-13 typed-parameter entries it meets (intersection as
+the meaning; his "type must equal" lean the other way); ideas file item 34. plus-operands stays OPEN; my reading is
+that his idea is the "nothing" answer. Lane predspec29 still running.
