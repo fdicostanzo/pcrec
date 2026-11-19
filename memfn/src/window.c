@@ -152,7 +152,12 @@ int kit_pick_takes(const kit_pick *b, unsigned long long v, int r, int32_t key)
 /* ---- THE DECISION's working state ----------------------------------------- */
 
 #define WF_LO   (-MF_MAX_BACK)          /* the least offset a position may take  */
-#define WF_NPOS MF_WPLAN_MAX            /* positions, offset - WF_LO             */
+#define WF_NPOS MF_WPLAN_MAX            /* the CEILING on positions (offset -
+                                           WF_LO): a guard only; the working
+                                           state is sized by each alternative's
+                                           stated EXTENT (wf_extent), allocated
+                                           per decision (r45_reply.md, the
+                                           kit's own working state)            */
 
 /* One OFFSET of an alternative after C-meet: the intersection of every
  * covering span's set (`set`, `core`) and of the verify-YES ones (`yset`,
@@ -180,7 +185,9 @@ typedef struct {
 
 typedef struct {
     const mf_walt *alt;
-    wf_pos   p[WF_NPOS];
+    wf_pos  *p;                 /* npos positions, offset - WF_LO: the
+                                   alternative's extent (wf_extent)          */
+    unsigned npos;
     /* THE CANDIDATE LIST (`cands`, span_pick.md §The shape step 2): the
        positions above, the walked offsets, F0, and what Table A's rows ask
        of them */
@@ -215,9 +222,9 @@ typedef struct {
     int             reseed, pinned;
     int             run_stated, run_len;
     int32_t         member, run_lo;
-    unsigned        np;
-    int32_t         poff[WF_NPOS];
-    uint8_t         pterm[WF_NPOS];
+    unsigned        np, pcap;       /* the plan's entries; poff/pterm hold pcap */
+    int32_t        *poff;
+    uint16_t       *pterm;     /* mf_wreply.plan_term's width (review r27 MEM-1) */
     char            path[16];
 } wf_dec;
 
@@ -278,7 +285,7 @@ static int full(const uint8_t s[32])
 
 static wf_pos *pos_at(wf_alt *m, int32_t off)
 {
-    return off >= WF_LO && off - WF_LO < WF_NPOS ? &m->p[off - WF_LO] : NULL;
+    return off >= WF_LO && (unsigned)(off - WF_LO) < m->npos ? &m->p[off - WF_LO] : NULL;
 }
 
 static int span_in_core(const mf_wspan *sp, unsigned j)
@@ -309,13 +316,31 @@ static int pinned_yes(const mf_wspan *sp)
     return 1;
 }
 
-/* C-MEET (step 1): every offset the alternative states, as one position. */
-static void merge(const mf_walt *alt, wf_alt *m)
+/* The alternative's EXTENT: positions from WF_LO up to its largest stated
+ * offset, offset 0 always inside (A-parked reads it), never above the
+ * ceiling WF_NPOS (wf_check refuses an offset outside the reach). */
+static unsigned wf_extent(const mf_walt *alt)
+{
+    int32_t hi = 1;
+    for (unsigned i = 0; i < alt->nspan; i++) {
+        int32_t e = alt->spans[i].start + (int32_t)alt->spans[i].len;
+        if (e > hi) hi = e;
+    }
+    unsigned n = (unsigned)(hi - WF_LO);
+    return n < WF_NPOS ? n : WF_NPOS;
+}
+
+/* C-MEET (step 1): every offset the alternative states, as one position,
+ * into `store` (wf_extent(alt) of them). */
+static void merge(const mf_walt *alt, wf_alt *m, wf_pos *store)
 {
     memset(m, 0, sizeof *m);
     m->alt = alt;
     m->run = -1;
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    m->p = store;
+    m->npos = wf_extent(alt);
+    memset(store, 0, m->npos * sizeof *store);
+    for (unsigned k = 0; k < m->npos; k++) {
         memset(m->p[k].set, 0xFF, 32);
         memset(m->p[k].yset, 0xFF, 32);
     }
@@ -391,10 +416,10 @@ static int in_stretch(const wf_pos *p)
 
 /* THE CANDIDATE BUILDER: alternative `alt`'s C-meet into `m`, then its
  * candidate list under the handed rates `rate` (NULL: the NONE row). */
-static void cands(const mf_walt *alt, const uint32_t *rate, wf_alt *m)
+static void cands(const mf_walt *alt, const uint32_t *rate, wf_alt *m, wf_pos *store)
 {
-    merge(alt, m);
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    merge(alt, m, store);
+    for (unsigned k = 0; k < m->npos; k++) {
         wf_pos *p = &m->p[k];
         if (!p->present) continue;
         p->mass = kit_mass(rate, p->set, 1, KIT_MASS_SUM);
@@ -704,7 +729,7 @@ static void a_mass_choose(wf_x *x)
             if (p0[rr.scan].stop_ok && p0[rr.scan].stretch) rs = r->start + rr.scan;
         }
     }
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    for (unsigned k = 0; k < m->npos; k++) {
         const wf_pos *p = &m->p[k];
         if (!p->stop_ok) continue;
         int32_t o = (int32_t)k + WF_LO;
@@ -898,7 +923,7 @@ static int in_plan(const wf_dec *d, int32_t off)
  * (`in_plan`, `tested_elsewhere`, `in_pinned`); C-run and C-asc order it. */
 static void plan_add(wf_dec *d, int32_t off)
 {
-    if (!in_plan(d, off) && d->np < WF_NPOS) d->poff[d->np++] = off;
+    if (!in_plan(d, off) && d->np < d->pcap) d->poff[d->np++] = off;
 }
 
 static void plan_drop(wf_dec *d, int32_t off)
@@ -1014,7 +1039,7 @@ static void c_floor(wf_dec *d)
     for (unsigned i = 0; i < m->alt->nspan; i++)
         if (m->alt->spans[i].verify == MF_VERIFY_NO && m->alt->entry == MF_ENTRY_PARKED)
             d->reseed = 1;
-    for (unsigned k = 0; k < WF_NPOS; k++)
+    for (unsigned k = 0; k < m->npos; k++)
         if (m->p[k].present) plan_add(d, (int32_t)k + WF_LO);
 }
 
@@ -1022,7 +1047,7 @@ static void c_floor(wf_dec *d)
 static void c_yes(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
-    for (unsigned k = 0; k < WF_NPOS; k++)
+    for (unsigned k = 0; k < m->npos; k++)
         if (m->p[k].present && m->p[k].yes) plan_add(d, (int32_t)k + WF_LO);
 }
 
@@ -1113,10 +1138,11 @@ static void c_asc(wf_dec *d)
  * of two or more positions, never through a position a one-position span
  * covers ([rev3.1 W2]: ofs_test_model's one term per selected offset).
  * Grouping reads adjacency, so it orders first (C-asc is idempotent). */
+_Static_assert(MF_WPLAN_MAX <= UINT16_MAX, "a plan's compare index (< np <= MF_WPLAN_MAX) is a uint16_t: pterm, mf_wreply.plan_term");
 static void c_run(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
-    uint8_t term = 0;
+    uint16_t term = 0;
     c_asc(d);
     for (unsigned i = 0; i < d->np; i++) {
         if (i && d->poff[i] == d->poff[i - 1] + 1) {
@@ -1218,7 +1244,7 @@ static void trace_cands(const wf_dec *d, const gate_tctx *tm)
     tc.table = "wfA";               /* KEY's candidates */
     for (unsigned ai = 0; ai < d->na; ai++) {
         const wf_alt *m = &d->a[ai];
-        for (unsigned k = 0; k < WF_NPOS; k++) {
+        for (unsigned k = 0; k < m->npos; k++) {
             const wf_pos *p = &m->p[k];
             if (!p->present) continue;
             gate_cand c = { .src = GATE_CAND_POS, .alt = ai, .off = (int32_t)k + WF_LO,
@@ -1245,15 +1271,27 @@ static void trace_cands(const wf_dec *d, const gate_tctx *tm)
 
 /* Tables A, M and C over window site `s` (wf_check'd) into `d`; the walks are
  * traced unless `quiet`. */
-static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
+static int decide(const mf_art *art, const mf_site *s, int quiet, mf_arena *al, wf_dec *d)
 {
     memset(d, 0, sizeof *d);
     d->art = art;
     d->s = s;
     d->rate = kit_byte_rate(art);
     d->na = s->nalt;
+    /* the working state, sized by each alternative's extent (never by the
+       ceiling), from `al`: the plan holds one alternative's positions */
+    wf_pos *pos[MF_WMAX_ALT];
     for (unsigned ai = 0; ai < d->na; ai++) {
-        cands(&s->alts[ai], d->rate, &d->a[ai]);
+        unsigned n = wf_extent(&s->alts[ai]);
+        pos[ai] = al->alloc(al->u, n * sizeof *pos[ai]);
+        if (!pos[ai]) return -1;
+        if (n > d->pcap) d->pcap = n;
+    }
+    d->poff = al->alloc(al->u, (d->pcap ? d->pcap : 1) * sizeof *d->poff);
+    d->pterm = al->alloc(al->u, (d->pcap ? d->pcap : 1) * sizeof *d->pterm);
+    if (!d->poff || !d->pterm) return -1;
+    for (unsigned ai = 0; ai < d->na; ai++) {
+        cands(&s->alts[ai], d->rate, &d->a[ai], pos[ai]);
         wf_facts f = { s, &s->alts[ai] };
         gate_in in = { .s = s, .wf = &f };
         gate_tctx tc = { art, "wfA", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
@@ -1285,11 +1323,27 @@ static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
     snprintf(d->path, sizeof d->path, "%s%s", wf_arows[d->a[d->ch].arow].path,
              d->pinned ? "+pin" : "");
     trace_cands(d, &tc);
+    return 0;
+}
+
+/* 1 iff the caller's `rows` can hold decision `d`'s plan lists: plan and
+ * plan_term, plus plan_test where the ask is `framed`, each of plan_cap >=
+ * np entries (an empty plan needs no list). THE STORAGE PRECONDITION: an
+ * ask checks it before its first write to `rows`, so a refused ask writes
+ * nothing there (memfn.h mf_wdecide; review r27 SEAM-1). */
+static int rows_hold(const wf_dec *d, const mf_rows *rows, int framed)
+{
+    if (!rows) return 0;
+    if (!d->np) return 1;
+    return rows->plan && rows->plan_term && (!framed || rows->plan_test) &&
+           d->np <= rows->plan_cap;
 }
 
 /* The reply's DECISION GROUP (`alt` .. `path`) from decision `d`, the reply
- * zeroed whole first (padding and the frame part included). */
-static void reply_of(const wf_dec *d, mf_wreply *out)
+ * zeroed whole first (padding and the frame part included), its plan lists
+ * written into the caller's `rows` (MF_SITE_ABI 30). The caller has checked
+ * rows_hold. */
+static void reply_of(const wf_dec *d, mf_wreply *out, const mf_rows *rows)
 {
     const wf_alt *m = &d->a[d->ch];
     memset(out, 0, sizeof *out);
@@ -1300,17 +1354,19 @@ static void reply_of(const wf_dec *d, mf_wreply *out)
         out->stop = m->stop;
         memcpy(out->stop_set, rd_set(d, &m->p[m->stop - WF_LO]), 32);
     }
-    out->nplan = (uint8_t)d->np;
+    out->nplan = (uint16_t)d->np;
     for (unsigned i = 0; i < d->np; i++) {
-        out->plan[i] = d->poff[i];
-        out->plan_term[i] = d->pterm[i];
+        rows->plan[i] = d->poff[i];
+        rows->plan_term[i] = d->pterm[i];
     }
+    out->plan = rows->plan;
+    out->plan_term = rows->plan_term;
     out->pinned = (uint8_t)d->pinned;
     out->run_stated = (uint8_t)d->run_stated;
     if (d->run_stated) {
         out->run_member = d->member;
         out->run_lo = d->run_lo;
-        out->run_len = (uint8_t)d->run_len;
+        out->run_len = (uint16_t)d->run_len;
     }
     snprintf(out->path, sizeof out->path, "%s", d->path);
 }
@@ -1320,10 +1376,13 @@ static void reply_of(const wf_dec *d, mf_wreply *out)
 
 struct wf_plan {
     unsigned n;                         /* tested positions: the stop and the plan */
-    int32_t  off[WF_NPOS];
-    uint8_t  set[WF_NPOS][32];
-    uint8_t  core[WF_NPOS];
-    uint32_t table[WF_NPOS];            /* C-table's offer, 0: C-own            */
+    /* n entries each (at most the decision's plan and its stop), allocated
+       per plan by plan_of: the kit's working state is sized by the extent */
+    int32_t  *off;
+    uint8_t (*set)[32];
+    uint8_t  *core;
+    uint32_t *table;                    /* C-table's offer, 0: C-own            */
+    int32_t  *key;                      /* find_groups' compare key per entry   */
     int      ncore;                     /* the hoisted bound: core positions'   */
     int32_t  clo, chi;                  /* least and largest offset             */
     int      hy_set;                    /* THE EMPTY RANGE: the largest offset  */
@@ -1351,7 +1410,7 @@ struct wf_plan {
     const struct ren_check_row  *chk;
     const mf_site *fsite;               /* B-fn: the plan as the offset-skip
                                            function's site and predicate       */
-    int8_t   grp[WF_NPOS];              /* C-run's compare: a run term of
+    int8_t   *grp;                      /* C-run's compare: a run term of
                                            `runs`, -1 a lone position          */
     unsigned nrun;
     mf_pred *runs;                      /* the run compares' terms (runcmp.c),
@@ -1360,6 +1419,10 @@ struct wf_plan {
                                            probe offset and the shift table
                                            sh[] over its window                */
     uint8_t  sh[256];
+    int32_t  head;                      /* THE SPAN FORMS' inline head h
+                                           (wf_span_head): a one-class repeat
+                                           loops from offset h on; INT32_MAX
+                                           is I, 0 is L                        */
 };
 
 /* C-table's offer at offset `off`: a covering span's table whose own set is
@@ -1375,14 +1438,69 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
     return 0;
 }
 
-static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
+/* ---- THE SPAN FORMS (R-45 r45_reply rev 8 §3 "The forms") ----------------
+ *
+ * Over the existing segmenter, the plan's tested positions in offset order
+ * (each the meet `merge` computed) fall into segments of one KIND, first
+ * match:
+ *   1. a LITERAL or cube stretch: C-run's run compare (find_groups), in EVERY
+ *      form; the head never splits one;
+ *   2. a ONE-CLASS REPEAT: a maximal stretch of two or more consecutive
+ *      offsets, every position core, carrying one byte-identical set kind 1
+ *      can never take (KIT_POS_WIDE: three or more members, or two that are
+ *      no cube; WIDE includes the empty set, so an empty-meet stretch loops
+ *      too, answer-neutral: no subject byte passes it either way) and one test (the same C-table offer, or none), across stated
+ *      span boundaries (the meet is per offset); from offset h on it renders
+ *      as ONE LOOP over its offsets, before h as today's lone tests;
+ *   3. a LONE test: anything else (a non-core position keeps its three-way
+ *      guard, so it never joins a loop).
+ * The forms are the one knob h: I = H(h >= every offset: today's text), L =
+ * H(0), H(h). A periodic segment, such as `(ab){500}`, is NOT built (r45_reply
+ * §3: UNMEASURED; its trigger is a census row with a periodic span of 36 or
+ * more positions).
+ *
+ * THE DEFAULT HEAD. MEASURED: 64, label "grid top, CHOSEN". The form cards
+ * ran (run fcards-zen4-1, frozen 33fec79b3, Zen 4, 2026-11-19): rule R1
+ * picked h* = 64, and card C3 is complete at H(64) after its re-run of the
+ * void-once cells. At pcrec's default window width (32: its largest stated
+ * offset is 32) no span loops, so nothing moves. R5 records near-miss long
+ * spans where H(64) loses to L (h0) on C3: hex500 near-miss, about 82 against
+ * 41 ns/B, while today's text I is about 130 there. The cards' script is
+ * memfn/tests/span_forms/cards.py; its record is cited by run id. */
+enum { WF_SPAN_HEAD = 64 };
+#define WF_LOOP_ID "span-loop"
+
+/* The inline head h of the forms for site `s` on `art`: the option row
+ * `span-loop` first (its deny `no-span-loop` is I, today's text, and wins;
+ * its force is L, h = 0), else the test-only lever `span-head=N` (the form
+ * cards' instrument, never a shipped compile), else WF_SPAN_HEAD. */
+static int32_t wf_span_head(const mf_art *art, const mf_site *s)
+{
+    int st = kit_opt_state(s->opts, WF_LOOP_ID);
+    if (st < 0) return INT32_MAX;
+    if (st > 0) return 0;
+    if (art && (art->levers & KIT_LEVER_SPAN_HEAD)) return (int32_t)art->span_head;
+    return WF_SPAN_HEAD;
+}
+
+static int plan_of(const wf_dec *d, const mf_hooks *def, mf_arena *al, struct wf_plan *w)
 {
     const wf_alt *m = &d->a[d->ch];
     memset(w, 0, sizeof *w);
     w->wfloor = d->s->wfloor;
+    w->head = wf_span_head(d->art, d->s);
     w->row = &wf_floor_arm;
     w->stop_ix = -1;
-    int32_t offs[WF_NPOS + 1];
+    /* the plan's entries and the stop: d->np + 1 at most */
+    size_t cap = (size_t)d->np + 1;
+    w->off = al->alloc(al->u, cap * sizeof *w->off);
+    w->set = al->alloc(al->u, cap * sizeof *w->set);
+    w->core = al->alloc(al->u, cap * sizeof *w->core);
+    w->table = al->alloc(al->u, cap * sizeof *w->table);
+    w->key = al->alloc(al->u, cap * sizeof *w->key);
+    w->grp = al->alloc(al->u, cap * sizeof *w->grp);
+    if (!w->off || !w->set || !w->core || !w->table || !w->key || !w->grp) return -1;
+    int32_t *offs = w->off;             /* gathered and sorted in place */
     unsigned n = 0;
     for (unsigned i = 0; i < d->np; i++) offs[n++] = d->poff[i];
     if (m->has_stop && !in_plan(d, m->stop)) offs[n++] = m->stop;
@@ -1409,7 +1527,7 @@ static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
     /* THE BOUND also spans every verify-YES core position the plan does not
        test (C-bound's full-set positions: a D11 `{1: any}` is the bound
        alone), since every yielded candidate must hold it inside the subject */
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    for (unsigned k = 0; k < m->npos; k++) {
         const wf_pos *p = &m->p[k];
         int32_t o = (int32_t)k + WF_LO;
         if (!p->present || !p->yes || !p->ycore) continue;
@@ -1421,6 +1539,7 @@ static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
             w->hy_set = 1;
         }
     }
+    return 0;
 }
 
 /* ---- TABLE E's legacy rows: the plan as today's row's site ----------------
@@ -1435,10 +1554,16 @@ static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
  * fails, as a core position does), a full-set position is only the bounded
  * range's end (`end_back`), and its empty range is the plan's: `legacy_ok`. */
 
+/* A legacy RUN term's positions: DERIVED, MF_MAX_TERM. legacy_ok admits at
+ * most MF_MAX_TERM non-full plan positions and a grouped stretch holds only
+ * spelled (so non-full) positions (run_bytes refuses any other), so no
+ * stretch translate() writes is longer; the legacy rows keep this bound
+ * whatever MF_WSPAN_POS is (r45_reply.md rev 4 §1). */
+#define WF_LEGACY_POS MF_MAX_TERM
 typedef struct {
     mf_site  site;
-    uint8_t  run[MF_MAX_TERM][MF_WSPAN_POS];
-    uint8_t  mask[MF_MAX_TERM][MF_WSPAN_POS];
+    uint8_t  run[MF_MAX_TERM][WF_LEGACY_POS];
+    uint8_t  mask[MF_MAX_TERM][WF_LEGACY_POS];
 } wf_legacy;
 
 /* 1 iff the plan translates into a legacy site with the plan's semantics;
@@ -1772,7 +1897,7 @@ static int run_group_ok(const struct wf_plan *w, unsigned from, unsigned to)
 _Static_assert(MF_MAX_TERM - 1 <= INT8_MAX, "a C-run term index (< MF_MAX_TERM) is an int8_t: w->grp[k] = (int8_t)nterm");
 static void find_groups(const wf_dec *d, struct wf_plan *w)
 {
-    int key[WF_NPOS];
+    int32_t *key = w->key;              /* the plan's own (plan_of), not a stack array */
     for (unsigned i = 0; i < w->n; i++) {
         key[i] = -1;
         w->grp[i] = -1;
@@ -1847,12 +1972,14 @@ static int hors_window(const wf_dec *d, int32_t *lo, int32_t *hi)
  * TESTS at offset whi - t (every byte where an offset is untested), else the
  * window's length: a candidate c + u, 0 < u < sh[b], would need b at its
  * own offset whi - u, which no tested set there holds. */
-_Static_assert(MF_MAX_SPAN_POS < 256, "a D-hors shift (at most a window's length) is a uint8_t: sh[b] = (uint8_t)t");
+/* A shift is a uint8_t: one over a window longer than 255 is CAPPED at
+ * 255, a shorter shift (any shift below the least unsafe one is safe; at
+ * every window of 255 or fewer positions the table is unchanged). */
 static void hors_table(const struct wf_plan *w, int32_t wlo, int32_t whi, uint8_t sh[256])
 {
     for (unsigned b = 0; b < 256; b++) {
         int32_t t = 1;
-        for (; whi - t >= wlo; t++) {
+        for (; whi - t >= wlo && t < 255; t++) {
             int tested = 0, in = 0;
             for (unsigned i = 0; i < w->n; i++)
                 if (w->off[i] == whi - t) { tested = 1; in = in_set(w->set[i], b); }
@@ -2386,8 +2513,7 @@ static int wf_plan_site(const mf_art *art, mf_arena *al, const mf_site *s,
                         struct wf_plan *w, wf_legacy *L, wf_fx *fx, size_t *erow,
                         const char **why)
 {
-    decide(art, s, quiet, d);
-    plan_of(d, def, w);
+    if (decide(art, s, quiet, al, d) || plan_of(d, def, al, w)) { *why = "out of memory"; return -1; }
     fx->fn = NULL;
     if (wf_find_decide(art, al, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
     wf_facts f = { s, d->a[d->ch].alt };
@@ -2553,7 +2679,8 @@ typedef struct {
     wf_frame_row erow;
     const char  *method;
     uint8_t      search, stream, fused;
-    uint8_t      plan_test[MF_WPLAN_MAX];
+    uint8_t     *plan_test;     /* the decision's np entries (the caller's
+                                   allocation, kept by wf_frame_of)         */
     uint8_t      stop_test;
     const arm   *ren;       /* the row whose use renders the site (the
                                family's, or E-func/E-stmt's composer arm) */
@@ -2591,7 +2718,10 @@ static int wf_frame_of(const mf_art *art, const mf_hooks *def, unsigned gphases,
                        const wf_dec *d, const struct wf_plan *w, const wf_fx *fx,
                        const wf_legacy *L, wf_fpart *fp)
 {
+    uint8_t *pt = fp->plan_test;
     memset(fp, 0, sizeof *fp);
+    fp->plan_test = pt;
+    if (d->np) memset(pt, 0, d->np);
     fp->erow = (wf_frame_row)r;
     fp->method = "";
     fp->ren = w->row;
@@ -2631,8 +2761,9 @@ static int wf_frame_of(const mf_art *art, const mf_hooks *def, unsigned gphases,
 }
 
 /* The reply's FRAME PART from `fp` (`out`'s decision group already
- * written): framed 1, the ids spelled, the pieces copied. */
-static void reply_frame(const wf_fpart *fp, mf_wreply *out)
+ * written): framed 1, the ids spelled, the pieces copied, plan_test into the
+ * caller's `rows` (nplan entries). The caller has checked rows_hold, framed. */
+static void reply_frame(const wf_fpart *fp, mf_wreply *out, const mf_rows *rows)
 {
     out->framed = 1;
     snprintf(out->frame_row, sizeof out->frame_row, "%s", wf_frame_name(fp->erow));
@@ -2640,7 +2771,8 @@ static void reply_frame(const wf_fpart *fp, mf_wreply *out)
     out->search = fp->search;
     out->stream = fp->stream;
     out->fused = fp->fused;
-    memcpy(out->plan_test, fp->plan_test, sizeof out->plan_test);
+    if (out->nplan) memcpy(rows->plan_test, fp->plan_test, out->nplan);
+    out->plan_test = rows->plan_test;
     out->stop_test = fp->stop_test;
 }
 
@@ -2706,7 +2838,7 @@ static int framed_refused(const mf_art *art, const mf_site *s)
  * site (mf_emit places no mf_locals before its use) or emit_use_refused.
  * The agreement asks with `use` 0: it holds the define's half. */
 static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks *def,
-                          unsigned gphases, int use, mf_wreply *out)
+                          unsigned gphases, int use, mf_wreply *out, const mf_rows *rows)
 {
     if (framed_refused(art, site)) return -1;
     if (use && site->decl_point) return -1;
@@ -2723,15 +2855,25 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
     if (d && w && L && fx && fp &&
         !wf_plan_site(art, &heap, site, def, gphases, 1, d, w, L, fx, &r, &why)) {
         unsigned eb;
+        fp->plan_test = wd_alloc(&blks, (size_t)d->np + 1);  /* the decision's np */
         /* the translation the define renders E-func/E-stmt from (wf_prepare) */
         if (r == E_FUNC || r == E_STMT) {
             legacy_ok(d, w, &eb);
             translate(d, w, eb, L);
         }
-        if (!wf_frame_of(art, def, gphases, r, d, w, fx, L, fp) &&
-            !(use && emit_use_refused(fp->ren, site, def))) {
-            reply_of(d, out);
-            reply_frame(fp, out);
+        /* every refusal first, then the writes, as statements (review r27
+           SEAM-1/HOUSE-1): a refused ask writes nothing to `rows` */
+        int ok = fp->plan_test && !wf_frame_of(art, def, gphases, r, d, w, fx, L, fp);
+        if (ok && use && emit_use_refused(fp->ren, site, def)) ok = 0;
+        /* `!art->err[0]`: UNREACHED by a sound site (review r28 R28-3,
+           recorded by lane forms): wf_plan_site sets the art's error only on
+           a kit invariant failure (run_bytes' unspelled position, run_rank's
+           non-strict tie row, the pinned rank's first position), each a
+           fenced defect no stated input reaches; a witness needs a planted
+           defect beside the conjunct's own plant */
+        if (ok && !art->err[0] && rows_hold(d, rows, 1)) {
+            reply_of(d, out, rows);
+            reply_frame(fp, out, rows);
             rc = 0;
         }
     }
@@ -2750,7 +2892,7 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
  * it, or a heap allocation is refused (OOM, R-28): every pcrec caller turns
  * -1 into pcrec_ctx_fail, so a refusal is never read as a reply. */
 int mf_wdecide(const mf_art *art, const mf_site *site, const mf_hooks *def, uint8_t call,
-               mf_wreply *out)
+               mf_wreply *out, mf_rows *rows)
 {
     memset(out, 0, sizeof *out);
     if (call == MF_WCALL_UNSTATED || call > MF_WCALL_EMIT) return -1;
@@ -2758,42 +2900,69 @@ int mf_wdecide(const mf_art *art, const mf_site *site, const mf_hooks *def, uint
     if (call != MF_WCALL_NONE)
         return wdecide_framed(art, site, def,
                               call == MF_WCALL_EMIT ? MF_PH_DEFINE | MF_PH_USE : MF_PH_DEFINE,
-                              call == MF_WCALL_EMIT, out);
+                              call == MF_WCALL_EMIT, out, rows);
     /* NONE: the decision reads no frame fact (§0), so only the window facts
        are held, and `def` is not read */
     if (wf_check(site, 0)) return -1;
-    /* the decision is ~10 KB, so it lives on the heap (R-28: a stack frame
-       above 4 KB is a kit defect); the ask is pure, so not the art's
+    /* the decision and its working state live on the heap (R-28: a stack
+       frame above 4 KB is a kit defect); the ask is pure, so not the art's
        arena; a refused allocation is -1 */
-    wf_dec *d = calloc(1, sizeof *d);
-    if (!d) return -1;
-    decide(art, site, 1, d);
-    reply_of(d, out);
-    free(d);
-    return 0;
+    wd_blk *blks = NULL;
+    mf_arena heap = { &blks, wd_alloc };
+    wf_dec *d = wd_alloc(&blks, sizeof *d);
+    int rc = -1;
+    if (d && !decide(art, site, 1, &heap, d) && rows_hold(d, rows, 0)) {
+        reply_of(d, out, rows);
+        rc = 0;
+    }
+    wd_free(blks);
+    return rc;
 }
 
 #ifdef MF_TRACE
 /* The reply members by offset, for naming the first one two replies differ
  * at (the agreement's refusal; a NONE reply's frame part is zero). */
-#define WR_M(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m }
-static const struct { const char *name; size_t off, size; } wr_members[] = {
+/* A member's KIND (the deep-compare rule, r45_reply.md §5 (a)): a value
+ * compared by its bytes, or a COUNTED LIST (`elem` bytes per entry, nplan
+ * entries) compared over the count, its pointer never compared. */
+#define WR_M(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m, 0 }
+#define WR_L(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m, \
+                  sizeof *((mf_wreply *)0)->m }
+static const struct { const char *name; size_t off, size, elem; } wr_members[] = {
     WR_M(alt), WR_M(reseed), WR_M(has_stop), WR_M(stop), WR_M(stop_set), WR_M(nplan),
-    WR_M(plan), WR_M(plan_term), WR_M(pinned), WR_M(run_stated), WR_M(run_member),
+    WR_L(plan), WR_L(plan_term), WR_M(pinned), WR_M(run_stated), WR_M(run_member),
     WR_M(run_lo), WR_M(run_len), WR_M(path), WR_M(framed), WR_M(frame_row), WR_M(method),
-    WR_M(search), WR_M(stream), WR_M(fused), WR_M(plan_test), WR_M(stop_test),
+    WR_M(search), WR_M(stream), WR_M(fused), WR_L(plan_test), WR_M(stop_test),
 };
 #undef WR_M
+#undef WR_L
 
 /* The name of the first member at which `a` and `b` differ ("padding"
- * where only padding does). */
+ * where only padding does). A list member differs where the counts differ
+ * or an entry below the count does (two NULL lists agree; one NULL list
+ * differs from a held one at a nonzero count). */
 static const char *wr_first_diff(const mf_wreply *a, const mf_wreply *b)
 {
-    for (size_t i = 0; i < sizeof wr_members / sizeof *wr_members; i++)
-        if (memcmp((const char *)a + wr_members[i].off, (const char *)b + wr_members[i].off,
-                   wr_members[i].size))
+    for (size_t i = 0; i < sizeof wr_members / sizeof *wr_members; i++) {
+        const char *pa = (const char *)a + wr_members[i].off;
+        const char *pb = (const char *)b + wr_members[i].off;
+        if (!wr_members[i].elem) {
+            if (memcmp(pa, pb, wr_members[i].size)) return wr_members[i].name;
+            continue;
+        }
+        const void *la, *lb;
+        memcpy(&la, pa, sizeof la);
+        memcpy(&lb, pb, sizeof lb);
+        if (a->nplan != b->nplan) return wr_members[i].name;
+        if (!a->nplan) continue;
+        if (la != lb && (!la || !lb || memcmp(la, lb, a->nplan * wr_members[i].elem)))
             return wr_members[i].name;
-    return "padding";
+    }
+    mf_wreply x = *a, y = *b;           /* the padding, pointers set aside */
+    x.plan = y.plan = NULL;
+    x.plan_term = y.plan_term = NULL;
+    x.plan_test = y.plan_test = NULL;
+    return memcmp(&x, &y, sizeof x) ? "padding" : NULL;
 }
 
 /* THE AGREEMENT (MF_TRACE; plan_frame.md §4.1 "The agreement's two
@@ -2811,12 +2980,29 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
 {
     mf_wreply asked, held;
     memset(&asked, 0, sizeof asked);
-    if (wdecide_framed(art, ws, def, gphases, 0, &asked))
-        return "the framed ask's refusal";
-    wf_dec *d = calloc(1, sizeof *d);
-    if (!d) return "(out of memory)";
-    decide(art, ws, 1, d);
-    reply_of(d, &held);
+    /* each holder its OWN plan storage (r45_reply.md §5), freed with `d` */
+    uint32_t cap = wf_stated_offsets(ws);
+    mf_rows ra = { NULL, 0, calloc(cap + 1, sizeof (int32_t)), calloc(cap + 1, sizeof (uint16_t)),
+                   calloc(cap + 1, 1), cap };
+    mf_rows rh = { NULL, 0, calloc(cap + 1, sizeof (int32_t)), calloc(cap + 1, sizeof (uint16_t)),
+                   calloc(cap + 1, 1), cap };
+    const char *res = NULL;
+    wf_dec *d = NULL;
+    wd_blk *blks = NULL;
+    mf_arena heap = { &blks, wd_alloc };
+    if (!ra.plan || !ra.plan_term || !ra.plan_test || !rh.plan || !rh.plan_term ||
+        !rh.plan_test) {
+        res = "(out of memory)";
+        goto out;
+    }
+    if (wdecide_framed(art, ws, def, gphases, 0, &asked, &ra)) {
+        res = "the framed ask's refusal";
+        goto out;
+    }
+    d = wd_alloc(&blks, sizeof *d);
+    if (!d || decide(art, ws, 1, &heap, d)) { res = "(out of memory)"; goto out; }
+    if (!rows_hold(d, &rh, 1)) { res = "(the held reply's storage)"; goto out; }
+    reply_of(d, &held, &rh);
     const struct wf_plan *w = r->wplan;
     wf_frame_row erow = w ? (w->row == &wf_find_arm ? E_FIND : E_GENERIC)
                           : r->site.form == MF_FORM_FUNC ? E_FUNC : E_STMT;
@@ -2837,8 +3023,8 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
         for (unsigned i = 0; i < d->np; i++)
             for (unsigned k = 0; k < w->n; k++)
                 if (w->off[k] == d->poff[i])
-                    held.plan_test[i] = w->table[k] && w->grp[k] < 0 ? MF_WTEST_TABLE
-                                                                      : MF_WTEST_OWN;
+                    rh.plan_test[i] = w->table[k] && w->grp[k] < 0 ? MF_WTEST_TABLE
+                                                                    : MF_WTEST_OWN;
         if (erow == E_FIND && w->stop_ix >= 0)
             held.stop_test = w->table[w->stop_ix] ? MF_WTEST_TABLE : MF_WTEST_OWN;
     } else if (erow == E_FUNC && r->arm == &ofsskip_arm) {
@@ -2853,8 +3039,13 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
     } else {
         held.fused = MF_WFUSED_ARM;
     }
-    free(d);
-    return memcmp(&asked, &held, sizeof asked) ? wr_first_diff(&asked, &held) : NULL;
+    held.plan_test = rh.plan_test;
+    res = wr_first_diff(&asked, &held);
+out:
+    wd_free(blks);
+    free(ra.plan); free(ra.plan_term); free(ra.plan_test);
+    free(rh.plan); free(rh.plan_term); free(rh.plan_test);
+    return res;
 }
 #endif
 
@@ -2997,6 +3188,22 @@ static int run_part_terms(const mf_art *art, const mf_site *s, unsigned part, in
         while (a > lo && kit_pos_spelled(run->set[a - 1])) a--;
         while (b < hi && kit_pos_spelled(run->set[b])) b++;
     }
+    /* THE DECLINING ROW CONTRACT (review r27 READ-1): the part is one RUN
+       term over the scan stretch [a, b) plus one SET term per other verified
+       position, and the RUN term's ranking has one entry per stretch
+       position. A stretch over MF_RANK_MAX positions, or more than
+       MF_MAX_TERM terms, has no spelling in mf_pred (rank_pos[], term[]):
+       refused here, before any term or ranking entry is written */
+    unsigned nterms = (hi - lo) - (b - a) + (rr.has_scan ? 1u : 0u);
+    if (b - a > MF_RANK_MAX) {
+        *why = "a derived run part whose scan stretch is over MF_RANK_MAX positions (its "
+               "ranking has no spelling)";
+        return -1;
+    }
+    if (nterms > MF_MAX_TERM) {
+        *why = "a derived run part of more than MF_MAX_TERM terms";
+        return -1;
+    }
     q->nterm = 0;
     memset(q->term, 0, sizeof q->term);
     q->need = MF_REQUIRED;
@@ -3010,17 +3217,18 @@ static int run_part_terms(const mf_art *art, const mf_site *s, unsigned part, in
         t->ppm_lo = 0;
         t->ppm_hi = MF_PPM_FULL;
         if (j == a) {                   /* the scan stretch: ONE RUN term */
-            uint8_t *rb = art->a->alloc(art->a->u, 2u * MF_WSPAN_POS);
+            /* sized by the run's length (r45_reply.md §1), not the bound */
+            uint8_t *rb = art->a->alloc(art->a->u, 2u * (b - a));
             int exact;
             if (!rb) { *why = "out of memory"; return -1; }
             t->kind = MF_T_RUN;
-            t->run_len = (uint8_t)(b - a);
-            if (run_bytes(art, kit_wspan_at, run, a, b, rb, rb + MF_WSPAN_POS, &exact)) {
+            t->run_len = b - a;
+            if (run_bytes(art, kit_wspan_at, run, a, b, rb, rb + (b - a), &exact)) {
                 *why = art->err;
                 return -1;
             }
             t->run = rb;
-            t->mask = exact ? NULL : rb + MF_WSPAN_POS;
+            t->mask = exact ? NULL : rb + (b - a);
             q->plan_hint = q->nterm;
             q->plan_pos = (uint16_t)(rr.scan - a);
             if (run_rank(art, kit_run_opts_of(art, s, KIT_RUN_WHOLE), kit_byte_rate(art),
@@ -3144,6 +3352,7 @@ struct wf_rc {
                                            their look-ahead widths and a
                                            look-ahead's end (kit.h ofs_pair) */
     const char           *FN;           /* B-fn's offset-skip function       */
+    const char           *J;            /* a span loop's offset (wf_loop)     */
     unsigned              used;     /* PARAM_* the text reads                  */
 };
 
@@ -3177,6 +3386,7 @@ static void wf_rc_init(wf_rc *rc, mf_art *art, uint32_t handle, const mf_hooks *
     rc->WB = wf_nm(art, handle, "_wb");
     rc->E = wf_nm(art, handle, "_e");
     rc->FN = wf_nm(art, handle, "_ofsskip");
+    rc->J = wf_nm(art, handle, "_j");
 }
 
 /* Writes `b`'s text to sink `o`: 0, or -1 (out of memory) recorded. */
@@ -3277,6 +3487,45 @@ static int wf_pos_test(wf_rc *rc, kb *t, unsigned i)
     return 0;
 }
 
+/* The ONE-CLASS REPEAT's loop at tested entry `i` (kind 2 of THE SPAN
+ * FORMS): the number of entries from `i` on that one loop tests, at least 2 (the minimum
+ * of two is DERIVED, r45_reply rev 7 §3 "The forms": a one-entry loop is a lone
+ * test plus loop overhead, and gcc unrolls two trips),
+ * or 0 where entry `i` starts none (its offset is below the head, it is not
+ * a kind-2 position, or fewer than two such entries follow at consecutive
+ * offsets). Entry `skip` (the position E-find's search proved) and a C-run
+ * compare's entries end a stretch: neither is tested here. */
+static unsigned wf_loop_len(const struct wf_plan *w, unsigned i, int skip)
+{
+    if (w->off[i] < w->head) return 0;
+    unsigned j = i;
+    for (; j < w->n; j++) {
+        if ((int)j == skip || w->grp[j] >= 0 || !w->core[j] ||
+            kit_pos_class_of(w->set[j]) != KIT_POS_WIDE)
+            break;
+        if (j > i && (w->off[j] != w->off[j - 1] + 1 || w->table[j] != w->table[i] ||
+                      memcmp(w->set[j], w->set[i], 32)))
+            break;
+    }
+    return j - i >= 2 ? j - i : 0;
+}
+
+/* The loop over tested entries `i` .. `i + len - 1` into `t`: one statement
+ * expression whose value is 1 iff every byte `S[C + J]`, J over the
+ * stretch's offsets, is a member (the stretch is core: the hoisted bound
+ * placed every byte inside the subject, as a run compare's). */
+static int wf_loop(wf_rc *rc, kb *t, unsigned i, unsigned len)
+{
+    int32_t lo = rc->w->off[i], end = lo + (int32_t)len;
+    kb byte;
+    kb_init(&byte, rc->art->a);
+    kb_printf(&byte, "%s[%s + %s]", rc->S, rc->C, rc->J);
+    kb_printf(t, "({ size_t %s = %d; for (; %s < %d; %s++) if (!", rc->J, lo, rc->J, end, rc->J);
+    if (wf_member_of(rc, t, i, byte.p ? byte.p : "0")) return -1;
+    kb_printf(t, ") break; %s == %d; })", rc->J, end);
+    return 0;
+}
+
 /* THE CANDIDATE TEST at C into `t`: the bound's lower half (where `lower`;
  * E-find raises C past it once, before its loop: wf_raise), then every plan
  * position but the lone index `skip` (-1: none) in ascending offset, a C-run
@@ -3295,6 +3544,12 @@ static int wf_test_to(wf_rc *rc, kb *t, mf_sink *o, int skip, int lower)
         if (w->grp[i] >= 0 && i && w->grp[i - 1] == w->grp[i]) continue;
         if (!first) kb_puts(t, " && ");
         first = 0;
+        unsigned len = w->grp[i] < 0 ? wf_loop_len(w, i, skip) : 0;
+        if (len) {
+            if (wf_loop(rc, t, i, len)) return -1;
+            i += len - 1;
+            continue;
+        }
         if (w->grp[i] < 0) {
             if (wf_pos_test(rc, t, i)) return -1;
             continue;
@@ -3835,8 +4090,13 @@ static int wf_family_applies(const mf_site *s, const mf_hooks *def)
     return 1;
 }
 
-/* The form class of the text the family row renders for the plan (kit.h). */
-void wf_plan_class(const struct wf_plan *w, mf_class *out)
+/* The form class of the text the family row renders for the plan (kit.h):
+ * a PROVING class (MF_CLASS_V 11, r45_reply.md §1), its range sized from the
+ * window site `ws`'s largest stated position and the plan's TESTED offsets;
+ * a tested offset outside [MF_PROOF_LO, MF_MAX_FWD) is refused (R-out),
+ * never clipped. */
+const char *wf_plan_class(const struct wf_plan *w, const mf_site *ws, mf_class *out,
+                          const kit_proof_st *st)
 {
     memset(out, 0, sizeof *out);
     out->v = MF_CLASS_V;
@@ -3845,16 +4105,49 @@ void wf_plan_class(const struct wf_plan *w, mf_class *out)
        this plan (wf_find_prepare; the floor's own compares need neither) */
     out->libc_free = !w->libc;
     out->includes = w->includes;
-    memset(out->proven, 0xFF, sizeof out->proven);
+    long tlo = 0, tlast = 0;
+    for (unsigned i = 0; i < w->n; i++) {
+        if (w->off[i] < tlo) tlo = w->off[i];
+        if (w->off[i] > tlast) tlast = w->off[i];
+    }
+    uint8_t (*rows)[32];
+    const char *why = kit_proof_open(out, kit_last_stated(ws), tlo, tlast, 1, st, &rows);
+    if (why) {
+        memset(out, 0, sizeof *out);
+        return why;
+    }
     /* R-25: every position the text tests, at every candidate it yields (an
        off-subject position is the core rule's, window_site.md §1.4) */
-    for (unsigned i = 0; i < w->n; i++) {
+    for (unsigned i = 0; rows && i < w->n; i++) {
         int32_t d = w->off[i];
-        if (d < MF_PROOF_LO || d >= MF_MAX_FWD) continue;
-        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] &= w->set[i][x];
+        for (unsigned x = 0; x < 32; x++) rows[d - MF_PROOF_LO][x] &= w->set[i][x];
     }
-    memcpy(out->proven0, out->proven[0 - MF_PROOF_LO], sizeof out->proven0);
-    memcpy(out->proven_prev, out->proven[-1 - MF_PROOF_LO], sizeof out->proven_prev);
+    kit_proof_close(out);
+    return NULL;
+}
+
+uint32_t wf_stated_offsets(const mf_site *s)
+{
+    /* the offsets lie in [-MF_MAX_BACK, MF_WREACH) (wf_check): a BIT set over
+       that range on the stack (MF_WPLAN_MAX bits, 520 B at 4104: inside
+       R-28's frame bar), so mf_rows_need, its sizing caller, stays PURE: no
+       allocation, no failure path (review r27 TRI-1/HOUSE-5). An offset off
+       the range (a site wf_check would refuse) counts once per statement, an
+       over-estimate the caller may pass. */
+    if (!s->nalt || !s->alts) return 0;
+    uint64_t seen[(MF_WPLAN_MAX + 63) / 64] = { 0 };
+    uint32_t n = 0;
+    for (unsigned i = 0; i < s->nalt; i++)
+        for (unsigned j = 0; j < s->alts[i].nspan; j++) {
+            const mf_wspan *sp = &s->alts[i].spans[j];
+            for (unsigned k = 0; k < sp->len; k++) {
+                long off = (long)sp->start + k + MF_MAX_BACK;
+                if (off < 0 || off >= MF_WPLAN_MAX) { n++; continue; }
+                uint64_t bit = (uint64_t)1 << (off % 64);
+                if (!(seen[off / 64] & bit)) { seen[off / 64] |= bit; n++; }
+            }
+        }
+    return n;
 }
 
 /* 1 iff the plan's text reads a table pcrec offered (kit.h). */

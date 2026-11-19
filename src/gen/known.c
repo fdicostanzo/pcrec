@@ -326,31 +326,61 @@ static bool cc_width(CoverSt *st)
     return st->w.k >= 1 && st->w.nrow > 0;
 }
 
-/* C15 (stage 1): the statement fits what the kit's window interface carries
- * today, read from the kit's own shape bounds, so `cover_window` never
- * writes past `mf_wspan.set[]` (K7). pcrec has no bound of its own. */
+/* The window search's width for this compile: the caller's
+ * `window_search_width`, or the built-in default where it is 0
+ * (`pcrec_compile` has refused any other value outside the legal range). */
+static int cover_width_limit(const Ctx *cx)
+{
+    int w = cx->opt->window_search_width;
+    return w ? w : PCREC_DEFAULT_WINDOW_SEARCH_WIDTH;
+}
+
+/* C15: the cover's width is within the window search's width limit
+ * (cover_cap.md §11.2). The kit-bound conjuncts after it (MF_WSPAN_POS,
+ * MF_WREACH, MF_MAX_FWD) cannot be false at a legal build: the width is at
+ * most PCREC_ANCHORED_MAX_STATES - 1 and the seam assertion below holds that
+ * inside the kit's bounds (review r32 F4; removal filed as a plan row). The
+ * span's rows are pcrec's own storage of exactly its length since
+ * MF_SITE_ABI 30, so no overrun is possible. */
+/* THE SEAM (cover_cap.md §11.1 B2): the cover walk ends before the anchored
+ * machine's ceiling, so a cover states at most the ceiling less one
+ * positions, its after side at offset k reaches the ceiling, and its proof
+ * range must reach offset k. Each must fit the kit's declared bounds, or the
+ * BUILD fails: a `-D` may lower PCREC_ANCHORED_MAX_STATES, never raise it
+ * past them (limits.md §3.12¶3). `_Static_assert`, never `#if`: the ceiling
+ * is an `enum` at the default and reads as 0 in `#if`. */
+_Static_assert(PCREC_ANCHORED_MAX_STATES - 1 <= MF_WSPAN_POS &&
+               PCREC_ANCHORED_MAX_STATES <= MF_WREACH &&
+               PCREC_ANCHORED_MAX_STATES <= MF_MAX_FWD,
+               "the cover seam: PCREC_ANCHORED_MAX_STATES exceeds the memfn kit's declared "
+               "window bounds (MF_WSPAN_POS, MF_WREACH, MF_MAX_FWD); a -D may only lower it");
+/* The kit header's derivation the seam leans on (review r32 F3; cover_cap.md
+ * §11.6.3): one threshold, the span bound one below the reach and the proof
+ * ceiling equal to it. This assert, not the run-time `window_bounds_check`,
+ * is the control for a one-conjunct weakening of the seam assertion above
+ * (S3266): a kit change that splits them fails the build here. */
+_Static_assert(MF_MAX_FWD == MF_WREACH && MF_WSPAN_POS == MF_WREACH - 1,
+               "the memfn kit's window bounds no longer derive from one threshold "
+               "(MF_MAX_FWD == MF_WREACH, MF_WSPAN_POS == MF_WREACH - 1)");
 static bool cc_fits(CoverSt *st)
 {
     int k = st->w.k;
     if (st->w.stop == COVER_STOP_BRANCH) return true;
-    return k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;
+    return k <= cover_width_limit(st->cx) &&
+           k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;
 }
 
 /* C8: the language from r0 is S_0 x .. x S_{k-1}: the walk did not stop at
  * a branch. Decision-redundant since the walk stops at `L` (the rows at a
  * branch never accept, so C10 declines whatever C8 does); it names the
- * `why`. Fills `MkEnd` from the record, bounded by its own array. */
+ * `why`. Points `MkEnd` at the record's sets (cover_cap.md §11.1 A1): no
+ * copy, so no bound of its own; the walk's depth is the only length. */
 static bool cc_exact(CoverSt *st)
 {
     int k = st->w.k;
     if (st->w.stop == COVER_STOP_BRANCH) { st->detail = "machine-inexact"; return false; }
-    if (k > MF_MAX_SPAN_POS)
-        pcrec_ctx_fail(st->cx, 0, "internal error: [COVER-CAP] the cover's exact "
-                       "stretch of %d positions exceeds MkEnd's %d (C15 statement-fits "
-                       "admits no more; docs/design/cover_cap.md section 3.5)",
-                       k, MF_MAX_SPAN_POS);
-    st->cv->end.k = (uint8_t)k;
-    memcpy(st->cv->end.set, st->w.set, (size_t)k * 32);
+    st->cv->end.k = (uint16_t)k;
+    st->cv->end.set = st->cv->sets;
     return true;
 }
 
@@ -415,7 +445,8 @@ static bool cc_served(CoverSt *st)
     mf_hooks h;
     PcrecMfU u;
     mf_site *s = pcrec_cover_site(st->cx, st->cv, NULL, NULL, &h, &u);
-    if (mf_ask(pcrec_memfn_art(st->cx), s, &h, &st->cv->cls)) {
+    if (mf_ask(pcrec_memfn_art(st->cx), s, &h, &st->cv->cls,
+               pcrec_memfn_rows(st->cx, s, PCREC_ROWS_PROOF_CEILING))) {
         st->detail = "refused";
         return false;
     }
@@ -436,12 +467,14 @@ static bool cc_proven(CoverSt *st)
  * `origin-start` is RETIRED [r3rc M-A]. B1's pcrec FACT deny
  * `-fno-kit-proof` (§7) is filed under [IFACE-PUSH], not built: the kit's
  * `--memfn=no-window-search` declines C13 (`refused`), D172 S3. C15
- * `statement-fits` (kind `seam`) is read right after C7 at stage 1 and
- * retires like C2 when the seam carries a counted span (cover_cap.md §3.5). */
+ * `width-limit` (kind `limit`, cover_cap.md §11.2) is read right after C7:
+ * the window search's width. Its kit-bound conjuncts are implied by the
+ * width's range and the seam assertion at every legal build (review r32
+ * F4; their removal is a plan row), so its `why` means the width. */
 typedef struct {
     const char *cid;            /* C1..C15                                   */
     const char *id;             /* the `why`                                 */
-    const char *kind;           /* route / machine / seam / kit              */
+    const char *kind;           /* route / machine / limit / kit             */
     bool      (*holds)(CoverSt *st);
 } CoverConj;
 
@@ -452,7 +485,7 @@ static const CoverConj cover_conj[] = {
     { "C5",  "unmarked-A",    "machine",   cc_unmarked },
     { "C6",  "entry-const",   "machine",   cc_entry },
     { "C7",  "fixed-width",   "machine",   cc_width },
-    { "C15", "statement-fits", "seam",     cc_fits },
+    { "C15", "width-limit",   "limit",     cc_fits },
     { "C8",  "exact",         "machine",   cc_exact },
     { "C9",  "no-eol-view",   "machine",   cc_eol },
     { "C10", "end-at-k",      "machine",   cc_end },
@@ -583,8 +616,8 @@ static const char *cover_fn_name(void *u, uint32_t fn_ref)
 static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
 {
     /* the span length first, before any position write (cover_cap.md §3.5
-       R-13): a statement past the kit's bounds is C15's to decline, and its
-       absence is this named error, never an overrun of `mf_wspan.set[]` */
+       R-13): a statement past the kit's refusal bounds is C15's to decline,
+       and its absence is this named error, never a site the kit refuses */
     if (e->k < 1 || e->k > MF_WSPAN_POS || e->k + 1 > MF_WREACH)
         pcrec_ctx_fail(cx, 0, "internal error: a window span of %u positions at "
                        "0 lies outside the kit's shape bounds (MF_WSPAN_POS, "
@@ -597,13 +630,13 @@ static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
     for (int i = 0; i < 2; i++) n += cover_side_stated(side[i].set, side[i].absent);
     mf_walt *a = pcrec_memfn_walts(cx, 1);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, n);
-    pcrec_memfn_wspan(&sp[0], 0, e->k, MF_VERIFY_YES);
-    for (int d = 0; d < e->k; d++) pcrec_memfn_wpos_bits(&sp[0], d, e->set[d]);
+    pcrec_memfn_wspan(cx, &sp[0], 0, e->k, MF_VERIFY_YES);
+    for (int d = 0; d < e->k; d++) pcrec_memfn_wpos_bits(cx, &sp[0], d, e->set[d]);
     n = 1;
     for (int i = 0; i < 2; i++) {
         if (!cover_side_stated(side[i].set, side[i].absent)) continue;
-        pcrec_memfn_wspan(&sp[n], side[i].off, 1, MF_VERIFY_YES);
-        pcrec_memfn_wpos_bits(&sp[n], 0, side[i].set);
+        pcrec_memfn_wspan(cx, &sp[n], side[i].off, 1, MF_VERIFY_YES);
+        pcrec_memfn_wpos_bits(cx, &sp[n], 0, side[i].set);
         if (side[i].absent == MK_ABS_SATISFIES) pcrec_memfn_wspan_core(&sp[n], 0, 0);
         n++;
     }
@@ -636,6 +669,11 @@ mf_site *pcrec_cover_site(Ctx *cx, const PcrecCover *cv, const char *stem,
     return s;
 }
 
+/* A proof row that proves nothing: every byte admitted (review r32 F18). */
+static const uint8_t kn_all_ones[32] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
 const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class *cls)
 {
     const MkEnd *e = &cv->end;
@@ -646,13 +684,27 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
     }
     before = before || e->absent_before != MK_ABS_SATISFIES;
     after = after || e->absent_after != MK_ABS_SATISFIES;
-    for (int d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {
+    /* the kit's counted range must reach the after-context at offset k
+       (cover_cap.md §11.1 B5): a shorter range is the kit's defect, named,
+       never a narrower comparison. Past the range both the want and the got
+       are all ones (the want is all ones past k), so the loop stops there
+       (r45_reply.md §5 (b); review r27 EMIT-1). */
+    long end = cls->proof ? MF_PROOF_LO + (long)cls->proof_n : MF_PROOF_LO;
+    if (end < (long)e->k + 1)
+        pcrec_ctx_fail(cx, 0, "internal error: the kit's proof range ends at offset %ld, "
+                       "before the cover's after-context at %d (src/gen/known.c)",
+                       end - 1, (int)e->k);
+    if (end > MF_MAX_FWD) end = MF_MAX_FWD;
+    for (int d = MF_PROOF_LO; d < end; d++) {
         uint8_t want[32];
         if (d >= 0 && d < e->k)        memcpy(want, e->set[d], 32);
         else if (d == -1 && before)    memcpy(want, e->ctx_before, 32);
         else if (d == e->k && after)   memcpy(want, e->ctx_after, 32);
         else                           memset(want, 0xff, 32);
-        const uint8_t *got = cls->proven[d - MF_PROOF_LO];
+        /* the kit's counted rows (MF_CLASS_V 11): every offset outside
+           [MF_PROOF_LO, MF_PROOF_LO + proof_n) proves nothing, all ones */
+        long row = (long)d - MF_PROOF_LO;
+        const uint8_t *got = cls->proof && row < (long)cls->proof_n ? cls->proof[row] : kn_all_ones;
         for (int b = 0; b < 256; b++) {
             bool w = kn_has(want, b), g = kn_has(got, b);
             if (w != g)

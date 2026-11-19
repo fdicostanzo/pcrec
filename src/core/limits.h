@@ -641,6 +641,13 @@
  * `-DPCREC_NO_ENDVAR` (`src/ir/dfa.c`'s header states the rule); never
  * overridden in a shipped build.
  *
+ * LOWER-ONLY BY `-D` ([COVER-CAP] stage 2, docs/design/cover_cap.md §11.1
+ * B2). The ceiling also bounds the cover: the cover walk ends before it, so
+ * a cover states at most the ceiling less one positions to the memfn kit.
+ * A `-D` may lower the ceiling; a raise past the kit's declared bounds
+ * (MF_WSPAN_POS 4095, MF_WREACH and MF_MAX_FWD 4096) fails the build, at
+ * the seam assertion beside `cc_fits` in src/gen/known.c.
+ *
  * IT IS AT THE ACTION. The value is read at the one `pcrec_build_dfa` call
  * that builds the optional machine, not at a flag some other edit could
  * cancel — the placement lesson of the [M6.2] repair slice.
@@ -729,8 +736,8 @@
 #undef PCREC_LIMIT_LIMITS_H_BUILD_D
 #undef PCREC_LIMIT_LIMITS_H_FLAG_D
 
-/* The six rows below (two BUILD_D-only, four FLAG_D since [LIM-OVR]
- * 2026-09-22 — see limits.def's own header for the token split) need a
+/* The eight rows below (three BUILD_D-only, five FLAG_D; see limits.def's own
+ * header for the token split) need a
  * REAL `#ifndef`/`#define`/`#endif` at their site — a preprocessor
  * DIRECTIVE, which no macro expansion can generate, is the one shape
  * limits.def's table rows cannot produce by themselves. This wiring is
@@ -764,5 +771,17 @@
 #ifndef PCREC_MAX_AUTO_DFA_ELEMS
 #define PCREC_MAX_AUTO_DFA_ELEMS PCREC_MAX_AUTO_DFA_ELEMS_DEFAULT
 #endif
+#ifndef PCREC_DEFAULT_WINDOW_SEARCH_WIDTH
+#define PCREC_DEFAULT_WINDOW_SEARCH_WIDTH PCREC_DEFAULT_WINDOW_SEARCH_WIDTH_DEFAULT
+#endif
+
+/* [COVER-CAP] stage 2 (docs/design/cover_cap.md §11.2): the window search's
+ * built-in width must be a legal width, 1 .. the anchored ceiling less one
+ * (the cover walk ends by then). A `_Static_assert`, never `#if`: the
+ * ceiling is an `enum` at the default and reads as 0 in `#if`. A builder
+ * who lowers the ceiling by `-D` lowers this default with it. */
+_Static_assert(PCREC_DEFAULT_WINDOW_SEARCH_WIDTH >= 1 &&
+               PCREC_DEFAULT_WINDOW_SEARCH_WIDTH <= PCREC_ANCHORED_MAX_STATES - 1,
+               "PCREC_DEFAULT_WINDOW_SEARCH_WIDTH must lie in 1 .. PCREC_ANCHORED_MAX_STATES - 1");
 
 #endif /* PCREC_LIMITS_H */

@@ -110,3 +110,16 @@ MF_OPT("run-verify-wide", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "verify wide run positions: the run pre-check also tests the run's positions of three or "
        "more bytes, each against its whole byte set; denied, it tests only the stretch of "
        "one- and two-byte positions around the position it searches for")
+/* R-45 (r45_reply rev 6 §3 "The option"; plan A, the owner's forms-now
+ * ruling 2026-11-16): THE SPAN FORMS, the kit's FIRST pair row. Unset: the
+ * default H(h*) (window.c WF_SPAN_HEAD, the inline head); `span-loop`
+ * FORCES L (h = 0: every one-class repeat of two or more positions at a
+ * non-negative offset is a loop), the answer-identity sweep's force arm;
+ * `no-span-loop` forces I, today's all-inline text, pcrec's G1 deny (an
+ * escape hatch, not the dial's always-inline option). The deny wins when
+ * both are given (kit_opt_state). Dense near-miss subjects are the cover's
+ * known slow regime in every form (r45_reply §4). */
+MF_OPT("span-loop", MF_OPT_PAIR, MF_B_ANY, MF_L_SCALAR,
+       "long window spans test a run of one byte set in a loop after an inline head; forced, "
+       "every such run of two or more positions loops; denied, every position is tested "
+       "inline (the text before the loop forms)")

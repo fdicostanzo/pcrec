@@ -1,0 +1,114 @@
+[emit_sweep] === REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/covs2a/main/build/pcrec vs bin:/home/pcrec/projects/pcrec/worktrees/covs2a/build/pcrec ===
+[emit_sweep] === real: stream 4 (composition) ===
+[emit_sweep] === real: stream 1 (.c default engine) ===
+[emit_sweep] === real: stream 2 (.c --engine=vm) ===
+[emit_sweep] === real: stream 3 (--emit-ir --engine=vm) ===
+[emit_sweep] === real: stream 6 (--emit-facts=byte,utf8) ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) <base> ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fprefilter ===
+[emit_sweep] === real: stream emit-ir-auto (--emit-ir, default engine) -fno-prefilter-collapse ===
+[emit_sweep] === real: stream stderr (full stderr + rc of streams 1-2) ===
+[emit_sweep] === real: stream 5 (registry dumps) ===
+
+===== SELF-CHECK (ref vs. independent rebuild of the same rev) =====
+-- stream: c-default --
+  population=7071 both_ok(reach)=6497 both_refuse=574 movers=0 asymmetric=0
+-- stream: c-vm --
+  population=7071 both_ok(reach)=6498 both_refuse=573 movers=0 asymmetric=0
+-- stream: emit-ir-vm --
+  population=7071 both_ok(reach)=6522 both_refuse=549 movers=0 asymmetric=0
+-- stream: facts --
+  population=7071 both_ok(reach)=6513 both_refuse=558 movers=0 asymmetric=0
+-- stream: emit-ir-auto --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+-- stream: emit-ir-auto[-fno-prefilter] --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+-- stream: emit-ir-auto[-fprefilter] --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+-- stream: emit-ir-auto[-fno-prefilter-collapse] --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+-- stream: stderr --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+-- stream: composition --
+  population=465 both_ok(reach)=38 both_refuse=427 movers=0 asymmetric=0
+-- stream: dumps --
+  population=7 both_ok(reach)=7 both_refuse=0 movers=0 asymmetric=0
+self-check reach: c-default=6497 c-vm=6498 emit-ir-vm=6522 facts=6513 emit-ir-auto=7071 emit-ir-auto[-fno-prefilter]=7071 emit-ir-auto[-fprefilter]=7071 emit-ir-auto[-fno-prefilter-collapse]=7071 stderr=7071 composition=38 dumps=7 composition producing=38 artifacts=88
+SELF-CHECK PASSED: all-identical, no asymmetry, at full reach.
+
+===== REAL RUN: ref-bin:/var/tmp/pcrec-pcrec/scratch/covs2a/main/build/pcrec  vs  bin:/home/pcrec/projects/pcrec/worktrees/covs2a/build/pcrec =====
+-- stream: c-default --
+  population=7071 both_ok(reach)=6497 both_refuse=574 movers=0 asymmetric=0
+-- stream: c-vm --
+  population=7071 both_ok(reach)=6498 both_refuse=573 movers=0 asymmetric=0
+-- stream: emit-ir-vm --
+  population=7071 both_ok(reach)=6522 both_refuse=549 movers=0 asymmetric=0
+-- stream: facts --
+  population=7071 both_ok(reach)=6513 both_refuse=558 movers=10 asymmetric=0
+  MOVERS (10), first 5 with diff hunk:
+    tests/base/d27_large_counts.rxt:pattern:b'a{500}':
+      --- 
+      +++ 
+      @@ -149,3 +149,3 @@
+       #encoding	why	k	exact_len	sets
+      -byte	statement-fits	500	500	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,9
+      -utf8	statement-fits	500	500	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,9
+    tests/base/d27_large_counts.rxt:pattern:b'a{200,500}':
+      --- 
+      +++ 
+      @@ -149,3 +149,3 @@
+       #encoding	why	k	exact_len	sets
+      -byte	statement-fits	200	200	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,9
+      -utf8	statement-fits	200	200	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,9
+    tests/base/d27_large_counts.rxt:pattern:b'a{200,500}?':
+      --- 
+      +++ 
+      @@ -149,3 +149,3 @@
+       #encoding	why	k	exact_len	sets
+      -byte	statement-fits	200	200	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,9
+      -utf8	statement-fits	200	200	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,9
+    tests/base/d27_large_counts.rxt:pattern:b'[ab]{1000}':
+      --- 
+      +++ 
+      @@ -149,3 +149,3 @@
+       #encoding	why	k	exact_len	sets
+      -byte	statement-fits	1000	1000	[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2]
+      -utf8	statement-fits	1000	1000	[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2]
+    tests/base/long_subjects.rxt:pattern:b'a{50,60}':
+      --- 
+      +++ 
+      @@ -149,3 +149,3 @@
+       #encoding	why	k	exact_len	sets
+      -byte	statement-fits	50	50	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97
+      -utf8	statement-fits	50	50	97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97
+-- stream: emit-ir-auto --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=520/520 no-callout=57/57 no-dfa-overflow=1/1 no-linked-call=132/132 no-nullable-collapsed=1/1 no-nullable-exact=166/166 no-variable=45/45 refused=4407/4407 yes=1739/1739 yes-collapsed=3/3
+  tag floors: 10 pinned, all held
+-- stream: emit-ir-auto[-fno-prefilter] --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=520/520 no-callout=57/57 no-dfa-overflow=3/3 no-fno-prefilter=1758/1758 no-linked-call=132/132 no-nullable-collapsed=1/1 no-nullable-exact=166/166 no-variable=45/45 refused=4389/4389
+  tag floors: 9 pinned, all held
+-- stream: emit-ir-auto[-fprefilter] --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): refused=5148/5148 yes=1923/1923
+  tag floors: 2 pinned, all held
+-- stream: emit-ir-auto[-fno-prefilter-collapse] --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): no-backreference=520/520 no-callout=57/57 no-dfa-overflow=5/5 no-linked-call=132/132 no-nullable-exact=166/166 no-variable=45/45 refused=4407/4407 yes=1739/1739
+  tag floors: 8 pinned, all held
+-- stream: stderr --
+  population=7071 both_ok(reach)=7071 both_refuse=0 movers=0 asymmetric=0
+  tags (side a / side b): refused-default=574/574 refused-vm=573/573 stderr-default=6/6
+  tag floors: 3 pinned, all held
+-- stream: composition --
+  population=465 both_ok(reach)=38 both_refuse=427 movers=0 asymmetric=0
+-- stream: dumps --
+  population=7 both_ok(reach)=7 both_refuse=0 movers=0 asymmetric=0
+  DECLARED MOVES (--facts-declared-moves, judged both ways): patterns=1 rows=1
+DELIVER witness: OK (at least one composition artifact carries the cross-group SET-pair shape; both named fixtures produced).
+
+population: argv=7071 composition_files=465 composition_producing=38 composition_artifacts=88
+elapsed: 99.4s
+emit_sweep: DONE rc=1

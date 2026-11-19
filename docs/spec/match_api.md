@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 108
-#error "pcrec: this artifact (abi 108) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 109
+#error "pcrec: this artifact (abi 109) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 108
+#define PCREC_RX_ABI_H 109
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1650,7 +1650,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `108` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `109` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1808,7 +1808,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `108` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `109` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -2130,7 +2130,7 @@ apart. Mirrored by `rx_info.scan`.
 |---|---|
 | `"unanchored"` | the O(n) forward scan from `search_from` (D7), followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"` |
 | `"rev-end"` | every match ends at the subject's end or just before a final newline (`tuning.md` §2.46): the artifact's reverse machine walks back from each possible end, and the smallest accepting position is the match start; no forward scan runs unless a tie between the two ends needs one forward run from that start |
-| `"cover"` | every match is one fixed-width window of `k` bytes, and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly: the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. On by default (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
+| `"cover"` | every match is one fixed-width window of `k` bytes, up to the window search's width (`tuning.md` §2.56), and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly: the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. On by default (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
 | `"landmark-walk"` | the pattern's one branch passes a byte class L whose bytes the part before it can never consume (`tuning.md` §2.54): the search finds each occurrence of L from `search_from` up, walks the artifact's reverse machine of that prefix and L back from it to the smallest possible start, and runs the anchored machine once from there; where that run already read past the next occurrence, it continues as the `"unanchored"` scan from that start |
 | `"char-step"` | the pattern needs a character set that is not byte-expressible under `-e utf8` (UCP `\b`/`\B`, `cli.md` §1.9¶7): the forward machine steps an ASCII byte through its table and a whole non-ASCII character (or one ill-formed byte) as one symbol, the end is found by that walk, and the start by the reverse machine stepping back the same way (`<PREFIX>_DFA_START "reverse-pass"`); no prefilter, skip or scan edge runs in front of it at this build, and a failing `<prefix>_match` runs the whole walk (`<PREFIX>_DFA_MATCH "search-filter"`, §3.2¶6) |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
@@ -3271,7 +3271,7 @@ larger.
 <a id="s8-2"></a>
 ### 8.2 The option and error structures
 
-<a id="s8-2-p1"></a>[8.2¶1] `pcrec_options`, all twenty-eight members in declaration order; the comment
+<a id="s8-2-p1"></a>[8.2¶1] `pcrec_options`, all thirty-three members in declaration order; the comment
 beside each is a one-line gloss, and the full text is `lib/pcrec.h`'s own
 comment and, for a tuning axis, `docs/spec/tuning.md` §2:
 
@@ -3341,6 +3341,11 @@ typedef struct {
     const char        *allow_code;          /* the CODE GRANT: languages of
                                                embedded code this call may
                                                compile ("c"); NULL = none */
+    const char        *memfn_simd;          /* -fmemfn-simd=LIST's CPU target
+                                               list; NULL = none (¶7d) */
+    int                window_search_width; /* 0 = PCREC_DEFAULT_WINDOW_SEARCH_WIDTH,
+                                               else 1 .. PCREC_ANCHORED_MAX_STATES - 1;
+                                               ¶7e */
 } pcrec_options;
 ```
 
@@ -3398,6 +3403,8 @@ string never becomes compiled code without the caller's say-so. An unknown
 language refuses the compile through `pcrec_error`.
 
 <a id="s8-2-p7d"></a>[8.2¶7d] **`memfn_simd`** is the CPU target list of `-fmemfn-simd=LIST` (`cli.md` §1.24): NULL (the default) for none. With `PCREC_FORCE_MEMFN_SIMD` set, NULL means the host family's default list and a LIST means exactly those targets; a list without the force bit, or beside `PCREC_NO_MEMFN_SIMD`, is refused. The tokens are the kit's, parsed by the kit before any pass runs; an unknown or empty token, a list of more than one target, or a list mixing families, refuses the compile through `pcrec_error`, the kit's text unchanged where the kit refused. It is not a flag bit and does not move `rx_info.flags`; the target it resolves to is the artifact's (§6.3.10¶14). `pcrec_cpu_targets_tsv` returns the listing of `cli.md` §2.16.
+
+<a id="s8-2-p7e"></a>[8.2¶7e] **`window_search_width`** is `--window-search-width=N` (`tuning.md` §2.56): the widest fixed-width match, in subject BYTES, the window search reports with no matching engine (`<PREFIX>_DFA_SCAN "cover"`, §6.3.4¶2); a wider one runs the engine with the same answers. 0 (the default) is the built-in `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH`; otherwise the legal range is 1 to `PCREC_ANCHORED_MAX_STATES` less one, and a value outside it makes `pcrec_compile()` return -1 with `invalid window_search_width` in `pcrec_error`, never clamped (`limits.md` §3.12¶3). Settable both ways; a compound artifact's parts compile with their parent's value. It is not a flag bit and does not move `rx_info.flags`.
 
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`

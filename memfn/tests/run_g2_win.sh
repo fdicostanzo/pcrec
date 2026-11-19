@@ -62,7 +62,7 @@ trap 'rm -rf "$WORK"' EXIT
 # own (G2W_R2_SITES; the 2200 before them unchanged): the widened PAIR's
 # population, any two bytes at any position.
 FLOOR_SITES=2500                # every generated site renders (no refusal)
-FLOOR_CONTROLS=104              # the controls, the NOP and REPORT refusals (116)
+FLOOR_CONTROLS=207              # the controls, the NOP and REPORT refusals (230 measured, r37 H6; BASE 222 + the 8 lever rows)
 FLOOR_QUERIES=1500              # mf_ask equal to a same-phase define, every site
 FLOOR_TWO_RUNS=77               # alternatives stating two R-shaped spans, refused (F-8 ruling; 86, lane wsc2)
 FLOOR_CALLS=3300000             # answer calls, each in four layouts (3745812)
@@ -97,6 +97,31 @@ FORM_FLOORS="window-search:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27
 # two-stream sites' LONG SUBJECTS (`long pair`, measured 406), each floor the measure less ~10%.
 EFIND_FLOORS="libc:320 walk:103 hors:110 run:115 below:95 report:370 refused:17 pair:316 fn:48 hwin:146"
 FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
+# R-45's span forms (lane forms, 2026-11-17, seed 20261022, less ~10%): the
+# repeated-class sites (G2W_RC_SITES, 150, their own stream) and every other
+# site whose window reaches offset 12 get the planted subjects (63); per head
+# pass, the sites whose text loops, per family (measured at 0: mass 34, report
+# 199, random 17, repeated 59; at 8: mass 1, random 3, repeated 24; at 24:
+# repeated 9). A family with no loop at a head has no floor there.
+FLOOR_PLANTED=56
+# MEASURED (lane formsfixb, 2026-11-17, seed 20261022, the dev box; each a K35 floor ~90% of its measured count,
+# at least 1): the span loops per (family, head) incl. the repeated-class family and its MIXED sites (F13, F16),
+# the head passes' exactly pinned sites (F14), the deterministic breaks (F17), the long rows (F12, F15).
+GRID_HEADS="0 1 2 4 8 16 24 32 64"   # asserted equal to cards.py's GRID below (r36 G13)
+G2W_SHIPPED_HEAD=64                  # the SHIPPED head, a literal (r36 G1): pinned in g2_win_gen.c's default pass
+FLOOR_WR_RENDERED=54 FLOOR_WR_PAST64=32     # the wide REPORT stream (K35, r36 G9; measured 60 / 36, less ~10%)
+LOOP_FLOORS_DEF="parked:4 pair:5 mass:5 mline:5 part:6 report:7 random:5 repeated:12 mixed:8"
+FLOOR_LONG_RENDERED_DEF=24 FLOOR_LONG_LOOPED_DEF=16 FLOOR_DENY_WITNESS=8 FLOOR_LONG_PINNED_DEF=8 FLOOR_LONG_PINNED_FORCE=8 FLOOR_PIN_SITES_DEF=50   # pinned_sites measured 55 (r37 H5)
+FLOOR_BREAKS_DEF=2197 FLOOR_SWAPS_DEF=86 FLOOR_LONG_SUBJ_DEF=561 FLOOR_LONG_PINNED_HEAD=8 FLOOR_LONG_SUBJ_HEAD=187
+LOOP_FLOORS_0="parked:29 pair:30 mass:38 mline:13 part:36 report:36 random:43 repeated:72 mixed:24" PIN_FLOOR_0=271 BREAK_FLOOR_0=2480
+LOOP_FLOORS_1="parked:28 pair:28 mass:37 mline:13 part:34 report:36 random:41 repeated:70 mixed:24" PIN_FLOOR_1=264 BREAK_FLOOR_1=2612
+LOOP_FLOORS_2="parked:28 pair:28 mass:34 mline:13 part:32 report:36 random:41 repeated:67 mixed:24" PIN_FLOOR_2=259 BREAK_FLOOR_2=2801
+LOOP_FLOORS_4="parked:25 pair:27 mass:27 mline:13 part:27 report:33 random:36 repeated:63 mixed:24" PIN_FLOOR_4=232 BREAK_FLOOR_4=3271
+LOOP_FLOORS_8="parked:22 pair:24 mass:24 mline:13 part:24 report:27 random:27 repeated:56 mixed:22" PIN_FLOOR_8=201 BREAK_FLOOR_8=3149
+LOOP_FLOORS_16="parked:20 pair:21 mass:21 mline:13 part:22 report:23 random:25 repeated:45 mixed:18" PIN_FLOOR_16=180 BREAK_FLOOR_16=2908
+LOOP_FLOORS_24="parked:17 pair:18 mass:18 mline:13 part:18 report:18 random:17 repeated:36 mixed:16" PIN_FLOOR_24=147 BREAK_FLOOR_24=2689
+LOOP_FLOORS_32="parked:12 pair:14 mass:13 mline:12 part:11 report:14 random:13 repeated:31 mixed:14" PIN_FLOOR_32=115 BREAK_FLOOR_32=2517
+LOOP_FLOORS_64="parked:4 pair:5 mass:5 mline:5 part:6 report:7 random:5 repeated:12 mixed:8" PIN_FLOOR_64=49 BREAK_FLOOR_64=2301
 # plan_frame.md 3.0b: the framed EMIT ask's (frame_row, stream) cells and the
 # frame part's classes, each at the measured count less ~10% (seed 20261022,
 # 1500 sites: E-func/none 233, E-func/restart 38, E-stmt/none 355,
@@ -152,7 +177,9 @@ plant_spec() {
     S1406) # C-pin splitting the stretch: the pinned positions not one compare
         echo 'window.c@@                join = in_pinned(d, o) \&\& in_pinned(d, o - 1);@@                join = 0;' ;;
     S1407) # an untested offset claimed: the class proves one past each tested position
-        echo 'window.c@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 < MF_MAX_FWD) for (unsigned x = 0; x < 32; x++) out->proven[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
+        # RE-ANCHORED 2026-11-16 (lane span4k, MF_CLASS_V 11): the class's rows are the caller's
+        # storage `rows`, proof_n of them
+        echo 'window.c@@        for (unsigned x = 0; x < 32; x++) rows[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) rows[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 - MF_PROOF_LO < (int32_t)out->proof_n) for (unsigned x = 0; x < 32; x++) rows[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
     S1409) # two spans of R's shape in one alternative not refused (the F-8 ruling: R is unique)
         echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two verify-NO spans@@        if (0)\n            return "an alternative states two verify-NO spans' ;;
         # RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D [r3pd FIX-9]): R is identified by ROLE
@@ -232,7 +259,9 @@ plant_spec() {
     S3091) # 3.0b (Z): fused left NO on B-fn: G2's class (the text calls _ofsskip) is red
         echo 'window.c@@        fp->fused = MF_WFUSED_FN;\n        fp->search = wsearch_of(fx->fused->search);@@        fp->fused = MF_WFUSED_NO;\n        fp->search = wsearch_of(fx->fused->search);' ;;
     S3092) # 3.0b (AA): frame_row swapped E-find <-> E-generic on REPORT sites: G2's form class is red
-        echo 'window.c@@            reply_frame(fp, out);@@            reply_frame(fp, out);\n            if (site->site_kind == MF_SK_REPORT \&\& (r == E_FIND || r == E_GENERIC)) snprintf(out->frame_row, sizeof out->frame_row, "%s", r == E_FIND ? "E-generic" : "E-find");' ;;
+        # RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): reply_frame writes the caller's rows
+        # and returns a verdict, so the swap rides the answered branch
+        echo 'window.c@@            !reply_of(d, out, rows) \&\& !reply_frame(fp, out, rows))\n            rc = 0;\n        else@@            !reply_of(d, out, rows) \&\& !reply_frame(fp, out, rows)) {\n            rc = 0;\n            if (site->site_kind == MF_SK_REPORT \&\& (r == E_FIND || r == E_GENERIC)) snprintf(out->frame_row, sizeof out->frame_row, "%s", r == E_FIND ? "E-generic" : "E-find");\n        } else' ;;
     S3093) # 3.0b (AB): plan_test always OWN: G2's table_name population (the hook's own marker
         # g2w_t<id>_<ref>[ matched by offset) is red
         echo 'window.c@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = test_of(w, k);@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = MF_WTEST_OWN;' ;;
@@ -300,7 +329,9 @@ one_run() {
     local rc2=$?
     local rc3=0
     if [ -z "${G2W_NOASAN:-}" ]; then
-        "$CC" -std=gnu11 -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all \
+        # -g1 (line tables, no locals): the long rows' 1024-position functions
+        # cost -g's variable tracking ~100 s of compile (lane formsfixb, measured)
+        "$CC" -std=gnu11 -O1 -g1 -fsanitize=address,undefined -fno-sanitize-recover=all \
             -I"$G2" "$G2/g2_win_run.c" "$G2/g2_win_ref.c" "$WORK/$tag.out/g2w_sites.c" \
             -o "$WORK/$tag.asan" 2> "$WORK/$tag.asanbuild" \
             || { echo "FAIL: $tag: the ASan+UBSan driver does not build"; return 1; }
@@ -382,6 +413,7 @@ if [ "${1:-}" = "--reach" ]; then
 fi
 
 [ -f "$LIB" ] || fail_setup "$LIB not built (make all first)"
+T_START=$(date +%s)
 tp=0 tf=0
 note() { tf=$((tf + 1)); echo "FAIL: $1"; }
 one_run plain "$LIB"
@@ -422,6 +454,14 @@ sites=$(grep -h '^G2W sites' "$WORK/plain.run.log" | awk '{print $3}')
 floor sites "${sites:-0}" "$FLOOR_SITES"
 ctl=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'controls refused [0-9]+' | grep -oE '[0-9]+$')
 floor controls "${ctl:-0}" "$FLOOR_CONTROLS"
+# r37 H6: the lever controls held by EQUALITY (a deterministic table of 8; the floor above is met without them)
+lv=$(grep -h '^g2_win_gen: lever controls' "$WORK/plain.gen.log" | head -1)
+case "$lv" in
+    "g2_win_gen: lever controls ok="[0-9]*" of "[0-9]*)
+        lv_ok=${lv#*ok=}; lv_ok=${lv_ok%% *}; lv_n=${lv##* of }
+        if [ "$lv_n" = 8 ] && [ "$lv_ok" = 8 ]; then tp=$((tp + 1)); else note "lever controls ok=$lv_ok of $lv_n (want 8 of 8)"; fi ;;
+    *) note "lever controls: no 'lever controls ok=N of M' line in the generator's output" ;;
+esac
 qry=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'queries agreeing [0-9]+' | grep -oE '[0-9]+$')
 floor queries "${qry:-0}" "$FLOOR_QUERIES"
 two=$(grep -h '^g2_win_gen:' "$WORK/plain.gen.log" | grep -oE 'two runs refused [0-9]+' | grep -oE '[0-9]+$')
@@ -449,6 +489,124 @@ if [ -n "${G2W_TRACE:-}" ]; then
     done
 fi
 for inf in $INRUN_FLOORS; do floor "inrun ${inf%%:*}" "$(val inrun "${inf%%:*}")" "${inf#*:}"; done
+floor "planted sites" "$(val planted sites)" "$FLOOR_PLANTED"
+
+# --- R-45's SPAN FORMS (r45_reply rev 6 §3 "Answers, controlled by G2"; review
+# r35 F12, F13, F16, F17, F20) --------------------------------------------------
+# The default pass above renders the shipped head (window.c WF_SPAN_HEAD) over the
+# whole space AND the forms' streams (repeated-class, straddle, wide REPORT) and the
+# long rows in three states (the head, the deny, the force): it LOOPS (H(64)'s own
+# regime: stretches past offset 64, long rows of 500 and 1024 positions) and its
+# driver runs ASan+UBSan, so the loops run sanitized (F20). Then ONE PASS PER FINITE
+# GRID HEAD (G2W_HEADS, the cards' grid: 0 1 2 4 8 16 24 32 64; F13), the lever
+# span-head=N on every art, the forms' streams and the long rows alone
+# (G2W_FORMS_ONLY), the driver plain but at head 0 (L, the most loops) also
+# ASan+UBSan. Per pass the generator holds every loop to G2's own reading (at or
+# past the head, one WIDE core set over tested entries) and, where the form's
+# skipped entry is known, EXACTLY (each loop's start and end: F14), and the driver
+# breaks each stated stretch deterministically at its edges, the stop's sides, the
+# head and a mixed stretch's class boundary (F16, F17). Counted per family and per
+# head (K35), every pair floored: a family whose stretches stopped looping at a head
+# is red.
+lp() { grep -h '^g2_win_gen: loops' "$1" | grep -oE " $2=[0-9]+" | head -1 | cut -d= -f2; }
+sl() { grep -h '^g2_win_gen: span loops' "$1" | grep -oE "$2=[0-9]+" | head -1 | cut -d= -f2; }
+rv() { grep -h "^G2W $2" "$1" | grep -oE "$3=[0-9]+" | head -1 | cut -d= -f2; }
+fam_floors() {   # fam_floors LOG LABEL "fam:N .."
+    for lf in $3; do floor "$2 loops ${lf%%:*}" "$(lp "$1" "${lf%%:*}")" "${lf#*:}"; done
+}
+# the runtime record states which tree it covered: the twins as derived from the kit's bounds
+grep -h '^g2_win_gen: twins' "$WORK/plain.gen.log" | sed 's/^g2_win_gen: /G2W /'
+fam_floors "$WORK/plain.gen.log" "default" "$LOOP_FLOORS_DEF"
+floor "default long rendered" "$(sl "$WORK/plain.gen.log" rendered)" "$FLOOR_LONG_RENDERED_DEF"
+floor "default long looped" "$(sl "$WORK/plain.gen.log" looped)" "$FLOOR_LONG_LOOPED_DEF"
+floor "default deny witnesses (no loop under no-span-loop)" "$(sl "$WORK/plain.gen.log" deny_witness)" "$FLOOR_DENY_WITNESS"
+# r37 H5 + r38 J6: the default state's pins and the force's each COUNTED directly (never one derived from
+# the other by subtraction), each floored, and held equal to the total (the table is deterministic).
+dpin=$(sl "$WORK/plain.gen.log" pinned_def)
+floor "default long pinned (default state)" "$dpin" "$FLOOR_LONG_PINNED_DEF"
+floor "default long pinned (the force)" "$(sl "$WORK/plain.gen.log" pinned_force)" "$FLOOR_LONG_PINNED_FORCE"
+# r39 K7: the equality is a function run on EVERY gen log (each head pass too): a head pass has one state
+# (the default's), so its pinned_def must equal pinned and its pinned_force be 0; a one-token mislabel of the
+# state test (st == 0 -> st == 2) reads pinned_def=0 there.
+pin_eq() {   # pin_eq LOG LABEL
+    local pt pd pf
+    pt=$(sl "$1" pinned); pd=$(sl "$1" pinned_def); pf=$(sl "$1" pinned_force)
+    if [ -n "$pt" ] && [ -n "$pd" ] && [ -n "$pf" ] && [ "$pt" = "$((pd + pf))" ]; then tp=$((tp + 1))
+    else note "$2 long pinned: total ${pt:-?} != default ${pd:-?} + force ${pf:-?} (a pinned state counted twice or elsewhere)"; fi
+}
+pin_eq "$WORK/plain.gen.log" default
+floor "default pinned sites" "$(sl "$WORK/plain.gen.log" pinned_sites)" "$FLOOR_PIN_SITES_DEF"
+floor "default breaks" "$(rv "$WORK/plain.run.log" breaks breaks)" "$FLOOR_BREAKS_DEF"
+floor "default class swaps" "$(rv "$WORK/plain.run.log" breaks swaps)" "$FLOOR_SWAPS_DEF"
+floor "default long-row subjects" "$(rv "$WORK/plain.run.log" longrows subjects)" "$FLOOR_LONG_SUBJ_DEF"
+# THE GRID, asserted (review r36 G13): this script's head list and the generator's RC_HEADS
+# (the finite heads less 0) must equal cards.py's GRID, read from cards.py; a head added
+# to one and not the others is r35 F13's class. G2W_HEADS may SUBSET the passes (a quick
+# run); the lists asserted are the literal GRID_HEADS and the generator's source.
+cards_grid=$(python3 -I - "$ROOT/memfn/tests/span_forms/cards.py" <<'PYEOF'
+import re, sys
+m = re.search(r'^GRID\s*=\s*\[([0-9, ]+)\]', open(sys.argv[1]).read(), re.M)
+print(' '.join(x.strip() for x in m.group(1).split(',')) if m else '')
+PYEOF
+)
+rc_grid=$(python3 -I - "$G2/g2_win_gen.c" <<'PYEOF'
+import re, sys
+m = re.search(r'RC_HEADS\[\]\s*=\s*\{([0-9, ]+)\}', open(sys.argv[1]).read())
+print(' '.join(x.strip() for x in m.group(1).split(',')) if m else '')
+PYEOF
+)
+if [ -z "$cards_grid" ] || [ "$cards_grid" != "$GRID_HEADS" ]; then
+    note "the head grid: this script's GRID_HEADS ($GRID_HEADS) != cards.py's GRID (${cards_grid:-unread})"
+else tp=$((tp + 1)); fi
+if [ "$rc_grid" != "${GRID_HEADS#0 }" ]; then
+    note "the head grid: g2_win_gen.c's RC_HEADS (${rc_grid:-unread}) != cards.py's GRID less 0 (${GRID_HEADS#0 })"
+else tp=$((tp + 1)); fi
+wr() { grep -h '^g2_win_gen: wide-report' "$1" | grep -oE "$2=[0-9]+" | head -1 | cut -d= -f2; }
+echo "G2W wide-report rendered=$(wr "$WORK/plain.gen.log" rendered) past64=$(wr "$WORK/plain.gen.log" past64)"
+floor "wide-report rendered" "$(wr "$WORK/plain.gen.log" rendered)" "$FLOOR_WR_RENDERED"
+floor "wide-report past64" "$(wr "$WORK/plain.gen.log" past64)" "$FLOOR_WR_PAST64"
+for h in ${G2W_HEADS:-$GRID_HEADS}; do
+    t0=$(date +%s)
+    if [ "$h" = 0 ] && [ -z "${G2W_NOASAN:-}" ]; then
+        G2W_SPAN_HEAD="$h" G2W_FORMS_ONLY=1 one_run "head$h" "$LIB"
+        read -r p f < <(counts "$WORK/head$h.asan.log")
+        if [ "$p" = x ] || [ "$f" = x ]; then
+            note "head $h: the ASan+UBSan driver printed no counts ($(grep -m1 'ERROR\|runtime error' "$WORK/head$h.asan.log"))"
+        else tp=$((tp + p)); tf=$((tf + f)); grep -h '^FAIL' "$WORK/head$h.asan.log" | head -10; fi
+    else
+        G2W_SPAN_HEAD="$h" G2W_FORMS_ONLY=1 G2W_NOASAN=1 one_run "head$h" "$LIB"
+    fi
+    read -r p f < <(counts "$WORK/head$h.run.log")
+    if [ "$p" = x ] || [ "$f" = x ]; then note "head $h: the driver printed no counts"; else tp=$((tp + p)); tf=$((tf + f)); fi
+    grep -h '^FAIL' "$WORK/head$h.gen.log" "$WORK/head$h.run.log" | head -10
+    gf=$(grep -h '^g2_win_gen failures:' "$WORK/head$h.gen.log" | grep -oE '[0-9]+$')
+    if [ "${gf:-x}" != 0 ]; then note "head $h: the generator failed ${gf:-?} sites"; else tp=$((tp + 1)); fi
+    grep -h '^g2_win_gen: loops\|^g2_win_gen: span loops' "$WORK/head$h.gen.log"
+    grep -h '^G2W breaks\|^G2W longrows' "$WORK/head$h.run.log"
+    fam_floors "$WORK/head$h.gen.log" "head $h" "$(eval echo "\${LOOP_FLOORS_$h:-}")"
+    [ -n "$(eval echo "\${LOOP_FLOORS_$h:-}")" ] || note "head $h: no loop floors (every finite grid head is floored, F13)"
+    floor "head $h pinned sites" "$(sl "$WORK/head$h.gen.log" pinned_sites)" "$(eval echo "\${PIN_FLOOR_$h:-1}")"
+    floor "head $h long pinned" "$(sl "$WORK/head$h.gen.log" pinned)" "$FLOOR_LONG_PINNED_HEAD"
+    floor "head $h long pinned (default state)" "$(sl "$WORK/head$h.gen.log" pinned_def)" "$FLOOR_LONG_PINNED_HEAD"
+    pin_eq "$WORK/head$h.gen.log" "head $h"
+    pf=$(sl "$WORK/head$h.gen.log" pinned_force)
+    if [ "${pf:-x}" = 0 ]; then tp=$((tp + 1)); else note "head $h: ${pf:-?} pins counted as the force in a one-state pass"; fi
+    floor "head $h breaks" "$(rv "$WORK/head$h.run.log" breaks breaks)" "$(eval echo "\${BREAK_FLOOR_$h:-1}")"
+    floor "head $h long-row subjects" "$(rv "$WORK/head$h.run.log" longrows subjects)" "$FLOOR_LONG_SUBJ_HEAD"
+    echo "G2W head $h wall ${t0:+$(( $(date +%s) - t0 ))}s"
+done
+# THE DEFAULT PASS == THE SHIPPED HEAD'S PASS (r36 G1): the default pass renders the
+# shipped head, so its per-family loop counts (and the head-literal's pass's) must EQUAL.
+# Its generator pins its loops at the literal G2W_SHIPPED_HEAD; this equality catches a
+# shipped constant moved off the literal even where the pin's own text still agrees.
+if [ -f "$WORK/head$G2W_SHIPPED_HEAD.gen.log" ]; then
+    for fam in parked pair mass mline part report random repeated mixed; do
+        d=$(lp "$WORK/plain.gen.log" "$fam"); l=$(lp "$WORK/head$G2W_SHIPPED_HEAD.gen.log" "$fam")
+        if [ -n "$d" ] && [ "$d" = "$l" ]; then tp=$((tp + 1)); else note "default pass loops $fam=${d:-?} != head $G2W_SHIPPED_HEAD pass's ${l:-?}"; fi
+    done
+    echo "G2W default==head$G2W_SHIPPED_HEAD loops: $(grep -h '^g2_win_gen: loops' "$WORK/plain.gen.log" | cut -d' ' -f3-)"
+fi
+echo "G2W wall total $(( $(date +%s) - T_START ))s"
 
 echo "checks passed: $tp"
 echo "checks failed: $tf"

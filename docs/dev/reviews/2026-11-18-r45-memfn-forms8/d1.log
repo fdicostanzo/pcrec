@@ -1,0 +1,13 @@
+{'C1': ['hex24', 'dig24', 'hex32', 'dig32'], 'C2': ['uuid36', 'lit40', 'alt49', 'abc60', 'hex64'], 'C3': ['hex500', 'hex1000', 'a500', 'a1000'], 'C4': ['hex32', 'hex500', 'hex1000', 'hex4095', 'a32', 'a500', 'a1000', 'a4095'], 'C5': ['hex24', 'dig24', 'hex32', 'dig32', 'uuid36', 'lit40', 'alt49', 'abc60', 'hex64', 'hex500', 'hex1000', 'a500', 'a1000'], 'AA': ['lit16']} ['hit-dense', 'near-miss', 'not-warm', 'miss-heavy', 'short-subject', 'random'] [0, 1, 2, 4, 8, 16, 24, 32, 64]
+baseline phase 1%                                            void=True win=0.95: nights flagged 1/100, h*=8 71, h*!=64 71
+hex? one pattern's head arms 2x sigma                        void=True win=0.95: nights flagged 100/100, h*=8 0, h*!=64 0
+every head arm 1.5x sigma (I, aa at 1x)                      void=True win=0.95: nights flagged 1/100, h*=8 36, h*!=64 36
+A/A 0.7x                                                     void=True win=0.95: nights flagged 1/100, h*=8 86, h*!=64 86
+t5 launches                                                  void=True win=0.95: nights flagged 55/100, h*=8 32, h*!=64 32
+one regime 3x (not-warm)                                     void=True win=0.95: nights flagged 56/100, h*=8 13, h*!=64 13
+baseline phase 1%                                            void=False win=0.95: nights flagged 1/100, h*=8 72, h*!=64 72
+hex? one pattern's head arms 2x sigma                        void=False win=0.95: nights flagged 100/100, h*=8 62, h*!=64 62
+every head arm 1.5x sigma (I, aa at 1x)                      void=False win=0.95: nights flagged 1/100, h*=8 37, h*!=64 37
+A/A 0.7x                                                     void=False win=0.95: nights flagged 1/100, h*=8 86, h*!=64 86
+t5 launches                                                  void=False win=0.95: nights flagged 52/100, h*=8 78, h*!=64 78
+one regime 3x (not-warm)                                     void=False win=0.95: nights flagged 58/100, h*=8 21, h*!=64 21

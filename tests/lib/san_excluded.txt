@@ -80,7 +80,6 @@ tests/findall/run_one_body.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS
 tests/findings/run_findings_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/fuzz/run_capturediff_gate.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/island/run_island_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
-tests/kitproof/run_cover.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/knowledge/run_knowledge_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/knowledge/run_measures_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/lib/run_group.sh	NOT-A-SUITE	job-pool runner for other scripts, not a suite

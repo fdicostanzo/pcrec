@@ -1,0 +1,13 @@
+population: 7071 corpus rows, 5516 distinct patterns
+width default D = 64
+## decision census (encoding, baseline why -> candidate why), K35 over 5516 patterns x 2
+moved	byte	statement-fits -> width-limit	7
+moved	utf8	statement-fits -> width-limit	7
+unchanged decisions: 11018
+## C4 guards on the candidate: none
+predicted INTO=3 OUT=0 observed=0 predicted-moved=0 predicted-unmoved=3
+predicted-unmoved	b'(?:abc){20}'	byte:width-limit utf8:width-limit
+predicted-unmoved	b'(?:ab|ba|aa|bb){24}c'	byte:width-limit utf8:width-limit
+predicted-unmoved	b'a{50,60}'	byte:width-limit utf8:width-limit
+predict: lost=0 unexplained=0 unexplained-rows=0 unkeyed=0 gained-movers=0
+predict: DONE rc=0

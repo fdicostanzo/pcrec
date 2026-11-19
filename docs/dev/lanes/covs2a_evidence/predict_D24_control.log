@@ -1,0 +1,16 @@
+population: 7071 corpus rows, 5516 distinct patterns
+width default D = 24
+## decision census (encoding, baseline why -> candidate why), K35 over 5516 patterns x 2
+moved	byte	statement-fits -> width-limit	7
+moved	utf8	statement-fits -> width-limit	7
+unchanged decisions: 11018
+## C4 guards on the candidate: none
+predicted INTO=0 OUT=2 observed=0 predicted-moved=0 predicted-unmoved=2
+predicted-unmoved	b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcde'	byte:cover utf8:cover
+predicted-unmoved	b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef'	byte:cover utf8:cover
+LOST	b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcde'	byte	cover -> cover
+LOST	b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcde'	utf8	cover -> cover
+LOST	b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef'	byte	cover -> cover
+LOST	b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef'	utf8	cover -> cover
+predict: lost=4 unexplained=0 unexplained-rows=0 unkeyed=0 gained-movers=0
+predict: DONE rc=1

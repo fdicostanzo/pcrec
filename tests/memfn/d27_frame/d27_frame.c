@@ -244,6 +244,10 @@ static void cb_on_cand(void *u, mf_sink *k, const char *cand)
 /* ---- my generator: window sites in MY alphabet --------------------------- */
 
 #define MAXSP 4
+#define KPOS  32    /* positions per span this generator states (its longest
+                       is 12): the kase's own list storage, not the kit's
+                       bound MF_WSPAN_POS (a kase is copied by value) */
+_Static_assert(KPOS <= MF_WSPAN_POS, "a generated span is a legal span");
 static const uint8_t ALPH[] = { 0x00, 0x01, '\n', '\t', ' ', '"', '\\', '0', '7', '9', 'A',
                                 'Q', 'Z', 'a', 'q', 'z', '_', '.', 0x7f, 0x80, 0xa0,
                                 0xc3, 0xe2, 0xfe, 0xff };
@@ -273,6 +277,10 @@ static int gen_set(uint8_t *s)
 
 typedef struct {
     mf_wspan sp[2][MAXSP];
+    /* each span's per-position lists (MF_SITE_ABI 30): this test's own
+       storage, attached by kase_attach (re-attached after a struct copy) */
+    uint8_t  sset[2][MAXSP][KPOS][32];
+    uint32_t stab[2][MAXSP][KPOS];
     mf_walt  alt[2];
     mf_site  site;
     int      frame;             /* 0 FUNC/RETURN, 1 STMT/ASSIGN, 2 STMT/ON_MISS */
@@ -294,28 +302,52 @@ static int g_ntgt;
 static const char *g_deny_opt[32];
 static int g_ndeny;
 
+/* Points every span of `k` at k's own list storage (MF_SITE_ABI 30). */
+static void kase_attach(kase *k)
+{
+    for (int a = 0; a < 2; a++)
+        for (int i = 0; i < MAXSP; i++) {
+            k->sp[a][i].set = (const uint8_t (*)[32])k->sset[a][i];
+            k->sp[a][i].table_ref = k->stab[a][i];
+        }
+}
+/* A span's lists as this test's own writable storage. */
+#define WSET(w) ((uint8_t (*)[32])(w)->set)
+#define WTAB(w) ((uint32_t *)(w)->table_ref)
+/* Clears span `w`, keeping its list storage (zeroed). */
+static void span_clear(mf_wspan *w)
+{
+    const uint8_t (*set)[32] = w->set;
+    const uint32_t *tab = w->table_ref;
+    memset(w, 0, sizeof *w);
+    memset((uint8_t (*)[32])set, 0, KPOS * 32);
+    memset((uint32_t *)tab, 0, KPOS * sizeof *tab);
+    w->set = set;
+    w->table_ref = tab;
+}
+
 /* A span: start, len, sets, verify, core, offers. */
 static void gen_span(mf_wspan *w, int alt, int si, int all_yes)
 {
-    memset(w, 0, sizeof *w);
+    span_clear(w);
     int len = pct(80) ? 1 + rn(5) : 1 + rn(12);
     int start = pct(70) ? rn(6) : -3 + rn(14);
     if (start < -MF_MAX_BACK) start = -MF_MAX_BACK;
     if (start + len > MF_WREACH) len = MF_WREACH - start;
     w->start = start;
-    w->len = (uint8_t)len;
+    w->len = (uint16_t)len;
     w->verify = (all_yes || pct(72)) ? MF_VERIFY_YES : MF_VERIFY_NO;
     w->core = MF_CORE_STATED;
     int c = rn(100);
-    if (c < 62) { w->core_lo = 0; w->core_len = (uint8_t)len; }
-    else if (c < 82) { w->core_lo = (uint8_t)rn(len); w->core_len = (uint8_t)(1 + rn(len - w->core_lo)); }
+    if (c < 62) { w->core_lo = 0; w->core_len = (uint16_t)len; }
+    else if (c < 82) { w->core_lo = (uint16_t)rn(len); w->core_len = (uint16_t)(1 + rn(len - w->core_lo)); }
     else { w->core_lo = 0; w->core_len = 0; }
     int offers = pct(60);
     for (int j = 0; j < len; j++) {
-        gen_set(w->set[j]);
-        if (pct(3)) { memset(w->set[j], 0, 32); }
+        gen_set(WSET(w)[j]);
+        if (pct(3)) { memset(WSET(w)[j], 0, 32); }
         /* a unique id per (alt, span, position): the table name maps back */
-        w->table_ref[j] = (offers && pct(75)) ? (uint32_t)(1 + (alt * MAXSP + si) * 64 + j) : 0;
+        WTAB(w)[j] = (offers && pct(75)) ? (uint32_t)(1 + (alt * MAXSP + si) * 64 + j) : 0;
     }
 }
 
@@ -325,6 +357,7 @@ static const int ONM_LEAVES[] = { 1, 0, 1, 1 };
 static void gen_case(kase *k, int idx)
 {
     memset(k, 0, sizeof *k);
+    kase_attach(k);
     int nalt = pct(85) ? 1 : 2;
     int kind = rn(100);
     int report = kind < 30;
@@ -341,11 +374,11 @@ static void gen_case(kase *k, int idx)
         mf_wspan *w = &k->sp[0][0];
         int len = pct(20) ? 1 : 2 + rn(7), shape = rn(4);   /* len 1: a PF-style k0 */
         k->alt[0].nspan = 1;
-        w->start = 0; w->len = (uint8_t)len; w->verify = MF_VERIFY_YES; w->core = MF_CORE_STATED;
-        w->core_lo = 0; w->core_len = (uint8_t)len;
+        w->start = 0; w->len = (uint16_t)len; w->verify = MF_VERIFY_YES; w->core = MF_CORE_STATED;
+        w->core_lo = 0; w->core_len = (uint16_t)len;
         int offers = pct(60);
         for (int j = 0; j < len; j++) {
-            uint8_t *st = w->set[j];
+            uint8_t *st = WSET(w)[j];
             memset(st, 0, 32);
             if (shape == 0) set_add(st, ALPH[rn(NALPH)]);                 /* bytes */
             else if (shape == 1) { int c = "aqzAQZ"[rn(6)]; set_add(st, c); set_add(st, c ^ 0x20); } /* cubes */
@@ -353,12 +386,12 @@ static void gen_case(kase *k, int idx)
                 int m = 40 + rn(161), sd = 1 + 2 * rn(60), b = rn(256);
                 for (int i = 0; i < m; i++) set_add(st, (b + i * sd) & 255);
             } else gen_set(st);                                            /* mixed */
-            w->table_ref[j] = (offers && pct(80)) ? (uint32_t)(1 + j) : 0;
+            WTAB(w)[j] = (offers && pct(80)) ? (uint32_t)(1 + j) : 0;
         }
         if (pct(25)) {                  /* a context span below the candidate */
             mf_wspan *x = &k->sp[0][1];
             gen_span(x, 0, 1, report);
-            x->start = -1 - rn(3); x->len = 1; x->core_lo = 0; x->core_len = (uint8_t)rn(2);
+            x->start = -1 - rn(3); x->len = 1; x->core_lo = 0; x->core_len = (uint16_t)rn(2);
             k->alt[0].nspan = 2;
         }
     }
@@ -512,6 +545,7 @@ static int frame_part_zero(const mf_wreply *r)
 #define CITE_L3  "plan_frame §2.2 contract line 3"
 #define CITE_L4  "plan_frame §2.2 contract line 4"
 #define CITE_NONE "plan_frame §2.2 NONE bullet; contract line 4"
+#define CITE_ROWS "memfn.h mf_rows; r45_reply §5 The asks"
 #define CITE_PUR "plan_frame §2.2 Purity"
 #define CITE_OBS "plan_frame §2.3 observable-meaning table"
 #define CITE_WHO "plan_frame §2.3 who-decides table"
@@ -520,12 +554,104 @@ static int frame_part_zero(const mf_wreply *r)
 
 static const mf_wreply g_zero;
 
+/* Each ask's reply lists (MF_SITE_ABI 30): this test's OWN storage, never an
+ * art's arena (ask_arena_no_growth counts that), a fresh slot per ask from a
+ * ring far longer than the replies one case holds at once, sized by the
+ * kit's own minimum (mf_rows_need) so a plan longer than it is a refusal
+ * the checks see. A refused ask returns its slot (it holds no rows). */
+#define RING 256
+static mf_rows g_ring[RING];
+static unsigned g_ring_at;
+static mf_rows *ask_rows(const mf_site *s)
+{
+    mf_rows *r = &g_ring[g_ring_at++ % RING];
+    uint32_t pc = 0, nc = 0;
+    if (mf_rows_need(s, &pc, &nc)) nc = MF_WPLAN_MAX;
+    free(r->plan); free(r->plan_term); free(r->plan_test);
+    memset(r, 0, sizeof *r);
+    r->plan_cap = nc;
+    r->plan = malloc((nc + 1) * sizeof *r->plan);
+    r->plan_term = malloc((nc + 1) * sizeof *r->plan_term);
+    r->plan_test = malloc((nc + 1) * sizeof *r->plan_test);
+    if (!r->plan || !r->plan_term || !r->plan_test) { perror("malloc"); exit(2); }
+    /* every byte a sentinel: a refused ask's write to them is seen */
+    memset(r->plan, 0xA5, (nc + 1) * sizeof *r->plan);
+    memset(r->plan_term, 0xA5, (nc + 1) * sizeof *r->plan_term);
+    memset(r->plan_test, 0xA5, (nc + 1) * sizeof *r->plan_test);
+    return r;
+}
+/* 1 iff no byte of `r`'s three lists (plan_cap + 1 entries) moved off the
+ * sentinel ask_rows wrote. */
+static int rows_untouched(const mf_rows *r)
+{
+    size_t n = (size_t)r->plan_cap + 1;
+    const unsigned char *l[3] = { (const void *)r->plan, (const void *)r->plan_term,
+                                  (const void *)r->plan_test };
+    size_t sz[3] = { n * sizeof *r->plan, n * sizeof *r->plan_term, n * sizeof *r->plan_test };
+    for (int k = 0; k < 3; k++)
+        for (size_t i = 0; i < sz[k]; i++)
+            if (l[k][i] != 0xA5) return 0;
+    return 1;
+}
+static void ring_free(void)
+{
+    for (unsigned i = 0; i < RING; i++) {
+        free(g_ring[i].plan); free(g_ring[i].plan_term); free(g_ring[i].plan_test);
+        memset(&g_ring[i], 0, sizeof g_ring[i]);
+    }
+}
+
+/* `r` with its list pointers set aside: the by-value members and padding. */
+static mf_wreply rvals(const mf_wreply *r)
+{
+    mf_wreply x = *r;
+    x.plan = NULL; x.plan_term = NULL; x.plan_test = NULL;
+    return x;
+}
+/* THE DEEP COMPARE (r45_reply.md §5 (a)), this test's own: two replies agree
+ * over their members below offset `n` iff the by-value bytes do and each
+ * counted list does over nplan (a pointer is never compared; two NULL lists
+ * agree). `n` is sizeof (the whole reply) or offsetof framed (the decision
+ * group). */
+static int list_same(const void *a, const void *b, size_t bytes)
+{
+    /* contents always, never the pointers' equality: two lists at one
+       address would make the compare vacuous (review r27 CHECK-3) */
+    if (!a && !b) return 1;
+    if (!a || !b) return bytes == 0;
+    return !memcmp(a, b, bytes);
+}
+static int rsame_n(const mf_wreply *a, const mf_wreply *b, size_t n)
+{
+    mf_wreply x = rvals(a), y = rvals(b);
+    if (memcmp(&x, &y, n)) return 0;
+    if (a->nplan != b->nplan) return 0;
+    size_t k = a->nplan;
+    if (!list_same(a->plan, b->plan, k * sizeof *a->plan)) return 0;
+    if (!list_same(a->plan_term, b->plan_term, k * sizeof *a->plan_term)) return 0;
+    if (n > offsetof(mf_wreply, plan_test) &&
+        !list_same(a->plan_test, b->plan_test, k * sizeof *a->plan_test))
+        return 0;
+    return 1;
+}
+static int rsame(const mf_wreply *a, const mf_wreply *b) { return rsame_n(a, b, sizeof *a); }
+
 /* Every ask goes through here: *out poisoned first, then held to line 3. */
 static int ask(const mf_art *a, const mf_site *s, const mf_hooks *h, unsigned call, mf_wreply *r)
 {
     memset(r, 0xA5, sizeof *r);
-    int rc = mf_wdecide(a, s, h, (uint8_t)call, r);
+    mf_rows *rows = ask_rows(s);
+    int rc = mf_wdecide(a, s, h, (uint8_t)call, r, rows);
+    if (rc) g_ring_at--;            /* a refusal holds no rows: its slot is free */
     chk("rc_range", "memfn.h mf_wdecide: Returns 0, or -1", rc == 0 || rc == -1, "call %u rc %d", call, rc);
+    /* the asks write only *out and the caller's rows, and nothing to rows
+       on -1 (memfn.h mf_rows / mf_wdecide; review r27 CHECK-3/4) */
+    if (rc) chk("rows_untouched_on_refusal", CITE_ROWS, rows_untouched(rows),
+                "call %u: a refused ask wrote the caller's rows", call);
+    else chk("lists_are_caller_rows", CITE_ROWS,
+             !r->nplan || (r->plan == rows->plan && r->plan_term == rows->plan_term &&
+                           (!r->plan_test || r->plan_test == rows->plan_test)),
+             "call %u: a reply list is not the caller's rows", call);
     if (rc) chk("zero_on_refusal", CITE_L3, !memcmp(r, &g_zero, sizeof *r), "call %u: *out not zero on -1", call);
     chk("padding_zero", CITE_L3, padding_zero(r), "call %u rc %d: a padding byte is nonzero", call, rc);
     return rc;
@@ -722,12 +848,13 @@ static void hold_reply(const kase *k, const mf_wreply *r, const render *d, const
         "%s search %d stream %d fused %d stop_test %d", callnm, r->search, r->stream, r->fused, r->stop_test);
     chk("mask_never", "plan_frame §2.3 stream row: MASK occurs in no reply in 3.0",
         r->stream != MF_WSTREAM_MASK, "%s stream MASK", callnm);
-    int pt_ok = 1;
-    for (int i = 0; i < MF_WPLAN_MAX; i++) {
+    /* plan_test is a COUNTED list since MF_SITE_ABI 30: nothing lies past
+       nplan, so the "NONE past nplan" check retired (r45_reply.md §5 (b));
+       its range check over the count stays */
+    int pt_ok = r->plan_test != NULL || !r->nplan;
+    for (int i = 0; pt_ok && i < r->nplan; i++)
         if (r->plan_test[i] > MF_WTEST_TABLE) pt_ok = 0;
-        if (i >= r->nplan && r->plan_test[i] != MF_WTEST_NONE) pt_ok = 0;
-    }
-    chk("plan_test_past_nplan", CITE_TAB ": NONE past nplan", pt_ok, "%s plan_test past nplan", callnm);
+    chk("plan_test_range", CITE_TAB, pt_ok, "%s plan_test out of range", callnm);
 
     /* frame_row: E-find / E-generic by form_id; E-func / E-stmt by the frame */
     int frok;
@@ -1025,8 +1152,8 @@ static void run_case(kase *k, int idx)
     if (g_prev_site) { mf_wreply y; ask(A.art, g_prev_site, NULL, MF_WCALL_NONE, &y); }   /* interleave */
     int cD2 = ask(A.art, S, def, MF_WCALL_DEFINE, &rD2);
     if (!poisoned) chk("purity_repeat", CITE_PUR " (asking twice, in any interleaving)",
-        cN == cN2 && cD == cD2 && cE == cE2 && !memcmp(&rN, &rN2, sizeof rN) && !memcmp(&rD, &rD2, sizeof rD)
-        && !memcmp(&rE, &rE2, sizeof rE), "a repeated ask differs (rc %d/%d %d/%d %d/%d)", cN, cN2, cD, cD2, cE, cE2);
+        cN == cN2 && cD == cD2 && cE == cE2 && rsame(&rN, &rN2) && rsame(&rD, &rD2)
+        && rsame(&rE, &rE2), "a repeated ask differs (rc %d/%d %d/%d %d/%d)", cN, cN2, cD, cD2, cE, cE2);
 
     /* NONE reads no frame field and not `def` */
     {
@@ -1047,9 +1174,9 @@ static void run_case(kase *k, int idx)
         int c3 = ask(A.art, S, &garbage, MF_WCALL_NONE, &q3);
         pop("none_invariance");
         if (!poisoned) chk("none_ignores_frame", CITE_NONE " (two NONE asks differing only in frame fields)",
-            c1 == cN && !memcmp(&q1, &rN, sizeof rN), "rc %d vs %d after mutating every frame field", c1, cN);
+            c1 == cN && rsame(&q1, &rN), "rc %d vs %d after mutating every frame field", c1, cN);
         if (!poisoned) chk("none_ignores_def", CITE_L2 " (under NONE `def` is not read and may hold any value)",
-            c2 == cN && c3 == cN && !memcmp(&q2, &rN, sizeof rN) && !memcmp(&q3, &rN, sizeof rN),
+            c2 == cN && c3 == cN && rsame(&q2, &rN) && rsame(&q3, &rN),
             "rc NULL %d garbage %d vs %d", c2, c3, cN);
     }
     if (!cN) {
@@ -1059,9 +1186,9 @@ static void run_case(kase *k, int idx)
     if (!cD) chk("framed_flag", CITE_OBS " framed: 1 iff DEFINE/EMIT answered 0", rD.framed == 1, "DEFINE framed %d", rD.framed);
     if (!cE) chk("framed_flag", CITE_OBS " framed: 1 iff DEFINE/EMIT answered 0", rE.framed == 1, "EMIT framed %d", rE.framed);
     if (!cN && !cD)
-        chk("decision_group_frame_independent", CITE_R27, !memcmp(&rN, &rD, offsetof(mf_wreply, framed)), "NONE vs DEFINE decision groups differ");
+        chk("decision_group_frame_independent", CITE_R27, rsame_n(&rN, &rD, offsetof(mf_wreply, framed)), "NONE vs DEFINE decision groups differ");
     if (!cN && !cE)
-        chk("decision_group_frame_independent", CITE_R27, !memcmp(&rN, &rE, offsetof(mf_wreply, framed)), "NONE vs EMIT decision groups differ");
+        chk("decision_group_frame_independent", CITE_R27, rsame_n(&rN, &rE, offsetof(mf_wreply, framed)), "NONE vs EMIT decision groups differ");
     if (cN && !cD)
         chk("framed_needs_decision", CITE_L4 " (DEFINE/EMIT ADD refusals to NONE's)", 0, "NONE refused but DEFINE answered");
 
@@ -1072,7 +1199,7 @@ static void run_case(kase *k, int idx)
         int e1 = ask(A.art, S, def2, MF_WCALL_EMIT, &s2);
         pop("same_class_asks");
         if (!poisoned) chk("purity_same_class_text", CITE_PUR " (the hooks' stated-ness and text CLASSES, not their text)",
-            d1 == cD && e1 == cE && !memcmp(&s1, &rD, sizeof rD) && !memcmp(&s2, &rE, sizeof rE),
+            d1 == cD && e1 == cE && rsame(&s1, &rD) && rsame(&s2, &rE),
             "rc %d/%d %d/%d", d1, cD, e1, cE);
         if (k->missk == 0) {    /* miss: the N token vs text equal to n's (R21) */
             mf_hooks H3 = H;
@@ -1081,7 +1208,7 @@ static void run_case(kase *k, int idx)
             int d3 = ask(A.art, S, &H3, MF_WCALL_DEFINE, &s3);
             pop("miss_token_vs_text");
             if (!poisoned) chk("purity_miss_class", "plan_frame §2.2 round-trip (R21: miss is the N token OR equals n)",
-                d3 == cD && !memcmp(&s3, &rD, sizeof rD), "miss=n's text: rc %d vs %d", d3, cD);
+                d3 == cD && rsame(&s3, &rD), "miss=n's text: rc %d vs %d", d3, cD);
         }
     }
     cap_end(&tr);
@@ -1102,7 +1229,7 @@ static void run_case(kase *k, int idx)
             mf_wreply q;
             int cq = ask(L.art, S, def, MF_WCALL_EMIT, &q);
             pop("layer_pairs");
-            if (cq != cE || memcmp(&q, &rE, sizeof q)) {
+            if (cq != cE || !rsame(&q, &rE)) {
                 pop("layer_variant_reply");
                 if (getenv("D27_VERBOSE")) printf("LAYERVAR %s tgt %s rc %d/%d search %d/%d fused %d/%d row %s/%s\n", g_case,
                                                   g_tgt_name[k->target], cE, cq, rE.search, q.search, rE.fused, q.fused, rE.frame_row, q.frame_row);
@@ -1121,7 +1248,7 @@ static void run_case(kase *k, int idx)
     } else {
         mf_wreply z;
         int cz = ask(A.art, S, def, MF_WCALL_DEFINE, &z);
-        chk("purity_after_define", CITE_PUR " (asking before vs after a define)", cz == cD && !memcmp(&z, &rD, sizeof z),
+        chk("purity_after_define", CITE_PUR " (asking before vs after a define)", cz == cD && rsame(&z, &rD),
             "re-ask after define differs (rc %d vs %d)", cz, cD);
     }
     art_close(&A);
@@ -1153,10 +1280,15 @@ static void run_case(kase *k, int idx)
         artbox U;
         art_open(&U, k);
         static mf_wspan us;
+        static uint8_t us_set[1][32];
+        static uint32_t us_tab[1];
         static mf_walt ua;
         memset(&us, 0, sizeof us);
+        memset(us_set, 0, sizeof us_set);
+        us.set = (const uint8_t (*)[32])us_set;
+        us.table_ref = us_tab;
         us.start = 0; us.len = 1; us.verify = MF_VERIFY_YES; us.core = MF_CORE_STATED; us.core_len = 1;
-        set_add(us.set[0], 'q');
+        set_add(us_set[0], 'q');
         ua.entry = MF_ENTRY_NONE; ua.nspan = 1; ua.spans = &us;
         mf_site u = *S;
         memset(&u, 0, sizeof u);
@@ -1175,7 +1307,7 @@ static void run_case(kase *k, int idx)
             int cz = ask(U.art, S, def, MF_WCALL_DEFINE, &z);
             pop("unrelated_define_asks");
             chk("purity_after_unrelated_define", CITE_PUR " (asking before vs after an unrelated define)",
-                cz == cD && !memcmp(&z, &rD, sizeof z), "ask after an unrelated define differs (rc %d vs %d)", cz, cD);
+                cz == cD && rsame(&z, &rD), "ask after an unrelated define differs (rc %d vs %d)", cz, cD);
         } else pop("unrelated_define_refused");
         rfree(&ur);
         art_close(&U);
@@ -1251,6 +1383,7 @@ static void run_case(kase *k, int idx)
     rfree(&dA); rfree(&dB); rfree(&dE);
     bfree(&tr);
     g_prev = *k;
+    kase_attach(&g_prev);           /* its OWN copy of the lists */
     g_prev.site.alts = g_prev.alt;
     for (int a = 0; a < g_prev.site.nalt; a++) g_prev.alt[a].spans = g_prev.sp[a];
     if (g_prev.site.opts) g_prev.site.opts = g_prev.opts;
@@ -1262,18 +1395,19 @@ static void run_case(kase *k, int idx)
  * Fixed sites, run through every check before the generated population. */
 static void lit_span(mf_wspan *w, const char *bytes, int verify, int offers)
 {
-    memset(w, 0, sizeof *w);
+    span_clear(w);
     int len = (int)strlen(bytes);
-    w->start = 0; w->len = (uint8_t)len; w->verify = (uint8_t)verify; w->core = MF_CORE_STATED;
-    w->core_lo = 0; w->core_len = (uint8_t)len;
+    w->start = 0; w->len = (uint16_t)len; w->verify = (uint8_t)verify; w->core = MF_CORE_STATED;
+    w->core_lo = 0; w->core_len = (uint16_t)len;
     for (int j = 0; j < len; j++) {
-        set_add(w->set[j], (uint8_t)bytes[j]);
-        w->table_ref[j] = offers ? (uint32_t)(1 + j) : 0;
+        set_add(WSET(w)[j], (uint8_t)bytes[j]);
+        WTAB(w)[j] = offers ? (uint32_t)(1 + j) : 0;
     }
 }
 static int fixed_case(kase *k, int which)
 {
     memset(k, 0, sizeof *k);
+    kase_attach(k);
     mf_site *s = &k->site;
     k->alt[0].entry = MF_ENTRY_NONE; k->alt[0].nspan = 1; k->alt[0].spans = k->sp[0];
     s->abi = MF_SITE_ABI; s->op = MF_OP_FIND; s->use = MF_USE_POSITION; s->body = MF_BODY_ONESHOT;
@@ -1414,6 +1548,7 @@ int main(int argc, char **argv)
     printf("checks passed: %ld\n", g_pass);
     printf("checks failed: %ld\n", g_fail);
     fclose(g_sites);
+    ring_free();
     close(g_capfd);
     if (g_control) return silent ? 3 : 1;   /* a silent family: its sabotage did not bite */
     return (g_fail == 0 && floors_ok) ? 0 : 1;

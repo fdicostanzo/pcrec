@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 108
+#define PCREC_ARTIFACT_ABI 109
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -1443,8 +1443,12 @@ static uint8_t site_kind_of(Ctx *cx, SiteKindSite site)
  * the statement before B3b, so `used` stays today's. The ONE constructor:
  * the define states it, and the trace build's five-pick shadow describes a
  * declined pre-check with it. NULL with *n 0 where nothing is necessary. */
-_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_WSPAN_POS,
-               "the run the analysis stores is stated uncut as one memfn window span");
+/* The run is stated whole, positions 0 .. whole_len - 1, so the analysis's
+ * bound is both its span length and its reach (memfn_sites.h, PCREC_WSTMT_*). */
+_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= PCREC_WSTMT_POS &&
+               PCREC_MAX_REQ_RUN_SCAN <= PCREC_WSTMT_REACH,
+               "the run the analysis stores is stated uncut as one window span within "
+               "pcrec's non-cover statement bounds (PCREC_WSTMT_POS, PCREC_WSTMT_REACH)");
 static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
 {
     const ReqSet *set = pcrec_fact_req_set_stated(cx);
@@ -1466,9 +1470,9 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
     if (run->whole_len >= 2) {
         mf_walt *a = pcrec_memfn_walts(cx, 1);
         mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
-        pcrec_memfn_wspan(sp, 0, run->whole_len, MF_VERIFY_NO);
+        pcrec_memfn_wspan(cx, sp, 0, run->whole_len, MF_VERIFY_NO);
         for (int j = 0; j < run->whole_len; j++)
-            pcrec_memfn_wpos_bits(sp, j, run->pos[j]);
+            pcrec_memfn_wpos_bits(cx, sp, j, run->pos[j]);
         pcrec_memfn_part_window_stated(cx, &p[k], a, 1, MF_WFLOOR_SUBJECT);
         k++;    /* nterm 0: the run states no term */
     }
@@ -6877,6 +6881,14 @@ static bool walk_proves(const KsetWalk *wk, int d, const ReqRun *r, int i)
     return true;
 }
 
+/* Every offset the prefilter's statement names is a walked offset, below the
+ * walk's depth (the run R is extended only where the walk proves it, and its
+ * pinned stretch is checked inside the walk below), and offset 0's span is
+ * at most 2 positions: the walk's bound is its span length and its reach
+ * (memfn_sites.h, PCREC_WSTMT_*). */
+_Static_assert(PCREC_PREFIX_K_MAX <= PCREC_WSTMT_POS && PCREC_PREFIX_K_MAX <= PCREC_WSTMT_REACH,
+               "the k-set walk's depth lies within pcrec's non-cover statement bounds "
+               "(PCREC_WSTMT_POS, PCREC_WSTMT_REACH)");
 static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
                         uint32_t offer, bool bounded, mf_walt **out)
 {
@@ -6909,30 +6921,30 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
     int n = reseed ? 2 : 1, z = bounded ? 2 : 1;
     mf_walt *a = pcrec_memfn_walts(cx, n);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, &a[0], MF_ENTRY_PARKED, 1 + parked_r);
-    pcrec_memfn_wspan(&sp[0], 0, z, MF_VERIFY_YES);
-    pcrec_memfn_wpos_table(&sp[0], 0, parked, offer);
-    if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+    pcrec_memfn_wspan(cx, &sp[0], 0, z, MF_VERIFY_YES);
+    pcrec_memfn_wpos_table(cx, &sp[0], 0, parked, offer);
+    if (bounded) pcrec_memfn_wpos_any(cx, &sp[0], 1);
     mf_wspan *rsp[2] = { parked_r ? &sp[1] : NULL, NULL };
     if (reseed) {
         int nw = wk->nwalk - 1;
         sp = pcrec_memfn_walt_spans(cx, &a[1], MF_ENTRY_RESEED, 1 + nw + (r != NULL));
-        pcrec_memfn_wspan(&sp[0], 0, z, MF_VERIFY_YES);
-        pcrec_memfn_wpos_table(&sp[0], 0, wk->k[0].set,
-                               wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);
-        if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+        pcrec_memfn_wspan(cx, &sp[0], 0, z, MF_VERIFY_YES);
+        pcrec_memfn_wpos_table(cx, &sp[0], 0, wk->k[0].set,
+                                   wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);
+        if (bounded) pcrec_memfn_wpos_any(cx, &sp[0], 1);
         for (int j = 1; j < wk->nwalk; j++) {
             const PrefixK *k = &wk->k[j];
-            pcrec_memfn_wspan(&sp[j], k->k, 1, MF_VERIFY_NO);
-            pcrec_memfn_wpos_table(&sp[j], 0, k->set,
-                                   k->count > 1 ? WIN_OFFER_OFS + (uint32_t)k->k : 0u);
+            pcrec_memfn_wspan(cx, &sp[j], k->k, 1, MF_VERIFY_NO);
+            pcrec_memfn_wpos_table(cx, &sp[j], 0, k->set,
+                                       k->count > 1 ? WIN_OFFER_OFS + (uint32_t)k->k : 0u);
         }
         if (r) rsp[1] = &sp[1 + nw];
     }
     for (int i = 0; i < 2; i++) {
         if (!rsp[i]) continue;
-        pcrec_memfn_wspan(rsp[i], w + lo, hi - lo, MF_VERIFY_NO);
+        pcrec_memfn_wspan(cx, rsp[i], w + lo, hi - lo, MF_VERIFY_NO);
         for (int j = lo; j < hi; j++)
-            pcrec_memfn_wpos_bits(rsp[i], j - lo, r->pos[j]);
+            pcrec_memfn_wpos_bits(cx, rsp[i], j - lo, r->pos[j]);
     }
     *out = a;
     return n;
@@ -6954,12 +6966,12 @@ static void find_window(const PcrecFind *f, mf_site *s)
     }
     mf_walt *a = pcrec_memfn_walts(cx, 1);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
-    pcrec_memfn_wspan(sp, f->offset, f->holdback ? 2 : 1, MF_VERIFY_YES);
+    pcrec_memfn_wspan(cx, sp, f->offset, f->holdback ? 2 : 1, MF_VERIFY_YES);
     if (f->table != PCREC_FIND_NO_TABLE)
-        pcrec_memfn_wpos_table(sp, 0, f->set, WIN_OFFER_FIND + (uint32_t)f->table);
+        pcrec_memfn_wpos_table(cx, sp, 0, f->set, WIN_OFFER_FIND + (uint32_t)f->table);
     else
-        pcrec_memfn_wpos_cube(sp, 0, (unsigned)f->byte, 0xFFu);
-    if (f->holdback) pcrec_memfn_wpos_any(sp, 1);
+        pcrec_memfn_wpos_cube(cx, sp, 0, (unsigned)f->byte, 0xFFu);
+    if (f->holdback) pcrec_memfn_wpos_any(cx, sp, 1);
     pcrec_memfn_window_stated(cx, s, a, 1, f->floor ? MF_WFLOOR_EXPR : MF_WFLOOR_SUBJECT);
 }
 
@@ -7159,7 +7171,7 @@ static void cand_asked_verify_emit(Ctx *cx, const PcrecFind *fd)
     PcrecMfU u;
     mf_site *site = find_site(fd);
     find_hooks(fd, site, NULL, &h, &u);
-    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cls))
+    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cls, pcrec_memfn_rows(cx, site, PCREC_ROWS_PROOF)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the %s site "
                        "it is about to write", pcrec_deleg_sites[fd->site].id);
     cand_asked_hold(cx, fd->site, 1, &cls);
@@ -7716,7 +7728,8 @@ static void window_reply_ask(Ctx *cx, UnanchStart *us)
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
         .miss = MF_MISS_N, .comment_tier = PCREC_CMT_NONESSENTIAL, .u = NULL,
     };
-    if (mf_wdecide(pcrec_memfn_art(cx), s, &h, MF_WCALL_DEFINE, &us->wr))
+    if (mf_wdecide(pcrec_memfn_art(cx), s, &h, MF_WCALL_DEFINE, &us->wr,
+                   pcrec_memfn_rows(cx, s, PCREC_ROWS_PLAN)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the window family's "
                        "phase-1 ask on the DFA prefilter (src/gen/emit_dfa.c, "
                        "window_reply_ask)");
@@ -7728,6 +7741,25 @@ static void window_reply_ask(Ctx *cx, UnanchStart *us)
  * (FIND / FUNC / RETURN, integration.md §15.1) and defines it into `c`, its
  * file-scope point: the run compare's word loads, the comment, the
  * function (all the kit's). Returns the handle every call of it uses. */
+#ifdef PCREC_CAND_TRACE
+/* THE DEEP COMPARE of two phase-1 replies (memfn r45_reply.md §5 (a); pcrec's
+ * own, sharing no code with the kit's): every by-value member equal, and the
+ * plan lists equal over nplan; a list pointer is never compared. */
+static bool wreply_same(const mf_wreply *a, const mf_wreply *b)
+{
+    if (a->nplan != b->nplan) return false;
+    for (unsigned i = 0; i < a->nplan; i++)
+        if (a->plan[i] != b->plan[i] || a->plan_term[i] != b->plan_term[i] ||
+            (a->plan_test ? a->plan_test[i] : 0) != (b->plan_test ? b->plan_test[i] : 0))
+            return false;
+    mf_wreply x = *a, y = *b;
+    x.plan = y.plan = NULL;
+    x.plan_term = y.plan_term = NULL;
+    x.plan_test = y.plan_test = NULL;
+    return !memcmp(&x, &y, sizeof x);
+}
+#endif
+
 static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
 {
     mf_site *s = pcrec_memfn_site(f->cx, DELEG_OFS);
@@ -7755,8 +7787,9 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
      * byte (the kit zeroes every reply first). pcrec reads no field of it. */
     if (f->us->wr_stated) {
         mf_wreply again;
-        if (mf_wdecide(pcrec_memfn_art(f->cx), s, &h, MF_WCALL_DEFINE, &again) ||
-            memcmp(&again, &f->us->wr, sizeof again))
+        if (mf_wdecide(pcrec_memfn_art(f->cx), s, &h, MF_WCALL_DEFINE, &again,
+                       pcrec_memfn_rows(f->cx, s, PCREC_ROWS_PLAN)) ||
+            !wreply_same(&again, &f->us->wr))
             pcrec_fit_invariant_fail("asked-plan-differs", "the define's re-asked reply",
                                      "the phase-1 reply the NEXT rows read",
                                      pcrec_deleg_sites[DELEG_OFS].id);
@@ -8488,7 +8521,7 @@ static void cand_ask(Ctx *cx, CandSlot reader, CandRoute route, const PcrecFind 
     mf_hooks h;
     PcrecMfU u;
     find_hooks(fd, site, NULL, &h, &u);
-    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cs->cls))
+    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cs->cls, pcrec_memfn_rows(cx, site, PCREC_ROWS_PROOF)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the start-search "
                        "site a selection reads (its define would refuse it too)");
 #ifdef PCREC_CAND_TRACE
@@ -8902,7 +8935,7 @@ static mf_site *req_pres_ask(Ctx *cx, const mf_pres_proof *proof, mf_class *cls)
     memset(cls, 0, sizeof *cls);
     if (!s->npspan) return s;
     mf_hooks h = { .comment_tier = PCREC_CMT_NONESSENTIAL, .start = PCREC_MF_ORIGIN };
-    if (mf_ask(pcrec_memfn_art(cx), s, &h, cls))
+    if (mf_ask(pcrec_memfn_art(cx), s, &h, cls, pcrec_memfn_rows(cx, s, PCREC_ROWS_PROOF)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the pre-check's "
                        "presence spans (its define would refuse them too)");
     return s;
@@ -11576,7 +11609,8 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
             const mf_site *ps = pp;
             mf_class *rc = pcrec_arena_alloc(&cx->arena, sizeof *rc);
             mf_hooks rh = { .comment_tier = PCREC_CMT_NONESSENTIAL, .start = PCREC_MF_ORIGIN };
-            int asked = ps->npspan && !mf_ask(pcrec_memfn_art(cx), ps, &rh, rc);
+            int asked = ps->npspan && !mf_ask(pcrec_memfn_art(cx), ps, &rh, rc,
+                                              pcrec_memfn_rows(cx, ps, PCREC_ROWS_PROOF));
             if (!asked) {
                 fprintf(stderr, "MFPICKSITE\troute-refused\t%s\n", kind);
                 goto out;
@@ -16322,7 +16356,8 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
          * decision only (call NONE: memfn plan_frame.md §4.2 ASK-6), and a
          * refusal is pcrec's defect, failed after `done:` restores the trace
          * state (a fail inside would leave the thread's trace quiet) */
-        if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_NONE, &w))
+        if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_NONE, &w,
+                       pcrec_memfn_rows(cx, cs, PCREC_ROWS_PLAN)))
             refused = true;
         else if (w.has_stop)
             at = req_run_in_cover(pcrec_fact_req_whole_run_stated(cx), &cv->end, w.stop);

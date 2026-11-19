@@ -13,8 +13,15 @@ SAB_DESC="the run reply says ver_len + 1 while the text compares the old extent:
 SAB_DOC_FIGURE="HAND-MEASURED by lane k382 2026-11-11: memfn/tests/run_g2_pres.sh --plant S3064 RED (EXTENT: part at 0 len 32: position 30 is NOT compared, the reply's stretch is [22, 31); oracle violations=120). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3064."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ? -1 : 0;'
-SAB_AFTER='        if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;   /* SABOTAGE S3064 */
+# RE-ANCHORED 2026-11-16 (lane span4kfix, review r27 MEM-2 (c)): the ALL_PRESENT ask
+# zeroes *out on its -1; the plant still lengthens the answered stretch.
+SAB_BEFORE='            memset(out, 0, sizeof *out);    /* On -1 *out is zeroed (memfn.h) */
+            return -1;
+        }
+        return 0;'
+SAB_AFTER='            memset(out, 0, sizeof *out);    /* On -1 *out is zeroed (memfn.h) */
+            return -1;
+        }   /* SABOTAGE S3064 */
         { int r_ = kit_pres_run(s); if (r_ >= 0 && out->pres[r_].verify && out->run.ver_len && out->run.ver_lo + out->run.ver_len < kit_pres_run_span(s, r_)->len) out->run.ver_len++; }
         return 0;'
 SAB_FILE2="memfn/src/compose.c"

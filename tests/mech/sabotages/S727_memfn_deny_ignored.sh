@@ -7,5 +7,5 @@ SAB_DESC='the walk never finds a --memfn=no-<row> deny, so a SIMD row'\''s own d
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S727. docs/dev/lanes/r13_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            return 1;'
-SAB_AFTER='            return 0;   /* SABOTAGE S727 */'
+SAB_BEFORE='    return opts && name && opt_has(opts, "no-", name);'
+SAB_AFTER='    return 0;   /* SABOTAGE S727 */'

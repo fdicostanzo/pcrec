@@ -13,10 +13,12 @@ SAB_DOC_FIGURE='Validated by plant at 3.0b (lane b30b, docs/dev/lanes/b30b_repor
 SAB_REACH_POP='tests/memfn/run_finder.sh|"\$WORK/fx" --purity >|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    decide(art, site, 1, d);
-    reply_of(d, out);
-    free(d);'
-SAB_AFTER='    decide(art, site, 1, d);
-    reply_of(d, out);
-    out->framed = 1;   /* SABOTAGE S3086 */
-    free(d);'
+# RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): reply_of writes the caller's rows
+# and returns a verdict, and the decision's working state is a heap block per ask; intent unchanged.
+# RE-ANCHORED 2026-11-16 (lane span4kfix, review r27 SEAM-1): the NONE ask writes its
+# reply only after rows_hold; the plant follows that write. Intent unchanged.
+SAB_BEFORE='        reply_of(d, out, rows);
+        rc = 0;'
+SAB_AFTER='        reply_of(d, out, rows);
+        rc = 0;
+        out->framed = 1;   /* SABOTAGE S3086 */'

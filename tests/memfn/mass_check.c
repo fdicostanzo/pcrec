@@ -256,17 +256,23 @@ int main(void)
        (compose.c pres_run_check), each a literal substring of its text --- */
     {
         static mf_wspan w;
+        static uint8_t wset[3][32];     /* w's lists, this test's own storage
+                                           (MF_SITE_ABI 30) */
+        static uint32_t wtab[3];
         static mf_walt a;
         mf_pred span[2];
         memset(span, 0, sizeof span);
         memset(&w, 0, sizeof w);
+        memset(wset, 0, sizeof wset);
+        w.set = (const uint8_t (*)[32])wset;
+        w.table_ref = wtab;
         w.len = 3;
         w.verify = MF_VERIFY_NO;
         w.core = MF_CORE_STATED;
         w.core_len = 3;
         for (unsigned j = 0; j < 3; j++) {
-            w.set[j][('A' + j) >> 3] |= (uint8_t)(1u << (('A' + j) & 7));
-            w.set[j][('a' + j) >> 3] |= (uint8_t)(1u << (('a' + j) & 7));
+            wset[j][('A' + j) >> 3] |= (uint8_t)(1u << (('A' + j) & 7));
+            wset[j][('a' + j) >> 3] |= (uint8_t)(1u << (('a' + j) & 7));
         }
         a = (mf_walt){ MF_ENTRY_NONE, 1, &w };
         span[0].need = MF_REQUIRED;
@@ -295,11 +301,11 @@ int main(void)
         expect("RUNFORM a verify-YES run is refused",
                why != NULL && strstr(why, "verify fact is NO") != NULL, 1);
         w.verify = MF_VERIFY_NO;
-        memset(w.set[2], 0, sizeof w.set[2]);           /* the LAST position empty */
+        memset(wset[2], 0, sizeof wset[2]);             /* the LAST position empty */
         why = kit_presence_check(&s);
         expect("RUNFORM an empty set at the LAST position is refused",
                why != NULL && strstr(why, "EMPTY set") != NULL, 1);
-        w.set[2]['C' >> 3] |= (uint8_t)(1u << ('C' & 7));
+        wset[2]['C' >> 3] |= (uint8_t)(1u << ('C' & 7));
         span[0].nterm = 1;                              /* a term beside the statement */
         why = kit_presence_check(&s);
         expect("RUNFORM a run stating a term is refused",

@@ -66,6 +66,21 @@
 #include "memfn.h"
 #include "g2_pres.h"
 
+/* The twin held to the kit's own bound (review r35 F12; r45_reply rev 6 §3
+ * names 64, which waits on MF_WSPAN_POS's raise past 32: g2_pres.h). */
+/* the longest generated run: G2P_RUNCAP (r45_reply's 64), or the kit's span
+   bound where that is less (32 before the [COVER-CAP] stage 2 raise);
+   DERIVED (lane formsfixb ruling R1), printed in the runtime record */
+/* ... and also by MF_MAX_TERM: window.c's run_part_terms refuses a derived
+   run part of more than MF_MAX_TERM terms at define time (review r27 READ-1),
+   so a run longer than that is outside the kit's admissible domain (lane
+   g2pcap: the raise of MF_WSPAN_POS to 4095 made the span bound alone too
+   loose, 58 "FAIL g2p" in cloud run 44358945125). */
+#define G2P_MAXRUN_SPAN (MF_WSPAN_POS < G2P_RUNCAP ? MF_WSPAN_POS : G2P_RUNCAP)
+#define G2P_MAXRUN  (MF_MAX_TERM < G2P_MAXRUN_SPAN ? MF_MAX_TERM : G2P_MAXRUN_SPAN)
+_Static_assert(G2P_MAXRUN <= MF_WSPAN_POS, "G2P_MAXRUN is past the kit's span (MF_WSPAN_POS)");
+_Static_assert(G2P_MAXRUN <= MF_MAX_TERM, "G2P_MAXRUN is past the kit's term bound (MF_MAX_TERM; window.c run_part_terms, review r27 READ-1)");
+
 /* ---- text ------------------------------------------------------------------- */
 
 typedef struct { char *p; size_t len, cap; } buf;
@@ -484,7 +499,23 @@ static int in_run_set(const gsite *g, unsigned j, unsigned b)
    nterm 0, and the generated omin (either sign) */
 static mf_pred g_ps[5];
 static mf_walt g_ra;
+/* An ask's proof rows (MF_SITE_ABI 30): G2's own storage, sized by the
+   kit's own minimum (mf_rows_need). */
+static mf_rows *ask_rows(const mf_site *s)
+{
+    static mf_rows r;
+    free(r.proof);
+    memset(&r, 0, sizeof r);
+    uint32_t pc = 0, nc = 0;
+    if (mf_rows_need(s, &pc, &nc)) pc = 0;
+    r.proof_cap = pc;
+    r.proof = calloc(pc + 1, sizeof *r.proof);
+    if (!r.proof) { perror("calloc"); exit(2); }
+    return &r;
+}
 static mf_wspan g_rw;
+static uint8_t g_rw_set[MF_WSPAN_POS][32];      /* g_rw's lists (MF_SITE_ABI 30) */
+static uint32_t g_rw_tab[MF_WSPAN_POS];
 static unsigned state_spans(const gsite *g, mf_need need)
 {
     unsigned k = 0;
@@ -506,14 +537,17 @@ static unsigned state_spans(const gsite *g, mf_need need)
     }
     memset(&g_rw, 0, sizeof g_rw);
     g_rw.start = 0;
-    g_rw.len = (uint8_t)g->L;
+    g_rw.set = (const uint8_t (*)[32])g_rw_set;
+    g_rw.table_ref = g_rw_tab;
+    memset(g_rw_set, 0, sizeof g_rw_set);
+    g_rw.len = (uint16_t)g->L;
     g_rw.verify = MF_VERIFY_NO;
     g_rw.core = MF_CORE_STATED;
     g_rw.core_lo = 0;
-    g_rw.core_len = (uint8_t)g->L;
+    g_rw.core_len = (uint16_t)g->L;
     for (unsigned j = 0; j < g->L; j++)
         for (unsigned b = 0; b < 256; b++)
-            if (in_run_set(g, j, b)) set_add(g_rw.set[j], b);
+            if (in_run_set(g, j, b)) set_add(g_rw_set[j], b);
     g_ra = (mf_walt){ MF_ENTRY_NONE, 1, &g_rw };
     g_ps[k].nterm = 0;
     g_ps[k].nalt = 1;
@@ -744,7 +778,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
     if (g->want == G2P_P2) {
         mf_pres_picks pk;
         if (mf_pres_ports(art, &s, NULL, NULL, &pk)) { fail(g->id, "mf_pres_ports", "refused"); return; }
-        if (mf_ask(art, &s, &h, &c)) { fail(g->id, "mf_ask (P2's lead)", "refused"); return; }
+        if (mf_ask(art, &s, &h, &c, ask_rows(&s))) { fail(g->id, "mf_ask (P2's lead)", "refused"); return; }
         int sc = c.pres[run].verify && c.run.has_scan ? c.run.scan : -1;
         int lead = -1;
         if (sc >= 0 && set_count(g->set[sc]) == 1) lead = set_first(g->set[sc]);
@@ -757,7 +791,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
         if (lead >= 0) s.pres_proof = (mf_pres_proof){ (int16_t)lead, 0, (uint8_t)!nofind, 1 };
     }
 
-    if (mf_ask(art, &s, &h, &c)) { fail(g->id, "mf_ask (the presence links)", "refused"); return; }
+    if (mf_ask(art, &s, &h, &c, ask_rows(&s))) { fail(g->id, "mf_ask (the presence links)", "refused"); return; }
     o->route = route_of(&c, run);
     if (o->route < 0) { fail(g->id, "the run's link", "no P0/P2/P3/P9 row decided it"); return; }
     g_route_sites[o->route]++;
@@ -1254,6 +1288,7 @@ int main(int argc, char **argv)
            g_nobg, g_f24, g_f24_3, g_scan_findable, g_route_sites[G2P_PD], g_declines, g_dec_member,
            g_dec_assign, g_dec_twin, g_dec_untested, g_dec_refused, g_dec_rendered, g_dec_noprecheck,
            g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one, g_r41, g_r41_flip);
+    printf("g2_pres_gen: twins maxrun=%d (MF_WSPAN_POS %d, MF_MAX_TERM %d)\n", (int)G2P_MAXRUN, (int)MF_WSPAN_POS, (int)MF_MAX_TERM);
     printf("g2_pres_gen failures: %d\n", g_fails);
     return g_fails ? 1 : 0;
 }

@@ -70,6 +70,7 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+Round 2026-11-15 r18, covs2a code round (`docs/dev/reviews/2026-11-15-r18-covs2a.md`); process changes ruled 2026-11-15 (manager): (1) **plants for a REACH-using row are built with `build/pcrec build/pcrec-harness`** (reach.sh read REACH-FAILED on every compiler-only plant); (2) **for a staged subject COMMON quotes every interim wrongness the design accepts for the stage** (CONTRACT-1 rediscovered 'wrong there until B').
 2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **simulate lens: "for every grouping a pooled estimator COLLAPSES, drill with an interaction term at that grouping; a synthetic model keyed like the fit cannot fail it"**.
 
 2026-11-18, proposed by the kit after its round r44 (memfn-forms7), accepted 2026-11-18 (manager): **perturbation lens: "name what each control holds FIXED (data sections, the driver's allocations, entry points outside the moved section) beside what it moves, and say which of those ships"**.

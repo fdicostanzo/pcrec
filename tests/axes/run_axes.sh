@@ -1327,14 +1327,24 @@ if [ -z "$AXES" ] || printf ' %s ' "$AXES" | grep -q -- ' --memfn' ; then
         echo "run_axes.sh: FATAL: derived ZERO rows from --list-axes' memfn section (docs/dev/learnings.md §3: hard-fail on empty, never silently measure nothing)" >&2
         exit 1
     fi
-    while IFS=$'\t' read -r _mname _mspell; do
-        if [ -n "$AXES" ]; then
-            case " $AXES " in (*" --memfn "*|*" $_mspell "*) ;; (*) continue ;; esac
-        fi
-        for _mlayer in default simd; do
-            _mflags="$_mspell"
-            [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"
-            memfn_cell_name+=("$_mname"); memfn_cell_layer+=("$_mlayer"); memfn_cell_flags+=("$_mflags")
+    # A `pair` row's spelling column is `--memfn=no-NAME|--memfn=NAME` (registry.md
+    # §6¶8a): its deny is the row's cell, NAME, and its force a second cell,
+    # NAME=force (R-45 `span-loop`: L over the whole corpus), each selected by its
+    # own spelling.
+    while IFS=$'\t' read -r _mname _mspells; do
+        IFS='|' read -r -a _mspl <<< "$_mspells"
+        for _mi in "${!_mspl[@]}"; do
+            _mspell="${_mspl[$_mi]}"
+            _mcell="$_mname"
+            [ "$_mi" -gt 0 ] && _mcell="$_mname=force"
+            if [ -n "$AXES" ]; then
+                case " $AXES " in (*" --memfn "*|*" $_mspell "*) ;; (*) continue ;; esac
+            fi
+            for _mlayer in default simd; do
+                _mflags="$_mspell"
+                [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"
+                memfn_cell_name+=("$_mcell"); memfn_cell_layer+=("$_mlayer"); memfn_cell_flags+=("$_mflags")
+            done
         done
     done < <(paste -d '\t' <(printf '%s\n' "$memfn_names") <(printf '%s\n' "$memfn_spells"))
 fi
@@ -1935,6 +1945,27 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
         job_flags+=("--vm-entry-shape=$_shape")
         job_lost_ok+=("0")
     done
+fi
+
+# [COVER-CAP] stage 2 B7 (docs/design/cover_cap.md §11.1 "Answer identity",
+# lane covs2g): THE WIDTH ARM. The whole corpus with the public option
+# `--window-search-width=` at the ceiling less one (the widest legal width,
+# PCREC_ANCHORED_MAX_STATES - 1, read from `--list-limits` and failing loud,
+# never an empty substitution, K35) against the default run: every cover the
+# default declines for width alone becomes a cover here, and its answers must
+# not move. Compound parts compile with a copy of their parent's options
+# (src/core/compound.c part_compile), so the arm reaches part covers too.
+# `lost_ok` 0: a legal width may never refuse a pattern the default compiles
+# (a refusal here is a finding: r27 READ-3, the code-size cap at 4095, is
+# such a one and is not allowed for).
+if [ -z "$AXES" ] || axes_has --window-search-width; then
+    _wsw_ceil="$("$TIMEOUT_BIN" 60 "$PCREC" --list-limits 2>/dev/null | awk -F'\t' '$1 == "PCREC_ANCHORED_MAX_STATES" { print $2 }')"
+    case "$_wsw_ceil" in
+        ''|*[!0-9]*|0|1) echo "axes: FAIL: --list-limits gives no usable PCREC_ANCHORED_MAX_STATES ('$_wsw_ceil'): the width arm has no width" >&2; exit 1 ;;
+    esac
+    job_label+=("--window-search-width=$((_wsw_ceil - 1)) (cover_cap.md §11.1, the width arm)")
+    job_flags+=("--window-search-width=$((_wsw_ceil - 1))")
+    job_lost_ok+=("0")
 fi
 
 # ============================================================================

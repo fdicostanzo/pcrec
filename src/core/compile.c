@@ -2093,6 +2093,18 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      (unsigned)defo.part_layout);
         return -1;
     }
+    /* [COVER-CAP] stage 2: the window search's width is 0 (the built-in
+     * default) or a legal width; refused like an out-of-range `tune`, so
+     * C15 (src/gen/known.c `cc_fits`) reads a legal value or 0. */
+    if (defo.window_search_width < 0 ||
+        defo.window_search_width > PCREC_ANCHORED_MAX_STATES - 1) {
+        if (err)
+            snprintf(err->msg, sizeof(err->msg),
+                     "invalid window_search_width %d (1..%d, or 0 for the "
+                     "built-in default)",
+                     defo.window_search_width, PCREC_ANCHORED_MAX_STATES - 1);
+        return -1;
+    }
 
     /* [MEMFN] R17-b' B3b PCREC_NO_REQ_SET_LEAD IS AN ALIAS (Q-R17P-19; the
      * kit manager's binding Q-19: a working alias, never a silent no-op).

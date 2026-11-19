@@ -23,6 +23,7 @@
   - [§3.9](#s3-9) The DFA's context sets and atoms
   - [§3.10](#s3-10) The compiler's C stack
   - [§3.11](#s3-11) Lookbehind length
+  - [§3.12](#s3-12) The window search's width
 - [§4](#s4) Worked example: `^(a(?1)?b)$`
 - [§5](#s5) The default entries and the C stack
 - [§6](#s6) Left recursion: a documented divergence
@@ -40,7 +41,7 @@
 - [§8b](#s8b) Three `limits.def` knees `--tune=N` moves
 <!-- spec-toc:end -->
 
-<a id="s0-p1"></a>[0¶1] This document is the contract for the resource bounds pcrec and an emitted matcher enforce: the numbers, the flags that move them, and what a caller observes when one is crossed. The code space of the give-up codes and the rules of their propagation are `docs/spec/match_api.md` §4; this document states the numbers and does not restate those rules. Every default below is a row of `src/core/limits.def`, which `pcrec --list-limits` prints (§3.4a); the sections named in that listing's `anchor` column are §3.1-§3.10 and §8, and `tests/registry/limits_check.sh` checks each anchored value against its section's text. The history of these bounds is `docs/dev/history/limits_record.md`, which is not normative.
+<a id="s0-p1"></a>[0¶1] This document is the contract for the resource bounds pcrec and an emitted matcher enforce: the numbers, the flags that move them, and what a caller observes when one is crossed. The code space of the give-up codes and the rules of their propagation are `docs/spec/match_api.md` §4; this document states the numbers and does not restate those rules. Every default below is a row of `src/core/limits.def`, which `pcrec --list-limits` prints (§3.4a); the sections named in that listing's `anchor` column are §3.1-§3.12 and §8, and `tests/registry/limits_check.sh` checks each anchored value against its section's text. The history of these bounds is `docs/dev/history/limits_record.md`, which is not normative.
 
 <a id="s1"></a>
 ## 1. Scope of the guarantee
@@ -228,6 +229,17 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 
 - <a id="s3-11-p2"></a>[3.11¶2] `LA_LOOKBEHIND_BRANCH_MAX` = 65,535: any alternative, fixed or varying (libpcre2's error 187).
 - <a id="s3-11-p3"></a>[3.11¶3] `LA_LOOKBEHIND_VAR_MAX` = 255: every alternative, once any alternative's length varies. It is libpcre2's default `max_varlookbehind` (its error 200), and pcrec answers at that default only; no option sets it.
+
+<a id="s3-12"></a>
+### 3.12 The window search's width
+
+<a id="s3-12-p1"></a>[3.12¶1] `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH` = 32 (bytes, kind `selection knee`, override `flag+-D`) is the widest fixed-width match the window search reports with no matching engine behind it (the width counts BYTES of the subject: under `-e utf8` a character counts its encoded length, so `é{4}` has width 8): the artifact stamped `<PREFIX>_DFA_SCAN "cover"` (`match_api.md` §6.3.4¶2). A pattern whose fixed width is wider runs the engine, with the same answers. The value is not yet a measured choice.
+
+<a id="s3-12-p2"></a>[3.12¶2] The limit is a cliff, not a prefix: at 32, `[0-9a-f]{32}` is reported by the window search and `[0-9a-f]{33}` runs the engine for all 33 positions; one position more loses the whole window search, not one position of it. The `--emit-facts` listing's `cover` section names the decline `width-limit` with the width (`facts_listing.md` §4.5¶2); the listing and the exact stretch it states are not bounded by this limit.
+
+<a id="s3-12-p3"></a>[3.12¶3] `--window-search-width=N` (library: `pcrec_options.window_search_width`, `match_api.md` §8.2; `tuning.md` §2.56) sets the width for one compile; `-DPCREC_DEFAULT_WINDOW_SEARCH_WIDTH=N` on pcrec's own build moves the built-in default. The legal range is 1 to `PCREC_ANCHORED_MAX_STATES` less one (4,095 at the shipped ceiling): no wider fixed width is ever reported, since the anchored machine's ceiling ends the stretch first. A width outside it is refused, never clamped: the CLI exits with `--window-search-width wants an integer in 1..4095`, the library returns -1 with `invalid window_search_width`, and a `-D` default outside it fails pcrec's own build. A build that lowers `PCREC_ANCHORED_MAX_STATES` by `-D` to 32 or below must lower this default below it too, or the build fails. The ceiling's own `-D` is LOWER-ONLY: a build may lower `PCREC_ANCHORED_MAX_STATES`, and a raise past the window bounds the memfn kit declares (4,095 positions per span, offsets below 4,096) fails pcrec's own build, so no width this section admits is ever stated past what the kit accepts.
+
+<a id="s3-12-p4"></a>[3.12¶4] The emitted-size cap (§8.1) is not a second cliff at the shipped value: at the shipped `PCREC_MAX_EMIT_BYTES` (1,000,000) no legal width reaches it (the widest, `[0-9a-f]{4095}` at `--window-search-width=4095`, emits 23,830 B). A builder who lowers the cap by `-D` below a cover's size gets a FAILED compile for that width, `pattern too large: N bytes of emitted C source (limit M ...)`: no rung of the size-cap ladder (§8.4) drops the cover (with `-DPCREC_MAX_EMIT_BYTES=20000`, that pattern at width 4095 exits 1 with 28,577 bytes over the limit). A route that is not a cover and exceeds a lowered cap still retries through the ladder, stamped `<PREFIX>_ENGINE_SEL "size-cap-retry"`.
 
 <a id="s4"></a>
 ## 4. Worked example: `^(a(?1)?b)$`
@@ -419,7 +431,7 @@ raise/disable the warning with --warn-emit-bytes.
 <a id="s8b"></a>
 ## 8b. Three `limits.def` knees `--tune=N` moves
 
-<a id="s8b-p1"></a>[8b¶1] A selection knee, a `limits.def` row that steers which lowering the emitter takes rather than what pcrec accepts, carries no anchor in this document (`tuning.md` §2.20). Three earn one here because `--tune=N` (`tuning.md` §5) sets each per position:
+<a id="s8b-p1"></a>[8b¶1] A selection knee, a `limits.def` row that steers which lowering the emitter takes rather than what pcrec accepts, carries no anchor in this document (`tuning.md` §2.20), except that a knee with its own caller option is anchored where that option is documented (§3.12). Three earn one here because `--tune=N` (`tuning.md` §5) sets each per position:
 
 | constant | override | −2 | −1 | 0 (default) | +1 | +2 |
 |---|---|---:|---:|---:|---:|---:|

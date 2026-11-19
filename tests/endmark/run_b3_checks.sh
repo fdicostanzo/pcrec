@@ -269,8 +269,8 @@ for want in "g1=41" "g2=20" "g3=42" "g4=223" "exempt=2"; do
 done
 
 # ---- §5 the declines under reference builds ------------------------------------
-refbuild() {   # refbuild OUT -DFLAG=V
-    ${CC:-gcc} -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" "$2" -o "$1" \
+refbuild() {   # refbuild OUT -DFLAG=V [-DFLAG=V ...]: every argument after OUT is passed
+    ${CC:-gcc} -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" "${@:2}" -o "$1" \
         "$ROOT_DIR/cli/main.c" $(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ') 2>"$WORKDIR/ref.err"
 }
 check_answers() {   # check_answers BIN LABEL PATTERN SUBJECT START END ...
@@ -300,7 +300,9 @@ if refbuild "$WORKDIR/pcrec_prio" -DPCREC_MARK_PRIO_MAX_STATES=2; then
 else
     bad "[decline] the PCREC_MARK_PRIO_MAX_STATES=2 reference compiler did not build: $(head -3 "$WORKDIR/ref.err")"
 fi
-if refbuild "$WORKDIR/pcrec_anch" -DPCREC_ANCHORED_MAX_STATES=3; then
+# the window search's width must stay below the lowered ceiling (limits.h's
+# _Static_assert, [COVER-CAP] stage 2, cover_cap.md §11.2): ceiling - 1
+if refbuild "$WORKDIR/pcrec_anch" -DPCREC_ANCHORED_MAX_STATES=3 -DPCREC_DEFAULT_WINDOW_SEARCH_WIDTH=2; then
     got="$(form_of "$WORKDIR/pcrec_anch" --pattern '\s*?$')"
     [ "$got" = "overflow -" ] \
         && ok "[decline] a lowered anchored machine over its cap declines the form to overflow ('\\s*?\$')" \

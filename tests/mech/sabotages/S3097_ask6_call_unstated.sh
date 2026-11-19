@@ -16,5 +16,7 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern zqxzqx &&
 SAB_REACH_EXPECT="REACH-ASK6-COVER"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_NONE, &w))'
-SAB_AFTER='        if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_UNSTATED, &w))   /* SABOTAGE S3097 */'
+# RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): the ask passes the caller's rows;
+# intent unchanged.
+SAB_BEFORE='        if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_NONE, &w,'
+SAB_AFTER='        if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_UNSTATED, &w,   /* SABOTAGE S3097 */'

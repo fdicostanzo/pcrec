@@ -1448,6 +1448,19 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
             }
             opt.vm_entry_shape = (int)v;
         }
+        /* [COVER-CAP] stage 2 `--window-search-width=N`: the widest fixed
+         * width the window search reports (lib/pcrec.h's
+         * `window_search_width`; docs/spec/tuning.md §2.56). Settable both
+         * ways; out of range is refused, never clamped. */
+        else if (!strncmp(a, "--window-search-width=", 22)) {
+            long long v;
+            if (cli_int_value(a + 22, 1, PCREC_ANCHORED_MAX_STATES - 1, &v) != 0) {
+                cli_err("--window-search-width wants an integer in %d..%d "
+                                "(got '%s')", 1, PCREC_ANCHORED_MAX_STATES - 1, a + 22);
+                return 1;
+            }
+            opt.window_search_width = (int)v;
+        }
         /* [OPT-DIAL] `--tune=N` — the speed-vs-size dial, an ORDINAL in
          * -2..+2 with five mnemonic aliases accepted on equal terms
          * (`src/core/tune.c` owns both spellings, so the CLI cannot drift
@@ -1539,6 +1552,24 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         /* [FIND-MINW] the minimum-width stop's inverse lever */
         else if (!strcmp(a, "--harness=no-min-width")) st->harness.no_min_width = 1;
         else if (!strcmp(a, "--harness=mfind")) st->harness.mfind = 1;
+        /* [MEMFN] R-45: the kit's valued lever, the span forms' inline head.
+           N is parsed here as strictly as mf_lever parses it (plain decimal
+           digits, no sign or space; review r35 F23), its top the kit's own
+           constant, so a refusal is the option's, never a compile's */
+        else if (!strncmp(a, "--harness=span-head=", 20)) {
+            const char *v = a + 20;
+            unsigned long n = 0;
+            int bad = !*v;
+            for (; *v && !bad; v++)
+                bad = *v < '0' || *v > '9' ||
+                      (n = n * 10 + (unsigned long)(*v - '0')) > MF_SPAN_HEAD_MAX;
+            if (bad) {
+                cli_err("--harness=span-head= wants a head of 0..%d positions in decimal digits",
+                        MF_SPAN_HEAD_MAX);
+                return 1;
+            }
+            st->harness.span_head = (unsigned)n + 1;
+        }
         /* [REQ-EMPTYCAT] span_arms §3.7: the necessary-run walk's restored
            arms, names joined by '+' (src/facts/walk_arms.def) */
         else if (!strncmp(a, "--harness=restore=", 18)) {

@@ -408,6 +408,10 @@ typedef struct {
     mf_site  s;
     mf_hooks h;
     mf_wspan sp;
+    uint8_t  sp_set[2][32];         /* sp's per-position lists, the writer's
+                                       own storage (MF_SITE_ABI 30): every
+                                       shape here states at most 2 positions */
+    uint32_t sp_table[2];
     mf_walt  al;
     mf_result res;                  /* its class alone is ~3 KB */
     uint8_t  mask[64];              /* a RUN entry's mask (fh_run) */
@@ -499,7 +503,9 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
         w->sp.core = MF_CORE_STATED;
         w->sp.core_lo = 0;
         w->sp.core_len = 1;
-        fh_set(e, w->sp.set[0]);
+        fh_set(e, w->sp_set[0]);
+        w->sp.set = (const uint8_t (*)[32])w->sp_set;
+        w->sp.table_ref = w->sp_table;
         w->al.entry = MF_ENTRY_NONE;
         w->al.nspan = 1;
         w->al.spans = &w->sp;
@@ -554,8 +560,10 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
         w->sp.core = MF_CORE_STATED;
         w->sp.core_lo = 0;
         w->sp.core_len = 2;
-        fh_set(e, w->sp.set[0]);
-        fh_set(e, w->sp.set[1]);
+        fh_set(e, w->sp_set[0]);
+        fh_set(e, w->sp_set[1]);
+        w->sp.set = (const uint8_t (*)[32])w->sp_set;
+        w->sp.table_ref = w->sp_table;
         w->al.entry = MF_ENTRY_NONE;
         w->al.nspan = 1;
         w->al.spans = &w->sp;

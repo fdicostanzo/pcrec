@@ -1,0 +1,5 @@
+report=docs/dev/lanes/covs2land_report.md
+sections: STATE AT HANDOFF; MERGE AND CONFLICTS; READERS CHECKED; LOCAL CHECKS; CLOUD RUNS DISPATCHED
+nonempty: all
+commit: yes
+owed: none

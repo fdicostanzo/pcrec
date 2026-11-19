@@ -1,3 +1,182 @@
+# covs2e (second use of the lane name) — [COVER-CAP] stage 2 unit 3: the design record, cover_cap.md rev 5.3
+
+This file holds TWO reports under one lane name. Part 1 (below) is the 2026-11-16 unit-3 lane
+(sonnet, branch `lane/covs2e`, cut from `lane/covs2b` df4d38bdb). Part 2 (after the rule line at the
+end) is the earlier covs2e lane's rev 5.1 report, kept VERBATIM (lane files are never edited after
+merge; the name was reused and the manager's deliver file names this path).
+
+## STATE AT HANDOFF
+
+- STATE: done. Docs only; no file under `src/`, `cli/`, `lib/`, `memfn/`, `tests/`, `docs/spec/`.
+  No STOP rule fired: every E item's quoted sentence was found by TEXT, none contradicted another.
+- Branch tip: see the commit that adds this report on top of d8231cb8d (the doc edits).
+- PREMISE TEST held: `git log --oneline -1` printed df4d38bdb at start; `grep -c 'ONE night window'
+  docs/design/cover_cap.md` printed 1.
+- RULINGS FILE `docs/dev/lanes/covs2e_rulings.md`: EMPTY (0 bytes, read 18:33 box clock before the
+  commit and again before this report). No R-n applied.
+- OWED: none. The one end-of-lane check (`make test-spec-history test-doc-lint`) is recorded under
+  VALIDATION.
+- Sources read: `r45read_report.md` (E1-E14), `r45chk_report.md` (P4: E4/E13 replaced, E15/E16 new),
+  `covs2b_report.md` (combined-branch facts), the kit's reply rev 6 (`memfn/docs/responses.md` on
+  `lane/memfn-k1108`, "R-45 reply ... rev 6") and its design of record
+  (`docs/design/memfn/r45_reply.md` rev 6 on `lane/memfn-r45` @ 69acf5376), the rulings under R-45
+  in `memfn/docs/requests.md`, the raise commit 9d4907a16's message, `span4k_report.md`
+  "Readers changed". NOTE: the kit's R-45 "done" lines are NOT in this branch's
+  `memfn/docs/responses.md` (it ends at R-43); I read them with `git show lane/memfn-k1108:...`
+  (read-only).
+- What changed in cover_cap.md: one revision (status line bumped to 5.3; a REVISION 5.3 block
+  after the status paragraph; 32 `[R-45 reply]` inline marks). Quoted, not invented: each note
+  cites the reply's own words or the ruling.
+
+## EDITS APPLIED
+
+One line per item. Locations are by quoted text (line numbers moved); "section" is cover_cap.md's.
+
+- E1 APPLIED: §11.4 header and "ONE night window" sentence: header now "...one night, or two",
+  the sentence gains the amendment ("one night, or two if the kit's cards and the width cells do
+  not fit one window"; about 440 added arm-cells, "two nights more likely, not certain").
+- E2 APPLIED: §11.4 "The three rendering forms" bullet: replaced by the cards-first, B-not-before-
+  their-verdict, rebuilt-binary text, plus the committed-before-the-run rule and the void-twice
+  fallback to h* = 64.
+- E3 APPLIED: §11.4 "B. Stage 2" bullet (note after its last sentence): B's binary is the rebuilt
+  one, not the frozen build; `[0-9a-f]{64}` is also the kit's card cell C2; plus E16's pointer.
+- E4 APPLIED, AS REPLACED BY P4: §11.6.1 "(4) Code round on both": the (4a)/(4b) text of r45chk
+  N6 (cards on the combined branch, h frozen by the kit's rule; h* compiled in, then the kit's
+  identity check), the "(4b)'s binary was not in code round (4)" fact, whether (4b) gets a review
+  left to the manager; `MFWSTMT`/predictor before (4b).
+- E5 APPLIED: §11.6.1 FALLBACK: "and the forms land OFF (all-inline), switched on in a later abi
+  event".
+- E6 APPLIED: §11.6.4 "the kit's three-form cards' timing (kit-side)": struck as a precondition
+  of the landing.
+- E7 APPLIED at both sentences: §11.2 EMITTED-2 "Leaning: the kit's rendering first" (with E14's
+  ASK (3) -> ASK (4) fix, same note) and §11.6.4 "(leaning: the kit's rendering first)". EXTENDED
+  to two more copies of the same false order, found by grep: §9 Q8's "ask the kit to render class
+  runs ... (its reply to §11.5 ASK (3) is the general fix)" and §11.4's outcome-table row 5
+  ("one-pass, kit, then §9 Q8"). Each carries an `[R-45 reply]` note.
+- E8 APPLIED: §11.1 B1 "`table_ref` is sized by the kit's carrier like `set`": both are host-owned
+  pointers of `len` entries allocated from `cx->arena` (reply of record §5 (e)); "width type holds
+  4095" kept (`uint16_t len`); states what is built (`pcrec_memfn_wspan`) and what remains
+  (the four `wpos_*` writers' `j` check, lane covs2c).
+- E9 APPLIED: §11.1 "abi events": both sentences. ASK (5) is answered (`MF_SITE_ABI` 29 -> 30,
+  `MF_CLASS_V` 10 -> 11, inside the one joint event; abi 109 taken once as built); the "only the
+  fallback costs a second event" sentence is marked incomplete (forms off then on is a second
+  event too).
+- E10 APPLIED: §11.1 B4: marked as having no input. The kit declares the bounds for EVERY window
+  span and gives no 32/64 names; the ruled answer (pcrec's own asserts at its writers, no site
+  kind) is stated with the as-built names `PCREC_WSTMT_POS` 32 and `PCREC_WSTMT_REACH` 64, the
+  two writer asserts, and where each is asserted (`src/gen/memfn_sites.h`, inside
+  `MF_WSPAN_POS`/`MF_WREACH`; `PCREC_MAX_REQ_RUN_SCAN` beside `req_pres_spans`;
+  `PCREC_PREFIX_K_MAX` beside `pf_window_of`).
+- E11 APPLIED: §11.1 B5 "Which one is the kit's reply": answered (per-reply count), the two-row
+  control (kit row (a), pcrec row (b) with R-short removed on `[0-9a-f]{32}`), B5's restored
+  short-range error (the kit's loop had widened the range to `k + 1`), row (b) left to covs2c.
+- E12 APPLIED at both sites: §11.1 B6 "as the kit's reply decides" (decided: decoupled, not
+  inline; `PM_NPROOF` retired; the arrays leave the seam structs; the carrier is an event) and
+  the S526 entry in the reader list ("moves under EITHER answer": answered, stays on
+  `MF_MAX_TERM`, pre-k382mech shape, DETECTED by C14's stride clause; built by 9d4907a16).
+- E13 APPLIED, AS REPLACED BY P4: §11.1 "The prediction" ("Non-cover window sites: no predicted
+  move; any move is red") and "Unchanged": the possible-mover predicate quoted in full, the
+  witness `\w{32}\B`, the h* = 64 / 32 / <= 24 readings, superset and red rule, the new `MFWSTMT`
+  record (not emitted text, no abi) and the predictor's change; the "Unchanged" bullet marked
+  false for the joint landing, with pcrec's statements themselves unchanged.
+- E14 APPLIED in four parts: (i) §11.2 ASK (3) -> ASK (4), no kit step (with E7); (ii) §11.3 "not
+  a `--memfn=` value": amended (the dial cell stays a cell; `--memfn=span-loop`/`no-span-loop` is
+  a new pair, deny forces I, memfn floor 13 -> 14, test-only lever `span-head=N`); (iii) §11.7 Q4's
+  `emit_dfa.c:1446` pin: now non-binding at 4095, pcrec's own bound binds it; (iv) §11.6.3: header
+  amended and a paragraph after the table adds row (b), S526 re-aimed, the re-anchored rows
+  (S1224 + `run_proof.sh`, S1083, S3097, S1148, S1018, S3086; REACH re-reads S1221, S3045,
+  S3064) and the combined branch's S3260/S3261/S3262. NOT EDITED (additive, not false):
+  §11.7 Q2's control list; the rows' table cells themselves (the paragraph carries the additions).
+  NOT EDITED (pre-existing, not reply-induced): "near 620 KB" (§11.1) vs "about 630 KB" (§11.2);
+  see LEFT OPEN.
+- E15 APPLIED: §11.4 "Regimes" (note after its last sentence): the kit's cards time the same five
+  regimes by the same methods, plus uniform random bytes for the cards' C1 cell; a loss in any
+  regime moves h, never the width default.
+- E16 APPLIED: §11.1 "The prediction" (last sentences of the E13 note) and §11.4 B's note: a
+  cover the width night adds renders in H(h*) from its first appearance, so its prediction
+  expects H(h*) text; uuid (`k` = 36) is a width event, not a form mover.
+
+Counts: 16 applied (E4 and E13 as replaced by P4), 0 already true, 0 not found. Four extra sites
+carry the same false sentences as E7 (§9 Q8, outcome row 5) and as the retired names (the PREMISE
+paragraph's `MF_MAX_SPAN_POS` line, the READY-3 `MkEnd` fill sentence); each has an inline note.
+
+Also added, from `covs2b_report.md` (the combined-branch facts): the REVISION 5.3 block names
+`PCREC_WSTMT_POS` 32 and `PCREC_WSTMT_REACH` 64 and where each is asserted; B5's short-range
+internal error restored after the kit's loop widened the range; abi 109 taken once on the combined
+branch; 0 movers at width 32 (the raise vs merge, and the kit's whole branch vs the raise, over
+7,071 argv rows and 465 composition files); and READ-3 stated as OPEN, lane covs2c, no fix
+described.
+
+## DOC READERS
+
+W27: grep for `MF_MAX_SPAN_POS`, `MF_MAX_AHEAD`, `MF_WSPAN_POS`, `MF_WREACH`, `MF_MAX_FWD`,
+`PM_NPROOF`, `proven[`, `WF_LEGACY_POS`, `MF_WMAX_SPAN` in each reader. What the kit's raise commit
+9d4907a16 retires: `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` (it ADDS `WF_LEGACY_POS`, a kit-internal
+name that no design-tier note cites). `docs/spec/` and `docs/guide/` hold none of the names.
+
+EDITED (inline `*(... covs2e ...)*` notes in each note's existing supersession style):
+- `docs/design/kit_proof.md`: `exact_len` row, the "term cap" sentence, §4.2 "Bounds" bullet
+  (superseded block), R-26.5, the `MkEnd` struct comment, the machine-reading depth sentence
+  (6 sites). Its other hits (`proven[d]` in C14, §4.2's meaning) are MEANING statements that the
+  raise leaves true; the sizes were already superseded by 69a32a7bf's note: not edited.
+- `docs/design/ctx_span.md`: the rev-1 carrier-constants sentence (`MF_MAX_AHEAD`), N-1's
+  `MF_MAX_SPAN_POS` twice (3 sites; N-1 is already superseded by cover_cap.md rev 4). The
+  `MF_MAX_AHEAD` in the term-table row (`[k, k + MF_MAX_AHEAD)`) is left: it is the item's offset
+  range as designed then, a record.
+- `docs/design/run_pos_set_stage3_readiness.md`: the `(MF_WSPAN_POS = MF_MAX_SPAN_POS ...)` clause.
+- `docs/design/stream/approach.md`: the `proof` row's `mf_class.proven[d]` reader (line 300's row);
+  its second hit (the `proves` row) states per-offset proven sets, a meaning, left.
+- `docs/dev/kvcensus.md`: "capped at 32 (`MF_MAX_SPAN_POS`'s derivation)".
+- `docs/design/span_arms.md`: already carries the 4096 note (69a32a7bf); no retired name; no edit.
+
+FLAGGED, NOT EDITED:
+- `docs/dev/kvcensus/kvdfa.py:25`: `CAP = 32  # MF_MAX_SPAN_POS's derivation ...` is CODE with a
+  trailing comment on the same line (the comment continues on :26). Per the brief, flagged, not
+  edited. The comment's name is retired; the cap itself is the census's own, frozen with its data
+  (the comment already says R-45's bounds "do not move it").
+- the memfn design notes under `docs/design/memfn/` (its CLAUDE.md does not say main edits them):
+  `window_site.md:494` (the reader row lists `MF_MAX_AHEAD`, retired), `window_site.md` (5 hits of
+  `MF_WSPAN_POS`/`MF_WREACH`/`MF_MAX_FWD`), `span_runs_sheet.md` (7), `part_d.md` (3),
+  `window_contract.md` (1; its `MF_MAX_SPAN_POS` sentence at ~:1351 already carries 69a32a7bf's
+  note). Reason: stale sentences, not contract breaks (the kit's own `r45_reply.md` §5 (h) and
+  `span4k_report.md` list them); the kit owns their text. For the kit's next seam touch.
+- `docs/dev/reviews/*`, `dev_journal.md`, lane reports: records, never edited.
+
+## LEFT OPEN
+
+- READ-3 (OPEN, lane covs2c; no fix described here): a legal `--window-search-width=4095` on
+  `[0-9a-f]{4095}` fails the compile on `PCREC_MAX_VM_EMIT_CODE_BYTES` (rc 0 -> 1), while
+  `docs/spec/limits.md` §3.12¶4 says a width whose artifact exceeds a size cap runs the engine and
+  "the compile does not fail". ¶4's text names the emitted-size cap (`PCREC_MAX_EMIT_BYTES`); the
+  code-bytes cap is not named there. Whether that sentence is false as written or the behaviour
+  is the bug is the open item; `docs/spec/` is not mine to edit.
+- The lane NAME COLLISION: `docs/dev/lanes/covs2e_report.md` already existed (the earlier covs2e
+  lane's rev 5.1 report, merged), and the manager's deliver file names that same path. Lane files
+  are never edited after merge, so I kept the old report verbatim as Part 2 below the rule and put
+  this lane's report first. If the manager prefers a separate file, move Part 2 back to its own
+  commit; cover_cap.md's REVISION 5.3 block points at "the rev 5.3 section" of this file. The
+  lanes history index already has an entry for the old report; one line was added for Part 1.
+- "near 620 KB" (§11.1 compile-cost bullet) vs "about 630 KB" (§11.2, and the request's FACT
+  (cost)): pre-existing, not reply-induced, not edited.
+- Two-sided facts not settled by the rulings: none found. r45read's contradictions C1, C2, C4, C5,
+  C7, C9, C11 are each now text in the note; C5 (head measured or chosen) and C11 (whether (4b)
+  has a review) stay the kit's/manager's as the kit's reply states them. Manager items P5 (does
+  (4b) get its own review), P6 (the bench dev's NOT-WARM / short-subject methods), P7 (the
+  night window(s)) are recorded in the note as "the manager's call"/"relayed", not decided.
+- Questions the note still cannot answer, from r45chk: K1 (who respells pcrec's callers on the
+  kit's branch: answered in practice, covs2b's work-list status shows the kit's branch carried
+  them, W3-W11) and K2 (where a bench-run regime's
+  A/A cells run) are the kit's; not in the note.
+- Spec sentences now false: none found beyond READ-3. (No spec file cites the retired names.)
+
+## VALIDATION
+
+- `timeout 600 make test-spec-history test-doc-lint` (log in lane scratch `lint.log`): rc 0, no
+  `*** [... test-...] Error` line (grep `'\*\*\* \[(Makefile:[0-9]+: )?test-'` empty). The five
+  lines matching `fail` are the checks' own "failed: 0" counters and plant-detection names.
+
+---
+
 # covs2e report — [COVER-CAP] stage 2 design addendum, cover_cap.md rev 5.1 (review r13 fixes)
 
 ## STATE AT HANDOFF

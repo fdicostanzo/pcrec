@@ -80,7 +80,7 @@ union over every predecessor class. A position d exists while no reached subset 
 set: the cross product S_0..S_d then equals the length-(d+1) prefixes, the brief's
 definition. When exactness ends, the walk records a counterexample pair (a string in the
 product that is a prefix, and one that is not). `span` is capped at 32 (`MF_MAX_SPAN_POS`'s
-derivation). The PCRE2 reading (`kvpcre.lang`) enumerates the prefixes explicitly and is
+derivation; covs2e: that name is retired by the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled), and the census's own cap stays 32, frozen with its data). The PCRE2 reading (`kvpcre.lang`) enumerates the prefixes explicitly and is
 used only where pcrec has no machine.
 
 **(a) consumable_len, plain DFA** (`kvdfa.uniform`). This uses the artifact's own FORWARD

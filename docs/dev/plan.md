@@ -323,9 +323,51 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the decisions-why section of cover_cap.md §3.3 NOTED (R-14) is built, which would list the kind once
     refs: docs/design/cover_cap.md §3.1, §3.3; docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-6; [ROWCONJ]
     The NFA-provenance facts are read by more than one conjunct table separately: the cover's kept `erased`/`island` guards (rev 4.1) and lmwalk.c's own copy of `nfa->erased`; `split_conj[]` is the third table. One shared row kind, read by `cover_conj[]`, `lmwalk_conj[]` and `split_conj[]`, replaces the per-table copies.
+  - [COVER-NEARMISS-SKIP] STATE:not-started — the kit's near-miss skip for the long cover (O(n*k) on a dense near miss)
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: cover_cap.md §11.4's timing, or the first caller of --window-search-width above 32
+    refs: review r32 (2026-11-16, round covs2code) F2; docs/design/cover_cap.md §11.2 [R-45 reply]; docs/spec/tuning.md §2.56¶1
+    The long cover re-tests up to k-1 positions per byte on a subject dense with near misses ([0-9a-f]{1000}: ~211x the engine). "No fix in the first build" is ruled; the caller contract now states the cost. A kit request when the trigger fires; pcrec states facts only (D157).
+  - [COVER-C15-CONJ] STATE:not-started — C15 reads the width alone: drop cc_fits' three kit-bound conjuncts
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: the next change that re-reads the cover plant anchors (S1131, S3223, S3234, S3266) or touches cc_fits
+    refs: review r32 (2026-11-16, round covs2code) F4; src/gen/known.c cc_fits; docs/design/cover_cap.md §11.1 B2
+    k <= width <= PCREC_ANCHORED_MAX_STATES - 1 and the seam assertion imply the MF_WSPAN_POS/MF_WREACH/MF_MAX_FWD conjuncts at every legal build; one fact is spelled four times. Remove them (route-identical by derivation, 0 movers to prove), re-aim the plant anchors in the same change. Simplification benefit.
+  - [COVER-PLANT-PIN] STATE:not-started — S3264/S3265: pin each combined plant's detection to its wrong answer
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: the next edit to S3264/S3265 or to the cover proof-range cut they plant
+    refs: review r32 (2026-11-16, round covs2code) F6; tests/mech/sabotages/S3264_cover_proof_range_cut_at_33.sh, S3265_cover_proof_range_cut_to_k1.sh
+    Each row plants a cut plus a statement change; the second alone declines C14 and reddens the same answer rows through REACH, so the rows would stay DETECTED if the cut stopped cutting. Pin the detection (a planted-tree REACH expecting REACH-COVER, or an expected FAIL text), or add single-plant control rows.
+  - [SAB-REFUSE-TEXT] STATE:not-started — BUILD-REFUSED sabotage rows: the matrix checks the refusal text, not any failed build
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: the next BUILD-REFUSED row filed, or the next edit to run_sabotage_matrix.sh's build scoring
+    refs: review r32 (2026-11-16, round covs2code) F7; tests/mech/run_sabotage_matrix.sh; S3261, S3262
+    run_sabotage_matrix.sh scores any failing build of a SAB_EXPECT=BUILD-REFUSED row DETECTED and never reads build.log; S3261/S3262 claim "exactly its own assertion". An optional SAB_REFUSE_TEXT the matrix greps in build.log, general to every BUILD-REFUSED row.
+  - [COVER-S1418-REACH] STATE:not-started — S1418: a REACH under the window-search-denied arm and its losing subjects in an answer check
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: the next edit to S1418 or to the offset-skip arm's flags
+    refs: review r32 (2026-11-16, round covs2code) F8; tests/mech/sabotages/S1418_reseed_f0_stated_as_k0.sh
+    The re-anchored row's witnesses are covers at the default (clean and planted artifacts byte-identical); its detection is a form-dependent text grep. Under --memfn=no-window-search the plant loses matches on subjects no test holds (".1234Z ab.1234Z" at 0: none vs 9:15). Add a SAB_REACH under the arm's flags and those subjects to an answer check.
+  - [COVER-AXES-REACH] STATE:not-started — the axes width arm: count that its compiles take the cover
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: the next axes run on main after the stage-2 landing
+    refs: review r32 (2026-11-16, round covs2code) F13; tests/axes/run_axes.sh (the [COVER-CAP] stage 2 B7 block); docs/design/cover_cap.md §6
+    SUSPECTED: nothing counts that the batched width arm's compiles move RX_DFA_SCAN to cover, so a dropped option would be answer-identical by vacuity. Count the movers on the next run and floor them at cover_cap.md §6's mover count.
+  - [COVER-ANSWERS-SYNC] STATE:not-started — kitproof: check cases.tsv answer rows against answers.tsv
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: the next edit to tests/kitproof/answers.tsv or its generator (gen_answers.sh)
+    refs: review r32 (2026-11-16, round covs2code) F22; tests/kitproof/run_cover.sh, cases.tsv, answers.tsv
+    run_cover.sh reads answers.tsv only; cases.tsv's answer rows (140, in sync today) are unchecked. Compare the FLAGS/PATTERN/SUBJECT triples in run_cover.sh; no libpcre2 needed.
   - [COVER-SIZE-LADDER] STATE:not-started — a legal --window-search-width fails at the code-size cap; no ladder rung drops the cover
     filed: 2026-11-16 manager (lane read3file; finding r27 READ-3, reproduced by lane covs2c)
-    status (2026-11-16): filed; UNRULED, record only; exists on lane/covs2b (stage 2), not on main
+    status (2026-11-19): sentence corrected (R1); premise holds only under a lowered -D cap; trigger: a builder reports a lowered cap, or a cover grows past the shipped cap
     trigger: must be DECIDED before the [COVER-CAP] stage-2 joint landing (it exists only on lane/covs2b, not on main)
     refs: docs/dev/lanes/covs2c_report.md (LEFT OPEN, r27 READ-3) and covs2b_report.md (LEFT OPEN), both on lane/covs2b; docs/spec/limits.md section 3.12 para 4 (stage-2 branch only) and section 8.4; src/core/compile.c fit_rungs[]
     Manager's lean (not a ruling): a drop-cover rung in the size ladder, as its own small unit with a design critic round.
@@ -1619,6 +1661,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   2026-10-22 CANDIDATE (lane dd10, [DD-10]): a caller-settable nesting limit, PCRE2's pcre2_set_parens_nest_limit; pcrec has none (fixed 250; stack budget in limits.md once lane/dd10 merges).
   2026-10-16: finding F-8/U-V (compound_entries rev 4): valued parameters (--part-layout, --part-inline-rank, --part-residual, --unroll, --vm-entry-shape, ...) have no single-source table; candidate unification at the interface push.
   2026-10-17 DISCUSSION POINT (Frank + manager, s115; with [STAMP-REVIEW]): what are the stamps FOR? A sample artifact (`a(b|c)+d`) emits 76 `RX_` macros: 6 in the header are caller API (`RX_NCAPS`, frame counts/sizes, `RX_BUFFER_ALIGN`); of the 70 in the `.c`, ~12 are implementation macros, and ~30 string stamps + ~15 integer counters are TU-local, so no caller can read them: they are already comments in effect, read only by tests, the bench and humans. Leaning: an always-emitted structured stamp COMMENT block (uniform grammar) replaces the informational `#define`s; keep the header macros and `rx_info`; typed `rx_info` fields only for a NAMED runtime consumer, integer macros only for a named `#if` consumer. Compound-literal struct macros rejected (duplicate `rx_info`, not an ICE). Cost: one abi event, every grep/bench reader re-pointed.
+  - [SETTABLE-LIMITS] STATE:not-started — one settable-limits table for range-checked CLI limit levers (both ways)
+    filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
+    status (2026-11-16): filed; nothing built
+    trigger: a third settable, range-checked limit lever (forest-for-trees: unify at the third member), or [IFACE-PUSH] itself
+    refs: review r32 (2026-11-16, round covs2code) F21; cli/main.c cli_parse (--warn-emit-bytes=, --window-search-width=); raise_only_limits[]; tests/registry/limits_check.sh
+    Two settable range-checked limit levers are hand-parsed in cli_parse's else-if chain with hand-copied range text (CLI, compile.c, limits.h); raise-only levers already live in raise_only_limits[]. A settable_limits[] table (min, max, field) is the house form at the third member.
 - [SPEC-ORG] STATE:not-started — match_api.md's organization: five structural gaps
   filed: 2026-10-10 Frank
   status (2026-10-10): not started; FILED 2026-10-10 by Frank, session 104, from reading the [SPEC-CLEAN] rewrite of docs/spec/match_api.md; DOCUMENT ONLY, unscheduled, "maybe not ever" — no fix lane without his word

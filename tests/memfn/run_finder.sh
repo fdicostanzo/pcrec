@@ -147,7 +147,11 @@ echo "run_finder: the arm-entry counter (R-MS6)"
 # span_pick unit 1d: THE PURITY HARNESS (arm_fixtures --purity; its header
 # says what it holds and why the defines are interleaved). PURITY_FLOOR is its
 # EXACT check count (7874 since 3.0b: the framed asks, the counting hooks and
-# arena, the call/opts/same-class fixtures), a literal. ITS PLANTS: a COPY of
+# arena, the call/opts/same-class fixtures; 13268 since review r27 CHECK-2/3/4:
+# every ask's rows held to the caller's storage or the refusal sentinel, the
+# refusal fixture, contents always compared = 7874 + 2 x 2665 asks + 53 refusal
+# + 11 plan_test, review r28 (2)); 13272 with the raise's long-run fixture,
+# READ-1: the stretch rule's pair and the term rule's pair, r28 R28-1), a literal. ITS PLANTS: a COPY of
 # memfn/src whose A-mass row, then whose M-parked row, is keyed on the art's
 # site count (one line each, awk; the row holds only on an art that has
 # defined nothing): the planted --purity must go RED. ITS CONTROL: the planted
@@ -157,7 +161,7 @@ echo "run_finder: the arm-entry counter (R-MS6)"
 # (tests/memfn/run_purity_reach.sh, purity_rows.tsv): every Table A, M and
 # T-VERIFY row, dropped unconditionally, moves some harness reply or is
 # declared unreached with a reason.
-PURITY_FLOOR=7874
+PURITY_FLOOR=13272
 "$WORK/fx" --purity > "$WORK/purity.log" 2>&1
 rc=$?
 part purity "$WORK/purity.log"

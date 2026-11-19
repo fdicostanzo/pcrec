@@ -334,13 +334,16 @@ struct mf_art {
     /* R-30: the test-only levers mf_lever set (bit KIT_LEVER_*; 0 on every
        shipped compile) */
     unsigned     levers;
+    /* R-45 the VALUED lever `span-head=N` (KIT_LEVER_SPAN_HEAD set): the
+       inline head h of the span forms on this art (window.c wf_span_head) */
+    unsigned     span_head;
     char        err[256];
 };
 
 /* The test-only levers (mf_lever, compose.c's table). Bit 0 was
  * `pres-window` (R-30), retired at R-38 K38-2 with the two-part run; never
  * reused. */
-enum { KIT_LEVER_RUN_LEFT = 1u << 1, KIT_LEVER_MFIND = 1u << 2 };
+enum { KIT_LEVER_RUN_LEFT = 1u << 1, KIT_LEVER_MFIND = 1u << 2, KIT_LEVER_SPAN_HEAD = 1u << 3 };
 
 /* P3's run window, in run positions (R-30's and K38-1's): the stretch the
  * run decision verifies on an OPTIONAL route (KIT_RUN_WINDOW). Kit-internal
@@ -601,13 +604,51 @@ enum {
                                REQUIRED: an OPTIONAL term may go untested    */
 };
 
+/* WHERE A PROVING CLASS'S ROWS GO (MF_CLASS_V 11, R-45; r45_reply.md rev 4
+ * §1, §5): `rows`/`cap`, the caller's storage (an ask: R-cap refuses more
+ * than `cap`); else `a`, the art's arena, EXACTLY proof_n rows (a define);
+ * else neither: the VERDICT only (kit_legacy_arm), no rows written and
+ * proof NULL. */
+typedef struct {
+    uint8_t        (*rows)[32];
+    uint32_t         cap;
+    const mf_arena  *a;
+} kit_proof_st;
+#define kit_proof_open  MF_NS(kit_proof_open)
+#define kit_proof_close MF_NS(kit_proof_close)
+#define kit_last_stated MF_NS(kit_last_stated)
+/* THE PROOF RANGE (r45_reply.md §1): opens `out`'s proof over [MF_PROOF_LO,
+ * end), end = max(last_s + 2, last_t + 1) clipped at MF_MAX_FWD, every row
+ * all ones, and returns its writable rows in *w (NULL in verdict-only mode).
+ * NULL, or the refusal: R-out (a tested offset outside [MF_PROOF_LO,
+ * MF_MAX_FWD), checked where `tested_lo`/`last_t` are the TESTED set's, i.e.
+ * `check_out` 1: a window plan class), R-cap (more rows than st->cap), R-short
+ * (the SELF-CHECK: end below min(MF_MAX_FWD, last_s + 2); it shares its
+ * source with `end`), or out of memory. */
+const char *kit_proof_open(mf_class *out, long last_s, long tested_lo, long last_t,
+                           int check_out, const kit_proof_st *st, uint8_t (**w)[32]);
+/* proven0/proven_prev, COPIED from the rows for offsets 0 and -1 (all ones
+ * outside the range). */
+void kit_proof_close(mf_class *out);
+/* The largest POSITION site `s` STATES: a window site's spans (every
+ * alternative, the after-context included), else span 0's terms (a RUN term
+ * at `offset` states offset .. offset + run_len - 1); -1 where it states
+ * none at or after 0. */
+long kit_last_stated(const mf_site *s);
+#define kit_class_same MF_NS(kit_class_same)
+/* THE DEEP COMPARE (r45_reply.md §5 (a)): 1 iff two classes agree, every
+ * by-value member equal and the proof rows equal over an equal proof_n; the
+ * `proof` pointer is never compared. */
+int kit_class_same(const mf_class *x, const mf_class *y);
+
 #define kit_class MF_NS(kit_class)
 /* The form CLASS of row `a`'s text for site `s` into *out (compose.c): what
- * the text proves, as facts (D157). NULL, or why the row cannot say (a FIND
- * row whose `tests` is UNSTATED; *out then proves nothing). One function
- * serves mf_define and mf_ask; external so tests/memfn/proven_check.c can ask
- * it of a test-only row. */
-const char *kit_class(const arm *a, const mf_site *s, mf_class *out);
+ * the text proves, as facts (D157), its rows placed by `st`. NULL, or why the
+ * row cannot say (a FIND row whose `tests` is UNSTATED; *out then proves
+ * nothing), or a proof-range refusal (kit_proof_open). One function serves
+ * mf_define and mf_ask; external so tests/memfn/proven_check.c can ask it of
+ * a test-only row. */
+const char *kit_class(const arm *a, const mf_site *s, mf_class *out, const kit_proof_st *st);
 
 #define generic_arm         MF_NS(generic_arm)
 #define ofsskip_arm         MF_NS(ofsskip_arm)
@@ -1193,7 +1234,13 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
  * for THIS plan, not the row's widest), the row itself (E-find's or the
  * floor's: mf_define's arm), and whether that text reads a table of pcrec's
  * (mf_defined's `reads_table`). */
-void wf_plan_class(const struct wf_plan *plan, mf_class *out);
+const char *wf_plan_class(const struct wf_plan *plan, const mf_site *ws, mf_class *out,
+                          const kit_proof_st *st);
+#define wf_stated_offsets MF_NS(wf_stated_offsets)
+/* The distinct offsets window site `s` states over its alternatives: the
+ * longest plan its reply can carry (mf_rows_need's plan_cap); 0 where it
+ * states no window. */
+uint32_t wf_stated_offsets(const mf_site *s);
 const struct arm *wf_plan_row(const struct wf_plan *plan);
 /* The FIND slot's row deciding E-find's stop (T-FIND: fd_find; D-hors
  * included since span_pick 1e), or NULL (the floor). */
@@ -1275,6 +1322,7 @@ typedef struct {
 #define kit_walk       MF_NS(kit_walk)
 #define kit_ask        MF_NS(kit_ask)
 #define kit_opt_denied MF_NS(kit_opt_denied)
+#define kit_opt_state MF_NS(kit_opt_state)
 
 /* The first row of slot `slot` of table `t` that `denies` does not deny,
  * that the gate passes at `gphases` over `in`, and whose predicate holds over
@@ -1298,6 +1346,12 @@ int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
 /* 1 iff `--memfn=` string `opts` holds the token `no-<name>` (options.c; the
  * string was validated by mf_opts_check). NULL `opts` or `name`: 0. */
 int kit_opt_denied(const char *opts, const char *name);
+
+/* A PAIR row's three states in `--memfn=` string `opts` (options.c): -1
+ * where `no-<name>` is given (the deny wins when both spellings are, as
+ * pcrec's own pair rule, tuning.md §2.43¶1), 1 where only the bare `<name>`
+ * (the force) is, 0 where neither is (or `opts`/`name` is NULL). */
+int kit_opt_state(const char *opts, const char *name);
 
 /* One candidate of the window family's list as its trace record writes it
  * (span_pick.md §The shape "The trace", stage 1: no price). Three sources

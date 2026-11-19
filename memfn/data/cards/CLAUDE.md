@@ -18,6 +18,10 @@ Hand-written, append-only by version (a committed row never changes):
   `reject` dim (lane slotx, a respelling of a draft row: `measure_sets.md` §7.2 says when a row binds): the percent of hits the site's check rejects;
   their `deps` name formhash.c's entry-table ids (`walk-set` folded into
   `walk`), `enter` none.
+  `kit-grid@7` (lane forms, R-45 plan A, `r45_reply.md` rev 6 §3): the span forms' cards C1-C5
+  (`span_cross`, `span_pop`, `span_long`, `span_size`, `span_engine`), whole-artifact cells (deps `-`)
+  run by `../../tests/span_forms/cards.py`, UNMEASURED; here, not in kit-synthetic, because they are
+  measured method cards.
 - `kit-synthetic.tsv` — `kit-synthetic@1` and `@2`: the cards of the synthetic sets
   (@1 is untouched; `kit-synthetic@2` = @1 plus `beta` for the sets' unit row, lane
   setdig: the loader refused sets without a unit row),

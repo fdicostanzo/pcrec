@@ -1,0 +1,43 @@
+--- cards.py
++++ cards.py
+@@ -161,6 +161,7 @@
+ # vary by record but not by variant). A share common to every variant of a text therefore also holds
+ # THIS harness's data placement, which a user's binary does not share.
+ # UNMEASURED DEFAULT: POOL_SIZE = 4 (one variant per 16-B phase mod 64, two of each alignment).
++TSCALE = None
+ POOL_SIZE = int(os.environ.get("POOL_SIZE", "4"))
+ # UNMEASURED DEFAULT: the prelude's draw space, j in 0..255 (16-B steps mod 4096). STRATIFIED: variant
+ # v takes the 16-B phase class (r + PHASE_ORDER[v mod 4]) mod 4 (r drawn per pool), a random multiple
+@@ -2446,6 +2447,23 @@
+     if lay["model"] == "heads" and body[0] in ("I", "aa"):
+         return 1.0
+     rng = st["_rng"]
++    if lay["model"] == "onereg":            # critic: per (body, variant) on heads, in ONE regime only
++        if body[0] in ("I", "aa") or rg != lay["rg"]:
++            return 1.0
++        if (body, v) not in st:
++            st[(body, v)] = math.exp(rng.gauss(0, tau))
++        return st[(body, v)]
++    if lay["model"] == "mix":               # critic: phase main effect x a regime interaction of tau_i, heads only
++        if body[0] in ("I", "aa"):
++            return 1.0
++        if (body, "r") not in st:
++            st[(body, "r")] = rng.randrange(4)
++        ph = (st[(body, "r")] + v) % 4
++        if (body, "ph", ph) not in st:
++            st[(body, "ph", ph)] = math.exp(rng.gauss(0, tau))
++        if (body, rg, v) not in st:
++            st[(body, rg, v)] = math.exp(rng.gauss(0, lay["ti"]))
++        return st[(body, "ph", ph)] * st[(body, rg, v)]
+     if lay["model"] == "regime":
+         if lay.get("heads") and body[0] in ("I", "aa"):
+             return 1.0
+@@ -2525,6 +2543,8 @@
+     def put(key, T):
+         base = (key[0], key[1], arm_base(key[2])) + key[3:5]
+         sg = sigma * rscale.get(key[3], 1.0) * (aascale if key[0] == "AA" else 1.0)
++        if TSCALE is not None:
++            sg *= TSCALE(key)
+         T *= cellwins.get(base, 1.0)
+         if key[:5] in bimodal_cells or (key[1], key[3], key[4]) in bimodal_cells:
+             ls = [T * math.exp(sg * eps()) * (1.08 if i < 2 else 1.0) for i in range(LAUNCHES)]

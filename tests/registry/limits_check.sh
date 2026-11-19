@@ -50,12 +50,12 @@
 #      §3(a) found (four rows rendered `-D`, "never a caller lever", while
 #      each one has a real cli/main.c flag) and that nothing in this file
 #      checked before. Independent-source discipline again: this part reads
-#      cli/main.c's `raise_only_limits[]` table BY GREP, plus one named
-#      bespoke flag site verified the same way, never limits.def's own
+#      cli/main.c's `raise_only_limits[]` table BY GREP, plus the named
+#      bespoke flag sites (two today) verified the same way, never limits.def's own
 #      claim about itself. Two directions: every row whose override
 #      CONTAINS "flag" must have a real cli/main.c site, and every row with
 #      a real site must claim one. Scoped to the FLAG_D/BUILD_D population
-#      specifically (the six rows the token split concerns), not to every
+#      specifically (the eight BUILD_D/FLAG_D rows), not to every
 #      "flag" row in the table — see the arm's own header for why.
 #
 # Usage: bash tests/registry/limits_check.sh
@@ -126,6 +126,7 @@ PCREC_UPROP_NAME_MAX
 PCREC_MAX_SPLICE_NODES
 PCREC_MAX_SPLICE_TOTAL
 PCREC_ANCHORED_MAX_STATES
+PCREC_DEFAULT_WINDOW_SEARCH_WIDTH
 PCREC_MARK_PRIO_MAX_STATES
 PCREC_MAX_VM_EMIT_CODE_BYTES
 PCREC_MAX_FIND_COUNT
@@ -179,8 +180,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 81 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 81 at [COVER-CAP] stage 1 (the span slice's subset budget retired with the slice, cover_cap.md §3.1); 82 at R-38 K38-2 (PCREC_MAX_REQ_RUN_EMIT retired, span_runs_sheet.md §4.3; restored to the count by lane k382m); 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once; 84 at [UCP] U3 (PCREC_MAX_CHAR_STEP_SETS, PCREC_MAX_CHAR_STEP_ATOMS); 83 at review r4 ucpu3 RULES-9 (PCREC_UCP_NARROW_MAX_INTERVALS retired: every UCP set compiles, the knee routed nothing)
-    ok "[count] --list-limits reports all 81 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 82 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 82 at [COVER-CAP] stage 2 (PCREC_DEFAULT_WINDOW_SEARCH_WIDTH, cover_cap.md §11.2); 81 at [COVER-CAP] stage 1 (the span slice's subset budget retired with the slice, cover_cap.md §3.1); 82 at R-38 K38-2 (PCREC_MAX_REQ_RUN_EMIT retired, span_runs_sheet.md §4.3; restored to the count by lane k382m); 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once; 84 at [UCP] U3 (PCREC_MAX_CHAR_STEP_SETS, PCREC_MAX_CHAR_STEP_ATOMS); 83 at review r4 ucpu3 RULES-9 (PCREC_UCP_NARROW_MAX_INTERVALS retired: every UCP set compiles, the knee routed nothing)
+    ok "[count] --list-limits reports all 82 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
@@ -334,6 +335,13 @@ done <<< "$anchored"
 #   SELECT_MAX_ROUNDS (select_engine.c) — a bounded-loop iteration cap with a
 #     from-day-one-bound argument at the loop itself (src/core/CLAUDE.md's
 #     [SEL-1] section), not a value a pattern can be measured against
+#   PCREC_WSTMT_POS, PCREC_WSTMT_REACH (src/gen/memfn_sites.h, [COVER-CAP]
+#     stage 2) -- pcrec's construction bounds on its non-cover window
+#     statements, a seam invariant between pcrec and the memfn kit asserted
+#     at build time at each writer (`_Static_assert` beside req_pres_spans
+#     and pf_window_of) with its argument beside it; the bounds a pattern is
+#     measured against are the writers' own rows (PCREC_MAX_REQ_RUN_SCAN,
+#     PCREC_PREFIX_K_MAX), never these
 #   (C_MEMCHR, C_BITMAP, C_VERIFY, C_ENTER, C_MISPRED, MATERIAL_NUM and
 #     MATERIAL_DEN, src/opt/prefix_k.c's cost model, left this list with that
 #     file at D172 S2 commit 6: the selection is the memfn kit's, its
@@ -563,7 +571,9 @@ VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
 VM_MRL_DYN_MAX
-SELECT_MAX_ROUNDS"
+SELECT_MAX_ROUNDS
+PCREC_WSTMT_POS
+PCREC_WSTMT_REACH"
 
 NONLIMIT_ALLOWLIST="PREMUL_DEAD
 REG_SEL_ANY
@@ -666,9 +676,9 @@ fi
 # override token, K35's "a control must not share a source with what it
 # controls") and cross-checks BOTH directions against the dump.
 #
-# Scoped to the FLAG_D/BUILD_D population (the six rows the [LIM-OVR] token
+# Scoped to the FLAG_D/BUILD_D population (the BUILD_D/FLAG_D rows the [LIM-OVR] token
 # split concerns), not to every "flag"-rendering row in the table: eleven
-# rows render bare "flag" and five of those six have no `-D` machinery at
+# rows render bare "flag" and five of those have no `-D` machinery at
 # all (a caller flag with no build-time-movable default is not this arm's
 # question), so widening the manifest below to cover them would be a
 # different, larger claim this row's charter never asked for.
@@ -698,18 +708,28 @@ else
     diff <(printf '%s\n' "$EXPECT_RAISE_ONLY") <(printf '%s\n' "$RAISE_ONLY_NAMES") >&2 || true
 fi
 
-# (b) the one BESPOKE (non-table) caller lever among the FLAG_D population:
-#     --warn-emit-bytes= sets pcrec_options.warn_emit_bytes directly in
-#     cli_parse's own else-if chain, never through the table above, because
-#     it is SETTABLE rather than raise-only (docs/spec/limits.md's "the one
-#     size option that is not raise-only" section) and so does not fit that
-#     table's shape. Verified live rather than assumed.
+# (b) the two BESPOKE (non-table) caller levers among the FLAG_D population:
+#     --warn-emit-bytes= sets pcrec_options.warn_emit_bytes and
+#     --window-search-width= sets pcrec_options.window_search_width
+#     ([COVER-CAP] stage 2, cover_cap.md §11.2.1) directly in cli_parse's own
+#     else-if chain, never through the table above, because each is SETTABLE
+#     rather than raise-only (docs/spec/match_api.md's "`warn_emit_bytes` is
+#     not raise-only"; tuning.md section 2.56 for the width) and so does not
+#     fit that table's shape. Verified live rather than assumed, each its own
+#     ok/bad pair.
 BESPOKE_FLAG_NAMES=""
 if grep -q '"--warn-emit-bytes=' "$ROOT_DIR/cli/main.c"; then
     ok "[override-src] cli/main.c still carries the bespoke --warn-emit-bytes= flag (PCREC_DEFAULT_WARN_EMIT_BYTES's caller lever)"
     BESPOKE_FLAG_NAMES="PCREC_DEFAULT_WARN_EMIT_BYTES"
 else
     bad "[override-src] --warn-emit-bytes= is gone from cli/main.c -- PCREC_DEFAULT_WARN_EMIT_BYTES's FLAG_D override is now UNVERIFIED against a real site"
+fi
+if grep -q '"--window-search-width=' "$ROOT_DIR/cli/main.c"; then
+    ok "[override-src] cli/main.c still carries the bespoke --window-search-width= flag (PCREC_DEFAULT_WINDOW_SEARCH_WIDTH's caller lever)"
+    BESPOKE_FLAG_NAMES="$BESPOKE_FLAG_NAMES
+PCREC_DEFAULT_WINDOW_SEARCH_WIDTH"
+else
+    bad "[override-src] --window-search-width= is gone from cli/main.c -- PCREC_DEFAULT_WINDOW_SEARCH_WIDTH's FLAG_D override is now UNVERIFIED against a real site"
 fi
 
 CALLER_LEVER_NAMES="$(printf '%s\n%s\n' "$RAISE_ONLY_NAMES" "$BESPOKE_FLAG_NAMES" | grep -v '^$' | sort -u)"
