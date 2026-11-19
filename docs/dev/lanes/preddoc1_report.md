@@ -20,7 +20,9 @@ Lane preddoc1 (2026-11-19, opus; DESIGN ONLY), branch `lane/preddoc1`, cut from 
   parked 0; written by `--write-ratchet`).
 - PART LT proves the two classes. It predicts the failing lines, runs the lint, and the two sets are EQUAL. Every
   cited title is a true record title (FORMAT PROBLEMS 1-2).
-- Evidence: 36 checks, 0 failed; 33 plants run singly, 33 caught. Owed: none.
+- Evidence: 36 checks, 0 failed; 33 plants run singly, 33 caught.
+
+OWED: none
 
 ## THE SKELETON
 
