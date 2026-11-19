@@ -30,3 +30,4 @@ Not ready. Open: the spec sentence (above). Reviews/register/plan-row/ledger lis
 
 ## STATE AT HANDOFF
 Branch lane/covland tip = merge 8c4cbc89e plus the report commit. Rulings file empty: no R-n applied (none). Scratch: /var/tmp/pcrec-pcrec/scratch/covland/ (b20k build, probe outputs).
+OWED: none (the full cloud suite was not dispatched because of the stop; it is a to-do after the spec decision, not an owed run)
