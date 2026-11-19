@@ -37,4 +37,5 @@ and ident_check given the feature tree. The queued job's script is the copy at `
 with this one (main's call; I queued nothing and did not touch worktrees/l1ffix).
 
 ## STATE AT HANDOFF
-Rulings file: present, empty of rulings; none applied. Re-run done by hand: ident_check "0 unexplained" (rerun.log). OWED: none.
+Rulings file: present, empty of rulings; none applied. Re-run done by hand: ident_check "0 unexplained" (rerun.log).
+OWED: none
