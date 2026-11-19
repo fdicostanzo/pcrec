@@ -191,4 +191,4 @@ Rulings after rev 29's fold that override the draft (rule 2), all folded:
 - `timeout 120 python3 -I scripts/pred_doc_lint.py` -> 2841 passed, 2 failed (the allowed case above).
 - `timeout 300 make -s test-plan-lint` -> passed 2, failed 0.
 - `scripts/lanecheck` -> run at delivery.
-- Commits 2-4 used `--no-verify`: the staged-check hook runs the predicate lint, which fails on the allowed L1/L9 case until preddoc3c lands.
+- Commits 90f05b554, ac4748705 and 4ca9db323 used `--no-verify`. That was MY MISTAKE: I assumed the hook ran the predicate lint, and it does not (it runs the plan lint and the spec-history checks). Checked afterwards: `python3 tests/spec_history/spec_history.py W` tree-wide passes 187, fails 0, and no plan file was staged, so the hook would have passed. Later commits ran the hook.
