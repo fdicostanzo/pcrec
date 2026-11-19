@@ -744,14 +744,66 @@ modes: n/a (no matching involved)
 
 ## Diagnostics   [core/diagnostics]
 
-### Compile errors   [core/diagnostics/errors]   ?  2026-11-19
+### Compile errors   [core/diagnostics/errors]   reading 2026-11-19
+A program whose meaning is refused is a compile error, and no setting disables one; what is only probably a mistake is a warning instead (core/diagnostics/warnings).
+needs: core/values/functions core/arrays/enumerate core/operators/statements core/modules/conflicts
+- Each error below is ruled or read in its own piece; this piece is the index (the manager's list from the draft).
+| fires on | piece |
+|---|---|
+| an undeclared name that is not a label (with a suggestion); a bare rx not final; a bare statement without `@` | core/operators/statements |
+| a pattern called with arguments; a missing required parameter; a macro in a hole (a condition excepted) | core/operators/bindings |
+| a label named twice in one condition | core/conditions/form |
+| a quantifier on a condition | core/conditions/quantified |
+| a piece of a filter operand that might look outside the matched text | core/filters/operand-context |
+| an rx where the other kind is needed (can match, can filter) | core/filters/kinds |
+| `\k<h>` to a name two groups of one literal carry, without `(?J)`; a number naming a group ambiguously | core/labels/backreferences, core/labels/numbers |
+| a hole position with no rule; an array in a group-name hole; a member that is not a count; a range written out of order; an option hole that is not one legal value; a backreference name or number from a hole | core/holes/insert and its position pieces |
+| `${@y}`, not defined | parked/ideas/array-in-hole |
+| an edge assertion in `enumerate`'s argument; an infinite or over-budget argument | core/arrays/enumerate |
+| a single-value function on an operand with an assertion looking outside | core/values/functions |
+| no file matched by `import`; one member name from two files of one `(=)` import; a bare `=` not first | core/modules/import, core/modules/conflicts, core/modules/all-symbols |
+| a library file that exports nothing | core/modules/export |
+| a recursion through a parameterised definition other than one integer literal parameter strictly decreasing to a literal base case | (a reading; no piece) |
+- UNDER CONSTRUCTION is a class of its own: the meaning is defined, the build is not there
+  (core/diagnostics/under-construction).
+- Four candidates whose only ground was "probably a mistake" are warnings: an empty search, a test that can never
+  pass, a nullable hit argument, the `$x & S` form.
+modes: n/a (compile errors)
 
 ### The under-construction error   [core/diagnostics/under-construction]   reading 2026-11-18
 The under-construction error keeps its own class, worded as under construction (the manager's call, told to the owner).
 by: core/principles/build-later
 modes: n/a (a compile error)
 
-### Warnings   [core/diagnostics/warnings]   ?  2026-11-19
+### Warnings   [core/diagnostics/warnings]   ruled 2026-11-17
+Every warning is structural or defined by a library, has one stable name and can be switched off or made an error by a selector; a warning moves no answer.
+needs: core/values/arithmetic
+by: core/principles/structural-warnings
+see: parked/ideas/known-nothing parked/ideas/warning-rows parked/ideas/severity-table
+- NAMES: the compiler's carry the prefix `pcrec.`; a library's are named by its path (`compare.width.variable_width`).
+  Every name below is a placeholder; the names and wordings are the manager's call, not yet made.
+- A SELECTOR is a set of names written as an rx, matched whole: `@warn.off(/compare\.width\..*/)`,
+  `@warn.error(/.*/)`; an `@warn.off` that suppresses nothing draws `warn.unused`. A STRICTNESS setting
+  (`@options.strict(...)`) makes the selected warnings errors.
+| name (placeholder) | fires on | ground |
+|---|---|---|
+| `pcrec.test.never`, `pcrec.test.always` | a test that can never pass; one that can never fail; at any polarity | polarity-rule |
+| `pcrec.empty.search` | a searched final pattern that can report an empty find | empty-search-error |
+| `pcrec.dead.branch` | an alternative of a narrowing site that can never match | the accepted list |
+| `pcrec.label.unset` | a label a condition names can be absent where it is read, with no default | the accepted list |
+| `pcrec.default.unused` | a default that can never be used | the accepted list |
+| `pcrec.label.ambiguous` | an ambiguous label in the author's own pattern text | the accepted list |
+| `pcrec.anchor.whole` | an explicit anchor that provably sits at the edge of a filter role's stretch | the accepted list |
+| `pcrec.warn.unused` | an `@warn.off` that suppresses nothing | the accepted list |
+| `pcrec.label.numbered` | a condition or `$` reading a label by number on a pattern not written there (`0` exempt) | accepted |
+| (hide) | a binding that hides a label | name resolution |
+| `pcrec.match.never` | an inserted pattern's edge that can never hold beside its neighbour; every copy of a product removed | a reading |
+| `pcrec.dollar.filter` | the form `$x & S` | core/diagnostics/dollar-form |
+| (arithmetic) | an arithmetic result known at compile time to be nothing, whatever the cause; a member list only when every member's result is nothing | plus-operands; the trigger a reading |
+| (nullable hit) | a hit argument that can match empty | core/diagnostics/nullable-hit |
+| (consuming test) | a bare pattern as the test of `when` | core/diagnostics/consuming-test |
+| (join) | `[^${c}]` with two or more different values: it points at `[^${join(c)}]` | a reading (core/holes/negated-class) |
+modes: n/a (warnings)
 
 ### The `$x & S` warning   [core/diagnostics/dollar-form]   ruled 2026-11-19
 The form `$x & S` stays legal and gets a warning keyed on the form, pointing at `(x: S)`.
@@ -771,7 +823,32 @@ modes: n/a (a warning)
 
 ## Spellings   [core/spellings]
 
-### Every placeholder spelling   [core/spellings/placeholders]   ?  2026-11-19
+### Every placeholder spelling   [core/spellings/placeholders]   ruled 2026-11-17
+Every spelling in these documents is a placeholder, settled together in one spellings review; the table names each thing to spell and where its meaning is.
+- A spelling never changes a meaning already settled. The MEANINGS are in the pieces named.
+| the thing to spell (the placeholder here) | its meaning |
+|---|---|
+| the SEQUENCE operator (`SEQ`; his `€`, `¥`); it cannot begin an operand | core/patterns/sequence |
+| the nine POSTFIX QUANTIFIERS; the parse readings that decide what a program says | core/patterns/quantifiers, core/operators/precedence |
+| ATOMIC (`atomic(...)`); the no-re-entry sequence (his `A :: B`); the skip-past verb | core/patterns/atomic, parked/ideas/atomic |
+| the RX parts (`rx.repeat`, `rx.digit`, the plurals) | lib/rx/repeat, lib/rx/classes |
+| the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, core/labels/one-rule |
+| the ARRAY FORM of a read (his `@x`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/one-rule |
+| the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
+| a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]` | core/labels/paths, core/labels/export |
+| the CONDITIONAL (`when(A, B, else = C)`), its argument shape, a `when` operator, the comma-free keyword form; `peek(A)` | lib/control/when, lib/control/peek |
+| the condition's parentheses (`(0: digit)`) | core/spellings/condition-parentheses |
+| the ANY-TEXT pattern (`anything`); a constant for the never-matching rx | lib/sets/anything, parked/ideas/never-constant |
+| the EXPLICIT PRODUCT (`cartesian(...)`), if adopted | parked/ideas/cartesian |
+| the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | core/values/functions, lib/strings/join |
+| `padded`'s width and pad parameters | lib/modifiers/padded |
+| the LABEL-ONLY group (his `(?<:x>foo)`) | parked/ideas/label-only-group |
+| OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | core/diagnostics/warnings, parked/ideas/capability-optins |
+| every WARNING name (`pcrec.test.never`, `pcrec.dollar.filter`, ...) and the under-construction error's name | core/diagnostics/warnings, core/diagnostics/under-construction |
+| `import(...)`, `@export(...)`, the filter inside the import | core/modules/import, core/modules/export, core/modules/import-filter |
+| the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
+| a positional binding `(a, b) := X` | core/modules/positional |
+modes: n/a (spellings)
 
 ### A condition keeps its parentheses   [core/spellings/condition-parentheses]   reading 2026-11-19
 A condition is written with its parentheses everywhere, in a hole too (`${(0: digit)}`); the unparenthesised forms are a spellings item.

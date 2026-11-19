@@ -1223,10 +1223,21 @@ history:
 ## core/diagnostics/errors — Compile errors
 slugs:
 rulings:
+- 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule"); a never-passing test is no longer an error
+- 2026-11-17 "Agree with all three." (record: "2026-11-17 OWNER RULING — the three remaining error-or-warning candidates"); label-twice stays an error, min-values none
 rejected:
+- the empty-ENTRY error (`["", "M"]`) — by owner ruling — "2026-11-14 RULING — the empty-match hazard": it rejected legitimate optional parts and missed `/\d*/`.
+- the empty-search ERROR in predicate programs — by owner ruling — empty-search-error: a warning (`pcrec.empty.search`).
+- the error for a never-passing test, and for a test on an unsettable label (REV 21, a manager disposition) — by owner ruling — polarity-rule: a warning (`pcrec.test.never`).
+- `$x & S` an error (dollar-condition) — by owner ruling — match-is-rx, then dollar-diagnostic: legal, with a warning.
+- `min = n` an error for n other than 0 or 1 — by owner ruling — the three remaining candidates.
 readings:
+- the table is the manager's index of the errors each piece rules or reads (the draft §R.2, §5.1, §7, §R.6) — UNTESTED (refusals; no regex model).
+- the recursion limit (one integer literal parameter strictly decreasing) — the draft's LEAN, no piece — UNTESTED.
 evidence:
-history: not converted; the draft §R.2, §7.
+history:
+- 2026-11-14 to 2026-11-19: errors moved to warnings one by one (empty-match hazard, polarity-rule, empty-search-error, dollar-condition); the edge-assertion error's reach ruled (operand-context) and taken off holes.
+- 2026-11-19 (lane preddoc3b): converted from `?`; a `reading` piece because the index as a whole is the manager's.
 
 ## core/diagnostics/under-construction — The under-construction error
 slugs: under-construction-class
@@ -1240,16 +1251,37 @@ history: skeleton; record "2026-11-18 OWNER RULING — construction-line: enumer
 ## core/diagnostics/warnings — Warnings
 slugs:
 rulings:
+- 2026-11-14 "I agree but warnings need names and the user must be able to disable them (wildcard?)" (record: "2026-11-14 RULING — the empty-match hazard")
+- 2026-11-14 "use an rx instead of wild card purely for consistency" (record: "2026-11-14 RULING — the empty-match hazard"); its amendment: a selector is a set of names as an rx
+- 2026-11-17 "What are all the warning items? Warnings should be structural or definable by a library option." (record: "2026-11-17 OWNER — a principle for warnings")
+- 2026-11-17 "Warnings: yes, that is my definition of structural and these warnings are good. Naming: library warnings/errors should be id'd by the library path" (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path")
+- 2026-11-17 "2. compiler errors and warnings are prefixed with "pcrec."" (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path"); the ADDENDUM
+- 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule")
+- 2026-11-17 "empty-search-error: warning" (record: "2026-11-17 OWNER RULING — empty-search-error: a warning")
+- 2026-11-17 "Agree. Good warning" (record: "2026-11-17 OWNER — the numbered-label warning accepted")
 rejected:
+- a `*` wildcard in a selector — by owner ruling — the amendment: `"*"` is the literal name and draws `warn.unused`.
+- `compare.width` as a compiler warning — by owner ruling — the list accepted: it is about one library form, so the compare library names it (`compare.width.variable_width`).
+- a looped-label warning of its own (the manager's proposal) — by the manager, recorded in the principle's entry: it is `label.unset` under the one label rule; the two triggers are not the same set (the draft R.2, rev 25's PART W).
+- `transform.noop` (the 2026-11-14 list) — by the draft (§7.1, after OWN-1 made a transform a macro on its filter): a transform without its argument is the unapplied-macro error (core/operators/bindings).
 readings:
+- every name is the manager's placeholder (the draft §7.1; his `no-fail` an example) — SUPPORTED by the record ("the names ... to the spellings review").
+- `match.never` (an inserted pattern's edge that can never hold; a product with every copy removed) and the `[^${c}]` -> join warning are the draft's, not in the accepted list — UNTESTED.
+- the arithmetic warning's one trigger (a result known to be nothing, a member list only when every member's is) is the manager's call — UNTESTED.
+- the binding-hides-label warning is the owner's 2026-11-13 "Warn (or error) on hiding label", read as a warning — UNTESTED.
+- his observation that a selector can catch a compiler warning and a library's of the same last component ("helpful or dangerous") is NOT ruled.
 evidence:
-history: not converted; the draft §7.1. Ideas: parked/ideas/known-nothing, parked/ideas/warning-rows.
+history:
+- 2026-11-14: names in dotted families, `@warn.off`; 2026-11-17: the principle, the list, the library path, the `pcrec.` prefix, polarity-rule, empty-search-error, numbered-label; 2026-11-19: dollar-diagnostic, plus-operands.
+- 2026-11-19 (lane preddoc3b): converted from `?`; three controls of one fact (`@warn.off`, `@warn.error`, `@options.strict`) stay an idea (parked/ideas/severity-table).
 
 ## core/diagnostics/dollar-form — The `$x & S` warning
 slugs: dollar-warning dollar-diagnostic
 rulings:
 - 2026-11-19 "i don't want to spend too much time on the warning. the form $x & .. should just get a warning" (record: "2026-11-19 OWNER RULING — dollar-diagnostic")
 rejected:
+- the form an ERROR (dollar-condition, 2026-11-17) — by owner ruling — match-is-rx made it legal; dollar-diagnostic gave it a warning.
+- no dedicated warning, the emptiness diagnostics with "a read stands for its group's rx" (the manager's, rev 28) — by owner ruling — dollar-diagnostic ("should just get a warning").
 readings:
 evidence: PART DD of predspec291.
 history: skeleton; the hint printed only where it is a drop-in (THE MANAGER'S CALL, review r54 P29-12).
@@ -1280,10 +1312,16 @@ history:
 ## core/spellings/placeholders — Every placeholder spelling
 slugs: atomic-spelling options-spelling conditional-spelling every-pass-spelling
 rulings:
+- 2026-11-17 "hits-text: yes but spelling to be reviewed with all other spellings." (record: "2026-11-17 OWNER RULING — the hit list: atomic and anchored")
 rejected:
+- juxtaposition as the sequence operator — by owner ruling — sequence-operator (core/operators/precedence).
+- alphabetic operators and statement keywords (`with`, `check`, `in`, `as`) — by owner ruling — "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11".
 readings:
+- every spelling a placeholder (D193 addendum 4, the owner's, 2026-11-10: "syntax is not settled") — SUPPORTED by the decision log; the ruling quoted is the record's own statement of it.
+- the table's rows are the draft's R.8 list plus the import spellings of 2026-11-19 — UNTESTED.
 evidence:
-history: not converted; the draft §R.8 spellings list (D193 addendum 4: spellings are placeholders).
+history:
+- 2026-11-10: D193 add. 4; 2026-11-17: hits-text sends every spelling to one review; 2026-11-19 (lane preddoc3b): converted from `?`; the four slugs (atomic, options, conditional, every-pass) are rows of the table.
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:
