@@ -5535,3 +5535,15 @@ come from". Not a ruling on the language.
 Applied: lane preddoc4's rulings file R-1 (no move of native names to the core; every call-form name, including
 those now in the core such as `enumerate` and `import`, has its piece in the library; each marked
 `defined: language` or `defined: native (<why>)`).
+
+### 2026-11-19 OWNER, on the manager's take on provided names: "I agree with your take"
+tags: core/principles/language-over-macros
+
+Given the manager's take (the split is by what a thing IS: syntax and meaning in the core, every call-form name in
+the library marked `defined: language` or `defined: native`; the native names are the kernel list; "building
+block" and "native" are two properties, no second mark now; `import` as a call goes to the library while the
+binding list stays in the core). HIS WORDS, whole: "I agree with your take"
+
+The reading taken: agreement with the take as a whole, the `import` split included (he was asked to say so if he
+would rather keep import whole in the core, and did not). A matter of the documents' form; no ruling on the
+language.
