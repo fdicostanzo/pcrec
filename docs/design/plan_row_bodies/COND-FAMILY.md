@@ -4331,3 +4331,22 @@ against a PCRE spelling. COSTS named: the matcher must keep EVERY pass's value (
 backtracking engine only); the order of the alternatives decides answers where one value is a prefix of another.
 THE MANAGER'S RECOMMENDATION: a future direction (its meaning proposed, not built), trigger: a user program of
 the declared-then-used shape.
+
+**2026-11-18 OWNER, a question on `${@y}` and a CSV header (Frank, to the predicate manager, evening; a QUESTION,
+nothing ruled).** After the manager's proposal (value only for "declared, then used many times"; recommendation: a
+future direction). HIS WORDS, in full: "could it be used to keep the header of a csv file ? or is that too much
+runtime getting in the way of compile time".
+RECORD: QUESTION. THE MANAGER'S ANSWER (mine; model `$PCREC_TMPDIR/scratch/pred/csvhead.py`, python `re`): TWO
+different jobs. (a) KEEPING the header's names as a list (to hand back, or to require that later keys are among
+them) is the array form's own job and is run-time only: nothing about the names is known at compile time (the
+declared-then-used case of the proposal). (b) Letting the header decide what the rest MEANS ("the column named
+price is below 100 in every row") done through `@y` would need the name's POSITION at run time and then a
+run-time count, which is the under-construction side (a read in a count, R.1.16 T13): that is run time getting
+in the way. But (b) does not need `@y`: for a bounded number of columns it is a COMPILE-TIME alternation, one
+alternative per column position, each ordinary regex. RUN (six positions, plain python `re`): WHOLE
+`id,price,name / 1,20,x / 2,99,y` HOLDS; with a row `2,100,y` FAILS; price first HOLDS; price fourth HOLDS; no
+price column FAILS; a padded `07` FAILS (canonical); FIND-ALL over two tables (`id,price / 1,5` then
+`price,id / 100,1`): [the first table @0, the header line `price,id` alone @14 (its row does not qualify)].
+THE MANAGER'S READINGS (to be tested if this is ever folded): how the language would WRITE the per-position
+alternation (one binding used in two count holes of one literal: do the holes vary together) is not checked
+against the draft.
