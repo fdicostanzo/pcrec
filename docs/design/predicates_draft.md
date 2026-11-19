@@ -18,7 +18,7 @@
   lane's report): 1 and 14 NOT SUPPORTED as worded, 10 an owner question (**class-positions**); flags-in-filter's
   draft reading is now REACH (the manager's reading 3, SUPPORTED by run, still a confirm). New questions
   **class-positions**, **class-index**. Tasks T-a (isodate), T-b (private labels), T-c (`any_case`) worked (R.1.13,
-  §2.7). Evidence `docs/dev/lanes/predspec29_evidence/` (CHECKS 25 of 25; t1-t18 each caught; premise: predspec281's
+  §2.7). Evidence `docs/dev/lanes/predspec29_evidence/` (CHECKS 25 of 25; t1-t19 each caught; premise: predspec281's
   and predspec28's models re-ran byte-identical). 9,973 lines (1,324,481 bytes) before (`wc -lc`).
 - **rev 28.1: review r52's fixes to rev 28, as the predicate manager RULED them, and the owner's numeral-width
   ruling; NOT STABLE pending the owner's answers (lane predspec281, 2026-11-18 night).** A FIX revision (no

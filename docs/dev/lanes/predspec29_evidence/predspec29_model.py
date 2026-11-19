@@ -45,7 +45,8 @@
 #     t15 SC: `\k<h>` after the hole reads the last mention (the inserted group);
 #     t16 TA: a part label HIDES its part's labels from a bare reference;
 #     t17 TB: a private label exported out of its binding;
-#     t18 AC: the body drops the argument's own written `(?-i)`.
+#     t18 AC: the body drops the argument's own written `(?-i)`;
+#     t19 FF: the inserted literal's `\k<h>` spelt as PCRE's text paste under `(?J)` (rev 28.1's reading).
 import os, sys, re, itertools, random
 import re._parser as SRE
 import re._constants as SC
@@ -55,7 +56,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "rxmodel_evidence"))
 import pcre2h as P                                           # noqa: E402
 
 _sv = os.environ.get("PREDSPEC29_SABOTAGE", "")
-SABS = set("t%d" % i for i in range(1, 19)) if _sv == "1" else set(x for x in _sv.split(",") if x)
+SABS = set("t%d" % i for i in range(1, 20)) if _sv == "1" else set(x for x in _sv.split(",") if x)
 def sab(k): return k in SABS
 
 CHECKS = []
@@ -383,7 +384,7 @@ print("FF %s" % check("FF the plain hole, every inline flag, against the hand-wr
 # reading 12 (J) and 13 (numbered references): the inserted literal's references are its own
 jt = {}
 for nm, prog, pat, w2, s_, f_ in (
-        ("J", "/(?J)(?<h>a)-${/(?<h>b)\\k<h>/}/", r"(?J)(?<h>a)-(?:(?<g>b)\k<g>)", ("a-bb", "a-ba"), "x a-ba a-bb", "a-bb a-ba a-bb"),
+        ("J", "/(?J)(?<h>a)-${/(?<h>b)\\k<h>/}/", r"(?J)(?'h'a)-(?:(?'h'b)\k<h>)" if sab("t19") else r"(?J)(?<h>a)-(?:(?<g>b)\k<g>)", ("a-bb", "a-ba"), "x a-ba a-bb", "a-bb a-ba a-bb"),
         ("J, PCRE's text paste (rev 28.1's draft reading)", "", r"(?J)(?'h'a)-(?:(?'h'b)\k<h>)", ("a-bb", "a-ba"), "x a-ba a-bb", "a-bb a-ba a-bb"),
         ("numbered", "/(a)-${/(b)\\1/}/", r"(a)-(?:(b)\2)", ("a-bb", "a-ba"), "x a-ba a-bb", "a-bb a-ba a-bb"),
         ("numbered, the text paste", "", r"(a)-(?:(b)\1)", ("a-bb", "a-ba"), "x a-ba a-bb", "a-bb a-ba a-bb")):

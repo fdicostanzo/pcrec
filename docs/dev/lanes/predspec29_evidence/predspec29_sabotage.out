@@ -16,4 +16,5 @@ t15: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: SC reading 15 and 
 t16: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: TA bare `year` = the last mention, paths read their parts, outside only paths
 t17: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: TB private labels do their work inside and export nothing
 t18: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: AC T-c: equal for plain and filter-role arguments under REACH in every mode; not for a written `(?-i)`
-ALL (=1): == CHECKS: 8 of 25 OK ; tracebacks 0
+t19: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: FF readings 12, 13: the inserted literal's `\k<h>` and `\1` are its own; the text paste reads the outer
+ALL (=1): == CHECKS: 7 of 25 OK ; tracebacks 0

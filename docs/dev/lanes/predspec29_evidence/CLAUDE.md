@@ -8,10 +8,10 @@ Helpers are COPIES from `../predspec281_evidence/` (that directory stays as comm
 ## Files
 
 - `predspec29_model.py` — STANDALONE. PARTS PO, FF, CO, NE, DD, SC, TA, TB, AC (the header names the reading or task
-  each feeds and the sabotages t1-t18). Controls: libpcre2-8 10.46 through `../rxmodel_evidence/pcre2h.py` (run, never
+  each feeds and the sabotages t1-t19). Controls: libpcre2-8 10.46 through `../rxmodel_evidence/pcre2h.py` (run, never
   read: D181), python `re`, direct semantic functions.
 - `predspec29_model.out` — forward run: CHECKS 25 of 25 OK (6 are the helper's selfchecks).
-- `predspec29_sabotage.out` — each of t1-t18 alone (every one CAUGHT, no traceback), then all at once (8 of 25).
+- `predspec29_sabotage.out` — each of t1-t19 alone (every one CAUGHT, no traceback), then all at once (7 of 25).
 
 ## Run (one process; no make; nothing under /tmp)
 
