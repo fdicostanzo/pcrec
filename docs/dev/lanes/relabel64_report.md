@@ -3,6 +3,8 @@
 STATE: complete
 
 ## STATE AT HANDOFF
+OWED: none
+
 Comment-only relabel of WF_SPAN_HEAD in memfn/src/window.c is committed (9c90d78e9). The enum value stays 64. No rulings file entries were applied (none read). Build and strict both ran clean.
 
 ## CHANGE
