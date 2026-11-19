@@ -4,12 +4,14 @@ One entry per tag of `library.md`, in the same order (fields as in `core_details
 is `docs/design/plan_row_bodies/COND-FAMILY.md`; a skeleton entry's source is `predicates_draft.md` revision 29.1.
 
 ## lib/modifiers/padded — padded
+was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs: padded-width padded-order padded-lazy-sparse
 rulings:
 - 2026-11-15 "padded(rx) := /0*${rx}/" (record: "2026-11-15 RULING — `padded` is the plain macro `padded(rx) := /0*${rx}/`")
 - 2026-11-18 "padded-width: minimum" (record: "2026-11-18 OWNER RULING — padded-width: minimum")
 - 2026-11-19 "i agree with your lean" (record: "2026-11-19 OWNER RULING — padded-order")
 - 2026-11-19 "padded-lazy-sparse: stated behavior." (record: "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros")
+- 2026-11-15 "cut-unpadded: agree" (record: "2026-11-15 RULING — `unpadded` is cut from the first spec")
 rejected:
 - exact width (a value longer than n is nothing) — by owner ruling — padded-width; the run: `9999-10000` FAILS under it (preddoc3c PART PW, sabotage s3 caught).
 - the exact-width branch first, `(/0*${rx}/ & /(?s:.){n}/) | (rx & /(?s:.){n,}/)` — by owner ruling — padded-order (the lean taken: any-length first); it differs SEARCHED on `x0129` (`012`@1) (PART PW, sabotage s1 caught).
@@ -17,6 +19,7 @@ rejected:
 - an error for a lazy or shortest-first argument — by owner ruling — padded-lazy-sparse.
 - a modifier's argument as a filter matched whole of its own (the draft's old row L13: `padded(/^5/)` = `padded("5")`) — by owner ruling — the plain macro: the argument is spliced into a hole, so `^` forbids the zeros (PART PA).
 - `0?` for the zeros arm — by run — `2025-002026` would fail (the draft's rev 28.1 PART PW; preddoc3c PART PW, sabotage s2 caught).
+- `unpadded` as a provided name (it read the subject as if zero-padded, `9:00` tested as `09:00`: text the subject does not contain, so no body in the language says it) — by owner ruling — cut-unpadded; a time range is written with split fields and number conditions, `/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: padded(between(9, 10)))` with the minute condition its end needs.
 readings:
 - the two-argument body `padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)` reproduces every printed answer of the width form: five argument orders (`(?:\d\d)+?` n = 3, `\d{2,3}`, `1|0123`, `\d|\d\d\d|\d\d`, `\d+?` n = 2) and the two value-hole programs — SUPPORTED (preddoc3c PART PW; sabotages s1, s2, s3 caught).
 - the one-argument body reproduces `5`, `05`, `005`; `padded(/^5/)` only `5`; `/1|2/` on `02`; `padded(between(0, 255))` on `000`; `padded(between(1, 12))` rejects `00` — SUPPORTED (PART PA; sabotage s4, the raw paste without the hole's group, caught).
@@ -29,26 +32,20 @@ history:
 - 2026-11-18: the width form, minimum (rev 28); the exact-first body as the draft's reading.
 - 2026-11-19: padded-order (any length first); padded-lazy-sparse (stated behaviour); `limited` proposed the same day (lib/modifiers/limited, parked/ideas/limited).
 - 2026-11-19 (lane preddoc3c): the skeleton converted in full.
-
-## lib/modifiers/unpadded — unpadded
-slugs:
-rulings:
-- 2026-11-15 "cut-unpadded: agree" (record: "2026-11-15 RULING — `unpadded` is cut from the first spec")
-rejected:
-- `unpadded(n, S)` as a provided transform — by owner ruling — cut-unpadded: it was never a plain macro (the zeros are not in the text, nothing to splice; the draft's pullback did the work), and it was the draft's addition.
-readings:
-- his reason: "The issue is numbers compare right aligned and strings left." The natural-order range he filed instead (digit runs compared as numbers, a way of comparing chosen where the range is written) is a later item with its trigger in the same entry ("a real example where splitting fields is too clumsy"); not an ideas-file item.
-evidence: the draft §2.7's bodies table and §9.
-history:
-- 2026-11-15: cut (rev 14); the time-range example rewritten with split fields.
-- 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided".
+- (from lib/modifiers/unpadded) his reason: "The issue is numbers compare right aligned and strings left." The natural-order range he filed instead (digit runs compared as numbers, a way of comparing chosen where the range is written) is a later item with its trigger in the same entry ("a real example where splitting fields is too clumsy"); not an ideas-file item.
+- (from lib/modifiers/unpadded) 2026-11-15: cut (rev 14); the time-range example rewritten with split fields.
+- (from lib/modifiers/unpadded) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided".
+- 2026-11-19 (lane preddoc4): the piece `lib/modifiers/unpadded` deleted, its content moved here (review r59 READ-13).
 
 ## lib/modifiers/quoted — quoted
+was: lib/modifiers/json-quoted (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs:
 rulings:
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
+- 2026-11-15 "cut-json-quoted: agree. It would necessitate a callout or similar? We have unrelated plans for dfa compatible callouts and that could be one" (record: "2026-11-15 RULING — `json.quoted` is cut from the first spec")
 rejected:
 - the plain splice `quoted(S) := /"(?:${S})"/` — by run — its `^` reads the stretch before the quote, so `quoted(/^a\w*/)` never matches (0 of 121 texts over `"ab`; preddoc3c PART QU, sabotage s13 caught).
+- `json.quoted` as a provided name (it tested S against the DECODED string, `\u0041` read as `A`, which is not in the text) — by owner ruling — cut-json-quoted; the `json` module keeps `json.string`, the literal's rx.
 readings:
 - the body `/"${S & /[^"]*/}"/` while the quoted text holds no escape (the draft's LEAN, §2.7 bodies table) — SUPPORTED for its one printed claim (PART QU).
 - the names `padded`, `any_case`, `quoted`, `length`, `month_numbered` are ruled (OWN-1's list); the bodies are the draft's.
@@ -56,38 +53,10 @@ evidence: preddoc3c PART QU.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 14): the body with `&` inside the hole (the draft).
 - 2026-11-19 (lane preddoc3c): converted.
-
-## lib/modifiers/any-case — any_case
-slugs: any-case-body
-rulings:
-- 2026-11-15 "primitive-transforms: I understand why any_case is currently a primitive. I'd like to look for more fundamental ways of reducing that like some option setting primitive that any_case is built on or something else. I am ok with that being a followup." (record: "2026-11-15 RULINGS — tuple compare in the first library; `any_case` stays a primitive for now, a more fundamental basis is a FOLLOW-UP")
-rejected:
-- one "reading primitive" for `any_case` and `json.quoted` ("S matched whole on what the transform reads") — by owner ruling — not adopted (the same entry).
-- `any_case(S) := each(folded, enumerate(S))` over a spelled lowers/uppers table — not taken as the definition (the draft §13; it needs a finite S).
-readings:
-- the candidate body `/(?i:${rx})/` equals the primitive for an argument writing no case flag: `/ho/` 0 / 0 / 0 of 781 texts (`hHoO1`, length <= 4) — SUPPORTED (preddoc3c PART CA; sabotage s17 caught).
-- it differs for an argument writing `(?-i)`: `any_case(/(?-i)ho/)` 3 / 246 / 249 of 781 (the draft's printed counts) — SUPPORTED, reproduced (PART CA).
-- it differs for a NEGATED filter operand: `any_case(/[abAB]{2}/ & !/ab/)` 4 / 168 / 216 of 781 (`aAbB `), the primitive WHOLE `aB` HOLDS / SEARCHED `x aB ab` `aB`@2 / FIND-ALL `ab aB AB` [`ab`@0, `aB`@3, `AB`@6], the body (the `(?i)` reaching `!/ab/`) FAILS / FAILS / [] — SUPPORTED, reproduced (PART CAneg).
-- the primitive's argument is a whole-match role on the CASE-FOLDED reading of the stretch (the manager's LEAN, §2.7) — UNTESTED (no row rests on it).
-- status: held `open any-case-body` by the manager (the brief of lane preddoc3c); the question was never put to the owner.
-evidence: preddoc3c PARTS CA, CAneg; the draft's rev 28 PART AC, rev 28.1 PART FF, rev 29 PART AC, rev 29.1 PART AC.
-history:
-- 2026-11-15: a primitive for now, the basis a follow-up ([PRED-REREAD], the draft §13 O70).
-- 2026-11-18 (rev 28): flags-propagate re-ran the candidate body; rev 28.1: the `(?-i)` difference; rev 29: T-c, equal for plain and positive filter-role arguments; rev 29.1: the negated operand differs; any-case-body named as a gap, not asked.
-- 2026-11-19 (lane preddoc3c): converted, `open any-case-body`.
-
-## lib/modifiers/json-quoted — json.quoted
-slugs:
-rulings:
-- 2026-11-15 "cut-json-quoted: agree. It would necessitate a callout or similar? We have unrelated plans for dfa compatible callouts and that could be one" (record: "2026-11-15 RULING — `json.quoted` is cut from the first spec")
-rejected:
-- `json.quoted(S)` as a provided transform — by owner ruling — cut-json-quoted: its filter tests the decoded string, not in the text.
-readings:
-- a DFA-compatible callout (his pointer) or a finite-state decoding rewrite could bring it back (the manager's answer in the entry); a follow-up with `any_case`'s basis.
-evidence: the draft §2.7 and §9.
-history:
-- 2026-11-15: cut (rev 16).
-- 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided"; `module: json` from the draft ("the `json` module keeps `json.string`").
+- (from lib/modifiers/json-quoted) a DFA-compatible callout (his pointer) or a finite-state decoding rewrite could bring it back (the manager's answer in the entry); a follow-up with `any_case`'s basis.
+- (from lib/modifiers/json-quoted) 2026-11-15: cut (rev 16).
+- (from lib/modifiers/json-quoted) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided"; `module: json` from the draft ("the `json` module keeps `json.string`").
+- 2026-11-19 (lane preddoc4): the piece `lib/modifiers/json-quoted` deleted, its content moved here (review r59 READ-13).
 
 ## lib/modifiers/limited — limited
 slugs:
@@ -204,6 +173,19 @@ history:
 - 2026-11-18: the manager's note in the record ("`then` is required; NOT gives the else-only behaviour"): complement-place and when-peek's reading collide here; asked as not-test.
 - 2026-11-19 (lane preddoc2): split from the test piece (one piece, one status: the test is ruled, this is open).
 
+## lib/control/atomic — atomic
+slugs:
+rulings:
+- 2026-11-17 "Atomic as used by say atomic() would provide pcre behavior." (record: "2026-11-17 OWNER on atomic-search")
+rejected:
+readings:
+- the body `atomic(X) := /(?>${X})/` reproduces its example: `atomic(/a|ab/) SEQ "c"` WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac` [`ac`@0, `ac`@7] — SUPPORTED (preddoc4 PART AT, built from the body's text; sabotage: the group not atomic).
+- `atomic(...)` was the core's placeholder spelling for its atomic part (core/patterns/atomic); a name that is a body over a hole is a library piece (doc_format's rule; review r59 PLACE-2 (a)).
+evidence: docs/dev/lanes/preddoc4_evidence/ PART AT.
+history:
+- 2026-11-17: atomic-search; `atomic(...)` the core's spelling of an atomic part.
+- 2026-11-19 (lane preddoc4): a new piece: the name moved out of core/patterns/atomic, which keeps the rule (review r59 PLACE-2 (a)).
+
 ## lib/search/occurrences — occurrences
 formerly: ?.search (2026-11-15, the owner renamed `search` to `occurrences` under his naming rule)
 slugs: hit-carry hit-carry-depth min-values
@@ -233,6 +215,7 @@ history:
 - 2026-11-17: regex-settles (his one-pattern lazy-gap model, "It's essentially /(.*(${rx}))*.*/ So not global"); min-values.
 - 2026-11-18: hit-carry; the nullable argument a warning; the hits of a nullable argument corrected twice by the manager.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-19 (lane preddoc4): the whole-text idiom `J & C & occurrences(M)` moved here from core/model/modes, whose ruling (whole-text, "adopt it if it's legal") stays cited there (review r59 PLACE-2 (b)).
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass some-own
@@ -334,16 +317,6 @@ history:
 - 2026-11-15: added (the one anchoring rule); exact ends (rev 13); anchored-in-hole and anchor-warn-scope (rev 14); the tie with `&` (rev 15, warn-in-macro-body).
 - 2026-11-19 (lane preddoc3c): converted.
 
-## lib/search/within — within
-slugs:
-rulings:
-rejected:
-readings:
-- `within(15, of = ...)` appears only in the worked example E-NEAR (the draft §12.7) and §5.1's list of library names; no body, no definition — the conversion's reading: `under-construction`.
-evidence: the draft §12.7.
-history:
-- 2026-11-19 (lane preddoc3c): converted.
-
 ## lib/sets/anything — anything
 slugs: anything-text
 rulings:
@@ -384,84 +357,6 @@ history:
 - 2026-11-15 (rev 15): `left/right/mid` with a body; 2026-11-18 (rev 27.1): renamed.
 - 2026-11-19 (lane preddoc3c): converted.
 
-## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
-slugs:
-rulings:
-- 2026-11-14 "more obscure but valuable" (record: "2026-11-14 RULING — counting occurrences")
-rejected:
-- `occurs.some` and `occurs.all` — by the draft (rev 7's, removed, not aliased; LEAN) — `some(c)` is the one spelling; `all` was retired (all-question).
-- a namespace `label` (`label.exactly(1, ...)`) — by the record — it clashes with element metadata `x.label`.
-readings:
-- the family is RULED as a library (2026-11-14); the name `occurs` ruled in use (the draft §8 STATUS).
-- `NOT some(c)` = `occurs.none(c)`; the every-pass form `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, not re-run here.
-- `count(c)` first, `occurs` the fallback (LEAN); `count()` refused only on budget (RULED) — the core's group questions, which have no core piece yet.
-evidence: the draft §8, §4.3, R.4.
-history:
-- 2026-11-14: agreed as a library family (all, some, none, exactly, at_least, at_most); 2026-11-15 (rev 8): counts only.
-- 2026-11-19 (lane preddoc3c): converted; the heading drops `.some` (withdrawn).
-
-## lib/strings/join — join
-slugs:
-rulings:
-- 2026-11-19 "negated-class-hole: [^${join(c)}]" (record: "2026-11-19 OWNER RULING — negated-class-hole")
-rejected:
-- one class built from all the values of `[^${c}]` (the manager's leaning at negated-class-hole) — by owner ruling — the user writes `join`.
-readings:
-- `[^${join(c)}]`, c := [x, y], is `[^xy]`: WHOLE `ax` FAILS, `ab` HOLDS / `ab`@3 / [`ab`@6] (the record's run) — SUPPORTED (preddoc3c PART JO; sabotage s14, `[^${c}]` with no join read as the alternation of negated classes, caught).
-- "a function from an array to one string, its members in order" — the manager's reading, told to him; `sep` is the draft's §5.3 (LEAN); `join` over a spelled array of PATTERNS is the n-ary sequence (the rx-module note).
-- for a NON-negated class `[${join(c)}]` equals `[${c}]`; a value with several characters is a class member each; `[^${c}]` with two or more values warns, pointing at `join` — the manager's readings (the negated-class-hole entry), UNTESTED here.
-evidence: preddoc3c PART JO.
-history:
-- 2026-11-12/13: `join([name = rx, ...], sep = ...)` in the draft (§5.3); 2026-11-19: his `join(c)` in a negated class.
-- 2026-11-19 (lane preddoc3c): converted.
-
-## lib/strings/left — left
-slugs:
-rulings:
-- 2026-11-18 "left(2) is the leftmost two digits of an rx." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match"")
-rejected:
-readings:
-- built for an rx `enumerate` accepts, under construction otherwise (construction-line, core/values/functions): `left(/foobar|bazqux/, 2)` = `fo|ba` — SUPPORTED (preddoc3c PART LF).
-- string-level manipulation of any rx (`left(/\d+/, 2)`) is parked/ideas/string-level-rx.
-evidence: preddoc3c PART LF; the draft R.1.16 T9.
-history:
-- 2026-11-18: match-is-rx; construction-line.
-- 2026-11-19 (lane preddoc3c): converted.
-
-## lib/strings/strlen — strlen
-slugs:
-rulings:
-- 2026-11-18 "illustrative: length($y) returns the length of the match." (record: "2026-11-18 OWNER, what "under construction" was about")
-rejected:
-readings:
-- `/(?<y>\w+)-${strlen($y)}/`: WHOLE `abc-3` HOLDS / `abc-3`@5 / [`a-1`@0, `abcdefghij-10`@9] (the draft's rev 28 PART CN) — SUPPORTED (preddoc3c PART SL; sabotage s16 caught).
-- the spelling `strlen` is the manager's call 6 (his own word in the padded sketch, "strlen($y-1)"), so the filter `length(S)` keeps its name.
-evidence: preddoc3c PART SL.
-history:
-- 2026-11-18: his `length($y)`; rev 28.1: written `strlen($y)` (the draft's A26).
-- 2026-11-19 (lane preddoc3c): converted.
-
-## lib/strings/upper-start — upperStart
-slugs:
-rulings:
-rejected:
-readings:
-- three mentions in the draft (R.1.16 T9, the spellings list), no definition — the conversion's reading: `under-construction`.
-evidence:
-history:
-- 2026-11-18: his placeholder beside `left(rx, n)` (match-is-rx).
-- 2026-11-19 (lane preddoc3c): converted.
-
-## lib/records/records — records
-slugs:
-rulings:
-rejected:
-readings:
-- the draft §7 (file_text and records; the names placeholders colliding with RECORD, §13 O44) — the draft's text, not run.
-evidence: the draft §7, §12.8 (E-FILE).
-history:
-- 2026-11-19 (lane preddoc3c): converted.
-
 ## lib/records/list-of — list_of
 slugs:
 rulings:
@@ -472,26 +367,6 @@ readings:
 evidence: preddoc3c PART LO.
 history:
 - 2026-11-17 (rev 24.4): defined as form (a), a proposal; separator-label dissolved.
-- 2026-11-19 (lane preddoc3c): converted.
-
-## lib/records/param — param
-slugs:
-rulings:
-rejected:
-readings:
-- a run-time input (the draft §0.3, §11; E-NEAR (b)); what it is: OPEN (the draft §13 O46, no owner slug) — the draft's.
-evidence: the draft §0.3, §12.7.
-history:
-- 2026-11-19 (lane preddoc3c): converted.
-
-## lib/records/file-text — file_text
-slugs:
-rulings:
-rejected:
-readings:
-- the draft §7: a pinned compile-time file; what moves when the file changes is the `sha256` pin (the draft's standing question 3).
-evidence: the draft §7, §12.8.
-history:
 - 2026-11-19 (lane preddoc3c): converted.
 
 ## lib/rx/classes — Character parts: rx.digit, rx.digits, rx.letter, rx.any_of, rx.range, rx.none_of, ...
@@ -510,13 +385,16 @@ history:
 
 ## lib/rx/repeat — rx.repeat
 was: core/patterns/repeat (2026-11-19, a library definition over count holes: the core holds primitives only)
+was: lib/rx/optional-loop (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs: count-argument
 rulings:
 - 2026-11-17 "i agree with the count proposal. i'm curious how the repeat functionality would work however. is it a primative?" (record: "2026-11-17 OWNER RULING — the count proposal")
 - 2026-11-17 "i agree with repeat. i agree with plurals, why not. can i name the item inside the repeat with [ a = rx.digit ]" (record: "2026-11-17 OWNER — the rx module: one repeat construct; plurals as conveniences")
+- 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
 rejected:
 - `repeat` as a primitive — by the two-kinds entry — "`repeat` is therefore a library definition" (the draft R.1.14).
 - one binding of an array for every mention (`n` the same member in both places) — by run — `repeat(digit, n, n + 1)`, n := [2, 5], WHOLE `1234` HOLDS only through the cross copy (2,6) (rev 26.1's PART R47 B2; preddoc2 PART RB, sabotage s9 caught).
+- `rx.optional` and `rx.loop` as provided names — by owner ruling — the quantifier operators (`x?`, `x??`, `x?+`, `x*`, `x+` and their lazy and possessive forms are the core's operators; counts are `rx.repeat`; a separated list is `list_of`).
 readings:
 - the three bodies, one per call form, reproduce every ruled example: RX5 (min = n, max = n), the one-argument exact count, every copy illegal, AL2 (`n + 1`), B2 (per mention), RX6 (a labelled item, a condition after it and inside it), the plural `digits` — SUPPORTED (preddoc2 PARTS RX, RB, R6; WHOLE against python's `\d{2,4}`, `\d{2}|\d{4}`, `\d+` on 63 texts, 0 differing).
 - "no maximum" written as a second body with the bound left out (the draft's reading; answer-free) — SUPPORTED as a lowering (PART R6, sabotage s11 caught).
@@ -525,19 +403,10 @@ evidence: PARTS RX4-RX6 of predspec25; rev 26's PART AL; preddoc2 PARTS RX, RB, 
 history:
 - 2026-11-17: the count proposal and the one repeat construct (the draft R.1.14, COUNTS, ONE REPEAT CONSTRUCT).
 - 2026-11-19 (lane preddoc2): the core piece `core/patterns/repeat` (a skeleton) and this `?` piece made one, converted in full in the library; `module: rx` from the record's "the rx module".
-
-## lib/rx/optional-loop — rx.optional and rx.loop
-slugs:
-rulings:
-- 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
-rejected:
-- `rx.optional(x, mode = ...)` and `rx.loop(x, min, max, sep, mode)` as constructs (the rx-module note's rows 11-13) — by owner ruling — the postfix operators and the one `repeat`; a `mode =` setting has no typed position.
-readings:
-- the note's `rx.loop` with `sep` is `list_of`; `every-pass-spelling` (his loop construct over a conditioned item) stays OPEN in the draft §R.8.
-evidence: `docs/design/rx_module.md` §2.
-history:
-- 2026-11-17: proposed in the rx-module note; the quantifier operators ruled the same evening.
-- 2026-11-19 (lane preddoc3c): written as "not provided".
+- (from lib/rx/optional-loop) the note's `rx.loop` with `sep` is `list_of`; `every-pass-spelling` (his loop construct over a conditioned item) stays OPEN in the draft §R.8.
+- (from lib/rx/optional-loop) 2026-11-17: proposed in the rx-module note; the quantifier operators ruled the same evening.
+- (from lib/rx/optional-loop) 2026-11-19 (lane preddoc3c): written as "not provided".
+- 2026-11-19 (lane preddoc4): the piece `lib/rx/optional-loop` deleted, its content moved here (review r59 READ-13).
 
 ## lib/structural/capture — capture
 slugs:
@@ -550,15 +419,3 @@ readings:
 evidence: preddoc3c PART CP.
 history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
-
-## lib/structural/each — each, each_group, where_group
-slugs:
-rulings:
-- 2026-11-15 "Agree with mapping" (record: "2026-11-14 RULINGS on rev 3's contradictions")
-rejected:
-- the ordinal as "the second argument when the macro takes one" (rev 9) — by review r10 CENSUS-15 — a two-parameter macro's slot 2 had two claimants.
-readings:
-- §5.3's rules (the draft's LEAN; mapping a filter by a section RULED): fenced compile-time tools over spelled arrays — not run (no subject).
-evidence: the draft §5.3.
-history:
-- 2026-11-19 (lane preddoc3c): a new piece (census rows `each`, `each_group`, `where`).

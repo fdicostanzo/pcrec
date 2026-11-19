@@ -133,9 +133,8 @@ by: core/principles/regex-default
   after an EMPTY report, a retry at the same place for the first surviving non-empty path starting there, and only
   then a step of one character (a reading: regex's loop, by the default of explicit-exceptions).
 - A searched pattern that can match the empty text behaves as PCRE's does (its empty matches), with a warning.
-- A check of the whole text is written with ruled pieces and matched WHOLE: `J & C & occurrences(M)`, a parse J of
-  the whole text, a check C on it, M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED
-  shape (each match of M reported as a match of the program) has no ruled spelling.
+- A check of the whole text is a program matched WHOLE; its idiom over a hit list is the library's
+  (lib/search/occurrences).
 see: lib/search/occurrences lib/search/hits
 WHOLE `1` HOLDS, `12` FAILS / SEARCHED `a12 1` `1`@1 / FIND-ALL `12 3` [`1`@0, `2`@1, `3`@3] (`/\d+/ & /^\d$/`)
 
@@ -152,7 +151,7 @@ WHOLE `73` HOLDS (l = `3`), `77` FAILS / SEARCHED `x737` `73`@1 (l = `3`) / FIND
 ### Group questions over the pass table   [core/model/table/group-truth]   open group-truth 2026-11-19
 After a loop, do the group questions over the passes, `NOT some(c)` and `occurs.none(c)`, agree with `occurs.none(NOT c)` read pass by pass?
 needs: core/model/table
-see: lib/counting/occurs
+see: core/builtins/occurs
 The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads
 the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the
 finished passes. Candidates: (a) `NOT some(c)` = `occurs.none(c)` (they agree on every text run); (b) `occurs.none(NOT
@@ -179,7 +178,7 @@ by: core/principles/operand-world
 | a part label `[x = A]` | A in place | as the place it stands in | as A's place | core/labels/paths |
 | an `occurrences` argument; a hit list | its stretch; the hit list atomic | can match | yes; the hit list no | lib/search/occurrences |
 | the test of a conditional | at the conditional's point | a test | no for a peek | lib/control/when-test |
-| a `records` item | a compile-time find-all | can match, condition-free | no | lib/records/records |
+| a `records` item | a compile-time find-all | can match, condition-free | no | core/builtins/records |
 - A place with no row here is not a place a program or a part can stand in.
 modes: n/a (the table of places; each place's piece has its example)
 
@@ -264,9 +263,9 @@ An atomic part means what PCRE's atomic group means: no path inside it is retrie
 needs: core/model/match core/model/table
 - A condition outside an atomic part never re-enters it.
 - In a search an atomic part does not stop the search going on to later starts.
-- Its spelling (`atomic(...)` here) is a placeholder; the backtracking verbs and a no-re-entry sequence are ideas
-  (parked).
-see: parked/ideas/atomic
+- The name `atomic(X)` used here is the library's body around PCRE's atomic group (lib/control/atomic); the
+  backtracking verbs and a no-re-entry sequence are ideas (parked).
+see: lib/control/atomic parked/ideas/atomic
 WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(B | A) & (l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
@@ -577,7 +576,7 @@ WHOLE `0099-100` FAILS / SEARCHED `0099-100 2025-2026` `2025-2026`@9 / FIND-ALL 
 `+ - * %` take the decimal numerals only; any other operand, `% 0` or a negative result yields nothing, with a warning where known at compile time.
 needs: core/values/number-domain core/values/one-type
 by: core/principles/nothing-outside-domain
-see: core/arrays/lift core/operators/precedence core/diagnostics/warnings lib/strings/join
+see: core/arrays/lift core/operators/precedence core/diagnostics/warnings core/builtins/join
 - Binary `+ - * %`: addition, subtraction, multiplication, remainder, on numerals; a constant expression folds
   (`2025 + 1` is `2026`). Their levels: core/operators/precedence.
 - An operand of many strings (an array, a class, any rx `enumerate` accepts) applies member by member, over the
@@ -586,14 +585,14 @@ see: core/arrays/lift core/operators/precedence core/diagnostics/warnings lib/st
 - `% 0` and a negative result are outside the domain: nothing, at compile time as at match time. There is no
   signed numeral, and a written `% 0` is no compile error of its own.
 - A result known at compile time to be nothing draws a warning, never an error (core/diagnostics/warnings).
-- `+` never joins strings or patterns. Joining is the sequence operator, or `join` over an array (lib/strings/join).
+- `+` never joins strings or patterns. Joining is the sequence operator, or `join` over an array (core/builtins/join).
 WHOLE `8` HOLDS / SEARCHED `x42 8` `42`@1 / FIND-ALL `8 x 42` [`8`@0, `42`@4] (`/${["7", "x", "41"] + 1}/` is `(?:8|42)`: the member `x` gives nothing)
 WHOLE `15-5` HOLDS, `5--5` FAILS / SEARCHED `5--5 15-5` `15-5`@5 / FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `10-0`@10] (`/(?<y>\d+)-${$y - 10}/`: a negative result is nothing)
 
 ### Single-value functions   [core/values/functions]   ruled 2026-11-18
 A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction.
 needs: core/values/one-type
-see: core/arrays/enumerate core/arrays/lift lib/strings/left lib/strings/strlen
+see: core/arrays/enumerate core/arrays/lift core/builtins/left core/builtins/strlen
 - A single-value function (`left`, `strlen`, the arithmetic operators; placeholder names) is defined on one string.
   On a read it runs at match time on the read's one string.
 - On any other rx the first clause that applies decides (the order is a reading):
@@ -698,10 +697,10 @@ modes: n/a (the table of positions; each position's piece has its example)
 In a pattern position a hole is the inserted pattern as a whole in a non-capturing group, `(?:X)`, matched in place; several values are one alternation, no copies.
 needs: core/patterns/sequence core/filters/kinds
 by: core/principles/positions-own-rules
+see: lib/search/anchored
 - `/xxx${/foo/}yyy/` is `/xxx(?:foo)yyy/`; a quantifier after the hole applies to the whole inserted pattern.
 - An assertion at the inserted pattern's edge crosses the border and reads its neighbours' text; one that can
   never hold beside its neighbour draws the can-never-match warning.
-- `anchored` in a hole has no error of its own: `x${anchored(/a/)}` never matches, as PCRE's `/x\Aa\z/`.
 - The hole and the sequence operator are one reading (pattern positions).
 - X must be an rx that can match: a filter-only rx (a complement) here is the compile error.
 - Several values, `${[a, b]}`: an ALTERNATION inside the one group, in the values' order; the literal is not copied.
@@ -739,7 +738,7 @@ by: core/principles/positions-own-rules
 - In practice, for a class that is not negated, the alternation collapses to one class: `[${c}]` is `[xy]`, in
   every mode, a capture before the class included (a reading, run).
 - The alternation is of the CLASS, not of the literal holding it: no copies, so it never reorders the rest of
-  the pattern (a reading, run: the copy reading differs).
+  the pattern (a reading, run).
 - One value may hold several characters, each a member; a character special inside a class (`^` first, `-`,
   `]`, `\`) in a value is a literal member: hole values are text (a reading, run).
 WHOLE `ax` HOLDS, `ay` HOLDS, `aq` HOLDS, `ab` FAILS / SEARCHED `-ab ay` `ay`@4 / FIND-ALL `ax ab aq` [`ax`@0, `aq`@6] (`/a[${c}q]/`, c := [x, y])
@@ -753,9 +752,9 @@ WHOLE `ap` HOLDS, `ab` FAILS / SEARCHED `-ab aq` `aq`@4 / FIND-ALL `ax ab ap` [`
 Several values in `[^${c}]` stay an alternation of the class, one per value; "none of these" is written by joining the array into one value: `[^${join(c)}]`.
 needs: core/holes/class
 by: core/principles/positions-own-rules
+see: core/builtins/join
 - `[^${c}]`, c := [x, y], is `[^x]|[^y]`, which accepts every character when two values differ.
-- `[^${join(c)}]` is `[^xy]`. `join` is a placeholder name: a function from an array to one string, its
-  members in order.
+- `[^${join(c)}]` is `[^xy]` (`join`: core/builtins/join).
 - `[^${c}]` written with an array of two or more different values draws a warning pointing at `join` (a reading:
   the manager's call).
 - A negated range end, `[^${lo}-z]` with several values, is the alternation the same way (a reading).
@@ -865,7 +864,7 @@ modes: n/a (a question; the runs are cited in the details entry)
 ### Same-name groups through a hole   [core/holes/same-name]   ruled 2026-11-19
 A group that arrives through a hole is the inserted pattern's own and does not count as a second group of its name in the outer literal.
 needs: core/labels/backreferences core/holes/pattern
-- The outer literal's `\k<h>` reads the outer group (asked and ruled on `\k<h>`).
+- The outer literal's `\k<h>` reads the outer group.
 - The inserted literal's own `\k<h>` and numbered references are its own, and an outer `(?J)` has no effect
   across the hole (readings).
 WHOLE `a-ba` HOLDS, `a-bb` FAILS / SEARCHED `x a-bb a-ba` `a-ba`@7 / FIND-ALL `a-ba a-bb a-ba` [`a-ba`@0, `a-ba`@10] (`/(?<h>a)-${q}\k<h>/`, q := `/(?<h>b)/`)
@@ -1069,12 +1068,113 @@ needs: core/modules/map
 - What `.` reaches on a module is its public names (core/labels/export); `@export` selects among them (a reading).
 modes: n/a (no matching involved)
 
+## Built-in names   [core/builtins]
+
+The names the language provides that are PRIMITIVE: no body written in the core language defines them. A
+provided name that has such a body is a library piece (`library.md`). Every name is a placeholder spelling.
+
+### occurs.exactly, .at_least, .at_most, .none   [core/builtins/occurs]   ruled 2026-11-14
+The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
+- Primitive: a count over the passes of a loop; no body in the core language writes it. A capped counter
+  (n + 2 states) multiplied in.
+- `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`); one record is
+  one pass; n is a constant or a caller parameter.
+- These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form.
+- The module is reached by `occurs := import("occurs")`.
+modes: n/a (a count over a loop's pass table; no example of the draft is printed in the three modes)
+
+### join   [core/builtins/join]   reading 2026-11-19
+`join(a, sep = s)` is one value: the members of a finite array in their order, s between them; with no `sep`, nothing between.
+needs: core/arrays/enumerate core/holes/class
+- No module is stated for it.
+- Primitive: a function over an array's members; the core language has no body that walks an array.
+- "None of these" is written with it: `[^${join(c)}]`, c := [x, y], is `[^xy]` (several values in `[^${c}]` stay
+  the alternation of the class).
+- Joined parts stay reachable by their labels (`c.A`). Ordered, fixed: `join`; ordered, repeated: `list_of`.
+WHOLE `ax` FAILS, `ab` HOLDS / SEARCHED `ax ab` `ab`@3 / FIND-ALL `ax ay ab` [`ab`@6] (`/a[^${join(c)}]/`, c := [x, y], is `a[^xy]`)
+
+### left   [core/builtins/left]   reading 2026-11-19
+`left(rx, n)` is the IMAGE: the first n characters of each string of rx, applied to each enumerated string in enumerate's order.
+needs: core/values/functions core/arrays/enumerate
+- No module is stated for it.
+- Primitive: a string function; the core language has no slicing.
+- Built for an rx `enumerate` accepts (`left(/foobar|bazqux/, 2)` is `fo|ba`); on any other rx (`left(/\d+/, 2)`)
+  it is under construction.
+- Characters or bytes is not settled (his "(Byte ideally)").
+WHOLE `fo` HOLDS, `foo` FAILS / SEARCHED `xba` `ba`@1 / FIND-ALL `fo ba` [`fo`@0, `ba`@3] (`left(/foobar|bazqux/, 2)` is `fo|ba`)
+
+### strlen   [core/builtins/strlen]   reading 2026-11-19
+`strlen(rx)` is the length of each enumerated string of rx, a canonical numeral: his `length($y)`, the length of the match.
+needs: core/values/functions core/holes/value core/values/number-domain
+- No module is stated for it.
+- Primitive: a string function. On a read it is computed at run time.
+- The spelling `strlen` keeps the filter `length(S)` (a preimage) apart from this image.
+WHOLE `abc-3` HOLDS / SEARCHED `ab-3 abc-3` `abc-3`@5 / FIND-ALL `a-1 ab-3 abcdefghij-10` [`a-1`@0, `abcdefghij-10`@9] (`/(?<y>\w+)-${strlen($y)}/`)
+
+### upperStart   [core/builtins/upper-start]   under-construction 2026-11-19
+`upperStart(rx)` is his placeholder for a string function of the `left` kind; nothing defines what it returns.
+see: core/builtins/left
+- No module is stated for it.
+- It falls under the rule of single-value functions (core/values/functions) once defined.
+
+### any_case   [core/builtins/any-case]   open any-case-body 2026-11-19
+Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay the primitive (a string equal, up to letter case, to a member of rx)?
+needs: core/holes/flags core/filters/and
+- No module is stated for it.
+- Today (ruled): `any_case` is a PRIMITIVE for now; a more fundamental basis is a follow-up.
+- The standing reading: under the flags rulings the body equals the primitive in every mode except (1) for an
+  argument writing its own `(?-i)` (its own flag wins) and (2) for a NEGATED filter operand in the argument
+  (`any_case(/[abAB]{2}/ & !/ab/)`), where the `(?i)` reaches the negated side.
+- Candidates: (a) the body is the definition, those two arguments its stated behaviour; (b) the primitive stays,
+  the body a lowering where it agrees.
+WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho`@0, `HO`@3] (the candidate body on `any_case("ho")`, `(?i:ho)`)
+
+### records   [core/builtins/records]   reading 2026-11-19
+`records(text, rx)` is an rx whose array has one item per compile-time match of the item rx over a compile-time text.
+needs: core/arrays/enumerate
+- No module is stated for it.
+- Primitive: a compile-time search over a text. The item rx is SEARCHED in the text (its `^`/`$` read the text);
+  each item is the item rx narrowed to that one match, its labels reachable by the map interface (`r.word`).
+- The names are placeholders.
+modes: n/a (a compile-time tool over a file's text; it builds an array, it matches no subject)
+
+### file_text   [core/builtins/file-text]   reading 2026-11-19
+`file_text(path, sha256 = ...)` is the whole file as one compile-time string, pinned by its hash.
+- No module is stated for it.
+- Primitive: it reads a file at compile time. Used with `records` (`records(file_text("w.txt", sha256 = ...), lines)`).
+modes: n/a (a compile-time string; it matches no subject)
+
+### param   [core/builtins/param]   reading 2026-11-19
+`param(rx)` is a run-time input: an rx whose string the caller fixes per match, read-only, validated against rx.
+- No module is stated for it.
+- Primitive: the caller supplies it (`limit := param(/\d{1,4}/)`, `ref := param(isodate)`).
+- What kind of value it is and how it is passed are not settled.
+modes: n/a (a caller's input; no subject example)
+
+### each, each_group, where_group   [core/builtins/each]   reading 2026-11-19
+`each(f, A)` applies a macro or filter f to every entry of a spelled array A, keeping labels and order; several arrays zip by position.
+needs: core/arrays/enumerate core/operators/bindings
+- No module is stated for it.
+- Primitive: compile-time structural tools over spelled arrays, never over a loop's passes.
+- f is a macro whose parameters the entries fill, or a filter passed as a section (`each((& isodate), dates)`).
+- `each_group` zips by label; `where_group` and `each_group` return an rx (an array in group order).
+- An ordinal is passed by name (`ordinal = "i"`, starting at `start =`, default 1).
+modes: n/a (compile-time tools that build an rx from arrays)
+
+### within   [core/builtins/within]   under-construction 2026-11-19
+`within(n, of = d)` (a placeholder) is a date within n days of a date d; the worked example names it and nothing defines it.
+- No module is stated for it.
+- Its use: `isodate & within(15, of = c)` with c a compile-time date, and `within(15, of = ref)` with
+  `ref := param(isodate)` (a run-time input).
+- A day difference is a function of the fields, out of reach of a set written in the language: a computed label
+  or a blessed callout.
+
 ## Diagnostics   [core/diagnostics]
 
 ### Compile errors   [core/diagnostics/errors]   reading 2026-11-19
 A program whose meaning is refused is a compile error, and no setting disables one; what is only probably a mistake is a warning instead (core/diagnostics/warnings).
 needs: core/values/functions core/arrays/enumerate core/operators/statements core/modules/conflicts
-- Each error below is ruled or read in its own piece; this piece is the index (the manager's list from the draft).
+- Each error below is ruled or read in its own piece; this piece is the index.
 | fires on | piece |
 |---|---|
 | an undeclared name that is not a label (with a suggestion); a bare rx not final; a bare statement without `@` | core/operators/statements |
@@ -1098,7 +1198,7 @@ needs: core/values/functions core/arrays/enumerate core/operators/statements cor
 modes: n/a (compile errors)
 
 ### The under-construction error   [core/diagnostics/under-construction]   reading 2026-11-18
-The under-construction error keeps its own class, worded as under construction (the manager's call, told to the owner).
+The under-construction error keeps its own class, worded as under construction (the manager's call).
 by: core/principles/build-later
 modes: n/a (a compile error)
 
@@ -1167,7 +1267,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the condition's parentheses (`(0: digit)`) | core/spellings/condition-parentheses |
 | the ANY-TEXT pattern (`anything`); a constant for the never-matching rx | lib/sets/anything, parked/ideas/never-constant |
 | the EXPLICIT PRODUCT (`cartesian(...)`), if adopted | parked/ideas/cartesian |
-| the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | core/values/functions, lib/strings/join |
+| the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | core/values/functions, core/builtins/join |
 | `padded`'s width and pad parameters | lib/modifiers/padded |
 | the LABEL-ONLY group (his `(?<:x>foo)`) | parked/ideas/label-only-group |
 | OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | core/diagnostics/warnings, parked/ideas/capability-optins |
