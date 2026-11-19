@@ -3998,3 +3998,20 @@ number, so by itself it answers numeral-width (the result is canonical; padding 
 held with `& /\d{n}/`), not number-domain; (m2) under canonical the padded read is handled by where the label is
 written (zeros outside the labelled group, (C)), with no new transform; (m3) under "the result of arithmetic is
 canonical, pad by wrapping", numeral-width's WIDTH KEPT candidate is not needed under any domain.
+
+**2026-11-18 OWNER, a form for padding to a width (Frank, to the predicate manager, evening; an IDEA in the
+number-domain discussion, nothing ruled).** After the runs of his wrap (`padded($y + 1)`; the width held with
+`& /\d{4}/`). HIS WORDS, in full: "padded($y + 1, 4) or even padded($y + 1, length = 4, pad = "0")".
+RECORD: IDEA: `padded` takes the WIDTH as a second parameter, and in the longer form named parameters `length` and
+`pad` (the pad character, `"0"` in his example). Spellings and parameter names are placeholders (D193 addendum 4;
+to the spellings review). FROM THE RECORD: the one-parameter body is RULED (2026-11-15: "padded(rx) := /0*${rx}/",
+"Give or take details."); the parameter rule his long form uses is the 2026-11-13 LEAN, still pending
+("positional = required parameters in declared order ... keywords = optional settings with defaults (`sep =
+"."`); ANY parameter may also be passed by name"). THE MANAGER'S READINGS (mine, to be tested by the next revision
+lane): (m1) the width form is a PLAIN MACRO over ruled pieces, for instance `padded(rx, n) := /0*${rx}/ &
+/(?s:.){${n}}/` and with a pad character `/(?:${pad})*${rx}/ & ...`: nothing new in the engine; (m2) it is one
+macro with optional parameters (no width = any number of pad characters, the ruled body), not an overload
+(overloading: 2026-11-13, "NOT phase one"); (m3) NOT decided by his words: whether the width is EXACT (a result
+that does not fit yields nothing: `9999 + 1` under width 4 fails) or a MINIMUM (printf's: `10000`); a small python
+check this session: result `2026` text `2026` both hold; result `43` text `0043` both hold, `43` and `00043` both
+fail; result `10000` text `10000`: exact FAILS, minimum HOLDS. To be asked as **padded-width**.
