@@ -4152,3 +4152,14 @@ macro ARGUMENT in a filter role are separate literals, not holes, and the ruling
 `any_case(rx) := /(?i:${rx})/` now holds for a plain pattern argument (the draft's §2.7 test to be re-run under
 the new rule; its filter-role failures expected to stay); (m4) rev 27.1's PART J answers for `/(?i)(?<y>a)-${q}/`,
 q := /a/ MOVE (WHOLE `a-A` FAILS becomes HOLDS).
+
+**2026-11-18 OWNER, a question on unset-in-hole (Frank, to the predicate manager, evening; a QUESTION, nothing
+ruled).** Asked **unset-in-hole** (the draft's "an unset read has NO string" against the EMPTY readings; the
+manager's leaning: no string). HIS WORDS, in full: "unset-in-hole: "no string" means auto fail to anything that
+touches it?"
+RECORD: QUESTION. THE MANAGER'S ANSWER (from the draft's R.1.15 (3) and runs of the PCRE spellings under python
+`re` this session): no: the unset read is the rx that matches nothing, and each operation does what it does to
+that rx: followed by text or joined (`$y . "E"`), nothing (`(?<y>\d)?-\k<y>E` WHOLE `-E` FAILS); arithmetic or
+`&` on it, nothing; an ALTERNATIVE beside it survives (`(?<y>\d)?-(?:\k<y>|x)` WHOLE `-x` HOLDS); an OPTIONAL
+around it lets the path go on (`(?<y>\d)?-(?:\k<y>)?` WHOLE `-` HOLDS); another branch of the pattern is still
+tried. "Auto fail to anything that touches it" is the WHOLE-HOLE candidate, which the draft does not take.
