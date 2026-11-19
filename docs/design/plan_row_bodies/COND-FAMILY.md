@@ -5083,3 +5083,24 @@ WITHDRAWN readings of the manager's (refuted or narrowed by the round): "the pad
 (narrowed, above); reading 16's "the suggestion is harmless there" as a statement about every place (it changes
 the answer in a value hole: 2 / 132 / 132 of 364); T-c's "equal for filter-role arguments" (false for a negated
 operand: 4 / 168 / 216 of 781).
+
+### 2026-11-19 OWNER, on a condition without its parentheses
+
+His words, verbatim: "i'm not sure on you alone in a hole argument. i know outside a hole this is ok: A & 0: digit
+but parenthesis are better because you can't add more to the chain as A & 0"
+
+Class: a DOUBT about the manager's note of the entry above (a condition "alone in a hole" needing no
+parentheses), a RECOLLECTION ("outside a hole this is ok: A & 0: digit") and an OBSERVATION with a LEAN
+(parentheses are better: an unparenthesised condition cannot be followed by more of the chain). Nothing ruled.
+
+The recollection CHECKED against the record and the draft: NOT the draft's state. (1) 2026-11-14 01:00 (the
+manager's line in that discussion): "`name:` takes ONE operand term ..., tighter than `&`", under which
+`A & 0: digit` was legal and the chain could continue; (2) SUPERSEDED by the RULED entry extent (CF:698, C22):
+inside an entry `&` and `|` bind tighter than `:`; (3) the draft's consequence of that, a LEAN and not a ruling
+(§13, "New consequences: `:` outside a record is an error (`P & x: S`, `[x: S]`)"): today the draft makes
+`A & 0: digit` a COMPILE ERROR. His observation agrees with the ruled extent: after `A & 0: digit` anything added
+with `&` would belong to the SET (`digit & ...`), not to the chain.
+
+The manager's call (syntax; told to him): the condition KEEPS its parentheses everywhere for now, in a hole too
+(`${(0: digit)}`); the unparenthesised trailing form (`A & 0: digit`, `${0: digit}`) stays the draft's error
+with its meaning acknowledged, and is an item of the spellings review, where allowing it later changes no answer.
