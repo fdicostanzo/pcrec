@@ -1,20 +1,23 @@
-t1: CAUGHT ; == CHECKS: 23 of 25 OK ; tracebacks 0 ; failed: PO reading 1: longest-first arguments equal; dense shortest-first equal; the sparse shortest-first `1|0119` parts;PO mixed order parts (`000`: body `000`, fill `00`); prefix pair `123`@1
-t2: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: PO reading 2: the unbounded lazy argument equals fill under any-length-first; rev 28.1's 0 / 160 / 160 is its greedy reduction
-t3: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: PO mixed order parts (`000`: body `000`, fill `00`); prefix pair `123`@1
-t4: CAUGHT ; == CHECKS: 22 of 25 OK ; tracebacks 0 ; failed: FF the plain hole, every inline flag, against the hand-written expectations;FF reading 3: reach changes only the inherited flags (i m s); the not-inherited agree; = the plain hole; program level own;FF reading 5: B gets `i` through A; reading 7: `x`, `U` stay B's defaults at depth two
-t5: CAUGHT ; == CHECKS: 23 of 25 OK ; tracebacks 0 ; failed: FF reading 3: reach changes only the inherited flags (i m s); the not-inherited agree; = the plain hole; program level own;FF reading 4: a condition's set and a filter-role argument under the same sentence
-t6: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: FF reading 4: a condition's set and a filter-role argument under the same sentence
-t7: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: FF reading 5: B gets `i` through A; reading 7: `x`, `U` stay B's defaults at depth two
-t8: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: FF reading 6: A alone has one string; at the hole four
-t9: CAUGHT ; == CHECKS: 23 of 25 OK ; tracebacks 0 ; failed: CO reading 8 and the ruled order on `\d + 1`;CO reading 10: the candidates part on `\d + \d` and the lazy quantifier; agree on `\d\d + 1`
-t10: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: CO reading 9: nested parts from across on `(1|9) + \d`
-t11: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: CO reading 10: the candidates part on `\d + \d` and the lazy quantifier; agree on `\d\d + 1`
-t12: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: CO reading 11: one result
-t13: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: NE `% 0` never holds; a negative result yields nothing; the constant lift is empty
-t14: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: DD reading 16: fires on every `$x & S`, including the right one; never on `(x: S)`; the right one equals its suggestion
-t15: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: SC reading 15 and the ruled example
-t16: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: TA bare `year` = the last mention, paths read their parts, outside only paths
-t17: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: TB private labels do their work inside and export nothing
-t18: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: AC T-c: equal for plain and filter-role arguments under REACH in every mode; not for a written `(?-i)`
-t19: CAUGHT ; == CHECKS: 24 of 25 OK ; tracebacks 0 ; failed: FF readings 12, 13: the inserted literal's `\k<h>` and `\1` are its own; the text paste reads the outer
-ALL (=1): == CHECKS: 7 of 25 OK ; tracebacks 0
+t1: CAUGHT ; == CHECKS: 26 of 28 OK ; tracebacks 0 ; failed: PO reading 1: longest-first arguments equal; dense shortest-first equal; the sparse shortest-first `1|0119` parts;PO mixed order parts (`000`: body `000`, fill `00`); prefix pair `123`@1
+t2: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: PO reading 2: the unbounded lazy argument equals fill under any-length-first; rev 28.1's 0 / 160 / 160 is its greedy reduction
+t3: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: PO mixed order parts (`000`: body `000`, fill `00`); prefix pair `123`@1
+t4: CAUGHT ; == CHECKS: 25 of 28 OK ; tracebacks 0 ; failed: FF the plain hole, every inline flag, against the hand-written expectations;FF reading 3: reach changes only the inherited flags (i m s); the not-inherited agree; = the plain hole; program level own;FF reading 5: B gets `i` through A; reading 7: `x`, `U` stay B's defaults at depth two
+t5: CAUGHT ; == CHECKS: 26 of 28 OK ; tracebacks 0 ; failed: FF reading 3: reach changes only the inherited flags (i m s); the not-inherited agree; = the plain hole; program level own;FF reading 4: a condition's set and a filter-role argument under the same sentence
+t6: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: FF reading 4: a condition's set and a filter-role argument under the same sentence
+t7: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: FF reading 5: B gets `i` through A; reading 7: `x`, `U` stay B's defaults at depth two
+t8: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: FF reading 6: A alone has one string; at the hole four
+t9: CAUGHT ; == CHECKS: 26 of 28 OK ; tracebacks 0 ; failed: CO reading 8 and the ruled order on `\d + 1`;CO reading 10: the candidates part on `\d + \d` and the lazy quantifier; agree on `\d\d + 1`
+t10: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: CO reading 9: nested parts from across on `(1|9) + \d`
+t11: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: CO reading 10: the candidates part on `\d + \d` and the lazy quantifier; agree on `\d\d + 1`
+t12: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: CO reading 11: one result
+t13: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: NE `% 0` never holds; a negative result yields nothing; the constant lift is empty
+t14: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: DD reading 16: fires on every `$x & S`, including the right one; never on `(x: S)`; the right one equals its suggestion
+t15: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: SC reading 15 and the ruled example
+t16: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: TA bare `year` = the last mention, paths read their parts, outside only paths
+t17: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: TB private labels do their work inside and export nothing
+t18: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: AC T-c: equal for plain and filter-role arguments under REACH in every mode; not for a written `(?-i)`
+t19: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: FF readings 12, 13: the inserted literal's `\k<h>` and `\1` are its own; the text paste reads the outer
+t20: CAUGHT ; == CHECKS: 25 of 28 OK ; tracebacks 0 ; failed: PL reading 18: `\w + 1` = `\d + 1` member by member; constants outside the domain nothing; the array per member;PL reading 17: the warning only where the whole result is known nothing;PL reading 19: a non-numeral read yields nothing (as number-domain ruled)
+t21: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: PL reading 17: the warning only where the whole result is known nothing
+t22: CAUGHT ; == CHECKS: 27 of 28 OK ; tracebacks 0 ; failed: PL reading 19: a non-numeral read yields nothing (as number-domain ruled)
+ALL (=1): == CHECKS: 7 of 28 OK ; tracebacks 0

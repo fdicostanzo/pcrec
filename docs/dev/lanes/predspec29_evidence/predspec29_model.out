@@ -156,6 +156,27 @@ TB (2) `year := /(?<_v>\d{4})/ & (_v: >= 2000)`: WHOLE `2025` HOLDS ; SEARCHED `
 TB (3) `qstr := /(?<_q>["'])[^"']*${$_q}/`; `[k = qstr] SEQ "=" SEQ [v = qstr]`: WHOLE `'a'="b"` HOLDS ; SEARCHED `x 'a"="b" 'a'="b"` `'a'="b"`@10 ; FIND-ALL `'a'="b" "c"='d' 'e"='f'` [`'a'="b"`@0, `"c"='d'`@8] ; the caller's labels: k, v (and their public paths: none, qstr exports [])
 TB OK
 
+== PART PL: plus-operands RULED (rulings file R1): arithmetic on the decimal numerals only; anything else NOTHING; a warning if known
+PL reading 18 `/${\w + 1}/` member by member: 10 results 10|1|2|3|4|5|6|7|8|9 ; vs `/${\d + 1}/` 0 / 0 / 0 of 3906 ; WHOLE `10` HOLDS ; SEARCHED `xa10` `10`@2 ; FIND-ALL `a1 10 b` [`1`@1, `10`@3]
+PL reading 18 the array `["7", "x", "41"] + 1` = ['8', '42']: WHOLE `8` HOLDS ; SEARCHED `x42 8` `42`@1 ; FIND-ALL `8 x 42` [`8`@0, `42`@4]
+PL reading 18 `/${"a" + "b"}/`: NOTHING ; WHOLE `a` FAILS ; SEARCHED `x8 ab` FAILS ; FIND-ALL `8 ab a1` []
+PL reading 18 `/${"a" + 1}/`: NOTHING ; WHOLE `a` FAILS ; SEARCHED `x8 ab` FAILS ; FIND-ALL `8 ab a1` []
+PL reading 18 `/${"a" - 1}/`: NOTHING ; WHOLE `a` FAILS ; SEARCHED `x8 ab` FAILS ; FIND-ALL `8 ab a1` []
+PL reading 18 `/${"a" * 2}/`: NOTHING ; WHOLE `a` FAILS ; SEARCHED `x8 ab` FAILS ; FIND-ALL `8 ab a1` []
+PL reading 18 `/${"a" % 2}/`: NOTHING ; WHOLE `a` FAILS ; SEARCHED `x8 ab` FAILS ; FIND-ALL `8 ab a1` []
+PL reading 18 `/${"7" + "b"}/`: NOTHING ; WHOLE `a` FAILS ; SEARCHED `x8 ab` FAILS ; FIND-ALL `8 ab a1` []
+PL reading 18 `/${"7" + 1}/`: `8` ; WHOLE `a` FAILS ; SEARCHED `x8 ab` `8`@1 ; FIND-ALL `8 ab a1` [`8`@0]
+PL reading 17 the warning on `"a" + "b"`: FIRES
+PL reading 17 the warning on `"a" + 1`: FIRES
+PL reading 17 the warning on `"a" % 2`: FIRES
+PL reading 17 the warning on `\w + 1`: silent
+PL reading 17 the warning on `[a-z] + 1`: FIRES
+PL reading 17 the warning on `\d + 1`: silent
+PL OK
+PL OK
+PL reading 19 `/(?<y>\w+)-${$y + 1}/` (number-domain's answer, unchanged): WHOLE `7-8` HOLDS ; SEARCHED `x a-a1 7-8` `7-8`@7 ; FIND-ALL `7-8 a-a1 41-42` [`7-8`@0, `41-42`@9] ; WHOLE `a-a1` FAILS
+PL OK
+
 == PART AC: task T-c: any_case(rx) against the body /(?i:${rx})/ under flags-scope (and flags-in-filter REACH, reading 3)
 AC plain `ho`: body vs primitive over 781 texts (`hHoO1`, length <= 4): 0 / 0 / 0
 AC plain `h[o1]{1,2}`: body vs primitive over 781 texts (`hHoO1`, length <= 4): 0 / 0 / 0
@@ -166,4 +187,4 @@ AC   REACH: WHOLE `HO1` HOLDS ; SEARCHED `x HO1 ho` `HO1`@2 ; FIND-ALL `ho1 HO 1
 AC `any_case(quoted("ho"))` under REACH: WHOLE `"HO"` HOLDS ; SEARCHED `x "HO" "ho"` `"HO"`@2 ; FIND-ALL `"ho" "HO" "Ho"` [`"ho"`@0, `"HO"`@5, `"Ho"`@10] ; vs primitive over 781 texts (`hHoO"`, length <= 4) 0 / 0 / 0
 AC OK
 
-== CHECKS: 25 of 25 OK
+== CHECKS: 28 of 28 OK

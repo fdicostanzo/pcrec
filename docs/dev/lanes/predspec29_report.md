@@ -4,7 +4,7 @@ Deliverables: `docs/design/predicates_draft.md` REVISION 29 (head line "rev 29: 
 folded (padded-order, flags-scope, class-order, dollar-diagnostic, number-edges, same-name-count); NOT STABLE pending
 the owner's answers"); evidence `docs/dev/lanes/predspec29_evidence/` (model, output, sabotage output, CLAUDE.md); an
 index line in `docs/dev/history/claude_md/docs__dev__lanes.md`. Branch lane/predspec29, cut from lane/pred-rev28 @
-340117775; not merged, not pushed. Draft size (`wc -lc`): 9,973 lines / 1,324,481 bytes before, 10,146 / 1,359,069
+340117775; not merged, not pushed. Draft size (`wc -lc`): 9,973 lines / 1,324,481 bytes before, 10,160 / 1,364,919
 after . A FOLD revision: no restructuring. Nothing under `src/`, `cli/`,
 `lib/`, `memfn/`, `tests/`, `scripts/`; COND-FAMILY.md, plan.md, decisions.md, `predicates_future.md`, `docs/dev/pred/`
 NOT edited; no `make` other than `make -s test-plan-lint` (PASS, "checks failed: 0"); no box job.
@@ -19,10 +19,11 @@ OWED: none
   OWNER, on building rx from many bindings": HELD. STOP RULE: nothing stopped; no record line contradicted the brief.
   NOTE: lane/pred-rev28 has since gained a commit (9cc933e2c, "owner on numbers as strings over an ordered symbol
   set") after this lane's cut; it is outside the fold range and was not read into the draft.
-- RULINGS FILE `docs/dev/lanes/predspec29_rulings.md`: EMPTY at every check (before each commit and before this
-  report; last check 2026-11-19 12:52). No entry applied.
-- Evidence: CHECKS 25 of 25 OK (6 are the helper's selfchecks); t1-t19 each alone CAUGHT, no traceback; all at once
-  7 of 25.
+- RULINGS FILE `docs/dev/lanes/predspec29_rulings.md`: EMPTY until lanecheck's first run (12:52); then R1 found
+  (plus-operands, a seventh ruling to fold, readings 17-19). LAST ENTRY APPLIED: R1 (folded and tested; re-checked
+  before the final commit, no later entry).
+- Evidence: CHECKS 28 of 28 OK (6 are the helper's selfchecks); t1-t22 each alone CAUGHT, no traceback; all at once
+  7 of 28.
 
 ## RULINGS FOLDED
 
@@ -42,6 +43,13 @@ Each quoted verbatim from the record; every changed passage marked "[REV 29 ...]
   with the placeholder `pcrec.dollar.filter`, selected like every warning (§7.1).
 - **number-edges** "number-edge: nothing": R.1.16 THE NUMBER DOMAIN (the reading becomes the ruling), R.1.15 (2)'s
   pointer, A33, §R.8 row ANSWERED, §R.11 row 166.
+- **plus-operands** (rulings file R1; COND-FAMILY "2026-11-19 OWNER RULING — plus-operands"): "for now, as you say, we
+  are restricting arithmetic to digits and anything else is nothing (for runtime compatibility) and a warning if
+  known", with "i don't think + should be used for anything that isn't numbers in one form or another": R.1.14's `+`
+  paragraph (TYPE ERROR lean DROPPED; his first sentence stated as a hedged DIRECTION, not a rule), R.1.15's pointer,
+  T8, T10 (the joining mark now the sequence operator's spelling), A8, A36, §2.5 heading and quantifier-grammar row,
+  the precedence rows 4 and 5, the §R.8 row ANSWERED + REV 29 list (his three IDEAS cited, not folded), the spellings
+  row 29, §R.9, §R.11 rows 171-175.
 - **same-name-count** "same-name-count: scoped" (backreferences only; the "(and `$h`)" withdrawn): R.1.13 REFERENCES
   (2) narrowed, R.1.15, A30, A34, §R.8 row ANSWERED, §R.9, §R.11 rows 167-168.
 
@@ -65,6 +73,9 @@ Each quoted verbatim from the record; every changed passage marked "[REV 29 ...]
 | 14 | a literal `% 0` meets the "can never match" diagnostics | NOT SUPPORTED by their WORDING: `match.never` (§7.1) names an edge assertion and a product with every combination removed; neither reaches `${$y % 0}`; the constant lift `${\d % 0}` has zero values, R.1.0's `(?!)` cell, no warning. A GAP; no rule made | PART NE; §7.1 row text |
 | 15 | `$h` the last mention beside `\k<h>` the outer | SUPPORTED: `/(?<h>a)-${q};${$h}\k<h>/` WHOLE `a-b;ba` HOLDS / `a-b;ba`@9 / [`a-b;ba`@0, `a-b;ba`@14] | PART SC; t15 |
 | 16 | the dollar warning fires wherever `$x & S` is written | SUPPORTED: fires on both forms, silent on `(x: S)`; the right one equals its suggestion 0 / 0 / 0 of 364 | PART DD; t14 |
+| 17 | "a warning if known" = can-never-match where its wording reaches, else a plain warning at the operator | SUPPORTED in its ELSE branch: `match.never`'s wording (an edge assertion; a product with every combination removed) does not reach a constant non-number operand, so it is a plain warning at the operator; RULE-AS-CODE (the manager's call): fires on `"a" + "b"`, `"a" + 1`, `"a" % 2`, `[a-z] + 1`; silent on `\w + 1`, `\d + 1` | PART PL; t21 |
+| 18 | the same for `- * %` and per member for an array or class | SUPPORTED: `"a" - 1`, `"a" * 2`, `"a" % 2`, `"7" + "b"` NOTHING (WHOLE FAILS / SEARCHED FAILS / FIND-ALL []); `/${\w + 1}/` = `/${\d + 1}/` 0 / 0 / 0 of 3,906, SEARCHED `xa10` `10`@2, FIND-ALL `a1 10 b` [`1`@1, `10`@3]; `["7", "x", "41"] + 1` = [`8`, `42`]: WHOLE `8` HOLDS / `x42 8` `42`@1 / [`8`@0, `42`@4] | PART PL; t20 |
+| 19 | no ruled example changes its answer | SUPPORTED: number-domain already gave nothing for a non-numeral read: `/(?<y>\w+)-${$y + 1}/` WHOLE `7-8` HOLDS, `a-a1` FAILS / `x a-a1 7-8` `7-8`@7 / [`7-8`@0, `41-42`@9]; the only answers that move are the UNRULED TYPE ERROR candidate's (A36) | PART PL; t22 |
 | T-a | isodate x3, two part labels | inside: bare `year` = the third use (last mention) `2023` / `2023` / [`2023`, `2026`]; paths read their parts. SURPRISES: (i) unlabelled use first -> bare `year` reads END_DATE's; (ii) outside a binding, an unlabelled SEQ part exports nothing while the same pattern through a hole does | PART TA; t16 |
 | T-b | private labels doing work | three: one separator per date (`_s`), a condition's subject (`_v`), matched quotes (`_q`); none reaches the caller; every mode run | PART TB; t17 |
 | T-c | `any_case` vs `/(?i:${rx})/` | EQUAL in every mode for plain and filter-role arguments under REACH (0 / 0 / 0 of 781 each); differs for a written `(?-i)` 3 / 246 / 249. Not closed here | PART AC; t18 |
@@ -81,18 +92,20 @@ Each quoted verbatim from the record; every changed passage marked "[REV 29 ...]
 | codepoint class order | §5.5, T8 | longest first per class position: `\d + 1` `x10` `1`@1 -> `10`@1 | FOLLOWS class-order |
 | dedicated warning withdrawn; call 4 (read = group's rx) | §R.2, L28, A21 | a form-keyed warning; call 4 dropped | FOLLOWS dollar-diagnostic |
 | number-edges THE DRAFT'S READING | R.1.16 | RULED; no answer moves | FOLLOWS |
+| plus-operands' TYPE ERROR lean (the manager's); the join candidate | R.1.14, T8, T10, A8 (A36) | NOTHING, a warning if known; `+` never joins; no ruled answer moves | FOLLOWS plus-operands |
 | same-name-count THE DRAFT'S READING; REFERENCES (2) for `\k` | §R.8, R.1.13 | RULED for `\k<h>`; no answer moves | FOLLOWS |
 
 ## WHAT MOVED
 
-RULED: the six. REVERSED / REPLACED / DROPPED (§R.9 rows): the exact-first body and "the argument's order"; the
+RULED: the six, and plus-operands (R1). DROPPED: plus-operands' TYPE ERROR lean. REVERSED / REPLACED / DROPPED (§R.9 rows): the exact-first body and "the argument's order"; the
 propagate-like-`i` reading and m1's `x`; codepoint order for lifts; the dedicated warning's withdrawal and call 4;
 m2 as flags-in-filter's reading; REFERENCES (2) for `\k` across a hole. WITHDRAWN: rev 28.1's lazy-infinite statement.
 
 GREP COMMANDS (run over the draft before and after; every live site fixed or marked):
 
     for t in 'flags-scope' 'flags-in-filter' 'class-order' 'codepoint\|CODEPOINT' 'padded-order' 'two-case' \
-             'dollar-diagnostic' 'dollar-warning' 'number-edges' 'same-name-count' 'propagate like'; do
+             'dollar-diagnostic' 'dollar-warning' 'number-edges' 'same-name-count' 'propagate like' \
+             'plus-operands' 'TYPE ERROR\|type error'; do
       grep -n -- "$t" docs/design/predicates_draft.md | grep -v 'REV 29'; done
 
 The remaining unmarked hits are history: the changelog entries of earlier revisions, §R.7's REV 28.1 block (preceded
@@ -115,7 +128,7 @@ by the new REV 29 block), §R.8's REV 28 / 28.1 lists and closed rows ("this row
   / 3,230); every mode in the §R.8 row.
 - **class-index** (new): the order of a class's members in `enumerate`'s array (`.index`); codepoint vs undefined.
 - **flags-in-filter** (confirm, reading now REACH).
-- Still asked from before: plus-operands, construction-line (b) (and its finite half), other-holes, anything-text,
+- Still asked from before: construction-line (b) (and its finite half), other-holes, anything-text,
   zero-in-sequence, group-truth / pass-table, number-in-loop, hit-carry-depth, caller-ambiguous, not-test,
   condition-group, the conditional's spelling, the spellings review.
 - For the manager (GAPS, not asked): a literal `% 0` draws no diagnostic (reading 14); T-a's two surprises; T-c's
@@ -126,11 +139,12 @@ by the new REV 29 block), §R.8's REV 28 / 28.1 lists and closed rows ("this row
 - Premise: `(cd $PCREC_TMPDIR/scratch/predspec29 && timeout 900 python3 -I -B
   <worktree>/docs/dev/lanes/predspec281_evidence/predspec281_model.py > p281.out)` then `cmp` with the committed
   `.out`: rc 0; the same for `predspec28_evidence/predspec28_model.py`: rc 0.
+- R1's readings: PART PL added to the same model; the run below covers it.
 - Forward: `(cd $PCREC_TMPDIR/scratch/predspec29 && timeout 900 python3 -I -B
   <worktree>/docs/dev/lanes/predspec29_evidence/predspec29_model.py > fwd.out)`; committed as `predspec29_model.out`;
-  "CHECKS: 25 of 25 OK". Seconds.
-- Sabotage: `PREDSPEC29_SABOTAGE=tN` for N = 1..19 each alone, then `=1`; `predspec29_sabotage.out`: every tN
-  CAUGHT, tracebacks 0; all at once 7 of 25.
+  "CHECKS: 28 of 28 OK". Seconds.
+- Sabotage: `PREDSPEC29_SABOTAGE=tN` for N = 1..22 each alone, then `=1`; `predspec29_sabotage.out`: every tN
+  CAUGHT, tracebacks 0; all at once 7 of 28.
 - Controls: libpcre2-8 10.46 via `../rxmodel_evidence/pcre2h.py` (run, never read; D181), python `re`. No PCRE2
   SOURCE fact was needed (every PCRE2 fact used is behaviour, run, including the `(?^)` / `(?-U:)` mechanics).
 - Checks: `make -s test-plan-lint` PASS ("checks failed: 0"); pre-commit staged checks 52 passed.

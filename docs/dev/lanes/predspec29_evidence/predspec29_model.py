@@ -19,6 +19,8 @@
 #   SC  same-name-count RULED scoped; reading 15 (`$h` the last mention beside `\k<h>` the outer group).
 #   TA  task T-a: his isodate example under the label rules AS DEFINED (export-rule (2)-(4)).
 #   TB  task T-b: private labels doing real work.
+#   PL  plus-operands RULED (the rulings file R1: "for now ... we are restricting arithmetic to digits and anything
+#       else is nothing (for runtime compatibility) and a warning if known"): readings 17-19.
 #   AC  task T-c: `any_case` against `/(?i:${rx})/` under the flags rulings, filtered arguments included.
 #
 # CONTROLS: libpcre2-8 through ../rxmodel_evidence/pcre2h.py (run, never read: D181); python `re`; direct python
@@ -46,7 +48,10 @@
 #     t16 TA: a part label HIDES its part's labels from a bare reference;
 #     t17 TB: a private label exported out of its binding;
 #     t18 AC: the body drops the argument's own written `(?-i)`;
-#     t19 FF: the inserted literal's `\k<h>` spelt as PCRE's text paste under `(?J)` (rev 28.1's reading).
+#     t19 FF: the inserted literal's `\k<h>` spelt as PCRE's text paste under `(?J)` (rev 28.1's reading);
+#     t20 PL: `+` JOINS a non-number member to its operand (the join candidate he closed);
+#     t21 PL: the warning fires when only SOME members are outside the domain;
+#     t22 PL: a non-numeral READ joined instead of yielding nothing.
 import os, sys, re, itertools, random
 import re._parser as SRE
 import re._constants as SC
@@ -56,7 +61,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "rxmodel_evidence"))
 import pcre2h as P                                           # noqa: E402
 
 _sv = os.environ.get("PREDSPEC29_SABOTAGE", "")
-SABS = set("t%d" % i for i in range(1, 20)) if _sv == "1" else set(x for x in _sv.split(",") if x)
+SABS = set("t%d" % i for i in range(1, 23)) if _sv == "1" else set(x for x in _sv.split(",") if x)
 def sab(k): return k in SABS
 
 CHECKS = []
@@ -721,6 +726,53 @@ tb[3] = (fW(prog3, "'a'=\"b\""), fW(prog3, "'a\"=\"b\""), exported(["_q"]))
 print("TB %s" % check("TB private labels do their work inside and export nothing",
       tb[1][:2] == ("HOLDS", "FAILS") and tb[2][:2] == ("HOLDS", "FAILS") and tb[3][:2] == ("HOLDS", "FAILS")
       and tb[1][2] == tb[2][2] == tb[3][2] == []))
+
+# =====================================================================================================================
+print("\n== PART PL: plus-operands RULED (rulings file R1): arithmetic on the decimal numerals only; anything else NOTHING; a warning if known")
+def op_(a, op, b):
+    """RULE-AS-CODE of the ruling: `a op b` on one pair of strings; a non-numeral operand yields nothing"""
+    if sab("t20") and op == "+" and not (canon(a) and canon(b)):
+        return a + b
+    return arith(a, op, int(b)) if canon(b) else None
+W_CLS = [chr(c) for c in range(48, 58)] + [chr(c) for c in range(65, 91)] + ["_"] + [chr(c) for c in range(97, 123)]   # \w (ASCII)
+wl = uniq(by_len(op_(m, "+", "1") for m in W_CLS))
+dl = uniq(by_len(op_(m, "+", "1") for m in DIG))
+dw, _ = diff3(alt_rx(wl), alt_rx(dl), CP)
+print("PL reading 18 `/${\\w + 1}/` member by member: %d results %s ; vs `/${\\d + 1}/` %d / %d / %d of %d ; %s"
+      % (len(wl), "|".join(wl), dw[0], dw[1], dw[2], len(CP), show(alt_rx(wl), "10", "xa10", "a1 10 b")))
+arr = uniq(r for r in (op_(m, "+", "1") for m in ["7", "x", "41"]) if r is not None)
+print("PL reading 18 the array `[\"7\", \"x\", \"41\"] + 1` = %s: %s" % (arr, show(alt_rx(arr), "8", "x42 8", "8 x 42")))
+consts = {}
+for a, op, b in (("a", "+", "b"), ("a", "+", "1"), ("a", "-", "1"), ("a", "*", "2"), ("a", "%", "2"), ("7", "+", "b"), ("7", "+", "1")):
+    r = op_(a, op, b)
+    consts["%s %s %s" % (a, op, b)] = r
+    print("PL reading 18 `/${\"%s\" %s %s}/`: %s ; %s" % (a, op, b if canon(b) else '"%s"' % b, "NOTHING" if r is None else "`%s`" % r,
+          show(alt_rx([] if r is None else [r]), "a", "x8 ab", "8 ab a1")))
+def warns_arith(members_a, op, b):
+    """RULE-AS-CODE (the manager's call in the record, reading (b)): the warning speaks only when the WHOLE result is
+    KNOWN to be nothing at compile time (a constant or enumerable operand every member of which is outside)"""
+    res = [op_(m, op, b) for m in members_a]
+    if sab("t21"):
+        return any(r is None for r in res)
+    return all(r is None for r in res)
+WA = {"\"a\" + \"b\"": warns_arith(["a"], "+", "b"), "\"a\" + 1": warns_arith(["a"], "+", "1"), "\"a\" % 2": warns_arith(["a"], "%", "2"),
+      "\\w + 1": warns_arith(W_CLS, "+", "1"), "[a-z] + 1": warns_arith([chr(c) for c in range(97, 123)], "+", "1"), "\\d + 1": warns_arith(DIG, "+", "1")}
+for k, v in WA.items():
+    print("PL reading 17 the warning on `%s`: %s" % (k, "FIRES" if v else "silent"))
+print("PL %s" % check("PL reading 18: `\\w + 1` = `\\d + 1` member by member; constants outside the domain nothing; the array per member",
+      dw == [0, 0, 0] and wl == dl and arr == ["8", "42"] and consts["a + b"] is None and consts["a % 2"] is None and consts["7 + 1"] == "8"))
+print("PL %s" % check("PL reading 17: the warning only where the whole result is known nothing",
+      [WA[k] for k in WA] == [True, True, True, False, True, False]))
+# reading 19: run-time reads that are no numeral already yielded nothing under number-domain
+def rd(c, v):
+    y = c.get("y")
+    r = (y + "1") if (sab("t22") and not canon(y)) else op_(y, "+", "1")
+    return v is not None and v == r
+h19 = hole(r"(?<y>\w+)-", rd)
+print("PL reading 19 `/(?<y>\\w+)-${$y + 1}/` (number-domain's answer, unchanged): %s ; WHOLE `a-a1` %s"
+      % (show(h19, "7-8", "x a-a1 7-8", "7-8 a-a1 41-42"), fW(h19, "a-a1")))
+print("PL %s" % check("PL reading 19: a non-numeral read yields nothing (as number-domain ruled)",
+      trip(h19, "7-8", "x a-a1 7-8", "7-8 a-a1 41-42") == ("HOLDS", "`7-8`@7", "[`7-8`@0, `41-42`@9]") and fW(h19, "a-a1") == "FAILS"))
 
 # =====================================================================================================================
 print("\n== PART AC: task T-c: any_case(rx) against the body /(?i:${rx})/ under flags-scope (and flags-in-filter REACH, reading 3)")
