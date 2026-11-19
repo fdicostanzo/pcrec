@@ -4239,3 +4239,24 @@ example compiles); `left(/\d+/, 2)` a compile error (infinite); a lookbehind at 
 already gives. (m2) this is array-lift (RULED) with "array" read as "what enumerate lists"; (m3) option (i) is
 the most conservative and would refuse the morning's ruled array examples; "specific forms" without a declared
 line would make which programs compile a property of the compiler's effort.
+
+**2026-11-18 OWNER RULING — construction-line: enumerate (Frank, to the predicate manager, evening).** ASKED AS A
+RULING (slug construction-line, with three choices: one string only; try specific forms; "`left(A, n)` works
+exactly where `enumerate(A)` works": the function applied to each string `enumerate` lists, in its order;
+anything `enumerate` refuses a compile error; a read `$y` the one-string case at run time; the manager's leaning
+the enumerate line). HIS WORDS, in full: "construction-line: enumerate".
+RULED: a single-value function (`left`, `length`, arithmetic; his examples) accepts an rx exactly where
+`enumerate` accepts it (a finite rx within the budget, no assertion looking outside): it is applied to each
+enumerated string, in enumerate's order; any other rx is a COMPILE ERROR, its meaning acknowledged (UNDER
+CONSTRUCTION); a read is the one-string case, at run time. This places the line of match-is-rx (4) and
+read-is-constant (4). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) construction-
+line (a) is answered: arithmetic over an array the user writes is BUILT (the morning's array-lift examples stand);
+(m2) **lift-order** is answered by consequence: the order is enumerate's (§5.5: PCRE priority order, class
+members in codepoint order, the latter a LEAN there); with several operands array-lift's "first operand slowest"
+(RULED) orders the product; (m3) `\d + 1` compiles (ten strings); `left(/\d+/, 2)` does not; (m4) `/a|b/` and
+`"a" | "b"` get one answer (the question (m5) of the clarification entry is closed by this ruling); (m5)
+construction-line (b), a READ in a count / class / option position, is NOT touched by this ruling and stays as
+the draft has it; (m6) the hand-worked table put to him is to be RUN by the revision lane.
+MANAGER'S CALL (an answer-free choice: no text and no compiled program differs; told to him, not asked):
+**under-construction-class**: the error keeps ITS OWN class, worded as under construction (the draft's reading),
+on his words "the error is an "under construction" sign"; closed unless he objects.
