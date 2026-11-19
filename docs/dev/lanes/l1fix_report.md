@@ -97,6 +97,11 @@ changed, are queued (STATE AT HANDOFF).
   - `4633830d6` F12;
   - this report.
 - **Rulings file** `l1fix_rulings.md`: empty. Last applied: none.
+OWED: none (as the deliver file declares); the queued box-queue jobs below are the merge's runs, listed for the manager to adjust per the brief.
+- **One commit landed after mechA started** (13:16:24): this OWED line, plus lane l1build's untracked deliver
+  file, which lanecheck's clean-tree item requires and which is committed by convention like the other 239
+  `*_deliver.txt`. Both are docs only. No file any queued row plants, builds or reads (`SAB_REACH_POP`) changed,
+  so the rows still measure one source tree.
 - **Not done (as ruled):**
   - F5, F11 and F13 are DOC for the next span_arms revision, including the S899 design sentence (F2's DOC half).
   - F7 beyond the row-5 note is PLAN; F14 is NOTED.
