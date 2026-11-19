@@ -4223,3 +4223,7 @@ Main ruled on the four kit findings (D186 add. 2):
   Morning lane owed: the loaded-vs-quiet summary for main/Frank. Night queue empty; no kit job pending.
 - NIGHT TOTAL: set 2 700-702 GREEN (h*=64), 703 C3 re-run owed (day window, main asks Frank by 10:00), 704 after it
   (REBUILT_BUILD only); set 1 INCONCLUSIVE-AT-NOISE (record owed); calibration GREEN (summary owed); h*=64 ceiling note owed.
+- 08:36 C3 window cleared by Frank (via main): job 705-kit-fcards-c3rerun (lane c3rerun, sonnet; reviewed against cards.py
+  cmd_rerun :1273-1300) QUEUED, key kit-fcards-c3rerun: `cards.py rerun RUNDIR` (rule_703's NEXT line) then `rule` -> rule_705.txt;
+  a freshness guard on results_c3_h64_rerun.tsv (time_cells appends); a confirm-instead path ends rc=1 "manager rules". 704
+  HELD for main's REBUILT_BUILD (main's cover-cap rebuild lane, h*=64 compiled in).
