@@ -1,0 +1,25 @@
+predspec281 sabotage runs: PREDSPEC281_SABOTAGE=tN for N = 1..22, each alone, then =1 (all at once); one line per run: CAUGHT = its run fails at least one check
+t1: CAUGHT ; CHECKS: 27 of 28 OK ; failed: PR enumerator = libpcre2's priority order; rev 28's order parts ; tracebacks 0
+t2: CAUGHT ; CHECKS: 27 of 28 OK ; failed: PR product first slowest = PCRE's concatenation order ; tracebacks 0
+t3: CAUGHT ; CHECKS: 26 of 28 OK ; failed: PR refusals as §5.5 states them (edge assertion; infinite; budget) and the model's own (NOT STATED);TT one class per operand, the hand-written table ; tracebacks 0
+t4: CAUGHT ; CHECKS: 25 of 28 OK ; failed: PR product first slowest = PCRE's concatenation order;CO codepoint order's answers;PO no one body keeps the argument's order for an infinite argument ; tracebacks 0
+t5: CAUGHT ; CHECKS: 26 of 28 OK ; failed: PO two-case body = definition in WHOLE, parts in SEARCHED/FIND-ALL; per-member = argument order;PO no one body keeps the argument's order for an infinite argument ; tracebacks 0
+t6: CAUGHT ; CHECKS: 27 of 28 OK ; failed: PO no one body keeps the argument's order for an infinite argument ; tracebacks 0
+t7: CAUGHT ; CHECKS: 27 of 28 OK ; failed: FF flags-in-filter: (a) parts from the plain hole, (b) equals it ; tracebacks 0
+t8: CAUGHT ; CHECKS: 27 of 28 OK ; failed: FF x and #: three readings, the text paste a compile error ; tracebacks 0
+t9: CAUGHT ; CHECKS: 27 of 28 OK ; failed: FF n, U, xx, J, branch carry ; tracebacks 0
+t10: CAUGHT ; CHECKS: 27 of 28 OK ; failed: FF caseful hole stays caseful ; tracebacks 0
+t11: CAUGHT ; CHECKS: 27 of 28 OK ; failed: FF any_case with a written flag differs ; tracebacks 0
+t12: CAUGHT ; CHECKS: 26 of 28 OK ; failed: NW differ = narrower, every op; the every-mode lines;NW WIDTH KEPT = padded(r, strlen($y)) ; tracebacks 0
+t13: CAUGHT ; CHECKS: 27 of 28 OK ; failed: NW two reads part; intermediate width parts ; tracebacks 0
+t14: CAUGHT ; CHECKS: 27 of 28 OK ; failed: NW WIDTH KEPT = padded(r, strlen($y)) ; tracebacks 0
+t15: CAUGHT ; CHECKS: 27 of 28 OK ; failed: NE `% 0` never holds; a negative result yields nothing ; tracebacks 0
+t16: CAUGHT ; CHECKS: 27 of 28 OK ; failed: SN the error at the backreference, the literal legal, `\2` legal, the corrected witness ; tracebacks 0
+t17: CAUGHT ; CHECKS: 27 of 28 OK ; failed: DD fires on the never-holding program, not on the holding one; never on a program that holds ; tracebacks 0
+t18: CAUGHT ; CHECKS: 27 of 28 OK ; failed: RC per-member lift ; tracebacks 0
+t19: CAUGHT ; CHECKS: 27 of 28 OK ; failed: TT one class per operand, the hand-written table ; tracebacks 0
+t20: CAUGHT ; CHECKS: 27 of 28 OK ; failed: UN never-matching spelling; the lookbehind facts ; tracebacks 0
+t21: CAUGHT ; CHECKS: 27 of 28 OK ; failed: PW `0*` admits two zeros ; tracebacks 0
+t22: CAUGHT ; CHECKS: 27 of 28 OK ; failed: NC the ruling's worked example ; tracebacks 0
+ALL AT ONCE (=1): == CHECKS: 6 of 28 OK ; tracebacks 0
+(all at once: only the six helper selfchecks stay OK)
