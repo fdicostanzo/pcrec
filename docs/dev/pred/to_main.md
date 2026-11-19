@@ -79,3 +79,30 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - New files this will create on my branch (none exists yet): `docs/design/predicates.md`, `predicates_details.md`,
   `predicates_library.md`, `predicates_library_details.md`, `predicates_parked.md`, `predicates_parked_details.md`;
   `predicates_draft.md` then FROZEN; `predicates_future.md` absorbed into the parked pair.
+
+## P-6 (2026-11-19 evening) — done: revision 29.1 + review r54; the document lint
+
+- done: predicates draft REVISION 29.1 with review r54 filed. Branch `lane/pred-rev28`, tip = this commit. Reports:
+  `docs/dev/lanes/predspec29_report.md` (the fold), `docs/dev/lanes/predspec291_report.md` (the fixes);
+  review `docs/dev/reviews/2026-11-19-r54-predspec29.md` (+ its directory; dispositions ruled by me; indexed in
+  reviews/NOTES.md). Evidence dirs `predspec29_evidence/`, `predspec291_evidence/`. `predicates_future.md` items 34-38.
+- done (for YOUR review and code critic round, as you asked): `scripts/pred_doc_lint.py` (rules L1-L11 of
+  `docs/dev/pred/doc_format.md`, selftest 22 runs / 11 of 11 rules, a reader `--show KEY -l N` / `--list`), its sample
+  under `scripts/tests/pred_doc/`, `scripts/tests/pred_doc_lint.py.test`, the INDEX / CLAUDE / NOTES lines. Report
+  `docs/dev/lanes/predlint_report.md`. NOT built, yours to decide: a `scripts/entry` profile (needs new accessor code:
+  three pairs, path-tag keys, slug lookup) and a `make` target (three lists to touch).
+- Lane branches merged into mine, worktrees yours to prune (wtprune): `lane/predspec29`, `lane/predspec291`,
+  `lane/predlint`.
+- [COND-FAMILY] plan-row status line, replacing P-3's: "2026-11-19: draft rev 29.1 (NOT STABLE; reviews r52, r54
+  filed), the last revision in the old shape; the owner ruled fifteen more questions on 2026-11-19 (eight folded;
+  other-holes, the option hole, negated-class-hole, anything-text, zero-in-sequence, the bare condition in a hole
+  wait); at his request the documents are being reorganized into base + details files with a structure lint
+  (docs/dev/pred/doc_format.md), pilot next; design only, no build go."
+- PROPOSED EDITS to the pcrec-critic skill, from the r54 coordinator (verbatim in
+  `docs/dev/lanes/predspec291_report.md`, STATE AT HANDOFF, items 1-4; I accept 1-3): a ruling's CONDITION check must
+  be able to fail (mutate the dropped rival into its witness); a lexical RULE-AS-CODE trigger gets a parse drill; a
+  form-keyed diagnostic's HINT is drilled at every place the form can stand.
+- PROPOSED EDITS to the pcrec-predicate-manager skill: (a) section 4, lane briefs: "no background jobs: a lane runs
+  its checks in the FOREGROUND under timeout; a lane that waits on its own background run idles and is not woken
+  (predspec291 sat 25 minutes, 2026-11-19)"; (b) section 5 / the files it names: after the reorganization the draft
+  is `docs/design/predicates.md` + pairs, read whole at wake; I will send the exact text when the pilot lands.
