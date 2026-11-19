@@ -5241,3 +5241,17 @@ The reading taken, and told to him: this is his go to BUILD the documentation or
 lint; no product code), the manager deciding its form; "use subagents to search for analogies in history" is
 read as a USE the files must serve (item 4), and the manager also applies it once now, to the design itself
 (what this project's own document splits rejected and why: [DOC-INDEX], D192).
+
+### 2026-11-19 MANAGER — after lane predspec291 (rev 29.1): review r54 applied and filed (no owner words)
+
+Lane predspec291 (`docs/dev/lanes/predspec291_report.md`; evidence 41 of 41, sabotages t1-t35 each caught)
+applied P29-1..16 as ruled and folded padded-lazy-sparse ("stated behavior") by its rulings file R1; review r54 is
+filed (`docs/dev/reviews/2026-11-19-r54-predspec29.md`, dispositions ruled). The manager's four readings of the
+brief: all SUPPORTED. No printed RULED answer moved. A FACT the lane added on padded-lazy-sparse, recorded so the
+manager's words to the owner are not left wider than the runs: the comparison "the dropped body equals per-string
+fill" depends on the fill reference: with the members taken SHORTEST FIRST (the review's and the manager's
+`padlazy.py` reference) ruled 0 / 2,688 / 2,688, dropped 0 / 0 / 0; with the members in `enumerate`'s priority
+order NEITHER body equals fill (ruled 0 / 168 / 168, dropped 0 / 2,520 / 2,520). His ruling ("stated behavior")
+does not rest on either count. Draft = REVISION 29.1, the LAST revision in the old shape; the rulings since its
+fold (other-holes, the option hole, negated-class-hole, anything-text, zero-in-sequence, the bare condition in a
+hole) and the lane's list of nine draft sentences they contradict go into the reorganized documents.

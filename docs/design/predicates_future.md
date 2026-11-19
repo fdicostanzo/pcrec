@@ -754,3 +754,18 @@ its trigger (build under measurement, D77).
 - THE LANGUAGE POINT (the manager's reading): a body that is one filter or one sequence keeps the argument's order;
   a body that is an alternation of filtered copies imposes its own.
 - TRIGGER: the library's macro list being specified; not before (his direction: no deep dives into one macro).
+
+## 37. One cause-free "known nothing" warning (review r54 GENERAL-2; nothing scheduled)
+
+- SOURCE: review r54 item P29-7; COND-FAMILY "2026-11-19 MANAGER — review r54 of rev 29".
+- THE IDEA (the critic's): every compile-time "this rx can never match" (a count hole emptied, an edge that cannot
+  hold, zero values, an out-of-domain operand or result) is ONE warning with one name, the cause in its text.
+- TRIGGER: naming the arithmetic warning and the dollar warning (the manager's owed call), or a fourth such case.
+
+## 38. Warnings as rows: form, places, look-alike (review r54 GENERAL-7; nothing scheduled)
+
+- SOURCE: review r54 item P29-12; the `$x & S` warning, the arithmetic warning, the `[^${c}]` warning (negated-class-hole).
+- THE IDEA (the critic's): each structural warning is a table row: the FORM it keys on, the PLACES it fires, the
+  LOOK-ALIKE it points at and where that hint is a drop-in.
+- TRIGGER: a third form-keyed warning with a hint (reached: the `join` warning); fold when the diagnostics section
+  of the reorganized core file is written.

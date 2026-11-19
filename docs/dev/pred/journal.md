@@ -220,3 +220,9 @@ own --show/--list reader covers the need. doc_format.md corrected (tag depth, `s
 predspec291: its watcher exited QUIET (25 min, rc 10): the lane had idled "waiting" on its own background sabotage
 run, which had finished 20 min earlier. Woken by message; watcher re-armed. LESSON (already a rule for critic
 coordinators, r53): a lane brief must say "no background jobs: run checks in the foreground under timeout".
+
+## 2026-11-19 (evening) — rev 29.1 delivered to main
+predspec291 DELIVERED (lanewatch DONE after the wake message; R1 applied), MERGED (plan-lint clean), TaskStopped.
+Draft = REVISION 29.1 (10,275 lines), review r54 filed. Record entry "after lane predspec291" (the fill-reference
+fact on padded-lazy-sparse). Ideas items 37, 38 (the round's two general forms). to_main P-6 (done lines, status
+line, proposed skill edits); main messaged. NEXT: the pilot lane of the reorganized documents.
