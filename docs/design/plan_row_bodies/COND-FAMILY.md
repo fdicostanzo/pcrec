@@ -4089,3 +4089,31 @@ names (`length`, `pad`: placeholders, to the spellings review); the keyword-para
 pending). THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) the body is the two-case
 macro of the clarification entry's (m2) (no computed count); (m2) with no width, `padded(rx)` stays the ruled
 2026-11-15 body (any number of zeros).
+
+**2026-11-18 OWNER RULING — hole-flags: a hole takes the flags in force at the hole; each regex literal has its
+own flags; and his question, do flags propagate down (Frank, to the predicate manager, evening).** ASKED AS A
+RULING (slug hole-flags; the proposed rule: "flags belong to pattern text that was written with them (a binding
+like `q := /a/` keeps its own, as a PCRE group call does); plain text with no flags of its own (a read, a string
+constant, a number) takes the options in force at the hole (as a PCRE backreference does)"; with libpcre2 runs of
+the two PCRE analogues on `a-A` under `(?i)`: the backreference HOLDS, the call to a group defined caseful FAILS;
+and `/(?i)(?<y>a)-${$y | "x"}/` in the three modes under python `re`). HIS WORDS, in full: "hole-flags: i have
+heard you say both that the ${} gets the flags in force and also that a hole has its own flags. i agree with your
+interpretation of flags and holes. a hole takes the flags in force at the hole. each regex literal has its own
+flags. do the flags propagate down though? /(?i)${/blah/}/ is blah case insensitive?"
+RULED: (1) a hole takes the flags in force at the hole; (2) each regex literal has its own flags. WHICH READING OF
+"i agree with your interpretation" THE MANAGER TOOK: the proposed rule as quoted above (plain text in a hole, a
+read or a string constant, takes the hole's options; a pattern written as a literal carries its own). OBSERVATION,
+his: he has heard both "the `${}` gets the flags in force" and "a hole has its own flags" (the draft says both:
+the value-hole form, and §11 NO INHERITED FLAGS / §13 O32, the latter the draft's own rule, never his). His
+QUESTION (a question, NOT ruled): do the flags propagate DOWN: in `/(?i)${/blah/}/` is `blah` case insensitive.
+Put back to him as **flags-propagate**. RUN this session (python `re`): no propagation, `(?i)id-(?-i:blah)`: WHOLE
+`id-BLAH` FAILS, `ID-blah` HOLDS, SEARCHED `x ID-BLAH` no match, FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0,
+`Id-blah`@16]; propagation, `(?i)id-(?:blah)`: HOLDS, HOLDS, `ID-BLAH`@2, [`id-blah`@0, `ID-BLAH`@8,
+`Id-blah`@16]. THE MANAGER'S READINGS (mine, to be tested by the next revision lane): (m1) his 2026-11-17
+hole-reading ruling ("a HOLE is the inserted pattern as a WHOLE, in a non-capturing group, matched in place";
+his own example `/xxx${/foo/}yyy/` = `/xxx(?:foo)yyy/`) read as TEXT gives propagation (`(?i)(?:blah)` is
+caseless in PCRE), while PCRE's group CALL keeps the definition's flags: the two PCRE analogues disagree, so the
+record does not settle it; (m2) under propagation the rule becomes ONE sentence for everything in a hole (the
+flags in force at the hole are the starting flags of what is inserted; flags a literal writes itself win), and
+the candidate body `any_case(rx) := /(?i:${rx})/` (the draft's §2.7: not expressible under NO INHERITED FLAGS)
+would hold for a plain pattern argument, not for arguments holding a filter role (the draft's own earlier test).
