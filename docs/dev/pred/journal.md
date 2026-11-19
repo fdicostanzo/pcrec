@@ -159,3 +159,9 @@ new owner questions class-positions, class-index; T-a's two surprises and T-c to
 chat (three places, runs in scratch/pred/otherholes.py). LAUNCHED coordinator crit-predspec29 (opus, background),
 design mode, review r54. On hand-back: rule dispositions, FIX lane predspec291 (rev 29.1 + files the review), merge,
 `done:` to main.
+
+## 2026-11-19 (afternoon) — other-holes RULED
+Frank: class member and range end = an alternation of the class, one per value (collapses to one class; range
+errors removed from the alternation); option hole with several values = error. Place 2 differs from my leaning.
+Recorded with runs and seven readings; a negated class is not covered (`[^x]|[^y]` vs `[^xy]` part): asked as
+negated-class-hole. NOT in rev 29 (round r54 frozen on it): goes to the fix lane (rev 29.1) with r54's dispositions.

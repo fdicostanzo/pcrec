@@ -4830,3 +4830,41 @@ a class under a lazy quantifier), class-index (the order of a class's members in
 T-a's two surprises under the label rules as defined (a bare `year` reads a labelled part's when the unlabelled use
 comes first; an unlabelled sequence part exports nothing outside its binding while the same pattern through a hole
 does); T-c (any-case-body: `/(?i:${rx})/` equals the primitive except for an argument that writes `(?-i)`).
+
+### 2026-11-19 OWNER RULING — other-holes
+
+His words, verbatim: "other holes: 1. classes should be alternations on the class like [x] | [y] like patterns. in
+practice, that means [xy] 2.  range end: again, alternation [a-z]|[x-z] which collapses to [a-z]. remove range errors
+from alternations 3. options: error. no clear semantics"
+
+Class: RULING (a slug answer to other-holes, asked with three places and "you can answer the three places
+separately"). On place 2 his answer is NOT the manager's leaning (which was "one value; an array is a compile error").
+
+The rule as ruled: (1) several values in a CLASS MEMBER hole are an ALTERNATION OF THE CLASS, one class per value, as
+a pattern hole is an alternation ("like patterns"): `[${c}]`, c := [x, y], is `[x] | [y]`, "in practice" `[xy]`.
+(2) several values in a RANGE END are again an alternation of the class, one per value: `[${lo}-z]`, lo := [a, x], is
+`[a-z]|[x-z]`, which collapses to `[a-z]`; a member whose range is an error (ends out of order) is REMOVED from the
+alternation, not a compile error. (3) several values in an OPTION hole: a compile ERROR ("no clear semantics").
+
+RUN (`$PCREC_TMPDIR/scratch/pred/otherholes.py`, `otherholes2.py`, python `re`): `(\w*)(?:[x]|[y])` against
+`(\w*)[xy]`, capture included: 0 / 0 / 0 of 341 texts over `xya-`, length <= 4 (WHOLE / SEARCHED / FIND-ALL);
+`[${c}q]` as `(?:[xq]|[yq])` against `[xyq]`: WHOLE `x` `y` `q` HOLD, `a` FAILS / SEARCHED `-ayq` `y`@2 / FIND-ALL
+`x y q a` [`x`@0, `y`@2, `q`@4], equal; range end `(?:[a-z]|[x-z])`: WHOLE `b` HOLDS / SEARCHED `-b y` `b`@1 /
+FIND-ALL `b a y` [`b`@0, `a`@2, `y`@4]; `[${lo}-m]`, lo := [a, x] with `x-m` removed: `[a-m]`, WHOLE `b` HOLDS, `x`
+FAILS / SEARCHED `-xb` `b`@2 / FIND-ALL `b x n a` [`b`@0, `a`@6].
+
+The manager's readings, for the next lane to test: (a) the alternation is of the CLASS, not of the literal holding
+it (no copies: the count-hole product is not used here), so a class alternation never reorders the rest of the
+pattern; one-character alternatives at one position cannot both match, so the alternation's order is unobservable
+and the collapse to one class is exact for a NON-NEGATED class. (b) A NEGATED class is NOT covered by his example
+and the two spellings part: `/a[^${c}]/`, c := [x, y]: the alternation `[^x]|[^y]` accepts every character (WHOLE
+`ax` HOLDS; SEARCHED `ax ab` `ax`@0; FIND-ALL `ax ay ab` all three), the one class `[^xy]` does not (`ax` FAILS;
+`ab`@3; [`ab`@6]). ASKED as **negated-class-hole**; the ruling is not stretched over it. (c) every member removed
+(or ZERO values, `[${[]}x]`): an alternation of no members, the never-matching rx, as the pattern hole's cell; this
+REPLACES the draft's class cell for zero values (`[${[]}x]` = `[x]`, a draft reading); with the can-never-match
+warning where its wording reaches. (d) two holes in one class (`[${a}${b}]`, `[${lo}-${hi}]`): the alternation over
+every combination, in product-order's order (unobservable for a non-negated class). (e) the draft's reading "a range
+whose ends are out of order: a compile error" stands for a range WRITTEN with single values (as PCRE has it); the
+removal is for members of an alternation, his words. (f) an option hole with ONE value is unchanged. (g) the
+count-hole details filed under other-holes (a member that is not a count: a kind error; a count PCRE refuses: its
+copy removed) are NOT touched by his words and stay the draft's readings.
