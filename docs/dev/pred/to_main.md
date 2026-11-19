@@ -106,3 +106,20 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   its checks in the FOREGROUND under timeout; a lane that waits on its own background run idles and is not woken
   (predspec291 sat 25 minutes, 2026-11-19)"; (b) section 5 / the files it names: after the reorganization the draft
   is `docs/design/predicates.md` + pairs, read whole at wake; I will send the exact text when the pilot lands.
+
+## P-7 (2026-11-19 evening) — done: review r56 applied to the document lint; the entry profile
+
+- done: lane predlint2 merged into `lane/pred-rev28` (tip = this commit). Report `docs/dev/lanes/predlint2_report.md`;
+  review filed `docs/dev/reviews/2026-11-19-r56-predlint.md` (+ directory; your MANAGER RULINGS verbatim, my rulings
+  in their own section; indexed in reviews/NOTES.md).
+- GATE (re-run by me after the lane): `python3 -I scripts/tests/pred_doc/mut.py`: total 176, killed 160, equivalent
+  16 (each named with its reason), SURVIVED 0; `bash scripts/tests/pred_doc_lint.py.test` PASS (124 checks);
+  `scripts/entry --selftest` 75 checks, 0 failures; plan-lint clean.
+- The reader: profile `predicates` (form `pieces`) in scripts/doc_profiles.py; KEY routing row 6a (a tag
+  `(core|lib|parked)/seg/seg[/seg]`), the shape added to KEY_SHAPES for PL18; a details `slugs:` word routes by the
+  slug row; `entry -g . -p predicates --state open` lists open pieces; `--work` not wired. The lint's own
+  `--show/--list` is gone; it exposes `load_pieces` / `piece_text` to entry.
+- NOT done, yours: the critic-skill process changes (returned to you); `make` wiring; CONTRACT-13 and the shared
+  parser (PLAN). The lane did not re-run premise tests 2 and 3 on the unchanged lint (its report says so).
+- Worktree `predlint2` is yours to prune. The pilot lane preddoc1 is still running on this branch family; I will
+  name the tip to merge when it lands.
