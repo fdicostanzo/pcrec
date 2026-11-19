@@ -4767,3 +4767,26 @@ the digit SET but not each digit's VALUE or the case of a RESULT (class-order, r
 members have NO order"); for `[\da-f]` under `i` codepoint order happens to give the right values, for other
 alphabets it does not; so the class would be one field of a numeral declaration, or the order must come from
 somewhere stated. Ideas file item 35.
+
+### 2026-11-19 OWNER, discussing the base idea: numbers are strings over an ordered set of symbols
+
+His words, verbatim: "if i allowed letters, the + would define the order as digits followed by letters as per normal.
+also, it would probably require spans without gaps. my point is that this is numbers but it is also strings which are
+basically symbols. if i have an ordered set of symbols, i can do the arithmetic on them and "a" + "b" makes sense
+when those types are defined as part of an ordered set of symbols (ie. not as written)"
+
+Class: DISCUSSION / IDEA (it elaborates ideas-file item 35; no slug answer; nothing ruled). What he states: (1) with
+letters allowed, the order of the symbols is digits then letters, "as per normal"; (2) "probably" the class must be
+spans without gaps; (3) a number is a string over an ORDERED SET OF SYMBOLS, and arithmetic is defined on such a set;
+(4) `"a" + "b"` has a meaning WHEN its operands are typed as members of such a set, and not as bare written strings
+("not as written").
+
+The manager's readings (told to him as readings; for a later lane to test): (a) this is a generalization of the
+number domain, not a second meaning of `+`: the domain is "canonical numerals over an ordered symbol set", the
+decimal digits being the set in force when none is given; number-domain's and number-edges' rulings are its decimal
+case. (b) it is consistent with his sentence of the entry above (`+` is for "numbers in one form or another") and
+with the join candidate staying closed: `"a" + "b"` under digits-then-letters is `15` in base 16 and `l` in base 36
+(RUN, python), never `ab`. (c) with no symbol set given, `"a" + "b"` is outside the decimal domain; whether that
+yields nothing or an error is the still-open half of plus-operands. (d) open under the idea, his to settle when it is
+taken up: how the set is attached to an operand or an operator (item 34's restriction; a declaration); the case of a
+RESULT under `i`; what "spans without gaps" excludes; a set with no zero symbol (letters only).

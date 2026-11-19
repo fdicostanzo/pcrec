@@ -740,3 +740,6 @@ its trigger (build under measurement, D77).
   RESULT need a stated source; how the base is attached (a restriction on the operand, item 34; a declaration; a
   literal prefix); the canonical numeral of each base (number-domain).
 - TRIGGER: a user program needing hex or another base in arithmetic or a comparison; or item 34 taken up.
+- HIS ELABORATION (COND-FAMILY, "2026-11-19 OWNER, discussing the base idea"): the order is digits then letters "as
+  per normal"; "probably" spans without gaps; a number is a string over an ORDERED SET OF SYMBOLS, and `"a" + "b"`
+  has a meaning when the operands are typed as members of such a set, not as bare written strings.
