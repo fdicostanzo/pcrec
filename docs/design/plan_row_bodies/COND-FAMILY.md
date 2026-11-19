@@ -4446,3 +4446,14 @@ MANAGER'S READINGS (mine, to be tested): (m1) this covers two reads (`$a - $b`) 
 (`($y - 1) + 1`), which WIDTH KEPT left undefined: canonical at every step; (m2) "as wide as what was read" on a
 field of any width stays the composition `padded($y - 1, strlen($y))`, which waits on a read as `padded`'s width
 (construction-line (b)); (m3) **number-edges** (`% 0`, a negative result) is NOT settled by this ruling.
+
+**2026-11-18 OWNER, a question on padded-order (Frank, to the predicate manager, night; a QUESTION, nothing
+ruled).** Asked **padded-order** by /q (padding keeps the pattern's order, the manager's leaning, or
+"exact-width strings first", the two-case body's order; `padded(/\d{1,3}/, 2)` in the three modes, python `re`:
+WHOLE agree; SEARCHED `x123`: `123`@1 against `12`@1; FIND-ALL `123 07 12345`: [`123`@0, `07`@4, `123`@7,
+`45`@10] against [`12`@0, `07`@4, `12`@7, `34`@9]). HIS WORDS, in full: "padded-order: whats the exact width rx".
+RECORD: QUESTION (what the "exact width" part is). THE MANAGER'S ANSWER: it is the FIRST branch of the two-case
+body, `/0*${rx}/ & /(?s:.){${n}}/`: zeros then a string of rx, kept only when the whole is exactly n characters;
+for `padded(/\d{1,3}/, 2)` it is the two-character strings `\d\d` and `0\d`; the second branch, `rx &
+/(?s:.){${n},}/`, is rx's strings already n or longer (`\d\d`, `\d\d\d`); written out as plain regex the body is
+`(?:\d{2}|0\d)|\d{3}`, and an alternation tries its first branch first, which is where the reordering comes from.
