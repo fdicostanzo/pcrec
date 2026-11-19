@@ -165,3 +165,9 @@ Frank: class member and range end = an alternation of the class, one per value (
 errors removed from the alternation); option hole with several values = error. Place 2 differs from my leaning.
 Recorded with runs and seven readings; a negated class is not covered (`[^x]|[^y]` vs `[^xy]` part): asked as
 negated-class-hole. NOT in rev 29 (round r54 frozen on it): goes to the fix lane (rev 29.1) with r54's dispositions.
+
+## 2026-11-19 (afternoon) — option-hole details and negated-class-hole RULED
+Frank: an empty option value adds no options; values from the legal set or an error; nothing there is an error;
+his count remark read as the count value 0 (`{0}`), my zero-values reading stands untested. negated-class-hole:
+"[^${join(c)}]" = the user joins; the alternation rule is unchanged (my one-class leaning not taken). All for rev
+29.1. Next asked: anything-text. Round r54 still running.
