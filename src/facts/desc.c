@@ -250,12 +250,27 @@ PdHead pcrec_ph_alt(Ctx *cx, const PdCfg *c, PdHead l, PdHead r)
                      bounded ? (l.maxw > r.maxw ? l.maxw : r.maxw) : 0, p };
 }
 
-/* `x * k` for a head width, saturating: past it the width is unbounded. */
+/* `x * k` for a head width, false past `PCREC_W_UNBOUNDED` (then the width
+ * is unbounded): `pcrec_sat_mul` with its ceiling one PAST ours, so a product
+ * of exactly the ceiling is still a width (the `<=` boundary). `*out` is
+ * written only on success. */
 static bool ph_wmul(long long x, int k, long long *out)
 {
-    if (k != 0 && x > (1LL << 40) / k) return false;
-    *out = x * k;
+    long long p = pcrec_sat_mul(x, k, PCREC_W_UNBOUNDED + 1);
+    if (p > PCREC_W_UNBOUNDED) return false;
+    *out = p;
     return true;
+}
+
+/* The one body of a one-body kind (a lookaround, a group, an atomic group, a
+ * repeat). Which kinds pass one is the caller's kind list, so a NULL here is
+ * a caller's mismatch: a loud internal error, not a NULL dereference. */
+static const PdHead *ph_body(Ctx *cx, const Ast *a, const PdHead *body)
+{
+    if (!body)
+        pcrec_ctx_fail(cx, 0, "internal error: the head's per-kind rule got no "
+                       "body for a one-body node (kind %d)", (int)a->k);
+    return body;
 }
 
 /* A leaf that consumes one symbol: the caller's position, or a wall. */
@@ -301,7 +316,7 @@ PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
         return pcrec_ph_unit();
     case A_LOOK: {
         PdHead u = pcrec_ph_unit();
-        u.writes = body->writes;
+        u.writes = ph_body(cx, a, body)->writes;
         return u;
     }
     case A_BREF:
@@ -309,15 +324,16 @@ PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
     case A_CALL:
         return pcrec_ph_wall(0, false, 0, true);
     case A_CAP: {
-        PdHead b = *body;
+        PdHead b = *ph_body(cx, a, body);
         b.writes = true;
         return b;
     }
     case A_ATOMIC:
-        return *body;
+        return *ph_body(cx, a, body);
     case A_REP: {
         long long lo = 0, hi = 0;
-        if (!ph_wmul(body->minw, a->u.rep.rmin, &lo)) lo = 1LL << 40;
+        body = ph_body(cx, a, body);
+        if (!ph_wmul(body->minw, a->u.rep.rmin, &lo)) lo = PCREC_W_UNBOUNDED;
         bool bounded = body->bounded && a->u.rep.rmax >= 0 &&
                        ph_wmul(body->maxw, a->u.rep.rmax, &hi);
         return pcrec_ph_wall(lo, bounded, hi, body->writes);
