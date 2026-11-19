@@ -5191,3 +5191,24 @@ with its body, or a primitive; its status: ruled / the draft's reading / idea, w
 keeps its argument's order; the language point it raised, if any), EXTRACTED from the draft and the record, no
 new rules; the draft then points at it. To be written by a lane after revision 29.1 merges (so it reads the
 fixed draft), with the rows today's later rulings will change marked as waiting for revision 30.
+
+### 2026-11-19 OWNER, housekeeping: organize the predicate documentation (a request for a proposal)
+
+His words, verbatim: "housekeeping: we need to organize our documentation. please consider an organization.
+consider first the files and what they should contain, the ordering and relationship between the files (the
+library file depends on knowledge from the core language). there might only be a few files. each file is
+organized by sections then pieces hierarchically. each of those has a name and a tag. the tag is a path. then
+split the files into two parts. the first is the pure current definition if the pieces if it exists or an summary
+of the standing discussion. the second file contains the history and discussion and they are linked by the tags.
+the tags have status like plan items. organize it such that the base file can be read whole or scanned to
+understand the current idea of the predicate language. the details can be searched for in the discussion/history
+file based on tags or grep as needed and the individual sections read easily. model on the plan items split.
+include lint for structure."
+
+Class: a REQUEST for a proposal ("please consider an organization"), with REQUIREMENTS in his words: few files,
+ordered, the library depending on the core; sections then pieces, each with a name and a TAG that is a PATH; each
+file split in two: a BASE (the pure current definition of each piece, or a summary of the standing discussion)
+and a HISTORY / DISCUSSION file, linked by the tags; tags carry a STATUS as plan items do; the base readable
+whole or scanned; details found by tag or grep; modelled on the plan items split ([DOC-INDEX], D192,
+`docs/dev/doc_format.md`); a LINT for the structure. Not a go to restructure: the proposal is put to him first.
+The library-document request of the entry above becomes one file of this organization (no separate lane).
