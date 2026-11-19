@@ -703,3 +703,19 @@ its trigger (build under measurement, D77).
 - Open with it: what `\k<x>` on a label-only group means; whether `(?<x>...)` then returns without the `captures`
   opt-in (§6.2); the 11-09 "numbers are captures" against number-names (RULED 2026-11-18).
 - TRIGGER: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
+
+## 33. The array form in a hole, `${@y}`: one of the earlier values (spelling a placeholder; NOT built)
+
+- SOURCE: his question 2026-11-18 ("Can i use @y there and what does that mean?") and his request of that evening
+  (COND-FAMILY, "on `${@y}`: a proposal with examples first; otherwise a future direction").
+- MEANING PROPOSED (the manager's): `${@y}` matches one of the values the label y took in the passes so far, tried
+  in pass order (an alternation built at run time).
+- WHERE IT HAS VALUE: declared-then-used, with MANY uses: `/(?:(?<v>\w+),)+;(?:${@v}=\d;)*/` (every key is one of
+  the header's names; variables declared then used; enum values). One capture cannot follow several different
+  names. WHERE IT HAS NONE: a single use ("the last item repeats an earlier one"), which plain regex already
+  writes by letting backtracking choose the captured item (0 differences of 9,841 strings, WHOLE, model
+  `arrayhole.py`).
+- COSTS: every pass's value kept during the match (the backtracking engine only); alternative order decides
+  answers when one value is a prefix of another; the same need might be met on the CONDITION side (a membership
+  test of a label against the array form), which is not defined either.
+- TRIGGER: a user program of the declared-then-used shape; or the array form's type being defined for conditions.

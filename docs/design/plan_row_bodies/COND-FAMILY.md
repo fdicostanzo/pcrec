@@ -4312,3 +4312,22 @@ tested by the next revision lane): (m1) "two groups of that literal" counts grou
 group arriving through a hole or a part does to the count is not stated (R.1.16 A9's part case reads the part's
 own group); (m2) the numbered form `\2` is untouched; (m3) R.1.16 A10's "FOR ONE GROUP OF THE NAME" note and the
 draft's PART BL m3 row become this rule's printed cases.
+
+**2026-11-18 OWNER, on `${@y}`: a proposal with examples first; otherwise a future direction (Frank, to the
+predicate manager, evening; a REQUEST and a LEAN, nothing ruled).** Told that what `${@y}` means in a hole is the
+next small question. HIS WORDS, in full: "for ${@y}, i would like a proposal with examples of where it might be
+used. if we cannot find value, i'd rather not build it but keep it in a future direction until we can".
+RECORD: REQUEST: a proposal with examples of use. LEAN: without found value, not built; kept as a future
+direction. **array-in-hole** is NOT asked as a ruling. THE MANAGER'S PROPOSAL (mine; `predicates_future.md` item
+33; model `$PCREC_TMPDIR/scratch/pred/arrayhole.py`, a hand-written model of two fixed shapes, python): MEANING:
+`${@y}` matches ONE of the values the label y has taken in the passes so far, tried in pass order. USE 1, a
+repeated item, `/(?:(?<v>[ab]+),)+${@v}/`: WHOLE `a,b,a` HOLDS, `a,b,ab` FAILS; FIND-ALL `a,b,a b,ab,ab a,b,`
+[`a,b,a`@0, `b,ab,ab`@6]; NO VALUE FOUND there: the plain regex `(?:[ab]+,)*?([ab]+),(?:[ab]+,)*\1` gives the
+same WHOLE answer on 0 differences of 9,841 strings (all strings over `a b ,` up to length 8). USE 2, declared
+then used many times, `/(?:(?<v>[ab]+),)+;(?:${@v}=\d;)*/` (every key one of the declared names): WHOLE
+`a,b,;a=1;b=2;a=3;` HOLDS, `a,b,;ab=1;` FAILS; SEARCHED `x a,b,;b=1;ab=2;` `a,b,;b=1;`@2; here a backreference
+cannot follow (one capture holds one name; each use may be a different name), the manager's judgement, not run
+against a PCRE spelling. COSTS named: the matcher must keep EVERY pass's value (beyond PCRE's capture model; the
+backtracking engine only); the order of the alternatives decides answers where one value is a prefix of another.
+THE MANAGER'S RECOMMENDATION: a future direction (its meaning proposed, not built), trigger: a user program of
+the declared-then-used shape.
