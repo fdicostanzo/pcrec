@@ -33,6 +33,8 @@ Trigger state (D177), recounted 2026-11-16: row 1 (tonight, 2026-10-23) discharg
 - 2026-11-16 02bbd527f none — land1116 (ledger lines, report, index line for the three landings above; docs only)
 
 
+- 2026-11-19 77edff7ae major — [COVER-CAP] stage 2 + the kit's span forms (abi 109) + span-head relabel + size-cliff spec sentence (merge of lane/covtri1119); covered by the cloud suite below
+
 ## Runs
 
 One line per full run, copied from the job's `summary.txt`: date, commit, verdict per stage, log path,
@@ -473,3 +475,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-17 6a9a1afe7 none — predicates_draft.md rev 24.3 (review r42 fixes) (docs)
 - 2026-11-17 0cf299152 none — predicates_draft.md rev 24.4 (one label rule; the evening's rulings) (docs)
 - 2026-11-18 453643836 none — architecture notes dense_hit_arch.md and req_lookaround_arch.md ACCEPTED (reviews r49, r50), register rows entered (docs)
+- RUN 2026-11-19 52afb3a81 / ab7e87c02 CLOUD suite (suite-52afb3a + covtri1119 re-runs): ubsan, asan, axes, recidentity GREEN on 52afb3a81; test RED (g2 shard timeout, limit 35 -> 50 min) re-run GREEN on ab7e87c02; mech RED (S526, S1138 plants outdated) rows re-run GREEN on ab7e87c02 (triage lane covtri1119). Local alloc + lint NOT run. Covers the [COVER-CAP] landing 77edff7ae.

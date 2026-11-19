@@ -305,7 +305,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-18): architecture note docs/design/req_lookaround_arch.md ACCEPTED (review r50); Frank ruled context-producer-home (ONE span, one producer); remodel-go is the manager's call; both in docs/design/plan_row_bodies/REQ-LOOKAROUND.md
 - [COVER-CAP] STATE:started — lift the cover route's 24-position cap (long exact literals and fixed shapes finish in the engine)
   filed: 2026-11-11 manager (lane paper), from the skipmeas measurement; set S3
-  status (2026-11-18): stage 1 landed (abi 108); stage 2 + the kit's forms MERGED on lane/covs2land (c774d15c0, abi 109); cloud: mechrows, asan green, test RED on a kit test bound, fix lane/memfn-g2pcap in its cloud run; next: freeze, form cards' night, width cells, landing
+  status (2026-11-19): stage 2 + the kit's span forms LANDED on main 77edff7ae (abi 109; full cloud suite green after triage covtri1119); the width default stays 32 (interim); owed: cover_cap.md §11.4 part B night timing (cover vs engine) to set it
   trigger: FIRED 2026-11-11 (D77, lane skipmeas): ~12 of 356 bench patterns still finish in the engine, 85-88% of instructions on l31/l40 (measurement body below)
   refs: [EARNED-SKIP] (measurement block); [REQ-LOOKAROUND] waits for set S4 ([EARNED-SKIP] and [MATCH-KNOWN] are PARKED, Frank 2026-11-11 evening); decisions D77
   Measurement (skipmeas): exact fixed patterns <= 24 positions skip the engine through the cover route (bench 78, corpus ~890). Still finish-bearing: long literals l31/l40, hex32/dig32/uuid, 4 lookaround, `$` tails. Stubbing the finish: lit-l31 match 30.0M -> 4.4M instructions:u, l40 28.6M -> 3.5M. Cause: the 24-position span cap.
