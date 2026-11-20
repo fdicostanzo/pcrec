@@ -289,7 +289,7 @@ limits.md §3.10 restated, measured:
 
 ## STATE AT HANDOFF
 
-STATE: done. All code, records and the report are committed on lane/k147fix.
+STATE: stopped. The fix is complete, and all code, records and the report are committed on lane/k147fix. The lane stops short of its last act: the cloud dispatch failed (below), so its validation is owed rather than queued.
 The rulings file `docs/dev/lanes/k147fix_rulings.md` is empty, so no ruling
 was applied (R-none). Inline validation is complete (above). Two runs are
 OWED because they were never dispatched (the push failed; see Validation
