@@ -49,3 +49,5 @@ l3build's own queued jobs were left alone. The box was held by a non-timing test
 
 Commit bc07f24ed plus this report. Rulings file: empty (no entries to apply). Both jobs OWED. Do not edit the
 worktree's source while `200-l3fix-test` runs.
+
+OWED: none (the two queued jobs are named above; the brief sends their verdicts to a fresh reader).
