@@ -863,3 +863,11 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
   rank_ppm, lowest mass first); the run compares are word-wide (runcmp.c, offset order), so order matters most for per-byte set
   tests. UNMEASURED; a scalar-layer spike (H64 vs back-to-front-with-skip vs rank order, near-miss/miss/hit-dense) would test it.
   Note: it attacks the same near-miss cost the block forms fixed, at the layer (scalar) where blocks did not replace H64.
+  + 2026-11-20 (Frank: "better to scan in reverse? Or last, first, last-1, second? Different strategies"). Kit judgment: for a
+  one-class window the rightmost failure sets the shift, so REVERSE is the strong candidate (same checks-to-failure as front-first
+  on random/miss text, much longer jump; near-miss fails in 1-2 checks). Better still: reverse + REMEMBER the known members
+  between the failure and the old window end (only bytes past the old end are re-checked: each byte about once, Boyer-Moore
+  bad-character specialized to one class). Alternating (last, first, last-1, ...) sits between the two; it is a control that should lose.
+  Mixed windows: rarest first, ties to the rightmost (the kit's rank already breaks ties to the higher offset). Order is moot
+  for hit-dense windows and for block forms. Spike arms if run: front (today), reverse+jump, reverse+jump+remember, alternating,
+  rank-first (mixed only).
