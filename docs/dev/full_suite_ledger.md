@@ -16,13 +16,14 @@ studies; listed, not counted).
 
 Baseline: run 2026-11-20 d68a1294c / 47ba76682, the CLOUD full suite (suite-d68a129 + re-runs; every cloud kind green after one infrastructure re-run and two intended re-pins) plus the local alloc + lint stages green on f8789cd2e (L1 landed; only test baselines and records between). It covers the [COVER-CAP] and lookaround L1 landings. Previous baseline: run 2026-11-16 e43603862.
 
-**major: 0, minor: 0** (reset 2026-11-20 at the d68a1294c baseline). Class is set by the manager at each landing. Landings after the reset were recorded as loose `Landing 2026-11-16 ...` lines at the end of the Runs section (the ledger's practice since 2026-11-05); the lines below are the 2026-11-16 additions that count them, by pointer (the loose lines stay where they are).
+**major: 1, minor: 0** (reset 2026-11-20 at the d68a1294c baseline). Class is set by the manager at each landing. Landings after the reset were recorded as loose `Landing 2026-11-16 ...` lines at the end of the Runs section (the ledger's practice since 2026-11-05); the lines below are the 2026-11-16 additions that count them, by pointer (the loose lines stay where they are).
 
 Trigger state (D177), recounted 2026-11-16: row 1 (tonight, 2026-10-23) discharged long ago; row 2 (a major version shift) not applicable until one is named; row 3 (a major refactor lands) un-fired, none since the baseline; row 4 (2-3 majors since the last green run) un-fired, 0 majors; row 5 (4-6 minors since the last green run) un-fired, 1 minor. No full suite is due.
 
 ### major
 
 - 2026-11-19 d68a1294c major — lookaround unit L1 ([REQ-LOOKAROUND]): census, remodels RM-1/RM-6/remodel 3 (refactors of shared fact-walk mechanisms: D177 row 3 FIRES), the feature, the run_pin sub-stretch rule, the C4 data-scope rule; branch gates green (identity, mech, axes, make test); full cloud suite dispatched on d68a1294c
+- 2026-11-20 1c26d77ea major — lookaround L3 remodels ([REQ-LOOKAROUND]): five byte-identical refactors of shared fact/move mechanisms (RM-2, RM-3, RM-5, RM-4, rn_cmp) + review r63 fix: D177 row 3 FIRES; identity per commit, mechA rows, trace and make test GREEN locally; no cloud suite yet (it can ride the L3 feature landing).
 
 ### minor
 
