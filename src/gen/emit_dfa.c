@@ -3673,7 +3673,7 @@ void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb)
      * it unread — so no encoding test decides it (DD-12 (7)). In the `.c`
      * only, ahead of the twin that reads it ([FINDALL-NEXT] F-1). */
     pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
-                    cx->lb_max);
+                    pcrec_lb_max(cx));
     /* [FINDALL-NEXT] F-1 the out-of-line entries' static twins, every one
      * this artifact defines (`noclone`: compound_entries.md §6 F-3 found gcc
      * splitting `_valid_upto` into a `.part` clone, K24's shape), ahead of

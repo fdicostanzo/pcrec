@@ -4508,6 +4508,14 @@ static inline void pcrec_lb_raise(Ctx *cx, int n)
     if (n > cx->lb_max) cx->lb_max = n;
 }
 
+/* [UTF-VALID] The pattern's declared lookbehind length in characters
+ * (`Ctx.lb_max`, PCRE2's `max_lookbehind`): the one read its readers outside
+ * the parser share (span_arms RM-5, register row 6a narrowed to this field). */
+static inline int pcrec_lb_max(const Ctx *cx)
+{
+    return cx->lb_max;
+}
+
 /* [M6.2 wave A] `Ctx.mods`' type is DELIBERATELY INCOMPLETE HERE (§8.6): the
  * definition lives in src/parse/parse_mods.h and nothing outside src/parse/
  * includes it, so "no post-parse pass reads cx->mods" is a compile error
