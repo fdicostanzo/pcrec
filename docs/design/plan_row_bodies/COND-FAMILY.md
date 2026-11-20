@@ -6153,3 +6153,22 @@ operand that writes the flag itself is taken as it is. On the session's examples
 `[ab]+ & a.*`, `[a-z]+ & !b.*`, `(?-i)ab & (?-i)ab`: quiet. Its message names the fix his principle gives: write
 the flag in the operand. Readings: it is a set comparison of the kind `pcrec.test.never` already is, computable
 where the operands are regular; where they are not, it does not fire.
+
+### 2026-11-19 OWNER RULING — flags-warning: yes, when it works; not when the expression reads a label of the literal
+tags: core/diagnostics/warnings core/holes/flags/in-filter
+
+Asked **flags-warning** (the manager's proposal at his request: at the hole, for an `&` or a complement that
+inherits a flag, warn when the ruled result, each side taking the flag first, differs from "the expression
+alone, then the flag applied to its result"; an operand that writes the flag itself taken as it is; the
+structural alternative and no warning as the other answers; run on six examples). HIS WORDS, whole:
+
+"flags-warning: yes when it works. You can't do it if the expression refers to $x a label in the literal"
+
+Class: a RULING on the slug: YES to the proposed (exact) trigger, "when it works": where the comparison can be
+made at compile time. And a LIMIT he states: it cannot be made when the expression reads `$x`, a label of the
+literal (a value known only at match time); there the warning does not fire.
+
+The manager's readings, for the next lane to test: (a) "when it works" also covers the proposal's own limit (an
+operand that is not regular: no warning), and an over-budget comparison (no warning, no error); (b) the name is
+a placeholder, `pcrec.flags.filter`, the manager's; (c) the message points at writing the flag in the operand;
+(d) the trigger is stated for `i`; `m` and `s` (the other inherited flags) follow the same comparison.

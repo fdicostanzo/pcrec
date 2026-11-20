@@ -997,12 +997,17 @@ WHOLE `id-BLAH` HOLDS, `ID-blah` HOLDS / SEARCHED `x ID-BLAH` `ID-BLAH`@2 / FIND
 ### Flags of an `&` inside a hole   [core/holes/flags/in-filter]   ruled 2026-11-19
 The two sides of an `&` written inside a hole each start with the flags in force at the hole, a flag a side writes for itself winning.
 needs: core/holes/flags
-see: core/holes/and-in-hole
+see: core/holes/and-in-hole core/diagnostics/warnings
 - The inherited flags are the hole's own list (`i`, `m`, `s`: core/holes/flags).
 - A binding of an `&` put in a hole behaves the same: a binding is its expression where it is used, so
   `C := /[a-z]+/ & /b.*/` at `/(?i)id-${C}/` is the `&` written in the hole (a reading). Used where no rx
   surrounds it, the same binding reads under its own flags: `C` as a program holds WHOLE on `blah`, not `BLAH`.
 - An `&` written at program level has no surrounding rx (core/patterns/flags).
+- A warning fires at the hole "when it works": where the sides-first result differs from the expression alone
+  with the flag applied to its result, an operand that writes the flag itself taken as it is; never where the
+  expression reads a label of the literal (`$x`), a value known only at match time. Under `(?i)`:
+  `/[a-z]x/ & /[A-Z]x/` and `/[a-z]+/ & !/[A-Z]+/` warn; `/[a-z]+/ & /b.*/` does not. The fix it names: write the
+  flag in the operand. The name `pcrec.flags.filter` is a placeholder (core/diagnostics/warnings).
 - "the environment of the hole sets the default options for the expression inside": the sides take the flags
   first and are then matched on the stretch, so `/[a-z]x/ & /[A-Z]x/`, nothing on its own, matches inside a
   case-insensitive hole (the second line below).
@@ -1352,6 +1357,7 @@ see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/idea
 | `pcrec.hit.nullable` | a hit argument that can match empty | core/diagnostics/nullable-hit |
 | `pcrec.test.consumes` | a bare pattern as the test of `when` | core/diagnostics/consuming-test |
 | `pcrec.class.join` | `[^${c}]` with two or more different values: it points at `[^${join(c)}]` | a reading (core/holes/negated-class) |
+| `pcrec.flags.filter` | an `&` or a complement in a hole that inherits a flag, where the result differs from the expression alone with the flag on its result; not where the expression reads a label (`$x`) or the comparison cannot be made | core/holes/flags/in-filter |
 modes: n/a (warnings)
 
 ### The `$x & S` warning   [core/diagnostics/dollar-form]   ruled 2026-11-19

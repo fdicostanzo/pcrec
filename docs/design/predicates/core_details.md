@@ -1397,18 +1397,20 @@ history:
 - 2026-11-19 (lane preddoc4): flags-in-filter (an open question in a bullet) became the open sub-piece core/holes/flags/in-filter (review r59 READ-9).
 
 ## core/holes/flags/in-filter — Flags of an `&` inside a hole
-slugs: flags-in-filter flags-before-and
+slugs: flags-in-filter flags-before-and flags-warning
 rulings:
 - 2026-11-19 "flags-in-filter: both sides inherit." (record: "2026-11-19 OWNER RULING — flags-in-filter: both sides inherit; and a question on a bound `&` put in a hole")
 - 2026-11-19 "flags-in-filter: i cannot think of a different solution. I agree with the ruling that the environment of the hole sets the default options for the expression inside." (record: "2026-11-19 OWNER RULING — flags-in-filter confirmed: the environment of the hole sets the default options for the expression inside; and a request for a warning"); it answers flags-before-and: the sides take the flags before the intersection
+- 2026-11-19 "flags-warning: yes when it works. You can't do it if the expression refers to $x a label in the literal" (record: "2026-11-19 OWNER RULING — flags-warning: yes, when it works; not when the expression reads a label of the literal")
 rejected:
+- a structural trigger for the warning (any `&` or complement in a flagged hole whose operand has a letter and sets no case flag) — by owner ruling — flags-warning: the exact trigger, "when it works"; it would fire on the harmless cases too.
 - resolve the expression on its own, then insert the result wrapped by the context options (his own proposal, "after") — by owner — dropped by him ("i cannot think of a different solution"): it collides with "a flag it writes for itself wins" (`A & A` against `A`, A := `/(?-i)ab/`).
 - neither side inherits (a filter operand judging its stretch with its own flags; candidate (b)) — by owner ruling — flags-in-filter.
 - the manager's m2 (an `&` operand, a condition's set, a filter-role argument keep their own flags) as the draft's flags-in-filter reading (2026-11-18) — by the draft (rev 29, R.9 row 100) — SUPERSEDED as the draft's reading by REACH (the manager's reading 3, not a ruling).
 readings:
 - a binding of an `&` put in a hole equals the `&` written in the hole; used with no surrounding rx it reads under its own flags (the manager's answer to his question, resting on core/holes/flags and the place table's binding row) — the second half run (`blah` HOLDS, `BLAH` FAILS); the first UNTESTED by a mechanical model.
 - the two sides of an `&` inside a hole start with the hole's flags (THE DRAFT'S READING REACH, 0 / 0 / 0 of 1,555 against the plain hole) — open in the draft §R.8; the record's "2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant" is his remark on it, not a ruling.
-evidence: the draft's PART FF of predspec29 (REACH).
+evidence: the draft's PART FF of predspec29 (REACH). The warning's trigger: the record's run flagswarn.py (brute force over 1,554 strings; 2 WARN, 4 quiet).
 history:
 - 2026-11-19: his before/after question ("Tricky"), his resolve-then-wrap proposal, then the confirmation; the second example line is the record's run (flagsorder.py, hand-built). A warning for the case is asked of him (flags-warning), not in the language.
 - 2026-11-19 (lane preddoc4): a new open sub-piece, from a bullet of core/holes/flags (review r59 READ-9). The candidate (b) is the lane's statement of the rival the draft names (a filter operand's own world).
@@ -1818,6 +1820,7 @@ rulings:
 - 2026-11-15 "But! padded is a simple macro so the warning shouldn't key off of the name" (record: "2026-11-15 RULING — the anchor warning keys off the ROLE, never a transform's name"); the warning is decided by the ROLE the rx ends up in after macros are expanded
 - 2026-11-15 "warn-in-macro-body: yes but is that an identity? The anchored and & are not the same" (record: "2026-11-15 RULING — the anchor warning has no exemption for macro-body text"); no exemption by authorship, the criterion applied to the expanded text; his question is the manager's to answer, not a ruling
 - 2026-11-16 "default-unused: agree" (record: "2026-11-16 OWNER RULINGS — unset-component: yes; default-unused: agree"); the manager's reading of "agree", told to him: the lean, so a never-used default is a WARNING (`pcrec.default.unused`), not an error
+- 2026-11-19 "flags-warning: yes when it works. You can't do it if the expression refers to $x a label in the literal" (record: "2026-11-19 OWNER RULING — flags-warning: yes, when it works; not when the expression reads a label of the literal")
 rejected:
 - a `*` wildcard in a selector — by owner ruling — the amendment: `"*"` is the literal name and draws `warn.unused`.
 - `compare.width` as a compiler warning — by owner ruling — the list accepted: it is about one library form, so the compare library names it (`compare.width.variable_width`).
@@ -1835,6 +1838,7 @@ readings:
 - his observation that a selector can catch a compiler warning and a library's of the same last component ("helpful or dangerous") is NOT ruled.
 evidence:
 history:
+- 2026-11-19: the row `pcrec.flags.filter` added (flags-warning; the name the manager's placeholder).
 - 2026-11-14: names in dotted families, `@warn.off`; 2026-11-17: the principle, the list, the library path, the `pcrec.` prefix, polarity-rule, empty-search-error, numbered-label; 2026-11-19: dollar-diagnostic, plus-operands.
 - 2026-11-19 (lane preddoc3b): converted from `?`; three controls of one fact (`@warn.off`, `@warn.error`, `@options.strict`) stay an idea (parked/ideas/severity-table).
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): the call-form names `@warn.off`/`@warn.error` and `@options.strict` have their library pieces (lib/builtin/warn, lib/builtin/options); this piece keeps the meaning (names, selectors, the table).
