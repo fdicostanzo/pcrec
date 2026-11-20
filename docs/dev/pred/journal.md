@@ -557,3 +557,11 @@ Folded by me (ruling item, his own proposal rejected by him, the `[a-z]x & [A-Z]
 asked for a warning; proposed flags-warning (fire when the sides-first result differs from the expression alone
 with the flag on its result; brute-force run on six examples, two WARN, four quiet). Not delivered yet (after
 P-14). WAITING on: Frank (flags-warning).
+
+## 2026-11-19 (23:40) — flags-warning RULED and folded
+
+"flags-warning: yes when it works. You can't do it if the expression refers to $x a label in the literal". Row
+`pcrec.flags.filter` (my placeholder) in the warnings table, a bullet on core/holes/flags/in-filter, rulings on
+both; lint 5,267 / 0; tip after this entry. Not yet delivered (two folds since P-14: flags-before-and,
+flags-warning): deliver with the next batch or at close; they were hand folds, so the next critic round covers
+them with flags-in-filter. WAITING on: Frank (class-value next).
