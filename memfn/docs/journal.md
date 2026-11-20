@@ -4351,3 +4351,6 @@ Diff scratch/l1pins/d3_census_diff.txt. Floors: byte/c-default 78->89, byte/c-vm
 
 ## 2026-11-20 09:59 — owed notes delivered to main (lane owednotes, stopped)
 scratch/memfn/owednotes/note1_set1.md (set 1 INCONCLUSIVE-AT-NOISE, libc gate 3.1 %; conclusive with a passing night or a gate ruling), note2_calibration.md (loaded box: 1-1.6 % from quiet, +0.5-1.3 % bias; usable above ~3 % plus bias), note3_ceiling.md (h*=64 is the grid edge; no head above 64 timed; W[64]=1.0 partly by construction). Main was asked: a re-run night or a gate ruling for set 1.
+
+## 2026-11-20 10:05 — set 1 CLOSED INCONCLUSIVE-AT-NOISE (main)
+Main: no gate re-size after the data (post-hoc, as with the block table) and no third night. Set 1 stays INCONCLUSIVE-AT-NOISE. If a later decision needs it, it reopens with the gate set BEFORE the night: libc noise across the two quiet nights plus the note2 bias. Note 3 (64 = grid edge) goes in main's record beside the cover-cap width row. worktrees/mfind unpinned (prunable).
