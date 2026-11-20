@@ -4446,3 +4446,11 @@ blockconfirm handed back (report /var/tmp/pcrec-pcrec/scratch/memfn/blockconfirm
 
 ### 2026-11-20 — bcq delivered; critic round on 710 launched
 bcq delivered eb2de1a9d (report docs/dev/lanes/bcq_report.md on lane/memfn-bcq), lanecheck DONE, TaskStopped. 710 changes: the CPU-quiet control ported from 711; walk-control voids (INCONCLUSIVE-HARNESS) kept separate from noise voids; gates STOP_AT 12:00 11-21 with now+estimate refusal, waiting on kit-checkorder and kit-rampchunk; --deadline gives NOT-RUN and TRUNCATED. RULE_SHA d32a1474107714e2; check re-run PASS (new marker 42f433d3...). Estimate 8,033 s. Critic round crit-memfn-blockconfirm (opus coordinator) due 21:00.
+
+### 2026-11-20 17:35 — 710 critic NOT READY; 711/712 cancelled for shared fixes
+The critic round on 710 (review docs/dev/reviews/2026-11-20-memfn-blockconfirm.md, RULING appended) found:
+- a wait cycle between 710 and 712 (neither could start);
+- an asymmetric re-time favouring the positive claim (MEASUREMENT-1);
+- a CPU7_MAX with no ceiling, which one busy second could disarm (GATES-3, a spec defect shared with 711/712);
+- the fitted population deciding the verdict, plus fidelity holes.
+The manager cancelled 711 and 712 (their hold expired at 20:00, unfixed) and amended cpuquiet/spec.md (2': a 20% cap with a banner). Lanes: bcfix (opus, 710, due 20:00) and cofix (sonnet; the 711 symmetric re-time, the ceiling in 711/712, 712's wait key; due 19:30). One critic then re-checks all three before re-queueing. HOLD-711 removed (moot).
