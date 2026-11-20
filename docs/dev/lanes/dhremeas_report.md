@@ -57,3 +57,6 @@ differences from the old run: abi, driver, statistic (median vs best of 7).
 ## Verdict
 LOSS STILL SHOWN (both dense cells, far beyond the 5% threshold; control passed; stamps correct). The tail win persists. This
 satisfies the R-46 gate's condition "post-K38-2 re-measure still showing the loss".
+
+## STATE AT HANDOFF
+Done; nothing owed. Last ruling applied: R-1 (run 2 re-timed all cells; run 1 not counted). Branch lane/dhremeas, scratch /var/tmp/pcrec-pcrec/scratch/dhremeas.
