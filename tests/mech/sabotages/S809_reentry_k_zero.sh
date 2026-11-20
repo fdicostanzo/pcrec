@@ -23,5 +23,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o1.c" --pattern '\''(?:(
 SAB_REACH_EXPECT='REACH-BYTE-REENTRY'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_sb_printf(c, "%s        %s = landmark_position - %lld;\n", ind, pos, k);'
-SAB_AFTER='        pcrec_sb_printf(c, "%s        %s = landmark_position - %lld;\n", ind, pos, 0LL);   /* SABOTAGE S809 */'
+SAB_BEFORE='        pcrec_sb_printf(c, "%s    %s = %s - %lld;\n", ind, target, hit, k);'
+SAB_AFTER='        pcrec_sb_printf(c, "%s    %s = %s - %lld;\n", ind, target, hit, 0LL);   /* SABOTAGE S809 */'
+# RE-AIMED 2026-11-20 (lane l3build, span_arms L3 RM-3, D-8): the move's arithmetic is ONE emitter,
+# `emit_req_move_open`; the plant keys on its ASSIGN branch (the re-entry's: `target` is not the
+# hit), so per-caller detection survives. Intent unchanged.

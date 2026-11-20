@@ -1061,6 +1061,35 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
     cx->job->mf_pre = req_site_define(cx, c);
 }
 
+/* THE LANDMARK MOVE's ARITHMETIC, the one text of the entry's in-place move
+ * (`emit_req_handoff_rest`, `target` IS `hit`) and the re-entry's
+ * (`emit_req_landmark_move`, `target` the scan or attempt position): at
+ * `ind`, the opening of the block that moves `target` to `hit - K` where that
+ * is ahead of `pos`, `if (hit - pos > K) {`, and its assignment one level
+ * in: in place `target -= K` (nothing at K = 0), else `target = hit - K`
+ * (`target = hit` at K = 0). The caller prints the rest of the block (the
+ * round-up, the reseed, its `else`, the close) and decides whether the block
+ * exists at all (span_arms §14.3 D-8: every other difference stays in the
+ * callers).
+ *
+ * THE SUBTRACTION CANNOT UNDERFLOW: `hit >= pos` always (the entry's kit
+ * contract; the re-entry's re-ask makes it true), so it compares the
+ * DISTANCE `hit - pos` with K rather than computing `hit - K`, and never forms
+ * `pos + K`, which could overflow near `SIZE_MAX`. K is bounded and >= 0. */
+static void emit_req_move_open(StrBuf *c, const char *ind, const char *hit,
+                               const char *pos, const char *target, long long k)
+{
+    bool in_place = strcmp(target, hit) == 0;
+    pcrec_sb_printf(c, "%sif (%s - %s > %lld) {\n", ind, hit, pos, k);
+    if (in_place) {
+        if (k > 0)
+            pcrec_sb_printf(c, "%s    %s -= %lld;\n", ind, target, k);
+    } else if (k > 0)
+        pcrec_sb_printf(c, "%s    %s = %s - %lld;\n", ind, target, hit, k);
+    else
+        pcrec_sb_printf(c, "%s    %s = %s;\n", ind, target, hit);
+}
+
 /* [K82] (B) THE HANDOFF, pcrec's half: what follows the gate once the kit's
  * text has assigned `handoff_position` (the composite site's ASSIGN, §15.5;
  * rule 8, what follows a site is pcrec's text). The gate's block returns
@@ -1069,12 +1098,9 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
  * every match begins at most K bytes before its window (invariant F,
  * litscan_k82h.md §1.2), so no attempt below `c - K` can succeed and the body
  * may begin its scan at `max(posvar, c - K)` and answer exactly what it
- * answers at `posvar` (the startpos contract, Claims 1-3).
- *
- * THE SUBTRACTION CANNOT UNDERFLOW: `c >= posvar` always, so it compares the
- * DISTANCE `c - posvar` with K rather than computing `c - K`, and never forms
- * `posvar + K`, which could overflow near `SIZE_MAX`. At K = 0 there is no
- * subtraction. Under a multibyte encoding the moved start is rounded UP to a
+ * answers at `posvar` (the startpos contract, Claims 1-3). The move's
+ * arithmetic is `emit_req_move_open`'s (`c >= posvar` always: the kit's
+ * contract). Under a multibyte encoding the moved start is rounded UP to a
  * character start (`PCREC_START0_ROUNDUP`, the backend's own predicate), so
  * it is a startpos the contract covers; only when it moved — `posvar` itself
  * is the caller's choice and stays exactly what it was ([r1 S-F6]). The
@@ -1121,10 +1147,8 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
                 indent, k, whole || run ? "whole" : "landmark",
                 indent, whole || run ? "run" : "byte");
             pcrec_sb_cmt_close(c);
-            pcrec_sb_printf(c, "%sif (handoff_position - %s > %lld) {\n",
-                            indent, posvar, k);
-            if (k > 0)
-                pcrec_sb_printf(c, "%s    handoff_position -= %lld;\n", indent, k);
+            emit_req_move_open(c, indent, "handoff_position", posvar,
+                               "handoff_position", k);
             if (round.len > 0) pcrec_sb_splice(c, &round);
             pcrec_sb_printf(c, "%s} else\n"
                                "%s    handoff_position = %s;\n",
@@ -7967,11 +7991,7 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s        ", ind), pos,
                           "subject", "subject_length", PCREC_START0_ROUNDUP);
-    pcrec_sb_printf(c, "%s    if (landmark_position - %s > %lld) {\n", ind, pos, k);
-    if (k > 0)
-        pcrec_sb_printf(c, "%s        %s = landmark_position - %lld;\n", ind, pos, k);
-    else
-        pcrec_sb_printf(c, "%s        %s = landmark_position;\n", ind, pos);
+    emit_req_move_open(c, dfa_fragf(cx, "%s    ", ind), "landmark_position", pos, pos, k);
     if (round.len > 0) pcrec_sb_splice(c, &round);
     if (f) pf_emit_ofs_reseed(c, f, dfa_fragf(cx, "%s        ", ind));
     pcrec_sb_printf(c, "%s    }\n", ind);
