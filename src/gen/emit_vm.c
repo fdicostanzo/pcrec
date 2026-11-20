@@ -9389,13 +9389,18 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
  * is what it was before the kind existed and `PCREC_MAX_VM_NODES` refuses the
  * same patterns (D-4, docs/dev/cls_s3_reader_inventory.md §10).
  *
- * EVERY RECURSIVE ARM IS ITS OWN FRAME ([DD-10], K146; `PCREC_OWN_FRAME`):
+ * THE ARMS THAT CARRY LOCALS ARE EACH THEIR OWN FRAME ([DD-10], K146;
+ * `PCREC_OWN_FRAME`, internal.h's second use):
  * this switch is entered once per AST level, several times per paren level,
  * so an arm inlined here would put its locals (and every other inlined arm's,
  * the union) on every level of every nest. Marked out of line, the arms are
  * tail calls and a level costs only the frames on its own path; `vm_cost`'s
- * arms follow the same rule. A new arm that recurses is marked the same way;
- * tests/thread/run_compile_stack.sh measures the result. */
+ * arms follow the same rule. Arms that recurse and are NOT marked:
+ * `vm_splice`, `vm_call` and `vm_callout` stay inlined here (nothing measured
+ * makes their frames matter, D77); `vm_ctx`, `vm_bref` and `vm_var` are marked
+ * without recursing, for the uniformity of the table. A new arm that recurses
+ * and carries locals is marked the same way; tests/thread/run_compile_stack.sh
+ * measures the result. */
 static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
 {
 
