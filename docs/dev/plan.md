@@ -2182,12 +2182,34 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: the next MF_SITE_ABI layout event
   refs: docs/dev/reviews/2026-11-03-r5-memfn-sp1g.md; [KN-CARRIERLESS] (a member with no carrier is the same smell)
   1g's own "the kit never reads the digest" check reached no reader until its fix; a census of members against readers would catch the general case.
-- [LM-SPINE-DEPTH] STATE:not-started — lm_flatten / lm_maxw recurse on the CAT spine (latent depth hazard)
+- [LM-SPINE-DEPTH] STATE:not-started — lm_flatten / lm_maxw recurse on the CAT spine: a compile crash on a long zero-width run (K148)
   filed: 2026-11-01 manager (noted by lane p1build)
-  status (2026-11-01): BOONIES, unreachable today; the functions live on branch lane/p1build (worktrees/p1build/src/gen/lmwalk.c: lm_flatten line 57, lm_maxw line 80, A_CAT arms at lines 59 and 86), not yet on main
-  trigger: [LANDWALK] stage 1 lands on main, or a pattern whose CAT spine can exceed the recursion budget reaches the walk
-  refs: [LANDWALK]; docs/dev/guide/coding.md (iterative spine descent); branch lane/p1build
-  Against the house rule on recursion: descend the spine iteratively and recurse only into items hanging off it. The same fix applies to both; check the landing of [LANDWALK] first so the fix rides it.
+  status (2026-11-20): REACHABLE on main (the earlier "unreachable today" is stale): `x` + `\b` x 30,000 + `y` and `(?=a)` x 12,000 + `a` die with SIGSEGV on the budget thread; filed as K148 by lane growfile; limits.md §3.10¶1 is false until it is fixed
+  next: a small lane: iterative spine descent in lm_flatten/lm_maxw (the house rule, coding.md), a limits.md §3.10 hunk, and the length family in [GROWTH-SWEEP]
+  refs: known_issues K148; docs/dev/lanes/growsurv_report.md C1; [LANDWALK]; docs/dev/guide/coding.md (iterative spine descent)
+  Against the house rule on recursion: descend the spine iteratively and recurse only into items hanging off it. The same fix applies to both.
+- [GROWTH-SWEEP] STATE:not-started — a test category for extreme growth (depth, length, memory): graceful refusals, never crashes
+  filed: 2026-11-20 manager, from the owner's go ("growth-sweep: go") and the survey lane growsurv
+  status (2026-11-20): survey merged (docs/dev/lanes/growsurv_report.md: 121 recursive functions, 34 candidate cells); crashes filed as K147-K151; the runner is not built
+  waits: K147 landing (the runner is built after it); pairs with [LINT-FRAME]
+  next: after K147 lands, a lane builds the runner from the survey's product (construct kind x quantifier x branch position x core, at depth 250 and 251 on the budget thread; spine-length families at 16,384 and 100,000; memory families under scripts/watchdog -m) and absorbs tests/thread's DEPTH_FAMILIES
+  refs: docs/dev/lanes/growsurv_report.md ("Suggested runner shape"); docs/dev/lanes/growsurv_evidence/; known_issues K147-K151; [LINT-FRAME]; [LM-SPINE-DEPTH]; docs/spec/limits.md §3.10
+  The owner: "These are stack based crashes. I suggest a new test category that looks at extreme growth directions like depth and length and looks for crashes. There might not be oracles for correctness. We are looking for graceful refusals instead of crashes. An examination of recursive and looped behavior at various stages of compilation would give candidates".
+- [K150-LMCAT-QUADRATIC] STATE:not-started — the landmark walk's lm_cat rebuilds a CAT spine per candidate: quadratic compile memory (K150)
+  filed: 2026-11-20 lane growfile, from growsurv KR-D
+  status (2026-11-20): filed; nothing built. `(?:a|b)` x 5,000 spends 3.46 GB with no refusal; the size cap fires only past about 8,000
+  next: build the candidate prefix once or walk the original spine, or bound the work with a named refusal; add a memory family to [GROWTH-SWEEP]
+  refs: known_issues K150; docs/dev/lanes/growsurv_report.md L1/C9; src/gen/lmwalk.c:70
+- [K151-CALLCHAIN-MEM] STATE:not-started — a call-target chain spends gigabytes in vm_build_region_saves before any refusal (K151)
+  filed: 2026-11-20 lane growfile, from growsurv KR-E
+  status (2026-11-20): filed; nothing built. `(?<g0>a(?&g1)?)...` at N=200 passes 2 GB; N=160 refuses by size
+  next: a refusal ceiling on targets x slots before the table is built, with a limits.md row; add the cell to [GROWTH-SWEEP]
+  refs: known_issues K151; docs/dev/lanes/growsurv_report.md L2/C10; src/gen/emit_vm.c (vm_build_region_saves)
+- [K149-FIRSTOF-NOBREF] STATE:not-started — `(abc|abd(…abe))*` kills pcrec_compile in first_of with no backreference (K149, K147's second shape)
+  filed: 2026-11-20 lane growfile, from growsurv KR-B
+  status (2026-11-20): filed; not fixed on lane/k146land (re-checked). Dies at N=200 on the budget thread; N=150 compiles
+  next: rides [K147-POSSESSIFY-DEPTH] (same functions); add the shape to its DEPTH_FAMILIES rows
+  refs: known_issues K149, K147; docs/dev/lanes/growsurv_report.md C4
 - [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 SLOT-6 (lane trailgc3)
   status (2026-10-29): BOONIES, unscheduled. The K134 trail checkpoint is its only member; tests/vm/trail_checkpoints.py would become the generic "every weighted cycle passes a safepoint" check.
