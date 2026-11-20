@@ -898,7 +898,7 @@ rulings:
 - 2026-11-16 "retire-paused: agree to split. But the pause on ^ is indefinite and requires real value other than 'override a users own *'" (record: "2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite"); RETIRED: the `lex_` names, their argument order, the fixed-size compares' first-library slot (the joint condition takes it); the sigil PAUSED (parked/ideas/other-side-sigil)
 rejected:
 - a third value kind for a set of tuples — by owner ruling — set-arity ("No third value kind", the record).
-- first/rest binding with recursion as the order's definition — by owner ruling — first-rest PARKED (parked/ideas/tuple-apart).
+- first/rest binding with recursion as the order's definition — by owner ruling — first-rest PARKED (parked/ideas/first-rest).
 - a warning between the two orders (the manager's lean) — by owner ruling — two-orders ("I like the control"; the record keeps both with no warning).
 - the six tuple compares `lex_ge2`, `lex_le2`, `lex_between2`, `lex_ge3`, `lex_le3`, `lex_between3` over arrays (`lex_between2([h, m], [9, 0], [10, 0])`) — by owner ruling — retire-paused (the comparison sets on a tuple atom, `((h, m): >= (9, 0))`, say the same with no library family).
 - their argument order subject, low, high — by owner ruling — retire-paused (retired with the names).
@@ -1486,9 +1486,9 @@ rulings:
 - 2026-11-19 "it might also be (=left, =right) := ... which looks odd but is a degenerate form of macro parameter binding" (record: "2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`"); the idea he then ruled
 rejected:
 - `(left,right) := import("blah", /left|right/)` (his first instinct) — by owner ruling — "double name is a weakness".
-- `(left, right) := import("blah")`, selection by bare name (the manager's leaning) — by owner ruling — "it has implications for the rest of the language"; bare `(a, b)` stays for a positional form (core/modules/positional).
+- `(left, right) := import("blah")`, selection by bare name (the manager's leaning) — by owner ruling — import-symbols adopted the `=`-marked form (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols"); the reason is his CAUTION in the discussion before it, "it has implications for the rest of the language" (record "2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`", class DISCUSSION, not a ruling); bare `(a, b)` stays for a positional form (core/modules/positional).
 readings:
-- the eight statements he agreed to are the manager's list, "no wider" — SUPPORTED by the record entry.
+- the eight statements he agreed to are the manager's list, "no wider" — SUPPORTED by the record entry; statement 7 ("A bare positional `(a, b) := X` is left undefined for now") does not stand as told: the manager WITHDREW it (record "2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN (the positional binding list)") and that withdrawal was itself CORRECTED to "the positional list `(a, b) := X` is OPEN under tuple-parts, for a tuple and for a map alike" (record "2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body"); the positional list is core/modules/positional.
 evidence:
 history:
 - 2026-11-19: his aside after the pilot, the discussion, his lean "don't confirm yet", the manager's implications (a)-(f), the ruling.
@@ -1515,9 +1515,11 @@ readings:
 - "all symbols" = the public members (the manager's) — UNTESTED.
 - a later library name can start a warning in a `(=)` program; the 2026-11-14 lean accepts that shape ("a later library member of the same name breaks the build, never silently rebinds") — UNTESTED.
 - the default set is `(=) := import(<the default module>)` (the manager's) — see core/modules/default-set.
+- with `(=)` a reader cannot tell from the file alone whether a bare name is a label or an import (the manager's, "Told to him as the cost of the form, not an objection") — UNTESTED (no matching involved).
 evidence:
 history:
 - 2026-11-19: the ruling's addition, then the addition on `=` first.
+- 2026-11-19 (lane preddoc6, review r60 RULING-8a): the base bullet on a reader not telling a label from an import marked a reading; the record has it among "The manager's readings of the addition, FOR A LANE TO CHECK", "Told to him as the cost of the form, not an objection".
 
 ## core/modules/leave-out — Leaving a member out
 slugs:
@@ -1567,6 +1569,7 @@ history:
 - 2026-11-19 (lane preddoc5): the slug renamed `default-imports` in the documents: the word `default-set` already names the RULED 2026-11-16 question on a label default of several strings (core/conditions/defaults); the record entry of 2026-11-19 keeps its word (review r59 COMPA-12).
 
 ## core/modules/positional — A positional binding
+was: parked/ideas/tuple-apart (2026-11-19, merged: the parked piece and this open piece were one question with two statuses in two base files; review r60 TUPLE-APART, FIXVER-1)
 slugs: tuple-parts
 rulings:
 - 2026-11-16 "Yes" (record: "2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"); a confirmation REOPENED the same morning, see the next item
@@ -1579,6 +1582,16 @@ readings:
 evidence:
 history:
 - `(x, y) := rx ~ /.../` kept in the design (the type picture); a tuple taken apart confirmed, then reopened; the lean in the frozen draft: (B1) on record, (A) in practice, asked again when a use appears.
+- 2026-11-19 (lane preddoc6, review r60 POSITIONAL-MAP / RULING-1): the question restated as the record's correction states it ("WHAT STANDS NOW: the positional list `(a, b) := X` is OPEN under tuple-parts, for a tuple and for a map alike; statement 7 of import-symbols ("left undefined for now") was nearer the record than its withdrawal, though its stated reason (no ordered right side) remains wrong: tuples exist", record "2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body"). The piece before said "a positional list against a MAP, which has no order, is not stated", the WITHDRAWN entry's wording.
+- 2026-11-19 (lane preddoc6, review r60 TUPLE-APART): parked/ideas/tuple-apart retired into this piece (the `was:` line above); its trigger is the base's "Asked again when" line. Its details entry, whole:
+  - rulings: 2026-11-16 (class: OWNER, reopening) the reopening quoted above; "nothing ruled on the parked item".
+  - the ideas file (`docs/design/predicates_future.md`) item 4, "Taking one tuple apart in a binding", whole:
+    WHAT: `(lo_h, lo_m) := lo` for ONE tuple (a set of several tuples is never taken apart: the parts no longer
+    pair up; the owner's "9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish"). STATUS: OPEN, with no
+    user while item 1 is parked (the manager's note, 2026-11-16; not an owner ruling). WORKED OUT IN:
+    joint_condition.md §4A.3 (both positions; the lean "one tuple only"). TRIGGER: item 1 taken up, or an example
+    that needs one part of a tuple value.
+  - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied there.
 
 ## core/modules/export — Export
 slugs:

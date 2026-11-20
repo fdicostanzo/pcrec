@@ -79,23 +79,6 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says `all` is retired and the mark is out.
 
-## parked/ideas/tuple-apart — Taking one tuple apart in a binding
-slugs: 
-rulings:
-- 2026-11-16 (class: OWNER, reopening) "Nothing is set in stone. I'd like to hear it out. So It's the set that makes it an item so you can't break it apart without changing its meaning. Like 9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish. Makes sense" (record: "2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the "use it whole" case heard"); nothing ruled on the parked item
-rejected:
-readings:
-evidence:
-history:
-- the ideas file (`docs/design/predicates_future.md`) item 4, "Taking one tuple apart in a binding", whole:
-
-  - WHAT: `(lo_h, lo_m) := lo` for ONE tuple (a set of several tuples is never taken apart: the parts no longer
-    pair up; the owner's "9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish").
-  - STATUS: OPEN, with no user while item 1 is parked (the manager's note, 2026-11-16; not an owner ruling).
-  - WORKED OUT IN: joint_condition.md §4A.3 (both positions; the lean "one tuple only").
-  - TRIGGER: item 1 taken up, or an example that needs one part of a tuple value.
-- 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
-
 ## parked/ideas/unset-member — An "unset" member in a value set
 slugs: 
 rulings:

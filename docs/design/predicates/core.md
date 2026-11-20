@@ -622,7 +622,7 @@ WHOLE `19` HOLDS, `020` FAILS, `20` FAILS / SEARCHED `x25` `2`@1 / FIND-ALL `25 
 ### Tuples   [core/values/tuples]   ruled 2026-11-16
 A tuple `(9, 30)` is a value, the one-tuple set of arity 2; every set carries a fixed arity, and a comparison on a tuple atom is in dictionary order.
 needs: core/values/comparisons core/conditions/form
-see: core/modules/positional parked/ideas/tuple-apart
+see: core/modules/positional parked/ideas/first-rest
 - A tuple is used as a value wherever values are used: bound, passed, returned.
 - ARITY: one set kind with an arity fixed at compile time; `|`, `&` and array entries need equal arity; the labels
   left of a joint entry's colon number the set's arity; only an arity-1 set has text (a pattern, a hole, `&` with
@@ -634,7 +634,8 @@ see: core/modules/positional parked/ideas/tuple-apart
   `(>= 9, >= 30)` compares each part on its own. `10:15` is in the first and not the second.
 - A modifier around a set of tuples acts on every part: `padded(>= (9, 30))` reads h and m both padded; a per-part
   modifier is parked (parked/ideas/partial-transforms).
-- Taking ONE tuple apart (`(a, b) := lo`) is open (core/modules/positional); a first/rest walk is parked.
+- Taking ONE tuple apart (`(a, b) := lo`) is open (core/modules/positional); a first/rest walk (a tuple's first
+  part and the rest, recursively) is parked (parked/ideas/first-rest).
 - A tuple is not a RECORD: the parentheses of a call or a condition are never a value (core/operators/bindings).
 WHOLE `9:45` HOLDS, `9:15` FAILS, `10:15` HOLDS / SEARCHED `9:15 10:30` `10:30`@5 / FIND-ALL `9:30 9:15 12:45` [`9:30`@0, `12:45`@10] (`time & ((h, m): >= (9, 30))`, time := `/(?<h>\d{1,2}):(?<m>\d{2})/`)
 
@@ -1084,7 +1085,8 @@ needs: core/modules/binding-list
 - A bare `=` anywhere but first is a compile error (a reading).
 - "Every member" is every public member (a reading). The hide-label rule fires per name, so a name a library adds
   later can start a warning in a program that used `(=)` (a reading).
-- With `(=)` a reader cannot tell from the file alone whether a bare name is a label or an imported name.
+- With `(=)` a reader cannot tell from the file alone whether a bare name is a label or an imported name (a
+  reading: the cost of the form told to him, not an objection).
 modes: n/a (no matching involved)
 
 ### Leaving a member out   [core/modules/leave-out]   ruled 2026-11-19
@@ -1116,16 +1118,18 @@ needs: core/modules/default-set
 modes: n/a (no matching involved)
 
 ### A positional binding   [core/modules/positional]   open tuple-parts 2026-11-19
-Is a positional list on the left of a binding, `(a, b) := lo`, a way to take ONE tuple apart, or is a tuple only ever used whole?
+Is the positional list on the left of a binding, `(a, b) := X`, defined, for a tuple and for a map alike, or is a tuple only ever used whole?
 needs: core/modules/binding-list
-see: parked/ideas/tuple-apart
-- The two candidates: (A) a tuple is used whole, its parts not reachable; (B1) one tuple is taken apart on the
-  left of a binding, with no index and no new operator.
+see: parked/ideas/first-rest
+- The candidates for a tuple: (A) a tuple is used whole, its parts not reachable; (B1) ONE tuple is taken apart on
+  the left of a binding (`(lo_h, lo_m) := lo`), with no index and no new operator. A set of several tuples is never
+  taken apart.
+- The same question covers a positional list against a MAP (a module, an import), which has no order.
 - The reason against access, the owner's: the SET makes the pairing, so breaking a set of tuples apart changes
   its meaning (`9:30`, `10:00` apart are `9, 10` and `30, 00`).
-- Nothing uses either answer while the first/rest binding is parked.
-- By-name selection from a map is always marked by `=` (the binding list) and is not part of this question; a
-  positional list against a MAP, which has no order, is not stated.
+- Nothing uses either answer while the first/rest binding is parked (parked/ideas/first-rest). Asked again when
+  that item is taken up, or an example needs one part of a tuple value.
+- By-name selection from a map is always marked by `=` (the binding list, ruled) and is not part of this question.
 modes: n/a (no matching involved)
 
 ### Export   [core/modules/export]   reading 2026-11-19
