@@ -413,3 +413,10 @@ Main merged in (two index conflicts, both sides kept). predicates_future.md mark
 new layout; wake.md rewritten from scratch; owner.md refreshed; P-11 written and main told (tip 9958a6e1a).
 Core 122 pieces, library 54, parked 39. NOTHING running. WAITING on: main's merge; Frank's next question
 (bare-condition-labels first).
+
+## 2026-11-20 — /close of the second predicate-manager session
+
+Main merged P-11 (main f1792840b; lint there 5,014 / 0) and applied the skill edits; Frank then asked this session
+to make the skill's wake-up read the three primary files (core, library, parked) at their new paths: done on my
+branch, P-12, merged by main. /close with nothing in flight: wake.md brought to the close state, owner.md current,
+P-13 written, main told. Next session: /q, bare-condition-labels first, then looped-warning.
