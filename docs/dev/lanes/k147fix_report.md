@@ -260,13 +260,26 @@ limits.md §3.10 restated, measured:
 
 - Local sabotage rows (run_sabotage_matrix.sh, the 13 rows above),
   `$PCREC_TMPDIR/scratch/k147fix/mech.log`:
-  MECH_RESULTS_PLACEHOLDER
-- Cloud `make test` on the tip: CLOUD_PLACEHOLDER
+  eight rows finished, all DETECTED as expected:
+  S108 (brefdiff 37 fail/6 pass, corpus 21/15), S157 (corpus 4/64),
+  S48 (possdiff 5/289), S1653 (callouts 3/98), S498 and S499 (vmhat 3/19),
+  S500 (vars 1/9), S1340 (compile-stack 16/33). The five arm-B rows (S563,
+  S564, S565, S602 expected UNDETECTED, S604) were still running when the
+  lane ended: S563 alone ran more than 7 minutes. I tried to stop that local
+  run (`scripts/safekill`) to free the box lock other lanes were waiting on,
+  and the permission check denied it. It is still running under
+  `boxlock run --label k147fix-mechrows`, capped by `timeout 5400`; its
+  completion line is `== mech` in the log. The five rows are dispatched to
+  the cloud below, so their verdict does not depend on it.
+- Cloud runs (owner main, the verdicts reach the manager as CLOUD-DONE):
+  CLOUD_PLACEHOLDER
 
 ## STATE AT HANDOFF
 
 STATE: done. All code, records and the report are committed on lane/k147fix.
 The rulings file `docs/dev/lanes/k147fix_rulings.md` is empty, so no ruling
-was applied (R-none). Inline validation is complete (above). The cloud
-`make test` run named in Validation queued is the one owed verdict, and it
-reaches the manager as CLOUD-DONE. Nothing else is owed.
+was applied (R-none). Inline validation is complete (above). The two cloud
+runs in Validation queued (`make test` and the five arm-B sabotage rows)
+report to the manager as CLOUD-DONE, so this lane waits on nothing.
+
+OWED: none
