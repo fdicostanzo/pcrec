@@ -549,3 +549,11 @@ as I folded it. Checked and told him: same answers as "before" except where the 
 `[a-z]x & [A-Z]x`); bound-and-inserted equals inserted-whole under both; it collides with the ruled "a flag it
 writes for itself wins" (`A & A` against `A` with `(?-i)`). Record tip 9d763c435. Nothing folded.
 WAITING on: Frank (flags-before-and).
+
+## 2026-11-19 (23:30) — flags-in-filter confirmed (before); a warning proposed to him
+
+"I agree with the ruling that the environment of the hole sets the default options for the expression inside."
+Folded by me (ruling item, his own proposal rejected by him, the `[a-z]x & [A-Z]x` line; lint 5,255 / 0). He
+asked for a warning; proposed flags-warning (fire when the sides-first result differs from the expression alone
+with the flag on its result; brute-force run on six examples, two WARN, four quiet). Not delivered yet (after
+P-14). WAITING on: Frank (flags-warning).
