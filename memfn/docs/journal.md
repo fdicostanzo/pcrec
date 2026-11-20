@@ -4412,3 +4412,9 @@ Lane rampchunk delivered a7208023d (report docs/dev/lanes/rampchunk_report.md on
 - Counted facts on early match: RAMP and RAMPCLIP read 34 / 1,496 bytes past the match; ALIGN and FIXED read about B. On dense at B=4096, RAMP crosses a block end on 255 of 266 windows; RAMPCLIP crosses 0 and makes 267 asks against ALIGN's 257.
 - Smoke (not evidence): even PASS ran about 1.3x OFF on dense, so the scalar window scan may fail NO-LOSS.
 Critic round crit-memfn-rampchunk (opus coordinator) launched, due 18:30.
+
+### 2026-11-20 15:35 — rampchunk critic: NOT READY TO TIME; fix lane rampfix
+The critic round (review docs/dev/reviews/2026-11-20-memfn-rampchunk.md, RULING appended) found two problems:
+- MEAS-6: the owner's pair (RAMPCLIP vs ALIGN) is identical by construction in 32 of 36 cells, because each search runs once from offset 0.
+- FID-5/3: no control sees a window defect at the timed B; a never-re-ask plant would read NO-LOSS.
+Plus verdict-printing holes. All FIX-NOW accepted. MEAS-7 (which reading of "max ramp") was ruled by covering both readings: RAMP vs ALIGN is now a named pair, and STREAM-SAFE (0 crossings) is a verdict row. Fresh lane rampfix (opus) is due 19:30, then a one-critic re-check before queueing 712. The stray __pycache__ was removed. Process lesson (critic skill, proposed): plant a harness's own sabotage rows at the timed parameter values.
