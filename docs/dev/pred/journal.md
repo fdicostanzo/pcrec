@@ -467,3 +467,13 @@ worktrees/predloop, branch lane/predloop off 18ca97f7e), deliver + empty rulings
 lanewatch --follow armed. Left open by his answer: class-value (non-digit classes). While it runs I do NOT edit
 core/arrays, core/values/arithmetic|functions, lib/builtin/enumerate, lib/structural/sort on my branch.
 WAITING on: predloop; Frank's next question (flags-in-filter).
+
+## 2026-11-19 (night) — predloop merged; one of my answers to him withdrawn; quantified-order asked
+
+predloop DONE (lanecheck rc 0), merged (tip after the record entry b47e798cf), stopped: lint 5,062 / 0, plan-lint
+clean, its model re-run on my branch 20 / 0. class-positions and class-index merged into lift / class-order /
+enumerate; new open class-value. My reading (c) half failed: I told him lazy + greedy gives `123` on `x123` from a
+hand model that enumerated count by count; enumerate's recorded priority order is depth first and gives `12`.
+Withdrawn in the record; asked him quantified-order. LESSON (again): a hand model is the model's INTENT; the
+lane's mechanical one found it. Critic round on the session's batch is owed before delivery to main (ask main
+for the number first). WAITING on: Frank (quantified-order).
