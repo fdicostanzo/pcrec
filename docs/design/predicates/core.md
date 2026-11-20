@@ -1003,7 +1003,11 @@ see: core/holes/and-in-hole
   `C := /[a-z]+/ & /b.*/` at `/(?i)id-${C}/` is the `&` written in the hole (a reading). Used where no rx
   surrounds it, the same binding reads under its own flags: `C` as a program holds WHOLE on `blah`, not `BLAH`.
 - An `&` written at program level has no surrounding rx (core/patterns/flags).
+- "the environment of the hole sets the default options for the expression inside": the sides take the flags
+  first and are then matched on the stretch, so `/[a-z]x/ & /[A-Z]x/`, nothing on its own, matches inside a
+  case-insensitive hole (the second line below).
 WHOLE `ID-BLAH` HOLDS, `id-blah` HOLDS / SEARCHED `x ID-BLAH id-blah` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-Blah` [`id-blah`@0, `ID-BLAH`@8, `Id-Blah`@16] (`/(?i)id-${/[a-z]+/ & /b.*/}/`)
+WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-ax Ax` `ax`@1 / FIND-ALL `ax AX 7x` [`ax`@0, `AX`@3] (`/(?i)${C}/`, C := `/[a-z]x/ & /[A-Z]x/`; `C` as a program: WHOLE `ax` FAILS, `AX` FAILS)
 
 ### Labels through a hole   [core/holes/labels]   ruled 2026-11-18
 For labels, only the inserted pattern's public (exported) labels flow into the outer pattern; for matching it behaves like a literal.

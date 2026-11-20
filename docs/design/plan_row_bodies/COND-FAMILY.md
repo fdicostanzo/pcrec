@@ -6122,3 +6122,34 @@ the resolved set, the only reading under which his example gives nothing):
   wrapped, would accept it: one set, two spellings, two answers (against meaning-not-spelling).
 - (4) and (5) agree with the documents as they stand (core/holes/value: the read's text matched "under the
   options in force at the hole"; a bare condition tested where the hole stands).
+
+### 2026-11-19 OWNER RULING — flags-in-filter confirmed: the environment of the hole sets the default options for the expression inside; and a request for a warning
+tags: core/holes/flags/in-filter core/holes/flags core/diagnostics/warnings
+
+Asked **flags-before-and**, with the collision shown (under resolve-then-wrap, `/(?i)${A & A}/` with A :=
+`/(?-i)ab/` would accept `AB` where `/(?i)${A}/` refuses it), and asked what that program should do. HIS WORDS,
+whole:
+
+"That's a good one! As soon as I think I have it figured out you present a fantastic conundrum.
+
+flags-in-filter: i cannot think of a different solution. I agree with the ruling that the environment of the
+hole sets the default options for the expression inside.
+
+However, I also anticipate the bug reports that will come from this. Is there a way to provide a warning?"
+
+Class: a RULING, confirming "flags-in-filter: both sides inherit" in his own statement of it: "the environment of
+the hole sets the default options for the expression inside". It answers flags-before-and: BEFORE (the options
+are the expression's defaults, so each side starts with them and a flag a side writes for itself wins). His
+resolve-then-wrap proposal of the entry before is thereby DROPPED by him ("i cannot think of a different
+solution"). And a QUESTION / REQUEST to the manager: "Is there a way to provide a warning?" (he expects bug
+reports). Nothing ruled about the warning.
+
+The manager's PROPOSAL for the warning (told to him; asked as **flags-warning**, not ruled; run:
+`$PCREC_TMPDIR/scratch/pred/flagswarn.py`, brute force over 1,554 strings of `abxABX`, length 1 to 4): warn at
+the HOLE when a filter expression (an `&` or a complement) put in a hole whose inherited flags differ from the
+expression's own would give a different result than "the expression alone, then the flag on its result"; an
+operand that writes the flag itself is taken as it is. On the session's examples: `[a-z]x & [A-Z]x` under `(?i)`
+(alone 0 strings, in the hole 12): WARN; `[a-z]+ & ![A-Z]+` (alone 120, in the hole 0): WARN; `[a-z]+ & b.*`,
+`[ab]+ & a.*`, `[a-z]+ & !b.*`, `(?-i)ab & (?-i)ab`: quiet. Its message names the fix his principle gives: write
+the flag in the operand. Readings: it is a set comparison of the kind `pcrec.test.never` already is, computable
+where the operands are regular; where they are not, it does not fire.
