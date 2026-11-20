@@ -3598,3 +3598,42 @@ WITH the kit before main's width cells are timed.
 Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.md, formsland6_report.md.
 
 - ack: R-46 (2026-11-18 18:23, kit manager) — taken as a design REPLY only (no build go on either side): a form for the weaker presence-site question (whole run at or after p? and some position at or after p where it occurs), what moves in the reply contract (ret_pred, serves, G2's leftmost reference), and whether it is a seam event with no mover. Planned: a design lane by day 11-19 after tonight's sets' verdicts, with a critic round on the reply before it is posted here.
+
+- done: R-46 (2026-11-20, kit manager) — DESIGN REPLY only (no build go either side; nothing built; critic round run).
+  The re-asked pre-check on dense occurrences ([REQ-PAST-LAST], unit U1-k of docs/design/dense_hit_arch.md).
+  - **(1) As it stands? NO.** ALL_PRESENT + ASSIGN answers one question, the LEFTMOST hit of preds[ret_pred] in [lo, n):
+    sound for the weaker question but the costliest answer, and the bounded row's move (`landmark_position - K`) is
+    sound only on the leftmost, so a weaker single answer breaks it. The site needs a SECOND answer beside the leftmost.
+  - **Form: the leftmost stays; a HORIZON is added** (precedent `count_by_caller` + `count`). Define fact
+    `mf_site.horizon_gap` (appended LAST, OBLIG, stated by NAME like `head_max`): 0 = no use asks a horizon (every
+    site today) or MF_GAP_UNBOUNDED; a finite gap (the general form) is refused by site_check, no customer (D77). Use
+    hook `mf_hooks.horizon` (appended LAST, an lvalue like `result`; NULL = not asked). On a hit `result` = the
+    leftmost c as today, `horizon` = an occurrence f with c <= f < n, which f is the kit's (D157), f = c always
+    correct; on a miss neither is promised and `on_miss` runs.
+  - **Who states it (CONTRACT-2, SOUND-2):** only the VM `handoff-attempts-unbounded` row's re-entry use. The bounded
+    row states none: its benefit falls only on hits within K + 1, read by main as SUPER-DENSE under the owner's
+    working scope (discussion, slug dense-not-target; docs/design/plan_row_bodies/REQ-PAST-LAST.md; revisitable);
+    its measured loss (§2.41¶8c) is NOT addressed here. The entry's use and the DFA/hybrid re-entry keep NULL.
+  - **Safe (inference; pcrec's design confirms; the critic's exhaustive model held it):** the unbounded row never
+    moves, so re-asking only once the attempt passes f runs today's attempt sequence exactly: answer- and
+    give-up-identical on every subject and step budget.
+  - **Kit's leading method (not the contract): FORWARD only** (CONTRACT-3/4): f = the last occurrence in (c, c + w],
+    w = min(B, max(1, lo - start)) (MEAS-1): per search call, look-ahead the search never needed is at most the
+    distance it already covered; O(log B) asks to reach B on dense occurrences; B = the page size (the owner's
+    constraint). Scalar arm composes today's forward FIND (one call per occurrence in the window, MEAS-2); a
+    one-pass forward "last occurrence in a range" form is NEW work with its own card and deny; no reverse form.
+  - **(2) What moves.** `ret_pred`'s meaning: nothing. Two fields.def rows plus a class for MF_GAP_UNBOUNDED;
+    non-serving rows declare `[FLD_horizon_gap] = CM(ZERO)` in the three shared serves macros, `horizon` needs no
+    entry off the serving rows (CONTRACT-1); serving rows: the pre-check ASSIGN rows and generic, first text
+    `horizon = result`. G2's leftmost reference UNCHANGED; NEW: a D27-blinded horizon reference and three fail-closed
+    gate cases; the presence family's site-file pins re-pinned by name (CONTRACT-7). No MF_VOCAB/MF_CLASS_V move;
+    DELEG_SITES `PRE` unchanged.
+  - **(3) Seam event, no mover? YES:** MF_SITE_ABI (next number at landing), ZERO emitted-byte movers while every site
+    states 0 (emit_sweep, arms.tsv, G2 quick verdicts, link/stack, the arch note's U1-k checks). Land it as U1-k's
+    first commit under pcrec's build go, not ahead (D77). The METHOD is a byte mover: one pcrec abi event with the
+    consumer step (new origin argument, CONTRACT-6; deny row + docs/spec hunk, D80; card; D144 alpha both layers),
+    and only if pcrec's owed post-K38-2 re-measure still shows the dense loss above noise (CONTRACT-8).
+  - **Card and controls (MEAS-4..7):** three arms (method; its own deny = today's text; the public deny); adversary
+    cells named; cold verified by mincore, not tmpfs; a deterministic COUNT control; value sabotages land with the
+    method row. Open: Q1-Q11 in the design notes (docs/dev/lanes/r46reply_report.md on lane/memfn-k1108; critic review docs/dev/reviews/2026-11-20-memfn-r46reply.md, to move into a
+    kit design note at the build go). Nothing filed, nothing built.
