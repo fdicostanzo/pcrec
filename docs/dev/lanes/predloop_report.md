@@ -19,7 +19,7 @@ and before this report); last entry applied: none.
   (their lines now live in library.md, verbatim there: `grep -c` 1 in library.md, 0 in core.md), M1 and SL (later
   pieces in its sections). predspec291's model re-run: output identical to its committed `.out` (`diff` empty, rc 0),
   PART CO included.
-- Owed runs: none.
+OWED: none (no box jobs, no owed runs).
 
 ## RULINGS FOLDED
 
