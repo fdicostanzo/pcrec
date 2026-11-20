@@ -468,7 +468,8 @@ fi
 # first-match table): the pre-check's run reply where its run part renders,
 # else the `cover`/run-pinned window site's member, else no `@` -- so a
 # `dominated` VM artifact whose prefilter is not run-pinned (`(a)(b)`,
-# `(?<=xyz)ab`, utf8's `é` here) stamps the run with no `@`.
+# utf8's `é` here) stamps the run with no `@`. `(?<=xyz)ab` was one until
+# span_arms L3: its run is now `xyzab` at K -3, `emitted`, `@2` the kit's.
 #
 # THE EXPECTED VALUES ARE LITERALS, hand-derived from the shipped prior and
 # from the walk's stated arms, NEVER recomputed here from
@@ -527,10 +528,18 @@ while IFS='%' read -r pat _sep want wantrun; do
         # [OPT-LITSCAN] S4 C3: an exact scan position is the stamped byte
         # (REQ_BYTE == bytes[idx]); a pair is scanned as both members and
         # REQ_BYTE names the set's pick instead (tuning.md §2.27).
+        # span_arms L3 (D-6, review r51 READYL3-9 (5)): `@idx` is the KIT's
+        # scan position over the WHOLE run, lookbehind bytes included, while
+        # REQ_BYTE is pcrec's pick over the CONSUMED positions; at a negative
+        # REQ_HANDOFF the two may differ (`(?<=xyz)ab`: `@2` is `z`, the byte
+        # `b`), so the scan is checked on `@idx`'s own member there, and on
+        # the stamped byte (their equality) everywhere else.
         if [ "$(run_scan_members "$gotrun" | wc -w)" -eq 1 ]; then
-            reqrun_scans "$a" "$got" \
-                && ok "[3.1b] $pat: the run scan's memchr carries the stamped byte $got" \
-                || bad "[3.1b] $pat: stamps \"$got\" with run \"$gotrun\" but no run-scan memchr for that byte is emitted"
+            mem="$got"
+            case "$(stamp "$a" REQ_HANDOFF)" in -*) mem="$(run_scan_members "$gotrun")" ;; esac
+            reqrun_scans "$a" "$mem" \
+                && ok "[3.1b] $pat: the run scan's memchr carries the scan position's byte $mem (stamped byte $got)" \
+                || bad "[3.1b] $pat: stamps \"$got\" with run \"$gotrun\" but no run-scan memchr for byte $mem is emitted"
         else
             reqrun_scans_run "$a" "$gotrun" \
                 && ok "[3.1b] $pat: the run's pair position is scanned on both members ($(run_scan_members "$gotrun"))" \
@@ -577,7 +586,7 @@ foo|bar%%none%[6266][616f][6f72]@0
 (?i)abc%%none%414243@1/dfdfdf
 a*%%none%none
 (?:ab)*c%%99%none
-(?<=xyz)ab%%98%6162
+(?<=xyz)ab%%98%78797a6162@2
 q%%113%none
 ROWS
 
@@ -2016,7 +2025,10 @@ s512_reentry() {
     # [REQRUN-VM] a VM hybrid's prefilter declares it from its own start
     # (`= search_from`); the VM attempt loop's re-entry keeps it with no
     # DFA_PREFILTER stamp, its retry re-asking from attempt_position.
-    nd="$(grep -c -E '^ *size_t landmark_position = (handoff_position|search_from);$' "$a")"
+    # span_arms L3: at K < 0 the hybrid prefilter's declaration carries no
+    # value and its first ask follows it (a neutral `= search_from` would
+    # move the scan to search_from + B before any hit, the l3feat finding).
+    nd="$(grep -c -E '^ *size_t landmark_position( = (handoff_position|search_from))?;$' "$a")"
     if [ "$pf" != "handoff" ]; then
         if grep -q '^ *if (landmark_position < attempt_position) {$' "$a"; then
             [ "$(stamp "$a" VM_PREFILTER)" = "none" ] && [ "$nd" -eq 1 ] \
@@ -2036,6 +2048,24 @@ s512_reentry() {
     [ "$nd" -eq 1 ] && [ "$st" != "none" ] \
         || { bad "[5.12l] $lbl: DFA_PREFILTER \"handoff\" with $nd landmark declarations / REQ_HANDOFF \"$st\""; return 0; }
     b="$(reentry_block "$a")"
+    if [ "$st" -lt 0 ] 2>/dev/null; then
+        # span_arms L3 (D-8's K < 0 row, B = -K): stale only when the kept hit
+        # lies more than B before the scan; the re-ask's floor is
+        # max(0, scan_position - B); the end clamp; the move ADDS B. The
+        # prefilter's first ask is real, from max(0, search_from - B).
+        local kb=$((-st))
+        printf '%s\n' "$b" | grep -qx " *if (landmark_position < scan_position && scan_position - landmark_position > $kb) {" \
+            && printf '%s\n' "$b" | grep -qF "(scan_position >= $kb ? scan_position - $kb : 0)" \
+            && printf '%s\n' "$b" | grep -qx " *if (subject_length - landmark_position < $kb) return 0;" \
+            && printf '%s\n' "$b" | grep -qx " *scan_position = landmark_position + $kb;" \
+            && ! printf '%s\n' "$b" | grep -q 'landmark_position - ' \
+            || bad "[5.12l] $lbl: the K < 0 restart block does not re-ask from scan_position - $kb, clamp, or add $kb:
+$b"
+        grep -qx ' *size_t landmark_position;' "$a" \
+            && grep -A1 -x ' *size_t landmark_position;' "$a" | grep -qF "(search_from >= $kb ? search_from - $kb : 0)" \
+            || bad "[5.12l] $lbl: at K $st the prefilter does not ask the gate from search_from - $kb at its start"
+        return 0
+    fi
     printf '%s\n' "$b" | grep -qx ' *if (landmark_position < scan_position) {' \
         && printf '%s\n' "$b" | grep -qE '(landmark_position = rx_reqrun\(subject, subject_length, scan_position\);|landmark_position = \(\{.*(size_t rx_mf1_lo = scan_position;|rx_mf1_q = subject_length > scan_position \? memchr\(subject \+ scan_position, ))' \
         && printf '%s\n' "$b" | grep -qx " *if (landmark_position - scan_position > $st) {" \

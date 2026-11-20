@@ -91,6 +91,15 @@ CASES = [
   "`a^15 b^17`; a guard that kept its first 32 positions instead narrows the run to a "
   "string absent from the subject and answers NOMATCH",
   ("", "vm")),
+ ("(?<=a{20})b{20}", "byte",
+  ["a" * 20 + "b" * 20, "x" + "a" * 20 + "b" * 20 + "x", "a" * 19 + "b" * 20,
+   "a" * 12 + "b" * 28],
+  "W-T3 (span_arms §5.7 and §14.1 item 6, span arms L3): the run `a^20 b^12` begins "
+  "20 bytes before every match (K -20); under --memfn=no-fd-pres-pick "
+  "(tests/memfn/run_presence.sh [deny-answers]) the pre-check tests the WHOLE run, and "
+  "a TOP `++` that kept the LAST positions states `a^12 b^20` at -20, found 8 bytes "
+  "late: the body starts past the match and answers NOMATCH",
+  ("", "vm")),
 ]
 
 
