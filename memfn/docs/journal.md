@@ -4354,3 +4354,6 @@ scratch/memfn/owednotes/note1_set1.md (set 1 INCONCLUSIVE-AT-NOISE, libc gate 3.
 
 ## 2026-11-20 10:05 — set 1 CLOSED INCONCLUSIVE-AT-NOISE (main)
 Main: no gate re-size after the data (post-hoc, as with the block table) and no third night. Set 1 stays INCONCLUSIVE-AT-NOISE. If a later decision needs it, it reopens with the gate set BEFORE the night: libc noise across the two quiet nights plus the note2 bias. Note 3 (64 = grid edge) goes in main's record beside the cover-cap width row. worktrees/mfind unpinned (prunable).
+
+## 2026-11-20 10:00 — prune pass
+Removed via wtprune --apply --force: formsfixg/i/j/k/m and relabel64 (merged; only untracked marker/deliver files; diffs saved under worktrees/.wtprune.force/). fcards-night was removed at 09:56 by a prune pass after its unpin (runs done). KEPT, not in main or the kit branch: gatebudget (544f63b2d, report commits), mfcal (fd0ea9a3a, mfcalfix report), mfind (e7f9a4365, run.py wait budget). The kit decides merge-or-archive for these at the main merge.
