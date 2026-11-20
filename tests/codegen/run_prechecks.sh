@@ -1735,7 +1735,9 @@ ROWS
 #       counted as one byte, `(?i)straße`'s U+017F) and S466 (an alternation
 #       taking its left branch's width).
 #   (b) PRESENCE: `handoff_position` is declared iff the stamp is not "none",
-#       and the subtraction and the comparison carry the stamp's K.
+#       and the subtraction and the comparison carry the stamp's K; at K < 0
+#       (span_arms L3, a run that begins inside a lookbehind) the end clamp,
+#       the comparison and the ADD carry B = -K (§14.3 D-8's K < 0 row).
 #   (c) BOUNDED: no artifact whose `req_landmark_maxoff` reads `unbounded` hands
 #       off (S467: answer-equivalent, so only this can see it), on the
 #       witnesses and on a corpus population with a floor (K35).
@@ -1792,6 +1794,15 @@ s512_presence() {
         handoff_block "$a" | grep -qx " *handoff_position -= $st;" \
             && handoff_block "$a" | grep -qx " *if (handoff_position - search_from > $st) {" \
             || bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but the block does not subtract and compare $st"
+    elif [ "$st" -lt 0 ]; then
+        # span_arms L3 (D-8's K < 0 row): B = -K, added after the end clamp,
+        # never subtracted; the block always exists at K < 0 (READYL3-1)
+        local b=$((-st))
+        handoff_block "$a" | grep -qx " *if (subject_length - handoff_position < $b) return 0;" \
+            && handoff_block "$a" | grep -qx " *if (handoff_position >= search_from || search_from - handoff_position < $b) {" \
+            && handoff_block "$a" | grep -qx " *handoff_position += $b;" \
+            && ! handoff_block "$a" | grep -q 'handoff_position -= ' \
+            || bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but the block does not clamp, compare and add $b"
     else
         handoff_block "$a" | grep -q 'handoff_position -= ' \
             && bad "[5.12b] $lbl: REQ_HANDOFF \"0\" but the block subtracts"
@@ -1836,8 +1847,11 @@ a.?b%-e byte%2%2%[REQ-HANDOFF-L1] a BYTE landmark b, after a and an optional byt
 .{1,3}:%-e utf8%12%12%[REQ-HANDOFF-L1] three characters of up to four bytes before the colon
 \w+:%-e byte%unbounded%none%[REQ-HANDOFF-L1] the colon after an unbounded run
 [a-y]\d{0,150}:%-e byte%151%151%[REQ-HANDOFF-L1] K ADMISSION's witness: the ENTRY hands off at any finite K (the re-entry declines, 5.12m)
+(?<=foo)bar(\w)\1%-e byte%-3%-3%span_arms L3: the run foobar[\w] begins in the lookbehind foo, three bytes before every match (the VM attempt loop's row)
+(?<=e{10})eeeeeqzx%-e byte%-10%-10%span_arms L3: e{10} is ten bytes before every match, the run e^15 qzx begins there
+(?<=éa)bc%-e utf8%-3%-3%span_arms L3 (D-11): the lookbehind's BYTES, é's two (c3 a9) and a's one, not its two characters
 ROWS
-[ "$s512_n" -ge 22 ] \
+[ "$s512_n" -ge 25 ] \
     && ok "[5.12a] the hand pin table's $s512_n rows all compiled" \
     || bad "[5.12a] only $s512_n hand pin rows compiled"
 
