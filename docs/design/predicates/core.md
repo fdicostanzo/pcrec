@@ -1218,6 +1218,7 @@ see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/idea
 | `pcrec.anchor.whole` | an explicit anchor that provably sits at the edge of a filter role's stretch | anchor-warn-scope; core/filters/and |
 | `pcrec.warn.unused` | an `@warn.off` that suppresses nothing | the accepted list; the selector rule above |
 | `pcrec.label.numbered` | a label read by number on a pattern not written there (core/labels/numbers) | accepted |
+| `pcrec.compare.looped` | a hand-written `\|` of conditions whose labels can repeat | core/diagnostics/looped-compare |
 | (hide) | a binding that hides a label | name resolution |
 | `pcrec.match.never` | an inserted pattern's edge that can never hold beside its neighbour; every copy of a product removed | a reading |
 | `pcrec.dollar.filter` | the form `$x & S` | core/diagnostics/dollar-form |
@@ -1242,6 +1243,26 @@ by: core/principles/structural-warnings
 see: lib/control/when-test
 The warning is keyed on the form (an argument written as a bare pattern), which no macro body can see.
 modes: n/a (a warning)
+
+### A `|` of conditions over labels that can repeat   [core/diagnostics/looped-compare]   ruled 2026-11-16
+A hand-written `|` of conditions whose labels can repeat draws a warning naming the joint condition as the per-item form; a joint condition itself draws none.
+needs: core/values/tuples core/diagnostics/warnings
+- The warning moves no answer; its name is a placeholder (`pcrec.compare.looped`).
+- It keys off the shape (a `|` of conditions, labels that a loop can set more than once), not off a name.
+- Whether it is still wanted, and on which shape: core/diagnostics/looped-compare/still-wanted.
+modes: n/a (a warning)
+
+### Is the warning on repeating labels still wanted   [core/diagnostics/looped-compare/still-wanted]   open looped-warning 2026-11-19
+Is a warning on labels that can repeat still wanted, and on which shape: a hand-written `|` of conditions (as ruled), a bare condition over a looped label, or none?
+needs: core/diagnostics/looped-compare core/labels/labels-vs-captures
+- The ruled warning stands until this is answered.
+- Its first ground (each alternative checked over every pass) predates the rule that a bare condition reads the
+  last pass's own label (core/labels/labels-vs-captures).
+- Candidates: (a) as ruled, on a `|` of conditions whose labels can repeat; (b) on a bare condition reading a label
+  set inside a loop; (c) no warning of its own, `pcrec.label.unset` covering what can be unset.
+- (b) and `pcrec.label.unset` fire on different programs: `/(?:(?<h>\d);)+/ & (h: <5)` fires (b) only (every path
+  sets h); `/(?<h>\d)?;/ & (h: <5)` fires `pcrec.label.unset` only (an optional is a branching, not a loop).
+modes: n/a (a question about a warning)
 
 ## Spellings   [core/spellings]
 

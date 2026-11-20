@@ -696,19 +696,20 @@ history:
 - 2026-11-19 (lane preddoc4): a new open sub-piece: the two readings of `0` in a loop stated once, as a question (review r59 ZERO).
 
 ## core/conditions/pass-start-read — Labels as they stand
-slugs: pass-start-read looped-warning looped-compare
+slugs: pass-start-read
 rulings:
 - 2026-11-17 "pass-start-read: yes keep it" (record: "2026-11-17 OWNER RULING — pass-start-read")
 - 2026-11-17 "I do want that. It makes sense and frankly pcre is wrong on this." (record: "2026-11-17 OWNER RULING — what an unqualified `$x` reads")
 rejected:
 - a "pass begins" reset rule — by owner ruling — pass-start-read (keep the previous pass's value before the group).
 - `$x` "as standard pcre" (pass-list-read's literal reading) — by owner ruling — the `$x` ruling: `$x` reads the label.
-- a warning on a bare condition over a looped label (looped-warning) — withdrawn by the manager (the draft §R.2, with `compare.looped`).
+- a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — withdrawn by the manager (the draft §R.2); the question is open (core/diagnostics/looped-compare/still-wanted).
 readings:
 evidence: preddoc3a_model.py PSR (the draft's PART PS line; printed answers reproduced) and PSR2 (WHOLE equals "the items are non-decreasing" on 1,365 texts over `139;`); sabotage s12 caught.
 history:
 - the draft R.1.7; 2026-11-17 pass-start-read and the `$x` ruling.
 - 2026-11-16 looped-compare ("looped-compare: warn", record "2026-11-16 RULING — a compare over looped labels warns"): the warning on a compare over looped labels was MOVED by joint-loops (3) onto a `|` of conditions over labels that can repeat (record "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); after after-loop-read (core/labels/labels-vs-captures) a bare condition reads the last pass's own label and the draft withdrew `compare.looped` with looped-warning (§R.2, rejected above). The slug is homed here with that rejected line (lane preddoc5).
+- 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1): the line above read a MANAGER's withdrawal as the end of an OWNER-ruled warning. The warning stands as joint-loops (3) left it (core/diagnostics/looped-compare, both rulings cited there); whether it is still wanted is open (core/diagnostics/looped-compare/still-wanted). The slugs looped-compare and looped-warning moved to those two pieces.
 
 ## core/conditions/defaults — Defaults and absent labels
 slugs: default-set unset-component drop-mark default-value match-context zero-pass-empty domain-scope mark-narrows mark-in-none mark-range mark-under-not one-witness default-reaches-dollar default-scope mark-design
@@ -1736,6 +1737,36 @@ readings:
 evidence: the draft R.1.10 (4); preddoc2 PART WT (the consumed form itself).
 history:
 - 2026-11-19 (lane preddoc2): split from the old core/conditional/test when `when`, its test and `peek` moved to the library: the warning is the one part of when-peek a body does not produce, so it stays a core diagnostic, beside core/diagnostics/nullable-hit (a warning on a library name's argument, kept in the core the same way).
+
+## core/diagnostics/looped-compare — A `|` of conditions over labels that can repeat
+slugs: looped-compare
+rulings:
+- 2026-11-16 "looped-compare: warn" (record: "2026-11-16 RULING — a compare over looped labels warns"); the meaning stays, the compiler warns when a compared field can hold more than one occurrence, naming the fix (the compare inside the loop's item)
+- 2026-11-16 "I agree. Makes sense." (record: "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); part (3): "the looped warning's subject is now a `|` of conditions whose labels can repeat (each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint condition itself draws no such warning". The owner's LAST word on the warning; it MOVES the 00:09 warning, it does not retire it
+rejected:
+- the warning on a compare over the looped fields themselves (the 00:09 shape) — by owner ruling — joint-loops (3) moved its subject onto a hand-written `|` of conditions; the joint condition draws none.
+readings:
+- the name `compare.looped` (the draft §7.1, its name LEAN), read with the compiler's `pcrec.` prefix (the ADDENDUM of "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the manager's; the draft notes it looks like a compare-library path (review r43 E; the spellings review).
+- "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path", in the manager's MINE paragraph) and the draft's "[REV 25.1] WITHDRAWN to the next review with looped-warning" (§7.1, §R.2) — the MANAGER's words: a manager's withdrawal does not undo an owner ruling, so the warning stands as joint-loops (3) left it; whether it is still wanted is core/diagnostics/looped-compare/still-wanted (the predicate manager's ruling of 2026-11-19, lane preddoc6).
+evidence: the draft §8 caveat (6) and §7.1's rows (`9:30,10:00,` rejected by the per-label meaning; the warning's text LEAN).
+history:
+- 2026-11-16 00:09: looped-compare asked (keep, error or warn; lean warn), ruled "warn" (the draft rev 19, rulings R-2: `compare.looped`). 11:17: joint-loops (3) moved the warning onto a hand `|` of conditions.
+- 2026-11-17: after-loop-read made a bare condition read the last pass's own label; the manager sorted its OWN looped-warning proposal as `label.unset` and sent it and `compare.looped` "to the next review as told"; the draft rev 25 marked `compare.looped` WITHDRAWN with it (a manager's act on an owner-ruled warning).
+- 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1 / RECOUNT-7): a new piece. The documents before said only "withdrawn by the manager" (core/conditions/pass-start-read) and cited neither ruling as a `rulings:` item; lane preddoc5's claim table row for this entry ("SUPERSEDED by joint-loops (3), then after-loop-read (2323 ...)") was WRONG: record line 2323 is "2026-11-17 OWNER RULING — last-pass-default: regex", and neither entry supersedes the warning. The slug looped-compare moved here from core/conditions/pass-start-read.
+
+## core/diagnostics/looped-compare/still-wanted — Is the warning on repeating labels still wanted
+slugs: looped-warning
+rulings:
+rejected:
+readings:
+- the manager's proposal, a compile WARNING on a bare condition over a looped label: "MINE, not ruled: a compile WARNING when a bare condition reads a looped label (proposed to him twice, not answered ...)" (record "2026-11-17 OWNER RULING — last-pass-default: regex"); "the manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the manager's proposal" (record "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label") — the MANAGER's words.
+- the manager's withdrawal: "the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a condition reads a label that can be unset where it is read, with no default) seen under the one label rule" (record "2026-11-17 OWNER — a principle for warnings") and "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the MANAGER's words, quoted as the manager's; they withdraw the manager's own proposal and cannot retire the owner-ruled warning (core/diagnostics/looped-compare).
+- the two triggers are not the same set (the draft §R.2, rev 25's PART W, five programs `& (h: <5)`): `/(?:(?<h>\d);)*/` both fire; `/(?:(?<h>\d);)+/` the looped trigger only; `/(?:(?<h>\d)?;)+/` both; `/(?<h>\d)?;/` `label.unset` only; `/(?<h>\d);/` neither — SUPPORTED by the draft's run (the base quotes two of the rows).
+evidence: the draft §R.2 (rev 25's PART W).
+history:
+- 2026-11-17: proposed by the manager twice, not answered; review r42 named looped-warning an owner question; rev 25 withdrew it to the next review.
+- 2026-11-19 (lane preddoc6, review r60 LOOPED): a new open sub-piece, at the predicate manager's ruling (2026-11-19): the question "is the warning still wanted, and on which shape" goes to the owner; the slug looped-warning moved here from core/conditions/pass-start-read.
+
 ## core/spellings/placeholders — Every placeholder spelling
 slugs: atomic-spelling options-spelling conditional-spelling
 rulings:
