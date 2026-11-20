@@ -402,3 +402,14 @@ three native library pieces; the looped warning is stated as he last ruled it, w
 looped-warning for him. Lane preddoc6 (opus) launched, watcher armed; it also files r60. The coordinator says no
 further full round is needed after this batch: I verify by its three readings and the lint, then deliver (P-11).
 New owner question queued: looped-warning. WAITING on: preddoc6.
+
+## 2026-11-20 — preddoc6 merged; r60 filed; DELIVERED to main (P-11); wake.md rewritten
+
+preddoc6 merged and stopped: lint 5,014 / 0; r60 filed RULED, verdict READY WITH NAMED RESIDUALS; re-counts
+rulings 0 missing of 144, slugs 0 language slugs missing of 188, names 0 of 98, rejected 0 of 100; `@warn`,
+`@export`, `@options` are library pieces; looped-compare restored as he ruled it with the open sub-piece
+looped-warning; new open piece call-forms (repeat / padded several call-form bodies against the macro rule).
+Main merged in (two index conflicts, both sides kept). predicates_future.md marked retired; pred CLAUDE.md for the
+new layout; wake.md rewritten from scratch; owner.md refreshed; P-11 written and main told (tip 9958a6e1a).
+Core 122 pieces, library 54, parked 39. NOTHING running. WAITING on: main's merge; Frank's next question
+(bare-condition-labels first).
