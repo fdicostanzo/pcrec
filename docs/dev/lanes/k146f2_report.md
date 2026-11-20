@@ -105,7 +105,10 @@ Batch b20261120112322125373, owner k146f2, prio 400, stages in
 ## STATE AT HANDOFF
 
 STATE: delivered; branch lane/k146f2 committed with this report. Last
-rulings entry applied: none (file empty). OWED: none in the lane; the
-queued jobs above are the validation, not owed lane work. The identity
+rulings entry applied: none (file empty).
+
+OWED: none (the queued jobs above are the validation, not owed lane work).
+
+The The identity
 verdict is NOT yet taken (queued), so no 0-movers claim is made here. Not
 done, by brief: merge, closing K146/its plan row, K147's fix, [LINT-FRAME].
