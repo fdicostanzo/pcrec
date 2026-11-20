@@ -4429,3 +4429,6 @@ Plus verdict-printing holes. All FIX-NOW accepted. MEAS-7 (which reading of "max
   - Caveats: the layout A/A read +10% on one smoke cell; the 5% DIFFER cut has no clean gap.
 - One-critic re-check crit-memfn-rampfix launched, due 17:30.
 - Lane blockconfirm is idle with its files last touched 10:14 and no handback received; I asked for its state.
+
+### 2026-11-20 16:30 — g2 runtime grew (main FACTS)
+make test-memfn-g2 takes 1004 s run alone (it was about 470 s as a section on 11-09). The window family run_g2_win.sh grew 54 -> 288 s (x5.3); the others grew x1.6-2.7 (indications only). Main: docs/dev/lanes/g2docs_report.md. The decision is the kit's. Plan: a triage lane after tonight's timing (why win grew; shrink it or move it to the opt-in g2-full).
