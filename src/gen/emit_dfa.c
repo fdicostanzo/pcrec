@@ -1099,8 +1099,8 @@ static void emit_req_move_open(StrBuf *c, const char *ind, const char *hit,
  * litscan_k82h.md §1.2), so no attempt below `c - K` can succeed and the body
  * may begin its scan at `max(posvar, c - K)` and answer exactly what it
  * answers at `posvar` (the startpos contract, Claims 1-3). The move's
- * arithmetic is `emit_req_move_open`'s (`c >= posvar` always: the kit's
- * contract). Under a multibyte encoding the moved start is rounded UP to a
+ * arithmetic, and the reason it cannot underflow, are
+ * `emit_req_move_open`'s. Under a multibyte encoding the moved start is rounded UP to a
  * character start (`PCREC_START0_ROUNDUP`, the backend's own predicate), so
  * it is a startpos the contract covers; only when it moved — `posvar` itself
  * is the caller's choice and stays exactly what it was ([r1 S-F6]). The
@@ -1672,7 +1672,10 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     s->head_max = 0;
     if (handoff) {
         PfBound k = req_handoff_k(cx);
-        s->head_max = pcrec_bound_bounded(k) ? (int64_t)k.v : MF_HEAD_MAX_UNBOUNDED;
+        /* NONE states nothing (0), as the empty site does; every HANDOFF
+           row excludes it, so only BOUNDED and UNBOUNDED arrive (D-7) */
+        if (k.st == PF_OFF_UNBOUNDED) s->head_max = MF_HEAD_MAX_UNBOUNDED;
+        else if (k.st == PF_OFF_BOUNDED) s->head_max = (int64_t)k.v;
     }
 #ifdef PCREC_CAND_TRACE
     req_pick_shadow(cx, s);
@@ -9339,7 +9342,10 @@ long long pcrec_landmark_margin(unsigned long long h, unsigned long long m, long
     return (long long)((1000000u - (unsigned long long)k * h) * m) - (long long)(1000000u * h);
 }
 
-static bool req_landmark_admits(const CandSel *s, long long k)
+/* `k` is the landmark's K with its state: NONE (nothing stated) and a K at
+ * or below 0 both price at 0, an UNBOUNDED K prices at its saturated value,
+ * which refuses (the margin is -1 there). */
+static bool req_landmark_admits(const CandSel *s, PfBound k)
 {
     Ctx *cx = s->cx;
     const uint32_t *rate = pcrec_find_byte_rate(cx);
@@ -9348,7 +9354,8 @@ static bool req_landmark_admits(const CandSel *s, long long k)
     if (req_start_set(s, start_set)) start_ppm = pcrec_find_set_mass(rate, start_set);
     /* at max(K, 0): a landmark at or before the attempt start costs no step
        back (span_runs_sheet.md §3.2, the kit twin's own rule) */
-    return pcrec_landmark_margin(landmark_ppm, start_ppm, k > 0 ? k : 0) > 0;
+    return pcrec_landmark_margin(landmark_ppm, start_ppm,
+                                 pcrec_bound_stated(k) && k.v > 0 ? k.v : 0) > 0;
 }
 
 
@@ -9372,7 +9379,7 @@ static bool pf_handoff_applies(const CandSel *s)
     u = req_use_read(cx, CAND_SLOT_NEXT);
     if (cx->req_handoff_dropped && cand_finish_of(cx) == CAND_ROUTE_VM) return false;
     if (u->use != REQ_USE_HANDOFF || u->whole) return false;
-    return req_landmark_admits(s, req_landmark_k(cx).v);
+    return req_landmark_admits(s, req_landmark_k(cx));
 }
 
 /* NEXT's selection for the artifact's forward DFA machine (the body's, or
@@ -11608,7 +11615,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         }
         /* the fifth, where NEXT prices it */
         if (priced) {
-            int pl = req_landmark_admits(&ns, req_landmark_k(cx).v);
+            int pl = req_landmark_admits(&ns, req_landmark_k(cx));
             int kl = k.landmark < 0 ? 0 : k.landmark;
             if (pick_plant("landmark")) kl = !kl;
             pick_rec("landmark", pl, kl, 1, pl, kind);

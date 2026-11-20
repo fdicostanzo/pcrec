@@ -57,8 +57,11 @@ static inline PfBound pcrec_bound_none(void)
 {
     return (PfBound){ .st = PF_OFF_NONE, .v = 0 };
 }
-/* The stated bound of an analysis offset `off >= 0`: unbounded at or above
- * `PCREC_W_UNBOUNDED` (the saturated reading is the safe one), else bounded. */
+/* The stated bound of an analysis offset: unbounded at or above
+ * `PCREC_W_UNBOUNDED` (the saturated reading is the safe one), else bounded
+ * (a negative `off` is a bounded, signed K, never none). `PfBound` is the
+ * third encoding in the tree of "a bound that may be none or unbounded",
+ * beside `WidthIv` and `Ast.u.call.cwmax` + `cwmax_known` ([BOUND-ENCODINGS]). */
 PfBound pcrec_bound_of(long long off);
 /* Is anything stated? */
 static inline bool pcrec_bound_stated(PfBound b) { return b.st != PF_OFF_NONE; }

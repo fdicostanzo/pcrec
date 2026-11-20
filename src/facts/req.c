@@ -532,8 +532,8 @@ static const struct {
  * from the first row of `rn_choice_rows` that decides and that the walk does
  * not restore; none deciding, the replaced form (`rn_first`, the default):
  * `a`. The one comparator of the run choice, split out of `rn_better` so a
- * caller that keeps more than the run beside each candidate (TOP's extents,
- * span_arms §14.3 D-4, L3 remodel 5) asks the same choice. */
+ * caller that keeps more than the run beside each candidate (an extent kept
+ * beside its run) asks the same choice, and the two cannot drift. */
 static int rn_cmp(const RbWalk *w, const RbRun *a, const RbRun *b)
 {
     size_t i;

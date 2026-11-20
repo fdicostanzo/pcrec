@@ -1014,6 +1014,24 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: the kit's B5 request
   refs: docs/design/span_arms.md §2, §10; memfn/include/memfn.h (mf_pred omin); [REQ-LOOKAROUND]
   The run's reach is its signed offset interval [omin, maxoff] from the attempt start (span_arms §2); the true positive omin is the same interval's lower end, stated to the kit as a fact (D157).
+- [BOUND-ENCODINGS] STATE:not-started — unify the encodings of "a bound that may be none or unbounded" (PfBound, WidthIv, cwmax)
+  filed: 2026-11-20 lane l3fix (review r63 CONFORM-4/HOUSE-2, ruled PLAN)
+  status (2026-11-20): not started; PfBound is the third encoding; WidthIv, Ast.u.call.cwmax + cwmax_known predate it, EndMark.width's -1 is a weaker fourth
+  trigger: the U-bound landing, or the next touch of the `width` derivation, or of callgraph.c's `cwmax` fixpoint
+  refs: docs/dev/reviews/2026-11-20-r63-l3remodel.md; docs/design/span_arms.md §10 U-bound, §14.3 D-7
+  The general form is §10's signed `[lo, hi]` with states, which is WidthIv's shape; its "rest of the family" gains the three other encodings. K < 0 is BOUNDED (D-7), so a map of `off < 0` to none is wrong.
+- [CHECKBIND-HANDOFF-HARNESS] STATE:not-started — S813/S814's `harness` arm (tests/litscan/handoff.rxt) stays green under both plants
+  filed: 2026-11-20 lane l3fix (review r63 CHECKBIND-1, ruled PLAN; pre-existing)
+  status (2026-11-20): not started; only run_prechecks [5.12n]/[5.12o] detect the plants, and those arms are red by construction; BASE is the same (4908/0)
+  trigger: the next change to the handoff move emitter's sabotage rows, or a handoff.rxt edit
+  refs: docs/dev/reviews/2026-11-20-r63-l3remodel.md
+  Drop the vacuous suite from the rows or add a handoff.rxt subject that decides them. Until then a report says S813/S814 are shown red through the prechecks only.
+- [CHECKMOVED-S901] STATE:not-started — S901's plant (`comp_shell ? 1 : ...`) is not dead on reach-0 compounds
+  filed: 2026-11-20 lane l3fix (review r63 CHECKMOVED-1, ruled PLAN; pre-existing)
+  status (2026-11-20): not started; on `^a|b$` and utf8 `-futf-check` it raises rx_VALID_LB 0 to 1, on BASE and SUBJECT alike; the row stays UNREACHED
+  trigger: the next touch of the VALID_LB emission or of row S901
+  refs: docs/dev/reviews/2026-11-20-r63-l3remodel.md
+  Confirming probe: does a VALID_LB of 1 refuse a subject PCRE2 accepts (an ill-formed byte just before a nonzero startpos)?
 - [DESC-DEAD] STATE:not-started — a pattern whose fixed-width description is EMPTY cannot match (the U-dead fact, generalized)
   filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
   status (2026-11-08): not started; span_arms unit L1 lists the dead fact from an empty guard meet, with no consumer; `a(?!)b` and empty classes are dead too (run none today)

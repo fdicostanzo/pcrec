@@ -4151,7 +4151,7 @@ struct Ctx {
      * LB would refuse subjects PCRE2 accepts. `[[:<:]]`/`[[:>:]]` count 1 in
      * PCRE2 and are not built here (src/parse/ext.c refuses them); their
      * producer raises this when it lands. */
-    int                  lb_max;
+    int                  lb_max;   /* writers: `pcrec_lb_raise`; readers outside the parser: `pcrec_lb_max` */
     /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
      * subset construction, across every machine this compile builds (forward
      * and reverse are charged to one budget because they are both live at
@@ -4509,8 +4509,8 @@ static inline void pcrec_lb_raise(Ctx *cx, int n)
 }
 
 /* [UTF-VALID] The pattern's declared lookbehind length in characters
- * (`Ctx.lb_max`, PCRE2's `max_lookbehind`): the one read its readers outside
- * the parser share (span_arms RM-5, register row 6a narrowed to this field). */
+ * (`Ctx.lb_max`, PCRE2's `max_lookbehind`): the one read for every reader
+ * outside the parser, so the field's storage stays the parser's own. */
 static inline int pcrec_lb_max(const Ctx *cx)
 {
     return cx->lb_max;
