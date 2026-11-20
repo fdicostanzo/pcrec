@@ -455,3 +455,15 @@ alternation example); the record has his own "The array takes all h including th
 "a compose and a literal rx have the same label behavior", so the array is by NAME in the composed rx. Readings
 of mine listed in the record entry (bare `v` outside `date` now the last mention). WAITING on: Frank (the array
 discussion; then class-positions).
+
+## 2026-11-19 (night) — array-scope RULED and folded; class-positions RULED, fold lane predloop launched
+
+array-scope: "by the scope of the entire rx", a part label limits it (`x.@a`); folded by me (5a655e436).
+class-positions: after my lean (written order, then classes by result length) he proposed the nested loop over
+enumerate "as though this was against fn()", classes in descending value order; shown `10 - \d` on `10` (`1`, not
+`10`), he ruled "class-positions: nested loops, classes descending". Record tip 18ca97f7e. It replaces
+class-order: longest and answers class-index, so it moves several pieces and needs runs: lane predloop (opus,
+worktrees/predloop, branch lane/predloop off 18ca97f7e), deliver + empty rulings file written before launch,
+lanewatch --follow armed. Left open by his answer: class-value (non-digit classes). While it runs I do NOT edit
+core/arrays, core/values/arithmetic|functions, lib/builtin/enumerate, lib/structural/sort on my branch.
+WAITING on: predloop; Frank's next question (flags-in-filter).
