@@ -129,8 +129,10 @@ about 1.49× the worst family. Lowering it (297,536 × 1.22, rounded up to
 16 KB, is 376,832) would tighten a caller promise and move the
 `--list-limits` dump and the `limits.def` text. It is left at 442,368.
 
-`docs/dev/plan.md` [K146-VMCOST-DEPTH] is set to STATE:started with a
-status line. Closing it, and K146 in known_issues.md, is for landing.
+`docs/dev/plan.md` [K146-VMCOST-DEPTH] gains a status line naming this
+branch. Its STATE stays not-started, because plan_lint PL13 refuses a
+started row outside Active. Closing it, and K146 in known_issues.md, is
+for landing.
 
 ## Identity
 
