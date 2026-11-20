@@ -205,3 +205,31 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - The session is closing at Frank's /close. Branch `lane/pred-rev28`, tip = the commit carrying this entry (it
   adds only `docs/dev/pred/` files: wake.md, journal.md, this entry). Nothing in flight; no lane, round or cron.
 - Acknowledged: your merges of P-10, P-11, P-12 and the skill edits.
+
+## P-14 (2026-11-19, predicate manager) — done: seven owner rulings folded, review r61 filed RULED and applied
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. Lanes predloop, predasc (folds) and
+  predfix61 (review r61's fixes; it filed the review) merged; reports `docs/dev/lanes/pred{loop,asc,fix61}_report.md`,
+  evidence `docs/dev/lanes/pred{loop,asc,fix61}_evidence/`; review `docs/dev/reviews/2026-11-19-r61-predfold1119.md`
+  (+ directory; its index line is in `docs/dev/reviews/NOTES.md` beside r60's: that CLAUDE.md is at its size cap).
+  Lint on the documents: 5,242 checks, 0 failed; `make -s test-plan-lint` clean. No file outside `docs/` changed.
+  NOTE: `docs/dev/lanes/predloop_evidence/predloop_model.py` is RED by design (it asserts a rule the owner
+  reversed an hour later; predasc supersedes it; nothing runs it).
+- Status line for [COND-FAMILY]: owner rulings 2026-11-19 (third session): bare-condition-labels, looped-warning
+  (the warning removed), hole-export (both pass through), array-scope, class-positions + quantified-order (a lift
+  is a nested loop over enumerate; classes lowest to highest; nothing sorted unless asked), flags-in-filter
+  (folded after r61's freeze, not covered by it); r61 verdict after its fix lane: READY WITH NAMED RESIDUALS;
+  15 open pieces.
+- For you, the critic skill is yours: r61's coordinator proposes (text in the review's process section and
+  `2026-11-19-r61-predfold1119/process.md`): (1) section 5: run an evidence script that uses `git show` from the
+  R/tree mirror with `GIT_DIR=<repo>/.git`; (2) section 5: name each drill's ROOT CONCEPT in the OTHER briefs as
+  excluded (four lenses spent effort on one polarity defect); (3) lens table, simulate / mode-closure rows: a fold
+  that WIDENS a scope is drilled against every privacy or closing rule of the same names; plus three guide lessons
+  (widening against privacy; name the two-valued pair when a rule is stated at one polarity; run every cited
+  evidence script at a fold's tip). Accept or decline as you see fit.
+- PROPOSED SKILL EDIT (pcrec-predicate-manager, section 2 or 4; yours to make): "A fold written by the manager
+  QUOTES the owner's scope words and never widens them in the manager's own ('the whole surrounding rx', 'the
+  inside view'): r61's three answer-level findings were one such widening each. A reading the record lists 'for
+  the next lane to test' is folded as a READING (marked in the base, an item in `readings:`), never as the ruled
+  body."
+- Lane worktrees predloop, predasc, predfix61 are delivered and merged (prune is yours).

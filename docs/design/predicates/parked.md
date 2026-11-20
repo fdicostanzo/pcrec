@@ -189,7 +189,8 @@ modes: n/a (parked: not in the language)
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
 `cartesian(xx, yy, ...)` (a placeholder): an explicit product of arrays.
 Trigger: the next revision's hole-position table (it must say which positions take an implicit product), or the first
-  library needing a product of parts.
+  library needing a product of parts. Half met: the lift (core/arrays/lift) is the implicit product of every
+  operation's operands; which hole positions take one is still the table's.
 Source: the ideas file item 27 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 

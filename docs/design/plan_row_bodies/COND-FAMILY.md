@@ -5547,3 +5547,542 @@ binding list stays in the core). HIS WORDS, whole: "I agree with your take"
 The reading taken: agreement with the take as a whole, the `import` split included (he was asked to say so if he
 would rather keep import whole in the core, and did not). A matter of the documents' form; no ruling on the
 language.
+
+### 2026-11-19 OWNER, on bare-condition-labels: a bare condition in a hole is the same condition just after the rx literal
+tags: core/holes/bare-condition/labels
+
+Asked **bare-condition-labels** as a confirmation (the manager's reading of the record: hit-carry and
+pass-start-read's witnesses already have a condition alone in a hole reading the surrounding literal's label; the
+leaning: the surrounding labels as they stand at the hole). HIS WORDS, whole:
+
+"Bare condition labels: in my words a bare condition in a hole is the same condition just after the rx literal so
+/clabel${c: >= 5}/ is the same as /clabel/ & (c: >= 5). Does that match you?"
+
+Class: a STATEMENT in his own words with a question back ("Does that match you?"): DISCUSSION, not yet a ruling.
+`clabel` is read as a placeholder for a pattern that sets the label c; `${c: >= 5}` is his unparenthesised
+spelling (the spellings review). What it settles in any reading: the bare condition reads the SURROUNDING
+literal's labels (not a compile error).
+
+CHECKED CONTEMPORANEOUSLY (model `$PCREC_TMPDIR/scratch/pred/bcl_end_vs_point.py`, python `re`, hand-built
+regexes, c one digit): with the hole LAST, as in his example, the equality HOLDS (`/(?<c>\d)${(c: >= 5)}/` and
+`/(?<c>\d)/ & (c: >= 5)`: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `3 7` `7`@2 / FIND-ALL `7 3 9` [`7`@0, `9`@4],
+both). With the hole NOT last, "at the hole" and "after the literal" PART: `/(?<c>\d)${(c: >= 5)}(?<c>\d)/`: at
+the hole WHOLE `73` HOLDS, `37` FAILS; after the literal (the last mention) WHOLE `73` FAILS, `37` HOLDS. Hole
+FIRST, `/${(c: >= 5)}(?<c>\d)/`: at the hole it never holds (c unset there); after the literal WHOLE `7` HOLDS.
+The record's earlier rulings are on the at-the-hole side (hit-carry: "In cases where the user puts the condition
+before the label, they are expecting carries behavior"; zero-in-sequence: "the 0: is the match so far"). Told to
+him the same turn, and asked which he means when the hole is not last.
+
+### 2026-11-19 OWNER, on bare-condition-labels, shown where the two readings part: "it's not the same"
+tags: core/holes/bare-condition/labels
+
+Shown the runs of the entry above (hole last: equal; hole in the middle or first: "at the hole" and "after the
+literal" part) and asked which he means when the hole is not last. HIS WORDS, whole: "I notice, it's not the same"
+
+Class: an OBSERVATION (he sees that his equality does not hold for every hole position). It does not say which
+reading he means when the hole is not last: NOT a ruling. The reading taken, and told to him: his sentence stands
+for the hole-last case; the question (at the hole, or after the literal) is still his to answer.
+
+### 2026-11-19 OWNER, bare-condition-labels: a GUESS: the whole rx is the scope; the last label to its left, otherwise the next to its right
+tags: core/holes/bare-condition/labels core/conditions/pass-start-read
+
+Asked which he means when the hole is not last (at the hole, or after the literal). HIS WORDS, whole:
+
+"Ok. I was thinking of scope not value. But even then it's wrong because if it's repeated, it's the last. Guess:
+it's the scope of the whole rx for visibility. It references the last label to its left otherwise the next label
+to its right."
+
+Class: a CLARIFICATION of his earlier sentence (it was about SCOPE, which labels are visible, not about which
+value is read), a self-correction ("even then it's wrong because if it's repeated, it's the last"), and a GUESS
+(his word): a LEAN, NOT a ruling. The guess has two parts:
+1. VISIBILITY: a bare condition in a hole sees the labels of the whole surrounding rx (no compile error; the
+   own-namespace rival is out under any reading of his words today).
+2. VALUE: "the last label to its left, otherwise the next label to its right".
+
+Against the record (the manager's reading, told to him): the first half of part 2 IS the at-the-hole rule
+(hit-carry, pass-start-read, "the 0: is the match so far"). The second half is NEW: where nothing to the left has
+set the label, the documents today read it as UNSET at that point (the manager's bullet under pass-start-read,
+"In the first pass, before its group, the label is unset"; his ruling there, "pass-start-read: yes keep it", was
+on keeping the previous pass's value). RUN, the two parting (`$PCREC_TMPDIR/scratch/pred/bcl_guess.py`, a
+hand-built simulation; `$PCREC_TMPDIR/scratch/pred/bcl_end_vs_point.py` row 3): `/${(c: >= 5)}(?<c>\d)/`: today
+never holds; under the guess it is `/(?<c>\d)/ & (c: >= 5)` (WHOLE `7` HOLDS, `3` FAILS / SEARCHED `3 7` `7`@2 /
+FIND-ALL `7 3 9` [`7`@0, `9`@4]). `/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5): today WHOLE `7;` HOLDS, `3;7;`
+HOLDS, `7;3;` FAILS / SEARCHED `7;3;` `7;`@0 / FIND-ALL `7; 3;7;` [`7;`@0, ``@2, `3;7;`@3, ``@7]; under the
+guess WHOLE `7;` FAILS, `3;7;` HOLDS, `7;3;` FAILS / SEARCHED `7;3;` ``@0 / FIND-ALL `7; 3;7;` [``@0, ``@1,
+``@2, `3;7;`@3, ``@7]. Asked of him as the remaining question (the same slug): with nothing to its left, is the
+label unset, or read from the right.
+
+### 2026-11-19 OWNER RULING — bare-condition-labels: the label as it stands at the hole; unset the first time through; no such label is an error
+tags: core/holes/bare-condition/labels core/conditions/pass-start-read
+
+Asked **bare-condition-labels** in its last form: "With nothing to its left, is the label unset, or read from the
+right?" HIS WORDS, whole (two messages, the second sent as a correction of the first):
+
+"The scenario is a loop. You brought this up. Both hole and label are in a loop and the reference is first. The
+reference refers to the label to its left. The first time through the loop, the reference is unset then the label
+is set. The second time through, the reference is set to the previous loop value. With lookahead, it lets the
+condition compare the current value to the previous. It was an odd semantic that fell out of the rules we had. If
+the reference matches not label, it's an error"
+
+"Correction to above: the reference refers to the label to its right"
+
+Read for the intended words (phone): "matches not label" = "matches NO label".
+
+The reading taken, and told to him: a RULING, answering the question asked ("unset, or read from the right"):
+UNSET. His "the label to its right" names WHERE THE GROUP IS WRITTEN (after the hole, in the same loop body), not
+a forward read of its value: "The first time through the loop, the reference is unset then the label is set. The
+second time through, the reference is set to the previous loop value." This is pass-start-read as ruled
+2026-11-17 (a RECOLLECTION, checked: SUPPORTED; "It was an odd semantic that fell out of the rules we had"), and
+his own use for it: "With lookahead, it lets the condition compare the current value to the previous." With it
+the "otherwise the next label to its right" of his guess (the entry above) is read as this same scenario, not as
+a second rule.
+
+Ruled, with the two earlier entries of today:
+1. A bare condition in a hole sees the labels of the whole surrounding rx ("it's the scope of the whole rx for
+   visibility").
+2. It reads a label as it stands where the hole is: after the group, the value just set; before it in a loop,
+   unset the first time through and the previous pass's value after that.
+3. "If the reference matches no label, it's an error": a bare condition naming a label that no group of the
+   surrounding rx carries is a compile error. The record already has this for conditions in general (2026-11-13:
+   "an undeclared name that is not a label is an ERROR with a suggestion"; "an unknown label is an error listing
+   the labels available").
+
+The manager's readings, for the next lane to test: (a) OUTSIDE a loop, a hole written before its label's group
+(`/${(c: >= 5)}(?<c>\d)/`) reads the label unset, so the test never passes (run: bcl_end_vs_point.py row 3,
+"at-hole"): the label exists, so it is not his error 3 but the can-never-pass warning (`pcrec.test.never`); he
+spoke of the loop only. (b) His earlier sentence "a bare condition in a hole is the same condition just after
+the rx literal" stands for a hole written LAST (run, equal in the three modes).
+
+### 2026-11-19 OWNER RULING — looped-warning: remove the warning
+tags: core/diagnostics/looped-compare core/diagnostics/warnings
+
+Asked **looped-warning** (is a warning on labels that can repeat still wanted, and on which shape: (a) as ruled,
+on a hand-written `|` of conditions; (b) on any bare condition reading a label set inside a loop; (c) no warning
+of its own; the manager's leaning (c), told to him as a reversal of his own ruling). HIS WORDS, whole:
+
+"looped-warning: I agree remove warning. Also please show me intended form inside the loop. And would it be
+better with (h,m): form?"
+
+Class: a RULING on the slug ("I agree remove warning"): REVERSES "looped-compare: warn" (2026-11-16 00:09) as
+moved by joint-loops part (3) (2026-11-16 11:17). No warning of its own is drawn on labels that can repeat; a
+condition after a loop reads the last pass's own label (after-loop-read, unchanged) and "every pass" is written
+with the condition on the item (unchanged). Parts (1) and (2) of joint-loops are not touched by this. And two
+REQUESTS, answered in the session: the intended form inside the loop; whether the joint `(h, m):` form is better.
+
+RUN for the answer (`$PCREC_TMPDIR/scratch/pred/looped.py`, `looped_item.py`, hand-built python models; h, m one
+digit): the hand `|` form `(h: >5) | (h: 5, m: >=3)` and the joint form `((h, m): >= (5, 3))` agree on 100 of
+100 pairs; on the item, `/(?:${late},)+/`, late := `/(?<h>\d):(?<m>\d)/ & ((h, m): >= (5, 3))`: WHOLE `6:0,5:3,`
+HOLDS, `1:0,5:3,` FAILS, `5:3,1:0,` FAILS / SEARCHED `1:0,5:3,6:0,` `5:3,6:0,`@4 / FIND-ALL `1:0,6:0, 5:3,1:0,`
+[`6:0,`@4, `5:3,`@9].
+
+The manager's readings, for the next lane to test: (a) the user-documentation list (parked/ideas/user-doc-traps)
+gains "a condition after a loop reads the last item; every item is the condition on the item"; (b) the warning
+`pcrec.label.unset` is unchanged and still fires where a looped label can be unset.
+
+### 2026-11-19 OWNER, after looped-warning: "would when() work here"
+tags: lib/control/when core/diagnostics/looped-compare
+
+On the in-loop forms shown him (the hand `|` of conditions and the joint `(h, m):` form on the item). HIS WORDS,
+whole: "Also, would when() work here"
+
+Class: a QUESTION to the manager; nothing ruled. The manager's answer (told to him): yes, by `when`'s body as
+ruled, with conditions as its three arguments: `when((h: 5), (m: >=3), else = (h: >5))` is
+`((h: 5) SEQ (m: >=3)) | (NOT peek((h: 5)) SEQ (h: >5))`, zero width, tested on the item. Hand-evaluated from the
+body over the 100 one-digit pairs: 0 differ from `((h, m): >= (5, 3))`. It leans on one READING, not his words:
+`peek(c)` of a condition tests c where it stands (lib/control/peek), so `NOT peek(c)` is `NOT c`.
+
+### 2026-11-19 OWNER RULING — hole-export: both pass through; and a question on the array of a label under composition
+tags: core/labels/export core/holes/labels core/labels/labels-vs-captures core/labels/flow
+
+Asked **hole-export** (outside a binding, does a pattern used inside it pass its public labels through: (a) both
+the hole and the unlabelled sequence part, (b) neither, (c) as today, the hole only; the manager's leaning (a),
+with `B1 := isodate SEQ "!"`, `B2 := /${isodate}!/`). HIS WORDS, whole:
+
+"hole-export: your B1 and B2 are the same thing as B2 is what B1 uses (give or take parentheses).  So they have to
+work the same. Agree both pass through.
+Here's the issue: if I have [a = ([ b = rx]|[c = rx])] where rx has labels x y z, this would mean that a b c x y z
+are all flatly visible. I can't access x y z flat because it's ambiguous and therefore an error. So it's b.x or
+a.b.x. In practice there may not be ambiguity, but is having all those symbols an issue? I'm saying no. But! Here
+is an example of a potential problem: (I think I know the answer). If I defined a an rx with label x. Then later
+define another x. The second x hides the first at that point. But if I asked for an array of x, would it show
+both? I guess is no, because we could define they had to be in the "same" rx. The problem is with composition,
+nothing will be in the same rx so the only arrays are from loops or labels specifically written in the same
+literal. Example: [x = digit]+. The final form is /(?<x>\d)+/ but that was composed from /${}+/,  /(?<${}>${})/,
+and /\d/ so none of it was in the same rx. Please consider"
+
+Class, part by part:
+1. A RULING on the slug: "they have to work the same. Agree both pass through", with his reason (the sequence
+   form is the hole form "give or take parentheses"). It REVISES statement 3 of export-rule (2026-11-18: "Outside
+   a binding, what is visible is the public labels written in its own literals, and its public part labels"):
+   the public labels of a part used in a binding are visible outside it, through a hole and through the sequence
+   operator alike.
+2. A STATEMENT of the consequence, and his POSITION on it: every public name of the nested parts is "flatly
+   visible"; "is having all those symbols an issue? I'm saying no."
+3. A QUESTION to the manager, with a GUESS ("I guess is no"), "Please consider": does the array of a label x show
+   the settings of two separately defined x's; and his worry that under composition "nothing will be in the same
+   rx". DISCUSSION; nothing ruled.
+
+CHECKED CONTEMPORANEOUSLY, and told to him:
+- His "I can't access x y z flat because it's ambiguous and therefore an error" is NOT what the rules as defined
+  say for an alternation: the ruled ambiguity is across `&` only (2026-11-17 label-flow: "it is an error to
+  ambigously reference a label. so if A & B & (h: blah) and A and B both use label h"); across `|` the branch
+  taken sets the label and a bare read is legal (the ruled alternation example `(B | A) & (l: <20)`, both
+  branches carrying `l`; core/model/table's `/(?<l>\d)\d|\d(?<l>\d)/ & (l: "3")`, WHOLE `73` HOLDS). So in his
+  example a flat `x` reads the x of the branch that matched; `b.x` and `c.x` say which.
+- On the array, the record already has HIS words, the other way from today's guess: 2026-11-17, before-and-inside:
+  "The array takes all h including the one outside the group"; and label-flow the same day: "i adjust my rules to
+  be such that a compose and a literal rx have the same label behavior". By those two the array of x lists every
+  setting of the NAME in the composed rx, however it was composed: `[x = digit]+` and `/(?<x>\d)+/` have one
+  array; two x's in a sequence are one label with two settings, so the array shows both.
+
+The manager's readings, for the next lane to test: (a) outside a binding the view is the inside view less the
+private names, so in the export-rule example (`date := [y = year] SEQ "-" SEQ [m = month]`) a bare `v` outside
+`date`, an error under the old statement 3, now reads the last mention (the month's), as it does inside; (b)
+`[_ = A]` and a `_` part label still close a part's labels; (c) the caller's captures (statement 5) grow the same
+way; (d) the array of a name reached by path (`b.x`) lists the settings made inside that part only.
+
+### 2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it
+tags: core/labels/labels-vs-captures core/labels/paths
+
+Asked **array-scope** (the manager's view: the array of `x` lists every setting of the name `x` in the rx as
+composed at the point of the reference; a path such as `b.x` limits it to the settings inside part `b`; the
+alternative, his guess of the entry above: limited to one definition). HIS WORDS, whole, as he EDITED them (his
+first send read "by the scope of the entire array"; he interrupted and corrected "array" to "rx"):
+
+"array-scope: the only way to do it is by the scope of the entire rx. As you say, you could limit it by grouping
+labels. So x.@a. (?spelling?).
+I can't think of a problem with the existing labeling rules so let's move on."
+
+Class: a RULING on the slug: the array of a label takes its settings over "the scope of the entire rx" (the
+composed rx, not one literal or one definition); it is limited "by grouping labels": a part label, then the array
+of a label inside it, his `x.@a` (part `x`, the array of label `a`), the spelling marked by him as a question
+("?spelling?": a placeholder for the spellings review). His guess of the entry above ("I guess is no ... the
+'same' rx") is thereby dropped by him. And a DIRECTION: "I can't think of a problem with the existing labeling
+rules so let's move on" (no change to the label rules; the next question).
+
+The manager's readings, for the next lane to test: (a) "the entire rx" is the rx as composed at the point the
+array is referenced (composed-at-point); (b) `x.@a` lists the settings of `a` made inside part `x` only, in
+order; (c) his "let's move on" does not rule on the reading given him under hole-export (a bare `v` outside
+`date` reads the last mention): it stays a reading.
+
+### 2026-11-19 OWNER, discussing class-positions: his restatement of the manager's lean
+tags: core/arrays/class-positions core/arrays/class-order
+
+Asked **class-positions** (two class positions in one lift, a class under a lazy quantifier, a class written first
+beside an alternation; the manager's lean, one rule: whatever has a written order keeps it, outermost; among
+results that differ only by class choices, the longer is tried first). HIS WORDS, whole:
+
+"class-positions: is your lean then: written order, in text order then classes by length, in text order"
+
+Class: a QUESTION back (a restatement to be confirmed); DISCUSSION, not a ruling. The manager's answer (told to
+him): yes, with two precisions. (1) "by length" is the length of the lift's RESULT string, not of a class. (2)
+"in text order" among the classes cannot be seen in any match: two different results of one length never compete
+at one position (the no-tie reading under class-order, run: 20 shuffles, 0 differing); it would show only in the
+order of `enumerate`'s array, which is the separate open question class-index.
+
+### 2026-11-19 OWNER, discussing class-positions: "What about \d+? + \d+"
+tags: core/arrays/class-positions core/values/functions
+
+HIS WORDS, whole: "What about \d+? + \d+"
+
+Class: a QUESTION (a test case for the lean); DISCUSSION, nothing ruled. The manager's answer (told to him):
+(1) TODAY the program is the under-construction error: both operands are infinite, and the lift is built only on
+an rx `enumerate` accepts (core/values/functions clause 2; the piece's words: "an infinite or over-budget rx
+(`left(/\d+/, 2)`): under construction"). (2) What the lean WOULD give, on a BOUNDED model
+(`$PCREC_TMPDIR/scratch/pred/classpos_inf.py`: `\d{1,3}? + \d{1,3}`, the first operand slowest in its lazy order,
+the second in its greedy order, class choices by result length, non-canonical operands out of the domain): WHOLE
+`123` HOLDS, `7` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 7 45` [`123`@0, `7`@4, `45`@6]: the greedy
+operand reaches every result while the lazy one is still at one digit, so the lift behaves as longest first.
+Greedy + lazy: the same answers. Lazy + lazy: SEARCHED `x123` `12`@1, FIND-ALL [`12`@0, `3`@2, `7`@4, `4`@6,
+`5`@7]: within the first group (one digit plus one digit) the results `10`..`18` are tried before `0`..`9`, by
+"class-order: longest". Extending the bounded answers to the unbounded program is the manager's reasoning, not a
+run; an unbounded greedy operand has no first count to start from, so its order exists only as a limit.
+
+### 2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform
+tags: core/arrays/class-positions core/arrays/class-order core/arrays/lift lib/builtin/enumerate/class-index lib/structural/sort
+
+HIS WORDS, whole (marked by him "Discussion"):
+
+"I'm looking for the simplest rules as though this was against fn() and not +.
+Discussion:
+So for \d + \d we defined the order by: pseudocode:
+  loop a = enumerate(\d):
+      loop b = enumerate(\d):
+           rx |= fn(a, b)
+Enumerate() will output in written or for classes descending class value order.  lazy/greedy loops start
+shortest/ longest respectively
+
+What this does is create a universal rule set for math operators. What it doesn't do, unfortunately, is produce a
+consistent longest to shortest result on pure digits.
+Perhaps then we need a lengthSorted() transform."
+
+Read for the intended words (phone): "in written or for classes" = "in written ORDER, or for classes".
+
+Class: DISCUSSION (his word), carrying a PROPOSAL, not a ruling: (1) the aim: "the simplest rules as though this
+was against fn() and not +"; (2) the rule: a lift is the nested loop over each operand's `enumerate`, the first
+operand outermost, each result OR-ed on in loop order (this is array-lift's "first operand slowest", ruled
+2026-11-18, stated as a loop); (3) `enumerate` gives written order; for a class, DESCENDING class value order; a
+lazy loop starts shortest, a greedy one longest (enumerate's priority order, already the piece's); (4) his own
+OBSERVATION of the cost: no consistent longest-to-shortest on pure digits; (5) an IDEA: a `lengthSorted()`
+transform (the library already has the under-construction piece lib/structural/sort, "`sort(alts, by = "length",
+order = "desc")`": the same thing under another placeholder name).
+
+If ruled it would REPLACE "class-order: longest" (2026-11-19) by the descending class order, and would answer
+class-positions and class-index (the order of a class in `enumerate`'s array) with the one rule.
+
+RUN (`$PCREC_TMPDIR/scratch/pred/nestloop.py`, the loop built mechanically from his pseudocode, compared with
+longest-first, the first match at the start of every result): `\d + 1` (order `10 9 8 .. 1`): 0 of 10 differ;
+`\d + \d` (`18 17 .. 0`): 0 of 19; `\d * \d` (`81 72 63 ..`): 0 of 37; `10 - \d` (order `1 2 .. 9 10`): 1 of 10:
+on `10` the loop reports `1`, longest-first `10` (WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL
+`10 7 3` [`1`@0, `7`@3, `3`@5]). Told to him the same turn.
+
+### 2026-11-19 OWNER RULING — class-positions: nested loops, classes descending
+tags: core/arrays/class-positions core/arrays/class-order core/arrays/lift lib/builtin/enumerate/class-index
+
+Asked **class-positions** after his own proposal of the entry above (the manager: "I think your nested-loop rule
+is the better one"; shown the run where it parts from longest-first, `10 - \d` on `10`; offered the answer
+wording "class-positions: nested loops, classes descending" or his own). HIS WORDS, whole:
+
+"class-positions: nested loops, classes descending"
+
+Class: a RULING on the slug, in the wording offered, adopting HIS proposal of the entry above:
+1. A lift is the nested loop over each operand's `enumerate`, the first operand outermost; each result is added
+   as the next alternative in loop order ("loop a = enumerate(\d): loop b = enumerate(\d): rx |= fn(a, b)"). The
+   same rule for every function, "as though this was against fn() and not +".
+2. `enumerate` gives written order; for a class, "descending class value order"; "lazy/greedy loops start
+   shortest/ longest respectively".
+3. Nothing is sorted by length. It REPLACES "class-order: longest" (2026-11-19, earlier the same day): he was
+   shown the cost ("What it doesn't do, unfortunately, is produce a consistent longest to shortest result on pure
+   digits"; `10 - \d` SEARCHED `x10` `1`@1).
+4. It ANSWERS class-index: the order of a class's members in `enumerate`'s array is descending value.
+NOT RULED: `lengthSorted()` (his "Perhaps then we need", an IDEA; lib/structural/sort is the existing
+under-construction piece). NOT ANSWERED (asked in the same turn, left open by his answer): what "class value" is
+for a class that is not digits.
+
+The manager's readings, FOR THE FOLD LANE TO TEST: (a) "class value" for a non-digit class is the codepoint, so
+`enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top (NOT his words; an owner question,
+class-value); (b) every example printed under class-order, class-positions, class-index, enumerate and arithmetic
+keeps its answers except where a subtraction-like function puts a shorter result first (`\d + 1`, `\d + \d`,
+`\d * \d`: 0 differing, nestloop.py); (c) the lazy + lazy lift gives `12` on `x123` (classpos_inf.py is the OLD
+rule's run: to re-run under the loop); (d) the readings "nesting, the alternation first" and "equal strings are
+one result" under class-order still hold under the loop (the first occurrence stands); (e) a class inside a
+larger rx (`[ab]\d`) enumerates as nested positions in text order, each class descending.
+
+### 2026-11-19 MANAGER — after lane predloop: class-positions folded; an answer told to the owner is WITHDRAWN (the lazy + greedy lift) (no owner words)
+tags: core/arrays/class-order core/arrays/lift lib/builtin/enumerate
+
+Lane predloop (opus; report `docs/dev/lanes/predloop_report.md`; evidence `docs/dev/lanes/predloop_evidence/`, 20
+checks, 20 plants caught; lint 5,059 / 0) folded "class-positions: nested loops, classes descending":
+core/arrays/lift and core/arrays/class-order restated, class-positions and class-index merged into them and
+lib/builtin/enumerate, a new OPEN piece lib/builtin/enumerate/class-value (the part he did not answer).
+
+The manager's readings (a)-(e) of the ruling entry, as tested: (a) UNTESTABLE (the open question class-value);
+(b) SUPPORTED (0 / 0 / 0 over 3,906 texts for every printed ruled example; `10 - \d` the one that parts, as he
+was shown); (d), (e) SUPPORTED; (c) HALF NOT SUPPORTED, and WITHDRAWN:
+
+In the entry "2026-11-19 OWNER, discussing class-positions: "What about \d+? + \d+"" the manager told him that
+the bounded lazy + greedy lift `\d{1,3}? + \d{1,3}` reports `123` on SEARCHED `x123` ("the greedy operand reaches
+every result while the lazy one is still at one digit, so the lift behaves as longest first"). That run
+(classpos_inf.py) enumerated a quantified operand COUNT BY COUNT (every 3-digit string before any 2-digit one).
+`enumerate`'s order in the record is PCRE's PRIORITY ORDER (2026-11-14: "entries in PCRE PRIORITY ORDER (leftmost
+alternative, greedy before lazy) so re-joining preserves which match is reported"), which is depth first: inside
+`\d{1,3}` the strings starting `3` (`399` .. `3`) come before those starting `1`. Built mechanically from that
+order under the nested loop (predloop EXbounded): lazy + greedy SEARCHED `x123` `12`@1, FIND-ALL `123 7 45`
+[`12`@0, `3`@2, `7`@4, `45`@6] (`9 + 3` precedes `9 + 114`); greedy + lazy and greedy + greedy `123`@1; lazy +
+lazy `12`@1 as told, its FIND-ALL corrected to [`12`@0, `3`@2, `7`@4, `45`@6]. The count-by-count order gives
+`123`@1. His "lazy/greedy loops start shortest/ longest respectively" fits both orders. WITHDRAWN: the `123`
+answer and its reason; to be told to him the same hour, and the order inside a quantified operand ASKED
+(quantified-order): priority order as recorded 2026-11-14, or count by count.
+
+### 2026-11-19 OWNER RULING — quantified-order: PCRE's priority order; and classes lowest to highest; sorting only when asked
+tags: core/arrays/class-order core/arrays/lift lib/builtin/enumerate lib/builtin/enumerate/class-value lib/structural/sort
+
+Told that an answer given him was withdrawn (the bounded lazy + greedy lift reports `12` on `x123`, not `123`),
+and asked **quantified-order** (inside a quantified operand of a lift: PCRE's priority order, depth first, as
+recorded 2026-11-14, or count by count; the manager's leaning: priority order). HIS WORDS, whole:
+
+"quantified-order: keep pcre priority order and classes change to lowest to highest unless pcre priority order
+disagrees. It was to help the arithmetic common choice but if it doesn't completely then it shouldn't at all.
+Only solution is sorting output when needed. Need a terser sort function for common use.
+Also, most numbers will use boundary checks to make sure they match the whole subject number."
+
+Class, part by part:
+1. A RULING on the slug: "keep pcre priority order" (inside a quantified operand `enumerate`'s order stays PCRE's
+   priority order; no count-by-count order).
+2. A RULING he adds, REVERSING the "classes descending" half of "class-positions: nested loops, classes
+   descending" (earlier the same evening): "classes change to lowest to highest unless pcre priority order
+   disagrees", with his reason: "It was to help the arithmetic common choice but if it doesn't completely then it
+   shouldn't at all." The nested loop stands; only the class's order turns round.
+3. A PRINCIPLE for this corner, his: "Only solution is sorting output when needed" (no built-in length order).
+4. A REQUEST: "Need a terser sort function for common use" (a provided name shorter than
+   `sort(alts, by = "length", order = "desc")`; its name is a spelling, the manager's to propose).
+5. An OBSERVATION: "most numbers will use boundary checks to make sure they match the whole subject number."
+
+CHECKED CONTEMPORANEOUSLY, and told to him (`$PCREC_TMPDIR/scratch/pred/asc.py`, the alternation built from the
+loop with the class ascending): `\d + 1` is `1|2|3|4|5|6|7|8|9|10`. Bare: WHOLE `10` HOLDS, `7` HOLDS / SEARCHED
+`x10 10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6]: the answer that made him ask for "longest" on
+2026-11-19 ("can we sort by length, longest first?") is back, by his choice. Between `\b` and `\b` (his
+observation 5): WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10 10` `10`@4 / FIND-ALL `10 3 11` [`10`@0, `3`@3]: the
+boundary makes the alternation go on to `10`.
+
+The manager's readings, for the fold lane to test: (a) "unless pcre priority order disagrees": PCRE gives a
+class's members no order (a class is one position), so nothing disagrees and a class is ascending everywhere; (b)
+"lowest to highest" for a class that is not digits is ascending codepoint (`enumerate(/[abc]/)` is [`a`, `b`,
+`c`], `.index` from the bottom); with it the open piece class-value has a natural answer, still not his words;
+(c) the rejected "codepoint order (the draft's lean)" under class-order is thereby the rule again, for digits by
+his words; (d) every lift example printed with a descending class is re-run ascending.
+
+### 2026-11-19 OWNER, on the sort function: the existing one is the general sort; a shorthand for longest first would help
+tags: lib/structural/sort
+
+After his request of the entry above ("Need a terser sort function for common use"), told that the manager owed
+him a name. HIS WORDS, whole:
+
+"Sort function: the existing sort function is lean: good as the general purpose sort. Helpful: a shorthand for
+sorting by longest so all those options don't have to be written out."
+
+Class: a LEAN (his word, on the existing `sort(alts, by = "length", order = "desc")`: "good as the general purpose
+sort") and a REQUEST made precise ("Helpful: a shorthand for sorting by longest so all those options don't have
+to be written out"). Not a ruling; `sort` itself stays under construction (nothing defines its orders yet).
+
+The manager's proposal (a spelling, the manager's call, a placeholder for the spellings review; told to him):
+`longest_first(X)`, defined in the language as `sort(X, by = "length", order = "desc")`, named for what it does
+to the set, not to the subject (core/modules/naming). The manager's reading, to test when `sort` is defined:
+entries of equal length keep their order (a stable sort), so the written order still decides among them. To be
+folded onto lib/structural/sort after lane predasc merges (that lane is editing the piece).
+
+### 2026-11-19 MANAGER — after lane predasc: quantified-order folded; two bounded answers told to the owner are CORRECTED (no owner words)
+tags: core/arrays/class-order lib/builtin/enumerate lib/structural/sort
+
+Lane predasc (opus; report `docs/dev/lanes/predasc_report.md`; evidence `docs/dev/lanes/predasc_evidence/`, 24
+checks, 26 plants caught; lint after the merge 5,088 / 0) folded "quantified-order: keep pcre priority order and
+classes change to lowest to highest": core/arrays/class-order and lib/builtin/enumerate restated (a class
+ascending; PCRE's priority order inside a quantified operand, ruled), the descending order and the count-by-count
+order rejected by his ruling, his principle and his request on lib/structural/sort, class-value still OPEN with
+ascending codepoint as the reading.
+
+The manager's readings (a)-(d) of the ruling entry, as tested: (a) SUPPORTED as far as a run reaches (20 shuffles
+of a class's members, five shapes, 0 / 0 / 0 over 3,906 texts; that PCRE's code holds no class order is a source
+fact, not asked); (b) UNTESTABLE (class-value); (c), (d) SUPPORTED.
+
+ANSWERS TOLD TO HIM THAT MOVE under the ascending order (built mechanically, predasc EXbounded; to be told the
+same hour): the bounded lazy + lazy lift `\d{1,3}? + \d{1,3}?` on SEARCHED `x123`: he was told `12`@1; it is
+`1`@1 (FIND-ALL `123 7 45` [`1`@0, `2`@1, `3`@2, `7`@4, `4`@6, `5`@7]). The bounded lazy + greedy lift
+`\d{1,3}? + \d{1,3}`: he was told `123`, then that it was withdrawn for `12`; ascending it is `123`@1 again
+(FIND-ALL [`123`@0, `7`@4, `45`@6]), for a different reason (the lazy operand starts at `0`, and inside the
+greedy operand with digits ascending `123` precedes `12` and `1`). Also turned round: `10 - \d` is now
+`10|9|..|1` (SEARCHED `x10` `10`@1) and `\d + \d` reports `1`@1 on `x13`.
+
+Folded by the manager with this entry: the shorthand for longest first on lib/structural/sort (the entry
+"2026-11-19 OWNER, on the sort function: the existing one is the general sort; a shorthand for longest first
+would help"), with the manager's placeholder name `longest_first(X)`.
+
+### 2026-11-19 OWNER RULING — flags-in-filter: both sides inherit; and a question on a bound `&` put in a hole
+tags: core/holes/flags/in-filter core/holes/flags
+
+Asked **flags-in-filter** (inside a hole, do the two sides of an `&` start with the flags in force at the hole;
+the manager's leaning: both inherit; shown `/(?i)id-${/[a-z]+/ & /b.*/}/`: inheriting, WHOLE `ID-BLAH` HOLDS,
+`id-blah` HOLDS / SEARCHED `x ID-BLAH id-blah` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-Blah` all three; not
+inheriting, WHOLE `ID-BLAH` FAILS / SEARCHED `id-blah`@10 / FIND-ALL [`id-blah`@0];
+`$PCREC_TMPDIR/scratch/pred/flagsfilter.py`, hand-built). HIS WORDS, whole:
+
+"flags-in-filter: both sides inherit.
+Can you work out if that means there is a difference between when two rx intersected in a hole or outside the
+hole and then the bound was put in the hole."
+
+Class: a RULING on the slug ("both sides inherit"): the two sides of an `&` written inside a hole start with the
+flags in force at the hole (`i`, `m`, `s`, as flags-scope has them), a flag a side writes for itself winning. And
+a QUESTION to the manager ("Can you work out"); nothing ruled by it.
+
+The manager's answer (told to him; a READING resting on the ruled piece core/holes/flags, "This holds for a
+direct literal and for a binding alike, at any depth", and on the place table's binding row, "none of its own (X
+where `name` is used)"): NO difference. `C := /[a-z]+/ & /b.*/` then `/(?i)id-${C}/` is `/(?i)id-${/[a-z]+/ &
+/b.*/}/`: a binding is its expression where it is used, so the `&` is inside the hole either way and both sides
+inherit. Where a difference DOES show: the same binding used where no rx surrounds it. `C` as the program, or
+anything computed from `C` alone, reads it under its own flags: WHOLE `blah` HOLDS, `BLAH` FAILS (run). So one
+binding can accept different strings in different places; that is his "it's that rx's responsibility to set them
+the way it wants and not assume". FOR THE NEXT LANE TO TEST: the transitive case (a binding inside a binding
+inside a hole) and a binding of an `&` used as a sequence operand at program level (the documents' reading: each
+operand keeps its own flags there).
+
+### 2026-11-19 MANAGER — review r61 (predfold1119) of the session's folds: dispositions ruled (no owner words)
+tags: core/labels/export core/holes/bare-condition/labels core/labels/labels-vs-captures core/arrays/class-order core/holes/class lib/structural/sort lib/builtin/enumerate/class-value core/diagnostics/looped-compare
+
+Review r61 (design mode; one opus coordinator, five critics: RULING, RUNOWN, REACH, GENERAL, STALE; draft
+`$PCREC_TMPDIR/scratch/crit-predfold1119/review.md`, to be filed as
+`docs/dev/reviews/2026-11-19-r61-predfold1119.md`) on the documents at 2e0adc746 (flags-in-filter, folded after
+the freeze, is NOT covered). Verdict: NOT READY as it stood, one text-fix pass away; all 16 printed run lines of
+the changed pieces held; the lift-order change moves no unchanged piece's answer.
+
+DISPOSITIONS, ruled by the manager (every proposal of the draft ACCEPTED; the ids are the draft's):
+- F-A FIX-NOW: export statement 3 against statements 6 and 7: a part under a `_` part label, or `[_ = A]`,
+  passes none of its labels; stated in statement 3 as the manager's reading (b) of hole-export, with a run.
+- F-B FIX-NOW + owner question **flat-read-outside**: the ruled part of statement 3 is "both pass through"; "the
+  inside view less the private names, read as labels are" is the manager's reading (a) and is MARKED so; his "I
+  can't access x y z flat because it's ambiguous and therefore an error" and the manager's correction (across
+  `|` a flat read is legal) are quoted in details; he did not answer the correction ("I can't think of a problem
+  with the existing labeling rules so let's move on" is not an answer to it). The parked user-doc trap that
+  teaches the old rule is restated.
+- F-C FIX-NOW: "the test can never pass" becomes: the read is unset, so the test's outcome is fixed:
+  `pcrec.test.never` where it then fails, `pcrec.test.always` where it then holds (NOT, a default).
+- F-D FIX-NOW: the third bullet is keyed on "no path of the rx as composed sets the label before the hole", loop
+  or not; the first bullet says the first-pass test must hold on unset for the loop to reach a second pass; the
+  rejected forward read is "by owner ruling (in a loop); outside a loop the manager's reading". NO new owner
+  question: he was asked "unset, or read from the right" and answered for the loop; the manager's reading stands
+  as a reading.
+- F-E FIX-NOW (the word) + owner question **bare-nested-scope**: "every label VISIBLE in the surrounding rx" in
+  core/holes/bare-condition/labels and core/values/reads; which rx a hole's readers (a bare condition, `$y`, `0`)
+  read when the literal holding the hole is itself inserted or is an `&` operand is marked a reading and asked.
+- F-F FIX-NOW (marks) + owner question **array-vs-passes**: array-scope's readings (a) and (b) are marked
+  readings in body and details; `x.@a` routed through core/labels/paths; the array of settings against the group
+  questions over a loop's passes is asked.
+- F-G FIX-NOW: "written last in the rx, outside every group, quantifier and branch".
+- F-H FIX-NOW (qualify) + owner question **class-hole-order**: core/holes/class's "collapses to one class, in
+  every mode" is qualified "for matching"; two-holes' "the order is not observable" goes; under a lift the order
+  of a class-member hole's values is asked.
+- F-I FIX-NOW: the stale glosses under looped-compare and pass-start-read; live `evidence:` lines citing
+  predloop's model are marked superseded by predasc (predloop's model is red at the tip by design: it asserts the
+  descending order).
+- F-J FIX-NOW: the one altered quote ("same", not 'same') and its reason; the GUESS class marker; the `\b` bullet
+  names its mode and subject; export statement 3 gets a defined binding and a run line; the joint-form equality
+  "where both are set".
+- F-K FIX-NOW: class-value quotes his earlier discussion, points at parked/ideas/class-base, names the
+  symbol-set order as the second candidate and the caseless single character in the question.
+- F-L FIX-NOW (text): sort's statement no longer says "only as"; `longest_first` / `lengthSorted()` in the
+  placeholder table; the stable-sort reading dropped as unobservable. PLAN: sort/sorted, unique/distinct as one
+  operation in two forms (trigger: the first definition of either).
+- F-M: GENERAL-11 FIX-NOW (the lift statement: only a SINGLE parameter lifts, a reading), GENERAL-4 and -15
+  FIX-NOW (pointers); GENERAL-1, -2, -5, -12 PLAN with the draft's triggers (GENERAL-2, one piece for the label
+  namespace and one for captures, is the shape of the NEXT document pass, not of this fix).
+WITHDRAWN by this round (the manager's own): none of the rulings; the manager's wording "the test can never
+pass" and "whole surrounding rx" (too wide: it reached private labels).
+
+### 2026-11-19 OWNER, after flags-in-filter: do the sides inherit before or after the intersection ("Tricky")
+tags: core/holes/flags/in-filter core/holes/flags
+
+After the ruling "flags-in-filter: both sides inherit" and the manager's answer that a bound `&` put in a hole
+equals the `&` written there. HIS WORDS, whole:
+
+"flags-in-filter: ok A is [a-z]x. B is [A -Z]x. A & B then is nothing. But in a hole, do they inherit before or
+after the intersection. If before, then they overlap. If after then nothing. Tricky"
+
+Read for the intended words: "[A -Z]x" = `[A-Z]x`.
+
+Class: a QUESTION with its two answers named by him and no choice made ("Tricky"): DISCUSSION. It probes his own
+ruling of the hour; nothing new ruled.
+
+RUN (`$PCREC_TMPDIR/scratch/pred/flagsorder.py`, hand-built: `&` = both sides match the stretch whole; A :=
+`/[a-z]x/`, B := `/[A-Z]x/`, C := `A & B`): C alone: WHOLE `ax` FAILS, `AX` FAILS / SEARCHED `-ax Ax` FAILS /
+FIND-ALL `ax AX 7x` []. `/(?i)${C}/` inheriting BEFORE the intersection: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED
+`-ax Ax` `ax`@1 / FIND-ALL `ax AX 7x` [`ax`@0, `AX`@3]. Inheriting AFTER: as C alone, nothing.
+
+The manager's answer (told to him): as ruled and folded it is BEFORE: "both sides inherit" makes each side start
+with the hole's flags, and only then are the two matched on the stretch; with the reading that a binding is its
+expression where it is used, C in the hole matches though C alone matches nothing. "After" needs a binding to be
+a fixed set of strings settled where it is written, which would also end `/(?i)${A}/` making a bound A case
+insensitive (his lean of 2026-11-19: "i'd say it does"). The manager's readings of the consequence, FOR A LANE
+TO TEST: (a) a compile-time judgement of a binding ALONE (a can-never-match warning, an assertion such as
+`@assert.none(C)`, `enumerate(C)`) reads it under its own flags and can say "nothing" of a binding that matches
+in a flagged hole: such warnings belong at the USE, not at the binding; (b) the same before/after split exists
+for a complement (`A & !B` in a flagged hole). Asked of him (flags-before-and): keep "before", or does he want a
+binding of an `&` settled where it is written.

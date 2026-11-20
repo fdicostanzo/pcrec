@@ -420,3 +420,122 @@ Main merged P-11 (main f1792840b; lint there 5,014 / 0) and applied the skill ed
 to make the skill's wake-up read the three primary files (core, library, parked) at their new paths: done on my
 branch, P-12, merged by main. /close with nothing in flight: wake.md brought to the close state, owner.md current,
 P-13 written, main told. Next session: /q, bare-condition-labels first, then looped-warning.
+
+## 2026-11-19 (box date) — third predicate-manager session: wake-up
+
+Registered (session_role pred); read wake, from_main (nothing after M-1), core/library/parked whole, the record from
+doc-shape to the end, r60's PLAN rows. Branch fast-forwarded to main 50f56b1cd; main told. Before asking
+bare-condition-labels I grepped the record: hit-carry (2026-11-18, asked as a ruling with the witness
+`occurrences(/${c}(?<h>\d)/, min = 2)`, c a condition in a hole reading the surrounding literal's h) and
+pass-start-read's witness `/(?:${c}(?<h>\d);)*/` already have a condition in a hole reading the surrounding labels;
+his words there: "a condition ... before the label ... carries". So the question goes to him as a CONFIRMATION that
+the record answers it, not as a fresh question. preddoc1 PART R10 re-run: same answers (the PART LT difference is
+the moved files, historical). WAITING on: Frank (bare-condition-labels).
+
+## 2026-11-19 (evening) — bare-condition-labels RULED and folded
+
+Five record entries (his statement "the same condition just after the rx literal", checked: true for a hole last
+only; "it's not the same"; his guess; the ruling with its correction). Folded by me in one commit: the core piece
+is ruled, details carry three rulings and three rejected candidates; lint 5,033 / 0. One reading of mine listed
+for a lane: outside a loop a hole before its group is the never-pass warning. NEXT: looped-warning. WAITING on:
+Frank.
+
+## 2026-11-19 (evening) — looped-warning RULED: the warning is removed
+
+"looped-warning: I agree remove warning." Folded by me: the piece core/diagnostics/looped-compare restated (no
+warning; last pass after the loop, every pass on the item), its question sub-piece merged in by a `was:` line,
+the warnings table's row gone; lint 5,020 / 0. He also asked for the intended in-loop form and whether the joint
+`(h, m):` form is better: answered in the session with runs. NEXT in the queue: hole-export. WAITING on: Frank.
+
+## 2026-11-19 (evening) — hole-export RULED (both pass through); his array-under-composition question
+
+Folded: core/labels/export statement 3 revised (outside = inside less private), the question piece merged by
+`was:`; lint 5,014 / 0. Told him two checks against his message: across `|` a flat label is not ambiguous (ruled
+alternation example); the record has his own "The array takes all h including the one outside the group" and
+"a compose and a literal rx have the same label behavior", so the array is by NAME in the composed rx. Readings
+of mine listed in the record entry (bare `v` outside `date` now the last mention). WAITING on: Frank (the array
+discussion; then class-positions).
+
+## 2026-11-19 (night) — array-scope RULED and folded; class-positions RULED, fold lane predloop launched
+
+array-scope: "by the scope of the entire rx", a part label limits it (`x.@a`); folded by me (5a655e436).
+class-positions: after my lean (written order, then classes by result length) he proposed the nested loop over
+enumerate "as though this was against fn()", classes in descending value order; shown `10 - \d` on `10` (`1`, not
+`10`), he ruled "class-positions: nested loops, classes descending". Record tip 18ca97f7e. It replaces
+class-order: longest and answers class-index, so it moves several pieces and needs runs: lane predloop (opus,
+worktrees/predloop, branch lane/predloop off 18ca97f7e), deliver + empty rulings file written before launch,
+lanewatch --follow armed. Left open by his answer: class-value (non-digit classes). While it runs I do NOT edit
+core/arrays, core/values/arithmetic|functions, lib/builtin/enumerate, lib/structural/sort on my branch.
+WAITING on: predloop; Frank's next question (flags-in-filter).
+
+## 2026-11-19 (night) — predloop merged; one of my answers to him withdrawn; quantified-order asked
+
+predloop DONE (lanecheck rc 0), merged (tip after the record entry b47e798cf), stopped: lint 5,062 / 0, plan-lint
+clean, its model re-run on my branch 20 / 0. class-positions and class-index merged into lift / class-order /
+enumerate; new open class-value. My reading (c) half failed: I told him lazy + greedy gives `123` on `x123` from a
+hand model that enumerated count by count; enumerate's recorded priority order is depth first and gives `12`.
+Withdrawn in the record; asked him quantified-order. LESSON (again): a hand model is the model's INTENT; the
+lane's mechanical one found it. Critic round on the session's batch is owed before delivery to main (ask main
+for the number first). WAITING on: Frank (quantified-order).
+
+## 2026-11-19 (night) — quantified-order RULED; classes turn to lowest to highest; lane predasc launched
+
+"quantified-order: keep pcre priority order and classes change to lowest to highest unless pcre priority order
+disagrees ... Only solution is sorting output when needed. Need a terser sort function for common use." Record tip
+5a299d40d. Shown him: `\d + 1` is then `1|..|9|10`, SEARCHED `x10 10` `1`@1 bare, `10`@4 between `\b`s (his
+boundary remark, run). Lane predasc (opus, worktrees/predasc off 5a299d40d): deliver + empty rulings file written
+first, lanewatch --follow armed. Owed by me: a name proposal for the terse sort; the critic round on the batch
+(number from main first). While it runs I do not edit the class-order / lift / enumerate / sort pieces.
+WAITING on: predasc; Frank's next question (flags-in-filter).
+
+## 2026-11-19 (late) — predasc merged; corrections owed to him told; sort shorthand noted
+
+predasc DONE (lanecheck rc 0; hand-back verified against the report), merged, to be stopped: lint 5,094 / 0 after
+my sort bullet, plan-lint clean, its model re-run on my branch 24 / 0. Classes ascending: `\d + 1` is
+`1|..|10`; `10 - \d` now `10|9|..|1`; bounded lazy + lazy `1`@1, lazy + greedy `123`@1 again (both told to him).
+His sort remark recorded (lean + request); `longest_first(X)` proposed and noted on lib/structural/sort.
+OPEN from tonight: class-value. NEXT: ask main for a review number, critic round on the batch (bare-condition-
+labels, looped-warning, hole-export, array-scope, class-positions + quantified-order), then deliver.
+WAITING on: Frank (flags-in-filter next; his word on the critic round timing is not needed).
+
+## 2026-11-19 (22:25) — critic round r61 (predfold1119) launched
+
+Main gave r61 and a box deadline: nothing running after 00:30 (the kit's timing night at 01:00). Coordinator
+crit-predfold1119 (opus, background, design mode) on the diff 50f56b1cd..tip over docs/design/predicates/ with the
+record from the first bare-condition-labels entry to the end; lenses required: ruling, run-every-example in three
+modes, general form + unlocks; told to hand back by ~00:15. Round dir $PCREC_TMPDIR/scratch/crit-predfold1119/.
+THEN: rule dispositions, a fix lane if needed (it files the review), deliver to main (P-14).
+WAITING on: crit-predfold1119; Frank (flags-in-filter).
+
+## 2026-11-19 (22:50) — flags-in-filter RULED and folded (after r61's freeze)
+
+"flags-in-filter: both sides inherit." Folded by me (piece ruled, details, lint 5,098 / 0). His follow-up (a bound
+`&` put in a hole against one written there): answered as a reading: no difference; the same binding with no
+surrounding rx reads under its own flags (run). NOT covered by r61 (frozen before it): name it in the delivery.
+WAITING on: crit-predfold1119; Frank (next: class-value or group-truth).
+
+## 2026-11-19 (22:45) — r61 handed back: NOT READY by one fix pass; dispositions ruled; fix lane predfix61 launched
+
+r61 (5 critics, ~20 min): all 16 printed run lines held; answer-level: export statement 3 against 6/7 (a `_` part
+leaks), "can never pass" wrong for NOT/default tests (four lenses), "whole surrounding rx" reaches private labels,
+array of settings against passes, a class-member hole's order under a lift. Ruling-level: statement 3's "inside
+view" is MY reading stated as ruled; his "ambiguous and therefore an error" unanswered. Every proposal accepted
+(record entry, tip 1fa811754). New owner questions: flat-read-outside, bare-nested-scope, array-vs-passes,
+class-hole-order. Lane predfix61 (opus, worktrees/predfix61 off 1fa811754; deliver + rulings files first;
+lanewatch armed; told the 00:30 deadline) applies FIX-NOW and files the review. Coordinator stopped.
+Process changes the coordinator proposed (for main, the skill is main's): name other lenses' root concepts in
+each brief; drill a scope-WIDENING fold against every privacy/closing rule; name the two-valued pair when a fold
+states a rule at one polarity; run every cited evidence script at the fold's tip.
+LESSON (mine): three of my hand folds widened a scope in my own words ("whole surrounding rx", "inside view")
+beyond his; quote, do not widen. WAITING on: predfix61; Frank (class-value / the four new questions).
+
+## 2026-11-19 (23:00) — predfix61 merged; r61 filed; DELIVERED to main (P-14)
+
+predfix61 DONE (lanecheck rc 0; hand-back checked against the report), merged, stopped: lint 5,242 / 0, plan-lint
+clean, predfix61 model 15 / 0 and predasc model 24 / 0 re-run on my branch; no printed answer changed. r61 filed
+RULED (docs/dev/reviews/2026-11-19-r61-predfold1119.md + directory; index line in reviews/NOTES.md, as r60's).
+Four new open pieces: flat-read-outside, bare-nested-scope, array-vs-passes, class-hole-order (lift-order tag).
+Not applied (mine to weigh): does label.unset also fire on an always-unset read; a note in predloop's superseded
+model. His follow-up on flags (inherit before or after the intersection) recorded as a question, flags-before-and,
+unanswered; the ruling stands as folded (before). P-14 written; main told.
+WAITING on: main's merge; Frank (flags-before-and, class-value, the four new questions, then group-truth...).
