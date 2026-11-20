@@ -439,3 +439,10 @@ only; "it's not the same"; his guess; the ruling with its correction). Folded by
 is ruled, details carry three rulings and three rejected candidates; lint 5,033 / 0. One reading of mine listed
 for a lane: outside a loop a hole before its group is the never-pass warning. NEXT: looped-warning. WAITING on:
 Frank.
+
+## 2026-11-19 (evening) — looped-warning RULED: the warning is removed
+
+"looped-warning: I agree remove warning." Folded by me: the piece core/diagnostics/looped-compare restated (no
+warning; last pass after the loop, every pass on the item), its question sub-piece merged in by a `was:` line,
+the warnings table's row gone; lint 5,020 / 0. He also asked for the intended in-loop form and whether the joint
+`(h, m):` form is better: answered in the session with runs. NEXT in the queue: hole-export. WAITING on: Frank.

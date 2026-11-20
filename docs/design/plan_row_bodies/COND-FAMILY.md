@@ -5652,3 +5652,29 @@ The manager's readings, for the next lane to test: (a) OUTSIDE a loop, a hole wr
 "at-hole"): the label exists, so it is not his error 3 but the can-never-pass warning (`pcrec.test.never`); he
 spoke of the loop only. (b) His earlier sentence "a bare condition in a hole is the same condition just after
 the rx literal" stands for a hole written LAST (run, equal in the three modes).
+
+### 2026-11-19 OWNER RULING — looped-warning: remove the warning
+tags: core/diagnostics/looped-compare core/diagnostics/warnings
+
+Asked **looped-warning** (is a warning on labels that can repeat still wanted, and on which shape: (a) as ruled,
+on a hand-written `|` of conditions; (b) on any bare condition reading a label set inside a loop; (c) no warning
+of its own; the manager's leaning (c), told to him as a reversal of his own ruling). HIS WORDS, whole:
+
+"looped-warning: I agree remove warning. Also please show me intended form inside the loop. And would it be
+better with (h,m): form?"
+
+Class: a RULING on the slug ("I agree remove warning"): REVERSES "looped-compare: warn" (2026-11-16 00:09) as
+moved by joint-loops part (3) (2026-11-16 11:17). No warning of its own is drawn on labels that can repeat; a
+condition after a loop reads the last pass's own label (after-loop-read, unchanged) and "every pass" is written
+with the condition on the item (unchanged). Parts (1) and (2) of joint-loops are not touched by this. And two
+REQUESTS, answered in the session: the intended form inside the loop; whether the joint `(h, m):` form is better.
+
+RUN for the answer (`$PCREC_TMPDIR/scratch/pred/looped.py`, `looped_item.py`, hand-built python models; h, m one
+digit): the hand `|` form `(h: >5) | (h: 5, m: >=3)` and the joint form `((h, m): >= (5, 3))` agree on 100 of
+100 pairs; on the item, `/(?:${late},)+/`, late := `/(?<h>\d):(?<m>\d)/ & ((h, m): >= (5, 3))`: WHOLE `6:0,5:3,`
+HOLDS, `1:0,5:3,` FAILS, `5:3,1:0,` FAILS / SEARCHED `1:0,5:3,6:0,` `5:3,6:0,`@4 / FIND-ALL `1:0,6:0, 5:3,1:0,`
+[`6:0,`@4, `5:3,`@9].
+
+The manager's readings, for the next lane to test: (a) the user-documentation list (parked/ideas/user-doc-traps)
+gains "a condition after a loop reads the last item; every item is the condition on the item"; (b) the warning
+`pcrec.label.unset` is unchanged and still fires where a looped label can be unset.

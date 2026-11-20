@@ -1788,12 +1788,16 @@ evidence: the draft R.1.10 (4); preddoc2 PART WT (the consumed form itself).
 history:
 - 2026-11-19 (lane preddoc2): split from the old core/conditional/test when `when`, its test and `peek` moved to the library: the warning is the one part of when-peek a body does not produce, so it stays a core diagnostic, beside core/diagnostics/nullable-hit (a warning on a library name's argument, kept in the core the same way).
 
-## core/diagnostics/looped-compare — A `|` of conditions over labels that can repeat
-slugs: looped-compare
+## core/diagnostics/looped-compare — Labels that can repeat draw no warning
+slugs: looped-compare looped-warning
+was: core/diagnostics/looped-compare/still-wanted (2026-11-19, merged: the question is answered here)
 rulings:
+- 2026-11-19 "looped-warning: I agree remove warning." (record: "2026-11-19 OWNER RULING — looped-warning: remove the warning"); it reverses the two rulings below
 - 2026-11-16 "looped-compare: warn" (record: "2026-11-16 RULING — a compare over looped labels warns"); the meaning stays, the compiler warns when a compared field can hold more than one occurrence, naming the fix (the compare inside the loop's item)
 - 2026-11-16 "I agree. Makes sense." (record: "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); part (3): "the looped warning's subject is now a `|` of conditions whose labels can repeat (each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint condition itself draws no such warning". The owner's LAST word on the warning; it MOVES the 00:09 warning, it does not retire it
 rejected:
+- the warning on a hand-written `|` of conditions whose labels can repeat (`pcrec.compare.looped`; candidate (a)) — by owner ruling — looped-warning: its ground (each alternative checked over every pass) went with after-loop-read.
+- a warning on any bare condition reading a label set inside a loop (candidate (b); the manager's 2026-11-17 proposal) — by owner ruling — looped-warning.
 - the warning on a compare over the looped fields themselves (the 00:09 shape) — by owner ruling — joint-loops (3) moved its subject onto a hand-written `|` of conditions; the joint condition draws none.
 readings:
 - the name `compare.looped` (the draft §7.1, its name LEAN), read with the compiler's `pcrec.` prefix (the ADDENDUM of "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the manager's; the draft notes it looks like a compare-library path (review r43 E; the spellings review).
@@ -1803,19 +1807,13 @@ history:
 - 2026-11-16 00:09: looped-compare asked (keep, error or warn; lean warn), ruled "warn" (the draft rev 19, rulings R-2: `compare.looped`). 11:17: joint-loops (3) moved the warning onto a hand `|` of conditions.
 - 2026-11-17: after-loop-read made a bare condition read the last pass's own label; the manager sorted its OWN looped-warning proposal as `label.unset` and sent it and `compare.looped` "to the next review as told"; the draft rev 25 marked `compare.looped` WITHDRAWN with it (a manager's act on an owner-ruled warning).
 - 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1 / RECOUNT-7): a new piece. The documents before said only "withdrawn by the manager" (core/conditions/pass-start-read) and cited neither ruling as a `rulings:` item; lane preddoc5's claim table row for this entry ("SUPERSEDED by joint-loops (3), then after-loop-read (2323 ...)") was WRONG: record line 2323 is "2026-11-17 OWNER RULING — last-pass-default: regex", and neither entry supersedes the warning. The slug looped-compare moved here from core/conditions/pass-start-read.
-
-## core/diagnostics/looped-compare/still-wanted — Is the warning on repeating labels still wanted
-slugs: looped-warning
-rulings:
-rejected:
-readings:
-- the manager's proposal, a compile WARNING on a bare condition over a looped label: "MINE, not ruled: a compile WARNING when a bare condition reads a looped label (proposed to him twice, not answered ...)" (record "2026-11-17 OWNER RULING — last-pass-default: regex"); "the manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the manager's proposal" (record "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label") — the MANAGER's words.
-- the manager's withdrawal: "the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a condition reads a label that can be unset where it is read, with no default) seen under the one label rule" (record "2026-11-17 OWNER — a principle for warnings") and "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the MANAGER's words, quoted as the manager's; they withdraw the manager's own proposal and cannot retire the owner-ruled warning (core/diagnostics/looped-compare).
-- the two triggers are not the same set (the draft §R.2, rev 25's PART W, five programs `& (h: <5)`): `/(?:(?<h>\d);)*/` both fire; `/(?:(?<h>\d);)+/` the looped trigger only; `/(?:(?<h>\d)?;)+/` both; `/(?<h>\d)?;/` `label.unset` only; `/(?<h>\d);/` neither — SUPPORTED by the draft's run (the base quotes two of the rows).
-evidence: the draft §R.2 (rev 25's PART W).
-history:
-- 2026-11-17: proposed by the manager twice, not answered; review r42 named looped-warning an owner question; rev 25 withdrew it to the next review.
-- 2026-11-19 (lane preddoc6, review r60 LOOPED): a new open sub-piece, at the predicate manager's ruling (2026-11-19): the question "is the warning still wanted, and on which shape" goes to the owner; the slug looped-warning moved here from core/conditions/pass-start-read.
+- 2026-11-19: the statement until the ruling: "A hand-written `|` of conditions whose labels can repeat draws a warning naming the joint condition as the per-item form; a joint condition itself draws none." The warnings table's row `pcrec.compare.looped` left with it.
+- from the merged question piece (its readings and history, kept verbatim):
+  - the manager's proposal, a compile WARNING on a bare condition over a looped label: "MINE, not ruled: a compile WARNING when a bare condition reads a looped label (proposed to him twice, not answered ...)" (record "2026-11-17 OWNER RULING — last-pass-default: regex"); "the manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the manager's proposal" (record "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label") — the MANAGER's words.
+  - the manager's withdrawal: "the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a condition reads a label that can be unset where it is read, with no default) seen under the one label rule" (record "2026-11-17 OWNER — a principle for warnings") and "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the MANAGER's words, quoted as the manager's; they withdraw the manager's own proposal and cannot retire the owner-ruled warning (core/diagnostics/looped-compare).
+  - the two triggers are not the same set (the draft §R.2, rev 25's PART W, five programs `& (h: <5)`): `/(?:(?<h>\d);)*/` both fire; `/(?:(?<h>\d);)+/` the looped trigger only; `/(?:(?<h>\d)?;)+/` both; `/(?<h>\d)?;/` `label.unset` only; `/(?<h>\d);/` neither — SUPPORTED by the draft's run (the base quotes two of the rows).
+  - 2026-11-17: proposed by the manager twice, not answered; review r42 named looped-warning an owner question; rev 25 withdrew it to the next review.
+  - 2026-11-19 (lane preddoc6, review r60 LOOPED): a new open sub-piece, at the predicate manager's ruling (2026-11-19): the question "is the warning still wanted, and on which shape" goes to the owner; the slug looped-warning moved here from core/conditions/pass-start-read.
 
 ## core/spellings/placeholders — Every placeholder spelling
 slugs: atomic-spelling options-spelling conditional-spelling
