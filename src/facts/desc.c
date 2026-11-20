@@ -249,3 +249,122 @@ PdHead pcrec_ph_alt(Ctx *cx, const PdCfg *c, PdHead l, PdHead r)
                      l.writes || r.writes, l.minw < r.minw ? l.minw : r.minw,
                      bounded ? (l.maxw > r.maxw ? l.maxw : r.maxw) : 0, p };
 }
+
+/* `x * k` for a head width, false past `PCREC_W_UNBOUNDED` (then the width
+ * is unbounded): `pcrec_sat_mul` with its ceiling one PAST ours, so a product
+ * of exactly the ceiling is still a width (the `<=` boundary). `*out` is
+ * written only on success. */
+static bool ph_wmul(long long x, int k, long long *out)
+{
+    long long p = pcrec_sat_mul(x, k, PCREC_W_UNBOUNDED + 1);
+    if (p > PCREC_W_UNBOUNDED) return false;
+    *out = p;
+    return true;
+}
+
+/* The one body of a one-body kind (a lookaround, a group, an atomic group, a
+ * repeat). Which kinds pass one is the caller's kind list, so a NULL here is
+ * a caller's mismatch: a loud internal error, not a NULL dereference. */
+static const PdHead *ph_body(Ctx *cx, const Ast *a, const PdHead *body)
+{
+    if (!body)
+        pcrec_ctx_fail(cx, 0, "internal error: the head's per-kind rule got no "
+                       "body for a one-body node (kind %d)", (int)a->k);
+    return body;
+}
+
+/* A leaf that consumes one symbol: the caller's position, or a wall. */
+static PdHead ph_leaf(Ctx *cx, const Ast *a, PhLeafPos pos, void *env)
+{
+    const void *p = pos(env, a);
+    return p ? pcrec_ph_pos(cx, p) : pcrec_ph_wall(0, false, 0, true);
+}
+
+/* THE HEAD'S PER-KIND RULE (span_arms §14.3 D-10, register row 27): node
+ * `a`'s adjacency head, given its body's head `body` (NULL for a leaf) and
+ * the caller's position reader `pos` for a leaf that consumes one symbol
+ * (NULL from it = no position here: a wall). A zero-width node is read
+ * THROUGH; a repeat contributes no head (FIX-1: `rmin >= 1` included, a REP
+ * head waits for [REPEAT-RUN] R2) but its widths; a backreference, a
+ * variable, a `consume` callout and a call have no head and unknown writes;
+ * a call reads no cached field (FIX-3: unset before the call graph). The
+ * caller walks: it folds a CAT or ALT spine itself with `pcrec_ph_cat` /
+ * `pcrec_ph_alt`, so those two kinds never reach here. Which leaf is a
+ * position is the ALPHABET's fact, `pos`'s answer (`A_WCLASS`: a wall at
+ * code-point level, a position at byte level). */
+PdHead pcrec_ph_node(Ctx *cx, const Ast *a, const PdHead *body,
+                     PhLeafPos pos, void *env)
+{
+    switch (a->k) {
+    case A_CLASS:
+        return ph_leaf(cx, a, pos, env);
+    case A_WCLASS:    /* its own arm: never shares A_CLASS's (wclass census [5b]) */
+        return ph_leaf(cx, a, pos, env);
+    case A_EMPTY:
+    case A_EOL:
+    case A_CTX:
+    case A_GSTART:
+        return pcrec_ph_unit();
+    case A_KRESET: {
+        PdHead u = pcrec_ph_unit();
+        u.writes = true;
+        return u;
+    }
+    case A_CALLOUT:
+        if (pcrec_ast_row(a).text == KTEXT_ANY)
+            return pcrec_ph_wall(0, false, 0, true);
+        return pcrec_ph_unit();
+    case A_LOOK: {
+        PdHead u = pcrec_ph_unit();
+        u.writes = ph_body(cx, a, body)->writes;
+        return u;
+    }
+    case A_BREF:
+    case A_VAR:
+    case A_CALL:
+        return pcrec_ph_wall(0, false, 0, true);
+    case A_CAP: {
+        PdHead b = *ph_body(cx, a, body);
+        b.writes = true;
+        return b;
+    }
+    case A_ATOMIC:
+        return *ph_body(cx, a, body);
+    case A_REP: {
+        long long lo = 0, hi = 0;
+        body = ph_body(cx, a, body);
+        if (!ph_wmul(body->minw, a->u.rep.rmin, &lo)) lo = PCREC_W_UNBOUNDED;
+        bool bounded = body->bounded && a->u.rep.rmax >= 0 &&
+                       ph_wmul(body->maxw, a->u.rep.rmax, &hi);
+        return pcrec_ph_wall(lo, bounded, hi, body->writes);
+    }
+    case A_CAT:
+    case A_ALT:
+        pcrec_ctx_fail(cx, 0, "internal error: a %s spine reached the head's "
+                       "per-kind rule; its walker folds it with pcrec_ph_%s",
+                       a->k == A_CAT ? "CAT" : "ALT", a->k == A_CAT ? "cat" : "alt");
+    }
+    return pcrec_ph_wall(0, false, 0, true);   /* unreachable under -Wswitch */
+}
+
+/* A described subtree's LAST positions as a head (desc.h): every width group
+ * reversed, the groups united by `pcrec_ph_alt`. A group stores its last
+ * positions (`max_pos` at most) contiguous to its end, so reading it backwards
+ * from its end is exact whatever it stores; `closed` where it stores its
+ * whole width. */
+PdHead pcrec_pd_tail_head(Ctx *cx, const PdCfg *c, PdDesc d)
+{
+    if (d.ng < 1) return pcrec_ph_wall(0, false, 0, false);
+    PdHead o = pcrec_ph_unit();
+    for (int i = 0; i < d.ng; i++) {
+        const PdGroup *g = &d.g[i];
+        const void **p = NULL;
+        if (g->n > 0) {
+            p = pcrec_arena_alloc(&cx->arena, (size_t)g->n * sizeof *p);
+            for (int k = 0; k < g->n; k++) p[k] = g->pos[g->n - 1 - k];
+        }
+        PdHead h = { g->n, g->n == g->w, true, false, g->w, g->w, p };
+        o = i == 0 ? h : pcrec_ph_alt(cx, c, o, h);
+    }
+    return o;
+}

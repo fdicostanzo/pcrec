@@ -170,63 +170,42 @@ static bool anf_pd_same(const void *a, const void *b)
 
 static const PdAlpha anf_pd_cls = { anf_pd_join, anf_pd_same };
 
-/* `x * k` for a width, saturating: past it the width is unbounded. */
-static bool anf_wmul(long long x, int k, long long *out)
+/* The code-point position of leaf `a` for the head: a class is its own
+ * node; a `A_WCLASS` (a byte-level piece of a lowered class) is no
+ * code-point position, so the head walls there. */
+static const void *anf_head_pos(void *env, const Ast *a)
 {
-    if (k != 0 && x > (1LL << 40) / k) return false;
-    *out = x * k;
-    return true;
+    (void)env;
+    return a->k == A_CLASS ? a : NULL;
 }
 
 /* THE ADJACENCY HEAD of `a` (§3.5 FIX-2's column; desc.h `PdHead`), one walk:
- * spines iterative, recursion on nesting only. A zero-width node is read
- * THROUGH; a repeat contributes no head (FIX-1: `rmin >= 1` included, a REP
- * head waits for [REPEAT-RUN]); a backreference, a variable, a `consume`
- * callout and a call have no head and unknown writes (row 3); a call reads
- * no cached field (FIX-3: unset before the call graph). */
+ * spines iterative, recursion on nesting only. Each node's head is the
+ * head's per-kind rule (desc.c `pcrec_ph_node`, its one spelling, read at
+ * code-point level through `anf_head_pos`); this walk folds the spines. */
 static PdHead anf_head(const AnfRun *r, const Ast *a)
 {
     switch (a->k) {
     case A_CLASS:
-        return pcrec_ph_pos(r->cx, a);
+        return pcrec_ph_node(r->cx, a, NULL, anf_head_pos, NULL);
+    case A_WCLASS:    /* its own arm (wclass census [5b]) */
+        return pcrec_ph_node(r->cx, a, NULL, anf_head_pos, NULL);
     case A_EMPTY:
     case A_EOL:
     case A_CTX:
     case A_GSTART:
-        return pcrec_ph_unit();
-    case A_KRESET: {
-        PdHead u = pcrec_ph_unit();
-        u.writes = true;
-        return u;
-    }
+    case A_KRESET:
     case A_CALLOUT:
-        if (pcrec_ast_row(a).text == KTEXT_ANY)
-            return pcrec_ph_wall(0, false, 0, true);
-        return pcrec_ph_unit();
-    case A_LOOK: {
-        PdHead u = pcrec_ph_unit();
-        u.writes = anf_head(r, a->l).writes;
-        return u;
-    }
     case A_BREF:
     case A_VAR:
     case A_CALL:
-    case A_WCLASS:
-        return pcrec_ph_wall(0, false, 0, true);
-    case A_CAP: {
-        PdHead b = anf_head(r, a->l);
-        b.writes = true;
-        return b;
-    }
+        return pcrec_ph_node(r->cx, a, NULL, anf_head_pos, NULL);
+    case A_LOOK:
+    case A_CAP:
     case A_ATOMIC:
-        return anf_head(r, a->l);
     case A_REP: {
         PdHead b = anf_head(r, a->l);
-        long long lo = 0, hi = 0;
-        if (!anf_wmul(b.minw, a->u.rep.rmin, &lo)) lo = 1LL << 40;
-        bool bounded = b.bounded && a->u.rep.rmax >= 0 &&
-                       anf_wmul(b.maxw, a->u.rep.rmax, &hi);
-        return pcrec_ph_wall(lo, bounded, hi, b.writes);
+        return pcrec_ph_node(r->cx, a, &b, anf_head_pos, NULL);
     }
     case A_CAT: {
         PdHead acc = pcrec_ph_unit();

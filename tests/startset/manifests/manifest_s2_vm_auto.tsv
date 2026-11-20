@@ -29,6 +29,7 @@
 # ic1btriage (2026-10-26): +29 rows, every one a tests/callouts/shapes.rxt block ([INLINE-C] stage 1b's callout corpus, a new file); no existing row moved. Rows taken from test-startset's own mover list.
 # cloudtri (2026-11-11): mechtri2 da685e9db added 4 witness blocks to tests/base/vm_lazy_rmin_prefix.rxt (S706/S708/S711, lines 204-229), correct movers never pinned; +2 rows (the --engine=vm blocks); no existing row moved.
 # ci609 (2026-11-14): +6 rows, every one a tests/litscan/d27/partd_*.rxt block (s2d27's Part D spec-first witnesses, landed without this pin); census_s1.py on main f296774df, no existing row moved.
+# l1ffix (2026-11-19, span_arms L1 + review r55 fixes, measured by the vm-movers check itself): +30 rows, every one a block of tests/litscan/spanarms.rxt (lane l1feat's L1 rows, landed unpinned, and l1ffix's W-L2b/W-L6b/W-D9), tests/lookaround/d27_l1/l1d27_witnesses.rxt (new corpus file) or tests/litscan/presence_deny.rxt (W-T1 regenerated at every start); no existing row moved.
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -538,7 +539,9 @@ tests/litscan/handoff_vm.rxt:400	--features all --encoding=utf8 --engine=vm	283f
 tests/litscan/handoff_vm.rxt:435	--features all --encoding=byte --engine=vm	283f692973747261
 tests/litscan/handoff_vm.rxt:460	--features all --encoding=byte --engine=vm	61625c4b6364
 # alttri (2026-11-07, 171 triage of the alternation branch): +6/-1 rows; every added row a block of tests/altcls/altnf_rules.rxt, tests/utf8/altnf_lowering.rxt, tests/counterk/counterk.rxt or tests/uprops/size_ladder_prefilter_drop.rxt (new files, shifted ids, a re-aimed block); rows taken from test-startset's own mover list (vmhat_checks.py).
+# l1tri2 (2026-11-19): r53 F3 0c42988cf inserted an 11-line pcre2-only block at altnf_rules.rxt:78: +1 row (:80, a correct mover), later rows of that file shifted +11 (same text and options); no other row moved.
 tests/altcls/altnf_rules.rxt:53	--features all	283f3a61627c286129647c6164295c313f
+tests/altcls/altnf_rules.rxt:80	--features all	286129283f3a61627c5c3164647c616429
 tests/utf8/altnf_lowering.rxt:113	--features all --encoding=utf8 --engine=vm	5c707b4e647d2b
 tests/utf8/altnf_lowering.rxt:44	--encoding=utf8 --engine=vm	283f6929ceb2
 tests/utf8/altnf_lowering.rxt:63	--encoding=utf8 --engine=vm	283f69296b
@@ -617,3 +620,33 @@ tests/litscan/d27/partd_required.rxt:48	--features all	285b612d7a5d295c315c647b3
 tests/litscan/d27/partd_required.rxt:58	--features all	285c77295c315b612d7a5d7b367d
 tests/litscan/d27/partd_required.rxt:66	--features all	285c64295b612d665d7b367d5c31
 tests/litscan/d27/partd_required.rxt:75	--features all	2861295c313f5b302d375d7b347d
+tests/litscan/presence_deny.rxt:838	--features all --encoding=byte --engine=vm	5b61635d7b31377d5b62635d7b31377d283f3c3d283f3c3d63617b31367d29627b31377d292e
+tests/litscan/spanarms.rxt:1009	--features all --engine=vm	283f3a283f3d61626364296162296364
+tests/litscan/spanarms.rxt:1025	--features all --engine=vm	5b61635d62283f3c3d61627c622963
+tests/litscan/spanarms.rxt:1041	--features all --engine=vm	283f3a283f3d61626329612e3f295b62635d63
+tests/litscan/spanarms.rxt:1057	--features all --engine=vm	79283f3a78283f3c3d797829297a
+tests/litscan/spanarms.rxt:1072	--features all --engine=vm	792a283f3a6162283f3c3d786162296329
+tests/litscan/spanarms.rxt:1087	--features all --engine=vm	78795b61635d62283f3a283f3c3d616229627c6329
+tests/litscan/spanarms.rxt:1115	--features all --engine=vm	5b61635d5b61635d283f3c3d6163283f3d636329296363
+tests/litscan/spanarms.rxt:1130	--features all --engine=vm	78283f3d6162293f615b62635d
+tests/litscan/spanarms.rxt:1145	--features all --engine=vm	283f3a616263283f3d616229297b327d
+tests/litscan/spanarms.rxt:1160	--features all --engine=vm	6162283f3c3d62295b62635d645c5c772a65
+tests/litscan/spanarms.rxt:1174	--features all --engine=vm	78283f21616229615b62635d
+tests/litscan/spanarms.rxt:715	--features all --engine=vm	7879283f3d6263295b62635d63
+tests/litscan/spanarms.rxt:734	--features all --engine=vm	61283f3d62295b62635d
+tests/litscan/spanarms.rxt:753	--features all --engine=vm	61625b78795d5b78795d283f3d283f3c3d78782979295b78795d
+tests/litscan/spanarms.rxt:772	--features all --engine=vm	5b61635d5b61635d6363283f3c3d61636329283f3c3d63632964
+tests/litscan/spanarms.rxt:790	--features all --engine=vm	78283f3d7172295b70715d72
+tests/litscan/spanarms.rxt:806	--features all --engine=vm	666f6f283f3d6261722962617a
+tests/litscan/spanarms.rxt:821	--features all --engine=vm	283f3c3d616229283f3c3d63622963
+tests/litscan/spanarms.rxt:835	--features all --engine=vm	785b5e5c5c7830302d5c5c7866665d79
+tests/litscan/spanarms.rxt:849	--features all --engine=vm	78283f3a283f3d61626364296162296364
+tests/litscan/spanarms.rxt:864	--features all --engine=vm	5b78795d283f3a283f3d61707129612e3f295b70715d5b717a5d7a7a
+tests/litscan/spanarms.rxt:879	--features all --engine=vm	78283f3d5b5e5c5c7830302d5c5c7866665d2979
+tests/litscan/spanarms.rxt:893	--features all --engine=vm	78283f3a666f6f283f3d6261722962617a293f79
+tests/litscan/spanarms.rxt:907	--features all --engine=vm	283f3a666f6f283f3d6261722962617a7c7129
+tests/litscan/spanarms.rxt:921	--features all --engine=vm	78283f21666f6f283f3d6261722962617a2979
+tests/litscan/spanarms.rxt:934	--features all --engine=vm	283f3a666f6f283f3d6261722962617a297b307d78
+tests/litscan/spanarms.rxt:949	--features all --engine=vm	5c5c772a283f3d61295c5c77
+tests/litscan/spanarms.rxt:978	--features all --engine=vm	78283f3d61627c616329612e
+tests/litscan/spanarms.rxt:993	--features all --engine=vm	5b61635d7b31377d5b62635d7b31377d283f3c3d283f3c3d63617b31367d29627b31377d292e

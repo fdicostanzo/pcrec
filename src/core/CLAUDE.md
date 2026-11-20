@@ -32,7 +32,7 @@ Maintenance: update this file when files are added/removed or their roles change
 ## Files
 
 - `ctxfn.def` — the one A_CTX truth table (ten rows; grid, hex, class, VM forms).
-- `kindrow.def` — the per-kind attribute row ([INLINE-C] 1a): TEXT/PATH/READS/ERASE per `AKind`, read via `pcrec_kind_row`/`pcrec_ast_row`; a kind without a row fails to compile (`tests/core/kindrow_check.sh`).
+- `kindrow.def` — the per-kind attribute row ([INLINE-C] 1a): TEXT/PATH/READS/ERASE/NEVER per `AKind`, read via `pcrec_kind_row`/`pcrec_ast_row` (NEVER, the never family's one propagation, via `pcrec_never_by_row`; span_arms RM-6); a kind without a row fails to compile (`tests/core/kindrow_check.sh`).
 - `part_layout.def` — part-layout vocabulary X-macros (`PL_CLASS/VALUE/RANK/WHY`).
 - `axes.def` — optimization-axis table (deny/force tokens, `-fno-X`/`-fX` spellings, default polarity).
 - `limits.h` / `limits.def` — every accept/reject/promise number, provenance-tiered.

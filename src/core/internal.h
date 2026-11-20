@@ -2521,29 +2521,32 @@ enum {
  * One row of kind-level facts per `AKind`, read by the pass families that
  * used to decide them arm by arm: the text/width readers read `text`, the
  * path-pruning readers `path`, the marked set `reads`, the prefilter
- * lowering `erase`. The column meanings are kindrow.def's header. A reader
+ * lowering `erase`, the never propagation `never` (`pcrec_never_by_row`
+ * below; today the split derivation, src/opt/derive.c). The column meanings are kindrow.def's header. A reader
  * whose answer depends on the node or its context keeps its code and reads
  * the row for the kind-level part; the arm inventory of which readers read
  * which column is docs/dev/lanes/ic1a_report.md. */
 typedef enum { KTEXT_ZERO, KTEXT_OWN, KTEXT_ANY } KindText;
 typedef enum { KPATH_TRANSPARENT, KPATH_GATE, KPATH_OPAQUE } KindPath;
 typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET, KREADS_ALL } KindReads;
+typedef enum { KNEVER_NO, KNEVER_ANY, KNEVER_EVERY, KNEVER_BODY, KNEVER_NODE } KindNever;
 typedef struct {
     KindText  text;
     KindPath  path;
     KindReads reads;
     unsigned  erase;   /* the NFA_ERASED_* bit its lowering records; 0 exact */
+    KindNever never;   /* how its never bit follows from its children's */
 } KindRow;
 
 /* THE ROWS ARE IN AKind ORDER: each row's position is asserted, so the table
  * reads like the enum and a misplaced row names itself. */
 enum {
-#define KIND_ROW(kind, text, path, reads, erase) KIND_ROW_AT_##kind,
+#define KIND_ROW(kind, text, path, reads, erase, never) KIND_ROW_AT_##kind,
 #include "core/kindrow.def"
 #undef KIND_ROW
     KIND_ROW_COUNT
 };
-#define KIND_ROW(kind, text, path, reads, erase)                              \
+#define KIND_ROW(kind, text, path, reads, erase, never)                       \
     _Static_assert((int)(kind) == (int)KIND_ROW_AT_##kind, "core/kindrow.def: " \
                    "the row for " #kind " is not at its AKind position");
 #include "core/kindrow.def"
@@ -2559,26 +2562,55 @@ enum {
 static inline KindRow pcrec_kind_row(AKind k)
 {
     switch (k) {
-#define KIND_ROW(kind, text, path, reads, erase)                              \
-    case kind: return (KindRow){ KTEXT_##text, KPATH_##path, KREADS_##reads, (erase) };
+#define KIND_ROW(kind, text, path, reads, erase, never)                       \
+    case kind: return (KindRow){ KTEXT_##text, KPATH_##path, KREADS_##reads,    \
+                                 (erase), KNEVER_##never };
 #include "core/kindrow.def"
 #undef KIND_ROW
     }
     /* unreachable for a valid kind; the row every reader treats as unknown */
-    return (KindRow){ KTEXT_ANY, KPATH_OPAQUE, KREADS_NONE, 0 };
+    return (KindRow){ KTEXT_ANY, KPATH_OPAQUE, KREADS_NONE, 0, KNEVER_NODE };
 }
 #pragma GCC diagnostic pop
 
 /* The row node `a` reads. Per NODE, not per kind, so a kind whose rows differ
  * by a node field has one place that picks: A_CALLOUT's width class
  * (inline_c.md §1.8), where a `consume` site's TEXT is ANY (the callee may
- * consume bytes between its neighbours) and a check's is its kind row's ZERO.
- * Every other kind has one row. */
+ * consume bytes between its neighbours) and a check's is its kind row's ZERO;
+ * and A_LOOK's NEVER, NO for a negative lookaround (a negative lookaround of
+ * a never body always holds) where the kind row's is BODY. Every other kind
+ * has one row. */
 static inline KindRow pcrec_ast_row(const Ast *a)
 {
     KindRow r = pcrec_kind_row(a->k);
     if (a->k == A_CALLOUT && a->u.callout.consume) r.text = KTEXT_ANY;
+    if (a->k == A_LOOK && a->u.look.neg) r.never = KNEVER_NO;
     return r;
+}
+
+/* `pcrec_ctx_fail` is declared with the other Ctx entries further down;
+ * repeated here because `pcrec_never_by_row` below calls it. */
+void pcrec_ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
+     __attribute__((noreturn, format(printf, 3, 4)));
+
+/* Whether a node can NEVER match, from its row's NEVER column and its
+ * children's never bits: `any` (some child is never) and `every` (every child
+ * is; a one-child kind passes its body's bit as both; a leaf passes false
+ * for both). The never family's ONE propagation (span_arms §14.3 D-9). A
+ * NODE row has no row answer: its reader keeps the node's own code and never
+ * asks here, so reaching here with one is a loud internal error. */
+static inline bool pcrec_never_by_row(Ctx *cx, KindNever n, bool any, bool every)
+{
+    switch (n) {
+    case KNEVER_NO:    return false;
+    case KNEVER_ANY:   return any;
+    case KNEVER_EVERY: return every;
+    case KNEVER_BODY:  return every;
+    case KNEVER_NODE:
+        pcrec_ctx_fail(cx, 0, "internal error: a NODE row reached the never "
+                       "propagation; its reader keeps the node's own code");
+    }
+    return every;   /* unreachable: -Wswitch */
 }
 
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c; the

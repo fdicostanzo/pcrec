@@ -122,7 +122,9 @@ static inline bool rb_has(const RbSet *s, int b)
  * walk reads besides the tree, filled ONCE by its one caller
  * (`pf_derive_req_walk`, src/facts/facts.c) from the option word and the
  * harness lever, so the walk itself reads no option. One field per row of
- * the table; a later unit adds its row (L1's reach, L3's `lb_bytes`). */
+ * the table; a later unit adds its row (L3's `lb_bytes`). The run's REACH is
+ * not a row: TOP's candidate rows carry the `look` arm instead (span_arms
+ * §14.1 item 8, §14.3 D-4). */
 typedef struct {
     /* the run's position DOMAIN ([RUN-POS-SET] stage 3): the largest member
      * set one run position may have (`PCREC_MAX_REQ_RUN_POS_SET`, or 1 under
@@ -137,6 +139,11 @@ typedef struct {
     /* the byte-rate (`pcrec_find_byte_rate`, NULL under NONE) that breaks the
      * run choice's ties at equal information (req.c `rn_choice_rows`) */
     const uint32_t *rate;
+    /* span_arms L1 (§5.1, the `A_CTX` item): the encoding's ONE-BYTE
+     * REPERTOIRE (`PcrecEnc.onebyte_max`), the bound under which a context
+     * node's code-point set reads exactly as a byte set; an `A_CTX` set
+     * with a member above it states no item */
+    unsigned onebyte_max;
 } ReqWalkParams;
 
 /* THE CORE FACTS from ONE walk of the lowered tree: the whole necessary set
@@ -146,9 +153,12 @@ typedef struct {
  * start", why a SET and a RUN, and why a lookaround's body is a correctness
  * decline. [RUN-POS-SET] stage 2p: the same walk builds the whole pattern's
  * byte-level piece description into `*pieces` (src/facts/desc.h), at most
- * `p->max_pieces` width groups. */
+ * `p->max_pieces` width groups. span_arms L1: `*never` is the root's NEVER
+ * bit (§14.3 D-9), true where the walk proved no attempt can match (an empty
+ * meet of two necessary conditions, or an empty class), listed as
+ * `req_whole_run`'s why `dead`. */
 void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
-                    RbSet *set, RbRun *run, PdDesc *pieces);
+                    RbSet *set, RbRun *run, PdDesc *pieces, bool *never);
                                                         /* src/facts/req.c */
 
 /* THE DERIVED FACTS, speed choices over the core ones, composed in

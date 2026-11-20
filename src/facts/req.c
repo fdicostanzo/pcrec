@@ -60,10 +60,24 @@
  * (the empty string, an assertion, `\G`, `\K`, a check callout, a
  * lookaround) is CAT's width-0 unit for the run (span_arms T3,
  * `rb_zero_rows`; `restore=empty`/`restore=zero` put the old cuts back): the
- * bytes on its two sides are adjacent in the subject. A lookaround's body is
- * deliberately not descended into: a LOOKBEHIND's bytes sit BEFORE the match's start and
- * can therefore be outside `[search_from, subject_length)` entirely, which
- * would make the check unsound in the direction that deletes matches.
+ * bytes on its two sides are adjacent in the subject.
+ *
+ * A POSITIVE LOOKAROUND'S BODY IS READ, BUT ITS BYTES NEVER JOIN THE RUN OR
+ * THE SET AS CONSUMED BYTES (docs/design/span_arms.md §5.1, §14.3 D-1..D-4,
+ * unit L1): a LOOKBEHIND's bytes sit BEFORE the match's start and can be
+ * outside `[search_from, subject_length)` entirely, and a lookahead's past
+ * its end, which would make the check unsound in the direction that deletes
+ * matches. What leaves the body is its ITEM, the per-offset byte sets every
+ * match of it implies at signed offsets from its cursor, carried as GUARDS
+ * (`RbRuns.lg`/`rg`) that MEET the consumed positions beside it at equal
+ * subject offsets: a guard only NARROWS a consumed position (both are
+ * necessary conditions on the same subject byte), never adds one. An empty
+ * meet is a contradiction, the never bit (`RbRuns.never`, the never family's
+ * rows, kindrow.def's NEVER column), listed as `req_whole_run`'s why `dead`.
+ * Each meet that narrows a consumed position to one byte puts that byte in
+ * the set where it meets (CAT-SET, `rr_cat`), whatever run TOP later
+ * chooses, so the set stays a CORE fact. At the walk's exit TOP drops
+ * whatever guard is left (reach 0: no candidate row yet).
  *
  * WHAT THE RUN DECLINES BEYOND THAT, each with its reason rather than a
  * shared "be careful" (reqpos_2b.md §2.4): an alternation contributes only
@@ -171,11 +185,27 @@
  * to the right, and it is FALSE the moment a run truncates — otherwise a
  * 20,000-byte literal would report its stored first bytes as adjacent to
  * whatever follows the literal, which is 19,968 bytes of a lie. */
-typedef struct { RbRun best, head, tail; bool all; long long maxw; } RbRuns;
+typedef struct {
+    RbRun best, head, tail;
+    bool all;
+    long long maxw;
+    /* span_arms L1 (§14.3 D-2) THE GUARDS: byte sets every match of the
+     * subtree implies OUTSIDE it, read from a positive lookaround's item.
+     * `lg` at the offsets `[-lg.n, 0)` before the subtree's START (its LAST
+     * positions kept, the ones nearest that edge, `rn_pre`), `rg` at `[0,
+     * rg.n)` after its END (its FIRST kept, `rn_app`). Never consumed bytes:
+     * a guard only narrows a consumed position it meets (`rr_cat`'s steps)
+     * and is dropped at the walk's exit (TOP). */
+    RbRun lg, rg;
+    /* the NEVER bit: no match of the subtree exists (§14.3 D-9) */
+    bool never;
+} RbRuns;
 
 /* The facts, threaded together because they come off one walk: the set, the
- * runs, and ([RUN-POS-SET] stage 2p) the piece description (desc.h). */
-typedef struct { RbSet set; RbRuns runs; PdDesc desc; } RbVal;
+ * runs, ([RUN-POS-SET] stage 2p) the piece description (desc.h) and (span
+ * arms L1, D-10) the adjacency HEAD, computed only while the walk is inside a
+ * positive lookahead's body (`RbWalk.ahead`), the one reader of it. */
+typedef struct { RbSet set; RbRuns runs; PdDesc desc; PdHead head; } RbVal;
 
 
 static RbSet rb_empty(void)
@@ -270,6 +300,12 @@ typedef struct {
      * and the one-byte position sets, built on first use. */
     PdCfg pd;
     const unsigned char *single[256];
+    /* span_arms L1: the encoding's one-byte repertoire (the `A_CTX` item's
+     * bound, `ReqWalkParams.onebyte_max`), and how many positive lookahead
+     * bodies the walk is inside: the head (`RbVal.head`) is built only then,
+     * so a 20,000-byte literal outside one pays nothing for it */
+    unsigned onebyte_max;
+    int ahead;
 } RbWalk;
 
 /* How many members the position set `p` has. */
@@ -395,6 +431,18 @@ static RbRun rn_pre(RbRun a, RbRun b)
         for ((i) = 0; (i) < RB_ROWS(tab); (i)++)                            \
             if (!((tab)[i].arm & (w)->restored) && (test))                  \
                 break;                                                      \
+    } while (0)
+
+/* THE ALL-ROWS SCAN, `RB_ROW_SCAN`'s sibling for a COMBINING table (span_arms
+ * L1, §14.3 D-4, review r51 CONFORM-2: TOP): `BODY` runs, with the row as
+ * `TAB[i]`, for EVERY row of `TAB` the walk does not restore and for which
+ * `TEST` holds, in table order; no row stops the scan. (`!=`, not `<`: a
+ * table may have no rows yet, TOP at L1, and `< 0` on a `size_t` is a
+ * -Wtype-limits warning.) */
+#define RB_ROW_EACH(i, w, tab, test, body)                                  \
+    do {                                                                    \
+        for ((i) = 0; (i) != RB_ROWS(tab); (i)++)                           \
+            if (!((tab)[i].arm & (w)->restored) && (test)) { body; }        \
     } while (0)
 
 /* THE RUN CHOICE: which of two candidate runs a subtree keeps as its best.
@@ -529,16 +577,133 @@ static RbRun rn_common_tail(const RbWalk *w, RbRun a, RbRun b)
     return o;
 }
 
+/* ---- THE GUARDS' MEET (span_arms L1, §14.3 D-3) ---------------------------
+ *
+ * A guard is a NECESSARY condition on subject bytes outside a subtree, as a
+ * consumed position is one on a byte inside it, so where the two fall on the
+ * same subject offset the byte lies in both sets: their INTERSECTION is the
+ * position. Every meet below is at EQUAL subject offsets, aligned at a
+ * shared edge, and none moves an offset. Positions are the byte SETS the
+ * run's domain admits (D187 addendum 1: a cube is a reader's private
+ * spelling, so the meet is of sets, never of hulls); a nonempty intersection
+ * of two admitted sets is admitted. */
+
+/* The intersection of the position sets `a` and `b`: one of them where it is
+ * a subset of the other (no allocation), NULL where it is empty. */
+static const unsigned char *rn_meet_pos(const RbWalk *w, const unsigned char *a,
+                                        const unsigned char *b)
+{
+    bool as = true, bs = true, any = false;
+    for (int i = 0; i < 32; i++) {
+        if (a[i] & ~b[i]) as = false;
+        if (b[i] & ~a[i]) bs = false;
+        if (a[i] & b[i]) any = true;
+    }
+    if (!any) return NULL;
+    if (as) return a;
+    if (bs) return b;
+    unsigned char *u = pcrec_arena_alloc(&w->cx->arena, 32);
+    for (int i = 0; i < 32; i++) u[i] = a[i] & b[i];
+    return u;
+}
+
+/* THE ONE MEET: run `a` met with the guard `g` position by position from
+ * their shared edge (`last`: both end there, read backwards; else both begin
+ * there). EMPTY-MEET's rule is inside it, and `*empty` reports it: where `a`
+ * is CONSUMED (`!guard`) an empty position keeps `a`'s un-narrowed value and
+ * the result is `a`'s length; where both are guards the result reaches as far
+ * as either and an empty position is dropped with everything outward of it.
+ * `a`'s offset and truncation are kept. */
+static RbRun rn_meet(const RbWalk *w, RbRun a, const RbRun *g, bool last,
+                     bool guard, bool *empty)
+{
+    const unsigned char *u[PCREC_MAX_REQ_RUN_SCAN];
+    int n = guard && g->n > a.n ? g->n : a.n;
+    for (int k = 0; k < n; k++) {
+        const unsigned char *pa = k < a.n ? a.pos[last ? a.n - 1 - k : k] : NULL;
+        const unsigned char *pg = k < g->n ? g->pos[last ? g->n - 1 - k : k] : NULL;
+        const unsigned char *m = pa && pg ? rn_meet_pos(w, pa, pg) : pa ? pa : pg;
+        if (!m) {
+            *empty = true;
+            if (guard) { n = k; break; }
+            m = pa;
+        }
+        u[k] = m;
+    }
+    RbRun o = rn_none();
+    o.trunc = a.trunc;
+    o.off = a.off;
+    for (int k = 0; k < n; k++) rn_put(w, &o, u[last ? n - 1 - k : k]);
+    return o;
+}
+
+/* Positions `[lo, hi)` of `r`, as a guard (no offset, no truncation). */
+static RbRun rn_slice(const RbRun *r, int lo, int hi)
+{
+    RbRun o = rn_none();
+    for (int i = lo; i < hi; i++) o.pos[o.n++] = r->pos[i];
+    return o;
+}
+
+/* `dst` takes `src`'s positions where it stores as many: an `all` subtree's
+ * head, tail and best are the same positions (its one literal string), so a
+ * narrowing of one is a narrowing of the three. */
+static void rn_same_positions(RbRun *dst, const RbRun *src)
+{
+    if (dst->n == src->n) memcpy(dst->pos, src->pos, sizeof dst->pos);
+}
+
+/* CAT-R: the left factor's `rg` `g` meets the right factor `r`'s first
+ * positions (its head; its tail and best too where `r` is `all`); returns
+ * the part of `g` past `r`'s head, the leftover CAT-EDGE may carry. */
+static RbRun rn_guard_onto_head(const RbWalk *w, RbRuns *r, RbRun g, bool *empty)
+{
+    if (g.n == 0) return g;
+    r->head = rn_meet(w, r->head, &g, false, false, empty);
+    if (r->all) {
+        rn_same_positions(&r->tail, &r->head);
+        rn_same_positions(&r->best, &r->head);
+    }
+    return rn_slice(&g, g.n < r->head.n ? g.n : r->head.n, g.n);
+}
+
+/* CAT-L, the mirror: the right factor's `lg` `g` meets the left factor `l`'s
+ * last positions (its tail; its head and best too where `l` is `all`);
+ * returns the part of `g` before `l`'s tail. */
+static RbRun rn_guard_onto_tail(const RbWalk *w, RbRuns *l, RbRun g, bool *empty)
+{
+    if (g.n == 0) return g;
+    l->tail = rn_meet(w, l->tail, &g, true, false, empty);
+    if (l->all) {
+        rn_same_positions(&l->head, &l->tail);
+        rn_same_positions(&l->best, &l->tail);
+    }
+    return rn_slice(&g, 0, g.n - (g.n < l->tail.n ? g.n : l->tail.n));
+}
+
+/* CAT-EDGE's two meets of guard against guard: `lg`s end at the shared start
+ * (read backwards), `rg`s begin at the shared end. */
+static RbRun rn_guard_meet_last(const RbWalk *w, RbRun a, RbRun b, bool *empty)
+{
+    return rn_meet(w, a, &b, true, true, empty);
+}
+
+static RbRun rn_guard_meet_first(const RbWalk *w, RbRun a, RbRun b, bool *empty)
+{
+    return rn_meet(w, a, &b, false, true, empty);
+}
+
 /* The identity of run concatenation: the EMPTY STRING, which is entirely
  * literal, so `all` is TRUE. That is not a trick — it is what makes an
- * accumulator seeded with it behave like the concatenation of nothing. */
+ * accumulator seeded with it behave like the concatenation of nothing.
+ * It is also THE STATED VALUE every builder below starts from (span_arms
+ * RM-1, req_lookaround_arch.md P1): a field added to `RbRuns` is defaulted
+ * here once, never silently left unwritten by a field-by-field builder. */
 static RbRuns rr_unit(void)
 {
-    RbRuns r;
-    r.best = r.head = r.tail = rn_none();
-    r.all = true;
-    r.maxw = 0;
-    return r;
+    return (RbRuns){ .best = rn_none(), .head = rn_none(), .tail = rn_none(),
+                     .all = true, .maxw = 0, .lg = rn_none(), .rg = rn_none(),
+                     .never = false };
 }
 
 /* Everything declined: no run, and no permission to join across this
@@ -555,9 +720,8 @@ static RbRuns rr_none(long long maxw)
  * byte wide. */
 static RbRuns rr_pos(const RbWalk *w, const unsigned char *p)
 {
-    RbRuns r;
+    RbRuns r = rr_unit();
     r.best = r.head = r.tail = rn_pos(w, p);
-    r.all = true;
     r.maxw = 1;
     return r;
 }
@@ -580,6 +744,29 @@ static long long rr_rep_w(int rmax, long long body)
                          PCREC_W_UNBOUNDED);
 }
 
+/* CAT-SET (span_arms §5.2's row as first written; review r55 A): each
+ * position of the CONSUMED run `after` that a meet narrowed from `before`'s
+ * (a new set: `rn_meet_pos` hands back an operand it did not narrow) to ONE
+ * byte puts that byte in the concatenation's necessary set `set` at offset
+ * `base + i`, if the set lacks it. Every match holds the byte there (the
+ * position is consumed, and both conditions are necessary). `*last` takes the
+ * byte joined, so the caller can thread the pick. A member the set already has
+ * keeps its offset (lowering it is review r55 EMITTED-1's own row). */
+static void rr_cat_set_side(RbSet *set, const RbRun *before, const RbRun *after,
+                            long long base, int *last)
+{
+    for (int i = 0; i < after->n; i++) {
+        if (after->pos[i] == before->pos[i] || rn_count(after->pos[i]) != 1) continue;
+        int b = 0;
+        while (!((after->pos[i][b >> 3] >> (b & 7)) & 1)) b++;
+        *last = b;
+        if (rb_has(set, b)) continue;
+        long long o = pcrec_sat_add(base, i, PCREC_W_UNBOUNDED);
+        set->off[b] = o >= RB_OFF_UNBOUNDED ? RB_OFF_UNBOUNDED : (uint32_t)o;
+        set->bits[b >> 3] |= (unsigned char)(1u << (b & 7));
+    }
+}
+
 /* CONCATENATION of runs: `l` is to the LEFT of `r` in subject order.
  *
  * The JOIN is the whole point of carrying head and tail runs — `l`'s
@@ -587,10 +774,36 @@ static long long rr_rep_w(int rmax, long long body)
  * concatenation is a guaranteed contiguous run even when neither factor is
  * literal on its own. `best` is the longest of the two factors' bests, that
  * join, and the resulting head and tail (which a `\z`-free literal makes the
- * same string, and which is what makes `rr_unit` a real identity). */
-static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
+ * same string, and which is what makes `rr_unit` a real identity).
+ *
+ * `set` is the concatenation's necessary set (both factors' already, in
+ * `o`'s frame), which CAT-SET adds to; NULL where the caller's factor has no
+ * consumed position a guard can meet (a gap, a cut, the unit), and a meet
+ * that narrows one anyway is an internal error, never a dropped byte. Its
+ * pick, where the set had none, becomes the rightmost byte joined, so the
+ * pick is -1 exactly when the set is empty (`pcrec_find_set_pick`'s
+ * premise); a set that had a pick keeps it (a joined byte is a necessary
+ * byte, so the pick is still one). */
+static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r, RbSet *set)
 {
-    RbRuns o;
+    RbRuns o = rr_unit();
+    bool empty = false;
+    RbRun lt0 = l.tail, rh0 = r.head;
+    int last = -1;
+    /* span_arms L1 (§14.3 D-3), FIXED STEPS in this order: CAT-R, CAT-L,
+     * CAT-SET, the consumed join, CAT-EDGE, never. */
+    RbRun rleft = rn_guard_onto_head(w, &r, l.rg, &empty);   /* CAT-R */
+    RbRun lleft = rn_guard_onto_tail(w, &l, r.lg, &empty);   /* CAT-L */
+    if (set) {                                                /* CAT-SET */
+        rr_cat_set_side(set, &lt0, &l.tail, lt0.off, &last);
+        rr_cat_set_side(set, &rh0, &r.head, l.maxw, &last);
+        if (set->pick < 0) set->pick = last;
+    } else if (memcmp(lt0.pos, l.tail.pos, sizeof lt0.pos) ||
+               memcmp(rh0.pos, r.head.pos, sizeof rh0.pos)) {
+        pcrec_ctx_fail(w->cx, 0, "internal error: a guard narrowed a consumed "
+                       "run position where no necessary set was handed in "
+                       "(src/facts/req.c rr_cat)");
+    }
     RbRun rb = r.best, join = rn_app(l.tail, r.head);
     o.maxw = pcrec_sat_add(l.maxw, r.maxw, PCREC_W_UNBOUNDED);
     o.head = l.all ? rn_app(l.head, r.head) : l.head;
@@ -605,6 +818,13 @@ static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
     join.off = rn_tail_off(l.maxw, l.tail.n);
     o.best = rn_better(w, rn_better(w, l.best, rb), join);
     o.best = rn_better(w, rn_better(w, o.best, o.head), o.tail);
+    /* CAT-EDGE: a leftover crosses its neighbour only where that neighbour is
+     * `all` (exact width, so the leftover's offset from `o`'s edge is known);
+     * elsewhere it is dropped. */
+    o.lg = l.all && lleft.n ? rn_guard_meet_last(w, l.lg, lleft, &empty) : l.lg;
+    o.rg = r.all && rleft.n ? rn_guard_meet_first(w, r.rg, rleft, &empty) : r.rg;
+    o.never = pcrec_never_by_row(w->cx, pcrec_kind_row(A_CAT).never,
+                                 l.never || r.never, l.never && r.never) || empty;
     return o;
 }
 
@@ -612,7 +832,8 @@ static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
  * declared first-match table (`rr_alt_rows`, alt_normal_form.md §6); each row
  * answers whether it applies and, if so, fills `*o`; a row that does not
  * apply leaves `*o` untouched, so the scan hands `*o` to every row and the
- * applying row's answer is the outcome (RB_ROW_SCAN's capture). */
+ * applying row's answer is the outcome (RB_ROW_SCAN's capture). An applying
+ * row writes a COMPLETE value, from `rr_unit` (RM-1). */
 typedef bool (*RrAltRow)(const RbWalk *w, const RbRuns *l, const RbRuns *r,
                          RbRuns *o);
 
@@ -631,6 +852,7 @@ static bool rr_alt_union(const RbWalk *w, const RbRuns *l, const RbRuns *r,
         return false;
     RbRun u = rn_common_head(w, l->head, r->head);
     if (u.n != n) return false;
+    *o = rr_unit();
     o->maxw = n;
     o->head = o->tail = o->best = u;
     o->all = true;
@@ -642,6 +864,7 @@ static bool rr_alt_union(const RbWalk *w, const RbRuns *l, const RbRuns *r,
 static bool rr_alt_affix(const RbWalk *w, const RbRuns *l, const RbRuns *r,
                          RbRuns *o)
 {
+    *o = rr_unit();
     o->maxw = l->maxw > r->maxw ? l->maxw : r->maxw;
     o->head = rn_common_head(w, l->head, r->head);
     o->head.off = 0;
@@ -664,9 +887,18 @@ static const struct {
 static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
     size_t i;
-    RbRuns o;
+    RbRuns o = rr_unit();
     RB_ROW_SCAN(i, w, rr_alt_rows, rr_alt_rows[i].row(w, &l, &r, &o));
     if (i == RB_ROWS(rr_alt_rows)) rr_alt_affix(w, &l, &r, &o);
+    /* span_arms L1 (§14.3 D-3) ALT's guard post-step, whatever row answered
+     * the consumed part: the guards both branches imply, by the common-head
+     * and common-tail rules the consumed part uses (a branch with no guard
+     * gives none); `lg` is placed from the alternation's start and `rg` from
+     * its end, which is the end of the branch that matched. */
+    o.lg = rn_common_tail(w, l.lg, r.lg);
+    o.rg = rn_common_head(w, l.rg, r.rg);
+    o.never = pcrec_never_by_row(w->cx, pcrec_kind_row(A_ALT).never,
+                                 l.never || r.never, l.never && r.never);
     return o;
 }
 
@@ -697,6 +929,7 @@ static PCREC_OWN_FRAME void rb_init(RbVal *acc)
     acc->set  = rb_empty();
     acc->runs = rr_unit();
     acc->desc = pcrec_pd_unit();
+    acc->head = pcrec_ph_unit();
 }
 
 /* `acc` := `r` followed by `acc`: `r` is to the RIGHT of everything still to
@@ -706,8 +939,9 @@ static PCREC_OWN_FRAME void rb_cat_into(const RbWalk *w, RbVal *acc,
                                         const RbVal *r)
 {
     acc->set  = rb_union(r->set, acc->set, r->runs.maxw);
-    acc->runs = rr_cat(w, r->runs, acc->runs);
+    acc->runs = rr_cat(w, r->runs, acc->runs, &acc->set);
     acc->desc = pcrec_pd_cat(w->cx, &w->pd, r->desc, acc->desc);
+    if (w->ahead) acc->head = pcrec_ph_cat(w->cx, &w->pd, r->head, acc->head);
 }
 
 /* `r` := the alternation of `b` and `r`: only what both guarantee. */
@@ -717,6 +951,7 @@ static PCREC_OWN_FRAME void rb_alt_into(const RbWalk *w, RbVal *r,
     r->set  = rb_intersect(b->set, r->set);
     r->runs = rr_alt(w, b->runs, r->runs);
     r->desc = pcrec_pd_alt(w->cx, &w->pd, b->desc, r->desc);
+    if (w->ahead) r->head = pcrec_ph_alt(w->cx, &w->pd, b->head, r->head);
 }
 
 /* `acc` := a stretch of width `maxw` that makes no byte necessary and breaks
@@ -725,8 +960,34 @@ static PCREC_OWN_FRAME void rb_gap_into(const RbWalk *w, RbVal *acc,
                                         long long maxw)
 {
     acc->set  = rb_union(rb_empty(), acc->set, maxw);
-    acc->runs = rr_cat(w, rr_none(maxw), acc->runs);
+    acc->runs = rr_cat(w, rr_none(maxw), acc->runs, NULL);
     acc->desc = pcrec_pd_none();
+}
+
+/* span_arms L1 (D-10) the head's per-kind rule's POSITION at byte level: a
+ * lowered class is its byte set, whether or not the run's domain admits it
+ * (a class outside the domain is still a position of the head, or a body
+ * like `(?=a.b)` would lose its terms past it; the item's guard is what stops
+ * there). `A_WCLASS` is no position: the walk descends to its byte child (it
+ * is transparent, `rb_walk_at`), so the rule never sees one from here. */
+static const unsigned char *rb_pos_set(RbWalk *w, const Ast *a, int b);
+
+static const void *rb_ph_pos(void *env, const Ast *a)
+{
+    RbWalk *w = env;
+    if (a->k != A_CLASS) return NULL;
+    return rb_pos_set(w, a, pcrec_cls_single(w->cx, a));
+}
+
+/* `acc`'s head := node `a`'s head (the per-kind rule, `pcrec_ph_node`, its
+ * second caller: span_arms D-10, register row 27) followed by `acc`'s; `body`
+ * the head of `a`'s one body, or NULL for a leaf. Only inside a positive
+ * lookahead's body, the head's one reader here (`RbWalk.ahead`). */
+static void rb_head_node(RbWalk *w, RbVal *acc, const Ast *a, const PdHead *body)
+{
+    if (!w->ahead) return;
+    acc->head = pcrec_ph_cat(w->cx, &w->pd,
+                             pcrec_ph_node(w->cx, a, body, rb_ph_pos, w), acc->head);
 }
 
 /* ---- THE POWER ARM ([REPEAT-RUN], span_arms R1: T2 rows 2-3) ------------- */
@@ -750,12 +1011,21 @@ static int rr_pow_count(const RbRuns *b, int m)
     return m < sat ? m : sat;
 }
 
-/* `X^c`: `c` copies of the body with runs `b`, through the CAT step (the
- * join between two copies is `rr_cat`'s; 0 copies is the unit). */
-static RbRuns rr_pow(const RbWalk *w, RbRuns b, int c)
+/* `X^c`: `c` copies of the body with runs `b` and set `bs`, through the CAT
+ * step (the join between two copies is `rr_cat`'s; 0 copies is the unit),
+ * and into `*set` the copies' necessary set, as `rb_cat_into` builds a
+ * concatenation's: each copy's members at their offsets (the first copy's
+ * are the nearest), plus every byte CAT-SET joins where one copy's guard
+ * narrows the next copy's consumed position (`(?:(?=ln)..){2}`). */
+static RbRuns rr_pow(const RbWalk *w, RbRuns b, int c, const RbSet *bs,
+                     RbSet *set)
 {
     RbRuns o = rr_unit();
-    for (int i = 0; i < c; i++) o = rr_cat(w, b, o);
+    *set = rb_empty();
+    for (int i = 0; i < c; i++) {
+        *set = rb_union(*bs, *set, b.maxw);
+        o = rr_cat(w, b, o, set);
+    }
     return o;
 }
 
@@ -764,10 +1034,11 @@ static RbRuns rr_pow(const RbWalk *w, RbRuns b, int c)
  * from it; `all` only when every copy was unrolled (`c < m` stored a prefix
  * of a longer literal) or the body is width 0 (its copies store nothing, so
  * `X^1` is `X^m`). `m = 0` gives the unit: `xy(?:ab){0}zw` is `xyzw`. */
-static RbRuns rr_rep_exact(const RbWalk *w, RbRuns b, int m)
+static RbRuns rr_rep_exact(const RbWalk *w, RbRuns b, int m, const RbSet *bs,
+                           RbSet *set)
 {
     int c = rr_pow_count(&b, m);
-    RbRuns o = rr_pow(w, b, c);
+    RbRuns o = rr_pow(w, b, c, bs, set);
     o.all = o.all && (c == m || b.maxw == 0);
     o.maxw = rr_rep_w(m, b.maxw);
     o.tail.off = rn_tail_off(o.maxw, o.tail.n);
@@ -780,12 +1051,14 @@ static RbRuns rr_rep_exact(const RbWalk *w, RbRuns b, int m)
  * run), so `all` is false and at `m = 0` this is today's gap. The best is
  * the first decomposition's: its offsets are the smaller bounds, and the
  * second's best is the same bytes further in. */
-static RbRuns rr_rep_split(const RbWalk *w, RbRuns b, int m, int n)
+static RbRuns rr_rep_split(const RbWalk *w, RbRuns b, int m, int n,
+                           const RbSet *bs, RbSet *set)
 {
-    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m));
+    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m), bs, set);
     RbRuns gap = rr_none(rr_rep_w(n < 0 ? -1 : n - m, b.maxw));
-    RbRuns o = rr_cat(w, p, gap);
-    o.tail = rr_cat(w, gap, p).tail;
+    RbRuns o = rr_cat(w, p, gap, NULL), tl = rr_cat(w, gap, p, NULL);
+    o.tail = tl.tail;
+    o.rg = tl.rg;   /* span_arms L1 (D-3): from the decomposition ending in `X^c` */
     o.maxw = rr_rep_w(n, b.maxw);
     o.tail.off = rn_tail_off(o.maxw, o.tail.n);
     return o;
@@ -830,12 +1103,25 @@ static const unsigned char *rb_pos_set(RbWalk *w, const Ast *a, int b)
     return s;
 }
 
+/* THE NEVER LEAF (span_arms §14.3 D-9; review r55 C): a node that becomes
+ * the EMPTY position matches no character, so the runs of the node alone are
+ * never, and CAT's never row (`rr_cat`) carries that to whatever it is
+ * concatenated with. The one leaf, asked where the walk turns a node into a
+ * position: a lowered class (`rb_class_into`) and the `A_CTX` item
+ * (`rb_ctx_item`), so the two lowerings of a one-character lookaround agree
+ * (`x(?=[^\x00-\xff])y` under `byte`, with and without `-fno-ctx-node`). */
+static bool rb_never_pos(const unsigned char *p)
+{
+    return rn_count(p) == 0;
+}
+
 /* `acc` := the lowered class `a`, followed by `acc`. */
 static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
                                           const Ast *a)
 {
     int b = pcrec_cls_single(w->cx, a);
     const unsigned char *ps = rb_pos_set(w, a, b);
+    rb_head_node(w, acc, a, NULL);
     /* [RUN-POS-SET] stage 2p: a piece position is the class's exact byte
      * SET, with no member bound (nothing scans a piece, §3.4). */
     PdDesc desc = pcrec_pd_cat(w->cx, &w->pd, pcrec_pd_pos(w->cx, ps), acc->desc);
@@ -845,14 +1131,20 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
          * also BREAKS contiguity for everything around it — which
          * `rr_none`'s cleared `all` is exactly what says. One byte wide: the
          * tree is lowered. */
-        rb_gap_into(w, acc, 1);
+        RbRuns g = rr_none(1);
+        /* span_arms L1 (D-9) the never family's leaf: the class's row is
+         * NODE, the answer the set's, read here at byte level after lowering
+         * (as derive.c's `is_never_leaf` reads the class before it) */
+        g.never = rb_never_pos(ps);
+        acc->set = rb_union(rb_empty(), acc->set, 1);
+        acc->runs = rr_cat(w, g, acc->runs, NULL);
         acc->desc = desc;
         return;
     }
     /* Only a single byte is a member of the necessary SET; a wider position is
      * one the RUN carries (litscan_s4.md §2.3.1). */
     acc->set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc->set, 1);
-    acc->runs = rr_cat(w, rr_pos(w, ps), acc->runs);
+    acc->runs = rr_cat(w, rr_pos(w, ps), acc->runs, &acc->set);
     acc->desc = desc;
 }
 
@@ -860,7 +1152,7 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
  * and a broken run (T3's last row, the form a restored arm runs). */
 static PCREC_OWN_FRAME void rb_assert_into(const RbWalk *w, RbVal *acc)
 {
-    acc->runs = rr_cat(w, rr_none(0), acc->runs);
+    acc->runs = rr_cat(w, rr_none(0), acc->runs, NULL);
     acc->desc = pcrec_pd_none();   /* a CUT, as in the run (§3.4) */
 }
 
@@ -871,7 +1163,7 @@ static PCREC_OWN_FRAME void rb_assert_into(const RbWalk *w, RbVal *acc)
 static PCREC_OWN_FRAME void rb_zero_unit_into(const RbWalk *w, RbVal *acc,
                                               PdDesc d)
 {
-    acc->runs = rr_cat(w, rr_unit(), acc->runs);
+    acc->runs = rr_cat(w, rr_unit(), acc->runs, NULL);
     acc->desc = pcrec_pd_cat(w->cx, &w->pd, d, acc->desc);
 }
 
@@ -899,8 +1191,7 @@ static PCREC_OWN_FRAME void rb_rep_unit_val(RbVal *v, const RbVal *b, int m)
 static PCREC_OWN_FRAME void rb_rep_exact_val(const RbWalk *w, RbVal *v,
                                              const RbVal *b, int m)
 {
-    v->set  = m >= 1 ? b->set : rb_empty();
-    v->runs = rr_rep_exact(w, b->runs, m);
+    v->runs = rr_rep_exact(w, b->runs, m, &b->set, &v->set);
     v->desc = pcrec_pd_pow(w->cx, &w->pd, b->desc, m);
 }
 
@@ -909,8 +1200,7 @@ static PCREC_OWN_FRAME void rb_rep_exact_val(const RbWalk *w, RbVal *v,
 static PCREC_OWN_FRAME void rb_rep_split_val(const RbWalk *w, RbVal *v,
                                              const RbVal *b, int m, int n)
 {
-    v->set  = m >= 1 ? b->set : rb_empty();
-    v->runs = rr_rep_split(w, b->runs, m, n);
+    v->runs = rr_rep_split(w, b->runs, m, n, &b->set, &v->set);
     v->desc = pcrec_pd_none();
 }
 
@@ -923,6 +1213,9 @@ static PCREC_OWN_FRAME void rb_rep_best_val(RbVal *v, const RbVal *b, int n)
     v->set  = b->set;
     v->runs = rr_none(rr_rep_w(n, b->runs.maxw));
     v->runs.best = b->runs.best;
+    /* span_arms L1 (READYL1-8 (a)): REP at `m >= 1` is never where its body
+     * is, under this restored form too; it carries no guard */
+    v->runs.never = b->runs.never;
     v->desc = pcrec_pd_none();
 }
 
@@ -1035,15 +1328,19 @@ static void rb_walk(RbWalk *w, const Ast *a, RbVal *out)
  * what a node whose kind row's TEXT is ZERO contributes. A node that
  * consumes nothing leaves the bytes on its two sides ADJACENT in the
  * subject, whether it is the empty string, an assertion, `\K` or a
- * lookaround whose body is not read, so it is CAT's unit (E-1, E-4, E-5);
- * joining ACROSS it reads nothing of a lookaround's body, which is what the
- * header forbids. E-5 (a positive lookaround, `A_LOOK` or `A_CTX` NEXT/PREV)
- * is the plain unit until L1 adds its item. E-1 restores under the `empty`
- * arm (span arms E2 took it from alt_normal_form stage 2a), E-4 and E-5
- * under `zero`. A row whose `arm` the walk parameters restore is passed
- * over; the default (after the table, the old cut) matches every node. */
+ * lookaround, so it is CAT's unit (E-1, E-4, E-5); joining ACROSS it puts
+ * no byte of a lookaround's body in the run, which is what the header
+ * forbids. E-5i (span_arms L1: a positive lookaround, `A_LOOK` or `A_CTX`
+ * NEXT/PREV) is that unit CARRYING its item's guards, its body's guards and
+ * its body's never bit (§5.1, §14.3 D-1); E-5 is E2's plain unit, which
+ * answers when E-5i is restored (`look`). E-1 restores under the `empty`
+ * arm (span arms E2 took it from alt_normal_form stage 2a), E-4, E-5 and
+ * E-5i under `zero` (E-5i's mask is `look | zero`, so `zero` keeps E2's
+ * meaning). A row whose `arm` the walk parameters restore is passed over;
+ * the default (after the table, the old cut) matches every node. */
 typedef enum {
     RB_ZERO_EMPTY,   /* the unit, described as the empty string (exact) */
+    RB_ZERO_ITEM,    /* the unit carrying the lookaround's item (E-5i) */
     RB_ZERO_UNIT,    /* the unit, described by desc.c `zero` (not exact) */
     RB_ZERO_CUT      /* the old form: a cut */
 } RbZeroRow;
@@ -1077,16 +1374,117 @@ static const struct {
     /* E-1 (span_arms E2, from alt_normal_form stage 2a): `abcd()efgh` */
     { rb_zero_empty,    RB_ZERO_EMPTY, PCREC_WALK_ARM(EMPTY) },
     { rb_zero_empty,    RB_ZERO_CUT,  0 },   /* E-1 restored */
-    /* E-5 (span_arms E2; L1 adds the item): `xyz(?<=yz)abc` */
+    /* E-5i (span_arms L1): `xy(?=bc)[bc]c`, `foo(?=bar)baz` */
+    { rb_zero_look_pos, RB_ZERO_ITEM, PCREC_WALK_ARM(LOOK) | PCREC_WALK_ARM(ZERO) },
+    /* E-5 (span_arms E2), the plain unit `look` restores: `xyz(?<=yz)abc` */
     { rb_zero_look_pos, RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
     /* E-4 (span_arms E2): `foo\bbar`, `x(?!ab)ac`, `ab\Kcd` */
     { rb_zero_any,      RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
 };
 
+/* ---- THE ITEM (span_arms L1, §5.1, §14.3 D-1, D-10) ----------------------- */
+
+/* The guard a head `h` states: its positions from the cursor outward, up to
+ * the first one outside the run's domain (§5.1), in the head's order. */
+static RbRun rb_guard_of_head(const RbWalk *w, const PdHead *h)
+{
+    RbRun g = rn_none();
+    for (int i = 0; i < h->h && i < PCREC_MAX_REQ_RUN_SCAN && rn_admits(w, h->pos[i]); i++)
+        rn_put(w, &g, h->pos[i]);
+    return g;
+}
+
+/* The item of the positive lookaround `a` into the unit `u`, from its body's
+ * value `b`, which this walks (`rb_walk(w, a->l, b)`). A LOOKAHEAD's guard is
+ * its body's HEAD (the positions every match of the body consumes FIRST, the
+ * ones nearest the cursor), followed by the body's own `rg` where the body is
+ * `all` and the guard covers it whole (exact width, so its end is known); its
+ * `lg` is the body's own (a lookbehind nested in the body, at its own
+ * offsets). A LOOKBEHIND's is the mirror, read from the body's DESCRIPTION
+ * (its LAST positions, every width group's, united: `pcrec_pd_tail_head`),
+ * preceded by the body's own `lg` where it is `all` and covered whole; its
+ * `rg` is the body's own. Nothing else leaves the body: its set, its
+ * description and its consumed runs stay in `b` (D-1). Its never bit is the
+ * body's, by the kind row's NEVER column (BODY for a positive lookaround). */
+static PCREC_OWN_FRAME void rb_look_item(RbWalk *w, const Ast *a, RbVal *b,
+                                         RbRuns *u)
+{
+    bool behind = a->u.look.behind;
+    const RbRuns *br = &b->runs;
+    u->never = pcrec_never_by_row(w->cx, pcrec_ast_row(a).never, br->never, br->never);
+    if (!behind) {
+        RbRun g = rb_guard_of_head(w, &b->head);
+        if (br->all && g.n == br->maxw && g.n == b->head.h && b->head.closed)
+            g = rn_app(g, br->rg);
+        u->rg = g;
+        u->lg = br->lg;
+    } else {
+        PdHead h = pcrec_pd_tail_head(w->cx, &w->pd, b->desc);
+        RbRun r = rb_guard_of_head(w, &h), g = rn_none();
+        for (int i = r.n - 1; i >= 0; i--) g.pos[g.n++] = r.pos[i];
+        if (br->all && g.n == br->maxw && g.n == h.h && h.closed)
+            g = rn_pre(br->lg, g);
+        u->lg = g;
+        u->rg = br->rg;
+    }
+}
+
+/* The item of a positive one-character `A_CTX` (`(?=C)` NEXT, `(?<=C)`
+ * PREV) into `u`: its set at offset 0 (NEXT, an `rg`) or −1 (PREV, an `lg`),
+ * where the set reads exactly as bytes (every member within the encoding's
+ * one-byte repertoire, `ReqWalkParams.onebyte_max`) and the run's domain
+ * admits it; else no item. An EMPTY set (no character at all: the parser
+ * complements within the encoding's repertoire) is the never leaf
+ * (`rb_never_pos`). It walks no body. */
+static void rb_ctx_item(const RbWalk *w, const Ast *a, RbRuns *u)
+{
+    unsigned char *s = pcrec_arena_alloc(&w->cx->arena, 32);
+    for (int i = 0; i < a->u.ctx.n; i++) {
+        if (a->u.ctx.iv[i].hi > w->onebyte_max) return;
+        for (unsigned c = a->u.ctx.iv[i].lo; c <= a->u.ctx.iv[i].hi; c++)
+            s[c >> 3] |= (unsigned char)(1u << (c & 7));
+    }
+    u->never = rb_never_pos(s);
+    if (!rn_admits(w, s)) return;
+    if (a->u.ctx.fn == CTXFN_NEXT) u->rg = rn_pos(w, s);
+    else u->lg = rn_pos(w, s);
+}
+
+/* E-5i: `acc` := the positive lookaround `a` followed by `acc`, as the unit
+ * (E2's: no byte, `all`, width 0, desc.c `zero`) carrying the item `u`,
+ * whose guards meet `acc`'s positions in `rr_cat`. `t` is the walk level's
+ * child slots; the body's value goes to `t[0]` and stays there. */
+static PCREC_OWN_FRAME void rb_zero_item_fin(RbWalk *w, RbVal *acc,
+                                             const Ast *a, RbVal *t)
+{
+    RbRuns u = rr_unit();
+    if (a->k == A_LOOK) rb_look_item(w, a, &t[0], &u);
+    else rb_ctx_item(w, a, &u);
+    acc->runs = rr_cat(w, u, acc->runs, &acc->set);
+    acc->desc = pcrec_pd_cat(w->cx, &w->pd, pcrec_pd_zero(), acc->desc);
+}
+
+/* THE DESCENT AND THE ITEM IN SEPARATE FRAMES ([DD-10], l1ttri): the body's
+ * walk is the one recursive step of a nested lookaround, so the frame that
+ * makes it holds only pointers; the item's runs (`RbRuns`, several KB with
+ * `rr_cat`'s temporaries) live in `rb_zero_item_fin`, entered after the
+ * descent returns. In one frame, a lookaround nested 250 deep cost 6.8 KB a
+ * level and overflowed limits.md §3.10's compile-thread budget. */
+static void rb_zero_item_into(RbWalk *w, RbVal *acc, const Ast *a, RbVal *t)
+{
+    if (a->k == A_LOOK) {
+        bool behind = a->u.look.behind;
+        if (!behind) w->ahead++;
+        rb_walk(w, a->l, &t[0]);
+        if (!behind) w->ahead--;
+    }
+    rb_zero_item_fin(w, acc, a, t);
+}
+
 /* `acc` := the zero-width node `a` followed by `acc`, by the first row of T3
  * that matches it and that the walk does not restore; none, the default (E-4
- * and E-5 restored): a cut. */
-static void rb_zero_into(const RbWalk *w, RbVal *acc, const Ast *a)
+ * and E-5 restored): a cut. `t` the level's child slots (E-5i walks a body). */
+static void rb_zero_into(RbWalk *w, RbVal *acc, const Ast *a, RbVal *t)
 {
     size_t i;
     RbZeroRow row = RB_ZERO_CUT;
@@ -1094,6 +1492,7 @@ static void rb_zero_into(const RbWalk *w, RbVal *acc, const Ast *a)
     if (i < RB_ROWS(rb_zero_rows)) row = rb_zero_rows[i].row;
     switch (row) {
     case RB_ZERO_EMPTY: rb_zero_unit_into(w, acc, pcrec_pd_unit()); return;
+    case RB_ZERO_ITEM:  rb_zero_item_into(w, acc, a, t);           return;
     case RB_ZERO_UNIT:  rb_zero_unit_into(w, acc, pcrec_pd_zero()); return;
     case RB_ZERO_CUT:   rb_assert_into(w, acc);                     return;
     }
@@ -1102,11 +1501,16 @@ static void rb_zero_into(const RbWalk *w, RbVal *acc, const Ast *a)
 /* `acc` := node `a` followed by `acc`, for a kind whose ROW answers for its
  * text: ZERO consumes nothing (T3's rows), ANY is a gap of unbounded width
  * (no byte, a broken run, every run to its right moved). An OWN kind has its
- * own arm; it would get the gap, which is always sound. */
-static void rb_row_into(const RbWalk *w, RbVal *acc, const Ast *a)
+ * own arm; it would get the gap, which is always sound. The head reads a
+ * lookaround THROUGH whatever its body (`pcrec_ph_node`'s A_LOOK row reads
+ * only the body's WRITES, which no reader here asks), so its body is the
+ * unit's head. */
+static void rb_row_into(RbWalk *w, RbVal *acc, const Ast *a, RbVal *t)
 {
+    PdHead unit = pcrec_ph_unit();
+    rb_head_node(w, acc, a, a->k == A_LOOK ? &unit : NULL);
     switch (pcrec_ast_row(a).text) {
-    case KTEXT_ZERO: rb_zero_into(w, acc, a); return;
+    case KTEXT_ZERO: rb_zero_into(w, acc, a, t); return;
     case KTEXT_ANY:  rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;
     case KTEXT_OWN:  break;
     }
@@ -1178,6 +1582,8 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
              * minimum is a deleted match rather than a missed opportunity. */
             rb_walk(w, a->l, &t[0]);
             rb_rep_val(w, a, &t[0], &t[1]);
+            t[1].head = pcrec_ph_unit();
+            rb_head_node(w, &t[1], a, &t[0].head);
             rb_cat_into(w, acc, &t[1]);
             return;
         case A_CLASS:
@@ -1187,15 +1593,15 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
          * width-0 body joins, `(?:\b)+` included, by the E1 ruling). The
          * ruled arm for the bare cuts is `zero` (E2); it restores only these.
          *
-         * Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
-         * is not descended into, and the header says why that is a
-         * CORRECTNESS decline rather than a missed opportunity.
+         * Consumes nothing, so it makes no byte necessary BY ITSELF: a
+         * positive lookaround's body bytes never join the run or the set as
+         * consumed bytes, and the header says why that is a CORRECTNESS rule.
          *
          * FOR THE RUN EACH IS T3's ROW (`rb_zero_rows`): the bytes on either
          * side of a node that consumes nothing ARE adjacent in the subject,
-         * so the run joins ACROSS it (the unit); that reads nothing of a
-         * lookaround's body, whose bytes stay unread until span_arms L1's
-         * item. */
+         * so the run joins ACROSS it (the unit); a POSITIVE lookaround is
+         * E-5i's ITEM (span_arms L1), whose body is walked and whose guards
+         * narrow the consumed positions beside it (`rb_zero_item_into`). */
         case A_EMPTY:
         case A_EOL:
         case A_CTX:
@@ -1212,15 +1618,45 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
             /* [INLINE-C] 1a: the kind ROW answers (`rb_row_into`): text ZERO
              * for every kind above the backreference and a check callout,
              * ANY for the two and a consuming callout. */
-            rb_row_into(w, acc, a);
+            rb_row_into(w, acc, a, t);
             return;
         /* The call's text is its callee's (row OWN), declined for the reason
          * above rather than computed. */
         case A_CALL:
+            rb_head_node(w, acc, a, NULL);
             rb_gap_into(w, acc, PCREC_W_UNBOUNDED);
             return;
         }
     }
+}
+
+/* ---- TOP, the walk's exit (span_arms L1, §14.3 D-3, D-4) ------------------ */
+
+/* TOP's candidate rows, a COMBINING table walked in full (`RB_ROW_EACH`): each
+ * row whose `when` holds on the root's runs and whose arm is not restored
+ * offers a candidate run built from the root's consumed runs and its guards,
+ * and the run is the best of the consumed `best` and every candidate by the
+ * one run choice (`rn_better`). The default, outside the table, is the
+ * consumed `best`. At L1 the table has NO ROWS (reach 0: every guard still
+ * standing at the root is dropped); L3 adds BACK (`lg ++ head`), L2 AHEAD
+ * (`tail ++ rg`), each under the `look` arm. */
+typedef struct {
+    bool (*when)(const RbWalk *w, const RbRuns *root);
+    RbRun (*cand)(const RbWalk *w, const RbRuns *root);
+    unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
+} RbTopRow;
+
+static const RbTopRow rb_top_rows[] = {
+};
+
+/* The run TOP chooses from the root's runs `root`. */
+static RbRun rb_top(const RbWalk *w, const RbRuns *root)
+{
+    size_t i;
+    RbRun best = root->best;
+    RB_ROW_EACH(i, w, rb_top_rows, rb_top_rows[i].when(w, root),
+                best = rn_better(w, best, rb_top_rows[i].cand(w, root)));
+    return best;
 }
 
 /* THE WALK'S FACTS, from ONE walk: the whole necessary SET (with its threaded
@@ -1233,7 +1669,7 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
  * the harness lever (span_arms §3.7) and the byte-rate the run choice's tie
  * rows read. */
 void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
-                    RbSet *set, RbRun *run, PdDesc *pieces)
+                    RbSet *set, RbRun *run, PdDesc *pieces, bool *never)
 {
     RbWalk *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
     w->cx = cx;
@@ -1241,11 +1677,14 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     w->restored = p->restored;
     w->rate = p->rate;
     w->pd = (PdCfg){ &rb_pd_bytes, p->max_pieces, PCREC_MAX_REQ_RUN_SCAN };
+    w->onebyte_max = p->onebyte_max;
+    w->ahead = 0;
     RbVal *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
     rb_walk(w, root, v);
     *set = v->set;
-    *run = v->runs.best;
+    *run = rb_top(w, &v->runs);
     *pieces = v->desc;
+    *never = v->runs.never;
 }
 
 /* The rate rule a derived pick answered by, for `--emit-facts`' `why`

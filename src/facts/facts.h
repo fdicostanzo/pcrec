@@ -411,7 +411,11 @@ typedef enum {
     PF_WHY_PIECES_ONE,
     /* [UCP] U3 a byte walk over an ISLAND NFA (`Nfa.island`): its character
      * edges consume one to four bytes, so no byte position is stated. */
-    PF_WHY_ISLAND
+    PF_WHY_ISLAND,
+    /* span_arms L1 (§14.3 D-9): `req_whole_run`'s walk proved no attempt can
+     * match (the never family's root bit). Status `derived`; listed `dead`,
+     * ahead of every other token (facts_listing.md §4.1.3¶1). */
+    PF_WHY_DEAD
 } PfWhyCode;
 
 typedef struct {

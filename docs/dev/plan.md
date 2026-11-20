@@ -600,6 +600,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]; [COND-FAMILY] (D193: speed leads, so conditionals stay refused until the family order reaches the node; no rework either way)
   NOTE (2026-11-12, review r1-s1 NMSOUND-2, ruling R2): `never_matches` is filed E2 CORE but reads route choices and machines; a separate `Job.machines_final` bool, beside the `PfEpoch` mechanism, guards it, and one pattern reads differently by route (`no` under `--engine=vm`). The general form is a machine-final epoch (E4, or E3 sealed on both routes) in the facts epoch vocabulary; not urgent (no second reader today). Same review: `(*ACCEPT)` and the other verbs are refused today, so `pcrec_minw` (src/opt/mrl.c) needs no arm; when they land it must not count width after an `(*ACCEPT)` ([FIND-MINW]'s trigger too). Proposed unlocks, with triggers, in docs/dev/reviews/2026-11-12-r1-s1.md (U1 `(?!)` as the empty class, U2 proof-only superset machine, U3 `unbounded-width` proof, U5 island row consuming its proof).
+  NOTE (2026-11-19, lane l1ffix, review r55 J): the L1 half of this trigger FIRED with L1's build; its first measured case is filed as [NEVER-DEAD].
 - [FLAG-DEMOTE] STATE:not-started — demote 20 public -f deny flags to test-only levers and drop one alias (~21 bits)
   filed: 2026-11-12 manager, from the read-only audit docs/dev/flag_audit_2026-11-12.md; Frank 2026-11-12: "Let's do the 20 plus drop. Agree with plan"
   status (2026-11-12): GO given; its own set after S1 and the kit's K38-2 land (same option table). The 3 medium and 6 unsure flags stay public; bit 55's dead reservation released if nothing reads it.
@@ -989,6 +990,17 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: span_arms unit L3 has landed, and a bench cell whose rarest bytes sit in a lookbehind
   refs: docs/design/span_arms.md §5.3, §10; docs/dev/reviews/2026-11-08-r1-spanarms.md; D168; D172; [REQ-LOOKAROUND]
   The item, placed at its negative offset, joins the one find-the-span choice set as a window span (Frank 2026-11-06: `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). The kit honours the span's verify flag (D172); no new kit mechanism.
+- [LOOK-STARTSET] STATE:not-started — start_set and the k-set walk read a positive lookaround's item
+  filed: 2026-11-19 lane l1ffix (review r55 J, UNLOCK 1, ruled PLAN: filed, not scheduled)
+  status (2026-11-19): not started; UNSCHEDULED. `(?=a)[ab]c` lists `start_set {a,b}` where `{a}` is sound: the start set and the k-set walk pass a lookaround over as a unit while the run walk narrows through its item
+  trigger: (D77) a census of lookahead-led corpus and bench patterns whose start set the item narrows, or start_set's next touch
+  refs: docs/design/span_arms.md §14.8 item 14, §12 (the D168 addendum: the item is the one producer); docs/dev/reviews/2026-11-19-r55-l1feat.md J, TABLE-3 (iii); [START-SET]; [REQ-LOOKAROUND]
+  A second reader of the item is also the trigger for moving its assembly from req.c into desc.c (the D168 addendum, D77).
+- [NEVER-DEAD] STATE:not-started — `never_matches` names a pattern the run walk lists `dead`
+  filed: 2026-11-19 lane l1ffix (review r55 J, UNLOCK 2, ruled PLAN: filed, not scheduled)
+  status (2026-11-19): not started; UNSCHEDULED. [NEVER-MATCH]'s trigger (span_arms L1's landing) FIRED: the walk's proof and the machines' disagree on a measured pattern, utf8 `x(?=\x{100})y` lists `req_whole_run` `dead` with `never_matches no`; `foo(?=bar)baz` (a VM artifact, no machine) likewise
+  trigger: (D77) a corpus count of patterns listed `dead` with `never_matches no` that shows in size or compile time, or [NEVER-MATCH]'s next build
+  refs: [NEVER-MATCH]; docs/design/span_arms.md §14.3 D-9, §14.8 item 14, §10 U-dead; docs/spec/facts_listing.md §4.1.3¶1a, §4.1.2¶12
 - [CTX-SIDES-PRODUCER] STATE:not-started — the cover's MkEnd ctx_before/ctx_after read from D168's signed-offset producer
   filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
   status (2026-11-18): SCHEDULED by the owner (proved-ending-scope): next after [REQ-LOOKAROUND] L1-L3 land, as its own step; delivers his `(?<=foo)bar` "proved, search over" ending; trigger fired 2026-10-23 (bc675b020)

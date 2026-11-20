@@ -8,7 +8,7 @@
 # tests/altcls/altnf_rules.rxt's S-h block (its control `(?:ab|ax+|ad)` is
 # refused either way).
 SAB_ID="S1891-altnf-head-reads-optional"
-SAB_FILE="src/opt/altnf.c"
+SAB_FILE="src/facts/desc.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/altcls/altnf_rules.rxt"
 SAB_DESC="the adjacency head gives an optional item its body head, so (?:ab|a(?:x)?|ad) merges ad past a(?:x)? and answers (0,2) where libpcre2 answers (0,1)"
@@ -19,7 +19,7 @@ SAB_REACH_POP='tests/altcls/altnf_rules.rxt|^pattern \(\?:ab\|a\(\?:x\)\?\|ad\)$
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    case A_REP: {
-        PdHead b = anf_head(r, a->l);'
+        long long lo = 0, hi = 0;'
 SAB_AFTER='    case A_REP: {
-        PdHead b = anf_head(r, a->l);
-        if (a->u.rep.rmax == 1) return b;   /* SABOTAGE S1891: an optional item as always there */'
+        long long lo = 0, hi = 0;
+        if (a->u.rep.rmax == 1) return *body;   /* SABOTAGE S1891: an optional item as always there */'

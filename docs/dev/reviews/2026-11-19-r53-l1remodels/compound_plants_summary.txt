@@ -1,0 +1,5 @@
+S893 test-compound: FAIL
+S1189 test-compound: FAIL
+S1190 test-compound: FAIL
+S904 test-compound: FAIL
+S899 test-compound: FAIL

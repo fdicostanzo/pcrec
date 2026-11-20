@@ -754,6 +754,7 @@ this table's method; Mac dev box, so directional):**
   corpus sample (five streams), each emitted, compiled `-O0 -fno-builtin
   -c` and read with `nm -u`, at 8 jobs. `--quick` (the default-engine
   stream alone, the mech solos' form) is about 15 s.
+- C4's scope (`test-memfn-arch`): test-corpus DATA is out of scope — a `.rxt` pattern, case or `var` line's text and a corpus listing TSV's `pattern`/`subject` columns are blanked before the scan (one rule, `mask_data` in `tests/memfn/arch_blind_check.py`); comments, `description` lines and every other prose region, `ext` subtrees, other directives and every other file type are scanned whole, and the scratch controls plant both sides (c4scope, 2026-11-19).
 - `test-memfn-arch`, `test-memfn-forms`, `test-memfn-reach` ([MEMFN] R4c,
   lane r4cchecks, 2026-10-06; one run each, gcc-16, `all` up to date):
   about **11 s**, **0.4 s** and **0.1 s** wall. C4 spends its time on the

@@ -1,0 +1,15 @@
+emit_sweep exit code 1
+  population=7613 both_ok(reach)=7015 both_refuse=598 movers=62 asymmetric=0
+  population=7613 both_ok(reach)=7018 both_refuse=595 movers=61 asymmetric=0
+  population=7613 both_ok(reach)=7042 both_refuse=571 movers=0 asymmetric=0
+  population=7613 both_ok(reach)=7028 both_refuse=585 movers=533 asymmetric=0
+  population=7613 both_ok(reach)=7613 both_refuse=0 movers=0 asymmetric=0
+  population=7613 both_ok(reach)=7613 both_refuse=0 movers=0 asymmetric=0
+  population=7613 both_ok(reach)=7613 both_refuse=0 movers=0 asymmetric=0
+  population=7613 both_ok(reach)=7613 both_refuse=0 movers=0 asymmetric=0
+  population=7613 both_ok(reach)=7613 both_refuse=0 movers=0 asymmetric=0
+  population=466 both_ok(reach)=38 both_refuse=428 movers=0 asymmetric=0
+  population=7 both_ok(reach)=7 both_refuse=0 movers=0 asymmetric=0
+movers by stream: c-default=62, c-vm=61, facts=533
+census movers: 422; facts-stream movers: 422
+== ident_check COMPLETE: 0 unexplained

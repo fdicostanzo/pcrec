@@ -1,0 +1,16 @@
+# remodel 3's extra identity witnesses (span_arms §14.4 L1 remodel 3, conf-spanarms8 (b)):
+# alternations whose branch heads are \w-class (A_WCLASS under utf8 lowering), compiled under byte and utf8.
+(?:\wa|\wb)
+(?:\w+x|\wy)
+(?:\xe9|\w)z
+(?:\d\w|\da)
+(?:\W|\s)q
+foo(?:\w\w|\wa)bar
+(?i)(?:\wk|\wK)
+(?:\w(?=a)b|\wc)
+(?:[\w-]a|[\w-]b|\wc)
+(?:\x{e9}\w|\x{e8}\w)
+(?:\p{L}a|\p{L}b)
+(?:\w{2}a|\w\wb)
+(?:\bfoo|\wfoo)
+(?:a|\w)(?:b|\W)

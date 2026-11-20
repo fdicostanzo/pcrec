@@ -1237,6 +1237,10 @@ test-backrefs-identity: all
 # one, libpcre2 on the expanded one), which is a DEPTH instrument on exactly one
 # body shape: the assertion family's, a class or a literal. Neither substitutes
 # for the other, and §11's landing bar asks for both.
+# [span_arms L1] the D27 L1 witnesses' LISTING half (`d27_l1/check_listing.py`,
+# lane l1ffix): `req_whole_run`'s value and why per witness, as the blinded
+# author recorded them, with every shortfall naming a declared limit. Their
+# answers ride test-corpus (`d27_l1/l1d27_witnesses.rxt`). 88 compiles, seconds.
 #
 # It SKIPS LOUDLY without libpcre2, like every other oracle-dependent script
 # here, and it parallelizes internally on PROCS (default tests/lib/
@@ -1247,6 +1251,7 @@ test-lookaround: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-lookaround.ran"; fi
 	bash tests/lookaround/run_lookaround_diff.sh
 	bash tests/lookaround/run_expansion_diff.sh
+	python3 tests/lookaround/d27_l1/check_listing.py build/pcrec
 
 # [DD-14] wave B+C: module `recursion`. Its `.rxt` corpus rides `test-corpus`
 # like every other module's; THIS target is the behavioural instrument, and it

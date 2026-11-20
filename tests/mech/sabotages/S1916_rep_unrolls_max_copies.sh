@@ -14,7 +14,9 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "xy(?:ab)
 SAB_REACH_EXPECT="REACH-WR2-RUN"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m));'
-SAB_AFTER='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, n));   /* SABOTAGE S1916 */'
+SAB_BEFORE='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m), bs, set);'
+SAB_AFTER='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, n), bs, set);   /* SABOTAGE S1916 */'
 # RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): the run walk's helpers take the
 # walk `w` (the run choice reads its byte-rate); same site, same plant.
+# RE-ANCHORED 2026-11-19 (lane l1ffix, review r55 A): `rr_pow` threads the copies' necessary set (CAT-SET
+# as a step of `rr_cat`, choice-free); the call gained `bs, set`, same plant on the count.
