@@ -1,0 +1,125 @@
+kind	function	loc	frame_bytes	scc_members
+mutual(2)	anf_list	src/opt/altnf.c:611:12	320	anf_list|anf_sublist
+mutual(2)	anf_sublist	src/opt/altnf.c:513:12	48	anf_list|anf_sublist
+mutual(2)	cand_path_follow	src/gen/emit_dfa.c:12492:13	48	cand_path_follow|cand_path_visit
+mutual(2)	cand_path_visit	src/gen/emit_dfa.c:12505:13	128	cand_path_follow|cand_path_visit
+mutual(2)	first_of	src/opt/possessify.c:523:14	448	first_of|text_first
+mutual(2)	pss_rep	src/opt/possessify.c:1740:13	240	pss_rep|pss_walk
+mutual(2)	pss_walk	src/opt/possessify.c:1799:13	256	pss_rep|pss_walk
+mutual(2)	st_cond	src/parse/subst_template.c:393:12	192	st_cond|st_seq
+mutual(2)	st_seq	src/parse/subst_template.c:440:12	304	st_cond|st_seq
+mutual(2)	text_first	src/opt/possessify.c:404:14	368	first_of|text_first
+mutual(2)	vm_cost_rep	src/gen/emit_vm.c:2436:13	480	vm_cost|vm_cost_rep
+mutual(2)	vm_cost	src/gen/emit_vm.c:3031:13	304	vm_cost|vm_cost_rep
+mutual(3)	cand_row_scan.isra	src/gen/emit_dfa.c:8575:13	336	cand_row_scan.isra|dfa_cand_scan|req_pres_ask
+mutual(3)	compile_ast	src/ir/nfa.c:663:13	384	compile_ast|frag_row|frag_star
+mutual(3)	dfa_cand_scan	src/gen/emit_dfa.c:8610:13	656	cand_row_scan.isra|dfa_cand_scan|req_pres_ask
+mutual(3)	frag_row	src/ir/nfa.c:630:13	144	compile_ast|frag_row|frag_star
+mutual(3)	frag_star	src/ir/nfa.c:237:13	128	compile_ast|frag_row|frag_star
+mutual(3)	p_alt_info	src/parse/parse.c:2232:13	64	p_alt_info|p_cat|p_rep
+mutual(3)	p_cat	src/parse/parse.c:2201:13	32	p_alt_info|p_cat|p_rep
+mutual(3)	p_rep	src/parse/parse.c:2007:13	336	p_alt_info|p_cat|p_rep
+mutual(3)	req_pres_ask	src/gen/emit_dfa.c:8932:17	2048	cand_row_scan.isra|dfa_cand_scan|req_pres_ask
+mutual(5)	compile_driver	src/core/compile.c:2046:12	11200	compile_driver|part_compile|pcrec_compile_driver|pcrec_compound_walk|walk_part.isra
+mutual(5)	part_compile	src/core/compound.c:57:12	576	compile_driver|part_compile|pcrec_compile_driver|pcrec_compound_walk|walk_part.isra
+mutual(5)	pcrec_compile_driver	src/core/compile.c:3823:5	8	compile_driver|part_compile|pcrec_compile_driver|pcrec_compound_walk|walk_part.isra
+mutual(5)	pcrec_compound_walk	src/core/compound.c:400:6	976	compile_driver|part_compile|pcrec_compile_driver|pcrec_compound_walk|walk_part.isra
+mutual(5)	walk_part.isra	src/core/compound.c:168:12	128	compile_driver|part_compile|pcrec_compile_driver|pcrec_compound_walk|walk_part.isra
+mutual(7)	vm_counter_phase	src/gen/emit_vm.c:6214:13	240	vm_counter_phase|vm_emit_node|vm_opt_chain|vm_poss_chain|vm_rep|vm_revdet_rep|vm_star
+mutual(7)	vm_emit_node	src/gen/emit_vm.c:9368:13	576	vm_counter_phase|vm_emit_node|vm_opt_chain|vm_poss_chain|vm_rep|vm_revdet_rep|vm_star
+mutual(7)	vm_opt_chain	src/gen/emit_vm.c:5382:13	80	vm_counter_phase|vm_emit_node|vm_opt_chain|vm_poss_chain|vm_rep|vm_revdet_rep|vm_star
+mutual(7)	vm_poss_chain	src/gen/emit_vm.c:5463:13	96	vm_counter_phase|vm_emit_node|vm_opt_chain|vm_poss_chain|vm_rep|vm_revdet_rep|vm_star
+mutual(7)	vm_rep	src/gen/emit_vm.c:6785:13	224	vm_counter_phase|vm_emit_node|vm_opt_chain|vm_poss_chain|vm_rep|vm_revdet_rep|vm_star
+mutual(7)	vm_revdet_rep	src/gen/emit_vm.c:5832:13	720	vm_counter_phase|vm_emit_node|vm_opt_chain|vm_poss_chain|vm_rep|vm_revdet_rep|vm_star
+mutual(7)	vm_star	src/gen/emit_vm.c:6671:13	192	vm_counter_phase|vm_emit_node|vm_opt_chain|vm_poss_chain|vm_rep|vm_revdet_rep|vm_star
+self	add_list	src/gen/memfn_targets.c:57:12	352	
+self	altcls_walk	src/opt/altcls.c:110:13	112	
+self	anf_head	src/opt/altnf.c:186:15	256	
+self	anf_node_same	src/opt/altnf.c:458:13	48	
+self	br_strip_caps	src/parse/mod_backrefs.c:607:13	48	
+self	cap_index	src/opt/possessify.c:314:13	48	
+self	cap_sig	src/opt/lower_enc.c:621:13	48	
+self	cfg_effective	src/parse/rxt_source.c:4202:13	224	
+self	cg_length_calls	src/opt/callgraph.c:929:13	48	
+self	closure_walk	src/parse/rxt_source.c:4612:12	672	
+self	co_choice	src/opt/callout.c:98:19	48	
+self	co_line	src/opt/callout.c:395:13	64	
+self	co_look_retry_inert	src/opt/callout.c:272:13	32	
+self	config_walk	src/parse/rxt_source.c:2636:12	640	
+self	co_reaches	src/opt/callout.c:787:13	48	
+self	co_walk	src/opt/callout.c:814:13	304	
+self	cwmax_walk	src/opt/mrl.c:545:18	64	
+self	dis_walk	src/opt/atomic.c:438:13	64	
+self	earliest_dfa_excluding	src/opt/select_engine.c:210:13	32	
+self	emit_region_items	src/gen/emit_subst.c:919:13	336	
+self	emit_subst_items	src/gen/emit_subst.c:764:13	128	
+self	emit_tree	src/gen/clskit.c:1086:13	176	
+self	em_set	src/facts/widths.c:116:17	48	
+self	em_tails	src/facts/endwin.c:296:13	32	
+self	eol_tail_plain	src/parse/definitions.c:420:13	32	
+self	ew_walk_marked	src/facts/endwin.c:100:12	48	
+self	gk_build	src/opt/possessify.c:942:16	368	
+self	item_first	src/opt/possessify.c:1520:14	352	
+self	la_has_kreset	src/parse/mod_lookaround.c:186:13	32	
+self	la_kind	src/parse/mod_lookaround.c:132:21	64	
+self	land_char_from	src/facts/kset.c:498:18	128	
+self	lang_charset	src/parse/ctxnode.c:46:13	32	
+self	lm_flatten	src/gen/lmwalk.c:57:12	96	
+self	lm_maxw	src/gen/lmwalk.c:80:18	32	
+self	lower_walk	src/opt/lower_enc.c:538:13	64	
+self	parse_src.constprop	src/parse/rxt_source.c:2828:19	1888	
+self	pcrec_ast_all_core	src/parse/definitions.c:259:6	32	
+self	pcrec_ast_stamped_by	src/opt/atomic.c:296:6	32	
+self	pcrec_ast_visit.constprop	src/core/internal.h:5864:20	144	
+self	pcrec_ast_visit.constprop	src/core/internal.h:5864:20	160	
+self	pcrec_ast_visit.constprop	src/core/internal.h:5864:20	208	
+self	pcrec_ast_visit	src/core/internal.h:5864:20	176	
+self	pcrec_bref_mark	src/opt/atomic.c:685:6	48	
+self	pcrec_cwmin	src/opt/mrl.c:723:11	32	
+self	pcrec_has_atomic	src/opt/atomic.c:59:6	32	
+self	pcrec_has_bref	src/opt/atomic.c:575:6	32	
+self	pcrec_has_call	src/opt/atomic.c:1000:6	32	
+self	pcrec_has_collapsible_rep	src/opt/atomic.c:225:6	32	
+self	pcrec_has_linked_call	src/opt/atomic.c:963:6	32	
+self	pcrec_has_live_capture	src/opt/atomic.c:849:6	32	
+self	pcrec_has_lookaround	src/opt/atomic.c:151:6	32	
+self	pcrec_minw	src/opt/mrl.c:151:11	32	
+self	pcrec_nullable	src/opt/mrl.c:315:6	32	
+self	pcrec_revdet_first	src/opt/revdet.c:497:6	128	
+self	pcrec_rxt_frag_by_real	src/parse/rxt_source.c:4453:18	48	
+self	pcrec_rxt_source_free.part.0	src/parse/rxt_source.c:4021:6	32	
+self	pf_derive	src/facts/facts.c:297:13	80	
+self	ps_node	src/opt/possessify.c:1325:13	288	
+self	qf_walk	src/opt/derive.c:66:13	64	
+self	qp_walk	src/opt/derive.c:323:13	64	
+self	q_rewrite	src/opt/derive.c:239:13	320	
+self	rb_walk	src/facts/req.c:1319:13	320	
+self	rc_find_root_call	src/parse/rxt_compose.c:444:19	48	
+self	rc_remap_caps	src/parse/rxt_compose.c:287:13	48	
+self	rc_view	src/parse/rxt_compose.c:669:13	64	
+self	rd_alt_disjoint	src/opt/revdet.c:607:13	128	
+self	rd_reverse	src/opt/revdet.c:300:13	80	
+self	rd_shape	src/opt/revdet.c:97:13	32	
+self	rd_walk	src/opt/revdet.c:739:13	80	
+self	reach_dfs	src/parse/rxt_source.c:4492:28	144	
+self	reach_includes	src/parse/rxt_source.c:4431:13	176	
+self	rw_node	src/facts/widths.c:235:13	64	
+self	sa_walk	src/facts/startanch.c:74:17	64	
+self	ss_walk	src/facts/startset.c:91:17	400	
+self	subtree_is_identity	src/opt/lower_enc.c:490:13	48	
+self	trie_build	src/ir/nfa.c:457:13	256	
+self	u8_box	src/opt/lower_enc.c:237:13	128	
+self	vars_assign	src/parse/mod_vars.c:220:13	48	
+self	vars_intern_exp_tree	src/parse/mod_vars.c:149:12	48	
+self	vars_intern_tree	src/parse/mod_vars.c:107:13	80	
+self	vm_cap_offsets.constprop	src/gen/emit_vm.c:2031:12	64	
+self	vm_count_slots	src/gen/emit_vm.c:3322:13	432	
+self	vm_det_seq	src/gen/emit_vm.c:1943:12	64	
+self	vm_isl_subtree_nodes	src/gen/emit_vm.c:4320:18	64	
+self	vm_isl_words	src/gen/emit_vm.c:4156:13	224	
+self	vm_rev_caps.constprop	src/gen/emit_vm.c:2190:13	48	
+self	vm_rev_emit	src/gen/emit_vm.c:5648:13	288	
+self	vm_walk_calls.constprop	src/gen/emit_vm.c:7972:13	48	
+self	vm_walk_caps	src/gen/emit_vm.c:7886:13	64	
+self	vx_parse_at	src/core/varexp.c:180:22	256	
+self	vx_render_into	src/core/varexp.c:286:13	64	

@@ -1,0 +1,316 @@
+alt_lit n=1000 len=4889 rc=0 t=0.1s :: 
+alt_cap n=1000 len=6889 rc=1 t=0.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_grp n=1000 len=4000 rc=1 t=0.6s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_ncgrp n=1000 len=7000 rc=0 t=0.4s :: 
+cat_star n=1000 len=2000 rc=0 t=0.4s :: 
+cat_look n=1000 len=5001 rc=0 t=0.1s :: 
+cat_nlook n=1000 len=5001 rc=0 t=0.1s :: 
+cat_atomic n=1000 len=7000 rc=1 t=0.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_bref n=1000 len=2003 rc=1 t=0.1s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_call n=1000 len=4003 rc=1 t=0.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_cnt n=1000 len=11000 rc=1 t=1.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_cls n=1000 len=6000 rc=0 t=0.6s :: 
+cls_ranges n=1000 len=5807 rc=0 t=0.1s :: 
+cls_ranges_b n=1000 len=15002 rc=1 t=0.1s :: pcrec: character code point value in \x{...} is too large (max U+00FF under encoding 'byte') (pattern offset 1) 
+alt_cat_alt n=1000 len=14000 rc=0 t=0.6s :: 
+cat_alt_big n=1000 len=5894 rc=0 t=0.1s :: 
+star_alt n=1000 len=4894 rc=0 t=0.1s :: 
+star_altcap n=1000 len=4893 rc=0 t=0.1s :: 
+rep_big n=1000 len=4896 rc=0 t=0.1s :: 
+look_alt n=1000 len=4899 rc=0 t=0.1s :: tes=250000. Unroll factor K=8 (default); prefilter language exact. See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes. 
+lookahead_alt n=1000 len=4894 rc=0 t=0.1s :: tes=250000. Unroll factor K=8 (default); prefilter language exact. See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes. 
+alt_prefix n=1000 len=6889 rc=0 t=0.1s :: 
+alt_common n=1000 len=5889 rc=0 t=0.1s :: 
+alt_rev n=1000 len=4889 rc=0 t=0.1s :: 
+optseq n=1000 len=3000 rc=0 t=0.6s :: 
+optseq_cap n=1000 len=4000 rc=1 t=0.1s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+ncap n=1000 len=3000 rc=0 t=0.4s :: tes=250000. Unroll factor K=8 (default); prefilter language exact. See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes. 
+named n=1000 len=9890 rc=1 t=0.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+named_ref n=1000 len=17780 rc=1 t=0.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+refs_all n=1000 len=3220 rc=1 t=0.1s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+calls_all n=1000 len=5220 rc=1 t=0.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+calls_chain n=1000 len=18773 rc=122 t=2.0s :: watchdog: pcrec_stk: memory limit exceeded (limit 2097152 kB) (TERM->KILL), peak rss 2965300 kB 
+calls_chain2 n=1000 len=18779 rc=122 t=2.0s :: watchdog: pcrec_stk: memory limit exceeded (limit 2097152 kB) (TERM->KILL), peak rss 2965984 kB 
+ncase n=1000 len=5893 rc=0 t=0.1s :: 
+utf8cls n=1000 len=12000 rc=0 t=0.4s :: 
+d_alt2_star n=250 len=2251 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 625) 
+d_alt2_ref n=250 len=2252 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 625) 
+d_alt2_look n=250 len=3001 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_nlook n=250 len=3001 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_lb n=250 len=3251 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1250) 
+d_alt2_atomic n=250 len=3251 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_poss n=250 len=3751 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_lazy n=250 len=3751 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_cnt n=250 len=4001 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_cnt1 n=250 len=3251 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_named n=250 len=3141 rc=139 t=5.7s :: 
+d_alt2_nref n=250 len=4396 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1640) 
+d_alt2_call n=250 len=2254 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 625) 
+d_alt2_call1 n=250 len=2254 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 625) 
+d_cat_ctx n=250 len=2501 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 875) 
+d_cat_ctx_cap n=250 len=1501 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 375) 
+d_cat_ref_each n=250 len=3504 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1128) 
+d_cls n=250 len=4255 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1625) 
+d_dotstar n=250 len=3501 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1250) 
+d_opt_alt n=250 len=3251 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt_first n=250 len=2501 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 750) 
+d_ci n=250 len=3255 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1129) 
+d_K n=250 len=3253 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_verb n=250 len=3259 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_bnd n=250 len=3252 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_lookcap n=250 len=2501 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 875) 
+d_lblook_cap n=250 len=2751 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1000) 
+d_rev n=250 len=3256 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1125) 
+d_alt2_star n=124 len=1117 rc=0 t=0.6s :: 
+d_alt2_ref n=124 len=1118 rc=0 t=0.1s :: 
+d_alt2_look n=124 len=1489 rc=0 t=0.1s :: 
+d_alt2_nlook n=124 len=1489 rc=0 t=0.1s :: 
+d_alt2_lb n=124 len=1613 rc=1 t=0.1s :: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 1226) 
+d_alt2_atomic n=124 len=1613 rc=0 t=1.2s :: 
+d_alt2_poss n=124 len=1861 rc=0 t=1.2s :: 
+d_alt2_lazy n=124 len=1861 rc=0 t=1.2s :: 
+d_alt2_cnt n=124 len=1985 rc=1 t=0.1s :: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-nfa-states) (pattern offset 0) 
+d_alt2_cnt1 n=124 len=1613 rc=1 t=0.1s :: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-nfa-states) (pattern offset 0) 
+d_alt2_nref n=124 len=2128 rc=0 t=0.1s :: 
+d_alt2_call n=124 len=1120 rc=1 t=0.1s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0
+d_alt2_call1 n=124 len=1120 rc=1 t=0.1s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 
+d_cat_ctx n=124 len=1241 rc=0 t=0.1s :: 
+d_cat_ctx_cap n=124 len=745 rc=0 t=0.1s :: 
+d_cat_ref_each n=124 len=1740 rc=0 t=0.1s :: 
+d_cls n=124 len=2113 rc=0 t=1.1s :: 
+d_dotstar n=124 len=1737 rc=0 t=0.4s :: 
+d_opt_alt n=124 len=1613 rc=0 t=0.1s :: 
+d_alt_first n=124 len=1241 rc=0 t=0.1s :: 
+d_ci n=124 len=1617 rc=0 t=1.2s :: 
+d_K n=124 len=1615 rc=0 t=0.6s :: 
+d_verb n=124 len=1621 rc=1 t=0.1s :: pcrec: (*...) requires module 'verbs' (pattern offset 1116) 
+d_bnd n=124 len=1614 rc=0 t=0.4s :: 
+d_lookcap n=124 len=1241 rc=0 t=0.1s :: 
+d_lblook_cap n=124 len=1365 rc=1 t=0.1s :: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 984) 
+d_rev n=124 len=1618 rc=0 t=0.4s :: 
+e_star n=250 len=1501 rc=139 t=1.9s :: 
+e_ref n=250 len=1502 rc=139 t=3.3s :: 
+e_ncstar n=250 len=2001 rc=0 t=0.1s :: 
+e_atomic n=250 len=2001 rc=139 t=3.0s :: 
+e_poss n=250 len=1751 rc=139 t=3.6s :: 
+e_lazy n=250 len=1751 rc=139 t=3.3s :: 
+e_opt n=250 len=1501 rc=139 t=2.0s :: 
+e_plus n=250 len=1501 rc=1 t=0.6s :: pcrec: pattern too large (NFA exceeds 131072 states; raise with --max-nfa-states) (pattern offset 0) 
+e_cnt n=250 len=3001 rc=0 t=0.1s :: 
+e_call n=250 len=1504 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1000) 
+e_call1 n=250 len=1504 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1000) 
+e_callg n=250 len=1506 rc=1 t=0.1s :: pcrec: parentheses are too deeply nested (pattern offset 1000) 
+e_named n=250 len=3141 rc=139 t=2.0s :: 
+e_nref n=250 len=3146 rc=139 t=1.2s :: 
+e_cls n=250 len=2505 rc=139 t=2.0s :: 
+e_ci n=250 len=1505 rc=139 t=2.0s :: 
+e_K n=250 len=1503 rc=139 t=2.0s :: 
+e_look n=250 len=1751 rc=0 t=0.1s :: ll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warni
+e_lookst n=250 len=2001 rc=139 t=1.2s :: 
+e_lookbk n=250 len=2001 rc=0 t=0.1s :: ll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the war
+e_neg n=250 len=1751 rc=0 t=0.1s :: 
+e_dot n=250 len=1751 rc=139 t=2.0s :: 
+e_third n=250 len=2001 rc=139 t=2.8s :: 
+e_last n=250 len=1751 rc=0 t=3.3s :: ll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warni
+e_first n=250 len=1751 rc=0 t=3.5s :: ll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warn
+e_lit3 n=250 len=2503 rc=139 t=2.2s :: 
+e_lit4 n=250 len=1752 rc=139 t=1.1s :: 
+e_every_ref n=250 len=2001 rc=0 t=0.1s :: ll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the 
+e_end n=250 len=1751 rc=139 t=1.9s :: 
+e_start n=250 len=1502 rc=139 t=2.1s :: 
+alt_lit n=5000 len=28889 rc=0 t=0.6s :: 
+cat_ncgrp n=5000 len=35000 rc=122 t=3.6s :: watchdog: pcrec_stk: memory limit exceeded (limit 2097152 kB) (TERM->KILL), peak rss 2699204 kB 
+cat_star n=5000 len=10000 rc=1 t=5.0s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_look n=5000 len=25001 rc=0 t=0.6s :: 
+cat_nlook n=5000 len=25001 rc=0 t=0.5s :: 
+cat_cls n=5000 len=30000 rc=122 t=5.9s :: watchdog: pcrec_stk: memory limit exceeded (limit 2097152 kB) (TERM->KILL), peak rss 2873868 kB 
+cls_ranges n=5000 len=33807 rc=0 t=0.4s :: 
+alt_cat_alt n=5000 len=70000 rc=122 t=4.8s :: watchdog: pcrec_stk: memory limit exceeded (limit 2097152 kB) (TERM->KILL), peak rss 2146592 kB 
+cat_alt_big n=5000 len=33894 rc=0 t=0.3s :: 
+star_alt n=5000 len=28894 rc=0 t=0.2s :: 
+star_altcap n=5000 len=28893 rc=0 t=0.2s :: 
+rep_big n=5000 len=28896 rc=0 t=0.2s :: 
+look_alt n=5000 len=28899 rc=1 t=2.0s :: pcrec: multiple quantifiers on the same item (pattern offset 10) 
+lookahead_alt n=5000 len=28894 rc=1 t=1.8s :: pcrec: multiple quantifiers on the same item (pattern offset 6) 
+alt_prefix n=5000 len=38889 rc=0 t=0.2s :: pcrec: multiple quantifiers on the same item (pattern offset 6) 
+alt_common n=5000 len=33889 rc=0 t=0.2s :: pcrec: multiple quantifiers on the same item (pattern offset 2) 
+alt_rev n=5000 len=28889 rc=0 t=0.2s :: pcrec: multiple quantifiers on the same item (pattern offset 2) 
+optseq n=5000 len=15000 rc=1 t=3.1s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+ncap n=5000 len=15000 rc=1 t=2.4s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+ncase n=5000 len=33893 rc=0 t=0.2s :: 
+utf8cls n=5000 len=60000 rc=122 t=2.0s :: watchdog: pcrec_stk: memory limit exceeded (limit 2097152 kB) (TERM->KILL), peak rss 2147344 kB 
+alt_lit n=20000 len=128889 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+cat_ncgrp n=20000 len=140000 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+cat_star n=20000 len=40000 rc=1 t=2.7s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+cat_look n=20000 len=100001 rc=139 t=1.4s :: 
+cat_nlook n=20000 len=100001 rc=139 t=1.4s :: 
+cat_cls n=20000 len=120000 rc=1 t=5.9s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+Traceback (most recent call last):
+  File "/var/tmp/pcrec-pcrec/scratch/growsurv/gen.py", line 143, in <module>
+    sys.stdout.write(G[k]())
+    ~~~~~~~~~~~~~~~~^^^^^^^^
+UnicodeEncodeError: 'utf-8' codec can't encode character '\ud801' in position 55042: surrogates not allowed
+cls_ranges 20000 GENFAIL
+alt_cat_alt n=20000 len=280000 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+cat_alt_big n=20000 len=148894 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+star_alt n=20000 len=128894 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+star_altcap n=20000 len=128893 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+rep_big n=20000 len=128896 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+look_alt n=20000 len=128899 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+lookahead_alt n=20000 len=128894 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+alt_prefix n=20000 len=168889 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+alt_common n=20000 len=148889 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+alt_rev n=20000 len=128889 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+optseq n=20000 len=60000 rc=1 t=5.9s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+ncap n=20000 len=60000 rc=1 t=2.8s :: ble time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0) 
+ncase n=20000 len=148893 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+utf8cls n=20000 len=240000 rc=126 t=0.0s :: /var/tmp/pcrec-pcrec/scratch/growsurv/probe.sh: line 7: /home/pcrec/projects/pcrec/scripts/watchdog: Argument list too long 
+SWEEPW DONE
+alt_lit n=20000 len=128898 stk=432 rc=0 t=0.4s :: 
+cat_ncgrp n=20000 len=140009 stk=432 rc=1 t=2.5s :: A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --ma
+alt_cat_alt n=20000 len=280009 stk=432 rc=1 t=4.6s :: A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --
+cat_alt_big n=20000 len=148903 stk=432 rc=0 t=0.4s :: 
+star_alt n=20000 len=128903 stk=432 rc=0 t=0.4s :: 
+star_altcap n=20000 len=128902 stk=432 rc=0 t=0.4s :: 
+rep_big n=20000 len=128905 stk=432 rc=0 t=0.4s :: 
+look_alt n=20000 len=128908 stk=432 rc=1 t=3.3s :: A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max
+lookahead_alt n=20000 len=128903 stk=432 rc=1 t=3.3s :: A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise 
+alt_prefix n=20000 len=168898 stk=432 rc=0 t=0.4s :: 
+alt_common n=20000 len=148898 stk=432 rc=0 t=0.4s :: 
+alt_rev n=20000 len=128898 stk=432 rc=0 t=0.4s :: 
+ncase n=20000 len=148902 stk=432 rc=0 t=0.4s :: 
+utf8cls n=20000 len=240009 stk=432 rc=1 t=0.6s :: A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-
+cls_ranges n=20000 len=180011 stk=432 rc=1 t=0.4s :: A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --m
+z_b n=12000 len=24011 stk=432 rc=0 t=0.4s :: [] 
+z_b n=12000 len=24011 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_b n=12000 len=24011 stk=432 rc=1 t=0.6s :: [--engine=vm] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --u
+z_b n=12000 len=24011 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_b n=12000 len=24011 stk=432 rc=0 t=0.4s :: [-i] 
+z_b n=12000 len=24011 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+cat_look n=12000 len=60010 stk=432 rc=0 t=0.4s :: [] 
+cat_look n=12000 len=60010 stk=432 rc=0 t=0.4s :: [-e utf8] 
+cat_look n=12000 len=60010 stk=432 rc=1 t=0.4s :: [--engine=vm] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, tr
+cat_look n=12000 len=60010 stk=432 rc=0 t=0.4s :: [--no-captures] 
+cat_look n=12000 len=60010 stk=432 rc=0 t=0.4s :: [-i] 
+cat_look n=12000 len=60010 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+z_cls n=12000 len=48009 stk=432 rc=1 t=1.7s :: [] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, 
+z_cls n=12000 len=48009 stk=432 rc=1 t=1.7s :: [-e utf8] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unr
+z_cls n=12000 len=48009 stk=432 rc=1 t=1.6s :: [--engine=vm] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try -
+z_cls n=12000 len=48009 stk=432 rc=1 t=1.8s :: [--no-captures] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try
+z_cls n=12000 len=48009 stk=432 rc=1 t=1.8s :: [-i] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1
+z_cls n=12000 len=48009 stk=432 rc=1 t=0.7s :: [--engine=dfa --no-captures] ex for the DFA engine (subset construction exceeds 48000000 state-set elem
+brk_lit n=12000 len=36009 stk=432 rc=0 t=1.3s :: [] ceeded the work budget (--max-auto-dfa-elems); falling back to the VM instead of refusing. --engin
+brk_lit n=12000 len=36009 stk=432 rc=0 t=1.2s :: [-e utf8] ceeded the work budget (--max-auto-dfa-elems); falling back to the VM instead of refusing. 
+brk_lit n=12000 len=36009 stk=432 rc=0 t=0.7s :: [--engine=vm] 
+brk_lit n=12000 len=36009 stk=432 rc=0 t=1.0s :: [--no-captures] ceeded the work budget (--max-auto-dfa-elems); falling back to the VM instead of refu
+brk_lit n=12000 len=36009 stk=432 rc=1 t=1.8s :: [-i] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll
+brk_lit n=12000 len=36009 stk=432 rc=1 t=0.6s :: [--engine=dfa --no-captures] ex for the DFA engine (subset construction exceeds 48000000 state-set el
+z_empty n=12000 len=48011 stk=432 rc=0 t=0.1s :: [] 
+z_empty n=12000 len=48011 stk=432 rc=0 t=0.1s :: [-e utf8] 
+z_empty n=12000 len=48011 stk=432 rc=0 t=0.1s :: [--engine=vm] 
+z_empty n=12000 len=48011 stk=432 rc=0 t=0.1s :: [--no-captures] 
+z_empty n=12000 len=48011 stk=432 rc=0 t=0.1s :: [-i] 
+z_empty n=12000 len=48011 stk=432 rc=0 t=0.1s :: [--engine=dfa --no-captures] 
+z_caret n=12000 len=60010 stk=432 rc=0 t=0.1s :: [] 
+z_caret n=12000 len=60010 stk=432 rc=0 t=0.1s :: [-e utf8] 
+z_caret n=12000 len=60010 stk=432 rc=1 t=0.4s :: [--engine=vm] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try
+z_caret n=12000 len=60010 stk=432 rc=0 t=0.1s :: [--no-captures] 
+z_caret n=12000 len=60010 stk=432 rc=0 t=0.1s :: [-i] 
+z_caret n=12000 len=60010 stk=432 rc=0 t=0.1s :: [--engine=dfa --no-captures] 
+z_lookb n=12000 len=72011 stk=432 rc=0 t=0.4s :: [] 
+z_lookb n=12000 len=72011 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_lookb n=12000 len=72011 stk=432 rc=1 t=0.4s :: [--engine=vm] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try
+z_lookb n=12000 len=72011 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_lookb n=12000 len=72011 stk=432 rc=0 t=0.4s :: [-i] 
+z_lookb n=12000 len=72011 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+anchors n=12000 len=12010 stk=432 rc=0 t=0.1s :: [] 
+anchors n=12000 len=12010 stk=432 rc=0 t=0.1s :: [-e utf8] 
+anchors n=12000 len=12010 stk=432 rc=1 t=0.4s :: [--engine=vm] A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try
+anchors n=12000 len=12010 stk=432 rc=0 t=0.1s :: [--no-captures] 
+anchors n=12000 len=12010 stk=432 rc=0 t=0.1s :: [-i] 
+anchors n=12000 len=12010 stk=432 rc=0 t=0.1s :: [--engine=dfa --no-captures] 
+comment n=12000 len=60010 stk=432 rc=1 t=0.1s :: [] crec: /var/tmp/pcrec-pcrec/scratch/growsurv/px.rxt:1: target 'rx': module 'comments' is enabled bu
+comment n=12000 len=60010 stk=432 rc=1 t=0.1s :: [-e utf8] crec: /var/tmp/pcrec-pcrec/scratch/growsurv/px.rxt:1: target 'rx': module 'comments' is ena
+comment n=12000 len=60010 stk=432 rc=1 t=0.1s :: [--engine=vm] crec: /var/tmp/pcrec-pcrec/scratch/growsurv/px.rxt:1: target 'rx': module 'comments' is
+comment n=12000 len=60010 stk=432 rc=1 t=0.1s :: [--no-captures] crec: /var/tmp/pcrec-pcrec/scratch/growsurv/px.rxt:1: target 'rx': module 'comments' 
+comment n=12000 len=60010 stk=432 rc=1 t=0.1s :: [-i] crec: /var/tmp/pcrec-pcrec/scratch/growsurv/px.rxt:1: target 'rx': module 'comments' is enabled 
+comment n=12000 len=60010 stk=432 rc=1 t=0.1s :: [--engine=dfa --no-captures] crec: /var/tmp/pcrec-pcrec/scratch/growsurv/px.rxt:1: target 'rx': modul
+inl n=12000 len=108010 stk=432 rc=0 t=0.1s :: [] 
+inl n=12000 len=108010 stk=432 rc=0 t=0.1s :: [-e utf8] 
+inl n=12000 len=108010 stk=432 rc=0 t=0.1s :: [--engine=vm] 
+inl n=12000 len=108010 stk=432 rc=0 t=0.1s :: [--no-captures] 
+inl n=12000 len=108010 stk=432 rc=0 t=0.1s :: [-i] 
+inl n=12000 len=108010 stk=432 rc=0 t=0.1s :: [--engine=dfa --no-captures] 
+z_b n=30000 len=60011 stk=432 rc=139 t=1.4s :: [-e utf8] 
+z_b n=30000 len=60011 stk=432 rc=139 t=1.4s :: [--no-captures] 
+z_b n=30000 len=60011 stk=432 rc=139 t=1.5s :: [-i] 
+z_b n=30000 len=60011 stk=432 rc=139 t=1.5s :: [--engine=dfa --no-captures] 
+z_b n=30000 len=60011 stk=432 rc=1 t=0.9s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] A repeat's body is replicated and counts 
+z_caret n=30000 len=150010 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_caret n=30000 len=150010 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_caret n=30000 len=150010 stk=432 rc=0 t=0.4s :: [-i] 
+z_caret n=30000 len=150010 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+z_caret n=30000 len=150010 stk=432 rc=0 t=0.7s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+z_lookb n=30000 len=180011 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_lookb n=30000 len=180011 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_lookb n=30000 len=180011 stk=432 rc=139 t=1.5s :: [-i] 
+z_lookb n=30000 len=180011 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+z_lookb n=30000 len=180011 stk=432 rc=0 t=0.4s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+anchors n=30000 len=30010 stk=432 rc=0 t=0.4s :: [-e utf8] 
+anchors n=30000 len=30010 stk=432 rc=0 t=0.4s :: [--no-captures] 
+anchors n=30000 len=30010 stk=432 rc=0 t=0.4s :: [-i] 
+anchors n=30000 len=30010 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+anchors n=30000 len=30010 stk=432 rc=0 t=0.4s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+z_empty n=30000 len=120011 stk=432 rc=0 t=0.1s :: [-e utf8] 
+z_empty n=30000 len=120011 stk=432 rc=0 t=0.1s :: [--no-captures] 
+z_empty n=30000 len=120011 stk=432 rc=0 t=0.1s :: [-i] 
+z_empty n=30000 len=120011 stk=432 rc=0 t=0.1s :: [--engine=dfa --no-captures] 
+z_empty n=30000 len=120011 stk=432 rc=0 t=0.1s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+z_dollar n=30000 len=30010 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_dollar n=30000 len=30010 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_dollar n=30000 len=30010 stk=432 rc=0 t=0.4s :: [-i] 
+z_dollar n=30000 len=30010 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+z_dollar n=30000 len=30010 stk=432 rc=0 t=0.4s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+z_G n=30000 len=60010 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_G n=30000 len=60010 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_G n=30000 len=60010 stk=432 rc=0 t=0.1s :: [-i] 
+z_G n=30000 len=60010 stk=432 rc=0 t=0.1s :: [--engine=dfa --no-captures] 
+z_G n=30000 len=60010 stk=432 rc=0 t=0.4s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+z_lookmid n=30000 len=150011 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_lookmid n=30000 len=150011 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_lookmid n=30000 len=150011 stk=432 rc=139 t=1.5s :: [-i] 
+z_lookmid n=30000 len=150011 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+z_lookmid n=30000 len=150011 stk=432 rc=0 t=0.4s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+z_opt_look n=30000 len=150012 stk=432 rc=0 t=0.4s :: [-e utf8] 
+z_opt_look n=30000 len=150012 stk=432 rc=0 t=0.4s :: [--no-captures] 
+z_opt_look n=30000 len=150012 stk=432 rc=0 t=0.4s :: [-i] 
+z_opt_look n=30000 len=150012 stk=432 rc=0 t=0.4s :: [--engine=dfa --no-captures] 
+z_opt_look n=30000 len=150012 stk=432 rc=0 t=0.4s :: [--engine=vm --warn-emit-bytes=0 --max-emit-code-bytes=9000000 --max-emit-bytes=9000000] 
+cat_star n=500 rc=0 t=0.1s
+cat_star n=1000 rc=0 t=0.4s
+cat_star n=2000 rc=0 t=0.6s
+cat_star n=4000 rc=0 t=2.0s
+optseq n=500 rc=0 t=0.4s
+optseq n=1000 rc=0 t=0.6s
+optseq n=2000 rc=0 t=2.0s
+optseq n=4000 rc=1 t=1.7s
+ncap n=500 rc=0 t=0.1s
+ncap n=1000 rc=0 t=0.4s
+ncap n=2000 rc=1 t=0.6s
+ncap n=4000 rc=1 t=1.2s
+alt_cat_alt n=500 rc=0 t=0.4s
+alt_cat_alt n=1000 rc=0 t=0.9s
+alt_cat_alt n=2000 rc=0 t=2.3s
+alt_cat_alt n=4000 rc=122 t=3.7s
+cat_cnt n=500 rc=0 t=0.6s
+cat_cnt n=1000 rc=1 t=1.5s
+cat_cnt n=2000 rc=1 t=1.5s
+cat_cnt n=4000 rc=1 t=1.7s
+alt_prefix n=500 rc=0 t=0.1s
+alt_prefix n=1000 rc=0 t=0.1s
+alt_prefix n=2000 rc=0 t=0.1s
+alt_prefix n=4000 rc=0 t=0.1s
+named n=500 rc=0 t=0.1s
+named n=1000 rc=1 t=0.4s
+named n=2000 rc=1 t=0.6s
+named n=4000 rc=1 t=1.4s
