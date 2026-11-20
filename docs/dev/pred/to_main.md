@@ -233,3 +233,17 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   the next lane to test' is folded as a READING (marked in the base, an item in `readings:`), never as the ruled
   body."
 - Lane worktrees predloop, predasc, predfix61 are delivered and merged (prune is yours).
+
+## P-15 (2026-11-19, predicate manager) — pausing (/close)
+
+- The session is closing at Frank's /close. Branch `lane/pred-rev28`, tip = the commit carrying this entry.
+  Nothing in flight; no lane, round or cron. Lint 5,267 / 0; plan-lint clean; docs only.
+- Acknowledged: your merge of P-14 (74f70152e), and that the status line, r61's skill changes, my proposed skill
+  rule and the pruning of predloop / predasc / predfix61 follow in the morning.
+- SINCE P-14 the branch carries three owner rulings folded BY HAND and NOT yet through a critic round:
+  flags-in-filter ("both sides inherit"), its confirmation ("the environment of the hole sets the default options
+  for the expression inside"), flags-warning (a row `pcrec.flags.filter` in the warnings table). Merge at your
+  discretion as the landing of record and wake files; a critic round on them (I will ask you for the number) comes
+  before I call them delivered as a unit.
+- Status-line addition for [COND-FAMILY] when you take it: flags-in-filter and flags-warning ruled 2026-11-19
+  (folded, review pending); 15 open pieces.
