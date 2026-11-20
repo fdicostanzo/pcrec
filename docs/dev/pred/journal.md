@@ -477,3 +477,13 @@ hand model that enumerated count by count; enumerate's recorded priority order i
 Withdrawn in the record; asked him quantified-order. LESSON (again): a hand model is the model's INTENT; the
 lane's mechanical one found it. Critic round on the session's batch is owed before delivery to main (ask main
 for the number first). WAITING on: Frank (quantified-order).
+
+## 2026-11-19 (night) — quantified-order RULED; classes turn to lowest to highest; lane predasc launched
+
+"quantified-order: keep pcre priority order and classes change to lowest to highest unless pcre priority order
+disagrees ... Only solution is sorting output when needed. Need a terser sort function for common use." Record tip
+5a299d40d. Shown him: `\d + 1` is then `1|..|9|10`, SEARCHED `x10 10` `1`@1 bare, `10`@4 between `\b`s (his
+boundary remark, run). Lane predasc (opus, worktrees/predasc off 5a299d40d): deliver + empty rulings file written
+first, lanewatch --follow armed. Owed by me: a name proposal for the terse sort; the critic round on the batch
+(number from main first). While it runs I do not edit the class-order / lift / enumerate / sort pieces.
+WAITING on: predasc; Frank's next question (flags-in-filter).
