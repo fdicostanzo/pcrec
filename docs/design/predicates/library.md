@@ -7,7 +7,8 @@ the syntax and meaning that is not a name and refers here as needed. Ideas not i
 Details per tag: `library_details.md`. Every name is a placeholder spelling. Names an example program binds with
 `:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. Names the worked
 examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned content of the standard
-library (lib/planned/standard, core/modules/standard-library).
+library (lib/planned/standard, core/modules/standard-library). Examples call every provided name bare, as if
+imported; how a `module: ?` name is reached is open (core/modules/default-set/members).
 
 ## Built-in names   [lib/builtin]
 
@@ -61,11 +62,27 @@ defined: native (it reads library files at compile time)
 modes: n/a (no matching involved)
 
 ### A filter inside the import   [lib/builtin/import/filter]   under-construction 2026-11-19
-A filter over the imported names, written inside the import (`import("file1"|"file2", search(string))`), is a direction acknowledged, not defined.
+A filter over the imported names, written inside the import as a further argument, is a direction acknowledged, not defined.
 needs: lib/builtin/import
 module: ?
 defined: ?
+- His example, `import("file1"|"file2", search(string))`, is a placeholder: `search` is no provided name (core/modules/naming);
+  read it as `import("file1"|"file2", <a filter over names>)`.
 - Not stated: whether it applies before the conflict check (so that it can remove a conflict).
+
+### export   [lib/builtin/export]   open export-choice 2026-11-19
+Is a library file's export written `@export(names)`, a set of names selecting among its public names, or is the `_` rule alone (every public binding exported) the export?
+needs: core/modules/map core/labels/export
+see: core/modules/export
+module: ?
+defined: native (a compile-time effect on the file's public names)
+- The reading today: `@export(names)` exports every binding whose name is in the rx `names`: `@export("leap")`,
+  `@export(["leap", /[^_].*/])`, `@export(/[^_].*/)`; the names are a set of strings, not a filter with no target;
+  an edge assertion in it is the edge-assertion error.
+- Candidates: (a) `@export(names)` as above, selecting among the public names; (b) no call: every public binding
+  (the `_` rule, core/labels/export) is exported.
+- An effect: written after `@` only, as a statement.
+modes: n/a (a question; no matching involved)
 
 ### pattern   [lib/builtin/pattern]   reading 2026-11-19
 `pattern($x)` is the static pattern of the group the label x names, inserted where it is used; it reads no match, so it is a compile-time value.
@@ -84,6 +101,33 @@ module: eval
 defined: ?
 - The output would stop being self-contained (it links a pcrec runtime): only as the explicit module `eval`, with a
   budget, never by default.
+
+### @warn.off, @warn.error   [lib/builtin/warn]   ruled 2026-11-14
+`@warn.off(sel)` switches off, and `@warn.error(sel)` makes errors of, the warnings whose names the selector `sel` matches: a set of names written as an rx, matched whole.
+needs: core/operators/statements
+see: core/diagnostics/warnings lib/builtin/options
+module: ?
+defined: native (a compile-time effect on the compiler's diagnostics)
+- `@warn.off(/compare\.width\..*/)` switches off a library's family; `@warn.error(/.*/)` makes every warning an error.
+- No wildcard: `"*"` is the literal name `*`, which matches no warning.
+- An `@warn.off` that suppresses nothing draws `pcrec.warn.unused` (core/diagnostics/warnings).
+- Errors cannot be switched off. Its reach (the rest of the file), a per-binding form and a whole-build compiler
+  option are readings.
+- An effect: written after `@` only, as a statement.
+modes: n/a (a compile-time effect; no matching involved)
+
+### @options.strict   [lib/builtin/options]   ruled 2026-11-17
+`@options.strict(sel)` makes the warnings whose names the selector `sel` matches into errors: strictness is selective, never every warning by default.
+needs: core/operators/statements
+see: core/diagnostics/warnings lib/builtin/warn parked/ideas/capability-optins parked/ideas/severity-table
+module: ?
+defined: native (a compile-time effect on the compiler's diagnostics)
+- `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
+  matches every name.
+- The `@options` family's other members, capability opt-ins declared in the source, are an idea
+  (parked/ideas/capability-optins); one table for the controls of one fact is parked/ideas/severity-table.
+- An effect: written after `@` only, as a statement.
+modes: n/a (a compile-time effect; no matching involved)
 
 ## Modifiers   [lib/modifiers]
 
@@ -391,7 +435,7 @@ WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2,
 needs: lib/counting/some core/values/comparisons
 module: ?
 defined: native (a count over a loop's passes; no expression of the language counts passes)
-- A count is a numeral string, so every filter applies to it (`even()` on a count); it may be bound and read
+- A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it may be bound and read
   like a label: `n := count((d: "7"))`, then `(n: ==2)`.
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.

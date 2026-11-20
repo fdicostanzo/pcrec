@@ -65,6 +65,23 @@ evidence:
 history:
 - 2026-11-19: his first instinct already filtered inside the import (`import("blah", /left|right/)`); the idea in import-several.
 - 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane preddoc6, review r60 COLD-2): his `search(string)` marked a placeholder in the base: `search` is the name the owner renamed `occurrences` (core/modules/naming); the statement before quoted it as the form.
+
+## lib/builtin/export — export
+slugs: export-choice
+rulings:
+rejected:
+- `export([leap])`, an array of names (`[leap, weekday]` is `leap | weekday`, names lost) — by the manager's 2026-11-14 analysis, (3) (record: "2026-11-14 — import/export as functions").
+- `export(leap, weekday)` receiving names (a macro seeing argument expressions) — by the manager's 2026-11-14 analysis ("a meta feature; avoid").
+readings:
+- the record: "Export choice PENDING Frank" (record "2026-11-14 — import/export as functions", the options (a) `export([leap = leap, ...])`, (b) every top-level binding exported unless its name starts with `_`, (c) `export(leap, weekday)`; the manager's lean (b)); never answered, so the piece is `open` under the slug export-choice (the manager's name for the pending choice, given by lane preddoc6 at the predicate manager's ruling of 2026-11-19).
+- `@export(names)`, the names a set of strings (`export(["leap", /[^_].*/])`, `export(/[^_].*/)`), and the no-export error ("library exports nothing"; no silent default): the manager's lean in the follow-up to his `export(["leap", !startsWith("_")])` (the same record entry; the draft §7, LEAN) — UNTESTED (no matching involved).
+- `@` marks a compile-time EFFECT macro (his "a prefix designating side-effect macros"; the manager's lean (3) in the follow-up) — UNTESTED.
+- the `_` rule, candidate (b)'s ground, is RULED for what `.` reaches (export-rule; import-symbols statement 3: core/labels/export, core/modules/map); whether it is the whole of export is what export-choice asks — the manager's reading.
+evidence:
+history:
+- 2026-11-14: import/export as functions (options (a)-(c), lean (b)), its follow-up (lean `@export(names)`).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS / COLD-1 / FIXVER-6 / RECOUNT-3 / RULING-7): a new piece. The core sentence "Every provided name written as a call has its piece in the library, these included" (core/operators/statements) named `@export`, `@warn`, `@options` with no library piece; the predicate manager ruled (2026-11-19) the `@` effects call-form names, so each has its library piece, `defined: native`, status by the record. `@export(names)` was defined in core/modules/export, which keeps the meaning (what a file exports is chosen among its public names).
 
 ## lib/builtin/pattern — pattern
 slugs:
@@ -87,6 +104,37 @@ readings:
 evidence:
 history:
 - 2026-11-19 (lane preddoc4): a new piece: a name on the closed built-in list with no piece (review r59 COMPB-3).
+
+## lib/builtin/warn — @warn.off, @warn.error
+slugs:
+rulings:
+- 2026-11-14 "I agree but warnings need names and the user must be able to disable them (wildcard?)" (record: "2026-11-14 RULING — the empty-match hazard"); control via `@` effects, `@warn.off(...)` and its reverse `@warn.error(...)` (the record)
+- 2026-11-14 "use an rx instead of wild card purely for consistency" (record: "2026-11-14 RULING — the empty-match hazard"); its amendment: a selector is a set of names as an rx, no `*` wildcard
+- 2026-11-17 "The suppression could be @config.warn.off(/compare\.width\..*/)" (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path"); suppression selects by a pattern over the names (his spellings placeholders)
+rejected:
+- a `*` wildcard in a selector — by owner ruling — the amendment: `"*"` is the literal name and draws `warn.unused`.
+readings:
+- the reach "rest of file", a per-binding form (spelling open) and a whole-build compiler option ("like -Wno-"): the manager's proposal inside the ruling entry — UNTESTED (no matching involved).
+- `@warn` an EFFECT built-in, reserved after `@` only (the draft §5.1, review r10 CENSUS-7; LEAN) — UNTESTED.
+evidence:
+history:
+- 2026-11-14: the empty-match hazard ruling and its amendment; 2026-11-17: the names, the library path, the `pcrec.` prefix (core/diagnostics/warnings).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; the selector rule stays stated in core/diagnostics/warnings, this piece is the name.
+
+## lib/builtin/options — @options.strict
+slugs:
+rulings:
+- 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule"); (2) warnings become errors under a strictness setting declared in the source
+- 2026-11-17 ""One reading of mine: the setting covers...": @options.strict(/no-fail/)" (record: "2026-11-17 OWNER RULING — polarity-rule"); the ADDENDUM, same evening: strictness is SELECTIVE, a pattern over warning names; it corrects the manager's reading "the setting covers every warning"
+rejected:
+- the strictness setting covering every warning by default (the manager's reading) — by owner ruling — the polarity-rule addendum (`@options.strict(/no-fail/)`).
+readings:
+- `@options` as the family of the capability opt-ins (record "2026-11-17 OWNER IDEA — options written in the language", an IDEA, not a ruling: "Perhaps there should be an @options() in the language") — parked (parked/ideas/capability-optins).
+- `@config.strict()` and `@options.strict(...)` are one setting under two placeholder spellings (D193 add. 4) — the manager's reading.
+evidence:
+history:
+- 2026-11-17: polarity-rule and its addendum.
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; `@options.strict` was stated only in core/diagnostics/warnings.
 
 ## lib/modifiers/padded — padded
 was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -516,6 +564,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS].
 history:
 - 2026-11-19 (lane preddoc4): a new piece: `count(c)` was the body helper of `length` with no piece (review r59 PRIMITIVES-MISSING, READ-6). The slug count-budget is the lane's name for the budget ruling.
+- 2026-11-19 (lane preddoc6, review r60 COLD-2): the base's "`even()` on a count" (his word, "Allows "even()" or other checks for count", quoted above) written as the set it names, `/\d*[02468]/`: no piece provides `even`.
 
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:

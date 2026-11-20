@@ -1037,13 +1037,15 @@ WHOLE `1,2` HOLDS / SEARCHED `x1,2` `1,2`@1 / FIND-ALL `1,2 3,3` [`1,2`@0, `3,3`
 ### Program shape and statements   [core/operators/statements]   reading 2026-11-19
 A program is bindings, expressions, calls and `@` statements with ONE final expression, its pattern; a bare rx anywhere else is a compile error.
 needs: core/operators/bindings
+see: lib/builtin/warn lib/builtin/export lib/builtin/options lib/assert/assert lib/builtin/eval
 - Newlines are layout; long logic goes in `:=` definitions. A statement ends before `NAME :=`.
 - Only `@` forms (compile-time EFFECTS) stand alone; a bare statement without `@` is a compile error ("unused
   pattern: bind it or make it the result"). Macros cannot take `@`; effects cannot drop it.
 - The BUILT-INS are a closed list, reserved in CALL position only: `import`, `enumerate`, `pattern`, `param`,
-  `file_text`, `records`, `eval`; the effects `@warn`, `@export`, `@options` and the assertions of the `assert`
-  module (lib/assert/assert) after `@` only. A label named like one still
-  works. Every provided name written as a call has its piece in the library (`library.md`), these included.
+  `file_text`, `records`, and `eval` (the name reserved for the module that alone provides it, lib/builtin/eval);
+  the effects `@warn`, `@export`, `@options` (lib/builtin/warn, lib/builtin/export, lib/builtin/options) and the
+  assertions of the `assert` module (lib/assert/assert) after `@` only. A label named like one still works. Every
+  provided name written as a call has its piece in the library (`library.md`), these included.
 - An undeclared name that is not a label is a compile error with a suggestion; a binding that hides a label
   draws a warning, and `$x` still reaches the label.
 - A binding that mentions a match label is match-dependent (a computed label); otherwise it is pure (compile time).
@@ -1108,6 +1110,8 @@ needs: core/modules/all-symbols
 see: lib/control/peek
 - That it is an ordinary implicit line of the `(=)` form, no special mechanism: ruled.
 - That the set exists and holds `peek`: his lean. Library pieces in it carry `default: yes`.
+- Examples in these documents call every provided name bare, as if imported; how a `module: ?` name is reached is
+  open (core/modules/default-set/members).
 modes: n/a (no matching involved)
 
 ### Which names are in the default set   [core/modules/default-set/members]   open default-imports 2026-11-19
@@ -1133,11 +1137,12 @@ see: parked/ideas/first-rest
 modes: n/a (no matching involved)
 
 ### Export   [core/modules/export]   reading 2026-11-19
-A library file exports with `@export(names)`: every binding whose name is in the rx `names`; a file that exports nothing is a compile error.
+What a library file exports is chosen among its public names, the names `.` reaches by the `_` rule; a file that exports nothing is a compile error.
 needs: core/modules/map
-- `@export("leap")`, `@export(["leap", /[^_].*/])`, `@export(/[^_].*/)`: the names a set of strings, not a filter
-  with no target; an edge assertion in it is the edge-assertion error.
-- What `.` reaches on a module is its public names (core/labels/export); `@export` selects among them (a reading).
+see: lib/builtin/export
+- What `.` reaches on a module is its public names (core/labels/export): ruled.
+- How the choice is written, `@export(names)` or no call, is open (lib/builtin/export).
+- A file that exports nothing is a compile error (a reading).
 modes: n/a (no matching involved)
 
 ### The standard library   [core/modules/standard-library]   reading 2026-11-19
@@ -1196,7 +1201,7 @@ modes: n/a (a compile error)
 Every warning is structural or defined by a library, has one stable name and can be switched off or made an error by a selector; a warning moves no answer.
 needs: core/values/arithmetic
 by: core/principles/structural-warnings
-see: parked/ideas/known-nothing parked/ideas/warning-rows parked/ideas/severity-table
+see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/ideas/warning-rows parked/ideas/severity-table
 - NAMES: the compiler's carry the prefix `pcrec.`; a library's are named by its path (`compare.width.variable_width`).
   Every name below is a placeholder; the names and wordings are the manager's call, not yet made.
 - A SELECTOR is a set of names written as an rx, matched whole: `@warn.off(/compare\.width\..*/)`,
@@ -1260,9 +1265,9 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | core/values/functions, lib/strings/join |
 | `padded`'s width and pad parameters | lib/modifiers/padded |
 | the LABEL-ONLY group (his `(?<:x>foo)`) | parked/ideas/label-only-group |
-| OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | core/diagnostics/warnings, parked/ideas/capability-optins |
+| OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | lib/builtin/options, lib/builtin/warn, core/diagnostics/warnings, parked/ideas/capability-optins |
 | every WARNING name (`pcrec.test.never`, `pcrec.dollar.filter`, ...) and the under-construction error's name | core/diagnostics/warnings, core/diagnostics/under-construction |
-| `import(...)`, `@export(...)`, the filter inside the import | lib/builtin/import, core/modules/export, lib/builtin/import/filter |
+| `import(...)`, `@export(...)`, the filter inside the import | lib/builtin/import, lib/builtin/export, core/modules/export, lib/builtin/import/filter |
 | the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
 | a positional binding `(a, b) := X` | core/modules/positional |
 modes: n/a (spellings)

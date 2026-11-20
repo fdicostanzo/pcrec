@@ -1463,6 +1463,7 @@ evidence:
 history:
 - 2026-11-19 (lane preddoc3b): new piece, split from core/operators/bindings: the draft §5.1's program shape and statements hold rules no other tag homes, and their status (LEAN) differs from the bindings' (RULED).
 - 2026-11-19 (lane preddoc4): `@options` (used by core/diagnostics/warnings' strictness setting) and the `assert` module's statements join the effect list; every call-form built-in has its library piece (review r59 COMPB-3, READ-11; the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS / COLD-1 / COLD-21): the three effects get their library pieces (lib/builtin/warn, lib/builtin/export, lib/builtin/options; the predicate manager ruled them call-form names, 2026-11-19), so "these included" holds; `eval` stays on the list as the draft wrote it (§5.1), now said to be the name reserved for the module that alone provides it (lib/builtin/eval).
 
 ## core/modules/map — A module is a map
 slugs:
@@ -1556,6 +1557,7 @@ readings:
 evidence:
 history:
 - 2026-11-19: his lean after the pilot; statement 5 of import-symbols.
+- 2026-11-19 (lane preddoc6, review r60 COLD-11): the bullet that examples call provided names bare, as if imported, added: built mechanically most examples otherwise call a `module: ?` name with no import line; the bullet decides nothing of default-imports.
 
 ## core/modules/default-set/members — Which names are in the default set
 slugs: default-imports
@@ -1605,6 +1607,7 @@ readings:
 evidence:
 history:
 - 2026-11-14: import/export as functions (options (a)-(c), lean (b): every top-level binding exported unless `_`), its follow-up (lean `@export(names)`); 2026-11-18: export-rule (labels); 2026-11-19: statement 3.
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): the call-form name `@export(names)` and its examples moved to lib/builtin/export (`open export-choice`: "Export choice PENDING Frank"); this piece keeps the meaning. Its statement before: "A library file exports with `@export(names)`: every binding whose name is in the rx `names`; a file that exports nothing is a compile error."
 
 ## core/modules/standard-library — The standard library
 slugs:
@@ -1696,6 +1699,7 @@ evidence:
 history:
 - 2026-11-14: names in dotted families, `@warn.off`; 2026-11-17: the principle, the list, the library path, the `pcrec.` prefix, polarity-rule, empty-search-error, numbered-label; 2026-11-19: dollar-diagnostic, plus-operands.
 - 2026-11-19 (lane preddoc3b): converted from `?`; three controls of one fact (`@warn.off`, `@warn.error`, `@options.strict`) stay an idea (parked/ideas/severity-table).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): the call-form names `@warn.off`/`@warn.error` and `@options.strict` have their library pieces (lib/builtin/warn, lib/builtin/options); this piece keeps the meaning (names, selectors, the table).
 
 ## core/diagnostics/dollar-form — The `$x & S` warning
 slugs: dollar-warning dollar-diagnostic
