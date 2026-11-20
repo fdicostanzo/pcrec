@@ -5547,3 +5547,28 @@ binding list stays in the core). HIS WORDS, whole: "I agree with your take"
 The reading taken: agreement with the take as a whole, the `import` split included (he was asked to say so if he
 would rather keep import whole in the core, and did not). A matter of the documents' form; no ruling on the
 language.
+
+### 2026-11-19 OWNER, on bare-condition-labels: a bare condition in a hole is the same condition just after the rx literal
+tags: core/holes/bare-condition/labels
+
+Asked **bare-condition-labels** as a confirmation (the manager's reading of the record: hit-carry and
+pass-start-read's witnesses already have a condition alone in a hole reading the surrounding literal's label; the
+leaning: the surrounding labels as they stand at the hole). HIS WORDS, whole:
+
+"Bare condition labels: in my words a bare condition in a hole is the same condition just after the rx literal so
+/clabel${c: >= 5}/ is the same as /clabel/ & (c: >= 5). Does that match you?"
+
+Class: a STATEMENT in his own words with a question back ("Does that match you?"): DISCUSSION, not yet a ruling.
+`clabel` is read as a placeholder for a pattern that sets the label c; `${c: >= 5}` is his unparenthesised
+spelling (the spellings review). What it settles in any reading: the bare condition reads the SURROUNDING
+literal's labels (not a compile error).
+
+CHECKED CONTEMPORANEOUSLY (model `$PCREC_TMPDIR/scratch/pred/bcl_end_vs_point.py`, python `re`, hand-built
+regexes, c one digit): with the hole LAST, as in his example, the equality HOLDS (`/(?<c>\d)${(c: >= 5)}/` and
+`/(?<c>\d)/ & (c: >= 5)`: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `3 7` `7`@2 / FIND-ALL `7 3 9` [`7`@0, `9`@4],
+both). With the hole NOT last, "at the hole" and "after the literal" PART: `/(?<c>\d)${(c: >= 5)}(?<c>\d)/`: at
+the hole WHOLE `73` HOLDS, `37` FAILS; after the literal (the last mention) WHOLE `73` FAILS, `37` HOLDS. Hole
+FIRST, `/${(c: >= 5)}(?<c>\d)/`: at the hole it never holds (c unset there); after the literal WHOLE `7` HOLDS.
+The record's earlier rulings are on the at-the-hole side (hit-carry: "In cases where the user puts the condition
+before the label, they are expecting carries behavior"; zero-in-sequence: "the 0: is the match so far"). Told to
+him the same turn, and asked which he means when the hole is not last.

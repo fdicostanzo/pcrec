@@ -420,3 +420,14 @@ Main merged P-11 (main f1792840b; lint there 5,014 / 0) and applied the skill ed
 to make the skill's wake-up read the three primary files (core, library, parked) at their new paths: done on my
 branch, P-12, merged by main. /close with nothing in flight: wake.md brought to the close state, owner.md current,
 P-13 written, main told. Next session: /q, bare-condition-labels first, then looped-warning.
+
+## 2026-11-19 (box date) — third predicate-manager session: wake-up
+
+Registered (session_role pred); read wake, from_main (nothing after M-1), core/library/parked whole, the record from
+doc-shape to the end, r60's PLAN rows. Branch fast-forwarded to main 50f56b1cd; main told. Before asking
+bare-condition-labels I grepped the record: hit-carry (2026-11-18, asked as a ruling with the witness
+`occurrences(/${c}(?<h>\d)/, min = 2)`, c a condition in a hole reading the surrounding literal's h) and
+pass-start-read's witness `/(?:${c}(?<h>\d);)*/` already have a condition in a hole reading the surrounding labels;
+his words there: "a condition ... before the label ... carries". So the question goes to him as a CONFIRMATION that
+the record answers it, not as a fresh question. preddoc1 PART R10 re-run: same answers (the PART LT difference is
+the moved files, historical). WAITING on: Frank (bare-condition-labels).
