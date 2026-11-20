@@ -59,3 +59,5 @@ Run in this worktree on the final tree (the commit tip):
 ## STATE AT HANDOFF
 
 Rulings file docs/dev/lanes/k147f2_rulings.md: empty; last R-n applied: none. Branch lane/k147f2 committed at the tip named in the handback. Every finding F1-F13 is done except the OWED run above (the S3440 matrix verdict) and the unrun-by-design items: no gdb for K152, no DEPTH_FAMILIES row for K152 (no expected-fail form), no CLAUDE.md touched (size check not needed). No STOP was hit.
+
+OWED: boxqueue job 200-k147f2-mech (`bash tests/mech/run_sabotage_matrix.sh S3440` on this worktree; the first direct launch died waiting on the box lock, so it was re-queued with `scripts/boxqueue add`); read it with `scripts/boxqueue state 200-k147f2-mech` and its job log, completion line `== mech run COMPLETE: 1 rows`, expected verdict DETECTED. Everything else is complete.
