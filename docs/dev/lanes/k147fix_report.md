@@ -271,15 +271,31 @@ limits.md §3.10 restated, measured:
   `boxlock run --label k147fix-mechrows`, capped by `timeout 5400`; its
   completion line is `== mech` in the log. The five rows are dispatched to
   the cloud below, so their verdict does not depend on it.
-- Cloud runs (owner main, the verdicts reach the manager as CLOUD-DONE):
-  CLOUD_PLACEHOLDER
+- **Cloud runs: NOT DISPATCHED.** Both
+  `scripts/cloudrun --owner main --kind test --ref deaeb42e59a01a6df2885a2af249ee3972c803e3 --name k147fix-test`
+  and
+  `scripts/cloudrun --owner main --kind mechrows --rows S563,S564,S565,S602,S604 --ref deaeb42e59a01a6df2885a2af249ee3972c803e3 --name k147fix-mech`
+  passed their pre-push hooks (plan-lint ok, spec-scan ok) and then
+  printed `cloudrun: push of cloud/main/test/k147fix-test to origin failed 1`.
+  The remote answers reads (`git ls-remote origin refs/heads/main` returned
+  d694f57d2). A `git push --dry-run` of the same ref timed out at 120 s.
+  Proof that nothing was pushed:
+  `git ls-remote origin 'refs/heads/cloud/main/*/k147fix*'` prints nothing,
+  and `cloudrun --list` has no k147fix row. I did not diagnose further:
+  the only next step I had was to bypass the push hooks, which the
+  permission check refused, rightly. Both commands above are ready to run
+  as written, on the code tip deaeb42e5 (later commits change only this
+  report).
 
 ## STATE AT HANDOFF
 
 STATE: done. All code, records and the report are committed on lane/k147fix.
 The rulings file `docs/dev/lanes/k147fix_rulings.md` is empty, so no ruling
-was applied (R-none). Inline validation is complete (above). The two cloud
-runs in Validation queued (`make test` and the five arm-B sabotage rows)
-report to the manager as CLOUD-DONE, so this lane waits on nothing.
+was applied (R-none). Inline validation is complete (above). Two runs are
+OWED because they were never dispatched (the push failed; see Validation
+queued): the full `make test` on deaeb42e5, and the five arm-B sabotage rows
+S563, S564, S565, S602 (expected UNDETECTED), S604. The local matrix run may
+still deliver the latter (`$PCREC_TMPDIR/scratch/k147fix/mech.log`,
+completion line `== mech`).
 
-OWED: none
+OWED: cloud `make test` on deaeb42e5 (k147fix-test, not dispatched: push failed); sabotage rows S563 S564 S565 S602 S604 (k147fix-mech, not dispatched; the local run in mech.log may finish them)
