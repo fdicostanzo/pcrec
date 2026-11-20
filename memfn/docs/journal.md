@@ -4322,3 +4322,6 @@ Main accepts 14:00 11-20. Scope, per Frank's dense-not-target discussion as rela
 
 ## 2026-11-19 18:35 — lookaround L1 landed on main d68a1294c
 The C4 architecture check (tests/memfn/arch_blind_check.py) now skips test-corpus DATA: .rxt pattern/subject/expectation and var lines, and listing TSV pattern/subject columns. Comments, descriptions and every other file stay in scope. Allowlist 116 -> 103 (adx-style rows deleted). The rule is diffed against the rxt reader (0 missed, 0 over-masked) and has a mutation gate. pcrec_run_pin now pins the longest proved sub-stretch: 48 non-lookaround patterns gain a pin, but bench 166/168/273 give byte-identical C. The owed merge of main into lane/memfn-k1108 now takes d68a1294c too (not during 708).
+
+## 2026-11-19 18:40 — D3-FLOOR red after L1 (main owns the re-pin)
+The kit D3-FLOOR ratchet (tests/memfn/run_d3floor.sh, the tail of test-axes) is red on all 4 cloud cells on d68a1294c. It is not an answer difference: every axis arm agrees, 90,887 cases, 0 mismatches. The census gained 11 lookahead patterns and lost `[a-z]+(?<=a)@x` in 3 cells. Main's lane re-pins it after 07:00 11-20. Kit ask: explain the lost pattern (why 3 cells and not the 4th) and send the census diff before the commit, so the kit can check it lost no site it should serve.
