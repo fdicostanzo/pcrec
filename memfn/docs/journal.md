@@ -4393,3 +4393,6 @@ scratch/memfn/checkorder/fix_report.txt. Head-miss regime plus the FJUMP arm, wi
 
 ## 2026-11-20 10:50 — order changed: 711 first
 711 is ready before 710, so it runs first. Its --ready no longer waits on 710 (backup 711...bak-order); 710 will wait on kit-checkorder. 711 is queued when lane blockconfirm delivers: its builds and correctness runs in bconf-night would load the timing.
+
+### 2026-11-20 — R-46 byte mover's gate met (main relay)
+Main: the post-K38-2 re-measure (lane dhremeas, merged d51096140, report docs/dev/lanes/dhremeas_report.md on main; rule 22dad3e20 committed before timing) shows LOSS STILL SHOWN: rows on vs -fno-req-handoff were 1.49x slower unbounded (`[^@ ]+@x`) and 2.23x slower bounded (`[^@ ]{1,5}@x`); 1 MB dense " @x", vm, median of 7, A/A floor 0.68 %. That meets the measured trigger R-46 gated the forward-only byte mover on (w = min(B, max(1, lo-start))). No build yet: it waits for main's dense-hit design questions, a critic round and Frank's build go.
