@@ -431,3 +431,11 @@ pass-start-read's witness `/(?:${c}(?<h>\d);)*/` already have a condition in a h
 his words there: "a condition ... before the label ... carries". So the question goes to him as a CONFIRMATION that
 the record answers it, not as a fresh question. preddoc1 PART R10 re-run: same answers (the PART LT difference is
 the moved files, historical). WAITING on: Frank (bare-condition-labels).
+
+## 2026-11-19 (evening) — bare-condition-labels RULED and folded
+
+Five record entries (his statement "the same condition just after the rx literal", checked: true for a hole last
+only; "it's not the same"; his guess; the ruling with its correction). Folded by me in one commit: the core piece
+is ruled, details carry three rulings and three rejected candidates; lint 5,033 / 0. One reading of mine listed
+for a lane: outside a loop a hole before its group is the never-pass warning. NEXT: looped-warning. WAITING on:
+Frank.

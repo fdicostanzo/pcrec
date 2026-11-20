@@ -1392,12 +1392,19 @@ history:
 ## core/holes/bare-condition/labels — Labels a bare condition reads
 slugs: bare-condition-labels
 rulings:
+- 2026-11-19 "it's the scope of the whole rx for visibility" (record: "2026-11-19 OWNER, bare-condition-labels: a GUESS: the whole rx is the scope; the last label to its left, otherwise the next to its right")
+- 2026-11-19 "The first time through the loop, the reference is unset then the label is set. The second time through, the reference is set to the previous loop value." (record: "2026-11-19 OWNER RULING — bare-condition-labels: the label as it stands at the hole; unset the first time through; no such label is an error")
+- 2026-11-19 "If the reference matches not label, it's an error" (record: "2026-11-19 OWNER RULING — bare-condition-labels: the label as it stands at the hole; unset the first time through; no such label is an error")
 rejected:
+- the inserted part's own namespace, under which `(h: ..)` alone in a hole is a compile error (the place table's hole row applied to a bare condition) — by owner ruling — bare-condition-labels.
+- the condition read as if written after the literal, wherever the hole stands (his first sentence taken for every position) — by the owner's own observation ("I notice, it's not the same"; "I was thinking of scope not value") — it holds for a hole written last.
+- a forward read where nothing to the left has set the label (one reading of his guess "otherwise the next label to its right") — by owner ruling — "The first time through the loop, the reference is unset".
 readings:
-- the surrounding rx's labels as they stand at the hole (the manager's reading 10; NOT his words) — PARTS from the place table's hole row ("inside X, X's own namespace"): an answer against a compile error (preddoc1 PART R10; sabotage s10 caught). A precedent for the manager's side: hit-carry's ruled witness `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5), read h from the surrounding literal. Asked, never picked.
-evidence: preddoc1 PART R10.
+- outside a loop, a hole before its label's group reads it unset and the test can never pass: the warning, not the error (the manager's reading; he spoke of the loop only) — UNTESTED as a diagnostic; the answers run (bcl_end_vs_point.py row 3).
+evidence: preddoc1 PART R10 (re-run 2026-11-19, same answers); the record's runs bcl_end_vs_point.py and bcl_guess.py.
 history:
 - 2026-11-19: listed by the manager in the "`0` inside an inserted part" entry ((a): "if the draft's rows part, ASK"); NEW owner question.
+- 2026-11-19: open until ruled; the statement then: "Which labels does a bare condition in a hole read: the surrounding rx's labels as they stand at the hole, or the inserted part's own namespace, where it has none?" The manager's reading 10 (the surrounding labels at the hole; preddoc1 PART R10, sabotage s10 caught; precedent hit-carry's witness `occurrences(/${c}(?<h>\d)/, min = 2)`) is now his ruling.
 
 ## core/holes/in-filter — A hole inside a filter operand
 slugs: hole-in-filter

@@ -5611,3 +5611,44 @@ HOLDS, `7;3;` FAILS / SEARCHED `7;3;` `7;`@0 / FIND-ALL `7; 3;7;` [`7;`@0, ``@2,
 guess WHOLE `7;` FAILS, `3;7;` HOLDS, `7;3;` FAILS / SEARCHED `7;3;` ``@0 / FIND-ALL `7; 3;7;` [``@0, ``@1,
 ``@2, `3;7;`@3, ``@7]. Asked of him as the remaining question (the same slug): with nothing to its left, is the
 label unset, or read from the right.
+
+### 2026-11-19 OWNER RULING — bare-condition-labels: the label as it stands at the hole; unset the first time through; no such label is an error
+tags: core/holes/bare-condition/labels core/conditions/pass-start-read
+
+Asked **bare-condition-labels** in its last form: "With nothing to its left, is the label unset, or read from the
+right?" HIS WORDS, whole (two messages, the second sent as a correction of the first):
+
+"The scenario is a loop. You brought this up. Both hole and label are in a loop and the reference is first. The
+reference refers to the label to its left. The first time through the loop, the reference is unset then the label
+is set. The second time through, the reference is set to the previous loop value. With lookahead, it lets the
+condition compare the current value to the previous. It was an odd semantic that fell out of the rules we had. If
+the reference matches not label, it's an error"
+
+"Correction to above: the reference refers to the label to its right"
+
+Read for the intended words (phone): "matches not label" = "matches NO label".
+
+The reading taken, and told to him: a RULING, answering the question asked ("unset, or read from the right"):
+UNSET. His "the label to its right" names WHERE THE GROUP IS WRITTEN (after the hole, in the same loop body), not
+a forward read of its value: "The first time through the loop, the reference is unset then the label is set. The
+second time through, the reference is set to the previous loop value." This is pass-start-read as ruled
+2026-11-17 (a RECOLLECTION, checked: SUPPORTED; "It was an odd semantic that fell out of the rules we had"), and
+his own use for it: "With lookahead, it lets the condition compare the current value to the previous." With it
+the "otherwise the next label to its right" of his guess (the entry above) is read as this same scenario, not as
+a second rule.
+
+Ruled, with the two earlier entries of today:
+1. A bare condition in a hole sees the labels of the whole surrounding rx ("it's the scope of the whole rx for
+   visibility").
+2. It reads a label as it stands where the hole is: after the group, the value just set; before it in a loop,
+   unset the first time through and the previous pass's value after that.
+3. "If the reference matches no label, it's an error": a bare condition naming a label that no group of the
+   surrounding rx carries is a compile error. The record already has this for conditions in general (2026-11-13:
+   "an undeclared name that is not a label is an ERROR with a suggestion"; "an unknown label is an error listing
+   the labels available").
+
+The manager's readings, for the next lane to test: (a) OUTSIDE a loop, a hole written before its label's group
+(`/${(c: >= 5)}(?<c>\d)/`) reads the label unset, so the test never passes (run: bcl_end_vs_point.py row 3,
+"at-hole"): the label exists, so it is not his error 3 but the can-never-pass warning (`pcrec.test.never`); he
+spoke of the loop only. (b) His earlier sentence "a bare condition in a hole is the same condition just after
+the rx literal" stands for a hole written LAST (run, equal in the three modes).

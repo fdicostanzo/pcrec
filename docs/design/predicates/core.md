@@ -973,12 +973,18 @@ see: core/spellings/condition-parentheses
   condition does (a reading, run).
 WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${(0: rx.digit)}x/`)
 
-### Labels a bare condition reads   [core/holes/bare-condition/labels]   open bare-condition-labels 2026-11-19
-Which labels does a bare condition in a hole read: the surrounding rx's labels as they stand at the hole, or the inserted part's own namespace, where it has none?
-needs: core/holes/bare-condition core/holes/labels
-The manager's reading: the surrounding labels at the hole. The rival: the hole row's "inside X, X's own
-namespace", under which `(h: ..)` in a hole is a compile error (free-name). They part:
-WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${(h: <5)}x/`, the manager's reading; the rival: a compile error)
+### Labels a bare condition reads   [core/holes/bare-condition/labels]   ruled 2026-11-19
+A bare condition in a hole sees the labels of the whole surrounding rx and reads each as it stands where the hole is; a label no group of that rx carries is a compile error.
+needs: core/holes/bare-condition core/holes/labels core/conditions/pass-start-read
+by: core/principles/composed-at-point
+- After the label's group it reads the value just set. Before it, in a loop, it is unset the first time through
+  and the previous pass's value after that (core/conditions/pass-start-read): with a lookahead, the way to
+  compare an item with its predecessor.
+- Written last in the rx, the bare condition equals the condition after the literal:
+  `/(?<c>\d)${(c: >= 5)}/` is `/(?<c>\d)/ & (c: >= 5)`.
+- Outside a loop, a hole before its label's group reads it unset: the test can never pass (the warning
+  `pcrec.test.never`, not the error; a reading).
+WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${(h: <5)}x/`)
 
 ### A hole inside a filter operand   [core/holes/in-filter]   ruled 2026-11-18
 Holes are filled first, an inserted assertion free to cross the hole's border; the finished operand is then judged as a filter operand.
