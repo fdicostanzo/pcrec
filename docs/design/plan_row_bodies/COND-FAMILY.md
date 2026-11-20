@@ -6086,3 +6086,39 @@ TO TEST: (a) a compile-time judgement of a binding ALONE (a can-never-match warn
 in a flagged hole: such warnings belong at the USE, not at the binding; (b) the same before/after split exists
 for a complement (`A & !B` in a flagged hole). Asked of him (flags-before-and): keep "before", or does he want a
 binding of an `&` settled where it is written.
+
+### 2026-11-19 OWNER, discussing flags-in-filter: resolve the expression on its own, then insert the result wrapped by the context options
+tags: core/holes/flags/in-filter core/holes/flags core/holes/bare-condition core/holes/value
+
+Asked **flags-before-and** (in a flagged hole, do the sides of an `&` take the flags before the intersection, as
+folded, or after). HIS WORDS, whole (marked by him "discussion"):
+
+"flags-in-filter: discussion: C in the hole can inherit the flags. In other words, the expression is run on its
+own independent of flags. Then when the expression is resolved, the resulting rx is inserted in place wrapped by
+the context options. Advantage is that an expression bound and inserted or insert whole both behave the same.
+Label references to rx would be $x so would return the match.
+Bare conditions are a different matter and would be always in the options of then literal."
+
+Read for the intended words (phone): "of then literal" = "of THE literal".
+
+Class: DISCUSSION (his word), carrying a PROPOSAL, not a ruling: (1) an expression in a hole (his C, `A & B`) is
+RESOLVED ON ITS OWN, "independent of flags"; (2) "the resulting rx is inserted in place wrapped by the context
+options": the RESULT inherits, not the sides (the "after" of the entry above); (3) the advantage he names: bound
+then inserted, and inserted whole, behave the same; (4) a label reference in the expression is `$x`, which
+"would return the match" (the label's text); (5) a bare condition is "a different matter": always under the
+options of the literal it stands in. If ruled, (1)-(2) REVERSE "flags-in-filter: both sides inherit" of the same
+evening as the manager folded it (the sides take the flags first).
+
+CHECKED CONTEMPORANEOUSLY, and told to him (python, hand-built; "wrapped" read as the case-insensitive closure of
+the resolved set, the only reading under which his example gives nothing):
+- His example, A := `/[a-z]x/`, B := `/[A-Z]x/`: resolved alone, nothing; wrapped, nothing. Flags into each side
+  first: `ax`, `AX`, `aX`, `Ax` all match.
+- `/[a-z]+/ & /b.*/` under `(?i)`: both orders accept `blah` and `BLAH` and refuse `alah`, `ALAH`: no difference
+  (the two orders part only where the sides' case demands conflict).
+- (3) holds under BOTH orders: bound-then-inserted equals inserted-whole either way.
+- A COLLISION with a ruled rule: flags-propagate's "a flag it writes for itself wins" (`/(?i)${/(?-i)ab/}/`: run
+  as `(?i)(?:(?-i:ab))`, `ab` HOLDS, `AB` FAILS). A closure of the resolved result cannot see a `(?-i)` that was
+  spent in resolving: A := `/(?-i)ab/`, `/(?i)${A}/` refuses `AB` (ruled), while `/(?i)${A & A}/`, resolved then
+  wrapped, would accept it: one set, two spellings, two answers (against meaning-not-spelling).
+- (4) and (5) agree with the documents as they stand (core/holes/value: the read's text matched "under the
+  options in force at the hole"; a bare condition tested where the hole stands).
