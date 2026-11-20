@@ -457,14 +457,16 @@ rulings:
 - 2026-11-18 "backref-label: capture" (record: "2026-11-18 OWNER RULING — backref-label: capture")
 - 2026-11-17 "last-pass-default: regex. I want to have the method of achieving the alternative meanings defined and tested so we don't lose that functionality." (record: "2026-11-17 OWNER RULING — last-pass-default: regex"); it STANDS with its edge changed by after-loop-read the same evening ("(5) last-pass-default (14:30) STANDS", that entry): the carried value is the capture's; its second sentence is a standing instruction (lib/counting/every-pass)
 rejected:
-- the array limited to settings from one definition or one literal (his own guess, "they had to be in the 'same' rx") — by owner ruling — array-scope: under composition nothing is in the same literal.
+- the array limited to settings from one definition or one literal (his own guess: "I guess is no, because we could define they had to be in the "same" rx.") — by owner ruling — array-scope: "the only way to do it is by the scope of the entire rx"; his own worry in the guess: "The problem is with composition, nothing will be in the same rx".
 - "labels match every pass, captures match the last" for a bare condition — by owner — reconsidered within minutes: "what you should do is assign the condition inside the loop to get the all behavior" (record: "2026-11-17 OWNER, reconsidering the entry above within minutes"); closed by after-loop-read.
 - regex's carried value for a bare looped label (last-pass-default: regex) — by owner ruling — after-loop-read and the `$x` ruling ("frankly pcre is wrong on this"); the carried value stays reachable as the capture.
 - a compile error for a bare condition after a loop (the manager's lean) — by owner ruling — after-loop-read.
 - pass-and (a Kleene AND over passes) and joint-last-pass — dissolved by the two-valued model and after-loop-read (a joint reads the last pass's own tuple).
 - per-pass pairing for a BARE joint condition, by the loop enclosing its labels (joint-loops (1), its wording pairing-loop part 1) — by owner ruling — after-loop-read: a bare joint reads the last pass's own tuple; per-pass pairing is the joint written on the item (the draft R.9, R.1.7).
 readings:
-- the array form's index counts settings (the draft R.1.7) — UNTESTED.
+- the array form's index counts settings (the draft R.1.7) — UNTESTED (open: core/labels/labels-vs-captures/array-vs-passes).
+- (a) of array-scope: "the entire rx" is the rx as composed AT THE POINT the array is referenced (composed-at-point); stated in the base as "the settings of the name where the name is visible, as they stand where it is read" (the manager's reading, "for the next lane to test") — UNTESTED.
+- (b) of array-scope: `x.@a` lists the settings of `a` made inside part `x` only, in order (the manager's reading, "for the next lane to test"); for a part label used twice it is routed through core/labels/paths (its last-mention rule) — UNTESTED.
 evidence: preddoc3a_model.py CAPT, CAPT2 (the draft's PART L: `\k<m>` reads the capture `45` while the label m is unset; python `re` agrees on the regex half); sabotage s9 caught.
 history:
 - 2026-11-17: last-pass-default (regex), then "labels match every pass", reconsidered within minutes, then after-loop-read and the `$x` ruling (the settled state of the evening).
@@ -474,6 +476,17 @@ history:
 - the slug array-slot moved here from core/labels/one-rule: the rule it decided ("a reset contributes nothing" to the array form) is this piece's (lane preddoc5, review r59 PLACE-4).
 - 2026-11-19 (lane preddoc6, review r60 COLD-13): "a callout" among the capture's readers qualified "where one is allowed: a one-literal program" (core/patterns/literals refuses callouts inside a larger program).
 - 2026-11-19: array-scope ruled after hole-export; the heading date moved from 2026-11-17 with it.
+- 2026-11-19 (lane predfix61, review r61 F-F (RULING-12, REACH-3, REACH-4, GENERAL-3, GENERAL-13), F-J (RULING-11)): array-scope's readings (a) and (b) were folded as body; now marked readings in the base and listed above. The bullet until then, verbatim: "The array's scope is the entire rx as composed, not one literal or one definition: `[x = rx.digit]+` and `/(?<x>\d)+/` have one array, and two groups of one name in a sequence give it both settings. A part label limits it: the array of `a` under part `x` (placeholder `x.@a`) lists the settings made inside that part." The rejected item's quote was altered ('same' for "same") and its reason was his hole-export worry, not array-scope's words; both corrected. The array of settings against the loop's passes: core/labels/labels-vs-captures/array-vs-passes.
+
+## core/labels/labels-vs-captures/array-vs-passes — The array of settings or the loop's passes
+slugs: array-vs-passes
+rulings:
+rejected:
+readings:
+- (a), the array of settings, is what the base tells the group questions today; (b) is lib/counting's definition (`some`: "at least one pass of a loop meets the condition c, each pass judged with its own labels; it is false where the loop made no pass") — UNTESTED as a rule; both RUN (predfix61 FF, FF2; sabotage s6 caught).
+evidence: predfix61_model.py FF (the three witnesses' values), FF2 (the six lines: the candidates part on 3 of 3 witnesses).
+history:
+- 2026-11-19 (lane predfix61, review r61 F-F: REACH-3, the tension older than the session, sharpened by array-scope's "two groups of one name in a sequence give it both settings"): a new open sub-piece at the manager's ruling of review r61, with the review's three witnesses.
 
 ## core/labels/one-rule — One label rule: branchings reset
 slugs: bare-loop-label before-and-inside shared-label repeated-means unsettable-label empty-pass optional-as-loop
@@ -527,15 +540,28 @@ rejected:
 - "a filter can never produce captures" (his lean, filter-captures) — closed by export-rule: visibility goes by export, not by the operand's role.
 - an explicit export spelling — by owner ruling — export-rule: the `_` prefix decides.
 readings:
-- outside a binding the view is the inside view less the private names, so a bare `v` outside `date := [y = year] SEQ "-" SEQ [m = month]` reads the last mention where the old statement 3 made it an error (the manager's reading of "all flatly visible") — UNTESTED.
+- outside a binding the view is the inside view less the private names, so a bare `v` outside `date := [y = year] SEQ "-" SEQ [m = month]` reads the last mention where the old statement 3 made it an error (the manager's reading (a) of hole-export, "for the next lane to test"; array-scope's reading (c): "it stays a reading") — UNTESTED as a rule (open: core/labels/export/flat-read-outside); its answers RUN (predfix61 FB).
+- a part under a `_` part label, or `[_ = A]`, passes none of its labels outside, so statement 3 agrees with statements 6 and 7 (the manager's reading (b) of hole-export: "`[_ = A]` and a `_` part label still close a part's labels") — SUPPORTED as rule-as-code (predfix61 FA: visible outside `[a = A]` {a, h}, `[_a = A]` none, `[_ = A]` none; sabotage s1 caught); the run line of statement 3 is predfix61's.
 - a filter operand's labels are visible like any others (the draft R.1.13, filter-captures not adopted) — UNTESTED.
 - his remark of 2026-11-19 ("it might be more that private labels are only visible in a binding scope") — already ruled as statement 1 (recorded as a recollection, nothing new).
-evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers reproduced; `[2-9]\d{3}` agrees). PARTS TA, TB of predspec291.
+evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers reproduced; `[2-9]\d{3}` agrees). PARTS TA, TB of predspec291. predfix61_model.py FA (statement 3's line and the closing parts).
 history:
 - 2026-11-18: the proposal (labels seen only if exported), the export-scope discussion, the ruling, the clarification of statement 6 and `[_ = A]`.
 - 2026-11-19 (lane preddoc5): the slug filter-captures moved here from core/filters/kinds: it is closed by export-rule, which this piece states (review r59 PLACE-4).
 - 2026-11-19 (lane preddoc6, review r60 COLD-15): the example names its program (`year`, the final expression); before it printed only the binding, which by core/operators/statements is not a program. Answers unchanged (preddoc6 PART EX).
 - 2026-11-19: hole-export ruled; the statement until then: "A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible." From the merged question piece: review r54 P29-13 asked it; the T-a surprise (PART TA of predspec291) was its ground.
+- 2026-11-19 (lane predfix61, review r61 F-A, F-B, F-J (RUNOWN-6)): statement 3 contradicted statements 6 and 7 (a `[_a = A]` part's public `h` was "visible inside" and so outside, less only `_a`) and stated the manager's reading (a) as the ruled body. The statement until then: "A label is public unless its name begins with `_`; outside a binding every public label visible inside it is visible, a part's labels passing through a hole and the sequence operator alike." Statement 3 until then: "Outside a binding, what is visible is what is visible inside it, less the private names: the public labels of everything written or used there, read as labels are, and its public part labels, a part's public labels also reached by path through its part label. `B1 := isodate SEQ "!"` and `B2 := /${isodate}!/` both show `year`." (`isodate` was defined nowhere; the run line printed was the private-label program's). Now: the ruled part ("both pass through"), the closing parts (reading (b)), the flat read marked a reading with its owner question flat-read-outside, a defined binding and a run line.
+
+## core/labels/export/flat-read-outside — A flat read of a part's label from outside
+slugs: flat-read-outside
+rulings:
+- 2026-11-19 "they have to work the same. Agree both pass through." (record: "2026-11-19 OWNER RULING — hole-export: both pass through; and a question on the array of a label under composition"); the ruled part of statement 3; it does not say how a flat read from outside resolves
+rejected:
+readings:
+- (a) flat reads outside a binding follow the inside rules (the manager's reading (a) of hole-export) — UNTESTED as a rule; the answers RUN (predfix61 FB; sabotage s2 caught).
+evidence: predfix61_model.py FB (both lines of candidate (a); candidate (b) refuses both programs).
+history:
+- 2026-11-19 (lane predfix61, review r61 F-B, RULING-7): a new open sub-piece at the manager's ruling of review r61. The owner's words in the hole-export message, whole for this point: "Here's the issue: if I have [a = ([ b = rx]|[c = rx])] where rx has labels x y z, this would mean that a b c x y z are all flatly visible. I can't access x y z flat because it's ambiguous and therefore an error. So it's b.x or a.b.x. In practice there may not be ambiguity, but is having all those symbols an issue? I'm saying no." The manager's correction, told to him the same turn (record, that entry): "His "I can't access x y z flat because it's ambiguous and therefore an error" is NOT what the rules as defined say for an alternation: the ruled ambiguity is across `&` only ...; across `|` the branch taken sets the label and a bare read is legal". He did not answer the correction; his later "I can't think of a problem with the existing labeling rules so let's move on." (record: "2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it") is a direction, not an answer to it (the manager's ruling of review r61).
 
 ## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared label
 slugs: caller-ambiguous read-out
@@ -1420,19 +1446,32 @@ history:
 ## core/holes/bare-condition/labels — Labels a bare condition reads
 slugs: bare-condition-labels
 rulings:
-- 2026-11-19 "it's the scope of the whole rx for visibility" (record: "2026-11-19 OWNER, bare-condition-labels: a GUESS: the whole rx is the scope; the last label to its left, otherwise the next to its right")
+- 2026-11-19 (class: GUESS) "it's the scope of the whole rx for visibility" (record: "2026-11-19 OWNER, bare-condition-labels: a GUESS: the whole rx is the scope; the last label to its left, otherwise the next to its right"); his guess, adopted as ruled by the entry below (its item 1)
 - 2026-11-19 "The first time through the loop, the reference is unset then the label is set. The second time through, the reference is set to the previous loop value." (record: "2026-11-19 OWNER RULING — bare-condition-labels: the label as it stands at the hole; unset the first time through; no such label is an error")
 - 2026-11-19 "If the reference matches not label, it's an error" (record: "2026-11-19 OWNER RULING — bare-condition-labels: the label as it stands at the hole; unset the first time through; no such label is an error")
 rejected:
 - the inserted part's own namespace, under which `(h: ..)` alone in a hole is a compile error (the place table's hole row applied to a bare condition) — by owner ruling — bare-condition-labels.
 - the condition read as if written after the literal, wherever the hole stands (his first sentence taken for every position) — by the owner's own observation ("I notice, it's not the same"; "I was thinking of scope not value") — it holds for a hole written last.
-- a forward read where nothing to the left has set the label (one reading of his guess "otherwise the next label to its right") — by owner ruling — "The first time through the loop, the reference is unset".
+- a forward read where nothing to the left has set the label (one reading of his guess "otherwise the next label to its right") — by owner ruling (in a loop) — "The first time through the loop, the reference is unset"; outside a loop the manager's reading ("he spoke of the loop only"; the record's reading (a)): answer-moving, `/${(c: >= 5)}(?<c>\d)/` WHOLE `7` FAILS today and would hold under the forward read (bcl_guess.py).
 readings:
-- outside a loop, a hole before its label's group reads it unset and the test can never pass: the warning, not the error (the manager's reading; he spoke of the loop only) — UNTESTED as a diagnostic; the answers run (bcl_end_vs_point.py row 3).
-evidence: preddoc1 PART R10 (re-run 2026-11-19, same answers); the record's runs bcl_end_vs_point.py and bcl_guess.py.
+- outside a loop, a hole before its label's group reads it unset and the test's outcome is fixed: `pcrec.test.never` where it then fails, `pcrec.test.always` where it then holds; the warning, not the error (the manager's reading; he spoke of the loop only) — UNTESTED as a diagnostic; the answers RUN at both polarities (predfix61 FC; sabotage s3 caught).
+- "before its label's group" is judged on the rx as composed (no path of it sets the label before the hole, loop or not): `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`, reads A's c (the manager's ruling of review r61 F-D) — SUPPORTED as rule-as-code (predfix61 FD: equal to `[5-9]\d` on 111 texts; sabotage s4 caught).
+- the surrounding rx is the rx as composed where the hole stands, when the literal holding it is inserted or an `&` operand (the manager's reading; open: core/holes/bare-condition/nested-scope) — UNTESTED as a rule.
+evidence: preddoc1 PART R10 (re-run 2026-11-19, same answers); the record's runs bcl_end_vs_point.py and bcl_guess.py; predfix61_model.py FC, FD, FG (every line but the first; the matcher checked against python `re`, CONTROL).
 history:
 - 2026-11-19: listed by the manager in the "`0` inside an inserted part" entry ((a): "if the draft's rows part, ASK"); NEW owner question.
 - 2026-11-19: open until ruled; the statement then: "Which labels does a bare condition in a hole read: the surrounding rx's labels as they stand at the hole, or the inserted part's own namespace, where it has none?" The manager's reading 10 (the surrounding labels at the hole; preddoc1 PART R10, sabotage s10 caught; precedent hit-carry's witness `occurrences(/${c}(?<h>\d)/, min = 2)`) is now his ruling.
+- 2026-11-19 (lane predfix61, review r61 F-C, F-D, F-E, F-G, F-J (RULING-4)): the statement until then: "A bare condition in a hole sees the labels of the whole surrounding rx and reads each as it stands where the hole is; a label no group of that rx carries is a compile error." ("the whole surrounding rx" reached private labels the export rule hides.) Its bullets until then, verbatim: "Written last in the rx, the bare condition equals the condition after the literal: `/(?<c>\d)${(c: >= 5)}/` is `/(?<c>\d)/ & (c: >= 5)`." (true at top level only: inside an optional it parts, 1 / 58 / 90 of 121, predfix61 FG); "Outside a loop, a hole before its label's group reads it unset: the test can never pass (the warning `pcrec.test.never`, not the error; a reading)." (true only for a test that fails on unset; the partition "outside a loop" judged on the written literal). The loop bullet gains the first-pass condition (a positive first-pass test: 0 matches of 1,093 texts, predfix61 FD).
+
+## core/holes/bare-condition/nested-scope — Which rx a hole in an inserted literal reads
+slugs: bare-nested-scope
+rulings:
+rejected:
+readings:
+- (b) composed, the documents' reading today (core/holes/bare-condition's `by: composed-at-point`; core/values/reads: "the chain's labels") — UNTESTED as a rule; the answers RUN (predfix61 FE; sabotage s5 caught).
+evidence: predfix61_model.py FE (three readers, both candidates; under (a) the condition and `$h` are refused, `0` reads the inner literal's `x`).
+history:
+- 2026-11-19 (lane predfix61, review r61 F-E: REACH-5, REACH-9, RULING-13, GENERAL-14): a new open sub-piece at the manager's ruling of review r61; one question for the three readers at a hole. The free-name ruling quoted in its statement: "It is like if a function in C were defined then references a variable it doesn't have defined so it looks up the call stack to the previous definition. Catastrophic." (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error").
 
 ## core/holes/in-filter — A hole inside a filter operand
 slugs: hole-in-filter
