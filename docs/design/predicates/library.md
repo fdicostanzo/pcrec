@@ -44,8 +44,8 @@ see: parked/ideas/class-base
 module: ?
 defined: ?
 - For digits the value is the digit; its codepoint order agrees.
-- Candidates: (a) ascending codepoint (the manager's reading today, not ruled): `enumerate(/[abc]/)` is [`a`, `b`,
-  `c`] and `.index` counts from the bottom (`a` is 1); (b) the order of a declared ordered symbol set, as in the
+- Candidates: (a) ascending codepoint (the manager's reading today, not ruled): `enumerate(/[abc]/)` is
+  [`a`, `b`, `c`] and `.index` counts from the bottom (`a` is 1); (b) the order of a declared ordered symbol set, as in the
   owner's discussion of numbers over symbols: "digits followed by letters as per normal" and "(ie. not as written)"
   (parked/ideas/class-base: `(?i)[\da-f]` by codepoint is `0..9A..Fa..f`; by value `A` and `a` tie).
 - PCRE orders no position that takes one character from a set: `(?i)k` takes `K`, `k` and U+212A; `\p{..}` too.

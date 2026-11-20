@@ -558,20 +558,22 @@ ctl = [
     ("/(?<c>\\d)(?:x${(c: >= 5)})?/", r"(\d)(?:x(?<=[5-9]x))?"),
     ("/(?<c>\\d)(?:x)?/ & (c: >= 5)", r"[5-9]x?"),
     ("/(?:(?<a>\\d)|(?<b>[a-z]))*xx/ & (a: <5)", None),
+    ("/(?:a|ab)(?<c>\\d)?/", r"(?:a|ab)(\d)?"),
 ]
 TX = pop("37x", 4)
 bad = []
 for prog_text, rx in ctl:
     if rx is None:
         continue
-    d = ndiff(answers_p(program(prog_text), TX), answers_re(rx, TX))
+    tx = pop("ab3", 4) if "a|ab" in prog_text else TX
+    d = ndiff(answers_p(program(prog_text), tx), answers_re(rx, tx))
     if d != (0, 0, 0):
         bad.append((prog_text, d))
 # the one-rule piece's printed line, reproduced by the matcher (a line the documents already carry)
 L1 = fmt_s(program("/(?:(?<a>\\d)|(?<b>[a-z]))*xx/ & (a: <5)"), ["3qxx", "q3xx", "7q3xx"], "3qxx", "3qxx q3xx 7q3xx")
 want = "WHOLE `3qxx` FAILS, `q3xx` HOLDS, `7q3xx` HOLDS / SEARCHED `3qxx` FAILS / FIND-ALL `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10]"
 check("CONTROL", not bad and L1 == want,
-      "%d programs x %d texts over `37x`: differing %s ; one-rule's printed line reproduced: %s" % (5, len(TX), bad, L1 == want))
+      "%d programs x %d texts over `37x` (`ab3` for the ordered alternation): differing %s ; one-rule's printed line reproduced: %s" % (6, len(TX), bad, L1 == want))
 
 # ---------------------------------------------------------------- F-A: statement 3 against statements 6 and 7
 print("== F-A: a part under a `_` part label, or `[_ = A]`, passes none of its labels (statement 3, the manager's reading (b))")
