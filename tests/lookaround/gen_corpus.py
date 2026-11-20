@@ -231,6 +231,18 @@ QUANTIFIED = [
  cell("(?=a)*+a", LA + ",atomic-groups", [("a", 0)],
       "The POSSESSIVE spelling, which desugars to `A_ATOMIC(A_REP(A_LOOK))` "
       "-- a cut ABOVE an assertion that has a cut of its own."),
+ cell("(?=a|b" * 8 + "c" + ")*+" * 8, LA + ",atomic-groups",
+      [("", 0), ("bbbbbbbbc", 0), ("x", 0)],
+      "K146's SHAPE, eight deep: a possessively quantified lookahead whose "
+      "second branch nests the next one. Nested 180 deep it overflowed the "
+      "compile thread (docs/spec/limits.md §3.10's budget) in the VM "
+      "emitter and `vm_cost`; the depth-250 check is tests/thread/"
+      "run_compile_stack.sh's `lookrep` family, and these cells check the "
+      "answers at a depth a corpus compile can afford."),
+ cell("^(?:" + "(?=a|b" * 8 + "c" + ")*+" * 8 + ")b", LA + ",atomic-groups",
+      [("b", 0), ("bbc", 0), ("a", 0)],
+      "The same, followed by a consumer: every assertion level is "
+      "zero-width, so only the trailing `b` moves the cursor."),
  cell("(?=a)*?a", LA, [("a", 0)], "The LAZY spelling."),
  cell("((?=a)*)a", LA, [("a", 0)],
       "A quantified assertion inside a CAPTURE: the group spans the empty "

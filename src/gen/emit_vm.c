@@ -7684,12 +7684,11 @@ static PCREC_OWN_FRAME void vm_look_behind(Vm *v, const Ast *a, int okl,
         v->enc_mask |= PCREC_ENCE_FWD_STEP;
     }
 
-    /* The label table lives in the ARENA, not in this frame: this function
-     * is inlined into `vm_emit_node`, which recurses once per nesting level
-     * whatever the pattern holds, so a table on the stack here is paid at
-     * every level of a pattern with no lookbehind at all ([DD-10],
-     * limits.md §3.10; `PCREC_OWN_FRAME`'s rule, by the other route — an
-     * out-of-line frame would sit on the recursion of a nested lookbehind). */
+    /* The label table lives in the ARENA, not in this frame: this frame
+     * sits on the recursion of a nested lookbehind (the branches are emitted
+     * from here), so a table on the stack here would be paid at every level
+     * ([DD-10], limits.md §3.10). The frame is its own (`PCREC_OWN_FRAME`,
+     * K146) so that a nest with no lookbehind pays none of it. */
     Arena *ar = &v->cx->arena;
     const Ast **br = pcrec_arena_alloc(ar, (size_t)m * sizeof *br);
     VmLbLabels *L = pcrec_arena_alloc(ar, sizeof *L);
@@ -9388,7 +9387,15 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
  * caller has already counted. Only `A_WCLASS` recurses here directly: the
  * wrapper's own charge stands in for its child's, so the program's node count
  * is what it was before the kind existed and `PCREC_MAX_VM_NODES` refuses the
- * same patterns (D-4, docs/dev/cls_s3_reader_inventory.md §10). */
+ * same patterns (D-4, docs/dev/cls_s3_reader_inventory.md §10).
+ *
+ * EVERY RECURSIVE ARM IS ITS OWN FRAME ([DD-10], K146; `PCREC_OWN_FRAME`):
+ * this switch is entered once per AST level, several times per paren level,
+ * so an arm inlined here would put its locals (and every other inlined arm's,
+ * the union) on every level of every nest. Marked out of line, the arms are
+ * tail calls and a level costs only the frames on its own path; `vm_cost`'s
+ * arms follow the same rule. A new arm that recurses is marked the same way;
+ * tests/thread/run_compile_stack.sh measures the result. */
 static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
 {
 

@@ -2424,7 +2424,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 
 - [K146-VMCOST-DEPTH] STATE:not-started — quantified nested lookarounds overflow the compile thread's stack in vm_cost (K146)
   filed: 2026-11-19 manager, from review r58 IDENT-1 (pre-existing; found while reviewing L1's stackdepth fix)
-  status (2026-11-19): not started; a compile crash (SIGSEGV) on a hostile pattern at nesting 180
+  status (2026-11-20): fix on lane/k146fix (own-frame VM emitter and vm_cost arms; `lookrep` DEPTH_FAMILIES row, 297,536 B at depth 250; zero emitted-byte movers); awaiting the code critic round and landing (docs/dev/lanes/k146fix_report.md)
   next: a small lane: split vm_cost/vm_cost_rep's descent frame (the shape of l1ttri 2e9e86126) and add a DEPTH_FAMILIES row; after the lookaround L1 landing
   refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md
 - [CLS-FOLD-WAF744] STATE:not-started — research why the caseless class fold loses on waf744 (x86)

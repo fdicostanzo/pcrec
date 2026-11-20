@@ -104,6 +104,25 @@ pattern (?=a)*+a
 features lookaround,atomic-groups
 m "a" 0 1
 
+# K146's SHAPE, eight deep: a possessively quantified lookahead whose second
+# branch nests the next one. Nested 180 deep it overflowed the compile thread
+# (docs/spec/limits.md §3.10's budget) in the VM emitter and `vm_cost`; the
+# depth-250 check is tests/thread/run_compile_stack.sh's `lookrep` family,
+# and these cells check the answers at a depth a corpus compile can afford.
+pattern (?=a|b(?=a|b(?=a|b(?=a|b(?=a|b(?=a|b(?=a|b(?=a|bc)*+)*+)*+)*+)*+)*+)*+)*+
+features lookaround,atomic-groups
+m "" 0 0
+m "bbbbbbbbc" 0 0
+m "x" 0 0
+
+# The same, followed by a consumer: every assertion level is zero-width, so
+# only the trailing `b` moves the cursor.
+pattern ^(?:(?=a|b(?=a|b(?=a|b(?=a|b(?=a|b(?=a|b(?=a|b(?=a|bc)*+)*+)*+)*+)*+)*+)*+)*+)b
+features lookaround,atomic-groups
+m "b" 0 1
+m "bbc" 0 1
+n "a"
+
 # The LAZY spelling.
 pattern (?=a)*?a
 features lookaround
