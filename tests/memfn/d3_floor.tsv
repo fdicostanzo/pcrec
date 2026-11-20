@@ -19,7 +19,7 @@
 #   records       run_part_terms records on the shipped arts the sweep must see (a sweep whose summarize dropped the record
 #                 again, p14, reds here too); records_band as pop_band.
 cell	census_floor	census_band	compiles	failed	pop_band	records	records_band	provenance
-byte/c-default	78	0	5030	486	0	380	0	d3fix measured 2026-11-15 (466d8e8ee tree)
-byte/c-vm	174	0	5031	485	0	1055	0	d3fix measured 2026-11-15 (466d8e8ee tree)
-utf8/c-default	119	0	5100	416	0	501	0	d3fix measured 2026-11-15 (466d8e8ee tree)
-utf8/c-vm	247	0	5077	439	0	1177	0	d3fix measured 2026-11-15 (466d8e8ee tree)
+byte/c-default	89	0	5147	486	0	426	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
+byte/c-vm	184	0	5148	485	0	1132	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
+utf8/c-default	129	0	5217	416	0	558	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
+utf8/c-vm	257	0	5194	439	0	1251	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
