@@ -60,3 +60,4 @@ satisfies the R-46 gate's condition "post-K38-2 re-measure still showing the los
 
 ## STATE AT HANDOFF
 Done; nothing owed. Last ruling applied: R-1 (run 2 re-timed all cells; run 1 not counted). Branch lane/dhremeas, scratch /var/tmp/pcrec-pcrec/scratch/dhremeas.
+OWED: none
