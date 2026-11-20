@@ -10,10 +10,10 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/litscan/spanarms.rxt"
 SAB_DESC='the landmark move has one row for both signs of K, so at K < 0 the unsigned compare never moves and an attempt starts before the start offset'
-SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/l3feat_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3411."
+SAB_DOC_FIGURE="MEASURED at landing (lane l3feat2, 2026-11-20): the K >= 0 text at a negative K compares a size_t difference with a negative literal, and the harness's generated-code compile refuses it (-Wsign-compare as an error), so the plant is caught at the artifact's build before any answer is read (1660 of 2130 cells red). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3411."
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?<=ab)ab(\w)\1'\'' && grep -q '\''^#define RX_REQ_HANDOFF "-2"$'\'' "$REACH_TMP/o.c" && echo REACH-WL14'
 SAB_REACH_EXPECT='REACH-WL14'
-SAB_EXPECT=DETECTED
+SAB_EXPECT=COMPILE-CATCH
 SAB_COUNT=1
 SAB_BEFORE='    bool in_place = strcmp(target, hit) == 0;
     if (k < 0) {'

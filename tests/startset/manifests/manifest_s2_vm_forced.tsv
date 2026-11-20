@@ -4838,3 +4838,43 @@ tests/lookaround/d27_l1/l1d27_witnesses.rxt:959	--features lookaround,classes,mo
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:974	--features lookaround,classes,modifiers	283f3d6b6576295b5c5c7830302d5c5c7838305d7b337d
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:989	--features lookaround,classes,modifiers	61283f3d5b612d7a5d7b327d7a29626379
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:999	--features lookaround,classes,modifiers	616263283f3c3d785b612d7a5d7b327d29
+# lane l3feat2 (2026-11-20): +38 rows, every one a NEW block of span_arms L3 (tests/litscan/spanarms.rxt's Unit L3 section,
+# past base line 1178; tests/litscan/presence_deny.rxt's W-T3 blocks, past base line 951), found by vmhat_checks [vm-movers]; no existing row moved.
+tests/litscan/presence_deny.rxt:1124	--features all --encoding=byte --engine=vm	283f3c3d617b32307d29627b32307d
+tests/litscan/presence_deny.rxt:954	--features all --encoding=byte	283f3c3d617b32307d29627b32307d
+tests/litscan/spanarms.rxt:1192	--features all --encoding=byte	283f3c3d666f6f29626172
+tests/litscan/spanarms.rxt:1243	--features all --encoding=byte --engine=vm	283f3c3d666f6f29626172
+tests/litscan/spanarms.rxt:1296	--features all --encoding=byte	283f3c3d61627c622963
+tests/litscan/spanarms.rxt:1320	--features all --encoding=byte --engine=vm	283f3c3d61627c622963
+tests/litscan/spanarms.rxt:1344	--features all --encoding=byte	283f3c3d61622961625b612d7a5d2a71
+tests/litscan/spanarms.rxt:1372	--features all --encoding=byte --engine=vm	283f3c3d61622961625b612d7a5d2a71
+tests/litscan/spanarms.rxt:1401	--features all --encoding=byte	283f3c3d61622961625b612d7a5d2a71285c772a295c31
+tests/litscan/spanarms.rxt:1430	--features all --encoding=byte --engine=vm	283f3c3d61622961625b612d7a5d2a71285c772a295c31
+tests/litscan/spanarms.rxt:1460	--features all --encoding=byte	283f3c3d6162296162285c77295c31
+tests/litscan/spanarms.rxt:1495	--features all --encoding=byte --engine=vm	283f3c3d6162296162285c77295c31
+tests/litscan/spanarms.rxt:1531	--features all --encoding=byte	283f3c3d612961285c77295c31
+tests/litscan/spanarms.rxt:1555	--features all --encoding=byte --engine=vm	283f3c3d612961285c77295c31
+tests/litscan/spanarms.rxt:1580	--features all --encoding=byte	283f3c3d436f6e74656e742d4c656e6774683a20295c64
+tests/litscan/spanarms.rxt:1665	--features all --encoding=byte --engine=vm	283f3c3d436f6e74656e742d4c656e6774683a20295c64
+tests/litscan/spanarms.rxt:1751	--features all --encoding=byte	283f3c3d666f6f626172295c642a78
+tests/litscan/spanarms.rxt:1802	--features all --encoding=byte --engine=vm	283f3c3d666f6f626172295c642a78
+tests/litscan/spanarms.rxt:1903	--features all --encoding=byte	283f3c3d617b33327d2962
+tests/litscan/spanarms.rxt:2052	--features all --encoding=byte --engine=vm	283f3c3d617b33327d2962
+tests/litscan/spanarms.rxt:2202	--features all --encoding=byte	283f3c3d61616161616161616161616161616161616161612962626262626262627a6262626262626262626262
+tests/litscan/spanarms.rxt:2330	--features all --encoding=byte --engine=vm	283f3c3d61616161616161616161616161616161616161612962626262626262627a6262626262626262626262
+tests/litscan/spanarms.rxt:2460	--features all --encoding=utf8	283f3c3dc3a961296263
+tests/litscan/spanarms.rxt:2496	--features all --encoding=utf8 --engine=vm	283f3c3dc3a961296263
+tests/litscan/spanarms.rxt:2532	--features all --encoding=byte	283f3c3d5c7863335c7861392978
+tests/litscan/spanarms.rxt:2551	--features all --encoding=byte --engine=vm	283f3c3d5c7863335c7861392978
+tests/litscan/spanarms.rxt:2571	--features all --encoding=byte	283f3c3d6974656d2029646f6e65
+tests/litscan/spanarms.rxt:2636	--features all --encoding=byte --engine=vm	283f3c3d6974656d2029646f6e65
+tests/litscan/spanarms.rxt:2703	--features all --encoding=byte	283f3c3d61295c4b62
+tests/litscan/spanarms.rxt:2724	--features all --encoding=byte --engine=vm	283f3c3d61295c4b62
+tests/litscan/spanarms.rxt:2746	--features all --encoding=byte	283f3c3d5c47612962
+tests/litscan/spanarms.rxt:2765	--features all --encoding=byte --engine=vm	283f3c3d5c47612962
+tests/litscan/spanarms.rxt:2784	--features all --encoding=byte	283f3c3d666f6f29626172283f3d62617a29
+tests/litscan/spanarms.rxt:2829	--features all --encoding=byte --engine=vm	283f3c3d666f6f29626172283f3d62617a29
+tests/litscan/spanarms.rxt:2875	--features all --encoding=byte	283f3c3d616229283f3c3d63622963
+tests/litscan/spanarms.rxt:2897	--features all --encoding=byte --engine=vm	283f3c3d616229283f3c3d63622963
+tests/litscan/spanarms.rxt:2920	--features all --encoding=byte	283f3c3d657b31307d296565656565717a78
+tests/litscan/spanarms.rxt:2987	--features all --encoding=byte --engine=vm	283f3c3d657b31307d296565656565717a78
