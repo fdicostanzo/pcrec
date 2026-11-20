@@ -5764,3 +5764,18 @@ The manager's readings, for the next lane to test: (a) "the entire rx" is the rx
 array is referenced (composed-at-point); (b) `x.@a` lists the settings of `a` made inside part `x` only, in
 order; (c) his "let's move on" does not rule on the reading given him under hole-export (a bare `v` outside
 `date` reads the last mention): it stays a reading.
+
+### 2026-11-19 OWNER, discussing class-positions: his restatement of the manager's lean
+tags: core/arrays/class-positions core/arrays/class-order
+
+Asked **class-positions** (two class positions in one lift, a class under a lazy quantifier, a class written first
+beside an alternation; the manager's lean, one rule: whatever has a written order keeps it, outermost; among
+results that differ only by class choices, the longer is tried first). HIS WORDS, whole:
+
+"class-positions: is your lean then: written order, in text order then classes by length, in text order"
+
+Class: a QUESTION back (a restatement to be confirmed); DISCUSSION, not a ruling. The manager's answer (told to
+him): yes, with two precisions. (1) "by length" is the length of the lift's RESULT string, not of a class. (2)
+"in text order" among the classes cannot be seen in any match: two different results of one length never compete
+at one position (the no-tie reading under class-order, run: 20 shuffles, 0 differing); it would show only in the
+order of `enumerate`'s array, which is the separate open question class-index.
