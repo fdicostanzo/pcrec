@@ -539,3 +539,13 @@ Not applied (mine to weigh): does label.unset also fire on an always-unset read;
 model. His follow-up on flags (inherit before or after the intersection) recorded as a question, flags-before-and,
 unanswered; the ruling stands as folded (before). P-14 written; main told.
 WAITING on: main's merge; Frank (flags-before-and, class-value, the four new questions, then group-truth...).
+
+## 2026-11-19 (23:15) — main merged P-14; his resolve-then-wrap proposal on flags recorded
+
+Main merged 74f70152e (lints clean there); it applies the status line, r61's skill changes and my skill edit in
+the morning, and prunes the lane worktrees then. Frank (discussion): an expression in a hole is resolved on its
+own, then the result is inserted wrapped by the context options ("after"); it would reverse "both sides inherit"
+as I folded it. Checked and told him: same answers as "before" except where the sides' case demands conflict (his
+`[a-z]x & [A-Z]x`); bound-and-inserted equals inserted-whole under both; it collides with the ruled "a flag it
+writes for itself wins" (`A & A` against `A` with `(?-i)`). Record tip 9d763c435. Nothing folded.
+WAITING on: Frank (flags-before-and).
