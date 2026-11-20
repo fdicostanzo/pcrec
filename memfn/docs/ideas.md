@@ -853,3 +853,13 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
   0 LOSS, S WIN 122 (SELECTION-BIASED; needs a fresh run with the walk held fixed). Scalar: no compile-time table works (only the
   regime separates WINs from LOSSes). 709: candidate N tracks k for SWAR on hex/word, none (>64) for AVX2, small for nonl: no
   single N.
+- 2026-11-20 (Frank: "consider order in the inline portion of the span test. Fail fast ... rarest to most common"). Read of today's
+  emitted window text (`build/pcrec -p rx --pattern '[0-9a-f]{12}'`): it probes the LAST position first (Horspool shift sh[] on a
+  non-member), then verifies positions 0..k-2 FRONT to back in one && chain, and on any failure shifts by the probe byte's sh[]
+  (1 for a member), discarding WHERE it failed. Ideas: (a) one-class spans/windows: every position has the same class, so rarity
+  cannot order them; POSITION can: verify BACK to front and resume past the rightmost failure (all windows covering it fail). This
+  is fail-fast in near-miss (front-first re-reads up to k-1 members per one-byte shift, O(k) per byte) and never shifts less than
+  today. (b) mixed windows/runs (several terms): test the rarest term first: the kit already holds the ranking (mf_pred.rank_pos/
+  rank_ppm, lowest mass first); the run compares are word-wide (runcmp.c, offset order), so order matters most for per-byte set
+  tests. UNMEASURED; a scalar-layer spike (H64 vs back-to-front-with-skip vs rank order, near-miss/miss/hit-dense) would test it.
+  Note: it attacks the same near-miss cost the block forms fixed, at the layer (scalar) where blocks did not replace H64.
