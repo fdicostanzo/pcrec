@@ -16,17 +16,18 @@ The names reserved in call position by the program shape (core/operators/stateme
 kind below. `param`, `file_text` and `records` are under lib/records.
 
 ### Enumerate   [lib/builtin/enumerate]   ruled 2026-11-19
-`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order, a class descending; an edge assertion in it, or an infinite or over-budget rx, is a compile error.
+`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order, a class ascending; an edge assertion in it, or an infinite or over-budget rx, is a compile error.
 needs: core/arrays/lift core/arrays/class-order
 see: lib/builtin/enumerate/class-value
 module: ?
 defined: native (it lists an rx's strings; no expression of the language walks an rx)
 - A built-in. PRIORITY ORDER: at each choice point the first alternative first, and for a greedy repeat one more
   copy first (a lazy repeat one fewer); so re-joining the entries reports the match the rx itself reports.
-- A class gives its members in "descending class value order", in the array and in a lift alike: `enumerate(/\d/)`
-  is [`9`, `8`, .., `0`], so `.index` counts from the top and `enumerate(/\d/) + 1` is `\d + 1`
-  (core/arrays/class-order). The value of a class that is not digits: lib/builtin/enumerate/class-value.
-- Positions nest in text order, each class descending: `enumerate(/[ab]\d/)` is [`b9`, `b8`, .., `b0`, `a9`, .., `a0`]
+- A class gives its members lowest to highest ("classes change to lowest to highest unless pcre priority order
+  disagrees"), in the array and in a lift alike: `enumerate(/\d/)` is [`0`, `1`, .., `9`], so `.index` counts
+  from the bottom and `enumerate(/\d/) + 1` is `\d + 1` (core/arrays/class-order). The value of a class that is
+  not digits: lib/builtin/enumerate/class-value.
+- Positions nest in text order, each class ascending: `enumerate(/[ab]\d/)` is [`a0`, `a1`, .., `a9`, `b0`, .., `b9`]
   (a reading, run; the letters' order is class-value's). Equal strings from two paths are one entry (a reading).
 - Its argument is a compile-time set position: an assertion at its edge is the edge-assertion error
   (`enumerate(/(?<=a)[bc]/)`). A BUDGET bounds it: an infinite or over-budget rx is a compile error giving the
@@ -34,16 +35,16 @@ defined: native (it lists an rx's strings; no expression of the language walks a
 - It is the line single-value functions follow (core/values/functions). Uses: finite backreferences made
   regular, matched delimiters, which alternative matched (`.index`).
 WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a`@6] (`/${enumerate(/(?:a|ab){1,2}/)}/` is `(?:aa|aab|a|aba|abab|ab)`)
-WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
+WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
 
 ### The value of a class's members   [lib/builtin/enumerate/class-value]   open class-value 2026-11-19
-What "class value" orders a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s descending order is a question for the owner.
+What "lowest to highest" means for a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s order is a question for the owner.
 needs: lib/builtin/enumerate
 module: ?
 defined: ?
 - For digits the value is the digit; its codepoint order agrees.
-- The reading today (the manager's, not ruled): descending codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`]
-  and `.index` counts from the top (`c` is 1). The other candidate: an order the owner names.
+- The reading today (the manager's, not ruled): ascending codepoint, so `enumerate(/[abc]/)` is [`a`, `b`, `c`]
+  and `.index` counts from the bottom (`a` is 1). The other candidate: an order the owner names.
 - A class's members are one character each, so two never compete at one position: the order shows in the array
   and its `.index`, and in a lift only through a function whose results compete (a reading).
 modes: n/a (no defined function on letters gives competing results; the order is the array's)
@@ -471,7 +472,7 @@ module: ?
 defined: native (a string function; the language has no slicing)
 - Built for an rx `enumerate` accepts (`left(/foobar|bazqux/, 2)` is `fo|ba`); on any other rx (`left(/\d+/, 2)`)
   it is under construction.
-- Its order is enumerate's, a class descending, nothing sorted by length: `left(/\d{1,2}?/, 2)` keeps
+- Its order is enumerate's, a class ascending, nothing sorted by length: `left(/\d{1,2}?/, 2)` keeps
   `\d{1,2}?`'s own answers (a reading, run).
 - Characters or bytes is not settled (his "(Byte ideally)").
 WHOLE `fo` HOLDS, `foo` FAILS / SEARCHED `xba` `ba`@1 / FIND-ALL `fo ba` [`fo`@0, `ba`@3] (`left(/foobar|bazqux/, 2)` is `fo|ba`)
@@ -641,6 +642,10 @@ defined: ?
 - The owner's idea, not defined: "Perhaps then we need a lengthSorted() transform." (a length order for a lift's
   results, which the nested loop does not give: core/arrays/class-order); the same thing under another
   placeholder name (a reading).
+- The owner on a lift's order: "Only solution is sorting output when needed." No built-in length order exists;
+  the user sorts (core/arrays/class-order).
+- The owner's request, nothing named or defined: "Need a terser sort function for common use." (a provided name
+  shorter than this piece's call; its name is open).
 
 ### sorted, distinct   [lib/structural/sorted]   under-construction 2026-11-19
 `sorted` and `distinct` would take the ARRAY form of a read (the other passes, his `@x`); they are named, not defined.

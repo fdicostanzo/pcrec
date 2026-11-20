@@ -717,7 +717,7 @@ see: core/holes/count parked/ideas/cartesian lib/builtin/enumerate core/arrays/c
   rule for every function, "as though this was against fn() and not +".
 - An array enumerates in the order given, so the first operand varies slowest; a single value is a one-member
   array, so `n + 1` over an array needs no rule of its own: `[2, 4] + [1, 10]` is `[3, 12, 5, 14]`.
-- Nothing is sorted by length; a class's order is core/arrays/class-order.
+- Nothing is sorted unless the user sorts (lib/structural/sort); a class's order is core/arrays/class-order.
 - An array mentioned twice is independent per mention (a reading).
 - A repeated result is harmless: as alternatives the first occurrence wins (a reading, run).
 - The rule is about arrays the user writes and the rxs `enumerate` accepts, not about the match-time array of a
@@ -726,31 +726,38 @@ see: core/holes/count parked/ideas/cartesian lib/builtin/enumerate core/arrays/c
 WHOLE `12` HOLDS, `4` FAILS / SEARCHED `x14` `14`@1 / FIND-ALL `3 12 5 14` [`3`@0, `12`@2, `5`@5, `14`@7] (`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`)
 
 ### The order of a class's results   [core/arrays/class-order]   ruled 2026-11-19
-A class enumerates in descending class value order, so a lift over it runs the nested loop in that order; nothing is sorted by length.
+A class enumerates lowest to highest and a quantified operand in PCRE's priority order, so a lift runs the nested loop in that order; nothing is sorted unless the user sorts.
 needs: core/arrays/lift
 see: lib/builtin/enumerate lib/builtin/enumerate/class-value lib/structural/sort
 - A class is one position taking one character from a set (`\d`, `[90]`, `\w`, `.`); `enumerate` gives its
-  members in "descending class value order". For digits the value is the digit; for any other class it is open
-  (lib/builtin/enumerate/class-value).
-- Alternations and arrays keep their written order; "lazy/greedy loops start shortest/ longest respectively".
+  members lowest to highest: "classes change to lowest to highest unless pcre priority order disagrees". For
+  digits the value is the digit; for any other class it is open (lib/builtin/enumerate/class-value). PCRE gives
+  a class's members no order of its own, so nothing disagrees (a reading; run: no plain match shows the order).
+- Alternations and arrays keep their written order. Inside a quantified operand the order is PCRE's priority
+  order, one more copy (lazy: one fewer) at each choice point: "keep pcre priority order"; "lazy/greedy loops
+  start shortest/ longest respectively".
 - Each position is one loop of the nest, outer to inner in text order, the first operand outermost: two classes
   (`\d + \d`), a class under a quantifier (`\d{1,2}? + 1`), the class first (`\d + (1|9)`) or the alternation
   first (`(1|9) + \d`) need no rule of their own (readings, run; the lines below).
-- A shorter result may come first: `10 - \d` tries `1` before `10`, the owner's "no consistent longest to
-  shortest result"; a length order is only an idea (lib/structural/sort).
+- No order is chosen to help the arithmetic: "It was to help the arithmetic common choice but if it doesn't
+  completely then it shouldn't at all." So a shorter result may come first (`\d + 1` tries `1` before `10`;
+  `10 - \d` tries `10` first). A length order is the user's: "Only solution is sorting output when needed."
+  (lib/structural/sort).
+- A boundary check reaches the whole number, the owner's "most numbers will use boundary checks to make sure
+  they match the whole subject number": `/\b${\d + 1}\b/` reports `10` (the second line below).
 - Equal strings from different members are one result, the first occurrence standing: `\d * 0` is `0` (a
   reading, run).
-- Inside a quantifier the order is `enumerate`'s priority order, one more copy (lazy: one fewer) at each choice
-  point, so a lazy + greedy lift need not report the longest (a reading, run, bounded); unbounded operands
-  (`\d+? + \d+`) are under construction (core/values/functions).
-WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:10|9|8|7|6|5|4|3|2|1)`)
-WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 7 3` [`1`@0, `7`@3, `3`@5] (`/${10 - \d}/` is `(?:1|2|3|4|5|6|7|8|9|10)`)
-WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (`/${\d + \d}/` is `(?:18|17|..|1|0)`)
-WHOLE `100` HOLDS / SEARCHED `x100` `10`@1 / FIND-ALL `100 10 9` [`10`@0, `10`@4, `9`@7] (`/${\d{1,2}? + 1}/` begins `(?:10|100|99|98|..`)
-WHOLE `11` HOLDS / SEARCHED `x11` `11`@1 / FIND-ALL `11 1 18` [`11`@0, `1`@3, `18`@5] (`/${\d + (1|9)}/` begins `(?:10|18|9|17|..`)
-WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${(1|9) + \d}/` begins `(?:10|9|8|7|..`)
-WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `12`@1 / FIND-ALL `123 7 45` [`12`@0, `3`@2, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}?}/`)
-WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `12`@1 / FIND-ALL `123 7 45` [`12`@0, `3`@2, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}}/`)
+- The bounded lifts below follow the same order; unbounded operands (`\d+? + \d+`) are under construction
+  (core/values/functions).
+WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:1|2|3|4|5|6|7|8|9|10)`)
+WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10 10` `10`@4 / FIND-ALL `10 3 11` [`10`@0, `3`@3] (`/\b${\d + 1}\b/`)
+WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 7 3` [`10`@0, `7`@3, `3`@5] (`/${10 - \d}/` is `(?:10|9|8|7|6|5|4|3|2|1)`)
+WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (`/${\d + \d}/` is `(?:0|1|..|17|18)`)
+WHOLE `100` HOLDS / SEARCHED `x100` `1`@1 / FIND-ALL `100 10 9` [`1`@0, `1`@4, `9`@7] (`/${\d{1,2}? + 1}/` begins `(?:1|2|11|12|..`)
+WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${\d + (1|9)}/` begins `(?:1|9|2|10|..`)
+WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${(1|9) + \d}/` begins `(?:1|2|3|4|..`)
+WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `1`@1 / FIND-ALL `123 7 45` [`1`@0, `2`@1, `3`@2, `7`@4, `4`@6, `5`@7] (`/${\d{1,3}? + \d{1,3}?}/`)
+WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 7 45` [`123`@0, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}}/`)
 
 ## Holes   [core/holes]
 
