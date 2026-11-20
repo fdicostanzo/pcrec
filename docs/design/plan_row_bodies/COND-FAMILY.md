@@ -5678,3 +5678,15 @@ HOLDS, `1:0,5:3,` FAILS, `5:3,1:0,` FAILS / SEARCHED `1:0,5:3,6:0,` `5:3,6:0,`@4
 The manager's readings, for the next lane to test: (a) the user-documentation list (parked/ideas/user-doc-traps)
 gains "a condition after a loop reads the last item; every item is the condition on the item"; (b) the warning
 `pcrec.label.unset` is unchanged and still fires where a looped label can be unset.
+
+### 2026-11-19 OWNER, after looped-warning: "would when() work here"
+tags: lib/control/when core/diagnostics/looped-compare
+
+On the in-loop forms shown him (the hand `|` of conditions and the joint `(h, m):` form on the item). HIS WORDS,
+whole: "Also, would when() work here"
+
+Class: a QUESTION to the manager; nothing ruled. The manager's answer (told to him): yes, by `when`'s body as
+ruled, with conditions as its three arguments: `when((h: 5), (m: >=3), else = (h: >5))` is
+`((h: 5) SEQ (m: >=3)) | (NOT peek((h: 5)) SEQ (h: >5))`, zero width, tested on the item. Hand-evaluated from the
+body over the 100 one-digit pairs: 0 differ from `((h, m): >= (5, 3))`. It leans on one READING, not his words:
+`peek(c)` of a condition tests c where it stands (lib/control/peek), so `NOT peek(c)` is `NOT c`.
