@@ -11,6 +11,30 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K151 — OPEN (found by lane growsurv, 2026-11-20, KR-E; filed by lane growfile; plan row [K151-CALLCHAIN-MEM]; not scheduled) — a chain of mutually linked call targets spends gigabytes in vm_build_region_saves before any refusal
+
+**Witness:** `(?<g0>a(?&g1)?)(?<g1>a(?&g2)?)` ... `(?<g{N-1}>b)` (N groups, each calling the next; growsurv gen.py kind `calls_chain`): N=160 refuses (rc 1, size) in about 2 s; N=200, 250, 320 and 1,000 are killed by `scripts/watchdog -m 2g` (rc 122, more than 2 GB; the survey saw more than 2.9 GB in 2 s at N=1,000). Re-checked 2026-11-20 on main 6134c8e8a and on lane/k146land: identical (not touched by the K146 fix). `--engine=vm` the same; `--engine=dfa` refuses by name.
+**Cause (survey):** `vm_build_region_saves` (src/gen/emit_vm.c about :8172) loops `for k < nstate` inside `for j < nt` inside `for i < nt`, with `pcrec_callgraph_reaches` per (i,j): O(targets^2 x slots) time and arena. The splice budgets (`PCREC_MAX_SPLICE_NODES` 512, `PCREC_MAX_SPLICE_TOTAL` 8,192) count splices, not this table, and the emit-size refusal fires only below N of about 200 (limits.md §3.3.1 promises "never exhaust memory").
+**Fix shape:** the fix joins the general depth/size mechanism: a refusal ceiling checked BEFORE the table is built (targets x slots against a named limit, with a limits.md row), and a growth-sweep row for it ([GROWTH-SWEEP]). Compile MEMORY, not stack; no answer moves.
+
+## K150 — OPEN (found by lane growsurv, 2026-11-20, KR-D; filed by lane growfile; plan row [K150-LMCAT-QUADRATIC]; not scheduled) — the landmark walk rebuilds a fresh CAT spine per candidate: quadratic compile memory with no refusal
+
+**Witness:** `(?:a|b)` repeated N times (kind `cat_ncgrp`; also `[ab]` x N, `(?:a|b)(?:c|d)` x N): peak RSS 11 MB at N=1,000, 766 MB at 2,500, 3.46 GB at 5,000, over 4 GB at 4,000 for the other two shapes (growsurv probe log; not re-measured to a peak here: N=3,000 and N=5,000 compile under a 6 GB cap on main 6134c8e8a and on lane/k146land, no refusal). The emit-size cap fires only from about N=8,000, after the memory is spent.
+**Cause (survey):** `lm_cat` (src/gen/lmwalk.c:70), called per candidate from `lm_walk_pre` (lmwalk.c:309) through `pcrec_lmwalk_admits` (src/core/compile.c:556), builds a new left-nested CAT spine of the candidate's prefix: N^2/2 AST nodes.
+**Fix shape:** the fix joins the general depth/size mechanism: build the prefix once and share it (or walk the original spine with an index), and/or bound the work with a named ceiling and a refusal; add a memory family to [GROWTH-SWEEP]. Same file as K148.
+
+## K149 — OPEN (found by lane growsurv, 2026-11-20, KR-B; filed by lane growfile; plan row [K147-POSSESSIFY-DEPTH] gains this shape) — SECOND SHAPE OF K147: `(abc|abd(…abe))*` kills pcrec_compile in first_of with NO backreference
+
+**Witness:** `(abc|abd` repeated N times, `abe`, `)*` repeated N times (kind `e_lit3`): SIGSEGV (rc 139) at N=200, 225 and 250 on the budget stack; N=150 and N=100 compile. Re-checked 2026-11-20 on main 6134c8e8a AND on lane/k146land (K146 fix): identical, so the K146 branch does NOT fix it. growsurv saw about 936 `first_of` frames in gdb.
+**Cause:** the K147 function family (src/opt/possessify.c `first_of`/`text_first`, literal-alternation text of nested groups), reached without the backreference K147's witness needs. K147's text names `\1` as the trigger; a fix tested only on K147's two shapes would leave this one.
+**Fix:** rides K147 (the same general depth mechanism, `PCREC_OWN_FRAME`); add a DEPTH_FAMILIES row for this shape with K147's two. Filed as its own entry only because K147's text lives on lane/k146land and not yet on main: the landing should append this witness to K147 as its third shape.
+
+## K148 — OPEN (found by lane growsurv, 2026-11-20, KR-A; filed by lane growfile; plan row [LM-SPINE-DEPTH]; not scheduled) — a long run of zero-width assertions overflows the compile thread's stack in lm_maxw/lm_flatten, and limits.md says it cannot
+
+**Witness:** `x` + `\b` x 30,000 + `y` (kind `z_b`), and `(?=a)` x 14,000 + `a` (kind `cat_look`): `pcrec_compile` dies with SIGSEGV (rc 139) on the budget stack; `(?=a)` x 9,000 compiles, x 12,000 dies (the survey's threshold: about 13,000). Re-checked 2026-11-20 on main 6134c8e8a AND on lane/k146land: both die, so the K146 fix does not touch it. gdb (survey): about 13,000 `lm_maxw` frames at 33 B each. On an 8 MB stack it passes to 100,000 `\b`. Also under `-e utf8`, `--no-captures`, `-i`, `--engine=dfa`.
+**Cause:** `lm_flatten` (src/gen/lmwalk.c:57) recurses on both children of the CAT spine and `lm_maxw` (lmwalk.c:80) on `l` along it; the frame is small but the depth is the spine LENGTH, which no cap bounds. `docs/spec/limits.md` §3.10¶1 ("a run of assertions of any length costs no stack per element") is therefore FALSE; the fix lane owns the spec hunk (not edited here). The plan row [LM-SPINE-DEPTH] said "unreachable today"; it is reachable on main.
+**Fix shape:** the fix joins the general depth/size mechanism: descend the spine iteratively (`PCREC_SPINE_EACH`, docs/dev/guide/coding.md) and recurse only into items hanging off it; add the length family to [GROWTH-SWEEP] (and a WIDTH row that puts the run BETWEEN two class items, which the existing `\b`/`\A` rows do not).
+
 ## K146 — OPEN (found by review 2026-11-19 r58 l1tail IDENT-1, pre-existing; plan row [K146-VMCOST-DEPTH]; not scheduled) — quantified nested lookarounds overflow the compile thread's stack in vm_cost
 
 **Witness:** `(?=a|b` repeated N times, then `c`, then `)*+` repeated N times: `pcrec_compile` dies with SIGSEGV (rc 139) at N=180 and N=250 on the 442,368-byte compile thread; N=179 compiles. Re-run by the r58 coordinator at lane/c4scope 3a707deaa (and present before L1: not introduced by it).
