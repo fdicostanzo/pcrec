@@ -497,3 +497,12 @@ His sort remark recorded (lean + request); `longest_first(X)` proposed and noted
 OPEN from tonight: class-value. NEXT: ask main for a review number, critic round on the batch (bare-condition-
 labels, looped-warning, hole-export, array-scope, class-positions + quantified-order), then deliver.
 WAITING on: Frank (flags-in-filter next; his word on the critic round timing is not needed).
+
+## 2026-11-19 (22:25) — critic round r61 (predfold1119) launched
+
+Main gave r61 and a box deadline: nothing running after 00:30 (the kit's timing night at 01:00). Coordinator
+crit-predfold1119 (opus, background, design mode) on the diff 50f56b1cd..tip over docs/design/predicates/ with the
+record from the first bare-condition-labels entry to the end; lenses required: ruling, run-every-example in three
+modes, general form + unlocks; told to hand back by ~00:15. Round dir $PCREC_TMPDIR/scratch/crit-predfold1119/.
+THEN: rule dispositions, a fix lane if needed (it files the review), deliver to main (P-14).
+WAITING on: crit-predfold1119; Frank (flags-in-filter).
