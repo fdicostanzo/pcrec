@@ -4366,3 +4366,6 @@ The 708 dig/hi "walk confound" is NOT a walk-TEXT difference: h0 and h64 carry b
 
 ## 2026-11-20 11:00 — OWNER RULING (Frank, direct): check-order YES
 Frank: "slug check-order: yes test". A scalar-layer spike on the inline window check order: FRONT (today) vs REV (reverse + jump past the rightmost failure), REVMEM (plus remembered members), ALT (alternating; a control expected to lose), and RANK (rarest-first, mixed windows). Information only; no build without his go. Lane checkorder (opus) builds the harness and job 711 (after 710, nothing at or after 07:00) by 16:30, then a critic round. Main was asked to extend night-1121 to 710 then 711.
+
+## 2026-11-20 — checkorder delivered (lane stopped)
+Job 711 is prepared, not queued. Report: scratch/memfn/checkorder/lane_report.txt (written by the manager from the lane message). The rule was frozen before timing (body sha 74271f120f96b995). 245 cells, est ~0.8 h + quiet. Correctness 0 FAIL on 2760 runs; sabotage 6/6 caught. Count preview: REV cuts near-miss checks/B 10-30x; REVMEM = REV everywhere. Next: a light critic round before queueing.
