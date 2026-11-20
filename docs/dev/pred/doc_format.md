@@ -51,6 +51,9 @@ are. The old draft `predicates_draft.md` is FROZEN at its last revision; the det
   is the LAST dotted word, an identifier). A previous tag is retired for good: it equals no live tag and is named by one
   entry only (a merge puts several `was:` lines on one entry). A reference (`needs:`, `by:`, `see:`) names the LIVE tag,
   never a retired one.
+- DELETE: a piece that leaves the documents without a successor retires its tag by a `was:` line on the entry that
+  carries its words (or the entry citing the same record entry), its why starting `deleted, not moved:`; the reader
+  then names the deletion, not a rename (review r60 DAMAGE-2, the manager's form call).
 
 ## Pieces and status
 

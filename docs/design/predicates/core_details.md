@@ -15,7 +15,7 @@ rulings:
 - 2026-11-17 "Notably: this is a break from the SQL model we were using. A encapsulating where clause in sql does not cause the inner sql to reconsider. However, it is in line with regex behavior so I do like it and think it should be the general behavior" (record: "2026-11-17 OWNER, on the model after branch-scope")
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-17 (class: DIRECTION) "Predicates: rather than I make arbitrary decisions on various choices that have difficult to predict ramification, can we come up with a regex model for each and use that to explain it. At least, where it is able to" (record: "2026-11-17 OWNER DIRECTION — decide the open choices by a REGEX MODEL where one exists")
-- 2026-11-17 (class: OWNER) "That said, we are also attempting to make a useful language. In that way, being able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for purity" (record: "2026-11-17 OWNER — the regex model explains; it does not exclude useful features"); refines the direction above within the half hour: the model explains, it never drops a useful feature
+- 2026-11-17 (class: OWNER, a qualification of the DIRECTION: the record's "access to ALL the hits of a search STAYS", a NOTED EXCEPTION) "That said, we are also attempting to make a useful language. In that way, being able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for purity" (record: "2026-11-17 OWNER — the regex model explains; it does not exclude useful features"); refines the direction above within the half hour: the model explains, it never drops a useful feature
 rejected:
 - the SQL picture (an enclosing condition does not make the inner pattern reconsider) — by owner ruling — "it is in line with regex behavior" (record above).
 readings:
@@ -23,6 +23,7 @@ readings:
 evidence: lanes pathimpact, rxmodel (the regex models of the open choices, 2026-11-17).
 history:
 - 2026-11-17: stated in the branch-scope discussion; the draft's §R heading "under regex behaviour" carries it since revision 24.
+- 2026-11-19 (lane preddoc6, review r60 RULING-6): the `(class: OWNER)` item names the record's own words for what it is (OWNER is the heading's speaker, not a class word).
 
 ## core/principles/explicit-exceptions — Exceptions are asked for by name
 slugs: exception-rule
@@ -100,7 +101,7 @@ history:
 - 2026-11-19: the record classes it a DISCUSSION with a LEAN and "a PRINCIPLE stated"; "flag by flag" became flags-scope (core/holes/flags).
 
 ## core/principles/composed-at-point — Composed at the point of use
-was: core/principles/exact-wording (2026-11-19, a remark on the manager's method in the same entry, not a language principle: review r59 RULING-2)
+was: core/principles/exact-wording (2026-11-19, deleted, not moved: a remark on the manager's method in the same record entry, not a language principle (review r59 RULING-2); its tag is retired here because this entry quotes the one record entry it came from)
 slugs:
 rulings:
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence")
@@ -112,6 +113,7 @@ evidence: preddoc1 PARTS R8, R9, R11; EX-bare-condition.
 history:
 - 2026-11-19: stated with zero-in-sequence; applied the same day to a bare condition in a hole (core/holes/bare-condition).
 - 2026-11-19 (lane preddoc4): the piece core/principles/exact-wording retired into this entry: his "you are a lawyer in your exact wording. this is what is needed now." (the same zero-in-sequence entry) is a remark on the manager's method, "no change asked" (the record); it belongs to the manager's skill, not to the language (review r59 RULING-2).
+- 2026-11-19 (lane preddoc6, review r60 DAMAGE-2): the `was:` line's why now says the previous tag was DELETED, not moved (doc_format's DELETE form): the reader presented the deletion of "rules are stated exactly" as a rename into this principle.
 
 ## core/principles/namespace-at-reference — The namespace at the point of reference
 slugs:
@@ -564,6 +566,7 @@ rulings:
 - 2026-11-18 "backref-across-parts: which is to say, it should be the last reference as labels" (record: "2026-11-18 OWNER, clarifying backref-across-parts — a backreference reads as labels do: the last mention at its point")
 - 2026-11-18 "backref-across-parts: I agree with error." (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error")
 rejected:
+- "inside rx text a backreference already reads the last-set capture" (rev 25) — by the draft (rev 25.1, R.9 row 37) — WITHDRAWN: false under `(?J)` (a backreference there reads the first set group); backref-across-parts asked, then free-name ruled.
 - a backreference that reads the label (reset on entry) — by owner ruling — backref-label: capture.
 - the written-out regex's reading (one namespace for the whole composition) — by owner ruling — backref-across-parts.
 - rev 27's three candidates for `\k<h>` after two groups of one name — by owner ruling — same-name-twice: a compile error unless `(?J)` (the draft R.9, A25).
@@ -572,9 +575,10 @@ readings:
 evidence: preddoc3a_model.py BREF (the draft's PART REF REF2 line; printed answers reproduced; `\d(\d)\1` agrees); sabotage s10 caught.
 history:
 - 2026-11-18: backref-across-parts, its clarification, free-name, backref-label, same-name-twice.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/labels/numbers — Numbers name groups only without ambiguity
-slugs: number-names zero-place numbered-label-warning
+slugs: number-names zero-place numbered-label-warning numbered-duplicate sequence-numbers
 rulings:
 - 2026-11-18 "number-names: exactly. Only when there is no ambiguity." (record: "2026-11-18 OWNER RULING — number-names")
 - 2026-11-18 "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is composed." (record: "2026-11-18 OWNER RULING, addendum to number-names — zero is the exception"); its "entire match" is the match so far after a complete pattern, by the next item
@@ -591,6 +595,7 @@ history:
 - 2026-11-17: zero-place, label numbers tried, the warning accepted; 2026-11-18: number-names and its addendum.
 - 2026-11-19 (lane preddoc4): the statement's "`0` is always the entire match" now points at the deciding piece core/conditions/match-so-far (his addendum's words stay in the rulings items; after a complete pattern the match so far IS the entire match); the bullet "inside a loop body, the pass's" removed (the loop case is core/conditions/match-so-far/in-loop); the warning's trigger stated once, as the record's accepted proposal words it (review r59 ZERO, READ-10).
 - 2026-11-19 (lane preddoc6, review r60 DAMAGE-4): the statement carries zero-in-sequence's meaning ("names the match so far"), so that ruling is cited here and the status re-dated 2026-11-19 (doc_format: a later ruling rewrites status and statement together); the 2026-11-18 addendum stays, its "entire match" read as the match so far after a complete pattern.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-5): slugs numbered-duplicate and sequence-numbers homed here: the draft's rev 25 asked them and rev 25.1 replaced both by number-names (the draft: "rev 25 asked two, **numbered-duplicate** and **sequence-numbers**; review r43 A folds them"); neither was answered under its own name.
 
 ## core/labels/numbers/in-loop — A number on a group optional in a loop
 slugs: number-in-loop
@@ -846,7 +851,7 @@ history:
 - 2026-11-19 (lane preddoc5): the slug pass-list-read moved here from core/conditions/pass-start-read: it asks what `$h` reads after the pattern, which this piece states (review r59 COMPA-13).
 
 ## core/values/one-type — One type: a match is an rx
-slugs: match-is-rx read-is-constant value-is-pattern
+slugs: match-is-rx read-is-constant value-is-pattern hole-member-kind
 rulings:
 - 2026-11-18 "value-hole: let's use the unifying idea for it. Change my answers to match." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match"")
 - 2026-11-18 "That means, in practice, that there are two forms for each of them: the compile time version that works on general regex, and the runtime version that,while compiled, works on single value strings at run time. So $y + 1 and \d + 1 look the same, the first one happens at run time, and the second at compile time." (record: "2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation")
@@ -863,6 +868,7 @@ evidence: preddoc3b EXonetype; PARTS UT, TT of predspec27, predspec28.
 history:
 - 2026-11-18: value-is-pattern (one ruling, two leans, one idea), then value-hole "yes but", then match-is-rx and read-is-constant; the draft R.1.16 ONE TYPE, THE TYPE TABLE, ANSWERS CHANGED A1-A36.
 - 2026-11-19 (lane preddoc3b): converted from the skeleton; the type table's rows are homed by position and operation (core/holes/*, core/values/*, core/arrays/*), not copied.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-5): slug hole-member-kind homed here: asked at rev 25 (the draft's changelog), folded into value-is-pattern (the draft's R.8 row 74, rev 26); never answered under its own name.
 
 ## core/values/number-domain — The number domain
 slugs: number-domain domain-components numeral-width
@@ -937,6 +943,7 @@ slugs:
 rulings:
 - 2026-11-14 "I agree with both excepting the spelling ... no alpha operators ... with, check, in ... check is not `x := ...` ... don't want to go into new grammar lightly" (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
 rejected:
+- a computed label's value is "a VALUE, not a pattern" (the draft §4.4, §11) — by the draft (rev 27.1, R.9 row 68), following value-is-pattern — CHANGED: a one-string rx known at run time.
 readings:
 - "a match-dependent binding is a computed label of the pattern whose labels it reads" — the manager's spelling LEAN in the same entry, the concept (compile-time checks and match-dependent bindings, no new grammar) agreed; the base's statement is that lean — a reading.
 - an unset input gives an unset computed label — the lane's reading (preddoc3c's proposal), UNTESTED.
@@ -944,6 +951,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PART CL; the draft §4.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: length and month_numbered name bindings left of `:` with no core rule allowing it (review r59 PRIMITIVES-MISSING, READ-8).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/values/metadata — Metadata of a member
 slugs:
@@ -1313,11 +1321,13 @@ history:
 slugs: flags-in-filter
 rulings:
 rejected:
+- the manager's m2 (an `&` operand, a condition's set, a filter-role argument keep their own flags) as the draft's flags-in-filter reading (2026-11-18) — by the draft (rev 29, R.9 row 100) — SUPERSEDED as the draft's reading by REACH (the manager's reading 3, not a ruling).
 readings:
 - the two sides of an `&` inside a hole start with the hole's flags (THE DRAFT'S READING REACH, 0 / 0 / 0 of 1,555 against the plain hole) — open in the draft §R.8; the record's "2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant" is his remark on it, not a ruling.
 evidence: the draft's PART FF of predspec29 (REACH).
 history:
 - 2026-11-19 (lane preddoc4): a new open sub-piece, from a bullet of core/holes/flags (review r59 READ-9). The candidate (b) is the lane's statement of the rival the draft names (a filter operand's own world).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/holes/labels — Labels through a hole
 slugs: inner-label-read
@@ -1349,6 +1359,7 @@ rulings:
 - 2026-11-19 "same-name-count: scoped" (record: "2026-11-19 OWNER RULING — same-name-count")
 - 2026-11-19 "same-name-count: this is only about backreferences, not labels ?" (record: "2026-11-19 OWNER, on same-name-count: backreferences, not labels? — and a MANAGER CORRECTION"); a QUESTION, answered by a correction
 rejected:
+- R.1.13 REFERENCES (2) read for `\k<h>` across a hole as the last mention — by owner ruling — same-name-count NARROWED it: `\k<h>` reads the outer group; `$h` still the last mention (the draft R.9 row 102).
 - a group through a hole counts as a second group of its name — by owner ruling — same-name-count; the rival (the outer `\k<h>` reading the inner group) holds on `a-bb` (preddoc1 sabotage xEX-same-name caught).
 - "(and `$h`) mean the outer group" — by the manager's correction the same day — the manager's extension, not asked.
 readings:
@@ -1356,6 +1367,7 @@ readings:
 evidence: preddoc1 EX-same-name; PART SN of predspec281; PART SC of predspec291.
 history:
 - 2026-11-18: same-name-twice's reading (m1) left the hole case unstated; 2026-11-19 ruled.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/holes/bare-condition — A bare condition in a hole
 slugs:

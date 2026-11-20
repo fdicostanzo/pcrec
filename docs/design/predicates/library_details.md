@@ -359,6 +359,7 @@ rulings:
 - 2026-11-18 "hit-carry: warning on nullable" (record: "2026-11-18 OWNER RULING — nullable argument: a warning")
 - 2026-11-15 "occurrences(x, label = \"foo\")" (record: "2026-11-15 RULINGS — a per-call hit name; no count warning; the hole is the scope an `&` in it anchors to")
 rejected:
+- "its hits are those of a plain search" (R.1.9, unqualified) — by owner ruling — hit-carry NARROWED it to an argument with no condition before its group (the draft R.9 row 41).
 - the name `search` (a verb acting on the subject) — by owner ruling — renamed `occurrences`.
 - `min` 0 or 1 only, another value a compile error naming `occurs.at_least` — by owner ruling — min-values: any n, at least n hits.
 - a nullable argument a compile error — by owner ruling — a warning.
@@ -380,6 +381,7 @@ history:
 - 2026-11-19 (lane preddoc4): the whole-text idiom `J & C & occurrences(M)` moved here from core/model/modes, whose ruling (whole-text, "adopt it if it's legal") stays cited there (review r59 PLACE-2 (b)).
 - 2026-11-19 (lane preddoc4): the ruled per-call hit name added to the base (review r59 COMPB-8); its spelling stays a placeholder.
 - 2026-11-19 (lane preddoc5): the slug nullable-meaning moved here from core/conditions/defaults, which named it this piece's fact (review r59 COMPA-13).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass hit-list
