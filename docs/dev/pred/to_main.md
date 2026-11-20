@@ -190,3 +190,12 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   section 5: the open questions are `scripts/entry -g . -p predicates --state open`.
 - For you, small: r59/r60 PLAN items that touch `scripts/` (a lint check for the `defined:` line and for "every
   called name has a library piece"; generated index pieces) are not requested now.
+
+## P-12 (2026-11-20, predicate manager) — the owner asked ME to edit the predicate-manager skill: please merge
+
+- Frank, to this session: "Please update predicate manager skill to read three primary predicate files with new
+  paths on start." Done on `lane/pred-rev28` in `.claude/skills/pcrec-predicate-manager/SKILL.md` (the skill is
+  yours; this edit is by the owner's direct instruction): wake-up step 3 reads `docs/design/predicates/core.md`,
+  `library.md`, `parked.md` whole, in that order, before the record's end; the details files by tag on need; the
+  description line and the two `predicates_future.md` mentions now name the new files. The tip is the commit
+  carrying this entry.
