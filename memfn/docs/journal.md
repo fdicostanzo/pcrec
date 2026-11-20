@@ -4418,3 +4418,14 @@ The critic round (review docs/dev/reviews/2026-11-20-memfn-rampchunk.md, RULING 
 - MEAS-6: the owner's pair (RAMPCLIP vs ALIGN) is identical by construction in 32 of 36 cells, because each search runs once from offset 0.
 - FID-5/3: no control sees a window defect at the timed B; a never-re-ask plant would read NO-LOSS.
 Plus verdict-printing holes. All FIX-NOW accepted. MEAS-7 (which reading of "max ramp") was ruled by covering both readings: RAMP vs ALIGN is now a named pair, and STREAM-SAFE (0 crossings) is a verdict row. Fresh lane rampfix (opus) is due 19:30, then a one-critic re-check before queueing 712. The stray __pycache__ was removed. Process lesson (critic skill, proposed): plant a harness's own sabotage rows at the timed parameter values.
+
+### 2026-11-20 15:55 — rampfix delivered; re-check launched; blockconfirm queried
+- rampfix delivered 1936fb191 (lane/memfn-rampfix, report docs/dev/lanes/rampfix_report.md), lanecheck DONE, TaskStopped:
+  - all ruled fixes applied; RULE_SHA 5f4851edba7f6589; marker f6111c9a5b7694d9;
+  - 192 plants caught at B 8/64/4096;
+  - restart cells rs1000 and rs20000 added;
+  - STREAM-SAFE: RAMPCLIP and ALIGN 0 crossings, RAMP and FIXED not stream-safe;
+  - job 712 est 2,002 s.
+  - Caveats: the layout A/A read +10% on one smoke cell; the 5% DIFFER cut has no clean gap.
+- One-critic re-check crit-memfn-rampfix launched, due 17:30.
+- Lane blockconfirm is idle with its files last touched 10:14 and no handback received; I asked for its state.
