@@ -4329,3 +4329,12 @@ The kit D3-FLOOR ratchet (tests/memfn/run_d3floor.sh, the tail of test-axes) is 
 ## 2026-11-20 01:05 — 708/709 RED at start (tree pruned); recovered, 708 running 01:02
 708 and 709 both failed their dry-run at START (01:00, 01:01; never ran): worktrees/fcards-night was gone. The prune pass at 13:45 11-19 (wtprune log line 1250) removed it legitimately. The kit pinned it in the REPO-ROOT .wtprune.keep, which wtprune never reads; the gate reads worktrees/.wtprune.keep (scripts/wtprune:181). The triage lane was skipped on purpose: the status line named the cause, and that was confirmed by the prune log and the pin-file read (purpose over wording). Fix: re-created the tree detached at 33fec79b3, built it (make -j8, watchdog), and the 708 dry-run passed (spike dry, est 16618 s). Re-queued 708 then 709; 709 waits on 708 pending. Pinned fcards-night in worktrees/.wtprune.keep and removed the stray root file (relabel64 is not re-pinned: it is merged and goes at the next prune). 708 is RUNNING since 01:02, so it should end ~05:50, and 709 ~06:15 (before 07:00).
 LESSON: pins live in worktrees/.wtprune.keep, never the repo root; verify a pin with a wtprune dry run (KEEP ... pinned).
+
+## 2026-11-20 03:25 — 708 GREEN (wall 8100 s); verdict per the frozen rule: LOSS at both layers
+Run /var/tmp/pcrec-pcrec/scratch/memfn/blockspan/run-20261120T010224 (decision.md, results.md/tsv, retime.tsv). 340 non-N/A cells, N/A 52, S = 190.
+- SCALAR (swar-loop vs H64): LOSS. 50 repeated LOSS; WIN 140 / TIE 141 / l 9; S: WIN 117 / TIE 50 / LOSS 21.
+- SIMD (avx2-loop vs H64@on): LOSS. 18 LOSS; WIN 180 / TIE 132 / l 10; S: WIN 142 / TIE 39 / LOSS 5. The H64@avx2 control agrees (20 LOSS, S WIN 144).
+- SIMD vs scalar (avx2-loop vs swar-loop): 5 LOSS, S: 0 LOSS, WIN 126.
+- Loop vs unrolled: "all loops over blocks + tail" FAILS for SWAR (44 L / 21 W), SSE (18/14), AVX2 (19/20); mostly TIE.
+- LOSS shapes: (a) dig ([0-9]) at every k in the miss-heavy/random/not-warm regimes, 1.5-2.4x; (b) vowel hit-dense k=4..64 and near-miss-in k=16..64, 1.3-1.9x (short spans); (c) miss-heavy for hex/word/vowel at k>=32, 1.15-1.4x on small ns/B; (d) nonl k=8, hi short-subject.
+- CAUTION: the substitution control Lspk vs L (expected all TIE) is L 0.70x on dig miss-heavy k=500 and 0.76x on dig random k=500, and L ~0.68x on hi hit-dense/near-miss k=500: the spike's substituted arms carry a cost there, so part of shape (a) may be the harness. An analysis lane after 709 decomposes it. The verdict as frozen stands; any reading beyond it is post-data and labelled as such.
