@@ -446,3 +446,12 @@ Frank.
 warning; last pass after the loop, every pass on the item), its question sub-piece merged in by a `was:` line,
 the warnings table's row gone; lint 5,020 / 0. He also asked for the intended in-loop form and whether the joint
 `(h, m):` form is better: answered in the session with runs. NEXT in the queue: hole-export. WAITING on: Frank.
+
+## 2026-11-19 (evening) — hole-export RULED (both pass through); his array-under-composition question
+
+Folded: core/labels/export statement 3 revised (outside = inside less private), the question piece merged by
+`was:`; lint 5,014 / 0. Told him two checks against his message: across `|` a flat label is not ambiguous (ruled
+alternation example); the record has his own "The array takes all h including the one outside the group" and
+"a compose and a literal rx have the same label behavior", so the array is by NAME in the composed rx. Readings
+of mine listed in the record entry (bare `v` outside `date` now the last mention). WAITING on: Frank (the array
+discussion; then class-positions).

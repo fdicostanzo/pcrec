@@ -510,16 +510,21 @@ history:
 - 2026-11-17: the proposal, then the ruling with his adjustment; shared-label's error revised to the reference.
 
 ## core/labels/export — Export and private labels
-slugs: export-rule export-scope free-name filter-captures
+slugs: export-rule export-scope free-name filter-captures hole-export
+was: core/holes/labels/hole-export (2026-11-19, merged: the question is answered here)
 rulings:
+- 2026-11-19 "they have to work the same. Agree both pass through." (record: "2026-11-19 OWNER RULING — hole-export: both pass through; and a question on the array of a label under composition"); it revises statement 3 of export-rule
 - 2026-11-18 "export-rule: Agee and add [_a = A] is a private reference that wouldn't export at all" (record: "2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels")
 - 2026-11-18 "I meant it wouldn't export outside the binding. To close all exports use [_ = A]" (record: "2026-11-18 OWNER, clarifying export-rule's sixth statement, and adding a form: `[_ = A]` closes all exports")
 - 2026-11-18 "backref-across-parts: I agree with error. It is like if a function in C were defined then references a variable it doesn't have defined so it looks up the call stack to the previous definition. Catastrophic. The rx should export the group." (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error")
 - 2026-11-18 "That's exactly right. It makes its labels invisible so you can use it to filter but not cloud the namespace" (record: "2026-11-18 OWNER confirms the reading of `[_ = A]`"); RULED, the reading confirmed: `[_ = A]` makes A's labels invisible everywhere outside A
 rejected:
+- statement 3 as first ruled, "Outside a binding, what is visible is the public labels written in its own literals, and its public part labels" (an unlabelled sequence part exporting nothing, a hole exporting) — by owner ruling — hole-export: "they have to work the same".
+- neither passes through (only a part label re-exports; candidate (b)) — by owner ruling — hole-export.
 - "a filter can never produce captures" (his lean, filter-captures) — closed by export-rule: visibility goes by export, not by the operand's role.
 - an explicit export spelling — by owner ruling — export-rule: the `_` prefix decides.
 readings:
+- outside a binding the view is the inside view less the private names, so a bare `v` outside `date := [y = year] SEQ "-" SEQ [m = month]` reads the last mention where the old statement 3 made it an error (the manager's reading of "all flatly visible") — UNTESTED.
 - a filter operand's labels are visible like any others (the draft R.1.13, filter-captures not adopted) — UNTESTED.
 - his remark of 2026-11-19 ("it might be more that private labels are only visible in a binding scope") — already ruled as statement 1 (recorded as a recollection, nothing new).
 evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers reproduced; `[2-9]\d{3}` agrees). PARTS TA, TB of predspec291.
@@ -527,6 +532,7 @@ history:
 - 2026-11-18: the proposal (labels seen only if exported), the export-scope discussion, the ruling, the clarification of statement 6 and `[_ = A]`.
 - 2026-11-19 (lane preddoc5): the slug filter-captures moved here from core/filters/kinds: it is closed by export-rule, which this piece states (review r59 PLACE-4).
 - 2026-11-19 (lane preddoc6, review r60 COLD-15): the example names its program (`year`, the final expression); before it printed only the binding, which by core/operators/statements is not a program. Answers unchanged (preddoc6 PART EX).
+- 2026-11-19: hole-export ruled; the statement until then: "A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible." From the merged question piece: review r54 P29-13 asked it; the T-a surprise (PART TA of predspec291) was its ground.
 
 ## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared label
 slugs: caller-ambiguous read-out
@@ -1341,17 +1347,6 @@ readings:
 evidence: preddoc1 EX-labels; PART TA of predspec291.
 history:
 - 2026-11-18: the export-scope discussion and export-rule; 2026-11-19 same-name-count's "(and `$h`)" withdrawn, leaving inner-label-read, then answered by this piece.
-
-## core/holes/labels/hole-export — Does a hole re-export a part's labels
-slugs: hole-export
-rulings:
-rejected:
-readings:
-- today an unlabelled sequence part exports nothing outside its binding while the same pattern through a hole does (the T-a surprise, told to him) — SUPPORTED as a fact of the rules as defined (PART TA of predspec291, P29-13).
-evidence: PART TA of predspec291.
-history:
-- 2026-11-19: review r54 P29-13 asked it; open.
-- 2026-11-19 (lane preddoc4): the statement says "outside a binding" (export rule 3 is the premise) and `needs: core/labels/export` (review r59 READ-14).
 
 ## core/holes/same-name — Same-name groups through a hole
 slugs: same-name-count

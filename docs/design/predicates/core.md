@@ -322,16 +322,17 @@ needs: core/labels/one-rule core/patterns/sequence
 see: core/labels/paths
 WHOLE `7` HOLDS (h unset), `7,3` HOLDS (h = `3`) / SEARCHED `x7 7,3` `7`@1 (h unset) / FIND-ALL `7 7,3` [`7`@0, `7,3`@2] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`)
 
-### Export and private labels   [core/labels/export]   ruled 2026-11-18
-A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible.
+### Export and private labels   [core/labels/export]   ruled 2026-11-19
+A label is public unless its name begins with `_`; outside a binding every public label visible inside it is visible, a part's labels passing through a hole and the sequence operator alike.
 needs: core/labels/flow
 by: core/principles/namespace-at-reference
 see: core/labels/backreferences
 1. A private label is visible only inside the binding it is written in.
 2. Inside a binding, the public labels of everything written or used there are visible, read as labels are (last
    mention; an ambiguous reference is the error).
-3. Outside a binding, what is visible is the public labels written in its own literals and its public part labels;
-   a part's public labels are reached by path through its part label.
+3. Outside a binding, what is visible is what is visible inside it, less the private names: the public labels of
+   everything written or used there, read as labels are, and its public part labels, a part's public labels also
+   reached by path through its part label. `B1 := isodate SEQ "!"` and `B2 := /${isodate}!/` both show `year`.
 4. A part label only disambiguates; it gives no access to anything private.
 5. The caller's captures are what is visible from the top-level program by these rules.
 6. A part label beginning with `_` (`[_a = A]`) is an ordinary part label inside its binding and exports nothing
@@ -945,13 +946,6 @@ by: core/principles/namespace-at-reference
 - The outer program reads an inserted pattern's public label by the label rules as defined (the last mention); a
   private `_` label never flows out.
 WHOLE `2025-x` HOLDS, `1999-x` FAILS / SEARCHED `1999-x 2025-x` `2025-x`@7 / FIND-ALL `2025-x 1999-x 2001-x` [`2025-x`@0, `2001-x`@14] (`/${year}-x/ & (v: >= 2000)`, year := `/(?<v>\d{4})/`)
-
-### Does a hole re-export a part's labels   [core/holes/labels/hole-export]   open hole-export 2026-11-19
-Outside a binding, does a hole re-export the inserted pattern's public labels where an unlabelled sequence part does not? Today the hole does, the part does not.
-needs: core/labels/export core/holes/labels
-Candidates: (a) both export (the sequence part made like the hole); (b) neither exports (the hole made like the
-sequence part, a part label being the way to reach a part's labels); (c) as today, different.
-modes: n/a (a question; the runs are cited in the details entry)
 
 ### Same-name groups through a hole   [core/holes/same-name]   ruled 2026-11-19
 A group that arrives through a hole is the inserted pattern's own and does not count as a second group of its name in the outer literal.

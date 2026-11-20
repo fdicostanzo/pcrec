@@ -5690,3 +5690,53 @@ ruled, with conditions as its three arguments: `when((h: 5), (m: >=3), else = (h
 `((h: 5) SEQ (m: >=3)) | (NOT peek((h: 5)) SEQ (h: >5))`, zero width, tested on the item. Hand-evaluated from the
 body over the 100 one-digit pairs: 0 differ from `((h, m): >= (5, 3))`. It leans on one READING, not his words:
 `peek(c)` of a condition tests c where it stands (lib/control/peek), so `NOT peek(c)` is `NOT c`.
+
+### 2026-11-19 OWNER RULING — hole-export: both pass through; and a question on the array of a label under composition
+tags: core/labels/export core/holes/labels core/labels/labels-vs-captures core/labels/flow
+
+Asked **hole-export** (outside a binding, does a pattern used inside it pass its public labels through: (a) both
+the hole and the unlabelled sequence part, (b) neither, (c) as today, the hole only; the manager's leaning (a),
+with `B1 := isodate SEQ "!"`, `B2 := /${isodate}!/`). HIS WORDS, whole:
+
+"hole-export: your B1 and B2 are the same thing as B2 is what B1 uses (give or take parentheses).  So they have to
+work the same. Agree both pass through.
+Here's the issue: if I have [a = ([ b = rx]|[c = rx])] where rx has labels x y z, this would mean that a b c x y z
+are all flatly visible. I can't access x y z flat because it's ambiguous and therefore an error. So it's b.x or
+a.b.x. In practice there may not be ambiguity, but is having all those symbols an issue? I'm saying no. But! Here
+is an example of a potential problem: (I think I know the answer). If I defined a an rx with label x. Then later
+define another x. The second x hides the first at that point. But if I asked for an array of x, would it show
+both? I guess is no, because we could define they had to be in the "same" rx. The problem is with composition,
+nothing will be in the same rx so the only arrays are from loops or labels specifically written in the same
+literal. Example: [x = digit]+. The final form is /(?<x>\d)+/ but that was composed from /${}+/,  /(?<${}>${})/,
+and /\d/ so none of it was in the same rx. Please consider"
+
+Class, part by part:
+1. A RULING on the slug: "they have to work the same. Agree both pass through", with his reason (the sequence
+   form is the hole form "give or take parentheses"). It REVISES statement 3 of export-rule (2026-11-18: "Outside
+   a binding, what is visible is the public labels written in its own literals, and its public part labels"):
+   the public labels of a part used in a binding are visible outside it, through a hole and through the sequence
+   operator alike.
+2. A STATEMENT of the consequence, and his POSITION on it: every public name of the nested parts is "flatly
+   visible"; "is having all those symbols an issue? I'm saying no."
+3. A QUESTION to the manager, with a GUESS ("I guess is no"), "Please consider": does the array of a label x show
+   the settings of two separately defined x's; and his worry that under composition "nothing will be in the same
+   rx". DISCUSSION; nothing ruled.
+
+CHECKED CONTEMPORANEOUSLY, and told to him:
+- His "I can't access x y z flat because it's ambiguous and therefore an error" is NOT what the rules as defined
+  say for an alternation: the ruled ambiguity is across `&` only (2026-11-17 label-flow: "it is an error to
+  ambigously reference a label. so if A & B & (h: blah) and A and B both use label h"); across `|` the branch
+  taken sets the label and a bare read is legal (the ruled alternation example `(B | A) & (l: <20)`, both
+  branches carrying `l`; core/model/table's `/(?<l>\d)\d|\d(?<l>\d)/ & (l: "3")`, WHOLE `73` HOLDS). So in his
+  example a flat `x` reads the x of the branch that matched; `b.x` and `c.x` say which.
+- On the array, the record already has HIS words, the other way from today's guess: 2026-11-17, before-and-inside:
+  "The array takes all h including the one outside the group"; and label-flow the same day: "i adjust my rules to
+  be such that a compose and a literal rx have the same label behavior". By those two the array of x lists every
+  setting of the NAME in the composed rx, however it was composed: `[x = digit]+` and `/(?<x>\d)+/` have one
+  array; two x's in a sequence are one label with two settings, so the array shows both.
+
+The manager's readings, for the next lane to test: (a) outside a binding the view is the inside view less the
+private names, so in the export-rule example (`date := [y = year] SEQ "-" SEQ [m = month]`) a bare `v` outside
+`date`, an error under the old statement 3, now reads the last mention (the month's), as it does inside; (b)
+`[_ = A]` and a `_` part label still close a part's labels; (c) the caller's captures (statement 5) grow the same
+way; (d) the array of a name reached by path (`b.x`) lists the settings made inside that part only.
