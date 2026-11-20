@@ -5582,3 +5582,32 @@ literal" part) and asked which he means when the hole is not last. HIS WORDS, wh
 Class: an OBSERVATION (he sees that his equality does not hold for every hole position). It does not say which
 reading he means when the hole is not last: NOT a ruling. The reading taken, and told to him: his sentence stands
 for the hole-last case; the question (at the hole, or after the literal) is still his to answer.
+
+### 2026-11-19 OWNER, bare-condition-labels: a GUESS: the whole rx is the scope; the last label to its left, otherwise the next to its right
+tags: core/holes/bare-condition/labels core/conditions/pass-start-read
+
+Asked which he means when the hole is not last (at the hole, or after the literal). HIS WORDS, whole:
+
+"Ok. I was thinking of scope not value. But even then it's wrong because if it's repeated, it's the last. Guess:
+it's the scope of the whole rx for visibility. It references the last label to its left otherwise the next label
+to its right."
+
+Class: a CLARIFICATION of his earlier sentence (it was about SCOPE, which labels are visible, not about which
+value is read), a self-correction ("even then it's wrong because if it's repeated, it's the last"), and a GUESS
+(his word): a LEAN, NOT a ruling. The guess has two parts:
+1. VISIBILITY: a bare condition in a hole sees the labels of the whole surrounding rx (no compile error; the
+   own-namespace rival is out under any reading of his words today).
+2. VALUE: "the last label to its left, otherwise the next label to its right".
+
+Against the record (the manager's reading, told to him): the first half of part 2 IS the at-the-hole rule
+(hit-carry, pass-start-read, "the 0: is the match so far"). The second half is NEW: where nothing to the left has
+set the label, the documents today read it as UNSET at that point (the manager's bullet under pass-start-read,
+"In the first pass, before its group, the label is unset"; his ruling there, "pass-start-read: yes keep it", was
+on keeping the previous pass's value). RUN, the two parting (`$PCREC_TMPDIR/scratch/pred/bcl_guess.py`, a
+hand-built simulation; `$PCREC_TMPDIR/scratch/pred/bcl_end_vs_point.py` row 3): `/${(c: >= 5)}(?<c>\d)/`: today
+never holds; under the guess it is `/(?<c>\d)/ & (c: >= 5)` (WHOLE `7` HOLDS, `3` FAILS / SEARCHED `3 7` `7`@2 /
+FIND-ALL `7 3 9` [`7`@0, `9`@4]). `/(?:${c}(?<h>\d);)*/`, c := NOT (h: >= 5): today WHOLE `7;` HOLDS, `3;7;`
+HOLDS, `7;3;` FAILS / SEARCHED `7;3;` `7;`@0 / FIND-ALL `7; 3;7;` [`7;`@0, ``@2, `3;7;`@3, ``@7]; under the
+guess WHOLE `7;` FAILS, `3;7;` HOLDS, `7;3;` FAILS / SEARCHED `7;3;` ``@0 / FIND-ALL `7; 3;7;` [``@0, ``@1,
+``@2, `3;7;`@3, ``@7]. Asked of him as the remaining question (the same slug): with nothing to its left, is the
+label unset, or read from the right.
