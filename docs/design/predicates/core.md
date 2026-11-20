@@ -944,16 +944,16 @@ see: core/holes/same-name
 - `J` has no effect across a hole (core/holes/same-name).
 WHOLE `id-BLAH` HOLDS, `ID-blah` HOLDS / SEARCHED `x ID-BLAH` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0, `ID-BLAH`@8, `Id-blah`@16] (`/(?i)id-${/blah/}/`)
 
-### Flags of an `&` inside a hole   [core/holes/flags/in-filter]   open flags-in-filter 2026-11-19
-Do the two sides of an `&` written inside a hole start with the flags in force at the hole?
+### Flags of an `&` inside a hole   [core/holes/flags/in-filter]   ruled 2026-11-19
+The two sides of an `&` written inside a hole each start with the flags in force at the hole, a flag a side writes for itself winning.
 needs: core/holes/flags
 see: core/holes/and-in-hole
-- The reading today (the draft's): yes, both sides inherit, as any inserted rx does.
-- Candidates: (a) both sides inherit; (b) neither does: a filter operand judges its stretch as its own whole world,
-  with its own flags.
-- His remark: "by "flags propagate" i thought we decided that rx inherits the flags of the surrounding rx" (on
-  this question; not asked as a ruling).
-modes: n/a (a question; the draft's run is cited in the details entry)
+- The inherited flags are the hole's own list (`i`, `m`, `s`: core/holes/flags).
+- A binding of an `&` put in a hole behaves the same: a binding is its expression where it is used, so
+  `C := /[a-z]+/ & /b.*/` at `/(?i)id-${C}/` is the `&` written in the hole (a reading). Used where no rx
+  surrounds it, the same binding reads under its own flags: `C` as a program holds WHOLE on `blah`, not `BLAH`.
+- An `&` written at program level has no surrounding rx (core/patterns/flags).
+WHOLE `ID-BLAH` HOLDS, `id-blah` HOLDS / SEARCHED `x ID-BLAH id-blah` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-Blah` [`id-blah`@0, `ID-BLAH`@8, `Id-Blah`@16] (`/(?i)id-${/[a-z]+/ & /b.*/}/`)
 
 ### Labels through a hole   [core/holes/labels]   ruled 2026-11-18
 For labels, only the inserted pattern's public (exported) labels flow into the outer pattern; for matching it behaves like a literal.

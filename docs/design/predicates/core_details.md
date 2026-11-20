@@ -1355,14 +1355,18 @@ history:
 ## core/holes/flags/in-filter — Flags of an `&` inside a hole
 slugs: flags-in-filter
 rulings:
+- 2026-11-19 "flags-in-filter: both sides inherit." (record: "2026-11-19 OWNER RULING — flags-in-filter: both sides inherit; and a question on a bound `&` put in a hole")
 rejected:
+- neither side inherits (a filter operand judging its stretch with its own flags; candidate (b)) — by owner ruling — flags-in-filter.
 - the manager's m2 (an `&` operand, a condition's set, a filter-role argument keep their own flags) as the draft's flags-in-filter reading (2026-11-18) — by the draft (rev 29, R.9 row 100) — SUPERSEDED as the draft's reading by REACH (the manager's reading 3, not a ruling).
 readings:
+- a binding of an `&` put in a hole equals the `&` written in the hole; used with no surrounding rx it reads under its own flags (the manager's answer to his question, resting on core/holes/flags and the place table's binding row) — the second half run (`blah` HOLDS, `BLAH` FAILS); the first UNTESTED by a mechanical model.
 - the two sides of an `&` inside a hole start with the hole's flags (THE DRAFT'S READING REACH, 0 / 0 / 0 of 1,555 against the plain hole) — open in the draft §R.8; the record's "2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant" is his remark on it, not a ruling.
 evidence: the draft's PART FF of predspec29 (REACH).
 history:
 - 2026-11-19 (lane preddoc4): a new open sub-piece, from a bullet of core/holes/flags (review r59 READ-9). The candidate (b) is the lane's statement of the rival the draft names (a filter operand's own world).
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
+- 2026-11-19: ruled; the statement until then: "Do the two sides of an `&` written inside a hole start with the flags in force at the hole?" with the candidates (a) both sides inherit, (b) neither does; the example line is the record's run (flagsfilter.py, hand-built).
 
 ## core/holes/labels — Labels through a hole
 slugs: inner-label-read

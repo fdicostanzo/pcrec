@@ -5976,3 +5976,31 @@ greedy operand with digits ascending `123` precedes `12` and `1`). Also turned r
 Folded by the manager with this entry: the shorthand for longest first on lib/structural/sort (the entry
 "2026-11-19 OWNER, on the sort function: the existing one is the general sort; a shorthand for longest first
 would help"), with the manager's placeholder name `longest_first(X)`.
+
+### 2026-11-19 OWNER RULING — flags-in-filter: both sides inherit; and a question on a bound `&` put in a hole
+tags: core/holes/flags/in-filter core/holes/flags
+
+Asked **flags-in-filter** (inside a hole, do the two sides of an `&` start with the flags in force at the hole;
+the manager's leaning: both inherit; shown `/(?i)id-${/[a-z]+/ & /b.*/}/`: inheriting, WHOLE `ID-BLAH` HOLDS,
+`id-blah` HOLDS / SEARCHED `x ID-BLAH id-blah` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-Blah` all three; not
+inheriting, WHOLE `ID-BLAH` FAILS / SEARCHED `id-blah`@10 / FIND-ALL [`id-blah`@0];
+`$PCREC_TMPDIR/scratch/pred/flagsfilter.py`, hand-built). HIS WORDS, whole:
+
+"flags-in-filter: both sides inherit.
+Can you work out if that means there is a difference between when two rx intersected in a hole or outside the
+hole and then the bound was put in the hole."
+
+Class: a RULING on the slug ("both sides inherit"): the two sides of an `&` written inside a hole start with the
+flags in force at the hole (`i`, `m`, `s`, as flags-scope has them), a flag a side writes for itself winning. And
+a QUESTION to the manager ("Can you work out"); nothing ruled by it.
+
+The manager's answer (told to him; a READING resting on the ruled piece core/holes/flags, "This holds for a
+direct literal and for a binding alike, at any depth", and on the place table's binding row, "none of its own (X
+where `name` is used)"): NO difference. `C := /[a-z]+/ & /b.*/` then `/(?i)id-${C}/` is `/(?i)id-${/[a-z]+/ &
+/b.*/}/`: a binding is its expression where it is used, so the `&` is inside the hole either way and both sides
+inherit. Where a difference DOES show: the same binding used where no rx surrounds it. `C` as the program, or
+anything computed from `C` alone, reads it under its own flags: WHOLE `blah` HOLDS, `BLAH` FAILS (run). So one
+binding can accept different strings in different places; that is his "it's that rx's responsibility to set them
+the way it wants and not assume". FOR THE NEXT LANE TO TEST: the transitive case (a binding inside a binding
+inside a hole) and a binding of an `&` used as a sequence operand at program level (the documents' reading: each
+operand keeps its own flags there).
