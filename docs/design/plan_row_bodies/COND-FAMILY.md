@@ -5893,3 +5893,41 @@ lazy `12`@1 as told, its FIND-ALL corrected to [`12`@0, `3`@2, `7`@4, `45`@6]. T
 `123`@1. His "lazy/greedy loops start shortest/ longest respectively" fits both orders. WITHDRAWN: the `123`
 answer and its reason; to be told to him the same hour, and the order inside a quantified operand ASKED
 (quantified-order): priority order as recorded 2026-11-14, or count by count.
+
+### 2026-11-19 OWNER RULING — quantified-order: PCRE's priority order; and classes lowest to highest; sorting only when asked
+tags: core/arrays/class-order core/arrays/lift lib/builtin/enumerate lib/builtin/enumerate/class-value lib/structural/sort
+
+Told that an answer given him was withdrawn (the bounded lazy + greedy lift reports `12` on `x123`, not `123`),
+and asked **quantified-order** (inside a quantified operand of a lift: PCRE's priority order, depth first, as
+recorded 2026-11-14, or count by count; the manager's leaning: priority order). HIS WORDS, whole:
+
+"quantified-order: keep pcre priority order and classes change to lowest to highest unless pcre priority order
+disagrees. It was to help the arithmetic common choice but if it doesn't completely then it shouldn't at all.
+Only solution is sorting output when needed. Need a terser sort function for common use.
+Also, most numbers will use boundary checks to make sure they match the whole subject number."
+
+Class, part by part:
+1. A RULING on the slug: "keep pcre priority order" (inside a quantified operand `enumerate`'s order stays PCRE's
+   priority order; no count-by-count order).
+2. A RULING he adds, REVERSING the "classes descending" half of "class-positions: nested loops, classes
+   descending" (earlier the same evening): "classes change to lowest to highest unless pcre priority order
+   disagrees", with his reason: "It was to help the arithmetic common choice but if it doesn't completely then it
+   shouldn't at all." The nested loop stands; only the class's order turns round.
+3. A PRINCIPLE for this corner, his: "Only solution is sorting output when needed" (no built-in length order).
+4. A REQUEST: "Need a terser sort function for common use" (a provided name shorter than
+   `sort(alts, by = "length", order = "desc")`; its name is a spelling, the manager's to propose).
+5. An OBSERVATION: "most numbers will use boundary checks to make sure they match the whole subject number."
+
+CHECKED CONTEMPORANEOUSLY, and told to him (`$PCREC_TMPDIR/scratch/pred/asc.py`, the alternation built from the
+loop with the class ascending): `\d + 1` is `1|2|3|4|5|6|7|8|9|10`. Bare: WHOLE `10` HOLDS, `7` HOLDS / SEARCHED
+`x10 10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6]: the answer that made him ask for "longest" on
+2026-11-19 ("can we sort by length, longest first?") is back, by his choice. Between `\b` and `\b` (his
+observation 5): WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10 10` `10`@4 / FIND-ALL `10 3 11` [`10`@0, `3`@3]: the
+boundary makes the alternation go on to `10`.
+
+The manager's readings, for the fold lane to test: (a) "unless pcre priority order disagrees": PCRE gives a
+class's members no order (a class is one position), so nothing disagrees and a class is ascending everywhere; (b)
+"lowest to highest" for a class that is not digits is ascending codepoint (`enumerate(/[abc]/)` is [`a`, `b`,
+`c`], `.index` from the bottom); with it the open piece class-value has a natural answer, still not his words;
+(c) the rejected "codepoint order (the draft's lean)" under class-order is thereby the rule again, for digits by
+his words; (d) every lift example printed with a descending class is re-run ascending.
