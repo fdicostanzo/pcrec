@@ -6004,3 +6004,55 @@ binding can accept different strings in different places; that is his "it's that
 the way it wants and not assume". FOR THE NEXT LANE TO TEST: the transitive case (a binding inside a binding
 inside a hole) and a binding of an `&` used as a sequence operand at program level (the documents' reading: each
 operand keeps its own flags there).
+
+### 2026-11-19 MANAGER — review r61 (predfold1119) of the session's folds: dispositions ruled (no owner words)
+tags: core/labels/export core/holes/bare-condition/labels core/labels/labels-vs-captures core/arrays/class-order core/holes/class lib/structural/sort lib/builtin/enumerate/class-value core/diagnostics/looped-compare
+
+Review r61 (design mode; one opus coordinator, five critics: RULING, RUNOWN, REACH, GENERAL, STALE; draft
+`$PCREC_TMPDIR/scratch/crit-predfold1119/review.md`, to be filed as
+`docs/dev/reviews/2026-11-19-r61-predfold1119.md`) on the documents at 2e0adc746 (flags-in-filter, folded after
+the freeze, is NOT covered). Verdict: NOT READY as it stood, one text-fix pass away; all 16 printed run lines of
+the changed pieces held; the lift-order change moves no unchanged piece's answer.
+
+DISPOSITIONS, ruled by the manager (every proposal of the draft ACCEPTED; the ids are the draft's):
+- F-A FIX-NOW: export statement 3 against statements 6 and 7: a part under a `_` part label, or `[_ = A]`,
+  passes none of its labels; stated in statement 3 as the manager's reading (b) of hole-export, with a run.
+- F-B FIX-NOW + owner question **flat-read-outside**: the ruled part of statement 3 is "both pass through"; "the
+  inside view less the private names, read as labels are" is the manager's reading (a) and is MARKED so; his "I
+  can't access x y z flat because it's ambiguous and therefore an error" and the manager's correction (across
+  `|` a flat read is legal) are quoted in details; he did not answer the correction ("I can't think of a problem
+  with the existing labeling rules so let's move on" is not an answer to it). The parked user-doc trap that
+  teaches the old rule is restated.
+- F-C FIX-NOW: "the test can never pass" becomes: the read is unset, so the test's outcome is fixed:
+  `pcrec.test.never` where it then fails, `pcrec.test.always` where it then holds (NOT, a default).
+- F-D FIX-NOW: the third bullet is keyed on "no path of the rx as composed sets the label before the hole", loop
+  or not; the first bullet says the first-pass test must hold on unset for the loop to reach a second pass; the
+  rejected forward read is "by owner ruling (in a loop); outside a loop the manager's reading". NO new owner
+  question: he was asked "unset, or read from the right" and answered for the loop; the manager's reading stands
+  as a reading.
+- F-E FIX-NOW (the word) + owner question **bare-nested-scope**: "every label VISIBLE in the surrounding rx" in
+  core/holes/bare-condition/labels and core/values/reads; which rx a hole's readers (a bare condition, `$y`, `0`)
+  read when the literal holding the hole is itself inserted or is an `&` operand is marked a reading and asked.
+- F-F FIX-NOW (marks) + owner question **array-vs-passes**: array-scope's readings (a) and (b) are marked
+  readings in body and details; `x.@a` routed through core/labels/paths; the array of settings against the group
+  questions over a loop's passes is asked.
+- F-G FIX-NOW: "written last in the rx, outside every group, quantifier and branch".
+- F-H FIX-NOW (qualify) + owner question **class-hole-order**: core/holes/class's "collapses to one class, in
+  every mode" is qualified "for matching"; two-holes' "the order is not observable" goes; under a lift the order
+  of a class-member hole's values is asked.
+- F-I FIX-NOW: the stale glosses under looped-compare and pass-start-read; live `evidence:` lines citing
+  predloop's model are marked superseded by predasc (predloop's model is red at the tip by design: it asserts the
+  descending order).
+- F-J FIX-NOW: the one altered quote ("same", not 'same') and its reason; the GUESS class marker; the `\b` bullet
+  names its mode and subject; export statement 3 gets a defined binding and a run line; the joint-form equality
+  "where both are set".
+- F-K FIX-NOW: class-value quotes his earlier discussion, points at parked/ideas/class-base, names the
+  symbol-set order as the second candidate and the caseless single character in the question.
+- F-L FIX-NOW (text): sort's statement no longer says "only as"; `longest_first` / `lengthSorted()` in the
+  placeholder table; the stable-sort reading dropped as unobservable. PLAN: sort/sorted, unique/distinct as one
+  operation in two forms (trigger: the first definition of either).
+- F-M: GENERAL-11 FIX-NOW (the lift statement: only a SINGLE parameter lifts, a reading), GENERAL-4 and -15
+  FIX-NOW (pointers); GENERAL-1, -2, -5, -12 PLAN with the draft's triggers (GENERAL-2, one piece for the label
+  namespace and one for captures, is the shape of the NEXT document pass, not of this fix).
+WITHDRAWN by this round (the manager's own): none of the rulings; the manager's wording "the test can never
+pass" and "whole surrounding rx" (too wide: it reached private labels).
