@@ -843,3 +843,13 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
   hex1000 op-cache 75 %): a block LOOP (UNMEASURED) would keep the code small. The classes are general (pshufb nibble test; SWAR by
   ranges, cost linear in the ranges). One class (hex), one near-miss depth profile. D77 TRIGGER CANDIDATE for a span block form at
   both layers; NOT a build go (owner direction first; design + critic round before any build).
+  -> evaluated 2026-11-20 (jobs 708 blockspan + 709 blockspace, Frank's "expand to other classes ... if it more or less always
+  improves it should replace the inline form"; decision scratch/memfn/blockspan/run-20261120T010224/decision.md, rule frozen before
+  data; analysis scratch/memfn/blockanalysis/report.md): DOES NOT REPLACE as frozen. Scalar swar-loop vs H64: LOSS (50 repeated; S
+  WIN 117/190). SIMD avx2-loop vs H64@on: LOSS (18; S WIN 142/190). Real losses: multi-range SWAR (vowel, 5 ranges) at k<=64
+  costs about as much as the inline chain; a single SWAR block vs 8 fused compares (nonl k=8); tiny absolute miss-heavy cells.
+  dig/hi losses are CONFOUNDED: the harness's block arms carry a different WALK around the span (10 vs 8 ins/B, lower IPC), not
+  span work. Loop vs unrolled: mostly TIE. Post-data SIMD table (window sites k 16..1000, scan sites k 24..64 -> block; else H64):
+  0 LOSS, S WIN 122 (SELECTION-BIASED; needs a fresh run with the walk held fixed). Scalar: no compile-time table works (only the
+  regime separates WINs from LOSSes). 709: candidate N tracks k for SWAR on hex/word, none (>64) for AVX2, small for nonl: no
+  single N.
