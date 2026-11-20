@@ -17,3 +17,5 @@ Done: FILEPIN -> d68a1294c with a history comment. ABASEPIN unchanged (A clean).
 
 ## STATE AT HANDOFF
 Rulings file: empty; none applied. OWED after 07:00 (heavy): confirm the 49 are all census movers by running the gate against the OLD pin (`RECURSION_IDENTITY_FILEPIN=b2d73b6b1 make test-recursion-identity` on d68a1294c, full DIFFERS list via KEEP=1 or a raised head -20) and checking against the l1ftri2 ident_check census; then re-dispatch the recidentity kind on the landed fix via scripts/cloudrun. Nothing dispatched.
+
+OWED: none queued by this lane (the post-07:00 confirmation above is a follow-up for main, not a pending job).
