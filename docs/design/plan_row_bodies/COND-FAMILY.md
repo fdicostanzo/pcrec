@@ -5779,3 +5779,21 @@ him): yes, with two precisions. (1) "by length" is the length of the lift's RESU
 "in text order" among the classes cannot be seen in any match: two different results of one length never compete
 at one position (the no-tie reading under class-order, run: 20 shuffles, 0 differing); it would show only in the
 order of `enumerate`'s array, which is the separate open question class-index.
+
+### 2026-11-19 OWNER, discussing class-positions: "What about \d+? + \d+"
+tags: core/arrays/class-positions core/values/functions
+
+HIS WORDS, whole: "What about \d+? + \d+"
+
+Class: a QUESTION (a test case for the lean); DISCUSSION, nothing ruled. The manager's answer (told to him):
+(1) TODAY the program is the under-construction error: both operands are infinite, and the lift is built only on
+an rx `enumerate` accepts (core/values/functions clause 2; the piece's words: "an infinite or over-budget rx
+(`left(/\d+/, 2)`): under construction"). (2) What the lean WOULD give, on a BOUNDED model
+(`$PCREC_TMPDIR/scratch/pred/classpos_inf.py`: `\d{1,3}? + \d{1,3}`, the first operand slowest in its lazy order,
+the second in its greedy order, class choices by result length, non-canonical operands out of the domain): WHOLE
+`123` HOLDS, `7` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 7 45` [`123`@0, `7`@4, `45`@6]: the greedy
+operand reaches every result while the lazy one is still at one digit, so the lift behaves as longest first.
+Greedy + lazy: the same answers. Lazy + lazy: SEARCHED `x123` `12`@1, FIND-ALL [`12`@0, `3`@2, `7`@4, `4`@6,
+`5`@7]: within the first group (one digit plus one digit) the results `10`..`18` are tried before `0`..`9`, by
+"class-order: longest". Extending the bounded answers to the unbounded program is the manager's reasoning, not a
+run; an unbounded greedy operand has no first count to start from, so its order exists only as a limit.
