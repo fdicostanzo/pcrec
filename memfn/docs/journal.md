@@ -4338,3 +4338,7 @@ Run /var/tmp/pcrec-pcrec/scratch/memfn/blockspan/run-20261120T010224 (decision.m
 - Loop vs unrolled: "all loops over blocks + tail" FAILS for SWAR (44 L / 21 W), SSE (18/14), AVX2 (19/20); mostly TIE.
 - LOSS shapes: (a) dig ([0-9]) at every k in the miss-heavy/random/not-warm regimes, 1.5-2.4x; (b) vowel hit-dense k=4..64 and near-miss-in k=16..64, 1.3-1.9x (short spans); (c) miss-heavy for hex/word/vowel at k>=32, 1.15-1.4x on small ns/B; (d) nonl k=8, hi short-subject.
 - CAUTION: the substitution control Lspk vs L (expected all TIE) is L 0.70x on dig miss-heavy k=500 and 0.76x on dig random k=500, and L ~0.68x on hi hit-dense/near-miss k=500: the spike's substituted arms carry a cost there, so part of shape (a) may be the harness. An analysis lane after 709 decomposes it. The verdict as frozen stands; any reading beyond it is post-data and labelled as such.
+
+## 2026-11-20 03:35 — 709 GREEN (717 s); analysis lane launched
+709 run: scratch/memfn/blockspan/space/run-20261120T031846/results.md. Candidate N (the smallest gap g at which the block form stops beating the reference) tracks k for hex/word: about N = k with SWAR, and with AVX2 "none" (wins at every g) for k >= 16. nonl is small: 2-32, and SWAR "never" (no WIN at g=1) at k=8/16. No single constant N. Lane blockanalysis (sonnet, read-only, scratch/memfn/blockanalysis/report.md, hard stop 06:30): harness control decomposition, mechanism per LOSS group, a post-data selection table labelled selection-biased, 709 N vs k.
+fcards-night can be unpinned and pruned once the analysis is read.
