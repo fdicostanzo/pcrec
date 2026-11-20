@@ -11401,7 +11401,7 @@ static bool req_set_leads_own(Ctx *cx)
     if ((q = req_set_pick_of(cx, pcrec_fact_req_set_stated(cx))) < 0) return false;
     /* pcrec's own pick (`req_byte`'s derivation, src/facts/req.c): the shadow's source
        is never the kit's */
-    cand[0] = r->pos[pcrec_find_run_scan_index(pcrec_find_byte_rate(cx), r->pos, r->whole_len)];
+    cand[0] = r->pos[pcrec_run_scan_index(pcrec_find_byte_rate(cx), r, 0, r->whole_len)];
     qs[q >> 3] = (uint8_t)(1u << (q & 7));
     cand[1] = qs;
     return pcrec_find_pos_pick(pcrec_find_byte_rate(cx), cand, 2, 0) == 1;

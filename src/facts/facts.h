@@ -112,6 +112,12 @@ int pcrec_req_info(const unsigned char *pos);
  * spelling, D187 addendum 1). True where the set IS the cube's members. */
 bool pcrec_req_cube(const unsigned char *pos, int *t, int *k);
 
+/* THE RUN POSITION pcrec's own pick tests over the stretch `run->pos[lo..hi)`
+ * (a run index in `[lo, hi)`), -1 where the stretch is empty: the one pick
+ * the `req_byte` fact (src/facts/req.c `pcrec_req_pick`) and the trace
+ * build's set-leads shadow ask (span_arms §14.3 D-6, RM-4). */
+int pcrec_run_scan_index(const uint32_t *rate, const ReqRun *run, int lo, int hi);
+
 /* Is byte `b` a member of the run's position `i`? */
 static inline bool pcrec_run_has(const ReqRun *r, int i, int b)
 {
