@@ -14,9 +14,9 @@ studies; listed, not counted).
 
 ## Since the last green full suite
 
-Baseline: run 2026-11-16 e43603862, the CLOUD full suite (`scripts/cloudrun --suite`, run names suite-e436038, six cloud stages all green) plus the local alloc + lint stages green on db7aab3de (no src/lib/cli/memfn diff to e43603862). It is the first green full suite since 2026-11-05 daf6f002b. Every landing up to and including e43603862 is listed under "Covered by run 2026-11-16 e43603862" in the Runs section (and earlier ones under "Covered by run 2026-11-05 daf6f002b").
+Baseline: run 2026-11-20 d68a1294c / 47ba76682, the CLOUD full suite (suite-d68a129 + re-runs; every cloud kind green after one infrastructure re-run and two intended re-pins) plus the local alloc + lint stages green on f8789cd2e (L1 landed; only test baselines and records between). It covers the [COVER-CAP] and lookaround L1 landings. Previous baseline: run 2026-11-16 e43603862.
 
-**major: 2, minor: 1** (2026-11-19: [COVER-CAP] 77edff7ae, covered by its own cloud suite except local alloc + lint; lookaround L1 d68a1294c, its cloud suite dispatched at landing) (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing. Landings after the reset were recorded as loose `Landing 2026-11-16 ...` lines at the end of the Runs section (the ledger's practice since 2026-11-05); the lines below are the 2026-11-16 additions that count them, by pointer (the loose lines stay where they are).
+**major: 0, minor: 0** (reset 2026-11-20 at the d68a1294c baseline). Class is set by the manager at each landing. Landings after the reset were recorded as loose `Landing 2026-11-16 ...` lines at the end of the Runs section (the ledger's practice since 2026-11-05); the lines below are the 2026-11-16 additions that count them, by pointer (the loose lines stay where they are).
 
 Trigger state (D177), recounted 2026-11-16: row 1 (tonight, 2026-10-23) discharged long ago; row 2 (a major version shift) not applicable until one is named; row 3 (a major refactor lands) un-fired, none since the baseline; row 4 (2-3 majors since the last green run) un-fired, 0 majors; row 5 (4-6 minors since the last green run) un-fired, 1 minor. No full suite is due.
 
