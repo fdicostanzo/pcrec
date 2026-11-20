@@ -4454,3 +4454,10 @@ The critic round on 710 (review docs/dev/reviews/2026-11-20-memfn-blockconfirm.m
 - a CPU7_MAX with no ceiling, which one busy second could disarm (GATES-3, a spec defect shared with 711/712);
 - the fitted population deciding the verdict, plus fidelity holes.
 The manager cancelled 711 and 712 (their hold expired at 20:00, unfixed) and amended cpuquiet/spec.md (2': a 20% cap with a banner). Lanes: bcfix (opus, 710, due 20:00) and cofix (sonnet; the 711 symmetric re-time, the ceiling in 711/712, 712's wait key; due 19:30). One critic then re-checks all three before re-queueing. HOLD-711 removed (moot).
+
+### 2026-11-20 — cofix delivered
+cofix delivered 8b02e6a03 (report docs/dev/lanes/cofix_report.md), lanecheck DONE, TaskStopped. Changes:
+- the CPU7 ceiling in 711 and 712, with the banner; 711 now observes at least 100 ms;
+- 711 symmetric re-time: near-miss WINs re-timed on variants 3-5, WIN-NR and WIN-UNRETIMED count as TIE, and there is no false-WIN control (stated);
+- 712 waits on kit-checkorder only.
+RULE_SHAs: 711 28b518b84de080aa, 712 efb4f0d7d3ab0bd5. Estimates: 711 6,405 s, 712 2,002 s. Both checks PASS. OWED: re-sync the 712 branch copy in worktrees/rampfix.
