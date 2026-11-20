@@ -3316,6 +3316,8 @@ tests/possessify/possessify.rxt:895		7a617b302c327d3f
 tests/possessify/possessify.rxt:927		617b312c337d3f633f
 tests/possessify/possessify.rxt:95		5b61625d7b332c337d63
 tests/possessify/possessify.rxt:991		617b312c337d
+tests/possessify/possessify.rxt:4860	--features all --engine=vm	287829285c3129285c3229285c3329285c3429285c3529285c3629285c3729285c3829285c3929285c313029285c313129285c313229285c313329285c313429285c313529285c313629285c313729285c313829285c313929285c323029285c323129285c323229285c323329285c323429285c323529285c323629285c323729285c323829285c323929285c333029285c333129285c333229285c333329285c333429285c333529285c333629285c333729285c333829285c333929285c343029285c343129285c343229285c343329285c343429285c343529285c343629285c343729285c343829285c343929285c353029285c353129285c353229285c353329285c353429285c353529285c353629285c353729285c353829285c353929285c363029285c363129285c363229285c363329782b5c3634
+tests/possessify/possessify.rxt:4933	--features all --engine=vm	287829285c3129285c3229285c3329285c3429285c3529285c3629285c3729285c3829285c3929285c313029285c313129285c313229285c313329285c313429285c313529285c313629285c313729285c313829285c313929285c323029285c323129285c323229285c323329285c323429285c323529285c323629285c323729285c323829285c323929285c333029285c333129285c333229285c333329285c333429285c333529285c333629285c333729285c333829285c333929285c343029285c343129285c343229285c343329285c343429285c343529285c343629285c343729285c343829285c343929285c353029285c353129285c353229285c353329285c353429285c353529285c353629285c353729285c353829285c353929285c363029285c363129285c363229285c363329285c363429782b5c3635
 tests/quoting/d27/adjacent_escapes.rxt:10	--features quoting	5c515c645c45
 tests/quoting/d27/adjacent_escapes.rxt:16	--features quoting,classes	5c775c5178795c455c73
 tests/quoting/d27/adjacent_escapes.rxt:4	--features quoting,classes	5c645c512b5c45
@@ -4661,6 +4663,7 @@ tests/utf8/wclass_illformed.rxt:981	--features all --encoding=utf8	78283f69295b6
 # reqpast (2026-11-12, [REQ-PAST-LAST]): tests/litscan/handoff_vm.rxt regenerated (six unbounded-K blocks inserted before the declines): rows 485, 509, 550, 711 removed and the file's movers re-pinned under their new ids; the VM hat row read off each block's own compile on the lane build, no other file's row moved.
 # mechund (2026-11-14): +2 rows, the two --engine=vm blocks added to tests/base/vm_lazy_rmin_prefix.rxt (S711's alternative-wrapped witnesses, lines 268/276), correct movers never pinned; no existing row moved.
 # r1on (2026-11-14, [RUN-POS-SET] rule (1) on): tests/litscan/spanarms.rxt gains S-c's two blocks at its end (`xy(?:ab|abc)zw`, lines 683 default and 690 engine vm); vm_auto +1 row (690), vm_forced +2 (683, 690); no existing row moved.
+# k147f2 (2026-11-20, r64 F5): +2 rows, the two tests/possessify/possessify.rxt B-depth BOUND cells (K=64, K=65), appended at the end of the file so no existing row moved.
 tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	28617c61617c62292b6378797a
 tests/litscan/handoff_vm.rxt:549	--features all --encoding=byte --engine=vm	622a7878283f3d7129
 tests/litscan/handoff_vm.rxt:569	--features all --encoding=byte --engine=vm	612b78797a
