@@ -513,3 +513,18 @@ WAITING on: crit-predfold1119; Frank (flags-in-filter).
 `&` put in a hole against one written there): answered as a reading: no difference; the same binding with no
 surrounding rx reads under its own flags (run). NOT covered by r61 (frozen before it): name it in the delivery.
 WAITING on: crit-predfold1119; Frank (next: class-value or group-truth).
+
+## 2026-11-19 (22:45) — r61 handed back: NOT READY by one fix pass; dispositions ruled; fix lane predfix61 launched
+
+r61 (5 critics, ~20 min): all 16 printed run lines held; answer-level: export statement 3 against 6/7 (a `_` part
+leaks), "can never pass" wrong for NOT/default tests (four lenses), "whole surrounding rx" reaches private labels,
+array of settings against passes, a class-member hole's order under a lift. Ruling-level: statement 3's "inside
+view" is MY reading stated as ruled; his "ambiguous and therefore an error" unanswered. Every proposal accepted
+(record entry, tip 1fa811754). New owner questions: flat-read-outside, bare-nested-scope, array-vs-passes,
+class-hole-order. Lane predfix61 (opus, worktrees/predfix61 off 1fa811754; deliver + rulings files first;
+lanewatch armed; told the 00:30 deadline) applies FIX-NOW and files the review. Coordinator stopped.
+Process changes the coordinator proposed (for main, the skill is main's): name other lenses' root concepts in
+each brief; drill a scope-WIDENING fold against every privacy/closing rule; name the two-valued pair when a fold
+states a rule at one polarity; run every cited evidence script at the fold's tip.
+LESSON (mine): three of my hand folds widened a scope in my own words ("whole surrounding rx", "inside view")
+beyond his; quote, do not widen. WAITING on: predfix61; Frank (class-value / the four new questions).
