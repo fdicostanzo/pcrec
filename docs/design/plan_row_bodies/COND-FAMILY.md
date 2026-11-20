@@ -5867,3 +5867,29 @@ keeps its answers except where a subtraction-like function puts a shorter result
 rule's run: to re-run under the loop); (d) the readings "nesting, the alternation first" and "equal strings are
 one result" under class-order still hold under the loop (the first occurrence stands); (e) a class inside a
 larger rx (`[ab]\d`) enumerates as nested positions in text order, each class descending.
+
+### 2026-11-19 MANAGER — after lane predloop: class-positions folded; an answer told to the owner is WITHDRAWN (the lazy + greedy lift) (no owner words)
+tags: core/arrays/class-order core/arrays/lift lib/builtin/enumerate
+
+Lane predloop (opus; report `docs/dev/lanes/predloop_report.md`; evidence `docs/dev/lanes/predloop_evidence/`, 20
+checks, 20 plants caught; lint 5,059 / 0) folded "class-positions: nested loops, classes descending":
+core/arrays/lift and core/arrays/class-order restated, class-positions and class-index merged into them and
+lib/builtin/enumerate, a new OPEN piece lib/builtin/enumerate/class-value (the part he did not answer).
+
+The manager's readings (a)-(e) of the ruling entry, as tested: (a) UNTESTABLE (the open question class-value);
+(b) SUPPORTED (0 / 0 / 0 over 3,906 texts for every printed ruled example; `10 - \d` the one that parts, as he
+was shown); (d), (e) SUPPORTED; (c) HALF NOT SUPPORTED, and WITHDRAWN:
+
+In the entry "2026-11-19 OWNER, discussing class-positions: "What about \d+? + \d+"" the manager told him that
+the bounded lazy + greedy lift `\d{1,3}? + \d{1,3}` reports `123` on SEARCHED `x123` ("the greedy operand reaches
+every result while the lazy one is still at one digit, so the lift behaves as longest first"). That run
+(classpos_inf.py) enumerated a quantified operand COUNT BY COUNT (every 3-digit string before any 2-digit one).
+`enumerate`'s order in the record is PCRE's PRIORITY ORDER (2026-11-14: "entries in PCRE PRIORITY ORDER (leftmost
+alternative, greedy before lazy) so re-joining preserves which match is reported"), which is depth first: inside
+`\d{1,3}` the strings starting `3` (`399` .. `3`) come before those starting `1`. Built mechanically from that
+order under the nested loop (predloop EXbounded): lazy + greedy SEARCHED `x123` `12`@1, FIND-ALL `123 7 45`
+[`12`@0, `3`@2, `7`@4, `45`@6] (`9 + 3` precedes `9 + 114`); greedy + lazy and greedy + greedy `123`@1; lazy +
+lazy `12`@1 as told, its FIND-ALL corrected to [`12`@0, `3`@2, `7`@4, `45`@6]. The count-by-count order gives
+`123`@1. His "lazy/greedy loops start shortest/ longest respectively" fits both orders. WITHDRAWN: the `123`
+answer and its reason; to be told to him the same hour, and the order inside a quantified operand ASKED
+(quantified-order): priority order as recorded 2026-11-14, or count by count.
