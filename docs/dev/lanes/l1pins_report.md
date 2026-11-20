@@ -28,4 +28,6 @@ Dispatched on the branch tip with an explicit sha, kinds recidentity and axes, n
 ## STATE AT HANDOFF
 Branch lane/l1pins = main c11a2da70 + merge of lane/l1ridtri + this report. Rulings file empty, none applied. (A) done and matched 49/49. (B) re-pin generated and explained, saved in scratch, uncommitted pending the kit. (C) awaiting the kit's reply. (D) not started.
 
-Update (after R-1): D3 re-pin committed at 47ba76682. Dispatched on that sha: cloud/main/recidentity/suite-l1pins and cloud/main/axes/suite-l1pins (both DONE rc=0 pushed; ls-remote shows both refs at 47ba76682895dc1abd3c11b689a2643a9cd4f208). Verdicts arrive to main as CLOUD-DONE. Rulings applied: R-1. OWED: none.
+Update (after R-1): D3 re-pin committed at 47ba76682. Dispatched on that sha: cloud/main/recidentity/suite-l1pins and cloud/main/axes/suite-l1pins (both DONE rc=0 pushed; ls-remote shows both refs at 47ba76682895dc1abd3c11b689a2643a9cd4f208). Verdicts arrive to main as CLOUD-DONE. Rulings applied: R-1.
+
+OWED: none
