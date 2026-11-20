@@ -112,7 +112,12 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   site) detect S1925, S1926, S1927. Unit R1 (lane sar1, [REPEAT-RUN]) adds
   the power arm's: a repeat of a consuming body is its copies
   (`xy(?:ab){2}zw` states `xyababzw`); W-R1/W-R2/W-R3/W-R6 detect
-  S1915/S1916/S1917/S1919. A later unit (L1) adds its own here.
+  S1915/S1916/S1917/S1919. Unit L1 (lane l1feat) adds the lookaround item's
+  witnesses. Unit L3 (lanes l3feat/l3feat2, BACK: a run that begins inside a
+  lookbehind, K < 0) adds W-L1/3/10/13..19, W-T3a, utf8, bench 258/333 and
+  W-D2 blocks at every start position on both routes, generated with
+  `gen_handoff.py`'s libpcre2 oracle (python3 `re` cross-check on byte
+  blocks); detector of S3405-S3412 (W-L17 is the forward re-entry decline's).
 - **gen_reqcube.py** — writes `reqcube.rxt` from python3 `re`; edit the case
   list there.
 - **presence_deny.rxt** — [MEMFN] R17-b' B3b (lane b3bfix, 2026-10-18;
