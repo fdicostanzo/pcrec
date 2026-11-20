@@ -1,0 +1,5 @@
+report: docs/dev/lanes/l3pin_report.md
+sections: Summary; S811 re-anchor; Plant check; Other stale anchors; Validation queued; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
