@@ -506,3 +506,10 @@ record from the first bare-condition-labels entry to the end; lenses required: r
 modes, general form + unlocks; told to hand back by ~00:15. Round dir $PCREC_TMPDIR/scratch/crit-predfold1119/.
 THEN: rule dispositions, a fix lane if needed (it files the review), deliver to main (P-14).
 WAITING on: crit-predfold1119; Frank (flags-in-filter).
+
+## 2026-11-19 (22:50) — flags-in-filter RULED and folded (after r61's freeze)
+
+"flags-in-filter: both sides inherit." Folded by me (piece ruled, details, lint 5,098 / 0). His follow-up (a bound
+`&` put in a hole against one written there): answered as a reading: no difference; the same binding with no
+surrounding rx reads under its own flags (run). NOT covered by r61 (frozen before it): name it in the delivery.
+WAITING on: crit-predfold1119; Frank (next: class-value or group-truth).
