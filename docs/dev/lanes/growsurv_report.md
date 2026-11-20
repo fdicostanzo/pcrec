@@ -167,3 +167,5 @@ What the table shows the 15 rows do not load: no row has a quantified group in a
 ## STATE AT HANDOFF
 
 Report and evidence committed on lane/growsurv. Rulings file empty (no entries applied). Nothing owed. Not done and flagged: C19/C20/C21 unprobed; L7 (possessify pairwise passes) not read; matcher-side emitted code not read exhaustively.
+
+OWED: none
