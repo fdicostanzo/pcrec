@@ -4369,3 +4369,6 @@ Frank: "slug check-order: yes test". A scalar-layer spike on the inline window c
 
 ## 2026-11-20 — checkorder delivered (lane stopped)
 Job 711 is prepared, not queued. Report: scratch/memfn/checkorder/lane_report.txt (written by the manager from the lane message). The rule was frozen before timing (body sha 74271f120f96b995). 245 cells, est ~0.8 h + quiet. Correctness 0 FAIL on 2760 runs; sabotage 6/6 caught. Count preview: REV cuts near-miss checks/B 10-30x; REVMEM = REV everywhere. Next: a light critic round before queueing.
+
+## 2026-11-20 12:00 — CPU-quiet control for 710/711 (main's call, from Frank's noise discussion)
+The timed process is pinned to CPU 15, but nothing isolates CPU 15 or its SMT sibling CPU 7 (no isolcpus or cpuset; isolation is Frank's call, not recommended now). Main ruled the in-scope control: thresholds from a QUIET SAMPLE taken in the job before timing, declared in each decision rule, void count per cell, and the short-cell outcome decided in advance. Kit form: CPU 7 busy from /proc/stat, plus the timed process's involuntary context switches. A voided rep is re-timed up to twice; a cell still short of 3 valid reps is INCONCLUSIVE-NOISE (listed, excluded, counted beside the verdict). A fresh lane adds it to both spikes after blockconfirm and both critic rounds, with dated, re-sha'd rule amendments, all before any timing.
