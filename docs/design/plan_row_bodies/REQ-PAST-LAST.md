@@ -42,3 +42,12 @@ dense = below one N" cannot be stated as one number; "dense = 2+ hits per block"
 MANAGER'S READING (mine, 2026-11-20, kit question bounded-horizon-scope; answer-identical either way, so the
 manager's call, revisitable when the discussion closes): hits within K+1 of each other (closer than the span itself) are
 SUPER-DENSE, outside the target; the BOUNDED handoff row states no horizon, only the UNBOUNDED row uses it.
+
+## Post-K38-2 re-measure, 2026-11-20 (lane dhremeas, main): LOSS STILL SHOWN
+
+The re-measure the row waited on (tuning.md §2.41¶8c's timings predated K38-2). The rule was committed before timing (22dad3e20). Counted run 2, on 1 MB of dense " @x", `--engine=vm`, median of 7, A/A floor 0.68 %, threshold 5 %, rows on vs `-fno-req-handoff`:
+- `[^@ ]+@x` (unbounded) is 1.490x slower;
+- `[^@ ]{1,5}@x` (bounded) is 2.226x slower;
+- the no-match tail win persists, at 0.0074 vs 1.55 ms.
+
+The kit's R-46 byte mover was gated on this result, and the gate is now MET. Report: docs/dev/lanes/dhremeas_report.md.
