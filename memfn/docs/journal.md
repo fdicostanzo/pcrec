@@ -4437,3 +4437,6 @@ make test-memfn-g2 takes 1004 s run alone (it was about 470 s as a section on 11
 - blockconfirm check PASS at 16:13: 3,900 exes, 0 failing against python re; marker sha 91f8de45...; the lane was nudged to finish its report.
 - Queued 711-kit-checkorder (est 4,131 s + 600 s quiet), then 712-kit-rampchunk (est 1,402 s + 600 s; --ready waits on kit-checkorder, verified rc 75).
 - monread kit --wait armed; main told.
+
+### 2026-11-20 16:50 — 711/712 deferred until main GO (cap 20:00)
+Main's two opus lanes run inline builds for 1-2 h. Main proposed deferring the timing over idling its lanes; accepted (the box is cleared until 12:00 11-21, and Frank prefers evening runs). 711's --ready (pending copy and source; backups .711.bak-hold.*) returns 75 while HOLD-711 exists and before 20:00. On GO the manager deletes the file.
