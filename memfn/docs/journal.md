@@ -4345,3 +4345,6 @@ fcards-night can be unpinned and pruned once the analysis is read.
 
 ## 2026-11-20 03:45 — blockanalysis delivered (lane stopped)
 Report scratch/memfn/blockanalysis/report.md; the ideas.md 707 entry gets its evaluated line. Key facts: the Lspk-vs-L control loss is gcc choosing a counter loop over a pointer-compare loop (same ins/B, lower IPC). The dig/hi block arms carry a different walk around the span than H64 (10.3 vs 8.2 ins/B), so their losses are a walk confound. Real losses: vowel 5-range SWAR at k<=64, nonl k=8 single block, tiny miss-heavy cells. A post-data SIMD table gets 0 LOSS keeping 122/142 S WINs (selection-biased). For scalar, no compile-time table works. Next (Frank's go): a confirming run with the walk held fixed and the SIMD table declared before data.
+
+## 2026-11-20 — D3-FLOOR re-pin OKed (main lane l1pins)
+Diff scratch/l1pins/d3_census_diff.txt. Floors: byte/c-default 78->89, byte/c-vm 174->184, utf8/c-default 119->129, utf8/c-vm 247->257. Gained 11 per cell: 8 by L1 lookaround facts joining the required run, 3 by new corpus rows (C identical). The lost [a-z]+(?<=a)@x narrows to the pure byte run 614078, so it correctly leaves; it was never in byte/c-default (landmark walk). Kit OK sent; no kit change.
