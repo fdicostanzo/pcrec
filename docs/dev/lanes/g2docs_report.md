@@ -29,4 +29,5 @@ Sources: units.out (11-20, g2 alone); memfn/tests/g2_units.tsv (weights, 11-11 j
 ## STATE AT HANDOFF
 - Last ruling applied: none (g2docs_rulings.md empty).
 - Files: scripts/perfrun, docs/dev/ttune_measurement.md, docs/testing.md, this report.
-- Checks run: bash -n scripts/perfrun; see commit for lanecheck. OWED: none.
+- Checks run: bash -n scripts/perfrun; see commit for lanecheck.
+OWED: none
