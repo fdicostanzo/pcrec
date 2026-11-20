@@ -1,73 +1,86 @@
 # Predicate-language manager: wake-up brief
 
-Rewritten 2026-11-19 early (box clock), at /close of the first predicate-manager session. Committed docs win on any
-disagreement.
+Rewritten 2026-11-20 (box clock, after midnight), in the second predicate-manager session, at the delivery of the
+reorganized documents. Committed docs win on any disagreement.
 
 ## State
 
-- Branch `lane/pred-rev28` (worktree `worktrees/pred`). Draft = REVISION 28.1, NOT STABLE; review r52 filed
-  (`docs/dev/reviews/2026-11-18-r52-predspec28.md`); lanes predspec28 / predspec281 merged and stopped; evidence 28 of
-  28. DELIVERED to main as P-2 in `to_main.md`; P-3 (the close notice) follows it. At close main had NOT merged yet:
-  check `from_main.md` and `git log main`; after its merge cut `lane/pred-rev29` from main (or merge main in).
-- NOTHING running. No crons of mine.
-- SEVENTEEN owner rulings since rev 27.1. Eleven (2026-11-18 evening) are folded in rev 28.1. SIX of 2026-11-19 are
-  in the record ONLY and are the fold for REVISION 29.
+- Branch `lane/pred-rev28` (worktree `worktrees/pred`); level with main at this writing except for the delivery
+  P-11 (check `from_main.md` and `git log main` for its merge). NOTHING running; no crons of mine; every lane and
+  coordinator stopped. Lane worktrees preddoc2..6, predlint3 are delivered and merged (prune is main's).
+- THE LANGUAGE IS NOW DEFINED BY `docs/design/predicates/`: `core.md` (122 pieces: syntax and meaning, section
+  Principles first), `library.md` (54 pieces: EVERY call-form name `x()` / `m.x()` / `@x()`, each marked
+  `defined: language` with a proved body or `defined: native (<why>)`), `parked.md` (39 ideas, each with a
+  trigger), each with a `_details.md` partner (slugs, rulings verbatim with record titles, rejected candidates with
+  reasons, readings, evidence, history). Format: `docs/dev/pred/doc_format.md`. Reader: `scripts/entry <tag|slug>
+  [-l 0|1|2]`, `scripts/entry -g . -p predicates --state open`. Lint: `python3 -I scripts/pred_doc_lint.py` (5,014
+  checks, 0 failed; it runs in `make test`: RUN IT BEFORE NAMING A TIP).
+- `docs/design/predicates_draft.md` is FROZEN at revision 29.1 (source and history only; never edited again).
+  `predicates_future.md` is retired (its items are parked pieces). THE RECORD stays
+  `docs/design/plan_row_bodies/COND-FAMILY.md`; each new entry carries a `tags:` line (the lint checks the tags
+  resolve).
+- Reviews of this work, all filed with ruled dispositions: r54 (rev 29), r56 and r57 (the lint), r59 (completeness:
+  NOT READY, about 60 findings), r60 (re-check: ready after one short batch, which lane preddoc6 applied). Verdict
+  now: READY WITH NAMED RESIDUALS.
 
 ## READ, IN THIS ORDER
 
-1. The skill, section 2. 2. COND-FAMILY.md from "2026-11-18 OWNER, discussing padded-order" (the first entry after
-   rev 28.1's fold point, "MANAGER — after lane predspec281") to the end. 3. `journal.md` (2026-11-19 entries).
-4. The draft's §R.8. 5. `owner.md`.
+1. The skill, section 2. 2. `docs/design/predicates/core.md` then `library.md` WHOLE (headings and statements at
+least), `parked.md` scanned. 3. The record from "2026-11-19 OWNER, after reading the pilot documents (doc-shape)"
+to the end (this session's later entries). 4. `journal.md` from "2026-11-19 (afternoon)". 5. `owner.md`.
+6. r60's review file for the residual PLAN list.
 
-## Revision 29: the fold brief's contents (first entry "2026-11-18 OWNER, discussing padded-order"; last "2026-11-19 OWNER, on building rx from many bindings")
+## How a ruling is folded NOW (no revision lanes for single rulings)
 
-RULINGS (quote each from the record):
-- padded-order: "i agree with your lean" = plain macro, ANY-LENGTH branch first; CONDITION: holds if the unbounded
-  lazy case (`\d+?`) is confirmed; if not, back to him with the run. Mixed-order alternation differs from fill: stated
-  behaviour.
-- flags-scope: inherit `i`, `m`, `s`; NOT `U`, `x`, `xx`, `n`. REVERSES rev 28.1's draft reading (all propagate).
-- class-order: longest first, CLASS POSITIONS ONLY; replaces the codepoint lean.
-- dollar-diagnostic: "the form $x & .. should just get a warning": the dedicated warning is BACK (my withdrawal
-  reversed); the read-stands-for-its-group proposal DROPPED; wording / silencing are my call.
-- number-edges: nothing, everywhere.
-- same-name-count: scoped, BACKREFERENCES ONLY (my "(and `$h`)" was withdrawn in the record).
-NOT RULINGS, recorded: "rx inherits the flags of the surrounding rx" (his statement of flags-propagate; flags-in-filter
-closed as "reach" by MY reading); a binding in a hole inherits (lean, equals the draft); "only i should be inherited"
-(observation); export/private labels (recollection; export-rule of 2026-11-18 already rules BINDING scope);
-"use labels as they are defined and see if there is a problem" (direction).
-MY READINGS TO TEST (each listed in its record entry): any-length-first = fill for length-ordered arguments; the
-unbounded lazy case vs predspec281's statement; flags reach an `&`, a condition's set and a filter-role argument
-inside a hole; inheritance is transitive; a binding has no fixed string set; not-inherited flags are the inserted
-rx's own defaults at any depth; class-order needs no tie rule; nesting `(3|9) + \d`; TWO classes in one lift and a
-class under a quantifier (NOT covered by his words: if readings part, ASK); equal results are one; `J` has no effect
-across a hole (rev 28.1's `(?J)` run flips); numbered references are the inserted literal's own; literal `% 0` under
-the never-match diagnostics; `$h` vs `\k<h>` across a hole (public label flows out, capture does not); the warning
-fires wherever `$x & S` is written.
-TASKS (not rules): his isodate example (three uses, part labels `start_date`, `end_date`; bare `year` and the paths,
-every mode) under the label rules AS DEFINED; two or three examples where a PRIVATE label does real work;
-any-case-body re-run under the flags rulings (if `/(?i:${rx})/` equals the primitive everywhere it is my
-answer-free call, else ask).
-Then a critic round: ask main for the review number FIRST.
+His words go into the record verbatim with a `tags:` line; the base piece and its details entry change in the SAME
+commit (status, statement, a `rulings:` item with the entry's exact title; the old statement to `history:`, a
+displaced candidate to `rejected:`); run the lint. A lane (opus) is for a ruling that moves several pieces or needs
+runs; a critic round for a batch of them. An example is RUN in the three modes with the regex built MECHANICALLY
+from the body's text.
 
-## The question queue after rev 29
+## Ruled this session (all in the record and the pieces)
 
-plus-operands, other-holes, anything-text, zero-in-sequence, group-truth / pass-table, number-in-loop,
-hit-carry-depth, caller-ambiguous, not-test, condition-group, conditional-spelling; construction-line (b) (a READ in a
-count / class / option position); any-case-body if the run leaves it open. NOT RULED, his PROPOSALS: arrays written
-with `|` only; the label-only group `(?<:x>...)`. THE SPELLINGS REVIEW (one sitting): also the carried-capture form,
-`padded`'s parameter names, the never-matching constant's name. He has NOT checked the ANSWERS CHANGED table (R.1.16).
+plus-operands; other-holes; the option hole; negated-class-hole; anything-text; zero-in-sequence ("the 0: is the
+match so far"); the bare condition in a hole; padded-lazy-sparse ("stated behavior"); import-symbols (the named
+binding list `(l = left, =right) := X`, any map; `f(=x)`; `(=) := X` first, later entries override; `_ = left`
+leaves a member out; a conflict between files is a compile error); import-several (several files; one name = the
+combined map; REVERSES "exactly one file"). FORM, his: every `x()` in the library marked defined in the language
+or not ("my 'primitive' designation doesn't work"; library = "provides the symbols"); a default-imported set with
+`peek` (a LEAN); move/rename by `was:`; the directory.
 
-## Lessons (cases; the rules among them are proposed skill edits in to_main.md)
+## The question queue (one per turn; grep the record AND read the same-day later entries first)
 
-- A recollection of his ("I proposed", "I thought we decided") was RIGHT each time and lived in the record, twice
-  in a place I had not grepped (POSTFACT.md; the export-rule entry). Grep `docs/design/plan_row_bodies/` AND the
-  draft's ruled lists before answering, and before queueing a question (inner-label-read was already ruled).
-- I stretched a slug ruling past what was asked (same-name-count onto `$h`); he caught it in one line. A ruling
-  covers the example and runs it was asked with; anything wider is a reading, written as one.
-- He prefers a simple form-keyed rule to machinery when the subject is a warning ("i don't want to spend too much
-  time on the warning"); he improves a question with a better candidate (longest-first) when the offered ones are
-  arbitrary: say "no natural answer" plainly and leave room.
-- He argues from the type ("everything is a regex") and from responsibility ("its that rx's responsibility to set
-  them"): test a proposed rule against both before proposing.
-- A body offered as EQUAL to a meaning is run in SEARCHED and FIND-ALL, with a mixed-order argument, before it is said.
-- The `no_cd_worktree` hook blocks any `cd` chained with another command: `git -C` and absolute paths only.
+Open pieces (`scripts/entry -g . -p predicates --state open`): bare-condition-labels (next), hole-export,
+class-positions, class-index, group-truth, number-in-loop, zero-in-loop, caller-ambiguous, not-test,
+condition-group, flags-in-filter, every-pass-spelling, call-forms, default-imports, export-choice, tuple-parts,
+looped-warning (HIS ruling "looped-compare: warn", moved by joint-loops part 3, was dropped by a withdrawal of
+MINE: ask whether it is still wanted and on which shape), any-case-body (held by me). Older, not yet pieces:
+hit-carry-depth, conditional-spelling, the `r`/`a` flags, sequence-operand flags. NOT asked (his direction on
+macros): limited "at most" or "exactly", between's body, list_of, param, within, upperStart. His PROPOSALS not
+ruled: arrays written with `|` only; the label-only group. THE SPELLINGS REVIEW (one sitting) is still owed.
+Manager's calls owed: the names of the dollar, arithmetic, `[^${c}]` and "known nothing" warnings.
+
+## Residuals (PLAN items from r59/r60, each with its trigger in the review)
+
+core.md is 107 KB against a 64 KB soft cap I guessed (generated indexes; a split); provenance wording in the
+base; an errors index; a lint check for `defined:` and for "every called name has a piece"; the sibling-family
+unification (COLD-16); operators as bodies and macro-raised warnings (questions for him, low priority).
+
+## Asked of main, unanswered
+
+The predicate-manager skill still names the draft as the working document (sections 0, 1, 3, 4, 5): P-11 carries
+the replacement text. Earlier proposed skill edits: P-4 (run the owner's regex), P-6 (no background jobs in lane
+briefs).
+
+## Lessons (cases)
+
+- THREE times this session I told him something about the record without reading far enough: the positional
+  binding "undefined" (a 2026-11-16 confirmation existed), then "confirmed" (it was REOPENED eight minutes later).
+  Before saying "ruled", "confirmed" or "undefined": grep the record, then READ THE SAME DAY'S LATER ENTRIES.
+- A body I wrote and he agreed to had a parameter outside a hole (`{n,}`); three rounds missed it because every
+  model ran the body's INTENT. Models build the regex from the TEXT.
+- A manager's withdrawal never removes an owner ruling from the documents (looped-compare).
+- A converter that walks the live sections drops what lives only in superseded sections, status paragraphs and
+  censuses: a completeness control must be built from the sources by someone who has not seen the output.
+- Late rulings to a running lane through its rulings file worked (R-1 on preddoc4) when the change was one item.
+- Lanes: NO BACKGROUND JOBS in every brief; never `--no-verify`; never `git reset --hard`.

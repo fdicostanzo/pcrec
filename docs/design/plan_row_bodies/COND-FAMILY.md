@@ -5309,7 +5309,7 @@ THE MANAGER'S DESIGN for 1, 4 and 5 (form, the manager's call; `docs/dev/pred/do
   where they are (hundreds of evidence and review pointers name those paths).
 
 ### 2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Asked **import-symbols** with the manager's leaning (the left side is the selection, by name, no rx:
 `(left, right) := import("blah")`). HIS WORDS, whole:
@@ -5331,7 +5331,7 @@ of `=` is the name being defined. `(l = left, r = right) := import("blah")` bind
 always marked by `=`. Not tested by any run (no matching is involved; modes: n/a).
 
 ### 2026-11-19 OWNER, import-symbols: a LEAN, explicitly not confirmed
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Asked to confirm (1) "`=left` is shorthand for `left = left`, with `l = left` as the rename" and (2) whether the
 form applies to any map or only to `import`. HIS WORDS, whole:
@@ -5353,7 +5353,7 @@ needs an ORDERED right side, which the language does not clearly have (an array 
 for import.
 
 ### 2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Given the manager's implications (the entry above, (a)-(f)) and asked for his view on the macro-call shorthand.
 HIS WORDS, whole:
@@ -5385,7 +5385,7 @@ The manager's readings of the addition, FOR A LANE TO CHECK against the record (
 - The default-imported set is then `(=) := import(<the default module>)`.
 
 ### 2026-11-19 OWNER RULING — import-symbols, addition: the bare `=` is first; names after it override
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 HIS WORDS, whole: "import-symbol: bare "=" must be first but one can override names after (=,l = left) := ... to
 handle conflicts"
@@ -5401,7 +5401,7 @@ The manager's readings (told to him; for a lane to list, no matching involved):
   the same member. Neither is asked now.
 
 ### 2026-11-19 OWNER, import-symbols: leaving a member out (`(=,left=)`, `(=, left=_)`)
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 On the manager's "NOT STATED: how to leave a member out altogether". HIS WORDS, whole:
 
@@ -5421,7 +5421,7 @@ draft's unnamed part), where `_` stands on the left. Offered to him as the spell
 way.
 
 ### 2026-11-19 OWNER RULING — import-symbols: a member is left out with `(=, _ = left)`
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Offered `(=, _ = left)` in place of his `(=, left=_)` (the entry above: the ruled direction, the new name left of
 `=`). HIS WORDS, whole: "import-symbol: yes, that correction is good"
@@ -5431,7 +5431,7 @@ member `left` to the unusable name `_`, so it is left out and the name `left` st
 later"). The spelling remains a placeholder for the spellings review.
 
 ### 2026-11-19 OWNER, import-symbols: several modules in one import; a conflict is a compile error
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 HIS WORDS, whole: "import-symbol: (=) := import("pcrec"|"numbers"). conflicts are a compiler error, import
 separately."
@@ -5449,7 +5449,7 @@ compile error, and zero matches stays an error. Open as the question **import-se
 the 2026-11-14 "exactly one file" is reversed.
 
 ### 2026-11-19 OWNER RULING — import-several: an import may name several files; one name bound to it is the combined map
-tags: parked/import-symbols
+tags: core/modules/binding-list core/modules/import
 
 Asked **import-several**: does `import("pcrec"|"numbers")` reverse the 2026-11-14 "must resolve to EXACTLY ONE
 file", and does it hold for `m := import("pcrec"|"numbers")` too. HIS WORDS, whole:
@@ -5470,3 +5470,80 @@ The manager's readings (told to him; for a lane to list):
 - A name carried by two of the files is a compile error in the one-name form as in the `(=)` form (his "conflicts
   are a compiler error, import separately" was said of `(=)`; extended here by the manager, NOT his words).
 - NOT STATED: whether the filter is applied before the conflict check (so a filter can remove a conflict).
+
+### 2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN (the positional binding list)
+tags: core/modules/binding-list
+
+Statement 7 of the import-symbols ruling above ("A bare positional `(a, b) := X` is left undefined for now"), and
+the reason the manager gave him for it ("needs an ordered right side, which the language does not clearly have"),
+were WRONG against the record, which the manager did not grep before saying them: "2026-11-16 OWNER CONFIRMATION
+— a tuple on the left of a binding takes it apart" has his "Yes" to `lo := (9, 0)` and `(a, b) := lo`. Found by
+lane preddoc3b. WITHDRAWN: statement 7 and its reason. What stands: a positional list on the left takes a TUPLE
+apart (confirmed 2026-11-16); the named list (`l = left`, `=left`) selects from a MAP by name (ruled
+2026-11-19). NOT STATED by either entry, and the only part still open: a positional list against a MAP (a module,
+an import), where there is no order. His "agree with all your statements" is NOT read as having reversed the
+2026-11-16 confirmation: he was shown a false premise. Told to him the same hour.
+
+### 2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body
+tags: core/modules/positional lib/modifiers/padded
+
+Found by review r59 (TUPLE-PARTS, PADDED-BODY). Two corrections of the manager's own text, told to the owner the
+same hour.
+
+1. The entry "2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN" said "a
+positional list on the left takes a TUPLE apart (confirmed 2026-11-16)". That stopped one entry short. EIGHT
+MINUTES after his "Yes", the record has "2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the
+'use it whole' case heard": "Nothing is set in stone. I'd like to hear it out. So It's the set that makes it an
+item so you can't break it apart without changing its meaning. Like 9:30, 10:00 broken apart is 9,10 and 30, 00
+which is gibberish. Makes sense". The frozen draft carries it as the OPEN question **tuple-parts**: (A) a tuple
+used whole, or (B1) ONE tuple taken apart on the left of a binding; no user while first/rest is parked. WHAT
+STANDS NOW: the positional list `(a, b) := X` is OPEN under tuple-parts, for a tuple and for a map alike;
+statement 7 of import-symbols ("left undefined for now") was nearer the record than its withdrawal, though its
+stated reason (no ordered right side) remains wrong: tuples exist. The named list from a map (`l = left`,
+`=left`) is ruled and not touched by any of this.
+
+2. The body the manager wrote in the padded-order leaning, which his "i agree with your lean" accepted:
+`padded(rx, n) := (rx & /(?s:.){n,}/) | (/0*${rx}/ & /(?s:.){n}/)`. The parameter `n` stands OUTSIDE a hole, so
+by the language's own rule the text `{n,}` is literal regex text, not a count of n. The body meant, and every run
+made for him used, a count of n: written with count holes it is
+`(rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)`. A correction of the manager's SPELLING; his ruling (a
+plain macro, the any-length branch first) and every printed answer are unchanged.
+
+### 2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or not
+tags: core/principles/language-over-macros
+
+Told the manager intended to move the primitive provided names from the library to the core "per your words"
+("macros in the library unless they are primitive"). HIS WORDS, whole:
+
+"Primitive names: primitive  was defined as not able to be written in the language: requiring other coding support.
+Let me refine: all macros "x()" should be in the library document. They should be marked as to whether they are
+defined in the language or not. The code should refer to them in that doc as needed. Reason: I was visualizing
+"primitive" as building block macros that the rest of the language was built on. They could. It be defined in the
+language. However there are now macros like file_text that are not base level like that but also require non
+language support. Therefore my "primitive" designation doesn't work. Library meant macros loaded in to use. I think
+now it means "provides the symbols" wherever they come from. Thoughts?"
+
+Read for the intended words (phone): "The code should refer" = "the CORE should refer"; "They could. It be
+defined" = "they could NOT be defined".
+
+Class: a REFINEMENT of his recommendation 1 of this afternoon on the documents' form (the form is the manager's by
+delegation; ADOPTED), with a DEFINITION and its withdrawal: "primitive was defined as not able to be written in
+the language: requiring other coding support"; "my 'primitive' designation doesn't work". And a statement of what
+LIBRARY now means, offered for discussion ("I think now ... Thoughts?"): "'provides the symbols' wherever they
+come from". Not a ruling on the language.
+
+Applied: lane preddoc4's rulings file R-1 (no move of native names to the core; every call-form name, including
+those now in the core such as `enumerate` and `import`, has its piece in the library; each marked
+`defined: language` or `defined: native (<why>)`).
+
+### 2026-11-19 OWNER, on the manager's take on provided names: "I agree with your take"
+tags: core/principles/language-over-macros
+
+Given the manager's take (the split is by what a thing IS: syntax and meaning in the core, every call-form name in
+the library marked `defined: language` or `defined: native`; the native names are the kernel list; "building
+block" and "native" are two properties, no second mark now; `import` as a call goes to the library while the
+binding list stays in the core). HIS WORDS, whole: "I agree with your take"
+
+The reading taken: agreement with the take as a whole, the `import` split included (he was asked to say so if he
+would rather keep import whole in the core, and did not). A matter of the documents' form; no ruling on the
+language.

@@ -24,10 +24,6 @@ Backtracking on a rejecting condition is the general behaviour; every rule is fi
 
 ### Exceptions are asked for by name (the manager's name)   [core/principles/explicit-exceptions]   ruled 2026-11-17
 "everything that looks like regex should behave like regex unless we explicitly allow"; an exception is "requested by using those features explicitly".
-His words in full: "This is the prove itself portion in that an exception has to be either so useful or the
-"expected understanding" whereas the actual regex behavior is obscure so as to be useless. Exceptions should be
-requested by using those features explicitly. If requested (and optioned in if needed), they don't have to be
-regular regex or even legal regex."
 by: core/principles/regex-default
 
 ### Meaning, not spelling (the manager's name)   [core/principles/meaning-not-spelling]   ruled 2026-11-16
@@ -82,20 +78,17 @@ No rule of one hole position carries to another by default.
 ### The left side decides (the manager's name)   [core/principles/left-decides]   ruled 2026-11-17
 "join-order: left side decides. That's always how I thought of it. In concedes the logical purity that you seemed to be going for for the reality that regex is not pure."
 
-### Stated behaviour (his words, the manager's coinage first)   [core/principles/stated-behaviour]   ruled 2026-11-19
-"padded-lazy-sparse: stated behavior." A macro body's documented behaviour on an odd argument is accepted, not made an error.
+### Stated behaviour (his words, the manager's coinage first)   [core/principles/stated-behaviour]   reading 2026-11-19
+A macro body's documented behaviour on an odd argument is accepted, not made an error: the manager's general form of his "padded-lazy-sparse: stated behavior."
 
 ### Nothing, not an error (the manager's name)   [core/principles/nothing-outside-domain]   ruled 2026-11-19
 "number-edge: nothing"; "we are restricting arithmetic to digits and anything else is nothing (for runtime compatibility) and a warning if known".
-An operation outside its domain yields no match, at compile time as at run time.
+Arithmetic outside its domain (an operand that is not digits) yields no match, at compile time as at run time; that every
+other operation follows the same rule is a reading.
 
 ### Build later: the under-construction sign (the manager's name)   [core/principles/build-later]   ruled 2026-11-18
 "The following can be delayed in build." ... "I'd like to consider that unbuilt territory however and the error is an "under construction" sign."
 A meaning can be acknowledged and its build deferred: the program is refused with the under-construction error.
-
-### Exact wording (the manager's name)   [core/principles/exact-wording]   principle 2026-11-19
-"you are a lawyer in your exact wording. this is what is needed now."
-On the manager's method: rules are stated exactly.
 
 ### Check his regex (the manager's name)   [core/principles/check-his-regex]   principle 2026-11-19
 "be suspicious of my regex and confirm contemporaneously if you see inconsistencies."
@@ -109,153 +102,648 @@ A regex in his example or ruling is run before it is recorded; a mismatch with h
 
 ## The model   [core/model]
 
-### What a match is   [core/model/match]   ?  2026-11-19
+### What a match is   [core/model/match]   ruled 2026-11-17
+A program is a pattern with conditions written into it; a condition is one more piece of the pattern, and when it rejects, the pattern goes on to its next path in PCRE's order.
+by: core/principles/regex-default core/principles/matching-language
+see: core/conditions/two-valued
+- A PATH is one complete way the pattern matches: a stretch of the subject (its text), the value of every label, and
+  for a loop the passes it ran, PCRE's trailing empty pass included (a reading).
+- A condition sits at a place in the pattern, reads the labels set so far, and either lets the match go on or
+  rejects; on a reject the pattern returns to its most recent choice and tries the next one, a branch of `|` as any
+  other, whether the condition is written inside the `|` or after it.
+- The answer is the first path that gets through every piece. Nothing is unknown: a test passes or fails.
+- A ROW is one potential match, a stretch with the labels it sets; the subject is the search text, not a row.
+- To a condition a pattern is a black box that exposes labels; an inner view is written by nesting the condition.
+WHOLE `123` HOLDS (a = `1`, b = `23`), `23` FAILS / SEARCHED `x23 123` `123`@4 (a = `1`, b = `23`) / FIND-ALL `123 213 1` [`123`@0, `13`@5] (`/(?<a>\d+)(?<b>\d+)/ & (a: "1")`)
 
-### The three modes   [core/model/modes]   ?  2026-11-19
+### The three modes   [core/model/modes]   ruled 2026-11-17
+A program is matched WHOLE (some surviving path spans the whole text), SEARCHED (the first surviving path at the leftmost start) or FIND-ALL (PCRE2's global loop over it).
+needs: core/model/match
+by: core/principles/regex-default
+- The subject is the search text. The program's final pattern is SEARCHED, or WHOLE when the caller matches a
+  whole value; a nested place fixes its own text and mode (core/model/places).
+- FIND-ALL is PCRE2's global loop: the first surviving path at the leftmost start, again from the reported end;
+  after an EMPTY report, a retry at the same place for the first surviving non-empty path starting there, and only
+  then a step of one character (a reading: regex's loop, by the default of explicit-exceptions).
+- A searched pattern that can match the empty text behaves as PCRE's does (its empty matches), with a warning.
+- A check of the whole text is a program matched WHOLE; its idiom over a hit list is the library's
+  (lib/search/occurrences).
+see: lib/search/occurrences lib/search/hits core/model/places
+WHOLE `1` HOLDS, `12` FAILS / SEARCHED `a12 1` `1`@1 / FIND-ALL `12 3` [`1`@0, `2`@1, `3`@3] (`/\d+/ & /^\d$/`)
 
-### The table of paths and its order   [core/model/table]   ?  2026-11-19
+### The table of paths and its order   [core/model/table]   reading 2026-11-19
+The table of a program on a text holds every path of the pattern in PCRE's preference order, each remembering the branch it took at every `|`; conditions filter it and the first survivor is reported.
+needs: core/model/match core/model/modes
+see: core/patterns/atomic
+- The order: the leftmost start first; at one start, the order PCRE tries its choices.
+- Two paths over one stretch with different labels are two rows.
+- A label takes its value inside a pass at its group's close; a condition placed after the group reads it.
+- An atomic part is the one place where the first row is taken BEFORE the conditions outside it filter
+  (core/patterns/atomic); a condition written INSIDE the atomic part is a piece of it and filters first.
+WHOLE `73` HOLDS (l = `3`), `77` FAILS / SEARCHED `x737` `73`@1 (l = `3`) / FIND-ALL `37 73 77` [`37`@0, `73`@3] (`/(?<l>\d)\d|\d(?<l>\d)/ & (l: "3")`)
 
-### The place table   [core/model/places]   ?  2026-11-19
+### Group questions over the pass table   [core/model/table/group-truth]   open group-truth 2026-11-19
+After a loop, is the reading the definition: each group question counts the passes on which its condition is TRUE, each pass judged with its own labels, two-valued?
+needs: core/model/table
+see: lib/counting/occurs lib/counting/some core/conditions/pass-start-read
+- The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads
+  the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the
+  finished passes.
+- Under the reading `NOT some(c)` and `occurs.none(c)` are one question (they agree on every text run), and
+  `occurs.none(NOT c)`, "no pass on which c fails", is another (it holds with no pass; on a pass lacking c's label
+  c fails and `NOT c` holds).
+- Candidates: (a) yes, the reading; (b) no: he names which of the three forms he meant to be one question.
+modes: n/a (a question over library names; the runs are cited in the details entry)
+
+### The place table   [core/model/places]   reading 2026-11-19
+Each place a program or a part can stand in fixes its text and mode, the kind of rx it needs, and whether a condition outside it re-enters it.
+needs: core/model/match core/model/modes
+by: core/principles/operand-world
+| place | its text and mode | the kind it needs | re-entered from outside | piece |
+|---|---|---|---|---|
+| the program | the subject; WHOLE, SEARCHED or FIND-ALL | can match | n/a | core/model/modes |
+| an `&` operand (either side) | the stretch's own text, whole | can filter | yes | core/filters/and |
+| a sequence operand | spliced in place | can match | yes | core/patterns/sequence |
+| a condition as a sequence operand | zero width at its point | a test | n/a | core/conditions/in-sequence |
+| a loop body, a postfix operand | each pass, in place | can match | yes, pass by pass | core/labels/one-rule |
+| an atomic part | in place | can match | no | core/patterns/atomic |
+| a positive lookahead or lookbehind | from its point, consuming nothing | can match | no | core/patterns/lookaround |
+| a pattern hole `${X}` | in place, `(?:X)` | can match | yes | core/holes/pattern |
+| a `label:` set | the label's text, whole | can filter | no | core/conditions/form |
+| the operand of a complement | the stretch's own text, whole | can filter | no | core/filters/complement |
+| a binding `name := X` | none of its own (X where `name` is used) | any: the error is at a use | n/a | core/labels/export |
+| a part label `[x = A]` | A in place | as the place it stands in | as A's place | core/labels/paths |
+| an `occurrences` argument; a hit list | its stretch; the hit list atomic | can match | yes; the hit list no | lib/search/occurrences |
+| the test of a conditional | at the conditional's point | a test | no for a peek | lib/control/when-test |
+| a `records` item | a compile-time find-all | can match, condition-free | no | lib/records/records |
+- A place with no row here is not a place a program or a part can stand in.
+modes: n/a (the table of places; each place's piece has its example)
+
+### The outermost view   [core/model/places/outermost-view]   ruled 2026-11-17
+A condition outside a pattern sees its labels at the outermost view; an inner view is written by nesting the condition at the level it speaks about.
+needs: core/model/places core/model/match
+- Every enclosing loop's pass enters its body anew, so a bare condition after the pattern reads a label only where
+  the last pass of each enclosing loop set it.
+- Pass tests (`some`, `occurs`, `h[k]`) on a label two loops deep range over the outermost loop's passes (a reading).
+WHOLE `3;,` HOLDS, `3;,,` FAILS, `3;;,` FAILS / SEARCHED `3;,,` `3;,`@0 / FIND-ALL `3;, 3;;, 4;,` [`3;,`@0, `4;,`@9] (`/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)`)
 
 ## Patterns   [core/patterns]
 
-### Literals and regex text   [core/patterns/literals]   ?  2026-11-19
+### Literals and regex text   [core/patterns/literals]   ruled 2026-11-14
+An rx literal `/.../` is full PCRE and means exactly what PCRE means; the predicate language adds only two marks inside it, the hole `${` and, under its switch, the operator `&`.
+needs: core/model/match
+- `\/` escapes the delimiter. A one-literal program is a valid program: every PCRE pattern is one (a reading: no
+  strict subset, no capability level beyond today's engine choice: lib/builtin/import).
+- Crossings: from rx text to the expression language only by `${...}`; from the expression language to rx only by
+  `/.../`.
+- `${` always opens a hole in rx text, in every position; a literal `$` then `{` is written `$\{` (a reading).
+- `&` in rx text is all or nothing, by a module or option: ON, `&` is the operator exactly where `|` means
+  alternation, PCRE's reading standing everywhere else; OFF, `&` is PCRE's literal. `\&` and `[&]` are a literal
+  `&` under both settings. Off by default (a reading).
+- Inside a larger program a literal starts from a strict subset: `\K`, `(*ACCEPT)`, `\G`, the backtracking verbs and
+  callouts are refused until their predicate meaning is defined.
+see: core/holes/insert core/holes/no-hole
+WHOLE `a b` HOLDS, `ab` FAILS / SEARCHED `xa b` `a b`@1 / FIND-ALL `c a b ab` [`c`@0, `a b`@2] (`/a b|c/`)
 
-### Flags in a literal   [core/patterns/flags]   ?  2026-11-19
+### Flags in a literal   [core/patterns/flags]   ruled 2026-11-18
+A literal's flags are the ones it writes (`(?x)`, `(?i)`, `/.../x`), with PCRE's scope; the predicate opt-in implies none, and a literal standing on its own inherits none.
+needs: core/patterns/literals
+by: core/principles/rx-owns-flags
+- No implicit extended mode: `/foo bar/` keeps its space and `#` is literal text.
+- Built up inside another rx, an rx inherits the flags of what surrounds it: for a hole, core/holes/flags.
+- An `&` written at program level has no surrounding rx: each side keeps its own flags (a reading); so does a
+  sequence operand at program level (a reading).
+see: core/holes/flags
+WHOLE `aB` HOLDS, `AB` FAILS / SEARCHED `AB aB` `aB`@3 / FIND-ALL `ab aB Ab` [`ab`@0, `aB`@3] (`/a(?i)b/`)
 
 ### The sequence operator   [core/patterns/sequence]   ruled 2026-11-17
 `A SEQ B` is regex concatenation, A's text then B's, an assertion at a part's edge seeing its neighbours; it binds tighter than `&` and `|`.
-skeleton: yes
+needs: core/patterns/literals
+- Each operand is spliced in as one non-capturing group: a quantifier after an operand applies to all of it.
+- There is one sequence operator ("A followed by B"); juxtaposition is not used. Its mark cannot begin an operand
+  (a reading), so `A+ SEQ B` is a postfix `+` then the sequence.
+- A sequence and a hole in a pattern position are one reading (core/holes/pattern).
+- Labels across the operator: core/labels/flow. A condition as an operand: core/conditions/in-sequence.
+- The flags of an operand: core/patterns/flags.
+see: core/labels/flow core/conditions/in-sequence core/holes/pattern
+WHOLE `12` HOLDS, `x12` FAILS / SEARCHED `x12 34` `34`@4 / FIND-ALL `12 x34 56` [`12`@0, `56`@7] (`wb SEQ digits SEQ wb`, wb := `/\b/`, digits := `/\d+/`)
 
-### Alternation   [core/patterns/alternation]   ?  2026-11-19
+### Alternation   [core/patterns/alternation]   ruled 2026-11-17
+`P | Q` is regex's alternation: a condition anywhere after the choice that rejects sends the pattern into the next branch.
+needs: core/model/match core/patterns/sequence
+- `&` distributes over a `|` on its LEFT: `(B | A) & X` = `(B & X) | (A & X)`. Over a `|` on its right it does not,
+  the left side deciding which stretch is reported (core/filters/and).
+- Between conditions `c | d` is this same `|`: an alternation of two zero-width tests at one place.
+- Entering an alternation resets the labels inside it (core/labels/one-rule).
+see: core/filters/and core/labels/one-rule core/arrays/lift
+WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 (l = `2`) / FIND-ALL `25 13` [`25`@0, `13`@3] (`(B | A) & (l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-17
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` are regex's quantifiers on the operand before them; counts in braces are `repeat`; binary `+` is addition.
-see: lib/rx/repeat
-skeleton: yes
+needs: core/patterns/sequence
+see: lib/rx/repeat core/values/arithmetic
+- Each is the regex quantifier of that spelling on the operand as a whole, with regex's behaviour (`(?:X)??` tries
+  nothing first, then X's own first choice).
+- A postfix operator binds tightly, to the single operand before it (a name, a literal, a call, a labelled part, a
+  parenthesised expression); anything larger is parenthesised. Tightest first: a postfix quantifier; the sequence
+  operator; `&`; `|`.
+- The same marks with two operands are arithmetic; nothing is guessed and there is no "did you mean" message. `?` is
+  the optional, so a conditional is spelled otherwise.
+- Read longest first: `x++` is the possessive, `x+?` the lazy; after `+` or `*` a token that can begin an operand
+  makes it binary; postfix operators stack (readings).
+- On a condition a quantifier is a compile error (core/conditions/quantified).
+see: core/conditions/quantified
+WHOLE `abab` HOLDS, `abb` FAILS / SEARCHED `abbab` `ab`@0 / FIND-ALL `abab x ab` [`abab`@0, `ab`@7] (`("a" SEQ "b")+` is `(?:ab)+`)
 
-### Atomic parts   [core/patterns/atomic]   ?  2026-11-19
+### Atomic parts   [core/patterns/atomic]   ruled 2026-11-17
+An atomic part means what PCRE's atomic group means: no path inside it is retried once it has matched, while a condition written inside it is a piece of it and is tried before it commits.
+needs: core/model/match core/model/table
+- A condition outside an atomic part never re-enters it.
+- In a search an atomic part does not stop the search going on to later starts.
+- The name `atomic(X)` used here is the library's body around PCRE's atomic group (lib/control/atomic); the
+  backtracking verbs and a no-re-entry sequence are ideas (parked).
+see: lib/control/atomic parked/ideas/atomic
+WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(B | A) & (l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
 Labels set inside a lookahead are visible after it, read by the usual label rules, as in PCRE.
-skeleton: yes
+needs: core/model/match
+- A condition outside a lookahead never re-enters it: it reads the labels of the lookahead's first path only.
+- A negative lookahead tries every inner path before it succeeds, and its labels are never set.
+- A label set in a lookahead may lie outside the matched text.
+- A lookbehind's labels are visible the same way (a reading).
+- In a filter operand a lookaround that can reach outside the stretch is the compile error (core/filters/operand-context).
+see: core/filters/operand-context
+WHOLE `1234` HOLDS (l = `4`, f = `1`), `4321` FAILS / SEARCHED `4321 1234` `1234`@5 (l = `4`, f = `1`) / FIND-ALL `1234 4321 77` [`1234`@0] (`/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/ & (l: > $f)`)
 
 ## Labels   [core/labels]
 
 ### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-17
-A label matches every pass; a capture is PCRE's last value; `$x` and `x:` read the label.
-skeleton: yes
+A label read after a loop is the last pass's own value, unset where that pass did not set it; a capture is PCRE's carried value; `$x` and `x:` read the label.
+needs: core/model/match
+see: core/labels/one-rule lib/counting/some
+- The LABEL is the language's: what a condition, a default, a joint, `$x` and the group questions read. `$x` and
+  `x:` never disagree.
+- The CAPTURE is regex's: the value from the last time a group of the name was set, read inside rx text (`\k<x>`, a
+  conditional group, and a callout where one is allowed: a one-literal program, core/patterns/literals) and by the
+  carried-capture form, a visibly different spelling.
+- The ARRAY form reads every setting of the name in order, the one outside the loop included; a reset contributes
+  nothing; it is its own type, compared with a single value only through the group questions (`some`, `count`,
+  `occurs`: lib/counting); its index `h[k]` counts settings (a reading).
+- "All passes" is written with the condition inside the loop, on the item.
+WHOLE `9:45,10:45,45` HOLDS, `9:45,10,45` FAILS / SEARCHED `9:45,10,45 1:45,45` `1:45,45`@11 / FIND-ALL `9:45,10,45 1:45,45` [`1:45,45`@11] (`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")`)
 
-### One label rule: branchings reset   [core/labels/one-rule]   ?  2026-11-19
+### One label rule: branchings reset   [core/labels/one-rule]   ruled 2026-11-17
+A label is a name; entering a branching (an alternation, an optional, a loop) resets every label whose group lies inside it, and in a sequence the last mention wins.
+needs: core/model/match core/labels/labels-vs-captures
+- Every group of one name sets the same label; two groups of one name are not an error (unlike PCRE).
+- A group's close sets its name; a reset is a mention; nothing else resets a label.
+- A loop is a branching over its number of passes: entering it resets; zero passes leave its labels unset; the
+  empty last pass enters the body's optional, which resets.
+- An inner loop is entered anew in each outer pass, so a label two loops deep is reset there.
+- A counted repeat `{n}` with n of 2 or more is a loop; `{1}` is no branching (readings).
+- A name set before a loop and inside it does not survive the loop: the separated list `/(?<h>\d)(?:,(?<h>\d))*/`
+  on `7` leaves h unset; `/(?:(?<h>\d),)*(?<h>\d)/` gives `7`.
+- Repeated means set in a loop by its operand regex (a reading).
+- A test on a label no match can set draws a warning, not an error: it is a test that can never pass
+  (`pcrec.test.never`, core/diagnostics/warnings).
+see: core/diagnostics/warnings
+WHOLE `3qxx` FAILS, `q3xx` HOLDS (a = `3`), `7q3xx` HOLDS (a = `3`) / SEARCHED `3qxx` FAILS / FIND-ALL `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10] (`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)`)
 
 ### Labels across composed parts   [core/labels/flow]   ruled 2026-11-17
 A label from a pattern is whatever label it surfaces; a composed pattern and a literal have the same label behaviour (the last mention wins).
-skeleton: yes
+needs: core/labels/one-rule core/patterns/sequence
+- Across the sequence operator a name both parts surface is one label, the last mention, which is not always the
+  last match.
+- Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$`
+  references it, not for existing; a part's own label is reached through a label given to the part.
+- A binding's name is not a path (`A.h` is an error where a label is referenced).
+- A chain `A & B` whose sides both surface h, itself used as a part, still surfaces h ambiguously (a reading).
+see: core/labels/paths
+WHOLE `7` HOLDS (h unset), `7,3` HOLDS (h = `3`) / SEARCHED `x7 7,3` `7`@1 (h unset) / FIND-ALL `7 7,3` [`7`@0, `7,3`@2] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`)
 
 ### Export and private labels   [core/labels/export]   ruled 2026-11-18
 A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible.
-skeleton: yes
+needs: core/labels/flow
+by: core/principles/namespace-at-reference
+see: core/labels/backreferences
+1. A private label is visible only inside the binding it is written in.
+2. Inside a binding, the public labels of everything written or used there are visible, read as labels are (last
+   mention; an ambiguous reference is the error).
+3. Outside a binding, what is visible is the public labels written in its own literals and its public part labels;
+   a part's public labels are reached by path through its part label.
+4. A part label only disambiguates; it gives no access to anything private.
+5. The caller's captures are what is visible from the top-level program by these rules.
+6. A part label beginning with `_` (`[_a = A]`) is an ordinary part label inside its binding and exports nothing
+   outside it.
+7. `[_ = A]` makes none of A's labels visible anywhere outside A; A matches as before.
+- A backreference or group number inside an rx to a name that rx does not define is a compile error
+  (core/labels/backreferences); a `$` read resolves where it is written (core/values/reads).
+- A filter operand's labels are visible like any others (a reading: visibility goes by export, not by role).
+WHOLE `2025` HOLDS, `1999` FAILS / SEARCHED `x1999 2001` `2001`@6 / FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] (the program `year`, year := `/(?<_v>\d{4})/ & (_v: >= 2000)`)
 
-### Part labels and paths   [core/labels/paths]   ?  2026-11-19
+### What the caller gets for an unreferenced shared label   [core/labels/export/caller-ambiguous]   open caller-ambiguous 2026-11-19
+For a public label two parts both set that the program never references, is the caller's ambiguous reference a compile error or an error when the caller reads it?
+needs: core/labels/export
+The rule (export-rule, statement 5): the caller sees what is visible from the top-level program, so a name two
+parts both make public is an ambiguous reference for the caller as for the program. Open: WHEN it is refused.
+Candidates: (a) a compile error; (e) an error when the caller reads it. The match is the same under both; h parts:
+from the left `1`, from the right `2`.
+WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34` [`12`@0, `34`@3] (`A & B`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
+
+### Part labels and paths   [core/labels/paths]   ruled 2026-11-18
+A part label `[x = A]` names part A; `x.h` is the label h as part A surfaces it, and a part label mentioned more than once names its last mention where the reference is written.
+needs: core/labels/flow core/labels/export
+- `[x = A]` is the group form `(?<x>A)` read as a label; inside pattern text a named group is the same thing.
+- `x.h` is read under the one label rule inside A (a branching inside A resets `x.h`) (a reading).
+- A reference is ambiguous when the last mention of the name among the patterns it can see is not unique; the two
+  sides of `&` are not ordered, across the sequence operator the later part's is the last (a reading).
+- An ambiguity is judged where the reference is written: `A & (B & (h: ..))` reads B's h only (a reading).
+- In a value position `alt.x[1]` stays legal (a reading).
+WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)`)
+A part label used twice: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)`)
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
-skeleton: yes
+needs: core/labels/labels-vs-captures core/labels/flow
+by: core/principles/namespace-at-reference
+- A reference uses the namespace as it is defined at the point of reference, read as labels are (the last
+  mention); inside a part, the part's own names: a backreference inside a part reads the part's own group.
+- A reference inside an rx to a name that rx does not define is a compile error, never a look into the
+  surroundings; a name crosses from one rx to another only by the defining rx exporting it.
+- Under `(?J)` the backreference reads PCRE's first set group of the name.
+- A reference to a name unset at that point fails, as regex's does (a reading).
+- Through a hole: core/holes/same-name.
+see: core/holes/same-name
+WHOLE `733` HOLDS, `737` FAILS / SEARCHED `x737 733` `733`@5 / FIND-ALL `733 737 455` [`733`@0, `455`@8] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`)
 
-### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-18
-A number names a group only when there is no ambiguity; `0` is always the entire match of the rx however it is composed.
-skeleton: yes
+### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-19
+A number names a group only when there is no ambiguity; `0` is never refused and names the match so far (core/conditions/match-so-far).
+needs: core/labels/one-rule core/labels/flow
+by: core/principles/operand-world
+- A number names a group of the condition's pattern only when that pattern is ONE written literal (or an `&` chain
+  with one pattern operand) and the group's name is not shared; elsewhere (a sequence, an inserted pattern, an
+  alternation of patterns, a repeat's operand, a chain of several patterns) it is the compile error "name the group".
+- Only capturing groups are numbered, plain `( )` and named alike, by their opening parenthesis; numbers are local
+  to each literal. A group's name and its number are two names of one label (naming both is the label-twice error).
+- `$1` reads label 1 as `$x` reads a name.
+- A number on a group whose name is shared inside one literal is refused too (a reading).
+- The numbered-label warning fires where a condition or a `$` reads a label by number on a pattern NOT written at
+  that place (a bound name, an imported element: `t & (1: <13)`, t := `/(\d\d?):(\d\d)/`); on the literal written
+  there it does not; `0` is exempt. This is its one trigger (core/diagnostics/warnings indexes it).
+- Relaxing a refused form later changes no existing answer.
+see: core/conditions/match-so-far core/diagnostics/warnings
+WHOLE `3:5` HOLDS, `5:3` FAILS / SEARCHED `5:3 3:5` `3:5`@4 / FIND-ALL `5:3 3:5 4:9` [`3:5`@4, `4:9`@8] (`/(\d):(\d)/ & (2: > $1)`)
+
+### A number on a group optional in a loop   [core/labels/numbers/in-loop]   open number-in-loop 2026-11-19
+On one literal whose group is optional in a loop, does a number read regex's capture, the label, or is it refused?
+needs: core/labels/numbers
+The reading today: THE LABEL (numbers and names read alike). Candidates: (a) the label; (b) regex's capture ("ONE
+WRITTEN LITERAL, with the regex meaning"); (c) refused, under "only when there is no ambiguity". They part: WHOLE
+`3;;`: the label FAILS, the capture HOLDS (group 1 keeps `3`).
+WHOLE `3;;` FAILS, `3;` HOLDS / SEARCHED `3;;` `3;`@0 / FIND-ALL `3;; 7;3;` [`3;`@0, `7;3;`@4] (`/(?:(\d)?;)*/ & (1: <5)`, the label reading)
 
 ## Conditions   [core/conditions]
 
-### The condition form   [core/conditions/form]   ?  2026-11-19
+### The condition form   [core/conditions/form]   ruled 2026-11-16
+A condition is a record `(label: S, ...)` laid against the labels of the pattern it meets; it holds when every entry's label text is in its set.
+needs: core/model/match core/labels/paths
+- An entry is `p: S`, p a label path, never an expression; `(h, m): R` is a joint entry (the tuple of the labels'
+  texts in the tuple set R); a record is the product of its entries: `(h: A, m: B)` = `((h, m): (A, B))`.
+- An entry runs to the next comma or the closing parenthesis; inside an entry `&` and `|` bind tighter than `:`.
+- Left of `:` names are labels; on the value side a bare name is a binding and a label is read `$x`.
+- A label named twice in one condition is a compile error.
+- `NOT c` is legal on a condition (core/conditions/two-valued; the negation spellings: core/filters/negation).
+- `$x & S` is an rx (x's text or nothing), legal where an rx stands, with a warning on the form.
+- A condition keeps its parentheses (core/spellings/condition-parentheses); `P & x: S` and `[x: S]` are errors.
+- A condition is a value of its own kind: it may be bound, passed or put in an array; the record is its body.
+see: core/values/number-domain core/diagnostics/dollar-form core/spellings/condition-parentheses core/conditions/two-valued core/values/comparisons core/values/tuples
+WHOLE `10:15` HOLDS, `9:15` FAILS, `10:45` FAILS / SEARCHED `9:15 10:15` `10:15`@5 / FIND-ALL `10:15 9:15 11:20` [`10:15`@0, `11:20`@11] (`/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: >= 10, m: <30)`)
 
-### Conditions are two-valued   [core/conditions/two-valued]   ?  2026-11-19
+### Conditions are two-valued   [core/conditions/two-valued]   ruled 2026-11-17
+A test on an absent label fails and the pattern tries its next path; `NOT c` holds exactly when c fails, an absent label included.
+needs: core/conditions/form core/model/match
+- `c | d` between conditions is regex's one `|` (core/patterns/alternation).
+- A record `(h: S, m: T)` is the `&` of its entries, with or without NOT.
+- `NOT (h: <5)`, `(h: !<5)` (h present and in the complement set) and `P & !(P & (h: <5))` are three meanings:
+  | spelling | P = `/(?<h>\d)?x/`: `x` / `3x` / `7x` (WHOLE) | P = `/(?<h>\d)?\d?x/`: `3x` (WHOLE) |
+  |---|---|---|
+  | `NOT (h: <5)` | HOLDS / FAILS / HOLDS | HOLDS |
+  | `(h: !<5)` | FAILS / FAILS / HOLDS | FAILS |
+  | `P & !(P & (h: <5))` | HOLDS / FAILS / HOLDS | FAILS |
+  The last column parts the first and third: P has two paths over `3x`, h = `3` and h unset; NOT rejects the first
+  and holds on the second, while the complement fails because one path of P has h under 5.
+- A test that can never pass and one that can never fail each draw a warning.
+see: core/filters/complement core/diagnostics/warnings core/filters/negation
+WHOLE `12` HOLDS (a = `2`, b = `1`), `1` FAILS / SEARCHED `12` `12`@0 (a = `2`, b = `1`) / FIND-ALL `12 1 19 3` [`12`@0] (`/(?<b>\d+)(?<a>\d)?/ & (a: <5)`)
 
 ### A condition as a sequence operand   [core/conditions/in-sequence]   ruled 2026-11-18
 A condition may be an operand of the sequence operator, tested where it stands; `&` stays beside it.
-skeleton: yes
+needs: core/conditions/form core/patterns/sequence
+see: core/conditions/pass-start-read
+- Zero width at its point, reading the labels as they stand there (core/conditions/pass-start-read).
+- Written last, the sequenced condition and `&` give the same answers; earlier, it is tested where it stands (in a
+  loop, each pass).
+- A condition written inside a loop, on the item, is a piece of every pass: that is how "every pass" is written.
+WHOLE `3;4;` HOLDS, `7;3;` FAILS / SEARCHED `7;3;` `3;`@2 / FIND-ALL `3;7;4; 2;` [`3;`@0, `4;`@4, `2;`@7] (`(/(?<h>\d)/ SEQ (h: <5) SEQ ";")+`)
 
 ### A quantifier on a condition   [core/conditions/quantified]   ruled 2026-11-18
 A postfix quantifier on a condition is a compile error.
 modes: n/a (a compile error)
 
+### A group holding only conditions   [core/conditions/quantified/group]   open condition-group 2026-11-19
+Is a group holding ONLY conditions (`((h: <5))?`, `((h: <5) SEQ (h: <5))*`) a condition for the quantifier's compile error, or a group quantified as regex?
+needs: core/conditions/quantified core/conditions/in-sequence
+- The reading today: (a) a condition, so a quantifier on it is the same compile error as on one condition.
+- Candidates: (a) the compile error: a quantified test is never silently dropped; (b) a group quantified as regex:
+  the test vanishes, so `[h = rx.digit] SEQ ((h: <5))?` is `rx.digit`.
+- A group holding a condition together with pattern text quantifies a pattern and is not this case.
+WHOLE `7` HOLDS / SEARCHED `x7` `7`@1 / FIND-ALL `7 3` [`7`@0, `3`@2] ((b), `[h = rx.digit] SEQ ((h: <5))?`; under (a) a compile error)
+WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x7` FAILS / FIND-ALL `7 3` [`3`@2] (unquantified, `[h = rx.digit] SEQ (h: <5)`)
+
 ### The match so far   [core/conditions/match-so-far]   ruled 2026-11-19
-In a condition standing as a sequence operand, `0` names the match so far: the text from the start of the rx it is written in to its point.
+`0` in a condition names the match so far: the text the rx the condition is written in has matched from its start to the condition's point.
+needs: core/conditions/in-sequence core/labels/numbers
 by: core/principles/composed-at-point
-skeleton: yes
+- This piece decides what `0` denotes, everywhere. After a complete pattern (`A & (0: S)`) the match so far is the
+  entire match; a condition written last in a sequence reads the entire match.
+- "The rx it is written in" is the rx composed at the point the condition is used; every hole case (a condition
+  alone in a hole, `${A & (0: S)}`) is core/holes/bare-condition's.
+- Inside a loop body: core/conditions/match-so-far/in-loop (open).
+see: core/holes/bare-condition
+WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`)
+
+### The match so far inside a loop   [core/conditions/match-so-far/in-loop]   open zero-in-loop 2026-11-19
+Inside a loop body, does `0` read the match so far from the start of the rx or from the start of the current pass?
+needs: core/conditions/match-so-far core/patterns/quantifiers
+- The reading today: from the rx's start (the earlier passes included). The candidates part on `3;4;`:
+  (a) the pass's own match so far; (b) the match so far from the rx's start.
+WHOLE `3;4;` HOLDS / SEARCHED `3;4;` `3;4;`@0 / FIND-ALL `3;4; 5;` [`3;4;`@0, `5;`@5] ((a) the pass's own match so far)
+WHOLE `3;4;` FAILS / SEARCHED `3;4;` `3;`@0 / FIND-ALL `3;4; 5;` [`3;`@0, `4;`@2, `5;`@5] ((b) the match so far from the rx's start)
+- The program: `(/\d/ SEQ (0: /\d/) SEQ ";")+`.
 
 ### Labels as they stand   [core/conditions/pass-start-read]   ruled 2026-11-17
 A condition reads the labels as they stand where it is written: after its group the current pass's, before it the previous pass's.
-skeleton: yes
+needs: core/conditions/in-sequence core/labels/one-rule
+- In the first pass, before its group, the label is unset. No "a pass begins" rule is added.
+- Its use: comparing an item with its predecessor.
+- A bare condition after the pattern reads the last pass's own value (core/labels/labels-vs-captures).
+WHOLE `3;4;7;` HOLDS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL `3;7;4; 9;1;` [`3;7;`@0, `4;`@4, ``@6, `9;`@7, `1;`@9, ``@11] (`/(?:(?=(?<n>\d))${c}(?<h>\d);)*/`, c := `NOT (h: /\d/) | (n: >= $h)`)
 
-### Defaults and absent labels   [core/conditions/defaults]   ?  2026-11-19
+### Defaults and absent labels   [core/conditions/defaults]   ruled 2026-11-16
+A default `h = v` written in a test stands in for an absent h in that one test only; `$h` reads the real label.
+needs: core/conditions/two-valued
+- A default is one string; a default of several strings is a compile error.
+- Two tests may give one label different defaults.
+- A default outside the test's set reads exactly as no default at every polarity.
+- "Present and not under 5" is `(h: !<5)`, or a default chosen outside the set: `(h = "x": !<5)`.
+- A default's regex model is PCRE's conditional group on the label, `(?(<h>)test-h|test-v)` (a model, not the mechanism).
+WHOLE `x` HOLDS, `3x` FAILS, `7x` HOLDS / SEARCHED `3x x` `x`@1 / FIND-ALL `7x 3x x` [`7x`@0, `x`@4, `x`@6] (`/(?<h>\d)?x/ & (h = "x": !<5)`)
 
 ## Filters   [core/filters]
 
-### The `&` operator   [core/filters/and]   ?  2026-11-19
+### The `&` operator   [core/filters/and]   ruled 2026-11-17
+`P & Q` keeps the paths of P whose stretch Q also matches whole, Q matched against the stretch as if it were the whole text; P's paths are tried first, the left side deciding.
+needs: core/model/match core/model/modes
+by: core/principles/left-decides core/principles/operand-world
+- Both sides match the same stretch whole; where it sits is decided by what surrounds the `&`.
+- `^`, `$`, `\A`, `\z`, `\Z` in an operand mean the stretch's ends; at the operand's edges they are redundant (a
+  warning).
+- `&` is symmetric for whether a program holds and left to right for what is reported: P's first path with every
+  path of Q, then P's next; so the order decides which labels and, with a lazy operand, which stretch are reported.
+- `A & B` holds exactly when `A & (0: B)` holds, on the same stretch; `&` also joins B's labels.
+- A condition written in an `&` chain stands after every pattern operand of that chain: `(a: "1") & P` = `P & (a: "1")`.
+- A hole inside an operand is filled first, then the operand judged (core/holes/in-filter).
+see: core/holes/in-filter
+WHOLE `1` HOLDS, `12` FAILS / SEARCHED `a12 1` `1`@1 / FIND-ALL `12 3` [`1`@0, `2`@1, `3`@3] (`/\d+/ & /^\d$/`)
 
 ### What a filter operand may contain   [core/filters/operand-context]   ruled 2026-11-17
 In a filter operand, any piece that might look outside the matched text is a compile error.
 by: core/principles/conservative-first
 modes: n/a (a compile error)
 
-### Complement   [core/filters/complement]   ?  2026-11-19
+### Complement   [core/filters/complement]   ruled 2026-11-17
+`!B` holds on a stretch where no path of B matches it whole; it takes a pattern or a set and is filter-only, its labels never visible outside it.
+needs: core/filters/and core/conditions/two-valued
+- `A & !B` is pattern difference: the paths of A whose stretch B does not match whole. `!B & A` = `A & !B`.
+- After `label:` the label's text is its left operand (`(x: !B)`); on a set, the complement over every text.
+- `!<200` and `>=200` differ on a target with non-canonical numerals.
+- `!` in rx text keeps PCRE's meaning (`/!foo/` matches `!foo`).
+- A complement inside an `occurrences` argument rejects a path like any piece; the loop tries the next (a reading).
+- Where it may stand: core/filters/kinds.
+see: core/filters/kinds lib/sets/anything
+WHOLE `123` HOLDS, `712` FAILS / SEARCHED `a7 12` `12`@3 / FIND-ALL `7 12 77 37` [`12`@2, `37`@8] (`/\d+/ & !/7\d*/`)
 
 ### Can match, can filter   [core/filters/kinds]   ruled 2026-11-18
 An rx can match when it produces a match by itself and can filter when it judges a stretch as its whole world; the error is at the use that needs the other kind.
+needs: core/filters/and core/filters/complement
 by: core/principles/match-and-filter
-skeleton: yes
+- A complement is filter-only: it may be bound, named, passed around and combined with other complements, and used
+  as an operand of `&` in a chain that has at least one positive pattern.
+- An `&` chain can match when every operand can filter and at least one can match.
+- Any use that needs it to produce a match by itself is a compile error at that use: a lone complement as a program
+  in every mode, a sequence operand, a pattern hole, an `occurrences` argument.
+- An rx with an outward-looking edge assertion can match and not filter (core/filters/operand-context).
+- The any-text pattern `anything` is provided to write beside a complement (lib/sets/anything).
+- The place table's kind column: core/model/places.
+see: lib/sets/anything core/filters/negation
+WHOLE `123` HOLDS, `812` FAILS / SEARCHED `7 8 12` `12`@4 / FIND-ALL `12 7 8 93` [`12`@0, `93`@7] (`/\d+/ & neither`, neither := `!/7\d*/ & !/8\d*/`)
+
+### Negation   [core/filters/negation]   ruled 2026-11-18
+`!X` is the complement of a pattern or set; `NOT c` on a condition holds exactly when c fails, a negative lookahead at its point.
+needs: core/filters/complement core/conditions/two-valued core/patterns/lookaround
+by: core/principles/regex-default
+see: lib/control/peek lib/control/when lib/control/when-test/not
+- `!X` (core/filters/complement) is filter-only, on a pattern or a set; `(h: !<5)` is h present and outside `<5`.
+- `NOT c`, c a condition, holds exactly when c fails, an absent label included (core/conditions/two-valued).
+- `NOT T`, T a zero-width pattern (a lookahead, a `peek(A)`): PCRE's negative lookahead, so `NOT peek(A)` is
+  `(?!A)`; this is the form the `when` body uses (a reading: the ruled `when` body needs it).
+- No other spelling of negation exists (a reading).
+- `NOT` on a bare consuming pattern is not defined: an open question (lib/control/when-test/not).
+- Lower-case `not` is no spelling: a word is a NAME, and no name `not` is provided.
+- `NOT` is a placeholder spelling and the one exception to "no alphabetic operators" (core/operators/bindings; a
+  reading). On a condition the record also wrote `!`; the documents write `NOT` there (a reading).
+WHOLE `7` HOLDS, `7x` FAILS / SEARCHED `7x 8` `8`@3 / FIND-ALL `1x 2 3x4` [`2`@3, `4`@7] (`/\d/ SEQ NOT peek(/x/)` is `\d(?!x)`)
 
 ## Values   [core/values]
 
 ### Reading a label   [core/values/reads]   ruled 2026-11-18
 `$y` reads the label, everywhere, holes included; a read is a one-string rx known at match time.
-skeleton: yes
+needs: core/labels/labels-vs-captures core/labels/backreferences core/conditions/pass-start-read
+see: core/holes/value core/diagnostics/dollar-form core/values/one-type core/holes/bare-condition/labels
+- `$y` is the label `y` as it stands where the read is written, in a hole as in a condition: `$x` and `x:` never
+  disagree.
+- A read yields at most one string: the label's text when it is set; when it is unset, the rx that never matches.
+- A read is an rx (core/values/one-type): every operation on rx applies to it, at match time. `$x & <5` is x's text
+  when x < 5 and nothing otherwise; the form draws a warning (core/diagnostics/dollar-form).
+- PCRE's capture (the last value a group of the name set) is `\k<y>` inside rx text; where a `$` reads, the form
+  that reads the capture is still to be spelled (core/spellings/placeholders).
+- A `$` read resolves in the namespace at the point it is written: in an `&` operand, the chain's labels; in a
+  value hole, the surrounding rx's labels as they stand at the hole. The free-name compile error is for rx TEXT
+  references (`\k<y>`, numbers) inside a literal or an inserted pattern (a reading; core/holes/bare-condition/labels).
+- The array form (every setting of the name, in order) is its own spelling; in a hole it is not defined
+  (parked/ideas/array-in-hole).
+WHOLE `3-3;-3;` FAILS / SEARCHED `3-3;-3;` `3-3;`@0 / FIND-ALL `3-3;-3; 7-7;` [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12] (`/(?:(?<y>\d)?-${$y};)*/`)
 
 ### One type: a match is an rx   [core/values/one-type]   ruled 2026-11-18
 A match is an rx; an operation on values applies to an rx; what cannot be built yet is the under-construction error.
 by: core/principles/build-later
-skeleton: yes
+see: core/diagnostics/under-construction core/arrays/lift
+- ONE type for values, the rx: a set of strings offered in an order. A constant (`5`, `"a"`) is a one-string rx
+  known at compile time; a label read is a one-string rx known at match time; an array the user writes is an
+  alternation (core/arrays/lift). A condition and a macro stay their own kinds (a reading).
+- PROPERTIES, not types: an operation or a position may need its operand SINGLE (at most one string), FINITE
+  (enumerable within the budget) or ANY; known at COMPILE time or allowed at MATCH time; able to MATCH or to FILTER
+  (core/filters/kinds).
+- TWO FORMS of each operation: the compile-time form on general regex, and the match-time form, compiled, on one
+  string. `$y + 1` (match time) and `\d + 1` (compile time) are written alike: `\d + 1` is the numerals 1 to 10.
+- A meaning the language defines whose build is not there is the under-construction error, never "illegal".
+- An operation written inside a position meets both: the operation's rule on its operands, then the position's on
+  the result; the stricter wins: compile error, then under construction, then built (a reading).
+WHOLE `3` HOLDS, `37` FAILS / SEARCHED `x7 3` `3`@3 / FIND-ALL `3 7 33 4` [`3`@0, `3`@4, `3`@5, `4`@7] (`/(?<x>\d+)/ & ($x & <5)`, equal to `(x: <5)` here)
 
 ### The number domain   [core/values/number-domain]   ruled 2026-11-18
 Every number operation reads the canonical decimal numerals only (no leading zeros); a read such as `0099` is not a number.
-skeleton: yes
+see: lib/modifiers/padded parked/ideas/class-base
+- ONE domain for every number operation: the comparisons, `+ - * %`, the counts.
+- Canonical: no leading zeros (`0` itself is one), no sign or point unless the literal writes them.
+- A member outside the domain is removed at compile time and yields nothing at match time (the position fails).
+- Every arithmetic result is the canonical numeral, whatever the width of what was read (`10 - 1` is `9`);
+  padding is the writer's request, through `padded`.
+- Numbers over another ordered set of symbols (a base given by a class) are an idea (parked/ideas/class-base).
+WHOLE `0099-100` FAILS / SEARCHED `0099-100 2025-2026` `2025-2026`@9 / FIND-ALL `0099-100 2025-2026 0100-101` [`2025-2026`@9] (`/(?<y>\d{4})-${$y + 1}/`)
+
+### Comparisons   [core/values/comparisons]   ruled 2026-11-18
+A comparison `<n`, `<=n`, `>n`, `>=n`, `==n` is a set of strings, the canonical numerals in that range, attached by `&` like any rx; the literal decides the reading.
+needs: core/values/number-domain core/filters/and
+see: lib/sets/between lib/modifiers/padded core/operators/precedence
+- Unary only: a comparison between two values is an intersection with a comparison set (`$start & <$end`,
+  `($x + $y) & <50`).
+- A prefix comparison takes ONE atom and binds tighter than `&`, `|` and `!`: `x & <256 | >300` is
+  `x & ((<256) | (>300))` (core/operators/precedence).
+- The set holds CANONICAL numerals of any width (the `\d+` shape, no leading zero): `/\d+/ & <20` rejects `020`;
+  padded text is compared through `padded(...)`, a visible modifier on the filter.
+- `>` and `>=` are infinite sets: they filter and are never enumerated (a reading).
+- The literal decides: `<256` compares integers; `<"256"` strings, `2.5` exact decimal and other radixes are the
+  draft's readings, not ruled.
+- A tuple atom compares in dictionary order (core/values/tuples).
+WHOLE `19` HOLDS, `020` FAILS, `20` FAILS / SEARCHED `x25` `2`@1 / FIND-ALL `25 7 019` [`2`@0, `5`@1, `7`@3, `0`@5, `19`@6] (`/\d+/ & <20`)
+
+### Tuples   [core/values/tuples]   ruled 2026-11-16
+A tuple `(9, 30)` is a value, the one-tuple set of arity 2; every set carries a fixed arity, and a comparison on a tuple atom is in dictionary order.
+needs: core/values/comparisons core/conditions/form
+see: core/modules/positional parked/ideas/first-rest
+- A tuple is used as a value wherever values are used: bound, passed, returned.
+- ARITY: one set kind with an arity fixed at compile time; `|`, `&` and array entries need equal arity; the labels
+  left of a joint entry's colon number the set's arity; only an arity-1 set has text (a pattern, a hole, `&` with
+  a pattern).
+- A joint entry `(h, m): R` lays the tuple of the labels' texts against R; a record `(h: S, m: T)` is its product
+  case, `((h, m): (S, T))`: one mechanism.
+- Two orders, both legal: `>= (9, 30)` compares the whole tuple in DICTIONARY ORDER (the first components, then the
+  next only where every earlier one is equal; each component read by its literal, in its literal's domain);
+  `(>= 9, >= 30)` compares each part on its own. `10:15` is in the first and not the second.
+- A modifier around a set of tuples acts on every part: `padded(>= (9, 30))` reads h and m both padded; a per-part
+  modifier is parked (parked/ideas/partial-transforms).
+- Taking ONE tuple apart (`(a, b) := lo`) is open (core/modules/positional); a first/rest walk (a tuple's first
+  part and the rest, recursively) is parked (parked/ideas/first-rest).
+- A tuple is not a RECORD: the parentheses of a call or a condition are never a value (core/operators/bindings).
+WHOLE `9:45` HOLDS, `9:15` FAILS, `10:15` HOLDS / SEARCHED `9:15 10:30` `10:30`@5 / FIND-ALL `9:30 9:15 12:45` [`9:30`@0, `12:45`@10] (`time & ((h, m): >= (9, 30))`, time := `/(?<h>\d{1,2}):(?<m>\d{2})/`)
+
+### Computed labels   [core/values/computed-labels]   reading 2026-11-19
+A binding whose expression reads a match label is a computed label of the pattern whose labels it reads: a one-string value per path, read by `$` and named left of `:` like a label.
+needs: core/values/reads core/conditions/form
+see: core/values/arithmetic lib/modifiers/length lib/modifiers/month-numbered
+- `sum := $a + $b` with `/(?<a>\d)\+(?<b>\d)/`: `(sum: <10)` tests the sum on each path, as `(a: ..)` tests a.
+- It is computed where it is read, from the labels as they stand there (core/conditions/pass-start-read); a binding
+  that reads no label is pure, a compile-time value (core/operators/statements).
+- An unset input gives an unset computed label: a test on it fails, as on an absent label (a reading).
+- Its value is one string (arity 1); a computed label over a loop's passes is a group question (lib/counting).
+WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 5+4` [`1+1`@0, `5+4`@8] (`/(?<a>\d)\+(?<b>\d)/ & (sum: <10)`, sum := `$a + $b`)
+
+### Metadata of a member   [core/values/metadata]   reading 2026-11-19
+A part label over an array carries two fields: `.index`, the 1-based position in the array of the member that matched, and `.label`, that member's name.
+needs: core/labels/paths core/values/computed-labels
+see: core/arrays/lift lib/modifiers/month-numbered lib/structural/capture
+- `days := [w = [/Mon/, /Tue/, /Wed/]]`: on `Tue`, `w.index` is `2`.
+- 1-based everywhere, as PCRE's group numbers are; `[0]` is the whole rx.
+- A user label named `index` or `label` would hide them: a compile error (a reading).
+- Read like labels: `$w.index`, or left of `:` (`(w.index: >= 2)`).
+WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon Wed` `Wed`@4 / FIND-ALL `Tue Mon Wed` [`Tue`@0, `Wed`@8] (`/${days}/ & (w.index: >= 2)`, days := `[w = [/Mon/, /Tue/, /Wed/]]`)
 
 ### Arithmetic   [core/values/arithmetic]   ruled 2026-11-19
 `+ - * %` take the decimal numerals only; any other operand, `% 0` or a negative result yields nothing, with a warning where known at compile time.
+needs: core/values/number-domain core/values/one-type
 by: core/principles/nothing-outside-domain
-skeleton: yes
+see: core/arrays/lift core/operators/precedence core/diagnostics/warnings lib/strings/join
+- Binary `+ - * %`: addition, subtraction, multiplication, remainder, on numerals; a constant expression folds
+  (`2025 + 1` is `2026`). Their levels: core/operators/precedence.
+- An operand of many strings (an array, a class, any rx `enumerate` accepts) applies member by member, over the
+  product of the operands (core/arrays/lift); a member outside the domain gives nothing and the others their
+  results: `\w + 1` is `\d + 1` (a reading, run).
+- `% 0` and a negative result are outside the domain: nothing, at compile time as at match time. There is no
+  signed numeral, and a written `% 0` is no compile error of its own.
+- A result known at compile time to be nothing draws a warning, never an error (core/diagnostics/warnings).
+- `+` never joins strings or patterns. Joining is the sequence operator, or `join` over an array (lib/strings/join).
+WHOLE `8` HOLDS / SEARCHED `x42 8` `42`@1 / FIND-ALL `8 x 42` [`8`@0, `42`@4] (`/${["7", "x", "41"] + 1}/` is `(?:8|42)`: the member `x` gives nothing)
+WHOLE `15-5` HOLDS, `5--5` FAILS / SEARCHED `5--5 15-5` `15-5`@5 / FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `10-0`@10] (`/(?<y>\d+)-${$y - 10}/`: a negative result is nothing)
 
 ### Single-value functions   [core/values/functions]   ruled 2026-11-18
-A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction.
-skeleton: yes
+A single-value function is built on an rx `enumerate` accepts, applied to each string in order; an outward-looking assertion is a compile error, an infinite or over-budget rx under construction.
+needs: core/values/one-type
+see: lib/builtin/enumerate core/arrays/lift lib/strings/left lib/strings/strlen lib/sets/prefix-in
+- A single-value function (`left`, `strlen`, the arithmetic operators; placeholder names) is defined on one string.
+  On a read it runs at match time on the read's one string.
+- On any other rx the first clause that applies decides (the order is a reading):
+  1. an assertion looking outside the operand (`left(/(?<=x)ab/, 1)`, `\b\d+\b`): `enumerate`'s compile error;
+  2. an infinite or over-budget rx (`left(/\d+/, 2)`): under construction;
+  3. a constant, a read, an array, a finite rx `enumerate` accepts: built, the function applied to each string.
+- `left` (lib/strings/left) is an image function; a preimage filter is another name (lib/sets/prefix-in).
+- An expression over reads and constants alone (`($y | "9") + 1`) is applied member by member at match time, in
+  its written order (a reading, run).
+WHOLE `fo` HOLDS / SEARCHED `xba fo` `ba`@1 / FIND-ALL `fo ba fofo` [`fo`@0, `ba`@3, `fo`@6, `fo`@8] (`/${left(/foobar|bazqux/, 2)}/` is `(?:fo|ba)`)
 
 ## Arrays   [core/arrays]
 
 ### Arrays are alternations; operations lift   [core/arrays/lift]   ruled 2026-11-18
 An array is an alternation of values; an operation on arrays applies to every combination of members, the first operand slowest, values in the order given.
+needs: core/values/one-type
 by: core/principles/general-rules
-skeleton: yes
-
-### Enumerate   [core/arrays/enumerate]   ?  2026-11-19
+see: core/holes/count parked/ideas/cartesian
+- A single value is a one-member array, so `n + 1` over an array needs no rule of its own:
+  `[2, 4] + [1, 10]` is `[3, 12, 5, 14]`.
+- An array mentioned twice is independent per mention (a reading).
+- A repeated result is harmless: as alternatives the first occurrence wins (a reading, run).
+- The rule is about arrays the user writes and the rxs `enumerate` accepts, not about the match-time array of a
+  label's settings, which is its own type (a reading).
+- A pairwise combination could exist only as an explicit function (parked/ideas/cartesian).
+WHOLE `12` HOLDS, `4` FAILS / SEARCHED `x14` `14`@1 / FIND-ALL `3 12 5 14` [`3`@0, `12`@2, `5`@5, `14`@7] (`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`)
 
 ### The order of a class's results   [core/arrays/class-order]   ruled 2026-11-19
 A class's members have no order; where a lift gives results of different lengths from one class position, the longer is tried first.
-skeleton: yes
+needs: core/arrays/lift
+see: lib/builtin/enumerate core/arrays/class-positions
+- A class is one position taking one character from a set (`\d`, `[90]`, `\w`, `.`). Alternations, quantifiers and
+  arrays the user writes keep their own order; nothing else is sorted.
+- No tie rule is needed: two different strings of one length cannot both match at one position (a reading, run).
+- Nesting, the alternation first: `(1|9) + \d` keeps the alternation's order and sorts each choice's class
+  results (a reading, run). The class first, or two class positions: core/arrays/class-positions.
+- Equal strings from different members are one result: `\d * 0` is `0` (a reading, run).
+WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:10|1|2|3|4|5|6|7|8|9)`)
 
 ### Two class positions in one lift   [core/arrays/class-positions]   open class-positions 2026-11-19
-The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-skeleton: yes
-
-### The order of a class in enumerate   [core/arrays/class-index]   open class-index 2026-11-19
-The draft's reading and its candidates are in `predicates_draft.md` until this section is converted.
-skeleton: yes
+The order of a lift's results with two class positions (`\d + \d`), a class under a lazy quantifier, or a class first beside an alternation is a question for the owner.
+needs: core/arrays/class-order
+- The ruled words cover one class position; the readings part where a lift holds more. Three cases, each with
+  its candidates in the details entry: two classes (C1 the lift as one position, longest first; C2 the first
+  class slowest, ascending; C3 = C1's answers), a lazy quantifier (Q1, Q2), the class first (A, B).
+- No candidate is the reading; it is asked.
+WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (C1, `/${\d + \d}/`: the lift's results longest first)
+WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (C2: the first class slowest, ascending)
 
 ## Holes   [core/holes]
 
 `${X}` inserts X into an rx literal. The insert is ONE construct whose meaning is given by its POSITION; each
-position below has its own rules. The pieces of this section are complete.
+position below has its own rules.
 
 ### One insert, its meaning by position   [core/holes/insert]   ruled 2026-11-17
 `${}` is a context-aware insert, not a string insert: what it inserts and how several values combine depend on the position it stands in.
@@ -270,22 +758,25 @@ by: core/principles/positions-own-rules
 | a value (an expression over reads and constants) in a pattern position | core/holes/value |
 | a backreference's name or number; inside `\Q..\E` | core/holes/no-hole |
 A position with no row here is a compile error (a reading).
+- Only `${...}` inserts: a parameter's name written bare inside an rx literal (`/(?s:.){n,}/`) is that literal text,
+  as in PCRE (`{n,}` is the four characters).
 modes: n/a (the table of positions; each position's piece has its example)
 
 ### The pattern hole   [core/holes/pattern]   ruled 2026-11-18
 In a pattern position a hole is the inserted pattern as a whole in a non-capturing group, `(?:X)`, matched in place; several values are one alternation, no copies.
 needs: core/patterns/sequence core/filters/kinds
 by: core/principles/positions-own-rules
+see: lib/search/anchored
 - `/xxx${/foo/}yyy/` is `/xxx(?:foo)yyy/`; a quantifier after the hole applies to the whole inserted pattern.
 - An assertion at the inserted pattern's edge crosses the border and reads its neighbours' text; one that can
   never hold beside its neighbour draws the can-never-match warning.
-- `anchored` in a hole has no error of its own: `x${anchored(/a/)}` never matches, as PCRE's `/x\Aa\z/`.
 - The hole and the sequence operator are one reading (pattern positions).
 - X must be an rx that can match: a filter-only rx (a complement) here is the compile error.
 - Several values, `${[a, b]}`: an ALTERNATION inside the one group, in the values' order; the literal is not copied.
   A member that is not a legal pattern makes the whole a compile error (a reading).
 - The inserted pattern keeps its own group numbering; a number other than `0` naming one of its groups from
-  outside is refused (core/labels/numbers); a `0` in the outer rx names the entire composed match.
+  outside is refused (core/labels/numbers); `0` in the outer rx is the outer match so far
+  (core/conditions/match-so-far).
 WHOLE `ac` FAILS, `abc` HOLDS / SEARCHED `bc` `c`@1 / FIND-ALL `c abc ac` [`c`@0, `abc`@2, `c`@7] (`/${/ab/}?c/`)
 
 ### The count hole   [core/holes/count]   ruled 2026-11-18
@@ -302,6 +793,8 @@ by: core/principles/positions-own-rules
   matches, with the can-never-match warning (a reading).
 - The count value zero, `x{${n}}` with n := 0, is `x{0}`: the object is absent and the rest matches (plain regex).
 - A count must have a finite enumeration; an unbounded repeat gives no maximum.
+- The copies are written as PCRE's branch reset, `(?|...)`: a group inside a copy keeps one number across the copies
+  (a reading).
 WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12`@0, `34`@2] (`rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4], is `(?|\d{2,2}|\d{2,4}|\d{4,4})`: the copy (4,2) removed)
 
 ### The group-name hole   [core/holes/name]   ruled 2026-11-18
@@ -317,7 +810,7 @@ by: core/principles/positions-own-rules
 - In practice, for a class that is not negated, the alternation collapses to one class: `[${c}]` is `[xy]`, in
   every mode, a capture before the class included (a reading, run).
 - The alternation is of the CLASS, not of the literal holding it: no copies, so it never reorders the rest of
-  the pattern (a reading, run: the copy reading differs).
+  the pattern (a reading, run).
 - One value may hold several characters, each a member; a character special inside a class (`^` first, `-`,
   `]`, `\`) in a value is a literal member: hole values are text (a reading, run).
 WHOLE `ax` HOLDS, `ay` HOLDS, `aq` HOLDS, `ab` FAILS / SEARCHED `-ab ay` `ay`@4 / FIND-ALL `ax ab aq` [`ax`@0, `aq`@6] (`/a[${c}q]/`, c := [x, y])
@@ -331,9 +824,9 @@ WHOLE `ap` HOLDS, `ab` FAILS / SEARCHED `-ab aq` `aq`@4 / FIND-ALL `ax ab ap` [`
 Several values in `[^${c}]` stay an alternation of the class, one per value; "none of these" is written by joining the array into one value: `[^${join(c)}]`.
 needs: core/holes/class
 by: core/principles/positions-own-rules
+see: lib/strings/join
 - `[^${c}]`, c := [x, y], is `[^x]|[^y]`, which accepts every character when two values differ.
-- `[^${join(c)}]` is `[^xy]`. `join` is a placeholder name: a function from an array to one string, its
-  members in order.
+- `[^${join(c)}]` is `[^xy]` (`join`: lib/strings/join).
 - `[^${c}]` written with an array of two or more different values draws a warning pointing at `join` (a reading:
   the manager's call).
 - A negated range end, `[^${lo}-z]` with several values, is the alternation the same way (a reading).
@@ -410,32 +903,52 @@ needs: core/values/reads core/values/one-type core/values/number-domain core/arr
 - A number's text is the canonical numeral; padding is the explicit `padded(...)` wrap.
 - In a loop the read is where the hole is written: after its group the current pass's, before it the previous.
 - The array form `${@y}` is not defined: written today it is a compile error.
-- A read in a count, class or option position: the draft's reading (`predicates_draft.md`) until converted.
+- A read in another position: core/holes/value/other-positions.
 WHOLE `3-x` HOLDS, `3-3` HOLDS, `3-4` FAILS / SEARCHED `7-3 3-3` `3-3`@4 / FIND-ALL `3-3 4-x 5-6 7-7` [`3-3`@0, `4-x`@4, `7-7`@12] (`/(?<y>\d)-${$y | "x"}/`)
+
+### A read in another hole position   [core/holes/value/other-positions]   reading 2026-11-19
+A read `$y` in a count position is under construction; in a class member or a range end its meaning is not stated; in an option position it is the option hole's compile error.
+needs: core/holes/value core/holes/count core/holes/class core/holes/option
+- A count from a read is known only at match time; the counted repeat over it is not built (core/diagnostics/under-construction).
+- A class member or range end from a read: not stated; asked with the construction-line question (which rx a
+  single-value function is built on, core/values/functions), not answered.
+- A group name from a read is a compile error (core/holes/name: a name is known at compile time).
+modes: n/a (compile-time verdicts; no matching involved)
 
 ### Flags at a hole   [core/holes/flags]   ruled 2026-11-19
 What is inserted in a hole starts with the flags in force at the hole for `i`, `m`, `s`, not for `U`, `x`, `xx`, `n`; a flag it writes for itself wins.
 needs: core/patterns/flags core/holes/pattern
 by: core/principles/rx-owns-flags
+see: core/holes/same-name
 - This holds for a direct literal and for a binding alike, at any depth (a binding in a hole inherits).
 - The inserted literal is parsed alone: its comments, its `\Q`, its group numbers and its recursion are its own.
 - `J` has no effect across a hole (core/holes/same-name).
-- Whether the two sides of an `&` written inside a hole inherit: open, flags-in-filter (the draft's reading: yes).
 WHOLE `id-BLAH` HOLDS, `ID-blah` HOLDS / SEARCHED `x ID-BLAH` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0, `ID-BLAH`@8, `Id-blah`@16] (`/(?i)id-${/blah/}/`)
+
+### Flags of an `&` inside a hole   [core/holes/flags/in-filter]   open flags-in-filter 2026-11-19
+Do the two sides of an `&` written inside a hole start with the flags in force at the hole?
+needs: core/holes/flags
+see: core/holes/and-in-hole
+- The reading today (the draft's): yes, both sides inherit, as any inserted rx does.
+- Candidates: (a) both sides inherit; (b) neither does: a filter operand judges its stretch as its own whole world,
+  with its own flags.
+- His remark: "by "flags propagate" i thought we decided that rx inherits the flags of the surrounding rx" (on
+  this question; not asked as a ruling).
+modes: n/a (a question; the draft's run is cited in the details entry)
 
 ### Labels through a hole   [core/holes/labels]   ruled 2026-11-18
 For labels, only the inserted pattern's public (exported) labels flow into the outer pattern; for matching it behaves like a literal.
 needs: core/labels/export core/holes/pattern
 by: core/principles/namespace-at-reference
-- A reference written INSIDE the inserted pattern resolves in its own namespace; a name it does not define there is
-  a compile error.
+- A backreference or group number written INSIDE the inserted pattern resolves in its own namespace; a name it does
+  not define there is a compile error (a `$` read: core/values/reads).
 - The outer program reads an inserted pattern's public label by the label rules as defined (the last mention); a
   private `_` label never flows out.
 WHOLE `2025-x` HOLDS, `1999-x` FAILS / SEARCHED `1999-x 2025-x` `2025-x`@7 / FIND-ALL `2025-x 1999-x 2001-x` [`2025-x`@0, `2001-x`@14] (`/${year}-x/ & (v: >= 2000)`, year := `/(?<v>\d{4})/`)
 
 ### Does a hole re-export a part's labels   [core/holes/labels/hole-export]   open hole-export 2026-11-19
-Does a hole re-export the inserted pattern's public labels where an unlabelled sequence part does not? Today they part: the hole does, the sequence part does not.
-needs: core/holes/labels
+Outside a binding, does a hole re-export the inserted pattern's public labels where an unlabelled sequence part does not? Today the hole does, the part does not.
+needs: core/labels/export core/holes/labels
 Candidates: (a) both export (the sequence part made like the hole); (b) neither exports (the hole made like the
 sequence part, a part label being the way to reach a part's labels); (c) as today, different.
 modes: n/a (a question; the runs are cited in the details entry)
@@ -443,7 +956,7 @@ modes: n/a (a question; the runs are cited in the details entry)
 ### Same-name groups through a hole   [core/holes/same-name]   ruled 2026-11-19
 A group that arrives through a hole is the inserted pattern's own and does not count as a second group of its name in the outer literal.
 needs: core/labels/backreferences core/holes/pattern
-- The outer literal's `\k<h>` reads the outer group (asked and ruled on `\k<h>`).
+- The outer literal's `\k<h>` reads the outer group.
 - The inserted literal's own `\k<h>` and numbered references are its own, and an outer `(?J)` has no effect
   across the hole (readings).
 WHOLE `a-ba` HOLDS, `a-bb` FAILS / SEARCHED `x a-bb a-ba` `a-ba`@7 / FIND-ALL `a-ba a-bb a-ba` [`a-ba`@0, `a-ba`@10] (`/(?<h>a)-${q}\k<h>/`, q := `/(?<h>b)/`)
@@ -452,12 +965,13 @@ WHOLE `a-ba` HOLDS, `a-bb` FAILS / SEARCHED `x a-bb a-ba` `a-ba`@7 / FIND-ALL `a
 A condition alone in a hole sees the regex composed at the point the hole stands: its `0` is the surrounding rx's match so far; in `${A & (0: S)}` the `0` is only A.
 needs: core/conditions/match-so-far core/holes/pattern
 by: core/principles/composed-at-point core/principles/operand-world
-- The condition is written with its parentheses, in a hole too: `${(0: digit)}`.
-- A bare condition last in an rx equals the condition on the whole: `/\d${(0: digit)}/` is `/\d/ & (0: digit)`.
-- At the very start of an rx it tests the empty match so far (`/${(0: digit)}/` never holds).
+see: core/spellings/condition-parentheses
+- A bare condition last in an rx equals the condition on the whole: `/\d${(0: rx.digit)}/` is `/\d/ & (0: rx.digit)`.
+- At the very start of an rx it tests the empty match so far (`/${(0: rx.digit)}/` never holds).
+- `rx.digit` (lib/rx/classes) stands where the owner wrote a bare `digit`, which no piece provides.
 - A binding whose whole body is a bare condition, used in a hole or as a sequence operand, behaves as the bare
   condition does (a reading, run).
-WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${(0: digit)}x/`)
+WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${(0: rx.digit)}x/`)
 
 ### Labels a bare condition reads   [core/holes/bare-condition/labels]   open bare-condition-labels 2026-11-19
 Which labels does a bare condition in a hole read: the surrounding rx's labels as they stand at the hole, or the inserted part's own namespace, where it has none?
@@ -486,20 +1000,262 @@ WHOLE `a${x}b` HOLDS, `ab` FAILS / SEARCHED `-a${x}b` `a${x}b`@1 / FIND-ALL `a${
 
 ## Operators   [core/operators]
 
-### Precedence   [core/operators/precedence]   ?  2026-11-19
+### Precedence   [core/operators/precedence]   reading 2026-11-19
+Tightest first: field, call and index; postfix quantifiers; prefix `!`, `NOT` and comparisons; `* %`; `+ -`; the sequence operator; `&`; `|`; then the entry marks and `:=`.
+needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/values/arithmetic
+| level | operator | fix, associativity | ground |
+|---|---|---|---|
+| 1 | `.` field, call `f(..)`, index `X[..]` | postfix after an OPERAND, left | a reading |
+| 2 | `+ +? ++ * *? *+ ? ?? ?+` on a pattern | postfix, stacking left to right | postfix and tightest of the four: ruled (core/patterns/quantifiers); stacking a reading |
+| 3 | prefix `!`, `NOT`, `< <= > >= ==` | prefix, on ONE atom with its postfix operators | a reading |
+| 4 | `* %` on numbers | binary, left | a reading |
+| 5 | `+ -` on numbers | binary, left | a reading |
+| 6 | the sequence operator | binary, n-ary | tighter than `&` and `|`: ruled (core/patterns/sequence) |
+| 7 | `&` | binary, a chain; the left side decides | ruled (core/filters/and) |
+| 8 | `|` | binary, n-ary | ruled |
+| 9 | `=` then `:` inside an entry | `p = v: S` is `(p = v): S` | a reading |
+| statement | `:=` | a statement ends before `NAME :=` | a reading |
+- After `+` or `*`, a token that can begin an operand makes it binary; otherwise it is postfix (a reading). The
+  sequence mark cannot begin an operand, so `A+ SEQ B` is unambiguous.
+- A `(` or `[` is a call or an index only after an operand; after an operator it begins an operand (a reading).
+- Inside an entry (`[ ... ]`, a call, a condition) `&` and `|` bind tighter than `=` and `:`, so
+  `(x: <200 | >900)` holds ONE entry.
+- Inside `/.../` none of this applies: rx text has PCRE's meaning, a hole `${...}` excepted.
+WHOLE `2` HOLDS, `x2` FAILS / SEARCHED `x2` `2`@1 / FIND-ALL `x1 2 x2` [`x1`@0, `2`@3, `2`@6] (`"x" SEQ "1" | "2"` is `(?:x1)|2`)
 
-### Bindings and macros   [core/operators/bindings]   ?  2026-11-19
+### Bindings and macros   [core/operators/bindings]   ruled 2026-11-15
+`name := expression` binds a name to whatever the expression is, an rx or a macro; `m(p1, p2) := body` makes a macro, and a call is the macro applied to one record.
+needs: core/values/one-type core/filters/and
+see: core/modules/call-shorthand core/holes/bare-condition core/filters/negation core/values/tuples
+- THE OPERAND IS NEVER AN ARGUMENT: it arrives by `&` or by a condition. Every argument is a PARAMETER: positional
+  arguments are the required parameters in declared order (`between(1, 12)`); keyword arguments are optional
+  settings with defaults (`join(a, sep = ".")`); any parameter may be passed by name (`between(low = 1, high = 12)`).
+- A pattern takes no arguments (calling one is a compile error: "write `isodate & (year: ...)`"); a parameterised
+  pattern is a macro: `date_in(years) := isodate & (year: years)`.
+- NO PARTIAL APPLICATION: a call binds every required parameter or is a compile error naming the missing one. A
+  SECTION, `(& f)`, is the one way to leave the operand open; sections start with `&` only and compose.
+- Typed parameters are not in the first build: a definition head declares names and, as `name = default`, the
+  defaults of optional settings (the `=` form a reading); a `:` in a head is a compile error (a reading).
+- No alphabetic operators or statement keywords: a word is always a NAME (a function, a label, a binding); the
+  placeholder `NOT` is the one exception (core/filters/negation).
+- A RECORD (the parentheses of a call or a condition) is never a value: it is laid against fields only; a tuple is
+  a value (core/values/tuples).
+- Macros expand at compile time, inlined per use; cost is per use. No lambda until an example needs one.
+- A macro in a hole is the unapplied-macro error, except a condition: a bare condition in a hole is legal
+  (core/holes/bare-condition).
+WHOLE `1,2` HOLDS / SEARCHED `x1,2` `1,2`@1 / FIND-ALL `1,2 3,3` [`1,2`@0, `3,3`@4] (`pair(p) := /${p},${p}/`, `pair(/\d/)` is `(?:\d),(?:\d)`)
+
+### Several bodies for one name   [core/operators/bindings/call-forms]   open call-forms 2026-11-19
+May one name have several bodies, chosen by the arguments a call passes, or does every name have one head whose optional parts are keyword settings?
+needs: core/operators/bindings
+see: lib/rx/repeat lib/modifiers/padded
+- The reading today: the library writes several bodies for two names, one per call form: `repeat(x, n)`,
+  `repeat(x, min, max)`, `repeat(x, min)`; `padded(rx)`, `padded(rx, n)`. The rule above has one head per name
+  (positional arguments the required parameters, keyword arguments optional settings).
+- Two of those bodies fit one call: `rx.repeat(rx.digit, 3)` is `\d{3}` by `repeat(x, n)` and `\d{3,}` by
+  `repeat(x, min)`.
+- Candidates: (a) several bodies, chosen by the set of parameters a call passes, a call fitting two of them a
+  compile error; (b) one head per name, its optional parts keyword settings (`repeat(x, min = 0, max = ...)`,
+  `padded(rx, width = ...)`), which needs a value or an absent setting for "no maximum" and "no width".
+WHOLE `1234` FAILS / SEARCHED `12345` `123`@0 / FIND-ALL `1234567` [`123`@0, `456`@3] (`rx.repeat(rx.digit, 3)` by `repeat(x, n)`, `(?:\d){3}`)
+WHOLE `1234` HOLDS / SEARCHED `12345` `12345`@0 / FIND-ALL `1234567` [`1234567`@0] (`rx.repeat(rx.digit, 3)` by `repeat(x, min)`, `(?:\d){3,}`)
+
+### Program shape and statements   [core/operators/statements]   reading 2026-11-19
+A program is bindings, expressions, calls and `@` statements with ONE final expression, its pattern; a bare rx anywhere else is a compile error.
+needs: core/operators/bindings
+see: lib/builtin/warn lib/builtin/export lib/builtin/options lib/assert/assert lib/builtin/eval
+- Newlines are layout; long logic goes in `:=` definitions. A statement ends before `NAME :=`.
+- Only `@` forms (compile-time EFFECTS) stand alone; a bare statement without `@` is a compile error ("unused
+  pattern: bind it or make it the result"). Macros cannot take `@`; effects cannot drop it.
+- The BUILT-INS are a closed list, reserved in CALL position only: `import`, `enumerate`, `pattern`, `param`,
+  `file_text`, `records`, and `eval` (the name reserved for the module that alone provides it, lib/builtin/eval);
+  the effects `@warn`, `@export`, `@options` (lib/builtin/warn, lib/builtin/export, lib/builtin/options) and the
+  assertions of the `assert` module (lib/assert/assert) after `@` only. A label named like one still works. Every
+  provided name written as a call has its piece in the library (`library.md`), these included.
+- An undeclared name that is not a label is a compile error with a suggestion; a binding that hides a label
+  draws a warning, and `$x` still reaches the label.
+- A binding that mentions a match label is match-dependent (a computed label); otherwise it is pure (compile time).
+- Option values in a call are strings, not bare words (`gaps = "allow"`).
+modes: n/a (the program's shape; no matching involved)
+
+## Modules   [core/modules]
+
+A module is reached by `import` and described by its map interface. Every spelling in this section is a
+placeholder (core/spellings/placeholders).
+
+### A module is a map   [core/modules/map]   ruled 2026-11-15
+A module is described by its map interface: its members are its fields, reached by the one `.`; what kind of thing a module is is not ruled.
+needs: core/operators/bindings
+- `.` has one meaning: a field of the map interface of the thing on its left (a label, a module member, metadata).
+- A map interface is not a created value: no map value is passed around.
+- Only what `.` reaches is reachable from outside: the public names, decided by the `_` rule (core/labels/export);
+  `@export`'s selection among them is core/modules/export's reading.
+modes: n/a (no matching involved)
+
+### The named binding list   [core/modules/binding-list]   ruled 2026-11-19
+`(l = left, =right) := X` binds `l` to `X.left` and `right` to `X.right`, on any map; `=left` is `left = left`.
+needs: core/modules/map
+- The name LEFT of `=` is the name being defined; the member is on the right. It is sugar: no new meaning beyond
+  `:=` and `.`, so a rename for a clash is `(wd = weekday) := import("dates")`.
+- Only what `.` reaches can be bound (public names).
+- The rule on a binding that hides a label applies to each bound name.
+modes: n/a (no matching involved)
+
+### The shorthand in a call   [core/modules/call-shorthand]   ruled 2026-11-19
+In a macro call `f(=x)` is `f(x = x)`, the same degenerate form as in a binding list.
+needs: core/modules/binding-list core/operators/bindings
+modes: n/a (no matching involved)
+
+### All symbols   [core/modules/all-symbols]   ruled 2026-11-19
+`(=) := X` binds every member `.` reaches on X under its own name; the bare `=` stands first, and named entries after it override.
+needs: core/modules/binding-list
+- `(=, l = left) := X` binds the member `left` as `l` and not also as `left` (a reading).
+- A bare `=` anywhere but first is a compile error (a reading).
+- "Every member" is every public member (a reading). The hide-label rule fires per name, so a name a library adds
+  later can start a warning in a program that used `(=)` (a reading).
+- With `(=)` a reader cannot tell from the file alone whether a bare name is a label or an imported name (a
+  reading: the cost of the form told to him, not an objection).
+modes: n/a (no matching involved)
+
+### Leaving a member out   [core/modules/leave-out]   ruled 2026-11-19
+In a `(=)` binding, `_ = left` binds the member `left` to the unusable name `_`: it is left out and the name `left` stays free to bind later.
+needs: core/modules/all-symbols
+modes: n/a (no matching involved)
+
+### Conflicts between files   [core/modules/conflicts]   ruled 2026-11-19
+A member name carried by two files of one `(=) := import(...)` is a compile error; such files are imported in separate bindings.
+needs: core/modules/all-symbols
+see: lib/builtin/import
+- In separate bindings the override entries handle a shared name.
+- The same compile error in the one-name form, `m := import("a"|"b")` (a reading).
+modes: n/a (no matching involved)
+
+### The default-imported set   [core/modules/default-set]   reading 2026-11-19
+A default-imported set, holding `peek`, is an ordinary implicit `(=) := import(...)` line before the program, so its names are written bare.
+needs: core/modules/all-symbols
+see: lib/control/peek
+- That it is an ordinary implicit line of the `(=)` form, no special mechanism: ruled.
+- That the set exists and holds `peek`: his lean. Library pieces in it carry `default: yes`.
+- Examples in these documents call every provided name bare, as if imported; how a `module: ?` name is reached is
+  open (core/modules/default-set/members).
+modes: n/a (no matching involved)
+
+### Which names are in the default set   [core/modules/default-set/members]   open default-imports 2026-11-19
+Which names besides `peek` are in the default-imported set is a question for the owner.
+needs: core/modules/default-set
+- Today only `lib/control/peek` carries `default: yes`. Candidates: `peek` alone; every name the core's own pieces
+  point at (`when`, `occurrences`, `some`, ...); a named prelude module.
+modes: n/a (no matching involved)
+
+### A positional binding   [core/modules/positional]   open tuple-parts 2026-11-19
+Is the positional list on the left of a binding, `(a, b) := X`, defined, for a tuple and for a map alike, or is a tuple only ever used whole?
+needs: core/modules/binding-list
+see: parked/ideas/first-rest
+- The candidates for a tuple: (A) a tuple is used whole, its parts not reachable; (B1) ONE tuple is taken apart on
+  the left of a binding (`(lo_h, lo_m) := lo`), with no index and no new operator. A set of several tuples is never
+  taken apart.
+- The same question covers a positional list against a MAP (a module, an import), which has no order.
+- The reason against access, the owner's: the SET makes the pairing, so breaking a set of tuples apart changes
+  its meaning (`9:30`, `10:00` apart are `9, 10` and `30, 00`).
+- Nothing uses either answer while the first/rest binding is parked (parked/ideas/first-rest). Asked again when
+  that item is taken up, or an example needs one part of a tuple value.
+- By-name selection from a map is always marked by `=` (the binding list, ruled) and is not part of this question.
+modes: n/a (no matching involved)
+
+### Export   [core/modules/export]   reading 2026-11-19
+What a library file exports is chosen among its public names, the names `.` reaches by the `_` rule; a file that exports nothing is a compile error.
+needs: core/modules/map
+see: lib/builtin/export
+- What `.` reaches on a module is its public names (core/labels/export): ruled.
+- How the choice is written, `@export(names)` or no call, is open (lib/builtin/export).
+- A file that exports nothing is a compile error (a reading).
+modes: n/a (no matching involved)
+
+### The standard library   [core/modules/standard-library]   reading 2026-11-19
+A standard library of provided modules for what users often match (dates, IP addresses, e-mail, ...) is a follow-up after the base: content, not mechanism.
+needs: core/modules/map
+see: core/modules/naming
+- Its members are modules reached by `import`; names the worked examples (the frozen draft §12) call and nothing
+  defines yet (`days`, `weekday_of`, `days_in`, `luhn`) are its planned content.
+- BLESSED CALLOUTS: a member may be emitted C code (pure, bounded, total, oracle-tested) that declares a regular
+  twin where one exists, the compiler choosing the automaton or the compiler-emitted callout, never a callout
+  written in rx text (a lean, its own plan row).
+modes: n/a (no matching involved)
+
+### Names of provided transforms   [core/modules/naming]   ruled 2026-11-15
+A provided transform is named for what it does to the FILTER, not to the subject: `padded`, `anchored`, `occurrences`, never `unpad`, `trim` or `search`.
+needs: core/modules/map
+see: lib/modifiers/padded lib/search/anchored lib/search/occurrences
+- A transform changes what a filter accepts; it never rewrites the subject. A name that reads as an operation on
+  the subject (`unpad` strips zeros; `search` acts on the text) is renamed.
+- The docs say that the transform transforms the filter.
+modes: n/a (no matching involved)
 
 ## Diagnostics   [core/diagnostics]
 
-### Compile errors   [core/diagnostics/errors]   ?  2026-11-19
+### Compile errors   [core/diagnostics/errors]   reading 2026-11-19
+A program whose meaning is refused is a compile error, and no setting disables one; what is only probably a mistake is a warning instead (core/diagnostics/warnings).
+needs: core/values/functions core/operators/statements core/modules/conflicts
+- Each error below is ruled or read in its own piece; this index is PARTIAL: more compile errors are stated in
+  their pieces only (an ambiguous reference across `&`, a free name, a `:` in a definition head, a `when` without
+  `then`, a failed assertion, ...).
+| fires on | piece |
+|---|---|
+| an undeclared name that is not a label (with a suggestion); a bare rx not final; a bare statement without `@` | core/operators/statements |
+| a pattern called with arguments; a missing required parameter; a macro in a hole (a condition excepted) | core/operators/bindings |
+| a label named twice in one condition | core/conditions/form |
+| a quantifier on a condition | core/conditions/quantified |
+| a piece of a filter operand that might look outside the matched text | core/filters/operand-context |
+| an rx where the other kind is needed (can match, can filter) | core/filters/kinds |
+| `\k<h>` to a name two groups of one literal carry, without `(?J)`; a number naming a group ambiguously | core/labels/backreferences, core/labels/numbers |
+| a hole position with no rule; an array in a group-name hole; a member that is not a count; a range written out of order; an option hole that is not one legal value; a backreference name or number from a hole | core/holes/insert and its position pieces |
+| `${@y}`, not defined | core/holes/value (the idea: parked/ideas/array-in-hole) |
+| an edge assertion in `enumerate`'s argument; an infinite or over-budget argument | lib/builtin/enumerate |
+| a single-value function on an operand with an assertion looking outside | core/values/functions |
+| no file matched by `import`; one member name from two files of one `(=)` import; a bare `=` not first | lib/builtin/import, core/modules/conflicts, core/modules/all-symbols |
+| a library file that exports nothing | core/modules/export |
+| a recursion through a parameterised definition other than one integer literal parameter strictly decreasing to a literal base case | (a reading; no piece) |
+- UNDER CONSTRUCTION is a class of its own: the meaning is defined, the build is not there
+  (core/diagnostics/under-construction).
+- Four candidates whose only ground was "probably a mistake" are warnings: an empty search, a test that can never
+  pass, a nullable hit argument, the `$x & S` form.
+modes: n/a (compile errors)
 
 ### The under-construction error   [core/diagnostics/under-construction]   reading 2026-11-18
-The under-construction error keeps its own class, worded as under construction (the manager's call, told to the owner).
+The under-construction error keeps its own class, worded as under construction (the manager's call).
 by: core/principles/build-later
 modes: n/a (a compile error)
 
-### Warnings   [core/diagnostics/warnings]   ?  2026-11-19
+### Warnings   [core/diagnostics/warnings]   ruled 2026-11-17
+Every warning is structural or defined by a library, has one stable name and can be switched off or made an error by a selector; a warning moves no answer.
+needs: core/values/arithmetic
+by: core/principles/structural-warnings
+see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/ideas/warning-rows parked/ideas/severity-table
+- NAMES: the compiler's carry the prefix `pcrec.`; a library's are named by its path (`compare.width.variable_width`).
+  Every name below is a placeholder; the names and wordings are the manager's call, not yet made.
+- A SELECTOR is a set of names written as an rx, matched whole: `@warn.off(/compare\.width\..*/)`,
+  `@warn.error(/.*/)`; an `@warn.off` that suppresses nothing draws `pcrec.warn.unused`. A STRICTNESS setting
+  (`@options.strict(...)`) makes the selected warnings errors.
+| name (placeholder) | fires on | ground |
+|---|---|---|
+| `pcrec.test.never`, `pcrec.test.always` | a test that can never pass (a test on a label no match can set included); one that can never fail; at any polarity | polarity-rule |
+| `pcrec.empty.search` | a searched final pattern that can report an empty find | empty-search-error |
+| `pcrec.dead.branch` | an alternative of a narrowing site (an `&` operand, a `label:` set) that can never match | the accepted list |
+| `pcrec.label.unset` | a label a condition names can be absent where it is read, with no default | the accepted list; core/conditions/two-valued |
+| `pcrec.default.unused` | a default that can never be used | default-unused; core/conditions/defaults |
+| `pcrec.label.ambiguous` | an ambiguous label in the author's own pattern text | the accepted list |
+| `pcrec.anchor.whole` | an explicit anchor that provably sits at the edge of a filter role's stretch | anchor-warn-scope; core/filters/and |
+| `pcrec.warn.unused` | an `@warn.off` that suppresses nothing | the accepted list; the selector rule above |
+| `pcrec.label.numbered` | a label read by number on a pattern not written there (core/labels/numbers) | accepted |
+| `pcrec.compare.looped` | a hand-written `\|` of conditions whose labels can repeat | core/diagnostics/looped-compare |
+| `pcrec.label.hidden` | a binding that hides a label | name resolution |
+| `pcrec.match.never` | an inserted pattern's edge that can never hold beside its neighbour; every copy of a product removed | a reading |
+| `pcrec.dollar.filter` | the form `$x & S` | core/diagnostics/dollar-form |
+| `pcrec.arith.nothing` | an arithmetic result known at compile time to be nothing, whatever the cause; a member list only when every member's result is nothing | plus-operands; the trigger a reading |
+| `pcrec.hit.nullable` | a hit argument that can match empty | core/diagnostics/nullable-hit |
+| `pcrec.test.consumes` | a bare pattern as the test of `when` | core/diagnostics/consuming-test |
+| `pcrec.class.join` | `[^${c}]` with two or more different values: it points at `[^${join(c)}]` | a reading (core/holes/negated-class) |
+modes: n/a (warnings)
 
 ### The `$x & S` warning   [core/diagnostics/dollar-form]   ruled 2026-11-19
 The form `$x & S` stays legal and gets a warning keyed on the form, pointing at `(x: S)`.
@@ -517,10 +1273,55 @@ see: lib/control/when-test
 The warning is keyed on the form (an argument written as a bare pattern), which no macro body can see.
 modes: n/a (a warning)
 
+### A `|` of conditions over labels that can repeat   [core/diagnostics/looped-compare]   ruled 2026-11-16
+A hand-written `|` of conditions whose labels can repeat draws a warning naming the joint condition as the per-item form; a joint condition itself draws none.
+needs: core/values/tuples core/diagnostics/warnings
+- The warning moves no answer; its name is a placeholder (`pcrec.compare.looped`).
+- It keys off the shape (a `|` of conditions, labels that a loop can set more than once), not off a name.
+- Whether it is still wanted, and on which shape: core/diagnostics/looped-compare/still-wanted.
+modes: n/a (a warning)
+
+### Is the warning on repeating labels still wanted   [core/diagnostics/looped-compare/still-wanted]   open looped-warning 2026-11-19
+Is a warning on labels that can repeat still wanted, and on which shape: a hand-written `|` of conditions (as ruled), a bare condition over a looped label, or none?
+needs: core/diagnostics/looped-compare core/labels/labels-vs-captures
+- The ruled warning stands until this is answered.
+- Its first ground (each alternative checked over every pass) predates the rule that a bare condition reads the
+  last pass's own label (core/labels/labels-vs-captures).
+- Candidates: (a) as ruled, on a `|` of conditions whose labels can repeat; (b) on a bare condition reading a label
+  set inside a loop; (c) no warning of its own, `pcrec.label.unset` covering what can be unset.
+- (b) and `pcrec.label.unset` fire on different programs: `/(?:(?<h>\d);)+/ & (h: <5)` fires (b) only (every path
+  sets h); `/(?<h>\d)?;/ & (h: <5)` fires `pcrec.label.unset` only (an optional is a branching, not a loop).
+modes: n/a (a question about a warning)
+
 ## Spellings   [core/spellings]
 
-### Every placeholder spelling   [core/spellings/placeholders]   ?  2026-11-19
+### Every placeholder spelling   [core/spellings/placeholders]   ruled 2026-11-17
+Every spelling in these documents is a placeholder, settled together in one spellings review; the table names each thing to spell and where its meaning is.
+- A spelling never changes a meaning already settled. The MEANINGS are in the pieces named.
+| the thing to spell (the placeholder here) | its meaning |
+|---|---|
+| the SEQUENCE operator (`SEQ`; his `€`, `¥`); it cannot begin an operand | core/patterns/sequence |
+| the nine POSTFIX QUANTIFIERS; the parse readings that decide what a program says | core/patterns/quantifiers, core/operators/precedence |
+| ATOMIC (`atomic(...)`); the no-re-entry sequence (his `A :: B`); the skip-past verb (PCRE's `(*SKIP)`) | core/patterns/atomic, parked/ideas/atomic |
+| the RX parts (`rx.repeat`, `rx.digit`, the plurals) | lib/rx/repeat, lib/rx/classes |
+| the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, lib/counting/every-pass |
+| the ARRAY FORM of a read (his `@x`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/labels-vs-captures, core/values/reads |
+| the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
+| a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]` | core/labels/paths, core/labels/export |
+| the CONDITIONAL (`when(A, B, else = C)`), its argument shape, a `when` operator, the comma-free keyword form; `peek(A)` | lib/control/when, lib/control/peek |
+| the condition's parentheses (`(0: rx.digit)`) | core/spellings/condition-parentheses |
+| the ANY-TEXT pattern (`anything`); a constant for the never-matching rx | lib/sets/anything, parked/ideas/never-constant |
+| the EXPLICIT PRODUCT (`cartesian(...)`), if adopted | parked/ideas/cartesian |
+| the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | lib/strings/left, lib/strings/strlen, lib/strings/upper-start, lib/sets/prefix-in, lib/strings/join; the rule: core/values/functions |
+| `padded`'s width and pad parameters | lib/modifiers/padded |
+| the LABEL-ONLY group (his `(?<:x>foo)`) | parked/ideas/label-only-group |
+| OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | lib/builtin/options, lib/builtin/warn, core/diagnostics/warnings, parked/ideas/capability-optins |
+| every WARNING name (`pcrec.test.never`, `pcrec.dollar.filter`, ...) and the under-construction error's name | core/diagnostics/warnings, core/diagnostics/under-construction |
+| `import(...)`, `@export(...)`, the filter inside the import | lib/builtin/import, lib/builtin/export, core/modules/export, lib/builtin/import/filter |
+| the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
+| a positional binding `(a, b) := X` | core/modules/positional |
+modes: n/a (spellings)
 
 ### A condition keeps its parentheses   [core/spellings/condition-parentheses]   reading 2026-11-19
-A condition is written with its parentheses everywhere, in a hole too (`${(0: digit)}`); the unparenthesised forms are a spellings item.
+A condition is written with its parentheses everywhere, in a hole too (`${(0: rx.digit)}`); the unparenthesised forms are a spellings item.
 modes: n/a (a spelling)

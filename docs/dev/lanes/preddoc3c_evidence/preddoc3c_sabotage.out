@@ -1,0 +1,22 @@
+s1 rc=1 CAUGHT failing: PW DOC 
+s2 rc=1 CAUGHT failing: PW 
+s3 rc=1 CAUGHT failing: PW DOC 
+s4 rc=1 CAUGHT failing: PA BE 
+s5 rc=1 CAUGHT failing: AN 
+s6 rc=1 CAUGHT failing: AC 
+s7 rc=1 CAUGHT failing: SW DOC 
+s8 rc=1 CAUGHT failing: SW 
+s9 rc=1 CAUGHT failing: OC DOC 
+s10 rc=1 CAUGHT failing: OC 
+s11 rc=1 CAUGHT failing: HI 
+s12 rc=1 CAUGHT failing: BE DOC 
+s13 rc=1 CAUGHT failing: QU 
+s14 rc=1 CAUGHT failing: JO DOC 
+s15 rc=1 CAUGHT failing: LO DOC 
+s16 rc=1 CAUGHT failing: SL DOC 
+s17 rc=1 CAUGHT failing: CA DOC 
+s18 rc=1 CAUGHT failing: DOC 
+s19 rc=1 CAUGHT failing: PI DOC 
+s20 rc=1 CAUGHT failing: MN DOC 
+s21 rc=1 CAUGHT failing: LE DOC 
+caught: 21 of 21

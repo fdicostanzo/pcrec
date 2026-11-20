@@ -3,8 +3,11 @@
 The predicate language ([COND-FAMILY]; DESIGN ONLY) has its own manager session, run by the
 `pcrec-predicate-manager` skill and managed by the pcrec manager ("main") as the memfn kit manager is.
 This directory is that session's hand-off and its channel with main. The design itself lives elsewhere:
-`docs/design/predicates_draft.md` (the draft), `docs/design/plan_row_bodies/COND-FAMILY.md` (the record
-of the owner's words, the only source of rulings), `docs/design/predicates_future.md` (ideas).
+`docs/design/predicates/` (the CURRENT DEFINITION since 2026-11-19: `core.md`, `library.md`, `parked.md`, each with a
+`_details.md` partner, one piece per path tag, read with `scripts/entry <tag|slug>`, checked by
+`scripts/pred_doc_lint.py`), `docs/design/plan_row_bodies/COND-FAMILY.md` (the record of the owner's words, the only
+source of rulings; new entries carry a `tags:` line), `docs/design/predicates_draft.md` (FROZEN at revision 29.1, the
+source the documents were cut from), `docs/design/predicates_future.md` (retired; its items are parked pieces).
 
 ## Files
 
@@ -15,9 +18,8 @@ of the owner's words, the only source of rulings), `docs/design/predicates_futur
   main). Requests, review numbers, and any predicate remark the owner made to main, verbatim.
 - `to_main.md` — predicate manager -> main. ONE writer: the predicate manager (single-file `[pred]`
   commits on its branch). `done:` lines, plan-row status to record, decision text to file.
-- `doc_format.md` — the format of the predicate documents (`docs/design/predicates/`: base + details files
-  linked by path tags with a status; the lint rules); the owner's request of 2026-11-19. Piloted, in use.
-- `doc_ratchet.tsv` — the lint's ratchet: per file, the `?` pieces and the skeleton pieces (rows only shrink).
+- `doc_format.md` — the format of the predicate documents (pieces, tags, statuses, details fields, the lint rules).
+- `doc_ratchet.tsv` — the lint's count of unconverted pieces (all zero; only shrinks).
 - `owner.md` — the owner's view of the predicate work (GITIGNORED; `/q` reads it in that session).
 
 ## Rules

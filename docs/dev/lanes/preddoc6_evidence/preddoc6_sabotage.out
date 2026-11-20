@@ -1,0 +1,9 @@
+s1 CAUGHT : checks 10, failed 1: TV
+s2 CAUGHT : checks 10, failed 1: DOC
+s3 CAUGHT : checks 10, failed 2: CP DOC
+s4 CAUGHT : checks 10, failed 1: DOC
+s5 CAUGHT : checks 10, failed 1: DOC
+s6 CAUGHT : checks 10, failed 1: DOC
+s7 CAUGHT : checks 10, failed 1: DOC
+s8 CAUGHT : checks 10, failed 1: R3
+s9 CAUGHT : checks 10, failed 1: DOC

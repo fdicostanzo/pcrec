@@ -302,3 +302,103 @@ into its upper half; PLAN F8, F12, G1-G3. Coordinator stopped; draft committed (
 (sonnet, worktrees/predlint3) applies and files it; watcher armed. NOTE for main: an older file
 2026-09-12-r57-w23-format.md already carries the number r57. Owner: import-several RULED (several files; one name
 = the combined map; reverses 2026-11-14 "exactly one file"). WAITING on: predlint3.
+
+## 2026-11-19 (evening, later) — predlint3 merged; delivered to main (P-10); conversion lanes 3a/3b/3c launched
+
+predlint3 merged (lint 2,278 / 0; mutation 316 / 301 / 15 / 0; r57 filed RULED; doc_format.md folded, each rule
+once). Accepted its calls: F2 "at least one principle item names its class"; the record `tags:` check accepts a
+live piece, a section or a previous tag. Delivered tip 3c0042d1c to main (P-10, message sent). Decided: import is
+RULED, so it is a CORE section (`core/modules`), not parked; the parked `?` piece is retired by `was:`.
+Launched, opus, watchers armed, disjoint: preddoc3a (core model, patterns, labels, conditions, filters),
+preddoc3b (core values, arrays, operators, diagnostics, spellings + new core/modules with today's import
+rulings), preddoc3c (library in full with proved bodies, `capture`, the 72 census names; parked against the 38
+ideas-file items; deletes parked/import-symbols). None edits the ratchet: I lower it after the merges. A known
+transient: 3b and 3c each may show ONE lint failure on the retired parked tag until both are merged.
+AFTER THEM: merge 3a, 3b, 3c (each ALONE), lower the ratchet, lint; ask main for a review number; a critic round
+with a COMPLETENESS lens (census lists: 155 ruling entries, slugs, 72 names each land on a tag); retire
+predicates_future.md; send main the skill text for the new layout. WAITING on: the three lanes; main's merge.
+
+## 2026-11-19 (night) — the conversion is merged: no unconverted piece left; asked main for the review number
+
+Main merged P-10 (main 892553b58). Lanes preddoc3a, 3b, 3c delivered, merged (index conflicts: both sides kept)
+and stopped. State: core 113 pieces, library 38, parked 39; no `?`, no skeleton; ratchet set to zero; lint 4,056
+checks, 0 failed; three soft-cap warnings (core.md 93.7 KB against 64; library 28.2 against 24; parked 17.7
+against 16: the caps were my guesses; decide after the review whether to raise them or split core).
+MY ERROR, found by 3b: statement 7 of import-symbols ("positional `(a, b) := X` left undefined") was wrong against
+"2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"; withdrawn in the record, told to
+Frank, core/modules/positional rewritten by hand as ruled. LESSON (again): grep the record before giving him a
+list of "implications".
+By hand: the eight record `tags: parked/import-symbols` lines repointed to core/modules (tags lines are my
+metadata, not his words); parked head paragraph.
+OPEN CALLS OF MINE for the fix lane after the review: (1) his words put PRIMITIVE names in the core, the library
+lane left the primitive provided names in the library (any_case, occurs, param, file_text, ...): move them to a
+core section, or amend the format with a reason; (2) the census has 61 names, not 72: 11 unaccounted; (3)
+nullable-meaning sits on a core piece and belongs to lib/search/occurrences; (4) condition-group (open) sits on a
+ruled piece; (5) bold openers glued to a paragraph cannot be cited; (6) some/count/none/same/all have no core
+piece; (7) retire predicates_future.md (all 38 items now have parked pieces).
+Owner questions now open in the documents: any-case-body, bare-condition-labels, caller-ambiguous, class-index,
+class-positions, default-set, group-truth, hole-export, not-test, number-in-loop; named by lanes, not pieces:
+condition-group, export-choice, limited (at most / exactly), between's body, list_of, param, within, upperStart.
+WAITING on: main's review number; then one opus critic coordinator (design mode, completeness lens).
+
+## 2026-11-19 (late night) — review r59: NOT ready; my tuple statement wrong a second time; fix lane preddoc4 launched
+
+r59 (main's number; five critics; draft committed c331717a6): examples 92 run, 0 differ, but: rulings 144
+expected / 27 missing; slugs 188 / 49 unhomed + 10 misplaced; provided names 98 / 27 missing; rejected candidates
+100 / 25 missing; core primitives with no piece (comparisons, some/every/count, tuples, computed labels, .index /
+.label, assert); three definitions of `0`; negation undefined in places; 11 primitive pieces in the library;
+core.md does not read front to back. Verdict: not ready as the wake base. ALL proposed dispositions accepted.
+MY ERRORS: (1) my withdrawal of statement 7 stopped one record entry short: his "Yes" on taking a tuple apart was
+REOPENED eight minutes later ("Nothing is set in stone"); the question is the draft's open tuple-parts. Record
+corrected again, piece rewritten `open tuple-parts`, to be told to him. (2) the padded width body I wrote and he
+agreed to has `n` outside a hole (`{n,}` is literal text); corrected to count holes in the record; answers
+unchanged. LESSONS: read the SAME-DAY entries after any entry cited as confirmed; an evidence model must build the
+regex from the body's TEXT, not its intent (three rounds missed the padded slip that way).
+PLAN: lane preddoc4 (opus, launched, watcher armed): the design-bearing findings (sections C, D, RULING-n;
+primitives move to a new core/builtins; missing primitives added; READ-18 stage 1). THEN lane preddoc5: the
+mechanical lists from the critics' appendices (citations, slugs, rejected, names). THEN a re-check round (ask main
+for a number), file r59, deliver. Not delivered to main since P-10. WAITING on: preddoc4.
+
+## 2026-11-19 (near midnight) — preddoc4 merged; the owner refined "primitive"; preddoc5 launched
+
+Owner: "all macros "x()" should be in the library document ... marked as to whether they are defined in the
+language or not"; "my 'primitive' designation doesn't work"; library = "provides the symbols"; then "I agree with
+your take" (split by what a thing is; `import` the call in the library, the binding list in the core). Recorded;
+sent to the running lane as R-1, which it applied (verified in the merge: no core/builtins; 46 library pieces all
+with `defined:`, 15 native; enumerate and import in lib/builtin).
+preddoc4 merged and stopped: lint 4,575 / 0; core 119 pieces, library 46; padded body with count holes built
+mechanically from its text; ZERO, NEGATION, the missing primitives (comparisons, tuples, computed labels,
+metadata, some/count, assert, pattern, eval), condition-group as an open sub-piece. Soft caps: core.md 100.6 KB,
+library 38.2 KB (grew with the new pieces; READ-18 stage 2, generated indexes, is PLAN).
+preddoc5 (opus, launched, watcher armed): the appendices' four lists row by row (27 rulings, 49 + 10 slugs, 27
+names, 25 rejected), parked rulings items, `defined:` into doc_format.md, files r59 as RULED.
+THEN: merge, ask main for a re-check review number, re-check round (same five lenses), deliver (P-11).
+Owner questions named by preddoc4: zero-in-loop, caller-ambiguous (a) vs (e), every-pass-spelling,
+condition-group, flags-in-filter, operators-as-bodies, macro-warning. WAITING on: preddoc5.
+
+## 2026-11-19 (midnight) — preddoc5 merged; r59 filed; re-check round r60 running
+
+preddoc5 merged and stopped (tip d8634250a after merge; lint 4,850 / 0): rulings 33 rows (20 homed, 8
+superseded, 5 already), slugs 59 (50 homed, 9 already), names 36 (24 homed, 9 already, 3 not names), rejected 25
+(24 homed, 1 not); no status rose to ruled; no contradiction met; r59 filed RULED and indexed; doc_format.md has
+`defined:`. Main gave r60 and reminded: evening hold, light work only (told to the coordinator). Coordinator
+crit-preddoc5 (opus) launched: fix-verification per r59 finding, list re-count from the appendices, ruling lens
+on the added text with the same-day-later-entry check, a cold read-whole, new-damage. Verdict asked: READY /
+READY WITH NAMED RESIDUALS / NOT READY.
+THEN: rule its dispositions; if a fix lane is needed, run it; deliver to main as P-11 (documents converted,
+reviews r59 + r60); retire predicates_future.md (my call, pending: all 38 items are parked pieces); send main the
+skill text for the new layout (sections 0, 1, 3, 4, 5 name the draft as the working document). At pause:
+REWRITE wake.md from scratch (it still describes the first session). WAITING on: crit-preddoc5.
+
+## 2026-11-20 (after midnight) — r60: NOT READY by a short batch; fix lane preddoc6 launched
+
+r60 (draft committed 3e520c47c): of 38 applied r59 findings 31 FIXED, 6 PARTLY, 1 FIXED WRONGLY
+(condition-group), 0 not fixed; re-counts: rulings 1 of 144 missing (looped-compare), slugs 5 of 188, names 1 of
+98 (+ the `@` effects), rejected 0 of 100 (5 partial). Worst: positional piece still used the withdrawn wording
+for the map case; `@export`/`@warn`/`@options` have no piece; a citation of words superseded the same night
+(SOURCE-ROW); an OWNER-RULED warning (looped-compare, moved by joint-loops part 3) that a manager's withdrawal had
+dropped from the documents; duplicate bodies in the base. All proposals accepted; my calls: the `@` effects are
+three native library pieces; the looped warning is stated as he last ruled it, with an open sub-piece
+looped-warning for him. Lane preddoc6 (opus) launched, watcher armed; it also files r60. The coordinator says no
+further full round is needed after this batch: I verify by its three readings and the lint, then deliver (P-11).
+New owner question queued: looped-warning. WAITING on: preddoc6.
