@@ -18,7 +18,7 @@ Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows
   scratch/memfn/blockanalysis/report.md; ideas.md 707 entry evaluated. dig/hi losses = walk confound; post-data SIMD table 0 LOSS (biased).
   OWED: Frank's answer on a confirming run (walk fixed, SIMD table declared before data). No build. fcards-night unpinned, prunable.
 - R-46 (dense-hit pre-check FORM reply): SLIPPED from 17:00 11-19. New target 14:00 11-20 (main agreed). Design lane 08:00 after
-  708/709, then a critic round. Scope (main, from Frank): dense = 2 or more hits per block, stop there; super-dense (hits within
+  708/709, then a critic round. Working scope (owner DISCUSSION, slug dense-not-target, not a ruling): dense = 2 or more hits per block, stop there; super-dense (hits within
   N) is not a target; read 709's N first.
 - COVER-CAP LANDED on main 77edff7ae (span forms abi 109 + relabel 0df533a85). OWED: merge main into lane/memfn-k1108 (merge
   alone, make strict) at a quiet point (not during 708).
