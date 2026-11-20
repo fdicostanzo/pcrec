@@ -487,3 +487,13 @@ boundary remark, run). Lane predasc (opus, worktrees/predasc off 5a299d40d): del
 first, lanewatch --follow armed. Owed by me: a name proposal for the terse sort; the critic round on the batch
 (number from main first). While it runs I do not edit the class-order / lift / enumerate / sort pieces.
 WAITING on: predasc; Frank's next question (flags-in-filter).
+
+## 2026-11-19 (late) — predasc merged; corrections owed to him told; sort shorthand noted
+
+predasc DONE (lanecheck rc 0; hand-back verified against the report), merged, to be stopped: lint 5,094 / 0 after
+my sort bullet, plan-lint clean, its model re-run on my branch 24 / 0. Classes ascending: `\d + 1` is
+`1|..|10`; `10 - \d` now `10|9|..|1`; bounded lazy + lazy `1`@1, lazy + greedy `123`@1 again (both told to him).
+His sort remark recorded (lean + request); `longest_first(X)` proposed and noted on lib/structural/sort.
+OPEN from tonight: class-value. NEXT: ask main for a review number, critic round on the batch (bare-condition-
+labels, looped-warning, hole-export, array-scope, class-positions + quantified-order), then deliver.
+WAITING on: Frank (flags-in-filter next; his word on the critic round timing is not needed).
