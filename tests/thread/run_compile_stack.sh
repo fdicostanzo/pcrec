@@ -181,6 +181,11 @@ run() {
 #   backreference at the core re-enters the fold through the capture fact,
 #   once (`\1`) or once per group (`\1\2…\N`), and litrep reaches it with no
 #   reference at all;
+#   altpos/altpospost/brefpost are the possessive wrap `*+` (a distinct
+#   arm), and every `*post` row carries one literal element beside the nest:
+#   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3:
+#   one trailing `d` moved `(abc|abd…abe)*` from 317,504 to 440,560 bytes and
+#   `(a|b…c)*` from 257,552 to 344,560; limits.md §3.10¶3);
 #   compound puts the nest in an arm of a pattern the compound route takes
 #   (two compiles, one inside the other: compile_driver -> pcrec_compound_walk
 #   -> part_compile -> compile_driver), checked below to reach that route.
@@ -198,6 +203,13 @@ ncaltrep;;(?:a|b;c;)*;;all;0
 brefrep;;(a|b;\1;)*;;all;0
 brefsrep;;(a|b;\\%d;)*;;all;0
 litrep;;(abc|abd;abe;)*;;all;0
+altpos;;(a|b;c;)*+;;all;0
+altpost;;(a|b;c;)*;d;all;0
+ncaltpost;;(?:a|b;c;)*;d;all;0
+litpost;;(abc|abd;abe;)*;d;all;0
+altpospost;;(a|b;c;)*+;d;all;0
+brefpost;;(a|b;\1;)*+;d;all;0
+optpost;;(a;;)?;d;all;0
 lookbehind;;(?<=;a;);;all;0
 atomic;;(?>;a;);;all;0
 inlineopt;;(?i:;a;);;all;0

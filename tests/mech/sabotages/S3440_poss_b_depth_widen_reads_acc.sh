@@ -10,7 +10,7 @@
 # possessified, and the match changes answer. The witness is a chain of 65
 # groups, `(x)(\1)...(\64)x+\65`, on x^67: libpcre2 10.46 and python3 `re`
 # match (0, 67); the planted compiler answers NOMATCH. No corpus cell reached
-# this edge before the two B-depth BOUND cells (K=64, K=65) this row's witness
+# this edge before the two B-depth BOUND cells (K=64, the control; K=65, the witness) this row's witness
 # lives in.
 SAB_ID="S3440-poss-b-depth-widen-reads-acc"
 SAB_FILE="src/opt/possessify.c"

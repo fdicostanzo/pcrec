@@ -124,17 +124,15 @@ static void ss_walk(Ctx *cx, const Ast *a, StartSet *acc)
             continue;
         case A_ALT: {
             /* The union of the branches, each walked into `b` from the
-             * empty suffix and ORed into `u`. */
+             * empty suffix and ORed into `u` (which starts as the empty
+             * union: no bytes, not nullable). */
             StartSet u = ss_empty();
-            ss_walk(cx, a->r, &u);
-            const Ast *t = a->l;
-            for (;;) {
+            u.nullable = false;
+            PCREC_SPINE_EACH(br, a, A_ALT) {
                 StartSet b = ss_empty();
-                ss_walk(cx, t->k == A_ALT ? t->r : t, &b);
+                ss_walk(cx, br, &b);
                 for (int i = 0; i < 32; i++) u.bits[i] |= b.bits[i];
                 u.nullable = u.nullable || b.nullable;
-                if (t->k != A_ALT) break;
-                t = t->l;
             }
             *acc = ss_cat(u, acc);
             return;

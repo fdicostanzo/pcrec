@@ -71,7 +71,7 @@
  *           which row 2's may_end catches and A1 would skip, N2).
  *   - ARM B, a backreference's FIRST (`-fno-poss-bref-first`): the union
  *     over every member of refs[] of every A_CAP with that number of the
- *     TEXT the body can begin with (`text_first`: a zero-width item is
+ *     TEXT the body can begin with (`first_eval`'s `text` reading: a zero-width item is
  *     (no bytes, nullable) — a gate is in no text, N1's
  *     `(?:((?=a))a)?b+\1b`), folded when the REFERENCE is caseless, and
  *     nullable iff some member body is. Each clause is a refutation
@@ -209,9 +209,9 @@ static First fst_seq(First x, First rest)
  * on the walk and never in a file static (§3.1, R-4; [TS-3]'s re-entrancy).
  * [POSS-CTX-TABLE] is where this becomes a context record with a READER
  * field; until then the two readers are two readings of one fold,
- * `first_of` (the next character at a POSITION) and `text_first` (the first
- * character of a captured TEXT; `first_eval`'s `text` reading), and the
- * difference is N1's miscompile. */
+ * `first_of` (the next character at a POSITION) and `first_eval`'s `text`
+ * reading (the first character of a captured TEXT), and the difference is
+ * N1's miscompile. */
 typedef struct PossCap PossCap;
 typedef struct FqFrame FqFrame;
 
@@ -376,8 +376,8 @@ static PossCap *cap_build(Ctx *cx, const Ast *root)
 
 /* ---- the FIRST machine ([DD-10], K147) -----------------------------------
  *
- * `first_of` (the next character at a POSITION) and `text_first` (the first
- * character of a captured TEXT) are one structural fold read two ways, and
+ * `first_of` (the next character at a POSITION) and `first_eval`'s `text`
+ * reading (the first character of a captured TEXT) are one structural fold read two ways, and
  * arm B makes that fold re-enter itself: a reference's FIRST is its groups'
  * captured-TEXT FIRST, and resolving a group walks the group's body, which
  * may hold references of its own. Written as a C recursion, the fold paid a
@@ -494,10 +494,9 @@ static First fst_row(const Ast *a)
  * A_CAT, A_ALT, A_REP), and an A_BREF arm B does not resolve. Every set is
  * computed in the SOUND direction: anything unmodellable (a wide class, a
  * call) widens to ALL BYTES rather than refusing, which can only cost a
- * possessification, never a wrong answer. ITS OWN FRAME ([DD-10], K147): its
- * arms' scratch (A0's gate bytes, the class widening) must not sit in the
- * machine's frame. */
-static PCREC_OWN_FRAME First fst_leaf(Fq *q, const Ast *a)
+ * possessification, never a wrong answer. A leaf: `first_eval` does not
+ * recurse in C, so its frame is paid once and needs no mark ([DD-10]). */
+static First fst_leaf(Fq *q, const Ast *a)
 {
     switch (a->k) {
     case A_CLASS: {
@@ -730,7 +729,7 @@ static PCREC_OWN_FRAME First fst_leaf(Fq *q, const Ast *a)
 }
 
 /* The fold itself: FIRST of `a` read as a POSITION (`text` false, `first_of`)
- * or as the start of a captured TEXT (`text` true, `text_first`), on `q`'s
+ * or as the start of a captured TEXT (`text` true), on `q`'s
  * explicit stack (the section header says why and in what order). It reads
  * the walk's arms and arm B's memo from `q` and writes only that memo, the
  * `*_used` flags and the stack, which it leaves as it found it. Re-entrant:
@@ -785,7 +784,7 @@ descend:
         /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
          * met; LOUD, because the class arm would read the set as bytes. */
         case A_WCLASS:
-            pcrec_wcls_misplaced(q->cx, text ? "text_first" : "first_of");
+            pcrec_wcls_misplaced(q->cx, "first_eval");
         case A_CLASS: case A_BREF: case A_VAR: case A_CALLOUT: case A_LOOK:
         case A_CALL: case A_EMPTY: case A_KRESET: case A_EOL: case A_GSTART:
         case A_CTX:
@@ -807,9 +806,9 @@ descend:
             v = fst_leaf(q, a);
             goto up;
         }
-        /* Unreachable: every AKind is listed. Widens, as `fst_leaf` does. */
-        v = fst_leaf(q, a);
-        goto up;
+        /* Unreachable: every AKind is listed above. */
+        pcrec_ctx_fail(q->cx, 0, "internal error: possessify: first_eval "
+                       "met a node kind it does not list");
     }
 
 refs:
@@ -916,7 +915,7 @@ up:
 
 /* The NEXT CHARACTER AT A POSITION at `a`, plus whether `a` can match empty —
  * what every reader here asks about (a captured text's first character is
- * `text_first`'s question, and the two differ at a gate). A structural fold
+ * the `text` reading's question, and the two differ at a gate). A structural fold
  * over `a`, walked TRANSPARENTLY through A_CAP/A_ATOMIC (a bracketing
  * construct's FIRST is its body's). Feeds §2.2's disjointness test in
  * `pss_walk` below. */
@@ -1083,6 +1082,7 @@ static PCREC_OWN_FRAME GkParts gk_class(Gk *g, const Ast *a)
  * 368 bytes a frame, three frames a level). */
 static void gk_build(Gk *g, const Ast *a, GkParts *out)
 {
+again:
     if (!g->ok) { *out = gk_parts_empty(true); return; }
 
     switch (a->k) {
@@ -1171,8 +1171,8 @@ static void gk_build(Gk *g, const Ast *a, GkParts *out)
      * never less. Declining a possessification is always safe; wrongly
      * granting one is a miscompile. */
     case A_ATOMIC:
-        gk_build(g, a->l, out);   /* a tail call: no frame of its own */
-        return;
+        a = a->l;   /* the body is the node: descend in place, no frame */
+        goto again;
 
     case A_CAT: {
         /* Right-to-left fold along the left-nested spine, the same direction
@@ -1186,9 +1186,7 @@ static void gk_build(Gk *g, const Ast *a, GkParts *out)
          * `*out` is `acc`, updated in place. */
         GkParts *acc = out;
         *acc = gk_parts_empty(true);
-        const Ast *t = a;
-        for (;;) {
-            const Ast *item = (t->k == A_CAT) ? t->r : t;
+        PCREC_SPINE_EACH(item, a, A_CAT) {
             GkParts x;
             gk_build(g, item, &x);
             gk_link(g, x.last, acc->first);
@@ -1197,24 +1195,18 @@ static void gk_build(Gk *g, const Ast *a, GkParts *out)
             memcpy(acc->first, x.first, 32);
             if (acc->nullable) bs_or(acc->last, x.last);
             acc->nullable = nullable;
-            if (t->k != A_CAT) break;
-            t = t->l;
         }
         return;
     }
     case A_ALT: {
         GkParts *acc = out;
         *acc = gk_parts_empty(false);
-        const Ast *t = a;
-        for (;;) {
-            const Ast *br = (t->k == A_ALT) ? t->r : t;
+        PCREC_SPINE_EACH(br, a, A_ALT) {
             GkParts x;
             gk_build(g, br, &x);
             bs_or(acc->first, x.first);
             bs_or(acc->last, x.last);
             acc->nullable = acc->nullable || x.nullable;
-            if (t->k != A_ALT) break;
-            t = t->l;
         }
         return;
     }

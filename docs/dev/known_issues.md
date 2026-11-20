@@ -11,6 +11,12 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K152 — OPEN (found by review 2026-11-20 r64 k147fix DEPTH-2, pre-existing; plan row [K152-NFA-DEPTH]; the next lane of the K146/K147 family) — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile on the budget thread
+
+**Witness:** `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` (nesting 250; 251 is refused by name): `pcrec_compile` DIED, rc 139, on the 442,368-byte budget thread (tests/thread/run_compile_stack.sh's driver), at lane/k147f2's base ceae6bcab and at the review's SUBJECT and BASE alike; 452,080 B on an 8 MB thread. Reproduced 2026-11-20 by lane k147f2 on the 442,368-byte thread (rc 139). Without the `^(?i:...)|b$` wrapper the plain nest compiles at 440,176 B (440,560 B with a trailing element): 0.5% under the budget.
+**Cause (review r64, unverified by gdb):** limits.md §3.10¶3 attributes the peak of this shape to the NFA construction (about 1.7 KB per level, against 0.95-1.3 KB for the other families); the compound route adds about 13 KB over the plain compile (the compound route's own cost, ¶3), which takes the 440 KB shape past 442,368. The trigger is at least two atoms per branch (`(?:ab|ac…ad)*` costs the same), capturing or not.
+**Fix shape:** rides the K146/K147 general depth mechanism (`PCREC_OWN_FRAME` on the recursive arms of the NFA builder, docs/dev/guide/coding.md), with DEPTH_FAMILIES rows for the plain and the compound-route shape (tests/thread/run_compile_stack.sh has no expected-fail form today, so the row waits for the fix); until then the headroom promise of limits.md §3.10¶2/¶5 excludes this family and K148, and says so.
+
 ## K151 — OPEN (found by lane growsurv, 2026-11-20, KR-E; filed by lane growfile; plan row [K151-CALLCHAIN-MEM]; not scheduled) — a chain of mutually linked call targets spends gigabytes in vm_build_region_saves before any refusal
 
 **Witness:** `(?<g0>a(?&g1)?)(?<g1>a(?&g2)?)` ... `(?<g{N-1}>b)` (N groups, each calling the next; growsurv gen.py kind `calls_chain`): N=160 refuses (rc 1, size) in about 2 s; N=200, 250, 320 and 1,000 are killed by `scripts/watchdog -m 2g` (rc 122, more than 2 GB; the survey saw more than 2.9 GB in 2 s at N=1,000). Re-checked 2026-11-20 on main 6134c8e8a and on lane/k146land: identical (not touched by the K146 fix). `--engine=vm` the same; `--engine=dfa` refuses by name.
