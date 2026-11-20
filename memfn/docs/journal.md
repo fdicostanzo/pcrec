@@ -4402,3 +4402,13 @@ Frank, to the kit: "Growing? That's problematic for streaming. Chunks might work
 
 ### 2026-11-20 14:55 — Frank: "Test the ramp up vs chunk" (slug aligned-blocks becomes a test)
 Frank: "Test the ramp up vs chunk. A max ramp may solve my streaming concerns." Lane rampchunk (opus, worktrees/rampchunk) builds a spike harness on frozen bconf-night (emitted VM C, hand-edited per arm). Arms: OFF, ON, RAMP (R-46 as written), RAMPCLIP (the ramp clipped at the current aligned block, the "max ramp"), ALIGN, FIXED (control), plus A/A. Cells: dense unb/bnd, tail, a spacing sweep, early match, sparse text; B 4/16/64 KiB; warm and cold (fadvise + mincore). Counts: asks, unneeded look-ahead, chunk-crossing asks (the streaming model), faults. The decision rule is frozen before timing, with the cpuquiet control. Job 712, not queued; it runs after 711/710, past a critic round. Window gate STOP_AT 2026-11-21 12:00.
+
+### 2026-11-20 — rampchunk delivered; critic round launched
+Lane rampchunk delivered a7208023d (report docs/dev/lanes/rampchunk_report.md on lane/memfn-rampchunk). Lanecheck DONE after the manager fixed its own deliver-file format (73fcd5bfe); the lane was TaskStopped.
+- Correctness: 226 binaries, 0 differences against OFF and python re over 4,490 subjects. Marker 786129aa15f6b7c2.
+- Plants: 5 kinds, all caught.
+- Rule: RULE_SHA bb841580a3de83f6. The lane added a METHOD axis (COMPOSED repeated finds vs one PASS) before timing; 27 arms per cell.
+- Job 712: estimate 1,690 s, prepared and not queued.
+- Counted facts on early match: RAMP and RAMPCLIP read 34 / 1,496 bytes past the match; ALIGN and FIXED read about B. On dense at B=4096, RAMP crosses a block end on 255 of 266 windows; RAMPCLIP crosses 0 and makes 267 asks against ALIGN's 257.
+- Smoke (not evidence): even PASS ran about 1.3x OFF on dense, so the scalar window scan may fail NO-LOSS.
+Critic round crit-memfn-rampchunk (opus coordinator) launched, due 18:30.
