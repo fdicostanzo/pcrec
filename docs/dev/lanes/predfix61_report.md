@@ -6,6 +6,8 @@ Opus, design only (no build go). Branch lane/predfix61, cut from lane/pred-rev28
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 STATE: complete. Commits: 8c0c2fab1 (F-A..F-G, three open pieces, the model), b119cdfbe (F-H..F-M, class-hole-order,
 trap 25), 501c864f9 (evidence outputs; a class-value line reflowed), 650f07df0 (the review filed), and this report's
 commit. Rulings file `docs/dev/lanes/predfix61_rulings.md`: empty at every commit and at this report (last entry
