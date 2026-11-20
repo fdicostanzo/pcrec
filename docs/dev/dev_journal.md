@@ -28532,3 +28532,11 @@ Next
 - Dense-hit re-measure after K38-2: LOSS STILL SHOWN (1.49x / 2.23x). The kit's R-46 byte-mover gate is met. NEXT: the dense-hit design lane.
 - Frank's growth-sweep (go): survey merged (121 recursive functions; 34 cells). Filed K148-K151 + rows. The runner comes after K147.
 - Critic skill: per-arm axes, emitted-text callers to one lens, plants to one lens, clean BASE builds.
+
+## 2026-11-20 session 141 close (main, about 15:50)
+
+- LANDED: L3's five byte-identical remodels (lane/l3pin: RM-2, RM-3, RM-5, RM-4, rn_cmp, the r63 fix, the S811 re-anchor; identity, mech, trace and make test GREEN; ledger major 1). The L3 census (GO), the dense-hit re-measure (LOSS STILL SHOWN), the growth-sweep survey and its K148-K151 filings, and reviews r62 and r63 with rulings.
+- IN THE QUEUE: K146's make test on lane/k146land (job 202-main-k146land-test2, timeout 5000). When it is GREEN, merge lane/k146land and fold K149 into K147 (expect a keep-both conflict in known_issues.md).
+- OWNER: growth-sweep go plus two rules (every cell must hit its limit and refuse; a timeout is a crash). A remark: a bench run after S4. Box free until 12:00 on 11-21. aligned-blocks became the kit's test 712.
+- PROPOSED to the owner (no answer yet): a lane's make test defaults to the CLOUD; the queue keeps identity, timing, alloc+lint.
+- LESSONS: (1) hand-written queue jobs failed three ways (an invalid shell name, battery detaching, perfrun's cap), now rules in the monitoring skill file. (2) make test grew: test-memfn-g2 went 470 -> 830-980 s; j2p8 needs about 5000 s. (3) Two remodel lanes each missed one stale sabotage anchor (S101, S811); run m6read_check_sab_anchors.py before delivering.
