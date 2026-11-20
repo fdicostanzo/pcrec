@@ -16,11 +16,13 @@ studies; listed, not counted).
 
 Baseline: run 2026-11-16 e43603862, the CLOUD full suite (`scripts/cloudrun --suite`, run names suite-e436038, six cloud stages all green) plus the local alloc + lint stages green on db7aab3de (no src/lib/cli/memfn diff to e43603862). It is the first green full suite since 2026-11-05 daf6f002b. Every landing up to and including e43603862 is listed under "Covered by run 2026-11-16 e43603862" in the Runs section (and earlier ones under "Covered by run 2026-11-05 daf6f002b").
 
-**major: 0, minor: 1** (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing. Landings after the reset were recorded as loose `Landing 2026-11-16 ...` lines at the end of the Runs section (the ledger's practice since 2026-11-05); the lines below are the 2026-11-16 additions that count them, by pointer (the loose lines stay where they are).
+**major: 2, minor: 1** (2026-11-19: [COVER-CAP] 77edff7ae, covered by its own cloud suite except local alloc + lint; lookaround L1 d68a1294c, its cloud suite dispatched at landing) (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing. Landings after the reset were recorded as loose `Landing 2026-11-16 ...` lines at the end of the Runs section (the ledger's practice since 2026-11-05); the lines below are the 2026-11-16 additions that count them, by pointer (the loose lines stay where they are).
 
 Trigger state (D177), recounted 2026-11-16: row 1 (tonight, 2026-10-23) discharged long ago; row 2 (a major version shift) not applicable until one is named; row 3 (a major refactor lands) un-fired, none since the baseline; row 4 (2-3 majors since the last green run) un-fired, 0 majors; row 5 (4-6 minors since the last green run) un-fired, 1 minor. No full suite is due.
 
 ### major
+
+- 2026-11-19 d68a1294c major — lookaround unit L1 ([REQ-LOOKAROUND]): census, remodels RM-1/RM-6/remodel 3 (refactors of shared fact-walk mechanisms: D177 row 3 FIRES), the feature, the run_pin sub-stretch rule, the C4 data-scope rule; branch gates green (identity, mech, axes, make test); full cloud suite dispatched on d68a1294c
 
 ### minor
 
