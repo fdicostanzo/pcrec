@@ -19,6 +19,7 @@ history:
 - 2026-11-14: "Enumerate go"; the draft §5.5. 2026-11-18: construction-line made it the line of single-value functions. 2026-11-19: class-order replaced the codepoint lean for lifts.
 - 2026-11-19 (lane preddoc3b): converted from `?`.
 - 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-7): `see: lib/builtin/enumerate/class-index core/arrays/class-order` added: the body depends on the forward piece class-index, and the pointer was lost in the move from the core (r59 READ-17's eleventh pair).
 
 ## lib/builtin/enumerate/class-index — The order of a class in enumerate
 was: core/arrays/class-index (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
@@ -65,6 +66,23 @@ evidence:
 history:
 - 2026-11-19: his first instinct already filtered inside the import (`import("blah", /left|right/)`); the idea in import-several.
 - 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane preddoc6, review r60 COLD-2): his `search(string)` marked a placeholder in the base: `search` is the name the owner renamed `occurrences` (core/modules/naming); the statement before quoted it as the form.
+
+## lib/builtin/export — export
+slugs: export-choice
+rulings:
+rejected:
+- `export([leap])`, an array of names (`[leap, weekday]` is `leap | weekday`, names lost) — by the manager's 2026-11-14 analysis, (3) (record: "2026-11-14 — import/export as functions").
+- `export(leap, weekday)` receiving names (a macro seeing argument expressions) — by the manager's 2026-11-14 analysis ("a meta feature; avoid").
+readings:
+- the record: "Export choice PENDING Frank" (record "2026-11-14 — import/export as functions", the options (a) `export([leap = leap, ...])`, (b) every top-level binding exported unless its name starts with `_`, (c) `export(leap, weekday)`; the manager's lean (b)); never answered, so the piece is `open` under the slug export-choice (the manager's name for the pending choice, given by lane preddoc6 at the predicate manager's ruling of 2026-11-19).
+- `@export(names)`, the names a set of strings (`export(["leap", /[^_].*/])`, `export(/[^_].*/)`), and the no-export error ("library exports nothing"; no silent default): the manager's lean in the follow-up to his `export(["leap", !startsWith("_")])` (the same record entry; the draft §7, LEAN) — UNTESTED (no matching involved).
+- `@` marks a compile-time EFFECT macro (his "a prefix designating side-effect macros"; the manager's lean (3) in the follow-up) — UNTESTED.
+- the `_` rule, candidate (b)'s ground, is RULED for what `.` reaches (export-rule; import-symbols statement 3: core/labels/export, core/modules/map); whether it is the whole of export is what export-choice asks — the manager's reading.
+evidence:
+history:
+- 2026-11-14: import/export as functions (options (a)-(c), lean (b)), its follow-up (lean `@export(names)`).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS / COLD-1 / FIXVER-6 / RECOUNT-3 / RULING-7): a new piece. The core sentence "Every provided name written as a call has its piece in the library, these included" (core/operators/statements) named `@export`, `@warn`, `@options` with no library piece; the predicate manager ruled (2026-11-19) the `@` effects call-form names, so each has its library piece, `defined: native`, status by the record. `@export(names)` was defined in core/modules/export, which keeps the meaning (what a file exports is chosen among its public names).
 
 ## lib/builtin/pattern — pattern
 slugs:
@@ -87,6 +105,37 @@ readings:
 evidence:
 history:
 - 2026-11-19 (lane preddoc4): a new piece: a name on the closed built-in list with no piece (review r59 COMPB-3).
+
+## lib/builtin/warn — @warn.off, @warn.error
+slugs:
+rulings:
+- 2026-11-14 "I agree but warnings need names and the user must be able to disable them (wildcard?)" (record: "2026-11-14 RULING — the empty-match hazard"); control via `@` effects, `@warn.off(...)` and its reverse `@warn.error(...)` (the record)
+- 2026-11-14 "use an rx instead of wild card purely for consistency" (record: "2026-11-14 RULING — the empty-match hazard"); its amendment: a selector is a set of names as an rx, no `*` wildcard
+- 2026-11-17 "The suppression could be @config.warn.off(/compare\.width\..*/)" (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path"); suppression selects by a pattern over the names (his spellings placeholders)
+rejected:
+- a `*` wildcard in a selector — by owner ruling — the amendment: `"*"` is the literal name and draws `warn.unused`.
+readings:
+- the reach "rest of file", a per-binding form (spelling open) and a whole-build compiler option ("like -Wno-"): the manager's proposal inside the ruling entry — UNTESTED (no matching involved).
+- `@warn` an EFFECT built-in, reserved after `@` only (the draft §5.1, review r10 CENSUS-7; LEAN) — UNTESTED.
+evidence:
+history:
+- 2026-11-14: the empty-match hazard ruling and its amendment; 2026-11-17: the names, the library path, the `pcrec.` prefix (core/diagnostics/warnings).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; the selector rule stays stated in core/diagnostics/warnings, this piece is the name.
+
+## lib/builtin/options — @options.strict
+slugs:
+rulings:
+- 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule"); (2) warnings become errors under a strictness setting declared in the source
+- 2026-11-17 ""One reading of mine: the setting covers...": @options.strict(/no-fail/)" (record: "2026-11-17 OWNER RULING — polarity-rule"); the ADDENDUM, same evening: strictness is SELECTIVE, a pattern over warning names; it corrects the manager's reading "the setting covers every warning"
+rejected:
+- the strictness setting covering every warning by default (the manager's reading) — by owner ruling — the polarity-rule addendum (`@options.strict(/no-fail/)`).
+readings:
+- `@options` as the family of the capability opt-ins (record "2026-11-17 OWNER IDEA — options written in the language", an IDEA, not a ruling: "Perhaps there should be an @options() in the language") — parked (parked/ideas/capability-optins).
+- `@config.strict()` and `@options.strict(...)` are one setting under two placeholder spellings (D193 add. 4) — the manager's reading.
+evidence:
+history:
+- 2026-11-17: polarity-rule and its addendum.
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; `@options.strict` was stated only in core/diagnostics/warnings.
 
 ## lib/modifiers/padded — padded
 was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -123,6 +172,7 @@ history:
 - (from lib/modifiers/unpadded) 2026-11-15: cut (rev 14); the time-range example rewritten with split fields.
 - (from lib/modifiers/unpadded) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided".
 - 2026-11-19 (lane preddoc4): the piece `lib/modifiers/unpadded` deleted, its content moved here (review r59 READ-13).
+- 2026-11-19 (lane preddoc6, review r60 COLD-9): a bullet points at the open question core/operators/bindings/call-forms: the two bodies are chosen by the call form, which the core's macro rule does not provide for.
 
 ## lib/modifiers/quoted — quoted
 was: lib/modifiers/json-quoted (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -204,9 +254,10 @@ history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body.
 - 2026-11-19 (lane preddoc3c): a new piece (not in the census's 61 rows; a provided name of the draft §2.7).
 - 2026-11-19 (lane preddoc4): `join([...])` removed from `months` (join is one string, the members joined; an array is already the alternation); `needs:` the computed-label and metadata pieces; answers unchanged: preddoc3c PART MN built the body as the alternation (review r59 READ-5).
+- 2026-11-19 (lane preddoc6, review r60 COLD-15): the body's `...` written out as the twelve names in calendar order (the `.index` the example reads depends on the order); answers unchanged (preddoc6 PART MN).
 
 ## lib/control/peek — peek
-was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive)
+was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
 slugs: when-peek
 rulings:
 - 2026-11-18 "When: I agree peek A. Automatic or enforced? peek() transform" (record: "2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced")
@@ -225,7 +276,7 @@ history:
 - 2026-11-19: his aside on importing symbols so a call is not `sys.peek()` (`(left,right) := import("blah", /left|right/)`) is an IDEA to discuss, owner question import-symbols; carried then by the parked piece `parked/import-symbols/import`, deleted the same day by the manager's brief (lane preddoc3c); no piece carries it now.
 
 ## lib/control/when — when
-was: core/conditional/when (2026-11-19, the owner: core document macros are defined in the library unless primitive)
+was: core/conditional/when (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
 slugs: when-meaning when-default when-alone
 rulings:
 - 2026-11-17 "when-meaning: agree" (record: "2026-11-17 OWNER RULING — when-meaning")
@@ -254,7 +305,7 @@ history:
 - 2026-11-19 (lane preddoc4): `needs: core/filters/negation` (the body's `NOT peek(test)` is legal by that piece) and `see: lib/control/when-test` (review r59 NEGATION, READ-17).
 
 ## lib/control/when-test — The test of `when`
-was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive)
+was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
 slugs: when-test
 rulings:
 - 2026-11-18 "When: I agree peek A. Automatic or enforced? peek() transform" (record: "2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced")
@@ -308,6 +359,7 @@ rulings:
 - 2026-11-18 "hit-carry: warning on nullable" (record: "2026-11-18 OWNER RULING — nullable argument: a warning")
 - 2026-11-15 "occurrences(x, label = \"foo\")" (record: "2026-11-15 RULINGS — a per-call hit name; no count warning; the hole is the scope an `&` in it anchors to")
 rejected:
+- "its hits are those of a plain search" (R.1.9, unqualified) — by owner ruling — hit-carry NARROWED it to an argument with no condition before its group (the draft R.9 row 41).
 - the name `search` (a verb acting on the subject) — by owner ruling — renamed `occurrences`.
 - `min` 0 or 1 only, another value a compile error naming `occurs.at_least` — by owner ruling — min-values: any n, at least n hits.
 - a nullable argument a compile error — by owner ruling — a warning.
@@ -329,6 +381,7 @@ history:
 - 2026-11-19 (lane preddoc4): the whole-text idiom `J & C & occurrences(M)` moved here from core/model/modes, whose ruling (whole-text, "adopt it if it's legal") stays cited there (review r59 PLACE-2 (b)).
 - 2026-11-19 (lane preddoc4): the ruled per-call hit name added to the base (review r59 COMPB-8); its spelling stays a placeholder.
 - 2026-11-19 (lane preddoc5): the slug nullable-meaning moved here from core/conditions/defaults, which named it this piece's fact (review r59 COMPA-13).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass hit-list
@@ -348,6 +401,7 @@ history:
 - 2026-11-19 (lane preddoc5): the slug hit-list moved here from core/model/table, whose reading named this piece as the one deciding it (review r59 PLACE-4).
 
 ## lib/search/contains — contains
+was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
 rulings:
 - 2026-11-15 "Your examples make me agree. /\d\d/ & between(1, 12) Without anchoring it would match "31"" (record: "2026-11-14 RULINGS on rev 3's contradictions")
@@ -358,22 +412,14 @@ rejected:
 readings:
 - the record's body `/.*${rx}.*/` with the gaps crossing line breaks is `/(?s:.*)(?:${s})(?s:.*)/`, and `contains(/^err/)` equals `startsWith("err")` WHOLE (0 of 1,365 texts over `erx` and a newline, length <= 5) — SUPPORTED (preddoc3c PART SW).
 - `contains(/err$/)` also accepts a value ending `err` and a newline (PCRE's `$`; `\z` for the exact end) — SUPPORTED (PART SW).
-evidence: preddoc3c PART SW.
+- a CANDIDATE body, not the definition: `contains(x) := occurrences(x, min = 1)` (the draft's LEAN, §2.6, §8: chosen so x's labels read as the leftmost hit) — the same set as the ruled gap body, 0 / 0 / 0 of 121 texts (`ab` over `abx`, length <= 4) in all three modes; only the labels differ (the hit, and which occurrence x's labels read) — SUPPORTED (preddoc3c PART SWocc). Its printed run: `occurrences("ab", min = 1)` WHOLE `xabx` HOLDS, `ba` FAILS / SEARCHED `x ab` `x ab`@0 / FIND-ALL `ab ab` [`ab ab`@0].
+- the same candidate also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft) — UNTESTED here.
+evidence: preddoc3c PART SW, PART SWocc.
 history:
-- 2026-11-14/15: the `contains` family; the record's body (11-15); the draft kept `occurrences(x, min = 1)` (lib/search/contains/by-occurrences).
+- 2026-11-14/15: the `contains` family; the record's body (11-15); the draft kept `occurrences(x, min = 1)` (its reading above).
 - 2026-11-19 (lane preddoc3c): converted; the draft's spelling split into its own piece (one piece, one status).
-
-## lib/search/contains/by-occurrences — contains as occurrences
-slugs:
-rulings:
-rejected:
-readings:
-- `contains(x) := occurrences(x, min = 1)` (the draft's LEAN, §2.6, §8: chosen so x's labels read as the leftmost hit) — the same set as the ruled gap body, 0 / 0 / 0 of 121 texts (`ab` over `abx`, length <= 4) in all three modes — SUPPORTED (preddoc3c PART SWocc).
-- it also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft) — UNTESTED here.
-evidence: preddoc3c PART SWocc.
-history:
-- 2026-11-15 (rev 9-12): the draft kept this spelling against the record's text, "the same sets".
-- 2026-11-19 (lane preddoc3c): split from `contains` (a new sub-piece).
+- 2026-11-15 (rev 9-12): the draft kept the occurrences spelling against the record's text, "the same sets".
+- 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "contains as occurrences" (`reading`, "`contains(x)` is written `occurrences(x, min = 1)`: the same set, and x's labels read leftmost, as a hit") merged back here as a candidate reading: the base had two present-tense definitions of one name.
 
 ## lib/search/starts-with — startsWith
 slugs:
@@ -390,28 +436,20 @@ history:
 - 2026-11-19 (lane preddoc3c): converted.
 
 ## lib/search/ends-with — endsWith
+was: lib/search/ends-with/lazy-gap (2026-11-19, merged: a second present-tense definition of `endsWith` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
 rulings:
 - 2026-11-15 "Ok I agree." (record: "2026-11-14 RULINGS on rev 3's contradictions")
 rejected:
 readings:
 - the record's body `/.*${rx}/` with the gap crossing line breaks: on `ab123` with `(?<n>\d+)`, n = `3` (greedy) — SUPPORTED as the record's text (preddoc3c PART SW).
+- a CANDIDATE body, not the definition: the LAZY gap `/(?s:.*?)(?:${s})/` (the draft's LEAN since rev 9, kept against the record's text), so the argument starts as far LEFT as it can: n = `123` on `ab123`; rev 8's greedy `.*` gave `3` (libpcre2). As SETS nothing changes; the labels and the searched stretch differ: `(?s:.*?)(?:(?<n>\d+))` WHOLE `ab123` HOLDS (123) / SEARCHED `x12 34` `x12`@0 (the ruled body: `x12 34`@0) / FIND-ALL `a1 b2` [`a1`@0, ` b2`@2] — SUPPORTED (preddoc3c PART SW).
 evidence: preddoc3c PART SW.
 history:
-- 2026-11-15: the plain gap body (rev 12); the draft kept a lazy gap (lib/search/ends-with/lazy-gap).
+- 2026-11-15: the plain gap body (rev 12); the draft kept a lazy gap (its reading above).
 - 2026-11-19 (lane preddoc3c): converted; the lazy gap split into its own piece.
-
-## lib/search/ends-with/lazy-gap — endsWith with a lazy gap
-slugs:
-rulings:
-rejected:
-readings:
-- the lazy gap (the draft's LEAN since rev 9, kept against the record's text): n = `123` on `ab123`; rev 8's greedy `.*` gave `3` (libpcre2) — SUPPORTED (preddoc3c PART SW).
-- "as SETS nothing changes" — SUPPORTED (a gap is a gap); the searched stretch differs (`x12 34`: `x12`@0 against `x12 34`@0).
-evidence: preddoc3c PART SW.
-history:
 - rev 9-10 (2026-11-15): the lazy gap chosen for how the argument's labels read; rev 12 kept it against the record's `/.*${rx}/`.
-- 2026-11-19 (lane preddoc3c): split from `endsWith`.
+- 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "endsWith with a lazy gap" (`reading`, "`endsWith(s)` is written with a LAZY gap, `/(?s:.*?)(?:${s})/`, so its argument starts as far LEFT as it can") merged back here as a candidate reading: the base had two present-tense definitions of one name; the ruled body is the definition.
 
 ## lib/search/anchored — anchored
 slugs: anchored-in-hole
@@ -500,6 +538,7 @@ evidence: docs/dev/lanes/preddoc4_evidence/ PART SO; the draft §4.3, R.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: ruled pieces used `some` with no piece (review r59 PRIMITIVES-MISSING, READ-6).
 - 2026-11-19 (lane preddoc5): the slug some-own (the draft's, closed by entailment) moved here from lib/search/hits; there was no `some` piece when it was homed (review r59 PLACE-4).
+- 2026-11-19 (lane preddoc6, review r60 COLD-20): "`NOT some(c)` and `occurs.none(c)` are the same question" marked as the reading of the open question core/model/table/group-truth (it is that question's candidate (a)); before, a ruled piece stated it as settled.
 
 ## lib/counting/count — count
 slugs: count-budget
@@ -516,6 +555,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS].
 history:
 - 2026-11-19 (lane preddoc4): a new piece: `count(c)` was the body helper of `length` with no piece (review r59 PRIMITIVES-MISSING, READ-6). The slug count-budget is the lane's name for the budget ruling.
+- 2026-11-19 (lane preddoc6, review r60 COLD-2): the base's "`even()` on a count" (his word, "Allows "even()" or other checks for count", quoted above) written as the set it names, `/\d*[02468]/`: no piece provides `even`.
 
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:
@@ -702,7 +742,7 @@ history:
 - 2026-11-19 (lane preddoc3c): converted.
 
 ## lib/rx/repeat — rx.repeat
-was: core/patterns/repeat (2026-11-19, a library definition over count holes: the core holds primitives only)
+was: core/patterns/repeat (2026-11-19, a library definition over count holes; the "core holds primitives only" rule of that morning was withdrawn the same day: every call-form name is a library piece)
 was: lib/rx/optional-loop (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs: count-argument
 rulings:
@@ -725,6 +765,8 @@ history:
 - (from lib/rx/optional-loop) 2026-11-17: proposed in the rx-module note; the quantifier operators ruled the same evening.
 - (from lib/rx/optional-loop) 2026-11-19 (lane preddoc3c): written as "not provided".
 - 2026-11-19 (lane preddoc4): the piece `lib/rx/optional-loop` deleted, its content moved here (review r59 READ-13).
+- 2026-11-19 (lane preddoc6, review r60 COLD-9): "The bodies, one per call form" marked a reading and pointed at the open question core/operators/bindings/call-forms (`rx.repeat(rx.digit, 3)` fits two bodies with different answers).
+- 2026-11-19 (lane preddoc6, review r60 RULING-9): the first `was:` line's reason read "the core holds primitives only" as a standing rule; rewritten: it was the rule of that morning, and the owner withdrew the designation the same day ("my "primitive" designation doesn't work", record "2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or not"); the reason today: every call-form name is a library piece.
 
 ## lib/structural/capture — capture
 slugs:
@@ -732,13 +774,15 @@ rulings:
 rejected:
 - the keyword form `export capture(x) := ...` (rev 0) — by the draft — superseded by `@export`.
 readings:
-- `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN) names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
+- `capture(name, x) := /(?<${name}>${x})/`, the name passed (lane preddoc6, review r60 COLD-8) — SUPPORTED (preddoc6 PART CP).
+- `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN; the owner's sketch `group(x) := /(?<${x.label}>${x})/`, "lots of hand waving", record "2026-11-14 — compose instead of an option") names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP), but NOT BUILDABLE from the core as written (no field gives a part label's own name); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
 - what `capture(x)` returns for a looped x is not stated (the draft R.11 row 32).
 evidence: preddoc3c PART CP.
 history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
+- 2026-11-19 (lane preddoc6, review r60 COLD-8): the body could not be built from the core: `.label` is defined only for a part label over an array ("that member's name", core/values/metadata), and inside the body `x` is a parameter, not a path (core/labels/flow: "A binding's name is not a path"). The piece now states `capture(name, x) := /(?<${name}>${x})/` (the name passed as a string to the group-name hole) and keeps the draft's one-parameter sketch as a bullet naming the missing field; the example `capture(x)`, x := `[d = /\d+/]` became `capture("d", /\d+/)`, same answers (preddoc6 PART CP).
 
-## lib/structural/each — each, each_group, where_group
+## lib/structural/each — each, each_group, where, where_group
 slugs:
 rulings:
 - 2026-11-15 "Agree with mapping" (record: "2026-11-14 RULINGS on rev 3's contradictions")
@@ -749,6 +793,7 @@ readings:
 evidence: the draft §5.3.
 history:
 - 2026-11-19 (lane preddoc3c): a new piece (census rows `each`, `each_group`, `where`).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-2): `where(p, X)` added to the heading and body: the history line above claimed it (census row `where`) and the piece did not carry it. The draft §5.3: "`where(p, X)` = SELECT entries by a compile-time STRUCTURAL property (the selecting twin of `each`; not the filter role, §0.3)"; its name table: "`where`, `where_group`, `each_group` | none | LEAN (§3.2, §5.3); candidate cut" — a reading, as the piece.
 
 ## lib/structural/sort — sort, unique
 slugs:
@@ -790,3 +835,4 @@ readings:
 evidence:
 history:
 - 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-9); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+- 2026-11-19 (lane preddoc6, review r60 COLD-19): `weekday` in the regular-twin bullet written `weekday_of`, as the piece calls it; the library header gives "the worked examples" their home (the frozen draft §12, the acceptance cases).

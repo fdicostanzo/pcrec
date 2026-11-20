@@ -1,0 +1,127 @@
+# (a) a_rulings.py S
+expected 144 cited directly 137 held by cited supersessor 7 STILL MISSING 0
+HELD 1223 | 2026-11-15 RULING — tuple compare names (Frank, to session 133, box clock 23:06) | by 2026-11-16 OWNER RULING — retire-paused | cited on core/values/tuples,parked/ideas/field-count,parked/ideas/other-side-sigil
+HELD 1250 | 2026-11-15 RULING — tuple compare argument order (Frank, to session 134, box clock 23:25) | by 2026-11-16 OWNER RULING — retire-paused | cited on core/values/tuples,parked/ideas/field-count,parked/ideas/other-side-sigil
+HELD 1739 | 2026-11-16 OWNER RULING — zero-pass-empty (Frank, to session 136, box clock 16:20) | by 2026-11-16 OWNER RULINGS — drop-mark | cited on core/conditions/defaults
+HELD 1759 | 2026-11-16 OWNER RULING — domain-scope (Frank, to session 136, box clock 16:31) | by 2026-11-16 OWNER RULINGS — drop-mark | cited on core/conditions/defaults
+HELD 1776 | 2026-11-16 OWNER RULING — mark-narrows (Frank, to session 136, box clock 16:44) | by 2026-11-16 OWNER RULINGS — drop-mark | cited on core/conditions/defaults
+HELD 1817 | 2026-11-16 OWNER RULING — mark-in-none: LEFT AS IS (Frank, to session 136, box clock 17:42) | by 2026-11-16 OWNER RULINGS — drop-mark | cited on core/conditions/defaults
+HELD 2423 | 2026-11-17 OWNER RULING — labels match every pass, captures match the last (Frank, to session 138, evening) | by 2026-11-17 OWNER RULING — after-loop-read | cited on core/labels/labels-vs-captures,lib/counting/some
+# (b) b_slugs.py
+candidates 192 population 188 homed 186 NOT homed 2
+newly homed since r59 58
+  NEW absent-holds -> core/principles/no-absence
+  NEW after-loop-read -> core/labels/labels-vs-captures
+  NEW all-question -> lib/counting/some
+  NEW anchor-warn-scope -> core/diagnostics/warnings
+  NEW anchored-in-hole -> lib/search/anchored
+  NEW bound-reference -> parked/ideas/other-side-sigil
+  NEW colon-scope -> core/conditions/form
+  NEW condition-kind -> core/model/match
+  NEW cut-json-quoted -> lib/modifiers/quoted
+  NEW cut-unpadded -> lib/modifiers/padded
+  NEW default-reaches-dollar -> core/conditions/defaults
+  NEW default-scope -> core/conditions/defaults
+  NEW default-unused -> core/diagnostics/warnings
+  NEW domain-scope -> core/conditions/defaults
+  NEW drop-mark -> core/conditions/defaults
+  NEW first-rest -> parked/ideas/first-rest
+  NEW hole-member-kind -> core/values/one-type
+  NEW joint-condition -> core/conditions/form
+  NEW joint-loops -> core/labels/labels-vs-captures
+  NEW label-section -> parked/ideas/other-side-sigil
+  NEW label-twice -> core/conditions/form
+  NEW last-pass-default -> core/labels/labels-vs-captures
+  NEW library-not-syntax -> core/values/tuples
+  NEW looped-compare -> core/diagnostics/looped-compare
+  NEW macro-arguments -> core/arrays/lift
+  NEW mark-design -> core/conditions/defaults
+  NEW mark-in-none -> core/conditions/defaults
+  NEW mark-narrows -> core/conditions/defaults
+  NEW mark-range -> core/conditions/defaults
+  NEW mark-under-not -> core/conditions/defaults
+  NEW match-context -> core/conditions/defaults
+  NEW modifier-lift -> core/values/tuples
+  NEW not-is-complement -> core/filters/negation
+  NEW numbered-duplicate -> core/labels/numbers
+  NEW one-witness -> core/conditions/defaults
+  NEW optional-as-loop -> core/labels/one-rule
+  NEW pairing-loop -> core/labels/labels-vs-captures
+  NEW primitive-transforms -> lib/modifiers/any-case
+  NEW read-out -> core/labels/export/caller-ambiguous
+  NEW record-is-product -> core/values/tuples
+  NEW reference-index -> parked/ideas/other-side-sigil
+  NEW regex-settles -> core/principles/regex-default
+  NEW retire-paused -> core/values/tuples
+  NEW row-is-match -> core/model/match
+  NEW searched-complement -> core/model/match
+  NEW sequence-numbers -> core/labels/numbers
+  NEW set-arity -> core/values/tuples
+  NEW tuple-anywhere -> core/values/tuples
+  NEW tuple-arg-order -> core/values/tuples
+  NEW tuple-compare -> core/values/tuples
+  NEW tuple-names -> core/values/tuples
+  NEW tuple-parts -> core/modules/positional
+  NEW tuple-value -> core/values/tuples
+  NEW two-orders -> core/values/tuples
+  NEW unset-component -> core/conditions/defaults
+  NEW warn-in-macro-body -> core/diagnostics/warnings
+  NEW zero-pass-empty -> core/conditions/defaults
+  NEW zero-pass-record -> core/conditions/two-valued
+  MOVED array-slot ['core/labels/one-rule'] -> ['core/labels/labels-vs-captures']
+  MOVED class-index ['core/arrays/class-index'] -> ['lib/builtin/enumerate/class-index']
+  MOVED condition-group ['core/conditions/quantified'] -> ['core/conditions/quantified/group']
+  MOVED default-set ['core/modules/default-set/members'] -> ['core/conditions/defaults']
+  MOVED every-pass-spelling ['core/spellings/placeholders'] -> ['lib/counting/every-pass']
+  MOVED filter-captures ['core/filters/kinds'] -> ['core/labels/export']
+  MOVED flags-in-filter ['core/holes/flags'] -> ['core/holes/flags/in-filter']
+  MOVED hit-list ['core/model/table'] -> ['lib/search/hits']
+  MOVED import-several ['core/modules/import'] -> ['lib/builtin/import']
+  MOVED looped-warning ['core/conditions/pass-start-read'] -> ['core/diagnostics/looped-compare/still-wanted']
+  MOVED nullable-meaning ['core/conditions/defaults'] -> ['lib/search/occurrences']
+  MOVED other-holes ['core/holes/class'] -> ['SHARED:core_details.md', 'core/holes/class', 'core/holes/range-end', 'core/holes/option']
+  MOVED pass-list-read ['core/conditions/pass-start-read'] -> ['core/values/reads']
+  MOVED rx-module ['core/patterns/sequence'] -> ['parked/ideas/rx-module']
+  MOVED some-own ['lib/search/hits'] -> ['lib/counting/some']
+NOT HOMED definition-lane | sources C
+NOT HOMED doc-shape | sources C
+slugs on two or more entries/lines: 2
+  DUP other-holes ['SHARED:core_details.md', 'core/holes/class', 'core/holes/range-end', 'core/holes/option']
+  DUP when-peek ['SHARED:core_details.md', 'core/diagnostics/consuming-test', 'lib/control/peek']
+homed words outside the population 10 ['bare-condition-labels', 'call-forms', 'count-budget', 'default-imports', 'default-value', 'export-choice', 'group-truth', 'inner-label-read', 'source-row', 'zero-in-loop']
+# (c) c_names.py (counts; per-row lines omitted)
+43 | where | BODY | lib/structural/each | defined: native (compile-time tools over spelled arrays; no expression of the language wal | {'library.md': 2, 'library_details.md': 2}
+55 | @warn | PIECE | lib/builtin/warn | defined: native (a compile-time effect on the compiler's diagnostics) | {'core.md': 5, 'library.md': 4, 'core_details.md': 3, 'library_details.md': 4, 'parked_details.md': 3}
+56 | @export | BODY | lib/builtin/import,lib/builtin/export | defined: native (it reads library files at compile time);defined: native (a compile-time e | {'core.md': 4, 'library.md': 5, 'core_details.md': 3, 'library_details.md': 4}
+57 | @options.strict | PIECE | lib/builtin/options | defined: native (a compile-time effect on the compiler's diagnostics) | {'core.md': 7, 'library.md': 3, 'parked.md': 4, 'core_details.md': 22, 'library_details.md': 8, 'parked_details.md': 24}
+{'PIECE': 35, 'BODY': 41, 'ELSE': 20, 'CORE': 2}
+# (d) d_rejected.py, the five r59-partial rows
+== R9:37 (x1) r59: partial
+   #33 core/labels/backreferences -> 1.00 core/labels/backreferences | 
+   kw core/labels/backreferences | "inside rx text a backreference already reads the last-set capture" (rev 25) — by the draft (rev 25.1, R.9 row 37) — WITHDRAWN: false under `(?J)` (a backreference t
+== R9:38 (x1) r59: carried
+   #4 core/principles/positions-own-rules -> 1.00 core/principles/positions-own-rules | 
+--
+== R9:41 (x1) r59: partial
+   #168 lib/search/occurrences -> 1.00 lib/search/occurrences | 
+   kw lib/search/occurrences | "its hits are those of a plain search" (R.1.9, unqualified) — by owner ruling — hit-carry NARROWED it to an argument with no condition before its group (the draft R.9 ro
+== R9:42 (x1) r59: MISSING
+   kw core/labels/numbers | "numbers name the groups of the nearest pattern to their left" and "numbers are not subject to the ambiguous-reference error" (the manager's readings, rev 25.1-26) — by o
+--
+== R9:68 (x1) r59: partial
+   #55 core/values/one-type -> 1.00 core/values/one-type | 
+   kw core/values/computed-labels | a computed label's value is "a VALUE, not a pattern" (the draft §4.4, §11) — by the draft (rev 27.1, R.9 row 68), following value-is-pattern — CHANGED: a one-string
+== R9:69 (x1) r59: carried
+   #65 core/values/functions -> 1.00 core/values/functions | 
+--
+== R9:100 (x1) r59: partial
+   #97 core/holes/flags -> 1.00 core/holes/flags | 
+   kw core/holes/flags | NO INHERITED FLAGS ("a hole keeps its own flags"; the draft's own rule, never his) — by owner ruling — flags-propagate.
+   kw core/holes/flags/in-filter | the manager's m2 (an `&` operand, a condition's set, a filter-role argument keep their own flags) as the draft's flags-in-filter reading (2026-11-18) — by the draft 
+== R9:102 (x1) r59: partial
+   #102 core/holes/same-name -> 1.00 core/holes/same-name | 
+   #103 core/holes/same-name -> 1.00 core/holes/same-name | 
+   kw core/labels/export/caller-ambiguous | (b) h absent from the captures; (c) the last mention's value (the right side's); (d) the left side's value — by owner ruling — export-rule statement 5 (the 
+   kw core/holes/same-name | R.1.13 REFERENCES (2) read for `\k<h>` across a hole as the last mention — by owner ruling — same-name-count NARROWED it: `\k<h>` reads the outer group; `$h` still the la
+# titles.py
+items 365 exact whole title 52 prefix-before-( only 313 NO MATCH 0 no (record:) at all 0

@@ -79,23 +79,6 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says `all` is retired and the mark is out.
 
-## parked/ideas/tuple-apart — Taking one tuple apart in a binding
-slugs: 
-rulings:
-- 2026-11-16 (class: OWNER, reopening) "Nothing is set in stone. I'd like to hear it out. So It's the set that makes it an item so you can't break it apart without changing its meaning. Like 9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish. Makes sense" (record: "2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the "use it whole" case heard"); nothing ruled on the parked item
-rejected:
-readings:
-evidence:
-history:
-- the ideas file (`docs/design/predicates_future.md`) item 4, "Taking one tuple apart in a binding", whole:
-
-  - WHAT: `(lo_h, lo_m) := lo` for ONE tuple (a set of several tuples is never taken apart: the parts no longer
-    pair up; the owner's "9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish").
-  - STATUS: OPEN, with no user while item 1 is parked (the manager's note, 2026-11-16; not an owner ruling).
-  - WORKED OUT IN: joint_condition.md §4A.3 (both positions; the lean "one tuple only").
-  - TRIGGER: item 1 taken up, or an example that needs one part of a tuple value.
-- 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
-
 ## parked/ideas/unset-member — An "unset" member in a value set
 slugs: 
 rulings:
@@ -557,7 +540,7 @@ rulings:
 - 2026-11-17 (class: PROPOSAL) "this discussion is showing me that we need to support building rx without rx literals." (record: "2026-11-17 OWNER PROPOSAL — building patterns without rx literals: an "rx" module and a concatenation operator"); its parts ruled later are core/patterns/sequence and lib/rx
 rejected:
 readings:
-- its ruled parts: the sequence operator (core/patterns/sequence), the one `rx.repeat` and the plurals (lib/rx), the postfix quantifiers (lib/rx/optional-loop); the item carries no TRIGGER line (the base says so).
+- its ruled parts: the sequence operator (core/patterns/sequence), the one `rx.repeat` and the plurals (lib/rx), the postfix quantifiers (core/patterns/quantifiers); the item carries no TRIGGER line (the base says so).
 evidence:
 history:
 - the ideas file (`docs/design/predicates_future.md`) item 21, "Building patterns without rx literals: an `rx` module and a concatenation operator", whole:
@@ -579,6 +562,7 @@ history:
   - SOURCE: COND-FAMILY.md, 2026-11-17. NEXT: a design note (lane rxlib), then the owner.
 - 2026-11-19 (lane preddoc3c): a new parked piece (the ideas-file item had none); its trigger and source in the base piece.
 - 2026-11-19 (lane preddoc5, review r59 PLACE-2): the slug rx-module moved here from core/patterns/sequence (it names the proposal); the base line's "taken up" now names the owner-ruled parts.
+- 2026-11-19 (lane preddoc6, review r60 DAMAGE-1): the readings line named the retired tag lib/rx/optional-loop for the postfix quantifiers; they are core/patterns/quantifiers.
 
 ## parked/ideas/place-table-skeleton — One place table as the definition's skeleton
 slugs:
@@ -779,7 +763,7 @@ history:
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
 rulings:
-- 2026-11-17 (class: RULING) "shared-label: keep the compiler error. It does cause problems for library writers. It's the typical macro variable problem" (record: "2026-11-17 OWNER RULING — shared-label: keep the compile error"); the error is ruled, the hygiene idea parked
+- 2026-11-17 (class: RULING) "shared-label: keep the compiler error. It does cause problems for library writers. It's the typical macro variable problem" (record: "2026-11-17 OWNER RULING — shared-label: keep the compile error"); the error is ruled AS REVISED the same evening by label-flow, an error of REFERENCE (an ambiguous reference across `&`), not of mere existence, by the record's entry "2026-11-17 OWNER RULING — label-flow (closes the proposal above)" of that evening; the hygiene idea parked
 rejected:
 readings:
 evidence:
@@ -800,10 +784,12 @@ history:
     user's level is a compile error.
   - SOURCE: COND-FAMILY.md, 2026-11-17. TRIGGER: the rx-module discussion, or the first library file with labels.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc6, review r60 RULING-5): the gloss names label-flow's revision of the same evening ("across `&`, a name that both sides surface is an AMBIGUOUS REFERENCE and an error where it is referenced (not an error for merely existing: the shared-label ruling so revised)"), which already makes a collision nobody references harmless and so eases this item's problem; the ideas file's "One label name on both sides of `&` is refused" above is that item's text as written before it.
 
 ## parked/ideas/label-parameter — A condition with a label parameter
 slugs: 
 rulings:
+- 2026-11-18 (class: OBSERVATION) "This also points to a label as something that can be manipulated and referenced. I almost wrote "first class type" but that might be too far" (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error"); "(4) OBSERVATION, his, not a ruling ... Added to predicates_future item 26" (this item)
 rejected:
 readings:
 evidence:
@@ -832,6 +818,7 @@ history:
     revision of the draft after rev 25 that takes up reusable conditions. NOT in lane predspec25's scope.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): the owner's message (2026-11-17, late evening) is not in the record; the ideas file's quote is its only text, so nothing for rulings:.
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-3): the line above held only for the 2026-11-17 message; the record DOES carry the 2026-11-18 one (free-name, "(4) OBSERVATION, his, not a ruling ... Added to predicates_future item 26"), now a `rulings:` item.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-3): the base Trigger line restored to the ideas file's words (it had been reworded).
 
 ## parked/ideas/cartesian — An explicit product of arrays
@@ -926,7 +913,8 @@ history:
 ## parked/ideas/string-level-rx — String-level manipulation of an rx, as graph manipulation
 slugs: 
 rulings:
-- 2026-11-18 (class: RULING) "It's certainly a phase two project." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match""); and "I'd like to consider that unbuilt territory however and the error is an "under construction" sign." from the same entry
+- 2026-11-18 (class: IDEA, in a ruling's message) "It's certainly a phase two project." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match""); the record files the sentence in the entry's IDEA paragraph (predicates_future item 30), not in its RULED list
+- 2026-11-18 (class: RULING) "I'd like to consider that unbuilt territory however and the error is an "under construction" sign." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match""); item (4) of the entry; clarified the same evening (record "2026-11-18 OWNER, what "under construction" was about": "under construction" is a compile error when a regex, not a constant or a `$` match, reaches such a function)
 rejected:
 readings:
 evidence:
@@ -954,6 +942,7 @@ history:
   - SOURCE: COND-FAMILY.md, "OWNER RULING — match-is-rx", 2026-11-18. TRIGGER: phase two of the predicate build, or
     the first user program that needs a string function on a non-constant rx.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc6, review r60 RULING-6): the one item split in two: the "phase two" sentence classed IDEA (the record's own class for it), the "under construction" sentence RULING with its same-evening clarification named.
 
 ## parked/ideas/match-is-rx-unlocks — Further unlocks of "a match is an rx"
 slugs: 
@@ -1103,7 +1092,6 @@ history:
 ## parked/ideas/known-nothing — One cause-free "known nothing" warning
 slugs: 
 rulings:
-- 2026-11-19 (class: MANAGER, no owner words) "the two general forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file)" (record: "2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)")
 rejected:
 readings:
 evidence:
@@ -1115,11 +1103,11 @@ history:
     hold, zero values, an out-of-domain operand or result) is ONE warning with one name, the cause in its text.
   - TRIGGER: naming the arithmetic warning and the dollar warning (the manager's owed call), or a fourth such case.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc6, review r60 RULING-3): the `rulings:` item quoting the manager's r54 disposition removed (no owner words; the field holds his words): 2026-11-19, the manager's r54 disposition, "the two general forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file)" (record "2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)").
 
 ## parked/ideas/warning-rows — Warnings as rows: form, places, look-alike
 slugs: 
 rulings:
-- 2026-11-19 (class: MANAGER, no owner words) "the two general forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file)" (record: "2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)")
 rejected:
 readings:
 evidence:
@@ -1132,6 +1120,7 @@ history:
   - TRIGGER: a third form-keyed warning with a hint (reached: the `join` warning); fold when the diagnostics section
     of the reorganized core file is written.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane preddoc6, review r60 RULING-3): the `rulings:` item quoting the manager's r54 disposition removed (no owner words; the field holds his words): 2026-11-19, the manager's r54 disposition, "the two general forms (one cause-free "known nothing" warning; warnings as rows of form / places / look-alike) PLAN (ideas file)" (record "2026-11-19 MANAGER — review r54 of rev 29: dispositions ruled (no owner words)").
 
 ## parked/ideas/never-constant — A constant for the regex that matches nothing
 slugs:

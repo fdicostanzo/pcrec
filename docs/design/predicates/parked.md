@@ -31,12 +31,6 @@ Trigger: a problem where a missing field means "any of these" or "does not matte
 Source: the ideas file item 3 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### Taking one tuple apart in a binding   [parked/ideas/tuple-apart]   parked 2026-11-19
-A binding that names the parts of one tuple value.
-Trigger: item 1 taken up, or an example that needs one part of a tuple value.
-Source: the ideas file item 4 (its whole text in the details entry).
-modes: n/a (parked: not in the language)
-
 ### An "unset" member in a value set   [parked/ideas/unset-member]   parked 2026-11-19
 A value set with a member meaning "unset", in place of the extra alternative for an optional field.
 Trigger: the extra-alternative spelling for an optional field shows up in real examples.

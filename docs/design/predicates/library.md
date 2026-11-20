@@ -5,9 +5,10 @@ member `m.x(...)`, by kind. Each piece says how the name is defined: `defined: l
 stated and run) or `defined: native (<why no body exists>)` (support outside the language). The core (`core.md`) holds
 the syntax and meaning that is not a name and refers here as needed. Ideas not in the language are `parked.md`.
 Details per tag: `library_details.md`. Every name is a placeholder spelling. Names an example program binds with
-`:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. Names the worked
-examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned content of the standard
-library (lib/planned/standard, core/modules/standard-library).
+`:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. The WORKED EXAMPLES are
+the acceptance cases of the frozen draft (`docs/design/predicates_draft.md` §12); names they CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned content of the standard
+library (lib/planned/standard, core/modules/standard-library). Examples call every provided name bare, as if
+imported; how a `module: ?` name is reached is open (core/modules/default-set/members).
 
 ## Built-in names   [lib/builtin]
 
@@ -17,6 +18,7 @@ kind below. `param`, `file_text` and `records` are under lib/records.
 ### Enumerate   [lib/builtin/enumerate]   ruled 2026-11-14
 `enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order; an edge assertion in it, or an infinite or over-budget rx, is a compile error.
 needs: core/arrays/lift
+see: lib/builtin/enumerate/class-index core/arrays/class-order
 module: ?
 defined: native (it lists an rx's strings; no expression of the language walks an rx)
 - A built-in. PRIORITY ORDER: at each choice point the first alternative first, and for a greedy repeat one more
@@ -54,18 +56,35 @@ defined: native (it reads library files at compile time)
 - `m := import("isodate")` binds a module to a name; members are `m.year`. Two modules' `year` never collide.
 - The argument is a set of names, as `@export`'s is; several files: `import("pcrec"|"numbers")`.
 - No file matched is a compile error (a reading).
-- A library element that needs more than the level the user asked for (automaton code only, by default) is a
+- A library element that needs more than the level the user asked for (the capability the compiled program may use:
+  automaton code only by default; the opt-ins are parked/ideas/capability-optins) is a
   compile error naming the element, never a silent lift.
 - Imports are COMPILE TIME only (the artifact is self-contained), PINNED (`sha256 = ...`), and resolved only from
   configured library directories, never an arbitrary path (a reading).
 modes: n/a (no matching involved)
 
 ### A filter inside the import   [lib/builtin/import/filter]   under-construction 2026-11-19
-A filter over the imported names, written inside the import (`import("file1"|"file2", search(string))`), is a direction acknowledged, not defined.
+A filter over the imported names, written inside the import as a further argument, is a direction acknowledged, not defined.
 needs: lib/builtin/import
 module: ?
 defined: ?
+- His example, `import("file1"|"file2", search(string))`, is a placeholder: `search` is no provided name (core/modules/naming);
+  read it as `import("file1"|"file2", <a filter over names>)`.
 - Not stated: whether it applies before the conflict check (so that it can remove a conflict).
+
+### export   [lib/builtin/export]   open export-choice 2026-11-19
+Is a library file's export written `@export(names)`, a set of names selecting among its public names, or is the `_` rule alone (every public binding exported) the export?
+needs: core/modules/map core/labels/export
+see: core/modules/export
+module: ?
+defined: native (a compile-time effect on the file's public names)
+- The reading today: `@export(names)` exports every binding whose name is in the rx `names`: `@export("leap")`,
+  `@export(["leap", /[^_].*/])`, `@export(/[^_].*/)`; the names are a set of strings, not a filter with no target;
+  an edge assertion in it is the edge-assertion error.
+- Candidates: (a) `@export(names)` as above, selecting among the public names; (b) no call: every public binding
+  (the `_` rule, core/labels/export) is exported.
+- An effect: written after `@` only, as a statement.
+modes: n/a (a question; no matching involved)
 
 ### pattern   [lib/builtin/pattern]   reading 2026-11-19
 `pattern($x)` is the static pattern of the group the label x names, inserted where it is used; it reads no match, so it is a compile-time value.
@@ -85,6 +104,33 @@ defined: ?
 - The output would stop being self-contained (it links a pcrec runtime): only as the explicit module `eval`, with a
   budget, never by default.
 
+### @warn.off, @warn.error   [lib/builtin/warn]   ruled 2026-11-14
+`@warn.off(sel)` switches off, and `@warn.error(sel)` makes errors of, the warnings whose names the selector `sel` matches: a set of names written as an rx, matched whole.
+needs: core/operators/statements
+see: core/diagnostics/warnings lib/builtin/options
+module: ?
+defined: native (a compile-time effect on the compiler's diagnostics)
+- `@warn.off(/compare\.width\..*/)` switches off a library's family; `@warn.error(/.*/)` makes every warning an error.
+- No wildcard: `"*"` is the literal name `*`, which matches no warning.
+- An `@warn.off` that suppresses nothing draws `pcrec.warn.unused` (core/diagnostics/warnings).
+- Errors cannot be switched off. Its reach (the rest of the file), a per-binding form and a whole-build compiler
+  option are readings.
+- An effect: written after `@` only, as a statement.
+modes: n/a (a compile-time effect; no matching involved)
+
+### @options.strict   [lib/builtin/options]   ruled 2026-11-17
+`@options.strict(sel)` makes the warnings whose names the selector `sel` matches into errors: strictness is selective, never every warning by default.
+needs: core/operators/statements
+see: core/diagnostics/warnings lib/builtin/warn parked/ideas/capability-optins parked/ideas/severity-table
+module: ?
+defined: native (a compile-time effect on the compiler's diagnostics)
+- `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
+  matches every name.
+- The `@options` family's other members, capability opt-ins declared in the source, are an idea
+  (parked/ideas/capability-optins); one table for the controls of one fact is parked/ideas/severity-table.
+- An effect: written after `@` only, as a statement.
+modes: n/a (a compile-time effect; no matching involved)
+
 ## Modifiers   [lib/modifiers]
 
 ### padded   [lib/modifiers/padded]   ruled 2026-11-19
@@ -96,6 +142,8 @@ defined: language
 - The bodies: `padded(rx) := /0*${rx}/`, the argument in a hole (one entry: `/0*(?:${rx})/` writes out the same);
   `padded(rx, n) := (rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)`, the any-length branch first; n reaches
   the counts through count holes (a bare `n` inside the literal would be the text `n`).
+- Two bodies chosen by the call form, the width passed by position (his `padded(blah, 4)`): whether a name may have
+  several bodies is open (core/operators/bindings/call-forms).
 - The width is a MINIMUM: zeros reach out to n characters; a value already n or longer stands unpadded.
 - With no width the zeros are any number (`0*`): the default.
 - The argument is part of the body's rx: a `^` in it reads the body's stretch, after the zeros, so `padded(/^5/)`
@@ -156,8 +204,9 @@ WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`a
 needs: core/filters/and core/values/reads core/values/computed-labels core/values/metadata
 module: ?
 defined: language
-- `months := [mname = [/Jan(?:uary)?/, ..., /Dec(?:ember)?/]]` (an array is an alternation), `mnum :=
-  $mname.index` (a computed label over the member's 1-based index).
+- `months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/,
+  /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]` (an array is an alternation;
+  the twelve names in calendar order), `mnum := $mname.index` (a computed label over the member's 1-based index).
 - The name is ruled; the body is a reading. The label `mname` is visible in the result.
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
@@ -265,7 +314,8 @@ defined: language
 - Anchored: it covers the text it is applied to from end to end; standing alone in a searched program that text
   is the whole subject.
 - "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS.
-- Reading the hits out as values is the captures level. The spelling is a placeholder (his: `all_matches`).
+- Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
+  names the levels). The spelling is a placeholder (his: `all_matches`).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
 
 ### contains   [lib/search/contains]   ruled 2026-11-15
@@ -277,17 +327,6 @@ defined: language
   `contains(/^err/)` is "starts with `err`" (WHOLE, 0 of 1,365 texts differ from `startsWith("err")`).
 - The negated test is `!contains(x)`.
 WHOLE `xerrx` HOLDS, `er` FAILS / SEARCHED `a err b` `a err b`@0 / FIND-ALL `err err` [`err err`@0] (`contains("err")` is `(?s:.*)(?:err)(?s:.*)`)
-
-### contains as occurrences   [lib/search/contains/by-occurrences]   reading 2026-11-19
-`contains(x)` is written `occurrences(x, min = 1)`: the same set, and x's labels read leftmost, as a hit.
-needs: lib/search/contains lib/search/occurrences
-module: ?
-defined: language
-- The one-hit test of the occurrences family, one definition; where no question reads x's labels the compiler may
-  build it as the plain set.
-- Against the gap body: WHOLE, SEARCHED and FIND-ALL 0 / 0 / 0 of 121 texts differ (`ab` over `abx`); only the
-  labels differ (the hit, and which occurrence x's labels read).
-WHOLE `xabx` HOLDS, `ba` FAILS / SEARCHED `x ab` `x ab`@0 / FIND-ALL `ab ab` [`ab ab`@0] (`occurrences("ab", min = 1)`)
 
 ### startsWith   [lib/search/starts-with]   ruled 2026-11-15
 `startsWith(s)` is the plain gap body `/(?:${s})(?s:.*)/`, no anchors of its own.
@@ -307,15 +346,6 @@ defined: language
 - The gap is greedy as the owner wrote it: the argument starts as far RIGHT as it can (`endsWith(/(?<n>\d+)/)`
   on `ab123`: n = `3`).
 WHOLE `ab123` HOLDS (3) / SEARCHED `x12 34` `x12 34`@0 / FIND-ALL `a1 b2` [`a1 b2`@0] (`endsWith(/(?<n>\d+)/)` is `(?s:.*)(?:(?<n>\d+))`)
-
-### endsWith with a lazy gap   [lib/search/ends-with/lazy-gap]   reading 2026-11-19
-`endsWith(s)` is written with a LAZY gap, `/(?s:.*?)(?:${s})/`, so its argument starts as far LEFT as it can.
-needs: lib/search/ends-with
-module: ?
-defined: language
-- The same set as the greedy body; the labels and the searched stretch differ (`endsWith(/(?<n>\d+)/)` on
-  `ab123`: n = `123`).
-WHOLE `ab123` HOLDS (123) / SEARCHED `x12 34` `x12`@0 / FIND-ALL `a1 b2` [`a1`@0, ` b2`@2] (`(?s:.*?)(?:(?<n>\d+))`)
 
 ### anchored   [lib/search/anchored]   ruled 2026-11-15
 `anchored(s)` is the plain macro `/\A(?:${s})\z/`: s matched whole on its scoped match, with exact ends.
@@ -366,7 +396,7 @@ WHOLE `12` HOLDS, `05` FAILS / SEARCHED `x05 11` `11`@4 / FIND-ALL `10 3 12 13` 
 needs: core/holes/pattern core/holes/count core/filters/and
 module: ?
 defined: language
-- `suffix_in(n, S)` and `slice_in(i, n, S)` alike; positions are characters per the encoding mode; out of range is
+- `suffix_in(n, S)` and `slice_in(i, n, S)` alike; positions are characters per the encoding mode (bytes or characters, open as for `left`); out of range is
   not stated.
 - A PREIMAGE filter: `prefix_in(2, "Columbus")` never holds (no 2-character member), while his `left(rx, n)` is an
   IMAGE (lib/strings/left).
@@ -382,7 +412,8 @@ module: ?
 defined: native (a question over a loop's passes; no expression of the language walks the passes)
 - `some` is the one spelling of "at least one pass"; `all` is retired: every pass is written with the condition
   inside the loop, on the item (core/conditions/in-sequence).
-- `NOT some(c)` and `occurs.none(c)` are the same question (core/model/table/group-truth asks the next step).
+- `NOT some(c)` and `occurs.none(c)` are the same question under the reading of the open question
+  core/model/table/group-truth (a reading).
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
 WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
 
@@ -391,7 +422,7 @@ WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2,
 needs: lib/counting/some core/values/comparisons
 module: ?
 defined: native (a count over a loop's passes; no expression of the language counts passes)
-- A count is a numeral string, so every filter applies to it (`even()` on a count); it may be bound and read
+- A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it may be bound and read
   like a label: `n := count((d: "7"))`, then `(n: ==2)`.
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
@@ -544,7 +575,7 @@ see: lib/rx/repeat
 module: rx
 defined: language
 - `rx.digit := /\d/`; `rx.word_char`, `rx.space`, `rx.any`, `rx.any_but_newline` are `\w`, `\s`, `(?s:.)`, `.`.
-- `rx.letter`: `[[:alpha:]]`, following the program's UCP setting as a literal does.
+- `rx.letter`: `[[:alpha:]]`, following the program's UCP setting (PCRE's Unicode-property mode for classes) as a literal does.
 - `rx.range(a, b) := /[${a}-${b}]/` (range ends are a typed position); `rx.none_of(S)` is `rx.any & !S`.
 - `rx.any_of` over an array is the array itself; over a string it needs a split into characters, not in the language.
 - The plurals: `rx.digits := rx.repeat(rx.digit, min = 1)` is `\d+` (0 / 0 / 0 of 63 texts differ).
@@ -556,9 +587,10 @@ One `repeat` construct does all counting (one argument exact, min and max a rang
 needs: core/patterns/quantifiers core/holes/count core/arrays/lift
 module: rx
 defined: language
-- The bodies, one per call form: `repeat(x, n) := /(?:${x}){${n}}/`; `repeat(x, min, max) :=
+- The bodies, one per call form (a reading; whether a name may have several bodies is open,
+  core/operators/bindings/call-forms): `repeat(x, n) := /(?:${x}){${n}}/`; `repeat(x, min, max) :=
   /(?:${x}){${min},${max}}/`; `repeat(x, min) := /(?:${x}){${min},}/` ("no maximum" is a second body with the bound
-  left out, a reading).
+  left out).
 - Several values make the count hole's copies: one copy per combination, first hole slowest, an illegal copy (min
   above max) removed; one array mentioned twice is independent per mention (`rx.repeat(rx.digit, n, n + 1)`).
 - A labelled item, `rx.repeat([a = rx.digit], min = 1)`, is `(?:(?<a>\d))+`: a condition after it reads the last
@@ -572,22 +604,26 @@ WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12
 The compile-time tools over spelled arrays and the macro that names a capture.
 
 ### capture   [lib/structural/capture]   reading 2026-11-19
-`capture(x)` names a capture after its argument: `capture(x) := /(?<${x.label}>${x})/`, the hole in a group-name position.
+`capture(name, x) := /(?<${name}>${x})/` names a capture: the name in a group-name hole, x in a pattern hole.
 needs: core/holes/name core/holes/pattern core/labels/export
 module: ?
 defined: language
 - A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture.
-- With `each`: `join(each(capture, a), sep = ".")`.
-WHOLE `12` HOLDS (12) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture(x)`, x := `[d = /\d+/]`)
+- The one-parameter sketch `capture(x) := /(?<${x.label}>${x})/` needs a field giving a part label's own name,
+  which the core does not define (`.label` is a field of a part label over an ARRAY, core/values/metadata); with it,
+  `join(each(capture, a), sep = ".")` would name each entry's capture after its label.
+WHOLE `12` HOLDS (d = `12`) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture("d", /\d+/)` is `(?<d>(?:\d+))`)
 
-### each, each_group, where_group   [lib/structural/each]   reading 2026-11-19
+### each, each_group, where, where_group   [lib/structural/each]   reading 2026-11-19
 `each(f, A)` applies a macro or filter f to every entry of a spelled array A, keeping labels and order; several arrays zip by position.
 needs: lib/builtin/enumerate core/operators/bindings
 module: ?
 defined: native (compile-time tools over spelled arrays; no expression of the language walks an array)
 - They work over spelled arrays, never over a loop's passes.
 - f is a macro whose parameters the entries fill, or a filter passed as a section (`each((& isodate), dates)`).
-- `each_group` zips by label; `where_group` and `each_group` return an rx (an array in group order).
+- `where(p, X)` selects the entries of a spelled array X by a compile-time structural property p, the selecting
+  twin of `each` (not a filter role); `where_group(p, X)` does the same over the map interface.
+- `each_group` zips by label; `where`, `where_group` and `each_group` return an rx (an array in group order).
 - An ordinal is passed by name (`ordinal = "i"`, starting at `start =`, default 1).
 modes: n/a (compile-time tools that build an rx from arrays)
 
@@ -626,4 +662,4 @@ module: ?
 defined: ?
 - The uses: `d := days($b) - days($a)`, `wd := weekday_of($rest.year, $rest.month, $rest.day)`,
   `dim := days_in($year, $month)` (computed labels), `card := /\d{4}( ?\d{4}){3}/ & luhn & startsWith("4")`.
-- A REGULAR TWIN (an automaton form beside a callout) is the lean for `luhn`, `weekday` and `days_in`.
+- A REGULAR TWIN (an automaton form beside a callout) is the lean for `luhn`, `weekday_of` and `days_in`.

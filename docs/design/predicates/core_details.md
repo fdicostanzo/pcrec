@@ -15,7 +15,7 @@ rulings:
 - 2026-11-17 "Notably: this is a break from the SQL model we were using. A encapsulating where clause in sql does not cause the inner sql to reconsider. However, it is in line with regex behavior so I do like it and think it should be the general behavior" (record: "2026-11-17 OWNER, on the model after branch-scope")
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-17 (class: DIRECTION) "Predicates: rather than I make arbitrary decisions on various choices that have difficult to predict ramification, can we come up with a regex model for each and use that to explain it. At least, where it is able to" (record: "2026-11-17 OWNER DIRECTION — decide the open choices by a REGEX MODEL where one exists")
-- 2026-11-17 (class: OWNER) "That said, we are also attempting to make a useful language. In that way, being able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for purity" (record: "2026-11-17 OWNER — the regex model explains; it does not exclude useful features"); refines the direction above within the half hour: the model explains, it never drops a useful feature
+- 2026-11-17 (class: OWNER, a qualification of the DIRECTION: the record's "access to ALL the hits of a search STAYS", a NOTED EXCEPTION) "That said, we are also attempting to make a useful language. In that way, being able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for purity" (record: "2026-11-17 OWNER — the regex model explains; it does not exclude useful features"); refines the direction above within the half hour: the model explains, it never drops a useful feature
 rejected:
 - the SQL picture (an enclosing condition does not make the inner pattern reconsider) — by owner ruling — "it is in line with regex behavior" (record above).
 readings:
@@ -23,6 +23,7 @@ readings:
 evidence: lanes pathimpact, rxmodel (the regex models of the open choices, 2026-11-17).
 history:
 - 2026-11-17: stated in the branch-scope discussion; the draft's §R heading "under regex behaviour" carries it since revision 24.
+- 2026-11-19 (lane preddoc6, review r60 RULING-6): the `(class: OWNER)` item names the record's own words for what it is (OWNER is the heading's speaker, not a class word).
 
 ## core/principles/explicit-exceptions — Exceptions are asked for by name
 slugs: exception-rule
@@ -100,7 +101,7 @@ history:
 - 2026-11-19: the record classes it a DISCUSSION with a LEAN and "a PRINCIPLE stated"; "flag by flag" became flags-scope (core/holes/flags).
 
 ## core/principles/composed-at-point — Composed at the point of use
-was: core/principles/exact-wording (2026-11-19, a remark on the manager's method in the same entry, not a language principle: review r59 RULING-2)
+was: core/principles/exact-wording (2026-11-19, deleted, not moved: a remark on the manager's method in the same record entry, not a language principle (review r59 RULING-2); its tag is retired here because this entry quotes the one record entry it came from)
 slugs:
 rulings:
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence")
@@ -112,6 +113,7 @@ evidence: preddoc1 PARTS R8, R9, R11; EX-bare-condition.
 history:
 - 2026-11-19: stated with zero-in-sequence; applied the same day to a bare condition in a hole (core/holes/bare-condition).
 - 2026-11-19 (lane preddoc4): the piece core/principles/exact-wording retired into this entry: his "you are a lawyer in your exact wording. this is what is needed now." (the same zero-in-sequence entry) is a remark on the manager's method, "no change asked" (the record); it belongs to the manager's skill, not to the language (review r59 RULING-2).
+- 2026-11-19 (lane preddoc6, review r60 DAMAGE-2): the `was:` line's why now says the previous tag was DELETED, not moved (doc_format's DELETE form): the reader presented the deletion of "rules are stated exactly" as a rename into this principle.
 
 ## core/principles/namespace-at-reference — The namespace at the point of reference
 slugs:
@@ -256,7 +258,7 @@ history:
 - 2026-11-19: a DIRECTION: no change to the label rules now.
 
 ## core/model/match — What a match is
-slugs: row-is-match condition-kind
+slugs: row-is-match condition-kind source-row searched-complement
 rulings:
 - 2026-11-17 "branch-scope: yes. I like that. Also, that makes me like 9:30 choice from yesterday more as well because if we have atomic, you can get the alternative I mentioned." (record: "2026-11-17 OWNER RULING — branch-scope: reading")
 - 2026-11-17 "However, it is in line with regex behavior so I do like it and think it should be the general behavior" (record: "2026-11-17 OWNER, on the model after branch-scope")
@@ -267,11 +269,13 @@ rulings:
 rejected:
 - the SQL model, an enclosing condition that does not make the inner pattern reconsider — by owner — "this is a break from the SQL model we were using ... However, it is in line with regex behavior so I do like it" (record: "2026-11-17 OWNER, on the model after branch-scope").
 - three-valued tests (an absent label UNKNOWN) — by owner ruling — regex-settles (1), a test on an absent label fails.
+- "a row of the source is the whole subject; the complement is per subject" (source-row's wording, the manager's framing of the question his "Source-row: yes" answered, record "2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane") — by owner ruling — row-is-match SUPERSEDES it the same night: a row is ONE POTENTIAL MATCH, the subject the search text; it closes searched-complement (review r31 finding A: a per-subject complement contradicted the same-stretch tie, `/\d+/ & !/0+/` on `0 7` reports `7`).
 readings:
 - a loop's passes include PCRE's trailing empty pass (by the default of exception-rule; his observation "makes sense as the entire rx is optional", not a ruling) — SUPPORTED (the draft R.1.7 (4a): the literal loop, the hole loop and `occurrences` agree with libpcre2).
 evidence: preddoc3a_model.py MATCH (the record's own example: WHOLE `123` a = `1`, b = `23`; the python `re` lowering `1\d+` gives the same spans in all three modes).
 history:
 - 2026-11-16: row-is-match; a row was a row of the pass table before it.
+- 2026-11-19 (lane preddoc6, review r60 SOURCE-ROW / RECOUNT-4): the slugs source-row and searched-complement moved here from core/filters/complement: row-is-match, this piece's ruling, superseded source-row's wording and closed searched-complement (record "2026-11-16 OWNER RULING — row-is-match": "Review r31 finding A is closed by this ruling").
 - 2026-11-17: branch-scope (reading (ii)) made a condition a piece of the pattern; the SQL reading went; regex-settles closed the five points; the nested-pass addendum gave the black-box principle.
 - the slugs pass-and and joint-last-pass moved to core/labels/labels-vs-captures, empty-pass to core/labels/one-rule, outer-pass-forms to core/model/places/outermost-view (lane preddoc3a): each is answered there.
 
@@ -317,6 +321,7 @@ readings:
 evidence: the draft §R.8 row group-truth / pass-table (E12).
 history:
 - new piece (lane preddoc3a): the slug was on core/model/table, whose statement does not answer it; the draft keeps it asked ("the 11-18 rulings do not entail an answer").
+- 2026-11-19 (lane preddoc6, review r60 COLD-20): the question restated as a choice: before, its candidates "(a) `NOT some(c)` = `occurs.none(c)`" and "(b) `occurs.none(NOT c)` is a different question" were both true at once; the reading (the draft §R.1.7, "Each remaining group question counts the REAL passes on which its condition is TRUE") is now candidate (a); lib/counting/some's sentence is marked as that reading.
 
 ## core/model/places — The place table
 slugs:
@@ -465,6 +470,7 @@ history:
 - the skeleton's statement "A label matches every pass; a capture is PCRE's last value" (the superseded entry) replaced by the after-loop-read statement (lane preddoc3a).
 - 2026-11-16 joint-loops and pairing-loop part 1 (per-pass pairing of a joint condition by the loop enclosing its labels; "I agree. Makes sense.", record "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"; "pairing-loop: I agree part 1.", record "2026-11-16 OWNER RULING — pairing-loop, part 1: the wording confirmed; his remark on optionals") are REVERSED for a bare joint by after-loop-read (cited above: a bare joint reads the last pass's own tuple); the per-pass form is the condition inside the loop, on the item. The slugs are homed here for that reason (lane preddoc5, review r59 COMPA-11).
 - the slug array-slot moved here from core/labels/one-rule: the rule it decided ("a reset contributes nothing" to the array form) is this piece's (lane preddoc5, review r59 PLACE-4).
+- 2026-11-19 (lane preddoc6, review r60 COLD-13): "a callout" among the capture's readers qualified "where one is allowed: a one-literal program" (core/patterns/literals refuses callouts inside a larger program).
 
 ## core/labels/one-rule — One label rule: branchings reset
 slugs: bare-loop-label before-and-inside shared-label repeated-means unsettable-label empty-pass optional-as-loop
@@ -486,6 +492,7 @@ evidence: preddoc3a_model.py ONE (the table he was shown with after-loop-read: `
 history:
 - 2026-11-17: the one label rule ("branchings reset"), array-slot, shared-label (then revised by label-flow); polarity-rule made the unsettable label a warning.
 - the slug empty-pass came from core/model/match (lane preddoc3a).
+- 2026-11-19 (lane preddoc6, review r60 COLD-14): the bullet on a label no match can set names its warning, `pcrec.test.never` (polarity-rule: "a test on an unsettable label" became that warning; core/diagnostics/warnings' `rejected:`).
 
 ## core/labels/flow — Labels across composed parts
 slugs: label-flow label-mark
@@ -519,6 +526,7 @@ evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers 
 history:
 - 2026-11-18: the proposal (labels seen only if exported), the export-scope discussion, the ruling, the clarification of statement 6 and `[_ = A]`.
 - 2026-11-19 (lane preddoc5): the slug filter-captures moved here from core/filters/kinds: it is closed by export-rule, which this piece states (review r59 PLACE-4).
+- 2026-11-19 (lane preddoc6, review r60 COLD-15): the example names its program (`year`, the final expression); before it printed only the binding, which by core/operators/statements is not a program. Answers unchanged (preddoc6 PART EX).
 
 ## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared label
 slugs: caller-ambiguous read-out
@@ -558,6 +566,7 @@ rulings:
 - 2026-11-18 "backref-across-parts: which is to say, it should be the last reference as labels" (record: "2026-11-18 OWNER, clarifying backref-across-parts — a backreference reads as labels do: the last mention at its point")
 - 2026-11-18 "backref-across-parts: I agree with error." (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error")
 rejected:
+- "inside rx text a backreference already reads the last-set capture" (rev 25) — by the draft (rev 25.1, R.9 row 37) — WITHDRAWN: false under `(?J)` (a backreference there reads the first set group); backref-across-parts asked, then free-name ruled.
 - a backreference that reads the label (reset on entry) — by owner ruling — backref-label: capture.
 - the written-out regex's reading (one namespace for the whole composition) — by owner ruling — backref-across-parts.
 - rev 27's three candidates for `\k<h>` after two groups of one name — by owner ruling — same-name-twice: a compile error unless `(?J)` (the draft R.9, A25).
@@ -566,12 +575,14 @@ readings:
 evidence: preddoc3a_model.py BREF (the draft's PART REF REF2 line; printed answers reproduced; `\d(\d)\1` agrees); sabotage s10 caught.
 history:
 - 2026-11-18: backref-across-parts, its clarification, free-name, backref-label, same-name-twice.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/labels/numbers — Numbers name groups only without ambiguity
-slugs: number-names zero-place numbered-label-warning
+slugs: number-names zero-place numbered-label-warning numbered-duplicate sequence-numbers
 rulings:
 - 2026-11-18 "number-names: exactly. Only when there is no ambiguity." (record: "2026-11-18 OWNER RULING — number-names")
-- 2026-11-18 "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is composed." (record: "2026-11-18 OWNER RULING, addendum to number-names — zero is the exception")
+- 2026-11-18 "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is composed." (record: "2026-11-18 OWNER RULING, addendum to number-names — zero is the exception"); its "entire match" is the match so far after a complete pattern, by the next item
+- 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence"); the statement's "`0` ... names the match so far" (the deciding piece: core/conditions/match-so-far)
 - 2026-11-17 "For A & B: from the perspective of B, the subject is now whatever A matched. There is no outside subject (unless we allow context, etc). That's its whole world. So all numbers are labels of groups in that world." (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 - 2026-11-17 "Also, not recommended to use group numbers as it's confusing on bound values you can't see" (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 rejected:
@@ -583,6 +594,8 @@ evidence: preddoc3a_model.py NUM (the draft's PART NUM (2) line; printed answers
 history:
 - 2026-11-17: zero-place, label numbers tried, the warning accepted; 2026-11-18: number-names and its addendum.
 - 2026-11-19 (lane preddoc4): the statement's "`0` is always the entire match" now points at the deciding piece core/conditions/match-so-far (his addendum's words stay in the rulings items; after a complete pattern the match so far IS the entire match); the bullet "inside a loop body, the pass's" removed (the loop case is core/conditions/match-so-far/in-loop); the warning's trigger stated once, as the record's accepted proposal words it (review r59 ZERO, READ-10).
+- 2026-11-19 (lane preddoc6, review r60 DAMAGE-4): the statement carries zero-in-sequence's meaning ("names the match so far"), so that ruling is cited here and the status re-dated 2026-11-19 (doc_format: a later ruling rewrites status and statement together); the 2026-11-18 addendum stays, its "entire match" read as the match so far after a complete pattern.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-5): slugs numbered-duplicate and sequence-numbers homed here: the draft's rev 25 asked them and rev 25.1 replaced both by number-names (the draft: "rev 25 asked two, **numbered-duplicate** and **sequence-numbers**; review r43 A folds them"); neither was answered under its own name.
 
 ## core/labels/numbers/in-loop — A number on a group optional in a loop
 slugs: number-in-loop
@@ -634,6 +647,7 @@ readings:
 evidence: preddoc3a_model.py TV (the draft's PART A U1 line; printed answers reproduced; the lowering agrees), TV2 (U2: `NOT (a: <5)` on `1` HOLDS); the three-spellings table is the draft §R.3's (N1-N4), reproduced by DEF for `(h = "x": !<5)`; sabotage s5 caught.
 history:
 - 2026-11-16: condition-not with "absence never matches"; 2026-11-17: regex-settles and absent-under-not reversed the absence clause; polarity-rule.
+- 2026-11-19 (lane preddoc6, review r60 COLD-12): a column added to the three-meanings table on P = `/(?<h>\d)?\d?x/`, `3x` WHOLE: HOLDS / FAILS / FAILS. On the old column rows 1 and 3 were identical, so the table showed two meanings; the new column parts NOT from the complement form (P has two paths over `3x`, h = `3` and h unset). Run: docs/dev/lanes/preddoc6_evidence/ PART TV.
 
 ## core/conditions/in-sequence — A condition as a sequence operand
 slugs: condition-in-sequence
@@ -663,25 +677,25 @@ slugs: condition-group
 rulings:
 rejected:
 readings:
-- open in the draft §R.8 ("condition-group"); never put to the owner — the manager's brief of lane preddoc4 makes it an open piece; the candidates are the lane's statement of the two ways the ruled quantified-condition can extend.
+- (a), the same compile error, is THE DRAFT'S READING (rev 26.1, review r47 B4): "a GROUP holding ONLY conditions (`((h: <5))?`, `(c1 SEQ c2)*`) IS a condition for this rule, so a quantifier on it is the same compile error; read as regex it is exactly what the punt keeps out: `[h = rx.digit] SEQ ((h: <5))?` WHOLE `7` HOLDS (the test vanishes), `((h: <5) SEQ (h: <5))*` likewise, unquantified WHOLE `7` FAILS (rev 26.1's PART R47 B4; RULE-AS-CODE PART CS CS4's new row; sabotage s22 caught)" (the draft §R.1.14); the §R.8 row: "a condition: the same COMPILE ERROR", candidate regex with SEARCHED `x7` `7`@1 / FIND-ALL `7 3` [`7`@0, `3`@2] HAND-WORKED from the run there — re-run here (preddoc6 PART CG).
+- open in the draft §R.8 ("condition-group"); never put to the owner (`grep -c condition-group` on the record: 0).
 evidence:
 history:
 - 2026-11-19 (lane preddoc4): a new open sub-piece; the slug came from core/conditions/quantified, where it sat on a ruled piece.
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-4): restated from the frozen draft's own words for the slug. Before, the piece said "The reading today: not stated" and "modes: n/a (a question; no candidate answer is run)"; the draft has the reading ((a), the same compile error) and the runs (PART R47 B4, CS4), now printed; its example `(?:(a: S)(b: T))` replaced by the draft's `((h: <5))?`, `((h: <5) SEQ (h: <5))*`.
 
 ## core/conditions/match-so-far — The match so far
 slugs: zero-in-sequence
 rulings:
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence")
-- 2026-11-19 ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/ but not /${A & (0: digit)}/ where it is only the A" (record: "2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A")
-- 2026-11-19 "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing" (record: "2026-11-19 OWNER, confirming: a bare condition last in an rx equals the condition on the whole")
 rejected:
 - the error for now (the manager's leaning) — by owner ruling — zero-in-sequence.
-- a bare condition's `0` in a hole as the inserted part's own (the draft's reading, PART N NZ) — by owner — "for a condition bare, yes".
 readings:
 evidence: preddoc3a_model.py ZERO (the record's zeroseq.py answers reproduced; `7\d` agrees); sabotage s11 caught. preddoc1 PARTS R8, R9.
 history:
 - 2026-11-19: zero-in-sequence; the bare condition in a hole; the confirmation. The slug number-in-loop moved to core/labels/numbers/in-loop (lane preddoc3a).
 - 2026-11-19 (lane preddoc4): the deciding piece for `0` (core/labels/numbers points here); the bare-condition-in-a-hole facts are core/holes/bare-condition's alone (review r59 RULING-8); the loop case moved to the open sub-piece core/conditions/match-so-far/in-loop (review r59 ZERO).
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-2): one owner for the hole facts: the base clause "in `${A & (0: S)}` it is A" and the two hole rulings items (""Inside an inserted part": for a condition bare, yes ..." and "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing") and the `rejected:` line "a bare condition's `0` in a hole as the inserted part's own" removed here; core/holes/bare-condition carries all three, word for word.
 
 ## core/conditions/match-so-far/in-loop — The match so far inside a loop
 slugs: zero-in-loop
@@ -696,19 +710,20 @@ history:
 - 2026-11-19 (lane preddoc4): a new open sub-piece: the two readings of `0` in a loop stated once, as a question (review r59 ZERO).
 
 ## core/conditions/pass-start-read — Labels as they stand
-slugs: pass-start-read looped-warning looped-compare
+slugs: pass-start-read
 rulings:
 - 2026-11-17 "pass-start-read: yes keep it" (record: "2026-11-17 OWNER RULING — pass-start-read")
 - 2026-11-17 "I do want that. It makes sense and frankly pcre is wrong on this." (record: "2026-11-17 OWNER RULING — what an unqualified `$x` reads")
 rejected:
 - a "pass begins" reset rule — by owner ruling — pass-start-read (keep the previous pass's value before the group).
 - `$x` "as standard pcre" (pass-list-read's literal reading) — by owner ruling — the `$x` ruling: `$x` reads the label.
-- a warning on a bare condition over a looped label (looped-warning) — withdrawn by the manager (the draft §R.2, with `compare.looped`).
+- a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — withdrawn by the manager (the draft §R.2); the question is open (core/diagnostics/looped-compare/still-wanted).
 readings:
 evidence: preddoc3a_model.py PSR (the draft's PART PS line; printed answers reproduced) and PSR2 (WHOLE equals "the items are non-decreasing" on 1,365 texts over `139;`); sabotage s12 caught.
 history:
 - the draft R.1.7; 2026-11-17 pass-start-read and the `$x` ruling.
 - 2026-11-16 looped-compare ("looped-compare: warn", record "2026-11-16 RULING — a compare over looped labels warns"): the warning on a compare over looped labels was MOVED by joint-loops (3) onto a `|` of conditions over labels that can repeat (record "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); after after-loop-read (core/labels/labels-vs-captures) a bare condition reads the last pass's own label and the draft withdrew `compare.looped` with looped-warning (§R.2, rejected above). The slug is homed here with that rejected line (lane preddoc5).
+- 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1): the line above read a MANAGER's withdrawal as the end of an OWNER-ruled warning. The warning stands as joint-loops (3) left it (core/diagnostics/looped-compare, both rulings cited there); whether it is still wanted is open (core/diagnostics/looped-compare/still-wanted). The slugs looped-compare and looped-warning moved to those two pieces.
 
 ## core/conditions/defaults — Defaults and absent labels
 slugs: default-set unset-component drop-mark default-value match-context zero-pass-empty domain-scope mark-narrows mark-in-none mark-range mark-under-not one-witness default-reaches-dollar default-scope mark-design
@@ -763,20 +778,23 @@ evidence:
 history: skeleton; the draft R.1.4.
 
 ## core/filters/complement — Complement
-slugs: nested-complement source-row searched-complement
+slugs: nested-complement
 rulings:
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-16 "not-is-complement: yes agree" (record: "2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none")
 - 2026-11-18 "complement-place: is this legal? not_seven := not seven It stands alone. I think it's the use that is the problem" (record: "2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx")
-- 2026-11-16 "Source-row: yes" (record: "2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane"); a row of the source is the whole subject; a searched pattern gives several result rows per subject; the complement is per subject
+- 2026-11-16 "row-is-match: yes I agree." (record: "2026-11-16 OWNER RULING — row-is-match"); a complement after `&` filters potential matches, one row each: `t2 & !q` searched on `9:30` HOLDS reporting `9`; it SUPERSEDES the 21:49 source-row wording (history)
 rejected:
-- `!` on a condition — by owner ruling — not-is-complement (a compile error naming the two rewrites).
+- `!` on a condition as a compile error (the second half of not-is-complement, "no meaning on a condition") — by owner ruling — REVERSED the same evening by condition-not (record: "2026-11-16 OWNER RULING — condition-not: allowed"); the spelling on a condition is `NOT` (core/filters/negation, a reading). The not-is-complement item above stands for its first half only (`!` on a pattern is a complement).
+- a complement per SUBJECT (source-row's wording, "a row of the source is the whole subject; the complement is per subject") — by owner ruling — row-is-match: a row is one potential match, the subject is the search text.
 readings:
 - a complement inside an `occurrences` argument rejects a path (nested-complement, entailed by hit-carry's premise) — SUPPORTED by the draft's PART RS RS1 (81 of 364 differ from the committed reading), not re-run here.
 - `!` in rx text keeps PCRE's meaning (the 2026-11-15 correction: `!` inside a normal rx is parked) — UNTESTED.
 evidence: preddoc3a_model.py COMP (`(?!7)\d+` agrees; the draft's `712` FAILS reproduced); sabotage s14 caught.
 history:
 - 2026-11-16 not-is-complement; 2026-11-17 regex-settles (2); 2026-11-18 complement-place.
+- 2026-11-19 (lane preddoc6, review r60 SOURCE-ROW / RULING-2 / RECOUNT-4): the `rulings:` item "2026-11-16 "Source-row: yes" (record: "2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane"); a row of the source is the whole subject; a searched pattern gives several result rows per subject; the complement is per subject" REMOVED: that wording was "the MANAGER's framing of the question" (record "2026-11-16 OWNER REMARKS — what a row is; negating a condition; the value of a complemented pattern") and row-is-match "SUPERSEDES the 21:49 source-row wording" the same night (cited above). The slugs source-row and searched-complement moved to core/model/match, the piece row-is-match decides.
+- 2026-11-19 (lane preddoc6, review r60 RULING-4): the `rejected:` line "`!` on a condition — by owner ruling — not-is-complement (a compile error naming the two rewrites)" stated the half of not-is-complement that condition-not reversed the same evening; rewritten.
 
 ## core/filters/kinds — Can match, can filter
 slugs: complement-place lone-complement-match
@@ -810,6 +828,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PARTS NE, KI.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: the one home of the negation spellings (review r59 NEGATION); the kinds example's undefined `not` replaced by `!`; the `when` body's `NOT peek(...)` stated legal here.
+- 2026-11-19 (lane preddoc6, review r60 DAMAGE-3): the ruled statement narrowed to what the rulings carry; before: "`!X` is the complement of a pattern or set; `NOT T` on a condition or a zero-width pattern is the negative lookahead `(?!T)`; no other spelling of negation exists." Its two readings (NOT on a zero-width pattern; no other spelling) are bullets marked "(a reading)"; the record writes `!` on a condition (condition-not: "`!` on a condition is LEGAL").
 
 ## core/values/reads — Reading a label
 slugs: value-filter pass-list-read
@@ -832,7 +851,7 @@ history:
 - 2026-11-19 (lane preddoc5): the slug pass-list-read moved here from core/conditions/pass-start-read: it asks what `$h` reads after the pattern, which this piece states (review r59 COMPA-13).
 
 ## core/values/one-type — One type: a match is an rx
-slugs: match-is-rx read-is-constant value-is-pattern
+slugs: match-is-rx read-is-constant value-is-pattern hole-member-kind
 rulings:
 - 2026-11-18 "value-hole: let's use the unifying idea for it. Change my answers to match." (record: "2026-11-18 OWNER RULING — match-is-rx: the unifying idea; "Change my answers to match"")
 - 2026-11-18 "That means, in practice, that there are two forms for each of them: the compile time version that works on general regex, and the runtime version that,while compiled, works on single value strings at run time. So $y + 1 and \d + 1 look the same, the first one happens at run time, and the second at compile time." (record: "2026-11-18 OWNER RULING — read-is-constant: yes; two forms of each operation")
@@ -849,6 +868,7 @@ evidence: preddoc3b EXonetype; PARTS UT, TT of predspec27, predspec28.
 history:
 - 2026-11-18: value-is-pattern (one ruling, two leans, one idea), then value-hole "yes but", then match-is-rx and read-is-constant; the draft R.1.16 ONE TYPE, THE TYPE TABLE, ANSWERS CHANGED A1-A36.
 - 2026-11-19 (lane preddoc3b): converted from the skeleton; the type table's rows are homed by position and operation (core/holes/*, core/values/*, core/arrays/*), not copied.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-5): slug hole-member-kind homed here: asked at rev 25 (the draft's changelog), folded into value-is-pattern (the draft's R.8 row 74, rev 26); never answered under its own name.
 
 ## core/values/number-domain — The number domain
 slugs: number-domain domain-components numeral-width
@@ -898,7 +918,7 @@ rulings:
 - 2026-11-16 "retire-paused: agree to split. But the pause on ^ is indefinite and requires real value other than 'override a users own *'" (record: "2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite"); RETIRED: the `lex_` names, their argument order, the fixed-size compares' first-library slot (the joint condition takes it); the sigil PAUSED (parked/ideas/other-side-sigil)
 rejected:
 - a third value kind for a set of tuples — by owner ruling — set-arity ("No third value kind", the record).
-- first/rest binding with recursion as the order's definition — by owner ruling — first-rest PARKED (parked/ideas/tuple-apart).
+- first/rest binding with recursion as the order's definition — by owner ruling — first-rest PARKED (parked/ideas/first-rest).
 - a warning between the two orders (the manager's lean) — by owner ruling — two-orders ("I like the control"; the record keeps both with no warning).
 - the six tuple compares `lex_ge2`, `lex_le2`, `lex_between2`, `lex_ge3`, `lex_le3`, `lex_between3` over arrays (`lex_between2([h, m], [9, 0], [10, 0])`) — by owner ruling — retire-paused (the comparison sets on a tuple atom, `((h, m): >= (9, 0))`, say the same with no library family).
 - their argument order subject, low, high — by owner ruling — retire-paused (retired with the names).
@@ -923,6 +943,7 @@ slugs:
 rulings:
 - 2026-11-14 "I agree with both excepting the spelling ... no alpha operators ... with, check, in ... check is not `x := ...` ... don't want to go into new grammar lightly" (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
 rejected:
+- a computed label's value is "a VALUE, not a pattern" (the draft §4.4, §11) — by the draft (rev 27.1, R.9 row 68), following value-is-pattern — CHANGED: a one-string rx known at run time.
 readings:
 - "a match-dependent binding is a computed label of the pattern whose labels it reads" — the manager's spelling LEAN in the same entry, the concept (compile-time checks and match-dependent bindings, no new grammar) agreed; the base's statement is that lean — a reading.
 - an unset input gives an unset computed label — the lane's reading (preddoc3c's proposal), UNTESTED.
@@ -930,6 +951,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PART CL; the draft §4.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: length and month_numbered name bindings left of `:` with no core rule allowing it (review r59 PRIMITIVES-MISSING, READ-8).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/values/metadata — Metadata of a member
 slugs:
@@ -982,6 +1004,8 @@ readings:
 evidence: preddoc3b EXleft; PARTS CN, TT, RC of predspec28, predspec281.
 history:
 - 2026-11-18: match-is-rx (4), read-is-constant (4), the clarification, construction-line; `length($y)` written `strlen($y)` (THE MANAGER'S CALL 6, A26).
+- 2026-11-19 (lane preddoc6, review r60 COLD-6): the statement said "accepts an rx exactly where `enumerate` accepts it ... any other rx is under construction", against its own clause 1 (an outward-looking assertion is enumerate's compile error, not under construction); rewritten to state the clauses as the rule. Statement before: "A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction."
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the bullet restating `left`'s definition ("`left(rx, n)` is the IMAGE (the first n characters of each string) ...") replaced by a pointer: the definition is lib/strings/left's (every call-form name is a library piece).
 
 ## core/arrays/lift — Arrays are alternations; operations lift
 slugs: array-lift lift-order macro-arguments
@@ -1297,11 +1321,13 @@ history:
 slugs: flags-in-filter
 rulings:
 rejected:
+- the manager's m2 (an `&` operand, a condition's set, a filter-role argument keep their own flags) as the draft's flags-in-filter reading (2026-11-18) — by the draft (rev 29, R.9 row 100) — SUPERSEDED as the draft's reading by REACH (the manager's reading 3, not a ruling).
 readings:
 - the two sides of an `&` inside a hole start with the hole's flags (THE DRAFT'S READING REACH, 0 / 0 / 0 of 1,555 against the plain hole) — open in the draft §R.8; the record's "2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant" is his remark on it, not a ruling.
 evidence: the draft's PART FF of predspec29 (REACH).
 history:
 - 2026-11-19 (lane preddoc4): a new open sub-piece, from a bullet of core/holes/flags (review r59 READ-9). The candidate (b) is the lane's statement of the rival the draft names (a filter operand's own world).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/holes/labels — Labels through a hole
 slugs: inner-label-read
@@ -1333,6 +1359,7 @@ rulings:
 - 2026-11-19 "same-name-count: scoped" (record: "2026-11-19 OWNER RULING — same-name-count")
 - 2026-11-19 "same-name-count: this is only about backreferences, not labels ?" (record: "2026-11-19 OWNER, on same-name-count: backreferences, not labels? — and a MANAGER CORRECTION"); a QUESTION, answered by a correction
 rejected:
+- R.1.13 REFERENCES (2) read for `\k<h>` across a hole as the last mention — by owner ruling — same-name-count NARROWED it: `\k<h>` reads the outer group; `$h` still the last mention (the draft R.9 row 102).
 - a group through a hole counts as a second group of its name — by owner ruling — same-name-count; the rival (the outer `\k<h>` reading the inner group) holds on `a-bb` (preddoc1 sabotage xEX-same-name caught).
 - "(and `$h`) mean the outer group" — by the manager's correction the same day — the manager's extension, not asked.
 readings:
@@ -1340,6 +1367,7 @@ readings:
 evidence: preddoc1 EX-same-name; PART SN of predspec281; PART SC of predspec291.
 history:
 - 2026-11-18: same-name-twice's reading (m1) left the hole case unstated; 2026-11-19 ruled.
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 
 ## core/holes/bare-condition — A bare condition in a hole
 slugs:
@@ -1359,6 +1387,7 @@ evidence: preddoc1 EX-bare-condition, EX-bare-and, PARTS R11, R12; zerohole.py, 
 history:
 - 2026-11-19: zero-in-sequence, then his "yes ... but not", his confirmation, his spelling correction `${0: digit}`, his "${} implies (?:${})" (SUPPORTED by hole-reading), then the parentheses remarks; rev 29.1 only marked §2.3.
 - 2026-11-19 (lane preddoc4): this piece owns the facts on `0` and a bare condition in a hole; core/conditions/match-so-far points here; the parentheses bullet (a spelling call) is core/spellings/condition-parentheses's (review r59 RULING-8).
+- 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
 
 ## core/holes/bare-condition/labels — Labels a bare condition reads
 slugs: bare-condition-labels
@@ -1449,6 +1478,18 @@ history:
 - 2026-11-19 (lane preddoc3b): converted from `?`; the statements part split off as core/operators/statements (a different status).
 - 2026-11-19 (lane preddoc4): `NOT` named as the one exception to no-alphabetic-operators; the record bullet points at tuples (review r59 NEGATION, READ-15).
 
+## core/operators/bindings/call-forms — Several bodies for one name
+slugs: call-forms
+rulings:
+rejected:
+readings:
+- the rule of core/operators/bindings, ruled ("Agree with mapping", record "2026-11-14 RULINGS on rev 3's contradictions": positional, keyword and by-name parameters), has one head per name; it is NOT corrected here. The several bodies are the library's reading: lib/rx/repeat ("The bodies, one per call form", the draft R.1.14; "no maximum" a second body, the draft's reading) and lib/modifiers/padded (the ruled `padded(rx) := /0*${rx}/` and the width form the owner wrote positionally, "someone could use padded(blah, 4) to get a minimum 4", record "2026-11-18 OWNER, on restricting a minimum-width `padded`").
+- the record's repeat is ONE construct, "exact with one argument, a range with min and max, no maximum = unbounded" (record "2026-11-17 OWNER — the rx module: one repeat construct; plurals as conveniences"; "an unbounded repeat is written by giving NO MAXIMUM", record "2026-11-17 OWNER RULING — the count proposal"): it rules what a call means, not how many heads define it.
+- the parting run: `rx.repeat(rx.digit, 3)` as `(?:\d){3}` and as `(?:\d){3,}` — SUPPORTED (preddoc6 PART CF, `re` on the written-out patterns).
+evidence: docs/dev/lanes/preddoc6_evidence/ PART CF.
+history:
+- 2026-11-19 (lane preddoc6, review r60 COLD-9): a new open sub-piece, at the predicate manager's ruling (r60's FIX-NOW (status) + PLAN (form)): the collision is a question for the owner; the general form (one head, keyword settings, an "unset" bound) is a PLAN item of review r60. The slug call-forms is the lane's name for the question.
+
 ## core/operators/statements — Program shape and statements
 slugs:
 rulings:
@@ -1463,6 +1504,7 @@ evidence:
 history:
 - 2026-11-19 (lane preddoc3b): new piece, split from core/operators/bindings: the draft §5.1's program shape and statements hold rules no other tag homes, and their status (LEAN) differs from the bindings' (RULED).
 - 2026-11-19 (lane preddoc4): `@options` (used by core/diagnostics/warnings' strictness setting) and the `assert` module's statements join the effect list; every call-form built-in has its library piece (review r59 COMPB-3, READ-11; the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS / COLD-1 / COLD-21): the three effects get their library pieces (lib/builtin/warn, lib/builtin/export, lib/builtin/options; the predicate manager ruled them call-form names, 2026-11-19), so "these included" holds; `eval` stays on the list as the draft wrote it (§5.1), now said to be the name reserved for the module that alone provides it (lib/builtin/eval).
 
 ## core/modules/map — A module is a map
 slugs:
@@ -1486,9 +1528,9 @@ rulings:
 - 2026-11-19 "it might also be (=left, =right) := ... which looks odd but is a degenerate form of macro parameter binding" (record: "2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`"); the idea he then ruled
 rejected:
 - `(left,right) := import("blah", /left|right/)` (his first instinct) — by owner ruling — "double name is a weakness".
-- `(left, right) := import("blah")`, selection by bare name (the manager's leaning) — by owner ruling — "it has implications for the rest of the language"; bare `(a, b)` stays for a positional form (core/modules/positional).
+- `(left, right) := import("blah")`, selection by bare name (the manager's leaning) — by owner ruling — import-symbols adopted the `=`-marked form (record: "2026-11-19 OWNER RULING — import-symbols: the named binding list, the shorthand in a macro call, `(=) :=` for all symbols"); the reason is his CAUTION in the discussion before it, "it has implications for the rest of the language" (record "2026-11-19 OWNER, discussing import-symbols: the double name, the binding form, `(=left, =right)`", class DISCUSSION, not a ruling); bare `(a, b)` stays for a positional form (core/modules/positional).
 readings:
-- the eight statements he agreed to are the manager's list, "no wider" — SUPPORTED by the record entry.
+- the eight statements he agreed to are the manager's list, "no wider" — SUPPORTED by the record entry; statement 7 ("A bare positional `(a, b) := X` is left undefined for now") does not stand as told: the manager WITHDREW it (record "2026-11-19 MANAGER — a statement told to the owner under import-symbols is WITHDRAWN (the positional binding list)") and that withdrawal was itself CORRECTED to "the positional list `(a, b) := X` is OPEN under tuple-parts, for a tuple and for a map alike" (record "2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body"); the positional list is core/modules/positional.
 evidence:
 history:
 - 2026-11-19: his aside after the pilot, the discussion, his lean "don't confirm yet", the manager's implications (a)-(f), the ruling.
@@ -1515,9 +1557,11 @@ readings:
 - "all symbols" = the public members (the manager's) — UNTESTED.
 - a later library name can start a warning in a `(=)` program; the 2026-11-14 lean accepts that shape ("a later library member of the same name breaks the build, never silently rebinds") — UNTESTED.
 - the default set is `(=) := import(<the default module>)` (the manager's) — see core/modules/default-set.
+- with `(=)` a reader cannot tell from the file alone whether a bare name is a label or an import (the manager's, "Told to him as the cost of the form, not an objection") — UNTESTED (no matching involved).
 evidence:
 history:
 - 2026-11-19: the ruling's addition, then the addition on `=` first.
+- 2026-11-19 (lane preddoc6, review r60 RULING-8a): the base bullet on a reader not telling a label from an import marked a reading; the record has it among "The manager's readings of the addition, FOR A LANE TO CHECK", "Told to him as the cost of the form, not an objection".
 
 ## core/modules/leave-out — Leaving a member out
 slugs:
@@ -1554,6 +1598,7 @@ readings:
 evidence:
 history:
 - 2026-11-19: his lean after the pilot; statement 5 of import-symbols.
+- 2026-11-19 (lane preddoc6, review r60 COLD-11): the bullet that examples call provided names bare, as if imported, added: built mechanically most examples otherwise call a `module: ?` name with no import line; the bullet decides nothing of default-imports.
 
 ## core/modules/default-set/members — Which names are in the default set
 slugs: default-imports
@@ -1567,6 +1612,7 @@ history:
 - 2026-11-19 (lane preddoc5): the slug renamed `default-imports` in the documents: the word `default-set` already names the RULED 2026-11-16 question on a label default of several strings (core/conditions/defaults); the record entry of 2026-11-19 keeps its word (review r59 COMPA-12).
 
 ## core/modules/positional — A positional binding
+was: parked/ideas/tuple-apart (2026-11-19, merged: the parked piece and this open piece were one question with two statuses in two base files; review r60 TUPLE-APART, FIXVER-1)
 slugs: tuple-parts
 rulings:
 - 2026-11-16 "Yes" (record: "2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart"); a confirmation REOPENED the same morning, see the next item
@@ -1579,6 +1625,16 @@ readings:
 evidence:
 history:
 - `(x, y) := rx ~ /.../` kept in the design (the type picture); a tuple taken apart confirmed, then reopened; the lean in the frozen draft: (B1) on record, (A) in practice, asked again when a use appears.
+- 2026-11-19 (lane preddoc6, review r60 POSITIONAL-MAP / RULING-1): the question restated as the record's correction states it ("WHAT STANDS NOW: the positional list `(a, b) := X` is OPEN under tuple-parts, for a tuple and for a map alike; statement 7 of import-symbols ("left undefined for now") was nearer the record than its withdrawal, though its stated reason (no ordered right side) remains wrong: tuples exist", record "2026-11-19 MANAGER — the withdrawal above is itself CORRECTED: taking a tuple apart is OPEN (tuple-parts), not confirmed; and a slip in the padded body"). The piece before said "a positional list against a MAP, which has no order, is not stated", the WITHDRAWN entry's wording.
+- 2026-11-19 (lane preddoc6, review r60 TUPLE-APART): parked/ideas/tuple-apart retired into this piece (the `was:` line above); its trigger is the base's "Asked again when" line. Its details entry, whole:
+  - rulings: 2026-11-16 (class: OWNER, reopening) the reopening quoted above; "nothing ruled on the parked item".
+  - the ideas file (`docs/design/predicates_future.md`) item 4, "Taking one tuple apart in a binding", whole:
+    WHAT: `(lo_h, lo_m) := lo` for ONE tuple (a set of several tuples is never taken apart: the parts no longer
+    pair up; the owner's "9:30, 10:00 broken apart is 9,10 and 30, 00 which is gibberish"). STATUS: OPEN, with no
+    user while item 1 is parked (the manager's note, 2026-11-16; not an owner ruling). WORKED OUT IN:
+    joint_condition.md §4A.3 (both positions; the lean "one tuple only"). TRIGGER: item 1 taken up, or an example
+    that needs one part of a tuple value.
+  - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied there.
 
 ## core/modules/export — Export
 slugs:
@@ -1592,6 +1648,7 @@ readings:
 evidence:
 history:
 - 2026-11-14: import/export as functions (options (a)-(c), lean (b): every top-level binding exported unless `_`), its follow-up (lean `@export(names)`); 2026-11-18: export-rule (labels); 2026-11-19: statement 3.
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): the call-form name `@export(names)` and its examples moved to lib/builtin/export (`open export-choice`: "Export choice PENDING Frank"); this piece keeps the meaning. Its statement before: "A library file exports with `@export(names)`: every binding whose name is in the rx `names`; a file that exports nothing is a compile error."
 
 ## core/modules/standard-library — The standard library
 slugs:
@@ -1604,6 +1661,7 @@ readings:
 evidence:
 history:
 - 2026-11-19 (lane preddoc4): a new piece (review r59 COMPB-4); library.md's header points here (COMPB-9).
+- 2026-11-19 (lane preddoc6, review r60 COLD-13): the blessed callout said to be compiler-emitted, never a callout written in rx text (core/patterns/literals refuses those inside a larger program).
 
 ## core/modules/naming — Names of provided transforms
 slugs:
@@ -1638,6 +1696,7 @@ evidence:
 history:
 - 2026-11-14 to 2026-11-19: errors moved to warnings one by one (empty-match hazard, polarity-rule, empty-search-error, dollar-condition); the edge-assertion error's reach ruled (operand-context) and taken off holes.
 - 2026-11-19 (lane preddoc3b): converted from `?`; a `reading` piece because the index as a whole is the manager's.
+- 2026-11-19 (lane preddoc6, review r60 COLD-5): the index said every error below is ruled in its piece and read as complete; at least 12 stated compile errors have no row. It now says it is PARTIAL; a generated index (r59 PLACE-8) is a PLAN item of review r60.
 
 ## core/diagnostics/under-construction — The under-construction error
 slugs: under-construction-class
@@ -1683,6 +1742,8 @@ evidence:
 history:
 - 2026-11-14: names in dotted families, `@warn.off`; 2026-11-17: the principle, the list, the library path, the `pcrec.` prefix, polarity-rule, empty-search-error, numbered-label; 2026-11-19: dollar-diagnostic, plus-operands.
 - 2026-11-19 (lane preddoc3b): converted from `?`; three controls of one fact (`@warn.off`, `@warn.error`, `@options.strict`) stay an idea (parked/ideas/severity-table).
+- 2026-11-19 (lane preddoc6, review r60 EFFECTS): the call-form names `@warn.off`/`@warn.error` and `@options.strict` have their library pieces (lib/builtin/warn, lib/builtin/options); this piece keeps the meaning (names, selectors, the table).
+- 2026-11-19 (lane preddoc6, review r60 COLD-14): (a) core/labels/one-rule's "A label no match can set draws a warning" pointed at no row: by polarity-rule it is the test that can never pass, so the `pcrec.test.never` row names it and the one-rule bullet says so (no new warning); (b) the five nameless rows given placeholder names like the rest (`pcrec.label.hidden`, `pcrec.arith.nothing`, `pcrec.hit.nullable`, `pcrec.test.consumes`, `pcrec.class.join`: the manager's placeholders, to the spellings review); (c) the selector bullet writes `pcrec.warn.unused`, as the table does.
 
 ## core/diagnostics/dollar-form — The `$x & S` warning
 slugs: dollar-warning dollar-diagnostic
@@ -1719,6 +1780,36 @@ readings:
 evidence: the draft R.1.10 (4); preddoc2 PART WT (the consumed form itself).
 history:
 - 2026-11-19 (lane preddoc2): split from the old core/conditional/test when `when`, its test and `peek` moved to the library: the warning is the one part of when-peek a body does not produce, so it stays a core diagnostic, beside core/diagnostics/nullable-hit (a warning on a library name's argument, kept in the core the same way).
+
+## core/diagnostics/looped-compare — A `|` of conditions over labels that can repeat
+slugs: looped-compare
+rulings:
+- 2026-11-16 "looped-compare: warn" (record: "2026-11-16 RULING — a compare over looped labels warns"); the meaning stays, the compiler warns when a compared field can hold more than one occurrence, naming the fix (the compare inside the loop's item)
+- 2026-11-16 "I agree. Makes sense." (record: "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); part (3): "the looped warning's subject is now a `|` of conditions whose labels can repeat (each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint condition itself draws no such warning". The owner's LAST word on the warning; it MOVES the 00:09 warning, it does not retire it
+rejected:
+- the warning on a compare over the looped fields themselves (the 00:09 shape) — by owner ruling — joint-loops (3) moved its subject onto a hand-written `|` of conditions; the joint condition draws none.
+readings:
+- the name `compare.looped` (the draft §7.1, its name LEAN), read with the compiler's `pcrec.` prefix (the ADDENDUM of "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the manager's; the draft notes it looks like a compare-library path (review r43 E; the spellings review).
+- "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path", in the manager's MINE paragraph) and the draft's "[REV 25.1] WITHDRAWN to the next review with looped-warning" (§7.1, §R.2) — the MANAGER's words: a manager's withdrawal does not undo an owner ruling, so the warning stands as joint-loops (3) left it; whether it is still wanted is core/diagnostics/looped-compare/still-wanted (the predicate manager's ruling of 2026-11-19, lane preddoc6).
+evidence: the draft §8 caveat (6) and §7.1's rows (`9:30,10:00,` rejected by the per-label meaning; the warning's text LEAN).
+history:
+- 2026-11-16 00:09: looped-compare asked (keep, error or warn; lean warn), ruled "warn" (the draft rev 19, rulings R-2: `compare.looped`). 11:17: joint-loops (3) moved the warning onto a hand `|` of conditions.
+- 2026-11-17: after-loop-read made a bare condition read the last pass's own label; the manager sorted its OWN looped-warning proposal as `label.unset` and sent it and `compare.looped` "to the next review as told"; the draft rev 25 marked `compare.looped` WITHDRAWN with it (a manager's act on an owner-ruled warning).
+- 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1 / RECOUNT-7): a new piece. The documents before said only "withdrawn by the manager" (core/conditions/pass-start-read) and cited neither ruling as a `rulings:` item; lane preddoc5's claim table row for this entry ("SUPERSEDED by joint-loops (3), then after-loop-read (2323 ...)") was WRONG: record line 2323 is "2026-11-17 OWNER RULING — last-pass-default: regex", and neither entry supersedes the warning. The slug looped-compare moved here from core/conditions/pass-start-read.
+
+## core/diagnostics/looped-compare/still-wanted — Is the warning on repeating labels still wanted
+slugs: looped-warning
+rulings:
+rejected:
+readings:
+- the manager's proposal, a compile WARNING on a bare condition over a looped label: "MINE, not ruled: a compile WARNING when a bare condition reads a looped label (proposed to him twice, not answered ...)" (record "2026-11-17 OWNER RULING — last-pass-default: regex"); "the manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the manager's proposal" (record "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label") — the MANAGER's words.
+- the manager's withdrawal: "the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a condition reads a label that can be unset where it is read, with no default) seen under the one label rule" (record "2026-11-17 OWNER — a principle for warnings") and "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the MANAGER's words, quoted as the manager's; they withdraw the manager's own proposal and cannot retire the owner-ruled warning (core/diagnostics/looped-compare).
+- the two triggers are not the same set (the draft §R.2, rev 25's PART W, five programs `& (h: <5)`): `/(?:(?<h>\d);)*/` both fire; `/(?:(?<h>\d);)+/` the looped trigger only; `/(?:(?<h>\d)?;)+/` both; `/(?<h>\d)?;/` `label.unset` only; `/(?<h>\d);/` neither — SUPPORTED by the draft's run (the base quotes two of the rows).
+evidence: the draft §R.2 (rev 25's PART W).
+history:
+- 2026-11-17: proposed by the manager twice, not answered; review r42 named looped-warning an owner question; rev 25 withdrew it to the next review.
+- 2026-11-19 (lane preddoc6, review r60 LOOPED): a new open sub-piece, at the predicate manager's ruling (2026-11-19): the question "is the warning still wanted, and on which shape" goes to the owner; the slug looped-warning moved here from core/conditions/pass-start-read.
+
 ## core/spellings/placeholders — Every placeholder spelling
 slugs: atomic-spelling options-spelling conditional-spelling
 rulings:
@@ -1733,6 +1824,8 @@ evidence:
 history:
 - 2026-11-10: D193 add. 4; 2026-11-17: hits-text sends every spelling to one review; 2026-11-19 (lane preddoc3b): converted from `?`; the four slugs (atomic, options, conditional, every-pass) are rows of the table.
 - 2026-11-19 (lane preddoc4): the slug every-pass-spelling moved to its open piece lib/counting/every-pass (review r59 PRIMITIVES-MISSING).
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the STRING FUNCTIONS row routes each name to its library piece (it named core/values/functions for `left`, `strlen`, `upperStart`, `prefix_in`); the EFFECTS rows name lib/builtin/warn, lib/builtin/options, lib/builtin/export (review r60 EFFECTS).
+- 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:
@@ -1742,3 +1835,4 @@ readings:
 - the condition keeps its parentheses everywhere, in a hole too; `A & 0: digit` and `${0: digit}` stay the draft's error with their meaning acknowledged (THE MANAGER'S CALL, record "2026-11-19 OWNER, on a condition without its parentheses") — UNTESTED (a spelling).
 evidence:
 history: skeleton; his remarks "i believe that ${} implies (?:${})", "parenthesis are better because you can't add more to the chain", "maybe thats the same." (an OBSERVATION; the `0` case run: preddoc1 PART R12).
+- 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
