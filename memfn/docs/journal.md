@@ -4440,3 +4440,6 @@ make test-memfn-g2 takes 1004 s run alone (it was about 470 s as a section on 11
 
 ### 2026-11-20 16:50 — 711/712 deferred until main GO (cap 20:00)
 Main's two opus lanes run inline builds for 1-2 h. Main proposed deferring the timing over idling its lanes; accepted (the box is cleared until 12:00 11-21, and Frank prefers evening runs). 711's --ready (pending copy and source; backups .711.bak-hold.*) returns 75 while HOLD-711 exists and before 20:00. On GO the manager deletes the file.
+
+### 2026-11-20 17:00 — blockconfirm delivered; lane bcq launched
+blockconfirm handed back (report /var/tmp/pcrec-pcrec/scratch/memfn/blockconfirm/report.md; it was a scratch-only lane) and was TaskStopped. RULE_SHA 60ca03823c8eeb26; marker 91f8de45...; check PASS (3,900 exes, 0 failing). Grid 4,200 cells, est 7,603 s. Walk identity: Hspk-inline == H64@on in 83/130; 43 differ in order or registers only, 4 in instruction count (inlining moves gcc's tie-breaks). Lane bcq (sonnet) adds the CPU-quiet control (ported from 711), sets the gates (STOP_AT 12:00 11-21, waits on kit-checkorder and kit-rampchunk) and amends the rule; due 18:45. A critic round follows.
