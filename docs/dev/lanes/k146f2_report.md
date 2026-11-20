@@ -109,6 +109,6 @@ rulings entry applied: none (file empty).
 
 OWED: none (the queued jobs above are the validation, not owed lane work).
 
-The The identity
+The identity
 verdict is NOT yet taken (queued), so no 0-movers claim is made here. Not
 done, by brief: merge, closing K146/its plan row, K147's fix, [LINT-FRAME].
