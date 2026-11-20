@@ -5835,3 +5835,35 @@ longest-first, the first match at the start of every result): `\d + 1` (order `1
 `\d + \d` (`18 17 .. 0`): 0 of 19; `\d * \d` (`81 72 63 ..`): 0 of 37; `10 - \d` (order `1 2 .. 9 10`): 1 of 10:
 on `10` the loop reports `1`, longest-first `10` (WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL
 `10 7 3` [`1`@0, `7`@3, `3`@5]). Told to him the same turn.
+
+### 2026-11-19 OWNER RULING — class-positions: nested loops, classes descending
+tags: core/arrays/class-positions core/arrays/class-order core/arrays/lift lib/builtin/enumerate/class-index
+
+Asked **class-positions** after his own proposal of the entry above (the manager: "I think your nested-loop rule
+is the better one"; shown the run where it parts from longest-first, `10 - \d` on `10`; offered the answer
+wording "class-positions: nested loops, classes descending" or his own). HIS WORDS, whole:
+
+"class-positions: nested loops, classes descending"
+
+Class: a RULING on the slug, in the wording offered, adopting HIS proposal of the entry above:
+1. A lift is the nested loop over each operand's `enumerate`, the first operand outermost; each result is added
+   as the next alternative in loop order ("loop a = enumerate(\d): loop b = enumerate(\d): rx |= fn(a, b)"). The
+   same rule for every function, "as though this was against fn() and not +".
+2. `enumerate` gives written order; for a class, "descending class value order"; "lazy/greedy loops start
+   shortest/ longest respectively".
+3. Nothing is sorted by length. It REPLACES "class-order: longest" (2026-11-19, earlier the same day): he was
+   shown the cost ("What it doesn't do, unfortunately, is produce a consistent longest to shortest result on pure
+   digits"; `10 - \d` SEARCHED `x10` `1`@1).
+4. It ANSWERS class-index: the order of a class's members in `enumerate`'s array is descending value.
+NOT RULED: `lengthSorted()` (his "Perhaps then we need", an IDEA; lib/structural/sort is the existing
+under-construction piece). NOT ANSWERED (asked in the same turn, left open by his answer): what "class value" is
+for a class that is not digits.
+
+The manager's readings, FOR THE FOLD LANE TO TEST: (a) "class value" for a non-digit class is the codepoint, so
+`enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top (NOT his words; an owner question,
+class-value); (b) every example printed under class-order, class-positions, class-index, enumerate and arithmetic
+keeps its answers except where a subtraction-like function puts a shorter result first (`\d + 1`, `\d + \d`,
+`\d * \d`: 0 differing, nestloop.py); (c) the lazy + lazy lift gives `12` on `x123` (classpos_inf.py is the OLD
+rule's run: to re-run under the loop); (d) the readings "nesting, the alternation first" and "equal strings are
+one result" under class-order still hold under the loop (the first occurrence stands); (e) a class inside a
+larger rx (`[ab]\d`) enumerates as nested positions in text order, each class descending.
