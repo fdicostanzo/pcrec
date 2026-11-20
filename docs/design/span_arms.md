@@ -2074,6 +2074,25 @@ rows take ids from the manager's range.
   premise as a universal (restated per K row); `p[i].omin = 0` on the run span; the presence comment's "no
   lookbehind byte" premise.
 
+- `[REV 3.3, lanes l3feat/l3feat2, ruling R-1 (manager, 2026-11-20)]` **PREMISE (3) IS REFUTED BY MEASUREMENT; the
+  forward scan's re-entry is DECLINED at K < 0.** The restated premise (3) above ("the move stays sound: equal DFA states
+  have equal futures, so a completion implies a fresh match at `s'' >= q`") is false for a BACK run. WITNESS (W-L17):
+  `(?<=foobar)\d*x` on the default route (VM hybrid, `RX_DFA_PREFILTER "handoff"` before the decline) answered NOMATCH on
+  `foobar12x` (libpcre2 (6,9)) and (15,16) on `xfoobar9xfoobarx` (libpcre2 (7,9)). CAUSE: `\d*` is absorbed into the
+  machine's start state, so at scan position 7 the state is the start state while the true match begun at 6 is in flight;
+  the re-entry reads that as a fresh search from 7, requires the run at or after `7 − 6 = 1`, re-asks, and finds none.
+  State equality covers only the CONSUMED part of a match: the lookbehind's bytes are tested by the machine but are never
+  in the language its start state's future recognises, so "equal states, equal futures" says nothing about a run that
+  lies before the scan position. THE DECLINE: `pf_handoff_applies` (the prefilter table's `handoff` row) gains a declared
+  condition, `req_k_reentry_sound` (K bounded and negative refuses), so at K < 0 the start-byte row below takes the
+  artifact (`(?<=foobar)\d*x` becomes `RX_DFA_PREFILTER "memchr"` with `RX_REQ_HANDOFF "-6"`: the entry move still
+  applies). The ENTRY move and the VM attempt loop's re-entry stay: an attempt there is a real fresh start, which the
+  argument needs. COUNTS (the l3feat witness file, 1,232 cells over W-L1/3/10/13..19, W-T3a, utf8 and bench 333 on both
+  engines): with the decline 1,232 pass; without it 15 fail, all W-L17 (`tests/harness/run.sh` over the generated
+  file, builds with and without the decline). Of the census's 57 movers no stamp changes under the decline. Its plant is
+  S3405, red on W-L17. Premise (3)'s sentence in emit_dfa.c (`pf_emit_handoff`'s header) keeps its form for K >= 0, where
+  the run lies wholly in the consumed part.
+
 #### L2 — AHEAD: the run reaches past the consumed end (after its readiness critic) `[REV 3.1, review r51: the critic is r51's READYL2 lens, discharged on condition, §14.0]`
 
 - **Census (first).** `census_l2.py`: compiles with a positive lookahead whose item reaches the run's right
@@ -2096,6 +2115,9 @@ rows take ids from the manager's range.
   L3 in that order. In the ruled order (L3 first) it is as written: L3 ships the BACK row without the clause, L2 adds it. The
   rule in one line: the clause lands with whichever of {L2, the BACK row} comes second. D-13's AFTER-side hunks follow the
   clause, so they land with L2 in either order (they cover AHEAD's own reach); the BACK clause adds no hunk of its own.
+- `[REV 3.3, L3's R-1]` AHEAD bytes, like a lookbehind's, are outside the DFA's language (a lookahead's bytes past the
+  consumed end are tested, never consumed), so L2's design must re-check any forward-scan re-entry (§14.4 L3's REV 3.3
+  addendum) before relying on it.
 - **Feature.** TOP's AHEAD row (D-4) `[REV 3.1, review r51 READYL2-5]` and the BACK row's `where all, lg ++ head
   ++ rg` clause; the pin reads the consumed extent (already, from L3). An AHEAD candidate's K can be negative only
   under W-L9's plant (`rn_tail_off` from the EXTENDED length gives K −1 and `pcrec_run_omin` −1 on a lookahead

@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 109
+#define PCREC_ARTIFACT_ABI 110
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -7996,12 +7996,14 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * `> K` test makes true by construction (the conditional-reseed rule and
  * its `(?:\b|xy)a` witness, in the DFA hat's section below). A move stays
  * sound past an in-flight thread the start state carries there: equal DFA
- * states have equal futures, so a completion of that thread implies a fresh
- * match at some `s'' >= scan_position`, whose run lies at or after
- * `s'' + omin` (`omin = pcrec_run_omin`, -B for a run that begins inside a
- * lookbehind, span_arms L3, else 0), which the kit's floor `max(0,
- * scan_position + omin)` finds; the move lands at `h - K <= s''` for that
- * hit `h`, so it never passes the fresh match's start. */
+ * states have equal futures over CONSUMED bytes, so a completion of that
+ * thread implies a fresh match at some `s'' >= scan_position`, whose run
+ * lies at or after `s''` (K >= 0: the run is consumed), which the kit's
+ * floor finds; the move lands at `h - K <= s''` for that hit `h`, so it
+ * never passes the fresh match's start. At K < 0 the run begins inside a
+ * lookbehind, outside the machine's language, and the argument fails, so
+ * the row is declined there (`req_k_reentry_sound`, span_arms §14.4 L3's
+ * REV 3.3 addendum). */
 static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
 {
     Ctx *cx = f->cx;
@@ -8038,7 +8040,8 @@ static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
  * - B)`, so a hit behind `pos` by B or less is still the least one and the
  * hit is stale only further back (`pos - landmark_position > B`); a re-asked
  * hit lies at or after that floor, so it is never stale and the re-ask
- * cannot repeat.
+ * cannot repeat. K < 0 reaches this text from the VM attempt loop only: the
+ * forward scan's row is declined there (`req_k_reentry_sound`).
  * [REQ-PAST-LAST] At no bound (K unbounded) there is no move:
  * the re-ask alone is the stop (a miss is NOMATCH), and its hit is kept in
  * `landmark_position`, which is what keeps the attempts linear. */
@@ -14185,7 +14188,11 @@ static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent)
          * arms L3: a run that begins inside a lookbehind) a lower bound is
          * NOT a neutral hit: the move from a hit `h` lands at `h + B`, past
          * `search_from` itself, so the kept hit must be a real one, and the
-         * gate is asked here, from `search_from` (a miss is NOMATCH). */
+         * gate is asked here, from `search_from` (a miss is NOMATCH). NOT
+         * REACHED while the forward scan's `handoff` row is declined at K < 0
+         * (`req_k_reentry_sound`): no prefilter keeps a site there. Kept as
+         * the stated init for that sign (span_arms §14.4 L3's REV 3.3
+         * addendum; L2 re-checks the re-entry). */
         PfBound k = req_handoff_k(cx);
         if (pcrec_bound_bounded(k) && k.v < 0) {
             pcrec_sb_puts(c, "    size_t landmark_position;\n");

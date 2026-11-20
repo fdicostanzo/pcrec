@@ -23,7 +23,18 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `109` on every artifact today ([COVER-CAP] stage 2, 108 -> 109, lane covs2b
+- **`rx_info.abi` is `110` on every artifact today ([REQ-LOOKAROUND] span_arms L3, 109 -> 110, lanes
+  l3feat/l3feat2 2026-11-20; `docs/design/span_arms.md` §14.4 L3).**
+  A required run may begin inside a positive lookbehind (`(?<=foo)bar` states `foobar` at K -3).
+  New emitted text where K < 0: the landmark move's own row (an end clamp `if (len - hit < B)
+  return 0;`, then `hit + B` where that is ahead of the position), the re-entry's per-sign stale
+  test (`landmark_position < pos && pos - landmark_position > B`) on the VM attempt loop, and the
+  K comments' "at least B bytes after" sentence. Artifacts with no
+  run at K < 0 are byte-identical to abi 109 but this number. The forward scan's `handoff`
+  re-entry is declined at K < 0 (`<PREFIX>_DFA_PREFILTER` falls to the start-byte row there). No struct offset moves and no
+  `rx_info` member changes.
+
+- **`rx_info.abi` was `109` on every artifact ([COVER-CAP] stage 2, 108 -> 109, lane covs2b
   2026-11-16, the combined branch; `docs/design/cover_cap.md` §11, R-45).**
   The ONE `abi` event of the stage-2 joint landing. The memfn kit's window statement became a
   counted list in storage pcrec owns (`MF_SITE_ABI` 29 -> 30, `MF_CLASS_V` 10 -> 11: the per-offset

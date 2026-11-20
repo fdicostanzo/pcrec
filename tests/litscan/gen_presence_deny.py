@@ -155,10 +155,20 @@ def main():
     print(f"presence_deny.rxt: {len(CASES)} cases; pcrec check failures {mism}")
 
 
+def tmp_root():
+    """pcrec's temp root (scripts/tmpdir.sh): $PCREC_TMPDIR, default
+    /var/tmp/pcrec-<user>, created 0700; never /tmp, a small RAM tmpfs (Frank
+    2026-10-28), whatever TMPDIR a plain shell carries."""
+    import pwd
+    root = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-" + pwd.getpwuid(os.getuid()).pw_name
+    os.makedirs(root, mode=0o700, exist_ok=True)
+    return root
+
+
 def check_with(pcrec, text):
     """The written file through the harness with `pcrec`, default and each deny:
     the failure count summed (a divergence is reported, not hidden)."""
-    path = os.path.join(tempfile.mkdtemp(dir=os.environ.get("TMPDIR")), "presence_deny.rxt")
+    path = os.path.join(tempfile.mkdtemp(dir=tmp_root()), "presence_deny.rxt")
     open(path, "w", encoding="utf-8", errors="surrogateescape").write(text)
     import subprocess
     n = 0
