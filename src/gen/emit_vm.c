@@ -9399,7 +9399,11 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
  * `Cost` by value). Arms that recurse and are NOT marked:
  * `vm_splice`, `vm_call` and `vm_callout` stay inlined here (nothing measured
  * makes their frames matter, D77); `vm_ctx`, `vm_bref` and `vm_var` are marked
- * without recursing, for the uniformity of the table. A new arm that recurses
+ * without recursing, for the uniformity of the table. One more walk is
+ * exempt: `vm_count_slots`'s A_ALT arm keeps its `VmIsl` (the third
+ * `vm_isl_build` reader) in the recursive dispatcher itself; its frame is
+ * 0x70 bytes and no measured family needs it moved (D77), so if it ever is
+ * the cost, build the trie in a marked helper as `vm_alt_island` does. A new arm that recurses
  * and carries locals is marked the same way; tests/thread/run_compile_stack.sh
  * measures the result. */
 static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
