@@ -19,6 +19,7 @@ history:
 - 2026-11-14: "Enumerate go"; the draft §5.5. 2026-11-18: construction-line made it the line of single-value functions. 2026-11-19: class-order replaced the codepoint lean for lifts.
 - 2026-11-19 (lane preddoc3b): converted from `?`.
 - 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-7): `see: lib/builtin/enumerate/class-index core/arrays/class-order` added: the body depends on the forward piece class-index, and the pointer was lost in the move from the core (r59 READ-17's eleventh pair).
 
 ## lib/builtin/enumerate/class-index — The order of a class in enumerate
 was: core/arrays/class-index (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
@@ -171,6 +172,7 @@ history:
 - (from lib/modifiers/unpadded) 2026-11-15: cut (rev 14); the time-range example rewritten with split fields.
 - (from lib/modifiers/unpadded) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided".
 - 2026-11-19 (lane preddoc4): the piece `lib/modifiers/unpadded` deleted, its content moved here (review r59 READ-13).
+- 2026-11-19 (lane preddoc6, review r60 COLD-9): a bullet points at the open question core/operators/bindings/call-forms: the two bodies are chosen by the call form, which the core's macro rule does not provide for.
 
 ## lib/modifiers/quoted — quoted
 was: lib/modifiers/json-quoted (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -252,9 +254,10 @@ history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body.
 - 2026-11-19 (lane preddoc3c): a new piece (not in the census's 61 rows; a provided name of the draft §2.7).
 - 2026-11-19 (lane preddoc4): `join([...])` removed from `months` (join is one string, the members joined; an array is already the alternation); `needs:` the computed-label and metadata pieces; answers unchanged: preddoc3c PART MN built the body as the alternation (review r59 READ-5).
+- 2026-11-19 (lane preddoc6, review r60 COLD-15): the body's `...` written out as the twelve names in calendar order (the `.index` the example reads depends on the order); answers unchanged (preddoc6 PART MN).
 
 ## lib/control/peek — peek
-was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive)
+was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
 slugs: when-peek
 rulings:
 - 2026-11-18 "When: I agree peek A. Automatic or enforced? peek() transform" (record: "2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced")
@@ -273,7 +276,7 @@ history:
 - 2026-11-19: his aside on importing symbols so a call is not `sys.peek()` (`(left,right) := import("blah", /left|right/)`) is an IDEA to discuss, owner question import-symbols; carried then by the parked piece `parked/import-symbols/import`, deleted the same day by the manager's brief (lane preddoc3c); no piece carries it now.
 
 ## lib/control/when — when
-was: core/conditional/when (2026-11-19, the owner: core document macros are defined in the library unless primitive)
+was: core/conditional/when (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
 slugs: when-meaning when-default when-alone
 rulings:
 - 2026-11-17 "when-meaning: agree" (record: "2026-11-17 OWNER RULING — when-meaning")
@@ -302,7 +305,7 @@ history:
 - 2026-11-19 (lane preddoc4): `needs: core/filters/negation` (the body's `NOT peek(test)` is legal by that piece) and `see: lib/control/when-test` (review r59 NEGATION, READ-17).
 
 ## lib/control/when-test — The test of `when`
-was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive)
+was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
 slugs: when-test
 rulings:
 - 2026-11-18 "When: I agree peek A. Automatic or enforced? peek() transform" (record: "2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced")
@@ -396,6 +399,7 @@ history:
 - 2026-11-19 (lane preddoc5): the slug hit-list moved here from core/model/table, whose reading named this piece as the one deciding it (review r59 PLACE-4).
 
 ## lib/search/contains — contains
+was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
 rulings:
 - 2026-11-15 "Your examples make me agree. /\d\d/ & between(1, 12) Without anchoring it would match "31"" (record: "2026-11-14 RULINGS on rev 3's contradictions")
@@ -406,22 +410,14 @@ rejected:
 readings:
 - the record's body `/.*${rx}.*/` with the gaps crossing line breaks is `/(?s:.*)(?:${s})(?s:.*)/`, and `contains(/^err/)` equals `startsWith("err")` WHOLE (0 of 1,365 texts over `erx` and a newline, length <= 5) — SUPPORTED (preddoc3c PART SW).
 - `contains(/err$/)` also accepts a value ending `err` and a newline (PCRE's `$`; `\z` for the exact end) — SUPPORTED (PART SW).
-evidence: preddoc3c PART SW.
+- a CANDIDATE body, not the definition: `contains(x) := occurrences(x, min = 1)` (the draft's LEAN, §2.6, §8: chosen so x's labels read as the leftmost hit) — the same set as the ruled gap body, 0 / 0 / 0 of 121 texts (`ab` over `abx`, length <= 4) in all three modes; only the labels differ (the hit, and which occurrence x's labels read) — SUPPORTED (preddoc3c PART SWocc). Its printed run: `occurrences("ab", min = 1)` WHOLE `xabx` HOLDS, `ba` FAILS / SEARCHED `x ab` `x ab`@0 / FIND-ALL `ab ab` [`ab ab`@0].
+- the same candidate also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft) — UNTESTED here.
+evidence: preddoc3c PART SW, PART SWocc.
 history:
-- 2026-11-14/15: the `contains` family; the record's body (11-15); the draft kept `occurrences(x, min = 1)` (lib/search/contains/by-occurrences).
+- 2026-11-14/15: the `contains` family; the record's body (11-15); the draft kept `occurrences(x, min = 1)` (its reading above).
 - 2026-11-19 (lane preddoc3c): converted; the draft's spelling split into its own piece (one piece, one status).
-
-## lib/search/contains/by-occurrences — contains as occurrences
-slugs:
-rulings:
-rejected:
-readings:
-- `contains(x) := occurrences(x, min = 1)` (the draft's LEAN, §2.6, §8: chosen so x's labels read as the leftmost hit) — the same set as the ruled gap body, 0 / 0 / 0 of 121 texts (`ab` over `abx`, length <= 4) in all three modes — SUPPORTED (preddoc3c PART SWocc).
-- it also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft) — UNTESTED here.
-evidence: preddoc3c PART SWocc.
-history:
-- 2026-11-15 (rev 9-12): the draft kept this spelling against the record's text, "the same sets".
-- 2026-11-19 (lane preddoc3c): split from `contains` (a new sub-piece).
+- 2026-11-15 (rev 9-12): the draft kept the occurrences spelling against the record's text, "the same sets".
+- 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "contains as occurrences" (`reading`, "`contains(x)` is written `occurrences(x, min = 1)`: the same set, and x's labels read leftmost, as a hit") merged back here as a candidate reading: the base had two present-tense definitions of one name.
 
 ## lib/search/starts-with — startsWith
 slugs:
@@ -438,28 +434,20 @@ history:
 - 2026-11-19 (lane preddoc3c): converted.
 
 ## lib/search/ends-with — endsWith
+was: lib/search/ends-with/lazy-gap (2026-11-19, merged: a second present-tense definition of `endsWith` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
 rulings:
 - 2026-11-15 "Ok I agree." (record: "2026-11-14 RULINGS on rev 3's contradictions")
 rejected:
 readings:
 - the record's body `/.*${rx}/` with the gap crossing line breaks: on `ab123` with `(?<n>\d+)`, n = `3` (greedy) — SUPPORTED as the record's text (preddoc3c PART SW).
+- a CANDIDATE body, not the definition: the LAZY gap `/(?s:.*?)(?:${s})/` (the draft's LEAN since rev 9, kept against the record's text), so the argument starts as far LEFT as it can: n = `123` on `ab123`; rev 8's greedy `.*` gave `3` (libpcre2). As SETS nothing changes; the labels and the searched stretch differ: `(?s:.*?)(?:(?<n>\d+))` WHOLE `ab123` HOLDS (123) / SEARCHED `x12 34` `x12`@0 (the ruled body: `x12 34`@0) / FIND-ALL `a1 b2` [`a1`@0, ` b2`@2] — SUPPORTED (preddoc3c PART SW).
 evidence: preddoc3c PART SW.
 history:
-- 2026-11-15: the plain gap body (rev 12); the draft kept a lazy gap (lib/search/ends-with/lazy-gap).
+- 2026-11-15: the plain gap body (rev 12); the draft kept a lazy gap (its reading above).
 - 2026-11-19 (lane preddoc3c): converted; the lazy gap split into its own piece.
-
-## lib/search/ends-with/lazy-gap — endsWith with a lazy gap
-slugs:
-rulings:
-rejected:
-readings:
-- the lazy gap (the draft's LEAN since rev 9, kept against the record's text): n = `123` on `ab123`; rev 8's greedy `.*` gave `3` (libpcre2) — SUPPORTED (preddoc3c PART SW).
-- "as SETS nothing changes" — SUPPORTED (a gap is a gap); the searched stretch differs (`x12 34`: `x12`@0 against `x12 34`@0).
-evidence: preddoc3c PART SW.
-history:
 - rev 9-10 (2026-11-15): the lazy gap chosen for how the argument's labels read; rev 12 kept it against the record's `/.*${rx}/`.
-- 2026-11-19 (lane preddoc3c): split from `endsWith`.
+- 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "endsWith with a lazy gap" (`reading`, "`endsWith(s)` is written with a LAZY gap, `/(?s:.*?)(?:${s})/`, so its argument starts as far LEFT as it can") merged back here as a candidate reading: the base had two present-tense definitions of one name; the ruled body is the definition.
 
 ## lib/search/anchored — anchored
 slugs: anchored-in-hole
@@ -752,7 +740,7 @@ history:
 - 2026-11-19 (lane preddoc3c): converted.
 
 ## lib/rx/repeat — rx.repeat
-was: core/patterns/repeat (2026-11-19, a library definition over count holes: the core holds primitives only)
+was: core/patterns/repeat (2026-11-19, a library definition over count holes; the "core holds primitives only" rule of that morning was withdrawn the same day: every call-form name is a library piece)
 was: lib/rx/optional-loop (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
 slugs: count-argument
 rulings:
@@ -775,6 +763,8 @@ history:
 - (from lib/rx/optional-loop) 2026-11-17: proposed in the rx-module note; the quantifier operators ruled the same evening.
 - (from lib/rx/optional-loop) 2026-11-19 (lane preddoc3c): written as "not provided".
 - 2026-11-19 (lane preddoc4): the piece `lib/rx/optional-loop` deleted, its content moved here (review r59 READ-13).
+- 2026-11-19 (lane preddoc6, review r60 COLD-9): "The bodies, one per call form" marked a reading and pointed at the open question core/operators/bindings/call-forms (`rx.repeat(rx.digit, 3)` fits two bodies with different answers).
+- 2026-11-19 (lane preddoc6, review r60 RULING-9): the first `was:` line's reason read "the core holds primitives only" as a standing rule; rewritten: it was the rule of that morning, and the owner withdrew the designation the same day ("my "primitive" designation doesn't work", record "2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or not"); the reason today: every call-form name is a library piece.
 
 ## lib/structural/capture — capture
 slugs:
@@ -782,13 +772,15 @@ rulings:
 rejected:
 - the keyword form `export capture(x) := ...` (rev 0) — by the draft — superseded by `@export`.
 readings:
-- `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN) names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
+- `capture(name, x) := /(?<${name}>${x})/`, the name passed (lane preddoc6, review r60 COLD-8) — SUPPORTED (preddoc6 PART CP).
+- `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN; the owner's sketch `group(x) := /(?<${x.label}>${x})/`, "lots of hand waving", record "2026-11-14 — compose instead of an option") names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP), but NOT BUILDABLE from the core as written (no field gives a part label's own name); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
 - what `capture(x)` returns for a looped x is not stated (the draft R.11 row 32).
 evidence: preddoc3c PART CP.
 history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
+- 2026-11-19 (lane preddoc6, review r60 COLD-8): the body could not be built from the core: `.label` is defined only for a part label over an array ("that member's name", core/values/metadata), and inside the body `x` is a parameter, not a path (core/labels/flow: "A binding's name is not a path"). The piece now states `capture(name, x) := /(?<${name}>${x})/` (the name passed as a string to the group-name hole) and keeps the draft's one-parameter sketch as a bullet naming the missing field; the example `capture(x)`, x := `[d = /\d+/]` became `capture("d", /\d+/)`, same answers (preddoc6 PART CP).
 
-## lib/structural/each — each, each_group, where_group
+## lib/structural/each — each, each_group, where, where_group
 slugs:
 rulings:
 - 2026-11-15 "Agree with mapping" (record: "2026-11-14 RULINGS on rev 3's contradictions")
@@ -799,6 +791,7 @@ readings:
 evidence: the draft §5.3.
 history:
 - 2026-11-19 (lane preddoc3c): a new piece (census rows `each`, `each_group`, `where`).
+- 2026-11-19 (lane preddoc6, review r60 RECOUNT-2): `where(p, X)` added to the heading and body: the history line above claimed it (census row `where`) and the piece did not carry it. The draft §5.3: "`where(p, X)` = SELECT entries by a compile-time STRUCTURAL property (the selecting twin of `each`; not the filter role, §0.3)"; its name table: "`where`, `where_group`, `each_group` | none | LEAN (§3.2, §5.3); candidate cut" — a reading, as the piece.
 
 ## lib/structural/sort — sort, unique
 slugs:

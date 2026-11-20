@@ -523,6 +523,7 @@ evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers 
 history:
 - 2026-11-18: the proposal (labels seen only if exported), the export-scope discussion, the ruling, the clarification of statement 6 and `[_ = A]`.
 - 2026-11-19 (lane preddoc5): the slug filter-captures moved here from core/filters/kinds: it is closed by export-rule, which this piece states (review r59 PLACE-4).
+- 2026-11-19 (lane preddoc6, review r60 COLD-15): the example names its program (`year`, the final expression); before it printed only the binding, which by core/operators/statements is not a program. Answers unchanged (preddoc6 PART EX).
 
 ## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared label
 slugs: caller-ambiguous read-out
@@ -992,6 +993,8 @@ readings:
 evidence: preddoc3b EXleft; PARTS CN, TT, RC of predspec28, predspec281.
 history:
 - 2026-11-18: match-is-rx (4), read-is-constant (4), the clarification, construction-line; `length($y)` written `strlen($y)` (THE MANAGER'S CALL 6, A26).
+- 2026-11-19 (lane preddoc6, review r60 COLD-6): the statement said "accepts an rx exactly where `enumerate` accepts it ... any other rx is under construction", against its own clause 1 (an outward-looking assertion is enumerate's compile error, not under construction); rewritten to state the clauses as the rule. Statement before: "A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction."
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the bullet restating `left`'s definition ("`left(rx, n)` is the IMAGE (the first n characters of each string) ...") replaced by a pointer: the definition is lib/strings/left's (every call-form name is a library piece).
 
 ## core/arrays/lift — Arrays are alternations; operations lift
 slugs: array-lift lift-order macro-arguments
@@ -1459,6 +1462,18 @@ history:
 - 2026-11-19 (lane preddoc3b): converted from `?`; the statements part split off as core/operators/statements (a different status).
 - 2026-11-19 (lane preddoc4): `NOT` named as the one exception to no-alphabetic-operators; the record bullet points at tuples (review r59 NEGATION, READ-15).
 
+## core/operators/bindings/call-forms — Several bodies for one name
+slugs: call-forms
+rulings:
+rejected:
+readings:
+- the rule of core/operators/bindings, ruled ("Agree with mapping", record "2026-11-14 RULINGS on rev 3's contradictions": positional, keyword and by-name parameters), has one head per name; it is NOT corrected here. The several bodies are the library's reading: lib/rx/repeat ("The bodies, one per call form", the draft R.1.14; "no maximum" a second body, the draft's reading) and lib/modifiers/padded (the ruled `padded(rx) := /0*${rx}/` and the width form the owner wrote positionally, "someone could use padded(blah, 4) to get a minimum 4", record "2026-11-18 OWNER, on restricting a minimum-width `padded`").
+- the record's repeat is ONE construct, "exact with one argument, a range with min and max, no maximum = unbounded" (record "2026-11-17 OWNER — the rx module: one repeat construct; plurals as conveniences"; "an unbounded repeat is written by giving NO MAXIMUM", record "2026-11-17 OWNER RULING — the count proposal"): it rules what a call means, not how many heads define it.
+- the parting run: `rx.repeat(rx.digit, 3)` as `(?:\d){3}` and as `(?:\d){3,}` — SUPPORTED (preddoc6 PART CF, `re` on the written-out patterns).
+evidence: docs/dev/lanes/preddoc6_evidence/ PART CF.
+history:
+- 2026-11-19 (lane preddoc6, review r60 COLD-9): a new open sub-piece, at the predicate manager's ruling (r60's FIX-NOW (status) + PLAN (form)): the collision is a question for the owner; the general form (one head, keyword settings, an "unset" bound) is a PLAN item of review r60. The slug call-forms is the lane's name for the question.
+
 ## core/operators/statements — Program shape and statements
 slugs:
 rulings:
@@ -1791,6 +1806,7 @@ evidence:
 history:
 - 2026-11-10: D193 add. 4; 2026-11-17: hits-text sends every spelling to one review; 2026-11-19 (lane preddoc3b): converted from `?`; the four slugs (atomic, options, conditional, every-pass) are rows of the table.
 - 2026-11-19 (lane preddoc4): the slug every-pass-spelling moved to its open piece lib/counting/every-pass (review r59 PRIMITIVES-MISSING).
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the STRING FUNCTIONS row routes each name to its library piece (it named core/values/functions for `left`, `strlen`, `upperStart`, `prefix_in`); the EFFECTS rows name lib/builtin/warn, lib/builtin/options, lib/builtin/export (review r60 EFFECTS).
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:

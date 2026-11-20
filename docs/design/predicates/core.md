@@ -339,7 +339,7 @@ see: core/labels/backreferences
 - A backreference or group number inside an rx to a name that rx does not define is a compile error
   (core/labels/backreferences); a `$` read resolves where it is written (core/values/reads).
 - A filter operand's labels are visible like any others (a reading: visibility goes by export, not by role).
-WHOLE `2025` HOLDS, `1999` FAILS / SEARCHED `x1999 2001` `2001`@6 / FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] (`year := /(?<_v>\d{4})/ & (_v: >= 2000)`)
+WHOLE `2025` HOLDS, `1999` FAILS / SEARCHED `x1999 2001` `2001`@6 / FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] (the program `year`, year := `/(?<_v>\d{4})/ & (_v: >= 2000)`)
 
 ### What the caller gets for an unreferenced shared label   [core/labels/export/caller-ambiguous]   open caller-ambiguous 2026-11-19
 For a public label two parts both set that the program never references, is the caller's ambiguous reference a compile error or an error when the caller reads it?
@@ -685,7 +685,7 @@ WHOLE `8` HOLDS / SEARCHED `x42 8` `42`@1 / FIND-ALL `8 x 42` [`8`@0, `42`@4] (`
 WHOLE `15-5` HOLDS, `5--5` FAILS / SEARCHED `5--5 15-5` `15-5`@5 / FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `10-0`@10] (`/(?<y>\d+)-${$y - 10}/`: a negative result is nothing)
 
 ### Single-value functions   [core/values/functions]   ruled 2026-11-18
-A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction.
+A single-value function is built on an rx `enumerate` accepts, applied to each string in order; an outward-looking assertion is a compile error, an infinite or over-budget rx under construction.
 needs: core/values/one-type
 see: lib/builtin/enumerate core/arrays/lift lib/strings/left lib/strings/strlen lib/sets/prefix-in
 - A single-value function (`left`, `strlen`, the arithmetic operators; placeholder names) is defined on one string.
@@ -694,8 +694,7 @@ see: lib/builtin/enumerate core/arrays/lift lib/strings/left lib/strings/strlen 
   1. an assertion looking outside the operand (`left(/(?<=x)ab/, 1)`, `\b\d+\b`): `enumerate`'s compile error;
   2. an infinite or over-budget rx (`left(/\d+/, 2)`): under construction;
   3. a constant, a read, an array, a finite rx `enumerate` accepts: built, the function applied to each string.
-- `left(rx, n)` is the IMAGE (the first n characters of each string); a filter on the texts whose first n
-  characters are in a set is another function (lib/sets/prefix-in).
+- `left` (lib/strings/left) is an image function; a preimage filter is another name (lib/sets/prefix-in).
 - An expression over reads and constants alone (`($y | "9") + 1`) is applied member by member at match time, in
   its written order (a reading, run).
 WHOLE `fo` HOLDS / SEARCHED `xba fo` `ba`@1 / FIND-ALL `fo ba fofo` [`fo`@0, `ba`@3, `fo`@6, `fo`@8] (`/${left(/foobar|bazqux/, 2)}/` is `(?:fo|ba)`)
@@ -1041,6 +1040,21 @@ see: core/modules/call-shorthand core/holes/bare-condition core/filters/negation
   (core/holes/bare-condition).
 WHOLE `1,2` HOLDS / SEARCHED `x1,2` `1,2`@1 / FIND-ALL `1,2 3,3` [`1,2`@0, `3,3`@4] (`pair(p) := /${p},${p}/`, `pair(/\d/)` is `(?:\d),(?:\d)`)
 
+### Several bodies for one name   [core/operators/bindings/call-forms]   open call-forms 2026-11-19
+May one name have several bodies, chosen by the arguments a call passes, or does every name have one head whose optional parts are keyword settings?
+needs: core/operators/bindings
+see: lib/rx/repeat lib/modifiers/padded
+- The reading today: the library writes several bodies for two names, one per call form: `repeat(x, n)`,
+  `repeat(x, min, max)`, `repeat(x, min)`; `padded(rx)`, `padded(rx, n)`. The rule above has one head per name
+  (positional arguments the required parameters, keyword arguments optional settings).
+- Two of those bodies fit one call: `rx.repeat(rx.digit, 3)` is `\d{3}` by `repeat(x, n)` and `\d{3,}` by
+  `repeat(x, min)`.
+- Candidates: (a) several bodies, chosen by the set of parameters a call passes, a call fitting two of them a
+  compile error; (b) one head per name, its optional parts keyword settings (`repeat(x, min = 0, max = ...)`,
+  `padded(rx, width = ...)`), which needs a value or an absent setting for "no maximum" and "no width".
+WHOLE `1234` FAILS / SEARCHED `12345` `123`@0 / FIND-ALL `1234567` [`123`@0, `456`@3] (`rx.repeat(rx.digit, 3)` by `repeat(x, n)`, `(?:\d){3}`)
+WHOLE `1234` HOLDS / SEARCHED `12345` `12345`@0 / FIND-ALL `1234567` [`1234567`@0] (`rx.repeat(rx.digit, 3)` by `repeat(x, min)`, `(?:\d){3,}`)
+
 ### Program shape and statements   [core/operators/statements]   reading 2026-11-19
 A program is bindings, expressions, calls and `@` statements with ONE final expression, its pattern; a bare rx anywhere else is a compile error.
 needs: core/operators/bindings
@@ -1291,7 +1305,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the condition's parentheses (`(0: digit)`) | core/spellings/condition-parentheses |
 | the ANY-TEXT pattern (`anything`); a constant for the never-matching rx | lib/sets/anything, parked/ideas/never-constant |
 | the EXPLICIT PRODUCT (`cartesian(...)`), if adopted | parked/ideas/cartesian |
-| the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | core/values/functions, lib/strings/join |
+| the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | lib/strings/left, lib/strings/strlen, lib/strings/upper-start, lib/sets/prefix-in, lib/strings/join; the rule: core/values/functions |
 | `padded`'s width and pad parameters | lib/modifiers/padded |
 | the LABEL-ONLY group (his `(?<:x>foo)`) | parked/ideas/label-only-group |
 | OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | lib/builtin/options, lib/builtin/warn, core/diagnostics/warnings, parked/ideas/capability-optins |
