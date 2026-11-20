@@ -4461,3 +4461,7 @@ cofix delivered 8b02e6a03 (report docs/dev/lanes/cofix_report.md), lanecheck DON
 - 711 symmetric re-time: near-miss WINs re-timed on variants 3-5, WIN-NR and WIN-UNRETIMED count as TIE, and there is no false-WIN control (stated);
 - 712 waits on kit-checkorder only.
 RULE_SHAs: 711 28b518b84de080aa, 712 efb4f0d7d3ab0bd5. Estimates: 711 6,405 s, 712 2,002 s. Both checks PASS. OWED: re-sync the 712 branch copy in worktrees/rampfix.
+
+### 2026-11-20 18:2x — bcfix delivered 18643f717; one follow-up ruling
+bcfix delivered (report docs/dev/lanes/bcfix_report.md on lane/memfn-bcfix), lanecheck DONE. RULE_SHA 3af29030022e8555. Re-time variants 10-12 (650 new exes). Check PASS: the timed-text unit 520/520, the arm guard 3,120 exes, the gate 3,900 exes. Plants at the timed values all CAUGHT (tailm1t 5/5, isspk 4/4). Drills 42/42. Estimate 8,992 s, latest start 09:30. 708 also ran nice -n 5, so there is no axis between them.
+The lane's open MEASUREMENT-2 reading, ruled by the manager: a TBL TIE beside a control WIN is VOIDED (it may hide a LOSS); a TBL TIE beside a control LOSS STANDS (conservative). Sent to bcfix as a follow-up; a new RULE_SHA follows. Then the one-critic re-check of 710.
