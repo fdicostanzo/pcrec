@@ -4856,7 +4856,6 @@ m "\xc4\x80x\xc4\x80" 0 5
 g 1 0 2
 
 # B-depth BOUND (lane k147f2, r64 F5): a reference chain of 64 groups, `(x)(\1)...(\63)x+\64`, whose arm B resolution ends exactly AT PCREC_MAX_POSS_REF_DEPTH (the control beside the K=65 cell: arm B resolves it, no widen; measured 2026-11-20, the S3440 plant leaves this cell green). Oracles: python3 re and libpcre2 10.46 agree (match 0 66).
-# pcre2-only
 pattern (x)(\1)(\2)(\3)(\4)(\5)(\6)(\7)(\8)(\9)(\10)(\11)(\12)(\13)(\14)(\15)(\16)(\17)(\18)(\19)(\20)(\21)(\22)(\23)(\24)(\25)(\26)(\27)(\28)(\29)(\30)(\31)(\32)(\33)(\34)(\35)(\36)(\37)(\38)(\39)(\40)(\41)(\42)(\43)(\44)(\45)(\46)(\47)(\48)(\49)(\50)(\51)(\52)(\53)(\54)(\55)(\56)(\57)(\58)(\59)(\60)(\61)(\62)(\63)x+\64
 features all
 engine vm
@@ -4929,7 +4928,6 @@ n "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 n ""
 
 # B-depth BOUND (lane k147f2, r64 F5): a reference chain of 65 groups, `(x)(\1)...(\64)x+\65`, whose arm B resolution runs one past PCREC_MAX_POSS_REF_DEPTH: the depth-bound widen (`widen:` in first_eval) is the answer, and a widen that read the wrong value turns this MATCH into NOMATCH (S3440). Oracles: python3 re and libpcre2 10.46 agree (match 0 67).
-# pcre2-only
 pattern (x)(\1)(\2)(\3)(\4)(\5)(\6)(\7)(\8)(\9)(\10)(\11)(\12)(\13)(\14)(\15)(\16)(\17)(\18)(\19)(\20)(\21)(\22)(\23)(\24)(\25)(\26)(\27)(\28)(\29)(\30)(\31)(\32)(\33)(\34)(\35)(\36)(\37)(\38)(\39)(\40)(\41)(\42)(\43)(\44)(\45)(\46)(\47)(\48)(\49)(\50)(\51)(\52)(\53)(\54)(\55)(\56)(\57)(\58)(\59)(\60)(\61)(\62)(\63)(\64)x+\65
 features all
 engine vm
