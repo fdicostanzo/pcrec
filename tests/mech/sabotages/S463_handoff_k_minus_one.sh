@@ -17,9 +17,9 @@ SAB_REACH_EXPECT='REACH-HANDOFF-K3'
 SAB_REACH_POP='tests/litscan/handoff.rxt|^pattern \(\?m\)\^x\{2,5\}|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    long long k = req_handoff_k(cx);
+SAB_BEFORE='    long long k = kb.v;
     /* the run is the landmark only where the pre-check TESTS it (part_d.md'
-SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0 && req_handoff_k(cx) < PCREC_W_UNBOUNDED); /* SABOTAGE S463 */
+SAB_AFTER='    long long k = kb.v - (kb.v > 0 && pcrec_bound_bounded(kb)); /* SABOTAGE S463 */
     /* the run is the landmark only where the pre-check TESTS it (part_d.md'
 # RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): K is the LANDMARK's
 # (`req_landmark_maxoff`, the run window's where a run ships, so every run
@@ -49,3 +49,7 @@ SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0 && req_h
 # line (unique: `emit_req_landmark_move`'s k line is followed by code). Probe
 # unchanged (re-read on the branch: REQ_HANDOFF "3"). Intent unchanged: the
 # ENTRY starts one byte too late.
+# RE-ANCHORED 2026-11-20 (lane l3build, span_arms L3 RM-2, D-7): K is a `PfBound` (state +
+# signed value); the entry reads its value `k = kb.v` on the line after the ask, and the
+# anchor is that line plus the next comment's first line (unique: the re-entry's value line is
+# followed by code). K is lowered only where it is bounded and positive, as before. Intent unchanged.
