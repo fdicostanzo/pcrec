@@ -194,6 +194,7 @@ optnest-vm;;(?:a;;)?;;all;2
 look;;(?=;a;);;all;0
 lookrep;;(?=a|b;c;)*+;;all;0
 altrep;;(a|b;c;)*;;all;0
+ncaltrep;;(?:a|b;c;)*;;all;0
 brefrep;;(a|b;\1;)*;;all;0
 brefsrep;;(a|b;\\%d;)*;;all;0
 litrep;;(abc|abd;abe;)*;;all;0

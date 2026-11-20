@@ -2230,7 +2230,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: known_issues K151; docs/dev/lanes/growsurv_report.md L2/C10; src/gen/emit_vm.c (vm_build_region_saves)
 - [K149-FIRSTOF-NOBREF] STATE:not-started — `(abc|abd(…abe))*` kills pcrec_compile in first_of with no backreference (K149, K147's second shape)
   filed: 2026-11-20 lane growfile, from growsurv KR-B
-  status (2026-11-20): filed; not fixed on lane/k146land (re-checked). Dies at N=200 on the budget thread; N=150 compiles
+  status (2026-11-20): fixed on lane/k147fix with [K147-POSSESSIFY-DEPTH], awaiting landing: at its base N=237 compiles and N=238 dies; after, 317,504 B at depth 250 (DEPTH_FAMILIES row litrep)
   next: rides [K147-POSSESSIFY-DEPTH] (same functions); add the shape to its DEPTH_FAMILIES rows
   refs: known_issues K149, K147; docs/dev/lanes/growsurv_report.md C4
 - [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
@@ -2469,7 +2469,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 
 - [K147-POSSESSIFY-DEPTH] STATE:not-started — possessify's first_of/text_first recursion kills pcrec_compile on `(a|b(a|b…\1)*)*` (K147)
   filed: 2026-11-20 manager, from review r62 DEPTH-3/DEPTH-4 (pre-existing; answer-adjacent: libpcre2 compiles it)
-  status (2026-11-20): filed; nothing built. Second shape K149 (`(abc|abd(…abe))*`, no backreference). Dies from depth 174 on the 442,368-byte thread.
+  status (2026-11-20): fixed on lane/k147fix, awaiting landing (lanes/k147fix_report.md): FIRST fold on an explicit stack + own frames; K147's two shapes and K149's compile at depth 250 (257,552/257,552/317,504 B); zero movers
   trigger: the NEXT lane of K146's family, right after K146 lands (Frank/manager ruling, r62); fix by the same general depth mechanism ([DD-10] PCREC_OWN_FRAME), with DEPTH_FAMILIES rows for both shapes; [LINT-FRAME] is scheduled after it
   refs: known_issues K147 (the family survey, r62 UNLOCK-2, is its notes); docs/dev/reviews/2026-11-20-r62-k146fix.md; docs/spec/limits.md §3.10¶1
 - [CLS-FOLD-WAF744] STATE:not-started — research why the caseless class fold loses on waf744 (x86)
