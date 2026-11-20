@@ -2781,6 +2781,17 @@ static PCREC_OWN_FRAME Cost vm_cost_cat(Vm *v, const Ast *a)
     return c;
 }
 
+/* `vm_alt_island`'s charge: an island costs one frame if its trie pushes
+ * any, nothing else; -1 when `a` is not an island. ITS OWN FRAME ([DD-10],
+ * K146), for `vm_alt_island`'s reason: the trie is dead before
+ * `vm_cost_alt` recurses into the branches. */
+static PCREC_OWN_FRAME int vm_cost_alt_island(Vm *v, const Ast *a)
+{
+    VmIsl isl;
+    if (!vm_isl_build(v, &isl, a)) return -1;
+    return isl.pushes > 0 ? 1 : 0;
+}
+
 /* Computes an `A_ALT` alternation's cost as the WORST live branch plus one
  * resume frame per chain level -- at most one branch's frames/trail/steps
  * are live at a time (see `vm_alt`), and a failed branch's own frames are
@@ -2811,17 +2822,6 @@ static PCREC_OWN_FRAME Cost vm_cost_cat(Vm *v, const Ast *a)
  * combiner, so this arm reads as ONE-PLUS-MAX against `vm_cost_cat`'s plain
  * SUM. `vm_alt_flatten` is the same branch-array walk `vm_alt`'s own
  * emission does — see its header. */
-/* `vm_alt_island`'s charge: an island costs one frame if its trie pushes
- * any, nothing else; -1 when `a` is not an island. ITS OWN FRAME ([DD-10],
- * K146), for `vm_alt_island`'s reason: the trie is dead before
- * `vm_cost_alt` recurses into the branches. */
-static PCREC_OWN_FRAME int vm_cost_alt_island(Vm *v, const Ast *a)
-{
-    VmIsl isl;
-    if (!vm_isl_build(v, &isl, a)) return -1;
-    return isl.pushes > 0 ? 1 : 0;
-}
-
 static PCREC_OWN_FRAME Cost vm_cost_alt(Vm *v, const Ast *a)
 {
     Cost c = { 0, 0, 0, 0, false, false };
@@ -4899,14 +4899,11 @@ static PCREC_OWN_FRAME bool vm_alt_island(Vm *v, int entry, const Ast *a,
 }
 
 /* Emits an alternation at label `entry` whose every branch continues to
- * `next`. The flat branch list is offered to the island trie first, and that
- * is a SELECTION rather than a special case: a declined alternation falls
- * through unchanged, which is what makes `-fno-alt-island` byte-identical
- * wherever the predicate says no. Otherwise it writes the CHAIN — branch
- * j+1's resume frame pushed just before branch j runs, so one frame is live
- * per alternation at any instant rather than one per untried branch. The
- * branch spine is walked iteratively (D10), and `v->nislands` is bumped in
- * the call that emits so the stamp cannot drift from the program text. */
+ * `next`. `vm_alt_island` takes the flat literal alternations first (its
+ * header says how that is a selection); otherwise this writes the CHAIN —
+ * branch j+1's resume frame pushed just before branch j runs, so one frame is
+ * live per alternation at any instant rather than one per untried branch. The
+ * branch spine is walked iteratively (D10). */
 static PCREC_OWN_FRAME void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
