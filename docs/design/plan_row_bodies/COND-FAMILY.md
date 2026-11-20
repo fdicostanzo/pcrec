@@ -6056,3 +6056,33 @@ DISPOSITIONS, ruled by the manager (every proposal of the draft ACCEPTED; the id
   namespace and one for captures, is the shape of the NEXT document pass, not of this fix).
 WITHDRAWN by this round (the manager's own): none of the rulings; the manager's wording "the test can never
 pass" and "whole surrounding rx" (too wide: it reached private labels).
+
+### 2026-11-19 OWNER, after flags-in-filter: do the sides inherit before or after the intersection ("Tricky")
+tags: core/holes/flags/in-filter core/holes/flags
+
+After the ruling "flags-in-filter: both sides inherit" and the manager's answer that a bound `&` put in a hole
+equals the `&` written there. HIS WORDS, whole:
+
+"flags-in-filter: ok A is [a-z]x. B is [A -Z]x. A & B then is nothing. But in a hole, do they inherit before or
+after the intersection. If before, then they overlap. If after then nothing. Tricky"
+
+Read for the intended words: "[A -Z]x" = `[A-Z]x`.
+
+Class: a QUESTION with its two answers named by him and no choice made ("Tricky"): DISCUSSION. It probes his own
+ruling of the hour; nothing new ruled.
+
+RUN (`$PCREC_TMPDIR/scratch/pred/flagsorder.py`, hand-built: `&` = both sides match the stretch whole; A :=
+`/[a-z]x/`, B := `/[A-Z]x/`, C := `A & B`): C alone: WHOLE `ax` FAILS, `AX` FAILS / SEARCHED `-ax Ax` FAILS /
+FIND-ALL `ax AX 7x` []. `/(?i)${C}/` inheriting BEFORE the intersection: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED
+`-ax Ax` `ax`@1 / FIND-ALL `ax AX 7x` [`ax`@0, `AX`@3]. Inheriting AFTER: as C alone, nothing.
+
+The manager's answer (told to him): as ruled and folded it is BEFORE: "both sides inherit" makes each side start
+with the hole's flags, and only then are the two matched on the stretch; with the reading that a binding is its
+expression where it is used, C in the hole matches though C alone matches nothing. "After" needs a binding to be
+a fixed set of strings settled where it is written, which would also end `/(?i)${A}/` making a bound A case
+insensitive (his lean of 2026-11-19: "i'd say it does"). The manager's readings of the consequence, FOR A LANE
+TO TEST: (a) a compile-time judgement of a binding ALONE (a can-never-match warning, an assertion such as
+`@assert.none(C)`, `enumerate(C)`) reads it under its own flags and can say "nothing" of a binding that matches
+in a flagged hole: such warnings belong at the USE, not at the binding; (b) the same before/after split exists
+for a complement (`A & !B` in a flagged hole). Asked of him (flags-before-and): keep "before", or does he want a
+binding of an `&` settled where it is written.
