@@ -5,8 +5,8 @@ member `m.x(...)`, by kind. Each piece says how the name is defined: `defined: l
 stated and run) or `defined: native (<why no body exists>)` (support outside the language). The core (`core.md`) holds
 the syntax and meaning that is not a name and refers here as needed. Ideas not in the language are `parked.md`.
 Details per tag: `library_details.md`. Every name is a placeholder spelling. Names an example program binds with
-`:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. Names the worked
-examples CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned content of the standard
+`:=` (`isodate`, `leap`, `tagged`, ...) are examples, not provided names, and have no piece. The WORKED EXAMPLES are
+the acceptance cases of the frozen draft (`docs/design/predicates_draft.md` §12); names they CALL but nothing defines (`days`, `weekday_of`, `days_in`, `luhn`) are the planned content of the standard
 library (lib/planned/standard, core/modules/standard-library). Examples call every provided name bare, as if
 imported; how a `module: ?` name is reached is open (core/modules/default-set/members).
 
@@ -56,7 +56,8 @@ defined: native (it reads library files at compile time)
 - `m := import("isodate")` binds a module to a name; members are `m.year`. Two modules' `year` never collide.
 - The argument is a set of names, as `@export`'s is; several files: `import("pcrec"|"numbers")`.
 - No file matched is a compile error (a reading).
-- A library element that needs more than the level the user asked for (automaton code only, by default) is a
+- A library element that needs more than the level the user asked for (the capability the compiled program may use:
+  automaton code only by default; the opt-ins are parked/ideas/capability-optins) is a
   compile error naming the element, never a silent lift.
 - Imports are COMPILE TIME only (the artifact is self-contained), PINNED (`sha256 = ...`), and resolved only from
   configured library directories, never an arbitrary path (a reading).
@@ -313,7 +314,8 @@ defined: language
 - Anchored: it covers the text it is applied to from end to end; standing alone in a searched program that text
   is the whole subject.
 - "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS.
-- Reading the hits out as values is the captures level. The spelling is a placeholder (his: `all_matches`).
+- Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
+  names the levels). The spelling is a placeholder (his: `all_matches`).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
 
 ### contains   [lib/search/contains]   ruled 2026-11-15
@@ -394,7 +396,7 @@ WHOLE `12` HOLDS, `05` FAILS / SEARCHED `x05 11` `11`@4 / FIND-ALL `10 3 12 13` 
 needs: core/holes/pattern core/holes/count core/filters/and
 module: ?
 defined: language
-- `suffix_in(n, S)` and `slice_in(i, n, S)` alike; positions are characters per the encoding mode; out of range is
+- `suffix_in(n, S)` and `slice_in(i, n, S)` alike; positions are characters per the encoding mode (bytes or characters, open as for `left`); out of range is
   not stated.
 - A PREIMAGE filter: `prefix_in(2, "Columbus")` never holds (no 2-character member), while his `left(rx, n)` is an
   IMAGE (lib/strings/left).
@@ -573,7 +575,7 @@ see: lib/rx/repeat
 module: rx
 defined: language
 - `rx.digit := /\d/`; `rx.word_char`, `rx.space`, `rx.any`, `rx.any_but_newline` are `\w`, `\s`, `(?s:.)`, `.`.
-- `rx.letter`: `[[:alpha:]]`, following the program's UCP setting as a literal does.
+- `rx.letter`: `[[:alpha:]]`, following the program's UCP setting (PCRE's Unicode-property mode for classes) as a literal does.
 - `rx.range(a, b) := /[${a}-${b}]/` (range ends are a typed position); `rx.none_of(S)` is `rx.any & !S`.
 - `rx.any_of` over an array is the array itself; over a string it needs a split into characters, not in the language.
 - The plurals: `rx.digits := rx.repeat(rx.digit, min = 1)` is `\d+` (0 / 0 / 0 of 63 texts differ).
@@ -660,4 +662,4 @@ module: ?
 defined: ?
 - The uses: `d := days($b) - days($a)`, `wd := weekday_of($rest.year, $rest.month, $rest.day)`,
   `dim := days_in($year, $month)` (computed labels), `card := /\d{4}( ?\d{4}){3}/ & luhn & startsWith("4")`.
-- A REGULAR TWIN (an automaton form beside a callout) is the lean for `luhn`, `weekday` and `days_in`.
+- A REGULAR TWIN (an automaton form beside a callout) is the lean for `luhn`, `weekday_of` and `days_in`.

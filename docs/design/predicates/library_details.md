@@ -833,3 +833,4 @@ readings:
 evidence:
 history:
 - 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-9); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
+- 2026-11-19 (lane preddoc6, review r60 COLD-19): `weekday` in the regular-twin bullet written `weekday_of`, as the piece calls it; the library header gives "the worked examples" their home (the frozen draft §12, the acceptance cases).

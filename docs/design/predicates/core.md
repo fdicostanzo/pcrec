@@ -193,7 +193,7 @@ WHOLE `3;,` HOLDS, `3;,,` FAILS, `3;;,` FAILS / SEARCHED `3;,,` `3;,`@0 / FIND-A
 An rx literal `/.../` is full PCRE and means exactly what PCRE means; the predicate language adds only two marks inside it, the hole `${` and, under its switch, the operator `&`.
 needs: core/model/match
 - `\/` escapes the delimiter. A one-literal program is a valid program: every PCRE pattern is one (a reading: no
-  strict subset, no level beyond today's engine choice).
+  strict subset, no capability level beyond today's engine choice: lib/builtin/import).
 - Crossings: from rx text to the expression language only by `${...}`; from the expression language to rx only by
   `/.../`.
 - `${` always opens a hole in rx text, in every position; a literal `$` then `{` is written `$\{` (a reading).
@@ -305,7 +305,8 @@ needs: core/model/match core/labels/labels-vs-captures
 - A name set before a loop and inside it does not survive the loop: the separated list `/(?<h>\d)(?:,(?<h>\d))*/`
   on `7` leaves h unset; `/(?:(?<h>\d),)*(?<h>\d)/` gives `7`.
 - Repeated means set in a loop by its operand regex (a reading).
-- A label no match can set draws a warning, not an error (core/diagnostics/warnings).
+- A test on a label no match can set draws a warning, not an error: it is a test that can never pass
+  (`pcrec.test.never`, core/diagnostics/warnings).
 see: core/diagnostics/warnings
 WHOLE `3qxx` FAILS, `q3xx` HOLDS (a = `3`), `7q3xx` HOLDS (a = `3`) / SEARCHED `3qxx` FAILS / FIND-ALL `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10] (`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)`)
 
@@ -376,7 +377,7 @@ by: core/principles/namespace-at-reference
 see: core/holes/same-name
 WHOLE `733` HOLDS, `737` FAILS / SEARCHED `x737 733` `733`@5 / FIND-ALL `733 737 455` [`733`@0, `455`@8] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`)
 
-### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-18
+### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-19
 A number names a group only when there is no ambiguity; `0` is never refused and names the match so far (core/conditions/match-so-far).
 needs: core/labels/one-rule core/labels/flow
 by: core/principles/operand-world
@@ -451,12 +452,14 @@ A postfix quantifier on a condition is a compile error.
 modes: n/a (a compile error)
 
 ### A group holding only conditions   [core/conditions/quantified/group]   open condition-group 2026-11-19
-What is a group that holds only conditions, `(?:(a: S)(b: T))`, and may a quantifier stand on it?
+Is a group holding ONLY conditions (`((h: <5))?`, `((h: <5) SEQ (h: <5))*`) a condition for the quantifier's compile error, or a group quantified as regex?
 needs: core/conditions/quantified core/conditions/in-sequence
-- The reading today: not stated; a quantifier on a lone condition is the compile error above.
-- Candidates: (a) the group is a sequence of zero-width tests, and a quantifier on it is the same compile error as
-  on one condition; (b) the group is legal and a quantifier on it keeps regex's meaning (a zero-width group).
-modes: n/a (a question; no candidate answer is run)
+- The reading today: (a) a condition, so a quantifier on it is the same compile error as on one condition.
+- Candidates: (a) the compile error: a quantified test is never silently dropped; (b) a group quantified as regex:
+  the test vanishes, so `[h = rx.digit] SEQ ((h: <5))?` is `rx.digit`.
+- A group holding a condition together with pattern text quantifies a pattern and is not this case.
+WHOLE `7` HOLDS / SEARCHED `x7` `7`@1 / FIND-ALL `7 3` [`7`@0, `3`@2] ((b), `[h = rx.digit] SEQ ((h: <5))?`; under (a) a compile error)
+WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x7` FAILS / FIND-ALL `7 3` [`3`@2] (unquantified, `[h = rx.digit] SEQ (h: <5)`)
 
 ### The match so far   [core/conditions/match-so-far]   ruled 2026-11-19
 `0` in a condition names the match so far: the text the rx the condition is written in has matched from its start to the condition's point.
@@ -464,8 +467,8 @@ needs: core/conditions/in-sequence core/labels/numbers
 by: core/principles/composed-at-point
 - This piece decides what `0` denotes, everywhere. After a complete pattern (`A & (0: S)`) the match so far is the
   entire match; a condition written last in a sequence reads the entire match.
-- "The rx it is written in" is the rx composed at the point the condition is used: in `${A & (0: S)}` it is A; a
-  condition alone in a hole: core/holes/bare-condition.
+- "The rx it is written in" is the rx composed at the point the condition is used; every hole case (a condition
+  alone in a hole, `${A & (0: S)}`) is core/holes/bare-condition's.
 - Inside a loop body: core/conditions/match-so-far/in-loop (open).
 see: core/holes/bare-condition
 WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`)
@@ -907,7 +910,8 @@ WHOLE `3-x` HOLDS, `3-3` HOLDS, `3-4` FAILS / SEARCHED `7-3 3-3` `3-3`@4 / FIND-
 A read `$y` in a count position is under construction; in a class member or a range end its meaning is not stated; in an option position it is the option hole's compile error.
 needs: core/holes/value core/holes/count core/holes/class core/holes/option
 - A count from a read is known only at match time; the counted repeat over it is not built (core/diagnostics/under-construction).
-- A class member or range end from a read: not stated; asked with the construction line, not answered.
+- A class member or range end from a read: not stated; asked with the construction-line question (which rx a
+  single-value function is built on, core/values/functions), not answered.
 - A group name from a read is a compile error (core/holes/name: a name is known at compile time).
 modes: n/a (compile-time verdicts; no matching involved)
 
@@ -962,11 +966,12 @@ A condition alone in a hole sees the regex composed at the point the hole stands
 needs: core/conditions/match-so-far core/holes/pattern
 by: core/principles/composed-at-point core/principles/operand-world
 see: core/spellings/condition-parentheses
-- A bare condition last in an rx equals the condition on the whole: `/\d${(0: digit)}/` is `/\d/ & (0: digit)`.
-- At the very start of an rx it tests the empty match so far (`/${(0: digit)}/` never holds).
+- A bare condition last in an rx equals the condition on the whole: `/\d${(0: rx.digit)}/` is `/\d/ & (0: rx.digit)`.
+- At the very start of an rx it tests the empty match so far (`/${(0: rx.digit)}/` never holds).
+- `rx.digit` (lib/rx/classes) stands where the owner wrote a bare `digit`, which no piece provides.
 - A binding whose whole body is a bare condition, used in a hole or as a sequence operand, behaves as the bare
   condition does (a reading, run).
-WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${(0: digit)}x/`)
+WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${(0: rx.digit)}x/`)
 
 ### Labels a bare condition reads   [core/holes/bare-condition/labels]   open bare-condition-labels 2026-11-19
 Which labels does a bare condition in a hole read: the surrounding rx's labels as they stand at the hole, or the inserted part's own namespace, where it has none?
@@ -1170,8 +1175,8 @@ modes: n/a (no matching involved)
 A standard library of provided modules for what users often match (dates, IP addresses, e-mail, ...) is a follow-up after the base: content, not mechanism.
 needs: core/modules/map
 see: core/modules/naming
-- Its members are modules reached by `import`; names the worked examples call and nothing defines yet (`days`,
-  `weekday_of`, `days_in`, `luhn`) are its planned content.
+- Its members are modules reached by `import`; names the worked examples (the frozen draft §12) call and nothing
+  defines yet (`days`, `weekday_of`, `days_in`, `luhn`) are its planned content.
 - BLESSED CALLOUTS: a member may be emitted C code (pure, bounded, total, oracle-tested) that declares a regular
   twin where one exists, the compiler choosing the automaton or the compiler-emitted callout, never a callout
   written in rx text (a lean, its own plan row).
@@ -1191,7 +1196,9 @@ modes: n/a (no matching involved)
 ### Compile errors   [core/diagnostics/errors]   reading 2026-11-19
 A program whose meaning is refused is a compile error, and no setting disables one; what is only probably a mistake is a warning instead (core/diagnostics/warnings).
 needs: core/values/functions core/operators/statements core/modules/conflicts
-- Each error below is ruled or read in its own piece; this piece is the index.
+- Each error below is ruled or read in its own piece; this index is PARTIAL: more compile errors are stated in
+  their pieces only (an ambiguous reference across `&`, a free name, a `:` in a definition head, a `when` without
+  `then`, a failed assertion, ...).
 | fires on | piece |
 |---|---|
 | an undeclared name that is not a label (with a suggestion); a bare rx not final; a bare statement without `@` | core/operators/statements |
@@ -1227,13 +1234,13 @@ see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/idea
 - NAMES: the compiler's carry the prefix `pcrec.`; a library's are named by its path (`compare.width.variable_width`).
   Every name below is a placeholder; the names and wordings are the manager's call, not yet made.
 - A SELECTOR is a set of names written as an rx, matched whole: `@warn.off(/compare\.width\..*/)`,
-  `@warn.error(/.*/)`; an `@warn.off` that suppresses nothing draws `warn.unused`. A STRICTNESS setting
+  `@warn.error(/.*/)`; an `@warn.off` that suppresses nothing draws `pcrec.warn.unused`. A STRICTNESS setting
   (`@options.strict(...)`) makes the selected warnings errors.
 | name (placeholder) | fires on | ground |
 |---|---|---|
-| `pcrec.test.never`, `pcrec.test.always` | a test that can never pass; one that can never fail; at any polarity | polarity-rule |
+| `pcrec.test.never`, `pcrec.test.always` | a test that can never pass (a test on a label no match can set included); one that can never fail; at any polarity | polarity-rule |
 | `pcrec.empty.search` | a searched final pattern that can report an empty find | empty-search-error |
-| `pcrec.dead.branch` | an alternative of a narrowing site that can never match | the accepted list |
+| `pcrec.dead.branch` | an alternative of a narrowing site (an `&` operand, a `label:` set) that can never match | the accepted list |
 | `pcrec.label.unset` | a label a condition names can be absent where it is read, with no default | the accepted list; core/conditions/two-valued |
 | `pcrec.default.unused` | a default that can never be used | default-unused; core/conditions/defaults |
 | `pcrec.label.ambiguous` | an ambiguous label in the author's own pattern text | the accepted list |
@@ -1241,13 +1248,13 @@ see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/idea
 | `pcrec.warn.unused` | an `@warn.off` that suppresses nothing | the accepted list; the selector rule above |
 | `pcrec.label.numbered` | a label read by number on a pattern not written there (core/labels/numbers) | accepted |
 | `pcrec.compare.looped` | a hand-written `\|` of conditions whose labels can repeat | core/diagnostics/looped-compare |
-| (hide) | a binding that hides a label | name resolution |
+| `pcrec.label.hidden` | a binding that hides a label | name resolution |
 | `pcrec.match.never` | an inserted pattern's edge that can never hold beside its neighbour; every copy of a product removed | a reading |
 | `pcrec.dollar.filter` | the form `$x & S` | core/diagnostics/dollar-form |
-| (arithmetic) | an arithmetic result known at compile time to be nothing, whatever the cause; a member list only when every member's result is nothing | plus-operands; the trigger a reading |
-| (nullable hit) | a hit argument that can match empty | core/diagnostics/nullable-hit |
-| (consuming test) | a bare pattern as the test of `when` | core/diagnostics/consuming-test |
-| (join) | `[^${c}]` with two or more different values: it points at `[^${join(c)}]` | a reading (core/holes/negated-class) |
+| `pcrec.arith.nothing` | an arithmetic result known at compile time to be nothing, whatever the cause; a member list only when every member's result is nothing | plus-operands; the trigger a reading |
+| `pcrec.hit.nullable` | a hit argument that can match empty | core/diagnostics/nullable-hit |
+| `pcrec.test.consumes` | a bare pattern as the test of `when` | core/diagnostics/consuming-test |
+| `pcrec.class.join` | `[^${c}]` with two or more different values: it points at `[^${join(c)}]` | a reading (core/holes/negated-class) |
 modes: n/a (warnings)
 
 ### The `$x & S` warning   [core/diagnostics/dollar-form]   ruled 2026-11-19
@@ -1295,14 +1302,14 @@ Every spelling in these documents is a placeholder, settled together in one spel
 |---|---|
 | the SEQUENCE operator (`SEQ`; his `€`, `¥`); it cannot begin an operand | core/patterns/sequence |
 | the nine POSTFIX QUANTIFIERS; the parse readings that decide what a program says | core/patterns/quantifiers, core/operators/precedence |
-| ATOMIC (`atomic(...)`); the no-re-entry sequence (his `A :: B`); the skip-past verb | core/patterns/atomic, parked/ideas/atomic |
+| ATOMIC (`atomic(...)`); the no-re-entry sequence (his `A :: B`); the skip-past verb (PCRE's `(*SKIP)`) | core/patterns/atomic, parked/ideas/atomic |
 | the RX parts (`rx.repeat`, `rx.digit`, the plurals) | lib/rx/repeat, lib/rx/classes |
 | the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, lib/counting/every-pass |
 | the ARRAY FORM of a read (his `@x`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/labels-vs-captures, core/values/reads |
 | the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
 | a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]` | core/labels/paths, core/labels/export |
 | the CONDITIONAL (`when(A, B, else = C)`), its argument shape, a `when` operator, the comma-free keyword form; `peek(A)` | lib/control/when, lib/control/peek |
-| the condition's parentheses (`(0: digit)`) | core/spellings/condition-parentheses |
+| the condition's parentheses (`(0: rx.digit)`) | core/spellings/condition-parentheses |
 | the ANY-TEXT pattern (`anything`); a constant for the never-matching rx | lib/sets/anything, parked/ideas/never-constant |
 | the EXPLICIT PRODUCT (`cartesian(...)`), if adopted | parked/ideas/cartesian |
 | the STRING FUNCTIONS (`left`, `strlen`, `upperStart`) and `prefix_in`; `join` | lib/strings/left, lib/strings/strlen, lib/strings/upper-start, lib/sets/prefix-in, lib/strings/join; the rule: core/values/functions |
@@ -1316,5 +1323,5 @@ Every spelling in these documents is a placeholder, settled together in one spel
 modes: n/a (spellings)
 
 ### A condition keeps its parentheses   [core/spellings/condition-parentheses]   reading 2026-11-19
-A condition is written with its parentheses everywhere, in a hole too (`${(0: digit)}`); the unparenthesised forms are a spellings item.
+A condition is written with its parentheses everywhere, in a hole too (`${(0: rx.digit)}`); the unparenthesised forms are a spellings item.
 modes: n/a (a spelling)

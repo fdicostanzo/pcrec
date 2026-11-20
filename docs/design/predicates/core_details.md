@@ -490,6 +490,7 @@ evidence: preddoc3a_model.py ONE (the table he was shown with after-loop-read: `
 history:
 - 2026-11-17: the one label rule ("branchings reset"), array-slot, shared-label (then revised by label-flow); polarity-rule made the unsettable label a warning.
 - the slug empty-pass came from core/model/match (lane preddoc3a).
+- 2026-11-19 (lane preddoc6, review r60 COLD-14): the bullet on a label no match can set names its warning, `pcrec.test.never` (polarity-rule: "a test on an unsettable label" became that warning; core/diagnostics/warnings' `rejected:`).
 
 ## core/labels/flow — Labels across composed parts
 slugs: label-flow label-mark
@@ -576,7 +577,8 @@ history:
 slugs: number-names zero-place numbered-label-warning
 rulings:
 - 2026-11-18 "number-names: exactly. Only when there is no ambiguity." (record: "2026-11-18 OWNER RULING — number-names")
-- 2026-11-18 "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is composed." (record: "2026-11-18 OWNER RULING, addendum to number-names — zero is the exception")
+- 2026-11-18 "number-names: the exception to our rule is 0. It is always the entire match of the rx however it is composed." (record: "2026-11-18 OWNER RULING, addendum to number-names — zero is the exception"); its "entire match" is the match so far after a complete pattern, by the next item
+- 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence"); the statement's "`0` ... names the match so far" (the deciding piece: core/conditions/match-so-far)
 - 2026-11-17 "For A & B: from the perspective of B, the subject is now whatever A matched. There is no outside subject (unless we allow context, etc). That's its whole world. So all numbers are labels of groups in that world." (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 - 2026-11-17 "Also, not recommended to use group numbers as it's confusing on bound values you can't see" (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 rejected:
@@ -588,6 +590,7 @@ evidence: preddoc3a_model.py NUM (the draft's PART NUM (2) line; printed answers
 history:
 - 2026-11-17: zero-place, label numbers tried, the warning accepted; 2026-11-18: number-names and its addendum.
 - 2026-11-19 (lane preddoc4): the statement's "`0` is always the entire match" now points at the deciding piece core/conditions/match-so-far (his addendum's words stay in the rulings items; after a complete pattern the match so far IS the entire match); the bullet "inside a loop body, the pass's" removed (the loop case is core/conditions/match-so-far/in-loop); the warning's trigger stated once, as the record's accepted proposal words it (review r59 ZERO, READ-10).
+- 2026-11-19 (lane preddoc6, review r60 DAMAGE-4): the statement carries zero-in-sequence's meaning ("names the match so far"), so that ruling is cited here and the status re-dated 2026-11-19 (doc_format: a later ruling rewrites status and statement together); the 2026-11-18 addendum stays, its "entire match" read as the match so far after a complete pattern.
 
 ## core/labels/numbers/in-loop — A number on a group optional in a loop
 slugs: number-in-loop
@@ -669,25 +672,25 @@ slugs: condition-group
 rulings:
 rejected:
 readings:
-- open in the draft §R.8 ("condition-group"); never put to the owner — the manager's brief of lane preddoc4 makes it an open piece; the candidates are the lane's statement of the two ways the ruled quantified-condition can extend.
+- (a), the same compile error, is THE DRAFT'S READING (rev 26.1, review r47 B4): "a GROUP holding ONLY conditions (`((h: <5))?`, `(c1 SEQ c2)*`) IS a condition for this rule, so a quantifier on it is the same compile error; read as regex it is exactly what the punt keeps out: `[h = rx.digit] SEQ ((h: <5))?` WHOLE `7` HOLDS (the test vanishes), `((h: <5) SEQ (h: <5))*` likewise, unquantified WHOLE `7` FAILS (rev 26.1's PART R47 B4; RULE-AS-CODE PART CS CS4's new row; sabotage s22 caught)" (the draft §R.1.14); the §R.8 row: "a condition: the same COMPILE ERROR", candidate regex with SEARCHED `x7` `7`@1 / FIND-ALL `7 3` [`7`@0, `3`@2] HAND-WORKED from the run there — re-run here (preddoc6 PART CG).
+- open in the draft §R.8 ("condition-group"); never put to the owner (`grep -c condition-group` on the record: 0).
 evidence:
 history:
 - 2026-11-19 (lane preddoc4): a new open sub-piece; the slug came from core/conditions/quantified, where it sat on a ruled piece.
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-4): restated from the frozen draft's own words for the slug. Before, the piece said "The reading today: not stated" and "modes: n/a (a question; no candidate answer is run)"; the draft has the reading ((a), the same compile error) and the runs (PART R47 B4, CS4), now printed; its example `(?:(a: S)(b: T))` replaced by the draft's `((h: <5))?`, `((h: <5) SEQ (h: <5))*`.
 
 ## core/conditions/match-so-far — The match so far
 slugs: zero-in-sequence
 rulings:
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence")
-- 2026-11-19 ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/ but not /${A & (0: digit)}/ where it is only the A" (record: "2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A")
-- 2026-11-19 "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing" (record: "2026-11-19 OWNER, confirming: a bare condition last in an rx equals the condition on the whole")
 rejected:
 - the error for now (the manager's leaning) — by owner ruling — zero-in-sequence.
-- a bare condition's `0` in a hole as the inserted part's own (the draft's reading, PART N NZ) — by owner — "for a condition bare, yes".
 readings:
 evidence: preddoc3a_model.py ZERO (the record's zeroseq.py answers reproduced; `7\d` agrees); sabotage s11 caught. preddoc1 PARTS R8, R9.
 history:
 - 2026-11-19: zero-in-sequence; the bare condition in a hole; the confirmation. The slug number-in-loop moved to core/labels/numbers/in-loop (lane preddoc3a).
 - 2026-11-19 (lane preddoc4): the deciding piece for `0` (core/labels/numbers points here); the bare-condition-in-a-hole facts are core/holes/bare-condition's alone (review r59 RULING-8); the loop case moved to the open sub-piece core/conditions/match-so-far/in-loop (review r59 ZERO).
+- 2026-11-19 (lane preddoc6, review r60 FIXVER-2): one owner for the hole facts: the base clause "in `${A & (0: S)}` it is A" and the two hole rulings items (""Inside an inserted part": for a condition bare, yes ..." and "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing") and the `rejected:` line "a bare condition's `0` in a hole as the inserted part's own" removed here; core/holes/bare-condition carries all three, word for word.
 
 ## core/conditions/match-so-far/in-loop — The match so far inside a loop
 slugs: zero-in-loop
@@ -1372,6 +1375,7 @@ evidence: preddoc1 EX-bare-condition, EX-bare-and, PARTS R11, R12; zerohole.py, 
 history:
 - 2026-11-19: zero-in-sequence, then his "yes ... but not", his confirmation, his spelling correction `${0: digit}`, his "${} implies (?:${})" (SUPPORTED by hole-reading), then the parentheses remarks; rev 29.1 only marked §2.3.
 - 2026-11-19 (lane preddoc4): this piece owns the facts on `0` and a bare condition in a hole; core/conditions/match-so-far points here; the parentheses bullet (a spelling call) is core/spellings/condition-parentheses's (review r59 RULING-8).
+- 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
 
 ## core/holes/bare-condition/labels — Labels a bare condition reads
 slugs: bare-condition-labels
@@ -1680,6 +1684,7 @@ evidence:
 history:
 - 2026-11-14 to 2026-11-19: errors moved to warnings one by one (empty-match hazard, polarity-rule, empty-search-error, dollar-condition); the edge-assertion error's reach ruled (operand-context) and taken off holes.
 - 2026-11-19 (lane preddoc3b): converted from `?`; a `reading` piece because the index as a whole is the manager's.
+- 2026-11-19 (lane preddoc6, review r60 COLD-5): the index said every error below is ruled in its piece and read as complete; at least 12 stated compile errors have no row. It now says it is PARTIAL; a generated index (r59 PLACE-8) is a PLAN item of review r60.
 
 ## core/diagnostics/under-construction — The under-construction error
 slugs: under-construction-class
@@ -1726,6 +1731,7 @@ history:
 - 2026-11-14: names in dotted families, `@warn.off`; 2026-11-17: the principle, the list, the library path, the `pcrec.` prefix, polarity-rule, empty-search-error, numbered-label; 2026-11-19: dollar-diagnostic, plus-operands.
 - 2026-11-19 (lane preddoc3b): converted from `?`; three controls of one fact (`@warn.off`, `@warn.error`, `@options.strict`) stay an idea (parked/ideas/severity-table).
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): the call-form names `@warn.off`/`@warn.error` and `@options.strict` have their library pieces (lib/builtin/warn, lib/builtin/options); this piece keeps the meaning (names, selectors, the table).
+- 2026-11-19 (lane preddoc6, review r60 COLD-14): (a) core/labels/one-rule's "A label no match can set draws a warning" pointed at no row: by polarity-rule it is the test that can never pass, so the `pcrec.test.never` row names it and the one-rule bullet says so (no new warning); (b) the five nameless rows given placeholder names like the rest (`pcrec.label.hidden`, `pcrec.arith.nothing`, `pcrec.hit.nullable`, `pcrec.test.consumes`, `pcrec.class.join`: the manager's placeholders, to the spellings review); (c) the selector bullet writes `pcrec.warn.unused`, as the table does.
 
 ## core/diagnostics/dollar-form — The `$x & S` warning
 slugs: dollar-warning dollar-diagnostic
@@ -1807,6 +1813,7 @@ history:
 - 2026-11-10: D193 add. 4; 2026-11-17: hits-text sends every spelling to one review; 2026-11-19 (lane preddoc3b): converted from `?`; the four slugs (atomic, options, conditional, every-pass) are rows of the table.
 - 2026-11-19 (lane preddoc4): the slug every-pass-spelling moved to its open piece lib/counting/every-pass (review r59 PRIMITIVES-MISSING).
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the STRING FUNCTIONS row routes each name to its library piece (it named core/values/functions for `left`, `strlen`, `upperStart`, `prefix_in`); the EFFECTS rows name lib/builtin/warn, lib/builtin/options, lib/builtin/export (review r60 EFFECTS).
+- 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:
@@ -1816,3 +1823,4 @@ readings:
 - the condition keeps its parentheses everywhere, in a hole too; `A & 0: digit` and `${0: digit}` stay the draft's error with their meaning acknowledged (THE MANAGER'S CALL, record "2026-11-19 OWNER, on a condition without its parentheses") — UNTESTED (a spelling).
 evidence:
 history: skeleton; his remarks "i believe that ${} implies (?:${})", "parenthesis are better because you can't add more to the chain", "maybe thats the same." (an OBSERVATION; the `0` case run: preddoc1 PART R12).
+- 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
