@@ -565,3 +565,10 @@ P-14). WAITING on: Frank (flags-warning).
 both; lint 5,267 / 0; tip after this entry. Not yet delivered (two folds since P-14: flags-before-and,
 flags-warning): deliver with the next batch or at close; they were hand folds, so the next critic round covers
 them with flags-in-filter. WAITING on: Frank (class-value next).
+
+## 2026-11-19 (23:50) — /close of the third predicate-manager session
+
+Nothing in flight at /close. wake.md rewritten from scratch; owner.md current; P-15 written; main told. On main:
+everything through P-14. On my branch only: flags-in-filter with its confirmation and flags-warning (hand folds,
+no critic round yet). Next session: /q, class-value first, then the four r61 questions; a critic round on the
+three post-P-14 folds before the next delivery.
