@@ -389,3 +389,16 @@ THEN: rule its dispositions; if a fix lane is needed, run it; deliver to main as
 reviews r59 + r60); retire predicates_future.md (my call, pending: all 38 items are parked pieces); send main the
 skill text for the new layout (sections 0, 1, 3, 4, 5 name the draft as the working document). At pause:
 REWRITE wake.md from scratch (it still describes the first session). WAITING on: crit-preddoc5.
+
+## 2026-11-20 (after midnight) — r60: NOT READY by a short batch; fix lane preddoc6 launched
+
+r60 (draft committed 3e520c47c): of 38 applied r59 findings 31 FIXED, 6 PARTLY, 1 FIXED WRONGLY
+(condition-group), 0 not fixed; re-counts: rulings 1 of 144 missing (looped-compare), slugs 5 of 188, names 1 of
+98 (+ the `@` effects), rejected 0 of 100 (5 partial). Worst: positional piece still used the withdrawn wording
+for the map case; `@export`/`@warn`/`@options` have no piece; a citation of words superseded the same night
+(SOURCE-ROW); an OWNER-RULED warning (looped-compare, moved by joint-loops part 3) that a manager's withdrawal had
+dropped from the documents; duplicate bodies in the base. All proposals accepted; my calls: the `@` effects are
+three native library pieces; the looped warning is stated as he last ruled it, with an open sub-piece
+looped-warning for him. Lane preddoc6 (opus) launched, watcher armed; it also files r60. The coordinator says no
+further full round is needed after this batch: I verify by its three readings and the lint, then deliver (P-11).
+New owner question queued: looped-warning. WAITING on: preddoc6.
