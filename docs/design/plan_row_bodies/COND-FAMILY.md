@@ -5797,3 +5797,41 @@ Greedy + lazy: the same answers. Lazy + lazy: SEARCHED `x123` `12`@1, FIND-ALL [
 `5`@7]: within the first group (one digit plus one digit) the results `10`..`18` are tried before `0`..`9`, by
 "class-order: longest". Extending the bounded answers to the unbounded program is the manager's reasoning, not a
 run; an unbounded greedy operand has no first count to start from, so its order exists only as a limit.
+
+### 2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform
+tags: core/arrays/class-positions core/arrays/class-order core/arrays/lift lib/builtin/enumerate/class-index lib/structural/sort
+
+HIS WORDS, whole (marked by him "Discussion"):
+
+"I'm looking for the simplest rules as though this was against fn() and not +.
+Discussion:
+So for \d + \d we defined the order by: pseudocode:
+  loop a = enumerate(\d):
+      loop b = enumerate(\d):
+           rx |= fn(a, b)
+Enumerate() will output in written or for classes descending class value order.  lazy/greedy loops start
+shortest/ longest respectively
+
+What this does is create a universal rule set for math operators. What it doesn't do, unfortunately, is produce a
+consistent longest to shortest result on pure digits.
+Perhaps then we need a lengthSorted() transform."
+
+Read for the intended words (phone): "in written or for classes" = "in written ORDER, or for classes".
+
+Class: DISCUSSION (his word), carrying a PROPOSAL, not a ruling: (1) the aim: "the simplest rules as though this
+was against fn() and not +"; (2) the rule: a lift is the nested loop over each operand's `enumerate`, the first
+operand outermost, each result OR-ed on in loop order (this is array-lift's "first operand slowest", ruled
+2026-11-18, stated as a loop); (3) `enumerate` gives written order; for a class, DESCENDING class value order; a
+lazy loop starts shortest, a greedy one longest (enumerate's priority order, already the piece's); (4) his own
+OBSERVATION of the cost: no consistent longest-to-shortest on pure digits; (5) an IDEA: a `lengthSorted()`
+transform (the library already has the under-construction piece lib/structural/sort, "`sort(alts, by = "length",
+order = "desc")`": the same thing under another placeholder name).
+
+If ruled it would REPLACE "class-order: longest" (2026-11-19) by the descending class order, and would answer
+class-positions and class-index (the order of a class in `enumerate`'s array) with the one rule.
+
+RUN (`$PCREC_TMPDIR/scratch/pred/nestloop.py`, the loop built mechanically from his pseudocode, compared with
+longest-first, the first match at the start of every result): `\d + 1` (order `10 9 8 .. 1`): 0 of 10 differ;
+`\d + \d` (`18 17 .. 0`): 0 of 19; `\d * \d` (`81 72 63 ..`): 0 of 37; `10 - \d` (order `1 2 .. 9 10`): 1 of 10:
+on `10` the loop reports `1`, longest-first `10` (WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL
+`10 7 3` [`1`@0, `7`@3, `3`@5]). Told to him the same turn.
