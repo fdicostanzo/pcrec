@@ -528,17 +528,26 @@ static const struct {
     { rn_content,   PCREC_WALK_ARM(TIE) },
 };
 
-/* The better of two runs by `rn_choice_rows`, first row that decides and that
- * the walk does not restore; none deciding, the replaced form (`rn_first`,
- * the default): `a`. */
-static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
+/* THE RUN CHOICE's SIGN for `a` against `b`: > 0 keeps `a`, < 0 keeps `b`,
+ * from the first row of `rn_choice_rows` that decides and that the walk does
+ * not restore; none deciding, the replaced form (`rn_first`, the default):
+ * `a`. The one comparator of the run choice, split out of `rn_better` so a
+ * caller that keeps more than the run beside each candidate (TOP's extents,
+ * span_arms §14.3 D-4, L3 remodel 5) asks the same choice. */
+static int rn_cmp(const RbWalk *w, const RbRun *a, const RbRun *b)
 {
     size_t i;
     int c;
     RB_ROW_SCAN(i, w, rn_choice_rows,
-                (c = rn_choice_rows[i].row(w, &a, &b)) != 0);
-    if (i == RB_ROWS(rn_choice_rows)) c = rn_first(w, &a, &b);
-    return c >= 0 ? a : b;
+                (c = rn_choice_rows[i].row(w, a, b)) != 0);
+    if (i == RB_ROWS(rn_choice_rows)) c = rn_first(w, a, b);
+    return c;
+}
+
+/* The better of two runs by the run choice (`rn_cmp`): `a` unless it keeps `b`. */
+static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
+{
+    return rn_cmp(w, &a, &b) >= 0 ? a : b;
 }
 
 static const void *rb_pd_join(Ctx *cx, const void *a, const void *b);
