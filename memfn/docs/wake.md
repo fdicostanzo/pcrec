@@ -1,6 +1,6 @@
 # memfn kit — wake-up brief
 
-Rewritten 2026-11-19 18:25 by the kit session (pcrec-memfn) IN FLIGHT. Main (pcrec-main) is up.
+Updated 2026-11-20 03:50 by the kit session IN FLIGHT (rewritten 18:25 11-19). Main (pcrec-main) is up.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). Ledger/journal branch: worktrees/memfn on lane/memfn-k1108. No heartbeat (Frank: none
@@ -14,12 +14,9 @@ needed; no lanes in flight). Waiting list worktrees/.mgr/waiting_on.kit. Verdict
 Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows main cleared. Never merge to main.
 
 ## CURRENT STATE (18:25 11-19)
-- TONIGHT (Frank-cleared): 708 kit-fcards-blockspan RUNNING since 01:02 (re-queued after a pruned-tree RED; tree rebuilt at 33fec79b3) (5,284 cells, ~4.8 h), then 709 kit-fcards-blockspace (420 cells,
-  ~15 min; refuses to start at/after 07:00). Scratch: /var/tmp/pcrec-pcrec/scratch/memfn/blockspan/ (spike.py,
-  decision_rule.md sha 21c941b4a719af0f, report.md; space/blockspace.py). The rule: REPLACES = no LOSS over non-N/A cells AND
-  a WIN majority in the span-dense subset S; read from swar-loop and avx2-loop against H64 / H64@on. Morning: report decision.md
-  + candidate N to Frank and main. If REPLACES: a design + critic round on "loops over blocks + tail" replacing the inline head;
-  NO build without Frank's go (D77 trigger candidate only).
+- BLOCK FORMS DONE: 708 + 709 GREEN; verdict LOSS at both layers (frozen rule): blocks do NOT replace the inline form. Analysis
+  scratch/memfn/blockanalysis/report.md; ideas.md 707 entry evaluated. dig/hi losses = walk confound; post-data SIMD table 0 LOSS (biased).
+  OWED: Frank's answer on a confirming run (walk fixed, SIMD table declared before data). No build. fcards-night unpinned, prunable.
 - R-46 (dense-hit pre-check FORM reply): SLIPPED from 17:00 11-19. New target 14:00 11-20 (main agreed). Design lane 08:00 after
   708/709, then a critic round. Scope (main, from Frank): dense = 2 or more hits per block, stop there; super-dense (hits within
   N) is not a target; read 709's N first.
