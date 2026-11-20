@@ -54,3 +54,4 @@ the model reading \K/\G as zero-width, which the build gate should confirm.
 
 ## STATE AT HANDOFF
 Instrument and evidence committed on lane/l3cen. Rulings file absent (no entries to apply). No owed runs.
+OWED: none
