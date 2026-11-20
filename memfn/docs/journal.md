@@ -4348,3 +4348,6 @@ Report scratch/memfn/blockanalysis/report.md; the ideas.md 707 entry gets its ev
 
 ## 2026-11-20 — D3-FLOOR re-pin OKed (main lane l1pins)
 Diff scratch/l1pins/d3_census_diff.txt. Floors: byte/c-default 78->89, byte/c-vm 174->184, utf8/c-default 119->129, utf8/c-vm 247->257. Gained 11 per cell: 8 by L1 lookaround facts joining the required run, 3 by new corpus rows (C identical). The lost [a-z]+(?<=a)@x narrows to the pure byte run 614078, so it correctly leaves; it was never in byte/c-default (landmark walk). Kit OK sent; no kit change.
+
+## 2026-11-20 09:59 — owed notes delivered to main (lane owednotes, stopped)
+scratch/memfn/owednotes/note1_set1.md (set 1 INCONCLUSIVE-AT-NOISE, libc gate 3.1 %; conclusive with a passing night or a gate ruling), note2_calibration.md (loaded box: 1-1.6 % from quiet, +0.5-1.3 % bias; usable above ~3 % plus bias), note3_ceiling.md (h*=64 is the grid edge; no head above 64 timed; W[64]=1.0 partly by construction). Main was asked: a re-run night or a gate ruling for set 1.
