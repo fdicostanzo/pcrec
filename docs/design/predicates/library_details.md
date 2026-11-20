@@ -5,33 +5,44 @@ is `docs/design/plan_row_bodies/COND-FAMILY.md`; a skeleton entry's source is `p
 
 ## lib/builtin/enumerate — Enumerate
 was: core/arrays/enumerate (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
-slugs:
+was: lib/builtin/enumerate/class-index (2026-11-19, merged: the owner's ruling class-positions answered class-index, "descending class value order"; lane predloop)
+was: core/arrays/class-index (2026-11-19, merged with lib/builtin/enumerate/class-index, its later tag: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
+slugs: class-index
 rulings:
+- 2026-11-19 "class-positions: nested loops, classes descending" (record: "2026-11-19 OWNER RULING — class-positions: nested loops, classes descending"); it answers class-index: a class's members in the array are in descending value order
+- 2026-11-19 "Enumerate() will output in written or for classes descending class value order." (record: "2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform"); "in written or" read as "in written ORDER, or" (phone); the proposal the ruling adopted
 - 2026-11-14 "I love it. Enumerate go." (record: "2026-11-14 RULINGS on the predx gaps"); design adoption, with its rules: the budget, PCRE priority order, a built-in
 rejected:
-- widest first (one more copy first everywhere) as the order — by review r52 D (TABLES-4): it parts from PCRE priority on `(?:a|ab){1,2}` (SEARCHED `aba` `aba`@0 against `a`@0); preddoc3b sabotage s8 caught.
-- codepoint order for a class's members in a lift — by owner ruling — class-order (core/arrays/class-order).
+- widest first (one more copy first everywhere) as the order — by review r52 D (TABLES-4): it parts from PCRE priority on `(?:a|ab){1,2}` (SEARCHED `aba` `aba`@0 against `a`@0); preddoc3b sabotage s8 caught; predloop sabotage s10 caught.
+- codepoint (ascending) order for a class's members in a lift — by owner ruling — class-order, then class-positions (descending) (core/arrays/class-order).
+- class-index (a), codepoint ascending for the ARRAY and the class order for a lift (`enumerate(/[-\/.]/)` [`-`, `.`, `/`]) — by owner ruling — class-positions: one order, descending, for the array and every lift.
+- class-index (b), the array's ascending codepoint order everywhere (`/${enumerate(/\d/) + 1}/` SEARCHED `x10` `1`@1) — by owner ruling — class-positions; run: the loop gives `10`@1 (predloop EXenumclass, sabotage s11 caught).
+- class-index (c), the longer result first, ties by codepoint — by owner ruling — class-positions: nothing is sorted by length.
 readings:
-- the enumerator's ORDER equals PCRE's own pattern on re-joining — SUPPORTED (preddoc3b EXenum: 0 / 0 / 0 of 63 texts; PART PR of predspec281 on libpcre2).
+- the enumerator's ORDER equals PCRE's own pattern on re-joining — SUPPORTED (preddoc3b EXenum: 0 / 0 / 0 of 63 texts; PART PR of predspec281 on libpcre2); re-run with classes descending, the ruled example has no class and is unchanged (predloop EXenum: 0 / 0 / 0 of 63 texts).
 - an interior lookaround or a backreference in the argument: NOT STATED (PART PR of predspec281).
-evidence: preddoc3b EXenum.
+- (the manager's (e) of class-positions) a class inside a larger rx enumerates as nested positions in text order, each class descending: `enumerate(/[ab]\d/)` is [`b9`, .., `b0`, `a9`, .., `a0`] — SUPPORTED as rule-as-code (predloop EXpos, sabotage s12 caught); the letters' order rests on class-value.
+- `enumerate(/\d/) + 1` = `\d + 1`, the array and the lift one order (follows from the ruling) — SUPPORTED (predloop EXenumclass: 0 / 0 / 0 by RB).
+evidence: preddoc3b EXenum, EXclassindex; PART CO of predspec291 (P29-10); predloop EXenum, EXenumclass, EXpos.
 history:
 - 2026-11-14: "Enumerate go"; the draft §5.5. 2026-11-18: construction-line made it the line of single-value functions. 2026-11-19: class-order replaced the codepoint lean for lifts.
 - 2026-11-19 (lane preddoc3b): converted from `?`.
 - 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-7): `see: lib/builtin/enumerate/class-index core/arrays/class-order` added: the body depends on the forward piece class-index, and the pointer was lost in the move from the core (r59 READ-17's eleventh pair).
+- 2026-11-19 (lane predloop): class-positions. Status date 2026-11-14 to 2026-11-19; statement before: "`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order; an edge assertion in it, or an infinite or over-budget rx, is a compile error." The bullet "A class's members have no PCRE order; for a lift see core/arrays/class-order, for the entries' own order lib/builtin/enumerate/class-index." replaced by the descending order; class-index merged here; `needs:` gains core/arrays/class-order, `see:` names class-value.
+- the piece lib/builtin/enumerate/class-index (open class-index; merged here by lane predloop), its history: new with class-order; re-worded by review r54 P29-10; moved to the library by lane preddoc4. Its statement: "The order of a class's members in `enumerate`'s array (`.index`, `each`, a lift of `enumerate(X)`) is a question for the owner." Its candidates: (a) codepoint order for the ARRAY, the class order for a lift; (b) the array's codepoint order everywhere; (c) the longer result first, ties by codepoint. Its readings line: "(a) is the draft's reading (rev 29's narrowing of the codepoint lean, not the ruling's words) — the record says the lean "is replaced", with no carve-out; (a) vs (b) 0 / 250 / 570 of 3,906; (a) vs (c) 0 / 0 / 0 (PART CO of predspec291)." Its printed lines: (a) `/${enumerate(/\d/) + 1}/` WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (kept, now the ruled answer); (b) SEARCHED `x10` `1`@1, FIND-ALL [`1`@0, `3`@3, `1`@5, `1`@6] (rejected).
 
-## lib/builtin/enumerate/class-index — The order of a class in enumerate
-was: core/arrays/class-index (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
-slugs: class-index
+## lib/builtin/enumerate/class-value — The value of a class's members
+slugs: class-value
 rulings:
+- 2026-11-19 "class-positions: nested loops, classes descending" (record: "2026-11-19 OWNER RULING — class-positions: nested loops, classes descending"); NOT ANSWERED by it: what "class value" is for a class that is not digits (asked in the same turn, left open)
 rejected:
 readings:
-- (a) is the draft's reading (rev 29's narrowing of the codepoint lean, not the ruling's words) — the record says the lean "is replaced", with no carve-out; (a) vs (b) 0 / 250 / 570 of 3,906; (a) vs (c) 0 / 0 / 0 (PART CO of predspec291).
-evidence: preddoc3b EXclassindex; PART CO of predspec291 (P29-10).
+- (the manager's (a) of class-positions) the codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top — UNTESTED as a rule (an owner question); the enumerator under that reading prints [`c`, `b`, `a`] (predloop EXpos).
+- no match shows the order (one-character members never compete; no defined function on letters gives competing results) — a reading, UNTESTED beyond `\w + 1` = `\d + 1` (predloop EXwplus: the letters give nothing).
+evidence: predloop EXpos, EXwplus.
 history:
-- 2026-11-19: new with class-order; re-worded by review r54 P29-10.
-- 2026-11-19 (lane preddoc4): moved to the library, section `lib/builtin` (the owner's direction of 2026-11-19, R-1).
+- 2026-11-19 (lane predloop): a new open sub-piece, the question the ruling left open.
 
 ## lib/builtin/import — import
 was: core/modules/import (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
@@ -608,11 +619,13 @@ rejected:
 readings:
 - built for an rx `enumerate` accepts, under construction otherwise (construction-line, core/values/functions): `left(/foobar|bazqux/, 2)` = `fo|ba` — SUPPORTED (preddoc3c PART LF).
 - string-level manipulation of any rx (`left(/\d+/, 2)`) is parked/ideas/string-level-rx.
+- its order is enumerate's, a class descending, nothing sorted by length: `left(/\d{1,2}?/, 2)` equals `\d{1,2}?` itself (this lane's reading of class-positions) — SUPPORTED (predloop EXleft: 0 / 0 / 0 of 3,906 against `\d{1,2}?`; its results sorted longest first differ, 0 / 3,104 / 3,616; sabotage s14 caught).
 - its kin `right` and `mid`: the owner's question "What about string operators like left, right, mid?" (record bullet STRING OPERATIONS, 2026-11-13) and the draft R.1.16 T9's "and kin" name them; neither is defined; their FILTER names are rejected under lib/sets/prefix-in — named, not defined (no piece of their own: they would be pieces of this kind once one is wanted).
-evidence: preddoc3c PART LF; the draft R.1.16 T9.
+evidence: preddoc3c PART LF; the draft R.1.16 T9; predloop EXleft.
 history:
 - 2026-11-18: match-is-rx; construction-line.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-19 (lane predloop): the order bullet and its example added (class-positions).
 
 ## lib/strings/strlen — strlen
 slugs:
@@ -798,11 +811,14 @@ history:
 ## lib/structural/sort — sort, unique
 slugs:
 rulings:
+- 2026-11-19 (class: IDEA) "Perhaps then we need a lengthSorted() transform." (record: "2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform"); his "Perhaps", an IDEA, not ruled (the ruling's entry lists it under NOT RULED)
 rejected:
 readings:
 - SORT IS SEMANTICS: the record's lean ("`sort(alts, by: length, desc)` exists only as the deliberate leftmost-longest choice. `unique` keeps the first occurrence", record: "2026-11-14 — literals from a file"); the draft §7 — a lean, UNTESTED.
+- his `lengthSorted()` is this piece's `sort(alts, by = "length", order = "desc")` under another placeholder name (the record's note under his proposal) — UNTESTED (an idea: nothing is defined).
 evidence:
 history:
+- 2026-11-19 (lane predloop): his idea `lengthSorted()` noted on the piece (class-positions); nothing defined.
 - 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
 
 ## lib/structural/sorted — sorted, distinct

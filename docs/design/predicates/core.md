@@ -681,9 +681,9 @@ by: core/principles/nothing-outside-domain
 see: core/arrays/lift core/operators/precedence core/diagnostics/warnings lib/strings/join
 - Binary `+ - * %`: addition, subtraction, multiplication, remainder, on numerals; a constant expression folds
   (`2025 + 1` is `2026`). Their levels: core/operators/precedence.
-- An operand of many strings (an array, a class, any rx `enumerate` accepts) applies member by member, over the
-  product of the operands (core/arrays/lift); a member outside the domain gives nothing and the others their
-  results: `\w + 1` is `\d + 1` (a reading, run).
+- An operand of many strings (an array, a class, any rx `enumerate` accepts) applies member by member, in the
+  nested loop over the operands' `enumerate` (core/arrays/lift); a member outside the domain gives nothing and the
+  others their results: `\w + 1` is `\d + 1` (a reading, run).
 - `% 0` and a negative result are outside the domain: nothing, at compile time as at match time. There is no
   signed numeral, and a written `% 0` is no compile error of its own.
 - A result known at compile time to be nothing draws a warning, never an error (core/diagnostics/warnings).
@@ -699,7 +699,7 @@ see: lib/builtin/enumerate core/arrays/lift lib/strings/left lib/strings/strlen 
   On a read it runs at match time on the read's one string.
 - On any other rx the first clause that applies decides (the order is a reading):
   1. an assertion looking outside the operand (`left(/(?<=x)ab/, 1)`, `\b\d+\b`): `enumerate`'s compile error;
-  2. an infinite or over-budget rx (`left(/\d+/, 2)`): under construction;
+  2. an infinite or over-budget rx (`left(/\d+/, 2)`, `\d+? + \d+`): under construction;
   3. a constant, a read, an array, a finite rx `enumerate` accepts: built, the function applied to each string.
 - `left` (lib/strings/left) is an image function; a preimage filter is another name (lib/sets/prefix-in).
 - An expression over reads and constants alone (`($y | "9") + 1`) is applied member by member at match time, in
@@ -708,13 +708,16 @@ WHOLE `fo` HOLDS / SEARCHED `xba fo` `ba`@1 / FIND-ALL `fo ba fofo` [`fo`@0, `ba
 
 ## Arrays   [core/arrays]
 
-### Arrays are alternations; operations lift   [core/arrays/lift]   ruled 2026-11-18
-An array is an alternation of values; an operation on arrays applies to every combination of members, the first operand slowest, values in the order given.
+### Arrays are alternations; operations lift   [core/arrays/lift]   ruled 2026-11-19
+An array is an alternation; an operation on operands of many strings is the nested loop over each operand's `enumerate`, the first outermost, each result the next alternative.
 needs: core/values/one-type
 by: core/principles/general-rules
-see: core/holes/count parked/ideas/cartesian
-- A single value is a one-member array, so `n + 1` over an array needs no rule of its own:
-  `[2, 4] + [1, 10]` is `[3, 12, 5, 14]`.
+see: core/holes/count parked/ideas/cartesian lib/builtin/enumerate core/arrays/class-order
+- The owner's loop, for `\d + \d`: "loop a = enumerate(\d): loop b = enumerate(\d): rx |= fn(a, b)". The same
+  rule for every function, "as though this was against fn() and not +".
+- An array enumerates in the order given, so the first operand varies slowest; a single value is a one-member
+  array, so `n + 1` over an array needs no rule of its own: `[2, 4] + [1, 10]` is `[3, 12, 5, 14]`.
+- Nothing is sorted by length; a class's order is core/arrays/class-order.
 - An array mentioned twice is independent per mention (a reading).
 - A repeated result is harmless: as alternatives the first occurrence wins (a reading, run).
 - The rule is about arrays the user writes and the rxs `enumerate` accepts, not about the match-time array of a
@@ -723,26 +726,31 @@ see: core/holes/count parked/ideas/cartesian
 WHOLE `12` HOLDS, `4` FAILS / SEARCHED `x14` `14`@1 / FIND-ALL `3 12 5 14` [`3`@0, `12`@2, `5`@5, `14`@7] (`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`)
 
 ### The order of a class's results   [core/arrays/class-order]   ruled 2026-11-19
-A class's members have no order; where a lift gives results of different lengths from one class position, the longer is tried first.
+A class enumerates in descending class value order, so a lift over it runs the nested loop in that order; nothing is sorted by length.
 needs: core/arrays/lift
-see: lib/builtin/enumerate core/arrays/class-positions
-- A class is one position taking one character from a set (`\d`, `[90]`, `\w`, `.`). Alternations, quantifiers and
-  arrays the user writes keep their own order; nothing else is sorted.
-- No tie rule is needed: two different strings of one length cannot both match at one position (a reading, run).
-- Nesting, the alternation first: `(1|9) + \d` keeps the alternation's order and sorts each choice's class
-  results (a reading, run). The class first, or two class positions: core/arrays/class-positions.
-- Equal strings from different members are one result: `\d * 0` is `0` (a reading, run).
-WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:10|1|2|3|4|5|6|7|8|9)`)
-
-### Two class positions in one lift   [core/arrays/class-positions]   open class-positions 2026-11-19
-The order of a lift's results with two class positions (`\d + \d`), a class under a lazy quantifier, or a class first beside an alternation is a question for the owner.
-needs: core/arrays/class-order
-- The ruled words cover one class position; the readings part where a lift holds more. Three cases, each with
-  its candidates in the details entry: two classes (C1 the lift as one position, longest first; C2 the first
-  class slowest, ascending; C3 = C1's answers), a lazy quantifier (Q1, Q2), the class first (A, B).
-- No candidate is the reading; it is asked.
-WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (C1, `/${\d + \d}/`: the lift's results longest first)
-WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (C2: the first class slowest, ascending)
+see: lib/builtin/enumerate lib/builtin/enumerate/class-value lib/structural/sort
+- A class is one position taking one character from a set (`\d`, `[90]`, `\w`, `.`); `enumerate` gives its
+  members in "descending class value order". For digits the value is the digit; for any other class it is open
+  (lib/builtin/enumerate/class-value).
+- Alternations and arrays keep their written order; "lazy/greedy loops start shortest/ longest respectively".
+- Each position is one loop of the nest, outer to inner in text order, the first operand outermost: two classes
+  (`\d + \d`), a class under a quantifier (`\d{1,2}? + 1`), the class first (`\d + (1|9)`) or the alternation
+  first (`(1|9) + \d`) need no rule of their own (readings, run; the lines below).
+- A shorter result may come first: `10 - \d` tries `1` before `10`, the owner's "no consistent longest to
+  shortest result"; a length order is only an idea (lib/structural/sort).
+- Equal strings from different members are one result, the first occurrence standing: `\d * 0` is `0` (a
+  reading, run).
+- Inside a quantifier the order is `enumerate`'s priority order, one more copy (lazy: one fewer) at each choice
+  point, so a lazy + greedy lift need not report the longest (a reading, run, bounded); unbounded operands
+  (`\d+? + \d+`) are under construction (core/values/functions).
+WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:10|9|8|7|6|5|4|3|2|1)`)
+WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 7 3` [`1`@0, `7`@3, `3`@5] (`/${10 - \d}/` is `(?:1|2|3|4|5|6|7|8|9|10)`)
+WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (`/${\d + \d}/` is `(?:18|17|..|1|0)`)
+WHOLE `100` HOLDS / SEARCHED `x100` `10`@1 / FIND-ALL `100 10 9` [`10`@0, `10`@4, `9`@7] (`/${\d{1,2}? + 1}/` begins `(?:10|100|99|98|..`)
+WHOLE `11` HOLDS / SEARCHED `x11` `11`@1 / FIND-ALL `11 1 18` [`11`@0, `1`@3, `18`@5] (`/${\d + (1|9)}/` begins `(?:10|18|9|17|..`)
+WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${(1|9) + \d}/` begins `(?:10|9|8|7|..`)
+WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `12`@1 / FIND-ALL `123 7 45` [`12`@0, `3`@2, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}?}/`)
+WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `12`@1 / FIND-ALL `123 7 45` [`12`@0, `3`@2, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}}/`)
 
 ## Holes   [core/holes]
 
