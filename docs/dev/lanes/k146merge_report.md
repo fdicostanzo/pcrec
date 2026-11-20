@@ -19,4 +19,5 @@ docs/dev/full_suite_ledger.md: landing line, class minor, commit c84be20a4.
 CI on the last pushed sha (origin/main): completed success (run 44814250941). Push performed after this report's commit; see the handback message.
 
 ## STATE AT HANDOFF
-Merged and recorded locally; nothing owed. Worktrees and branches not pruned (the manager does that).
+OWED: none
+Merged and recorded; unrelated main-tree dirt (artifact_size_log.tsv, other lanes' untracked deliver files, land1101.done) left alone per the brief. Worktrees and branches not pruned (the manager does that).
