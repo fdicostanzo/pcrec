@@ -988,12 +988,13 @@ rejected:
 - a signed numeral for a negative result — by owner ruling — number-edges; run: `5--5` HOLDS under it (preddoc3b sabotage s4; PART NE of predspec281).
 - `% 0` a compile error of its own (a constant divisor) — by owner ruling — number-edges.
 readings:
-- a member list (array, class) is filtered member by member: `\w + 1` = `\d + 1` (the manager's (d)) — SUPPORTED (PART PL of predspec29: 0 / 0 / 0 of 3,906; preddoc3b EXplus).
+- a member list (array, class) is filtered member by member: `\w + 1` = `\d + 1` (the manager's (d)) — SUPPORTED (PART PL of predspec29: 0 / 0 / 0 of 3,906; preddoc3b EXplus); re-run under the nested loop, classes descending: both `(?:10|9|8|7|6|5|4|3|2|1)`, 0 / 0 / 0 (predloop EXwplus, sabotage s7 caught).
 - "(joining is the sequence operator)" (the manager's (c) of plus-operands) — NOT SUPPORTED as complete: negated-class-hole's `join(c)` is a joining that is not the sequence operator; the piece names both.
 - his first sentence (a literal `"a" + "b"` an ERROR once operand types exist) is a DIRECTION, "if that works", not in force (the draft's reading) — UNTESTED; ideas parked/ideas/restricted-parameter, parked/ideas/class-base.
-evidence: preddoc3b EXplus, EXedges; PARTS PL, NE of predspec29, predspec291.
+evidence: preddoc3b EXplus, EXedges; PARTS PL, NE of predspec29, predspec291; predloop EXplus, EXwplus.
 history:
 - 2026-11-18: array-lift's arrays; value-is-pattern part 1.
+- 2026-11-19 (lane predloop): class-positions; the many-strings bullet said "applies member by member, over the product of the operands (core/arrays/lift)", now "in the nested loop over the operands' `enumerate`".
 - 2026-11-19: his restriction idea `m(g & /\d+/)`, "`+` is for numbers only", the base idea, plus-operands, number-edges; the warning's one trigger is the manager's call (core/diagnostics/warnings).
 
 ## core/values/functions — Single-value functions
@@ -1010,15 +1011,19 @@ readings:
 - the three clauses in order (the assertion error first) (THE MANAGER'S CALL 1, review r52 B, answer-free) — SUPPORTED as rule-as-code (PART TT of predspec281).
 - read compounds applied per member (the draft's reading, review r52 K) — SUPPORTED (PART RC of predspec281: equal to the compile-time copies in libpcre2, 0 / 0 / 0).
 - characters or bytes for `left` (his "(Byte ideally)") — UNTESTED; parked/ideas/string-level-rx.
+- `\d+? + \d+` (his test case under class-positions) is clause 2, under construction (the manager's answer (1), told to him; record: "2026-11-19 OWNER, discussing class-positions: "What about \d+? + \d+"") — SUPPORTED as rule-as-code (both operands infinite: the evidence model's enumerator refuses an unbounded repeat; predloop).
 evidence: preddoc3b EXleft; PARTS CN, TT, RC of predspec28, predspec281.
 history:
 - 2026-11-18: match-is-rx (4), read-is-constant (4), the clarification, construction-line; `length($y)` written `strlen($y)` (THE MANAGER'S CALL 6, A26).
 - 2026-11-19 (lane preddoc6, review r60 COLD-6): the statement said "accepts an rx exactly where `enumerate` accepts it ... any other rx is under construction", against its own clause 1 (an outward-looking assertion is enumerate's compile error, not under construction); rewritten to state the clauses as the rule. Statement before: "A single-value function accepts an rx exactly where `enumerate` accepts it, applied to each enumerated string in its order; any other rx is under construction."
+- 2026-11-19 (lane predloop): `\d+? + \d+` added to clause 2's examples (class-positions).
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the bullet restating `left`'s definition ("`left(rx, n)` is the IMAGE (the first n characters of each string) ...") replaced by a pointer: the definition is lib/strings/left's (every call-form name is a library piece).
 
 ## core/arrays/lift — Arrays are alternations; operations lift
 slugs: array-lift lift-order macro-arguments
 rulings:
+- 2026-11-19 "class-positions: nested loops, classes descending" (record: "2026-11-19 OWNER RULING — class-positions: nested loops, classes descending"); adopting his proposal of the entry below as the lift's rule
+- 2026-11-19 "I'm looking for the simplest rules as though this was against fn() and not +." (record: "2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform"); marked by him "Discussion", a PROPOSAL, with the loop "loop a = enumerate(\d): loop b = enumerate(\d): rx |= fn(a, b)"; ruled by the entry above
 - 2026-11-18 "array-lift: I meant, alternations as you suggested. It's consistent that alternations combine on the product and multiply the rx and produce more alternations" (record: "2026-11-18 OWNER RULING — array-lift: operations on arrays combine on the product")
 - 2026-11-18 "What is needed is a consistent, general rule about it and not something specific to adding to arrays for example. What happens to array + array ?" (record: "2026-11-18 OWNER on value-is-pattern: one ruling, two leans, one idea"); a LEAN, settled by array-lift
 - 2026-11-16 (class: DIRECTION) "macro-arguments: the general path is that an array of something is that something. i feel like this is creating a bunch of mechanism for very specific use. what otherwise is an array of macros?" (record: "2026-11-16 OWNER DIRECTION — arrays of macros: the general path, no special mechanism"); NO to the special mechanism; an array of macros is a macro, nothing more
@@ -1031,36 +1036,41 @@ readings:
 - the rule is about arrays the user writes, not a label's settings — UNTESTED (a scope statement).
 - one array mentioned twice is independent per mention (the draft, review r47 D1) — SUPPORTED (preddoc2 PART RB).
 - lift-order is enumerate's order (the manager's m2 of construction-line) — SUPPORTED (PART CN of predspec28); for a class, class-order.
-evidence: preddoc3b EXlift; PART AL of predspec26.
+- the nested loop over arrays the user writes is array-lift's product, first operand slowest (the record's note on his proposal: "this is array-lift's "first operand slowest", ruled 2026-11-18, stated as a loop") — SUPPORTED (predloop EXlift: `[2, 4] + [1, 10]` is `(?:3|12|5|14)`, the line unchanged; RB 0 / 0 / 0 against array-lift's list; sabotage s8 caught).
+evidence: preddoc3b EXlift; PART AL of predspec26; predloop EXlift, RB.
 history:
 - 2026-11-18: array-lift; the draft R.1.14 (ARRAYS UNDER OPERATIONS), AL1/AL2.
+- 2026-11-19 (lane predloop): class-positions restated the rule as the owner's nested loop over each operand's `enumerate`, for every function. Statement before (ruled 2026-11-18): "An array is an alternation of values; an operation on arrays applies to every combination of members, the first operand slowest, values in the order given." The loop and "as though this was against fn()" bullets added; "Nothing is sorted by length" added as a pointer to class-order.
 
 ## core/arrays/class-order — The order of a class's results
-slugs: class-order
+was: core/arrays/class-positions (2026-11-19, merged: the owner's ruling class-positions answered it; its three shapes are this piece's run examples)
+slugs: class-order class-positions
 rulings:
-- 2026-11-19 "class-order: longest" (record: "2026-11-19 OWNER RULING — class-order")
-- 2026-11-19 "can we sort by length, longest first?" (record: "2026-11-19 OWNER, discussing class-order: longest first"); a question carrying the idea
+- 2026-11-19 "class-positions: nested loops, classes descending" (record: "2026-11-19 OWNER RULING — class-positions: nested loops, classes descending")
+- 2026-11-19 "Enumerate() will output in written or for classes descending class value order.  lazy/greedy loops start shortest/ longest respectively" (record: "2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform"); "in written or" read as "in written ORDER, or" (phone); the proposal the ruling adopted
+- 2026-11-19 "What it doesn't do, unfortunately, is produce a consistent longest to shortest result on pure digits." (record: "2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform"); his own statement of the cost, shown `10 - \d` on `10`
+- 2026-11-19 "class-positions: is your lean then: written order, in text order then classes by length, in text order" (record: "2026-11-19 OWNER, discussing class-positions: his restatement of the manager's lean"); a question back, discussion
+- 2026-11-19 "What about \d+? + \d+" (record: "2026-11-19 OWNER, discussing class-positions: "What about \d+? + \d+""); a test case, discussion
+- 2026-11-19 "class-order: longest" (record: "2026-11-19 OWNER RULING — class-order"); REPLACED the same day by class-positions (history)
+- 2026-11-19 "can we sort by length, longest first?" (record: "2026-11-19 OWNER, discussing class-order: longest first"); a question carrying the idea; replaced with it
 rejected:
-- codepoint order (the draft's lean, §5.5) — by owner ruling — class-order; run: SEARCHED `x10` `1`@1 against `10`@1 (0 / 250 / 570 of 3,906, PART CO of predspec291; preddoc3b sabotage s9 caught).
-- "longest everywhere" (sorting alternations and arrays too) — by owner ruling — the class-only version was the one he took.
+- longest first (class-order as ruled earlier the same day: "where a lift gives results of different lengths from one class position, the LONGER is tried first") — by owner ruling — class-positions, after he was shown the cost; run: `/${10 - \d}/` SEARCHED `x10` `1`@1 under the loop against `10`@1 longest first, 0 / 250 / 570 of 3,906 (predloop EXsub, RB; sabotage s2 caught).
+- ascending codepoint order (the draft's lean, §5.5) — by owner ruling — class-order, then class-positions ("descending"); run: `/${\d + 1}/` SEARCHED `x10` ascending `1`@1 against `10`@1 (PART CO of predspec291; predloop EXclassorder, sabotage s1 caught).
+- "longest everywhere" (sorting alternations and arrays too) — by owner ruling — class-order took the class-only version; class-positions sorts nothing by length.
+- class-positions' candidates C1 (the lift as one position, longest first), C2 (the first class slowest, ascending), C3 (the first descending, longest first within), Q1 and Q2 (a lazy quantifier), A and B (the class first) — by owner ruling — class-positions: none is the nested loop. Against the loop (predloop RB, 3,906 texts): C1 on `\d + \d` 0 / 0 / 0; Q1 on `\d{1,2}? + 1` 0 / 2,250 / 2,790; A on `\d + (1|9)` 0 / 750 / 1,404 (the loop gives B's answers, `11`@1 on `x11`, by another rule); C2's ascending first class is the rejected ascending order.
 readings:
-- no tie rule (the manager's 8) — SUPPORTED (20 shuffles, 0 differing; PART CO of predspec29).
-- nesting with the alternation first (the manager's 9) — SUPPORTED (0 / 750 / 1,404 against sorting across).
-- equal strings are one result (the manager's 11) — SUPPORTED (PART CO of predspec29).
-evidence: preddoc3b EXclassorder; PART CO of predspec29, predspec291.
+- (the manager's (a)) "class value" for a non-digit class is the codepoint — UNTESTED: not a run question; asked as lib/builtin/enumerate/class-value.
+- (the manager's (b)) every printed example keeps its answers except where a subtraction-like function puts a shorter result first — SUPPORTED for the ruled and readings' examples (predloop RB, 0 / 0 / 0 each: `\d + 1`, `\w + 1`, `enumerate(/\d/) + 1`, `\d * 0`, `(1|9) + \d`, `\d + \d`, `\d * \d`, `[2, 4] + [1, 10]`); `10 - \d` differs (0 / 250 / 570, never printed before); the OPEN candidates A and Q1 differ too (above).
+- (the manager's (c)) the bounded lazy + lazy lift `\d{1,3}? + \d{1,3}?` reports `12` on SEARCHED `x123` — SUPPORTED; lazy + greedy `\d{1,3}? + \d{1,3}` reports `123` — NOT SUPPORTED: it reports `12`@1 (FIND-ALL `123 7 45` [`12`@0, `3`@2, `7`@4, `45`@6]), because inside the greedy operand enumerate's priority order tries `3` (first digit 3) before `114` (first digit 1); `123`@1 comes only from a COUNT-GROUPED order (every 3-digit string before any 2-digit one), which is not enumerate's ruled order (predloop EXbounded, the rival printed; sabotage s13 caught). Greedy + lazy and greedy + greedy report `123`@1.
+- (the manager's (d)) nesting, the alternation first, and equal strings are one result (the first occurrence standing) hold under the loop — SUPPORTED: `(1|9) + \d` 0 / 0 / 0 against the old nested list (predloop EXnest, sabotage s5 caught); `\d * 0` is `0` (EXeq, sabotage s6 caught). `\d + (1|9)` is now `10|18|9|17|..` (SEARCHED `x11` `11`@1); `\d{1,2}? + 1` is `10|100|99|98|..` (SEARCHED `x100` `10`@1).
+- (the manager's (e)) is enumerate's: lib/builtin/enumerate.
+- the order inside a quantifier is enumerate's priority order, depth first (this lane's reading of "lazy/greedy loops start shortest/ longest respectively" with enumerate's ruled PRIORITY ORDER) — SUPPORTED as rule-as-code (predloop EXlazy, EXbounded; sabotage s4 caught); an owner question (lane predloop's report): it decides `\d{1,3}? + \d{1,3}`.
+- no tie rule (the manager's 8 under longest first) — moot: the order is total.
+evidence: predloop EXclassorder, EXsub, EXtwo, EXlazy, EXfirst, EXnest, EXeq, EXmul, EXbounded, RB; earlier preddoc3b EXclassorder, EXclasspos; PART CO of predspec29, predspec291 (P29-9).
 history:
-- 2026-11-19: his question, "what do you mean class only?", then the ruling.
-
-## core/arrays/class-positions — Two class positions in one lift
-slugs: class-positions
-rulings:
-rejected:
-readings:
-- C1 vs C2 0 / 776 / 1,816, C1 vs C3 0 of 3,906; Q1 vs Q2 0 / 2,797 / 3,230; A vs B 0 / 750 / 1,404 (PART CO of predspec29, predspec291) — the candidates part, so asked.
-evidence: preddoc3b EXclasspos (C1, C2 re-run); PART CO of predspec291 (P29-9).
-history:
-- 2026-11-19: the manager's reading (c) of class-order; widened by review r54 P29-9 with the class first.
-- 2026-11-19 (lane preddoc4): the long candidate runs left the base for this entry, the base keeping the question and the candidates' names (review r59 READ-18 stage 1). As they stood: "Two classes, `\d + \d`: C1, the lift as one position, its results longest first; C2, the first class slowest in ascending order, the second's results longest first within each; C3, the first descending (= C1's answers). A lazy quantifier, `\d{1,2}? + 1`: Q1, the quantifier's order kept, each count's results longest first (SEARCHED `x100` `10`@1); Q2, the quantified class as one position (`100`@1). The greedy `\d{1,2} + 1` agrees. The class first, `\d + (1|9)`: A, the alternation's order outermost, each choice's class results longest first (SEARCHED `x11` `1`@1); B, the class position's results longest first across the lift (`11`@1)."
+- 2026-11-19: his question, "what do you mean class only?", then the ruling class-order: longest.
+- 2026-11-19 (lane predloop): REPLACED by class-positions the same day. Statement before (ruled): "A class's members have no order; where a lift gives results of different lengths from one class position, the longer is tried first." Bullets before: "Alternations, quantifiers and arrays the user writes keep their own order; nothing else is sorted."; "No tie rule is needed: two different strings of one length cannot both match at one position (a reading, run)."; "Nesting, the alternation first: `(1|9) + \d` keeps the alternation's order and sorts each choice's class results (a reading, run)."; the example's expansion was `(?:10|1|2|3|4|5|6|7|8|9)` (its modes unchanged).
+- the piece core/arrays/class-positions (open class-positions, merged here by lane predloop), its history: the manager's reading (c) of class-order; widened by review r54 P29-9 with the class first; lane preddoc4 moved its long candidate runs to the details entry (review r59 READ-18 stage 1). Its statement: "The order of a lift's results with two class positions (`\d + \d`), a class under a lazy quantifier, or a class first beside an alternation is a question for the owner." Its printed lines: C1 `/${\d + \d}/` WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (the loop's answers); C2 SEARCHED `x13` `1`@1, FIND-ALL [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6]. Its readings line: C1 vs C2 0 / 776 / 1,816, C1 vs C3 0 of 3,906; Q1 vs Q2 0 / 2,797 / 3,230; A vs B 0 / 750 / 1,404 (PART CO of predspec29, predspec291). The candidates as they stood: "Two classes, `\d + \d`: C1, the lift as one position, its results longest first; C2, the first class slowest in ascending order, the second's results longest first within each; C3, the first descending (= C1's answers). A lazy quantifier, `\d{1,2}? + 1`: Q1, the quantifier's order kept, each count's results longest first (SEARCHED `x100` `10`@1); Q2, the quantified class as one position (`100`@1). The greedy `\d{1,2} + 1` agrees. The class first, `\d + (1|9)`: A, the alternation's order outermost, each choice's class results longest first (SEARCHED `x11` `1`@1); B, the class position's results longest first across the lift (`11`@1)."
 
 ## core/holes/insert — One insert, its meaning by position
 slugs:
