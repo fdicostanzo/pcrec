@@ -41,5 +41,7 @@ Binaries: main = worktree build of 6134c8e8a; K146 = `git archive lane/k146land`
 
 Not done: KR-D's peak RSS was not re-measured (an unwatched run was declined); the K entry cites the survey's figures. Raw output: /var/tmp/pcrec-pcrec/scratch/growfile/recheck.txt.
 
-STATE AT HANDOFF: committed on lane/growfile; rulings file empty; nothing owed.
+## STATE AT HANDOFF
+
+Committed on lane/growfile; rulings file empty; nothing owed.
 OWED: none
