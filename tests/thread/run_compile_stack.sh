@@ -178,6 +178,7 @@ starnest;;(?:;a;)*;;all;0
 optnest;;(a;;)?;;all;0
 optnest-vm;;(?:a;;)?;;all;2
 look;;(?=;a;);;all;0
+lookrep;;(?=a|b;c;)*+;;all;0
 lookbehind;;(?<=;a;);;all;0
 atomic;;(?>;a;);;all;0
 inlineopt;;(?i:;a;);;all;0
