@@ -9395,7 +9395,8 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
  * so an arm inlined here would put its locals (and every other inlined arm's,
  * the union) on every level of every nest. Marked out of line, the arms are
  * tail calls and a level costs only the frames on its own path; `vm_cost`'s
- * arms follow the same rule. Arms that recurse and are NOT marked:
+ * arms follow the same rule but are CALLS, not tail calls (each returns its
+ * `Cost` by value). Arms that recurse and are NOT marked:
  * `vm_splice`, `vm_call` and `vm_callout` stay inlined here (nothing measured
  * makes their frames matter, D77); `vm_ctx`, `vm_bref` and `vm_var` are marked
  * without recursing, for the uniformity of the table. A new arm that recurses
