@@ -55,3 +55,5 @@ note records it.
 Branch lane/k146land committed (re-pin commit 89d83c400 plus this report). Validation OWED: the two queued
 items above. If pins.log shows any number different from the table, that is a delta the added cells do not
 explain: stop and report. No rulings file entries (none existed).
+
+OWED: none from this lane (the two queued runs above are the queue's; their verdicts are read by main).
