@@ -528,3 +528,14 @@ each brief; drill a scope-WIDENING fold against every privacy/closing rule; name
 states a rule at one polarity; run every cited evidence script at the fold's tip.
 LESSON (mine): three of my hand folds widened a scope in my own words ("whole surrounding rx", "inside view")
 beyond his; quote, do not widen. WAITING on: predfix61; Frank (class-value / the four new questions).
+
+## 2026-11-19 (23:00) — predfix61 merged; r61 filed; DELIVERED to main (P-14)
+
+predfix61 DONE (lanecheck rc 0; hand-back checked against the report), merged, stopped: lint 5,242 / 0, plan-lint
+clean, predfix61 model 15 / 0 and predasc model 24 / 0 re-run on my branch; no printed answer changed. r61 filed
+RULED (docs/dev/reviews/2026-11-19-r61-predfold1119.md + directory; index line in reviews/NOTES.md, as r60's).
+Four new open pieces: flat-read-outside, bare-nested-scope, array-vs-passes, class-hole-order (lift-order tag).
+Not applied (mine to weigh): does label.unset also fire on an always-unset read; a note in predloop's superseded
+model. His follow-up on flags (inherit before or after the intersection) recorded as a question, flags-before-and,
+unanswered; the ruling stands as folded (before). P-14 written; main told.
+WAITING on: main's merge; Frank (flags-before-and, class-value, the four new questions, then group-truth...).
