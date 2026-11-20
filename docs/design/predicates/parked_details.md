@@ -741,9 +741,10 @@ history:
         "name the group"; so is a number on a group whose name is shared. `0` is always the entire match. Added by
         lane predspec26.
     25. A NAME IS PRIVATE WHEN IT STARTS WITH `_`, AND `[_ = A]` HIDES ALL OF A's NAMES (export-rule, ruled
-        2026-11-18). Outside a binding a reader sees only its own public labels and its parts' public labels by path:
-        with `date := [y = year] SEQ "-" SEQ [m = month]`, write `m.v`, not `v`. Spellings are placeholders. Added by
-        lane predspec26.
+        2026-11-18). Outside a binding a part's public labels pass through, a hole and the sequence operator alike
+        (hole-export, 2026-11-19); a flat `v` outside `date := [y = year] SEQ "-" SEQ [m = month]` reads the last
+        mention, the month's (the manager's reading; open: flat-read-outside): write `m.v` to say which. Spellings
+        are placeholders. Added by lane predspec26; restated by lane predfix61.
     26. A PART CANNOT REFER TO A NAME IT DOES NOT DEFINE (free-name, ruled 2026-11-18: "Catastrophic. The rx should
         export the group."). `B := /\k<h>/` used after a part that sets h is a compile error, not a reference to that
         part's h. Added by lane predspec26.
@@ -759,6 +760,7 @@ history:
   - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
     documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane predfix61, review r61 F-B, REACH-6): item 25 taught the rule hole-export revised ("a bare `v` an error"); its second sentence until then, verbatim: "Outside a binding a reader sees only its own public labels and its parts' public labels by path: with `date := [y = year] SEQ "-" SEQ [m = month]`, write `m.v`, not `v`." Restated under the reading that stands today (core/labels/export/flat-read-outside).
 
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
@@ -858,6 +860,7 @@ history:
   - SOURCE: COND-FAMILY.md, "OWNER RULING — product-order", 2026-11-18. TRIGGER: the next revision's hole-position
     table (it must say which positions take an implicit product), or the first library needing a product of parts.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-15): the trigger noted half met by the ruled lift (class-positions' nested loop).
 
 ## parked/ideas/count-filter — A count given as a filter over all numbers
 slugs: 

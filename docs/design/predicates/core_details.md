@@ -752,13 +752,14 @@ rulings:
 rejected:
 - a "pass begins" reset rule — by owner ruling — pass-start-read (keep the previous pass's value before the group).
 - `$x` "as standard pcre" (pass-list-read's literal reading) — by owner ruling — the `$x` ruling: `$x` reads the label.
-- a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — withdrawn by the manager (the draft §R.2); the question is open (core/diagnostics/looped-compare/still-wanted).
+- a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — by owner ruling — looped-warning: "I agree remove warning." (core/diagnostics/looped-compare).
 readings:
 evidence: preddoc3a_model.py PSR (the draft's PART PS line; printed answers reproduced) and PSR2 (WHOLE equals "the items are non-decreasing" on 1,365 texts over `139;`); sabotage s12 caught.
 history:
 - the draft R.1.7; 2026-11-17 pass-start-read and the `$x` ruling.
 - 2026-11-16 looped-compare ("looped-compare: warn", record "2026-11-16 RULING — a compare over looped labels warns"): the warning on a compare over looped labels was MOVED by joint-loops (3) onto a `|` of conditions over labels that can repeat (record "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); after after-loop-read (core/labels/labels-vs-captures) a bare condition reads the last pass's own label and the draft withdrew `compare.looped` with looped-warning (§R.2, rejected above). The slug is homed here with that rejected line (lane preddoc5).
 - 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1): the line above read a MANAGER's withdrawal as the end of an OWNER-ruled warning. The warning stands as joint-loops (3) left it (core/diagnostics/looped-compare, both rulings cited there); whether it is still wanted is open (core/diagnostics/looped-compare/still-wanted). The slugs looped-compare and looped-warning moved to those two pieces.
+- 2026-11-19 (lane predfix61, review r61 F-I, RULING-2, STALE-2): the rejected item until then: "a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — withdrawn by the manager (the draft §R.2); the question is open (core/diagnostics/looped-compare/still-wanted)." The question was answered (looped-warning) and the tag merged.
 
 ## core/conditions/defaults — Defaults and absent labels
 slugs: default-set unset-component drop-mark default-value match-context zero-pass-empty domain-scope mark-narrows mark-in-none mark-range mark-under-not one-witness default-reaches-dollar default-scope mark-design
@@ -884,6 +885,7 @@ history:
 - 2026-11-19 (lane preddoc3b): converted from the skeleton; the example is the ruled witness.
 - 2026-11-19 (lane preddoc4): "a read of a name the rx it is written in does not define is a compile error" restated as the one scope rule for `$` (a reading, tied to open bare-condition-labels): read literally it made the core's own examples (`$x` in an `&` operand, `${$y + 1}`) errors (review r59 READ-7).
 - 2026-11-19 (lane preddoc5): the slug pass-list-read moved here from core/conditions/pass-start-read: it asks what `$h` reads after the pattern, which this piece states (review r59 COMPA-13).
+- 2026-11-19 (lane predfix61, review r61 F-E, REACH-2): "the surrounding rx's labels as they stand at the hole" reached a private `_v` of an inserted binding and the labels behind `[_ = A]`; now "every label visible in the surrounding rx (core/labels/export)", and which rx, for a hole in an inserted literal or an `&` operand, a reading (core/holes/bare-condition/nested-scope). The sentence until then, verbatim: "A `$` read resolves in the namespace at the point it is written: in an `&` operand, the chain's labels; in a value hole, the surrounding rx's labels as they stand at the hole." Status date 2026-11-18 to 2026-11-19.
 
 ## core/values/one-type — One type: a match is an rx
 slugs: match-is-rx read-is-constant value-is-pattern hole-member-kind
@@ -1017,7 +1019,7 @@ readings:
 - a member list (array, class) is filtered member by member: `\w + 1` = `\d + 1` (the manager's (d)) — SUPPORTED (PART PL of predspec29: 0 / 0 / 0 of 3,906; preddoc3b EXplus); re-run under the nested loop, classes descending: both `(?:10|9|8|7|6|5|4|3|2|1)`, 0 / 0 / 0 (predloop EXwplus, sabotage s7 caught). Re-run with classes ascending (quantified-order): both `(?:1|2|3|4|5|6|7|8|9|10)`, 0 / 0 / 0 (predasc EXwplus, sabotage s7 caught).
 - "(joining is the sequence operator)" (the manager's (c) of plus-operands) — NOT SUPPORTED as complete: negated-class-hole's `join(c)` is a joining that is not the sequence operator; the piece names both.
 - his first sentence (a literal `"a" + "b"` an ERROR once operand types exist) is a DIRECTION, "if that works", not in force (the draft's reading) — UNTESTED; ideas parked/ideas/restricted-parameter, parked/ideas/class-base.
-evidence: preddoc3b EXplus, EXedges; PARTS PL, NE of predspec29, predspec291; predloop EXplus, EXwplus; predasc EXplus, EXwplus.
+evidence: preddoc3b EXplus, EXedges; PARTS PL, NE of predspec29, predspec291; predloop (superseded by predasc: predloop's model asserts the retired descending order and is red at the tip by design) EXplus, EXwplus; predasc EXplus, EXwplus.
 history:
 - 2026-11-18: array-lift's arrays; value-is-pattern part 1.
 - 2026-11-19 (lane predloop): class-positions; the many-strings bullet said "applies member by member, over the product of the operands (core/arrays/lift)", now "in the nested loop over the operands' `enumerate`".
@@ -1064,11 +1066,12 @@ readings:
 - one array mentioned twice is independent per mention (the draft, review r47 D1) — SUPPORTED (preddoc2 PART RB).
 - lift-order is enumerate's order (the manager's m2 of construction-line) — SUPPORTED (PART CN of predspec28); for a class, class-order.
 - the nested loop over arrays the user writes is array-lift's product, first operand slowest (the record's note on his proposal: "this is array-lift's "first operand slowest", ruled 2026-11-18, stated as a loop") — SUPPORTED (predloop EXlift: `[2, 4] + [1, 10]` is `(?:3|12|5|14)`, the line unchanged; RB 0 / 0 / 0 against array-lift's list; sabotage s8 caught).
-evidence: preddoc3b EXlift; PART AL of predspec26; predloop EXlift, RB; predasc EXlift, OLD.
+evidence: preddoc3b EXlift; PART AL of predspec26; predloop (superseded by predasc: predloop's model asserts the retired descending order and is red at the tip by design) EXlift, RB; predasc EXlift, OLD.
 history:
 - 2026-11-18: array-lift; the draft R.1.14 (ARRAYS UNDER OPERATIONS), AL1/AL2.
 - 2026-11-19 (lane predloop): class-positions restated the rule as the owner's nested loop over each operand's `enumerate`, for every function. Statement before (ruled 2026-11-18): "An array is an alternation of values; an operation on arrays applies to every combination of members, the first operand slowest, values in the order given." The loop and "as though this was against fn()" bullets added; "Nothing is sorted by length" added as a pointer to class-order.
 - 2026-11-19 (lane predasc): quantified-order. Bullet before: "Nothing is sorted by length; a class's order is core/arrays/class-order." Now "Nothing is sorted unless the user sorts (lib/structural/sort); ...". The example line unchanged (predasc EXlift, OLD).
+- 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-11): the lift "for every function" read literally lifts `join(c)` member by member; the bullet gains the manager's reading that only a parameter needing a SINGLE operand lifts (core/values/one-type's properties). Its words until then: "The same rule for every function, "as though this was against fn() and not +"."
 
 ## core/arrays/class-order — The order of a class's results
 was: core/arrays/class-positions (2026-11-19, merged: the owner's ruling class-positions answered it; its three shapes are this piece's run examples)
@@ -1113,6 +1116,7 @@ history:
   - (the manager's (e)) is enumerate's: lib/builtin/enumerate.
   - the order inside a quantifier is enumerate's priority order, depth first (this lane's reading of "lazy/greedy loops start shortest/ longest respectively" with enumerate's ruled PRIORITY ORDER) — SUPPORTED as rule-as-code (predloop EXlazy, EXbounded; sabotage s4 caught); an owner question (lane predloop's report): it decides `\d{1,3}? + \d{1,3}`.
   - no tie rule (the manager's 8 under longest first) — moot: the order is total.
+- 2026-11-19 (lane predfix61, review r61 F-J, RUNOWN-7): the boundary bullet named no mode and was false on the first line's subject; until then: "`/\b${\d + 1}\b/` reports `10` (the second line below)." Now SEARCHED on `x10 10` `10`@4, on `x10` none (predfix61 FJB, sabotage s9 caught).
 
 ## core/holes/insert — One insert, its meaning by position
 slugs:
@@ -1148,6 +1152,7 @@ history:
 - 2026-11-17: hole-reading; the draft before it put "a hole's set" among the set positions with an edge-assertion error (the 2026-11-14 Q1 ruling, narrowed).
 - 2026-11-18: product-order (1) took the copy rule off pattern holes; the "keeping its own flags" clause went with hole-flags (core/holes/flags).
 - 2026-11-19 (lane preddoc4): the bullet on `anchored` in a hole left this piece; lib/search/anchored states it (review r59 PLACE-2 (d)).
+- 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-4): "in the values' order" points at the lift's loop (core/arrays/lift); no answer moves. Status date 2026-11-18 to 2026-11-19.
 
 ## core/holes/count — The count hole
 slugs: removal
@@ -1172,6 +1177,7 @@ evidence: preddoc1 EX-count, EX-count-zero; PART P of predspec26; PARTS RX4-RX5 
 history:
 - 2026-11-17: the count proposal and two kinds of hole; 2026-11-18 product-order scoped the product to COUNT holes, removal fixed the unit; revision 26.1 replaced "the pattern" by "the literal" (review r47 B9).
 - 2026-11-19 (lane preddoc4): the bullet on the copies' group kind: branch reset `(?|...)`, the draft's reading (its count-hole copies, R.1.14 / PART RX4-RX5); the library example now writes the same expansion (review r59 READ-16).
+- 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-4): "the order given" points at the lift's loop (core/arrays/lift) and a class's order (core/arrays/class-order); no answer moves. Status date 2026-11-18 to 2026-11-19.
 
 ## core/holes/name — The group-name hole
 slugs: name-hole
@@ -1199,6 +1205,7 @@ evidence: preddoc1 EX-class, PARTS R1, R5; otherholes.py, otherholes2.py (the re
 history:
 - 2026-11-18: the draft R.1.0 cell "OPEN ("Idk for others")" with the draft's reading "more characters"; revision 26.1 showed the two readings part for a member in a literal with a capture before (0 / 32 / 32 of 121, PART R47 B6 of predspec261).
 - 2026-11-19: other-holes ruled; predspec291 report sentence 4 lists the draft cells this replaces.
+- 2026-11-19 (lane predfix61, review r61 F-H, GENERAL-6): the bullet until then: "In practice, for a class that is not negated, the alternation collapses to one class: `[${c}]` is `[xy]`, in every mode, a capture before the class included (a reading, run)." Under a lift the collapse is falsified (c := [`9`, `0`], `[${c}] + 1`: the alternation gives `(?:10|1)`, one class `(?:1|10)`; SEARCHED `x10` `10`@1 against `1`@1; predfix61 FH, sabotage s8 caught); unlifted the two agree (0 / 0 / 0 of 1,365 texts). Qualified "for matching"; the order is asked (core/holes/class/lift-order).
 
 ## core/holes/class/two-holes — Two holes in one class
 slugs:
@@ -1209,6 +1216,17 @@ readings:
 evidence: preddoc1 EX-two-holes, PART R2.
 history:
 - 2026-11-19: the manager's reading (d) of the other-holes entry; not his words.
+- 2026-11-19 (lane predfix61, review r61 F-H): the statement until then: "Two holes in one class (`[${a}${b}]`, `[${lo}-${hi}]`) are the alternation over every combination, first hole slowest; for a class that is not negated the order is not observable." The order is observable under a lift (core/holes/class/lift-order).
+
+## core/holes/class/lift-order — The order of a class-member hole's values under a lift
+slugs: class-hole-order
+rulings:
+- 2026-11-19 "other holes: 1. classes should be alternations on the class like [x] | [y] like patterns. in practice, that means [xy]" (record: "2026-11-19 OWNER RULING — other-holes"); both halves of his sentence, read under a lift, are the two candidates
+rejected:
+readings:
+evidence: predfix61_model.py FH (lane predasc's enumerator and nested loop, copied; the two lines; unlifted 0 / 0 / 0 of 1,365).
+history:
+- 2026-11-19 (lane predfix61, review r61 F-H, GENERAL-6): a new open sub-piece at the manager's ruling of review r61.
 
 ## core/holes/negated-class — The negated class hole
 slugs: negated-class-hole
@@ -1860,21 +1878,22 @@ slugs: looped-compare looped-warning
 was: core/diagnostics/looped-compare/still-wanted (2026-11-19, merged: the question is answered here)
 rulings:
 - 2026-11-19 "looped-warning: I agree remove warning." (record: "2026-11-19 OWNER RULING — looped-warning: remove the warning"); it reverses the two rulings below
-- 2026-11-16 "looped-compare: warn" (record: "2026-11-16 RULING — a compare over looped labels warns"); the meaning stays, the compiler warns when a compared field can hold more than one occurrence, naming the fix (the compare inside the loop's item)
-- 2026-11-16 "I agree. Makes sense." (record: "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); part (3): "the looped warning's subject is now a `|` of conditions whose labels can repeat (each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint condition itself draws no such warning". The owner's LAST word on the warning; it MOVES the 00:09 warning, it does not retire it
+- 2026-11-16 "looped-compare: warn" (record: "2026-11-16 RULING — a compare over looped labels warns"); reversed by looped-warning (above); it had the compiler warn when a compared field can hold more than one occurrence
+- 2026-11-16 "I agree. Makes sense." (record: "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"); part (3): "the looped warning's subject is now a `|` of conditions whose labels can repeat (each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint condition itself draws no such warning"; it moved the 00:09 warning onto a hand `|` of conditions; part (3) reversed by looped-warning (above)
 rejected:
 - the warning on a hand-written `|` of conditions whose labels can repeat (`pcrec.compare.looped`; candidate (a)) — by owner ruling — looped-warning: its ground (each alternative checked over every pass) went with after-loop-read.
 - a warning on any bare condition reading a label set inside a loop (candidate (b); the manager's 2026-11-17 proposal) — by owner ruling — looped-warning.
 - the warning on a compare over the looped fields themselves (the 00:09 shape) — by owner ruling — joint-loops (3) moved its subject onto a hand-written `|` of conditions; the joint condition draws none.
 readings:
 - the name `compare.looped` (the draft §7.1, its name LEAN), read with the compiler's `pcrec.` prefix (the ADDENDUM of "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the manager's; the draft notes it looks like a compare-library path (review r43 E; the spellings review).
-- "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path", in the manager's MINE paragraph) and the draft's "[REV 25.1] WITHDRAWN to the next review with looped-warning" (§7.1, §R.2) — the MANAGER's words: a manager's withdrawal does not undo an owner ruling, so the warning stands as joint-loops (3) left it; whether it is still wanted is core/diagnostics/looped-compare/still-wanted (the predicate manager's ruling of 2026-11-19, lane preddoc6).
+- "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path", in the manager's MINE paragraph) and the draft's "[REV 25.1] WITHDRAWN to the next review with looped-warning" (§7.1, §R.2) — the MANAGER's words: a manager's withdrawal does not undo an owner ruling; the owner's own looped-warning ruling then removed the warning (above).
 evidence: the draft §8 caveat (6) and §7.1's rows (`9:30,10:00,` rejected by the per-label meaning; the warning's text LEAN).
 history:
 - 2026-11-16 00:09: looped-compare asked (keep, error or warn; lean warn), ruled "warn" (the draft rev 19, rulings R-2: `compare.looped`). 11:17: joint-loops (3) moved the warning onto a hand `|` of conditions.
 - 2026-11-17: after-loop-read made a bare condition read the last pass's own label; the manager sorted its OWN looped-warning proposal as `label.unset` and sent it and `compare.looped` "to the next review as told"; the draft rev 25 marked `compare.looped` WITHDRAWN with it (a manager's act on an owner-ruled warning).
 - 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1 / RECOUNT-7): a new piece. The documents before said only "withdrawn by the manager" (core/conditions/pass-start-read) and cited neither ruling as a `rulings:` item; lane preddoc5's claim table row for this entry ("SUPERSEDED by joint-loops (3), then after-loop-read (2323 ...)") was WRONG: record line 2323 is "2026-11-17 OWNER RULING — last-pass-default: regex", and neither entry supersedes the warning. The slug looped-compare moved here from core/conditions/pass-start-read.
 - 2026-11-19: the statement until the ruling: "A hand-written `|` of conditions whose labels can repeat draws a warning naming the joint condition as the per-item form; a joint condition itself draws none." The warnings table's row `pcrec.compare.looped` left with it.
+- 2026-11-19 (lane predfix61, review r61 F-I, RULING-1, STALE-1): live glosses of the reversed rule, verbatim until then: rulings item 2 "; the meaning stays, the compiler warns when a compared field can hold more than one occurrence, naming the fix (the compare inside the loop's item)"; rulings item 3 ". The owner's LAST word on the warning; it MOVES the 00:09 warning, it does not retire it"; readings item 2 "so the warning stands as joint-loops (3) left it; whether it is still wanted is core/diagnostics/looped-compare/still-wanted (the predicate manager's ruling of 2026-11-19, lane preddoc6)." F-J (RUNOWN-5): the joint-form equality qualified "where both are set" (100 of 100 pairs, predfix61 FJJ; with m unset the two part, 6 of 240 in review r61's count).
 - from the merged question piece (its readings and history, kept verbatim):
   - the manager's proposal, a compile WARNING on a bare condition over a looped label: "MINE, not ruled: a compile WARNING when a bare condition reads a looped label (proposed to him twice, not answered ...)" (record "2026-11-17 OWNER RULING — last-pass-default: regex"); "the manager's compile-error lean is withdrawn; a compile WARNING on a bare condition over a looped label remains the manager's proposal" (record "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label") — the MANAGER's words.
   - the manager's withdrawal: "the manager's looped-warning proposal is not a new warning but the existing `label.unset` (a condition reads a label that can be unset where it is read, with no default) seen under the one label rule" (record "2026-11-17 OWNER — a principle for warnings") and "`compare.looped` and the manager's withdrawn looped-warning go to the next review as told" (record "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path") — the MANAGER's words, quoted as the manager's; they withdraw the manager's own proposal and cannot retire the owner-ruled warning (core/diagnostics/looped-compare).
@@ -1898,6 +1917,7 @@ history:
 - 2026-11-19 (lane preddoc4): the slug every-pass-spelling moved to its open piece lib/counting/every-pass (review r59 PRIMITIVES-MISSING).
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the STRING FUNCTIONS row routes each name to its library piece (it named core/values/functions for `left`, `strlen`, `upperStart`, `prefix_in`); the EFFECTS rows name lib/builtin/warn, lib/builtin/options, lib/builtin/export (review r60 EFFECTS).
 - 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
+- 2026-11-19 (lane predfix61, review r61 F-L, RULING-9): a row for the sort and its shorthand for longest first (`longest_first(X)`, the manager's placeholder; his `lengthSorted()`). Status date 2026-11-17 to 2026-11-19.
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:

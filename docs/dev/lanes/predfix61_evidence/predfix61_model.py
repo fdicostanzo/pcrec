@@ -804,6 +804,12 @@ agree = sum(1 for h in range(10) for mm_ in range(10)
             if ((h > 5) or (h == 5 and mm_ >= 3)) == (eval("(h, mm_) %s (5, 3)" % op)))
 check("FJJ", agree == 100, "`(h: >5) | (h: 5, m: >=3)` against `((h, m): >= (5, 3))`, both set: %d of 100 agree" % agree)
 
+# ---------------------------------------------------------------- F-K: the caseless single character; class-base by codepoint
+cps = [chr(c) for c in range(0x3000) if re.fullmatch(r"(?i)k", chr(c))]
+hexs = "".join(sorted(chr(c) for c in range(128) if re.fullmatch(r"(?i)[\da-f]", chr(c))))
+check("FK", cps == ["K", "k", "\u212a"] and hexs == "0123456789ABCDEFabcdef",
+      "`(?i)k` takes %s ; `(?i)[\\da-f]` by codepoint %s" % ([hex(ord(c)) for c in cps], hexs))
+
 # ---------------------------------------------------------------- QUOTES: every owner sentence this lane quotes
 print("== QUOTES: the owner's words this lane quotes, verbatim in the record")
 QUOTED = [

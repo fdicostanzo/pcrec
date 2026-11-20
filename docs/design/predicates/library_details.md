@@ -22,7 +22,7 @@ readings:
 - an interior lookaround or a backreference in the argument: NOT STATED (PART PR of predspec281).
 - (the manager's (e) of class-positions, re-run under quantified-order) a class inside a larger rx enumerates as nested positions in text order, each class ascending: `enumerate(/[ab]\d/)` is [`a0`, .., `a9`, `b0`, .., `b9`] — SUPPORTED as rule-as-code (predasc EXpos, sabotage s12 caught); the letters' order rests on class-value.
 - `enumerate(/\d/) + 1` = `\d + 1`, the array and the lift one order (follows from the ruling) — SUPPORTED (predasc EXenumclass: both `(?:1|2|3|4|5|6|7|8|9|10)`; EXwplus 0 / 0 / 0); class-index's candidate (b) ("the array's ascending codepoint order everywhere", its line SEARCHED `x10` `1`@1) and (a) (ascending for the array) now coincide with the ruled order for digits (a reading).
-evidence: preddoc3b EXenum, EXclassindex; PART CO of predspec291 (P29-10); predloop EXenum, EXenumclass, EXpos; predasc EXenum, EXenumclass, EXpos, OLD.
+evidence: preddoc3b EXenum, EXclassindex; PART CO of predspec291 (P29-10); predloop (superseded by predasc: predloop's model asserts the retired descending order and is red at the tip by design) EXenum, EXenumclass, EXpos; predasc EXenum, EXenumclass, EXpos, OLD.
 history:
 - 2026-11-14: "Enumerate go"; the draft §5.5. 2026-11-18: construction-line made it the line of single-value functions. 2026-11-19: class-order replaced the codepoint lean for lifts.
 - 2026-11-19 (lane preddoc3b): converted from `?`.
@@ -37,13 +37,15 @@ slugs: class-value
 rulings:
 - 2026-11-19 "class-positions: nested loops, classes descending" (record: "2026-11-19 OWNER RULING — class-positions: nested loops, classes descending"); NOT ANSWERED by it: what "class value" is for a class that is not digits (asked in the same turn, left open)
 - 2026-11-19 "classes change to lowest to highest unless pcre priority order disagrees" (record: "2026-11-19 OWNER RULING — quantified-order: PCRE's priority order; and classes lowest to highest; sorting only when asked"); NOT ANSWERED by it either: what "lowest to highest" is for a class that is not digits
+- 2026-11-19 (class: DISCUSSION) "if i allowed letters, the + would define the order as digits followed by letters as per normal." (record: "2026-11-19 OWNER, discussing the base idea: numbers are strings over an ordered set of symbols"); with "a" + "b" meaningful "when those types are defined as part of an ordered set of symbols (ie. not as written)"; candidate (b)'s ground; not a ruling
 rejected:
 readings:
 - (the manager's (b) of quantified-order) ascending codepoint, so `enumerate(/[abc]/)` is [`a`, `b`, `c`] and `.index` counts from the bottom — UNTESTED as a rule (an owner question); the enumerator under that reading prints [`a`, `b`, `c`] (predasc EXpos, sabotage s12 caught).
-- no match shows the order (one-character members never compete; no defined function on letters gives competing results) — a reading, UNTESTED beyond `\w + 1` = `\d + 1` (predloop EXwplus: the letters give nothing).
-evidence: predloop EXpos, EXwplus; predasc EXpos, EXwplus, PCREORD.
+- no match shows the order (one-character members never compete; no defined function on letters gives competing results) — a reading, UNTESTED beyond `\w + 1` = `\d + 1` (predasc EXwplus: the letters give nothing; earlier predloop EXwplus).
+evidence: predloop (superseded by predasc: predloop's model asserts the retired descending order and is red at the tip by design) EXpos, EXwplus; predasc EXpos, EXwplus, PCREORD.
 history:
 - 2026-11-19 (lane predloop): a new open sub-piece, the question the ruling left open.
+- 2026-11-19 (lane predfix61, review r61 F-K: RULING-8, REACH-7, GENERAL-7): the statement until then: "What "lowest to highest" means for a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s order is a question for the owner." Its bullet until then: "The reading today (the manager's, not ruled): ascending codepoint, so `enumerate(/[abc]/)` is [`a`, `b`, `c`] and `.index` counts from the bottom (`a` is 1). The other candidate: an order the owner names." Now: his earlier discussion quoted, parked/ideas/class-base pointed at, the ordered symbol set named as candidate (b), and the caseless single character in the question (predfix61 FK: `(?i)k` takes `K`, `k`, U+212A; `(?i)[\da-f]` by codepoint `0..9A..Fa..f`).
 - 2026-11-19 (lane predasc): quantified-order turned the class order to lowest to highest; the question stays open, restated. Statement before: "What "class value" orders a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s descending order is a question for the owner." Bullet before: "The reading today (the manager's, not ruled): descending codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top (`c` is 1). The other candidate: an order the owner names." Reading before, verbatim: "(the manager's (a) of class-positions) the codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top — UNTESTED as a rule (an owner question); the enumerator under that reading prints [`c`, `b`, `a`] (predloop EXpos)."
 
 ## lib/builtin/import — import
@@ -623,7 +625,7 @@ readings:
 - string-level manipulation of any rx (`left(/\d+/, 2)`) is parked/ideas/string-level-rx.
 - its order is enumerate's, a class ascending, nothing sorted by length: `left(/\d{1,2}?/, 2)` equals `\d{1,2}?` itself (lane predloop's reading of class-positions, re-run under quantified-order) — SUPPORTED (predasc EXleft: 0 / 0 / 0 of 3,906 against `\d{1,2}?`; its results sorted longest first differ, 0 / 3,104 / 3,616; the line unchanged; sabotage s14 caught).
 - its kin `right` and `mid`: the owner's question "What about string operators like left, right, mid?" (record bullet STRING OPERATIONS, 2026-11-13) and the draft R.1.16 T9's "and kin" name them; neither is defined; their FILTER names are rejected under lib/sets/prefix-in — named, not defined (no piece of their own: they would be pieces of this kind once one is wanted).
-evidence: preddoc3c PART LF; the draft R.1.16 T9; predloop EXleft; predasc EXleft.
+evidence: preddoc3c PART LF; the draft R.1.16 T9; predloop (superseded by predasc: predloop's model asserts the retired descending order and is red at the tip by design) EXleft; predasc EXleft.
 history:
 - 2026-11-18: match-is-rx; construction-line.
 - 2026-11-19 (lane preddoc3c): converted.
@@ -783,6 +785,7 @@ history:
 - 2026-11-19 (lane preddoc4): the piece `lib/rx/optional-loop` deleted, its content moved here (review r59 READ-13).
 - 2026-11-19 (lane preddoc6, review r60 COLD-9): "The bodies, one per call form" marked a reading and pointed at the open question core/operators/bindings/call-forms (`rx.repeat(rx.digit, 3)` fits two bodies with different answers).
 - 2026-11-19 (lane preddoc6, review r60 RULING-9): the first `was:` line's reason read "the core holds primitives only" as a standing rule; rewritten: it was the rule of that morning, and the owner withdrew the designation the same day ("my "primitive" designation doesn't work", record "2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or not"); the reason today: every call-form name is a library piece.
+- 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-4): "first hole slowest" points at the lift's loop (core/arrays/lift); no answer moves. Status date 2026-11-17 to 2026-11-19.
 
 ## lib/structural/capture — capture
 slugs:
@@ -824,6 +827,7 @@ readings:
 - his `lengthSorted()` is this piece's `sort(alts, by = "length", order = "desc")` under another placeholder name (the record's note under his proposal) — UNTESTED (an idea: nothing is defined).
 evidence:
 history:
+- 2026-11-19 (lane predfix61, review r61 F-L: GENERAL-8, RULING-9): the statement until then: "`sort(alts, by = "length", order = "desc")` reorders an array's alternatives, only as the deliberate leftmost-longest choice; `unique` keeps each entry's first occurrence." ("only as" stood against his "good as the general purpose sort"; the record's 2026-11-14 lean stays above as a reading.) The reading "entries of equal length keeping their order" (the manager's, a stable sort) dropped: two different strings of one length never tie at one position, so it is not observable (review r61 RULING-9). `longest_first` and `lengthSorted()` added to core/spellings/placeholders.
 - 2026-11-19 (the manager, after lane predasc): the request bullet restated with his second sentence and the placeholder name `longest_first(X)`; before: "The owner's request, nothing named or defined: \"Need a terser sort function for common use.\" (a provided name shorter than this piece's call; its name is open)."
 - 2026-11-19 (lane predloop): his idea `lengthSorted()` noted on the piece (class-positions); nothing defined.
 - 2026-11-19 (lane predasc): quantified-order: his principle "Only solution is sorting output when needed." and his request for a terser sort function added as two bullets; nothing named or defined; status unchanged.

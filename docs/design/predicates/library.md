@@ -38,13 +38,17 @@ WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a
 WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
 
 ### The value of a class's members   [lib/builtin/enumerate/class-value]   open class-value 2026-11-19
-What "lowest to highest" means for a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s order is a question for the owner.
+What "lowest to highest" means for a one-character set position that is not digits (`[abc]`, `\w`, `.`, a caseless `(?i)k`) in `enumerate`'s order is a question for the owner.
 needs: lib/builtin/enumerate
+see: parked/ideas/class-base
 module: ?
 defined: ?
 - For digits the value is the digit; its codepoint order agrees.
-- The reading today (the manager's, not ruled): ascending codepoint, so `enumerate(/[abc]/)` is [`a`, `b`, `c`]
-  and `.index` counts from the bottom (`a` is 1). The other candidate: an order the owner names.
+- Candidates: (a) ascending codepoint (the manager's reading today, not ruled): `enumerate(/[abc]/)` is [`a`, `b`,
+  `c`] and `.index` counts from the bottom (`a` is 1); (b) the order of a declared ordered symbol set, as in the
+  owner's discussion of numbers over symbols: "digits followed by letters as per normal" and "(ie. not as written)"
+  (parked/ideas/class-base: `(?i)[\da-f]` by codepoint is `0..9A..Fa..f`; by value `A` and `a` tie).
+- PCRE orders no position that takes one character from a set: `(?i)k` takes `K`, `k` and U+212A; `\p{..}` too.
 - A class's members are one character each, so two never compete at one position: the order shows in the array
   and its `.index`, and in a lift only through a function whose results compete (a reading).
 modes: n/a (no defined function on letters gives competing results; the order is the array's)
@@ -587,7 +591,7 @@ defined: language
 - The names are placeholders.
 WHOLE `123` HOLDS, `12a` FAILS / SEARCHED `ab12` `12`@2 / FIND-ALL `1 23` [`1`@0, `23`@2] (`rx.digits` is `(?:(?:\d)){1,}`)
 
-### rx.repeat   [lib/rx/repeat]   ruled 2026-11-17
+### rx.repeat   [lib/rx/repeat]   ruled 2026-11-19
 One `repeat` construct does all counting (one argument exact, min and max a range, no maximum unbounded); it is a library definition over count holes.
 needs: core/patterns/quantifiers core/holes/count core/arrays/lift
 module: rx
@@ -596,8 +600,8 @@ defined: language
   core/operators/bindings/call-forms): `repeat(x, n) := /(?:${x}){${n}}/`; `repeat(x, min, max) :=
   /(?:${x}){${min},${max}}/`; `repeat(x, min) := /(?:${x}){${min},}/` ("no maximum" is a second body with the bound
   left out).
-- Several values make the count hole's copies: one copy per combination, first hole slowest, an illegal copy (min
-  above max) removed; one array mentioned twice is independent per mention (`rx.repeat(rx.digit, n, n + 1)`).
+- Several values make the count hole's copies: one copy per combination, first hole slowest (the lift's loop:
+  core/arrays/lift), an illegal copy (min above max) removed; one array mentioned twice is independent per mention (`rx.repeat(rx.digit, n, n + 1)`).
 - A labelled item, `rx.repeat([a = rx.digit], min = 1)`, is `(?:(?<a>\d))+`: a condition after it reads the last
   item; a condition inside the item is judged for every item.
 - Plurals are one-line definitions over it: `digits := rx.repeat(rx.digit, min = 1)` is `\d+`.
@@ -633,7 +637,7 @@ defined: native (compile-time tools over spelled arrays; no expression of the la
 modes: n/a (compile-time tools that build an rx from arrays)
 
 ### sort, unique   [lib/structural/sort]   under-construction 2026-11-19
-`sort(alts, by = "length", order = "desc")` reorders an array's alternatives, only as the deliberate leftmost-longest choice; `unique` keeps each entry's first occurrence.
+`sort(X, by = key, order = ..)` is the general sort: it reorders an array's alternatives by a key (`sort(alts, by = "length", order = "desc")`); `unique` keeps each entry's first occurrence.
 needs: core/patterns/alternation
 module: ?
 defined: ?
@@ -646,8 +650,7 @@ defined: ?
   the user sorts (core/arrays/class-order).
 - The owner's request: "Need a terser sort function for common use."; "a shorthand for sorting by longest so all
   those options don't have to be written out." The placeholder name (the manager's): `longest_first(X)`, to be
-  `sort(X, by = "length", order = "desc")` once `sort` is defined; entries of equal length keeping their order is
-  a reading.
+  `sort(X, by = "length", order = "desc")` once `sort` is defined.
 
 ### sorted, distinct   [lib/structural/sorted]   under-construction 2026-11-19
 `sorted` and `distinct` would take the ARRAY form of a read (the other passes, his `@x`); they are named, not defined.

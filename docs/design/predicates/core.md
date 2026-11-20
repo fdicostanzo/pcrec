@@ -604,7 +604,7 @@ WHOLE `7` HOLDS, `7x` FAILS / SEARCHED `7x 8` `8`@3 / FIND-ALL `1x 2 3x4` [`2`@3
 
 ## Values   [core/values]
 
-### Reading a label   [core/values/reads]   ruled 2026-11-18
+### Reading a label   [core/values/reads]   ruled 2026-11-19
 `$y` reads the label, everywhere, holes included; a read is a one-string rx known at match time.
 needs: core/labels/labels-vs-captures core/labels/backreferences core/conditions/pass-start-read
 see: core/holes/value core/diagnostics/dollar-form core/values/one-type core/holes/bare-condition/labels
@@ -749,7 +749,8 @@ needs: core/values/one-type
 by: core/principles/general-rules
 see: core/holes/count parked/ideas/cartesian lib/builtin/enumerate core/arrays/class-order
 - The owner's loop, for `\d + \d`: "loop a = enumerate(\d): loop b = enumerate(\d): rx |= fn(a, b)". The same
-  rule for every function, "as though this was against fn() and not +".
+  rule for every function, "as though this was against fn() and not +"; it lifts a parameter that needs its operand
+  SINGLE, not one that takes a FINITE or ANY operand whole, as `join`'s array (core/values/one-type; a reading).
 - An array enumerates in the order given, so the first operand varies slowest; a single value is a one-member
   array, so `n + 1` over an array needs no rule of its own: `[2, 4] + [1, 10]` is `[3, 12, 5, 14]`.
 - Nothing is sorted unless the user sorts (lib/structural/sort); a class's order is core/arrays/class-order.
@@ -779,7 +780,8 @@ see: lib/builtin/enumerate lib/builtin/enumerate/class-value lib/structural/sort
   `10 - \d` tries `10` first). A length order is the user's: "Only solution is sorting output when needed."
   (lib/structural/sort).
 - A boundary check reaches the whole number, the owner's "most numbers will use boundary checks to make sure
-  they match the whole subject number": `/\b${\d + 1}\b/` reports `10` (the second line below).
+  they match the whole subject number": `/\b${\d + 1}\b/` SEARCHED on `x10 10` reports `10`@4 and on `x10` none
+  (no boundary between `x` and `1`) (the second line below).
 - Equal strings from different members are one result, the first occurrence standing: `\d * 0` is `0` (a
   reading, run).
 - The bounded lifts below follow the same order; unbounded operands (`\d+? + \d+`) are under construction
@@ -816,7 +818,7 @@ A position with no row here is a compile error (a reading).
   as in PCRE (`{n,}` is the four characters).
 modes: n/a (the table of positions; each position's piece has its example)
 
-### The pattern hole   [core/holes/pattern]   ruled 2026-11-18
+### The pattern hole   [core/holes/pattern]   ruled 2026-11-19
 In a pattern position a hole is the inserted pattern as a whole in a non-capturing group, `(?:X)`, matched in place; several values are one alternation, no copies.
 needs: core/patterns/sequence core/filters/kinds
 by: core/principles/positions-own-rules
@@ -826,14 +828,15 @@ see: lib/search/anchored
   never hold beside its neighbour draws the can-never-match warning.
 - The hole and the sequence operator are one reading (pattern positions).
 - X must be an rx that can match: a filter-only rx (a complement) here is the compile error.
-- Several values, `${[a, b]}`: an ALTERNATION inside the one group, in the values' order; the literal is not copied.
+- Several values, `${[a, b]}`: an ALTERNATION inside the one group, in the values' order (the lift's loop:
+  core/arrays/lift); the literal is not copied.
   A member that is not a legal pattern makes the whole a compile error (a reading).
 - The inserted pattern keeps its own group numbering; a number other than `0` naming one of its groups from
   outside is refused (core/labels/numbers); `0` in the outer rx is the outer match so far
   (core/conditions/match-so-far).
 WHOLE `ac` FAILS, `abc` HOLDS / SEARCHED `bc` `c`@1 / FIND-ALL `c abc ac` [`c`@0, `abc`@2, `c`@7] (`/${/ab/}?c/`)
 
-### The count hole   [core/holes/count]   ruled 2026-11-18
+### The count hole   [core/holes/count]   ruled 2026-11-19
 A count hole takes values that produce counts; several values make one copy of the literal per combination, first hole slowest, an illegal copy removed whole.
 needs: core/arrays/lift
 see: lib/rx/repeat
@@ -841,7 +844,8 @@ by: core/principles/positions-own-rules
 - A member that is not a count (text, a negative number) is a compile error (a reading of "must"); a count is
   never converted to rx text. A count PCRE refuses as too large is a count whose copy is illegal (a reading).
 - Several values: ONE COPY OF THE LITERAL holding the holes per combination, the cartesian product over the count
-  holes, the first hole slowest, holes in written order, each hole's values in the order given.
+  holes, the first hole slowest, holes in written order, each hole's values in the order given (that order is
+  the lift's loop: core/arrays/lift, a class's core/arrays/class-order).
 - A combination that is not a legal pattern (minimum above maximum) removes the WHOLE COPY of the literal, not
   only the piece holding the hole; "legal" is this language's rules. Every copy removed: that literal never
   matches, with the can-never-match warning (a reading).
@@ -861,8 +865,9 @@ WHOLE `7x` HOLDS, `x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 8x` [`7x`@0, 
 Several values in a class-member hole are an alternation of the class, one class per value, as a pattern hole is an alternation: `[${c}]`, c := [x, y], is `[x] | [y]`.
 needs: core/holes/pattern core/arrays/lift
 by: core/principles/positions-own-rules
-- In practice, for a class that is not negated, the alternation collapses to one class: `[${c}]` is `[xy]`, in
-  every mode, a capture before the class included (a reading, run).
+- In practice, for a class that is not negated, the alternation collapses to one class for matching: `[${c}]`
+  is `[xy]` in every mode, a capture before the class included (a reading, run). Under a lift the order of the
+  values can show; which order stands is core/holes/class/lift-order.
 - The alternation is of the CLASS, not of the literal holding it: no copies, so it never reorders the rest of
   the pattern (a reading, run).
 - One value may hold several characters, each a member; a character special inside a class (`^` first, `-`,
@@ -870,9 +875,19 @@ by: core/principles/positions-own-rules
 WHOLE `ax` HOLDS, `ay` HOLDS, `aq` HOLDS, `ab` FAILS / SEARCHED `-ab ay` `ay`@4 / FIND-ALL `ax ab aq` [`ax`@0, `aq`@6] (`/a[${c}q]/`, c := [x, y])
 
 ### Two holes in one class   [core/holes/class/two-holes]   reading 2026-11-19
-Two holes in one class (`[${a}${b}]`, `[${lo}-${hi}]`) are the alternation over every combination, first hole slowest; for a class that is not negated the order is not observable.
+Two holes in one class (`[${a}${b}]`, `[${lo}-${hi}]`) are the alternation over every combination, first hole slowest; for a class that is not negated it matches as one class.
 needs: core/holes/class
+see: core/holes/class/lift-order
 WHOLE `ap` HOLDS, `ab` FAILS / SEARCHED `-ab aq` `aq`@4 / FIND-ALL `ax ab ap` [`ax`@0, `ap`@6] (`/a[${a}${b}]/`, a := [x, y], b := [p, q], is `a(?:[xp]|[xq]|[yp]|[yq])`, equal to `a[xypq]`)
+
+### The order of a class-member hole's values under a lift   [core/holes/class/lift-order]   open class-hole-order 2026-11-19
+Under a lift, are the values of a class-member hole taken in written order, as the alternation of one class per value, or as one class, lowest to highest?
+needs: core/holes/class core/arrays/class-order
+Unlifted, the two match alike (core/holes/class). Under a lift the alternation keeps the written order
+(core/arrays/class-order: alternations keep their written order) while one class runs lowest to highest.
+Candidates: (a) written order, the alternation of classes; (b) one ascending class.
+(a): WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 1 101` [`10`@0, `1`@3, `10`@5, `1`@7] (`/${[${c}] + 1}/`, c := [`9`, `0`]: the alternation `[9] | [0]`, `(?:10|1)`)
+(b): WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 1 101` [`1`@0, `1`@3, `1`@5, `1`@7] (the same with one class `[09]`: `(?:1|10)`)
 
 ### The negated class hole   [core/holes/negated-class]   ruled 2026-11-19
 Several values in `[^${c}]` stay an alternation of the class, one per value; "none of these" is written by joining the array into one value: `[^${join(c)}]`.
@@ -1357,13 +1372,13 @@ needs: core/values/tuples core/diagnostics/warnings core/labels/labels-vs-captur
 - A condition after the loop reads the last pass's own labels (core/labels/labels-vs-captures); every pass is
   written with the condition on the item (core/conditions/in-sequence).
 - `pcrec.label.unset` still fires where such a label can be unset at the read (core/diagnostics/warnings).
-- On the item the joint form says a dictionary-order test in one entry: `((h, m): >= (5, 3))` is
-  `(h: >5) | (h: 5, m: >=3)`.
+- On the item the joint form says a dictionary-order test in one entry: where both are set, `((h, m): >= (5, 3))`
+  is `(h: >5) | (h: 5, m: >=3)`.
 WHOLE `6:0,5:3,` HOLDS, `1:0,5:3,` FAILS / SEARCHED `1:0,5:3,6:0,` `5:3,6:0,`@4 / FIND-ALL `1:0,6:0, 5:3,1:0,` [`6:0,`@4, `5:3,`@9] (`/(?:${late},)+/`, late := `/(?<h>\d):(?<m>\d)/ & ((h, m): >= (5, 3))`)
 
 ## Spellings   [core/spellings]
 
-### Every placeholder spelling   [core/spellings/placeholders]   ruled 2026-11-17
+### Every placeholder spelling   [core/spellings/placeholders]   ruled 2026-11-19
 Every spelling in these documents is a placeholder, settled together in one spellings review; the table names each thing to spell and where its meaning is.
 - A spelling never changes a meaning already settled. The MEANINGS are in the pieces named.
 | the thing to spell (the placeholder here) | its meaning |
@@ -1373,6 +1388,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | ATOMIC (`atomic(...)`); the no-re-entry sequence (his `A :: B`); the skip-past verb (PCRE's `(*SKIP)`) | core/patterns/atomic, parked/ideas/atomic |
 | the RX parts (`rx.repeat`, `rx.digit`, the plurals) | lib/rx/repeat, lib/rx/classes |
 | the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, lib/counting/every-pass |
+| the SORT and its shorthand for longest first (`sort(...)`, `longest_first(X)`; his `lengthSorted()`) | lib/structural/sort |
 | the ARRAY FORM of a read (his `@x`), under a part label (his `x.@a`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/labels-vs-captures, core/values/reads |
 | the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
 | a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]` | core/labels/paths, core/labels/export |
