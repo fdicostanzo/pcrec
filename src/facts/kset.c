@@ -290,17 +290,20 @@ static bool pin_proved(const KsetWalk *o, const ReqRun *r, int k, int j)
 
 /* The pin of the stretch around run position `x` of `r` (an exact one) into
  * `*pin`, unpinned where none: the maximal exact stretch `[s0, e0)` holding
- * `x`, placed at every walk offset `ro` for its start; at each placement the
+ * `x` inside the run's consumed extent `[clo, chi)` (span_arms L3, D-6: a
+ * position inside a lookbehind is no consumed byte, so no pin claims it),
+ * placed at every walk offset `ro` for its start; at each placement the
  * pinned part is the LONGEST sub-stretch around `x` the walk proves
  * (`pin_proved`), and the pin is the longest over every placement, ties to
  * the smallest offset. Where the whole stretch is proved that is exactly the
  * whole-or-nothing pin (review r55 B), and it is never shorter. */
 static void pin_around(const KsetWalk *o, const ReqRun *r, int x, RunPin *pin)
 {
-    int s0, e0;
+    int s0, e0, clo, chi;
     *pin = (RunPin){ false, 0, 0, 0, 0 };
-    for (s0 = x; s0 > 0 && pcrec_run_byte(r, s0 - 1) >= 0; s0--) {}
-    for (e0 = x + 1; e0 < r->whole_len && pcrec_run_byte(r, e0) >= 0; e0++) {}
+    pcrec_run_cons(r, &clo, &chi);
+    for (s0 = x; s0 > clo && pcrec_run_byte(r, s0 - 1) >= 0; s0--) {}
+    for (e0 = x + 1; e0 < chi && pcrec_run_byte(r, e0) >= 0; e0++) {}
     if (e0 - s0 < 2) return;
     /* R-38 K38-2 (span_runs_sheet.md §4.2): the WHOLE run, CLIPPED per
        placement to the walk's reach, `l = min(e0 - s0, nwalk - ro)`; the
@@ -350,17 +353,24 @@ static void pin_around(const KsetWalk *o, const ReqRun *r, int x, RunPin *pin)
  * whole-or-nothing form pinned, its pick is still a candidate and still
  * wins (PICK is an argmin, so dropping losers keeps the winner) and its pin
  * is unchanged; a position the walk cannot prove no longer takes the pick
- * from one it can. */
+ * from one it can.
+ *
+ * ONLY THE CONSUMED EXTENT (span_arms §14.3 D-6, L3): the pick's candidates
+ * and the stretch lie inside `pcrec_run_cons`'s `[lo, hi)`, so a run that
+ * begins inside a lookbehind pins only bytes a match consumes (an empty
+ * extent pins nothing); the gen readers' widening (`walk_proves`' `d >= 0`
+ * refusal) keeps the stated span consumed too. */
 void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
                    RunPin *pin)
 {
     unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
-    int pos[PCREC_MAX_REQ_RUN_SCAN], nc = 0;
+    int pos[PCREC_MAX_REQ_RUN_SCAN], nc = 0, lo, hi;
     RunPin p;
 
     *pin = (RunPin){ false, 0, 0, 0, 0 };
     if (r->whole_len < 2) return;
-    for (int i = r->whole_len - 1; i >= 0; i--) {
+    pcrec_run_cons(r, &lo, &hi);
+    for (int i = hi - 1; i >= lo; i--) {
         int b = pcrec_run_byte(r, i);
         if (b < 0) continue;
         pin_around(o, r, i, &p);

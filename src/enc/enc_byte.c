@@ -441,5 +441,6 @@ const PcrecEnc pcrec_enc_backend_byte = {
     true,
     0u,   /* [UCP] implies no module */
     0xFFu, /* [UCP] U2 every code point is one byte */
-    sites_byte  /* [MEMFN] M7 the span compares' site data */
+    sites_byte, /* [MEMFN] M7 the span compares' site data */
+    1u          /* span_arms L3 (D-11): every character is one byte */
 };
