@@ -4443,3 +4443,6 @@ Main's two opus lanes run inline builds for 1-2 h. Main proposed deferring the t
 
 ### 2026-11-20 17:00 — blockconfirm delivered; lane bcq launched
 blockconfirm handed back (report /var/tmp/pcrec-pcrec/scratch/memfn/blockconfirm/report.md; it was a scratch-only lane) and was TaskStopped. RULE_SHA 60ca03823c8eeb26; marker 91f8de45...; check PASS (3,900 exes, 0 failing). Grid 4,200 cells, est 7,603 s. Walk identity: Hspk-inline == H64@on in 83/130; 43 differ in order or registers only, 4 in instruction count (inlining moves gcc's tie-breaks). Lane bcq (sonnet) adds the CPU-quiet control (ported from 711), sets the gates (STOP_AT 12:00 11-21, waits on kit-checkorder and kit-rampchunk) and amends the rule; due 18:45. A critic round follows.
+
+### 2026-11-20 — bcq delivered; critic round on 710 launched
+bcq delivered eb2de1a9d (report docs/dev/lanes/bcq_report.md on lane/memfn-bcq), lanecheck DONE, TaskStopped. 710 changes: the CPU-quiet control ported from 711; walk-control voids (INCONCLUSIVE-HARNESS) kept separate from noise voids; gates STOP_AT 12:00 11-21 with now+estimate refusal, waiting on kit-checkorder and kit-rampchunk; --deadline gives NOT-RUN and TRUNCATED. RULE_SHA d32a1474107714e2; check re-run PASS (new marker 42f433d3...). Estimate 8,033 s. Critic round crit-memfn-blockconfirm (opus coordinator) due 21:00.
