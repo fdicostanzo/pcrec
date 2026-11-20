@@ -5950,3 +5950,29 @@ The manager's proposal (a spelling, the manager's call, a placeholder for the sp
 to the set, not to the subject (core/modules/naming). The manager's reading, to test when `sort` is defined:
 entries of equal length keep their order (a stable sort), so the written order still decides among them. To be
 folded onto lib/structural/sort after lane predasc merges (that lane is editing the piece).
+
+### 2026-11-19 MANAGER — after lane predasc: quantified-order folded; two bounded answers told to the owner are CORRECTED (no owner words)
+tags: core/arrays/class-order lib/builtin/enumerate lib/structural/sort
+
+Lane predasc (opus; report `docs/dev/lanes/predasc_report.md`; evidence `docs/dev/lanes/predasc_evidence/`, 24
+checks, 26 plants caught; lint after the merge 5,088 / 0) folded "quantified-order: keep pcre priority order and
+classes change to lowest to highest": core/arrays/class-order and lib/builtin/enumerate restated (a class
+ascending; PCRE's priority order inside a quantified operand, ruled), the descending order and the count-by-count
+order rejected by his ruling, his principle and his request on lib/structural/sort, class-value still OPEN with
+ascending codepoint as the reading.
+
+The manager's readings (a)-(d) of the ruling entry, as tested: (a) SUPPORTED as far as a run reaches (20 shuffles
+of a class's members, five shapes, 0 / 0 / 0 over 3,906 texts; that PCRE's code holds no class order is a source
+fact, not asked); (b) UNTESTABLE (class-value); (c), (d) SUPPORTED.
+
+ANSWERS TOLD TO HIM THAT MOVE under the ascending order (built mechanically, predasc EXbounded; to be told the
+same hour): the bounded lazy + lazy lift `\d{1,3}? + \d{1,3}?` on SEARCHED `x123`: he was told `12`@1; it is
+`1`@1 (FIND-ALL `123 7 45` [`1`@0, `2`@1, `3`@2, `7`@4, `4`@6, `5`@7]). The bounded lazy + greedy lift
+`\d{1,3}? + \d{1,3}`: he was told `123`, then that it was withdrawn for `12`; ascending it is `123`@1 again
+(FIND-ALL [`123`@0, `7`@4, `45`@6]), for a different reason (the lazy operand starts at `0`, and inside the
+greedy operand with digits ascending `123` precedes `12` and `1`). Also turned round: `10 - \d` is now
+`10|9|..|1` (SEARCHED `x10` `10`@1) and `\d + \d` reports `1`@1 on `x13`.
+
+Folded by the manager with this entry: the shorthand for longest first on lib/structural/sort (the entry
+"2026-11-19 OWNER, on the sort function: the existing one is the general sort; a shorthand for longest first
+would help"), with the manager's placeholder name `longest_first(X)`.

@@ -644,8 +644,10 @@ defined: ?
   placeholder name (a reading).
 - The owner on a lift's order: "Only solution is sorting output when needed." No built-in length order exists;
   the user sorts (core/arrays/class-order).
-- The owner's request, nothing named or defined: "Need a terser sort function for common use." (a provided name
-  shorter than this piece's call; its name is open).
+- The owner's request: "Need a terser sort function for common use."; "a shorthand for sorting by longest so all
+  those options don't have to be written out." The placeholder name (the manager's): `longest_first(X)`, to be
+  `sort(X, by = "length", order = "desc")` once `sort` is defined; entries of equal length keeping their order is
+  a reading.
 
 ### sorted, distinct   [lib/structural/sorted]   under-construction 2026-11-19
 `sorted` and `distinct` would take the ARRAY form of a read (the other passes, his `@x`); they are named, not defined.

@@ -817,12 +817,14 @@ rulings:
 - 2026-11-19 (class: IDEA) "Perhaps then we need a lengthSorted() transform." (record: "2026-11-19 OWNER, discussing class-positions: the nested-loop rule, as if against `fn()`; a `lengthSorted()` transform"); his "Perhaps", an IDEA, not ruled (the ruling's entry lists it under NOT RULED)
 - 2026-11-19 (class: PRINCIPLE) "Only solution is sorting output when needed." (record: "2026-11-19 OWNER RULING — quantified-order: PCRE's priority order; and classes lowest to highest; sorting only when asked"); for a lift's order: no built-in length order; the user sorts
 - 2026-11-19 (class: REQUEST) "Need a terser sort function for common use." (record: "2026-11-19 OWNER RULING — quantified-order: PCRE's priority order; and classes lowest to highest; sorting only when asked"); a provided name shorter than this piece's `sort` call; its name is a spelling, the manager's to propose; nothing named or defined here
+- 2026-11-19 (class: LEAN and REQUEST) "the existing sort function is lean: good as the general purpose sort. Helpful: a shorthand for sorting by longest so all those options don't have to be written out." (record: "2026-11-19 OWNER, on the sort function: the existing one is the general sort; a shorthand for longest first would help"); the name `longest_first` is the manager's placeholder, not his words
 rejected:
 readings:
 - SORT IS SEMANTICS: the record's lean ("`sort(alts, by: length, desc)` exists only as the deliberate leftmost-longest choice. `unique` keeps the first occurrence", record: "2026-11-14 — literals from a file"); the draft §7 — a lean, UNTESTED.
 - his `lengthSorted()` is this piece's `sort(alts, by = "length", order = "desc")` under another placeholder name (the record's note under his proposal) — UNTESTED (an idea: nothing is defined).
 evidence:
 history:
+- 2026-11-19 (the manager, after lane predasc): the request bullet restated with his second sentence and the placeholder name `longest_first(X)`; before: "The owner's request, nothing named or defined: \"Need a terser sort function for common use.\" (a provided name shorter than this piece's call; its name is open)."
 - 2026-11-19 (lane predloop): his idea `lengthSorted()` noted on the piece (class-positions); nothing defined.
 - 2026-11-19 (lane predasc): quantified-order: his principle "Only solution is sorting output when needed." and his request for a terser sort function added as two bullets; nothing named or defined; status unchanged.
 - 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
