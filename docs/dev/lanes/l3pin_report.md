@@ -18,4 +18,6 @@ None. The whole-branch tripwire (`python3 scripts/m6read_check_sab_anchors.py`, 
 - `200-l3pin-mech` (S811 plant), `201-l3pin-test` (`scripts/perfrun --label l3pin --timeout 5000`, cap 5400), scripts at /var/tmp/pcrec-pcrec/scratch/l3pin/. Queued behind the held 202-k146land make test, which was not touched.
 
 ## STATE AT HANDOFF
-Branch lane/l3pin at 5ce6c0fd7 plus this report. No rulings file entries applied (the file has none). OWED: the S811 mech verdict (job 200-l3pin-mech) and make test (job 201-l3pin-test).
+Branch lane/l3pin at 5ce6c0fd7 plus this report. No rulings file entries applied (the file has none).
+
+OWED: none to this lane. Queued for main's watcher, verdicts not yet in: the S811 mech row (job 200-l3pin-mech) and make test (job 201-l3pin-test).
