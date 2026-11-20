@@ -4319,3 +4319,6 @@ The R-46 reply form was due ~17:00 and has not been started: the span-form timin
 
 ## 2026-11-19 18:20 — R-46 scope from main
 Main accepts 14:00 11-20. Scope, per Frank's dense-not-target discussion as relayed by main: the R-46 form covers dense (2 or more hits per block) and stops there; super-dense (hits within N) is not a target. Read the hit-spacing N from 709 before briefing the design lane.
+
+## 2026-11-19 18:35 — lookaround L1 landed on main d68a1294c
+The C4 architecture check (tests/memfn/arch_blind_check.py) now skips test-corpus DATA: .rxt pattern/subject/expectation and var lines, and listing TSV pattern/subject columns. Comments, descriptions and every other file stay in scope. Allowlist 116 -> 103 (adx-style rows deleted). The rule is diffed against the rxt reader (0 missed, 0 over-masked) and has a mutation gate. pcrec_run_pin now pins the longest proved sub-stretch: 48 non-lookaround patterns gain a pin, but bench 166/168/273 give byte-identical C. The owed merge of main into lane/memfn-k1108 now takes d68a1294c too (not during 708).
