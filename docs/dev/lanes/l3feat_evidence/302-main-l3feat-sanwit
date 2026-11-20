@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# 302-main-l3feat-sanwit: span_arms L3's sanitizer witnesses W-L16..W-L19
+# (tests/litscan/spanarms.rxt, whose L3 blocks hold them, both routes) under
+# `make asan`'s and `make ubsan`'s builds and env, BOTH axes instrumented
+# (the compiler's empty-extent pick, the artifact's K < 0 end clamp).
+# Builds build-asan/ and build-ubsan/ in worktrees/l3feat (gitignored).
+set -eu
+TREE=/home/pcrec/projects/pcrec/worktrees/l3feat
+case "${1:-}" in
+    --dry-run)
+        grep -q 'W-L16' "$TREE/tests/litscan/spanarms.rxt" || { echo "no W-L16 block" >&2; exit 1; }
+        echo "would run in $TREE: asan and ubsan builds, then the harness over tests/litscan/spanarms.rxt under each"
+        echo "boxqueue: cap 3600"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=set -e: a failed build or a harness failure (a sanitizer report fails its case) exits non-zero"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+cd "$TREE"
+. scripts/tmpdir.sh
+A="-O1 -g -fsanitize=address,leak"
+U="-O1 -g -fsanitize=undefined -fno-sanitize-recover=undefined"
+echo "== asan build"; make BUILD_DIR=build-asan CFLAGS="$A" all
+echo "== asan harness"
+env PCREC="$TREE/build-asan/pcrec" GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $A" SANFLAGS="$A" \
+    ASAN_OPTIONS="detect_leaks=1" bash tests/harness/run.sh tests/litscan/spanarms.rxt
+echo "== ubsan build"; make BUILD_DIR=build-ubsan CFLAGS="$U" all
+echo "== ubsan harness"
+env PCREC="$TREE/build-ubsan/pcrec" GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $U" SANFLAGS="$U" \
+    UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" bash tests/harness/run.sh tests/litscan/spanarms.rxt
+echo "== sanwit DONE green"

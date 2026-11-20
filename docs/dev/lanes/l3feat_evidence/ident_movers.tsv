@@ -1,0 +1,477 @@
+kind	src	pattern	base	feat
+facts	corpus:corpus:tests/utf8/axis13_ctx_illformed.rxt	(?<=a)b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/startset/dfahat.rxt	\\b(?<=bc)d	('none', '0', '100', 'none')	('626364', '-2', '100', 'none')
+facts	corpus:corpus:tests/startset/reseed.rxt	\\B(?<=bc)d	('none', '0', '100', 'none')	('626364', '-2', '100', 'none')
+facts	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a)){2,3}-\\1*	('none', '0', '45', '')	('612d', '-1', '45', '')
+facts	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a))+a\\1+?	('none', '0', '97', '')	('6161', '-1', '97', '')
+facts	corpus:corpus:tests/possessify/composition_d27.rxt	(?<n>(?<=a))x\\k{n}	('none', '0', '120', '')	('6178', '-1', '120', '')
+facts	corpus:corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(?:abc|abde|ab))z	('none', '0', '122', 'none')	('[616264][626365]7a', '-2', '122', 'none')
+facts	corpus:corpus:tests/ucp/ctxnode.rxt	(?<*a)b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/ucp/ctxnode.rxt	(*plb:a)b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=a)+b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(?:a))b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=ab)x	('none', '0', '120', 'none')	('616278', '-2', '120', 'none')
+facts	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(a))x	('none', '0', '120', 'none')	('6178', '-1', '120', 'none')
+facts	corpus:corpus:tests/litscan/handoff_vm.rxt	(?<=xyz)a+xyz	('6178797a', 'unbounded', '122', 'none')	('78797a61', '-3', '97', 'none')
+facts	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=qz)x?a:	('613a', '1', '58', 'none')	('717a', '-2', '58', 'none')
+facts	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=q)a:	('613a', '0', '58', '0')	('71613a', '-1', '58', '0:1+2')
+facts	corpus:corpus:tests/litscan/reqcube.rxt	(?<=ab)(?i:cdef)	('43444546/dfdfdfdf', '0', 'none', 'none')	('616243444546/ffffdfdfdfdf', '-2', 'none', 'none')
+facts	corpus:corpus:tests/litscan/spanarms.rxt	(?<=foo)bar	('626172', '0', '98', '0')	('666f6f626172', '-3', '98', '0:3+3')
+facts	corpus:corpus:tests/litscan/spanarms.rxt	(?<=ab)(?<=cb)c	('none', '0', '99', 'none')	('6263', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:a)b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:a)b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:a)b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*plb:(a)|(ba))c\\2	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:(a)|(ba))c\\2	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:(a)|(ba))c\\2	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:(a)|(ba))c\\2	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=abc)x	('none', '0', '120', 'none')	('61626378', '-3', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=[ab][cd])x	('none', '0', '120', 'none')	('[6162][6364]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{3})x	('none', '0', '120', 'none')	('61616178', '-3', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?:ab){2})x	('none', '0', '120', 'none')	('6162616278', '-4', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd)x	('none', '0', '120', 'none')	('[6163][6264]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd|ef)x	('none', '0', '120', 'none')	('[616365][626466]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(a)(b))c	('none', '0', '99', 'none')	('616263', '-2', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(aa)|(ab))c	('none', '0', '99', 'none')	('61[6162]63', '-2', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?=b))ab	('6162', '0', '98', '0')	('616162', '-1', '98', '0:1+2')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?!b))x	('none', '0', '120', 'none')	('6178', '-1', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	((?<=a)b)+	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?>(?<=a)b)	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?>ab))c	('none', '0', '99', 'none')	('616263', '-2', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab)(?<=b)c	('none', '0', '99', 'none')	('616263', '-2', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\n)x	('none', '0', '120', 'none')	('0a78', '-1', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{2})b	('none', '0', '98', 'none')	('616162', '-2', '98', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a)\\Kb	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\Ga)b	('none', '0', '98', 'none')	('6162', '-1', '98', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd))x	('none', '0', '120', 'none')	('[6163][6264]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd|ef))x	('none', '0', '120', 'none')	('[616365][626466]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?i:ab|cd))x	('none', '0', '120', 'none')	('[41436163][42446264]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(*plb:(?:ab|cd))x	('none', '0', '120', 'none')	('[6163][6264]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a{2}|bc))x	('none', '0', '120', 'none')	('[6162][6163]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a(?:b|c)|d(?:e|f)))x	('none', '0', '120', 'none')	('[6164][62636566]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=(?:a|bc)d)x	('none', '0', '120', 'none')	('616478/fdffff', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=((a|bc)d))x	('none', '0', '120', 'none')	('616478/fdffff', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a|aa))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<*(a|aaa))c\\1	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=a{65535})x	('none', '0', '120', 'none')	('6161616161616161616161616161616161616161616161616161616161616161', '-32', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(?:a{1000}){65})x	('none', '0', '120', 'none')	('6161616161616161616161616161616161616161616161616161616161616161', '-32', '120', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a)|(aa))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aa)|(a))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(a)|(aa)|(aaa))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aaa)|(aa)|(a))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c\\2	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<=(a)|(ba))c\\2	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(ba)|(a))c\\2	('none', '0', '99', '')	('6163', '-1', '99', '')
+facts	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*ab)c	('none', '0', '99', 'none')	('616263', '-2', '99', 'none')
+facts	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a))a	('none', '0', '97', 'none')	('6161', '-1', '97', 'none')
+facts	corpus:corpus:tests/lookaround/startpos.rxt	(?<=ab)c	('none', '0', '99', 'none')	('616263', '-2', '99', 'none')
+facts	corpus:corpus:tests/lookaround/workbudget.rxt	(?<=ab|cd|ef|gh)x	('none', '0', '120', 'none')	('[61636567][62646668]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(a)(b))(c)(d)	('6364', '0', '99', '0')	('61626364', '-2', '99', '0:2+2')
+facts	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=a{3}|bb)x	('none', '0', '120', 'none')	('[6162][6162]78', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(?:a{2})|(?:a{3}))x	('none', '0', '120', 'none')	('616178', '-2', '120', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a)z	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a)z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a)z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=abc)z	('none', '0', '122', 'none')	('6162637a', '-3', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<=abc)	('none', '0', '122', 'none')	('61627a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=abc)z	('797a', '0', '122', '0')	('6162797a', '-2', '122', '0:2+2')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=abc)z)	('none', '0', '122', 'none')	('6162637a', '-3', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=abc)z)	('none', '0', '122', 'none')	('6162637a', '-3', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=ab|cd)z	('none', '0', '122', 'none')	('[6163][6264]7a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=ab|cd)z	('797a', '0', '122', '0')	('61797a/fdffff', '-1', '122', '0:1+2')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=ab|cd)z)	('none', '0', '122', 'none')	('[6163][6264]7a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=ab|cd)z)	('none', '0', '122', 'none')	('[6163][6264]7a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=(a))z	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=(a))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=(a))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a(?!b))z	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a(?!b))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a(?!b))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a)z	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a)z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a)z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*abc)z	('none', '0', '122', 'none')	('6162637a', '-3', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<*abc)	('none', '0', '122', 'none')	('61627a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*abc)z	('797a', '0', '122', '0')	('6162797a', '-2', '122', '0:2+2')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*abc)z)	('none', '0', '122', 'none')	('6162637a', '-3', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*abc)z)	('none', '0', '122', 'none')	('6162637a', '-3', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*ab|cd)z	('none', '0', '122', 'none')	('[6163][6264]7a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*ab|cd)z	('797a', '0', '122', '0')	('61797a/fdffff', '-1', '122', '0:1+2')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*ab|cd)z)	('none', '0', '122', 'none')	('[6163][6264]7a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*ab|cd)z)	('none', '0', '122', 'none')	('[6163][6264]7a', '-2', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*(a))z	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*(a))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*(a))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a(?!b))z	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a(?!b))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a(?!b))z)	('none', '0', '122', 'none')	('617a', '-1', '122', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=a)c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:a)c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*positive_lookbehind:a)c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<*(a|ba))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*naplb:(a|ba))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*non_atomic_positive_lookbehind:(a|ba))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=(a|ba))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:(a|ba))c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=nop)st	('7374', '0', '115', '0')	('6e6f707374', '-3', '115', '0:3+2')
+facts	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=a)(?<=[ab])c	('none', '0', '99', 'none')	('6163', '-1', '99', 'none')
+facts	bench:bench:258	(?<=item )done	('646f6e65', '0', '100', '0')	('6974656d20646f6e65', '-5', '100', '0:5+4')
+facts	bench:bench:333	(?<=\xc3\xa9)x	('none', '0', '120', 'none')	('c3a978', '-2', '120', 'none')
+stamps	corpus:corpus:tests/utf8/axis13_ctx_illformed.rxt	(?<=a)b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/utf8/axis13_ctx_illformed.rxt	(?<=a)b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/startset/dfahat.rxt	\\b(?<=bc)d	('dominated', 'none', 'none', '100', 'unanchored', 'first-memchr-bounded', 'hybrid')	('emitted', '-2', '626364@0', '100', 'unanchored', 'first-memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/startset/dfahat.rxt	\\b(?<=bc)d	('emitted', 'none', 'none', '100', '-', '-', 'none')	('emitted', '-2', '626364@0', '100', '-', '-', 'none')
+stamps	corpus:corpus:tests/startset/reseed.rxt	\\B(?<=bc)d	('dominated', 'none', 'none', '100', 'unanchored', 'first-memchr-bounded', 'hybrid')	('emitted', '-2', '626364@0', '100', 'unanchored', 'first-memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/startset/reseed.rxt	\\B(?<=bc)d	('emitted', 'none', 'none', '100', '-', '-', 'none')	('emitted', '-2', '626364@0', '100', '-', '-', 'none')
+stamps	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a)){2,3}-\\1*	('emitted', 'none', 'none', '45', '-', '-', 'none')	('emitted', '-1', '612d@1', '45', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a)){2,3}-\\1*	('emitted', 'none', 'none', '45', '-', '-', 'none')	('emitted', '-1', '612d@1', '45', '-', '-', 'none')
+stamps	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a))+a\\1+?	('emitted', 'none', 'none', '97', '-', '-', 'none')	('emitted', '-1', '6161@1', '97', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a))+a\\1+?	('emitted', 'none', 'none', '97', '-', '-', 'none')	('emitted', '-1', '6161@1', '97', '-', '-', 'none')
+stamps	corpus:corpus:tests/possessify/composition_d27.rxt	(?<n>(?<=a))x\\k{n}	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-1', '6178@1', '120', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/possessify/composition_d27.rxt	(?<n>(?<=a))x\\k{n}	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-1', '6178@1', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(?:abc|abde|ab))z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[616264][626365]7a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(?:abc|abde|ab))z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '[616264][626365]7a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/ucp/ctxnode.rxt	(?<*a)b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/ucp/ctxnode.rxt	(?<*a)b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/ucp/ctxnode.rxt	(*plb:a)b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/ucp/ctxnode.rxt	(*plb:a)b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=a)+b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=a)+b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(?:a))b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(?:a))b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=ab)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616278@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=ab)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '616278@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(a))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6178@1', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(a))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-1', '6178@1', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/litscan/handoff_vm.rxt	(?<=xyz)a+xyz	('emitted', 'none', '6178797a@3', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '78797a61@2', '97', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/litscan/handoff_vm.rxt	(?<=xyz)a+xyz	('emitted', 'unbounded', '6178797a@3', '122', '-', '-', 'none')	('emitted', '-3', '78797a61@2', '97', '-', '-', 'none')
+stamps	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=qz)x?a:	('emitted', '1', '613a@1', '58', 'unanchored', 'handoff', 'hybrid')	('emitted', '-2', '717a@1', '58', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=qz)x?a:	('emitted', '1', '613a@1', '58', '-', '-', 'none')	('emitted', '-2', '717a@1', '58', '-', '-', 'none')
+stamps	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=q)a:	('dominated', 'none', '613a', '58', 'cover', 'none', '-')	('dominated', 'none', '71613a', '58', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=q)a:	('emitted', '0', '613a@1', '58', '-', '-', 'none')	('emitted', '-1', '71613a@0', '58', '-', '-', 'none')
+stamps	corpus:corpus:tests/litscan/reqcube.rxt	(?<=ab)(?i:cdef)	('emitted', '0', '43444546@3/dfdfdfdf', 'none', 'unanchored', 'handoff', 'hybrid')	('emitted', '-2', '616243444546@1/ffffdfdfdfdf', 'none', 'unanchored', 'byte-class', 'hybrid')
+stamps-vm	corpus:corpus:tests/litscan/reqcube.rxt	(?<=ab)(?i:cdef)	('emitted', '0', '43444546@3/dfdfdfdf', 'none', '-', '-', 'none')	('emitted', '-2', '616243444546@1/ffffdfdfdfdf', 'none', '-', '-', 'none')
+stamps	corpus:corpus:tests/litscan/spanarms.rxt	(?<=foo)bar	('dominated', 'none', '626172@0', '98', 'unanchored', 'run-pinned', 'hybrid')	('emitted', '-3', '666f6f626172@3', '98', 'unanchored', 'run-pinned', 'hybrid')
+stamps-vm	corpus:corpus:tests/litscan/spanarms.rxt	(?<=foo)bar	('emitted', '0', '626172@0', '98', '-', '-', 'none')	('emitted', '-3', '666f6f626172@3', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/litscan/spanarms.rxt	(?<=ab)(?<=cb)c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6263@0', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/litscan/spanarms.rxt	(?<=ab)(?<=cb)c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6263@0', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:a)b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:a)b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:a)b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:a)b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:a)b	('dominated', 'none', 'none', '98', 'cover', 'none', '-')	('dominated', 'none', '6162', '98', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:a)b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*plb:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*plb:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=abc)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '61626378@3', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=abc)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-3', '61626378@3', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=[ab][cd])x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6162][6364]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=[ab][cd])x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[6162][6364]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{3})x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '61616178@3', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{3})x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-3', '61616178@3', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?:ab){2})x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-4', '6162616278@4', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?:ab){2})x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-4', '6162616278@4', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[6163][6264]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd|ef)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[616365][626466]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd|ef)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[616365][626466]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(a)(b))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616263@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(a)(b))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-2', '616263@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(aa)|(ab))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '61[6162]63@2', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(aa)|(ab))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-2', '61[6162]63@2', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?=b))ab	('dominated', 'none', '6162', '98', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-1', '616162@2', '98', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?=b))ab	('emitted', '0', '6162@1', '98', '-', '-', 'none')	('emitted', '-1', '616162@2', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?!b))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6178@1', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?!b))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-1', '6178@1', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	((?<=a)b)+	('emitted', '0', 'none', '98', 'unanchored', 'handoff', 'hybrid')	('emitted', '-1', '6162@1', '98', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	((?<=a)b)+	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?>(?<=a)b)	('emitted', '0', 'none', '98', 'unanchored', 'handoff', 'hybrid')	('emitted', '-1', '6162@1', '98', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?>(?<=a)b)	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?>ab))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616263@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?>ab))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-2', '616263@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab)(?<=b)c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr-bounded', 'hybrid')	('emitted', '-2', '616263@1', '99', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab)(?<=b)c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-2', '616263@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\n)x	('dominated', 'none', 'none', '120', 'cover', 'none', '-')	('dominated', 'none', '0a78', '120', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\n)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-1', '0a78@1', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{2})b	('dominated', 'none', 'none', '98', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616162@2', '98', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{2})b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-2', '616162@2', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a)\\Kb	('emitted', '0', 'none', '98', 'unanchored', 'handoff', 'hybrid')	('emitted', '-1', '6162@1', '98', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a)\\Kb	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\Ga)b	('dominated', 'none', 'none', '98', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6162@1', '98', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\Ga)b	('emitted', 'none', 'none', '98', '-', '-', 'none')	('emitted', '-1', '6162@1', '98', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[6163][6264]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd|ef))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[616365][626466]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd|ef))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[616365][626466]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?i:ab|cd))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[41436163][42446264]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?i:ab|cd))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[41436163][42446264]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(*plb:(?:ab|cd))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(*plb:(?:ab|cd))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[6163][6264]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a{2}|bc))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6162][6163]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a{2}|bc))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[6162][6163]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a(?:b|c)|d(?:e|f)))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6164][62636566]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a(?:b|c)|d(?:e|f)))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[6164][62636566]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=(?:a|bc)d)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616478@2/fdffff', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=(?:a|bc)d)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '616478@2/fdffff', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=((a|bc)d))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616478@2/fdffff', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=((a|bc)d))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '616478@2/fdffff', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a|aa))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a|aa))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<*(a|aaa))c\\1	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<*(a|aaa))c\\1	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=a{65535})x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-32', '6161616161616161616161616161616161616161616161616161616161616161@31', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=a{65535})x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-32', '6161616161616161616161616161616161616161616161616161616161616161@31', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(?:a{1000}){65})x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-32', '6161616161616161616161616161616161616161616161616161616161616161@31', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(?:a{1000}){65})x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-32', '6161616161616161616161616161616161616161616161616161616161616161@31', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a)|(aa))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a)|(aa))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aa)|(a))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aa)|(a))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(a)|(aa)|(aaa))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(a)|(aa)|(aaa))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aaa)|(aa)|(a))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aaa)|(aa)|(a))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<=(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<=(a)|(ba))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(ba)|(a))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps-vm	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(ba)|(a))c\\2	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*ab)c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616263@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*ab)c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-2', '616263@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a))a	('dominated', 'none', 'none', '97', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6161@1', '97', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a))a	('emitted', 'none', 'none', '97', '-', '-', 'none')	('emitted', '-1', '6161@1', '97', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/startpos.rxt	(?<=ab)c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616263@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/startpos.rxt	(?<=ab)c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-2', '616263@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/workbudget.rxt	(?<=ab|cd|ef|gh)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[61636567][62646668]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/workbudget.rxt	(?<=ab|cd|ef|gh)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[61636567][62646668]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(a)(b))(c)(d)	('emitted', '0', '6364@0', '99', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-2', '61626364@1', '99', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(a)(b))(c)(d)	('emitted', '0', '6364@0', '99', '-', '-', 'none')	('emitted', '-2', '61626364@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=a{3}|bb)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6162][6162]78@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=a{3}|bb)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '[6162][6162]78@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(?:a{2})|(?:a{3}))x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '616178@2', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(?:a{2})|(?:a{3}))x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', '616178@2', '120', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a)z	('dominated', 'none', 'none', '122', 'cover', 'none', '-')	('dominated', 'none', '617a', '122', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a)z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a)z)	('emitted', '0', 'none', '122', 'unanchored', 'handoff', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a)z)	('emitted', '0', 'none', '122', 'unanchored', 'handoff', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=abc)z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '6162637a@3', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=abc)z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-3', '6162637a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<=abc)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '61627a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<=abc)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '61627a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=abc)z	('dominated', 'none', '797a', '122', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-2', '6162797a@3', '122', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=abc)z	('emitted', '0', '797a@1', '122', '-', '-', 'none')	('emitted', '-2', '6162797a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=abc)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '6162637a@3', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=abc)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-3', '6162637a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=abc)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '6162637a@3', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=abc)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-3', '6162637a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=ab|cd)z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]7a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=ab|cd)z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '[6163][6264]7a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=ab|cd)z	('dominated', 'none', '797a', '122', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-1', '61797a@2/fdffff', '122', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=ab|cd)z	('emitted', '0', '797a@1', '122', '-', '-', 'none')	('emitted', '-1', '61797a@2/fdffff', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=ab|cd)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]7a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=ab|cd)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '[6163][6264]7a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=ab|cd)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]7a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=ab|cd)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '[6163][6264]7a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=(a))z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=(a))z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=(a))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=(a))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=(a))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=(a))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a(?!b))z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a(?!b))z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a(?!b))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a(?!b))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a(?!b))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a(?!b))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a)z	('dominated', 'none', 'none', '122', 'cover', 'none', '-')	('dominated', 'none', '617a', '122', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a)z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a)z)	('emitted', '0', 'none', '122', 'unanchored', 'handoff', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a)z)	('emitted', '0', 'none', '122', 'unanchored', 'handoff', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr-bounded', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*abc)z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '6162637a@3', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*abc)z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-3', '6162637a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<*abc)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '61627a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<*abc)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '61627a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*abc)z	('dominated', 'none', '797a', '122', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-2', '6162797a@3', '122', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*abc)z	('emitted', '0', '797a@1', '122', '-', '-', 'none')	('emitted', '-2', '6162797a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*abc)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '6162637a@3', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*abc)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-3', '6162637a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*abc)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-3', '6162637a@3', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*abc)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-3', '6162637a@3', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*ab|cd)z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]7a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*ab|cd)z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '[6163][6264]7a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*ab|cd)z	('dominated', 'none', '797a', '122', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-1', '61797a@2/fdffff', '122', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*ab|cd)z	('emitted', '0', '797a@1', '122', '-', '-', 'none')	('emitted', '-1', '61797a@2/fdffff', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*ab|cd)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]7a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*ab|cd)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '[6163][6264]7a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*ab|cd)z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', '[6163][6264]7a@2', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*ab|cd)z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-2', '[6163][6264]7a@2', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*(a))z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*(a))z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*(a))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*(a))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*(a))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*(a))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a(?!b))z	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a(?!b))z	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a(?!b))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a(?!b))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a(?!b))z)	('dominated', 'none', 'none', '122', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '617a@1', '122', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a(?!b))z)	('emitted', 'none', 'none', '122', '-', '-', 'none')	('emitted', '-1', '617a@1', '122', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=a)c	('dominated', 'none', 'none', '99', 'cover', 'none', '-')	('dominated', 'none', '6163', '99', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=a)c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:a)c	('dominated', 'none', 'none', '99', 'cover', 'none', '-')	('dominated', 'none', '6163', '99', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:a)c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*positive_lookbehind:a)c	('dominated', 'none', 'none', '99', 'cover', 'none', '-')	('dominated', 'none', '6163', '99', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*positive_lookbehind:a)c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<*(a|ba))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<*(a|ba))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*naplb:(a|ba))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*naplb:(a|ba))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*non_atomic_positive_lookbehind:(a|ba))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*non_atomic_positive_lookbehind:(a|ba))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=(a|ba))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=(a|ba))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:(a|ba))c	('dominated', 'none', 'none', '99', 'unanchored', 'memchr', 'hybrid')	('emitted', '-1', '6163@1', '99', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:(a|ba))c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=nop)st	('emitted', '0', '7374@0', '115', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-3', '6e6f707374@2', '115', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=nop)st	('emitted', '0', '7374@0', '115', '-', '-', 'none')	('emitted', '-3', '6e6f707374@2', '115', '-', '-', 'none')
+stamps	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=a)(?<=[ab])c	('dominated', 'none', 'none', '99', 'cover', 'none', '-')	('dominated', 'none', '6163', '99', 'cover', 'none', '-')
+stamps-vm	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=a)(?<=[ab])c	('emitted', 'none', 'none', '99', '-', '-', 'none')	('emitted', '-1', '6163@1', '99', '-', '-', 'none')
+stamps	bench:bench:258	(?<=item )done	('emitted', '0', '646f6e65@0', '100', 'unanchored', 'offset-set', 'hybrid')	('emitted', '-5', '6974656d20646f6e65@3', '100', 'unanchored', 'offset-set', 'hybrid')
+stamps-vm	bench:bench:258	(?<=item )done	('emitted', '0', '646f6e65@0', '100', '-', '-', 'none')	('emitted', '-5', '6974656d20646f6e65@3', '100', '-', '-', 'none')
+stamps	bench:bench:333	(?<=\xc3\xa9)x	('dominated', 'none', 'none', '120', 'unanchored', 'memchr', 'hybrid')	('emitted', '-2', 'c3a978@1', '120', 'unanchored', 'memchr', 'hybrid')
+stamps-vm	bench:bench:333	(?<=\xc3\xa9)x	('emitted', 'none', 'none', '120', '-', '-', 'none')	('emitted', '-2', 'c3a978@1', '120', '-', '-', 'none')
+ctext	corpus:corpus:tests/utf8/axis13_ctx_illformed.rxt	(?<=a)b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/startset/dfahat.rxt	\\b(?<=bc)d	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/startset/reseed.rxt	\\B(?<=bc)d	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a)){2,3}-\\1*	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/possessify/composition_d27.rxt	((?<=a))+a\\1+?	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/possessify/composition_d27.rxt	(?<n>(?<=a))x\\k{n}	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/altcls/altnf_lookbehind.rxt	(?<=(?:abc|abde|ab))z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/ucp/ctxnode.rxt	(?<*a)b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/ucp/ctxnode.rxt	(*plb:a)b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=a)+b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(?:a))b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=ab)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/ucp/ctxnode.rxt	(?<=(a))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/litscan/handoff_vm.rxt	(?<=xyz)a+xyz	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=qz)x?a:	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/litscan/presence_deny.rxt	(?<=q)a:	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/litscan/reqcube.rxt	(?<=ab)(?i:cdef)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/litscan/spanarms.rxt	(?<=foo)bar	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/litscan/spanarms.rxt	(?<=ab)(?<=cb)c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:a)b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:a)b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:a)b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*plb:(a)|(ba))c\\2	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*positive_lookbehind:(a)|(ba))c\\2	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*naplb:(a)|(ba))c\\2	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/alpha_spellings.rxt	(*non_atomic_positive_lookbehind:(a)|(ba))c\\2	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=abc)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=[ab][cd])x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{3})x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?:ab){2})x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab|cd|ef)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(a)(b))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(aa)|(ab))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?=b))ab	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a(?!b))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	((?<=a)b)+	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?>(?<=a)b)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=(?>ab))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=ab)(?<=b)c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\n)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a{2})b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=a)\\Kb	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind.rxt	(?<=\\Ga)b	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:ab|cd|ef))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?i:ab|cd))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(*plb:(?:ab|cd))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a{2}|bc))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_group_alt.rxt	(?<=(?:a(?:b|c)|d(?:e|f)))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=(?:a|bc)d)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_variable.rxt	(?<=((a|bc)d))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a|aa))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<*(a|aaa))c\\1	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=a{65535})x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(?:a{1000}){65})x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_variable_witness.rxt	(?<=(a)|(aa))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aa)|(a))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(a)|(aa)|(aaa))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/lookbehind_widths.rxt	(?<=(aaa)|(aa)|(a))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c\\2	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<=(a)|(ba))c\\2	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(ba)|(a))c\\2	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a)|(ba))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*ab)c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/nonatomic_behind.rxt	(?<*(a))a	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/startpos.rxt	(?<=ab)c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/workbudget.rxt	(?<=ab|cd|ef|gh)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(a)(b))(c)(d)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=a{3}|bb)x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/adversarial.rxt	(?<=(?:a{2})|(?:a{3}))x	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=abc)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<=abc)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=abc)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=abc)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=abc)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=ab|cd)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<=ab|cd)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=ab|cd)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=ab|cd)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=(a))z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=(a))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=(a))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<=a(?!b))z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<=a(?!b))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<=a(?!b))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*abc)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	z(?<*abc)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*abc)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*abc)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*abc)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*ab|cd)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	y(?<*ab|cd)z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*ab|cd)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*ab|cd)z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*(a))z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*(a))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*(a))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?<*a(?!b))z	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	((?<*a(?!b))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/matrix.rxt	(?>(?<*a(?!b))z)	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=a)c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:a)c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*positive_lookbehind:a)c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<*(a|ba))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*naplb:(a|ba))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*non_atomic_positive_lookbehind:(a|ba))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(?<=(a|ba))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27/spellings.rxt	(*plb:(a|ba))c	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=nop)st	default-identical=False	vm-identical=False
+ctext	corpus:corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt	(?<=a)(?<=[ab])c	default-identical=False	vm-identical=False
+ctext	bench:bench:258	(?<=item )done	default-identical=False	vm-identical=False
+ctext	bench:bench:333	(?<=\xc3\xa9)x	default-identical=False	vm-identical=False
