@@ -36,9 +36,9 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "/abcd[xy]/user" && grep -q "^#define RX_REQ_RUN \"2f61626364782f75736572@6/fffffffffffeffffffffff\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"handoff\"" "$REACH_TMP/o.c" && echo REACH-C0-PIN-WITNESS'
 SAB_REACH_EXPECT="REACH-C0-PIN-WITNESS"
 SAB_COUNT=1
-SAB_BEFORE='        while (i < l && o->k[ro + i].count == 1 &&
-               o->k[ro + i].byte == pcrec_run_byte(r, s0 + i))'
-SAB_AFTER='        while (i < l && o->k[ro + i].count == 1)   /* SABOTAGE S280 */'
+SAB_BEFORE='    return o->k[k].count == 1 &&
+           o->k[k].byte == pcrec_run_byte(r, j);'
+SAB_AFTER='    return o->k[k].count == 1;   /* SABOTAGE S280 */'
 # RE-AIMED 2026-11-11 (lane k382, R-38 K38-2; span_runs_sheet.md §4.2): pcrec_run_pin reads the WHOLE run with
 # a per-placement CLIP (`l = min(e0 - s0, nwalk - ro)`, the stretch still holding the pick);
 # the plant drops the same byte test inside the clipped placement loop, so the first
@@ -46,3 +46,8 @@ SAB_AFTER='        while (i < l && o->k[ro + i].count == 1)   /* SABOTAGE S280 *
 # REQ_RUN is now the whole 11-position run (`/abcd[xy]/user`, scan @6); the probe reads it.
 # RE-ANCHORED 2026-11-13 (lane rps3, [RUN-POS-SET] stage 3): run positions are SETS; the
 # byte test reads the position's one member (`pcrec_run_byte`); same plant, same fault.
+# RE-ANCHORED 2026-11-19 (lane l1ffix, review r55 B): the byte test moved into `pin_proved`
+# (the one "the walk proves this run position" predicate, read by `pin_around` for the pick's
+# candidates and for the proved sub-stretch); same plant, same fault: with the byte test gone
+# placement 0 proves `/user`'s five positions over `/abcd`'s singletons, the longest-then-
+# smallest-offset rule takes it, and the run is compared at the wrong offset.

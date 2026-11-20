@@ -280,39 +280,25 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
     }
 }
 
-/* Fills `*pin` from the walk `o` and the shipped run `r`: the SMALLEST offset
- * at which the walk's singletons spell an EXACT STRETCH of the run. Any
- * satisfying offset is a true statement; the smallest is deterministic, and
- * a later one would only ever be a lost opportunity for the run rows, never
- * a wrong answer.
- *
- * [OPT-LITSCAN] S4 C3 WHICH STRETCH (litscan_s4.md §2.3.5, r2 R2-C3). A pin
- * is a fact about EXACT positions (one-member sets): a wider position has
- * two or more members and the walk's `count == 1` test could never claim it
- * anyway. So PICK — the one
- * PICK primitive, byte candidates — over the run's exact positions in
- * REVERSE order (ties and the NONE answer to the rightmost, the run scan
- * index's own rule), and the stretch is the maximal run of exact positions
- * around the picked one, when it has at least two (the floor's 16 bits). On
- * an exact run the exact positions are the whole window, so the pick is the
- * window's own `idx` (the same primitive over the same candidates), the
- * stretch is the window and the pin is the pre-row one exactly. A masked
- * position makes no pin claim; a shorter stretch is a lost opportunity,
- * never an unsound one. */
-void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
-                   RunPin *pin)
+/* Whether the k-set walk `o` proves run position `j` of `r` at walk offset
+ * `k`: one member there, and it is the run's own byte. */
+static bool pin_proved(const KsetWalk *o, const ReqRun *r, int k, int j)
 {
-    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
-    int pos[PCREC_MAX_REQ_RUN_SCAN], nc = 0, x, s0, e0;
+    return o->k[k].count == 1 &&
+           o->k[k].byte == pcrec_run_byte(r, j);
+}
 
+/* The pin of the stretch around run position `x` of `r` (an exact one) into
+ * `*pin`, unpinned where none: the maximal exact stretch `[s0, e0)` holding
+ * `x`, placed at every walk offset `ro` for its start; at each placement the
+ * pinned part is the LONGEST sub-stretch around `x` the walk proves
+ * (`pin_proved`), and the pin is the longest over every placement, ties to
+ * the smallest offset. Where the whole stretch is proved that is exactly the
+ * whole-or-nothing pin (review r55 B), and it is never shorter. */
+static void pin_around(const KsetWalk *o, const ReqRun *r, int x, RunPin *pin)
+{
+    int s0, e0;
     *pin = (RunPin){ false, 0, 0, 0, 0 };
-    if (r->whole_len < 2) return;
-    for (int i = r->whole_len - 1; i >= 0; i--) {
-        int b = pcrec_run_byte(r, i);
-        if (b >= 0) { cand[nc] = (unsigned char)b; pos[nc] = i; nc++; }
-    }
-    if (nc == 0) return;
-    x = pos[pcrec_find_pick(rate, cand, NULL, nc, 0)];
     for (s0 = x; s0 > 0 && pcrec_run_byte(r, s0 - 1) >= 0; s0--) {}
     for (e0 = x + 1; e0 < r->whole_len && pcrec_run_byte(r, e0) >= 0; e0++) {}
     if (e0 - s0 < 2) return;
@@ -320,16 +306,68 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
        placement to the walk's reach, `l = min(e0 - s0, nwalk - ro)`; the
        clipped stretch must still hold the pick (`x - s0 < l`) and be two
        positions, else that placement is no pin (and no later one is, as
-       `l` only shrinks) */
-    for (int ro = 0; !pin->pinned; ro++) {
+       `l` only shrinks). Inside the clip, run position `j` sits at walk
+       offset `ro + j - s0`; the proved part around the pick is `[a, b)`. */
+    for (int ro = 0;; ro++) {
         int l = e0 - s0 < o->nwalk - ro ? e0 - s0 : o->nwalk - ro;
         if (l < 2 || x - s0 >= l) break;
-        int i = 0;
-        while (i < l && o->k[ro + i].count == 1 &&
-               o->k[ro + i].byte == pcrec_run_byte(r, s0 + i))
-            i++;
-        if (i == l) *pin = (RunPin){ true, ro, s0, l, x - s0 };
+        if (!pin_proved(o, r, ro + x - s0, x)) continue;
+        int a = x, b = x + 1;
+        while (a > s0 && pin_proved(o, r, ro + a - 1 - s0, a - 1)) a--;
+        while (b < s0 + l && pin_proved(o, r, ro + b - s0, b)) b++;
+        if (b - a >= 2 && (!pin->pinned || b - a > pin->len))
+            *pin = (RunPin){ true, ro + a - s0, a, b - a, x - a };
     }
+}
+
+/* Fills `*pin` from the walk `o` and the shipped run `r`: a stretch of the
+ * run's exact positions that the walk's singletons spell at a fixed offset.
+ * Any satisfying offset is a true statement; the smallest is deterministic,
+ * and a later one would only ever be a lost opportunity for the run rows,
+ * never a wrong answer.
+ *
+ * [OPT-LITSCAN] S4 C3 WHICH STRETCH (litscan_s4.md §2.3.5, r2 R2-C3). A pin
+ * is a fact about EXACT positions (one-member sets): a wider position has
+ * two or more members and the walk's `count == 1` test could never claim it
+ * anyway. So PICK — the one
+ * PICK primitive, byte candidates — over the run's exact positions in
+ * REVERSE order (ties and the NONE answer to the rightmost, the run scan
+ * index's own rule), and the stretch is the one around the picked position
+ * (`pin_around`), when it has at least two (the floor's 16 bits). On
+ * an exact run the exact positions are the whole window, so the pick is the
+ * window's own `idx` (the same primitive over the same candidates), the
+ * stretch is the window and the pin is the pre-row one exactly. A masked
+ * position makes no pin claim; a shorter stretch is a lost opportunity,
+ * never an unsound one.
+ *
+ * THE PIN CLAIMS ONLY WHAT THE WALK PROVES (span_arms §14.4 L1, review r55
+ * B; the same rule answers L2's §14.1 A5). The run walk can state MORE than
+ * the k-set walk proves: a lookaround's guard narrows a masked position to
+ * one byte (`xy(?=bc)[bc]c`, run `xybc` over the walk `x y [bc] c`), and a
+ * run can reach past where the walk ends (K38-2's clip). So the pick's
+ * candidates are the exact positions the walk can PIN (`pin_around` pins
+ * them), and the stretch is the proved part around the pick. Where the
+ * whole-or-nothing form pinned, its pick is still a candidate and still
+ * wins (PICK is an argmin, so dropping losers keeps the winner) and its pin
+ * is unchanged; a position the walk cannot prove no longer takes the pick
+ * from one it can. */
+void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
+                   RunPin *pin)
+{
+    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
+    int pos[PCREC_MAX_REQ_RUN_SCAN], nc = 0;
+    RunPin p;
+
+    *pin = (RunPin){ false, 0, 0, 0, 0 };
+    if (r->whole_len < 2) return;
+    for (int i = r->whole_len - 1; i >= 0; i--) {
+        int b = pcrec_run_byte(r, i);
+        if (b < 0) continue;
+        pin_around(o, r, i, &p);
+        if (p.pinned) { cand[nc] = (unsigned char)b; pos[nc] = i; nc++; }
+    }
+    if (nc == 0) return;
+    pin_around(o, r, pos[pcrec_find_pick(rate, cand, NULL, nc, 0)], pin);
 }
 
 /* ---- [START-LANDING] THE ITERATOR'S SECOND CONSUMER: THE BYTE WIDTH -------

@@ -1,0 +1,8 @@
+# firstunit_anchors_l1.py DIR subject, run by lane l1fix 2026-11-19 on lane/l1build 39981a9d1 (review r53 F4):
+# each moved anchor at its NEW site, the r53 rows S3355-S3357 included. REM3 (anf_head) is empty by design:
+# remodel 3 moved S1891 out of it into desc.c (REM3d).
+RM6 5 S1189@256 S1190@330 S893@248 S899@226 S904@282
+RM6k 5 S1638@92 S1639@94 S1640@92 S1641@90 S3356@77
+RM6h 1 S3355@2579
+REM3 0 
+REM3d 2 S1891@333 S3357@322

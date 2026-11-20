@@ -1,0 +1,63 @@
+# The stated LIMITS behind the D27 L1 witnesses that list LESS than the promise allows
+# (lane l1ffix, 2026-11-19; dispositions in docs/dev/lanes/l1ffix_report.md "D27 findings
+# dispositions"). Written by the BUILD side, never by the blinded author: l1d27_listing.tsv
+# beside it is the author's and is not edited. check_listing.py reads both: every row the
+# author recorded FAIL must name at least one limit here, and no PASS row may.
+#
+# LIMIT KEYS (one design sentence each; a key not declared here is a check error):
+#   domain       F1. A consumed class outside the run's domain (more than
+#                PCREC_MAX_REQ_RUN_POS_SET = 128 members: `.`, `[^z]`) is a gap, not a run
+#                position (src/facts/req.c rb_class_into), so no guard meets it. span_arms
+#                §5.1 "The guard" (positions are the sets the domain admits, D187 add. 1);
+#                the unlock is §10 U-descguard (guards meet DESCRIPTION positions, where a gap
+#                is a position: `x(?=ab|ac)a.`).
+#   guard-domain F2. A guard is read term by term outward from the cursor and ends at the
+#                first term outside the run's domain (span_arms §5.1 "The guard"), so a
+#                lookbehind `(?<=x..)` keeps no term past its wide one; same unlock.
+#   rep-wall     F3. The head's REP arm is a wall until [REPEAT-RUN] R2 (span_arms §14.3
+#                D-10, "WHY THE REP WALL STAYS UNTIL R2"): a lookahead body with a counted
+#                repeat yields no item past the repeat (`(?=(?:ab){2}c)`), counted by R2's
+#                trigger census.
+#   nested-item  F4. A nested positive lookaround is its OWN item (span_arms §5.1 ITEM,
+#                ctx_span §3.6: items are conjoined, never merged) and reaches the run only
+#                as the body's edge guards; its narrowing of the body's consumed positions
+#                stays in the body (§14.3 D-1: the body's set, description and consumed runs
+#                stay in the body), and the item reads the body's HEAD column (D-10), where a
+#                lookaround is a unit read through. Unlock: span_arms §10 U-nesteditem.
+#   edge-drop    F5. CAT-EDGE carries a leftover guard only across an `all` (exact-width)
+#                neighbour and drops it otherwise (span_arms §14.3 D-3; §10 U-exactwidth is
+#                the exact-width widening, for fixed-width neighbours only), and `dead` is one-sided (facts_listing §4.1.3¶1a
+#                names two lookbehinds, not two lookaheads): the walk meets `(?=xz)` with
+#                `\w+` before `(?=xy)` reaches it. Unlock: span_arms §10 U-assoc (not U-exactwidth:
+#                `\w+` is not fixed-width).
+#
+#id	limits
+A01	domain
+A02	domain
+A03	domain
+A04	domain
+A07	domain
+A08	domain
+A09	domain
+A10	domain
+A11	domain,nested-item
+A14	domain
+A16	domain
+A18	domain
+A21	domain
+A23	domain
+A24	domain
+A25	domain
+A26	domain,guard-domain
+A26k	rep-wall
+A30	domain
+A31	rep-wall
+A11k	nested-item
+A11w	nested-item
+B05	edge-drop
+B07	domain
+B14	rep-wall,guard-domain
+B14k	rep-wall
+B15	guard-domain
+B17	domain
+B22	guard-domain

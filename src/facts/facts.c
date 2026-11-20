@@ -69,6 +69,15 @@ static const uint32_t walk_arm_facts[PCREC_WALK_ARM_N] = {
 };
 _Static_assert(PCREC_WALK_ARM_N <= 8, "PfWhy.arms is one byte of arm bits");
 
+/* The run record with NO run: no position, length 0, offset 0. THE STATED
+ * VALUE both `ReqRun` writers (the deny's empty value and the derivation)
+ * start from (span_arms RM-1), so a field added to `ReqRun` is defaulted
+ * here once, never silently left unwritten by one of them. */
+static ReqRun pf_req_run_none(void)
+{
+    return (ReqRun){ .pos = { NULL }, .whole_len = 0, .whole_maxoff = 0 };
+}
+
 /* Stores fact `f`'s EMPTY VALUE — the answer for a pattern with nothing to
  * find, which every consumer already handles because real patterns produce
  * it. The switch has no `default:` so a new row is a compile error here. */
@@ -94,11 +103,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_REQ_SET_MAXOFF:
         memset(pf->req_set.maxoff, 0, sizeof pf->req_set.maxoff);
         break;
-    case PF_REQ_WHOLE_RUN:
-        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
-        pf->req_run.whole_len = 0;
-        pf->req_run.whole_maxoff = 0;
-        break;
+    case PF_REQ_WHOLE_RUN: pf->req_run = pf_req_run_none(); break;
     case PF_REQ_PIECES:
         pf->req_pieces = (PdDesc){ -1, PD_WALL, NULL };
         break;
@@ -230,17 +235,25 @@ static void pf_derive_req_walk(Ctx *cx)
         .restored   = h ? h->walk_arms
                     : cx->emit_in && cx->emit_in->meas ? cx->emit_in->meas->walk_arms : 0,
         .rate       = pcrec_find_byte_rate(cx),
+        /* the encoding descriptor, resolved here once (design §4.2.2
+         * carve-out (d)), as `land_char`'s is */
+        .onebyte_max = pcrec_enc_by_id(cx->opt->encoding)->onebyte_max,
     };
     RbSet set;
     RbRun run;
     PdDesc pieces;
+    bool never;
     int bits = 0;
-    pcrec_req_walk(cx, pf->root, &p, &set, &run, &pieces);
+    pcrec_req_walk(cx, pf->root, &p, &set, &run, &pieces, &never);
     for (int i = 0; i < run.n; i++) bits += pcrec_req_info(run.pos[i]);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
         pf->req_set.rightmost = set.pick;
         pf_done(pf, PF_REQ_SET);
+        /* span_arms L1: `rr_cat`'s CAT-SET moves the set where a guard
+         * narrowed a run position, so the arms that can take the guard or
+         * its neighbour away (`zero`, `look`, `rep`, `empty`) name it */
+        pf->why[PF_REQ_SET].arms = pf_walk_arms_of(p.restored, PF_REQ_SET);
     }
     if (pf_enter(cx, PF_REQ_SET_MAXOFF, false)) {
         /* [REQ-HANDOFF-L1] the walk's 32-bit saturation reads as the one
@@ -249,18 +262,20 @@ static void pf_derive_req_walk(Ctx *cx)
             pf->req_set.maxoff[b] = set.off[b] >= RB_OFF_UNBOUNDED ? PCREC_W_UNBOUNDED
                                                                    : (long long)set.off[b];
         pf_done(pf, PF_REQ_SET_MAXOFF);
+        pf->why[PF_REQ_SET_MAXOFF].arms = pf_walk_arms_of(p.restored, PF_REQ_SET_MAXOFF);
     }
     if (pf_enter(cx, PF_REQ_WHOLE_RUN, false)) {
-        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
-        pf->req_run.whole_len = 0;
-        pf->req_run.whole_maxoff = 0;
+        pf->req_run = pf_req_run_none();
         if (bits >= PCREC_MIN_REQ_RUN_BITS) {
             memcpy(pf->req_run.pos, run.pos, (size_t)run.n * sizeof run.pos[0]);
             pf->req_run.whole_len = run.n;
             /* [K82] the walk's bound on where this run begins. */
             pf->req_run.whole_maxoff = run.off;
         }
-        pf_done_why(pf, PF_REQ_WHOLE_RUN, pf->req_run.whole_len
+        /* span_arms L1 (D-9): the walk's root NEVER bit is this fact's why
+         * `dead`, ahead of the rate rule (facts_listing.md §4.1.3¶1) */
+        pf_done_why(pf, PF_REQ_WHOLE_RUN, never ? PF_WHY_DEAD
+                                          : pf->req_run.whole_len
                                           ? pcrec_req_rate_why(cx) : PF_WHY_NONE);
         pf->why[PF_REQ_WHOLE_RUN].arms = pf_walk_arms_of(p.restored, PF_REQ_WHOLE_RUN);
     }

@@ -28494,3 +28494,30 @@ Next
 - NEXT: l1fix delivers -> L1 feature lane (opus) on lane/l1build; cover-cap re-runs green -> landing (register
   rows, plan status, D177 ledger line, merge); dense-hit design when R-46's form arrives; read 708/709 in the
   morning (N, the block verdict).
+
+## 2026-11-19 session 141 (in flight, 19:15) — L1 landed; predicate lint + documents merged
+
+- LOOKAROUND L1 LANDED main d68a1294c (pushed 1eb474389). Path: l1fix (r53's 11 FIX-NOWs) -> l1feat (feature; two-sided
+  compare: all 54 census movers seen; 249 more, explained) -> D27 cell l1d27 (88 witnesses, 0 answer disagreements;
+  5 listing limits, all stated by the design) + review r55 (no answer findings; B = an unpredicted lost run_pin) ->
+  l1ffix (r55 FIX-NOWs; B in the general form: the pin claims the longest proved sub-stretch; PIN-LOST 0) ->
+  triages: l1tri2 (3 stale pins from r53 F3's block), l1ftri + l1ftri2 (identity JOB defects: emit_sweep's rc line read
+  as red; the sweep ran in the BASE tree, missing new test rows), l1s465 (S465's plant stopped compiling: rr_cat's new
+  arg), l1ttri (codegen manifest stale; test-stackdepth REAL: a 6.8 KB frame on the lookaround recursion, split;
+  memfn-arch: "adx" a THIRD time -> my scope ruling) -> c4scope + review r58 + c4fix (C4 skips .rxt data lines and
+  listing data columns; reader diff 98,114 data lines, 0 missed/over-masked) -> make test GREEN 19:08 -> merged.
+- D191 add. 1(b) REASSESSMENT recorded in REQ-LOOKAROUND.md: the lost pin fixed before landing; the general pin rule
+  gains pins on 48 non-lookaround patterns, bench 166/168/273 byte-identical C, so no timing owed.
+- Filed: D168 addendum 4 (span_arms §12 rev 3.3 text); [CTX-FACTS-NEG] note; register row 27 CLOSED; K146 +
+  [K146-VMCOST-DEPTH] (pre-existing compile crash, nesting 180, vm_cost); D177 ledger (row 3 fires; cloud suite
+  suite-d68a129 dispatched; local alloc + lint owed).
+- Predicate session: merged rev 29.1 + r54 + the document lint (review r56: 36 findings; my rulings: mutation gate,
+  ONE reader = an entry profile) at 672b26fc9; the pilot (fceff8f98) and the move to docs/design/predicates/
+  (892553b58); lint wired into test-doc-lint (76024ee9e). Critic skill: r56's two process changes (f006849ad), r55's
+  plant step and r58's reader diff (via lanes). Review numbers: r57, r59, r60 to pred; r58 mine; next r61.
+- Kit: R-46 (dense-hit) slipped to 14:00 11-20 (Frank's span-form work took its day), scoped to dense by 709's N.
+- LESSONS: (1) a queue-chained job retried after an in-place script fix may still run a SNAPSHOT: check what it runs;
+  (2) identity sweeps must run over the FEATURE tree's population, the base binary as reference; (3) the "third patch
+  to the same check" rule worked as designed: the scope fix deleted rows instead of adding one.
+- NEXT: cloud suite verdicts; local alloc + lint (a box window); prune the L1 worktrees; L3 (abi event) under the
+  D191 go, census first; K146 small lane; read 708/709 in the morning; R-46 form at 14:00.

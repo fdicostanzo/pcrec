@@ -83,9 +83,9 @@ that live here because an error in them is silent (wrong answers, no warning).
   is NOT refused (PCRE2's rule is lexical; tests/recursion/kreset.rxt). Sabotage
   S166 (pass order), S165 (prefilter vs call), S171 (maxw one round).
 - derive.c — [COMPOUND] B2 DERIVATIONS: `pcrec_derive_split_q` ([MATCH-SPLIT]'s Q:
-  kill `\G`/non-multiline `^` `\A` to the never node, prune bottom-up, GROUP-KEEP
-  rule, G5 check, `PcrecDeriveReport`); `pcrec_ast_crosses_attempts`. Runs second in
-  the tree-hook list (after the composer, before altcls). Tests tests/compound/.
+  kill `\G`/non-multiline `^` `\A`, prune bottom-up by kindrow.def's NEVER column
+  (`pcrec_never_by_row`), GROUP-KEEP, G5 check, `PcrecDeriveReport`);
+  `pcrec_ast_crosses_attempts`. Second tree hook (after the composer, before altcls). Tests tests/compound/.
 - lower_enc.c — [M5.0] ENCODING LOWERING: `LowerOps` table, one row per encoding (no
   `if (enc == ...)`); code-point classes -> byte-sequence ASTs; sole producer of
   `A_WCLASS` ([CLS-TREE] S3); clears `u.rep.revbody` where lowering would change the

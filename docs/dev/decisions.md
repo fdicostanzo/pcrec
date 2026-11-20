@@ -9871,6 +9871,44 @@ P2d folded `\A`/`\z` at the NFA layer: `N_BOT`/`N_END` and their engine arms are
 
 P2e built: `\A`/`\z` are `A_CTX` rows of the 9-cell table and the table's CLASS column (`CTX_CONTEXT`, `CTX_PIN_START`, `CTX_PIN_END`) is derived by grid equality, with the written column checked against it. The 8 sites that stayed special-cased on `A_BOL`/`A_END` now switch on the class with no `default:`; `A_BOL`/`A_END` and `pcrec_anchor_ctxfn` are deleted. The heavy chain measured ZERO emitted-byte movers against 73c2bb655 (plain and `--arms start`, every variant), so there is no abi event per D76/D94: abi stays 81, and D168 add. 3's "own abi event" was conditional on movers (N-3), which measured zero. Report: docs/dev/lanes/ctxp2e_report.md (validation verdicts in 7a).
 
+### D168 addendum 4 — the context producer is the lookaround ITEM (positive one-sided lookarounds); `\b`/`\B` and the negative complement move to [CTX-FACTS-NEG] (filed at the lookaround L1 landing, 2026-11-19)
+
+Filed by the manager at the landing of span_arms unit L1 (main merge d68a1294c), as span_arms.md §12 "D168 addendum, rev 3" states it (rev 3.3: what L1 BUILT, per review r55 TABLE-3). Text, without its inline revision markers:
+
+"The context producer of D168 is ONE producer of per-offset sets at signed offsets: the lookaround
+ITEM, assembled by the run walk (`src/facts/req.c`, its own statics) at each positive one-sided context node
+from the fixed-width description's readers (`src/facts/desc.c`: the head column, the description read reversed);
+the assembly moves into `desc.c` when a second reader of the item exists (D77). An `A_CTX` NEXT/PREV gives its set at 0/−1; a
+positive lookahead gives the head column of its body (the positions every match consumes FIRST, at offsets
+0..h−1); a positive lookbehind gives its body's description placed right-aligned at the cursor, united per
+offset across width groups (offsets −h..−1). Each term is an EXACT byte set, a set of members (D187
+addendum 1), never a hull; a term the run's domain does not admit ends the item there. The item has no form and no
+absent cell: a SUPERSET form and an absent cell are not built until a reader needs them (D77; L3's bounded
+variable-width lookbehind is the first). D168's named home, the span slice (`span_facts`), was deleted by
+[COVER-CAP] stage 1; the cover's own edge context (the byte before and after its span) is the anchored
+machine's walk (`src/gen/known.c`), which answers a different question (two-sided, per thread) and is not a
+second producer of these sets. Every reader places an item in its own coordinates and reads it from this one
+producer: the run (as pending guards), the kit's presence run span (the run uncut, `foobar` at −3 for
+`(?<=foo)bar`: the owner's span, 2026-11-18; that this makes ONE producer is the manager's reading of his
+ruling, checked against D168, D172 and D191.3 ), D172's window site,
+[LOOK-LOCATE], [CTX-SIDES-PRODUCER]. A reader
+that narrows the sets (the run's meet by set membership within `pos_set`) does so locally and never writes back.
+[CTX-FACTS-NEG] keeps only what the item cannot state: `\b`/`\B` folded at an offset, the width-1 negative
+lookbehind's complement, sets past the subject's end, and thread context. The `\b`/`\B` fold, the negated
+one-sided rows and every negative lookaround are NOT item members: in the run walk they are CAT's width-0
+unit (the EMPTY/E2 arm). Not stored as a fact until a second reader exists (D77). THIS ADDENDUM AMENDS D168: its title and member list. D168 named one `span_facts` producer with three
+members (`\b`/`\B` through the fold, the fixed positive lookbehind, the width-1 negative lookbehind's
+complement); from this addendum the ITEM is the one producer of POSITIVE one-sided lookaround sets, and `\b`/`\B`
+and the negative complement move to [CTX-FACTS-NEG]. This is not D168's "two mechanisms for one fact": the
+item states the sets a positive context REQUIRES on one side of the cursor; `\b`'s fold needs both sides (the
+byte before AND the byte after, a relation the item cannot state) and the negative complement states what is
+EXCLUDED, a different fact; neither is an item member, so each fact still has one producer. [CTX-FACTS-NEG]'s
+scope here (`\b`/`\B` folded at an offset, the width-1 negative lookbehind's complement, sets past the subject's
+end, thread context) adds the negative complement to the plan row's NOTE (`\b`, past the end, thread context);
+the manager aligns that NOTE when filing."
+
+[CTX-FACTS-NEG]'s NOTE is aligned in the same change (it now names the width-1 negative lookbehind's complement besides `\b`, past the end and thread context).
+
 ## D169 — R17-b′ B4's default under unknown landing predictability is V1 (Frank, 2026-10-20, session 120)
 
 - **Decision:** grid2 showed that neither search length (M9: V1 beats the walk at every N >= 8) nor candidate gap (M15) decides V1 versus the walk: landing predictability does, and it is a property of the data, unknown at compile time. Short candidate gaps tend to come with short subjects, whose total search time and absolute losses are small; large gaps come with large subjects, where throughput matters. So presume large gaps and large subjects, and all else being equal, default to V1. The walk stays the default only where a measured row keeps it (the VM hat, D1w, until F2); one-byte sites keep LIBC (D1); a measured or caller-stated regular regime may select the walk (R5's MEASURED-E path).

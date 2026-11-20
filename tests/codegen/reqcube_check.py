@@ -289,6 +289,10 @@ WIT = [
     ("x1234", "(?i)x/1234", ()),
     ("frank", "frank|fred", ()),
     ("gcon", "(?i)group_concat", ()),
+    # span_arms L1 W-S4 (§5.7, §14.4 L1): the lookahead narrows `[pq]` to `q`,
+    # which the TOP set step joins to req_set; check 4 reads RX_REQ_BYTE (`q`)
+    # against that set, so a set step that joined the wrong byte is red here
+    ("ws4", "x(?=qr)[pq]r", ()),
 ]
 
 n_whole_route = 0

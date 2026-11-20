@@ -296,8 +296,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-18): architecture note docs/design/dense_hit_arch.md ACCEPTED (reviews r49); Frank ruled lookahead-home = the kit's method; his words and the open starts-or-occurrences question: docs/design/plan_row_bodies/REQ-PAST-LAST.md
 - [REQ-LOOKAROUND] STATE:started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
-  status (2026-11-18): span_arms.md rev 3.2 MERGED (054c9cdf7; r51 applied, confirm critic passed); D191 build go: L1, L3; L2 after the kit's R-38 delivery (its readiness critic discharged by the confirm); NOT built
-  next: build L1 (opus lane: census, remodel commits, feature; D27 witnesses; code critic before landing), then L3 (abi event), then L2
+  status (2026-11-19): L1 LANDED main d68a1294c (census, RM-1/RM-6/remodel 3, the feature, reviews r53/r55/r58 fixed, 88 D27 witnesses; identity/mech/axes/make test green); D168 add. 4 filed; D191 add. 1(b) reassessment recorded in the body file
+  next: L3 (abi event), then L2; K146 (vm_cost depth) is its own small lane
   refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
@@ -600,6 +600,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]; [COND-FAMILY] (D193: speed leads, so conditionals stay refused until the family order reaches the node; no rework either way)
   NOTE (2026-11-12, review r1-s1 NMSOUND-2, ruling R2): `never_matches` is filed E2 CORE but reads route choices and machines; a separate `Job.machines_final` bool, beside the `PfEpoch` mechanism, guards it, and one pattern reads differently by route (`no` under `--engine=vm`). The general form is a machine-final epoch (E4, or E3 sealed on both routes) in the facts epoch vocabulary; not urgent (no second reader today). Same review: `(*ACCEPT)` and the other verbs are refused today, so `pcrec_minw` (src/opt/mrl.c) needs no arm; when they land it must not count width after an `(*ACCEPT)` ([FIND-MINW]'s trigger too). Proposed unlocks, with triggers, in docs/dev/reviews/2026-11-12-r1-s1.md (U1 `(?!)` as the empty class, U2 proof-only superset machine, U3 `unbounded-width` proof, U5 island row consuming its proof).
+  NOTE (2026-11-19, lane l1ffix, review r55 J): the L1 half of this trigger FIRED with L1's build; its first measured case is filed as [NEVER-DEAD].
 - [FLAG-DEMOTE] STATE:not-started — demote 20 public -f deny flags to test-only levers and drop one alias (~21 bits)
   filed: 2026-11-12 manager, from the read-only audit docs/dev/flag_audit_2026-11-12.md; Frank 2026-11-12: "Let's do the 20 plus drop. Agree with plan"
   status (2026-11-12): GO given; its own set after S1 and the kit's K38-2 land (same option table). The 3 medium and 6 unsure flags stay public; bit 55's dead reservation released if nothing reads it.
@@ -917,6 +918,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: [DD-11.5] (part (a) stays there); [COVER-CAP]; [REQ-LOOKAROUND]; decisions D168; kit_proof UL-0; docs/design/ctx_span.md
   The D168 context facts at negative offsets / past the end (per-offset sets {set, includes-absent, exact}: `\b`, fixed positive lookbehind, width-1 negative lookbehind), to be produced from the anchored DFA the cover route reads, shared with kit_proof UL-0.
   NOTE (2026-11-18): RE-SCOPED by Frank's context-producer-home ruling ([REQ-LOOKAROUND] body file): fixed lookbehinds come from the lookaround item (one producer); this row keeps only what the item cannot state (`\b`, past the end, thread context)
+  NOTE (2026-11-19): D168 addendum 4 filed at the L1 landing: this row keeps `\b`/`\B` folded at an offset, the width-1 negative lookbehind's complement, sets past the subject's end, and thread context
 - [RX-NOT] STATE:not-started — negation inside a normal rx (`!` in `/!foo/`): LATER item, not scheduled, in no set
   filed: 2026-11-15 Frank (answer on COND-FAMILY scope), written by the manager
   status (2026-11-15): filed, NOT SCHEDULED; parked until the owner clarifies what `!` covers; the predicate design ([COND-FAMILY]) does not depend on it
@@ -989,6 +991,17 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: span_arms unit L3 has landed, and a bench cell whose rarest bytes sit in a lookbehind
   refs: docs/design/span_arms.md §5.3, §10; docs/dev/reviews/2026-11-08-r1-spanarms.md; D168; D172; [REQ-LOOKAROUND]
   The item, placed at its negative offset, joins the one find-the-span choice set as a window span (Frank 2026-11-06: `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). The kit honours the span's verify flag (D172); no new kit mechanism.
+- [LOOK-STARTSET] STATE:not-started — start_set and the k-set walk read a positive lookaround's item
+  filed: 2026-11-19 lane l1ffix (review r55 J, UNLOCK 1, ruled PLAN: filed, not scheduled)
+  status (2026-11-19): not started; UNSCHEDULED. `(?=a)[ab]c` lists `start_set {a,b}` where `{a}` is sound: the start set and the k-set walk pass a lookaround over as a unit while the run walk narrows through its item
+  trigger: (D77) a census of lookahead-led corpus and bench patterns whose start set the item narrows, or start_set's next touch
+  refs: docs/design/span_arms.md §14.8 item 14, §12 (the D168 addendum: the item is the one producer); docs/dev/reviews/2026-11-19-r55-l1feat.md J, TABLE-3 (iii); [START-SET]; [REQ-LOOKAROUND]
+  A second reader of the item is also the trigger for moving its assembly from req.c into desc.c (the D168 addendum, D77).
+- [NEVER-DEAD] STATE:not-started — `never_matches` names a pattern the run walk lists `dead`
+  filed: 2026-11-19 lane l1ffix (review r55 J, UNLOCK 2, ruled PLAN: filed, not scheduled)
+  status (2026-11-19): not started; UNSCHEDULED. [NEVER-MATCH]'s trigger (span_arms L1's landing) FIRED: the walk's proof and the machines' disagree on a measured pattern, utf8 `x(?=\x{100})y` lists `req_whole_run` `dead` with `never_matches no`; `foo(?=bar)baz` (a VM artifact, no machine) likewise
+  trigger: (D77) a corpus count of patterns listed `dead` with `never_matches no` that shows in size or compile time, or [NEVER-MATCH]'s next build
+  refs: [NEVER-MATCH]; docs/design/span_arms.md §14.3 D-9, §14.8 item 14, §10 U-dead; docs/spec/facts_listing.md §4.1.3¶1a, §4.1.2¶12
 - [CTX-SIDES-PRODUCER] STATE:not-started — the cover's MkEnd ctx_before/ctx_after read from D168's signed-offset producer
   filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
   status (2026-11-18): SCHEDULED by the owner (proved-ending-scope): next after [REQ-LOOKAROUND] L1-L3 land, as its own step; delivers his `(?<=foo)bar` "proved, search over" ending; trigger fired 2026-10-23 (bc675b020)
@@ -2409,6 +2422,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: starts only on Frank's word; no row-specific trigger recorded
   BOONIES (Frank, 2026-10-09: "File it in boonies"). Fold a caseless backreference's/variable's capture ONCE (canonical case-set representatives, bounded buffer) and compare only the subject side, keyed on the capture span. Pays only when the capture holds still across many compares (`(?i)^(\w+).*\1`), and mostly under utf8. It loses when backtracking is inside the capture. NOT TRIGGERED; no measurement chartered.
 
+- [K146-VMCOST-DEPTH] STATE:not-started — quantified nested lookarounds overflow the compile thread's stack in vm_cost (K146)
+  filed: 2026-11-19 manager, from review r58 IDENT-1 (pre-existing; found while reviewing L1's stackdepth fix)
+  status (2026-11-19): not started; a compile crash (SIGSEGV) on a hostile pattern at nesting 180
+  next: a small lane: split vm_cost/vm_cost_rep's descent frame (the shape of l1ttri 2e9e86126) and add a DEPTH_FAMILIES row; after the lookaround L1 landing
+  refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md
 - [CLS-FOLD-WAF744] STATE:not-started — research why the caseless class fold loses on waf744 (x86)
   filed: 2026-09-30 Frank (decisions D138 addendum)
   status (2026-10-12): not started; re-filed as its own row after [FORM-CHAR2] was archived (it had been merged into that row by [PLAN-LINT] step 2)
