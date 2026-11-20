@@ -1,13 +1,14 @@
 # Predicate-language manager: wake-up brief
 
-Rewritten 2026-11-20 (box clock, after midnight), in the second predicate-manager session, at the delivery of the
-reorganized documents. Committed docs win on any disagreement.
+Rewritten 2026-11-20 (box clock, after midnight), at /close of the second predicate-manager session. Committed docs
+win on any disagreement.
 
 ## State
 
-- Branch `lane/pred-rev28` (worktree `worktrees/pred`); level with main at this writing except for the delivery
-  P-11 (check `from_main.md` and `git log main` for its merge). NOTHING running; no crons of mine; every lane and
-  coordinator stopped. Lane worktrees preddoc2..6, predlint3 are delivered and merged (prune is main's).
+- Branch `lane/pred-rev28` (worktree `worktrees/pred`), level with main at close: main merged P-10 (the move and
+  the lint), P-11 (the converted documents, reviews r59 and r60) and P-12 (the skill edit Frank asked this session
+  for: wake-up reads the three primary files). P-13 is the close notice. NOTHING running; no crons of mine; every
+  lane and coordinator stopped. Lane worktrees preddoc2..6, predlint3 are delivered and merged (prune is main's).
 - THE LANGUAGE IS NOW DEFINED BY `docs/design/predicates/`: `core.md` (122 pieces: syntax and meaning, section
   Principles first), `library.md` (54 pieces: EVERY call-form name `x()` / `m.x()` / `@x()`, each marked
   `defined: language` with a proved body or `defined: native (<why>)`), `parked.md` (39 ideas, each with a
@@ -66,11 +67,11 @@ core.md is 107 KB against a 64 KB soft cap I guessed (generated indexes; a split
 base; an errors index; a lint check for `defined:` and for "every called name has a piece"; the sibling-family
 unification (COLD-16); operators as bodies and macro-raised warnings (questions for him, low priority).
 
-## Asked of main, unanswered
+## Asked of main
 
-The predicate-manager skill still names the draft as the working document (sections 0, 1, 3, 4, 5): P-11 carries
-the replacement text. Earlier proposed skill edits: P-4 (run the owner's regex), P-6 (no background jobs in lane
-briefs).
+Nothing open: main applied the skill edits of P-11 and merged P-12. Not requested yet (r59/r60 PLAN items that
+touch `scripts/`): a lint check for the `defined:` line and for "every called name has a library piece";
+generated index pieces.
 
 ## Lessons (cases)
 

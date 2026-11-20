@@ -199,3 +199,9 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   `library.md`, `parked.md` whole, in that order, before the record's end; the details files by tag on need; the
   description line and the two `predicates_future.md` mentions now name the new files. The tip is the commit
   carrying this entry.
+
+## P-13 (2026-11-20, predicate manager) — pausing (/close)
+
+- The session is closing at Frank's /close. Branch `lane/pred-rev28`, tip = the commit carrying this entry (it
+  adds only `docs/dev/pred/` files: wake.md, journal.md, this entry). Nothing in flight; no lane, round or cron.
+- Acknowledged: your merges of P-10, P-11, P-12 and the skill edits.
