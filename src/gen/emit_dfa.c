@@ -9448,7 +9448,25 @@ static bool req_landmark_admits(const CandSel *s, PfBound k)
  * the row it displaces. FIRST is READ, never restated: one fact, one proof,
  * one deny (`-fno-req-handoff` removes every handoff row). Inside a VM
  * hybrid's prefilter it is declined after the size-cap ladder's
- * `drop-handoff` row fired. */
+ * `drop-handoff` row fired.
+ *
+ * DECLINED AT K < 0 (span_arms §14.4 L3, REV 3.3 addendum): the re-entry
+ * runs at a scan position where the machine is back in its start state,
+ * and treats that as a fresh search; at K < 0 it is not one. The DFA's
+ * language holds only the CONSUMED part of a match: a lookbehind's bytes
+ * are tested by the machine but are never in what the start state's
+ * future recognises, so a match begun BEFORE the scan position whose
+ * lookbehind run lies further back can be in flight in the start state
+ * (`(?<=foobar)\d*x` on "foobar12x": `\d*` keeps the start state at 7, a
+ * match begun at 6 is in flight, and the re-ask from 7 finds no `foobar` at
+ * or after 1, so NOMATCH where PCRE2 answers (6,9)). Equal DFA states have
+ * equal futures only over consumed bytes. The entry move and the VM
+ * attempt loop's re-entry stay: an attempt there is a real fresh start. */
+static bool req_k_reentry_sound(PfBound k)
+{
+    return !(pcrec_bound_bounded(k) && k.v < 0);
+}
+
 static bool pf_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
@@ -9457,7 +9475,9 @@ static bool pf_handoff_applies(const CandSel *s)
     u = req_use_read(cx, CAND_SLOT_NEXT);
     if (cx->req_handoff_dropped && cand_finish_of(cx) == CAND_ROUTE_VM) return false;
     if (u->use != REQ_USE_HANDOFF || u->whole) return false;
-    return req_landmark_admits(s, req_landmark_k(cx));
+    PfBound k = req_landmark_k(cx);
+    if (!req_k_reentry_sound(k)) return false;
+    return req_landmark_admits(s, k);
 }
 
 /* NEXT's selection for the artifact's forward DFA machine (the body's, or
