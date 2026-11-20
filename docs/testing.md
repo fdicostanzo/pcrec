@@ -739,8 +739,18 @@ consistent with each other.
 
 **Sections added since, each with its own lane's one-run figure (NOT
 this table's method; Mac dev box, so directional):**
-- `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05): about
-  **52-62 s** wall over two runs, with `all` up to date. It is G2's `run_g2.sh --quick`:
+- `test-memfn-g2` **(2026-11-20, STALE figure below; current)**: **1004 s**
+  wall run ALONE on the Linux dev box (job 205-g2tri-g2alone, `make -j4`,
+  `G2_UNITS_OUT` per-unit seconds). The 29 units sum to 1791 s (they run
+  concurrently, so the sum exceeds the wall). Top units by time (s):
+  win 288, gcc 132, asan 93, w2-3 80, w2-1 77, w1w3 77, mfind 76. As one
+  section of a `make test` at j2p8 the section reads 960.2 s (job
+  202-main-k146land-test2); that whole `make test` measured 2677 s
+  (~45 min; 2677-2850 s over the j2p8 runs, ~45-48 min on a quiet box).
+  Earlier section readings from the same ledger: 470.6 s (11-09), 614.9 s
+  (11-12), 829.8 s (11-19). The next bullet's figure is the original one.
+- `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05; Mac, STALE: about
+  **52-62 s** wall over two runs, with `all` up to date). It is G2's `run_g2.sh --quick`:
   - gcc over every generated site at the quick subject tier;
   - ASan and the W1-W3 witnesses on every third batch, run
     concurrently, so it uses every core for most of that minute.
