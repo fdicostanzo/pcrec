@@ -27,9 +27,11 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
   command there: `git rev-parse --show-toplevel`. You never merge to main and never push; main merges.
   Never `cd` into another tree in a chained command (a hook blocks it): `git -C`, absolute paths, or a
   `(cd X && ...)` subshell. Never raw `git worktree remove`, never `rm -rf`.
-- **What you own** (edit on your branch): `docs/design/predicates_draft.md` (the draft; its status line
-  says NOT STABLE until Frank says otherwise), `docs/design/plan_row_bodies/COND-FAMILY.md` (THE RECORD
-  of the owner's words, append-only), `docs/design/predicates_future.md` (ideas, not rules),
+- **What you own** (edit on your branch): `docs/design/predicates/` (the current definition: core,
+  library and parked, each with its `_details.md`; format `docs/dev/pred/doc_format.md`; run
+  `python3 -I scripts/pred_doc_lint.py` before naming a tip: make test runs it; `predicates_draft.md` is
+  FROZEN at rev 29.1 and `predicates_future.md` is retired), `docs/design/plan_row_bodies/COND-FAMILY.md` (THE RECORD
+  of the owner's words, append-only),
   `docs/dev/pred/` (your wake, journal and `to_main.md`), the evidence directories
   `docs/dev/lanes/predspec*_evidence/`, your lanes' reports, and the filed reviews of the draft.
 - **What main owns:** `docs/dev/plan.md` (the [COND-FAMILY] row), `decisions.md`, `known_issues.md`,
@@ -56,8 +58,8 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
 2. Read `docs/dev/pred/wake.md` (your branch's copy if `worktrees/pred` exists), then
    `docs/dev/pred/from_main.md` (every entry after the last one your `to_main.md` acknowledges).
 3. Read the END of `docs/design/plan_row_bodies/COND-FAMILY.md` back to the last revision's fold point
-   (wake.md names the entry), then the draft's header/history block and its question list (section
-   R.8), then the latest filed review of the draft (`ls docs/dev/reviews | grep predspec | tail`).
+   (wake.md names the entry), then `docs/design/predicates/core.md` and `library.md`, then the latest
+   filed review (`ls docs/dev/reviews | grep -E 'predspec|preddoc' | tail`).
 4. Tail of `docs/dev/pred/journal.md`; `git log --oneline -10 main` for what main merged.
 5. Bring `worktrees/pred` up to date with main (merge ALONE; read the result).
 6. Tell main you are up (one SendMessage: your branch, what you are about to discuss or revise).
@@ -67,7 +69,9 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
 
 - **Record his words VERBATIM, the same hour**, as a dated entry appended to COND-FAMILY.md, and class
   each remark as OBSERVATION, LEAN, DISCUSSION, PROPOSAL, IDEA or RULING. **A remark is a RULING only
-  when it answers a question asked as one, or he says so.** "I thought we said" is a recollection:
+  when it answers a question asked as one, or he says so.** Each record entry carries a `tags:` line;
+  before saying ruled, confirmed or undefined, grep the record AND read the same day's later entries.
+  "I thought we said" is a recollection:
   check the record. Say which reading of a bare "agree" or "yes" you took.
 - **Every consequence YOU derive is marked "the manager's reading"** in the record and is LISTED for
   the next revision lane to test (supported / not supported / untestable, with the run or the record
@@ -112,6 +116,9 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
 Rulings gathered -> a FOLD revision lane -> a critic round -> you rule the dispositions -> a FIX
 revision lane (which also files the review) -> merge into your branch -> deliver to main.
 
+- **A single ruling is folded by YOU in one commit** (record + base piece + details entry + lint green); a
+  lane is for a ruling that moves several pieces or needs runs. An evidence model builds the regex
+  mechanically from the body's text, never by hand.
 - **Lane briefs** start "LANE <name> (<tier>): <task>" then "Read docs/dev/lanes/BOILERPLATE.md FIRST
   and follow it", then every field of `docs/dev/lanes/BRIEF_TEMPLATE.md`. Worktree cut from YOUR
   branch (`worktree add worktrees/<lane> -b lane/<lane> lane/pred-<topic>`). Write
@@ -146,8 +153,9 @@ revision lane (which also files the review) -> merge into your branch -> deliver
 
 `docs/dev/pred/wake.md` is the hand-off: the current revision, what is ruled, the open questions in
 the order to take them, the proposals not ruled, the plan for the next FULL revision (one table per
-position, one table per operation), and the readings awaiting a test. The draft's status line and
-section R.8 win over anything remembered.
+position, one table per operation), and the readings awaiting a test. The open questions are
+`scripts/entry -g . -p predicates --state open`; `docs/design/predicates/` and the record win over anything
+remembered.
 
 ## 6. Session end or pause
 
