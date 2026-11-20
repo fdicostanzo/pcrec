@@ -442,6 +442,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the next counterfactual reader (stage 2's VM walk, a second deep `under` read) or the next toggle site
     refs: docs/dev/reviews/2026-10-29-r7-landwalk3.md; docs/dev/lanes/p1build_report.md; src/gen/emit_dfa.c (pcrec_cand_lmwalk_next_cf)
     Reentrant and longjmp-safe, lets `under` propagate as the static walk assumes, and unifies the ladder's shrink test, the memo and the facts hook (forest-for-trees: the family's third member, so proposed, not built).
+- [LINT-FRAME] STATE:ready — `make lint` COMPILER STACK-FRAME CEILING PER CALL-GRAPH CYCLE
+  filed: 2026-10-22 manager (lane dd10fix report section 4 item 1)
+  status (2026-11-20): TRIGGER FIRED: K146 is the recursion regression it names (review r62 UNLOCK-1: no single dropped mark made any DEPTH_FAMILIES row die; 11 of 21 plants moved nothing). Nothing built.
+  ready: the VCG/SCC frame-ceiling check as a `make lint` row; before it: [K146-VMCOST-DEPTH] landing, then [K147-POSSESSIFY-DEPTH] (its fix needs the same guard); priority over not-started work when the close-out freeze lifts (Frank 2026-11-10)
+  refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
+  Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
 
 ## Candidates ([OPTLOOP])
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
@@ -1428,12 +1434,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: a user with two prefixes differing only in case, or the next rx abi event (bundle the fix there).
   refs: lane/subst docs/dev/lanes/subst_rulings.md R14; subst_api_r4_draft.md §1¶3; [M4-SUBST]
   Charter: one general rule for every emitted uppercase identifier derived from a prefix (stamps, header guards), so case-only-different prefixes never collide; replaces the #error. An rx abi event.
-- [LINT-FRAME] STATE:not-started — `make lint` COMPILER STACK-FRAME CEILING PER CALL-GRAPH CYCLE
-  filed: 2026-10-22 manager (lane dd10fix report section 4 item 1)
-  status (2026-10-22): filed; nothing built. PCREC_OWN_FRAME marking is checked only by its effect (S1340 on the compilestack arm)
-  trigger: a recursion regression the compile-stack run (tests/thread/run_compile_stack.sh) catches late, or the L1-X1 spine sweep finishing.
-  refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
-  Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
 - [SUBST-SPEED] STATE:not-started — SUBST'S UTF-8 CASE FORCING AND REPLACE-ALL OVERHEAD
   filed: 2026-10-24 manager, from review 2026-10-24-r1-subst-code (EMIT-1, EMIT-2, EMIT-3)
   status (2026-10-24): measured: utf8 \U path +15.7% instructions vs pcre2+JIT (two passes, no ASCII fast path, bsearch per letter); replace-all 3.2x a hand loop's per-match overhead (still 22% under pcre2+JIT)
@@ -2424,9 +2424,14 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 
 - [K146-VMCOST-DEPTH] STATE:not-started — quantified nested lookarounds overflow the compile thread's stack in vm_cost (K146)
   filed: 2026-11-19 manager, from review r58 IDENT-1 (pre-existing; found while reviewing L1's stackdepth fix)
-  status (2026-11-20): fix on lane/k146fix (own-frame VM emitter and vm_cost arms; `lookrep` DEPTH_FAMILIES row, 297,536 B at depth 250; zero emitted-byte movers); awaiting the code critic round and landing (docs/dev/lanes/k146fix_report.md)
-  next: a small lane: split vm_cost/vm_cost_rep's descent frame (the shape of l1ttri 2e9e86126) and add a DEPTH_FAMILIES row; after the lookaround L1 landing
-  refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md
+  status (2026-11-20): FIXED on lane/k146f2 (r62 rulings on k146fix's 21 own-frame marks; rows `lookrep`, `altrep`; true worst 353,512 B at depth 250; zero emitted-byte movers); validation queued, then landing (docs/dev/lanes/k146f2_report.md)
+  next: land lane/k146f2 after its queued make test; then [K147-POSSESSIFY-DEPTH]
+  refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md; docs/dev/reviews/2026-11-20-r62-k146fix.md
+- [K147-POSSESSIFY-DEPTH] STATE:not-started — possessify's first_of/text_first recursion kills pcrec_compile on `(a|b(a|b…\1)*)*` (K147)
+  filed: 2026-11-20 manager, from review r62 DEPTH-3/DEPTH-4 (pre-existing; answer-adjacent: libpcre2 compiles it)
+  status (2026-11-20): filed; nothing built. Dies from depth 174 on the 442,368-byte thread, and from 26 with one backreference per group.
+  trigger: the NEXT lane of K146's family, right after K146 lands (Frank/manager ruling, r62); fix by the same general depth mechanism ([DD-10] PCREC_OWN_FRAME), with DEPTH_FAMILIES rows for both shapes; [LINT-FRAME] is scheduled after it
+  refs: known_issues K147 (the family survey, r62 UNLOCK-2, is its notes); docs/dev/reviews/2026-11-20-r62-k146fix.md; docs/spec/limits.md §3.10¶1
 - [CLS-FOLD-WAF744] STATE:not-started — research why the caseless class fold loses on waf744 (x86)
   filed: 2026-09-30 Frank (decisions D138 addendum)
   status (2026-10-12): not started; re-filed as its own row after [FORM-CHAR2] was archived (it had been merged into that row by [PLAN-LINT] step 2)

@@ -11,13 +11,23 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K146 — OPEN (found by review 2026-11-19 r58 l1tail IDENT-1, pre-existing; plan row [K146-VMCOST-DEPTH]; not scheduled) — quantified nested lookarounds overflow the compile thread's stack in vm_cost
+## K147 — OPEN (found by review 2026-11-20 r62 k146fix DEPTH-3/DEPTH-4, pre-existing; plan row [K147-POSSESSIFY-DEPTH]; the next lane of K146's family) — possessify's first_of/text_first recursion kills pcrec_compile on `(a|b(a|b…\1)*)*`
+
+**Witness:** a quantified capture nesting in its alternation's second branch with a BACKREFERENCE at the core, `(a|b` repeated N times, `\1`, `)*` repeated N times: `pcrec_compile` dies with SIGSEGV (rc 139) at N=174..250 on the 442,368-byte compile thread; N=173 compiles (hw 441,096 B). With one backreference per group, `(a|b` x N, `\1\2…\N`, `)*` x N, it dies from N=26 (N=25 hw 420,744 B, N=24 391,352 B), and from N=14 on musl's 128 KB thread: the stack grows about quadratically, not linearly, in the nesting (about 2,450 B per level for one backreference). Re-run at lane/k146f2 and lane/k146fix; BASE is identical (pre-existing, outside the K146 diff). libpcre2 10.46 compiles both (`OK 250`; `M 0 4 …` on `bbaa`), so this is a compile crash on an accepted pattern. Variants that also die at 250: `(a|b(…\1)?)?`, named groups with `\k<x0>`, `*+`, `*?`; unquantified `(a|b(…\1))` fits at 381,928 B.
+
+**Cause (per r62's gdb, not re-run here):** the frames are `first_of` / `text_first` in src/opt/possessify.c: the capture fact re-walks the nest from the innermost level at every level (its self-recursive walks hold 232-392 B frames: first_of 392, text_first 328, item_first 312, gk_build 312, ps_node 232). docs/spec/limits.md §3.10¶1 names this as the one exception to "nesting and nothing else".
+
+**Fix shape:** the SAME general depth mechanism as K146 (`PCREC_OWN_FRAME`, [DD-10]; internal.h's two uses): keep each recursive walk's descent frame small and move per-level scratch into marked off-path leaves, then make the capture fact's re-walk not quadratic if the frame split alone does not bring the quadratic case under the budget; add DEPTH_FAMILIES rows for both shapes (`\1` core and `\1…\N` core) and take [LINT-FRAME] first or in the same lane, since this fix needs the same guard (K146's r62 UNLOCK-1).
+
+**Family survey (r62 UNLOCK-2; direct self-recursion only, frame >= 160 B, a floor; which are on a depth-250 path is not measured):** parse_src 1768 / closure_walk 600 / config_walk 568 (parse/rxt_source.c, .rxt sources, not pattern nesting); first_of 392, text_first 328, item_first 312, gk_build 312, ps_node 232 (opt/possessify.c); compile_ast 328 (ir/nfa.c); ss_walk 296 (facts/startset.c); q_rewrite 264 (opt/derive.c); emit_region_items 264 (gen/emit_subst.c); co_walk 232 (opt/callout.c); vm_emit_node 232, vm_rev_emit 200 (a fourth per-level switch in emit_vm.c with inline arms, unchanged by K146); rb_walk 200; trie_build 200; vm_isl_words 168. Members of the family so far: req.c rb_* marks, l1ttri's rb_zero_item_into split, K146. The possessify walks (5 members) are the first place to look.
+
+## K146 — FIXED ON lane/k146f2 (awaiting landing; found by review 2026-11-19 r58 l1tail IDENT-1, pre-existing; plan row [K146-VMCOST-DEPTH]) — quantified nested lookarounds overflowed the compile thread's stack in vm_cost and the VM emitter
 
 **Witness:** `(?=a|b` repeated N times, then `c`, then `)*+` repeated N times: `pcrec_compile` dies with SIGSEGV (rc 139) at N=180 and N=250 on the 442,368-byte compile thread; N=179 compiles. Re-run by the r58 coordinator at lane/c4scope 3a707deaa (and present before L1: not introduced by it).
 
-**Cause (as found, not yet confirmed by a fix):** `vm_cost` / `vm_cost_rep` (src/gen/emit_vm.c about :3031 and :2440) recurse about 2 KB of frame per nesting level; tests/thread's DEPTH_FAMILIES has no family of this shape, so test-stackdepth never reached it.
+**Cause (confirmed by the fix):** `vm_cost` / `vm_cost_rep` and the VM emitter's `vm_emit_node` (src/gen/emit_vm.c) inlined their recursive arms, so every nesting level paid the union of the arms' locals (about 2 KB per level).
 
-**Fix shape (proposed by r58):** the same split L1 applied to `rb_zero_item_into` (l1ttri 2e9e86126: keep the descent frame small, move the per-level work into off-path leaves), plus a DEPTH_FAMILIES row for this shape so the bound is checked.
+**Fix (lane/k146fix, r62 fixes on lane/k146f2):** 21 `PCREC_OWN_FRAME` marks in src/gen/emit_vm.c (the recursive arms of `vm_emit_node` and `vm_cost`, and three off-path helpers); DEPTH_FAMILIES rows `lookrep` and `altrep` in tests/thread/run_compile_stack.sh; limits.md §3.10 restated from the measured worst (`(a|b(a|b…c)*)*`, 353,512 B at depth 250); zero emitted-byte movers. The same crash class in possessify's walk is K147.
 
 ## K145 — OPEN (TOOLING; found by lane s2d27land, 2026-11-14; filed by lane s2d27fix; not scheduled) — `tests/litscan/verify_rxt.py` hangs on a block carrying an `oracle none` line
 
