@@ -1,5 +1,9 @@
 # Predicates: future considerations (parked ideas, each with its trigger)
 
+> RETIRED AS A WORKING FILE 2026-11-20: every item 1-38 is a piece of `docs/design/predicates/parked.md` (details,
+> source and trigger in `parked_details.md`). New ideas go THERE. This file is kept unedited because the record,
+> the frozen draft and filed reviews cite its item numbers.
+
 Ideas for the predicate language that were worked through far enough to record and then PARKED by the owner, or
 set aside by a ruling "not now". Nothing here is designed-to-build or scheduled. An item leaves this list only by
 an owner decision (taken up, or dropped). Created 2026-11-16 at the owner's request ("a 'predicate future
