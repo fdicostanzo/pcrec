@@ -4432,3 +4432,8 @@ Plus verdict-printing holes. All FIX-NOW accepted. MEAS-7 (which reading of "max
 
 ### 2026-11-20 16:30 — g2 runtime grew (main FACTS)
 make test-memfn-g2 takes 1004 s run alone (it was about 470 s as a section on 11-09). The window family run_g2_win.sh grew 54 -> 288 s (x5.3); the others grew x1.6-2.7 (indications only). Main: docs/dev/lanes/g2docs_report.md. The decision is the kit's. Plan: a triage lane after tonight's timing (why win grew; shrink it or move it to the opt-in g2-full).
+
+### 2026-11-20 16:46 — 711 and 712 queued
+- blockconfirm check PASS at 16:13: 3,900 exes, 0 failing against python re; marker sha 91f8de45...; the lane was nudged to finish its report.
+- Queued 711-kit-checkorder (est 4,131 s + 600 s quiet), then 712-kit-rampchunk (est 1,402 s + 600 s; --ready waits on kit-checkorder, verified rc 75).
+- monread kit --wait armed; main told.
