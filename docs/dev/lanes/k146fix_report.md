@@ -203,9 +203,13 @@ STATE: delivered. The branch lane/k146fix is committed, and this report is
 committed. The rulings file `k146fix_rulings.md` was empty at every check,
 so no ruling was applied.
 
-OWED: the queued `make test` verdict, under the job keys given in the
-handback message (`scripts/boxqueue state KEY`; log via `scripts/verdict`).
-If it is red on a population pin moved by the two new quantified.rxt
+OWED: none in the lane. The `make test` is QUEUED, not owed: it is batch
+b20261120104514388223, jobs `400-k146fix-b20261120104514388223.build`,
+`401-k146fix-b20261120104514388223.strict` and
+`402-k146fix-b20261120104514388223.test` (perfrun label
+k146fix-maketest). They wait behind `200-dhremeas-timing`, which held the
+box at handoff. Read the verdict with `scripts/boxqueue state KEY` and
+`scripts/verdict`. If it is red on a population pin moved by the two new quantified.rxt
 blocks, a follow-up re-pins it. The manager runs the code critic round
 before landing. Not done here, by brief: merge, closing the plan row and
 the K146 entry, any change to the budget value.
