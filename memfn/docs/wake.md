@@ -14,7 +14,7 @@ needed; no lanes in flight). Waiting list worktrees/.mgr/waiting_on.kit. Verdict
 Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows main cleared. Never merge to main.
 
 ## CURRENT STATE (18:25 11-19)
-- TONIGHT (Frank-cleared): 708 kit-fcards-blockspan at 01:00 (5,284 cells, ~4.8 h), then 709 kit-fcards-blockspace (420 cells,
+- TONIGHT (Frank-cleared): 708 kit-fcards-blockspan RUNNING since 01:02 (re-queued after a pruned-tree RED; tree rebuilt at 33fec79b3) (5,284 cells, ~4.8 h), then 709 kit-fcards-blockspace (420 cells,
   ~15 min; refuses to start at/after 07:00). Scratch: /var/tmp/pcrec-pcrec/scratch/memfn/blockspan/ (spike.py,
   decision_rule.md sha 21c941b4a719af0f, report.md; space/blockspace.py). The rule: REPLACES = no LOSS over non-N/A cells AND
   a WIN majority in the span-dense subset S; read from swar-loop and avx2-loop against H64 / H64@on. Morning: report decision.md
@@ -38,4 +38,5 @@ Evening hold 20:00-01:00 is Frank's; lane CPU ends 19:30. Timing only in windows
 - PENDING-STUCK can fire seconds after a predecessor ends; check its outcome and wait one poll.
 - A job exiting 1 for "re-run owed" reads RED; triage tells it from a defect.
 - A --ready chained on a job KEY breaks when that key fails and a re-run job replaces it (704 → re-pointed to c3rerun).
+- Pins live in worktrees/.wtprune.keep (NOT the repo root); verify with a wtprune dry run showing "KEEP ... pinned". A root-file pin let fcards-night be pruned 11-19 13:45 and 708/709 fail at start 11-20 01:00.
 - Owed-by-time items slip silently when owner-direct work fills the day: put each in waiting_on.kit WITH its due time (R-46).
