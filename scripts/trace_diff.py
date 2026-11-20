@@ -21,6 +21,13 @@ WHAT IT REQUIRES, per (pattern index, arm):
   - each arm carries at least --min-records records on EACH side (a records
     floor: a trace build that prints nothing passes every diff).
 
+A DECLARED MULTIPLICITY CHANGE the default compare reports: span_arms L3's
+RM-2 (f52b6d6aa, `PfBound`) cut the number of FIRST `req-use` asks the trace
+build prints (`req_handoff_k` was asked twice in `req_site_define` and in
+`req_handoff_stamp`, now once each: 2 fewer for bounded handoff artifacts, 1
+for unbounded; the record SET and the MFPICK lines are unchanged). A sweep
+spanning that commit passes --declared naming that site, or --unordered.
+
 --keys NAMES selects which record fields are compared (default: all the
 fields a record carries). --unordered compares each (pattern, arm)'s SET of
 records instead of its sequence: blind to order and multiplicity by design,

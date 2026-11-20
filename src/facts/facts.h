@@ -38,6 +38,36 @@ struct Ast;
 
 /* ---- the facts' value types -------------------------------------------- */
 
+/* AN OFFSET BOUND WITH ITS STATE: none (nothing is stated), bounded (the
+ * signed value `v`) or unbounded (no static bound; `v` keeps the analysis'
+ * saturated `PCREC_W_UNBOUNDED`-or-above number, so a reader that prints it
+ * prints today's bytes). Named for the offset-bound family
+ * (docs/design/span_arms.md §14.3 D-7, CONFORM-12); its one member today is
+ * the landmark's K (`req_landmark_maxoff`, the handoff's K). A reader asks
+ * the state through the two predicates below, never through the value: `v`
+ * of a `PF_OFF_NONE` bound means nothing. */
+typedef enum { PF_OFF_NONE, PF_OFF_BOUNDED, PF_OFF_UNBOUNDED } PfBoundState;
+typedef struct {
+    PfBoundState st;
+    long long    v;
+} PfBound;
+
+/* The bound that states nothing. */
+static inline PfBound pcrec_bound_none(void)
+{
+    return (PfBound){ .st = PF_OFF_NONE, .v = 0 };
+}
+/* The stated bound of an analysis offset: unbounded at or above
+ * `PCREC_W_UNBOUNDED` (the saturated reading is the safe one), else bounded
+ * (a negative `off` is a bounded, signed K, never none). `PfBound` is the
+ * third encoding in the tree of "a bound that may be none or unbounded",
+ * beside `WidthIv` and `Ast.u.call.cwmax` + `cwmax_known` ([BOUND-ENCODINGS]). */
+PfBound pcrec_bound_of(long long off);
+/* Is anything stated? */
+static inline bool pcrec_bound_stated(PfBound b) { return b.st != PF_OFF_NONE; }
+/* Is it stated AND bounded (a value a reader may compute with)? */
+static inline bool pcrec_bound_bounded(PfBound b) { return b.st == PF_OFF_BOUNDED; }
+
 /* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN: `whole_len` contiguous
  * positions every match of the pattern must contain, as the analysis stored
  * it (at most `PCREC_MAX_REQ_RUN_SCAN` positions), with `whole_maxoff` the
@@ -84,6 +114,12 @@ int pcrec_req_info(const unsigned char *pos);
  * AND of the members, `k` the bits they all agree on (a reader's private
  * spelling, D187 addendum 1). True where the set IS the cube's members. */
 bool pcrec_req_cube(const unsigned char *pos, int *t, int *k);
+
+/* THE RUN POSITION pcrec's own pick tests over the stretch `run->pos[lo..hi)`
+ * (a run index in `[lo, hi)`), -1 where the stretch is empty: the one pick
+ * the `req_byte` fact (src/facts/req.c `pcrec_req_pick`) and the trace
+ * build's set-leads shadow ask (span_arms §14.3 D-6, RM-4). */
+int pcrec_run_scan_index(const uint32_t *rate, const ReqRun *run, int lo, int hi);
 
 /* Is byte `b` a member of the run's position `i`? */
 static inline bool pcrec_run_has(const ReqRun *r, int i, int b)
@@ -484,8 +520,8 @@ typedef struct {
      * -1; -1 under `-fno-req-byte`. */
     int       req_byte;
     /* [REQ-HANDOFF-L1] E2 derived: the landmark's K
-     * (`pcrec_fact_req_landmark_maxoff`), -1 where there is no landmark. */
-    long long req_landmark_maxoff;
+     * (`pcrec_fact_req_landmark_maxoff`), none where there is no landmark. */
+    PfBound   req_landmark_maxoff;
     /* [OPT-K] E3 core, sealed on the `ENG_UNANCH` branch only: the k-set walk
      * over the wrapped forward NFA from its anchored start. The offset-skip
      * window statement (src/gen/emit_dfa.c `window_reply_ask`) states it to the
@@ -589,9 +625,9 @@ int            pcrec_fact_req_byte(Ctx *cx);
 const ReqSet  *pcrec_fact_req_set_maxoff(Ctx *cx);
 /* E2 derived ([REQ-HANDOFF-L1]): THE LANDMARK's K — the pre-check gate's
  * needle, whatever its length — the run window's `maxoff` where a run
- * shipped, else the `req_byte` member's; -1 where the gate has no needle.
- * `PCREC_W_UNBOUNDED` reads as "no bound". */
-long long      pcrec_fact_req_landmark_maxoff(Ctx *cx);
+ * shipped, else the `req_byte` member's; none where the gate has no needle,
+ * unbounded where the offset has no static bound. */
+PfBound        pcrec_fact_req_landmark_maxoff(Ctx *cx);
 const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */

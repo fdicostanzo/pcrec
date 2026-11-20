@@ -62,3 +62,12 @@ expectation is a reason to reassess, not to push on"; "a mover here could also b
   tests/lookaround/d27_l1/l1d27_limits.tsv names each, and make test goes red when one is lifted.
 - **Found on the way, pre-existing:** K146 (nested quantified lookarounds overflow the compile thread in vm_cost at
   nesting 180), filed with [K146-VMCOST-DEPTH].
+
+## L3 remodels
+
+- **Declared multiplicity change of the trace build's ordered record sequence (review r63 EMITTED-1).** Across
+  `f52b6d6aa` (RM-2, `PfBound`) the trace build prints fewer FIRST `req-use` records: `req_handoff_k` is a traced
+  `cand_select(FIRST)` that BASE asked twice in `req_site_define` and twice in `req_handoff_stamp` and the subject asks
+  once in each. Bounded-handoff artifacts lose 2 asks (and their nested reads), unbounded ones 1 (e.g. 240 to 216
+  lines on `x{2,5}(?i:cat)` vm). The record SET and the MFPICK lines are identical, no emitted byte, fact or answer
+  moves. A trace sweep spanning RM-2 declares it (`scripts/trace_diff.py --declared`, or `--unordered`).
