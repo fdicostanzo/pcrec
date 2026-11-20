@@ -5572,3 +5572,13 @@ FIRST, `/${(c: >= 5)}(?<c>\d)/`: at the hole it never holds (c unset there); aft
 The record's earlier rulings are on the at-the-hole side (hit-carry: "In cases where the user puts the condition
 before the label, they are expecting carries behavior"; zero-in-sequence: "the 0: is the match so far"). Told to
 him the same turn, and asked which he means when the hole is not last.
+
+### 2026-11-19 OWNER, on bare-condition-labels, shown where the two readings part: "it's not the same"
+tags: core/holes/bare-condition/labels
+
+Shown the runs of the entry above (hole last: equal; hole in the middle or first: "at the hole" and "after the
+literal" part) and asked which he means when the hole is not last. HIS WORDS, whole: "I notice, it's not the same"
+
+Class: an OBSERVATION (he sees that his equality does not hold for every hole position). It does not say which
+reading he means when the hole is not last: NOT a ruling. The reading taken, and told to him: his sentence stands
+for the hole-last case; the question (at the hole, or after the literal) is still his to answer.
