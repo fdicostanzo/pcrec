@@ -15,6 +15,8 @@ SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_handoff_reach.sh" "$T
 SAB_REACH_EXPECT='PASS: (a)\1xyz (byte): declined (RX_REQ_HANDOFF none)'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='           pcrec_fact_req_whole_run(s->cx)->whole_maxoff >= PCREC_W_UNBOUNDED &&
+SAB_BEFORE='           !pcrec_bound_bounded(pcrec_bound_of(pcrec_fact_req_whole_run(s->cx)->whole_maxoff)) &&
            req_parts_in_whole(s->cx);'
-SAB_AFTER='           pcrec_fact_req_whole_run(s->cx)->whole_maxoff >= PCREC_W_UNBOUNDED;   /* SABOTAGE S1956 */'
+SAB_AFTER='           !pcrec_bound_bounded(pcrec_bound_of(pcrec_fact_req_whole_run(s->cx)->whole_maxoff));   /* SABOTAGE S1956 */'
+# RE-ANCHORED 2026-11-20 (lane l3feat2, span_arms L3 feature): the unbounded row reads K through
+# `pcrec_bound_bounded` (review r63 CONFORM-1). Intent unchanged.

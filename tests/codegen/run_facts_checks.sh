@@ -858,6 +858,24 @@ fi
 #   - the run is equal with and without `-fno-ctx-node` where the lowering
 #     can differ (`a(?=b)[bc]`, `ab[xy](?=(?<=x)y)[xy]`: the item is the
 #     lookaround's body or its context node, one answer, §14.4 L1 Tests).
+# span arms L3 (span_arms.md §14.4 L3, BACK): a left guard standing at the
+# root joins the head as a run that begins up to the declared lookbehind
+# length before the attempt start (K < 0), and `req_byte` and the run pin
+# read only its CONSUMED extent (D-6). By hand from §14.2's L3 rows:
+#   - `(?<=foo)bar` is `foobar` at -3, pinned over `bar` only (`0:3+3`);
+#     `restore=look` gives back `bar` (S-L, W-L1);
+#   - `(?<=ab|b)c` is `bc` at -1, the union of the branches' -1 term (W-L3);
+#   - `(?<=abc)x` is `abcx` (S1887's pattern);
+#   - W-S4c `(?<=qz)ab`: `req_byte` is `b`, a consumed byte, never `z`;
+#   - W-L17 `(?<=foobar)\d*x` and W-L19 `(?<=a{32})b`: an EMPTY consumed
+#     extent, so the set's pick (120, 98) and no pin; W-L18 `(?<=foo)` has no
+#     set byte at all, `req_byte` none;
+#   - W-T3's listing row `(?<=a{20})b{20}`: `a^20 b^12` at -20, the FIRST 32
+#     positions (a keep-last `++` states `a^12 b^20`);
+#   - `(?<=foo)bar(?=baz)` stays `foobar` at -3: the `++ rg` clause is L2's;
+#   - W-D2 `(?<=ab)(?<=cb)c` is still `dead`, and its run is now BACK's `bc`
+#     at -1 (D-4's BACK row has no never conjunct; any run is sound for a
+#     pattern that never matches).
 lbad=""; nlk=0
 if [ ! -x "$HBIN" ]; then
     lbad=" $HBIN is missing (make builds it);"
@@ -883,7 +901,7 @@ h	look	xy(?=bc)[bc]c	req_set_maxoff	99:3,120:0,121:1	harness:look
 p	-	a(?=b)[bc]	req_byte	98	rate:builtin-prior
 p	-	foo(?=bar)baz	req_whole_run	666f6f62617a	dead
 h	look	foo(?=bar)baz	req_whole_run	666f6f62617a	harness:look
-p	-	(?<=ab)(?<=cb)c	req_whole_run	none	dead
+p	-	(?<=ab)(?<=cb)c	req_whole_run	6263	dead
 p	-	x[^\x00-\xff]y	req_whole_run	none	dead
 p	-	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
 p	-fno-ctx-node	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
@@ -904,6 +922,25 @@ p	-	(?:foo(?=bar)baz|q)	req_whole_run	none	-
 p	-	x(?!foo(?=bar)baz)y	req_whole_run	7879	rate:builtin-prior
 p	-	(?:foo(?=bar)baz){0}x	req_whole_run	none	-
 p	-	[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).	req_whole_run	6161616161616161616161616161616161626262626262626262626262626262/fdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff	rate:builtin-prior
+p	-	(?<=foo)bar	req_whole_run	666f6f626172	rate:builtin-prior
+p	-	(?<=foo)bar	req_landmark_maxoff	-3	-
+p	-	(?<=foo)bar	run_pin	0:3+3	-
+h	look	(?<=foo)bar	req_whole_run	626172	harness:look
+p	-	(?<=ab|b)c	req_whole_run	6263	rate:builtin-prior
+p	-	(?<=ab|b)c	req_landmark_maxoff	-1	-
+p	-	(?<=abc)x	req_whole_run	61626378	rate:builtin-prior
+p	-	(?<=qz)ab	req_byte	98	rate:builtin-prior
+p	-	(?<=foobar)\d*x	req_whole_run	666f6f626172	rate:builtin-prior
+p	-	(?<=foobar)\d*x	req_byte	120	rate:builtin-prior
+p	-	(?<=foobar)\d*x	run_pin	none	-
+p	-	(?<=foo)	req_whole_run	666f6f	rate:builtin-prior
+p	-	(?<=foo)	req_byte	none	-
+p	-	(?<=a{32})b	req_landmark_maxoff	-32	-
+p	-	(?<=a{32})b	req_byte	98	rate:builtin-prior
+p	-	(?<=a{32})b	run_pin	none	-
+p	-	(?<=a{20})b{20}	req_whole_run	6161616161616161616161616161616161616161626262626262626262626262	rate:builtin-prior
+p	-	(?<=a{20})b{20}	req_landmark_maxoff	-20	-
+p	-	(?<=foo)bar(?=baz)	req_whole_run	666f6f626172	rate:builtin-prior
 LKEOF
     for pat in 'a(?=b)[bc]' 'ab[xy](?=(?<=x)y)[xy]'; do
         nlk=$((nlk + 1))
