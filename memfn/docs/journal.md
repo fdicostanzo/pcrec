@@ -4465,3 +4465,6 @@ RULE_SHAs: 711 28b518b84de080aa, 712 efb4f0d7d3ab0bd5. Estimates: 711 6,405 s, 7
 ### 2026-11-20 18:2x — bcfix delivered 18643f717; one follow-up ruling
 bcfix delivered (report docs/dev/lanes/bcfix_report.md on lane/memfn-bcfix), lanecheck DONE. RULE_SHA 3af29030022e8555. Re-time variants 10-12 (650 new exes). Check PASS: the timed-text unit 520/520, the arm guard 3,120 exes, the gate 3,900 exes. Plants at the timed values all CAUGHT (tailm1t 5/5, isspk 4/4). Drills 42/42. Estimate 8,992 s, latest start 09:30. 708 also ran nice -n 5, so there is no axis between them.
 The lane's open MEASUREMENT-2 reading, ruled by the manager: a TBL TIE beside a control WIN is VOIDED (it may hide a LOSS); a TBL TIE beside a control LOSS STANDS (conservative). Sent to bcfix as a follow-up; a new RULE_SHA follows. Then the one-critic re-check of 710.
+
+### 2026-11-20 18:55 — bcfix round 2 delivered; 710 re-check launched
+bcfix round 2 delivered 466f0bafd: the TIE ruling is applied, RULE_SHA b7dbbafff6d43441, check PASS at 18:41, drills 45/45, estimate 8,992 s, latest start 09:30. TaskStopped. One-critic re-check crit-memfn-bcfix (opus) due 20:30. 711 and 712 are already READY TO TIME (crit-memfn-cofix).
