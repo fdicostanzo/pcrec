@@ -231,6 +231,38 @@ QUANTIFIED = [
  cell("(?=a)*+a", LA + ",atomic-groups", [("a", 0)],
       "The POSSESSIVE spelling, which desugars to `A_ATOMIC(A_REP(A_LOOK))` "
       "-- a cut ABOVE an assertion that has a cut of its own."),
+ cell("(?=(a)|b(?=(a)|b(?=(a)|bc)*+)*+)*+", LA + ",atomic-groups",
+      [("a", 0), ("ba", 0), ("bba", 0), ("bbc", 0), ("", 0)],
+      "K146's SHAPE with a CAPTURE in every level, three deep: a "
+      "possessively quantified lookahead whose first branch captures "
+      "and whose second branch nests the next one. Which branch each "
+      "assertion committed to is observable in the groups, so a lost "
+      "or mis-slotted level changes an answer (the capture-free "
+      "spelling is the empty pattern, whatever the nest does). Nested "
+      "180 deep the VM emitter and `vm_cost` overflowed the compile "
+      "thread (docs/spec/limits.md §3.10's budget); the depth-250 "
+      "check is tests/thread/run_compile_stack.sh's `lookrep` family."),
+ cell("(?=(a)|b" * 40 + "c" + ")*+" * 40, LA + ",atomic-groups",
+      [("bbbbbba", 0), ("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbba", 0), ("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc", 0)],
+      "The same, forty deep: 40 capture slots, one set per case."),
+ cell("(?=(a)|b(?=(a)|b(?=(a)|bc)*)*)*x", LA + ",atomic-groups",
+      [("bax", 0), ("bbax", 0), ("x", 0)],
+      "The same with a plain (greedy) star, a trailing consumer and "
+      "fewer levels."),
+ cell("(?:(?=(a)|b(?:(?=(a)|b(?:(?=(a)|b(?:(?=(a)|b(?:(?=(a)|bc)*+b))*+b))*+b))*+b))*+b)", LA + ",atomic-groups",
+      [("bbba", 0), ("bbbbbbc", 0), ("a", 0)],
+      "Wrapped in a non-capturing group per level, with a consumer "
+      "after each."),
+ cell("^(?:(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)c)*+)*+)*+)*+)*+)*+)*+)*+)b", LA + ",atomic-groups",
+      [("b", 0), ("bbc", 0), ("bbbbbbbbc", 0), ("a", 0)],
+      "Captures in the SECOND branch, a consumer after the nest."),
+ cell("(?!a|(b)(?!a|(b)(?!a|(b)(?!a|(b)(?!a|(b)(?!a|(b)c)*+)*+)*+)*+)*+)*+x", LA + ",atomic-groups",
+      [("x", 0), ("bx", 0), ("ax", 0)],
+      "The NEGATIVE spelling, captures in the second branch."),
+ cell("(?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|bc)*+)*+)*+)*+)*+)*+", LA + ",atomic-groups",
+      [("ab", 0), ("babd", 0), ("bbbc", 0)],
+      "Multi-literal first branches, so the assertion's island "
+      "enumeration is used per level."),
  cell("(?=a)*?a", LA, [("a", 0)], "The LAZY spelling."),
  cell("((?=a)*)a", LA, [("a", 0)],
       "A quantified assertion inside a CAPTURE: the group spans the empty "

@@ -11,6 +11,8 @@
 # under --engine=vm); no existing row moved.
 # r4cpin (2026-10-06): +6 rows, every one a tests/litscan/handoff.rxt R4c VM-hybrid handoff witness block (lane r4cchecks); regenerated
 # with census_s1.py on the current build, no existing row moved.
+# k146land (2026-11-20): tests/lookaround/quantified.rxt gained 7 blocks (lane k146fix/k146f2): 3 new --engine=vm movers (:266 :282 :331, capture-bearing K146-shape cells)
+# and the 3 existing movers shifted by +274 lines (:108/:114/:121 -> :382/:388/:395, same patterns, hex unchanged); the 4 other new blocks are not movers. Hex read off the patterns, rows by the vm-movers check.
 #id	options	pattern_hex
 # k93tri (2026-10-07): +18 rows, every one a tests/recursion/k93.rxt block (lane k93fix's new file; census_s1.py on the k93fix build, ubuntubudu); no existing row moved.
 # k94tri (2026-10-07): +424 rows: 8 tests/backrefs/caseless_ucp.rxt blocks (lane k94fix's new file) and 416 tests/possessify/composition_d27.rxt blocks (main's D27 composition corpus, landed without this pin); census_s1.py on the merged tree, no existing row moved.
@@ -2563,9 +2565,12 @@ tests/lookaround/prefilter.rxt:67	--features lookaround	28283f3a61283f2171297c61
 tests/lookaround/prefilter.rxt:81	--features lookaround	283f3a61283f2171297c617129787b302c337d71
 tests/lookaround/prefilter.rxt:93	--features lookaround	792a28283f3a61283f2171297c617129283f3a7879297b302c347d7129
 tests/lookaround/quantified.rxt:103	--features lookaround,atomic-groups	283f3d61292a2b61
-tests/lookaround/quantified.rxt:108	--features lookaround	283f3d61292a3f61
-tests/lookaround/quantified.rxt:114	--features lookaround	28283f3d61292a2961
-tests/lookaround/quantified.rxt:121	--features lookaround	283f3a283f3d612961292b
+tests/lookaround/quantified.rxt:266	--features lookaround,atomic-groups	283f3d2861297c62283f3d2861297c62283f3d2861297c6263292a292a292a78
+tests/lookaround/quantified.rxt:282	--features lookaround,atomic-groups	283f3a283f3d2861297c62283f3a283f3d2861297c62283f3a283f3d2861297c62283f3a283f3d2861297c62283f3a283f3d2861297c6263292a2b6229292a2b6229292a2b6229292a2b6229292a2b6229
+tests/lookaround/quantified.rxt:331	--features lookaround,atomic-groups	283f21617c286229283f21617c286229283f21617c286229283f21617c286229283f21617c286229283f21617c28622963292a2b292a2b292a2b292a2b292a2b292a2b78
+tests/lookaround/quantified.rxt:382	--features lookaround	283f3d61292a3f61
+tests/lookaround/quantified.rxt:388	--features lookaround	28283f3d61292a2961
+tests/lookaround/quantified.rxt:395	--features lookaround	283f3a283f3d612961292b
 tests/lookaround/quantified.rxt:69	--features lookaround	283f3d61292a61
 tests/lookaround/quantified.rxt:74	--features lookaround	283f3d61292b61
 tests/lookaround/quantified.rxt:79	--features lookaround	283f3d61293f61

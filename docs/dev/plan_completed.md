@@ -6625,3 +6625,7 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   status (2026-11-12): DONE: delivered by the kit's close-out (merge of lane/memfn-kclose, 2026-11-12) and fixed by lane memfn-xarchfix (a failing level reports a clean MISMATCH, not a compiler error); S725, S726, S2981, S2994 read DETECTED.
   refs: tests/mech/sabotages/S726_w32_under_weak_guard.sh; memfn/tests/check_targets.sh
   check_targets.sh proves needs is a subset of features, never that the needs are enough: a level under-declaring (avx for avx2) is invisible while every target carrying the one carries the other.
+- [K146-VMCOST-DEPTH] STATE:done — quantified nested lookarounds overflow the compile thread's stack in vm_cost (K146)
+  filed: 2026-11-19 manager, from review r58 IDENT-1 (pre-existing; found while reviewing L1's stackdepth fix)
+  status (2026-11-20): DONE: landed from lane/k146land (make test 202 GREEN); PCREC_OWN_FRAME on the vm_emit_node/vm_cost recursive arms, DEPTH_FAMILIES rows lookrep, altrep; true worst 353,512 B at depth 250; zero emitted-byte movers.
+  refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md; docs/dev/reviews/2026-11-20-r62-k146fix.md
