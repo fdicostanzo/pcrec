@@ -1,0 +1,26 @@
+s1 -> EXclassorder: CAUGHT (traceback 0) | predasc_model: 24 checks, 12 failed: EXclassorder RECASC EXsub EXtwo EXlazy EXfirst EXnest EXmul EXbounded EXenumclass EXpos OLD
+s2 -> EXclassorder: CAUGHT (traceback 0) | predasc_model: 24 checks, 13 failed: EXlift EXplus EXclassorder RECASC EXtwo EXlazy EXfirst EXnest EXmul EXbounded EXenumclass EXleft OLD
+s3 -> EXfirst: CAUGHT (traceback 0) | predasc_model: 24 checks, 5 failed: EXlift EXfirst EXnest EXbounded OLD
+s4 -> EXlazy: CAUGHT (traceback 0) | predasc_model: 24 checks, 4 failed: EXlazy EXbounded EXleft OLD
+s5 -> EXfirst: CAUGHT (traceback 0) | predasc_model: 24 checks, 3 failed: EXfirst EXmul EXbounded
+s6 -> EXeq: CAUGHT (traceback 0) | predasc_model: 24 checks, 4 failed: EXtwo EXnest EXeq EXmul
+s7 -> EXwplus: CAUGHT (traceback 0) | predasc_model: 24 checks, 3 failed: EXplus EXwplus OLD
+s8 -> EXlift: CAUGHT (traceback 0) | predasc_model: 24 checks, 15 failed: EXlift EXplus EXclassorder EXbound RECASC EXsub EXtwo EXlazy EXfirst EXnest EXmul EXbounded EXenumclass EXleft OLD
+s9 -> EXplus: CAUGHT (traceback 0) | predasc_model: 24 checks, 4 failed: EXplus EXwplus EXlazy OLD
+s10 -> EXenum: CAUGHT (traceback 0) | predasc_model: 24 checks, 5 failed: EXlazy EXbounded EXenum EXleft OLD
+s11 -> EXenumclass: CAUGHT (traceback 0) | predasc_model: 24 checks, 4 failed: EXenum EXenumclass EXpos OLD
+s12 -> EXpos: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: EXpos
+s13 -> EXbounded: CAUGHT (traceback 0) | predasc_model: 24 checks, 4 failed: EXlazy EXbounded EXenum OLD
+s14 -> EXleft: CAUGHT (traceback 0) | predasc_model: 24 checks, 2 failed: EXleft OLD
+s15 -> EXbound: CAUGHT (traceback 0) | predasc_model: 24 checks, 2 failed: EXbound RECASC
+s16 -> OLD: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: OLD
+s17 -> PCREORD: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: PCREORD
+s18 -> RECASC: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: RECASC
+s19 -> EXmul: CAUGHT (traceback 0) | predasc_model: 24 checks, 2 failed: EXeq EXmul
+s20 -> EXtwo: CAUGHT (traceback 0) | predasc_model: 24 checks, 8 failed: EXlift EXsub EXtwo EXfirst EXnest EXmul EXbounded OLD
+s21 -> SORT: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: SORT
+s22 -> QUOTES: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: QUOTES
+s23 -> NODESC: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: NODESC
+s24 -> TAGS: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: TAGS
+s25 -> EXsub: CAUGHT (traceback 0) | predasc_model: 24 checks, 1 failed: EXsub
+s26 -> EXnest: CAUGHT (traceback 0) | predasc_model: 24 checks, 5 failed: EXfirst EXnest EXenum EXleft OLD

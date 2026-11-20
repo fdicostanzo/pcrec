@@ -1,0 +1,84 @@
+== the nested-loop lift (first operand outermost), classes LOWEST TO HIGHEST, PCRE priority within an operand
+population for comparisons: 3906 texts over `0123x`, length <= 5 (WHOLE / SEARCHED / FIND-ALL differing)
+EXlift       ok   WHOLE `12` HOLDS, `4` FAILS / SEARCHED `x14` `14`@1 / FIND-ALL `3 12 5 14` [`3`@0, `12`@2, `5`@5, `14`@7] (`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`)
+EXplus       ok   WHOLE `8` HOLDS / SEARCHED `x42 8` `42`@1 / FIND-ALL `8 x 42` [`8`@0, `42`@4] (`/${["7", "x", "41"] + 1}/` is `(?:8|42)`: the member `x` gives nothing)
+EXwplus      ok   `\w + 1` = `(?:1|2|3|4|5|6|7|8|9|10)` ; `\d + 1` = `(?:1|2|3|4|5|6|7|8|9|10)` ; equal: True ; 0 / 0 / 0
+EXclassorder ok   WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:1|2|3|4|5|6|7|8|9|10)`) | against longest first 0 / 250 / 570 | reading (c): the codepoint candidate's recorded line (`1`@1 on `x10`, rejected at 5a299d40d: True) is the loop's
+EXbound      ok   WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10 10` `10`@4 / FIND-ALL `10 3 11` [`10`@0, `3`@3] (`/\b${\d + 1}\b/`)
+RECASC       ok   record bare found: True ; record \b found: True ; model bare = record: True ; model \b = record: True
+EXsub        ok   WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 7 3` [`10`@0, `7`@3, `3`@5] (`/${10 - \d}/` is `(?:10|9|8|7|6|5|4|3|2|1)`) | against longest-first 0 / 0 / 0
+EXtwo        ok   WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (`/${\d + \d}/` is `(?:0|1|..|17|18)`)
+EXlazy       ok   WHOLE `100` HOLDS / SEARCHED `x100` `1`@1 / FIND-ALL `100 10 9` [`1`@0, `1`@4, `9`@7] (`/${\d{1,2}? + 1}/` begins `(?:1|2|11|12|..`)
+EXfirst      ok   WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${\d + (1|9)}/` begins `(?:1|9|2|10|..`)
+EXnest       ok   WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${(1|9) + \d}/` begins `(?:1|2|3|4|..`)
+EXeq         ok   `\d * 0` = ['0']
+EXmul        ok   `\d * \d` 37 results, begins ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], then ['10', '12', '14', '16', '18'] ; against longest-first 0 / 1164 / 2556
+   bounded \d{1,3}? + \d{1,3}?    first tried ['0', '1', '10', '100'] : WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `1`@1 / FIND-ALL `123 7 45` [`1`@0, `2`@1, `3`@2, `7`@4, `4`@6, `5`@7] (`/${\d{1,3}? + \d{1,3}?}/`)
+   bounded \d{1,3}? + \d{1,3}     first tried ['0', '100', '101', '102'] : WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 7 45` [`123`@0, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}}/`)
+   bounded \d{1,3} + \d{1,3}?     first tried ['0', '1', '10', '100'] : WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `1`@1 / FIND-ALL `123 7 45` [`1`@0, `2`@1, `3`@2, `7`@4, `4`@6, `5`@7] (`/${\d{1,3} + \d{1,3}?}/`)
+   bounded \d{1,3} + \d{1,3}      first tried ['0', '100', '101', '102'] : WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 7 45` [`123`@0, `7`@4, `45`@6] (`/${\d{1,3} + \d{1,3}}/`)
+   the RIVAL (count by count, NOT the ruled order), lazy + greedy: first tried ['100', '101', '102', '103'] : WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 7 45` [`123`@0, `7`@4, `45`@6]
+EXbounded    ok   lazy + lazy, lazy + greedy printed in core.md; lazy + greedy begins ['0', '100', '101'] (the rival count by count ['100', '101', '102']); ruled vs rival over the population 0 / 0 / 0
+EXenum       ok   WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a`@6] (`/${enumerate(/(?:a|ab){1,2}/)}/` is `(?:aa|aab|a|aba|abab|ab)`) | against `(?:a|ab){1,2}` itself 0 / 0 / 0 of 63 texts
+EXenumclass  ok   array ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] ; WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
+EXpos        ok   `enumerate(/[ab]\d/)` = ['a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9'] ; `enumerate(/[abc]/)` = ['a', 'b', 'c']
+EXleft       ok   WHOLE `fo` HOLDS, `foo` FAILS / SEARCHED `xba` `ba`@1 / FIND-ALL `fo ba` [`fo`@0, `ba`@3] (`left(/foobar|bazqux/, 2)` is `fo|ba`) || WHOLE `12` HOLDS / SEARCHED `x12` `1`@1 / FIND-ALL `12 3` [`1`@0, `2`@1, `3`@3] (`/${left(/\d{1,2}?/, 2)}/`: `\d{1,2}?` itself) | against `\d{1,2}?` itself 0 / 0 / 0 ; against its results longest first 0 / 3104 / 3616
+== reading (a): a class's member order in a plain match (the class as an alternation, 20 shuffles each)
+   \d                     worst over 20 shuffles 0 / 0 / 0
+   \d{1,2}                worst over 20 shuffles 0 / 0 / 0
+   \d{1,2}?               worst over 20 shuffles 0 / 0 / 0
+   x\d\d                  worst over 20 shuffles 0 / 0 / 0
+   (?:\d|1){1,3}          worst over 20 shuffles 0 / 0 / 0
+PCREORD      ok   no shuffle of a class's members changes a plain match: worst 0 / 0 / 0
+== ANSWERS CHANGED against the documents at 5a299d40d (the printed lines, read by git show)
+   CHANGED \d + 1
+      old: WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:10|9|8|7|6|5|4|3|2|1)`)
+      new: WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:1|2|3|4|5|6|7|8|9|10)`)
+   CHANGED 10 - \d
+      old: WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 7 3` [`1`@0, `7`@3, `3`@5] (`/${10 - \d}/` is `(?:1|2|3|4|5|6|7|8|9|10)`)
+      new: WHOLE `10` HOLDS, `7` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 7 3` [`10`@0, `7`@3, `3`@5] (`/${10 - \d}/` is `(?:10|9|8|7|6|5|4|3|2|1)`)
+   CHANGED \d + \d
+      old: WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (`/${\d + \d}/` is `(?:18|17|..|1|0)`)
+      new: WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (`/${\d + \d}/` is `(?:0|1|..|17|18)`)
+   CHANGED \d{1,2}? + 1
+      old: WHOLE `100` HOLDS / SEARCHED `x100` `10`@1 / FIND-ALL `100 10 9` [`10`@0, `10`@4, `9`@7] (`/${\d{1,2}? + 1}/` begins `(?:10|100|99|98|..`)
+      new: WHOLE `100` HOLDS / SEARCHED `x100` `1`@1 / FIND-ALL `100 10 9` [`1`@0, `1`@4, `9`@7] (`/${\d{1,2}? + 1}/` begins `(?:1|2|11|12|..`)
+   CHANGED \d + (1|9)
+      old: WHOLE `11` HOLDS / SEARCHED `x11` `11`@1 / FIND-ALL `11 1 18` [`11`@0, `1`@3, `18`@5] (`/${\d + (1|9)}/` begins `(?:10|18|9|17|..`)
+      new: WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${\d + (1|9)}/` begins `(?:1|9|2|10|..`)
+   CHANGED (1|9) + \d
+      old: WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${(1|9) + \d}/` begins `(?:10|9|8|7|..`)
+      new: WHOLE `11` HOLDS / SEARCHED `x11` `1`@1 / FIND-ALL `11 1 18` [`1`@0, `1`@1, `1`@3, `1`@5, `8`@6] (`/${(1|9) + \d}/` begins `(?:1|2|3|4|..`)
+   CHANGED \d{1,3}? + \d{1,3}?
+      old: WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `12`@1 / FIND-ALL `123 7 45` [`12`@0, `3`@2, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}?}/`)
+      new: WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `1`@1 / FIND-ALL `123 7 45` [`1`@0, `2`@1, `3`@2, `7`@4, `4`@6, `5`@7] (`/${\d{1,3}? + \d{1,3}?}/`)
+   CHANGED \d{1,3}? + \d{1,3}
+      old: WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `12`@1 / FIND-ALL `123 7 45` [`12`@0, `3`@2, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}}/`)
+      new: WHOLE `123` HOLDS, `7` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 7 45` [`123`@0, `7`@4, `45`@6] (`/${\d{1,3}? + \d{1,3}}/`)
+   CHANGED enumerate(/\d/) + 1
+      old: WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
+      new: WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
+   unchanged: ['[2, 4] + [1, 10]', '["7", "x", "41"] + 1', 'enumerate(/(?:a|ab){1,2}/)', 'left(/foobar|bazqux/, 2)', 'left(/\\d{1,2}?/, 2)']
+   not printed at the base commit: ['\\d{1,3} + \\d{1,3}?', '\\d{1,3} + \\d{1,3}']
+   ascending vs descending  \d + 1                 0 / 250 / 570
+   ascending vs descending  \w + 1                 0 / 250 / 570
+   ascending vs descending  enumerate(/\d/) + 1    0 / 250 / 570
+   ascending vs descending  10 - \d                0 / 250 / 570
+   ascending vs descending  \d + \d                0 / 776 / 1816
+   ascending vs descending  \d * \d                0 / 1164 / 2556
+   ascending vs descending  \d{1,2}? + 1           0 / 2500 / 3000
+   ascending vs descending  \d + (1|9)             0 / 1000 / 1816
+   ascending vs descending  (1|9) + \d             0 / 250 / 570
+   ascending vs descending  \d * 0                 0 / 0 / 0
+   ascending vs descending  \d{1,3}? + \d{1,3}?    0 / 2328 / 3360
+   ascending vs descending  \d{1,3}? + \d{1,3}     0 / 484 / 632
+   ascending vs descending  \d{1,3} + \d{1,3}?     0 / 2328 / 3360
+   ascending vs descending  \d{1,3} + \d{1,3}      0 / 448 / 512
+   ascending vs descending  left(/\d{1,2}?/, 2)    0 / 0 / 0
+   ascending vs descending  [2, 4] + [1, 10]       0 / 0 / 0
+OLD          ok   changed 9 (expected 9: True) ; the answers not governed by the class rulings unchanged: True
+TAGS         ok   class-order slugs ['class-order', 'class-positions', 'quantified-order'] ; class-value still open: True
+SORT         ok   sort piece: lengthSorted named, his request quoted, no definition, still under construction
+QUOTES       ok   record has each: True ; documents print each quoted: True
+NODESC       ok   base files (core.md, library.md) lines with 'descend': 0 []
+predasc_model: 24 checks, 0 failed
