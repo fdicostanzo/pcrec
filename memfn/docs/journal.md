@@ -4384,3 +4384,6 @@ Review: scratch/crit-memfn-r46/review.md (frozen reply sha 29de5a28...). The con
 
 ## 2026-11-20 — R-46 bounded-horizon-scope answered (main) + correction
 Main: SUPER-DENSE, so the bounded row states no horizon and only the unbounded row uses it. Answers are identical either way; this is main's reading, revisitable. CORRECTION: Frank's dense words (the 18:20 11-19 entry) are a DISCUSSION, not a ruling (slug dense-not-target, still open); main recorded them verbatim in docs/design/plan_row_bodies/REQ-PAST-LAST.md. The kit cites them as "the owner's working scope (discussion)".
+
+## 2026-11-20 — R-46 DONE (posted)
+[responses] 96fc6f382: keep the leftmost, add a horizon (unbounded row only); seam event with no mover at pcrec's build go; the method is forward-only, a separate byte mover gated on the post-K38-2 re-measure. Notes docs/dev/lanes/r46reply_report.md (210bae26e). Reviews docs/dev/reviews/2026-11-20-memfn-{r46reply,checkorder}.md (65efeb4ba). Main told.
