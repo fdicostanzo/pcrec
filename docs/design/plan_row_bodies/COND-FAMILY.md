@@ -5740,3 +5740,27 @@ private names, so in the export-rule example (`date := [y = year] SEQ "-" SEQ [m
 `date`, an error under the old statement 3, now reads the last mention (the month's), as it does inside; (b)
 `[_ = A]` and a `_` part label still close a part's labels; (c) the caller's captures (statement 5) grow the same
 way; (d) the array of a name reached by path (`b.x`) lists the settings made inside that part only.
+
+### 2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it
+tags: core/labels/labels-vs-captures core/labels/paths
+
+Asked **array-scope** (the manager's view: the array of `x` lists every setting of the name `x` in the rx as
+composed at the point of the reference; a path such as `b.x` limits it to the settings inside part `b`; the
+alternative, his guess of the entry above: limited to one definition). HIS WORDS, whole, as he EDITED them (his
+first send read "by the scope of the entire array"; he interrupted and corrected "array" to "rx"):
+
+"array-scope: the only way to do it is by the scope of the entire rx. As you say, you could limit it by grouping
+labels. So x.@a. (?spelling?).
+I can't think of a problem with the existing labeling rules so let's move on."
+
+Class: a RULING on the slug: the array of a label takes its settings over "the scope of the entire rx" (the
+composed rx, not one literal or one definition); it is limited "by grouping labels": a part label, then the array
+of a label inside it, his `x.@a` (part `x`, the array of label `a`), the spelling marked by him as a question
+("?spelling?": a placeholder for the spellings review). His guess of the entry above ("I guess is no ... the
+'same' rx") is thereby dropped by him. And a DIRECTION: "I can't think of a problem with the existing labeling
+rules so let's move on" (no change to the label rules; the next question).
+
+The manager's readings, for the next lane to test: (a) "the entire rx" is the rx as composed at the point the
+array is referenced (composed-at-point); (b) `x.@a` lists the settings of `a` made inside part `x` only, in
+order; (c) his "let's move on" does not rule on the reading given him under hole-export (a bare `v` outside
+`date` reads the last mention): it stays a reading.

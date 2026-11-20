@@ -278,7 +278,7 @@ WHOLE `1234` HOLDS (l = `4`, f = `1`), `4321` FAILS / SEARCHED `4321 1234` `1234
 
 ## Labels   [core/labels]
 
-### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-17
+### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-19
 A label read after a loop is the last pass's own value, unset where that pass did not set it; a capture is PCRE's carried value; `$x` and `x:` read the label.
 needs: core/model/match
 see: core/labels/one-rule lib/counting/some
@@ -290,6 +290,9 @@ see: core/labels/one-rule lib/counting/some
 - The ARRAY form reads every setting of the name in order, the one outside the loop included; a reset contributes
   nothing; it is its own type, compared with a single value only through the group questions (`some`, `count`,
   `occurs`: lib/counting); its index `h[k]` counts settings (a reading).
+- The array's scope is the entire rx as composed, not one literal or one definition: `[x = rx.digit]+` and
+  `/(?<x>\d)+/` have one array, and two groups of one name in a sequence give it both settings. A part label
+  limits it: the array of `a` under part `x` (placeholder `x.@a`) lists the settings made inside that part.
 - "All passes" is written with the condition inside the loop, on the item.
 WHOLE `9:45,10:45,45` HOLDS, `9:45,10,45` FAILS / SEARCHED `9:45,10,45 1:45,45` `1:45,45`@11 / FIND-ALL `9:45,10,45 1:45,45` [`1:45,45`@11] (`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")`)
 
@@ -1294,7 +1297,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | ATOMIC (`atomic(...)`); the no-re-entry sequence (his `A :: B`); the skip-past verb (PCRE's `(*SKIP)`) | core/patterns/atomic, parked/ideas/atomic |
 | the RX parts (`rx.repeat`, `rx.digit`, the plurals) | lib/rx/repeat, lib/rx/classes |
 | the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, lib/counting/every-pass |
-| the ARRAY FORM of a read (his `@x`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/labels-vs-captures, core/values/reads |
+| the ARRAY FORM of a read (his `@x`), under a part label (his `x.@a`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/labels-vs-captures, core/values/reads |
 | the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
 | a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]` | core/labels/paths, core/labels/export |
 | the CONDITIONAL (`when(A, B, else = C)`), its argument shape, a `when` operator, the comma-free keyword form; `peek(A)` | lib/control/when, lib/control/peek |

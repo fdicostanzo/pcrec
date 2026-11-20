@@ -449,13 +449,15 @@ history:
 - the draft R.1.0 lookaround row.
 
 ## core/labels/labels-vs-captures — Labels and captures
-slugs: pass-own-labels pass-and joint-last-pass after-loop-read last-pass-default joint-loops pairing-loop array-slot
+slugs: pass-own-labels pass-and joint-last-pass after-loop-read last-pass-default joint-loops pairing-loop array-slot array-scope
 rulings:
+- 2026-11-19 "array-scope: the only way to do it is by the scope of the entire rx. As you say, you could limit it by grouping labels. So x.@a. (?spelling?)." (record: "2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it")
 - 2026-11-17 "after-loop-read: ok I see it. Last pass own label makes sense" (record: "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label")
 - 2026-11-17 "I do want that. It makes sense and frankly pcre is wrong on this. I agree but! We need a way to get the pcre behavior even if ugly" (record: "2026-11-17 OWNER RULING — what an unqualified `$x` reads")
 - 2026-11-18 "backref-label: capture" (record: "2026-11-18 OWNER RULING — backref-label: capture")
 - 2026-11-17 "last-pass-default: regex. I want to have the method of achieving the alternative meanings defined and tested so we don't lose that functionality." (record: "2026-11-17 OWNER RULING — last-pass-default: regex"); it STANDS with its edge changed by after-loop-read the same evening ("(5) last-pass-default (14:30) STANDS", that entry): the carried value is the capture's; its second sentence is a standing instruction (lib/counting/every-pass)
 rejected:
+- the array limited to settings from one definition or one literal (his own guess, "they had to be in the 'same' rx") — by owner ruling — array-scope: under composition nothing is in the same literal.
 - "labels match every pass, captures match the last" for a bare condition — by owner — reconsidered within minutes: "what you should do is assign the condition inside the loop to get the all behavior" (record: "2026-11-17 OWNER, reconsidering the entry above within minutes"); closed by after-loop-read.
 - regex's carried value for a bare looped label (last-pass-default: regex) — by owner ruling — after-loop-read and the `$x` ruling ("frankly pcre is wrong on this"); the carried value stays reachable as the capture.
 - a compile error for a bare condition after a loop (the manager's lean) — by owner ruling — after-loop-read.
@@ -471,6 +473,7 @@ history:
 - 2026-11-16 joint-loops and pairing-loop part 1 (per-pass pairing of a joint condition by the loop enclosing its labels; "I agree. Makes sense.", record "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"; "pairing-loop: I agree part 1.", record "2026-11-16 OWNER RULING — pairing-loop, part 1: the wording confirmed; his remark on optionals") are REVERSED for a bare joint by after-loop-read (cited above: a bare joint reads the last pass's own tuple); the per-pass form is the condition inside the loop, on the item. The slugs are homed here for that reason (lane preddoc5, review r59 COMPA-11).
 - the slug array-slot moved here from core/labels/one-rule: the rule it decided ("a reset contributes nothing" to the array form) is this piece's (lane preddoc5, review r59 PLACE-4).
 - 2026-11-19 (lane preddoc6, review r60 COLD-13): "a callout" among the capture's readers qualified "where one is allowed: a one-literal program" (core/patterns/literals refuses callouts inside a larger program).
+- 2026-11-19: array-scope ruled after hole-export; the heading date moved from 2026-11-17 with it.
 
 ## core/labels/one-rule — One label rule: branchings reset
 slugs: bare-loop-label before-and-inside shared-label repeated-means unsettable-label empty-pass optional-as-loop
