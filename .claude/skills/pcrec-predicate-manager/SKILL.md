@@ -1,6 +1,6 @@
 ---
 name: pcrec-predicate-manager
-description: Run a predicate-language work session as its technical manager, and be the owner's interface for discussing predicate work. The predicate language ([COND-FAMILY]; docs/design/predicates_draft.md) is DESIGN ONLY today - orient from docs/dev/pred/wake.md and the record of the owner's words, discuss and ask rulings one question at a time with RUN examples, fold rulings into the draft through revision lanes with evidence, run critic rounds, and deliver a branch to the pcrec manager (never to main). Managed by the pcrec manager as the memfn kit manager is. Use at the start of any predicate-language session, or when Frank types /pcrec-predicate-manager.
+description: Run a predicate-language work session as its technical manager, and be the owner's interface for discussing predicate work. The predicate language ([COND-FAMILY]; docs/design/predicates/core.md, library.md, parked.md) is DESIGN ONLY today - orient from docs/dev/pred/wake.md and the record of the owner's words, discuss and ask rulings one question at a time with RUN examples, fold rulings into the predicate documents with evidence, run critic rounds, and deliver a branch to the pcrec manager (never to main). Managed by the pcrec manager as the memfn kit manager is. Use at the start of any predicate-language session, or when Frank types /pcrec-predicate-manager.
 ---
 
 # pcrec predicate-language manager
@@ -57,9 +57,14 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
    files by session id; the monitor hook is silent for you; unregistered, they inject nothing).
 2. Read `docs/dev/pred/wake.md` (your branch's copy if `worktrees/pred` exists), then
    `docs/dev/pred/from_main.md` (every entry after the last one your `to_main.md` acknowledges).
-3. Read the END of `docs/design/plan_row_bodies/COND-FAMILY.md` back to the last revision's fold point
-   (wake.md names the entry), then `docs/design/predicates/core.md` and `library.md`, then the latest
-   filed review (`ls docs/dev/reviews | grep -E 'predspec|preddoc' | tail`).
+3. Read the THREE PRIMARY PREDICATE FILES, whole, in this order (each uses only what is before it):
+   `docs/design/predicates/core.md` (syntax and meaning; the owner's principles first),
+   `docs/design/predicates/library.md` (every call-form name, marked defined in the language or native),
+   `docs/design/predicates/parked.md` (ideas, each with a trigger). Your branch's copies if `worktrees/pred`
+   exists. Their `_details.md` partners (his words, rejected candidates, history) are NOT read at start: reach
+   them by tag when a question needs them (`scripts/entry <tag|slug> -l 2`).
+   Then the END of `docs/design/plan_row_bodies/COND-FAMILY.md` back to the entry wake.md names, then the
+   latest filed review (`ls docs/dev/reviews | grep -E 'predspec|preddoc' | tail`).
 4. Tail of `docs/dev/pred/journal.md`; `git log --oneline -10 main` for what main merged.
 5. Bring `worktrees/pred` up to date with main (merge ALONE; read the result).
 6. Tell main you are up (one SendMessage: your branch, what you are about to discuss or revise).
@@ -98,7 +103,8 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
 - **Plain words, not item numbers**; no "still waiting on you" lines in chat (the owner view carries
   them); never the question UI. Odd word swaps in his messages are phone autocorrect: read for the
   intended word.
-- Obscure ideas get a short answer and a `predicates_future.md` item with a trigger, never a lane.
+- Obscure ideas get a short answer and a piece in `docs/design/predicates/parked.md` (with its details entry
+  and a trigger), never a lane.
 
 ## 3. Status and records
 
@@ -107,9 +113,9 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
   your session reads THIS file.
 - `docs/dev/pred/journal.md` (tracked, append-only, dated): an entry after every work piece and
   whenever you start waiting. `docs/dev/pred/wake.md` (tracked): rewritten at every pause (section 6).
-- The draft's own header/history block and "what moved" section are the revision history; the record
-  (COND-FAMILY.md) is the only source of rulings. `predicates_future.md` takes ideas, each with its
-  source entry and a trigger.
+- Each piece's entry in the `_details.md` files is its history; the record (COND-FAMILY.md) is the only
+  source of rulings. `docs/design/predicates/parked.md` takes ideas, each with its source entry and a
+  trigger.
 
 ## 4. The revision cycle (delegate; your own model never runs a lane)
 
