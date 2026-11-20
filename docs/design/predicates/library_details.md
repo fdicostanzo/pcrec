@@ -548,6 +548,7 @@ evidence: docs/dev/lanes/preddoc4_evidence/ PART SO; the draft §4.3, R.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: ruled pieces used `some` with no piece (review r59 PRIMITIVES-MISSING, READ-6).
 - 2026-11-19 (lane preddoc5): the slug some-own (the draft's, closed by entailment) moved here from lib/search/hits; there was no `some` piece when it was homed (review r59 PLACE-4).
+- 2026-11-19 (lane preddoc6, review r60 COLD-20): "`NOT some(c)` and `occurs.none(c)` are the same question" marked as the reading of the open question core/model/table/group-truth (it is that question's candidate (a)); before, a ruled piece stated it as settled.
 
 ## lib/counting/count — count
 slugs: count-budget

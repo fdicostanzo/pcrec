@@ -143,13 +143,16 @@ see: core/patterns/atomic
 WHOLE `73` HOLDS (l = `3`), `77` FAILS / SEARCHED `x737` `73`@1 (l = `3`) / FIND-ALL `37 73 77` [`37`@0, `73`@3] (`/(?<l>\d)\d|\d(?<l>\d)/ & (l: "3")`)
 
 ### Group questions over the pass table   [core/model/table/group-truth]   open group-truth 2026-11-19
-After a loop, do the group questions over the passes, `NOT some(c)` and `occurs.none(c)`, agree with `occurs.none(NOT c)` read pass by pass?
+After a loop, is the reading the definition: each group question counts the passes on which its condition is TRUE, each pass judged with its own labels, two-valued?
 needs: core/model/table
 see: lib/counting/occurs lib/counting/some core/conditions/pass-start-read
-The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads
-the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the
-finished passes. Candidates: (a) `NOT some(c)` = `occurs.none(c)` (they agree on every text run); (b) `occurs.none(NOT
-c)` is a different question (it also holds with no pass, and parts from (a) on a pass lacking the label).
+- The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads
+  the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the
+  finished passes.
+- Under the reading `NOT some(c)` and `occurs.none(c)` are one question (they agree on every text run), and
+  `occurs.none(NOT c)`, "no pass on which c fails", is another (it holds with no pass; on a pass lacking c's label
+  c fails and `NOT c` holds).
+- Candidates: (a) yes, the reading; (b) no: he names which of the three forms he meant to be one question.
 modes: n/a (a question over library names; the runs are cited in the details entry)
 
 ### The place table   [core/model/places]   reading 2026-11-19
@@ -282,7 +285,8 @@ see: core/labels/one-rule lib/counting/some
 - The LABEL is the language's: what a condition, a default, a joint, `$x` and the group questions read. `$x` and
   `x:` never disagree.
 - The CAPTURE is regex's: the value from the last time a group of the name was set, read inside rx text (`\k<x>`, a
-  conditional group, a callout) and by the carried-capture form, a visibly different spelling.
+  conditional group, and a callout where one is allowed: a one-literal program, core/patterns/literals) and by the
+  carried-capture form, a visibly different spelling.
 - The ARRAY form reads every setting of the name in order, the one outside the loop included; a reset contributes
   nothing; it is its own type, compared with a single value only through the group questions (`some`, `count`,
   `occurs`: lib/counting); its index `h[k]` counts settings (a reading).
@@ -421,11 +425,13 @@ needs: core/conditions/form core/model/match
 - `c | d` between conditions is regex's one `|` (core/patterns/alternation).
 - A record `(h: S, m: T)` is the `&` of its entries, with or without NOT.
 - `NOT (h: <5)`, `(h: !<5)` (h present and in the complement set) and `P & !(P & (h: <5))` are three meanings:
-  | spelling | on `/(?<h>\d)?x/`: `x` / `3x` / `7x` (WHOLE) |
-  |---|---|
-  | `NOT (h: <5)` | HOLDS / FAILS / HOLDS |
-  | `(h: !<5)` | FAILS / FAILS / HOLDS |
-  | `P & !(P & (h: <5))` | HOLDS / FAILS / HOLDS |
+  | spelling | P = `/(?<h>\d)?x/`: `x` / `3x` / `7x` (WHOLE) | P = `/(?<h>\d)?\d?x/`: `3x` (WHOLE) |
+  |---|---|---|
+  | `NOT (h: <5)` | HOLDS / FAILS / HOLDS | HOLDS |
+  | `(h: !<5)` | FAILS / FAILS / HOLDS | FAILS |
+  | `P & !(P & (h: <5))` | HOLDS / FAILS / HOLDS | FAILS |
+  The last column parts the first and third: P has two paths over `3x`, h = `3` and h unset; NOT rejects the first
+  and holds on the second, while the complement fails because one path of P has h under 5.
 - A test that can never pass and one that can never fail each draw a warning.
 see: core/filters/complement core/diagnostics/warnings core/filters/negation
 WHOLE `12` HOLDS (a = `2`, b = `1`), `1` FAILS / SEARCHED `12` `12`@0 (a = `2`, b = `1`) / FIND-ALL `12 1 19 3` [`12`@0] (`/(?<b>\d+)(?<a>\d)?/ & (a: <5)`)
@@ -541,14 +547,15 @@ see: lib/sets/anything core/filters/negation
 WHOLE `123` HOLDS, `812` FAILS / SEARCHED `7 8 12` `12`@4 / FIND-ALL `12 7 8 93` [`12`@0, `93`@7] (`/\d+/ & neither`, neither := `!/7\d*/ & !/8\d*/`)
 
 ### Negation   [core/filters/negation]   ruled 2026-11-18
-`!X` is the complement of a pattern or set; `NOT T` on a condition or a zero-width pattern is the negative lookahead `(?!T)`; no other spelling of negation exists.
+`!X` is the complement of a pattern or set; `NOT c` on a condition holds exactly when c fails, a negative lookahead at its point.
 needs: core/filters/complement core/conditions/two-valued core/patterns/lookaround
 by: core/principles/regex-default
 see: lib/control/peek lib/control/when lib/control/when-test/not
 - `!X` (core/filters/complement) is filter-only, on a pattern or a set; `(h: !<5)` is h present and outside `<5`.
 - `NOT c`, c a condition, holds exactly when c fails, an absent label included (core/conditions/two-valued).
 - `NOT T`, T a zero-width pattern (a lookahead, a `peek(A)`): PCRE's negative lookahead, so `NOT peek(A)` is
-  `(?!A)`; this is the form the `when` body uses.
+  `(?!A)`; this is the form the `when` body uses (a reading: the ruled `when` body needs it).
+- No other spelling of negation exists (a reading).
 - `NOT` on a bare consuming pattern is not defined: an open question (lib/control/when-test/not).
 - Lower-case `not` is no spelling: a word is a NAME, and no name `not` is provided.
 - `NOT` is a placeholder spelling and the one exception to "no alphabetic operators" (core/operators/bindings; a
@@ -1152,7 +1159,8 @@ see: core/modules/naming
 - Its members are modules reached by `import`; names the worked examples call and nothing defines yet (`days`,
   `weekday_of`, `days_in`, `luhn`) are its planned content.
 - BLESSED CALLOUTS: a member may be emitted C code (pure, bounded, total, oracle-tested) that declares a regular
-  twin where one exists, the compiler choosing the automaton or the callout (a lean, its own plan row).
+  twin where one exists, the compiler choosing the automaton or the compiler-emitted callout, never a callout
+  written in rx text (a lean, its own plan row).
 modes: n/a (no matching involved)
 
 ### Names of provided transforms   [core/modules/naming]   ruled 2026-11-15

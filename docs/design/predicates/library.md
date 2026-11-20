@@ -426,7 +426,8 @@ module: ?
 defined: native (a question over a loop's passes; no expression of the language walks the passes)
 - `some` is the one spelling of "at least one pass"; `all` is retired: every pass is written with the condition
   inside the loop, on the item (core/conditions/in-sequence).
-- `NOT some(c)` and `occurs.none(c)` are the same question (core/model/table/group-truth asks the next step).
+- `NOT some(c)` and `occurs.none(c)` are the same question under the reading of the open question
+  core/model/table/group-truth (a reading).
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
 WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
 

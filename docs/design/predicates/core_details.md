@@ -256,7 +256,7 @@ history:
 - 2026-11-19: a DIRECTION: no change to the label rules now.
 
 ## core/model/match — What a match is
-slugs: row-is-match condition-kind
+slugs: row-is-match condition-kind source-row searched-complement
 rulings:
 - 2026-11-17 "branch-scope: yes. I like that. Also, that makes me like 9:30 choice from yesterday more as well because if we have atomic, you can get the alternative I mentioned." (record: "2026-11-17 OWNER RULING — branch-scope: reading")
 - 2026-11-17 "However, it is in line with regex behavior so I do like it and think it should be the general behavior" (record: "2026-11-17 OWNER, on the model after branch-scope")
@@ -267,11 +267,13 @@ rulings:
 rejected:
 - the SQL model, an enclosing condition that does not make the inner pattern reconsider — by owner — "this is a break from the SQL model we were using ... However, it is in line with regex behavior so I do like it" (record: "2026-11-17 OWNER, on the model after branch-scope").
 - three-valued tests (an absent label UNKNOWN) — by owner ruling — regex-settles (1), a test on an absent label fails.
+- "a row of the source is the whole subject; the complement is per subject" (source-row's wording, the manager's framing of the question his "Source-row: yes" answered, record "2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane") — by owner ruling — row-is-match SUPERSEDES it the same night: a row is ONE POTENTIAL MATCH, the subject the search text; it closes searched-complement (review r31 finding A: a per-subject complement contradicted the same-stretch tie, `/\d+/ & !/0+/` on `0 7` reports `7`).
 readings:
 - a loop's passes include PCRE's trailing empty pass (by the default of exception-rule; his observation "makes sense as the entire rx is optional", not a ruling) — SUPPORTED (the draft R.1.7 (4a): the literal loop, the hole loop and `occurrences` agree with libpcre2).
 evidence: preddoc3a_model.py MATCH (the record's own example: WHOLE `123` a = `1`, b = `23`; the python `re` lowering `1\d+` gives the same spans in all three modes).
 history:
 - 2026-11-16: row-is-match; a row was a row of the pass table before it.
+- 2026-11-19 (lane preddoc6, review r60 SOURCE-ROW / RECOUNT-4): the slugs source-row and searched-complement moved here from core/filters/complement: row-is-match, this piece's ruling, superseded source-row's wording and closed searched-complement (record "2026-11-16 OWNER RULING — row-is-match": "Review r31 finding A is closed by this ruling").
 - 2026-11-17: branch-scope (reading (ii)) made a condition a piece of the pattern; the SQL reading went; regex-settles closed the five points; the nested-pass addendum gave the black-box principle.
 - the slugs pass-and and joint-last-pass moved to core/labels/labels-vs-captures, empty-pass to core/labels/one-rule, outer-pass-forms to core/model/places/outermost-view (lane preddoc3a): each is answered there.
 
@@ -317,6 +319,7 @@ readings:
 evidence: the draft §R.8 row group-truth / pass-table (E12).
 history:
 - new piece (lane preddoc3a): the slug was on core/model/table, whose statement does not answer it; the draft keeps it asked ("the 11-18 rulings do not entail an answer").
+- 2026-11-19 (lane preddoc6, review r60 COLD-20): the question restated as a choice: before, its candidates "(a) `NOT some(c)` = `occurs.none(c)`" and "(b) `occurs.none(NOT c)` is a different question" were both true at once; the reading (the draft §R.1.7, "Each remaining group question counts the REAL passes on which its condition is TRUE") is now candidate (a); lib/counting/some's sentence is marked as that reading.
 
 ## core/model/places — The place table
 slugs:
@@ -465,6 +468,7 @@ history:
 - the skeleton's statement "A label matches every pass; a capture is PCRE's last value" (the superseded entry) replaced by the after-loop-read statement (lane preddoc3a).
 - 2026-11-16 joint-loops and pairing-loop part 1 (per-pass pairing of a joint condition by the loop enclosing its labels; "I agree. Makes sense.", record "2026-11-16 OWNER RULING — joint-loops: agreed, all three parts"; "pairing-loop: I agree part 1.", record "2026-11-16 OWNER RULING — pairing-loop, part 1: the wording confirmed; his remark on optionals") are REVERSED for a bare joint by after-loop-read (cited above: a bare joint reads the last pass's own tuple); the per-pass form is the condition inside the loop, on the item. The slugs are homed here for that reason (lane preddoc5, review r59 COMPA-11).
 - the slug array-slot moved here from core/labels/one-rule: the rule it decided ("a reset contributes nothing" to the array form) is this piece's (lane preddoc5, review r59 PLACE-4).
+- 2026-11-19 (lane preddoc6, review r60 COLD-13): "a callout" among the capture's readers qualified "where one is allowed: a one-literal program" (core/patterns/literals refuses callouts inside a larger program).
 
 ## core/labels/one-rule — One label rule: branchings reset
 slugs: bare-loop-label before-and-inside shared-label repeated-means unsettable-label empty-pass optional-as-loop
@@ -634,6 +638,7 @@ readings:
 evidence: preddoc3a_model.py TV (the draft's PART A U1 line; printed answers reproduced; the lowering agrees), TV2 (U2: `NOT (a: <5)` on `1` HOLDS); the three-spellings table is the draft §R.3's (N1-N4), reproduced by DEF for `(h = "x": !<5)`; sabotage s5 caught.
 history:
 - 2026-11-16: condition-not with "absence never matches"; 2026-11-17: regex-settles and absent-under-not reversed the absence clause; polarity-rule.
+- 2026-11-19 (lane preddoc6, review r60 COLD-12): a column added to the three-meanings table on P = `/(?<h>\d)?\d?x/`, `3x` WHOLE: HOLDS / FAILS / FAILS. On the old column rows 1 and 3 were identical, so the table showed two meanings; the new column parts NOT from the complement form (P has two paths over `3x`, h = `3` and h unset). Run: docs/dev/lanes/preddoc6_evidence/ PART TV.
 
 ## core/conditions/in-sequence — A condition as a sequence operand
 slugs: condition-in-sequence
@@ -764,20 +769,23 @@ evidence:
 history: skeleton; the draft R.1.4.
 
 ## core/filters/complement — Complement
-slugs: nested-complement source-row searched-complement
+slugs: nested-complement
 rulings:
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-16 "not-is-complement: yes agree" (record: "2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none")
 - 2026-11-18 "complement-place: is this legal? not_seven := not seven It stands alone. I think it's the use that is the problem" (record: "2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx")
-- 2026-11-16 "Source-row: yes" (record: "2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane"); a row of the source is the whole subject; a searched pattern gives several result rows per subject; the complement is per subject
+- 2026-11-16 "row-is-match: yes I agree." (record: "2026-11-16 OWNER RULING — row-is-match"); a complement after `&` filters potential matches, one row each: `t2 & !q` searched on `9:30` HOLDS reporting `9`; it SUPERSEDES the 21:49 source-row wording (history)
 rejected:
-- `!` on a condition — by owner ruling — not-is-complement (a compile error naming the two rewrites).
+- `!` on a condition as a compile error (the second half of not-is-complement, "no meaning on a condition") — by owner ruling — REVERSED the same evening by condition-not (record: "2026-11-16 OWNER RULING — condition-not: allowed"); the spelling on a condition is `NOT` (core/filters/negation, a reading). The not-is-complement item above stands for its first half only (`!` on a pattern is a complement).
+- a complement per SUBJECT (source-row's wording, "a row of the source is the whole subject; the complement is per subject") — by owner ruling — row-is-match: a row is one potential match, the subject is the search text.
 readings:
 - a complement inside an `occurrences` argument rejects a path (nested-complement, entailed by hit-carry's premise) — SUPPORTED by the draft's PART RS RS1 (81 of 364 differ from the committed reading), not re-run here.
 - `!` in rx text keeps PCRE's meaning (the 2026-11-15 correction: `!` inside a normal rx is parked) — UNTESTED.
 evidence: preddoc3a_model.py COMP (`(?!7)\d+` agrees; the draft's `712` FAILS reproduced); sabotage s14 caught.
 history:
 - 2026-11-16 not-is-complement; 2026-11-17 regex-settles (2); 2026-11-18 complement-place.
+- 2026-11-19 (lane preddoc6, review r60 SOURCE-ROW / RULING-2 / RECOUNT-4): the `rulings:` item "2026-11-16 "Source-row: yes" (record: "2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane"); a row of the source is the whole subject; a searched pattern gives several result rows per subject; the complement is per subject" REMOVED: that wording was "the MANAGER's framing of the question" (record "2026-11-16 OWNER REMARKS — what a row is; negating a condition; the value of a complemented pattern") and row-is-match "SUPERSEDES the 21:49 source-row wording" the same night (cited above). The slugs source-row and searched-complement moved to core/model/match, the piece row-is-match decides.
+- 2026-11-19 (lane preddoc6, review r60 RULING-4): the `rejected:` line "`!` on a condition — by owner ruling — not-is-complement (a compile error naming the two rewrites)" stated the half of not-is-complement that condition-not reversed the same evening; rewritten.
 
 ## core/filters/kinds — Can match, can filter
 slugs: complement-place lone-complement-match
@@ -811,6 +819,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PARTS NE, KI.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: the one home of the negation spellings (review r59 NEGATION); the kinds example's undefined `not` replaced by `!`; the `when` body's `NOT peek(...)` stated legal here.
+- 2026-11-19 (lane preddoc6, review r60 DAMAGE-3): the ruled statement narrowed to what the rulings carry; before: "`!X` is the complement of a pattern or set; `NOT T` on a condition or a zero-width pattern is the negative lookahead `(?!T)`; no other spelling of negation exists." Its two readings (NOT on a zero-width pattern; no other spelling) are bullets marked "(a reading)"; the record writes `!` on a condition (condition-not: "`!` on a condition is LEGAL").
 
 ## core/values/reads — Reading a label
 slugs: value-filter pass-list-read
@@ -1621,6 +1630,7 @@ readings:
 evidence:
 history:
 - 2026-11-19 (lane preddoc4): a new piece (review r59 COMPB-4); library.md's header points here (COMPB-9).
+- 2026-11-19 (lane preddoc6, review r60 COLD-13): the blessed callout said to be compiler-emitted, never a callout written in rx text (core/patterns/literals refuses those inside a larger program).
 
 ## core/modules/naming — Names of provided transforms
 slugs:
