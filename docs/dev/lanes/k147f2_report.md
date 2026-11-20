@@ -7,7 +7,7 @@ Premise test: `git log --oneline -1` read ceae6bcab. F2's DIED reproduced (rc 13
 
 All FIX-NOW items (F1, F3-F10) and PLAN/DOC items (F2 -> K152, F11, F12, F13) are applied; the four process changes are in the skill.
 No emitted-byte mover: a 368-compile and a 1,500-compile BASE-vs-lane comparison (below) read 0 movers (`--list-limits` text aside, which is the declared F1/F6 move).
-The committed identity sweep (`scripts/emit_sweep.py`) is DONE: every stream 0 movers. OWED, not claimed: the new sabotage row's matrix run (`run_sabotage_matrix.sh S3440`), queued on the box lock since 17:53 behind other lanes' jobs (log path in Validation); the plant itself was shown red by hand. Two pins moved and were re-pinned: the start-set VM mover manifests (+2 rows) and rxtsource's census and C3 pins (+2 blocks, +135 case lines).
+The committed identity sweep (`scripts/emit_sweep.py`) is DONE: every stream 0 movers. The new sabotage row S3440 ran through the matrix as a queue job: DETECTED (66 corpus failures, possdiff 0 fail, reach ok), no unexpected or unreached; its plant was also shown red by hand. Two pins moved and were re-pinned: the start-set VM mover manifests (+2 rows) and rxtsource's census and C3 pins (+2 blocks, +135 case lines).
 
 ## Fixes by finding
 
@@ -54,10 +54,10 @@ Run in this worktree on the final tree (the commit tip):
 - `make test-possessify` 44/0 (re-run after the move), `make test-endmark` 46/0, `make test-compound` 17/0 + 16/0 + 4/0, `make test-thread` rc 0.
 - `make test-spec` FAILS 13 of 14 checks (`did not compile`) on this tree AND on a clean ceae6bcab build alike (`make -C <scratch base> test-spec`: the same 13 failed): environmental and pre-existing, not from this lane; not investigated.
 - Not run: `make test` and `make test-axes` (the manager dispatches the cloud run), and the size tripwire of `test-corpus` (two python-verified blocks appended to a file the size log reads).
-- OWED (queued on the box lock since 17:53 behind other lanes' jobs): `bash tests/mech/run_sabotage_matrix.sh S3440` (log /var/tmp/pcrec-pcrec/scratch/k147f2/s3440.log, expected DETECTED, completion trailer `== mech run COMPLETE`; the runner archives HEAD when it starts, so it measures the final commit). S602 and S604 were re-worded only (text, not anchors); their rows were not re-run.
+- `bash tests/mech/run_sabotage_matrix.sh S3440` through `scripts/boxqueue add` (job 200-k147f2-mech, 138 s): DETECTED, `== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)` at the tree 87e3e41d7 (src-identical to the final commit). S602 and S604 were re-worded only (text, not anchors); their rows were not re-run.
 
 ## STATE AT HANDOFF
 
-Rulings file docs/dev/lanes/k147f2_rulings.md: empty; last R-n applied: none. Branch lane/k147f2 committed at the tip named in the handback. Every finding F1-F13 is done except the OWED run above (the S3440 matrix verdict) and the unrun-by-design items: no gdb for K152, no DEPTH_FAMILIES row for K152 (no expected-fail form), no CLAUDE.md touched (size check not needed). No STOP was hit.
+Rulings file docs/dev/lanes/k147f2_rulings.md: empty; last R-n applied: none. Branch lane/k147f2 committed at the tip named in the handback. Every finding F1-F13 is done; the items not done by design: no gdb for K152, no DEPTH_FAMILIES row for K152 (no expected-fail form), no CLAUDE.md touched (size check not needed). No STOP was hit.
 
-OWED: boxqueue job 200-k147f2-mech (`bash tests/mech/run_sabotage_matrix.sh S3440` on this worktree; the first direct launch died waiting on the box lock, so it was re-queued with `scripts/boxqueue add`); read it with `scripts/boxqueue state 200-k147f2-mech` and its job log, completion line `== mech run COMPLETE: 1 rows`, expected verdict DETECTED. Everything else is complete.
+OWED: none. The S3440 matrix row ran as boxqueue job 200-k147f2-mech (the first direct launch had died waiting on the box lock): `== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at 87e3e41d7`, verdict DETECTED: reach ok (1/1), pop 1 (want >=1), corpus 66 fail / 3722 pass, possdiff 0 fail / 294 pass. Job dir /home/pcrec/projects/pcrec/worktrees/.boxqueue/done/20261120T184824.280080792-200-k147f2-mech.
