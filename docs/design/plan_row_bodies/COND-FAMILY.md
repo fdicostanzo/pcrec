@@ -5931,3 +5931,22 @@ class's members no order (a class is one position), so nothing disagrees and a c
 `c`], `.index` from the bottom); with it the open piece class-value has a natural answer, still not his words;
 (c) the rejected "codepoint order (the draft's lean)" under class-order is thereby the rule again, for digits by
 his words; (d) every lift example printed with a descending class is re-run ascending.
+
+### 2026-11-19 OWNER, on the sort function: the existing one is the general sort; a shorthand for longest first would help
+tags: lib/structural/sort
+
+After his request of the entry above ("Need a terser sort function for common use"), told that the manager owed
+him a name. HIS WORDS, whole:
+
+"Sort function: the existing sort function is lean: good as the general purpose sort. Helpful: a shorthand for
+sorting by longest so all those options don't have to be written out."
+
+Class: a LEAN (his word, on the existing `sort(alts, by = "length", order = "desc")`: "good as the general purpose
+sort") and a REQUEST made precise ("Helpful: a shorthand for sorting by longest so all those options don't have
+to be written out"). Not a ruling; `sort` itself stays under construction (nothing defines its orders yet).
+
+The manager's proposal (a spelling, the manager's call, a placeholder for the spellings review; told to him):
+`longest_first(X)`, defined in the language as `sort(X, by = "length", order = "desc")`, named for what it does
+to the set, not to the subject (core/modules/naming). The manager's reading, to test when `sort` is defined:
+entries of equal length keep their order (a stable sort), so the written order still decides among them. To be
+folded onto lib/structural/sort after lane predasc merges (that lane is editing the piece).
