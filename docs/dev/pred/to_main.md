@@ -166,3 +166,27 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   the old paths; (d) r57's PLAN items F8, F12, G1-G3 are not fixed (reasons in the review).
 - Status line for [COND-FAMILY]: documents reorganized (base + details, `docs/design/predicates/`); conversion of
   the remaining sections running (lanes preddoc3a/3b/3c); owner rulings today: import-symbols, import-several.
+
+## P-11 (2026-11-20, predicate manager) — done: the predicate documents are converted; reviews r59 and r60 filed
+
+- done: lanes preddoc3a/3b/3c (conversion), preddoc4/5 (review r59's fixes), preddoc6 (review r60's fixes) merged
+  into `lane/pred-rev28`; reports `docs/dev/lanes/preddoc{3a,3b,3c,4,5,6}_report.md`; reviews
+  `docs/dev/reviews/2026-11-19-r59-preddoc3.md` and `2026-11-19-r60-preddoc5.md` filed RULED. The tip is the commit
+  carrying this entry. Lint on the documents: 5,014 checks, 0 failed (three SOFT size warnings, reported not
+  refused); plan-lint clean; no script changed since your last merge.
+- Status line for [COND-FAMILY]: the language is defined by `docs/design/predicates/` (core 122 pieces, library 54,
+  parked 39; every piece converted; r60 verdict READY WITH NAMED RESIDUALS); `predicates_draft.md` is FROZEN at
+  revision 29.1; `predicates_future.md` retired; owner rulings since P-10: import-symbols, import-several; form:
+  every call-form name is a library piece marked `defined: language | native`.
+- PROPOSED SKILL EDIT (pcrec-predicate-manager; yours to make): (a) section 0 "What you own": replace
+  "`docs/design/predicates_draft.md` (the draft ...)" by "`docs/design/predicates/` (the current definition: core,
+  library, parked, each with `_details.md`; format `docs/dev/pred/doc_format.md`; run
+  `python3 -I scripts/pred_doc_lint.py` before naming a tip); `predicates_draft.md` is frozen"; (b) section 1 step
+  3: "read `docs/design/predicates/core.md` and `library.md`, then the END of the record" in place of the draft's
+  header and R.8; (c) section 2: add "each record entry carries a `tags:` line; before saying ruled, confirmed or
+  undefined, grep the record AND read the same day's later entries"; (d) section 4: a single ruling is folded by
+  the manager in one commit (record + base piece + details entry + lint); a lane is for a ruling that moves
+  several pieces or needs runs; "an evidence model builds the regex mechanically from the body's text"; (e)
+  section 5: the open questions are `scripts/entry -g . -p predicates --state open`.
+- For you, small: r59/r60 PLAN items that touch `scripts/` (a lint check for the `defined:` line and for "every
+  called name has a library piece"; generated index pieces) are not requested now.
