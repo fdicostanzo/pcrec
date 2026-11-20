@@ -42,5 +42,6 @@ SAB_REACH_EXPECT="REACH-S602"
 SAB_REACH_POP='tests/possessify/possessify.rxt|^pattern \(a\\2\\3\)\(b\\1\)\(c\\1\)x\+\\1$|1'
 SAB_EXPECT=UNDETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (F->state[g] == CF_BUSY) return false;'
-SAB_AFTER='    /* SABOTAGE S602: an in-progress group is recomputed */'
+SAB_BEFORE='        if (F->state[g] == CF_BUSY || F->depth >= PCREC_MAX_POSS_REF_DEPTH)'
+SAB_AFTER='        if (F->depth >= PCREC_MAX_POSS_REF_DEPTH)  /* SABOTAGE S602: an in-progress group is recomputed */'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): the in-progress test shares first_eval's line with the depth bound, which the plant keeps; same site, same plant.

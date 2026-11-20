@@ -23,12 +23,15 @@ SAB_BEFORE='        case A_BREF:
         case A_CALLOUT:
             /* [INLINE-C] 1a: the kind ROW answers (`ss_row`): text ZERO for
              * every kind above the backreference, ANY for the two. */
-            return ss_row(a, acc);'
+            ss_row(a, acc);
+            return;'
 SAB_AFTER='        case A_BREF:
         case A_CALLOUT:
-            return ss_row(a, acc);
+            ss_row(a, acc);
+            return;
         case A_VAR: {   /* SABOTAGE S500: the arm drops its bytes */
-            StartSet z = ss_empty();
-            z.nullable = false;
-            return z;
+            *acc = ss_empty();
+            acc->nullable = false;
+            return;
         }'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): ss_walk answers through `*acc`; same site, same plant.

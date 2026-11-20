@@ -23,5 +23,8 @@ SAB_REACH_POP='tests/possessify/possessify.rxt|^pattern \(\?:\(\(\?=a\)\)a\)\?b\
 tests/possessify/arms_reach.tsv|^\(\?:\(\(\?=a\)\)a\)\?b\+\\1b[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        First f = text_first(q, F->caps[g][i]->l);'
-SAB_AFTER='        First f = first_of(q, F->caps[g][i]->l);  /* SABOTAGE S604: POSITION answer */'
+SAB_BEFORE='        a = F->caps[f->g][f->i]->l;
+        text = true;'
+SAB_AFTER='        a = F->caps[f->g][f->i]->l;
+        text = false;  /* SABOTAGE S604: POSITION answer */'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): a group's A_CAP bodies are read by first_eval's `group:` block, the reading a flag; same site, same plant.
