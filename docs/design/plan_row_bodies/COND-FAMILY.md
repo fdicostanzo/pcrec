@@ -6575,3 +6575,43 @@ content) belongs to the definition it is written in; (b) a condition bound ALONE
 the match so far of the definition it is USED in (core/holes/bare-condition's reading "a binding whose whole body
 is a bare condition ... behaves as the bare condition does"); (c) `${A & (0: S)}` is unchanged: that `0` is only A
 (ruled, operand-world); (d) zero-in-loop (pass or rx start) is untouched and still open.
+
+### 2026-11-21 OWNER RULING — array-vs-passes: a (the group questions and the index read the array of settings)
+tags: core/labels/labels-vs-captures/array-vs-passes core/labels/labels-vs-captures lib/counting/some lib/counting/count lib/counting/occurs core/model/table/group-truth core/model/places/outermost-view core/values/tuples
+
+Asked **array-vs-passes** (do `some`, `count`, `occurs` and `h[k]` read (a) the array of a label's settings, (b)
+the loop's passes, or (c) split: a group question over passes, the array form and its index over settings; the
+manager's leaning (c); shown the piece's three parting cases and a fourth run today, `/(?:(?<h>\d):(?<m>\d),)+/ &
+some((h: "5", m: "3"))`: passes WHOLE `5:1,2:3,` FAILS, settings HOLDS). HIS WORDS, whole:
+
+"array-vs-passes: in your example, the user chose to set the labels the same. if they wanted the out-the-loop
+setting to be separately labeled they could have done so. also, if they wanted the h5,m3 condition to be held at
+the same time they could have specified (h,m): (5,3) but they did not. they chose to use the same labels and
+therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be
+otherwise spelled, i think option "a""
+
+Class: a RULING on the slug, answer (a) ("i think option "a"", with his reasons): `some`, `count`, `occurs` and
+`h[k]` read the ARRAY OF SETTINGS of a name: every setting, in order, the one outside the loop included (his
+2026-11-17 "The array takes all h including the one outside the group"; array-scope, 2026-11-19). His reasons: the
+user chose one name, "and therefore that has to have a meaning"; a setting outside the loop wanted apart is given
+its own label; "simplicity"; "the other interpretations can be otherwise spelled". It REVISES lib/counting's
+statements on passes (`some(c)`: "at least one pass of a loop meets the condition c", 2026-11-15) and the reading
+under core/model/places/outermost-view ("Pass tests ... range over the outermost loop's passes").
+
+One part of his reasons is a CLAIM about a spelling, checked the same turn: "if they wanted the h5,m3 condition
+to be held at the same time they could have specified (h,m): (5,3)". Under (a) a joint entry inside a group
+question meets TWO arrays, and no rule says how they pair. RUN (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/`, m optional;
+python, the arrays built from the parse, "only what was set" as array-slot rules): `5,2:3,` has h = [`5`, `2`], m
+= [`3`]: paired BY INDEX the tuple (`5`, `3`) is found though no item holds both; paired by ITEM it is not found.
+`5:3,` both find it; `5:1,2:3,` neither. So his spelling gives "at the same time" only if a joint entry pairs by
+item (the passes again) or the arrays keep unset slots (against array-slot, 2026-11-17: "only what was set"). Told
+to him, and asked as **joint-in-some**.
+
+The manager's readings, for the fold lane to test: (a) a record of two entries inside a group question is the
+product of its entries, each over its own array: `some((h: "5", m: "3"))` is "some h is 5 and some m is 3"; (b)
+`count(c)` and `occurs` on a one-entry condition count SETTINGS; on a condition of several entries what is counted
+is not stated; (c) the group questions are false / zero on an empty array (no setting), which replaces "false
+where the loop made no pass"; (d) the open group-truth ("each pass judged with its own labels") is re-put or
+closed by this ruling: `NOT some(c)` against `occurs.none(NOT c)` now part on settings, not passes; (e) "same item"
+without a joint entry is spelled on the item: a label set only where the item meets the condition, then a group
+question on that label.
