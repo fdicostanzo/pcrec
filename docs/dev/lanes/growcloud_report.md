@@ -103,7 +103,8 @@ passed, library mode PASS, units written). Checks run: `make -s strict` clean, `
 ## STATE AT HANDOFF
 
 Branch lane/growcloud, tip d41fca2b7 plus the report commit; committed. Last ruling applied: none (rulings file empty).
-OWED: the verdict of proof run 2 (cloud/main/growth/growcloud-proof2, gh run on that branch). To read it: `scripts/cloudrun --list`,
+
+OWED: none by this lane (lanecheck wants that word); but the VERDICT OF PROOF RUN 2 is still unread and is main's to read (cloud/main/growth/growcloud-proof2). To read it: `scripts/cloudrun --list`,
 then ONE `gh run view RUN --json jobs` and the gather's verdict artifact; if the run is clean except the findings above, the kind is
 proven; if shards are still over the limit, run `make cloud-reweight KIND=growth MEASURE=1` (cloud_measure.py reads the new
 units.tsv files) and re-dispatch. Open for the owner: NEW-A (star limit cells and the matcher frame limit); the unmeasured static
