@@ -2,7 +2,8 @@
 
 ## STATE AT HANDOFF
 
-STATE: done (design only; no code, no suite, no timing). The note is
+STATE: done (design only; no code, no suite, no timing).
+OWED: none The note is
 `docs/design/memfn/block_span.md` (rev 1), committed on lane/bspan. The
 last rulings entry applied is **R-4** (smallest form). R-1 was applied and
 then withdrawn by R-2. R-3's population record is in the note's §0.1. The
