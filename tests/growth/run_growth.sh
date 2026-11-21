@@ -7,6 +7,9 @@
 #      plain build (RLIMIT_DATA caps), then built with the flags `make asan`
 #      uses (live-heap caps), so LeakSanitizer judges the clean-up.
 # Usage: bash tests/growth/run_growth.sh   (env: JOBS, ONLY, SKIP_LIB=1, SKIP_CLI=1)
+# CLOUD ([GROWTH-CLOUD], kind `growth`): GROWTH_SHARD=K/N runs only shard K's cells of tests/ci/cloud_growth_shards.tsv, BOTH stages
+# (each library cell's bound comes from this runner's own CLI wall); GROWTH_UNITS=FILE records per-cell seconds;
+# GROWTH_MAKE_J=N builds build-asan/ with make -jN. Unset, this is `make test-growth` exactly as before.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -15,22 +18,30 @@ cd "$ROOT" || exit 2
 rc=0
 only=(); [ -n "${ONLY:-}" ] && only=(--only "$ONLY")
 jobs=(); [ -n "${JOBS:-}" ] && jobs=(--jobs "$JOBS")
+shard=(); [ -n "${GROWTH_SHARD:-}" ] && shard=(--shard "$GROWTH_SHARD")
+units=(); [ -n "${GROWTH_UNITS:-}" ] && units=(--units "$GROWTH_UNITS")
+mj=(); [ -n "${GROWTH_MAKE_J:-}" ] && mj=(-j"$GROWTH_MAKE_J")
+# the compiler the numbers below were read under: stack-depth headroom is a property of the compiler, not of pcrec
+# (tests/growth/CLAUDE.md "Compiler"), so every run says which one it ran on
+echo "growth: compiler: $(${CC:-gcc} --version | head -1) (${CC:-gcc} -dumpfullversion = $(${CC:-gcc} -dumpfullversion)); $(uname -m); $(nproc) cpus${GROWTH_SHARD:+; shard $GROWTH_SHARD}"
+# the selftest is about the runner, not a cell: one shard runs it
+case "${GROWTH_SHARD:-1/1}" in 1/*) 
 echo "== growth: the crossing-over alert, both ways (--selftest) =="
-python3 -I tests/growth/run_growth.py --selftest || rc=1
+python3 -I tests/growth/run_growth.py --selftest || rc=1 ;; esac
 echo "== growth: CLI mode, every cell uncapped and under the memory ladder =="
 if [ "${SKIP_CLI:-0}" != 1 ]; then
-    python3 -I tests/growth/run_growth.py "${only[@]}" "${jobs[@]}" || rc=1
+    python3 -I tests/growth/run_growth.py "${only[@]}" "${jobs[@]}" "${shard[@]}" "${units[@]}" || rc=1
 fi
 if [ "${SKIP_LIB:-0}" != 1 ]; then
     echo "== growth: library mode (ONE process), plain build, RLIMIT_DATA caps =="
-    python3 -I tests/growth/run_growth.py --lib "${only[@]}" || rc=1
+    python3 -I tests/growth/run_growth.py --lib "${only[@]}" "${shard[@]}" "${units[@]}" || rc=1
     ASAN_CFLAGS='-O1 -g -fsanitize=address,leak'
     echo "== growth: library mode (ONE process), ASan+LSan build in build-asan/ =="
-    make --no-print-directory BUILD_DIR=build-asan CFLAGS="$ASAN_CFLAGS" all >/dev/null || { echo "FAIL: could not build build-asan/"; exit 1; }
+    make --no-print-directory "${mj[@]}" BUILD_DIR=build-asan CFLAGS="$ASAN_CFLAGS" all >/dev/null || { echo "FAIL: could not build build-asan/"; exit 1; }
     # the caps here are a live-heap budget (growth_driver.c GROWTH_HEAPCAP):
     # ASan's runtime cannot start under RLIMIT_DATA
     LIBPCREC="$ROOT/build-asan/libpcrec.a" \
         GROWTH_CFLAGS="$ASAN_CFLAGS -DGROWTH_HEAPCAP -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free" \
-        python3 -I tests/growth/run_growth.py --lib "${only[@]}" || rc=1
+        python3 -I tests/growth/run_growth.py --lib "${only[@]}" "${shard[@]}" "${units[@]}" || rc=1
 fi
 exit $rc
