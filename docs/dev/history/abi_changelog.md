@@ -23,9 +23,10 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `111` on every artifact today (R-47 unit U2, the vector span's wrapper, 109 ->
-  111, lane bsu2 2026-11-21; `docs/design/memfn/block_span.md` rev 4.1 §5, §14; D201 add. 2 and
-  add. 4; 110 is lane L3's number, the manager's ruling).**
+- **`rx_info.abi` is `110` on every artifact today (R-47 unit U2, the vector span's wrapper, 109 ->
+  110; the kit stamped 111 while L3 held 110, and U2 landed first, so lane u2land re-pinned it
+  to 110 at the landing, 2026-11-21; `docs/design/memfn/block_span.md` rev 4.1 §5, §14; D201
+  add. 2 and add. 4).**
   The memfn kit's window search renders a one-class stretch of a window site (finder row D-hors
   with 16 to 1000 positions, or R7w with 24 to 64, tested by the kit's own set test) as a call of
   a selector function `<p>_mf<h>_vs<j>(S, C)`, at EVERY layer: its one body `__body` is the
