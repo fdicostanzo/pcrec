@@ -4703,3 +4703,6 @@ That said, do track the clang issue with an item for follow-up to make sure no s
 - The clang/-Os machine-code difference gets its own follow-up ITEM. main owns plan.md, so main files it.
 - The kit's part: U5's card C6 times the bench's clang arms on the 3 sites, wrapper against the deny.
 - U2 delivery is unblocked once 723 is green.
+
+### 2026-11-21 15:38 — U2 + U2b delivered to main
+723 GREEN (the 18 U2 rows on the fix tree). lane/bsu2fix (contains lane/bsu2) merged into k1108 (005e35c7b, make strict clean). Delivered: [responses] 994de281c and a SendMessage. abi 111 (re-pin to 110 if U2 lands before L3). Final-tree validation 719/720/721/722/723 all GREEN. U3 next (the w32 helper, the first SIMD text).
