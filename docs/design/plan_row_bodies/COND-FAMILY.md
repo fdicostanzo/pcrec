@@ -6525,3 +6525,32 @@ visibility rules a condition does, so a `_` label cannot be named, hence cannot 
 (d) the existing `capture(name, x) := /(?<${name}>${x})/` is the wrapper method in its literal form; the
 after-the-fact form has no body in the language (native); (e) what the caller reads for a captured label that a
 loop sets (the label's last-pass value or PCRE's carried capture) is not stated.
+
+### 2026-11-21 OWNER, on condition-argument: "i need an example that can't be written more simply"
+tags: core/holes/bare-condition/nested-scope core/operators/bindings lib/control/when lib/control/when-test
+
+Asked **condition-argument** (may a caller pass a condition naming the labels of another argument: `B(rx, c) :=
+/${rx}xx/ & c`, `C := B(A, (d: <100))`; the manager's leaning: legal). HIS WORDS, whole:
+
+"condition-argument: i need an example that can't be written more simply. B(rx) := /${rx}xx/ C := B(A & (d:
+<100))"
+
+Class: a REQUEST and a COUNTER-EXAMPLE (the manager's example reduces to a condition attached to the argument);
+DISCUSSION, nothing ruled.
+
+CHECKED (brute force, 19,530 subjects over `0 1 9 x` and space, lengths 1 to 6; WHOLE and FIND-ALL): his `C :=
+B(A & (d: <100))` and `C := B(A) & (d: <100)`: 0 differ. His rewrite is equivalent and simpler; the manager's
+example is WITHDRAWN as a case for the question.
+
+The manager's answer (told to him): (1) a condition used ONCE at the edge of an argument is always written on the
+argument, as he shows; a test across two parts is written in the definition that holds both (bottom up). (2) The
+case that does not reduce is a macro that places the condition where the caller cannot attach it, more than once
+or negated; that macro exists and is RULED: `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ
+else)` with "A condition or a `peek(A)` as the test" (when-test, 2026-11-18), and the record's own use of it with
+labels of the surrounding item, `when((h: 5), (m: >=3), else = (h: >5))` (2026-11-19, "would when() work here").
+So the record ALREADY ANSWERS condition-argument (legal): the question should not have been asked; WITHDRAWN as a
+question. RUN (hand-built, the test of `kind` standing as a lookbehind): `tagged := [kind = any_of("n", "w")] SEQ
+":" SEQ when((kind: "n"), digits, else = word)`: WHOLE `n:42` HOLDS, `n:ab` FAILS, `w:ab` HOLDS, `w:42` HOLDS /
+SEARCHED `n:ab w:ab` `w:ab`@5 / FIND-ALL `n:42 n:ab w:ab n:7x` [`n:42`@0, `w:ab`@10, `n:7`@15].
+The manager's reading, for the fold lane: a condition passed as an argument is resolved in the CALLER's
+definition (where it is written), as every argument is; the macro's body never names its labels.
