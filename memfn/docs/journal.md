@@ -4731,3 +4731,9 @@ r76 committed with its ruling at 847e8e74c, using a separate verifier and the co
 - PLAN relayed to main: [BSPAN-VANY-RIDE] to name both lifts.
 - Process rule: quote every in-scope item whose only record is denied in the LAUNCH prompt.
 - 724 make test GREEN; 725 mech pending.
+
+### 2026-11-21 17:49 — r76 gap closed; process notes
+crit-memfn-bsu3b: r75 SLOT-3 and SLOT-4 are DISCHARGED at ec578d053. Its residue (define as the is-V flag; no pairing) is r76 SLOT-3, already in bsu3fix (rulings R-1). Findings committed beside r76.
+From the r76 coordinator's closing note:
+- The contract critic saw a few lines of the denied bsu3 report through one unfiltered diff; it used nothing from them and they were quarantined.
+- Proposed: deny docs/dev/history/claude_md/docs__dev__lanes.md (the lanes summary index) in every round, and self-test the kit's oracle before briefing (a wrong UTF option bit, caught by its first critic). Both go into the next launch prompt.
