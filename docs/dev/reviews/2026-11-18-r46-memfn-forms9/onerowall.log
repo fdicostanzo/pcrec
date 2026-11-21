@@ -1,0 +1,4 @@
+interaction one row per head text (regime hashed) tau 0.02 N=200 | von/pt: fl 81 h8 0 P!=64 0.020 | voff/pt: fl 65 h8 1 P!=64 0.045 | von/pool: fl 200 h8 0 P!=64 0.000
+interaction one row per head text (regime hashed) tau 0.03 N=200 | von/pt: fl 196 h8 0 P!=64 0.020 | voff/pt: fl 185 h8 1 P!=64 0.215 | von/pool: fl 200 h8 0 P!=64 0.040
+interaction one row per head text (regime hashed) tau 0.05 N=200 | von/pt: fl 200 h8 0 P!=64 0.030 | voff/pt: fl 200 h8 0 P!=64 0.110 | von/pool: fl 200 h8 0 P!=64 0.010
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

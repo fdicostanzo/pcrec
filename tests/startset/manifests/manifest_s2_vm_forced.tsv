@@ -4846,3 +4846,45 @@ tests/lookaround/d27_l1/l1d27_witnesses.rxt:959	--features lookaround,classes,mo
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:974	--features lookaround,classes,modifiers	283f3d6b6576295b5c5c7830302d5c5c7838305d7b337d
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:989	--features lookaround,classes,modifiers	61283f3d5b612d7a5d7b327d7a29626379
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:999	--features lookaround,classes,modifiers	616263283f3c3d785b612d7a5d7b327d29
+# bsu1 (2026-11-21, R-47 U1): +41 rows, every block of the new tests/memfn/span_seed.rxt (SPAN-SEED, block_span.md §9.3), VM-hat movers under --engine=vm; taken from census_s1.py on the lane's build (corpus rows only, no existing row moved; the regeneration's other differences are left as they were).
+tests/memfn/span_seed.rxt:1013		5b412d5a612d7a302d395f2d5d7b33327d
+tests/memfn/span_seed.rxt:1052		5b412d5a5d7b31377d
+tests/memfn/span_seed.rxt:1076		5b412d5a5d7b32357d
+tests/memfn/span_seed.rxt:1108		5b412d5a5d7b33327d
+tests/memfn/span_seed.rxt:1147		5b2b2e302d395d7b31377d
+tests/memfn/span_seed.rxt:1171		5b2b2e302d395d7b32357d
+tests/memfn/span_seed.rxt:1203		5b2b2e302d395d7b33327d
+tests/memfn/span_seed.rxt:129		5b302d39612d665d7b31367d
+tests/memfn/span_seed.rxt:152		5b302d39612d665d7b31377d
+tests/memfn/span_seed.rxt:176		5b302d39612d665d7b313030317d
+tests/memfn/span_seed.rxt:192		5b302d39612d665d7b313030327d
+tests/memfn/span_seed.rxt:208		5b302d395d7b32347d
+tests/memfn/span_seed.rxt:239		5b302d395d7b32357d
+tests/memfn/span_seed.rxt:271		5b302d395d7b36357d
+tests/memfn/span_seed.rxt:285		5b302d395d7b36367d
+tests/memfn/span_seed.rxt:300		61625b302d395d7b32367d
+tests/memfn/span_seed.rxt:335		5b78795d5b302d395d7b32367d
+tests/memfn/span_seed.rxt:369		5b302d39612d665d7b32307d5b672d7a5d7b32307d
+tests/memfn/span_seed.rxt:384		5b302d39612d665d7b32357d
+tests/memfn/span_seed.rxt:416		5b302d395d7b31377d
+tests/memfn/span_seed.rxt:440		5b302d395d7b33327d
+tests/memfn/span_seed.rxt:46	--features assertions	5c625b302d39612d665d7b33327d5c62
+tests/memfn/span_seed.rxt:479		5c777b31377d
+tests/memfn/span_seed.rxt:503		5c777b32357d
+tests/memfn/span_seed.rxt:535		5c777b33327d
+tests/memfn/span_seed.rxt:574		5b6165696f755d7b31377d
+tests/memfn/span_seed.rxt:598		5b6165696f755d7b32357d
+tests/memfn/span_seed.rxt:630		5b6165696f755d7b33327d
+tests/memfn/span_seed.rxt:669		5b5e5c6e5d7b31377d
+tests/memfn/span_seed.rxt:693		5b5e5c6e5d7b32357d
+tests/memfn/span_seed.rxt:7		5b302d39612d665d7b33327d
+tests/memfn/span_seed.rxt:725		5b5e5c6e5d7b33327d
+tests/memfn/span_seed.rxt:764	--encoding=byte	5b5c7838302d5c7862665d7b31377d
+tests/memfn/span_seed.rxt:789	--encoding=byte	5b5c7838302d5c7862665d7b32357d
+tests/memfn/span_seed.rxt:822	--encoding=byte	5b5c7838302d5c7862665d7b33327d
+tests/memfn/span_seed.rxt:862		5b612d665d7b31377d
+tests/memfn/span_seed.rxt:88		5c647b33327d
+tests/memfn/span_seed.rxt:886		5b612d665d7b32357d
+tests/memfn/span_seed.rxt:918		5b612d665d7b33327d
+tests/memfn/span_seed.rxt:957		5b412d5a612d7a302d395f2d5d7b31377d
+tests/memfn/span_seed.rxt:981		5b412d5a612d7a302d395f2d5d7b32357d

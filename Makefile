@@ -755,7 +755,8 @@ test-codegen: all
 	    'bash tests/codegen/run_landmark_walk.sh' \
 	    'bash tests/codegen/run_case_spelling_identity.sh' \
 	    'bash tests/codegen/run_residual_twins.sh' \
-	    'bash tests/codegen/run_stmt_writer.sh'
+	    'bash tests/codegen/run_stmt_writer.sh' \
+	    'bash tests/codegen/run_skip_pins.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a

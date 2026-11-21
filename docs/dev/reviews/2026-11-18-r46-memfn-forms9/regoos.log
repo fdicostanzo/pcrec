@@ -1,0 +1,4 @@
+r44 A regime heads tau 3%, seed 5140 (oos)   N=300 | von/pt: fl 300 h8 0 P!=64 0.053
+r44 A regime heads tau 3%, seed 5141 (oos)   N=300 | von/pt: fl 300 h8 0 P!=64 0.033
+r44 A regime heads tau 3%, seed 5142 (oos)   N=300 | von/pt: fl 300 h8 0 P!=64 0.023
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

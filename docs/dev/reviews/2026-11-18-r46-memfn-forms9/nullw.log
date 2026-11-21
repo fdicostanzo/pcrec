@@ -1,0 +1,3 @@
+null phase tau 0.01 + 5% win                 N=200 | von/pt: fl 0 h8 127 P!=64 0.635 | voff/pt: fl 0 h8 127 P!=64 0.635 | von/pool: fl 5 h8 124 P!=64 0.620
+null phase tau 0.02 + 5% win                 N=200 | von/pt: fl 0 h8 23 P!=64 0.115 | voff/pt: fl 0 h8 23 P!=64 0.115 | von/pool: fl 1 h8 23 P!=64 0.115
+  texts read/night median 120, excluded median 0; per-text pure-error df: min 6 median 12.0, share<4 0.000

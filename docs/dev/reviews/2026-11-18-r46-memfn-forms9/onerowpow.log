@@ -1,0 +1,3 @@
+POWER one row per head text tau 0.005 + 5% win N=200 | von/pt: fl 3 h8 180 P!=64 0.900 | voff/pt: fl 4 h8 189 P!=64 0.945 | von/pool: fl 5 h8 185 P!=64 0.925
+POWER one row per head text tau 0.01 + 5% win N=200 | von/pt: fl 6 h8 178 P!=64 0.890 | voff/pt: fl 8 h8 182 P!=64 0.910 | von/pool: fl 60 h8 129 P!=64 0.645
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000
