@@ -918,6 +918,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [SKIP-VISIBLE] STATE:not-started — sections that SKIP loudly (PC-3, test-spec) give a green make test with nothing decided
+  filed: 2026-11-21 manager (review r70 RATCHET-3), written by lane specfix2
+  status (2026-11-21): filed; a box without libpcre2 exits 0 from each such section after its .ran marker is touched, visible only in stderr scrollback; CI builds pcre2 10.46 but nothing asserts it resolved
+  trigger: the next CI change (ci.yml / cloud-test.yml edit)
+  refs: docs/dev/reviews/2026-11-21-r70-specfix.md; tests/spec_mod0/CLAUDE.md
+  One row for every SKIP-loudly section. Options: (a) a CI-only require-oracle switch that turns the SKIP into a failure where pcre2 is built; (b) a trailer line listing the skipped sections at the end of make test.
 - [CTX-FACTS-NEG] STATE:not-started — D168 context facts at negative offsets / past the end (`\b`, fixed lookbehind), anchored DFA
   filed: 2026-11-16 manager (admin1116; part (b) split out of [DD-11.5] by the manager's ruling of 2026-11-16)
   status (2026-11-16): filed; no build before a measured need (D77); the producer is no longer an NFA span slice (deleted by [COVER-CAP] stage 1, abi 108)

@@ -491,7 +491,11 @@ int main(int argc, char **argv)
                           "the accurate cell", S);
                 continue;
             }
-            if (is_yes != row_q[i] && known_finding(S)) {
+            /* The waiver keys on the FULL disagreement the .inc header
+             * states: the registry says `no` AND libpcre2 compiles the
+             * quantified form. A listed row whose disagreement flipped
+             * direction (registry `yes`, oracle rejects) is a NEW finding. */
+            if (is_no && row_q[i] && known_finding(S)) {
                 known_hit[known_idx(S)] = 1;
             } else if (is_yes != row_q[i])
                 spec_fail("row '%s': pcrec says quantifiable='%s', libpcre2 "
@@ -537,15 +541,22 @@ int main(int argc, char **argv)
     printf("  compared %ld two-valued rows; %ld form-resolved rows; "
            "%ld lexical rows; %ld rows with an unrecognised value\n",
            compared, formvalued, lexvalued, unknownvalued);
+    int nstale = 0;
     for (int i = 0; i < NKNOWN; i++) {
-        if (!known_hit[i])
+        if (!known_hit[i]) {
+            nstale++;
             spec_fail("known_findings.inc lists '%s', but pcrec and libpcre2 "
                       "no longer disagree on it (or the row left the "
                       "registry): the finding is fixed, delete the entry",
                       KNOWN_FINDINGS[i]);
+        }
     }
-    printf("  KNOWN FINDINGS (registry `quantifiable` vs libpcre2, "
-           "known_findings.inc): %d, all still disagreeing\n", NKNOWN);
+    if (nstale == 0)
+        printf("  KNOWN FINDINGS (registry `quantifiable` vs libpcre2, "
+               "known_findings.inc): %d, all still disagreeing\n", NKNOWN);
+    else
+        printf("  KNOWN FINDINGS (known_findings.inc): %d listed, %d STALE "
+               "(see FAIL above)\n", NKNOWN, nstale);
     spec_pop("quantifiable.compared_rows", compared);
     spec_pop("quantifiable.lexical_cells", lexvalued);
     return spec_finish();

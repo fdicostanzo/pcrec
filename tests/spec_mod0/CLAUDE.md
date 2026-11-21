@@ -22,8 +22,8 @@ It does not run `make` itself. One entry point:
 - **spec_common.h** — the shared harness: the libpcre2 oracle (via `../fuzz/pcre2_abi.h`), the `--list-syntax` TSV parser, `spec_is_lexical()`, and the population/floor ...
 - **known_findings.inc** — check10's list of registry values that disagree with the oracle (a finding list, fails stale in both directions).
 - **floors.txt** — every ratcheting population floor, in one file.
-- **class_expectations.inc** — the measured class-position expectation of each of the 44 class-reachable rows plus 22 endpoint-adjacent probes (check04).
-- **endpoint_deviations.inc** — the three cells where libpcre2 decides a range endpoint differently from check08's five-step model (check08).
+- **class_expectations.inc** — the measured class-position expectation of each of the 57 class-reachable rows plus 22 endpoint-adjacent probes (check04).
+- **endpoint_deviations.inc** — the five cells where libpcre2 decides a range endpoint differently from check08's five-step model (check08).
 - **run_spec_mod0.sh** — builds and runs everything; dumps the registry and verb tables from a *run* of pcrec, never a committed copy.
 - **check01_isolation.sh**, **check06_cursor.sh**, **check09_every_feature_toggles.sh** — the three shell checks.
 - **check02 / 03 / 04 / 05 / 07 / 08 / 10** `.c` — the seven C checks for the ten module-0 invariants.

@@ -602,7 +602,7 @@ cloud-reweight: all
 # touched-path guidance table; `test-spec` is
 # one of `test:`'s prerequisites (TEST_SECTIONS) since the specfix lane (2026-11-21).
 #
-# Each target rebuilds `all` first (bar test-spec, which treats build/pcrec
+# Each target rebuilds `all` first (test-spec too, though it treats build/pcrec
 # as a black box the way its own runner already does) so a stale binary never
 # reads as a pass.
 test-corpus: all
