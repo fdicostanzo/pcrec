@@ -20,75 +20,137 @@ rows: re-judge them against `spec_expectation`, re-pin the value, drop the
 limit), a FAIL row with no limit or an undeclared key, a PASS row with one, a
 limit row naming no listing row, and an empty population (K35).
 
-usage: check_listing.py PCREC   (exit 0 green, 1 red, 2 usage)
+Shared with d27_l3 (lane l3wire): `check_listing.py PCREC [DIR]` reads DIR's
+`*_listing.tsv` and `*_limits.tsv` (DIR defaults to this directory, L1). The
+profile is chosen by the listing's header: L1's has `listing_req_whole_run` (one
+row per witness, `verdict` PASS/FAIL); L3's has `run`/`K`/`why`/`req_set_maxoff`
+(one row per witness x encoding x config, `status` PASS/LIMIT/INFO; limits name a
+witness id and apply when any of its rows is LIMIT; INFO is a sound join the brief
+did not expect, never a limit). The limit rules are the same for both.
+
+usage: check_listing.py PCREC [DIR]   (exit 0 green, 1 red, 2 usage)
 """
 import csv
 import os
+import re
 import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LISTING = os.path.join(HERE, "l1d27_listing.tsv")
-LIMITS = os.path.join(HERE, "l1d27_limits.tsv")
-KEYS = {"domain", "guard-domain", "rep-wall", "nested-item", "edge-drop"}
+L3CONFIGS = {"def": [], "vm": ["--engine=vm"], "vmpf": ["--engine=vm", "-fprefilter"],
+             "dfa": ["--engine=dfa"]}
+
+
+def facts(pcrec, pat, enc, extra=()):
+    """pcrec's {fact: (value, why)} for `pat` under `enc` (the --emit-facts rows)."""
+    p = subprocess.run([pcrec, "--features", "all", "--emit-facts=" + enc, *extra,
+                        "--pattern", pat], capture_output=True, text=True,
+                       timeout=120)
+    out = {}
+    for line in p.stdout.splitlines():
+        f = line.split("\t")
+        if len(f) > 7 and f[0] == enc:
+            out[f[1]] = (f[6], f[7])
+    if "req_whole_run" not in out:
+        out["req_whole_run"] = ("REFUSED", (p.stderr.strip().splitlines() or ["no row"])[0])
+    return out
 
 
 def listing(pcrec, pat, enc):
     """pcrec's (value, why) for `req_whole_run` of `pat` under `enc`."""
-    p = subprocess.run([pcrec, "--features", "all", "--emit-facts=" + enc,
-                        "--pattern", pat], capture_output=True, text=True,
-                       timeout=120)
-    for line in p.stdout.splitlines():
-        f = line.split("\t")
-        if len(f) > 7 and f[0] == enc and f[1] == "req_whole_run":
-            return f[6], f[7]
-    return "REFUSED", (p.stderr.strip().splitlines() or ["no row"])[0]
+    return facts(pcrec, pat, enc)["req_whole_run"]
 
 
-def main():
-    if len(sys.argv) != 2:
-        print(__doc__.strip().splitlines()[-1], file=sys.stderr)
-        return 2
-    pcrec = sys.argv[1]
-    rows = list(csv.DictReader(open(LISTING), delimiter="\t"))
-    limits = {}
-    for line in open(LIMITS):
-        if line.startswith("#") or not line.strip():
-            continue
-        rid, keys = line.rstrip("\n").split("\t")
-        limits[rid] = keys.split(",")
-    bad = []
-    ids = set()
+def l1_check(pcrec, rows, bad):
+    """(id, fail?) per row; the listing must equal the author's record."""
+    out = []
     for r in rows:
         rid = r["id"]
-        ids.add(rid)
         got = listing(pcrec, r["pattern"], r["encoding"])
         want = (r["listing_req_whole_run"], r["listing_why"])
         if got != want:
             bad.append(f"{rid} `{r['pattern']}` ({r['encoding']}) lists {got[0]} [{got[1]}], "
                        f"recorded {want[0]} [{want[1]}]: re-judge against "
                        f"`{r['spec_expectation']}`, re-pin, and drop its limit if lifted")
-        fail = r["verdict"] == "FAIL"
-        lim = limits.get(rid)
-        if fail and not lim:
-            bad.append(f"{rid} fails the spec ({r['finding']}) and names no limit")
-        if not fail and lim:
-            bad.append(f"{rid} meets the spec but still names limit(s) {','.join(lim)}")
-        for k in lim or []:
-            if k not in KEYS:
+        out.append((rid, r["verdict"] == "FAIL", r["finding"]))
+    return out
+
+
+def l3_check(pcrec, rows, bad):
+    """(id, limit?) per row; run, K, why and req_set_maxoff must equal the record."""
+    out = []
+    for r in rows:
+        rid = r["id"]
+        extra = L3CONFIGS[r["config"]] + (["-i"] if r["flags"] == "i" else [])
+        f = facts(pcrec, r["pattern"], r["encoding"], extra)
+        got = (f["req_whole_run"], f.get("req_landmark_maxoff", ("?",))[0],
+               f.get("req_set_maxoff", ("?",))[0])
+        want = ((r["run"], r["why"]), r["K"], r["req_set_maxoff"])
+        if got != want:
+            bad.append(f"{rid} `{r['pattern']}` ({r['encoding']}, {r['config']}) lists "
+                       f"{got[0][0]}@{got[1]} [{got[0][1]}] set {got[2]}, recorded "
+                       f"{r['run']}@{r['K']} [{r['why']}] set {r['req_set_maxoff']}: re-judge "
+                       f"against `{r['claim']}`, re-pin, and drop its limit if lifted")
+        out.append((rid, r["status"] == "LIMIT", r["note"]))
+    return out
+
+
+def main():
+    if len(sys.argv) not in (2, 3):
+        print(__doc__.strip().splitlines()[-1], file=sys.stderr)
+        return 2
+    pcrec = sys.argv[1]
+    here = os.path.abspath(sys.argv[2]) if len(sys.argv) == 3 else HERE
+    tag = os.path.basename(here).replace("_", "-")
+    names = os.listdir(here)
+    lst = [n for n in names if n.endswith("_listing.tsv")]
+    lim = [n for n in names if n.endswith("_limits.tsv")]
+    if len(lst) != 1 or len(lim) != 1:
+        print(f"FAIL: {here} needs exactly one *_listing.tsv and one *_limits.tsv")
+        return 1
+    rows = list(csv.DictReader(open(os.path.join(here, lst[0])), delimiter="\t"))
+    limits = {}
+    for line in open(os.path.join(here, lim[0])):
+        if line.startswith("#") or not line.strip():
+            continue
+        rid, keys = line.rstrip("\n").split("\t")
+        limits[rid] = keys.split(",")
+    keys = set()
+    for line in open(os.path.join(here, lim[0])):
+        m = re.match(r"#   (\S+)\s+F\d+\.", line)  # a key's declaration line
+        if m:
+            keys.add(m.group(1))
+    bad = []
+    l3 = bool(rows) and "listing_req_whole_run" not in rows[0]
+    res = (l3_check if l3 else l1_check)(pcrec, rows, bad)
+    ids = {rid for rid, _, _ in res}
+    failing = {}
+    for rid, fail, why in res:
+        if fail:
+            failing[rid] = why
+    for rid, why in failing.items():
+        if not limits.get(rid):
+            bad.append(f"{rid} fails the spec ({why}) and names no limit")
+    for rid in ids - set(failing):
+        if limits.get(rid):
+            bad.append(f"{rid} meets the spec but still names limit(s) {','.join(limits[rid])}")
+    for rid, ks in limits.items():
+        for k in ks:
+            if k not in keys:
                 bad.append(f"{rid} names undeclared limit key `{k}`")
     for rid in limits:
         if rid not in ids:
             bad.append(f"limit row {rid} names no listing row")
-    nfail = sum(1 for r in rows if r["verdict"] == "FAIL")
-    print(f"REACH: {len(rows)} listing row(s), {nfail} at a named limit")
+    nfail = len(failing)
+    unit = "row(s)" if not l3 else "record(s) (witness x encoding x config)"
+    print(f"REACH: {len(rows)} listing {unit}, {nfail} witness(es) at a named limit")
     if not rows:
         bad.append("no listing row was read")
     for b in bad:
         print("FAIL:", b)
     if bad:
         return 1
-    print(f"PASS: [d27-l1-listing] {len(rows)} rows list as recorded; "
+    print(f"PASS: [{tag}-listing] {len(rows)} rows list as recorded; "
           f"{nfail} shortfalls each name a declared limit")
     return 0
 

@@ -38,6 +38,7 @@ going down is the module landing.
 - **vlb_accept.py** — §6: the accept set inside libpcre2's, and the `width LO..HI` judgment against libpcre2 at `max_varlookbehind = 0`.
 - `d27/` — the [M6.6.3] BLINDED corpus (D27): 7 .rxt files (457 blocks, 1,819 harness cases after acceptance triage) written from the design extract and the oracles only, ...
 - `d27_l1/` — span_arms L1's D27 BLINDED witnesses (lane l1d27, 88; answers ride test-corpus) and their listing check in `make test-lookaround`; own CLAUDE.md.
+- `d27_l3/` — span_arms L3's D27 BLINDED witnesses (lane l3d27, 136; answers ride test-corpus) and their listing check (the same `d27_l1/check_listing.py`, given this directory) in `make test-lookaround`; own CLAUDE.md.
 - `run_expansion_diff.sh`, `expand_corpus.py` — section "`run_expansion_diff.sh` + `expand_corpus.py` — THE SUBSTITUTION DRIVER (wave E2)" (history file)
 
 ## What this directory does NOT hold

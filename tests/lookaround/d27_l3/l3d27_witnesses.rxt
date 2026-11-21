@@ -3,8 +3,8 @@
 # Groups: A = join, B = dead, C = look-alike controls. Every expectation is libpcre2-8
 # 10.46 2025-08-27 (python3 ctypes), find-all spans over every start position; written by an author
 # denied src/ and tests/. Each witness appears once per encoding and engine (auto, vm).
-description L3 lookbehind-join D27 witnesses (answers only; listing claims in l3d27_listing.tsv)
-oracle pcre2/10.46
+# description L3 lookbehind-join D27 witnesses (answers only; listing claims in l3d27_listing.tsv)
+# oracle pcre2/10.46
 
 # A01 (A) byte: spec 4.1.2p8 worked example
 pattern (?<=foo)bar
@@ -906,6 +906,7 @@ ms 32 "foobar.fobar.bar.xbar.foobarfoobar.foobaz.ofoobar.foo bar.FOOBAR.foOBar" 
 mc "foobar.fobar.bar.xbar.foobarfoobar.foobaz.ofoobar.foo bar.FOOBAR.foOBar" 4
 
 # A10 (A) byte: two-byte character in the body
+# pcre2-only
 pattern (?<=é)x
 features lookaround
 n ""
@@ -941,6 +942,7 @@ ns 21 "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x"
 mc "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x" 3
 
 # A10 (A) byte: two-byte character in the body
+# pcre2-only
 pattern (?<=é)x
 features lookaround
 engine vm
@@ -977,6 +979,7 @@ ns 21 "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x"
 mc "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x" 3
 
 # A10 (A) utf8: two-byte character in the body
+# pcre2-only
 pattern (?<=é)x
 encoding utf8
 features lookaround
@@ -1013,6 +1016,7 @@ ns 21 "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x"
 mc "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x" 3
 
 # A10 (A) utf8: two-byte character in the body
+# pcre2-only
 pattern (?<=é)x
 encoding utf8
 features lookaround
@@ -1050,6 +1054,7 @@ ns 21 "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x"
 mc "\xc3\xa9x.ex.x.\xc3\x89x.a\xc3\xa9xx\xc3\xa9x" 3
 
 # A11 (A) byte: three-byte characters
+# pcre2-only
 pattern (?<=日本)語
 features lookaround
 n ""
@@ -1083,6 +1088,7 @@ ns 38 "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9
 mc "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9e.x\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e" 3
 
 # A11 (A) byte: three-byte characters
+# pcre2-only
 pattern (?<=日本)語
 features lookaround
 engine vm
@@ -1117,6 +1123,7 @@ ns 38 "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9
 mc "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9e.x\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e" 3
 
 # A11 (A) utf8: three-byte characters
+# pcre2-only
 pattern (?<=日本)語
 encoding utf8
 features lookaround
@@ -1151,6 +1158,7 @@ ns 40 "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9
 mc "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9e.x\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e" 3
 
 # A11 (A) utf8: three-byte characters
+# pcre2-only
 pattern (?<=日本)語
 encoding utf8
 features lookaround
@@ -1186,6 +1194,7 @@ ns 40 "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9
 mc "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e.\xe6\x9c\xac\xe8\xaa\x9e.\xe8\xaa\x9e.x\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e" 3
 
 # A12 (A) byte -i: -i over a two-byte character: utf8 folds e-acute
+# pcre2-only
 pattern (?<=é)x
 flags i
 features lookaround
@@ -1216,6 +1225,7 @@ ns 11 "\xc3\xa9x.\xc3\x89x.\xc3\xa9X.ex.X"
 mc "\xc3\xa9x.\xc3\x89x.\xc3\xa9X.ex.X" 2
 
 # A12 (A) byte -i: -i over a two-byte character: utf8 folds e-acute
+# pcre2-only
 pattern (?<=é)x
 flags i
 features lookaround
@@ -1247,6 +1257,7 @@ ns 11 "\xc3\xa9x.\xc3\x89x.\xc3\xa9X.ex.X"
 mc "\xc3\xa9x.\xc3\x89x.\xc3\xa9X.ex.X" 2
 
 # A12 (A) utf8 -i: -i over a two-byte character: utf8 folds e-acute
+# pcre2-only
 pattern (?<=é)x
 flags i
 encoding utf8
@@ -1284,6 +1295,7 @@ ns 11 "\xc3\xa9x.\xc3\x89x.\xc3\xa9X.ex.X"
 mc "\xc3\xa9x.\xc3\x89x.\xc3\xa9X.ex.X" 3
 
 # A12 (A) utf8 -i: -i over a two-byte character: utf8 folds e-acute
+# pcre2-only
 pattern (?<=é)x
 flags i
 encoding utf8
@@ -4879,6 +4891,7 @@ n "ac.Ac.bc.Bc.abc.aBc"
 mc "ac.Ac.bc.Bc.abc.aBc" 0
 
 # B08 (B) byte: two-byte chars differing in the 2nd byte
+# pcre2-only
 pattern (?<=é)(?<=è)x
 features lookaround
 n ""
@@ -4890,6 +4903,7 @@ n "\xc3\xa9x.\xc3\xa8x"
 mc "\xc3\xa9x.\xc3\xa8x" 0
 
 # B08 (B) byte: two-byte chars differing in the 2nd byte
+# pcre2-only
 pattern (?<=é)(?<=è)x
 features lookaround
 engine vm
@@ -4902,6 +4916,7 @@ n "\xc3\xa9x.\xc3\xa8x"
 mc "\xc3\xa9x.\xc3\xa8x" 0
 
 # B08 (B) utf8: two-byte chars differing in the 2nd byte
+# pcre2-only
 pattern (?<=é)(?<=è)x
 encoding utf8
 features lookaround
@@ -4914,6 +4929,7 @@ n "\xc3\xa9x.\xc3\xa8x"
 mc "\xc3\xa9x.\xc3\xa8x" 0
 
 # B08 (B) utf8: two-byte chars differing in the 2nd byte
+# pcre2-only
 pattern (?<=é)(?<=è)x
 encoding utf8
 features lookaround
@@ -7262,6 +7278,7 @@ ms 9 "ac.bc.abc.bac.c.xabcbac" 12 13
 mc "ac.bc.abc.bac.c.xabcbac" 7
 
 # C24 (C) utf8 -i: utf8 -i: e-acute and E-acute fold together, not dead
+# pcre2-only
 pattern (?<=é)(?<=É)x
 flags i
 encoding utf8
@@ -7287,6 +7304,7 @@ ns 7 "\xc3\xa9x.\xc3\x89x"
 mc "\xc3\xa9x.\xc3\x89x" 2
 
 # C24 (C) utf8 -i: utf8 -i: e-acute and E-acute fold together, not dead
+# pcre2-only
 pattern (?<=é)(?<=É)x
 flags i
 encoding utf8
@@ -7313,6 +7331,7 @@ ns 7 "\xc3\xa9x.\xc3\x89x"
 mc "\xc3\xa9x.\xc3\x89x" 2
 
 # B25 (B) byte -i: byte -i: second bytes a9/89 are not letters under byte, so it IS dead (C24 is its utf8 twin)
+# pcre2-only
 pattern (?<=é)(?<=É)x
 flags i
 features lookaround
@@ -7325,6 +7344,7 @@ n "\xc3\xa9x.\xc3\x89x"
 mc "\xc3\xa9x.\xc3\x89x" 0
 
 # B25 (B) byte -i: byte -i: second bytes a9/89 are not letters under byte, so it IS dead (C24 is its utf8 twin)
+# pcre2-only
 pattern (?<=é)(?<=É)x
 flags i
 features lookaround
@@ -11136,6 +11156,7 @@ ms 81 "a.B.aa.aB.Ba.BB.aaa.aaB.aBa.aBB.Baa.BaB.BBa.BBB.aaaa.aaaB.aaBa.aaBB.aBaa.
 mc "a.B.aa.aB.Ba.BB.aaa.aaB.aBa.aBB.Baa.BaB.BBa.BBB.aaaa.aaaB.aaBa.aaBB.aBaa.aBaB.aBBa.aBBB.Baaa.BaaB.BaBa.BaBB.BBaa.BBaB.BBBa.BBBB.aaaaa.aaaaB.aaaBa.aaaBB.aaBaa.aaBaB.aaBBa.aaBBB.aBaaa.aBaaB" 8
 
 # A72 (A) byte: utf8 periodic [exhaustive aéb^<=5]
+# pcre2-only
 pattern (?<=éa)é
 features lookaround
 n ""
@@ -11265,6 +11286,7 @@ ns 91 "a.\xc3\xa9.b.aa.a\xc3\xa9.ab.\xc3\xa9a.\xc3\xa9\xc3\xa9.\xc3\xa9b.ba.b\xc
 mc "a.\xc3\xa9.b.aa.a\xc3\xa9.ab.\xc3\xa9a.\xc3\xa9\xc3\xa9.\xc3\xa9b.ba.b\xc3\xa9.bb.aaa.aa\xc3\xa9.aab.a\xc3\xa9a.a\xc3\xa9\xc3\xa9.a\xc3\xa9b.aba.ab\xc3\xa9.abb.\xc3\xa9aa.\xc3\xa9a\xc3\xa9.\xc3\xa9ab.\xc3\xa9\xc3\xa9a.\xc3\xa9\xc3\xa9\xc3\xa9.\xc3\xa9\xc3\xa9b.\xc3\xa9ba.\xc3\xa9b\xc3\xa9.\xc3\xa9bb.baa.ba\xc3\xa9.bab.b\xc3\xa9a.b\xc3\xa9\xc3\xa9.b\xc3\xa9b.bba.bb\xc3\xa9.bbb.aaaa" 1
 
 # A72 (A) byte: utf8 periodic [exhaustive aéb^<=5]
+# pcre2-only
 pattern (?<=éa)é
 features lookaround
 engine vm
@@ -11395,6 +11417,7 @@ ns 91 "a.\xc3\xa9.b.aa.a\xc3\xa9.ab.\xc3\xa9a.\xc3\xa9\xc3\xa9.\xc3\xa9b.ba.b\xc
 mc "a.\xc3\xa9.b.aa.a\xc3\xa9.ab.\xc3\xa9a.\xc3\xa9\xc3\xa9.\xc3\xa9b.ba.b\xc3\xa9.bb.aaa.aa\xc3\xa9.aab.a\xc3\xa9a.a\xc3\xa9\xc3\xa9.a\xc3\xa9b.aba.ab\xc3\xa9.abb.\xc3\xa9aa.\xc3\xa9a\xc3\xa9.\xc3\xa9ab.\xc3\xa9\xc3\xa9a.\xc3\xa9\xc3\xa9\xc3\xa9.\xc3\xa9\xc3\xa9b.\xc3\xa9ba.\xc3\xa9b\xc3\xa9.\xc3\xa9bb.baa.ba\xc3\xa9.bab.b\xc3\xa9a.b\xc3\xa9\xc3\xa9.b\xc3\xa9b.bba.bb\xc3\xa9.bbb.aaaa" 1
 
 # A72 (A) utf8: utf8 periodic [exhaustive aéb^<=5]
+# pcre2-only
 pattern (?<=éa)é
 encoding utf8
 features lookaround
@@ -11525,6 +11548,7 @@ ns 92 "a.\xc3\xa9.b.aa.a\xc3\xa9.ab.\xc3\xa9a.\xc3\xa9\xc3\xa9.\xc3\xa9b.ba.b\xc
 mc "a.\xc3\xa9.b.aa.a\xc3\xa9.ab.\xc3\xa9a.\xc3\xa9\xc3\xa9.\xc3\xa9b.ba.b\xc3\xa9.bb.aaa.aa\xc3\xa9.aab.a\xc3\xa9a.a\xc3\xa9\xc3\xa9.a\xc3\xa9b.aba.ab\xc3\xa9.abb.\xc3\xa9aa.\xc3\xa9a\xc3\xa9.\xc3\xa9ab.\xc3\xa9\xc3\xa9a.\xc3\xa9\xc3\xa9\xc3\xa9.\xc3\xa9\xc3\xa9b.\xc3\xa9ba.\xc3\xa9b\xc3\xa9.\xc3\xa9bb.baa.ba\xc3\xa9.bab.b\xc3\xa9a.b\xc3\xa9\xc3\xa9.b\xc3\xa9b.bba.bb\xc3\xa9.bbb.aaaa" 1
 
 # A72 (A) utf8: utf8 periodic [exhaustive aéb^<=5]
+# pcre2-only
 pattern (?<=éa)é
 encoding utf8
 features lookaround
@@ -14502,6 +14526,7 @@ ms 160 "Zabababababababababababababababababababababababababababababababababababa
 ns 161 "ZababababababababababababababababababababababababababababababababababababababababababababababababababfobarfobarfobarfobarfobarFoObArfobarfobarfobarfobarfobarFoObArZ"
 
 # A83 (A) byte: long subjects, utf8
+# pcre2-only
 pattern (?<=é)x
 features lookaround
 n ""
@@ -14561,6 +14586,7 @@ ms 126 "Zabababababababababababababababababababababababababababababababababababa
 ns 127 "Zababababababababababababababababababababababababababababababababababababababababababababababababababexexexexex\xc3\xa9xexexexexex\xc3\xa9xZ"
 
 # A83 (A) byte: long subjects, utf8
+# pcre2-only
 pattern (?<=é)x
 features lookaround
 engine vm
@@ -14621,6 +14647,7 @@ ms 126 "Zabababababababababababababababababababababababababababababababababababa
 ns 127 "Zababababababababababababababababababababababababababababababababababababababababababababababababababexexexexex\xc3\xa9xexexexexex\xc3\xa9xZ"
 
 # A83 (A) utf8: long subjects, utf8
+# pcre2-only
 pattern (?<=é)x
 encoding utf8
 features lookaround
@@ -14681,6 +14708,7 @@ ms 126 "Zabababababababababababababababababababababababababababababababababababa
 ns 127 "Zababababababababababababababababababababababababababababababababababababababababababababababababababexexexexex\xc3\xa9xexexexexex\xc3\xa9xZ"
 
 # A83 (A) utf8: long subjects, utf8
+# pcre2-only
 pattern (?<=é)x
 encoding utf8
 features lookaround

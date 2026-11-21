@@ -20,7 +20,7 @@ and look-alike controls that must not be listed dead (kind C). Written by a D27-
   moved listing after re-judging it.
 - `l1d27_limits.tsv` — BUILD-side: the declared limit each FAIL row rests on (five keys, each with
   its design sentence in the header). Lane l1ffix.
-- `check_listing.py` — `make test-lookaround`'s listing check: pcrec's listing equals the record,
+- `check_listing.py` — `make test-lookaround`'s listing check (also run over `../d27_l3` with a directory argument): pcrec's listing equals the record,
   every FAIL row names a declared limit, no PASS row does, non-empty population.
 
 ## Rules

@@ -327,6 +327,30 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: L2's design, or a bench pattern that reaches the shape (an empty consumed run, a necessary byte at a bounded K, a lookbehind run)
     refs: docs/design/span_arms.md §14.4 L3 REV 3.5; docs/dev/reviews/2026-11-21-r66-l3fix.md EMIT-3; D191 addendum 3; src/facts/req.c `rb_top_back_displaces`
     `(?<=qz)(?:a.|.a)`, instructions:u, 1 MiB x 5 searches: BASE's handoff on `a` (K 1) costs 85,622,145 on English text, where BACK's `qz` at -2 costs 14,170,871 (x6 win), but 39,964,842 vs 8,998,891 on qz-dense text (x4.4 loss). Choosing between them needs the subject's byte rates (pricing) or a sound re-entry at K < 0 ([L3-CONS-REENTRY]); no corpus pattern reaches the shape today.
+  - [L3-RUN-CAP] STATE:not-started — a 33+-byte lookbehind keeps no consumed position in the 32-position run (D27 F1)
+    filed: 2026-11-21 manager (lane l3wire; the blinded L3 witnesses' finding F1)
+    status (2026-11-21): filed; a listing gap the spec allows, not a violation. Declared as limit `run-cap` (A35) in tests/lookaround/d27_l3/l3d27_limits.tsv
+    trigger: L2's design, or a bench pattern reaching the shape (a lookbehind of 33+ bytes before a consumed run)
+    refs: docs/dev/lanes/l3d27_report.md F1; tests/lookaround/d27_l3/; [L3-BACK-CLIP] (the sibling clip, consumed bytes dropped from the right)
+    Under `--engine=vm`, `(?<=<36 bytes>)!` lists the lookbehind's last 32 bytes at K -32 without `!`; the default lists `4142..4a`@0 for `(?<=<40 bytes>)ABCDEFGHIJ`. The cap itself is general (a plain 40-byte literal lists its first 32).
+  - [L3-MEET-WIDE] STATE:not-started — two lookbehinds combine where one has a wide class (D27 F2)
+    filed: 2026-11-21 manager (lane l3wire; finding F2)
+    status (2026-11-21): filed; a listing gap the spec allows. Limit `meet-wide` (A15)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F2; tests/lookaround/d27_l3/
+    `(?<=.b)(?<=a.)cd` lists `626364`@-1 where the meet `ab` would give `61626364`@-2; two lookbehinds that agree byte for byte do meet. L1's recorded limit (a wide class in a body is dropped), reached through a meet.
+  - [L3-NESTED-HEAD] STATE:not-started — a lookbehind nested at the start of a lookbehind body must not block the item (D27 F3)
+    filed: 2026-11-21 manager (lane l3wire; finding F3)
+    status (2026-11-21): filed; a listing gap the spec allows. Limit `nested-head` (A17)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F3; tests/lookaround/d27_l3/; docs/design/span_arms.md §10 U-nesteditem
+    `(?<=(?<=x)ab)cd` lists `6364`@0 (not even the outer `ab` joins); nested at the END it joins (`(?<=a(?<=a))bc` gives `616263`@-1).
+  - [L3-CLASS-ONE] STATE:not-started — a one-character class lookbehind before a single consumed byte joins (D27 F4)
+    filed: 2026-11-21 manager (lane l3wire; finding F4)
+    status (2026-11-21): filed; a listing gap the spec allows, possibly a deliberate weak-position choice the spec does not state. Limit `class-one` (A45)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F4; tests/lookaround/d27_l3/
+    `(?<=a|b)c` and `(?<=[ab])c` list no run under vm; with two consumed bytes `(?<=[ab])cd` joins (`[6162]6364`@-1), and a one-BYTE lookbehind joins either way.
   - [REQ-CAND-STRUCT] STATE:not-started — the run candidate travels as one { run, lo, hi } record, not loose int pointers
     filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat P, HOUSE-5; lane l3r65 wrote the row)
     status (2026-11-20): filed; maintenance only, no answer or speed change
