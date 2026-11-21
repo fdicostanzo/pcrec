@@ -118,3 +118,8 @@ STATE: done. Branch lane/l3tri, tip = this report's commit (named in the handbac
 re-dispatched with main's `scripts/cloudrun --owner main --kind test --ref <tip> --name l3tri-test`; its
 DONE line and the `git ls-remote` proof are in the handback message. Its verdict is owed to the manager's
 watcher, not to this lane. A full REACH_ONLY re-run (job-301 shape) at the tip is recommended to the manager.
+Dispatched: `cloudrun: DONE rc=0 pushed 5cd2bc269 -> cloud/main/test/l3tri-test owner=main kind=test`;
+`git ls-remote origin 'refs/heads/cloud/main/*/l3tri*'` prints
+`5cd2bc269511b09a9f31624714572b6a54efa057 refs/heads/cloud/main/test/l3tri-test` (the dispatched sha is the
+commit before this sentence, which adds only text to the report).
+OWED: none (the cloud verdict is the manager's, via queuewatch CLOUD-DONE).
