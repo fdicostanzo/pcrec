@@ -4468,3 +4468,6 @@ The lane's open MEASUREMENT-2 reading, ruled by the manager: a TBL TIE beside a 
 
 ### 2026-11-20 18:55 — bcfix round 2 delivered; 710 re-check launched
 bcfix round 2 delivered 466f0bafd: the TIE ruling is applied, RULE_SHA b7dbbafff6d43441, check PASS at 18:41, drills 45/45, estimate 8,992 s, latest start 09:30. TaskStopped. One-critic re-check crit-memfn-bcfix (opus) due 20:30. 711 and 712 are already READY TO TIME (crit-memfn-cofix).
+
+### 2026-11-20 19:18 — 711 and 712 queued; main slot before 710
+Main sent CLEAR at 19:17; 711-kit-checkorder (RULE 28b518b84de080aa) and 712-kit-rampchunk (RULE efb4f0d7d3ab0bd5) are queued and monread is armed. Main asked for a build slot between 712 and 710: agreed. 710 is queued after main's next CLEAR (latest start 09:30). bcfix round 3: the TIE ruling is reversed (ties count, listed as "may hide a LOSS"); CONFIRMED needs at least half the NEW S-pick cells readable; RULE_SHA 6351bff3901e3955; drills 50/50; check re-running.
