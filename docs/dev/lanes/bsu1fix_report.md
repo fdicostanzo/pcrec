@@ -1,7 +1,7 @@
 # bsu1fix report: r72 FIX-NOW items on U1
 
 ## STATE AT HANDOFF
-Branch lane/bsu1fix (cut from lane/bsu1 4a098e1e4), commits 8ff1712ce (fix items) and 20b94dff4 + one follow-up (CHECKS-1 detector). Rulings file read at start (empty). In-lane green: make, make strict, test-codegen, test-memfn-rows, test-memfn-finder, test-memfn-g2 (window family included), decider census (HITS 68, no change), anchors tripwire (1428 sites resolve), identity gate movers=0. OWED (queued as the last act): `715-kit-bsu1fix-test` (make test) and `716-kit-bsu1fix-mech` (S3278 S3279 S3281 S3282 S3500 S3501).
+Branch lane/bsu1fix (cut from lane/bsu1 4a098e1e4), commits 8ff1712ce (fix items), 20b94dff4 (CHECKS-1 detector), c5a2b57d6 (report). Rulings file read at start (empty). In-lane green: make, make strict, test-codegen, test-memfn-rows, test-memfn-finder, test-memfn-g2 (window family included), decider census (HITS 68, no change), anchors tripwire (1428 sites resolve), identity gate movers=0. OWED (queued as the last act): `715-kit-bsu1fix-test` (make test) and `716-kit-bsu1fix-mech` (S3278 S3279 S3281 S3282 S3500 S3501).
 
 ## THE JOB
 Apply review r72's FIX-NOW items to block-span U1 with no emitted byte moved; settle CHECKS-1 (V1/V2 plants).
