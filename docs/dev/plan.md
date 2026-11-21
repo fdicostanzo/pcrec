@@ -472,8 +472,14 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-20): TRIGGER FIRED: K146 is the recursion regression it names (review r62 UNLOCK-1: no single dropped mark made any DEPTH_FAMILIES row die; 11 of 21 plants moved nothing). Nothing built.
   ready: the VCG/SCC frame-ceiling check as a `make lint` row; before it: [K146-VMCOST-DEPTH] landing, then [K147-POSSESSIFY-DEPTH] (its fix needs the same guard); priority over not-started work when the close-out freeze lifts (Frank 2026-11-10)
   refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4; known_issues K152 ([K152-NFA-DEPTH]: the NFA builder's depth, the next family member it must see)
+  Note (review r67 F7 + F10, 2026-11-21): a partial undo of K152 is invisible to every check (each piece alone, marks dropped or nfa_rep alone inlined, leaves the deepest DEPTH_FAMILIES row 7.6% under the budget, and run_compile_stack.sh reads the budget, not headroom): the frame census this row charters (`-fstack-usage` per recursive dispatcher; compile_ast 384 to 32 B is measurable directly) makes a partial undo visible; trigger = this row's own. Sibling listed, no witness: src/gen/emit_vm.c `vm_rev_emit` has the same inlined kind-switch shape (288 B frame, vm_revdet_rep 720 B; `x(?<=(?:a ... b ...))y` peaks at 66,960 B at depth 100, depth 250 is refused by the group-depth limit); trigger to mark it = a DEPTH_FAMILIES row through a lookbehind body over 70% of the budget, or a raise of PCREC_MAX_GROUP_DEPTH.
   Note (review r64 F13, 2026-11-20): the mech coverage of K147's explicit stack has one unwitnessed decision point, gk_build's CAT update order (plant V3i was silent on 8 probes, 0 emitted-byte movers): find a witness first, then a row; the rest (the depth-- leak, ss_walk's ALT over-approximation, an out-of-range member, stack growth caught only by test-stackdepth) are answer-silent by construction and NOTED. An "explicit stack, no cycle" category belongs here once [ARENA-REGROW] lands.
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [K152-NFA-DEPTH] STATE:started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
+  filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
+  status (2026-11-21): FIXED on lane/k152fix, not landed (k152fix_report.md): own frames on every compile_ast arm, one recursion site in nfa_cat; 0 movers; S3470; review r67 fixes (anchors, limits text) in lane k152r67; true worst 319,504 B (pre-existing shape)
+  trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
+  refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]
 
 ## Candidates ([OPTLOOP])
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
@@ -943,6 +949,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [STACKDRIVER-ENC] STATE:not-started — test-stackdepth cannot measure `-e utf8` (no encoding argument in its driver)
+  filed: 2026-11-21 manager (review r67 k152 F9)
+  status (2026-11-21): tests/thread/compile_stack_driver.c sets features and engine only, so no DEPTH_FAMILIES row reaches island or wide-class builds; the utf8 class nest `([e-u]bc|[e-u]bd(...abe)*)*d` was 440,560 B at BASE and is 64 B over the stated 319,504 B worst
+  trigger: [GROWTH-SWEEP]'s runner build, or the next utf8 depth finding: one ENCODING argument to the driver and one utf8 row (a test-harness edit, not a product change)
+  refs: docs/dev/reviews/2026-11-21-r67-k152.md (F9); [GROWTH-SWEEP]; [K152-NFA-DEPTH]; tests/thread/run_compile_stack.sh
 - [CTX-FACTS-NEG] STATE:not-started — D168 context facts at negative offsets / past the end (`\b`, fixed lookbehind), anchored DFA
   filed: 2026-11-16 manager (admin1116; part (b) split out of [DD-11.5] by the manager's ruling of 2026-11-16)
   status (2026-11-16): filed; no build before a measured need (D77); the producer is no longer an NFA span slice (deleted by [COVER-CAP] stage 1, abi 108)
@@ -2494,11 +2505,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: a small data lane after lane/specfix lands (fix the rows, empty the ratchet in the same change)
   refs: known_issues K153; tests/spec_mod0/known_findings.inc; docs/dev/decisions.md D26
   NOTE (2026-11-21, manager): KEEP the ratchet (tied to K153, not a silent pin). Spec gap from the same lane: no docs/spec sentence says a by-name reference (`\k<name>`, `(?P=n)`) is gated by module `named-groups`; the data lane adds it.
-- [K152-NFA-DEPTH] STATE:not-started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
-  filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
-  status (2026-11-20): filed; nothing built. `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` DIES (rc 139) on the 442,368-byte thread; the plain nest costs 440,176 B (440,560 B with a trailing element), the compound route about 13 KB more
-  trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
-  refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]
 - [ARENA-REGROW] STATE:not-started — one `pcrec_arena_regrow` in core for the arena-grown explicit stacks (three members today)
   filed: 2026-11-20 lane k147f2, from review r64 k147fix F11 (HOUSE-3/9/10)
   status (2026-11-20): filed; nothing built. possessify.c's `fq_push`, dfa.c's file-static `arena_regrow` and its `cont_push` (K18) each grow an arena stack by hand; emit_vm.c's trie walks use fixed arrays. Three members: the forest-for-trees threshold is met for the allocation half

@@ -183,10 +183,24 @@ run() {
 #   reference at all;
 #   altpos/altpospost/brefpost are the possessive wrap `*+` (a distinct
 #   arm), and every `*post` row carries one literal element beside the nest:
-#   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3:
-#   one trailing `d` moved `(abc|abd…abe)*` from 317,504 to 440,560 bytes and
-#   `(a|b…c)*` from 257,552 to 344,560; limits.md §3.10¶3);
-#   K152: `litpost`, the literal nest + trailing element, is NOT a row: no headroom, died on CI; `optaltpost` is the trailing-position row)
+#   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3,
+#   before K152's fix: one trailing `d` moved `(abc|abd…abe)*` from 317,504
+#   to 440,560 bytes and `(a|b…c)*` from 257,552 to 344,560; after it the
+#   element costs a few hundred bytes; limits.md §3.10¶3);
+#   nclitrep/litpost/nclitpost/litcompound are the multi-atom-branch nest
+#   (K152): its peak was the NFA builder's `compile_ast`, whose inlined arms
+#   paid about 1.7 KB per level until each arm got its own frame;
+#   litcompound is the same nest on the compound route (the review r64
+#   witness `^(?i:…)|b$`'s route, checked to reach it below); of these four
+#   only litcompound dies at BASE (before the K152 fix) and on the S3470
+#   plant: it is the undo witness; nclitrep/litpost/nclitpost were GREEN at
+#   BASE and guard headroom against another compiler (litpost died on CI);
+#   capwrap/longwrap (r67 F3) are the CAPTURING nest under the same `^…|b$`
+#   wrapper (not the compound route: the reach check below does not cover
+#   them) and its long distinct-letter-atoms form, the measured WORST of
+#   every family (319,504 bytes at depth 250, gcc 15.2.0, the same before
+#   and after K152: a wrapper alternative and distinct letters in the atoms
+#   cost most);
 #   compound puts the nest in an arm of a pattern the compound route takes
 #   (two compiles, one inside the other: compile_driver -> pcrec_compound_walk
 #   -> part_compile -> compile_driver), checked below to reach that route.
@@ -204,6 +218,9 @@ ncaltrep;;(?:a|b;c;)*;;all;0
 brefrep;;(a|b;\1;)*;;all;0
 brefsrep;;(a|b;\\%d;)*;;all;0
 litrep;;(abc|abd;abe;)*;;all;0
+nclitrep;;(?:abc|abd;abe;)*;;all;0
+litpost;;(abc|abd;abe;)*;d;all;0
+nclitpost;;(?:abc|abd;abe;)*;d;all;0
 altpos;;(a|b;c;)*+;;all;0
 altpost;;(a|b;c;)*;d;all;0
 ncaltpost;;(?:a|b;c;)*;d;all;0
@@ -218,6 +235,9 @@ named;;(?<n%d>;a;);;all;0
 callouter;;(;a;);(?1);all;0
 callinner;;(;a;);(?%d);all;0
 compound;^;(?i:;a;);|b$;all;0
+litcompound;^;(?:abc|abd;abe;)*;|b$;all;0
+capwrap;^;(abc|abd;abe;)*;|b$;all;0
+longwrap;^;(abcdefghijklmnopqrstuvwxyz|abcdefghijklmnopqrstuvwxy_;abe;)*;|b$;all;0
 '
 while IFS=';' read -r name pre open core close post feat eng; do
     [ -n "$name" ] || continue
@@ -243,15 +263,17 @@ while IFS=';' read -r name pre open core close post feat eng; do
     done
 done <<< "$DEPTH_FAMILIES"
 
-# The compound family's REACH: its depth-250 pattern must take the compound
-# route, or the family measures a plain compile under another name.
-if "$TIMEOUT_BIN" 300 "$PCREC" -p rx --features all -o "$WORKDIR/compound.c" \
-        --pattern "$(cat "$WORKDIR/depth-compound-$DEPTH.pat")" 2>/dev/null &&
-   grep -q '"compound"' "$WORKDIR/compound.c"; then
-    ok "compound nested $DEPTH deep takes the compound route (its stamps read \"compound\")"
-else
-    bad "[DD-10] compound nested $DEPTH deep no longer takes the compound route: pick a family the route admits (limits.md §3.10 measured it)"
-fi
+# The compound families' REACH: each depth-250 pattern must take the
+# compound route, or the family measures a plain compile under another name.
+for name in compound litcompound; do
+    if "$TIMEOUT_BIN" 300 "$PCREC" -p rx --features all -o "$WORKDIR/$name.c" \
+            --pattern "$(cat "$WORKDIR/depth-$name-$DEPTH.pat")" 2>/dev/null &&
+       grep -q '"compound"' "$WORKDIR/$name.c"; then
+        ok "$name nested $DEPTH deep takes the compound route (its stamps read \"compound\")"
+    else
+        bad "[DD-10] $name nested $DEPTH deep no longer takes the compound route: pick a family the route admits (limits.md §3.10 measured it)"
+    fi
+done
 
 # ---- UNBUILT --------------------------------------------------------------
 unbuilt_case() {   # <name> <pattern-file>

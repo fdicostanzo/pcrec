@@ -14,6 +14,7 @@ SAB_DESC='the NFA lowers ^/\A/\z (the context rows that read no membership) to a
 SAB_DOC_FIGURE='OWED (lane ctxp2e): by hand 2026-10-20, tests/assertions/absolute.rxt 193 failed / 676 passed'
 SAB_EXPECT='DETECTED'
 # RE-ANCHORED 2026-11-11 (lane ucfix): [UCP] U3 added an island-build twin of the site; both are planted.
+# RE-ANCHORED 2026-11-21 (lane k152r67): K152 moved the arms out one indent level; the 4-space anchor matches both sites (nfa_ctx's two) as a substring.
 SAB_COUNT='2'
-SAB_BEFORE='        st->ctxfn = a->u.ctx.fn;'
-SAB_AFTER='        st->ctxfn = ctxfn_reads_membership(a->u.ctx.fn) ? a->u.ctx.fn : 0;   /* SABOTAGE S1176 */'
+SAB_BEFORE='    st->ctxfn = a->u.ctx.fn;'
+SAB_AFTER='    st->ctxfn = ctxfn_reads_membership(a->u.ctx.fn) ? a->u.ctx.fn : 0;   /* SABOTAGE S1176 */'
