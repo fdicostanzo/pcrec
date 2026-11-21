@@ -4723,3 +4723,11 @@ lane/bsu3 delivered (be192b04a, 33953d7c2, 3f5d93969 + report; lanecheck DONE; T
 - C4 was red at 33953d7c2 and fixed by the lane at 3f5d93969: the brief's rule worked in-lane.
 - Owed: 724-kit-bsu3-test and 725-kit-bsu3-mech.
 - Lane slip: it left the deliver file's owed line at none against the brief; minor.
+
+### 2026-11-21 17:49 — r76 (U3 code round) ruled FIX FIRST; bsu3fix; gap critic
+r76 committed with its ruling at 847e8e74c, using a separate verifier and the consumer-flag columns. No answer or speed finding: 57k guard-paged subjects show 0 differences; F2 82/82; shipped equals timed at gcc -O2/-O3/-Os, clang -O2 and -march=native.
+- FIX-NOW: CHECKS-1/2/3, CONTRACT-1, SLOT-1 (a smallest-B constant + static asserts) and SLOT-3 (the define <-> V pairing check). Lane bsu3fix (sonnet, S3516-S3524).
+- GAP: r75's SLOT-3/SLOT-4 were not reviewed. The manager's 17:12 message with their texts was not read before hand-back, and it was a manager miss to rely on a mid-round message. The narrow critic crit-memfn-bsu3b reviews them; its findings go to bsu3fix as rulings R-n.
+- PLAN relayed to main: [BSPAN-VANY-RIDE] to name both lifts.
+- Process rule: quote every in-scope item whose only record is denied in the LAUNCH prompt.
+- 724 make test GREEN; 725 mech pending.
