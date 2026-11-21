@@ -31,4 +31,6 @@ NOT pushed. `gh run list --commit origin/main` shows run 44878604284 (CI, push o
 
 ## STATE AT HANDOFF
 
-STATE: delivered locally, push OWED (CI on origin/main in progress). main holds the merge 559289e85 plus a records commit (ledger line + this report). The dirty-ok files were left untouched and uncommitted. No worktrees or branches pruned. Validation complete apart from the push. OWED: push of main once run 44878604284 reads `completed success`.
+STATE: delivered locally, push OWED (CI on origin/main in progress). main holds the merge 559289e85 plus a records commit (ledger line + this report). The dirty-ok files were left untouched and uncommitted. No worktrees or branches pruned. Validation complete.
+
+OWED: none (no validation run is owed; the push itself is held, not a run: the manager or a fresh agent pushes once run 44878604284 reads `completed success`).
