@@ -4706,3 +4706,9 @@ That said, do track the clang issue with an item for follow-up to make sure no s
 
 ### 2026-11-21 15:38 — U2 + U2b delivered to main
 723 GREEN (the 18 U2 rows on the fix tree). lane/bsu2fix (contains lane/bsu2) merged into k1108 (005e35c7b, make strict clean). Delivered: [responses] 994de281c and a SendMessage. abi 111 (re-pin to 110 if U2 lands before L3). Final-tree validation 719/720/721/722/723 all GREEN. U3 next (the w32 helper, the first SIMD text).
+
+### 2026-11-21 15:39 — U2 merge OK; lane bsu3 (U3) launched
+- main gave MERGE OK at 994de281c. U2 lands FIRST, re-pinned to abi 110 by the landing lane u2land; L3 moves to 111.
+- Lane bsu3 (opus, S3515-S3529) builds U3: the w32 level block, the C18 head family, F2 first, and r75's PLAN items SLOT-3/SLOT-4/CHECKS-8 plus the S730 V witness.
+- abi 112, confirmed by main. Whichever of L3/U3 lands later re-pins.
+- Its brief adds the C4 rule (a -fmemfn-simd token outside memfn/ needs its allowlist row in the same commit) and keeps clear of main's 01:00-07:00 timing window.
