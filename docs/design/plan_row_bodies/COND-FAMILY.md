@@ -6726,3 +6726,38 @@ a mark on the parameter; inferring from the calls makes a definition's meaning d
 variable is a NAME known at compile time, the kind of value the group-name hole already takes
 (`capture("d", x)`). The manager's recommendation: leave it parked until an example cannot be written by passing
 the condition or the set.
+
+### 2026-11-21 OWNER, on bare-nested-scope case 2: "no, c" — not (a); his reason: the loop case would break
+tags: core/holes/bare-condition/nested-scope core/holes/bare-condition/labels core/conditions/pass-start-read core/labels/one-rule core/labels/flow
+
+Asked **bare-nested-scope, case 2** (a piece holds a public label and reads it before its own group sets it:
+`A := /(?<c>\d)/`, `B := /${(c: >= 5)}(?<c>\d)/`, `A SEQ B`; (a) shared: B's test reads A's `c`, WHOLE `73` HOLDS,
+the documents' line; (b) own value only: never matches; the manager's leaning (a)). HIS WORDS, whole (he wrote the
+slug "base-nested-scope"):
+
+"base-nested-scope: no, c. we actually discussed this and another ruling would break on a. in a loop around the
+insides of the B, the condition would see the second iteration as it is in front of the label definition. the
+first time through it is unset. that would mysteriously break if "a" was the choice"
+
+Class: an ANSWER on the slug whose letter is UNCLEAR, so NOT YET RECORDED AS A RULING. Clear: "no" to (a), with a
+reason. Unclear: "c": the question as last put had (a) and (b) only; (c) of the message before was "composed for
+both", which his case-1 ruling of the same hour ("compile error at inner") excludes. The reading taken, TOLD TO
+HIM AND ASKED BACK: he means (b), own value only (unset the first time; in a loop, B's own previous pass). The
+ruling he recalls ("we actually discussed this") is bare-condition-labels, 2026-11-19: "The first time through the
+loop, the reference is unset then the label is set. The second time through, the reference is set to the previous
+loop value": a RECOLLECTION, checked: SUPPORTED as a ruling.
+
+CHECKED CONTEMPORANEOUSLY, and told to him:
+- His reason does not part (a) from (b). Entering a loop RESETS the labels set inside it (one-rule, 2026-11-17:
+  "Yes. Let's keep it"; the piece: "A name set before a loop and inside it does not survive the loop"), so under
+  (a) too the first pass reads UNSET. RUN (hand-built simulation): `A SEQ B`, B := `/(?:${NOT (c: >= 5)}(?<c>\d))+/`:
+  (a) with the ruled reset and (b) alike: WHOLE `7341` HOLDS, `7391` FAILS / SEARCHED `x7341 7391 29` `7341`@1 /
+  FIND-ALL [`7341`@1, `739`@6, `29`@11]. Only "shared with NO reset" breaks it (WHOLE `7341` FAILS), which no
+  candidate proposed.
+- (a) and (b) part only where no branching is entered between the user's setting and B's read: the plain sequence.
+- A COLLISION of (b) with a ruled rule, one witness pair: ONE definition, `/(?<c>\d)${(c: >= 5)}(?<c>\d)/`: the test
+  reads the first c (bare-condition-labels: "after the group, the value just set"; run 2026-11-19: WHOLE `73`
+  HOLDS, `37` FAILS). COMPOSED from two, `A SEQ B` as above, under (b): never matches. The same rx, two ways of
+  writing it, two answers: against "i adjust my rules to be such that a compose and a literal rx have the same
+  label behavior" (label-flow, 2026-11-17).
+Nothing folded.
