@@ -6398,3 +6398,36 @@ used twice, `/${string(quotes)}=${string(quotes)}/`, lowers to one regex with `_
 `body__2`; the table gives `body` = `body__2` (the last mention) and no `_q`: WHOLE `"a"='b'` HOLDS (body = `b`),
 `"a"="b'` FAILS / SEARCHED `x "a"='b' 'k'="v" "z"=q` `"a"='b'`@2 / FIND-ALL [`"a"='b'`@2, `'k'="v"`@10]. Asked of
 him as bare-nested-scope restated: a name written in a hole is resolved in the definition the hole is written in.
+
+### 2026-11-21 OWNER, discussing bare-nested-scope: rules on literals or compiler rewrites; is `v` a label variable; `inner(digits)`; what the compiled C exports
+tags: core/holes/bare-condition/nested-scope core/labels/export core/operators/bindings parked/ideas/label-parameter core/holes/same-name
+
+Asked **bare-nested-scope** restated (a name written in a hole is resolved in the definition the hole is written
+in; the closed answer's rewrite given as `inner(v) := /x${v & <5}/` called `inner($h)`, "or the condition is passed
+in"). HIS WORDS, whole:
+
+"bare-nested-scope: are you saying this can't be resolved through a rule set on literals so its a matter of
+compiler rewrites? for your inner(v) example, does that mean that v is not a label but a label variable? would
+inner(digits) have meaning here as, sofar, macros take rx as arguments but a rx argument to inner() would be hard
+to see in your example. once the rx is written, and the C form is produced and run, what would be the labels that
+the pcrec compiler would export?"
+
+Class: three QUESTIONS to the manager; DISCUSSION, nothing ruled.
+
+The manager's answers (told to him; hand-built runs, `$PCREC_TMPDIR/scratch/pred/innerv.py`):
+1. Rules on literals: for PUBLIC labels the rule IS on the literal and is ruled ("a compose and a literal rx have
+   the same label behavior": the composed rx read as one literal, last mention). What a literal cannot say: a
+   private `_x`, and which group an rx-text `\k<x>` means when a piece is used twice; there the compiler renames
+   groups apart, which same-name already implies ("A group that arrives through a hole is the inserted pattern's
+   own"). A renaming, not a rewrite of the pattern.
+2. `v` is an ordinary rx parameter, not a label variable. `inner(digits)` has a meaning: `/x${/\d+/ & <5}/`, x then
+   a number under 5 (WHOLE `x3` HOLDS, `x7` FAILS / SEARCHED `ax7 x3` `x3`@4 / FIND-ALL `x3 x7 x44` [`x3`@0,
+   `x4`@6]); `inner($h)` is x then h's text when h is under 5 (in `/(?<h>\d)${inner($h)}/`: WHOLE `3x3` HOLDS, `3x`
+   FAILS). CORRECTED by the manager: that rewrite is NOT the original `/x${(h: <5)}/`, which tests h and consumes
+   nothing (WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6]); the
+   faithful closed form passes the CONDITION: `inner(c) := /x${c}/`, `inner((h: <5))`. A macro that names the label
+   to test itself (`small(L) := (L: <5)`) would need the label variable he asks about: the parked label parameter.
+3. The compiled C's labels: export statement 5 (ruled 2026-11-18): "The caller's captures are what is visible from
+   the top-level program by these rules": the public names in the top-level scope table, flat and by part-label
+   path; no `_` name; never a renamed internal name. Not stated: the caller's group NUMBERS for a composed rx;
+   whether the caller gets the array of a name; the open caller-ambiguous.
