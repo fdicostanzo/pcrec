@@ -22,4 +22,5 @@ Applied review r70's rulings (RATCHET-1, -2, -4, COORD-1 fixed; RATCHET-3 filed 
 Cloud test run `specfix2-test` dispatched at the tip sha (see the reply to main).
 
 ## STATE AT HANDOFF
-Last ruling applied: none (specfix2_rulings.md empty). All work committed on lane/specfix2. Owed: none.
+Last ruling applied: none (specfix2_rulings.md empty). All work committed on lane/specfix2.
+OWED: none
