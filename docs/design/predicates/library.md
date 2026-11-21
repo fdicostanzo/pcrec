@@ -203,7 +203,8 @@ see: lib/counting/count
 module: ?
 defined: language
 - The helpers: `chars := /(?:(?<ch>(?s:.)))*/`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral.
-- The name is ruled; the body is a reading. The label `ch` is visible in the result.
+- The name is ruled; the body is a reading. The label `ch` is visible in the result; written as a group in rx
+  text it is also a capture (a reading of pure-label).
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
 WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
 
@@ -215,7 +216,8 @@ defined: language
 - `months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/,
   /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]` (an array is an alternation;
   the twelve names in calendar order), `mnum := $mname.index` (a computed label over the member's 1-based index).
-- The name is ruled; the body is a reading. The label `mname` is visible in the result.
+- The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
+  capture (pure-label).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -322,7 +324,8 @@ defined: language
 - Anchored: it covers the text it is applied to from end to end; standing alone in a searched program that text
   is the whole subject.
 - "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS.
-- Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
+- The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label).
+  Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
 
@@ -614,16 +617,35 @@ WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12
 
 The compile-time tools over spelled arrays and the macro that names a capture.
 
-### capture   [lib/structural/capture]   reading 2026-11-19
+### capture   [lib/structural/capture]   reading 2026-11-21
 `capture(name, x) := /(?<${name}>${x})/` names a capture: the name in a group-name hole, x in a pattern hole.
 needs: core/holes/name core/holes/pattern core/labels/export
 module: ?
 defined: language
-- A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture.
+- A label reaches the caller only as a capture: "captures are explicitly written either in literal form or using
+  a macro like capture()" (core/labels/export, statement 5); `[x = A]` alone makes none.
+- `capture(name, x)` is the WRAPPER method in its literal form (a reading); his wrapper placeholder
+  `[ d = capture(digits) ]` takes its name from the part label, which needs the field below.
+- Making an existing label a capture afterwards: lib/structural/capture/add-on.
 - The one-parameter sketch `capture(x) := /(?<${x.label}>${x})/` needs a field giving a part label's own name,
   which the core does not define (`.label` is a field of a part label over an ARRAY, core/values/metadata); with it,
   `join(each(capture, a), sep = ".")` would name each entry's capture after its label.
 WHOLE `12` HOLDS (d = `12`) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture("d", /\d+/)` is `(?<d>(?:\d+))`)
+
+### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-21
+An add-on that makes a label a capture is required ("an add on component that converted a label into a capture is needed"); how it is asked for is not defined.
+needs: lib/structural/capture core/labels/export
+module: ?
+defined: ?
+- His two methods, both placeholders ("no spelling suggested"): a wrapper, `[ d = capture(digits) ]`, and after
+  the fact, `[ d = digits ] & capture(d)`. "what i don't know is precisely what that looks like."
+- His reason for the second: "isodate and all the other libraries don't want to presume everyone is interested in
+  every label being a capture." "but then, someone might later want the year of an isodate as a capture. so an add
+  on component that converted a label into a capture is needed."
+- After the fact it names its label by the visibility rules (core/labels/export), so a `_` label cannot be
+  captured outside its binding (a reading); a `_` label "cannot become exported captures".
+- The after-the-fact form has no body in the language today (a reading).
+- What the caller receives for a captured label a loop sets is not stated (core/labels/labels-vs-captures).
 
 ### each, each_group, where, where_group   [lib/structural/each]   reading 2026-11-19
 `each(f, A)` applies a macro or filter f to every entry of a spelled array A, keeping labels and order; several arrays zip by position.

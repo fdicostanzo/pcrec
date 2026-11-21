@@ -451,6 +451,8 @@ history:
 ## core/labels/labels-vs-captures — Labels and captures
 slugs: pass-own-labels pass-and joint-last-pass after-loop-read last-pass-default joint-loops pairing-loop array-slot array-scope
 rulings:
+- 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); answer (a): a group in rx text or a capture form makes a capture; `[x = A]` a label and no capture
+- 2026-11-17 (class: STATEMENT) "setting labels is just the label using the group-label-not-capture syntax" (record: "2026-11-17 OWNER, three points on labels"); his supporting words, recalled in the pure-label discussion
 - 2026-11-19 "array-scope: the only way to do it is by the scope of the entire rx. As you say, you could limit it by grouping labels. So x.@a. (?spelling?)." (record: "2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it")
 - 2026-11-17 "after-loop-read: ok I see it. Last pass own label makes sense" (record: "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label")
 - 2026-11-17 "I do want that. It makes sense and frankly pcre is wrong on this. I agree but! We need a way to get the pcre behavior even if ugly" (record: "2026-11-17 OWNER RULING — what an unqualified `$x` reads")
@@ -467,6 +469,7 @@ readings:
 - the array form's index counts settings (the draft R.1.7) — UNTESTED (open: core/labels/labels-vs-captures/array-vs-passes).
 - (a) of array-scope: "the entire rx" is the rx as composed AT THE POINT the array is referenced (composed-at-point); stated in the base as "the settings of the name where the name is visible, as they stand where it is read" (the manager's reading, "for the next lane to test") — UNTESTED.
 - (b) of array-scope: `x.@a` lists the settings of `a` made inside part `x` only, in order (the manager's reading, "for the next lane to test"); for a part label used twice it is routed through core/labels/paths (its last-mention rule) — UNTESTED.
+- what the caller receives for a captured label that a loop sets (PCRE's carried value or the label's last-pass value) is not stated (the manager's reading (e) of pure-label) — SUPPORTED: no record line states it; the two part on `/(?:(?<h>\d)?;)+/` on `3;;` (label unset, python `re` capture `3`; predscope_model.py LOOPVAL, sabotage s13 caught). Asked as capture-loop-value (proposed).
 evidence: preddoc3a_model.py CAPT, CAPT2 (the draft's PART L: `\k<m>` reads the capture `45` while the label m is unset; python `re` agrees on the regex half); sabotage s9 caught.
 history:
 - 2026-11-17: last-pass-default (regex), then "labels match every pass", reconsidered within minutes, then after-loop-read and the `$x` ruling (the settled state of the evening).
@@ -477,6 +480,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-13): "a callout" among the capture's readers qualified "where one is allowed: a one-literal program" (core/patterns/literals refuses callouts inside a larger program).
 - 2026-11-19: array-scope ruled after hole-export; the heading date moved from 2026-11-17 with it.
 - 2026-11-19 (lane predfix61, review r61 F-F (RULING-12, REACH-3, REACH-4, GENERAL-3, GENERAL-13), F-J (RULING-11)): array-scope's readings (a) and (b) were folded as body; now marked readings in the base and listed above. The bullet until then, verbatim: "The array's scope is the entire rx as composed, not one literal or one definition: `[x = rx.digit]+` and `/(?<x>\d)+/` have one array, and two groups of one name in a sequence give it both settings. A part label limits it: the array of `a` under part `x` (placeholder `x.@a`) lists the settings made inside that part." The rejected item's quote was altered ('same' for "same") and its reason was his hole-export worry, not array-scope's words; both corrected. The array of settings against the loop's passes: core/labels/labels-vs-captures/array-vs-passes.
+- 2026-11-21 (lane predscope, pure-label folded): two bullets added (a label is not always a capture; the caller's value for a captured looped label not stated) and the line "Captured in a loop"; the rest unchanged. Status date 2026-11-19 to 2026-11-21. evidence: predscope_model.py CAPT, LOOPVAL.
 
 ## core/labels/labels-vs-captures/array-vs-passes — The array of settings or the loop's passes
 slugs: array-vs-passes
@@ -529,6 +533,8 @@ history:
 slugs: export-rule export-scope free-name filter-captures hole-export
 was: core/holes/labels/hole-export (2026-11-19, merged: the question is answered here)
 rulings:
+- 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); NARROWS statement 5, ruled 2026-11-18 as "The caller's captures: agree": the caller gets captures, not every public label
+- 2026-11-21 (class: STATEMENT, marked agreed "as we discussed") "1. purely predicate labels and 2. cannot become exported captures (although they might be internal captures)" (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); of the `_t` labels; their use, his words: "they would be used in your examples to define a binding level label like the quote character in a string."
 - 2026-11-19 "they have to work the same. Agree both pass through." (record: "2026-11-19 OWNER RULING — hole-export: both pass through; and a question on the array of a label under composition"); it revises statement 3 of export-rule
 - 2026-11-18 "export-rule: Agee and add [_a = A] is a private reference that wouldn't export at all" (record: "2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels")
 - 2026-11-18 "I meant it wouldn't export outside the binding. To close all exports use [_ = A]" (record: "2026-11-18 OWNER, clarifying export-rule's sixth statement, and adding a form: `[_ = A]` closes all exports")
@@ -544,6 +550,7 @@ readings:
 - a part under a `_` part label, or `[_ = A]`, passes none of its labels outside, so statement 3 agrees with statements 6 and 7 (the manager's reading (b) of hole-export: "`[_ = A]` and a `_` part label still close a part's labels") — SUPPORTED as rule-as-code (predfix61 FA: visible outside `[a = A]` {a, h}, `[_a = A]` none, `[_ = A]` none; sabotage s1 caught); the run line of statement 3 is predfix61's.
 - a filter operand's labels are visible like any others (the draft R.1.13, filter-captures not adopted) — UNTESTED.
 - his remark of 2026-11-19 ("it might be more that private labels are only visible in a binding scope") — already ruled as statement 1 (recorded as a recollection, nothing new).
+- (pure-label) `pub` shows the labels `a`, `h` and the one capture `h`; `year` (`_v`) and `[d = digits] & (d: <100)` show no capture; `capture("d", /\d+/)` shows `d` (python `re` agrees on its groups) — SUPPORTED as rule-as-code (predscope_model.py CAPT; sabotage s2, a label counted a capture, and s3, a `_` label exported, caught).
 evidence: preddoc3a_model.py EXP (the draft's PART TB (2) line; printed answers reproduced; `[2-9]\d{3}` agrees). PARTS TA, TB of predspec291. predfix61_model.py FA (statement 3's line and the closing parts).
 history:
 - 2026-11-18: the proposal (labels seen only if exported), the export-scope discussion, the ruling, the clarification of statement 6 and `[_ = A]`.
@@ -551,6 +558,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-15): the example names its program (`year`, the final expression); before it printed only the binding, which by core/operators/statements is not a program. Answers unchanged (preddoc6 PART EX).
 - 2026-11-19: hole-export ruled; the statement until then: "A label is public unless its name begins with `_`; outside a binding its public labels and its public part labels are visible." From the merged question piece: review r54 P29-13 asked it; the T-a surprise (PART TA of predspec291) was its ground.
 - 2026-11-19 (lane predfix61, review r61 F-A, F-B, F-J (RUNOWN-6)): statement 3 contradicted statements 6 and 7 (a `[_a = A]` part's public `h` was "visible inside" and so outside, less only `_a`) and stated the manager's reading (a) as the ruled body. The statement until then: "A label is public unless its name begins with `_`; outside a binding every public label visible inside it is visible, a part's labels passing through a hole and the sequence operator alike." Statement 3 until then: "Outside a binding, what is visible is what is visible inside it, less the private names: the public labels of everything written or used there, read as labels are, and its public part labels, a part's public labels also reached by path through its part label. `B1 := isodate SEQ "!"` and `B2 := /${isodate}!/` both show `year`." (`isodate` was defined nowhere; the run line printed was the private-label program's). Now: the ruled part ("both pass through"), the closing parts (reading (b)), the flat read marked a reading with its owner question flat-read-outside, a defined binding and a run line.
+- 2026-11-21 (lane predscope, pure-label folded): statement 5 until then: "The caller's captures are what is visible from the top-level program by these rules." Now the CAPTURES visible from the top-level program (the groups in rx text and the capture forms); `[x = A]` makes a label and no capture. Bullets added: the `_` labels in his words; `pub` and `year` with their captures. Status date 2026-11-19 to 2026-11-21. Every printed line that shows label values in parentheses shows LABELS and stands.
 
 ## core/labels/export/flat-read-outside — A flat read of a part's label from outside
 slugs: flat-read-outside
@@ -567,23 +575,28 @@ history:
 - 2026-11-21 (the manager, one ruling): flat-read-outside RULED (a). Status `open flat-read-outside 2026-11-19` to `ruled 2026-11-21`. Statement before: "Outside a binding, is a part's public label read flat (`x`, not `b.x`) under the inside rules, or is a flat read of a part's label an error, the path required?" Its candidates before: "(a) a flat read outside a binding follows the inside rules (the lines below); (b) a flat read of a part's labels from outside is a compile error; the path (`b.x`, `m.v`) is required (no line: refused)." His question back the same day ("so the read is based on match not group?") and the answer told him are in the record.
 - 2026-11-19 (lane predfix61, review r61 F-B, RULING-7): a new open sub-piece at the manager's ruling of review r61. The owner's words in the hole-export message, whole for this point: "Here's the issue: if I have [a = ([ b = rx]|[c = rx])] where rx has labels x y z, this would mean that a b c x y z are all flatly visible. I can't access x y z flat because it's ambiguous and therefore an error. So it's b.x or a.b.x. In practice there may not be ambiguity, but is having all those symbols an issue? I'm saying no." The manager's correction, told to him the same turn (record, that entry): "His "I can't access x y z flat because it's ambiguous and therefore an error" is NOT what the rules as defined say for an alternation: the ruled ambiguity is across `&` only ...; across `|` the branch taken sets the label and a bare read is legal". He did not answer the correction; his later "I can't think of a problem with the existing labeling rules so let's move on." (record: "2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it") is a direction, not an answer to it (the manager's ruling of review r61).
 
-## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared label
+## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared capture
 slugs: caller-ambiguous read-out
 rulings:
 - 2026-11-18 "The caller's captures: agree" (record: "2026-11-18 OWNER, export-scope discussion, third exchange")
 - 2026-11-18 "export-rule: Agee and add [_a = A] is a private reference that wouldn't export at all" (record: "2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels")
+- 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); narrows statement 5 from labels to captures
 rejected:
 - (b) h absent from the captures; (c) the last mention's value (the right side's); (d) the left side's value — by owner ruling — export-rule statement 5 (the caller's captures follow the program's rules, where a shared public name is an ambiguous reference).
 readings:
 - the record's export-rule discussion: "a name two parts both make public is an ambiguous reference for the caller as for the program", pending a ruling (the manager's reading of "The caller's captures: agree") — favours (a) or (e); not ruled.
+- the question narrowed to a CAPTURE two parts both make (a label no capture makes never reaches the caller); the example's h is written in rx text in both parts, so the question and its run are unchanged (the lane's reading of pure-label) — UNTESTED as a rule; the spans are preddoc3a CALL's.
 evidence: preddoc3a_model.py CALL (the spans; the draft's PART R47 B13 printed the same spans under every candidate, reproduced).
 history:
 - new piece (lane preddoc3a): the slug was on core/model/modes; the draft R.1.13 leaves it "NOT DEFINED".
 - 2026-11-19 (lane preddoc4): narrowed to (a) against (e); (b)-(d) to `rejected:` by export-rule statement 5; the record's slug read-out (path-and-ambiguity's second corner) homed here (review r59 RULING-3). The base's slug stays caller-ambiguous.
+- 2026-11-21 (lane predscope, pure-label folded): heading "What the caller gets for an unreferenced shared label" to "... shared capture"; statement before: "For a public label two parts both set that the program never references, is the caller's ambiguous reference a compile error or an error when the caller reads it?" Body before: "The rule (export-rule, statement 5): the caller sees what is visible from the top-level program, so a name two parts both make public is an ambiguous reference for the caller as for the program. Open: WHEN it is refused." Status date 2026-11-19 to 2026-11-21.
 
 ## core/labels/paths — Part labels and paths
 slugs: path-and-ambiguity
 rulings:
+- 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); `[x = A]` makes a label and no capture
+- 2026-11-17 (class: STATEMENT) "setting labels is just the label using the group-label-not-capture syntax" (record: "2026-11-17 OWNER, three points on labels")
 - 2026-11-18 "so I agree the last reference" (record: "2026-11-18 OWNER on path-and-ambiguity: the part label used twice is RULED; the read-out is open")
 - 2026-11-18 "Naming [x = A] only disambiguates scope, it doesn't give additional access" (record: "2026-11-18 OWNER, export-scope discussion, third exchange")
 - 2026-11-17 "label-flow: 1. propose: it is an error to ambigously reference a label." (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error")
@@ -592,9 +605,11 @@ rejected:
 readings:
 - `x.h` follows the one label rule inside A; an ambiguity judged where the reference is written; `alt.x[1]` legal (the draft R.1.13) — UNTESTED.
 - the read-out corner (what a caller gets) — core/labels/export/caller-ambiguous.
+- his `[=year]` (a placeholder in "an EXERCISE asked for", 2026-11-21) is `[year = year]`, the part label named for the binding it holds (the manager's reading, the `=x` shorthand of the binding list in a third place, not asked) — UNTESTED (a spelling).
 evidence: preddoc3a_model.py PATH (the draft's PART LF line; printed answers reproduced; `[01]\d` agrees) and PATH2 (his corner 1: the last mention); sabotage s18 caught.
 history:
 - 2026-11-18: corner 1 ruled; corner 2 (the read-out) went to filter-captures, export-scope, export-rule.
+- 2026-11-21 (lane predscope, pure-label folded): the first bullet until then (the draft §3.1's reading): "`[x = A]` is the group form `(?<x>A)` read as a label; inside pattern text a named group is the same thing." It was wrong as to capture. The `[=year]` bullet added. Status date 2026-11-18 to 2026-11-21.
 
 ## core/labels/backreferences — Backreferences
 slugs: backref-label backref-across-parts same-name-twice
@@ -724,17 +739,23 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-4): restated from the frozen draft's own words for the slug. Before, the piece said "The reading today: not stated" and "modes: n/a (a question; no candidate answer is run)"; the draft has the reading ((a), the same compile error) and the runs (PART R47 B4, CS4), now printed; its example `(?:(a: S)(b: T))` replaced by the draft's `((h: <5))?`, `((h: <5) SEQ (h: <5))*`.
 
 ## core/conditions/match-so-far — The match so far
-slugs: zero-in-sequence
+slugs: zero-in-sequence zero-in-definition
 rulings:
+- 2026-11-21 "zero-in-definition: a" (record: "2026-11-21 OWNER RULING — zero-in-definition: a"); answer (a) as put to him: "`0` is the match so far of the definition it is written in"; "within one definition `0` still spans all its literals and operands, so your ruled example is unchanged"
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence")
 rejected:
 - the error for now (the manager's leaning) — by owner ruling — zero-in-sequence.
 readings:
+- (the manager's (a) of zero-in-definition) an expression written in place (an argument, a hole's content) belongs to the definition it is written in — SUPPORTED by the words as put ("the definition it is written in"); run: `/\d/ SEQ B((0: /\d/))`, B(rx) := `/${rx}xx/`, the caller's `0` HOLDS on `5xx`, the macro's would never match (predscope_model.py ZARG; sabotage s11 caught).
+- a program's final expression is the outermost definition (the lane's reading) — UNTESTED (no ruling names the program).
+- (the manager's (d)) zero-in-loop is untouched and still open — SUPPORTED (the ruling's question and answer name definitions, not passes; core/conditions/match-so-far/in-loop unchanged).
+- the ruled example `/\d/ SEQ (0: /7/) SEQ /\d/` unchanged — SUPPORTED (predscope_model.py ZSEQ; sabotage s9, `0` restarting at each operand, caught).
 evidence: preddoc3a_model.py ZERO (the record's zeroseq.py answers reproduced; `7\d` agrees); sabotage s11 caught. preddoc1 PARTS R8, R9.
 history:
 - 2026-11-19: zero-in-sequence; the bare condition in a hole; the confirmation. The slug number-in-loop moved to core/labels/numbers/in-loop (lane preddoc3a).
 - 2026-11-19 (lane preddoc4): the deciding piece for `0` (core/labels/numbers points here); the bare-condition-in-a-hole facts are core/holes/bare-condition's alone (review r59 RULING-8); the loop case moved to the open sub-piece core/conditions/match-so-far/in-loop (review r59 ZERO).
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-2): one owner for the hole facts: the base clause "in `${A & (0: S)}` it is A" and the two hole rulings items (""Inside an inserted part": for a condition bare, yes ..." and "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing") and the `rejected:` line "a bare condition's `0` in a hole as the inserted part's own" removed here; core/holes/bare-condition carries all three, word for word.
+- 2026-11-21 (lane predscope, zero-in-definition folded): statement until then: "`0` in a condition names the match so far: the text the rx the condition is written in has matched from its start to the condition's point." Bullet until then: ""The rx it is written in" is the rx composed at the point the condition is used; every hole case (a condition alone in a hole, `${A & (0: S)}`) is core/holes/bare-condition's." Now the DEFINITION it is written in; within one definition composed; three readings and the "An argument" line added. Status date 2026-11-19 to 2026-11-21.
 
 ## core/conditions/match-so-far/in-loop — The match so far inside a loop
 slugs: zero-in-loop
@@ -890,6 +911,7 @@ history:
 - 2026-11-19 (lane preddoc4): "a read of a name the rx it is written in does not define is a compile error" restated as the one scope rule for `$` (a reading, tied to open bare-condition-labels): read literally it made the core's own examples (`$x` in an `&` operand, `${$y + 1}`) errors (review r59 READ-7).
 - 2026-11-19 (lane preddoc5): the slug pass-list-read moved here from core/conditions/pass-start-read: it asks what `$h` reads after the pattern, which this piece states (review r59 COMPA-13).
 - 2026-11-19 (lane predfix61, review r61 F-E, REACH-2): "the surrounding rx's labels as they stand at the hole" reached a private `_v` of an inserted binding and the labels behind `[_ = A]`; now "every label visible in the surrounding rx (core/labels/export)", and which rx, for a hole in an inserted literal or an `&` operand, a reading (core/holes/bare-condition/nested-scope). The sentence until then, verbatim: "A `$` read resolves in the namespace at the point it is written: in an `&` operand, the chain's labels; in a value hole, the surrounding rx's labels as they stand at the hole." Status date 2026-11-18 to 2026-11-19.
+- 2026-11-21 (lane predscope): the pointer to nested-scope restated (a definition used inside another, not "the literal is itself inserted"); no answer moves.
 
 ## core/values/one-type — One type: a match is an rx
 slugs: match-is-rx read-is-constant value-is-pattern hole-member-kind
@@ -1144,6 +1166,7 @@ rulings:
 - 2026-11-18 "product-order: first, the ruling was for counting holes which duplicate the pattern. It doesn't apply for rx holes. Idk for others" (record: "2026-11-18 OWNER RULING — product-order: first slowest; and a correction of the product's scope")
 - 2026-11-17 "sequence-reading: splice. But opening up the hole again, what was our rationale? I'm wondering if it would be ok if we declared that /xxx${/foo/}yyy/ was /xxx(?:foo)yyy/." (record: "2026-11-17 OWNER RULING — sequence-reading: splice; and the hole reopened")
 - 2026-11-15 "anchored-in-hole: agree" (record: "2026-11-15 RULINGS — no anchored-specific error in a hole; the anchor warning covers every whole-match place")
+- 2026-11-21 "zero-in-definition: a" (record: "2026-11-21 OWNER RULING — zero-in-definition: a"); the `0` of the last bullet
 rejected:
 - the edge-assertion error for holes (the draft's L8) — by owner ruling — hole-reading ("assertions become ok to cross the border").
 - one copy of the literal per value — by owner ruling — product-order (1), "It doesn't apply for rx holes".
@@ -1157,6 +1180,7 @@ history:
 - 2026-11-18: product-order (1) took the copy rule off pattern holes; the "keeping its own flags" clause went with hole-flags (core/holes/flags).
 - 2026-11-19 (lane preddoc4): the bullet on `anchored` in a hole left this piece; lib/search/anchored states it (review r59 PLACE-2 (d)).
 - 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-4): "in the values' order" points at the lift's loop (core/arrays/lift); no answer moves. Status date 2026-11-18 to 2026-11-19.
+- 2026-11-21 (lane predscope, zero-in-definition folded): the last bullet's end until then: "`0` in the outer rx is the outer match so far (core/conditions/match-so-far)." Now a `0` in the outer definition is its match so far, the inserted text included, and a `0` inside an inserted definition is that definition's own. Status date 2026-11-19 to 2026-11-21.
 
 ## core/holes/count — The count hole
 slugs: removal
@@ -1426,6 +1450,7 @@ slugs: inner-label-read
 rulings:
 - 2026-11-18 "export-rule: Agee and add [_a = A] is a private reference that wouldn't export at all" (record: "2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels")
 - 2026-11-18 "Agree", under the manager's heading "Inserting through a hole." (record: "2026-11-18 OWNER, continuing the export-scope discussion"); his agreement to the manager's lean in a DISCUSSION (the entry says nothing is ruled by it): only the inserted part's exported names flow into the outer pattern
+- 2026-11-21 (class: EXAMPLE, given "rather than rules") "C can see d as a flat look into A." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); of `A := [d = digits]`, `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)`: a label flows out through a macro's parameter hole
 rejected:
 - his lean "a filter can never produce captures" as a rule — by owner ruling — export-rule ("NOT CARRIED": visibility goes by export, not by an operand's role); the form he wanted is `[_ = A]`.
 readings:
@@ -1433,6 +1458,7 @@ readings:
 evidence: preddoc1 EX-labels; PART TA of predspec291.
 history:
 - 2026-11-18: the export-scope discussion and export-rule; 2026-11-19 same-name-count's "(and `$h`)" withdrawn, leaving inner-label-read, then answered by this piece.
+- 2026-11-21 (lane predscope, pure-label folded): two bullets added (what flows is labels; his example 1 through a parameter hole). Status date 2026-11-18 to 2026-11-21. evidence: predscope_model.py EX1 (and CONTROL: equal to `(?:[1-9]\d?|0)xx` on 1,365 texts).
 
 ## core/holes/same-name — Same-name groups through a hole
 slugs: same-name-count
@@ -1453,6 +1479,7 @@ history:
 ## core/holes/bare-condition — A bare condition in a hole
 slugs:
 rulings:
+- 2026-11-21 "zero-in-definition: a" (record: "2026-11-21 OWNER RULING — zero-in-definition: a"); the `0` of a condition alone in a hole is the match so far of the definition the hole is written in
 - 2026-11-19 ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/ but not /${A & (0: digit)}/ where it is only the A" (record: "2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A")
 - 2026-11-19 "yes, thanks: /\d${(&(0:digit))}/ and /\d/ & (0: digit) are the same thing" (record: "2026-11-19 OWNER, confirming: a bare condition last in an rx equals the condition on the whole")
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence")
@@ -1464,11 +1491,14 @@ readings:
 - a binding whose whole body is a bare condition behaves as the bare condition (the manager's reading 11) — SUPPORTED (preddoc1 PART R11: the record's printed answers for `/\d${(0: digit)}x/` reproduced; the rival, the binding as its own rx, never holds; sabotage s15 caught).
 - at the very START of an rx it tests the empty match so far, a candidate for the can-never-match diagnostics (the manager's (c)) — UNTESTED (a warning); `/${(0: digit)}/` never holds (zerohole.py, CHECKED CONTEMPORANEOUSLY in the record).
 - `A & (0: digit & (b: blah))` = `A & (0: digit) & (b: blah)` (the manager's reading 12) — SUPPORTED for `0` (preddoc1 PART R12: 0 / 0 / 0 of 364, span and b; sabotage s11 caught); after a NAMED label the draft's existing error — UNTESTABLE by run (a refusal).
+- (the manager's (b) of zero-in-definition) a condition bound ALONE has no rx of its own: its `0` is the match so far of the definition it is USED in — UNTESTED (not settled by the record: the answer as put, "`0` is the match so far of the definition it is written in", read literally makes the binding that definition, its match so far at the condition empty). The two answers RUN on `/\d${c}x/`, c := `(0: rx.digit)`: as if in place WHOLE `7x` HOLDS; the binding's own `0` never matches (predscope_model.py ZCBIND; sabotage s12 caught). Proposed question: zero-condition-binding.
+- (the manager's (c)) `${A & (0: S)}` is unchanged, that `0` only A — SUPPORTED by the record (operand-world, ruled; the 2026-11-19 "but not /${A & (0: digit)}/ where it is only the A"); not re-run here (preddoc1 EX-bare-and).
 evidence: preddoc1 EX-bare-condition, EX-bare-and, PARTS R11, R12; zerohole.py, zeroseq.py (the record's runs).
 history:
 - 2026-11-19: zero-in-sequence, then his "yes ... but not", his confirmation, his spelling correction `${0: digit}`, his "${} implies (?:${})" (SUPPORTED by hole-reading), then the parentheses remarks; rev 29.1 only marked §2.3.
 - 2026-11-19 (lane preddoc4): this piece owns the facts on `0` and a bare condition in a hole; core/conditions/match-so-far points here; the parentheses bullet (a spelling call) is core/spellings/condition-parentheses's (review r59 RULING-8).
 - 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
+- 2026-11-21 (lane predscope, zero-in-definition folded): statement until then: "A condition alone in a hole sees the regex composed at the point the hole stands: its `0` is the surrounding rx's match so far; in `${A & (0: S)}` the `0` is only A." Bullet until then: "A binding whose whole body is a bare condition, used in a hole or as a sequence operand, behaves as the bare condition does (a reading, run)." Its `0` now stated as unsettled, two run lines added. Status date 2026-11-19 to 2026-11-21.
 
 ## core/holes/bare-condition/labels — Labels a bare condition reads
 slugs: bare-condition-labels
@@ -1489,16 +1519,27 @@ history:
 - 2026-11-19: listed by the manager in the "`0` inside an inserted part" entry ((a): "if the draft's rows part, ASK"); NEW owner question.
 - 2026-11-19: open until ruled; the statement then: "Which labels does a bare condition in a hole read: the surrounding rx's labels as they stand at the hole, or the inserted part's own namespace, where it has none?" The manager's reading 10 (the surrounding labels at the hole; preddoc1 PART R10, sabotage s10 caught; precedent hit-carry's witness `occurrences(/${c}(?<h>\d)/, min = 2)`) is now his ruling.
 - 2026-11-19 (lane predfix61, review r61 F-C, F-D, F-E, F-G, F-J (RULING-4)): the statement until then: "A bare condition in a hole sees the labels of the whole surrounding rx and reads each as it stands where the hole is; a label no group of that rx carries is a compile error." ("the whole surrounding rx" reached private labels the export rule hides.) Its bullets until then, verbatim: "Written last in the rx, the bare condition equals the condition after the literal: `/(?<c>\d)${(c: >= 5)}/` is `/(?<c>\d)/ & (c: >= 5)`." (true at top level only: inside an optional it parts, 1 / 58 / 90 of 121, predfix61 FG); "Outside a loop, a hole before its label's group reads it unset: the test can never pass (the warning `pcrec.test.never`, not the error; a reading)." (true only for a test that fails on unset; the partition "outside a loop" judged on the written literal). The loop bullet gains the first-pass condition (a positive first-pass test: 0 matches of 1,093 texts, predfix61 FD).
+- 2026-11-21 (lane predscope): the pointer to nested-scope restated (a definition used inside another, not "the literal holding the hole"); the Composed line's sentence notes that B writes a c of its own (legal by name) and that A's value is the composed reading: closed to its user, `A SEQ B` never matches (predscope_model.py CLOSEDB; sabotage s8 caught). Answers unchanged.
 
-## core/holes/bare-condition/nested-scope — Which rx a hole in an inserted literal reads
+## core/holes/bare-condition/nested-scope — What a hole in a used definition may name
 slugs: bare-nested-scope
 rulings:
+- 2026-11-21 "zero-in-definition: a" (record: "2026-11-21 OWNER RULING — zero-in-definition: a"); "It settles the `0` line of bare-nested-scope: candidate (a) of that piece, with the unit the DEFINITION (a binding or a macro body), not the literal" (the entry's class, the manager's words)
+- 2026-11-21 (class: EXAMPLE) "let me give some examples rather than rules: 1.  A := [ d = digits ] B(rx) := /${rx}xx/ C := B(A) & (d: < 100) is legal. C can see d as a flat look into A. C cannot see rx as its a binding variable not a label." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name")
+- 2026-11-21 (class: EXAMPLE) "2. previous but B(rx) := /${rx}xx/ & (d: <100) is incorrect." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name")
+- 2026-11-21 (class: EXAMPLE) "3. previous but B(rx) := /${[dd = rx]}xx/ & (dd: < 100) would be correct" (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name")
 rejected:
+- COMPOSED for `0` (candidate (b) of the `0` line) — by owner ruling — zero-in-definition: a.
+- COMPOSED for a label only a parameter holds — by owner ruling (example 2, "is incorrect") — composed, `B(A)` would match exactly as example 1 (predscope_model.py EX2).
+- the LITERAL as the unit of scope (candidate (a) as first put) — by the owner, "literals are not the way to think about it" (record: "2026-11-21 OWNER, discussing bare-nested-scope: literals are not the way to think about it; construction; which way a hole is filled; descending and horizontal; the kind of hole") and zero-in-definition's unit, the definition.
 readings:
-- (b) composed, the documents' reading today (core/holes/bare-condition's `by: composed-at-point`; core/values/reads: "the chain's labels") — UNTESTED as a rule; the answers RUN (predfix61 FE; sabotage s5 caught).
+- (the manager's (a) of pure-label) the rule his three examples fit: a body names the labels it writes and the public labels of the parts it writes in, never a label of a parameter; a parameter's public labels pass through to the user; a parameter's name is never a label — NOT SUPPORTED as stated: run over 17 definitions the documents print, it refuses 7 (pass-start-read's `c`, computed-labels' `sum`, count's `n`, length's `nchars`, month_numbered's `mnum`, and this piece's Condition and Read lines); SUPPORTED with bound conditions and computed labels outside it (they are laid against the labels of the pattern they meet), then only this piece's two lines (predscope_model.py NAMES; sabotage s7 caught). It fits all three examples (EX1-EX3).
+- (the manager's (b) of pure-label) this is the CLOSED answer to bare-nested-scope for labels and reads — UNTESTED (untestable by the record: none of his examples names a label of the definition's USER, which is what the Condition and Read lines do; example 2 is a parameter's label).
+- (b) composed, the documents' reading before 2026-11-21 — rejected for `0` and for a parameter's labels (above); open for a label of the definition's user; the answers RUN (predfix61 FE; predscope_model.py ZNEST).
 evidence: predfix61_model.py FE (three readers, both candidates; under (a) the condition and `$h` are refused, `0` reads the inner literal's `x`).
 history:
 - 2026-11-19 (lane predfix61, review r61 F-E: REACH-5, REACH-9, RULING-13, GENERAL-14): a new open sub-piece at the manager's ruling of review r61; one question for the three readers at a hole. The free-name ruling quoted in its statement: "It is like if a function in C were defined then references a variable it doesn't have defined so it looks up the call stack to the previous definition. Catastrophic." (record: "2026-11-18 OWNER RULING — free-name: a reference to a name the rx does not define is an error").
+- 2026-11-21 (lane predscope, zero-in-definition and the three examples folded): heading "Which rx a hole in an inserted literal reads" to "What a hole in a used definition may name"; statement before: "When the literal holding a hole is itself inserted into another rx, or is an `&` operand, do the hole's readers (a bare condition, `$y`, `0`) read that literal or the rx as composed?" Its candidates before: "(a) LEXICAL: the literal the hole is written in (a label it does not define is a compile error; its `0` starts where that literal starts); (b) COMPOSED: the rx as composed where that literal ends up." The `0` line ruled ("Match so far, (a)" now "Match so far (ruled)"; the "(b)" line moved here: WHOLE `3x` HOLDS, `7x` HOLDS / SEARCHED `a3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0, `7x`@3]); his three examples and their run lines added; the question narrowed to a label the definition's user sets. The status stays open (the lane's proposal: the Condition and Read lines are not decided by any ruling). Date 2026-11-19 to 2026-11-21.
 
 ## core/holes/in-filter — A hole inside a filter operand
 slugs: hole-in-filter
@@ -1562,6 +1603,7 @@ rulings:
 - 2026-11-15 "2. yes keep out of phase 1. I like the idea of types but they need more thinking." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — answers to the four questions of review r8"
 - 2026-11-14 "I agree with both excepting the spelling ... no alpha operators ... with, check, in ..." (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
 - 2026-11-19 ""Inside an inserted part": for a condition bare, yes. like /${(0: digit)}/" (record: "2026-11-19 OWNER, on `0` inside an inserted part: a bare condition sees the surroundings; `A & (0: ..)` sees only A")
+- 2026-11-21 (class: EXAMPLE) "C cannot see rx as its a binding variable not a label." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); a parameter's name is not a label
 rejected:
 - `p(x)` = `x & p` (application as a call, C20/C30) — by owner ruling — "Agree with mapping": application has one spelling, `x & f`.
 - calling a pattern with conditions, `isodate(year: S)` — by owner ruling (the same entry): "write `isodate & (year: ...)`".
@@ -1572,12 +1614,14 @@ readings:
 - the nested-record error (`f((x = 1, y = 2))`) and a condition argument passing a macro (the draft's LEAN, §13 O45) — UNTESTED.
 - `name = default` in a head, a `:` in a head an error (LEAN, review r10 CENSUS-4) — UNTESTED.
 - macros expand per use, cost per use (the manager's, 2026-11-13) — UNTESTED.
+- (the manager's reading of condition-argument) a condition passed as an argument is resolved in the caller's definition, where it is written — SUPPORTED: `tagged := [kind = any_of("n", "w")] SEQ ":" SEQ when((kind: "n"), digits, else = word)` with `when`'s body read from library.md reproduces the record's line (WHOLE `n:42` HOLDS, `n:ab` FAILS, `w:ab` HOLDS, `w:42` HOLDS); `when`'s body names no label, so resolved there `kind` would not be visible (predscope_model.py WHEN; sabotage s18 caught); the ruled when-test admits a condition as the test.
 evidence: preddoc3b EXpair.
 history:
 - 2026-11-13: macro bindings; 2026-11-14/15: the C20/C30/C33/C34 rulings, mapping by sections, the type picture; currying DEFERRED, not dropped (record "2026-11-15 CLARIFICATION — currying is DEFERRED from phase 1, not dropped").
 - FINDING for the manager (rule 5): the draft §5.3's `capture(x) := /(?<${x.label}>${x})/`, `each`, `each_group`, `where_group` are structural macros with no piece; `capture` is a BODY in the core language (a library piece), the others compile-time tools.
 - 2026-11-19 (lane preddoc3b): converted from `?`; the statements part split off as core/operators/statements (a different status).
 - 2026-11-19 (lane preddoc4): `NOT` named as the one exception to no-alphabetic-operators; the record bullet points at tuples (review r59 NEGATION, READ-15).
+- 2026-11-21 (lane predscope): a bullet added (a parameter's name is not a label, his words; an argument resolved in the caller, a reading). Status date 2026-11-15 to 2026-11-21.
 
 ## core/operators/bindings/call-forms — Several bodies for one name
 slugs: call-forms
@@ -1929,6 +1973,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-5): the STRING FUNCTIONS row routes each name to its library piece (it named core/values/functions for `left`, `strlen`, `upperStart`, `prefix_in`); the EFFECTS rows name lib/builtin/warn, lib/builtin/options, lib/builtin/export (review r60 EFFECTS).
 - 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
 - 2026-11-19 (lane predfix61, review r61 F-L, RULING-9): a row for the sort and its shorthand for longest first (`longest_first(X)`, the manager's placeholder; his `lengthSorted()`). Status date 2026-11-17 to 2026-11-19.
+- 2026-11-21 (lane predscope): rows added or widened for his placeholders of 2026-11-21: `.` as the sequence operator and `[=year]` (record: "2026-11-21 OWNER, discussing bare-nested-scope: an EXERCISE asked for (construct moderately difficult rx from macros), with his predictions"); the capture forms, a wrapper and after the fact, "no spelling suggested" (pure-label).
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:
