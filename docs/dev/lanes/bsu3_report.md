@@ -23,7 +23,7 @@ Commits (lane/bsu3):
 - 3f5d93969: the FILEPIN comment worded arch-free (C4 read red at 33953d7c2; SABOTAGE AND REACH).
 - the report commit.
 
-OWED: 724-kit-bsu3-test, then 725-kit-bsu3-mech (box queue), queued as my last act (OWED RUNS). No other process of mine is running.
+OWED: none of my own; no process of mine is running. The closing runs are box-queue jobs, queued as my last act (OWED RUNS): `724-kit-bsu3-test` (key kit-bsu3-test) and `725-kit-bsu3-mech` (key kit-bsu3-mech), ready after 724.
 
 ## THE JOB
 
