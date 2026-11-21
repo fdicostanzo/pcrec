@@ -346,7 +346,9 @@ needs: core/labels/one-rule core/patterns/sequence
   references it, not for existing; a part's own label is reached through a label given to the part.
 - A binding's name is not a path (`A.h` is an error where a label is referenced).
 - A chain `A & B` whose sides both surface h, itself used as a part, still surfaces h ambiguously (a reading).
-see: core/labels/paths
+- The exception (ruled): what a separately defined piece reads INSIDE itself is its own settings only;
+  "the same label behaviour" is for what the piece's user reads (core/holes/bare-condition/nested-scope).
+see: core/labels/paths core/holes/bare-condition/nested-scope
 WHOLE `7` HOLDS (h unset), `7,3` HOLDS (h = `3`) / SEARCHED `x7 7,3` `7`@1 (h unset) / FIND-ALL `7 7,3` [`7`@0, `7,3`@2] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`)
 
 ### Export and private labels   [core/labels/export]   ruled 2026-11-21
@@ -637,9 +639,9 @@ see: core/holes/value core/diagnostics/dollar-form core/values/one-type core/hol
 - PCRE's capture (the last value a group of the name set) is `\k<y>` inside rx text; where a `$` reads, the form
   that reads the capture is still to be spelled (core/spellings/placeholders).
 - A `$` read resolves in the namespace at the point it is written: in an `&` operand, the chain's labels; in a
-  value hole, every label visible in the surrounding rx (core/labels/export) as it stands at the hole; which
-  labels, when the definition holding the hole is used inside another or is an `&` operand, is
-  core/holes/bare-condition/nested-scope's (his three examples; a label its user sets is open).
+  value hole, every label visible in the definition the hole is written in (core/labels/export) as it stands at
+  the hole; a separately defined piece names only labels it holds and reads only its own settings
+  (core/holes/bare-condition/nested-scope, ruled).
   The free-name compile error is for rx TEXT references (`\k<y>`, numbers) inside a literal or an inserted pattern
   (a reading; core/holes/bare-condition/labels).
 - The array form (every setting of the name, in order) is its own spelling; in a hole it is not defined
@@ -1081,9 +1083,9 @@ needs: core/holes/bare-condition core/holes/labels core/conditions/pass-start-re
 by: core/principles/composed-at-point
 see: core/holes/bare-condition/nested-scope
 - Visible means by core/labels/export: a private `_v` of an inserted binding, and the labels behind `[_ = A]` or a
-  `_` part label, are not seen. The surrounding rx is the rx as composed where the hole stands; which labels a
-  hole may name when its definition is used inside another, or is an `&` operand, is
-  core/holes/bare-condition/nested-scope's (his three examples ruled; a label of the definition's user open).
+  `_` part label, are not seen. The surrounding rx is the DEFINITION the hole is written in: a separately defined
+  piece names only labels it holds and reads only its own settings of them (core/holes/bare-condition/nested-scope,
+  ruled).
 - After the label's group it reads the value just set. Before it, in a loop, it is unset the first time through
   and the previous pass's value after that (core/conditions/pass-start-read): with a lookahead, the way to
   compare an item with its predecessor. The loop reaches a second pass only where the first pass's test holds on
@@ -1092,40 +1094,45 @@ see: core/holes/bare-condition/nested-scope
   after the literal: `/(?<c>\d)${(c: >= 5)}/` is `/(?<c>\d)/ & (c: >= 5)`; inside an optional it does not.
 - Where no path of the rx as composed sets the label before the hole (loop or not), the read is unset, so the
   test's outcome is fixed: `pcrec.test.never` where it then fails, `pcrec.test.always` where it then holds (a
-  NOT, a default); not the error (outside a loop a reading). `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`, reads A's c
-  (B writes a c of its own, so the name is legal; that the value is A's is the composed reading, nested-scope).
+  NOT, a default); not the error (outside a loop a reading). In `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`, B's test does
+  not read A's c: B reads its own value only, unset there (nested-scope; the last line below).
 WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${(h: <5)}x/`)
 Pass 2: WHOLE `3;7;` HOLDS, `7;3;` FAILS, `3;` HOLDS / SEARCHED `7;3;` `7;`@0 / FIND-ALL `3;7; 7;3;` [`3;7;`@0, `7;`@5, `3;`@7] (`/(?:${NOT (h: >= 5)}(?<h>\d);)+/`)
 In an optional: WHOLE `3` HOLDS, `3x` FAILS, `7x` HOLDS / SEARCHED `a3x` `3`@1 / FIND-ALL `3x 7x` [`3`@0, `7x`@3] (`/(?<c>\d)(?:x${(c: >= 5)})?/`)
 After the literal: WHOLE `3` FAILS, `3x` FAILS, `7x` HOLDS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [`7x`@3] (`/(?<c>\d)(?:x)?/ & (c: >= 5)`)
 Fixed, fails: WHOLE `3` FAILS, `7` FAILS / SEARCHED `x3 7` FAILS / FIND-ALL `3 7 x` [] (`/${(c: >= 5)}(?<c>\d)/`)
 Fixed, holds: WHOLE `3` HOLDS, `7` HOLDS / SEARCHED `x3 7` `3`@1 / FIND-ALL `3 7 x` [`3`@0, `7`@2] (`/${NOT (c: >= 5)}(?<c>\d)/`)
-Composed: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
+Two definitions: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
+One definition: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`/(?<c>\d)${(c: >= 5)}(?<c>\d)/`)
 
-### What a hole in a used definition may name   [core/holes/bare-condition/nested-scope]   open bare-nested-scope 2026-11-21
-When a definition holding a hole is used inside another, may the hole's readers (a bare condition, `$y`) name a label its user sets, or only the labels the definition itself holds?
+### What a hole in a used definition may name   [core/holes/bare-condition/nested-scope]   ruled 2026-11-21
+A separately defined piece names only labels it holds and reads only its own settings of them; its `0` is its own match so far; the label a parameter holds is not its to name.
 needs: core/holes/bare-condition/labels core/values/reads core/conditions/match-so-far
-RULED, `0`: it is the match so far of the definition it is written in (core/conditions/match-so-far): the line
-"Match so far" below. RULED, his three examples, "rather than rules", with A := `[d = digits]`:
-1. `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)` "is legal. C can see d as a flat look into A. C cannot see rx as
-   its a binding variable not a label."
-2. `B(rx) := /${rx}xx/ & (d: <100)` "is incorrect": composed, it would match as example 1 does.
-3. `B(rx) := /${[dd = rx]}xx/ & (dd: <100)` "would be correct".
-A rule over the three (a reading, the manager's, not his words): a definition names the labels it writes and the
-public labels of the parts it writes in, never a label only its parameter holds; a parameter's public labels pass
-through to its user; a bound condition or computed label, laid against the labels of the pattern it meets
-(core/conditions/form), is outside it, or it would refuse their printed examples. Example 2 refuses COMPOSED for
-a parameter's labels.
-OPEN: a label the definition's USER sets (the Condition and Read lines); no example of his names one. Candidates:
-(a) CLOSED: a compile error, as for a parameter's label; (b) COMPOSED: the rx as composed where the definition is
-used. The same question for a hole in an `&` operand (`/(?<h>\d)x/ & /\d${(h: <5)}x/`; core/values/reads: "the
-chain's labels"). Under (a) the Condition and Read lines are a compile error. Under (b):
-Condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${inner}/`, inner := `/x${(h: <5)}/`)
-Read: WHOLE `3x3` HOLDS, `3x7` FAILS / SEARCHED `3x7 3x3` `3x3`@4 / FIND-ALL `3x3 7x7 3x7` [`3x3`@0, `7x7`@4] (`/(?<h>\d)${inner}/`, inner := `/x${$h}/`)
-Match so far (ruled): WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
+see: core/labels/flow parked/ideas/label-parameter
+- NAMES: a piece that names a label it does not hold is a compile error at its definition ("case 1: compile error
+  at inner"): `inner := /x${(h: <5)}/` is refused wherever it is used. The caller passes the condition instead
+  (`inner(c) := /x${c}/`, `inner((h: <5))`); a label variable is an idea (parked/ideas/label-parameter).
+- VALUES: a read inside a piece sees the piece's own settings only, unset before its own group the first time, its
+  own previous pass in a loop ("i meant b"). So the same rx written as one definition and composed from two can
+  answer differently: the exception to "a compose and a literal rx have the same label behavior"
+  (core/labels/flow), which holds for what a piece's USER reads, shown to him before he ruled (the last two lines).
+- `0`: the match so far of the definition it is written in (core/conditions/match-so-far).
+- His three examples, "rather than rules", with A := `[d = digits]`:
+  1. `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)` "is legal. C can see d as a flat look into A. C cannot see rx
+     as its a binding variable not a label."
+  2. `B(rx) := /${rx}xx/ & (d: <100)` "is incorrect".
+  3. `B(rx) := /${[dd = rx]}xx/ & (dd: <100)` "would be correct".
+- Readings (the manager's): a piece is a binding or a macro body, and what is written inside ONE definition
+  (literals, operands, holes, an `&` operand's hole) is one piece; a bound condition or computed label has no rx
+  of its own and is laid against the pattern it meets (core/conditions/form); an argument is the caller's text and
+  reads the caller's labels; a piece looped by its user reads its own previous pass; two uses of one piece are two
+  pieces.
+Match so far: WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
 Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (d: <100)`, A := `[d = digits]`, B(rx) := `/${rx}xx/`)
-Example 2, the composed reading he refused: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`; ruled a compile error)
 Example 3: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
+Passing the condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${inner((h: <5))}/`, inner(c) := `/x${c}/`)
+Two definitions: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
+One definition: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`/(?<c>\d)${(c: >= 5)}(?<c>\d)/`)
 
 ### A hole inside a filter operand   [core/holes/in-filter]   ruled 2026-11-18
 Holes are filled first, an inserted assertion free to cross the hole's border; the finished operand is then judged as a filter operand.

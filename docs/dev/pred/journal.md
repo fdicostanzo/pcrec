@@ -652,3 +652,14 @@ His correction first: the piece's example `/${[${c}] + 1}/` was not legal predic
 predarr (opus; `worktrees/predarr`, branch `lane/predarr` from 96f25d7a0; deliver + empty rulings written first;
 lanewatch armed) folds array-vs-passes (a) and joint-in-some and tests the readings of those two entries.
 WAITING on: lane predarr; Frank (bare-nested-scope narrowed, next).
+
+## 2026-11-21 (22:20) — bare-nested-scope RULED in two cases and folded by me
+
+Case 1: "compile error at inner" (a piece may not name a label it does not hold). His label-variable question
+answered (the parked label parameter; pass the condition or the set today). Case 2: "no, c" (letter unclear; his
+loop reason checked: same under both, the loop resets), then, shown the witness pair against compose-equals-
+literal, "lol. i meant b": own value only. Folded by me: core/holes/bare-condition/nested-scope to ruled (the
+composed lines to rejected), bare-condition/labels' "Composed" line flipped to never matching with the
+one-definition line beside it, reads' value-hole clause, a bullet on core/labels/flow for the exception; details.
+Lint 5,487 / 0. Five readings of mine listed (the piece = a binding or macro body; user's loop; two uses).
+Lane predarr still running. WAITING on: lane predarr; Frank (zero-condition-binding next).

@@ -6761,3 +6761,30 @@ CHECKED CONTEMPORANEOUSLY, and told to him:
   writing it, two answers: against "i adjust my rules to be such that a compose and a literal rx have the same
   label behavior" (label-flow, 2026-11-17).
 Nothing folded.
+
+### 2026-11-21 OWNER RULING — bare-nested-scope, case 2: b (a separately defined piece reads its own value only)
+tags: core/holes/bare-condition/nested-scope core/holes/bare-condition/labels core/values/reads core/labels/flow
+
+Told that the letter of his last answer was unclear (read as (b)), that the loop case is the same under (a) and
+(b) (entering the loop resets the label; run), and shown the witness pair: one definition `/(?<c>\d)${(c: >=
+5)}(?<c>\d)/` WHOLE `73` HOLDS; composed `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`, under (b) never matches, against
+"a compose and a literal rx have the same label behavior"; asked "Knowing the loop case is safe either way, do you
+still want (b)?". HIS WORDS, whole: "lol. i meant b"
+
+Class: a RULING, with the entry "2026-11-21 OWNER RULING — bare-nested-scope, case 1": the reading taken, and told
+to him: (b) as put, WITH the witness pair in view: "(b) Own value only. A definition is sealed for values as well
+as names, and the compose-equals-literal rule gets an exception: it holds for what the user sees, not for what a
+piece reads inside itself." So, for a separately defined piece: (1) it may not NAME a label it does not hold (a
+compile error at its definition); (2) a read inside it (a bare condition; `$c`, by "`$x` and `x:` never disagree")
+sees only the piece's OWN settings of a label: unset before its own group the first time, its own previous pass in
+a loop. The documents' line `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/` (it read A's c: WHOLE `73` HOLDS) becomes
+never matching: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (predscope CLOSEDB).
+The USER of A and B still reads `c` as labels are read (the last mention): export and flat-read-outside unchanged.
+
+The manager's readings, for the next lane or critic round to test: (a) "separately defined piece" is a binding or
+a macro body; literals, operands and holes written inside ONE definition are one piece (the definition is the
+unit, as for `0`); (b) a bound CONDITION or computed label has no rx of its own and stays laid against the pattern
+it meets (lane predscope's finding); (c) when the USER loops a piece (`B+`), the piece's previous pass is its own
+(his words name "a loop around the insides of the B" only); (d) two uses of one piece (`B SEQ B`) are two pieces:
+the second's read does not see the first's setting; (e) an argument is the caller's text and reads the caller's
+labels.
