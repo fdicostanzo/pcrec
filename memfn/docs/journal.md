@@ -4560,3 +4560,6 @@ Frank: "Scalar wrap: the function goes inline so it's just code organization? If
 
 ### 2026-11-21 03:50 — block_span.md rev 2; critic round launched
 Lane bspan2 delivered rev 2 (lane/bspan2 aaa1b3227, report docs/dev/lanes/bspan2_report.md; TaskStop). Changes: scalar-wrap A (D201 add. 2), unit U2b with the scalar no-loss check and its row T-keep, the final census, the manager calls, the D155 citation, and a ship-size section (3 rows, 1 deny, 1 card, 2 G2 sections, 4 sabotage rows, 6 spec hunks, 1 abi event; about 0.4 KB per site scalar and 1.3 KB more at w32, UNMEASURED). Frank: the selector shape is the SIMD organization agreed in the #if days (D155). Critic round crit-memfn-bspan (design, opus coordinator, plus the SHIP-SIZE lens main asked for) launched.
+
+### 2026-11-21 00:57 — correction: entry times
+The 11-21 entry headings stamped 00:0x through 03:50 were estimated, not read from the clock, and run ahead of real time. The clock (`date`) read 00:56 at the critic round's first heartbeat, so all of tonight's events from the 710 verdict (23:23 11-20) to the critic launch fall between 23:24 and about 00:50. The order of the entries is correct.
