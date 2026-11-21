@@ -47,3 +47,4 @@ Cloud `make test` run named l3wire-test on the tip sha (see the reply).
 ## STATE AT HANDOFF
 
 Rulings file: none applied (no R-n). Branch l3d27, one commit on top of 4e12d4517.
+OWED: none (the cloud make test on 8a4bc96d6 is dispatched as cloud/main/test/l3wire-test; its verdict arrives via queuewatch)
