@@ -309,6 +309,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: L2's design (L2 must re-check every forward-scan re-entry anyway, span_arms §14.4 L2's REV 3.3 line)
     refs: docs/design/span_arms.md §14.4 L3 REV 3.3/3.4; docs/dev/reviews/2026-11-20-r65-l3feat.md A, Q; docs/design/plan_row_bodies/REQ-LOOKAROUND.md (Frank's 2026-11-20 LEAN)
     The re-entry restricted to the run's consumed extent, K' = whole_maxoff + cons_lo >= 0, re-asks only consumed bytes, so it needs its own soundness argument (the decline's lesson: equal DFA states have equal futures only over consumed bytes). Frank's 2026-11-20 lean (a discussion, not a ruling): graph-based re-entry ("follow the proved bytes through the whole graph") waits for a general rx/graph manipulation layer, as the predicate language will need one.
+  - [L3-BOUNDED-RUN-REFINE] STATE:not-started — refine "bounded" toward "keeps re-entry" with gen-tier dominance facts
+    filed: 2026-11-20 manager (R-1 of lane l3chk; route 2 of the byte/UTF-8 run asymmetry, not taken)
+    status (2026-11-20): filed; nothing designed. Route 1 (declare the asymmetry, generalize the DD12a(i) checker) was taken instead
+    trigger: L2's design, or a measured loss from a bounded run that hands off nothing
+    refs: docs/dev/lanes/l3chk_report.md; docs/dev/lanes/l3r65tri_report.md; tests/codegen/manifests/k50_gate_refinement.txt [l3chk]; src/findings/default.rxt:42-46; D123-4
+    `(?<=a)(b)\1x` and `(?i)(?<=ab)(b)\1x` state a run under byte (the byte-only byte-rate tie-break) and none under UTF-8; neither side is slower than BASE. The refinement would make the pick rule decline a run that keeps no re-entry from gen-tier dominance facts, removing the asymmetry at its source rather than declaring it.
   - [L3-BACK-CLIP] STATE:not-started — a BACK join that overflows the stored bound clips lookbehind bytes first, not consumed ones
     filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat L, EMIT-5; lane l3r65 wrote the row)
     status (2026-11-20): filed; measured mixed (0.87 to +10%) on one shape, minor

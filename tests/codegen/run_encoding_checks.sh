@@ -1711,6 +1711,7 @@ def main():
     nselect_bad = 0
     nhandoff_both = 0
     npresence_order = 0
+    nrun_oneside = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
     ncompound = 0
@@ -1779,6 +1780,37 @@ def main():
                     else:
                         tb, tu = sb_, su_
                         npresence_order += 1
+            # [l3chk] A RUN STATED ON ONE ENCODING ONLY. The block above reads
+            # a run stated on BOTH sides. An encoding-only fact (the byte-rate
+            # prior is byte-only, D123-4) can break the run pick's tie so that
+            # one side states a run and the other states none (`(?<=a)(b)\1x`,
+            # `(?i)(?<=ab)(b)\1x`: byte a required run, utf8 none). The
+            # run-bearing side's presence gates sit BESIDE its run, so what
+            # the run-less side demands as presence must be covered by the
+            # run-bearing side's presence gates plus the bytes its run scans:
+            # every byte the other side asks for is asked for or scanned here.
+            # The run-bearing side's own gates are then not the "pre-check
+            # scans" its REQ_BYTE names (`gate_ok`), the run-less side keeps
+            # its ordinary check. A run on neither side, or on both, is the
+            # existing paths.
+            runs_ = ['@' in (r_.group(1) if r_ else '') for r_ in (rsb, rsu)]
+            gate_ok = {'byte': False, 'utf8': False}
+            if runs_[0] != runs_[1]:
+                rside = 'byte' if runs_[0] else 'utf8'
+                oside = 'utf8' if runs_[0] else 'byte'
+                tr_, to_ = (tb, tu) if runs_[0] else (tu, tb)
+                pr_, _x = presence_stmts(tr_)
+                po_, _y = presence_stmts(to_)
+                have = {b for _f, m, _a, _c in pr_ for b in m}
+                want = {b for _f, m, _a, _c in po_ for b in m}
+                got = {int(b) for body in REQRUN_FN_BODY_RE.findall(tr_)
+                       for b in REQRUN_MEMCHR_VAL_RE.findall(body)}
+                if not (have <= want and want - have <= got):
+                    cov_bad.append("one-sided run (%s states one, %s none): %s presence %s is not covered by %s's presence %s plus its run scan %s"
+                                   % (rside, oside, oside, sorted(want), rside, sorted(have), sorted(got)))
+                else:
+                    gate_ok[rside] = True
+                    nrun_oneside += 1
             if COVER_SCAN_RE.search(tb) and COVER_SCAN_RE.search(tu) and \
                     cover_pick_stamped(tb) != cover_pick_stamped(tu):
                 for side in ('byte', 'utf8'):
@@ -1852,7 +1884,8 @@ def main():
                 rbyte = mb.group(1) if mb else None
                 scanned = [b for body in REQRUN_FN_BODY_RE.findall(text)
                            for b in REQRUN_MEMCHR_VAL_RE.findall(body)]
-                scanned += REQCHK_MEMCHR_VAL_RE.findall(text)
+                if not gate_ok[side]:
+                    scanned += REQCHK_MEMCHR_VAL_RE.findall(text)
                 pair = None
                 setwide = False
                 if m and '@' in rstamp and '[' in rstamp:
@@ -1935,6 +1968,9 @@ def main():
                 if not mb2 or mb2.group(1) not in left:
                     bad_sel.append("REQ_WHY byte \"emitted\" vs utf8 \"dominated\" but the utf8 REQ_BYTE \"%s\" is not the byte its own DFA prefilter scans (%s) -- not the identity elision"
                                    % (mb2.group(1) if mb2 else '(absent)', ",".join(sorted(left)) or 'no memchr'))
+            elif wb != wu and runs_[0] != runs_[1] and \
+                    ((wb, wu) if runs_[0] else (wu, wb)) == ('emitted', 'none'):
+                pass    # [l3chk] the run-bearing side's run IS its pre-check; the other states none
             elif wb != wu and (wb, wu) != ('dominated', 'emitted'):
                 bad_sel.append("REQ_WHY byte \"%s\" vs utf8 \"%s\" -- not the byte-keyed dominance rule"
                                % (wb, wu))
@@ -2059,6 +2095,7 @@ def main():
         print("EXCISED %s=%d" % (k, agg[k]))
     print("HANDOFF_BOTH=%d" % nhandoff_both)
     print("PRESENCE_ORDER=%d" % npresence_order)
+    print("RUN_ONE_SIDED=%d" % nrun_oneside)
     for p in gate_pats:
         print("GATEPAT %s" % p)
     for p in gateform_pats:
@@ -2206,7 +2243,7 @@ else
             while IFS= read -r row; do
                 [ -z "$row" ] && continue
                 case "$row" in
-                    'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x')
+                    'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x'|'(?i)(?<=ab)(b)\1x')
                         printf '%s\n' "$row" >> "$WORKDIR/k50_reachable.txt"; continue ;;
                 esac
                 rowb64="$(printf '%s' "$row" | base64 | tr -d '\n')"
