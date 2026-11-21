@@ -6694,3 +6694,35 @@ Class: a RULING on the slug, answer (a): under a lift the values of a class-memb
 order, the alternation of one class per value (the first half of his 2026-11-19 sentence, "classes should be
 alternations on the class like [x] | [y] like patterns"); "in practice, that means [xy]" stays true for matching.
 No reading of the manager's is added.
+
+### 2026-11-21 OWNER RULING — bare-nested-scope, case 1: a compile error at inner; and a question on a label variable
+tags: core/holes/bare-condition/nested-scope parked/ideas/label-parameter core/conditions/form core/holes/name
+
+Asked **bare-nested-scope** narrowed, in two cases: case 1, a piece names a label it does not hold (`inner :=
+/x${(h: <5)}/` in `/(?<h>\d)${inner}/`); case 2, a piece holds the label but reads it before its own group sets it
+(`A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`); answers (a) names closed, public values shared, (b) closed for both,
+(c) composed for both; the manager's leaning (a). HIS WORDS, whole:
+
+"bare-nested-scope: case 1: compile error at inner. would this work: inner(l) := /x${(l: <5}}/
+/(?<h>\d)${inner(h)}/. i guess not unless 1. we note that l is a label variable, or 2. the definition looked at
+its use and figured out it was a label variable from its use"
+
+Read for the intended text: `${(l: <5}}` = `${(l: <5)}`.
+
+Class: (1) a RULING on case 1: "compile error at inner": a separately defined piece that names a label it does
+not hold is a compile error at its definition (answer (c) is out; (a) and (b) agree on case 1). (2) NOT ANSWERED:
+case 2 (the value read); still open. (3) a QUESTION with his own GUESS ("i guess not unless ..."): would a macro
+with a LABEL VARIABLE work, `inner(l) := /x${(l: <5)}/` called `inner(h)`; two ways named: the parameter is noted
+as a label variable, or the definition infers it from its use. DISCUSSION; nothing ruled.
+
+The manager's answer (told to him): his guess is right as the documents stand: left of `:` a name is a label
+(core/conditions/form: "Left of `:` names are labels; on the value side a bare name is a binding and a label is
+read `$x`"), so in the body `l` is a label inner does not hold (the case-1 error itself), and at the call a bare
+`h` is a binding name, not a label. It is the parked label parameter (parked/ideas/label-parameter). What works
+today, RUN (hand-built, `(?<h>[0-4])x`): pass the CONDITION, `inner(c) := /x${c}/`, `/(?<h>\d)${inner((h: <5))}/`:
+WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6]; or keep the reusable
+part as a SET, `small := <5`, the caller writing `(h: small)`. The manager's leaning on his two ways: (1) over (2):
+a mark on the parameter; inferring from the calls makes a definition's meaning depend on its uses; and a label
+variable is a NAME known at compile time, the kind of value the group-name hole already takes
+(`capture("d", x)`). The manager's recommendation: leave it parked until an example cannot be written by passing
+the condition or the set.
