@@ -2243,7 +2243,7 @@ else
             while IFS= read -r row; do
                 [ -z "$row" ] && continue
                 case "$row" in
-                    'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x'|'(?i)(?<=ab)(b)\1x')
+                    'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x')
                         printf '%s\n' "$row" >> "$WORKDIR/k50_reachable.txt"; continue ;;
                 esac
                 rowb64="$(printf '%s' "$row" | base64 | tr -d '\n')"
@@ -2319,7 +2319,7 @@ else
         while IFS= read -r row; do
             [ -z "$row" ] && continue
             case "$row" in
-                'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x')
+                'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x'|'(?i)(?<=ab)(b)\1x')
                     printf '%s\n' "$row" >> "$WORKDIR/k50undecl_reachable.txt"; continue ;;
             esac
             rowb64="$(printf '%s' "$row" | base64 | tr -d '\n')"
