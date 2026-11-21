@@ -12,6 +12,8 @@ commit. `make -s strict` clean; `python3 scripts/plan_lint.py` 0 violations. RUL
 (test-codegen, test-registry, test-rxtsource) are QUEUED behind other jobs in the box lock and had not
 started when this lane handed back: OWED RUNS below. Cloud runs: see OWED RUNS.
 
+STATE: stopped (local suites still queued; the brief's owed: none could not be met honestly)
+
 OWED: the three local suites named under OWED RUNS (queued in the box lock, not yet run).
 
 ## MERGE
@@ -58,7 +60,7 @@ None (the kit's branch is the kit's).
   line `EXIT <rc>` at its end; verdict by `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` (none = green).
   Red: report the failing section; patch no pins beyond the number move.
 - Cloud: `scripts/cloudrun --kind test` and `--kind recidentity` on the final landed sha (names
-  `u2land-test`, `u2land-recid`), launched by the manager's request after the commit; see the handback.
+  `u2land-test`, `u2land-recid`), LAUNCHED on 9c93cfdac (cloud/main/test/u2land-test, cloud/main/recidentity/u2land-recid; proved by git ls-remote).
 
 ---
 
