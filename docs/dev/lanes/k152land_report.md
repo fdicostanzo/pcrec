@@ -18,7 +18,8 @@ Two content conflicts, both append-only trackers, resolved keep-both:
 make -s strict passes; make -s test-plan-lint passes; python3 scripts/plan_lint.py: 388 rows, 0 violations. Conflict-marker scan clean.
 
 ## Push
-See the handback message; the push is gated on CI of origin/main being completed success.
+CI on the prior origin/main (run 44865982856) was completed success; pushed main to origin (f22ce49ca..f286a8e1a), pre-push-light passed. A new CI run starts on the pushed tip.
 
 ## STATE AT HANDOFF
+OWED: none
 Merge and records committed on main (named paths). Nothing owed. No worktrees or branches pruned.
