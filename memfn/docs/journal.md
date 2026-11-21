@@ -4471,3 +4471,6 @@ bcfix round 2 delivered 466f0bafd: the TIE ruling is applied, RULE_SHA b7dbbafff
 
 ### 2026-11-20 19:18 — 711 and 712 queued; main slot before 710
 Main sent CLEAR at 19:17; 711-kit-checkorder (RULE 28b518b84de080aa) and 712-kit-rampchunk (RULE efb4f0d7d3ab0bd5) are queued and monread is armed. Main asked for a build slot between 712 and 710: agreed. 710 is queued after main's next CLEAR (latest start 09:30). bcfix round 3: the TIE ruling is reversed (ties count, listed as "may hide a LOSS"); CONFIRMED needs at least half the NEW S-pick cells readable; RULE_SHA 6351bff3901e3955; drills 50/50; check re-running.
+
+### 2026-11-20 19:27 — 711 RED rc 5 (quiet wait); retried after 712
+711 ended RED rc=5 after 345 s: wait_quiet failed (it needs load1 < 2). The cause is plain, so no triage lane (purpose over wording): the box was loaded by the kit's own bcfix round-3 check (JOBS=6, ended 19:26 PASS), which main also saw (load about 9). Lesson: no kit check runs while a kit timing job is queued. 712 took the box at 19:23:52 (its wait key read failed as not waiting). 711 was retried and now runs after 712. New order: 712, 711, main slot, 710.
