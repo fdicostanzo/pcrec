@@ -1254,6 +1254,7 @@ rejected:
 readings:
 evidence: predfix61_model.py FH (lane predasc's enumerator and nested loop, copied; the two lines; unlifted 0 / 0 / 0 of 1,365).
 history:
+- 2026-11-21 (the manager, the owner's correction): the example program was printed `/${[${c}] + 1}/`, which is not legal ("[${c}] is not legal predicate language": inside `${...}` the text is the expression language, where `${` is no hole and `[..]` is an array); it is `/${/[${c}]/ + 1}/`, the class written as a literal inside the hole. The answers are unchanged (the model lifted the class with its hole, predfix61 FH; re-run 2026-11-21).
 - 2026-11-19 (lane predfix61, review r61 F-H, GENERAL-6): a new open sub-piece at the manager's ruling of review r61.
 
 ## core/holes/negated-class — The negated class hole

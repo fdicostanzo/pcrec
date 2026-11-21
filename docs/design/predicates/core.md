@@ -909,7 +909,7 @@ needs: core/holes/class core/arrays/class-order
 Unlifted, the two match alike (core/holes/class). Under a lift the alternation keeps the written order
 (core/arrays/class-order: alternations keep their written order) while one class runs lowest to highest.
 Candidates: (a) written order, the alternation of classes; (b) one ascending class.
-(a): WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 1 101` [`10`@0, `1`@3, `10`@5, `1`@7] (`/${[${c}] + 1}/`, c := [`9`, `0`]: the alternation `[9] | [0]`, `(?:10|1)`)
+(a): WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 1 101` [`10`@0, `1`@3, `10`@5, `1`@7] (`/${/[${c}]/ + 1}/`, c := [`9`, `0`]: the alternation `[9] | [0]`, `(?:10|1)`)
 (b): WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 1 101` [`1`@0, `1`@3, `1`@5, `1`@7] (the same with one class `[09]`: `(?:1|10)`)
 
 ### The negated class hole   [core/holes/negated-class]   ruled 2026-11-19

@@ -6665,3 +6665,19 @@ Owner questions the lane leaves (proposed slugs): zero-condition-binding (a cond
 rx.digit)`: the `0` of the definition it is used in, or its own, empty); bare-nested-scope narrowed; 
 capture-loop-value (PCRE's carried value or the label's last-pass value for a capture a loop sets). For a
 pcre2-reader, not him: the members of `(?i)k` in libpcre2 per mode.
+
+### 2026-11-21 OWNER, on class-hole-order: the example program is not legal predicate language
+tags: core/holes/class/lift-order core/patterns/literals
+
+Asked **class-hole-order** with the piece's example `/${[${c}] + 1}/`, c := [`9`, `0`]. HIS WORDS, whole:
+
+"/${[${c}] + 1}/  i think this rx is not written the way you intend or i am missing something. [${c}] is not legal
+predicate language."
+
+Class: a CORRECTION of the manager's example (an OBSERVATION; nothing ruled). He is RIGHT: inside `${...}` the text
+is the expression language, where `${` opens no hole and `[..]` is an array (core/patterns/literals: "from rx text
+to the expression language only by `${...}`; from the expression language to rx only by `/.../`"). The program
+meant is `/${/[${c}]/ + 1}/`: the class written as a literal inside the hole, the lift over that literal. The
+printed answers stand (the model lifted the class with its hole, predfix61 FH; re-run the same turn: (a) `(?:10|1)`
+SEARCHED `x10` `10`@1; (b) `(?:1|10)` SEARCHED `x10` `1`@1). The document's line (written by lane predfix61,
+passed by review r61 and the lint) is corrected in the same commit. The question stands as asked.
