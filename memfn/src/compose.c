@@ -1073,6 +1073,7 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
                            the readers of `d->rate`, found by grep) */
     gate_trace_art(art);
     const char *why = wf_tables_check();
+    if (!why) why = fd_tables_check();
     if (why) {
         kit_fail(art, "mf_art_begin: the kit's window tables are refused: %s", why);
         return art;

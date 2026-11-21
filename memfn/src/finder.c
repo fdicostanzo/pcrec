@@ -366,6 +366,16 @@ int fd_brow_is(const char *brow, fd_named which)
     return 0;
 }
 
+const char *fd_tables_check(void)
+{
+    for (size_t w = 0; w < sizeof fd_named_id / sizeof fd_named_id[0]; w++) {
+        size_t i = 0;
+        while (i < FD_NROWS && (!fd_named_id[w] || strcmp(fd_rows[i].id, fd_named_id[w]))) i++;
+        if (i == FD_NROWS) return "a named FIND row's id is not a row of the finder table";
+    }
+    return NULL;
+}
+
 /* THE CHAIN ORDER of a link (mf_link.order; r17b_prime.md §1.4's LEAD), set
  * by fd_pres after the rows decide, over the spans it VERIFIES: the HEAD
  * member first (P4's leading pick where a run is stated; the set's pick

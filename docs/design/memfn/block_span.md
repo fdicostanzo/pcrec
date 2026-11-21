@@ -1,13 +1,15 @@
 # The vector span: building job 710's block span at the SIMD layer (R-47, D201)
 
-Status: DESIGN, rev 4.1 (lane bsu1, 2026-11-21, opus; over rev 4, lane
-bspan4). Request R-47 (`memfn/docs/requests.md`); ruling D201 (slug
+Status: DESIGN, rev 4.2 (lane bsu2fix, 2026-11-21, sonnet; over rev 4.1,
+lane bsu1). Request R-47 (`memfn/docs/requests.md`); ruling D201 (slug
 block-build). Order: this note, critic rounds r68 and r69 (done), rev 4, the
-LIGHT re-check r71 (done: READY WITH TEXT FIXES, every unit), this
-revision (r71's text fixes), then the build. **U1 is being built (lane
-bsu1). U2 onward waits on ONE owner answer: `scalar-check-cut` (§2.2),
-which replaced `wrap-differs` [rev4.1, r71 FREEZE DRIFT].**
-Read §18 (the r71, r69 and r68 dispositions) first.
+LIGHT re-check r71 (done), rev 4.1, **U1 built (lane bsu1), U2 and U2b built
+(lane bsu2), code round r75 (done: FIX FIRST, small), this revision (r75's
+doc items, with U2's fixes)**. **`scalar-check-cut` is ANSWERED: Frank
+2026-11-21, "scalar-check-cut: yes" (D201 add. 4; §2.2). One owner question
+is OPEN: `wrap-clang` (§2.2.1), which the census's compiler scope raises
+[rev4.2, r75 CENSUS-3].** Read §18 (the r75, r71, r69 and r68 dispositions)
+first.
 
 Revision history:
 - rev 1 (2026-11-21, lane bspan): first design, gated on `scalar-wrap`.
@@ -41,6 +43,14 @@ Revision history:
   measure at U2, not 0); R71-3's floor-branch reading CONFIRMED; the owner
   question renamed `scalar-check-cut` (it replaced `wrap-differs`), both
   readings carried. Text changed in rev 4.1 is marked `[rev4.1, R71-n]`.
+- **rev 4.2 (2026-11-21): review r75 applied** (lane bsu2fix, the U2 fix
+  lane; review `docs/dev/reviews/2026-11-21-r75-memfn-bsu2.md` on the kit
+  branch, its MANAGER RULING: FIX FIRST). D201 add. 4 is recorded (FREEZE
+  NOTE row, §2.2 ANSWERED, the CONSTRAINT collapsed to arm 1); the U2b
+  census record carries the DIFFERS classes by k, GNU-diff counts and the
+  census's COMPILER SCOPE (§2.1); the owner question `wrap-clang` is OPEN
+  (§2.2.1); the identity gate is a DELIVERY step (§10.1, §14). Text changed
+  in rev 4.2 is marked `[rev4.2, r75-ID]`.
 
 Inputs read: D201 and its addenda 1-3 (main at `d255d94a3`), D146, D147,
 D155 and its items 2 and 6, addenda 1-3, D144 addendum 4, D76/D94, D80;
@@ -66,7 +76,8 @@ relays R-23 and R-24). Each row names its record.
 | D155 item 6, AMENDMENT (Frank) | "The SIMD-off artifact routes through the helper too — a one-time, measured byte move and abi event — so the floor rule stays exact." | decisions.md D155 item 6 | the strongest record for option A's shape. It says MEASURED. Arm 1 of the fork (formerly `wrap-differs`, now inside `scalar-check-cut` [rev4.1]) ships an UNMEASURED SIMD-off machine-code move on the `\w`-like sets. Whether D155 add. 3's relaxation also relaxes "measured" is a READING (this lane's), and the owner is given the word (§2.2) |
 | D155 add. 3 (Frank) | "They were more guidelines or goals than hard rules" | D155 add. 3 | main's "What stands" line: "NO `#if`/`#ifdef` in the code the kit emits into a function BODY". The single-call shape is a GUIDELINE; this design rests on the contract (§2) |
 | D155 recollection (Frank, relayed by the kit manager) | "We talked about that being the way we'd organize simd stuff anyway back when you used ifdef macro code" | D201 add. 3 (b), recorded as an OBSERVATION, not a ruling; the verbatim words are the manager's relay | context only: the selector shape is the organization D155 add. 1 Q-R9-10 agreed |
-| R-4, smallest form | "design the SMALLEST form that serves the 710 table. Add no generality beyond what 710 confirmed" (the kit's bspan ruling, main asked for it) | D201 add. 3 (b) | no widths, site kinds or knobs beyond 710's table, the deny row and the card |
+| D201 add. 4 (`scalar-check-cut`) [rev4.2, r75 SLOT-5] | Frank, verbatim, to the kit: "scalar-check-cut: yes" | D201 add. 4 (the words are in the kit journal, memfn/docs/journal.md) | the cut is accepted: U2b's census replaces the scalar timing; the real bench sites' SIMD-off code must be identical or the build stops, a differing grid shape is REPORTED, `\w{20}` is the floor witness; no T-keep. Arm 1 (wrap everything) stands, arm 2 is dead. The stop rule names no compiler: the census is gcc 15.2 -O2 (§2.1, `wrap-clang`) |
+| R-4, smallest form | "design the SMALLEST form that serves the 710 table. Add no generality beyond what 710 confirmed" (the kit's bspan ruling, main asked for it) | the kit's r69 MANAGER RULING R-4 (docs/dev/reviews/2026-11-21-r69-memfn-bspan3.md, on the kit branch); D201 add. 3 (b) holds a paraphrase ("the smallest form that serves job 710's table, no generality beyond it"), not these words [rev4.2, r75 SLOT-5] | no widths, site kinds or knobs beyond 710's table, the deny row and the card |
 | `scan-scope` | WALK only, not LIBC/PAIR: nothing else was measured (D77) | D201 add. 3 (b), KIT MANAGER | T-vscan holds on finder row **R7w** only. D1w is EXCLUDED ON PURPOSE (F-4; §3.3) |
 | `wrap-deny` | the deny `span-vector` is LIVE at both layers | D201 add. 3 (b), KIT MANAGER | `--memfn=no-span-vector` un-wraps the stretch too, restoring main's bytes at every layer and target |
 | D155 item 2 | "a SIMD level is judged on EVERY bench box that runs it: a loss anywhere blocks the level, and a win somewhere is required. Rows may land first as CANDIDATE behind the OFF switch." | D155 item 2 | [rev4, R-31] V lands CANDIDATE behind the OFF switch until a run on every bench box that runs it (§8, §13) |
@@ -76,17 +87,16 @@ relays R-23 and R-24). Each row names its record.
 The kit manager's r68 ruling (F-14, F-21) of a reading of the owner's
 conditional answer (D201 add. 2):
 
-**SIMD-off renders the H64 form. On the population (§0.1) its machine code
-is identical to today's (U2b, §2.1), or the build stops. Elsewhere the
-owner question `scalar-check-cut` (§2.2) decides [rev4.1, r71 FREEZE
-DRIFT]: if he keeps the cut, under arm 1 every eligible set is wrapped and
-accepted as code organization, and under arm 2 the proxy row keeps today's
-text on the sets it names; if he restores the short timing or the
-keep-a-loser row, U2 onward is re-designed (§2.2).**
+**SIMD-off renders the H64 form. On the population (§0.1) its machine
+code is identical to today's (U2b, §2.1), or the build stops. Elsewhere,
+every eligible set is wrapped and accepted as code organization (D201
+add. 4, `scalar-check-cut`: yes), its differing machine code REPORTED by
+the census and not timed [rev4.2, r75 SLOT-5].**
 
 No goal below can trade against this line. It does not claim that the
-wrapper is machine-code neutral everywhere: on `\w`-like sets it is not
-(§2), and `\w{20}` is eligible in the default build.
+wrapper is machine-code neutral everywhere: on three classes of set it is
+not (`\w`, `[aeiou]`, `[A-Za-z0-9_-]`; §2.1's record), and `\w{20}` is
+eligible in the default build.
 
 ## 0. Goals (ranked; a conflict goes to the higher one)
 
@@ -283,7 +293,62 @@ The census is the CONSTRAINT's checkable form on the population (identical
 there, or the build stops), and the record the owner's answer reads on
 the grid.
 
-### 2.2 OWNER QUESTION `scalar-check-cut` (OPEN; U2 onward waits on it; it replaced `wrap-differs`) [rev4.1, r71 FREEZE DRIFT; rev4, R-25, R-24]
+**The U2b record as built and re-derived [rev4.2, r75 CENSUS-1..5]** (the
+lane's census and the code round's independent re-implementation agree;
+counts are GNU diff's, equal to python difflib at `autojunk=False`):
+
+| population | compiled | eligible | IDENTICAL | DIFFERS |
+|---|---|---|---|---|
+| the 3 bench patterns x widths 32, 4095 | 6 | 6 | 6 | 0 |
+| the grid: 10 classes x k 16..31 at width 32 (`cls{17}`..`cls{32}`) | 160 | 128 | 80 | 48 (+ 32 non-movers, byte-identical C) |
+| `\w{501}` at 4095 | 1 | 1 | 0 | 1 (2 lines) |
+
+The grid's DIFFERS set is THREE classes, each at EVERY k 16..31 (not
+"`\w`-like sets"; an earlier summary and the owner-facing list "`\w{17}`,
+`\w{20}`, `\w{32}`" were incomplete):
+- `\w` (4 terms): 16 of 16; 20 lines at every k (GNU diff; a `cmp`/operand
+  change);
+- `[aeiou]` (5 terms): 16 of 16; 38 lines at every k (a block reorder, an
+  early-exit `ret` tail moved: a different change kind);
+- `[A-Za-z0-9_-]`: 16 of 16; 2 lines at every k (one `cmp` operand order).
+Identical: `[0-9a-f]` 16, `[a-f]` 16, `[^\n]` 16, `[0-9]` 8, `[\x80-\xbf]` 8,
+`[A-Z]` 8, `[+.0-9]` 8. At width 4095 the same three classes differ at every
+sampled k 32..1000 (`\w{501}` 2 lines); the other classes, and every
+T-vscan shape at k 33/49/65, stay identical. Under `-e utf8` the hex and
+`[0-9]` stretches differ at SOME k (`{25}` and `{28}`, 10 to 13 lines; an
+early-exit tail moved) while the 3 bench patterns stay identical (4 of 4):
+the census is byte-only, and no set property keys the differing set
+(§2.2 arm 2's term-count correlate is weaker still). The `\w{20}` figure
+is **20** (GNU diff, `autojunk=False`); the 42 / 26-22 / 24-20 spread of
+the earlier figures was python difflib's autojunk heuristic
+(`rxa_search` is over 200 lines), not the wrapper.
+
+**The census's COMPILER SCOPE [rev4.2, r75 CENSUS-3].** The census as
+declared is gcc 15.2 at -O2, and passes there (the stop rule is not
+tripped). On the 3 REAL bench sites the SIMD-off code is identical under
+gcc -O1, -O2, -O3 (also -O2 -fPIC and -march=native, 24 of 24 cells) and
+DIFFERS under **clang 21 -O2 and -O3** (`\d{32}` 264 lines, the two hex
+sites 12: a range test re-derived) and **gcc -Os** (all three sites 5
+lines: a branch inverted), at both widths (18 of 18). The grid at {17, 20,
+25, 32}: clang -O2 differs on 28 of 32 eligible (identical only `[^\n]`),
+gcc -Os on 32 of 32, gcc -O3 and -march=native on 12 of 32 (the -O2 set).
+D201 add. 4's record names no compiler; the owner's premise (add. 2: "the
+function goes inline so it's just code organization?") holds on the real
+sites for gcc at -O1..-O3 only, and the bench builds the pcrec arms with
+clang as well. That is the open owner question `wrap-clang` (§2.2.1). No
+timing is implied: add. 4 cut it.
+
+### 2.2 OWNER QUESTION `scalar-check-cut` (ANSWERED: yes, D201 add. 4; it replaced `wrap-differs`) [rev4.2, r75 SLOT-5; rev4.1, r71 FREEZE DRIFT; rev4, R-25, R-24]
+
+**[rev4.2] THE ANSWER.** Frank, 2026-11-21, to the kit, verbatim:
+"scalar-check-cut: yes" (D201 add. 4). **He KEEPS the cut**: the census
+(§2.1) is the SIMD-off record, arm 1 (wrap everything) stands and arm 2
+(the proxy row) is dead, the short timing and T-keep are dropped, and the
+cost is accepted and filed as [BSPAN-SCALAR-RISK] (a user pattern of a
+changed shape ships changed, unmeasured SIMD-off code; trigger: a bench or
+user pattern of that shape: measure it). The text below is the question as
+it was put and the fork as it was framed, kept as the record; its "OPEN"
+and "carries both readings" statements are history.
 
 **[rev4.1] The question as put.** Main declined to amend D201 add. 3 (a)
 on the kit's ruling alone: option A was put to Frank WITH the short scalar
@@ -362,6 +427,24 @@ whether "measured" still binds after D155 add. 3 is a reading.
 **Leaning (for the question's framing only; no ruling records a leaning,
 r69 R-24):** the bspan3 and bspan4 lanes lean to outcome 1, the only one
 with no proxy and no forfeited win. The owner decides.
+
+### 2.2.1 OWNER QUESTION `wrap-clang` (OPEN; U2 does not wait on it, it goes to main with the delivery) [rev4.2, r75 CENSUS-3]
+
+Add. 2's premise ("the function goes inline so it's just code
+organization?") and add. 4's stop rule ("the real bench sites' SIMD-off
+code must be identical or the build stops") were checked at gcc -O2 only
+(§2.1's compiler scope). The bench HAS clang arms (pcrec-auto-clang,
+pcrec-nocaps-clang, pcrec-vm-clang and the -clang-utf8 siblings), and on
+clang -O2/-O3 and gcc -Os every real site's SIMD-off code differs. The
+question for him: is the wrapper still acceptable as code organization
+where the compiler is clang (or gcc -Os), as he accepted it for gcc, or
+should those consumers keep today's text? The build does not stop on it
+(the declared census passes); a "no" is a new design (no compile-time fact
+names the consumer's compiler: §2.2 arm 2's reasoning applies, with a
+compiler for a set). The kit's leaning: carry the cost under
+[BSPAN-SCALAR-RISK] like the other changed shapes, and measure a clang
+bench arm when the scalar layer is next timed. It is the kit and main's to
+relay; this lane does not wait on it.
 
 ## 3. The selection: THE SPAN FORM TABLE (rows added to the existing choice)
 
@@ -1371,8 +1454,8 @@ the default width. This lane runs no sweep.
 **U1 may start after the light re-check** (r69 ruling R-26: U1 moves no
 artifact byte and is identical under either arm and either reading of the
 owner question). [rev4.1] r71 ran (READY WITH TEXT FIXES); U1 is built by
-lane bsu1. **U2 onward waits on `scalar-check-cut` (§2.2), which replaced
-`wrap-differs`.**
+lane bsu1. [rev4.2] `scalar-check-cut` is ANSWERED (yes, §2.2): U2 and U2b
+are built (lane bsu2) and fixed (lane bsu2fix, r75); U3 onward is next.
 
 | unit | what it does | moves bytes? |
 |---|---|---|
@@ -1389,16 +1472,23 @@ follows it. The code round precedes the landing (Frank 2026-11-15). U2 and
 U3 may share one abi event if they land together; the number is taken
 once.
 
-**Where the owner RESTORES the short timing and/or T-keep
-(`scalar-check-cut`, §2.2) [rev4.1]:** U2 onward is re-designed from r71's
-hand mapping (U2b gains a timing step in a cleared window; T-keep
-returns); the lists below do not cover it. **Where he keeps the cut,**
-the former `wrap-differs` fork applies:
+**[rev4.2] He KEPT the cut (`scalar-check-cut`: yes, §2.2): arm 1, the
+units above as written.** The re-design paths for a restored timing or
+T-keep, and arm 2's list below, are kept as history.
 
-**Under arm 1:** the units above as written.
+**The identity gate is a DELIVERY step [rev4.2, r75 CHECKS-6].**
+`tests/memfn/span_vector_identity.py` is run once per delivery of a unit
+that moves bytes (U2, and U3 when it lands), like U2b's census; it is
+wired to no make target on purpose: its reference is a build of the lane's
+merge base, which cannot exist after the merge, so it cannot ratchet. What
+repeats at make tier is `tests/axes/memfn_arm.py`'s `span-vector` DIFFER
+rows (28 / 20 floors, §9.3) under `make test-axes`. U1's "repeatable
+ratchet lands with U2's identity gate" reads that way. A pinned reference
+commit (`run_recursion_identity.sh`'s FILEPIN shape) would make it
+repeatable and is a PLAN item, not built.
 
-**Under arm 2 (the proxy row) [rev4, R-26]** the build also
-needs:
+**Under arm 2 (the proxy row; DEAD since add. 4) [rev4, R-26]** the build
+also needs:
 1. a NEW §3 fact column, the term count `kit_set_test` renders for the
    set: a renderer OUTPUT, so the same lift R-1 met for `skip` (a plan fact
    written where the set is known);
@@ -1422,9 +1512,9 @@ Option B instead of arm 2's proxy row is a separate architecture note.
 
 ## 15. Open questions
 
-1. **`scalar-check-cut`: OPEN, the owner's** [rev4.1, r71 FREEZE DRIFT]
-   (§2.2: it replaced `wrap-differs`, whose fork it now contains; both
-   readings carried). U2 onward waits on it.
+1. **`scalar-check-cut`: ANSWERED, yes** (Frank 2026-11-21, D201 add. 4;
+   §2.2) [rev4.2]. **`wrap-clang`: OPEN, the owner's** (§2.2.1, from the
+   census's compiler scope); U2 does not wait on it.
 2. Owed to main, not blocking: the cover-width timing (`cover_cap.md`
    §11.4 B) decides whether the default window width (32) rises.
 3. **Relays to main [rev4, R-23, R-24, R-29]** (records only; main's to
@@ -1662,6 +1752,28 @@ unrolled form, no knob beyond the deny row. Every r69 addition traces to a
 ruled finding (§18).
 
 ## 18. Dispositions
+
+### 18.0a r75 (review 2026-11-21-r75-memfn-bsu2, the kit manager's MANAGER RULING: FIX FIRST, small) [rev4.2]
+
+| id | ruled | answered in |
+|---|---|---|
+| CHECKS-1/3 gate floors, empty cells | FIX-NOW | `span_vector_identity.py`: per-cell mover floors (28 byte / 20 utf8 at width 32, 31 at 4095, from the committed `span_seed.rxt`, always in the population), a population-0 cell fails; the independent k-source count of §10.1's wiring row is NOT built (the committed seed's V sites are the floor) |
+| CHECKS-2 per-hunk movers | FIX-NOW | the gate diffs default against deny at each mover: one definition insertion and one walk line per site, one call per site |
+| CHECKS-4 mask rows | FIX-NOW | rows selected by name, a group replaced only where it equals that side's STATED abi (`--ref-abi`, `--abi`), per-row hit counts printed |
+| CHECKS-5 the x86-64 layer | FIX-NOW | `LAYERS` gains `-fmemfn-simd=x86-64` |
+| CHECKS-6 the gate is a delivery step | DOC | §14 |
+| CHECKS-7 stale comments | FIX-NOW | S3280's SAB_DESC, `memfn_arm.py`'s span-vector comment |
+| CHECKS-8 V text readers | PLAN at U3 (the U3 brief) | not here |
+| SLOT-1 the tag's place | FIX-NOW | the readers tolerate `key=value` tokens before `chosen=` (`reach_equal.py` and three more), `trace_format.md` |
+| SLOT-2 named-id typo | FIX-NOW (the self-check only) | `fd_tables_check` at `mf_art_begin`, sabotage S3510; the general form (a named-row index) is PLAN |
+| SLOT-3, SLOT-4 | PLAN at U3 | not here |
+| SLOT-5 this note | FIX-NOW | status, FREEZE NOTE (D201 add. 4; R-4's record), CONSTRAINT, §2.1 record, §2.2, §2.2.1 |
+| SLOT-6 decider census | FIX-NOW | `decider_census.tsv` (six wfS rows) |
+| CENSUS-1/2/4/5 | DOC | §2.1 "The U2b record" |
+| CENSUS-3 | DOC + owner question `wrap-clang` | §2.1 "compiler scope", §2.2.1 |
+| CONTRACT-1 the cap edge | DOC | registry §6¶8a `span-vector`, tuning §2.43¶3d |
+| CONTRACT-2 help text, U3 not built | FIX-NOW | `options.def`'s `span-vector` help, registry, tuning |
+| CONTRACT-3 "walks to the stop" | FIX-NOW | registry, tuning: "with the default set walk" |
 
 ### 18.0 r71 (review 2026-11-21-r71-memfn-bspan4, the kit manager's MANAGER RULING) [rev4.1]
 

@@ -823,6 +823,11 @@ typedef enum { FD_NAMED_DHORS, FD_NAMED_R7W } fd_named;
 #define fd_brow_is MF_NS(fd_brow_is)
 /* 1 iff `brow`, a row fd_find decided (its *row), is FIND row `which`. */
 int fd_brow_is(const char *brow, fd_named which);
+/* NULL iff each fd_named names a row of the FIND table (finder.c): else the
+ * broken one, which mf_art_begin refuses (wf_tables_check's shape; a typo'd
+ * id would compile and silently make fd_brow_is never true: review r75 SLOT-2). */
+#define fd_tables_check MF_NS(fd_tables_check)
+const char *fd_tables_check(void);
 /* THE ROUTED PRES DECISION (finder.c, R17-b' B3b, r17b_prime.md §1.4): the
  * chain link of every presence span of ALL_PRESENT site `s` (its `pspans`),
  * by the PRES rows P0 P2 P3 P9 (first match) and P4 (the order row, asked on
