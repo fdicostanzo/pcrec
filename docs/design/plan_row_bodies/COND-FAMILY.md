@@ -6788,3 +6788,29 @@ it meets (lane predscope's finding); (c) when the USER loops a piece (`B+`), the
 (his words name "a loop around the insides of the B" only); (d) two uses of one piece (`B SEQ B`) are two pieces:
 the second's read does not see the first's setting; (e) an argument is the caller's text and reads the caller's
 labels.
+
+### 2026-11-21 OWNER, after bare-nested-scope was ruled: "please discuss if you see an issue"; a capture of B compared against a capture of A
+tags: core/holes/bare-condition/nested-scope core/labels/backreferences core/holes/same-name core/labels/flow
+
+After the ruling (names closed; own value only) was folded and told to him, and **bound-condition** asked. HIS
+WORDS, whole:
+
+"bare-nested-scope: please discuss if you see an issue. i see a capture defined in B being used against a capture
+defined in A as a label compare and that seems to me to violate what we just discussed"
+
+Class: a REQUEST for discussion and an OBSERVATION; nothing ruled; bound-condition not answered. The reading
+taken (told to him, with the request to say if he meant another example): he speaks of `A := /(?<c>\d)/`, `B :=
+/${(c: >= 5)}(?<c>\d)/`, `A SEQ B` under the SHARED reading (a): B's test would compare against the group A
+defines; his ruling (b) removes it.
+
+The manager's answer (told to him; the manager's views, nothing folded): agreement, and (b) brings a label read
+inside a piece into line with what is already ruled for rx text: "a backreference inside a part reads the part's
+own group" (backreferences, 2026-11-18) and "A group that arrives through a hole is the inserted pattern's own"
+(same-name, 2026-11-19). Issues seen: (1) moving part of one definition into its own binding can change an answer
+(the one-definition and two-definition lines); the existing warning `pcrec.test.never` fires at B's definition
+(core/holes/bare-condition/labels, "Fixed, fails"), which (a) could not have given; (2) flags flow INTO a piece
+("the environment of the hole sets the default options for the expression inside", 2026-11-19) while label values
+now do not: an asymmetry, defensible (a default the piece may override against a reference), to be stated; (3)
+what ONE piece is when a macro uses its argument twice or a user loops a piece (`list_of(X, sep = S) :=
+/(?:${X}${S})*${X}/`; a predecessor test written in X): the manager's readings (c), (d), (e) of the ruling entry
+decide whether the last item sees the loop's last value; UNTESTED, hand-worked only; for the critic round.
