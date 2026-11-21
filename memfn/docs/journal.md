@@ -4676,3 +4676,7 @@ r75 (crit-memfn-bsu2) committed with its ruling at cabf2ab77. No answer finding:
 - CENSUS-3: the 3 real bench sites' SIMD-off code is identical only under gcc -O1..-O3. It differs under clang -O2/-O3 (\d{32} 264 lines) and gcc -Os. The bench has clang arms, so this tests the premise of Frank's scalar-wrap answer. It goes to him as wrap-clang, not as a manager ruling.
 - FIX-NOW items go to lane bsu2fix (sonnet, S3510-S3514), cut from lane/bsu2 d9d86e39e; its box work ends before main's 01:00 window.
 - Relayed to main: the risk-row shapes and the abi 110 record.
+
+### 2026-11-21 14:13 — r75 process notes (from the coordinator's closing summary)
+- The coordinator verified the CONFIRMED findings itself instead of launching a separate verifier (skill §1). This is the second time, after r68. Their repros were mostly one command each, so the ruling stands; next round's launch prompt says "launch the verifier; never verify yourself".
+- The checks critic exceeded its compile cap (~720 vs 600) and ran a full-corpus copy of the gate, both disclosed.
