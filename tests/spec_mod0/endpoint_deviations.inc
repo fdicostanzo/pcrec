@@ -43,3 +43,23 @@
 { "[0-(?[[a]])]", "`[S]` is rejected for a reason unrelated to a doorway (an "
                   "embedded ] closes the class early), so the model treats all "
                   "of S as the item; the cell is really the range 0-'('" },
+
+/* --- two `^` cells (the `bare` row `^`, registry.md section 2) -------------
+ * `^` is a `bare` row: parsed directly by the grammar, no doorway, and its
+ * `class_expect` is EMPTY, i.e. it cannot reach a class position as a
+ * construct (check04 verifies it as one of the rows carrying no class value).
+ * Inside a class it is plain text, except as the FIRST byte after `[`, where
+ * it negates. The model's rule "if `[S]` is rejected then the doorway was
+ * recognised and S whole is the item" misfires for it exactly as for
+ * `(?[[a]])` above: `[^]` is rejected (err 106, the `]` is taken as the first
+ * class member of a negated class), but that says nothing about a doorway.
+ * libpcre2 reads `[0-^]` as the ascending range 0x30-0x5e and `[^-z]` as the
+ * negation of {-, z}; both compile.
+ * The registry has carried the `^` row since the base-tier bare rows were
+ * added, after this suite's 100-row census; pinned rather than modelled, on
+ * the same reasoning as the `(?[[a]])` cell. */
+{ "[0-^]", "`[^]` is rejected only because a leading `^` negates and `]` is "
+           "then its first member; `^` is not a doorway, the range 0-'^' "
+           "compiles" },
+{ "[^-z]", "a leading `^` negates the class, it is not the low endpoint; "
+           "`[^-z]` compiles as the negation of {-, z}" },
