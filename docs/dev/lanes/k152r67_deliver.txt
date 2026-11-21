@@ -1,0 +1,5 @@
+report: docs/dev/lanes/k152r67_report.md
+sections: Summary; Anchors; Limits doc; Comments; Plan rows; Validation dispatched; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
