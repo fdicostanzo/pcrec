@@ -584,7 +584,9 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
  * classes. A_REP/A_ALT/A_EMPTY/A_EOL/A_CTX branches are not, and are chained
  * around the eligible runs at their original priority. Returns false and
  * leaves *out untouched when ineligible. In reverse mode the step order is
- * flipped, since rev(X.Y) = rev(Y).rev(X). */
+ * flipped, since rev(X.Y) = rev(Y).rev(X). Marked `PCREC_OWN_FRAME` for the
+ * mark's SECOND use: it recurses along the spine and sits under nfa_alt, so
+ * its frame stays out of every dispatcher level above it. */
 static PCREC_OWN_FRAME bool trie_key(NB *b, const Ast *a, TItem *out)
 {
     a = ast_bare(b, a);
@@ -653,7 +655,8 @@ static Frag frag_row(NB *b, const Ast *a)
 /* ---- the recursive arms of compile_ast, each in its own frame ([DD-10], K152)
  *
  * `compile_ast` is the tree's one exhaustive switch and recurses through
- * these three arms, once per nesting level and up to
+ * its three main arms (nfa_cat, nfa_alt, nfa_rep; ten functions in all carry
+ * the mark, the rest below), once per nesting level and up to
  * `PCREC_MAX_GROUP_DEPTH` times on one stack (docs/spec/limits.md §3.10).
  * Inlined, the dispatcher paid the UNION of their locals (and `trie_key`'s)
  * at every level, about four 384-byte frames per level of
@@ -661,8 +664,9 @@ static Frag frag_row(NB *b, const Ast *a)
  * on the compound route). Marked `PCREC_OWN_FRAME` for the mark's SECOND use
  * (core/internal.h): a recursive arm kept out of its dispatcher's frame, so a
  * level pays only the frames on its own path. The bodies are the old arms,
- * moved verbatim; state numbering and every `nst` call are in the same
- * order, so the machine is byte-identical. */
+ * moved out one indent level (a whitespace-only difference, except nfa_cat,
+ * whose two loops are merged into one recursion site, above); state
+ * numbering and every `nst` call are in the same order, so the machine is byte-identical. */
 static PCREC_OWN_FRAME Frag nfa_cat(NB *b, const Ast *a)
 {
     /* flatten the left-leaning spine iteratively (R-2); in reverse mode
@@ -825,7 +829,9 @@ static PCREC_OWN_FRAME Frag nfa_rep(NB *b, const Ast *a)
  * K152): out of the dispatcher, so its own frame (paid once per level on
  * every path through it) holds none of their locals. `nfa_eol` (a tail
  * `$`'s body) and `nfa_splice` (a spliced call's callee) recurse; the
- * others are leaves. Bodies moved verbatim; their comments stay at their
+ * others (nfa_class, nfa_ctx, nfa_wclass) are leaves, marked for the second
+ * use read for a leaf: kept out of the dispatcher's frame. Bodies moved out
+ * one indent level (whitespace only); their comments stay at their
  * `case` labels in `compile_ast`. */
 /* The atomic arm's row read: the by-value `KindRow` is scratch dead before
  * the arm recurses into its body, so it lives here (the mark's FIRST use)

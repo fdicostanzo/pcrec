@@ -191,7 +191,16 @@ run() {
 #   (K152): its peak was the NFA builder's `compile_ast`, whose inlined arms
 #   paid about 1.7 KB per level until each arm got its own frame;
 #   litcompound is the same nest on the compound route (the review r64
-#   witness `^(?i:…)|b$`'s route, checked to reach it below);
+#   witness `^(?i:…)|b$`'s route, checked to reach it below); of these four
+#   only litcompound dies at BASE (before the K152 fix) and on the S3470
+#   plant: it is the undo witness; nclitrep/litpost/nclitpost were GREEN at
+#   BASE and guard headroom against another compiler (litpost died on CI);
+#   capwrap/longwrap (r67 F3) are the CAPTURING nest under the same `^…|b$`
+#   wrapper (not the compound route: the reach check below does not cover
+#   them) and its long distinct-letter-atoms form, the measured WORST of
+#   every family (319,504 bytes at depth 250, gcc 15.2.0, the same before
+#   and after K152: a wrapper alternative and distinct letters in the atoms
+#   cost most);
 #   compound puts the nest in an arm of a pattern the compound route takes
 #   (two compiles, one inside the other: compile_driver -> pcrec_compound_walk
 #   -> part_compile -> compile_driver), checked below to reach that route.
@@ -227,6 +236,8 @@ callouter;;(;a;);(?1);all;0
 callinner;;(;a;);(?%d);all;0
 compound;^;(?i:;a;);|b$;all;0
 litcompound;^;(?:abc|abd;abe;)*;|b$;all;0
+capwrap;^;(abc|abd;abe;)*;|b$;all;0
+longwrap;^;(abcdefghijklmnopqrstuvwxyz|abcdefghijklmnopqrstuvwxy_;abe;)*;|b$;all;0
 '
 while IFS=';' read -r name pre open core close post feat eng; do
     [ -n "$name" ] || continue
