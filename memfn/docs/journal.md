@@ -4670,3 +4670,9 @@ lane/bsu2 delivered (lanecheck DONE; TaskStop). abi 109->111 (R-1).
 - Owed to U3: the S730 V witness.
 - Queued: 717-kit-bsu2-test and 718-kit-bsu2-mech. Box steps waited 3 h 18 min on main's grow2-lib (no jump; main kept its ASan pass).
 - Next: the code round on lane/bsu2.
+
+### 2026-11-21 14:12 — r75 (U2 code round) ruled FIX FIRST; lane bsu2fix; owner question wrap-clang
+r75 (crit-memfn-bsu2) committed with its ruling at cabf2ab77. No answer finding: 0 of 3,810 oracle runs mismatch; the deny arm equals BASE.
+- CENSUS-3: the 3 real bench sites' SIMD-off code is identical only under gcc -O1..-O3. It differs under clang -O2/-O3 (\d{32} 264 lines) and gcc -Os. The bench has clang arms, so this tests the premise of Frank's scalar-wrap answer. It goes to him as wrap-clang, not as a manager ruling.
+- FIX-NOW items go to lane bsu2fix (sonnet, S3510-S3514), cut from lane/bsu2 d9d86e39e; its box work ends before main's 01:00 window.
+- Relayed to main: the risk-row shapes and the abi 110 record.
