@@ -1662,6 +1662,9 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
 typedef struct {
     bool (*when)(const RbWalk *w, const RbRuns *root);
     RbRun (*cand)(const RbWalk *w, const RbRuns *root, int *lo, int *hi);
+    /* may the candidate, its consumed extent `[lo, hi)`, displace the
+     * consumed `best` at all (before the run choice compares them)? */
+    bool (*displaces)(const RbRun *best, int lo, int hi);
     unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
 } RbTopRow;
 
@@ -1690,8 +1693,22 @@ static RbRun rb_top_back(const RbWalk *w, const RbRuns *root, int *lo, int *hi)
     return r;
 }
 
+/* BACK's displacement condition (span_arms §14.4 L3, REV 3.3 addendum, review
+ * r65 A): every forward scan declines its re-entry at K < 0
+ * (`req_k_reentry_sound`, src/gen/emit_dfa.c), so a BACK run that displaces a
+ * consumed run at a BOUNDED offset (K >= 0, the only run the re-entry can
+ * keep) trades that re-entry for a start-byte scan, up to x10 slower than the
+ * run it displaced. The run choice is a fact below the route (layer order),
+ * so the condition is stated in the walk's own terms on every route: BACK
+ * displaces only a consumed `best` that is EMPTY or begins at no static bound,
+ * and a candidate with an EMPTY consumed extent displaces no consumed run. */
+static bool rb_top_back_displaces(const RbRun *best, int lo, int hi)
+{
+    return best->n == 0 || (lo < hi && best->off >= PCREC_W_UNBOUNDED);
+}
+
 static const RbTopRow rb_top_rows[] = {
-    { rb_top_back_when, rb_top_back, PCREC_WALK_ARM(LOOK) },
+    { rb_top_back_when, rb_top_back, rb_top_back_displaces, PCREC_WALK_ARM(LOOK) },
 };
 
 /* The run TOP chooses from the root's runs `root`, its consumed extent into
@@ -1706,7 +1723,9 @@ static RbRun rb_top(const RbWalk *w, const RbRuns *root, int *lo, int *hi)
     RbRun cand;
     RB_ROW_EACH(i, w, rb_top_rows, rb_top_rows[i].when(w, root), {
         cand = rb_top_rows[i].cand(w, root, &clo, &chi);
-        if (rn_cmp(w, &best, &cand) < 0) { best = cand; *lo = clo; *hi = chi; }
+        if (rb_top_rows[i].displaces(&root->best, clo, chi) && rn_cmp(w, &best, &cand) < 0) {
+            best = cand; *lo = clo; *hi = chi;
+        }
     });
     return best;
 }
