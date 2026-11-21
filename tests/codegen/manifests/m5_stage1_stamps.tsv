@@ -66,7 +66,7 @@ cat|dog|cow|calf|camel	EMITTED_BYTES	36187
 (?<=foo)bar	RX_VM_ALT_ISLANDS	0
 (?<=foo)bar	RX_VM_FRAMELESS	1
 (?<=foo)bar	RX_DFA_PREFILTER	"run-pinned"
-(?<=foo)bar	EMITTED_BYTES	39608
+(?<=foo)bar	EMITTED_BYTES	38505
 (a(?1)?b)	RX_ENGINE	"vm"
 (a(?1)?b)	RX_ENGINE_SEL	"selected"
 (a(?1)?b)	RX_VM_RUNGS	0x2u
