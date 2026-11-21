@@ -4660,3 +4660,13 @@ Main relayed Frank's D202 ruling. Its context names the kit's block span cost, 1
 - Frank, verbatim: "Width owner: this is kits but it needs input from pcrec eventually. Can be fixed assumption now."; "...it needs simd for reference _eventually_ or it's not actionable".
 - Nothing is built: [COVER-WIDTH-KIT] waits on a build go.
 - Tonight's scalar width night is recorded only. [COVER-WIDTH-SIMD] rides the block span's Zen 1 run, which gives the kit's U6 C6 card a second client.
+
+### 2026-11-21 13:50 — bsu2 delivered U2 + U2b
+lane/bsu2 delivered (lanecheck DONE; TaskStop). abi 109->111 (R-1).
+- Identity: commit A 0 movers (10 arms, no mask). The deny arm 0 diffs in 41894 compiles under M1-M9. The default arm moves the V sites only: 28 byte / 20 utf8 / 31 seed on c-default, 0 on c-vm.
+- U2b census (D201 add. 4): the 3 bench sites are IDENTICAL at w32 and w4095. Grid: 48 of 128 eligible DIFFER (every \w, [aeiou], [A-Za-z0-9_-] shape); \w{20} and \w{501}@4095 DIFFER (the floor witness holds); both controls pass.
+- G2 win family 27376/0; 14 sections rc=0.
+- REACH_ONLY: 671 rows reach, 2 do not (S1760/S1761 rxt_source.c, already filed as [PIN-MSG-DEPTH], untouched).
+- Owed to U3: the S730 V witness.
+- Queued: 717-kit-bsu2-test and 718-kit-bsu2-mech. Box steps waited 3 h 18 min on main's grow2-lib (no jump; main kept its ASan pass).
+- Next: the code round on lane/bsu2.
