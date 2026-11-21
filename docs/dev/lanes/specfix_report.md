@@ -34,4 +34,5 @@ Local: `make test-spec` 14 passed, 0 failed, 0 awaiting (about 27 s). Cloud `tes
 
 ## STATE AT HANDOFF
 
-Rulings applied: none (no R-n in specfix_rulings.md). OWED: the cloud run. Open: the check10 finding (manager decision above). The weight 30 s in cloud_test_shards.tsv is an ESTIMATE until a CI measurement lands.
+OWED: none
+Rulings applied: none (no R-n in specfix_rulings.md). The cloud run is dispatched, not owed by this lane. Open: the check10 finding (manager decision above). The weight 30 s in cloud_test_shards.tsv is an ESTIMATE until a CI measurement lands.
