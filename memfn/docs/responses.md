@@ -3637,3 +3637,10 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     cells named; cold verified by mincore, not tmpfs; a deterministic COUNT control; value sabotages land with the
     method row. Open: Q1-Q11 in the design notes (docs/dev/lanes/r46reply_report.md on lane/memfn-k1108; critic review docs/dev/reviews/2026-11-20-memfn-r46reply.md, to move into a
     kit design note at the build go). Nothing filed, nothing built.
+
+- **NOTICE 2026-11-21 — owner ruling to the kit, for main to file (proposed D-entry text):** "block-build (Frank,
+  2026-11-21, to the kit): build the block span at the SIMD layer by the table 710 confirmed (rule 6351bff3901e3955):
+  window site 16<=k<=1000 or scan site 24<=k<=64 -> the avx2-loop block span; else today's H64. The scalar layer stays
+  H64. Trigger: job 710 (0 repeated LOSS / 722 readable cells; 127/144 new busy pick cells WIN, median busy win 3.5x).
+  Steps: kit design note + critic round, then the build under the same-commit abi ritual with its deny row and card."
+  Kit asks main to file the R-n for it.
