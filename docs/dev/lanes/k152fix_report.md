@@ -213,7 +213,10 @@ would become a gate.
 STATE: delivered. Commits: dfeeb645d (fix), the DEPTH_FAMILIES rows,
 63dce3213 (S3470), 91dccb67a (records and spec), then this report. The
 rulings file `k152fix_rulings.md` was empty at every re-read, so no R-n
-was applied. OWED: the cloud verdict for `k152fix-test` at 91dccb67a
-(main's queuewatch). Not done: nothing in scope. The proposed headroom arm
+was applied. The cloud verdict for `k152fix-test` at 91dccb67a reaches main
+through queuewatch; it is not a lane obligation.
+
+OWED: none
+ Not done: nothing in scope. The proposed headroom arm
 above is a filing for the manager. Scratch: `$PCREC_TMPDIR/scratch/k152fix/`
 (probe, frames.py, measure*.sh and the logs named above).
