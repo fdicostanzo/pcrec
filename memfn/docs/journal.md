@@ -4680,3 +4680,11 @@ r75 (crit-memfn-bsu2) committed with its ruling at cabf2ab77. No answer finding:
 ### 2026-11-21 14:13 — r75 process notes (from the coordinator's closing summary)
 - The coordinator verified the CONFIRMED findings itself instead of launching a separate verifier (skill §1). This is the second time, after r68. Their repros were mostly one command each, so the ruling stands; next round's launch prompt says "launch the verifier; never verify yourself".
 - The checks critic exceeded its compile cap (~720 vs 600) and ran a full-corpus copy of the gate, both disclosed.
+
+### 2026-11-21 14:27 — bsu2fix delivered
+lane/bsu2fix delivered (cca26a4a6, c1dcbcaea + report; lanecheck DONE; TaskStop). Every r75 FIX-NOW and DOC item is applied, and the abi stays 111.
+- Identity gate: floors 28/20/31, the V-site diff shape, named abi-checked mask rows, and the x86-64 layer. Every gate plant goes RED; the noop plant PASSES.
+- SLOT-2 fd_tables_check + S3510. block_span.md rev 4.2 records add. 4 and wrap-clang as OPEN.
+- Identity in-lane: deny 0, movers 28/20/31; seed vs d9d86e39e 0 of 328.
+- test-codegen and G2 win ride the make test job.
+- Owed: kit-bsu2fix-test, -mech, -gate and -ids.
