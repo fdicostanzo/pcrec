@@ -3537,6 +3537,7 @@ never edited afterwards.
   pattern-esc-first head census, the always-emitted K50 guard comment, and
   pre-existing encoding-check reds. Part 2 is
   `../../design/utf_valid_design.md`.
+- `u2land_report.md` (2026-11-21, lane u2land, sonnet) — the kit's R-47 U2+U2b merged onto main and re-pinned abi 111 -> 110; the 2026-09-29 [UCP] U2 landing report of the same name is kept verbatim inside it (entry below).
 - `u2land_report.md` — [UCP] U2 landed onto current main (2026-09-29, lane
   u2land, sonnet): the four-conflict merge, C3 pins combined by mechanism
   (U2's +230 on clstri's two-tier pins), Mac section verdicts, and the Linux

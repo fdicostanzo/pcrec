@@ -330,6 +330,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     status (2026-11-21): filed as a declared known risk; the scalar timing is dropped; U2b's census holds the 3 real bench sites identical and \w{20} is its floor witness
     trigger: a bench or user pattern of a changed shape (a \w-like run of that width) appears -> measure its SIMD-off code against today's
     refs: decisions D201 add. 3 (a), add. 4; docs/design/memfn/block_span.md (lane/bspan3) section 13
+    NOTE (2026-11-21, lane u2land): R-47 U2+U2b LANDED on main (merge 2d8beeb2a of lane/memfn-k1108 994de281c; abi 110, re-pinned from the kit's 111; L3 takes 111); this row and [BSPAN-CLANG-DIFF] stay open
     NOTE (2026-11-21, kit relay): the census also differs at gcc -O2 on [aeiou]-like and [A-Za-z0-9_-]-like sets and utf8 hex/digit at some k; and the 3 REAL bench sites' SIMD-off code DIFFERS under clang -O2/-O3 and gcc -Os (identical only at gcc -O1..-O3). The kit asks the owner `wrap-clang` directly (it tests his scalar-wrap premise)
   - [BSPAN-CLANG-DIFF] STATE:not-started — block span: the 3 real bench sites' SIMD-off code differs under clang -O2/-O3 and gcc -Os
     filed: 2026-11-21 manager (Frank's wrap-clang answer: "do track the clang issue with an item for follow-up to make sure no surprises"; D201 add. 5)
@@ -379,7 +380,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     DISCUSSION (Frank 2026-11-21: "Maybe instructions per byte?"): manager's lean: yes as the unit (deterministic, portable across boxes, inexact accepted), per engine form and per regime (hit-dense, near-miss, miss-heavy), measured once and declared in a table; its home is a measurement set (measure_store/, D166), which already carries per-class values to libpcrec. Known blind spots: SIMD does more per instruction, and branch mispredicts and cache misses cost no instructions. Not yet a ruling.
   - [COVER-WIDTH-SIMD] STATE:not-started — the SIMD layer's cover-vs-engine reference timing; makes the width night actionable
     filed: 2026-11-21 manager, from Frank ("it needs simd for reference _eventually_ or it's not actionable"; D202)
-    status (2026-11-21): filed; the SIMD long-span form (the block span, R-47 U2+) is not on main yet
+    status (2026-11-21): filed; the block span's vector wrapper (R-47 U2+U2b) landed 2026-11-21 at abi 110; its SIMD-on form still waits on the bench runs ([BSPAN-ZEN1-C6])
     trigger: the block span's SIMD form delivered; rides its Zen 1 bench run ([BSPAN-ZEN1-C6]) on the targeted hardware
     refs: decisions D202, D201; docs/design/cover_cap.md §11.4
   - [COVER-NEARMISS-SKIP] STATE:not-started — the kit's near-miss skip for the long cover (O(n*k) on a dense near miss)
