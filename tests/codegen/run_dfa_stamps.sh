@@ -954,6 +954,12 @@ fi
 # set); each is a never-match pattern under the byte encoding this census compiles at (two of them
 # match under UTF, e.g. `(?i)(?=k)(?-i)[^kK]z` on U+212A + `z` and `x[^\x00-\xff]y`, and the last
 # has no zero-width assertion), so the empty artifact is correct here. Bucket +10.
+# [NEW-CORPUS d27_l3] (lane l3tri3, 2026-11-21): the last 11 entries are the DEAD-group patterns of the new
+# corpus file tests/lookaround/d27_l3/l3d27_witnesses.rxt (L3 blinded witnesses; no other file holds them), each
+# never-match: a lookbehind chain whose byte sets are disjoint, or one no byte satisfies, or one that
+# contradicts the consumed byte. libpcre2 10.46 (non-UTF, no flags -- the census compiles without the block's
+# flags) matched none of them on 22 probe subjects; (?<=a)(?<=A)c and (?<=a)(?<=B)c carry /i in their
+# witness blocks (live there) but are case-sensitively empty, the form this census compiles. Bucket +11.
 EMPTY_MANIFEST='\B\b
 \b\B
 abcd(?:\b)+efgh
@@ -1233,7 +1239,18 @@ a(?=b)\Kc
 \d(?<=[a-z])
 x(?=[^\x00-\xff])y
 x[^\x00-\xff]y
-a\K\bb'
+a\K\bb
+(?:x(?<=y))+
+(?<=[^\x00-\xff])x
+(?<=\d)(?<=[a-z])x
+(?<=a)(?<=A)c
+(?<=a)(?<=B)c
+(?<=a)(?<=b)
+(?<=a)b(?<=a)
+(?<=x)b(?<=c)
+(?>(?<=a)(?<=b))c
+(ab)(?<=a)c
+x(?<=y)z'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then
