@@ -591,3 +591,10 @@ class-value to ruled (candidate (b) rejected as enumerate's order; class-base st
 enumerate, core/arrays/class-order and its details; lint 5,279 / 0. Two readings of mine listed for the next lane
 (a caseless single character; byte mode). On my branch only now: four hand folds since P-14. 14 open pieces.
 WAITING on: Frank (flat-read-outside next).
+
+## 2026-11-21 (17:10) — flat-read-outside RULED (a) and folded
+
+His question back ("so the read is based on match not group?") answered and recorded; then "flat-read-outside: a".
+Folded by me: the piece to ruled with both run lines (predfix61 FB), statement 3's clause, details ((b) and (c)
+rejected), the parked user-doc trap. Lint 5,289 / 0. 13 open pieces. Five hand folds on my branch since P-14.
+WAITING on: Frank (bare-nested-scope next).

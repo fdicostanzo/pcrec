@@ -743,7 +743,7 @@ history:
     25. A NAME IS PRIVATE WHEN IT STARTS WITH `_`, AND `[_ = A]` HIDES ALL OF A's NAMES (export-rule, ruled
         2026-11-18). Outside a binding a part's public labels pass through, a hole and the sequence operator alike
         (hole-export, 2026-11-19); a flat `v` outside `date := [y = year] SEQ "-" SEQ [m = month]` reads the last
-        mention, the month's (the manager's reading; open: flat-read-outside): write `m.v` to say which. Spellings
+        mention, the month's (ruled 2026-11-21: flat-read-outside): write `m.v` to say which. Spellings
         are placeholders. Added by lane predspec26; restated by lane predfix61.
     26. A PART CANNOT REFER TO A NAME IT DOES NOT DEFINE (free-name, ruled 2026-11-18: "Catastrophic. The rx should
         export the group."). `B := /\k<h>/` used after a part that sets h is a compile error, not a reference to that

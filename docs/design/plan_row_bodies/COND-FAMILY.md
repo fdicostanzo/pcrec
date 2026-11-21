@@ -6251,3 +6251,23 @@ that matched": entering a branching resets the labels inside it (his "Yes. Let's
 optional that is entered and sets nothing leaves the label UNSET though an earlier group of the name matched; the
 piece's ruled line, quoted: `A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`: WHOLE `7` HOLDS (h unset), `7,3`
 HOLDS (h = `3`) (core/labels/flow; evidence preddoc3a FLOW). The path (`b.x`) is the read by GROUP.
+
+### 2026-11-21 OWNER RULING — flat-read-outside: a (a flat read outside a binding follows the inside rules)
+tags: core/labels/export/flat-read-outside core/labels/export
+
+Asked **flat-read-outside** (the entry above has the question and his question back, answered: a read is by name,
+what the path that matched left in it; the path `b.x` is the read by group). HIS WORDS, whole:
+"flat-read-outside: a"
+
+Class: a RULING on the slug, answer (a) as it was put to him: "Flat reads follow the inside rules. Both examples
+stand as shown; the path is there when you want to say which part." So outside a binding a part's public label is
+read flat as it is inside: across `|` the branch taken sets it and the read is legal; across the sequence operator
+the last mention wins. His sentence of 2026-11-19 ("I can't access x y z flat because it's ambiguous and therefore
+an error. So it's b.x or a.b.x.") is thereby not the rule; the ambiguous reference stays the error across `&`
+(label-flow, 2026-11-17). The lines he was shown: `pair & (x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`:
+WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5];
+`date & (v: <5)`, date := `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED
+`3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8] (evidence predfix61 FB).
+
+No reading of the manager's is added by this ruling. Still a reading under statement 3: a part under a `_` part
+label, or `[_ = A]`, passes none of its labels.

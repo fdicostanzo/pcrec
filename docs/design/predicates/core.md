@@ -354,7 +354,7 @@ see: core/labels/backreferences core/labels/export/flat-read-outside
 3. Outside a binding, the public labels of every part written or used there pass through, a hole and the sequence
    operator alike, with its public part labels; a part's public labels are also reached by path through its part
    label. A part under a `_` part label, or `[_ = A]`, passes none of its labels (statements 6, 7; a reading).
-   Read flat from outside, they are read as labels are inside (a reading; core/labels/export/flat-read-outside).
+   Read flat from outside, they are read as labels are inside (ruled: core/labels/export/flat-read-outside).
    `pub := [a = A] SEQ "!"` and `/${A}!/`, A := `/(?<h>\d)/`, both show `h`; `[_a = A] SEQ "!"` shows none.
 4. A part label only disambiguates; it gives no access to anything private.
 5. The caller's captures are what is visible from the top-level program by these rules.
@@ -367,17 +367,17 @@ see: core/labels/backreferences core/labels/export/flat-read-outside
 Statement 3: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`pub & (h: <5)`, pub := `[a = A] SEQ "!"`, A := `/(?<h>\d)/`)
 WHOLE `2025` HOLDS, `1999` FAILS / SEARCHED `x1999 2001` `2001`@6 / FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] (the program `year`, year := `/(?<_v>\d{4})/ & (_v: >= 2000)`)
 
-### A flat read of a part's label from outside   [core/labels/export/flat-read-outside]   open flat-read-outside 2026-11-19
-Outside a binding, is a part's public label read flat (`x`, not `b.x`) under the inside rules, or is a flat read of a part's label an error, the path required?
+### A flat read of a part's label from outside   [core/labels/export/flat-read-outside]   ruled 2026-11-21
+Outside a binding a part's public label is read flat (`x`, not only `b.x`) under the inside rules.
 needs: core/labels/export
-The rule today (statement 3, its flat-read clause the manager's reading): read flat from outside, a part's labels
-are read as inside: across `|` the branch taken sets the label and the read is legal; across the sequence operator
-the last mention wins. The owner, on `[a = ([b = rx] | [c = rx])]` with rx's labels x y z: "I can't access x y z
-flat because it's ambiguous and therefore an error. So it's b.x or a.b.x." Not yet answered.
-Candidates: (a) a flat read outside a binding follows the inside rules (the lines below); (b) a flat read of a
-part's labels from outside is a compile error; the path (`b.x`, `m.v`) is required (no line: refused).
-Across `|`, (a): WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`pair & (x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`)
-Across a sequence, (a): WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8] (`date & (v: <5)`, date := `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`)
+see: core/labels/paths core/labels/one-rule
+- Across `|` the branch taken sets the label and the read is legal; across the sequence operator the last mention
+  wins (core/labels/one-rule, core/labels/flow). Across `&` a name both sides surface stays the ambiguous
+  reference, a compile error (core/labels/flow).
+- A flat read is by NAME: what the path that matched left in it. The path (`b.x`, `m.v`) says which part's group
+  (core/labels/paths).
+Across `|`: WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`pair & (x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`)
+Across a sequence: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8] (`date & (v: <5)`, date := `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`)
 
 ### What the caller gets for an unreferenced shared label   [core/labels/export/caller-ambiguous]   open caller-ambiguous 2026-11-19
 For a public label two parts both set that the program never references, is the caller's ambiguous reference a compile error or an error when the caller reads it?
