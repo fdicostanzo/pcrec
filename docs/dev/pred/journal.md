@@ -674,3 +674,12 @@ of 2026-11-19 and today's class-value, flat-read-outside, pure-label + zero-in-d
 class-hole-order, bare-nested-scope (hand), array-vs-passes + joint-in-some (predarr). Review number asked of main.
 NEXT: the critic round over all of it; then deliver (P-17).
 WAITING on: main (review number); Frank (bound-condition).
+
+## 2026-11-21 (23:20) — critic round r77 predfold1121 launched
+
+Main gave r77. One opus coordinator `crit-predfold1121` (design mode; background) over the documents at
+lane/pred-rev28 882bcf330 against main's 74f70152e: the three folds of 2026-11-19 and all of today's. Round dir
+`$PCREC_TMPDIR/scratch/crit-predfold1121/`; standing lenses required (RULING; printed ruled examples re-derived in
+every mode + legal programs; general form and unlocks); lane reports, earlier reviews and my journal/wake denied.
+The subject stays FROZEN until the draft: rulings Frank gives meanwhile are RECORDED only, folded after the round.
+WAITING on: the coordinator's hand-back (read the round dir at each wake); Frank (bound-condition).
