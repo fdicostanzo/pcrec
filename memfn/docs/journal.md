@@ -4508,3 +4508,12 @@ Run /var/tmp/pcrec-pcrec/scratch/memfn/checkorder/run-20261120T194521/decision.m
 
 ### 2026-11-20 21:28 — 710 queued
 Main sent CLEAR at 21:27, and 710-kit-blockconfirm is queued (RULE_SHA 6351bff3901e3955; est 8,992 s, so it should end around 00:00). monread is armed. After it: the verdict to Frank and main, and unpinning bconf-night.
+
+### 2026-11-20 23:24 — 710 block-confirm: CONFIRMED
+710-kit-blockconfirm GREEN (rc 0, 6,827 s, 4,200 timed cells; rule 6351bff3901e3955); decision scratch/memfn/blockconfirm/run-20261120T212920/decision.md.
+- VERDICT CONFIRMED: with SIMD on, the declared table (window 16<=k<=1000 or scan 24<=k<=64 -> avx2-loop, else H64) has 0 repeated LOSS among 722 readable cells; it WINS 127 of the 144 readable NEW busy pick cells (17 TIE).
+- Replication of 708's cells on fresh layouts: 104 of 115 WIN. All 231 S WINs: median 3.5x, p25 1.8x, max 111x (hex hit-dense k=1000).
+- Controls: A/A repeated non-TIE 6 of 448 (expected false WINs in the verdict population 1.9); 3 harness voids (num k=64 scan cells, control WIN in the same direction); 3 INCONCLUSIVE-NOISE; QUIET SAMPLE BUSY banner (CPU7 capped at 20 %, sample max 18.8 %).
+- Scalar layer not tested (stays H64). Premise MEASUREMENT-3 unchecked: the inlined always_inline + immintrin.h text is assumed to be what the kit would ship.
+- Main's 23:23:51 push/strict build started after 710 ended (23:23:41): no cell affected.
+- Next: a build needs a design + critic round + Frank's build go. No build started. bconf-night unpinned.
