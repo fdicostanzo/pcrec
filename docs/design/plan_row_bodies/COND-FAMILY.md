@@ -6431,3 +6431,44 @@ The manager's answers (told to him; hand-built runs, `$PCREC_TMPDIR/scratch/pred
    the top-level program by these rules": the public names in the top-level scope table, flat and by part-label
    path; no `_` name; never a renamed internal name. Not stated: the caller's group NUMBERS for a composed rx;
    whether the caller gets the array of a name; the open caller-ambiguous.
+
+### 2026-11-21 OWNER, correcting himself in the bare-nested-scope discussion: a label is not a capture; a pure label is a compiler value; the question is what a pure label is scoped to
+tags: core/labels/labels-vs-captures core/labels/export core/labels/paths lib/structural/capture parked/ideas/label-only-group core/holes/bare-condition/nested-scope
+
+After the manager's answer that the compiled C exports the public names of the top-level program (export
+statement 5). HIS WORDS, whole:
+
+"i made a mistake forgetting that a label is not a capture. these labels may not exist as capture groups at all
+and non-capture group labels are just compiler values that disappear once the rx is written ie [ d = digits ] & (d:
+< 100) has no capture (no capture(...)) so therefore d would not be visible in the capture groups of the pcrec
+compiled C artifact. however, labels are visible in predicate language and perhaps that is where your rewrite idea
+sits. its not so much rewrite and to internally define what a pure label is scoped to."
+
+Read for the intended word: "and to internally define" = "AS to internally define".
+
+Class: a CORRECTION of his own last question (its premise, that the artifact exports labels) and a STATEMENT, not
+asked as a ruling: (1) a label is not a capture; (2) a label that is not a capture group is a compiler value that
+"disappear[s] once the rx is written"; (3) his example: `[d = digits] & (d: <100)` "has no capture (no
+capture(...))", so `d` is not among the artifact's capture groups; (4) labels are visible in the predicate
+language; (5) a REFRAMING of the manager's renaming: the matter is "to internally define what a pure label is
+scoped to".
+
+AGAINST THE RECORD (checked the same turn, told to him):
+- SUPPORTED by his 2026-11-17 words: "setting labels is just the label using the group-label-not-capture syntax";
+  and by the parked label-only group (his proposal of 2026-11-09, recalled 2026-11-18): named and non-capturing.
+- IN TENSION with export statement 5 as ruled ("The caller's captures: agree", 2026-11-18; the statement put to
+  him then: the caller sees the public labels of the top-level program plus paths through its part labels), with
+  core/labels/paths' first bullet (a reading of the draft §3.1: "`[x = A]` is the group form `(?<x>A)` read as a
+  label"), and with lib/structural/capture's bullet "A binding's public labels reach the caller by export with no
+  macro".
+- WITHDRAWN by the manager: answer 3 of the entry above as far as it said the caller gets `body` and `k.body`
+  for labels no capture makes.
+
+RUN for the question that follows (brute force over `\d+`'s greedy order, the stretch a canonical numeral under
+100): `[d = digits] & (d: <100)`: WHOLE `42` HOLDS, `100` FAILS, `042` FAILS / SEARCHED `x100 42` `10`@1 / FIND-ALL
+`100 42 7` [`10`@0, `0`@2, `42`@4, `7`@7]; the answers do not depend on whether `d` is a capture.
+
+The manager's readings (NOT his words; nothing folded): (a) a pure label still costs the matcher something where a
+condition or a read needs its text at match time; what disappears is its visibility to the caller; (b) with pure
+labels, scope is a matter of the predicate language alone, and renaming apart is needed only for captures and
+rx-text references. Asked of him as **pure-label**.
