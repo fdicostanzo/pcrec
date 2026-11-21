@@ -6324,3 +6324,42 @@ up"); nothing ruled; he does not answer the frame. Spellings in his example are 
 recorded for the spellings review: `.` as the sequence operator; `[=year]`, read by the manager as `[year = year]`
 (the part label named for the binding it holds, the `=x` shorthand of the binding list and of a call, ruled
 2026-11-19, in a third place: a READING, not asked); `month := digit. digit`.
+
+### 2026-11-21 MANAGER — the construction exercise he asked for: four rx built from macros only; where a reference was needed (no owner words)
+tags: core/holes/bare-condition/nested-scope core/operators/bindings core/diagnostics/dollar-form parked/ideas/label-parameter parked/ideas/label-hygiene
+
+The exercise of the entry above, done by the manager (`$PCREC_TMPDIR/scratch/pred/construct.py`, python `re`: each
+macro a function returning rx text, the construction lowered mechanically, compared with a target in the three
+modes; a scratch run for discussion, NOT a lane's evidence). Presumed macros beyond the library's: `digit`,
+`word_char`, `any`, `any_of`, `repeat`, postfix `+ * *?`, `until(stop)`, `close(t)`, `bounded_item(max)`.
+- E1 isodate, bottom up as he predicted (`year := repeat(digit, 4)`, `month := digit SEQ digit`, `isodate := [=year]
+  SEQ "-" SEQ [=month] SEQ "-" SEQ [=day]` with `(year: <2050)`, `(month: padded(between(1, 12)))` and a day rule
+  by month): 0 of 14 subjects differ from a hand-written regex of the same dates; `x2026-11-21 2051-01-01
+  1987-06-30` FIND-ALL [`2026-11-21`@1, `1987-06-30`@23]. Every label read is of a label the definition itself
+  makes. (The judge takes one path per start: the pattern is fixed width.)
+- E2 same-quote string: `until(stop) := (NOT peek(stop) SEQ any)*`; `string := [q = any_of("\"", "'")] SEQ [body =
+  until($q)] SEQ $q`: 0 of 6 differ from `(?<q>["'])(?<body>(?:(?!\k<q>)(?s:.))*)\k<q>`. The READ `$q` is passed
+  to the macro as an ARGUMENT.
+- E3 element: `close(t) := "</" SEQ t SEQ ">"`; `element := "<" SEQ [tag = word_char+] SEQ ">" SEQ any*? SEQ
+  close($tag)`: 0 of 5 differ from `<(?<tag>\w+)>(?s:.)*?</\k<tag>>`. The read passed as an argument again.
+- E4 limit list: `bounded_item(max) := [v = digit] SEQ (v: <= max) SEQ ","`; `limitlist := [limit = digit] SEQ ":"
+  SEQ bounded_item($limit)+` (a condition on every pass, against a label set outside the loop): lowered by
+  enumerating the one-digit label; 0 of 5 differ from an independent procedural reference; `5:3,7,` WHOLE FAILS,
+  SEARCHED `5:3,`@0.
+In E2, E3 and E4 the capture stands in for the label (no loop resets the label read).
+
+FINDINGS (the manager's; told to him):
+1. His prediction is SUPPORTED on these four: every piece was definable bottom up. No separately defined rx piece
+   had to read a label it does not set.
+2. Where a lower piece needs an outer value, the READ is passed as a macro ARGUMENT (`until($q)`, `close($tag)`,
+   `bounded_item($limit)`): "a read is an rx" (one-type, ruled) and a macro is inlined at its use (bindings, ruled),
+   so the read is written, and resolves, in the caller's definition. A VALUE parameter; the parked label parameter
+   was not needed.
+3. A CONDITION bound on its own (`modern := (year: <2050)`) reads labels it does not set by its nature: it is "laid
+   against the labels of the pattern it meets" (the condition form). That is not the free-name case.
+4. Rules that pinched: (a) inside a macro a test of a parameter is written `(v: <= max)` when the macro makes the
+   label, but a test of a passed read alone is `t & S`, which at the call is the form `$x & S` and draws
+   `pcrec.dollar.filter`; (b) a label a macro makes for its own use (`q`) is public unless named `_q`, and two uses
+   in one rx make two settings of one name; (c) `$q` reads the LABEL where the regex wrote `\k<q>` (the capture):
+   alike here, not inside a loop that resets; (d) `[=year]` is not a defined form.
+5. Not met: a case that NEEDS a piece to read an undeclared outer label (the open side of the question).

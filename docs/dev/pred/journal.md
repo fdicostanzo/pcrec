@@ -598,3 +598,13 @@ His question back ("so the read is based on match not group?") answered and reco
 Folded by me: the piece to ruled with both run lines (predfix61 FB), statement 3's clause, details ((b) and (c)
 rejected), the parked user-doc trap. Lint 5,289 / 0. 13 open pieces. Five hand folds on my branch since P-14.
 WAITING on: Frank (bare-nested-scope next).
+
+## 2026-11-21 (18:00) — bare-nested-scope in discussion; the construction exercise run
+
+He set my question's frame aside ("literals are not the way to think about it"; construction; fill order;
+descending and horizontal; hole kinds). My leaning (a) as put withdrawn; a frame proposed (meaning on the finished
+rx; shaping and matching holes; open or closed at a BINDING boundary). He asked for an exercise: build four rx from
+macros only. Done (`$PCREC_TMPDIR/scratch/pred/construct.py`, 0 differing on all four); recorded with findings: his
+bottom-up prediction supported; outer values reach a lower piece as READS PASSED AS ARGUMENTS; the closed rule
+never pinched; the dollar-form warning, label hygiene and `[=year]` did. Nothing folded.
+WAITING on: Frank (bare-nested-scope, his reaction to the exercise).
