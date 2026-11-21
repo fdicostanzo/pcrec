@@ -364,6 +364,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     status (2026-11-16): filed; nothing built
     trigger: cover_cap.md §11.4's timing, or the first caller of --window-search-width above 32
     refs: review r32 (2026-11-16, round covs2code) F2; docs/design/cover_cap.md §11.2 [R-45 reply]; docs/spec/tuning.md §2.56¶1
+    NOTE (2026-11-21, Frank's idea, his words in part: "search for g at last plus min width ... it starts verify span back 32, sees the g and stops"): check the span's LAST position first, verify backward, and on a miss at p restart at p+1. Manager's simulation (docs/dev/cover_nearmiss/span_sim.py): agrees with brute force on every 16-byte text for k=3..5; on `[0-9a-f]{32}` over 31 hex + g repeated, 0.031 reads per byte vs 16.5 for restart-one-later and 1.0 for a forward skip; worst seen 1.12 reads per byte. The kit owns the method (D157).
     The long cover re-tests up to k-1 positions per byte on a subject dense with near misses ([0-9a-f]{1000}: ~211x the engine). "No fix in the first build" is ruled; the caller contract now states the cost. A kit request when the trigger fires; pcrec states facts only (D157).
   - [COVER-C15-CONJ] STATE:not-started — C15 reads the width alone: drop cc_fits' three kit-bound conjuncts
     filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
