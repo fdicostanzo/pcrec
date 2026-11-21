@@ -644,3 +644,11 @@ bare-nested-scope stays open, narrowed to a label the USER of a definition sets.
 NEXT: a follow-up fold lane (predarr) for array-vs-passes + joint-in-some once class-hole-order is answered (it can
 ride along); then a critic round over all of today's folds and the three of 2026-11-19 (number from main).
 WAITING on: Frank (class-hole-order).
+
+## 2026-11-21 (21:10) — class-hole-order RULED (a), folded by me; lane predarr launched
+
+His correction first: the piece's example `/${[${c}] + 1}/` was not legal predicate language (it is `/${/[${c}]/ +
+1}/`); corrected in the piece, recorded. Then "class-hole-order: a": folded (one piece; lint 5,459 / 0). Lane
+predarr (opus; `worktrees/predarr`, branch `lane/predarr` from 96f25d7a0; deliver + empty rulings written first;
+lanewatch armed) folds array-vs-passes (a) and joint-in-some and tests the readings of those two entries.
+WAITING on: lane predarr; Frank (bare-nested-scope narrowed, next).
