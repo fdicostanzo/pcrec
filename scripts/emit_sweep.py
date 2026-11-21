@@ -624,6 +624,17 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-run-verify-wide", "c-default"): (99, 0, b"(?i:select)\\d+x"),
     ("byte", "--memfn=no-run-verify-wide", "c-vm"): (117, 0, b"(?i:select)\\d+x"),
     ("utf8", "--memfn=no-run-verify-wide", "c-vm"): (181, 0, b"(?i:select)\\d+x"),
+    # [MEMFN] R-47 U2 (lane bsu2; block_span.md §9.3): `span-vector`'s deny
+    # restores the inline span at the V sites, all of them span_seed.rxt's
+    # (the real corpus has none, §0.1). MEASURED at lane/bsu2 c51fb2d36 by
+    # memfn_arm.py --measure (both layers identical) and span_vector_identity.py
+    # (the deny's movers are exactly the artifacts with a V call): 28 byte /
+    # 20 utf8 on c-default; no start stamp moves (the walk's text only); c-vm
+    # an exact 0 (no window walk on the VM engine).
+    ("byte", "--memfn=no-span-vector", "c-default"): (28, 0, b"[0-9]{25}"),
+    ("utf8", "--memfn=no-span-vector", "c-default"): (20, 0, b"[0-9]{25}"),
+    ("byte", "--memfn=no-span-vector", "c-vm"): (0, 0, None),
+    ("utf8", "--memfn=no-span-vector", "c-vm"): (0, 0, None),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -638,7 +649,9 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
     # R17-b' B3b: G1 and the pick act on the DFA-scanned routes only; under
     # --engine=vm no pre-check is dominated and every span is REQUIRED
     (base, "--memfn=no-" + row, "c-vm")
-    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")}
+    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")} | {
+    # R-47 U2: the vector span is a window walk's; under --engine=vm there is none
+    (base, "--memfn=no-span-vector", "c-vm") for base in ("byte", "utf8")}
 
 # The NULL arm: the flag is empty, so BASE+FLAG is BASE's argv and the
 # DIFFER count must be exactly 0 (a deterministic compiler). It proves the
