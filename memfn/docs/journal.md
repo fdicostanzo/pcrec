@@ -4737,3 +4737,11 @@ crit-memfn-bsu3b: r75 SLOT-3 and SLOT-4 are DISCHARGED at ec578d053. Its residue
 From the r76 coordinator's closing note:
 - The contract critic saw a few lines of the denied bsu3 report through one unfiltered diff; it used nothing from them and they were quarantined.
 - Proposed: deny docs/dev/history/claude_md/docs__dev__lanes.md (the lanes summary index) in every round, and self-test the kit's oracle before briefing (a wrong UTF option bit, caught by its first critic). Both go into the next launch prompt.
+
+### 2026-11-21 18:05 — bsu3fix delivered (validation owed)
+lane/bsu3fix delivered (37394534b + report; lanecheck DONE; TaskStop). Every r76 FIX-NOW item is applied:
+- CHECKS-1: V_O0_CONTROL, S3515 header, new row S3516.
+- CHECKS-2: o0_compile_issues + S3517.
+- CHECKS-3: named-vspan-w32 floor + S3518.
+- CONTRACT-1; SLOT-1 (WF_VBLK_MIN/MAX + static asserts); SLOT-3 (define<->render pairing), and R-1.
+In-lane green: make, strict, arch 32/0, census 68. Its simdfloor run, the plants and the sweep were NOT run in-lane (725 held the box), so they ride jobs 726 (make test), 727 (mech: S3516-S3518 must be DETECTED) and 728 (ids vs ec578d053, movers 0).
