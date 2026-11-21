@@ -471,15 +471,10 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-10-22 manager (lane dd10fix report section 4 item 1)
   status (2026-11-20): TRIGGER FIRED: K146 is the recursion regression it names (review r62 UNLOCK-1: no single dropped mark made any DEPTH_FAMILIES row die; 11 of 21 plants moved nothing). Nothing built.
   ready: the VCG/SCC frame-ceiling check as a `make lint` row; before it: [K146-VMCOST-DEPTH] landing, then [K147-POSSESSIFY-DEPTH] (its fix needs the same guard); priority over not-started work when the close-out freeze lifts (Frank 2026-11-10)
-  refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4; known_issues K152 ([K152-NFA-DEPTH]: the NFA builder's depth, the next family member it must see)
+  refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4; known_issues K152 ([K152-NFA-DEPTH]: the NFA builder's depth, the next family member it must see; LANDED f9b1b21eb 2026-11-21, trigger fired)
   Note (review r67 F7 + F10, 2026-11-21): a partial undo of K152 is invisible to every check (each piece alone, marks dropped or nfa_rep alone inlined, leaves the deepest DEPTH_FAMILIES row 7.6% under the budget, and run_compile_stack.sh reads the budget, not headroom): the frame census this row charters (`-fstack-usage` per recursive dispatcher; compile_ast 384 to 32 B is measurable directly) makes a partial undo visible; trigger = this row's own. Sibling listed, no witness: src/gen/emit_vm.c `vm_rev_emit` has the same inlined kind-switch shape (288 B frame, vm_revdet_rep 720 B; `x(?<=(?:a ... b ...))y` peaks at 66,960 B at depth 100, depth 250 is refused by the group-depth limit); trigger to mark it = a DEPTH_FAMILIES row through a lookbehind body over 70% of the budget, or a raise of PCREC_MAX_GROUP_DEPTH.
   Note (review r64 F13, 2026-11-20): the mech coverage of K147's explicit stack has one unwitnessed decision point, gk_build's CAT update order (plant V3i was silent on 8 probes, 0 emitted-byte movers): find a witness first, then a row; the rest (the depth-- leak, ss_walk's ALT over-approximation, an out-of-range member, stack growth caught only by test-stackdepth) are answer-silent by construction and NOTED. An "explicit stack, no cycle" category belongs here once [ARENA-REGROW] lands.
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
-- [K152-NFA-DEPTH] STATE:started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
-  filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
-  status (2026-11-21): FIXED on lane/k152fix, not landed (k152fix_report.md): own frames on every compile_ast arm, one recursion site in nfa_cat; 0 movers; S3470; review r67 fixes (anchors, limits text) in lane k152r67; true worst 319,504 B (pre-existing shape)
-  trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
-  refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]
 
 ## Candidates ([OPTLOOP])
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
@@ -2245,7 +2240,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Against the house rule on recursion: descend the spine iteratively and recurse only into items hanging off it. The same fix applies to both.
 - [GROWTH-SWEEP] STATE:not-started — a test category for extreme growth (depth, length, memory): graceful refusals, never crashes
   filed: 2026-11-20 manager, from the owner's go ("growth-sweep: go") and the survey lane growsurv
-  status (2026-11-20): survey merged (docs/dev/lanes/growsurv_report.md: 121 recursive functions, 34 candidate cells); crashes filed as K147-K152; red until fixed: K148, K150, K151, K152; the runner is not built
+  status (2026-11-20): survey merged (docs/dev/lanes/growsurv_report.md: 121 recursive functions, 34 candidate cells); crashes filed as K147-K152; red until fixed: K148, K150, K151 (K152 LANDED f9b1b21eb 2026-11-21: trigger fired for its depth family); the runner is not built
   waits: K147 landing (the runner is built after it); pairs with [LINT-FRAME]. Note (r64 F12): `item_first` stays on C recursion, 352 B/level, ~88 KB at 250 (within budget)
   next: after K147 lands, a lane builds the runner from the survey's product (construct kind x quantifier x branch position x core, at depth 250 and 251 on the budget thread; spine-length families at 16,384 and 100,000; memory families under scripts/watchdog -m) and absorbs tests/thread's DEPTH_FAMILIES
   refs: docs/dev/lanes/growsurv_report.md ("Suggested runner shape"); docs/dev/lanes/growsurv_evidence/; known_issues K147-K152; [LINT-FRAME]; [LM-SPINE-DEPTH]; docs/spec/limits.md §3.10
