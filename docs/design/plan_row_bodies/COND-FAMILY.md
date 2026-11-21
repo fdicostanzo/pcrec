@@ -6363,3 +6363,22 @@ FINDINGS (the manager's; told to him):
    in one rx make two settings of one name; (c) `$q` reads the LABEL where the regex wrote `\k<q>` (the capture):
    alike here, not inside a loop that resets; (d) `[=year]` is not a defined form.
 5. Not met: a case that NEEDS a piece to read an undeclared outer label (the open side of the question).
+
+### 2026-11-21 OWNER, discussing bare-nested-scope after the exercise: `_x` closed in a binding, `x` available where the binding is used; how do the predicate rules translate into the rx literal
+tags: core/holes/bare-condition/nested-scope core/labels/export core/holes/labels core/operators/bindings
+
+After the construction exercise and the manager's leaning (closed at a binding; outer values passed as arguments;
+conditions open by nature). HIS WORDS, whole:
+
+"we have two sides to this. predicate language: i can see that _x labels should be closed within a binding
+definition and x labels should be available when the binding is used, including through another binding. i know
+that at its based, all macros are of the form x(y) := /blah${y}abc/ but what i can't tell is how the predicate
+rules translate into the rx literal"
+
+Read for the intended word: "at its based" = "at its base".
+
+Class: DISCUSSION; nothing newly ruled. (1) A STATEMENT of the predicate-language side, which is the export rule as
+already ruled (2026-11-18 export-rule, 2026-11-19 hole-export: "Agree both pass through"): `_x` closed within the
+binding it is defined in, `x` available where the binding is used, "including through another binding". (2) A
+PREMISE: every macro is at base `x(y) := /blah${y}abc/`. (3) A QUESTION to the manager: how the predicate rules
+translate into the rx literal. He does not answer open-or-closed.
