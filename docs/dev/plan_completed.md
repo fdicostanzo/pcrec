@@ -6629,3 +6629,11 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   filed: 2026-11-19 manager, from review r58 IDENT-1 (pre-existing; found while reviewing L1's stackdepth fix)
   status (2026-11-20): DONE: landed from lane/k146land (make test 202 GREEN); PCREC_OWN_FRAME on the vm_emit_node/vm_cost recursive arms, DEPTH_FAMILIES rows lookrep, altrep; true worst 353,512 B at depth 250; zero emitted-byte movers.
   refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md; docs/dev/reviews/2026-11-20-r62-k146fix.md
+- [K147-POSSESSIFY-DEPTH] STATE:done — possessify's first_of/text_first recursion kills pcrec_compile on `(a|b(a|b…\1)*)*` (K147)
+  filed: 2026-11-20 manager, from review r62 DEPTH-3/DEPTH-4 (pre-existing; answer-adjacent: libpcre2 compiles it)
+  status (2026-11-20):  DONE: landed on main 0016d430f from lane/k147tri (cloud make test 44851932923 GREEN): FIRST fold on an explicit arena stack + own frames; K147's two shapes and K149's compile at depth 250 (257,552/257,552/317,504 B); zero emitted-byte movers; K152 filed for the NFA builder's depth.
+  refs: known_issues K147 (the family survey, r62 UNLOCK-2, is its notes); docs/dev/reviews/2026-11-20-r62-k146fix.md; docs/spec/limits.md §3.10¶1
+- [K149-FIRSTOF-NOBREF] STATE:done — `(abc|abd(…abe))*` kills pcrec_compile in first_of with no backreference (K149, K147's second shape)
+  filed: 2026-11-20 lane growfile, from growsurv KR-B
+  status (2026-11-20):  DONE: landed on main 0016d430f from lane/k147tri (cloud make test 44851932923 GREEN): FIRST fold on an explicit arena stack + own frames; K147's two shapes and K149's compile at depth 250 (257,552/257,552/317,504 B); zero emitted-byte movers; K152 filed for the NFA builder's depth.
+  refs: known_issues K149, K147; docs/dev/lanes/growsurv_report.md C4

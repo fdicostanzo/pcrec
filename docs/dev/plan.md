@@ -2229,11 +2229,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-20): filed; nothing built. `(?<g0>a(?&g1)?)...` at N=200 passes 2 GB; N=160 refuses by size
   next: a refusal ceiling on targets x slots before the table is built, with a limits.md row; add the cell to [GROWTH-SWEEP]
   refs: known_issues K151; docs/dev/lanes/growsurv_report.md L2/C10; src/gen/emit_vm.c (vm_build_region_saves)
-- [K149-FIRSTOF-NOBREF] STATE:not-started — `(abc|abd(…abe))*` kills pcrec_compile in first_of with no backreference (K149, K147's second shape)
-  filed: 2026-11-20 lane growfile, from growsurv KR-B
-  status (2026-11-20): fixed on lane/k147fix with [K147-POSSESSIFY-DEPTH], awaiting landing: at its base N=237 compiles and N=238 dies; after, 317,504 B at depth 250 (DEPTH_FAMILIES row litrep)
-  next: rides [K147-POSSESSIFY-DEPTH] (same functions); add the shape to its DEPTH_FAMILIES rows
-  refs: known_issues K149, K147; docs/dev/lanes/growsurv_report.md C4
 - [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 SLOT-6 (lane trailgc3)
   status (2026-10-29): BOONIES, unscheduled. The K134 trail checkpoint is its only member; tests/vm/trail_checkpoints.py would become the generic "every weighted cycle passes a safepoint" check.
@@ -2468,11 +2463,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: starts only on Frank's word; no row-specific trigger recorded
   BOONIES (Frank, 2026-10-09: "File it in boonies"). Fold a caseless backreference's/variable's capture ONCE (canonical case-set representatives, bounded buffer) and compare only the subject side, keyed on the capture span. Pays only when the capture holds still across many compares (`(?i)^(\w+).*\1`), and mostly under utf8. It loses when backtracking is inside the capture. NOT TRIGGERED; no measurement chartered.
 
-- [K147-POSSESSIFY-DEPTH] STATE:not-started — possessify's first_of/text_first recursion kills pcrec_compile on `(a|b(a|b…\1)*)*` (K147)
-  filed: 2026-11-20 manager, from review r62 DEPTH-3/DEPTH-4 (pre-existing; answer-adjacent: libpcre2 compiles it)
-  status (2026-11-20): fixed on lane/k147fix, awaiting landing (lanes/k147fix_report.md): FIRST fold on an explicit stack + own frames; K147's two shapes and K149's compile at depth 250 (257,552/257,552/317,504 B); zero movers
-  trigger: the NEXT lane of K146's family, right after K146 lands (Frank/manager ruling, r62); fix by the same general depth mechanism ([DD-10] PCREC_OWN_FRAME), with DEPTH_FAMILIES rows for both shapes; [LINT-FRAME] is scheduled after it
-  refs: known_issues K147 (the family survey, r62 UNLOCK-2, is its notes); docs/dev/reviews/2026-11-20-r62-k146fix.md; docs/spec/limits.md §3.10¶1
 - [K152-NFA-DEPTH] STATE:not-started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
   filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
   status (2026-11-20): filed; nothing built. `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` DIES (rc 139) on the 442,368-byte thread; the plain nest costs 440,176 B (440,560 B with a trailing element), the compound route about 13 KB more

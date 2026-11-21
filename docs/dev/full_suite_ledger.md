@@ -25,6 +25,7 @@ Trigger state (D177), recounted 2026-11-16: row 1 (tonight, 2026-10-23) discharg
 - 2026-11-19 d68a1294c major — lookaround unit L1 ([REQ-LOOKAROUND]): census, remodels RM-1/RM-6/remodel 3 (refactors of shared fact-walk mechanisms: D177 row 3 FIRES), the feature, the run_pin sub-stretch rule, the C4 data-scope rule; branch gates green (identity, mech, axes, make test); full cloud suite dispatched on d68a1294c
 - 2026-11-20 1c26d77ea major — lookaround L3 remodels ([REQ-LOOKAROUND]): five byte-identical refactors of shared fact/move mechanisms (RM-2, RM-3, RM-5, RM-4, rn_cmp) + review r63 fix: D177 row 3 FIRES; identity per commit, mechA rows, trace and make test GREEN locally; no cloud suite yet (it can ride the L3 feature landing).
 - 2026-11-20 adea38104 minor — merge lane/k146land 06f394fcf (K146 compile-stack fix: PCREC_OWN_FRAME on the vm_emit_node/vm_cost recursive arms, DEPTH_FAMILIES lookrep+altrep; a bug fix, zero emitted-byte movers; K147 filed, S101 anchor, perfrun cap 3600, re-pins); lane gates: make test GREEN (job 202-main-k146land-test2, wall 2677 s), strict and pins GREEN; landing lane k146merge
+- 2026-11-20 0016d430f minor — merge lane/k147tri 01620e456 (K147 + K149 compile-stack fix: possessify FIRST fold on an arena explicit stack + own frames; review r64 fixes, K152 filed, arm-B depth-bound cell + S3440; cloud triage; a bug fix, zero emitted-byte movers); cloud make test GREEN (run 44851932923); landing lane k147land
 
 ### minor
 
