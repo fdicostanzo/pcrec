@@ -10295,3 +10295,11 @@ D196 addendum 2 (2026-11-12, Frank): MECHANISM AND SYNTAX ARE UNTETHERED. "The &
 - **Decision (owner, verbatim):** "pilot-verdict: it seems successful to me. the 20 minutes spent is days not refactoring later. i say keep it. also, keep it at the current size trigger. its easier to back that off then wonder later if we missed something"
 - **Consequences:** a feature above the size trigger gets an accepted architecture note before its design (manager skill trigger table, pcrec-architect skill section 2, no longer marked provisional). The A6 retro test is still owed. Step costs are recorded per lane from now so a later revisit has numbers.
 - **Revisit when:** the step's recorded cost or a run of notes that find nothing argues for raising the trigger (the owner's "easier to back that off").
+
+## D201 — [MEMFN] block-build: build the block span at the SIMD layer by job 710's table (Frank 2026-11-21, to the kit)
+
+- **Context:** kit job 710 (block-confirm, GREEN 2026-11-20 23:23, 6,827 s) ran a table the kit declared before any data (rule 6351bff3901e3955): 0 repeated LOSS over 722 readable cells at SIMD-on; 127 of the 144 new busy cells it routes to blocks WIN (median 3.5x, max 111x); A/A noise 6/448. Decision file: the kit's scratch `memfn/blockconfirm/run-20261120T212920/decision.md`; kit journal 914b46e45. Asked as **block-span-design** (main) / **block-build** (kit).
+- **Decision (owner, verbatim, to the kit; recorded in memfn/docs/responses.md, kit commit 29e893818):** "build with simd layer".
+- **Read as:** the build go for the 710 table at the SIMD-on layer: window site 16<=k<=1000 or scan site 24<=k<=64 -> the avx2-loop block span; else today's H64. The scalar layer stays H64 (untested). Steps: kit design note + critic round, then the build under the same-commit abi ritual with its deny row and measurement card. Request R-47.
+- **Consequences:** a kit build; pcrec sees a kit byte move as its own abi event in the same commit (D146/D147). Off by default rides on -fmemfn-simd (OFF) as today.
+- **Revisit when:** the scalar layer is measured, or a post-build bench run shows a loss the table did not predict.
