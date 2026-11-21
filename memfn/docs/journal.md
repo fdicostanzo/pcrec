@@ -4745,3 +4745,10 @@ lane/bsu3fix delivered (37394534b + report; lanecheck DONE; TaskStop). Every r76
 - CHECKS-3: named-vspan-w32 floor + S3518.
 - CONTRACT-1; SLOT-1 (WF_VBLK_MIN/MAX + static asserts); SLOT-3 (define<->render pairing), and R-1.
 In-lane green: make, strict, arch 32/0, census 68. Its simdfloor run, the plants and the sweep were NOT run in-lane (725 held the box), so they ride jobs 726 (make test), 727 (mech: S3516-S3518 must be DETECTED) and 728 (ids vs ec578d053, movers 0).
+
+### 2026-11-21 18:45 — 726 RED: the new -O0 control does not compile; lane bsu3fix2
+726-kit-bsu3fix-test went RED on test-memfn-simdfloor only. One FAIL: "x86-64-v3: control __w32's always_inline dropped did not compile at -O0".
+- The CHECKS-1 control as built cannot prove the -O0 rule. bsu3fix never ran simdfloor in-lane, because the box was held by 725.
+- 727 was cancelled; 728 ids is running.
+- Lane bsu3fix2 (sonnet) fixes the control, with light single-section runs until 20:00 (Frank's hold: box clear by 19:15, evening hold to 01:00, main's timing window 01:00-07:00). Its make test + mech are gated after 07:00 11-22.
+- Lesson: a lane must not hand off a CHECK change unrun because the box was busy. The brief should say: wait for the lock and run the touched section, or STOP and report.
