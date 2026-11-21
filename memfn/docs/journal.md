@@ -4579,3 +4579,16 @@ Main's 2026-11-21-r67-k152 took r67 first. The kit's memfn-bspan round is now do
 
 ### 2026-11-21 01:19 — rev 3 delivered; re-check round r69 launched
 Lane bspan3 delivered block_span.md rev 3 (lane/bspan3 01f1c3959; r68 applied, §18 the F-id map; TaskStop). The trace build re-derived the population: 3 bench sites (D-hors x2, R7w; k31). T-vscan is keyed on R7w. SPAN-SEED has 41 patterns, with V-site floors of 28 and 31. Re-check round crit-memfn-bspan3 (r69, number from main) launched with a separate verifier. Waiting on Frank: wrap-differs.
+
+### 2026-11-21 01:50 — review r69 ruled; fix lane bspan4
+Re-check r69 (design, 5 lenses + a separate verifier, 22/22 HOLD) committed with the ruling (326c7c2f0). NOT READY as frozen, no answer-level defect.
+Blockers:
+- the C18 amendment is red on correct text (-O0 ymm rule at B=16);
+- the identity mask misses ;
+- skip is not a plan_of fact;
+- 8 more sabotage anchors move;
+- test-axes needs a MEMFN_CLASS row;
+- U2b's padding list stops the build on a real site.
+Decisions: R-2 store-once; R-4 lift fn_selector only; R-20 MEMFN_CLASS row plus a committed SPAN-SEED .rxt (oracle-verified); R-31 CANDIDATE until every bench box runs it (D155 item 2, D144 add. 4).
+R-25 corrects the wrap-differs question: arm 1 also waives D147's SIMD-off reading where code differs, and an aggregate measurement is possible but declined on cost.
+Relays to main: R-23, R-24, R-29, R-30's rows. Fix lane bspan4 (opus) writes rev 4. Then a light re-check; U1 may start after it, and U2 onward waits on wrap-differs.
