@@ -12,9 +12,7 @@ commit. `make -s strict` clean; `python3 scripts/plan_lint.py` 0 violations. RUL
 (test-codegen, test-registry, test-rxtsource) are QUEUED behind other jobs in the box lock and had not
 started when this lane handed back: OWED RUNS below. Cloud runs: see OWED RUNS.
 
-STATE: stopped (local suites still queued; the brief's owed: none could not be met honestly)
-
-OWED: the three local suites named under OWED RUNS (queued in the box lock, not yet run).
+OWED: none (the local suites and both cloud runs have since read green; see OWED RUNS).
 
 ## MERGE
 
@@ -54,6 +52,8 @@ ledger, the NOTE and the history index instead.
 None (the kit's branch is the kit's).
 
 ## OWED RUNS
+
+VERDICTS (read after handback): local `make test-codegen test-registry test-rxtsource` EXIT 0, no `*** [...test-X] Error` lines; cloud u2land-test and u2land-recid GREEN (per main); main pushed at 68521b3ad. Nothing is owed. The text below is the state at handback.
 
 - `scripts/boxlock run -- make test-codegen test-registry test-rxtsource`, queued 15:40 on 2026-11-21 and
   waiting behind other holders. Log: `/var/tmp/pcrec-pcrec/scratch/u2land/suites.log`; completion
