@@ -2,17 +2,17 @@
 
 Status: DESIGN, rev 3 (lane bspan3, 2026-11-21, opus). Design only: no
 code. Request R-47 (`memfn/docs/requests.md`); ruling D201 (slug
-block-build). Order: this note, a critic round (r67, done), this revision,
+block-build). Order: this note, a critic round (r68, done), this revision,
 then the build. **The build waits on ONE owner answer: `wrap-differs`
-(§2.2).** Read §18 (the r67 dispositions) first.
+(§2.2).** Read §18 (the r68 dispositions) first.
 
 Revision history:
 - rev 1 (2026-11-21, lane bspan): first design, gated on `scalar-wrap`.
 - rev 2 (2026-11-21, lane bspan2): scalar-wrap read as option A, option B
   retired, U2b and T-keep added, population record replaced by the final
   census, manager calls recorded, §17 ship-size.
-- **rev 3 (2026-11-21): review r67 applied** (lane bspan3; review
-  `docs/dev/reviews/2026-11-21-r67-memfn-bspan.md` on the kit branch, with
+- **rev 3 (2026-11-21): review r68 applied** (lane bspan3; review
+  `docs/dev/reviews/2026-11-21-r68-memfn-bspan.md` on the kit branch, with
   the kit manager's ruling). The population corrected to 3 bench sites and
   0 corpus sites; seeded witness lists for every population-read check;
   T-keep, §2.1 (c), the scalar timing, the G1 timing window and C6's
@@ -27,13 +27,13 @@ Inputs read: D201 and its addenda 1-2, D146, D147, D155 and its addenda
 run's `decision.md` (TABLE, ARMS, THE CLAIM, CONTROL), `confirm.py`,
 `spike708.py` (`span_fn`, `nib_blk`, `span_body`); the 708 reports; the
 reviews 2026-11-20-memfn-blockconfirm and -bcfix-recheck (MEASUREMENT-3);
-review r67 and its five critic files; `tests/memfn/simd_floor_check.py`;
+review r68 and its five critic files; `tests/memfn/simd_floor_check.py`;
 `memfn/src/window.c`, `ofsskip.c`, `vany.c`, `runcmp.c`;
 `docs/dev/guide/README.md` + `coding.md`.
 
 ## FREEZE NOTE: the rulings this note rests on, restated here [rev3]
 
-Review r67 found that four of the rulings below lived only in lane
+Review r68 found that four of the rulings below lived only in lane
 rulings files (gitignored) and the kit journal. They are restated here so
 that this note is their record for the build and the code round.
 
@@ -70,7 +70,7 @@ Non-goals: the scalar layer's own block form (D201: "Revisit when the
 scalar layer is measured"); a 16-byte (`w16`) rung; the SWAR rung of 708's
 cascade (no table row reaches it, §4.4); a periodic span; the LIBC, PAIR,
 D1w and floor sites (unmeasured, §3.3); aarch64 (K-4; D147 addendum 8); a
-scalar timing of the wrapper (cut by r67, F-14).
+scalar timing of the wrapper (cut by r68, F-14).
 
 ### 0.1 Population record (information only, D201 add. 1) [rev3: corrected, F-2]
 
@@ -80,7 +80,7 @@ sites, and the corpus holds 0 V sites at any width.** The corpus row
 finder-row D1 site (`FF_LIBC`, a memchr find), which `scan-scope`
 excludes; it has no window site at width 32. The census script's "scan"
 was any site without `rxa_mf1_sh[` (a text proxy), not the table's
-predicate (r67 lesson 1: count a site's KIND by the table's own predicate
+predicate (r68 lesson 1: count a site's KIND by the table's own predicate
 on the trace record).
 
 | pattern (bench) | finder row (MFTRACE FDROUTE) | k | at width 32 and 4095 |
@@ -180,7 +180,7 @@ differ on some sets.** Frank's words (D201 add. 2, verbatim): "the
 function goes inline so it's just code organization? If that's true I
 don't have a problem with that." The function is `always_inline`, so in
 source it is only code organization. What gcc makes of `rxa_search` is a
-separate fact [rev3, F-13: corrected; numbers from r67's probes, V8/V12]:
+separate fact [rev3, F-13: corrected; numbers from r68's probes, V8/V12]:
 - **On the real population** (the 3 bench sites, §0.1) the shipped
   two-level shape (selector → `__body`) gives SIMD-off `rxa_search`
   machine code that differs in NO instruction from today's (one site
@@ -196,7 +196,7 @@ separate fact [rev3, F-13: corrected; numbers from r67's probes, V8/V12]:
   evidence for the shipped wrapper, and this note no longer cites them.
 - At `-fmemfn-simd=x86-64` (w16 only) the machine code equals
   `-fno-memfn-simd`'s for wrapped and unwrapped `\w{20}`/`\w{32}` on gcc
-  15.2 (r67 NOTED, MEAS's probe): the SIMD-off reading covers w16 on this
+  15.2 (r68 NOTED, MEAS's probe): the SIMD-off reading covers w16 on this
   compiler (not shown for clang).
 
 **Why option B was not taken.** B admitted "a replaced inline expression"
@@ -210,7 +210,7 @@ makes it unnecessary.
 
 Rev 2's three parts become one. **Dropped:** the scalar timing (its cell
 rule reads a uniform 14 % slowdown as TIE, so it could not return LOSS on
-a small wrapper effect: r67 MEAS-5) and T-keep with §2.1 (c) (no
+a small wrapper effect: r68 MEAS-5) and T-keep with §2.1 (c) (no
 compile-time fact keys a "keep list": §2.2).
 
 **U2b, the census.** On the BUILT U2 text (never a probe: the inline depth
@@ -432,7 +432,7 @@ static inline __attribute__((always_inline)) int rxa_mf1_vs0__w32(const unsigned
 - **[rev3, F-5] Lane order.** `_mm256_set_epi8` takes the HIGHEST lane
   first. Each 16-byte half of a table is written `t[15], t[14], ..., t[0]`
   (spike708's reading), as the `bit` table already is (`-128` is lane 7's
-  `1 << 7`). Written in index order, 14 of 16 test sets answer wrong (r67
+  `1 << 7`). Written in index order, 14 of 16 test sets answer wrong (r68
   SOUND-1). A table value > 127 is written as its signed char value
   (`-128` for 0x80).
 - At B = 16 the block helper is `nib_blk`'s `sse` text: `__m128i`, `_mm_`
@@ -469,7 +469,7 @@ The block form reads exactly [p, p + K):
 - each loop trip reads [p + i, p + i + B) with i + B < K;
 - the final block reads [p + K - B, p + K), and K ≥ B holds by B's choice
   (the largest of 32, 16 that is ≤ K). **This needs K ≥ 16** [rev3, F-8]:
-  below 16 there is no B, and a B = 16 block would read below p (r67's
+  below 16 there is no B, and a B = 16 block would read below p (r68's
   plant at k 15: a fault at a start guard page). T-vwin's lower bound is
   therefore a safety precondition as well as a measured bound, and the
   renderer asserts it.
@@ -487,7 +487,7 @@ So the order of evaluation (blocks, then the overlapped tail) cannot change
 the value.
 
 The nibble test is the universal byte-set test (708's critic: correct for
-any set, the empty set and the 255-byte `[^\n]` included; r67 SOUND
+any set, the empty set and the 255-byte `[^\n]` included; r68 SOUND
 hand-executed it on 16 sets x 14 K with 0 differences). `pshufb` zeroes a
 lane whose index has bit 7 set. b0 covers high nibbles 0..7, and b1 covers
 8..15 through the XOR. `bit` = `1 << (hn & 7)`. A byte is a member iff
@@ -536,7 +536,7 @@ static inline __attribute__((always_inline)) int rxa_mf1_vs0(const unsigned char
   under CLANGGEN=1) errors on it; gcc is silent. The attribute is on the
   OFF line too, so the OFF and ON header lines stay identical (C18 (c)).
 - **`always_inline` is load-bearing** (G-2): F2 was machine-identical 9 of
-  9 with it (r67 MEAS). It is why C18 needs an amendment (§10, F-1).
+  9 with it (r68 MEAS). It is why C18 needs an amendment (§10, F-1).
 
 **At a target admitting `w32`:**
 - §4.1's two functions are written between `simd_open(LV_X86_W32)` and
@@ -588,7 +588,7 @@ kit would ship". The build closes it in two steps. The first needs no timing.
 
 | step | how | what it closes |
 |---|---|---|
-| **F2, machine-code fidelity** (a delivery check, run once by the build lane and recorded in its report; not a committed test) [rev3, F-17] | **population: the 82 cells of 710's grid the table routes** (by 710's site kinds: 6 window classes x 11 k in 16..1000 = 66, and 4 scan classes x 4 k in 24..64 = 16; `confirm.py` `CLASSES`, `SITE_EXPECT`, `KS_OLD` + `KS_NEW`). The build lane re-counts the routed set from the SHIPPED trace (FDROUTE row and k) and reports any cell where the two counts disagree. For each: `objdump -d` of `rxa_search`, addresses normalized, the shipped `-fmemfn-simd=x86-64-v3` artifact at width 4095 against 710's `work/src/<pat>.avx2-loop.c`, same gcc and flags. There is no `.H64` source (work/src holds avx2-loop, avx2-ool, Hspk, Hspk-ool, prof); the 48 unrouted cells are not compared | the inlined machine code is what was timed. r67 matched 9 of 9 (B 16 and 32, HORS and WALK, k 16..1000). **Landing rule, before data:** any DIFFERS on a routed cell is listed with its diff, enters C6's population, and blocks the landing until the code round rules it |
+| **F2, machine-code fidelity** (a delivery check, run once by the build lane and recorded in its report; not a committed test) [rev3, F-17] | **population: the 82 cells of 710's grid the table routes** (by 710's site kinds: 6 window classes x 11 k in 16..1000 = 66, and 4 scan classes x 4 k in 24..64 = 16; `confirm.py` `CLASSES`, `SITE_EXPECT`, `KS_OLD` + `KS_NEW`). The build lane re-counts the routed set from the SHIPPED trace (FDROUTE row and k) and reports any cell where the two counts disagree. For each: `objdump -d` of `rxa_search`, addresses normalized, the shipped `-fmemfn-simd=x86-64-v3` artifact at width 4095 against 710's `work/src/<pat>.avx2-loop.c`, same gcc and flags. There is no `.H64` source (work/src holds avx2-loop, avx2-ool, Hspk, Hspk-ool, prof); the 48 unrouted cells are not compared | the inlined machine code is what was timed. r68 matched 9 of 9 (B 16 and 32, HORS and WALK, k 16..1000). **Landing rule, before data:** any DIFFERS on a routed cell is listed with its diff, enters C6's population, and blocks the landing until the code round rules it |
 | **F3, timing** | card C6 (§8) times the SHIPPED compile (default vs `no-span-vector`, both from one binary) | what F2 cannot see: layout, I-cache, and the shipped trade at SIMD-on |
 
 ## 7. The deny row
@@ -787,7 +787,7 @@ and `[0-9a-f]{20}[g-z]{20}`'s first stretch).
 `static inline size_t ...`, while V spells `static inline
 __attribute__((always_inline)) int ...` (and `__body` adds `unused`). On a
 hand-built ON text it found 0 selectors and 0 helpers and reported every
-V mover's deleted line as "no SIMD FUNC's floor call" (r67 V1). Its -O0
+V mover's deleted line as "no SIMD FUNC's floor call" (r68 V1). Its -O0
 leg (C9-x86) requires `<fn>__w<VW>` as a defined symbol in the -O0
 object, and an `always_inline` static is never emitted there (§16 item
 6c). The amendment, as one unit with its controls (learnings §3):
@@ -816,8 +816,8 @@ object, and an `always_inline` static is never emitted there (§16 item
 | plant | what it breaks | caught by |
 |---|---|---|
 | (a) | a nibble table drops a member (708 `nib_drop`) | G2-V unit |
-| (b) [rev3, F-7] | the final block reads 1 B past (708 `past`). Witness: a **WALK** whose stretch ends at the pattern end, subject flush at the end (`[0-9]{25}`). On HORS the byte past the stretch is the probe, in bounds and a member, so the plant is benign there (r67: 0 of 1100 answers differ on `[0-9a-f]{32}`) | the guard page |
-| (c) | T-vwin's lower bound becomes 15 | T-table pins, the renderer's K ≥ 16 assert, the start guard page, the staircase (three ways, r67 MEAS-3) |
+| (b) [rev3, F-7] | the final block reads 1 B past (708 `past`). Witness: a **WALK** whose stretch ends at the pattern end, subject flush at the end (`[0-9]{25}`). On HORS the byte past the stretch is the probe, in bounds and a member, so the plant is benign there (r68: 0 of 1100 answers differ on `[0-9a-f]{32}`) | the guard page |
+| (c) | T-vwin's lower bound becomes 15 | T-table pins, the renderer's K ≥ 16 assert, the start guard page, the staircase (three ways, r68 MEAS-3) |
 | (d) | the deny is ignored at SIMD-off | identity gate, over SPAN-SEED (the corpus alone holds no V site, so it could not see the plant: S3281's own header records this lesson) |
 | (e) [rev3, F-9] | V evaluated before T-lever / T-force (the order §3 claims) | G2's head-pass loop pins on an eligible stretch (SPAN-SEED's k 16 HORS cell) under `span-head=N`; the build lane names the detecting check with the REACH witness |
 
@@ -932,7 +932,7 @@ check, or goes to option B (a separate note).
 | **U5** | Card C6 (its patterns, widths, A/A arm and rule clauses as §8 states) + `kit-grid@8` + the formhash SHAPE, renderer and entry; `cards.py plan`/`dry` green, with no timing | no |
 | **U6** | The abi package at the landing base (§9.2, the unfiltered grep), `make test` async, `make test-axes`, REACH_ONLY. Then G1's manifest and dry run (no timing window, §9.4); C6's timing owed to main's window | — |
 
-The design round (r67) preceded this revision. The code round precedes
+The design round (r68) preceded this revision. The code round precedes
 the landing (Frank 2026-11-15). U2 and U3 may share one abi event if they
 land together; the number is taken once.
 
@@ -972,7 +972,7 @@ Item 1 re-checked at main `248f3cff6`. Other items are rev 1's (main
    - Rev 1's text facts stand: every class has a window site up to n = 32 and none from n = 33; the positions tested = n (k = n - 1); `[0-9a-f]{17}` and `[0-9]{25}` have byte-identical walk lines at widths 32 and 4095.
 6. **Machine-code probes** (gcc 15.2.0, -O2, `objdump -d` of `rxa_search`, addresses normalized):
    - **(a)** (rev 1; `$PCREC_TMPDIR/scratch/bspan/`) On 710's timed `avx2-loop` sources, with the `target()` attributes dropped: IDENTICAL on 6/6 (hex16, hex40, hex1000, dig24, num64, word500). With the harness's `rxs_span` wrapper also removed: hex16, hex40, hex1000 and word500 IDENTICAL; dig24 and num64 differ in one `cmp` operand order.
-   - **(b)** [rev3, F-13] Rev 1's `wrapprobe.py` measured a ONE-level wrapper; its `[+.0-9]{65}` "440 lines" did not reproduce with the shipped two-level shape (0 lines, two independent r67 lenses) and is withdrawn. The two-level figures this note uses are r67's (SOUND-5, PREMISE-9, MEAS-6; `$PCREC_TMPDIR/scratch/crit-memfn-bspan/meas/`, `kit/objfn.sh`): the 3 real sites 0 instruction differences (one padding only); `\w{17}`, `\w{20}`, `\w{32}` 20-26 lines; `[+.0-9]{65}` 0. U2b re-measures on the built text.
+   - **(b)** [rev3, F-13] Rev 1's `wrapprobe.py` measured a ONE-level wrapper; its `[+.0-9]{65}` "440 lines" did not reproduce with the shipped two-level shape (0 lines, two independent r68 lenses) and is withdrawn. The two-level figures this note uses are r68's (SOUND-5, PREMISE-9, MEAS-6; `$PCREC_TMPDIR/scratch/crit-memfn-bspan/meas/`, `kit/objfn.sh`): the 3 real sites 0 instruction differences (one padding only); `\w{17}`, `\w{20}`, `\w{32}` 20-26 lines; `[+.0-9]{65}` 0. U2b re-measures on the built text.
    - **(c)** [rev3] `always_inline` at -O0: `$PCREC_TMPDIR/scratch/bspan3/ai.c` (an AVX2 `always_inline` helper `h` inside a `#pragma GCC target("avx2")` region, called from `inreg` inside it and `outreg` outside it). `gcc -O0 -c` → error "inlining failed in call to 'always_inline' 'h': target specific option mismatch" (from `outreg`). With `outreg` removed: compiles; `nm` lists only `T inreg` (no `h`); `objdump -d | grep -c ymm` → 6.
 7. **Job 710's verdict** (`$PCREC_TMPDIR/scratch/memfn/blockconfirm/run-20261120T212920/decision.md`): CONFIRMED.
    - Cells: 840 cells, 112 N/A.
@@ -1001,14 +1001,14 @@ marked UNMEASURED are estimates the build lane replaces with `git diff
 | spec | `registry.md` §6¶8a/8b, `tuning.md` §2.43¶3a/3b/3d, `limits.md` §8.3¶3, `match_api.md` §6 (abi): 6 hunks |
 | abi | 1 event (the number taken at landing, §9.1) |
 
-**Cut by r67 (each with its trigger):** T-keep and §2.1 (c) (no fact to
+**Cut by r68 (each with its trigger):** T-keep and §2.1 (c) (no fact to
 key on; returns only under `wrap-differs` outcome 2, as a proxy row);
 U2b's scalar timing (cannot detect the effect); G1's timing window
 (UNREACHED by construction; trigger: a bin reaches 8 movers); C6's four
 outside-bound cells (A/A by construction); the force and body levers
 (PLAN rows; trigger: a bound is questioned).
 
-**Grew by r67:** the C18 amendment, the formhash shape and renderer, five
+**Grew by r68:** the C18 amendment, the formhash shape and renderer, five
 sabotage re-aims plus one ordering plant, SPAN-SEED and its floors, four
 pin cells. Net: about rev 2's size, minus T-keep and two timing windows,
 plus the C18 and formhash units rev 2 did not count.
@@ -1021,7 +1021,7 @@ site reaches it, but D201's "Read as" names the 710 table), the deny, the
 one-stretch-per-site rule, the 32 and 16 rungs only, no SWAR, no unrolled
 form, no knob beyond the deny row.
 
-## 18. r67 dispositions (review 2026-11-21-r67-memfn-bspan, the kit manager's ruling)
+## 18. r68 dispositions (review 2026-11-21-r68-memfn-bspan, the kit manager's ruling)
 
 | F-id | ruled | answered in |
 |---|---|---|
