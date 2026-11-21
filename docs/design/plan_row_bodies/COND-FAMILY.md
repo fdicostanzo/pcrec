@@ -6615,3 +6615,22 @@ where the loop made no pass"; (d) the open group-truth ("each pass judged with i
 closed by this ruling: `NOT some(c)` against `occurs.none(NOT c)` now part on settings, not passes; (e) "same item"
 without a joint entry is spelled on the item: a label set only where the item meets the condition, then a group
 question on that label.
+
+### 2026-11-21 OWNER RULING — joint-in-some: agree (a joint entry inside a group question is refused for now; "same item" is written on the item)
+tags: core/labels/labels-vs-captures/array-vs-passes lib/counting/some core/values/tuples parked/ideas/user-doc-traps
+
+Asked **joint-in-some** (inside a group question, how a joint entry `(h, m): ...` pairs the two arrays: (a) by
+index, as the arrays stand; (b) by item; (c) refused for now, "same item" written on the item itself, `[ok = item &
+((h, m): ("5", "3"))]` then `some((ok: anything))`; the manager's leaning (c); shown the run where by-index finds
+(`5`, `3`) in `5,2:3,` though no item holds both). HIS WORDS, whole (he wrote the slug "join-in-some"):
+
+"join-in-some: agree and elegant. that said, no one would know to write it."
+
+Class: a RULING on the slug. The reading of "agree" taken, and told to him: the manager's leaning, (c): a joint
+entry inside a group question is refused for now (a compile error; (a) or (b) can be allowed later without
+changing an answer), and "same item" is the on-item label followed by a group question on that label. And an
+OBSERVATION: "no one would know to write it" (discoverability; nothing ruled by it).
+
+The manager's readings, for the fold lane: (a) the refusal's message names the on-item form (the manager's call on
+a diagnostic's content); (b) the idiom goes on the user-documentation list (parked/ideas/user-doc-traps); (c) a
+provided shorthand for it is an idea, not asked for by him: nothing parked beyond the list item.
