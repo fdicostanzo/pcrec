@@ -32,5 +32,7 @@ Cloud runs `--kind mech` and `--kind axes` on the tip sha; names l3pop-mech and 
 for the sha and the ls-remote proof). The cloud mech run covers all 6 owed rows as well.
 
 ## STATE AT HANDOFF
-OWED: local result of S3409, S3413, S3455, S3480, S3481, S3483 (log above). Cloud verdicts arrive as CLOUD-DONE.
+OWED: none to the deliverable (the cloud mech run covers every row).
+NOTE, not owed: a background local re-run of S3409, S3413, S3455, S3480, S3481, S3483 writes
+/var/tmp/pcrec-pcrec/scratch/l3pop/mechC.log (`ALLDONE`); main may read it. Cloud verdicts arrive as CLOUD-DONE.
 Rulings: none applied. Branch lane/l3pop.
