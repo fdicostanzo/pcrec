@@ -4688,3 +4688,10 @@ lane/bsu2fix delivered (cca26a4a6, c1dcbcaea + report; lanecheck DONE; TaskStop)
 - Identity in-lane: deny 0, movers 28/20/31; seed vs d9d86e39e 0 of 328.
 - test-codegen and G2 win ride the make test job.
 - Owed: kit-bsu2fix-test, -mech, -gate and -ids.
+
+### 2026-11-21 14:33 — 717 RED: test-memfn-arch (C4 vocabulary); fixed
+717-kit-bsu2-test went RED on one section, test-memfn-arch: 2 checks failed, all the others passed. U2's S730 re-aim put -fmemfn-simd=x86-64-v3 in a SAB_REACH (isa-name and arch-noun) without c4_allowlist rows.
+- This is ours. main's unlocked grow6 runs overlapped 717, but this is not a timeout.
+- Fixed by the manager on lane/bsu2fix (2eccfecb8, two allowlist rows; run_arch_blind 32/0).
+- 718 cancelled (its prerequisite failed); its 18 rows were re-queued as 723-kit-bsu2fix-mechu2 on the fix tree. 721 gate GREEN.
+- Lesson for U3's brief: any new -fmemfn-simd token outside memfn/ needs its C4 row in the same commit; run test-memfn-arch in-lane, it is static and light.
