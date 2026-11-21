@@ -55,6 +55,18 @@ vrun-w32	2800
 vrun-w16	2400
 mfind-w16	1400
 mfind-w32	1500
+# span-vector-w32 (R-47 unit U3, docs/design/memfn/block_span.md §5 "The guarded
+# bound"): ONE vector span site's level block at w32 (the block helper `__w32_b`,
+# then `__w32`) plus its selector's one call line. CHOSEN, UNMEASURED DEFAULT, a
+# BOUND BY CONSTRUCTION (V renders at most once per site, no decline path): the
+# text is fixed per (B, set) apart from its numbers, so its worst is the
+# largest instance with every varying part at its longest: both nibble tables
+# at 32 lanes of `-128`, a ten-digit site handle (uint32_t; the kit caps no site
+# count) in each of the 11 names, the stretch offset ` + 4095`, k 1000: 1,605
+# bytes (measured instances: 1,315 at B = 32, `[0-9a-f]{41}` at width 4095;
+# 1,102 at B = 16, `[0-9a-f]{17}`). Rounded up to 1,700.
+# Read by simd_guarded_check.py's NAMED witness `vspan` at the 32-byte target.
+span-vector-w32	1700
 # target-text ([XARCH-DEV] U3): the kit's family guard and one target's
 # region (open + close), written once per artifact for a SIMD target whatever
 # its forms. MEASURED (lane u3tgt, 2026-11-08) over the kit's targets: the

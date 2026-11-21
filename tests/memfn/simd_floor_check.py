@@ -59,6 +59,17 @@ On every mover additionally:
       -mgeneral-regs-only; at -O0 each SIMD FUNC's called helper is defined
       in the object (read with nm) at EVERY cell: the region, not the
       consumer's flags, supplies the ISA.
+      A selector whose own head says `always_inline` (the vector span's,
+      R-47 U3, docs/design/memfn/block_span.md §10.2) takes the -O0 RULE
+      instead: no symbol of its family (`<fn>`, `<fn>__*`) is defined, and
+      each function calling it holds a `pshufb` (any register width); its
+      control, a `__w32` without always_inline, is mech row S3515.
+THE HEAD FAMILY (U3): a SELECTOR or HELPER head is `static inline`, an optional
+`__attribute__((...))` naming always_inline and/or unused, then `size_t` or
+`int`; a HELPER is `<fn>__w<VW>` or the block helper `<fn>__w<VW>_b`. The
+vector span's functions (`<p>_mf<h>_vs<j>` and its parts) carry their declared
+heads (`V head`: always_inline, `__body` also unused; review r75 CHECKS-8),
+with one planted control (V_PLANTS) on a clean V mover at V_CONTROL_TARGETS.
 
 CONTROLS, on every run: each target's first mover is judged again with one
 plant at a time (a stray `#pragma` outside the region, the region close
@@ -120,8 +131,21 @@ NAMED = [
 STAMP_MOVES = re.compile(r'^#define (?:(?!__)\w)+_(TARGETS|MEMFN_FORMS|SIMD_GUARDED_BYTES) ')
 TARGETS = re.compile(r'^#define (?:(?!__)\w)+_TARGETS "([^"]*)"$', re.M)
 GUARDED = re.compile(r'^#define (?:(?!__)\w)+_SIMD_GUARDED_BYTES (0x[0-9a-f]+)ULL$', re.M)
-SELECTOR = re.compile(r'^static inline size_t (\w+)\([^)]*\)\n\{\n    return (\w+)__w(\d+)\(.*\);\n\}$', re.M)
-HELPER = re.compile(r'^static inline size_t (\w+)__w(\d+)\(', re.M)
+# THE HEAD FAMILY (R-47 U3, block_span.md §10.2 [R71-4]): `static inline`, then an
+# optional `__attribute__((...))` naming `always_inline` and/or `unused`, then
+# `size_t` (ofsskip's FUNC) or `int` (the vector span's selector `<p>_mf<h>_vs<j>`).
+# A HELPER is `<fn>__w<VW>` or the level's block helper `<fn>__w<VW>_b` [R-10].
+HEAD = r'^static inline (?:__attribute__\(\((?P<attr>(?:always_inline|unused)(?:, (?:always_inline|unused))?)\)\) )?(?:size_t|int) '
+SELECTOR = re.compile(HEAD + r'(?P<fn>\w+)\([^)]*\)\n\{\n    return (?P<callee>\w+)__w(?P<vw>\d+)\(.*\);\n\}$', re.M)
+HELPER = re.compile(HEAD + r'(\w+)__w(\d+)(?:_b)?\(', re.M)
+# CHECKS-8 (review r75): the vector span's functions, by NAME (`<p>_mf<h>_vs<j>` and
+# its parts), each with its declared head: `always_inline` and `int`, `__body`
+# also `unused` (block_span.md §5: its OFF and ON head lines are one line).
+VHEAD = re.compile(r'^static inline (?:__attribute__\(\(([^)]*)\)\) )?(\w+) (\w+_mf\d+_vs\d+)(__\w+)?\(', re.M)
+# A V selector's -O0 path is fixed by ITS head (always_inline): the call site of
+# the selector, its CALLER, is found in the text (a column-0 definition line).
+DEF_LINE = re.compile(r'^[A-Za-z_][\w \*]*?\b(\w+)\(')
+PSHUFB = re.compile(r'\bv?pshufb\b')
 BODY_OPEN = re.compile(r'^(\{|\S.*= \{$)', re.M)
 FLOOR_CALL = re.compile(r'^    return (\w+)__body\((.*)\);$')
 LEVEL_CALL = re.compile(r'^    return (\w+)__w(\d+)\((.*)\);$')
@@ -192,11 +216,17 @@ def text_legs(toff, ton, t, adm, aside=0):
             mi = re.match(r'^#include <([^>]*)>$', l)
             if not mi or mi.group(1) not in headers:
                 issues.append('guard lint: %r inserted' % l[:100])
-    for fn, vw in HELPER.findall(ton):
+    for _, fn, vw in HELPER.findall(ton):
         if vw not in vws:
             issues.append('guard lint: helper %s__w%s is no admitted level' % (fn, vw))
     # (c) the deletions: stamps, and one floor call per SIMD FUNC, replaced
-    sel = {m.group(1): m.group(3) for m in SELECTOR.finditer(ton) if m.group(2) == m.group(1)}
+    sel = {m.group('fn'): m.group('vw') for m in SELECTOR.finditer(ton) if m.group('callee') == m.group('fn')}
+    # CHECKS-8: every vector span function's head is the declared one
+    for m in VHEAD.finditer(ton):
+        want = 'always_inline, unused' if m.group(4) == '__body' else 'always_inline'
+        if m.group(1) != want or m.group(2) != 'int':
+            issues.append('V head: %s%s is `%s %s`, expected `__attribute__((%s)) int`'
+                          % (m.group(3), m.group(4) or '', m.group(1), m.group(2), want))
     calls = [l for l in dele if not STAMP_MOVES.match(l)]
     replaced = {}
     for l in calls:
@@ -228,6 +258,53 @@ def text_legs(toff, ton, t, adm, aside=0):
     return mover, sel, issues
 
 
+def always_inline_sel(ton):
+    """The SIMD FUNC selectors whose own head says `always_inline` (the -O0
+    rule's path, R-7/R-8: fixed by the SELECTOR's head, never the helper's)."""
+    return {m.group('fn') for m in SELECTOR.finditer(ton)
+            if m.group('callee') == m.group('fn') and 'always_inline' in (m.group('attr') or '')}
+
+
+def callers_of(ton, fn):
+    """The functions whose bodies call `fn`, read from the text: each line
+    belongs to the nearest column-0 definition line above it."""
+    call = re.compile(r'\b%s\(' % re.escape(fn))
+    out, cur = set(), None
+    for ln in ton.split('\n'):
+        m = DEF_LINE.match(ln)
+        if m and not ln.rstrip().endswith(';'):
+            cur = m.group(1)
+            continue
+        if cur and cur != fn and not cur.startswith(fn + '__') and call.search(ln):
+            out.add(cur)
+    return out
+
+
+def o0_inline_issues(ton, sel, obj, cell):
+    """The -O0 rule for a selector whose head says always_inline (block_span.md
+    §10.2 [R-7, R-8]): in the -O0 object (1) NO symbol of the selector's family
+    (`<fn>`, `<fn>__*`) is defined, and (2) each function calling the selector
+    holds at least one `pshufb` (`pshufb` or `vpshufb`, any register width: the
+    B = 16 rung is xmm only). Its control (1), a `__w32` without always_inline,
+    is mech row S3515."""
+    issues = []
+    syms = subprocess.run(['nm', obj], capture_output=True, text=True).stdout
+    defined = set(re.findall(r' [tT] (\w+)$', syms, re.M))
+    for fn in sorted(always_inline_sel(ton) & set(sel)):
+        fam = sorted(s for s in defined if s == fn or s.startswith(fn + '__'))
+        if fam:
+            issues.append('C9 %s -O0: %s is always_inline, yet its family defines %s' % (cell, fn, ', '.join(fam)))
+        who = sorted(callers_of(ton, fn) & defined)
+        if not who:
+            issues.append('C9 %s -O0: no defined function calls %s' % (cell, fn))
+        for c in who:
+            d = subprocess.run(['objdump', '-d', '--no-show-raw-insn', '--disassemble=' + c, obj],
+                               capture_output=True, text=True).stdout
+            if not PSHUFB.search(d):
+                issues.append('C9 %s -O0: %s, which calls %s, holds no pshufb' % (cell, c, fn))
+    return issues
+
+
 # the planted controls: (name, the leg that must reject it, plant(ton, t))
 def _move_guard(ton, t):
     rest = ton.replace(t['guard'], '', 1)
@@ -250,6 +327,18 @@ PLANTS = [
      lambda ton, t: re.sub(r'^(static inline size_t \w+__body\(.*\)\n\{\n).*\n', r'\1', ton,
                            count=1, flags=re.M)),
 ]
+
+# the vector span's planted control (CHECKS-8), on a target's first clean V mover:
+# `__body`'s head loses always_inline, answer-identical and invisible to (c),
+# whose OFF and ON head lines both lose it
+V_PLANTS = [
+    ("__body's always_inline dropped", 'V head',
+     lambda ton, t: re.sub(r'(?m)^(static inline __attribute__\(\()always_inline, (unused\)\) int \w+_mf\d+_vs\d+__body\()',
+                           r'\1\2', ton, count=1)),
+]
+# the targets whose population must hold a clean V mover for V_PLANTS (K35): the
+# 32-byte one; at x86-64 (w16 only) the V selector calls `__body` (no mover)
+V_CONTROL_TARGETS = ('x86-64-v3',)
 
 
 def main():
@@ -376,7 +465,12 @@ def main():
                 syms = subprocess.run(['nm', d + '/c9o0.o'], capture_output=True,
                                       text=True).stdout if r and r.returncode == 0 else ''
                 defined = set(re.findall(r' t (\w+)$', syms, re.M))
+                inl = always_inline_sel(ton)
+                if r and r.returncode == 0:
+                    rec['issues'] += o0_inline_issues(ton, sel, d + '/c9o0.o', cell)
                 for fn, vw in sorted(sel.items()):
+                    if fn in inl:
+                        continue
                     if '%s__w%s' % (fn, vw) not in defined:
                         rec['issues'].append('C9 %s: %s__w%s is not defined in the -O0 object' % (cell, fn, vw))
         subprocess.run(['rm', '-rf', base])
@@ -384,7 +478,7 @@ def main():
 
     stats = {t['name']: {'movers': 0, 'funcs': 0, 'levels': {}} for t in targets}
     named_movers = set()
-    first = {}
+    first, first_v = {}, {}
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
         for recs in ex.map(one, enumerate(pop)):
             for rec in recs:
@@ -403,6 +497,9 @@ def main():
                         named_movers.add((rec['target'], rec['key']))
                     if rec['target'] not in first and not rec['issues'] and 'ton' in rec:
                         first[rec['target']] = rec
+                    if rec['target'] not in first_v and not rec['issues'] and 'ton' in rec \
+                            and always_inline_sel(rec['ton']) & set(rec['sel']):
+                        first_v[rec['target']] = rec
     subprocess.run(['rm', '-rf', work])
     for t in targets:
         tn = t['name']
@@ -438,6 +535,21 @@ def main():
                 bad('%s: control %s did not apply' % (tn, name))
                 continue
             _, _, why = text_legs(rec['toff'], planted, t, adm)
+            if any(w.startswith(leg) for w in why):
+                ok('%s: control %s rejected by %s' % (tn, name, leg))
+            else:
+                bad('%s: control %s NOT rejected by %s (%r)' % (tn, name, leg, why[:2]))
+        vrec = first_v.get(tn)
+        if vrec is None:
+            if tn in V_CONTROL_TARGETS:
+                bad('%s: no clean vector span mover to plant the V controls on' % tn)
+            continue
+        for name, leg, plant in V_PLANTS:
+            planted = plant(vrec['ton'], t)
+            if planted == vrec['ton']:
+                bad('%s: control %s did not apply' % (tn, name))
+                continue
+            _, _, why = text_legs(vrec['toff'], planted, t, adm)
             if any(w.startswith(leg) for w in why):
                 ok('%s: control %s rejected by %s' % (tn, name, leg))
             else:

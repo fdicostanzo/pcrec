@@ -116,6 +116,10 @@ NAMED = [
     ('vrun-fixed', '(?i)foobarbaz'),
     ('vrun-gap', '(?i)select.*from'),
     ('vrun-long', '(?i)abcdefghijklmnop'),
+    # R-47 U3 [R71-5]: the vector span's w32 level (`span-vector@w32`, row
+    # span-vector-w32), so that row has a reader that is not the every-10th
+    # corpus sample: D-hors k 16, B 16; it renders at the 32-byte target only
+    ('vspan', '[0-9a-f]{17}'),
 ]
 
 # LEVER WITNESSES (lane mfind fix 1): a row the default picks nowhere (the
@@ -162,8 +166,9 @@ FLOORS = {
                             # 16 at lane sae2mt (2026-11-09): tests/litscan/spanarms.rxt (+64 blocks) shifts the
                             # every-10th sample; the branch-point compiler (E1's parent) counts 16 too, so it is
                             # corpus drift, not a rule move; pinned AT the measure
-    'simd-form-named': 8,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (4 of 4 at each
-                             # level-rendering `simd:` arm, 2 arms since lane u3crit);
+    'simd-form-named': 9,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (4 of 4 at each
+                             # level-rendering `simd:` arm, 2 arms since lane u3crit); 9 at R-47 U3
+                             # (lane bsu3): `vspan` renders at the 32-byte target alone (x86-64 admits no w32);
                              # the sample-independent control, so 'simd-form' above can drift with the corpus
     'simd-form-lever': 2,    # lane mfind fix 1: the lever witnesses that render a SIMD row (2 of 2 measured:
                              # one per level-rendering target in LEVER_ARMS)
