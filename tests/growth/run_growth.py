@@ -23,7 +23,8 @@ Verdicts per run (an outcome is one of: compiled, refused <msg>, CRASH
       FIXED-RED failure (it passes) when it passes: the ratchet.
   ladder column: PASS iff compiled, or refused by the cell's own limit text
       (a `refuse:` alternative of its `expect`) or by "out of memory"; an
-      `internal error:` refusal, CRASH/TIMEOUT/RUNAWAY/ERROR fail.
+      `internal error:` refusal, CRASH/TIMEOUT/RUNAWAY/ERROR fail.  An
+      `internal error:` refusal fails in EVERY column, whatever text it holds.
   `red` column: `ID:KIND` (KIND = CRASH, TIMEOUT, RUNAWAY, ERROR or refused):
       the known issue and the failure kind it is known to take.  A failure
       of THAT kind is KNOWN-RED; a failure of any other kind is a FAIL (a
@@ -73,19 +74,22 @@ SUBJECTS = ("", "a", "abcabc")
 LIB_FLOOR_S, LIB_MARGIN = 300, 20
 DEPTH_LIMIT_TEXT = "too deeply nested"      # PCREC_MAX_GROUP_DEPTH's diagnostic
 CAPTURING = ("group", "named")              # the matrix kinds whose groups capture (a backreference core needs one)
-# matrix `+` cells at depth 250 (measured 2026-11-21 on a 20-pair sample): refused by a limit far below depth 250
 # NAMED compile-only exceptions (owner ruling limit-cell-matcher-cost, 2026-11-21,
 # docs/design/plan_row_bodies/GROWTH-SWEEP.md): a limit cell sits just before a limit whose edge cell
 # cannot be built into a matcher.  `compile:norun=NAME` in a cells.tsv row names the exception; the
 # runner counts them (every run prints the count) and --list shows each.
-PLUS_REPLICATION_TEXT = "nested bounded repeats would replicate"   # PCREC_MAX_VM_REPLICATION_PRODUCT
 NORUN_EXCEPTIONS = {
     "limit-cell-matcher-cost": "NFA-state / VM-node edge with the size limits lifted (raise 1): the emitted C is "
-                               "25 MB, gcc -O0 takes about 10 min and 3.4 GB (measured on z_cls 131069)",
-    # the same cause, applied by lane grow5 to the matrix `+` edge cells (their edge IS the NFA-state / VM-node
-    # edge, reached at depth 12-15): a manager-ruled extension of limit-cell-matcher-cost, owner to confirm
-    "plus-edge-matcher-cost": "the matrix `+` edge cell sits at the NFA-state / VM-node edge too (131,072, emit caps "
-                              "lifted): same 25 MB of C; a sample build timed out at the 180 s wall",
+                               "tens of MB (25 MB measured on z_cls 131069; 22 to 119 MB on the matrix `+` edges, "
+                               "reached at depth 12-15), gcc -O0 takes about 10 min and 3.4 GB",
+}
+# A cell with no twin of the other kind across its limit is UNPAIRED; a cells.tsv row declares WHY
+# (`none=NAME` in its pair column), so --pairs and the run report list only the unexplained ones.
+UNPAIRED_REASONS = {
+    "runaway-before-limit": "a memory runaway (K150/K151) starts before any size limit: no just-before cell exists",
+    "stability-only-by-ruling": "owner-manager ruling (K156 revision): an ordinary stability test at the shipped limit, no limit half asked",
+    "no-depth-half-for-plus": "no `+` cell compiles at depth 250 (a lower limit binds near 12-16): the depth limit has no limit half for `+`",
+    "far-limit-differs": "the matrix `+`@250 cell is refused by the replication product, not the edge pair's VM-node limit (a pair names ONE limit)",
 }
 
 
@@ -143,6 +147,11 @@ def spine(pre, unit, sep, mid, unit2, post, n):
     return sub(pre) + many(unit) + sub(mid) + many(unit2) + sub(post)
 
 
+# K157: these matrix `*` limit cells compile at depth 250, but their matcher gives up (exit 3, PCREC_ERR_FRAMES: the
+# stamped resume/trail capacity) on 'abc'.  Red kind MATCHER keeps the sweep honest (known_issues K157).
+K157_CELLS = {"ncgroup.star.first.bref", "group.star.last.lit", "named.star.last.lit", "inline.star.first.bref"}
+K157_RED = "K157:MATCHER"
+
 KINDS = ("stability", "limit")      # a closed set; every cell declares one, there is no default
 
 
@@ -155,7 +164,11 @@ class Cell:
         # cell and its stability twin across the same limit ("" = none: reported UNPAIRED).
         if kind not in KINDS:
             sys.exit("run_growth: cell %s: kind %r is not one of %s" % (cid, kind, "/".join(KINDS)))
-        self.kind, self.pair = kind, pair
+        self.kind, self.pair, self.why = kind, pair, ""
+        if pair.startswith("none="):
+            self.pair, self.why = "", pair[5:]
+            if self.why not in UNPAIRED_REASONS:
+                sys.exit("run_growth: cell %s: unpaired reason %r is not one of %s" % (cid, self.why, "/".join(sorted(UNPAIRED_REASONS))))
         # a compile-only limit cell is a NAMED exception: `compile:norun=NAME`, NAME in NORUN_EXCEPTIONS
         self.norun = expect.partition("=")[2] if expect.startswith("compile:norun") else ""
         if kind == "limit" and expect != "compile" and not (
@@ -195,8 +208,9 @@ def build_cells(budget, depth):
                               "compile" if lim else "refuse:" + DEPTH_LIMIT_TEXT,
                               "PCREC_MAX_GROUP_DEPTH", "depth/" + name, ""))
     # --- MATRIX: kind x quantifier x position x core ------------------------
-    # plus_edges.tsv: cid, edge E (the deepest `+` nest that compiles), the lower limit that refuses E + 1, its text
-    plus_edges = {r[0]: (int(r[1]), r[2], r[3]) for r in tsv(os.path.join(HERE, "plus_edges.tsv"), 4)}
+    # plus_edges.tsv: cid, edge E (the deepest `+` nest that compiles), the lower limit that refuses E + 1, its text,
+    # then the limit (and text) that refuses the @250 cell
+    plus_edges = {r[0]: (int(r[1]), r[2], r[3], r[4], r[5]) for r in tsv(os.path.join(HERE, "plus_edges.tsv"), 6)}
     ax = {"K": [], "Q": [], "P": [], "C": []}
     for row in tsv(os.path.join(HERE, "matrix_axes.tsv"), {"K": 3, "Q": 3, "P": 4, "C": 4}):
         ax[row[0]].append(tuple(row[1:]))
@@ -216,7 +230,7 @@ def build_cells(budget, depth):
                         pat = nest(pre, op, core, cl, "", d)    # nest() repeats `cl` once per level
                         if d > depth:       # past the depth limit: stability (a `+` cell has no limit-test half: unpaired)
                             kind, exp, lim, pair = ("stability", "refuse:" + DEPTH_LIMIT_TEXT, "PCREC_MAX_GROUP_DEPTH",
-                                                    "" if qn == "plus" else "matrix/" + cid)
+                                                    "none=no-depth-half-for-plus" if qn == "plus" else "matrix/" + cid)
                         elif qn == "plus":
                             # `+` replicates the body at every level, so a LOWER limit (PCREC_MAX_NFA_STATES or
                             # PCREC_MAX_VM_NODES, limits.md 3.10 para 3) binds near depth 12-16, long before 250.
@@ -224,26 +238,29 @@ def build_cells(budget, depth):
                             # edge (plus_edges.tsv: the bisected edge E), which is added below with its E+1 twin.
                             # The @251 cell stays a depth-limit stability cell, UNPAIRED: no `+` cell can compile
                             # at 250, so the depth limit has no limit-test half for `+`.
+                            # The @250 cell names the limit that REALLY refuses it (plus_edges.tsv far_limit/far_text;
+                            # r74 VERDICT-3) and accepts only that text.  The replication product is its own limit, so
+                            # where it differs from the edge pair's limit the cell cannot join the pair.
                             e = plus_edges[cid]
-                            # the @250 refusal is the edge limit's text OR its sibling the replication product's
-                            # (PCREC_MAX_VM_REPLICATION_PRODUCT, a literal alias of PCREC_MAX_VM_NODES): limits.md 3.10
-                            kind, exp, lim, pair = ("stability", "refuse:" + e[2] + ",refuse:" + PLUS_REPLICATION_TEXT, e[1],
-                                                    "matrix/%s+" % cid)
+                            kind, exp, lim = "stability", "refuse:" + e[4], e[3]
+                            pair = "matrix/%s+" % cid if e[3] == e[1] else "none=far-limit-differs"
                         else:
                             kind, exp, lim, pair = "limit", "compile", "PCREC_MAX_GROUP_DEPTH", "matrix/" + cid
                         cells.append(Cell("matrix/%s@%d" % (cid, d), "matrix", pat, budget, 1, "all", 0,
-                                          kind, exp, lim, pair, ""))
+                                          kind, exp, lim, pair, K157_RED if d == depth and cid in K157_CELLS else ""))
                     if qn == "plus":
                         # the `+` limit test just under its lower limit (the bisected edge E) and the exact stability
                         # twin at E + 1; the @250 stability cell above is the same pair's far-past member
-                        e, lname, text = plus_edges[cid]
-                        for dd, kind, exp in ((int(e), "limit", "compile:norun=plus-edge-matcher-cost"),
+                        e, lname, text = plus_edges[cid][:3]
+                        for dd, kind, exp in ((int(e), "limit", "compile:norun=limit-cell-matcher-cost"),
                                               (int(e) + 1, "stability", "refuse:" + text)):
                             cells.append(Cell("matrix/%s@%d" % (cid, dd), "matrix", nest(pre, op, core, cl, "", dd), budget, 1,
                                               "all", 0, kind, exp, lname, "matrix/%s+" % cid, ""))
     # --- CELLS: explicit ----------------------------------------------------
     for (cid, fam, pre, unit, sep, mid, unit2, post, n, stack, rz, kind, exp, lim, pair, red) in \
             tsv(os.path.join(HERE, "cells.tsv"), 16):
+        if not pair:
+            sys.exit("run_growth: cells.tsv: %s: an empty pair column; write `fam/id` or `none=REASON` (%s)" % (cid, "/".join(sorted(UNPAIRED_REASONS))))
         if stack not in ("budget", "main"):
             sys.exit("run_growth: cells.tsv: %s: stack %r is neither `budget` nor `main`" % (cid, stack))
         for nn in n.split(","):
@@ -251,6 +268,18 @@ def build_cells(budget, depth):
                               spine(pre, unit, sep, mid, unit2, post, int(nn)),
                               budget if stack == "budget" else 0, int(rz), "all", 0, kind, exp, lim, pair, red))
     return cells
+
+
+def print_unpaired(unpaired):
+    """Unpaired cells by declared reason (one count line each), then every UNEXPLAINED one by name."""
+    by = {}
+    for c in unpaired:
+        by.setdefault(c.why, []).append(c)
+    for why in sorted(w for w in by if w):
+        print("unpaired, declared (%s): %d cells: %s" % (why, len(by[why]), UNPAIRED_REASONS[why]))
+    for c in by.get("", []):
+        print("UNPAIRED: %s (%s, limit %s) has no %s twin across the same limit and no declared reason" % (
+            c.id, c.kind, c.limit or "-", "limit" if c.kind == "stability" else "stability"))
 
 
 def pair_report(cells):
@@ -266,21 +295,6 @@ def pair_report(cells):
             sys.exit("run_growth: pair %s names two limits: %s" % (pid, sorted({c.limit for c in cs})))
     unpaired = [c for c in cells if not c.pair or {x.kind for x in pairs[c.pair]} != set(KINDS)]
     return pairs, unpaired
-
-
-def sample_matrix(cells, npairs):
-    """Keep every non-matrix cell and `npairs` matrix PAIRS (all cells of each id), chosen by a
-    prime stride over the product so every construct kind, quantifier, position and core shows
-    up (the sweep's own coverage check below).  The full matrix is the queued sweep's job."""
-    base = lambda c: c.id.rsplit("@", 1)[0]
-    mat = [c for c in cells if c.family == "matrix"]
-    ids = list(dict.fromkeys(base(c) for c in mat))
-    pick = {ids[(k * 37) % len(ids)] for k in range(npairs)}
-    # the `+` cells (each a 4-cell group: edge, edge + 1, @250, @251) are 1/7 of the product, so the stride
-    # alone samples few of them: add npairs // 2 more, chosen by their own stride over the `+` ids
-    plus = [i for i in ids if ".plus." in i]
-    pick |= {plus[(k * 13) % len(plus)] for k in range(npairs // 2)}
-    return [c for c in cells if c.family != "matrix" or base(c) in pick]
 
 
 # ---- CLOUD SHARDS ([GROWTH-CLOUD]) ------------------------------------------------------------
@@ -438,6 +452,8 @@ class Runner:
 def judge(cell, kind, text):
     """The uncapped verdict, by the cell's declared kind (RULING limit-test-criteria).
     -> (good, why)."""
+    if kind == "refused" and text.startswith("internal error:"):
+        return False, "%s cell: an `internal error:` refusal is a FAIL whatever limit text it holds: %s" % (cell.kind, text)
     if cell.kind == "limit":
         if kind == "compiled":
             return True, ""
@@ -461,16 +477,20 @@ def ladder_ok(cell, kind, text):
     limit text or by out-of-memory (not by an `internal error:`)."""
     if kind == "compiled":
         return True
+    if text.startswith("internal error:"):
+        return False
     return kind == "refused" and ("out of memory" in text or any(r in text for r in cell.refusals))
 
 
 def job(rn, cell, ladder):
     res = [("uncapped", 0) + rn.one(cell, 0)]
+    skipped = 0
     for cap in ladder:
         if cap < 2 * len(cell.pattern):
-            continue    # the pattern's own bytes (read before the cap is set) would fill the rung: no thread can start
+            skipped += 1    # the pattern's own bytes (read before the cap is set) would fill the rung: no thread can start
+            continue
         res.append(("cap%dM" % (cap >> 20), cap) + rn.one(cell, cap))
-    return cell, res
+    return cell, res, skipped
 
 
 def tmp_base():
@@ -536,7 +556,7 @@ def lib_mode(rn, cells, ladder):
     env.setdefault("ASAN_OPTIONS", "detect_leaks=1:allocator_may_return_null=1")
     # the driver's progress goes to a LOG that is readable while it runs (a
     # captured pipe showed nothing for 50 minutes on the first run)
-    plog = os.path.join(os.path.dirname(walls_path()), "growth-lib-progress.log")
+    plog = os.path.join(rn.work, "lib-progress.log")        # this run's own work dir (r74 FIXES-1)
     with open(plog, "w") as pf:
         r = subprocess.run([rn.wd, "-s", "28800", "-c", "28800", "-m", "6g", "-i", "0.5", "-S", "growth-lib",
                             "-L", os.path.join(rn.work, "watchdog.log"), "--", lib_drv, "lib", ctl, series],
@@ -632,7 +652,6 @@ def main():
     ap.add_argument("--keep", action="store_true")
     ap.add_argument("--verbose", action="store_true", help="print every uncapped outcome")
     ap.add_argument("--pattern", default="", help="print the pattern of the cell with this id and exit")
-    ap.add_argument("--sample", type=int, default=0, metavar="N", help="run N matrix PAIRS (2N cells) instead of the whole matrix")
     ap.add_argument("--pairs", action="store_true", help="list every limit/stability pair and every UNPAIRED cell, then exit")
     ap.add_argument("--selftest", action="store_true", help="the crossing-over alert: a stability cell that compiles and a limit cell that is refused must both FAIL")
     ap.add_argument("--shard", default="", metavar="K/N", help="only the cells shard K of N owns, by --table (the cloud kind `growth`)")
@@ -655,7 +674,7 @@ def main():
         for pid, cs in pairs.items():
             print("%s\t%s\t%s" % (pid, cs[0].limit, " ".join("%s:%s" % (c.kind, c.id.split("@")[-1]) for c in cs)))
         for c in unpaired:
-            print("UNPAIRED\t%s\t%s\t%s" % (c.id, c.kind, c.limit or "-"))
+            print("UNPAIRED\t%s\t%s\t%s\t%s" % (c.id, c.kind, c.limit or "-", c.why or "UNEXPLAINED"))
         print("# %d pairs, %d unpaired cells, %d limit cells, %d stability cells" % (
             len(pairs), len(unpaired), sum(c.kind == "limit" for c in cells), sum(c.kind == "stability" for c in cells)))
         return 0
@@ -664,8 +683,6 @@ def main():
     if a.shard:
         cells = shard_cells(cells, a.shard, a.table)
         print("shard %s: %d of the sweep's cells (table %s)" % (a.shard, len(cells), os.path.relpath(a.table, ROOT)))
-    if a.sample:
-        cells = sample_matrix(cells, a.sample)
     if a.depth_only:
         a.only, a.no_ladder = "depth", True
     if a.only:
@@ -709,11 +726,16 @@ def main():
             write_units(a.units, rn)
         return 1 if nbad else 0
     jobs = a.jobs or max(1, (os.cpu_count() or 4) // 2)
-    npass = nfail = nred = nfixed = 0
+    npass = nfail = nred = nfixed = nskip = 0
     fam = {}
     with cf.ThreadPoolExecutor(jobs) as ex:
-        for cell, res in ex.map(lambda c: job(rn, c, ladder), cells):
+        for cell, res, skipped in ex.map(lambda c: job(rn, c, ladder), cells):
             st = fam.setdefault(cell.family, [0, 0, 0, 0])
+            nskip += skipped
+            if ladder and skipped == len(ladder):
+                # a ladder cell with no rung runs nothing of the ladder: a green that tested nothing (learnings 3)
+                nfail += 1; st[1] += 1
+                print("FAIL: %s: every ladder rung was skipped (pattern %d bytes, smallest rung %d)" % (cell.id, len(cell.pattern), ladder[0]))
             for col, cap, kind, text in res:
                 if col == "uncapped":
                     good, why = judge(cell, kind, text)
@@ -758,14 +780,13 @@ def main():
     print("runs passed: %d" % npass)
     print("runs failed: %d" % (nfail + nfixed))
     print("runs known-red: %d" % nred)
+    if ladder:
+        print("ladder rungs skipped (cap under twice the pattern's bytes): %d of %d" % (nskip, len(ladder) * len(cells)))
     sel = {c.id for c in cells}
     exc = [c for c in cells if c.norun]
     print("compile-only exceptions: %d limit cells (matcher not built; named in cells.tsv): %s" % (
         len(exc), ", ".join("%s=%d" % (n, sum(c.norun == n for c in exc)) for n in sorted(NORUN_EXCEPTIONS))))
-    for c in unpaired:
-        if c.id in sel:
-            print("UNPAIRED: %s (%s, limit %s) has no %s twin across the same limit" % (
-                c.id, c.kind, c.limit or "-", "limit" if c.kind == "stability" else "stability"))
+    print_unpaired([c for c in unpaired if c.id in sel])
     if not a.keep:
         subprocess.run(["rm", "-rf", "--", work])
     else:

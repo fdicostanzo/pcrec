@@ -6642,3 +6642,8 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   status (2026-11-21):  DONE: landed on main f9b1b21eb from lane/k152r67 (cloud make test 44875195557 GREEN): the NFA builder's compile_ast arms on their own frames (dispatcher 384 -> 32 B), every DEPTH_FAMILIES row at 250 with >= 28% headroom (worst longwrap 319,504 B); review r67 fixes (anchors, limits.md 3.10); zero emitted-byte movers; S3470.
   trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
   refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]
+- [K156-NO-REPEAT-LIMIT] STATE:done — no limit counts a run of empty or option-only groups once the emit caps are lifted (K156)
+  filed: 2026-11-21 lane grow5, from grow4's dropped empty/inl families (owner-manager ruling, GROWTH-SWEEP row body)
+  status (2026-11-21): DONE (closed, not a defect): the shipped emit cap refuses both shapes; grow6 made spine/empty and spine/inl ordinary stability cells at the shipped limits (review r74 VERDICT-1)
+  trigger: (closed) a pattern-length / group-count limit design would still bound the caps-lifted case; no row waits on it
+  refs: known_issues K156; docs/dev/lanes/grow5_report.md; tests/growth/cells.tsv

@@ -2288,7 +2288,7 @@ test-axes: all
 
 # [GROWTH-SWEEP] extreme depth / length / memory cells that must REFUSE cleanly,
 # never crash (tests/growth/, docs/testing.md "Growth sweep"). OPT-IN like
-# test-axes: it is long (about 1,500 cells x 5 runs, then the library-mode
+# test-axes: it is long (about 1,600 cells, up to 5 runs each (the count varies: a ladder rung is skipped under twice the pattern's bytes), then the library-mode
 # series under ASan+LSan), so it is NOT in `make test`; the depth arm alone is
 # in `make test-stackdepth`. Known-red cells (the `red` column of
 # tests/growth/cells.tsv) are listed, not failures; one that starts passing fails the sweep (the ratchet).

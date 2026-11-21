@@ -277,6 +277,8 @@ cout="$("$TIMEOUT_BIN" 300 "$GDRIVER" one 0 "$CONTROL_STACK" 1 all 0 "$WORKDIR/c
 crc=$?
 if [ "$crc" -ge 128 ]; then
     ok "control: the same compile on a $CONTROL_STACK-byte thread dies by signal (exit $crc), so the guard catches an overflow"
+elif [ "$crc" -eq 0 ] && case "$cout" in rc=-9\ *) true;; *) false;; esac; then
+    bad "[DD-10] control: the driver's thread never started (${cout%% msg=*}) on a $CONTROL_STACK-byte stack: the control tested nothing (check CONTROL_STACK against the system's minimum thread stack), not a guard result"
 elif [ "$crc" -eq 0 ] && [ -n "$cout" ]; then
     bad "[DD-10] control: a compile on a $CONTROL_STACK-byte thread did NOT die (${cout%% msg=*}) — either the compiler's baseline fell below it (lower CONTROL_STACK) or the driver is not running the compile on the thread it sized"
 else

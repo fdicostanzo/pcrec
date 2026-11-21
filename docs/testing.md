@@ -5539,8 +5539,8 @@ green with no green record, nothing left to run, simulated/real mismatch. Tests:
 
 ## Growth sweep (`make test-growth`, [GROWTH-SWEEP], 2026-11-21)
 
-Opt-in, like `make test-axes`: NOT in `make test` (about 1,500 cells x 5 runs
-plus a library-mode series under ASan+LSan). Its depth arm alone rides
+Opt-in, like `make test-axes`: NOT in `make test` (1,600 cells, up to 5 runs each: the
+ladder skips a rung under twice the pattern's bytes, and the run reports the count; plus a library-mode series under ASan+LSan). Its depth arm alone rides
 `make test-stackdepth`. The owner's rulings of 2026-11-21 (growth-compile-cells:
 "the purpose of that section is to test limits and look for crashes. If it
 compiles, it's not testing limits"; limit-test-criteria, in
@@ -5558,8 +5558,11 @@ Crossing over is red either way (a stability cell that compiles, a limit cell
 that refuses), which is the alert for a cell that used to refuse and no longer
 does (`run_growth.py --selftest` shows both directions). Each limit cell has a
 stability twin across the same limit and value (depth 250/251 is the model;
-`--pairs` lists the pairs and any unpaired cell). The memory ladder (below) is
-stability-only: there is no sharp "just before" a memory cap. A timeout is a
+`--pairs` lists the pairs and any unpaired cell; a cell with no twin declares why in the `pair` column,
+`none=REASON`, and a run lists only the unexplained ones). The memory ladder (below) is not a kind:
+there is no sharp "just before" a memory cap. A LIMIT cell under a cap passes on a compile or a clean
+out-of-memory refusal (its own count limit firing under a cap is red: a cap must not move a count limit);
+a STABILITY cell passes on any clean refusal (its limit's text or out of memory). A timeout is a
 crash.
 There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md.
 Cloud: the kind `growth` runs the same two stages sharded (`GROWTH_SHARD=K/N`; tests/growth/CLAUDE.md "Cloud"); the runner's gcc is
@@ -5573,13 +5576,20 @@ recorded per shard and stack-depth headroom is read per compiler.
   cells (a `stability` row names its limit's diagnostic in `refuse:`; a `limit` row is `compile` and names the limit it sits just before).
 - **Matcher run.** A `limit` cell's uncapped run also builds the emitted C (`gcc -O0`) and runs it on
   three subjects (exit 0 or 1). The exception is a NAMED one (owner ruling limit-cell-matcher-cost,
-  2026-11-21): the 13 NFA-state / VM-node edge cells are `compile:norun=limit-cell-matcher-cost`: at those
-  sizes (the size limits lifted, `raise 1`) gcc needs about 10 minutes and 3.4 GB per cell, so they are
-  compile-only; an unnamed `compile:norun` is a table error and every run prints the count per name
-  (13). The same ruling adds limit tests at the SHIPPED generated-code size limits (`raise 0`, buildable,
-  the matcher runs), each with a stability twin one unit past it: PCREC_MAX_VM_EMIT_CODE_BYTES at
+  2026-11-21): the NFA-state / VM-node edge cells (13 in cells.tsv, 92 matrix `+` edges, the `cnt` and
+  `cnt_nest` count edges: 107) are `compile:norun=limit-cell-matcher-cost`: at those
+  sizes (the size limits lifted, `raise 1`) the emitted C is tens of MB (25 MB on z_cls; 22 to 119 MB on the
+  `+` edges) and gcc needs about 10 minutes and 3.4 GB per cell, so they are
+  compile-only; an unnamed `compile:norun` is a table error and every run prints the count per name.
+  The same ruling adds limit tests at the SHIPPED generated-code size limits (`raise 0`, buildable,
+  the matcher runs). Each edge pair's two halves sit at the exact edge of their OWN mode: the limit cell
+  carries a main() (which counts toward the emit cap), the twin has none, so the twin sits one unit past
+  the NO-main edge (`alt_cap_emit`: no-main 801 compiles, 802 is refused; with main 800 is refused): PCREC_MAX_VM_EMIT_CODE_BYTES at
   `alt_lit` 70657, `alt_cap_emit` 799, `cat_grp_emit` 1007, `named_emit` 990 units, and PCREC_MAX_NFA_STATES
-  at `lit_ship` 131069 and `anchors_ship` 131070. No shipped-cap edge cell exists for the other NFA/VM
+  at `lit_ship` 131069 and `anchors_ship` 131070 (the `lit_ship` / `anchors_ship` NFA-edge pairs are the
+  growth lane's addition, not part of the ruling, which names only the generated-code size limit; the
+  `cnt`, `cnt_nest` and `calls` pairs likewise: count-limit edges 9,362/9,363 NFA states, 10/11 nested
+  `{2,3}` (NFA states) and 14/15 chained calls (emitted-code cap)). No shipped-cap edge cell exists for the other NFA/VM
   families: z_b, z_look, z_nlook, z_lookb and z_cilook crash (K148) between 8,000 and 16,000 units, before
   the emit cap refuses; z_cls, cat_ncgrp and uni run away in memory (K150) near 8,000. PCREC_MAX_EMIT_BYTES
   (the whole artifact) was not reached by any family tried: the code cap binds first.
@@ -5588,12 +5598,16 @@ recorded per shard and stack-depth headroom is read per compiler.
   bisected edge E; `run_growth.py` makes a limit cell at E, a stability twin at E + 1, and the matrix@250
   cell is the pair's far-past stability member. The edge depends on kind, position and core (so one row
   per cell). The 92 edge limit cells sit at the NFA-state / VM-node edge too, so they are compile-only
-  under a second exception name, `plus-edge-matcher-cost` (a sample matcher build timed out at the 180 s
-  wall; owner to confirm it falls under limit-cell-matcher-cost). The @251 `+` cells stay UNPAIRED: the
+  under the same exception name, `limit-cell-matcher-cost` (a sample matcher build timed out at the 180 s
+  wall). The @250 cell names the limit that really refuses it (`far_limit`, `far_text` in plus_edges.tsv:
+  the NFA-state limit for 40 rows, PCREC_MAX_VM_REPLICATION_PRODUCT for 52) and accepts only that text; the
+  52 replication-product cells cannot join their edge pair (a pair names one limit) and are declared
+  unpaired (`far-limit-differs`). The @251 `+` cells stay UNPAIRED (`no-depth-half-for-plus`): the
   depth limit has no limit-test half for `+`.
-- **K156 cells.** `spine/empty` (`(?:)` x 1,000,000) and `spine/inl` (`(?i)(?-i)` x 1,000,000) are
-  stability cells with the emit caps lifted, red `K156:compiled` (red kind `compiled`): no limit counts
-  these units, so they compile; they flip to FIXED-RED the day a limit refuses them.
+- **Empty and option-only runs.** `spine/empty` (`(?:)` x 1,000,000) and `spine/inl` (`(?i)(?-i)` x
+  1,000,000) are ordinary stability cells at the SHIPPED limits: PASS = the emitted-code cap refuses them
+  ("emitted code", PCREC_MAX_VM_EMIT_CODE_BYTES); K156 closed as not a defect, since the shipped cap refuses both.
+  The caps-lifted variants were dropped.
 - **Memory ladder.** Every cell also runs under RLIMIT_DATA caps of 2, 8, 32 and
   128 MB; PASS = compiled, or refused by the cell's own limit text or by out of
   memory; FAIL = an `internal error:` refusal, a thread that never started,
