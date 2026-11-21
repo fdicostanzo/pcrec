@@ -1,0 +1,29 @@
+# matrix_axes.tsv - the survey's product ([GROWTH-SWEEP], growsurv_report.md "Suggested runner shape"):
+# construct kind K x quantifier Q x branch position P x core C, each cell nested to depth 250
+# (compile, or any clean refusal: some combinations are refused for their own reasons, e.g. an
+# unbounded lookbehind) and 251 (must be refused "too deeply nested"). Columns: axis name a b.
+#   K: a = the group opener (nest repeats it per level).  Q: a = the quantifier after each `)`.
+#   P: a = text after the opener, b = text before the `)` ({A} {B} = the core's two branch literals).
+#   C: a = the two branch literals `A,B`, b = the innermost core.
+K	group	(	-
+K	ncgroup	(?:	-
+K	named	(?<n%d>	-
+K	atomic	(?>	-
+K	look	(?=	-
+K	neglook	(?!	-
+K	lookbehind	(?<=	-
+K	inline	(?i:	-
+Q	none	-	-
+Q	star	*	-
+Q	plus	+	-
+Q	lazy	*?	-
+Q	poss	*+	-
+Q	opt	?	-
+Q	cnt01	{0,1}	-
+P	sole	-	-
+P	first	-	|{B}
+P	second	{A}|	-
+P	last	{A}|{B}|	-
+C	lit	a,b	c
+C	bref	a,b	\1
+C	litalt	abc,abd	abe

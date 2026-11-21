@@ -1,0 +1,276 @@
+/*
+ * growth_driver.c — [GROWTH-SWEEP]: pcrec_compile() on a thread whose stack
+ * this driver owns, under an optional memory cap, in two modes.
+ *
+ *   growth_driver one CAP STACK RAISE FEATURES ENGINE PATFILE
+ *       ONE compile, then exit. Prints `rc=<0|-1> hw=<bytes> msg=<diag>` and
+ *       exits 0; a crash kills the process before the line, which is what
+ *       the runner reads.
+ *   growth_driver lib CONTROL_OUT SERIES_FILE
+ *       LIBRARY MODE: ONE process compiles a whole series of cells, refusals
+ *       and memory-capped failures included, to see whether a series in one
+ *       process crashes or leaks (build it with ASan+LSan and the process
+ *       exit reports a leak). SERIES_FILE has one TAB-separated line per cell:
+ *       CAP STACK RAISE FEATURES ENGINE PATFILE. A CONTROL pattern is compiled
+ *       before the series and again after it; both outputs are written to
+ *       CONTROL_OUT.before / .after for the runner to compare and to run.
+ *       Prints one `cell <n> rc=.. hw=.. msg=..` line per cell.
+ *
+ * CAP is bytes of RLIMIT_DATA (0 = none): private writable mappings and the
+ * heap, which a failing malloc turns into a refusal. RLIMIT_DATA and not
+ * RLIMIT_AS because AddressSanitizer reserves terabytes of address space
+ * and cannot start under an AS cap; the cap is set AFTER the runtime is up,
+ * so it is the data size the compile itself may reach. Under ASan even
+ * RLIMIT_DATA fails (the runtime's own shadow mappings), so the sanitizer
+ * build defines GROWTH_HEAPCAP and the cap is a live-heap budget (below).
+ *
+ * STACK is the thread's size in bytes, painted and guarded as
+ * tests/thread/compile_stack_driver.c does; 0 = run the compile on the main
+ * thread (the process's own stack). RAISE=1 lifts the emitted-size caps to
+ * their maximum (so a wide pattern reaches every pass), 0 keeps the defaults.
+ * FEATURES is pcrec_options.features ("-" = NULL), ENGINE a number.
+ */
+#define _GNU_SOURCE
+#include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/resource.h>
+#include <unistd.h>
+
+#include "pcrec.h"
+
+#define PAINT 0xA5
+#define GUARD (64 * 1024)
+
+struct job {
+    const char  *pattern;
+    const char  *features;
+    int          engine, raise, emit_main;
+    int          rc;
+    pcrec_error  err;
+    char        *out;      /* the c_src, kept only when emit_main */
+};
+
+static void *compile_job(void *p)
+{
+    struct job *j = p;
+    pcrec_options o;
+    pcrec_output out;
+
+    pcrec_default_options(&o);
+    o.features = j->features;
+    o.engine = j->engine;
+    if (j->emit_main) o.flags |= PCREC_EMIT_MAIN;
+    if (j->raise) {
+        o.max_emit_code_bytes = UINT64_MAX / 2;
+        o.max_emit_bytes = UINT64_MAX / 2;
+    }
+    memset(&out, 0, sizeof out);
+    j->rc = pcrec_compile(j->pattern, &o, &out, &j->err);
+    if (j->rc == 0) {
+        if (j->emit_main) j->out = out.c_src, out.c_src = NULL;
+        pcrec_output_free(&out);
+    }
+    return NULL;
+}
+
+static char *slurp(const char *path)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return NULL; }
+    long n = ftell(f);
+    if (n < 0 || fseek(f, 0, SEEK_SET) != 0) { fclose(f); return NULL; }
+    char *s = malloc((size_t)n + 1);
+    if (s && fread(s, 1, (size_t)n, f) != (size_t)n) { free(s); s = NULL; }
+    if (s) s[n] = '\0';
+    fclose(f);
+    return s;
+}
+
+#ifdef GROWTH_HEAPCAP
+/* The cap as a LIVE-HEAP budget (build with -DGROWTH_HEAPCAP and
+ * -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free): malloc, calloc
+ * and realloc in the objects linked here (pcrec's and this driver's) return
+ * NULL when the live bytes would pass the cap, which is what an exhausted
+ * address space does to them. For the ASan build, whose runtime cannot start
+ * its shadow mappings under RLIMIT_DATA (the runner's library-mode ASan stage);
+ * the counts are approximate (strdup and friends are libc-internal calls the
+ * wrap does not see), so the cap is a ladder rung, not a measurement. */
+#include <malloc.h>
+static size_t heap_cap;
+static long   heap_live;
+void *__real_malloc(size_t), *__real_calloc(size_t, size_t), *__real_realloc(void *, size_t);
+void  __real_free(void *);
+static int over(size_t add)
+{
+    return heap_cap && (size_t)__atomic_load_n(&heap_live, __ATOMIC_RELAXED) + add > heap_cap;
+}
+void *__wrap_malloc(size_t n)
+{
+    if (over(n)) return NULL;
+    void *p = __real_malloc(n);
+    if (p) __atomic_add_fetch(&heap_live, (long)malloc_usable_size(p), __ATOMIC_RELAXED);
+    return p;
+}
+void *__wrap_calloc(size_t a, size_t b)
+{
+    if (b && a > (size_t)-1 / b) return NULL;
+    if (over(a * b)) return NULL;
+    void *p = __real_calloc(a, b);
+    if (p) __atomic_add_fetch(&heap_live, (long)malloc_usable_size(p), __ATOMIC_RELAXED);
+    return p;
+}
+void *__wrap_realloc(void *q, size_t n)
+{
+    long old = q ? (long)malloc_usable_size(q) : 0;
+    if (over(n > (size_t)old ? n - (size_t)old : 0)) return NULL;
+    void *p = __real_realloc(q, n);
+    if (p) __atomic_add_fetch(&heap_live, (long)malloc_usable_size(p) - old, __ATOMIC_RELAXED);
+    return p;
+}
+void __wrap_free(void *q)
+{
+    if (q) __atomic_sub_fetch(&heap_live, (long)malloc_usable_size(q), __ATOMIC_RELAXED);
+    __real_free(q);
+}
+static void set_cap(size_t bytes) { heap_cap = bytes; }
+#else
+static void set_cap(size_t bytes)
+{
+    struct rlimit r;
+    getrlimit(RLIMIT_DATA, &r);
+    r.rlim_cur = bytes ? bytes : r.rlim_max;
+    setrlimit(RLIMIT_DATA, &r);
+}
+#endif
+
+/* Compile j on a STACK-byte painted thread (0: this thread); the high-water
+ * mark of the stack goes to *hw. Returns 0, or -1 when the thread could not
+ * be started (the cap may be below what a thread needs). */
+static int run_job(struct job *j, size_t want, size_t *hw)
+{
+    *hw = 0;
+    if (want == 0) { compile_job(j); return 0; }
+    const size_t page = (size_t)sysconf(_SC_PAGESIZE);
+    const size_t size = (want + page - 1) / page * page;
+    const size_t guard = (GUARD + page - 1) / page * page;
+    unsigned char *map = mmap(NULL, size + guard, PROT_READ | PROT_WRITE,
+                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (map == MAP_FAILED) return -1;
+    if (mprotect(map, guard, PROT_NONE) != 0) { munmap(map, size + guard); return -1; }
+    unsigned char *stk = map + guard;
+    memset(stk, PAINT, size);
+    pthread_attr_t at;
+    pthread_t t;
+    if (pthread_attr_init(&at) != 0 || pthread_attr_setstack(&at, stk, size) != 0 ||
+        pthread_create(&t, &at, compile_job, j) != 0) {
+        munmap(map, size + guard);
+        return -1;
+    }
+    pthread_join(t, NULL);
+    size_t i = 0;
+    while (i < size && stk[i] == PAINT) i++;
+    *hw = size - i;
+    munmap(map, size + guard);
+    return 0;
+}
+
+static void job_report(const char *lead, struct job *j, size_t hw, int started)
+{
+    if (!started) printf("%src=-9 hw=0 msg=could not start the thread (the cap is below what a thread needs)\n", lead);
+    else printf("%src=%d hw=%zu msg=%s\n", lead, j->rc, hw, j->rc ? j->err.msg : "");
+    fflush(stdout);
+}
+
+static int write_file(const char *path, const char *s)
+{
+    FILE *f = fopen(path, "wb");
+    if (!f) return -1;
+    if (s) fputs(s, f);
+    return fclose(f);
+}
+
+/* The control: compiled with a main(), uncapped, on the main thread. */
+static int control(const char *path)
+{
+    struct job j;
+    size_t hw;
+    memset(&j, 0, sizeof j);
+    j.pattern = "^(?:ab|cd)+e(f)?$";
+    j.features = "all";
+    j.emit_main = 1;
+    run_job(&j, 0, &hw);
+    if (j.rc != 0) { fprintf(stderr, "control: compile refused: %s\n", j.err.msg); return -1; }
+    int rc = write_file(path, j.out);
+    free(j.out);
+    return rc;
+}
+
+int main(int argc, char **argv)
+{
+    if (argc >= 8 && strcmp(argv[1], "one") == 0) {
+        struct job j;
+        size_t hw;
+        memset(&j, 0, sizeof j);
+        j.pattern = slurp(argv[7]);
+        if (!j.pattern) { perror(argv[7]); return 2; }
+        j.raise = atoi(argv[4]);
+        j.features = argv[5];
+        if (strcmp(j.features, "-") == 0) j.features = NULL;
+        j.engine = atoi(argv[6]);
+        set_cap((size_t)strtoull(argv[2], NULL, 10));
+        int started = run_job(&j, (size_t)strtoull(argv[3], NULL, 10), &hw) == 0;
+        job_report("", &j, hw, started);
+        return 0;
+    }
+    if (argc == 4 && strcmp(argv[1], "lib") == 0) {
+        char path[4096];
+        snprintf(path, sizeof path, "%s.before", argv[2]);
+        if (control(path) != 0) return 2;
+        FILE *f = fopen(argv[3], "r");
+        if (!f) { perror(argv[3]); return 2; }
+        char line[8192];
+        int n = 0;
+        while (fgets(line, sizeof line, f)) {
+            char *fld[6];
+            char *s = line, *nl = strchr(line, '\n');
+            if (nl) *nl = '\0';
+            int k = 0;
+            for (; k < 6; k++) {
+                fld[k] = s;
+                char *t = strchr(s, '\t');
+                if (!t) { k++; break; }
+                *t = '\0';
+                s = t + 1;
+            }
+            if (k < 6) continue;
+            struct job j;
+            size_t hw;
+            memset(&j, 0, sizeof j);
+            j.pattern = slurp(fld[5]);
+            if (!j.pattern) { perror(fld[5]); return 2; }
+            j.raise = atoi(fld[2]);
+            j.features = fld[3];
+            if (strcmp(j.features, "-") == 0) j.features = NULL;
+            j.engine = atoi(fld[4]);
+            set_cap((size_t)strtoull(fld[0], NULL, 10));
+            int started = run_job(&j, (size_t)strtoull(fld[1], NULL, 10), &hw) == 0;
+            set_cap(0);
+            char lead[64];
+            snprintf(lead, sizeof lead, "cell %d ", n++);
+            job_report(lead, &j, hw, started);
+            free((void *)j.pattern);
+        }
+        fclose(f);
+        snprintf(path, sizeof path, "%s.after", argv[2]);
+        if (control(path) != 0) return 2;
+        printf("series done: %d cells\n", n);
+        return 0;
+    }
+    fprintf(stderr, "usage: %s one CAP STACK RAISE FEATURES ENGINE PATFILE | lib CONTROL_OUT SERIES_FILE\n", argv[0]);
+    return 2;
+}

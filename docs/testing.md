@@ -5536,3 +5536,30 @@ still running, the worktree's HEAD differs from the run's commit or is dirty (th
 `docs/dev/artifact_size_log.tsv` is tolerated: measured, `make test` touches it), a summary that names a stage
 green with no green record, nothing left to run, simulated/real mismatch. Tests: `scripts/tests/fullsuite_resume.test`
 (offline, simulated). Staged real test: docs/dev/lanes/suiteresume_report.md.
+
+## Growth sweep (`make test-growth`, [GROWTH-SWEEP], 2026-11-21)
+
+Opt-in, like `make test-axes`: NOT in `make test` (about 1,500 cells x 5 runs
+plus a library-mode series under ASan+LSan). Its depth arm alone rides
+`make test-stackdepth`. Owner's rule (2026-11-20): every cell is sized past a
+limit and names it; it passes only on a clean refusal by that limit, and fails
+if it compiles, crashes, aborts, hangs or runs away; a timeout is a crash.
+There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md.
+
+- **Cells.** `tests/growth/depth_families.tsv` is the one depth table (33
+  families at depth 250 = must compile on the 442,368-byte budget thread, 251 =
+  refused by PCREC_MAX_GROUP_DEPTH; `run_compile_stack.sh` reads it through the
+  runner); `matrix_axes.tsv` is the construct x quantifier x position x core
+  product at 250/251; `cells.tsv` holds the spine-length, width and memory
+  cells, each with its named limit.
+- **Memory ladder.** Every cell also runs under RLIMIT_DATA caps of 2, 8, 32 and
+  128 MB; PASS = compiled or any clean refusal (out of memory included), FAIL =
+  crash, abort, hang, timeout. Why those four: LADDER in run_growth.py.
+- **Library mode.** `run_growth.py --lib`: ONE process (the ASan+LSan build)
+  compiles the whole series, caps set in-process, then must exit 0 with no leak
+  report, answer every cell, and compile a control pattern identically before
+  and after the series and run its matcher on a known subject.
+- **Known red.** A `red` cell (K148, K150, K151, NEW-n) is listed, not a
+  failure; when it starts passing the sweep fails until its `red` is removed.
+- Every cell runs under `scripts/watchdog` (wall 180 s, CPU 180 s, RSS 3 GB);
+  run it through the box queue (`scripts/boxqueue`), it is heavy.

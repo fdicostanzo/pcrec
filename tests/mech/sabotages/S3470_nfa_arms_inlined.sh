@@ -8,7 +8,7 @@
 # nfa.c becomes always_inline (site 1, the 10 marks) and nfa_cat gets its
 # two loops back (site 2). That rebuilds the pre-fix frame exactly
 # (measured: `(?:abc|abd…abe)*` x250 440,176 B, as at base 2b4e56eab), and
-# the compound-route nest `^(?:abc|abd…abe)*…|b$` (DEPTH_FAMILIES
+# the compound-route nest `^(?:abc|abd…abe)*…|b$` (tests/growth/depth_families.tsv
 # `litcompound`) dies on the 442,368-byte thread, as at base. Same answers.
 #
 # ONE ROW, NOT ONE PER PIECE: measured by plant (lane k152fix), each piece
