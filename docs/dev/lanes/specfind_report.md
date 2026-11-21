@@ -110,7 +110,8 @@ Wire it back in only after repair, in this order:
 
 - Fact-finding only; no tests or code edited. Rulings file: none present (no
   R-n applied).
-- Owed runs: none. Logs in /var/tmp/pcrec-pcrec/scratch/specfind/ (spec.log
+OWED: none
+- Logs in /var/tmp/pcrec-pcrec/scratch/specfind/ (spec.log
   as shipped, spec3.log repaired scratch copy, bisect.log, a7.spec).
 - Open: whether check08's `^`-endpoint model deviation is a pcrec classification
   quirk (not examined beyond the one libpcre2 probe, which compiles).
