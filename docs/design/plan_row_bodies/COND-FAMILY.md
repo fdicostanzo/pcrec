@@ -6834,3 +6834,53 @@ under BOTH readings; what moves is `occurs.none(NOT c)` itself. Also found: the 
 
 Owner questions the lane leaves (proposed slugs): record-in-some; count-several; group-truth re-put (close for one
 entry?); every-pass-spelling re-put (its named form would now mean every SETTING).
+
+### 2026-11-21 OWNER, his "issue definition" for bare-nested-scope: bindings define scope; flags are a symptom of PCRE, probably only `i` inherits; the two languages differ by construction; a sketch `list_of_stuff(X, cmp, S)`
+tags: core/holes/bare-condition/nested-scope core/holes/flags core/holes/flags/in-filter lib/records/list-of core/principles/regex-default parked/ideas/label-parameter
+
+After the manager's three issues with the ruling (extracting a definition changes an answer; flags flow in, label
+values do not; what one piece is for a twice-used argument or a user's loop, with `list_of` and a predecessor test
+written in X). HIS WORDS, whole (two messages; the second about the first's last line):
+
+"bare-nested-scope: issue definition: 1. bindings define scope. if they must refer to each other then construct in
+predicate with labels or create them in the same literal. 2. flags are a symtom of the source being pcre. also, i
+am probably going to rule that only i is inherited this way as it doesn't make sense for any other flag.
+therefore, the only flag we are talking about is case insensitivity. we have to give up mathematical purity for
+the reality on which we were founded. thats practically a quote from godel. 3. i am seeing that the language of
+predicate and the language of regex are different by construction. C has rules like local scope and code blocks
+that are not needed in assembly but are better for correctness. in your example, X should not have a compare with
+predecessor test defined in a single binding because it has no meaning. list_of might not support that. i have no
+idea what this means: list_of_stuff(X, cmp, S) := /(?:${_p = [peek(X)] & cmp}{X}${S})*${X})/"
+
+"oops syntax but i think you can see what i mean"
+
+Class, part by part (DISCUSSION; nothing asked as a ruling):
+1. A STATEMENT of the ruled rule in his words: "bindings define scope. if they must refer to each other then
+   construct in predicate with labels or create them in the same literal." (It confirms the manager's reading (a)
+   of case 2: the unit is the binding; what is written in one literal or one definition is one piece.)
+2. On flags: an OBSERVATION ("flags are a symptom of the source being pcre"), a FORECAST of a ruling, not a ruling
+   ("i am probably going to rule that only i is inherited this way"): a LEAN; today's ruled list is `i`, `m`, `s`
+   (flags-scope / flags-propagate, 2026-11-19, core/holes/flags). And a PRINCIPLE stated: "we have to give up
+   mathematical purity for the reality on which we were founded."
+3. An OBSERVATION ("the language of predicate and the language of regex are different by construction", with the
+   C / assembly comparison: scope rules are there for correctness), and a POSITION on the manager's third issue:
+   "X should not have a compare with predecessor test defined in a single binding because it has no meaning.
+   list_of might not support that." And a SKETCH he does not vouch for ("i have no idea what this means"; "oops
+   syntax"): a list macro taking the comparison as an argument, with a private peek label.
+
+WITHDRAWN by the manager on his position in 3: reading (c) of the case-2 ruling entry ("when the USER loops a
+piece, the piece's previous pass is its own"): a binding that reads its label before its own group is fixed
+(unset) on its own; a predecessor test belongs to the definition that writes the loop. Reading (d) (two uses are
+two pieces) stands with it. Not asked as a ruling; to be confirmed.
+
+The manager's answer on the sketch (told to him; proposals, the manager's; RUN as a hand-built simulation in
+PCRE's order): the macro that owns the loop also owns the test and its two labels, all private; the caller passes
+a macro from the previous item to the SET the next item must be in:
+`list_of_stuff(X, rel, S) := /(?:${step}${S})*${step}/` with step written out as `[_p = peek(X)] SEQ (NOT (_c:
+anything) | (_p: rel($_c))) SEQ [_c = X]`; `at_least(v) := >= v`; `list_of_stuff(digit, at_least, ",")`: WHOLE
+`1,3,3` HOLDS, `1,3,2` FAILS, `7` HOLDS, `3,1` FAILS / SEARCHED `x1,3,2 5` `1,3`@1 / FIND-ALL `1,3,2 5,5,9 4,1`
+[`1,3`@0, `2`@4, `5,5,9`@6, `4`@12, `1`@14]. What it needs that is not defined today: a NAMED MACRO passed as an
+argument outside `each` (lib/structural/each takes one; core/operators/bindings: "No lambda until an example needs
+one"). His form, the comparison passed as a CONDITION `cmp`, needs the caller to name the macro's labels, so they
+must be public part labels (as `hit` is in `occurrences`), and needs a passed condition to read where it is used
+(the open bound-condition).
