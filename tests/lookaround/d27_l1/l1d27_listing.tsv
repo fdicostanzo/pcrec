@@ -20,7 +20,7 @@ A18	A	bu..(?<=ck)	byte	'buck bucx buckbuck'=>0-4 10-14 14-18; 'buc'=>none; 'abuc
 A19	A	t(?=[o])\w	byte	'to ta toto'=>0-2 6-8 8-10; 't'=>none; 'atob'=>1-3	yes	yes	746f	rate:builtin-prior	run contains 746f; sound in every match; not dead	PASS	
 A20	A	\w(?<=q)u	byte	'qu au ququ'=>0-2 6-8 8-10; 'q'=>none; 'squid'=>1-3	yes	yes	7175	rate:builtin-prior	run contains 7175; sound in every match; not dead	PASS	
 A21	A	..(?=wvz)..	byte	'abwvz abwvy cdwvzwvz'=>0-4 12-16; 'abwv'=>none; 'wvwvz'=>0-4	yes	yes	none		run contains 7776; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=7776
-A22	A	(?<=nop)st	byte	'nopst xopst nopstnopst'=>3-5 15-17 20-22; 'st'=>none; 'anopstb'=>4-6	yes	yes	6e6f707374	rate:builtin-prior	run contains 7374; sound in every match; not dead	PASS	
+A22	A	(?<=nop)st	byte	'nopst xopst nopstnopst'=>3-5 15-17 20-22; 'st'=>none; 'anopstb'=>4-6	yes	yes	7374	rate:builtin-prior	run contains 7374; sound in every match; not dead	PASS	
 A23	A	.m(?<=jm)k	byte	'jmk xmk jmkjmk'=>0-3 8-11 11-14; 'mk'=>none; 'ajmkb'=>1-4	yes	yes	6d6b	rate:builtin-prior	run contains 6a6d6b; sound in every match; not dead	FAIL	RUN listing=6d6b expected(spec-allowed, contained)=6a6d6b
 A24	A	(?=\x{e9}).e	utf8	'ée ee éeée'=>0-3 7-10 10-13; 'é'=>none; 'xéex'=>1-4	yes	yes	none		run contains c3a965; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=c3a965
 A25	A	(?:x|y)(?=cb)..z	byte	'xcbz ycbz zcbz xcbzycbz'=>0-4 5-9 15-19 19-23; 'xcb'=>none; 'axcbza'=>1-5	yes	yes	none		run contains 63627a or [7879]63627a or 7863627a/feffffff; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=['63627a', '[7879]63627a', '7863627a/feffffff']
@@ -49,7 +49,7 @@ C03	C	(?!ab)ac	byte	'ac ab acac'=>0-2 6-8 8-10; 'ab'=>none; 'aac'=>1-3	yes	yes	6
 C04	C	(?:(?=z)a){0}b	byte	'b ab bb'=>0-1 3-4 5-6 6-7; 'a'=>none; 'zab'=>2-3	yes	yes	none		NOT dead; answers as PCRE2	PASS	
 C05	C	(?:(?=z)a)*b	byte	'b ab bb'=>0-1 3-4 5-6 6-7; 'a'=>none; 'zab'=>2-3	yes	yes	none		NOT dead; answers as PCRE2	PASS	
 C06	C	(?i)(?=K)k	byte	'k K kk'=>0-1 2-3 4-5 5-6; 'x'=>none; 'aKa'=>1-2	yes	yes	none		NOT dead; answers as PCRE2	PASS	
-C07	C	(?<=a)(?<=[ab])c	byte	'ac bc acac'=>1-2 7-8 9-10; 'c'=>none; 'abc'=>none	yes	yes	6163	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
+C07	C	(?<=a)(?<=[ab])c	byte	'ac bc acac'=>1-2 7-8 9-10; 'c'=>none; 'abc'=>none	yes	yes	none		NOT dead; answers as PCRE2	PASS	
 C08	C	(?:(?=ab)ac|(?=ad)ad)x	byte	'adx acx adxadx'=>0-3 8-11 11-14; 'abx'=>none; 'aadx'=>1-4	yes	yes	61[6364]78	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
 C09	C	(?<!x)ab(?<!xb)	byte	'ab xab abab'=>0-2 7-9 9-11; 'x'=>none; 'cab'=>1-3	yes	yes	6162	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
 C10	C	(?=ab|ac)ac	byte	'ac ab acac'=>0-2 6-8 8-10; 'a'=>none; 'aac'=>1-3	yes	yes	6163	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
