@@ -20,7 +20,7 @@ Green in the lane:
   - `emit_sweep --extra=--memfn=no-span-vector` at byte and utf8 is rc=0 at the new floors.
 - REACH_ONLY over every row (1370 rows): 671 reached, 2 unreached. The 2 are S1760 and S1761. They were red before this lane, the file they plant in is untouched here, and the cause is not established (see SABOTAGE AND REACH).
 
-Owed: the two box-queue jobs, queued as my last act (OWED RUNS): `717-kit-bsu2-test` and `718-kit-bsu2-mech`.
+OWED: none of my own; no process of mine is running. The closing runs are box-queue jobs, queued as my last act (OWED RUNS): `717-kit-bsu2-test` (key kit-bsu2-test) and `718-kit-bsu2-mech` (key kit-bsu2-mech).
 
 Rulings file (docs/dev/lanes/bsu2_rulings.md): the last entry applied is R-3.
 - R-1: abi 111.
