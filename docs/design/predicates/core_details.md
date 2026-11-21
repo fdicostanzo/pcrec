@@ -1249,11 +1249,14 @@ history:
 ## core/holes/class/lift-order — The order of a class-member hole's values under a lift
 slugs: class-hole-order
 rulings:
+- 2026-11-21 "class-hole-order: a" (record: "2026-11-21 OWNER RULING — class-hole-order: a (written order under a lift)"); (a) as put to him: written order, the alternation of one class per value
 - 2026-11-19 "other holes: 1. classes should be alternations on the class like [x] | [y] like patterns. in practice, that means [xy]" (record: "2026-11-19 OWNER RULING — other-holes"); both halves of his sentence, read under a lift, are the two candidates
 rejected:
+- (b) one class, lowest to highest (the second half of his sentence, "in practice, that means [xy]", read under a lift) — by owner ruling — class-hole-order: a; run: `(?:1|10)`, SEARCHED `x10` `1`@1 against `10`@1 (predfix61 FH; sabotage s8 caught).
 readings:
 evidence: predfix61_model.py FH (lane predasc's enumerator and nested loop, copied; the two lines; unlifted 0 / 0 / 0 of 1,365).
 history:
+- 2026-11-21 (the manager, one ruling): class-hole-order RULED (a). Status `open class-hole-order 2026-11-19` to `ruled 2026-11-21`. Statement before: "Under a lift, are the values of a class-member hole taken in written order, as the alternation of one class per value, or as one class, lowest to highest?" Its candidates before: "(a) written order, the alternation of classes; (b) one ascending class." Candidate (b)'s line is kept as the hand-written class `[09]`, which it equals.
 - 2026-11-21 (the manager, the owner's correction): the example program was printed `/${[${c}] + 1}/`, which is not legal ("[${c}] is not legal predicate language": inside `${...}` the text is the expression language, where `${` is no hole and `[..]` is an array); it is `/${/[${c}]/ + 1}/`, the class written as a literal inside the hole. The answers are unchanged (the model lifted the class with its hole, predfix61 FH; re-run 2026-11-21).
 - 2026-11-19 (lane predfix61, review r61 F-H, GENERAL-6): a new open sub-piece at the manager's ruling of review r61.
 

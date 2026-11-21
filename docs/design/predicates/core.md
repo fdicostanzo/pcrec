@@ -890,7 +890,7 @@ needs: core/holes/pattern core/arrays/lift
 by: core/principles/positions-own-rules
 - In practice, for a class that is not negated, the alternation collapses to one class for matching: `[${c}]`
   is `[xy]` in every mode, a capture before the class included (a reading, run). Under a lift the order of the
-  values can show; which order stands is core/holes/class/lift-order.
+  values shows: the written order stands (core/holes/class/lift-order).
 - The alternation is of the CLASS, not of the literal holding it: no copies, so it never reorders the rest of
   the pattern (a reading, run).
 - One value may hold several characters, each a member; a character special inside a class (`^` first, `-`,
@@ -903,14 +903,14 @@ needs: core/holes/class
 see: core/holes/class/lift-order
 WHOLE `ap` HOLDS, `ab` FAILS / SEARCHED `-ab aq` `aq`@4 / FIND-ALL `ax ab ap` [`ax`@0, `ap`@6] (`/a[${a}${b}]/`, a := [x, y], b := [p, q], is `a(?:[xp]|[xq]|[yp]|[yq])`, equal to `a[xypq]`)
 
-### The order of a class-member hole's values under a lift   [core/holes/class/lift-order]   open class-hole-order 2026-11-19
-Under a lift, are the values of a class-member hole taken in written order, as the alternation of one class per value, or as one class, lowest to highest?
+### The order of a class-member hole's values under a lift   [core/holes/class/lift-order]   ruled 2026-11-21
+Under a lift the values of a class-member hole are taken in written order, as the alternation of one class per value.
 needs: core/holes/class core/arrays/class-order
-Unlifted, the two match alike (core/holes/class). Under a lift the alternation keeps the written order
-(core/arrays/class-order: alternations keep their written order) while one class runs lowest to highest.
-Candidates: (a) written order, the alternation of classes; (b) one ascending class.
-(a): WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 1 101` [`10`@0, `1`@3, `10`@5, `1`@7] (`/${/[${c}]/ + 1}/`, c := [`9`, `0`]: the alternation `[9] | [0]`, `(?:10|1)`)
-(b): WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 1 101` [`1`@0, `1`@3, `1`@5, `1`@7] (the same with one class `[09]`: `(?:1|10)`)
+- Unlifted, the alternation and the one class match alike (core/holes/class). Under a lift the alternation keeps
+  its written order (core/arrays/class-order: alternations keep their written order); a class WRITTEN by hand
+  (`[09]`) enumerates lowest to highest.
+WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 1 101` [`10`@0, `1`@3, `10`@5, `1`@7] (`/${/[${c}]/ + 1}/`, c := [`9`, `0`]: the alternation `[9] | [0]`, `(?:10|1)`)
+The class written by hand: WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 1 101` [`1`@0, `1`@3, `1`@5, `1`@7] (`/${/[09]/ + 1}/` is `(?:1|10)`)
 
 ### The negated class hole   [core/holes/negated-class]   ruled 2026-11-19
 Several values in `[^${c}]` stay an alternation of the class, one per value; "none of these" is written by joining the array into one value: `[^${join(c)}]`.

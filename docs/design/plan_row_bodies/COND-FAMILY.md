@@ -6681,3 +6681,16 @@ meant is `/${/[${c}]/ + 1}/`: the class written as a literal inside the hole, th
 printed answers stand (the model lifted the class with its hole, predfix61 FH; re-run the same turn: (a) `(?:10|1)`
 SEARCHED `x10` `10`@1; (b) `(?:1|10)` SEARCHED `x10` `1`@1). The document's line (written by lane predfix61,
 passed by review r61 and the lint) is corrected in the same commit. The question stands as asked.
+
+### 2026-11-21 OWNER RULING — class-hole-order: a (written order under a lift)
+tags: core/holes/class/lift-order core/holes/class core/arrays/class-order
+
+Asked **class-hole-order** (under a lift, are a class-member hole's values taken (a) in written order, the
+alternation of one class per value, or (b) as one class, lowest to highest; the corrected example `/${/[${c}]/ +
+1}/`, c := [`9`, `0`]: (a) `(?:10|1)`, SEARCHED `x10` `10`@1; (b) `(?:1|10)`, SEARCHED `x10` `1`@1; the manager's
+leaning (a)). HIS WORDS, whole: "class-hole-order: a"
+
+Class: a RULING on the slug, answer (a): under a lift the values of a class-member hole are taken in WRITTEN
+order, the alternation of one class per value (the first half of his 2026-11-19 sentence, "classes should be
+alternations on the class like [x] | [y] like patterns"); "in practice, that means [xy]" stays true for matching.
+No reading of the manager's is added.
