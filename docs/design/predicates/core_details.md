@@ -311,18 +311,20 @@ evidence: preddoc3a_model.py TABLE; the example is invented (no printed answer).
 history:
 - the draft R.1.2; the pass table was the model's centre before last-pass-default (2026-11-17).
 
-## core/model/table/group-truth — Group questions over the pass table
+## core/model/table/group-truth — Group questions over the array
 slugs: group-truth
 rulings:
 rejected:
 readings:
 - (a) `NOT some(c)` = `occurs.none(c)` — SUPPORTED by the draft's E12 (0 / 0 / 0), not re-run here.
 - (b) `occurs.none(NOT c)` differs from both (21 / 201 / 301 of 364, E12) — not re-run here.
-evidence: the draft §R.8 row group-truth / pass-table (E12).
+- on the array (array-vs-passes (a)), c := `(d: "7")` on `/(?:(?<d>\d)?,)+/`, 364 texts over `17,`: `NOT some(c)` against `occurs.none(c)` 0 / 0 / 0 (one question by definition); against `occurs.none(NOT c)` 28 / 216 / 244; `occurs.none(NOT c)` on the array against on the passes 17 / 237 / 245; `NOT some(c)` on the array against on the passes 0 / 0 / 0 — SUPPORTED (predarr TRUTH; sabotage s10 caught). The manager's reading (d) "now part on settings, not passes" is NOT SUPPORTED as worded: `NOT some(c)` and `occurs.none(NOT c)` part under both readings; what moves is `occurs.none(NOT c)` itself.
+- the proposal (the lane's): close the question as answered by array-vs-passes for a condition of one entry, the several-entry case asked as record-in-some and count-several — UNTESTED (a proposal; the status is the owner's or the manager's).
+evidence: the draft §R.8 row group-truth / pass-table (E12); docs/dev/lanes/predarr_evidence/ TRUTH.
 history:
 - new piece (lane preddoc3a): the slug was on core/model/table, whose statement does not answer it; the draft keeps it asked ("the 11-18 rulings do not entail an answer").
 - 2026-11-19 (lane preddoc6, review r60 COLD-20): the question restated as a choice: before, its candidates "(a) `NOT some(c)` = `occurs.none(c)`" and "(b) `occurs.none(NOT c)` is a different question" were both true at once; the reading (the draft §R.1.7, "Each remaining group question counts the REAL passes on which its condition is TRUE") is now candidate (a); lib/counting/some's sentence is marked as that reading.
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): re-put over the array; the statement until then, verbatim: "After a loop, is the reading the definition: each group question counts the passes on which its condition is TRUE, each pass judged with its own labels, two-valued?"; the body's bullets "The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the finished passes.", "Under the reading `NOT some(c)` and `occurs.none(c)` are one question (they agree on every text run), and `occurs.none(NOT c)`, "no pass on which c fails", is another (it holds with no pass; on a pass lacking c's label c fails and `NOT c` holds)." and "Candidates: (a) yes, the reading; (b) no: he names which of the three forms he meant to be one question." The heading "Group questions over the pass table" renamed. Status date 2026-11-19 to 2026-11-21, still open.
 ## core/model/places — The place table
 slugs:
 rulings:
@@ -342,11 +344,11 @@ rulings:
 rejected:
 - the innermost or per-inner-pass view for a bare condition — by owner ruling — nested-pass.
 readings:
-- pass tests on a label two loops deep range over the outermost loop's passes (outer-pass-forms; told, his confirmation "this is how i expected", not asked as a ruling) — SUPPORTED by the draft R.1.7 (4b), not re-run here.
+- pass tests on a label two loops deep range over the outermost loop's passes (outer-pass-forms; told, his confirmation "this is how i expected", not asked as a ruling) — REPLACED by array-vs-passes (a) (record: "2026-11-21 OWNER RULING — array-vs-passes: a"): the group questions and `h[k]` read the array of settings at every depth (the line "Two depths" in core/labels/labels-vs-captures/array-vs-passes: `h[2]` on `3;4;,5;,` is `4`, not the second outer pass's `5`). The bare-condition view (the ruling above) is untouched.
 evidence: the draft R.1.7 (4b): `/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)` on `3;,,` and `3;;,` FAIL.
 history:
 - new piece (lane preddoc3a), split from core/model/places.
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the bullet "Pass tests (`some`, `occurs`, `h[k]`) on a label two loops deep range over the outermost loop's passes (a reading)." replaced by the array-of-settings bullet; the printed line (a bare condition) does not move.
 ## core/patterns/literals — Literals and regex text
 slugs:
 rulings:
@@ -451,6 +453,7 @@ history:
 ## core/labels/labels-vs-captures — Labels and captures
 slugs: pass-own-labels pass-and joint-last-pass after-loop-read last-pass-default joint-loops pairing-loop array-slot array-scope
 rulings:
+- 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); the group questions and the index read this piece's array of settings (core/labels/labels-vs-captures/array-vs-passes)
 - 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); answer (a): a group in rx text or a capture form makes a capture; `[x = A]` a label and no capture
 - 2026-11-17 (class: STATEMENT) "setting labels is just the label using the group-label-not-capture syntax" (record: "2026-11-17 OWNER, three points on labels"); his supporting words, recalled in the pure-label discussion
 - 2026-11-19 "array-scope: the only way to do it is by the scope of the entire rx. As you say, you could limit it by grouping labels. So x.@a. (?spelling?)." (record: "2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it")
@@ -466,7 +469,8 @@ rejected:
 - pass-and (a Kleene AND over passes) and joint-last-pass — dissolved by the two-valued model and after-loop-read (a joint reads the last pass's own tuple).
 - per-pass pairing for a BARE joint condition, by the loop enclosing its labels (joint-loops (1), its wording pairing-loop part 1) — by owner ruling — after-loop-read: a bare joint reads the last pass's own tuple; per-pass pairing is the joint written on the item (the draft R.9, R.1.7).
 readings:
-- the array form's index counts settings (the draft R.1.7) — UNTESTED (open: core/labels/labels-vs-captures/array-vs-passes).
+- the array form's index counts settings (the draft R.1.7) — RULED by array-vs-passes (a): `h[k]` reads the array of settings (core/labels/labels-vs-captures/array-vs-passes).
+- the array beside "a reset contributes nothing" (array-slot) and "a name set before a loop and inside it does not survive the loop" (core/labels/one-rule), against "the one outside the loop included" — CONSISTENT: a reset acts on the label, never on the array; `/(?<h>\d);(?:(?<h>\d);)*/` on `7;` leaves the label h unset and the array [`7`], the separated list `/(?<h>\d)(?:,(?<h>\d))*/` on `7` the same (predarr OUTSIDE; sabotage s3, a reset deleting settings, caught).
 - (a) of array-scope: "the entire rx" is the rx as composed AT THE POINT the array is referenced (composed-at-point); stated in the base as "the settings of the name where the name is visible, as they stand where it is read" (the manager's reading, "for the next lane to test") — UNTESTED.
 - (b) of array-scope: `x.@a` lists the settings of `a` made inside part `x` only, in order (the manager's reading, "for the next lane to test"); for a part label used twice it is routed through core/labels/paths (its last-mention rule) — UNTESTED.
 - what the caller receives for a captured label that a loop sets (PCRE's carried value or the label's last-pass value) is not stated (the manager's reading (e) of pure-label) — SUPPORTED: no record line states it; the two part on `/(?:(?<h>\d)?;)+/` on `3;;` (label unset, python `re` capture `3`; predscope_model.py LOOPVAL, sabotage s13 caught). Asked as capture-loop-value (proposed).
@@ -481,17 +485,40 @@ history:
 - 2026-11-19: array-scope ruled after hole-export; the heading date moved from 2026-11-17 with it.
 - 2026-11-19 (lane predfix61, review r61 F-F (RULING-12, REACH-3, REACH-4, GENERAL-3, GENERAL-13), F-J (RULING-11)): array-scope's readings (a) and (b) were folded as body; now marked readings in the base and listed above. The bullet until then, verbatim: "The array's scope is the entire rx as composed, not one literal or one definition: `[x = rx.digit]+` and `/(?<x>\d)+/` have one array, and two groups of one name in a sequence give it both settings. A part label limits it: the array of `a` under part `x` (placeholder `x.@a`) lists the settings made inside that part." The rejected item's quote was altered ('same' for "same") and its reason was his hole-export worry, not array-scope's words; both corrected. The array of settings against the loop's passes: core/labels/labels-vs-captures/array-vs-passes.
 - 2026-11-21 (lane predscope, pure-label folded): two bullets added (a label is not always a capture; the caller's value for a captured looped label not stated) and the line "Captured in a loop"; the rest unchanged. Status date 2026-11-19 to 2026-11-21. evidence: predscope_model.py CAPT, LOOPVAL.
-
-## core/labels/labels-vs-captures/array-vs-passes — The array of settings or the loop's passes
-slugs: array-vs-passes
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the array bullet's "its index `h[k]` counts settings (a reading). Settings or the loop's passes: core/labels/labels-vs-captures/array-vs-passes." became "which read this array, as its index `h[k]`, the k-th setting, does (core/labels/labels-vs-captures/array-vs-passes)". No answer moves.
+## core/labels/labels-vs-captures/array-vs-passes — The array of settings, not the loop's passes
+slugs: array-vs-passes joint-in-some
 rulings:
+- 2026-11-21 "array-vs-passes: in your example, the user chose to set the labels the same. if they wanted the out-the-loop setting to be separately labeled they could have done so. also, if they wanted the h5,m3 condition to be held at the same time they could have specified (h,m): (5,3) but they did not. they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); answer (a): `some`, `count`, `occurs` and `h[k]` read the ARRAY OF SETTINGS of a name, every setting in order, the one outside the loop included. His reasons: the user chose one name, "and therefore that has to have a meaning"; a setting outside the loop wanted apart is given its own label, in his words "if they wanted the out-the-loop setting to be separately labeled they could have done so"; "simplicity"; "the other interpretations can be otherwise spelled"; the record says the ruling REVISES lib/counting's statements on passes and the reading under core/model/places/outermost-view
+- 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); the reading of "agree" taken and told to him, the manager's leaning (c): a joint entry `(h, m): ...` inside a group question is refused for now (a compile error; pairing by index or by item can be allowed later without changing an answer); "same item" is written on the item, the item labelled only where it meets the condition, then a group question on that label (the base's line "Same item, on the item" runs it). "no one would know to write it" is an OBSERVATION (discoverability), not a ruling: the idiom is on the user-documentation list (parked/ideas/user-doc-traps)
 rejected:
+- (b) the passes of the outermost loop holding the group, each pass judged with its own labels, false where the loop made no pass (lib/counting's wording of 2026-11-15) — by owner ruling — array-vs-passes (a). Its lines, verbatim as run (predarr_model.py AVP, RECORD, EMPTY):
+  Two depths: Passes: WHOLE `3;4;,5;,` HOLDS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `3;4;,5;,`@1 / FIND-ALL `3;4;,5;, 3;,5;,` [`3;4;,5;,`@0, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
+  Two in a pass: Passes: WHOLE `71,` FAILS, `17,` HOLDS / SEARCHED `x71,` FAILS / FIND-ALL `71, 17, 12,` [`17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
+  Outside the loop: Passes: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED `x7;` FAILS / FIND-ALL `7; 1;7; 1;` [`1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+  Passes: WHOLE `5:1,2:3,` FAILS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` FAILS / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`)
+  Passes: WHOLE `,` HOLDS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` `,`@1 / FIND-ALL `, 7, 1,` [`,`@0, `,`@3, `1,`@5] (`/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`)
+  Passes: WHOLE `,` FAILS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` FAILS / FIND-ALL `1, , 7,` [`7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`)
+- (c) split: a group question over the passes, the array form and its index over the settings (the manager's leaning when asked) — by owner ruling — array-vs-passes (a).
+- a joint entry inside a group question paired BY INDEX (joint-in-some (a)) — by owner ruling — joint-in-some: refused for now; it finds (`5`, `3`) in `5,2:3,` though no item holds both:
+  By index: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` HOLDS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` `5,2:3,`@1 / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0, `5,2:3,`@5] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some(((h, m): ("5", "3")))`)
+- a joint entry inside a group question paired BY ITEM (joint-in-some (b), the passes again) — by owner ruling — joint-in-some: refused for now; the on-item form gives the same answers (predarr IDIOM):
+  By item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some(((h, m): ("5", "3")))`)
 readings:
-- (a), the array of settings, is what the base tells the group questions today; (b) is lib/counting's definition (`some`: "at least one pass of a loop meets the condition c, each pass judged with its own labels; it is false where the loop made no pass") — UNTESTED as a rule; both RUN (predfix61 FF, FF2; sabotage s6 caught).
-evidence: predfix61_model.py FF (the three witnesses' values), FF2 (the six lines: the candidates part on 3 of 3 witnesses).
+- (a) of array-vs-passes: a record of several plain entries inside a group question is the product of its entries, each a group question over its own array (`some((h: "5", m: "3"))` is "some h is 5 and some m is 3") — SUPPORTED by the record's run ("passes WHOLE `5:1,2:3,` FAILS, settings HOLDS"; predarr RECORD, against a hand regex 0 / 0 / 0 of 5,461 texts) and by his words "if they wanted the h5,m3 condition to be held at the same time they could have specified (h,m): (5,3)"; BUT it parts from record-is-product ("record-is-product: absolutely", 2026-11-16: `(h: A, m: B)` = `((h, m): (A, B))`) inside a group question, where the joint form is refused (joint-in-some): an owner question (record-in-some, proposed).
+- (b): `count(c)` and `occurs` on a one-entry condition count SETTINGS — SUPPORTED (it follows from the ruling's words; predarr CHANGED, EMPTY); on several entries what is counted is not stated — SUPPORTED (no record line states it; the model refuses to compute it): an owner question (count-several, proposed).
+- (c): the group questions are false / zero on an EMPTY array, replacing "false where the loop made no pass" — SUPPORTED as a reading of the ruling (predarr EMPTY; sabotage s9 caught). It moves answers only for a negated condition: `some(NOT (d: "7"))` on `,` FAILS on the array and HOLDS on the passes.
+- (d): group-truth re-put — see core/model/table/group-truth (on the array `NOT some(c)` = `occurs.none(c)` by definition; "now part on settings, not passes" NOT SUPPORTED as worded).
+- (e): "same item" without a joint entry is spelled on the item — SUPPORTED (predarr IDIOM: against the by-item reading and against a hand regex, 0 / 0 / 0 of 5,461 texts over `53:,`; the record's four subjects in the line "Same item, on the item").
+- joint-in-some (a): the refusal's message names the on-item form (the manager's call on a diagnostic's content) — UNTESTABLE as a rule (a wording); the model's error names `[ok = item & ((h, m): (..))]` (predarr REFUSE).
+- joint-in-some (b): the idiom on the user-documentation list — done (parked/ideas/user-doc-traps, item 30).
+- joint-in-some (c): no shorthand parked — SUPPORTED (nothing parked beyond the list item).
+- `h[k]` is the k-th setting, 1-based as the line "Two depths" reads `h[2]` — the ruling's words; 1-based is core/values/metadata's convention (a reading).
+evidence: docs/dev/lanes/predarr_evidence/ predarr_model.py ARRAYS, OUTSIDE, AVP, RECORD, JOINT, REFUSE, IDIOM, EMPTY; sabotages s2-s9 caught. Earlier: predfix61_model.py FF, FF2 (the six lines, then candidates (a) and (b)).
 history:
 - 2026-11-19 (lane predfix61, review r61 F-F: REACH-3, the tension older than the session, sharpened by array-scope's "two groups of one name in a sequence give it both settings"): a new open sub-piece at the manager's ruling of review r61, with the review's three witnesses.
 
+- 2026-11-21 (lane predarr): RULED (a), joint-in-some folded; the heading "The array of settings or the loop's passes" renamed. The piece until then, verbatim: statement "Do the group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a label's settings, or the passes of the loop that sets it?"; body "The rule today tells the group questions to the ARRAY (every setting, in order, the one outside the loop included; `h[k]` counts settings, a reading), while lib/counting defines them on a loop's PASSES, each pass with its own label, false where the loop made no pass. They part on two depths, two settings in one pass, and a setting outside the loop. Candidates: (a) the array of settings; (b) the passes of the outermost loop holding the group." Its six lines were labelled "Two depths, (a): Settings: ...", "Two depths, (b): Passes: ..." and so on; the (a) lines stay as "Two depths: Settings: ..." (the same answers, re-run), the (b) lines are under rejected above. Lines added: the label beside the array, a record of two entries, the record form, same item on the item, an empty array, a count of zero. Status open 2026-11-19 to ruled 2026-11-21.
 ## core/labels/one-rule — One label rule: branchings reset
 slugs: bare-loop-label before-and-inside shared-label repeated-means unsettable-label empty-pass optional-as-loop
 rulings:
@@ -678,12 +705,13 @@ rejected:
 - compared fields written as bare label names in an argument (`[h, m]`, the tuple compare's array) — by owner ruling — "definitely not a bare reference. it might shadow a binding and it wouldn't be clear where it was coming from" (record: "2026-11-15 RULING + OWNER IDEA — no bare field reference; a mark for the other side of the intersection"); left of `:` a name is a label by this piece's rule, so the joint entry `(h, m): R` is not that form.
 readings:
 - a condition is a value of its own kind (bound, passed, put in an array) (the draft §4.1) — its own kind is the owner's DIRECTION (rulings above); bound, passed, put in an array is the draft's — UNTESTED.
+- inside a group question each plain entry reads its own array and a joint entry is refused, so there a record and its joint form part (the lane's reading of array-vs-passes (a) beside joint-in-some; predarr RECORD, JOINT) — SUPPORTED as runs; whether record-is-product is meant to hold there is an owner question (record-in-some, proposed; core/labels/labels-vs-captures/array-vs-passes).
 - `P & x: S` and `[x: S]` are errors; parentheses kept (the manager's call on "a condition without its parentheses") — see core/spellings/condition-parentheses.
 evidence: preddoc3a_model.py FORM (invented; the lowering `[1-9]\d:[1-2]\d` agrees).
 history:
 - 2026-11-14 C22; 2026-11-16 colon-scope, record-is-product, label-twice, condition-not; 2026-11-17 the three candidates (label-twice-warn kept the error).
 - 2026-11-19: dollar-diagnostic answered dollar-condition (the form `$x & S` stays legal and gets a warning); the warning's wording is core/diagnostics/dollar-form's.
-
+- 2026-11-21 (lane predarr): a bullet added, a record and its joint form inside a group question (a reading).
 ## core/conditions/two-valued — Conditions are two-valued
 slugs: three-valued polarity-rule record-under-not zero-pass-record
 rulings:
@@ -970,6 +998,8 @@ history:
 ## core/values/tuples — Tuples
 slugs: tuple-value tuple-anywhere set-arity two-orders record-is-product modifier-lift library-not-syntax retire-paused tuple-compare tuple-names tuple-arg-order
 rulings:
+- 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); a joint entry inside a group question is refused for now; "same item" is written on the item (core/labels/labels-vs-captures/array-vs-passes)
+- 2026-11-21 "if they wanted the h5,m3 condition to be held at the same time they could have specified (h,m): (5,3) but they did not." (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); his claim about the joint spelling, checked the same turn: inside a group question a joint entry meets two arrays and no rule paired them; then refused (joint-in-some)
 - 2026-11-16 "A pair as a value: I am ok with the tuple as a value. My request is that it's fleshed out and not the slice of an idea." (record: "2026-11-16 OWNER RULING + REQUEST — the tuple as a value: OK, to be fleshed out")
 - 2026-11-16 "I meant left right in the expression sense around = You could use them as you say" (record: "2026-11-16 OWNER CLARIFICATION + ANSWER — "left/right" was about the binding sign; tuple-anywhere: yes")
 - 2026-11-16 "I think the tuple mechanism as otherwise described handled the problem more simply which I like." (record: "2026-11-16 OWNER — on first-rest: the built-in tuple mechanism is simpler, "which I like"; and a question")
@@ -1000,7 +1030,7 @@ history:
 - 2026-11-19 (lane preddoc4): a new piece: the tuple had no piece and its spelling read as a record (review r59 PRIMITIVES-MISSING, READ-15).
 - 2026-11-15/16, the tuple-compare library direction (rev 16-19, the draft §16), RETIRED by retire-paused (cited above): "tuple-compare: agree" (record: "2026-11-15 RULINGS — tuple compare in the first library; `any_case` stays a primitive for now, a more fundamental basis is a FOLLOW-UP", part (a)); "tuple_names: a" (record: "2026-11-15 RULING — tuple compare names"; the slug tuple-names); "tuple-arg-order: subject low high" (record: "2026-11-15 RULING — tuple compare argument order").
 - 2026-11-16: modifier-lift (the base bullet added by lane preddoc5, review r59 COMPA-1; the draft §2.7 MODIFIERS ON TUPLE SETS states it); library-not-syntax; retire-paused.
-
+- 2026-11-21 (lane predarr): a bullet added, a joint entry inside a group question is refused for now (joint-in-some). Status date 2026-11-16 to 2026-11-21.
 ## core/values/computed-labels — Computed labels
 slugs:
 rulings:
@@ -1015,7 +1045,7 @@ evidence: docs/dev/lanes/preddoc4_evidence/ PART CL; the draft §4.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: length and month_numbered name bindings left of `:` with no core rule allowing it (review r59 PRIMITIVES-MISSING, READ-8).
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the last bullet's "a computed label over a loop's passes is a group question" became "over a name's settings (its array)". No answer moves.
 ## core/values/metadata — Metadata of a member
 slugs:
 rulings:
@@ -1959,7 +1989,7 @@ history:
   - the two triggers are not the same set (the draft §R.2, rev 25's PART W, five programs `& (h: <5)`): `/(?:(?<h>\d);)*/` both fire; `/(?:(?<h>\d);)+/` the looped trigger only; `/(?:(?<h>\d)?;)+/` both; `/(?<h>\d)?;/` `label.unset` only; `/(?<h>\d);/` neither — SUPPORTED by the draft's run (the base quotes two of the rows).
   - 2026-11-17: proposed by the manager twice, not answered; review r42 named looped-warning an owner question; rev 25 withdrew it to the next review.
   - 2026-11-19 (lane preddoc6, review r60 LOOPED): a new open sub-piece, at the predicate manager's ruling (2026-11-19): the question "is the warning still wanted, and on which shape" goes to the owner; the slug looped-warning moved here from core/conditions/pass-start-read.
-
+- 2026-11-21 (lane predarr, joint-in-some): the joint-form bullet gains "Inside a group question a joint entry is a compile error for now" (a pointer; this piece's ruling is untouched).
 ## core/spellings/placeholders — Every placeholder spelling
 slugs: atomic-spelling options-spelling conditional-spelling
 rulings:
@@ -1978,7 +2008,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
 - 2026-11-19 (lane predfix61, review r61 F-L, RULING-9): a row for the sort and its shorthand for longest first (`longest_first(X)`, the manager's placeholder; his `lengthSorted()`). Status date 2026-11-17 to 2026-11-19.
 - 2026-11-21 (lane predscope): rows added or widened for his placeholders of 2026-11-21: `.` as the sequence operator and `[=year]` (record: "2026-11-21 OWNER, discussing bare-nested-scope: an EXERCISE asked for (construct moderately difficult rx from macros), with his predictions"); the capture forms, a wrapper and after the fact, "no spelling suggested" (pure-label).
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the ARRAY FORM row's "its index `h[k]` and the pass index `(h[2]: ..)`" became "its index `h[k]`, the k-th setting (`(h[2]: ..)`)".
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:
 rulings:

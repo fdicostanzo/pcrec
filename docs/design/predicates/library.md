@@ -197,7 +197,7 @@ defined: ?
 - Whether the limit is "at most n" or "exactly n" is not settled by his words.
 
 ### length   [lib/modifiers/length]   reading 2026-11-19
-`length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one loop pass per character, its count tested by S.
+`length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one setting of `ch` per character, their count tested by S.
 needs: core/filters/and core/values/reads core/values/computed-labels
 see: lib/counting/count
 module: ?
@@ -323,7 +323,8 @@ defined: language
   and tests on them judge a fixed list.
 - Anchored: it covers the text it is applied to from end to end; standing alone in a searched program that text
   is the whole subject.
-- "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS.
+- "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS. Written as a
+  group question on the array of `hit`, one setting per hit: `hits(/\d+/) & occurs.none((hit: >= 100))` (a reading).
 - The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label).
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
@@ -415,24 +416,29 @@ WHOLE `xyz` HOLDS, `abc` FAILS / SEARCHED `abxyq` `xyq`@2 / FIND-ALL `xy ab` [`x
 
 ## Counting   [lib/counting]
 
-### some   [lib/counting/some]   ruled 2026-11-15
-`some(c)` holds when at least one pass of a loop meets the condition c, each pass judged with its own labels; it is false where the loop made no pass.
-needs: core/model/table core/conditions/form
+### some   [lib/counting/some]   ruled 2026-11-21
+`some(c)` holds when at least one setting in the array of c's label meets c; it is false on an empty array.
+needs: core/model/table core/conditions/form core/labels/labels-vs-captures/array-vs-passes
 see: core/model/table/group-truth lib/assert/assert
 module: ?
-defined: native (a question over a loop's passes; no expression of the language walks the passes)
-- `some` is the one spelling of "at least one pass"; `all` is retired: every pass is written with the condition
+defined: native (a question over a name's array of settings; no expression of the language walks the array)
+- The array is every setting of the name, in order, the one outside the loop included
+  (core/labels/labels-vs-captures/array-vs-passes); "false on an empty array" is a reading of that ruling.
+- `some` is the one spelling of "at least one"; `all` is retired: every pass is written with the condition
   inside the loop, on the item (core/conditions/in-sequence).
-- `NOT some(c)` and `occurs.none(c)` are the same question under the reading of the open question
-  core/model/table/group-truth (a reading).
+- A record of several entries in it, and a joint entry, which is a compile error for now: the array piece. "Same
+  item" is the on-item label, then `some((ok: anything))`.
+- `NOT some(c)` and `occurs.none(c)` are the same question over the array (a reading; core/model/table/group-truth).
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
 WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
 
-### count   [lib/counting/count]   ruled 2026-11-15
-`count(c)` is the number of passes of a loop that meet c, a canonical numeral used with the ordinary comparisons; it is refused only over the budget, the refusal naming `occurs`.
+### count   [lib/counting/count]   ruled 2026-11-21
+`count(c)` is the number of settings in the array of c's label that meet c, a canonical numeral for the comparisons; it is refused only over the budget, naming `occurs`.
 needs: lib/counting/some core/values/comparisons
 module: ?
-defined: native (a count over a loop's passes; no expression of the language counts passes)
+defined: native (a count over a name's array of settings; no expression of the language counts them)
+- It counts SETTINGS (core/labels/labels-vs-captures/array-vs-passes): zero on an empty array; on a condition of
+  several entries what is counted is not stated (readings).
 - A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it may be bound and read
   like a label: `n := count((d: "7"))`, then `(n: ==2)`.
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
@@ -440,27 +446,32 @@ defined: native (a count over a loop's passes; no expression of the language cou
 - A later optimisation may turn `count()` into `occurs` where the answers provably do not change.
 WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (n: ==2)`, n := `count((d: "7"))`)
 
-### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-14
-The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
+### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-21
+The `occurs` module counts the settings of a label meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
+needs: core/labels/labels-vs-captures/array-vs-passes
 module: occurs
-defined: native (a count over the passes of a loop, a capped counter; no expression of the language counts passes)
+defined: native (a count over a name's array of settings, a capped counter; no expression of the language counts them)
 - Its states: a capped counter (n + 2 states) multiplied in.
-- `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`); one record is
-  one pass; n is a constant or a caller parameter.
+- `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`), judged on each
+  setting of its label (core/labels/labels-vs-captures/array-vs-passes; several entries: not stated, a reading); n
+  is a constant or a caller parameter.
 - These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form
   (lib/counting/count).
 - The module is reached by `occurs := import("occurs")`.
-modes: n/a (a count over a loop's pass table; no example of the draft is printed in the three modes)
+modes: n/a (a count over a name's array of settings; the runs are in core/labels/labels-vs-captures/array-vs-passes and lib/counting/every-pass)
 
-### Every pass, named   [lib/counting/every-pass]   open every-pass-spelling 2026-11-19
-Is there a named group question for "every pass meets c", equal to `some(c) & occurs.none(NOT c)`, or is every pass written only with the condition on the item?
+### Every pass, named   [lib/counting/every-pass]   open every-pass-spelling 2026-11-21
+Is there a named question for "every pass meets c", or is every pass written only with the condition on the item?
 needs: lib/counting/some lib/counting/occurs
 module: ?
 defined: ?
 - Today: the condition is written inside the loop, on the item (core/conditions/in-sequence).
-- Candidates: (a) no name, the item form; (b) a named group question equal to `some(c) & occurs.none(NOT c)`;
-  (c) a loop construct over a conditioned item.
-modes: n/a (a question; the draft's runs are cited in the details entry)
+- Over the array, `some(c) & occurs.none(NOT c)` says "c's label is set and every SETTING meets c": a pass that
+  sets nothing is not judged, so where the label is optional it is not the item form (a reading; the lines below).
+- Candidates: (a) no name, the item form; (b) a named group question (the settings form above, or a new one over
+  the passes, which no group question reads); (c) a loop construct over a conditioned item.
+Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+The item form: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?${(d: "7")},)+/`)
 
 ## Strings   [lib/strings]
 
@@ -517,7 +528,7 @@ defined: native (a compile-time check of a set's emptiness, not a pattern)
 - The argument is a compile-time set position: an edge assertion in it is the edge-assertion error.
 - Reached by `assert := import("assert")`; a failed assertion is a compile error naming it.
 - It is how an author validates what an ambiguous rx means under PCRE's one reading.
-- Not the group question `some(c)` (lib/counting/some): that one asks about a loop's passes in a match.
+- Not the group question `some(c)` (lib/counting/some): that one asks about a label's settings in a match.
 modes: n/a (compile-time checks; no matching involved)
 
 ### assert.each   [lib/assert/each]   under-construction 2026-11-19
@@ -677,7 +688,7 @@ defined: ?
   `sort(X, by = "length", order = "desc")` once `sort` is defined.
 
 ### sorted, distinct   [lib/structural/sorted]   under-construction 2026-11-19
-`sorted` and `distinct` would take the ARRAY form of a read (the other passes, his `@x`); they are named, not defined.
+`sorted` and `distinct` would take the ARRAY form of a read (every setting of the name, his `@x`); they are named, not defined.
 needs: core/values/reads
 module: ?
 defined: ?
