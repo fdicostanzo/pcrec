@@ -4554,3 +4554,6 @@ Manager calls (answer-free, the kit's method): scan-scope = WALK only; the deny 
 
 ### 2026-11-21 03:10 — census re-run with flags: unchanged
 Lane spancensus2 (lane/spancensus2; job green, lanecheck DONE; TaskStop). Applying each pattern's own options leaves the routed counts at corpus 1 / bench 3. --encoding=utf8 alone changed span sites, all at k<=3. Recorded for bspan as R-5. Waiting on Frank: scalar-wrap.
+
+### 2026-11-21 03:20 — Frank ruling scalar-wrap
+Frank: "Scalar wrap: the function goes inline so it's just code organization? If that's true I don't have a problem with that." Kit answer: yes in source (both functions always_inline, __body = today's text), but gcc's machine code differs on 2 of 10 probes (\w{20}, \w{32}). Kit reading: OPTION A, with main's scalar no-loss check (a non-timing census of the sites whose scalar machine code differs, then a short timing in a Frank-cleared window; losers keep today's text). Proposed D-entry for main: "scalar-wrap (Frank 2026-11-21): option A; the wrapper is code organization; machine-code changes at SIMD-off are checked for no loss." Next: rev 2 lane, then the critic round.
