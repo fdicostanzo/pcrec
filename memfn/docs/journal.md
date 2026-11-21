@@ -4576,3 +4576,6 @@ The "4 patterns" figure told to Frank and main was wrong (it is 3), and both are
 
 ### 2026-11-21 01:20 — review renumbered r67 -> r68
 Main's 2026-11-21-r67-k152 took r67 first. The kit's memfn-bspan round is now docs/dev/reviews/2026-11-21-r68-memfn-bspan.md (+ dir); journal mentions of "r67" for memfn-bspan read r68. Main fixed D201 (population: 0 corpus, 3 bench, k31; F-24 pointer 923ea33d2).
+
+### 2026-11-21 01:19 — rev 3 delivered; re-check round r69 launched
+Lane bspan3 delivered block_span.md rev 3 (lane/bspan3 01f1c3959; r68 applied, §18 the F-id map; TaskStop). The trace build re-derived the population: 3 bench sites (D-hors x2, R7w; k31). T-vscan is keyed on R7w. SPAN-SEED has 41 patterns, with V-site floors of 28 and 31. Re-check round crit-memfn-bspan3 (r69, number from main) launched with a separate verifier. Waiting on Frank: wrap-differs.
