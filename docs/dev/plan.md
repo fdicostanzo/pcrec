@@ -2468,6 +2468,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-21): filed; nothing built. Registry DATA only (pcrec already accepts `(a)\1*`); the spec suite carries the 13 in known_findings.inc as a ratchet.
   trigger: a small data lane after lane/specfix lands (fix the rows, empty the ratchet in the same change)
   refs: known_issues K153; tests/spec_mod0/known_findings.inc; docs/dev/decisions.md D26
+  NOTE (2026-11-21, manager): KEEP the ratchet (tied to K153, not a silent pin). Spec gap from the same lane: no docs/spec sentence says a by-name reference (`\k<name>`, `(?P=n)`) is gated by module `named-groups`; the data lane adds it.
 - [K152-NFA-DEPTH] STATE:not-started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
   filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
   status (2026-11-20): filed; nothing built. `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` DIES (rc 139) on the 442,368-byte thread; the plain nest costs 440,176 B (440,560 B with a trailing element), the compound route about 13 KB more
