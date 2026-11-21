@@ -4530,3 +4530,6 @@ Needs main's R-n filed (main is requests.md's only writer) before the kit briefs
 
 ### 2026-11-21 00:35 — R-47 taken; design lane bspan
 Main filed R-47 + D201 (051e78af2). Merged main into lane/memfn-k1108 (2af5a3fd5; conflicts union in journal, docs/dev/reviews/CLAUDE.md taken from main, over its size limit as a union; make strict clean). R-47 acked. Lane bspan (opus, worktrees/bspan on lane/bspan): design note docs/design/memfn/block_span.md, design only; then a critic round, then the build lane.
+
+### 2026-11-21 01:05 — Frank (via main): how often do real patterns reach the block span?
+Frank asked "How often do the test or bench rx have spans that would use this? Those are longer spans". There is no existing span census, so lane spancensus (sonnet, compile-only, worktrees/spancensus) is counting window/scan span sites and k over tests/**/*.rxt and the bench catalogue, routed by rule 6351bff3901e3955. bspan rulings R-1: scope PENDING CENSUS.
