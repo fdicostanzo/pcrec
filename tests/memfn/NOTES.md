@@ -96,5 +96,13 @@ utf8, both engines, both layers) and span_seed.rxt's patterns at
 `--window-search-width=4095`, after the nine-spelling abi mask declared in
 the file (M1-M9) and nothing else. Its second arm holds the default artifact's
 movers to exactly the artifacts that call a V selector. Opt-in, no make
-target; heavy (run under `scripts/boxlock run`). Usage: `--ref-bin REF --bin
-BIN [--jobs N] [--cells corpus,seed4095]`.
+target; heavy (run under `scripts/boxlock run`). Usage: `--ref-bin REF
+--ref-abi N --bin BIN --abi N [--jobs N] [--every K] [--cells corpus,seed4095]`.
+Lane bsu2fix (review r75) changed it: the mask rows are selected by name and
+replace a group only where it equals that side's STATED abi (per-row hit counts
+printed); each cell holds a mover FLOOR (28 byte / 20 utf8 at width 32, 31 at
+4095; span_seed.rxt is always in the population) and fails at population 0; at
+a mover the default-vs-deny diff must be one definition insertion plus one walk
+line per site, one call per site; the `-fmemfn-simd=x86-64` layer is in. It is
+a DELIVERY step, not a ratchet (its reference is a pre-merge build): what
+repeats is memfn_arm.py's span-vector DIFFER rows (block_span.md §14).
