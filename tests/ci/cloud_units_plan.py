@@ -198,13 +198,13 @@ def plan_san(a):
 # the limit default is 3 s, not the median.  The spine/memory/depth defaults come from the CLI walls of tests/growth's own
 # earlier sweeps (one run's wall x the 5 runs of a cell, rounded up), the ASan library stage included at the same weight.
 # ALL are ESTIMATEs: the first cloud run's units.tsv replaces them (make cloud-reweight KIND=growth MEASURE=1).
-GROWTH_DEFAULT_S = {"matrix/limit": 3.0, "matrix/stability": 0.5, "depth/limit": 3.0, "depth/stability": 0.5,
-                    "spine/limit": 40.0, "spine/stability": 25.0, "memory/stability": 40.0, "memory/limit": 40.0}
+GROWTH_DEFAULT_S = {"matrix/limit": 30.0, "matrix/stability": 3.0, "depth/limit": 11.0, "depth/stability": 0.5,
+                    "spine/limit": 90.0, "spine/stability": 1.0, "memory/stability": 26.0, "memory/limit": 26.0}
 GROWTH_FALLBACK_S = 10.0
 # cells known slow from earlier local sweeps (the slowest single CLI run, x about 4 for the cell's runs and its library compile)
 GROWTH_KNOWN_S = {"memory/calls_big@1000": 300.0, "memory/calls_big@320": 70.0, "spine/named_past@100000": 250.0,
                   "spine/named@65535": 110.0, "spine/named_past@65536": 100.0}
-GROWTH_BUILD_S = 150.0   # UNMEASURED: the per-shard ASan+LSan build of build-asan/ (-jN on a 4-core runner); `@build` in the measured file replaces it
+GROWTH_BUILD_S = 120.0   # the per-shard ASan+LSan build of build-asan/ (-jN on a 4-core runner), read from run 44931033374's step times roughly; `@build` in the measured file replaces it
 GROWTH_TARGET_S = 600    # [CLOUD-SUITE] requirement 9: ~10 min of wall per shard
 
 
@@ -219,29 +219,43 @@ def growth_cells():
 
 
 def growth_class(cid, kind):
+    """The class an unmeasured cell takes its weight from: a matrix cell by (quantifier, kind) -- `poss` and `lazy` limit
+    cells cost 100x a `lit` stability cell (proof run 44931033374) -- every other cell by (family, kind)."""
     fam = cid.split("/")[0]
-    pos = cid.rsplit("@", 1)[-1]
-    return "%s/%s" % (fam, kind) if fam != "memory" else "memory/%s" % kind
+    if fam == "matrix":
+        return "matrix/%s/%s" % (cid.split("/")[1].split(".")[1], kind)
+    return "%s/%s" % (fam, kind)
 
 
 def plan_growth(a):
     meas, mbasis = read_measured(a.measured) if a.measured else ({}, {})
     items = []
-    for cid, kind, *_ in growth_cells():
+    cells = growth_cells()
+    # an unmeasured cell takes the MEAN of the measured cells of its class (when any), else the static default below
+    byclass = {}
+    for cid, kind, *_ in cells:
+        if cid in meas:
+            byclass.setdefault(growth_class(cid, kind), []).append(meas[cid])
+    for cid, kind, *_ in cells:
         if cid in meas:
             items.append([cid, meas[cid], 0, "runner %s" % mbasis[cid]])
         elif cid in GROWTH_KNOWN_S:
             items.append([cid, GROWTH_KNOWN_S[cid], 0, "ESTIMATE known-slow cell %gs" % GROWTH_KNOWN_S[cid]])
         else:
             cls = growth_class(cid, kind)
-            d = GROWTH_DEFAULT_S.get(cls, GROWTH_FALLBACK_S)
-            items.append([cid, d, 0, "ESTIMATE class %s %gs" % (cls, d)])
+            if cls in byclass:
+                d = sum(byclass[cls]) / len(byclass[cls])
+                items.append([cid, d, 0, "ESTIMATE mean of %d measured %s cell(s) %.1fs" % (len(byclass[cls]), cls, d)])
+            else:
+                d = GROWTH_DEFAULT_S.get(cls, GROWTH_FALLBACK_S)
+                items.append([cid, d, 0, "ESTIMATE class %s %gs" % (cls, d)])
     global GROWTH_BUILD_S
     if "@build" in meas:
         GROWTH_BUILD_S = round(meas["@build"])
-    if not a.shards:    # the shard count that lands the slowest near the target: work + the build + setup <= target
+    if not a.shards:    # the shard count that lands the slowest near the target: work + the build + setup <= target (more than
+        # max_parallel shards run in waves, as mech's do)
         import math
-        a.shards = max(1, min(a.slots or 20, math.ceil(sum(i[1] for i in items) / max(1.0, GROWTH_TARGET_S - GROWTH_BUILD_S - a.setup))))
+        a.shards = max(1, min(200, math.ceil(sum(i[1] for i in items) / max(1.0, GROWTH_TARGET_S - GROWTH_BUILD_S - a.setup))))
     tot = lpt(items, a.shards)
     n_def = sum(1 for i in items if "ESTIMATE" in i[3])
     return items, tot, ["%d cell(s) have no measurement and carry their class default; the %gs per-shard ASan build is %s"
