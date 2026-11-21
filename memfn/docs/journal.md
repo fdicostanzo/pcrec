@@ -4652,3 +4652,11 @@ Frank, to the kit: "scalar-check-cut: yes". The short scalar timing and the keep
 
 ### 2026-11-21 08:47 — U1 delivered to main; lane bsu2 (U2 + U2b)
 716-kit-bsu1fix-mech GREEN. lane/bsu1fix merged (e8dea21a3, make strict clean). U1 delivered ALONE to main ([responses] 0481a4130; 0 movers, no abi event). Lane bsu2 (opus, S3505-S3519) launched for U2 (wrapper, deny span-vector, the first abi event, r72's PLAN items) + U2b (the census per D201 add. 4). Its brief: TMPDIR on every run, rulings re-read by name at every checkpoint, foreground lock waits. The abi number has been asked of main.
+
+### 2026-11-21 13:11 — D202 (main bac1c74e7): the cover width is the kit's decision
+Main relayed Frank's D202 ruling. Its context names the kit's block span cost, 11 ns/byte in plain C against 2.8 ns/byte with AVX2 on 500-wide hex.
+- The cover width (whether the cover route takes or declines a fixed span, per layer) is the KIT's call. pcrec keeps only the hard ceilings: the walk's state ceiling and the emitted-size cap.
+- pcrec will supply an engine cost unit, inexact allowed ([ENGINE-COST-UNIT]). Until then the kit may use a FIXED assumption.
+- Frank, verbatim: "Width owner: this is kits but it needs input from pcrec eventually. Can be fixed assumption now."; "...it needs simd for reference _eventually_ or it's not actionable".
+- Nothing is built: [COVER-WIDTH-KIT] waits on a build go.
+- Tonight's scalar width night is recorded only. [COVER-WIDTH-SIMD] rides the block span's Zen 1 run, which gives the kit's U6 C6 card a second client.
