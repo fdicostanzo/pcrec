@@ -183,9 +183,10 @@ run() {
 #   reference at all;
 #   altpos/altpospost/brefpost are the possessive wrap `*+` (a distinct
 #   arm), and every `*post` row carries one literal element beside the nest:
-#   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3:
-#   one trailing `d` moved `(abc|abd…abe)*` from 317,504 to 440,560 bytes and
-#   `(a|b…c)*` from 257,552 to 344,560; limits.md §3.10¶3);
+#   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3,
+#   before K152's fix: one trailing `d` moved `(abc|abd…abe)*` from 317,504
+#   to 440,560 bytes and `(a|b…c)*` from 257,552 to 344,560; after it the
+#   element costs a few hundred bytes; limits.md §3.10¶3);
 #   nclitrep/litpost/nclitpost/litcompound are the multi-atom-branch nest
 #   (K152): its peak was the NFA builder's `compile_ast`, whose inlined arms
 #   paid about 1.7 KB per level until each arm got its own frame;

@@ -449,6 +449,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4; known_issues K152 ([K152-NFA-DEPTH]: the NFA builder's depth, the next family member it must see)
   Note (review r64 F13, 2026-11-20): the mech coverage of K147's explicit stack has one unwitnessed decision point, gk_build's CAT update order (plant V3i was silent on 8 probes, 0 emitted-byte movers): find a witness first, then a row; the rest (the depth-- leak, ss_walk's ALT over-approximation, an out-of-range member, stack growth caught only by test-stackdepth) are answer-silent by construction and NOTED. An "explicit stack, no cycle" category belongs here once [ARENA-REGROW] lands.
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [K152-NFA-DEPTH] STATE:started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
+  filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
+  status (2026-11-21): FIXED on lane/k152fix, not landed (docs/dev/lanes/k152fix_report.md): own frames on every compile_ast arm, one recursion site in nfa_cat; litpost 317,744 B, the new worst; 0 movers; S3470
+  trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
+  refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]
 
 ## Candidates ([OPTLOOP])
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
@@ -2463,11 +2468,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: starts only on Frank's word; no row-specific trigger recorded
   BOONIES (Frank, 2026-10-09: "File it in boonies"). Fold a caseless backreference's/variable's capture ONCE (canonical case-set representatives, bounded buffer) and compare only the subject side, keyed on the capture span. Pays only when the capture holds still across many compares (`(?i)^(\w+).*\1`), and mostly under utf8. It loses when backtracking is inside the capture. NOT TRIGGERED; no measurement chartered.
 
-- [K152-NFA-DEPTH] STATE:not-started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
-  filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
-  status (2026-11-20): filed; nothing built. `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` DIES (rc 139) on the 442,368-byte thread; the plain nest costs 440,176 B (440,560 B with a trailing element), the compound route about 13 KB more
-  trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
-  refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]
 - [ARENA-REGROW] STATE:not-started — one `pcrec_arena_regrow` in core for the arena-grown explicit stacks (three members today)
   filed: 2026-11-20 lane k147f2, from review r64 k147fix F11 (HOUSE-3/9/10)
   status (2026-11-20): filed; nothing built. possessify.c's `fq_push`, dfa.c's file-static `arena_regrow` and its `cont_push` (K18) each grow an arena stack by hand; emit_vm.c's trie walks use fixed arrays. Three members: the forest-for-trees threshold is met for the allocation half
