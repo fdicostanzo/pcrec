@@ -6,6 +6,8 @@ No suites, no timing, no box-queue jobs.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - `docs/design/memfn/block_span.md` is at rev 4: "rev 4 (2026-11-21):
   review r69 applied". `docs/design/memfn/CLAUDE.md`'s line is updated to
   match.
