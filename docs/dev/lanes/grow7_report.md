@@ -1,7 +1,7 @@
 # grow7 report — growth timeout triage, proof2 classification, reweigh, load-sensitive cells
 
 Branch lane/grow7 (cut from lane/grow6 245110035). Harness-only: no `src/`, `lib/` or `cli/` edit.
-Rulings file `grow7_rulings.md` present, empty; last R-n applied: none.
+Rulings file `grow7_rulings.md` present; last R-n applied: R-1 (task 4).
 PREMISE TEST held: `tests/ci/cloud_kinds.tsv` has a `growth` row.
 
 ## Summary
@@ -14,7 +14,7 @@ PREMISE TEST held: `tests/ci/cloud_kinds.tsv` has a `growth` row.
 - The growth shard table is regenerated from the run's measured seconds: 82 shards, 1,600 cells once each (population check
   PASS), predicted slowest shard 1,491 s (24.9 min) against the 45-min (2,700 s) job limit. The old prediction was 609 s.
 - Load-sensitive cells: the wall bound fired (watchdog `-s 180`, per run, and the library driver's `alarm()` wall bound);
-  a verdict CAN flip on box load alone. The smallest fix is proposed, not built.
+  a verdict CAN flip on box load alone. The smallest fix is proposed, not built. R-1: the `+`@15 limit cells are also slow on their own (named.plus.first.lit@15 alone here: 183 s wall, 267 s CPU, killed at 180 s), so they need a per-cell bound as well (proposed, section Load-sensitive cells).
 
 ## spine/uni timeout
 
@@ -78,6 +78,21 @@ CPU seconds are nearly load-independent; and in `growth_driver.c` replace `alarm
 SIGPROF so the library bound counts the process's own CPU (the compile runs on the main thread). One edit per stage; the bound
 constants stay, the reported text names "CPU" (the 123/124 conflation goes away). This needs a build go; the harness change is
 in `tests/growth/` plus one C file under `tests/growth/` (not `src/`).
+
+R-1 (main, 14:58; cloud evidence): grow6-growth shard 20 timed out `matrix/named.plus.first.lit@15` at 180 s on a GitHub runner. Measured
+alone here (`--no-ladder`, uncapped run only, scratch two-shard table, box load 41 falling to 15 over the run): the cell TIMED OUT again,
+`FAIL ... [TIMEOUT] wall/CPU limit (180s)`; `/usr/bin/time` on the whole stage: wall 183.3 s, user 230.6 s, sys 36.2 s (about 267 s of CPU,
+more than the wall: the compile uses a second thread), max RSS 1.39 GB. The cell is a `compile:norun` limit cell (no gcc, no matcher run), so by
+construction the time is all in the one `growth_driver one` process: pcrec's compile plus writing the emitted C (22 to 119 MB on the `+` edges).
+Gcc and the matcher are not in this cell. So the `+`@15 limit cells are slow on their own: this one costs more than 180 s of wall AND of CPU
+at modest load, unlike grow6's `group.plus.first.lit@15` (about 100 s wall, 48 s CPU), so the `+` edge cells differ several-fold from one
+another and a single 180 s bound sits inside their range. The CPU-bound fix above does NOT help this cell (its CPU is over the bound).
+Verdict: RE-SIZE (a bound change), not a K row: the cost is the one the owner ruled (limit-cell-matcher-cost) and the cells pass answer-wise
+when given time. Proposal (not built): the 180 s wall/CPU bound becomes per cell from a measured value: the `+` edge cells (the `plus_edges.tsv`
+rows) take max(180, 4 x their measured CLI seconds) as the CPU bound, with the cell's seconds recorded by the next cloud run's `--units`; until
+measured, 900 s for that cell class. The cell's measured seconds are not known yet (this run killed it at 180 s, and the cloud red shard's units
+are dropped), so the first measurement run would use the 900 s class bound. Same arithmetic for the library stage: floor 300 s may also be low
+for a `+` edge cell's ASan compile; it takes 20 x the CLI wall once the cell has one.
 
 ## Reweigh
 
