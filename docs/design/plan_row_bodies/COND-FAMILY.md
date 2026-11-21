@@ -6382,3 +6382,19 @@ already ruled (2026-11-18 export-rule, 2026-11-19 hole-export: "Agree both pass 
 binding it is defined in, `x` available where the binding is used, "including through another binding". (2) A
 PREMISE: every macro is at base `x(y) := /blah${y}abc/`. (3) A QUESTION to the manager: how the predicate rules
 translate into the rx literal. He does not answer open-or-closed.
+
+The manager's answer to (3) (told to him; a PROPOSAL, the manager's throughout; nothing folded): the rules never
+reach the literal at match time; they are settled at compile time, and the literal that results has only unique
+group names. (i) Each USE of a binding or macro is one instance, its groups renamed apart (the evidence models'
+renaming, the draft R.9). (ii) A scope table per definition, built bottom up, says for each name visible there
+which instance's group it is: the definition's own labels, plus the public labels its parts export; never a `_`
+name of a part. (iii) Three kinds of written reference, each resolved in one place: rx TEXT (`\k<h>`, a number,
+recursion) in the literal alone, as PCRE parses it (free-name, ruled); what is written inside `${...}` or between
+literals (`$h`, a condition's label) in the DEFINITION it is written in, a hole being a window from rx text back
+into that definition's expression language; a macro ARGUMENT in the caller's definition, before it is substituted.
+(iv) A condition bound alone has no rx of its own and is resolved where it is used. RUN
+(`$PCREC_TMPDIR/scratch/pred/translate.py`): `string(open) := /(?<_q>${open})(?<body>(?:(?!\k<_q>)(?s:.))*)\k<_q>/`
+used twice, `/${string(quotes)}=${string(quotes)}/`, lowers to one regex with `_q__1`, `body__1`, `_q__2`,
+`body__2`; the table gives `body` = `body__2` (the last mention) and no `_q`: WHOLE `"a"='b'` HOLDS (body = `b`),
+`"a"="b'` FAILS / SEARCHED `x "a"='b' 'k'="v" "z"=q` `"a"='b'`@2 / FIND-ALL [`"a"='b'`@2, `'k'="v"`@10]. Asked of
+him as bare-nested-scope restated: a name written in a hole is resolved in the definition the hole is written in.
