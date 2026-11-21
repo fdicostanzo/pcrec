@@ -16,3 +16,4 @@ Children of [REQ-PAST-LAST] (no block-span row exists): [BSPAN-LEVERS] trigger: 
 
 ## STATE AT HANDOFF
 Rulings file: last entry applied R-1. Nothing owed. No new decision asked of main. Committed on lane/bsrec.
+OWED: none
