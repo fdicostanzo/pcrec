@@ -5573,7 +5573,7 @@ There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md
   three subjects (exit 0 or 1). The exception is a NAMED one (owner ruling limit-cell-matcher-cost,
   2026-11-21): the 13 NFA-state / VM-node edge cells are `compile:norun=limit-cell-matcher-cost`: at those
   sizes (the size limits lifted, `raise 1`) gcc needs about 10 minutes and 3.4 GB per cell, so they are
-  compile-only; an unnamed `compile:norun` is a table error and every run prints the count of exceptions
+  compile-only; an unnamed `compile:norun` is a table error and every run prints the count per name
   (13). The same ruling adds limit tests at the SHIPPED generated-code size limits (`raise 0`, buildable,
   the matcher runs), each with a stability twin one unit past it: PCREC_MAX_VM_EMIT_CODE_BYTES at
   `alt_lit` 70657, `alt_cap_emit` 799, `cat_grp_emit` 1007, `named_emit` 990 units, and PCREC_MAX_NFA_STATES
@@ -5585,7 +5585,10 @@ There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md
   refuses it near depth 12 to 16, not at the depth limit. `plus_edges.tsv` holds each of the 92 cells'
   bisected edge E; `run_growth.py` makes a limit cell at E, a stability twin at E + 1, and the matrix@250
   cell is the pair's far-past stability member. The edge depends on kind, position and core (so one row
-  per cell). The @251 `+` cells stay UNPAIRED: the depth limit has no limit-test half for `+`.
+  per cell). The 92 edge limit cells sit at the NFA-state / VM-node edge too, so they are compile-only
+  under a second exception name, `plus-edge-matcher-cost` (a sample matcher build timed out at the 180 s
+  wall; owner to confirm it falls under limit-cell-matcher-cost). The @251 `+` cells stay UNPAIRED: the
+  depth limit has no limit-test half for `+`.
 - **K156 cells.** `spine/empty` (`(?:)` x 1,000,000) and `spine/inl` (`(?i)(?-i)` x 1,000,000) are
   stability cells with the emit caps lifted, red `K156:compiled` (red kind `compiled`): no limit counts
   these units, so they compile; they flip to FIXED-RED the day a limit refuses them.

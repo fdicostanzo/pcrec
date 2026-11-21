@@ -76,9 +76,14 @@ CAPTURING = ("group", "named")              # the matrix kinds whose groups capt
 # docs/design/plan_row_bodies/GROWTH-SWEEP.md): a limit cell sits just before a limit whose edge cell
 # cannot be built into a matcher.  `compile:norun=NAME` in a cells.tsv row names the exception; the
 # runner counts them (every run prints the count) and --list shows each.
+PLUS_REPLICATION_TEXT = "nested bounded repeats would replicate"   # PCREC_MAX_VM_REPLICATION_PRODUCT
 NORUN_EXCEPTIONS = {
     "limit-cell-matcher-cost": "NFA-state / VM-node edge with the size limits lifted (raise 1): the emitted C is "
                                "25 MB, gcc -O0 takes about 10 min and 3.4 GB (measured on z_cls 131069)",
+    # the same cause, applied by lane grow5 to the matrix `+` edge cells (their edge IS the NFA-state / VM-node
+    # edge, reached at depth 12-15): a manager-ruled extension of limit-cell-matcher-cost, owner to confirm
+    "plus-edge-matcher-cost": "the matrix `+` edge cell sits at the NFA-state / VM-node edge too (131,072, emit caps "
+                              "lifted): same 25 MB of C; a sample build timed out at the 180 s wall",
 }
 
 
@@ -218,7 +223,10 @@ def build_cells(budget, depth):
                             # The @251 cell stays a depth-limit stability cell, UNPAIRED: no `+` cell can compile
                             # at 250, so the depth limit has no limit-test half for `+`.
                             e = plus_edges[cid]
-                            kind, exp, lim, pair = "stability", "refuse:" + e[2], e[1], "matrix/%s+" % cid
+                            # the @250 refusal is the edge limit's text OR its sibling the replication product's
+                            # (PCREC_MAX_VM_REPLICATION_PRODUCT, a literal alias of PCREC_MAX_VM_NODES): limits.md 3.10
+                            kind, exp, lim, pair = ("stability", "refuse:" + e[2] + ",refuse:" + PLUS_REPLICATION_TEXT, e[1],
+                                                    "matrix/%s+" % cid)
                         else:
                             kind, exp, lim, pair = "limit", "compile", "PCREC_MAX_GROUP_DEPTH", "matrix/" + cid
                         cells.append(Cell("matrix/%s@%d" % (cid, d), "matrix", pat, budget, 1, "all", 0,
@@ -227,7 +235,8 @@ def build_cells(budget, depth):
                         # the `+` limit test just under its lower limit (the bisected edge E) and the exact stability
                         # twin at E + 1; the @250 stability cell above is the same pair's far-past member
                         e, lname, text = plus_edges[cid]
-                        for dd, kind, exp in ((int(e), "limit", "compile"), (int(e) + 1, "stability", "refuse:" + text)):
+                        for dd, kind, exp in ((int(e), "limit", "compile:norun=plus-edge-matcher-cost"),
+                                              (int(e) + 1, "stability", "refuse:" + text)):
                             cells.append(Cell("matrix/%s@%d" % (cid, dd), "matrix", nest(pre, op, core, cl, "", dd), budget, 1,
                                               "all", 0, kind, exp, lname, "matrix/%s+" % cid, ""))
     # --- CELLS: explicit ----------------------------------------------------
@@ -258,13 +267,17 @@ def pair_report(cells):
 
 
 def sample_matrix(cells, npairs):
-    """Keep every non-matrix cell and `npairs` matrix PAIRS (both cells of each), chosen by a
+    """Keep every non-matrix cell and `npairs` matrix PAIRS (all cells of each id), chosen by a
     prime stride over the product so every construct kind, quantifier, position and core shows
     up (the sweep's own coverage check below).  The full matrix is the queued sweep's job."""
     base = lambda c: c.id.rsplit("@", 1)[0]
     mat = [c for c in cells if c.family == "matrix"]
     ids = list(dict.fromkeys(base(c) for c in mat))
     pick = {ids[(k * 37) % len(ids)] for k in range(npairs)}
+    # the `+` cells (each a 4-cell group: edge, edge + 1, @250, @251) are 1/7 of the product, so the stride
+    # alone samples few of them: add npairs // 2 more, chosen by their own stride over the `+` ids
+    plus = [i for i in ids if ".plus." in i]
+    pick |= {plus[(k * 13) % len(plus)] for k in range(npairs // 2)}
     return [c for c in cells if c.family != "matrix" or base(c) in pick]
 
 

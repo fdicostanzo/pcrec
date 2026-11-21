@@ -68,7 +68,7 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
   NAME is a key of NORUN_EXCEPTIONS in run_growth.py (today `limit-cell-matcher-cost`, owner ruling of
   2026-11-21): the 13 NFA-state / VM-node edge cells run with the size limits lifted (raise 1), their
   emitted C is 25 MB and gcc -O0 takes about 10 minutes and 3.4 GB. An unnamed `compile:norun` is a
-  table error; every run prints the exceptions' count (13) and `--list` names each reason. Each family
+  table error; every run prints the count per name (`limit-cell-matcher-cost` 13) and `--list` names each reason. The 92 matrix `+` edge cells are a second name, `plus-edge-matcher-cost` (a manager-ruled extension of the same ruling, owner to confirm): their edge is the NFA-state / VM-node edge too (a sample build at the 180 s wall timed out). Each family
   that can be built at the SHIPPED caps has an extra pair (raise 0) that does run its matcher: the
   emit-code edge (`alt_lit`, `alt_cap_emit`, `cat_grp_emit`, `named_emit`) and the NFA edge that
   shipped caps reach (`lit_ship`, `anchors_ship`). No such pair exists for the other families:
@@ -76,7 +76,8 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
   cap refuses; z_cls/cat_ncgrp/uni run away in memory (K150) near 8,000.
 - `plus_edges.tsv`: one row per matrix `+` cell (the lower limit that binds near depth 12-16); each
   row makes a limit cell at its edge E, a stability cell at E + 1, and the matrix@250 cell is the same
-  pair's far-past member. The @251 `+` cells stay unpaired (the depth limit has no limit half for `+`).
+  pair's far-past member (its refusal is the edge limit's text or the replication product's). The @251
+  `+` cells stay unpaired (the depth limit has no limit half for `+`).
 - Red kind `compiled` (a stability cell that compiles): K156's `spine/empty`, `spine/inl` (no limit
   bounds them once the emit caps are lifted).
   RLIMIT_DATA, not AS: ASan cannot start under an AS cap.

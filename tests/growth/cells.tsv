@@ -18,7 +18,8 @@
 # compile:norun=NAME (limit cells only): a NAMED exception (run_growth.py NORUN_EXCEPTIONS; owner ruling
 # limit-cell-matcher-cost, 2026-11-21): the cell must compile but its matcher is NOT built. At the NFA-state and
 # VM-node edges (emit caps lifted, raise 1) the emitted C is 25 MB and gcc -O0 needs 10 minutes and 3.4 GB
-# (measured on z_cls 131069). The runner prints their count (13). The SHIPPED-cap edges that build do run:
+# (measured on z_cls 131069). The runner prints the count per name (13 here; the matrix `+` edge cells add
+# `plus-edge-matcher-cost`, see plus_edges.tsv). The SHIPPED-cap edges that build do run:
 # alt_lit, alt_cap_emit, cat_grp_emit, named_emit (emit-code cap, raise 0) and lit_ship, anchors_ship (the NFA edge
 # at shipped caps). Not reachable at shipped caps: z_b z_look z_nlook z_lookb z_cilook crash (K148) between
 # n=8000 (compiles) and n=16000, before any size cap refuses; z_cls cat_ncgrp uni exceed 3 GB (K150) near 8000
