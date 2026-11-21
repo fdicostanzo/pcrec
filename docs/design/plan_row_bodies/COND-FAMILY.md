@@ -6198,3 +6198,38 @@ The manager's readings (NOT his words; nothing folded): (a) how `&` and `!` are 
 complement over the DFA graph, or otherwise) is a question for the architecture note of the first build go, through
 main, not for these documents; (b) if a shared graph-manipulation layer becomes a design item it is a
 [COND-FAMILY]-owned shared piece that main's two deferred items ride on (main's statement in M-2, D193.6).
+
+### 2026-11-21 OWNER RULING — class-value: ascending codepoints everywhere
+tags: lib/builtin/enumerate/class-value lib/builtin/enumerate core/arrays/class-order lib/structural/sort
+
+Asked **class-value** (what "lowest to highest" means for a class that is not digits; shown his ruled words, his
+earlier discussion "digits followed by letters as per normal", and a run under codepoint order:
+`enumerate(/[\dA-Fa-f]/)` is `0123456789ABCDEFabcdef`, `A` index 11, `a` index 17; `[a-cB]` enumerates `B a b c`;
+the answers (a) ascending codepoint everywhere, (b) a value order now; the manager's leaning (a);
+`$PCREC_TMPDIR/scratch/pred/classvalue.py`, python `re`, the alternation built from the sorted member list). HIS
+WORDS, whole:
+
+"class value: this references enumerate(). it was me undoing a statement that it should be descending so that $y +
+1 would naturally have longer digits appear in alternations before shorter however it 1. turned out not to work
+100% and 2. was useless for - anyway so i undid the directive with this statement. it is more natural to enumerate
+classes lowest to highest. alternation order should be decided by transform anyway for consistency. ascending
+codepoints everywhere makes sesne."
+
+Read for the intended word: "sesne" = "sense".
+
+Class, part by part:
+1. A RULING on the slug, answer (a): "ascending codepoints everywhere makes sense". The reading taken, and told to
+   him: "everywhere" is every class in `enumerate`'s order, digits or not (for digits the two agree).
+2. An ACCOUNT of his own earlier ruling (quantified-order's "classes change to lowest to highest"): it undid the
+   descending directive, which was there so that `$y + 1` would put longer digits first, because it "turned out
+   not to work 100%" and "was useless for - anyway". A RECOLLECTION, checked against the record: SUPPORTED ("It was
+   to help the arithmetic common choice but if it doesn't completely then it shouldn't at all.").
+3. A STATEMENT of his view, not asked as a ruling (an OBSERVATION): "it is more natural to enumerate classes lowest
+   to highest"; "alternation order should be decided by transform anyway for consistency" (it agrees with his "Only
+   solution is sorting output when needed", 2026-11-19; `sort` stays under construction).
+
+Not ruled by it: the parked idea of number operations over a declared ordered symbol set (parked/ideas/class-base)
+is untouched; candidate (b) is out only as the order of `enumerate`.
+
+The manager's readings, for the next lane to test: (a) a caseless single character is a class for this rule:
+`(?i)k` enumerates `K`, `k`, U+212A in codepoint order; (b) "codepoint" in a byte-mode program is the byte value.

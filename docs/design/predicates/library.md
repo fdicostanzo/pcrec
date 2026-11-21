@@ -25,10 +25,10 @@ defined: native (it lists an rx's strings; no expression of the language walks a
   copy first (a lazy repeat one fewer); so re-joining the entries reports the match the rx itself reports.
 - A class gives its members lowest to highest ("classes change to lowest to highest unless pcre priority order
   disagrees"), in the array and in a lift alike: `enumerate(/\d/)` is [`0`, `1`, .., `9`], so `.index` counts
-  from the bottom and `enumerate(/\d/) + 1` is `\d + 1` (core/arrays/class-order). The value of a class that is
-  not digits: lib/builtin/enumerate/class-value.
+  from the bottom and `enumerate(/\d/) + 1` is `\d + 1` (core/arrays/class-order). Every class is in ascending
+  codepoint order (lib/builtin/enumerate/class-value).
 - Positions nest in text order, each class ascending: `enumerate(/[ab]\d/)` is [`a0`, `a1`, .., `a9`, `b0`, .., `b9`]
-  (a reading, run; the letters' order is class-value's). Equal strings from two paths are one entry (a reading).
+  (a reading, run; the letters' order is class-value's, ruled). Equal strings from two paths are one entry (a reading).
 - Its argument is a compile-time set position: an assertion at its edge is the edge-assertion error
   (`enumerate(/(?<=a)[bc]/)`). A BUDGET bounds it: an infinite or over-budget rx is a compile error giving the
   count; no number is stated for the budget. An interior lookaround or a backreference: not stated.
@@ -37,18 +37,20 @@ defined: native (it lists an rx's strings; no expression of the language walks a
 WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a`@6] (`/${enumerate(/(?:a|ab){1,2}/)}/` is `(?:aa|aab|a|aba|abab|ab)`)
 WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
 
-### The value of a class's members   [lib/builtin/enumerate/class-value]   open class-value 2026-11-19
-What "lowest to highest" means for a one-character set position that is not digits (`[abc]`, `\w`, `.`, a caseless `(?i)k`) in `enumerate`'s order is a question for the owner.
+### The value of a class's members   [lib/builtin/enumerate/class-value]   ruled 2026-11-21
+A class's members are enumerated in ascending codepoint order, every class alike: "ascending codepoints everywhere makes sense".
 needs: lib/builtin/enumerate
-see: parked/ideas/class-base
+see: parked/ideas/class-base lib/structural/sort
 module: ?
-defined: ?
-- For digits the value is the digit; its codepoint order agrees.
-- Candidates: (a) ascending codepoint (the manager's reading today, not ruled): `enumerate(/[abc]/)` is
-  [`a`, `b`, `c`] and `.index` counts from the bottom (`a` is 1); (b) the order of a declared ordered symbol set, as in the
-  owner's discussion of numbers over symbols: "digits followed by letters as per normal" and "(ie. not as written)"
-  (parked/ideas/class-base: `(?i)[\da-f]` by codepoint is `0..9A..Fa..f`; by value `A` and `a` tie).
-- PCRE orders no position that takes one character from a set: `(?i)k` takes `K`, `k` and U+212A; `\p{..}` too.
+defined: native (a part of `enumerate`'s order)
+- For digits the codepoint order is the digits' own: `enumerate(/\d/)` is [`0`, .., `9`].
+- For any other class the same: `enumerate(/[abc]/)` is [`a`, `b`, `c`] and `.index` counts from the bottom (`a` is 1);
+  `enumerate(/[\dA-Fa-f]/)` is `0123456789ABCDEFabcdef`, so `A` is 11 and `a` is 17; `[a-cB]` gives `B`, `a`,
+  `b`, `c` (run).
+- "it is more natural to enumerate classes lowest to highest. alternation order should be decided by transform
+  anyway for consistency": an order other than this one is the user's, by a sort (lib/structural/sort).
+- A caseless single character is a class here: `(?i)k` gives `K`, `k`, U+212A (a reading).
+- Number operations over a declared ordered symbol set stay an idea (parked/ideas/class-base).
 - A class's members are one character each, so two never compete at one position: the order shows in the array
   and its `.index`, and in a lift only through a function whose results compete (a reading).
 modes: n/a (no defined function on letters gives competing results; the order is the array's)

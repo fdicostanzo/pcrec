@@ -583,3 +583,11 @@ record; nothing folded. P-16 written (M-2 acknowledged). Nothing running. NEXT: 
 (run: `$PCREC_TMPDIR/scratch/pred/classvalue.py`); a critic round on the three post-P-14 hand folds before the
 next delivery (number from main first).
 WAITING on: Frank (class-value).
+
+## 2026-11-21 (16:50) — class-value RULED and folded
+
+"ascending codepoints everywhere makes sesne." Folded by me (one ruling): record entry, lib/builtin/enumerate/
+class-value to ruled (candidate (b) rejected as enumerate's order; class-base stays parked), pointers in
+enumerate, core/arrays/class-order and its details; lint 5,279 / 0. Two readings of mine listed for the next lane
+(a caseless single character; byte mode). On my branch only now: four hand folds since P-14. 14 open pieces.
+WAITING on: Frank (flat-read-outside next).

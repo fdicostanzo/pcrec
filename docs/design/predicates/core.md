@@ -767,7 +767,7 @@ needs: core/arrays/lift
 see: lib/builtin/enumerate lib/builtin/enumerate/class-value lib/structural/sort
 - A class is one position taking one character from a set (`\d`, `[90]`, `\w`, `.`); `enumerate` gives its
   members lowest to highest: "classes change to lowest to highest unless pcre priority order disagrees". For
-  digits the value is the digit; for any other class it is open (lib/builtin/enumerate/class-value). PCRE gives
+  digits the value is the digit; every class is in ascending codepoint order (lib/builtin/enumerate/class-value). PCRE gives
   a class's members no order of its own, so nothing disagrees (a reading; run: no plain match shows the order).
 - Alternations and arrays keep their written order. Inside a quantified operand the order is PCRE's priority
   order, one more copy (lazy: one fewer) at each choice point: "keep pcre priority order"; "lazy/greedy loops
