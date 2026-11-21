@@ -196,7 +196,7 @@ STATE: delivered. Branch `lane/l3r66`, all work committed.
 - abi stays 110.
 - Rulings file: `docs/dev/lanes/l3r66_rulings.md` is empty, so no R-n was applied beyond the brief. I
   re-read it before each commit and before this report.
-- OWED: the two cloud verdicts (l3r66-test, l3r66-axes), dispatched, not awaited.
+OWED: none. The two cloud runs (l3r66-test, l3r66-axes) are dispatched, and their verdicts reach main through queuewatch.
 - Not done, and not asked for:
   - An answer cell for `(?<=qz)(?:a.|.a)`. Adding one adds a new corpus pattern and moves more pins; the
     listing is pinned by [facts-look], and the critic's 43 answer cells held.
