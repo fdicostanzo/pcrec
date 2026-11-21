@@ -4573,3 +4573,6 @@ Critic round r67 (memfn-bspan, design; 5 lenses + verifier) committed with the m
 All are FIX-NOW. F-14 as the coordinator leaned: a machine-code census on the built text with a probe grid and \w{20} as floor witness; T-keep and the scalar timing dropped; owner question wrap-differs.
 KIT RULE (r67 lesson 1): a census's site KIND is read by the table's own predicate on the trace record (MFTRACE fd row), never by a text proxy.
 The "4 patterns" figure told to Frank and main was wrong (it is 3), and both are told. Fix lane bspan3 (opus) writes rev 3.
+
+### 2026-11-21 01:20 — review renumbered r67 -> r68
+Main's 2026-11-21-r67-k152 took r67 first. The kit's memfn-bspan round is now docs/dev/reviews/2026-11-21-r68-memfn-bspan.md (+ dir); journal mentions of "r67" for memfn-bspan read r68. Main fixed D201 (population: 0 corpus, 3 bench, k31; F-24 pointer 923ea33d2).

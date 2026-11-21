@@ -1,4 +1,4 @@
-# Review r67 — memfn-bspan (design): the kit's block-span design note, block_span.md rev 2 (R-47, D201)
+# Review r68 — memfn-bspan (design): the kit's block-span design note, block_span.md rev 2 (R-47, D201)
 
 - **Subject:** `docs/design/memfn/block_span.md` rev 2 at `aaa1b3227fe28c9480f1e3c914f5b9d8ee648bc1` (lane/bspan2; branch
   HEAD `814a44106` adds only the lane report's OWED line). Design only; nothing is built.
@@ -301,3 +301,4 @@ SIZE-1 F-2; SIZE-2 F-14; SIZE-3 F-14; SIZE-4 F-22; SIZE-5 F-20; SIZE-6 F-14, F-2
 - **Freeze note:** R-1..R-4 / scan-scope / wrap-deny were recorded only in denied files. Rev 3 restates them in the note.
 - The reviews/CLAUDE.md index line is left to main: the file sits at its size limit.
 - **Process note (manager):** the coordinator verified the 17 CONFIRMED claims itself and launched no separate verifier, which the skill §1 roles require; it reported this. Accepted for this round, because every finding is a text or design fix that rev 3's own re-check reads. The next round of this subject launches a verifier. Also accepted: the coordinator's top process change. Every run kit for a rule keyed on kit picks ships the MF_TRACE harness plus a per-site fd-row script, never a text-proxy census.
+- **Renumbered r67 -> r68** (2026-11-21): main's 2026-11-21-r67-k152 took r67 first. Both launchers share the sequence; main takes r69 and up next.
