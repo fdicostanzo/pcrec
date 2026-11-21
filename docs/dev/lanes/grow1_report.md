@@ -1,7 +1,7 @@
 # grow1: the growth-sweep runner ([GROWTH-SWEEP])
 
 Lane grow1 (sonnet), 2026-11-21, branch lane/grow1 cut from main f286a8e1a.
-Rulings file empty (no R-n applied). No `src/` edit.
+Last ruling applied: R-1 (do not wait for the queued run; finish with it OWED). No `src/` edit.
 
 ## Summary
 
@@ -175,9 +175,9 @@ No timeout fired in any run so far.
 
 ## STATE AT HANDOFF
 
-Committed on lane/grow1; the report is committed. Rulings file empty (no R-n).
+Committed on lane/grow1; the report is committed. Last ruling applied: R-1.
 Not done: the first-run numbers of the matrix family and the whole library
 series (queued, OWED); the utf8 depth row ([STACKDRIVER-ENC]) and the
 thread-size ladder (growth-stackcap: future direction, not built, by ruling).
 Do not edit tests/growth/ while the queued job runs (it executes the worktree).
-OWED: queue job 300-grow1-growth verdict.
+OWED: 300-grow1-growth (box queue; matrix family numbers and the whole library-series verdict; a follow-up lane folds them in).
