@@ -369,6 +369,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     status (2026-11-21): filed; the kit may use a fixed assumption until it exists; pricing in general stays deferred (memory pcrec-pilot-is-pricing-baseline)
     trigger: [COVER-WIDTH-KIT]'s build, or the next kit decision that compares against the engine
     refs: decisions D202; docs/design/memfn/integration.md (the request seam)
+    DISCUSSION (Frank 2026-11-21: "Maybe instructions per byte?"): manager's lean: yes as the unit (deterministic, portable across boxes, inexact accepted), per engine form and per regime (hit-dense, near-miss, miss-heavy), measured once and declared in a table; its home is a measurement set (measure_store/, D166), which already carries per-class values to libpcrec. Known blind spots: SIMD does more per instruction, and branch mispredicts and cache misses cost no instructions. Not yet a ruling.
   - [COVER-WIDTH-SIMD] STATE:not-started — the SIMD layer's cover-vs-engine reference timing; makes the width night actionable
     filed: 2026-11-21 manager, from Frank ("it needs simd for reference _eventually_ or it's not actionable"; D202)
     status (2026-11-21): filed; the SIMD long-span form (the block span, R-47 U2+) is not on main yet
