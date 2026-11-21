@@ -4584,7 +4584,7 @@ Lane bspan3 delivered block_span.md rev 3 (lane/bspan3 01f1c3959; r68 applied, Â
 Re-check r69 (design, 5 lenses + a separate verifier, 22/22 HOLD) committed with the ruling (326c7c2f0). NOT READY as frozen, no answer-level defect.
 Blockers:
 - the C18 amendment is red on correct text (-O0 ymm rule at B=16);
-- the identity mask misses ;
+- the identity mask misses the `.abi = N,` line;
 - skip is not a plan_of fact;
 - 8 more sabotage anchors move;
 - test-axes needs a MEMFN_CLASS row;
