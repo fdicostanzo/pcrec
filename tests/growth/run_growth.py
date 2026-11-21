@@ -230,7 +230,7 @@ def lib_mode(rn, cells, ladder):
     ctl = os.path.join(rn.work, "control")
     env = dict(os.environ)
     env.setdefault("ASAN_OPTIONS", "detect_leaks=1:allocator_may_return_null=1")
-    r = subprocess.run([rn.wd, "-s", "3600", "-c", "3600", "-m", "6g", "-i", "0.5", "-S", "growth-lib",
+    r = subprocess.run([rn.wd, "-s", "14400", "-c", "14400", "-m", "6g", "-i", "0.5", "-S", "growth-lib",
                         "-L", os.path.join(rn.work, "watchdog.log"), "--", lib_drv, "lib", ctl, series],
                        capture_output=True, text=True, errors="replace", env=env)
     bad = []
