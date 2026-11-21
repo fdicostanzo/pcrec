@@ -15,48 +15,67 @@
 #          limit; `-` = none (the cell is UNPAIRED: run_growth.py --pairs lists it)
 #   red    `ID:KIND`: the known issue and the ONE failure kind it takes (CRASH, TIMEOUT, RUNAWAY,
 #          ERROR or refused); a failure of another kind FAILS, and a pass fails the sweep (ratchet)
-# compile:norun (limit cells only): the cell must compile but its matcher is NOT built: at the NFA-state and
+# compile:norun=NAME (limit cells only): a NAMED exception (run_growth.py NORUN_EXCEPTIONS; owner ruling
+# limit-cell-matcher-cost, 2026-11-21): the cell must compile but its matcher is NOT built. At the NFA-state and
 # VM-node edges (emit caps lifted, raise 1) the emitted C is 25 MB and gcc -O0 needs 10 minutes and 3.4 GB
-# (measured on z_cls 131069): an owner question, see the grow4 report. The emit-cap edge cell (alt_lit) runs.
+# (measured on z_cls 131069). The runner prints their count (13). The SHIPPED-cap edges that build do run:
+# alt_lit, alt_cap_emit, cat_grp_emit, named_emit (emit-code cap, raise 0) and lit_ship, anchors_ship (the NFA edge
+# at shipped caps). Not reachable at shipped caps: z_b z_look z_nlook z_lookb z_cilook crash (K148) between
+# n=8000 (compiles) and n=16000, before any size cap refuses; z_cls cat_ncgrp uni exceed 3 GB (K150) near 8000
+# (at 4000 they compile).
 # The memory-family compile cells (lm_cat, lm_cls, lm_alt2: 8 cells) are STABILITY cells past
 # PCREC_MAX_VM_EMIT_CODE_BYTES: K150's memory runaway starts near N=4,770 (3 GB), before the cap (about
 # N=7,700) can be approached, so no "just before" cell exists for them.
 # The limit cells' sizes (2026-11-21, grow4; bisected with the default build, 1 unit past = refused):
+#   (raise 0 edges, bisected the same way, with a main(); limit n / twin n: alt_cap_emit 799 / 802, cat_grp_emit 1007 / 1009,
+#     named_emit 990 / 993 (emit code 500,000 bytes), lit_ship 131069 / 131070, anchors_ship 131070 / 131071 (NFA states))
 #   NFA states 131,072 (PCREC_MAX_NFA_STATES): z_b 131067, z_look/z_nlook/z_cilook 131068, z_lookb 131067,
 #     z_cls/lit/cat_ncgrp/uni 131069, anchors 131070.  VM nodes 131,072 (PCREC_MAX_VM_NODES): alt_cap
 #     17772, cat_grp 65535, named 65535.  Emitted code 500,000 bytes (PCREC_MAX_VM_EMIT_CODE_BYTES,
 #     raise 0): alt_lit 70657 (a limit cell's artifact carries a main(), which counts; its stability twin has none and
-#     is refused from 70773).  The empty (`(?:)`) and inl
-#     (`(?i)(?-i)`) spine families reach NO named limit (they compile at 400,000 units), so
-#     they have no cell here: see the grow4 report.
-z_b	spine	x	\b	-	-	-	y	131067	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/z_b	K148:CRASH
+#     is refused from 70773).  The empty (`(?:)`) and inl (`(?i)(?-i)`) spine families reach NO named limit once
+#     the emit caps are lifted (they compile at 1,000,000 units: 0.4 s / 292 MB and 1.1 s / 596 MB): stability cells
+#     sized at 1,000,000 (7.6 x PCREC_MAX_NFA_STATES, which they never count), red K156:compiled.
+z_b	spine	x	\b	-	-	-	y	131067	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/z_b	K148:CRASH
 z_b_past	spine	x	\b	-	-	-	y	131068	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/z_b	-
-z_look	spine	-	(?=a)	-	-	-	a	131068	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/z_look	K148:CRASH
+z_look	spine	-	(?=a)	-	-	-	a	131068	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/z_look	K148:CRASH
 z_look_past	spine	-	(?=a)	-	-	-	a	131069	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/z_look	-
-z_nlook	spine	-	(?!b)	-	-	-	a	131068	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/z_nlook	K148:CRASH
+z_nlook	spine	-	(?!b)	-	-	-	a	131068	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/z_nlook	K148:CRASH
 z_nlook_past	spine	-	(?!b)	-	-	-	a	131069	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/z_nlook	-
-z_lookb	spine	x	(?<=x)	-	-	-	y	131067	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/z_lookb	K148:CRASH
+z_lookb	spine	x	(?<=x)	-	-	-	y	131067	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/z_lookb	K148:CRASH
 z_lookb_past	spine	x	(?<=x)	-	-	-	y	131068	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/z_lookb	-
-z_cilook	spine	(?i)	(?=a)	-	-	-	a	131068	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/z_cilook	K148:CRASH
+z_cilook	spine	(?i)	(?=a)	-	-	-	a	131068	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/z_cilook	K148:CRASH
 z_cilook_past	spine	(?i)	(?=a)	-	-	-	a	131069	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/z_cilook	-
-z_cls	spine	-	[ab]	-	-	-	-	131069	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/z_cls	-
+z_cls	spine	-	[ab]	-	-	-	-	131069	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/z_cls	-
 z_cls_past	spine	-	[ab]	-	-	-	-	131070	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/z_cls	-
-lit	spine	-	a	-	-	-	-	131069	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/lit	-
+lit	spine	-	a	-	-	-	-	131069	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/lit	-
 lit_past	spine	-	a	-	-	-	-	131070	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/lit	-
-cat_ncgrp	spine	-	(?:a|b)	-	-	-	-	131069	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/cat_ncgrp	-
+cat_ncgrp	spine	-	(?:a|b)	-	-	-	-	131069	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/cat_ncgrp	-
 cat_ncgrp_past	spine	-	(?:a|b)	-	-	-	-	131070	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/cat_ncgrp	-
-anchors	spine	-	^	-	-	-	a	131070	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/anchors	-
+anchors	spine	-	^	-	-	-	a	131070	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/anchors	-
 anchors_past	spine	-	^	-	-	-	a	131071	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/anchors	-
-uni	spine	-	[\p{L}\p{N}]	-	-	-	-	131069	budget	1	limit	compile:norun	PCREC_MAX_NFA_STATES	spine/uni	-
+uni	spine	-	[\p{L}\p{N}]	-	-	-	-	131069	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_NFA_STATES	spine/uni	-
 uni_past	spine	-	[\p{L}\p{N}]	-	-	-	-	131070	budget	1	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/uni	-
-alt_cap	spine	-	({i}x)	|	-	-	-	17772	budget	1	limit	compile:norun	PCREC_MAX_VM_NODES	spine/alt_cap	-
+alt_cap	spine	-	({i}x)	|	-	-	-	17772	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_VM_NODES	spine/alt_cap	-
 alt_cap_past	spine	-	({i}x)	|	-	-	-	17773	budget	1	stability	refuse:VM exceeds	PCREC_MAX_VM_NODES	spine/alt_cap	-
-cat_grp	spine	-	(a)	-	-	-	-	65535	budget	1	limit	compile:norun	PCREC_MAX_VM_NODES	spine/cat_grp	-
+cat_grp	spine	-	(a)	-	-	-	-	65535	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_VM_NODES	spine/cat_grp	-
 cat_grp_past	spine	-	(a)	-	-	-	-	65536	budget	1	stability	refuse:VM exceeds	PCREC_MAX_VM_NODES	spine/cat_grp	-
-named	spine	-	(?<n{i}>a)	-	-	-	-	65535	budget	1	limit	compile:norun	PCREC_MAX_VM_NODES	spine/named	-
+named	spine	-	(?<n{i}>a)	-	-	-	-	65535	budget	1	limit	compile:norun=limit-cell-matcher-cost	PCREC_MAX_VM_NODES	spine/named	-
 named_past	spine	-	(?<n{i}>a)	-	-	-	-	65536	budget	1	stability	refuse:VM exceeds	PCREC_MAX_VM_NODES	spine/named	-
 alt_lit	spine	-	{i}x	|	-	-	-	70657	budget	0	limit	compile	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/alt_lit	-
 alt_lit_past	spine	-	{i}x	|	-	-	-	70773	budget	0	stability	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/alt_lit	-
+alt_cap_emit	spine	-	({i}x)	|	-	-	-	799	budget	0	limit	compile	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/alt_cap_emit	-
+alt_cap_emit_past	spine	-	({i}x)	|	-	-	-	802	budget	0	stability	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/alt_cap_emit	-
+cat_grp_emit	spine	-	(a)	-	-	-	-	1007	budget	0	limit	compile	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/cat_grp_emit	-
+cat_grp_emit_past	spine	-	(a)	-	-	-	-	1009	budget	0	stability	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/cat_grp_emit	-
+named_emit	spine	-	(?<n{i}>a)	-	-	-	-	990	budget	0	limit	compile	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/named_emit	-
+named_emit_past	spine	-	(?<n{i}>a)	-	-	-	-	993	budget	0	stability	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	spine/named_emit	-
+lit_ship	spine	-	a	-	-	-	-	131069	budget	0	limit	compile	PCREC_MAX_NFA_STATES	spine/lit_ship	-
+lit_ship_past	spine	-	a	-	-	-	-	131070	budget	0	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/lit_ship	-
+anchors_ship	spine	-	^	-	-	-	a	131070	budget	0	limit	compile	PCREC_MAX_NFA_STATES	spine/anchors_ship	-
+anchors_ship_past	spine	-	^	-	-	-	a	131071	budget	0	stability	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	spine/anchors_ship	-
+empty	spine	-	(?:)	-	-	-	-	1000000	budget	1	stability	refuse:pattern too large	none (K156)	-	K156:compiled
+inl	spine	-	(?i)(?-i)	-	-	-	-	1000000	budget	1	stability	refuse:pattern too large	none (K156)	-	K156:compiled
 lm_cat_past	memory	-	(?:a|b)	-	-	-	-	8000	main	0	stability	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	-	-
 lm_cls_past	memory	-	[ab]	-	-	-	-	8000	main	0	stability	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	-	-
 lm_alt2_past	memory	-	(?:a|b)(?:c|d)	-	-	-	-	8000	main	0	stability	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	-	-

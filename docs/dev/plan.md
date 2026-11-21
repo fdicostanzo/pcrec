@@ -2261,6 +2261,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-21): the control already runs on growth_driver (r73 FIX-NOW); tests/thread/compile_stack_driver.c is a second copy of growth_driver.c still serving the width and unbuilt arms, and three expansion dialects remain (shell nest/rep/chain, Python nest() and spine())
   trigger: the next lane that touches tests/thread or tests/growth's drivers: move the width and unbuilt cases onto cells.tsv rows (the `red` ratchet carries the unbuilt flip), delete compile_stack_driver.c and the shell pattern builder, fold `post`'s escaping into printf_fmt
   refs: docs/dev/reviews/2026-11-21-r73-growth.md (HOUSE-1, HOUSE-2); tests/thread/run_compile_stack.sh; tests/growth/growth_driver.c; tests/growth/run_growth.py
+- [K156-NO-REPEAT-LIMIT] STATE:not-started — no limit counts a run of empty or option-only groups once the emit caps are lifted (K156)
+  filed: 2026-11-21 lane grow5, from grow4's dropped empty/inl families (owner-manager ruling, GROWTH-SWEEP row body)
+  status (2026-11-21): filed; nothing built. `(?:)` and `(?i)(?-i)` x 1,000,000 compile with raised emit caps (0.4 s and 1.1 s, 0.3 and 0.6 GB); at the shipped caps the emit-code cap refuses them. Two red growth cells (spine/empty, spine/inl) carry it
+  trigger: the next change to src/core/limits.def, or a pattern-length / group-count limit design: decide whether a pattern-length limit or a unit counter bounds these shapes; the two cells flip to FIXED-RED when a limit refuses them
+  refs: known_issues K156; docs/dev/lanes/grow5_report.md; tests/growth/cells.tsv
 - [K155-STAMPS-LEAK] STATE:not-started — target_headers_render leaks its 32 KB pass-2 buffer on an out-of-memory refusal (K155)
   filed: 2026-11-21 lane grow2, from grow1's library stage (NEW-2)
   status (2026-11-21): filed; nothing built. LeakSanitizer in the growth sweep's ASan library stage names src/gen/memfn_stamps.c target_headers_render

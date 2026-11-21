@@ -5570,8 +5570,25 @@ There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md
   product at 250/251; `cells.tsv` holds the spine-length, width and memory
   cells (a `stability` row names its limit's diagnostic in `refuse:`; a `limit` row is `compile` and names the limit it sits just before).
 - **Matcher run.** A `limit` cell's uncapped run also builds the emitted C (`gcc -O0`) and runs it on
-  three subjects (exit 0 or 1). The 13 NFA-state / VM-node edge cells are `compile:norun`: at those sizes
-  (emit caps lifted) gcc needs about 10 minutes and 3.4 GB per cell.
+  three subjects (exit 0 or 1). The exception is a NAMED one (owner ruling limit-cell-matcher-cost,
+  2026-11-21): the 13 NFA-state / VM-node edge cells are `compile:norun=limit-cell-matcher-cost`: at those
+  sizes (the size limits lifted, `raise 1`) gcc needs about 10 minutes and 3.4 GB per cell, so they are
+  compile-only; an unnamed `compile:norun` is a table error and every run prints the count of exceptions
+  (13). The same ruling adds limit tests at the SHIPPED generated-code size limits (`raise 0`, buildable,
+  the matcher runs), each with a stability twin one unit past it: PCREC_MAX_VM_EMIT_CODE_BYTES at
+  `alt_lit` 70657, `alt_cap_emit` 799, `cat_grp_emit` 1007, `named_emit` 990 units, and PCREC_MAX_NFA_STATES
+  at `lit_ship` 131069 and `anchors_ship` 131070. No shipped-cap edge cell exists for the other NFA/VM
+  families: z_b, z_look, z_nlook, z_lookb and z_cilook crash (K148) between 8,000 and 16,000 units, before
+  the emit cap refuses; z_cls, cat_ncgrp and uni run away in memory (K150) near 8,000. PCREC_MAX_EMIT_BYTES
+  (the whole artifact) was not reached by any family tried: the code cap binds first.
+- **`+` pairs.** Nested `+` replicates its body per level, so PCREC_MAX_NFA_STATES or PCREC_MAX_VM_NODES
+  refuses it near depth 12 to 16, not at the depth limit. `plus_edges.tsv` holds each of the 92 cells'
+  bisected edge E; `run_growth.py` makes a limit cell at E, a stability twin at E + 1, and the matrix@250
+  cell is the pair's far-past stability member. The edge depends on kind, position and core (so one row
+  per cell). The @251 `+` cells stay UNPAIRED: the depth limit has no limit-test half for `+`.
+- **K156 cells.** `spine/empty` (`(?:)` x 1,000,000) and `spine/inl` (`(?i)(?-i)` x 1,000,000) are
+  stability cells with the emit caps lifted, red `K156:compiled` (red kind `compiled`): no limit counts
+  these units, so they compile; they flip to FIXED-RED the day a limit refuses them.
 - **Memory ladder.** Every cell also runs under RLIMIT_DATA caps of 2, 8, 32 and
   128 MB; PASS = compiled, or refused by the cell's own limit text or by out of
   memory; FAIL = an `internal error:` refusal, a thread that never started,

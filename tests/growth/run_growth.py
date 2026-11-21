@@ -72,8 +72,14 @@ LIB_FLOOR_S, LIB_MARGIN = 300, 20
 DEPTH_LIMIT_TEXT = "too deeply nested"      # PCREC_MAX_GROUP_DEPTH's diagnostic
 CAPTURING = ("group", "named")              # the matrix kinds whose groups capture (a backreference core needs one)
 # matrix `+` cells at depth 250 (measured 2026-11-21 on a 20-pair sample): refused by a limit far below depth 250
-PLUS_250_EXPECT = "refuse:NFA exceeds,refuse:nested bounded repeats would replicate"
-PLUS_250_LIMIT = "PCREC_MAX_NFA_STATES or PCREC_MAX_VM_REPLICATION_PRODUCT"
+# NAMED compile-only exceptions (owner ruling limit-cell-matcher-cost, 2026-11-21,
+# docs/design/plan_row_bodies/GROWTH-SWEEP.md): a limit cell sits just before a limit whose edge cell
+# cannot be built into a matcher.  `compile:norun=NAME` in a cells.tsv row names the exception; the
+# runner counts them (every run prints the count) and --list shows each.
+NORUN_EXCEPTIONS = {
+    "limit-cell-matcher-cost": "NFA-state / VM-node edge with the size limits lifted (raise 1): the emitted C is "
+                               "25 MB, gcc -O0 takes about 10 min and 3.4 GB (measured on z_cls 131069)",
+}
 
 
 def tsv(path, ncols):
@@ -143,8 +149,12 @@ class Cell:
         if kind not in KINDS:
             sys.exit("run_growth: cell %s: kind %r is not one of %s" % (cid, kind, "/".join(KINDS)))
         self.kind, self.pair = kind, pair
-        if kind == "limit" and expect not in ("compile", "compile:norun"):
-            sys.exit("run_growth: cell %s: a limit cell's expect is `compile` or `compile:norun`, got %r" % (cid, expect))
+        # a compile-only limit cell is a NAMED exception: `compile:norun=NAME`, NAME in NORUN_EXCEPTIONS
+        self.norun = expect.partition("=")[2] if expect.startswith("compile:norun") else ""
+        if kind == "limit" and expect != "compile" and not (
+                expect.startswith("compile:norun=") and self.norun in NORUN_EXCEPTIONS):
+            sys.exit("run_growth: cell %s: a limit cell's expect is `compile` or `compile:norun=NAME` (NAME one of %s), got %r"
+                     % (cid, "/".join(sorted(NORUN_EXCEPTIONS)), expect))
         if kind == "limit" and not limit_name:
             sys.exit("run_growth: cell %s: a limit cell names the limit it sits just before" % cid)
         if kind == "stability" and (not expect or any(not a.startswith("refuse:") for a in expect.split(","))):
@@ -155,7 +165,7 @@ class Cell:
         self.red, _, self.red_kind = red.partition(":")
         if self.red and not self.red_kind:
             sys.exit("run_growth: cell %s: red %r needs a kind (ID:KIND)" % (cid, red))
-        if self.red_kind not in ("", "CRASH", "TIMEOUT", "RUNAWAY", "ERROR", "refused", "BUILD", "MATCHER"):
+        if self.red_kind not in ("", "CRASH", "TIMEOUT", "RUNAWAY", "ERROR", "refused", "BUILD", "MATCHER", "compiled"):
             sys.exit("run_growth: cell %s: red kind %r is not a failure kind" % (cid, self.red_kind))
         # the refusal texts a clean refusal of this cell may carry
         self.refusals = []
@@ -178,6 +188,8 @@ def build_cells(budget, depth):
                               "compile" if lim else "refuse:" + DEPTH_LIMIT_TEXT,
                               "PCREC_MAX_GROUP_DEPTH", "depth/" + name, ""))
     # --- MATRIX: kind x quantifier x position x core ------------------------
+    # plus_edges.tsv: cid, edge E (the deepest `+` nest that compiles), the lower limit that refuses E + 1, its text
+    plus_edges = {r[0]: (int(r[1]), r[2], r[3]) for r in tsv(os.path.join(HERE, "plus_edges.tsv"), 4)}
     ax = {"K": [], "Q": [], "P": [], "C": []}
     for row in tsv(os.path.join(HERE, "matrix_axes.tsv"), {"K": 3, "Q": 3, "P": 4, "C": 4}):
         ax[row[0]].append(tuple(row[1:]))
@@ -195,17 +207,29 @@ def build_cells(budget, depth):
                     cid = "%s.%s.%s.%s" % (kn, qn, pn, cn)
                     for d in (depth, depth + 1):
                         pat = nest(pre, op, core, cl, "", d)    # nest() repeats `cl` once per level
-                        if d > depth:       # past the depth limit: stability
-                            kind, exp, lim, pair = "stability", "refuse:" + DEPTH_LIMIT_TEXT, "PCREC_MAX_GROUP_DEPTH", "matrix/" + cid
+                        if d > depth:       # past the depth limit: stability (a `+` cell has no limit-test half: unpaired)
+                            kind, exp, lim, pair = ("stability", "refuse:" + DEPTH_LIMIT_TEXT, "PCREC_MAX_GROUP_DEPTH",
+                                                    "" if qn == "plus" else "matrix/" + cid)
                         elif qn == "plus":
-                            # `+` replicates the body at every level, so a LOWER limit binds long before depth 250
-                            # (limits.md 3.10: "`+` ... is refused as too large (PCREC_MAX_NFA_STATES)"): this cell
-                            # is sized past THAT limit (its limit cell would sit at a much smaller depth: UNPAIRED)
-                            kind, exp, lim, pair = "stability", PLUS_250_EXPECT, PLUS_250_LIMIT, ""
+                            # `+` replicates the body at every level, so a LOWER limit (PCREC_MAX_NFA_STATES or
+                            # PCREC_MAX_VM_NODES, limits.md 3.10 para 3) binds near depth 12-16, long before 250.
+                            # The @250 cell is sized past THAT limit: a stability twin of the limit cell at the
+                            # edge (plus_edges.tsv: the bisected edge E), which is added below with its E+1 twin.
+                            # The @251 cell stays a depth-limit stability cell, UNPAIRED: no `+` cell can compile
+                            # at 250, so the depth limit has no limit-test half for `+`.
+                            e = plus_edges[cid]
+                            kind, exp, lim, pair = "stability", "refuse:" + e[2], e[1], "matrix/%s+" % cid
                         else:
                             kind, exp, lim, pair = "limit", "compile", "PCREC_MAX_GROUP_DEPTH", "matrix/" + cid
                         cells.append(Cell("matrix/%s@%d" % (cid, d), "matrix", pat, budget, 1, "all", 0,
                                           kind, exp, lim, pair, ""))
+                    if qn == "plus":
+                        # the `+` limit test just under its lower limit (the bisected edge E) and the exact stability
+                        # twin at E + 1; the @250 stability cell above is the same pair's far-past member
+                        e, lname, text = plus_edges[cid]
+                        for dd, kind, exp in ((int(e), "limit", "compile"), (int(e) + 1, "stability", "refuse:" + text)):
+                            cells.append(Cell("matrix/%s@%d" % (cid, dd), "matrix", nest(pre, op, core, cl, "", dd), budget, 1,
+                                              "all", 0, kind, exp, lname, "matrix/%s+" % cid, ""))
     # --- CELLS: explicit ----------------------------------------------------
     for (cid, fam, pre, unit, sep, mid, unit2, post, n, stack, rz, kind, exp, lim, pair, red) in \
             tsv(os.path.join(HERE, "cells.tsv"), 16):
@@ -533,6 +557,8 @@ def main():
             fams[c.family] = fams.get(c.family, 0) + 1
         for c in cells:
             print("%s\t%s\t%s\t%s" % (c.id, c.kind, c.expect, c.red))
+        print("# compile-only exceptions: %d (%s)" % (sum(bool(c.norun) for c in cells),
+              ", ".join("%s: %s" % (n, NORUN_EXCEPTIONS[n]) for n in sorted(NORUN_EXCEPTIONS))))
         print("# %d cells (%d limit, %d stability): %s" % (len(cells), sum(c.kind == "limit" for c in cells),
               sum(c.kind == "stability" for c in cells), ", ".join("%s %d" % kv for kv in sorted(fams.items()))))
         return 0
@@ -603,6 +629,9 @@ def main():
     print("runs failed: %d" % (nfail + nfixed))
     print("runs known-red: %d" % nred)
     sel = {c.id for c in cells}
+    exc = [c for c in cells if c.norun]
+    print("compile-only exceptions: %d limit cells (matcher not built; named in cells.tsv): %s" % (
+        len(exc), ", ".join("%s=%d" % (n, sum(c.norun == n for c in exc)) for n in sorted(NORUN_EXCEPTIONS))))
     for c in unpaired:
         if c.id in sel:
             print("UNPAIRED: %s (%s, limit %s) has no %s twin across the same limit" % (

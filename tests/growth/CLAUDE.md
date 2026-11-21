@@ -36,7 +36,8 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
   DEPTH_FAMILIES; each row = a `limit` cell at depth 250 and its `stability`
   twin at 251, refused by PCREC_MAX_GROUP_DEPTH). `make test-stackdepth` reads it through the runner.
 - `matrix_axes.tsv` — construct kind x quantifier x branch position x core
-  (growsurv's product), each a `limit` cell at 250 and a `stability` twin at 251.
+  (growsurv's product), each a `limit` cell at 250 and a `stability` twin at 251; the `+` cells are
+  paired at their lower limit instead (`plus_edges.tsv`, below).
 - `cells.tsv` — explicit spine / memory cells (width and unbuilt cases still live
   in tests/thread/run_compile_stack.sh); its header documents the columns
   (kind, expect, limit, pair, red). Every row runs `all` features, engine 0.
@@ -63,8 +64,21 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
   (`rc=-9`, ERROR), fails.
 - Ladder caps (2, 8, 32, 128 MB of RLIMIT_DATA) and why: run_growth.py LADDER. A rung below twice the
   pattern's own size is skipped (the pattern bytes are read before the cap is set).
-- `compile:norun` (limit cells only): compiles, matcher NOT built: the 13 NFA/VM-node edge cells, whose
-  25 MB of C takes gcc 10 minutes and 3.4 GB (owner question, grow4 report).
+- `compile:norun=NAME` (limit cells only): a NAMED exception, compiles but the matcher is NOT built.
+  NAME is a key of NORUN_EXCEPTIONS in run_growth.py (today `limit-cell-matcher-cost`, owner ruling of
+  2026-11-21): the 13 NFA-state / VM-node edge cells run with the size limits lifted (raise 1), their
+  emitted C is 25 MB and gcc -O0 takes about 10 minutes and 3.4 GB. An unnamed `compile:norun` is a
+  table error; every run prints the exceptions' count (13) and `--list` names each reason. Each family
+  that can be built at the SHIPPED caps has an extra pair (raise 0) that does run its matcher: the
+  emit-code edge (`alt_lit`, `alt_cap_emit`, `cat_grp_emit`, `named_emit`) and the NFA edge that
+  shipped caps reach (`lit_ship`, `anchors_ship`). No such pair exists for the other families:
+  z_b/z_look/z_nlook/z_lookb/z_cilook crash (K148) between 8,000 and 16,000 units, before the emit
+  cap refuses; z_cls/cat_ncgrp/uni run away in memory (K150) near 8,000.
+- `plus_edges.tsv`: one row per matrix `+` cell (the lower limit that binds near depth 12-16); each
+  row makes a limit cell at its edge E, a stability cell at E + 1, and the matrix@250 cell is the same
+  pair's far-past member. The @251 `+` cells stay unpaired (the depth limit has no limit half for `+`).
+- Red kind `compiled` (a stability cell that compiles): K156's `spine/empty`, `spine/inl` (no limit
+  bounds them once the emit caps are lifted).
   RLIMIT_DATA, not AS: ASan cannot start under an AS cap.
 - Never run a hostile cell outside watchdog; scratch under `$PCREC_TMPDIR`.
 - Future direction (owner, 2026-11-20, not built): a ladder of THREAD sizes
