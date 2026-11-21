@@ -62,3 +62,5 @@ is OWED to the next full growth run; it is opt-in and held behind grow2-lib on t
 Branch lane/grow3 (cut from lane/grow2 6a8238519), committed; rulings file empty, last R-n applied: none.
 Box lock was held by grow2-lib during the lane; nothing of mine is running. Open: owner question
 growth-compile-cells (742 cells that pass by compiling) and its follow-up lane.
+
+OWED: none (the matrix ladder and library stage of `make test-growth` are not owed by this lane's brief; named above).
