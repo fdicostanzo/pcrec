@@ -1,7 +1,9 @@
 # bspan3 report: block_span.md rev 3 (review r68 applied)
 
 ## STATE AT HANDOFF
-STATE: done (design text only; no code under memfn/src, src, cli, lib or tests; no suite, no timing, no queue job). OWED: none. Branch lane/bspan3, note `docs/design/memfn/block_span.md` rev 3 (revision line "rev 3 (2026-11-21): review r68 applied"), plus its index line in `docs/design/memfn/CLAUDE.md`. Rulings file `bspan3_rulings.md` re-read before each commit and this report; last entry applied: **R-1** (the review is renumbered r68; the note names r68 everywhere, F-ids unchanged). The owner's answer to `wrap-differs` had not landed there.
+OWED: none.
+
+STATE: done (design text only; no code under memfn/src, src, cli, lib or tests; no suite, no timing, no queue job). Branch lane/bspan3, note `docs/design/memfn/block_span.md` rev 3 (revision line "rev 3 (2026-11-21): review r68 applied"), plus its index line in `docs/design/memfn/CLAUDE.md`. Rulings file `bspan3_rulings.md` re-read before each commit and this report; last entry applied: **R-1** (the review is renumbered r68; the note names r68 everywhere, F-ids unchanged). The owner's answer to `wrap-differs` had not landed there.
 
 Probes run (re-derivations only): a lane build (`nice make -j2`, unlocked) and a traced pcrec (memfn/src/*.c with `-DMF_TRACE -O1`, linked the way `tests/memfn/rows_check.py` does) in `$PCREC_TMPDIR/scratch/bspan3/tr/`; one gcc -O0 `always_inline` probe (`$PCREC_TMPDIR/scratch/bspan3/ai.c`). The commands are in the note's §16 items 5, 6c and 9.
 
