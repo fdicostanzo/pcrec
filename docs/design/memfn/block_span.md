@@ -433,11 +433,10 @@ does:
 static const kit_table wf_spantable = { "wfS", WF_NSROWS, s_ct, NULL, NULL, s_holds, s_opt };
 ```
 
-- six `gate_contract`s, one per row, by a `WF_CT_S(name, row)` macro after
-  `WF_CT_E`, each `{ "wfS", <row id>, NU(use_s_none), ... }` with
-  `use_s_none = { MF_ANY, MF_ANY, MF_PH_DEFINE, 0, GATE_ALWAYS }`: every
-  field a wildcard (the rows read plan facts, not site fields), phase
-  DEFINE;
+- four `gate_contract`s at U1, one per row (six at U2, with the two V rows), by a `WF_CT_S(name, row)` macro after
+  `WF_CT_E`, each `{ "wfS", <row id>, NU(use_nothing), ... }` (U1 reuses the
+  existing `use_nothing`, the better form): every field a wildcard (the
+  rows read no `FLD_*` contract field), phase DEFINE;
 - `s_opt(i)` names `"span-vector"` on T-vwin and T-vscan, NULL elsewhere.
   `walk_row` applies the opt column only when `in->s` is set
   (compose.c:172), so the walk's `gate_in` sets `.s = s` (the site): it is
@@ -466,7 +465,7 @@ agreement is now literal.
   walk the plan in offset order; skip entry `skip` and a C-run group's
   later entries (as `wf_test_to` does); at an entry `i` with `grp[i] < 0`,
   `k = wf_loop_len(w, i, skip)` at head 0 (§3.1); for k ≥ 2, walk the span
-  form table once (the facts above) and store `{i, k, form, j}`; advance
+  form table once (the facts above) and store the subset `{i, k, h}` at U1 (the row's form is its head h; `form` and `j` arrive with U2's V rows); advance
   by k. Entries outside every stretch keep their lone tests, as today.
 - **Where it runs:** at the end of `wf_find_prepare` (E-find), after the
   search row's `prepare` and R-1's `skip`; and, for the floor (E-generic),
@@ -1006,8 +1005,8 @@ it up with no registration. `tests/memfn/CLAUDE.md` gains its line.
 
 **Its cases, per pattern** (`m`, `n`, `mc` lines, `rxt_format.md` §1.5,
 §1.7; byte encoding, no `flags`): with n the pattern's repeat count, M a
-member string of the class, X a byte outside it (`\n` for `[^\n]`, `a` for
-`[\x80-\xbf]`, `g` or `!` otherwise, written with the `<subject>` escapes,
+member string of the class, X a byte outside it (`\n` for `[^\n]`, `g` or `!`
+otherwise (`g` for `[\x80-\xbf]`), written with the `<subject>` escapes,
 §1.5.1):
 - a match at the subject start, and a match flush against the subject end
   after a non-member prefix;
@@ -1377,7 +1376,7 @@ lane bsu1. **U2 onward waits on `scalar-check-cut` (§2.2), which replaced
 
 | unit | what it does | moves bytes? |
 |---|---|---|
-| **U1** | The table refactor: `wf_span_head` becomes THE SPAN FORM TABLE (T-deny, T-force, T-lever, T-head; the V rows land at U2), its six contracts, `wf_tables_check`'s line and the `trace_format.md` hunk (§3); the stretch list stored once by one enumerator (E-find in `wf_find_prepare`, the floor in `wf_plan_site`'s floor branch); `skip` a plan fact by the search rows' `skip` column; `w->head` retired; `wf_loop_len` takes the head. **SPAN-SEED's `.rxt` and generator committed** (§10.1), with the population pins it moves (`make test`). The U1 re-aims and REACH re-proofs (§10.2). An identity gate: every corpus artifact (the `.rxt` included) and SPAN-SEED at 4095 byte-identical to the merge base at both layers, both engines (no mask: no abi event). A refactor gets no flag (Frank 2026-10-29). [rev4.1, R-1 of lane bsu1] **The decider census** (a U1 surface this note missed, found red by `make test-memfn-rows`): `tests/memfn/decider_census.tsv` gains `wf_stretches` (fn) and `wf_spanrows` (data), answering the new table name **T-SPAN** (the span form table, `wfS`), added to its header list; `decider_census.py`'s `HITS` 67 to 68 and `MEMBER_COUNT` 70 to 72, re-derived from the map; the retired if-chain had no row | no artifact byte (a corpus file is added) |
+| **U1** | The table refactor: `wf_span_head` becomes THE SPAN FORM TABLE (T-deny, T-force, T-lever, T-head; the V rows land at U2), its four contracts (six at U2, with the V rows), `wf_tables_check`'s line and the `trace_format.md` hunk (§3); the stretch list stored once by one enumerator (E-find in `wf_find_prepare`, the floor in `wf_plan_site`'s floor branch); `skip` a plan fact by the search rows' `skip` column; `w->head` retired; `wf_loop_len` takes the head. **SPAN-SEED's `.rxt` and generator committed** (§10.1), with the population pins it moves (`make test`). The U1 re-aims and REACH re-proofs (§10.2). An identity gate: every corpus artifact (the `.rxt` included) and SPAN-SEED at 4095 byte-identical to the merge base at both layers, both engines (no mask: no abi event); the 4095 run is the U1 lane's one-off, and its repeatable ratchet lands with U2's identity gate (§10.1). A refactor gets no flag (Frank 2026-10-29). [rev4.1, R-1 of lane bsu1] **The decider census** (a U1 surface this note missed, found red by `make test-memfn-rows`): `tests/memfn/decider_census.tsv` gains `wf_stretches` (fn) and `wf_spanrows` (data), answering the new table name **T-SPAN** (the span form table, `wfS`), added to its header list; `decider_census.py`'s `HITS` 67 to 68 and `MEMBER_COUNT` 70 to 72, re-derived from the map; the retired if-chain had no row | no artifact byte (a corpus file is added) |
 | **U2** | The wrapper (option A): T-vwin, T-vscan; `vs<j>` + `__body` + the selector for eligible stretches at every layer, the selector line through the ONE lifted selector writer (§5; ofsskip's bytes unchanged); the deny row `span-vector` (both layers) with its `MEMFN_CLASS` row, its corpus floors measured and pinned at U2 [rev4.1, R71-2], and `span-loop`'s re-measured axes rows (§9.3). The identity gate against the merge base for the deny arm, with its declared mask. The U2 re-aims, `REACH_ONLY` at U2. The first abi event lands here | yes |
 | **U2b** | **The scalar no-loss check** (§2.1): the machine-code census on the BUILT U2 text, the declared normalizer with its two-sided controls, over the real population, the 160-pattern grid and `\w{501}` at 4095. Identical on the population, or the build stops; the grid's DIFFERS list goes into the report | no |
 | **U3** | The `w32` level block: §4.1's text bracketed by V's own writer (lane order, the K ≥ 16 assert), the selector's replaced call, the include bit on the art, the form token, the guarded bound and `simd_bounds.tsv`, the `limits.md`/`tuning.md`/`registry.md` hunks. [rev4.1, R71-4] **C18's head family (`SELECTOR`, `HELPER`), the `_b` name form and the -O0 rule with control (1)** (§10.2), so `test-memfn-simdfloor` reads U3's text green. [rev4.1, R71-5] A V witness (`[0-9a-f]{17}`) added to `simd_guarded_check.py`'s NAMED, `simd-form-named` re-pinned 8 → 9, so the new `simd_bounds.tsv` row has a reader that is not the every-10th sample. F2 recorded before anything else | yes (SIMD-on) |

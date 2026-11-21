@@ -44,8 +44,8 @@
  *   "floor: generic"), with ONE hoisted core bound per candidate and the
  *   THREE-WAY guard outside it.
  *
- * Every table is a `kit_table` on the one walk (kit_walk; Tables A, M, E, and
- * T-FIND's fd_rows) or a declared row list read in order (C, TIE, and B's
+ * Every table is a `kit_table` on the one walk (kit_walk; Tables A, M, E, the
+ * span form table wfS, and T-FIND's fd_rows) or a declared row list read in order (C, TIE, and B's
  * renderers, keyed on the FIND slot's pick); every cost row reads ONE cost
  * table, plan_cost.def (HORS_MIN in finder.c's D-hors facts).
  * The decision reads no frame fact; a FRAMED phase-1 ask's frame part
@@ -1469,8 +1469,8 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
  *      guard, so it never joins a loop).
  * The forms are the one knob h: I = H(h >= every offset: today's text), L =
  * H(0), H(h), chosen per stretch by THE SPAN FORM TABLE (wfS, below Table E;
- * block_span.md §3) and stored once in the plan's stretch list. A periodic segment, such as `(ab){500}`, is NOT built (r45_reply
- * §3: UNMEASURED; its trigger is a census row with a periodic span of 36 or
+ * block_span.md §3) and stored once in the plan's stretch list. A periodic
+ * segment, such as `(ab){500}`, is NOT built (r45_reply §3: UNMEASURED; its trigger is a census row with a periodic span of 36 or
  * more positions).
  *
  * THE DEFAULT HEAD. MEASURED: 64, label "grid top, CHOSEN". The form cards
@@ -1888,8 +1888,12 @@ static const kit_table wf_etable = { "wfE", WF_NEROWS, e_ct, NULL, NULL, e_holds
  *   T-head   always                          H(WF_SPAN_HEAD)
  * T-deny, T-force and T-lever stay ahead of every later row: the escape hatch
  * means "the text before the forms", and the cards' arms keep their names.
- * The rows read plan facts, not site fields, so each contract serves every
- * class of every field. */
+ * The rows read no FLD_* contract field (they read the options and the
+ * artifact), so each contract serves every class of every field. The `opt`
+ * column is NULL throughout: T-deny and T-force SELECT a row rather than
+ * skip one, so no row is denied by an option (U2's `span-vector` deny row
+ * is the column's first user). The last row, T-head, holds always
+ * (wf_tables_check), so the walk always ends on a row. */
 typedef struct {
     const wf_dec         *d;
     const struct wf_plan *w;
@@ -1900,7 +1904,7 @@ static int s_deny_holds(const wf_sx *x)  { return kit_opt_state(x->d->s->opts, W
 static int s_force_holds(const wf_sx *x) { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) > 0; }
 static int s_lever_holds(const wf_sx *x)
 {
-    return x->d->art && (x->d->art->levers & KIT_LEVER_SPAN_HEAD);
+    return x->d->art->levers & KIT_LEVER_SPAN_HEAD;
 }
 static int s_head_holds(const wf_sx *x)  { (void)x; return 1; }
 
@@ -1953,6 +1957,8 @@ static int wf_stretches(mf_arena *al, const wf_dec *d, struct wf_plan *w, unsign
                         int quiet)
 {
     w->nstr = 0;
+    /* A stretch is two or more entries, so at most n/2 of them (n/2 + 1 is
+     * exact for n >= 2 and keeps the allocation non-empty). */
     w->str = al->alloc(al->u, (w->n / 2 + 1) * sizeof *w->str);
     if (!w->str) return -1;
     const mf_art *art = d->art;
@@ -1966,7 +1972,9 @@ static int wf_stretches(mf_arena *al, const wf_dec *d, struct wf_plan *w, unsign
         gate_verdict why = { 0, 0 };
         wf_sx x = { d, w, i, k };
         size_t r = kit_walk(&wf_spantable, 0, &in, gphases, 0, &x, &tc, &why);
-        if (r >= WF_NSROWS) return -1;  /* T-head always holds: unreachable */
+        /* The last row holds always (wf_tables_check), so this is a stated
+         * invariant, not an allocation failure: named, never "out of memory". */
+        if (r >= WF_NSROWS) return kit_fail((mf_art *)art, "window family: no span form row holds");
         w->str[w->nstr++] = (struct wf_stretch){ i, k, wf_spanrows[r].h(&x) };
         i += k - 1;
     }
@@ -2232,7 +2240,8 @@ _Static_assert(sizeof ren_skel / sizeof *ren_skel == RK_N, "every skeleton row i
  * `path`, `prepare`, its LOOP STATE (written before the frame's RAISE) and
  * its `find` and HEAD (the loop's head: the find and the bound, or D-hors's
  * bound and probe), its `skip` (the entry the head proves, a plan fact
- * wf_find_prepare stores), and no predicate (wf_tables_check). An E-stmt row is
+ * wf_find_prepare stores), and no predicate (wf_tables_check, which also
+ * refuses a head or skip hole). An E-stmt row is
  * the composer's (compose.c select_arm): it states only its ARM, which
  * renders the pick and states its own libc and includes (its contract),
  * keyed also by the site's `end_back` (its predicate, over the site); its id
@@ -2495,9 +2504,14 @@ const char *wf_tables_check(void)
     for (size_t i = 0; i < WF_NSROWS; i++)
         if (!wf_spanrows[i].holds || !wf_spanrows[i].h || !wf_spanrows[i].ct)
             return "a span form row is a hole";
+    if (!wf_spanrows[WF_NSROWS - 1].holds(NULL))
+        return "the last span form row does not hold always";
     for (size_t i = 0; i < RB_N; i++)
         if (ren_search[i].k.frame == E_FIND && ren_search[i].k.holds)
             return "an E-find search renderer row takes a predicate";
+    for (size_t i = 0; i < RB_N; i++)
+        if (ren_search[i].k.frame == E_FIND && (!ren_search[i].head || !ren_search[i].skip))
+            return "an E-find search renderer row has no head or skip";
     for (size_t i = 0; i < RF_N; i++)
         if (ren_fused[i].k.keys != REN_PICK(ren_fused[i].search))
             return "a fused row's key is not its declared search's pick";
@@ -3602,10 +3616,10 @@ static int wf_pos_test(wf_rc *rc, kb *t, unsigned i)
 }
 
 /* The ONE-CLASS REPEAT's loop at tested entry `i` (kind 2 of THE SPAN
- * FORMS) under inline head `head`: the number of entries from `i` on that one loop tests, at least 2 (the minimum
- * of two is DERIVED, r45_reply rev 7 §3 "The forms": a one-entry loop is a lone
- * test plus loop overhead, and gcc unrolls two trips),
- * or 0 where entry `i` starts none (its offset is below the head, it is not
+ * FORMS) under inline head `head`: the number of entries from `i` on that
+ * one loop tests, at least 2 (the minimum of two is DERIVED, r45_reply rev 7
+ * §3 "The forms": a one-entry loop is a lone test plus loop overhead, and
+ * gcc unrolls two trips), or 0 where entry `i` starts none (its offset is below the head, it is not
  * a kind-2 position, or fewer than two such entries follow at consecutive
  * offsets). Head 0 gives a stretch's length k (the enumerator's,
  * wf_stretches). Entry `w->skip` (the position E-find's search proved) and a
@@ -3656,6 +3670,10 @@ static int wf_test_to(wf_rc *rc, kb *t, mf_sink *o, int lower)
     mf_art *art = rc->art;
     kb_puts(t, "(");
     int first = !(lower && wf_lower(rc, t));
+    /* The stored {i,k,h} is read as a gate (i < end) and for its head; the
+     * extent is re-walked by wf_loop_len. The two agree because every break
+     * in wf_loop_len but `off < head` is independent of the head (a head-h
+     * loop is the tail of a head-0 stretch), so keep it so. */
     unsigned si = 0, end = 0;           /* the next stored stretch; the
                                            current one's end and head        */
     int32_t head = INT32_MAX;

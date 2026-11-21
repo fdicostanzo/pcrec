@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3278 -- lane forms (R-45 plan A, r45_reply.md rev 6 §3 "The option"): THE FORCE SPELLING IS IGNORED.
-# wf_span_head (memfn/src/window.c) drops the `--memfn=span-loop` arm, so the force compiles the
+# the span form table, wfS (memfn/src/window.c; formerly wf_span_head), drops the `--memfn=span-loop` arm, so the force compiles the
 # default head and moves no byte: the option row's force cell is the base build. The detector is
 # the `--memfn=` arm's reach (tests/axes/memfn_arm.py via run_axes.sh, arm axesmemfn): the cell
 # `span-loop=force` is DIFFER-class with the witness `[0-9a-f]{32}` at c-default, which no longer

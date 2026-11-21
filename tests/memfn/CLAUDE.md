@@ -67,10 +67,10 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 - **run_rank.sh**, **rank_check.py** — the ranking claim, INVERTED since D172 S2 commit 6: pcrec hands the kit no ranking (every PRE/OFS predicate has rank_n 0); S1420 is the failing direction; N4's door (`find_door`) stays. History: NOTES.md.
 
+- **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv**, **d3_census.tsv** — D3 floor gate: `make test-memfn-d3floor`, last step of test-axes; also cloud shard 1; not in `make test`. See NOTES.md.
+
 ### SPAN-SEED (R-47 U1, lane bsu1; docs/design/memfn/block_span.md §10.1)
 - **span_seed.rxt**, **gen_span_seed.py** — the vector span's corpus witnesses (41 patterns, python-`re` cases), GENERATED: re-run, never hand-edit.
-
-- **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv**, **d3_census.tsv** — D3 floor gate: `make test-memfn-d3floor`, last step of test-axes; also cloud shard 1; not in `make test`. See NOTES.md.
 
 ## Maintaining it
 
