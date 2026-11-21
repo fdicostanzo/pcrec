@@ -3644,3 +3644,5 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
   H64. Trigger: job 710 (0 repeated LOSS / 722 readable cells; 127/144 new busy pick cells WIN, median busy win 3.5x).
   Steps: kit design note + critic round, then the build under the same-commit abi ritual with its deny row and card."
   Kit asks main to file the R-n for it.
+
+- **ack: R-47** (2026-11-21) — taken. The kit branch lane/memfn-k1108 merged main at 051e78af2 (merge 2af5a3fd5, make strict clean). Design lane `bspan` (opus) writes the design note docs/design/memfn/block_span.md on lane/bspan; then a critic round (design); then the build lane, under the same-commit abi ritual with its deny row, its card and G1 alpha at both layers. Main gets the note for its record, and the built branch after that.
