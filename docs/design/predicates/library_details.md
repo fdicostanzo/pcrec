@@ -42,8 +42,8 @@ rulings:
 rejected:
 - (b) the order of a declared ordered symbol set ("digits followed by letters as per normal"), as `enumerate`'s order for a class — by owner ruling — class-value ("ascending codepoints everywhere"); the idea itself stays parked (parked/ideas/class-base); run under the ruled order: `enumerate(/[\dA-Fa-f]/)` is `0123456789ABCDEFabcdef` (classvalue.py, the manager's scratch run, not a lane's evidence).
 readings:
-- (the manager's (a) of class-value) a caseless single character is a class for this rule, `(?i)k` enumerating `K`, `k`, U+212A — UNTESTED (for the next lane).
-- (the manager's (b) of class-value) "codepoint" in a byte-mode program is the byte value — UNTESTED (for the next lane).
+- (the manager's (a) of class-value) a caseless single character is a class for this rule, `(?i)k` enumerating `K`, `k`, U+212A — SUPPORTED as to the ORDER: python `re` (str mode, IGNORECASE) over every codepoint gives U+004B, U+006B, U+212A, ascending (predscope_model.py CASELESS; sabotage s14 caught); UNTESTED that a caseless single character is a class for `enumerate` (no ruling says so), and which members libpcre2 gives in each mode (UTF, UCP, byte) is a PCRE2 fact this lane does not look up (D181; a question for a pcre2-reader).
+- (the manager's (b) of class-value) "codepoint" in a byte-mode program is the byte value — UNTESTED (untestable: it defines a word; no ruling speaks of byte mode). Run for orientation: python `re` bytes mode, `[A-C\xe9\x80]` by byte value is 0x41, 0x42, 0x43, 0x80, 0xe9, the same as the Latin-1 codepoint order (predscope_model.py BYTES; sabotage s15 caught).
 - (the manager's (b) of quantified-order) ascending codepoint, so `enumerate(/[abc]/)` is [`a`, `b`, `c`] and `.index` counts from the bottom — RULED 2026-11-21 (class-value), no longer a reading; the enumerator under that reading prints [`a`, `b`, `c`] (predasc EXpos, sabotage s12 caught).
 - no match shows the order (one-character members never compete; no defined function on letters gives competing results) — a reading, UNTESTED beyond `\w + 1` = `\d + 1` (predasc EXwplus: the letters give nothing; earlier predloop EXwplus).
 evidence: predloop (superseded by predasc: predloop's model asserts the retired descending order and is red at the tip by design) EXpos, EXwplus; predasc EXpos, EXwplus, PCREORD.
@@ -52,6 +52,7 @@ history:
 - 2026-11-19 (lane predloop): a new open sub-piece, the question the ruling left open.
 - 2026-11-19 (lane predfix61, review r61 F-K: RULING-8, REACH-7, GENERAL-7): the statement until then: "What "lowest to highest" means for a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s order is a question for the owner." Its bullet until then: "The reading today (the manager's, not ruled): ascending codepoint, so `enumerate(/[abc]/)` is [`a`, `b`, `c`] and `.index` counts from the bottom (`a` is 1). The other candidate: an order the owner names." Now: his earlier discussion quoted, parked/ideas/class-base pointed at, the ordered symbol set named as candidate (b), and the caseless single character in the question (predfix61 FK: `(?i)k` takes `K`, `k`, U+212A; `(?i)[\da-f]` by codepoint `0..9A..Fa..f`).
 - 2026-11-19 (lane predasc): quantified-order turned the class order to lowest to highest; the question stays open, restated. Statement before: "What "class value" orders a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s descending order is a question for the owner." Bullet before: "The reading today (the manager's, not ruled): descending codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top (`c` is 1). The other candidate: an order the owner names." Reading before, verbatim: "(the manager's (a) of class-positions) the codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top — UNTESTED as a rule (an owner question); the enumerator under that reading prints [`c`, `b`, `a`] (predloop EXpos)."
+- 2026-11-21 (lane predscope): the manager's two readings tested (above); the printed lines re-run: `[\dA-Fa-f]` 0123456789ABCDEFabcdef (A 11, a 17), `[a-cB]` B a b c (predscope_model.py CLASSV, python `re` over the codepoint range; sabotage s16 caught). The piece unchanged.
 
 ## lib/builtin/import — import
 was: core/modules/import (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
@@ -261,6 +262,7 @@ history:
 - 2026-11-18: his `length($y)` (an image) is written `strlen($y)` (the draft's A26), so this filter keeps its name.
 - 2026-11-19 (lane preddoc3c): a new piece (a provided name the library lacked: census row `length`).
 - 2026-11-19 (lane preddoc4): `needs:` the computed-label piece and lib/counting/count, the two names its body uses (review r59 READ-8).
+- 2026-11-21 (lane predscope, pure-label folded): one sentence added, `ch`, written as a group in rx text, is also a capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
@@ -275,6 +277,7 @@ history:
 - 2026-11-19 (lane preddoc3c): a new piece (not in the census's 61 rows; a provided name of the draft §2.7).
 - 2026-11-19 (lane preddoc4): `join([...])` removed from `months` (join is one string, the members joined; an array is already the alternation); `needs:` the computed-label and metadata pieces; answers unchanged: preddoc3c PART MN built the body as the alternation (review r59 READ-5).
 - 2026-11-19 (lane preddoc6, review r60 COLD-15): the body's `...` written out as the twelve names in calendar order (the `.index` the example reads depends on the order); answers unchanged (preddoc6 PART MN).
+- 2026-11-21 (lane predscope, pure-label folded): one sentence added, `[mname = ...]` makes no capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -419,6 +422,7 @@ history:
 - 2026-11-17: "OWNER on what `hits` is" (questions), then the ruling: atomic and anchored (hits-committed, hits-text).
 - 2026-11-19 (lane preddoc3c): converted.
 - 2026-11-19 (lane preddoc5): the slug hit-list moved here from core/model/table, whose reading named this piece as the one deciding it (review r59 PLACE-4).
+- 2026-11-21 (lane predscope, pure-label folded): one sentence added, the `hit` group written in rx text is a capture as well as a label (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
@@ -795,16 +799,33 @@ history:
 ## lib/structural/capture — capture
 slugs:
 rulings:
+- 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name")
 rejected:
 - the keyword form `export capture(x) := ...` (rev 0) — by the draft — superseded by `@export`.
 readings:
 - `capture(name, x) := /(?<${name}>${x})/`, the name passed (lane preddoc6, review r60 COLD-8) — SUPPORTED (preddoc6 PART CP).
 - `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN; the owner's sketch `group(x) := /(?<${x.label}>${x})/`, "lots of hand waving", record "2026-11-14 — compose instead of an option") names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP), but NOT BUILDABLE from the core as written (no field gives a part label's own name); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
 - what `capture(x)` returns for a looped x is not stated (the draft R.11 row 32).
+- (the manager's (d) of pure-label) `capture(name, x) := /(?<${name}>${x})/` is the wrapper method in its literal form — SUPPORTED as a wrapper that makes a capture (python `re` groups of its lowering: `d`; predscope_model.py CAPT); his wrapper placeholder `[ d = capture(digits) ]` names the capture from the part label, which this body cannot (the missing field above).
 evidence: preddoc3c PART CP.
 history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
 - 2026-11-19 (lane preddoc6, review r60 COLD-8): the body could not be built from the core: `.label` is defined only for a part label over an array ("that member's name", core/values/metadata), and inside the body `x` is a parameter, not a path (core/labels/flow: "A binding's name is not a path"). The piece now states `capture(name, x) := /(?<${name}>${x})/` (the name passed as a string to the group-name hole) and keeps the draft's one-parameter sketch as a bullet naming the missing field; the example `capture(x)`, x := `[d = /\d+/]` became `capture("d", /\d+/)`, same answers (preddoc6 PART CP).
+- 2026-11-21 (lane predscope, pure-label folded): the bullet until then: "A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture." (wrong after pure-label: a label reaches the caller only as a capture). Two bullets added (the wrapper reading; the add-on pointer). Status date 2026-11-19 to 2026-11-21.
+
+## lib/structural/capture/add-on — Making a label a capture
+slugs: none
+rulings:
+- 2026-11-21 (class: REQUIREMENT) "so an add on component that converted a label into a capture is needed." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); his reason: "the reason for the second one is that someone may use a library form like isodate."
+- 2026-11-21 (class: DISCUSSION, nothing ruled) "what i don't know is precisely what that looks like. two methods are to specify it like a wrapper like [ d = capture(digits) ] etc or specify it afterthefact like [ d = digits ] & capture(d) or something. no spelling suggested." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name")
+- 2026-11-21 (class: STATEMENT, marked agreed) "1. purely predicate labels and 2. cannot become exported captures (although they might be internal captures)" (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); of the `_t` labels
+rejected:
+readings:
+- (the manager's (c) of pure-label) the after-the-fact capture names its label by the visibility rules a condition does, so a `_` label cannot be named, hence cannot be captured, outside its binding — SUPPORTED by the record (statement 1 of core/labels/export, "A private label is visible only inside the binding it is written in"; his "cannot become exported captures (although they might be internal captures)"); untestable by run (a refusal).
+- the after-the-fact form has no body in the language (native) (the manager's (d), second half) — UNTESTED (no form is defined).
+evidence: predscope_model.py CAPT (what is a capture today).
+history:
+- 2026-11-21 (lane predscope): a new under-construction piece for his requirement of pure-label; both spellings are placeholders (core/spellings/placeholders).
 
 ## lib/structural/each — each, each_group, where, where_group
 slugs:
