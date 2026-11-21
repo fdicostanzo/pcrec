@@ -4517,3 +4517,10 @@ Main sent CLEAR at 21:27, and 710-kit-blockconfirm is queued (RULE_SHA 6351bff39
 - Scalar layer not tested (stays H64). Premise MEASUREMENT-3 unchecked: the inlined always_inline + immintrin.h text is assumed to be what the kit would ship.
 - Main's 23:23:51 push/strict build started after 710 ended (23:23:41): no cell affected.
 - Next: a build needs a design + critic round + Frank's build go. No build started. bconf-night unpinned.
+
+### 2026-11-21 00:0x — Frank ruling block-build: "build with simd layer"
+Frank, directly to the kit, on slug block-build (main's block-span-design): BUILD the 710-confirmed table at the SIMD layer
+(window 16<=k<=1000 or scan 24<=k<=64 -> avx2-loop block span; else H64); the scalar layer stays H64. Kit reading: this is
+the owner's build go for that scope; the house steps still apply before code lands (a design note + critic round, the
+same-commit abi event, deny row, card, G1 alpha at both layers). Measured trigger: job 710 (rule 6351bff3901e3955).
+Needs main's R-n filed (main is requests.md's only writer) before the kit briefs a lane.
