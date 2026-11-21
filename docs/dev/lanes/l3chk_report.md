@@ -21,10 +21,10 @@ tests/codegen/manifests/k50_gate_refinement.txt: two `#UNDECLARED` rows with the
 [L3-BOUNDED-RUN-REFINE] (child of [REQ-LOOKAROUND]) in docs/dev/plan.md: route 2, trigger "L2's design or a measured loss from a bounded run that hands off nothing". `make -s test-plan-lint` passes.
 
 ## Validation dispatched
-Cloud run: `scripts/cloudrun --owner main --kind test --ref <tip> --name l3chk-test` (see the tip and ref in the reply to main). Not awaited. Local box use ended 23:4x with nice make -j4, failing sections only.
+Cloud run: `scripts/cloudrun --owner main --kind test --ref <tip> --name l3chk-test` (see the tip and ref in the reply to main). Not awaited. Local box use ended 23:50 with nice make -j4, failing sections only.
 
 ## STATE AT HANDOFF
 - Branch lane/l3chk (from lane/l3enc e9be43e92): WIP commit 05ea100ea plus a follow-up fixing the undeclared reached-case list, plus this report.
 - Last R-n applied: R-1.
-- Owed: the cloud verdict (shard 13 and the full test).
+OWED: none (the cloud verdict, shard 13 and the full test, goes to main).
 - Scratch: /var/tmp/pcrec-pcrec/scratch/l3chk/ (enc*.log, cpset.log, shim.sh).
