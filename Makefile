@@ -2290,8 +2290,8 @@ test-axes: all
 # never crash (tests/growth/, docs/testing.md "Growth sweep"). OPT-IN like
 # test-axes: it is long (about 1,500 cells x 5 runs, then the library-mode
 # series under ASan+LSan), so it is NOT in `make test`; the depth arm alone is
-# in `make test-stackdepth`. Known-red cells (K148, K150, K151, NEW-n) are
-# listed, not failures; one that starts passing fails the sweep (the ratchet).
+# in `make test-stackdepth`. Known-red cells (the `red` column of
+# tests/growth/cells.tsv) are listed, not failures; one that starts passing fails the sweep (the ratchet).
 # Two stages under ONE box-lock hold: the CLI-per-cell runner against build/,
 # then LIBRARY mode (one process, every cell, memory caps set in it) against
 # the ASan tree build-asan/ built the way `make asan` builds it.

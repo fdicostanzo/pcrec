@@ -113,6 +113,18 @@ if ! $CC -O2 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -o "$DRIVER" \
     summary
 fi
 
+# The DEPTH arm and the CONTROL run on tests/growth/growth_driver.c: the control
+# must exercise the driver whose guard it vouches for (r73 HOUSE-1). The WIDTH
+# and UNBUILT arms still use compile_stack_driver.c (their deletion is a plan row).
+GDRIVER="$WORKDIR/growth_driver"
+# shellcheck disable=SC2086
+if ! $CC -O2 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -o "$GDRIVER" \
+        "$ROOT_DIR/tests/growth/growth_driver.c" "$LIBPCREC" -lpthread -lm \
+        >"$WORKDIR/gdriver.log" 2>&1; then
+    bad "[DD-10] could not build tests/growth/growth_driver.c against $LIBPCREC: $(head -3 "$WORKDIR/gdriver.log")"
+    summary
+fi
+
 # rep <string> <count> — <string> repeated <count> times.
 rep() { local s="" i; for ((i = 0; i < $2; i++)); do s+="$1"; done; printf '%s' "$s"; }
 
@@ -187,11 +199,25 @@ growth_rc=$?
 printf '%s\n' "$growth_out" | grep -E '^(RECORD|FAIL|KNOWN-RED|FIXED-RED):'
 gp="$(printf '%s\n' "$growth_out" | sed -n 's/^runs passed: //p')"
 gf="$(printf '%s\n' "$growth_out" | sed -n 's/^runs failed: //p')"
-case "$gp$gf" in
-    ''|*[!0-9]*) bad "[DD-10] the depth arm (tests/growth/run_growth.py --depth-only) printed no summary (rc $growth_rc): $(printf '%s' "$growth_out" | tail -3)" ;;
-    *) pass=$((pass + gp)); fail=$((fail + gf))
-       [ "$gf" -eq 0 ] && echo "PASS: $gp depth cells (every family at $DEPTH compiles on a $COMPILE_STACK-byte thread, at $((DEPTH + 1)) is refused by name)" ;;
-esac
+# THE POPULATION IS COUNTED (learnings §3, populations nobody counts): two cells
+# per table row, and never fewer than DEPTH_FLOOR, so a deleted row, a stale
+# ONLY= or an empty selection cannot read as a smaller green. Each count line
+# is tested on its own (a missing line must not vanish into the other's
+# digits), and the runner's own exit status is a verdict too.
+DEPTH_FLOOR=66
+depth_rows="$(grep -cvE '^(#|$)' "$ROOT_DIR/tests/growth/depth_families.tsv")"
+case "$gp" in ''|*[!0-9]*) gp_bad=1 ;; *) gp_bad=0 ;; esac
+case "$gf" in ''|*[!0-9]*) gf_bad=1 ;; *) gf_bad=0 ;; esac
+if [ "$gp_bad" -eq 1 ] || [ "$gf_bad" -eq 1 ]; then
+    bad "[DD-10] the depth arm (tests/growth/run_growth.py --depth-only) printed no \"runs passed\" / \"runs failed\" count (rc $growth_rc): $(printf '%s' "$growth_out" | tail -3)"
+elif [ "$growth_rc" -ne 0 ] && [ "$gf" -eq 0 ]; then
+    bad "[DD-10] the depth arm exited $growth_rc with no failed cell counted: $(printf '%s' "$growth_out" | tail -3)"
+elif [ $((gp + gf)) -ne $((2 * depth_rows)) ] || [ $((gp + gf)) -lt "$DEPTH_FLOOR" ]; then
+    bad "[DD-10] the depth arm ran $((gp + gf)) cells; the table has $depth_rows rows (2 cells each, floor $DEPTH_FLOOR): the population shrank or the selection is empty"
+else
+    pass=$((pass + gp)); fail=$((fail + gf))
+    [ "$gf" -eq 0 ] && echo "PASS: $gp depth cells (every family at $DEPTH compiles on a $COMPILE_STACK-byte thread, at $((DEPTH + 1)) is refused by name)"
+fi
 
 # pattern <cell id> — a depth cell's pattern, from the same table.
 cell_pattern() { python3 -I "$ROOT_DIR/tests/growth/run_growth.py" --pattern "$1"; }
@@ -242,12 +268,18 @@ rep 'a' 20000           > "$WORKDIR/w3.pat";   width_case "a 20000-byte literal"
 { printf '(?<='; chain '%dx' 2000 '|'; printf ')y'; } > "$WORKDIR/w7.pat"; width_case "a lookbehind of 2000 alternatives" "$WORKDIR/w7.pat"
 
 # ---- CONTROL --------------------------------------------------------------
+# The depth-250 pattern on a CONTROL_STACK thread, through growth_driver (the
+# driver the depth cells run on): `one CAP STACK RAISE FEATURES ENGINE PATFILE`
+# with the depth cells' own settings (no cap, raise 1, all features, engine 0).
 cell_pattern "depth/grp@$DEPTH" > "$WORKDIR/control.pat"
-run "control" "$CONTROL_STACK" "$WORKDIR/control.pat"
-case "$HOW" in
-    died) ok "control: the same compile on a $CONTROL_STACK-byte thread dies by signal ($RC_LINE), so the guard catches an overflow" ;;
-    ran) bad "[DD-10] control: a compile on a $CONTROL_STACK-byte thread did NOT die ($RC_LINE) — either the compiler's baseline fell below it (lower CONTROL_STACK) or the driver is not running the compile on the thread it sized" ;;
-    *) bad "[DD-10] control: the driver did not run to completion ($RC_LINE), which says nothing about the guard" ;;
-esac
+cout="$("$TIMEOUT_BIN" 300 "$GDRIVER" one 0 "$CONTROL_STACK" 1 all 0 "$WORKDIR/control.pat" 2>"$WORKDIR/control.err")"
+crc=$?
+if [ "$crc" -ge 128 ]; then
+    ok "control: the same compile on a $CONTROL_STACK-byte thread dies by signal (exit $crc), so the guard catches an overflow"
+elif [ "$crc" -eq 0 ] && [ -n "$cout" ]; then
+    bad "[DD-10] control: a compile on a $CONTROL_STACK-byte thread did NOT die (${cout%% msg=*}) — either the compiler's baseline fell below it (lower CONTROL_STACK) or the driver is not running the compile on the thread it sized"
+else
+    bad "[DD-10] control: the driver did not run to completion (exit $crc: $(head -2 "$WORKDIR/control.err")), which says nothing about the guard"
+fi
 
 summary

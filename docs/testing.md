@@ -5543,7 +5543,9 @@ Opt-in, like `make test-axes`: NOT in `make test` (about 1,500 cells x 5 runs
 plus a library-mode series under ASan+LSan). Its depth arm alone rides
 `make test-stackdepth`. Owner's rule (2026-11-20): every cell is sized past a
 limit and names it; it passes only on a clean refusal by that limit, and fails
-if it compiles, crashes, aborts, hangs or runs away; a timeout is a crash.
+if it compiles, crashes, aborts, hangs or runs away; a timeout is a crash. (The
+`compile` cells, about 740 of them, stand as declared crash-only controls
+until the owner rules growth-compile-cells.)
 There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md.
 
 - **Cells.** `tests/growth/depth_families.tsv` is the one depth table (33
@@ -5551,21 +5553,26 @@ There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md
   refused by PCREC_MAX_GROUP_DEPTH; `run_compile_stack.sh` reads it through the
   runner); `matrix_axes.tsv` is the construct x quantifier x position x core
   product at 250/251; `cells.tsv` holds the spine-length, width and memory
-  cells, each with its named limit.
+  cells (a `refuse:` row names its limit's diagnostic; a `compile` row has none).
 - **Memory ladder.** Every cell also runs under RLIMIT_DATA caps of 2, 8, 32 and
-  128 MB; PASS = compiled or any clean refusal (out of memory included), FAIL =
+  128 MB; PASS = compiled, or refused by the cell's own limit text or by out of
+  memory; FAIL = an `internal error:` refusal, a thread that never started,
   crash, abort, hang, timeout. Why those four: LADDER in run_growth.py.
 - **Library mode.** `run_growth.py --lib`: ONE process (the ASan+LSan build)
-  compiles the whole series, caps set in-process, then must exit 0 with no leak
+  compiles the series (a red cell's UNCAPPED run is left out: it is a known
+  runaway), caps set in-process, then must exit 0 with no leak
   report, answer every cell, and compile a control pattern identically before
   and after the series and run its matcher on a known subject. Each in-process
   compile has its OWN wall bound (a seventh series column, `growth_driver`'s
   SIGALRM): max(300 s, 20 x that cell's slowest CLI-stage wall), the CLI stage
-  writing its walls to `$PCREC_TMPDIR/growth-walls.tsv` (`GROWTH_WALLS`); a cell
+  writing its walls to `$PCREC_TMPDIR/growth-walls-<tree key>.tsv` (`GROWTH_WALLS`; one file per tree
+  root, and the library stage prints the file and how many cells it covered); a cell
   over its bound is a FAIL (a timeout is a crash), the driver prints
   `cell N TIMEOUT ...` and exits, so the series stops with the cell named; a
   `begin N` progress line precedes every compile, a `wall=` follows it.
-- **Known red.** A `red` cell (K148, K150, K151, K154, K155) is listed, not a
-  failure; when it starts passing the sweep fails until its `red` is removed.
+- **Known red.** A cell with a `red` (the `red` column of cells.tsv, `ID:KIND`)
+  is listed, not a failure, while it fails in that KIND; a different kind fails
+  the sweep, and so does a pass, until its `red` is removed. K155 is the
+  library stage's whole-stage red; no cell carries it.
 - Every cell runs under `scripts/watchdog` (wall 180 s, CPU 180 s, RSS 3 GB);
   run it through the box queue (`scripts/boxqueue`), it is heavy.

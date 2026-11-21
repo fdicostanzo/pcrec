@@ -2255,6 +2255,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-21): filed; nothing built. 500,000 alternatives spend 2.8 GB then refuse; 1,000,000 are killed at the 3 GB watchdog
   next: trigger the next crash-family lane (K150/K151's); refuse before the work: an alternative-count or pattern-size estimate against the emitted-code limit on entry, with a limits.md row; the growth cell memory/alt_1m loses its `red`
   refs: known_issues K154; docs/dev/lanes/grow2_report.md; tests/growth/cells.tsv
+  NOTE (2026-11-21, r73): memory/alt_past@500000 (not red) peaks at 2.77 GB, 88 % of the 3 GB runaway kill, the same linear-memory shape; a refusal before the work fixes both, and until then a loaded box or an allocator change can flip it red.
+- [GROWTH-DRIVER-UNIFY] STATE:not-started — one painted-thread driver and one pattern expander in the growth harness (r73 HOUSE-1/2)
+  filed: 2026-11-21 manager, from review r73 (growth, code) rulings
+  status (2026-11-21): the control already runs on growth_driver (r73 FIX-NOW); tests/thread/compile_stack_driver.c is a second copy of growth_driver.c still serving the width and unbuilt arms, and three expansion dialects remain (shell nest/rep/chain, Python nest() and spine())
+  trigger: the next lane that touches tests/thread or tests/growth's drivers: move the width and unbuilt cases onto cells.tsv rows (the `red` ratchet carries the unbuilt flip), delete compile_stack_driver.c and the shell pattern builder, fold `post`'s escaping into printf_fmt
+  refs: docs/dev/reviews/2026-11-21-r73-growth.md (HOUSE-1, HOUSE-2); tests/thread/run_compile_stack.sh; tests/growth/growth_driver.c; tests/growth/run_growth.py
 - [K155-STAMPS-LEAK] STATE:not-started — target_headers_render leaks its 32 KB pass-2 buffer on an out-of-memory refusal (K155)
   filed: 2026-11-21 lane grow2, from grow1's library stage (NEW-2)
   status (2026-11-21): filed; nothing built. LeakSanitizer in the growth sweep's ASan library stage names src/gen/memfn_stamps.c target_headers_render

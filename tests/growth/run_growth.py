@@ -21,18 +21,23 @@ Verdicts per run (an outcome is one of: compiled, refused <msg>, CRASH
       (`compile`, `refuse:SUBSTR`, comma-separated alternatives); a cell whose
       `red` column names a known issue is KNOWN-RED when it fails, and a
       FIXED-RED failure (it passes) when it passes: the ratchet.
-  ladder column: PASS iff compiled or ANY clean refusal (out of memory
-      included); CRASH/TIMEOUT/RUNAWAY/ERROR fail.  A `red` cell's ladder
-      failures are KNOWN-RED too.
+  ladder column: PASS iff compiled, or refused by the cell's own limit text
+      (a `refuse:` alternative of its `expect`) or by "out of memory"; an
+      `internal error:` refusal, CRASH/TIMEOUT/RUNAWAY/ERROR fail.
+  `red` column: `ID:KIND` (KIND = CRASH, TIMEOUT, RUNAWAY, ERROR or refused):
+      the known issue and the failure kind it is known to take.  A failure
+      of THAT kind is KNOWN-RED; a failure of any other kind is a FAIL (a
+      known crash that starts timing out is a new finding).
 
 Modes:  run_growth.py [--only FAMILY[,FAMILY]] [--jobs N] [--no-ladder]
                       [--list] [--lib] [--keep]
         --lib   LIBRARY mode: ONE process compiles the whole cell series
                 (see lib_mode()).
-Exit 0 iff no failures.
+Exit 0 iff no FAIL and no FIXED-RED, and at least one cell was selected.
 """
 import argparse
 import concurrent.futures as cf
+import hashlib
 import os
 import re
 import subprocess
@@ -62,17 +67,26 @@ WALL_S, CPU_S, RSS = 180, 180, "3g"
 # (a timeout is a crash) and the series stops there with the cell named.
 LIB_FLOOR_S, LIB_MARGIN = 300, 20
 DEPTH_LIMIT_TEXT = "too deeply nested"      # PCREC_MAX_GROUP_DEPTH's diagnostic
+# matrix@250: compiles, or is refused for one of the reasons MEASURED over the 672
+# cells (2026-11-21, r73): a backreference to a group the nest lacks, the NFA state
+# limit, the nested-bounded-repeat limit, an unbounded lookbehind. Any other refusal
+# (an `internal error:` above all) is a FAIL.
+MATRIX_250_EXPECT = ",".join(["compile"] + ["refuse:" + t for t in (
+    "refers to capture group", "NFA exceeds", "nested bounded repeats would replicate",
+    "a lookbehind containing a backreference")])
 
 
 def tsv(path, ncols):
+    """ncols: an int, or a dict first-field -> column count (matrix_axes.tsv)."""
     rows = []
     for line in open(path, encoding="utf-8"):
         line = line.rstrip("\n")
         if not line or line.startswith("#"):
             continue
         f = line.split("\t")
-        if len(f) != ncols:
-            sys.exit("run_growth: %s: %d columns, wanted %d: %r" % (path, len(f), ncols, line[:80]))
+        want = ncols[f[0]] if isinstance(ncols, dict) and f[0] in ncols else ncols
+        if isinstance(want, dict) or len(f) != want:
+            sys.exit("run_growth: %s: %d columns, wanted %s: %r" % (path, len(f), want if isinstance(want, int) else "a known axis", line[:80]))
         rows.append(["" if x == "-" else x for x in f])
     return rows
 
@@ -120,7 +134,20 @@ class Cell:
     def __init__(self, cid, family, pattern, stack, raise_, features, engine, expect, limit_name, red):
         self.id, self.family, self.pattern = cid, family, pattern
         self.stack, self.raise_, self.features, self.engine = stack, raise_, features, engine
-        self.expect, self.limit, self.red = expect, limit_name, red
+        self.expect, self.limit = expect, limit_name
+        # red: "ID:KIND" -> the known issue and the one failure kind it takes
+        self.red, _, self.red_kind = red.partition(":")
+        if self.red and not self.red_kind:
+            sys.exit("run_growth: cell %s: red %r needs a kind (ID:KIND)" % (cid, red))
+        if self.red_kind not in ("", "CRASH", "TIMEOUT", "RUNAWAY", "ERROR", "refused"):
+            sys.exit("run_growth: cell %s: red kind %r is not a failure kind" % (cid, self.red_kind))
+        # the refusal texts a clean refusal of this cell may carry
+        self.refusals = []
+        for alt in expect.split(","):
+            if alt.startswith("refuse:"):
+                if not alt[7:]:
+                    sys.exit("run_growth: cell %s: empty refuse: substring accepts any refusal" % cid)
+                self.refusals.append(alt[7:])
 
 
 def build_cells(budget, depth):
@@ -134,10 +161,10 @@ def build_cells(budget, depth):
                               "PCREC_MAX_GROUP_DEPTH" if d > depth else "", ""))
     # --- MATRIX: kind x quantifier x position x core ------------------------
     ax = {"K": [], "Q": [], "P": [], "C": []}
-    for axis, name, a, b in tsv(os.path.join(HERE, "matrix_axes.tsv"), 4):
-        ax[axis].append((name, a, b))
-    for kn, kopen, _ in ax["K"]:
-        for qn, q, _ in ax["Q"]:
+    for row in tsv(os.path.join(HERE, "matrix_axes.tsv"), {"K": 3, "Q": 3, "P": 4, "C": 4}):
+        ax[row[0]].append(tuple(row[1:]))
+    for kn, kopen in ax["K"]:
+        for qn, q in ax["Q"]:
             for pn, ppre, ppost in ax["P"]:
                 for cn, calts, core in ax["C"]:
                     a, b = calts.split(",")
@@ -146,18 +173,19 @@ def build_cells(budget, depth):
                     # the position is part of `op`/`cl`: close is per level
                     for d in (depth, depth + 1):
                         pat = nest("", op, core, cl, "", d)    # nest() repeats `cl` once per level
-                        exp = "compile,refuse:" if d == depth else "refuse:" + DEPTH_LIMIT_TEXT
+                        exp = MATRIX_250_EXPECT if d == depth else "refuse:" + DEPTH_LIMIT_TEXT
                         cells.append(Cell("matrix/%s.%s.%s.%s@%d" % (kn, qn, pn, cn, d), "matrix", pat,
                                           budget, 1, "all", 0, exp,
                                           "PCREC_MAX_GROUP_DEPTH" if d > depth else "", ""))
     # --- CELLS: explicit ----------------------------------------------------
-    for (cid, fam, pre, unit, sep, mid, unit2, post, n, stack, rz, feat, eng, exp, lim, red) in \
-            tsv(os.path.join(HERE, "cells.tsv"), 16):
+    for (cid, fam, pre, unit, sep, mid, unit2, post, n, stack, rz, exp, lim, red) in \
+            tsv(os.path.join(HERE, "cells.tsv"), 14):
+        if stack not in ("budget", "main"):
+            sys.exit("run_growth: cells.tsv: %s: stack %r is neither `budget` nor `main`" % (cid, stack))
         for nn in n.split(","):
             cells.append(Cell("%s/%s@%s" % (fam, cid, nn), fam,
                               spine(pre, unit, sep, mid, unit2, post, int(nn)),
-                              budget if stack == "budget" else 0, int(rz), feat or "all",
-                              int(eng or 0), exp, lim, red))
+                              budget if stack == "budget" else 0, int(rz), "all", 0, exp, lim, red))
     return cells
 
 
@@ -192,7 +220,7 @@ class Runner:
                cell.features or "-", str(cell.engine), pf]
         r = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
         rc = r.returncode
-        if rc == 124:
+        if rc in (123, 124):    # 124 wall, 123 CPU (scripts/watchdog)
             return "TIMEOUT", "wall/CPU limit (%ds): a timeout is a crash" % WALL_S
         if rc == 122:
             return "RUNAWAY", "tree RSS over %s: runaway memory" % RSS
@@ -203,6 +231,8 @@ class Runner:
             return "ERROR", "driver rc=%d %s" % (rc, (r.stderr or r.stdout).strip()[:120])
         if m.group(1) == "0":
             return "compiled", "hw=%s" % m.group(2)
+        if m.group(1) == "-9":   # the thread never started: the compile never ran
+            return "ERROR", m.group(3)
         return "refused", m.group(3)
 
 
@@ -215,8 +245,12 @@ def meets(expect, kind, text):
     return False
 
 
-def ladder_ok(kind):
-    return kind in ("compiled", "refused")
+def ladder_ok(cell, kind, text):
+    """A capped run passes iff it compiled, or was refused by the cell's own
+    limit text or by out-of-memory (not by an `internal error:`)."""
+    if kind == "compiled":
+        return True
+    return kind == "refused" and ("out of memory" in text or any(r in text for r in cell.refusals))
 
 
 def job(rn, cell, ladder):
@@ -226,9 +260,15 @@ def job(rn, cell, ladder):
     return cell, res
 
 
+def tmp_base():
+    return os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR") or "/var/tmp/pcrec-%s" % os.environ.get("USER", "u")
+
+
 def walls_path():
-    base = os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR") or "/var/tmp/pcrec-%s" % os.environ.get("USER", "u")
-    return os.environ.get("GROWTH_WALLS") or os.path.join(base, "growth-walls.tsv")
+    """One walls file PER TREE (keyed by the tree root): a plant, a worktree and
+    main must not bound each other's library-mode compiles (r73 VERDICT-8)."""
+    key = hashlib.sha1(ROOT.encode()).hexdigest()[:10]
+    return os.environ.get("GROWTH_WALLS") or os.path.join(tmp_base(), "growth-walls-%s.tsv" % key)
 
 
 def read_walls():
@@ -265,6 +305,8 @@ def lib_mode(rn, cells, ladder):
     series = os.path.join(rn.work, "series.tsv")
     n = 0
     walls = read_walls()
+    print("library mode: walls file %s (%d of %d cells have a CLI-stage wall; the rest get the %ds floor)"
+          % (walls_path(), sum(1 for c in cells if c.id in walls), len(cells), LIB_FLOOR_S))
     with open(series, "w") as f:
         for c in cells:
             # a known-red cell's UNCAPPED run is a known runaway (K150/K151, NEW-n):
@@ -321,7 +363,7 @@ def lib_mode(rn, cells, ladder):
             # generated main(): see tests/growth/CLAUDE.md; it reads the subject from argv[1]
             ok = subprocess.run([exe, "ababcdef"], capture_output=True, text=True)
             nok = subprocess.run([exe, "ababcdx"], capture_output=True, text=True)
-            if ok.returncode != 0 or nok.returncode == 0:
+            if ok.returncode != 0 or nok.returncode != 1:
                 bad.append("the control's matcher answered wrongly (match rc=%d, non-match rc=%d)"
                            % (ok.returncode, nok.returncode))
     except OSError as e:
@@ -363,7 +405,12 @@ def main():
         a.only, a.no_ladder = "depth", True
     if a.only:
         keep = set(a.only.split(","))
+        known = {c.family for c in cells}
+        if keep - known:
+            sys.exit("run_growth: --only names no family: %s (families: %s)" % (",".join(sorted(keep - known)), ",".join(sorted(known))))
         cells = [c for c in cells if c.family in keep]
+    if not cells:
+        sys.exit("run_growth: no cells selected")
     if a.list:
         fams = {}
         for c in cells:
@@ -372,7 +419,7 @@ def main():
             print("%s\t%s\t%s" % (c.id, c.expect, c.red))
         print("# %d cells: %s" % (len(cells), ", ".join("%s %d" % kv for kv in sorted(fams.items()))))
         return 0
-    base = os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR") or "/var/tmp/pcrec-%s" % os.environ.get("USER", "u")
+    base = tmp_base()
     os.makedirs(base, exist_ok=True)
     work = tempfile.mkdtemp(prefix="growth-", dir=base)
     drv = os.path.join(work, "growth_driver")
@@ -399,27 +446,29 @@ def main():
                     good = meets(cell.expect, kind, text)
                     why = "expected %s (limit %s), got %s: %s" % (cell.expect, cell.limit or "-", kind, text)
                 else:
-                    good = ladder_ok(kind)
-                    why = "a capped run must compile or refuse cleanly, got %s: %s" % (kind, text)
+                    good = ladder_ok(cell, kind, text)
+                    why = ("a capped run must compile or be refused by %s or out of memory, got %s: %s"
+                           % (cell.refusals or "its limit", kind, text))
                 tag = "%s %s [%s]" % (cell.id, col, kind)
                 if a.depth_only and kind == "compiled":
                     print("RECORD: %s stack=%d %s" % (cell.id, cell.stack, text))
                 if a.verbose and col == "uncapped":
                     print("OUTCOME: %s: %s" % (tag, text[:110]))
-                if cell.red:
-                    if good:
-                        if col == "uncapped" or kind in ("compiled", "refused"):
-                            pass
+                if cell.red and not good and kind != cell.red_kind:
+                    # the red names ONE failure kind; a different one is a new finding
+                    nfail += 1; st[1] += 1
+                    print("FAIL: %s: known-red %s is a %s, but it failed as %s: %s" % (tag, cell.red, cell.red_kind, kind, why))
+                    print("      repro: %s" % repro(cell, cap))
+                elif cell.red:
                     if not good:
                         nred += 1; st[2] += 1
                         print("KNOWN-RED: %s (%s): %s" % (tag, cell.red, why))
-                    else:
+                    elif col == "uncapped":
                         # a red cell that passes in the uncapped column is a ratchet event
-                        if col == "uncapped":
-                            nfixed += 1; st[3] += 1
-                            print("FIXED-RED: %s passes now: remove its `red` (%s)" % (tag, cell.red))
-                        else:
-                            npass += 1; st[0] += 1
+                        nfixed += 1; st[3] += 1
+                        print("FIXED-RED: %s passes now: remove its `red` (%s)" % (tag, cell.red))
+                    else:
+                        npass += 1; st[0] += 1
                 elif good:
                     npass += 1; st[0] += 1
                 else:
@@ -428,6 +477,7 @@ def main():
                     print("      repro: %s" % repro(cell, cap))
     print()
     write_walls(rn.walls)
+    print("walls file %s: %d cells" % (walls_path(), len(rn.walls)))
     print("== Growth sweep ==")
     for f, (p, fl, rd, fx) in sorted(fam.items()):
         print("family %-8s runs passed %d  failed %d  known-red %d  fixed-red %d" % (f, p, fl, rd, fx))

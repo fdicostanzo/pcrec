@@ -116,7 +116,9 @@ void *__real_malloc(size_t), *__real_calloc(size_t, size_t), *__real_realloc(voi
 void  __real_free(void *);
 static int over(size_t add)
 {
-    return heap_cap && (size_t)__atomic_load_n(&heap_live, __ATOMIC_RELAXED) + add > heap_cap;
+    long live = __atomic_load_n(&heap_live, __ATOMIC_RELAXED);
+    if (live < 0) live = 0;     /* an unwrapped alloc (strdup) freed through the wrap can drive it negative */
+    return heap_cap && (size_t)live + add > heap_cap;
 }
 void *__wrap_malloc(size_t n)
 {
@@ -146,14 +148,16 @@ void __wrap_free(void *q)
     if (q) __atomic_sub_fetch(&heap_live, (long)malloc_usable_size(q), __ATOMIC_RELAXED);
     __real_free(q);
 }
-static void set_cap(size_t bytes) { heap_cap = bytes; }
+static int set_cap(size_t bytes) { heap_cap = bytes; return 0; }
 #else
-static void set_cap(size_t bytes)
+/* 0 on success; nonzero when the cap cannot be set (above the hard limit): the
+ * run would be UNCAPPED and its cap column would read green. */
+static int set_cap(size_t bytes)
 {
     struct rlimit r;
-    getrlimit(RLIMIT_DATA, &r);
+    if (getrlimit(RLIMIT_DATA, &r) != 0) return -1;
     r.rlim_cur = bytes ? bytes : r.rlim_max;
-    setrlimit(RLIMIT_DATA, &r);
+    return setrlimit(RLIMIT_DATA, &r);
 }
 #endif
 
@@ -260,7 +264,10 @@ int main(int argc, char **argv)
         j.features = argv[5];
         if (strcmp(j.features, "-") == 0) j.features = NULL;
         j.engine = atoi(argv[6]);
-        set_cap((size_t)strtoull(argv[2], NULL, 10));
+        if (set_cap((size_t)strtoull(argv[2], NULL, 10)) != 0) {
+            fprintf(stderr, "growth_driver: cannot set the memory cap %s (above the hard limit?)\n", argv[2]);
+            return 2;
+        }
         int started = run_job(&j, (size_t)strtoull(argv[3], NULL, 10), &hw) == 0;
         job_report("", &j, hw, started, -1.0);
         return 0;
@@ -298,7 +305,10 @@ int main(int argc, char **argv)
             j.engine = atoi(fld[4]);
             printf("begin %d bound=%u pat=%s\n", n, bound, fld[5]);
             fflush(stdout);
-            set_cap((size_t)strtoull(fld[0], NULL, 10));
+            if (set_cap((size_t)strtoull(fld[0], NULL, 10)) != 0) {
+                fprintf(stderr, "growth_driver: cannot set the memory cap %s (above the hard limit?)\n", fld[0]);
+                return 2;
+            }
             double t0 = now_s();
             arm_bound(n, bound, fld[5]);
             int started = run_job(&j, (size_t)strtoull(fld[1], NULL, 10), &hw) == 0;

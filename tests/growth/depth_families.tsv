@@ -5,9 +5,11 @@
 # Columns (TAB-separated; `-` is the empty string): name pre open core close post
 # features engine. nest(): pre, then <open> per level (`%d` = the level's index),
 # then <core> (a core with `%d` prints once per level, groups 1..depth), then
-# <close> per level, then <post> (`%d` = the depth).
+# <close> per level, then <post> (`%d` = the depth). Escaping, in run_growth.py's
+# printf_fmt: a field holding a `%` has `\\` read as one backslash and `%d` as
+# the number (<open> and <core> only; <post> takes `%d` and nothing else); a
+# field with no `%` is taken literally (`\1` stays `\1`).
 # Notes carried over from the script's comment on these rows:
-# name;pre;open;core;close;post;features;engine (pre/post: nest's)
 #   callouter/callinner call the whole nest and its innermost group again;
 #   brefrep/brefsrep/litrep are possessify's FIRST shapes (K147, K149): a
 #   backreference at the core re-enters the fold through the capture fact,
@@ -23,19 +25,19 @@
 #   (K152): its peak was the NFA builder's `compile_ast`, whose inlined arms
 #   paid about 1.7 KB per level until each arm got its own frame;
 #   litcompound is the same nest on the compound route (the review r64
-#   witness `^(?i:…)|b$`'s route, checked to reach it below); of these four
+#   witness `^(?i:…)|b$`'s route, checked to reach it in run_compile_stack.sh); of these four
 #   only litcompound dies at BASE (before the K152 fix) and on the S3470
 #   plant: it is the undo witness; nclitrep/litpost/nclitpost were GREEN at
 #   BASE and guard headroom against another compiler (litpost died on CI);
 #   capwrap/longwrap (r67 F3) are the CAPTURING nest under the same `^…|b$`
-#   wrapper (not the compound route: the reach check below does not cover
+#   wrapper (not the compound route: the reach check in run_compile_stack.sh does not cover
 #   them) and its long distinct-letter-atoms form, the measured WORST of
 #   every family (319,504 bytes at depth 250, gcc 15.2.0, the same before
 #   and after K152: a wrapper alternative and distinct letters in the atoms
 #   cost most);
 #   compound puts the nest in an arm of a pattern the compound route takes
 #   (two compiles, one inside the other: compile_driver -> pcrec_compound_walk
-#   -> part_compile -> compile_driver), checked below to reach that route.
+#   -> part_compile -> compile_driver), checked in run_compile_stack.sh to reach that route.
 grp	-	(	a	)	-	all	0
 ncgrp	-	(?:	a	)	-	all	0
 altnest	-	(a|	b	)	-	all	0
