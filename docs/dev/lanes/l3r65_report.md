@@ -242,3 +242,7 @@ Cloud: `scripts/cloudrun --owner main --kind test --name l3r65-test` and `--kind
 - **For the manager:**
   - re-pin the identity gate's FILEPIN to the landing merge;
   - the D3 re-pin is on this branch.
+
+OWED: none
+
+Nothing is owed by this lane. E belongs to a separate D27 lane, and B's code half waits on the owner's answer to back-findall-cost.
