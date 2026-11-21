@@ -70,6 +70,9 @@ PfBound pcrec_bound_of(long long off);
 static inline bool pcrec_bound_stated(PfBound b) { return b.st != PF_OFF_NONE; }
 /* Is it stated AND bounded (a value a reader may compute with)? */
 static inline bool pcrec_bound_bounded(PfBound b) { return b.st == PF_OFF_BOUNDED; }
+/* Is the bound stated and NEGATIVE (a run that begins before the attempt
+ * start, span_arms L3)? The one spelling of that question (review r65 N). */
+static inline bool pcrec_bound_negative(PfBound b) { return pcrec_bound_bounded(b) && b.v < 0; }
 
 /* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN: `whole_len` contiguous
  * positions every match of the pattern must contain, as the analysis stored

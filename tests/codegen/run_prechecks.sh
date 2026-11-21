@@ -2025,10 +2025,7 @@ s512_reentry() {
     # [REQRUN-VM] a VM hybrid's prefilter declares it from its own start
     # (`= search_from`); the VM attempt loop's re-entry keeps it with no
     # DFA_PREFILTER stamp, its retry re-asking from attempt_position.
-    # span_arms L3: at K < 0 the hybrid prefilter's declaration carries no
-    # value and its first ask follows it (a neutral `= search_from` would
-    # move the scan to search_from + B before any hit, the l3feat finding).
-    nd="$(grep -c -E '^ *size_t landmark_position( = (handoff_position|search_from))?;$' "$a")"
+    nd="$(grep -c -E '^ *size_t landmark_position = (handoff_position|search_from);$' "$a")"
     if [ "$pf" != "handoff" ]; then
         if grep -q '^ *if (landmark_position < attempt_position) {$' "$a"; then
             [ "$(stamp "$a" VM_PREFILTER)" = "none" ] && [ "$nd" -eq 1 ] \
@@ -2048,24 +2045,9 @@ s512_reentry() {
     [ "$nd" -eq 1 ] && [ "$st" != "none" ] \
         || { bad "[5.12l] $lbl: DFA_PREFILTER \"handoff\" with $nd landmark declarations / REQ_HANDOFF \"$st\""; return 0; }
     b="$(reentry_block "$a")"
-    if [ "$st" -lt 0 ] 2>/dev/null; then
-        # span_arms L3 (D-8's K < 0 row, B = -K): stale only when the kept hit
-        # lies more than B before the scan; the re-ask's floor is
-        # max(0, scan_position - B); the end clamp; the move ADDS B. The
-        # prefilter's first ask is real, from max(0, search_from - B).
-        local kb=$((-st))
-        printf '%s\n' "$b" | grep -qx " *if (landmark_position < scan_position && scan_position - landmark_position > $kb) {" \
-            && printf '%s\n' "$b" | grep -qF "(scan_position >= $kb ? scan_position - $kb : 0)" \
-            && printf '%s\n' "$b" | grep -qx " *if (subject_length - landmark_position < $kb) return 0;" \
-            && printf '%s\n' "$b" | grep -qx " *scan_position = landmark_position + $kb;" \
-            && ! printf '%s\n' "$b" | grep -q 'landmark_position - ' \
-            || bad "[5.12l] $lbl: the K < 0 restart block does not re-ask from scan_position - $kb, clamp, or add $kb:
-$b"
-        grep -qx ' *size_t landmark_position;' "$a" \
-            && grep -A1 -x ' *size_t landmark_position;' "$a" | grep -qF "(search_from >= $kb ? search_from - $kb : 0)" \
-            || bad "[5.12l] $lbl: at K $st the prefilter does not ask the gate from search_from - $kb at its start"
-        return 0
-    fi
+    # K >= 0 only: the forward scan's `handoff` row is declined at K < 0
+    # (span_arms §14.4 L3's REV 3.3 addendum; review r65 C), so no artifact
+    # reaches a K < 0 restart block here; L2 brings its own arm and witness.
     printf '%s\n' "$b" | grep -qx ' *if (landmark_position < scan_position) {' \
         && printf '%s\n' "$b" | grep -qE '(landmark_position = rx_reqrun\(subject, subject_length, scan_position\);|landmark_position = \(\{.*(size_t rx_mf1_lo = scan_position;|rx_mf1_q = subject_length > scan_position \? memchr\(subject \+ scan_position, ))' \
         && printf '%s\n' "$b" | grep -qx " *if (landmark_position - scan_position > $st) {" \

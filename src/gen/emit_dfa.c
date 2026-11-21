@@ -1177,7 +1177,7 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
             pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
             if (k < 0)      /* D-16: the sentence that holds at K < 0 */
                 pcrec_sb_printf(c,
-                    "%s/* [K82] every match begins at least %lld bytes after its %s\n"
+                    "%s/* [K82] every match begins at least %lld bytes after the start of its %s\n"
                     "%s * %s, so no match begins before this. */\n",
                     indent, -k, whole || run ? "whole" : "landmark",
                     indent, whole || run ? "run" : "byte");
@@ -1544,10 +1544,10 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
         p[i].need = need;
         p[i].plan_hint = MF_NO_PRED;
         p[i].span_class = MF_SPAN_PRESENCE;
-        p[i].omin = 0;
+        /* one writer per entry (review r65 H): the run's entry (stated
+         * last) carries its least offset, signed; every other entry 0 */
+        p[i].omin = run->whole_len >= 2 && i == np - 1 ? (int32_t)pcrec_run_omin(run) : 0;
     }
-    /* the run's entry only (stated last): its least offset, signed */
-    if (run->whole_len >= 2) p[np - 1].omin = (int32_t)pcrec_run_omin(run);
     return p;
 }
 
@@ -8009,14 +8009,14 @@ static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
     Ctx *cx = f->cx;
     const char *ind = f->dir->bind;
     if (cand_finish_of(cx) == CAND_ROUTE_VM) cx->job->req_handoff_vm = true;
-    long long k = req_handoff_k(cx).v;
+    const PfBound kb = req_handoff_k(cx);
+    long long k = kb.v;
+    /* the row is declined at K < 0 (`req_k_reentry_sound`); its text there
+     * would state the refuted premise (span_arms §14.4 L3, REV 3.3) */
+    if (pcrec_bound_negative(kb))
+        pcrec_ctx_fail(cx, 0, "internal error: the forward scan's handoff "
+                              "re-entry emitted at a negative K");
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    if (k < 0)      /* D-16: the sentence that holds at K < 0 */
-        pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
-                     "%s// this is a fresh search from here: the pre-check's landmark\n"
-                     "%s// again, and every match begins at least %lld bytes after it.\n",
-                     ind, ind, ind, -k);
-    else
     pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// this is a fresh search from here: the pre-check's landmark\n"
                  "%s// again, and no match begins more than %lld bytes before it.\n",
@@ -8051,7 +8051,7 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
     const PfBound kb = req_handoff_k(cx);
     long long k = kb.v;
     /* the re-ask's condition, per sign of K: the kept hit is stale */
-    const char *stale = pcrec_bound_bounded(kb) && k < 0
+    const char *stale = pcrec_bound_negative(kb)
         ? dfa_fragf(cx, "landmark_position < %s && %s - landmark_position > %lld", pos, pos, -k)
         : dfa_fragf(cx, "landmark_position < %s", pos);
     pcrec_sb_printf(c, "%s    if (%s) {\n", ind, stale);
@@ -8093,9 +8093,9 @@ void pcrec_emit_req_attempt_reentry(Ctx *cx, StrBuf *c, const char *ind)
         pcrec_sb_printf(c, "%s    /* [REQ-PAST-LAST] a fresh search from here: past the last\n"
                            "%s     * occurrence of the whole run, no attempt can match. */\n",
                         ind, ind);
-    else if (k.v < 0)   /* D-16: the sentence that holds at K < 0 */
+    else if (pcrec_bound_negative(k))   /* D-16: the sentence that holds at K < 0 */
         pcrec_sb_printf(c, "%s    /* [REQRUN-VM] a fresh search from here: the whole run again,\n"
-                           "%s     * and every match begins at least %lld bytes after it. */\n",
+                           "%s     * and every match begins at least %lld bytes after the start of it. */\n",
                         ind, ind, -k.v);
     else
         pcrec_sb_printf(c, "%s    /* [REQRUN-VM] a fresh search from here: the whole run again,\n"
@@ -9440,19 +9440,7 @@ static bool req_landmark_admits(const CandSel *s, PfBound k)
 }
 
 
-/* [REQ-HANDOFF-L1] NEXT's `handoff` row: a forward search machine — the
- * caller-facing body's, or since [REQRUN-VM] the VM hybrid's inlined
- * prefilter, whose own answer the re-entry leaves unchanged (the DFA
- * argument with `f` its third argument), so no VM attempt moves — where
- * FIRST chose the handoff over a DFA scan (`handoff`, not the attempt loop's
- * `handoff-attempts`: so the pre-check is emitted, its site keeps the
- * landmark's position, K is finite and the hybrid's two declines hold:
- * FIRST's own conjuncts, not restated), and the K admission passes against
- * the row it displaces. FIRST is READ, never restated: one fact, one proof,
- * one deny (`-fno-req-handoff` removes every handoff row). Inside a VM
- * hybrid's prefilter it is declined after the size-cap ladder's
- * `drop-handoff` row fired.
- *
+/* Is the forward scan's re-entry sound at the landmark's K?
  * DECLINED AT K < 0 (span_arms §14.4 L3, REV 3.3 addendum): the re-entry
  * runs at a scan position where the machine is back in its start state,
  * and treats that as a fresh search; at K < 0 it is not one. The DFA's
@@ -9467,9 +9455,22 @@ static bool req_landmark_admits(const CandSel *s, PfBound k)
  * attempt loop's re-entry stay: an attempt there is a real fresh start. */
 static bool req_k_reentry_sound(PfBound k)
 {
-    return !(pcrec_bound_bounded(k) && k.v < 0);
+    return !pcrec_bound_negative(k);
 }
 
+/* [REQ-HANDOFF-L1] NEXT's `handoff` row: a forward search machine — the
+ * caller-facing body's, or since [REQRUN-VM] the VM hybrid's inlined
+ * prefilter, whose own answer the re-entry leaves unchanged (the DFA
+ * argument with `f` its third argument), so no VM attempt moves — where
+ * FIRST chose the handoff over a DFA scan (`handoff`, not the attempt loop's
+ * `handoff-attempts`: so the pre-check is emitted, its site keeps the
+ * landmark's position, K is finite and the hybrid's two declines hold:
+ * FIRST's own conjuncts, not restated), and the K admission passes against
+ * the row it displaces. FIRST is READ, never restated: one fact, one proof,
+ * one deny (`-fno-req-handoff` removes every handoff row). Inside a VM
+ * hybrid's prefilter it is declined after the size-cap ladder's
+ * `drop-handoff` row fired.
+ * DECLINED AT K < 0 (`req_k_reentry_sound`, above). */
 static bool pf_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
@@ -14181,24 +14182,18 @@ static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent)
             req_handoff_assert_body(cx, &job->dfa, act);
     } else if (pcrec_req_site_in_prefilter(cx)) {
         /* [REQRUN-VM] the prefilter's own kept hit for its re-entry. Nothing
-         * is found yet, so at K >= 0 it starts at the call's lower bound: a
-         * position no occurrence at or after `search_from` lies below, which
-         * is all the re-entry's move needs (it never moves past a hit it
-         * holds, and from `search_from` it moves nothing). At K < 0 (span
-         * arms L3: a run that begins inside a lookbehind) a lower bound is
-         * NOT a neutral hit: the move from a hit `h` lands at `h + B`, past
-         * `search_from` itself, so the kept hit must be a real one, and the
-         * gate is asked here, from `search_from` (a miss is NOMATCH). NOT
-         * REACHED while the forward scan's `handoff` row is declined at K < 0
-         * (`req_k_reentry_sound`): no prefilter keeps a site there. Kept as
-         * the stated init for that sign (span_arms §14.4 L3's REV 3.3
-         * addendum; L2 re-checks the re-entry). */
-        PfBound k = req_handoff_k(cx);
-        if (pcrec_bound_bounded(k) && k.v < 0) {
-            pcrec_sb_puts(c, "    size_t landmark_position;\n");
-            emit_req_reentry_use(cx, c, "    ", "search_from");
-        } else
-            pcrec_sb_puts(c, "    size_t landmark_position = search_from;\n");
+         * is found yet, so it starts at the call's lower bound: a position no
+         * occurrence at or after `search_from` lies below, which is all the
+         * re-entry's move needs (it never moves past a hit it holds, and
+         * from `search_from` it moves nothing). K >= 0 only: the forward
+         * scan's `handoff` row is declined at K < 0 (`req_k_reentry_sound`,
+         * span_arms §14.4 L3's REV 3.3 addendum), so no prefilter keeps a
+         * site there; L2 brings its own init with a witness if it re-enters
+         * on a negative K. */
+        if (pcrec_bound_negative(req_handoff_k(cx)))
+            pcrec_ctx_fail(cx, 0, "internal error: a prefilter keeps a re-entry "
+                                  "site at a negative K");
+        pcrec_sb_puts(c, "    size_t landmark_position = search_from;\n");
     }
     emit_machine_tables(c, &fwd);
     if (rmem) emit_machine_tables(c, &rev);

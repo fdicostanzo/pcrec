@@ -151,6 +151,13 @@ typedef struct {
      * candidate begins `lg.n` bytes before the attempt and is offered only
      * at `lg.n <= lb_bytes`. A cost cap, not a soundness bound (§5.5). */
     long long lb_bytes;
+    /* review r65 A (span_arms §14.4 L3, REV 3.3 addendum): may this compile
+     * RE-ENTER A FORWARD SCAN on the run (the `handoff` row, declined at
+     * K < 0)? False only where no forward scan's re-entry can exist whatever
+     * route is chosen: `--engine=vm` (no hybrid prefilter) or
+     * `-fno-req-handoff` (no handoff row). Read only by TOP's BACK row's
+     * `displaces`. */
+    bool fwd_reentry;
 } ReqWalkParams;
 
 /* THE CORE FACTS from ONE walk of the lowered tree: the whole necessary set

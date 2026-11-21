@@ -253,6 +253,11 @@ static void pf_derive_req_walk(Ctx *cx)
          * (RM-5's accessor), in the encoding's widest-character bytes */
         .lb_bytes    = (long long)pcrec_lb_max(cx) *
                        pcrec_enc_by_id(cx->opt->encoding)->max_char_bytes,
+        /* review r65 A: a forward scan's re-entry can exist (the handoff
+         * row is not denied and the engine is not the forced VM, which has
+         * no hybrid prefilter) */
+        .fwd_reentry = cx->opt->engine != PCREC_ENGINE_VM &&
+                       !pcrec_opt_has(cx->opt, PCREC_NO_REQ_HANDOFF),
     };
     RbSet set;
     RbRun run;
