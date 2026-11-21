@@ -4563,3 +4563,13 @@ Lane bspan2 delivered rev 2 (lane/bspan2 aaa1b3227, report docs/dev/lanes/bspan2
 
 ### 2026-11-21 00:57 — correction: entry times
 The 11-21 entry headings stamped 00:0x through 03:50 were estimated, not read from the clock, and run ahead of real time. The clock (`date`) read 00:56 at the critic round's first heartbeat, so all of tonight's events from the 710 verdict (23:23 11-20) to the critic launch fall between 23:24 and about 00:50. The order of the entries is correct.
+
+### 2026-11-21 01:08 — review r67 ruled; fix lane bspan3; owner question wrap-differs
+Critic round r67 (memfn-bspan, design; 5 lenses + verifier) committed with the manager ruling (1ecdd9a5c). No answer-level defect: SOUND hand-ran §4.1 and the wrapper with 0 differences, and the V side matched 710's machine code 9 of 9. The note was NOT ready, with 4 blockers:
+- C18's regexes and its -O0 nm leg miss the selector and helpers;
+- the POPULATION is 3 bench sites (all k31) with 0 in the corpus: counterk is a LIBC site, which the census's text proxy miscounted;
+- U2b's census held none of the differing shapes, and its timing could not see the effect;
+- where the table is evaluated was unstated.
+All are FIX-NOW. F-14 as the coordinator leaned: a machine-code census on the built text with a probe grid and \w{20} as floor witness; T-keep and the scalar timing dropped; owner question wrap-differs.
+KIT RULE (r67 lesson 1): a census's site KIND is read by the table's own predicate on the trace record (MFTRACE fd row), never by a text proxy.
+The "4 patterns" figure told to Frank and main was wrong (it is 3), and both are told. Fix lane bspan3 (opus) writes rev 3.
