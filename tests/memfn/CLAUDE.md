@@ -71,6 +71,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 
 ### SPAN-SEED (R-47 U1, lane bsu1; docs/design/memfn/block_span.md §10.1)
 - **span_seed.rxt**, **gen_span_seed.py** — the vector span's corpus witnesses (41 patterns, python-`re` cases), GENERATED: re-run, never hand-edit.
+- **span_vector_identity.py** — U2's identity gate (§10.2 G-4); opt-in, heavy. NOTES.md.
 
 ## Maintaining it
 

@@ -86,3 +86,15 @@ normalization respelled the five ADVANCE loops in the kit's layout
 `walk-stmt`/`walk-open` stopped seeing them (4 rule-4 FAILs, 3 C12 STALE
 ceilings). Both regexes were widened to the new shape, not the rows or
 ceilings touched: C12 reads the same 12 forms in the same ceilings.
+
+## span_vector_identity.py (R-47 U2, lane bsu2, 2026-11-21)
+
+The vector span's identity gate (docs/design/memfn/block_span.md §10.2, G-4):
+the deny `--memfn=no-span-vector` on the U2 binary against a REFERENCE binary
+(the lane's merge base, built once) with no deny, over the corpus (byte and
+utf8, both engines, both layers) and span_seed.rxt's patterns at
+`--window-search-width=4095`, after the nine-spelling abi mask declared in
+the file (M1-M9) and nothing else. Its second arm holds the default artifact's
+movers to exactly the artifacts that call a V selector. Opt-in, no make
+target; heavy (run under `scripts/boxlock run`). Usage: `--ref-bin REF --bin
+BIN [--jobs N] [--cells corpus,seed4095]`.
