@@ -4695,3 +4695,11 @@ lane/bsu2fix delivered (cca26a4a6, c1dcbcaea + report; lanecheck DONE; TaskStop)
 - Fixed by the manager on lane/bsu2fix (2eccfecb8, two allowlist rows; run_arch_blind 32/0).
 - 718 cancelled (its prerequisite failed); its 18 rows were re-queued as 723-kit-bsu2fix-mechu2 on the fix tree. 721 gate GREEN.
 - Lesson for U3's brief: any new -fmemfn-simd token outside memfn/ needs its C4 row in the same commit; run test-memfn-arch in-lane, it is static and light.
+
+### 2026-11-21 15:24 — Frank ruling wrap-clang: a
+Frank, to the kit, verbatim: "wrap-clang: a. Policy is inline wrappers where possible so this is a move towards that. The wrapper is a separate fix to an out of policy coding not related to the simd change
+That said, do track the clang issue with an item for follow-up to make sure no surprises"
+- Reading: option A stands. The wrapper is framed as conformance to the inline-wrapper policy, not as part of the SIMD change.
+- The clang/-Os machine-code difference gets its own follow-up ITEM. main owns plan.md, so main files it.
+- The kit's part: U5's card C6 times the bench's clang arms on the 3 sites, wrapper against the deny.
+- U2 delivery is unblocked once 723 is green.
