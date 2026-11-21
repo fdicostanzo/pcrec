@@ -12,6 +12,8 @@ commit. `make -s strict` clean; `python3 scripts/plan_lint.py` 0 violations. RUL
 (test-codegen, test-registry, test-rxtsource) are QUEUED behind other jobs in the box lock and had not
 started when this lane handed back: OWED RUNS below. Cloud runs: see OWED RUNS.
 
+OWED: the three local suites named under OWED RUNS (queued in the box lock, not yet run).
+
 ## MERGE
 
 `git merge --no-ff lane/memfn-k1108` (tip 2cdff1794 = the manager-ruled 994de281c plus one
