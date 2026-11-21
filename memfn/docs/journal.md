@@ -4551,3 +4551,6 @@ Lane bspan delivered (lane/bspan 229a98795; docs/design/memfn/block_span.md rev 
 - (B) a new seam shape, needing its own architecture note.
 Lane's further finding: at the default width there are no window sites past 32 positions, so the eligible default-width k is 16..31 (window) and 24..31 (scan).
 Manager calls (answer-free, the kit's method): scan-scope = WALK only; the deny is live at both layers under A. To Frank: scalar-wrap.
+
+### 2026-11-21 03:10 — census re-run with flags: unchanged
+Lane spancensus2 (lane/spancensus2; job green, lanecheck DONE; TaskStop). Applying each pattern's own options leaves the routed counts at corpus 1 / bench 3. --encoding=utf8 alone changed span sites, all at k<=3. Recorded for bspan as R-5. Waiting on Frank: scalar-wrap.
