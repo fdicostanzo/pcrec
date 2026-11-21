@@ -4544,3 +4544,10 @@ Lane spancensus delivered (lane/spancensus d0848d0ed, lanecheck DONE; job 300 gr
 - 39 of 41 sites have k<=31.
 Caveats: .rxt option lines and bench flags were not applied; distinct texts were counted once.
 Information only: D201 add. 1 keeps the build. Sent to bspan as rulings R-3 for the note's population record. TaskStop spancensus; unpinned.
+
+### 2026-11-21 02:45 — bspan delivered: block_span.md rev 1, gated on owner ruling scalar-wrap
+Lane bspan delivered (lane/bspan 229a98795; docs/design/memfn/block_span.md rev 1; report docs/dev/lanes/bspan_report.md; lanecheck DONE; TaskStop). PREMISE FAILURE: 710 timed the span replaced mid-line inside the walk, and the SIMD seam admits only whole lines plus one replaced `__body` call (C18 (c); limits.md §8.3¶1, the size decisions read the SIMD-off length).
+- (A) vany's selector shape at every layer: SIMD-off bytes move on eligible stretches; machine code is identical on 8 of 10 default-width probes, `\w{20}` and `\w{32}` differ.
+- (B) a new seam shape, needing its own architecture note.
+Lane's further finding: at the default width there are no window sites past 32 positions, so the eligible default-width k is 16..31 (window) and 24..31 (scan).
+Manager calls (answer-free, the kit's method): scan-scope = WALK only; the deny is live at both layers under A. To Frank: scalar-wrap.
