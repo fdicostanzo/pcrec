@@ -319,6 +319,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     status (2026-11-21): filed as a ride-along, not built; U2 lifts ofsskip's two writers into one shared kit helper (r68 ruling R-4)
     trigger: vany's next touch (kit design note block_span.md section 5, "One writer")
     refs: docs/design/memfn/block_span.md (lane/bspan3) section 5; memfn/src/vany.c; decisions D201
+  - [BSPAN-SCALAR-RISK] STATE:not-started — block span: changed SIMD-off code for \w{17}/\w{20}/\w{32}-like shapes ships unmeasured
+    filed: 2026-11-21 manager (Frank's scalar-check-cut answer "yes", relayed verbatim by the kit; D201 add. 4)
+    status (2026-11-21): filed as a declared known risk; the scalar timing is dropped; U2b's census holds the 3 real bench sites identical and \w{20} is its floor witness
+    trigger: a bench or user pattern of a changed shape (a \w-like run of that width) appears -> measure its SIMD-off code against today's
+    refs: decisions D201 add. 3 (a), add. 4; docs/design/memfn/block_span.md (lane/bspan3) section 13
 - [REQ-LOOKAROUND] STATE:started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
   status (2026-11-20): L1 LANDED d68a1294c (full suite GREEN, baseline reset); L3 census GO (57 movers, bench 2) and its five remodels LANDED (lane/l3pin, review r63); L3 FEATURE next (brief carries r63 CONFORM-1)
