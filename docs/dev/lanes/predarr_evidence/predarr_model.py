@@ -22,7 +22,8 @@
 #   byindex   a joint entry pairing the two arrays by index (joint-in-some (a), not adopted);
 #   byitem    a joint entry judged on each pass's own labels (joint-in-some (b), not adopted; the reference for
 #             "same item").
-# Every three-mode line printed for the documents must occur VERBATIM in them (DOC). Controls that do not share the
+# Every three-mode line printed for the documents must occur VERBATIM in them, the owner questions' lines in the
+# report (DOC). Controls that do not share the
 # matcher or the log: python `re` on independent hand regexes (CONTROL, RECORD, IDIOM, HITS), python `re`'s
 # finditer over the matched text for the arrays (ARRAYS), the record's printed lines and the owner's quoted words
 # (RECLINES, QUOTES).
@@ -45,6 +46,7 @@
 #   s14 a record line altered before the record lookup                                   -> RECLINES
 #   s15 a quoted owner sentence altered (in memory)                                      -> QUOTES
 #   s16 one formatted line's subject altered before the document lookup                  -> DOC
+#   s17 a count of a record of several entries computed (no refusal) under the ruling    -> QUESTIONS
 import itertools
 import os
 import re
@@ -469,6 +471,10 @@ def gq_some(cond, log, mode):
 
 
 def gq_count(cond, log, mode):
+    _, neg, entries, joint = cond
+    if not joint and len(entries) > 1 and (mode == "byindex" or sab("s17")):   # count-several's candidate (b): the arrays zipped
+        arrs = [settings(log, n) for n, _ in entries]
+        return sum(1 for tup in zip(*arrs) if all(val_ok(x, v) for x, (_, v) in zip(tup, entries)))
     return sum(1 for v in gq_values(cond, log, mode) if v)
 
 
@@ -728,6 +734,8 @@ def gq_test(text):
 
 def count_test(count_text, cmp_text):
     arg = parse_cond(re.fullmatch(r"count\((.*)\)", count_text).group(1))
+    if MODE[0] == "settings" and not arg[3] and len(arg[2]) > 1 and not sab("s17"):
+        raise CompileError("not stated: what a count of several entries counts")
     val = parse_value(cmp_text)
     return lambda log: val_ok(str(gq_count(arg, log, MODE[0])), val)
 
@@ -1001,6 +1009,29 @@ check("HITS", ch == (0, 0, 0) and hv["settings"] == [False, True, False, False] 
       "the body against python `re` %s of %d ; `%s` WHOLE on `1234`, `12 34`, `12 345`, `x300 12`: settings %s, "
       "passes %s (the base: FAILS, HOLDS, FAILS, FAILS)" % (ch, len(POPH), E_H, hv["settings"], hv["passes"]))
 
+# ---------------------------------------------------------------- QUESTIONS: the owner questions' example lines (in the report)
+print("== QUESTIONS: the lines the report's owner questions print")
+NC = 'n := count((h: "5", m: "3"))'
+try:
+    Bound(RX_HM + " & (n: ==1)", [NC])
+    cs_a = "computed"
+except CompileError as e:
+    cs_a = "a compile error (" + str(e) + ")"
+L_CS_B = doc_line("count-several (b), the arrays paired by index: " + fmt(Bound(RX_HM + " & (n: ==1)", [NC], mode="byindex"),
+                  ["5:3,2:1,", "5:1,2:3,"], "5:1,2:3, 5:3,", "5:3,2:1, 5:1,2:3, 5:3,")
+                  + ' (`%s & (n: ==1)`, n := `count((h: "5", m: "3"))`)' % RX_HM, "report")
+L_GT_1 = doc_line("group-truth, `NOT some(c)`: " + fmt(Bound(RX_DO + ' & NOT some((d: "7"))'), ["1,,", "7,1,", ","], "7, 1,,", "7, 1,, 7,1, ,")
+                  + ' (`%s & NOT some((d: "7"))`)' % RX_DO, "report")
+L_GT_2 = doc_line("group-truth, `occurs.none(c)`: " + fmt(Bound(RX_DO + ' & occurs.none((d: "7"))'), ["1,,", "7,1,", ","], "7, 1,,", "7, 1,, 7,1, ,")
+                  + ' (`%s & occurs.none((d: "7"))`)' % RX_DO, "report")
+L_GT_3 = doc_line("group-truth, `occurs.none(NOT c)`: " + fmt(Bound(RX_DO + ' & occurs.none(NOT (d: "7"))'), ["1,,", "7,1,", ","], "7, 1,,", "7, 1,, 7,1, ,")
+                  + ' (`%s & occurs.none(NOT (d: "7"))`)' % RX_DO, "report")
+for L in (L_CS_B, L_GT_1, L_GT_2, L_GT_3):
+    print("   " + L)
+check("QUESTIONS", cs_a.startswith("a compile error") and L_GT_1.split(": ", 1)[1].split(" (`")[0] == L_GT_2.split(": ", 1)[1].split(" (`")[0]
+      and L_GT_1.split(": ", 1)[1].split(" (`")[0] != L_GT_3.split(": ", 1)[1].split(" (`")[0],
+      "count of a record under the ruling's model: %s ; NOT some(c) and occurs.none(c) print the same line, occurs.none(NOT c) another" % cs_a)
+
 # ---------------------------------------------------------------- RECLINES: the record's lines this lane relies on
 print("== RECLINES: the record's printed lines, in the record and as run")
 rec_lines = [
@@ -1036,9 +1067,11 @@ print("== DOC: every formatted line occurs verbatim in the documents")
 lines = list(LINES)
 if sab("s16"):
     lines[0] = (lines[0][0], lines[0][1].replace("`7;`", "`8;`", 1))
-missing = [(t, L) for t, L in lines if L not in DOCS]
+REPORT_PATH = os.path.join(W, "docs", "dev", "lanes", "predarr_report.md")
+REPORT = read(REPORT_PATH) if os.path.exists(REPORT_PATH) else ""
+missing = [(t, L) for t, L in lines if L not in (REPORT if t == "report" else DOCS)]
 for t, L in lines:
     print("   [%s] %s" % (t, L))
-check("DOC", not missing, "%d lines; missing: %s" % (len(lines), missing))
+check("DOC", not missing, "%d lines (%d in the report); missing: %s" % (len(lines), sum(1 for t, _ in lines if t == "report"), missing))
 
 print("predarr_model: %d checks, %d failed%s" % (len(CHECKS), len(FAILED), (" (" + ", ".join(FAILED) + ")") if FAILED else ""))
