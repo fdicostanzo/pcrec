@@ -949,6 +949,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-21): tests/thread/compile_stack_driver.c sets features and engine only, so no DEPTH_FAMILIES row reaches island or wide-class builds; the utf8 class nest `([e-u]bc|[e-u]bd(...abe)*)*d` was 440,560 B at BASE and is 64 B over the stated 319,504 B worst
   trigger: [GROWTH-SWEEP]'s runner build, or the next utf8 depth finding: one ENCODING argument to the driver and one utf8 row (a test-harness edit, not a product change)
   refs: docs/dev/reviews/2026-11-21-r67-k152.md (F9); [GROWTH-SWEEP]; [K152-NFA-DEPTH]; tests/thread/run_compile_stack.sh
+- [SKIP-VISIBLE] STATE:not-started — sections that SKIP loudly (PC-3, test-spec) give a green make test with nothing decided
+  filed: 2026-11-21 manager (review r70 RATCHET-3), written by lane specfix2
+  status (2026-11-21): filed; a box without libpcre2 exits 0 from each such section after its .ran marker is touched, visible only in stderr scrollback; CI builds pcre2 10.46 but nothing asserts it resolved
+  trigger: the next CI change (ci.yml / cloud-test.yml edit)
+  refs: docs/dev/reviews/2026-11-21-r70-specfix.md; tests/spec_mod0/CLAUDE.md
+  One row for every SKIP-loudly section. Options: (a) a CI-only require-oracle switch that turns the SKIP into a failure where pcre2 is built; (b) a trailer line listing the skipped sections at the end of make test.
 - [CTX-FACTS-NEG] STATE:not-started — D168 context facts at negative offsets / past the end (`\b`, fixed lookbehind), anchored DFA
   filed: 2026-11-16 manager (admin1116; part (b) split out of [DD-11.5] by the manager's ruling of 2026-11-16)
   status (2026-11-16): filed; no build before a measured need (D77); the producer is no longer an NFA span slice (deleted by [COVER-CAP] stage 1, abi 108)

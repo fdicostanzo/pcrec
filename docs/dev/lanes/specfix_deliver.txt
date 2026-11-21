@@ -1,0 +1,5 @@
+report: docs/dev/lanes/specfix_report.md
+sections: Summary; Harness fixes; Pins; Wiring; Validation dispatched; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
