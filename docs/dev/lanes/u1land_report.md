@@ -21,3 +21,4 @@ origin/main (dee3f0d3c) had CI completed success; pushed dee3f0d3c..d261a9e86 ma
 
 ## STATE AT HANDOFF
 Landed and pushed; nothing owed. Worktrees and branches not pruned, as instructed. CI on the new push will run on d261a9e86.
+OWED: none
