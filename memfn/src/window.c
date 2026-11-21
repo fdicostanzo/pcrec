@@ -2506,12 +2506,12 @@ const char *wf_tables_check(void)
             return "a span form row is a hole";
     if (!wf_spanrows[WF_NSROWS - 1].holds(NULL))
         return "the last span form row does not hold always";
-    for (size_t i = 0; i < RB_N; i++)
-        if (ren_search[i].k.frame == E_FIND && ren_search[i].k.holds)
-            return "an E-find search renderer row takes a predicate";
-    for (size_t i = 0; i < RB_N; i++)
-        if (ren_search[i].k.frame == E_FIND && (!ren_search[i].head || !ren_search[i].skip))
-            return "an E-find search renderer row has no head or skip";
+    for (size_t i = 0; i < RB_N; i++) {
+        const ren_search_row *r = &ren_search[i];
+        if (r->k.frame != E_FIND) continue;
+        if (r->k.holds) return "an E-find search renderer row takes a predicate";
+        if (!r->head || !r->skip) return "an E-find search renderer row has no head or skip";
+    }
     for (size_t i = 0; i < RF_N; i++)
         if (ren_fused[i].k.keys != REN_PICK(ren_fused[i].search))
             return "a fused row's key is not its declared search's pick";
