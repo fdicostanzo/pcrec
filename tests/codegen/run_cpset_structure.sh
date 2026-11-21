@@ -1127,14 +1127,11 @@ fi
 # RX_REQ_RUN "none" -> "[6364][616f][676c6d7477]" (+20) and RX_REQ_WHY "none" -> "untestable"
 # (+6); the abi number keeps its width. Read by diffing the artifact built from 27bf6f146^
 # (the tree before the flip). Diff read, not bumped.
-# RE-RECORDED 2026-11-20 at span_arms L3 (lane l3tri over lane l3feat, abi 109 -> 110): ONE
-# row moved, `(?<=foo)bar` EMITTED_BYTES 38505 -> 39608 (+1103), no census stamp. The run now
-# begins inside the lookbehind (RX_REQ_RUN "626172@0" -> "666f6f626172@3", RX_REQ_WHY
-# "dominated" -> "emitted", RX_REQ_HANDOFF "none" -> "-3"), so the entry gains the run finder
-# (`rx_reqrun`, scan `b`, verify `foob`/`obar`), the K < 0 move (gate from `search_from - 3`,
-# the end clamp, `+= 3`) and the prefilter's start `handoff_position`; RX_RUN_WORDS 3 -> 4;
-# the abi number keeps its width. RX_DFA_PREFILTER stays "run-pinned". Read by diffing the
-# abi 109 main build's artifact. Diff read, not bumped.
+# span_arms L3 (lanes l3tri..l3r66, abi 109 -> 110): NO row moves against the abi 109 base. The
+# l3tri re-record (`(?<=foo)bar` 38505 -> 39608, its run inside the lookbehind) was undone by
+# review r65 A's pick rule (35d352129): the default route keeps BASE's `626172@0`, so the manifest
+# is back at 38505; the K -3 figures hold only under `--engine=vm`, which this census does not run
+# (review r66 TRADE-1, restated by lane l3r66).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

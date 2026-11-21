@@ -3051,3 +3051,48 @@ ns 22 "xxeeeeeeeeeeeeeeeeqzxqzx"
 ns 23 "xxeeeeeeeeeeeeeeeeqzxqzx"
 ns 24 "xxeeeeeeeeeeeeeeeeqzxqzx"
 
+
+# Review r66 (lane l3r66, 2026-11-21): span_arms L3's pick rule on the default route; every cell is
+# libpcre2-8 10.46's (tests/lib/p2probe.c) at every start position.
+# review r66 CHECK-3: the pick rule's DEFAULT-route keep (BACK's `xyza` at K -3 displaces the unbounded consumed `xyz`); handoff_vm.rxt carries the block under `engine vm` only
+pattern (?<=xyz)a+xyz
+features all
+ms 0 "xyzaxyz" 3 7
+ms 1 "xyzaxyz" 3 7
+ms 2 "xyzaxyz" 3 7
+ms 3 "xyzaxyz" 3 7
+ns 4 "xyzaxyz"
+ns 5 "xyzaxyz"
+ns 6 "xyzaxyz"
+ns 7 "xyzaxyz"
+ms 0 "qxyzaxyz" 4 8
+ms 1 "qxyzaxyz" 4 8
+ms 2 "qxyzaxyz" 4 8
+ms 3 "qxyzaxyz" 4 8
+ms 4 "qxyzaxyz" 4 8
+ns 5 "qxyzaxyz"
+ns 6 "qxyzaxyz"
+ns 7 "qxyzaxyz"
+ns 8 "qxyzaxyz"
+ms 0 "xyzaaxyzq" 3 8
+ms 1 "xyzaaxyzq" 3 8
+ms 2 "xyzaaxyzq" 3 8
+ms 3 "xyzaaxyzq" 3 8
+ns 4 "xyzaaxyzq"
+ns 5 "xyzaaxyzq"
+ns 6 "xyzaaxyzq"
+ns 7 "xyzaaxyzq"
+ns 8 "xyzaaxyzq"
+ns 9 "xyzaaxyzq"
+ns 0 "axyz"
+ns 1 "axyz"
+ns 2 "axyz"
+ns 3 "axyz"
+ns 4 "axyz"
+ns 0 "xyzxyz"
+ns 1 "xyzxyz"
+ns 2 "xyzxyz"
+ns 3 "xyzxyz"
+ns 4 "xyzxyz"
+ns 5 "xyzxyz"
+ns 6 "xyzxyz"

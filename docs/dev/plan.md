@@ -307,20 +307,26 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat A step 2, HOUSE-6 unlock 1; lane l3r65 wrote the row)
     status (2026-11-20): filed; nothing designed. L3's pick rule keeps BASE's run where a re-entry exists; this would let BACK keep it too
     trigger: L2's design (L2 must re-check every forward-scan re-entry anyway, span_arms §14.4 L2's REV 3.3 line)
-    refs: docs/design/span_arms.md §14.4 L3 REV 3.3/3.4; docs/dev/reviews/2026-11-20-r65-l3feat.md A, Q; docs/design/plan_row_bodies/REQ-LOOKAROUND.md (Frank's 2026-11-20 LEAN)
+    refs: docs/design/span_arms.md §14.4 L3 REV 3.3/3.4; docs/dev/reviews/2026-11-20-r65-l3feat.md A, Q; docs/design/plan_row_bodies/REQ-LOOKAROUND.md on main, the LEAN paragraph (Frank's 2026-11-20 words, landed on main after this row's branch was cut; quoted verbatim in span_arms §14.4 L3 REV 3.4, review r66 TRADE-2)
     The re-entry restricted to the run's consumed extent, K' = whole_maxoff + cons_lo >= 0, re-asks only consumed bytes, so it needs its own soundness argument (the decline's lesson: equal DFA states have equal futures only over consumed bytes). Frank's 2026-11-20 lean (a discussion, not a ruling): graph-based re-entry ("follow the proved bytes through the whole graph") waits for a general rx/graph manipulation layer, as the predicate language will need one.
   - [L3-BOUNDED-RUN-REFINE] STATE:not-started — refine "bounded" toward "keeps re-entry" with gen-tier dominance facts
     filed: 2026-11-20 manager (R-1 of lane l3chk; route 2 of the byte/UTF-8 run asymmetry, not taken)
     status (2026-11-20): filed; nothing designed. Route 1 (declare the asymmetry, generalize the DD12a(i) checker) was taken instead
     trigger: L2's design, or a measured loss from a bounded run that hands off nothing
     refs: docs/dev/lanes/l3chk_report.md; docs/dev/lanes/l3r65tri_report.md; tests/codegen/manifests/k50_gate_refinement.txt [l3chk]; src/findings/default.rxt:42-46; D123-4
-    `(?<=a)(b)\1x` and `(?i)(?<=ab)(b)\1x` state a run under byte (the byte-only byte-rate tie-break) and none under UTF-8; neither side is slower than BASE. The refinement would make the pick rule decline a run that keeps no re-entry from gen-tier dominance facts, removing the asymmetry at its source rather than declaring it.
+    `(?<=a)(b)\1x` and `(?i)(?<=ab)(b)\1x` state a run under byte (the byte-only byte-rate tie-break) and none under UTF-8; neither side is slower than BASE. NOTED by review r66 EMIT-1: bounded one-byte consumed bests with no handoff (`(?<=foo)b`, `(?<=foo)[bc]`) block BACK too; the same shape, trigger unchanged. The refinement would make the pick rule decline a run that keeps no re-entry from gen-tier dominance facts, removing the asymmetry at its source rather than declaring it.
   - [L3-BACK-CLIP] STATE:not-started — a BACK join that overflows the stored bound clips lookbehind bytes first, not consumed ones
     filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat L, EMIT-5; lane l3r65 wrote the row)
     status (2026-11-20): filed; measured mixed (0.87 to +10%) on one shape, minor
     trigger: a bench cell with a long lookbehind before a long consumed run (`(?<=a{20})b{8}zb{11}`'s shape)
     refs: docs/dev/reviews/2026-11-20-r65-l3feat.md L; src/facts/req.c `rb_top_back`
     `lg ++ head` keeps the first 32 positions, so a long lookbehind clips the consumed run from the right: `(?<=a{20})b{8}zb{11}`'s offsets 0..19 -> 0..11, consumed bytes BASE had are dropped.
+  - [L3-BYTE-LANDMARK-WIN] STATE:not-started — take BACK's run over a byte landmark where it wins (the given-up x6 on English text)
+    filed: 2026-11-21 manager (review 2026-11-21-r66-l3fix EMIT-3 ruling; lane l3r66 wrote the row)
+    status (2026-11-21): filed; given up at landing. The pick rule keeps BASE's byte-landmark handoff (no loss), which also gives up a win
+    trigger: L2's design, or a bench pattern that reaches the shape (an empty consumed run, a necessary byte at a bounded K, a lookbehind run)
+    refs: docs/design/span_arms.md §14.4 L3 REV 3.5; docs/dev/reviews/2026-11-21-r66-l3fix.md EMIT-3; D191 addendum 3; src/facts/req.c `rb_top_back_displaces`
+    `(?<=qz)(?:a.|.a)`, instructions:u, 1 MiB x 5 searches: BASE's handoff on `a` (K 1) costs 85,622,145 on English text, where BACK's `qz` at -2 costs 14,170,871 (x6 win), but 39,964,842 vs 8,998,891 on qz-dense text (x4.4 loss). Choosing between them needs the subject's byte rates (pricing) or a sound re-entry at K < 0 ([L3-CONS-REENTRY]); no corpus pattern reaches the shape today.
   - [REQ-CAND-STRUCT] STATE:not-started — the run candidate travels as one { run, lo, hi } record, not loose int pointers
     filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat P, HOUSE-5; lane l3r65 wrote the row)
     status (2026-11-20): filed; maintenance only, no answer or speed change
@@ -1352,6 +1358,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-10-29): not started. Meant to remove one D27 cell; with no worktree NAMEs, `--apply` also removed all 9 gated REMOVE candidates (7 kit memfn-* trees). All merged, clean and quiet, branches kept: nothing lost.
   next: make `--dir` alone scope `--apply` to the named dirs (worktrees only when NAMEs are given too), plus a self-test row.
   refs: scripts/wtprune (arg parse, line 83); worktrees/.wtprune.log 2026-10-29T02:43
+- [WTPRUNE-QUIET] STATE:not-started — a `--quiet` wtprune teardown for critic rounds (it leaks denied lanes' commits)
+  filed: 2026-11-21 manager (review 2026-11-21-r66-l3fix PROCESS, accepted; lane l3r66 wrote the row)
+  status (2026-11-21): filed; not started. A critic round's teardown ran wtprune, whose report printed the commit subjects of lanes the critics were denied
+  next: a `--quiet` switch that prints only counts and the critic round's own targets, used by the pcrec-critic skill's teardown; plus a self-test row.
+  refs: scripts/wtprune; .claude/skills/pcrec-critic/SKILL.md; docs/dev/reviews/2026-11-21-r66-l3fix.md (Rulings, PROCESS)
 - [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
   filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
   status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.

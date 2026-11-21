@@ -4878,3 +4878,5 @@ tests/litscan/spanarms.rxt:2875	--features all --encoding=byte	283f3c3d616229283
 tests/litscan/spanarms.rxt:2897	--features all --encoding=byte --engine=vm	283f3c3d616229283f3c3d63622963
 tests/litscan/spanarms.rxt:2920	--features all --encoding=byte	283f3c3d657b31307d296565656565717a78
 tests/litscan/spanarms.rxt:2987	--features all --encoding=byte --engine=vm	283f3c3d657b31307d296565656565717a78
+# lane l3r66 (2026-11-21): +1 row, the NEW default-route block of `(?<=xyz)a+xyz` (review r66 CHECK-3, tests/litscan/spanarms.rxt:3058); a VM-hat mover under --engine=vm as its engine-vm twin in handoff_vm.rxt is; no existing row moved.
+tests/litscan/spanarms.rxt:3058	--features all	283f3c3d78797a29612b78797a

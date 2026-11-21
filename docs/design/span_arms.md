@@ -2128,8 +2128,9 @@ rows take ids from the manager's range.
   off lost its forward re-entry: `(?<=qz)x?a:` BASE `handoff` on `a:` (K 1) -> `memchr` with `qz` at -2, an EMPTY
   consumed extent; on 1 MB with no `:` 225,064 -> 2,325,063 instructions (x10.3), 0.74-0.87 on English-like text;
   `-i (?<=foo)bar`, `-i (?<=item )done`, `(?<=a)\Kb`, `(?>(?<=a)b)` `handoff` -> `byte-class`/`memchr-bounded`;
-  `(?<=x)qzjv[a-z]*\d` `handoff` -> `dominated`. THE PICK RULE (D191 addendum 1(b): an unpredicted performance mover is
-  fixed before landing): TOP's BACK row gains a declared `displaces` column (src/facts/req.c `rb_top_back_displaces`),
+  `(?<=x)qzjv[a-z]*\d` `handoff` -> `dominated`. THE PICK RULE (D191 addendum 1's RECORD (b), the manager's record line: "After the build,
+  a result that differs from the census's expectation is a reason to reassess, not to push on." `[REV 3.5, review r66
+  TRADE-3: quoted, was a paraphrase]`; its ruling of record is D191 addendum 3, review r66 TRADE-4): TOP's BACK row gains a declared `displaces` column (src/facts/req.c `rb_top_back_displaces`),
   read before the run choice compares the two runs: on a compile that may RE-ENTER A FORWARD SCAN, a BACK candidate
   displaces only a consumed `best` that is EMPTY or begins at no static bound (a K >= 0 run at a bounded offset is the
   one the re-entry keeps), and a candidate with an EMPTY consumed extent displaces no consumed run. "May re-enter a
@@ -2155,7 +2156,11 @@ rows take ids from the manager's range.
   STEP 2 (review r65 A, HOUSE-6 unlock 1): a re-entry on the run restricted to its consumed extent, `K' = whole_maxoff
   + cons_lo >= 0`, needs its own soundness argument (the decline's lesson); plan row [L3-CONS-REENTRY], triggered by
   L2's design, which also records the owner's 2026-11-20 lean that graph-based re-entry waits for a general rx/graph
-  manipulation layer (docs/design/plan_row_bodies/REQ-LOOKAROUND.md).
+  manipulation layer `[REV 3.5, review r66 TRADE-2: its home is main's docs/design/plan_row_bodies/REQ-LOOKAROUND.md,
+  the LEAN paragraph, landed after this branch's base; his words, verbatim:]` "Looking forward, we are probably going to
+  have to build a bunch of rx and graph manipulation stuff for the predicate language. I don't know how you planned to
+  implement rx intersection or subtraction but this sounds an awful lot like that. Perhaps we save both this and match
+  start for then when it can be proper manipulation rather than one offs" (a discussion, not a ruling).
   REVIEW r65 C: the K < 0 forward-scan texts the decline made unreachable are DELETED (the hybrid prefilter's K < 0
   kept-hit init and `pf_handoff_applies`'s K < 0 sentence); at that state the compile refuses with the house's internal
   error, so S3405 (the decline removed) now refuses `(?<=xyz)a+xyz` and is red in run_prechecks.sh [5.12a];
@@ -2169,6 +2174,34 @@ rows take ids from the manager's range.
   > R-1 (manager, 2026-11-20 ~16:40): l3feat's STOP is accepted. ADOPT THE DECLINE: pf_handoff_applies declines the forward-scan `handoff` row whenever the stated K < 0 (a declared row condition in the existing table, not an if-spiderweb). The entry move and the VM attempt-loop re-entry stay. span_arms §14.4 L3's "RESTATED premise (3)" (the forward-scan re-entry is sound at K<0 because equal DFA states have equal futures) is REFUTED by measurement: state equality covers only the run's consumed part; the lookbehind bytes are never in the DFA's language. Record it as a REV 3.3 addendum in span_arms §14.4 L3 (the witness, the cause, the decline, the counts 1232 pass / 15 fail without), and a one-line note in §14.4 L2 that AHEAD bytes are likewise outside the DFA's language, so L2's design must re-check any forward-scan re-entry before relying on it. The bff1a3d89 deviation (hybrid prefilter's landmark_position init now asks the kit at init) goes in "Deviations from the design". A sabotage row (from S3405-S3429) removes the decline and must go red on W-L17. Also fix gen_presence_deny.py --check-pcrec so its mkdtemp uses $PCREC_TMPDIR (default /var/tmp/pcrec-<user>), never /tmp.
   >
   > R-2 (manager, 2026-11-20 ~17:00; a question from the owner, reply in the report's "Forward-scan decline at K<0" section): for `(?<=foobar)\d*x`, bench 258 `(?<=item )done`, bench 333, and every census mover whose prefilter the decline changes, state (by command) at BASE, at L3 without the decline, and at L3 with it: DFA_PREFILTER, the byte(s) or run the prefilter actually searches for, and whether that byte/run comes from the lookbehind. Also count how many of the 57 census movers the decline touches at all. The owner asked whether the decline throws away the point of L3 (lookbehind bytes in the search); the answer must be measured, not argued.
+
+- `[REV 3.5, lane l3r66, review r66 rulings (manager, 2026-11-21 01:40)]` **THE PICK RULE KEYED ON THE LANDMARK, AND THE
+  `-fprefilter` ROUTE.** Two speed findings against BASE (`694d91dc4`, built clean), both re-measured by `perf stat -e
+  instructions:u`, `taskset -c 7`, 5 repeats, a 1 MiB buffer searched 5 times (fill floor ~9.0M; scratch
+  `l3r66/perf/m.sh`, `emit23.tsv`):
+  (EMIT-2) `fwd_reentry` read `engine != VM`, but `-fprefilter` (PCREC_FORCE_PREFILTER) forces the forced VM a hybrid
+  prefilter whose forward scan takes the `handoff` row: `(?<=qz)x?a: --engine=vm -fprefilter` went `handoff` on `a:` at 1
+  -> `memchr` on `qz` at -2, 8,998,887 -> 14,170,843 on English text. Now `fwd_reentry = !-fno-req-handoff && (engine !=
+  VM || -fprefilter)`, still options-only: 8,998,888, BASE's stamps. Plant S3480.
+  (EMIT-3) an EMPTY consumed run is not "nothing to keep": with no consumed run BASE's forward scan hands off on the
+  necessary BYTE (facts_listing §4.1.2¶8b's landmark), and `best->n == 0` let BACK displace it: `(?<=qz)(?:a.|.a)` went
+  `handoff` on `a` at K 1 -> `byte-class` on `qz` at -2: qz-dense text (`qz bqz cqz `) 8,998,891 -> 39,964,842 (x4.4
+  LOSS); English 85,622,145 -> 14,170,871 (x6 WIN, BASE's re-entry thrashes on `a`). RULED: keyed on the landmark. The
+  BACK row's `displaces` now reads the root's necessary set beside its consumed `best`, one declared row condition:
+  BACK displaces (1) an EMPTY `best` whose set has no member at a static bound (`rb_set_bounded_landmark`, over
+  `RbSet.off`), or (2) a `best` at no static bound by a candidate with a consumed position, or (3) anything where no
+  forward re-entry exists. "Some member bounded" is a superset of "the picked member is bounded" (the pick is a derived
+  rate choice the core walk does not read); the superset only keeps BASE more often. Re-measured: qz-dense 8,998,891,
+  English 85,622,144, BASE's stamps on both. The English win is given up: plan row [L3-BYTE-LANDMARK-WIN] (trigger:
+  L2's design, or a bench pattern reaching the shape). Plant S3481.
+  The rule's narrowing direction (review r66 CHECK-4's plants): S3482 (no empty-best arm, red on `(?<=foo)`), S3483 (no
+  unbounded arm, red on `(?<=xyz)a+xyz`), S3484 (no engine clause, red on the `--engine=vm` cells).
+  RE-CHECKED BASE -> SUBJECT at l3r66: the six r65 A patterns (`(?<=qz)x?a:`, `-i (?<=foo)bar`, `-i (?<=item )done`,
+  `(?<=a)\Kb`, `(?>(?<=a)b)`, `(?<=x)qzjv[a-z]*\d`) emit C identical to BASE but for the abi digits and read 1.000 in every
+  cell (absent/rare/common/decoy). THE CENSUS (the 428 corpus `(?<=` patterns x byte, `-i`, utf8, `--engine=vm` and,
+  new, `--engine=vm -fprefilter`): default byte/`-i`/utf8 2 movers each (`(?<=foo)`, `(?<=xyz)a+xyz`, unchanged from
+  REV 3.4); `--engine=vm` 93 (unchanged); `--engine=vm -fprefilter` the same 2 as the default; the program region is
+  identical on all 2,140 cells. No corpus pattern reaches EMIT-3's shape, so the census does not move with it.
 
 #### L2 — AHEAD: the run reaches past the consumed end (after its readiness critic) `[REV 3.1, review r51: the critic is r51's READYL2 lens, discharged on condition, §14.0]`
 
