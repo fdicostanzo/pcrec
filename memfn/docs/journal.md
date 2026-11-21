@@ -4474,3 +4474,6 @@ Main sent CLEAR at 19:17; 711-kit-checkorder (RULE 28b518b84de080aa) and 712-kit
 
 ### 2026-11-20 19:27 — 711 RED rc 5 (quiet wait); retried after 712
 711 ended RED rc=5 after 345 s: wait_quiet failed (it needs load1 < 2). The cause is plain, so no triage lane (purpose over wording): the box was loaded by the kit's own bcfix round-3 check (JOBS=6, ended 19:26 PASS), which main also saw (load about 9). Lesson: no kit check runs while a kit timing job is queued. 712 took the box at 19:23:52 (its wait key read failed as not waiting). 711 was retried and now runs after 712. New order: 712, 711, main slot, 710.
+
+### 2026-11-20 19:4x — bcfix round 3 delivered; 710 READY TO TIME (manager-verified)
+bcfix round 3 delivered e7c1d142b. RULE_SHA 6351bff3901e3955; check PASS (marker 6ca1c9b7...); drills 50/50; the critic's NEW-1 repro reads NO LOSS, no WIN majority, 70/144; the floor holds at 72/144 and fails at 71/144. The manager read round3.patch: the TIE stands as a non-WIN; the floor comes after the LOSS row; INCONCLUSIVE is named for its cause. The lane's reading is confirmed: below the floor, no-majority is also INCONCLUSIVE, not NO LOSS (NO LOSS needs readable data). TaskStopped. 710 is READY TO TIME; it is queued after main's CLEAR, which follows 711 and main's build slot.
