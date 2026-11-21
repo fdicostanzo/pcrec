@@ -4533,3 +4533,6 @@ Main filed R-47 + D201 (051e78af2). Merged main into lane/memfn-k1108 (2af5a3fd5
 
 ### 2026-11-21 01:05 — Frank (via main): how often do real patterns reach the block span?
 Frank asked "How often do the test or bench rx have spans that would use this? Those are longer spans". There is no existing span census, so lane spancensus (sonnet, compile-only, worktrees/spancensus) is counting window/scan span sites and k over tests/**/*.rxt and the bench catalogue, routed by rule 6351bff3901e3955. bspan rulings R-1: scope PENDING CENSUS.
+
+### 2026-11-21 01:15 — Frank (via main, D201 add. 1): "We're here and there's no downside so let's build it."
+Frank also said: "I want to start the simd optimizations and I suspect that, outside of window finding, most simd optimizations will be niche covering a small set of rx". bspan's scope is no longer pending the census (bspan rulings R-2 withdraws R-1). The census finishes anyway and goes into the note as the population record, information only. Kit practice from now on: every SIMD row reports its population count beside its timing.
