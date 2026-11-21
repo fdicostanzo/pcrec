@@ -4607,3 +4607,6 @@ Drills:
 Manager ruling §15 Q4: the span-vector MEMFN_CLASS corpus floor is pinned at the measured value at U2, not 0 (K35).
 Light re-check r71 (one readiness critic + verifier) launched; it also judges the floor-branch call of the enumerator.
 Relay to main: D201 add. 3 (a) still restates the reading r68 F-14 cut.
+
+### 2026-11-21 02:15 — scalar-check-cut replaces wrap-differs (main's catch)
+Main declined to amend D201 add. 3 (a) on the kit's ruling alone. Option A was put to Frank WITH the short scalar timing and the keep-a-loser row, and r68 F-14's cut of both narrowed what he was told. That is right: the cut needed his word. One owner question, scalar-check-cut (replacing wrap-differs), was put to him by the kit and by main, with the reasons (no real site differs; the cell rule is blind to a 14% loss; no fact keys T-keep) and what the census proves. bspan4 carries both readings until he answers. Lesson: a reviewer's cut of a condition the owner was told is an owner question, never a manager ruling.
