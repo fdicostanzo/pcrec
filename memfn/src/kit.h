@@ -335,7 +335,8 @@ struct mf_art {
        shipped compile) */
     unsigned     levers;
     /* R-45 the VALUED lever `span-head=N` (KIT_LEVER_SPAN_HEAD set): the
-       inline head h of the span forms on this art (window.c wf_span_head) */
+       inline head h of the span forms on this art (window.c, the span
+       form table's T-lever row) */
     unsigned     span_head;
     char        err[256];
 };

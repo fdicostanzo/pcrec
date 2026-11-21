@@ -1632,7 +1632,7 @@ static const struct {
 
 /* THE VALUED LEVER (R-45 r45_reply rev 6 §3 "The head lever"): `span-head=N`,
  * N in 0..MF_SPAN_HEAD_MAX decimal, sets the span forms' inline head h on
- * the art (window.c wf_span_head), so the form cards time every H(h) on one
+ * the art (window.c, the span form table's T-lever row), so the form cards time every H(h) on one
  * binary. 1 iff `name` is that lever (*bad set where N is malformed). */
 static int lever_span_head(mf_art *art, const char *name, int *bad)
 {

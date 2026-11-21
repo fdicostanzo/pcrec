@@ -7,6 +7,7 @@
 # run_g2_win.sh, the lever span-head=N at every finite grid head): the generator's EXACT loop pin
 # (G2's own reading of the forms: each loop's start and end) is red on every site whose stretch
 # crosses the head.
+# Re-aimed by lane bsu1 (R-47 U1, block_span.md §10.2): w->head retired; wf_loop_len takes the head as a parameter.
 SAB_ID="S3280-span-loop-head-late"
 SAB_FILE="memfn/src/window.c"
 SAB_SUITES="g2win"
@@ -14,5 +15,5 @@ SAB_DESC="wf_loop_len reads the head as <=: loops start one past it, G2's window
 SAB_DOC_FIGURE="G2's WINDOW family (memfn/tests/run_g2_win.sh, arm g2win), the head passes' span loop pin: lane formsfixb 2026-11-17. Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3280."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (w->off[i] < w->head) return 0;'
-SAB_AFTER='    if (w->off[i] <= w->head) return 0;   /* SABOTAGE S3280 */'
+SAB_BEFORE='    if (w->off[i] < head) return 0;'
+SAB_AFTER='    if (w->off[i] <= head) return 0;   /* SABOTAGE S3280 */'

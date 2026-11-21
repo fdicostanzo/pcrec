@@ -67,6 +67,9 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 - **run_rank.sh**, **rank_check.py** — the ranking claim, INVERTED since D172 S2 commit 6: pcrec hands the kit no ranking (every PRE/OFS predicate has rank_n 0); S1420 is the failing direction; N4's door (`find_door`) stays. History: NOTES.md.
 
+### SPAN-SEED (R-47 U1, lane bsu1; docs/design/memfn/block_span.md §10.1)
+- **span_seed.rxt**, **gen_span_seed.py** — the vector span's corpus witnesses (41 patterns, python-`re` cases), GENERATED: re-run, never hand-edit.
+
 - **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv**, **d3_census.tsv** — D3 floor gate: `make test-memfn-d3floor`, last step of test-axes; also cloud shard 1; not in `make test`. See NOTES.md.
 
 ## Maintaining it
@@ -74,13 +77,8 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **A new search form in an emitter:** add a row, or name the function on
   its site's existing row, and raise the floor if you added a row.
 - **A respelled form the vocabulary no longer sees:** rule 4 says so. Teach
-  `search_vocab.tsv` the new shape; never delete the row to get green.
-  Worked example (lane advtri, 2026-10-08, abi 67): [MEMFN] R4h's layout
-  normalization respelled the five ADVANCE loops in the kit's layout
-  (parenthesised `more` and member, braced body, step on its own line), and
-  `walk-stmt`/`walk-open` stopped seeing them (4 rule-4 FAILs, 3 C12 STALE
-  ceilings). Both regexes were widened to the new shape, not the rows or
-  ceilings touched: C12 reads the same 12 forms in the same ceilings.
+  `search_vocab.tsv` the new shape; never delete the row to get green
+  (worked example: NOTES.md "A respelled form").
 - **A migration step's REPLACE commit:** flip its rows to `delegated`.
   From then on, rule 3 holds pcrec to spelling none of them.
 - `c4_populations/` — C4's COMMITTED compiler populations (`gcc -dM -E` dumps
