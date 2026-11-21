@@ -4595,3 +4595,15 @@ Relays to main: R-23, R-24, R-29, R-30's rows. Fix lane bspan4 (opus) writes rev
 
 ### 2026-11-21 — Frank's D155 recollection, verbatim (owed record)
 Frank, to the kit, 2026-11-21 (about 00:45), on scalar-wrap: "We talked about that being the way we'd organize simd stuff anyway back when you used ifdef macro code". Until now it was recorded only as a paraphrase: entry 03ce1ee3b, and the gitignored bspan2 rulings R-1. This entry is the verbatim record. It is an OBSERVATION, not a ruling.
+
+### 2026-11-21 02:14 — rev 4 delivered; light re-check r71
+Lane bspan4 delivered block_span.md rev 4 (lane/bspan4 5f3ce1a4a; r69 applied, §18.1 the R-id map; TaskStop).
+Drills:
+- the C18 -O0 rule passes at B 16 and B 32, and goes red on its plant;
+- the U2b normalizer works both ways;
+- SPAN-SEED holds 28/31 V sites;
+- the anchor map covers every moved function;
+- a real 109->110 bump found M9 and the support_id hash.
+Manager ruling §15 Q4: the span-vector MEMFN_CLASS corpus floor is pinned at the measured value at U2, not 0 (K35).
+Light re-check r71 (one readiness critic + verifier) launched; it also judges the floor-branch call of the enumerator.
+Relay to main: D201 add. 3 (a) still restates the reading r68 F-14 cut.
