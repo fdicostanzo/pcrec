@@ -1575,7 +1575,9 @@ def excise(text, backend, label, drop_run=False):
 # prior (byte puts the rarer member first, utf8's NONE does not), so the same
 # members can take either form and either side of the run's gate: `ab(c)\1x`
 # (VM, K 1) shows it on main, and L3 moved the DD12a(ii) witness
-# `(?<=a)(b)\1x` (K -1) into the same shape. Where both sides state a run and
+# `(?<=a)(b)\1x` (K -1) into the same shape (review r65 A's pick rule moved it
+# back: BACK does not displace its consumed `b`; `ab(c)\1x` is the explicit
+# witness now). Where both sides state a run and
 # their presence statements differ in order or form, the presence MEMBERS are
 # compared as a multiset (equal, or a finding), and only then are the
 # statements removed from both sides (counted, `presence_order`), so the rest
@@ -1689,7 +1691,7 @@ def main():
     # block (`L_n_i`, its cursor restore) nor the negative polarity's, and
     # the default slice holds no lookbehind block at all, so an
     # encoding-keyed splice there was green (S1988 is the plant).
-    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x',
+    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', 'ab(c)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x',
                  '(?<=a{1,2})x', '(*UCP)(?i)(a)\\1x', '(?<=a{1,2}|b)x', '(?<!a{1,2}|b)x',
                  '(*UCP)\\b\\w+\\b']
 
@@ -2139,11 +2141,12 @@ else
         hboth="$(grep -oE '^HANDOFF_BOTH=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
         echo "  DD12a(i) handoff pairs excised on both sides: ${hboth:-?} (landing $HANDOFF_BOTH_LANDING)"
         # THE PRESENCE ORDER (presence_stmts): counted, and floored at the one
-        # explicit witness that always reaches it, `(?<=a)(b)\1x` (K35).
+        # explicit witness that always reaches it, `ab(c)\1x` (K35; review r65 A
+        # moved `(?<=a)(b)\1x` back to BASE's run-free form on the default route).
         pord="$(grep -oE '^PRESENCE_ORDER=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
         echo "  DD12a(i) presence-order pairs (members equal, statements removed from both sides): ${pord:-?} (floor 1)"
         if [ "${pord:-0}" -lt 1 ]; then
-            bad "DD12a(i) no pair reached the presence-order normalization — the witness (?<=a)(b)\\1x no longer has a run beside a presence test; re-aim the floor"
+            bad "DD12a(i) no pair reached the presence-order normalization — the witness ab(c)\\1x no longer has a run beside a presence test; re-aim the floor"
         fi
         if [ "${hboth:-0}" -lt $(( HANDOFF_BOTH_LANDING * 8 / 10 )) ] || [ "${hboth:-0}" -eq 0 ]; then
             bad "DD12a(i) only ${hboth:-0} pair(s) hand off under both encodings, floor $(( HANDOFF_BOTH_LANDING * 8 / 10 )) — the handoff region's comparison may be vacuous"

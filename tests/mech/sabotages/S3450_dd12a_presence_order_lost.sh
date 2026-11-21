@@ -10,10 +10,12 @@
 # comparison on that witness.
 SAB_ID="S3450-dd12a-presence-order-lost"
 SAB_FILE="tests/codegen/run_encoding_checks.sh"
+# RE-AIMED 2026-11-20 (lane l3r65, review r65 A): the explicit witness is `ab(c)\1x` (K 1); the pick rule
+# moved `(?<=a)(b)\1x` back to BASE's run-free form on the default route.
 SAB_SUITES="encoding"
 SAB_DESC='DD12a(i) never takes the presence-order arm, so a run-stating pair whose presence tests differ only in byte-rate-keyed order and form is reported as an encoding conditional in the hot path'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/l3tri_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3450.'
-SAB_REACH='"$PCREC" --features all -p rx -e utf8 -o "$REACH_TMP/o.c" --pattern '\''(?<=a)(b)\1x'\'' && grep -q '\''static const unsigned char rq_set\[\] = { 120 };'\'' "$REACH_TMP/o.c" && grep -q '\''#define RX_REQ_RUN "6162@1"'\'' "$REACH_TMP/o.c" && echo REACH-PRES-ORDER'
+SAB_REACH='"$PCREC" --features all -p rx -e utf8 -o "$REACH_TMP/o.c" --pattern '\''ab(c)\1x'\'' && grep -q '\''static const unsigned char rq_set\[\] = { 120 };'\'' "$REACH_TMP/o.c" && grep -q '\''#define RX_REQ_RUN "616263@2"'\'' "$REACH_TMP/o.c" && echo REACH-PRES-ORDER'
 SAB_REACH_EXPECT='REACH-PRES-ORDER'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

@@ -7,11 +7,13 @@
 # Detector: tests/litscan/spanarms.rxt (the L3 blocks, both routes).
 SAB_ID="S3411-move-sign-rows-merged"
 SAB_FILE="src/gen/emit_dfa.c"
+# RE-AIMED 2026-11-20 (lane l3r65, review r65 A): the pick rule keeps BASE's consumed run on a compile that
+# may re-enter a forward scan, so the witness reaches the K < 0 site under `--engine=vm` (the detector's vm blocks).
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/litscan/spanarms.rxt"
 SAB_DESC='the landmark move has one row for both signs of K, so at K < 0 the unsigned compare never moves and an attempt starts before the start offset'
 SAB_DOC_FIGURE="MEASURED at landing (lane l3feat2, 2026-11-20): the K >= 0 text at a negative K compares a size_t difference with a negative literal, and the harness's generated-code compile refuses it (-Wsign-compare as an error), so the plant is caught at the artifact's build before any answer is read (1660 of 2130 cells red). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3411."
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?<=ab)ab(\w)\1'\'' && grep -q '\''^#define RX_REQ_HANDOFF "-2"$'\'' "$REACH_TMP/o.c" && echo REACH-WL14'
+SAB_REACH='"$PCREC" --features all -p rx --engine=vm -o "$REACH_TMP/o.c" --pattern '\''(?<=ab)ab(\w)\1'\'' && grep -q '\''^#define RX_REQ_HANDOFF "-2"$'\'' "$REACH_TMP/o.c" && echo REACH-WL14'
 SAB_REACH_EXPECT='REACH-WL14'
 SAB_EXPECT=COMPILE-CATCH
 SAB_COUNT=1

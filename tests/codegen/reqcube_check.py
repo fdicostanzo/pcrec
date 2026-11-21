@@ -297,7 +297,9 @@ WIT = [
     # inside the lookbehind; RX_REQ_BYTE is picked over the CONSUMED extent
     # (`ab`), so it lies in req_set {97,98}; a pick over the whole run takes
     # `z` (122), outside the set: check 4 red
-    ("ws4c", "(?<=qz)ab", ()),
+    # (review r65 A: under `--engine=vm`, where no forward scan re-enters and
+    # BACK is chosen; by default the consumed `ab` is kept)
+    ("ws4c", "(?<=qz)ab", ("--engine=vm",)),
 ]
 
 n_whole_route = 0

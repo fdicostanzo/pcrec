@@ -468,8 +468,9 @@ fi
 # first-match table): the pre-check's run reply where its run part renders,
 # else the `cover`/run-pinned window site's member, else no `@` -- so a
 # `dominated` VM artifact whose prefilter is not run-pinned (`(a)(b)`,
-# utf8's `é` here) stamps the run with no `@`. `(?<=xyz)ab` was one until
-# span_arms L3: its run is now `xyzab` at K -3, `emitted`, `@2` the kit's.
+# `(?<=xyz)ab`, utf8's `é` here) stamps the run with no `@`. (`(?<=xyz)ab`
+# stated `xyzab` at K -3 at span_arms L3 until review r65 A's pick rule kept
+# the consumed `ab` where a forward scan may re-enter.)
 #
 # THE EXPECTED VALUES ARE LITERALS, hand-derived from the shipped prior and
 # from the walk's stated arms, NEVER recomputed here from
@@ -586,7 +587,7 @@ foo|bar%%none%[6266][616f][6f72]@0
 (?i)abc%%none%414243@1/dfdfdf
 a*%%none%none
 (?:ab)*c%%99%none
-(?<=xyz)ab%%98%78797a6162@2
+(?<=xyz)ab%%98%6162
 q%%113%none
 ROWS
 
@@ -1856,11 +1857,13 @@ a.?b%-e byte%2%2%[REQ-HANDOFF-L1] a BYTE landmark b, after a and an optional byt
 .{1,3}:%-e utf8%12%12%[REQ-HANDOFF-L1] three characters of up to four bytes before the colon
 \w+:%-e byte%unbounded%none%[REQ-HANDOFF-L1] the colon after an unbounded run
 [a-y]\d{0,150}:%-e byte%151%151%[REQ-HANDOFF-L1] K ADMISSION's witness: the ENTRY hands off at any finite K (the re-entry declines, 5.12m)
-(?<=foo)bar(\w)\1%-e byte%-3%-3%span_arms L3: the run foobar[\w] begins in the lookbehind foo, three bytes before every match (the VM attempt loop's row)
-(?<=e{10})eeeeeqzx%-e byte%-10%-10%span_arms L3: e{10} is ten bytes before every match, the run e^15 qzx begins there
-(?<=éa)bc%-e utf8%-3%-3%span_arms L3 (D-11): the lookbehind's BYTES, é's two (c3 a9) and a's one, not its two characters
+(?<=foo)bar(\w)\1%-e byte --engine=vm%-3%-3%span_arms L3 (under --engine=vm, review r65 A): the run foobar[\w] begins in the lookbehind foo, three bytes before every match (the VM attempt loop's row)
+(?<=e{10})eeeeeqzx%-e byte --engine=vm%-10%-10%span_arms L3 (under --engine=vm, review r65 A): e{10} is ten bytes before every match, the run e^15 qzx begins there
+(?<=éa)bc%-e utf8 --engine=vm%-3%-3%span_arms L3 (D-11; under --engine=vm, review r65 A): the lookbehind's BYTES, é's two (c3 a9) and a's one, not its two characters
+(?<=foo)bar(\w)\1%-e byte%0%0%review r65 A's pick rule: a compile that may re-enter a forward scan keeps the consumed run bar[\w] at K 0 (BASE's), not BACK's foobar[\w] at -3
+(?<=xyz)a+xyz%-e byte%-3%-3%review r65 A's pick rule: the consumed best xyz has no bound (after a+), so BACK's xyza at -3 is kept on the default route; the forward scan declines its re-entry at K < 0 (the start-byte row) and S3405 (the decline removed) refuses this compile at C's internal error
 ROWS
-[ "$s512_n" -ge 25 ] \
+[ "$s512_n" -ge 27 ] \
     && ok "[5.12a] the hand pin table's $s512_n rows all compiled" \
     || bad "[5.12a] only $s512_n hand pin rows compiled"
 
