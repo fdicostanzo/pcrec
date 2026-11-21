@@ -4712,3 +4712,14 @@ That said, do track the clang issue with an item for follow-up to make sure no s
 - Lane bsu3 (opus, S3515-S3529) builds U3: the w32 level block, the C18 head family, F2 first, and r75's PLAN items SLOT-3/SLOT-4/CHECKS-8 plus the S730 V witness.
 - abi 112, confirmed by main. Whichever of L3/U3 lands later re-pins.
 - Its brief adds the C4 rule (a -fmemfn-simd token outside memfn/ needs its allowlist row in the same commit) and keeps clear of main's 01:00-07:00 timing window.
+
+### 2026-11-21 17:08 — bsu3 delivered U3 (the w32 helper)
+lane/bsu3 delivered (be192b04a, 33953d7c2, 3f5d93969 + report; lanecheck DONE; TaskStop). abi 111 -> 112 (readers by grep -w 111).
+- F2 ran first: 82/82 routed cells MATCH 710's avx2-loop text.
+- SIMD-off movers: 0 (no mask, both engines, every arm, x86-64 included).
+- SIMD-on movers: at w32 only, c-default 28/20/31, c-vm 0. span_vector_identity PASS (62,841 compiles).
+- C18 simdfloor green 22,767/0. Guarded bound 1700, a construction bound (measured 1,315 / 1,102).
+- Sabotage: S3515 (C18 control (1)) and S730 (2/2) REACH. REACH_ONLY: only S1760/S1761 unreached ([PIN-MSG-DEPTH]).
+- C4 was red at 33953d7c2 and fixed by the lane at 3f5d93969: the brief's rule worked in-lane.
+- Owed: 724-kit-bsu3-test and 725-kit-bsu3-mech.
+- Lane slip: it left the deliver file's owed line at none against the brief; minor.
