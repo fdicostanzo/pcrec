@@ -4614,3 +4614,14 @@ Main declined to amend D201 add. 3 (a) on the kit's ruling alone. Option A was p
 ### 2026-11-21 02:41 — r71 READY WITH TEXT FIXES; U1 build lane bsu1
 Light re-check r71 (one opus critic + a sonnet verifier, 7/7 HOLD) committed with the ruling (59a85159e). No answer- or speed-level finding. R71-1..7 are FIX-NOW text, landing as rev 4.1 in bsu1's first commit. The floor-branch reading is confirmed. Freeze drift mapped (scalar-check-cut). Process change accepted: the freeze also records the kit HEAD and re-diffs the kit's ruling records.
 U1 build lane bsu1 (opus; S3490-S3499) launched under D201's go: the span form table refactor plus the SPAN-SEED .rxt, with byte identity required. U2 onward waits on scalar-check-cut.
+
+### 2026-11-21 06:11 — U1 built (lane bsu1); validation jobs queued
+Lane bsu1 delivered U1 on lane/bsu1 4a098e1e4 (lanecheck DONE; TaskStop).
+- The span form table wfS: T-deny, T-force, T-lever, T-head, 6 contracts.
+- The stretch list stored once (wf_stretches); skip is a plan fact; w->head retired.
+- SPAN-SEED .rxt: 41 patterns, 1145 python-verified cases.
+- S3278-S3282 re-aimed. Decider census +T-SPAN (manager ruling R-1).
+- Identity gate: 10 arms x c-default/c-vm, 0 movers, no mask.
+- Pin triage: rxtsource and startset are deliberate population re-pins. memfn-rows/finder was the decider census missing the new table, which the design missed and rev 4.1 now names.
+Owed: 713-kit-bsu1-test (make test) and 714-kit-bsu1-mech (detection); monread is armed. Manager review of window.c: OK so far. A code round comes before delivery to main.
+Lesson: lanes idled four times waiting on runs whose notifications never woke them, and the manager nudged each time. Briefs should say that a lock-waiting run does not wake the lane: poll its log with a bounded gnutimeout loop.
