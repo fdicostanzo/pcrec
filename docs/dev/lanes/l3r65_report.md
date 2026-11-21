@@ -20,7 +20,7 @@ Lane l3r65 (opus), 2026-11-20. Branch `lane/l3r65`, cut from `lane/l3tri` 04b889
   L, P and I (speed) are plan rows, and so is A's step 2. Q is a register row 30 note. E is recorded as owed
   by a separate D27 lane.
 - **The four process changes and the four guide lessons are applied** (critic skill + `docs/dev/guide/critics.md`).
-- **The cloud AXES reds:**
+- **The cloud AXES reds:** shards 8 and 9 were restored by A's fix; shard 1 (D3) is re-pinned once for this cause, with a reason for each pattern.
   - shard 8 (`precheck-assign-byte`): restored by A's fix.
   - shard 9 (`fd-pres-g1`): see "Axes floors".
   - shard 1 (D3 floor): see "Axes floors".
@@ -194,8 +194,13 @@ with `AXES=<deny> MEMFN_REACH_ONLY=1 bash tests/axes/run_axes.sh` (`scratch/l3r6
 
 - **shard 8, `precheck-assign-byte` (default and simd), FIXED by A's fix.** byte/c-default corpus 118 -> 125
   (floor 122); utf8/c-default 188 (floor 176). No floor file touched.
-- **shard 9, `fd-pres-g1`:** FD-PRES-G1 (filled below).
-- **shard 1, the D3 floor:** D3-FLOOR (filled below).
+- **shard 9, `fd-pres-g1`, FIXED by A's fix.** byte/c-default corpus 927 -> 1012 (floor 949), utf8/c-default 844 -> 931 (floor 878), default and simd alike. No floor file touched.
+- **shard 1, the D3 floor, RE-PINNED (one re-pin, this cause).** No member was LOST, so nothing was short. The red was the gate's two-sided population and census pins, which rose:
+  - population 5147 -> 5163 (l3feat's new `.rxt` rows);
+  - default cells +1 member, `(?<=ab)ab(\w)\1`, a NEW corpus pattern (l3feat's `tests/litscan/spanarms.rxt`, absent at BASE);
+  - c-vm cells +22 (byte) and +23 (utf8) members, all EXISTING lookbehind-alternation patterns (`(?<=ab|cd)z`, `(?<=(?:ab|cd))x`, `(*plb:(?:ab|cd))x`, ...). Their run now begins inside the lookbehind at a signed K under `--engine=vm`, which is L3's designed effect there.
+  - Before re-pinning I ran `git log --since=14.days` on d3_floor.tsv/d3_census.tsv. The only re-pin in that window is 47ba76682 (L1, a different cause), so this is the first re-pin for this cause and below the stop count.
+  - Re-pinned with `D3FLOOR_REPIN=1` and a per-pattern note (the patterns are listed in d3_census.tsv). The re-run is green on all 4 cells, 60 plants ok.
 
 ## Records
 
@@ -213,10 +218,27 @@ with `AXES=<deny> MEMFN_REACH_ONLY=1 bash tests/axes/run_axes.sh` (`scratch/l3r6
 
 ## Validation dispatched
 
-Local (this lane's tree): VALIDATION (filled below).
+Local (this lane's tree, `nice`, PROCS=6):
+- **`make strict`:** clean.
+- **`make -k test-codegen test-startset test-lookaround`:**
+  - test-codegen: green.
+  - test-startset: green.
+  - test-lookaround: one red, `[d27-l1-listing]`. A22 `(?<=nop)st` and C07 `(?<=a)(?<=[ab])c` listed BASE's runs again. I reverted l3tri's c424cd262 re-pin of those two rows to their pre-l3tri values. `check_listing.py` then PASSes on 88 rows.
+- **Before that:**
+  - prechecks: rc 0.
+  - `[facts-look]`: 63 cells pass.
+- **`make -k test-plan-lint test-spec-history test-claudemd-size`:** rc 0.
+- **The sabotage matrix over every row I added, re-aimed or re-anchored:** DETECTED on all 12 rows: S3455, S3405 (prechecks 1 fail), S3406, S3409, S3410, S3411 (DETECTED-BUILD), S3413, S3450, S1887, S3408, S3381, S3412. My first S3405 run read FATAL because of the fields my edit lost; I restored them and re-ran.
+- **The axes arm reach (`precheck-assign-byte`, `fd-pres-g1`)** and **the D3 floor**: as above.
+- **NOT run locally:** the full `make test`. It goes to the cloud.
 
-Cloud: CLOUD (filled below).
+Cloud: `scripts/cloudrun --owner main --kind test --name l3r65-test` and `--kind axes --name l3r65-axes`, both on the tip that carries this report (the sha is in the lane's reply to main). Dispatched as the lane's last acts and not waited on.
 
 ## STATE AT HANDOFF
 
-STATE (filled below).
+- **Rulings file:** `docs/dev/lanes/l3r65_rulings.md` was EMPTY at every read, so the last R-n applied is **none**.
+- **B's code half (back-findall-cost):** not built.
+- **E:** owed by a separate D27 lane.
+- **For the manager:**
+  - re-pin the identity gate's FILEPIN to the landing merge;
+  - the D3 re-pin is on this branch.
