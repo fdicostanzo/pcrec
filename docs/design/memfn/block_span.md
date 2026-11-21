@@ -1,12 +1,13 @@
 # The vector span: building job 710's block span at the SIMD layer (R-47, D201)
 
-Status: DESIGN, rev 4 (lane bspan4, 2026-11-21, opus). Design only: no
-code. Request R-47 (`memfn/docs/requests.md`); ruling D201 (slug
-block-build). Order: this note, critic rounds r68 and r69 (done), this
-revision, a LIGHT re-check (one readiness critic over U1, U2, U4 and the
-C18 rule, plus a verifier), then the build. **U1 may start after the light
-re-check. U2 onward waits on ONE owner answer: `wrap-differs` (§2.2).**
-Read §18 (the r69 and r68 dispositions) first.
+Status: DESIGN, rev 4.1 (lane bsu1, 2026-11-21, opus; over rev 4, lane
+bspan4). Request R-47 (`memfn/docs/requests.md`); ruling D201 (slug
+block-build). Order: this note, critic rounds r68 and r69 (done), rev 4, the
+LIGHT re-check r71 (done: READY WITH TEXT FIXES, every unit), this
+revision (r71's text fixes), then the build. **U1 is being built (lane
+bsu1). U2 onward waits on ONE owner answer: `scalar-check-cut` (§2.2),
+which replaced `wrap-differs` [rev4.1, r71 FREEZE DRIFT].**
+Read §18 (the r71, r69 and r68 dispositions) first.
 
 Revision history:
 - rev 1 (2026-11-21, lane bspan): first design, gated on `scalar-wrap`.
@@ -33,6 +34,13 @@ Revision history:
   with the plan rows "to be filed by main" (R-30). Text changed in rev 4
   is marked `[rev4, R-n]`; `[rev3]` marks survive where rev 3's text
   stands.
+- **rev 4.1 (2026-11-21): review r71 applied** (lane bsu1, the U1 build
+  lane's first commit; review `docs/dev/reviews/2026-11-21-r71-memfn-bspan4.md`
+  on the kit branch, its MANAGER RULING): R71-1..R71-7 as text fixes; the
+  §15 Q4 ruling (the `span-vector` `MEMFN_CLASS` corpus floor pinned at the
+  measure at U2, not 0); R71-3's floor-branch reading CONFIRMED; the owner
+  question renamed `scalar-check-cut` (it replaced `wrap-differs`), both
+  readings carried. Text changed in rev 4.1 is marked `[rev4.1, R71-n]`.
 
 Inputs read: D201 and its addenda 1-3 (main at `d255d94a3`), D146, D147,
 D155 and its items 2 and 6, addenda 1-3, D144 addendum 4, D76/D94, D80;
@@ -55,7 +63,7 @@ relays R-23 and R-24). Each row names its record.
 | D201 | Frank, verbatim: "build with simd layer" | D201 Decision (verbatim words in the kit journal, commit 923ea33d2) | the build go for 710's table at the SIMD-on layer. "The scalar layer stays H64" is D201's "Read as" line, main's reading, and D201 add. 3 (a) says add. 2's READING supersedes it |
 | D201 add. 1 | Frank, verbatim: "We're here and there's no downside so let's build it." | D201 add. 1 | the population count is **information only**; it does not gate the build or its scope |
 | D201 add. 2 (`scalar-wrap`) | Frank, verbatim: "the function goes inline so it's just code organization? If that's true I don't have a problem with that." He had been told, before the reading was formed, that this "is true in source, but gcc's machine code differs on 2 of 10 probes (`\w{20}`, `\w{32}`)" | D201 add. 2 | **The recorded READING, in full** (the kit's and main's, not his words): "option A, with the SIMD-off machine-code changes checked for no loss: a non-timing census of the corpus and bench sites whose scalar machine code changes, then a short timing of only those in a window he clears; any loser keeps today's text through a selector row." **It moved:** the kit manager's r68 ruling (F-14) CUT the short timing (710's cell rule cannot return LOSS on a uniform small effect, r68 MEAS-5) and the keep-a-loser selector row (no compile-time fact keys it, §2.2). What remains is option A with the census (§2.1). D201 add. 3 (a) restates the uncut reading in main's amended R-47 GO line: relayed to main (§15) |
-| D155 item 6, AMENDMENT (Frank) | "The SIMD-off artifact routes through the helper too — a one-time, measured byte move and abi event — so the floor rule stays exact." | decisions.md D155 item 6 | the strongest record for option A's shape. It says MEASURED. Arm 1 of `wrap-differs` ships an UNMEASURED SIMD-off machine-code move on the `\w`-like sets. Whether D155 add. 3's relaxation also relaxes "measured" is a READING (this lane's), and the owner is given the word (§2.2) |
+| D155 item 6, AMENDMENT (Frank) | "The SIMD-off artifact routes through the helper too — a one-time, measured byte move and abi event — so the floor rule stays exact." | decisions.md D155 item 6 | the strongest record for option A's shape. It says MEASURED. Arm 1 of the fork (formerly `wrap-differs`, now inside `scalar-check-cut` [rev4.1]) ships an UNMEASURED SIMD-off machine-code move on the `\w`-like sets. Whether D155 add. 3's relaxation also relaxes "measured" is a READING (this lane's), and the owner is given the word (§2.2) |
 | D155 add. 3 (Frank) | "They were more guidelines or goals than hard rules" | D155 add. 3 | main's "What stands" line: "NO `#if`/`#ifdef` in the code the kit emits into a function BODY". The single-call shape is a GUIDELINE; this design rests on the contract (§2) |
 | D155 recollection (Frank, relayed by the kit manager) | "We talked about that being the way we'd organize simd stuff anyway back when you used ifdef macro code" | D201 add. 3 (b), recorded as an OBSERVATION, not a ruling; the verbatim words are the manager's relay | context only: the selector shape is the organization D155 add. 1 Q-R9-10 agreed |
 | R-4, smallest form | "design the SMALLEST form that serves the 710 table. Add no generality beyond what 710 confirmed" (the kit's bspan ruling, main asked for it) | D201 add. 3 (b) | no widths, site kinds or knobs beyond 710's table, the deny row and the card |
@@ -69,10 +77,12 @@ The kit manager's r68 ruling (F-14, F-21) of a reading of the owner's
 conditional answer (D201 add. 2):
 
 **SIMD-off renders the H64 form. On the population (§0.1) its machine code
-is identical to today's (U2b, §2.1), or the build stops. Elsewhere
-`wrap-differs` (§2.2) decides: under arm 1 every eligible set is wrapped
-and accepted as code organization; under arm 2 the proxy row keeps today's
-text on the sets it names.**
+is identical to today's (U2b, §2.1), or the build stops. Elsewhere the
+owner question `scalar-check-cut` (§2.2) decides [rev4.1, r71 FREEZE
+DRIFT]: if he keeps the cut, under arm 1 every eligible set is wrapped and
+accepted as code organization, and under arm 2 the proxy row keeps today's
+text on the sets it names; if he restores the short timing or the
+keep-a-loser row, U2 onward is re-designed (§2.2).**
 
 No goal below can trade against this line. It does not claim that the
 wrapper is machine-code neutral everywhere: on `\w`-like sets it is not
@@ -205,8 +215,9 @@ separate fact [rev4: re-drilled by this lane, §16 item 12]:
   `\b[0-9a-f]{32}\b`, differs in 3 padding lines, which the declared
   normalizer removes).
 - **On `\w`-like sets it differs**: `\w{17}`, `\w{20}`, `\w{32}` (r68: 20-26
-  lines one-sided; this lane: `\w{20}` 42 lines added + removed after
-  normalizing), and [rev4, R-18] `\w{501}` at width 4095 (2 lines; r68's
+  lines one-sided; rev 4's lane: `\w{20}` 42 lines added + removed after
+  normalizing, a figure r71 did NOT reproduce: 26/22 by difflib, 24/20 by
+  GNU diff [rev4.1, R71-7 (a)]; the verdict DIFFERS holds), and [rev4, R-18] `\w{501}` at width 4095 (2 lines; r68's
   figure reproduced). None of these is in the corpus or the bench.
 - **On `[+.0-9]{65}`** (num k = 64) the two-level shape is identical to
   today (r68).
@@ -251,7 +262,8 @@ same `-o` basename** (the `#include "<name>.h"` line otherwise differs):
   routed cell), so the census sees one k > 31 shape.
 - **the normalizer's two-sided control:** `\b[0-9a-f]{32}\b` is its
   POSITIVE control (raw > 0, normalized 0: drilled 3 → 0, §16 item 12);
-  `\w{20}` its NEGATIVE (normalized > 0: drilled 42). If either side
+  `\w{20}` its NEGATIVE (normalized > 0: drilled DIFFERS; the count
+  depends on the diff tool, §16 item 12). If either side
   fails, the census is red (it cannot see what it is for).
 - **known positives:** `\w{20}` (k 19) and `\w{501}` at 4095 (k 500) must be
   reported DIFFERS; either reading IDENTICAL makes the census red.
@@ -262,13 +274,38 @@ same `-o` basename** (the `#include "<name>.h"` line otherwise differs):
 - **output:** each count (patterns compiled, eligible, IDENTICAL, DIFFERS)
   and the DIFFERS list by class and k, in the build lane's report.
 - **command:** the build lane states it in its report; it is a delivery
-  step, not a committed test (arm 2 would change this, §14).
+  step, not a committed test (arm 2 would change this, §14). [rev4.1,
+  R71-7 (a)] **It NAMES its diff tool** (difflib or GNU diff: the count of
+  added plus removed lines differs between them) and re-derives the
+  `\w{20}` figure with it.
 
 The census is the CONSTRAINT's checkable form on the population (identical
 there, or the build stops), and the record the owner's answer reads on
 the grid.
 
-### 2.2 OWNER QUESTION `wrap-differs` (OPEN; U2 onward waits on it) [rev4, R-25, R-24]
+### 2.2 OWNER QUESTION `scalar-check-cut` (OPEN; U2 onward waits on it; it replaced `wrap-differs`) [rev4.1, r71 FREEZE DRIFT; rev4, R-25, R-24]
+
+**[rev4.1] The question as put.** Main declined to amend D201 add. 3 (a)
+on the kit's ruling alone: option A was put to Frank WITH the short scalar
+timing and the keep-a-loser row, and r68 F-14's cut of both narrowed what
+he was told, so the cut needs his word (kit journal, 2026-11-21 02:15). One
+owner question, `scalar-check-cut`, replaced `wrap-differs`; the kit and
+main put it to him with the reasons (no real site differs; 710's cell rule
+is blind to a uniform 14 % loss; no compile-time fact keys T-keep) and what
+U2b's census proves. **This note carries both readings until he answers:**
+
+- **He KEEPS the cut.** The text below stands with the question renamed:
+  the census (§2.1) is the SIMD-off record, and the fork that follows
+  (formerly `wrap-differs`: arm 1, wrap everything; arm 2, the proxy row)
+  is decided inside it, as written.
+- **He RESTORES the short timing and/or the keep-a-loser row.** U2b gains
+  a timing step in a window he clears, and T-keep returns, which r68 found
+  no compile-time fact keys (arm 2 below): that is new design for U2
+  onward, from r71's hand mapping, not a text fix.
+
+U1 is unaffected under either reading: it moves no artifact byte (§14).
+
+The fork, as rev 4 framed it (it applies where he keeps the cut):
 
 **The fact.** The wrapper changes gcc's SIMD-off machine code on `\w`-like
 sets (`\w{17}`, `\w{20}`, `\w{32}`, `\w{501}` at width 4095), and on none
@@ -369,7 +406,7 @@ Compile-time facts only; no class name.
   (`[0-9a-f]{31}[0-9]`, R7w, a hex stretch with a digit stop, k 31). Both
   drilled (§16 item 5). Answers hold by §4.3; C6 does not time them (they
   are not real sites).
-- T-keep is gone (r68 F-14). Under `wrap-differs` outcome 1 the table is
+- T-keep is gone (r68 F-14). Under `scalar-check-cut` kept and outcome 1 the table is
   exactly this. Under outcome 2 a proxy row sits between T-lever and
   T-vwin (§14's list).
 - [SEAM-7, NOTED] T-vscan is window.c's first decision keyed on a finder
@@ -434,12 +471,28 @@ agreement is now literal.
 - **Where it runs:** at the end of `wf_find_prepare` (E-find), after the
   search row's `prepare` and R-1's `skip`; and, for the floor (E-generic),
   at `wf_plan_site`'s floor branch (window.c:2583, the `r == E_GENERIC`
-  block that already finishes the floor's plan), with skip -1. The floor
-  needs its stretches' forms too (T-force and T-lever render loops there;
-  T-head at width 32 renders none); V never holds there (`brow` is NULL).
-  This reads the ruling's "computed once in `wf_find_prepare`" for the
-  frame the ruling names, and extends the same enumerator to the one other
-  frame that renders stretches; it adds no second mechanism.
+  block that already finishes the floor's plan), with skip -1. V never
+  holds at the floor (`brow` is NULL).
+  [rev4.1, R71-7 (d)] The walk needs the walk's phases: `wf_find_prepare(al,
+  d, w, fx, build)` gains ONE parameter, `gphases` (its `quiet` is `!build`,
+  already a parameter); the floor branch has both in hand.
+- **[rev4.1, R71-3, CONFIRMED by the kit manager] Why the floor call is
+  NEEDED.** The floor's check row reaches `wf_loop_len`, which reads
+  `w->head` at every frame (window.c:3500), and `w->head` retires at U1.
+  So the floor needs each stretch's form from the stored list, or a second,
+  use-side derivation (the parallel mechanism R-2 forbids). The floor
+  renders stretches: T-force and T-lever loops, and T-head's loops past
+  offset 64 (G2's long floor rows; at width 32 T-head renders none there).
+  In R-2's words, the store-once enumerator's call in `wf_plan_site`'s
+  floor branch keeps ONE selection, computed once at plan time and read by
+  both the define and the use, at both frames that render stretches; it
+  adds no reader and no asks (phase-1 asks are quiet), and no second
+  mechanism. It extends the ruling's letter ("computed once in
+  `wf_find_prepare`") to the one other frame, and matches its intent.
+  `memfn/docs/trace_format.md`'s `table=wfS` hunk names floor sites as
+  well as E-find sites. **Reach slots:** the trace's reach registry
+  (`gate.c` `REACH_ROWS = 64`) holds 54 of 64 after wfS's six rows (36
+  printed + 12 window + 6 wfS, recounted by r71's verifier).
 - **`j` counts V stretches only** (ruled). With SMALLEST FORM (§3.2) at
   most one V stretch renders per site, so `j` is 0 today; the field keeps
   the name family (`vs<j>`) stable if that rule is ever lifted.
@@ -650,7 +703,8 @@ that its row-1 cells at k = 16..31 and its row-2 cells at k = 24..31
   stretch's chain stood;
 - the E-find define (`wf_find_define`, after the run compares' word loads
   and the stream row's table) writes the functions below at file scope,
-  inside the region, after the `_sh` table. It reads the V stretch from
+  inside the region where the target has one [rev4.1, R71-7 (c): none at
+  `-fno-memfn-simd`], after the `_sh` table. It reads the V stretch from
   the stored stretch list (§3).
 
 ```c
@@ -858,15 +912,20 @@ addendum).
 - `simd_bounds.tsv` gains the row `span-vector-w32`.
 - **`MEMFN_CLASS`** (`tests/axes/memfn_arm.py`) gains, as ruled,
   `("span-vector", "default")` and `("span-vector", "simd")`: class
-  DIFFER, corpus floors 0 at every (encoding, stream), witnesses the 3
+  DIFFER, [rev4.1, R71-2, ruled] corpus floors PINNED AT THE MEASURE at U2
+  per (encoding, stream), witnesses the 3
   bench texts (`[0-9a-f]{32}`, `\b[0-9a-f]{32}\b`, `\d{32}`) at byte and
   utf8 on `c-default` (witness-only patterns, as `span-loop=force`'s
   `[0-9a-f]{32}`), both layers, because the deny is live at SIMD-off too
-  (the wrapper). ASSERT_ZERO would be false. Corpus floor 0 is the REAL
-  corpus's count (§0.1); with SPAN-SEED's `.rxt` in the corpus the
-  measured count is about 28 (byte) and 20 (utf8) on `c-default` (this
-  lane's census, §16 item 5), and the ruled floor 0 stays a lower bound
-  (§15 Q4).
+  (the wrapper). ASSERT_ZERO would be false. [rev4.1, R71-2] The REAL
+  corpus's count is 0 (§0.1); with SPAN-SEED's `.rxt` in the corpus the
+  measured count is about 28 (byte) and 20 (utf8) on `c-default` and 0 on
+  `c-vm` (no window walk on the VM engine), and U2 pins each floor at that
+  measure (K35; §15 Q4, resolved). U2 can: `memfn_arm.py`'s floor counts
+  DIFFER patterns in `enumerate_corpus`, every `.rxt` under `tests/`, so
+  the `.rxt` U1 commits is counted at U2. U3 moves no pattern into or out
+  of DIFFER, so the U2 pin holds at U3; under any arm that takes sets out
+  of V (§2.2), re-measure.
 - **The `.rxt` moves existing `MEMFN_CLASS` rows** (it puts V sites into
   the corpus): `("span-loop", *)` is ASSERT_ZERO today and becomes DIFFER
   (at a V site `no-span-loop` is T-deny's I, all inline, while the default
@@ -879,7 +938,10 @@ addendum).
   BOILERPLATE delivery bar lists: the rxtsource census, the start-set mover
   manifests (`tests/startset/manifests/`), the axes allowances, the size
   tripwires and the corpus case counts. Found by `make test` at U1, not by
-  this list.
+  this list. [rev4.1, R71-5] One more, sample-dependent: the `.rxt`'s 41
+  patterns shift `simd_guarded_check.py`'s every-10th corpus sample
+  (`run_simd_guarded.sh`), which moves its `simd-form` floor (pinned at
+  the measure).
 
 `MF_SITE_ABI`: unchanged, since the site carries no new field.
 `MF_CLASS_V`: unchanged, because the level include bit rides the ART
@@ -1003,7 +1065,7 @@ fails on a disagreement.
 | answer identity, default build (G-1) | `make test-corpus`: the `.rxt`'s oracle-verified cases, at the default width 32 and `-fno-memfn-simd` (the wrapped V at 28 sites) |
 | the deny arm's answer identity, both layers (G-1) | `make test-axes`: `run_axes.sh` runs the corpus (the `.rxt` included, with its subjects) under every memfn arm, the `span-vector` deny included, at its default and simd (x86-64-v3) layers; `memfn_arm.py`'s `MEMFN_CLASS` row classifies the deny (§9.3) |
 | the identity gate (G-4) | its corpus enumeration (`emit_sweep.enumerate_corpus`) includes the `.rxt` at width 32; it ALSO compiles the `.rxt`'s 41 patterns (`pcrec --list-source`) at `--window-search-width=4095`; prints its V-site count by the k source above, floored 28 / 31 |
-| C18 / simdfloor | its corpus population includes the `.rxt`; its `NAMED` list gains the two span witnesses (§10.2) with their floor; `FLOORS` for x86-64-v3 rise by the `.rxt`'s V sites at the default engine (re-pinned at the measure, U4); x86-64 does not move (the selector calls `__body` there, no mover) |
+| C18 / simdfloor | its corpus population includes the `.rxt`; its `NAMED` list gains the THREE span witnesses (§10.2) [rev4.1, R71-1: rev 4 said two here] with their floor, NAMED at x86-64-v3 ONLY (a per-target column on `NAMED`: x86-64 renders no V mover, so a span witness there prints "NOT a mover" on correct text); `FLOORS` for x86-64-v3 rise by the `.rxt`'s V sites at the default engine (re-pinned at the measure, U4); x86-64 does not move (the selector calls `__body` there, no mover) |
 | `DIFFER_PINS` (`scripts/emit_sweep.py`, a hand-run tier) | floors over the corpus, the `.rxt` included, both layers |
 | G1's population (§9.4) | EXCLUDES the `.rxt` from its bins by path; prints its V count separately as the floor witness |
 | the T-table pins (§10.2) | do NOT read SPAN-SEED: their own literal cell list |
@@ -1016,12 +1078,15 @@ fails on a disagreement.
 | **G2-V whole** [rev4, R-14] | `cls{k+1}` and mixed patterns (a literal run plus a stretch, two stretches, a stretch beside a non-core position) compiled at SIMD-on and SIMD-off, find-all, at widths 32 and 4095 | python `re` over the cards' regimes, plus forced near-miss staircases (a failing index at each of 0..k-1, at the first window and after a match), **with every subject flush against a `PROT_NONE` page at BOTH ends** | per site kind: literal floors, counted by §10.1's k source |
 | **T-table pins** [rev4, R-14, R-15, R-16] | the row bounds, the brow column, the order (T-lever, T-force ahead of V) and once-per-site | a literal CELL list in the test, each with its width and flags, read off the rendered text: the count of selector calls `<p>_mf<h>_vs<j>(` in the walk and, at x86-64-v3, the count of `__w32(` calls in the selectors; never off window.c. Every cell's finder row and k checked by the trace (§10.1's k source) | **20 cells over 11 patterns** (below), every one reached (drilled, §16 item 5) |
 | **Identity gate** (G-4) [rev4, R-12] | `--memfn=no-span-vector` artifact on the U2 binary vs the artifact of the lane's MERGE BASE, built once (never "main", which moves); **both arms compiled with the same `-o` basename** in two directories | byte diff of `.c` AND `.h`, both layers, over the corpus (the `.rxt` included) and SPAN-SEED's patterns at 4095. **Mask, declared before data: nine anchored spellings (below), each replacing ONLY its number group.** Nothing else is masked | count printed; 0 differences expected |
-| **C18 / simdfloor, AMENDED** | a unit of its own in U4 (below) | its own rules, with their own controls | its per-target SIMD FUNC floor rises, plus the NAMED span witnesses' literal floor |
+| **C18 / simdfloor, AMENDED** | split across U3 and U4 [rev4.1, R71-4] (below) | its own rules, with their own controls | its per-target SIMD FUNC floor rises, plus the NAMED span witnesses' literal floor |
 | **F2** (delivery check) | §6 | 710's arm sources | 82 routed cells |
 
 **The T-table pin cells [rev4]** (20; x86-64-v3 unless the cell says
-both layers; "present" = 1 selector call and 1 `__w32(` call, "absent" =
-0 of each):
+both layers; [rev4.1, R71-6] "present" = 1 selector CALL SITE and 1
+`__w32` CALL, "absent" = 0 of each, counted by these spellings (the
+definition heads match a bare `vs0(` / `__w32(`, which reads 2/2 on a
+whole-text count): the call `rxa_mf1_vs\d+\(rxa_mf1_s, rxa_mf1_c\)` in the
+walk, and `__w32(rxa_mf1_s, rxa_mf1_c)` in the selector):
 
 | # | cell | width | expect | what it guards |
 |---|---|---|---|---|
@@ -1075,7 +1140,15 @@ item 10].** C18's regexes (`tests/memfn/simd_floor_check.py` `SELECTOR`,
 inline __attribute__((always_inline)) int ...` (and `__body` adds
 `unused`). Its -O0 leg (C9-x86) requires `<fn>__w<VW>` as a defined
 symbol in the -O0 object, and an `always_inline` static is never emitted
-there. The amendment, as one unit with its controls (learnings §3):
+there. The amendment, with its controls (learnings §3). [rev4.1, R71-4]
+**Which unit:** U3 first emits V movers, and `test-memfn-simdfloor` is in
+`TEST_SECTIONS`, so the unamended `text_legs` read U3's correct V text RED
+("(c) a deleted line that is no SIMD FUNC's floor call", "a mover with no
+SIMD FUNC selector"). So the head family (both regexes), the `_b` name
+form and the -O0 rule with control (1) land IN U3; NAMED, the floors, the
+routing leg (not red at U3) and controls (2)-(4) stay in U4. (Lesson: a
+unit order is a check order; an amendment lands in the first unit whose
+output the old check reads wrongly.)
 - **the head family:** `SELECTOR` and `HELPER` accept `static inline`,
   then an optional `__attribute__((...))` naming `always_inline` and/or
   `unused`, then `size_t` or `int`;
@@ -1117,7 +1190,10 @@ there. The amendment, as one unit with its controls (learnings §3):
   k 16, B 16) and `[0-9]{25}` (R7w, k 24, B 16), plus `[0-9a-f]{41}` at
   width 4095 (HORS, k 40, B 32), the one B = 32 witness; each with one
   `vs0` selector at x86-64-v3; literal floor: 3 span SIMD FUNCs, written
-  before the build;
+  before the build. [rev4.1, R71-1] `simd_floor_check.py` checks every
+  NAMED witness on every `FLOORS` target (x86-64 and x86-64-v3), and
+  x86-64 renders no V mover (§11), so these three carry a per-target
+  column on `NAMED`: x86-64-v3 only;
 - **controls**, each a mech row with a REACH witness, each rejected by the
   leg it names: (1) drop `always_inline` from `__w32`: the -O0 rule is red
   (the symbol `<fn>__w32` appears and `rxa_search`'s `pshufb` count falls
@@ -1176,6 +1252,8 @@ R-13; lesson r69-2; §16 item 13].** The map: every mech row whose
 - **At U5** (formhash.c: a new shape, renderer and entry): **re-check**
   S2930 (anchored in the entries table) and S2933 (`mf_form_hash`): moved
   only if the entry struct gains a field or the hash's dispatch changes.
+  [rev4.1, R71-7 (b)] **Re-check** S2931 (`kit-grid.tsv`, unchanged by an
+  append).
 - **At U6:** S693 (`#define PCREC_ARTIFACT_ABI`), re-aimed by the abi
   ritual (§9.2).
 - **Conditional** (re-check only if the unit edits those lines): G2's
@@ -1222,6 +1300,7 @@ the default width. This lane runs no sweep.
 | the loop shape (not unrolled) | MEASURED as a form: 710 timed `loop` | 708/710 |
 | `guarded_max` (`span-vector-w32`) | CHOSEN, UNMEASURED DEFAULT, a cap by construction | §5 |
 | SPAN-SEED floors 28 / 31 (byte), 20 / 21 (utf8) | DERIVED: the table's predicate over the committed `.rxt`'s patterns, by the independent k source | §10.1, §16 item 5 |
+| [rev4.1, R71-2] `span-vector`'s `MEMFN_CLASS` corpus floors (about 28 byte / 20 utf8 on `c-default`, 0 on `c-vm`) | MEASURED at U2, pinned at the measure (ruled, §15 Q4) | §9.3 |
 | U2b's padding regex | DECLARED before data; drilled two-sided | §2.1, §16 item 12 |
 | `SWAR_MAX_RANGES` | not shipped (no row reaches SWAR) | §4.4 |
 
@@ -1291,16 +1370,18 @@ the default width. This lane runs no sweep.
 ## 14. The build units, in order
 
 **U1 may start after the light re-check** (r69 ruling R-26: U1 moves no
-artifact byte and is identical under either `wrap-differs` arm). **U2
-onward waits on `wrap-differs` (§2.2).**
+artifact byte and is identical under either arm and either reading of the
+owner question). [rev4.1] r71 ran (READY WITH TEXT FIXES); U1 is built by
+lane bsu1. **U2 onward waits on `scalar-check-cut` (§2.2), which replaced
+`wrap-differs`.**
 
 | unit | what it does | moves bytes? |
 |---|---|---|
 | **U1** | The table refactor: `wf_span_head` becomes THE SPAN FORM TABLE (T-deny, T-force, T-lever, T-head; the V rows land at U2), its six contracts, `wf_tables_check`'s line and the `trace_format.md` hunk (§3); the stretch list stored once by one enumerator (E-find in `wf_find_prepare`, the floor in `wf_plan_site`'s floor branch); `skip` a plan fact by the search rows' `skip` column; `w->head` retired; `wf_loop_len` takes the head. **SPAN-SEED's `.rxt` and generator committed** (§10.1), with the population pins it moves (`make test`). The U1 re-aims and REACH re-proofs (§10.2). An identity gate: every corpus artifact (the `.rxt` included) and SPAN-SEED at 4095 byte-identical to the merge base at both layers, both engines (no mask: no abi event). A refactor gets no flag (Frank 2026-10-29) | no artifact byte (a corpus file is added) |
-| **U2** | The wrapper (option A): T-vwin, T-vscan; `vs<j>` + `__body` + the selector for eligible stretches at every layer, the selector line through the ONE lifted selector writer (§5; ofsskip's bytes unchanged); the deny row `span-vector` (both layers) with its `MEMFN_CLASS` row, and `span-loop`'s re-measured axes rows (§9.3). The identity gate against the merge base for the deny arm, with its declared mask. The U2 re-aims, `REACH_ONLY` at U2. The first abi event lands here | yes |
+| **U2** | The wrapper (option A): T-vwin, T-vscan; `vs<j>` + `__body` + the selector for eligible stretches at every layer, the selector line through the ONE lifted selector writer (§5; ofsskip's bytes unchanged); the deny row `span-vector` (both layers) with its `MEMFN_CLASS` row, its corpus floors measured and pinned at U2 [rev4.1, R71-2], and `span-loop`'s re-measured axes rows (§9.3). The identity gate against the merge base for the deny arm, with its declared mask. The U2 re-aims, `REACH_ONLY` at U2. The first abi event lands here | yes |
 | **U2b** | **The scalar no-loss check** (§2.1): the machine-code census on the BUILT U2 text, the declared normalizer with its two-sided controls, over the real population, the 160-pattern grid and `\w{501}` at 4095. Identical on the population, or the build stops; the grid's DIFFERS list goes into the report | no |
-| **U3** | The `w32` level block: §4.1's text bracketed by V's own writer (lane order, the K ≥ 16 assert), the selector's replaced call, the include bit on the art, the form token, the guarded bound and `simd_bounds.tsv`, the `limits.md`/`tuning.md`/`registry.md` hunks. F2 recorded before anything else | yes (SIMD-on) |
-| **U4** | G2-V (unit, whole, with guard pages at both ends), the 20 T-table pin cells, SPAN-SEED's per-check wiring and floors (§10.1), sabotage rows (a)-(f) with reach, **the C18 amendment** with its controls and three named span witnesses, the routing leg, `DIFFER_PINS` floors, C18's `FLOORS` re-pin | no |
+| **U3** | The `w32` level block: §4.1's text bracketed by V's own writer (lane order, the K ≥ 16 assert), the selector's replaced call, the include bit on the art, the form token, the guarded bound and `simd_bounds.tsv`, the `limits.md`/`tuning.md`/`registry.md` hunks. [rev4.1, R71-4] **C18's head family (`SELECTOR`, `HELPER`), the `_b` name form and the -O0 rule with control (1)** (§10.2), so `test-memfn-simdfloor` reads U3's text green. [rev4.1, R71-5] A V witness (`[0-9a-f]{17}`) added to `simd_guarded_check.py`'s NAMED, `simd-form-named` re-pinned 8 → 9, so the new `simd_bounds.tsv` row has a reader that is not the every-10th sample. F2 recorded before anything else | yes (SIMD-on) |
+| **U4** | G2-V (unit, whole, with guard pages at both ends), the 20 T-table pin cells, SPAN-SEED's per-check wiring and floors (§10.1), sabotage rows (a)-(f) with reach, **the rest of the C18 amendment** (its NAMED three span witnesses, x86-64-v3 only (R71-1), the floors, controls (2)-(4)), the routing leg, `DIFFER_PINS` floors, C18's `FLOORS` re-pin | no |
 | **U5** | Card C6 (its patterns, widths, A/A arm and rule clauses as §8 states; CANDIDATE) + `kit-grid@8` + the formhash SHAPE, renderer and entry; `cards.py plan`/`dry` green, with no timing; the U5 re-checks | no |
 | **U6** | The abi package at the landing base (§9.2, the unfiltered grep), `make test` async, `make test-axes`, REACH_ONLY. Then G1's manifest and dry run (no timing window, §9.4); C6's timing owed to main's window, on each bench box (§8) | — |
 
@@ -1309,9 +1390,15 @@ follows it. The code round precedes the landing (Frank 2026-11-15). U2 and
 U3 may share one abi event if they land together; the number is taken
 once.
 
-**Under `wrap-differs` arm 1:** the units above as written.
+**Where the owner RESTORES the short timing and/or T-keep
+(`scalar-check-cut`, §2.2) [rev4.1]:** U2 onward is re-designed from r71's
+hand mapping (U2b gains a timing step in a cleared window; T-keep
+returns); the lists below do not cover it. **Where he keeps the cut,**
+the former `wrap-differs` fork applies:
 
-**Under `wrap-differs` arm 2 (the proxy row) [rev4, R-26]** the build also
+**Under arm 1:** the units above as written.
+
+**Under arm 2 (the proxy row) [rev4, R-26]** the build also
 needs:
 1. a NEW §3 fact column, the term count `kit_set_test` renders for the
    set: a renderer OUTPUT, so the same lift R-1 met for `skip` (a plan fact
@@ -1336,8 +1423,9 @@ Option B instead of arm 2's proxy row is a separate architecture note.
 
 ## 15. Open questions
 
-1. **`wrap-differs`: OPEN, the owner's** (§2.2, restated with r69 R-25's
-   correction). U2 onward waits on it.
+1. **`scalar-check-cut`: OPEN, the owner's** [rev4.1, r71 FREEZE DRIFT]
+   (§2.2: it replaced `wrap-differs`, whose fork it now contains; both
+   readings carried). U2 onward waits on it.
 2. Owed to main, not blocking: the cover-width timing (`cover_cap.md`
    §11.4 B) decides whether the default window width (32) rises.
 3. **Relays to main [rev4, R-23, R-24, R-29]** (records only; main's to
@@ -1354,13 +1442,11 @@ Option B instead of arm 2's proxy row is a separate architecture note.
    - R-29 is closed at main: D201 add. 2's population line and D201's
      provenance pointer carry the corrections and cite r68 (checked at
      `d255d94a3`).
-4. **[rev4] The `MEMFN_CLASS` corpus floor for `span-vector`** is 0 as
-   ruled (the real corpus). Once SPAN-SEED's `.rxt` is in the corpus the
-   measured count is about 28 (byte) / 20 (utf8), and the house practice
-   pins axes floors AT the measure. The kit manager's call: keep 0 (a
-   lower bound; the `.rxt`'s sites are guarded by the identity gate and
-   SPAN-SEED's own floors) or pin at the measure at U2. This note writes
-   the ruling (0).
+4. **[rev4.1, R71-2] RESOLVED: the `MEMFN_CLASS` corpus floor for
+   `span-vector` is PINNED AT THE MEASURE at U2, not 0** (the kit
+   manager's ruling, 2026-11-21, recorded post-freeze in the kit journal
+   and in r71's MANAGER RULING; K35). The measure is about 28 (byte) / 20
+   (utf8) on `c-default` and 0 on `c-vm` (§9.3).
 
 Resolved earlier, restated in the FREEZE NOTE: `scalar-wrap` (read as
 option A, as cut by r68 F-14), `scan-scope`, `wrap-deny`, R-4.
@@ -1503,6 +1589,11 @@ literal, from the build's OFF/ON artifacts).
 
     The built U2 text is what U2b reads; this drill shows only that the
     declared regex passes and fails as worded on its named witnesses.
+    [rev4.1, R71-7 (a)] r71's critic did NOT reproduce `\w{20}`'s 46 / 42:
+    on its own hand-built wrapper text it read 26 / 22 by python difflib
+    and 24 / 20 by GNU diff (r69 R-17 also read 22). The verdict DIFFERS
+    holds under all three; the figure depends on the diff tool and on the
+    wrapper text, so U2b names its tool and re-derives it on the BUILT text.
 13. **[rev4] The sabotage-anchor map (lesson r69-2).** `bash
     $S/tools/anchors.sh <tree> > $S/anchors.tsv` (229 rows on `memfn/src/`)
     then `python3 -I -B $S/tools/anchor_map.py <tree> $S/anchors.tsv`
@@ -1520,7 +1611,7 @@ literal, from the build's OFF/ON artifacts).
 
 ## 17. SHIP-SIZE (R-4's lens; information, not a ruling) [rev4, R-30]
 
-What the build adds, under option A and `wrap-differs` outcome 1. Counts
+What the build adds, under option A, `scalar-check-cut` kept, and outcome 1. Counts
 marked UNMEASURED are estimates the build lane replaces with `git diff
 --stat` at its landing; nothing here was built.
 
@@ -1572,6 +1663,20 @@ ruled finding (§18).
 
 ## 18. Dispositions
 
+### 18.0 r71 (review 2026-11-21-r71-memfn-bspan4, the kit manager's MANAGER RULING) [rev4.1]
+
+| R-id | ruled | answered in |
+|---|---|---|
+| R71-1 C18's NAMED leg at x86-64 | FIX-NOW (text): a per-target column on NAMED, x86-64-v3 only; "two" -> three | §10.1 wiring row, §10.2 NAMED span witnesses, §14 U4 |
+| R71-2 the Q4 ruling | FIX-NOW (text): floor pinned at the measure at U2, five places | §9.3, §12, §14 U2, §15 Q4 (resolved), §18.1 R-20 |
+| R71-3 the floor-branch call | FIX-NOW (text); the reading CONFIRMED | §3 "Why the floor call is NEEDED" (R-2's words, the trace hunk, the slot budget) |
+| R71-4 U3 red until U4's amendment | FIX-NOW (text): the head family, `_b` and the -O0 rule move into U3 | §10.2 C18 row and "Which unit", §14 U3/U4 |
+| R71-5 `simd_guarded_check.py`'s sample | FIX-NOW (text): a V witness at U3, `simd-form-named` 8 -> 9; the U1 sample note | §14 U3, §9.3 (the `.rxt`'s pins) |
+| R71-6 "present" reads 2/2 | FIX-NOW (text): the counted call spellings | §10.2 pin cells |
+| R71-7 (a)-(d) | FIX-NOW (text) | (a) §2, §2.1, §16 item 12; (b) §10.2 U5 re-aims; (c) §5; (d) §3 "Where it runs" |
+| FREEZE DRIFT `scalar-check-cut` | accepted as mapped; both readings carried | status, CONSTRAINT, §2.2, §3, §14, §15 Q1, §17 |
+| U5/U6 not re-checked | accepted (the code round covers them) | — |
+
 ### 18.1 r69 (review 2026-11-21-r69-memfn-bspan3, the kit manager's MANAGER RULING) [rev4]
 
 | R-id | ruled | answered in |
@@ -1595,7 +1700,7 @@ ruled finding (§18).
 | R-17 U2b's normalizer | FIX-NOW | §2.1 (one regex, two-sided control, non-movers relabelled), §16 item 12 |
 | R-18 a k > 31 positive | FIX-NOW (add the cell) | §2.1 (`\w{501}` at 4095), §2, §2.2, §16 item 12 |
 | R-19 the k source | FIX-NOW (doc) | §10.1 "The k source", §16 item 5 |
-| R-20 `MEMFN_CLASS`; SPAN-SEED's wiring | **the row, the wiring, a committed `.rxt`** (ruled) | §9.3, §10.1 (file, cases, oracle, wiring table), §7, §0.1, §14 U1/U2/U4, §15 Q4 |
+| R-20 `MEMFN_CLASS`; SPAN-SEED's wiring | **the row, the wiring, a committed `.rxt`** (ruled); [rev4.1] AMENDED by the §15 Q4 ruling (the corpus floor pinned at the measure at U2, not 0; R71-2) | §9.3, §10.1 (file, cases, oracle, wiring table), §7, §0.1, §14 U1/U2/U4, §15 Q4 |
 | R-21 the bench attribution | FIX-NOW | §0.1 table |
 | R-22 §11 under utf8; W > 32 | DOC | §11 |
 | R-23 the READING quoted in part | FIX-NOW + relay | FREEZE NOTE (the reading in full, how it moved), §2.2, §15 Q3 |
