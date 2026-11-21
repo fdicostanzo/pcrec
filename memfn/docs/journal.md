@@ -4477,3 +4477,18 @@ Main sent CLEAR at 19:17; 711-kit-checkorder (RULE 28b518b84de080aa) and 712-kit
 
 ### 2026-11-20 19:4x — bcfix round 3 delivered; 710 READY TO TIME (manager-verified)
 bcfix round 3 delivered e7c1d142b. RULE_SHA 6351bff3901e3955; check PASS (marker 6ca1c9b7...); drills 50/50; the critic's NEW-1 repro reads NO LOSS, no WIN majority, 70/144; the floor holds at 72/144 and fails at 71/144. The manager read round3.patch: the TIE stands as a non-WIN; the floor comes after the LOSS row; INCONCLUSIVE is named for its cause. The lane's reading is confirmed: below the floor, no-majority is also INCONCLUSIVE, not NO LOSS (NO LOSS needs readable data). TaskStopped. 710 is READY TO TIME; it is queued after main's CLEAR, which follows 711 and main's build slot.
+
+### 2026-11-20 19:46 — 712 rampchunk GREEN: verdict (frozen rule efb4f0d7d3ab0bd5)
+Run /var/tmp/pcrec-pcrec/scratch/memfn/rampchunk/run-20261120T192834/decision.md; wall 1,286 s.
+- Header: QUIET SAMPLE BUSY (sample max 17 %, CPU7_MAX capped at 20 %); 76 void launches; 0 NOISE cells; 0 NOT-RUN.
+- A/A floors: warm 9.74 % (threshold 19.5 %, counted); cold 51.8 % (mode INCONCLUSIVE, printed only, as predicted).
+- The owner's question (warm, counted):
+  - RAMPCLIP ("max ramp") vs ALIGN: PREFERRED at every B and under both methods, with 0 losses. The wins come at early and at restarts: at 4 KiB 0.49/0.58/0.74; at 64 KiB 0.04-0.06, because ALIGN reads a whole block ahead.
+  - RAMP vs RAMPCLIP: the clip never loses and wins 1-4 cells.
+  - RAMP vs ALIGN: MIXED.
+  - STREAM-SAFE: RAMPCLIP and ALIGN (0 crossings); RAMP and FIXED are not (302-5,036 crossing windows).
+- NO-LOSS against OFF: EVERY arm LOSES, today's ON included (1.47x unb dense, 1.82x bnd dense).
+  - COMPOSED windows are worse than ON on dense (2.2-2.75x).
+  - PASS (one scalar pass) is the best on dense (1.29x unb, 1.45x bnd), but it regresses sparse cells where ON wins big (unb sp64 1.15x vs 0.91x; bnd sp512 0.25x vs 0.02x; bnd text 0.08x vs 0.00x).
+  - ZERO (the edit with no window) costs on bnd dense (2.36x vs ON 1.82x).
+- Reading: the window RULE question is settled (max ramp). The METHOD is not: no scalar window method meets the owner's no-loss condition on dense subjects. It needs a faster in-window last-occurrence scan (SIMD block masks, R-46's one-pass arm at the SIMD layer) or a different approach. No build without Frank's go.

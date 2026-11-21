@@ -871,3 +871,7 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
   Mixed windows: rarest first, ties to the rightmost (the kit's rank already breaks ties to the higher offset). Order is moot
   for hit-dense windows and for block forms. Spike arms if run: front (today), reverse+jump, reverse+jump+remember, alternating,
   rank-first (mixed only).
+
+- 2026-11-20 (Frank: "Test the ramp up vs chunk. A max ramp may solve my streaming concerns"; job 712, rule efb4f0d7d3ab0bd5, warm counted):
+  - The max ramp (R-46's ramp clipped at the current aligned chunk) beats aligned chunks wherever their reads differ (early match, find-all restarts), never loses, never asks past the chunk (stream-safe), and the clip costs nothing.
+  - OPEN: no scalar method of the window removes the dense loss against the plain loop. One pass is 1.29-1.45x OFF on dense but regresses sparse cells; repeated finds are 2.2x+. Candidate: a SIMD last-occurrence scan in the window. Evaluate before any build.
