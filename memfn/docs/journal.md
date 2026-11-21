@@ -4505,3 +4505,6 @@ Run /var/tmp/pcrec-pcrec/scratch/memfn/checkorder/run-20261120T194521/decision.m
   - RANK (rarest first, mixed sites only) is flat: 12/17/11.
   - Near-miss WIN majorities were reached by FJUMP 72/126, REV 80/127, REVMEM 69/102 and ALT 88/127. Each arm's repeated LOSSes decide it.
 - Reading: a check order wins only where it matches where failures land, which is a subject property unknown at compile time; and every reorder costs on hits. No compile-time order replaces FRONT. Logged in ideas.md. No build.
+
+### 2026-11-20 21:28 — 710 queued
+Main sent CLEAR at 21:27, and 710-kit-blockconfirm is queued (RULE_SHA 6351bff3901e3955; est 8,992 s, so it should end around 00:00). monread is armed. After it: the verdict to Frank and main, and unpinning bconf-night.
