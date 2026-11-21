@@ -94,7 +94,8 @@ and was reported FAIL; fixed by sizing the twin at 70773.
 
 ## STATE AT HANDOFF
 
-Complete except OWED: the queued full sweep, KEY `grow4-growth` (the first full run of the new kinds: the 552 matrix limit cells
+OWED: none (the queued full sweep, box-queue name `300-grow4-growth`, is QUEUED for the manager, not owed by this lane).
+The sweep (the first full run of the new kinds: the 552 matrix limit cells
 that were not sampled may reveal more cells refused by a lower limit; the `+` rule is measured on 4 sampled cells only).
 Unfixed by design: items under FINDING above (norun cells, dropped empty/inl, `+` limit cells at small depth, K150).
 Last R-n applied: none (rulings file empty).
