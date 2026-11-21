@@ -294,6 +294,31 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, no-loss condition): no case slower than the plain loop (Frank 2026-11-12 on cold mmapped subjects): a backward scan loses on cold mapped tails, a forward keep-latest pass loses when a match comes early in a long subject with hits to its end; a lazy re-ask with doubling look-ahead ("any occurrence >= d bytes ahead?", d doubling on yes) reads forward, near the loop, with O(log) calls on dense hits, is the candidate with no constructed losing case. The request states the fact + the no-loss requirement; otherwise the public bit stays. Order: after reqpast lands, K38-2 and set S2; needs a measurement card (new method).
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
   NOTE (2026-11-18): architecture note docs/design/dense_hit_arch.md ACCEPTED (reviews r49); Frank ruled lookahead-home = the kit's method; his words and the open starts-or-occurrences question: docs/design/plan_row_bodies/REQ-PAST-LAST.md
+  - [BSPAN-LEVERS] STATE:not-started — block span: the `span-vector=force` and `span-vector-body` test levers
+    filed: 2026-11-21 manager (kit review r69 R-30 relay; bsrec)
+    status (2026-11-21): filed; nothing built; cut from the block-span build scope by r68 F-15
+    trigger: a bound is questioned by a C6 or Zen 1 run (kit review r69, block_span.md section 8)
+    refs: docs/design/memfn/block_span.md (lane/bspan3) section 8; decisions D201
+  - [BSPAN-G1-TIMING] STATE:not-started — block span: G1's timing window for the manifest bins
+    filed: 2026-11-21 manager (kit review r69 R-30 relay; bsrec)
+    status (2026-11-21): filed; no window booked; every bin UNREACHED today (the build delivers the manifest and a dry run)
+    trigger: a G1 bin reaches 8 real movers (the default width rises, or patterns land in range) (kit review r69, block_span.md section 10)
+    refs: docs/design/memfn/block_span.md (lane/bspan3); docs/design/memfn/integration.md section 17.2; decisions D147
+  - [BSPAN-GCC-RERUN] STATE:not-started — block span: re-run U2b's SIMD-off machine-code census when the house gcc changes
+    filed: 2026-11-21 manager (kit review r69 R-26/R-30 relay; bsrec)
+    status (2026-11-21): filed; the census is a compile-time reading at gcc 15.2 -O2 and has no committed instrument or owner yet
+    trigger: the house gcc changes (kit review r69, block_span.md section 13; a committed check only under wrap-differs outcome 2)
+    refs: docs/design/memfn/block_span.md (lane/bspan3) sections 2.2, 13; decisions D201 add. 2
+  - [BSPAN-ZEN1-C6] STATE:not-started — block span: a Zen 1 run of card C6; the form is CANDIDATE until every bench box runs it
+    filed: 2026-11-21 manager (kit review r69 R-30/R-31 relay; bsrec)
+    status (2026-11-21): filed; unmeasured; a Zen 1 LOSS would block the level (D155 item 2, D144 add. 4), not merely move the lower bounds
+    trigger: the level is built and delivered behind the OFF switch; it stays CANDIDATE until a run on each bench box that runs it, Zen 1 (ubuntubudu) via main (kit review r69 R-31)
+    refs: decisions D155 item 2, D144 add. 4, D201; docs/design/memfn/block_span.md (lane/bspan3) sections 8, 13
+  - [BSPAN-VANY-RIDE] STATE:not-started — block span: vany joins the lifted selector writer
+    filed: 2026-11-21 manager (kit review r69 R-30 relay; bsrec)
+    status (2026-11-21): filed as a ride-along, not built; U2 lifts ofsskip's two writers into one shared kit helper (r68 ruling R-4)
+    trigger: vany's next touch (kit design note block_span.md section 5, "One writer")
+    refs: docs/design/memfn/block_span.md (lane/bspan3) section 5; memfn/src/vany.c; decisions D201
 - [REQ-LOOKAROUND] STATE:started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
   status (2026-11-20): L1 LANDED d68a1294c (full suite GREEN, baseline reset); L3 census GO (57 movers, bench 2) and its five remodels LANDED (lane/l3pin, review r63); L3 FEATURE next (brief carries r63 CONFORM-1)
