@@ -61,7 +61,10 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
 - Ladder PASS = compiled, or refused by the cell's own limit text or by "out of
   memory"; an `internal error:` refusal, or a thread that never started
   (`rc=-9`, ERROR), fails.
-- Ladder caps (2, 8, 32, 128 MB of RLIMIT_DATA) and why: run_growth.py LADDER.
+- Ladder caps (2, 8, 32, 128 MB of RLIMIT_DATA) and why: run_growth.py LADDER. A rung below twice the
+  pattern's own size is skipped (the pattern bytes are read before the cap is set).
+- `compile:norun` (limit cells only): compiles, matcher NOT built: the 13 NFA/VM-node edge cells, whose
+  25 MB of C takes gcc 10 minutes and 3.4 GB (owner question, grow4 report).
   RLIMIT_DATA, not AS: ASan cannot start under an AS cap.
 - Never run a hostile cell outside watchdog; scratch under `$PCREC_TMPDIR`.
 - Future direction (owner, 2026-11-20, not built): a ladder of THREAD sizes

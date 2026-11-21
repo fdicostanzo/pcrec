@@ -143,8 +143,8 @@ class Cell:
         if kind not in KINDS:
             sys.exit("run_growth: cell %s: kind %r is not one of %s" % (cid, kind, "/".join(KINDS)))
         self.kind, self.pair = kind, pair
-        if kind == "limit" and expect != "compile":
-            sys.exit("run_growth: cell %s: a limit cell's expect is `compile`, got %r" % (cid, expect))
+        if kind == "limit" and expect not in ("compile", "compile:norun"):
+            sys.exit("run_growth: cell %s: a limit cell's expect is `compile` or `compile:norun`, got %r" % (cid, expect))
         if kind == "limit" and not limit_name:
             sys.exit("run_growth: cell %s: a limit cell names the limit it sits just before" % cid)
         if kind == "stability" and (not expect or any(not a.startswith("refuse:") for a in expect.split(","))):
@@ -271,7 +271,7 @@ class Runner:
         pf = self.patfile(cell)
         # a LIMIT cell's uncapped run also emits the artifact's C (with a main()) so its
         # matcher can be built and run: "compiles AND its matcher runs"
-        csrc = pf + ".c" if (cell.kind == "limit" and cap == 0) else None
+        csrc = pf + ".c" if (cell.kind == "limit" and cell.expect == "compile" and cap == 0) else None
         cmd = [self.wd, "-s", str(WALL_S), "-c", str(CPU_S), "-m", RSS, "-i", "0.1",
                "-S", "growth", "-L", os.path.join(self.work, "watchdog.log"), "--",
                self.drv, "one", str(cap), str(cell.stack), str(cell.raise_),
@@ -356,6 +356,8 @@ def ladder_ok(cell, kind, text):
 def job(rn, cell, ladder):
     res = [("uncapped", 0) + rn.one(cell, 0)]
     for cap in ladder:
+        if cap < 2 * len(cell.pattern):
+            continue    # the pattern's own bytes (read before the cap is set) would fill the rung: no thread can start
         res.append(("cap%dM" % (cap >> 20), cap) + rn.one(cell, cap))
     return cell, res
 

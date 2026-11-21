@@ -5569,6 +5569,9 @@ There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md
   runner); `matrix_axes.tsv` is the construct x quantifier x position x core
   product at 250/251; `cells.tsv` holds the spine-length, width and memory
   cells (a `stability` row names its limit's diagnostic in `refuse:`; a `limit` row is `compile` and names the limit it sits just before).
+- **Matcher run.** A `limit` cell's uncapped run also builds the emitted C (`gcc -O0`) and runs it on
+  three subjects (exit 0 or 1). The 13 NFA-state / VM-node edge cells are `compile:norun`: at those sizes
+  (emit caps lifted) gcc needs about 10 minutes and 3.4 GB per cell.
 - **Memory ladder.** Every cell also runs under RLIMIT_DATA caps of 2, 8, 32 and
   128 MB; PASS = compiled, or refused by the cell's own limit text or by out of
   memory; FAIL = an `internal error:` refusal, a thread that never started,
