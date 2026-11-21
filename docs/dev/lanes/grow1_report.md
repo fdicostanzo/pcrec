@@ -180,4 +180,4 @@ Not done: the first-run numbers of the matrix family and the whole library
 series (queued, OWED); the utf8 depth row ([STACKDRIVER-ENC]) and the
 thread-size ladder (growth-stackcap: future direction, not built, by ruling).
 Do not edit tests/growth/ while the queued job runs (it executes the worktree).
-OWED: 300-grow1-growth (box queue; matrix family numbers and the whole library-series verdict; a follow-up lane folds them in).
+OWED: 300-grow1-growth (box queue KEY `grow1-growth`, which is what `boxqueue state` takes; matrix family numbers and the whole library-series verdict; a follow-up lane folds them in).
