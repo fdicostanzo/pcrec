@@ -320,11 +320,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     status (2026-11-21): filed; unmeasured; a Zen 1 LOSS would block the level (D155 item 2, D144 add. 4), not merely move the lower bounds
     trigger: the level is built and delivered behind the OFF switch; it stays CANDIDATE until a run on each bench box that runs it, Zen 1 (ubuntubudu) via main (kit review r69 R-31)
     refs: decisions D155 item 2, D144 add. 4, D201; docs/design/memfn/block_span.md (lane/bspan3) sections 8, 13
-  - [BSPAN-VANY-RIDE] STATE:not-started — block span: vany joins the lifted selector writer
+  - [BSPAN-VANY-RIDE] STATE:not-started — block span: vany joins both lifted writers (the selector and the level block)
     filed: 2026-11-21 manager (kit review r69 R-30 relay; bsrec)
     status (2026-11-21): filed as a ride-along, not built; U2 lifts ofsskip's two writers into one shared kit helper (r68 ruling R-4)
     trigger: vany's next touch (kit design note block_span.md section 5, "One writer")
     refs: docs/design/memfn/block_span.md (lane/bspan3) section 5; memfn/src/vany.c; decisions D201
+    NOTE (2026-11-21, kit relay of review r76): BOTH lifts ride here. Level-block members: ofsskip.c fn_level_block, vany.c vany_level, window.c vs_w32_block. Folds r76 SLOT-4 (V's level choice is an inline if beside the declared level rows), SLOT-5 (a) the name builders and (b) the sink-brackets predicate; SLOT-6's general form is NOTED (no build)
   - [BSPAN-SCALAR-RISK] STATE:not-started — block span: changed SIMD-off code for \w{17}/\w{20}/\w{32}-like shapes ships unmeasured
     filed: 2026-11-21 manager (Frank's scalar-check-cut answer "yes", relayed verbatim by the kit; D201 add. 4)
     status (2026-11-21): filed as a declared known risk; the scalar timing is dropped; U2b's census holds the 3 real bench sites identical and \w{20} is its floor witness
