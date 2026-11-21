@@ -50,8 +50,8 @@ your work single-process, and stay within your compile share (stated in your bri
 - docs/dev/guide/README.md, docs/dev/guide/coding.md (line 198: PCREC_OWN_FRAME's two uses and the third
   case), src/core/internal.h:366 (the macro and its comment: "the comment there is the rule").
 - docs/spec/limits.md §3.10 (the contract for compile stack), src/core/limits.def PCREC_COMPILE_STACK_BUDGET.
-- Ruling records at the freeze: [DD-10] docs/dev/plan_completed.md:6212; [K152-NFA-DEPTH] plan.md:2472 (base
-  text); [LINT-FRAME] plan.md:445; [GROWTH-SWEEP] plan.md:2210; coding.md:198.
+- Ruling records at the freeze: [DD-10] docs/dev/plan_completed.md:6212; [K152-NFA-DEPTH] plan.md (line 2472 at the freeze) (base
+  text); [LINT-FRAME] plan.md (line 445 at the freeze); [GROWTH-SWEEP] plan.md (line 2210 at the freeze); coding.md:198.
 - The family's earlier reviews ARE allowed and are its rules: docs/dev/reviews/2026-11-20-r62-k146fix.md,
   docs/dev/reviews/2026-11-20-r64-k147fix.md (and r64's dir). docs/dev/learnings.md §3 (check design).
 

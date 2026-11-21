@@ -11,7 +11,7 @@ Date: 2026-11-21. Mode: code. Size: LIGHT (3 critics). Coordinator: opus (crit-k
   site), tests/thread/run_compile_stack.sh (rows nclitrep, litpost, nclitpost, litcompound; the reach check looped over
   compound + litcompound), new sabotage S3470, docs/spec/limits.md §3.10¶1-¶5, the limits.def PCREC_COMPILE_STACK_BUDGET
   text, known_issues K152, plan row [K152-NFA-DEPTH], one history line.
-- Rulings relied on: [K152-NFA-DEPTH] trigger (plan.md:2472 at the freeze: "same general depth mechanism, [DD-10]
+- Rulings relied on: [K152-NFA-DEPTH] trigger (plan.md (line 2472 at the freeze) at the freeze: "same general depth mechanism, [DD-10]
   PCREC_OWN_FRAME on the NFA builder's recursive arms; with DEPTH_FAMILIES rows for the plain and the compound-route
   shape"); coding.md:198 and internal.h:366 (the mark's two uses); D80 (spec in the same change). All have records at the freeze.
 - Kit: SUBJECT review tree + BASE archive built once at `nice make -j2`; one planted compiler (S3470, both pairs exact);
