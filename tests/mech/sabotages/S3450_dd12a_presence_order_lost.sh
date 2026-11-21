@@ -10,8 +10,9 @@
 # comparison on that witness.
 SAB_ID="S3450-dd12a-presence-order-lost"
 SAB_FILE="tests/codegen/run_encoding_checks.sh"
-# RE-AIMED 2026-11-20 (lane l3r65, review r65 A): the explicit witness is `ab(c)\1x` (K 1); the pick rule
-# moved `(?<=a)(b)\1x` back to BASE's run-free form on the default route.
+# RE-AIMED 2026-11-20 (lane l3r65, review r65 A): the explicit witness is `ab(c)\1x` (K 1); after the pick
+# rule `(?<=a)(b)\1x` states a run under byte only (`6162` at -1; utf8 none), so it no longer has a run on
+# both sides (reason restated 2026-11-21, lane l3r66, review r66 CHECK-2).
 SAB_SUITES="encoding"
 SAB_DESC='DD12a(i) never takes the presence-order arm, so a run-stating pair whose presence tests differ only in byte-rate-keyed order and form is reported as an encoding conditional in the hot path'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/l3tri_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3450.'

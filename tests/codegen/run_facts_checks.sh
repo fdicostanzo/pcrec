@@ -793,7 +793,7 @@ RP='xy(?:ab){2}zw'
 rbad=""; nrw=0
 rget() { # rget <bin> <arm-or-flag-or-empty> <pattern> <fact> -> "value<TAB>why" (byte)
     local arm=()   # an arm name is a --harness=restore= arm; a `-f...` is a compiler flag
-    case "$2" in "") ;; -*) arm=("$2") ;; *) arm=("--harness=restore=$2") ;; esac
+    case "$2" in "") ;; -*) read -ra arm <<< "$2" ;; *) arm=("--harness=restore=$2") ;; esac   # flags split on spaces
     "$TIMEOUT_BIN" 120 "$1" --features all "${arm[@]}" --emit-facts --pattern "$3" > "$WORKDIR/rp.l" 2> "$WORKDIR/rp.err" ||
         { printf 'REFUSED\t%s\n' "$(head -1 "$WORKDIR/rp.err")"; return; }
     sect "$WORKDIR/rp.l" facts | grep -F "$(printf 'encoding=byte\t')" | arow "$4" /dev/stdin > "$WORKDIR/rp.r"
@@ -891,6 +891,17 @@ fi
 # `-fno-req-handoff` is the no-re-entry route too. W-D2 lists BASE's `none`
 # by default and BACK's `bc` under `--engine=vm`. S3455 is the plant (the
 # column passed over), red on these default-route cells.
+# Review r66 (the REV 3.5 addendum): `-fprefilter` forces the forced VM a
+# hybrid prefilter whose forward scan re-enters, so `--engine=vm
+# -fprefilter` keeps `(?<=qz)x?a:`'s `a:` at 1 (EMIT-2; plant S3480); an
+# EMPTY consumed run keeps BASE's BYTE landmark where a necessary byte sits
+# at a bounded K, so `(?<=qz)(?:a.|.a)` lists no run with landmark K 1 by
+# default and BACK's `qz` at -2 under `--engine=vm` (EMIT-3; plant S3481);
+# `(?<=a)(b)\1x` lists BACK's `ab` at -1 by default on byte (its consumed
+# best is the rate-picked `x`, unbounded; CHECK-2). The rule's narrowing
+# plants (CHECK-4): S3482 (no empty-best disjunct, red on `(?<=foo)`),
+# S3483 (no unbounded disjunct, red on `(?<=xyz)a+xyz`), S3484 (no engine
+# clause, red on the `--engine=vm` cells).
 lbad=""; nlk=0
 if [ ! -x "$HBIN" ]; then
     lbad=" $HBIN is missing (make builds it);"
@@ -967,6 +978,14 @@ p	-	(?<=xyz)a+xyz	req_landmark_maxoff	-3	-
 p	-	(?<=foo)	req_whole_run	666f6f	rate:builtin-prior
 p	-	(?<=foobar)\d*x	req_whole_run	none	-
 p	-fno-req-handoff	(?<=foo)bar	req_whole_run	666f6f626172	rate:builtin-prior
+p	--engine=vm -fprefilter	(?<=qz)x?a:	req_whole_run	613a	rate:builtin-prior
+p	--engine=vm -fprefilter	(?<=qz)x?a:	req_landmark_maxoff	1	-
+p	-	(?<=qz)(?:a.|.a)	req_whole_run	none	-
+p	-	(?<=qz)(?:a.|.a)	req_landmark_maxoff	1	-
+p	--engine=vm	(?<=qz)(?:a.|.a)	req_whole_run	717a	rate:builtin-prior
+p	--engine=vm	(?<=qz)(?:a.|.a)	req_landmark_maxoff	-2	-
+p	-	(?<=a)(b)\1x	req_whole_run	6162	rate:builtin-prior
+p	-	(?<=a)(b)\1x	req_landmark_maxoff	-1	-
 LKEOF
     for pat in 'a(?=b)[bc]' 'ab[xy](?=(?<=x)y)[xy]'; do
         nlk=$((nlk + 1))

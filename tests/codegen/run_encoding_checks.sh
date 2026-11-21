@@ -1575,9 +1575,10 @@ def excise(text, backend, label, drop_run=False):
 # prior (byte puts the rarer member first, utf8's NONE does not), so the same
 # members can take either form and either side of the run's gate: `ab(c)\1x`
 # (VM, K 1) shows it on main, and L3 moved the DD12a(ii) witness
-# `(?<=a)(b)\1x` (K -1) into the same shape (review r65 A's pick rule moved it
-# back: BACK does not displace its consumed `b`; `ab(c)\1x` is the explicit
-# witness now). Where both sides state a run and
+# `(?<=a)(b)\1x` (K -1) into the same shape (review r65 A's pick rule took it
+# out of it: under utf8 BACK no longer displaces, so only byte states a run,
+# `6162` at -1, and the pair is the one-sided-run arm's below (review r66
+# CHECK-2); `ab(c)\1x` is the explicit witness now). Where both sides state a run and
 # their presence statements differ in order or form, the presence MEMBERS are
 # compared as a multiset (equal, or a finding), and only then are the
 # statements removed from both sides (counted, `presence_order`), so the rest
@@ -2178,12 +2179,25 @@ else
         hboth="$(grep -oE '^HANDOFF_BOTH=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
         echo "  DD12a(i) handoff pairs excised on both sides: ${hboth:-?} (landing $HANDOFF_BOTH_LANDING)"
         # THE PRESENCE ORDER (presence_stmts): counted, and floored at the one
-        # explicit witness that always reaches it, `ab(c)\1x` (K35; review r65 A
-        # moved `(?<=a)(b)\1x` back to BASE's run-free form on the default route).
+        # explicit witness that always reaches it, `ab(c)\1x` (K35; after review
+        # r65 A `(?<=a)(b)\1x` states a run under byte only, `6162` at -1, and
+        # utf8 none: the one-sided-run arm's pair, review r66 CHECK-2).
         pord="$(grep -oE '^PRESENCE_ORDER=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
         echo "  DD12a(i) presence-order pairs (members equal, statements removed from both sides): ${pord:-?} (floor 1)"
         if [ "${pord:-0}" -lt 1 ]; then
             bad "DD12a(i) no pair reached the presence-order normalization — the witness ab(c)\\1x no longer has a run beside a presence test; re-aim the floor"
+        fi
+        # [l3chk] THE ONE-SIDED RUN (review r66 CHECK-1, K35): pairs where one
+        # encoding states a run and the other none, whose run-less presence
+        # is covered by the run side's presence plus its run scan. Floored at
+        # the two pairs that reach it at landing, `(?<=a)(b)\1x` and
+        # `(?i)(?<=ab)(b)\1x` (byte a run, utf8 none); S3485 plants the
+        # coverage test's red branch.
+        RUN_ONE_SIDED_LANDING=2
+        roside="$(grep -oE '^RUN_ONE_SIDED=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
+        echo "  DD12a(i) one-sided-run pairs (a run on one encoding only, presence covered): ${roside:-?} (floor $RUN_ONE_SIDED_LANDING)"
+        if [ "${roside:-0}" -lt "$RUN_ONE_SIDED_LANDING" ]; then
+            bad "DD12a(i) only ${roside:-0} pair(s) reached the one-sided-run arm, floor $RUN_ONE_SIDED_LANDING — (?<=a)(b)\\1x / (?i)(?<=ab)(b)\\1x no longer state a run on one encoding only; re-aim the floor"
         fi
         if [ "${hboth:-0}" -lt $(( HANDOFF_BOTH_LANDING * 8 / 10 )) ] || [ "${hboth:-0}" -eq 0 ]; then
             bad "DD12a(i) only ${hboth:-0} pair(s) hand off under both encodings, floor $(( HANDOFF_BOTH_LANDING * 8 / 10 )) — the handoff region's comparison may be vacuous"

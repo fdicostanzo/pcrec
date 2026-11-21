@@ -13,5 +13,6 @@ SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''(?<=qz)x?a:'\'' | 
 SAB_REACH_EXPECT="REACH-A"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (rb_top_rows[i].displaces(w, &root->best, clo, chi) && rn_cmp(w, &best, &cand) < 0) {'
+SAB_BEFORE='        if (rb_top_rows[i].displaces(w, &root->best, set, clo, chi) && rn_cmp(w, &best, &cand) < 0) {'
 SAB_AFTER='        if (rn_cmp(w, &best, &cand) < 0) {   /* SABOTAGE S3455 */'
+# RE-ANCHORED 2026-11-21 (lane l3r66, review r66 EMIT-3): `displaces` takes the root's set. Intent unchanged.
