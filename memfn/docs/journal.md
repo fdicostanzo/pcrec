@@ -4628,3 +4628,9 @@ Lesson: lanes idled four times waiting on runs whose notifications never woke th
 
 ### 2026-11-21 07:04 — U1 GREEN and merged
 713-kit-bsu1-test GREEN (make test, 2135 s) and 714-kit-bsu1-mech GREEN (detection, 1023 s). lane/bsu1 merged into lane/memfn-k1108 (dca2c8e4a; merge alone, make strict clean). A code round on U1 comes next (number from main), then delivery. The lane worktrees (bspan..bsu1, spancensus*, rampchunk etc.) are unpinned; they become prunable once main merges the kit branch.
+
+### 2026-11-21 07:24 — r72 (U1 code round) ruled FIX FIRST; lane bsu1fix
+Code round r72 (memfn-bsu1; verifier run) committed with the ruling (3552a5545). Nothing at answer, speed or byte level: the equiv lens found 393 BASE/SUBJECT compares SAME, and MF_TRACE is identical outside the wfS lines.
+- FIX-NOW (small): comment drift, a dead guard, the skip column's hole check, and CHECKS-1, the skip column with no detector (plants V1/V2 move bytes silently).
+- PLAN items go to U2.
+Fix lane bsu1fix (sonnet, S3500-S3504) launched. Its brief tells it to poll lock-waiting runs in the foreground (the lesson from bsu1). U1 is delivered ALONE after the fixes (main, D153).
