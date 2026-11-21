@@ -12,6 +12,8 @@
 SAB_ID="S3405-forward-reentry-at-negative-k"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks"
+SAB_DESC='the forward scan re-enters the handoff at K < 0 (the decline removed), so a match begun before the scan position, in flight in the start state, is skipped; since review r65 C the compile refuses there (the K < 0 kept-hit init is an internal error)'
+SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/l3feat_report.md), re-aimed by lane l3r65 (docs/dev/lanes/l3r65_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3405."
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?<=xyz)a+xyz'\'' && grep -q '\''^#define RX_DFA_PREFILTER "memchr"$'\'' "$REACH_TMP/o.c" && grep -q '\''^#define RX_REQ_HANDOFF "-3"$'\'' "$REACH_TMP/o.c" && echo REACH-WL17'
 SAB_REACH_EXPECT='REACH-WL17'
 SAB_EXPECT=DETECTED
