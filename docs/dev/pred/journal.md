@@ -572,3 +572,14 @@ Nothing in flight at /close. wake.md rewritten from scratch; owner.md current; P
 everything through P-14. On my branch only: flags-in-filter with its confirmation and flags-warning (hand folds,
 no critic round yet). Next session: /q, class-value first, then the four r61 questions; a critic round on the
 three post-P-14 folds before the next delivery.
+
+## 2026-11-21 (16:30) — fourth predicate-manager session: wake-up
+
+Registered (role pred). Read wake.md, from_main (M-2 new), the three base files whole, the record from
+bare-condition-labels to the end, the journal tail. Merged main into `lane/pred-rev28` (clean; lint 5,267 / 0,
+plan-lint clean). Main had not merged P-15's three hand folds: branch is ahead of main by them. M-2 (Frank's
+remark to main on rx / graph manipulation for intersection and subtraction, a LEAN) recorded verbatim in the
+record; nothing folded. P-16 written (M-2 acknowledged). Nothing running. NEXT: /q with class-value first
+(run: `$PCREC_TMPDIR/scratch/pred/classvalue.py`); a critic round on the three post-P-14 hand folds before the
+next delivery (number from main first).
+WAITING on: Frank (class-value).

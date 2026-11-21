@@ -6172,3 +6172,29 @@ The manager's readings, for the next lane to test: (a) "when it works" also cove
 operand that is not regular: no warning), and an over-budget comparison (no warning, no error); (b) the name is
 a placeholder, `pcrec.flags.filter`, the manager's; (c) the message points at writing the flag in the operand;
 (d) the trigger is stated for `i`; `m` and `s` (the other inherited flags) follow the same comparison.
+
+### 2026-11-20 OWNER, to main (relayed as M-2): rx and graph manipulation will be built for the predicate language; save two engine one-offs for then
+tags: core/filters/and core/filters/complement parked/ideas/string-level-rx
+
+Said to the pcrec manager while discussing a lookaround matter of pcrec proper (L3's forward-scan re-entry), relayed
+verbatim in `docs/dev/pred/from_main.md` M-2; recorded here 2026-11-21 at the wake of the fourth predicate-manager
+session. HIS WORDS, whole:
+
+"Looking forward, we are probably going to have to build a bunch of rx and graph manipulation stuff for the predicate
+language. I don't know how you planned to implement rx intersection or subtraction but this sounds an awful lot like
+that. Perhaps we save both this and match start for then when it can be proper manipulation rather than one offs"
+
+Class: a LEAN (main's class, kept: said in another discussion, not asked as a ruling). Main's context, not his words:
+"this" is running a subject's proved bytes through the DFA graph from the state reached, pruning unreachable states;
+"match start" is the parked [MATCH-KNOWN]; both are recorded in `docs/design/plan_row_bodies/REQ-LOOKAROUND.md`.
+
+What it says for the predicate language: (1) an EXPECTATION, not a requirement: the build will need rx and graph
+manipulation; (2) he names intersection and subtraction (`&`, `A & !B`) as the operations he means, and says he does
+not know how they are to be implemented: no design of ours states it either (the work is DESIGN ONLY; the nearest
+piece is parked/ideas/string-level-rx, "string operations as graph manipulation (phase two)"); (3) a DIRECTION for
+main's two items (wait for "proper manipulation rather than one offs"), which is main's to act on.
+
+The manager's readings (NOT his words; nothing folded): (a) how `&` and `!` are built (an automaton product and
+complement over the DFA graph, or otherwise) is a question for the architecture note of the first build go, through
+main, not for these documents; (b) if a shared graph-manipulation layer becomes a design item it is a
+[COND-FAMILY]-owned shared piece that main's two deferred items ride on (main's statement in M-2, D193.6).
