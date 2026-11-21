@@ -228,8 +228,9 @@ MEMFN_CLASS = {
     # restores the inline span at every layer (the wrapper is live at SIMD-off too), so DIFFER
     # at both layers, never ASSERT_ZERO. MEASURED (`--measure`, lane/bsu2 c51fb2d36, 5700
     # patterns, both layers identical): 28 byte / 20 utf8 on c-default, the span_seed.rxt V
-    # sites (the real corpus has none, §0.1); 0 on c-vm. Floors AT the measure; witnesses the
-    # three bench texts (witness-only), byte and utf8 on c-default.
+    # sites (the real corpus has none, §0.1); 0 on c-vm. Floors AT the measure; the three bench
+    # texts are witnesses byte and utf8 on c-default, and ARE span_seed.rxt corpus patterns, so
+    # they are counted inside the floor they back (r75 CHECKS-7), not beside it.
     **{("span-vector", ly): ("DIFFER",
         {("byte", "c-default"): 28, ("byte", "c-vm"): 0, ("utf8", "c-default"): 20, ("utf8", "c-vm"): 0},
         [(e, "c-default", w) for e in ("byte", "utf8") for w in SPAN_BENCH]) for ly in ("default", "simd")},

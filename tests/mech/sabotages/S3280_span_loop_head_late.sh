@@ -13,7 +13,7 @@
 SAB_ID="S3280-span-loop-head-late"
 SAB_FILE="memfn/src/window.c"
 SAB_SUITES="g2win"
-SAB_DESC="wf_loop_len reads the head as <=: loops start one past it, G2's window family's exact loop pin must red"
+SAB_DESC="wf_span_h reads the head as <= (wf_loop_len before U2): loops start one past it, G2's window family's exact loop pin must red"
 SAB_DOC_FIGURE="G2's WINDOW family (memfn/tests/run_g2_win.sh, arm g2win), the head passes' span loop pin: lane formsfixb 2026-11-17. Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3280."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
