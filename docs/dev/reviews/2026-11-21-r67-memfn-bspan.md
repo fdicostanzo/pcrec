@@ -300,3 +300,4 @@ SIZE-1 F-2; SIZE-2 F-14; SIZE-3 F-14; SIZE-4 F-22; SIZE-5 F-20; SIZE-6 F-14, F-2
 - **Lessons:** all three accepted. Lesson 1 (census site KIND by the table's own predicate on the trace record, not a text proxy) also becomes a kit rule, journaled.
 - **Freeze note:** R-1..R-4 / scan-scope / wrap-deny were recorded only in denied files. Rev 3 restates them in the note.
 - The reviews/CLAUDE.md index line is left to main: the file sits at its size limit.
+- **Process note (manager):** the coordinator verified the 17 CONFIRMED claims itself and launched no separate verifier, which the skill §1 roles require; it reported this. Accepted for this round, because every finding is a text or design fix that rev 3's own re-check reads. The next round of this subject launches a verifier. Also accepted: the coordinator's top process change. Every run kit for a rule keyed on kit picks ships the MF_TRACE harness plus a per-site fd-row script, never a text-proxy census.
