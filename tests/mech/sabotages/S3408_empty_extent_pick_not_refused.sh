@@ -11,8 +11,10 @@ SAB_SUITES="facts harness"
 SAB_HARNESS_TARGET="tests/litscan/spanarms.rxt"
 SAB_DESC='pcrec_run_scan_index asks the pick over an empty stretch, so the req_byte pick of an empty consumed extent names a lookbehind byte no match consumes'
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/l3feat_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3408."
-SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''(?<=foobar)\d*x'\'' | grep -qP '\''^byte\treq_byte\t([^\t]*\t){4}120\t'\'' && echo REACH-WL17-EMPTY'
+SAB_REACH='"$PCREC" --features all --engine=vm --emit-facts --pattern '\''(?<=foobar)\d*x'\'' | grep -qP '\''^byte\treq_byte\t([^\t]*\t){4}120\t'\'' && echo REACH-WL17-EMPTY'
 SAB_REACH_EXPECT='REACH-WL17-EMPTY'
+# RE-AIMED 2026-11-20 (lane l3r65, review r65 A): on the default route `(?<=foobar)\d*x` keeps no BACK run
+# (its consumed extent is empty, the pick rule); the reach and the detector cells read `--engine=vm`.
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (lo >= hi) return -1;'

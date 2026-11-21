@@ -876,6 +876,21 @@ fi
 #   - W-D2 `(?<=ab)(?<=cb)c` is still `dead`, and its run is now BACK's `bc`
 #     at -1 (D-4's BACK row has no never conjunct; any run is sound for a
 #     pattern that never matches).
+# Review r65 A (the REV 3.3 addendum's pick rule, BACK's `displaces` column):
+# where a forward scan may re-enter on the run (every compile but
+# `--engine=vm` / `-fno-req-handoff`), BACK displaces only a consumed run
+# that is empty or unbounded, and an empty consumed extent displaces none.
+# So every L3 row above runs under `--engine=vm` (its run_pin rows under
+# `-fno-req-handoff`: the pin is an E3 fact of the forward NFA; neither has
+# a forward re-entry, so the run choice decides), and the default route lists BASE's run where the
+# consumed part has a bounded one: `(?<=foo)bar` `bar` at 0, `(?<=qz)x?a:`
+# `a:` at 1 (the x10 shape), `(?<=x)qzjv[a-z]*\d` K 0 (CONTRACT-5's shape);
+# `(?<=xyz)a+xyz` keeps BACK's `xyza` at -3 (the consumed best `xyz` is
+# unbounded), `(?<=foo)` keeps `foo` at -3 (no consumed run), and
+# `(?<=foobar)\d*x` lists no run (the BACK run's consumed extent is empty);
+# `-fno-req-handoff` is the no-re-entry route too. W-D2 lists BASE's `none`
+# by default and BACK's `bc` under `--engine=vm`. S3455 is the plant (the
+# column passed over), red on these default-route cells.
 lbad=""; nlk=0
 if [ ! -x "$HBIN" ]; then
     lbad=" $HBIN is missing (make builds it);"
@@ -901,7 +916,8 @@ h	look	xy(?=bc)[bc]c	req_set_maxoff	99:3,120:0,121:1	harness:look
 p	-	a(?=b)[bc]	req_byte	98	rate:builtin-prior
 p	-	foo(?=bar)baz	req_whole_run	666f6f62617a	dead
 h	look	foo(?=bar)baz	req_whole_run	666f6f62617a	harness:look
-p	-	(?<=ab)(?<=cb)c	req_whole_run	6263	dead
+p	-	(?<=ab)(?<=cb)c	req_whole_run	none	dead
+p	--engine=vm	(?<=ab)(?<=cb)c	req_whole_run	6263	dead
 p	-	x[^\x00-\xff]y	req_whole_run	none	dead
 p	-	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
 p	-fno-ctx-node	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
@@ -922,25 +938,35 @@ p	-	(?:foo(?=bar)baz|q)	req_whole_run	none	-
 p	-	x(?!foo(?=bar)baz)y	req_whole_run	7879	rate:builtin-prior
 p	-	(?:foo(?=bar)baz){0}x	req_whole_run	none	-
 p	-	[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).	req_whole_run	6161616161616161616161616161616161626262626262626262626262626262/fdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff	rate:builtin-prior
-p	-	(?<=foo)bar	req_whole_run	666f6f626172	rate:builtin-prior
-p	-	(?<=foo)bar	req_landmark_maxoff	-3	-
-p	-	(?<=foo)bar	run_pin	0:3+3	-
+p	--engine=vm	(?<=foo)bar	req_whole_run	666f6f626172	rate:builtin-prior
+p	--engine=vm	(?<=foo)bar	req_landmark_maxoff	-3	-
+p	-fno-req-handoff	(?<=foo)bar	run_pin	0:3+3	-
 h	look	(?<=foo)bar	req_whole_run	626172	harness:look
-p	-	(?<=ab|b)c	req_whole_run	6263	rate:builtin-prior
-p	-	(?<=ab|b)c	req_landmark_maxoff	-1	-
-p	-	(?<=abc)x	req_whole_run	61626378	rate:builtin-prior
-p	-	(?<=qz)ab	req_byte	98	rate:builtin-prior
-p	-	(?<=foobar)\d*x	req_whole_run	666f6f626172	rate:builtin-prior
-p	-	(?<=foobar)\d*x	req_byte	120	rate:builtin-prior
-p	-	(?<=foobar)\d*x	run_pin	none	-
+p	--engine=vm	(?<=ab|b)c	req_whole_run	6263	rate:builtin-prior
+p	--engine=vm	(?<=ab|b)c	req_landmark_maxoff	-1	-
+p	--engine=vm	(?<=abc)x	req_whole_run	61626378	rate:builtin-prior
+p	--engine=vm	(?<=qz)ab	req_byte	98	rate:builtin-prior
+p	--engine=vm	(?<=foobar)\d*x	req_whole_run	666f6f626172	rate:builtin-prior
+p	--engine=vm	(?<=foobar)\d*x	req_byte	120	rate:builtin-prior
+p	-fno-req-handoff	(?<=foobar)\d*x	run_pin	none	-
+p	--engine=vm	(?<=foo)	req_whole_run	666f6f	rate:builtin-prior
+p	--engine=vm	(?<=foo)	req_byte	none	-
+p	--engine=vm	(?<=a{32})b	req_landmark_maxoff	-32	-
+p	--engine=vm	(?<=a{32})b	req_byte	98	rate:builtin-prior
+p	-fno-req-handoff	(?<=a{32})b	run_pin	none	-
+p	--engine=vm	(?<=a{20})b{20}	req_whole_run	6161616161616161616161616161616161616161626262626262626262626262	rate:builtin-prior
+p	--engine=vm	(?<=a{20})b{20}	req_landmark_maxoff	-20	-
+p	--engine=vm	(?<=foo)bar(?=baz)	req_whole_run	666f6f626172	rate:builtin-prior
+p	-	(?<=foo)bar	req_whole_run	626172	rate:builtin-prior
+p	-	(?<=foo)bar	req_landmark_maxoff	0	-
+p	-	(?<=qz)x?a:	req_whole_run	613a	rate:builtin-prior
+p	-	(?<=qz)x?a:	req_landmark_maxoff	1	-
+p	-	(?<=x)qzjv[a-z]*\d	req_landmark_maxoff	0	-
+p	-	(?<=xyz)a+xyz	req_whole_run	78797a61	rate:builtin-prior
+p	-	(?<=xyz)a+xyz	req_landmark_maxoff	-3	-
 p	-	(?<=foo)	req_whole_run	666f6f	rate:builtin-prior
-p	-	(?<=foo)	req_byte	none	-
-p	-	(?<=a{32})b	req_landmark_maxoff	-32	-
-p	-	(?<=a{32})b	req_byte	98	rate:builtin-prior
-p	-	(?<=a{32})b	run_pin	none	-
-p	-	(?<=a{20})b{20}	req_whole_run	6161616161616161616161616161616161616161626262626262626262626262	rate:builtin-prior
-p	-	(?<=a{20})b{20}	req_landmark_maxoff	-20	-
-p	-	(?<=foo)bar(?=baz)	req_whole_run	666f6f626172	rate:builtin-prior
+p	-	(?<=foobar)\d*x	req_whole_run	none	-
+p	-fno-req-handoff	(?<=foo)bar	req_whole_run	666f6f626172	rate:builtin-prior
 LKEOF
     for pat in 'a(?=b)[bc]' 'ab[xy](?=(?<=x)y)[xy]'; do
         nlk=$((nlk + 1))

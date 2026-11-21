@@ -3,6 +3,7 @@
 # from the start offset, not max(0, startpos + K): `(?<=foo)bar` on "foobar" from 2 or 3 misses the run
 # at 0 and answers NOMATCH where the oracle answers (3,6).
 # Detector: tests/litscan/spanarms.rxt (the L3 blocks, both routes).
+# RE-ANCHORED 2026-11-20 (lane l3r65, review r65 H): the run's omin has one writer, in the entry loop.
 SAB_ID="S3412-run-span-omin-zero"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness"
@@ -13,5 +14,5 @@ SAB_REACH='"$PCREC" --features all -p rx --engine=vm -o "$REACH_TMP/o.c" --patte
 SAB_REACH_EXPECT='REACH-WL1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (run->whole_len >= 2) p[np - 1].omin = (int32_t)pcrec_run_omin(run);'
-SAB_AFTER='    (void)run;   /* SABOTAGE S3412: the run'\''s omin stays 0 */'
+SAB_BEFORE='        p[i].omin = run->whole_len >= 2 && i == np - 1 ? (int32_t)pcrec_run_omin(run) : 0;'
+SAB_AFTER='        p[i].omin = 0;   /* SABOTAGE S3412: the run'\''s omin stays 0 */'

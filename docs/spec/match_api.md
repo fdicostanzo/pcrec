@@ -2501,7 +2501,7 @@ the value.
 ```c
 #define RX_REQ_HANDOFF "2"     /* the scan begins 2 bytes before the
                                   pre-check's first landmark hit */
-#define RX_REQ_HANDOFF "-3"    /* (?<=foo)bar: the scan begins 3 bytes
+#define RX_REQ_HANDOFF "-3"    /* (?<=foo)bar --engine=vm: the scan begins 3 bytes
                                   AFTER the landmark hit, past the
                                   lookbehind's foo */
 #define RX_REQ_HANDOFF "unbounded" /* the attempts begin at startpos; a
@@ -2536,7 +2536,7 @@ byte `_REQ_BYTE` where no run is stated, the necessary-set member the kit's
 links lead with where it declined the run; `K` is the landmark's position 0's maximum byte offset from the
 attempt start (the whole run's position-0 offset for a run), NEGATIVE where the run begins inside a lookbehind (¶6). Then every match
 begins at most `K` bytes before an occurrence of the landmark's position 0 (at `K < 0`, at least `−K` bytes after it); the pre-check's search block returns the LEAST CANDIDATE
-`c >= max(0, startpos + omin)`, `omin = min(0, K)`: no occurrence of the landmark has its position 0 in `[max(0, startpos + omin), c)`, and `c` holds
+`c >= max(0, startpos + min(0, K))`: no occurrence of the landmark has its position 0 in `[max(0, startpos + min(0, K)), c)`, and `c` holds
 the stretch of the run the pre-check verifies (where that is the whole run, `c` is the least
 occurrence) — or `n` when there is no candidate, and then no occurrence (the
 position itself is meaningful, not only its comparison with `n`); and the body begins its scan

@@ -144,12 +144,14 @@ typedef struct {
      * node's code-point set reads exactly as a byte set; an `A_CTX` set
      * with a member above it states no item */
     unsigned onebyte_max;
-    /* span_arms L3 (§14.3 D-11): the most BYTES a required run may begin
-     * before the attempt start, the declared lookbehind length
-     * (`pcrec_lb_max`, characters) times the encoding's widest character
-     * (`PcrecEnc.max_char_bytes`); read only by TOP's BACK row, whose
-     * candidate begins `lg.n` bytes before the attempt and is offered only
-     * at `lg.n <= lb_bytes`. A cost cap, not a soundness bound (§5.5). */
+    /* span_arms L3 (§14.3 D-11): the BACK row's cap in BYTES, the declared
+     * lookbehind length (`pcrec_lb_max`, PCRE2's max_lookbehind, characters)
+     * times the encoding's widest character (`PcrecEnc.max_char_bytes`);
+     * read only by TOP's BACK row, whose candidate begins `lg.n` bytes
+     * before the attempt and is offered only at `lg.n <= lb_bytes`. A
+     * nested lookbehind's guard may reach further (the declared length is a
+     * max over nesting, the walk's guard a sum), and is then declined
+     * (review r65 I). A cost cap, not a soundness bound (§5.5). */
     long long lb_bytes;
     /* review r65 A (span_arms §14.4 L3, REV 3.3 addendum): may this compile
      * RE-ENTER A FORWARD SCAN on the run (the `handoff` row, declined at
