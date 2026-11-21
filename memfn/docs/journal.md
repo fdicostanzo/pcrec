@@ -4649,3 +4649,6 @@ Brief rules to add: TMPDIR=$PCREC_TMPDIR on every run; re-read the rulings file 
 
 ### 2026-11-21 08:41 — Frank ruling scalar-check-cut: yes
 Frank, to the kit: "scalar-check-cut: yes". The short scalar timing and the keep-a-loser row (T-keep) are DROPPED. U2b is the machine-code census on the built text: identical on the 3 real sites or the build stops; the 160-pattern grid's DIFFERS list is reported, not timed; \w{20} is the floor witness. The changed \w-like shapes are filed as a known unmeasured risk, triggered by "a bench or user pattern of that shape -> measure it" (main's row). wrap-differs is withdrawn. U2 onward is unblocked; the U2 lane starts after 716 is green and bsu1fix is merged.
+
+### 2026-11-21 08:47 — U1 delivered to main; lane bsu2 (U2 + U2b)
+716-kit-bsu1fix-mech GREEN. lane/bsu1fix merged (e8dea21a3, make strict clean). U1 delivered ALONE to main ([responses] 0481a4130; 0 movers, no abi event). Lane bsu2 (opus, S3505-S3519) launched for U2 (wrapper, deny span-vector, the first abi event, r72's PLAN items) + U2b (the census per D201 add. 4). Its brief: TMPDIR on every run, rulings re-read by name at every checkpoint, foreground lock waits. The abi number has been asked of main.
