@@ -6814,3 +6814,23 @@ now do not: an asymmetry, defensible (a default the piece may override against a
 what ONE piece is when a macro uses its argument twice or a user loops a piece (`list_of(X, sep = S) :=
 /(?:${X}${S})*${X}/`; a predecessor test written in X): the manager's readings (c), (d), (e) of the ruling entry
 decide whether the last item sees the loop's last value; UNTESTED, hand-worked only; for the critic round.
+
+### 2026-11-21 MANAGER — after lane predarr: array-vs-passes and joint-in-some folded; readings tested (no owner words)
+tags: core/labels/labels-vs-captures/array-vs-passes lib/counting/some lib/counting/count lib/counting/occurs core/model/table/group-truth lib/counting/every-pass
+
+Lane predarr (opus; report `docs/dev/lanes/predarr_report.md`; evidence `docs/dev/lanes/predarr_evidence/`, 17
+checks, 17 plants caught; lint after the merge 5,546 / 0) folded array-vs-passes (a) (`some`, `count`, `occurs`,
+`h[k]` read the array of settings; lib/counting and outermost-view's reading revised; the array piece ruled, its
+Passes lines rejected) and joint-in-some (a joint entry inside a group question refused for now; "same item" on
+the item; the idiom on the user-documentation list). No printed `some` / `count` / `length` / `hits` line changed.
+
+The manager's readings, as tested: SUPPORTED: (a) a record of two entries inside a group question is the product
+of its entries, WITH A CONFLICT the lane names (it parts from the joint form there, so "a record is the product
+of its entries = the joint entry" holds outside group questions only); (b) for one entry; (c) (empty array: false
+/ zero; one answer moves: `some(NOT (d: "7"))` on `,` FAILS where the pass reading HELD); (e) the on-item idiom (0
+/ 0 / 0 of 5,461 texts against by-item). NOT SUPPORTED as worded: (d): `NOT some(c)` and `occurs.none(NOT c)` part
+under BOTH readings; what moves is `occurs.none(NOT c)` itself. Also found: the draft's "every pass =
+`some(c) & occurs.none(NOT c)`" holds only on passes (`7,,` HOLDS on the array where the item form FAILS).
+
+Owner questions the lane leaves (proposed slugs): record-in-some; count-several; group-truth re-put (close for one
+entry?); every-pass-spelling re-put (its named form would now mean every SETTING).

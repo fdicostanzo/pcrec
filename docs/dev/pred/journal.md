@@ -663,3 +663,14 @@ composed lines to rejected), bare-condition/labels' "Composed" line flipped to n
 one-definition line beside it, reads' value-hole clause, a bullet on core/labels/flow for the exception; details.
 Lint 5,487 / 0. Five readings of mine listed (the piece = a binding or macro body; user's loop; two uses).
 Lane predarr still running. WAITING on: lane predarr; Frank (zero-condition-binding next).
+
+## 2026-11-21 (23:00) — lane predarr merged; his "do you see an issue" answered
+
+Frank asked for issues with bare-nested-scope as ruled: three told him (extracting a definition changes an answer,
+with the never-pass warning at the definition; flags flow in, label values do not; what one piece is for a
+twice-used argument or a user's loop). bound-condition asked, not answered. Lane predarr DELIVERED (lanewatch
+DONE; tip 5133528c6), merged (lint 5,546 / 0; plan-lint clean), stopped. On the branch since P-14: the three folds
+of 2026-11-19 and today's class-value, flat-read-outside, pure-label + zero-in-definition (predscope),
+class-hole-order, bare-nested-scope (hand), array-vs-passes + joint-in-some (predarr). Review number asked of main.
+NEXT: the critic round over all of it; then deliver (P-17).
+WAITING on: main (review number); Frank (bound-condition).
