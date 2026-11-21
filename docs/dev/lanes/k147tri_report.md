@@ -17,3 +17,4 @@ Cloud run k147tri-test dispatched as last act; sha and ls-remote proof in STATE 
 
 ## STATE AT HANDOFF
 Branch lane/k147tri, committed. Rulings: none applied. Owed: none.
+Cloud dispatched: k147tri-test @ b2067a93c (ls-remote proven).
