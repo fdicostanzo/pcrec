@@ -1,7 +1,7 @@
 # bspan2 report: block_span.md rev 2
 
 ## STATE AT HANDOFF
-STATE: done (text revision only; no code, no run). Branch lane/bspan2, note `docs/design/memfn/block_span.md` rev 2 (revision-history line marked "rev 2 (2026-11-21)"). Rulings file `bspan2_rulings.md` re-read before the commit and this report; last entry applied: R-1 (D155 add. 1 Q-R9-10 cited in the option-A paragraph, §2). No probe was run; every number quoted is rev 1's, with its command in §16.
+OWED: none. STATE: done (text revision only; no code, no run). Branch lane/bspan2, note `docs/design/memfn/block_span.md` rev 2 (revision-history line marked "rev 2 (2026-11-21)"). Rulings file `bspan2_rulings.md` re-read before the commit and this report; last entry applied: R-1 (D155 add. 1 Q-R9-10 cited in the option-A paragraph, §2). No probe was run; every number quoted is rev 1's, with its command in §16.
 
 ## THE JOB
 Fold the scalar-wrap ruling, the final census, the manager calls and a ship-size account into rev 1, without redesigning.
