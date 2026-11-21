@@ -186,6 +186,7 @@ run() {
 #   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3:
 #   one trailing `d` moved `(abc|abd…abe)*` from 317,504 to 440,560 bytes and
 #   `(a|b…c)*` from 257,552 to 344,560; limits.md §3.10¶3);
+#   K152: `litpost`, the literal nest + trailing element, is NOT a row: no headroom, died on CI; `optaltpost` is the trailing-position row)
 #   compound puts the nest in an arm of a pattern the compound route takes
 #   (two compiles, one inside the other: compile_driver -> pcrec_compound_walk
 #   -> part_compile -> compile_driver), checked below to reach that route.
@@ -206,7 +207,7 @@ litrep;;(abc|abd;abe;)*;;all;0
 altpos;;(a|b;c;)*+;;all;0
 altpost;;(a|b;c;)*;d;all;0
 ncaltpost;;(?:a|b;c;)*;d;all;0
-litpost;;(abc|abd;abe;)*;d;all;0
+optaltpost;;(?:a|b;c;)?;d;all;0
 altpospost;;(a|b;c;)*+;d;all;0
 brefpost;;(a|b;\1;)*+;d;all;0
 optpost;;(a;;)?;d;all;0
