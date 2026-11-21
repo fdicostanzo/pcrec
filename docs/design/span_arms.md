@@ -1424,6 +1424,15 @@ pointing here. E1, R1 and E2 are not this revision's: they are cited only as bui
 Measured with the main tree's `build/pcrec -p rx --features all --emit-facts --pattern P` (C-R2); "L1" and
 "L3/L2" are hand-derived from §14.3's rules. Run values are `req_whole_run`'s; K is `req_landmark_maxoff`.
 
+`[REV 3.4, lane l3r65, review r65 A/J/K]` Every "L3:" cell below is the run under `--engine=vm` (or `-fno-req-handoff`), where
+no forward scan re-enters. By default the pick rule (§14.4 L3's REV 3.4 addendum) keeps the "today" run wherever the consumed part
+has one at a bounded K: `(?<=foo)bar`, `(?<=ab|b)c`, `(?<=ab)ab[a-z]*q`, `(?<=qz)ab`, `(?<=e{10})eeeeeqzx`, `(?<=foo)bar(\w)\1`,
+`(?<=foo)bar(?=baz)` and W-D2 `(?<=ab)(?<=cb)c` list their "today" values on the default route. UNPREDICTED MOVERS the table
+did not carry, recorded (review r65): W-D2 `(?<=ab)(?<=cb)c` gains BACK's `bc` at −1 with an EMITTED pre-check (`"-1"`), why still
+`dead`, answers unchanged (K: under `--engine=vm` only since REV 3.4); `(?<=xyz)a+xyz` moves `RX_REQ_BYTE` 122 → 97 (J: the
+BACK run `xyza` at −3 has the one-byte consumed extent `a`; kept on the default route too, its consumed best `xyz` being
+unbounded; measured not slower, 0.33-0.82).
+
 | pattern | today at T (run; K; `RX_REQ_WHY`; `RX_REQ_HANDOFF`) | L1 (reach 0) | L3 / L2 (full reach) |
 |---|---|---|---|
 | `(?<=foo)bar` | `626172`; 0; dominated; none | same | L3: `foobar`, K −3 |
