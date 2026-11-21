@@ -6554,3 +6554,24 @@ question. RUN (hand-built, the test of `kind` standing as a lookbehind): `tagged
 SEARCHED `n:ab w:ab` `w:ab`@5 / FIND-ALL `n:42 n:ab w:ab n:7x` [`n:42`@0, `w:ab`@10, `n:7`@15].
 The manager's reading, for the fold lane: a condition passed as an argument is resolved in the CALLER's
 definition (where it is written), as every argument is; the macro's body never names its labels.
+
+### 2026-11-21 OWNER RULING — zero-in-definition: a (`0` is the match so far of the definition it is written in)
+tags: core/conditions/match-so-far core/holes/bare-condition core/holes/bare-condition/nested-scope core/holes/pattern
+
+Asked **zero-in-definition** (when a definition that uses `0` is put inside another rx, where its `0` starts: (a)
+the definition's own match so far; (b) the using rx's match so far; shown his "composed at the point it is used ...
+the 0: is the match so far", ruled on one definition; the example `B := /x${(0: /\dx/)}/`, `C := /(?<h>\d)${B}/`,
+its lines the documents' (core/holes/bare-condition/nested-scope, lane predfix61): (a) WHOLE `3x` FAILS / SEARCHED
+`a3x` FAILS / FIND-ALL `3x 7x` []; (b) WHOLE `3x` HOLDS, `7x` HOLDS / SEARCHED `a3x` `3x`@1 / FIND-ALL `3x 7x`
+[`3x`@0, `7x`@3]; the manager's leaning (a)). HIS WORDS, whole: "zero-in-definition: a"
+
+Class: a RULING on the slug, answer (a) as put to him: "`0` is the match so far of the definition it is written
+in"; "within one definition `0` still spans all its literals and operands, so your ruled example is unchanged"
+(zero-in-sequence, `/\d/ SEQ (0: /7/) SEQ /\d/`). It settles the `0` line of bare-nested-scope: candidate (a) of
+that piece, with the unit the DEFINITION (a binding or a macro body), not the literal.
+
+The manager's readings, for the fold lane to test: (a) an expression written in place (an argument, a hole's
+content) belongs to the definition it is written in; (b) a condition bound ALONE has no rx of its own: its `0` is
+the match so far of the definition it is USED in (core/holes/bare-condition's reading "a binding whose whole body
+is a bare condition ... behaves as the bare condition does"); (c) `${A & (0: S)}` is unchanged: that `0` is only A
+(ruled, operand-world); (d) zero-in-loop (pass or rx start) is untouched and still open.
