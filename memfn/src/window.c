@@ -1374,6 +1374,15 @@ static void reply_of(const wf_dec *d, mf_wreply *out, const mf_rows *rows)
 
 /* ---- THE PLAN the text tests (phase 2) ------------------------------------ */
 
+/* One ONE-CLASS STRETCH of a plan (kind 2 of THE SPAN FORMS) and the form
+ * THE SPAN FORM TABLE gave it: entries `i` .. `i + k - 1`, which a loop over
+ * the stretch at head 0 would test (wf_loop_len), rendered with the inline
+ * head `h` (INT32_MAX is I, every entry a lone test; 0 is L; else H(h)). */
+struct wf_stretch {
+    unsigned i, k;
+    int32_t  h;
+};
+
 struct wf_plan {
     unsigned n;                         /* tested positions: the stop and the plan */
     /* n entries each (at most the decision's plan and its stop), allocated
@@ -1419,10 +1428,14 @@ struct wf_plan {
                                            probe offset and the shift table
                                            sh[] over its window                */
     uint8_t  sh[256];
-    int32_t  head;                      /* THE SPAN FORMS' inline head h
-                                           (wf_span_head): a one-class repeat
-                                           loops from offset h on; INT32_MAX
-                                           is I, 0 is L                        */
+    int      skip;                      /* the entry E-find's search proved
+                                           (its search row's `skip` column,
+                                           wf_find_prepare), which the test
+                                           drops; -1: none (the floor, B-fn) */
+    unsigned nstr;                      /* THE STRETCH LIST, stored once at
+                                           plan time (wf_stretches) and read  */
+    struct wf_stretch *str;             /* by the define and the use, in
+                                           entry order                       */
 };
 
 /* C-table's offer at offset `off`: a covering span's table whose own set is
@@ -1455,7 +1468,8 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
  *   3. a LONE test: anything else (a non-core position keeps its three-way
  *      guard, so it never joins a loop).
  * The forms are the one knob h: I = H(h >= every offset: today's text), L =
- * H(0), H(h). A periodic segment, such as `(ab){500}`, is NOT built (r45_reply
+ * H(0), H(h), chosen per stretch by THE SPAN FORM TABLE (wfS, below Table E;
+ * block_span.md §3) and stored once in the plan's stretch list. A periodic segment, such as `(ab){500}`, is NOT built (r45_reply
  * §3: UNMEASURED; its trigger is a census row with a periodic span of 36 or
  * more positions).
  *
@@ -1470,27 +1484,14 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
 enum { WF_SPAN_HEAD = 64 };
 #define WF_LOOP_ID "span-loop"
 
-/* The inline head h of the forms for site `s` on `art`: the option row
- * `span-loop` first (its deny `no-span-loop` is I, today's text, and wins;
- * its force is L, h = 0), else the test-only lever `span-head=N` (the form
- * cards' instrument, never a shipped compile), else WF_SPAN_HEAD. */
-static int32_t wf_span_head(const mf_art *art, const mf_site *s)
-{
-    int st = kit_opt_state(s->opts, WF_LOOP_ID);
-    if (st < 0) return INT32_MAX;
-    if (st > 0) return 0;
-    if (art && (art->levers & KIT_LEVER_SPAN_HEAD)) return (int32_t)art->span_head;
-    return WF_SPAN_HEAD;
-}
-
 static int plan_of(const wf_dec *d, const mf_hooks *def, mf_arena *al, struct wf_plan *w)
 {
     const wf_alt *m = &d->a[d->ch];
     memset(w, 0, sizeof *w);
     w->wfloor = d->s->wfloor;
-    w->head = wf_span_head(d->art, d->s);
     w->row = &wf_floor_arm;
     w->stop_ix = -1;
+    w->skip = -1;                       /* the memset's 0 is a real entry */
     /* the plan's entries and the stop: d->np + 1 at most */
     size_t cap = (size_t)d->np + 1;
     w->off = al->alloc(al->u, cap * sizeof *w->off);
@@ -1876,6 +1877,102 @@ static int e_holds(size_t i, const void *x) { return wf_erows[i].holds(x); }
 static const char *e_opt(size_t i) { return wf_erows[i].opt; }
 static const kit_table wf_etable = { "wfE", WF_NEROWS, e_ct, NULL, NULL, e_holds, e_opt };
 
+/* ---- THE SPAN FORM TABLE (wfS; block_span.md §3, R-47 unit U1) -----------
+ *
+ * The form of one ONE-CLASS STRETCH, first match, asked once per stretch by
+ * the enumerator (wf_stretches) at plan time:
+ *   T-deny   `no-span-loop` given            I (every position inline)
+ *   T-force  `span-loop` forced              L (h = 0)
+ *   T-lever  the test-only lever span-head=N H(N) (the form cards' instrument,
+ *                                            never a shipped compile)
+ *   T-head   always                          H(WF_SPAN_HEAD)
+ * T-deny, T-force and T-lever stay ahead of every later row: the escape hatch
+ * means "the text before the forms", and the cards' arms keep their names.
+ * The rows read plan facts, not site fields, so each contract serves every
+ * class of every field. */
+typedef struct {
+    const wf_dec         *d;
+    const struct wf_plan *w;
+    unsigned              i, k;         /* the stretch                       */
+} wf_sx;
+
+static int s_deny_holds(const wf_sx *x)  { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) < 0; }
+static int s_force_holds(const wf_sx *x) { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) > 0; }
+static int s_lever_holds(const wf_sx *x)
+{
+    return x->d->art && (x->d->art->levers & KIT_LEVER_SPAN_HEAD);
+}
+static int s_head_holds(const wf_sx *x)  { (void)x; return 1; }
+
+/* Each row's form, as its inline head h. */
+static int32_t s_inline_h(const wf_sx *x) { (void)x; return INT32_MAX; }
+static int32_t s_loop_h(const wf_sx *x)   { (void)x; return 0; }
+static int32_t s_lever_h(const wf_sx *x)
+{
+    return (int32_t)x->d->art->span_head;
+}
+static int32_t s_head_h(const wf_sx *x)   { (void)x; return WF_SPAN_HEAD; }
+
+#define WF_CT_S(name, row) \
+    static const gate_contract name = { "wfS", row, NU(use_nothing), { \
+        WF_SERVES_LEGACY WF_SERVES_WINDOW [FLD_entry] = MF_ANY, [FLD_core] = MF_ANY, \
+    } };
+WF_CT_S(ct_s_deny, "T-deny")
+WF_CT_S(ct_s_force, "T-force")
+WF_CT_S(ct_s_lever, "T-lever")
+WF_CT_S(ct_s_head, "T-head")
+
+enum { S_DENY, S_FORCE, S_LEVER, S_HEAD };
+static const struct {
+    int     (*holds)(const wf_sx *x);
+    int32_t (*h)(const wf_sx *x);       /* its form: the inline head h       */
+    const gate_contract *ct;
+    const char *opt;                    /* its options.def deny, or NULL     */
+} wf_spanrows[] = {
+    [S_DENY]  = { s_deny_holds,  s_inline_h, &ct_s_deny,  NULL },
+    [S_FORCE] = { s_force_holds, s_loop_h,   &ct_s_force, NULL },
+    [S_LEVER] = { s_lever_holds, s_lever_h,  &ct_s_lever, NULL },
+    [S_HEAD]  = { s_head_holds,  s_head_h,   &ct_s_head,  NULL },
+};
+#define WF_NSROWS (sizeof wf_spanrows / sizeof wf_spanrows[0])
+
+static const gate_contract *s_ct(size_t i) { return wf_spanrows[i].ct; }
+static int s_holds(size_t i, const void *x) { return wf_spanrows[i].holds(x); }
+static const char *s_opt(size_t i) { return wf_spanrows[i].opt; }
+static const kit_table wf_spantable = { "wfS", WF_NSROWS, s_ct, NULL, NULL, s_holds, s_opt };
+
+static unsigned wf_loop_len(const struct wf_plan *w, unsigned i, int32_t head);
+
+/* THE STRETCH LIST of plan `w` (from allocator `al`), stored once for the
+ * define and the use: today's segmentation in offset order (the entry the
+ * search proved and a C-run compare's entries are no stretch's), each
+ * stretch of two or more entries at head 0 given its form by one walk of
+ * the span form table at `gphases`, traced unless `quiet`. 0, or -1 out of
+ * memory. */
+static int wf_stretches(mf_arena *al, const wf_dec *d, struct wf_plan *w, unsigned gphases,
+                        int quiet)
+{
+    w->nstr = 0;
+    w->str = al->alloc(al->u, (w->n / 2 + 1) * sizeof *w->str);
+    if (!w->str) return -1;
+    const mf_art *art = d->art;
+    wf_facts f = { d->s, d->a[d->ch].alt };
+    gate_in in = { .s = d->s, .wf = &f };
+    gate_tctx tc = { art, "wfS", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
+    for (unsigned i = 0; i < w->n; i++) {
+        if ((int)i == w->skip || w->grp[i] >= 0) continue;
+        unsigned k = wf_loop_len(w, i, 0);
+        if (!k) continue;
+        gate_verdict why = { 0, 0 };
+        wf_sx x = { d, w, i, k };
+        size_t r = kit_walk(&wf_spantable, 0, &in, gphases, 0, &x, &tc, &why);
+        if (r >= WF_NSROWS) return -1;  /* T-head always holds: unreachable */
+        w->str[w->nstr++] = (struct wf_stretch){ i, k, wf_spanrows[r].h(&x) };
+        i += k - 1;
+    }
+    return 0;
+}
+
 /* ---- E-FIND's PLAN (wf_find_prepare): C-run's compares and D-hors's window */
 
 /* 1 iff every position of `w` in [from, to) is core and a run position (one
@@ -2052,8 +2149,10 @@ static const void *ren_find(const void *rows, size_t n, size_t size, wf_frame_ro
 }
 
 /* The pieces' C spellings (below, E-FIND's TEXT and the floor's). */
-static int  find_head(wf_rc *rc, kb *b, const char *bound, int *skip);
-static int  d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip);
+static int  find_head(wf_rc *rc, kb *b, const char *bound);
+static int  d_hors_head(wf_rc *rc, kb *b, const char *bound);
+static int  stop_skip(const struct wf_plan *w);
+static int  hors_skip(const struct wf_plan *w);
 static int  wf_b_pair(wf_rc *rc, kb *b, const char *p, int32_t d);
 static int  wf_b_memchr(wf_rc *rc, kb *b, const char *p, int32_t d);
 static int  wf_b_walk(wf_rc *rc, kb *b, const char *p, int32_t d);
@@ -2061,8 +2160,8 @@ static void b_pair_state(wf_rc *rc, kb *b);
 static void resume_next(const wf_rc *rc, kb *b);
 static void d_hors_next(const wf_rc *rc, kb *b);
 static int  d_hors_define(mf_art *art, const wf_rc *rc, mf_sink *out);
-static int  c_find_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip);
-static int  c_floor_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip);
+static int  c_find_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o);
+static int  c_floor_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o);
 static int  wf_find_fn(wf_rc *rc, mf_sink *o);
 static int  b_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h, const wf_rc *rc,
                         mf_sink *out);
@@ -2132,7 +2231,8 @@ _Static_assert(sizeof ren_skel / sizeof *ren_skel == RK_N, "every skeleton row i
  * Columns by frame: an E-find row states `libc` (its text calls memchr),
  * `path`, `prepare`, its LOOP STATE (written before the frame's RAISE) and
  * its `find` and HEAD (the loop's head: the find and the bound, or D-hors's
- * bound and probe), and no predicate (wf_tables_check). An E-stmt row is
+ * bound and probe), its `skip` (the entry the head proves, a plan fact
+ * wf_find_prepare stores), and no predicate (wf_tables_check). An E-stmt row is
  * the composer's (compose.c select_arm): it states only its ARM, which
  * renders the pick and states its own libc and includes (its contract),
  * keyed also by the site's `end_back` (its predicate, over the site); its id
@@ -2147,9 +2247,11 @@ typedef struct ren_search_row {
     void      (*prepare)(struct wf_plan *w, const wf_fx *fx);           /* or NULL */
     void      (*state)(wf_rc *rc, kb *b);                               /* or NULL */
     int       (*find)(wf_rc *rc, kb *b, const char *p, int32_t d);      /* or NULL */
-    int       (*head)(wf_rc *rc, kb *b, const char *bound, int *skip);
+    int       (*head)(wf_rc *rc, kb *b, const char *bound);
     const arm  *arm;            /* E-stmt: the composer's arm (NULL: E-find) */
     const char *basis;
+    int       (*skip)(const struct wf_plan *w);  /* E-find: the entry its head
+                                   proves, which the test drops (-1: none) */
 } ren_search_row;
 enum { RB_PAIR, RB_MEMCHR, RB_WALK, RB_HORS, RB_ST_MEMCHR, RB_ST_MEMCHR_B, RB_ST_BACK, RB_ST_WALK,
        RB_ST_WALK_B, RB_N };
@@ -2157,19 +2259,19 @@ static const ren_search_row ren_search[] = {
     [RB_PAIR]   = { { E_FIND, REN_PICK(FF_PAIR), "B-pair", NULL }, 1, "", NULL, b_pair_state,
                     wf_b_pair, find_head, NULL,
                     "PAIR elsewhere (any two bytes, a cube outside a run term included): "
-                    "fn-pair's two memchr streams (ofs_pair_text) at the stop's offset" },
+                    "fn-pair's two memchr streams (ofs_pair_text) at the stop's offset", stop_skip },
     [RB_MEMCHR] = { { E_FIND, REN_PICK(FF_LIBC) | REN_PICK(FF_LIBC_BACK), "B-memchr", NULL }, 1, "",
                     NULL, NULL, wf_b_memchr, find_head, NULL,
                     "LIBC (D1) or LIBC_BACK (D1c): memchr for the stop's byte, a stop below "
-                    "the candidate raising C first" },
+                    "the candidate raising C first", stop_skip },
     [RB_WALK]   = { { E_FIND, REN_PICK(FF_WALK), "B-walk", NULL }, 0, "", NULL, NULL,
                     wf_b_walk, find_head, NULL,
                     "WALK (R7w, D1w): C advanced while the stop's byte is outside its set "
-                    "(C-table or C-own)" },
+                    "(C-table or C-own)", stop_skip },
     [RB_HORS]   = { { E_FIND, REN_PICK(FF_HORS), "B-hors", NULL }, 0, "+hors", b_hors_prepare, NULL,
                     NULL, d_hors_head, NULL,
                     "HORS (D-hors): no find; the bound, then the probe of the window's last "
-                    "position (its miss resumes by the stream's text)" },
+                    "position (its miss resumes by the stream's text)", hors_skip },
     [RB_ST_MEMCHR]   = { .k = { E_STMT, REN_PICK(FF_LIBC), "pf_memchr", stmt_end0_holds },
                          .arm = &pf_memchr_arm, .basis = "LIBC: the memchr row" },
     [RB_ST_MEMCHR_B] = { .k = { E_STMT, REN_PICK(FF_LIBC), "pf_memchr_bounded", stmt_end1_holds },
@@ -2221,7 +2323,7 @@ typedef struct ren_check_row {
     uint8_t     libc_runs;      /* its text calls libc iff the plan has a run
                                    compare (runcmp.c: the memcmp row, the
                                    words' memcpy loads)                     */
-    int       (*test)(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip);  /* or NULL */
+    int       (*test)(wf_rc *rc, kb *t, kb *cond, mf_sink *o);  /* or NULL */
     const char *basis;
 } ren_check_row;
 enum { RC_FIND, RC_FLOOR, RC_N };
@@ -2378,7 +2480,8 @@ const char *wf_frame_name(wf_frame_row f)
 
 /* THE TABLES' SELF-CHECK (kit.h; refused at mf_art_begin): what no
  * initializer states. (1) Every Table E row has its predicate and contract
- * (a designated hole would be a NULL row). (2) An E-find search renderer
+ * (a designated hole would be a NULL row), and so does every span form row
+ * (with its form). (2) An E-find search renderer
  * row takes no predicate: the renderable set asks it over the SITE (T-FIND's
  * gate, before any plan exists) and E-find's composition over the plan
  * (wf_bx), so the two could disagree; trigger to lift it: the first E-find
@@ -2389,6 +2492,9 @@ const char *wf_tables_check(void)
 {
     for (size_t i = 0; i < WF_NEROWS; i++)
         if (!wf_erows[i].holds || !wf_erows[i].ct) return "a Table E row is a hole";
+    for (size_t i = 0; i < WF_NSROWS; i++)
+        if (!wf_spanrows[i].holds || !wf_spanrows[i].h || !wf_spanrows[i].ct)
+            return "a span form row is a hole";
     for (size_t i = 0; i < RB_N; i++)
         if (ren_search[i].k.frame == E_FIND && ren_search[i].k.holds)
             return "an E-find search renderer row takes a predicate";
@@ -2450,11 +2556,12 @@ static uint8_t pieces_libc(const struct wf_plan *w)
 /* E-find's plan from its setup and its pieces' rows: B (the pick, its row
  * and renderer; B-fn's translated site), the stop's role, C-run's compares
  * (the terms at the define), the search's and the stream's preparation
- * (D-hors's probe and shift table), and the text's libc and include bounds
- * (pieces_libc). The run terms come from allocator `al`. 0, or -1 out of
- * memory. */
+ * (D-hors's probe and shift table), the entry the search proves (`skip`),
+ * the stretch list (the span form table walked at `gphases`, traced where
+ * `build`), and the text's libc and include bounds (pieces_libc). The run
+ * terms and the list come from allocator `al`. 0, or -1 out of memory. */
 static int wf_find_prepare(mf_arena *al, const wf_dec *d, struct wf_plan *w,
-                           const wf_fx *fx, int build)
+                           const wf_fx *fx, int build, unsigned gphases)
 {
     w->row = &wf_find_arm;
     w->pick = fx->pick;
@@ -2472,6 +2579,8 @@ static int wf_find_prepare(mf_arena *al, const wf_dec *d, struct wf_plan *w,
     if (build && build_runs(d->art, al, w)) return -1;
     if (w->srch->prepare) w->srch->prepare(w, fx);
     if (w->strm->prepare) w->strm->prepare(w, fx);
+    w->skip = w->srch->skip(w);
+    if (wf_stretches(al, d, w, gphases, !build)) return -1;
     /* memchr where the search calls it (not B-hors: D-hors's probe); a run
        compare's memcmp row and its words' memcpy loads (runcmp.c) */
     w->libc = pieces_libc(w);
@@ -2575,14 +2684,19 @@ static int wf_plan_site(const mf_art *art, mf_arena *al, const mf_site *s,
         snprintf(buf, WF_WHY_MAX, "%s has no %s renderer row", frame, none);
         return -1;
     }
-    if (r == E_FIND && wf_find_prepare(al, d, w, fx, !quiet)) {
+    if (r == E_FIND && wf_find_prepare(al, d, w, fx, !quiet, gphases)) {
         *why = "out of memory";
         return -1;
     }
-    /* the floor's libc bound is its pieces' too (E-find's: wf_find_prepare) */
+    /* the floor's libc bound is its pieces' too, and its stretch list (skip
+       -1) is the same enumerator's (E-find's: wf_find_prepare) */
     if (r == E_GENERIC) {
         w->libc = pieces_libc(w);
         w->includes = w->libc ? MF_INC_STRING_H : 0;
+        if (wf_stretches(al, d, w, gphases, quiet)) {
+            *why = "out of memory";
+            return -1;
+        }
     }
     return 0;
 }
@@ -3488,19 +3602,20 @@ static int wf_pos_test(wf_rc *rc, kb *t, unsigned i)
 }
 
 /* The ONE-CLASS REPEAT's loop at tested entry `i` (kind 2 of THE SPAN
- * FORMS): the number of entries from `i` on that one loop tests, at least 2 (the minimum
+ * FORMS) under inline head `head`: the number of entries from `i` on that one loop tests, at least 2 (the minimum
  * of two is DERIVED, r45_reply rev 7 §3 "The forms": a one-entry loop is a lone
  * test plus loop overhead, and gcc unrolls two trips),
  * or 0 where entry `i` starts none (its offset is below the head, it is not
  * a kind-2 position, or fewer than two such entries follow at consecutive
- * offsets). Entry `skip` (the position E-find's search proved) and a C-run
- * compare's entries end a stretch: neither is tested here. */
-static unsigned wf_loop_len(const struct wf_plan *w, unsigned i, int skip)
+ * offsets). Head 0 gives a stretch's length k (the enumerator's,
+ * wf_stretches). Entry `w->skip` (the position E-find's search proved) and a
+ * C-run compare's entries end a stretch: neither is tested here. */
+static unsigned wf_loop_len(const struct wf_plan *w, unsigned i, int32_t head)
 {
-    if (w->off[i] < w->head) return 0;
+    if (w->off[i] < head) return 0;
     unsigned j = i;
     for (; j < w->n; j++) {
-        if ((int)j == skip || w->grp[j] >= 0 || !w->core[j] ||
+        if ((int)j == w->skip || w->grp[j] >= 0 || !w->core[j] ||
             kit_pos_class_of(w->set[j]) != KIT_POS_WIDE)
             break;
         if (j > i && (w->off[j] != w->off[j - 1] + 1 || w->table[j] != w->table[i] ||
@@ -3528,23 +3643,32 @@ static int wf_loop(wf_rc *rc, kb *t, unsigned i, unsigned len)
 
 /* THE CANDIDATE TEST at C into `t`: the bound's lower half (where `lower`;
  * E-find raises C past it once, before its loop: wf_raise), then every plan
- * position but the lone index `skip` (-1: none) in ascending offset, a C-run
- * stretch (E-find's `grp`) as ONE run compare at its first position. A run
+ * position but the lone index `w->skip` (-1: none) in ascending offset, a
+ * C-run stretch (E-find's `grp`) as ONE run compare at its first position,
+ * and each stored ONE-CLASS stretch in the form the span form table gave it
+ * (lone tests below its head, one loop from the head on). A run
  * compare is the sink's (runcmp.c writes C-string literals), so where one is
  * met the text so far goes to `o` first and `t` starts again; the floor
  * forms none (its `grp` is -1 throughout) and passes no sink. */
-static int wf_test_to(wf_rc *rc, kb *t, mf_sink *o, int skip, int lower)
+static int wf_test_to(wf_rc *rc, kb *t, mf_sink *o, int lower)
 {
     const struct wf_plan *w = rc->w;
     mf_art *art = rc->art;
     kb_puts(t, "(");
     int first = !(lower && wf_lower(rc, t));
+    unsigned si = 0, end = 0;           /* the next stored stretch; the
+                                           current one's end and head        */
+    int32_t head = INT32_MAX;
     for (unsigned i = 0; i < w->n; i++) {
-        if ((int)i == skip) continue;
+        if ((int)i == w->skip) continue;
         if (w->grp[i] >= 0 && i && w->grp[i - 1] == w->grp[i]) continue;
         if (!first) kb_puts(t, " && ");
         first = 0;
-        unsigned len = w->grp[i] < 0 ? wf_loop_len(w, i, skip) : 0;
+        if (si < w->nstr && w->str[si].i == i) {
+            end = i + w->str[si].k;
+            head = w->str[si++].h;
+        }
+        unsigned len = w->grp[i] < 0 && i < end ? wf_loop_len(w, i, head) : 0;
         if (len) {
             if (wf_loop(rc, t, i, len)) return -1;
             i += len - 1;
@@ -3573,23 +3697,22 @@ static int wf_test(wf_rc *rc, kb *t, kb *cond)
 {
     rc->used |= PARAM_N | PARAM_LO;
     wf_bound(rc, cond);
-    return wf_test_to(rc, t, NULL, -1, 1);
+    return wf_test_to(rc, t, NULL, 1);
 }
 
-/* C-find, E-find's check renderer row: the test less the position `skip`
+/* C-find, E-find's check renderer row: the test less the position `w->skip`
  * the search proved, its run compares through sink `o`. */
-static int c_find_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip)
+static int c_find_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o)
 {
     (void)cond;
-    return wf_test_to(rc, t, o, skip, 0);
+    return wf_test_to(rc, t, o, 0);
 }
 
 /* C-floor, E-generic's check renderer row: the floor's test, which also
  * writes the bound into `cond` (the for header's). */
-static int c_floor_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip)
+static int c_floor_test(wf_rc *rc, kb *t, kb *cond, mf_sink *o)
 {
     (void)o;
-    (void)skip;
     return wf_test(rc, t, cond);
 }
 
@@ -3633,7 +3756,7 @@ static int wf_floor_expr(wf_rc *rc, mf_sink *o, int want_value)
     kb_init(&t, rc->art->a);
     kb_init(&cond, rc->art->a);
     kb_init(&e, rc->art->a);
-    if (rc->w->chk->test(rc, &t, &cond, NULL, -1)) return -1;
+    if (rc->w->chk->test(rc, &t, &cond, NULL)) return -1;
     wf_open(rc, &e, rc->used & PARAM_S, rc->used & PARAM_FL);
     wf_cand(rc, &e);
     kb_printf(&e, "for (; %s; ", cond.p);
@@ -3734,7 +3857,7 @@ static int wf_floor_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_s
     kb_init(&t, art->a);
     kb_init(&cond, art->a);
     kb_init(&f, art->a);
-    if (rc.w->chk->test(&rc, &t, &cond, NULL, -1)) return -1;
+    if (rc.w->chk->test(&rc, &t, &cond, NULL)) return -1;
     const char *pname[] = { rc.S, rc.N, rc.LO, rc.FL, rc.MISS };
     kb_printf(&f, "static inline size_t %s(", fn);
     int any = 0;
@@ -3957,9 +4080,8 @@ static int wf_find_fn(wf_rc *rc, mf_sink *o)
 /* D-hors's loop head (B-hors, its search renderer row): the bound (chi >=
  * hl >= 0: finder.c's hors_facts), then the probe of the window's last
  * position into B, a byte outside its tested set resuming at once by the
- * stream row's text (S-shift's); *skip the probed position where the test
- * may drop it (a lone position the probe proved). */
-static int d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip)
+ * stream row's text (S-shift's). */
+static int d_hors_head(wf_rc *rc, kb *b, const char *bound)
 {
     const struct wf_plan *w = rc->w;
     int ih = plan_ix(w, w->hl);
@@ -3974,19 +4096,31 @@ static int d_hors_head(wf_rc *rc, kb *b, const char *bound, int *skip)
         w->strm->next(rc, b);
         kb_puts(b, "; continue; } ");
     }
-    *skip = ih >= 0 && w->grp[ih] < 0 ? ih : -1;
     return 0;
 }
 
+/* B-hors's `skip`: the probed position where the test may drop it (a lone
+ * position D-hors's probe proved), else -1. */
+static int hors_skip(const struct wf_plan *w)
+{
+    int ih = plan_ix(w, w->hl);
+    return ih >= 0 && w->grp[ih] < 0 ? ih : -1;
+}
+
 /* The loop head of every renderer row that finds the stop: its find,
- * then the bound; *skip the stop where C-stop dropped it from the test (B
- * proved it). */
-static int find_head(wf_rc *rc, kb *b, const char *bound, int *skip)
+ * then the bound. */
+static int find_head(wf_rc *rc, kb *b, const char *bound)
 {
     if (wf_find_b(rc, b)) return -1;
     kb_printf(b, "if (!(%s)) break; ", bound);
-    *skip = rc->w->stop_alone ? rc->w->stop_ix : -1;
     return 0;
+}
+
+/* The find rows' `skip`: the stop where C-stop dropped it from the test (B
+ * proved it), else -1. */
+static int stop_skip(const struct wf_plan *w)
+{
+    return w->stop_alone ? w->stop_ix : -1;
 }
 
 /* S-shift's text, D-hors's resume: C by the shift of the probed byte. */
@@ -4034,10 +4168,9 @@ static int wf_find_expr(wf_rc *rc, mf_sink *o, int want_value)
     if (w->strm->state) w->strm->state(rc, &b);
     wf_raise(rc, &b);
     kb_puts(&b, "for (;;) { ");
-    int skip;
-    if (w->srch->head(rc, &b, bound.p, &skip)) return -1;
+    if (w->srch->head(rc, &b, bound.p)) return -1;
     kb_puts(&b, "if ");
-    if (w->chk->test(rc, &b, NULL, o, skip) || wf_put(art, o, &b)) return -1;
+    if (w->chk->test(rc, &b, NULL, o) || wf_put(art, o, &b)) return -1;
     kb_init(&b, art->a);
     kb_printf(&b, " { %s = 1; break; } ", rc->F);
     w->strm->next(rc, &b);

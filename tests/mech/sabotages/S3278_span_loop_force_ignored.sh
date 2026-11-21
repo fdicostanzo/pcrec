@@ -5,12 +5,13 @@
 # the `--memfn=` arm's reach (tests/axes/memfn_arm.py via run_axes.sh, arm axesmemfn): the cell
 # `span-loop=force` is DIFFER-class with the witness `[0-9a-f]{32}` at c-default, which no longer
 # differs from the default.
+# Re-aimed by lane bsu1 (R-47 U1, block_span.md §10.2): wf_span_head retired into THE SPAN FORM TABLE (wfS); the plant is now T-force's predicate never holding.
 SAB_ID="S3278-span-loop-force-ignored"
 SAB_FILE="memfn/src/window.c"
 SAB_SUITES="axesmemfn"
-SAB_DESC="wf_span_head ignores the force: --memfn=span-loop compiles the default, the memfn arm's span-loop=force witness must red"
+SAB_DESC="the span form table's T-force never holds: --memfn=span-loop compiles the default, the memfn arm's span-loop=force witness must red"
 SAB_DOC_FIGURE="tests/axes/memfn_arm.py's span-loop=force DIFFER cell (arm axesmemfn): lane forms 2026-11-17, by hand. Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3278."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (st > 0) return 0;'
-SAB_AFTER='    (void)0;   /* SABOTAGE S3278 */'
+SAB_BEFORE='static int s_force_holds(const wf_sx *x) { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) > 0; }'
+SAB_AFTER='static int s_force_holds(const wf_sx *x) { (void)x; return 0; }   /* SABOTAGE S3278 */'
