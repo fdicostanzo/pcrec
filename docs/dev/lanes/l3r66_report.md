@@ -170,8 +170,36 @@ repointed and one new stream, `vm-pf` = `--engine=vm -fprefilter`. The populatio
 
 ## Validation dispatched
 
-Filled in at the end (see STATE AT HANDOFF).
+LOCAL RUNS (complete, on this box, nice):
+- `bash tests/mech/run_sabotage_matrix.sh S3480 S3481 S3482 S3483 S3484 S3485 S3455 S3383` at e8a191b99
+  (`scratch/l3r66/mech.log`) printed `== mech run COMPLETE: 8 rows (unexpected: 0, undetected: 0,
+  unreached: 0, anomalies: 0, oracle-skipped: 0)`. All 8 were DETECTED: the 7 facts rows each give
+  facts 1fail/15pass, and S3485 gives encoding 1fail/14pass (baseline 0 fail).
+- D3 floor: `PROCS=4 bash tests/memfn/run_d3floor.sh` (`scratch/l3r66/d3.log`). All 4 cells are green
+  and 60 of 60 plants are ok, so no re-pin was needed.
+- Other local runs: `make strict` clean; `bash tests/codegen/run_facts_checks.sh` 16/0;
+  `bash tests/rxtsource/run_rxtsource_tests.sh` 0 failed; `bash tests/startset/run_startset_checks.sh`,
+  `run_vmhat_checks.sh` and `run_dfahat_checks.sh` rc 0; `bash tests/harness/run.sh
+  tests/litscan/spanarms.rxt` 2169/0; `scripts/plan_lint.sh` 0 violations;
+  `scripts/m6read_check_sab_anchors.py` all anchors resolve.
+
+CLOUD (dispatched as the last act; verdicts reach main through queuewatch): `scripts/cloudrun --owner main
+--kind test --ref <tip> --name l3r66-test` and `--kind axes --name l3r66-axes`. The tip sha and the
+ls-remote proof are in the handback message (the tip is this report's commit).
 
 ## STATE AT HANDOFF
 
-Filled in at the end.
+STATE: delivered. Branch `lane/l3r66`, all work committed.
+- Code: `src/facts/facts.c` (EMIT-2), `src/facts/req.c` and `src/facts/facts_derive.h` (EMIT-3, comments).
+- The stop rule never fired: no answer moved, each fix is one declared row condition, and no loss
+  against BASE is left on any measured cell.
+- abi stays 110.
+- Rulings file: `docs/dev/lanes/l3r66_rulings.md` is empty, so no R-n was applied beyond the brief. I
+  re-read it before each commit and before this report.
+- OWED: the two cloud verdicts (l3r66-test, l3r66-axes), dispatched, not awaited.
+- Not done, and not asked for:
+  - An answer cell for `(?<=qz)(?:a.|.a)`. Adding one adds a new corpus pattern and moves more pins; the
+    listing is pinned by [facts-look], and the critic's 43 answer cells held.
+  - A `-fprefilter` answer block. The .rxt format has no optimization-flag line, and the [facts-look]
+    cell pins the listing.
+- Box use ended at 01:22 local.
