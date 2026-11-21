@@ -68,3 +68,5 @@ One cloud `growth` run and one cloud `test` run, dispatched as the last act at t
 ## STATE AT HANDOFF
 
 Branch lane/grow6 committed, report committed, lanecheck DONE rc=0 expected. Merge from lane/growcloud done. No rulings file; last R-n applied: none. No src/ edits. Open: the load-sensitive timeouts above (cloud verdict will say whether the 180 s wall holds on a runner); K157 awaits its fix lane.
+
+OWED: none (the two cloud verdicts are dispatched validation, named in "Validation dispatched", not owed work)
