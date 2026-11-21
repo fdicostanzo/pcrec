@@ -4592,3 +4592,6 @@ Blockers:
 Decisions: R-2 store-once; R-4 lift fn_selector only; R-20 MEMFN_CLASS row plus a committed SPAN-SEED .rxt (oracle-verified); R-31 CANDIDATE until every bench box runs it (D155 item 2, D144 add. 4).
 R-25 corrects the wrap-differs question: arm 1 also waives D147's SIMD-off reading where code differs, and an aggregate measurement is possible but declined on cost.
 Relays to main: R-23, R-24, R-29, R-30's rows. Fix lane bspan4 (opus) writes rev 4. Then a light re-check; U1 may start after it, and U2 onward waits on wrap-differs.
+
+### 2026-11-21 — Frank's D155 recollection, verbatim (owed record)
+Frank, to the kit, 2026-11-21 (about 00:45), on scalar-wrap: "We talked about that being the way we'd organize simd stuff anyway back when you used ifdef macro code". Until now it was recorded only as a paraphrase: entry 03ce1ee3b, and the gitignored bspan2 rulings R-1. This entry is the verbatim record. It is an OBSERVATION, not a ruling.
