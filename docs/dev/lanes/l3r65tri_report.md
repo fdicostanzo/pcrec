@@ -55,7 +55,7 @@ are both PCRE2-equal; this is a selection-quality question.
 ## Validation dispatched
 None. The shard-13 section is still red at the tip, so a cloud run would only reproduce it;
 shard 6 is verified locally (above). No cloud run was dispatched and no `--name l3r65tri-test`
-ref exists. Local box use ended at 23:50 (nice make -j4, only the failing sections).
+ref exists. Local box use ended at 23:28 (nice make -j4, only the failing sections).
 
 ## STATE AT HANDOFF
 - Branch lane/l3r65tri: one commit on top of bffc5d2ed (the shard-6 restore) plus this report.
