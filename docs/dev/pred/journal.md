@@ -620,3 +620,13 @@ pure-label moves export statement 5, core/labels/paths, labels-vs-captures, lib/
 once the scope thread settles (with the readings listed in the record entry). On the branch: five hand folds since
 P-14 plus this unfolded ruling; a critic round (number from main) after the lane.
 WAITING on: Frank (the condition-as-argument edge of bare-nested-scope).
+
+## 2026-11-21 (19:40) — zero-in-definition RULED (a); fold lane predscope launched
+
+condition-argument withdrawn (his `B(A & (d: <100))` is equivalent, 0 of 19,530 differ; `when`'s ruled condition
+test already answers it). "zero-in-definition: a" recorded. Lane predscope (opus; worktree `worktrees/predscope`,
+branch `lane/predscope` from 36a74948f; deliver + empty rulings file written before launch; lanewatch armed) folds
+pure-label, the `_` statement, zero-in-definition and his three examples, and tests the readings of today's
+entries. NOT for the lane: the capture add-on's form (under construction), my frame (proposals).
+WAITING on: lane predscope (delivery by lanewatch DONE + report); Frank (array-vs-passes next; it touches
+core/labels/labels-vs-captures, which the lane edits: a ruling there goes to the rulings file or a follow-up fold).
