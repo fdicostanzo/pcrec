@@ -1,12 +1,17 @@
 # The vector span: building job 710's block span at the SIMD layer (R-47, D201)
 
-Status: DESIGN, rev 1 (lane bspan, 2026-11-21, opus; rulings R-1..R-4 applied, R-1 withdrawn by R-2). Design only: no code.
+Status: DESIGN, rev 2 (lane bspan2, 2026-11-21, sonnet). Rev 2 (2026-11-21):
+folds in the rulings `scalar-wrap` (option A with a scalar no-loss check),
+`scan-scope`, `wrap-deny`, the final census, and the ship-size account.
+Rev 1 (lane bspan, opus; R-1..R-4). Design only: no code.
 Request R-47 (`memfn/docs/requests.md`); ruling D201 ("build with simd
 layer", slug block-build). Order: this note, then a critic round, then the
-build. **GATED** on one ruling, `scalar-wrap` (§2, §15 Q1): job 710 timed a
-text that the SIMD seam contract (D155; `tuning.md` §2.43¶4, `limits.md`
-§8.3¶1, check C18) does not admit. §2 explains why. The rest of the note
-designs the shape that the contract does admit.
+build. Not gated: every rev 1 question is resolved (§15).
+
+Revision history: rev 1 (2026-11-21): first design, gated on
+`scalar-wrap`. rev 2 (2026-11-21): scalar-wrap ruled A, option B retired,
+U2b and T-keep added, population record replaced by the final census,
+manager calls recorded, §17 ship-size.
 
 Inputs read: D201, D146, D147, D155, D76/D94, D80, D144; integration.md §14,
 §15, §17.2, §18; the 710 run's `decision.md` (TABLE, ARMS, THE CLAIM,
@@ -29,24 +34,30 @@ when the scalar layer is measured"); a 16-byte (`w16`) rung; the SWAR rung
 of 708's cascade (no table row reaches it, §4.4); a periodic span; the LIBC,
 PAIR and floor sites (unmeasured, §3.3); aarch64 (K-4; D147 addendum 8).
 
-### 0.1 Population record (census; information only, rulings R-2/R-3)
+### 0.1 Population record (final census; information only, D201 add. 1)
 
-Source: lane/spancensus d0848d0ed (`docs/dev/lanes/spancensus_report.md`,
-`spancensus_{corpus,bench}.tsv`). Compiled at SIMD-on with
-`--harness=span-head=0`, `--features all`, bare pattern text, each
-distinct text once. The manager may post revised counts (R-4: a re-run
-with option flags is under way).
+Source: lane/spancensus2 (`docs/dev/lanes/spancensus2_report.md`; it
+supersedes the first census, lane/spancensus d0848d0ed). Compiled at
+SIMD-on with each pattern's OWN options, `--harness=span-head=0`,
+`--window-search-width=4095`.
 
-| set | compiled (refused) | span sites: window (patterns / sites) | scan | routed to V |
-|---|---|---|---|---|
-| pcrec test corpus | 5161 (483) | 2 / 2 | 14 / 19 | 1: `tests/counterk/counterk.rxt` line 1919, scan k=48 |
-| bench catalogue | 332 (24) | 3 / 3 | 8 / 17 | 3: bounded/hex32 and loglines/hex32-id (window k=31), bounded/dig-exact-32 (scan k=31) |
+| set | distinct (text, options) pairs | routed to V |
+|---|---|---|
+| pcrec test corpus | 6403 (5645 texts) | **1** (1 of 5645 texts): `tests/counterk/counterk.rxt` line 1919, scan k=48 |
+| bench catalogue | 363 (356 texts) | **3** (3 of 356 texts): bounded/hex32 and loglines/hex32-id (window k=31), bounded/dig-exact-32 (scan k=31) |
 
-39 of the 41 sites have k ≤ 31. Window k = 8..15: 0 sites. The scope does
-not change (R-2: "no downside, build it"). R-4 asks for the SMALLEST
-form, and rev 1 applies it: one V stretch per site (§3.2), a fixed
-guarded bound (§5), no committed fixture set (§6), a bounds-only card
-(§8), four sabotage rows (§10).
+- Only `--encoding=utf8` moved a span site, and only at k ≤ 3; the
+  routed set did not move from the first census.
+- Not applied: the callout/code-header grants (23 `(?C` blocks refused).
+- **At the default window width (32) only k 16-31 (window) / 24-31 (scan)
+  is eligible.** The 32-1000 wins need `--window-search-width`; main's owed
+  cover-width timing (`cover_cap.md` §11.4 B) decides whether that default
+  rises.
+- The count is INFORMATION ONLY. It does not gate the build (D201 addendum
+  1: "We're here and there's no downside so let's build it."). Under R-4
+  rev 2 keeps the smallest form: one V stretch per site (§3.2), a fixed
+  guarded bound (§5), no committed fixture set (§6), a bounds-only card
+  (§8), four sabotage rows (§10), and the ship-size account in §17.
 
 ## 1. Site map: where it lives today (found by grep)
 
@@ -72,7 +83,7 @@ these are the kit's own picks, so facts-only (D157) holds.
 span. Both 710 site kinds are window.c E-find sites. They differ only in
 T-FIND's pick (HORS or WALK).
 
-## 2. THE PREMISE FORK: the timed text is not a shape the SIMD seam admits
+## 2. THE PREMISE FORK, RESOLVED: the timed text is not a shape the SIMD seam admits
 
 Job 710 timed this replacement: inside the walk's statement expression,
 which is ONE line, the span's inline chain is replaced by a call to an
@@ -95,42 +106,75 @@ bracket). It shortens an unguarded line, so the length decisions would read
 a SIMD-dependent length. The 710 shape therefore fails C18 and breaks
 §8.3¶1.
 
-**Two ways out.**
+**The shape taken (option A, RULED 2026-11-21).** An eligible stretch (§3:
+HORS with 16 ≤ k ≤ 1000, or WALK with 24 ≤ k ≤ 64; these are
+layer-independent facts) renders **at every layer** as a call
+`<p>_mf<h>_vs<j>(S, C)` to a selector, exactly vany's shape:
+- `__body` is today's H64 text of that stretch;
+- at a target admitting `w32`, a bracketed helper `__w32` is added (the
+  710 form) and the selector's one call names it.
 
-- **(A) THE SEAM SHAPE (recommended; no new seam).** An eligible stretch
-  (§3: HORS with 16 ≤ k ≤ 1000, or WALK with 24 ≤ k ≤ 64; these are
-  layer-independent facts) renders **at every layer** as a call
-  `<p>_mf<h>_vs<j>(S, C)` to a selector, exactly vany's shape:
-  - `__body` is today's H64 text of that stretch;
-  - at a target admitting `w32`, a bracketed helper `__w32` is added (the
-    710 form) and the selector's one call names it.
+This is the standing SIMD organization agreed back when the kit used `#if`
+code (D155, addendum 1 Q-R9-10, cited per rulings R-1): a working function
+holds no `#if`; a selector picks the level, one call per arm (the CPU `#if`
+is gone today, `limits.md` §8.3¶1). Option A is that shape applied to the
+span, not a new cost.
 
-  OFF and ON then differ only as C18 admits, and the lengths stay those of
-  SIMD-off. **The cost: SIMD-off bytes move** on eligible stretches. The
-  FORM is still H64 (D201), but its text sits inside a function. Measured
-  evidence on the wrapper:
-  - 710's control arm Hspk is exactly this wrapper (H64's span as an
-    `always_inline` function, at SIMD-on). On the cells the table routes,
-    it had 0 standing LOSS and 3 standing WIN (num k=64; `decision.md`
-    CONTROL).
-  - My probes compared machine code (`rxa_search`, today's text against
-    the wrapped one, gcc 15.2 -O2). At SIMD-off at the default width, 8 of
-    10 patterns are identical. `\w{20}` and `\w{32}` differ (97 lines).
-    At width 4095, 6 of 8 are identical (§16 item 6).
-  - At SIMD-off the wrapper is not measured.
-- **(B) A NEW SEAM SHAPE.** Admit "a replaced inline expression" as a third
-  diff kind. C18 (c)/(b) and `tuning.md` §2.43¶4 change, and pcrec's
-  length accounting must read the SIMD-off length of the replaced segment:
-  a kit→pcrec fact, or a second OFF render. This keeps SIMD-off bytes and
-  710's exact text. But it is a seam change touching pcrec's size decisions
-  and three contract sentences. That is outside this lane's mandate (the
-  brief's STOP rule). It would need its own architecture note.
+OFF and ON then differ only as C18 admits, and the lengths stay those of
+SIMD-off. **The cost: SIMD-off bytes move** on eligible stretches. The FORM
+is still H64 (D201), but its text sits inside a function.
 
-I recommend (A): it is the general mechanism the kit already has (D155;
-the forest-for-trees lens), and C18 checks it unchanged. Its one new fact
-is a scalar-layer text move, which G1 at both layers was already owed for.
-The rest of this note designs (A). Under (B), §4 and §8-§10 stand as
-written. §5 and §11's SIMD-off rows fall away, and a seam note is added.
+**The wrapper is code organization in source; the machine code can still
+differ.** Frank's ruling (verbatim): "Scalar wrap: the function goes inline
+so it's just code organization? If that's true I don't have a problem with
+that." The function is `always_inline`, so in source it is only code
+organization. gcc's machine code for `rxa_search` is not always the same,
+and that is why the check in §2.1 exists:
+- 710's control arm Hspk is exactly this wrapper at SIMD-on. On the cells
+  the table routes it had 0 standing LOSS and 3 standing WIN (num k=64;
+  `decision.md` CONTROL).
+- Probes (gcc 15.2 -O2, `objdump -d` of `rxa_search`, today's text against
+  the wrapped one): at SIMD-off at the default width 8 of 10 patterns are
+  identical; **2 of 10 differ, `\w{20}` and `\w{32}`** (97 lines). At width
+  4095, 6 of 8 are identical (§16 item 6).
+- At SIMD-off the wrapper has not been timed.
+
+**Why option B was not taken.** B admitted "a replaced inline expression"
+as a third diff kind, keeping SIMD-off bytes and 710's exact text, but it
+changes C18 (c)/(b), `tuning.md` §2.43¶4 and pcrec's length accounting (a
+kit-to-pcrec fact, or a second OFF render): a seam change outside this
+design's remit, with its own architecture note. The ruling makes it
+unnecessary.
+
+### 2.1 The scalar no-loss check (a build unit, §14 U2b, before landing)
+
+Because the machine code can differ, the build proves the wrapper does not
+lose at SIMD-off. Three parts:
+
+- **(a) A NON-TIMING census.** Over the pcrec test corpus and the bench
+  catalogue, list the sites whose SIMD-off `rxa_search` machine code
+  differs between today's text and the wrapped text. Method: `objdump -d`
+  with addresses normalized, at the default window width AND at
+  `--window-search-width=4095`. Reuse the census method of
+  `docs/dev/lanes/spancensus2_report.md` and its script (`git -C
+  /home/pcrec/projects/pcrec show
+  lane/spancensus2:docs/dev/lanes/spancensus_census.py`: the `--list-source`
+  option reader, the site regexes), and rev 1's `wrapprobe` method (§16
+  item 6b).
+- **(b) A short SCALAR timing** of ONLY the differing sites, wrapped
+  against today, in a window Frank clears. The decision rule and its floor
+  are written BEFORE data, using 710's cards/A-A method (floor from the
+  A/A repeat rate, re-time, control); the rule's sha is recorded with the
+  result.
+- **(c) A loser keeps today's text** through a declared row of the same
+  first-match table: **T-keep** (§3), which holds for a stretch on a
+  declared keep list and renders H(64) unwrapped. Cost to name: T-keep
+  drops the selector for that stretch at every layer, so the SIMD win on
+  that stretch is forfeited too (the SIMD helper needs the selector); the
+  build go decides whether that trade is taken for a given loser.
+
+The step costs nothing where (a) finds zero differing sites: no timing,
+no T-keep.
 
 ## 3. The selection: THE SPAN FORM TABLE (rows added to the existing choice)
 
@@ -154,6 +198,7 @@ Compile-time facts only; no class name.
 | T-deny | `no-span-loop` given | I (every position inline) | today, row 1 of the chain |
 | T-force | `span-loop` forced | L (h = 0) | today, row 2 |
 | T-lever | test-only `span-head=N` | H(N) | today, row 3 (the cards' instrument) |
+| T-keep | the stretch is on the declared keep list (§2.1: a site the scalar no-loss check found losing) | H(64), unwrapped (today's text, no selector) | **NEW**, EMPTY until U2b's census and timing fill it; not built if U2b finds nothing |
 | T-vwin | frame E-find, pick HORS, 16 ≤ k ≤ 1000, `span-vector` not denied | V | **NEW**, 710 row 1, MEASURED |
 | T-vscan | frame E-find, pick WALK, 24 ≤ k ≤ 64, `span-vector` not denied | V | **NEW**, 710 row 2, MEASURED |
 | T-head | always | H(64) | today, the default (`WF_SPAN_HEAD`, MEASURED by cards run fcards-zen4-1) |
@@ -208,8 +253,8 @@ gate (unit U1, §14).
 was a WALK. The declared table's words ("skips to a member byte") also
 cover memchr finds (LIBC, LIBC_BACK) and PAIR. Those were not measured.
 
-T-vscan therefore keys on WALK alone. Open question `scan-scope` (§15 Q2)
-asks for the ruling; the recommendation is to keep the narrow form (D77).
+T-vscan therefore keys on WALK alone (`scan-scope` RESOLVED, manager
+2026-11-21: nothing else was measured; D77).
 The floor (E-generic) and the legacy rows (E-func, E-stmt) never reach
 `wf_test_to`'s span path with a pick, so T-head holds there.
 
@@ -388,14 +433,11 @@ MF_OPT("span-vector", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
 - **The name.** It says what the caller sees (D174): a span tested by
   vector. The `span-` prefix groups it with `span-loop`.
 - **The layer is `scalar`** on purpose, under option A. The deny is LIVE
-  at both settings: it un-wraps the stretch too, so `--memfn=no-span-vector`
-  restores main's bytes exactly at every layer and target. That gives
-  G1's SIMD-off reading a population (G-4), and gives the wrapper an
-  escape hatch, since it can move machine code (§2).
-  - A SIMD-only deny would leave the SIMD-off wrapper with no control and
-    no population. Open question `wrap-deny` (§15 Q3).
-  - Under option B the row is `MF_L_SIMD` and inert at SIMD-off, as the
-    brief assumed.
+  at both settings (manager 2026-11-21, `wrap-deny` RESOLVED): it un-wraps
+  the stretch too, so `--memfn=no-span-vector` restores main's bytes
+  exactly at every layer and target. That gives G1's SIMD-off reading a
+  population (G-4), and gives the wrapper an escape hatch, since it can
+  move machine code (§2).
 - **Off by default** follows from `-fmemfn-simd` being OFF by default: the
   vector helper renders only at a `w32` target.
 - **Spec:** `registry.md` §6¶8a gains the row. §6¶8b's `memfn` section
@@ -408,10 +450,9 @@ append-only row `kit span_vector 8 form;pat;regime;layer ratio cards.py C6
 ...` in `memfn/data/cards/kit-grid.tsv` (`kit-grid@8`). The row is visibly
 UNMEASURED until a box runs it.
 
-- **Arms.** On ONE binary, at `-fmemfn-simd=x86-64-v3`:
-  - `V` (default) and `H64@on` (`--memfn=no-span-vector`);
-  - plus, at layer off, `W` (default: the wrapper alone) and `H64`
-    (deny): the scalar wrapper's own reading, which 710 never took.
+- **Arms.** On ONE binary, at `-fmemfn-simd=x86-64-v3`: `V` (default) and
+  `H64@on` (`--memfn=no-span-vector`). The layer-off wrapper arms of rev 1
+  moved to §14 U2b (rev 2, R-4: one timing of the wrapper, not two).
 - **Patterns.** Each table bound, from both sides:
   - the four routed census patterns (§0.1);
   - window k ∈ {15, 16, 31, 32, 1000, 1001};
@@ -427,13 +468,13 @@ UNMEASURED until a box runs it.
 - **`deps`.** `kit:form.span-vector=<hash>`: a new `formhash.c` ENTRY, the
   canonical instance `[0-9a-f]{41}` at x86-64-v3, so a later text change
   stales the row.
-- **Size.** C4-style emitted and `.text` bytes for V at the grid top
-  (record only).
+
 
 **What it settles.** G-3 on the shipped text. The SIMD-off wrapper's cost
-(feeding Q3). A Zen 1 run of C6 (ubuntubudu: AVX2 split into 2x128) is the
-D144 addendum 4 reading on other hardware; it is unmeasured and may move
-the lower bounds.
+is NOT read here: rev 2 moves it to the scalar no-loss check (§14 U2b), so
+it is timed once. A Zen 1 run of C6 (ubuntubudu: AVX2 split into 2x128) is
+the D144 addendum 4 reading on other hardware; it is unmeasured and may
+move the lower bounds.
 
 ## 9. The same-commit abi package (D76/D94, D146/D147)
 
@@ -535,7 +576,7 @@ since a new row fires in new places (BOILERPLATE).
 | setting | moves | does not move |
 |---|---|---|
 | every artifact | the abi number lines | — |
-| `-fno-memfn-simd` (the default build), default width | artifacts whose window site is E-find HORS with a one-class stretch of 16..31 positions, or E-find WALK with a stretch of 24..31 (e.g. `[0-9a-f]{17}`..`{32}`, `\w{17}`..`{32}`, `[^\n]{17}`.., `[0-9]{25}`..`{32}`, `[A-Z]{25}`..`{32}`). The walk calls `vs<j>`; file scope gains `__body` and the selector (option A only) | `[0-9a-f]{16}` (k 15), `[0-9]{24}` (k 23), any 33+ position pattern (no window site at the default width), LIBC/PAIR finds (`a[0-9a-f]{20}`), floor and legacy sites, every VM/DFA body text |
+| `-fno-memfn-simd` (the default build), default width | artifacts whose window site is E-find HORS with a one-class stretch of 16..31 positions, or E-find WALK with a stretch of 24..31 (e.g. `[0-9a-f]{17}`..`{32}`, `\w{17}`..`{32}`, `[^\n]{17}`.., `[0-9]{25}`..`{32}`, `[A-Z]{25}`..`{32}`). The walk calls `vs<j>`; file scope gains `__body` and the selector | `[0-9a-f]{16}` (k 15), `[0-9]{24}` (k 23), any 33+ position pattern (no window site at the default width), LIBC/PAIR finds (`a[0-9a-f]{20}`), floor and legacy sites, every VM/DFA body text |
 | `-fmemfn-simd=x86-64-v3` | the same artifacts, plus the bracketed `__w32` helpers, the selector's replaced call, `<immintrin.h>` ahead of the region, `MEMFN_FORMS` `span-vector@w32`, `SIMD_GUARDED_BYTES` | as above |
 | `-fmemfn-simd=x86-64` (w16 only), `generic` | as `-fno-memfn-simd` (wrapper, no helper) | — |
 | `--window-search-width=W` > 32 | HORS with 16 ≤ k ≤ min(1000, W - 1); WALK with 24 ≤ k ≤ 64 | k > 1000 (HORS), k > 64 (WALK): H64 |
@@ -600,7 +641,8 @@ lane runs no sweep (§16).
 | unit | what it does | moves bytes? |
 |---|---|---|
 | **U1** | The table refactor: `wf_span_head` becomes THE SPAN FORM TABLE (T-deny, T-force, T-lever, T-head), evaluated per stretch; `w->head` retired. An identity gate: every corpus artifact byte-identical to main at both layers, both engines. A refactor gets no flag (Frank 2026-10-29) | no |
-| **U2** | The wrapper (option A): `vs<j>` + `__body` + selector for eligible stretches at every layer, and the deny row `span-vector` (both layers). The identity gate against main for the deny arm. The first abi event lands here; under (B) this unit vanishes | yes |
+| **U2** | The wrapper (option A): `vs<j>` + `__body` + selector for eligible stretches at every layer, and the deny row `span-vector` (both layers). The identity gate against main for the deny arm. The first abi event lands here | yes |
+| **U2b** | **The scalar no-loss check, before landing** (§2.1): (a) the non-timing census of sites whose SIMD-off `rxa_search` machine code differs, wrapped against today's; (b) a short SCALAR timing of only those sites, in a window Frank clears; (c) any loser is kept on today's text by row T-keep. Costs nothing where (a) finds zero sites | no (decides T-keep's contents) |
 | **U3** | The `w32` helper: §4.1's text bracketed, the selector's replaced call, the `includes` fact, the form token, the guarded bound and `simd_bounds.tsv`, the `limits.md`/`tuning.md`/`registry.md` hunks. F2 recorded before anything else | yes (SIMD-on) |
 | **U4** | G2-V (unit, whole), T-table pins, sabotage rows (a)-(d) with reach, simdfloor re-pin, `DIFFER_PINS` floors | no |
 | **U5** | Card C6 + `kit-grid@8` + the formhash entry; `cards.py plan`/`dry` green, with no timing | no |
@@ -610,38 +652,27 @@ The design round (critics) precedes U1. The code round precedes the
 landing (Frank 2026-11-15). U2 and U3 may share one abi event if they land
 together; the number is taken once.
 
-## 15. Open questions (each with a recommendation)
+## 15. Open questions
 
-1. **`scalar-wrap`: option A or B (§2)?**
-   - A moves default-build bytes, the H64 form inside a function. On 8 of
-     10 default-width probes it is machine-code identical; `\w{20}` and
-     `\w{32}` differ. It is unmeasured at SIMD-off, and C6's off-layer
-     arms and G1 measure it.
-   - B keeps the default build untouched but is a seam change: C18, the
-     length invariant, and three spec sentences.
-   - **Recommend A.** It is the general mechanism already built and
-     checked, and G1 at both layers was already part of the brief.
-   - Ask Frank if "the scalar layer stays H64" was meant as BYTES rather
-     than FORM. Then only B satisfies it, and B needs its own architecture
-     note before this design proceeds.
-2. **`scan-scope`: does T-vscan cover LIBC, LIBC_BACK and PAIR scans?**
-   710's declared words do, but its cells were all WALK. **Recommend WALK
-   only** (D77). Widen when a C6 cell measures a memchr scan with a long
-   stretch.
-3. **`wrap-deny`: is the deny live at SIMD-off (it un-wraps), or SIMD-only
-   and inert there?** **Recommend live at both.** It is the only control
-   and population the SIMD-off wrapper gets, and it restores main's bytes
-   everywhere. Under B the question disappears.
-4. **`ship-size`** (R-4's lens, for the critics). Under A the change adds:
-   - six table rows, one deny row, one card, a G2 section, four sabotage
-     rows and one abi event;
-   - on the default build, a moved text at every eligible site.
+All four rev 1 questions are RESOLVED.
 
-   The real population is 4 patterns (§0.1). Under B the default build
-   stays put, but three contract sentences and C18 change. My
-   recommendation is still A, but the cost-benefit call belongs to the
-   go/no-go: the 710 wins are real (median 3.5x on the S-pick cells) and
-   the population is small.
+1. **`scalar-wrap`: RESOLVED, option A with a scalar no-loss check
+   (Frank 2026-11-21; manager's reading, which Frank was told).** Frank's
+   words: "Scalar wrap: the function goes inline so it's just code
+   organization? If that's true I don't have a problem with that." See §2
+   and §14 U2b.
+2. **`scan-scope`: RESOLVED, WALK only, not LIBC/PAIR (manager
+   2026-11-21).** Nothing else was measured (D77). Widen when a C6 cell
+   measures a memchr scan with a long stretch.
+3. **`wrap-deny`: RESOLVED, `span-vector` is LIVE at both layers
+   (manager 2026-11-21).** It un-wraps the stretch, so
+   `--memfn=no-span-vector` restores main's bytes everywhere; it is the
+   wrapper's only control and population.
+4. **`ship-size`: RESOLVED into §17** (information for the critic round).
+
+Open, owed to main: the cover-width timing (`cover_cap.md` §11.4 B) decides
+whether the default window width (32) rises, which widens the eligible
+range from k 16-31 / 24-31 to the 710 table's 16-1000 / 24-64.
 
 ## 16. TODAY NUMBERS (each with the command that produced it; 2026-11-21, main 051e78af2)
 
@@ -666,3 +697,34 @@ together; the number is taken once.
    - The A/A line: 6/448 repeated.
    - The Hspk control: 9 WIN and 2 LOSS standing (the two LOSSes are hi k=8, a cell no table row routes).
 8. **The C18 rule (c).** The docstring of `tests/memfn/simd_floor_check.py`: one `return <fn>__body(...)` replaced per SIMD FUNC. The bracket's whole-line rule: `src/core/sb.c` `pcrec_sb_simd_open` / `_close`.
+
+## 17. SHIP-SIZE (R-4's lens, for the critic round; information, not a ruling)
+
+What the build adds, under option A with the scalar no-loss check. Counts
+marked UNMEASURED are estimates the build lane replaces with `git diff
+--stat` at its landing; nothing here was built.
+
+| surface | added |
+|---|---|
+| table | 3 rows (T-vwin, T-vscan, T-keep) plus the 4 H/I/L rows reshaped from the if chain; `wf_span_head` and `w->head` retire |
+| code, `memfn/src` | the block-text renderer (§4.1, two widths), the selector/`__body` writer, the per-stretch table evaluation: UNMEASURED, expected a few hundred lines in `window.c` (and a `window.h` fact), no new file |
+| emitted text per site | scalar layer (every layer): the `vs<j>` selector and `__body` (one `return` each, about 0.4 KB, UNMEASURED). SIMD layer (`w32`): the bracket, about 1.3 KB at B = 32 (§5), less at B = 16 (UNMEASURED) |
+| deny | 1 row (`span-vector`), live at both layers; 1 `registry.md` row, floor 14 to 15 |
+| card | 1 (C6), 1 `kit-grid@8` row, 1 formhash entry. Rev 2 moves the scalar-wrapper arms out of C6 into the scalar no-loss check (§14 U2b), so they are timed once |
+| checks | 1 G2 unit section, 1 G2 whole section, 8 flip cells, 1 identity gate, 4 sabotage rows; F2 and the U2b census are delivery steps, not committed tests |
+| spec | `registry.md` §6¶8a/8b, `tuning.md` §2.43¶3a/3b/3d, `limits.md` §8.3¶3, `match_api.md` §6 (abi): 6 hunks |
+| abi | 1 event (the number taken at landing, §9.1) |
+
+Against the population: 4 (text, options) pairs route today (§0.1), by
+information only (D201 add. 1: "We're here and there's no downside so
+let's build it."). At the default window width only k 16-31 (window) and
+24-31 (scan) is eligible, so the 4 are all the default build can show.
+
+**Rev 2's check of rev 1 against R-4 (smallest form that serves the 710
+table).** Cut: C6's size-record bullet (nothing in the table reads it) and
+C6's scalar-wrapper arms (they move to U2b, which the ruling adds). Kept
+because the 710 table needs them: both bounds from both sides, the
+deny, the one-stretch-per-site rule, the 32 and 16 rungs only, no SWAR,
+no unrolled form, no knob beyond the deny row. The one NEW surface this
+revision adds is U2b plus T-keep, both required by the scalar-wrap ruling;
+where U2b's census finds zero differing sites, T-keep is not built.
