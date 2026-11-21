@@ -359,6 +359,21 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the decisions-why section of cover_cap.md §3.3 NOTED (R-14) is built, which would list the kind once
     refs: docs/design/cover_cap.md §3.1, §3.3; docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-6; [ROWCONJ]
     The NFA-provenance facts are read by more than one conjunct table separately: the cover's kept `erased`/`island` guards (rev 4.1) and lmwalk.c's own copy of `nfa->erased`; `split_conj[]` is the third table. One shared row kind, read by `cover_conj[]`, `lmwalk_conj[]` and `split_conj[]`, replaces the per-table copies.
+  - [COVER-WIDTH-KIT] STATE:not-started — the cover width becomes the kit's per-layer take/decline; pcrec keeps hard ceilings only
+    filed: 2026-11-21 manager, from Frank's width-owner answer (D202)
+    status (2026-11-21): filed; no build go ("can be fixed assumption now"); today pcrec's limits.def row decides at 32
+    trigger: the owner's build go, or [COVER-WIDTH-SIMD]'s measurement (a second layer's row makes one pcrec number wrong for one of them)
+    refs: decisions D202, D198 add. 1, D157; docs/design/cover_cap.md §11.2
+  - [ENGINE-COST-UNIT] STATE:not-started — pcrec states an engine cost unit to the kit (what the engine route would cost; inexact allowed)
+    filed: 2026-11-21 manager, from Frank ("we need a cost unit that pcrec provides to kit for engine usage. Even if inexact"; D202)
+    status (2026-11-21): filed; the kit may use a fixed assumption until it exists; pricing in general stays deferred (memory pcrec-pilot-is-pricing-baseline)
+    trigger: [COVER-WIDTH-KIT]'s build, or the next kit decision that compares against the engine
+    refs: decisions D202; docs/design/memfn/integration.md (the request seam)
+  - [COVER-WIDTH-SIMD] STATE:not-started — the SIMD layer's cover-vs-engine reference timing; makes the width night actionable
+    filed: 2026-11-21 manager, from Frank ("it needs simd for reference _eventually_ or it's not actionable"; D202)
+    status (2026-11-21): filed; the SIMD long-span form (the block span, R-47 U2+) is not on main yet
+    trigger: the block span's SIMD form delivered; rides its Zen 1 bench run ([BSPAN-ZEN1-C6]) on the targeted hardware
+    refs: decisions D202, D201; docs/design/cover_cap.md §11.4
   - [COVER-NEARMISS-SKIP] STATE:not-started — the kit's near-miss skip for the long cover (O(n*k) on a dense near miss)
     filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
     status (2026-11-16): filed; nothing built
