@@ -303,6 +303,24 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
   Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
   NOTE (2026-11-18): architecture note docs/design/req_lookaround_arch.md ACCEPTED (review r50); Frank ruled context-producer-home (ONE span, one producer); remodel-go is the manager's call; both in docs/design/plan_row_bodies/REQ-LOOKAROUND.md
+  - [L3-CONS-REENTRY] STATE:not-started — the forward scan re-enters on a BACK run's consumed extent (K' >= 0)
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat A step 2, HOUSE-6 unlock 1; lane l3r65 wrote the row)
+    status (2026-11-20): filed; nothing designed. L3's pick rule keeps BASE's run where a re-entry exists; this would let BACK keep it too
+    trigger: L2's design (L2 must re-check every forward-scan re-entry anyway, span_arms §14.4 L2's REV 3.3 line)
+    refs: docs/design/span_arms.md §14.4 L3 REV 3.3/3.4; docs/dev/reviews/2026-11-20-r65-l3feat.md A, Q; docs/design/plan_row_bodies/REQ-LOOKAROUND.md (Frank's 2026-11-20 LEAN)
+    The re-entry restricted to the run's consumed extent, K' = whole_maxoff + cons_lo >= 0, re-asks only consumed bytes, so it needs its own soundness argument (the decline's lesson: equal DFA states have equal futures only over consumed bytes). Frank's 2026-11-20 lean (a discussion, not a ruling): graph-based re-entry ("follow the proved bytes through the whole graph") waits for a general rx/graph manipulation layer, as the predicate language will need one.
+  - [L3-BACK-CLIP] STATE:not-started — a BACK join that overflows the stored bound clips lookbehind bytes first, not consumed ones
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat L, EMIT-5; lane l3r65 wrote the row)
+    status (2026-11-20): filed; measured mixed (0.87 to +10%) on one shape, minor
+    trigger: a bench cell with a long lookbehind before a long consumed run (`(?<=a{20})b{8}zb{11}`'s shape)
+    refs: docs/dev/reviews/2026-11-20-r65-l3feat.md L; src/facts/req.c `rb_top_back`
+    `lg ++ head` keeps the first 32 positions, so a long lookbehind clips the consumed run from the right: `(?<=a{20})b{8}zb{11}`'s offsets 0..19 -> 0..11, consumed bytes BASE had are dropped.
+  - [REQ-CAND-STRUCT] STATE:not-started — the run candidate travels as one { run, lo, hi } record, not loose int pointers
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat P, HOUSE-5; lane l3r65 wrote the row)
+    status (2026-11-20): filed; maintenance only, no answer or speed change
+    trigger: L2's AHEAD candidate adds its own consumed extent
+    refs: docs/dev/reviews/2026-11-20-r65-l3feat.md P; src/facts/req.c TOP, src/facts/facts.c, src/facts/facts.h `pcrec_run_cons`
+    The consumed extent `[lo, hi)` passes as `int *lo, *hi` through four layers (TOP's rows, `rb_top`, `pcrec_req_walk`, the record).
 - [COVER-CAP] STATE:started — lift the cover route's 24-position cap (long exact literals and fixed shapes finish in the engine)
   filed: 2026-11-11 manager (lane paper), from the skipmeas measurement; set S3
   status (2026-11-19): stage 2 + the kit's span forms LANDED on main 77edff7ae (abi 109; full cloud suite green after triage covtri1119); the width default stays 32 (interim); owed: cover_cap.md §11.4 part B night timing (cover vs engine) to set it
@@ -2182,6 +2200,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
 
 ## Boonies
+- [LB-NEST-CAP] STATE:not-started — cap the BACK row by the walk's own reach, so sound nested-lookbehind runs are kept
+  filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat I speed half, WALK-1; lane l3r65 wrote the row)
+  status (2026-11-20): parked; the comment is fixed (review r65 I doc half); no answer is wrong
+  trigger: a corpus or bench pattern with a nested lookbehind whose guard reaches past the widest single lookbehind
+  refs: docs/dev/reviews/2026-11-20-r65-l3feat.md I; src/facts/facts_derive.h `ReqWalkParams.lb_bytes`
+  `lb_bytes` follows PCRE2's max_lookbehind (a max over nesting) while the walk's guard sums, so `(?<=(?<=x)a)b` (true run `xab` at -2) is declined; the design's §5.5 says why the cap exists before it moves.
 - [RUN-LOWINFO-HEAD] STATE:not-started — run's head position is a low-information class tail (`\w+`) after rule (1)
   filed: 2026-11-15 manager (review 2026-11-15 r1 posts2 EMITTED-1, NOTED; filed by lane fixposts2)
   status (2026-11-15): NOTED, unmeasured (a suspected speed cost, very low); the answer is sound and the scan byte is unchanged.
