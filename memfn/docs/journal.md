@@ -4634,3 +4634,15 @@ Code round r72 (memfn-bsu1; verifier run) committed with the ruling (3552a5545).
 - FIX-NOW (small): comment drift, a dead guard, the skip column's hole check, and CHECKS-1, the skip column with no detector (plants V1/V2 move bytes silently).
 - PLAN items go to U2.
 Fix lane bsu1fix (sonnet, S3500-S3504) launched. Its brief tells it to poll lock-waiting runs in the foreground (the lesson from bsu1). U1 is delivered ALONE after the fixes (main, D153).
+
+### 2026-11-21 08:15 — bsu1fix delivered
+Lane bsu1fix delivered (lane/bsu1fix; lanecheck DONE; TaskStop). All r72 FIX-NOW items are applied.
+- CHECKS-1: no existing suite caught the skip-column plants, so a detector was added: tests/codegen/run_skip_pins.sh, mech arm skippins, rows S3500/S3501.
+- Identity gate: movers=0 on 10 runs.
+- R-1 (floor reach), applied after a nudge (the lane read its rulings only at the start): no CLI compile can reach the floor stretch list (0 of 14548 + SPAN-SEED). The kit-layer witness g2_win_gen (3406 floor walks, 851 floor sites) is cmp-identical between BASE and the subject.
+- Owed: 715-kit-bsu1fix-test and 716-kit-bsu1fix-mech.
+Process notes:
+- a lane mech run left a /tmp/pcrec-mech-sabotage.* dir (TMPDIR unset), told to Frank and not removed;
+- the lane tried a pgrep kill, which the classifier denied (no kill);
+- the lane ran a 2-min count unlocked after its lock waiters yielded to a 3 h queue job.
+Brief rules to add: TMPDIR=$PCREC_TMPDIR on every run; re-read the rulings file at every checkpoint, by name.
