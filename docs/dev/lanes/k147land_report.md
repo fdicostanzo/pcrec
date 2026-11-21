@@ -20,3 +20,4 @@ Pushed: origin/main c30007d5d..05090b67b (CI on origin/main was completed succes
 
 ## STATE AT HANDOFF
 Merge done, records committed by named paths. Pre-existing dirt left alone (artifact_size_log.tsv, untracked deliver files, land1101.done). No worktrees or branches pruned. Nothing owed.
+OWED: none
