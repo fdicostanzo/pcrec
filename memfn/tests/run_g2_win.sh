@@ -485,7 +485,7 @@ for cf in $FRAME_CELL_FLOORS; do floor "frame cell ${cf%%:*}" "$(fcv cells "${cf
 for cf in $FRAME_CLASS_FLOORS; do floor "frame class ${cf%%:*}" "$(fcv classes "${cf%%:*}")" "${cf#*:}"; done
 if [ -n "${G2W_TRACE:-}" ]; then
     for tr in $TRACED_FLOORS; do
-        floor "traced defines ${tr%%:*}" "$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define chosen=${tr%%:*} " "$WORK/plain.gen.log")" "${tr#*:}"
+        floor "traced defines ${tr%%:*}" "$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define( [a-z_]+=[^ ]+)* chosen=${tr%%:*} " "$WORK/plain.gen.log")" "${tr#*:}"
     done
 fi
 for inf in $INRUN_FLOORS; do floor "inrun ${inf%%:*}" "$(val inrun "${inf%%:*}")" "${inf#*:}"; done

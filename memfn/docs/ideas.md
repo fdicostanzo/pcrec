@@ -882,3 +882,14 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
   - POST-DATA (selection-biased) idea, unevaluated: the order is a property of where failures land in the SUBJECT, so only a subject-aware choice (a measured regime fact) could pick it. Not a compile-time table.
 - 2026-11-20 block-confirm (job 710, rule 6351bff3901e3955; the confirming run Frank asked for after 708): the table declared BEFORE data (window 16<=k<=1000, scan 24<=k<=64 -> the avx2-loop block span; else H64) is CONFIRMED at the SIMD-on layer: 0 LOSS, 127/144 NEW busy pick cells WIN, median 3.5x over all busy wins. Candidate for a build (design, critic round, Frank's go). The scalar layer is unchanged.
 - 2026-11-21 span census (lane spancensus): kit span sites are rare in both populations: 16 of 5161 corpus patterns and 11 of 332 bench patterns have one at all, and 39 of 41 sites have k<=31. The 710 block rule routes 1 corpus pattern and 3 bench patterns. This matches Frank's expectation that SIMD beyond window finding is niche. Every SIMD row now reports its population count beside its timing.
+
+### 2026-11-21 12:56 — [COVER-NEARMISS-SKIP]: check the last position first, verify backward (owner, via main)
+Frank's words, in part (relayed by main): "search for g at last plus min width ... it starts verify span back 32, sees the g and stops".
+- Main's reading: at a candidate start p, check the span's LAST position (p+k-1) first, then verify backward; on a miss at position q, the next start is q+1. This is the Boyer-Moore-style back-scan applied to a class span.
+- Main's model: main docs/dev/cover_nearmiss/span_sim.py (a model, not kit code).
+  - It agrees with brute force on every 16-byte text for k=3..5.
+  - On [0-9a-f]{32} over "31 hex + g" repeated: 0.031 reads per byte, against 16.5 for restart-one-later and 1.0 for a forward skip. Worst seen: 1.12 per byte.
+- Kit notes, unevaluated:
+  - It composes with the block span: a backward block test still finds the rightmost miss.
+  - The bound needs the miss position, which today's span loop does not keep.
+- UNSCHEDULED, under its trigger.

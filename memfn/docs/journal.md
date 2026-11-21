@@ -4652,3 +4652,57 @@ Frank, to the kit: "scalar-check-cut: yes". The short scalar timing and the keep
 
 ### 2026-11-21 08:47 — U1 delivered to main; lane bsu2 (U2 + U2b)
 716-kit-bsu1fix-mech GREEN. lane/bsu1fix merged (e8dea21a3, make strict clean). U1 delivered ALONE to main ([responses] 0481a4130; 0 movers, no abi event). Lane bsu2 (opus, S3505-S3519) launched for U2 (wrapper, deny span-vector, the first abi event, r72's PLAN items) + U2b (the census per D201 add. 4). Its brief: TMPDIR on every run, rulings re-read by name at every checkpoint, foreground lock waits. The abi number has been asked of main.
+
+### 2026-11-21 13:11 — D202 (main bac1c74e7): the cover width is the kit's decision
+Main relayed Frank's D202 ruling. Its context names the kit's block span cost, 11 ns/byte in plain C against 2.8 ns/byte with AVX2 on 500-wide hex.
+- The cover width (whether the cover route takes or declines a fixed span, per layer) is the KIT's call. pcrec keeps only the hard ceilings: the walk's state ceiling and the emitted-size cap.
+- pcrec will supply an engine cost unit, inexact allowed ([ENGINE-COST-UNIT]). Until then the kit may use a FIXED assumption.
+- Frank, verbatim: "Width owner: this is kits but it needs input from pcrec eventually. Can be fixed assumption now."; "...it needs simd for reference _eventually_ or it's not actionable".
+- Nothing is built: [COVER-WIDTH-KIT] waits on a build go.
+- Tonight's scalar width night is recorded only. [COVER-WIDTH-SIMD] rides the block span's Zen 1 run, which gives the kit's U6 C6 card a second client.
+
+### 2026-11-21 13:50 — bsu2 delivered U2 + U2b
+lane/bsu2 delivered (lanecheck DONE; TaskStop). abi 109->111 (R-1).
+- Identity: commit A 0 movers (10 arms, no mask). The deny arm 0 diffs in 41894 compiles under M1-M9. The default arm moves the V sites only: 28 byte / 20 utf8 / 31 seed on c-default, 0 on c-vm.
+- U2b census (D201 add. 4): the 3 bench sites are IDENTICAL at w32 and w4095. Grid: 48 of 128 eligible DIFFER (every \w, [aeiou], [A-Za-z0-9_-] shape); \w{20} and \w{501}@4095 DIFFER (the floor witness holds); both controls pass.
+- G2 win family 27376/0; 14 sections rc=0.
+- REACH_ONLY: 671 rows reach, 2 do not (S1760/S1761 rxt_source.c, already filed as [PIN-MSG-DEPTH], untouched).
+- Owed to U3: the S730 V witness.
+- Queued: 717-kit-bsu2-test and 718-kit-bsu2-mech. Box steps waited 3 h 18 min on main's grow2-lib (no jump; main kept its ASan pass).
+- Next: the code round on lane/bsu2.
+
+### 2026-11-21 14:12 — r75 (U2 code round) ruled FIX FIRST; lane bsu2fix; owner question wrap-clang
+r75 (crit-memfn-bsu2) committed with its ruling at cabf2ab77. No answer finding: 0 of 3,810 oracle runs mismatch; the deny arm equals BASE.
+- CENSUS-3: the 3 real bench sites' SIMD-off code is identical only under gcc -O1..-O3. It differs under clang -O2/-O3 (\d{32} 264 lines) and gcc -Os. The bench has clang arms, so this tests the premise of Frank's scalar-wrap answer. It goes to him as wrap-clang, not as a manager ruling.
+- FIX-NOW items go to lane bsu2fix (sonnet, S3510-S3514), cut from lane/bsu2 d9d86e39e; its box work ends before main's 01:00 window.
+- Relayed to main: the risk-row shapes and the abi 110 record.
+
+### 2026-11-21 14:13 — r75 process notes (from the coordinator's closing summary)
+- The coordinator verified the CONFIRMED findings itself instead of launching a separate verifier (skill §1). This is the second time, after r68. Their repros were mostly one command each, so the ruling stands; next round's launch prompt says "launch the verifier; never verify yourself".
+- The checks critic exceeded its compile cap (~720 vs 600) and ran a full-corpus copy of the gate, both disclosed.
+
+### 2026-11-21 14:27 — bsu2fix delivered
+lane/bsu2fix delivered (cca26a4a6, c1dcbcaea + report; lanecheck DONE; TaskStop). Every r75 FIX-NOW and DOC item is applied, and the abi stays 111.
+- Identity gate: floors 28/20/31, the V-site diff shape, named abi-checked mask rows, and the x86-64 layer. Every gate plant goes RED; the noop plant PASSES.
+- SLOT-2 fd_tables_check + S3510. block_span.md rev 4.2 records add. 4 and wrap-clang as OPEN.
+- Identity in-lane: deny 0, movers 28/20/31; seed vs d9d86e39e 0 of 328.
+- test-codegen and G2 win ride the make test job.
+- Owed: kit-bsu2fix-test, -mech, -gate and -ids.
+
+### 2026-11-21 14:33 — 717 RED: test-memfn-arch (C4 vocabulary); fixed
+717-kit-bsu2-test went RED on one section, test-memfn-arch: 2 checks failed, all the others passed. U2's S730 re-aim put -fmemfn-simd=x86-64-v3 in a SAB_REACH (isa-name and arch-noun) without c4_allowlist rows.
+- This is ours. main's unlocked grow6 runs overlapped 717, but this is not a timeout.
+- Fixed by the manager on lane/bsu2fix (2eccfecb8, two allowlist rows; run_arch_blind 32/0).
+- 718 cancelled (its prerequisite failed); its 18 rows were re-queued as 723-kit-bsu2fix-mechu2 on the fix tree. 721 gate GREEN.
+- Lesson for U3's brief: any new -fmemfn-simd token outside memfn/ needs its C4 row in the same commit; run test-memfn-arch in-lane, it is static and light.
+
+### 2026-11-21 15:24 — Frank ruling wrap-clang: a
+Frank, to the kit, verbatim: "wrap-clang: a. Policy is inline wrappers where possible so this is a move towards that. The wrapper is a separate fix to an out of policy coding not related to the simd change
+That said, do track the clang issue with an item for follow-up to make sure no surprises"
+- Reading: option A stands. The wrapper is framed as conformance to the inline-wrapper policy, not as part of the SIMD change.
+- The clang/-Os machine-code difference gets its own follow-up ITEM. main owns plan.md, so main files it.
+- The kit's part: U5's card C6 times the bench's clang arms on the 3 sites, wrapper against the deny.
+- U2 delivery is unblocked once 723 is green.
+
+### 2026-11-21 15:38 — U2 + U2b delivered to main
+723 GREEN (the 18 U2 rows on the fix tree). lane/bsu2fix (contains lane/bsu2) merged into k1108 (005e35c7b, make strict clean). Delivered: [responses] 994de281c and a SendMessage. abi 111 (re-pin to 110 if U2 lands before L3). Final-tree validation 719/720/721/722/723 all GREEN. U3 next (the w32 helper, the first SIMD text).
