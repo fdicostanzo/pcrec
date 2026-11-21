@@ -875,3 +875,8 @@ inline chain; any N or unroll width is a suspect constant until measured (memory
 - 2026-11-20 (Frank: "Test the ramp up vs chunk. A max ramp may solve my streaming concerns"; job 712, rule efb4f0d7d3ab0bd5, warm counted):
   - The max ramp (R-46's ramp clipped at the current aligned chunk) beats aligned chunks wherever their reads differ (early match, find-all restarts), never loses, never asks past the chunk (stream-safe), and the clip costs nothing.
   - OPEN: no scalar method of the window removes the dense loss against the plain loop. One pass is 1.29-1.45x OFF on dense but regresses sparse cells; repeated finds are 2.2x+. Candidate: a SIMD last-occurrence scan in the window. Evaluate before any build.
+
+- 2026-11-20 check order (Frank: "consider order in the inline portion of the span test. Fail fast"; job 711, rule 28b518b84de080aa):
+  - No arm replaces front-to-back: each loses repeatably on hit-dense cells (its overhead on passing checks).
+  - Reverse wins big where failures land late; the jump alone wins where they land early; alternating wins at both ends but loses mid-span; rarest-first is flat on mixed sites.
+  - POST-DATA (selection-biased) idea, unevaluated: the order is a property of where failures land in the SUBJECT, so only a subject-aware choice (a measured regime fact) could pick it. Not a compile-time table.

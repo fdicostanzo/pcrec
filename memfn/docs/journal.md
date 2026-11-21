@@ -4492,3 +4492,16 @@ Run /var/tmp/pcrec-pcrec/scratch/memfn/rampchunk/run-20261120T192834/decision.md
   - PASS (one scalar pass) is the best on dense (1.29x unb, 1.45x bnd), but it regresses sparse cells where ON wins big (unb sp64 1.15x vs 0.91x; bnd sp512 0.25x vs 0.02x; bnd text 0.08x vs 0.00x).
   - ZERO (the edit with no window) costs on bnd dense (2.36x vs ON 1.82x).
 - Reading: the window RULE question is settled (max ramp). The METHOD is not: no scalar window method meets the owner's no-loss condition on dense subjects. It needs a faster in-window last-occurrence scan (SIMD block masks, R-46's one-pass arm at the SIMD layer) or a different approach. No build without Frank's go.
+
+### 2026-11-20 20:35 — 711 checkorder GREEN: every arm LOSS (frozen rule 28b518b84de080aa)
+Run /var/tmp/pcrec-pcrec/scratch/memfn/checkorder/run-20261120T194521/decision.md; wall 2,978 s (the estimate was 6,405).
+- Header: QUIET SAMPLE BUSY (sample max 17 %, cap 20 %); 12 void repeats; 2 cell-arms INCONCLUSIVE-NOISE.
+- Verdict per arm vs FRONT: FJUMP, REV, REVMEM, ALT and RANK all read LOSS (repeated LOSSes). FRONT stays.
+- Shape (POST-DATA reading, selection-biased):
+  - Every non-FRONT arm loses on hit-dense (10-14 cells): the extra per-check cost is paid when the checks pass.
+  - REV wins where failures land late (near-miss-in 20/20, nm-d75 23/25, miss-heavy 18/20) and loses where they land early (head-miss 17 of 25).
+  - FJUMP (the jump alone) wins head-miss 19/25.
+  - ALT wins at both ends (head-miss 22, nm-d75 23, near-miss-in 16) but loses nm-d50 15.
+  - RANK (rarest first, mixed sites only) is flat: 12/17/11.
+  - Near-miss WIN majorities were reached by FJUMP 72/126, REV 80/127, REVMEM 69/102 and ALT 88/127. Each arm's repeated LOSSes decide it.
+- Reading: a check order wins only where it matches where failures land, which is a subject property unknown at compile time; and every reorder costs on hits. No compile-time order replaces FRONT. Logged in ideas.md. No build.
