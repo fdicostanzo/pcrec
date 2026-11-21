@@ -446,7 +446,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-10-22 manager (lane dd10fix report section 4 item 1)
   status (2026-11-20): TRIGGER FIRED: K146 is the recursion regression it names (review r62 UNLOCK-1: no single dropped mark made any DEPTH_FAMILIES row die; 11 of 21 plants moved nothing). Nothing built.
   ready: the VCG/SCC frame-ceiling check as a `make lint` row; before it: [K146-VMCOST-DEPTH] landing, then [K147-POSSESSIFY-DEPTH] (its fix needs the same guard); priority over not-started work when the close-out freeze lifts (Frank 2026-11-10)
-  refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4
+  refs: docs/dev/lanes/dd10fix_report.md; [DD-10] in plan_completed.md; coding_guide section 2.4; known_issues K152 ([K152-NFA-DEPTH]: the NFA builder's depth, the next family member it must see)
+  Note (review r64 F13, 2026-11-20): the mech coverage of K147's explicit stack has one unwitnessed decision point, gk_build's CAT update order (plant V3i was silent on 8 probes, 0 emitted-byte movers): find a witness first, then a row; the rest (the depth-- leak, ss_walk's ALT over-approximation, an out-of-range member, stack growth caught only by test-stackdepth) are answer-silent by construction and NOTED. An "explicit stack, no cycle" category belongs here once [ARENA-REGROW] lands.
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
 
 ## Candidates ([OPTLOOP])
@@ -874,7 +875,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   TRIGGER: a bench or corpus cell where a lost possessive mark in a spliced call target costs past the floor. Population at filing: 0 bench movers (12 call patterns), 1 corpus mark lost (nocaptures.rxt:76, answer-identical). Sequencing: after K93 merges; [ART-POSS-ARMS] widens the same verdict, so whichever lands second re-derives.
 - [POSS-CTX-TABLE] STATE:not-started — POSSESSIFY'S PER-KIND ANALYSIS AS ONE TABLE
   filed: 2026-10-07 lane possarms2
-  status (2026-10-07): not started; FILED 2026-10-07 by lane possarms2 from the [ART-POSS-ARMS] D6 panel's B-FAM disposition; UNSCHEDULED; decision_families_survey.md family 14 / §3.14
+  status (2026-11-20): TRIGGER FIRED by lane/k147fix (a per-kind possessify edit); `first_eval(q, a, text)` IS the READER field proposed here (r64 HOUSE-8). Remains: gk_build/pss_walk/item_first tables. Filed 2026-10-07 (possarms2); UNSCHEDULED
   trigger: the next per-kind possessify edit after [ART-POSS-ARMS] lands.
   refs: src/opt/possessify.c; scripts/emit_sweep.py; decisions D6 D137; known_issues K93
   `src/opt/possessify.c` answers "what does node kind K contribute" in three per-AKind switches (`first_of`, `gk_build`, `pss_walk`) plus the `pss_verdict` ladder, the K93 CallCtx join and the atomic discharge's survey consumer; [ART-POSS-ARMS] adds a fourth fold (A1's continuation) and [POSS-CALL-COPY] / the `verbs` tripwire would add more — past the ~3-member threshold (memory pcrec-forest-for-trees).
@@ -2208,10 +2209,10 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Against the house rule on recursion: descend the spine iteratively and recurse only into items hanging off it. The same fix applies to both.
 - [GROWTH-SWEEP] STATE:not-started — a test category for extreme growth (depth, length, memory): graceful refusals, never crashes
   filed: 2026-11-20 manager, from the owner's go ("growth-sweep: go") and the survey lane growsurv
-  status (2026-11-20): survey merged (docs/dev/lanes/growsurv_report.md: 121 recursive functions, 34 candidate cells); crashes filed as K147-K151; the runner is not built
-  waits: K147 landing (the runner is built after it); pairs with [LINT-FRAME]
+  status (2026-11-20): survey merged (docs/dev/lanes/growsurv_report.md: 121 recursive functions, 34 candidate cells); crashes filed as K147-K152; red until fixed: K148, K150, K151, K152; the runner is not built
+  waits: K147 landing (the runner is built after it); pairs with [LINT-FRAME]. Note (r64 F12): `item_first` stays on C recursion, 352 B/level, ~88 KB at 250 (within budget)
   next: after K147 lands, a lane builds the runner from the survey's product (construct kind x quantifier x branch position x core, at depth 250 and 251 on the budget thread; spine-length families at 16,384 and 100,000; memory families under scripts/watchdog -m) and absorbs tests/thread's DEPTH_FAMILIES
-  refs: docs/dev/lanes/growsurv_report.md ("Suggested runner shape"); docs/dev/lanes/growsurv_evidence/; known_issues K147-K151; [LINT-FRAME]; [LM-SPINE-DEPTH]; docs/spec/limits.md §3.10
+  refs: docs/dev/lanes/growsurv_report.md ("Suggested runner shape"); docs/dev/lanes/growsurv_evidence/; known_issues K147-K152; [LINT-FRAME]; [LM-SPINE-DEPTH]; docs/spec/limits.md §3.10
   The owner: "These are stack based crashes. I suggest a new test category that looks at extreme growth directions like depth and length and looks for crashes. There might not be oracles for correctness. We are looking for graceful refusals instead of crashes. An examination of recursive and looped behavior at various stages of compilation would give candidates".
   RULE (Frank 2026-11-20, his words): "all tests should hit a limit and refuse to compile (or crash). This is like the mech forced fail tests. If a test does not fail to compile, that is a failed test like mech failing to see the error". So each cell names the LIMIT it must hit and is sized past it; PASS = a clean refusal by that limit; FAIL = it compiles (the cell never reached its limit) or crashes, times out or runs away. A cell with no limit to hit (K150, K151) stays red until its fix adds one.
   RULE addendum (Frank 2026-11-20): "a timeout should be considered the same as a crash": a cell that times out is a FINDING, filed and fixed like a crash; never retried longer, never read as slow infrastructure.
@@ -2230,7 +2231,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: known_issues K151; docs/dev/lanes/growsurv_report.md L2/C10; src/gen/emit_vm.c (vm_build_region_saves)
 - [K149-FIRSTOF-NOBREF] STATE:not-started — `(abc|abd(…abe))*` kills pcrec_compile in first_of with no backreference (K149, K147's second shape)
   filed: 2026-11-20 lane growfile, from growsurv KR-B
-  status (2026-11-20): filed; not fixed on lane/k146land (re-checked). Dies at N=200 on the budget thread; N=150 compiles
+  status (2026-11-20): fixed on lane/k147fix with [K147-POSSESSIFY-DEPTH], awaiting landing: at its base N=237 compiles and N=238 dies; after, 317,504 B at depth 250 (DEPTH_FAMILIES row litrep)
   next: rides [K147-POSSESSIFY-DEPTH] (same functions); add the shape to its DEPTH_FAMILIES rows
   refs: known_issues K149, K147; docs/dev/lanes/growsurv_report.md C4
 - [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
@@ -2469,9 +2470,19 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 
 - [K147-POSSESSIFY-DEPTH] STATE:not-started — possessify's first_of/text_first recursion kills pcrec_compile on `(a|b(a|b…\1)*)*` (K147)
   filed: 2026-11-20 manager, from review r62 DEPTH-3/DEPTH-4 (pre-existing; answer-adjacent: libpcre2 compiles it)
-  status (2026-11-20): filed; nothing built. Second shape K149 (`(abc|abd(…abe))*`, no backreference). Dies from depth 174 on the 442,368-byte thread.
+  status (2026-11-20): fixed on lane/k147fix, awaiting landing (lanes/k147fix_report.md): FIRST fold on an explicit stack + own frames; K147's two shapes and K149's compile at depth 250 (257,552/257,552/317,504 B); zero movers
   trigger: the NEXT lane of K146's family, right after K146 lands (Frank/manager ruling, r62); fix by the same general depth mechanism ([DD-10] PCREC_OWN_FRAME), with DEPTH_FAMILIES rows for both shapes; [LINT-FRAME] is scheduled after it
   refs: known_issues K147 (the family survey, r62 UNLOCK-2, is its notes); docs/dev/reviews/2026-11-20-r62-k146fix.md; docs/spec/limits.md §3.10¶1
+- [K152-NFA-DEPTH] STATE:not-started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
+  filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
+  status (2026-11-20): filed; nothing built. `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` DIES (rc 139) on the 442,368-byte thread; the plain nest costs 440,176 B (440,560 B with a trailing element), the compound route about 13 KB more
+  trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
+  refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]
+- [ARENA-REGROW] STATE:not-started — one `pcrec_arena_regrow` in core for the arena-grown explicit stacks (three members today)
+  filed: 2026-11-20 lane k147f2, from review r64 k147fix F11 (HOUSE-3/9/10)
+  status (2026-11-20): filed; nothing built. possessify.c's `fq_push`, dfa.c's file-static `arena_regrow` and its `cont_push` (K18) each grow an arena stack by hand; emit_vm.c's trie walks use fixed arrays. Three members: the forest-for-trees threshold is met for the allocation half
+  trigger: the allocation half (one `pcrec_arena_regrow` in core) is ready now; the walk-stack primitive (a `PcrecWalkStack`, the fold machine's shape) WAITS for a FOURTH member: the next depth-not-nesting recursion that [GROWTH-SWEEP] or [LINT-FRAME] finds
+  refs: src/opt/possessify.c (fq_push); src/gen/dfa.c (arena_regrow, cont_push); docs/dev/guide/coding.md (OWN_FRAME, third case); docs/dev/reviews/2026-11-20-r64-k147fix.md (F11); [LINT-FRAME] (gains an "explicit stack, no cycle" category); [GROWTH-SWEEP] (one place to state arena-frame bounds)
 - [CLS-FOLD-WAF744] STATE:not-started — research why the caseless class fold loses on waf744 (x86)
   filed: 2026-09-30 Frank (decisions D138 addendum)
   status (2026-10-12): not started; re-filed as its own row after [FORM-CHAR2] was archived (it had been merged into that row by [PLAN-LINT] step 2)
