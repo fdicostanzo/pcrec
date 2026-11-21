@@ -3,8 +3,8 @@
 ## Summary
 Premise reproduced at cc96bb7a8: `make cloud-check` 14 passed, 2 failed (axes, mech). The axes and mech shard tables
 were regenerated with `tests/ci/cloud_reweight.sh axes` / `mech` exactly as cloudpop did, with the same one hand row;
-`make cloud-check` is now 16 passed, 0 failed. L3's own rows run locally: 11 of 17 rows done (10 DETECTED, 1 UNDETECTED
-as declared); 6 rows could not take the box lock in time and are OWED (below). No src/ edit. Rulings file empty: no R-n.
+`make cloud-check` is now 16 passed, 0 failed. L3's own rows run locally: all 17 rows reached (16 DETECTED, S3407 UNDETECTED
+as declared). No src/ edit. Rulings file empty: no R-n.
 
 ## Dropped rows
 39 mech ids in no shard: S3355-S3357, S3365-S3383, S3405-S3413, S3450, S3455, S3480-S3485 (list:
@@ -23,9 +23,8 @@ branch; S3456-S3464 neither. Every row that ran was REACHED (reach:ok(1/1)).
 - UNDETECTED (EXPECTED): S3407. Its row declares SAB_EXPECT=UNDETECTED (measured at landing by l3feat2: the clamp is
   defence in depth; a planted record that turns NOW DETECTED when a consumer lacks the guard). Matrix: unexpected 0.
   This is a declared survivor, not a new one; flagged because the brief names SURVIVED a STOP.
-- NOT RUN (box lock held by the kit's queue jobs, boxlock YIELDING until my 1500 s timeout killed each): S3409, S3413,
-  S3455, S3480, S3481, S3483. Rerun in background with a 10000 s timeout: log
-  /var/tmp/pcrec-pcrec/scratch/l3pop/mechC.log (completion line `ALLDONE`). OWED.
+- DETECTED on the rerun (at fcf710c02, mechC.log, reach:ok(1/1) each): S3409, S3413, S3455, S3480, S3481, S3483.
+All 17 rows reached; 16 DETECTED, S3407 UNDETECTED as declared.
 
 ## Validation dispatched
 Cloud runs `--kind mech` and `--kind axes` on the tip sha; names l3pop-mech and l3pop-axes (see the reply to main
@@ -33,6 +32,5 @@ for the sha and the ls-remote proof). The cloud mech run covers all 6 owed rows 
 
 ## STATE AT HANDOFF
 OWED: none to the deliverable (the cloud mech run covers every row).
-NOTE, not owed: a background local re-run of S3409, S3413, S3455, S3480, S3481, S3483 writes
-/var/tmp/pcrec-pcrec/scratch/l3pop/mechC.log (`ALLDONE`); main may read it. Cloud verdicts arrive as CLOUD-DONE.
+The six rows first starved of the box lock were rerun and are all DETECTED. Cloud verdicts arrive as CLOUD-DONE.
 Rulings: none applied. Branch lane/l3pop.
