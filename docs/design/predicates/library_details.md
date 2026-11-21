@@ -255,6 +255,7 @@ rejected:
 - `length(<=20)` read as an IMAGE function — by owner ruling — OWN-1 superseded the image forms (`unpad(S)`, `length(<=20)`).
 readings:
 - the body `chars & (nchars: S)` gives the length (S in ==0, ==3, ==20, ==21, <=20, even; the empty text, a newline, 20 and 21 characters) — SUPPORTED (preddoc3c PART LE; sabotage s21 caught); the draft's review r16 emulation, 27 cases, 0 differ.
+- under array-vs-passes `nchars := count((ch: /(?s:.)/))` counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
 - caveats (the draft's): two helper bindings beside the body; `count`'s budget applies to `nchars`; the label `ch` visible.
 evidence: preddoc3c PART LE; review r16 `bodies_check.out`.
 history:
@@ -263,7 +264,7 @@ history:
 - 2026-11-19 (lane preddoc3c): a new piece (a provided name the library lacked: census row `length`).
 - 2026-11-19 (lane preddoc4): `needs:` the computed-label piece and lib/counting/count, the two names its body uses (review r59 READ-8).
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `ch`, written as a group in rx text, is also a capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the statement's "one loop pass per character, its count tested by S" became "one setting of `ch` per character, their count tested by S". No answer moves.
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
 rulings:
@@ -415,6 +416,7 @@ rejected:
 - the stretch reading (SEARCHED `x300 12` gives `x30`@0 with [`30`]) — by owner ruling — hits-text: standing alone the list is the whole subject's.
 readings:
 - the body (an atomic group around the whole loop, anchored at both ends) gives the printed lists and verdicts: `1234` FAILS [`1234`], `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS; with an optional label `axa` FAILS (the last hit's own g unset), `aax` HOLDS — SUPPORTED (preddoc3c PART HI).
+- "every hit under 100" written as `hits(/\d+/) & occurs.none((hit: >= 100))`, a group question on the array of `hit` (one setting per hit) — the lane's reading of the unwritten program; WHOLE `1234` FAILS, `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS under the settings and the pass readings alike — SUPPORTED (predarr HITS: the body read from library.md, against python `re` 0 / 0 / 0 of 1,365 texts; sabotage s13, the atomic group re-entered, caught).
 - hits-pass and some-own: a bare condition after it reads the last hit's own labels (closed by entailment, the draft §R.8) — SUPPORTED for the optional-label rows (PART HI).
 - `module: ?`; the spelling `hits` is a placeholder, his `all_matches(rx)`.
 evidence: preddoc3c PART HI; the draft R.1.9, rev 24.4 PART H.
@@ -423,7 +425,7 @@ history:
 - 2026-11-19 (lane preddoc3c): converted.
 - 2026-11-19 (lane preddoc5): the slug hit-list moved here from core/model/table, whose reading named this piece as the one deciding it (review r59 PLACE-4).
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, the `hit` group written in rx text is a capture as well as a label (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the "every hit under 100" bullet names its program, a group question on the array of `hit` (a reading). No answer moves.
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
@@ -548,6 +550,8 @@ history:
 ## lib/counting/some — some
 slugs: all-question some-own
 rulings:
+- 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); `some` reads the ARRAY OF SETTINGS of the name, the one outside the loop included; it REVISES this piece's "at least one pass of a loop meets the condition c" (2026-11-15)
+- 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); a joint entry inside `some` is refused for now; "same item" is the on-item label, then `some` on that label
 - 2026-11-15 "3. could you use some() to get some hits?" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
 - 2026-11-15 "Do it" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
 - 2026-11-16 "all-question: retire" (record: "2026-11-16 OWNER RULING — all-question: retire")
@@ -556,17 +560,19 @@ rejected:
 - `all` as a group question — by owner ruling — all-question: retire.
 - `occurs.some` — by the draft (rev 7's, removed, not aliased) — `some(c)` is the one spelling.
 readings:
-- false on zero passes, each pass judged with its own labels (the draft §4.3's group-questions table) — the draft's reading; SUPPORTED for its example (preddoc4 PART SO; sabotage s8, "every pass", caught).
-- `some` is native to the language: it walks a pass table no body can reach (review r59 PLACE-3) — the lane's reading under R-1 (`defined: native`).
-evidence: docs/dev/lanes/preddoc4_evidence/ PART SO; the draft §4.3, R.4.
+- false on zero passes, each pass judged with its own labels (the draft §4.3's group-questions table) — the draft's reading; SUPPORTED for its example (preddoc4 PART SO; sabotage s8, "every pass", caught); REPLACED by array-vs-passes (a): false on an EMPTY array (a reading of the ruling; predarr EMPTY).
+- the printed line under the settings reading — the SAME answers as under the passes (one setting per pass, none outside the loop): `WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)` — SUPPORTED (predarr CHANGED; sabotage s12, the last setting only, caught).
+- `some` is native to the language: it walks a pass table no body can reach (review r59 PLACE-3) — the lane's reading under R-1 (`defined: native`); since array-vs-passes it walks a name's array of settings, still native.
+evidence: docs/dev/lanes/preddoc4_evidence/ PART SO (its "every pass" wording superseded by array-vs-passes; the line's answers stand); docs/dev/lanes/predarr_evidence/ CHANGED, EMPTY; the draft §4.3, R.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: ruled pieces used `some` with no piece (review r59 PRIMITIVES-MISSING, READ-6).
 - 2026-11-19 (lane preddoc5): the slug some-own (the draft's, closed by entailment) moved here from lib/search/hits; there was no `some` piece when it was homed (review r59 PLACE-4).
 - 2026-11-19 (lane preddoc6, review r60 COLD-20): "`NOT some(c)` and `occurs.none(c)` are the same question" marked as the reading of the open question core/model/table/group-truth (it is that question's candidate (a)); before, a ruled piece stated it as settled.
-
+- 2026-11-21 (lane predarr, array-vs-passes and joint-in-some ruled): the statement until then, verbatim: "`some(c)` holds when at least one pass of a loop meets the condition c, each pass judged with its own labels; it is false where the loop made no pass."; `defined: native (a question over a loop's passes; no expression of the language walks the passes)`; the bullet "`some` is the one spelling of "at least one pass"" lost "pass"; "`NOT some(c)` and `occurs.none(c)` are the same question under the reading of the open question core/model/table/group-truth (a reading)" became "the same question over the array". Bullets added: the array, the joint entry refused and the on-item idiom. Status date 2026-11-15 to 2026-11-21. The printed line does not move.
 ## lib/counting/count — count
 slugs: count-budget
 rulings:
+- 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); `count` reads the ARRAY OF SETTINGS; it REVISES "the number of passes of a loop that meet c"
 - 2026-11-15 "counts: perhaps the solution is both. you can use count() until you can't then you can use 'occurs' as a fallback" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING (lean) — counts: `count()` first, `occurs` as the fallback"
 - 2026-11-15 "i would refuse count() on budget or as a recommended way to reduce states rather than rules" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule"
 - 2026-11-15 "4. agree. Allows "even()" or other checks for count." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — the five open items"
@@ -575,28 +581,31 @@ rejected:
 - `count()` refused in a set position by rule (the manager's "until you can't" reading) — by owner ruling — "by BUDGET, not by rule" (the reading WITHDRAWN in the record).
 readings:
 - `n := count((d: "7"))`, `/(?:(?<d>\d),)+/ & (n: ==2)`: WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL [`7,7,`@0, `1,7,7,`@7] — SUPPORTED (preddoc4 PART CO; sabotage s9, every pass counted, caught).
+- the printed line under the settings reading — the SAME answers (one setting per pass): SUPPORTED (predarr CHANGED). On an empty array the count is zero (a reading; predarr EMPTY: `count(NOT (d: "7"))` on `,` is 0 on the array, 1 on the passes). On a condition of several entries what is counted is not stated (the manager's reading (b); an owner question, count-several, proposed).
 - the budget is one measured quantity, named with the "too many classes" budget (the five open items, (3)); no number stated.
 evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS].
 history:
 - 2026-11-19 (lane preddoc4): a new piece: `count(c)` was the body helper of `length` with no piece (review r59 PRIMITIVES-MISSING, READ-6). The slug count-budget is the lane's name for the budget ruling.
 - 2026-11-19 (lane preddoc6, review r60 COLD-2): the base's "`even()` on a count" (his word, "Allows "even()" or other checks for count", quoted above) written as the set it names, `/\d*[02468]/`: no piece provides `even`.
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "`count(c)` is the number of passes of a loop that meet c, a canonical numeral used with the ordinary comparisons; it is refused only over the budget, the refusal naming `occurs`."; `defined: native (a count over a loop's passes; no expression of the language counts passes)`. A bullet added (settings, zero, several entries). Status date 2026-11-15 to 2026-11-21. The printed line does not move.
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:
 rulings:
+- 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); `occurs` reads the ARRAY OF SETTINGS (the record entry names lib/counting/occurs among the revised pieces)
 - 2026-11-14 "more obscure but valuable" (record: "2026-11-14 RULING — counting occurrences")
 rejected:
 - `occurs.some` and `occurs.all` — by the draft (rev 7's, removed, not aliased; LEAN) — `some(c)` is the one spelling; `all` was retired (all-question).
 - a namespace `label` (`label.exactly(1, ...)`) — by the record — it clashes with element metadata `x.label`.
 readings:
 - the family is RULED as a library (2026-11-14); the name `occurs` ruled in use (the draft §8 STATUS).
+- over the array, `NOT some(c)` = `occurs.none(c)` by definition and `occurs.none(NOT c)` is "every setting meets c" — SUPPORTED (predarr TRUTH); the every-pass form over the array is not the item form where the label is optional (predarr EVERYPASS; lib/counting/every-pass).
 - `NOT some(c)` = `occurs.none(c)`; the every-pass form `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, not re-run here.
 - `count(c)` first, `occurs` the fallback (LEAN); `count()` refused only on budget (RULED) — the core's group questions, which have no core piece yet.
 evidence: the draft §8, §4.3, R.4.
 history:
 - 2026-11-14: agreed as a library family (all, some, none, exactly, at_least, at_most); 2026-11-15 (rev 8): counts only.
 - 2026-11-19 (lane preddoc3c): converted; the heading drops `.some` (withdrawn).
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`."; `defined: native (a count over the passes of a loop, a capped counter; no expression of the language counts passes)`; the bullet's "one record is one pass" became "judged on each setting of its label"; the `modes:` line's "a count over a loop's pass table; no example of the draft is printed in the three modes" re-pointed at the runs. `needs:` the array piece. Status date 2026-11-14 to 2026-11-21.
 ## lib/counting/every-pass — Every pass, named
 slugs: every-pass-spelling
 rulings:
@@ -604,11 +613,11 @@ rulings:
 rejected:
 readings:
 - OPEN in the draft (§R.8, row every-pass-home: "the conditioned item inside `repeat` is the item form"; the draft R.4's W1a, W1b); the owner, the evening of 2026-11-16 as the draft quotes him: "assign the condition inside the loop to get the all behavior" — the item form, today's way; whether a name exists is not asked.
-- `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, not re-run here.
-evidence: the draft R.4, §R.8.
+- `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, under the PASS reading; NOT SUPPORTED over the array where the label is optional: on `7,,` every setting is `7` and the form HOLDS while the item form FAILS (predarr EVERYPASS; sabotage s11 caught). The pass-reading line, verbatim as run: `Passes: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)`.
+evidence: the draft R.4, §R.8; docs/dev/lanes/predarr_evidence/ EVERYPASS.
 history:
 - 2026-11-19 (lane preddoc4): a new open piece: the slug every-pass-spelling had no home (review r59 PRIMITIVES-MISSING).
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "Is there a named group question for "every pass meets c", equal to `some(c) & occurs.none(NOT c)`, or is every pass written only with the condition on the item?"; candidate (b) until then "a named group question equal to `some(c) & occurs.none(NOT c)`"; the `modes:` line "modes: n/a (a question; the draft's runs are cited in the details entry)" replaced by two run lines. Over the array the form says every SETTING, not every pass; the question stays open. Status date 2026-11-19 to 2026-11-21.
 ## lib/strings/join — join
 slugs:
 rulings:
@@ -680,7 +689,7 @@ readings:
 evidence: the draft §5.6.
 history:
 - 2026-11-19 (lane preddoc4): a new piece and section: the ruled assert module had no piece (review r59 COMPB-2).
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the last bullet's "that one asks about a loop's passes in a match" became "about a label's settings in a match".
 ## lib/assert/each — assert.each
 slugs:
 rulings:
@@ -868,7 +877,7 @@ readings:
 evidence:
 history:
 - 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
-
+- 2026-11-21 (lane predarr, array-vs-passes ruled): the statement's "(the other passes, his `@x`)" became "(every setting of the name, his `@x`)": the array is the settings, not the passes.
 ## lib/json/members — json.row, json.string
 slugs:
 rulings:

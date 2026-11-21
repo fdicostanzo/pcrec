@@ -1,0 +1,91 @@
+== the library bodies read from library.md: hits /\A(?>(?:(?s:.*?)(?<hit>${r}))*[\s\S]*)\z/ ; chars /(?:(?<ch>(?s:.)))*/ ; nchars count((ch: /(?s:.)/)) ; anything [\s\S]*
+== CONTROL: lowered programs without group questions against python `re` on hand regexes
+CONTROL   ok   the optional-m item loop (0, 0, 0) of 1365 ; `"ab" | "a"` (0, 0, 0), `(?:a|ab)??c` (0, 0, 0) of 121
+== ARRAYS: the array of settings (from the path's log) against python `re`'s finditer over the matched text
+ARRAYS    ok   34 whole matches over `53:,` (length <= 6), 0 differ ; `5,2:3,`: h = ['5', '2'], m = ['3'] ; `/(?:(?<h>\d)?;)*/` on `7;;3;`: h = ['7', '3']
+== OUTSIDE: the label rule (a reset, a name set before a loop and inside it) beside the array of settings
+   Outside the loop: Settings: WHOLE `7;` HOLDS, `1;7;` HOLDS / SEARCHED `x7;` `7;`@1 / FIND-ALL `7; 1;7; 1;` [`7;`@0, `1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+   Outside the loop, the label beside it: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED `x7;` FAILS / FIND-ALL `7; 1;7; 1;` [`1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & (h: "7")`)
+OUTSIDE   ok   `7;`: label h None, array ['7'] ; the separated list on `7`: label None, array ['7'] (a reset acts on the label, the array keeps every setting)
+== AVP: the piece's three witnesses, settings (ruled) and passes (rejected)
+   Two depths: Settings: WHOLE `3;4;,5;,` FAILS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `4;,5;,`@3 / FIND-ALL `3;4;,5;, 3;,5;,` [`4;,5;,`@2, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
+   Two depths: Passes: WHOLE `3;4;,5;,` HOLDS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `3;4;,5;,`@1 / FIND-ALL `3;4;,5;, 3;,5;,` [`3;4;,5;,`@0, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
+   Two in a pass: Settings: WHOLE `71,` HOLDS, `17,` HOLDS / SEARCHED `x71,` `71,`@1 / FIND-ALL `71, 17, 12,` [`71,`@0, `17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
+   Two in a pass: Passes: WHOLE `71,` FAILS, `17,` HOLDS / SEARCHED `x71,` FAILS / FIND-ALL `71, 17, 12,` [`17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
+   Outside the loop: Settings: WHOLE `7;` HOLDS, `1;7;` HOLDS / SEARCHED `x7;` `7;`@1 / FIND-ALL `7; 1;7; 1;` [`7;`@0, `1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+   Outside the loop: Passes: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED `x7;` FAILS / FIND-ALL `7; 1;7; 1;` [`1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+AVP       ok   the two readings give different lines on 3 of 3 witnesses; settings: two depths `3;4;,5;,` FAILS, `71,` HOLDS, `7;` HOLDS
+== RECORD: `some((h: "5", m: "3"))`, the manager's reading (a): the product of its entries, each over its own array
+   A record of two entries: WHOLE `5:1,2:3,` HOLDS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` `5:1,2:3,`@5 / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:1,2:3,`@0, `5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`)
+   Passes: WHOLE `5:1,2:3,` FAILS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` FAILS / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`)
+RECORD    ok   settings against the hand regex `(?=(?:\d:\d,)*5:\d,)(?=(?:\d:\d,)*\d:3,)(?:\d:\d,)+`: (0, 0, 0) of 5461 ; the record's line (passes FAILS, settings HOLDS on `5:1,2:3,`): True
+== JOINT: `some(((h, m): ("5", "3")))` on the optional-m loop, paired by index and by item; REFUSE: the ruling
+   By index: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` HOLDS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` `5,2:3,`@1 / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0, `5,2:3,`@5] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some(((h, m): ("5", "3")))`)
+   By item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some(((h, m): ("5", "3")))`)
+   The record form: WHOLE `5:3,` HOLDS, `5:1,2:3,` HOLDS, `5,2:3,` HOLDS, `2:3,5,` HOLDS / SEARCHED `x5,2:3,` `5,2:3,`@1 / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0, `5,2:3,`@5, `2:3,5,`@12, `5:1,2:3,`@19] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some((h: "5", m: "3"))`)
+JOINT     ok   WHOLE by index [True, False, True, False], by item [True, False, False, False] on ['5:3,', '5:1,2:3,', '5,2:3,', '2:3,5,']: they part on `5,2:3,` only (the record: "`5:3,` both find it; `5:1,2:3,` neither")
+REFUSE    ok   under the ruling the program is a compile error: a joint entry inside a group question is refused for now: label the item where it meets the condition, `[ok = item & ((h, m): (..))]`, then `some((ok: anything))`
+== IDIOM: the on-item label, then a group question on it, against the by-item reference
+   Same item, on the item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0] (`([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))`, item := `/(?<h>\d)(?::(?<m>\d))?,/`)
+IDIOM     ok   against the by-item reading (0, 0, 0), against the hand regex `(?:\d(?::\d)?,)*5:3,(?:\d(?::\d)?,)*` (0, 0, 0), of 5461 texts over `53:,`; the printed line equals the by-item line: True
+== EMPTY: `some` false and `count` zero on an empty array (the manager's reading (c))
+   An empty array: WHOLE `,` FAILS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` FAILS / FIND-ALL `, 7, 1,` [`1,`@5] (`/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`)
+   Passes: WHOLE `,` HOLDS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` `,`@1 / FIND-ALL `, 7, 1,` [`,`@0, `,`@3, `1,`@5] (`/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`)
+   A count of zero: WHOLE `,` HOLDS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` `,`@1 / FIND-ALL `1, , 7,` [`,`@1, `,`@3, `7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`)
+   Passes: WHOLE `,` FAILS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` FAILS / FIND-ALL `1, , 7,` [`7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`)
+EMPTY     ok   on `,` (one pass, no setting): settings `some(NOT c)` FAILS and the count is 0; passes HOLDS and 1
+== TRUTH: `NOT some(c)`, `occurs.none(c)`, `occurs.none(NOT c)` with c := (d: "7")
+TRUTH     ok   of 364 texts over `17,` on `/(?:(?<d>\d)?,)+/`: settings NOT some(c) vs occurs.none(c) (0, 0, 0), vs occurs.none(NOT c) (28, 216, 244); passes NOT some(c) vs occurs.none(c) (0, 0, 0); occurs.none(NOT c) settings vs passes (17, 237, 245); NOT some(c) settings vs passes (0, 0, 0)
+== EVERYPASS: `some(c) & occurs.none(NOT c)` against the item form
+   Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+   The item form: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?${(d: "7")},)+/`)
+   Passes: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+EVERYPASS ok   on `7,,` every SETTING is 7 (HOLDS) where the item form and the passes reading FAIL
+== CHANGED: every printed example with a group question, under the pass reading and the settings reading
+   [lib/counting/some] same under both: True | WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
+   [lib/counting/count] same under both: True | WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (n: ==2)`, n := `count((d: "7"))`)
+   [lib/modifiers/length] same under both: True | WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
+CHANGED   ok   the three printed lines are the same under the pass and the settings readings: [('lib/counting/some', True), ('lib/counting/count', True), ('lib/modifiers/length', True)]
+== HITS: `hits(r)`'s body (read from library.md) against python `re`; "every hit under 100"
+HITS      ok   the body against python `re` (0, 0, 0) of 1365 ; `hits(/\d+/) & occurs.none((hit: >= 100))` WHOLE on `1234`, `12 34`, `12 345`, `x300 12`: settings [False, True, False, False], passes [False, True, False, False] (the base: FAILS, HOLDS, FAILS, FAILS)
+== QUESTIONS: the lines the report's owner questions print
+   count-several (b), the arrays paired by index: WHOLE `5:3,2:1,` HOLDS, `5:1,2:3,` FAILS / SEARCHED `5:1,2:3, 5:3,` `5:3,`@9 / FIND-ALL `5:3,2:1, 5:1,2:3, 5:3,` [`5:3,2:1,`@0, `5:3,`@18] (`/(?:(?<h>\d):(?<m>\d),)+/ & (n: ==1)`, n := `count((h: "5", m: "3"))`)
+   group-truth, `NOT some(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & NOT some((d: "7"))`)
+   group-truth, `occurs.none(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none((d: "7"))`)
+   group-truth, `occurs.none(NOT c)`: WHOLE `1,,` FAILS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `7,`@0 / FIND-ALL `7, 1,, 7,1, ,` [`7,`@0, `,,`@4, `7,`@7, `,`@10, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none(NOT (d: "7"))`)
+QUESTIONS ok   count of a record under the ruling's model: a compile error (not stated: what a count of several entries counts) ; NOT some(c) and occurs.none(c) print the same line, occurs.none(NOT c) another
+== RECLINES: the record's printed lines, in the record and as run
+RECLINES  ok   3 record lines; missing: []
+== QUOTES: the owner's words this lane quotes, verbatim in the record
+QUOTES    ok   6 quoted sentences; missing from the record: []
+== DOC: every formatted line occurs verbatim in the documents
+   [array-vs-passes] Outside the loop: Settings: WHOLE `7;` HOLDS, `1;7;` HOLDS / SEARCHED `x7;` `7;`@1 / FIND-ALL `7; 1;7; 1;` [`7;`@0, `1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+   [array-vs-passes] Outside the loop, the label beside it: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED `x7;` FAILS / FIND-ALL `7; 1;7; 1;` [`1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & (h: "7")`)
+   [array-vs-passes] Two depths: Settings: WHOLE `3;4;,5;,` FAILS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `4;,5;,`@3 / FIND-ALL `3;4;,5;, 3;,5;,` [`4;,5;,`@2, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
+   [array-vs-passes rejected] Two depths: Passes: WHOLE `3;4;,5;,` HOLDS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `3;4;,5;,`@1 / FIND-ALL `3;4;,5;, 3;,5;,` [`3;4;,5;,`@0, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
+   [array-vs-passes] Two in a pass: Settings: WHOLE `71,` HOLDS, `17,` HOLDS / SEARCHED `x71,` `71,`@1 / FIND-ALL `71, 17, 12,` [`71,`@0, `17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
+   [array-vs-passes rejected] Two in a pass: Passes: WHOLE `71,` FAILS, `17,` HOLDS / SEARCHED `x71,` FAILS / FIND-ALL `71, 17, 12,` [`17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
+   [array-vs-passes] Outside the loop: Settings: WHOLE `7;` HOLDS, `1;7;` HOLDS / SEARCHED `x7;` `7;`@1 / FIND-ALL `7; 1;7; 1;` [`7;`@0, `1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+   [array-vs-passes rejected] Outside the loop: Passes: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED `x7;` FAILS / FIND-ALL `7; 1;7; 1;` [`1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+   [array-vs-passes] A record of two entries: WHOLE `5:1,2:3,` HOLDS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` `5:1,2:3,`@5 / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:1,2:3,`@0, `5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`)
+   [array-vs-passes rejected] Passes: WHOLE `5:1,2:3,` FAILS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` FAILS / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`)
+   [array-vs-passes rejected] By index: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` HOLDS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` `5,2:3,`@1 / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0, `5,2:3,`@5] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some(((h, m): ("5", "3")))`)
+   [array-vs-passes rejected] By item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some(((h, m): ("5", "3")))`)
+   [array-vs-passes] The record form: WHOLE `5:3,` HOLDS, `5:1,2:3,` HOLDS, `5,2:3,` HOLDS, `2:3,5,` HOLDS / SEARCHED `x5,2:3,` `5,2:3,`@1 / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0, `5,2:3,`@5, `2:3,5,`@12, `5:1,2:3,`@19] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some((h: "5", m: "3"))`)
+   [array-vs-passes] Same item, on the item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0] (`([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))`, item := `/(?<h>\d)(?::(?<m>\d))?,/`)
+   [array-vs-passes] An empty array: WHOLE `,` FAILS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` FAILS / FIND-ALL `, 7, 1,` [`1,`@5] (`/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`)
+   [array-vs-passes rejected] Passes: WHOLE `,` HOLDS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` `,`@1 / FIND-ALL `, 7, 1,` [`,`@0, `,`@3, `1,`@5] (`/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`)
+   [array-vs-passes] A count of zero: WHOLE `,` HOLDS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` `,`@1 / FIND-ALL `1, , 7,` [`,`@1, `,`@3, `7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`)
+   [array-vs-passes rejected] Passes: WHOLE `,` FAILS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` FAILS / FIND-ALL `1, , 7,` [`7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`)
+   [every-pass] Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+   [every-pass] The item form: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?${(d: "7")},)+/`)
+   [every-pass] Passes: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+   [lib/counting/some] WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
+   [lib/counting/count] WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (n: ==2)`, n := `count((d: "7"))`)
+   [lib/modifiers/length] WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
+   [report] count-several (b), the arrays paired by index: WHOLE `5:3,2:1,` HOLDS, `5:1,2:3,` FAILS / SEARCHED `5:1,2:3, 5:3,` `5:3,`@9 / FIND-ALL `5:3,2:1, 5:1,2:3, 5:3,` [`5:3,2:1,`@0, `5:3,`@18] (`/(?:(?<h>\d):(?<m>\d),)+/ & (n: ==1)`, n := `count((h: "5", m: "3"))`)
+   [report] group-truth, `NOT some(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & NOT some((d: "7"))`)
+   [report] group-truth, `occurs.none(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none((d: "7"))`)
+   [report] group-truth, `occurs.none(NOT c)`: WHOLE `1,,` FAILS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `7,`@0 / FIND-ALL `7, 1,, 7,1, ,` [`7,`@0, `,,`@4, `7,`@7, `,`@10, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none(NOT (d: "7"))`)
+DOC       ok   28 lines (4 in the report); missing: []
+predarr_model: 17 checks, 0 failed

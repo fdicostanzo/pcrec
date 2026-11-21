@@ -142,17 +142,19 @@ see: core/patterns/atomic
   (core/patterns/atomic); a condition written INSIDE the atomic part is a piece of it and filters first.
 WHOLE `73` HOLDS (l = `3`), `77` FAILS / SEARCHED `x737` `73`@1 (l = `3`) / FIND-ALL `37 73 77` [`37`@0, `73`@3] (`/(?<l>\d)\d|\d(?<l>\d)/ & (l: "3")`)
 
-### Group questions over the pass table   [core/model/table/group-truth]   open group-truth 2026-11-19
-After a loop, is the reading the definition: each group question counts the passes on which its condition is TRUE, each pass judged with its own labels, two-valued?
+### Group questions over the array   [core/model/table/group-truth]   open group-truth 2026-11-21
+With the group questions reading a name's array of settings, does this question close: `NOT some(c)` and `occurs.none(c)` one question, `occurs.none(NOT c)` another?
 needs: core/model/table
-see: lib/counting/occurs lib/counting/some core/conditions/pass-start-read
-- The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads
-  the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the
-  finished passes.
-- Under the reading `NOT some(c)` and `occurs.none(c)` are one question (they agree on every text run), and
-  `occurs.none(NOT c)`, "no pass on which c fails", is another (it holds with no pass; on a pass lacking c's label
-  c fails and `NOT c` holds).
-- Candidates: (a) yes, the reading; (b) no: he names which of the three forms he meant to be one question.
+see: lib/counting/occurs lib/counting/some core/conditions/pass-start-read core/labels/labels-vs-captures/array-vs-passes
+- The question as first put ("each pass judged with its own labels") is about passes; the group questions now
+  read the array of settings (core/labels/labels-vs-captures/array-vs-passes), so no pass is judged.
+- The reading under the array, for a condition of one entry: each group question counts the settings c holds on;
+  a setting is a value, never absent, so a "pass lacking c's label" does not arise.
+- Then `NOT some(c)` and `occurs.none(c)` are one question by definition (no setting meets c), and
+  `occurs.none(NOT c)` is another: every setting meets c, true on an empty array (a reading, run).
+- A condition of several entries: core/labels/labels-vs-captures/array-vs-passes (not stated for a count).
+- Candidates: (a) close: answered by array-vs-passes for one entry; (b) keep it open for the several-entry case.
+  The choice is the owner's or the manager's.
 modes: n/a (a question over library names; the runs are cited in the details entry)
 
 ### The place table   [core/model/places]   reading 2026-11-19
@@ -182,9 +184,11 @@ modes: n/a (the table of places; each place's piece has its example)
 ### The outermost view   [core/model/places/outermost-view]   ruled 2026-11-17
 A condition outside a pattern sees its labels at the outermost view; an inner view is written by nesting the condition at the level it speaks about.
 needs: core/model/places core/model/match
+see: core/labels/labels-vs-captures/array-vs-passes
 - Every enclosing loop's pass enters its body anew, so a bare condition after the pattern reads a label only where
   the last pass of each enclosing loop set it.
-- Pass tests (`some`, `occurs`, `h[k]`) on a label two loops deep range over the outermost loop's passes (a reading).
+- The group questions (`some`, `count`, `occurs`) and the index `h[k]` are not a view: they read the array of the
+  name's settings, every setting at every depth in order (core/labels/labels-vs-captures/array-vs-passes).
 WHOLE `3;,` HOLDS, `3;,,` FAILS, `3;;,` FAILS / SEARCHED `3;,,` `3;,`@0 / FIND-ALL `3;, 3;;, 4;,` [`3;,`@0, `4;,`@9] (`/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)`)
 
 ## Patterns   [core/patterns]
@@ -294,8 +298,8 @@ see: core/labels/one-rule lib/counting/some core/labels/export lib/structural/ca
   carried-capture form, a visibly different spelling.
 - The ARRAY form reads every setting of the name in order, the one outside the loop included; a reset contributes
   nothing; it is its own type, compared with a single value only through the group questions (`some`, `count`,
-  `occurs`: lib/counting); its index `h[k]` counts settings (a reading). Settings or the loop's passes:
-  core/labels/labels-vs-captures/array-vs-passes.
+  `occurs`: lib/counting), which read this array, as its index `h[k]`, the k-th setting, does
+  (core/labels/labels-vs-captures/array-vs-passes).
 - The array's scope is the entire rx as composed, not one literal or one definition: `[x = rx.digit]+` and
   `/(?<x>\d)+/` have one array, and two groups of one name in a sequence give it both settings. It holds the
   settings of the name where the name is visible, as they stand where it is read (composed at that point: a
@@ -305,20 +309,33 @@ see: core/labels/one-rule lib/counting/some core/labels/export lib/structural/ca
 WHOLE `9:45,10:45,45` HOLDS, `9:45,10,45` FAILS / SEARCHED `9:45,10,45 1:45,45` `1:45,45`@11 / FIND-ALL `9:45,10,45 1:45,45` [`1:45,45`@11] (`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")`)
 Captured in a loop: WHOLE `3;;` HOLDS, `3;` HOLDS / SEARCHED `x3;;` `3;;`@1 / FIND-ALL `3;; 7;` [`3;;`@0, `7;`@4] (`/(?:(?<h>\d)?;)+/`; on `3;;` the label h is unset, PCRE's capture `3`)
 
-### The array of settings or the loop's passes   [core/labels/labels-vs-captures/array-vs-passes]   open array-vs-passes 2026-11-19
-Do the group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a label's settings, or the passes of the loop that sets it?
+### The array of settings, not the loop's passes   [core/labels/labels-vs-captures/array-vs-passes]   ruled 2026-11-21
+The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order, the one outside the loop included.
 needs: core/labels/labels-vs-captures
-see: lib/counting/some lib/counting/count lib/counting/occurs
-The rule today tells the group questions to the ARRAY (every setting, in order, the one outside the loop
-included; `h[k]` counts settings, a reading), while lib/counting defines them on a loop's PASSES, each pass with
-its own label, false where the loop made no pass. They part on two depths, two settings in one pass, and a setting
-outside the loop. Candidates: (a) the array of settings; (b) the passes of the outermost loop holding the group.
-Two depths, (a): Settings: WHOLE `3;4;,5;,` FAILS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `4;,5;,`@3 / FIND-ALL `3;4;,5;, 3;,5;,` [`4;,5;,`@2, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
-Two depths, (b): Passes: WHOLE `3;4;,5;,` HOLDS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `3;4;,5;,`@1 / FIND-ALL `3;4;,5;, 3;,5;,` [`3;4;,5;,`@0, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
-Two in a pass, (a): Settings: WHOLE `71,` HOLDS, `17,` HOLDS / SEARCHED `x71,` `71,`@1 / FIND-ALL `71, 17, 12,` [`71,`@0, `17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
-Two in a pass, (b): Passes: WHOLE `71,` FAILS, `17,` HOLDS / SEARCHED `x71,` FAILS / FIND-ALL `71, 17, 12,` [`17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
-Outside the loop, (a): Settings: WHOLE `7;` HOLDS, `1;7;` HOLDS / SEARCHED `x7;` `7;`@1 / FIND-ALL `7; 1;7; 1;` [`7;`@0, `1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
-Outside the loop, (b): Passes: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED `x7;` FAILS / FIND-ALL `7; 1;7; 1;` [`1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+see: lib/counting/some lib/counting/count lib/counting/occurs core/conditions/form core/values/tuples parked/ideas/user-doc-traps
+- "they chose to use the same labels and therefore that has to have a meaning": a setting outside the loop wanted
+  apart is given a label of its own. `h[k]` is the k-th setting (the line "Two depths").
+- The label and the array are two reads of one name: a reset acts on the label only, so after
+  `/(?<h>\d);(?:(?<h>\d);)*/` on `7;` the label h is unset and the array is [`7`] (the two lines "Outside the loop").
+- On an empty array (no setting) `some` is false and a count is zero; a pass that sets nothing adds nothing (a
+  reading; the lines "An empty array", "A count of zero").
+- A record of several plain entries inside a group question is the product of its entries, each a group question
+  over its own array: `some((h: "5", m: "3"))` is "some h is 5 and some m is 3" (a reading; inside a group question
+  a record and its joint form then part, core/conditions/form). `count` and `occurs` of several entries: not stated.
+- A JOINT entry inside a group question (`some(((h, m): ("5", "3")))`) is a compile error for now; pairing by index
+  or by item can be allowed later without changing an answer. The error's message names the on-item form (the
+  manager's call).
+- "Same item" is written on the item: label the item only where it meets the condition, then ask a group question
+  on that label (the line "Same item, on the item").
+Two depths: Settings: WHOLE `3;4;,5;,` FAILS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `4;,5;,`@3 / FIND-ALL `3;4;,5;, 3;,5;,` [`4;,5;,`@2, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
+Two in a pass: Settings: WHOLE `71,` HOLDS, `17,` HOLDS / SEARCHED `x71,` `71,`@1 / FIND-ALL `71, 17, 12,` [`71,`@0, `17,`@4] (`/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`)
+Outside the loop: Settings: WHOLE `7;` HOLDS, `1;7;` HOLDS / SEARCHED `x7;` `7;`@1 / FIND-ALL `7; 1;7; 1;` [`7;`@0, `1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`)
+Outside the loop, the label beside it: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED `x7;` FAILS / FIND-ALL `7; 1;7; 1;` [`1;7;`@3] (`/(?<h>\d);(?:(?<h>\d);)*/ & (h: "7")`)
+A record of two entries: WHOLE `5:1,2:3,` HOLDS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` `5:1,2:3,`@5 / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:1,2:3,`@0, `5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`)
+The record form: WHOLE `5:3,` HOLDS, `5:1,2:3,` HOLDS, `5,2:3,` HOLDS, `2:3,5,` HOLDS / SEARCHED `x5,2:3,` `5,2:3,`@1 / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0, `5,2:3,`@5, `2:3,5,`@12, `5:1,2:3,`@19] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some((h: "5", m: "3"))`)
+Same item, on the item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0] (`([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))`, item := `/(?<h>\d)(?::(?<m>\d))?,/`)
+An empty array: WHOLE `,` FAILS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` FAILS / FIND-ALL `, 7, 1,` [`1,`@5] (`/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`)
+A count of zero: WHOLE `,` HOLDS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` `,`@1 / FIND-ALL `1, , 7,` [`,`@1, `,`@3, `7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`)
 
 ### One label rule: branchings reset   [core/labels/one-rule]   ruled 2026-11-17
 A label is a name; entering a branching (an alternation, an optional, a loop) resets every label whose group lies inside it, and in a sequence the last mention wins.
@@ -471,6 +488,8 @@ needs: core/model/match core/labels/paths
 - `$x & S` is an rx (x's text or nothing), legal where an rx stands, with a warning on the form.
 - A condition keeps its parentheses (core/spellings/condition-parentheses); `P & x: S` and `[x: S]` are errors.
 - A condition is a value of its own kind: it may be bound, passed or put in an array; the record is its body.
+- Inside a group question each plain entry reads its own array and a joint entry is refused for now, so there a
+  record and its joint form part (a reading: core/labels/labels-vs-captures/array-vs-passes).
 see: core/values/number-domain core/diagnostics/dollar-form core/spellings/condition-parentheses core/conditions/two-valued core/values/comparisons core/values/tuples
 WHOLE `10:15` HOLDS, `9:15` FAILS, `10:45` FAILS / SEARCHED `9:15 10:15` `10:15`@5 / FIND-ALL `10:15 9:15 11:20` [`10:15`@0, `11:20`@11] (`/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: >= 10, m: <30)`)
 
@@ -692,7 +711,7 @@ see: lib/sets/between lib/modifiers/padded core/operators/precedence
 - A tuple atom compares in dictionary order (core/values/tuples).
 WHOLE `19` HOLDS, `020` FAILS, `20` FAILS / SEARCHED `x25` `2`@1 / FIND-ALL `25 7 019` [`2`@0, `5`@1, `7`@3, `0`@5, `19`@6] (`/\d+/ & <20`)
 
-### Tuples   [core/values/tuples]   ruled 2026-11-16
+### Tuples   [core/values/tuples]   ruled 2026-11-21
 A tuple `(9, 30)` is a value, the one-tuple set of arity 2; every set carries a fixed arity, and a comparison on a tuple atom is in dictionary order.
 needs: core/values/comparisons core/conditions/form
 see: core/modules/positional parked/ideas/first-rest
@@ -710,6 +729,8 @@ see: core/modules/positional parked/ideas/first-rest
 - Taking ONE tuple apart (`(a, b) := lo`) is open (core/modules/positional); a first/rest walk (a tuple's first
   part and the rest, recursively) is parked (parked/ideas/first-rest).
 - A tuple is not a RECORD: the parentheses of a call or a condition are never a value (core/operators/bindings).
+- Inside a group question a joint entry is a compile error for now; "same item" is written on the item
+  (core/labels/labels-vs-captures/array-vs-passes).
 WHOLE `9:45` HOLDS, `9:15` FAILS, `10:15` HOLDS / SEARCHED `9:15 10:30` `10:30`@5 / FIND-ALL `9:30 9:15 12:45` [`9:30`@0, `12:45`@10] (`time & ((h, m): >= (9, 30))`, time := `/(?<h>\d{1,2}):(?<m>\d{2})/`)
 
 ### Computed labels   [core/values/computed-labels]   reading 2026-11-19
@@ -720,7 +741,8 @@ see: core/values/arithmetic lib/modifiers/length lib/modifiers/month-numbered
 - It is computed where it is read, from the labels as they stand there (core/conditions/pass-start-read); a binding
   that reads no label is pure, a compile-time value (core/operators/statements).
 - An unset input gives an unset computed label: a test on it fails, as on an absent label (a reading).
-- Its value is one string (arity 1); a computed label over a loop's passes is a group question (lib/counting).
+- Its value is one string (arity 1); a computed label over a name's settings (its array) is a group question
+  (lib/counting).
 WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 5+4` [`1+1`@0, `5+4`@8] (`/(?<a>\d)\+(?<b>\d)/ & (sum: <10)`, sum := `$a + $b`)
 
 ### Metadata of a member   [core/values/metadata]   reading 2026-11-19
@@ -1437,7 +1459,8 @@ needs: core/values/tuples core/diagnostics/warnings core/labels/labels-vs-captur
   written with the condition on the item (core/conditions/in-sequence).
 - `pcrec.label.unset` still fires where such a label can be unset at the read (core/diagnostics/warnings).
 - On the item the joint form says a dictionary-order test in one entry: where both are set, `((h, m): >= (5, 3))`
-  is `(h: >5) | (h: 5, m: >=3)`.
+  is `(h: >5) | (h: 5, m: >=3)`. Inside a group question a joint entry is a compile error for now
+  (core/labels/labels-vs-captures/array-vs-passes).
 WHOLE `6:0,5:3,` HOLDS, `1:0,5:3,` FAILS / SEARCHED `1:0,5:3,6:0,` `5:3,6:0,`@4 / FIND-ALL `1:0,6:0, 5:3,1:0,` [`6:0,`@4, `5:3,`@9] (`/(?:${late},)+/`, late := `/(?<h>\d):(?<m>\d)/ & ((h, m): >= (5, 3))`)
 
 ## Spellings   [core/spellings]
@@ -1453,7 +1476,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the RX parts (`rx.repeat`, `rx.digit`, the plurals) | lib/rx/repeat, lib/rx/classes |
 | the HIT LIST (`hits(r)`); the EVERY-PASS shorthand | lib/search/hits, lib/counting/every-pass |
 | the SORT and its shorthand for longest first (`sort(...)`, `longest_first(X)`; his `lengthSorted()`) | lib/structural/sort |
-| the ARRAY FORM of a read (his `@x`), under a part label (his `x.@a`), its index `h[k]` and the pass index `(h[2]: ..)` | core/labels/labels-vs-captures, core/values/reads |
+| the ARRAY FORM of a read (his `@x`), under a part label (his `x.@a`), its index `h[k]`, the k-th setting (`(h[2]: ..)`) | core/labels/labels-vs-captures, core/values/reads |
 | the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
 | a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]`; the part label named for its binding (his `[=year]`, read as `[year = year]`) | core/labels/paths, core/labels/export |
 | the CAPTURE forms: a wrapper (his `[ d = capture(digits) ]`), after the fact (his `[ d = digits ] & capture(d)`); `capture(name, x)` | lib/structural/capture, lib/structural/capture/add-on |
