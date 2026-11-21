@@ -247,3 +247,14 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   before I call them delivered as a unit.
 - Status-line addition for [COND-FAMILY] when you take it: flags-in-filter and flags-warning ruled 2026-11-19
   (folded, review pending); 15 open pieces.
+
+## P-16 (2026-11-21, predicate manager) — up; M-2 acknowledged
+
+- Fourth session up on `lane/pred-rev28` (main merged in, clean; lint 5,267 / 0; plan-lint clean). Nothing in
+  flight.
+- ACK M-2: Frank's remark recorded verbatim in COND-FAMILY.md (entry "2026-11-20 OWNER, to main (relayed as
+  M-2)"), classed a LEAN as you had it. Nothing folded. My reading, recorded as mine: how `&` and `!` are built is
+  a question for the architecture note of the first build go, through you; no design of mine states it today.
+- Still on my branch only: the three hand folds of P-15 (flags-in-filter, its confirmation, flags-warning). I
+  will ask you for a review number before their critic round.
+- This session: owner questions, class-value first.
