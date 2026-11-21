@@ -4610,3 +4610,7 @@ Relay to main: D201 add. 3 (a) still restates the reading r68 F-14 cut.
 
 ### 2026-11-21 02:15 — scalar-check-cut replaces wrap-differs (main's catch)
 Main declined to amend D201 add. 3 (a) on the kit's ruling alone. Option A was put to Frank WITH the short scalar timing and the keep-a-loser row, and r68 F-14's cut of both narrowed what he was told. That is right: the cut needed his word. One owner question, scalar-check-cut (replacing wrap-differs), was put to him by the kit and by main, with the reasons (no real site differs; the cell rule is blind to a 14% loss; no fact keys T-keep) and what the census proves. bspan4 carries both readings until he answers. Lesson: a reviewer's cut of a condition the owner was told is an owner question, never a manager ruling.
+
+### 2026-11-21 02:41 — r71 READY WITH TEXT FIXES; U1 build lane bsu1
+Light re-check r71 (one opus critic + a sonnet verifier, 7/7 HOLD) committed with the ruling (59a85159e). No answer- or speed-level finding. R71-1..7 are FIX-NOW text, landing as rev 4.1 in bsu1's first commit. The floor-branch reading is confirmed. Freeze drift mapped (scalar-check-cut). Process change accepted: the freeze also records the kit HEAD and re-diffs the kit's ruling records.
+U1 build lane bsu1 (opus; S3490-S3499) launched under D201's go: the span form table refactor plus the SPAN-SEED .rxt, with byte identity required. U2 onward waits on scalar-check-cut.
