@@ -16,7 +16,7 @@ known_issues.md K147 and K149 headings now FIXED (landed on main 0016d430f, 2026
 - Conflict-marker grep: empty.
 
 ## Push
-See the handback message; the push gate (CI of origin/main) is checked after the records commit.
+Pushed: origin/main c30007d5d..05090b67b (CI on origin/main was completed success; pre-push light gate passed).
 
 ## STATE AT HANDOFF
 Merge done, records committed by named paths. Pre-existing dirt left alone (artifact_size_log.tsv, untracked deliver files, land1101.done). No worktrees or branches pruned. Nothing owed.
