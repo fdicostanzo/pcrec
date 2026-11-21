@@ -48,6 +48,12 @@ EVERYPASS ok   on `7,,` every SETTING is 7 (HOLDS) where the item form and the p
 CHANGED   ok   the three printed lines are the same under the pass and the settings readings: [('lib/counting/some', True), ('lib/counting/count', True), ('lib/modifiers/length', True)]
 == HITS: `hits(r)`'s body (read from library.md) against python `re`; "every hit under 100"
 HITS      ok   the body against python `re` (0, 0, 0) of 1365 ; `hits(/\d+/) & occurs.none((hit: >= 100))` WHOLE on `1234`, `12 34`, `12 345`, `x300 12`: settings [False, True, False, False], passes [False, True, False, False] (the base: FAILS, HOLDS, FAILS, FAILS)
+== QUESTIONS: the lines the report's owner questions print
+   count-several (b), the arrays paired by index: WHOLE `5:3,2:1,` HOLDS, `5:1,2:3,` FAILS / SEARCHED `5:1,2:3, 5:3,` `5:3,`@9 / FIND-ALL `5:3,2:1, 5:1,2:3, 5:3,` [`5:3,2:1,`@0, `5:3,`@18] (`/(?:(?<h>\d):(?<m>\d),)+/ & (n: ==1)`, n := `count((h: "5", m: "3"))`)
+   group-truth, `NOT some(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & NOT some((d: "7"))`)
+   group-truth, `occurs.none(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none((d: "7"))`)
+   group-truth, `occurs.none(NOT c)`: WHOLE `1,,` FAILS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `7,`@0 / FIND-ALL `7, 1,, 7,1, ,` [`7,`@0, `,,`@4, `7,`@7, `,`@10, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none(NOT (d: "7"))`)
+QUESTIONS ok   count of a record under the ruling's model: a compile error (not stated: what a count of several entries counts) ; NOT some(c) and occurs.none(c) print the same line, occurs.none(NOT c) another
 == RECLINES: the record's printed lines, in the record and as run
 RECLINES  ok   3 record lines; missing: []
 == QUOTES: the owner's words this lane quotes, verbatim in the record
@@ -77,5 +83,9 @@ QUOTES    ok   6 quoted sentences; missing from the record: []
    [lib/counting/some] WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
    [lib/counting/count] WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (n: ==2)`, n := `count((d: "7"))`)
    [lib/modifiers/length] WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
-DOC       ok   24 lines; missing: []
-predarr_model: 16 checks, 0 failed
+   [report] count-several (b), the arrays paired by index: WHOLE `5:3,2:1,` HOLDS, `5:1,2:3,` FAILS / SEARCHED `5:1,2:3, 5:3,` `5:3,`@9 / FIND-ALL `5:3,2:1, 5:1,2:3, 5:3,` [`5:3,2:1,`@0, `5:3,`@18] (`/(?:(?<h>\d):(?<m>\d),)+/ & (n: ==1)`, n := `count((h: "5", m: "3"))`)
+   [report] group-truth, `NOT some(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & NOT some((d: "7"))`)
+   [report] group-truth, `occurs.none(c)`: WHOLE `1,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `,`@1 / FIND-ALL `7, 1,, 7,1, ,` [`,`@1, `1,,`@3, `,1,`@8, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none((d: "7"))`)
+   [report] group-truth, `occurs.none(NOT c)`: WHOLE `1,,` FAILS, `7,1,` FAILS, `,` HOLDS / SEARCHED `7, 1,,` `7,`@0 / FIND-ALL `7, 1,, 7,1, ,` [`7,`@0, `,,`@4, `7,`@7, `,`@10, `,`@12] (`/(?:(?<d>\d)?,)+/ & occurs.none(NOT (d: "7"))`)
+DOC       ok   28 lines (4 in the report); missing: []
+predarr_model: 17 checks, 0 failed
