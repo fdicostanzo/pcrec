@@ -608,3 +608,15 @@ macros only. Done (`$PCREC_TMPDIR/scratch/pred/construct.py`, 0 differing on all
 bottom-up prediction supported; outer values reach a lower piece as READS PASSED AS ARGUMENTS; the closed rule
 never pinched; the dollar-form warning, label hygiene and `[=year]` did. Nothing folded.
 WAITING on: Frank (bare-nested-scope, his reaction to the exercise).
+
+## 2026-11-21 (19:10) — pure-label RULED (a); three examples on scope; NOT yet folded
+
+The bare-nested-scope thread: his three questions answered (my `inner($h)` rewrite corrected: it consumes; the
+faithful closed form passes the condition); then his correction "a label is not a capture"; pure-label asked and
+RULED: "captures are explicitly written either in literal form or using a macro like capture()"; a label-to-capture
+add-on is needed (after the fact, for library labels; spelling open); `_` labels never export as captures; three
+examples (C sees d through B(A); B's body may not name d; B may label its parameter). All recorded. NOT FOLDED:
+pure-label moves export statement 5, core/labels/paths, labels-vs-captures, lib/structural/capture: a fold LANE
+once the scope thread settles (with the readings listed in the record entry). On the branch: five hand folds since
+P-14 plus this unfolded ruling; a critic round (number from main) after the lane.
+WAITING on: Frank (the condition-as-argument edge of bare-nested-scope).

@@ -6472,3 +6472,56 @@ The manager's readings (NOT his words; nothing folded): (a) a pure label still c
 condition or a read needs its text at match time; what disappears is its visibility to the caller; (b) with pure
 labels, scope is a matter of the predicate language alone, and renaming apart is needed only for captures and
 rx-text references. Asked of him as **pure-label**.
+
+### 2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name
+tags: core/labels/labels-vs-captures core/labels/export core/labels/paths lib/structural/capture core/holes/bare-condition/nested-scope core/operators/bindings core/holes/labels
+
+Asked **pure-label** (which forms make a capture the caller gets: (a) only rx-text groups and `capture(...)`,
+`[x = A]` a pure label, statement 5 narrowed from labels to captures; (b) as ruled 2026-11-18, every public label;
+(c) nothing unless asked for; the manager's leaning (a)). HIS WORDS, whole:
+
+"i agree that captures are explicitly written either in literal form or using a macro like capture(). what i don't
+know is precisely what that looks like. two methods are to specify it like a wrapper like [ d = capture(digits) ]
+etc or specify it afterthefact like [ d = digits ] & capture(d) or something. no spelling suggested. the reason for
+the second one is that someone may use a library form like isodate. isodate and all the other libraries don't want
+to presume everyone is interested in every label being a capture. but then, someone might later want the year of
+an isodate as a capture. so an add on component that converted a label into a capture is needed. label discussion
+continued: i agree that _t are not rx pcre possible values but as we discussed are 1. purely predicate labels and
+2. cannot become exported captures (although they might be internal captures). they would be used in your examples
+to define a binding level label like the quote character in a string. let me give some examples rather than rules:
+1.  A := [ d = digits ] B(rx) := /${rx}xx/ C := B(A) & (d: < 100) is legal. C can see d as a flat look into A. C
+cannot see rx as its a binding variable not a label. 2. previous but B(rx) := /${rx}xx/ & (d: <100) is incorrect.
+3. previous but B(rx) := /${[dd = rx]}xx/ & (dd: < 100) would be correct"
+
+Class, part by part:
+1. A RULING on the slug, answer (a): "captures are explicitly written either in literal form or using a macro like
+   capture()". It NARROWS export statement 5 (2026-11-18, "The caller's captures: agree"): the caller gets
+   captures, not every public label; `[x = A]` makes a label and no capture.
+2. DISCUSSION, with a REQUIREMENT stated: how a capture is asked for is not settled ("what i don't know is
+   precisely what that looks like"; "no spelling suggested"); two methods named, a wrapper (`[d =
+   capture(digits)]`) and after the fact (`[d = digits] & capture(d)`); his reason for the second: a library form
+   such as isodate does not presume its labels are captures, and its user "might later want the year of an isodate
+   as a capture"; "so an add on component that converted a label into a capture is needed". Both spellings are
+   placeholders.
+3. A STATEMENT he marks as agreed ("as we discussed"): `_t` labels are (1) "purely predicate labels" and (2)
+   "cannot become exported captures (although they might be internal captures)"; their use: "a binding level label
+   like the quote character in a string".
+4. THREE EXAMPLES, given "rather than rules", on the open bare-nested-scope: (1) `A := [d = digits]`, `B(rx) :=
+   /${rx}xx/`, `C := B(A) & (d: <100)` is LEGAL: "C can see d as a flat look into A. C cannot see rx as its a
+   binding variable not a label." (2) `B(rx) := /${rx}xx/ & (d: <100)` is INCORRECT. (3) `B(rx) := /${[dd =
+   rx]}xx/ & (dd: <100)` is CORRECT. The three verdicts are his; no rule is stated by him.
+
+CHECKED CONTEMPORANEOUSLY (brute force over `\d+`'s greedy order then `xx`, d a canonical numeral under 100; told
+to him): example 1, `C`: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 /
+FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17]. Example 1 agrees with hole-export and
+flat-read-outside as ruled. Example 3 with `B(A)` gives the same answers (dd and d are one text).
+
+The manager's readings, for the fold lane to test (NOT his words): (a) the rule his three examples fit: a
+definition's body may name the labels it writes itself and the public labels of the parts it writes in; it may NOT
+name a label of a PARAMETER (unknown until the call); a parameter's public labels pass through to the definition's
+USER; a parameter's name is never a label; (b) this is the CLOSED answer to bare-nested-scope for labels; `0` and
+the nested read are not covered by the examples; (c) the after-the-fact capture names its label by the same
+visibility rules a condition does, so a `_` label cannot be named, hence cannot be captured, outside its binding;
+(d) the existing `capture(name, x) := /(?<${name}>${x})/` is the wrapper method in its literal form; the
+after-the-fact form has no body in the language (native); (e) what the caller reads for a captured label that a
+loop sets (the label's last-pass value or PCRE's carried capture) is not stated.
