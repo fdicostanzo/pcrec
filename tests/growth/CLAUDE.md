@@ -28,7 +28,7 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
   `scripts/watchdog` (wall + RSS + CPU), uncapped and under the memory LADDER,
   classifies the outcome, prints `FAIL` (with a repro), `KNOWN-RED`,
   `FIXED-RED` (the ratchet) and a summary; `--lib` is library mode; `--list`, `--pairs`, `--sample N` (N matrix PAIRS, not the whole matrix), `--selftest` (the crossing-over alert, both ways),
-  `--only FAMILY[,FAMILY]` (an unknown family or an empty selection exits nonzero), `--jobs N`, `--no-ladder`, `--verbose`, `--keep`, `--pattern ID`, `--depth-only`; env `GROWTH_WALLS`, `GROWTH_LIB_DRIVER`, `GROWTH_CFLAGS`, `CC`, `LIBPCREC`, `PCREC`, `PCREC_TMPDIR`.
+  `--shard K/N [--table T]` (the cloud kind's cells; `--shard-check` is its population check; `--units FILE` records per-cell seconds), `--only FAMILY[,FAMILY]` (an unknown family or an empty selection exits nonzero), `--jobs N`, `--no-ladder`, `--verbose`, `--keep`, `--pattern ID`, `--depth-only`; env `GROWTH_WALLS`, `GROWTH_LIB_DRIVER`, `GROWTH_CFLAGS`, `CC`, `LIBPCREC`, `PCREC`, `PCREC_TMPDIR`.
 - `growth_driver.c` — one `pcrec_compile` on a painted, guarded thread under an
   optional RLIMIT_DATA cap (`one` mode), or a whole series in ONE process
   (`lib` mode, plus a control compiled before and after).
@@ -70,3 +70,19 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
 - Future direction (owner, 2026-11-20, not built): a ladder of THREAD sizes
   below the stack budget; limits.md §3.10¶4 promises an overflow there, so
   every such cell would fail by design.
+
+## Cloud (kind `growth`, [GROWTH-CLOUD])
+
+`tests/ci/cloud_kinds.tsv` row `growth`: each shard runs `run_growth.sh` with `GROWTH_SHARD=K/N`, so BOTH stages (CLI, then
+the plain and ASan+LSan library passes) run for ITS OWN cells only; a library cell's bound comes from the CLI wall the same
+runner just measured, no walls file crosses shards. The ASan pass sits INSIDE each shard (one row, and the bound above needs
+the CLI walls of the same shard); the cost is a per-shard `build-asan/` build (`GROWTH_MAKE_J`). The partition is the declared
+`tests/ci/cloud_growth_shards.tsv` (generated: `cloud_units_plan.py growth`, LPT over a cell's measured runner seconds, class
+defaults labelled ESTIMATE until a run measures them; `make cloud-reweight KIND=growth`); `run_growth.py --shard-check` proves
+every cell is in exactly one shard. `make test-growth` (no `GROWTH_*` env) is unchanged.
+
+## Compiler
+
+The shard's gcc is the runner's, not the house gcc 15.2: every run prints `growth: compiler: ...` first. Stack-depth headroom
+(the high-water marks the depth cells record, the budget thread's margin) is read PER COMPILER; a result from one runner's gcc
+pins nothing about another's stack numbers, so no depth limit is ever fixed from one compiler's `hw=` values.

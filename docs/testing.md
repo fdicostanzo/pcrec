@@ -5562,6 +5562,8 @@ stability twin across the same limit and value (depth 250/251 is the model;
 stability-only: there is no sharp "just before" a memory cap. A timeout is a
 crash.
 There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md.
+Cloud: the kind `growth` runs the same two stages sharded (`GROWTH_SHARD=K/N`; tests/growth/CLAUDE.md "Cloud"); the runner's gcc is
+recorded per shard and stack-depth headroom is read per compiler.
 
 - **Cells.** `tests/growth/depth_families.tsv` is the one depth table (33
   families: a `limit` cell at depth 250 on the 442,368-byte budget thread and its
