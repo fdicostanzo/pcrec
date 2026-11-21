@@ -6233,3 +6233,21 @@ is untouched; candidate (b) is out only as the order of `enumerate`.
 
 The manager's readings, for the next lane to test: (a) a caseless single character is a class for this rule:
 `(?i)k` enumerates `K`, `k`, U+212A in codepoint order; (b) "codepoint" in a byte-mode program is the byte value.
+
+### 2026-11-21 OWNER, discussing flat-read-outside: "so the read is based on match not group?"
+tags: core/labels/export/flat-read-outside core/labels/one-rule core/labels/flow
+
+Asked **flat-read-outside** (outside a binding, is a part's label read flat under the inside rules, (a); a compile
+error with the path required, (b); or legal across `|` and an error across a sequence, (c); the manager's leaning
+(a); shown his words of 2026-11-19, the ruled ambiguity across `&` only, and the piece's two run lines). HIS WORDS,
+whole: "flat-read-outside: so the read is based on match not group?"
+
+Class: a QUESTION back; DISCUSSION, nothing ruled.
+
+The manager's answer (told to him): yes, with one precision. A read is by NAME, never by which group is written:
+"Every group of one name sets the same label" (core/labels/one-rule), and a flat `x` reads what the path that
+matched left in that name. Across `|` that is the branch taken. The precision: it is not "any group of the name
+that matched": entering a branching resets the labels inside it (his "Yes. Let's keep it", 2026-11-17), so a later
+optional that is entered and sets nothing leaves the label UNSET though an earlier group of the name matched; the
+piece's ruled line, quoted: `A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`: WHOLE `7` HOLDS (h unset), `7,3`
+HOLDS (h = `3`) (core/labels/flow; evidence preddoc3a FLOW). The path (`b.x`) is the read by GROUP.
