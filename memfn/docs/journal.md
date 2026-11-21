@@ -4625,3 +4625,6 @@ Lane bsu1 delivered U1 on lane/bsu1 4a098e1e4 (lanecheck DONE; TaskStop).
 - Pin triage: rxtsource and startset are deliberate population re-pins. memfn-rows/finder was the decider census missing the new table, which the design missed and rev 4.1 now names.
 Owed: 713-kit-bsu1-test (make test) and 714-kit-bsu1-mech (detection); monread is armed. Manager review of window.c: OK so far. A code round comes before delivery to main.
 Lesson: lanes idled four times waiting on runs whose notifications never woke them, and the manager nudged each time. Briefs should say that a lock-waiting run does not wake the lane: poll its log with a bounded gnutimeout loop.
+
+### 2026-11-21 07:04 — U1 GREEN and merged
+713-kit-bsu1-test GREEN (make test, 2135 s) and 714-kit-bsu1-mech GREEN (detection, 1023 s). lane/bsu1 merged into lane/memfn-k1108 (dca2c8e4a; merge alone, make strict clean). A code round on U1 comes next (number from main), then delivery. The lane worktrees (bspan..bsu1, spancensus*, rampchunk etc.) are unpinned; they become prunable once main merges the kit branch.
