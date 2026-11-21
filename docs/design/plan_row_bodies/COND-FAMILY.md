@@ -6271,3 +6271,37 @@ WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 
 
 No reading of the manager's is added by this ruling. Still a reading under statement 3: a part under a `_` part
 label, or `[_ = A]`, passes none of its labels.
+
+### 2026-11-21 OWNER, discussing bare-nested-scope: literals are not the way to think about it; construction; which way a hole is filled; descending and horizontal; the kind of hole
+tags: core/holes/bare-condition/nested-scope core/holes/insert core/values/reads core/holes/name
+
+Asked **bare-nested-scope** (when a literal holding a hole is itself inserted into another rx, do the hole's
+readers, a bare condition, `$y`, `0`, read (a) the literal they are written in, or (b) the rx as composed; shown
+his "composed at the point it is used" and his free-name "Catastrophic", the piece's run lines for
+`/(?<h>\d)${inner}/`, and the manager's leaning (a)). HIS WORDS, whole:
+
+"bare-nested-scope: this is an important question that we have to get right. the trick here is that literals are
+not the way to think about it. we need to support construction in a useful way. also, some of this presupposes the
+way in which a hole is filled semantically. for instance, in your example, is inner defined first, then outer is
+defined around inner, or is the thinking that the outermost is designed and filled in down the hole. also, there is
+decending logic of filling the hole and horizontal logic of filling two holes and what do they relatively see? then
+there is the nature of the hole being filled. is the label hole treated the same as an rx hole?"
+
+Class: DISCUSSION; nothing ruled. What he states: (1) a weight ("an important question that we have to get right");
+(2) a CORRECTION of the question's frame: "literals are not the way to think about it"; (3) a REQUIREMENT on any
+answer: "we need to support construction in a useful way"; (4) three questions he puts to the frame: which way a
+hole is filled (inner defined first and outer around it, or the outermost designed and filled in downward); what a
+descending fill and two horizontal fills "relatively see"; whether "the label hole" is treated as an rx hole is.
+
+WITHDRAWN by the manager on (2) and (3): the leaning (a) AS PUT (the unit being the literal). The record already
+has his words against the literal as a unit: 2026-11-19, hole-export, "The problem is with composition, nothing
+will be in the same rx ... [x = digit]+. The final form is /(?<x>\d)+/ but that was composed from /${}+/,
+/(?<${}>${})/, and /\d/ so none of it was in the same rx", and his ruling that followed, "array-scope: the only way
+to do it is by the scope of the entire rx".
+
+The manager's answer (told to him; a FRAME proposed, every part of it the manager's unless quoted): the meaning is
+defined on the FINISHED rx, so neither order of definition is privileged; the holes that take compile-time values
+(a name, a count, class members, an option) are filled first and shape the rx ("Holes are filled first", in-filter,
+2026-11-18); the match-time readers (a bare condition, `$y`, `0`) are then resolved at their point in the finished
+rx; descending and horizontal are then one question, "what is visible at this point"; what remains to decide is
+whether a separately DEFINED piece (a binding, not a literal) may read a name it does not define. Nothing folded.
