@@ -52,7 +52,7 @@ the [ENG-LOOK] row.
   would drop `c` from `S_1`, and `[ab](?<=a)c|bc` would drop `b` from `S_0`. On the next side
   the walk restricts only the classes of frontier states reached THROUGH the item. On the
   previous side it narrows only when every thread at `d − 1` passes the item, and otherwise
-  ends `exact_len` at `d − 1`. The narrowed sets live in the SLICE'S OWN RECORD (`MkLang`).
+  ends `exact_len` at `d − 1`. The narrowed sets live in the SLICE'S OWN RECORD (`MkLang`). *(superseded by cover_cap.md rev 4, 2026-11-15)*
   `KsetWalk.k[]` stays the pass-through hull, so the k-set consumers (offset-k selection, the
   run pin, the OFS rows, the listing) are unmoved by construction (§3.8). Both witnesses join
   CK-6, `conj.txt` D and X0's list as text. The union-narrowing plant is PROPOSED (SP-6 here,
@@ -111,7 +111,7 @@ the [ENG-LOOK] row.
 
 | question | answer |
 |---|---|
-| what part 1 is | ONE producer, `span_facts`' first slice (kit_proof UL-0), computed by EXTENDING `pcrec_kset_walk` (`src/facts/kset.c`) `[r4 C4, Q-r4-3]`. It states one context record per context ITEM `[r4 U-B4]` before span 0 and after its end. It refines span 0's own `S_d` with the same rule where an item stands INSIDE the span (§3) |
+| what part 1 is | ONE producer, `span_facts`' first slice (kit_proof UL-0), computed by EXTENDING `pcrec_kset_walk` (`src/facts/kset.c`) `[r4 C4, Q-r4-3]`. It states one context record per context ITEM `[r4 U-B4]` before span 0 and after its end. It refines span 0's own `S_d` with the same rule where an item stands INSIDE the span (§3) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | its one rule | every zero-width item contributes, relative to its own position, a per-offset set list with an `absent` cell. Outside the span the list is a context record; inside, it intersects `S_d` or ends `exact_len`. `\b`/`\B` contribute only once the neighbouring side is known (the FOLD). A first-match INPUT TABLE (§3.3) maps each zero-width kind to its contribution. Its lookaround rows CALL the recognizer instead of restating it `[r4 C5]`. No kind has a private arm |
 | what it is not | a tree rewrite: no engine's bytes move, and the producer READS `A_CTX` nodes and `A_LOOK` bodies (D168) |
 | what it sends the kit | stage 1 sends EXACT items only, one R-26 `mf_site.ctx[]` predicate per item with `absent`. There is no exactness field, because none exists: `byte_form` is not in `memfn.h` `[r4 B1]`. The exactness fact is filed as R-26.7, triggered at UL-b/UL-g. Facts only (D157) (§3.9) |
@@ -141,7 +141,7 @@ Two things carry the same fact today in separate places.
      DFA.
 
    Each reads a different object, and a VM-only pattern gets none of it. D168 rules ONE
-   producer of per-offset sets in `span_facts`.
+   producer of per-offset sets in `span_facts`. *(superseded by cover_cap.md rev 4, 2026-11-15)*
 
 2. **The assertion family's special cases.** `\b`, `\B` and every one-character lookaround
    are one node, `A_CTX` (UD-2), with the truth function as DATA. `(?m)^` and `(?m)$` are
@@ -207,9 +207,9 @@ part 2, `(?m)^` before a consuming item is an `A_CTX` the fold already reads.
   the frontier (closed over epsilon and over every assertion, which it PASSES) and records
   the union of the frontier's classes. That union is `S_j` for the hull, up to
   `PCREC_PREFIX_K_MAX` (24, `limits.def`). `req.c` and `widths.c` are two more per-offset
-  walks. Revision 1's `span_facts` slice in a new `src/facts/spans.c` would have been a
+  walks. Revision 1's `span_facts` slice in a new `src/facts/spans.c` would have been a *(superseded by cover_cap.md rev 4, 2026-11-15)*
   fourth.
-- `span_facts` is NOT BUILT. kit_proof §5.2 designs its first slice (UL-0: `S_d`,
+- `span_facts` is NOT BUILT. kit_proof §5.2 designs its first slice (UL-0: `S_d`, *(superseded by cover_cap.md rev 4, 2026-11-15)*
   `exact_len`, the hull at the match-start origin, priority-free) and builds it at Z2,
   now as the extended k-set walk (kit_proof §5.2 `[r4 Q-r4-3]`). window_contract §5.2
   designs the whole producer (segments, hull spans, prefix sums).
@@ -218,13 +218,13 @@ part 2, `(?m)^` before a consuming item is an `A_CTX` the fold already reads.
 
 ### 3.2 The record and where it lives
 
-The record extends kit_proof's pattern-fact record `MkLang` (`src/facts/known.h`, kit_proof
+The record extends kit_proof's pattern-fact record `MkLang` (`src/facts/known.h`, kit_proof *(superseded by cover_cap.md rev 4, 2026-11-15)*
 §5.1). A context set is a property of the same language, at the same origin, on the same
 lowered machine, filled by the same walk. A separate record would be a second home for one
 walk's output.
 
 ```c
-/* src/facts/known.h -- span_facts' context half (ctx_span.md §3). ONE RECORD PER CONTEXT
+/* src/facts/known.h -- span_facts' context half (ctx_span.md §3). ONE RECORD PER CONTEXT  /* superseded by cover_cap.md rev 4, 2026-11-15 */
    ITEM [r4 U-B4] (a \b, a lookbehind, a lookahead), its terms at every offset outside
    span 0 it constrains. Byte sets (mf_term.set's layout), on the lowered machine. Every
    enum has an UNSTATED zero, refused where read. */
@@ -250,7 +250,7 @@ typedef struct {
                                               keeps the pass-through hull       */
     uint8_t  nctx;                         /* 0 = no context fact (not "none holds") */
     MkCtx    ctx[PCREC_CTX_ITEMS];         /* one per item, in walk order           */
-} MkLang;
+} MkLang;  /* superseded by cover_cap.md rev 4, 2026-11-15 */
 ```
 
 - **The grain is the ITEM** `[r4 U-B4, B1]`. Revision 1 keyed records by OFFSET and needed
@@ -260,7 +260,7 @@ typedef struct {
   rule (§3.6), and `form` is a property of one item. A whole artifact's context is exact iff
   every item is.
 - **The bounds are the producer's own** `[r4 B10]`. Revision 1 sized the record by the
-  kit's carrier constants (`MF_MAX_BACK`, `MF_MAX_AHEAD`, `MF_MAX_CTX`). That contradicted
+  kit's carrier constants (`MF_MAX_BACK`, `MF_MAX_AHEAD`, `MF_MAX_CTX`) *(covs2e: `MF_MAX_AHEAD` is retired by the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled); this is a record of rev 1's mistake and the argument stands)*. That contradicted
   its own rule that "the producer states what the item gives and the carrier truncates".
   The walk's bound is `PCREC_PREFIX_K_MAX`. `PCREC_CTX_ITEM_TERMS`, the widest item, is
   DERIVED from it: an item's offsets lie within `PCREC_PREFIX_K_MAX` of the span edge on its
@@ -472,11 +472,11 @@ carries one restriction per offset ahead, up to its width. An item whose terms t
 cannot carry ends `exact_len` at its offset. Written once in the shared iterator `wclose`,
 this is U2 (§10).
 
-**Where the narrowed sets live** `[r4rc R2]`: in the SLICE'S OWN RECORD (`MkLang.set[]`,
-`MkLang.exact_len`, §3.2), never in `KsetWalk.k[]`. The walk projects one frontier twice:
+**Where the narrowed sets live** `[r4rc R2]`: in the SLICE'S OWN RECORD (`MkLang.set[]`, *(superseded by cover_cap.md rev 4, 2026-11-15)*
+`MkLang.exact_len`, §3.2), never in `KsetWalk.k[]`. The walk projects one frontier twice: *(superseded by cover_cap.md rev 4, 2026-11-15)*
 - `KsetWalk.k[j]` is the frontier's class union with every restriction IGNORED, which is
   today's pass-through hull, the output `wdrain`'s "every assertion is passed" produces now;
-- `MkLang.set[d]` is the union of `cls ∩ R` over the frontier, with `exact_len` as §3.4
+- `MkLang.set[d]` is the union of `cls ∩ R` over the frontier, with `exact_len` as §3.4 *(superseded by cover_cap.md rev 4, 2026-11-15)*
   states it.
 
 So the k-set consumers are unmoved by construction. They are `prefix_k.c`'s offset-k
@@ -999,7 +999,7 @@ CLAUDE.md` cites the define by line `emit_dfa.c:51`, which is stale (F-4).
 - `--emit-facts`' `start_anchor`/`end_pin`/widths rows do not change (table A's "after" column
   is answer-identical by reading).
 - `match_api.md` §1¶7, §6¶1 and §6¶17 take the new abi number (§4.5.1).
-- If P1a lands, `facts_listing.md` gets the context records in the `span_facts` slice
+- If P1a lands, `facts_listing.md` gets the context records in the `span_facts` slice *(superseded by cover_cap.md rev 4, 2026-11-15)*
   section (kit_proof §6.2, Z2).
 
 #### 4.5.3 Is byte identity reachable?
@@ -1319,7 +1319,7 @@ which shares nothing with P2c's code, so a moved verdict is a finding about P2c.
 | P2b | the two new rows and their `vm_ctx_forms` rows; three-valued `Sides` with A1's per-direction absent read; the three derived predicates; possessify's absent-reading decline. Nothing builds the new rows yet | 0 |
 | P2c | the parser builds `A_CTX` for `(?m)^`/`(?m)$`; tables A-B delete (with the dead `rows` logic); retire `run_mlinectx_identity.sh`; re-define `run_wordctx_identity.sh`'s population; the derived sabotage list (§4.5.4); the D62 addendum; abi 81 with §4.5.1's readers | the measured DFA list-order movers (CK-4), answer-identical, table-confined; `conj.py` identical (U-B3) |
 | P2d (if Q7 takes it) | `A_BOL`/`A_END` lower to `N_CTX` rows; `N_BOT`/`N_END` and their engine arms delete; `cr_ctx_reads` reads `ctxfn_reads_membership` | 0 predicted (CK-4); its own derived rows |
-| P1a (= kit_proof Z2) | the extended k-set walk with §3.3's table (in-span and out-of-span), the per-thread frontier (U2) with the narrowed sets in `MkLang` only `[r4rc R2]`, listed in `--emit-facts` (`facts_listing.md` hunk), CK-1..CK-3, CK-6, CK-7, CK-10 | 0 bytes (`KsetWalk` unchanged, §3.8); listing only |
+| P1a (= kit_proof Z2) | the extended k-set walk with §3.3's table (in-span and out-of-span), the per-thread frontier (U2) with the narrowed sets in `MkLang` only `[r4rc R2]`, listed in `--emit-facts` (`facts_listing.md` hunk), CK-1..CK-3, CK-6, CK-7, CK-10 | 0 bytes (`KsetWalk` unchanged, §3.8); listing only *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | P1b (= UL-8's trigger) | the producer's EXACT items become the context source for the first VM-side consumer; the machine reading becomes the control; `MF_MAX_CTX` rises (kit_proof §4.1) | per that consumer's own event |
 
 P2a-P2b touch the closure and move nothing, so they can land early. If part 1 lands first
@@ -1369,7 +1369,7 @@ the step's lane report.
   context items) a projection. *Filed* as a unification candidate with its trigger: the next
   per-offset fact asked of any of the three (§10, UL-j).
 - **The position-pin family** (window_contract §5.6: `start_set`, the k-set, `run_pin`,
-  `end_pin`/`end_window`, compound's split facts, landmark K, `span_facts`). The context
+  `end_pin`/`end_window`, compound's split facts, landmark K, `span_facts`). The context *(superseded by cover_cap.md rev 4, 2026-11-15)*
   producer is a projection of the k-set walk, so the family's count does not grow.
 - **The context family** (kit_proof §8.2): MLINE's `{\n}` predicate, the 23 shifted origins,
   the seed table, the VM's `A_CTX`, the `-bounded` view family, D164's end set and kvctx.py's
@@ -1425,12 +1425,12 @@ the step's lane report.
   `PCREC_ARTIFACT_ABI`. It is `:54`.
 - **F-5 (add. 1's measure):** the "38 `A_EOL` references under `src/opt/`" are case labels
   that survive the fold (§4.4 D).
-- **N-1 (new): the walk's bound is below the carrier's.** `PCREC_PREFIX_K_MAX` is 24, while
-  kit_proof's `MkLang` and `MF_MAX_SPAN_POS` assume 32. With the slice as the extended k-set
+- **N-1 (new): the walk's bound is below the carrier's.** *(Superseded by cover_cap.md rev 4, 2026-11-15: the slice and its bound are deleted; the cover's stretch is the anchored machine's, bounded by its state ceiling.)* `PCREC_PREFIX_K_MAX` is 24, while
+  kit_proof's `MkLang` and `MF_MAX_SPAN_POS` *(retired, covs2e: the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled))* assume 32. With the slice as the extended k-set *(superseded by cover_cap.md rev 4, 2026-11-15)*
   walk, a whole-cover body with `k` > 24 can state `exact_len` at most 24, and declines C8.
   kvcensus's `whole` column counts such bodies at 1 bench / 2 corpus native and 1 / 1 utf8.
   That is an upper bound, since conj.py's admitted subset is not split by `k`. Either the
-  walk's limit is raised to a value derived from `MF_MAX_SPAN_POS` (a compile-budget
+  walk's limit is raised to a value derived from `MF_MAX_SPAN_POS` *(retired, covs2e; moot since the slice is deleted)* (a compile-budget
   re-measure, D90) or the four decline. That is the build's choice, with the count re-taken
   on the admitted set.
 - **N-2 (new): the derived sabotage population is larger than any hand list** (§4.5.4). There
@@ -1507,7 +1507,7 @@ Every other r4 id is listed. Nothing in the review is left undischarged.
 | id | sev | disposition | discharged in |
 |---|---|---|---|
 | R1 | MAJOR | ACCEPT: the absent index is gated on the row, `q = (right_abs && ctxfn_reads_absent_next(fn)) ? 2 : bit(right)` and the mirror for `p`; equals today's six functions and the `N_BOT_M`/`N_EOL_M` arms; P2a's zero-mover argument restored on it with `\bfoo\b` (under `-e utf8`) as the witness the old rule moves; P2d's zero movers rest on it. Consequence: no reverse machine reads `left_abs`, so A1's plant is UNREACHED (SP-11) and S341 re-aims to R1's plant | §4.2.3; §4.5.4 (S341); §6 CK-5; §7 P2a; §R2.1 |
-| R2 | BLOCKER (if built) | ACCEPT: next side narrows per thread (frontier states reached through the item; a frontier entry carries its restriction, merged by union); previous side narrows only when every thread at `d − 1` passes, else `exact_len` ends at `d − 1`; the narrowed sets live in `MkLang` only, `KsetWalk` stays the hull, so offset-k selection, the run pin, the OFS rows and the listing are unmoved by construction; both witnesses in CK-6, `conj.txt` D, `witnesses.txt` and X0 as text; the union-narrowing plant SP-6 = S1150 PROPOSED; `conj.py` does not model the in-span rule (OWED) | §3.4; §3.6; §3.8; §3.2 (`MkLang` comment); §6 CK-6; §7 P1a; §10 UL-k, U2; kit_proof §5.2, §6.3, §6.4 `[r4rc R2]`; `kit_proof/witnesses.txt`, `conj.txt` D |
+| R2 | BLOCKER (if built) | ACCEPT: next side narrows per thread (frontier states reached through the item; a frontier entry carries its restriction, merged by union); previous side narrows only when every thread at `d − 1` passes, else `exact_len` ends at `d − 1`; the narrowed sets live in `MkLang` only, `KsetWalk` stays the hull, so offset-k selection, the run pin, the OFS rows and the listing are unmoved by construction; both witnesses in CK-6, `conj.txt` D, `witnesses.txt` and X0 as text; the union-narrowing plant SP-6 = S1150 PROPOSED; `conj.py` does not model the in-span rule (OWED) | §3.4; §3.6; §3.8; §3.2 (`MkLang` comment); §6 CK-6; §7 P1a; §10 UL-k, U2; kit_proof §5.2, §6.3, §6.4 `[r4rc R2]`; `kit_proof/witnesses.txt`, `conj.txt` D *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | R3 | MINOR | ACCEPT: a multi-byte newline convention is REFUSED BY NAME until UL-e (no fallback kind after P2c) | §3.3; §10 UL-e |
 | R4 | MINOR | ACCEPT: at build each step regenerates the edit set from its real diff and compares it with `edit_set.tsv`; the derived list comes from the regenerated set | §4.5.4; §7 |
 | R5/R6 | holds | nothing to discharge | — |

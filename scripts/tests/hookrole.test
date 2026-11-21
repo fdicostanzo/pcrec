@@ -20,6 +20,8 @@ bash "$SR" --get nosuch >/dev/null 2>&1; [ $? = 1 ]; chk "--get of an unregister
 bash "$SR" --get '../x' >/dev/null 2>&1; [ $? = 1 ]; chk "--get rejects a path-shaped id" $?
 CLAUDE_CODE_SESSION_ID=sid-env bash "$SR" kit >/dev/null; [ "$(bash "$SR" --get sid-env)" = kit ]; chk "id defaults to \$CLAUDE_CODE_SESSION_ID" $?
 bash "$SR" bogus >/dev/null 2>&1; [ $? = 64 ]; chk "unknown role -> usage 64" $?
+bash "$SR" pred sid-pred >/dev/null; [ "$(bash "$SR" --get sid-pred)" = pred ]; chk "register + --get, role pred" $?
+echo bogus > "$T/roles/sid-bad"; bash "$SR" --get sid-bad >/dev/null 2>&1; [ $? = 1 ]; chk "--get of an unknown role file still exits 1" $?
 
 # --- monitor_unread: each role consumes only its own owner's lines
 LOG=$T/mgr/monitor.log
@@ -38,6 +40,9 @@ out=$(mu '{"session_id":"sid-main","agent_id":"a1","hook_event_name":"UserPrompt
 [ -z "$out" ] && [ "$(cat "$T/mgr/monitor.cursor.main")" = 2 ]; chk "subagent input: silent, cursor untouched" $?
 out=$(mu 'not json at all'); printf '%s' "$out" | grep -q 'no session role'; chk "garbage input: fails open to the notice, exit 0" $?
 
+out=$(mu '{"session_id":"sid-pred","hook_event_name":"UserPromptSubmit","prompt":"x"}')
+[ -z "$out" ] && [ "$(cat "$T/mgr/monitor.cursor.main")" = 2 ] && [ "$(cat "$T/mgr/monitor.cursor.kit")" = 2 ] && [ ! -e "$T/mgr/monitor.cursor.pred" ]; chk "role pred: prints nothing, no cursor moved or created" $?
+
 # --- post_compact: which file each role gets
 P=$T/proj; mkdir -p "$P/docs/dev" "$P/memfn/docs"
 echo OWNERVIEW > "$P/docs/dev/owner.md"; echo MAINWAKE > "$P/docs/dev/wake.md"; echo KITWAKE > "$P/memfn/docs/wake.md"
@@ -49,8 +54,14 @@ printf '%s' "$out" | grep -q KITWAKE && ! printf '%s' "$out" | grep -q -e OWNERV
 mkdir -p "$P/worktrees/memfn/memfn/docs"; echo KITBRANCHWAKE > "$P/worktrees/memfn/memfn/docs/wake.md"
 out=$(pc '{"session_id":"sid-kit","hook_event_name":"SessionStart","source":"compact"}')
 printf '%s' "$out" | grep -q KITBRANCHWAKE && ! printf '%s' "$out" | grep -q 'KITWAKE$'; chk "compact, role kit: the kit branch's copy is preferred when present" $?
+mkdir -p "$P/docs/dev/pred"; echo PREDWAKE > "$P/docs/dev/pred/wake.md"; echo PREDOWNER > "$P/docs/dev/pred/owner.md"
+out=$(pc '{"session_id":"sid-pred","hook_event_name":"SessionStart","source":"compact"}')
+printf '%s' "$out" | grep -q 'role PRED' && printf '%s' "$out" | grep -q 'docs/dev/pred/wake.md' && printf '%s' "$out" | grep -q PREDWAKE && printf '%s' "$out" | grep -q PREDOWNER && ! printf '%s' "$out" | grep -q -e OWNERVIEW -e MAINWAKE -e KITWAKE; chk "compact, role pred: names + inlines its wake and owner, not the others'" $?
+mkdir -p "$P/worktrees/pred/docs/dev/pred"; echo PREDBRANCHWAKE > "$P/worktrees/pred/docs/dev/pred/wake.md"
+out=$(pc '{"session_id":"sid-pred","hook_event_name":"SessionStart","source":"compact"}')
+printf '%s' "$out" | grep -q PREDBRANCHWAKE && ! printf '%s' "$out" | grep -q 'PREDWAKE$'; chk "compact, role pred: the pred branch's wake copy is preferred" $?
 out=$(pc '{"session_id":"sid-none","hook_event_name":"SessionStart","source":"compact"}')
-printf '%s' "$out" | grep -q 'scripts/session_role main' && printf '%s' "$out" | grep -q 'scripts/session_role kit' && ! printf '%s' "$out" | grep -q -e OWNERVIEW -e MAINWAKE -e KITWAKE; chk "compact, no role: both candidates named, nothing injected" $?
+printf '%s' "$out" | grep -q 'scripts/session_role main' && printf '%s' "$out" | grep -q 'scripts/session_role kit' && printf '%s' "$out" | grep -q 'scripts/session_role pred' && ! printf '%s' "$out" | grep -q -e OWNERVIEW -e MAINWAKE -e KITWAKE; chk "compact, no role: both candidates named, nothing injected" $?
 out=$(pc '{"session_id":"sid-main","agent_id":"a1","hook_event_name":"SessionStart","source":"compact"}')
 [ -z "$out" ]; chk "compact, subagent input: silent" $?
 

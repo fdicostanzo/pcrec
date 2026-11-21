@@ -199,7 +199,9 @@ if "$TO" 60 git -C "$root" ls-remote --exit-code --heads "$remote" "$branch" >/d
     die "$branch already exists on $remote (a push to it starts no new run): pick another --name, or --prune" 1
 fi
 if [ $dry = 1 ]; then echo "cloudrun: DRY-RUN would push ${sha:0:9} -> $remote $branch and record owner=$owner kind=$kind in $ledger"; exit 0; fi
-"$TO" 120 git -C "$root" push -q "$remote" "$sha:refs/heads/$branch" || die "push of $branch to $remote failed" 1
+# 600 s: the pre-push hook runs the light gate (plan lint, spec scan, a strict build), about 2 min at load 11 and
+# more on a busy box; a 120 s bound killed three lane dispatches on 2026-11-20 (k147fix x2, l3feat2 x3).
+"$TO" 600 git -C "$root" push -q "$remote" "$sha:refs/heads/$branch" || die "push of $branch to $remote failed (rc $?; 124 = the 600 s bound)" 1
 mkdir -p "$(dirname "$ledger")"
 printf 'R\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date +%s)" "$owner" "$kind" "$name" "$branch" "$sha" >> "$ledger"
 echo "cloudrun: DONE rc=0 pushed ${sha:0:9} -> $branch owner=$owner kind=$kind; verdict arrives as CLOUD-DONE via queuewatch (not waiting)"

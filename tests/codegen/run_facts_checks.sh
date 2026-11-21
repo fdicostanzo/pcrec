@@ -621,7 +621,8 @@ fi
 # alone (the lever is not a caller's): under the `empty` arm the walk runs T2
 # row 1's old form, so the witness's run is cut in two again, and the walk
 # facts the arm can change (walk_arms.def) plus every fact derived from them
-# name the arm; a fact it cannot change (`req_set`) keeps its plain why; the
+# name the arm; a fact it cannot change (`kset_walk`; `req_set` until L1's
+# CAT-SET, review r55 A, made the set movable by `empty`) keeps its plain why; the
 # default build lists the unit's run and no token; an unknown arm is refused.
 # The value under the lever is what shows the arm ACTS (a lever the walk
 # ignored lists the token over the new run, S1907); the derived rows show the
@@ -648,7 +649,7 @@ else
         'ar	req_whole_run	61626364	harness:empty' \
         'ar	req_byte	-	harness:empty' \
         'ar	req_pieces	-	harness:empty' \
-        'ar	req_set	-	' > "$WORKDIR/aw"
+        'ar	kset_walk	-	' > "$WORKDIR/aw"
     while IFS=$'\t' read -r side fact wval wwhy; do
         r="$(arow "$fact" "$WORKDIR/$side.f")"
         gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
@@ -723,7 +724,7 @@ if [ -x "$HBIN" ] && [ -z "$abad" ]; then
             'zr	req_whole_run	78797a	harness:zero' \
             'zr	req_byte	-	harness:zero' \
             'zr	req_pieces	-	harness:zero' \
-            'zr	req_set	-	' > "$WORKDIR/zw"
+            'zr	req_set	-	harness:zero' > "$WORKDIR/zw"
         while IFS=$'\t' read -r side fact wval wwhy; do
             r="$(arow "$fact" "$WORKDIR/$side.f")"
             gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
@@ -769,9 +770,10 @@ fi
 #   - `xy(?:ab){2}zw` is `xyababzw`; under `--harness=restore=rep` (build/
 #     pcrec-harness) today's best-only copy again, whose three 2-byte runs
 #     `xy`, `ab`, `zw` tie on information and go to the rarest scan byte
-#     (`rn_choice_rows`: `z`, 498 ppm), with the token on the walk facts and
-#     none on `req_set` (S1921: a row that the arm no longer passes over keeps
-#     the new run); the same for T2 row 3, `xy(?:ab){1,2}zw` (`abzw` by
+#     (`rn_choice_rows`: `z`, 498 ppm), with the token on the walk facts,
+#     `req_set` included since L1's CAT-SET (review r55 A: a restored copy
+#     can drop a guard's narrowing; the set's VALUE is unmoved here) (S1921:
+#     a row that the arm no longer passes over keeps the new run); the same for T2 row 3, `xy(?:ab){1,2}zw` (`abzw` by
 #     default, the `xyab`/`abzw` tie to the rarer `z`; `zw` restored; S1922);
 #   - a body that is not `all` saturates at TWO copies (`rr_pow_count`):
 #     `(?:ab.cd){3}` is the join `cdab` (S1923 stops at one copy: `ab`);
@@ -789,9 +791,9 @@ fi
 #     repeat stays `not-fixed-width`.
 RP='xy(?:ab){2}zw'
 rbad=""; nrw=0
-rget() { # rget <bin> <arm-or-empty> <pattern> <fact> -> "value<TAB>why" (byte)
-    local arm=()
-    [ -n "$2" ] && arm=("--harness=restore=$2")
+rget() { # rget <bin> <arm-or-flag-or-empty> <pattern> <fact> -> "value<TAB>why" (byte)
+    local arm=()   # an arm name is a --harness=restore= arm; a `-f...` is a compiler flag
+    case "$2" in "") ;; -*) arm=("$2") ;; *) arm=("--harness=restore=$2") ;; esac
     "$TIMEOUT_BIN" 120 "$1" --features all "${arm[@]}" --emit-facts --pattern "$3" > "$WORKDIR/rp.l" 2> "$WORKDIR/rp.err" ||
         { printf 'REFUSED\t%s\n' "$(head -1 "$WORKDIR/rp.err")"; return; }
     sect "$WORKDIR/rp.l" facts | grep -F "$(printf 'encoding=byte\t')" | arow "$4" /dev/stdin > "$WORKDIR/rp.r"
@@ -814,7 +816,7 @@ else
 p	-	$RP	req_whole_run	7879616261627a77	rate:builtin-prior
 h	rep	$RP	req_whole_run	7a77	harness:rep
 h	rep	$RP	req_pieces	none	harness:rep
-h	rep	$RP	req_set	97,98,119,120,121,122	-
+h	rep	$RP	req_set	97,98,119,120,121,122	harness:rep
 p	-	(?:abc){20}	req_whole_run	6162636162636162636162636162636162636162636162636162636162636162	rate:builtin-prior
 p	-	xy(?:ab){1,2}zw	req_whole_run	61627a77	rate:builtin-prior
 h	rep	xy(?:ab){1,2}zw	req_whole_run	7a77	harness:rep
@@ -831,6 +833,95 @@ if [ "$nrw" -eq 0 ] || [ -n "$rbad" ]; then
     bad "[facts-rep] the power arm's listing is wrong:${rbad:- no cell was read}"
 else
     ok "[facts-rep] $nrw cells: an exact repeat lists its copies (run and pieces), the storage bound's 32 positions at W-R5, and --harness=restore=rep the old form"
+fi
+
+# [facts-look] span arms L1 (span_arms.md §14.4 L1, §5.2, §5.7): a positive
+# lookaround's bytes NARROW the consumed run positions they overlap, CAT-SET
+# puts every position a meet narrows to one byte in the necessary set
+# whatever run TOP chooses (review r55 A: `restore=tie` moves no set), the
+# run pin claims only what the k-set walk proves (r55 B: a narrowed run keeps
+# its base pin), and a walk
+# that proves no attempt can match lists `req_whole_run`'s why `dead`
+# (facts_listing.md §4.1.3¶1a). Expectations by hand from §14.2's L1 rows,
+# every answer libpcre2's (tests/litscan/spanarms.rxt):
+#   - `xy(?=bc)[bc]c`: `[bc]` meets `b`, the run is `xybc` and `b` joins the
+#     set; under `--harness=restore=look` the plain unit again (the set and
+#     the masked run of the base, `harness:look` on all three walk facts);
+#   - `a(?=b)[bc]` (W-S1's row): the byte moves from `a` to `b`;
+#   - W-L4 `bar(?=baz)`: at reach 0 TOP keeps no guard, the run stays `bar`;
+#   - W-D1 `foo(?=bar)baz`, W-D2 `(?<=ab)(?<=cb)c`, W-D8 `x[^\x00-\xff]y`
+#     and W-D9 `x(?=[^\x00-\xff])y` (the empty position as an `A_CTX` item,
+#     r55 C; under `-fno-ctx-node` too) list `dead` (`dead` ranks above
+#     `harness:`); W-D3, W-D4, W-D5, W-D6 and
+#     W-D7 (the contradiction is optional, one branch, negated, repeated zero
+#     times; W-T1's live pattern) do NOT;
+#   - the run is equal with and without `-fno-ctx-node` where the lowering
+#     can differ (`a(?=b)[bc]`, `ab[xy](?=(?<=x)y)[xy]`: the item is the
+#     lookaround's body or its context node, one answer, §14.4 L1 Tests).
+lbad=""; nlk=0
+if [ ! -x "$HBIN" ]; then
+    lbad=" $HBIN is missing (make builds it);"
+else
+    while IFS=$'\t' read -r bin arm pat fact want wwhy; do
+        nlk=$((nlk + 1))
+        b="$PCREC"
+        [ "$bin" = h ] && b="$HBIN"
+        [ "$arm" = - ] && arm=""
+        got="$(rget "$b" "$arm" "$pat" "$fact")"
+        gval="${got%%$'\t'*}"; gwhy="${got#*$'\t'}"
+        [ "$wwhy" = - ] && wwhy=""
+        [ "$gval" = "$want" ] || lbad="$lbad '$pat'${arm:+ restore=$arm} $fact value [$gval], want [$want];"
+        [ "$gwhy" = "$wwhy" ] || lbad="$lbad '$pat'${arm:+ restore=$arm} $fact why [$gwhy], want [$wwhy];"
+    done <<'LKEOF'
+p	-	xy(?=bc)[bc]c	req_whole_run	78796263	rate:builtin-prior
+p	-	bar(?=baz)	req_whole_run	626172	rate:builtin-prior
+p	-	xy(?=bc)[bc]c	req_set	98,99,120,121	-
+p	-	xy(?=bc)[bc]c	req_set_maxoff	98:2,99:3,120:0,121:1	-
+h	look	xy(?=bc)[bc]c	req_whole_run	78796263/fffffeff	harness:look
+h	look	xy(?=bc)[bc]c	req_set	99,120,121	harness:look
+h	look	xy(?=bc)[bc]c	req_set_maxoff	99:3,120:0,121:1	harness:look
+p	-	a(?=b)[bc]	req_byte	98	rate:builtin-prior
+p	-	foo(?=bar)baz	req_whole_run	666f6f62617a	dead
+h	look	foo(?=bar)baz	req_whole_run	666f6f62617a	harness:look
+p	-	(?<=ab)(?<=cb)c	req_whole_run	none	dead
+p	-	x[^\x00-\xff]y	req_whole_run	none	dead
+p	-	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
+p	-fno-ctx-node	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
+h	look	x(?=[^\x00-\xff])y	req_whole_run	7879	harness:look
+p	-	y(?=q)[pq].e(?=e)[ae]	req_set	101,113,121	-
+h	tie	y(?=q)[pq].e(?=e)[ae]	req_set	101,113,121	-
+p	-	x(?:[ab](?=b)){2}	req_set	98,120	-
+h	rep	x(?:[ab](?=b)){2}	req_set	120	harness:rep
+p	-	x[ab](?=b)()[ab]	req_set	98,120	-
+h	empty	x[ab](?=b)()[ab]	req_set	120	harness:empty
+h	rep	x(?:ab){2}(?=c)d	req_whole_run	6162	dead
+h	rep	x(?:ab){2}(?=c)d	req_byte	98	harness:rep
+p	-	xy(?=bc)[bc]c	run_pin	0:0+2	-
+p	-	foo(?=b)[bc]{2,4}	run_pin	0:0+3	-
+h	look	x[^\x00-\xff]y	req_whole_run	none	dead
+p	-	x(?:foo(?=bar)baz)?y	req_whole_run	none	-
+p	-	(?:foo(?=bar)baz|q)	req_whole_run	none	-
+p	-	x(?!foo(?=bar)baz)y	req_whole_run	7879	rate:builtin-prior
+p	-	(?:foo(?=bar)baz){0}x	req_whole_run	none	-
+p	-	[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).	req_whole_run	6161616161616161616161616161616161626262626262626262626262626262/fdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff	rate:builtin-prior
+LKEOF
+    for pat in 'a(?=b)[bc]' 'ab[xy](?=(?<=x)y)[xy]'; do
+        nlk=$((nlk + 1))
+        for side in on off; do
+            fl=(); [ "$side" = off ] && fl=(-fno-ctx-node)
+            "$TIMEOUT_BIN" 120 "$PCREC" --features all "${fl[@]}" --emit-facts --pattern "$pat" > "$WORKDIR/lk.l" 2> /dev/null ||
+                { lbad="$lbad '$pat' refused ($side);"; continue; }
+            sect "$WORKDIR/lk.l" facts | grep -F "$(printf 'encoding=byte\t')" | arow req_whole_run /dev/stdin | col value > "$WORKDIR/lk.$side"
+        done
+        cmp -s "$WORKDIR/lk.on" "$WORKDIR/lk.off" && [ -s "$WORKDIR/lk.on" ] && ! grep -qx none "$WORKDIR/lk.on" ||
+            lbad="$lbad '$pat' run [$(cat "$WORKDIR/lk.on")] with the context node, [$(cat "$WORKDIR/lk.off")] under -fno-ctx-node;"
+    done
+fi
+echo "REACH: $nlk [facts-look] listing cell(s)"
+if [ "$nlk" -eq 0 ] || [ -n "$lbad" ]; then
+    bad "[facts-look] the lookaround item's listing is wrong:${lbad:- no cell was read}"
+else
+    ok "[facts-look] $nlk cells: a lookaround narrows the run and joins the set, --harness=restore=look restores the unit, dead is listed exactly where no attempt can match, and the run is the same under -fno-ctx-node"
 fi
 
 # [REPEAT-RUN] the lever's REACH on a `.rxt` FILE compile (sar1mrg pairb,

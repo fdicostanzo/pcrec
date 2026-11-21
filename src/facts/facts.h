@@ -38,6 +38,36 @@ struct Ast;
 
 /* ---- the facts' value types -------------------------------------------- */
 
+/* AN OFFSET BOUND WITH ITS STATE: none (nothing is stated), bounded (the
+ * signed value `v`) or unbounded (no static bound; `v` keeps the analysis'
+ * saturated `PCREC_W_UNBOUNDED`-or-above number, so a reader that prints it
+ * prints today's bytes). Named for the offset-bound family
+ * (docs/design/span_arms.md §14.3 D-7, CONFORM-12); its one member today is
+ * the landmark's K (`req_landmark_maxoff`, the handoff's K). A reader asks
+ * the state through the two predicates below, never through the value: `v`
+ * of a `PF_OFF_NONE` bound means nothing. */
+typedef enum { PF_OFF_NONE, PF_OFF_BOUNDED, PF_OFF_UNBOUNDED } PfBoundState;
+typedef struct {
+    PfBoundState st;
+    long long    v;
+} PfBound;
+
+/* The bound that states nothing. */
+static inline PfBound pcrec_bound_none(void)
+{
+    return (PfBound){ .st = PF_OFF_NONE, .v = 0 };
+}
+/* The stated bound of an analysis offset: unbounded at or above
+ * `PCREC_W_UNBOUNDED` (the saturated reading is the safe one), else bounded
+ * (a negative `off` is a bounded, signed K, never none). `PfBound` is the
+ * third encoding in the tree of "a bound that may be none or unbounded",
+ * beside `WidthIv` and `Ast.u.call.cwmax` + `cwmax_known` ([BOUND-ENCODINGS]). */
+PfBound pcrec_bound_of(long long off);
+/* Is anything stated? */
+static inline bool pcrec_bound_stated(PfBound b) { return b.st != PF_OFF_NONE; }
+/* Is it stated AND bounded (a value a reader may compute with)? */
+static inline bool pcrec_bound_bounded(PfBound b) { return b.st == PF_OFF_BOUNDED; }
+
 /* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN: `whole_len` contiguous
  * positions every match of the pattern must contain, as the analysis stored
  * it (at most `PCREC_MAX_REQ_RUN_SCAN` positions), with `whole_maxoff` the
@@ -84,6 +114,12 @@ int pcrec_req_info(const unsigned char *pos);
  * AND of the members, `k` the bits they all agree on (a reader's private
  * spelling, D187 addendum 1). True where the set IS the cube's members. */
 bool pcrec_req_cube(const unsigned char *pos, int *t, int *k);
+
+/* THE RUN POSITION pcrec's own pick tests over the stretch `run->pos[lo..hi)`
+ * (a run index in `[lo, hi)`), -1 where the stretch is empty: the one pick
+ * the `req_byte` fact (src/facts/req.c `pcrec_req_pick`) and the trace
+ * build's set-leads shadow ask (span_arms §14.3 D-6, RM-4). */
+int pcrec_run_scan_index(const uint32_t *rate, const ReqRun *run, int lo, int hi);
 
 /* Is byte `b` a member of the run's position `i`? */
 static inline bool pcrec_run_has(const ReqRun *r, int i, int b)
@@ -284,29 +320,6 @@ typedef struct {
  * saturated finite minimum share (nevermatch_report.md). */
 typedef enum { PF_NEVER_NO = 0, PF_NEVER_MACHINE } PfNever;
 
-/* [KIT-VERIFY] U1 Z2 THE SPAN SLICE (fact `span_facts`, E3 core;
- * docs/design/kit_proof.md §5.1-§5.2 UL-0, docs/design/ctx_span.md §3.2-§3.4,
- * §3.8): span 0 at the MATCH-START origin, priority-free, on the lowered
- * machine the k-set walk reads. `set[d]` is the TRUE byte set some match
- * carries at offset d from its own start, the context before it ranging
- * over every byte and the subject start (kit_proof.md §R2.2's ruling: a
- * byte reached through a `$` before a final newline is in it), and
- * `exact_len` the largest L such that, for every d < L, the length-(d+1)
- * prefixes of the matches are exactly `set[0] x .. x set[d]` and no match
- * ends before d + 1. An UNDER-statement of `exact_len` is sound; `set[d]`
- * is meaningful only for d < `exact_len`. `stated` is MK_LANG_UNSTATED (the
- * empty value) on a route that never sealed E3 or where the walk declined
- * (an erased or marked machine): a reader then states 0. The k-set walk's
- * `KsetWalk` stays the pass-through HULL its consumers read; these are the
- * narrowed sets (ctx_span.md §3.8 [r4rc R2]). */
-typedef enum { MK_LANG_UNSTATED = 0, MK_LANG_STATED } MkLangState;
-typedef struct {
-    uint8_t  stated;                       /* MkLangState                     */
-    uint8_t  exact_len;                    /* 0..PCREC_PREFIX_K_MAX           */
-    uint8_t  set[PCREC_PREFIX_K_MAX][32];  /* S_d, d < exact_len; bit b & 7 of
-                                              byte b >> 3 (mf_term.set's)   */
-} MkLang;
-
 /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
  * contains, each the root answer of the node predicate named beside it
  * (src/facts/kinds.c). A bit exists only where a pass asks it at the root.
@@ -425,12 +438,6 @@ typedef enum {
     /* D164 B3 `end_mark`'s L3 decline: a subroutine call re-enters a body with
      * another continuation, so no node is path-final for every caller. */
     PF_WHY_CALL,
-    /* [KIT-VERIFY] U1 Z2 `span_facts`' declines (src/facts/kset.c): the
-     * machine's language is a SUPERSET of the pattern's (`Nfa.erased`), or
-     * its accepts carry D164 mark distances (a lowered `$` tail, whose bytes
-     * lie past the match end); `nullable` and `dead-start` are Λ's. */
-    PF_WHY_ERASED,
-    PF_WHY_MARKED,
     /* [RUN-POS-SET] stage 2p `req_pieces`' declines (src/facts/desc.h): no
      * description (a wall: a variable width, a cut, a repeat), over the
      * group bound, or ONE group (the single run's business, not a piece
@@ -440,7 +447,11 @@ typedef enum {
     PF_WHY_PIECES_ONE,
     /* [UCP] U3 a byte walk over an ISLAND NFA (`Nfa.island`): its character
      * edges consume one to four bytes, so no byte position is stated. */
-    PF_WHY_ISLAND
+    PF_WHY_ISLAND,
+    /* span_arms L1 (§14.3 D-9): `req_whole_run`'s walk proved no attempt can
+     * match (the never family's root bit). Status `derived`; listed `dead`,
+     * ahead of every other token (facts_listing.md §4.1.3¶1). */
+    PF_WHY_DEAD
 } PfWhyCode;
 
 typedef struct {
@@ -509,8 +520,8 @@ typedef struct {
      * -1; -1 under `-fno-req-byte`. */
     int       req_byte;
     /* [REQ-HANDOFF-L1] E2 derived: the landmark's K
-     * (`pcrec_fact_req_landmark_maxoff`), -1 where there is no landmark. */
-    long long req_landmark_maxoff;
+     * (`pcrec_fact_req_landmark_maxoff`), none where there is no landmark. */
+    PfBound   req_landmark_maxoff;
     /* [OPT-K] E3 core, sealed on the `ENG_UNANCH` branch only: the k-set walk
      * over the wrapped forward NFA from its anchored start. The offset-skip
      * window statement (src/gen/emit_dfa.c `window_reply_ask`) states it to the
@@ -527,11 +538,6 @@ typedef struct {
      * carries its row deny. */
     LandChar  land_char;
     WidthIv   width;
-    /* [KIT-VERIFY] U1 Z2 E3 core, sealed on the `ENG_UNANCH` branch only:
-     * the span slice over the wrapped NFA (`MkLang`). No deny of its own:
-     * its readers (the `cover` row, the FIND sites' `exact_len` statement)
-     * state what it gives. */
-    MkLang    span;
     /* [NEVER-MATCH] E2 core, asked only once the machines are final
      * (`Job.machines_final`): `PfNever`. No deny. */
     PfNever   never_matches;
@@ -619,18 +625,22 @@ int            pcrec_fact_req_byte(Ctx *cx);
 const ReqSet  *pcrec_fact_req_set_maxoff(Ctx *cx);
 /* E2 derived ([REQ-HANDOFF-L1]): THE LANDMARK's K — the pre-check gate's
  * needle, whatever its length — the run window's `maxoff` where a run
- * shipped, else the `req_byte` member's; -1 where the gate has no needle.
- * `PCREC_W_UNBOUNDED` reads as "no bound". */
-long long      pcrec_fact_req_landmark_maxoff(Ctx *cx);
+ * shipped, else the `req_byte` member's; none where the gate has no needle,
+ * unbounded where the offset has no static bound. */
+PfBound        pcrec_fact_req_landmark_maxoff(Ctx *cx);
 const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
 const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
-/* E3 [KIT-VERIFY] U1 Z2: `span`, read WITHOUT a `used` record, its one
- * reader being the cover decision (`locate_cover_applies` -> `pcrec_cover`),
- * a check, not a pass: `used` stays the passes' record (facts_listing.md
- * §4.1¶2). */
-const MkLang   *pcrec_fact_span_stated(Ctx *cx);
+#ifdef PCREC_CAND_TRACE
+/* The trace build's HULL CONTAINMENT control on the cover's exact stretch
+ * (docs/design/cover_cap.md §3.6 Q2): fails the compile, naming the offset
+ * and byte, where some `sets[d]`, `d < min(n, the hull's depth)`, holds a
+ * byte outside the k-set walk's hull over `Job.nfa` at `d`. The hull is
+ * recomputed (a pure walk, no fact asked), so the `used` column is the
+ * default build's. */
+void pcrec_facts_hull_check(Ctx *cx, const uint8_t (*sets)[32], int n);
+#endif
 /* E2 [NEVER-MATCH], asked after the machine build: the proof that the
  * pattern matches nothing, `PF_NEVER_NO` where there is none. */
 PfNever         pcrec_fact_never_matches(Ctx *cx);

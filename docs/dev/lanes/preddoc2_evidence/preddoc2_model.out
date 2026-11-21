@@ -1,0 +1,26 @@
+PE     ok   peek: WHOLE `37` HOLDS (d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`) | doc line found
+W1     ok   R.1.10's four forms against the draft's table and the semantic model; differ: none
+W1doc  ok   when's example line: WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
+WT     ok   peek {'12': True, '123': False, 'x': True, '1': False} consumed {'12': False, '123': True, 'x': True, '1': False} (the draft: peek 12 holds, 123 fails, x holds, 1 fails; consumed 12 fails, 123 holds, x holds, 1 fails)
+WTdoc  ok   the test's example line: WHOLE `12` FAILS, `123` HOLDS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`x`@3, `123`@5, `x`@10] (`when(/\d/, /\d\d/, else = /\w/)`, a bare test, is `\d\d\d|(?!\d)\w`)
+WD     ok   when-default: WHOLE `12` HOLDS, `1` FAILS, SEARCHED `x` ``@0 (the draft R.1.10 (2))
+WN     ok   when(NOT peek(x), z): WHOLE `x` HOLDS; SEARCHED `1x` ``@0; FIND-ALL `x1 y 12` [`x`@0, ``@1, `y`@3, ``@5, ``@6]
+WC     ok   [h = rx.digit] SEQ when((h: <5), /\d\d/, else = /\w/): WHOLE `112` HOLDS; SEARCHED `x7x` `7x`@1; FIND-ALL `112 7x 17` [`112`@0, `7x`@4]
+WCnot  ok   [h = rx.digit] SEQ when(NOT (h: <5), /\w/): WHOLE `7x` HOLDS; SEARCHED `x17x` `1`@1; FIND-ALL [`7x`@0, `1`@3, `1`@6]
+WS     ok   the five legal calls bind, `when(x)` and `when(x, else = z)` are refused (then required; R.1.10 (8))
+WV     ok   value-test (a) the condition test, (b) his test consumed: the draft R.8's answers
+W8     ok   rev 26's `KH & when((h: <5), (k: between(3, 7)))`: WH1 and the else form `5;1;9` FAILS, `1;0;9`@0, by the semantic model and by when's body
+RX     ok   RX5 min = n, max = n, n := [2, 4]: WHOLE `123` HOLDS; SEARCHED `12345` `12`@0; FIND-ALL [`12`@0, `34`@2]; WHOLE equals `\d{2,4}` on 0 of 63 differing
+RXexact ok   one-argument exact `rx.repeat(rx.digit, n)`: WHOLE `123` FAILS, equal to `\d{2}|\d{4}`
+RXnone ok   every combination illegal: `(?!)`
+RXlift ok   AL2 `rx.repeat(rx.digit, n + 1)` is `\d{3}|\d{5}`: WHOLE `123` HOLDS; SEARCHED `123456` `123`@0; FIND-ALL [`123`@0, `678`@6]
+RXdoc  ok   repeat's example line: WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12`@0, `34`@2] (`rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4], is `(?:\d{2,2}|\d{2,4}|\d{4,4})`: the copy (4,2) removed)
+RB     ok   `repeat(digit, n, n + 1)`, n := [2, 5]: copies (2,3), (2,6), (5,6), (5,3) removed; WHOLE `1234` HOLDS (the cross copy)
+R6     ok   RX6: `rx.repeat([a = rx.digit], min = 1)` & (a: <5) WHOLE `73` HOLDS a = 3, `37` FAILS; inside: `3417` FAILS, `341` HOLDS a = `1`, SEARCHED `341`@0, FIND-ALL [`341`@0, `2`@6]; `digits` equals `\d+`
+ZVpattern ok   WHOLE `a` FAILS, `b` HOLDS / SEARCHED `ab` `b`@1 / FIND-ALL `a b ab` [`b`@2, `b`@5] (`/a${[]}|b/` is `a(?!)|b`)
+ZVcount ok   WHOLE `` FAILS, `b` HOLDS / SEARCHED `ab` `b`@1 / FIND-ALL `a b` [`b`@2] (`/a{${n}}/ | /b/`, n := `[]`: the literal `/a{${n}}/` never matches)
+ZVclass ok   WHOLE `ax` FAILS, `b` HOLDS / SEARCHED `axb` `b`@2 / FIND-ALL `ax b` [`b`@3] (`/a[${[]}x]|b/` is `a(?!)|b`)
+M3     ok   core needs: into the library: none; core pieces with see: ['core/patterns/quantifiers', 'core/holes/count', 'core/diagnostics/consuming-test']
+M4     ok   core/patterns/repeat (ruled 2026-11-17): statement equal; core/conditional/when (?  2026-11-19): no pilot statement ('?' piece); core/conditional/test (?  2026-11-19): no pilot statement ('?' piece); core/conditional/peek (?  2026-11-19): no pilot statement ('?' piece)
+SL     ok   124 of 124 slugs homed (R.8's 120 bold kebab slugs + 4); missing: none
+preddoc2_model: 25 checks, 0 failed

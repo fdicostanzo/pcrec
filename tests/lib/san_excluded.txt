@@ -80,7 +80,6 @@ tests/findall/run_one_body.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS
 tests/findings/run_findings_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/fuzz/run_capturediff_gate.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/island/run_island_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
-tests/kitproof/run_cover.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/knowledge/run_knowledge_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/knowledge/run_measures_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/lib/run_group.sh	NOT-A-SUITE	job-pool runner for other scripts, not a suite
@@ -90,6 +89,7 @@ tests/memfn/run_arch_blind.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.
 tests/memfn/run_arm_pins.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_arm_reach.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_deleg_sites.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_d3floor.sh	OWN-TIER	compiler axis only: it builds r33_sim's traced probe compiler with build.sh's fixed CFLAGS (-DMF_TRACE) and runs no generated matcher; the corpus already reaches the compiler axis under make san/ubsan (r10 D3W-7)
 tests/memfn/run_finder.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_form_checks.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_purity_reach.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run

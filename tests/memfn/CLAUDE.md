@@ -41,7 +41,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE` builds, the ...
 - `occurrence_oracle.py` (+ `_selftest.py`) — K38-2a occurrence oracle (D27-blind, sheet §3.3; k382o_report.md).
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
-- `arm_fixtures.c --site-text ID [CLS]` / `--site-parts ID [CLS]` / `--hash-text FILE|-` / `--facts ID [CLS]` (span_cards S2c, includes kit.h): an instance's hashed text (whole or FILE/BODY), any text's hash, the slot's facts; `--hash`: `FORMCLS` lines, per-instance R-MS3 fixtures (r9).
+- `arm_fixtures.c --site-text ID [CLS]` / `--site-parts ID [CLS]` / `--hash-text FILE|-` / `--facts ID [CLS]` / `--frame` (+`--target-facts`) (S2c, kit.h): an instance's text (whole or FILE/BODY), any text's hash, the slot's facts; `--hash`: `FORMCLS` lines, per-instance R-MS3 fixtures (r9).
 - `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; NONE and framed replies, fresh art vs interleaved defines, whole-reply memcmp; the sticky-err fence; 3.0b's fixtures: NOTES.md "Purity harness"). run_finder.sh floors it EXACTLY, runs it plain and on the MF_TRACE driver `fxt` (E-func/E-generic define counts EXACT), plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each window.c table row dropped must move a reply or be declared unreached.
 - **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target; mech arm `n2sample`).
 ### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
@@ -67,6 +67,8 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 - **run_rank.sh**, **rank_check.py** — the ranking claim, INVERTED since D172 S2 commit 6: pcrec hands the kit no ranking (every PRE/OFS predicate has rank_n 0); S1420 is the failing direction; N4's door (`find_door`) stays. History: NOTES.md.
 
+- **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv**, **d3_census.tsv** — D3 floor gate: `make test-memfn-d3floor`, last step of test-axes; also cloud shard 1; not in `make test`. See NOTES.md.
+
 ## Maintaining it
 
 - **A new search form in an emitter:** add a row, or name the function on
@@ -88,7 +90,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
   dump fails its population, with a scratch control on every run (R4c′).
   Own CLAUDE.md.
 
-- **prov_check.c** — BUILD-ONLY (run_finder.sh compiles it `-fsyntax-only -Werror`, never links or runs it): a static assertion of `mf_akind.digest`'s offset. Reduced at span_pick 1g (MF_SITE_ABI 22) when `mf_prov` and pcrec's stanza mapping left the seam; finder_check L (the seam allowlist, rate-site digest loop with reach control, no-`digest` scan) is the digest check.
+- **prov_check.c** — BUILD-ONLY (run_finder.sh compiles it `-fsyntax-only -Werror`): a static assertion of `mf_akind.digest`'s offset; finder_check L is the digest check.
 - Also (one-line entries for these are in the history file): `c10_onebyte.tsv`, `run_arm_reach.sh`, `run_libc_census.sh`, `run_presence.sh`.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__memfn.md`.

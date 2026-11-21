@@ -15,7 +15,7 @@
 # from a CI split run: `python3 -I memfn/tests/g2_parts.py reweight --table memfn/tests/g2_units.tsv --source 'TEXT' gather.log`
 # rewrites the weight and source of every unit the gather.log (or any log with `G2UNIT name seconds` lines) measured, then
 # `g2_parts.py predict --table memfn/tests/g2_units.tsv 4 8` prints the dealt parts' summed weights.
-# Rule for the table: no unit may weigh more than total/N for the N in use (here total/8 = 103), else N parts cannot balance.
+# Rule for the table: no unit may weigh more than total/N for the N in use (here total/8 = 115), else N parts cannot balance.
 # A weight is a balance input only; a wrong weight costs balance, never coverage (g2_parts.py gather proves coverage).
 gcc	81	job 561 wall in part
 simd-facts	45	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
@@ -24,7 +24,7 @@ simd-paths	15	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, 
 simd-plants-a	60	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
 simd-plants-b	59	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
 asan	46	job 561 wall in part
-win	54	job 561 wall in part
+win	79	job 561 wall in part x 151/103 (lane formsfixb: run_g2_win.sh alone, niced, 103 s at 7506bca30 -> 151 s)
 w1w3	41	job 561 wall in part
 any	22	job 561 wall in part
 k1	6	job 561 wall in part
@@ -45,3 +45,4 @@ w2-13	26	job 561 wall in part
 w2-14	15	job 561 wall in part
 w2-15	20	job 561 wall in part
 w2-16	23	job 561 wall in part
+mfind	73	lane mfind own run_g2_mfind.py --quick (73 s, G2M_JOBS 2, unloaded)

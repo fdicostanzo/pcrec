@@ -6,7 +6,8 @@
 # WHICH MANAGER (Frank 2026-11-07): the input's `session_id` looked up with
 # scripts/session_role --get. main -> the owner's view whole + docs/dev/wake.md
 # up to its WORK QUEUE section; kit -> memfn/docs/wake.md (the kit has no owner
-# view) up to its WORK QUEUE section if it has one; NO role -> neither file is
+# view) up to its WORK QUEUE section if it has one; pred -> docs/dev/pred/wake.md (+ pred/owner.md when present);
+# NO role -> neither file is
 # injected: both candidate paths are named and the session is asked to register.
 # A subagent input (top-level agent_id) prints nothing. Stays under the
 # 10,000-character inline limit (larger output goes to a file with a
@@ -25,6 +26,10 @@ role=$(bash "$here/../session_role" --get "$sid" 2>/dev/null)
 # the kit's wake file: its branch's copy (worktrees/memfn) is newer than the tree's when it exists
 kitwake=memfn/docs/wake.md
 [ -r "$root/worktrees/memfn/memfn/docs/wake.md" ] && kitwake=worktrees/memfn/memfn/docs/wake.md
+# the predicate manager's files: its branch's copy (worktrees/pred) when readable
+predwake=docs/dev/pred/wake.md; predowner=docs/dev/pred/owner.md
+[ -r "$root/worktrees/pred/docs/dev/pred/wake.md" ] && predwake=worktrees/pred/docs/dev/pred/wake.md
+[ -r "$root/worktrees/pred/docs/dev/pred/owner.md" ] && predowner=worktrees/pred/docs/dev/pred/owner.md
 case $role in
 main)
 cat <<'EOT'
@@ -56,6 +61,22 @@ if [ -r "$root/$kitwake" ]; then
   printf '\n===== %s (to WORK QUEUE if present; read the rest) =====\n' "$kitwake"
   awk '/^## WORK QUEUE/{exit} {print}' "$root/$kitwake" | head -c 7000
 fi ;;
+pred)
+cat <<EOT
+POST-COMPACTION RE-ENTRY (scripts/hooks/post_compact.sh), role PRED (predicate-language manager). Compaction just ran.
+Before acting on anything: (1) trust the notes below over the summary;
+(2) re-read $predwake in full, then docs/dev/pred/from_main.md and the end of
+docs/design/plan_row_bodies/COND-FAMILY.md; refresh docs/dev/pred/owner.md;
+(3) check each in-flight lane's report/log before reporting its state.
+EOT
+if [ -r "$root/$predwake" ]; then
+  printf '\n===== %s (to WORK QUEUE if present; read the rest) =====\n' "$predwake"
+  awk '/^## WORK QUEUE/{exit} {print}' "$root/$predwake" | head -c 6000
+fi
+if [ -r "$root/$predowner" ]; then
+  printf '\n===== %s =====\n' "$predowner"
+  head -c 2500 "$root/$predowner"
+fi ;;
 *)
 cat <<'EOT'
 POST-COMPACTION RE-ENTRY (scripts/hooks/post_compact.sh). Compaction just ran, and
@@ -64,6 +85,7 @@ share this hook; injecting the wrong one is worse than none).
 If you are the pcrec manager: run scripts/session_role main, then read docs/dev/owner.md and docs/dev/wake.md.
 If you are the memfn kit manager: run scripts/session_role kit, then read memfn/docs/wake.md
 (or worktrees/memfn/memfn/docs/wake.md when that checkout exists).
+If you are the predicate-language manager: run scripts/session_role pred, then read docs/dev/pred/wake.md.
 Any other session: ignore this.
 EOT
 ;;

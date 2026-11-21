@@ -1,0 +1,5 @@
+report=docs/dev/lanes/span4kfix_report.md
+sections: Summary; Fixes by id; Raise; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

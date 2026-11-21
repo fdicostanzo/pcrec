@@ -1,0 +1,32 @@
+PD     ok   body '(rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)' built from its text: width line as printed; one-argument line as printed; \d{2,3} n=3 012/0123, 1|0123 n=4 0001/0123 (True, False, True, True)
+AT     ok   atomic(/a|ab/) SEQ "c" from the body '/(?>${X})/': ([('ac', True, None), ('abc', False, None)], ('xabc ac', ('ac', 5)), ('ac abc ac', [('ac', 0), ('ac', 7)]))
+KI     ok   `/\d+/ & !/7\d*/ & !/8\d*/` (the printed answers): ([('123', True, None), ('812', False, None)], ('7 8 12', ('12', 4)), ('12 7 8 93', [('12', 0), ('93', 7)]))
+CM     ok   `/\d+/ & <20`: ([('19', True, None), ('020', False, None), ('20', False, None)], ('x25', ('2', 1)), ('25 7 019', [('2', 0), ('5', 1), ('7', 3), ('0', 5), ('19', 6)]))
+TU     ok   time & ((h, m): >= (9, 30)), dictionary order: ([('9:45', True, None), ('9:15', False, None), ('10:15', True, None)], ('9:15 10:30', ('10:30', 5)), ('9:30 9:15 12:45', [('9:30', 0), ('12:45', 10)]))
+NE     ok   `/\d/ SEQ NOT peek(/x/)` is `\d(?!x)`: ([('7', True, None), ('7x', False, None)], ('7x 8', ('8', 3)), ('1x 2 3x4', [('2', 3), ('4', 7)]))
+ZL     ok   the witness `(/\d/ SEQ (0: /\d/) SEQ ";")+`: (a) the pass ([('3;4;', True, None)], ('3;4;', ('3;4;', 0)), ('3;4; 5;', [('3;4;', 0), ('5;', 5)])); (b) the rx's start ([('3;4;', False, None)], ('3;4;', ('3;', 0)), ('3;4; 5;', [('3;', 0), ('4;', 2), ('5;', 5)]))
+SO     ok   `/(?:(?<d>\d),)+/ & some((d: "7"))`: ([('1,7,', True, None), ('1,2,', False, None)], ('1,2, 7,', ('7,', 5)), ('7,1, 2, 3,7,', [('7,1,', 0), ('3,7,', 8)]))
+CO     ok   `/(?:(?<d>\d),)+/ & (n: ==2)`, n := count((d: "7")): ([('7,1,7,', True, None), ('7,1,', False, None)], ('7,7,7,', ('7,7,', 0)), ('7,7,7, 1,7,7,', [('7,7,', 0), ('1,7,7,', 7)]))
+ME     ok   `/${days}/ & (w.index: >= 2)`, 1-based: ([('Tue', True, None), ('Mon', False, None)], ('Mon Wed', ('Wed', 4)), ('Tue Mon Wed', [('Tue', 0), ('Wed', 8)]))
+CL     ok   `/(?<a>\d)\+(?<b>\d)/ & (sum: <10)`, sum := $a + $b: ([('3+4', True, None), ('7+8', False, None)], ('7+8 2+2', ('2+2', 4)), ('1+1 9+9 5+4', [('1+1', 0), ('5+4', 8)]))
+PT     ok   `/(?<x>\d+),${pattern($x)}/` is `(?<x>\d+),(?:\d+)`: ([('12,345', True, None), ('12,', False, None)], ('a1,2', ('1,2', 1)), ('1,22 3,4', [('1,22', 0), ('3,4', 5)]))
+RP     ok   the count-hole copies \d{2,2}|\d{2,4}|\d{4,4}; the line as printed: True
+R1     ok   core pieces named as a call: []; library pieces without defined: []; 46 library pieces, 15 native
+       native  lib/builtin/enumerate                it lists an rx's strings; no expression of the language walks an rx
+       native  lib/builtin/import                   it reads library files at compile time
+       native  lib/builtin/pattern                  it reads a group's written pattern, which no expression of the language reaches
+       native  lib/modifiers/any-case               for now, by the owner's ruling; whether the body defines it is the open question
+       native  lib/counting/some                    a question over a loop's passes; no expression of the language walks the passes
+       native  lib/counting/count                   a count over a loop's passes; no expression of the language counts passes
+       native  lib/counting/occurs                  a count over the passes of a loop, a capped counter; no expression of the language counts passes
+       native  lib/strings/join                     a function over an array's members; no expression of the language walks an array
+       native  lib/strings/left                     a string function; the language has no slicing
+       native  lib/strings/strlen                   a string function; the language has no length of a string as a value
+       native  lib/assert/assert                    a compile-time check of a set's emptiness, not a pattern
+       native  lib/records/records                  a compile-time search over a text
+       native  lib/records/param                    the caller supplies it at run time
+       native  lib/records/file-text                it reads a file at compile time
+       native  lib/structural/each                  compile-time tools over spelled arrays; no expression of the language walks an array
+R2     ok   52 names called in the base files; without a library piece: []; the listed exceptions found: ['even']
+DOC    ok   15 example lines, each verbatim in core.md or library.md; missing []
+checks 16, failed 0

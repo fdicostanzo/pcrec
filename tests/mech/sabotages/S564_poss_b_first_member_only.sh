@@ -23,5 +23,6 @@ SAB_REACH_POP='tests/possessify/possessify.rxt|^pattern \(\?J\)\(\?:\(\?<n>a\)\|
 tests/possessify/arms_reach.tsv|^\(\?J\)\(\?:\(\?<n>a\)\|\(\?<n>x\)\)x\+\\k<n>[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    for (int i = 0; i < a->u.bref.nrefs; i++) {'
-SAB_AFTER='    for (int i = 0; i < 1; i++) {  /* SABOTAGE S564: refs[0] only */'
+SAB_BEFORE='    while (f->i < f->a->u.bref.nrefs) {'
+SAB_AFTER='    while (f->i < 1) {  /* SABOTAGE S564: refs[0] only */'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): arm B's member loop is first_eval's `refs:` block; same site, same plant.

@@ -19,6 +19,7 @@
  */
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "kit.h"
@@ -333,7 +334,10 @@ const arm *kit_legacy_arm(const mf_art *art, const mf_site *s, const mf_hooks *d
     if (site_check(s) || s->denies != art->denies) return NULL;
     const arm *row = select_arm(art, s, def, gphases, &why, 1, rid, &ren);
     memset(&cls, 0, sizeof cls);
-    if (!row || kit_class(row, s, &cls) ||
+    /* the verdict only (r45_reply.md §5): no rows are kept, and an old-field
+       FIND keeps the clip, so kit_class gains no refusal here */
+    const kit_proof_st verdict = { NULL, 0, NULL };
+    if (!row || kit_class(row, s, &cls, &verdict) ||
         fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, &cls, &pw) ||
         (s->npspan && pres_layout_check(art, s, &cls)))
         return NULL;
@@ -368,10 +372,12 @@ static int row_tests(const arm *a, const mf_pred *p, const mf_term *t)
 }
 
 /* Intersects the bytes term `t` admits at each of its positions in [dlo,
- * dhi] into the per-offset proof `pv` (proven[]'s layout, row 0 = offset
+ * dhi] into the per-offset proof `pv` (the class's rows, row 0 = offset
  * `base`), clipped to its range: a SET term's set at its offset, a RUN term's
- * position j under its mask at offset + j (R-26.4). */
-static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32], long base)
+ * position j under its mask at offset + j (R-26.4). An old-field FIND term's
+ * text tests exactly its stated positions, so the clip at MF_MAX_FWD is
+ * conservative (nothing proven there) and is kept (r45_reply.md §1). */
+static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t (*pv)[32], long base)
 {
     long len = t->kind == MF_T_RUN ? (long)t->run_len : t->kind == MF_T_SET ? 1 : 0;
     if (t->kind == MF_T_RUN && !t->run) return;
@@ -385,14 +391,102 @@ static void term_prove(const mf_term *t, long dlo, long dhi, uint8_t pv[][32], l
     }
 }
 
-const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
+long kit_last_stated(const mf_site *s)
+{
+    long last = -1;
+    for (unsigned i = 0; i < s->nalt && s->alts; i++)
+        for (unsigned j = 0; j < s->alts[i].nspan; j++) {
+            const mf_wspan *sp = &s->alts[i].spans[j];
+            if (sp->len && (long)sp->start + sp->len - 1 > last)
+                last = (long)sp->start + sp->len - 1;
+        }
+    if (s->nalt) return last;
+    for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++) {
+        const mf_term *tm = &s->pred.term[t];
+        long len = tm->kind == MF_T_RUN ? (long)tm->run_len : tm->kind == MF_T_SET ? 1 : 0;
+        if (len && (long)tm->offset + len - 1 > last) last = (long)tm->offset + len - 1;
+    }
+    return last;
+}
+
+/* The proof range's least END (one past its last row) for a site whose last
+ * stated offset is `last_s`: one past the statement's following offset,
+ * clipped to MF_MAX_FWD, and never below 1 (rows -1 and 0, the copies, always
+ * lie inside). THE MINIMUM's one spelling: mf_rows_need sizes the caller's
+ * storage by it and kit_proof_open's R-short checks against it (review r27
+ * HOUSE-2). */
+static long proof_min_end(long last_s)
+{
+    long end = last_s + 2 < MF_MAX_FWD ? last_s + 2 : MF_MAX_FWD;
+    return end < 1 ? 1 : end;
+}
+
+const char *kit_proof_open(mf_class *out, long last_s, long tested_lo, long last_t,
+                           int check_out, const kit_proof_st *st, uint8_t (**w)[32])
+{
+    *w = NULL;
+    out->proof = NULL;
+    out->proof_n = 0;
+    /* (R-out) a TESTED offset outside the range is refused, never clipped */
+    if (check_out && (tested_lo < MF_PROOF_LO || last_t >= MF_MAX_FWD))
+        return "a tested offset lies outside the proof range [MF_PROOF_LO, MF_MAX_FWD) "
+               "(R-45 R-out)";
+    long end = last_s + 2 > last_t + 1 ? last_s + 2 : last_t + 1;
+    if (end > MF_MAX_FWD) end = MF_MAX_FWD;
+    if (end < 1) end = 1;           /* rows -1 and 0 always lie inside: the copies */
+    /* (R-short) THE SELF-CHECK: the range reaches one past the statement. It
+       shares its source with `end` (the kit checking its own computation) */
+    if (end < proof_min_end(last_s))
+        return "the proof range ends before the statement's following offset";
+    uint32_t n = (uint32_t)(end - MF_PROOF_LO);
+    uint8_t (*rows)[32] = NULL;
+    if (st && st->rows) {
+        if (n > st->cap)            /* (R-cap) */
+            return "the proof range needs more rows than the caller's storage holds "
+                   "(R-45 R-cap)";
+        rows = st->rows;
+    } else if (st && st->a) {
+        rows = st->a->alloc(st->a->u, (size_t)n * 32);
+        if (!rows) return "out of memory";
+    } else if (st) {
+        return NULL;                /* the verdict only */
+    } else {
+        return "the proof range has no storage (a NULL `rows`)";
+    }
+    memset(rows, 0xFF, (size_t)n * 32);
+    out->proof = (const uint8_t (*)[32])rows;
+    out->proof_n = n;
+    *w = rows;
+    return NULL;
+}
+
+void kit_proof_close(mf_class *out)
+{
+    long i0 = 0 - MF_PROOF_LO, im = -1 - MF_PROOF_LO;
+    if (out->proof && (uint32_t)i0 < out->proof_n) memcpy(out->proven0, out->proof[i0], 32);
+    else memset(out->proven0, 0xFF, 32);
+    if (out->proof && (uint32_t)im < out->proof_n) memcpy(out->proven_prev, out->proof[im], 32);
+    else memset(out->proven_prev, 0xFF, 32);
+}
+
+int kit_class_same(const mf_class *x, const mf_class *y)
+{
+    if (x->proof_n != y->proof_n) return 0;
+    for (uint32_t i = 0; i < x->proof_n; i++)
+        if (memcmp(x->proof[i], y->proof[i], 32)) return 0;
+    mf_class a = *x, b = *y;        /* the by-value members: a pointer is
+                                       never compared */
+    a.proof = b.proof = NULL;
+    return !memcmp(&a, &b, sizeof a);
+}
+
+const char *kit_class(const arm *a, const mf_site *s, mf_class *out, const kit_proof_st *st)
 {
     memset(out, 0, sizeof *out);
     out->v = MF_CLASS_V;
     out->exists = 1;
     out->libc_free = !a->libc;
     out->includes = a->includes;
-    memset(out->proven, 0xFF, sizeof out->proven);
     const char *why = NULL;
     if (s->op == MF_OP_FIND && a->tests == ARM_TESTS_UNSTATED) {
         why = "the row states no `tests` (which terms its text tests), so its "
@@ -400,15 +494,23 @@ const char *kit_class(const arm *a, const mf_site *s, mf_class *out)
     } else if (s->op == MF_OP_FIND) {
         /* THE PER-OFFSET PROOF (MF_CLASS_V 5, R-26.4): every candidate satisfies
            the site's predicate (span 0, or a context stop), so each term the
-           row TESTS proves its bytes at every position it reads */
-        for (unsigned t = 0; t < s->pred.nterm && t < MF_MAX_TERM; t++)
+           row TESTS proves its bytes at every position it reads. A proving
+           class: its rows over the proof range (MF_CLASS_V 11); the old-field
+           term's tested set is its stated one, so no R-out (the clip) */
+        long last = kit_last_stated(s);
+        uint8_t (*rows)[32];
+        if ((why = kit_proof_open(out, last, 0, last, 0, st, &rows))) {
+            memset(out, 0, sizeof *out);
+            return why;
+        }
+        for (unsigned t = 0; rows && t < s->pred.nterm && t < MF_MAX_TERM; t++)
             if (row_tests(a, &s->pred, &s->pred.term[t]))
-                term_prove(&s->pred.term[t], MF_PROOF_LO, MF_MAX_FWD - 1, out->proven, MF_PROOF_LO);
+                term_prove(&s->pred.term[t], MF_PROOF_LO, MF_PROOF_LO + (long)out->proof_n - 1,
+                           rows, MF_PROOF_LO);
     }
     /* proven0 and proven_prev are COPIES (kit_proof.md §4.2), equal by
        construction */
-    memcpy(out->proven0, out->proven[0 - MF_PROOF_LO], sizeof out->proven0);
-    memcpy(out->proven_prev, out->proven[-1 - MF_PROOF_LO], sizeof out->proven_prev);
+    kit_proof_close(out);
     return why;
 }
 
@@ -1062,18 +1164,22 @@ static int window_route(const mf_art *art, const mf_site *site, const mf_hooks *
  * walk is quiet: a query is not a selection). The class of the row the
  * define would choose, or -1 where the define would refuse. */
 static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
-                   unsigned gphases, mf_class *out)
+                   unsigned gphases, mf_class *out, mf_rows *rows)
 {
     const char *why;
     memset(out, 0, sizeof *out);
     if (art->err[0] || s->abi != MF_SITE_ABI) return -1;
+    /* the caller's storage (MF_SITE_ABI 30): NULL refuses a proving class */
+    const kit_proof_st st = { rows ? rows->proof : NULL, rows ? rows->proof_cap : 0, NULL };
+    const kit_proof_st *stp = rows && rows->proof ? &st : NULL;
     /* D172: a window site is the family's (its floor's class, or the class
        of the row its plan's translation takes) */
+    const mf_site *ws = s;
     const struct wf_plan *wplan = NULL;
     if (window_route(art, s, def, gphases, 1, &s, &wplan, NULL, &why)) return -1;
     if (wplan) {
         if (s->denies != art->denies) return -1;
-        wf_plan_class(wplan, out);
+        if (wf_plan_class(wplan, ws, out, stp)) { memset(out, 0, sizeof *out); return -1; }
         return 0;
     }
     if (site_check(s) || s->denies != art->denies)
@@ -1085,27 +1191,66 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
        proof all ones: a search text is not yet decided) */
     if (s->op == MF_OP_ALL_PRESENT && s->npspan && !s->npred) {
         out->v = MF_CLASS_V;
-        memset(out->proven, 0xFF, sizeof out->proven);
+        /* proof_n 0, proof NULL: the legal all-ones class */
         memset(out->proven0, 0xFF, sizeof out->proven0);
         memset(out->proven_prev, 0xFF, sizeof out->proven_prev);
-        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ? -1 : 0;
+        if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) {
+            memset(out, 0, sizeof *out);    /* On -1 *out is zeroed (memfn.h) */
+            return -1;
+        }
+        return 0;
     }
     gate_verdict declined = { 0, 0 };
     const char *rid;
     const ren_key *ren;
     const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid, &ren);
-    if (!row || kit_class(row, s, out)) return -1;
-    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;
-    if (s->npspan && pres_layout_check(art, s, out)) return -1;
+    if (!row) return -1;
+    /* every refusal before the first write to `rows` (review r27 SEAM-1): the
+       presence decision and the layout read no proof row, so they are held
+       on the class's verdict first; only then is the proof written.
+       UNREACHED today (review r28 R28-2, recorded by lane forms): kit_class
+       writes a proof only on a FIND site, fd_pres refuses only in its PRES
+       scope (an ALL_PRESENT site stating pspans, fd_scope) and the layout
+       check runs only with npspan, which site_check refuses on every
+       non-ALL_PRESENT site (kit_presence_check); so no site both writes a
+       proof and is refused after it. The order is kept for the day a
+       presence-stating FIND exists; a witness is owed then */
+    const kit_proof_st verdict = { NULL, 0, NULL };
+    if (kit_class(row, s, out, &verdict) ||
+        fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ||
+        (s->npspan && pres_layout_check(art, s, out))) {
+        memset(out, 0, sizeof *out);
+        return -1;
+    }
+    /* the proving class into the caller's rows (R-cap and a NULL `rows`
+       refuse before any write, kit_proof_open), then the same presence
+       decision again: kit_class rewrote the whole class */
+    if (kit_class(row, s, out, stp) || fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) {
+        memset(out, 0, sizeof *out);
+        return -1;
+    }
     return 0;
 }
 
-int mf_ask(const mf_art *art, const mf_site *site, const mf_hooks *def, mf_class *out)
+int mf_rows_need(const mf_site *site, uint32_t *proof_cap, uint32_t *plan_cap)
 {
-    int rc = ask_sel(art, site, def, MF_PH_DEFINE, out);
+    if (!site || !proof_cap || !plan_cap) return -1;
+    *proof_cap = *plan_cap = 0;
+    if (site->nalt || site->op == MF_OP_FIND) {
+        *proof_cap = (uint32_t)(proof_min_end(kit_last_stated(site)) - MF_PROOF_LO);
+    }
+    *plan_cap = wf_stated_offsets(site);
+    return 0;
+}
+
+int mf_ask(const mf_art *art, const mf_site *site, const mf_hooks *def, mf_class *out,
+           mf_rows *rows)
+{
+    int rc = ask_sel(art, site, def, MF_PH_DEFINE, out, rows);
 #ifdef MF_TRACE
-    fprintf(stderr, "MFTRACE ASK art=%u rc=%d exists=%d libc_free=%d includes=%u\n",
-            art->trace_id, rc, out->exists, out->libc_free, (unsigned)out->includes);
+    fprintf(stderr, "MFTRACE ASK art=%u rc=%d exists=%d libc_free=%d includes=%u proof_n=%u\n",
+            art->trace_id, rc, out->exists, out->libc_free, (unsigned)out->includes,
+            (unsigned)out->proof_n);
     /* R17-b' B3b: a presence site's links, recorded (phase SHADOW: never
        counted as chosen); a site whose every span P2 drops is asked and never
        defined, so this is its only observation */
@@ -1179,8 +1324,10 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     }
     mf_class cls;
     const char *cw = NULL;
-    if (wplan) wf_plan_class(wplan, &cls);
-    else cw = kit_class(row, s, &cls);
+    /* a define's rows are the ART's (r45_reply.md §5), exactly proof_n */
+    const kit_proof_st st = { NULL, 0, art->a };
+    if (wplan) cw = wf_plan_class(wplan, ws, &cls, &st);
+    else cw = kit_class(row, s, &cls, &st);
     if (cw) return kit_fail(art, "mf_define: %s", cw);
 
     if (art->nsites == art->cap) {
@@ -1257,23 +1404,31 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
        define's own phases, answers the class the define chose, and a class
        that searches nothing proves nothing (Q-R17P-25) */
     {
+        /* the re-ask takes its OWN storage, at the ceiling (r45_reply.md §5
+           (a)), freed after; the compare is the deep one (kit_class_same) */
         mf_class q;
-        if (ask_sel(art, ws, def, gphases, &q) || memcmp(&q, &r->cls, sizeof q))
+        mf_rows qr = { calloc(MF_MAX_FWD - MF_PROOF_LO, 32), MF_MAX_FWD - MF_PROOF_LO,
+                       NULL, NULL, NULL, 0 };
+        if (!qr.proof) return kit_fail(art, "mf_define: out of memory");
+        int differs = ask_sel(art, ws, def, gphases, &q, &qr) || !kit_class_same(&q, &r->cls);
+        free(qr.proof);
+        if (differs)
             return kit_fail(art, "mf_define: the define-time query's class differs "
                             "from the define's (r17b_prime.md §4.5 rule 2)");
         /* R-26.4: for EVERY offset d, and the two copies equal by
            construction (kit_proof.md §4.2) */
         if (!r->cls.exists)
-            for (unsigned d = 0; d < MF_MAX_FWD - MF_PROOF_LO; d++)
+            for (unsigned d = 0; d < r->cls.proof_n; d++)
                 for (unsigned i = 0; i < 32; i++)
-                    if (r->cls.proven[d][i] != 0xFF)
+                    if (r->cls.proof[d][i] != 0xFF)
                         return kit_fail(art, "mf_define: a class with exists 0 proves "
                                         "bytes at offset %d (Q-R17P-25)",
                                         (int)d + MF_PROOF_LO);
-        if (memcmp(r->cls.proven0, r->cls.proven[0 - MF_PROOF_LO], 32) ||
-            memcmp(r->cls.proven_prev, r->cls.proven[-1 - MF_PROOF_LO], 32))
-            return kit_fail(art, "mf_define: proven0/proven_prev are not proven[0]/"
-                            "proven[-1] (R-26.4: copies)");
+        mf_class c = r->cls;
+        kit_proof_close(&c);
+        if (memcmp(r->cls.proven0, c.proven0, 32) || memcmp(r->cls.proven_prev, c.proven_prev, 32))
+            return kit_fail(art, "mf_define: proven0/proven_prev are not the proof's rows "
+                            "for offsets 0 and -1 (R-26.4: copies)");
     }
 #endif
 
@@ -1469,13 +1624,45 @@ static const struct {
     /* presence.c kit_run_opts_of: the run decision's ties go LEFTMOST, for
        every reader of it on the art (span_runs_sheet.md §2.4 C4, §5) */
     { "run-tie-left", KIT_LEVER_RUN_LEFT },
+    /* ofsskip.c fn_rows[]: the BODY row fn-mfind (the inline one-member
+       finder, vrun.c's mfind_text) holds where fn-memchr would: a PROBE of
+       an unpicked measuring instrument, D197 (lane mfind) */
+    { "mfind",        KIT_LEVER_MFIND },
 };
+
+/* THE VALUED LEVER (R-45 r45_reply rev 6 §3 "The head lever"): `span-head=N`,
+ * N in 0..MF_SPAN_HEAD_MAX decimal, sets the span forms' inline head h on
+ * the art (window.c wf_span_head), so the form cards time every H(h) on one
+ * binary. 1 iff `name` is that lever (*bad set where N is malformed). */
+static int lever_span_head(mf_art *art, const char *name, int *bad)
+{
+    const char *key = "span-head=";
+    size_t kl = strlen(key);
+    if (!name || strncmp(name, key, kl)) return 0;
+    const char *v = name + kl;
+    unsigned long n = 0;
+    *bad = !*v;
+    for (; *v && !*bad; v++) {
+        if (*v < '0' || *v > '9') *bad = 1;
+        else if ((n = n * 10 + (unsigned long)(*v - '0')) > MF_SPAN_HEAD_MAX) *bad = 1;
+    }
+    if (!*bad) {
+        art->levers |= KIT_LEVER_SPAN_HEAD;
+        art->span_head = (unsigned)n;
+    }
+    return 1;
+}
 
 int mf_lever(mf_art *art, const char *name)
 {
     if (art->err[0]) return -1;
     if (art->nsites)
         return kit_fail(art, "mf_lever: called after the first define");
+    int bad = 0;
+    if (lever_span_head(art, name, &bad))
+        return bad ? kit_fail(art, "mf_lever: `%s` wants a head of 0..%u positions", name,
+                              (unsigned)MF_SPAN_HEAD_MAX)
+                   : 0;
     for (size_t i = 0; i < sizeof kit_levers / sizeof kit_levers[0]; i++)
         if (name && !strcmp(name, kit_levers[i].name)) {
             art->levers |= kit_levers[i].bit;

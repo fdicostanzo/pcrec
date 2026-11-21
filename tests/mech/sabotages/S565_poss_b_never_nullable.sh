@@ -23,8 +23,9 @@ SAB_REACH_POP='tests/possessify/possessify.rxt|^pattern \(a\?\)x\+\\1x$|1
 tests/possessify/arms_reach.tsv|^\(a\?\)x\+\\1x[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (a->u.bref.caseless) bref_fold(q->cx, a->u.bref.ucp, acc.f);
-    *out = acc;'
-SAB_AFTER='    if (a->u.bref.caseless) bref_fold(q->cx, a->u.bref.ucp, acc.f);
-    acc.nullable = false;  /* SABOTAGE S565: never nullable */
-    *out = acc;'
+SAB_BEFORE='    if (f->a->u.bref.caseless) bref_fold(q->cx, f->a->u.bref.ucp, f->acc.f);
+    q->b_used = true;'
+SAB_AFTER='    if (f->a->u.bref.caseless) bref_fold(q->cx, f->a->u.bref.ucp, f->acc.f);
+    f->acc.nullable = false;  /* SABOTAGE S565: never nullable */
+    q->b_used = true;'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): arm B's result is first_eval's `refs:` block, the reference read off its frame; same site, same plant.

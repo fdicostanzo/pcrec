@@ -2,11 +2,15 @@
 # cloud_mech_check.sh TABLE [--selftest] -- the POPULATION CHECK of the cloud mech shards ([CLOUD-SUITE] D):
 # the rows of TABLE are EXACTLY the sabotage ids of tests/mech/sabotages/S*.sh (an id = the file name before its first
 # `_`, as the driver's id arguments spell it), each in exactly one shard, every shard 1..N non-empty. A sabotage dropped
-# from the table, listed twice, or not on disk is FAIL by name. `--selftest` plants each defect.
+# from the table, listed twice, or not on disk is FAIL by name. WEIGHTS (review r9 covs1 TRADES-1): every id that has a
+# measured row in tests/ci/measured_mech.tsv carries that measurement (weight_source not ESTIMATE): a table regenerated
+# without `--measured` (every row a 45 s default, 2026-11-15) is FAIL. `--selftest` plants each defect.
 # Text only: no build needed.
 set -u
+meas=${meas:-}   # the measured file; the selftest points it at a planted one
 here=$(cd "$(dirname "$0")" && pwd); root=$(cd "$here/../.." && pwd)
 tab=${1:?TABLE}; case $tab in /*) ;; *) tab=$root/$tab ;; esac
+[ -n "$meas" ] || meas=$here/measured_mech.tsv
 T=$(mktemp -d "${TMPDIR:-/var/tmp}/cloud_mech_check.XXXXXX"); trap 'rm -rf "$T"' EXIT
 for f in "$root"/tests/mech/sabotages/S*.sh; do b=$(basename "$f" .sh); echo "${b%%_*}"; done | LC_ALL=C sort -u > "$T/manifest"
 
@@ -22,6 +26,12 @@ check() {
         [ -n "$(bash "$here/cloud_table.sh" rows "$t" "$k/$n")" ] || { echo "  EMPTY shard $k/$n"; bad=1; }
     done
     bash "$here/cloud_table.sh" shard-of "$t" | awk -F'\t' -v n="$n" '$2 < 1 || $2 > n || $2 != int($2) {print "  SHARD OUT OF RANGE: " $1 " -> " $2}' > "$T/d"
+    [ -s "$T/d" ] && { cat "$T/d"; bad=1; }
+    [ -r "$meas" ] && [ "$(awk -F'\t' '$1 ~ /^S/ && $6 == "measured"' "$meas" | wc -l)" -gt 0 ] \
+        || { echo "  WEIGHTS: tests/ci/measured_mech.tsv is missing or has no measured row (a weights check over nothing)"; bad=1; }
+    awk -F'\t' 'FNR == NR { if ($1 ~ /^S/ && $6 == "measured") m[$1] = 1; next }
+                 $1 in m && $4 ~ /^ESTIMATE/ { u++; if (u <= 5) print "  UNWEIGHTED (measured, table says " $4 "): " $1 }
+                 END { if (u > 5) print "  UNWEIGHTED: " u - 5 " more" }' "$meas" "$t" > "$T/d"
     [ -s "$T/d" ] && { cat "$T/d"; bad=1; }
     [ "$bad" = 0 ] && echo "PASS: $n shards of $(basename "$t") hold the $(wc -l < "$T/manifest") sabotage ids of tests/mech/sabotages exactly once"
     return $bad
@@ -43,6 +53,14 @@ if [ "${2:-}" = --selftest ]; then
     sed "s/^# shards=$n\$/# shards=$((n + 1))/" "$tab" > "$T/wide.tsv"
     check "$T/wide.tsv" > "$T/o" 2>&1 && { echo "FAIL: selftest: an empty shard not seen"; rc=1; } \
         || { grep -q EMPTY "$T/o" && echo "PASS: selftest: an empty shard is named" || { echo "FAIL: selftest: empty not named"; rc=1; }; }
+    awk -F'\t' 'BEGIN { OFS = "\t" } /^#/ || $1 == "sabotage" { print; next } { $4 = "ESTIMATE unmeasured default 45s"; print }' "$tab" > "$T/unw.tsv"
+    check "$T/unw.tsv" > "$T/o" 2>&1 && { echo "FAIL: selftest: a table without its measured weights not seen"; rc=1; } \
+        || { grep -q UNWEIGHTED "$T/o" && echo "PASS: selftest: a table without its measured weights is named" || { echo "FAIL: selftest: unweighted not named"; rc=1; }; }
+    for v in empty missing; do   # review r11 ADQ-2: no measured rows must not read as "nothing to weigh"
+        if [ $v = empty ]; then : > "$T/m.tsv"; else rm -f "$T/m.tsv"; fi
+        meas=$T/m.tsv check "$tab" > "$T/o" 2>&1 && { echo "FAIL: selftest: a $v measured file passed"; rc=1; } \
+            || { grep -q WEIGHTS "$T/o" && echo "PASS: selftest: a $v measured file is named" || { echo "FAIL: selftest: $v measured file not named"; rc=1; }; }
+    done
     check "$tab" || rc=1
     echo "cloud_mech_check --selftest: rc=$rc"; exit $rc
 fi

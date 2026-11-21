@@ -196,6 +196,20 @@ typedef struct {
      * at the minimum width and the answer-identity sweep can still produce
      * the form before it. Off on every shipped compile. */
     unsigned no_min_width : 1;
+    /* [MEMFN] lane mfind: the eleventh, `--harness=mfind`, the kit's PROBE
+     * lever (mf_lever(art, "mfind")): the offset-skip function's one-byte
+     * scan takes the kit's INLINE ONE-MEMBER FINDER (its BODY row fn-mfind,
+     * the SWAR word; at an art target admitting a level, its mfind-w16 /
+     * mfind-w32 helpers) instead of fn-memchr, an unpicked measuring
+     * instrument (D197). Off on every shipped compile. */
+    unsigned mfind : 1;
+    /* [MEMFN] R-45 (r45_reply rev 6 §3 "The head lever"): the twelfth,
+     * `--harness=span-head=N`, the kit's VALUED test-only lever
+     * (mf_lever(art, "span-head=N")): the span forms' inline head h on the
+     * art, so the form cards time every H(h) on one binary and the identity
+     * check compares the lever at h* with the rebuilt default. span_head is
+     * N + 1 (0: unset, every shipped compile). */
+    unsigned span_head;
     /* [RUN-POS-SET] stage 2a: the ninth, `run-pos-sets`, and the tenth,
      * `alt-union-run`, both RETIRED (lanes s2land, r1on) when what they
      * turned on became the default; the tenth's restore is the walk arm
@@ -341,7 +355,13 @@ void  pcrec_arena_free(Arena *a);
  * pays its frame once per level, up to `PCREC_MAX_GROUP_DEPTH` times on one
  * stack (docs/spec/limits.md §3.10 states the resulting budget), so a scratch
  * array or a by-value analysis struct that is dead before the walk recurses
- * belongs in a callee marked this way. `tests/thread/run_compile_stack.sh`
+ * belongs in a callee marked this way. The mark has a SECOND use, on the
+ * recursive arm itself: a dispatcher that switches over every node kind and
+ * recurses (`vm_emit_node`, `vm_cost`) would otherwise inline its arms and
+ * pay the UNION of their locals at every level, so each recursive arm is
+ * marked and the dispatcher keeps only the frames on a level's own path
+ * (K146; precedent `rb_look_item`, src/facts/req.c). Mark an arm for either
+ * reason, and say which in its header. `tests/thread/run_compile_stack.sh`
  * measures the result; nothing checks the marking itself. */
 #define PCREC_OWN_FRAME __attribute__((noinline))
 
@@ -2507,29 +2527,32 @@ enum {
  * One row of kind-level facts per `AKind`, read by the pass families that
  * used to decide them arm by arm: the text/width readers read `text`, the
  * path-pruning readers `path`, the marked set `reads`, the prefilter
- * lowering `erase`. The column meanings are kindrow.def's header. A reader
+ * lowering `erase`, the never propagation `never` (`pcrec_never_by_row`
+ * below; today the split derivation, src/opt/derive.c). The column meanings are kindrow.def's header. A reader
  * whose answer depends on the node or its context keeps its code and reads
  * the row for the kind-level part; the arm inventory of which readers read
  * which column is docs/dev/lanes/ic1a_report.md. */
 typedef enum { KTEXT_ZERO, KTEXT_OWN, KTEXT_ANY } KindText;
 typedef enum { KPATH_TRANSPARENT, KPATH_GATE, KPATH_OPAQUE } KindPath;
 typedef enum { KREADS_NONE, KREADS_REFS, KREADS_TARGET, KREADS_ALL } KindReads;
+typedef enum { KNEVER_NO, KNEVER_ANY, KNEVER_EVERY, KNEVER_BODY, KNEVER_NODE } KindNever;
 typedef struct {
     KindText  text;
     KindPath  path;
     KindReads reads;
     unsigned  erase;   /* the NFA_ERASED_* bit its lowering records; 0 exact */
+    KindNever never;   /* how its never bit follows from its children's */
 } KindRow;
 
 /* THE ROWS ARE IN AKind ORDER: each row's position is asserted, so the table
  * reads like the enum and a misplaced row names itself. */
 enum {
-#define KIND_ROW(kind, text, path, reads, erase) KIND_ROW_AT_##kind,
+#define KIND_ROW(kind, text, path, reads, erase, never) KIND_ROW_AT_##kind,
 #include "core/kindrow.def"
 #undef KIND_ROW
     KIND_ROW_COUNT
 };
-#define KIND_ROW(kind, text, path, reads, erase)                              \
+#define KIND_ROW(kind, text, path, reads, erase, never)                       \
     _Static_assert((int)(kind) == (int)KIND_ROW_AT_##kind, "core/kindrow.def: " \
                    "the row for " #kind " is not at its AKind position");
 #include "core/kindrow.def"
@@ -2545,26 +2568,55 @@ enum {
 static inline KindRow pcrec_kind_row(AKind k)
 {
     switch (k) {
-#define KIND_ROW(kind, text, path, reads, erase)                              \
-    case kind: return (KindRow){ KTEXT_##text, KPATH_##path, KREADS_##reads, (erase) };
+#define KIND_ROW(kind, text, path, reads, erase, never)                       \
+    case kind: return (KindRow){ KTEXT_##text, KPATH_##path, KREADS_##reads,    \
+                                 (erase), KNEVER_##never };
 #include "core/kindrow.def"
 #undef KIND_ROW
     }
     /* unreachable for a valid kind; the row every reader treats as unknown */
-    return (KindRow){ KTEXT_ANY, KPATH_OPAQUE, KREADS_NONE, 0 };
+    return (KindRow){ KTEXT_ANY, KPATH_OPAQUE, KREADS_NONE, 0, KNEVER_NODE };
 }
 #pragma GCC diagnostic pop
 
 /* The row node `a` reads. Per NODE, not per kind, so a kind whose rows differ
  * by a node field has one place that picks: A_CALLOUT's width class
  * (inline_c.md §1.8), where a `consume` site's TEXT is ANY (the callee may
- * consume bytes between its neighbours) and a check's is its kind row's ZERO.
- * Every other kind has one row. */
+ * consume bytes between its neighbours) and a check's is its kind row's ZERO;
+ * and A_LOOK's NEVER, NO for a negative lookaround (a negative lookaround of
+ * a never body always holds) where the kind row's is BODY. Every other kind
+ * has one row. */
 static inline KindRow pcrec_ast_row(const Ast *a)
 {
     KindRow r = pcrec_kind_row(a->k);
     if (a->k == A_CALLOUT && a->u.callout.consume) r.text = KTEXT_ANY;
+    if (a->k == A_LOOK && a->u.look.neg) r.never = KNEVER_NO;
     return r;
+}
+
+/* `pcrec_ctx_fail` is declared with the other Ctx entries further down;
+ * repeated here because `pcrec_never_by_row` below calls it. */
+void pcrec_ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
+     __attribute__((noreturn, format(printf, 3, 4)));
+
+/* Whether a node can NEVER match, from its row's NEVER column and its
+ * children's never bits: `any` (some child is never) and `every` (every child
+ * is; a one-child kind passes its body's bit as both; a leaf passes false
+ * for both). The never family's ONE propagation (span_arms §14.3 D-9). A
+ * NODE row has no row answer: its reader keeps the node's own code and never
+ * asks here, so reaching here with one is a loud internal error. */
+static inline bool pcrec_never_by_row(Ctx *cx, KindNever n, bool any, bool every)
+{
+    switch (n) {
+    case KNEVER_NO:    return false;
+    case KNEVER_ANY:   return any;
+    case KNEVER_EVERY: return every;
+    case KNEVER_BODY:  return every;
+    case KNEVER_NODE:
+        pcrec_ctx_fail(cx, 0, "internal error: a NODE row reached the never "
+                       "propagation; its reader keeps the node's own code");
+    }
+    return every;   /* unreachable: -Wswitch */
 }
 
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c; the
@@ -4105,7 +4157,7 @@ struct Ctx {
      * LB would refuse subjects PCRE2 accepts. `[[:<:]]`/`[[:>:]]` count 1 in
      * PCRE2 and are not built here (src/parse/ext.c refuses them); their
      * producer raises this when it lands. */
-    int                  lb_max;
+    int                  lb_max;   /* writers: `pcrec_lb_raise`; readers outside the parser: `pcrec_lb_max` */
     /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
      * subset construction, across every machine this compile builds (forward
      * and reverse are charged to one budget because they are both live at
@@ -4460,6 +4512,14 @@ static inline bool pcrec_kit_proof_routed(const Ctx *cx)
 static inline void pcrec_lb_raise(Ctx *cx, int n)
 {
     if (n > cx->lb_max) cx->lb_max = n;
+}
+
+/* [UTF-VALID] The pattern's declared lookbehind length in characters
+ * (`Ctx.lb_max`, PCRE2's `max_lookbehind`): the one read for every reader
+ * outside the parser, so the field's storage stays the parser's own. */
+static inline int pcrec_lb_max(const Ctx *cx)
+{
+    return cx->lb_max;
 }
 
 /* [M6.2 wave A] `Ctx.mods`' type is DELIBERATELY INCOMPLETE HERE (§8.6): the
@@ -9213,6 +9273,11 @@ int pcrec_cand_body_route(Ctx *cx);
  * C1, kit_proof.md §1.1): a DFA body whose caller-facing entries the DFA
  * emitter writes, so no group above 0 is live. */
 bool pcrec_cand_finisher_dfa(Ctx *cx);
+/* [COVER-CAP] the `--emit-facts` `cover` section's cells for this attempt
+ * (docs/spec/facts_listing.md §4.5; src/gen/known.c): `why`, `k`,
+ * `exact_len`, `sets`, read from the LAST cover decision's record (never a
+ * second walk), or `unasked` where no LOCATE ask reached it. */
+void pcrec_cover_listing_cells(Ctx *cx, const char *cells[4]);
 
 /* ---- [LANDWALK] stage 1: the landmark walk (src/gen/lmwalk.c; design
  * docs/dev/lanes/p1dsg3_report.md rev 2 + p1build_report.md rev 3) ----

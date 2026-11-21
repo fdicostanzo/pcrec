@@ -1,0 +1,5 @@
+report: docs/dev/lanes/growfile_report.md
+sections: Summary; Known issues filed; Plan rows; Re-checks against the K146 branch; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

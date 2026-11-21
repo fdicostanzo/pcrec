@@ -1,0 +1,4 @@
+report=docs/dev/lanes/covs1v_report.md
+sections: STATE AT HANDOFF; CAUSE; FIXES; OWED RUNS
+nonempty: all
+commit: yes

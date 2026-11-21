@@ -1,0 +1,58 @@
+## R1
+note: skip core: docs/design/predicates.md absent
+note: skip lib: docs/design/predicates_library.md absent
+note: skip parked: docs/design/predicates_parked.md absent
+note: no pair present: nothing linted
+note: L10: docs/dev/pred/doc_ratchet.tsv absent: ratchet not checked
+checked: L1=0 L2=0 L3=0 L4=0 L5=0 L6=0 L7=0 L8=0 L9=0 L10=0 L11=0
+pred_doc_lint: checks passed 0, failed 0
+rc=0
+## R2d
+pred_doc_lint: wrote docs/dev/pred/doc_ratchet.tsv: 
+rc=0
+-rw-rw-r-- 1 pcrec pcrec    0 Nov 19 14:45 doc_ratchet.tsv
+## R3 dup loosen
+core	1
+lib	1
+parked	1
+checked: L1=13 L2=13 L3=3 L4=13 L5=4 L6=49 L7=9 L8=3 L9=7 L10=3 L11=3
+pred_doc_lint: checks passed 120, failed 0
+rc=0
+## R2b
+pred_doc_lint: wrote docs/dev/pred/doc_ratchet.tsv: core=0, lib=1, parked=1
+rc=0
+core	0
+lib	1
+parked	1
+## R5a
+L5 docs/design/predicates.md:18: needs: nothing/here names no piece
+checked: L1=13 L2=13 L3=3 L4=13 L5=5 L6=50 L7=9 L8=3 L9=7 L10=3 L11=3
+pred_doc_lint: checks passed 121, failed 1
+## R4
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 594: invalid start byte
+rc=0
+## doc_format reader
+31:new entry gains a line `tags: <tag> <tag>`. Evidence directories and filed reviews stay where they are. The old draft
+54:- A details ENTRY, one per tag, in the same order as the base:
+58:      rulings:   - <date> "<his words, verbatim>" (record: "<entry title>")
+66:- A new ruling = the record entry (with its `tags:`), the base piece and the details entry in ONE commit; a ruling
+69:  status date. Everything of that kind is in the details entry.
+83:rule. Reader: the files registered as a profile of `scripts/entry` (`entry core/holes/class`: level 0 the heading and
+84:statement, 1 the piece, 2 the details entry; `entry <slug>` finds the piece by slug).
+92:   lists (every ruling entry of the record, every slug, every provided name) each land on a tag; no ruled answer
+818:    return 1 if rep.fails else 0
+pred_doc_lint: checks passed 120, failed 0
+PASS: pred_doc_lint
+pred_doc_lint: checks passed 121, failed 1
+rc=0
+68:- The base never carries history: no revision marks, review ids, "withdrawn", "reversed", dates other than the
+77:`by:` tag exists, and a `needs:` target is earlier in the read order (core before lib before parked); L6 no history
+79:SOFT (core 64 KB, library 24 KB, parked 16 KB: reported, never refused); L8 an example line names the three modes or
+== This rule was withdrawn once.: pred_doc_lint: checks passed 121, failed 0 
+== Decided on 2026-01-05 after a long talk.: pred_doc_lint: checks passed 121, failed 0 
+== Matches the prev 2 fragments.: L6 docs/design/predicates.md:7: history word 'rev 2' in a base file pred_doc_lint: checks passed 120, failed 1 
+== Raised as r56 item 3.: pred_doc_lint: checks passed 121, failed 0 
+4:## core/principles/regex-default — Regex default
+13:## core/holes/class — Class
+18:## core/holes/name — Name
+pred_doc_lint: checks passed 120, failed 0

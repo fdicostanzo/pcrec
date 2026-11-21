@@ -1,0 +1,23 @@
+# lane covs2g, 2026-11-16: hand probes of each new check's plant on copies of lane/covs2g
+# (git archive HEAD into $PCREC_TMPDIR/scratch/covs2g/tN, plant applied, `make -j8`). Output as printed.
+#
+# S3264 (P1 = C14 comparison cut at 33; P2 = statement narrowed at offset 36), witness W [0-9a-f]{40}
+#   facts cover row (why k) | harness RX_DFA_SCAN | answer on '0' x 40 (libpcre2: 0:40)
+P1 alone   cover 40              | cover       | 0:40,-,...      (silent: nothing differs before 33)
+P2 alone   proven/under@36:30 40 | unanchored  | 0:40,-,...      (C14 sees the narrowing; kitproof REACH red)
+P1+P2      cover 40              | cover       | -,-,...         (DETECTED: answer differs)
+#
+# S3265 (P3 = C14 comparison cut to k + 1; P4 = one more stated span at k + 1, byte 97 only), witness a{5}
+#   facts cover row | RX_DFA_SCAN | answers on aaaaa / aaaaaa / aaaaaaa (libpcre2: 0:5 / 0:5 / 0:5)
+P3 alone   cover 5               | cover       | 0:5 / 0:5 / 0:5
+P4 alone   proven/under@6:00 5   | unanchored  | 0:5 / 0:5 / 0:5  (C14 sees offset 6; kitproof REACH red)
+P3+P4      cover 5               | cover       | -   / -   / 0:5  (DETECTED: aaaaa and aaaaaa lost)
+#
+# S3266 (the cover seam _Static_assert deleted), run_anchored_match.sh §4c extracted and run alone
+clean      PASS: §4c known.c at -DPCREC_ANCHORED_MAX_STATES=4097 fails on the cover seam's assertion, by its message
+clean      PASS: §4c control: known.c compiles at the shipped ceiling 4096 with the same command
+planted    FAIL: §4c known.c COMPILED at -DPCREC_ANCHORED_MAX_STATES=4097, past the kit's declared 4095 positions: ...
+planted    PASS: §4c control: known.c compiles at the shipped ceiling 4096 with the same command
+#
+# predict.py (P2): --selftest's two plants (predict_selftest.log): the two-member clause dropped flips a{32}
+# to a mover; span boundaries ending a run drops \w{32}\B at h*=32. Each reddens the selftest.

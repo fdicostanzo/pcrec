@@ -153,3 +153,4 @@ Never merge to main yourself.
 A design note answers the three STANDING QUESTIONS in docs/design/CLAUDE.md (measurement regime; independent control; what moves when data is regenerated). For each one, first state whether it is relevant to this design.
 
 Cite a docs/spec/ file by its section number (`match_api.md §6.3.4¶11`), never by line (the file name, a colon and a line number), in every file you write: notes, reports, review text. `make test-spec-history` scans the whole tree and goes red on a line cite (it turned CI red twice, 2026-10-17 and 10-18).
+Cite a docs/dev/plan.md row by its TAG (`[VMREC]`), never by the file name, a colon and a line number: `make test-plan-lint` (PL14) fails the main tree on such a cite in ANY committed file, your report included (lanes archhist and archreview, 2026-11-17).

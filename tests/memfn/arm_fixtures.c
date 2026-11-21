@@ -151,15 +151,129 @@ static void c_stamp_int(void *u, const char *name, long long value)
     (void)u; (void)name; (void)value;
 }
 
+/* Lane mfind's fixtures: the art's CPU target (a kit token; NULL the
+ * portable one) and a test-only lever (NULL none), set around one render;
+ * a fixture at a target admitting a level gets the bracket ops, written as
+ * markers (the host's region is not the fixture's). */
+static const char *fx_target, *fx_lever;
+static void s_simd_open(void *u, int level)
+{
+    char b[48];
+    snprintf(b, sizeof b, "/* simd_open %d */\n", level);
+    s_puts(u, b);
+}
+static void s_simd_close(void *u) { s_puts(u, "/* simd_close */\n"); }
+
 static mf_sink sink_of(Text *t)
 {
     mf_sink s = { .u = t, .puts = s_puts, .vprintf = s_vprintf,
                   .cmt_open = s_cmt_open, .cmt_close = s_cmt_close,
                   .cstr = s_cstr, .legend_byte = s_legend };
+    if (fx_target) {
+        s.simd_open = s_simd_open;
+        s.simd_close = s_simd_close;
+    }
     return s;
 }
 
 static void *a_alloc(void *u, size_t n) { (void)u; return calloc(1, n); }
+
+/* A span's per-position lists (MF_SITE_ABI 30): `n` zeroed sets and table
+ * offers in this test's OWN storage (the heap, never an art's arena),
+ * attached to `w`; returns the writable sets. */
+static uint8_t (*span_lists(mf_wspan *w, unsigned n))[32]
+{
+    uint8_t (*set)[32] = calloc(n ? n : 1, 32);
+    uint32_t *tab = calloc(n ? n : 1, sizeof *tab);
+    if (!set || !tab) { perror("calloc"); exit(2); }
+    w->set = (const uint8_t (*)[32])set;
+    w->table_ref = tab;
+    return set;
+}
+/* Position j's set of span `w` as this test's own writable storage. */
+#define SPAN_SET(w, j) ((uint8_t *)(w)->set[j])
+
+/* An ask's reply lists (MF_SITE_ABI 30): fresh storage per ask, this test's
+ * own, at the ceilings, so no two held replies share rows; every byte the
+ * SENTINEL, so a refused ask's write to them is seen (rows_untouched). */
+#define ROWS_SENTINEL 0xA5
+static mf_rows *ask_rows(void)
+{
+    mf_rows *r = calloc(1, sizeof *r);
+    if (!r) { perror("calloc"); exit(2); }
+    r->proof_cap = MF_MAX_FWD - MF_PROOF_LO;
+    r->proof = malloc((size_t)r->proof_cap * 32);
+    r->plan_cap = MF_WPLAN_MAX;
+    r->plan = malloc(MF_WPLAN_MAX * sizeof *r->plan);
+    r->plan_term = malloc(MF_WPLAN_MAX * sizeof *r->plan_term);
+    r->plan_test = malloc(MF_WPLAN_MAX * sizeof *r->plan_test);
+    if (!r->proof || !r->plan || !r->plan_term || !r->plan_test) { perror("malloc"); exit(2); }
+    memset(r->proof, ROWS_SENTINEL, (size_t)r->proof_cap * 32);
+    memset(r->plan, ROWS_SENTINEL, MF_WPLAN_MAX * sizeof *r->plan);
+    memset(r->plan_term, ROWS_SENTINEL, MF_WPLAN_MAX * sizeof *r->plan_term);
+    memset(r->plan_test, ROWS_SENTINEL, MF_WPLAN_MAX * sizeof *r->plan_test);
+    return r;
+}
+
+static void rows_free(mf_rows *r)
+{
+    if (!r) return;
+    free(r->proof); free(r->plan); free(r->plan_term); free(r->plan_test);
+    free(r);
+}
+
+/* 1 iff `n` bytes at `p` are all the sentinel (or `p` is NULL). */
+static int sentinel_only(const void *p, size_t n)
+{
+    const unsigned char *b = p;
+    for (size_t i = 0; b && i < n; i++)
+        if (b[i] != ROWS_SENTINEL) return 0;
+    return 1;
+}
+
+/* 1 iff no list of `r` (an ask_rows block, at the caller's caps) was
+ * written: the clause "on -1 the asks write nothing to rows" (memfn.h
+ * mf_ask/mf_wdecide; review r27 CHECK-4). */
+static int rows_untouched(const mf_rows *r)
+{
+    return sentinel_only(r->proof, (size_t)r->proof_cap * 32) &&
+           sentinel_only(r->plan, (size_t)r->plan_cap * sizeof *r->plan) &&
+           sentinel_only(r->plan_term, (size_t)r->plan_cap * sizeof *r->plan_term) &&
+           sentinel_only(r->plan_test, (size_t)r->plan_cap * sizeof *r->plan_test);
+}
+
+/* NULL iff reply `w`'s counted lists lie in the CALLER's `r` (the clause
+ * "the asks write only *out and the caller's rows": a non-empty list is
+ * r's own; review r27 CHECK-3), else the list that does not. */
+static const char *wrows_owner(const mf_wreply *w, const mf_rows *r)
+{
+    if (!w->nplan) return NULL;
+    if (w->plan != r->plan) return "plan";
+    if (w->plan_term != r->plan_term) return "plan_term";
+    if (w->plan_test && w->plan_test != r->plan_test) return "plan_test";
+    if (w->framed && w->plan_test != r->plan_test) return "plan_test (framed)";
+    return NULL;
+}
+
+/* NULL iff class `c`'s proof rows lie in the caller's `r` (a proof_n of 0
+ * holds none), else why not (CHECK-3's clause for mf_ask). */
+static const char *crows_owner(const mf_class *c, const mf_rows *r)
+{
+    if (!c->proof_n) return NULL;
+    return c->proof == (const uint8_t (*)[32])r->proof ? NULL : "proof";
+}
+
+/* THE DEEP COMPARE of two classes (r45_reply.md §5 (a)), this test's own:
+ * by-value members equal, proof rows equal over an equal proof_n. */
+static int class_same(const mf_class *a, const mf_class *b)
+{
+    if (a->proof_n != b->proof_n) return 0;
+    for (uint32_t k = 0; k < a->proof_n; k++)
+        if (memcmp(a->proof[k], b->proof[k], 32)) return 0;
+    mf_class x = *a, y = *b;
+    x.proof = y.proof = NULL;
+    return !memcmp(&x, &y, sizeof x);
+}
 
 /* An art begun as pcrec begins one (unit U3): no art-level policy word, the
  * CPU target stated at once; the fixtures render the portable target's text. */
@@ -167,7 +281,10 @@ static mf_art *art_begin(mf_arena *a, const char *pfx, uint64_t denies,
                          const mf_measures *ms, const mf_analysis *an)
 {
     mf_art *art = mf_art_begin(a, pfx, denies, ms, an);
-    return art && !mf_art_target(art, mf_portable_target()) ? art : NULL;
+    const mf_target *t = fx_target ? mf_target_parse(fx_target, strlen(fx_target), NULL, 0)
+                                   : mf_portable_target();
+    if (!art || mf_art_target(art, t)) return NULL;
+    return !fx_lever || !mf_lever(art, fx_lever) ? art : NULL;
 }
 
 /* ---- the hooks ------------------------------------------------------------ */
@@ -301,14 +418,15 @@ static void ps_run(mf_pred *p, mf_walt *a, mf_wspan *w, const char *run, const u
     unsigned n = (unsigned)strlen(run);
     memset(p, 0, sizeof *p);
     memset(w, 0, sizeof *w);
-    w->len = (uint8_t)n;
+    uint8_t (*set)[32] = span_lists(w, n);
+    w->len = (uint16_t)n;
     w->verify = MF_VERIFY_NO;
     w->core = MF_CORE_STATED;
-    w->core_len = (uint8_t)n;
+    w->core_len = (uint16_t)n;
     for (unsigned j = 0; j < n; j++)
         for (unsigned b = 0; b < 256; b++)
             if ((b & (mask ? mask[j] : 0xFFu)) == (unsigned char)run[j])
-                w->set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+                set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
     *a = (mf_walt){ MF_ENTRY_NONE, 1, w };
     p->nalt = 1;
     p->alts = a;
@@ -402,14 +520,16 @@ static void q_proven0(const mf_site *s, uint8_t out[32])
  * what every FIND row proves, `exists` and `proven0`, which is what B2's
  * readers read. */
 static void q_check(const char *name, const mf_site *s, int ask_rc, const mf_class *qa,
-                    const mf_art *art, uint32_t handle, const char *text, int full)
+                    const mf_rows *qrows, const mf_art *art, uint32_t handle, const char *text,
+                    int full)
 {
     mf_result dr;
     uint8_t p0[32];
     const char *why = NULL;
-    if (ask_rc) why = "ASK-REFUSED";
+    if (ask_rc) why = rows_untouched(qrows) ? "ASK-REFUSED" : "ASK-REFUSED-WROTE-ROWS";
+    else if (crows_owner(qa, qrows)) why = "ASK-NOT-CALLER-ROWS";
     else if (mf_defined(art, handle, &dr)) why = "DEFINED-REFUSED";
-    else if (full ? memcmp(qa, &dr.cls, sizeof *qa) != 0
+    else if (full ? !class_same(qa, &dr.cls)
                   : qa->exists != dr.cls.exists || memcmp(qa->proven0, dr.cls.proven0, 32))
         why = "ASK!=DEFINE";
     else {
@@ -453,7 +573,8 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
     mf_result res = { 0 };
     uint32_t h = 0;
     mf_class qa;
-    int qrc = query_mode ? mf_ask(art, FXW(s), &hd, &qa) : 0;
+    mf_rows *qrows = query_mode ? ask_rows() : NULL;
+    int qrc = query_mode ? mf_ask(art, FXW(s), &hd, &qa, qrows) : 0;
     int rc = mf_define(art, FXW(s), &hd, &sd, &h) ||
              (s->form == MF_FORM_FUNC ? mf_call(art, h, &hu, &su)
                                       : mf_use(art, h, &hu, &su, &res)) ||
@@ -467,9 +588,10 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
         Text all = { 0 };
         if (def.p) text_put(&all, def.p, def.len);
         if (use.p) text_put(&all, use.p, use.len);
-        q_check(name, s, qrc, &qa, art, h, all.p, 1);
+        q_check(name, s, qrc, &qa, qrows, art, h, all.p, 1);
         free(all.p);
     }
+    rows_free(qrows);
     if (s->form == MF_FORM_FUNC) {
         /* a FUNC site's form id: render its call once more through mf_use */
         Text scratch = { 0 };
@@ -539,7 +661,8 @@ static int render_emit(const char *dir, const char *name, const mf_site *s,
     mf_hooks h = *hp;
     mf_result res = { 0 };
     mf_class qa;
-    int qrc = query_mode ? mf_ask(art, FXW(s), &h, &qa) : 0;
+    mf_rows *qrows = query_mode ? ask_rows() : NULL;
+    int qrc = query_mode ? mf_ask(art, FXW(s), &h, &qa, qrows) : 0;
     if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art, NULL)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
         return 1;
@@ -550,9 +673,10 @@ static int render_emit(const char *dir, const char *name, const mf_site *s,
         Text all = { 0 };
         if (def.p) text_put(&all, def.p, def.len);
         if (use.p) text_put(&all, use.p, use.len);
-        q_check(name, s, qrc, &qa, art, res.handle, all.p, 0);
+        q_check(name, s, qrc, &qa, qrows, art, res.handle, all.p, 0);
         free(all.p);
     }
+    rows_free(qrows);
     char path[1024];
     snprintf(path, sizeof path, "%s/%s.def", dir, name);
     FILE *f = fopen(path, "w");
@@ -1326,6 +1450,11 @@ static void gate_cases(void)
  *   arm_fixtures --site-parts ID [CLS]  the same text in two parts: the
  *       FILE part, a form-feed line, the BODY part (the slot's wrapper
  *       places them)
+ *   arm_fixtures --frame ID [CLS]  the instance's header lines, its
+ *       target's region open and close, its family guard, form-feed
+ *       separated (the host's text around a cell, as pcrec places it; lane
+ *       slotx), then its target's facts line
+ *   arm_fixtures --target-facts TOKEN  `target<TAB>name<TAB>features`
  *   arm_fixtures --hash-text FILE|-  mf_form_hash_text of a text (the slot's
  *       cell-text check folds a cell TU's site span with it)
  *   arm_fixtures --facts ID [CLS]  `key<TAB>value` lines the slot harness
@@ -1427,7 +1556,7 @@ static int fd_ask_links(const char *name, const mf_site *s)
     mf_art *art = art_begin(&a, "rx", s->denies, NULL, NULL);
     mf_hooks h = { .start = "search_from" };
     mf_class c;
-    if (mf_ask(art, FXW(s), &h, &c)) {
+    if (mf_ask(art, FXW(s), &h, &c, ask_rows())) {
         fprintf(stderr, "%s: the kit refused the ask\n", name);
         printf("REFUSED\t-\n");
         return 1;
@@ -1513,8 +1642,9 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
            member `q` is the set's pick, verified at the HEAD; only ASKED */
         if (decl)
             for (unsigned j = 0; j < 3; j++) {
-                memset(sw.set[j], 0, 32);
-                for (unsigned b = '0'; b <= '9'; b++) sw.set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+                memset(SPAN_SET(&sw, j), 0, 32);
+                for (unsigned b = '0'; b <= '9'; b++)
+                    SPAN_SET(&sw, j)[b >> 3] |= (uint8_t)(1u << (b & 7));
             }
         for (int i = 0; i < 1 + lead; i++) {
             sp[i].nterm = i == 0;
@@ -1747,6 +1877,10 @@ static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
     { "rc-words",  "w3", "pos + 10",   "pos + 9" },
     { "rc-memcmp", "l1", ", 4)",       ", 3)" },
     { "every-pos", "-",  "pos++",      "pos += 2" },
+    { "mfind-swar", "-", "m &= m - 1", "m &= m - 2" },
+    { "mfind-w16", "-",  "i += 16",    "i += 15" },
+    { "mfind-w32", "-",  "i += 32",    "i += 31" },
+    { "fn-memchr", "-",  "pos = cand + 1", "pos = cand + 2" },
 };
 static const struct { const char *from, *to; } hash_renames[] = {
     { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },
@@ -1797,7 +1931,8 @@ static char *edit_once(const char *t, const char *from, const char *to)
 static int hash_mode(void)
 {
     static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
-                                       "every-pos", "V1", "W64", "NONE", "dispatch-twin", NULL };
+                                       "every-pos", "mfind-swar", "mfind-w16", "mfind-w32",
+                                       "fn-memchr", "V1", "W64", "NONE", "dispatch-twin", NULL };
     for (unsigned i = 0; ids[i]; i++) {
         char h[17] = "-";
         int rc = mf_form_hash(ids[i], h);
@@ -1896,6 +2031,52 @@ static int site_parts_mode(const char *id, const char *cls)
     return 0;
 }
 
+/* --frame: what a HOST writes around the instance's site text, as pcrec
+ * places it (match_api.md §6.3.10¶15; src/gen/memfn_targets.c): the
+ * `#include` lines of its rendered art's header facts (mf_include_c of each
+ * mf_form_includes bit), a form-feed line, its target's region open, a
+ * form-feed line, the region close (mf_target_c_of; both "" for a target
+ * with nothing to enable), a form-feed line, the family guard
+ * (mf_family_c_of; "" for the portable target, which has no family; review
+ * 2026-11-15 r1 F10), a form-feed line, the target's facts line
+ * (--target-facts). The slot harness writes the guard first in the TU, the
+ * header lines at file scope ahead of the region (span_cards/slot/link.py). */
+static void target_facts(const mf_target *t)
+{
+    printf("target\t%s\t%s\n", t->name, *t->features ? t->features : "-");
+}
+/* --target-facts TOKEN: `target<TAB>name<TAB>features` (`-` none), the kit
+ * table's row for a token (the slot harness's ISA check reads the features
+ * its compile floor, -march=x86-64, supplies) */
+static int target_facts_mode(const char *tok)
+{
+    const mf_target *t = mf_target_parse(tok, strlen(tok), NULL, 0);
+    if (!t) { fprintf(stderr, "arm_fixtures: no target %s\n", tok); return 1; }
+    target_facts(t);
+    return 0;
+}
+static int frame_mode(const char *id, const char *cls)
+{
+    const mf_form_entry *e = mf_form_entry_of(id, cls);
+    uint32_t inc;
+    const mf_target *t = e ? mf_target_parse(e->target, strlen(e->target), NULL, 0) : NULL;
+    if (!t || mf_form_includes(id, cls, &inc)) {
+        fprintf(stderr, "arm_fixtures: no rendered instance %s %s\n", id, cls ? cls : "(canonical)");
+        return 1;
+    }
+    for (uint32_t bit = 1; bit; bit <<= 1) {
+        if (!(inc & bit)) continue;
+        const char *line = mf_include_c(bit);
+        if (!line) { fprintf(stderr, "arm_fixtures: no C spelling for header fact 0x%x\n", (unsigned)bit); return 1; }
+        fputs(line, stdout);
+    }
+    const mf_target_c *c = mf_target_c_of(t);
+    printf("\f\n%s\f\n%s\f\n%s\f\n", c->region_open, c->region_close,
+           t->family ? mf_family_c_of(t->family)->guard : "");
+    target_facts(t);
+    return 0;
+}
+
 /* --hash-text FILE|-: mf_form_hash_text of a whole text (the slot harness's
  * cell-text check folds a cell TU's site span with it; check B folds the
  * instances' texts with it). */
@@ -1943,9 +2124,13 @@ static void f_hex(Text *o, const uint8_t *b, size_t n)
     if (!n) f_str(o, NULL);
 }
 static int f_set_shape(const FactIn *x) { return x->e->shape != MF_FH_RUNCMP; }
+/* the offset-skip site's ONE RUN term (lane slotx): scanned at its position
+   0 (its `members`, the byte a hit plants), the whole run its verify chain
+   compares (L, run, mask: a hit is an answer iff the run follows it) */
+static int f_ofs_shape(const FactIn *x) { return x->e->shape == MF_FH_OFS; }
 static int f_find_shape(const FactIn *x)
 {
-    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW;
+    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW || x->e->shape == MF_FH_OFS;
 }
 /* the run's mask byte at i: 0xDF at a caseless letter, else 0xFF (fh_run's) */
 static uint8_t f_mask(const mf_form_entry *e, size_t i)
@@ -2008,7 +2193,8 @@ static void f_table_value(const FactIn *x, Text *o)
 }
 static void f_members(const FactIn *x, Text *o)
 {
-    if (f_set_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
+    if (f_ofs_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, 1);
+    else if (f_set_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
     else f_str(o, NULL);
 }
 /* the first byte from 'a' up (mod 256) outside the set, or one failing the
@@ -2028,25 +2214,26 @@ static void f_L(const FactIn *x, Text *o)
 {
     char buf[24];
     snprintf(buf, sizeof buf, "%zu", strlen(x->e->bytes));
-    f_str(o, f_set_shape(x) ? NULL : buf);
+    f_str(o, f_set_shape(x) && !f_ofs_shape(x) ? NULL : buf);
 }
 static void f_run(const FactIn *x, Text *o)
 {
-    if (f_set_shape(x)) f_str(o, NULL);
+    if (f_set_shape(x) && !f_ofs_shape(x)) f_str(o, NULL);
     else f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
 }
 static void f_runmask(const FactIn *x, Text *o)
 {
     uint8_t m[64];
     size_t L = strlen(x->e->bytes);
-    if (f_set_shape(x) || L > sizeof m) { f_str(o, NULL); return; }
+    if ((f_set_shape(x) && !f_ofs_shape(x)) || L > sizeof m) { f_str(o, NULL); return; }
     for (size_t i = 0; i < L; i++) m[i] = f_mask(x->e, i);
     f_hex(o, m, L);
 }
 static void f_hit(const FactIn *x, Text *o)
 {
-    f_str(o, f_set_shape(x) ? "a byte of `members`"
-                            : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
+    f_str(o, f_ofs_shape(x) ? "a byte of `members` at the candidate; an answer iff the run holds there"
+             : f_set_shape(x) ? "a byte of `members`"
+                              : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
 }
 static void f_reads(const FactIn *x, Text *o)
 {
@@ -2142,15 +2329,16 @@ static void pur_span(mf_wspan *w, int32_t start, const char *const *sets, unsign
                      int verify, unsigned core_lo, unsigned core_len)
 {
     memset(w, 0, sizeof *w);
+    uint8_t (*set)[32] = span_lists(w, len);
     w->start = start;
-    w->len = (uint8_t)len;
+    w->len = (uint16_t)len;
     w->verify = (uint8_t)verify;
     w->core = MF_CORE_STATED;
-    w->core_lo = (uint8_t)core_lo;
-    w->core_len = (uint8_t)core_len;
+    w->core_lo = (uint16_t)core_lo;
+    w->core_len = (uint16_t)core_len;
     for (unsigned j = 0; j < len; j++)
         for (const char *c = sets[j]; *c; c++)
-            set_add(w->set[j], (unsigned char)*c);
+            set_add(set[j], (unsigned char)*c);
 }
 
 /* The RESEED alternative of sites 2 and 3: F0 and three walked offsets, two
@@ -2210,13 +2398,13 @@ static mf_site pur_site(unsigned i)
     case 6:                     /* A-floor: no core position; a full-set one (C-bound) */
         pur_span(&sp[0][0], 0, (const char *const[]){ "a" }, 1, MF_VERIFY_YES, 0, 0);
         pur_span(&sp[0][1], 1, (const char *const[]){ "" }, 1, MF_VERIFY_YES, 0, 0);
-        memset(sp[0][1].set[0], 0xFF, 32);
+        memset(SPAN_SET(&sp[0][1], 0), 0xFF, 32);
         a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
         break;
     case 7:                     /* A-mass with a full-set verify-YES position (C-bound) */
         pur_span(&sp[0][0], 0, (const char *const[]){ "ab" }, 1, MF_VERIFY_YES, 0, 1);
         pur_span(&sp[0][1], 2, (const char *const[]){ "" }, 1, MF_VERIFY_YES, 0, 0);
-        memset(sp[0][1].set[0], 0xFF, 32);
+        memset(SPAN_SET(&sp[0][1], 0), 0xFF, 32);
         a[0] = (mf_walt){ MF_ENTRY_NONE, 2, sp[0] };
         break;
     case 8:                     /* RESEED first, PARKED second: M-parked wins at index 1 */
@@ -2269,30 +2457,62 @@ static const mf_analysis *pur_rated(void)
     return an_make(1, pur_rates);
 }
 
-/* The reply members by offset, for naming where two replies differ. */
-#define PUR_M(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m }
-static const struct { const char *name; size_t off, size; } pur_members[] = {
+/* The reply members by offset, for naming where two replies differ; a
+ * COUNTED LIST member (`elem` bytes per entry, nplan entries; MF_SITE_ABI 30)
+ * is compared over the count, its pointer never (the deep-compare rule,
+ * r45_reply.md §5 (a)). */
+#define PUR_M(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m, 0 }
+#define PUR_L(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m, \
+                   sizeof *((mf_wreply *)0)->m }
+static const struct { const char *name; size_t off, size, elem; } pur_members[] = {
     PUR_M(alt), PUR_M(reseed), PUR_M(has_stop), PUR_M(stop), PUR_M(stop_set), PUR_M(nplan),
-    PUR_M(plan), PUR_M(plan_term), PUR_M(pinned), PUR_M(run_stated), PUR_M(run_member),
+    PUR_L(plan), PUR_L(plan_term), PUR_M(pinned), PUR_M(run_stated), PUR_M(run_member),
     PUR_M(run_lo), PUR_M(run_len), PUR_M(path), PUR_M(framed), PUR_M(frame_row),
-    PUR_M(method), PUR_M(search), PUR_M(stream), PUR_M(fused), PUR_M(plan_test),
+    PUR_M(method), PUR_M(search), PUR_M(stream), PUR_M(fused), PUR_L(plan_test),
     PUR_M(stop_test),
 };
 #undef PUR_M
+#undef PUR_L
 
-/* NULL iff replies `a` and `b` are equal byte for byte over their first
- * `n` bytes (the whole struct, or the decision group's prefix), else the
- * first member that differs ("padding" where only padding does). The kit
- * zeroes every reply whole first (contract line 3), so memcmp is exact. */
+/* `r` with its list pointers set aside: the by-value members and the
+ * padding the kit zeroes. */
+static mf_wreply pur_vals(const mf_wreply *r)
+{
+    mf_wreply x = *r;
+    x.plan = NULL;
+    x.plan_term = NULL;
+    x.plan_test = NULL;
+    return x;
+}
+
+/* NULL iff replies `a` and `b` agree over their members below offset `n`
+ * (the whole struct, or the decision group's prefix): every by-value member
+ * byte for byte, every list over nplan (two NULL lists agree: NONE's
+ * plan_test; one NULL list differs from a held one at a nonzero count), else the first member that differs ("padding" where
+ * only padding does). The kit zeroes every reply whole first (contract line
+ * 3), so the by-value compare is exact. */
 static const char *pur_diff_n(const mf_wreply *a, const mf_wreply *b, size_t n)
 {
-    if (!memcmp(a, b, n)) return NULL;
-    for (size_t i = 0; i < sizeof pur_members / sizeof *pur_members; i++)
-        if (pur_members[i].off < n &&
-            memcmp((const char *)a + pur_members[i].off, (const char *)b + pur_members[i].off,
-                   pur_members[i].size))
+    for (size_t i = 0; i < sizeof pur_members / sizeof *pur_members; i++) {
+        if (pur_members[i].off >= n) continue;
+        const char *pa = (const char *)a + pur_members[i].off;
+        const char *pb = (const char *)b + pur_members[i].off;
+        if (!pur_members[i].elem) {
+            if (memcmp(pa, pb, pur_members[i].size)) return pur_members[i].name;
+            continue;
+        }
+        const void *la, *lb;
+        memcpy(&la, pa, sizeof la);
+        memcpy(&lb, pb, sizeof lb);
+        if (a->nplan != b->nplan) return pur_members[i].name;
+        /* contents always: two held lists at one address would make the
+           compare vacuous (review r27 CHECK-3); two NULL lists agree */
+        if (a->nplan && (la || lb) &&
+            (!la || !lb || memcmp(la, lb, a->nplan * pur_members[i].elem)))
             return pur_members[i].name;
-    return "padding";
+    }
+    mf_wreply x = pur_vals(a), y = pur_vals(b);
+    return memcmp(&x, &y, n) ? "padding" : NULL;
 }
 
 static const char *pur_diff(const mf_wreply *a, const mf_wreply *b)
@@ -2358,7 +2578,16 @@ static int pur_ask(const mf_art *art, const mf_site *s, const mf_hooks *h, uint8
 {
     char m[200];
     long a0 = pur_arena_n, h0 = pur_hook_calls;
-    int rc = mf_wdecide(art, s, h, call, out);
+    mf_rows *rows = ask_rows();
+    int rc = mf_wdecide(art, s, h, call, out, rows);
+    const char *own = rc ? NULL : wrows_owner(out, rows);
+    snprintf(m, sizeof m, "%s: the reply's %s list is not the caller's rows (memfn.h mf_rows: "
+             "the asks write only *out and the caller's rows)", what, own ? own : "-");
+    pur_ok(!own, m);
+    snprintf(m, sizeof m, "%s: a refused ask wrote the caller's rows (memfn.h: on -1 the asks "
+             "write nothing to rows)", what);
+    pur_ok(!rc || rows_untouched(rows), m);
+    /* the reply's lists live in `rows`: kept for the caller's compares */
     snprintf(m, sizeof m, "%s: the ask grew the art's arena by %ld (plan_frame.md §2.2: a "
              "phase-1 ask allocates on the heap only)", what, pur_arena_n - a0);
     pur_ok(pur_arena_n == a0, m);
@@ -2452,6 +2681,166 @@ static mf_hooks pur_pf_hooks(void)
     return h;
 }
 
+/* THE REFUSED ASK's rows (memfn.h mf_wdecide / mf_ask: "on -1 the asks
+ * write nothing to rows"; review r27 CHECK-4/SEAM-1): site `s` (its NONE
+ * plan `nplan` entries) asked where its storage refuses AFTER the decision
+ * is made: a framed ask with no plan_test list, a plan_cap one short, and
+ * mf_ask with a proof_cap one short of mf_rows_need's. Each answers -1 and
+ * leaves every list the sentinel; at the need, mf_ask answers in them. */
+static void pur_refusal_rows(const mf_art *art, const mf_site *s, const mf_hooks *h,
+                             unsigned nplan, unsigned i)
+{
+    char m[220];
+    mf_wreply r;
+    mf_class c;
+    uint32_t pc, plc;
+    if (nplan) {
+        mf_rows *rows = ask_rows();
+        free(rows->plan_test);
+        rows->plan_test = NULL;
+        int rc = mf_wdecide(art, s, h, MF_WCALL_DEFINE, &r, rows);
+        snprintf(m, sizeof m, "refusal: site %u: a framed ask with no plan_test list answered "
+                 "%d or wrote the caller's rows", i, rc);
+        pur_ok(rc == -1 && rows_untouched(rows), m);
+        rows_free(rows);
+        rows = ask_rows();
+        rows->plan_cap = nplan - 1;
+        rc = mf_wdecide(art, s, NULL, MF_WCALL_NONE, &r, rows);
+        snprintf(m, sizeof m, "refusal: site %u: a NONE ask at plan_cap %u (need %u) answered "
+                 "%d or wrote the caller's rows", i, nplan - 1, nplan, rc);
+        pur_ok(rc == -1 && rows_untouched(rows), m);
+        rows_free(rows);
+    }
+    snprintf(m, sizeof m, "refusal: site %u: mf_rows_need refused", i);
+    pur_ok(mf_rows_need(s, &pc, &plc) == 0, m);
+    if (!pc) return;
+    /* one short of the need: refused with the rows untouched, or (a class
+       that proves fewer rows than the need: a translated site) answered
+       within the cap, in the caller's rows */
+    mf_rows *rows = ask_rows();
+    rows->proof_cap = pc - 1;
+    int rc = mf_ask(art, s, h, &c, rows);
+    const char *own = rc ? NULL : crows_owner(&c, rows);
+    snprintf(m, sizeof m, "refusal: site %u: mf_ask at proof_cap %u (need %u): rc %d proof_n %u "
+             "%s%s", i, pc - 1, pc, rc, rc ? 0 : c.proof_n,
+             rc && !rows_untouched(rows) ? "wrote the caller's rows" : "",
+             own ? own : "");
+    pur_ok(rc ? rows_untouched(rows) : c.proof_n <= pc - 1 && !own, m);
+    rows_free(rows);
+    rows = ask_rows();
+    rows->proof_cap = pc;
+    rc = mf_ask(art, s, h, &c, rows);
+    own = rc ? "(refused)" : crows_owner(&c, rows);
+    snprintf(m, sizeof m, "refusal: site %u: mf_ask at its need: %s", i, own ? own : "-");
+    pur_ok(!own, m);
+    rows_free(rows);
+}
+
+/* THE LONG RUN PART (review 2026-11-16 r27 READ-1, the raise's declining row
+ * contract): an ALL_PRESENT site whose one presence span is a RUN of `L`
+ * one-byte positions, defined with its derived run part (`fn_ref` 1). Its
+ * scan stretch is the whole run, so at L = MF_RANK_MAX + 1 run_part_terms
+ * must REFUSE it, naming the stretch, before any ranking entry is written
+ * (rank_pos[MF_RANK_MAX]); at L = MF_RANK_MAX it defines. The define's
+ * error text is the witness. 0, or -1 with `err` the art's error.
+ * THE TERM RULE (review r28 R28-1): positions from `M` on carry many bytes
+ * (unspelled), so each is its own SET term outside any scan stretch; at
+ * M = 0 the part is L SET terms and no RUN term, so at L = MF_MAX_TERM + 8
+ * (the stretch is empty, well within MF_RANK_MAX) only the TERM rule refuses
+ * it, before term[MF_MAX_TERM] is written; at L = MF_MAX_TERM it defines.
+ * M = L is the all-spelled run of the stretch rule. */
+static int pur_long_run(mf_arena *ar, unsigned L, unsigned M, char *err, size_t errn)
+{
+    mf_art *art = art_begin(ar, "plr", 0, NULL, NULL);
+    uint8_t (*set)[32] = calloc(L, 32);
+    uint32_t *tab = calloc(L, sizeof *tab);
+    if (!set || !tab) { perror("calloc"); exit(2); }
+    for (unsigned j = 0; j < L; j++) {
+        unsigned b = 'a' + j % 26;
+        set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+        if (j >= M) {                   /* unspelled: '0'-'7' and 'A'-'C' too */
+            set[j]['0' >> 3] |= 0xFF;
+            set[j]['A' >> 3] |= 0x0E;
+        }
+    }
+    mf_wspan w;
+    memset(&w, 0, sizeof w);
+    w.start = 0;
+    w.len = (uint16_t)L;
+    w.verify = MF_VERIFY_NO;
+    w.core = MF_CORE_STATED;
+    w.core_len = (uint16_t)L;
+    w.set = (const uint8_t (*)[32])set;
+    w.table_ref = tab;
+    mf_walt a = { MF_ENTRY_NONE, 1, &w };
+    mf_pred ps;
+    memset(&ps, 0, sizeof ps);
+    ps.nalt = 1;
+    ps.alts = &a;
+    ps.wfloor = MF_WFLOOR_SUBJECT;
+    ps.need = MF_REQUIRED;
+    ps.plan_hint = MF_NO_PRED;
+    ps.span_class = MF_SPAN_PRESENCE;
+    mf_pred part;
+    memset(&part, 0, sizeof part);
+    part.fn_ref = 1;                    /* the derived run part */
+    mf_site s;
+    memset(&s, 0, sizeof s);
+    s.abi = MF_SITE_ABI;
+    s.ret_pred = MF_NO_PRED;
+    s.span_hi = MF_SPAN_UNBOUNDED;
+    s.cand_ppm_hi = MF_PPM_FULL;
+    s.pred.plan_hint = MF_NO_PRED;
+    s.body = MF_BODY_ONESHOT;
+    s.form = MF_FORM_STMT;
+    s.op = MF_OP_ALL_PRESENT;
+    s.handoff = MF_H_ON_MISS;
+    s.empty = MF_EMPTY_MISS;
+    s.use = MF_USE_ENTRY;
+    s.site_kind = MF_SK_VM_ATTEMPT;
+    s.on_miss_leaves = 1;
+    s.npspan = 1;
+    s.pspans = &ps;
+    s.pres_proof = (mf_pres_proof){ -1, 0, 0, 1 };
+    s.npred = 1;
+    s.preds = &part;
+    Text def = { 0 };
+    mf_sink sd = sink_of(&def);
+    Fx fx = { &s, "rx_plr", NULL };
+    mf_hooks h = { .fn_name = h_fn_name, .start = "search_from", .u = &fx };
+    uint32_t hd = 0;
+    int rc = mf_define(art, &s, &h, &sd, &hd);
+    snprintf(err, errn, "%s", rc ? mf_art_error(art) : "");
+    free(def.p);
+    free(set);
+    free(tab);
+    return rc;
+}
+
+static void pur_long_run_fixtures(mf_arena *ar)
+{
+    char err[400], m[600];
+    int rc = pur_long_run(ar, MF_RANK_MAX, MF_RANK_MAX, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a run part of MF_RANK_MAX (%d) positions refused: %s",
+             MF_RANK_MAX, err);
+    pur_ok(rc == 0, m);
+    rc = pur_long_run(ar, MF_RANK_MAX + 1, MF_RANK_MAX + 1, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a run part of MF_RANK_MAX + 1 positions answered rc %d, "
+             "not run_part_terms' stretch refusal (READ-1): %s", rc, err);
+    pur_ok(rc == -1 && strstr(err, "over MF_RANK_MAX positions"), m);
+    /* the term rule (R28-1): MF_MAX_TERM unspelled positions define (the
+       control: the fixture's shape is admitted at the bound), MF_MAX_TERM + 8
+       are refused naming the term count */
+    rc = pur_long_run(ar, MF_MAX_TERM, 0, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a part of MF_MAX_TERM (%d) unspelled positions refused: %s",
+             MF_MAX_TERM, err);
+    pur_ok(rc == 0, m);
+    rc = pur_long_run(ar, MF_MAX_TERM + 8, 0, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a part of MF_MAX_TERM + 8 unspelled positions answered rc %d, "
+             "not run_part_terms' term refusal (READ-1, R28-1): %s", rc, err);
+    pur_ok(rc == -1 && strstr(err, "more than MF_MAX_TERM terms"), m);
+}
+
 /* THE CALL's fixtures (plan_frame.md §2.2 contract lines 1-4, §5 rows S, T,
  * U, I, AD) and the counted asks the counting arena must reach (row AC). */
 static void pur_call_fixtures(mf_arena *ar)
@@ -2468,8 +2857,12 @@ static void pur_call_fixtures(mf_arena *ar)
         snprintf(m, sizeof m, "call: site %u: call 0 (UNSTATED) did not answer -1", i);
         pur_ok(pur_ask(art, &site, &h, MF_WCALL_UNSTATED, &r, m) == -1, m);
         int above = 0;
-        for (unsigned c = MF_WCALL_EMIT + 1; c < 256; c++)
-            above += mf_wdecide(art, &site, &h, (uint8_t)c, &r) != -1;
+        for (unsigned c = MF_WCALL_EMIT + 1; c < 256; c++) {
+            mf_rows *rows = ask_rows();
+            above += mf_wdecide(art, &site, &h, (uint8_t)c, &r, rows) != -1 ||
+                     !rows_untouched(rows);
+            rows_free(rows);
+        }
         snprintf(m, sizeof m, "call: site %u: %d call value(s) above EMIT were not refused", i,
                  above);
         pur_ok(!above, m);
@@ -2479,9 +2872,15 @@ static void pur_call_fixtures(mf_arena *ar)
         pur_ok(pur_ask(art, &site, NULL, MF_WCALL_NONE, &r, m) == 0, m);
         snprintf(m, sizeof m, "call: site %u: NONE's frame part is not zero (framed %u)", i,
                  r.framed);
-        pur_ok(!memcmp((const char *)&r + offsetof(mf_wreply, framed),
+        mf_wreply rv = pur_vals(&r);    /* the list pointer is asserted apart */
+        pur_ok(!memcmp((const char *)&rv + offsetof(mf_wreply, framed),
                        zero + offsetof(mf_wreply, framed),
                        sizeof r - offsetof(mf_wreply, framed)), m);
+        /* plan_test NULL on NONE (r45_reply.md §5 (a)): pur_vals sets it
+           aside above, so it is asserted here (review r27 CHECK-2) */
+        snprintf(m, sizeof m, "call: site %u: NONE's reply carries a plan_test list", i);
+        pur_ok(r.plan_test == NULL, m);
+        pur_refusal_rows(art, &site, &h, r.nplan, i);
         mf_site other = site;
         other.form = MF_FORM_STMT;
         other.handoff = MF_H_ON_MISS;
@@ -2714,6 +3113,7 @@ static int purity_mode(void)
         }
     }
     pur_call_fixtures(&ar);
+    pur_long_run_fixtures(&ar);
     /* THE STICKY-ERR CASE: breaker (a), FENCED (no reply after a refusal
        reaches an artifact); equal replies are asserted only once a later
        unit makes the refusal non-sticky */
@@ -2727,7 +3127,10 @@ static int purity_mode(void)
             snprintf(m, sizeof m, "sticky-err: site %u's %s plan call after a refused define "
                      "did not answer -1 (breaker (a) is FENCED by the refusal)", i,
                      c ? "framed" : "NONE");
-            pur_ok(mf_wdecide(art, &site[i], &hk, calls[c], &r) == -1, m);
+            mf_rows *rows = ask_rows();
+            pur_ok(mf_wdecide(art, &site[i], &hk, calls[c], &r, rows) == -1 &&
+                   rows_untouched(rows), m);
+            rows_free(rows);
         }
     printf("checks passed: %ld\n", pur_pass);
     printf("checks failed: %ld\n", pur_fail);
@@ -2735,11 +3138,16 @@ static int purity_mode(void)
 }
 
 /* `r` as a hex dump of the whole struct (the control's print: every member,
- * present and future, and the padding the kit zeroes). */
+ * present and future, and the padding the kit zeroes), its list pointers
+ * set aside, then each counted list's nplan entries (MF_SITE_ABI 30). */
 static void pur_hex(const mf_wreply *r)
 {
-    const unsigned char *b = (const unsigned char *)r;
-    for (size_t k = 0; k < sizeof *r; k++) printf("%02x", b[k]);
+    mf_wreply x = pur_vals(r);
+    const unsigned char *b = (const unsigned char *)&x;
+    for (size_t k = 0; k < sizeof x; k++) printf("%02x", b[k]);
+    for (unsigned i = 0; i < r->nplan; i++)
+        printf("%s%d/%u/%u", i ? "," : ":", r->plan[i], r->plan_term[i],
+               r->plan_test ? r->plan_test[i] : 0u);
 }
 
 /* THE CONTROL's print: each site's NONE and framed replies after one define
@@ -2756,8 +3164,8 @@ static int purity_control_mode(void)
                                        rated ? pur_rated() : NULL);
             mf_wreply r, f;
             if (pur_define(art, &site[(i + 1) % PUR_N]) ||
-                mf_wdecide(art, &site[i], NULL, MF_WCALL_NONE, &r) ||
-                mf_wdecide(art, &site[i], &hk, MF_WCALL_DEFINE, &f)) {
+                mf_wdecide(art, &site[i], NULL, MF_WCALL_NONE, &r, ask_rows()) ||
+                mf_wdecide(art, &site[i], &hk, MF_WCALL_DEFINE, &f, ask_rows())) {
                 printf("%s site %u: refused: %s\n", rated ? "rated" : "none", i,
                        mf_art_error(art));
                 continue;
@@ -2775,7 +3183,7 @@ static int purity_control_mode(void)
                 mf_hooks th = pur_text_hooks(0);
                 mf_wreply e;
                 printf("%s site %u stmt%d: ", rated ? "rated" : "none", i, k);
-                if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e)) printf("refused\n");
+                if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e, ask_rows())) printf("refused\n");
                 else { pur_hex(&e); printf(" (%s)\n", e.frame_row); }
             }
         }
@@ -2785,7 +3193,7 @@ static int purity_control_mode(void)
         mf_hooks th = pur_pf_hooks();
         mf_wreply e;
         printf("pf site: ");
-        if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e)) printf("refused\n");
+        if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e, ask_rows())) printf("refused\n");
         else { pur_hex(&e); printf(" (%s)\n", e.frame_row); }
     }
     return 0;
@@ -2795,7 +3203,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
                           "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash | "
-                          "--site-text ID [CLS] | --site-parts ID [CLS] | --hash-text FILE|- | --facts ID [CLS] | "
+                          "--site-text ID [CLS] | --site-parts ID [CLS] | --frame ID [CLS] | --target-facts TOKEN | --hash-text FILE|- | --facts ID [CLS] | "
                           "--purity | --purity-control\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL, *digest = NULL;
@@ -2812,6 +3220,8 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--site-text") && argc > 2) return site_text_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--site-parts") && argc > 2) return site_parts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--hash-text") && argc > 2) return hash_text_mode(argv[2]);
+    if (!strcmp(argv[1], "--frame") && argc > 2) return frame_mode(argv[2], argc > 3 ? argv[3] : NULL);
+    if (!strcmp(argv[1], "--target-facts") && argc > 2) return target_facts_mode(argv[2]);
     if (!strcmp(argv[1], "--facts") && argc > 2) return facts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--purity")) return purity_mode();
     if (!strcmp(argv[1], "--purity-control")) return purity_control_mode();
@@ -2866,6 +3276,26 @@ int main(int argc, char **argv)
     t_byte(&s.pred.term[1], 1, 'e');
     s.pred.plan_hint = 0;
     bad |= render(dir, "ofs-scan0", &s, "rx_ofsskip");
+
+    /* lane mfind: the inline one-member finder, reached by the test-only
+     * lever `mfind` alone (rows.tsv's fn-mfind, mfind-w16, mfind-w32): a
+     * byte at 0 scanned, a byte at 2 verified; at the portable target the
+     * SWAR body, at x86-64 its w16 helper, at x86-64-v3 w32 over w16; the
+     * control the same site with no lever (fn-memchr) */
+    for (int f = 0; f < 4; f++) {
+        static const char *const nm[] = { "ofs-mfind-off", "ofs-mfind", "ofs-mfind-w16",
+                                          "ofs-mfind-w32" };
+        static const char *const tg[] = { NULL, NULL, "x86-64", "x86-64-v3" };
+        s = ofs_site();
+        s.pred.nterm = 2;
+        t_byte(&s.pred.term[0], 0, '.');
+        t_byte(&s.pred.term[1], 2, 'z');
+        s.pred.plan_hint = 0;
+        fx_target = tg[f];
+        fx_lever = f ? "mfind" : NULL;
+        bad |= render(dir, nm[f], &s, "rx_mfind");
+        fx_target = fx_lever = NULL;
+    }
 
     /* ofsskip: a masked run scanned on a two-member cube: the pair leapfrog */
     s = ofs_site();
@@ -2967,13 +3397,14 @@ int main(int argc, char **argv)
         static mf_wspan ww;
         memset(wr, 0, sizeof wr);
         memset(&ww, 0, sizeof ww);
+        span_lists(&ww, 2);
         ww.len = 2;
         ww.verify = MF_VERIFY_NO;
         ww.core = MF_CORE_STATED;
         ww.core_len = 2;
-        for (unsigned b = '0'; b <= '9'; b++) set_add(ww.set[0], b);
-        if (findable) set_add(ww.set[1], 'a');
-        else for (unsigned b = '0'; b <= '9'; b++) set_add(ww.set[1], b);
+        for (unsigned b = '0'; b <= '9'; b++) set_add(SPAN_SET(&ww, 0), b);
+        if (findable) set_add(SPAN_SET(&ww, 1), 'a');
+        else for (unsigned b = '0'; b <= '9'; b++) set_add(SPAN_SET(&ww, 1), b);
         wa = (mf_walt){ MF_ENTRY_NONE, 1, &ww };
         wr[0].nalt = 1;
         wr[0].alts = &wa;

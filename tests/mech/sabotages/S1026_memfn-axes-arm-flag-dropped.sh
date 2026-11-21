@@ -8,7 +8,8 @@ SAB_DESC='run_axes.sh composes each memfn cell without the row spelling: the ans
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/runaxes_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1026.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            _mflags="$_mspell"
-            [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"'
-SAB_AFTER='            _mflags=""   # SABOTAGE S1026
-            [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag"'
+SAB_BEFORE='                _mflags="$_mspell"
+                [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"'
+SAB_AFTER='                _mflags=""   # SABOTAGE S1026
+                [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag"'
+# RE-ANCHORED 2026-11-17 (lane forms): the cell loop gained a per-spelling loop (a pair row's deny and force), one indent deeper; the edit is unchanged.

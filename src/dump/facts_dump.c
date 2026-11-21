@@ -38,6 +38,7 @@
 typedef struct {
     StrBuf facts;
     StrBuf dec;
+    StrBuf cover;     /* [COVER-CAP] the cover decision's record */
     StrBuf plctl;     /* [ENTRY-TABLE] E1 the part-layout sections */
     StrBuf plparts;
 } FactsRows;
@@ -87,12 +88,13 @@ static const char *fd_status(const PfWhy *w)
     return "absent";
 }
 
-/* The `why` token: `harness:<arms>`, `deny:<flag>`, `decline:<reason>`,
- * `rate:<source>`, or empty for a plain derivation; the first that applies,
- * in that order (facts_listing.md §4.1.3¶1). The token grammar is the
- * contract; a reason's NAME is advisory (facts_listing.md). */
+/* The `why` token: `dead`, `harness:<arms>`, `deny:<flag>`,
+ * `decline:<reason>`, `rate:<source>`, or empty for a plain derivation; the
+ * first that applies, in that order (facts_listing.md §4.1.3¶1). The token
+ * grammar is the contract; a reason's NAME is advisory (facts_listing.md). */
 static const char *fd_why(Ctx *cx, const PfWhy *w, const char *enc)
 {
+    if (w->code == PF_WHY_DEAD) return "dead";
     if (w->arms)
         return pcrec_sb_fragf(&cx->arena, "harness:%s",
                               pcrec_walk_arms_text(&cx->arena, w->arms));
@@ -116,12 +118,11 @@ static const char *fd_why(Ctx *cx, const PfWhy *w, const char *enc)
     case PF_WHY_ALIVE_NOT_ACCEPT: return "decline:alive-not-accept";
     case PF_WHY_ASSERT_AFTER:     return "decline:assert-after";
     case PF_WHY_CALL:             return "decline:call";
-    case PF_WHY_ERASED:           return "decline:erased-nfa";
-    case PF_WHY_MARKED:           return "decline:end-mark";
     case PF_WHY_PIECES_WALL:      return "decline:not-fixed-width";
     case PF_WHY_PIECES_OVER:      return "decline:over-bound";
     case PF_WHY_PIECES_ONE:       return "decline:one-group";
     case PF_WHY_ISLAND:           return "decline:char-step";
+    case PF_WHY_DEAD:             return "dead";
     }
     return "";
 }
@@ -187,6 +188,15 @@ static void fd_hook(Ctx *cx, const char *artifact, size_t len, void *ud)
         pcrec_sb_row(&r->facts, cells, 9);
     }
     fd_decisions(cx, r, enc, artifact, len);
+    /* [COVER-CAP] the cover decision's record, read, never re-walked
+     * (src/gen/known.c renders the cells, facts_listing.md §4.5) */
+    {
+        const char *cells[5], *cc[4];
+        pcrec_cover_listing_cells(cx, cc);
+        cells[0] = enc;
+        for (int i = 0; i < 4; i++) cells[i + 1] = cc[i];
+        pcrec_sb_row(&r->cover, cells, 5);
+    }
     /* [ENTRY-TABLE] E1: the part-layout tables' record of this attempt,
      * read off `Job.pl` as the render left it (src/gen/part_layout.c). */
     pcrec_part_layout_facts(cx, &r->plctl, &r->plparts, enc);
@@ -221,6 +231,7 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
                                  fd_hook, &r, in) != 0) {
             pcrec_sb_free(&r.facts);
             pcrec_sb_free(&r.dec);
+            pcrec_sb_free(&r.cover);
             pcrec_sb_free(&r.plctl);
             pcrec_sb_free(&r.plparts);
             return NULL;
@@ -260,8 +271,16 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
         "# layout; `wrappers` counts callers that only forward to a shared part.\n"
         "#encoding\tfunction\tclass\tcallers\trank\tcopyable\trow\tlayout\twrappers\n");
     if (r.plparts.p) pcrec_sb_puts(&s, r.plparts.p);
+    pcrec_sb_puts(&s,
+        "#section cover\n"
+        "# The cover decision's record (docs/spec/facts_listing.md section 4.5):\n"
+        "# its why (cover, the first failing conjunct, or unasked), the depth k\n"
+        "# its walk ended at, the exact stretch and its per-position sets.\n"
+        "#encoding\twhy\tk\texact_len\tsets\n");
+    if (r.cover.p) pcrec_sb_puts(&s, r.cover.p);
     pcrec_sb_free(&r.facts);
     pcrec_sb_free(&r.dec);
+    pcrec_sb_free(&r.cover);
     pcrec_sb_free(&r.plctl);
     pcrec_sb_free(&r.plparts);
     return pcrec_sb_take(&s);

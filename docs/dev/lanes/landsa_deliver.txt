@@ -1,0 +1,5 @@
+report=docs/dev/lanes/landsa_report.md
+sections: MERGE; CONFLICTS; PINS; CHECKS; LEDGER; PUSH; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/lanes/; docs/dev/artifact_size_log.tsv; land1101.done

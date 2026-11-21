@@ -121,12 +121,12 @@ sites are in `src/gen/emit_dfa.c` unless another file is named.
 | `:16237-16294` | `pcrec_emit_prologue` | S7 | end_window, req_byte, req_run (stamps) | pass via `pcrec_fact_stamp*` | no (stamps) |
 | `emit_vm.c:13891` | `vm_emit_search_body` | S7 | start_anchor | pass | no (stamp text) |
 | `emit_iter.c:31` | `retry_none_applies` | S7 | reports_empty | pass | no |
-| `known.c:260` | `cc_exact` (the `cover` LOCATE row) | S7 (E3) | span_facts | stated | yes: LOCATE |
+| `known.c` (retired) | `cc_exact` (the `cover` LOCATE row) read the span slice's fact until [COVER-CAP] stage 1 (2026-11-15, `cover_cap.md` rev 4: the fact is deleted; the cover reads the anchored machine) | — | — | — | — |
 | `dump/facts_dump.c:182` | the listing | S9 | all (`pcrec_fact_render`: memo only, asks nothing) | — | no |
 
 Count (a text scan of `pcrec_fact_*(` calls outside `src/facts/`, comments excluded): 60 functions
 in 8 files, 95 call sites. `req_run` alone has 20. Five facts have exactly one call site (`end_mark`,
-`kset_walk`, `never_matches`, `reports_empty`, `span_facts`). Three are asked by no consumer at all:
+`kset_walk`, `never_matches`, `reports_empty`, and until [COVER-CAP] stage 1 the slice's fact). Three are asked by no consumer at all:
 `req_pieces` ("no reader but `--emit-facts`", `facts.h`), `req_set_maxoff` and `req_run_maxoff`. These
 are reached only through `depends` edges or the force loop.
 

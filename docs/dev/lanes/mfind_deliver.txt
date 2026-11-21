@@ -1,0 +1,5 @@
+report=docs/dev/lanes/mfind_report.md
+sections: Summary; Design; Forms and levels; Card; Checks and plants; Identity; Owed runs
+nonempty: all
+commit: yes
+owed: kit-mfind-gate

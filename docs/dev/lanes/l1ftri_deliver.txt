@@ -1,0 +1,5 @@
+report: docs/dev/lanes/l1ftri_report.md
+sections: Summary; What the identity job compared; Each mover and its class; Fixes; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

@@ -1,0 +1,3 @@
+# docs/dev/reviews/2026-11-18-r50-archlook/ — critic texts for review r50
+
+The five critics' findings (AGGREGATION, SITEMAP, REGISTER, FIRSTUNIT, RULING), FIRSTUNIT's `firstunit_anchors.py` (maps each sabotage's SAB_BEFORE into the moved line ranges), the verifier's `verify.md`, the round's `COMMON.md`, the coordinator's `process.md`, and the manager's `dispositions.md` for `../2026-11-18-r50-archlook.md` (ARCHITECTURE round on docs/design/req_lookaround_arch.md, [REQ-LOOKAROUND]; the round dir is `crit-archlook`). Records only; the review file holds the rulings. Copied unchanged except that every plan line-number cite is replaced by its plan tag (PL14) and one spec line cite by its section.

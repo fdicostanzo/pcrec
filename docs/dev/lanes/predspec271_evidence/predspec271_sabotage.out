@@ -1,0 +1,91 @@
+predspec271 evidence; libpcre2-8 10.46 2025-08-27 ; SABOTAGE s1,s2,s3,s4,s5,s6,s7,s8,s9
+selfcheck: NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3) ; OK
+selfcheck: NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried) ; OK
+selfcheck: MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match) ; OK
+selfcheck: callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F) ; OK
+selfcheck: callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T) ; OK
+selfcheck: ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False ; OK
+
+== PART B: unset-in-hole re-cut (review r48 B): four candidates for an UNSET read inside a hole's expression
+B bare `/(?<y>\d)?-${$y}/` ALGEBRA    WHOLE `-` FAILS ; SEARCHED `x- 3-3` `3-3`@3 ; FIND-ALL `- 3-3 -` [`3-3`@2]
+B bare `/(?<y>\d)?-${$y}/` WHOLE-HOLE WHOLE `-` FAILS ; SEARCHED `x- 3-3` `3-3`@3 ; FIND-ALL `- 3-3 -` [`3-3`@2]
+B bare `/(?<y>\d)?-${$y}/` EMPTY-READ WHOLE `-` HOLDS ; SEARCHED `x- 3-3` `-`@1 ; FIND-ALL `- 3-3 -` [`-`@0, `3-3`@2, `-`@6]
+B bare `/(?<y>\d)?-${$y}/` EMPTY-HOLE WHOLE `-` HOLDS ; SEARCHED `x- 3-3` `-`@1 ; FIND-ALL `- 3-3 -` [`-`@0, `3-3`@2, `-`@6]
+B `/(?<y>\d)?-${$y | "x"}/` ALGEBRA    WHOLE `-x` FAILS ; SEARCHED `-x` FAILS ; FIND-ALL `3-3 -x` [`3-3`@0]
+B `/(?<y>\d)?-${$y | "x"}/` WHOLE-HOLE WHOLE `-x` FAILS ; SEARCHED `-x` FAILS ; FIND-ALL `3-3 -x` [`3-3`@0]
+B `/(?<y>\d)?-${$y | "x"}/` EMPTY-READ WHOLE `-x` HOLDS ; SEARCHED `-x` `-`@0 ; FIND-ALL `3-3 -x` [`3-3`@0, `-`@4]
+B `/(?<y>\d)?-${$y | "x"}/` EMPTY-HOLE WHOLE `-x` FAILS ; SEARCHED `-x` `-`@0 ; FIND-ALL `3-3 -x` [`3-3`@0, `-`@4]
+B `/(?<y>\d{4})?-${$y + 1}/` ALGEBRA    WHOLE `-` FAILS ; SEARCHED `x-1 2025-2026` `2025-2026`@4 ; FIND-ALL `- 2025-2026 -` [`2025-2026`@2]
+B `/(?<y>\d{4})?-${$y + 1}/` WHOLE-HOLE WHOLE `-` FAILS ; SEARCHED `x-1 2025-2026` `2025-2026`@4 ; FIND-ALL `- 2025-2026 -` [`2025-2026`@2]
+B `/(?<y>\d{4})?-${$y + 1}/` EMPTY-READ WHOLE `-` FAILS ; SEARCHED `x-1 2025-2026` `2025-2026`@4 ; FIND-ALL `- 2025-2026 -` [`2025-2026`@2]
+B `/(?<y>\d{4})?-${$y + 1}/` EMPTY-HOLE WHOLE `-` HOLDS ; SEARCHED `x-1 2025-2026` `-`@1 ; FIND-ALL `- 2025-2026 -` [`-`@0, `2025-2026`@2, `-`@12]
+B vs PCRE over 1365 texts (`37x-`, length <= 5): `${$y | "x"}` ALGEBRA    vs `(?:\k<y>|x)` 1 / 188 / 192 (first ('W', '-x')) ; bare `${$y}` vs `\k<y>` 0 / 0 / 0
+B vs PCRE over 1365 texts (`37x-`, length <= 5): `${$y | "x"}` WHOLE-HOLE vs `(?:\k<y>|x)` 1 / 188 / 192 (first ('W', '-x')) ; bare `${$y}` vs `\k<y>` 0 / 0 / 0
+B vs PCRE over 1365 texts (`37x-`, length <= 5): `${$y | "x"}` EMPTY-READ vs `(?:\k<y>|x)` 1 / 821 / 865 (first ('W', '-')) ; bare `${$y}` vs `\k<y>` 1 / 911 / 933
+B vs PCRE over 1365 texts (`37x-`, length <= 5): `${$y | "x"}` EMPTY-HOLE vs `(?:\k<y>|x)` 2 / 821 / 865 (first ('W', '-')) ; bare `${$y}` vs `\k<y>` 1 / 911 / 933
+B `${$y + 1}` over 364 texts (`12-`, length <= 5) against ALGEBRA: ALGEBRA 0 / 0 / 0 ; WHOLE-HOLE 0 / 0 / 0 ; EMPTY-READ 0 / 0 / 0 ; EMPTY-HOLE 1 / 301 / 301
+B only ALGEBRA keeps PCRE's answer for `(?:\k<y>|x)` ; on `$y + 1` ALGEBRA = WHOLE-HOLE = EMPTY-READ, EMPTY-HOLE parts ; FAILED
+B R.1.15 (5) `occurrences(/${$y + 1}-(?<y>\d{4})/, min = 2)` unset read as FAIL       `-2025 2026-2030`: hits [`-2025`@0, `2026-2030`@6] -> HOLDS
+B R.1.15 (5) `occurrences(/${$y + 1}-(?<y>\d{4})/, min = 2)` unset read as FAIL       `-2025 2027-2030`: hits [`-2025`@0] -> FAILS
+B R.1.15 (5) `occurrences(/${$y + 1}-(?<y>\d{4})/, min = 2)` unset read as EMPTY-HOLE `-2025 2026-2030`: hits [`-2025`@0, `2026-2030`@6] -> HOLDS
+B R.1.15 (5) `occurrences(/${$y + 1}-(?<y>\d{4})/, min = 2)` unset read as EMPTY-HOLE `-2025 2027-2030`: hits [`-2025`@0] -> FAILS
+B `/${$y + 1}-(?<y>\d)/` as a hit-list argument over 5461 texts (`12- `, length <= 6): texts with ANY hit: FAIL 2758, EMPTY-HOLE 2758 ; FAILED
+B the edge second, under FAIL: `/(?:${$y + 1}-)?(?<y>\d{4})/` as a hit-list argument `2025 2026-2030`: hits [`2025`@0, `2026-2030`@5]
+B the edge second, under FAIL: `/(?:${$y + 1}-)?(?<y>\d{4})/` as a hit-list argument `2025 2027-2030`: hits [`2025`@0, `2027`@5, `2030`@10]
+
+== PART C: a FINITE label of variable width: run time vs the compile-time copies (review r48 C)
+C `/(?<y>\d{1,2})${$y + 1}/` (domain: canonical numerals) run-time vs copies in PATH order 0 / 53 / 56 ; in the values' order 0 / 53 / 56 (first ('S', '012')) of 1365 texts (`0123`, length <= 5)
+C run time: WHOLE `1213` HOLDS ; SEARCHED `1213` `1213`@0 ; FIND-ALL `1213 45 910` [`1213`@0, `45`@5, `910`@8]
+C values' order copies: WHOLE `1213` HOLDS ; SEARCHED `1213` `12`@0 ; FIND-ALL `1213 45 910` [`12`@0, `45`@5, `910`@8]
+C FAILED
+
+== PART D: T1's run-time order (review r48 D): the operands' strings in WRITTEN order
+D `/(?<y>\d)-${"33" | $y}/` written order: WHOLE `3-33` HOLDS ; SEARCHED `3-33` `3-3`@0 ; FIND-ALL `3-33 7-7 3-3` [`3-3`@0, `7-7`@5, `3-3`@9]
+D the same, READ FIRST:         WHOLE `3-33` HOLDS ; SEARCHED `3-33` `3-3`@0 ; FIND-ALL `3-33 7-7 3-3` [`3-3`@0, `7-7`@5, `3-3`@9]
+D vs PCRE `(?:33|\k<y>)` over 364 texts (`37-`): written order 0 / 7 / 7 ; read first 0 / 7 / 7 (first ('S', '3-33')) ; `${$y | ($y . "x")}` vs `(?:\k<y>|\k<y>x)` 0 / 18 / 18 of 1,365
+D FAILED
+
+== PART K: the narrowed control per place (review r48 K): an `occurrences` argument (a hit is a pass)
+K `occurrences(/(?<y>\d)?-${$y};/, min = 2)` vs the `\k<y>` spelling 0 / 0 / 0 of 21845 (first None) ; the same literal at top level 0 / 0 / 0 of 5461
+K `occurrences(/(?:(?<y>\d);)*=${$y}/, min = 2)` (no optional, one written depth) vs `\k<y>` 0 / 0 / 0 of 1093 (first None)
+K label: WHOLE `3-3;-3;` HOLDS ; SEARCHED `3-3;-3;` `3-3;-3;`@0 ; FIND-ALL `3-3;-3; 7-7;` [`3-3;-3; 7-7;`@0]
+K `\k`:   WHOLE `3-3;-3;` HOLDS ; SEARCHED `3-3;-3;` `3-3;-3;`@0 ; FIND-ALL `3-3;-3; 7-7;` [`3-3;-3; 7-7;`@0]
+K the model "label where set, else the capture" vs `\k<y>` in the argument 0 / 0 / 0 ; FAILED
+
+== PART J: hole-flags (review r48 J): one string known at compile time vs at run time, same position
+J own flags  `/(?i)(?<y>a)-${q}/`, q := /a/: WHOLE `a-A` FAILS ; SEARCHED `x a-A` FAILS ; FIND-ALL `a-A a-a A-a` [`a-a`@4, `A-a`@8]
+J options at the hole `/(?i)(?<y>a)-${$y}/`:   WHOLE `a-A` FAILS ; SEARCHED `x a-A` FAILS ; FIND-ALL `a-A a-a A-a` [`a-a`@4]
+J python `re` agrees (own flags FAILS, reference HOLDS on `a-A`): True ; the hole model vs `\k<y>` 2 / 110 / 110 of 1,365 (`aA-x`) ; FAILED
+
+== PART H: the one number domain (review r48 H)
+H `/(?<y>\d{4})-${$y + 1}/` under the one domain: WHOLE `0099-100` HOLDS ; SEARCHED `0099-100 2025-2026` `0099-100`@0 ; FIND-ALL `0099-100 2025-2026 0100-101` [`0099-100`@0, `2025-2026`@9, `0100-101`@19]
+H the candidate PARSED (any digit string read as an integer, rev 27's `+`): WHOLE `0099-100` HOLDS ; SEARCHED `0099-100 2025-2026` `0099-100`@0 ; FIND-ALL `0099-100 2025-2026 0100-101` [`0099-100`@0, `2025-2026`@9, `0100-101`@19]
+H one domain vs PARSED on 30 texts (five years x six tails): 0 / 0 / 0
+H a non-numeral read `/(?<y>\w+)-${$y + 1}/`: WHOLE `ab-ab1` FAILS ; SEARCHED `ab-ab1 9-10` `9-10`@7 ; FIND-ALL `ab-ab1 9-10 b-c` [`9-10`@7]
+H `0099`: `y: <100` False ; `$y + 1` 100 ; `+` and `<` agree on the domain for 7 strings: False ; FAILED
+
+== PART A: construction-line (a): the finite-lifting fact (review r48 A; the RULED array-lift answers)
+A AL2 `rx.repeat(rx.digit, n + 1)`, n := [2, 4] = `(?|\d{3}|\d{5})`: WHOLE `123` HOLDS ; SEARCHED `123456` `123`@0 ; FIND-ALL `12345 678` [`123`@0, `678`@6]
+A AL1 `[2, 4] + 1` = [3, 5] ; `[2, 4] + [1, 10]` = [3, 12, 5, 14]
+A `\d + 1` lifted in the values' order `(?:1|...|10)`: WHOLE `10` HOLDS ; SEARCHED `x10` `1`@1 ; FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6]
+A WHOLE over 1111 digit texts (length <= 3) vs "a canonical numeral 1..10": 0 differ ; OK
+
+== PART CL: construction-line (b): a READ of a FINITE label in a COUNT hole (meaning if built)
+CL run-time count read: WHOLE `2-12` HOLDS ; SEARCHED `x3-12 3-123` `3-123`@6 ; FIND-ALL `2-12 3-12 3-123` [`2-12`@0, `3-123`@10]
+CL compile-time copies: WHOLE `2-12` HOLDS ; SEARCHED `x3-12 3-123` `3-123`@6 ; FIND-ALL `2-12 3-12 3-123` [`2-12`@0, `3-123`@10]
+CL the two over 5461 texts (`123-`, length <= 6): 0 / 0 / 0 (first None) ; OK
+
+== PART I: under-construction-class (review r48 I): an image whose meaning is defined, the build not there
+I the meaning of `${\d+ + 1}` (HAND-WORKED spelling `[1-9]\d*`, its answers RUN): WHOLE `10` HOLDS ; SEARCHED `x07 12` `7`@2 ; FIND-ALL `0 10 007` [`10`@2, `7`@7]
+I today, under either error class ("under construction" or "requires module"): a compile error, in every mode
+
+== PART TT: the TYPE TABLE of rev 27.1 as RULE-AS-CODE (every stated cell; unstated -> NOT-MODELLED)
+TT +          const BUILT ; read BUILT ; readfin BUILT ; array UNDER CONSTRUCTION ; finite UNDER CONSTRUCTION ; rx UNDER CONSTRUCTION ; matchonly ERROR
+TT count-hole const BUILT ; read UNDER CONSTRUCTION ; readfin UNDER CONSTRUCTION ; array BUILT ; finite BUILT ; rx NOT-MODELLED ; matchonly NOT-MODELLED
+TT name-hole  const BUILT ; read ERROR ; readfin ERROR ; array NOT-MODELLED ; finite NOT-MODELLED ; rx NOT-MODELLED ; matchonly NOT-MODELLED
+TT .          const OPEN ; read OPEN ; readfin OPEN ; array NOT-MODELLED ; finite NOT-MODELLED ; rx NOT-MODELLED ; matchonly ERROR
+TT compare    const BUILT ; read BUILT ; readfin BUILT ; array NOT-MODELLED ; finite NOT-MODELLED ; rx NOT-MODELLED ; matchonly NOT-MODELLED
+TT composition `\d{${n + 1}}`, n := [2, 4]: T8 on an array UNDER CONSTRUCTION, T13 on its finite result BUILT -> UNDER CONSTRUCTION
+TT 161 cells (23 operations x 7 kinds), 15 NOT-MODELLED (no cell stated) ; FAILED
+
+== CHECKS: 8 of 16 OK

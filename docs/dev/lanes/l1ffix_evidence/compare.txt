@@ -1,0 +1,419 @@
+population: 7613 rows, 5932 distinct texts; model read 682 positive-lookaround texts (105 abstained)
+OBSERVED movers (any encoding): 422 (corpus 418, bench 4); byte: 413 (corpus 409, bench 4); utf8 only: 9 (corpus 9, bench 0)
+MODEL movers: 93 (corpus 93, bench 0)
+both, agreeing (facts and values): 89
+route facts (byte): PIN-LOST 0, PIN-GAIN 48, PIN-MOVED 0, LANDMARK-LOST 0, LANDMARK-LOOSER 0, LANDMARK-GAIN 26, LANDMARK-TIGHTER 4
+observed facts moved, byte, by fact: dead 318, req_whole_run 39, req_set 46, req_set_maxoff 46, req_byte 37
+  MODEL-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt a(?=[a-z]{2}z)bcy model=dead
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt ((?*(a))z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt ((?*[ab])z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt ((?*a(?!b))z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt ((?*a)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt ((?*abc)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt ((?*ab|cd)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt ((?*a|bc)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/possessify/possessify.rxt ((?=a))x++\\1x observed=dead byte-facts=req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/possessify/possessify.rxt ((?=a))x+\\1x observed=dead byte-facts=req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/base/groups.rxt ((ab)+c)+ observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/lookaround/alpha_spellings.rxt (*napla:a)b observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/alpha_spellings.rxt (*non_atomic_positive_lookahead:a)b observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/alpha_spellings.rxt (*pla:a)b observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/alpha_spellings.rxt (*positive_lookahead:a)b observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?*(a))z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?*[ab])z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?*a(?!b))z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/ucp/ctxnode.rxt (?*a)b observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?*a)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?*abc)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?*ab|cd)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?*a|bc)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/nonatomic_ahead.rxt (?*x)a observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?:(?=ln)[a-z]{2}){2} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/atomic_groups/d27/atomic_in_quantifiers.rxt (?:(?>aa|a))+ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/assertions/kreset.rxt (?:a\\K){2,}b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?:aa|a)++ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?:aa|a){1,3}+ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?:aa|a){8,12}+ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/assertions/kreset.rxt (?:ab)+\\Kc observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/spanarms.rxt (?:ab){1,2}cd(?:ef){1,2} observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/mrl/05_multibyte_body.rxt (?:ab){3,6}c observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/litrun.rxt (?:abc)+d observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/spanarms.rxt (?:abc){20} observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?:a|aa)++ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?:x|y)(?=cb)[a-c]{2}z observed=req_set,req_set_maxoff,req_whole_run byte-facts=req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z][a-z]l)[a-z]{4} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z]{2}l)[a-z]{4} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=fgh)\\w{3} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=go)(?=[a-z]o)(?=[a-z]{2}l)[a-z]{3}f observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[\\x01-\\x80]{3} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[a-z]{3} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=r(?=ne))[a-z]{3} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=uv)[0-9a-z]{4} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=wo)[\\w]{2}[!?] observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w+ observed=req_byte,req_set,req_set_maxoff byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?>(?*(a))z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?>(?*[ab])z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?>(?*a(?!b))z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?>(?*a)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?>(?*abc)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?>(?*ab|cd)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt (?>(?*a|bc)z) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+)ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt (?>a(?:aa|a)+)ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/atomic_quant.rxt (?>ab)+c observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=ab)ac observed=dead byte-facts=req_whole_run (abstained: (?x) or (?i))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)[a-z]{3} observed=req_whole_run byte-facts=req_landmark_maxoff,req_whole_run (abstained: (?x) or (?i))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)\\w\\w\\w observed=req_whole_run byte-facts=req_landmark_maxoff,req_whole_run (abstained: (?x) or (?i))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=k)(?-i)[a-jl-z]z observed=dead byte-facts=req_whole_run (abstained: (?x) or (?i))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)[a-z]{3}(?-i)(?<=dov) observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (abstained: (?x) or (?i))
+  OBSERVED-ONLY corpus:tests/base/vm_lazy_rmin_prefix.rxt (a)(?:ab){2,}?ac observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_large_counts.rxt (ab){300} observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/mrl/09_captures.rxt (a{2,3})(b{2,3}) observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/possessify/possessify.rxt (a{3,}c) observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcde observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [0-9a-z]{4}(?<=gh) observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt [\\p{Age=2.1}\\p{Age=6.1}] observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt [\\p{Age=6.0}\\p{Age=6.1}] observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt [\\p{Block=Cyrillic}\\p{Block=Hebrew}] observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt [\\p{bc=R}\\p{bc=AL}] observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt [^\\p{Age=1.1}] observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt [a-]{1,3}(?<=a|bc)\\b observed=req_byte,req_set,req_set_maxoff byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/landwalk/landwalk.rxt [a-z]+(?<=a)@x observed=req_set,req_set_maxoff,req_whole_run byte-facts=req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?<=ws)(?=tk)[a-z]{2} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?=wvz)[a-z]{2} observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{3}(?<=kev) observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/litscan/presence_deny.rxt [ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}). observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\P{Age=1.1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/emoji.rxt \\P{^Emoji_Modifier_Base} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/misc.rxt \\P{^Prepended_Concatenation_Mark} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/cjk.rxt \\P{^Radical} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt \\b(?=a)\\w+\\b observed=req_byte,req_set,req_set_maxoff byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{AGE=6.1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Age:V10_0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=10.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=11.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=12.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=13.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=14.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=15.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=16.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=2.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=2.1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=3.1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=5.1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=6.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=6.1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=6.2} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=8.0} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Age=NA} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=Unassigned} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{Age=V6_1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{BC=AL} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{BIDI_CLASS=AL} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{BLK=Greek} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bc:al} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:AL} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:AN} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:FSI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:LRE} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:LRI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:LRO} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:NSM} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:PDF} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:PDI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:RLE} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:RLI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:RLO} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{Bidi_Class:R} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{Bidi_Control} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{Bidi_C} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block:Cyrillic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Arabic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Box_Drawing} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=CJK_Unified_Ideographs_Extension_A} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=CJK_Unified_Ideographs} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Currency_Symbols} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Cyrillic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Block=Cyrillic}+ observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Dingbats} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Emoticons} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=GREEK_AND_COPTIC} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=General_Punctuation} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Greek And Coptic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Greek-And-Coptic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Block=Greek_And_Coptic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Greek_and_Coptic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{Block=Greek} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Hangul_Syllables} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Hebrew} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Hiragana} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Katakana} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Mathematical_Alphanumeric_Symbols} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Miscellaneous_Symbols_and_Pictographs} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=No_Block} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Private_Use_Area} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Specials} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Supplemental_Symbols_and_Pictographs} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Supplementary_Private_Use_Area_A} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Supplementary_Private_Use_Area_B} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Tags} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=Variation_Selectors} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{Block=greekandcoptic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Cn} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Co} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Cs} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY bench:377 \\p{Cyrillic}+ observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/byte.rxt \\p{Deprecated} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{Dep} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{EBase} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/spelling.rxt \\p{EMOJI_PRESENTATION} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{EMod} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{EPres} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/spelling.rxt \\p{Emoji Presentation} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/spelling.rxt \\p{EmojiPresentation} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/emoji.rxt \\p{Emoji_Modifier_Base} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{Emoji_Modifier} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{Emoji_Presentation} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{Gr_Ext} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/unsure_names.rxt \\p{Gr_Link} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/byte.rxt \\p{Grapheme_Extend} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/unsure_names.rxt \\p{Grapheme_Link} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{IDSB} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{IDST} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/unsure_names.rxt \\p{IDSU} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/cjk.rxt \\p{IDS_Binary_Operator} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/cjk.rxt \\p{IDS_Trinary_Operator} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/unsure_names.rxt \\p{IDS_Unary_Operator} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{ID_Compat_Math_Start} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{Ideographic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{Ideo} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/byte.rxt \\p{Join_Control} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{Join_C} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{LOE} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Lm} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/byte.rxt \\p{Logical_Order_Exception} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Lt} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{MCM} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Mc} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Me} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Mn} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/unsure_names.rxt \\p{Modifier_Combining_Mark} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{M} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{NChar} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Nl} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/invisible.rxt \\p{Noncharacter_Code_Point} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/alias.rxt \\p{PCM} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/misc.rxt \\p{Prepended_Concatenation_Mark} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{Qaai} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{RI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/cjk.rxt \\p{Radical} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/byte.rxt \\p{Regional_Indicator} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{Script:Greek} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{Thaana} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{UIdeo} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/byte.rxt \\p{Unified_Ideograph} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{Unknown} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{VS} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/byte.rxt \\p{Variation_Selector} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Zl} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis04_p_categories.rxt \\p{Zp} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{Zzzz} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/age.rxt \\p{age:6.1} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{age=Unassigned} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{bc:AL} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{bc=AL} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{bc=AN} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{bc=FSI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=LRE} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=LRI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=LRO} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{bc=NSM} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=PDF} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=PDI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=RLE} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=RLI} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bc=RLO} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_more.rxt \\p{bc=R} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bidi_class:aL} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/bidiclass.rxt \\p{bidiclass=AL} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{blk:Greek_and-Coptic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Arabic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Box_Drawing} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=CJK_Ext_A} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=CJK} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=Currency_Symbols} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Cyrillic} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Dingbats} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=Emoticons} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=Greek} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Hangul} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Hebrew} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Hiragana} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Katakana} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Math_Alphanum} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Misc_Pictographs} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/uprop_blk_age.rxt \\p{blk=NB} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=PUA} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Punctuation} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Specials} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Sup_PUA_A} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Sup_PUA_B} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Sup_Symbols_And_Pictographs} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=Tags} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{blk=VS} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/block.rxt \\p{block=greek} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/spelling.rxt \\p{emoji-presentation} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/uprops/d27/spelling.rxt \\p{emoji_presentation} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Greek} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Grek} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Thaana} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{sc=Unknown} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/utf8/axis12_scripts.rxt \\p{scx=Unknown} observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt \\s+(?<=a)b observed=dead byte-facts=req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt \\w+(?<=a) observed=req_byte,req_set,req_set_maxoff byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt \\w+(?<=a)b? observed=req_byte,req_set,req_set_maxoff byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt \\w+?(?<=a) observed=req_byte,req_set,req_set_maxoff byte-facts=req_byte,req_landmark_maxoff,req_set,req_set_maxoff (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt \\w{1,3}(?<=a)b observed=req_set,req_set_maxoff,req_whole_run byte-facts=req_landmark_maxoff,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/uprops/d27/context.rxt ^\\p{Emoji_Presentation}{2}$ observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt a++ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY bench:273 a+ab observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY bench:166 abcdefghijklmnopqrstuvwxyzABCDE observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY bench:168 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/possessive.rxt a{2,3}+b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,4}+b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_forms.rxt a{2,4}?b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/assertions/kreset.rxt a{2,4}\\Kb observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/presence_deny.rxt a{2,4}\\Kb.c observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_forms.rxt a{2,4}b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt a{2,}(?<!\\B)- observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,}+b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/possessify/composition_d27.rxt a{2,}?(?:\\b|)b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_forms.rxt a{2,}?b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_forms.rxt a{2,}b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_large_counts.rxt a{200,500} observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_large_counts.rxt a{200,500}? observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/mrl/07_partial_and_startpos.rxt a{3,5}b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/mrl/08_nomatch.rxt a{3,6}b observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/possessify/possessify.rxt a{3,}c observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/mrl/08_nomatch.rxt a{5,10}b{5,10}$ observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/long_subjects.rxt a{50,60} observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/base/d27_large_counts.rxt a{500} observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt bu[a-z]{2}(?<=ck) observed=req_byte,req_set,req_set_maxoff,req_whole_run byte-facts=req_byte,req_set,req_set_maxoff,req_whole_run (the model predicts no move)
+  OBSERVED-ONLY corpus:tests/litscan/spanarms.rxt x[^\\x00-\\xff]y observed=dead byte-facts=req_whole_run (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/spanarms.rxt xy(?:ab){1,2}zw observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/litscan/spanarms.rxt xy(?:ab){1,3}zw observed= byte-facts=run_pin (outside the model's scope (no positive lookaround))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?*(a))z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?*[ab])z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?*a(?!b))z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?*a)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?*abc)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?*ab|cd)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?*a|bc)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?<*(a))z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?<*[ab])z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?<*a(?!b))z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?<*a)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?<*abc)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?<*ab|cd)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt y(?<*a|bc)z observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt z(?<*(a)) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt z(?<*[ab]) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt z(?<*a(?!b)) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt z(?<*a) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt z(?<*abc) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt z(?<*ab|cd) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  OBSERVED-ONLY corpus:tests/lookaround/d27/matrix.rxt z(?<*a|bc) observed=dead byte-facts=req_whole_run (a positive lookaround in another spelling (the model reads (?= and (?<= only))
+  DIFFER corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w\\w observed=dead,req_byte,req_set,req_set_maxoff,req_whole_run model=dead,req_byte,req_set,req_set_maxoff,req_whole_run req_whole_run observed [787a] model [7879]; req_set observed [120,122] model [120,121]; req_byte observed [122] model [120]; req_set_maxoff observed [120:0,122:1] model [120:0,121:1]
+  DIFFER corpus:tests/litscan/spanarms.rxt [ac][ac](?<=ac(?=cc))cc observed=req_set,req_set_maxoff,req_whole_run model=req_set,req_set_maxoff,req_whole_run req_set_maxoff observed [97:0,99:2] model [97:0,99:1]
+  DIFFER corpus:tests/litscan/spanarms.rxt ab[xy][xy](?=(?<=xx)y)[xy] observed=req_byte,req_set,req_set_maxoff,req_whole_run model=req_byte,req_set,req_set_maxoff,req_whole_run req_set_maxoff observed [97:0,98:1,120:3,121:4] model [97:0,98:1,120:2,121:4]
+  PIN-GAIN corpus:tests/base/groups.rxt ((ab)+c)+ run_pin base [none] subject [0:0+2]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?:(?=ln)[a-z]{2}){2} req_landmark_maxoff base [none] subject [0]
+  PIN-GAIN corpus:tests/atomic_groups/d27/atomic_in_quantifiers.rxt (?:(?>aa|a))+ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/assertions/kreset.rxt (?:a\\K){2,}b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?:aa|a)++ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?:aa|a){1,3}+ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?:aa|a){8,12}+ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/assertions/kreset.rxt (?:ab)+\\Kc run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/litscan/spanarms.rxt (?:ab){1,2}cd(?:ef){1,2} run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/mrl/05_multibyte_body.rxt (?:ab){3,6}c run_pin base [none] subject [0:0+6]
+  PIN-GAIN corpus:tests/litscan/litrun.rxt (?:abc)+d run_pin base [none] subject [0:0+3]
+  PIN-GAIN corpus:tests/litscan/spanarms.rxt (?:abc){20} run_pin base [none] subject [0:0+24]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?:a|aa)++ab run_pin base [none] subject [0:0+2]
+  LANDMARK-TIGHTER corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=\\x{e9})[\\x{e0}-\\x{ff}]e req_landmark_maxoff base [1] subject [0]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt (?=a(b)?)\\w\\1? req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z][a-z]l)[a-z]{4} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=a[a-z]{2}l)[a-z]{4} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=fgh)\\w{3} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[\\x01-\\x80]{3} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=kev)[a-z]{3} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=r(?=ne))[a-z]{3} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=uv)[0-9a-z]{4} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=wo)[\\w]{2}[!?] req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w+ req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?=xy)(?=xz)\\w\\w req_landmark_maxoff base [none] subject [0]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+)ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)ab run_pin base [none] subject [0:0+3]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?>(?:aa|a)+a)b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt (?>a(?:aa|a)+)ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/atomic_quant.rxt (?>ab)+c run_pin base [none] subject [0:0+2]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)[a-z]{3} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)(?=dov)\\w\\w\\w req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt (?i)[a-z]{3}(?-i)(?<=dov) req_landmark_maxoff base [none] subject [0]
+  PIN-GAIN corpus:tests/base/vm_lazy_rmin_prefix.rxt (a)(?:ab){2,}?ac run_pin base [none] subject [1:0+5]
+  PIN-GAIN corpus:tests/base/d27_large_counts.rxt (ab){300} run_pin base [none] subject [0:0+24]
+  PIN-GAIN corpus:tests/mrl/09_captures.rxt (a{2,3})(b{2,3}) run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/possessify/possessify.rxt (a{3,}c) run_pin base [none] subject [0:0+3]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt A*(?=a)\\w req_landmark_maxoff base [none] subject [unbounded]
+  PIN-GAIN corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcde run_pin base [none] subject [0:0+24]
+  PIN-GAIN corpus:tests/litscan/litrun.rxt ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef run_pin base [none] subject [0:0+24]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [0-9a-z]{4}(?<=gh) req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt [a-]{1,3}(?<=a|bc)\\b req_landmark_maxoff base [none] subject [2]
+  LANDMARK-TIGHTER corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z][a-z](?<=hz)! req_landmark_maxoff base [2] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?<=ws)(?=tk)[a-z]{2} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{2}(?=wvz)[a-z]{2} req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt [a-z]{3}(?<=kev) req_landmark_maxoff base [none] subject [0]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt \\b(?=a)\\w+\\b req_landmark_maxoff base [none] subject [0]
+  LANDMARK-TIGHTER corpus:tests/lookaround/d27_l1/l1d27_witnesses.rxt \\w(?<=q)u req_landmark_maxoff base [1] subject [0]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt \\w*(?=a)\\w req_landmark_maxoff base [none] subject [unbounded]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt \\w+(?<=a) req_landmark_maxoff base [none] subject [unbounded]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt \\w+(?<=a)b? req_landmark_maxoff base [none] subject [unbounded]
+  LANDMARK-GAIN corpus:tests/possessify/composition_d27.rxt \\w+?(?<=a) req_landmark_maxoff base [none] subject [unbounded]
+  LANDMARK-TIGHTER corpus:tests/possessify/composition_d27.rxt \\w{1,3}(?<=a)b req_landmark_maxoff base [3] subject [2]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt a++ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN bench:273 a+ab run_pin base [none] subject [0:0+2]
+  PIN-GAIN bench:166 abcdefghijklmnopqrstuvwxyzABCDE run_pin base [none] subject [0:0+24]
+  PIN-GAIN bench:168 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN run_pin base [none] subject [4:0+20]
+  PIN-GAIN corpus:tests/atomic_groups/possessive.rxt a{2,3}+b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,4}+b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/base/d27_forms.rxt a{2,4}?b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/assertions/kreset.rxt a{2,4}\\Kb run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/litscan/presence_deny.rxt a{2,4}\\Kb.c run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/base/d27_forms.rxt a{2,4}b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/possessify/composition_d27.rxt a{2,}(?<!\\B)- run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/atomic_groups/d27/possessive_spellings.rxt a{2,}+b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/possessify/composition_d27.rxt a{2,}?(?:\\b|)b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/base/d27_forms.rxt a{2,}?b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/base/d27_forms.rxt a{2,}b run_pin base [none] subject [0:0+2]
+  PIN-GAIN corpus:tests/base/d27_large_counts.rxt a{200,500} run_pin base [none] subject [0:0+24]
+  PIN-GAIN corpus:tests/base/d27_large_counts.rxt a{200,500}? run_pin base [none] subject [0:0+24]
+  PIN-GAIN corpus:tests/mrl/07_partial_and_startpos.rxt a{3,5}b run_pin base [none] subject [0:0+3]
+  PIN-GAIN corpus:tests/mrl/08_nomatch.rxt a{3,6}b run_pin base [none] subject [0:0+3]
+  PIN-GAIN corpus:tests/possessify/possessify.rxt a{3,}c run_pin base [none] subject [0:0+3]
+  PIN-GAIN corpus:tests/mrl/08_nomatch.rxt a{5,10}b{5,10}$ run_pin base [none] subject [0:0+5]
+  PIN-GAIN corpus:tests/base/long_subjects.rxt a{50,60} run_pin base [none] subject [0:0+24]
+  PIN-GAIN corpus:tests/base/d27_large_counts.rxt a{500} run_pin base [none] subject [0:0+24]
+  PIN-GAIN corpus:tests/litscan/spanarms.rxt xy(?:ab){1,2}zw run_pin base [none] subject [2:0+2]
+  PIN-GAIN corpus:tests/litscan/spanarms.rxt xy(?:ab){1,3}zw run_pin base [none] subject [2:0+2]
+  UTF8-ONLY corpus:tests/base/vm_lazy_rmin_prefix.rxt (b)(a){200,}?b utf8-facts=run_pin
+  UTF8-ONLY corpus:tests/possessify/composition_d27.rxt [a-c]{0,}?(?=a)\\W utf8-facts=req_whole_run
+  UTF8-ONLY corpus:tests/possessify/composition_d27.rxt \\w{1,3}(?=a)\\W utf8-facts=req_whole_run
+  UTF8-ONLY corpus:tests/litscan/spanarms.rxt ab(?<=b)[bc]d\\w*e utf8-facts=run_pin
+  UTF8-ONLY corpus:tests/possessify/composition_d27.rxt a{1,3}?(?=\\w)\\W utf8-facts=req_whole_run
+  UTF8-ONLY corpus:tests/litscan/spanarms.rxt x(?:a[bc]){2}y utf8-facts=run_pin
+  UTF8-ONLY corpus:tests/utf8/wclass_illformed.rxt x([\\x{e0}-\\x{ff}])y utf8-facts=run_pin
+  UTF8-ONLY corpus:tests/utf8/wclass_illformed.rxt x[\\x{e0}-\\x{ff}]y utf8-facts=run_pin
+  UTF8-ONLY corpus:tests/litscan/spanarms.rxt xy[ac]b(?:(?<=ab)b|c) utf8-facts=run_pin
+== compare COMPLETE: 325 disagreements, 43 s

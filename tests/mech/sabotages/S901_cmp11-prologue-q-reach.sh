@@ -12,6 +12,8 @@ SAB_REACH='"$PCREC" --features all -p rx -e utf8 -futf-check -o - --pattern '\''
 SAB_REACH_EXPECT='#define RX_COMPOUND "split"'
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
-                    cx->lb_max);'
+                    pcrec_lb_max(cx));'
 SAB_AFTER='    pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
-                    cx->job->comp_shell ? 1 : cx->lb_max);   /* SABOTAGE S901 */'
+                    cx->job->comp_shell ? 1 : pcrec_lb_max(cx));   /* SABOTAGE S901 */'
+# RE-ANCHORED 2026-11-20 (lane l3build, span_arms L3 RM-5): the stamp reads LB through its accessor
+# `pcrec_lb_max` (internal.h); the plant and its UNREACHED declaration are unchanged.

@@ -1,0 +1,315 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(SP) spelling test: `(n: <5)` on a subject where n has no value; rows grouped by EQUAL patterns
+     same language as (?<n>\d)?x                    : (?:(?<n>\d)|)x                   YES (all strings over 1xy up to length 5)
+     same language as (?<n>\d)?x                    : (?<n>\d){0,1}x                   YES (all strings over 1xy up to length 5)
+     same language as (?<n>\d)?x                    : (?<n>\d)??x                      YES (all strings over 1xy up to length 5)
+     same language as (?<n>\d)*x                    : (?:(?<n>\d)+)?x                  YES (all strings over 1xy up to length 5)
+     same language as (?<n>\d)*x                    : (?:(?<n>\d)+|)x                  YES (all strings over 1xy up to length 5)
+     same language as (?<n>\d)*x                    : (?:(?<n>\d)*)?x                  YES (all strings over 1xy up to length 5)
+     same language as (?<n>\d)*x                    : (?:(?<n>\d)*)??x                 YES (all strings over 1xy up to length 5)
+     same language as (?<n>\d){0,2}x                : (?:(?<n>\d){1,2})?x              YES (all strings over 1xy up to length 5)
+     same language as (?:a(?<n>\d)?,)*              : (?:a(?:(?<n>\d)|),)*             YES (all strings over a1, up to length 5)
+     same language as (?:a(?<n>\d)*,)*              : (?:a(?:(?<n>\d)+)?,)*            YES (all strings over a1, up to length 5)
+     same language as (?:a(?<n>\d)*,)*              : (?:a(?:(?<n>\d)+|),)*            YES (all strings over a1, up to length 5)
+     same language as (?:a(?:-(?:(?<n>\d),)*)?;)*   : (?:a(?:-|-(?:(?<n>\d),)+)?;)*    YES (all strings over a-1,; up to length 6)
+     same language as (?:a(?:-(?:(?<n>\d),)*)?;)*   : (?:a(?:-(?:(?<n>\d),)*|);)*      YES (all strings over a-1,; up to length 6)
+(SP) spelling pairs that are NOT the same language: 0
+     spelling                         subject   kind T-pass   T-match  X1       H        H-d2     F      
+     (?<n>\d)?x                       'x'       O    FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:(?<n>\d)|)x                   'x'       A    FAILS    FAILS    FAILS    HOLDS    HOLDS    FAILS  
+     (?<n>\d){0,1}x                   'x'       O    FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?<n>\d)??x                      'x'       O    FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?<n>\d)*x                       'x'       Z    HOLDS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:(?<n>\d)+)?x                  'x'       EO   FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:(?<n>\d)+|)x                  'x'       EA   FAILS    FAILS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:(?<n>\d)*)?x                  'x'       Z    HOLDS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:(?<n>\d)*)??x                 'x'       EO   FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?<n>\d){0,2}x                   'x'       Z    HOLDS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:(?<n>\d){1,2})?x              'x'       EO   FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:(?<n>\d)|y)                   'y'       A    FAILS    FAILS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:a(?<n>\d)?,)*                 'a,'      O    FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:(?<n>\d)|),)*             'a,'      A    FAILS    FAILS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:a(?<n>\d)?,)*                 'a3,a,'   O    FAILS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:(?<n>\d)|),)*             'a3,a,'   A    FAILS    HOLDS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:a(?<n>\d)*,)*                 'a,'      Z    HOLDS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:(?<n>\d)+)?,)*            'a,'      EO   FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:(?<n>\d)+|),)*            'a,'      EA   FAILS    FAILS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:a(?<n>\d)*,)*                 'a3,a,'   Z    HOLDS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:(?<n>\d)+)?,)*            'a3,a,'   EO   FAILS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:(?<n>\d)+|),)*            'a3,a,'   EA   FAILS    HOLDS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:a(?:-(?:(?<n>\d),)*)?;)*      'a-;'     Z    HOLDS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:-|-(?:(?<n>\d),)+)?;)*    'a-;'     EA   FAILS    FAILS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:a(?:-(?:(?<n>\d),)*)?;)*      'a;'      EO   FAILS    FAILS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:-(?:(?<n>\d),)*|);)*      'a;'      EA   FAILS    FAILS    FAILS    HOLDS    HOLDS    FAILS  
+     (?:a(?:-(?:(?<n>\d),)*)?;)*      'a-3,;a;' EO   FAILS    HOLDS    HOLDS    HOLDS    HOLDS    FAILS  
+     (?:a(?:-(?:(?<n>\d),)*|);)*      'a-3,;a;' EA   FAILS    HOLDS    FAILS    HOLDS    HOLDS    FAILS  
+(SP) per option: number of equal-spelling groups (same pattern, same subject) whose rows DISAGREE:
+     T-pass  5 of 11 groups: b n2 n2' n3 s
+     T-match 4 of 11 groups: b n2 n3 s
+     X1      9 of 11 groups: n1 n1' n2 n2' n3 n3' n3o q s
+     H       0 of 11 groups: -
+     H-d2    0 of 11 groups: -
+     F       0 of 11 groups: -
+
+(MV) what moves, per population (moved = differs from T-pass; 'vs T-match' where the ruled text is undecided)
+(MV) (U) ((h, m, s): padded(>= (9, 0, 30)))           7 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     3 vs T-pass (e.g. '9:00', '9:01'          )     3 vs T-match
+       H       moves     3 vs T-pass (e.g. '9:00', '9:01'          )     3 vs T-match
+       H-d2    moves     3 vs T-pass (e.g. '9:00', '9:01'          )     3 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+(MV) (S) ((h, m): padded(> (9, 30))), m optional      6 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     2 vs T-pass (e.g. '9', '10'               )     2 vs T-match
+       H       moves     2 vs T-pass (e.g. '9', '10'               )     2 vs T-match
+       H-d2    moves     2 vs T-pass (e.g. '9', '10'               )     2 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+
+(TM) the time example: t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/ & ((h, m): >= (9, 30)), with and without m = 0
+     no default   9: T-pass=F/T-match=F/X1=H/H=H/H-d2=H/F=F  10: T-pass=F/T-match=F/X1=H/H=H/H-d2=H/F=F  9:15: T-pass=F/T-match=F/X1=F/H=F/H-d2=F/F=F  9:45: T-pass=H/T-match=H/X1=H/H=H/H-d2=H/F=H
+     m = 0        9: T-pass=F/T-match=F/X1=F/H=F/H-d2=F/F=F  10: T-pass=H/T-match=H/X1=H/H=H/H-d2=H/F=H  9:15: T-pass=F/T-match=F/X1=F/H=F/H-d2=F/F=F  9:45: T-pass=H/T-match=H/X1=H/H=H/H-d2=H/F=H
+     engine-run T-pass  no default over 11110 subjects: minutes-absent subjects accepted 0
+     engine-run F       no default over 11110 subjects: minutes-absent subjects accepted 0
+     engine-run H       no default over 11110 subjects: minutes-absent subjects accepted 91
+     engine-run T-pass  m = 0      over 11110 subjects: minutes-absent subjects accepted 90
+     engine-run F       m = 0      over 11110 subjects: minutes-absent subjects accepted 90
+     engine-run H       m = 0      over 11110 subjects: minutes-absent subjects accepted 90
+
+(MV) (D1) t2 & (m: <30)                           11110 subjects [ADDED by this lane]
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves   110 vs T-pass (e.g. '0', '1'                )   110 vs T-match
+       H       moves   110 vs T-pass (e.g. '0', '1'                )   110 vs T-match
+       H-d2    moves   110 vs T-pass (e.g. '0', '1'                )   110 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+(MV) (D1) t2 & (m = 0: <30)                       11110 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+(MV) (D1) t2 & (m = 45: <30)                      11110 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+(MV) (D1) t2 & (m = 00: <30)                      11110 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+(DU) default.unused: is `(m = v: <30)` answer-identical to `(m: <30)` (no default) under each base?
+     m = 0   T-pass=used  T-match=used  X1=UNUSED  H=UNUSED  H-d2=UNUSED  F=used
+     m = 45  T-pass=UNUSED  T-match=UNUSED  X1=used  H=used  H-d2=used  F=UNUSED
+     m = 00  T-pass=UNUSED  T-match=UNUSED  X1=used  H=used  H-d2=used  F=UNUSED
+(MV) (DA) o'clock & ((h, m): padded(between((9,30),(11,0)))) 11110 subjects [ADDED by this lane]
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     4 vs T-pass (e.g. "9 o'clock", "09 o'clock")     4 vs T-match
+       H-d2    moves     4 vs T-pass (e.g. "9 o'clock", "09 o'clock")     4 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+(MV) (DA) o'clock & ((h, m = 0): padded(between((9,30),(11,0)))) 11110 subjects [ADDED by this lane]
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+
+(MV) (L56/L65) the draft's witnesses, (n: <5)         5 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     2 vs T-pass (e.g. '(?<n>\\d)?x', '(?:(?<n>\\d)+)?x')     2 vs T-match
+       H       moves     3 vs T-pass (e.g. '(?<n>\\d)?x', 'x|(?<n>\\d)+')     3 vs T-match
+       H-d2    moves     3 vs T-pass (e.g. '(?<n>\\d)?x', 'x|(?<n>\\d)+')     3 vs T-match
+       F       moves     2 vs T-pass (e.g. '(?<n>\\d)*x', '(?:(?<n>\\d),)*')     2 vs T-match
+       /x|(?<n>\d)+/ on 'x'  T-pass=FAILS T-match=FAILS X1=FAILS H=HOLDS H-d2=HOLDS F=FAILS
+       /(?:(?<n>\d),)*/ on ''   T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       /(?:(?<n>\d)+)?x/ on 'x'  T-pass=FAILS T-match=FAILS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       /(?<n>\d)?x/ on 'x'  T-pass=FAILS T-match=FAILS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       /(?<n>\d)*x/ on 'x'  T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+(MV) (RZ) (h: <5, k: 3..7), h looped               1110 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     5 vs T-pass (e.g. '3', '4'                )     5 vs T-match
+(MV) (ZD a) (h = 9: <5, k: 3..7)                   1110 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     5 vs T-pass (e.g. '3', '4'                )     5 vs T-match
+       H       moves     5 vs T-pass (e.g. '3', '4'                )     5 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     5 vs T-pass (e.g. '3', '4'                )     5 vs T-match
+(MV) (ZJ) five non-product sets on (RZ)'s pattern  5550 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves    22 vs T-pass (e.g. '((h, k): < (0, 3)) 0', '((h, k): < (0, 3)) 1')    22 vs T-match
+(MV) (ZN) (c: 3..7, h: 0..4, k: 2..6), nested      2526 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves    69 vs T-pass (e.g. '3', '5'                )    69 vs T-match
+(MV) (OP) (h: <10, m: <30), m optional in each item   259 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     8 vs T-match
+       T-match moves     8 vs T-pass (e.g. '3,3:15,', '3:15,3,'    )     0 vs T-match
+       X1      moves    11 vs T-pass (e.g. '3,', '3,3,'            )     3 vs T-match
+       H       moves    11 vs T-pass (e.g. '3,', '3,3,'            )     3 vs T-match
+       H-d2    moves    11 vs T-pass (e.g. '3,', '3,3,'            )     3 vs T-match
+       F       moves     1 vs T-pass (e.g. ''                      )     9 vs T-match
+       ''         T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '3,'       T-pass=FAILS T-match=FAILS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '3:15,'    T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=HOLDS
+       '3:15,3,'  T-pass=FAILS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '3:45,3,'  T-pass=FAILS T-match=FAILS X1=FAILS H=FAILS H-d2=FAILS F=FAILS
+(MV) (UP) (h: <5, k: <5), k's loop in an optional   241 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )    16 vs T-match
+       T-match moves    16 vs T-pass (e.g. '3-;3;', '3-;4;'        )     0 vs T-match
+       X1      moves    22 vs T-pass (e.g. '3;', '4;'              )     6 vs T-match
+       H       moves    22 vs T-pass (e.g. '3;', '4;'              )     6 vs T-match
+       H-d2    moves    22 vs T-pass (e.g. '3;', '4;'              )     6 vs T-match
+       F       moves    15 vs T-pass (e.g. '', '3-;'               )    31 vs T-match
+       ''         T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '3;'       T-pass=FAILS T-match=FAILS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '3-;'      T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '3-2,;9;'  T-pass=FAILS T-match=FAILS X1=FAILS H=FAILS H-d2=FAILS F=FAILS
+       '3-2,;4;'  T-pass=FAILS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '3-2,;3;'  T-pass=FAILS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+(MV) (DL) list & ((h, m = 0): padded(between((9,30),(11,0))))   585 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )    46 vs T-match
+       T-match moves    46 vs T-pass (e.g. '9,9:45,', '9:45,9,'    )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )    46 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )    46 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )    46 vs T-match
+       F       moves     1 vs T-pass (e.g. ''                      )    47 vs T-match
+       ''         T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '9,'       T-pass=FAILS T-match=FAILS X1=FAILS H=FAILS H-d2=FAILS F=FAILS
+       '10,'      T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=HOLDS
+       '10,9:45,' T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=HOLDS
+       '11,9:45,' T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=HOLDS
+       '9,10:30,' T-pass=FAILS T-match=HOLDS X1=FAILS H=FAILS H-d2=FAILS F=FAILS
+(MV) (DL) list & ((h, m): padded(between((9,30),(11,0))))   585 subjects [ADDED by this lane]
+       T-pass  moves     0 vs T-pass (e.g. -                       )   102 vs T-match
+       T-match moves   102 vs T-pass (e.g. '9,9:45,', '9:45,9,'    )     0 vs T-match
+       X1      moves   141 vs T-pass (e.g. '9,', '10,'             )    39 vs T-match
+       H       moves   141 vs T-pass (e.g. '9,', '10,'             )    39 vs T-match
+       H-d2    moves   141 vs T-pass (e.g. '9,', '10,'             )    39 vs T-match
+       F       moves     1 vs T-pass (e.g. ''                      )   103 vs T-match
+       ''         T-pass=HOLDS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '9,'       T-pass=FAILS T-match=FAILS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '10,'      T-pass=FAILS T-match=FAILS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '10,9:45,' T-pass=FAILS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '11,9:45,' T-pass=FAILS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+       '9,10:30,' T-pass=FAILS T-match=HOLDS X1=HOLDS H=HOLDS H-d2=HOLDS F=FAILS
+(MV) (ZD b) never reached, (h: <5, k: 3..7)        1120 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     5 vs T-pass (e.g. '3', '4'                )     5 vs T-match
+       H       moves     5 vs T-pass (e.g. '3', '4'                )     5 vs T-match
+       H-d2    moves     5 vs T-pass (e.g. '3', '4'                )     5 vs T-match
+       F       moves     5 vs T-pass (e.g. '3-', '4-'              )     5 vs T-match
+(MV) (ZD b) never reached, (h = 9: <5, k: 3..7)    1120 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     5 vs T-pass (e.g. '3-', '4-'              )     5 vs T-match
+       H       moves     5 vs T-pass (e.g. '3-', '4-'              )     5 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     5 vs T-pass (e.g. '3-', '4-'              )     5 vs T-match
+(MV) (ZD b) never reached, (h = 2: <5, k: 3..7)    1120 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       T-match moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+       F       moves     0 vs T-pass (e.g. -                       )     0 vs T-match
+(MV) (ZD c) ((h, m = 0): >= (5, 3)), looped          91 subjects 
+       T-pass  moves     0 vs T-pass (e.g. -                       )     6 vs T-match
+       T-match moves     6 vs T-pass (e.g. '5,5:3,', '5,6:0,'      )     0 vs T-match
+       X1      moves     0 vs T-pass (e.g. -                       )     6 vs T-match
+       H       moves     0 vs T-pass (e.g. -                       )     6 vs T-match
+       H-d2    moves     0 vs T-pass (e.g. -                       )     6 vs T-match
+       F       moves     1 vs T-pass (e.g. ''                      )     7 vs T-match
+
+(EQ) record vs `&` of its one-label conditions, each under the SAME option: subjects that differ
+     RZ  T-pass=0  T-match=0  X1=0  H=0  H-d2=0  F=0
+     ZN  T-pass=0  T-match=0  X1=0  H=0  H-d2=0  F=0
+     OP  T-pass=0  T-match=0  X1=0  H=0  H-d2=0  F=0
+     UP  T-pass=0  T-match=0  X1=0  H=0  H-d2=0  F=0
+     crossed: OP record T-pass vs & T-match: 8; UP record T-pass vs & T-match: 16; UP record T-match vs & T-pass: 16
+
+(MV) TOTAL moved answers per option over the RULED populations (the brief's list) (vs T-pass / vs T-match)
+     T-pass       0 /     76 of 48180
+     T-match     76 /      0 of 48180
+     X1          55 /     83 of 48180
+     H           56 /     84 of 48180
+     H-d2        46 /     74 of 48180
+     F          131 /    207 of 48180
+
+(MV) TOTAL moved answers per option over the populations ADDED by this lane (vs T-pass / vs T-match)
+     T-pass       0 /    102 of 33915
+     T-match    102 /      0 of 33915
+     X1         251 /    149 of 33915
+     H          255 /    153 of 33915
+     H-d2       255 /    153 of 33915
+     F            1 /    103 of 33915
+
+(AU) author forms on (OP) and (DL, no default): a default written to reproduce another option's answers
+     (OP) H with h, m = x vs T-pass with no default: differ 1 of 259  e.g. ['']
+     (OP) F with h, m = 0 vs H with no default: differ 1 of 259  e.g. ['']
+     (OP) F with h = 0, m = 0 vs H with no default: differ 0 of 259  e.g. []
+     (DL) H with h, m = x vs T-pass with no default: differ 1 of 585  e.g. ['']
+     (DL) F with h = 10, m = 0 vs H with no default: differ 71 of 585  e.g. ['9,', '9,9,', '10,9,']
+
+(ZE) zero-pass-empty under each option (a = 0: both sets empty); 11,100 subjects, a, k in 0..9, 0-2 passes
+     T-pass  C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     T-match C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     X1      C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     H       C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     H-d2    C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     F       C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     T (vacuous one-label rule, today's ruled `&`) on '0-3': HOLDS; C1 under T's projection vs it: 1 of 11100 differ
+
+(R2) optional mark on t2 & ((h, m): padded(between((9, 30), (11, 0)))) and on ((h, m): >= (9, 30)), DOM
+     R = between((9,30),(11,0)) padded
+       8     neither=F dflt0=F mark_label=F mark_filter_vacuous=H hand=F H=F
+       9     neither=F dflt0=F mark_label=H mark_filter_vacuous=H hand=F H=H
+       10    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       11    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=F H=H
+       9:15  neither=F dflt0=F mark_label=F mark_filter_vacuous=F hand=F H=F
+       9:45  neither=H dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       mark_label           vs H                    differ    0 of 11110  e.g. []
+       mark_label           vs hand                 differ    3 of 11110  e.g. ['9', '09', '11']
+       mark_label           vs mark_filter_vacuous  differ  106 of 11110  e.g. ['0', '1', '2', '3']
+       mark_label           vs dflt0                differ    2 of 11110  e.g. ['9', '09']
+       neither              vs hand                 differ    1 of 11110  e.g. ['10']
+     R = >= (9, 30)
+       8     neither=F dflt0=F mark_label=F mark_filter_vacuous=H hand=F H=F
+       9     neither=F dflt0=F mark_label=H mark_filter_vacuous=H hand=F H=H
+       10    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       11    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=F H=H
+       9:15  neither=F dflt0=F mark_label=F mark_filter_vacuous=F hand=F H=F
+       9:45  neither=H dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       mark_label           vs H                    differ    0 of 11110  e.g. []
+       mark_label           vs hand                 differ   90 of 11110  e.g. ['9', '11', '12', '13']
+       mark_label           vs mark_filter_vacuous  differ   19 of 11110  e.g. ['0', '1', '2', '3']
+       mark_label           vs dflt0                differ    1 of 11110  e.g. ['9']
+       neither              vs hand                 differ    1 of 11110  e.g. ['10']
+     (OP) (h: <10, m?: <30) vs (h: <10) & (m?: <30), base F: differ 0 of 259; the EVERY reading of m? vs SOME: differ 11 (e.g. '3,': SOME HOLDS, EVERY FAILS)
+
+CONTROL comparisons 53366 differ 0
+TOTAL engine cases 72196 differ 0 engine-disagreements 0

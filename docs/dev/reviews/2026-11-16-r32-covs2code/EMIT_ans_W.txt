@@ -1,0 +1,31 @@
+#0 [-] [0-9a-f]{33} :: subject o0___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=19053 --features all --window-search-width=4095
+#1 [-] [0-9a-f]{40} :: subject o1___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=20026 --features all --window-search-width=4095
+#2 [-] [0-9a-f]{64} :: subject o2___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=23362 --features all --window-search-width=4095
+#3 [-] [0-9a-f]{200} :: subject o3___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=42909 --features all --window-search-width=4095
+#4 [-] [0-9a-f]{1000} :: subject o4___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=157314 --features all --window-search-width=4095
+#5 [-] a{33} :: subject o5___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=11865 --features all --window-search-width=4095
+#6 [-] a{1000} :: subject o6___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=12849 --features all --window-search-width=4095
+#7 [-] abcdefghijklmnopqrstuvwxyz0123456789ABCDEF :: subject o7___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=31107 --features all --window-search-width=4095
+#8 [-] \b[0-9a-f]{40}\b :: subject o8___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=20322 --features all --window-search-width=4095
+#9 [-] (?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f]) :: subject o9___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=19273 --features all --window-search-width=4095
+#10 [-] x[0-9a-f]{40}y :: subject o10___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=19028 --features all --window-search-width=4095
+#11 [-] [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} :: subject o11___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=24391 --features all --window-search-width=4095
+#12 [-] (abc|def|ghi){11} :: subject o12___window_search_width_4095_ rc=0 route=unanchored same=86 diff=0 bytes=35874 --features all --window-search-width=4095
+#13 [-] (ab|cd){20} :: subject o13___window_search_width_4095_ rc=0 route=unanchored same=86 diff=0 bytes=31643 --features all --window-search-width=4095
+#14 [-] (?:[A-Z][a-z]){17} :: subject o14___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=14101 --features all --window-search-width=4095
+#15 [-] \w{33} :: subject o15___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=22464 --features all --window-search-width=4095
+#16 [-] \s\w{40}\s :: subject o16___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=23217 --features all --window-search-width=4095
+#17 [-] .{40} :: subject o17___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=16563 --features all --window-search-width=4095
+#18 [-] [^\n]{33} :: subject o18___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=16103 --features all --window-search-width=4095
+#19 [-] [0-9a-f]{20}[g-z]{20} :: subject o19___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=19200 --features all --window-search-width=4095
+#20 [-] (?i)[0-9a-f]{40} :: subject o20___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=22851 --features all --window-search-width=4095
+#21 [i] [0-9a-f]{40} :: subject o21___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=22842 -i --features all --window-search-width=4095
+#22 [i] \b[0-9a-f]{40}\b :: subject o22___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=23138 -i --features all --window-search-width=4095
+#23 [u] é{20} :: subject o23___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=15869 -e utf8 --features all --window-search-width=4095
+#24 [u] [α-ω]{17} :: subject o24___window_search_width_4095_ rc=0 route=unanchored same=86 diff=0 bytes=24521 -e utf8 --features all --window-search-width=4095
+#25 [u] [0-9a-f]{40} :: subject o25___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=22694 -e utf8 --features all --window-search-width=4095
+#26 [u] \w{33} :: subject o26___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=26208 -e utf8 --features all --window-search-width=4095
+#27 [-] [0-9a-f]{40}$ :: subject o27___window_search_width_4095_ rc=0 route=rev-end same=86 diff=0 bytes=17741 --features all --window-search-width=4095
+#28 [R] [0-9a-f]{40}$ :: subject o28___window_search_width_4095_ rc=0 route=unanchored same=86 diff=0 bytes=18717 -fno-rev-end --features all --window-search-width=4095
+#29 [-] [0-9a-f]{40}(?=\n) :: subject o29___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=18124 --features all --window-search-width=4095
+#30 [R] [0-9a-f]{40}\z :: subject o30___window_search_width_4095_ rc=0 route=cover same=86 diff=0 bytes=20651 -fno-rev-end --features all --window-search-width=4095

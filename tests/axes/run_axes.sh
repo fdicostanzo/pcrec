@@ -1114,6 +1114,19 @@ declare -A GIVEUP1_ALLOWANCE=(
     ["-fno-req-byte|tests/litscan/handoff_vm.rxt:502"]="[REQ-PAST-LAST] (tuning.md §2.41¶8c, §2.27): the unbounded-K witness (a|aa|b)+cxyz from startpos 1..14, past the only cxyz; with the necessary-byte pre-check removed no entry gate proves no match, so the attempts on the a-run exhaust budget steps=3000 and give up; the default's gate answers no match. One direction only."
     ["-fno-req-byte|tests/litscan/handoff_vm.rxt:503"]="[REQ-PAST-LAST] (tuning.md §2.41¶8c, §2.27): the unbounded-K witness (a|aa|b)+cxyz from startpos 1..14, past the only cxyz; with the necessary-byte pre-check removed no entry gate proves no match, so the attempts on the a-run exhaust budget steps=3000 and give up; the default's gate answers no match. One direction only."
     ["-fno-req-byte|tests/litscan/handoff_vm.rxt:504"]="[REQ-PAST-LAST] (tuning.md §2.41¶8c, §2.27): the unbounded-K witness (a|aa|b)+cxyz from startpos 1..14, past the only cxyz; with the necessary-byte pre-check removed no entry gate proves no match, so the attempts on the a-run exhaust budget steps=3000 and give up; the default's gate answers no match. One direction only."
+# [S2 D27] tests/litscan/d27/partd_required.rxt, the F4 "subject that gives
+# up without the run" witness (lane axtri1115, 2026-11-15): `(x?)([a-z]+)+
+# eeeeeeee~#~#~#~#.[0-7]{32}\1` on a subject holding no byte 0-7 — K65/K66's
+# backref family on the REQUIRED route. The file's own comment says this
+# subject gives up without the run (python3 `re` cannot judge it either); the
+# default build's necessary-run pre-check proves nomatch at once, and
+# -fno-req-run / -fno-req-byte remove it, leaving the VM's `([a-z]+)+`
+# catastrophic backtracking to exhaust the default steps budget. Live
+# (RXTFLAGS= each flag over tests/litscan/d27): keys_base=143 giveup1=1, this
+# one case, for BOTH flags. Keyed by TEXT (the second of the file's two
+# identical `pattern` lines governs it; the file's header comment grows).
+    ["-fno-req-run|tests/litscan/d27/partd_required.rxt@pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1 :: n \"eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa~#~#~#~#x88888888888888888888888888888888\""]="K65/K66 shape (tuning.md §2.28/§2.29, [S2 D27] partd_required.rxt:32): -fno-req-run removes the whole-run compare, the one linear no-match proof of this required-route subject — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/litscan/d27/partd_required.rxt@pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1 :: n \"eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa~#~#~#~#x88888888888888888888888888888888\""]="K65/K66 shape (tuning.md §2.28/§2.29, [S2 D27] partd_required.rxt:32): -fno-req-byte removes the necessary-run pre-check, the one linear no-match proof of this required-route subject — default proves nomatch, axis gives up (steps)"
     ["-fno-start-set|tests/startset/giveup.rxt:21"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:22"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:23"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
@@ -1274,6 +1287,15 @@ giveup1_named() {
 #   MEMFN_EVERY=K        reach over every K-th distinct corpus pattern
 #                        (floors not applied; witnesses and classes still are)
 # ============================================================================
+# The SIMD layer's target (U3): of the one family --list-cpu-targets gives
+# more than one target, the target with the most features; read by the
+# `--memfn=` arm below and the internal arm `--harness=mfind` x SIMD.
+memfn_top_target() {
+    local rows fam
+    rows="$("$TIMEOUT_BIN" 60 "$PCREC" --list-cpu-targets | awk -F'\t' '$1=="target" && $3!=""')"
+    fam="$(printf '%s\n' "$rows" | awk -F'\t' '{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
+    printf '%s\n' "$rows" | awk -F'\t' -v f="$fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | sort -n | tail -1 | cut -f2
+}
 declare -a memfn_cell_name=() memfn_cell_layer=() memfn_cell_flags=()
 memfn_arm_ran=0
 memfn_verdict="not run (filtered out by AXES=)"
@@ -1291,9 +1313,7 @@ if [ -z "$AXES" ] || printf ' %s ' "$AXES" | grep -q -- ' --memfn' ; then
     # same on every host): of the one family --list-cpu-targets gives more
     # than one target, the target with the most features (it admits every
     # level the floors below were measured with). No token is spelled here.
-    _mf_rows="$("$TIMEOUT_BIN" 60 "$PCREC" --list-cpu-targets | awk -F'\t' '$1=="target" && $3!=""')"
-    _mf_fam="$(printf '%s\n' "$_mf_rows" | awk -F'\t' '{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
-    _mf_top="$(printf '%s\n' "$_mf_rows" | awk -F'\t' -v f="$_mf_fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | sort -n | tail -1 | cut -f2)"
+    _mf_top="$(memfn_top_target)"
     if [ -z "$_mf_top" ]; then
         echo "run_axes.sh: FATAL: --list-cpu-targets gives no family with two targets -- the SIMD layer has no target" >&2
         exit 1
@@ -1307,14 +1327,24 @@ if [ -z "$AXES" ] || printf ' %s ' "$AXES" | grep -q -- ' --memfn' ; then
         echo "run_axes.sh: FATAL: derived ZERO rows from --list-axes' memfn section (docs/dev/learnings.md §3: hard-fail on empty, never silently measure nothing)" >&2
         exit 1
     fi
-    while IFS=$'\t' read -r _mname _mspell; do
-        if [ -n "$AXES" ]; then
-            case " $AXES " in (*" --memfn "*|*" $_mspell "*) ;; (*) continue ;; esac
-        fi
-        for _mlayer in default simd; do
-            _mflags="$_mspell"
-            [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"
-            memfn_cell_name+=("$_mname"); memfn_cell_layer+=("$_mlayer"); memfn_cell_flags+=("$_mflags")
+    # A `pair` row's spelling column is `--memfn=no-NAME|--memfn=NAME` (registry.md
+    # §6¶8a): its deny is the row's cell, NAME, and its force a second cell,
+    # NAME=force (R-45 `span-loop`: L over the whole corpus), each selected by its
+    # own spelling.
+    while IFS=$'\t' read -r _mname _mspells; do
+        IFS='|' read -r -a _mspl <<< "$_mspells"
+        for _mi in "${!_mspl[@]}"; do
+            _mspell="${_mspl[$_mi]}"
+            _mcell="$_mname"
+            [ "$_mi" -gt 0 ] && _mcell="$_mname=force"
+            if [ -n "$AXES" ]; then
+                case " $AXES " in (*" --memfn "*|*" $_mspell "*) ;; (*) continue ;; esac
+            fi
+            for _mlayer in default simd; do
+                _mflags="$_mspell"
+                [ "$_mlayer" = simd ] && _mflags="$memfn_simd_flag $_mspell"
+                memfn_cell_name+=("$_mcell"); memfn_cell_layer+=("$_mlayer"); memfn_cell_flags+=("$_mflags")
+            done
         done
     done < <(paste -d '\t' <(printf '%s\n' "$memfn_names") <(printf '%s\n' "$memfn_spells"))
 fi
@@ -1759,14 +1789,47 @@ done
 # predecessor's choice (information, then the first run). [RUN-POS-SET]
 # stage 2a's `restore=alt` (lane r1on) runs an alternation as its common head
 # and tail alone, never `all` (alt_normal_form.md §6 row 2 without row 1).
-# A later span arms unit adds its arm here (`restore=look`). [FIND-MINW]
+# Span arms L1's `restore=look` runs a positive lookaround as E2's plain
+# unit again (no item, no guard, no `dead`). A later span arms unit adds its
+# row to walk_arms.def. [FIND-MINW]
 # `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
 # a change with no public deny; its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
-INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
-               "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie"
-               "--harness=restore=alt"
-               "--harness=no-min-width")
+# The restore arms are DERIVED from src/facts/walk_arms.def (the one source of
+# the arm population; reviews 2026-11-15 r1 posts2 CONTRACT-4, r3 fixposts2
+# CHECKS-2/3): read by the preprocessor, the .def's own reader, never a second
+# grammar (comments stripped by "$CC" -E with WALK_ARM left undefined, so any
+# compiler, gcc or clang, leaves the rows as text), and counted both ways --
+# every row the comment-stripped text holds is an arm read, and every arm read
+# is a row -- or FATAL. Both counts read the one file, so this checks the
+# .def's GRAMMAR only: a DELETED row silently leaves the sweep (review r4
+# fixposts2c AXES-1, NOTED; the per-arm mech reach rows are the backstop).
+# An arm added there is swept here without a second list to remember.
+WALK_ARMS_DEF="$ROOT_DIR/src/facts/walk_arms.def"
+walk_arm_names=$(printf '#define WALK_ARM(ID, name, facts) PCREC_ARM name\n#include "%s"\n' \
+                   "$WALK_ARMS_DEF" | "$CC" -E -P -x c - | sed -n 's/^PCREC_ARM "\([a-z0-9_]*\)"$/\1/p')
+walk_arm_read=$(printf '%s\n' "$walk_arm_names" | grep -c .)
+walk_arm_rows=$("$CC" -E -P -x c "$WALK_ARMS_DEF" | grep -o 'WALK_ARM' | grep -c .)
+if [ "$walk_arm_read" -lt 1 ] || [ "$walk_arm_read" != "$walk_arm_rows" ]; then
+    echo "run_axes.sh: FATAL: $walk_arm_read WALK_ARM arms read from src/facts/walk_arms.def, its text holds $walk_arm_rows rows" >&2
+    exit 1
+fi
+INTERNAL_ARMS=("--harness=no-compound")
+while IFS= read -r walk_arm; do
+    INTERNAL_ARMS+=("--harness=restore=$walk_arm")
+done <<< "$walk_arm_names"
+INTERNAL_ARMS+=("--harness=no-min-width")
+INTERNAL_ARMS+=("--harness=mfind")
+# [MEMFN] lane mfind: `--harness=mfind` gives the offset-skip function's
+# one-byte scan the kit's inline one-member finder (an unpicked measuring
+# instrument, D197; the SWAR word at SIMD-off); its answers must equal the default's.
+# Selected by the empty AXES= or by its spelling. Its SIMD x lever arm
+# (review 2026-11-15 r2 F12, lane mfindfix2): `--harness=mfind` at the SIMD
+# layer's target (memfn_top_target), so the rows mfind-w16/-w32 are answer-
+# checked on pcrec's own sites (the SIMD-off arm renders the SWAR body only);
+# selected by the empty AXES= or by `--harness=mfind`. Chosen over a corpus
+# sample because this arm is the whole corpus against the default's answers,
+# the same check every axis gets, at the cost of one more job.
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do
@@ -1781,6 +1844,21 @@ for arm in "${INTERNAL_ARMS[@]}"; do
     job_bin[$((${#job_label[@]} - 1))]="$HARNESS_BIN"
     [ "$arm" = "--harness=no-compound" ] && lever_ran=1
 done
+if [ -z "$AXES" ] || case " $AXES " in (*" --harness=mfind "*) true ;; (*) false ;; esac; then
+    _mfind_top="$(memfn_top_target)"
+    if [ -z "$_mfind_top" ]; then
+        echo "run_axes.sh: FATAL: --list-cpu-targets gives no family with two targets -- the mfind x SIMD arm has no target" >&2
+        exit 1
+    fi
+    _mfind_simd="${macro_flag[PCREC_FORCE_MEMFN_SIMD]:-}"
+    if [ -z "$_mfind_simd" ]; then
+        echo "run_axes.sh: FATAL: PCREC_FORCE_MEMFN_SIMD has no CLI spelling -- the mfind x SIMD arm cannot be addressed" >&2
+        exit 1
+    fi
+    job_label+=("--harness=mfind $_mfind_simd=$_mfind_top (internal arm x SIMD layer, r2 F12)")
+    job_flags+=("--harness=mfind $_mfind_simd=$_mfind_top"); job_lost_ok+=("0")
+    job_bin[$((${#job_label[@]} - 1))]="$HARNESS_BIN"
+fi
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--engine'; then
     job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
     job_savedump[$((${#job_label[@]} - 1))]="$WORKDIR/ss_vm_base.tsv"
@@ -1869,6 +1947,27 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
         job_flags+=("--vm-entry-shape=$_shape")
         job_lost_ok+=("0")
     done
+fi
+
+# [COVER-CAP] stage 2 B7 (docs/design/cover_cap.md §11.1 "Answer identity",
+# lane covs2g): THE WIDTH ARM. The whole corpus with the public option
+# `--window-search-width=` at the ceiling less one (the widest legal width,
+# PCREC_ANCHORED_MAX_STATES - 1, read from `--list-limits` and failing loud,
+# never an empty substitution, K35) against the default run: every cover the
+# default declines for width alone becomes a cover here, and its answers must
+# not move. Compound parts compile with a copy of their parent's options
+# (src/core/compound.c part_compile), so the arm reaches part covers too.
+# `lost_ok` 0: a legal width may never refuse a pattern the default compiles
+# (a refusal here is a finding: r27 READ-3, the code-size cap at 4095, is
+# such a one and is not allowed for).
+if [ -z "$AXES" ] || axes_has --window-search-width; then
+    _wsw_ceil="$("$TIMEOUT_BIN" 60 "$PCREC" --list-limits 2>/dev/null | awk -F'\t' '$1 == "PCREC_ANCHORED_MAX_STATES" { print $2 }')"
+    case "$_wsw_ceil" in
+        ''|*[!0-9]*|0|1) echo "axes: FAIL: --list-limits gives no usable PCREC_ANCHORED_MAX_STATES ('$_wsw_ceil'): the width arm has no width" >&2; exit 1 ;;
+    esac
+    job_label+=("--window-search-width=$((_wsw_ceil - 1)) (cover_cap.md §11.1, the width arm)")
+    job_flags+=("--window-search-width=$((_wsw_ceil - 1))")
+    job_lost_ok+=("0")
 fi
 
 # ============================================================================

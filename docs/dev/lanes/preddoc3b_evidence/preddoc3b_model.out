@@ -1,0 +1,18 @@
+EXreads       ok   WHOLE `3-3;-3;` FAILS / SEARCHED `3-3;-3;` `3-3;`@0 / FIND-ALL `3-3;-3; 7-7;` [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12] (`/(?:(?<y>\d)?-${$y};)*/`) | rival (capture) = the draft's `\k<y>` answers: True
+EXonetype     ok   WHOLE `3` HOLDS, `37` FAILS / SEARCHED `x7 3` `3`@3 / FIND-ALL `3 7 33 4` [`3`@0, `3`@4, `3`@5, `4`@7] (`/(?<x>\d+)/ & ($x & <5)`, equal to `(x: <5)` here)
+EXdomain      ok   WHOLE `0099-100` FAILS / SEARCHED `0099-100 2025-2026` `2025-2026`@9 / FIND-ALL `0099-100 2025-2026 0100-101` [`2025-2026`@9] (`/(?<y>\d{4})-${$y + 1}/`)
+EXedges       ok   WHOLE `15-5` HOLDS, `5--5` FAILS / SEARCHED `5--5 15-5` `15-5`@5 / FIND-ALL `15-5 5--5 10-0` [`15-5`@0, `10-0`@10] (`/(?<y>\d+)-${$y - 10}/`: a negative result is nothing) | `% 0` never holds: True
+EXplus        ok   WHOLE `8` HOLDS / SEARCHED `x42 8` `42`@1 / FIND-ALL `8 x 42` [`8`@0, `42`@4] (`/${["7", "x", "41"] + 1}/` is `(?:8|42)`: the member `x` gives nothing)
+EXleft        ok   WHOLE `fo` HOLDS / SEARCHED `xba fo` `ba`@1 / FIND-ALL `fo ba fofo` [`fo`@0, `ba`@3, `fo`@6, `fo`@8] (`/${left(/foobar|bazqux/, 2)}/` is `(?:fo|ba)`)
+EXlift        ok   WHOLE `12` HOLDS, `4` FAILS / SEARCHED `x14` `14`@1 / FIND-ALL `3 12 5 14` [`3`@0, `12`@2, `5`@5, `14`@7] (`/${[2, 4] + [1, 10]}/` is `(?:3|12|5|14)`) | AL1 printed [3, 12, 5, 14]: True; the direct model agrees: True; the pairwise rival differs: True
+EXenum        ok   WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a`@6] (`/${enumerate(/(?:a|ab){1,2}/)}/` is `(?:aa|aab|a|aba|abab|ab)`) | priority list printed by the draft: True; against `(?:a|ab){1,2}` itself 0 / 0 / 0 of 63 texts
+EXclassorder  ok   WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (`/${\d + 1}/` is `(?:10|1|2|3|4|5|6|7|8|9)`) | the codepoint rival SEARCHED ('1', 1)
+EXclasspos    ok   WHOLE `13` HOLDS / SEARCHED `x13` `13`@1 / FIND-ALL `13 4 18` [`13`@0, `4`@3, `18`@5] (C1, `/${\d + \d}/`: the lift's results longest first) || WHOLE `13` HOLDS / SEARCHED `x13` `1`@1 / FIND-ALL `13 4 18` [`1`@0, `3`@1, `4`@3, `1`@5, `8`@6] (C2: the first class slowest, ascending)
+EXclassindex  ok   WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] ((a), `/${enumerate(/\d/) + 1}/` as the class) || WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] ((b): the array's codepoint order)
+EXprec        ok   WHOLE `2` HOLDS, `x2` FAILS / SEARCHED `x2` `2`@1 / FIND-ALL `x1 2 x2` [`x1`@0, `2`@3, `2`@6] (`"x" SEQ "1" | "2"` is `(?:x1)|2`) | the rival `x(?:1|2)` differs: True
+EXpair        ok   WHOLE `1,2` HOLDS / SEARCHED `x1,2` `1,2`@1 / FIND-ALL `1,2 3,3` [`1,2`@0, `3,3`@4] (`pair(p) := /${p},${p}/`, `pair(/\d/)` is `(?:\d),(?:\d)`)
+M1            ok   21 ruled pieces in my sections, each with >= 1 rulings item citing a record title; bad: none
+M2            ok   needs: from my sections into a LATER core section: none
+SL            ok   25 of 25 slugs homed in my sections; missing: none
+NOQ           ok   33 pieces in my sections; `?` or skeleton: none
+preddoc3b_model: 17 checks, 0 failed

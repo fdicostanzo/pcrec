@@ -1,0 +1,4 @@
+report=docs/dev/lanes/covcap5_report.md
+sections: STATE AT HANDOFF; FINDINGS APPLIED BY ID; QUESTIONS
+nonempty: all
+commit: yes

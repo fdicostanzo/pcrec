@@ -1,0 +1,159 @@
+id	rev22 lines	section	terms	class	cite / reason	finding
+S001	3-358	Changelog	all terms (47 lexical hits)	UNAFFECTED	history of revs 1-22; rev 23 appends its own entry	-
+S002	400-470	0 status-mark legend, early ruled rows	"mark" = status mark (RULED/LEAN)	UNAFFECTED	not the optional mark	-
+S003	431	0 table row some()/all() CF:912-914	all(	AFFECTED-UNCOVERED	all(c) = c with every label marked: no definition without the mark; record leaves it to the manager (21:49 MINE)	SITES-1
+S004	460	0 row per-match rule (pre-14:31)	zero-pass	UNAFFECTED	already overtaken history	-
+S005	587	0 zero-pass-record 12:45	zero-pass	COVERED	condition_kind I.1.2 ZERO PASSES, II.5 table: STANDS	-
+S006	591	0 pairing-loop	loop	COVERED	II.5: optional-as-loop STANDS	-
+S007	594-596	0 optional-filter idea 13:52; mark+default as two absence kinds 14:15	mark	UNAFFECTED	recorded ideas/history	-
+S008	597	0 absent-rule LOCKED	absent-rule	COVERED	COND-FAMILY 21:49: clause offering the mark removed, rest stands; II.5 rows (1)(2)(4) STAND, (3) CHANGES	-
+S009	598	0 manager's readings after the fold (a) all() over no values	all(	AFFECTED-UNCOVERED	all restated by manager, retired reading; new definition not ruled	SITES-1
+S010	600	0 mark-domain principle	mark-domain	COVERED	II.5: principle stands, value-set use retired	-
+S011	602	0 match-context	match-context	COVERED	21:49 retired; II.5	-
+S012	603	0 zero-pass-empty	zero-pass-empty	COVERED	21:49 retired; corner stands as part of 5.2 (II.5)	-
+S013	604	0 default-reaches-dollar	default-reaches-dollar	COVERED	22:30: REVERSES (per-entry; $a reads the real label)	-
+S014	605	0 domain-scope	domain-scope	COVERED	21:49 retired; BUT see S112/S115/S117 (other readers)	SITES-9
+S015	606	0 mark-narrows	mark-narrows	COVERED	21:49 retired	-
+S016	607	0 17:02 remarks (marked pair; item 11)	marked pair	COVERED	21:49 default-value YES (any text); marked pair has no subject	-
+S017	608	0 not-is-complement	not-is-complement	COVERED	22:30 STATE: ! on a condition stays an error	-
+S018	609-611	0 mark-in-none rows; warn remark	mark-in-none	COVERED	21:49 retired; remark parked	-
+S019	615-616	0 dispositions A-L	A domain, C all marks, D ?, E, G	UNAFFECTED	history of rev 20	-
+S020	630-634	0 Goals G0 G0b G3	G0b few marks	COVERED	fewer marks; G0 look-alike duty lands on S044/S047 rows	SITES-2
+S021	651	0 SAVING PEOPLE: SILENT list	all(((h,m):R)); label controls in searched mode	AFFECTED-UNCOVERED	all part: SITES-1; searched default: II.8 unchanged	SITES-1
+S022	657	0 MEANING NOT SPELLING	mark-domain	COVERED	II.5 principle stands	-
+S023	669	0.1 legend: BY DESIGN = "a mark's stated meaning (5.4)"	mark	AFFECTED-UNCOVERED	the class definition names the mark; no replacement stated	SITES-7
+S024	681	0.1 L6 each / absent alternative	absence	COVERED	absent-rule (1) stands	-
+S025	686	0.1 L11 alts & !/^#.*/	complement	UNAFFECTED	whole-value item strings; anchor warning	-
+S026	691	0.1 L16 occurrences min=0, (g?:..) reads DOM	mark	COVERED	mark half retired; possibly none = default spelling (II.3.5)	-
+S027	693-694	0.1 L18 L19	searched	UNAFFECTED	empty.search by mode	-
+S028	696	0.1 L21 !<200 vs >=200	complement on a set	COVERED	condition_kind 2: the complement ON THE SET is neither nots	-
+S029	705	0.1 L30 !(x:S) vs (x:!S)	mark; complement	COVERED	two-nots table (condition_kind 2); marked half retired; ERROR class stands	-
+S030	711	0.1 L36 (x:S) vs all((x:S))	all(	AFFECTED-UNCOVERED	verdict and reason both rest on all = marked	SITES-1
+S031	730	0.1 L55 occurrences min vs plain	mark	COVERED	BY DESIGN-with-the-mark clause drops: SAME	-
+S032	731 740	0.1 L56 L65	mark	COVERED	SAME stands; marked HOLDS becomes default n=0 HOLDS (III.2 zero-pass row)	-
+S033	744	0.1 L69 anchored	subject	UNAFFECTED		-
+S034	751-752	0.1 L76 L77	mark (sigil)	UNAFFECTED	paused (16)	-
+S035	757	0.1 L82 three controls	mark	COVERED	two spellings remain (II.1.1)	-
+S036	759 762	0.1 L84 L87	default	UNAFFECTED	dictionary order / : inside reference list	-
+S037	768	0.1 L93 all((x:S)) vs (x?:S) SAME	all(	AFFECTED-UNCOVERED	both sides gone or redefined	SITES-1
+S038	769	0.1 L94 /x?/ vs /(?:x|)/ with k?	mark	COVERED	optional-as-loop STANDS; k? becomes a default	-
+S039	770	0.1 L95 t2 & !q vs ((h,m?):!R)	mark	COVERED	with a default the rewrites agree (rev22 2238); two-nots table	-
+S040	773	0.1 L98 parameter left of :	-	UNAFFECTED		-
+S041	774	0.1 L99 (k?) vs (k) never absent	mark	COVERED	retired with mark-narrows	-
+S042	775	0.1 L100 not an independent filter	mark	COVERED	II.1.2 / II.1.3 A: SAME now (per-row tests)	-
+S043	776	0.1 L101 (a=0:<10,b:>$a) vs joint set SAME	default; $a	AFFECTED-UNCOVERED	22:30 per-entry makes record FAIL on -1, joint HOLD; verdict+class not stated	SITES-3
+S044	777	0.1 L102 !some(c)	! on condition	COVERED	stays an error (22:30)	-
+S045	778	0.1 L103 mark in none	mark-in-none	COVERED	retired; two spellings left	-
+S046	779	0.1 L104 one-witness	one-witness	AFFECTED-UNCOVERED	record: two defaults stay legal and hold; row verdict/class and diagnostic not decided	SITES-2
+S047	804-815	0.1 narrative per-match rule overtaken	zero-pass	UNAFFECTED	history	-
+S048	820-830	0.1 MODE OF THE ANSWERS	searched; m? m=0 counts	COVERED	II.8: searched default unchanged, not re-run; mark counts drop	-
+S049	917-949	0.1 per-revision re-application narrative	marks	UNAFFECTED	history	-
+S050	979	0.2 phase 1: group questions	all(	AFFECTED-UNCOVERED	all IN phase 1 ruled; its meaning is not	SITES-1
+S051	997-999	0.2 phase 1: mark/default IN or OUT; all reads DOM	mark; all(	AFFECTED-UNCOVERED	mark gone; default phase-1 status still unasked; all unredefined	SITES-1
+S052	1017-1050	0.3 Words: subject, span/stretch, scoped match, filter role, searched, pass, set once/repeated	subject; span	AFFECTED-UNCOVERED	the model's source row / result row / statement / table are new words colliding with subject/span	SITES-6
+S053	1033	0.3 absent	absent	COVERED	absent-rule (1) stands	-
+S054	1034	0.3 optional mark / default	mark; default	COVERED	mark half deleted; default = per-test COALESCE (22:30)	-
+S055	1036	0.3 DOM(h)	DOM	COVERED	retired (II.5)	-
+S056	1137	2.1 kind table	!M only where M not a condition	COVERED	stands	-
+S057	1199-1211	2.2 RULE extensional ! as filter; standalone !B error	complement; string set	AFFECTED-UNCOVERED	membership/extensional reading vs per-source-row complement; standalone ! has a meaning in the model (condition_kind 2 row 157)	SITES-4
+S058	1213-1229	2.2 WHAT ! TAKES	complement of its string set	AFFECTED-UNCOVERED	source row of a complemented pattern in a filter role: stretch or subject	SITES-4
+S059	1231-1233	2.2 complemented pattern (1)(2)	own DOMs; no labels	COVERED	no labels (20:41 + I.2); own statement (III.1 b1); DOM part retired	-
+S060	1234-1240	2.2 (3) !q label-free filter on subjects narrowing the outside's matches	filter on subjects	AFFECTED-UNCOVERED	per match (span) in rev 22 vs per subject in source-row ruling	SITES-4
+S061	1241-1255	2.2 (4) a mark inside q	mark	COVERED	retired	-
+S062	1257-1261	2.2 !<200 vs >=200	set complement	UNAFFECTED	sets, not statements	-
+S063	1263-1267	2.2 reported span D196	span	UNAFFECTED	reporting rule	-
+S064	1271-1283	2.2 REASONING/STATUS	standalone complement useless/VM-hostile	AFFECTED-UNCOVERED	model gives standalone !Q a meaning; rev 23 must keep the unapplied-macro error	SITES-7
+S065	1295-1297	2.3 alternative lacking the label	marked condition keeps it where DOM would do	COVERED	mark clause retired; unmarked FAILS stands	-
+S066	1307-1352	2.4 comparison sets on string sets; DICT-DOMAIN 1325 1350	string set; domain	UNAFFECTED	sets; "literal's domain" is a numeral rule (II.5)	-
+S067	1427-1473	2.6 contains/occurrences prose	searched; marked	UNAFFECTED		-
+S068	1503-1512	2.6 ZERO HITS; every hit possibly none	all((g:x)); (g?:)	AFFECTED-UNCOVERED	rev 21 spelling all(); rev 22 default sentinel; A2 candidate	SITES-1
+S069	1543 1596-1613	2.6 unrolled form (g?:"x"); min	mark	COVERED	mark halves retired	-
+S070	1618-1730	2.7 filter modifiers	!padded	UNAFFECTED	whole-value filter	-
+S071	1731-1873	3 array and map interfaces	(0 hits)	UNAFFECTED	no term	-
+S072	1913	4.1 LABEL CONTROLS mark or default	mark	COVERED	mark deleted	-
+S073	1920	4.1 record = & each entry carries its label's control	default	COVERED	22:30 per entry: record = AND exactly (III.2 row 866)	-
+S074	1929-1931	4.1 : in reference list; ? or = anywhere else	mark	COVERED	mark half	-
+S075	1936-1937	4.1 ! on a condition ERROR	!	COVERED	stands	-
+S076	1990-2020	4.2 examples + tables, columns m? / m?=0 / h?	mark	COVERED	columns retire (II.1.1); default columns stand, zero-pass default per III.2	-
+S077	2022-2031	4.2 RULE absent-rule text (3)	mark; not both	COVERED	21:49 clause removed	-
+S078	2033-2040	4.2 spellings; m?=0 error	mark	COVERED	not-both has no subject (II.5)	-
+S079	2042-2049	4.2 POINT 3 under F1	zero-pass-empty	COVERED	retired	-
+S080	2051-2055	4.2 SEVERAL VALUES per pass		COVERED	stands (R1 nested pass table)	-
+S081	2057-2064	4.2 WHOLE VALUE NOT SEARCHED	searched	COVERED	default half unchanged (II.8); 1,698 mark count drops	-
+S082	2066-2075	4.2 THE RULE IN ONE SENTENCE (D candidate set)	D={} {v} DOM	COVERED	reduces to COALESCE (condition_kind 3 row default)	-
+S083	2077-2090	4.2 THE DOMAIN	DOM; match-context; domain-scope	COVERED	retired (II.5 cites these lines)	-
+S084	2092-2122	4.2 WHICH CONDITIONS NARROW; worked P table; independent filter	mark-narrows	COVERED	retired; I.1.3 A dissolves	-
+S085	2124-2154	4.2 ADDING A CONDITION admits only via marked negative reads	added condition	COVERED	II.1.2 0 of 11,388; II.1.3 D: classical half inside !q survives	-
+S086	2156-2165	4.2 negative-polarity worked rows	mark	COVERED	rewrites w/ marks retire; default rows stand	-
+S087	2167-2184	4.2 candidate domains side by side	DOM	COVERED	retired	-
+S088	2186-2196	4.2 WHAT COMPUTING THE RULE TAKES	DOM regular tier	COVERED	II.5: tier shrinks to per-label regex values	-
+S089	2198-2205	4.2 principles (*)	mark-domain	COVERED	stands	-
+S090	2207-2222	4.2 table (AR) columns h? and h?=v; alt-not-taken with mark	mark	COVERED	columns retire	-
+S091	2224-2232	4.2 WHAT THE RULE CHANGES ELSEWHERE	all(c) = every label marked	AFFECTED-UNCOVERED		SITES-1
+S092	2234-2257	4.2 NEGATION OVER A MARKED LABEL; existential vs classical	mark	COVERED	mark gone; default classical; two-nots table	-
+S093	2269-2299	4.2 (a) DOM exact/approx tiers	DOM	COVERED	retired (II.5)	-
+S094	2301-2307	4.2 A LABEL NO MATCH CAN SET: compile error on the mark (or default)	DOM empty	AFFECTED-UNCOVERED	error's reason (empty DOM) gone; unmarked condition on a never-set label still fails silently, a default on it always reads	SITES-8
+S095	2309-2318	4.2 (b) match-context	match-context	COVERED	retired	-
+S096	2320-2324	4.2 (c) defaulted label inside all	all(	AFFECTED-UNCOVERED		SITES-1
+S097	2326-2334	4.2 (d) zero-pass-empty; all((n:<0)) error	zero-pass-empty	COVERED	corner stands as 5.2 error (II.5); the all example is SITES-1	-
+S098	2336-2341	4.2 (e1) computed label absent; mnum?	mark	COVERED	(e1) STANDS; mark examples retire	-
+S099	2342-2354	4.2 (e2.1) default-reaches-dollar	(e2.1)	COVERED	22:30 reverses; but see the L101 consequence	SITES-3
+S100	2355-2360	4.2 (e2.2) $a on absent a; $x default error	$a	COVERED	stands	-
+S101	2361-2371	4.2 ONE WITNESS stated rule	one-witness; stand-in	AFFECTED-UNCOVERED	mark text; returns for defaults per 22:30	SITES-2
+S102	2372-2375	4.2 (e3) mark through a macro label parameter; all(office_c)	all(	AFFECTED-UNCOVERED	only way to mark through a macro was all(c)	SITES-1
+S103	2377-2382	4.2 (f) ONE WARNING never consulted		COVERED	II.5: mark warning retired, default.unused (a) covers	-
+S104	2384-2416	4.2 REASONING / STATUS		COVERED	statuses of retired rulings, rewritten wholesale	-
+S105	2437-2441	4.3 repeated label = can be set more than once in some match of the PROGRAM, by domain-scope	domain-scope	AFFECTED-UNCOVERED	a second reader of domain-scope not in II.5's reader list	SITES-9
+S106	2452-2468	4.3 group-question table; all; every iteration possibly none	all(	AFFECTED-UNCOVERED		SITES-1
+S107	2470-2494	4.3 closing example table, I2b	mark; all(((h,m):R))	AFFECTED-UNCOVERED	marked rows retire; all row 11 of 259	SITES-1
+S108	2496-2525	4.3 A MARK INSIDE A GROUP QUESTION	mark-in-none	COVERED	retired	-
+S109	2534 2594	4.3 count not upward closed	searched	UNAFFECTED		-
+S110	2546-2562	4.3 pairing loop examples with (h?:) (k?:)	mark	COVERED	defaults; zero-pass default III.2 row 872	-
+S111	2564-2570	4.3 A loop is what can set a label more than once in some match of the program	domain; program	AFFECTED-UNCOVERED	same reader as S105	SITES-9
+S112	2587 2606-2607	4.3 out-of-range iteration; REV 20 note all marks	all(	AFFECTED-UNCOVERED		SITES-1
+S113	2624-2656	4.4 computed labels (e1) mnum?	mark	COVERED	(e1) STANDS; default form kept	-
+S114	2657-2770	4.5 4.6 ambiguity one reading; value relations	(0 hits except 2724)	UNAFFECTED	one reading unchanged (R3 ruled out, condition_kind 1.2)	-
+S115	2848-2856	5.2 empty intersection from pure parts	value set	COVERED	II.5 other reader STANDS with per-label value set	-
+S116	2910-2933	5.4 THE MARK TABLE row h? and h=v	mark	COVERED	mark half deleted, default stays	-
+S117	2949	5.4 prefix ! row: complement in the filter role	complement	AFFECTED-UNCOVERED	same as SITES-4	SITES-4
+S118	2954	5.4 $ row	$	COVERED	$ reads the real label (22:30)	-
+S119	2968-2975	5.4 history rows	mark	UNAFFECTED	history	-
+S120	2984-3056	5.5 enumerate 5.6 assertions (A & !B empty)	complement	UNAFFECTED	whole strings of the target; source row = the target string	-
+S121	3087-3097	6.1 capability: mark projects over DOM; in-context DOM	mark; DOM	COVERED	retired; default slices the set	-
+S122	3165-3170	7 empty-match hazard	string sets	UNAFFECTED		-
+S123	3205-3218	7.1 label.unset: three fixes; never-absent mark warning; default.unused; all inserts no mark	mark; all(	COVERED	II.1.3 G, II.5 (names two fixes now); all part SITES-1; can-be-absent reader SITES-9	SITES-9
+S124	3338-3346	8 when(c,p) = (x&c&p) | (x&!q)	complement	AFFECTED-UNCOVERED	per source row vs case-when per row in searched mode	SITES-5
+S125	3365-3366	8 library group questions all(c) marked	all(	AFFECTED-UNCOVERED		SITES-1
+S126	3409-3419	8 library: author's two controls; empty list needs the mark	mark	COVERED	default only; III.2 zero-pass	-
+S127	3546-3600	11 marks inside /.../ (the rx-& switch)	mark	UNAFFECTED	different "mark"	-
+S128	3597 3619 3679 3714 3733 3765-3771 3850-3868	11 STRING SETS foundation; role table rows 6/7	string sets	AFFECTED-UNCOVERED	foundation ruled CF:713 as "the strings it matches entirely"; the model's statement/source row not mapped onto the role table	SITES-6
+S129	3930 3965 3971 4041	12 header: no group question; absent-label rule moves 0 of 12	absent-rule	COVERED	the twelve cases write no mark and no default; claim still true, restate	-
+S130	4057 4061	12 coverage table rows some/all; label controls	all(; mark	COVERED	no case uses them (0 hits)	-
+S131	4075-4102	12.1 E-JSONL		UNAFFECTED	unmarked conditions, contains; no absence	-
+S132	4103-4114	12.2 E-WEEKDAY	computed label	UNAFFECTED	(weekday: 6) over a never-absent join label	-
+S133	4115-4129	12.3 E-IPV4	searched	UNAFFECTED	join entries; no complement	-
+S134	4130-4139	12.4 E-LUHN		UNAFFECTED		-
+S135	4140-4166	12.5 E-CAL	$dim	UNAFFECTED	(day: padded(<=$dim)) both labels never absent in isodate	-
+S136	4167-4183	12.6 E-RFC	$wd	UNAFFECTED	same	-
+S137	4184-4199	12.7 E-NEAR		UNAFFECTED		-
+S138	4200-4219	12.8 E-FILE	!startsWith, !""	UNAFFECTED	complement of item strings, whole-value; one result row per item	-
+S139	4220-4243	12.9 E-HTTP	occurs.exactly(1,(name:..))	UNAFFECTED	group question counts TRUE passes, unmarked	-
+S140	4244-4253	12.10 E-SEP		UNAFFECTED		-
+S141	4254-4268	12.11 E-DEPTH		UNAFFECTED		-
+S142	4269-4312	12.12 E-CTX		UNAFFECTED	compile-time errors; no label controls	-
+S143	4324-4348	13 RESOLVED C/O rows (O25 string sets, C9, C15, C27)	string sets	AFFECTED-UNCOVERED	same foundation as S128	SITES-6
+S144	4376-4381 4794-4795	13 RESOLVED all((x:S)) overtaken notes	all(	AFFECTED-UNCOVERED		SITES-1
+S145	4407-4409	13 zero iterations possibly none	mark	COVERED	default spelling	-
+S146	4528 4572-4601	13 O3, O28 negation of a marked label	mark; complement	COVERED	two-nots table, 22:30 STATE	-
+S147	4660-4669	13 BY DESIGN legend and SILENT entries	mark; all(	AFFECTED-UNCOVERED		SITES-7
+S148	4887-4888	13 O56 pairing loop	absent-rule	COVERED	stands	-
+S149	5088	13 general form recorded, not adopted	absent-rule	COVERED	history	-
+S150	5429-5432	13 rulings pointer list	absent-rule; mark-domain	COVERED	updated by rev 23	-
+S151	5440-5457	13 zero-pass-empty, match-context, domain-scope, mark-narrows, mark-under-not, mark-in-none CLOSED		COVERED	retired 21:49	-
+S152	5459-5462	13 one-witness CLOSED as a stated rule	one-witness	AFFECTED-UNCOVERED		SITES-2
+S153	5463-5469	13 complemented pattern labels looked up in that program only	complement	COVERED	III.1 b1	-
+S154	5470-5471	13 default-reaches-dollar	(e2.1)	COVERED	reversed	-
+S155	5484-5489	13 PLAN: default and mark IN or OUT of phase 1; all depends on the mark; unlock behind (e2.1) and one-witness	all(	AFFECTED-UNCOVERED		SITES-1
+S156	5493-5567	14 non-goals 15 provenance		UNAFFECTED	history; rev 23 adds a row	-
+S157	5568-5952	16 paused field-reference record	mark (sigil)	UNAFFECTED	retired	-
+S158	whole file	subject (187 hits), span (160 hits) outside S052/S060	subject; span	UNAFFECTED	reporting spans (D196), anchors, scoped match, examples; whole-value mode: one span per subject, same answer under S1	-

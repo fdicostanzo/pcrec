@@ -1,0 +1,4 @@
+report=docs/dev/lanes/s486re_report.md
+sections: STATE AT HANDOFF; CAUSE; RE-AIM; FAMILY CHECK; REACH SWEEP; OWED
+nonempty: all
+commit: yes

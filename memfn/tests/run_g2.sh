@@ -1112,6 +1112,32 @@ grep -E '^(space|build|plants|SKIPPED|skipped)' "$work/any.log" | sed 's/^/   /'
 udone any
 fi
 
+# --- 4z. G2's ONE-MEMBER family (lane mfind): its own runner ----------------
+# memfn/tests/run_g2_mfind.py: the inline one-member finder (the test-only
+# lever `mfind`, memfn/src/vrun.c) at the offset-skip FUNC site over a
+# generated one-byte-scan predicate space, every target and lever state, every
+# level and ASan+UBSan, against its own scalar loop with guard pages, the mask
+# stream and the SWAR-exactness trap, plus the plants S3150-S3159 (~60 s quick).
+# Its generator links the same library as the others, so under --rows its REACH lines join the per-row
+# sum below (fn/fn-mfind, fn/mfind-w16 and fn/mfind-w32 are unpicked by default and reached only here,
+# through the lever, as the SIMD rows are reached only by section 4a's process).
+if want mfind; then
+ustart mfind
+echo "== mfind: G2's one-member family (run_g2_mfind.py)"
+mfind_args=(--root "$root" --lib "$lib")
+[ "$rows" = 1 ] && mfind_args+=(--reach-err "$work/reach/gen-mfind.err")
+[ "$quick" = 1 ] && mfind_args+=(--quick)
+if TMPDIR="$work" "$TO" 900 python3 "$here/run_g2_mfind.py" "${mfind_args[@]}" > "$work/mfind.log" 2>&1; then
+    passed=$((passed + 1))
+    echo "PASS: one-member family ($(grep '^checks passed' "$work/mfind.log"))"
+else
+    grep -E '^FAIL' "$work/mfind.log" | head -20
+    note_fail 1 "one-member family (run_g2_mfind.py): $(grep '^checks failed' "$work/mfind.log")"
+fi
+grep -E '^(space|build|plants|PLANT|G2M|SKIPPED|skipped)' "$work/mfind.log" | sed 's/^/   /'
+udone mfind
+fi
+
 # --- 4b. --rows: the per-ROW floor, from the kit's own REACH trace ----------
 # Sources: the `MFTRACE REACH table=T row=R chosen=N asked=A` lines of every G2
 # process that SELECTS rows (the generator, once per W2 mutation; K1 calls
@@ -1120,7 +1146,7 @@ fi
 # driver output, and FLOOR_ROWS below is a literal measured once.
 MM_ROW_FLOORS="arms:generic:600 arms:mismatch_inplace:300"   # (f): the MISMATCH-only process, measured less ~10%
 ST_ROW_FLOORS="arms:generic:4100"   # (g): the STRIDE-only process, measured less ~10% (lane g2m6)
-FLOOR_ROWS=20   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 19, with fn/vrun-w16 and fn/vrun-w32, reached by the SIMD family's process below; lane r15b: 20, with arms/precheck_assign_byte, reached by the gate family's landmark sites)
+FLOOR_ROWS=36   # distinct (table,row) pairs in the registry, COUNTED 36 on 2026-11-15 (review r2 F14, lane mfindfix2: lane mfindg2's full and gathered quick runs on lane/memfn-mfind both print 36, every row of the kit's 36 (tests/memfn/run_rows.sh ROWS_FLOOR); the literal sat at 20 since lane r15b; history: lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 19, with fn/vrun-w16 and fn/vrun-w32, reached by the SIMD family's process below; lane r15b: 20, with arms/precheck_assign_byte, reached by the gate family's landmark sites)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process

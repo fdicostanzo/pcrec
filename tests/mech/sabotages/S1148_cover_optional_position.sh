@@ -10,8 +10,10 @@ SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'\d{4}'"
 SAB_REACH_EXPECT='REACH-COVER'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_memfn_wspan(&sp[0], 0, e->k, MF_VERIFY_YES);'
-SAB_AFTER='    pcrec_memfn_wspan(&sp[0], 0, e->k, MF_VERIFY_NO);   /* SABOTAGE S1148 */'
+# RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): pcrec_memfn_wspan takes the Ctx
+# (the span's lists come from its arena); intent unchanged.
+SAB_BEFORE='    pcrec_memfn_wspan(cx, &sp[0], 0, e->k, MF_VERIFY_YES);'
+SAB_AFTER='    pcrec_memfn_wspan(cx, &sp[0], 0, e->k, MF_VERIFY_NO);   /* SABOTAGE S1148 */'
 # RE-AIMED 2026-10-22 (D172 S2 commit 6, lane wsc6): the cover site states
 # its window facts only (R1), so span 0's need is its span's VERIFY (YES =
 # REQUIRED, window_site.md §1.4). The plant states span 0 verify NO, the

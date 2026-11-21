@@ -68,6 +68,14 @@ DOORS = {'pcrec_memfn_define': 'gen/memfn_sites.h',
          'pcrec_memfn_emit': 'gen/memfn_sites.h'}       # M1b: VMRUN
 DOOR_RX = re.compile(r'\b(' + '|'.join(DOORS) + r')\s*\(')
 CORPUS_CAP = 300            # compiles per pass
+# Fixed witnesses appended to the strided sample: the sample's stride alignment
+# moves with ANY corpus edit above a pattern (l1tri2, 2026-11-19: one added
+# block dropped the only DFA_HAT-stating pattern from the 300), so a kind the
+# manifest lists must not depend on where the stride lands. Each row names the
+# kind it guarantees.
+CORPUS_WITNESSES = (
+    r'\b(?:true|false|null)\b',   # PF/DFA_HAT: the start-set DFA hat (tests/startset [dfa-wit])
+)
 CORPUS_FLOOR = 100          # K35: a pass that compiled fewer is not a census
 # THE PASS'S CONFIGURATIONS, one row each, every corpus pattern compiled under
 # each. The traced binary is the test harness's build (cli/main.c with
@@ -279,7 +287,8 @@ def corpus_patterns(root):
             seen.add(p)
             uniq.append(p)
     step = max(1, len(uniq) // CORPUS_CAP)
-    return uniq[::step][:CORPUS_CAP]
+    out = uniq[::step][:CORPUS_CAP]
+    return out + [w for w in CORPUS_WITNESSES if w not in out]
 
 
 def run_corpus(exe, pats, tmp):

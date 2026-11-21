@@ -1,0 +1,152 @@
+population: 7613 rows (7224 corpus, 389 bench), 5932 distinct texts; with a positive lookbehind text `(?<=`: 416
+abstained: 73 (corpus-only 73, bench 0, both 0)
+read by the model: 343 (corpus-only 338, bench 5, both 1)
+  alternation root (BACK combine not modelled, counted): 9 (corpus-only 9, bench 0, both 0)
+  never (L1's dead rows; no BACK candidate): 27 (corpus-only 27, bench 0, both 0)
+  no left leftover (no lg: the lookbehind sits inside consumed context or a wall): 205 (corpus-only 204, bench 1, both 0)
+  BACK candidate exists (lg.n > 0): 102 (corpus-only 98, bench 4, both 1)
+    base compiler refuses: 4 (corpus-only 4, bench 0, both 0)
+    candidate not better than today's run (information): 40 (corpus-only 38, bench 2, both 1)
+    information TIE (rarity decides, not modelled): 1 (corpus-only 1, bench 0, both 0)
+PREDICTED MOVERS: 57 (corpus-only 55, bench 2, both 0)
+  new-run        52 (corpus-only 51, bench 1, both 0)
+  narrower-run   5 (corpus-only 4, bench 1, both 0)
+  landmark-K     57 (corpus-only 55, bench 2, both 0)
+  empty consumed extent among movers: 0 (corpus-only 0, bench 0, both 0)
+  routes of the movers (today's stamps):
+    cover route (RX_DFA_SCAN cover): 7 (corpus-only 7, bench 0, both 0)
+    prefilter run-pinned (RX_DFA_PREFILTER): 1 (corpus-only 1, bench 0, both 0)
+    prefilter stamps (dfa/vm): dfa=None vm=none: 2; dfa=first-memchr-bounded vm=hybrid: 2; dfa=handoff vm=hybrid: 4; dfa=memchr vm=hybrid: 37; dfa=memchr-bounded vm=hybrid: 1; dfa=none vm=None: 7; dfa=offset-set vm=hybrid: 3; dfa=run-pinned vm=hybrid: 1
+    why/handoff/scan stamps: why=dominated handoff=none scan=cover: 7; why=dominated handoff=none scan=unanchored: 41; why=emitted handoff=0 scan=unanchored: 7; why=emitted handoff=none scan=None: 2
+  dead (never) movers: 0 by construction (BACK adds a candidate; the never bit is L1's)
+  MOVER [bench:258] (?<=item )done moved=narrower-run+landmark-K t=5 today_run=646f6e65 cand_run=6974656d20646f6e65 stamps=emitted/0/unanchored/offset-set/hybrid
+  MOVER [bench:333] (?<=\xc3\xa9)x moved=new-run+landmark-K t=2 today_run=none cand_run=c3a978 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/litscan/presence_deny.rxt] (?<=q)a: moved=narrower-run+landmark-K t=1 today_run=613a cand_run=71613a stamps=dominated/none/cover/none/None
+  MOVER [corpus:tests/litscan/spanarms.rxt] (?<=foo)bar moved=narrower-run+landmark-K t=3 today_run=626172 cand_run=666f6f626172 stamps=dominated/none/unanchored/run-pinned/hybrid
+  MOVER [corpus:tests/lookaround/d27/adversarial.rxt] (?<=(a)(b))(c)(d) moved=narrower-run+landmark-K t=2 today_run=6364 cand_run=61626364 stamps=emitted/0/unanchored/offset-set/hybrid
+  MOVER [corpus:tests/lookaround/d27/adversarial.rxt] (?<=a{3}|bb)x moved=new-run+landmark-K t=2 today_run=none cand_run=[6162][6162]78 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/adversarial.rxt] (?<=(?:a{2})|(?:a{3}))x moved=new-run+landmark-K t=2 today_run=none cand_run=616178 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?<=a)z moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=dominated/none/cover/none/None
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] ((?<=a)z) moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=emitted/0/unanchored/handoff/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?>(?<=a)z) moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=emitted/0/unanchored/handoff/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?<=abc)z moved=new-run+landmark-K t=3 today_run=none cand_run=6162637a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] ((?<=abc)z) moved=new-run+landmark-K t=3 today_run=none cand_run=6162637a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?>(?<=abc)z) moved=new-run+landmark-K t=3 today_run=none cand_run=6162637a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?<=ab|cd)z moved=new-run+landmark-K t=2 today_run=none cand_run=[6163][6264]7a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] ((?<=ab|cd)z) moved=new-run+landmark-K t=2 today_run=none cand_run=[6163][6264]7a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?>(?<=ab|cd)z) moved=new-run+landmark-K t=2 today_run=none cand_run=[6163][6264]7a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?<=(a))z moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] ((?<=(a))z) moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?>(?<=(a))z) moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?<=a(?!b))z moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] ((?<=a(?!b))z) moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/matrix.rxt] (?>(?<=a(?!b))z) moved=new-run+landmark-K t=1 today_run=none cand_run=617a stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/d27/spellings.rxt] (?<=a)c moved=new-run+landmark-K t=1 today_run=none cand_run=6163 stamps=dominated/none/cover/none/None
+  MOVER [corpus:ts/lookaround/d27_l1/l1d27_witnesses.rxt] (?<=nop)st moved=narrower-run+landmark-K t=3 today_run=7374 cand_run=6e6f707374 stamps=emitted/0/unanchored/offset-set/hybrid
+  MOVER [corpus:ts/lookaround/d27_l1/l1d27_witnesses.rxt] (?<=a)(?<=[ab])c moved=new-run+landmark-K t=1 today_run=none cand_run=6163 stamps=dominated/none/cover/none/None
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=abc)x moved=new-run+landmark-K t=3 today_run=none cand_run=61626378 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=[ab][cd])x moved=new-run+landmark-K t=2 today_run=none cand_run=[6162][6364]78 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=a{3})x moved=new-run+landmark-K t=3 today_run=none cand_run=61616178 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=ab|cd)x moved=new-run+landmark-K t=2 today_run=none cand_run=[6163][6264]78 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=ab|cd|ef)x moved=new-run+landmark-K t=2 today_run=none cand_run=[616365][626466]78 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=(a)(b))c moved=new-run+landmark-K t=2 today_run=none cand_run=616263 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=(aa)|(ab))c moved=new-run+landmark-K t=2 today_run=none cand_run=61[6162]63 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=(?<=a)b)c moved=new-run+landmark-K t=2 today_run=none cand_run=616263 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=a(?!b))x moved=new-run+landmark-K t=1 today_run=none cand_run=6178 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?>(?<=a)b) moved=new-run+landmark-K t=1 today_run=none cand_run=6162 stamps=emitted/0/unanchored/handoff/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=(?>ab))c moved=new-run+landmark-K t=2 today_run=none cand_run=616263 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=ab)(?<=b)c moved=new-run+landmark-K t=2 today_run=none cand_run=616263 stamps=dominated/none/unanchored/memchr-bounded/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=\\n)x moved=new-run+landmark-K t=1 today_run=none cand_run=0a78 stamps=dominated/none/cover/none/None
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=a{2})b moved=new-run+landmark-K t=2 today_run=none cand_run=616162 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=a)\\Kb moved=new-run+landmark-K t=1 today_run=none cand_run=6162 stamps=emitted/0/unanchored/handoff/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind.rxt] (?<=\\Ga)b moved=new-run+landmark-K t=1 today_run=none cand_run=6162 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind_variable.rxt] (?<=(?:a|bc)d)x moved=new-run+landmark-K t=1 today_run=none cand_run=6478 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind_variable.rxt] (?<=((a|bc)d))x moved=new-run+landmark-K t=1 today_run=none cand_run=6478 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:okaround/lookbehind_variable_witness.rxt] (?<=(a)|(aa))c moved=new-run+landmark-K t=1 today_run=none cand_run=6163 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind_widths.rxt] (?<=(aa)|(a))c moved=new-run+landmark-K t=1 today_run=none cand_run=6163 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind_widths.rxt] (?<=(a)|(aa)|(aaa))c moved=new-run+landmark-K t=1 today_run=none cand_run=6163 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/lookbehind_widths.rxt] (?<=(aaa)|(aa)|(a))c moved=new-run+landmark-K t=1 today_run=none cand_run=6163 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/nonatomic_behind.rxt] (?<=(a)|(ba))c\\2 moved=new-run+landmark-K t=1 today_run=none cand_run=6163 stamps=emitted/none/None/None/none
+  MOVER [corpus:tests/lookaround/startpos.rxt] (?<=ab)c moved=new-run+landmark-K t=2 today_run=none cand_run=616263 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/lookaround/workbudget.rxt] (?<=ab|cd|ef|gh)x moved=new-run+landmark-K t=2 today_run=none cand_run=[61636567][62646668]78 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/possessify/composition_d27.rxt] (?<n>(?<=a))x\\k{n} moved=new-run+landmark-K t=1 today_run=none cand_run=6178 stamps=emitted/none/None/None/none
+  MOVER [corpus:tests/startset/dfahat.rxt] \\b(?<=bc)d moved=new-run+landmark-K t=2 today_run=none cand_run=626364 stamps=dominated/none/unanchored/first-memchr-bounded/hybrid
+  MOVER [corpus:tests/startset/reseed.rxt] \\B(?<=bc)d moved=new-run+landmark-K t=2 today_run=none cand_run=626364 stamps=dominated/none/unanchored/first-memchr-bounded/hybrid
+  MOVER [corpus:tests/ucp/ctxnode.rxt] (?<=(?:a))b moved=new-run+landmark-K t=1 today_run=none cand_run=6162 stamps=dominated/none/cover/none/None
+  MOVER [corpus:tests/ucp/ctxnode.rxt] (?<=ab)x moved=new-run+landmark-K t=2 today_run=none cand_run=616278 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/ucp/ctxnode.rxt] (?<=(a))x moved=new-run+landmark-K t=1 today_run=none cand_run=6178 stamps=dominated/none/unanchored/memchr/hybrid
+  MOVER [corpus:tests/utf8/axis13_ctx_illformed.rxt] (?<=a)b moved=new-run+landmark-K t=1 today_run=none cand_run=6162 stamps=dominated/none/cover/none/None
+  BACK-NOT-MOVED [bench:335] (?<=a|\xc3\xa9)x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/altcls/altnf_lookbehind.rxt] (?<=foo|fob|fo{2,3}x)y t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/assertions/d27/syntax_errors.rxt] (?<=a\\Kb)c t=2 today_run=None cand_run=None tie=None refused=True
+  BACK-NOT-MOVED [corpus:tests/findall/global.rxt] (?<=a) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/litscan/handoff_vm.rxt] (?<=xyz)a+xyz t=3 today_run=6178797a cand_run=78797a tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/litscan/presence_deny.rxt] (?<=qz)x?a: t=2 today_run=613a cand_run=717a tie=True refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/longsubject.rxt] (?<=a|bb|ccc|dddd)X t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/matrix.rxt] (?<=[ab])z t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/matrix.rxt] ((?<=[ab])z) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/matrix.rxt] (?>(?<=[ab])z) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/matrix.rxt] (?<=a|bc)z t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/matrix.rxt] ((?<=a|bc)z) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/matrix.rxt] (?>(?<=a|bc)z) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/d27/refusals.rxt] (?<=\\Ka)x t=1 today_run=None cand_run=None tie=None refused=True
+  BACK-NOT-MOVED [corpus:tests/lookaround/lookbehind_variable_witnes] (?<=a{65535}b)x t=1 today_run=None cand_run=None tie=None refused=True
+  BACK-NOT-MOVED [corpus:tests/lookaround/lookbehind_variable_witnes] (?<=bc|d)x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/lookbehind_widths.rxt] (?<=a|bc)x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/lookbehind_widths.rxt] (?<=a|bc|def)x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/lookbehind_widths.rxt] (?<=x|abc)y t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/lookbehind_widths.rxt] (?<=ab|c)x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/lookaround/startpos.rxt] (?<=(a)|(bc))x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/possessify/composition_d27.rxt] (?<=(\\w))\\1 t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/possessify/composition_d27.rxt] (?<=(a))a*\\1 t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/possessify/composition_d27.rxt] (?<=A)a* t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/possessify/composition_d27.rxt] (?<=a)a*(?=b) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/possessify/composition_d27.rxt] (?<=a|b)\\w*?\\b t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/revend/stage2_captures.rxt] (?<=,)(\\d+)$ t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/revend/stage2_captures.rxt] (?<=\\s)(\\S+)\\z t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=\\w) *a t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=\\w)-*a t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=\\w) *(?:and|or)\\b t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=[ab])\\W*?b t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=\\w) *(a) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=\\s)a*?\\n t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=\\w)\\W*x\\b t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/startset/dfahat_f1.rxt] (?<=\\w)\\s*?a t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/ucp/ctxnode.rxt] (?<=\\$)\\d+(?:\\.\\d{2})?\\b t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/ucp/ctxnode.rxt] (?<=[aeiou])x\\b t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/ucp/ctxnode.rxt] (?<=[0-9a-f])x(?=[a-z_]) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/ucp/ctxnode.rxt] (?<=a|b)x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/ucp/ctxnode.rxt] (?<=[ab])x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/ucp/ctxnode.rxt] (?<=\\d)(?=\\d) t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/utf8/axis08_lookbehind_varwidth.rxt] (?<=\\w)x t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/utf8/axis13_ctx_illformed.rxt] (?<=[a-z])\\x{e9} t=1 today_run=none cand_run=none tie=None refused=None
+  BACK-NOT-MOVED [corpus:tests/vars/basic.rxt] (?<=${v})x t=2 today_run=None cand_run=None tie=None refused=True
+  ALTROOT [corpus:tests/compound/split.rxt] (?<=^a)b|c$
+  ALTROOT [corpus:tests/compound/split.rxt] ^(?<=\\x{e9})a|b
+  ALTROOT [corpus:tests/findall/global.rxt] (?<=a)|b
+  ALTROOT [corpus:tests/lookaround/workbudget.rxt] (?<=ab|cd|ef|gh)x|q
+  ALTROOT [corpus:tests/startset/dfahat.rxt] (?<=a)b|(?<=bc)d
+  ALTROOT [corpus:tests/startset/dfahat.rxt] (?m)(?<=\\n)a|b$
+  ALTROOT [corpus:tests/startset/dfahat.rxt] (?<=ab)z|\\bw
+  ALTROOT [corpus:tests/startset/dfahat.rxt] (?<=abc)d|\\bx
+  ALTROOT [corpus:tests/startset/dfahat.rxt] \\b(?:ab|cd)\\b|(?<=x)z
+abstentions by reason: (?x) or (?i) 13, conditional 11, group head 2, recursion 4, subroutine call 40, unbalanced 1, verb or (*...) 2
+§14.2 / §14.4 L3 expected rows (16, 0 disagreements):
+  EXPECT (?<=foo)bar                        ok   expect_mover=True model_mover=True kind=back t=3 cand_run=666f6f626172 today_run=626172 tie=None
+  EXPECT (?<=ab|b)c                         ok   expect_mover=True model_mover=True kind=back t=1 cand_run=6263 today_run=none tie=None
+  EXPECT (?<=ab)ab[a-z]*q                   ok   expect_mover=True model_mover=True kind=back t=2 cand_run=61626162 today_run=6162 tie=None
+  EXPECT (?<=qz)ab                          ok   expect_mover=True model_mover=True kind=back t=2 cand_run=717a6162 today_run=6162 tie=None
+  EXPECT (?<=e{10})eeeeeqzx                 ok   expect_mover=True model_mover=True kind=back t=10 cand_run=656565656565656565656565656565717a78 today_run=6565656565717a78 tie=None
+  EXPECT (?<=foo)bar(\w)\1                  ok   expect_mover=True model_mover=True kind=back t=3 cand_run=666f6f626172[30-3941-5a5f61-7a] today_run=626172[30-3941-5a5f61-7a] tie=None
+  EXPECT (?<=foobar)\d*x                    ok   expect_mover=True model_mover=True kind=back t=6 cand_run=666f6f626172 today_run=none tie=None
+  EXPECT (?<=foo)                           ok   expect_mover=True model_mover=True kind=back t=3 cand_run=666f6f today_run=none tie=None
+  EXPECT (?<=a{32})b                        ok   expect_mover=True model_mover=True kind=back t=32 cand_run=6161616161616161616161616161616161616161616161616161616161616161 today_run=none tie=None
+  EXPECT (?<=a)a(\w)\1                      ok   expect_mover=True model_mover=True kind=back t=1 cand_run=6161[30-3941-5a5f61-7a] today_run=none tie=None
+  EXPECT (?<=foo)bar(?=baz)                 ok   expect_mover=True model_mover=True kind=back t=3 cand_run=666f6f626172 today_run=626172 tie=None
+  EXPECT xyz(?<=yz)abc                      ok   expect_mover=False model_mover=False kind=none t=None cand_run=None today_run=None tie=None
+  EXPECT (?<=fo{1,3})bar                    ok   expect_mover=False model_mover=False kind=none t=None cand_run=None today_run=None tie=None
+  EXPECT [ac][ac]cc(?<=acc)(?<=cc)d         ok   expect_mover=False model_mover=False kind=none t=None cand_run=None today_run=None tie=None
+  EXPECT bar(?=baz)                         ok   expect_mover=False model_mover=False kind=none t=None cand_run=None today_run=None tie=None
+  EXPECT xy[ac]b(?:(?<=ab)b|c)              ok   expect_mover=False model_mover=False kind=none t=None cand_run=None today_run=None tie=None
+CENSUS-VERDICT: PROCEED (57 predicted movers: 57 (corpus-only 55, bench 2, both 0))
+== census COMPLETE: 57 predicted movers, 0 expectation disagreements, 1 s

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/slotxf8_report.md
+sections: Summary; F7; F8; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

@@ -1,0 +1,3 @@
+# docs/dev/reviews/2026-11-19-r56-predlint/ — critic texts for review r56
+
+The three critics' findings (CONTRACT: `contract.md` with its `contract_rules_from_text.md`; CHECKS: `checks.md`; ROBUST: `robust.md`), the coordinator's `verify_inline.txt` and the checks critic's mutation harness `checks_harness/` (`mut.py`, `mut2.py` and their outputs `out.txt`, `out2.txt`, run against the SUBJECT lint) for `../2026-11-19-r56-predlint.md` (scripts/pred_doc_lint.py, code review; the round dir is `crit-predlint`). `checks_harness/fix_lane_final_out.txt` is the output of the fix lane's successor harness `scripts/tests/pred_doc/mut.py` (the acceptance gate) on the fixed lint. Records only; the review file holds the rulings. Copied unchanged. The round's `COMMON.md` is not copied.

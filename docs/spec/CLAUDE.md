@@ -100,7 +100,7 @@ contents block).
 - `ir_listing.md` -- `--emit-ir` format (VM-only, nine `#section` blocks); read
   before changing anything `vm_render_listing` prints.
 - `limits.md` -- resource-bound contract. `pcrec --list-limits` names each
-  number's section in its `anchor` column (3.1-3.9 and 8), and
+  number's section in its `anchor` column (3.1-3.12 and 8), and
   `tests/registry/limits_check.sh` finds each anchored value, comma-grouped,
   inside that section's text: keep a number's literal in its section.
 - `cli.md` -- the `pcrec` command-line reference (§1 flags, §2 listing/query

@@ -1,0 +1,192 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(DOM-AR) table (AR)'s marked cells per domain: h absent (one kind), h's group \d, VALUES of a \d group = 0..9
+   one (h?: <5)                             ANY HOLDS  GROUP HOLDS  VALUES HOLDS
+   one (h?: !(<10))                         ANY HOLDS  GROUP FAILS  VALUES FAILS
+   record (h?: <5, k: 3..7), k = 6          ANY HOLDS  GROUP HOLDS  VALUES HOLDS
+   record (h?: !(<10), k: 3..7), k = 6      ANY HOLDS  GROUP FAILS  VALUES FAILS
+   joint ((h?, k): >= (5, 3)), k = 6        ANY HOLDS  GROUP HOLDS  VALUES HOLDS
+
+(DOM-TM2) t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/, 11,110 subjects; R = padded(>= (9, 30)), office = padded(between((9, 0), (17, 0)))
+   m: GROUP 100 texts (\d\d), VALUES 100 (run), ANY 224 (represented)
+   ((h, m?): R)         on '10': ANY HOLDS  GROUP HOLDS  VALUES HOLDS
+      t2 ((h, m?): R): ANY vs GROUP                                   differ     0 of  11110
+      t2 ((h, m?): R): ANY vs VALUES                                  differ     0 of  11110
+      t2 ((h, m?): R): GROUP vs VALUES                                differ     0 of  11110
+   ((h, m?): !R)        on '10': ANY HOLDS  GROUP FAILS  VALUES FAILS
+      t2 ((h, m?): !R): ANY vs GROUP                                  differ    90 of  11110   smallest '10' (ANY HOLDS, GROUP FAILS)
+      t2 ((h, m?): !R): ANY vs VALUES                                 differ    90 of  11110   smallest '10' (ANY HOLDS, VALUES FAILS)
+      t2 ((h, m?): !R): GROUP vs VALUES                               differ     0 of  11110
+   ((h, m?): !office)   on '10': ANY HOLDS  GROUP FAILS  VALUES FAILS
+      t2 ((h, m?): !office): ANY vs GROUP                             differ     9 of  11110   smallest '9' (ANY HOLDS, GROUP FAILS)
+      t2 ((h, m?): !office): ANY vs VALUES                            differ     9 of  11110   smallest '9' (ANY HOLDS, VALUES FAILS)
+      t2 ((h, m?): !office): GROUP vs VALUES                          differ     0 of  11110
+   ANY    ((h, m?): R) and ((h, m?): !R) BOTH hold on  92 of 11110  e.g. ['9', '09', '10']
+   GROUP  ((h, m?): R) and ((h, m?): !R) BOTH hold on   2 of 11110  e.g. ['9', '09']
+   VALUES ((h, m?): R) and ((h, m?): !R) BOTH hold on   2 of 11110  e.g. ['9', '09']
+   ENGINE-RUN: ((h, m?): !office) under GROUP over 11,110 (regex from the set)
+
+(DOM-RZ) /(?<k>\d)(?:;(?<h>\d))*/, 1,110 subjects: marked h per domain; record vs & per domain
+   (h?: <5, k: 3..7) vs (h?: <5) & (k: 3..7) [ANY]                    differ     0 of   1110
+   (h?: <5, k: 3..7) vs (h?: <5) & (k: 3..7) [GROUP]                  differ     0 of   1110
+   (h?: <5, k: 3..7) vs (h?: <5) & (k: 3..7) [VALUES]                 differ     0 of   1110
+      (h?: <5, k: 3..7): ANY vs GROUP                                 differ     0 of   1110
+      (h?: <5, k: 3..7): ANY vs VALUES                                differ     0 of   1110
+      (h?: <5, k: 3..7): GROUP vs VALUES                              differ     0 of   1110
+   (h?: 5..9, k: 3..7) vs (h?: 5..9) & (k: 3..7) [ANY]                differ     0 of   1110
+   (h?: 5..9, k: 3..7) vs (h?: 5..9) & (k: 3..7) [GROUP]              differ     0 of   1110
+   (h?: 5..9, k: 3..7) vs (h?: 5..9) & (k: 3..7) [VALUES]             differ     0 of   1110
+      (h?: 5..9, k: 3..7): ANY vs GROUP                               differ     0 of   1110
+      (h?: 5..9, k: 3..7): ANY vs VALUES                              differ     0 of   1110
+      (h?: 5..9, k: 3..7): GROUP vs VALUES                            differ     0 of   1110
+   (h?: !(<10), k: 3..7) vs (h?: !(<10)) & (k: 3..7) [ANY]            differ     0 of   1110
+   (h?: !(<10), k: 3..7) vs (h?: !(<10)) & (k: 3..7) [GROUP]          differ     0 of   1110
+   (h?: !(<10), k: 3..7) vs (h?: !(<10)) & (k: 3..7) [VALUES]         differ     0 of   1110
+      (h?: !(<10), k: 3..7): ANY vs GROUP                             differ     5 of   1110   smallest '3' (ANY HOLDS, GROUP FAILS)
+      (h?: !(<10), k: 3..7): ANY vs VALUES                            differ     5 of   1110   smallest '3' (ANY HOLDS, VALUES FAILS)
+      (h?: !(<10), k: 3..7): GROUP vs VALUES                          differ     0 of   1110
+
+(DOM-ZJ) jcfold2's non-product sets on (RZ)'s pattern, zero passes, h MARKED: the subjects that HOLD
+   ((h?, k): >= (5, 3))                 ANY ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  GROUP ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  VALUES ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+         ((h?, k): >= (5, 3)): ANY vs GROUP                           differ     0 of     10
+         ((h?, k): >= (5, 3)): ANY vs VALUES                          differ     0 of     10
+         ((h?, k): >= (5, 3)): GROUP vs VALUES                        differ     0 of     10
+   ((h?, k): (0|1|2, 3|4) | (5, 5))     ANY ['3', '4', '5']  GROUP ['3', '4', '5']  VALUES ['3', '4', '5']
+         ((h?, k): (0|1|2, 3|4) | (5, 5)): ANY vs GROUP               differ     0 of     10
+         ((h?, k): (0|1|2, 3|4) | (5, 5)): ANY vs VALUES              differ     0 of     10
+         ((h?, k): (0|1|2, 3|4) | (5, 5)): GROUP vs VALUES            differ     0 of     10
+   ((h?, k): ("x", 3) | (0, 5))         ANY ['3', '5']  GROUP ['5']  VALUES ['5']
+         ((h?, k): ("x", 3) | (0, 5)): ANY vs GROUP                   differ     1 of     10   smallest '3' (ANY HOLDS, GROUP FAILS)
+         ((h?, k): ("x", 3) | (0, 5)): ANY vs VALUES                  differ     1 of     10   smallest '3' (ANY HOLDS, VALUES FAILS)
+         ((h?, k): ("x", 3) | (0, 5)): GROUP vs VALUES                differ     0 of     10
+   ((h?, k): < (0, 3))                  ANY ['0', '1', '2']  GROUP ['0', '1', '2']  VALUES ['0', '1', '2']
+         ((h?, k): < (0, 3)): ANY vs GROUP                            differ     0 of     10
+         ((h?, k): < (0, 3)): ANY vs VALUES                           differ     0 of     10
+         ((h?, k): < (0, 3)): GROUP vs VALUES                         differ     0 of     10
+
+(DOM-ZE) /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/, 11,100 subjects, the set empty through $a; h MARKED (F1)
+      C1 (h?: <$a, k: 3): ANY vs GROUP                                differ     0 of  11100
+      C1 (h?: <$a, k: 3): ANY vs VALUES                               differ     0 of  11100
+      C1 (h?: <$a, k: 3): GROUP vs VALUES                             differ     0 of  11100
+      C2 ((h?, k): < ($a, 0)): ANY vs GROUP                           differ     0 of  11100
+      C2 ((h?, k): < ($a, 0)): ANY vs VALUES                          differ     0 of  11100
+      C2 ((h?, k): < ($a, 0)): GROUP vs VALUES                        differ     0 of  11100
+   C1 marked vs (h?: <$a) & (k: 3) [ANY]                              differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 marked [ANY]                 differ     0 of   1110
+   C1 marked vs (h?: <$a) & (k: 3) [GROUP]                            differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 marked [GROUP]               differ     0 of   1110
+   C1 marked vs (h?: <$a) & (k: 3) [VALUES]                           differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 marked [VALUES]              differ     0 of   1110
+
+(DOM-2SP) two spellings of one pattern: h's group text differs, the matches and captures do not
+   P1, P2, P3 give the same match and captures on 1110 of 1110 (RZ) subjects; 310 match
+   P1 /(?<k>\d)(?:;(?<h>\d)(?<=[0-4]))*/    h: GROUP 0123456789, VALUES 01234
+   P2 /(?<k>\d)(?:;(?<h>[0-4]))*/           h: GROUP 01234, VALUES 01234
+   P3 /(?<k>\d)(?:;(?=[0-4])(?<h>\d))*/     h: GROUP 0123456789, VALUES 01234
+   (h?: 5..9, k: 3..7) ANY    zero-pass subjects HOLDING: P1 5 of 10, P2 5 of 10, P3 5 of 10
+   P1 vs P2 [ANY]                                                     differ     0 of    310
+   P3 vs P2 [ANY]                                                     differ     0 of    310
+   (h?: 5..9, k: 3..7) GROUP  zero-pass subjects HOLDING: P1 5 of 10, P2 0 of 10, P3 5 of 10
+   P1 vs P2 [GROUP]                                                   differ     5 of    310   smallest '3' (P1 HOLDS, P2 FAILS)
+   P3 vs P2 [GROUP]                                                   differ     5 of    310   smallest '3' (P3 HOLDS, P2 FAILS)
+   (h?: 5..9, k: 3..7) VALUES zero-pass subjects HOLDING: P1 0 of 10, P2 0 of 10, P3 0 of 10
+   P1 vs P2 [VALUES]                                                  differ     0 of    310
+   P3 vs P2 [VALUES]                                                  differ     0 of    310
+
+(DOM-SET) two spellings of one set, and two different sets that agree on every value h can hold; (RZ)
+   (h?: <5) vs (h?: 0|1|2|3|4)  [one set, two spellings; ANY]         differ     0 of   1110
+   (h?: <0) vs (h?: !(<10))  [both hold no \d; ANY]                   differ    10 of   1110   smallest '0' (<0 FAILS, !(<10) HOLDS)
+   (h?: <5) vs (h?: 0|1|2|3|4)  [one set, two spellings; GROUP]       differ     0 of   1110
+   (h?: <0) vs (h?: !(<10))  [both hold no \d; GROUP]                 differ     0 of   1110
+   (h?: <5) vs (h?: 0|1|2|3|4)  [one set, two spellings; VALUES]      differ     0 of   1110
+   (h?: <0) vs (h?: !(<10))  [both hold no \d; VALUES]                differ     0 of   1110
+
+(DOM-COMP) ruling R2 (4): where VALUES (the values h takes in some match) is NOT read off the group's text; each RUN by enumeration, PCRE2 only (Python `re` lacks branch reset and recursion)
+   LOOKAROUND (regular; a product with the lookaround's language)
+      /(?<h>\d)(?<=[0-4])/               group text \d                     VALUES (subjects to length 1): '0' '1' '2' '3' '4'
+   ATOMIC / POSSESSIVE (the group can match, the match never keeps it)
+      /(?<h>\d++)5|x/                    group text \d++                   VALUES (subjects to length 3):   (EMPTY)
+   CONDITIONAL on another label (the branch read depends on the match)
+      /(?<a>x)?(?<h>(?(a)[0-4]|[5-9]))/  group text (?(a)[0-4]|[5-9])      VALUES (subjects to length 2): '0' '4' '5' '9'
+   BACKREFERENCE (the value set is not regular: a^n b a^n)
+      /(?<h>(?<a>a+)b\k<a>)/             group text (?<a>a+)b\k<a>         VALUES (subjects to length 7): 'aba' 'aabaa' 'aaabaaa'
+   RECURSION (the value set is context-free: balanced parentheses)
+      /(?<h>\((?:x|(?&h))*\))/           group text \((?:x|(?&h))*\)       VALUES (subjects to length 6): '()' '(x)' '(())' '(xx)' '(()x)' '((x))' '(x())' '(xxx)' '((()))' '(()())' '(()xx)' '((x)x)' ...
+      BACKREFERENCE check: every value is a^n b a^n: True; RECURSION check: every value balanced: True
+   CONTEXT (R2's "some match of the pattern": any match, or a match agreeing with this one's other labels?)
+      /(?|(?<k>a)(?:;(?<h>\d))*|(?<k>b)(?:;(?<h>[5-9]))*)/ (branch reset): VALUES of h over the pattern 0123456789; given k = b: 56789
+      (h?: <5) on 'b' (zero passes): over the pattern's VALUES HOLDS (h = 0 is a value of SOME match); given k = b FAILS
+
+(DOM-SUMMARY) per candidate: (i) a never-holdable value witnesses an answer; (ii) two spellings of one pattern split; (iii) two spellings of one set split [(iii') sets equal on every holdable value split]; (iv) record = &
+   ANY    (i) YES (112 answers in 7 tables; e.g. AR one (h?: !(<10)) on '-')  (ii) no  (0)  (iii) no  (0) [(iii') 10]  (iv) KEPT (0 split)
+          (i) AR one (h?: !(<10))                              1 of      1  smallest '-'
+          (i) AR record (h?: !(<10), k: 3..7), k = 6           1 of      1  smallest '-'
+          (i) TM2 ((h, m?): !R)                               90 of  11110  smallest '10'
+          (i) TM2 ((h, m?): !office)                           9 of  11110  smallest '9'
+          (i) RZ (h?: !(<10), k: 3..7)                         5 of   1110  smallest '3'
+          (i) ZJ ((h?, k): ("x", 3) | (0, 5))                  1 of     10  smallest '3'
+          (i) 2SP P1 (h?: 5..9, k: 3..7)                       5 of    310  smallest '3'
+   GROUP  (i) YES (5 answers in 1 tables; e.g. 2SP P1 (h?: 5..9, k: 3..7) on '3')  (ii) YES (10)  (iii) no  (0) [(iii') 0]  (iv) KEPT (0 split)
+          (i) 2SP P1 (h?: 5..9, k: 3..7)                       5 of    310  smallest '3'
+   VALUES (i) no  (0 answers in 0 tables)  (ii) no  (0)  (iii) no  (0) [(iii') 0]  (iv) KEPT (0 split)
+
+(LOOP) optional-as-loop: is `?` (upper bound 1) a loop for the pairing rule?
+   (OP) /(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/ & (h: <10, m: <30), 259 lists; WANTED = the answers before 14:31
+   (h: <10, m: <30)                   vs WANTED, `?` NOT a loop       differ     1 of    259   smallest '' (want HOLDS, notloop FAILS)
+   (h: <10, m: <30)                   vs WANTED, `?` a loop           differ     1 of    259   smallest '' (want HOLDS, loop FAILS)
+   (h: <10, m: <30)                   `?` a loop vs not               differ     0 of    259
+   (h?, m?)                           vs WANTED, `?` NOT a loop       differ    11 of    259   smallest '3,' (want FAILS, notloop HOLDS)
+   (h?, m?)                           vs WANTED, `?` a loop           differ    11 of    259   smallest '3,' (want FAILS, loop HOLDS)
+   (h?, m?)                           `?` a loop vs not               differ     0 of    259
+   (h?, m = 0)                        vs WANTED, `?` NOT a loop       differ    11 of    259   smallest '3,' (want FAILS, notloop HOLDS)
+   (h?, m = 0)                        vs WANTED, `?` a loop           differ    11 of    259   smallest '3,' (want FAILS, loop HOLDS)
+   (h?, m = 0)                        `?` a loop vs not               differ     0 of    259
+   (h, m = 0)                         vs WANTED, `?` NOT a loop       differ    12 of    259   smallest '' (want HOLDS, notloop FAILS)
+   (h, m = 0)                         vs WANTED, `?` a loop           differ    12 of    259   smallest '' (want HOLDS, loop FAILS)
+   (h, m = 0)                         `?` a loop vs not               differ     0 of    259
+   all(...) [C]                       vs WANTED, `?` NOT a loop       differ    11 of    259   smallest '3,' (want FAILS, notloop HOLDS)
+   all(...) [C]                       vs WANTED, `?` a loop           differ    11 of    259   smallest '3,' (want FAILS, loop HOLDS)
+   all(...) [C]                       `?` a loop vs not               differ     0 of    259
+   occurs.none(((h, m?): !R)) [E]     vs WANTED, `?` NOT a loop       differ     0 of    259
+   occurs.none(((h, m?): !R)) [E]     vs WANTED, `?` a loop           differ     0 of    259
+   occurs.none(((h, m?): !R)) [E]     `?` a loop vs not               differ     0 of    259
+   all A2v (withdrawn)                vs WANTED, `?` NOT a loop       differ     0 of    259
+   all A2v (withdrawn)                vs WANTED, `?` a loop           differ    36 of    259   smallest '3,' (want FAILS, loop HOLDS)
+   all A2v (withdrawn)                `?` a loop vs not               differ    36 of    259   smallest '3,' (notloop FAILS, loop HOLDS)
+   all A2z (withdrawn)                vs WANTED, `?` NOT a loop       differ     0 of    259
+   all A2z (withdrawn)                vs WANTED, `?` a loop           differ    11 of    259   smallest '3,' (want FAILS, loop HOLDS)
+   all A2z (withdrawn)                `?` a loop vs not               differ    11 of    259   smallest '3,' (notloop FAILS, loop HOLDS)
+   SIBLING drill: A = /(?<k>\d)?-(?<h>\d)?/, B = /(?:(?<k>\d)|)-(?:(?<h>\d)|)/ (x? = (?:x|), CF 13:38), condition (h: <5, k?: 3..7) and its & spelling
+   NOT a loop: A vs B (record)                                        differ     0 of    121
+   NOT a loop: A record vs A &                                        differ     0 of    121
+   `?` a loop: A's record is the SIBLING-LOOP COMPILE ERROR (k's loop and h's loop do not nest), decided from the text: A ERROR vs B an answer on 121 of 121; A's & spelling answers (= B's on 121 of 121)
+   A list of items with two optional fields, /(?:(?<a>\d)?-(?<b>\d)?,)*/ & (a?: <5, b?: 3..7):
+      NOT a loop: answers on all 43 lists (ENGINE-RUN), e.g. '3-6,' HOLDS, '7-2,' FAILS, '' HOLDS; `?` a loop: the SIBLING-LOOP ERROR on all 43
+
+(ALL) ruling C: all(c) := c with every label marked, read F1
+   (LI) (n: <5) vs all((n: <5))                                       differ     1 of   1111   smallest '' (plain FAILS, all HOLDS)
+   (LI) all((n: <5)) vs (n?: <5)                                      differ     0 of   1111
+   (LI) all((n: <0)) vs (n?: <0)  [the empty-set corner, corrected]   differ     0 of   1111
+   (LI) all((n: <0)) vs the vacuous 'holds over none' absfold computed differ     1 of   1111   smallest '' (all FAILS, vacuous HOLDS)
+   L36: all((n: <5)) [C] over lane absent's 28 spelling rows: groups of equal spellings that SPLIT: 0 of 11
+   L36: all((n: <0)) [C] over lane absent's 28 spelling rows: groups of equal spellings that SPLIT: 0 of 11
+   (RZ) all((h: <5, k: 3..7)) vs all((h: <5)) & all((k: 3..7))  [record = & under all] differ     0 of   1110
+   (RZ) all(record) vs the answers before 14:31                       differ     0 of   1110
+   (RZ) '9': all(record) FAILS (k = 9 tested); '3': HOLDS
+   (OP) all((h: <10, m: <30)) vs WANTED (before 14:31)                differ    11 of    259   smallest '3,' (want FAILS, all HOLDS)
+   (OP) (m: <30) vs all((m: <30)), every list                         differ    71 of    259   smallest '' (plain FAILS, all HOLDS)
+   (OP) the same, lists where m HAS a value                           differ    56 of    244   smallest '3,3:15,' (plain FAILS, all HOLDS)
+
+(NONE) ruling E: the mark COUNTED (F1) inside occurs.*/some/count; (OP), per domain
+   occurs.none(((h, m?): !R)) mark COUNTED vs WANTED [ANY]            differ     0 of    259
+   occurs.none(((h, m?): !R)) mark COUNTED vs WANTED [GROUP]          differ     0 of    259
+   occurs.none(((h, m?): !R)) mark COUNTED vs WANTED [VALUES]         differ     0 of    259
+   occurs.none(((h, m?): !R)) mark NOT counted (14:31) vs WANTED      differ    36 of    259   smallest '3,' (want FAILS, notcounted HOLDS)
+   occurs.none(((h, m): !R)) unmarked vs WANTED                       differ    36 of    259   smallest '3,' (want FAILS, unmarked HOLDS)
+   the domain decides it in general: R' = (h: <10, m: padded(<100)), occurs.none(((h, m?): !R')) on '3,': ANY FAILS  GROUP HOLDS  VALUES HOLDS
+   4G.6 (4)'s pair, occurrences(/ab(?<g>[xy])?/) on 'ab': (g?: "x") / some((g?: "x")) with the mark counted: ANY HOLDS/HOLDS  GROUP HOLDS/HOLDS  VALUES HOLDS/HOLDS
+
+(GF) ruling K: the general form (a candidate set D per absent label), written without part()/tup(), vs the ruled engine
+   (AR) 4 kinds x 4 controls x 3 shapes, (TM2) 11,110 x 3, (ZJ) 10 x 4 sets x 2, (ZE) 11,100 x 2 x 2; each under ANY, GROUP, VALUES: 233574 cases, differ 0
+
+TOTAL engine-run cases 14014 differ 0 engine-disagreements 0 probes 58976

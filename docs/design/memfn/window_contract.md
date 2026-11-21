@@ -101,7 +101,7 @@ D161 add. 9: pcrec chooses only the ORIGIN of the handed sub-problem; given it, 
 | id | sev | where | disposition |
 |---|---|---|---|
 | E1 | BLOCKER | §2.3 (context terms), §2.4 (coverage, the edge), §2.5 | RESOLVED by D161 add. 7. A context check (`(?m)^`'s preceding `\n`) is not a span. pcrec tries the edge itself (today's shape, `emit_dfa.c:12376` at the review's commit) and opens the stream after it. "Miss = NOMATCH" is restated as "no match begins at any COVERED candidate"; the edge is outside the coverage |
-| E2 | MAJOR | §0.6, §5.1, §5.2, §5.6, §8.1(iii), §13 | ACCEPTED. The producer's claim is narrowed to per-path-common (hull) spans. `start_set` and the k-set stay their own facts. `span_facts` is specified as a MEMBER of the position-pin fact family. The offset-pinned union span is a filed unlock with a trigger. C-SP1/C-SP2 get non-vacuity floors |
+| E2 | MAJOR | §0.6, §5.1, §5.2, §5.6, §8.1(iii), §13 | ACCEPTED. The producer's claim is narrowed to per-path-common (hull) spans. `start_set` and the k-set stay their own facts. `span_facts` is specified as a MEMBER of the position-pin fact family. The offset-pinned union span is a filed unlock with a trigger. C-SP1/C-SP2 get non-vacuity floors *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | E3 | MAJOR | §5.4 (T-CUT), §5.4a (T-PRES), §13 unlock (c) | ACCEPTED. Presence is its own table beside the cut, so `a.*zxq` sends segment 0 AND the `zxq` presence site |
 | E4 | MAJOR | §4.3 (T-PROOF) | KEPT as pcrec-side consumption conditions of a proof (D161 add. 8): no proof-skip on seeded or context-viewed machines; the VM row skips no assertion and moves no meter |
 | E5 | MAJOR | §2.3 (Range) | ACCEPTED. Candidates are span-0 STARTS, not occurrences. Reads below `lo` are bounded by `floor` under Q-R7-1's reads-below rule. Character alignment under `-e utf8` is pcrec's consumer obligation; the kit stays encoding-blind |
@@ -173,7 +173,7 @@ Revision 1's §12 Q3 (`U` now or later) is DELETED: D161 add. 7 removes `U`.
    with "fo" of `foobar` proven, pcrec asks a span test for the rest or starts
    its engine past the proof; with "foobar" proven and nothing else to check,
    pcrec reports the match.
-6. **ONE pcrec-side producer of HULL spans**: a new core fact `span_facts`
+6. **ONE pcrec-side producer of HULL spans**: a new core fact `span_facts` *(superseded by cover_cap.md rev 4, 2026-11-15)*
    (E2, proposed owner `src/facts/spans.c`), a MEMBER of the position-pin fact
    family (`start_set`, the k-set, `run_pin`, `end_pin`, compound's split
    facts, landmark K; §5.6) `[r4 E2]`. It is one AST walk that generalizes
@@ -522,7 +522,7 @@ there is no edge, and an exhausted stream is NOMATCH outright.
 |---|---|---|---|
 | PF FIND, DFA hat, VM hat (R-17) | one span, one position, class `S` (an offset-pinned union, §5.6) | 0 / 0 | stream; candidate = the hit |
 | MLINE `(?m)^` | no span; one context predicate `{\n}` one byte before the origin | -1 / 0 (R-17's spelling) | stream from edge + 1; candidate = the hit + 1; the edge is pcrec's |
-| offset-skip FUNC | one span: the k-set positions 0..k (an offset-pinned union, from the k-set, not from `span_facts`) | 0 / 0 | stream; candidate = the hit |
+| offset-skip FUNC | one span: the k-set positions 0..k (an offset-pinned union, from the k-set, not from `span_facts`) | 0 / 0 | stream; candidate = the hit *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | run pre-check (unbounded offset) `[rev3 C-5]` | the run as a PRESENCE span (and each necessary-set member as its own, unpicked), beside span 0 where one exists | none (`window_stated` 0); `omin` 0 at B3a | the same stream: EMPTY = NOMATCH (obligation 5); on a presence-only site, the range `[lo, n)` (obligation 6) |
 | K82/L1 handoff `[rev3 C-5, Q-WR-5 (a)]` | origin = the landmark: span 0 is the landmark (one byte, or a RUN term); presence is fused (an exhausted stream is the landmark's absence); `head_max` = K | 0 / 0 | a stream; pcrec keeps `max(lo, c − K)`, the utf8 round-up and the re-entry (a further USE of the same site at `scan_position`). Framing (b), origin = the match start, is a later byte move behind its own deny |
 
@@ -1350,7 +1350,10 @@ kit keeps the freedom to skip a dense span.
     mask; the mask's information is which OPTIONAL positions also hold.
   - The positions per span are bounded by a shape bound `MF_MAX_SPAN_POS`,
     derived from `PCREC_MAX_REQ_RUN_SCAN` (32) and asserted where pcrec
-    builds a span, on `MF_RANK_MAX`'s precedent.
+    builds a span, on `MF_RANK_MAX`'s precedent. *(R-45 plan B, MF_SITE_ABI 30:
+    a span's sets are HOST storage of exactly `len` rows, so the bound is the
+    kit's refusal bound `MF_WSPAN_POS` only; the held raise lifts it to 4095
+    and retires `MF_MAX_SPAN_POS`)*
 - **Layer invariance** (the floor rule's condition). The proof is the kit's
   statement for the SITE REQUEST (the site fields and its analysis object). It
   is the SAME under `-fno-memfn-simd`, `-fmemfn-simd` at every level, and every
@@ -1444,7 +1447,7 @@ Q12.2's leaning (fixed offsets only) stands.
 
 ### 5.2 The producer
 
-- **What.** One new CORE fact, `span_facts` (E2, on the lowered tree, so it
+- **What.** One new CORE fact, `span_facts` (E2, on the lowered tree, so it *(superseded by cover_cap.md rev 4, 2026-11-15)*
   reads the encoding, `-i` and `--ucp` by construction). Proposed owner
   `src/facts/spans.c`; no prior and no option read. It is a MEMBER of the
   position-pin fact family (§5.6), not a parallel producer `[r4 E2]`.
@@ -1556,7 +1559,7 @@ port today's pre-check (D1/P-rows, zero movers through B3b).
 
 ### 5.6 The position-pin fact family `[r4 E2]`
 
-`span_facts` joins a family that answers one question, "which bytes or
+`span_facts` joins a family that answers one question, "which bytes or *(superseded by cover_cap.md rev 4, 2026-11-15)*
 anchors are pinned at which positions of every match", today in six members:
 
 | member | owner | states |
@@ -1567,7 +1570,7 @@ anchors are pinned at which positions of every match", today in six members:
 | `end_pin` / `end_window` | `src/facts/endwin.c` | the whole-pattern end pins |
 | compound's split facts (`pin_split`'s per-path has/must) | `compound.md` §B | the per-path anchor classes |
 | landmark K | `req.c` | the max offset of the landmark from the attempt start |
-| `span_facts` (new) | `src/facts/spans.c` | the hull spans with `[omin, omax]` from their segment's first span |
+| `span_facts` (new) | `src/facts/spans.c` | the hull spans with `[omin, omax]` from their segment's first span *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 
 - **The unification is already proposed** in `match_split_pinonly.md` §4.3 /
   §9 U3 (the four pin members as projections of `pin_split`). `compound.md`
@@ -1576,7 +1579,7 @@ anchors are pinned at which positions of every match", today in six members:
   to the six members above: ONE position-pin record per pattern, with each
   member a projection. **Trigger:** U3's own (4a landed, plus a reader that
   gains from the stronger facts) or S4's offset-k move, whichever first.
-- **Until then** `span_facts` is specified AS a member: same tree level
+- **Until then** `span_facts` is specified AS a member: same tree level *(superseded by cover_cap.md rev 4, 2026-11-15)*
   (lowered), same epoch, its CONTROLS are its siblings (§5.3), and no member
   re-derives another's question.
 
@@ -1754,7 +1757,7 @@ it as a placement with that trigger.
 5. **The kit's own row tables** (`pffind`, `precheck`, `fn_rows[]`, `arms`
    under `kit_walk`). A chain is a form of those tables, never a parallel
    planner beside them.
-6. **The position-pin fact family** (§5.6), with `span_facts` as its newest
+6. **The position-pin fact family** (§5.6), with `span_facts` as its newest *(superseded by cover_cap.md rev 4, 2026-11-15)*
    member and one proposed unification.
 7. **The knowledge-source family** `[rev3]` ([KNOW-SRC], `measure_sets.md` §9):
    the analysis object, measurement sets and [TABLE-JUDGE]'s picks. The

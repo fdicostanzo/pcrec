@@ -20,7 +20,7 @@
  *           largest verify-YES core offset's, wsc1_report.md);
  *   BIND    a yielded candidate satisfies every verify-YES span of the chosen
  *           alternative, read straight off the facts;
- *   PROOF   every offset the define's class proves (mf_class.proven[],
+ *   PROOF   every offset the define's class proves (mf_class.proof[],
  *           R-25) holds at the yielded candidate inside the subject;
  *   COMPL   no candidate where EVERY span of the chosen alternative holds
  *           (none of their reads inside [0, F)) lies before the answer;
@@ -33,6 +33,9 @@
  * Floors on the cells the design names are printed for run_g2_win.sh to
  * hold (K35): edge rejections under an expression floor, core and non-core
  * positions off the subject, NOP empties, and per path and form id.
+ * R-45's span forms (review r35 F12, F17): a site with a stated one-class
+ * stretch gets DETERMINISTIC breaks (run_breaks), and the LONG ROWS (k 500
+ * and 4095) are held to G2's own byte loop (run_long_rows).
  */
 #include <setjmp.h>
 #include <signal.h>
@@ -47,6 +50,8 @@
 extern const g2w_site g2w_sites[];
 extern const g2w_fn g2w_fns[];
 extern const unsigned g2w_nsites;
+extern const g2w_long_site g2w_longs[];
+extern const unsigned g2w_nlong;
 
 static long failed, passed, calls, hits;
 static long edge_rejects, core_off, noncore_off, nop_empty, neg_reads;
@@ -120,15 +125,20 @@ typedef struct {
 static long page;
 static unsigned char *regU, *regL;     /* three pages each: guard placements */
 
-static outcome call(unsigned si, const unsigned char *s, size_t n, size_t lo, size_t fl)
+static outcome call_fn(g2w_fn fn, const unsigned char *s, size_t n, size_t lo, size_t fl)
 {
     outcome o = { 0, 0, 0, 0 };
     in_call = 1;
     if (sigsetjmp(jb, 1)) { in_call = 0; o.faulted = 1; return o; }
-    o.got = g2w_fns[si](s, n, lo, fl, &o.wrote, &o.missed);
+    o.got = fn(s, n, lo, fl, &o.wrote, &o.missed);
     in_call = 0;
     calls++;
     return o;
+}
+
+static outcome call(unsigned si, const unsigned char *s, size_t n, size_t lo, size_t fl)
+{
+    return call_fn(g2w_fns[si], s, n, lo, fl);
 }
 
 /* The expected outcome of one call, by the reference, and its check. */
@@ -185,7 +195,7 @@ static void judge(unsigned si, const g2w_dec *d, const unsigned char *s, long n,
     hits++;
     /* PROOF (R-25): every offset the define's class proves holds at the
        yielded candidate wherever it lies inside the subject */
-    for (int k = 0; k < G2W_NPROOF; k++) {
+    for (int k = 0; k < x->nproof; k++) {
         long p = want + k + G2W_PROOF_LO;
         if (p < 0 || p >= n) continue;
         if (!has(x->proven[k], s[p])) {
@@ -224,15 +234,15 @@ static void census(const g2w_dec *d, const unsigned char *s, long n, long F, lon
     neg_reads += neg;
 }
 
-/* One subject: every lo up to `lomax` (every lo where lomax < 0), the
- * floors the site's floor allows, every layout (the sentinel pads only up to
- * their 64 bytes). */
-static void run_subject_to(unsigned si, const g2w_dec *d, const unsigned char *subj, long n,
-                           const uint8_t sentinel[2], long lomax)
+/* One subject: every lo in [lofrom, lomax] (every lo from lofrom where
+ * lomax < 0), the floors the site's floor allows, every layout (the sentinel
+ * pads only up to their 64 bytes). */
+static void run_subject_range(unsigned si, const g2w_dec *d, const unsigned char *subj, long n,
+                              const uint8_t sentinel[2], long lofrom, long lomax)
 {
     const g2w_site *x = &g2w_sites[si];
     static unsigned char pad[16 + 64 + 16];
-    for (long lo = 0; lo <= (lomax < 0 ? n + 1 : lomax); lo++) {
+    for (long lo = lofrom < 0 ? 0 : lofrom; lo <= (lomax < 0 ? n + 1 : lomax); lo++) {
         long Fs[3] = { 0, 0, 0 };
         int nf = 1;
         if (x->wfloor == G2W_F_EXPR) {
@@ -271,6 +281,12 @@ static void run_subject_to(unsigned si, const g2w_dec *d, const unsigned char *s
     }
 }
 
+static void run_subject_to(unsigned si, const g2w_dec *d, const unsigned char *subj, long n,
+                           const uint8_t sentinel[2], long lomax)
+{
+    run_subject_range(si, d, subj, n, sentinel, 0, lomax);
+}
+
 static void run_subject(unsigned si, const g2w_dec *d, const unsigned char *subj, long n,
                         const uint8_t sentinel[2])
 {
@@ -299,6 +315,197 @@ static void run_long(unsigned si, const g2w_dec *d, const uint8_t *alpha, int na
             }
             run_subject_to(si, d, subj, LONG_N, sentinel, 2);
         }
+}
+
+/* THE PLANTED SUBJECTS of a window that reaches past the short subjects
+ * (a tested offset at 12 or more: R-45's span forms loop over such
+ * stretches): 16 subjects, the candidate at 8..10 (room for every negative
+ * offset), each tested offset given a member of its set (the reference's
+ * meet), the rest a byte no set holds, and every other subject one tested
+ * offset broken to that byte, so a loop is seen both to pass and to stop;
+ * lo up to the candidate. Counted in `nplanted`. */
+static unsigned long long rngp_ = 0x45F01AA7ull;   /* the planted subjects' own stream */
+static long nplanted;
+static unsigned rnd_p(unsigned n)
+{
+    rngp_ ^= rngp_ << 13; rngp_ ^= rngp_ >> 7; rngp_ ^= rngp_ << 17;
+    return (unsigned)(rngp_ % n);
+}
+static void run_planted(unsigned si, const g2w_dec *d, uint8_t fill, const uint8_t sentinel[2])
+{
+    int hi = 0;
+    for (int t = 0; t < d->ntest; t++) if (d->toff[t] > hi) hi = d->toff[t];
+    if (hi < 12) return;
+    unsigned char subj[16 + G2W_REACH + 8];
+    nplanted++;
+    for (int k = 0; k < 16 && !site_failed; k++) {
+        long c = 8 + k % 3, n = c + hi + 1 + (k / 3) % 2;
+        memset(subj, fill, sizeof subj);
+        for (int t = 0; t < d->ntest; t++) {
+            int mem[256], nm = 0;
+            for (int b = 0; b < 256; b++) if (has(d->tset[t], b) && b != fill) mem[nm++] = b;
+            if (nm && c + d->toff[t] >= 0) subj[c + d->toff[t]] = (unsigned char)mem[rnd_p((unsigned)nm)];
+        }
+        if (k % 2) subj[c + d->toff[rnd_p((unsigned)d->ntest)]] = fill;
+        run_subject_to(si, d, subj, n, sentinel, c);
+    }
+}
+
+/* THE DETERMINISTIC BREAKS (R-45's span forms; review r35 F17): a site
+ * whose generator stated a one-class stretch [st_lo, st_end) gets, beside
+ * the planted subjects' one random break, one subject per BREAK OFFSET:
+ * every tested offset given a member of its set (as the planted subjects),
+ * the candidate at 8, and the byte at ONE tested offset replaced by the fill
+ * (a byte no set holds). The offsets: the stretch's first two and last two
+ * (a loop's first and last entry, the stop inside or at its end), either
+ * side of the stop (where it splits the stretch), the head's h - 1, h and
+ * h + 1 (where the pass names one: the inline/loop boundary), and both sides
+ * of a mixed stretch's class boundary; at that boundary also a CLASS SWAP,
+ * the byte a member of the other class only (a loop testing both classes
+ * against one set takes it, S3277's class). lo is c - 1 and c. Counted. */
+static long nbreak_sites, nbreaks, nswaps;
+static int tested_at(const g2w_dec *d, int off)
+{
+    for (int t = 0; t < d->ntest; t++) {
+        if (d->toff[t] != off) continue;
+        int full = 1;
+        for (int i = 0; i < 32 && full; i++) full = d->tset[t][i] == 0xFF;
+        return full ? -1 : t;
+    }
+    return -1;
+}
+static void plant_all(const g2w_dec *d, unsigned char *subj, size_t size, long c, uint8_t fill)
+{
+    memset(subj, fill, size);
+    for (int t = 0; t < d->ntest; t++) {
+        int mem[256], nm = 0;
+        for (int b = 0; b < 256; b++) if (has(d->tset[t], b) && b != fill) mem[nm++] = b;
+        if (nm && c + d->toff[t] >= 0) subj[c + d->toff[t]] = (unsigned char)mem[rnd_p((unsigned)nm)];
+    }
+}
+static void run_breaks(unsigned si, const g2w_dec *d, uint8_t fill, const uint8_t sentinel[2])
+{
+    const g2w_site *x = &g2w_sites[si];
+    if (x->st_end <= 0) return;
+    int hi = 0;
+    for (int t = 0; t < d->ntest; t++) if (d->toff[t] > hi) hi = d->toff[t];
+    const int none = -1000;
+    int cand[] = { x->st_lo, x->st_lo + 1, x->st_end - 2, x->st_end - 1,
+                   x->st_mid < x->st_end ? x->st_mid - 1 : none, x->st_mid < x->st_end ? x->st_mid : none,
+                   d->has_stop ? d->stop - 1 : none, d->has_stop ? d->stop + 1 : none,
+                   x->head >= 0 ? x->head - 1 : none, x->head >= 0 ? x->head : none,
+                   x->head >= 0 ? x->head + 1 : none };
+    int at[16], na = 0;
+    for (unsigned i = 0; i < sizeof cand / sizeof cand[0]; i++) {
+        if (cand[i] == none || tested_at(d, cand[i]) < 0) continue;
+        int dup = 0;
+        for (int j = 0; j < na; j++) dup |= at[j] == cand[i];
+        if (!dup) at[na++] = cand[i];
+    }
+    const long c = 8, n = c + hi + 1;
+    unsigned char subj[16 + G2W_REACH + 8];
+    nbreak_sites++;
+    for (int b = 0; b < na && !site_failed; b++) {
+        plant_all(d, subj, sizeof subj, c, fill);
+        subj[c + at[b]] = fill;
+        run_subject_range(si, d, subj, n, sentinel, c - 1, c);
+        nbreaks++;
+    }
+    if (x->st_mid <= x->st_lo || x->st_mid >= x->st_end) return;
+    for (int side = 0; side < 2 && !site_failed; side++) {
+        int own = tested_at(d, x->st_mid - 1 + side), other = tested_at(d, x->st_mid - side);
+        if (own < 0 || other < 0) continue;
+        int pick = -1;
+        for (int bt = 0; bt < 256 && pick < 0; bt++)
+            if (has(d->tset[other], bt) && !has(d->tset[own], bt) && bt != fill) pick = bt;
+        if (pick < 0) continue;
+        plant_all(d, subj, sizeof subj, c, fill);
+        subj[c + x->st_mid - 1 + side] = (unsigned char)pick;
+        run_subject_range(si, d, subj, n, sentinel, c - 1, c);
+        nswaps++;
+    }
+}
+
+/* THE LONG ROWS (g2_win.h g2w_long_site; review r35 F12): G2's OWN byte
+ * loop is the answer, the first candidate c >= lo whose k positions all lie
+ * inside the subject, each a member of its class (a below mid, b from it);
+ * the frame is STMT/ASSIGN with the miss (size_t)-1. Subjects: the stretch
+ * planted at c (0 and 5) with 0 or 3 bytes after it, whole and with one
+ * offset broken by the fill (the stretch's first two and last two, the
+ * class boundary's two, the stop's three, the head's three) or class-swapped
+ * at the boundary; lo 0 and c; layouts U and L. */
+enum { LONG_SUBJ = 4096 + 16 };
+static long nlong_rows, nlong_subj;
+static int lfailed;
+static long long_answer(const g2w_long_site *L, const unsigned char *s, long n, long lo)
+{
+    for (long c = lo; c + L->k <= n; c++) {
+        int j = 0;
+        while (j < L->k && has(j < L->mid ? L->a : L->b, s[c + j])) j++;
+        if (j == L->k) return c;
+    }
+    return -1;
+}
+static void long_judge(const g2w_long_site *L, const unsigned char *subj, long n, long lo)
+{
+    long want = long_answer(L, subj, n, lo);
+    for (int lay = 0; lay < 2 && !lfailed; lay++) {
+        unsigned char *b = lay ? regL + page : regU + 2 * page - n;
+        memcpy(b, subj, (size_t)n);
+        outcome o = call_fn(L->fn, b, (size_t)n, (size_t)lo, 0);
+        int ok = !o.faulted && !o.missed && (want >= 0 ? o.wrote && o.got == (size_t)want
+                                                      : o.got == (size_t)-1);
+        if (!ok) {
+            lfailed = 1;
+            failed++;
+            printf("FAIL: long row %s: layout %s n %ld lo %ld: got %zu wrote %d missed %d faulted %d, want %ld\n",
+                   L->name, lay ? "L" : "U", n, lo, o.got, o.wrote, o.missed, o.faulted, want);
+        }
+        hits += want >= 0;
+    }
+}
+static void run_long_rows(void)
+{
+    static unsigned char subj[LONG_SUBJ];
+    for (unsigned li = 0; li < g2w_nlong; li++) {
+        const g2w_long_site *L = &g2w_longs[li];
+        const uint8_t fill = 'z';
+        lfailed = 0;
+        int cand[] = { 0, 1, L->k - 2, L->k - 1, L->mid - 1, L->mid, L->stop - 1, L->stop, L->stop + 1,
+                       L->head - 1, L->head, L->head + 1 };
+        int at[16], na = 0;
+        for (unsigned i = 0; i < sizeof cand / sizeof cand[0]; i++) {
+            if (cand[i] < 0 || cand[i] >= L->k || (L->head < 0 && i >= 9) || (L->stop < 0 && i >= 6 && i < 9))
+                continue;
+            int dup = 0;
+            for (int j = 0; j < na; j++) dup |= at[j] == cand[i];
+            if (!dup) at[na++] = cand[i];
+        }
+        for (long c = 0; c <= 5 && !lfailed; c += 5)
+            for (long extra = 0; extra <= 3 && !lfailed; extra += 3) {
+                long n = c + L->k + extra;
+                for (int b = -2; b < na && !lfailed; b++) {
+                    if (b == -1 && L->mid >= L->k) continue;    /* the swap: a mixed row's */
+                    memset(subj, fill, (size_t)n);
+                    for (int j = 0; j < L->k; j++) {
+                        const uint8_t *set = j < L->mid ? L->a : L->b;
+                        int mem[256], nm = 0;
+                        for (int x = 0; x < 256; x++) if (has(set, x)) mem[nm++] = x;
+                        subj[c + j] = (unsigned char)mem[rnd_p((unsigned)nm)];
+                    }
+                    if (b >= 0) subj[c + at[b]] = fill;
+                    if (b == -1) {      /* the boundary's first byte a member of a, not of b */
+                        for (int x = 0; x < 256; x++)
+                            if (has(L->a, x) && !has(L->b, x)) { subj[c + L->mid] = (unsigned char)x; break; }
+                    }
+                    long_judge(L, subj, n, 0);
+                    if (c) long_judge(L, subj, n, c);
+                    nlong_subj++;
+                }
+            }
+        nlong_rows++;
+        if (!lfailed) passed++;
+    }
 }
 
 int main(int argc, char **argv)
@@ -403,8 +610,11 @@ int main(int argc, char **argv)
             run_subject(si, &d, subj, len, sentinel);
         }
         if (x->pair) { run_long(si, &d, alpha, na, sentinel); nlong++; }
+        if (!site_failed) run_planted(si, &d, alpha[na - 1], sentinel);
+        if (!site_failed) run_breaks(si, &d, alpha[na - 1], sentinel);
         if (!site_failed) passed++;
     }
+    run_long_rows();
     printf("G2W sites %u calls %ld hits %ld\n", g2w_nsites, calls, hits);
     printf("G2W paths empty=%ld parked=%ld reseed=%ld mass=%ld floor=%ld pinned=%ld reseed_bit=%ld\n",
            npaths[0], npaths[1], npaths[2], npaths[3], npaths[4], pinned, reseeded);
@@ -413,6 +623,9 @@ int main(int argc, char **argv)
     printf("G2W cells edge_rejects=%ld core_off=%ld noncore_off=%ld neg_reads=%ld nop_empty=%ld\n",
            edge_rejects, core_off, noncore_off, neg_reads, nop_empty);
     printf("G2W long pair=%ld\n", nlong);
+    printf("G2W planted sites=%ld\n", nplanted);
+    printf("G2W breaks sites=%ld breaks=%ld swaps=%ld\n", nbreak_sites, nbreaks, nswaps);
+    printf("G2W longrows rows=%ld subjects=%ld\n", nlong_rows, nlong_subj);
     printf("G2W partd r_yes=%ld r_wide=%ld\n", r_yes, r_wide);
     printf("G2W inrun lever=%ld set=%ld set_won=%ld meet=%ld\n", in_lever, in_set, in_set_won, in_meet);
     printf("G2W forms");

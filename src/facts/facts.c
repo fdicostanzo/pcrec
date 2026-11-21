@@ -69,6 +69,24 @@ static const uint32_t walk_arm_facts[PCREC_WALK_ARM_N] = {
 };
 _Static_assert(PCREC_WALK_ARM_N <= 8, "PfWhy.arms is one byte of arm bits");
 
+/* The run record with NO run: no position, length 0, offset 0. THE STATED
+ * VALUE both `ReqRun` writers (the deny's empty value and the derivation)
+ * start from (span_arms RM-1), so a field added to `ReqRun` is defaulted
+ * here once, never silently left unwritten by one of them. */
+static ReqRun pf_req_run_none(void)
+{
+    return (ReqRun){ .pos = { NULL }, .whole_len = 0, .whole_maxoff = 0 };
+}
+
+/* `pcrec_bound_of` (facts.h): the saturated `PCREC_W_UNBOUNDED` reading is
+ * the unbounded state, and the value is kept so a printer prints it as
+ * before (span_arms §14.3 D-7). */
+PfBound pcrec_bound_of(long long off)
+{
+    return (PfBound){ .st = off >= PCREC_W_UNBOUNDED ? PF_OFF_UNBOUNDED : PF_OFF_BOUNDED,
+                      .v = off };
+}
+
 /* Stores fact `f`'s EMPTY VALUE — the answer for a pattern with nothing to
  * find, which every consumer already handles because real patterns produce
  * it. The switch has no `default:` so a new row is a compile error here. */
@@ -94,21 +112,16 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_REQ_SET_MAXOFF:
         memset(pf->req_set.maxoff, 0, sizeof pf->req_set.maxoff);
         break;
-    case PF_REQ_WHOLE_RUN:
-        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
-        pf->req_run.whole_len = 0;
-        pf->req_run.whole_maxoff = 0;
-        break;
+    case PF_REQ_WHOLE_RUN: pf->req_run = pf_req_run_none(); break;
     case PF_REQ_PIECES:
         pf->req_pieces = (PdDesc){ -1, PD_WALL, NULL };
         break;
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
-    case PF_REQ_LANDMARK_MAXOFF: pf->req_landmark_maxoff = -1; break;
+    case PF_REQ_LANDMARK_MAXOFF: pf->req_landmark_maxoff = pcrec_bound_none(); break;
     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
     case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0, 0, 0, 0 }; break;
     case PF_LAND_CHAR:    pf->land_char = (LandChar){ false, false }; break;
     case PF_WIDTH:        pf->width = (WidthIv){ -1, -1 }; break;
-    case PF_SPAN:         memset(&pf->span, 0, sizeof pf->span); break;
     case PF_NEVER_MATCHES: pf->never_matches = PF_NEVER_NO; break;
     case PF_NFACTS:       break;
     }
@@ -176,7 +189,6 @@ static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
                 code == PF_WHY_NULLABLE || code == PF_WHY_ASSERT_AT_START ||
                 code == PF_WHY_DEAD_START || code == PF_WHY_ALIVE_NOT_ACCEPT ||
                 code == PF_WHY_ASSERT_AFTER || code == PF_WHY_CALL ||
-                code == PF_WHY_ERASED || code == PF_WHY_MARKED ||
                 code == PF_WHY_PIECES_WALL || code == PF_WHY_PIECES_OVER ||
                 code == PF_WHY_PIECES_ONE || code == PF_WHY_ISLAND;
     pf->have |= pf_bit(f);
@@ -232,17 +244,25 @@ static void pf_derive_req_walk(Ctx *cx)
         .restored   = h ? h->walk_arms
                     : cx->emit_in && cx->emit_in->meas ? cx->emit_in->meas->walk_arms : 0,
         .rate       = pcrec_find_byte_rate(cx),
+        /* the encoding descriptor, resolved here once (design §4.2.2
+         * carve-out (d)), as `land_char`'s is */
+        .onebyte_max = pcrec_enc_by_id(cx->opt->encoding)->onebyte_max,
     };
     RbSet set;
     RbRun run;
     PdDesc pieces;
+    bool never;
     int bits = 0;
-    pcrec_req_walk(cx, pf->root, &p, &set, &run, &pieces);
+    pcrec_req_walk(cx, pf->root, &p, &set, &run, &pieces, &never);
     for (int i = 0; i < run.n; i++) bits += pcrec_req_info(run.pos[i]);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
         pf->req_set.rightmost = set.pick;
         pf_done(pf, PF_REQ_SET);
+        /* span_arms L1: `rr_cat`'s CAT-SET moves the set where a guard
+         * narrowed a run position, so the arms that can take the guard or
+         * its neighbour away (`zero`, `look`, `rep`, `empty`) name it */
+        pf->why[PF_REQ_SET].arms = pf_walk_arms_of(p.restored, PF_REQ_SET);
     }
     if (pf_enter(cx, PF_REQ_SET_MAXOFF, false)) {
         /* [REQ-HANDOFF-L1] the walk's 32-bit saturation reads as the one
@@ -251,18 +271,20 @@ static void pf_derive_req_walk(Ctx *cx)
             pf->req_set.maxoff[b] = set.off[b] >= RB_OFF_UNBOUNDED ? PCREC_W_UNBOUNDED
                                                                    : (long long)set.off[b];
         pf_done(pf, PF_REQ_SET_MAXOFF);
+        pf->why[PF_REQ_SET_MAXOFF].arms = pf_walk_arms_of(p.restored, PF_REQ_SET_MAXOFF);
     }
     if (pf_enter(cx, PF_REQ_WHOLE_RUN, false)) {
-        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
-        pf->req_run.whole_len = 0;
-        pf->req_run.whole_maxoff = 0;
+        pf->req_run = pf_req_run_none();
         if (bits >= PCREC_MIN_REQ_RUN_BITS) {
             memcpy(pf->req_run.pos, run.pos, (size_t)run.n * sizeof run.pos[0]);
             pf->req_run.whole_len = run.n;
             /* [K82] the walk's bound on where this run begins. */
             pf->req_run.whole_maxoff = run.off;
         }
-        pf_done_why(pf, PF_REQ_WHOLE_RUN, pf->req_run.whole_len
+        /* span_arms L1 (D-9): the walk's root NEVER bit is this fact's why
+         * `dead`, ahead of the rate rule (facts_listing.md §4.1.3¶1) */
+        pf_done_why(pf, PF_REQ_WHOLE_RUN, never ? PF_WHY_DEAD
+                                          : pf->req_run.whole_len
                                           ? pcrec_req_rate_why(cx) : PF_WHY_NONE);
         pf->why[PF_REQ_WHOLE_RUN].arms = pf_walk_arms_of(p.restored, PF_REQ_WHOLE_RUN);
     }
@@ -353,9 +375,13 @@ static void pf_derive(Ctx *cx, PfFactId f)
         pf_ask(cx, PF_REQ_SET_MAXOFF, false);
         pf_ask(cx, PF_REQ_WHOLE_RUN, false);
         pf_ask(cx, PF_REQ_BYTE, false);
-        pf->req_landmark_maxoff = pf->req_run.whole_len >= 2 ? pf->req_run.whole_maxoff
-                                : pf->req_byte >= 0 ? pf->req_set.maxoff[pf->req_byte] : -1;
-        if (pf->req_landmark_maxoff >= PCREC_W_UNBOUNDED) why = PF_WHY_UNBOUNDED;
+        pf->req_landmark_maxoff =
+            pf->req_run.whole_len >= 2 ? pcrec_bound_of(pf->req_run.whole_maxoff)
+            : pf->req_byte >= 0        ? pcrec_bound_of(pf->req_set.maxoff[pf->req_byte])
+                                       : pcrec_bound_none();
+        if (pcrec_bound_stated(pf->req_landmark_maxoff) &&
+            !pcrec_bound_bounded(pf->req_landmark_maxoff))
+            why = PF_WHY_UNBOUNDED;
         break;
     case PF_KSET_WALK:
         /* The machine E3 sealed: `Job.nfa`, wrapped, never rebuilt after. */
@@ -376,44 +402,6 @@ static void pf_derive(Ctx *cx, PfFactId f)
         break;
     case PF_WIDTH:
         pcrec_width_walk(cx, &cx->job->nfa, &pf->width.bmin, &pf->width.bmax);
-        break;
-    case PF_SPAN:
-        /* The machine E3 sealed, as the k-set walk's. */
-        why = pcrec_span_walk(cx, &cx->job->nfa, &pf->span);
-#ifdef PCREC_CAND_TRACE
-        {
-            /* The ONE-WALK control (ctx_span.md §3.8): the slice narrows the
-             * hull, never widens it. The hull is the k-set walk over the
-             * same machine, recomputed here (a pure walk, no fact asked), so
-             * the listing's `used` column is the default build's. */
-            KsetWalk hull;
-            pcrec_kset_walk(cx, &cx->job->nfa, &hull);
-            for (int d = 0; d < pf->span.exact_len && d < hull.nwalk; d++)
-                for (int b = 0; b < 256; b++)
-                    if ((pf->span.set[d][b >> 3] >> (b & 7) & 1) && !hull.k[d].set[b])
-                        pcrec_ctx_fail(cx, 0, "internal error: the span slice states "
-                                       "byte 0x%02x at offset %d, outside the k-set "
-                                       "walk's hull there (ctx_span.md §3.8)", b, d);
-            /* X0's input (kit_proof.md §6.4): the slice's statement, every
-             * exact set as a comma list of hex bytes, `;` between positions
-             * (docs/design/kit_proof/x0/x0.py `stated`'s line shape), under
-             * its own switch so the CANDTRACE stream is unchanged; then the
-             * compound part's role, `-` for the compile itself. */
-            if (getenv("PCREC_KIT_PROOF_TRACE")) {
-                fprintf(stderr, "SPANSET\t%d\t", pf->span.exact_len);
-                for (int d = 0; d < pf->span.exact_len; d++) {
-                    bool first = true;
-                    if (d) fputc(';', stderr);
-                    for (int b = 0; b < 256; b++)
-                        if (pf->span.set[d][b >> 3] >> (b & 7) & 1) {
-                            fprintf(stderr, "%s%02x", first ? "" : ",", b);
-                            first = false;
-                        }
-                }
-                fprintf(stderr, "\t%s\n", pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
-            }
-        }
-#endif
         break;
     case PF_NEVER_MATCHES:
         pf->never_matches = pcrec_never_matches(cx);
@@ -634,7 +622,7 @@ const ReqSet *pcrec_fact_req_set_maxoff(Ctx *cx)
     return &cx->job->pf.req_set;
 }
 
-long long pcrec_fact_req_landmark_maxoff(Ctx *cx)
+PfBound pcrec_fact_req_landmark_maxoff(Ctx *cx)
 {
     pf_ask(cx, PF_REQ_LANDMARK_MAXOFF, true);
     return cx->job->pf.req_landmark_maxoff;
@@ -670,11 +658,19 @@ const WidthIv *pcrec_fact_width(Ctx *cx)
     return &cx->job->pf.width;
 }
 
-const MkLang *pcrec_fact_span_stated(Ctx *cx)
+#ifdef PCREC_CAND_TRACE
+void pcrec_facts_hull_check(Ctx *cx, const uint8_t (*sets)[32], int n)
 {
-    pf_ask(cx, PF_SPAN, false);
-    return &cx->job->pf.span;
+    KsetWalk hull;
+    pcrec_kset_walk(cx, &cx->job->nfa, &hull);
+    for (int d = 0; d < n && d < hull.nwalk; d++)
+        for (int b = 0; b < 256; b++)
+            if ((sets[d][b >> 3] >> (b & 7) & 1) && !hull.k[d].set[b])
+                pcrec_ctx_fail(cx, 0, "internal error: the cover's exact stretch states "
+                               "byte 0x%02x at offset %d, outside the k-set walk's "
+                               "hull there (cover_cap.md section 3.6)", b, d);
 }
+#endif
 
 PfNever pcrec_fact_never_matches(Ctx *cx)
 {
@@ -897,9 +893,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         if (pf->req_byte < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
     case PF_REQ_LANDMARK_MAXOFF:
-        if (pf->req_landmark_maxoff < 0) return "none";
-        if (pf->req_landmark_maxoff >= PCREC_W_UNBOUNDED) return "unbounded";
-        return pcrec_sb_fragf(&cx->arena, "%lld", pf->req_landmark_maxoff);
+        if (!pcrec_bound_stated(pf->req_landmark_maxoff)) return "none";
+        if (!pcrec_bound_bounded(pf->req_landmark_maxoff)) return "unbounded";
+        return pcrec_sb_fragf(&cx->arena, "%lld", pf->req_landmark_maxoff.v);
     case PF_KSET_WALK: {
         /* One item per offset, offset order: a singleton as its byte in
          * decimal, a wider set as `[N]`, its member count. */
@@ -935,27 +931,6 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         if (pf->width.bmax >= PCREC_W_UNBOUNDED)
             return pcrec_sb_fragf(&cx->arena, "[%lld,inf)", pf->width.bmin);
         return pcrec_sb_fragf(&cx->arena, "[%lld,%lld]", pf->width.bmin, pf->width.bmax);
-    case PF_SPAN: {
-        /* `L:` and one item per exact position, `kset_walk`'s spelling (a
-         * one-byte set as that byte in decimal, a wider one as `[N]`); `0`
-         * where no position is exact, `none` where the walk declined. */
-        StrBuf sb = { 0 };
-        const char *t;
-        if (pf->span.stated != MK_LANG_STATED) return "none";
-        if (pf->span.exact_len == 0) return "0";
-        sb.cx = cx;
-        pcrec_sb_printf(&sb, "%d:", pf->span.exact_len);
-        for (int d = 0; d < pf->span.exact_len; d++) {
-            int n = 0, one = 0;
-            for (int b = 0; b < 256; b++)
-                if (pf->span.set[d][b >> 3] >> (b & 7) & 1) { n++; one = b; }
-            if (n == 1) pcrec_sb_printf(&sb, "%s%d", d ? "," : "", one);
-            else pcrec_sb_printf(&sb, "%s[%d]", d ? "," : "", n);
-        }
-        t = pcrec_sb_fragf(&cx->arena, "%s", sb.p);
-        pcrec_sb_free(&sb);
-        return t;
-    }
     case PF_NEVER_MATCHES:
         /* The proof's name, or `no` where there is none. */
         return pf->never_matches == PF_NEVER_MACHINE ? "empty-machine" : "no";

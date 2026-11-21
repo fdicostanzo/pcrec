@@ -9,3 +9,21 @@ Kit side: memfn/docs/requests.md, R-38 Part C (unscheduled).
 ## Parked (Frank 2026-11-11 evening)
 
 Wanted eventually; a bigger piece than intended for now. Raise the caps first ([COVER-CAP], set S3). Not in S4. Part C becomes one PRODUCER feeding [MATCH-KNOWN]'s compile-time walk of the engine program, not its own mechanism. Notes (a)-(e): [MATCH-KNOWN] row in docs/dev/plan.md and D194's 2026-11-11 evening addendum.
+
+**2026-11-15 OWNER NOTE (Frank, on [COVER-CAP] design rev 4.1, which reads the exact stretch from the anchored DFA).**
+His words: "reading dfa for the span is fine. In my goal of partial span proofs that means either rebuilding the dfa on
+the remainder or editing out the proven span states." RECORD: for the partial case (an exact stretch that proves only
+a fraction of the pattern, the engine running the rest), the engine side has two candidate forms: (a) build a DFA for
+the REMAINDER of the pattern, or (b) take the existing DFA and EDIT OUT the states the proven stretch already walked.
+Neither is designed or scheduled (this row stays PARKED); the note is the owner's statement of the end state's two
+routes, for whoever designs it. See decisions D198 and docs/design/cover_cap.md (end-state section).
+
+**2026-11-15 (manager, from [COVER-CAP] rev 5.1, review r13 F23/F24).** [COVER-CAP] stage 2
+bounds the cover ROUTE by a per-compile width (`--window-search-width=N`, default measured): a
+fixed-width pattern wider than the limit gets no cover and runs the engine for every position,
+a CLIFF. The no-cliff form, "prove the first N positions, the engine finishes the rest", is
+this row's proof extent read at the width limit, and it is where the cliff goes away (the
+owner's 14:10 "1." names its two engine-side routes, recorded above). Status unchanged:
+PARKED. Trigger unchanged (lookaround-as-run lands, then a bench cell where the engine's
+finish is a measurable share), plus one: the owner answers [COVER-CAP]'s route-versus-stretch
+question for the stretch.

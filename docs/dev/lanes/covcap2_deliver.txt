@@ -1,0 +1,4 @@
+report=docs/dev/lanes/covcap2_report.md
+sections: STATE AT HANDOFF; WHAT ELSE IS BOUNDED; DESIGN REV 1; SEAM CHANGE; ANSWER IDENTITY PLAN; MOVERS ESTIMATE; KIT REQUEST DRAFT; QUESTIONS
+nonempty: all
+commit: yes

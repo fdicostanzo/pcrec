@@ -106,6 +106,9 @@ fn	fn-memchr	117902	18981
 fn	vrun-w16	70	743
 fn	vrun-w32	70	743
 fn	fn-every-pos	-	PLACEHOLDER
+fn	fn-mfind	-	PLACEHOLDER
+fn	mfind-w16	-	PLACEHOLDER
+fn	mfind-w32	-	PLACEHOLDER
 fd	D-hors	PLACEHOLDER	PLACEHOLDER
 fd	D1	129159	PLACEHOLDER
 fd	D1c	4287	PLACEHOLDER

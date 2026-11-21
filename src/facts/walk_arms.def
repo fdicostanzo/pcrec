@@ -28,15 +28,30 @@
  * `\K`, a check callout, a lookaround of either lowering, back to the old
  * CUT). `rep` is unit R1's (T2 rows 2-3, a repeat of a body that consumes:
  * the old best-only copy and gap). `tie` is R1's rarity tie rule (the run choice's rows 2-4). `alt` is [RUN-POS-SET] stage 2a's rule (1), the
- * equal-width alternation's union row. A later unit adds its own row (L1 `look`). */
-WALK_ARM(EMPTY, "empty", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
-/* span_arms E2 (T3 E-4, E-5 as the plain unit) */
-WALK_ARM(ZERO,  "zero",  (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
+ * equal-width alternation's union row. `look` is unit L1's (T3 row E-5i, a
+ * positive lookaround's ITEM and its guards, and TOP's candidate rows: the
+ * plain unit E2 shipped, guards none). A later unit adds its own row. */
+/* span_arms E1/E2 (T2 row 1, T3 E-1). Since L1's CAT-SET (review r55 A) the
+ * set too: restored, an `A_EMPTY` cut separates a guard from the position it
+ * met, so the narrowed byte leaves the set (`x[ab](?=b)()[ab]`). */
+WALK_ARM(EMPTY, "empty", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES) |
+                         (1u << PF_REQ_SET) | (1u << PF_REQ_SET_MAXOFF))
+/* span_arms E2 (T3 E-4, E-5 as the plain unit). Since L1 it also passes over
+ * E-5i (its mask is `look | zero`, so `zero` keeps E2's meaning: every
+ * lookaround back to the old CUT), and a cut lookaround carries no guard, so
+ * the set `rr_cat`'s CAT-SET narrows (review r55 A) moves under it too (span_arms
+ * §14.3 D-1, conf-spanarms8 D1). */
+WALK_ARM(ZERO,  "zero",  (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES) |
+                         (1u << PF_REQ_SET) | (1u << PF_REQ_SET_MAXOFF))
 
 /* span_arms unit R1 ([REPEAT-RUN], T2 rows 2-3, the power arm): a repeat of
  * a body that consumes, read as its copies. Restored: today's best-only copy
  * (`m >= 1`) and the gap (`m = 0`, `X{0}` included). */
-WALK_ARM(REP,   "rep",   (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
+/* Since L1's CAT-SET (review r55 A) the set too: restored, the best-only copy
+ * keeps no copy beside the guard, so its narrowing leaves the set
+ * (`x(?:[ab](?=b)){2}`). */
+WALK_ARM(REP,   "rep",   (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES) |
+                         (1u << PF_REQ_SET) | (1u << PF_REQ_SET_MAXOFF))
 
 /* span_arms unit R1's tie rule (`rn_choice_rows`, D191): at equal information
  * the rarer run, then the nearer, then content order. Restored: the
@@ -48,4 +63,12 @@ WALK_ARM(TIE,   "tie",   (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
  * `all`, its run the per-position union. Restored: row 2 alone, the common
  * head and tail, never `all`. Default since lane r1on (abi 107). */
 WALK_ARM(ALT,   "alt",   (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
+
+/* span_arms unit L1 ([REQ-LOOKAROUND], T3 row E-5i and TOP, §14.3 D-1, D-4):
+ * a positive lookaround is the unit carrying its ITEM's guards, which meet
+ * the consumed positions around it, and `rr_cat`'s CAT-SET puts a narrowed
+ * byte in the set. Restored: E2's plain unit, no guard. The parent's piece
+ * description is E2's either way (D-1), so `req_pieces` is not listed. */
+WALK_ARM(LOOK,  "look",  (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_SET) |
+                         (1u << PF_REQ_SET_MAXOFF))
 #undef WALK_ARM

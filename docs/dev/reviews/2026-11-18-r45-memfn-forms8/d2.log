@@ -1,0 +1,16 @@
+onereg hit-dense heads tau 0.02                            void=True  win=None: flagged 200/200, first-void   0, h*=8   0, P(h*!=64) 0.000
+onereg hit-dense heads tau 0.02                            void=False win=None: flagged 200/200, first-void  12, h*=8   0, P(h*!=64) 0.035
+onereg hit-dense heads tau 0.03                            void=True  win=None: flagged 200/200, first-void  43, h*=8   0, P(h*!=64) 0.025
+onereg hit-dense heads tau 0.03                            void=False win=None: flagged 200/200, first-void 114, h*=8   4, P(h*!=64) 0.175
+onereg hit-dense heads tau 0.05                            void=True  win=None: flagged 200/200, first-void 182, h*=8   0, P(h*!=64) 0.015
+onereg hit-dense heads tau 0.05                            void=False win=None: flagged 200/200, first-void 199, h*=8   0, P(h*!=64) 0.170
+mix heads main 0.02 x regime 0.01                          void=True  win=None: flagged 200/200, first-void   0, h*=8   0, P(h*!=64) 0.000
+mix heads main 0.02 x regime 0.01                          void=False win=None: flagged 200/200, first-void   3, h*=8   0, P(h*!=64) 0.020
+mix heads main 0.03 x regime 0.015                         void=True  win=None: flagged 200/200, first-void   6, h*=8   0, P(h*!=64) 0.000
+mix heads main 0.03 x regime 0.015                         void=False win=None: flagged 200/200, first-void  33, h*=8   3, P(h*!=64) 0.135
+mix heads main 0.03 x regime 0.02                          void=True  win=None: flagged 200/200, first-void 108, h*=8   0, P(h*!=64) 0.015
+mix heads main 0.03 x regime 0.02                          void=False win=None: flagged 200/200, first-void 128, h*=8   5, P(h*!=64) 0.240
+POWER mix heads main 0.01 x regime 0.005                   void=True  win=0.95: flagged  52/200, first-void   0, h*=8 144, P(h*!=64) 0.720
+POWER mix heads main 0.01 x regime 0.005                   void=False win=0.95: flagged  56/200, first-void   0, h*=8 193, P(h*!=64) 0.965
+POWER mix heads main 0 x regime 0.005                      void=True  win=0.95: flagged  56/200, first-void   0, h*=8 132, P(h*!=64) 0.660
+POWER mix heads main 0 x regime 0.005                      void=False win=0.95: flagged  50/200, first-void   0, h*=8 189, P(h*!=64) 0.945

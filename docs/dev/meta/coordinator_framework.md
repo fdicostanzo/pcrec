@@ -62,3 +62,64 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 - Freeze to draft took ~36 min, with no resends.
 - The verifier reused a critic's plant directory read-only, which saved builds. Worth stating in the verifier brief template.
 - Reading found the one gate defect (F1) that ~2k byte-identical compiles could not: on a zero-mover unit, probes confirm the bar and reading finds the defects.
+
+## 2026-11-15 — critic rounds covs2d (review r13) and predspec12 (review r14)
+- r13 covs2d (design, 5 critics + sonnet verifier): the coordinator pattern held cleanly at small scale: one freeze, one build, one kit, five parallel critics, one verifier, draft in about 20 minutes of wall time; the manager saw nothing until the hand-back. The verifier's value was concentrated: of 23 items the one REFUTED (MEASURE-4, shell quoting dropped a `\b`) was the only critic error, and it would otherwise have entered the draft as a design finding. All critics returned within the launch turn (2-7 min); the sonnet measurement critic was fastest and least careful.
+- r14 predspec12 (design, 2 opus critics, inline verification): for a short re-check the pattern's overhead (COMMON, deliver files, lanecheck) is about 5 min of setup against about 5 min of critic time; still worth it for the blinding and the census counts. Freeze to draft about 11 min; the coordinator verified inline (quotes + 4 oracle calls) because every finding was a quote claim or a one-call repro.
+
+## 2026-11-15 — critic round covs2e (review r15)
+- The coordinator pattern handled a mid-round ruling cheaply: one `git diff` of decisions.md at hand-back found D198 addendum 1, and the hand mapping took one paragraph. Without the freeze-drift step the draft would have carried a stale "owner question open".
+- Nested critics' final replies were again lost; the files-plus-lanecheck contract made it irrelevant.
+
+## 2026-11-15 — critic round predspec14 (review r16)
+- Three opus critics on a ~3,700-line design doc, all done in under 10 min with complete files, from a COMMON that pointed at read-only round-dir copies: no repo access needed, no denylist exposure. Inline verification was cheaper than a verifier agent for quote/one-script findings (second round in a row).
+
+## 2026-11-15 — critic round covs2a (review r18)
+- Coordinator pattern worked with no manager wake-ups; the only round-trip was the single hand-back. Inline verification (16 quote/one-call checks in one command) was right-sized; a verifier agent would have cost more.
+- For a staged change against a named item list, the conformance lens was the most productive (8 findings, 17 compiles) and earns its own lens.
+- A box deadline was easy to meet: zero-mover code rounds at -j2 with prebuilt plants finish probing in about 10 minutes.
+## 2026-11-15 — critic round predspec17 (review r17)
+- A confirm round over a ~600-line two-revision delta ran end to end in ~15 minutes (launch 23:32 box clock, draft about 23:45) with zero coordinator interventions: three opus critics, all returned in the launch turn (6-8 min), files complete, lanecheck DONE. Evidence: `docs/dev/reviews/2026-11-15-r17-predspec17.md` "Round process".
+- The frozen-copy + diffs pack (rev 15/16/17 copies plus both diffs in the round dir) is what made the critics self-contained: no repo reads, no blinding exposure. The text-first simulate and the fix-induced lens converged on the one answer finding (F1) from different directions (rule emulation vs "what did moving the labels to the author change").
+
+## 2026-11-16 — critic round jointcond (review r26)
+- A design-only fold needed no build and no verifier agent: about 35 minutes wall from freeze (13:01 box clock) to draft, five critics in parallel (4 opus, 1 sonnet), all evidence as files, all five finished in 3-12 minutes with complete files (a pre-created findings file plus a `CRITIC COMPLETE` line plus lanecheck). All five Agent results came back in the launch turn as "no report delivered"; the file channel was the only channel, as the skill expects. Inline verification (quote claims re-read at their lines, two script re-runs) sufficed. The pattern fits any "fold N rulings into a client doc" step (the predicates_draft revisions especially), where the change table is the seam to check. Evidence: `docs/dev/reviews/2026-11-16-r26-jointcond.md`, its sibling directory (process.md).
+- The lens table had no row for a design-to-design FOLD; the coordinator borrowed readiness's reader-grep as a sonnet "rev20 completeness" lens: the cheapest lens and the most raw findings (10). It is now the row "change-table completeness".
+- The ruling and owner lenses both re-checked the same ~19 owner quotes (duplicate work, both 0 drift): quote verification is now given to ONE lens.
+- A ruling (label-twice) landed at 13:16:09, the second the critics returned; the per-return re-diff caught it and the draft's FREEZE DRIFT block carried a hand mapping.
+
+## 2026-11-16 — critic round absfold (review r28)
+- A coordinator with a copied, read-only subject + record + evidence (no repo access needed) ran a 5-lens design round in about 18 minutes wall, zero manager turns. The pattern fits any fold-review of a document against a rulings record.
+
+## 2026-11-16 — critic round predspec20 (review r29)
+- A 5-critic + 1-verifier design re-check ran in ~25 min wall with zero coordinator interventions; the coordinator's main value was the freeze-drift hand mapping (two owner rulings landed mid-round and settled or reshaped 6 findings) and the consolidation of 50 findings into 17 groups. The pattern fits any fold re-check where rulings are moving the same afternoon.
+
+## 2026-11-16 — critic round predspec22 (review r30)
+- A 4-critic + verifier round on a 6,000-line design closed in 30 minutes wall, coordinator-drafted, with every agent returning inside its launch turn; the coordinator pattern scales to giant subjects when critics get frozen copies and a runnable evidence tree, and briefs are ONE question with two sub-parts.
+
+## 2026-11-16 — critic round condkind (review r31)
+- A pure design round (a definition note folded against a rulings record) ran in ~25 min wall with 5 agents and no build (4 critics + an opus verifier, 39 findings verified by group into 10 roots); every nested agent's final reply was lost and the files carried everything. Verify-by-group with an opus verifier is the right size when findings interlock; the verifier's opposite-recommendation item turned a conflict into "neither conflicts with a ruling; ask the owner". Fits any "fold a model into a client doc" round.
+
+## 2026-11-16 — critic round covs2code (review r32)
+- A code round with prebuilt plants and one shared run kit ran 5 opus critics to completion in ~11 min wall, inside an owner evening hold, with the box idle by 23:00: the pattern fits short box windows when the coordinator front-loads the build cost (17 plants + BASE + 2 trace builds in ~72 s, incremental from the subject archive's mtimes). Three lenses converged on one refusal from three sides (emitted size, spec sentence, bound chain); every nested critic's final reply was lost and the files carried the round, which confirms the files-only rule.
+
+## 2026-11-17 — critic round predspec23 (review r33)
+- A 5-critic + 1-verifier design re-check of a 6,000-line draft closed in ~20 min wall from freeze to draft, one hand-back; every nested agent's final reply was lost and pre-created files plus lanecheck carried 100%, so the file rule is load-bearing, not a precaution. A cheap sonnet change-table critic found only doc items (5 min); the from-the-text evaluator found no numeric divergence but found two answer-level gaps by evaluating what the text says where the engine decides alone. Open: the COMMON template's role-name R and the copy dir R/R collided in prose (name the copy dir S/).
+
+## 2026-11-17 — critic round predspec231 (review r34)
+- Coordinator pattern at its smallest useful size (3 opus critics + 1 verifier, ~40 min wall, all critics back in the launch turn) still produced 4 answer-level items on a revision billed as applying fixes; the from-the-text evaluator with the document's own set rules remains the highest-yield single tool for design rounds with an evidence engine. The biggest finding (value vs canonical numerals) was a carry-over: a prior verifier had the right number and the fix lane published the engine's. Folding the ruling lens into fix-induced worked at ~3 new manager readings; a 4th critic is justified above that. A hook-blocked setup command silently skipped a pre-created file: check every setup command's result before launching.
+
+## 2026-11-17 — critic round predspec24 (review r40)
+- Coordinator pattern at five critics + one verifier: ~35 min wall from freeze to draft, every agent delivering in its launch turn; the coordinator's context stayed small because every result travelled as a file and the verifier grouped 48 ids into 10 items. Good fit for "re-check of a design with an executable evidence engine"; the cost driver is the verifier's re-runs, not the critics. The two answer-level discoveries that mattered most (A1 carried optional label, A3 `&` in subject context) came from critics writing their OWN evaluator or PCRE2 probe before trusting the engine (the evidence's 20 PART C models set every path's labels and were top-level, so they could not see either). The coordinator's fix-induced step (diffing r34's verifier numbers against the revision's published ones) took 5 min and produced C5. Files-as-delivery again: every nested agent ended "without SubagentHandback" with complete files.
+
+## 2026-11-17 — critic round predspec242 (review r42)
+- The coordinator pattern at the small end (3 critics + verifier, the fix-induced step inline instead of a fourth lens) held the launcher's SHORT profile for a confirming re-check: 33 min wall on an 870 KB subject, all critics back in the launch turn, because the brief pointed at section R line ranges and the evidence copy was pre-run. Every agent's final reply was lost again; pre-created files + CRITIC COMPLETE + lanecheck carried the round.
+- The coordinator's own brief is a new blinding hazard: it carries the launcher's paraphrases into every critic. The launcher's drill text should reach critics as the drill, while any document rule it restates is re-quoted from the subject by the coordinator (B1: a paraphrased numeral rule led a critic to a refuted answer claim).
+- Two lenses converged on the empty trailing pass by two different controls although the CAPTURE-STATE drill did not name nullable bodies; worth naming in the lens row.
+
+## 2026-11-18 — critic round predspec25 (review r43)
+- Five opus critics + one verifier over a three-revision re-check closed in 28 min from freeze to draft with zero resends, because every brief was one question over read-only copies plus a diff file from the last reviewed revision. Nested agents' final replies were lost 6 of 6 ("ended without delivering a report"); the pre-created files, CRITIC COMPLETE lines and lanecheck carried everything, so the file rule is load-bearing. The coordinator never stopped: its critics finished inside its launch turn and their reply messages could not be delivered (normal for nested agents); one critic took that for a stopped coordinator and relayed to the manager, whose resume message crossed with the hand-back. Brief critics that a failed hand-back is EXPECTED and needs no escalation: the CRITIC COMPLETE line in the file is the delivery. Overlap was high (group A by four lenses); a re-check of an 8,000-line draft might staff a sonnet withdrawn-term sweep and drop one opus lens.
+
+
+## 2026-11-18 — critic round predspec26 (review r47)
+- Coordinator pattern again cheap: freeze to draft in about 25 min, 6 agents, no manager wake-ups. Inline verification of quote/grep findings by the coordinator plus one verifier for the 14 drill items (7 min) split the load well. Three lenses spent effort on the same nullable finding because three briefs all named hit-carry/nullable: assign each drill topic to one lens. A mid-round FREEZE DRIFT (six conditional rulings in about 20 min) was found only by the hand-back diff; with rounds this fast a single hand-back re-diff suffices. The lens table has no row for "a restructure must lose nothing"; fix-induced fitted with a rewritten question (now a named sub-part).

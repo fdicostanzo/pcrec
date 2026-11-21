@@ -1,0 +1,8 @@
+selftest ok: '\\w{32}\\B' at h*=32: possible mover True (expected True; 1 alternative(s), 2 record(s))
+selftest ok: '\\w{32}\\B' at h*=33: possible mover False (expected False; 1 alternative(s), 2 record(s))
+selftest ok: '[0-9a-f]{24}' at h*=23: possible mover True (expected True; 1 alternative(s), 1 record(s))
+selftest ok: '[0-9a-f]{24}' at h*=24: possible mover False (expected False; 1 alternative(s), 1 record(s))
+selftest ok: 'a{32}' at h*=0: possible mover False (expected False; 1 alternative(s), 1 record(s))
+selftest ok: plant (the two-member clause dropped) flips the literal to a mover
+selftest ok: plant (span boundaries end a run) drops \w{32}\B at h*=32
+predict selftest: DONE rc=0

@@ -1,0 +1,5 @@
+report: docs/dev/lanes/k146f2_report.md
+sections: Summary; Fix by finding; K147 and LINT-FRAME records; Checks run; Validation queued; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

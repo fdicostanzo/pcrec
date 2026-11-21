@@ -1,0 +1,89 @@
+id	kind	pattern	encoding	oracle_matches(subject=>spans)	pcrec_auto_eq_oracle	pcrec_vm_eq_oracle	listing_req_whole_run	listing_why	spec_expectation	verdict	finding
+A01	A	(?=kev)...	byte	'xkevykevz'=>1-4 5-8; 'kekv'=>none; 'kevkevkev'=>0-3 3-6 6-9	yes	yes	none		run contains 6b6576; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=6b6576
+A02	A	...(?<=kev)	byte	'xkevykevz'=>1-4 5-8; 'kek'=>none; 'kevkev'=>0-3 3-6	yes	yes	none		run contains 6b6576; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=6b6576
+A03	A	jo(?=wl)..	byte	'jowl jowx jowljowl'=>0-4 10-14 14-18; 'jo'=>none; 'jjowl'=>1-5	yes	yes	6a6f	rate:builtin-prior	run contains 6a6f776c; sound in every match; not dead	FAIL	RUN listing=6a6f expected(spec-allowed, contained)=6a6f776c
+A04	A	..(?<=jo)wl	byte	'jowl jowx jowljowl'=>0-4 10-14 14-18; 'xowl'=>none; 'ajowl'=>1-5	yes	yes	776c	rate:builtin-prior	run contains 6a6f776c; sound in every match; not dead	FAIL	RUN listing=776c expected(spec-allowed, contained)=6a6f776c
+A05	A	m(?=pq)[a-z][a-z]r	byte	'mpqr mpqs mpqrmpqr'=>0-4 10-14 14-18; 'mxqr'=>none; 'mmpqr'=>1-5	yes	yes	6d707172	rate:builtin-prior	run contains 6d707172; sound in every match; not dead	PASS	
+A06	A	[a-z][a-z](?<=hz)!	byte	'hz! az! hz!hz!'=>0-3 8-11 11-14; 'hz'=>none; 'ahz!'=>1-4	yes	yes	687a21	rate:builtin-prior	run contains 687a21; sound in every match; not dead	PASS	
+A07	A	(?=uv).{4}	byte	'uvwxuvyz'=>0-4 4-8; 'uvw'=>none; 'xuv12uv34'=>1-5 5-9	yes	yes	none		run contains 7576; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=7576
+A08	A	.{4}(?<=gh)	byte	'12gh34gh'=>0-4 4-8; '1gh'=>none; 'xxxghyygh'=>1-5 5-9	yes	yes	none		run contains 6768; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=6768
+A09	A	..(?<=ws)(?=tk)..	byte	'wstk wstx wstkwstk'=>0-4 10-14 14-18; 'wst'=>none; 'awstkb'=>1-5	yes	yes	none		run contains 7773746b; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=7773746b
+A10	A	(?=r(?=ne))...	byte	'rne rnx rnerne'=>0-3 8-11 11-14; 'rn'=>none; 'xrnez'=>1-4	yes	yes	none		run contains 726e65; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=726e65
+A11	A	(?=..(?<=xy))..z	byte	'xyz xyw xyzxyz'=>0-3 8-11 11-14; 'yz'=>none; 'axyzb'=>1-4	yes	yes	none		run contains 78797a; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=78797a
+A12	A	(?=[pq]x)[o-r][w-z]y	byte	'pxy qxy rxy oxy pxyqxy'=>0-3 4-7 16-19 19-22; 'pwy'=>none; 'zqxyz'=>1-4	yes	yes	707879/feffff	rate:builtin-prior	run contains [7071]7879 or 707879/feffff; sound in every match; not dead	PASS	
+A13	A	(?=fgh)\w{3}	byte	'fgh fgx fghfgh'=>0-3 8-11 11-14; 'fg'=>none; '_fgh_'=>1-4	yes	yes	666768	rate:builtin-prior	run contains 666768; sound in every match; not dead	PASS	
+A14	A	(?:(?=ln)..){2}	byte	'lnln lnlx lnlnlnln'=>0-4 10-14 14-18; 'ln'=>none; 'xlnlnx'=>1-5	yes	yes	none		run contains 6c6e6c6e; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=6c6e6c6e
+A15	A	(?i)(?=dov)\w\w\w	byte	'dov DOV dOv dox'=>0-3 4-7 8-11; 'do'=>none; 'xDoVx'=>1-4	yes	yes	444f56/dfdfdf	rate:builtin-prior	run contains 444f56/dfdfdf; sound in every match; not dead	PASS	
+A16	A	(?i)...(?-i)(?<=dov)	byte	'dov DOV dOv dov'=>0-3 12-15; 'DOV'=>none; 'xdovy'=>1-4	yes	yes	none		run contains 646f76; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=646f76
+A17	A	(?=47)\d\d-\d	byte	'47-1 48-1 47-947-0'=>0-4 10-14 14-18; '47-'=>none; 'x47-5x'=>1-5	yes	yes	34372d[30-39]	rate:builtin-prior	run contains 34372d; sound in every match; not dead	PASS	
+A18	A	bu..(?<=ck)	byte	'buck bucx buckbuck'=>0-4 10-14 14-18; 'buc'=>none; 'abucky'=>1-5	yes	yes	6275	rate:builtin-prior	run contains 6275636b; sound in every match; not dead	FAIL	RUN listing=6275 expected(spec-allowed, contained)=6275636b
+A19	A	t(?=[o])\w	byte	'to ta toto'=>0-2 6-8 8-10; 't'=>none; 'atob'=>1-3	yes	yes	746f	rate:builtin-prior	run contains 746f; sound in every match; not dead	PASS	
+A20	A	\w(?<=q)u	byte	'qu au ququ'=>0-2 6-8 8-10; 'q'=>none; 'squid'=>1-3	yes	yes	7175	rate:builtin-prior	run contains 7175; sound in every match; not dead	PASS	
+A21	A	..(?=wvz)..	byte	'abwvz abwvy cdwvzwvz'=>0-4 12-16; 'abwv'=>none; 'wvwvz'=>0-4	yes	yes	none		run contains 7776; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=7776
+A22	A	(?<=nop)st	byte	'nopst xopst nopstnopst'=>3-5 15-17 20-22; 'st'=>none; 'anopstb'=>4-6	yes	yes	7374	rate:builtin-prior	run contains 7374; sound in every match; not dead	PASS	
+A23	A	.m(?<=jm)k	byte	'jmk xmk jmkjmk'=>0-3 8-11 11-14; 'mk'=>none; 'ajmkb'=>1-4	yes	yes	6d6b	rate:builtin-prior	run contains 6a6d6b; sound in every match; not dead	FAIL	RUN listing=6d6b expected(spec-allowed, contained)=6a6d6b
+A24	A	(?=\x{e9}).e	utf8	'ée ee éeée'=>0-3 7-10 10-13; 'é'=>none; 'xéex'=>1-4	yes	yes	none		run contains c3a965; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=c3a965
+A25	A	(?:x|y)(?=cb)..z	byte	'xcbz ycbz zcbz xcbzycbz'=>0-4 5-9 15-19 19-23; 'xcb'=>none; 'axcbza'=>1-5	yes	yes	none		run contains 63627a or [7879]63627a or 7863627a/feffffff; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=['63627a', '[7879]63627a', '7863627a/feffffff']
+A26	A	(?=go)(?=.o.)(?=..l)...f	byte	'golf gol golfgolf'=>0-4 9-13 13-17; 'goof'=>none; 'xgolfx'=>1-5	yes	yes	none		run contains 676f6c66; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=676f6c66
+B01	B	qx(?=mn)mp	byte	'qxmp qxmn qxmnmp'=>none; 'qxmpqxmp'=>none; 'mnmp'=>none	yes	yes	71786d70	dead	why=dead; no match on any subject	PASS	
+B02	B	(?=ab)ac	byte	'ab ac abac'=>none; 'acac'=>none; 'abc'=>none	yes	yes	6163	dead	why=dead; no match on any subject	PASS	
+B03	B	ab(?<=xb)	byte	'ab xb abxb'=>none; 'xbab'=>none; 'aab'=>none	yes	yes	6162	dead	why=dead; no match on any subject	PASS	
+B04	B	(?<=a)(?<=b)c	byte	'ac bc abc'=>none; 'acbc'=>none; 'c'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B05	B	(?=xy)(?=xz)\w+	byte	'xy xz xyz'=>none; 'xyxz'=>none; 'x'=>none	yes	yes	none		why=dead; no match on any subject	FAIL	NOT-DEAD listing why=''
+B06	B	(?=[ab])[cd]x	byte	'cx dx acx'=>none; 'bdx'=>none; 'ax'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B07	B	(?i)(?=k)(?-i)[^kK]z	byte	'kz Kz az'=>none; 'kzKz'=>none; 'z'=>none	yes	yes	none		why=dead; no match on any subject	FAIL	NOT-DEAD listing why=''
+B08	B	(?i)(?=ab)ac	byte	'ab AC Ab ac'=>none; 'abAC'=>none; 'acab'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B09	B	(?=a(?=c))ab	byte	'ab ac abc'=>none; 'acab'=>none; 'abab'=>none	yes	yes	6162	dead	why=dead; no match on any subject	PASS	
+B10	B	[0-4]q(?<=[5-9]q)	byte	'1q 6q 16q'=>none; '4q9q'=>none; 'q'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B11	B	(?:(?=z)a){3}	byte	'aaa zzz azaz'=>none; 'aaaa'=>none; 'za'=>none	yes	yes	616161	dead	why=dead; no match on any subject	PASS	
+B12	B	aab(?<=bb)	byte	'aab abb aabb'=>none; 'bbaab'=>none; 'ab'=>none	yes	yes	616162	dead	why=dead; no match on any subject	PASS	
+B13	B	(?=\x{e9})e.	utf8	'eé ée ee'=>none; 'éé'=>none; 'e'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B14	B	a(?=.{2}z)bcy	byte	'abcy abcz abcyz'=>none; 'abczabcy'=>none; 'a'=>none	yes	yes	61626379	rate:builtin-prior	why=dead; no match on any subject	FAIL	NOT-DEAD listing why='rate:builtin-prior'
+B15	B	abc(?<=x..)	byte	'abc xbc abcxbc'=>none; 'xabc'=>none; 'bc'=>none	yes	yes	616263	rate:builtin-prior	why=dead; no match on any subject	FAIL	NOT-DEAD listing why='rate:builtin-prior'
+B16	B	\d(?<=[a-z])	byte	'1 a 1a a1'=>none; '9z'=>none; '0'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B17	B	(?=xyz)xy[^z]	byte	'xyz xya xyzxya'=>none; 'xyxy'=>none; 'xy'=>none	yes	yes	7879	rate:builtin-prior	why=dead; no match on any subject	FAIL	NOT-DEAD listing why='rate:builtin-prior'
+B18	B	(?<=ro)(?<=.p)t	byte	'rot rpt ropt'=>none; 'pt'=>none; 'rpot'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+C01	C	(?:qx(?=mn)mp)?r	byte	'r qxmpr qxr r'=>0-1 6-7 10-11 12-13; 'qxmnr'=>4-5; 'x'=>none	yes	yes	none		NOT dead; answers as PCRE2	PASS	
+C02	C	(?=ab)ac|ab	byte	'ab ac abab'=>0-2 6-8 8-10; 'ac'=>none; 'aab'=>1-3	yes	yes	none		NOT dead; answers as PCRE2	PASS	
+C03	C	(?!ab)ac	byte	'ac ab acac'=>0-2 6-8 8-10; 'ab'=>none; 'aac'=>1-3	yes	yes	6163	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
+C04	C	(?:(?=z)a){0}b	byte	'b ab bb'=>0-1 3-4 5-6 6-7; 'a'=>none; 'zab'=>2-3	yes	yes	none		NOT dead; answers as PCRE2	PASS	
+C05	C	(?:(?=z)a)*b	byte	'b ab bb'=>0-1 3-4 5-6 6-7; 'a'=>none; 'zab'=>2-3	yes	yes	none		NOT dead; answers as PCRE2	PASS	
+C06	C	(?i)(?=K)k	byte	'k K kk'=>0-1 2-3 4-5 5-6; 'x'=>none; 'aKa'=>1-2	yes	yes	none		NOT dead; answers as PCRE2	PASS	
+C07	C	(?<=a)(?<=[ab])c	byte	'ac bc acac'=>1-2 7-8 9-10; 'c'=>none; 'abc'=>none	yes	yes	none		NOT dead; answers as PCRE2	PASS	
+C08	C	(?:(?=ab)ac|(?=ad)ad)x	byte	'adx acx adxadx'=>0-3 8-11 11-14; 'abx'=>none; 'aadx'=>1-4	yes	yes	61[6364]78	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
+C09	C	(?<!x)ab(?<!xb)	byte	'ab xab abab'=>0-2 7-9 9-11; 'x'=>none; 'cab'=>1-3	yes	yes	6162	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
+C10	C	(?=ab|ac)ac	byte	'ac ab acac'=>0-2 6-8 8-10; 'a'=>none; 'aac'=>1-3	yes	yes	6163	rate:builtin-prior	NOT dead; answers as PCRE2	PASS	
+A01k	A	(?=kev)[a-z]{3}	byte	'xkevykevz'=>1-4 5-8; 'kekv'=>none; 'kevkevkev'=>0-3 3-6 6-9	yes	yes	6b6576	rate:builtin-prior	run contains 6b6576; sound in every match; not dead	PASS	
+A02k	A	[a-z]{3}(?<=kev)	byte	'xkevykevz'=>1-4 5-8; 'kek'=>none; 'kevkev'=>0-3 3-6	yes	yes	6b6576	rate:builtin-prior	run contains 6b6576; sound in every match; not dead	PASS	
+A03k	A	jo(?=wl)[a-z][a-z]	byte	'jowl jowx jowljowl'=>0-4 10-14 14-18; 'jo'=>none; 'jjowl'=>1-5	yes	yes	6a6f776c	rate:builtin-prior	run contains 6a6f776c; sound in every match; not dead	PASS	
+A04k	A	[a-z][a-z](?<=jo)wl	byte	'jowl jowx jowljowl'=>0-4 10-14 14-18; 'xowl'=>none; 'ajowl'=>1-5	yes	yes	6a6f776c	rate:builtin-prior	run contains 6a6f776c; sound in every match; not dead	PASS	
+A07k	A	(?=uv)[0-9a-z]{4}	byte	'uvwxuvyz'=>0-4 4-8; 'uvw'=>none; 'xuv12uv34'=>1-5 5-9	yes	yes	7576[30-3961-7a][30-3961-7a]	rate:builtin-prior	run contains 7576; sound in every match; not dead	PASS	
+A08k	A	[0-9a-z]{4}(?<=gh)	byte	'12gh34gh'=>0-4 4-8; '1gh'=>none; 'xxxghyygh'=>1-5 5-9	yes	yes	[30-3961-7a][30-3961-7a]6768	rate:builtin-prior	run contains 6768; sound in every match; not dead	PASS	
+A09k	A	[a-z]{2}(?<=ws)(?=tk)[a-z]{2}	byte	'wstk wstx wstkwstk'=>0-4 10-14 14-18; 'wst'=>none; 'awstkb'=>1-5	yes	yes	7773746b	rate:builtin-prior	run contains 7773746b; sound in every match; not dead	PASS	
+A10k	A	(?=r(?=ne))[a-z]{3}	byte	'rne rnx rnerne'=>0-3 8-11 11-14; 'rn'=>none; 'xrnez'=>1-4	yes	yes	726e65	rate:builtin-prior	run contains 726e65; sound in every match; not dead	PASS	
+A11k	A	(?=[a-z]{2}(?<=xy))[a-z]{2}z	byte	'xyz xyw xyzxyz'=>0-3 8-11 11-14; 'yz'=>none; 'axyzb'=>1-4	yes	yes	none		run contains 78797a; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=78797a
+A14k	A	(?:(?=ln)[a-z]{2}){2}	byte	'lnln lnlx lnlnlnln'=>0-4 10-14 14-18; 'ln'=>none; 'xlnlnx'=>1-5	yes	yes	6c6e6c6e	rate:builtin-prior	run contains 6c6e6c6e; sound in every match; not dead	PASS	
+A18k	A	bu[a-z]{2}(?<=ck)	byte	'buck bucx buckbuck'=>0-4 10-14 14-18; 'buc'=>none; 'abucky'=>1-5	yes	yes	6275636b	rate:builtin-prior	run contains 6275636b; sound in every match; not dead	PASS	
+A21k	A	[a-z]{2}(?=wvz)[a-z]{2}	byte	'abwvz abwvy cdwvzwvz'=>0-4 12-16; 'abwv'=>none; 'wvwvz'=>0-4	yes	yes	[61-7a][61-7a]7776	rate:builtin-prior	run contains 7776; sound in every match; not dead	PASS	
+A23k	A	[a-z]m(?<=jm)k	byte	'jmk xmk jmkjmk'=>0-3 8-11 11-14; 'mk'=>none; 'ajmkb'=>1-4	yes	yes	6a6d6b	rate:builtin-prior	run contains 6a6d6b; sound in every match; not dead	PASS	
+A24k	A	(?=\x{e9})[\x{e0}-\x{ff}]e	utf8	'ée èe éeée'=>0-3 8-11 11-14; 'é'=>none; 'xéex'=>1-4	yes	yes	c3a965	rate:none(utf8)->rightmost	run contains c3a965; sound in every match; not dead	PASS	
+A25k	A	(?:x|y)(?=cb)[a-c]{2}z	byte	'xcbz ycbz zcbz xcbzycbz'=>0-4 5-9 15-19 19-23; 'xcb'=>none; 'axcbza'=>1-5	yes	yes	7863627a/feffffff	rate:builtin-prior	run contains 63627a or [7879]63627a or 7863627a/feffffff; sound in every match; not dead	PASS	
+A26k	A	(?=go)(?=[a-z]o)(?=[a-z]{2}l)[a-z]{3}f	byte	'golf gol golfgolf'=>0-4 9-13 13-17; 'goof'=>none; 'xgolfx'=>1-5	yes	yes	676f[61-7a]66	rate:builtin-prior	run contains 676f6c66; sound in every match; not dead	FAIL	RUN listing=676f[61-7a]66 expected(spec-allowed, contained)=676f6c66
+A27k	A	(?i)(?=dov)[a-z]{3}	byte	'dov DOV dOv dox'=>0-3 4-7 8-11; 'do'=>none; 'xDoVx'=>1-4	yes	yes	444f56/dfdfdf	rate:builtin-prior	run contains 444f56/dfdfdf; sound in every match; not dead	PASS	
+A28k	A	(?=wo)[\w]{2}[!?]	byte	'wo! wo? wox! wo!wo?'=>0-3 4-7 13-16 16-19; 'w!'=>none; 'awo!'=>1-4	yes	yes	776f[213f]	rate:builtin-prior	run contains 776f[213f] or 776f21/ffffe1; sound in every match; not dead	PASS	
+A29	A	(?=kev)[\x01-\x80]{3}	byte	'xkevykevz'=>1-4 5-8; 'kekv'=>none; 'kevkevkev'=>0-3 3-6 6-9	yes	yes	6b6576	rate:builtin-prior	run contains 6b6576; sound in every match; not dead	PASS	
+A30	A	(?=kev)[\x00-\x80]{3}	byte	'xkevykevz'=>1-4 5-8; 'kekv'=>none; 'kevkevkev'=>0-3 3-6 6-9	yes	yes	none		run contains 6b6576; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=6b6576
+B14k	B	a(?=[a-z]{2}z)bcy	byte	'abcy abcz abcyz'=>none; 'abczabcy'=>none; 'a'=>none	yes	yes	61626379	rate:builtin-prior	why=dead; no match on any subject	FAIL	NOT-DEAD listing why='rate:builtin-prior'
+B15k	B	abc(?<=x[a-z]{2})	byte	'abc xbc abcxbc'=>none; 'xabc'=>none; 'bc'=>none	yes	yes	616263	dead	why=dead; no match on any subject	PASS	
+B17k	B	(?=xyz)xy[a-y]	byte	'xyz xya xyzxya'=>none; 'xyxy'=>none; 'xy'=>none	yes	yes	7879[61-79]	dead	why=dead; no match on any subject	PASS	
+B19	B	[a-p](?<=q)	byte	'qa qq aqb'=>none; 'qp'=>none; 'a'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B07k	B	(?i)(?=k)(?-i)[a-jl-z]z	byte	'kz Kz az'=>none; 'kzKzaz'=>none; 'z'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+B20	B	a(?=[a-z][a-z]z)bcy	byte	'abcy abcz abcyz'=>none; 'abczabcy'=>none; 'a'=>none	yes	yes	61626379	dead	why=dead; no match on any subject	PASS	
+B21	B	abc(?<=x[a-y]c)	byte	'abc xbc abcxbc'=>none; 'xabc'=>none; 'bc'=>none	yes	yes	616263	dead	why=dead; no match on any subject	PASS	
+B22	B	abc(?<=x[^z]c)	byte	'abc xbc abcxbc'=>none; 'xabc'=>none; 'bc'=>none	yes	yes	616263	rate:builtin-prior	why=dead; no match on any subject	FAIL	NOT-DEAD listing why='rate:builtin-prior'
+B23	B	(?=xy)(?=xz)\w\w	byte	'xy xz xyz'=>none; 'xyxz'=>none; 'x'=>none	yes	yes	787a	dead	why=dead; no match on any subject	PASS	
+B24	B	(?=xy)(?=xz)	byte	'xy xz xyz'=>none; 'xyxz'=>none; 'x'=>none	yes	yes	none	dead	why=dead; no match on any subject	PASS	
+A16k	A	(?i)[a-z]{3}(?-i)(?<=dov)	byte	'dov DOV dOv dov'=>0-3 12-15; 'DOV'=>none; 'xdovy'=>1-4	yes	yes	646f76	rate:builtin-prior	run contains 646f76; sound in every match; not dead	PASS	
+A11w	A	(?=[a-z][a-z](?<=xy))[a-z]{2}z	byte	'xyz xyw xyzxyz'=>0-3 8-11 11-14; 'yz'=>none; 'axyzb'=>1-4	yes	yes	none		run contains 78797a; sound in every match; not dead	FAIL	RUN listing=none expected(spec-allowed, contained)=78797a
+A31	A	(?=a[a-z]{2}l)[a-z]{4}	byte	'axyl axyz abclazzl'=>0-4 10-14 14-18; 'axl'=>none; 'xaqql'=>1-5	yes	yes	61[61-7a][61-7a][61-7a]	rate:builtin-prior	run contains 61[61-7a][61-7a]6c; sound in every match; not dead	FAIL	RUN listing=61[61-7a][61-7a][61-7a] expected(spec-allowed, contained)=61[61-7a][61-7a]6c
+A32	A	(?=a[a-z][a-z]l)[a-z]{4}	byte	'axyl axyz abclazzl'=>0-4 10-14 14-18; 'axl'=>none; 'xaqql'=>1-5	yes	yes	61[61-7a][61-7a]6c	rate:builtin-prior	run contains 61[61-7a][61-7a]6c; sound in every match; not dead	PASS	

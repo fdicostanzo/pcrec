@@ -30,7 +30,9 @@ KEY_SHAPES = (
     r"D[0-9]+\.[0-9]+",
     r"D[0-9]+\.a" + ADDENDUM_N,
     r"[a-z0-9]+(?:-[a-z0-9]+)*",
+    r"(?:core|lib|parked)/[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*){1,2}",  # a predicate-document tag
 )
+PIECE_TAG_SHAPE = KEY_SHAPES[-1]
 
 PLAN_PATH = "docs/dev/plan.md"
 COMPLETED_PATH = "docs/dev/plan_completed.md"
@@ -54,6 +56,14 @@ PROFILES = [
     dict(name="upstream", index="docs/dev/upstream_issues.md", details="docs/dev/upstream_issues_details.md",
          id=r"U[0-9]+[a-z]?", states=(), caps=(180, 280, 12 * 1024), level1="unit 4's", work="unit 4's",
          form="dormant", dormant="unit 4", linter="doc_lint", extra=(), floor=None),
+    # the predicate documents (docs/dev/pred/doc_format.md): three base/details pairs, parsed by scripts/pred_doc_lint.py.
+    # KEY = a path tag (core/holes/class), a previous tag from a details `was:` line (resolved to the current piece,
+    # the first output line `entry: was OLD -> NEW`), or a details `slugs:` word; level 0 heading + statement, 1 the base piece,
+    # 2 + the details entry; `-g` searches them, `--state open` lists the open pieces. The pairs are pred_doc_lint.PAIRS.
+    dict(name="predicates", index="docs/design/predicates/core.md", details="docs/design/predicates/core_details.md", id=None,
+         states=("ruled", "principle", "reading", "open", "under-construction", "parked", "?"), caps=None,
+         level1="the base piece: statement, needs:/by:, definition, example", work="-", form="pieces", dormant=None,
+         linter="pred_doc_lint.py", extra=("docs/design/predicates/library.md", "docs/design/predicates/parked.md"), floor=None),
     # scripts/INDEX.md: one line per file under scripts/ (and scripts/hooks/); level 2 prints the script's own header
     # comment, so there is no details file. `entry --lint-scripts` checks coverage, shape and headers.
     dict(name="scripts", index="scripts/INDEX.md", details=None, id=r"[A-Za-z0-9_./-]+", states=("live", "retired"),

@@ -131,7 +131,10 @@ alternative holds. Spans may overlap; positions at one offset are tested as thei
 
 **Spans are finite; the limits are pcrec's.** The one kit bound is the PROOF range `[MF_PROOF_LO,
 MF_MAX_FWD)` (`mf_class.proven[]` is fixed): outside it a position is tested, unproven; a consumer needing
-the proof declines on pcrec's side (trigger to grow it: a longer lookaround as context source, §7). pcrec
+the proof declines on pcrec's side *(superseded by R-45 plan B, MF_CLASS_V 11 / MF_SITE_ABI 30: `proven[]`
+is retired for the counted `mf_class.proof`, `proof_n` rows in the caller's `mf_rows` under the ceiling
+MF_MAX_FWD = MF_WREACH; a window plan class testing outside the range is REFUSED (R-out), never clipped;
+memfn.h `mf_class`, `mf_rows`)* (trigger to grow it: a longer lookaround as context source, §7). pcrec
 truncates a long run to its stated stretch (`pcrec_find_run_window_start`) before stating it (§9).
 
 **Producer obligations** (asserted where pcrec builds the site): a verify-NO core is a SUBSET of the
@@ -632,7 +635,7 @@ bar ("`dense` not slower than COV"); main AGREED (rev 3.2). In family terms, 581
 
 ## 7. The pcrec producer (D168, `ctx_span.md`)
 
-`MkLang`'s `S_d` are span 0's positions; each `MkCtx` item is one span (least to greatest offset, gaps
+The cover's exact stretch `S_d` (the anchored machine's walk since [COVER-CAP] stage 1, 2026-11-15, `cover_cap.md` rev 4; the NFA slice's record before it) are span 0's positions; each `MkCtx` item is one span (least to greatest offset, gaps
 full-set; FAILS → core, width-1 SATISFIES → empty core; EXACT may be YES, SUPERSET only NO). A longer
 lookaround is a longer span with no new field. What does NOT dissolve: the proof range (§1.1) and the
 SOURCE switch (`(?<=ab)` needs the facts-layer producer as THE context source, pcrec's own event with X1

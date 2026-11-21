@@ -23,6 +23,7 @@
  * byte-rate table once (`R33RATE`), the table every kit mass reads. */
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "memfn.h"
@@ -98,7 +99,17 @@ static void wr_json(FILE *f, const mf_art *art, const mf_site *s)
 {
     mf_wreply r;
     memset(&r, 0, sizeof r);
-    int rc = mf_wdecide(art, s, NULL, MF_WCALL_NONE, &r);
+    /* the reply's lists are the caller's storage (MF_SITE_ABI 30) */
+    uint32_t pc = 0, nc = 0;
+    if (mf_rows_need(s, &pc, &nc)) nc = MF_WPLAN_MAX;
+    mf_rows rows;
+    memset(&rows, 0, sizeof rows);
+    rows.plan_cap = nc;
+    rows.plan = calloc(nc + 1, sizeof *rows.plan);
+    rows.plan_term = calloc(nc + 1, sizeof *rows.plan_term);
+    rows.plan_test = calloc(nc + 1, sizeof *rows.plan_test);
+    int rc = rows.plan && rows.plan_term && rows.plan_test
+           ? mf_wdecide(art, s, NULL, MF_WCALL_NONE, &r, &rows) : -1;
     fprintf(f, "\"wr\":{\"rc\":%d", rc);
     if (!rc) {
         fprintf(f, ",\"alt\":%u,\"reseed\":%u,\"has_stop\":%u,\"stop\":%d,\"stop_set\":",
@@ -112,6 +123,7 @@ static void wr_json(FILE *f, const mf_art *art, const mf_site *s)
                 r.pinned, r.run_stated, (int)r.run_member, (int)r.run_lo, r.run_len, r.path);
     }
     fputc('}', f);
+    free(rows.plan); free(rows.plan_term); free(rows.plan_test);
 }
 
 static void pred_json(FILE *f, const mf_pred *p)

@@ -1,0 +1,7 @@
+(?<=foo)bar
+(?<=ab|b)c
+(?<=e{10})eeeeeqzx
+\bfoo
+(?<=a)a(\w)\1
+^(?<=xy)a|b$
+(?m)^a

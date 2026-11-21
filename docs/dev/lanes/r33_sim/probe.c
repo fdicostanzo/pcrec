@@ -103,7 +103,13 @@ static void wr_json(FILE *f, const mf_art *art, const mf_site *s)
 {
     mf_wreply r;
     memset(&r, 0, sizeof r);
-    int rc = pcrec_mf_wdecide(art, s, NULL, MF_WCALL_NONE, &r);   /* the decision alone (plan_frame.md 3.0b) */
+    /* the reply's plan lists in the probe's own storage (MF_SITE_ABI 30), at
+       the ceiling, as tests/memfn/run_decide_check.c passes them */
+    static int32_t plan[MF_WPLAN_MAX];
+    static uint16_t plan_term[MF_WPLAN_MAX];
+    static uint8_t plan_test[MF_WPLAN_MAX];
+    mf_rows rows = { NULL, 0, plan, plan_term, plan_test, MF_WPLAN_MAX };
+    int rc = pcrec_mf_wdecide(art, s, NULL, MF_WCALL_NONE, &r, &rows);   /* the decision alone (plan_frame.md 3.0b) */
     fprintf(f, "\"wr\":{\"rc\":%d", rc);
     if (!rc) {
         fprintf(f, ",\"alt\":%u,\"reseed\":%u,\"has_stop\":%u,\"stop\":%d,\"stop_set\":",

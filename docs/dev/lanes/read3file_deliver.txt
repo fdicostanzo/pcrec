@@ -1,0 +1,5 @@
+report=docs/dev/lanes/read3file_report.md
+sections: STATE AT HANDOFF; ROW FILED; FRAMEWORK NOTE; OPEN ITEMS
+nonempty: all
+commit: yes
+owed: none

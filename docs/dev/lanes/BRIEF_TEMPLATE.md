@@ -33,7 +33,7 @@ A field with nothing to say is written "none", never dropped.
     any run over ~2 min, and before writing its report; the report's
     STATE AT HANDOFF names the last entry it applied (R-n), and the
     manager checks that against the file at acceptance (u25, 2026-11-07,
-    reported "empty" over R1 and R2). A change bigger than
+    reported "empty" over R1 and R2). The rulings file is GITIGNORED, so the lane looks for it with `ls`, not `git status` (land1115d reported "does not exist", 2026-11-15). A change bigger than
     a clarification (new scope, a reversed design) still goes to a FRESH
     lane.
 
@@ -41,6 +41,11 @@ A field with nothing to say is written "none", never dropped.
     worktrees/.mgr/sabotage_ids.txt, and the D/K/I/R numbers from their
     ledgers (decisions.md; memfn/docs/requests.md and responses.md). A
     lane takes no id outside its range.>
+
+    ARCHITECTURE NOTE: <path of the ACCEPTED note (docs/design/<topic>_arch.md) and its critic round, for a
+    design or build lane of a feature above the size trigger; "below the trigger: <the one-paragraph form,
+    pasted>" otherwise; "none: not a feature" for a fix, a measurement or a doc lane. The lane's design stays
+    inside the note's site map and lands the note's first units first ([ARCH-STEP], 2026-11-17).>
 
     BUILD GO: <the owner's words and date, quoted verbatim>
       -- or --
@@ -52,7 +57,14 @@ A field with nothing to say is written "none", never dropped.
     brief, or a premise below fails, stop and report.
     PREMISE TEST: <the first check the lane makes that the brief's
     premises hold, with the expected result.>
+    TODAY NUMBERS (design lanes): every "today the tree does X" number
+    the note states carries the exact command that produced it (round
+    covcap-r2, 2026-11-15: "`[ab]{1000}` lists 24" was false on one
+    compile).
 
+    (A lane that dispatches CLOUD runs proves each one in its report with the matching
+    `git ls-remote origin 'refs/heads/cloud/OWNER/*/NAME*'` line; lanecheck knows only box-queue
+    keys, so its report says `OWED: none` and names the cloud runs in their own section; 2026-11-16.)
     OWED RUNS: queue every owed stage as a box-queue job (RUNS.md), name
     their keys in STATE AT HANDOFF, run lanecheck, SendMessage, then END.
     Do NOT wait for the jobs or for any notification: a fresh agent reads
@@ -78,3 +90,5 @@ A field with nothing to say is written "none", never dropped.
     complete on its own, then END. Any question the manager asks the lane
     (and any the lane asks back) wants a reply EITHER WAY; never phrase a
     request as "reply only if ..." (Frank 2026-11-07).
+
+Two more traps (2026-11-15): never run a fix lane in a worktree that queued box jobs build in (cut a new branch/worktree); and a prepare command chained with `&&` after a commit loses the deliver/rulings files when a hook rejects the commit (write them in their own command).

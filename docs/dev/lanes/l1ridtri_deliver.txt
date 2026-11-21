@@ -1,0 +1,5 @@
+report: docs/dev/lanes/l1ridtri_report.md
+sections: Summary; What recidentity compares; The failure; Cause; Fix or re-pin; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

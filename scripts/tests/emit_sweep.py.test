@@ -215,6 +215,43 @@ assert es.facts_declared_delta(lst("no", "yes"), lst("yes", "yes"), m)[0]
 assert es.facts_declared_delta(lst("yes", "yes"), lst("no", "no"), m)[0]
 PY
 
+# The declared GONE fact and declared NEW section ([COVER-CAP] stage 1, review
+# r9 covs1 TRADES-2), judged both ways: the declared delta passes and counts
+# both items; a declared-gone fact still in NEW, a declared-new section absent
+# from NEW or already in REF, an undeclared fact deleted, an invented row and
+# another section's moved cell each fail; a self-check demands no move.
+python3 - "$here" <<'PY' && ok "facts declared gone/new section: both directions" || bad "facts declared gone/new section control"
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+def row(e, f, v="x"): return "%s\t%s\tpat\tE3\tderived\t%s\tv\t\tn" % (e, f, v)
+def ref(extra=()):
+    L = ["#section facts"]
+    for e in ("byte", "utf8"): L += [row(e, "kset_walk"), row(e, "span_facts")]
+    return ("\n".join(L + list(extra)) + "\n").encode()
+def new(gone=True, cover=True, extra=None, drop_other=False, tail=()):
+    L = ["#section facts"]
+    for e in ("byte", "utf8"):
+        L.append(row(e, "kset_walk"))
+        if not gone: L.append(row(e, "span_facts"))
+    if drop_other: L = L[:1] + L[2:]
+    if extra: L.append(extra)
+    if cover: L += ["#section cover", "byte\tcover\t2"]
+    return ("\n".join(L + list(tail)) + "\n").encode()
+m = es.parse_fact_moves("span_facts:row:gone>,cover:section:>new")
+assert es.facts_declared_delta(ref(), new(), m) == ([], 2)
+assert any("still in NEW" in p for p in es.facts_declared_delta(ref(), new(gone=False), m)[0])
+assert any("absent from NEW" in p for p in es.facts_declared_delta(ref(), new(cover=False), m)[0])
+assert any("already in REF" in p for p in
+           es.facts_declared_delta(ref(["#section cover", "byte\tcover\t2"]), new(), m)[0])
+assert es.facts_declared_delta(ref(), new(drop_other=True), m)[0]
+assert es.facts_declared_delta(ref(), new(extra=row("byte", "invented")), m)[0]
+assert es.facts_declared_delta(ref(["#section other", "byte\ta\t1"]),
+                               new(tail=["#section other", "byte\ta\t2"]), m)[0]
+assert es.facts_declarations("selfcheck", "span_facts:row:gone>") == []
+assert es.facts_declarations("selfcheck-lowdfa", "span_facts:row:gone>") == []
+assert es.facts_declarations("real", "span_facts:row:gone>") == m[:1]
+assert es.facts_declarations("real", "") == []
+PY
+
 # --dumps-declared-rows, both directions: the declared row's move passes; an
 # unmoved declared row, an undeclared row's move and a line-count change fail.
 python3 - "$here" <<'PY' && ok "dumps declared rows: both directions" || bad "dumps declared rows control"

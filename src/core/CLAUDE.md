@@ -6,6 +6,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 Maintenance: update this file when files are added/removed or their roles change.
 
+- `Ctx.lb_max` (PCRE2's `max_lookbehind`) is raised by `pcrec_lb_raise` and read outside the parser through `pcrec_lb_max` (`internal.h`).
 - All dynamic allocations for AST/IR go through `pcrec_arena_alloc()` and are freed together; `StrBuf` accumulates generated code; error paths longjmp to `cx.jb`. `internal.h` is NOT installed; it is internal to `src/`.
 - pcrec is a LIBRARY: never `abort()` on the caller's process (K7). A failed malloc calls `pcrec_ctx_nomem()` (Arena and StrBuf carry a `Ctx *cx`; NULL is legitimate only for `StrBuf`s outside a compile, e.g. `src/dump/syntax_dump.c`). Realloc into a temporary. Builders that can be interrupted by `pcrec_ctx_fail` must be arena-backed (no malloc builders: they leak on every diagnosed pattern).
 - `compile.c` holds the tree's ONLY `setjmp`. `compile_driver` is a bounded retry loop (`COMPILE_MAX_ATTEMPTS`, [SEL-1]); a retry is one more input bit on a fresh `Ctx`, never a second local recovery point; `attempt`/`dfa_disabled` stay `volatile` (`-Wclobbered` under `make strict`). Cross-attempt state is plain `Ctx` fields, not arena text (the arena is freed by `job_cleanup`).
@@ -32,7 +33,7 @@ Maintenance: update this file when files are added/removed or their roles change
 ## Files
 
 - `ctxfn.def` — the one A_CTX truth table (ten rows; grid, hex, class, VM forms).
-- `kindrow.def` — the per-kind attribute row ([INLINE-C] 1a): TEXT/PATH/READS/ERASE per `AKind`, read via `pcrec_kind_row`/`pcrec_ast_row`; a kind without a row fails to compile (`tests/core/kindrow_check.sh`).
+- `kindrow.def` — the per-kind attribute row ([INLINE-C] 1a): TEXT/PATH/READS/ERASE/NEVER per `AKind`, read via `pcrec_kind_row`/`pcrec_ast_row` (NEVER, the never family's one propagation, via `pcrec_never_by_row`; span_arms RM-6); a kind without a row fails to compile (`tests/core/kindrow_check.sh`).
 - `part_layout.def` — part-layout vocabulary X-macros (`PL_CLASS/VALUE/RANK/WHY`).
 - `axes.def` — optimization-axis table (deny/force tokens, `-fno-X`/`-fX` spellings, default polarity).
 - `limits.h` / `limits.def` — every accept/reject/promise number, provenance-tiered.

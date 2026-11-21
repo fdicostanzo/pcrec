@@ -28,21 +28,26 @@
 #include "gen/known.h"
 #include "enc/enc.h"
 
-/* The deepest fixed end the reading states (kit_proof.md §1.1 C7):
- * `1 <= k <= MF_MAX_SPAN_POS`; C8 then needs the slice's exact prefix, which
- * is bounded by `PCREC_PREFIX_K_MAX`. */
-#define KN_CAP MF_MAX_SPAN_POS
-
 typedef struct { int s, c; } KnVs;   /* a state and its count inside s's chain */
 
+/* THE WALK of A from its entry row (cover_cap.md §3.1): no bound of its own.
+ * Every row it holds is live, so it ends by the shortest path to an accept,
+ * and A exists only under PCREC_ANCHORED_MAX_STATES: that ceiling is its
+ * bound. Rows are deduplicated by a per-virtual-state stamp (`vbase[s] + c`
+ * is (s, c)'s index), so a depth holds at most `nv` rows. */
 typedef struct {
     const Dfa *d;
     uint8_t   *live;                 /* per state: can reach an accept      */
-    KnVs      *lv[KN_CAP + 1];       /* the rows at each depth              */
-    int        nlv[KN_CAP + 1];
-    int        k;                    /* the walk's span                     */
-    bool       exact;                /* A's language from r0 is a product   */
-    uint8_t    set[KN_CAP][32];
+    int       *vbase, nv;            /* per state: its first virtual index  */
+    int       *stamp;                /* per virtual state: depth + 1 added  */
+    KnVs      *row, *next;           /* the rows at this depth, the next's  */
+    int        nrow, nnext;
+    int        k;                    /* the depth the walk ended at         */
+    uint8_t    stop;                 /* PcrecCoverStop                      */
+    bool       eolview;              /* C9: a row at depth 0..k has a non-
+                                        identity eol view                   */
+    uint8_t  (*set)[32];             /* S_0..S_{k-1}, grown as walked       */
+    int        nsetcap;
 } KnWalk;
 
 static void kn_add(uint8_t s[32], int b) { s[b >> 3] |= (uint8_t)(1u << (b & 7)); }
@@ -117,53 +122,106 @@ static void kn_liveness(Ctx *cx, KnWalk *w)
 
 static bool kn_live(const KnWalk *w, KnVs v) { return v.s >= 0 && w->live[v.s]; }
 
-/* The rows reached from `r0` depth by depth, the span (the first depth some
- * row accepts in any form, or one past a view-gated newline), A's S_d and
- * whether the rows at every depth below the span allow one live byte set.
- * kvdfa.py's `lang`, on the built machine (one entry row, so each string
- * reaches one virtual row). Returns false where a depth holds more rows than
- * the walk's scratch (a decline, never a guess). */
-static bool kn_walk(Ctx *cx, KnWalk *w, int r0)
+/* The per-state first virtual index and the walk's row arrays: a chain
+ * head of span m stands for m virtual states (s, 0..m-1), any other state
+ * for one. */
+static void kn_rows_alloc(Ctx *cx, KnWalk *w)
 {
     const Dfa *d = w->d;
-    int cap = d->n * 4 + 8;
-    bool ended = false;
-    w->exact = true;
-    w->k = KN_CAP;
-    for (int j = 0; j <= KN_CAP; j++) {
-        w->lv[j] = pcrec_arena_alloc(&cx->arena, sizeof(KnVs) * (size_t)cap);
-        w->nlv[j] = 0;
+    int nv = 0;
+    w->vbase = pcrec_arena_alloc(&cx->arena, sizeof(int) * (size_t)(d->n ? d->n : 1));
+    for (int s = 0; s < d->n; s++) {
+        w->vbase[s] = nv;
+        nv += d->st[s].scan_span > 0 ? d->st[s].scan_span : 1;
     }
-    if (kn_live(w, (KnVs){ r0, 0 })) w->lv[0][w->nlv[0]++] = (KnVs){ r0, 0 };
-    for (int j = 0; j < KN_CAP; j++) {
-        uint8_t first[32];
-        bool havefirst = false;
-        if (w->nlv[j] == 0 || ended) { w->k = j; break; }
-        for (int i = 0; i < w->nlv[j]; i++)
-            if (kn_acc_any(d, w->lv[j][i].s)) { w->k = j; return true; }
-        memset(w->set[j], 0, 32);
-        for (int i = 0; i < w->nlv[j]; i++) {
-            KnVs q = w->lv[j][i];
+    w->nv = nv;
+    w->stamp = pcrec_arena_alloc(&cx->arena, sizeof(int) * (size_t)(nv ? nv : 1));
+    w->row = pcrec_arena_alloc(&cx->arena, sizeof(KnVs) * (size_t)(nv ? nv : 1));
+    w->next = pcrec_arena_alloc(&cx->arena, sizeof(KnVs) * (size_t)(nv ? nv : 1));
+}
+
+/* The set slot for depth `j`, the array doubled in the arena when full. */
+static uint8_t *kn_set_at(Ctx *cx, KnWalk *w, int j)
+{
+    if (j >= w->nsetcap) {
+        int cap = w->nsetcap ? w->nsetcap * 2 : 32;
+        uint8_t (*n)[32] = pcrec_arena_alloc(&cx->arena, (size_t)cap * 32);
+        if (w->nsetcap) memcpy(n, w->set, (size_t)w->nsetcap * 32);
+        w->set = n;
+        w->nsetcap = cap;
+    }
+    memset(w->set[j], 0, 32);
+    return w->set[j];
+}
+
+/* C9 as the walk passes a depth: a row carrying a non-identity eol view. */
+static void kn_eol_rows(KnWalk *w)
+{
+    for (int i = 0; i < w->nrow; i++) {
+        int s = w->row[i].s, e = w->d->st[s].eolvar;
+        if (e >= 0 && e != s) w->eolview = true;
+    }
+}
+
+/* Does some row of this depth accept in any form? */
+static bool kn_rows_accept(const KnWalk *w)
+{
+    for (int i = 0; i < w->nrow; i++)
+        if (kn_acc_any(w->d, w->row[i].s)) return true;
+    return false;
+}
+
+/* THE EXACT STRETCH, read off A (cover_cap.md §3.1; kvdfa.py's `lang` on the
+ * built machine, one entry row, so each string reaches one virtual row).
+ * From `r0`, depth by depth, it holds the live rows reached and checks C9 on
+ * them; it ENDS where no row is left (EMPTY) or one past a view-gated final
+ * newline (VIEW), or where a row accepts (ACCEPT): `k` is that depth and the
+ * stretch is `k`. Otherwise every row's live next-byte set is computed; where
+ * all rows allow one set `S_j` the depth is exact and the walk goes on, and
+ * the first depth where two differ is `L` (BRANCH): the walk ends there,
+ * since past it nothing it decides is read (C8 declines). The rows at the
+ * last depth stay in `row` for C10/C11. */
+static void kn_walk(Ctx *cx, KnWalk *w, int r0)
+{
+    const Dfa *d = w->d;
+    bool viewed = false;
+    int j = 0;
+    kn_rows_alloc(cx, w);
+    w->nrow = 0;
+    if (kn_live(w, (KnVs){ r0, 0 })) w->row[w->nrow++] = (KnVs){ r0, 0 };
+    for (;; j++) {
+        uint8_t first[32], *set;
+        kn_eol_rows(w);                      /* C9, the rows at k included */
+        if (viewed) { w->stop = COVER_STOP_VIEW; break; }   /* VIEW wins: k */
+        if (w->nrow == 0) { w->stop = COVER_STOP_EMPTY; break; }
+        if (kn_rows_accept(w)) { w->stop = COVER_STOP_ACCEPT; break; }
+        set = kn_set_at(cx, w, j);
+        w->nnext = 0;
+        for (int i = 0; i < w->nrow && w->stop != COVER_STOP_BRANCH; i++) {
+            KnVs q = w->row[i];
             uint8_t b32[32];
             memset(b32, 0, 32);
             for (int b = 0; b < 256; b++) {
                 KnVs t = kn_step(d, q, d->clsmap[b]);
                 if (!kn_live(w, t)) continue;
                 kn_add(b32, b);
-                bool dup = false;
-                for (int x = 0; x < w->nlv[j + 1] && !dup; x++)
-                    dup = w->lv[j + 1][x].s == t.s && w->lv[j + 1][x].c == t.c;
-                if (dup) continue;
-                if (w->nlv[j + 1] >= cap) return false;
-                w->lv[j + 1][w->nlv[j + 1]++] = t;
+                int vi = w->vbase[t.s] + t.c;
+                if (w->stamp[vi] == j + 1) continue;
+                w->stamp[vi] = j + 1;
+                w->next[w->nnext++] = t;
             }
-            if (kn_vnl(d, q.s)) { kn_add(b32, '\n'); ended = true; }
-            if (!havefirst) { memcpy(first, b32, 32); havefirst = true; }
-            else if (memcmp(first, b32, 32)) w->exact = false;
-            for (int k = 0; k < 32; k++) w->set[j][k] |= b32[k];
+            if (kn_vnl(d, q.s)) { kn_add(b32, '\n'); viewed = true; }
+            if (i == 0) memcpy(first, b32, 32);
+            else if (memcmp(first, b32, 32)) w->stop = COVER_STOP_BRANCH;
+            for (int x = 0; x < 32; x++) set[x] |= b32[x];
         }
+        if (w->stop == COVER_STOP_BRANCH) break;
+        KnVs *t = w->row;
+        w->row = w->next;
+        w->next = t;
+        w->nrow = w->nnext;
     }
-    return true;
+    w->k = j;
 }
 
 /* ---- the conjuncts ---------------------------------------------------- */
@@ -191,9 +249,16 @@ static bool cc_gstart(CoverSt *st)
     return true;
 }
 
+/* C4: the anchored machine A exists. Two of the retired span slice's guards
+ * stay here (cover_cap.md §3.1 R-9), each its own detail: an ERASED NFA (a
+ * language wider than the pattern's) and an ISLAND one (character-stepped).
+ * Believed subsumed (C1, the byte walk), not shown; the slice's third guard,
+ * a marked accept, is C5's own test. */
 static bool cc_anchored(CoverSt *st)
 {
     Job *job = st->cx->job;
+    if (job->nfa.erased) { st->detail = "erased"; return false; }
+    if (job->nfa.island) { st->detail = "island"; return false; }
     if (!job->anchored_ok || job->adfa.n <= 0) return false;
     st->d = &job->adfa;
     st->w.d = st->d;
@@ -244,58 +309,94 @@ static bool cc_entry(CoverSt *st)
     return true;
 }
 
+/* C7: the walk of A (it runs here, once) reached a fixed end: `k >= 1` and
+ * rows at `k`. A walk that stopped at a branch passes to C8, which names it.
+ * The record is filled here, on every walk (cover_cap.md §3.3). */
 static bool cc_width(CoverSt *st)
 {
-    if (!kn_walk(st->cx, &st->w, st->cv->end.r0)) { st->detail = "rows"; return false; }
-    return st->w.k >= 1 && st->w.k <= KN_CAP - 1 && st->w.nlv[st->w.k] > 0;
+    PcrecCover *cv = st->cv;
+    kn_walk(st->cx, &st->w, cv->end.r0);
+    cv->stop = st->w.stop;
+    cv->k = (uint16_t)st->w.k;
+    cv->k_known = st->w.stop == COVER_STOP_ACCEPT || st->w.stop == COVER_STOP_VIEW;
+    cv->exact_len = (uint16_t)st->w.k;
+    cv->exact_known = true;
+    cv->sets = (const uint8_t (*)[32])st->w.set;
+    if (st->w.stop == COVER_STOP_BRANCH) return true;
+    return st->w.k >= 1 && st->w.nrow > 0;
 }
 
-/* C8: the language from r0 is S_0 x .. x S_{k-1}, by both producers. The
- * trace build asserts the two never disagree inside the prefix both claim
- * exact [r3rc m2]; the slice stating less is an under-statement, sound. */
+/* The window search's width for this compile: the caller's
+ * `window_search_width`, or the built-in default where it is 0
+ * (`pcrec_compile` has refused any other value outside the legal range). */
+static int cover_width_limit(const Ctx *cx)
+{
+    int w = cx->opt->window_search_width;
+    return w ? w : PCREC_DEFAULT_WINDOW_SEARCH_WIDTH;
+}
+
+/* C15: the cover's width is within the window search's width limit
+ * (cover_cap.md §11.2). The kit-bound conjuncts after it (MF_WSPAN_POS,
+ * MF_WREACH, MF_MAX_FWD) cannot be false at a legal build: the width is at
+ * most PCREC_ANCHORED_MAX_STATES - 1 and the seam assertion below holds that
+ * inside the kit's bounds (review r32 F4; removal filed as a plan row). The
+ * span's rows are pcrec's own storage of exactly its length since
+ * MF_SITE_ABI 30, so no overrun is possible. */
+/* THE SEAM (cover_cap.md §11.1 B2): the cover walk ends before the anchored
+ * machine's ceiling, so a cover states at most the ceiling less one
+ * positions, its after side at offset k reaches the ceiling, and its proof
+ * range must reach offset k. Each must fit the kit's declared bounds, or the
+ * BUILD fails: a `-D` may lower PCREC_ANCHORED_MAX_STATES, never raise it
+ * past them (limits.md §3.12¶3). `_Static_assert`, never `#if`: the ceiling
+ * is an `enum` at the default and reads as 0 in `#if`. */
+_Static_assert(PCREC_ANCHORED_MAX_STATES - 1 <= MF_WSPAN_POS &&
+               PCREC_ANCHORED_MAX_STATES <= MF_WREACH &&
+               PCREC_ANCHORED_MAX_STATES <= MF_MAX_FWD,
+               "the cover seam: PCREC_ANCHORED_MAX_STATES exceeds the memfn kit's declared "
+               "window bounds (MF_WSPAN_POS, MF_WREACH, MF_MAX_FWD); a -D may only lower it");
+/* The kit header's derivation the seam leans on (review r32 F3; cover_cap.md
+ * §11.6.3): one threshold, the span bound one below the reach and the proof
+ * ceiling equal to it. This assert, not the run-time `window_bounds_check`,
+ * is the control for a one-conjunct weakening of the seam assertion above
+ * (S3266): a kit change that splits them fails the build here. */
+_Static_assert(MF_MAX_FWD == MF_WREACH && MF_WSPAN_POS == MF_WREACH - 1,
+               "the memfn kit's window bounds no longer derive from one threshold "
+               "(MF_MAX_FWD == MF_WREACH, MF_WSPAN_POS == MF_WREACH - 1)");
+static bool cc_fits(CoverSt *st)
+{
+    int k = st->w.k;
+    if (st->w.stop == COVER_STOP_BRANCH) return true;
+    return k <= cover_width_limit(st->cx) &&
+           k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;
+}
+
+/* C8: the language from r0 is S_0 x .. x S_{k-1}: the walk did not stop at
+ * a branch. Decision-redundant since the walk stops at `L` (the rows at a
+ * branch never accept, so C10 declines whatever C8 does); it names the
+ * `why`. Points `MkEnd` at the record's sets (cover_cap.md §11.1 A1): no
+ * copy, so no bound of its own; the walk's depth is the only length. */
 static bool cc_exact(CoverSt *st)
 {
-    /* read as the statement it is checked against, with no `used` record
-       (facts_listing.md §4.1¶2) */
-    const MkLang *l = st->cv->lang = pcrec_fact_span_stated(st->cx);
     int k = st->w.k;
-    if (!st->w.exact) { st->detail = "machine-inexact"; return false; }
-    if (l->stated != MK_LANG_STATED) { st->detail = "producer-unstated"; return false; }
-    for (int dd = 0; dd < k && dd < l->exact_len; dd++)
-        if (memcmp(l->set[dd], st->w.set[dd], 32)) {
-#ifdef PCREC_CAND_TRACE
-            pcrec_ctx_fail(st->cx, 0, "internal error: [KIT-VERIFY] C8: the span slice "
-                           "and the anchored machine state two sets at offset %d of "
-                           "one language (kit_proof.md section 1.1, exact/producers-disagree)",
-                           dd);
-#endif
-            st->detail = "producers-disagree";
-            return false;
-        }
-    if (l->exact_len < k) { st->detail = "producer-short"; return false; }
-    st->cv->end.k = (uint8_t)k;
-    memcpy(st->cv->end.set, st->w.set, sizeof st->cv->end.set);
+    if (st->w.stop == COVER_STOP_BRANCH) { st->detail = "machine-inexact"; return false; }
+    st->cv->end.k = (uint16_t)k;
+    st->cv->end.set = st->cv->sets;
     return true;
 }
 
-/* C9: no row on the walk at depth 0..k carries a non-identity eol view
- * [r3rc K1]. */
+/* C9: no row on the walk at depth 0..k INCLUSIVE carries a non-identity eol
+ * view [r3rc K1]; the walk checks each depth as it passes (`kn_eol_rows`,
+ * cover_cap.md §3.1 rule 2, FI-3). */
 static bool cc_eol(CoverSt *st)
 {
-    for (int j = 0; j <= st->w.k; j++)
-        for (int i = 0; i < st->w.nlv[j]; i++) {
-            int e = st->d->st[st->w.lv[j][i].s].eolvar;
-            if (e >= 0 && e != st->w.lv[j][i].s) return false;
-        }
-    return true;
+    return !st->w.eolview;
 }
 
 /* C10: every row at k accepts, and none has a live successor. */
 static bool cc_end(CoverSt *st)
 {
-    int k = st->w.k;
-    for (int i = 0; i < st->w.nlv[k]; i++) {
-        KnVs q = st->w.lv[k][i];
+    for (int i = 0; i < st->w.nrow; i++) {
+        KnVs q = st->w.row[i];
         if (!kn_acc_any(st->d, q.s)) return false;
         for (int c = 0; c < st->d->ncls; c++)
             if (kn_live(&st->w, kn_step(st->d, q, c))) return false;
@@ -310,9 +411,8 @@ static bool cc_after(CoverSt *st)
 {
     const Dfa *d = st->d;
     MkEnd *e = &st->cv->end;
-    int k = st->w.k;
-    for (int i = 0; i < st->w.nlv[k]; i++) {
-        int s = st->w.lv[k][i].s;
+    for (int i = 0; i < st->w.nrow; i++) {
+        int s = st->w.row[i].s;
         uint8_t ck[32];
         memset(ck, 0, 32);
         for (int b = 0; b < 256; b++)
@@ -325,14 +425,15 @@ static bool cc_after(CoverSt *st)
     return e->absent_after == MK_ABS_SATISFIES;
 }
 
-/* C12: under an encoding with non-start bytes, S_0 holds none (a candidate
- * is then a character start; P0's reading, start_landing.md §2.3). */
+/* C12: under an encoding with non-start bytes, the record's S_0 holds none
+ * (a candidate is then a character start; P0's reading, start_landing.md
+ * §2.3). */
 static bool cc_utf8(CoverSt *st)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(st->cx->opt->encoding);
     if (!enc->start_cls) return true;
     for (int b = 0; b < 256; b++)
-        if (kn_has(st->cv->end.set[0], b) && !cls_has(enc->start_cls, (unsigned)b))
+        if (kn_has(st->cv->sets[0], b) && !cls_has(enc->start_cls, (unsigned)b))
             return false;
     return true;
 }
@@ -344,7 +445,8 @@ static bool cc_served(CoverSt *st)
     mf_hooks h;
     PcrecMfU u;
     mf_site *s = pcrec_cover_site(st->cx, st->cv, NULL, NULL, &h, &u);
-    if (mf_ask(pcrec_memfn_art(st->cx), s, &h, &st->cv->cls)) {
+    if (mf_ask(pcrec_memfn_art(st->cx), s, &h, &st->cv->cls,
+               pcrec_memfn_rows(st->cx, s, PCREC_ROWS_PROOF_CEILING))) {
         st->detail = "refused";
         return false;
     }
@@ -364,11 +466,15 @@ static bool cc_proven(CoverSt *st)
  * `why`. The ids are stable and C2 keeps its number by being absent:
  * `origin-start` is RETIRED [r3rc M-A]. B1's pcrec FACT deny
  * `-fno-kit-proof` (§7) is filed under [IFACE-PUSH], not built: the kit's
- * `--memfn=no-window-search` declines C13 (`refused`), D172 S3. */
+ * `--memfn=no-window-search` declines C13 (`refused`), D172 S3. C15
+ * `width-limit` (kind `limit`, cover_cap.md §11.2) is read right after C7:
+ * the window search's width. Its kit-bound conjuncts are implied by the
+ * width's range and the seam assertion at every legal build (review r32
+ * F4; their removal is a plan row), so its `why` means the width. */
 typedef struct {
-    const char *cid;            /* C1..C14                                   */
+    const char *cid;            /* C1..C15                                   */
     const char *id;             /* the `why`                                 */
-    const char *kind;           /* route / machine / span fact / kit         */
+    const char *kind;           /* route / machine / limit / kit             */
     bool      (*holds)(CoverSt *st);
 } CoverConj;
 
@@ -379,11 +485,12 @@ static const CoverConj cover_conj[] = {
     { "C5",  "unmarked-A",    "machine",   cc_unmarked },
     { "C6",  "entry-const",   "machine",   cc_entry },
     { "C7",  "fixed-width",   "machine",   cc_width },
-    { "C8",  "exact",         "span fact", cc_exact },
+    { "C15", "width-limit",   "limit",     cc_fits },
+    { "C8",  "exact",         "machine",   cc_exact },
     { "C9",  "no-eol-view",   "machine",   cc_eol },
     { "C10", "end-at-k",      "machine",   cc_end },
     { "C11", "after-agree",   "machine",   cc_after },
-    { "C12", "utf8-start",    "span fact", cc_utf8 },
+    { "C12", "utf8-start",    "machine",   cc_utf8 },
     { "C13", "report-served", "kit",       cc_served },
     { "C14", "proven",        "kit",       cc_proven },
 };
@@ -396,6 +503,17 @@ static bool cover_key_holds(const Job *job, const PcrecCover *cv)
 {
     return cv->key_ok == job->anchored_ok && cv->key_st == job->adfa.st &&
            cv->key_n == job->adfa.n && cv->key_fin == (int)job->fit.chosen;
+}
+
+/* Whether the compile's `width` fact bounds a match's length: where it does,
+ * a stated stretch is checkable by X0 with `wmax` as its horizon
+ * (cover_cap.md §3.3 R-4), and only there is one listed off a cover (the listing's and the trace's COVERSET
+ * rule, one home: review r9 covs1 CONFORM-4). */
+static bool cover_width_bounded(const Ctx *cx)
+{
+    const PatFacts *pf = &cx->job->pf;
+    return pf->why[PF_WIDTH].status == PF_ST_DERIVED && pf->width.bmin >= 0 &&
+           pf->width.bmax < PCREC_W_UNBOUNDED;
 }
 
 const PcrecCover *pcrec_cover(Ctx *cx)
@@ -421,6 +539,11 @@ const PcrecCover *pcrec_cover(Ctx *cx)
         break;
     }
 #ifdef PCREC_CAND_TRACE
+    /* The hull containment control (cover_cap.md §3.6 Q2): every stated
+     * exact set lies inside the k-set walk's hull over the NFA, a producer
+     * that shares `Job.nfa` only, not the machine or this walk. */
+    if (cv->exact_known)
+        pcrec_facts_hull_check(cx, cv->sets, cv->exact_len);
     /* K35's record (kit_proof.md §6.4): one per decision, the first failing
      * row or `cover` with k, under its own switch so the trace build's
      * CANDTRACE stream is unchanged. The last field is the compound part's
@@ -430,6 +553,37 @@ const PcrecCover *pcrec_cover(Ctx *cx)
         fprintf(stderr, "KITPROOF\t%s\tk=%d\trouted=%d\t%s\n", cv->why ? cv->why : "cover",
                 cv->why ? 0 : cv->end.k, pcrec_kit_proof_routed(cx),
                 pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
+    /* X0's input (cover_cap.md §3.6 Q2): the record's exact stretch, every
+     * set as a comma list of hex bytes, `;` between positions (x0.py
+     * `stated`'s line shape), beside the listing's lossy `[N]` spelling */
+    if (getenv("PCREC_KIT_PROOF_TRACE")) {
+        /* the stated rule is the listing's (§3.3 R-4): a declined row states
+         * its stretch only under a finite width maximum, which is X0's
+         * horizon; the width is read off the record, never ASKED here (an
+         * ask would move the trace build's `used` column) -- `?` when this
+         * compile had not derived it by now */
+        const PatFacts *pf = &cx->job->pf;
+        bool wder = pf->why[PF_WIDTH].status == PF_ST_DERIVED;
+        bool wfin = cover_width_bounded(cx);
+        /* `!wder` is the trace's own clause: a width not derived yet is `?`,
+           and the stretch is stated for X0 to judge (the listing reads `-`) */
+        bool stated = cv->exact_known && (!cv->why || wfin || !wder);
+        fprintf(stderr, "COVERSET\t%s\t", cv->why ? cv->why : "cover");
+        if (stated) fprintf(stderr, "%u", (unsigned)cv->exact_len);
+        else fputc('-', stderr);
+        if (wfin) fprintf(stderr, "\t%d\t", (int)pf->width.bmax);
+        else fprintf(stderr, "\t%s\t", wder ? "-" : "?");
+        for (int d = 0; stated && d < cv->exact_len; d++) {
+            bool first = true;
+            if (d) fputc(';', stderr);
+            for (int b = 0; b < 256; b++)
+                if (kn_has(cv->sets[d], b)) {
+                    fprintf(stderr, "%s%02x", first ? "" : ",", b);
+                    first = false;
+                }
+        }
+        fprintf(stderr, "\t%s\n", pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
+    }
 #endif
     return cv;
 }
@@ -461,6 +615,14 @@ static const char *cover_fn_name(void *u, uint32_t fn_ref)
  * every cover (C7, `cc_width`). */
 static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
 {
+    /* the span length first, before any position write (cover_cap.md §3.5
+       R-13): a statement past the kit's refusal bounds is C15's to decline,
+       and its absence is this named error, never a site the kit refuses */
+    if (e->k < 1 || e->k > MF_WSPAN_POS || e->k + 1 > MF_WREACH)
+        pcrec_ctx_fail(cx, 0, "internal error: a window span of %u positions at "
+                       "0 lies outside the kit's shape bounds (MF_WSPAN_POS, "
+                       "[-MF_MAX_BACK, MF_WREACH)) (src/gen/known.c cover_window)",
+                       (unsigned)e->k);
     const struct { int off; const uint8_t *set; uint8_t absent; } side[2] = {
         { -1, e->ctx_before, e->absent_before }, { e->k, e->ctx_after, e->absent_after },
     };
@@ -468,13 +630,13 @@ static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
     for (int i = 0; i < 2; i++) n += cover_side_stated(side[i].set, side[i].absent);
     mf_walt *a = pcrec_memfn_walts(cx, 1);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, n);
-    pcrec_memfn_wspan(&sp[0], 0, e->k, MF_VERIFY_YES);
-    for (int d = 0; d < e->k; d++) pcrec_memfn_wpos_bits(&sp[0], d, e->set[d]);
+    pcrec_memfn_wspan(cx, &sp[0], 0, e->k, MF_VERIFY_YES);
+    for (int d = 0; d < e->k; d++) pcrec_memfn_wpos_bits(cx, &sp[0], d, e->set[d]);
     n = 1;
     for (int i = 0; i < 2; i++) {
         if (!cover_side_stated(side[i].set, side[i].absent)) continue;
-        pcrec_memfn_wspan(&sp[n], side[i].off, 1, MF_VERIFY_YES);
-        pcrec_memfn_wpos_bits(&sp[n], 0, side[i].set);
+        pcrec_memfn_wspan(cx, &sp[n], side[i].off, 1, MF_VERIFY_YES);
+        pcrec_memfn_wpos_bits(cx, &sp[n], 0, side[i].set);
         if (side[i].absent == MK_ABS_SATISFIES) pcrec_memfn_wspan_core(&sp[n], 0, 0);
         n++;
     }
@@ -507,6 +669,11 @@ mf_site *pcrec_cover_site(Ctx *cx, const PcrecCover *cv, const char *stem,
     return s;
 }
 
+/* A proof row that proves nothing: every byte admitted (review r32 F18). */
+static const uint8_t kn_all_ones[32] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
 const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class *cls)
 {
     const MkEnd *e = &cv->end;
@@ -517,13 +684,27 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
     }
     before = before || e->absent_before != MK_ABS_SATISFIES;
     after = after || e->absent_after != MK_ABS_SATISFIES;
-    for (int d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {
+    /* the kit's counted range must reach the after-context at offset k
+       (cover_cap.md §11.1 B5): a shorter range is the kit's defect, named,
+       never a narrower comparison. Past the range both the want and the got
+       are all ones (the want is all ones past k), so the loop stops there
+       (r45_reply.md §5 (b); review r27 EMIT-1). */
+    long end = cls->proof ? MF_PROOF_LO + (long)cls->proof_n : MF_PROOF_LO;
+    if (end < (long)e->k + 1)
+        pcrec_ctx_fail(cx, 0, "internal error: the kit's proof range ends at offset %ld, "
+                       "before the cover's after-context at %d (src/gen/known.c)",
+                       end - 1, (int)e->k);
+    if (end > MF_MAX_FWD) end = MF_MAX_FWD;
+    for (int d = MF_PROOF_LO; d < end; d++) {
         uint8_t want[32];
         if (d >= 0 && d < e->k)        memcpy(want, e->set[d], 32);
         else if (d == -1 && before)    memcpy(want, e->ctx_before, 32);
         else if (d == e->k && after)   memcpy(want, e->ctx_after, 32);
         else                           memset(want, 0xff, 32);
-        const uint8_t *got = cls->proven[d - MF_PROOF_LO];
+        /* the kit's counted rows (MF_CLASS_V 11): every offset outside
+           [MF_PROOF_LO, MF_PROOF_LO + proof_n) proves nothing, all ones */
+        long row = (long)d - MF_PROOF_LO;
+        const uint8_t *got = cls->proof && row < (long)cls->proof_n ? cls->proof[row] : kn_all_ones;
         for (int b = 0; b < 256; b++) {
             bool w = kn_has(want, b), g = kn_has(got, b);
             if (w != g)
@@ -534,36 +715,32 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
     return "";
 }
 
-/* ---- the knowledge helper --------------------------------------------- */
+/* ---- the listing's `cover` section ------------------------------------ */
 
-MkDerived pcrec_known_derive(const MkLang *lang, const MkEnd *end, const MkKnown *known)
+void pcrec_cover_listing_cells(Ctx *cx, const char *cells[4])
 {
-    MkDerived out = { 0, -1, 0 };
-    const mf_class *cls = known ? known->cls : NULL;
-    if (!cls || !lang || lang->stated != MK_LANG_STATED) return out;
-    for (int d = 0; d < lang->exact_len; d++) {
-        const uint8_t *p = cls->proven[d - MF_PROOF_LO];
-        bool sub = true;
-        for (int k = 0; k < 32 && sub; k++) sub = (p[k] & ~lang->set[d][k]) == 0;
-        if (!sub) break;
-        out.prefix = (uint8_t)(d + 1);
+    const PcrecCover *cv = cx->job->cover;
+    StrBuf sb = { 0 };
+    if (!cv) {
+        cells[0] = "unasked";
+        cells[1] = cells[2] = "-";
+        cells[3] = "";
+        return;
     }
-    for (int d = MF_MAX_FWD - 1; d >= 0; d--) {
-        const uint8_t *p = cls->proven[d - MF_PROOF_LO];
-        bool all = true;
-        for (int k = 0; k < 32 && all; k++) all = p[k] == 0xff;
-        if (all) break;
-        out.suffix_lo = (int8_t)d;
+    cells[0] = cv->why ? cv->why : "cover";
+    cells[1] = cv->k_known ? pcrec_sb_fragf(&cx->arena, "%u", (unsigned)cv->k) : "-";
+    cells[3] = "";
+    if (cv->why && !cover_width_bounded(cx)) { cells[2] = "-"; return; }
+    if (!cv->exact_known) { cells[2] = "0"; return; }
+    cells[2] = pcrec_sb_fragf(&cx->arena, "%u", (unsigned)cv->exact_len);
+    sb.cx = cx;
+    for (int d = 0; d < cv->exact_len; d++) {
+        int n = 0, one = 0;
+        for (int b = 0; b < 256; b++)
+            if (kn_has(cv->sets[d], b)) { n++; one = b; }
+        if (n == 1) pcrec_sb_printf(&sb, "%s%d", d ? "," : "", one);
+        else pcrec_sb_printf(&sb, "%s[%d]", d ? "," : "", n);
     }
-    if (end) {
-        const uint8_t *pb = cls->proven[-1 - MF_PROOF_LO];
-        const uint8_t *pa = end->k < MF_MAX_FWD ? cls->proven[end->k - MF_PROOF_LO] : NULL;
-        bool b = true, a = pa != NULL;
-        for (int k = 0; k < 32; k++) {
-            b = b && (pb[k] & ~end->ctx_before[k]) == 0;
-            if (pa) a = a && (pa[k] & ~end->ctx_after[k]) == 0;
-        }
-        out.ctx_proven = (uint8_t)((b ? 1u : 0u) | (a ? 2u : 0u));
-    }
-    return out;
+    if (sb.p) cells[3] = pcrec_sb_fragf(&cx->arena, "%s", sb.p);
+    pcrec_sb_free(&sb);
 }

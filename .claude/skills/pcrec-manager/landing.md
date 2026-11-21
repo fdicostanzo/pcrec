@@ -30,6 +30,7 @@ merge VERDICT and a sonnet landing lane does merge/strict/index/push/prune
   ends (while it exists, NO subagent is guarded). While a lane works in the
   main tree, commit named paths only (memory
   pcrec-no-commit-a-during-landing).
+- A landing that flips a DEFAULT runs EVERY mech row's reach probe (REACH_ONLY), not only the new rows' (2026-11-15: rule (1) moved S486's witness off its site; landing validation and a retroactive code round probed 9 rows of ~1,300; learnings §3.ad (f)).
 - At each landing, add a line to docs/dev/full_suite_ledger.md
   (major/minor/none) and check D177's triggers; when one fires, offer the
   owner the full suite (skill "Offer the owner") and queue
@@ -43,3 +44,6 @@ merge VERDICT and a sonnet landing lane does merge/strict/index/push/prune
   `rm -rf` (memory pcrec-wtprune-force-never-rmrf). Never remove a
   delivered lane's worktree while a message you sent it may be unread (it
   resurrects and re-creates the tree).
+- Run the identity gate in the CLOUD (kind recidentity via `scripts/cloudrun` on the local merge) when the box queue is long or the evening hold is near; an idle landing lane does not self-wake: message it when the verdict lands (2026-11-15).
+- Before launching a landing lane run `make test-plan-lint` on main yourself: land1115d stopped at step 1 on a violation an earlier landing's report had left on main (2026-11-15).
+- The append-only lanes history index (docs/dev/history/claude_md/docs__dev__lanes.md) CONFLICTS whenever two lanes branched from the same main: delete the three marker lines, keep both lines, `git add`, commit the merge (ten times on 2026-11-17). A lane's HELPER agents hand back to the MANAGER, not to the lane: briefs say a helper writes its findings to a scratch file and returns the path (lane archhist lost three reports).

@@ -1,0 +1,12 @@
+TV     ok   3 spellings x 2 columns (paths of `(?<h>\d)?\d?x` on `3x`: h = ['3', None]); differ []
+CF     ok   bodies /(?:${x}){${n}}/ / /(?:${x}){${min},}/; the two lines differ
+CP     ok   built (?<d>(?:\d+))
+MN     ok   12 names
+EX     ok   lowered: the condition on the 4 digits `_v` took
+DG     ok   lowered: the match so far at the hole is the `\d` before it
+CG     ok   lowered: h the digit; the condition zero-width after it
+EV     ok   0..999: 0 disagree
+R3     ok   70 names called in the base files; without a library piece: []; the listed exceptions found: ['cartesian', 'example', 'options', 'search']; bare `digit` in a code span at []
+DOC    ok   8 example lines, each verbatim in core.md or library.md; missing []
+checks 10, failed 0
+rc 0

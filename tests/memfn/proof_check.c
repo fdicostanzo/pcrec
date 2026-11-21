@@ -45,7 +45,6 @@
 #include "memfn.h"
 #include "proof_meta.h"
 
-_Static_assert(PM_NPROOF == MF_MAX_FWD - MF_PROOF_LO, "proof_meta.h's proof range");
 _Static_assert(PM_PROOF_LO == MF_PROOF_LO, "proof_meta.h's proof range");
 
 static int passed, failed;
@@ -198,6 +197,9 @@ static mf_site stop_site(void)
  * no entry fact, span 0 `{0: a}` verify YES, core all, the floor SUBJECT;
  * its `pred` carries the FUNC name and nothing else. */
 static mf_wspan win_span;
+static uint8_t win_set[1][32];      /* the span's lists, the writer's own
+                                       storage (MF_SITE_ABI 30) */
+static uint32_t win_table[1];
 static mf_walt win_alt;
 static mf_site win_site(void)
 {
@@ -210,7 +212,10 @@ static mf_site win_site(void)
     win_span.core = MF_CORE_STATED;
     win_span.core_lo = 0;
     win_span.core_len = 1;
-    set_of(win_span.set[0], "a");
+    memset(win_set, 0, sizeof win_set);
+    set_of(win_set[0], "a");
+    win_span.set = (const uint8_t (*)[32])win_set;
+    win_span.table_ref = win_table;
     win_alt.entry = MF_ENTRY_NONE;
     win_alt.nspan = 1;
     win_alt.spans = &win_span;
@@ -262,6 +267,37 @@ static const char *define_on(const mf_site *s, char *err, size_t n, mf_class *cl
     return form;
 }
 
+/* The test's OWN ask storage (MF_SITE_ABI 30), at the ceiling, never the
+ * art's arena; `slot` keeps two asks' rows apart (a re-ask compared against
+ * an earlier reply needs its own). */
+static mf_rows *rows_slot(unsigned slot)
+{
+    static uint8_t buf[2][MF_MAX_FWD - MF_PROOF_LO][32];
+    static mf_rows r[2];
+    r[slot] = (mf_rows){ buf[slot], MF_MAX_FWD - MF_PROOF_LO, NULL, NULL, NULL, 0 };
+    return &r[slot];
+}
+
+/* The class's row for offset `d`: all ones outside its counted range. */
+static const uint8_t *row_at(const mf_class *c, int d)
+{
+    static const uint8_t ones[32] = {
+        255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+        255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
+    long k = (long)d - MF_PROOF_LO;
+    return c->proof && k >= 0 && k < (long)c->proof_n ? c->proof[k] : ones;
+}
+
+/* 1 iff two classes prove the same bytes at every offset (the counted
+ * lists compared over their counts; this test's own compare). */
+static int proof_same(const mf_class *a, const mf_class *b)
+{
+    if (a->proof_n != b->proof_n) return 0;
+    for (uint32_t k = 0; k < a->proof_n; k++)
+        if (memcmp(a->proof[k], b->proof[k], 32)) return 0;
+    return 1;
+}
+
 static const char *define(const mf_site *s, char *err, size_t n, mf_class *cls)
 {
     return define_on(s, err, n, cls, NULL);
@@ -280,7 +316,7 @@ static void refuse(const char *name, const mf_site *s, const char *needle)
         mf_art *art = art_for("rx", s->denies, mf_portable_target());
         mf_hooks h = stmt_hooks();
         mf_class c;
-        if (!mf_ask(art, s, &h, &c)) snprintf(why, sizeof why, "mf_ask answered it");
+        if (!mf_ask(art, s, &h, &c, rows_slot(0))) snprintf(why, sizeof why, "mf_ask answered it");
     }
     char label[160];
     snprintf(label, sizeof label, "A refuse %s", name);
@@ -310,6 +346,14 @@ static void family_a(void)
     s = win_site();
     s.pred.plan_hint = MF_NO_PRED;
     accept("a window site with plan_hint MF_NO_PRED (no term named)", &s);
+    /* R-45 (MF_CLASS_V 11) R-short's control, witness row (a) of
+       r45_reply.md §1 (run_proof.sh's plant S3242 cuts the range's `end` to
+       last_s + 1): the unplanted kit defines a terms site and a window site,
+       each class's range reaching one past its statement */
+    s = span_site();
+    accept("R-short control: a terms site's range reaches one past its statement", &s);
+    s = win_site();
+    accept("R-short control: a window site's range reaches one past its statement", &s);
 
     /* R-26.1/R-26.2: the class of a forward FIND's `pred` */
     s = span_site();
@@ -399,24 +443,29 @@ static void family_b(void)
     char err[512];
     const char *form = define(&s, err, sizeof err, &cls);
     if (!form) { verdict("B the class site defines", err); return; }
-    static const struct { int d; const char *set; } want[] = {
+    const struct { int d; const char *set; } want[] = {
         { -8, "ALL" }, { -3, "ALL" }, { -2, "x" }, { -1, "ALL" }, { 0, "a" },
-        { 1, "b" }, { 2, "cd" }, { 3, "yz" }, { 4, "ALL" }, { MF_MAX_FWD - 1, "ALL" },
+        { 1, "b" }, { 2, "cd" }, { 3, "yz" }, { 4, "ALL" },
+        { MF_PROOF_LO + (int)cls.proof_n - 1, "ALL" },     /* the last row in the range */
     };
     for (size_t i = 0; i < sizeof want / sizeof want[0]; i++) {
         char name[96];
         snprintf(name, sizeof name, "B proven[%d] (%s)", want[i].d, form);
-        verdict(name, expect(cls.proven[want[i].d - MF_PROOF_LO], want[i].set));
+        verdict(name, expect(row_at(&cls, want[i].d), want[i].set));
     }
-    verdict("B proven0 is proven[0]", memcmp(cls.proven0, cls.proven[-MF_PROOF_LO], 32)
+    /* the range (MF_CLASS_V 11): one past the statement (offset 3), so
+       [MF_PROOF_LO, 5) */
+    verdict("B the proof range ends one past the statement",
+            cls.proof_n == (uint32_t)(5 - MF_PROOF_LO) ? "" : "proof_n is not 5 - MF_PROOF_LO");
+    verdict("B proven0 is proven[0]", memcmp(cls.proven0, row_at(&cls, 0), 32)
                                      ? "differs" : "");
     verdict("B proven_prev is proven[-1]",
-            memcmp(cls.proven_prev, cls.proven[-1 - MF_PROOF_LO], 32) ? "differs" : "");
+            memcmp(cls.proven_prev, row_at(&cls, -1), 32) ? "differs" : "");
     verdict("B class version", cls.v == MF_CLASS_V ? "" : "not MF_CLASS_V");
     s = stop_site();
     form = define(&s, err, sizeof err, &cls);
     if (!form) { verdict("B context stop defines", err); return; }
-    verdict("B context stop: proven[-1] its set", expect(cls.proven[-1 - MF_PROOF_LO], "\n\r"));
+    verdict("B context stop: proven[-1] its set", expect(row_at(&cls, -1), "\n\r"));
     verdict("B context stop: proven_prev its set", expect(cls.proven_prev, "\n\r"));
     verdict("B context stop: proven0 nothing", expect(cls.proven0, "ALL"));
 }
@@ -518,12 +567,12 @@ static const char *fn_name(void *u, uint32_t ref) { (void)ref; return u; }
 
 /* The class of `s` asked on an art for CPU target `t` under options `opts`. */
 static int ask_under(const mf_site *s0, const mf_hooks *h0, const mf_target *t,
-                     const char *opts, mf_class *c)
+                     const char *opts, mf_class *c, unsigned slot)
 {
     mf_site s = *s0;
     s.opts = opts;
     mf_art *art = art_for("rx", s.denies, t);
-    return art ? mf_ask(art, &s, h0, c) : -1;
+    return art ? mf_ask(art, &s, h0, c, rows_slot(slot)) : -1;
 }
 
 static void put_bytes(FILE *o, const uint8_t *b, size_t n)
@@ -666,6 +715,10 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
         free(def.p);
         free(use.p);
     }
+    /* the rows each site's claim points into, written after the sites */
+    Text rowt = { 0 };
+    unsigned nrows = 0;
+    fputs("extern const unsigned char pm_rows[][32];\n", o);
     fputs("const pm_site pm_sites[] = {\n", o);
     for (unsigned i = 0; i < nsites; i++) {
         int stop = i % 4 == 2;
@@ -724,15 +777,15 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
         mf_class off, lay;
         const char *why = NULL;
         snprintf(name, sizeof name, "C site %u C-PROOF", i);
-        if (ask_under(&s, &h, mf_portable_target(), NULL, &off))
+        if (ask_under(&s, &h, mf_portable_target(), NULL, &off, 0))
             why = "a layer refuses the site";
-        else if (memcmp(off.proven, r.cls.proven, sizeof off.proven))
+        else if (!proof_same(&off, &r.cls))
             why = "mf_ask's class is not the define's";
         for (size_t t = 0; !why && t < nt; t++)
             for (size_t k = 0; !why && k < sizeof layer_opts / sizeof layer_opts[0]; k++) {
-                if (ask_under(&s, &h, &tt[t], layer_opts[k], &lay))
+                if (ask_under(&s, &h, &tt[t], layer_opts[k], &lay, 1))
                     why = "a layer refuses the site";
-                else if (memcmp(off.proven, lay.proven, sizeof off.proven))
+                else if (!proof_same(&off, &lay))
                     why = "proven[] differs across the layers";
             }
         if (why) verdict(name, why);
@@ -740,13 +793,25 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
         /* the facts, then the claim */
         fprintf(o, "  { \"%u\", %d, 1, {\n    ", i, stop);
         put_pred(o, &s.pred, s.pred.span_class == MF_SPAN_CONTEXT);
-        fputs(" },\n    {", o);
-        for (unsigned d = 0; d < MF_MAX_FWD - MF_PROOF_LO; d++) {
-            if (d) fputs(",", o);
-            put_bytes(o, r.cls.proven[d], 32);
+        /* the claim: a counted list of rows (MF_CLASS_V 11) in pm_rows */
+        fprintf(o, " },\n    %u, pm_rows + %u,\n    \"abcdx\\n\", 6 },\n",
+                (unsigned)r.cls.proof_n, nrows);
+        for (unsigned d = 0; d < r.cls.proof_n; d++) {
+            char b[160];
+            int k = 0;
+            for (unsigned x = 0; x < 32; x++)
+                k += snprintf(b + k, sizeof b - (size_t)k, "%s%u", x ? "," : "{",
+                              r.cls.proof[d][x]);
+            snprintf(b + k, sizeof b - (size_t)k, "},\n");
+            s_puts(&rowt, b);
         }
-        fprintf(o, "},\n    \"abcdx\\n\", 6 },\n");
+        nrows += r.cls.proof_n;
     }
+    fputs("};\n\n", o);
+    fputs("const unsigned char pm_rows[][32] = {\n", o);
+    if (rowt.p) fputs(rowt.p, o);
+    free(rowt.p);
+    if (!nrows) fputs("{ 0 }\n", o);
     fputs("};\n\n", o);
     if (files.p) fputs(files.p, o);
     if (bodies.p) fputs(bodies.p, o);

@@ -1,0 +1,6 @@
+report=docs/dev/lanes/mfindfix2_report.md
+sections: Summary; Main merge; Fixes by id; Default-flip proof; Validation; STATE AT HANDOFF
+nonempty: all
+cites: F[0-9]+ in docs/dev/reviews/2026-11-15-r2-memfn-mfind.md -> docs/dev/lanes/mfindfix2_report.md
+commit: yes
+owed: none

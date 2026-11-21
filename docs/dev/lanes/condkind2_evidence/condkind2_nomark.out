@@ -1,0 +1,65 @@
+ORDER: forward
+
+PART 1: THE MODEL WITHOUT THE MARK, ITS PROPERTIES BY RUN
+   (1a) monotone: 11388 (program, added condition) pairs over 1278 programs (rev 22's pools + condkind's EXTRA, each mark replaced by nothing or by `= 0`/`= 4`/`= 5`/`= 9`/`= "x"`): FAIL -> HOLD in 0
+   (1b) record = `&` on RZ (1,110 subjects, h looped, zero passes included): `(h = v: <5, k: 3..7)` vs `(h = v: <5) & (k: 3..7)` over v in nothing, 0-9, "", "x", "99": differ on 0 subject-variant pairs
+   (1c) review r30 I (dollar-across-and), /(?<a>\d)?-(?<b>\d)/, 110 subjects: the record `(a = 0: <10, b: >$a)` holds on 54; its `&` spelling with the default LOCAL to its condition on 45 (differ 9, smallest '-1'); with the default a rewrite of the STATEMENT's column on 54 (differ 0)
+   (1d) RULING-2: P & C1' and Q & C1' with C1' = ((h = v, k): h < k) and the same rows, then & (j = w: <5): 196 (v, w) pairs, differ on 0 subjects in all (rev 22: 54 of 1,210 with the marks)
+        RULING-7: the product joint ((h = v, k): (<5, <5)) vs its record = `&` spelling, beside (j = w: <5), 56 (v, w) pairs over 355 rows: differ on 0 (rev 22 with marks: 30 of 355)
+        SIMULATE-9 `((h = v, k): h < k) & (j = 0: <3)`, 220 subjects, v = nothing / 0 / 9: holds on [45, 54, 45] (the swap run must print the same)
+   (1e) review r30 E: `some(((h, m = v): m < h))` and `occurs.none(((h, m = v): m < h))` BOTH hold, 43 lists x 14 controls: 0 (rev 22 with the mark: 14 of 43)
+   (1f) one-witness, J (1,100): `(h = v: <$k) & (h = v: >$j)` vs `(h = v: >$j & <$k)`, v over 0-9 and 3 sentinels: differ 0; with TWO defaults, `(h = 0: <$k) & (h = 9: >$j)` holds on 81 subjects with h absent, on 45 of them (smallest '01') no one value is both below k and above j
+
+PART 2: THE REWRITE RUN (every marked program; target = rev 22's answers on every subject of its pool)
+   [REV22] 314 marked programs; first tier that rewrites exactly: T0 314, T1 0, T2 0, T3 0, T4 0, NONE 0; T0 by NOTHING (the mark changed no answer): 219; T0 only with a default the label never holds: 0
+   [WORKED] 21 marked programs; first tier that rewrites exactly: T0 19, T1 1, T2 0, T3 1, T4 0, NONE 0; T0 by NOTHING (the mark changed no answer): 5; T0 only with a default the label never holds: 0
+   [PROBE] 4 marked programs; first tier that rewrites exactly: T0 0, T1 1, T2 1, T3 0, T4 2, NONE 0; T0 by NOTHING (the mark changed no answer): 0; T0 only with a default the label never holds: 0
+   COMPOSITIONAL? 680 (rev 22 program, the same + one condition) pairs, both rewritten at T0: in 45 no rewrite of the larger keeps any rewrite of the smaller (the earlier default must CHANGE when a condition is added); smallest: `(h?: <5)` -> `(h?: <5) & (k: <5)` (A)
+   every program past T0 (tier; the best one-constant-per-label rewrite: subjects off, smallest):
+      PROBE  B9   T2    ((h?, k): h == k), h and k both \d                   best T0 off    9 at '-1'
+      PROBE  H5   T1    ((h?, k): h < k) & ((h?, k): h + 3 > k)              best T0 off    4 at '-3'
+      PROBE  H5   T4    ((h?, k): h == k), h [0-4], k \d                     best T0 off    4 at '-1'
+      PROBE  H5   T4    ((h?, k): k - 3 < h < k)                             best T0 off    4 at '-3'
+      WORKED J    T1    (h?: <$k) & (h?: >$j)                                best T0 off   44 at '02'
+      WORKED J    T3    (h?: >$j & <$k)                                      best T0 off   16 at '02'
+   the WORKED programs, each:
+      WORKED T2   ((h, m?): late)                                T0            m='30'
+      WORKED T2   ((h, m?): !late)                               T0            m='00'
+      WORKED T2   ((h, m?): late) & (m?: padded(<30))            T0            m='00'
+      WORKED ZE   (h?: <$a, k: 3)                                T0            h='0'
+      WORKED RZ   (h?: <5, k: 3..7)                              T0            h='0'
+      WORKED RZ   (h?: <5)                                       T0            h='0'
+      WORKED MN   (mnum?: >5)                                    T0   NOTHING  mnum=nothing
+      WORKED MN   (mnum?: <3)                                    T0            mnum='1'
+      WORKED J    (h?: <$k)                                      T0            h='0'
+      WORKED J    (h?: <$k) & (h?: >$j)                          T1            h='1' | h='8'
+      WORKED J    (h?: >$j & <$k)                                T3            h=$j+1
+      WORKED BR   P & (h?: <5)                                   T0            h='0'
+      WORKED BR   P & (k: "b") & (h?: <5)                        T0   NOTHING  h=nothing
+      WORKED BR   P & ((k, h?): ("b", <5))                       T0   NOTHING  h=nothing
+      WORKED LST  occurs.none(((h, m?): m < h))                  T0            m='2'
+      WORKED LST  occurs.none(((h, m?): m < h)) & (m?: >5)       T0            m='7'
+      WORKED R2P  R2 P & ((h?, k): h < k) & (j?: <5)             T0            h='0' j='0'
+      WORKED R2Q  R2 Q & ((h?, k): h < k) & (j?: <5)             T0   NOTHING  h=nothing j=nothing
+      WORKED S9   S9 ((h?, k): h < k) & (j?: <3)                 T0            h='0' j='0'
+      WORKED R7   R7 ((h?, k): (<5, <5)) & (j?: <5)              T0            h='0' j='0'
+      WORKED R7   R7 (h?: <5) & (k: <5) & (j?: <5)               T0   NOTHING  h=nothing j=nothing
+      PROBE  B9   ((h?, k): h == k), h and k both \d             T2            h=$k
+      PROBE  H5   ((h?, k): h == k), h [0-4], k \d               T4            
+      PROBE  H5   ((h?, k): h < k) & ((h?, k): h + 3 > k)        T1            h='0' | h='4'
+      PROBE  H5   ((h?, k): k - 3 < h < k)                       T4            
+   THE SENTINEL ROUTE on H5, second probe: `((h = "x", k): k - 3 < h < k | (h == "x" & 1 <= k <= 6))` vs rev 22's `((h?, k): k - 3 < h < k)`: differ 0 of 60
+   THE SENTINEL ROUTE on H5: `((h = "x", k): h == k | (h == "x" & k < 5))` vs rev 22's `((h?, k): h == k)`: differ 0 of 60
+
+PART 3: THE DEFAULT'S SCOPE
+   (3a) two defaults for one label, pool A (21): `(h = 0: <5) & (h = 9: >7)` holds on 11 (smallest 'c'), `(h = v: <5 & >7)` on 0 for every v
+   (3b) a default reaching later readers only (positional): `(a = 0: <10) & (b: >$a)` holds on 54, `(b: >$a) & (a = 0: <10)` on 45: differ 9 (`&` stops commuting)
+   (3c) a default on a looped label, RZ zero-pass subjects (10): `(h = 0: <5)` holds on 10 (the LEFT JOIN row reads 0), `some((h = 0: <5))` on 0 (no pass to read); on all 1,110: 310 vs 800
+   (3d) a default the label never holds, T2 `((h, m = v): late)`: v = 0 vs v = 60 (no two-digit minute field reads 60 in a time, but the regex's m is \d\d, so 60 IS a value it holds): differ 2; v = 0 vs v = "x": 90
+
+PART 4: SILENT DRIFT (a default that does not satisfy its own condition)
+   marked conditions of rev 22's pools + EXTRA + the WORKED and PROBE programs: 55 with a constant set (whether a default satisfies its own condition is decidable from the text), 5 reading a `$` (decidable only per match)
+   pool A: `(h = 4: <3)` (after an edit from `<5`) vs `(h: <3)` with no control: differ 0 (the default is dead)
+   T2: `late` edited to padded(>= (9, 45)): rev 22's `((h, m?): late45)` vs the kept rewrite `((h, m = 30): late45)`: differ 2 of 11110 (smallest '9'; the rewrite for the edited set is m = 45)
+
+END

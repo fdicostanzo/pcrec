@@ -1,0 +1,70 @@
+== T1 L58/L61: contains(r) & (g: x) vs contains(r & (g: x)), r = /ab(?<g>[xy])/
+L58 `contains(r) & (g: "x")` on `abx aby` [rules 24]: WHOLE HOLDS / SEARCHED `abx aby`@0 g=x / FIND-ALL [`abx aby`@0 g=x]
+L61 `contains(r & (g: "x"))` on `abx aby` [rules 24]: WHOLE HOLDS / SEARCHED `abx aby`@0 / FIND-ALL [`abx aby`@0]
+L61 `occurrences(r) & (g: "x")` on `abx aby` [rules 24]: WHOLE HOLDS / SEARCHED `abx aby`@0 g=x / FIND-ALL [`abx aby`@0 g=x]
+L61 pair (operand-side vs inside) [rules 24]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 85
+L58 `contains(r) & (g: x)` vs `contains(r) & some((g: x))` [rules 24]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 85
+L58 `contains(r) & (g: "x")` on `abx aby` [rules 23.2]: WHOLE FAILS / SEARCHED `abx ab`@0 g=x / FIND-ALL [`abx ab`@0 g=x]
+L61 `contains(r & (g: "x"))` on `abx aby` [rules 23.2]: WHOLE HOLDS / SEARCHED `abx aby`@0 / FIND-ALL [`abx aby`@0]
+L61 `occurrences(r) & (g: "x")` on `abx aby` [rules 23.2]: WHOLE FAILS / SEARCHED `abx ab`@0 g=x / FIND-ALL [`abx ab`@0 g=x]
+L61 pair (operand-side vs inside) [rules 23.2]: WHOLE 20 (first `abxaby`); SEARCHED 20 (first `abxaby`); FIND-ALL 20 (first `abxaby`) of 85
+L58 `contains(r) & (g: x)` vs `contains(r) & some((g: x))` [rules 23.2]: WHOLE 20 (first `abxaby`); SEARCHED 20 (first `abxaby`); FIND-ALL 20 (first `abxaby`) of 85
+== T2 L100: P & A & B vs (P & A) and (P & B), P = /(?<a>\d+)(?<b>\d+)/, A = (a: "1"), B = (b: "3")
+L100 [rules 24] WHOLE differ 0 of 341
+   on `123`: P&A HOLDS, P&B HOLDS, P&A&B FAILS
+L100 [rules 23.2] WHOLE differ 0 of 341
+   on `123`: P&A FAILS, P&B HOLDS, P&A&B FAILS
+L100 one label [rules 24] (a: <5), (a: >10): WHOLE differ 156 of 341 first `110`
+L100 one label [rules 23.2] (a: <5), (a: >10): WHOLE differ 0 of 341
+== T3 L1/L39: (P & Q) & c vs (Q & P) & c, c = (a: "1") | (c: "1")
+L39 swap, holds/stretch [rules 24]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+L39 swap, labels [rules 24, labels a,b,c,d]: WHOLE 117 (first `111`); SEARCHED 414 (first `111`); FIND-ALL 414 (first `111`) of 1365
+P & Q & c on `123` [rules 24]: WHOLE HOLDS / SEARCHED `123`@0 a=12 c=1 / FIND-ALL [`123`@0 a=12 c=1]
+Q & P & c on `123` [rules 24]: WHOLE HOLDS / SEARCHED `123`@0 a=1 c=12 / FIND-ALL [`123`@0 a=1 c=12]
+L39 swap, holds/stretch [rules 23.2]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+L39 swap, labels [rules 23.2, labels a,b,c,d]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+P & Q & c on `123` [rules 23.2]: WHOLE FAILS / SEARCHED `12`@0 a=1 c=1 / FIND-ALL [`12`@0 a=1 c=1]
+Q & P & c on `123` [rules 23.2]: WHOLE FAILS / SEARCHED `12`@0 a=1 c=1 / FIND-ALL [`12`@0 a=1 c=1]
+L39 swap, c = (a:1) & (c:12) [rules 24, labels a,b,c,d]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+== T4 §8 when: complement body vs rev 24 definition vs rev 20-21 NOT body, KH, c=(h:<5), p=(k: between(3,7))
+c=(h: <5) complement body vs rev24 x & (NOT c | p) [rules 24]: WHOLE 0; SEARCHED 125 (first `3;0;5`); FIND-ALL 125 (first `3;0;5`) of 1110
+c=(h: <5) NOT body vs rev24 x & (NOT c | p) [rules 24]: WHOLE 0; SEARCHED 125 (first `3;0;5`); FIND-ALL 125 (first `3;0;5`) of 1110
+c=(h: <5) complement body vs NOT body [rules 24]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1110
+  holds WHOLE: complement 835, rev24 def 835, NOT body 835 (rev 24); complement 960 (rev 23.2)
+  complement body SEARCHED holds 1110
+c=(h = 0: <5) complement body vs rev24 x & (NOT c | p) [rules 24]: WHOLE 0; SEARCHED 275 (first `3;5`); FIND-ALL 275 (first `3;5`) of 1110
+c=(h = 0: <5) NOT body vs rev24 x & (NOT c | p) [rules 24]: WHOLE 0; SEARCHED 275 (first `3;5`); FIND-ALL 275 (first `3;5`) of 1110
+c=(h = 0: <5) complement body vs NOT body [rules 24]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1110
+  holds WHOLE: complement 830, rev24 def 830, NOT body 830 (rev 24); complement 955 (rev 23.2)
+  complement body SEARCHED holds 1045
+== T5 default.unused (b) under NOT, rev 24 two-valued
+set-once `NOT (h = 9: <5)` vs `NOT (h: <5)` [rules 24, labels h]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+REP `NOT (h = "x": <5)` vs `NOT (h: <5)` [rules 24, labels h]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+REP `(h: <5)` vs `NOT some(NOT (h: <5))` [rules 24, labels h]: WHOLE 17 (first ``); SEARCHED 338 (first ``); FIND-ALL 364 (first ``) of 364
+set-once `(h = 9: <5)` vs `(h: <5)` [rules 24, labels h]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+set-once `(h = 3: !<5)` vs `(h: !<5)` [rules 24, labels h]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+set-once `NOT (h = 9: <5)` vs `NOT (h: <5)` [rules 23.2, labels h]: WHOLE 1 (first `x`); SEARCHED 175 (first `x`); FIND-ALL 185 (first `x`) of 341
+REP `NOT (h = "x": <5)` vs `NOT (h: <5)` [rules 23.2, labels h]: WHOLE 18 (first ``); SEARCHED 300 (first ``); FIND-ALL 364 (first ``) of 364
+REP `(h: <5)` vs `NOT some(NOT (h: <5))` [rules 23.2, labels h]: WHOLE 18 (first ``); SEARCHED 338 (first ``); FIND-ALL 364 (first ``) of 364
+set-once `(h = 9: <5)` vs `(h: <5)` [rules 23.2, labels h]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+set-once `(h = 3: !<5)` vs `(h: !<5)` [rules 23.2, labels h]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+== T6 L30 edges
+REP `NOT (h: <0)` vs `(h: !<0)` [rules 24]: WHOLE 6 (first ``); SEARCHED 248 (first ``); FIND-ALL 364 (first ``) of 364
+set-once SV `NOT (h: <0)` vs `(h: !<0)` [rules 24]: WHOLE 1 (first `x`); SEARCHED 130 (first `x`); FIND-ALL 148 (first `x`) of 341
+set-once SV `NOT (h: <10)` vs `(h: !<10)` [rules 24]: WHOLE 1 (first `x`); SEARCHED 220 (first `x`); FIND-ALL 220 (first `x`) of 341
+  SV `NOT (h: <10)` holds WHOLE 1, `(h: !<10)` 0 of 341 [rules 24]
+REP `NOT (h: <0)` vs `(h: !<0)` [rules 23.2]: WHOLE 30 (first `3;;`); SEARCHED 94 (first `3;;`); FIND-ALL 94 (first `3;;`) of 364
+set-once SV `NOT (h: <0)` vs `(h: !<0)` [rules 23.2]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+set-once SV `NOT (h: <10)` vs `(h: !<10)` [rules 23.2]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 341
+  SV `NOT (h: <10)` holds WHOLE 0, `(h: !<10)` 0 of 341 [rules 23.2]
+== T7 §4.4 computed label mnum := $mname.index over /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/
+`NOT (mnum: <3)` on `-5` [rules 24]: WHOLE HOLDS / SEARCHED `-5`@0 / FIND-ALL [`-5`@0]
+`NOT (mnum: <3)` on `-5` [rules 23.2]: WHOLE FAILS / SEARCHED FAILS / FIND-ALL []
+== T8 sub-part numbers on the 3,906 pool (TP5)
+L83 joint vs record under NOT [rules 24, labels h,m]: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  `t2 & !q` holds WHOLE 78 of 3906 [rules 24]
+L95 `t2 & !q` vs `t2 & ((h, m = 0): !R)` [rules 24]: WHOLE 6 (first `50`); SEARCHED 1482 (first `50`); FIND-ALL 1908 (first `50`) of 3906
+L83 joint vs record under NOT [rules 23.2, labels h,m]: WHOLE 10 (first `9`); SEARCHED 3008 (first `9`); FIND-ALL 3035 (first `9`) of 3906
+  `t2 & !q` holds WHOLE 78 of 3906 [rules 23.2]
+L95 `t2 & !q` vs `t2 & ((h, m = 0): !R)` [rules 23.2]: WHOLE 6 (first `50`); SEARCHED 1482 (first `50`); FIND-ALL 1908 (first `50`) of 3906
+DONE-PROBE

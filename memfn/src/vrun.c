@@ -214,8 +214,11 @@ static uint32_t reach_w32(const mf_site *s, const mf_pred *p)
 }
 
 /* The site shape both rows take (the module comment's APPLIES). */
-static int vrun_applies(const mf_site *s, const mf_pred *p)
+static int vrun_applies(const fn_in *x, const mf_formdecl *d)
 {
+    (void)d;
+    const mf_site *s = x->site;
+    const mf_pred *p = x->p;
     if (p->nterm != 1 || p->plan_hint != 0) return 0;
     const mf_term *t = &p->term[0];
     if (t->kind != MF_T_RUN || t->offset < 0 || t->run_len < 2 ||
@@ -446,6 +449,269 @@ const mf_formdecl vrun_w32_decl = {
     reach_w32, VRUN_W32_GUARDED_MAX, vrun_applies, vrun_render,
 };
 
+/* ---- THE INLINE ONE-MEMBER FINDER (lane mfind) ---------------------------
+ *
+ * D190's SEARCH piece whose STREAM is MASK ("continue through the current
+ * block mask"): a find of ONE byte, every candidate it yields handed to the
+ * site's own CHECK in place, a rejected candidate followed by the NEXT SET
+ * LANE of the same block mask (clear the lowest, count the trailing zeros):
+ * no call per hit, and no scanned byte compared twice (a COST claim: no
+ * check counts it; review 2026-11-15 r2 F11). The offset-skip function is
+ * its site (fn-memchr's: the scanned position is one byte `a` at offset
+ * `k`), its check that function's VERIFY CHAIN (ofsskip.c, every term but
+ * the scanned SET), so the answer is fn-memchr's: the leftmost candidate
+ * >= `pos` whose every term holds, else `n` (THE CONTRACT, ofsskip.c).
+ *
+ * ONE RENDERER, mfind_text, for every form; a form is a row of `mfind_lv`:
+ *   swar   SIMD-off, portable C: the BODY row `fn-mfind` (`<fn>__body`),
+ *          8 lanes per block, a lane one byte of an unsigned long long, its
+ *          mask bit the byte's bit 7 (lane shift 3);
+ *   w16    SIMD-on, the PREFIX row `mfind-w16` (`<fn>__w16`, levels.def's
+ *          LV_X86_W16), vrun's own intrinsic spellings (ops_of): broadcast,
+ *          one unaligned load, one compare-equal, one movemask (lane shift 0);
+ *   w32    the same at LV_X86_W32 (`mfind-w32`), its rung mfind-w16.
+ * Each PREFIX helper falls through (D155) to the next lower rendered rung,
+ * else to `<fn>__body`, the SWAR word, on a span too short for one block.
+ *
+ * THE SWAR MASK IS EXACT. With t = w ^ (0x01..01 * a), the 8 lanes' bytes
+ * are 0 exactly where the subject byte is `a`, and
+ *     m = ~(((t & 0x7f..7f) + 0x7f..7f) | t) & 0x80..80
+ * has bit 7 of byte j set iff t's byte j is 0: (t_j & 0x7f) + 0x7f is at most
+ * 0xfe, so NO CARRY leaves a byte, and its bit 7 is set iff t_j's low seven
+ * bits are not all 0; OR t_j sets it iff t_j's bit 7 is 1. Every set bit is a
+ * real hit, so the stream rejects nothing the mask invented. (The classic
+ * (t - 0x01..01) & ~t & 0x80..80 is exact at its LOWEST set bit only: its
+ * borrow sets a 0x01 byte above a 0x00 byte, a false lane the MASK stream
+ * would hand the check; a one-shot find could use it, this stream cannot.)
+ * The word is ONE 8-byte `memcpy` load, put in little-endian lane order
+ * (byte j at bits 8j, so lane j is subject byte i + j) by a byte swap under
+ * an ordinary `if` on the compiler's predefined `__BYTE_ORDER__`: a
+ * constant the compiler folds away, never an `#if` (D155; no CPU fact). A
+ * byte-by-byte assembly would need no swap, but gcc 15.2 -O2 does not fold
+ * it into one load (measured here: eight byte loads and seven shifts).
+ *
+ * OVER-READ / BOUNDARY ARGUMENT (reads only [pos, n), by construction):
+ *   - D = maxk - k >= 0 (maxk, the largest offset any term reads, is at
+ *     least the scanned offset k). A candidate c is valid iff pos <= c and
+ *     c + maxk < n (the guard every BODY row keeps), i.e. its scanned byte
+ *     b = c + k lies in [pos + k, e), e = n - D. The entry test returns `n`
+ *     (the body) or falls through (a helper) at pos + maxk >= n, so below
+ *     it e > pos + k and nothing wraps.
+ *   - A whole block at i is taken while e - i >= VW: it reads [i, i + VW),
+ *     inside [pos + k, e). The body's spans shorter than one word take the
+ *     byte loop over [pos + k, e); a helper's take the fall-through (its
+ *     entry test: e - (pos + k) < VW).
+ *   - The loop leaves with 0 <= e - i < VW. At i == e nothing is left. Else
+ *     the FINAL block reads [f, e), f = e - VW >= pos + k (the entry test),
+ *     with its lanes below i MASKED OFF: unlike vany's final block, a lane
+ *     below i was a candidate of the previous block that the CHECK may have
+ *     REJECTED: handing it over again costs a second check (the answer
+ *     cannot move: the check is pure, so a re-handed lane is rejected
+ *     again; a COST claim, which G2's plant S3153 pins as text, not as a
+ *     count). The shift i - f is
+ *     1..VW - 1 lanes (never the mask's width: no UB).
+ *   - A candidate's check reads [c, c + maxk], c >= pos (offsets >= 0,
+ *     ofs_fn_applies) and c + maxk < n: inside the subject.
+ *   - Held by G2's one-member family (memfn/tests/run_g2_mfind.py): guard
+ *     pages at s + n and below s + pos, every n 0..2 VW + 9, every alignment,
+ *     plants that move a bound by one byte must FAULT.
+ *
+ * D149, every constant of the form:
+ *   VW, the lane shift  DERIVED: the word's 8 bytes; the level's register
+ *              width (levels.def); the mask's bits per lane.
+ *   the masks  DERIVED: the exact zero-byte test above.
+ *   the entry cut-over  DERIVED as a correctness bound (a span shorter than
+ *              one block); whether the next level down or the byte loop is
+ *              faster somewhat above it is UNMEASURED DEFAULT: no other
+ *              cut-over is written.
+ *   the loop   UNMEASURED DEFAULT: 1x (one block per iteration), unaligned
+ *              loads from pos + k with no alignment prologue (vrun's and
+ *              vany's shape); unrolls are the card's variants, not built.
+ * Its card: memfn/data/cards/kit-grid.tsv ver 6, UNMEASURED; its form ids
+ * formhash.c's mfind-swar / mfind-w16 / mfind-w32 (fn-memchr, the libc
+ * memchr search and its restart stream on the same site: the BUNDLE
+ * comparison, review 2026-11-15 r2 F6). */
+
+/* One form's spellings. `level` LV_* for a SIMD row (its intrinsics are
+ * ops_of[level]'s), MF_NLEVEL for the SWAR word. */
+typedef struct {
+    unsigned    level;
+    unsigned    vw;          /* lanes (candidates) per block               */
+    unsigned    shift;       /* log2 of a lane's bits in the mask          */
+    const char *mtype;       /* the mask's C type                          */
+    const char *ctz;         /* its count-trailing-zeros builtin           */
+    const char *ones;        /* its all-ones constant                      */
+} mfind_lv;
+
+static const mfind_lv mfind_swar = {
+    MF_NLEVEL, 8, 3, "unsigned long long", "__builtin_ctzll", "~0ull" };
+static const mfind_lv mfind_simd[MF_NLEVEL] = {
+    [LV_X86_W16] = { LV_X86_W16, 16, 0, "unsigned", "__builtin_ctz", "~0u" },
+    [LV_X86_W32] = { LV_X86_W32, 32, 0, "unsigned", "__builtin_ctz", "~0u" },
+};
+
+/* The block's mask at `base` into `m`, `ind` its indent: the SWAR word's
+ * exact test (THE SWAR MASK IS EXACT), or the level's one compare. */
+static void mfind_mask(mf_sink *o, const mfind_lv *v, const char *ind, const char *base, int a)
+{
+    if (v->level == MF_NLEVEL) {
+        kit_out(o, "%sunsigned long long w;\n"
+                   "%smemcpy(&w, subject + %s, 8);\n"
+                   "%sif (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__) w = __builtin_bswap64(w);\n"
+                   "%sw ^= 0x%016llxull;\n"
+                   "%sm = ~(((w & 0x7f7f7f7f7f7f7f7full) + 0x7f7f7f7f7f7f7f7full) | w)"
+                   " & 0x8080808080808080ull;\n",
+                ind, ind, base, ind, ind, 0x0101010101010101ull * (unsigned)a, ind);
+        return;
+    }
+    const vrun_ops *x = &ops_of[v->level];
+    kit_out(o, "%sm = (unsigned)%s(%s(%s((const %s *)(subject + %s)), va));\n",
+            ind, x->mmask, x->eq, x->load, x->type, base);
+}
+
+/* THE TEXT (the module section's form), after the seam's head: the entry
+ * test (the body: return `n`, or its short-span byte loop; a helper: fall
+ * through to `fall`), the block loop, the final block, the MASK stream
+ * handing each set lane to the verify chain, the closing brace. */
+static int mfind_text(mf_art *art, const mf_hooks *h, const fn_in *x, const mfind_lv *v,
+                      const char *fall, mf_sink *o)
+{
+    int k = x->k, maxk = x->maxk, d = maxk - k, a = x->a;
+    if (k < 0 || d < 0 || a < 0)
+        return kit_fail(art, "mfind: the scan is not one byte at an offset the guard covers");
+    char at[32], e[32], back[32];
+    if (k) snprintf(at, sizeof at, "pos + %d", k);
+    else   snprintf(at, sizeof at, "pos");
+    if (k) snprintf(back, sizeof back, " - %d", k);
+    else   back[0] = '\0';
+    if (d) snprintf(e, sizeof e, "n - %d", d);
+    else   snprintf(e, sizeof e, "n");
+    if (fall) {
+        kit_out(o, "    if (pos + %d >= n || %s - %s%s%s < %u)\n    ", maxk, e, k ? "(" : "", at,
+                k ? ")" : "", v->vw);
+        if (ofs_fn_fall(art, h, x->p, fall, o)) return -1;
+    } else {
+        kit_out(o, "    if (pos + %d >= n) return n;\n", maxk);
+    }
+    kit_out(o, "    const size_t e = %s;\n"
+               "    size_t i = %s;\n", e, at);
+    if (!fall) {
+        /* the body's span shorter than one word: the byte loop */
+        kit_out(o, "    if (e - i < %u) {\n"
+                   "        for (; i < e; i++)\n"
+                   "            if (subject[i] == %d) {\n"
+                   "                size_t cand = i%s;\n"
+                   "                if (", v->vw, a, back);
+        if (ofs_verify_chain(art, h, x, o)) return -1;
+        o->puts(o->u, ") return cand;\n"
+                      "            }\n"
+                      "        return n;\n"
+                      "    }\n");
+    } else {
+        const vrun_ops *ops = &ops_of[v->level];
+        kit_out(o, "    const %s va = %s((char)%d);\n", ops->type, ops->set1, a);
+    }
+    kit_out(o, "    for (;;) {\n"
+               "        %s m;\n"
+               "        if (e - i >= %u) {\n", v->mtype, v->vw);
+    mfind_mask(o, v, "            ", "i", a);
+    kit_out(o, "        } else {\n"
+               "            if (i == e) return n;\n"
+               "            const size_t f = e - %u;\n", v->vw);
+    mfind_mask(o, v, "            ", "f", a);
+    if (v->shift) kit_out(o, "            m &= %s << ((i - f) << %u);\n", v->ones, v->shift);
+    else          kit_out(o, "            m &= %s << (i - f);\n", v->ones);
+    kit_out(o, "            i = f;\n"
+               "        }\n"
+               "        while (m) {\n"
+               "            size_t cand = i + (size_t)(%s(m)", v->ctz);
+    if (v->shift) kit_out(o, " >> %u", v->shift);
+    kit_out(o, ")%s;\n", back);
+    o->puts(o->u, ""
+                  "            if (");
+    /* a helper's chain is bracketed text: RUN_WORDS counts no compare in it
+       (compose.c's rule, as vrun_verify keeps it; review 2026-11-15 r2 F3) */
+    long long words = art->words;
+    int rc = ofs_verify_chain(art, h, x, o);
+    if (fall) art->words = words;
+    if (rc) return -1;
+    kit_out(o, ") return cand;\n"
+               "            m &= m - 1;\n"
+               "        }\n"
+               "        i += %u;\n"
+               "    }\n", v->vw);
+    if (fall) o->puts(o->u, "}\n");
+    else      o->puts(o->u, "}\n\n");
+    return 0;
+}
+
+/* kit.h: the BODY row fn-mfind's text, the SWAR word (writes no libc call,
+ * so notes none). */
+int mfind_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
+{
+    return mfind_text(art, h, x, &mfind_swar, NULL, o);
+}
+
+/* A PREFIX row's helper: the level's form, falling through to `fall`. */
+static int mfind_render(mf_art *art, const mf_hooks *h, const fn_in *x,
+                        const mf_formdecl *d, const char *fall, mf_sink *o)
+{
+    return mfind_text(art, h, x, &mfind_simd[d->level], fall, o);
+}
+
+/* The derived reach (walk test 3): one block of scanned bytes past the
+ * guard's maxk (the same correctness bound as vrun's VW + T). */
+static uint32_t mfind_reach_w16(const mf_site *s, const mf_pred *p)
+{
+    (void)s;
+    return 16 + vrun_t(p);
+}
+
+static uint32_t mfind_reach_w32(const mf_site *s, const mf_pred *p)
+{
+    (void)s;
+    return 32 + vrun_t(p);
+}
+
+/* APPLIES: every predicate the BODY row fn-mfind took (OVER says so; the
+ * scan is one byte by its predicate), on a FIND or a pre-check part, as
+ * the body, whose helper FITS its declared guarded_max (ofs_fn_fits: the
+ * verify chain is the body's own, as wide as the predicate, so a wider site
+ * declines the row and keeps the body alone; review 2026-11-15 r2 F1). */
+static int mfind_applies(const fn_in *x, const mf_formdecl *d)
+{
+    return ofs_fn_fits(x, d);
+}
+
+#define MFIND_INSN (MF_I_LOADU | MF_I_CMPEQ | MF_I_MOVEMASK | MF_I_BROADCAST | MF_I_CTZ)
+
+static const char *const mfind_over[] = { "fn-mfind", NULL };
+static const char *const mfind_w32_rungs[] = { "mfind-w16", NULL };
+
+/* guarded_max (Q-R9-9): a BOUND BY CONSTRUCTION, the row's CAP (review
+ * 2026-11-15 r2 F1): APPLIES renders the helper into a counting sink
+ * (ofs_fn_fits) and declines the row where it would bracket more, so no
+ * rendering passes it whatever the predicate (up to MF_MAX_TERM terms) or
+ * the names. The values are CHOSEN shape bounds, not tuning constants:
+ * they admit every site of G2's one-member family (its alone maximum, 1,299
+ * w16 and 1,385 w32 over 44 generator seeds at 160 sites, lane mfind) with
+ * headroom; a wider chain (`a.*\x7f[acegikmoqsuwy]{12}`, ~4 KB at w16)
+ * keeps the SWAR body alone. Whether a wider helper pays is the card's
+ * question, UNMEASURED. tests/memfn/simd_bounds.tsv states the same numbers
+ * (pinned equal by tests/memfn/simd_guarded_check.py). */
+#define MFIND_W16_GUARDED_MAX 1400
+#define MFIND_W32_GUARDED_MAX 1500
+
+const mf_formdecl mfind_w16_decl = {
+    "mfind-w16", "mfind", LV_X86_W16, mfind_over, vrun_no_rungs, MFIND_INSN,
+    mfind_reach_w16, MFIND_W16_GUARDED_MAX, mfind_applies, mfind_render,
+};
+
+const mf_formdecl mfind_w32_decl = {
+    "mfind-w32", "mfind", LV_X86_W32, mfind_over, mfind_w32_rungs, MFIND_INSN,
+    mfind_reach_w32, MFIND_W32_GUARDED_MAX, mfind_applies, mfind_render,
+};
+
 /* ---- the contracts ([MEMFN-ROWCON]; walk test 2) -------------------------
  *
  * A PREFIX row's text is the BODY's function under a level guard: it reads
@@ -472,7 +738,6 @@ const mf_formdecl vrun_w32_decl = {
     [FLD_span_hi]         = MF_ANY,                   /* REACH is the walk's test 3 */ \
     [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* the verify is the run compare's */ \
     [FLD_fn_ref]          = MF_ANY,                   /* the calling arm names it */ \
-    [FLD_table_ref]       = CM(NONE),                 /* one RUN term: no table */ \
     [FLD_s]               = MF_ANY,                   /* its own `subject` */ \
     [FLD_n]               = MF_ANY,                   /* its own `n` */ \
     [FLD_lo]              = MF_ANY,                   /* its own `pos` */ \
@@ -509,13 +774,32 @@ static const gate_use vrun_uses[] = {
 const gate_contract vrun_w16_ct = {
     "fn", "vrun-w16", vrun_uses, 1, {
     VRUN_SERVES
+    [FLD_table_ref]       = CM(NONE),                 /* one RUN term: no table */
     [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* a target admitting w16 */
 }};
 
 const gate_contract vrun_w32_ct = {
     "fn", "vrun-w32", vrun_uses, 1, {
     VRUN_SERVES
+    [FLD_table_ref]       = CM(NONE),                 /* one RUN term: no table */
     [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W32),  /* a target admitting w32 */
+}};
+
+/* The one-member finder's rows: vrun's contract, but the verify chain is
+ * the BODY's (ofsskip.c verify_chain), so a multi-byte SET term reads
+ * pcrec's table as the body does. */
+const gate_contract mfind_w16_ct = {
+    "fn", "mfind-w16", vrun_uses, 1, {
+    VRUN_SERVES
+    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* ofs_verify_chain: a set's table */
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* admits w16 */
+}};
+
+const gate_contract mfind_w32_ct = {
+    "fn", "mfind-w32", vrun_uses, 1, {
+    VRUN_SERVES
+    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* ofs_verify_chain: a set's table */
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W32),  /* admits w32 */
 }};
 
 #undef VRUN_SERVES

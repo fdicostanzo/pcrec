@@ -334,13 +334,16 @@ struct mf_art {
     /* R-30: the test-only levers mf_lever set (bit KIT_LEVER_*; 0 on every
        shipped compile) */
     unsigned     levers;
+    /* R-45 the VALUED lever `span-head=N` (KIT_LEVER_SPAN_HEAD set): the
+       inline head h of the span forms on this art (window.c wf_span_head) */
+    unsigned     span_head;
     char        err[256];
 };
 
 /* The test-only levers (mf_lever, compose.c's table). Bit 0 was
  * `pres-window` (R-30), retired at R-38 K38-2 with the two-part run; never
  * reused. */
-enum { KIT_LEVER_RUN_LEFT = 1u << 1 };
+enum { KIT_LEVER_RUN_LEFT = 1u << 1, KIT_LEVER_MFIND = 1u << 2, KIT_LEVER_SPAN_HEAD = 1u << 3 };
 
 /* P3's run window, in run positions (R-30's and K38-1's): the stretch the
  * run decision verifies on an OPTIONAL route (KIT_RUN_WINDOW). Kit-internal
@@ -601,13 +604,51 @@ enum {
                                REQUIRED: an OPTIONAL term may go untested    */
 };
 
+/* WHERE A PROVING CLASS'S ROWS GO (MF_CLASS_V 11, R-45; r45_reply.md rev 4
+ * §1, §5): `rows`/`cap`, the caller's storage (an ask: R-cap refuses more
+ * than `cap`); else `a`, the art's arena, EXACTLY proof_n rows (a define);
+ * else neither: the VERDICT only (kit_legacy_arm), no rows written and
+ * proof NULL. */
+typedef struct {
+    uint8_t        (*rows)[32];
+    uint32_t         cap;
+    const mf_arena  *a;
+} kit_proof_st;
+#define kit_proof_open  MF_NS(kit_proof_open)
+#define kit_proof_close MF_NS(kit_proof_close)
+#define kit_last_stated MF_NS(kit_last_stated)
+/* THE PROOF RANGE (r45_reply.md §1): opens `out`'s proof over [MF_PROOF_LO,
+ * end), end = max(last_s + 2, last_t + 1) clipped at MF_MAX_FWD, every row
+ * all ones, and returns its writable rows in *w (NULL in verdict-only mode).
+ * NULL, or the refusal: R-out (a tested offset outside [MF_PROOF_LO,
+ * MF_MAX_FWD), checked where `tested_lo`/`last_t` are the TESTED set's, i.e.
+ * `check_out` 1: a window plan class), R-cap (more rows than st->cap), R-short
+ * (the SELF-CHECK: end below min(MF_MAX_FWD, last_s + 2); it shares its
+ * source with `end`), or out of memory. */
+const char *kit_proof_open(mf_class *out, long last_s, long tested_lo, long last_t,
+                           int check_out, const kit_proof_st *st, uint8_t (**w)[32]);
+/* proven0/proven_prev, COPIED from the rows for offsets 0 and -1 (all ones
+ * outside the range). */
+void kit_proof_close(mf_class *out);
+/* The largest POSITION site `s` STATES: a window site's spans (every
+ * alternative, the after-context included), else span 0's terms (a RUN term
+ * at `offset` states offset .. offset + run_len - 1); -1 where it states
+ * none at or after 0. */
+long kit_last_stated(const mf_site *s);
+#define kit_class_same MF_NS(kit_class_same)
+/* THE DEEP COMPARE (r45_reply.md §5 (a)): 1 iff two classes agree, every
+ * by-value member equal and the proof rows equal over an equal proof_n; the
+ * `proof` pointer is never compared. */
+int kit_class_same(const mf_class *x, const mf_class *y);
+
 #define kit_class MF_NS(kit_class)
 /* The form CLASS of row `a`'s text for site `s` into *out (compose.c): what
- * the text proves, as facts (D157). NULL, or why the row cannot say (a FIND
- * row whose `tests` is UNSTATED; *out then proves nothing). One function
- * serves mf_define and mf_ask; external so tests/memfn/proven_check.c can ask
- * it of a test-only row. */
-const char *kit_class(const arm *a, const mf_site *s, mf_class *out);
+ * the text proves, as facts (D157), its rows placed by `st`. NULL, or why the
+ * row cannot say (a FIND row whose `tests` is UNSTATED; *out then proves
+ * nothing), or a proof-range refusal (kit_proof_open). One function serves
+ * mf_define and mf_ask; external so tests/memfn/proven_check.c can ask it of
+ * a test-only row. */
+const char *kit_class(const arm *a, const mf_site *s, mf_class *out, const kit_proof_st *st);
 
 #define generic_arm         MF_NS(generic_arm)
 #define ofsskip_arm         MF_NS(ofsskip_arm)
@@ -665,7 +706,17 @@ int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
  * the window family's skip (D-hors, span_pick 1e), is the one pick whose text
  * finds no stop: it probes the window's end and resumes by a shift table. */
 typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
-               FF_W64, FF_A3, FF_PAIR, FF_HORS } fd_form;
+               FF_W64, FF_A3, FF_PAIR, FF_HORS, FF_MFIND,
+               FF__COUNT /* not a form: the member count, the bound every
+                            per-form table is held to (review r6 CHECKS-A1) */ } fd_form;
+/* FF_MFIND, THE INLINE ONE-MEMBER FINDER (lane mfind, vrun.c): the pick of
+ * the offset-skip function's BODY row `fn-mfind` alone, which holds only on
+ * an art carrying the test-only lever `mfind` (mf_lever). No T-FIND row
+ * picks it and no renderer row of window.c's tables names it, so it is
+ * renderable on E-func only; the reply's vocabulary (memfn.h mf_wsearch) has
+ * no word for it and a reply under the lever reports MF_WSEARCH_NONE. An
+ * UNPICKED measuring instrument only (D197): no selection table picks it, and
+ * a fused win builds a different (split) shape, not this one. */
 /* T-FRAME's rows, the frames a window or composer site's text is written
  * in (window.c's Table E; plan_frame.md 3.0a): E-func, E-stmt (the
  * composer's PF block), E-find, E-generic (the floor). The renderer tables
@@ -844,7 +895,9 @@ typedef struct mf_formdecl {
     uint32_t           insn;        /* MF_I_* the text uses                  */
     uint32_t         (*reach)(const mf_site *s, const mf_pred *p);
     uint32_t           guarded_max;
-    int              (*applies)(const mf_site *s, const mf_pred *p);
+    /* APPLIES over the walk input `x` (its site and predicate; the art and
+       define hooks for a row whose test renders, mfind's fit test) */
+    int              (*applies)(const struct fn_in *x, const struct mf_formdecl *d);
     /* Writes the helper's BODY (after the seam's head): its entry test,
        falling through to `fall` with the head's arguments, its block loop
        and the closing brace. Bytes outside the guard: none. */
@@ -869,6 +922,13 @@ typedef struct fn_in {
     const char *body_row;
     const char *body_fn;
     int brackets;
+    unsigned levers;        /* the art's test-only levers (KIT_LEVER_*): the
+                               BODY row fn-mfind holds only under `mfind` */
+    /* the define's art and hooks: a PREFIX row's APPLIES may render its
+       helper to count it (ofs_fn_fits); NULL on ofs_fn_serves' walk, which
+       asks the BODY slot only */
+    mf_art *art;
+    const mf_hooks *h;
 } fn_in;
 
 #define vrun_w16_decl MF_NS(vrun_w16_decl)
@@ -883,6 +943,20 @@ typedef struct fn_in {
  * predicate, sitting over `fn-pair`. */
 extern const mf_formdecl vrun_w16_decl, vrun_w32_decl;
 extern const gate_contract vrun_w16_ct, vrun_w32_ct;
+
+/* vrun.c: THE INLINE ONE-MEMBER FINDER (lane mfind; D190's search piece
+ * whose stream is MASK). ONE renderer, `mfind_text`, for every form: the
+ * SWAR word at SIMD-off (the offset-skip function's BODY row `fn-mfind`,
+ * through mfind_body) and the PREFIX rows `mfind-w16`/`mfind-w32` over it.
+ * Unpicked: fn-mfind holds only under the test-only lever `mfind`. */
+#define mfind_body     MF_NS(mfind_body)
+#define mfind_w16_decl MF_NS(mfind_w16_decl)
+#define mfind_w16_ct   MF_NS(mfind_w16_ct)
+#define mfind_w32_decl MF_NS(mfind_w32_decl)
+#define mfind_w32_ct   MF_NS(mfind_w32_ct)
+int mfind_body(mf_art *art, const mf_hooks *h, const struct fn_in *x, mf_sink *o);
+extern const mf_formdecl mfind_w16_decl, mfind_w32_decl;
+extern const gate_contract mfind_w16_ct, mfind_w32_ct;
 
 /* THE KIT'S NAMED POLICY SET: every mf_site.policy bit the kit reads, declared
  * once. A bit outside it is unnamed: mf_define refuses it (define_sel), and
@@ -957,6 +1031,26 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
  * parameters in its order. */
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
                 const char *fn, mf_sink *o);
+/* The function's pieces a BODY or PREFIX row of another file writes
+ * (vrun.c's one-member finder): the VERIFY CHAIN, the `if (...)` condition a
+ * candidate `cand` must pass (every term but the scanned SET, in the
+ * predicate's order), and a fall-through line `    return <callee>(subject,
+ * n, pos[, tables]);` with the head's own arguments. */
+#define ofs_verify_chain MF_NS(ofs_verify_chain)
+#define ofs_fn_fall      MF_NS(ofs_fn_fall)
+int ofs_verify_chain(mf_art *art, const mf_hooks *h, const struct fn_in *x, mf_sink *o);
+int ofs_fn_fall(mf_art *art, const mf_hooks *h, const mf_pred *p, const char *callee,
+                mf_sink *o);
+/* THE FIT TEST of PREFIX row `d` (review 2026-11-15 r2 F1): 1 iff the bytes
+ * one rendering of its helper would bracket, counted by rendering it into a
+ * counting sink (the head and the fall-through at the longest name the seam
+ * writes, `<fn>__body`; the blank line after it; the selector's call line),
+ * are at most d->guarded_max, so a declared guarded_max is a BOUND by
+ * construction: a site whose helper would pass it declines the row. 0 where
+ * the walk input carries no art or hooks. The art's RUN_WORDS count is kept
+ * (the stamp counts no bracketed compare). */
+#define ofs_fn_fits      MF_NS(ofs_fn_fits)
+int ofs_fn_fits(const struct fn_in *x, const struct mf_formdecl *d);
 /* THE PAIR LEAPFROG, one renderer for its two customers: fn-pair's body
  * (ofsskip.c) and the window family's B-pair (window.c). The caller's names
  * and layout: */
@@ -1140,7 +1234,13 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
  * for THIS plan, not the row's widest), the row itself (E-find's or the
  * floor's: mf_define's arm), and whether that text reads a table of pcrec's
  * (mf_defined's `reads_table`). */
-void wf_plan_class(const struct wf_plan *plan, mf_class *out);
+const char *wf_plan_class(const struct wf_plan *plan, const mf_site *ws, mf_class *out,
+                          const kit_proof_st *st);
+#define wf_stated_offsets MF_NS(wf_stated_offsets)
+/* The distinct offsets window site `s` states over its alternatives: the
+ * longest plan its reply can carry (mf_rows_need's plan_cap); 0 where it
+ * states no window. */
+uint32_t wf_stated_offsets(const mf_site *s);
 const struct arm *wf_plan_row(const struct wf_plan *plan);
 /* The FIND slot's row deciding E-find's stop (T-FIND: fd_find; D-hors
  * included since span_pick 1e), or NULL (the floor). */
@@ -1222,6 +1322,7 @@ typedef struct {
 #define kit_walk       MF_NS(kit_walk)
 #define kit_ask        MF_NS(kit_ask)
 #define kit_opt_denied MF_NS(kit_opt_denied)
+#define kit_opt_state MF_NS(kit_opt_state)
 
 /* The first row of slot `slot` of table `t` that `denies` does not deny,
  * that the gate passes at `gphases` over `in`, and whose predicate holds over
@@ -1245,6 +1346,12 @@ int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
 /* 1 iff `--memfn=` string `opts` holds the token `no-<name>` (options.c; the
  * string was validated by mf_opts_check). NULL `opts` or `name`: 0. */
 int kit_opt_denied(const char *opts, const char *name);
+
+/* A PAIR row's three states in `--memfn=` string `opts` (options.c): -1
+ * where `no-<name>` is given (the deny wins when both spellings are, as
+ * pcrec's own pair rule, tuning.md §2.43¶1), 1 where only the bare `<name>`
+ * (the force) is, 0 where neither is (or `opts`/`name` is NULL). */
+int kit_opt_state(const char *opts, const char *name);
 
 /* One candidate of the window family's list as its trace record writes it
  * (span_pick.md §The shape "The trace", stage 1: no price). Three sources
@@ -1323,7 +1430,8 @@ static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
  * mf_form_hash folds (every instance of the id, one text) AND what a
  * span_cards cell times. TEST entries (no
  * memfn.h change): the slot harness and tests/memfn/arm_fixtures.c read them. */
-typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST, MF_FH_RUNPART } mf_form_shape_id;
+typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST, MF_FH_RUNPART,
+               MF_FH_OFS } mf_form_shape_id;
 typedef struct {
     const char *id;
     const char *cls;        /* the class token; "-" for an id with one instance */
@@ -1338,6 +1446,8 @@ typedef struct {
     const char *on_miss;    /* mf_hooks.on_miss, NULL none                       */
     const char *target;     /* the art's target, a kit token (mf_art_target)     */
     const char *deny;       /* mf_site.opts, NULL none                           */
+    const char *lever;      /* a test-only lever on the scratch art (mf_lever),
+                               NULL none                                         */
 } mf_form_entry;
 /* A shape's word (the slot harness's wrapper key), the kit entry that
  * reaches its form, and the C names its text reads and writes (NULL: not
@@ -1353,6 +1463,7 @@ typedef struct {
 #define mf_form_site_text MF_NS(form_site_text)
 #define mf_form_site_split MF_NS(form_site_split)
 #define mf_form_row       MF_NS(form_row)
+#define mf_form_includes  MF_NS(form_includes)
 #define mf_form_hash_cls  MF_NS(form_hash_cls)
 /* The i-th instance (NULL past the last); the instance of `id` in class
  * `cls` (NULL: the canonical one), NULL for none; an instance's shape. */
@@ -1370,6 +1481,11 @@ int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file
 /* The kit row the instance's facts reached ("-": its shape has none), NULL
  * on a -1 of mf_form_site_text. */
 const char *mf_form_row(const char *id, const char *cls);
+/* The MF_INC_* bits the instance's rendered art needs (mf_includes at its
+ * end) into *inc: 0, or -1 as mf_form_site_text. The slot harness writes
+ * their lines at file scope ahead of the target's region (span_cards/slot/
+ * link.py's frame, as pcrec places them). */
+int mf_form_includes(const char *id, const char *cls, uint32_t *inc);
 /* The hash of ONE instance's site text (the slot's cell-text check); for an
  * id with one instance it equals mf_form_hash(id), which folds every
  * instance (formhash.c). */

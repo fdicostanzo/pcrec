@@ -1729,6 +1729,20 @@ typedef struct {
      * CLI sets it from `-fmemfn-simd=LIST`; the flag is renamed at
      * [IFACE-PUSH]. */
     const char        *memfn_simd;
+
+    /* [COVER-CAP] stage 2 THE WINDOW SEARCH'S WIDTH: the widest fixed-width
+     * match the window search reports with no matching engine (the artifact
+     * stamped `<PREFIX>_DFA_SCAN "cover"`); a wider one runs the engine, with
+     * the same answers. 0 = the built-in PCREC_DEFAULT_WINDOW_SEARCH_WIDTH
+     * (`pcrec_limits_tsv`); otherwise 1 .. PCREC_ANCHORED_MAX_STATES - 1,
+     * and a value outside that is a malformed option (`pcrec_compile`
+     * returns -1), never clamped. Settable both ways, not raise-only. A
+     * compound part compiles with its parent's value. Answers are the same
+     * but cost is not: on a subject dense with near misses a search costs
+     * O(n*k) at width k, against the engine's O(n), so a wide width over
+     * untrusted subjects accepts that worst case. docs/spec/limits.md
+     * §3.12, docs/spec/tuning.md §2.56. */
+    int         window_search_width;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

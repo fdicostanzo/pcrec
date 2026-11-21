@@ -19,4 +19,7 @@ SAB_REACH_EXPECT="REACH-SG2-RUN-ABX"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    case KTEXT_ANY:  rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;'
-SAB_AFTER='    case KTEXT_ANY:  rb_zero_into(w, acc, a); return;   /* SABOTAGE S1927 */'
+SAB_AFTER='    case KTEXT_ANY:  rb_zero_into(w, acc, a, t); return;   /* SABOTAGE S1927 */'
+# RE-AIMED 2026-11-19 (lane l1ffix, review r55 CHECK-1): span_arms L1's feature gave `rb_zero_into` a fourth
+# argument (the level's child slots `t`, E-5i walks a body); the plant still called it with three, so it
+# no longer compiled (a matrix ANOMALY). Same plant, the current call.

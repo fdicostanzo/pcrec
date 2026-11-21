@@ -13,10 +13,14 @@ SAB_COUNT=1
 SAB_BEFORE='    mf_site *s = pcrec_cover_site(cx, cv, stem, NULL, &h, &u);
     uint32_t handle = pcrec_memfn_define(cx, DELEG_COVER, s, &h, c);'
 SAB_AFTER='    mf_site *s = pcrec_cover_site(cx, cv, stem, NULL, &h, &u);
-    ((mf_wspan *)s->alts[0].spans)->set[0][0] |= 0xff;   /* SABOTAGE S1138 */
+    ((uint8_t (*)[32])((mf_wspan *)s->alts[0].spans)->set)[0][0] |= 0xff;   /* SABOTAGE S1138 */
     uint32_t handle = pcrec_memfn_define(cx, DELEG_COVER, s, &h, c);'
 # RE-AIMED 2026-10-22 (D172 S2 commit 6, lane wsc7): the cover site states its
 # window facts only (R1), so the old predicate term (`pred.term`) is gone; the
 # plant widens span 0, position 0's set (`alts[0]` span 0 `set[0]`) between
 # `pcrec_cover_site` and `pcrec_memfn_define`, the form wsc6 gave S1137/S1148.
 # Intent unchanged: the define describes sets that are not the ones asked.
+# RE-AIMED 2026-11-19 (covtri1119): span4k made mf_wspan.set `const uint8_t (*)[32]`
+# (memfn.h, MF_SITE_ABI 30), so the plant's `->set[0][0] |= 0xff` no longer compiled
+# on the merged tip (cloud mech run 44550979304 read BUILD-FAILED, ANOMALY). The plant
+# casts the const away over the host storage it writes; the planted sets are unchanged.

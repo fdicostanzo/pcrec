@@ -13,9 +13,14 @@ SAB_REACH_EXPECT='REACH-RUN-CHOICE'
 SAB_REACH_POP='tests/codegen/run_prechecks.sh|78797a77|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    for (size_t i = 0; i < sizeof rn_choice_rows / sizeof rn_choice_rows[0]; i++) {'
-SAB_AFTER='    if ((a.off < PCREC_W_UNBOUNDED) != (b.off < PCREC_W_UNBOUNDED)) /* SABOTAGE S474 */
-        return a.off < PCREC_W_UNBOUNDED ? a : b;
-    for (size_t i = 0; i < sizeof rn_choice_rows / sizeof rn_choice_rows[0]; i++) {'
+SAB_BEFORE='    RB_ROW_SCAN(i, w, rn_choice_rows,'
+SAB_AFTER='    if ((a->off < PCREC_W_UNBOUNDED) != (b->off < PCREC_W_UNBOUNDED)) /* SABOTAGE S474 */
+        return a->off < PCREC_W_UNBOUNDED ? 1 : -1;
+    RB_ROW_SCAN(i, w, rn_choice_rows,'
+# RE-ANCHORED (lane fixposts2d, 2026-11-15, review r4 fixposts2c RESPELL-2): the scan now captures the deciding row's answer and spans two lines; the anchor is its first line, the plant still sits just before the scan in `rn_better`.
+# RE-ANCHORED (lane fixposts2, 2026-11-15, review r1 posts2 CONTRACT-1): the row scan is the shared `RB_ROW_SCAN` statement macro now (r3 fixposts2b: the catch-all is a default outside the table); the plant sits just before the scan in `rn_better`.
 # RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): `rn_better` is now the first-match
 # `rn_choice_rows` loop; the plant puts the bounded preference before row 1.
+# RE-AIMED 2026-11-20 (lane l3build, span_arms L3 remodel 5, D-4): the row scan moved into the
+# comparator `rn_cmp` (pointers, a sign), which `rn_better` and TOP read; the plant answers the
+# bounded run's sign there, just before the scan. Intent unchanged.

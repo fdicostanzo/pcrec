@@ -1,0 +1,4 @@
+report=docs/dev/lanes/land1115b_report.md
+sections: STATE AT HANDOFF; MERGE; CHECKS; PUSH; PRUNE
+nonempty: all
+commit: yes

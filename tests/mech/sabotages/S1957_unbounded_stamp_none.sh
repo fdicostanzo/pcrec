@@ -14,5 +14,7 @@ SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_handoff_reach.sh" "$T
 SAB_REACH_EXPECT='PASS: a+xyz (byte): reaches the attempt loop'\''s re row (RX_REQ_HANDOFF unbounded)'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (req_handoff_k(cx) >= PCREC_W_UNBOUNDED) return "unbounded";   /* [REQ-PAST-LAST] */'
-SAB_AFTER='    if (req_handoff_k(cx) >= PCREC_W_UNBOUNDED) return "none";   /* SABOTAGE S1957 */'
+SAB_BEFORE='    if (!pcrec_bound_bounded(k)) return "unbounded";   /* [REQ-PAST-LAST] */'
+SAB_AFTER='    if (!pcrec_bound_bounded(k)) return "none";   /* SABOTAGE S1957 */'
+# RE-ANCHORED 2026-11-20 (lane l3build, span_arms L3 RM-2, D-7): K is a `PfBound` (state +
+# signed value); the stamp asks K once and tests its state through the bounded predicate. Intent unchanged.

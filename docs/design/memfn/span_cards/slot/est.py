@@ -28,6 +28,7 @@ import hashlib, math, os, re, shutil, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import plan  # noqa: E402
+import link  # noqa: E402  [r5 DRAFTSETS-1] the compile floor (link.CC), one spelling
 
 TREE = plan.TREE
 K_TRIM_E6, K_MED_E6 = 1723000, 210300      # measures.md §3.4¶16, §3.5¶6
@@ -350,21 +351,41 @@ def disasm(exe):
             cur.append(([int(x, 16) for x in m.group(2).split()], re.sub(r"\s*#.*$", "", m.group(3)).strip()))
     return out
 
+MANIFEST_FILES = ("cell_text", "placement")      # [r5 FIDELITY-2] the job files a manifest pins and est re-reads
+
+def legacy_record(rec):
+    """[review 2026-11-15 r8 ADQ-3] a record finalized before r6 (the s2d1/s2d2 windows) carries no `window` key; every
+    window since (mfcard, mfconfirm, ..) names one. A missing pin is tolerated ONLY on such a legacy record"""
+    return "window" not in rec["run"]
+
 def manifest_check(rundir, rec, j, L):
     """[r11-REV15-1] job j's MANIFEST (run.py dry's: the run id and the sha-256 of the frozen plan and of every launch
     executable) against the run directory, and against the record's pin of it (`manifest_sha256_<job>`, from the
     window after the second) when the record has one: (the manifest's sha-256, pinned?)"""
     p = os.path.join(rundir, j, "manifest.tsv")
     if not os.path.exists(p):
-        raise InputError("job %s ran but %s is absent (the fused-compare fact is read from the code it pins)" % (j, p))
+        raise InputError("MANIFEST ABSENT job %s ran but %s is absent (est reads the job's cells, text facts and "
+                         "code through the dry run's pins)" % (j, p))
     m = dict(ln.rstrip("\n").split("\t", 1) for ln in open(p) if ln.strip() and not ln.startswith("#"))
     msha, pin = plan.sha256(p), rec["run"].get("manifest_sha256_" + j)
+    if pin is None and not legacy_record(rec):      # [r8 ADQ-3] a windowed record pins every ran job's manifest
+        raise InputError("MANIFEST PIN absent job %s: the record (window %s) pins no manifest sha-256 (finalize writes it)"
+                         % (j, rec["run"]["window"]))
     if pin is not None and pin != msha:
         raise InputError("MANIFEST MISMATCH job %s: %s's sha-256 is %s, the record pins %s" % (j, p, msha, pin))
     if m.get("run_id") != rec["run"]["run_id"]:
         raise InputError("MANIFEST MISMATCH job %s: the manifest's run id %s, the record's %s" % (j, m.get("run_id"), rec["run"]["run_id"]))
     if m.get("plan") != plan.sha256(os.path.join(rundir, "plan.tsv")):
         raise InputError("MANIFEST MISMATCH job %s: plan.tsv is not the plan the manifest pins" % j)
+    # [review 2026-11-15 r5 FIDELITY-2] the job's text facts the draft reads (cell_text.tsv: each row's form, fold
+    # hash, target and recorded ISA needs, which decide its set) and its placement record, against their pins
+    for f in MANIFEST_FILES:
+        fp = os.path.join(rundir, j, f + ".tsv")
+        if not m.get(f):
+            raise InputError("MANIFEST MISMATCH job %s: the manifest pins no %s (run.py dry writes it)" % (j, f))
+        if not os.path.exists(fp) or plan.sha256(fp) != m[f]:
+            raise InputError("MANIFEST MISMATCH job %s: %s is not the %s the manifest pins (edited after the dry run)"
+                             % (j, fp, f))
     for l in range(1, L + 1):
         exe = os.path.join(rundir, j, "L%d" % l, "%s.L%d" % (j, l))
         if not os.path.exists(exe):
@@ -516,7 +537,7 @@ def cells_text(run_id, rows):
 def read_cells(rundir, rec):
     """the cells of every RAN timing job, cross-checked against the record (r9 G3)"""
     ran = {j for j, (s, _c) in rec["jobs"].items() if s == "ran"}
-    cells = []
+    cells, seen = [], set()
     for f in sorted(os.listdir(rundir)):
         m = re.fullmatch(r"cells\.(J\w+)\.tsv", f)
         if not m:
@@ -524,6 +545,19 @@ def read_cells(rundir, rec):
         j = m.group(1)
         if j not in ran:
             raise InputError("%s holds cells of job %s, which the record says %s" % (f, j, rec["jobs"].get(j, ("unplanned",))[0]))
+        # [review 2026-11-15 r6 FIDELITY-3] the file is the one finalize pinned (record.py cells_pins): a post-run edit
+        # that keeps every cell key unique (two keys' values swapped) is refused here, not by CELL TWICE below
+        got, pin = plan.sha256(os.path.join(rundir, f)), rec["run"].get("cells_sha256_" + j)
+        # [review 2026-11-15 r7 RULE-2] refused only when a pin is PRESENT and differs; a record with none (finalized
+        # before r6: the s2d1/s2d2 windows, rmax_drill.py's re-derivation) reads with a NOTE, as manifest_check does
+        if pin is None and not legacy_record(rec):      # [r8 ADQ-3] only a legacy record may lack the pin
+            raise InputError("CELLS PIN absent %s: the record (window %s) pins no cells sha-256 (finalize writes it)"
+                             % (f, rec["run"]["window"]))
+        if pin is None:
+            print("est: NOTE %s: the record pins no cells sha-256 (finalized before r6): read unpinned" % f, file=sys.stderr)
+        elif got != pin:
+            raise InputError("CELLS PIN %s: sha-256 %s, the record pins %s (a cells file edited after finalize)"
+                             % (f, got[:16], pin[:16]))
         lines = open(os.path.join(rundir, f)).read().splitlines()
         if not lines or lines[0] != "#run_id\t%s" % rec["run"]["run_id"]:
             raise InputError("%s's first line %r is not `#run_id<TAB>%s`: a cells file of another run" % (f, lines[:1], rec["run"]["run_id"]))
@@ -543,12 +577,20 @@ def read_cells(rundir, rec):
             if (idf[4] if len(idf) == 5 else None) != want or len(idf) > 5:
                 raise InputError("%s: cell %s names base %s, the family rule's is %s" % (f, c["cell"], idf[4:] or "none", want))
             c["job"] = j
+            # [review 2026-11-15 r5 FIDELITY-5] one line per (job, arm, length, launch): a second line (a duplicate, or
+            # one key's cells renamed onto another's) would replace the first silently. A FULL swap of two keys' cells
+            # keeps every key unique and passes here: the file's pin above refuses it (review r6 FIDELITY-3)
+            ck = (j, c["arm"], c["length"], c["launch"])
+            if ck in seen:
+                raise InputError("%s: cell (%s, %s, %d, launch %d) appears twice (CELL TWICE)" % ((f,) + ck))
+            seen.add(ck)
             cells.append(c)
     return cells
 
 def read_record(rundir):
     """the finalized run record: run (dict), jobs {job: (state, cause)}, plan [(key, group, job)], floor, the
-    pinned card and policy rows, and from them `card` ({quantity: card}) and `facts` (plan.card_facts)"""
+    pinned card and policy rows, and from them `card` ({quantity@ver: card}, a key's through plan.card_of) and
+    `facts` (plan.card_facts)"""
     rec, sec = {"run": {}, "jobs": {}, "plan": [], "floor": [], "cards": [], "policy": []}, None
     p = os.path.join(rundir, "run_record.tsv")
     if not os.path.exists(p):
@@ -598,9 +640,15 @@ def compute(rundir):
     R_MAX = r_max(rec)[0]
     card = rec["card"]                         # the PINNED cards (r9fc FIX-1), never plan.CARD
     LENGTHS, _LEN, L, _R, GU = rec["facts"]
-    if any(k.split(".")[1] not in card for k, _g, _j in rec["plan"]):
-        raise InputError("a planned key's quantity has no pinned card (%s)" % sorted({k.split(".")[1] for k, _g, _j in rec["plan"]} - set(card)))
-    rows = [(k, g, j, card[k.split(".")[1]]["est"], plan.base_of(k)) for k, g, j in rec["plan"]]
+    # [lane slotx] THE WINDOW's rows only: the frozen plan holds every job's rows, the record the window's jobs
+    # (record.py WINDOWS); a row of a job outside the window is not this window's (never `never-ran`), and so
+    # are its floor lines
+    win = [(k, g, j) for k, g, j in rec["plan"] if j in rec["jobs"]]
+    try:
+        rows = [(k, g, j, plan.card_of(card, k)["est"], plan.base_of(k)) for k, g, j in win]
+    except SystemExit as e:
+        raise InputError("a planned key names no pinned card: %s" % e)
+    floor = [f for f in floor if f[1] in {k for k, _g, _j in win}]
     c = {}
     for x in cells:
         c[(x["job"], x["arm"], x["length"], x["launch"])] = x
@@ -620,8 +668,11 @@ def compute(rundir):
             raise InputError("job %s's control slopes %s: every u_l must be positive (measures.md §3.4¶14a)" % (j, u[j]))
     out = {}
     W = None
+    # [review 2026-11-15 r5 FIDELITY-2] EVERY ran job's manifest (r11's check ran for verify jobs only, so the mfcard
+    # window's cells, cell_text.tsv and executables were read unvouched)
+    pins = {j: manifest_check(rundir, rec, j, L) for j in sorted(ran)}
     # [rev1.5 R15-1] every ran verify row's FUSED-COMPARE fact, from its timed code
-    fused, pins = fused_facts(rundir, rec, [(k, j) for k, _g, j, _e, b in rows if j in ran and b and k.startswith("kit.verify_cmp.")], L)
+    fused, _vp = fused_facts(rundir, rec, [(k, j) for k, _g, j, _e, b in rows if j in ran and b and k.startswith("kit.verify_cmp.")], L)
     for key, group, j, est, base in rows:
         if j not in ran:
             out[key] = {"absent": "never-ran:%s" % j}
@@ -681,9 +732,14 @@ def compute(rundir):
                 r["why"] = "null: below its paired A/A or signs mixed, at a size above its resolution r %d" % res
         else:
             # §3.5¶2: the card's gate; the unit's is HALF, compared doubled (exact for an odd gate, r9 G7)
-            G = card[key.split(".")[1]]["gate"]
+            G = plan.card_of(card, key)["gate"]
             half = 2 if key == plan.UNIT_KEY else 1
             r["gate"] = r["value"] > 0 and half * r["noise"] * 10**6 <= G * r["value"]
+            if not r["gate"]:
+                # [r13 JF-4] the failed gate's numbers, for a reader that prints the row unpriced (d197's scan line)
+                r["gate_why"] = ("gate FAIL: value %d not positive" % r["value"] if r["value"] <= 0 else
+                                 "gate FAIL: noise %d is %d ppm of value %d, over the card gate %d ppm"
+                                 % (r["noise"], rhafz(half * r["noise"] * 10**6, r["value"]), r["value"], G))
     unit = out.get(plan.UNIT_KEY, {})
     unit_bad = None
     if "absent" in unit or not unit or W is None or W <= 0:
@@ -723,15 +779,18 @@ def compute(rundir):
     failed = [cl for cl, ks in sorted(clauses.items()) if all(unpriced(k) for k in ks)]
     absent = [k for k in out if "absent" in out[k] or drift.get(out[k]["job"], (0, 0, False))[2]
               or out[k].get("gate") is False]
+    # the outcome (word, exit, causes, REFUSALS): [r13 JF-4] the refusals as data, (cause, the keys it names) per
+    # cause (`unit` names none), so a reader can tell WHICH rows refused (d197_rule.tsv's `refusal` table); the draft
+    # reads only the word: REFUSED writes no draft, whichever rows refused
     if unit_bad:
-        outcome = ("REFUSED", 3, ["unit"])
+        outcome = ("REFUSED", 3, ["unit"], [("unit", [])])
     elif failed:
         outcome = ("REFUSED", 3, ["floor:%s (%s)" % (cl, ",".join(sorted({unpriced(k) for k in clauses[cl]})))
-                                  for cl in failed])
+                                  for cl in failed], [("floor:" + cl, sorted(clauses[cl])) for cl in failed])
     elif absent:
-        outcome = ("PARTIAL", 4, sorted(absent))
+        outcome = ("PARTIAL", 4, sorted(absent), [])
     else:
-        outcome = ("FULL", 0, [])
+        outcome = ("FULL", 0, [], [])
     return out, drift, unit_bad, outcome, W, pins
 
 def notes(rundir, out=None):
@@ -760,8 +819,10 @@ def notes(rundir, out=None):
              "launches; priced with their spread as noise): %s" % (NOTE_BIMODAL_E6, ", ".join(bim) or "none"))]
 
 def cell_texts(rundir, rec):
-    """{row key: (form, fold hash, tags)} from every ran job's cell_text.tsv (link.py's, the texts it TIMED and
-    checked, r9 G5); a form whose fold differs between jobs REFUSES (the kit moved inside the window)"""
+    """{arm: (form, fold hash, tags, target, ISA needs, job)} for every row and base arm (twins left out) from every
+    ran job's cell_text.tsv (link.py's, the texts it TIMED and checked, r9 G5; the file its manifest pins, r5
+    FIDELITY-2); a form whose fold differs between jobs REFUSES (the kit moved inside the window), and so does an
+    arm with two lines (r5 DRAFTSETS-2: the last line used to win, whatever its text or target)"""
     out, fold = {}, {}
     for j, (s, _c) in sorted(rec["jobs"].items()):
         if s != "ran" or j == "J1":
@@ -772,11 +833,94 @@ def cell_texts(rundir, rec):
         for ln in open(p):
             if ln.startswith("#") or not ln.strip():
                 continue
-            arm, form, _cls, _inst, fh, tags = ln.rstrip("\n").split("\t")
+            f = ln.rstrip("\n").split("\t")
+            arm, form, _cls, _inst, fh, tags = f[:6]
+            tgt = f[6] if len(f) > 6 else "-"          # [lane slotx] the target the cell TU was compiled in
+            isa = f[7] if len(f) > 7 else "-"          # [r5 DRAFTSETS-1] the features above the floor its code used
             if fold.setdefault(form, fh) != fh:
                 raise InputError("form %s's fold hash is %s in one job and %s in %s" % (form, fold[form], fh, j))
-            if not arm.endswith("#b") and arm.startswith("kit."):
-                out[arm] = (form, fh, tags)
+            if arm.endswith("#b"):
+                continue
+            key = arm if arm.startswith("kit.") else (j, arm)    # a base is its job's (each job renders its own)
+            if key in out:
+                raise InputError("CELL-TEXT TWICE %s: two lines in job %s's cell_text.tsv (or two jobs')" % (arm, j))
+            out[key] = (form, fh, tags, "generic" if tgt == "-" else tgt,
+                        set() if isa in ("-", "") else set(isa.split(",")), j)
+    return out
+
+# [review 2026-11-15 r5 DRAFTSETS-1] THE DRAFT SETS' ISA LEVEL, from ONE source: the kit's own target facts
+# (`arm_fixtures --target-facts`, the run's fixture binary, the one its manifests pin). A target whose features the
+# compile floor (link.CC's -march, a kit target token too) already has is the FLOOR's level; any other target is its
+# own level. A set is one level: id suffix `-<level past the floor's family>` (x86-64-v3 -> `-v3`, the floor ``),
+# class the level's glibc-hwcaps spelling (x86-64 -> x86_64) on the box's uarch. No per-target table: a new kit
+# target (the owed mfind-w64's) gets its own set by the rule; a token the kit does not know REFUSES
+BOX_UARCH = "zen4"                      # the timing box's uarch, the class's second half (record.SETS' ids too)
+
+class Levels:
+    def __init__(self, fx):
+        self.fx, self.floor, self._f = fx, next(x.split("=", 1)[1] for x in link.CC if x.startswith("-march=")), {}
+    def feats(self, tok):
+        if tok not in self._f:
+            r = subprocess.run([self.fx, "--target-facts", tok], capture_output=True, text=True)
+            f = r.stdout.strip().split("\t")
+            if r.returncode or len(f) != 3 or f[:2] != ["target", tok]:
+                raise InputError("DRAFT-ISA-LEVEL: target %s is not one the kit's target facts know (%s): no draft set "
+                                 "for it (span_cards.md §2.7)" % (tok, (r.stderr or r.stdout).strip()[:80]))
+            self._f[tok] = set() if f[2] == "-" else set(f[2].split(","))
+        return self._f[tok]
+    def level(self, tok):
+        """the ISA level a target's code is compiled for: the floor's when the floor has every feature it enables"""
+        return self.floor if self.feats(tok) <= self.feats(self.floor) else tok
+    def set_of(self, lvl):
+        """(set id suffix, class) of the set holding level lvl's rows"""
+        fam = self.floor + "-"
+        suf = "" if lvl == self.floor else "-" + (lvl[len(fam):] if lvl.startswith(fam) else lvl)
+        return suf, "%s/%s" % (lvl.replace(self.floor, self.floor.replace("-", "_"), 1), BOX_UARCH)
+    def class_feats(self, cls):
+        """the features a set's CLASS admits (read back from the class, not from the row's target): the floor's
+        plus its level's"""
+        lvl = cls.split("/")[0].replace(self.floor.replace("-", "_"), self.floor, 1)
+        return self.feats(self.floor) | self.feats(lvl)
+
+LEVEL_OF = None        # the self-test's plant hook (a derivation that files a level elsewhere); None: Levels.level
+
+def run_fx(rundir, rec):
+    """the run's fixture binary: RUNDIR/fx.* whose sha-256 every ran job's manifest pins (one fx per window)"""
+    shas = set()
+    for j, (s, _c) in sorted(rec["jobs"].items()):
+        if s != "ran" or j == "J1":
+            continue
+        m = dict(ln.rstrip("\n").split("\t", 1) for ln in open(os.path.join(rundir, j, "manifest.tsv"))
+                 if ln.strip() and not ln.startswith("#"))
+        shas.add(m.get("fx"))
+    if len(shas) != 1 or None in shas:
+        raise InputError("the ran jobs' manifests pin %s fixture binaries (one per window)" % (sorted(map(str, shas)) or "no"))
+    want = shas.pop()
+    for f in sorted(os.listdir(rundir)):
+        if f.startswith("fx.") and plan.sha256(os.path.join(rundir, f)) == want:
+            return os.path.join(rundir, f)
+    raise InputError("no RUNDIR/fx.* is the fixture binary the manifests pin (%s)" % want[:16])
+
+def draft_split(rec, rows):
+    """[lane slotx] THE WRITER'S SPLIT BY VER: {ver: rows}, each row in its KEY's card's ver (plan.card_of over the
+    record's pinned cards); then each set's rows are held to that set's OWN cards, read here without card_of: a
+    card of the row's quantity at the set's ver that prices the row's form (its deps name it, or it names none). A
+    row in a set whose cards do not price it REFUSES (DRAFT-VER MISMATCH): a ver-6 row never lands in another
+    ver's set under a card of the same quantity"""
+    out = {}
+    for r in rows:
+        try:
+            v = plan.card_of(rec["card"], r[0])["ver"]
+        except SystemExit as e:
+            raise InputError("DRAFT-VER: %s" % e)
+        out.setdefault(v, []).append(r)
+    for v, vr in sorted(out.items()):
+        for r in vr:
+            q = r[0].split(".")
+            if not any(c["ver"] == v and c["quantity"] == q[1] and (plan.card_forms(c) is None or q[2] in plan.card_forms(c))
+                       for c in rec["card"].values()):
+                raise InputError("DRAFT-VER MISMATCH row %s in ver %s's set: no ver-%s card of %s prices form %s"
+                                 % (r[0], v, v, q[1], q[2]))
     return out
 
 def main():
@@ -807,6 +951,16 @@ def main():
                                        "gate %s" % ("pass" if r.get("gate", True) else "FAIL"))))
         for j, (d, T, bad) in sorted(drift.items()):
             print("drift\t%s\t%d\t%d\t%s" % (j, d, T, "REFUSED" if bad else "kept"))
+        # [review 2026-11-15 r5 EMITTED-1] the emitted size BESIDE the timing (never in a value): each row's timed
+        # function (its site inlined) in bytes, link.py's cell_text column; `-` for a TU it did not size
+        rec = read_record(rundir)
+        for j, (s, _c) in sorted(rec["jobs"].items()):
+            p = os.path.join(rundir, j, "cell_text.tsv")
+            if s == "ran" and j != "J1" and os.path.exists(p):
+                for ln in open(p):
+                    f = ln.rstrip("\n").split("\t")
+                    if not ln.startswith("#") and f[0].startswith("kit.") and not f[0].endswith("#b"):
+                        print("size\t%s\t%s bytes (the timed function, its site inlined)" % (f[0], f[8] if len(f) > 8 else "-"))
         for k, v in notes(rundir, out):
             print("note\t%s\t%s" % (k, v))
         print("== s2 OUTCOME %s exit %d %s" % (outcome[0], outcome[1], "; ".join(outcome[2])))
@@ -834,22 +988,24 @@ def write_draft(rundir, path, out, drift, outcome):
     # [r2s1 RK383-3] THE WRITER SPLITS BY VER: one set per method, each with that ver's cards section and rows only
     # (kit-grid@3 keeps zen4-grid3; a ver with no timed row writes no set, so an unmeasured cell stays unmeasured)
     n = str(rec["facts"][2] * rec["facts"][3])
-    rows = []
+    rows, tgt_of, isa_of = [], {}, {}
     rec_rmax = r_max(rec)[0]
     for k in sorted(out):
         r = out[k]
         if "absent" in r or r.get("gate") is False or drift.get(r["job"], (0, 0, False))[2]:
             continue
         q = k.split(".")
-        unit = rec["card"][q[1]]["unit"]
-        deps, tags = "-", "-"
+        unit = plan.card_of(rec["card"], k)["unit"]
+        deps, tags, tgt = "-", "-", "-"
         if q[1] not in ("enter", "enter_back"):
             if k not in texts:
                 raise InputError("row %s has no cell text in its job's cell_text.tsv" % k)
-            form, fh, tags = texts[k]
+            form, fh, tags, tgt, isa_of[k], _j = texts[k]
             if form != q[2]:
                 raise InputError("row %s's cell text is form %s's" % (k, form))
             deps = "kit:form.%s=%s" % (form, fh)
+        tgt_of[k] = "generic" if tgt == "-" else tgt     # an unframed TU is the compile floor's: no region
+        isa_of.setdefault(k, set())
         if r.get("null"):
             rows.append([k, unit, "", str(r["abs"]), "-", n, "null", "-", "-",
                          deps, tags, r["why"]])
@@ -859,34 +1015,83 @@ def write_draft(rundir, path, out, drift, outcome):
                          "slot %s fused-compare bound r_max %d; %s" % (r["job"], rec_rmax, FUSED_EVIDENCE)])
         else:
             rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]), n, "measured", "-", "-", deps,
-                         tags, "slot %s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "")])
+                         tags, "slot %s%s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "",
+                                                " target %s" % tgt if tgt not in ("-", "generic") else "")])
     import record
     allcells = read_cells(rundir, rec)
-    ver_of = lambda key: rec["card"][key.split(".")[1]]["ver"]
-    def mine(v, c):          # a cell belongs to ver v's set: its row's arm (any ver), and a base or the ctl (ver 3's
-        a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]   # always; ver v's when one of its rows names it)
-        if a.startswith("kit."):
-            return ver_of(a) == v
-        return v == "3" or a == "ctl" or any(plan.base_of(r[0]) == a for r in rows if ver_of(r[0]) == v)
+    split = draft_split(rec, rows)
     msgs, rc = [], outcome[1]
-    for v in sorted({c["ver"] for c in rec["card"].values()}):
-        vrows = [r for r in rows if ver_of(r[0]) == v]
-        if not vrows:
+    vers = sorted({c["ver"] for c in rec["card"].values()})
+    job_of = {r[0]: out[r[0]]["job"] for r in rows}
+    # [review 2026-11-15 r5 DRAFTSETS-1] ONE DRAFT SET PER (ver, ISA LEVEL) (span_cards.md §2.7): a row goes to the
+    # set of its target's LEVEL (Levels, from the kit's target facts), and THE GUARD holds every row and every base
+    # cell of a set to the set's CLASS through the ISA needs link.py RECORDED from the object (cell_text's
+    # target_isa): needs above what the class admits REFUSE the whole draft before any file is written
+    # (DRAFT-ISA-LEVEL MIXED); so does a target the kit does not know. [r5 contract-2] the UNIT row (the header's
+    # unit_key, the set's normaliser: same box, same run, never a priced form) is REPEATED in every set written, so
+    # each set loads; it alone is exempt from the guard, as the job controls are (compiled at the floor, no region)
+    lv = Levels(run_fx(rundir, rec))
+    level_of = LEVEL_OF or lv.level
+    groups = {}                  # (ver, set suffix, class) -> rows
+    for v in vers:
+        for r in split.get(v, []):
+            if r[0] == plan.UNIT_KEY:
+                continue
+            lv.feats(tgt_of[r[0]])                       # a token the kit does not know refuses here
+            suf, cls = lv.set_of(level_of(tgt_of[r[0]]))
+            groups.setdefault((v, suf, cls), []).append(r)
+    unit = [r for r in rows if r[0] == plan.UNIT_KEY]
+    for g in list(groups):
+        groups[g] = sorted(unit + groups[g], key=lambda r: r[0])
+    if unit and not any(g[0] == "3" and not g[1] for g in groups):
+        groups[("3",) + lv.set_of(lv.floor)] = list(unit)     # the unit's own ver, the floor's set (a window of ver 3)
+    def guard(what, needs, g):
+        over = sorted(needs - lv.class_feats(g[2]))
+        if over:
+            raise InputError("DRAFT-ISA-LEVEL MIXED ver %s's set %s (class %s) would hold %s whose recorded ISA needs "
+                             "%s are above its class (span_cards.md §2.7: a set never mixes ISA levels): no draft "
+                             "written" % (g[0], g[1] or "baseline", g[2], what, ",".join(over)))
+    for g, vrows in groups.items():
+        for r in vrows:
+            if r[0] != plan.UNIT_KEY:
+                guard("row " + r[0], isa_of[r[0]] | (lv.feats(tgt_of[r[0]]) - lv.feats(lv.floor)), g)
+    def homes(c):
+        """[r5 FIDELITY-3] the sets a cell belongs to: a row's cells its row's set(s); a base's the sets of the rows
+        of ITS job that name it (held to the set's class by its own recorded needs); a job's ctl the sets holding
+        a row of that job. Never a set of another ver or level by default"""
+        a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]
+        if a.startswith("kit."):
+            return [g for g, vr in groups.items() if any(r[0] == a for r in vr)]
+        if a == "ctl":
+            return [g for g, vr in groups.items() if any(job_of[r[0]] == c["job"] for r in vr)]
+        hs = [g for g, vr in groups.items() if any(plan.base_of(r[0]) == a and job_of[r[0]] == c["job"] for r in vr)]
+        bt = texts.get((c["job"], a))
+        for g in hs:
+            if bt:
+                guard("base %s's cells" % a, bt[4] | (lv.feats(bt[3]) - lv.feats(lv.floor)), g)
+        return hs
+    cell_home = [(c, homes(c)) for c in allcells]
+    for v in vers:
+        if not any(g[0] == v for g in groups):
             print("draft: ver %s: no timed row, no set written (its cards stay UNMEASURED)" % v)
-            continue
-        vpath = path if v == "3" else "%s.v%s%s" % (os.path.splitext(path)[0], v, os.path.splitext(path)[1])
+    for (v, suf, cls) in sorted(groups):
+        vrows = groups[(v, suf, cls)]
+        vpath = path if v == "3" else "%s.v%s%s%s" % (os.path.splitext(path)[0], v, suf, os.path.splitext(path)[1])
         vcards = ["\t".join(f) for f in rec["cards"] if f[2] == v]
         sid, srev = record.SETS[v].split("@")
-        hdr = [("format", "2"), ("id", sid), ("rev", srev), ("class", "x86_64/zen4"),
+        sid += suf                                    # zen4-grid6 / zen4-grid6-v3
+        hdr = [("format", "2"), ("id", sid), ("rev", srev), ("class", cls),
                ("isa", rec["run"]["isa"]), ("tier", "scratch"), ("composite", "0"), ("members", ""),
                ("unit_key", plan.UNIT_KEY), ("method", "kit-grid@%s" % v),
                ("run", "%s record:%s" % (rec["run"]["run_id"], rsha)),
-               ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic" % rec["run"]["gcc"]),
+               ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic%s" % (rec["run"]["gcc"],
+                    "; a row compiled in a kit target's region names it (source `target T`)"
+                    if any(" target " in r[-1] for r in vrows) else "")),
                ("libc", rec["run"]["libc"]), ("code_commit", rec["run"]["code_commit"]),
                ("counters", "skipped:not-taken"), ("partial", "1" if outcome[0] == "PARTIAL" else "0"),
                ("rows", str(len(vrows))), ("values_digest", "0000000000000000")]
         cells = ["\t".join([c[k] if isinstance(c[k], str) else str(c[k]) for k in CELL_COLS])
-                 for c in allcells if mine(v, c)]
+                 for c, hs in cell_home if (v, suf, cls) in hs]
         def text(h):
             t = ["# pcrec measurement set (spec: docs/spec/measures.md)"]
             t += ["# note %s: %s" % kv for kv in notes(rundir, out)]       # [rev1.4 R14-3, R14-4]
@@ -945,10 +1150,72 @@ def _synth_code(scratch, arms, fused, variant=None):
                         o[:-2] + ".c", "-o", o], check=True)
     return o
 
+# [r5 DRAFTSETS-1] the synth's kit targets per form (link.py's: the instance's `--frame` target) and the ISA needs
+# link.py records for them (the features above the floor the object used); every other form generic, none
+SYNTH_TARGET = {"mfind-w16": ("x86-64", "-"), "mfind-w32": ("x86-64-v3", "avx,avx2,bmi,bmi2")}
+
+def _synth_cell_text(d, j, tgt=None):
+    """[r5] job j's cell_text.tsv as link.py writes it: every row, twin and base arm whose key names a (form, cls),
+    its target and recorded needs from SYNTH_TARGET updated by `tgt` {form: (target, needs)}"""
+    tg = dict(SYNTH_TARGET, **(tgt or {}))
+    lines = []
+    for a in plan.build()[0][j]:
+        kf = plan.key_form(a.name[:-2] if a.name.endswith("#b") else a.name) if a.kind not in ("ctl", "enter", "j1") else None
+        if kf:
+            t_, isa = tg.get(kf[0], ("generic", "-"))
+            lines.append("\t".join([a.name, kf[0], kf[1] or "-", "h", "fold." + kf[0], "-", t_, isa]) + "\n")
+    os.makedirs(os.path.join(d, j), exist_ok=True)
+    open(os.path.join(d, j, "cell_text.tsv"), "w").write(
+        "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\ttarget\ttarget_isa\n" + "".join(lines))
+
+def load_set(path):
+    """[r5 contract-2] (rc, why): the set LOADED by the tree's own loader (build/pcrec --measures=FILE, a compile
+    of one pattern). A self-test set holds synthetic values, so its id is renamed in a copy first: the store's
+    shadow rule (measures.md §3.3) refuses a committed id with other values, a fact about the store, not the set"""
+    txt = open(path).read()
+    cp = path + ".load.tsv"
+    open(cp, "w").write(re.sub(r"(?m)^id\t(\S+)$", lambda m: "id\tselftest-" + m.group(1), txt, count=1))
+    r = subprocess.run([os.path.join(TREE, "build", "pcrec"), "-p", "rx", "--measures=" + cp, "-o", cp + ".c",
+                        "--pattern", "abc"], capture_output=True, text=True)
+    os.remove(cp)
+    return r.returncode, (r.stderr or r.stdout).strip()[:200]
+
+def _synth_fx(d):
+    """[r5] the run's fixture binary in d (link.fx_path's, built once per scratch and copied): est reads the kit's
+    target facts from it"""
+    fx = link.fx_path(os.path.dirname(d))
+    dst = os.path.join(d, os.path.basename(fx))
+    if not os.path.exists(dst):
+        shutil.copyfile(fx, dst)
+        os.chmod(dst, 0o755)
+    return dst
+
+def _synth_seal(d, j):
+    """[r5 FIDELITY-2] job j sealed as a dry run leaves it: its placement record, a launch file per launch when it
+    has no compiled code (a non-verify job: est reads no code of it), the manifest, the record's pin"""
+    os.makedirs(os.path.join(d, j), exist_ok=True)
+    if not os.path.exists(os.path.join(d, j, "cell_text.tsv")):
+        _synth_cell_text(d, j)
+    open(os.path.join(d, j, "placement.tsv"), "w").write("#job\tlaunch\tarm\taddr\tmod64\thot_loop\tdraws\n")
+    for l in range(1, plan.L_LAUNCHES + 1):
+        e = os.path.join(d, j, "L%d" % l, "%s.L%d" % (j, l))
+        if not os.path.exists(e):
+            os.makedirs(os.path.dirname(e), exist_ok=True)
+            open(e, "w").write("synthetic launch %s L%d\n" % (j, l))
+    _synth_manifest(d, j)
+    _synth_pin(d, j)
+
 def _synth_manifest(d, j):
-    """[r11-REV15-1] job j's manifest as run.py dry writes it (the run id, the plan's and every launch's sha-256)"""
+    """[r11-REV15-1] job j's manifest as run.py dry writes it (the run id, the plan's and every launch's sha-256;
+    [r5] the fixture binary's, cell_text's and placement's)"""
     run_id = read_record(d)["run"]["run_id"] if os.path.exists(os.path.join(d, "run_record.tsv")) else "selftest"
-    m = {"run_id": run_id, "plan": plan.sha256(os.path.join(d, "plan.tsv"))}
+    m = {"run_id": run_id, "plan": plan.sha256(os.path.join(d, "plan.tsv")), "fx": plan.sha256(_synth_fx(d))}
+    for f in MANIFEST_FILES:
+        p = os.path.join(d, j, f + ".tsv")
+        if not os.path.exists(p):
+            (_synth_cell_text(d, j) if f == "cell_text" else
+             open(p, "w").write("#job\tlaunch\tarm\taddr\tmod64\thot_loop\tdraws\n"))
+        m[f] = plan.sha256(p)
     for l in range(1, plan.L_LAUNCHES + 1):
         m["L%d" % l] = plan.sha256(os.path.join(d, j, "L%d" % l, "%s.L%d" % (j, l)))
     open(os.path.join(d, j, "manifest.tsv"), "w").write("#name\tvalue\n" + "".join("%s\t%s\n" % kv for kv in sorted(m.items())))
@@ -978,7 +1245,7 @@ def _synth_launches(d, j, arms, fused, launches=None, variant=None, manifest=Tru
     if manifest:
         _synth_manifest(d, j)
 
-def _synth(d, run_id="selftest"):
+def _synth(d, run_id="selftest", window="s2d"):
     """a synthetic finalized run directory: the live plan frozen, every timing job ran, linear cells (a slope
     arm's per-byte cost and a delta arm's per-event cost by its key's hash, so rows differ), no clock;
     [rev1.5 R15-1] each verify job's timed code compiled (_synth_code), [r11-REV15-1] its manifest written and
@@ -991,13 +1258,13 @@ def _synth(d, run_id="selftest"):
     fr = plan.read_frozen(os.path.join(d, "plan.tsv"))
     jobs, _rows, _f, _u = plan.build()
     rec = {name: [] for name, _ in record.SECTIONS}
-    rec["run"] = [["set", record.SET], ["rules", record.RULES["3"]], ["rules.4", record.RULES["4"]], ["run_id", run_id], ["code_commit", "0000000"],
-                  ["j1_verdict", "a"]]
-    rec["jobs"] = [[j, "ran", "-"] for j in record.JOBS]
+    rec["run"] = ([["set", record.SET]] + [[record.rules_key(v), record.RULES[v]] for v in sorted(record.RULES)]
+                  + [["run_id", run_id], ["code_commit", "0000000"], ["j1_verdict", "a"], ["window", window]])
+    rec["jobs"] = [[j, "ran", "-"] for j in record.WINDOWS[window]]
     record.pin(rec, fr)
     record.write(os.path.join(d, "run_record.tsv"), rec)
     for j, arms in jobs.items():
-        if j == "J1" or j not in record.JOBS:       # J5B ([k383 F1]) is planned, not scheduled: no cells
+        if j == "J1" or j not in record.WINDOWS[window]:   # J5B ([k383 F1]) is planned, not scheduled: no cells
             continue
         lines = []
         for a in arms:
@@ -1005,7 +1272,8 @@ def _synth(d, run_id="selftest"):
             for l in range(1, plan.L_LAUNCHES + 1):
                 for x in a.lengths:
                     jit = (l * 7919 + (a.name.endswith("#b")) * 13) % 97
-                    if a.kind == "ctl" or plan._est_parse(plan.CARD.get(a.name.split(".")[1], {"est": "slope 1,2,3"})["est"])[0] == "slope" and not a.name.startswith("base."):
+                    est = plan.card_of(plan.CARD, a.name)["est"] if a.name.startswith("kit.") else "slope 1,2,3"
+                    if a.kind == "ctl" or plan._est_parse(est)[0] == "slope" and not a.name.startswith("base."):
                         ns = x * (1000 + h % 500) + 5000 + jit
                     else:
                         ns = 9000000 + (a.events or 0) * (2000 + h % 900) + jit
@@ -1014,7 +1282,55 @@ def _synth(d, run_id="selftest"):
         if any(a.name.startswith("kit.verify_cmp.") for a in arms):
             _synth_launches(d, j, [a for a in arms if a.kind != "ctl"], SYNTH_FUSED)
             _synth_pin(d, j)
+        else:
+            _synth_seal(d, j)          # [r5 FIDELITY-2] every ran job's manifest is checked, not only verify jobs'
+    _synth_cells_pin(d)
     return d
+
+def _synth_cells_pin(d):
+    """[r6 FIDELITY-3] the record's pins of the cells files as they stand (record.py finalize's cells_pins): the
+    self-test's plants model a run that PRODUCED those cells, so each case re-pins after its plant; the post-finalize
+    edit case does not"""
+    import record
+    p = os.path.join(d, "run_record.tsv")
+    rec = record.read(p)          # every cells file present is pinned (a never-ran job's too: its own check refuses it)
+    pins = record.cells_pins(d, sorted(f[6:-4] for f in os.listdir(d) if re.fullmatch(r"cells\.J\w+\.tsv", f)))
+    rec["run"] = [r for r in rec["run"] if not r[0].startswith("cells_sha256_")] + [[k, v] for k, v in sorted(pins.items())]
+    record.write(p, rec)
+
+def _synth_edit_cells(d, j, f):
+    """rewrite job j's cells: f(arm, launch, ns_e6) -> ns_e6, then re-pin (a run that PRODUCED those cells)"""
+    p = os.path.join(d, "cells.%s.tsv" % j)
+    ls = []
+    for ln in open(p).read().split("\n"):
+        c = ln.split("\t")
+        if len(c) == 8 and not ln.startswith("#"):
+            c[7] = str(f(c[2], int(c[4]), int(c[7])))
+        ls.append("\t".join(c))
+    open(p, "w").write("\n".join(ls))
+    _synth_cells_pin(d)
+
+def _plant_scan_noise(d, form="mfind-swar"):
+    """[r13 JF-4] the find_byte@6 row of `form` (a SCAN row, never deciding) noisy as last night's swar: the arm and
+    its twin scaled apart by 5 % on two launches in three, so its paired A/A is ~10 % of its value (gate 3 %)"""
+    k = "kit.find_byte.%s" % form
+    s = lambda l: (l % 3) - 1
+    _synth_edit_cells(d, "JMB", lambda a, l, ns: ns * (100 + 5 * s(l)) // 100 if a == k else
+                      ns * (100 - 5 * s(l)) // 100 if a == k + "#b" else ns)
+
+def _plant_deciding_unpriced(d, form="mfind-w32", how="defect"):
+    """[r13 JF-4] every reject-0 find_hit@6 row of `form` (DECIDING rows) unpriced by est's own NULL rule, so its floor
+    clause hit6.<form> refuses: `defect` below its own base on every launch; `noisy` (R1 condition A) its per-launch
+    cost swinging +-20 % of the cell around its base, arm and twin opposite: signs mixed, its paired A/A above its resolution"""
+    pre = "kit.find_hit.%s.periodic.one." % form
+    def f(a, l, ns):
+        if not (a.startswith(pre) and a.rstrip("#b").endswith(".0")):
+            return ns
+        if how == "defect":
+            return 8000000 * 1000 + l
+        s = (1 if l % 2 else -1) * (-1 if a.endswith("#b") else 1)
+        return 9000000 * 1000 + s * 1800000 * 1000
+    _synth_edit_cells(d, "JMH", f)
 
 # [r11-REV15-2..4] the READING cases: hand-written timed functions (assembled, .size set), each with the fact both
 # readings must give; a disagreement or another answer is WRONG
@@ -1130,7 +1446,7 @@ def selftest(scratch):
         unit_twin_skew(d)
         for c in plan.CARD.values():
             c["gate"] = 300
-        plan.CARD["find_byte"]["est"] = "slope 1,2,3"
+        plan.CARD["find_byte@3"]["est"] = "slope 1,2,3"
     def set_delta(d, key, ds, twin=3):
         """[rev1.4 R14-2] KEY's (and its twin's) cells in J4 = its base's cell + ds[l-1] x E per launch l (the twin
         `twin` x E above, or twin[l-1] x E for a list): a per-event cost of ds[l-1] in the cells' own units"""
@@ -1199,6 +1515,11 @@ def selftest(scratch):
         _synth_launches(d, "J4", j4, (), launches=[3])
     def unpinned(d):           # [r11-REV15-1] a record finalized before the pin (windows 1 and 2): checked as it stands
         _synth_pin(d, drop=True)
+        import record      # [r8 ADQ-3] "before the pin" = a LEGACY record: no window key (s2d1/s2d2)
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [r for r in rec["run"] if r[0] != "window"]
+        record.write(rp, rec)
     def stems_swapped(d):      # [r11-REV15-1] P6: obj/tab.c's stems of l1.p0 and w1.p0 swapped
         p = os.path.join(d, "J4", "obj", "tab.c")
         t = open(p).read()
@@ -1290,6 +1611,7 @@ def selftest(scratch):
                 open(os.path.join(d, "J4", f)).read() for f in ("manifest.tsv", os.path.join("obj", "tab.c")))
         before = state()
         plant(d)
+        _synth_cells_pin(d)            # [r6 FIDELITY-3] the plant is the run's own cells: pinned as finalize pins
         after = state()
         if not isinstance(want, str):       # a row predicate over compute()'s rows (rev 1.4)
             try:
@@ -1325,6 +1647,267 @@ def selftest(scratch):
         ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
         bad += not ok
         print("selftest\t%s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
+    # [lane slotx] THE mfcard WINDOW (record.py WINDOWS): kit-grid@6's rows priced under their own cards, the frozen
+    # plan's other jobs' rows not this window's, and the writer's split by ver (draft_split)
+    K6 = "kit.find_hit.mfind-w32.periodic.one.256.50"
+    def mf_priced(d):
+        out, _dr, _ub, outcome, _w, _p = compute(d)
+        return (K6 in out and "value" in out[K6] and outcome[0] != "REFUSED"
+                and not any(k.startswith(("kit.verify_cmp.", "kit.enter")) or out[k].get("job") == "J3" for k in out))
+    def mf_split(d):
+        out = compute(d)[0]
+        sp = draft_split(read_record(d), [[k] for k in sorted(out) if "absent" not in out[k]])
+        six = [r[0] for r in sp.get("6", [])]
+        return (K6 in six and all(k.split(".")[2] in plan.FORMS6 for k in six)
+                and plan.UNIT_KEY in [r[0] for r in sp.get("3", [])] and "4" not in sp)
+    def mf_draft(d, tgt=None, edit=None):
+        """[review 2026-11-15 r1 F5] write_draft itself on the synth (each ran job's cell_text.tsv, the targets
+        `tgt` {form: (target, needs)} over SYNTH_TARGET's, sealed by its manifest as a dry run leaves it; `edit`: a
+        post-run edit of the run directory, NOT re-sealed; the draft gate stubbed: the synth has no commit), then
+        {set: (row keys, cell lines' (job, arm))} per written set"""
+        rec = read_record(d)
+        for j, (s, _c) in rec["jobs"].items():
+            if s == "ran" and j != "J1":
+                _synth_cell_text(d, j, tgt)
+                _synth_seal(d, j)
+        rr = os.path.join(d, "run_record.tsv")
+        txt = open(rr).read().replace("run_id\tselftest\n", "run_id\tselftest\nbox\tselftest\nisa\tselftest\n"
+                                       "libc\tselftest\ngcc\tselftest\n", 1)
+        open(rr, "w").write(txt)
+        if edit:
+            edit(d)
+        out, drift, _ub, outcome, _w, _p = compute(d)
+        gate = globals()["draft_gate"]
+        globals()["draft_gate"] = lambda code_commit, paths=None: "0" * 40
+        try:
+            with open(os.devnull, "w") as dn:
+                so, sys.stdout = sys.stdout, dn
+                try:
+                    write_draft(d, os.path.join(d, "draft.tsv"), out, drift, outcome)
+                finally:
+                    sys.stdout = so
+        finally:
+            globals()["draft_gate"] = gate
+        sets = {}
+        for p in sorted(os.listdir(d)):
+            m = re.fullmatch(r"draft(?:\.v(\d+)(-\w+)?)?\.tsv", p)
+            if m:
+                txt = open(os.path.join(d, p)).read()
+                rows = txt.split("#section rows\n", 1)[1].split("#section members", 1)[0]
+                cells = txt.split("#section cells\n", 1)[1]
+                sets[(m.group(1) or "3") + (m.group(2) or "").lstrip("-")] = (
+                    [ln.split("\t")[0] for ln in rows.splitlines()[1:] if ln],
+                    [(ln.split("\t")[1].split(".")[0], ln.split("\t")[2]) for ln in cells.splitlines()[1:] if ln])
+        return sets
+    def mf_rows(sets, s):
+        return set(sets.get(s, ([], []))[0])
+    def mf_header(d, p):
+        h = open(os.path.join(d, p)).read().split("#section header\n#key\tvalue\n", 1)[1].split("#section cards", 1)[0]
+        return dict(ln.split("\t", 1) for ln in h.splitlines() if ln)
+    six_of = lambda d: {k for k, _g, _j in read_record(d)["plan"] if k.startswith("kit.") and k.split(".")[2] in plan.FORMS6}
+    def mf_write(d):
+        sets = mf_draft(d, {f: ("generic", "-") for f in plan.FORMS6})   # one level (all generic): one ver-6 set
+        six = six_of(d)
+        return (mf_rows(sets, "6") == six | {plan.UNIT_KEY} and K6 in six and not six & mf_rows(sets, "3")
+                and plan.UNIT_KEY in mf_rows(sets, "3") and not any(s.startswith("4") for s in sets)
+                and set(sets) == {"3", "6"})
+    def mf_levels(d):
+        """[F8, r5 DRAFTSETS-1/FIDELITY-3/contract-2] the kit's three targets: two ver-6 sets (zen4-grid6
+        x86_64/zen4 holding the generic + x86-64 rows, zen4-grid6-v3 x86_64-v3/zen4 the x86-64-v3 rows), each
+        with the unit row; a base's cells only in its own level's set; no ver-6 job's base or ctl cell in ver 3's"""
+        sets = mf_draft(d)
+        if set(sets) != {"3", "6", "6v3"}:
+            return False
+        h6, h3 = mf_header(d, "draft.v6.tsv"), mf_header(d, "draft.v6-v3.tsv")
+        r6, r3 = mf_rows(sets, "6") - {plan.UNIT_KEY}, mf_rows(sets, "6v3") - {plan.UNIT_KEY}
+        c6, c3, cv3 = (set(sets[s][1]) for s in ("6", "6v3", "3"))
+        return ((h6["id"], h6["class"], h3["id"], h3["class"]) ==
+                ("zen4-grid6", "x86_64/zen4", "zen4-grid6-v3", "x86_64-v3/zen4")
+                and plan.UNIT_KEY in mf_rows(sets, "6") and plan.UNIT_KEY in mf_rows(sets, "6v3")
+                and r3 and all(".mfind-w32" in k for k in r3) and r6 and not any(".mfind-w32" in k for k in r6)
+                and any(".mfind-w16" in k for k in r6) and not r6 & r3
+                and ("JMH", "base.mfind-w32") in c3 and ("JMH", "base.mfind-w32") not in c6
+                and ("JMH", "base.mfind-w16") in c6 and ("JMH", "base.mfind-w16") not in c3
+                and not any(j in ("JMB", "JMH") for j, _a in cv3))
+    def mf_loads(d):
+        """[r5 contract-2] every set the writer writes LOADS with the tree's own loader (build/pcrec --measures)"""
+        mf_draft(d)
+        bad = []
+        for p in sorted(os.listdir(d)):
+            if re.fullmatch(r"draft.*\.tsv", p):
+                rc, why = load_set(os.path.join(d, p))
+                if rc:
+                    bad.append("%s: %s" % (p, why))
+        if bad:
+            raise InputError("LOAD " + "; ".join(bad))
+        return True
+    def refused(text, **kw):
+        def pred(d):
+            try:
+                mf_draft(d, **kw)
+            except InputError as e:
+                if text not in str(e):
+                    raise
+                return not any(p.startswith("draft") for p in os.listdir(d))
+            return False
+        return pred
+    def mf_mixed(d):
+        """[r5 DRAFTSETS-1 P4] the level derivation files every target at the floor's level (one set): the guard,
+        reading the needs link.py RECORDED, refuses the whole draft"""
+        globals()["LEVEL_OF"] = lambda tok: next(x.split("=", 1)[1] for x in link.CC if x.startswith("-march="))
+        try:
+            return refused("DRAFT-ISA-LEVEL MIXED ver 6")(d)
+        finally:
+            globals()["LEVEL_OF"] = None
+    def mf_edit(d):
+        """[r5 FIDELITY-2 P11] cell_text.tsv relabelled after the dry run (x86-64-v3 -> generic), not re-sealed"""
+        def ed(d):
+            for j in ("JMB", "JMH"):
+                p = os.path.join(d, j, "cell_text.tsv")
+                open(p, "w").write(open(p).read().replace("\tx86-64-v3\t", "\tgeneric\t"))
+        return refused("MANIFEST MISMATCH job JMB", edit=ed)(d)
+    def mf_twice(d):
+        """[r5 DRAFTSETS-2 P9] a second cell_text line for one key (another text, another target), sealed"""
+        def ed(d):
+            p = os.path.join(d, "JMH", "cell_text.tsv")
+            ls = open(p).read().splitlines(True)
+            ln = next(x for x in ls if x.startswith(K6 + "\t"))
+            open(p, "a").write(ln.replace("\th\t", "\th2\t").replace("\tx86-64-v3\t", "\tx86-64\t"))
+            _synth_seal(d, "JMH")
+        return refused("CELL-TEXT TWICE " + K6, edit=ed)(d)
+    def mf_dupcell(d):
+        """[r5 FIDELITY-5 P3b] a cell line repeated with another value (a second record of one cell)"""
+        p = os.path.join(d, "cells.JMH.tsv")
+        ln = next(x for x in open(p).read().splitlines() if ("/%s/" % K6) in x)
+        f = ln.split("\t")
+        open(p, "a").write("\t".join(f[:-1] + [str(int(f[-1]) * 3)]) + "\n")
+        _synth_cells_pin(d)            # a producer that wrote the line twice: the pin holds, CELL TWICE refuses
+        try:
+            compute(d)
+        except InputError as e:
+            return "CELL TWICE" in str(e)
+        return False
+    def mf_swap(d, repin=False):
+        """[r6 FIDELITY-3] two keys' cells exchanged after finalize, launch by launch (the verifier's plant: every
+        (job, arm, length, launch) stays unique): the record's cells pin refuses it; repin (the control): the same
+        swapped file pinned, as a producer that wrote it, is PRICED, so the pin is what refused"""
+        p = os.path.join(d, "cells.JMH.tsv")
+        ka, kb = ("kit.find_hit.%s.periodic.one.2.0" % f for f in ("mfind-swar", "mfind-w16"))
+        ls = open(p).read().split("\n")
+        at = {}
+        for i, ln in enumerate(ls):
+            c = ln.split("\t")
+            if len(c) == 8 and c[2] in (ka, kb):
+                at[(c[2], c[3], c[4])] = i
+        n = 0
+        for (k, length, l), i in sorted(at.items()):
+            if k == ka and (kb, length, l) in at:
+                j = at[(kb, length, l)]
+                ci, cj = ls[i].split("\t"), ls[j].split("\t")
+                ci[6:], cj[6:] = cj[6:], ci[6:]
+                ls[i], ls[j] = "\t".join(ci), "\t".join(cj)
+                n += 1
+        open(p, "w").write("\n".join(ls))
+        if repin:
+            _synth_cells_pin(d)
+        try:
+            out = compute(d)[0]
+        except InputError as e:
+            return not repin and n >= plan.L_LAUNCHES and "CELLS PIN cells.JMH.tsv" in str(e)
+        return repin and n >= plan.L_LAUNCHES and ka in out and kb in out
+    def mf_nopin(d):
+        """[r7 RULE-2, r8 ADQ-3] a LEGACY record (no `window` key, no cells pin: finalized before r6): priced, with a NOTE"""
+        import io, contextlib, record
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [r for r in rec["run"] if not r[0].startswith("cells_sha256_") and r[0] != "window"]
+        record.write(rp, rec)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            out = compute(d)[0]
+        return bool(out) and err.getvalue().count("NOTE cells.") >= 1 and "pins no cells sha-256" in err.getvalue()
+    def mf_pinless(d, what="cells_sha256_J2", want="CELLS PIN absent"):
+        """[r8 ADQ-3, S3224] a record WITH a window key and one pin line deleted: refused, never priced"""
+        import record
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [r for r in rec["run"] if r[0] != what]
+        record.write(rp, rec)
+        try:
+            compute(d)
+        except InputError as e:
+            return want in str(e)
+        return False
+    def mf_badpin(d):
+        """[r7 RULE-2] a record whose cells pin is present and WRONG: refused"""
+        import record
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [[r[0], "0" * 64] if r[0].startswith("cells_sha256_") else r for r in rec["run"]]
+        record.write(rp, rec)
+        try:
+            compute(d)
+        except InputError as e:
+            return "CELLS PIN" in str(e)
+        return False
+    def mf_refusals(plant, want):
+        """[r13 JF-4] the outcome's REFUSALS as data: after `plant`, REFUSED, its refusals exactly `want`
+        [(cause, keys)], every deciding (find_hit@6) row still carrying its per-launch x"""
+        def pred(d):
+            plant(d)
+            out, _dr, _ub, outcome, _w, _p = compute(d)
+            hit6 = [k for k in out if k.startswith("kit.find_hit.") and k.split(".")[2] in plan.FORMS6]
+            return (outcome[0] == "REFUSED" and outcome[3] == want(out) and hit6 and all("x" in out[k] for k in hit6)
+                    and all(out[k].get("gate") is not False or "gate FAIL" in out[k].get("gate_why", "") for k in out))
+        return pred
+    MF_CASES = (
+        ("[r13 JF-4] the scan row kit.find_byte.mfind-swar noisy alone: REFUSED by ONE refusal, "
+         "floor:byte.mfind-swar naming that key only; every find_hit@6 row keeps its x",
+         mf_refusals(_plant_scan_noise, lambda out: [("floor:byte.mfind-swar", ["kit.find_byte.mfind-swar"])])),
+        ("[r13 JF-4] every reject-0 mfind-w32 find_hit@6 row unpriced: REFUSED by floor:hit6.mfind-w32 naming those "
+         "deciding keys", mf_refusals(_plant_deciding_unpriced, lambda out: [("floor:hit6.mfind-w32", sorted(
+             k for k in out if k.startswith("kit.find_hit.mfind-w32.") and k.endswith(".0")))])),
+        ("[r13 JF-4, R1 condition A] every reject-0 mfind-w32 row NOISY (signs mixed): REFUSED by floor:hit6.mfind-w32",
+         mf_refusals(lambda d: _plant_deciding_unpriced(d, how="noisy"), lambda out: [("floor:hit6.mfind-w32", sorted(
+             k for k in out if k.startswith("kit.find_hit.mfind-w32.") and k.endswith(".0")))])),
+        ("[r13 JF-4] the control: the unplanted mfcard window is FULL, no refusals",
+         lambda d: compute(d)[3] == ("FULL", 0, [], [])),
+        ("[r7 RULE-2, r8 ADQ-3] a legacy record (no window key) with no cells pin (pre-r6): priced, with a NOTE", mf_nopin),
+        ("[r8 ADQ-3 S3224] an mfcard-window record with one cells pin line deleted: refused", mf_pinless),
+        ("[r8 ADQ-3 S3225] an mfcard-window record with one manifest pin line deleted: refused",
+         lambda d: mf_pinless(d, "manifest_sha256_JMB", "MANIFEST PIN absent")),
+        ("[r7 RULE-2] a record whose cells pin is present and different: refused", mf_badpin),
+        ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
+        ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),
+        ("[F5] write_draft on the mfcard window: ver 6's set holds exactly the FORMS6 rows and the unit, ver 3's the "
+         "unit and none of them, no ver-4 set", mf_write),
+        ("[F8] write_draft writes one ver-6 set per ISA level (generic + x86-64 together, x86-64-v3 apart), ids and "
+         "classes as ruled, bases by their own level", mf_levels),
+        ("[r5 contract-2] every draft set written loads with the tree's loader", mf_loads),
+        ("[F8, r5 P4] write_draft refuses a set mixing ISA levels (the derivation files v3 at the floor) and writes "
+         "no set", mf_mixed),
+        ("[r5 P5] a row labelled generic whose recorded needs are AVX2: refused",
+         refused("DRAFT-ISA-LEVEL MIXED", tgt={"mfind-w32": ("generic", "avx,avx2")})),
+        ("[r5 P11] a post-run cell_text edit: refused by the manifest", mf_edit),
+        ("[r5 DRAFTSETS-3 P6] a target the kit does not know: refused, no traceback",
+         refused("not one the kit's target facts know", tgt={"mfind-w32": ("x86-64-v4", "avx512f")})),
+        ("[r5 DRAFTSETS-2 P9] one key, two cell_text lines: refused", mf_twice),
+        ("[r5 FIDELITY-5] one cell, two lines: refused", mf_dupcell),
+        ("[r6 FIDELITY-3] two keys' cells swapped after finalize: refused by the record's cells pin", mf_swap),
+        ("[r6 FIDELITY-3] the control: the same swap pinned as the run's own: priced (the pin refused it)",
+         lambda d: mf_swap(d, repin=True)),
+        ("[r5 FIDELITY-2] a mfcard job without its manifest: refused",
+         refused("MANIFEST ABSENT job JMB", edit=lambda d: os.remove(os.path.join(d, "JMB", "manifest.tsv")))),
+    )
+    for name, pred in MF_CASES:
+        d = _synth(os.path.join(scratch, "est_selftest_mf"), window="mfcard")
+        try:
+            ok = bool(pred(d))
+        except (InputError, KeyError) as e:
+            ok = False
+            print("selftest\t%s\t(%s)" % (name, str(e)[:200]))
+        bad += not ok
+        print("selftest\t%s\t%s" % (name, "ok" if ok else "WRONG"))
     for name, got, want in _reading_cases(scratch):          # [r11-REV15-2..4]
         ok = got == want
         bad += not ok
@@ -1339,7 +1922,7 @@ def selftest(scratch):
         ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
         bad += not ok
         print("selftest\t[r11 gate] %s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
-    n = len(cases) + len(READING_CASES) + len(GATE_CASES)
+    n = len(cases) + len(MF_CASES) + len(READING_CASES) + len(GATE_CASES)
     print("== est SELFTEST %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", n, bad))
     return 1 if bad else 0
 

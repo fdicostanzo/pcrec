@@ -94,7 +94,35 @@ def gate(exe, arms):
     if not m or tuple(int(g) for g in m.groups()[:3]) != want or m.group(4) != m.group(3):
         raise SystemExit("run: THE ANSWER GATE's population on %s is %r; the plan's is %d arms, %d pools, %d "
                          "subjects, each timed once" % (exe, last, *want))
+    reject_check(exe, out, arms)
     return last
+
+
+def reject_check(exe, out, arms):
+    """[lane slotx] THE REALIZED REJECT RATE: every landed find arm's `reject ARM CAND REJECTED` line (the driver's
+    count of the subjects' hit bytes and of those its `_gate` did not return) against the percent its KEY names
+    (Arm.reject, held to the key's `reject` token by link.py's KEY-ARM check; None: 0): per pool subject
+    floor(E x R / 100) of its E hits, so REJECTED = CAND / E x floor(E x R / 100) over the pools. A generator or a
+    table entry that plants another rate than the one the row is keyed and recorded under REFUSES"""
+    got = {}
+    for ln in out.splitlines():
+        f = ln.split("\t")
+        if len(f) == 4 and f[0] == "reject":
+            got[f[1]] = (int(f[2]), int(f[3]))
+    for a in arms:
+        if a.kind not in ("find", "ctl") or a.landing is None:
+            continue
+        if a.name not in got:
+            raise SystemExit("run: REJECT-RATE: %s has no reject line on %s" % (a.name, exe))
+        cand, rej = got[a.name]
+        R = a.reject or 0
+        np_ = sum(plan.POOL_BYTES // x for x in a.lengths)
+        E = cand // np_ if np_ else 0
+        want = np_ * (E * R // 100)
+        if cand != np_ * E or E != plan.LEN // a.gap or rej != want:
+            raise SystemExit("run: REJECT-RATE MISMATCH %s on %s: %d hits (%d per subject over %d subjects), %d rejected; "
+                             "its key names reject %d%%: %d per subject, %d" % (a.name, exe, cand, E, np_, rej, R,
+                                                                              E * R // 100, want))
 
 
 CHECK_LINE = re.compile(r"== s2 ROUND CHECK ok: (\d+) points, (\d+) calls, 0 misses$")

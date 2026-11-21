@@ -39,8 +39,9 @@ the build (§R.6.2 item 1, the `rev2corp` precedent); the forms are the build's.
   `b3_census.tsv` with literal population floors per form and `mark_prio`
   value; §4 gates G1-G4 per artifact (§R.6.2, D164 add. 4) with the NAMED
   exemption list and its own floor; §5 the declines under reference builds
-  (`-DPCREC_MARK_PRIO_MAX_STATES=2`: state-dependent; `-DPCREC_ANCHORED_MAX_STATES=3`:
-  form overflow), each answering.
+  (`-DPCREC_MARK_PRIO_MAX_STATES=2`: state-dependent; `-DPCREC_ANCHORED_MAX_STATES=3
+  -DPCREC_DEFAULT_WINDOW_SEARCH_WIDTH=2`: form overflow; the width -D keeps the
+  build's `_Static_assert` true), each answering.
 - **gen_b3_census.py** / **b3_census.tsv** — the 266-row probe census
   (`docs/design/endmark/b3rev/results/census.json`) as the form and
   `mark_prio` each artifact must take; §3 reads it.

@@ -51,6 +51,19 @@ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
  * size ladder's re-emission starts clean), its CPU target stated at once
  * (`mf_art_target`, before any define or emit). */
 mf_art *pcrec_memfn_art(Ctx *cx);
+/* Storage for one ask's counted lists (MF_SITE_ABI 30, memfn.h `mf_rows`),
+ * from `cx`'s arena: the minimum `mf_rows_need` names for `s`, or, at
+ * PCREC_ROWS_PROOF_CEILING, the whole proof range (the cover ask: every kit
+ * over-read then lands where the proof comparison reads it, r45_reply.md
+ * §1). Only the `part` the ask reads is allocated (mf_ask reads the proof,
+ * mf_wdecide the plan lists; review r27 SEAM-2); the other's cap is 0. Each
+ * ask takes its own: two asks given one storage overwrite each other. */
+typedef enum {
+    PCREC_ROWS_PROOF,                   /* mf_ask: the proof rows, at the minimum */
+    PCREC_ROWS_PROOF_CEILING,           /* mf_ask: the whole proof range          */
+    PCREC_ROWS_PLAN,                    /* mf_wdecide: plan, plan_term, plan_test */
+} PcrecRowsPart;
+mf_rows *pcrec_memfn_rows(Ctx *cx, const mf_site *s, PcrecRowsPart part);
 
 /* [XARCH-DEV] U3 the compile's one CPU target as `pcrec_memfn_target_derive`
  * put it on the Ctx (src/gen/memfn_targets.c): the kit's row, and its
@@ -169,21 +182,46 @@ mf_walt *pcrec_memfn_walts(Ctx *cx, int n);
  * the caller fills in order (the walked offsets in walk-index order, §1.1's
  * obligation); returns them. */
 mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n);
+/* pcrec's own bounds on every window statement OTHER than the cover (the
+ * pre-check's run, the prefilter's walked offsets and run, the FIND seek):
+ * at most PCREC_WSTMT_POS positions per span, every stated offset below
+ * PCREC_WSTMT_REACH. They are the kit's pre-R-45 bounds (32 positions,
+ * reach 64), kept by pcrec when the kit's own bounds rose to 4095/4096 for
+ * the cover (R-45, the manager's other-sites-at-32 ruling, 2026-11-16).
+ * Construction keeps every such statement inside them, and each writer
+ * asserts the construction bound it states from against them at build time
+ * (`req_pres_spans`, `pf_window_of` in emit_dfa.c); the run-time check
+ * (`window_bounds_check`) reads only the kit's bounds and takes no site
+ * kind. Raising one of these is a kit-visible change of what pcrec states. */
+#define PCREC_WSTMT_POS   32
+#define PCREC_WSTMT_REACH 64
+_Static_assert(PCREC_WSTMT_POS <= MF_WSPAN_POS && PCREC_WSTMT_REACH <= MF_WREACH,
+               "pcrec's non-cover window statement bounds lie inside the kit's");
+/* The kit's BINDING bounds for a non-cover span (review r32 F3): a presence
+ * run's span ranks and terms every position, so its length is held to the
+ * ranking (MF_RANK_MAX) and the term list (MF_MAX_TERM); 4095 above cannot
+ * bind. A kit that lowers either fails pcrec's build here, never a compile. */
+_Static_assert(PCREC_WSTMT_POS <= MF_RANK_MAX && PCREC_WSTMT_POS <= MF_MAX_TERM,
+               "pcrec's non-cover window statement bound exceeds the kit's ranking "
+               "(MF_RANK_MAX) or term (MF_MAX_TERM) bound");
 /* Fills span `w`: `len` positions from `start`, verify `v`, its core every
  * position (narrow it with pcrec_memfn_wspan_core); every set empty until a
- * position setter below fills it. */
-void pcrec_memfn_wspan(mf_wspan *w, int start, int len, mf_verify v);
+ * position setter below fills it. The span's per-position lists (`len`
+ * sets and table offers) are allocated here from `cx`'s arena: the host
+ * owns them (MF_SITE_ABI 30). */
+void pcrec_memfn_wspan(Ctx *cx, mf_wspan *w, int start, int len, mf_verify v);
 /* Narrows span `w`'s core to positions [lo, lo + len) (len 0: the empty
  * core, the absence-satisfies case). */
 void pcrec_memfn_wspan_core(mf_wspan *w, int lo, int len);
 /* Position `j` of span `w`: the bytes of a 256-entry table (nonzero = in),
  * of a 32-byte bitset, every byte, or the cube {x : (x & mask) == byte}; a
  * nonzero `offer` is pcrec's table for that set, named by the site's
- * `table_name` hook. */
-void pcrec_memfn_wpos_table(mf_wspan *w, int j, const uint8_t set[256], uint32_t offer);
-void pcrec_memfn_wpos_bits(mf_wspan *w, int j, const uint8_t bits[32]);
-void pcrec_memfn_wpos_any(mf_wspan *w, int j);
-void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask);
+ * `table_name` hook. A `j` outside the span's `len` fails the compile as
+ * pcrec's internal error (the host storage holds exactly `len`). */
+void pcrec_memfn_wpos_table(Ctx *cx, mf_wspan *w, int j, const uint8_t set[256], uint32_t offer);
+void pcrec_memfn_wpos_bits(Ctx *cx, mf_wspan *w, int j, const uint8_t bits[32]);
+void pcrec_memfn_wpos_any(Ctx *cx, mf_wspan *w, int j);
+void pcrec_memfn_wpos_cube(Ctx *cx, mf_wspan *w, int j, unsigned byte, unsigned mask);
 /* States alternatives `alts[0..n)` and floor `fl` on site `s`, checking
  * pcrec's own bounds against the kit's shape bounds (MF_WMAX_ALT,
  * MF_WMAX_SPAN, MF_WSPAN_POS, [-MF_MAX_BACK, MF_WREACH)) loudly: a statement

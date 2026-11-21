@@ -1,0 +1,5 @@
+report=docs/dev/lanes/scanrow_report.md
+sections: Summary; Fixes by id; Replay; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

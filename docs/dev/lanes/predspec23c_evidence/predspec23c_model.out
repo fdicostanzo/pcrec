@@ -1,0 +1,167 @@
+ORDER: forward
+  CONTROL KH (1,110) when body, c = (h = 0: <5): end-major (predspec23b) vs branch-major reported row differ 400 first '3;5' (review r33 F2: 125 for (h: <5), 400 for (h = 0: <5))
+  CONTROL KH (1,110) when body, c = (h: <5): end-major (predspec23b) vs branch-major reported row differ 125 first '3;0;5' (review r33 F2: 125 for (h: <5), 400 for (h = 0: <5))
+  CONTROL KH (1,110) c = (h = 0: <5): predspec23b's end-major body vs the filter form x & when(c, p) reported row differ 0 first None (expected 0: the old engine searched the body as the filter form)
+  CONTROL KH (1,110) c = (h: <5): predspec23b's end-major body vs the filter form x & when(c, p) reported row differ 0 first None (expected 0: the old engine searched the body as the filter form)
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `0`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5`@0
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+  WHEN c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `0`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5`@0
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+  WHEN c = (h = 0: <5) body (x & c & p) | (x & !q) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `0`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5`: branch-order WHOLE FAILS | SEARCHED FAILS ; before (end-major) WHOLE FAILS | SEARCHED FAILS ; filter form x & when WHOLE FAILS | SEARCHED FAILS
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+  WHEN c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `0`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `0;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `0;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `0;9`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `3;0;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;0`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;0;5`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `3;5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `3;5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `3;5`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5;1`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5;1;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;1`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0   MOVED ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;1;9`@0
+  WHEN c = (h: <5) body (x & c & p) | (x & !q) on `5;9`: branch-order WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; before (end-major) WHOLE HOLDS | SEARCHED HOLDS `5;9`@0 ; filter form x & when WHOLE HOLDS | SEARCHED HOLDS `5;9`@0
+  WHEN SEARCHED c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c): holds 1045 of 1,110; filter form holds 1045
+  WHEN WHOLE c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c): holds 955 of 1,110; filter form holds 955
+  WHEN SEARCHED c = (h = 0: <5) body (x & c & p) | (x & !q): holds 1045 of 1,110; filter form holds 1045
+  WHEN WHOLE c = (h = 0: <5) body (x & c & p) | (x & !q): holds 955 of 1,110; filter form holds 955
+  WHEN SEARCHED c = (h: <5) NOT-c body (x & c & p) | (x & NOT c): holds 1000 of 1,110; filter form holds 1000
+  WHEN WHOLE c = (h: <5) NOT-c body (x & c & p) | (x & NOT c): holds 950 of 1,110; filter form holds 950
+  WHEN SEARCHED c = (h: <5) body (x & c & p) | (x & !q): holds 1110 of 1,110; filter form holds 1110
+  WHEN WHOLE c = (h: <5) body (x & c & p) | (x & !q): holds 960 of 1,110; filter form holds 960
+  WHEN SEARCHED c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c) vs filter form x & when: reported row differ 400 of 1,110 first '3;5' (holds-or-not differ 0)
+  WHEN SEARCHED c = (h = 0: <5) body (x & c & p) | (x & !q) vs filter form x & when: reported row differ 400 of 1,110 first '3;5' (holds-or-not differ 0)
+  WHEN SEARCHED c = (h: <5) NOT-c body (x & c & p) | (x & NOT c) vs filter form x & when: reported row differ 125 of 1,110 first '3;0;5' (holds-or-not differ 0)
+  WHEN SEARCHED c = (h: <5) body (x & c & p) | (x & !q) vs filter form x & when: reported row differ 125 of 1,110 first '3;0;5' (holds-or-not differ 0)
+  WHEN SEARCHED c = (h = 0: <5) NOT-c body (x & c & p) | (x & NOT c): reported row MOVED by branch-order (end-major -> branch-major) on 400 of 1,110 first '3;5'
+  WHEN SEARCHED c = (h = 0: <5) body (x & c & p) | (x & !q): reported row MOVED by branch-order (end-major -> branch-major) on 400 of 1,110 first '3;5'
+  WHEN SEARCHED c = (h: <5) NOT-c body (x & c & p) | (x & NOT c): reported row MOVED by branch-order (end-major -> branch-major) on 125 of 1,110 first '3;0;5'
+  WHEN SEARCHED c = (h: <5) body (x & c & p) | (x & !q): reported row MOVED by branch-order (end-major -> branch-major) on 125 of 1,110 first '3;0;5'
+  WHEN-T2 SEARCHED T2 (11,110) c = late, p = (m: <45): body holds 11110, case-when (filter form) holds 11110 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+  WHEN-T2 WHOLE T2 (11,110) c = late, p = (m: <45): body holds 6050, case-when (filter form) holds 6050 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+  WHEN-T2 SEARCHED T2PAIRS (600) c = late, p = (m: <45): body holds 600, case-when (filter form) holds 600 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+  WHEN-T2 WHOLE T2PAIRS (600) c = late, p = (m: <45): body holds 18, case-when (filter form) holds 18 (searchrow.out: 11,110 / 600 SEARCHED, 6,050 / 18 WHOLE)
+  WHEN-T2 SEARCHED T2 (11,110) body (branch-order) vs case-when: reported row differ 0 first None
+  WHEN-T2 SEARCHED T2PAIRS (600) body (branch-order) vs case-when: reported row differ 0 first None
+  WHEN-T2 on `10:50`: body WHOLE FAILS | SEARCHED HOLDS `10`@0 ; case-when WHOLE FAILS | SEARCHED HOLDS `10`@0
+  WHEN-T2 on `9:15`: body WHOLE HOLDS | SEARCHED HOLDS `9:15`@0 ; case-when WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  WHEN-T2 on `9:45`: body WHOLE FAILS | SEARCHED HOLDS `9`@0 ; case-when WHOLE FAILS | SEARCHED HOLDS `9`@0
+  PASS-AND NOT (h: <5) on ``: Kleene AND over passes WHOLE FAILS | SEARCHED FAILS ; alternative (a pass lacking h -> UNKNOWN) WHOLE FAILS | SEARCHED FAILS
+  PASS-AND NOT (h: <5) on `3;7;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `3;7;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE HOLDS | SEARCHED HOLDS `3;7;`@0
+  PASS-AND NOT (h: <5) on `7;3;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `7;3;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE HOLDS | SEARCHED HOLDS `7;3;`@0
+  PASS-AND NOT (h: <5) on `7;;`: Kleene AND over passes WHOLE HOLDS | SEARCHED HOLDS `7;;`@0 ; alternative (a pass lacking h -> UNKNOWN) WHOLE FAILS | SEARCHED HOLDS `7;`@0
+  PASS-AND SEARCHED REP (364) NOT (h: <5) Kleene vs alternative differ 0 first None
+  PASS-AND WHOLE REP (364) NOT (h: <5) Kleene vs alternative differ 18 first '7;;'
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `a7`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `a7`@0
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `b3`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE FAILS | SEARCHED FAILS
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `b7`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `b7`@0
+  CONDITION-OR /a(?<h>\d)|b(?<k>\d)|c/ & NOT ((h: <5) | (k: <5)) on `c`: Kleene OR WHOLE FAILS | SEARCHED FAILS ; two-valued OR (absent fails) WHOLE HOLDS | SEARCHED HOLDS `c`@0
+  CONDITION-OR SEARCHED (156 texts over {a,b,c,3,7} to length 3) Kleene vs two-valued differ 89 first 'c'
+  CONDITION-OR WHOLE (156 texts over {a,b,c,3,7} to length 3) Kleene vs two-valued differ 3 first 'c'
+  L83 SEARCHED T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 371 first '9'
+  L83 SEARCHED T2 (11,110) plain: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 0 first None
+  L83 WHOLE T2 (11,110) NOT: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 101 first '9'
+  L83 WHOLE T2 (11,110) plain: joint ((h, m): (<9, <30)) vs record (h: <9, m: <30) differ 0 first None
+  L83 on `10`: t2 & NOT joint WHOLE FAILS | SEARCHED FAILS ; t2 & NOT record WHOLE HOLDS | SEARCHED HOLDS `10`@0
+  L83 on `10:15`: t2 & NOT joint WHOLE HOLDS | SEARCHED HOLDS `10:15`@0 ; t2 & NOT record WHOLE HOLDS | SEARCHED HOLDS `10:15`@0
+  L83 on `8`: t2 & NOT joint WHOLE FAILS | SEARCHED FAILS ; t2 & NOT record WHOLE FAILS | SEARCHED FAILS
+  L83 on `9`: t2 & NOT joint WHOLE FAILS | SEARCHED FAILS ; t2 & NOT record WHOLE HOLDS | SEARCHED HOLDS `9`@0
+  CLOSING (1,111 lists) occurs.none(NOT ((h, m): R)) [joint] WHOLE holds 85 (I1 differ 70 first '3,'; I2a differ 0; I2b differ 45 first '12,') | SEARCHED holds 1111
+  CLOSING (1,111 lists) occurs.none(NOT (h: <10, m: <30)) [record] WHOLE holds 40 (I1 differ 25 first '3,'; I2a differ 45 first '12,'; I2b differ 0) | SEARCHED holds 1111
+  DEFAULT-UNUSED SEARCHED REP (364) (h: <5) vs (h = "x": <5) [no NOT]: differ 0 first None
+  DEFAULT-UNUSED SEARCHED SV (341) (h: <5) vs (h = 9: <5) [no NOT]: differ 0 first None
+  DEFAULT-UNUSED SEARCHED REP (364) NOT (h: <5) vs NOT (h = "x": <5): differ 232 first ''
+  DEFAULT-UNUSED SEARCHED SV (341) NOT (h: <5) vs NOT (h = 9: <5): differ 164 first 'x'
+  DEFAULT-UNUSED SEARCHED REP (364) occurs.none(NOT (h = "x": <5)) vs occurs.none((h = "x": !<5)): differ 0 first None
+  DEFAULT-UNUSED SEARCHED REP (364) some((h: <5)) vs some((h = "x": <5)) [group, no NOT]: differ 0 first None
+  DEFAULT-UNUSED WHOLE REP (364) (h: <5) vs (h = "x": <5) [no NOT]: differ 0 first None
+  DEFAULT-UNUSED WHOLE SV (341) (h: <5) vs (h = 9: <5) [no NOT]: differ 0 first None
+  DEFAULT-UNUSED WHOLE REP (364) NOT (h: <5) vs NOT (h = "x": <5): differ 18 first ''
+  DEFAULT-UNUSED WHOLE SV (341) NOT (h: <5) vs NOT (h = 9: <5): differ 1 first 'x'
+  DEFAULT-UNUSED WHOLE REP (364) occurs.none(NOT (h = "x": <5)) vs occurs.none((h = "x": !<5)): differ 0 first None
+  DEFAULT-UNUSED WHOLE REP (364) some((h: <5)) vs some((h = "x": <5)) [group, no NOT]: differ 0 first None
+  EMPTY-ERROR SEARCHED NL (121) NOT (n: <0) [looped n] holds 64 of 121 first '3,'
+  EMPTY-ERROR SEARCHED NL (121) some((n: any text)) holds 64 of 121 first '3,'
+  EMPTY-ERROR SEARCHED REP (364) occurs.none((h = "x": !<10)) [sentinel, S covers every digit] holds 364 of 364 first ''
+  EMPTY-ERROR SEARCHED SV (341) (h: !<0) holds 110 of 341 first '3x'
+  EMPTY-ERROR SEARCHED SV (341) (h: !<10) holds 0 of 341 first None
+  EMPTY-ERROR SEARCHED SV (341) NOT (h: <0) holds 110 of 341 first '3x'
+  EMPTY-ERROR SEARCHED SV (341) NOT (h: <10) holds 0 of 341 first None
+  EMPTY-ERROR WHOLE NL (121) NOT (n: <0) [looped n] holds 6 of 121 first '3,'
+  EMPTY-ERROR WHOLE NL (121) some((n: any text)) holds 6 of 121 first '3,'
+  EMPTY-ERROR WHOLE REP (364) occurs.none((h = "x": !<10)) [sentinel, S covers every digit] holds 7 of 364 first ''
+  EMPTY-ERROR WHOLE SV (341) (h: !<0) holds 2 of 341 first '3x'
+  EMPTY-ERROR WHOLE SV (341) (h: !<10) holds 0 of 341 first None
+  EMPTY-ERROR WHOLE SV (341) NOT (h: <0) holds 2 of 341 first '3x'
+  EMPTY-ERROR WHOLE SV (341) NOT (h: <10) holds 0 of 341 first None
+  EMPTY-ERROR SEARCHED [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+  EMPTY-ERROR SEARCHED [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+  EMPTY-ERROR SEARCHED [NOT (n: <0) [looped n]] vs [some((n: any text))] differ 0 first None
+  EMPTY-ERROR WHOLE [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+  EMPTY-ERROR WHOLE [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+  EMPTY-ERROR WHOLE [NOT (n: <0) [looped n]] vs [some((n: any text))] differ 0 first None
+  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on ``: WHOLE HOLDS | SEARCHED HOLDS ``@0
+  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on `3;`: WHOLE HOLDS | SEARCHED HOLDS `3;`@0
+  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on `7;`: WHOLE HOLDS | SEARCHED HOLDS `7;`@0
+  EMPTY-ERROR sentinel occurs.none((h = "x": !<10)) on `;`: WHOLE FAILS | SEARCHED HOLDS ``@0
+  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ holds 220; vs the program without the test differ 0 first None
+  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ & (o = "1": <5) holds 220; vs the program without the test differ 0 first None
+  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ & (o: <5) holds 0; vs the program without the test differ 220 first 'y'
+  LABEL-NO-MATCH SEARCHED (341 texts) /(?<o>\d)x|y/ & /y/ & NOT (o = "9": <5) holds 220; vs the program without the test differ 0 first None
+  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ holds 1; vs the program without the test differ 0 first None
+  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ & (o = "1": <5) holds 1; vs the program without the test differ 0 first None
+  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ & (o: <5) holds 0; vs the program without the test differ 1 first 'y'
+  LABEL-NO-MATCH WHOLE (341 texts) /(?<o>\d)x|y/ & /y/ & NOT (o = "9": <5) holds 1; vs the program without the test differ 0 first None
+  NESTED X & (x: !q) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+  NESTED X & (x: !q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  NESTED X & (x: !q) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9:3`@0
+  NESTED X & (x: q) on `9`: WHOLE FAILS | SEARCHED FAILS
+  NESTED X & (x: q) on `9:15`: WHOLE FAILS | SEARCHED FAILS
+  NESTED X & (x: q) on `9:30`: WHOLE HOLDS | SEARCHED HOLDS `9:30`@0
+  NESTED X & (x: t2 & NOT late) on `9`: WHOLE FAILS | SEARCHED FAILS
+  NESTED X & (x: t2 & NOT late) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  NESTED X & (x: t2 & NOT late) on `9:30`: WHOLE FAILS | SEARCHED FAILS
+  NESTED X & NOT (x: q) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+  NESTED X & NOT (x: q) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  NESTED X & NOT (x: q) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9:3`@0
+  NESTED t2 & !q (difference, flat) on `9`: WHOLE HOLDS | SEARCHED HOLDS `9`@0
+  NESTED t2 & !q (difference, flat) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  NESTED t2 & !q (difference, flat) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+  NESTED t2 & NOT late (flat) on `9`: WHOLE FAILS | SEARCHED FAILS
+  NESTED t2 & NOT late (flat) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
+  NESTED t2 & NOT late (flat) on `9:30`: WHOLE FAILS | SEARCHED FAILS
+  FIND-ALL /(?<n>\d+)/ on `1234`: [`1234`@0]
+  FIND-ALL /(?<n>\d+)/ on `123456`: [`123456`@0]
+  FIND-ALL /(?<n>\d+)/ & (n: <100) on `1234`: [`12`@0, `34`@2]
+  FIND-ALL /(?<n>\d+)/ & (n: <100) on `123456`: [`12`@0, `34`@2, `56`@4]
+  HITS string-set reading of the argument (set's alternation longest-first) on `1234`: ['12', '34']
+  HITS string-set reading of the argument (set's alternation shortest-first) on `1234`: ['1', '2', '3', '4']
+  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on ``: by the definition (empty rows included) False ; non-empty rows only True
+  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on `1,`: by the definition (empty rows included) False ; non-empty rows only True
+  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on `7,`: by the definition (empty rows included) False ; non-empty rows only False
+  NULLABLE-B B = /(?:(?<n>\d),)*/ & (n = 9: >=5), text.none(B) on `a`: by the definition (empty rows included) False ; non-empty rows only True
+  SWEEP L56/L65 /(?<n>\d)*x/ & NOT (n: <5) on `x`: WHOLE FAILS | SEARCHED FAILS
+  SWEEP L56/L65 /(?<n>\d)?x/ & NOT (n: <5) on `x`: WHOLE FAILS | SEARCHED FAILS
+  SWEEP L56/L65 /x|(?<n>\d)+/ & NOT (n: <5) on `x`: WHOLE FAILS | SEARCHED FAILS
+  SWEEP L94 SEARCHED NOT (h: <5, k = 3: between(3, 7)): /x?/ vs /(?:x|)/ differ 0 of 121 first None
+  SWEEP L94 WHOLE NOT (h: <5, k = 3: between(3, 7)): /x?/ vs /(?:x|)/ differ 0 of 121 first None
+  SWEEP L55 WHOLE (323 spans over {a,b,x,y} to length 4 with no hit) occurrences(r) & NOT (g: "x") vs min = 1: differ 0 first None (the first holds on 0)
+  SWEEP L30 SEARCHED SV (341) [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+  SWEEP L30 SEARCHED SV (341) [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+  SWEEP L30 WHOLE SV (341) [NOT (h: <0)] vs [(h: !<0)] differ 0 first None
+  SWEEP L30 WHOLE SV (341) [NOT (h: <10)] vs [(h: !<10)] differ 0 first None
+END

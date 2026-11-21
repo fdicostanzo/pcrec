@@ -24,8 +24,9 @@ below fires, not before.
 | message the kit, the bench or a running lane; relay a ruling; wait on a peer | `peers.md` |
 | brief a lane | §3 below + `docs/dev/lanes/BRIEF_TEMPLATE.md` |
 | run a test suite or the full battery | the `pcrec-test` skill |
-| send a design to build, or land major code | the `pcrec-critic` skill (§5) |
-| plan a timing run, a bench window, anything in 20:00-01:00 | memories pcrec-box-evening-hold, pcrec-box-shared-with-frank, pcrec-bench-status; docs/dev/lanes/RUNS.md "TIMING WINDOWS" |
+| plan a new feature, or charter its design | `docs/dev/guide/architecture.md` FIRST: the four goals, the judgement section, and part 3 (which register rows and noted deviations the feature touches); above the size trigger, an ARCHITECTURE NOTE comes BEFORE the design: launch the `pcrec-architect` skill as a lane (note at `docs/design/<topic>_arch.md`), then a `pcrec-critic` round in mode `arch`; the design brief cites the accepted note ([ARCH-STEP], Frank 2026-11-17) |
+| send a design to build, or land major code | the `pcrec-critic` skill (§5); a BUILD-GO request to the owner LISTS the design's small answer-identical refactors (they need no go of their own: D191 add. 2, Frank 2026-11-18) and names its fail-fast census (D191 add. 1) |
+| plan a timing run, a bench window, anything in 20:00-01:00 | memories pcrec-box-evening-hold, pcrec-box-shared-with-frank, pcrec-bench-status; docs/dev/lanes/RUNS.md "TIMING WINDOWS"; run `scripts/loadshame` about 30 min before the window and tell Frank by name what is loading the box (Frank 2026-11-16); `scripts/loadshame --present` lists the watched trouble makers (Steam, VS Code) by PRESENCE, however idle, window or not: remind him to close each one listed, 30 min before and at the start (Frank 2026-11-17; memory pcrec-timing-troublemakers) |
 | end or pause the session; Frank types /close or /idle | §6; the `close` / `idle` skills |
 | anything in root CLAUDE.md's situation index | that row |
 
@@ -35,6 +36,50 @@ Always on, whatever the situation:
 - **Ask for replies unconditionally** (Frank 2026-11-07): a message that
   needs anything back ends "REPLY: one line, either way"; never "reply only
   if" (peers.md §1).
+- **Questions to the owner carry a word SLUG** (Frank 2026-11-15: "Use slugs for your questions so I can refer
+  exactly"): bold, plain words (`**route-or-stretch**`), reused unchanged in chat and owner.md; he answers
+  "slug: ...". Say which reading of a bare "agree" you took; a consequence YOU derive from his ruling is recorded
+  as yours and checked by the next revision (two derived consequences were wrong that evening).
+- **A rule that decides ANSWERS is asked, never told** (2026-11-16/17, three times in one night: the source-row
+  wording asked on one example of my own framing; the whole-statement default lean; the branch-order "ruling"): if
+  it is not word for word in the owner's record it goes to him as a question, with the CURRENT definition, an
+  example in EVERY mode the language has, and a several-match subject. Before presenting any finding as a new
+  decision, grep the design of record for the plan that already covers it (cover_cap.md 11.3 held the owner's
+  inline-head-then-loops plan while I asked him to choose around its absence).
+- **The ride-along register is kept at every landing** (Frank 2026-11-17, [ARCH-STEP]): a landing that opens, rides or closes a row of `docs/dev/guide/architecture.md` part 3 updates the row in the same change; a small change made AGAINST a goal lands only with its "noted deviation" row (his judgement point: note it, correct it at the next larger change; do not remodel with every change).
+- **A remark is recorded as a RULING only when it answers a question asked as one, or he says so** (2026-11-17,
+  session 138, corrected by Frank twice: "It's not so much a ruling as an observation"; "I thought we said" was a
+  recollection): record his words as OBSERVATION, LEAN, DISCUSSION or RULING, and launch nothing on a
+  recollection; a discussion is closed by a question asked as a ruling.
+- **Check, then act, in SEPARATE commands** (2026-11-17, three times): read CI on the previous tip in one command
+  and push in the next (a chained push cancelled two CI runs); run `make -s test-plan-lint` after every lane
+  merge and READ it before committing anything else (a commit chained after a failed check left two wiring files
+  uncommitted for four hours while I told Frank they were in force); `git status --short` at every landing.
+- **Hand-worked examples are marked as such, and a number-comparing example is run under the draft's own rule
+  sentence, QUOTED** (2026-11-17: I showed Frank `10:00` against `(9, 30)`, false under the draft's numeral rule,
+  and paraphrased that rule wrongly in a critic brief).
+- **A REASON given to the owner is run too, and a manager reading goes to a lane to be tested** (2026-11-18, session 139: I told Frank
+  "every spelling of anything agrees as a whole value" (false: `/.*/` stops at a newline) and that the export rule
+  "settled" the caller's read-out (undefined); three of 24 marked readings failed their runs): a factual sentence
+  about what a pattern matches is run before it is said or is marked hand-worked, and every "MANAGER'S READING" in
+  the record is listed for the next revision lane to test and report as supported or not.
+- **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
+  run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
+- **A status claim about a set or a row is READ from the journal and `git log`, never from a plan status line**
+  (2026-11-18, session 140, three stale rows in one day: I told Frank a GO'd set had "no work since" when it had
+  landed four days earlier; [REQ-LOOKAROUND] read not-started with a nine-day-old build go; [LANDWALK] not-started
+  with its stage 1 built). Before saying "not started" or "waiting": `grep -n TAG docs/dev/dev_journal.md | tail`
+  and `git log --oneline --grep=TAG main | head`.
+- **Lane-launch mechanics that each cost a round trip on 2026-11-18**: a deliver file's `files:` paths are separated
+  by `;` (lanecheck splits on it); `scripts/lanewatch --follow` takes ONE name; `scripts/cloudrun` gets an explicit
+  sha in `--ref` and the sha on its DONE line is read (a `--ref HEAD` from a worktree subshell pushed main's tip);
+  the manager ASSIGNS the review number in every critic coordinator's launch prompt (two coordinators negotiated
+  theirs and a filed review had to be renamed); a subagent cannot Write outside a worktree, so a read-only critic
+  writes its findings file with a Bash heredoc and its brief says so.
+- **Predicate-language work belongs to the predicate manager session** (Frank 2026-11-18; the
+  `pcrec-predicate-manager` skill; managed as the kit is): once it is up, main writes none of the draft, COND-FAMILY.md
+  or predicates_future.md; a predicate remark Frank makes to main goes VERBATIM into `docs/dev/pred/from_main.md`
+  (an `M-n`, single-file `[pred-in]` commit); main assigns review numbers, merges its branch and keeps the plan row.
 - **Purpose over wording** (Frank 2026-11-07: "too literal with exact
   wording compliance"): when a rule's wording and its evident purpose
   diverge, follow the purpose and say so in one line.

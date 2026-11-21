@@ -2174,6 +2174,32 @@ case15
 case16
 case17
 
+# [COVER-CAP] stage 2, review r18 CHECKS-2: `--window-search-width=N` refuses an
+# out-of-range value (1 .. PCREC_ANCHORED_MAX_STATES - 1) with a nonzero exit,
+# no artifact and the option's own refusal text, and accepts the edges; its
+# EFFECT on the route is the kitproof `N` verdict row. The ceiling is read from
+# `--list-limits` (review r32 F19), never a literal: the edges are ceiling - 1
+# (accepted) and the ceiling (refused).
+wceil="$(pcrec_run "$PCREC" --list-limits 2>/dev/null | awk -F'\t' '$1 == "PCREC_ANCHORED_MAX_STATES" { print $2 }')"
+case "$wceil" in
+    ''|*[!0-9]*) fail "window-search-width: ceiling from --list-limits" "PCREC_ANCHORED_MAX_STATES read '$wceil', not a decimal"; wceil=4096 ;;
+esac
+for wv in 0 -1 "$wceil" x ""; do
+    wout="$WORKDIR/width_refuse.c"; rm -f "$wout"
+    pcrec_run "$PCREC" -p rx --window-search-width="$wv" -o "$wout" --pattern 'abc' >/dev/null 2>"$WORKDIR/width_refuse.err"
+    wrc=$?
+    if [ "$wrc" -ne 0 ] && [ ! -s "$wout" ] && grep -q -- '--window-search-width wants an integer' "$WORKDIR/width_refuse.err"; then
+        pass "window-search-width=$wv refused (rc $wrc)"
+    else fail "window-search-width=$wv refused" "rc $wrc, artifact written: $([ -s "$wout" ] && echo yes || echo no), stderr: $(head -1 "$WORKDIR/width_refuse.err")"; fi
+done
+for wv in 1 $((wceil / 2)) $((wceil - 1)); do
+    wout="$WORKDIR/width_accept.c"; rm -f "$wout"
+    pcrec_run "$PCREC" -p rx --window-search-width="$wv" -o "$wout" --pattern 'abc' >/dev/null 2>&1
+    wrc=$?
+    if [ "$wrc" -eq 0 ] && [ -s "$wout" ]; then pass "window-search-width=$wv accepted"
+    else fail "window-search-width=$wv accepted" "rc $wrc"; fi
+done
+
 echo
 echo "== Summary =="
 echo "cases passed: $total_pass"
@@ -2394,6 +2420,9 @@ if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "unknown option 'no-fromfil
 else
     fail "config --memfn= did not win silently (rc $wrc)" "$werr"
 fi
+
+# [MEMFN] R-45 (review r36 G10): the span-head lever's strict value-parse rows live in
+# tests/compound/run_shell_checks.sh (4) (the lever fence allows its spelling only there).
 
 # D172 S3 (job 600): `(?i)cat` is a fixed-width window, a `cover` artifact by
 # default, which carries no reqrun helper at all; every compile in this block

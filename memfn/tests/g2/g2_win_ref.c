@@ -151,7 +151,7 @@ typedef struct {
     unsigned long long cost;
     int npick, pick[2];
     int tie_mass, tie_model;
-    int inrun_set, inrun_set_won, inrun_meet;
+    int inrun_set, inrun_set_won, inrun_meet, inrun_filt;
 } arow;
 
 /* THE IN-RUN STOP (span_runs_sheet.md §5 K38-2a's kit ruling [r1.3 K7], its
@@ -267,8 +267,8 @@ static void table_a(const g2w_alt *a, const uint32_t *rate, int left, arow *r)
             return;
         }
     } else {
-        int bk = 1 << 30;
-        unsigned long long bm = 0;
+        int bk = 1 << 30, bk2 = 1 << 30;     /* bk2: the same scan with the in-run filter off */
+        unsigned long long bm = 0, bm2 = 0;
         /* R's one stop candidate (the in-run stop, above), where R states YES */
         int R = run_of(a), rs = G2W_REACH;
         int yr = R >= 0 && a->span[R].verify == G2W_YES;
@@ -283,6 +283,8 @@ static void table_a(const g2w_alt *a, const uint32_t *rate, int left, arow *r)
             if (!meet(a, off, 0, set, &core) || !core || is_full(set)) continue;
             unsigned long long m = mass(rate, set, 0);
             int stretch = long_cover(a, off) && kind_of(set);
+            if (bk2 == 1 << 30 || m < bm2) { bk2 = off; bm2 = m; }
+            else if (m == bm2 && stretch) bk2 = off;
             if (yr && stretch && off >= a->span[R].start &&
                 off < a->span[R].start + a->span[R].len && off != rs)
                 continue;                       /* inside R: the run decision's one */
@@ -295,6 +297,7 @@ static void table_a(const g2w_alt *a, const uint32_t *rate, int left, arow *r)
         }
         if (bk != 1 << 30) {
             r->inrun_set_won = r->inrun_set && bk != rs;
+            r->inrun_filt = bk != bk2;
             r->row = "mass";
             r->has_stop = 1;
             r->stop = bk;
@@ -340,6 +343,7 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
     d->inrun_set = ra->inrun_set;
     d->inrun_set_won = ra->inrun_set_won;
     d->inrun_meet = ra->inrun_meet;
+    d->inrun_filt = ra->inrun_filt;
     d->has_stop = ra->has_stop;
     d->stop = ra->stop;
     d->reseed = a->entry == G2W_E_RESEED;

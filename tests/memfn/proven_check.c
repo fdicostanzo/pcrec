@@ -122,13 +122,17 @@ static void verdict(const char *name, const char *why)
     else { printf("ok   %s\n", name); passed++; }
 }
 
+/* The class rows' storage (MF_CLASS_V 11): this test's own, at the ceiling. */
+static uint8_t cls_rows[MF_MAX_FWD - MF_PROOF_LO][32];
+
 /* One class reading: row `a` on site `s`, proven0 (or proven_prev when
  * `prev`) held to `members`. */
 static void check(const char *name, const arm *a, const mf_site *s, int prev,
                   const char *members)
 {
     mf_class c;
-    const char *r = kit_class(a, s, &c);
+    const kit_proof_st st = { cls_rows, MF_MAX_FWD - MF_PROOF_LO, NULL };  /* the test's own */
+    const char *r = kit_class(a, s, &c, &st);
     if (r) { verdict(name, r); return; }
     verdict(name, expect(prev ? c.proven_prev : c.proven0, members));
 }
@@ -187,11 +191,12 @@ static void family_b(void)
     s.pred.nterm = 1;
     t_set(&s.pred.term[0], 0, "ab", MF_REQUIRED);
     mf_class c;
-    const char *r = kit_class(&unstated_row, &s, &c);
+    const kit_proof_st st = { cls_rows, MF_MAX_FWD - MF_PROOF_LO, NULL };
+    const char *r = kit_class(&unstated_row, &s, &c, &st);
     verdict("B1 FIND under an UNSTATED row: refused", r ? "" : "kit_class gave it a reading");
     verdict("B2 the refused class proves nothing", expect(c.proven0, "ALL"));
     s.op = MF_OP_VERIFY;
-    r = kit_class(&unstated_row, &s, &c);
+    r = kit_class(&unstated_row, &s, &c, &st);
     verdict("B3 a non-FIND site under an UNSTATED row: not refused", r ? r : "");
 }
 
@@ -248,7 +253,9 @@ static void family_c(void)
     if (art && mf_art_target(art, mf_portable_target())) art = NULL;   /* as pcrec states it (U3) */
     mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name, .miss = MF_MISS_N };
     mf_class c;
-    if (!art || mf_ask(art, &s, &hd, &c))
+    static uint8_t proof[MF_MAX_FWD - MF_PROOF_LO][32];   /* the test's own storage */
+    mf_rows storage = { proof, MF_MAX_FWD - MF_PROOF_LO, NULL, NULL, NULL, 0 };
+    if (!art || mf_ask(art, &s, &hd, &c, &storage))
         verdict("C3 mf_ask, offset-skip site: proven0 the OPTIONAL term's set",
                 art ? "mf_ask refused the site" : "mf_art_begin failed");
     else

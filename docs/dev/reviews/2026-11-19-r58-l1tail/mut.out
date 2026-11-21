@@ -1,0 +1,34 @@
+delkw pattern                                 rc=0 fails=0 scopectl=0
+delkw pattern-esc                             rc=0 fails=0 scopectl=0
+delkw m                                       rc=1 fails=5 scopectl=1
+delkw n                                       rc=1 fails=3 scopectl=0
+delkw ms                                      rc=1 fails=2 scopectl=1
+delkw ns                                      rc=1 fails=1 scopectl=0
+delkw mc                                      rc=1 fails=1 scopectl=0
+delkw mg                                      rc=0 fails=0 scopectl=0
+delkw gu                                      rc=0 fails=0 scopectl=0
+delkw var                                     rc=0 fails=0 scopectl=0
+delkw under                                   rc=0 fails=0 scopectl=0
+region never opens                            rc=0 fails=0 scopectl=0
+region open only pattern (drop pattern-esc)   rc=0 fails=0 scopectl=0
+region open w/o endswith |                    rc=0 fails=0 scopectl=0
+region body mask off                          rc=0 fails=0 scopectl=0
+region indent > -> >=                         rc=0 fails=0 scopectl=0
+region indent > -> always                     rc=0 fails=0 scopectl=0
+region ends not on blank                      rc=0 fails=0 scopectl=0
+region ends not on #                          rc=0 fails=0 scopectl=0
+comment test off                              rc=0 fails=0 scopectl=0
+lstrip off (indented dirs unmasked)           rc=0 fails=0 scopectl=0
+mask whole line not just rest                 rc=0 fails=0 scopectl=0
+rxt mask noop                                 rc=1 fails=6 scopectl=1
+tsv mask noop                                 rc=1 fails=2 scopectl=1
+tests guard rxt -> any scope                  rc=0 fails=0 scopectl=0
+tests guard tsv -> any scope                  rc=0 fails=0 scopectl=0
+rxt guard -> code scope too: rxt guard dropped scope rc=1 fails=2 scopectl=1
+mask_data call removed                        rc=1 fails=8 scopectl=2
+tsv: pattern col not masked                   rc=0 fails=0 scopectl=0
+tsv: subject col not masked                   rc=1 fails=2 scopectl=1
+tsv: header masked too                        rc=0 fails=0 scopectl=0
+tsv: all cols masked                          rc=1 fails=1 scopectl=1
+tsv: no cols masked                           rc=1 fails=2 scopectl=1
+tsv: pattern match substring                  rc=0 fails=0 scopectl=0

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# covs1-sections: the sections that pin emitted bytes / the cover's checks, before any cloud dispatch (RUNS.md)
+set -u
+. /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
+SECS="test-codegen test-compound test-partlayout test-resource test-cpset-structure test-startset test-rxtsource test-registry test-kitproof test-spec-history test-plan-lint test-anchored-match test-cand-oracle"
+case "${1:-}" in
+    --dry-run)
+        make -C "$TREE" -n $SECS >/dev/null 2>&1 || { echo "make -n failed" >&2; exit 1; }
+        echo "would run in $TREE: make -k -j8 -Otarget $SECS"
+        echo "boxqueue: cap 3000"; echo "boxqueue: est 900"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=exec'd make, so make's rc is the job's rc and its *** lines are the verdict"
+        exit 0 ;;
+    --ready) ready_after ;;
+esac
+cd "$TREE" || exit 1
+exec make -k -j8 -Otarget $SECS

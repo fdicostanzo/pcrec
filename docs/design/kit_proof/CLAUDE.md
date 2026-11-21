@@ -14,7 +14,8 @@ Compile-side evidence only: nothing here is built or run by `make`, nothing was 
   counted), C3, C4, C6-C12. C2 is RETIRED (rev 2.1) and the census applies nothing after
   the table, so the `why` histogram is first-match in table order; admitted patterns are
   labelled `start-site`/`no-start-site` as a count only. C5 is not here (no population).
-  C8 is the machine half only (`span_facts` is unbuilt). C9 tests every depth 0..k
+  C8 is the machine half only (the NFA slice, unbuilt then, was built at Z2 and
+  deleted by [COVER-CAP] stage 1, `cover_cap.md` rev 4). C9 tests every depth 0..k
   (rev 2.1, K1); `CONJ_PLANT=c9-depth-k` in the environment restores revision 2's
   depth-k-only C9, the K1 plant (S1136). Modes: `census` (stage-1 sites by FINISHER
   route; the table over every census whole-cover / context-join pattern; sites whose

@@ -1,0 +1,154 @@
+# replay_zen4-1.txt — r13 JF-4's fixed scoring on LAST NIGHT's records (mfcard-zen4-1, 2026-11-16 01:00 window),
+# PRODUCED BEFORE TONIGHT's RUN (mfcard-zen4-2), by lane scanrow on 2026-11-16T16:15Z, kit manager ruling R1 condition B.
+# Scored by the tree at 61c3198a067906c27268683c7cb2ade4b2b96fc4 (lane/memfn-scanrow) with these files (sha-256):
+#   d197_rule.tsv f2f7bfcb23c9013b947fcde4041b7e66bf583f17b9d1743c5044aeb159792e3b
+#   d197_rule.py 98f92aa1a6e42eadce6e698ff31d5a708607735d32921502e980aad7a9098a9f
+#   est.py 369ebce10abe950035e13897d92757372dd650e860347c4f1fd73f7467e4d312
+#   record.py 565727bfd2bdf8ca976b7b543ce7d3d410c01d84430cf57fd01b5479aa6a64bc
+# How: job 609 ITSELF (its scanrow version: arm_run, the R2 rc mapping) in a scratch root, on COPIES of
+# scratch/memfn/mcfixa/run/mfcard-zen4-1{,.avx2libc} (the evidence untouched); the copies' two D197 rule pins dropped
+# so finalize pins the files above; boxqueue's state answered from last night's end states (JMH-avx2libc failed:
+# wait-timeout); RUN_ID mfcard-zen4-1, code commit 363fec82e. 609's rc: 0 (d197's). zen4-1 is NOT a run under the
+# rule (JF-5 RULED): this file is evidence of what the fixed rule reads, never a verdict.
+#
+# --- est OUTCOME per record (est rows; the find_byte rows) ---
+## mfcard-zen4-1
+row	kit.find_byte.fn-memchr	value 39150	noise 955	gate pass
+row	kit.find_byte.libc	value 38162	noise 1111	gate pass
+row	kit.find_byte.mfind-swar	value 372073	noise 14990	gate FAIL
+row	kit.find_byte.mfind-w16	value 184125	noise 497	gate pass
+row	kit.find_byte.mfind-w32	value 65682	noise 964	gate pass
+row	kit.find_byte.pair	value 76709	noise 1100	gate pass
+row	kit.find_byte.walk	value 1000000	noise 7360	gate pass
+== s2 OUTCOME REFUSED exit 3 floor:byte.mfind-swar (text)
+## mfcard-zen4-1.avx2libc
+row	kit.find_byte.fn-memchr	value 38760	noise 1100	gate pass
+row	kit.find_byte.libc	value 37839	noise 853	gate pass
+row	kit.find_byte.mfind-swar	value 371502	noise 11307	gate FAIL
+row	kit.find_byte.mfind-w16	value 184494	noise 497	gate pass
+row	kit.find_byte.mfind-w32	value 65541	noise 874	gate pass
+row	kit.find_byte.pair	value 74621	noise 1727	gate pass
+row	kit.find_byte.walk	value 1000000	noise 3619	gate pass
+== s2 OUTCOME REFUSED exit 3 floor:byte.mfind-swar (text); floor:hit6.fn-memchr (never-ran:JMH); floor:hit6.mfind-swar (never-ran:JMH); floor:hit6.mfind-w16 (never-ran:JMH); floor:hit6.mfind-w32 (never-ran:JMH)
+# --- d197_rule.py rule (d197_verdict.txt, verbatim) ---
+generic	shipped	cell	gap 2 reject 0	mfind-swar vs fn-memchr	win	gain 4896317 floor 19706	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 2 reject 100	mfind-swar vs fn-memchr	win	gain 15670208 floor 16975	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 4 reject 0	mfind-swar vs fn-memchr	win	gain 5595007 floor 39954	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 4 reject 100	mfind-swar vs fn-memchr	win	gain 15594868 floor 50342	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 8 reject 0	mfind-swar vs fn-memchr	win	gain 6535804 floor 883697	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 8 reject 100	mfind-swar vs fn-memchr	win	gain 15695483 floor 95176	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 16 reject 0	mfind-swar vs fn-memchr	win	gain 6735763 floor 787756	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 16 reject 100	mfind-swar vs fn-memchr	win	gain 13091806 floor 574430	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 32 reject 0	mfind-swar vs fn-memchr	win	gain 6114311 floor 900376	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 32 reject 100	mfind-swar vs fn-memchr	win	gain 14609144 floor 1040531	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 64 reject 0	mfind-swar vs fn-memchr	win	gain 7576791 floor 1983354	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 64 reject 100	mfind-swar vs fn-memchr	win	gain 15877985 floor 123825	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 256 reject 0	mfind-swar vs fn-memchr	win	gain 8034783 floor 6862494	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 256 reject 100	mfind-swar vs fn-memchr	win	gain 17465697 floor 2338909	(gain-beyond-floor-and-every-trimmed-launch-positive)
+generic	shipped	cell	gap 1024 reject 0	mfind-swar vs fn-memchr	tie	gain -7713212 floor 35078451	(always)
+generic	shipped	cell	gap 1024 reject 100	mfind-swar vs fn-memchr	tie	gain 5984124 floor 8438092	(always)
+generic	shipped	cell	gap 65536 reject 0	mfind-swar vs fn-memchr	loss	gain -901465763 floor 746468340	(gain-below-minus-floor)
+generic	shipped	cell	gap 65536 reject 100	mfind-swar vs fn-memchr	tie	gain 35443188 floor 1598093458	(always)
+generic	shipped	arm	mfind-swar vs fn-memchr (memchr=evex: EVEX-encoded (AVX-512VL; 32- or 64-byte: the probe names the encoding only))	not-win	loss 1 tie 3 unresolved 0 win 14	(always)	[record REFUSED: scan-unpriced: floor:byte.mfind-swar]
+generic	avx2	cell	gap 2 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 2 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 4 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 4 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 8 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 8 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 16 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 16 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 32 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 32 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 64 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 64 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 256 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 256 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 1024 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 1024 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 65536 reject 0	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	cell	gap 65536 reject 100	mfind-swar vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+generic	avx2	arm	mfind-swar vs fn-memchr (memchr=avx2: 32-byte VEX (AVX2))	no-verdict	loss 0 tie 0 unresolved 18 win 0	(run-refused)	[record REFUSED: run-refused: floor:byte.mfind-swar; floor:hit6.fn-memchr; floor:hit6.mfind-swar; floor:hit6.mfind-w16; floor:hit6.mfind-w32]
+d197_scan	generic	find_byte@6 (miss-only per byte, NOT deciding): shipped: mfind-swar scan unpriced (gate FAIL: noise 14990 is 40288 ppm of value 372073, over the card gate 30000 ppm), fn-memchr 39150, ratio -; avx2: mfind-swar scan unpriced (gate FAIL: noise 11307 is 30436 ppm of value 371502, over the card gate 30000 ppm), fn-memchr 38760, ratio -
+d197_verdict	generic	mfind-swar	CONFIRM	(loss-comparisons-awaiting-confirmation) -> the confirming re-run of exactly those cells (610-kit-mfcard-confirm, both libc arms), then this rule again with the SAME arguments (a second run's --second included) plus --confirm	[records: shipped est REFUSED (scan-unpriced: floor:byte.mfind-swar kit.find_byte.mfind-swar gate FAIL: noise 14990 is 40288 ppm of value 372073, over the card gate 30000 ppm); avx2 est REFUSED (run-refused: floor:byte.mfind-swar; floor:hit6.fn-memchr; floor:hit6.mfind-swar; floor:hit6.mfind-w16; floor:hit6.mfind-w32)]
+x86-64	shipped	cell	gap 2 reject 0	mfind-w16 vs fn-memchr	win	gain 6348418 floor 23335	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 2 reject 100	mfind-w16 vs fn-memchr	win	gain 16167829 floor 17703	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 4 reject 0	mfind-w16 vs fn-memchr	win	gain 6718765 floor 30473	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 4 reject 100	mfind-w16 vs fn-memchr	win	gain 16449568 floor 32969	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 8 reject 0	mfind-w16 vs fn-memchr	win	gain 6967785 floor 880110	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 8 reject 100	mfind-w16 vs fn-memchr	win	gain 15858715 floor 151395	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 16 reject 0	mfind-w16 vs fn-memchr	win	gain 8227391 floor 417681	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 16 reject 100	mfind-w16 vs fn-memchr	win	gain 15544845 floor 81338	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 32 reject 0	mfind-w16 vs fn-memchr	win	gain 8339551 floor 21143	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 32 reject 100	mfind-w16 vs fn-memchr	win	gain 14831346 floor 131833	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 64 reject 0	mfind-w16 vs fn-memchr	win	gain 12794620 floor 34420	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 64 reject 100	mfind-w16 vs fn-memchr	win	gain 16399550 floor 68217	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 256 reject 0	mfind-w16 vs fn-memchr	win	gain 19128784 floor 178943	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 256 reject 100	mfind-w16 vs fn-memchr	win	gain 18483853 floor 70205	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 1024 reject 0	mfind-w16 vs fn-memchr	win	gain 16354784 floor 1808139	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 1024 reject 100	mfind-w16 vs fn-memchr	win	gain 15665969 floor 2196812	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	cell	gap 65536 reject 0	mfind-w16 vs fn-memchr	tie	gain 101260030 floor 57834618	(always)
+x86-64	shipped	cell	gap 65536 reject 100	mfind-w16 vs fn-memchr	win	gain 117455780 floor 27695397	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64	shipped	arm	mfind-w16 vs fn-memchr (memchr=evex: EVEX-encoded (AVX-512VL; 32- or 64-byte: the probe names the encoding only))	WIN	loss 0 tie 1 unresolved 0 win 17	(no-loss-and-wins-over-half-of-deciding-comparisons)	[record REFUSED: scan-unpriced: floor:byte.mfind-swar]
+x86-64	avx2	cell	gap 2 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 2 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 4 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 4 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 8 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 8 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 16 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 16 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 32 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 32 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 64 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 64 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 256 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 256 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 1024 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 1024 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 65536 reject 0	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	cell	gap 65536 reject 100	mfind-w16 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64	avx2	arm	mfind-w16 vs fn-memchr (memchr=avx2: 32-byte VEX (AVX2))	no-verdict	loss 0 tie 0 unresolved 18 win 0	(run-refused)	[record REFUSED: run-refused: floor:byte.mfind-swar; floor:hit6.fn-memchr; floor:hit6.mfind-swar; floor:hit6.mfind-w16; floor:hit6.mfind-w32]
+d197_scan	x86-64	find_byte@6 (miss-only per byte, NOT deciding): shipped: mfind-w16 184125, fn-memchr 39150, ratio 4.70; avx2: mfind-w16 184494, fn-memchr 38760, ratio 4.76
+d197_verdict	x86-64	mfind-w16	INCONCLUSIVE	(always) -> ONE re-run allowed: the mfcard window again (J2, J2p, JMB, JMH; both libc arms) in a later window Frank clears, the same plan and commit, a new run id, scored with `--second` naming this run's two records	[records: shipped est REFUSED (scan-unpriced: floor:byte.mfind-swar kit.find_byte.mfind-swar gate FAIL: noise 14990 is 40288 ppm of value 372073, over the card gate 30000 ppm); avx2 est REFUSED (run-refused: floor:byte.mfind-swar; floor:hit6.fn-memchr; floor:hit6.mfind-swar; floor:hit6.mfind-w16; floor:hit6.mfind-w32)]
+x86-64-v3	shipped	cell	gap 2 reject 0	mfind-w32 vs fn-memchr	win	gain 4022890 floor 16940	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 2 reject 100	mfind-w32 vs fn-memchr	win	gain 16045107 floor 20717	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 4 reject 0	mfind-w32 vs fn-memchr	win	gain 4098131 floor 35542	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 4 reject 100	mfind-w32 vs fn-memchr	win	gain 15998317 floor 121034	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 8 reject 0	mfind-w32 vs fn-memchr	win	gain 3896503 floor 878582	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 8 reject 100	mfind-w32 vs fn-memchr	win	gain 15988092 floor 94089	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 16 reject 0	mfind-w32 vs fn-memchr	win	gain 4134355 floor 414947	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 16 reject 100	mfind-w32 vs fn-memchr	win	gain 15074534 floor 191516	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 32 reject 0	mfind-w32 vs fn-memchr	win	gain 4862064 floor 33322	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 32 reject 100	mfind-w32 vs fn-memchr	win	gain 14873375 floor 128670	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 64 reject 0	mfind-w32 vs fn-memchr	win	gain 5991957 floor 51597	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 64 reject 100	mfind-w32 vs fn-memchr	win	gain 14117688 floor 314319	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 256 reject 0	mfind-w32 vs fn-memchr	win	gain 10671733 floor 269713	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 256 reject 100	mfind-w32 vs fn-memchr	win	gain 18582755 floor 352175	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 1024 reject 0	mfind-w32 vs fn-memchr	tie	gain 931926 floor 2184618	(always)
+x86-64-v3	shipped	cell	gap 1024 reject 100	mfind-w32 vs fn-memchr	win	gain 13263420 floor 5067402	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	cell	gap 65536 reject 0	mfind-w32 vs fn-memchr	tie	gain 41702800 floor 115365006	(always)
+x86-64-v3	shipped	cell	gap 65536 reject 100	mfind-w32 vs fn-memchr	win	gain 58089732 floor 40552494	(gain-beyond-floor-and-every-trimmed-launch-positive)
+x86-64-v3	shipped	arm	mfind-w32 vs fn-memchr (memchr=evex: EVEX-encoded (AVX-512VL; 32- or 64-byte: the probe names the encoding only))	WIN	loss 0 tie 2 unresolved 0 win 16	(no-loss-and-wins-over-half-of-deciding-comparisons)	[record REFUSED: scan-unpriced: floor:byte.mfind-swar]
+x86-64-v3	avx2	cell	gap 2 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 2 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 4 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 4 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 8 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 8 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 16 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 16 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 32 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 32 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 64 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 64 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 256 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 256 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 1024 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 1024 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 65536 reject 0	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	cell	gap 65536 reject 100	mfind-w32 vs fn-memchr	unresolved	gain - floor -	(either-row-unpriced)
+x86-64-v3	avx2	arm	mfind-w32 vs fn-memchr (memchr=avx2: 32-byte VEX (AVX2))	no-verdict	loss 0 tie 0 unresolved 18 win 0	(run-refused)	[record REFUSED: run-refused: floor:byte.mfind-swar; floor:hit6.fn-memchr; floor:hit6.mfind-swar; floor:hit6.mfind-w16; floor:hit6.mfind-w32]
+d197_scan	x86-64-v3	find_byte@6 (miss-only per byte, NOT deciding): shipped: mfind-w32 65682, fn-memchr 39150, ratio 1.68; avx2: mfind-w32 65541, fn-memchr 38760, ratio 1.69
+d197_verdict	x86-64-v3	mfind-w32	INCONCLUSIVE	(always) -> ONE re-run allowed: the mfcard window again (J2, J2p, JMB, JMH; both libc arms) in a later window Frank clears, the same plan and commit, a new run id, scored with `--second` naming this run's two records	[records: shipped est REFUSED (scan-unpriced: floor:byte.mfind-swar kit.find_byte.mfind-swar gate FAIL: noise 14990 is 40288 ppm of value 372073, over the card gate 30000 ppm); avx2 est REFUSED (run-refused: floor:byte.mfind-swar; floor:hit6.fn-memchr; floor:hit6.mfind-swar; floor:hit6.mfind-w16; floor:hit6.mfind-w32)]
+d197_confirm_cells	65536.0

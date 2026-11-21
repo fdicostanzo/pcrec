@@ -1,0 +1,42 @@
+MATCH  ok   WHOLE `123` HOLDS (a = `1`, b = `23`), `23` FAILS / SEARCHED `x23 123` `123`@4 (a = `1`, b = `23`) / FIND-ALL `123 213 1` [`123`@0, `13`@5] (`/(?<a>\d+)(?<b>\d+)/ & (a: "1")`) | re same | printed reproduced | doc found
+TABLE  ok   WHOLE `73` HOLDS (l = `3`), `77` FAILS / SEARCHED `x737` `73`@1 (l = `3`) / FIND-ALL `37 73 77` [`37`@0, `73`@3] (`/(?<l>\d)\d|\d(?<l>\d)/ & (l: "3")`) | re same | printed n/a | doc found
+NEST   ok   WHOLE `3;,` HOLDS, `3;,,` FAILS, `3;;,` FAILS / SEARCHED `3;,,` `3;,`@0 / FIND-ALL `3;, 3;;, 4;,` [`3;,`@0, `4;,`@9] (`/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)`) | re n/a | printed reproduced | doc found
+LIT    ok   WHOLE `a b` HOLDS, `ab` FAILS / SEARCHED `xa b` `a b`@1 / FIND-ALL `c a b ab` [`c`@0, `a b`@2] (`/a b|c/`) | re same | printed n/a | doc found
+FLAGS  ok   WHOLE `aB` HOLDS, `AB` FAILS / SEARCHED `AB aB` `aB`@3 / FIND-ALL `ab aB Ab` [`ab`@0, `aB`@3] (`/a(?i)b/`) | re same | printed n/a | doc found
+SEQ    ok   WHOLE `12` HOLDS, `x12` FAILS / SEARCHED `x12 34` `34`@4 / FIND-ALL `12 x34 56` [`12`@0, `56`@7] (`wb SEQ digits SEQ wb`, wb := `/\b/`, digits := `/\d+/`) | re same | printed reproduced | doc found
+ALT    ok   WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 (l = `2`) / FIND-ALL `25 13` [`25`@0, `13`@3] (`(B | A) & (l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`) | re same | printed reproduced | doc found
+QUANT  ok   WHOLE `abab` HOLDS, `abb` FAILS / SEARCHED `abbab` `ab`@0 / FIND-ALL `abab x ab` [`abab`@0, `ab`@7] (`("a" SEQ "b")+` is `(?:ab)+`) | re same | printed reproduced | doc found
+ATOM   ok   WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(B | A) & (l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`) | re same | printed reproduced | doc found
+LOOK   ok   WHOLE `1234` HOLDS (l = `4`, f = `1`), `4321` FAILS / SEARCHED `4321 1234` `1234`@5 (l = `4`, f = `1`) / FIND-ALL `1234 4321 77` [`1234`@0] (`/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/ & (l: > $f)`) | re n/a | printed reproduced | doc found
+LOOK2  ok   `/(?=\d*(?<l>\d))\d+/ & (l: <5)` WHOLE `35` FAILS, `53` HOLDS (PCRE: FAILS, HOLDS)
+CAPT   ok   WHOLE `9:45,10:45,45` HOLDS, `9:45,10,45` FAILS / SEARCHED `9:45,10,45 1:45,45` `1:45,45`@11 / FIND-ALL `9:45,10,45 1:45,45` [`1:45,45`@11] (`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")`) | re n/a | printed reproduced | doc found
+CAPT2  ok   the backreference reads PCRE's capture: path model True, python re True (printed: MATCHES)
+ONE    ok   WHOLE `3qxx` FAILS, `q3xx` HOLDS (a = `3`), `7q3xx` HOLDS (a = `3`) / SEARCHED `3qxx` FAILS / FIND-ALL `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10] (`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)`) | re n/a | printed reproduced | doc found
+FLOW   ok   WHOLE `7` HOLDS (h unset), `7,3` HOLDS (h = `3`) / SEARCHED `x7 7,3` `7`@1 (h unset) / FIND-ALL `7 7,3` [`7`@0, `7,3`@2] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`) | re same | printed reproduced | doc found
+EXP    ok   WHOLE `2025` HOLDS, `1999` FAILS / SEARCHED `x1999 2001` `2001`@6 / FIND-ALL `1999 2001 2025` [`2001`@5, `2025`@10] (`year := /(?<_v>\d{4})/ & (_v: >= 2000)`) | re same | printed reproduced | doc found
+CALL   ok   WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34` [`12`@0, `34`@3] (`A & B`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`) | re same | printed reproduced | doc found
+PATH   ok   WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)`) | re same | printed reproduced | doc found
+PATH2  ok   WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)`) | doc found
+BREF   ok   WHOLE `733` HOLDS, `737` FAILS / SEARCHED `x737 733` `733`@5 / FIND-ALL `733 737 455` [`733`@0, `455`@8] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`) | re same | printed reproduced | doc found
+NUM    ok   WHOLE `3:5` HOLDS, `5:3` FAILS / SEARCHED `5:3 3:5` `3:5`@4 / FIND-ALL `5:3 3:5 4:9` [`3:5`@4, `4:9`@8] (`/(\d):(\d)/ & (2: > $1)`) | re n/a | printed reproduced | doc found
+NUML   ok   WHOLE `3;;` FAILS, `3;` HOLDS / SEARCHED `3;;` `3;`@0 / FIND-ALL `3;; 7;3;` [`3;`@0, `7;3;`@4] (`/(?:(\d)?;)*/ & (1: <5)`, the label reading) | re n/a | printed reproduced | doc found
+NUML2  ok   WHOLE `3;;`: the label reading FAILS, regex's capture HOLDS (printed: the label FAILS, the capture HOLDS)
+FORM   ok   WHOLE `10:15` HOLDS, `9:15` FAILS, `10:45` FAILS / SEARCHED `9:15 10:15` `10:15`@5 / FIND-ALL `10:15 9:15 11:20` [`10:15`@0, `11:20`@11] (`/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: >= 10, m: <30)`) | re same | printed n/a | doc found
+TV     ok   WHOLE `12` HOLDS (a = `2`, b = `1`), `1` FAILS / SEARCHED `12` `12`@0 (a = `2`, b = `1`) / FIND-ALL `12 1 19 3` [`12`@0] (`/(?<b>\d+)(?<a>\d)?/ & (a: <5)`) | re same | printed reproduced | doc found
+TV2    ok   `NOT (a: <5)` on `1` (a absent): HOLDS (printed U2: HOLDS)
+INSEQ  ok   WHOLE `3;4;` HOLDS, `7;3;` FAILS / SEARCHED `7;3;` `3;`@2 / FIND-ALL `3;7;4; 2;` [`3;`@0, `4;`@4, `2;`@7] (`(/(?<h>\d)/ SEQ (h: <5) SEQ ";")+`) | re same | printed reproduced | doc found
+ZERO   ok   WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`) | re same | printed reproduced | doc found
+PSR    ok   WHOLE `3;4;7;` HOLDS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL `3;7;4; 9;1;` [`3;7;`@0, `4;`@4, ``@6, `9;`@7, `1;`@9, ``@11] (`/(?:(?=(?<n>\d))${c}(?<h>\d);)*/`, c := `NOT (h: /\d/) | (n: >= $h)`) | re n/a | printed reproduced | doc found
+PSR2   ok   WHOLE vs the intent 'items non-decreasing' (python) on 1365 texts over `139;`: 0 differ
+DEF    ok   WHOLE `x` HOLDS, `3x` FAILS, `7x` HOLDS / SEARCHED `3x x` `x`@1 / FIND-ALL `7x 3x x` [`7x`@0, `x`@4, `x`@6] (`/(?<h>\d)?x/ & (h = "x": !<5)`) | re same | printed reproduced | doc found
+AND    ok   WHOLE `1` HOLDS, `12` FAILS / SEARCHED `a12 1` `1`@1 / FIND-ALL `12 3` [`1`@0, `2`@1, `3`@3] (`/\d+/ & /^\d$/`) | re same | printed reproduced | doc found
+AND2   ok   join order: `G & L` SEARCHED `11` ('11', 0), `L & G` ('1', 0) (printed: `11`@0, `1`@0)
+AND3   ok   `/\d+/ & /1/` WHOLE `11` FAILS, `1` HOLDS (the sentence: FAILS, HOLDS)
+COMP   ok   WHOLE `123` HOLDS, `712` FAILS / SEARCHED `a7 12` `12`@3 / FIND-ALL `7 12 77 37` [`12`@2, `37`@8] (`/\d+/ & !/7\d*/`) | re same | printed reproduced | doc found
+KINDS  ok   WHOLE `123` HOLDS, `812` FAILS / SEARCHED `7 8 12` `12`@4 / FIND-ALL `12 7 8 93` [`12`@0, `93`@7] (`/\d+/ & neither`, neither := `not /7\d*/ & not /8\d*/`) | re same | printed n/a | doc found
+R1     ok   28 ruled pieces; each rulings item's title found in the record: all
+R2     ok   needs: into a later section: none
+DONE   ok   33 pieces in the five sections, by status {'open': 3, 'reading': 2, 'ruled': 28}; `?` left: 0; skeleton left: 0
+SL     ok   124 of 124 slugs homed (R.8's 120 bold kebab slugs + 4), 58 of them on the five sections' entries (58 of those in the 124); missing: none
+       the five sections' slugs: array-slot atomic-search backref-across-parts backref-label bare-loop-label before-and-inside caller-ambiguous complement-place condition-group condition-in-sequence condition-not condition-or dollar-condition empty-pass empty-search-error export-rule export-scope filter-captures free-name group-truth hit-list joint-last-pass label-flow label-mark label-twice-warn lone-complement-match lookahead-labels looped-warning nested-complement nested-pass nullable-meaning number-in-loop number-names numbered-label-warning operand-context outer-pass-forms pass-and pass-list-read pass-own-labels pass-start-read pass-table path-and-ambiguity polarity-rule quantified-condition record-under-not repeated-means rx-module same-name-twice sequence-operator sequence-precedence sequence-reading shared-label three-valued unsettable-label value-point whole-text zero-in-sequence zero-place
+preddoc3a_model: 40 checks, 0 failed

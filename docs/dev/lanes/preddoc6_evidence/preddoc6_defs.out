@@ -1,0 +1,18 @@
+names defined by := in base files: 34
+DUP capture
+    ('library.md', '(name, x)', '/(?<${name}>${x})/')
+    ('library.md', '(x)', '/(?<${x.label}>${x})/')
+DUP m
+    ('core.md', '', 'import("a"|"b")')
+    ('core.md', '(p1, p2)', 'body')
+    ('library.md', '', 'import("isodate")')
+DUP name
+    ('core.md', '', 'X')
+    ('core.md', '', 'expression')
+DUP padded
+    ('library.md', '(rx)', '/0*${rx}/')
+    ('library.md', '(rx, n)', '(rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)')
+DUP repeat
+    ('library.md', '(x, min)', '/(?:${x}){${min},}/')
+    ('library.md', '(x, min, max)', '/(?:${x}){${min},${max}}/')
+    ('library.md', '(x, n)', '/(?:${x}){${n}}/')

@@ -739,8 +739,18 @@ consistent with each other.
 
 **Sections added since, each with its own lane's one-run figure (NOT
 this table's method; Mac dev box, so directional):**
-- `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05): about
-  **52-62 s** wall over two runs, with `all` up to date. It is G2's `run_g2.sh --quick`:
+- `test-memfn-g2` **(2026-11-20, STALE figure below; current)**: **1004 s**
+  wall run ALONE on the Linux dev box (job 205-g2tri-g2alone, `make -j4`,
+  `G2_UNITS_OUT` per-unit seconds). The 29 units sum to 1791 s (they run
+  concurrently, so the sum exceeds the wall). Top units by time (s):
+  win 288, gcc 132, asan 93, w2-3 80, w2-1 77, w1w3 77, mfind 76. As one
+  section of a `make test` at j2p8 the section reads 960.2 s (job
+  202-main-k146land-test2); that whole `make test` measured 2677 s
+  (~45 min; 2677-2850 s over the j2p8 runs, ~45-48 min on a quiet box).
+  Earlier section readings from the same ledger: 470.6 s (11-09), 614.9 s
+  (11-12), 829.8 s (11-19). The next bullet's figure is the original one.
+- `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05; Mac, STALE: about
+  **52-62 s** wall over two runs, with `all` up to date). It is G2's `run_g2.sh --quick`:
   - gcc over every generated site at the quick subject tier;
   - ASan and the W1-W3 witnesses on every third batch, run
     concurrently, so it uses every core for most of that minute.
@@ -754,6 +764,7 @@ this table's method; Mac dev box, so directional):**
   corpus sample (five streams), each emitted, compiled `-O0 -fno-builtin
   -c` and read with `nm -u`, at 8 jobs. `--quick` (the default-engine
   stream alone, the mech solos' form) is about 15 s.
+- C4's scope (`test-memfn-arch`): test-corpus DATA is out of scope — a `.rxt` pattern, case or `var` line's text and a corpus listing TSV's `pattern`/`subject` columns are blanked before the scan (one rule, `mask_data` in `tests/memfn/arch_blind_check.py`); comments, `description` lines and every other prose region, `ext` subtrees, other directives and every other file type are scanned whole, and the scratch controls plant both sides (c4scope, 2026-11-19).
 - `test-memfn-arch`, `test-memfn-forms`, `test-memfn-reach` ([MEMFN] R4c,
   lane r4cchecks, 2026-10-06; one run each, gcc-16, `all` up to date):
   about **11 s**, **0.4 s** and **0.1 s** wall. C4 spends its time on the
@@ -1071,7 +1082,7 @@ on a push of `cloud/OWNER/KIND/NAME`). Its plan job reads the kind from `tests/c
 run `make test-shard CISHARD=K/17` over the declared table `tests/ci/cloud_test_shards.tsv`; its gather job builds
 the ONE verdict (green only if every expected shard reported rc 0; a missing/timed-out shard is red by name).
 Expected wall ~18 min per push (the old 3-shard form: 52-68 min); the per-shard limit is the kinds table's `limit_min`
-(35). The table is held to `TEST_SECTIONS` exactly by `make test-ci-shards` (a `TEST_SECTIONS` member; a new section
+(50; was 35 until 2026-11-19, when the cover-cap line grew the window family and shard 1 = test-memfn-g2 alone ran 23-36+ min by runner CPU). The table is held to `TEST_SECTIONS` exactly by `make test-ci-shards` (a `TEST_SECTIONS` member; a new section
 with no row turns it red, so it can never silently not run in CI) and by `make cloud-check`. Per-run knobs come from
 the call's inputs (`kind`, `owner` default `ci`, `name`, `ref`). Forks: a `pull_request` from a fork runs the same
 workflows with no secrets (none are used; the default read-only token uploads artifacts). A superseded run of a PR/main

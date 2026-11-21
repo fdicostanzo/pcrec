@@ -9,7 +9,7 @@
 # position (one member, or a two-member cube): [0-7] is an 8-member cube,
 # [a-z], [a-f] and \d are not cubes. Every m/n line is python3 `re` verified
 # except the one block marked `oracle none` (its reason is on the line).
-# arms: --memfn=no-run-verify-wide | --memfn=no-window-search | --memfn=no-fd-pres-pick
+# arms: none moves a block of this file; inert identity control: --memfn=no-run-verify-wide, no-window-search, no-fd-pres-pick
 
 # F4 / P2 / P9: the run is [0-7]{32}, ranked above the exact 16-byte run.
 # route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "none" _REQ_RUN "3030303030303030303030303030303030303030303030303030303030303030/f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8" _ENGINE "vm" _VM_PREFILTER "none"

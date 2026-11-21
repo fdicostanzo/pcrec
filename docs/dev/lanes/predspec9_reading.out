@@ -1,0 +1,29 @@
+== search hits, min 0 and 1 (libpcre2 | python re as a second control)
+x='ab(?:[xy])' value='abx aby abx'  min=0  pcre2 ['abx@0', 'aby@4', 'abx@8'] | re ['abx@0', 'aby@4', 'abx@8']
+x='ab(?:[xy])' value='abx aby abx'  min=1  pcre2 ['abx@0', 'aby@4', 'abx@8'] | re ['abx@0', 'aby@4', 'abx@8']
+x='ab(?:[xy])' value='xyz'          min=0  pcre2 [] | re []
+x='ab(?:[xy])' value='xyz'          min=1  pcre2 REJECTED | re REJECTED
+x='aa'         value='aaa'          min=0  pcre2 ['aa@0'] | re ['aa@0']
+x='aa'         value='aaa'          min=1  pcre2 ['aa@0'] | re ['aa@0']
+x='^err'       value='err x err'    min=0  pcre2 ['err@0'] | re ['err@0']
+x='^err'       value='err x err'    min=1  pcre2 ['err@0'] | re ['err@0']
+x='^err'       value='x err'        min=0  pcre2 [] | re []
+x='^err'       value='x err'        min=1  pcre2 REJECTED | re REJECTED
+== min 2 re-cuts the hits (x = aab|a on 'aab'); find-all control: ['aab']
+x='aab|a' value='aab' min=0  pcre2 ['aab@0'] | re ['aab@0']
+x='aab|a' value='aab' min=1  pcre2 ['aab@0'] | re ['aab@0']
+x='aab|a' value='aab' min=2  pcre2 ['a@0', 'a@1'] | re ['a@0', 'a@1']
+== set-once ambiguous label: (?<a>\d+)(?<b>\d+) on 123
+pcre2 a='12' b='3'
+re    a='12' b='3'
+== contains body (?s).*X.* reads the argument's label at the RIGHTMOST occurrence
+pcre2 'abx aby' g='y'
+== endsWith body: greedy (?s).*X vs lazy (?s).*?X, label n = \d+ on ab123
+pcre2 (?s).*(?<n>\d+)      n='3'
+pcre2 (?s).*?(?<n>\d+)     n='123'
+== extra rows: hit spans with the g label, and (?m)^err
+x='ab([xy])' value='abx aby abx' min=0 pcre2 ['abx@0 g=x', 'aby@4 g=y', 'abx@8 g=x'] | re ['abx@0', 'aby@4', 'abx@8']
+x='ab([xy])' value='abx aby abx' min=1 pcre2 ['abx@0 g=x', 'aby@4 g=y', 'abx@8 g=x'] | re ['abx@0', 'aby@4', 'abx@8']
+x='(?m:^err)' value='err\nerr x\nok' min=0 pcre2 ['err@0', 'err@4'] | re ['err@0', 'err@4']
+x='(?m:^err)' value='err\nerr x\nok' min=1 pcre2 ['err@0', 'err@4'] | re ['err@0', 'err@4']
+== a* on baa (nullable argument), min 0: ['@0', '@0', '@0', '@0', '@0', '@0'] | re ['@0', '@0', '@0', '@0', '@0', '@0'] | findall ['', 'aa', '']
