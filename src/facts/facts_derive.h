@@ -156,7 +156,8 @@ typedef struct {
     /* review r65 A (span_arms §14.4 L3, REV 3.3 addendum): may this compile
      * RE-ENTER A FORWARD SCAN on the run (the `handoff` row, declined at
      * K < 0)? False only where no forward scan's re-entry can exist whatever
-     * route is chosen: `--engine=vm` (no hybrid prefilter) or
+     * route is chosen: `--engine=vm` without `-fprefilter` (no hybrid
+     * prefilter; `-fprefilter` forces one, review r66 EMIT-2) or
      * `-fno-req-handoff` (no handoff row). Read only by TOP's BACK row's
      * `displaces`. */
     bool fwd_reentry;

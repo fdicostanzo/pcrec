@@ -1665,8 +1665,11 @@ typedef struct {
     bool (*when)(const RbWalk *w, const RbRuns *root);
     RbRun (*cand)(const RbWalk *w, const RbRuns *root, int *lo, int *hi);
     /* may the candidate, its consumed extent `[lo, hi)`, displace the
-     * consumed `best` at all (before the run choice compares them)? */
-    bool (*displaces)(const RbWalk *w, const RbRun *best, int lo, int hi);
+     * consumed `best` at all (before the run choice compares them)? `set` is
+     * the root's necessary set, whose members are the byte landmarks where
+     * no run is stated */
+    bool (*displaces)(const RbWalk *w, const RbRun *best, const RbSet *set,
+                      int lo, int hi);
     unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
 } RbTopRow;
 
@@ -1695,27 +1698,47 @@ static RbRun rb_top_back(const RbWalk *w, const RbRuns *root, int *lo, int *hi)
     return r;
 }
 
-/* BACK's displacement condition (span_arms §14.4 L3, REV 3.3 addendum, review
- * r65 A): a forward scan declines its re-entry at K < 0
- * (`req_k_reentry_sound`, src/gen/emit_dfa.c), so on a compile that may
- * re-enter a forward scan (`fwd_reentry`) a BACK run that displaced a consumed
- * run at a BOUNDED offset (K >= 0, the run the re-entry keeps) traded that
- * re-entry for a start-byte scan, up to x10 slower than the run it displaced.
- * There BACK displaces only a consumed `best` that is EMPTY or begins at no
- * static bound, and a candidate with an EMPTY consumed extent displaces no
- * consumed run. Where no forward re-entry exists the run choice decides. */
-static bool rb_top_back_displaces(const RbWalk *w, const RbRun *best, int lo, int hi)
+/* Does the set state a BYTE LANDMARK at a static bound: some member every
+ * match holds at most a bounded distance in (`RbSet.off`)? Where no run is
+ * stated, the pre-check's needle is a set member (facts_listing §4.1.2¶8b),
+ * and a forward scan's re-entry keeps it exactly where its K is bounded. A
+ * superset of "the picked member is bounded": the pick is a derived choice
+ * this core walk does not read, and the wider answer only keeps BASE more
+ * often (review r66 EMIT-3). */
+static bool rb_set_bounded_landmark(const RbSet *s)
 {
-    return !w->fwd_reentry || best->n == 0 || (lo < hi && best->off >= PCREC_W_UNBOUNDED);
+    for (int b = 0; b < 256; b++)
+        if (rb_has(s, b) && s->off[b] < RB_OFF_UNBOUNDED) return true;
+    return false;
+}
+
+/* BACK's displacement condition (span_arms §14.4 L3, REV 3.3 addendum, review
+ * r65 A, review r66 EMIT-3): a forward scan declines its re-entry at K < 0
+ * (`req_k_reentry_sound`, src/gen/emit_dfa.c), so on a compile that may
+ * re-enter a forward scan (`fwd_reentry`) a BACK run that displaced the
+ * LANDMARK the re-entry keeps traded that re-entry for a start-byte scan, up
+ * to x10 slower than what it displaced. The landmark is the consumed `best`
+ * where one is stated, else a necessary byte. There BACK displaces only
+ * (1) an EMPTY consumed `best` whose set states no byte landmark at a static
+ * bound (`(?<=foo)`; not `(?<=qz)(?:a.|.a)`, whose `a` sits at K 1), or
+ * (2) a `best` that begins at no static bound, by a candidate that keeps a
+ * consumed position. Where no forward re-entry exists the run choice decides. */
+static bool rb_top_back_displaces(const RbWalk *w, const RbRun *best, const RbSet *set,
+                                  int lo, int hi)
+{
+    return !w->fwd_reentry
+        || (best->n == 0 && !rb_set_bounded_landmark(set))
+        || (lo < hi && best->off >= PCREC_W_UNBOUNDED);
 }
 
 static const RbTopRow rb_top_rows[] = {
     { rb_top_back_when, rb_top_back, rb_top_back_displaces, PCREC_WALK_ARM(LOOK) },
 };
 
-/* The run TOP chooses from the root's runs `root`, its consumed extent into
- * `[*lo, *hi)`. */
-static RbRun rb_top(const RbWalk *w, const RbRuns *root, int *lo, int *hi)
+/* The run TOP chooses from the root's runs `root` and necessary set `set`,
+ * its consumed extent into `[*lo, *hi)`. */
+static RbRun rb_top(const RbWalk *w, const RbRuns *root, const RbSet *set,
+                    int *lo, int *hi)
 {
     size_t i;
     RbRun best = root->best;
@@ -1725,7 +1748,7 @@ static RbRun rb_top(const RbWalk *w, const RbRuns *root, int *lo, int *hi)
     RbRun cand;
     RB_ROW_EACH(i, w, rb_top_rows, rb_top_rows[i].when(w, root), {
         cand = rb_top_rows[i].cand(w, root, &clo, &chi);
-        if (rb_top_rows[i].displaces(w, &root->best, clo, chi) && rn_cmp(w, &best, &cand) < 0) {
+        if (rb_top_rows[i].displaces(w, &root->best, set, clo, chi) && rn_cmp(w, &best, &cand) < 0) {
             best = cand; *lo = clo; *hi = chi;
         }
     });
@@ -1758,7 +1781,7 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     RbVal *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
     rb_walk(w, root, v);
     *set = v->set;
-    *run = rb_top(w, &v->runs, cons_lo, cons_hi);
+    *run = rb_top(w, &v->runs, &v->set, cons_lo, cons_hi);
     *pieces = v->desc;
     *never = v->runs.never;
 }
