@@ -6634,3 +6634,34 @@ OBSERVATION: "no one would know to write it" (discoverability; nothing ruled by 
 The manager's readings, for the fold lane: (a) the refusal's message names the on-item form (the manager's call on
 a diagnostic's content); (b) the idiom goes on the user-documentation list (parked/ideas/user-doc-traps); (c) a
 provided shorthand for it is an idea, not asked for by him: nothing parked beyond the list item.
+
+### 2026-11-21 MANAGER — after lane predscope: pure-label, the `_` labels, zero-in-definition and the three examples folded; a reading told to the owner is NARROWED (no owner words)
+tags: core/labels/export core/labels/paths core/conditions/match-so-far core/holes/bare-condition/nested-scope core/holes/bare-condition/labels lib/structural/capture
+
+Lane predscope (opus; report `docs/dev/lanes/predscope_report.md`; evidence `docs/dev/lanes/predscope_evidence/`, 20
+checks, 21 plants caught; lint after the merge 5,446 / 0) folded: pure-label (export statement 5 narrowed to
+captures; `[x = A]` a label and no capture), the `_` statement, zero-in-definition (the `0` line of
+bare-nested-scope ruled), his three examples verbatim in core/holes/bare-condition/nested-scope (the piece STAYS
+OPEN), a new under-construction piece for the label-to-capture add-on.
+
+The manager's readings, as tested (the report has each): SUPPORTED: pure-label (c), (d) with a caveat (the
+existing `capture(name, x)` cannot take its name from a part label, as his `[d = capture(digits)]` would), (e);
+condition-argument; zero-in-definition (a), (c), (d); class-value (a) as to the order. UNTESTABLE: class-value
+(b); zero-in-definition (b); pure-label (b). NOT SUPPORTED AS STATED, and NARROWED: pure-label (a), "a
+definition's body may name the labels it writes itself and the public labels of the parts it writes in; it may NOT
+name a label of a PARAMETER". Over the 17 definitions the documents print it refuses 7: five bound conditions and
+computed labels (pass-start-read's `c`, `sum`, `n := count(..)`, `nchars`, `mnum`), which read the labels of the
+pattern they meet by their nature and are OUTSIDE the rule (told to him earlier the same day: "a condition bound
+on its own is naturally open"), and the nested-scope piece's own two lines.
+
+What the manager told him and now takes back in part: "That is the closed answer for labels." His three examples
+speak of a PARAMETER's labels only. None speaks of a label the definition's USER sets (from above, or from a
+sibling to the left): the piece's `inner := /x${(h: <5)}/` case, and the ruled piece core/holes/bare-condition/
+labels' line `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`, "reads A's c" (WHOLE `73` HOLDS), which a definition closed
+to its user's VALUES would turn into never matching (predscope CLOSEDB). So bare-nested-scope is still open, in
+this narrowed form; to be told to him and asked.
+
+Owner questions the lane leaves (proposed slugs): zero-condition-binding (a condition bound alone, `c := (0:
+rx.digit)`: the `0` of the definition it is used in, or its own, empty); bare-nested-scope narrowed; 
+capture-loop-value (PCRE's carried value or the label's last-pass value for a capture a loop sets). For a
+pcre2-reader, not him: the members of `(?i)k` in libpcre2 per mode.

@@ -630,3 +630,17 @@ pure-label, the `_` statement, zero-in-definition and his three examples, and te
 entries. NOT for the lane: the capture add-on's form (under construction), my frame (proposals).
 WAITING on: lane predscope (delivery by lanewatch DONE + report); Frank (array-vs-passes next; it touches
 core/labels/labels-vs-captures, which the lane edits: a ruling there goes to the rulings file or a follow-up fold).
+
+## 2026-11-21 (20:30) — array-vs-passes (a) and joint-in-some RULED; lane predscope merged
+
+Rulings recorded, NOT folded: array-vs-passes "option a" (the group questions and `h[k]` read the array of
+settings; revises lib/counting's pass wording, group-truth, outermost-view's bullet); joint-in-some (a joint entry
+inside a group question refused for now; same item written on the item; "no one would know to write it").
+class-hole-order asked, not answered yet. Lane predscope DELIVERED (lanewatch DONE; tip e86e2ce0c), merged (lint
+5,446 / 0; plan-lint clean), stopped. Its finding: my rule over his three examples is not supported as stated
+(bound conditions and computed labels are outside it; his examples cover a parameter's labels only), so
+bare-nested-scope stays open, narrowed to a label the USER of a definition sets. Three new owner questions queued
+(zero-condition-binding, bare-nested-scope narrowed, capture-loop-value).
+NEXT: a follow-up fold lane (predarr) for array-vs-passes + joint-in-some once class-hole-order is answered (it can
+ride along); then a critic round over all of today's folds and the three of 2026-11-19 (number from main).
+WAITING on: Frank (class-hole-order).
