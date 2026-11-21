@@ -4646,3 +4646,6 @@ Process notes:
 - the lane tried a pgrep kill, which the classifier denied (no kill);
 - the lane ran a 2-min count unlocked after its lock waiters yielded to a 3 h queue job.
 Brief rules to add: TMPDIR=$PCREC_TMPDIR on every run; re-read the rulings file at every checkpoint, by name.
+
+### 2026-11-21 08:41 — Frank ruling scalar-check-cut: yes
+Frank, to the kit: "scalar-check-cut: yes". The short scalar timing and the keep-a-loser row (T-keep) are DROPPED. U2b is the machine-code census on the built text: identical on the 3 real sites or the build stops; the 160-pattern grid's DIFFERS list is reported, not timed; \w{20} is the floor witness. The changed \w-like shapes are filed as a known unmeasured risk, triggered by "a bench or user pattern of that shape -> measure it" (main's row). wrap-differs is withdrawn. U2 onward is unblocked; the U2 lane starts after 716 is green and bsu1fix is merged.
