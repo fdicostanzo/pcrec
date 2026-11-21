@@ -190,9 +190,10 @@ run() {
 
 # ---- DEPTH ----------------------------------------------------------------
 # The depth table is tests/growth/depth_families.tsv ([GROWTH-SWEEP]: one table,
-# not two; its header carries what each family is for). Every row at depth 250
-# must compile on the COMPILE_STACK-byte thread and at 251 be refused by name
-# ("parentheses are too deeply nested"); tests/growth/run_growth.py runs them
+# not two; its header carries what each family is for). Every row is a pair
+# (owner ruling limit-test-criteria): a LIMIT cell at depth 250 that must compile on the
+# COMPILE_STACK-byte thread and run its matcher, and its STABILITY twin at 251 that must be
+# refused by name ("parentheses are too deeply nested"); tests/growth/run_growth.py runs them
 # (uncapped column only; the memory ladder is `make test-growth`'s).
 growth_out="$("$TIMEOUT_BIN" 3000 python3 -I "$ROOT_DIR/tests/growth/run_growth.py" --depth-only 2>&1)"
 growth_rc=$?

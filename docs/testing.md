@@ -5541,19 +5541,34 @@ green with no green record, nothing left to run, simulated/real mismatch. Tests:
 
 Opt-in, like `make test-axes`: NOT in `make test` (about 1,500 cells x 5 runs
 plus a library-mode series under ASan+LSan). Its depth arm alone rides
-`make test-stackdepth`. Owner's rule (2026-11-20): every cell is sized past a
-limit and names it; it passes only on a clean refusal by that limit, and fails
-if it compiles, crashes, aborts, hangs or runs away; a timeout is a crash. (The
-`compile` cells, about 740 of them, stand as declared crash-only controls
-until the owner rules growth-compile-cells.)
+`make test-stackdepth`. The owner's rulings of 2026-11-21 (growth-compile-cells:
+"the purpose of that section is to test limits and look for crashes. If it
+compiles, it's not testing limits"; limit-test-criteria, in
+docs/design/plan_row_bodies/GROWTH-SWEEP.md) give every cell a declared KIND,
+a closed set with no default:
+
+- **stability**: sized PAST a named limit. PASS = a clean refusal by THAT limit
+  (its diagnostic text); a crash, abort, hang, timeout, runaway memory, a
+  different refusal or a compile is FAIL.
+- **limit**: sized JUST BEFORE a named limit. PASS = it compiles AND its matcher
+  runs (the emitted C is built and run on a small fixed set of subjects, exit 0
+  or 1, no crash); a refusal of any kind is FAIL (the limit fired early).
+
+Crossing over is red either way (a stability cell that compiles, a limit cell
+that refuses), which is the alert for a cell that used to refuse and no longer
+does (`run_growth.py --selftest` shows both directions). Each limit cell has a
+stability twin across the same limit and value (depth 250/251 is the model;
+`--pairs` lists the pairs and any unpaired cell). The memory ladder (below) is
+stability-only: there is no sharp "just before" a memory cap. A timeout is a
+crash.
 There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md.
 
 - **Cells.** `tests/growth/depth_families.tsv` is the one depth table (33
-  families at depth 250 = must compile on the 442,368-byte budget thread, 251 =
-  refused by PCREC_MAX_GROUP_DEPTH; `run_compile_stack.sh` reads it through the
+  families: a `limit` cell at depth 250 on the 442,368-byte budget thread and its
+  `stability` twin at 251, refused by PCREC_MAX_GROUP_DEPTH; `run_compile_stack.sh` reads it through the
   runner); `matrix_axes.tsv` is the construct x quantifier x position x core
   product at 250/251; `cells.tsv` holds the spine-length, width and memory
-  cells (a `refuse:` row names its limit's diagnostic; a `compile` row has none).
+  cells (a `stability` row names its limit's diagnostic in `refuse:`; a `limit` row is `compile` and names the limit it sits just before).
 - **Memory ladder.** Every cell also runs under RLIMIT_DATA caps of 2, 8, 32 and
   128 MB; PASS = compiled, or refused by the cell's own limit text or by out of
   memory; FAIL = an `internal error:` refusal, a thread that never started,

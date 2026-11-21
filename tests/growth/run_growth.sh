@@ -15,6 +15,8 @@ cd "$ROOT" || exit 2
 rc=0
 only=(); [ -n "${ONLY:-}" ] && only=(--only "$ONLY")
 jobs=(); [ -n "${JOBS:-}" ] && jobs=(--jobs "$JOBS")
+echo "== growth: the crossing-over alert, both ways (--selftest) =="
+python3 -I tests/growth/run_growth.py --selftest || rc=1
 echo "== growth: CLI mode, every cell uncapped and under the memory ladder =="
 if [ "${SKIP_CLI:-0}" != 1 ]; then
     python3 -I tests/growth/run_growth.py "${only[@]}" "${jobs[@]}" || rc=1

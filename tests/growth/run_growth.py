@@ -58,6 +58,9 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 LADDER = [2 << 20, 8 << 20, 32 << 20, 128 << 20]
 
 WALL_S, CPU_S, RSS = 180, 180, "3g"
+# A LIMIT cell's matcher runs on each of these subjects (no match, a one-byte, a longer
+# one); each run must exit 0 or 1.  Fixed, not per-cell: the verdict is "it runs", not the answer.
+SUBJECTS = ("", "a", "abcabc")
 # LIBRARY per-cell bound ([GROWTH-SWEEP] timeout addendum): each in-process
 # compile gets its OWN wall bound = max(LIB_FLOOR_S, LIB_MARGIN x that cell's
 # slowest CLI-stage run), from the walls file the CLI stage writes.  The
@@ -67,13 +70,10 @@ WALL_S, CPU_S, RSS = 180, 180, "3g"
 # (a timeout is a crash) and the series stops there with the cell named.
 LIB_FLOOR_S, LIB_MARGIN = 300, 20
 DEPTH_LIMIT_TEXT = "too deeply nested"      # PCREC_MAX_GROUP_DEPTH's diagnostic
-# matrix@250: compiles, or is refused for one of the reasons MEASURED over the 672
-# cells (2026-11-21, r73): a backreference to a group the nest lacks, the NFA state
-# limit, the nested-bounded-repeat limit, an unbounded lookbehind. Any other refusal
-# (an `internal error:` above all) is a FAIL.
-MATRIX_250_EXPECT = ",".join(["compile"] + ["refuse:" + t for t in (
-    "refers to capture group", "NFA exceeds", "nested bounded repeats would replicate",
-    "a lookbehind containing a backreference")])
+CAPTURING = ("group", "named")              # the matrix kinds whose groups capture (a backreference core needs one)
+# matrix `+` cells at depth 250 (measured 2026-11-21 on a 20-pair sample): refused by a limit far below depth 250
+PLUS_250_EXPECT = "refuse:NFA exceeds,refuse:nested bounded repeats would replicate"
+PLUS_250_LIMIT = "PCREC_MAX_NFA_STATES or PCREC_MAX_VM_REPLICATION_PRODUCT"
 
 
 def tsv(path, ncols):
@@ -130,16 +130,32 @@ def spine(pre, unit, sep, mid, unit2, post, n):
     return sub(pre) + many(unit) + sub(mid) + many(unit2) + sub(post)
 
 
+KINDS = ("stability", "limit")      # a closed set; every cell declares one, there is no default
+
+
 class Cell:
-    def __init__(self, cid, family, pattern, stack, raise_, features, engine, expect, limit_name, red):
+    def __init__(self, cid, family, pattern, stack, raise_, features, engine, kind, expect, limit_name, pair, red):
         self.id, self.family, self.pattern = cid, family, pattern
+        # kind: RULING limit-test-criteria (owner, 2026-11-21).  STABILITY = sized PAST the
+        # named limit: it passes on a clean refusal by THAT limit.  LIMIT = JUST BEFORE it:
+        # it passes only if it compiles and its matcher runs.  pair: the id shared by a limit
+        # cell and its stability twin across the same limit ("" = none: reported UNPAIRED).
+        if kind not in KINDS:
+            sys.exit("run_growth: cell %s: kind %r is not one of %s" % (cid, kind, "/".join(KINDS)))
+        self.kind, self.pair = kind, pair
+        if kind == "limit" and expect != "compile":
+            sys.exit("run_growth: cell %s: a limit cell's expect is `compile`, got %r" % (cid, expect))
+        if kind == "limit" and not limit_name:
+            sys.exit("run_growth: cell %s: a limit cell names the limit it sits just before" % cid)
+        if kind == "stability" and (not expect or any(not a.startswith("refuse:") for a in expect.split(","))):
+            sys.exit("run_growth: cell %s: a stability cell's expect is refuse:SUBSTR (the limit's text), got %r" % (cid, expect))
         self.stack, self.raise_, self.features, self.engine = stack, raise_, features, engine
         self.expect, self.limit = expect, limit_name
         # red: "ID:KIND" -> the known issue and the one failure kind it takes
         self.red, _, self.red_kind = red.partition(":")
         if self.red and not self.red_kind:
             sys.exit("run_growth: cell %s: red %r needs a kind (ID:KIND)" % (cid, red))
-        if self.red_kind not in ("", "CRASH", "TIMEOUT", "RUNAWAY", "ERROR", "refused"):
+        if self.red_kind not in ("", "CRASH", "TIMEOUT", "RUNAWAY", "ERROR", "refused", "BUILD", "MATCHER"):
             sys.exit("run_growth: cell %s: red kind %r is not a failure kind" % (cid, self.red_kind))
         # the refusal texts a clean refusal of this cell may carry
         self.refusals = []
@@ -155,10 +171,12 @@ def build_cells(budget, depth):
     # --- DEPTH: the shared table, at depth and depth + 1 --------------------
     for name, pre, op, core, cl, post, feat, eng in tsv(os.path.join(HERE, "depth_families.tsv"), 8):
         for d in (depth, depth + 1):
-            exp = "compile" if d == depth else "refuse:" + DEPTH_LIMIT_TEXT
+            lim = d == depth        # depth is the limit's value: AT it = just before, one more = past
             cells.append(Cell("depth/%s@%d" % (name, d), "depth", nest(pre, op, core, cl, post, d),
-                              budget, 1, feat or "all", int(eng or 0), exp,
-                              "PCREC_MAX_GROUP_DEPTH" if d > depth else "", ""))
+                              budget, 1, feat or "all", int(eng or 0),
+                              "limit" if lim else "stability",
+                              "compile" if lim else "refuse:" + DEPTH_LIMIT_TEXT,
+                              "PCREC_MAX_GROUP_DEPTH", "depth/" + name, ""))
     # --- MATRIX: kind x quantifier x position x core ------------------------
     ax = {"K": [], "Q": [], "P": [], "C": []}
     for row in tsv(os.path.join(HERE, "matrix_axes.tsv"), {"K": 3, "Q": 3, "P": 4, "C": 4}):
@@ -167,26 +185,63 @@ def build_cells(budget, depth):
         for qn, q in ax["Q"]:
             for pn, ppre, ppost in ax["P"]:
                 for cn, calts, core in ax["C"]:
+                    if kn == "lookbehind" and cn == "bref":
+                        continue    # PCRE2 refuses a backreference inside a lookbehind: no cell can compile
                     a, b = calts.split(",")
                     op = kopen + ppre.replace("{A}", a).replace("{B}", b)
                     cl = ppost.replace("{B}", b) + ")" + q
-                    # the position is part of `op`/`cl`: close is per level
+                    # a `\1` core needs a group 1: the kinds that capture nothing get one in front
+                    pre = "(a)" if cn == "bref" and kn not in CAPTURING else ""
+                    cid = "%s.%s.%s.%s" % (kn, qn, pn, cn)
                     for d in (depth, depth + 1):
-                        pat = nest("", op, core, cl, "", d)    # nest() repeats `cl` once per level
-                        exp = MATRIX_250_EXPECT if d == depth else "refuse:" + DEPTH_LIMIT_TEXT
-                        cells.append(Cell("matrix/%s.%s.%s.%s@%d" % (kn, qn, pn, cn, d), "matrix", pat,
-                                          budget, 1, "all", 0, exp,
-                                          "PCREC_MAX_GROUP_DEPTH" if d > depth else "", ""))
+                        pat = nest(pre, op, core, cl, "", d)    # nest() repeats `cl` once per level
+                        if d > depth:       # past the depth limit: stability
+                            kind, exp, lim, pair = "stability", "refuse:" + DEPTH_LIMIT_TEXT, "PCREC_MAX_GROUP_DEPTH", "matrix/" + cid
+                        elif qn == "plus":
+                            # `+` replicates the body at every level, so a LOWER limit binds long before depth 250
+                            # (limits.md 3.10: "`+` ... is refused as too large (PCREC_MAX_NFA_STATES)"): this cell
+                            # is sized past THAT limit (its limit cell would sit at a much smaller depth: UNPAIRED)
+                            kind, exp, lim, pair = "stability", PLUS_250_EXPECT, PLUS_250_LIMIT, ""
+                        else:
+                            kind, exp, lim, pair = "limit", "compile", "PCREC_MAX_GROUP_DEPTH", "matrix/" + cid
+                        cells.append(Cell("matrix/%s@%d" % (cid, d), "matrix", pat, budget, 1, "all", 0,
+                                          kind, exp, lim, pair, ""))
     # --- CELLS: explicit ----------------------------------------------------
-    for (cid, fam, pre, unit, sep, mid, unit2, post, n, stack, rz, exp, lim, red) in \
-            tsv(os.path.join(HERE, "cells.tsv"), 14):
+    for (cid, fam, pre, unit, sep, mid, unit2, post, n, stack, rz, kind, exp, lim, pair, red) in \
+            tsv(os.path.join(HERE, "cells.tsv"), 16):
         if stack not in ("budget", "main"):
             sys.exit("run_growth: cells.tsv: %s: stack %r is neither `budget` nor `main`" % (cid, stack))
         for nn in n.split(","):
             cells.append(Cell("%s/%s@%s" % (fam, cid, nn), fam,
                               spine(pre, unit, sep, mid, unit2, post, int(nn)),
-                              budget if stack == "budget" else 0, int(rz), "all", 0, exp, lim, red))
+                              budget if stack == "budget" else 0, int(rz), "all", 0, kind, exp, lim, pair, red))
     return cells
+
+
+def pair_report(cells):
+    """-> (pairs, unpaired): pair id -> its cells; and the cells with no twin of the other kind
+    (a limit cell with no stability cell across the same limit, or the reverse; empty pair too).
+    A pair whose cells name different limits is a table error."""
+    pairs = {}
+    for c in cells:
+        if c.pair:
+            pairs.setdefault(c.pair, []).append(c)
+    for pid, cs in pairs.items():
+        if len({c.limit for c in cs}) != 1:
+            sys.exit("run_growth: pair %s names two limits: %s" % (pid, sorted({c.limit for c in cs})))
+    unpaired = [c for c in cells if not c.pair or {x.kind for x in pairs[c.pair]} != set(KINDS)]
+    return pairs, unpaired
+
+
+def sample_matrix(cells, npairs):
+    """Keep every non-matrix cell and `npairs` matrix PAIRS (both cells of each), chosen by a
+    prime stride over the product so every construct kind, quantifier, position and core shows
+    up (the sweep's own coverage check below).  The full matrix is the queued sweep's job."""
+    base = lambda c: c.id.rsplit("@", 1)[0]
+    mat = [c for c in cells if c.family == "matrix"]
+    ids = list(dict.fromkeys(base(c) for c in mat))
+    pick = {ids[(k * 37) % len(ids)] for k in range(npairs)}
+    return [c for c in cells if c.family != "matrix" or base(c) in pick]
 
 
 class Runner:
@@ -214,10 +269,13 @@ class Runner:
 
     def one_(self, cell, cap):
         pf = self.patfile(cell)
+        # a LIMIT cell's uncapped run also emits the artifact's C (with a main()) so its
+        # matcher can be built and run: "compiles AND its matcher runs"
+        csrc = pf + ".c" if (cell.kind == "limit" and cap == 0) else None
         cmd = [self.wd, "-s", str(WALL_S), "-c", str(CPU_S), "-m", RSS, "-i", "0.1",
                "-S", "growth", "-L", os.path.join(self.work, "watchdog.log"), "--",
                self.drv, "one", str(cap), str(cell.stack), str(cell.raise_),
-               cell.features or "-", str(cell.engine), pf]
+               cell.features or "-", str(cell.engine), pf] + ([csrc] if csrc else [])
         r = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
         rc = r.returncode
         if rc in (123, 124):    # 124 wall, 123 CPU (scripts/watchdog)
@@ -230,19 +288,61 @@ class Runner:
         if rc != 0 or not m:
             return "ERROR", "driver rc=%d %s" % (rc, (r.stderr or r.stdout).strip()[:120])
         if m.group(1) == "0":
+            if csrc:
+                bad = self.matcher(csrc)
+                if bad:
+                    return bad
             return "compiled", "hw=%s" % m.group(2)
         if m.group(1) == "-9":   # the thread never started: the compile never ran
             return "ERROR", m.group(3)
         return "refused", m.group(3)
 
 
-def meets(expect, kind, text):
-    for alt in expect.split(","):
-        if alt == "compile" and kind == "compiled":
-            return True
-        if alt.startswith("refuse:") and kind == "refused" and alt[7:] in text:
-            return True
-    return False
+    def matcher(self, csrc):
+        """Build the cell's emitted C and run it on SUBJECTS: each run must exit 0 (match) or
+        1 (no match), the generated main()'s contract; a crash, a give-up (3) or any other exit
+        fails.  -> None, or an outcome (kind, text) with kind BUILD or MATCHER (or TIMEOUT)."""
+        exe = csrc[:-2] + ".exe"
+        cc = os.environ.get("CC", "gcc")
+        b = subprocess.run([self.wd, "-s", str(WALL_S), "-c", str(CPU_S), "-m", RSS, "-S", "growth-cc",
+                            "-L", os.path.join(self.work, "watchdog.log"), "--",
+                            cc, "-O0", "-std=gnu11", "-w", "-o", exe, csrc, "-lm"],
+                           capture_output=True, text=True, errors="replace")
+        if b.returncode in (122, 123, 124):
+            return "TIMEOUT", "gcc on the emitted C over its wall/CPU/RSS bound (rc=%d)" % b.returncode
+        if b.returncode != 0:
+            return "BUILD", "the emitted C did not build: " + (b.stderr or b.stdout).strip()[:160]
+        for subj in SUBJECTS:
+            r = subprocess.run([self.wd, "-s", "60", "-c", "60", "-m", "1g", "-S", "growth-run", "-L",
+                                os.path.join(self.work, "watchdog.log"), "--", exe, subj],
+                               capture_output=True, text=True, errors="replace")
+            if r.returncode in (122, 123, 124):
+                return "TIMEOUT", "matcher on %r over its bound (rc=%d)" % (subj, r.returncode)
+            if r.returncode not in (0, 1):
+                return "MATCHER", "matcher on %r exited %d (0 = match, 1 = no match): %s" % (
+                    subj, r.returncode, (r.stdout or r.stderr).strip()[:80])
+        return None
+
+
+def judge(cell, kind, text):
+    """The uncapped verdict, by the cell's declared kind (RULING limit-test-criteria).
+    -> (good, why)."""
+    if cell.kind == "limit":
+        if kind == "compiled":
+            return True, ""
+        extra = ""
+        if kind == "refused":
+            extra = " CROSSED OVER: a limit cell was REFUSED (the limit fires early)."
+        return False, "limit cell: expected to compile and run its matcher, got %s: %s.%s" % (kind, text, extra)
+    if kind == "refused" and any(r in text for r in cell.refusals):
+        return True, ""
+    extra = ""
+    if kind == "compiled":
+        extra = " CROSSED OVER: a stability cell COMPILED (it no longer tests the limit)."
+    elif kind == "refused":
+        extra = " A DIFFERENT refusal than limit %s." % (cell.limit or "-")
+    return False, "stability cell: expected a clean refusal by %s (%s), got %s: %s.%s" % (
+        cell.limit or "-", "/".join(cell.refusals), kind, text, extra)
 
 
 def ladder_ok(cell, kind, text):
@@ -390,6 +490,9 @@ def main():
     ap.add_argument("--keep", action="store_true")
     ap.add_argument("--verbose", action="store_true", help="print every uncapped outcome")
     ap.add_argument("--pattern", default="", help="print the pattern of the cell with this id and exit")
+    ap.add_argument("--sample", type=int, default=0, metavar="N", help="run N matrix PAIRS (2N cells) instead of the whole matrix")
+    ap.add_argument("--pairs", action="store_true", help="list every limit/stability pair and every UNPAIRED cell, then exit")
+    ap.add_argument("--selftest", action="store_true", help="the crossing-over alert: a stability cell that compiles and a limit cell that is refused must both FAIL")
     ap.add_argument("--depth-only", action="store_true", help="the uncapped depth family only (make test-stackdepth)")
     a = ap.parse_args()
     budget = limit("PCREC_COMPILE_STACK_BUDGET")
@@ -401,6 +504,17 @@ def main():
             sys.exit("run_growth: no cell %s" % a.pattern)
         sys.stdout.write(hit[0].pattern)
         return 0
+    pairs, unpaired = pair_report(cells)
+    if a.pairs:
+        for pid, cs in pairs.items():
+            print("%s\t%s\t%s" % (pid, cs[0].limit, " ".join("%s:%s" % (c.kind, c.id.split("@")[-1]) for c in cs)))
+        for c in unpaired:
+            print("UNPAIRED\t%s\t%s\t%s" % (c.id, c.kind, c.limit or "-"))
+        print("# %d pairs, %d unpaired cells, %d limit cells, %d stability cells" % (
+            len(pairs), len(unpaired), sum(c.kind == "limit" for c in cells), sum(c.kind == "stability" for c in cells)))
+        return 0
+    if a.sample:
+        cells = sample_matrix(cells, a.sample)
     if a.depth_only:
         a.only, a.no_ladder = "depth", True
     if a.only:
@@ -416,8 +530,9 @@ def main():
         for c in cells:
             fams[c.family] = fams.get(c.family, 0) + 1
         for c in cells:
-            print("%s\t%s\t%s" % (c.id, c.expect, c.red))
-        print("# %d cells: %s" % (len(cells), ", ".join("%s %d" % kv for kv in sorted(fams.items()))))
+            print("%s\t%s\t%s\t%s" % (c.id, c.kind, c.expect, c.red))
+        print("# %d cells (%d limit, %d stability): %s" % (len(cells), sum(c.kind == "limit" for c in cells),
+              sum(c.kind == "stability" for c in cells), ", ".join("%s %d" % kv for kv in sorted(fams.items()))))
         return 0
     base = tmp_base()
     os.makedirs(base, exist_ok=True)
@@ -432,6 +547,8 @@ def main():
         print("FAIL: could not build growth_driver.c:\n" + b.stderr[:800])
         return 1
     rn = Runner(work, drv, os.path.join(ROOT, "scripts", "watchdog"))
+    if a.selftest:
+        return selftest(rn, budget, depth)
     ladder = [] if a.no_ladder else LADDER
     if a.lib:
         return 1 if lib_mode(rn, cells, ladder) else 0
@@ -443,13 +560,12 @@ def main():
             st = fam.setdefault(cell.family, [0, 0, 0, 0])
             for col, cap, kind, text in res:
                 if col == "uncapped":
-                    good = meets(cell.expect, kind, text)
-                    why = "expected %s (limit %s), got %s: %s" % (cell.expect, cell.limit or "-", kind, text)
+                    good, why = judge(cell, kind, text)
                 else:
                     good = ladder_ok(cell, kind, text)
                     why = ("a capped run must compile or be refused by %s or out of memory, got %s: %s"
                            % (cell.refusals or "its limit", kind, text))
-                tag = "%s %s [%s]" % (cell.id, col, kind)
+                tag = "%s (%s) %s [%s]" % (cell.id, cell.kind, col, kind)
                 if a.depth_only and kind == "compiled":
                     print("RECORD: %s stack=%d %s" % (cell.id, cell.stack, text))
                 if a.verbose and col == "uncapped":
@@ -484,11 +600,39 @@ def main():
     print("runs passed: %d" % npass)
     print("runs failed: %d" % (nfail + nfixed))
     print("runs known-red: %d" % nred)
+    sel = {c.id for c in cells}
+    for c in unpaired:
+        if c.id in sel:
+            print("UNPAIRED: %s (%s, limit %s) has no %s twin across the same limit" % (
+                c.id, c.kind, c.limit or "-", "limit" if c.kind == "stability" else "stability"))
     if not a.keep:
         subprocess.run(["rm", "-rf", "--", work])
     else:
         print("work dir kept: " + work)
     return 1 if (nfail or nfixed) else 0
+
+
+def selftest(rn, budget, depth):
+    """The crossing-over alert, both ways (RULING limit-test-criteria (3)): a stability cell
+    that COMPILES and a limit cell that is REFUSED must each be judged FAIL, and each cell on
+    its own side of the limit must be judged PASS.  Exit 0 iff all four are judged as written."""
+    deep = lambda d: nest("", "(?:", "a", ")", "", d)
+    cases = [("stability", "a", False, "CROSSED OVER"),                      # compiles: the limit is not tested
+             ("stability", deep(depth + 1), True, ""),                        # refused by the limit: PASS
+             ("limit", deep(depth + 1), False, "CROSSED OVER"),               # refused: the limit fires early
+             ("limit", deep(depth), True, "")]                                # compiles and its matcher runs
+    bad = 0
+    for k, (kind, pat, want_good, want_word) in enumerate(cases):
+        c = Cell("selftest/%d" % k, "selftest", pat, budget, 1, "all", 0, kind,
+                 "compile" if kind == "limit" else "refuse:" + DEPTH_LIMIT_TEXT, "PCREC_MAX_GROUP_DEPTH", "", "")
+        outcome = rn.one(c, 0)
+        good, why = judge(c, *outcome)
+        ok = good == want_good and want_word in why
+        print("%s: %s cell, %s: judged %s%s" % ("selftest ok" if ok else "FAIL: selftest", kind,
+              outcome[0], "PASS" if good else "FAIL", ("  <- " + why) if why else ""))
+        bad += not ok
+    subprocess.run(["rm", "-rf", "--", rn.work])
+    return 1 if bad else 0
 
 
 def repro(cell, cap):

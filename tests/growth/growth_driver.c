@@ -2,8 +2,10 @@
  * growth_driver.c — [GROWTH-SWEEP]: pcrec_compile() on a thread whose stack
  * this driver owns, under an optional memory cap, in two modes.
  *
- *   growth_driver one CAP STACK RAISE FEATURES ENGINE PATFILE
- *       ONE compile, then exit. Prints `rc=<0|-1> hw=<bytes> msg=<diag>` and
+ *   growth_driver one CAP STACK RAISE FEATURES ENGINE PATFILE [CSRC_OUT]
+ *       ONE compile, then exit. With CSRC_OUT the artifact is compiled with a
+ *       main() (PCREC_EMIT_MAIN) and its C source written there, for the
+ *       runner to build and run (a LIMIT cell's matcher). Prints `rc=<0|-1> hw=<bytes> msg=<diag>` and
  *       exits 0; a crash kills the process before the line, which is what
  *       the runner reads.
  *   growth_driver lib CONTROL_OUT SERIES_FILE
@@ -254,7 +256,7 @@ static int control(const char *path)
 
 int main(int argc, char **argv)
 {
-    if (argc >= 8 && strcmp(argv[1], "one") == 0) {
+    if ((argc == 8 || argc == 9) && strcmp(argv[1], "one") == 0) {
         struct job j;
         size_t hw;
         memset(&j, 0, sizeof j);
@@ -268,7 +270,12 @@ int main(int argc, char **argv)
             fprintf(stderr, "growth_driver: cannot set the memory cap %s (above the hard limit?)\n", argv[2]);
             return 2;
         }
+        if (argc >= 9) j.emit_main = 1;
         int started = run_job(&j, (size_t)strtoull(argv[3], NULL, 10), &hw) == 0;
+        if (argc >= 9 && started && j.rc == 0 && write_file(argv[8], j.out) != 0) {
+            perror(argv[8]);
+            return 2;
+        }
         job_report("", &j, hw, started, -1.0);
         return 0;
     }
@@ -326,6 +333,6 @@ int main(int argc, char **argv)
         printf("series done: %d cells\n", n);
         return 0;
     }
-    fprintf(stderr, "usage: %s one CAP STACK RAISE FEATURES ENGINE PATFILE | lib CONTROL_OUT SERIES_FILE\n", argv[0]);
+    fprintf(stderr, "usage: %s one CAP STACK RAISE FEATURES ENGINE PATFILE [CSRC_OUT] | lib CONTROL_OUT SERIES_FILE\n", argv[0]);
     return 2;
 }
