@@ -5560,7 +5560,7 @@ There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md
   report, answer every cell, and compile a control pattern identically before
   and after the series and run its matcher on a known subject. Each in-process
   compile has its OWN wall bound (a seventh series column, `growth_driver`'s
-  SIGALRM): max(120 s, 20 x that cell's slowest CLI-stage wall), the CLI stage
+  SIGALRM): max(300 s, 20 x that cell's slowest CLI-stage wall), the CLI stage
   writing its walls to `$PCREC_TMPDIR/growth-walls.tsv` (`GROWTH_WALLS`); a cell
   over its bound is a FAIL (a timeout is a crash), the driver prints
   `cell N TIMEOUT ...` and exits, so the series stops with the cell named; a

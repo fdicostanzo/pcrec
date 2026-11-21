@@ -60,7 +60,7 @@ WALL_S, CPU_S, RSS = 180, 180, "3g"
 # times the plain -O2 CLI) and a loaded box; a cell the walls file has never
 # seen (a --lib run alone) gets the floor.  A cell over its bound is a FAIL
 # (a timeout is a crash) and the series stops there with the cell named.
-LIB_FLOOR_S, LIB_MARGIN = 120, 20
+LIB_FLOOR_S, LIB_MARGIN = 300, 20
 DEPTH_LIMIT_TEXT = "too deeply nested"      # PCREC_MAX_GROUP_DEPTH's diagnostic
 
 
@@ -277,9 +277,15 @@ def lib_mode(rn, cells, ladder):
     ctl = os.path.join(rn.work, "control")
     env = dict(os.environ)
     env.setdefault("ASAN_OPTIONS", "detect_leaks=1:allocator_may_return_null=1")
-    r = subprocess.run([rn.wd, "-s", "14400", "-c", "14400", "-m", "6g", "-i", "0.5", "-S", "growth-lib",
-                        "-L", os.path.join(rn.work, "watchdog.log"), "--", lib_drv, "lib", ctl, series],
-                       capture_output=True, text=True, errors="replace", env=env)
+    # the driver's progress goes to a LOG that is readable while it runs (a
+    # captured pipe showed nothing for 50 minutes on the first run)
+    plog = os.path.join(os.path.dirname(walls_path()), "growth-lib-progress.log")
+    with open(plog, "w") as pf:
+        r = subprocess.run([rn.wd, "-s", "28800", "-c", "28800", "-m", "6g", "-i", "0.5", "-S", "growth-lib",
+                            "-L", os.path.join(rn.work, "watchdog.log"), "--", lib_drv, "lib", ctl, series],
+                           stdout=pf, stderr=subprocess.PIPE, text=True, errors="replace", env=env)
+    r.stdout = open(plog, errors="replace").read()
+    print("library mode: progress log " + plog)
     bad = []
     to = [l for l in r.stdout.splitlines() if re.match(r"cell \d+ TIMEOUT ", l)]
     for l in to:

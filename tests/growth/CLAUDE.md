@@ -28,7 +28,7 @@ arm rides `make test-stackdepth`.
 - `run_growth.sh` — the `make test-growth` body: CLI stage, then library stage
   against an ASan+LSan build (`build-asan/`). The library stage bounds each
   in-process compile by its own wall time (CLI walls in
-  `$PCREC_TMPDIR/growth-walls.tsv`, floor 120 s, margin x20; see testing.md).
+  `$PCREC_TMPDIR/growth-walls.tsv`, floor 300 s, margin x20; see testing.md).
 
 ## Rules
 
