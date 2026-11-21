@@ -93,6 +93,9 @@ PAB_U8 = [b"x.(?:1[\xc3\xa9\xc3\xa0]|q2|r3).y"]
 PAB_WIT = ([("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]
            + [(e, "c-default", w) for w in PAB_BOTH for e in ("byte", "utf8")]
            + [("utf8", "c-default", w) for w in PAB_U8])
+# the three bench texts of the vector span (block_span.md §9.3: its witnesses)
+SPAN_BENCH = (b"[0-9a-f]{32}", b"\\b[0-9a-f]{32}\\b", b"\\d{32}")
+
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
         {("byte", "c-default"): 122, ("byte", "c-vm"): 0, ("utf8", "c-default"): 176, ("utf8", "c-vm"): 0},
@@ -209,10 +212,28 @@ MEMFN_CLASS = {
     # patterns per encoding on the default engine (`...`, `.{3}cat`, `[-a]{3}-b`: a window's
     # stretch of one wide set) and none on the VM engine (no window site). Floors AT the
     # measured value; witness `[0-9a-f]{32}` (witness-only: the cover's 31 looped offsets).
-    **{("span-loop", ly): ("ASSERT_ZERO", {}, []) for ly in ("default", "simd")},
+    # RE-MEASURED (lane bsu2, R-47 U2, 2026-11-21; block_span.md §9.3): U2 puts V sites in
+    # the corpus (span_seed.rxt) and makes the wrapper the default there, so the deny
+    # (T-deny's all-inline text) now DIFFERS at exactly the V sites, 28 byte / 20 utf8 on
+    # c-default, 0 on c-vm (no window walk), both layers identical; the force's floors rise
+    # 14 -> 50 byte / 44 utf8 (the seed's long stretches join). `--measure` over the six
+    # cells at lane/bsu2 c51fb2d36, 5700 patterns. Floors AT the measure.
+    **{("span-loop", ly): ("DIFFER",
+        {("byte", "c-default"): 28, ("byte", "c-vm"): 0, ("utf8", "c-default"): 20, ("utf8", "c-vm"): 0},
+        [(e, "c-default", w) for e in ("byte", "utf8") for w in SPAN_BENCH]) for ly in ("default", "simd")},
     **{("span-loop=force", ly): ("DIFFER",
-        {("byte", "c-default"): 14, ("byte", "c-vm"): 0, ("utf8", "c-default"): 14, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 50, ("byte", "c-vm"): 0, ("utf8", "c-default"): 44, ("utf8", "c-vm"): 0},
         [(e, "c-default", b"[0-9a-f]{32}") for e in ("byte", "utf8")]) for ly in ("default", "simd")},
+    # span-vector (R-47 U2, lane bsu2; block_span.md §9.3, memfn/src/options.def): the deny
+    # restores the inline span at every layer (the wrapper is live at SIMD-off too), so DIFFER
+    # at both layers, never ASSERT_ZERO. MEASURED (`--measure`, lane/bsu2 c51fb2d36, 5700
+    # patterns, both layers identical): 28 byte / 20 utf8 on c-default, the span_seed.rxt V
+    # sites (the real corpus has none, §0.1); 0 on c-vm. Floors AT the measure; the three bench
+    # texts are witnesses byte and utf8 on c-default, and ARE span_seed.rxt corpus patterns, so
+    # they are counted inside the floor they back (r75 CHECKS-7), not beside it.
+    **{("span-vector", ly): ("DIFFER",
+        {("byte", "c-default"): 28, ("byte", "c-vm"): 0, ("utf8", "c-default"): 20, ("utf8", "c-vm"): 0},
+        [(e, "c-default", w) for e in ("byte", "utf8") for w in SPAN_BENCH]) for ly in ("default", "simd")},
     # The five vrun rows' utf8 witnesses (lane s2axes, 2026-11-13). [RUN-POS-SET] stage 3
     # (the S2 joint landing) states a utf8 caseless `s` or `k` as a WIDE position (`[Ss\xbf]`,
     # the last byte of U+017F; `k` likewise with U+212A), so a run through one is no single RUN

@@ -70,7 +70,8 @@ import row_map   # the ONE parser of row_map.tsv (rows_check.py reads it too)
 POP_FLOOR = 1000
 DEFAULT_ARMS = ["", "--engine=vm", "-fmemfn-simd", "-e utf8"]
 LINE = re.compile(r"^MFTRACE REACH table=(\S+) row=(\S+) (.*)$")
-END = re.compile(r"^MFTRACE END table=(\S+) .*\bphase=(\S+) chosen=(\S+) ")
+# a table's tag (wfS's `at=I k=K`) sits between `phase=` and `chosen=`: skipped (r75 SLOT-1)
+END = re.compile(r"^MFTRACE END table=(\S+) .*\bphase=(\S+) (?:[a-z_]+=\S+ )*?chosen=(\S+) ")
 TABLE = re.compile(r"^MFTRACE (?!REACH)\S+ .*?\btable=(\S+)")
 
 # One compile's trace. counts: the REACH lines summed per key; tables: every table

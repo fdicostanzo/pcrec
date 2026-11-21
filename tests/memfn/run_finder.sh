@@ -185,7 +185,7 @@ rc=$?
 part purity_traced "$WORK/purity_traced.log"
 [ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/purity_traced.log")" -gt 0 ] || { echo "FAIL: the traced --purity exited $rc with no failed check"; tf=$((tf + 1)); }
 for row in E-func:$PURITY_TRACED_EFUNC E-generic:$PURITY_TRACED_EGENERIC; do
-    rn=$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define chosen=${row%%:*} " "$WORK/purity_traced.trace")
+    rn=$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define( [a-z_]+=[^ ]+)* chosen=${row%%:*} " "$WORK/purity_traced.trace")
     if [ "$rn" -eq "${row##*:}" ] && [ "$rn" -gt 0 ]; then
         echo "ok   purity traced: ${row%%:*} defines agreed: $rn == ${row##*:}"; tp=$((tp + 1))
     else
