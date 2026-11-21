@@ -170,6 +170,9 @@ FLOORS = {
                              # level-rendering `simd:` arm, 2 arms since lane u3crit); 9 at R-47 U3
                              # (lane bsu3): `vspan` renders at the 32-byte target alone (x86-64 admits no w32);
                              # the sample-independent control, so 'simd-form' above can drift with the corpus
+    'named-vspan-w32': 1,    # r76 CHECKS-3: the NAMED `vspan` witness itself reads the row span-vector-w32 (at
+                             # the 32-byte target alone); the total above is kind-blind, so another witness
+                             # gaining a form could hide a V loss there. R71-5's reader that is not the sample
     'simd-form-lever': 2,    # lane mfind fix 1: the lever witnesses that render a SIMD row (2 of 2 measured:
                              # one per level-rendering target in LEVER_ARMS)
     'lever-capped': 4,       # lane mfindfix2 (r2 F1): lever witnesses whose helper the row's fit test
@@ -363,6 +366,8 @@ def main():
                 rec['counts'].append('simd-form')
                 if rec['key'].startswith('named:'):
                     rec['counts'].append('simd-form-named')
+                if rec['key'] == 'named:vspan' and 'span-vector-w32' in rec['rows']:
+                    rec['counts'].append('named-vspan-w32')
         if PROG.search(pout):
             rec['counts'].append('vm')
         why = UNROLL_WHY.search(pout)

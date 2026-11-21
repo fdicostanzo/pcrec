@@ -1929,7 +1929,15 @@ typedef struct {
  * box that runs V (D155 item 2). The window row's lower bound 16 is ALSO
  * the safety floor: below it no 16-byte block fits the stretch (§4.2), so a
  * re-measure may raise it, never lower it. */
-enum { WF_VWIN_LO = 16, WF_VWIN_HI = 1000, WF_VSCAN_LO = 24, WF_VSCAN_HI = 64 };
+enum { WF_VWIN_LO = 16, WF_VWIN_HI = 1000, WF_VSCAN_LO = 24, WF_VSCAN_HI = 64,
+      WF_VBLK_MIN = 16, WF_VBLK_MAX = 32 };
+/* THE BLOCK WIDTHS of V's level block (§4.1), in the enum above: the smallest B a stretch may
+ * use and the widest: vs_w32_block's safety assert, its refusal text and its
+ * B choice all read these. Both rows' lower bounds are at or above the
+ * smallest, so a re-measure that LOWERS a bound below it fails the build
+ * (r76 SLOT-1); one that RAISES a bound leaves the assert true. */
+_Static_assert(WF_VWIN_LO >= WF_VBLK_MIN, "T-vwin's lower bound is below the smallest block");
+_Static_assert(WF_VSCAN_LO >= WF_VBLK_MIN, "T-vscan's lower bound is below the smallest block");
 
 static int s_deny_holds(const wf_sx *x)  { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) < 0; }
 static int s_force_holds(const wf_sx *x) { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) > 0; }
@@ -1988,9 +1996,15 @@ static const struct {
     int     (*render)(wf_rc *rc, kb *t, const struct wf_stretch *st);
                                         /* the use's text of the stretch     */
     int     (*define)(wf_rc *rc, const struct wf_stretch *st, mf_sink *out);
-                                        /* its file-scope text, or NULL: a
-                                           row with one numbers its stretches
-                                           (j) for their function names      */
+                                        /* its file-scope text, or NULL. A
+                                           row with one IS the V family, and
+                                           this pointer is the V-family test
+                                           at its two reads: wf_stretches
+                                           (numbers the stretch j and counts
+                                           it in nv, s_v_ok's smallest-form
+                                           rule) and wf_find_define (writes
+                                           the text). wf_tables_check pairs
+                                           it with the V renderer, both ways */
     const gate_contract *ct;
     const char *opt;                    /* its options.def deny, or NULL     */
 } wf_spanrows[] = {
@@ -2558,7 +2572,8 @@ const char *wf_frame_name(wf_frame_row f)
 /* THE TABLES' SELF-CHECK (kit.h; refused at mf_art_begin): what no
  * initializer states. (1) Every Table E row has its predicate and contract
  * (a designated hole would be a NULL row), and so does every span form row
- * (with its form). (2) An E-find search renderer
+ * (with its form), and a span form row renders V's text iff it has V's
+ * define (the column's one reading). (2) An E-find search renderer
  * row takes no predicate: the renderable set asks it over the SITE (T-FIND's
  * gate, before any plan exists) and E-find's composition over the plan
  * (wf_bx), so the two could disagree; trigger to lift it: the first E-find
@@ -2573,6 +2588,9 @@ const char *wf_tables_check(void)
         if (!wf_spanrows[i].holds || !wf_spanrows[i].h || !wf_spanrows[i].render ||
             !wf_spanrows[i].ct)
             return "a span form row is a hole";
+    for (size_t i = 0; i < WF_NSROWS; i++)
+        if ((wf_spanrows[i].render == wf_span_v) != (wf_spanrows[i].define != NULL))
+            return "a span form row's define and the V renderer do not pair";
     if (!wf_spanrows[WF_NSROWS - 1].holds(NULL))
         return "the last span form row does not hold always";
     for (size_t i = 0; i < RB_N; i++) {
@@ -4370,8 +4388,10 @@ static int vs_w32_block(wf_rc *rc, const struct wf_stretch *st, const char *blk,
     mf_art *art = rc->art;
     const struct wf_plan *w = rc->w;
     const unsigned k = st->k;
-    if (k < WF_VWIN_LO) return kit_fail(art, "window family: a vector span of %u positions (16 at least)", k);
-    const unsigned b = k >= 32 ? 32 : 16;
+    if (k < WF_VBLK_MIN)
+        return kit_fail(art, "window family: a vector span of %u positions (%u at least)", k,
+                        (unsigned)WF_VBLK_MIN);
+    const unsigned b = k >= WF_VBLK_MAX ? WF_VBLK_MAX : WF_VBLK_MIN;
     const char *v = b == 32 ? "__m256i" : "__m128i", *mm = b == 32 ? "_mm256" : "_mm";
     const char *si = b == 32 ? "si256" : "si128";
     /* the nibble tables of the stretch's set (spike708.py nibble_tables) */

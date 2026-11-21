@@ -63,7 +63,12 @@ On every mover additionally:
       R-47 U3, docs/design/memfn/block_span.md §10.2) takes the -O0 RULE
       instead: no symbol of its family (`<fn>`, `<fn>__*`) is defined, and
       each function calling it holds a `pshufb` (any register width); its
-      control, a `__w32` without always_inline, is mech row S3515.
+      control, judged by that rule ALONE, is an in-script plant (a `__w32`
+      without always_inline, V_O0_CONTROL; mech row S3516 disables the rule).
+      A -O0 compile that fails or times out is an issue for EVERY selector,
+      the always_inline ones included (o0_compile_issues; mech row S3517).
+      Mech row S3515 plants the same `__w32` in the emitter: both the V head
+      leg and this rule reject it, so it proves the suite, not either leg.
 THE HEAD FAMILY (U3): a SELECTOR or HELPER head is `static inline`, an optional
 `__attribute__((...))` naming always_inline and/or unused, then `size_t` or
 `int`; a HELPER is `<fn>__w<VW>` or the block helper `<fn>__w<VW>_b`. The
@@ -89,6 +94,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TREE = os.path.dirname(os.path.dirname(HERE))
@@ -286,7 +292,7 @@ def o0_inline_issues(ton, sel, obj, cell):
     (`<fn>`, `<fn>__*`) is defined, and (2) each function calling the selector
     holds at least one `pshufb` (`pshufb` or `vpshufb`, any register width: the
     B = 16 rung is xmm only). Its control (1), a `__w32` without always_inline,
-    is mech row S3515."""
+    is the in-script V_O0_CONTROL (mech row S3516)."""
     issues = []
     syms = subprocess.run(['nm', obj], capture_output=True, text=True).stdout
     defined = set(re.findall(r' [tT] (\w+)$', syms, re.M))
@@ -303,6 +309,19 @@ def o0_inline_issues(ton, sel, obj, cell):
             if not PSHUFB.search(d):
                 issues.append('C9 %s -O0: %s, which calls %s, holds no pshufb' % (cell, c, fn))
     return issues
+
+
+def o0_compile_issues(r, sel, cell, obj, ton):
+    """The -O0 leg of C9 for one cell, from its compile result `r` (None: timed
+    out). A compile that did not succeed is an issue for EVERY selector, the
+    always_inline ones too (their symbols are never defined at -O0, so the
+    object cannot vouch for them; r76 CHECKS-2: the failed compile was once
+    green for every V selector); a successful one is the -O0 rule's."""
+    if r is None or r.returncode:
+        why = 'timeout' if r is None else 'rc %d: %s' % (r.returncode, r.stderr.decode(errors='replace')[-200:])
+        return ['C9 %s: %s: the -O0 compile failed (%s)' % (cell, fn, why) for fn in sorted(sel)] \
+            or ['C9 %s: the -O0 compile failed (%s)' % (cell, why)]
+    return o0_inline_issues(ton, sel, obj, cell)
 
 
 # the planted controls: (name, the leg that must reject it, plant(ton, t))
@@ -336,6 +355,13 @@ V_PLANTS = [
      lambda ton, t: re.sub(r'(?m)^(static inline __attribute__\(\()always_inline, (unused\)\) int \w+_mf\d+_vs\d+__body\()',
                            r'\1\2', ton, count=1)),
 ]
+# the -O0 rule's own control (CHECKS-1), judged by o0_inline_issues ALONE, on the
+# same clean V mover: `__w32` loses always_inline, so at -O0 it is a defined
+# symbol of the selector's family (rule leg 1). Applied to the artifact as
+# emitted (it is compiled), at the V_CONTROL_TARGETS' own -march.
+V_O0_CONTROL = ("__w32's always_inline dropped",
+                lambda raw: re.sub(r'(?m)^(static inline )__attribute__\(\(always_inline\)\) (int \w+_mf\d+_vs\d+__w32\()',
+                                   r'\1\2', raw, count=1))
 # the targets whose population must hold a clean V mover for V_PLANTS (K35): the
 # 32-byte one; at x86-64 (w16 only) the V selector calls `__body` (no mover)
 V_CONTROL_TARGETS = ('x86-64-v3',)
@@ -433,7 +459,7 @@ def main():
             rec['mover'], rec['sel'] = mover, sel
             if not mover:
                 continue
-            rec['toff'], rec['ton'] = toffm, ton
+            rec['toff'], rec['ton'], rec['raw'] = toffm, ton, raw
             # (b) by the preprocessor: only the floor calls change
             onpp = on[:-2] + '_pp.c'
             with open(onpp, 'w', encoding='utf-8', errors='surrogateescape') as f:
@@ -462,12 +488,12 @@ def main():
                                          % (cell, (r.stderr.decode()[-300:] if r else 'timeout')))
                     continue
                 r = sh(['gcc', '-O0', '-c'] + march + ['-o', d + '/c9o0.o', on], 120, cwd=d)
-                syms = subprocess.run(['nm', d + '/c9o0.o'], capture_output=True,
-                                      text=True).stdout if r and r.returncode == 0 else ''
+                rec['issues'] += o0_compile_issues(r, sel, cell, d + '/c9o0.o', ton)
+                if r is None or r.returncode:
+                    continue
+                syms = subprocess.run(['nm', d + '/c9o0.o'], capture_output=True, text=True).stdout
                 defined = set(re.findall(r' t (\w+)$', syms, re.M))
                 inl = always_inline_sel(ton)
-                if r and r.returncode == 0:
-                    rec['issues'] += o0_inline_issues(ton, sel, d + '/c9o0.o', cell)
                 for fn, vw in sorted(sel.items()):
                     if fn in inl:
                         continue
@@ -554,6 +580,33 @@ def main():
                 ok('%s: control %s rejected by %s' % (tn, name, leg))
             else:
                 bad('%s: control %s NOT rejected by %s (%r)' % (tn, name, leg, why[:2]))
+        # CHECKS-1: the -O0 rule alone rejects a V level helper without always_inline
+        name, plant = V_O0_CONTROL
+        planted = plant(vrec['raw'])
+        if planted == vrec['raw']:
+            bad('%s: control %s did not apply' % (tn, name))
+        else:
+            cd = tempfile.mkdtemp(prefix='o0ctl.', dir=os.environ.get('TMPDIR'))
+            with open(cd + '/a.c', 'w', encoding='utf-8', errors='surrogateescape') as f:
+                f.write(planted)
+            r = sh(['gcc', '-O0', '-c', '-march=' + tn, '-o', cd + '/a.o', cd + '/a.c'], 120, cwd=cd)
+            if r is None or r.returncode:
+                bad('%s: control %s did not compile at -O0' % (tn, name))
+            else:
+                why = o0_inline_issues(planted, vrec['sel'], cd + '/a.o', tn)
+                if any(' -O0: ' in w and 'yet its family defines' in w for w in why):
+                    ok('%s: control %s rejected by the -O0 rule alone' % (tn, name))
+                else:
+                    bad('%s: control %s NOT rejected by the -O0 rule (%r)' % (tn, name, why[:2]))
+            subprocess.run(['rm', '-rf', cd])
+        # CHECKS-2: a failed or timed-out -O0 compile is an issue for every selector, V included
+        for what, fake in (('failed', types.SimpleNamespace(returncode=1, stderr=b'x')), ('timed-out', None)):
+            why = o0_compile_issues(fake, vrec['sel'], tn, '/nonexistent.o', vrec['ton'])
+            miss = [fn for fn in sorted(vrec['sel']) if not any(': %s: ' % fn in w for w in why)]
+            if miss or not why:
+                bad('%s: a %s -O0 compile leaves selector(s) %s without an issue' % (tn, what, miss))
+            else:
+                ok('%s: a %s -O0 compile is an issue for each of %d selector(s)' % (tn, what, len(vrec['sel'])))
     print('checks passed: %d' % passed[0])
     print('checks failed: %d' % len(failed))
     return 1 if failed else 0
