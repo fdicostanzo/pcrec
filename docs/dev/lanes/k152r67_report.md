@@ -20,4 +20,4 @@ Local: test-stackdepth green (78 passed, 0 failed, 75 records); anchor check cle
 
 ## STATE AT HANDOFF
 Last R-n applied: none (the rulings file was empty). Cloud run name k152r67-test OWED, ref the tip sha in the lane's final message; verdict via monread/queuewatch.
-OWED: the cloud make test, run name k152r67-test, branch cloud/main/test/k152r67-test at 9ed03afe6 (pushed).
+OWED: none (the cloud make test, run k152r67-test, branch cloud/main/test/k152r67-test at 9ed03afe6, is dispatched; its verdict arrives via queuewatch).
