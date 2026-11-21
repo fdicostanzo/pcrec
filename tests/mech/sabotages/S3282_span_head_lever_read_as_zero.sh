@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3282 -- lane formsfixb (review r35 F14, the sibling of S3279): THE HEAD LEVER IS READ AS A SMALLER
-# HEAD. wf_span_head (memfn/src/window.c) honours the lever `span-head=N` but takes every N as 0 (L),
+# HEAD. the span form table, wfS (memfn/src/window.c; formerly wf_span_head), honours the lever `span-head=N` but takes every N as 0 (L),
 # so each head pass renders more loops, not fewer: the loop-count floors (lower bounds) all hold and
 # the answers are unchanged. The detector is G2's WINDOW family's head passes (memfn/tests/
 # run_g2_win.sh): the generator's reading that no loop starts below the pass's head, and its exact

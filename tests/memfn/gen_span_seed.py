@@ -170,7 +170,8 @@ def subjects(p):
 def findall_subject(p):
     near = bytearray(full(p, 2))
     near[-1] = outside(p.pos[-1])
-    return full(p) + full(p, 1) + bytes(near)
+    sep = b"!" if p.bounded else b""     # a bounded match abuts into one word without it
+    return full(p) + sep + full(p, 1) + sep + bytes(near)
 
 
 def render(path):

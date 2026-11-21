@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3281 -- lane formsfixb (review r35 F15, R-45 r45_reply.md rev 6 §3 "The option"): THE DENY IS IGNORED.
-# wf_span_head (memfn/src/window.c) drops the `--memfn=no-span-loop` arm, so the deny compiles the
+# the span form table, wfS (memfn/src/window.c; formerly wf_span_head), drops the `--memfn=no-span-loop` arm, so the deny compiles the
 # default head: at pcrec's default width (no offset past 32) deny == default by construction, so the
 # axes arm's ASSERT_ZERO cell cannot see it, and the cards' arm I would time H(64) under I's name.
 # The detector is G2's WINDOW family's long rows (memfn/tests/run_g2_win.sh): stretches of 500 and
