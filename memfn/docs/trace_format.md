@@ -97,10 +97,15 @@ the choice over alternatives), `table=wfE` (Table E, the frame) and, where
 Table E chose E-find (D172 S3), the finder's own `table=fd` walk for the stop
 (fd_find, T-FIND: D-hors first, the resume included; until span_pick 1e a
 `table=wfD` walk, Table D, came first, its D-hors now `fd`'s row and its
-D-one every other row's resume: tests/memfn/row_map.tsv), each at
-`phase=define`, `site=` the handle the define will take; a query (`mf_ask`,
+D-one every other row's resume: tests/memfn/row_map.tsv), and `table=wfS`
+(the span form table, R-47 U1, docs/design/memfn/block_span.md §3: one
+selection per one-class stretch of the plan, at E-find sites and at floor
+sites alike, written where the plan's stretch list is stored; each of its
+records carries `at=I k=K` after `phase=`, the stretch's first plan entry
+and its length, so one site's stretches are told apart: review r72 SLOT-7; any table's tag prints so, as `key=value` tokens between `phase=` and the record's next own key (`chosen=` on an `END`), and a reader skips them, `(?:[a-z_]+=\S+ )*?` before `chosen=`, as tests/memfn/reach_equal.py, memfn/tests/g2/run_part_census.py and the traced-define greps of run_g2_win.sh and run_finder.sh do: review r75 SLOT-1),
+each at `phase=define`, `site=` the handle the define will take; a query (`mf_ask`,
 `mf_wdecide`, NONE or framed, and the family's own quiet ask of today's rows) writes none; under MF_TRACE every window define also re-asks its phase-1 reply and compares it with the define's record (plan_frame.md §4.1, the agreement), writing nothing when they agree and refusing the define (`mf_define: the window family's phase-1 reply differs ...`) when not.
-Its own tables' rows (wfA, wfM, wfE) are not in the reach registry's printed
+Its own tables' rows (wfA, wfM, wfE, wfS) are not in the reach registry's printed
 tables (the family's floors are G2's, `memfn/tests/run_g2_win.sh`); D-hors,
 an `fd` row since 1e, is. Each window site a define renders
 also writes its PATH ID (window_site.md §2.7):

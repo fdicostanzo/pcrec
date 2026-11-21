@@ -29,3 +29,25 @@ drafted it). IDEA, his, NOT scheduled: for a run far behind a long variable head
 finds the run, steps back the head's maximum, and scans forward for the SET OF POTENTIAL STARTS (the head's first
 set, `\d`); "a specific request in the future from pcrec". TRIGGER (the manager's wording): a measured cell where
 attempts between (hit - K) and the true start are a measurable share of a search with a large K.
+
+## dense-not-target (2026-11-19 about 11:25, DISCUSSION, not a ruling; recorded 2026-11-20 at the kit's R-46 freeze note)
+
+HIS WORDS (as relayed in the owner view the same hour): "Just don't use kit searches (turn off the bit) but loop every
+byte start old school. So therefore, we should not try to optimize for super dense"; then "this is a matter of degrees.
+Dense for me could be defined as two+ hits in a single block if we use blocks. Super dense might be hits within some
+low N like 8. I don't know N". CLASS: DISCUSSION (no question was asked as a ruling; it is still open in the owner
+view under the slug dense-not-target). The kit's job 709 (night of 11-20) measured that the crossover N is NOT one
+constant (about k for plain C on hex/word classes, none up to 64 with AVX2, 2 to 4 for "not newline"), so "super
+dense = below one N" cannot be stated as one number; "dense = 2+ hits per block" stands as his working scope.
+MANAGER'S READING (mine, 2026-11-20, kit question bounded-horizon-scope; answer-identical either way, so the
+manager's call, revisitable when the discussion closes): hits within K+1 of each other (closer than the span itself) are
+SUPER-DENSE, outside the target; the BOUNDED handoff row states no horizon, only the UNBOUNDED row uses it.
+
+## Post-K38-2 re-measure, 2026-11-20 (lane dhremeas, main): LOSS STILL SHOWN
+
+The re-measure the row waited on (tuning.md §2.41¶8c's timings predated K38-2). The rule was committed before timing (22dad3e20). Counted run 2, on 1 MB of dense " @x", `--engine=vm`, median of 7, A/A floor 0.68 %, threshold 5 %, rows on vs `-fno-req-handoff`:
+- `[^@ ]+@x` (unbounded) is 1.490x slower;
+- `[^@ ]{1,5}@x` (bounded) is 2.226x slower;
+- the no-match tail win persists, at 0.0074 vs 1.55 ms.
+
+The kit's R-46 byte mover was gated on this result, and the gate is now MET. Report: docs/dev/lanes/dhremeas_report.md.

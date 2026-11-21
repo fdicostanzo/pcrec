@@ -268,7 +268,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const ren_key **ren)
 {
     gate_in in = { .s = s, .h = def };
-    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
+    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0, NULL };
     /* R17-b' B2 (r17b_prime.md §1.6): a site T-FIND decides (fd_find, the
        one walk; span_pick 1e) renders the deciding row's pick through the
        arm its renderer row names, asked on its own (deny, gate, predicate);
@@ -1073,6 +1073,7 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
                            the readers of `d->rate`, found by grep) */
     gate_trace_art(art);
     const char *why = wf_tables_check();
+    if (!why) why = fd_tables_check();
     if (why) {
         kit_fail(art, "mf_art_begin: the kit's window tables are refused: %s", why);
         return art;
@@ -1470,7 +1471,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
                         handle);
     wf_facts wff = { &r->site, NULL };
     gate_in in = { .s = &r->site, .h = use, .wf = r->wplan ? &wff : NULL };
-    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0 };
+    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0, NULL };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
     gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);
@@ -1632,7 +1633,7 @@ static const struct {
 
 /* THE VALUED LEVER (R-45 r45_reply rev 6 §3 "The head lever"): `span-head=N`,
  * N in 0..MF_SPAN_HEAD_MAX decimal, sets the span forms' inline head h on
- * the art (window.c wf_span_head), so the form cards time every H(h) on one
+ * the art (window.c, the span form table's T-lever row), so the form cards time every H(h) on one
  * binary. 1 iff `name` is that lever (*bad set where N is malformed). */
 static int lever_span_head(mf_art *art, const char *name, int *bad)
 {

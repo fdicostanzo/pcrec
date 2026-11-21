@@ -78,6 +78,15 @@ static ReqRun pf_req_run_none(void)
     return (ReqRun){ .pos = { NULL }, .whole_len = 0, .whole_maxoff = 0 };
 }
 
+/* `pcrec_bound_of` (facts.h): the saturated `PCREC_W_UNBOUNDED` reading is
+ * the unbounded state, and the value is kept so a printer prints it as
+ * before (span_arms §14.3 D-7). */
+PfBound pcrec_bound_of(long long off)
+{
+    return (PfBound){ .st = off >= PCREC_W_UNBOUNDED ? PF_OFF_UNBOUNDED : PF_OFF_BOUNDED,
+                      .v = off };
+}
+
 /* Stores fact `f`'s EMPTY VALUE — the answer for a pattern with nothing to
  * find, which every consumer already handles because real patterns produce
  * it. The switch has no `default:` so a new row is a compile error here. */
@@ -108,7 +117,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         pf->req_pieces = (PdDesc){ -1, PD_WALL, NULL };
         break;
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
-    case PF_REQ_LANDMARK_MAXOFF: pf->req_landmark_maxoff = -1; break;
+    case PF_REQ_LANDMARK_MAXOFF: pf->req_landmark_maxoff = pcrec_bound_none(); break;
     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
     case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0, 0, 0, 0 }; break;
     case PF_LAND_CHAR:    pf->land_char = (LandChar){ false, false }; break;
@@ -366,9 +375,13 @@ static void pf_derive(Ctx *cx, PfFactId f)
         pf_ask(cx, PF_REQ_SET_MAXOFF, false);
         pf_ask(cx, PF_REQ_WHOLE_RUN, false);
         pf_ask(cx, PF_REQ_BYTE, false);
-        pf->req_landmark_maxoff = pf->req_run.whole_len >= 2 ? pf->req_run.whole_maxoff
-                                : pf->req_byte >= 0 ? pf->req_set.maxoff[pf->req_byte] : -1;
-        if (pf->req_landmark_maxoff >= PCREC_W_UNBOUNDED) why = PF_WHY_UNBOUNDED;
+        pf->req_landmark_maxoff =
+            pf->req_run.whole_len >= 2 ? pcrec_bound_of(pf->req_run.whole_maxoff)
+            : pf->req_byte >= 0        ? pcrec_bound_of(pf->req_set.maxoff[pf->req_byte])
+                                       : pcrec_bound_none();
+        if (pcrec_bound_stated(pf->req_landmark_maxoff) &&
+            !pcrec_bound_bounded(pf->req_landmark_maxoff))
+            why = PF_WHY_UNBOUNDED;
         break;
     case PF_KSET_WALK:
         /* The machine E3 sealed: `Job.nfa`, wrapped, never rebuilt after. */
@@ -609,7 +622,7 @@ const ReqSet *pcrec_fact_req_set_maxoff(Ctx *cx)
     return &cx->job->pf.req_set;
 }
 
-long long pcrec_fact_req_landmark_maxoff(Ctx *cx)
+PfBound pcrec_fact_req_landmark_maxoff(Ctx *cx)
 {
     pf_ask(cx, PF_REQ_LANDMARK_MAXOFF, true);
     return cx->job->pf.req_landmark_maxoff;
@@ -880,9 +893,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         if (pf->req_byte < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
     case PF_REQ_LANDMARK_MAXOFF:
-        if (pf->req_landmark_maxoff < 0) return "none";
-        if (pf->req_landmark_maxoff >= PCREC_W_UNBOUNDED) return "unbounded";
-        return pcrec_sb_fragf(&cx->arena, "%lld", pf->req_landmark_maxoff);
+        if (!pcrec_bound_stated(pf->req_landmark_maxoff)) return "none";
+        if (!pcrec_bound_bounded(pf->req_landmark_maxoff)) return "unbounded";
+        return pcrec_sb_fragf(&cx->arena, "%lld", pf->req_landmark_maxoff.v);
     case PF_KSET_WALK: {
         /* One item per offset, offset order: a singleton as its byte in
          * decimal, a wider set as `[N]`, its member count. */

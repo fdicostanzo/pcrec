@@ -1,0 +1,2 @@
+variant-0 extra noise t(3) s=0.01, ALL texts N=200 | von/pt: fl 15 h8 91 P!=64 0.455 | voff/pt: fl 9 h8 117 P!=64 0.585 | von/pool: fl 98 h8 56 P!=64 0.280
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

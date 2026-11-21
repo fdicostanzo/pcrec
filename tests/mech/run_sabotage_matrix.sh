@@ -456,6 +456,11 @@
 #     body's run-time tiling check only fires on a compile that reaches the
 #     foreign write, and a write on an unreached path (the comment tier, a
 #     rare rung) moves no answer. Registered before S1840.
+#   skippins — added 2026-11-21 (review r72 CHECKS-1, lane bsu1fix); runs
+#     tests/codegen/run_skip_pins.sh: the E-find search rows' `skip` column
+#     held to the artifact (the proved position is not re-tested). Its own arm
+#     because a re-tested position moves no answer and no G2 pin. Registered
+#     before S3500.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -3761,6 +3766,13 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
                 score_arm "$work/trailcompact.log" "$f" "trailcompact:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            skippins)
+                # tests/codegen/run_skip_pins.sh -- see the vocabulary entry above.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_skip_pins.sh" > "$work/skippins.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/skippins.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/skippins.log" | grep -oE '[0-9]+')"
+                score_arm "$work/skippins.log" "$f" "skippins:${f:-ERR}fail/${p:-?}pass"
                 ;;
             stmtwriter)
                 # [VMREC] tests/codegen/run_stmt_writer.sh -- see the

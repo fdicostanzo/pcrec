@@ -118,7 +118,10 @@ rep() { local s="" i; for ((i = 0; i < $2; i++)); do s+="$1"; done; printf '%s' 
 # <depth> levels deep, between <pre> and <post>. <open> is a printf format
 # given the level's index, so a family whose groups must differ (named groups)
 # can number them; <post> is one given the depth, so it can name the innermost
-# group; a format with no conversion prints as itself.
+# group; a format with no conversion prints as itself. A <core> holding a
+# conversion is printed once per level, given the group numbers 1..<depth>
+# (`\\%d`: one backreference to every group, `\1\2…\N`); one with none
+# prints as itself.
 nest() {
     local i el
     printf '%s' "${5:-}"
@@ -126,7 +129,14 @@ nest() {
         # shellcheck disable=SC2059
         printf -v el "$1" "$i"; printf '%s' "$el"
     done
-    printf '%s' "$2"; rep "$3" "$4"
+    case "$2" in
+        *%*) for ((i = 1; i <= $4; i++)); do
+                 # shellcheck disable=SC2059
+                 printf -v el "$2" "$i"; printf '%s' "$el"
+             done ;;
+        *)   printf '%s' "$2" ;;
+    esac
+    rep "$3" "$4"
     # shellcheck disable=SC2059
     printf "${6:-}" "$4"
 }
@@ -167,6 +177,30 @@ run() {
 # ---- DEPTH ----------------------------------------------------------------
 # name;pre;open;core;close;post;features;engine (pre/post: nest's)
 #   callouter/callinner call the whole nest and its innermost group again;
+#   brefrep/brefsrep/litrep are possessify's FIRST shapes (K147, K149): a
+#   backreference at the core re-enters the fold through the capture fact,
+#   once (`\1`) or once per group (`\1\2…\N`), and litrep reaches it with no
+#   reference at all;
+#   altpos/altpospost/brefpost are the possessive wrap `*+` (a distinct
+#   arm), and every `*post` row carries one literal element beside the nest:
+#   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3,
+#   before K152's fix: one trailing `d` moved `(abc|abd…abe)*` from 317,504
+#   to 440,560 bytes and `(a|b…c)*` from 257,552 to 344,560; after it the
+#   element costs a few hundred bytes; limits.md §3.10¶3);
+#   nclitrep/litpost/nclitpost/litcompound are the multi-atom-branch nest
+#   (K152): its peak was the NFA builder's `compile_ast`, whose inlined arms
+#   paid about 1.7 KB per level until each arm got its own frame;
+#   litcompound is the same nest on the compound route (the review r64
+#   witness `^(?i:…)|b$`'s route, checked to reach it below); of these four
+#   only litcompound dies at BASE (before the K152 fix) and on the S3470
+#   plant: it is the undo witness; nclitrep/litpost/nclitpost were GREEN at
+#   BASE and guard headroom against another compiler (litpost died on CI);
+#   capwrap/longwrap (r67 F3) are the CAPTURING nest under the same `^…|b$`
+#   wrapper (not the compound route: the reach check below does not cover
+#   them) and its long distinct-letter-atoms form, the measured WORST of
+#   every family (319,504 bytes at depth 250, gcc 15.2.0, the same before
+#   and after K152: a wrapper alternative and distinct letters in the atoms
+#   cost most);
 #   compound puts the nest in an arm of a pattern the compound route takes
 #   (two compiles, one inside the other: compile_driver -> pcrec_compound_walk
 #   -> part_compile -> compile_driver), checked below to reach that route.
@@ -178,6 +212,22 @@ starnest;;(?:;a;)*;;all;0
 optnest;;(a;;)?;;all;0
 optnest-vm;;(?:a;;)?;;all;2
 look;;(?=;a;);;all;0
+lookrep;;(?=a|b;c;)*+;;all;0
+altrep;;(a|b;c;)*;;all;0
+ncaltrep;;(?:a|b;c;)*;;all;0
+brefrep;;(a|b;\1;)*;;all;0
+brefsrep;;(a|b;\\%d;)*;;all;0
+litrep;;(abc|abd;abe;)*;;all;0
+nclitrep;;(?:abc|abd;abe;)*;;all;0
+litpost;;(abc|abd;abe;)*;d;all;0
+nclitpost;;(?:abc|abd;abe;)*;d;all;0
+altpos;;(a|b;c;)*+;;all;0
+altpost;;(a|b;c;)*;d;all;0
+ncaltpost;;(?:a|b;c;)*;d;all;0
+optaltpost;;(?:a|b;c;)?;d;all;0
+altpospost;;(a|b;c;)*+;d;all;0
+brefpost;;(a|b;\1;)*+;d;all;0
+optpost;;(a;;)?;d;all;0
 lookbehind;;(?<=;a;);;all;0
 atomic;;(?>;a;);;all;0
 inlineopt;;(?i:;a;);;all;0
@@ -185,6 +235,9 @@ named;;(?<n%d>;a;);;all;0
 callouter;;(;a;);(?1);all;0
 callinner;;(;a;);(?%d);all;0
 compound;^;(?i:;a;);|b$;all;0
+litcompound;^;(?:abc|abd;abe;)*;|b$;all;0
+capwrap;^;(abc|abd;abe;)*;|b$;all;0
+longwrap;^;(abcdefghijklmnopqrstuvwxyz|abcdefghijklmnopqrstuvwxy_;abe;)*;|b$;all;0
 '
 while IFS=';' read -r name pre open core close post feat eng; do
     [ -n "$name" ] || continue
@@ -210,15 +263,17 @@ while IFS=';' read -r name pre open core close post feat eng; do
     done
 done <<< "$DEPTH_FAMILIES"
 
-# The compound family's REACH: its depth-250 pattern must take the compound
-# route, or the family measures a plain compile under another name.
-if "$TIMEOUT_BIN" 300 "$PCREC" -p rx --features all -o "$WORKDIR/compound.c" \
-        --pattern "$(cat "$WORKDIR/depth-compound-$DEPTH.pat")" 2>/dev/null &&
-   grep -q '"compound"' "$WORKDIR/compound.c"; then
-    ok "compound nested $DEPTH deep takes the compound route (its stamps read \"compound\")"
-else
-    bad "[DD-10] compound nested $DEPTH deep no longer takes the compound route: pick a family the route admits (limits.md §3.10 measured it)"
-fi
+# The compound families' REACH: each depth-250 pattern must take the
+# compound route, or the family measures a plain compile under another name.
+for name in compound litcompound; do
+    if "$TIMEOUT_BIN" 300 "$PCREC" -p rx --features all -o "$WORKDIR/$name.c" \
+            --pattern "$(cat "$WORKDIR/depth-$name-$DEPTH.pat")" 2>/dev/null &&
+       grep -q '"compound"' "$WORKDIR/$name.c"; then
+        ok "$name nested $DEPTH deep takes the compound route (its stamps read \"compound\")"
+    else
+        bad "[DD-10] $name nested $DEPTH deep no longer takes the compound route: pick a family the route admits (limits.md §3.10 measured it)"
+    fi
+done
 
 # ---- UNBUILT --------------------------------------------------------------
 unbuilt_case() {   # <name> <pattern-file>

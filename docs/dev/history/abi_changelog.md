@@ -23,7 +23,21 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `109` on every artifact today ([COVER-CAP] stage 2, 108 -> 109, lane covs2b
+- **`rx_info.abi` is `110` on every artifact today (R-47 unit U2, the vector span's wrapper, 109 ->
+  110; the kit stamped 111 while L3 held 110, and U2 landed first, so lane u2land re-pinned it
+  to 110 at the landing, 2026-11-21; `docs/design/memfn/block_span.md` rev 4.1 §5, §14; D201
+  add. 2 and add. 4).**
+  The memfn kit's window search renders a one-class stretch of a window site (finder row D-hors
+  with 16 to 1000 positions, or R7w with 24 to 64, tested by the kit's own set test) as a call of
+  a selector function `<p>_mf<h>_vs<j>(S, C)`, at EVERY layer: its one body `__body` is the
+  stretch's former inline text, both `static inline __attribute__((always_inline))` (the body
+  also `unused`), written at file scope by the window define. At pcrec's default window width
+  (32) the corpus holds 28 such stretches, all in `tests/memfn/span_seed.rxt` (no real corpus
+  pattern), and the bench 3. The deny `--memfn=no-span-vector` restores every artifact's bytes
+  but this number, at every layer and target. The vector helper itself (unit U3) renders no byte
+  yet. No struct offset moves, no `rx_info` member changes, and no answer moves.
+
+- **`rx_info.abi` was `109` on every artifact ([COVER-CAP] stage 2, 108 -> 109, lane covs2b
   2026-11-16, the combined branch; `docs/design/cover_cap.md` §11, R-45).**
   The ONE `abi` event of the stage-2 joint landing. The memfn kit's window statement became a
   counted list in storage pcrec owns (`MF_SITE_ABI` 29 -> 30, `MF_CLASS_V` 10 -> 11: the per-offset

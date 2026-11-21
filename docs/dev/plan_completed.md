@@ -6625,3 +6625,20 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   status (2026-11-12): DONE: delivered by the kit's close-out (merge of lane/memfn-kclose, 2026-11-12) and fixed by lane memfn-xarchfix (a failing level reports a clean MISMATCH, not a compiler error); S725, S726, S2981, S2994 read DETECTED.
   refs: tests/mech/sabotages/S726_w32_under_weak_guard.sh; memfn/tests/check_targets.sh
   check_targets.sh proves needs is a subset of features, never that the needs are enough: a level under-declaring (avx for avx2) is invisible while every target carrying the one carries the other.
+- [K146-VMCOST-DEPTH] STATE:done — quantified nested lookarounds overflow the compile thread's stack in vm_cost (K146)
+  filed: 2026-11-19 manager, from review r58 IDENT-1 (pre-existing; found while reviewing L1's stackdepth fix)
+  status (2026-11-20): DONE: landed from lane/k146land (make test 202 GREEN); PCREC_OWN_FRAME on the vm_emit_node/vm_cost recursive arms, DEPTH_FAMILIES rows lookrep, altrep; true worst 353,512 B at depth 250; zero emitted-byte movers.
+  refs: known_issues K146; docs/dev/reviews/2026-11-19-r58-l1tail.md; docs/dev/reviews/2026-11-20-r62-k146fix.md
+- [K147-POSSESSIFY-DEPTH] STATE:done — possessify's first_of/text_first recursion kills pcrec_compile on `(a|b(a|b…\1)*)*` (K147)
+  filed: 2026-11-20 manager, from review r62 DEPTH-3/DEPTH-4 (pre-existing; answer-adjacent: libpcre2 compiles it)
+  status (2026-11-20):  DONE: landed on main 0016d430f from lane/k147tri (cloud make test 44851932923 GREEN): FIRST fold on an explicit arena stack + own frames; K147's two shapes and K149's compile at depth 250 (257,552/257,552/317,504 B); zero emitted-byte movers; K152 filed for the NFA builder's depth.
+  refs: known_issues K147 (the family survey, r62 UNLOCK-2, is its notes); docs/dev/reviews/2026-11-20-r62-k146fix.md; docs/spec/limits.md §3.10¶1
+- [K149-FIRSTOF-NOBREF] STATE:done — `(abc|abd(…abe))*` kills pcrec_compile in first_of with no backreference (K149, K147's second shape)
+  filed: 2026-11-20 lane growfile, from growsurv KR-B
+  status (2026-11-20):  DONE: landed on main 0016d430f from lane/k147tri (cloud make test 44851932923 GREEN): FIRST fold on an explicit arena stack + own frames; K147's two shapes and K149's compile at depth 250 (257,552/257,552/317,504 B); zero emitted-byte movers; K152 filed for the NFA builder's depth.
+  refs: known_issues K149, K147; docs/dev/lanes/growsurv_report.md C4
+- [K152-NFA-DEPTH] STATE:done — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
+  filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
+  status (2026-11-21):  DONE: landed on main f9b1b21eb from lane/k152r67 (cloud make test 44875195557 GREEN): the NFA builder's compile_ast arms on their own frames (dispatcher 384 -> 32 B), every DEPTH_FAMILIES row at 250 with >= 28% headroom (worst longwrap 319,504 B); review r67 fixes (anchors, limits.md 3.10); zero emitted-byte movers; S3470.
+  trigger: the NEXT lane of the K146/K147 family (same general depth mechanism, [DD-10] PCREC_OWN_FRAME on the NFA builder's recursive arms); with DEPTH_FAMILIES rows for the plain and the compound-route shape; [LINT-FRAME] and [GROWTH-SWEEP] list it
+  refs: known_issues K152; docs/dev/reviews/2026-11-20-r64-k147fix.md (F2); docs/spec/limits.md §3.10¶3; [K147-POSSESSIFY-DEPTH]

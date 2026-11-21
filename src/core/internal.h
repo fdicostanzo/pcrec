@@ -355,7 +355,13 @@ void  pcrec_arena_free(Arena *a);
  * pays its frame once per level, up to `PCREC_MAX_GROUP_DEPTH` times on one
  * stack (docs/spec/limits.md §3.10 states the resulting budget), so a scratch
  * array or a by-value analysis struct that is dead before the walk recurses
- * belongs in a callee marked this way. `tests/thread/run_compile_stack.sh`
+ * belongs in a callee marked this way. The mark has a SECOND use, on the
+ * recursive arm itself: a dispatcher that switches over every node kind and
+ * recurses (`vm_emit_node`, `vm_cost`) would otherwise inline its arms and
+ * pay the UNION of their locals at every level, so each recursive arm is
+ * marked and the dispatcher keeps only the frames on a level's own path
+ * (K146; precedent `rb_look_item`, src/facts/req.c). Mark an arm for either
+ * reason, and say which in its header. `tests/thread/run_compile_stack.sh`
  * measures the result; nothing checks the marking itself. */
 #define PCREC_OWN_FRAME __attribute__((noinline))
 
@@ -4151,7 +4157,7 @@ struct Ctx {
      * LB would refuse subjects PCRE2 accepts. `[[:<:]]`/`[[:>:]]` count 1 in
      * PCRE2 and are not built here (src/parse/ext.c refuses them); their
      * producer raises this when it lands. */
-    int                  lb_max;
+    int                  lb_max;   /* writers: `pcrec_lb_raise`; readers outside the parser: `pcrec_lb_max` */
     /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
      * subset construction, across every machine this compile builds (forward
      * and reverse are charged to one budget because they are both live at
@@ -4506,6 +4512,14 @@ static inline bool pcrec_kit_proof_routed(const Ctx *cx)
 static inline void pcrec_lb_raise(Ctx *cx, int n)
 {
     if (n > cx->lb_max) cx->lb_max = n;
+}
+
+/* [UTF-VALID] The pattern's declared lookbehind length in characters
+ * (`Ctx.lb_max`, PCRE2's `max_lookbehind`): the one read for every reader
+ * outside the parser, so the field's storage stays the parser's own. */
+static inline int pcrec_lb_max(const Ctx *cx)
+{
+    return cx->lb_max;
 }
 
 /* [M6.2 wave A] `Ctx.mods`' type is DELIBERATELY INCOMPLETE HERE (§8.6): the

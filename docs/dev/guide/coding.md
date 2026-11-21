@@ -195,6 +195,7 @@ reversal) stay separate walks by design; only a walk that is genuinely this
 same generic shape merges into `pcrec_ast_visit`, and until L1-X1's staged
 sweep reaches a given site you are still copying the two rules above
 verbatim there.
+A walk's FRAME matters as much as its depth: `PCREC_OWN_FRAME` (`core/internal.h`) has two uses, scratch that is dead before the walk recurses and a recursive arm kept out of its dispatcher's frame; the comment there is the rule ([DD-10], K146). It fixes a frame's SIZE, not a recursion whose depth is not bounded by the nesting (a memo re-entry: arm B's FIRST fold re-enters itself through a reference's groups, K147): that goes on an arena-grown explicit stack, one frame struct per pending step (`first_eval`/`FqFrame`, src/opt/possessify.c), the third case beside the two marked uses. Three such stacks exist today; [ARENA-REGROW] is the plan row to share their growth.
 
 **2.5 Ownership.** The compile's `Ctx` owns the arena; the arena owns everything
 allocated from it; the caller owns nothing you did not hand back through the

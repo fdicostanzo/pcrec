@@ -14,5 +14,9 @@ SAB_REACH_EXPECT='REACH-UNBOUNDED-NONE'
 SAB_REACH_POP='tests/codegen/run_prechecks.sh|^a\.\*\?\(\?i\)select%|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;'
-SAB_AFTER='    if (k < 0) return false; /* SABOTAGE S467 */'
+SAB_BEFORE='    if (!pcrec_bound_bounded(k)) return false;'
+SAB_AFTER='    if (!pcrec_bound_stated(k)) return false; /* SABOTAGE S467 */'
+# RE-ANCHORED 2026-11-20 (lane l3build, span_arms L3 RM-2, D-7): K is a `PfBound` (state +
+# signed value); the conjunct is the bounded predicate, and the plant keeps only "stated",
+# so an unbounded landmark is handed off (the DFA route then stamps REQ_HANDOFF "unbounded"
+# and takes the no-move branch; [5.12c] reads it as before). Intent unchanged.

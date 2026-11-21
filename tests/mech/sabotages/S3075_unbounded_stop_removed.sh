@@ -16,8 +16,11 @@ SAB_REACH='"$PCREC" --features all -p rx --engine=vm -o "$REACH_TMP/o.c" --patte
 SAB_REACH_EXPECT='REACH-STOP'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    long long k = req_handoff_k(cx);
+SAB_BEFORE='    long long k = kb.v;
     pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);'
-SAB_AFTER='    long long k = req_handoff_k(cx);
-    if (k >= PCREC_W_UNBOUNDED) return;   /* SABOTAGE S3075: no stop */
+SAB_AFTER='    long long k = kb.v;
+    if (!pcrec_bound_bounded(kb)) return;   /* SABOTAGE S3075: no stop */
     pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);'
+# RE-ANCHORED 2026-11-20 (lane l3build, span_arms L3 RM-2, D-7): K is a `PfBound` (state +
+# signed value); the re-entry's value line `k = kb.v` follows the ask, and the anchor is that
+# line plus the re-ask printf (the two-line site, review r51 READYL3-8). Intent unchanged.

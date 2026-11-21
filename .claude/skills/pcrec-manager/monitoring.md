@@ -134,3 +134,5 @@ monitor); it adds a one-shot alarm at the expected end + 2 h.
 After each push note its sha; on the next wake or heartbeat read `timeout 60
 gh run list --commit <sha>`. A cancelled run is NOT green (a push cancels the
 running job). Any `failure` on main -> a triage lane before other work.
+
+- **Hand-written queue jobs (2026-11-20, three false or instant reds in one day):** `bash -n` the script and run its `--dry-run` before `boxqueue add`. A prefix assignment must be a valid shell name (`STAGE_l3fix-test=` died in 1 s with rc 127). A job that execs `scripts/battery.sh` reads GREEN in seconds, because battery detaches: wrap it the way `scripts/fullsuite_job.sh` does, or read the battery's own trailer. A `make test` under perfrun's j2p8 shape needs `--timeout 5000` (g2tri, 2026-11-20).

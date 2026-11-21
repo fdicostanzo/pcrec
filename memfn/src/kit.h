@@ -335,7 +335,8 @@ struct mf_art {
        shipped compile) */
     unsigned     levers;
     /* R-45 the VALUED lever `span-head=N` (KIT_LEVER_SPAN_HEAD set): the
-       inline head h of the span forms on this art (window.c wf_span_head) */
+       inline head h of the span forms on this art (window.c, the span
+       form table's T-lever row) */
     unsigned     span_head;
     char        err[256];
 };
@@ -815,6 +816,18 @@ enum { FD_REFUSED = -1, FD_NO_ROW = 0, FD_DECIDED = 1 };
 #define fd_find MF_NS(fd_find)
 int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_stop *st,
             wf_frame_row frame, int quiet, fd_form *pick, const char **row);
+/* The FIND rows another file's table keys on by IDENTITY (window.c's span
+ * form table, block_span.md §3 SEAM-7): a name for each, so the row's id is
+ * spelled in finder.c alone. */
+typedef enum { FD_NAMED_DHORS, FD_NAMED_R7W } fd_named;
+#define fd_brow_is MF_NS(fd_brow_is)
+/* 1 iff `brow`, a row fd_find decided (its *row), is FIND row `which`. */
+int fd_brow_is(const char *brow, fd_named which);
+/* NULL iff each fd_named names a row of the FIND table (finder.c): else the
+ * broken one, which mf_art_begin refuses (wf_tables_check's shape; a typo'd
+ * id would compile and silently make fd_brow_is never true: review r75 SLOT-2). */
+#define fd_tables_check MF_NS(fd_tables_check)
+const char *fd_tables_check(void);
 /* THE ROUTED PRES DECISION (finder.c, R17-b' B3b, r17b_prime.md §1.4): the
  * chain link of every presence span of ALL_PRESENT site `s` (its `pspans`),
  * by the PRES rows P0 P2 P3 P9 (first match) and P4 (the order row, asked on
@@ -1041,6 +1054,19 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
 int ofs_verify_chain(mf_art *art, const mf_hooks *h, const struct fn_in *x, mf_sink *o);
 int ofs_fn_fall(mf_art *art, const mf_hooks *h, const mf_pred *p, const char *callee,
                 mf_sink *o);
+/* THE SELECTOR WRITER, kit-wide (D155 addendum 1; block_span.md §5, the
+ * ONE writer of a selector's text, review r69 R-4): the function `fn` whose
+ * whole body is ONE call, to the top rung's helper `top` bracketed by the
+ * sink's simd_open(level)/simd_close where a rung renders, else the plain
+ * call to `body`; then the closing brace and a blank line. Its two lines are
+ * the caller's: `head(ctx, fn, o)` writes the head and the opening brace,
+ * `call(ctx, callee, o)` the line `    return <callee>(<args>);`, so each
+ * caller keeps its own head and argument list (ofsskip's FUNC, window.c's
+ * vector span). 0, or -1 where a line writer failed (recorded on the art). */
+typedef int (*kit_sel_line)(const void *ctx, const char *name, mf_sink *o);
+#define kit_selector MF_NS(kit_selector)
+int kit_selector(const char *fn, const char *body, const char *top, int level,
+                 kit_sel_line head, kit_sel_line call, const void *ctx, mf_sink *o);
 /* THE FIT TEST of PREFIX row `d` (review 2026-11-15 r2 F1): 1 iff the bytes
  * one rendering of its helper would bracket, counted by rendering it into a
  * counting sink (the head and the fall-through at the longest name the seam
@@ -1292,6 +1318,10 @@ typedef struct {
     int            ask;         /* the selection decides at the ASK: the
                                    reach counts its END as `asked`, never
                                    `chosen` (fd_pres FD_PRES_ASK, b3breach) */
+    const char    *tag;         /* NULL, or text naming WHICH of a site's
+                                   selections this walk is, printed after
+                                   `phase=` on its records (wfS's per-stretch
+                                   `at=I k=K`: review r72 SLOT-7, EQUIV-2)  */
 } gate_tctx;
 
 /* ---- the shared walk (integration.md §R4.9.2.3) ---------------------------

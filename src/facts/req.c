@@ -528,17 +528,26 @@ static const struct {
     { rn_content,   PCREC_WALK_ARM(TIE) },
 };
 
-/* The better of two runs by `rn_choice_rows`, first row that decides and that
- * the walk does not restore; none deciding, the replaced form (`rn_first`,
- * the default): `a`. */
-static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
+/* THE RUN CHOICE's SIGN for `a` against `b`: > 0 keeps `a`, < 0 keeps `b`,
+ * from the first row of `rn_choice_rows` that decides and that the walk does
+ * not restore; none deciding, the replaced form (`rn_first`, the default):
+ * `a`. The one comparator of the run choice, split out of `rn_better` so a
+ * caller that keeps more than the run beside each candidate (an extent kept
+ * beside its run) asks the same choice, and the two cannot drift. */
+static int rn_cmp(const RbWalk *w, const RbRun *a, const RbRun *b)
 {
     size_t i;
     int c;
     RB_ROW_SCAN(i, w, rn_choice_rows,
-                (c = rn_choice_rows[i].row(w, &a, &b)) != 0);
-    if (i == RB_ROWS(rn_choice_rows)) c = rn_first(w, &a, &b);
-    return c >= 0 ? a : b;
+                (c = rn_choice_rows[i].row(w, a, b)) != 0);
+    if (i == RB_ROWS(rn_choice_rows)) c = rn_first(w, a, b);
+    return c;
+}
+
+/* The better of two runs by the run choice (`rn_cmp`): `a` unless it keeps `b`. */
+static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
+{
+    return rn_cmp(w, &a, &b) >= 0 ? a : b;
 }
 
 static const void *rb_pd_join(Ctx *cx, const void *a, const void *b);
@@ -1699,8 +1708,18 @@ PfWhyCode pcrec_req_rate_why(Ctx *cx)
     return pcrec_find_byte_rate_answers(cx) ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
 }
 
+/* `pcrec_run_scan_index` (facts.h): pcrec's own pick
+ * (`pcrec_find_run_scan_index`, src/core/findings.c) over the stretch
+ * `run->pos[lo..hi)`, as a run index; -1 for an empty stretch, which has no
+ * pick (the primitive is never asked over zero positions). */
+int pcrec_run_scan_index(const uint32_t *rate, const ReqRun *run, int lo, int hi)
+{
+    if (lo >= hi) return -1;
+    return lo + pcrec_find_run_scan_index(rate, run->pos + lo, hi - lo);
+}
+
 /* THE NECESSARY BYTE — the `req_byte` fact — at ONE return: pcrec's own
- * pick over the whole run's positions (`pcrec_find_run_scan_index`, asked
+ * pick over the whole run's positions (`pcrec_run_scan_index`, asked
  * here: the retired `req_run` row's `idx`, review 2026-11-11 r1 k382 F5)
  * where a run of two or more positions is stored and that position is one
  * EXACT byte, and otherwise the set's pick
@@ -1720,7 +1739,7 @@ int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
     const uint32_t *rate = pcrec_find_byte_rate(cx);
     *why = pcrec_req_rate_why(cx);
     if (run->whole_len >= 2) {
-        int x = pcrec_run_byte(run, pcrec_find_run_scan_index(rate, run->pos, run->whole_len));
+        int x = pcrec_run_byte(run, pcrec_run_scan_index(rate, run, 0, run->whole_len));
         if (x >= 0) return x;
     }
     if (set->rightmost < 0) *why = PF_WHY_NONE;

@@ -124,29 +124,81 @@
 static const unsigned char D2_ALPHA[] = {
     'Z', 'a', '*', '0', 'A', ' ', '\t', '\n', 0x18, 0x00
 };
+/* Rows whose language is ONE control byte (\a \e \f \r, the escapes' own
+ * bytes) or needs a 'b' ((?+2)(a)(b) calls group 2, `b`) sit outside the
+ * brute-force alphabet; widening it multiplies the search by 1.4x per byte, so
+ * the structured pass below tries "Z" + each of these (and "Zab") directly. */
+static const unsigned char D2_EXTRA[] = { 0x07, 0x1b, 0x0c, 0x0d, 'b' };
 #define D2_NALPHA ((int)(sizeof D2_ALPHA))
 #define D2_MAXLEN 5
-#define D2_UNMEASURED_CEILING 4
+#define D2_UNMEASURED_CEILING 12
+
+/* THE PROBE MUST BE A PATTERN. The registry's `syntax` column is "a valid probe
+ * pattern for the construct" (registry.md section 2) but a reference row
+ * (`\1`..`\9`, `\k<name>`, `\g<1>`, `(?P=n)`, `(?P>n)`, `(?&name)`,
+ * `(?1)`..`(?10)`, `(?01)`, `(?(1)a|b)`) is a pattern only where a group of
+ * that number or name exists: bare, `a(?1)*` is PCRE2 error 115 (reference to
+ * non-existent subpattern) and says nothing about whether the CONSTRUCT takes
+ * a quantifier. The promise is about the construct, so the probe supplies its
+ * referents: ten leading capture groups, the first two named `name` and `n`
+ * (the names the rows use), each matching one `a`. It is added ONLY where the
+ * bare probe does not compile and the supplied one does; every other row keeps
+ * its exact original probe. Matching subjects then carry PRELUDE_SUBJECT in
+ * front (ten a's) so the D2 witness search still reaches these rows. */
+#define PROBE_PRELUDE "(?<name>a)(?<n>a)(a)(a)(a)(a)(a)(a)(a)(a)"
+#define PRELUDE_SUBJECT "aaaaaaaaaa"
+static const char *probe_prelude(const char *S)
+{
+    char bare[512], with[600];
+    snprintf(bare, sizeof bare, "a%s", S);
+    if (spec_compile(bare).ok) return "";
+    snprintf(with, sizeof with, PROBE_PRELUDE "a%s", S);
+    return spec_compile(with).ok ? PROBE_PRELUDE : "";
+}
 
 static long d2_vacuous;
 static int d2_was_vacuous;   /* set per call: no accepted subject in bound */
 
 /* One subject: does it witness a removal? Returns 1 on witness, and sets
  * *accepted when the unquantified pattern accepts it at all. */
+/* known_findings.inc: registry values that disagree with the oracle, listed
+ * as findings (see that file); stale entries fail, new disagreements fail. */
+static const char *KNOWN_FINDINGS[] = {
+#include "known_findings.inc"
+};
+#define NKNOWN ((int)(sizeof KNOWN_FINDINGS / sizeof KNOWN_FINDINGS[0]))
+static int known_hit[NKNOWN];
+static int known_idx(const char *S)
+{
+    for (int i = 0; i < NKNOWN; i++)
+        if (!strcmp(KNOWN_FINDINGS[i], S)) return i;
+    return -1;
+}
+static int known_finding(const char *S) { return known_idx(S) >= 0; }
+
+static const char *d2_prefix = "";   /* PRELUDE_SUBJECT while the probe has a prelude */
+
 static int d2_try(const SpecPat *pn, const SpecPat *pq,
                   const char *s, size_t len, int *accepted)
 {
-    if (!spec_pat_match(pn, s, len)) return 0;
+    char full[128];
+    size_t pl = strlen(d2_prefix);
+    if (pl + len >= sizeof full) return 0;
+    memcpy(full, d2_prefix, pl);
+    memcpy(full + pl, s, len);
+    if (!spec_pat_match(pn, full, pl + len)) return 0;
     *accepted = 1;
-    return !spec_pat_match(pq, s, len);
+    return !spec_pat_match(pq, full, pl + len);
 }
 
 static int star_became_literal(const char *S)
 {
     char q[512], noq[512], quant[512];
-    snprintf(q,     sizeof q,     "a%s*", S);
-    snprintf(noq,   sizeof noq,   "^Z%s", S);
-    snprintf(quant, sizeof quant, "^Z%s*", S);
+    const char *pre = probe_prelude(S);
+    snprintf(q,     sizeof q,     "%sa%s*", pre, S);
+    snprintf(noq,   sizeof noq,   "^%sZ%s", pre, S);
+    snprintf(quant, sizeof quant, "^%sZ%s*", pre, S);
+    d2_prefix = *pre ? PRELUDE_SUBJECT : "";
     d2_was_vacuous = 0;
     if (!spec_compile(q).ok) return 0;
 
@@ -167,6 +219,15 @@ static int star_became_literal(const char *S)
         for (int i = 0; i < k; i++) sb[2 + i] = 'a';
         witnessed = d2_try(&pn, &pq, sb, (size_t)(2 + k), &accepted_any);
     }
+
+    /* structured: "Z" + one extra byte, "Zab" and "Zbab" (the `(?+2)(a)(b)`
+     * shape: Z, then b, a, b) */
+    for (size_t e = 0; e < sizeof D2_EXTRA && !witnessed; e++) {
+        char se[2] = { 'Z', (char)D2_EXTRA[e] };
+        witnessed = d2_try(&pn, &pq, se, 2, &accepted_any);
+    }
+    if (!witnessed) witnessed = d2_try(&pn, &pq, "Zab", 3, &accepted_any);
+    if (!witnessed) witnessed = d2_try(&pn, &pq, "Zbab", 4, &accepted_any);
 
     /* exhaustive within the bound */
     char buf[D2_MAXLEN + 1];
@@ -192,7 +253,7 @@ static int star_became_literal(const char *S)
 static int quantifiable(const char *syntax)
 {
     char pat[512];
-    snprintf(pat, sizeof pat, "a%s*", syntax);
+    snprintf(pat, sizeof pat, "%sa%s*", probe_prelude(syntax), syntax);
     return spec_compile(pat).ok;
 }
 
@@ -302,12 +363,20 @@ int main(int argc, char **argv)
         /* A CEILING, not a floor. floors.txt pins minima, which is the right
          * shape for a population — more comparing is better. This number is
          * the opposite: it is the size of the blind spot, and it must not grow
-         * quietly. The four rows at the ceiling today are `(?<=...)`,
+         * quietly. The twelve rows at the ceiling today are `(?<=...)`,
          * `(?<*a)`, `(?R)` and `(?0)`, whose languages are empty for
          * structural reasons (unbounded recursion, and a lookbehind that
          * cannot be satisfied after `^Z`) rather than because the search bound
          * is too small — widening the alphabet or the length will not reach
-         * them. */
+         * them — plus eight rows the registry has added since, each the same
+         * structural class: the other spellings of (?0)/(?R) (`(?00)`,
+         * `\g<0>`, `\g'0'`), the four lookbehind spellings of
+         * pattern_language.md 7.4 (`(*plb:a)`, `(*positive_lookbehind:a)`,
+         * `(*naplb:a)`, `(*non_atomic_positive_lookbehind:a)`: `a` cannot
+         * precede after `^Z`), and `${name}`, which libpcre2 reads as `$`
+         * then the literal `{name}` (an end anchor, so no subject continues
+         * past it). The reference rows (`\1`, `(?1)`, ...) are NOT here:
+         * probe_prelude() gives them a group, and D2 measures them. */
         if (at_risk > D2_UNMEASURED_CEILING)
             spec_fail("D2 could not be measured for %ld rows whose quantified "
                       "form compiles, above the ceiling of %d. The blind spot "
@@ -422,7 +491,13 @@ int main(int argc, char **argv)
                           "the accurate cell", S);
                 continue;
             }
-            if (is_yes != row_q[i])
+            /* The waiver keys on the FULL disagreement the .inc header
+             * states: the registry says `no` AND libpcre2 compiles the
+             * quantified form. A listed row whose disagreement flipped
+             * direction (registry `yes`, oracle rejects) is a NEW finding. */
+            if (is_no && row_q[i] && known_finding(S)) {
+                known_hit[known_idx(S)] = 1;
+            } else if (is_yes != row_q[i])
                 spec_fail("row '%s': pcrec says quantifiable='%s', libpcre2 "
                           "says `a%s*` %s", S, val, S,
                           row_q[i] ? "COMPILES" : "does not compile");
@@ -466,6 +541,22 @@ int main(int argc, char **argv)
     printf("  compared %ld two-valued rows; %ld form-resolved rows; "
            "%ld lexical rows; %ld rows with an unrecognised value\n",
            compared, formvalued, lexvalued, unknownvalued);
+    int nstale = 0;
+    for (int i = 0; i < NKNOWN; i++) {
+        if (!known_hit[i]) {
+            nstale++;
+            spec_fail("known_findings.inc lists '%s', but pcrec and libpcre2 "
+                      "no longer disagree on it (or the row left the "
+                      "registry): the finding is fixed, delete the entry",
+                      KNOWN_FINDINGS[i]);
+        }
+    }
+    if (nstale == 0)
+        printf("  KNOWN FINDINGS (registry `quantifiable` vs libpcre2, "
+               "known_findings.inc): %d, all still disagreeing\n", NKNOWN);
+    else
+        printf("  KNOWN FINDINGS (known_findings.inc): %d listed, %d STALE "
+               "(see FAIL above)\n", NKNOWN, nstale);
     spec_pop("quantifiable.compared_rows", compared);
     spec_pop("quantifiable.lexical_cells", lexvalued);
     return spec_finish();

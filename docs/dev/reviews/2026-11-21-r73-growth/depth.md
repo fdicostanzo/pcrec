@@ -1,0 +1,46 @@
+# CRITIC depth: growth (r73)
+
+## Findings
+
+
+### DEPTH-1
+CONFIRMED (by construction, no compile). Severity: answer (a green it should not give), LOW: unreachable from today's runner, a robustness gap in the new parse. Effort: one line. Blast radius: `make test-stackdepth` verdict. File: tests/thread/run_compile_stack.sh, the `case "$gp$gf"` block after `growth_rc=$?` (SUBJECT ~line 186-193).
+The parse accepts the summary when the CONCATENATION `$gp$gf` is all digits, so ONE missing line passes the test, and `growth_rc` is only ever printed, never consulted. Repro: the block copied verbatim into depth/fake/parse.sh with the runner replaced by `cat FILE; exit RC`:
+- output `runs passed: 66` alone, rc 1 -> `fail=$((fail + gf))` evaluates the empty `gf` as 0, `[ "" -eq 0 ]` prints "integer expected" to stderr, script exit 0: GREEN with the runner having exited 1 and no failed count.
+- output `runs passed: 66\nruns failed: 0`, rc 1 -> GREEN (rc ignored).
+Expected: red whenever the runner exits non-zero or either count is missing. Why it is LOW: run_growth.py prints the two lines back to back and exits 1 only when `nfail or nfixed` (both in "runs failed"), and a kill under `$TIMEOUT_BIN 3000` loses Python's block-buffered stdout whole (empty/partial-without-summary held red, below), so today's runner cannot produce either shape. Fix: test each count on its own (`case "$gp" ...` and `case "$gf" ...`) and add `|| [ "$growth_rc" -ne 0 ]` to the red condition (with gf==0 and rc!=0 a `bad` naming rc).
+
+### DEPTH-2
+CONFIRMED (reasoned from the tables; not a regression: BASE had the same property). Severity: answer, LOW / design. Effort: small. Blast radius: depth arm. File: tests/thread/run_compile_stack.sh (parse block) + tests/growth/depth_families.tsv.
+No population count: the arm passes on however many depth cells the runner happened to build (the PASS line even says "PASS: 0 depth cells ..." for a zero; fake output `runs passed: 0 / runs failed: 0`, rc 0 -> script exit 0). Deleting or commenting-out a row of depth_families.tsv (e.g. `longwrap`, limits.md §3.10's measured worst, or `look`/`atomic`, S1440's witnesses) is silently green. Partial guards that DO exist: a wholly empty table goes red through the compound REACH check (`cell_pattern depth/compound@250` exits "no cell", the reach compile sees an empty pattern, no "compound" stamp -> bad) and a malformed row exits in tsv() (red, "printed no summary"). The new risk over BASE: the table now lives in tests/growth/, the opt-in sweep's directory, edited by growth-sweep work that does not run `make test-stackdepth`, and its header no longer sits beside the check that owns the 250/251 contract. Cheap fix: pin the count (2 x number of non-comment rows == gp+gf, or a floor of 66) in the parse, which also closes DEPTH-1.
+
+### DEPTH-3
+CONFIRMED (text). Severity: doc, LOW. Effort: trivial. File: tests/growth/depth_families.tsv header (lines ~9-38) and tests/growth/run_growth.py printf_fmt docstring.
+(1) The comment block was carried over verbatim and still says "checked to reach it below" / "checked below to reach that route" (litcompound, compound) and "the reach check below does not cover them" (capwrap/longwrap): the reach check is not below, it is in tests/thread/run_compile_stack.sh. (2) The header's nest() description omits the one escape the table relies on: brefsrep's core `\\%d` is turned into `\1\2...` only because printf_fmt maps `\\` to `\` when the field holds a `%`. printf_fmt's docstring calls itself "The shell nest()'s printf", but it is not: the shell's printf interpreted EVERY backslash escape in <open> and <post> (always used as formats) and `%%`; printf_fmt handles only `\\` and `%d`, and only in a field containing `%`. All 33 BASE rows are byte-identical either way (66/66 patterns compared, PROBED-AND-HELD), so no verdict moves today; the shell nest() is gone, so the Python is now the definition and the header should state its rule, not point at a deleted function.
+
+## PROBED-AND-HELD
+
+Probe count: 133 kit runs (cell.sh + base_cell.sh) of the 200 cap; pattern diffs free. Matrix stated before each run: S1440 10x2=20, S3470 7x2=14, S1340 9x2=18, width 4 plants x 7 = 28, S1339 33 depth@250 new + 2 old = 35, S1336-38 depth spot 3x4 = 12, SUBJECT spot 4, empty/1-byte control probes 2.
+
+(a) IDENTITY - held:
+- Patterns: kit/base_patterns.sh (BASE's nest/rep and DEPTH_FAMILIES, both checked verbatim against `git show 695e450dd:tests/thread/run_compile_stack.sh`) vs `run_growth.py --pattern depth/<f>@<d>`: 66/66 byte-identical (33 families x 250/251), same names in the same order, same features/engine for all 33 (all/0 except optnest-vm all/2).
+- Run line: growth_driver `one 0 442368 1 all ENG` = compile_stack_driver's: same 64 KB guard, same paint and high-water read, same page rounding, same raised emit caps (RAISE=1 is UINT64_MAX/2 on both), same features/engine, same pcrec_default_options; cap 0 leaves RLIMIT_DATA at rlim_max. Spot: SUBJECT grp@250 hw=120552 and grp@251 refused both drivers identically; every plant run below printed the same rc/hw/exit on both drivers (34 pairs).
+- Verdicts: 250 expects `compile` (rc=0 line, exit 0), 251 `refuse:too deeply nested` (substring of msg, as BASE's `*"too deeply nested"*`); signal death (watchdog passes 128+N through: 139) -> CRASH -> FAIL; watchdog 124/122 -> FAIL; driver rc!=0 or no line -> ERROR -> FAIL; a refused 250 -> FAIL. Thread start failure changed shape (BASE: exit 2 = error; SUBJECT: `rc=-9 ... msg=could not start` exit 0 = refused) but fails at both 250 and 251 either way.
+- Differences that cannot move a verdict on today's cells: per-cell bound is watchdog 180 s wall + 180 s CPU + 3 GB tree RSS instead of `timeout 300` (deepest depth cell is ~0.3 MB stack, tens of MB RSS, sub-second); cells run cf.ThreadPoolExecutor(cpu/2) in parallel rather than serially (separate processes, own painted stacks: hw identical); RECORD lines now only for compiled cells (refused 251 cells no longer print RECORD; reporting only); `repro:` lines of a FAIL are not echoed by the grep (diagnostic only). CC is exported by tests/lib/cc_resolve.sh, LIBPCREC/PCREC are read from the env by both, so the Mac versioned-gcc and the LIBPCREC override reach the Python as they reached the shell.
+- CONTROL: `cell_pattern depth/grp@250 > control.pat` is byte-identical to BASE's depth-grp-250.pat, same old driver, same run(); held. If cell_pattern ever failed, control.pat would be empty and STILL die on 32 KB (probed: empty and 1-byte patterns exit 139 on 32768) - the control proves the guard, not the pattern, so it still tests what it did (and the depth arm would be red on the same failure).
+- REACH: `--pattern "$(cell_pattern depth/<f>@250)"` = BASE's `$(cat ...)` text (no trailing newline either way); a failing cell_pattern gives an empty pattern, no "compound" stamp, red. Held.
+- PARSE (fake runner, depth/fake/parse.sh, block verbatim): empty output rc 124 -> red; traceback rc 1 -> red; RECORD lines only, no summary, rc 124 (the 3000 s kill: Python's block-buffered stdout is lost whole) -> red; summary with `runs failed: 1` -> fail=1, script exit 1; duplicated summary -> red ("no summary"); good summary rc 0 -> green. The gaps are DEPTH-1 (one count missing / rc ignored) and DEPTH-2 (zero/shrunk population).
+
+(b) REACH ON THE PLANTS (new arm = cell.sh, old = base_cell.sh; identical result in every pair run):
+- S1440 (ExtResult inline text): look, lookbehind, atomic, inlineopt, named at 250 AND 251 all die 139 on both = exactly the row's "10 FAIL". CAUGHT BY THE NEW ARM.
+- S3470 (K152 undone): litcompound@250 dies 139 (the named undo witness); litcompound@251 refused by name; nclitrep/litpost/nclitpost compile at 440,176-440,560 B, capwrap 318,032, longwrap 319,504 (same as SAB_DESC: litcompound the one witness). CAUGHT BY THE NEW ARM.
+- S1340 (PCREC_OWN_FRAME always_inline): grp, look, altrep, brefsrep, litcompound, longwrap, optnest-vm at 250 die 139; compound@250 compiles (225,496); grp@251 refused. CAUGHT BY THE NEW ARM.
+- S1339 (rb_walk values on stack): NO width case dies (w1..w7 all compile, hw up to 229,512); depth@250 sweep over all 33: 25 families die 139 (altnest ... lookbehind, litcompound, capwrap, longwrap), 8 compile (grp, ncgrp, atomic, inlineopt, named, callouter, callinner, compound); old driver agrees on altnest/longwrap. CAUGHT BY THE NEW ARM ONLY (the depth table is this row's only witness).
+- S1336 (minw alt spine): w1 (10,000 captures) dies 139; others compile; depth spot altnest/look/optnest-vm/longwrap compile. CAUGHT ONLY BY WIDTH (unchanged arm).
+- S1337 (endwin zero-width run): w4 (20,000 trailing \b) dies 139; depth spot compiles. CAUGHT ONLY BY WIDTH.
+- S1338 (vm_det_seq unbounded): w6 (VM quantified literal, engine 2) dies 139; depth spot compiles. CAUGHT ONLY BY WIDTH.
+- MISSED: none. Every death is exit 139, which run_growth.py maps to CRASH -> FAIL -> "runs failed" > 0 -> fail += gf -> script exit 1.
+
+Largest/deepest witness reached: depth 251 nests (all 33 families' patterns diffed; longwrap@250 compiled at 319,504 B and S3470's litpost@250 at 440,560 B of the 442,368-byte budget); widest: w2, the 128,889-byte 20,000-literal alternation.
+
+CRITIC COMPLETE

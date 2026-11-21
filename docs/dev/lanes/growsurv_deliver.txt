@@ -1,0 +1,5 @@
+report: docs/dev/lanes/growsurv_report.md
+sections: Summary; Method; Recursive functions by stage; Per-node loops and super-linear paths; Matcher-side (generated code) growth; Candidate growth cells; Already covered; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

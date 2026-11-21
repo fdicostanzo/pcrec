@@ -15,7 +15,7 @@
 #   kind     fn | part | data | excluded (a hit the backstop may not count)
 #   anchor   for a part: a substring that must occur inside the function
 #            (the part's identity); `-` otherwise
-#   answers  the table (T-FIND, T-VERIFY, T-SETTEST, T-CMP, T-PRES, T-FRAME,
+#   answers  the table (T-FIND, T-VERIFY, T-SETTEST, T-CMP, T-PRES, T-FRAME, T-SPAN,
 #            KEY, M, TIE) or `EXC:` + the named exception
 #   retires  the unit or trigger that moves it (span_pick.md §Staging and
 #            §The tables' named exceptions), `-` for a table's own home
@@ -80,6 +80,8 @@ window.c	wf_stream_refusal	fn	-	T-STREAM	- (3.0a: Table S's ST-many row's text, 
 window.c	wf_tables_check	excluded	-	the renderer tables' self-check (mf_art_begin refuses a broken table; it decides nothing)	-
 window.c	wf_arm_pick	fn	-	T-FRAME	- (plan_frame.md 3.0b: E-stmt's arm-to-pick map over the search renderer table's E-stmt rows; both halves of the agreement read it)
 window.c	wf_frame_of	fn	-	T-FRAME,T-STREAM	- (3.0b: THE plan function's FRAME PART, the reply's frame_row/method/search/stream/fused/tests)
+window.c	wf_stretches	fn	-	T-SPAN	- (block_span.md U1, R-47: THE stretch enumerator, one T-SPAN walk per one-class stretch, at E-find and the floor; the retired wf_span_head if-chain had no row)
+window.c	wf_spanrows	data	-	T-SPAN	- (U1: T-SPAN's rows, the span form table wfS: T-deny, T-force, T-lever, T-vwin, T-vscan, T-head; six at U2)
 window.c	wf_agree	excluded	-	the MF_TRACE agreement's define side (3.0b, plan_frame.md §4.1): reads the stored record and the declared rows; it decides nothing	-
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
 presence.c	kit_run_decide	fn	-	T-VERIFY,TIE	- (K38-1: THE RUN DECISION, scan and stretch; kit_pres_picks:run-window moved in, reads T_WINDOW, asks kit_pick_takes)
