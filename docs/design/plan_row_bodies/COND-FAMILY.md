@@ -6305,3 +6305,22 @@ defined on the FINISHED rx, so neither order of definition is privileged; the ho
 2026-11-18); the match-time readers (a bare condition, `$y`, `0`) are then resolved at their point in the finished
 rx; descending and horizontal are then one question, "what is visible at this point"; what remains to decide is
 whether a separately DEFINED piece (a binding, not a literal) may read a name it does not define. Nothing folded.
+
+### 2026-11-21 OWNER, discussing bare-nested-scope: an EXERCISE asked for (construct moderately difficult rx from macros), with his predictions
+tags: core/holes/bare-condition/nested-scope core/operators/bindings core/patterns/sequence
+
+After the manager's proposed frame (meaning on the finished rx; shaping holes and matching holes; open or closed
+at a binding boundary; the manager's leaning then: open). HIS WORDS, whole:
+
+"please perform the following exercise: get a few current or new moderately difficult rx. then construct them
+using a presumed set of rx construction macros. for this exercise, each piece should be a different macro/operator
+eg don't put \d+ use digit+ there should be the need for labels and conditions. you are not limited to currently
+proposed macros. lets see where you need to reference and which of the rules would limit you. predictions: i think
+most of the macros can be defined bottom up so month := digit. digit year := repeat(digit, 4) isodate := ([=year] .
+"-" . [=month] . "-" . [=day]) & (year: <2050) etc"
+
+Class: a REQUEST (an exercise for the manager) and a PREDICTION ("i think most of the macros can be defined bottom
+up"); nothing ruled; he does not answer the frame. Spellings in his example are placeholders (D193 addendum 4),
+recorded for the spellings review: `.` as the sequence operator; `[=year]`, read by the manager as `[year = year]`
+(the part label named for the binding it holds, the `=x` shorthand of the binding list and of a call, ruled
+2026-11-19, in a third place: a READING, not asked); `month := digit. digit`.
