@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K153 — OPEN (found 2026-11-21 by lane specfix, the repaired spec-first suite tests/spec_mod0 check10; plan row [K153-QUANT-REGISTRY]) — 13 registry rows say a construct cannot be quantified where libpcre2 quantifies it
+
+**Witness:** registry `quantifiable=no` on `\1`..`\9`, `\k<name>`, `\g{-1}`, `(?P=n)` and `(?(1)..)`; with a target group in the probe, libpcre2 accepts each quantified form, and pcrec itself accepts `(a)\1*`. So the registry DATA is wrong (what the compiler does is not): a reader of `--list-syntax` is told something false. Carried as a ratchet in tests/spec_mod0/known_findings.inc (fails when stale). Fix: the registry rows' data under src/parse, with the spec suite's ratchet emptied in the same change. Tier: D26 "whether a construct is REAL" is exact, so this is a real defect, small.
+
 ## K152 — OPEN (found by review 2026-11-20 r64 k147fix DEPTH-2, pre-existing; plan row [K152-NFA-DEPTH]; the next lane of the K146/K147 family) — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile on the budget thread
 
 **Witness:** `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` (nesting 250; 251 is refused by name): `pcrec_compile` DIED, rc 139, on the 442,368-byte budget thread (tests/thread/run_compile_stack.sh's driver), at lane/k147f2's base ceae6bcab and at the review's SUBJECT and BASE alike; 452,080 B on an 8 MB thread. Reproduced 2026-11-20 by lane k147f2 on the 442,368-byte thread (rc 139). Without the `^(?i:...)|b$` wrapper the plain nest compiles at 440,176 B (440,560 B with a trailing element): 0.5% under the budget.

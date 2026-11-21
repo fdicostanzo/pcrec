@@ -2463,6 +2463,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: starts only on Frank's word; no row-specific trigger recorded
   BOONIES (Frank, 2026-10-09: "File it in boonies"). Fold a caseless backreference's/variable's capture ONCE (canonical case-set representatives, bounded buffer) and compare only the subject side, keyed on the capture span. Pays only when the capture holds still across many compares (`(?i)^(\w+).*\1`), and mostly under utf8. It loses when backtracking is inside the capture. NOT TRIGGERED; no measurement chartered.
 
+- [K153-QUANT-REGISTRY] STATE:not-started — 13 registry rows say "not quantifiable" for constructs libpcre2 quantifies (K153)
+  filed: 2026-11-21 lane specfix (spec_mod0 check10, once its probes got a target group)
+  status (2026-11-21): filed; nothing built. Registry DATA only (pcrec already accepts `(a)\1*`); the spec suite carries the 13 in known_findings.inc as a ratchet.
+  trigger: a small data lane after lane/specfix lands (fix the rows, empty the ratchet in the same change)
+  refs: known_issues K153; tests/spec_mod0/known_findings.inc; docs/dev/decisions.md D26
 - [K152-NFA-DEPTH] STATE:not-started — a legal 250-deep non-capturing multi-atom-branch nest kills pcrec_compile (K152)
   filed: 2026-11-20 lane k147f2, from review r64 k147fix DEPTH-2 (pre-existing)
   status (2026-11-20): filed; nothing built. `^(?i:` + `(?:abc|abd` x249 + `abe` + `)*` x249 + `)|b$` DIES (rc 139) on the 442,368-byte thread; the plain nest costs 440,176 B (440,560 B with a trailing element), the compound route about 13 KB more
