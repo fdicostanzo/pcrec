@@ -4536,3 +4536,11 @@ Frank asked "How often do the test or bench rx have spans that would use this? T
 
 ### 2026-11-21 01:15 — Frank (via main, D201 add. 1): "We're here and there's no downside so let's build it."
 Frank also said: "I want to start the simd optimizations and I suspect that, outside of window finding, most simd optimizations will be niche covering a small set of rx". bspan's scope is no longer pending the census (bspan rulings R-2 withdraws R-1). The census finishes anyway and goes into the note as the population record, information only. Kit practice from now on: every SIMD row reports its population count beside its timing.
+
+### 2026-11-21 02:00 — span census: the block rule routes 1 corpus pattern and 3 bench patterns
+Lane spancensus delivered (lane/spancensus d0848d0ed, lanecheck DONE; job 300 green). Compiled at SIMD-on with span-head=0.
+- Corpus: 1 of 5161 compiled patterns has a routed site (counterk:1919, scan k=48). Only 16 have span sites at all.
+- Bench: 3 of 332 (hex32 and hex32-id, window k=31; dig-exact-32, scan k=31). 11 have span sites.
+- 39 of 41 sites have k<=31.
+Caveats: .rxt option lines and bench flags were not applied; distinct texts were counted once.
+Information only: D201 add. 1 keeps the build. Sent to bspan as rulings R-3 for the note's population record. TaskStop spancensus; unpinned.
