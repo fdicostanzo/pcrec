@@ -3648,3 +3648,15 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
 - **ack: R-47** (2026-11-21) — taken. The kit branch lane/memfn-k1108 merged main at 051e78af2 (merge 2af5a3fd5, make strict clean). Design lane `bspan` (opus) writes the design note docs/design/memfn/block_span.md on lane/bspan; then a critic round (design); then the build lane, under the same-commit abi ritual with its deny row, its card and G1 alpha at both layers. Main gets the note for its record, and the built branch after that.
 
 - **done (partial): R-47 unit U1** (2026-11-21) — branch lane/memfn-k1108 @ e8dea21a3 (merges lane/bsu1 4a098e1e4 + lane/bsu1fix). The span form table (wfS) replaces the head if-chain; the stretch list is stored once; skip is a plan fact; SPAN-SEED .rxt (41 patterns, 1145 python-verified cases); skip-column detector (run_skip_pins.sh, S3500/S3501); decider census +T-SPAN. ZERO emitted-byte movers (identity gate, 10 arms x c-default/c-vm, no mask), so no abi event. Reviews r68/r69/r71 (design) and r72 (code, FIX FIRST, fixed). Validation: 713 make test GREEN and 714 mech GREEN (U1); 715 make test GREEN and 716 mech GREEN (fixes, lane/bsu1fix tip). Reports docs/dev/lanes/bsu1_report.md, bsu1fix_report.md. Delivered ALONE ahead of U2 (D153). U2 onward next (D201 add. 4).
+
+- **done (partial): R-47 units U2 + U2b** (2026-11-21) — branch lane/memfn-k1108 @ 005e35c7b (merges lane/bsu2 d9d86e39e + lane/bsu2fix 2eccfecb8; make strict clean).
+  - **The change:** the vector span's wrapper (option A, every layer: `<p>_mf<h>_vs<j>` + `__body`, the selector through the kit-wide writer kit_selector) and the deny `--memfn=no-span-vector` (both layers).
+  - **ABI EVENT 109 -> 111** in commit c51fb2d36. 110 is L3's; whichever lands second re-pins (main plan.md [REQ-LOOKAROUND]). Re-pins were found by `git grep -n -w 109`; spec hunks in registry §6¶8a/¶8b, tuning §2.43¶3d, match_api §1/§6.
+  - **Identity:** the deny arm differs from the merge base in 0 compiles, under the declared abi mask. The default arm moves only the V sites: 28 byte / 20 utf8 / 31 seed on c-default, 0 on c-vm.
+  - **U2b census (D201 add. 4):** the 3 bench sites are IDENTICAL at gcc -O2 (w32, w4095); 48 of 128 grid cells DIFFER; \w{20} DIFFERS. Under clang/gcc -Os the real sites differ: D201 add. 5 (wrap-clang: a), [BSPAN-CLANG-DIFF].
+  - **Reviews:** r75 (code), ruled FIX FIRST, fixed in bsu2fix (identity-gate floors and shape, SLOT-1/2/5/6, CONTRACT-1..3, block_span.md rev 4.2).
+  - **Validation:**
+    - 717 RED on test-memfn-arch: the C4 vocabulary of S730's REACH. Fixed at 2eccfecb8.
+    - On the final tree, all GREEN: 719 make test, 720 mech (S3510, S3280), 721 gate, 722 ids (0 movers vs d9d86e39e), 723 mech (18 U2 rows).
+  - **Reports:** docs/dev/lanes/bsu2_report.md, bsu2fix_report.md.
+  - **Next:** U3 (the w32 helper; the first SIMD text).
