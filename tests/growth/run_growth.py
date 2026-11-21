@@ -38,6 +38,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -52,6 +53,14 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 LADDER = [2 << 20, 8 << 20, 32 << 20, 128 << 20]
 
 WALL_S, CPU_S, RSS = 180, 180, "3g"
+# LIBRARY per-cell bound ([GROWTH-SWEEP] timeout addendum): each in-process
+# compile gets its OWN wall bound = max(LIB_FLOOR_S, LIB_MARGIN x that cell's
+# slowest CLI-stage run), from the walls file the CLI stage writes.  The
+# margin covers the sanitizer build's slowdown (ASan+LSan at -O1 is several
+# times the plain -O2 CLI) and a loaded box; a cell the walls file has never
+# seen (a --lib run alone) gets the floor.  A cell over its bound is a FAIL
+# (a timeout is a crash) and the series stops there with the cell named.
+LIB_FLOOR_S, LIB_MARGIN = 120, 20
 DEPTH_LIMIT_TEXT = "too deeply nested"      # PCREC_MAX_GROUP_DEPTH's diagnostic
 
 
@@ -155,9 +164,12 @@ def build_cells(budget, depth):
 class Runner:
     def __init__(self, work, drv, wd):
         self.work, self.drv, self.wd = work, drv, wd
+        self.walls = {}        # cell id -> slowest CLI-stage wall seconds
+        self.pat_id = {}       # patfile -> cell id
 
     def patfile(self, cell):
         p = os.path.join(self.work, re.sub(r"[^A-Za-z0-9_.@-]", "_", cell.id) + ".pat")
+        self.pat_id[p] = cell.id
         if not os.path.exists(p):
             with open(p, "w", encoding="utf-8") as f:
                 f.write(cell.pattern)
@@ -165,6 +177,14 @@ class Runner:
 
     def one(self, cell, cap):
         """-> (kind, text): kind in compiled|refused|CRASH|TIMEOUT|RUNAWAY|ERROR."""
+        t0 = time.monotonic()
+        r = self.one_(cell, cap)
+        w = time.monotonic() - t0
+        if w > self.walls.get(cell.id, 0):
+            self.walls[cell.id] = w
+        return r
+
+    def one_(self, cell, cap):
         pf = self.patfile(cell)
         cmd = [self.wd, "-s", str(WALL_S), "-c", str(CPU_S), "-m", RSS, "-i", "0.1",
                "-S", "growth", "-L", os.path.join(self.work, "watchdog.log"), "--",
@@ -206,6 +226,31 @@ def job(rn, cell, ladder):
     return cell, res
 
 
+def walls_path():
+    base = os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR") or "/var/tmp/pcrec-%s" % os.environ.get("USER", "u")
+    return os.environ.get("GROWTH_WALLS") or os.path.join(base, "growth-walls.tsv")
+
+
+def read_walls():
+    w = {}
+    try:
+        for line in open(walls_path()):
+            k, _, v = line.rstrip("\n").partition("\t")
+            if v:
+                w[k] = float(v)
+    except OSError:
+        pass
+    return w
+
+
+def write_walls(w):
+    old = read_walls()
+    old.update(w)
+    with open(walls_path(), "w") as f:
+        for k in sorted(old):
+            f.write("%s\t%.2f\n" % (k, old[k]))
+
+
 def lib_mode(rn, cells, ladder):
     """LIBRARY mode: ONE process compiles the whole cell series in a loop, each
     cell once uncapped and once under each ladder cap (RLIMIT_DATA set in that
@@ -219,13 +264,15 @@ def lib_mode(rn, cells, ladder):
     lib_drv = os.environ.get("GROWTH_LIB_DRIVER", rn.drv)
     series = os.path.join(rn.work, "series.tsv")
     n = 0
+    walls = read_walls()
     with open(series, "w") as f:
         for c in cells:
             # a known-red cell's UNCAPPED run is a known runaway (K150/K151, NEW-n):
             # it would take the one process down with it; its capped runs stay
             for cap in ([] if c.red else [0]) + ladder:
+                bound = max(LIB_FLOOR_S, int(LIB_MARGIN * walls.get(c.id, 0)) + 1)
                 f.write("\t".join([str(cap), "0", str(c.raise_), c.features or "-",
-                                   str(c.engine), rn.patfile(c)]) + "\n")
+                                   str(c.engine), rn.patfile(c), str(bound)]) + "\n")
                 n += 1
     ctl = os.path.join(rn.work, "control")
     env = dict(os.environ)
@@ -234,13 +281,22 @@ def lib_mode(rn, cells, ladder):
                         "-L", os.path.join(rn.work, "watchdog.log"), "--", lib_drv, "lib", ctl, series],
                        capture_output=True, text=True, errors="replace", env=env)
     bad = []
-    lines = [l for l in r.stdout.splitlines() if l.startswith("cell ")]
+    to = [l for l in r.stdout.splitlines() if re.match(r"cell \d+ TIMEOUT ", l)]
+    for l in to:
+        m = re.match(r"cell (\d+) TIMEOUT bound=(\d+) pat=(.*)", l)
+        bad.append("TIMEOUT (a timeout is a crash): series line %s, cell %s, over its own bound of %ss "
+                   "(CLI wall x%d, floor %ds); series stopped there. progress line: %s"
+                   % (m.group(1), rn.pat_id.get(m.group(3), m.group(3)), m.group(2), LIB_MARGIN, LIB_FLOOR_S, l))
+    lines = [l for l in r.stdout.splitlines() if re.match(r"cell \d+ rc=", l)]
     if r.returncode != 0:
         bad.append("library process exit %d (signal, abort, sanitizer report, or watchdog kill)\n%s"
                    % (r.returncode, r.stderr[-1500:]))
-    if len(lines) != n:
+    if len(lines) != n and not to:
         bad.append("library process printed %d of %d cell lines" % (len(lines), n))
     crashed = [l for l in lines if not re.match(r"cell \d+ rc=(0|-1|-9) ", l)]
+    slow = sorted(((float(m.group(1)), l) for l in lines for m in [re.search(r" wall=([\d.]+) ", l)] if m), reverse=True)[:3]
+    for w_, l in slow:
+        print("library mode: slowest cell lines: " + l[:140])
     bad += ["unexpected cell line: " + l for l in crashed[:5]]
     if "ERROR: LeakSanitizer" in r.stderr or "ERROR: AddressSanitizer" in r.stderr:
         bad.append("sanitizer report:\n" + r.stderr[-1500:])
@@ -365,6 +421,7 @@ def main():
                     print("FAIL: %s: %s" % (tag, why))
                     print("      repro: %s" % repro(cell, cap))
     print()
+    write_walls(rn.walls)
     print("== Growth sweep ==")
     for f, (p, fl, rd, fx) in sorted(fam.items()):
         print("family %-8s runs passed %d  failed %d  known-red %d  fixed-red %d" % (f, p, fl, rd, fx))

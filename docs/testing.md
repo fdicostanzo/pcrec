@@ -5558,8 +5558,14 @@ There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md
 - **Library mode.** `run_growth.py --lib`: ONE process (the ASan+LSan build)
   compiles the whole series, caps set in-process, then must exit 0 with no leak
   report, answer every cell, and compile a control pattern identically before
-  and after the series and run its matcher on a known subject.
-- **Known red.** A `red` cell (K148, K150, K151, NEW-n) is listed, not a
+  and after the series and run its matcher on a known subject. Each in-process
+  compile has its OWN wall bound (a seventh series column, `growth_driver`'s
+  SIGALRM): max(120 s, 20 x that cell's slowest CLI-stage wall), the CLI stage
+  writing its walls to `$PCREC_TMPDIR/growth-walls.tsv` (`GROWTH_WALLS`); a cell
+  over its bound is a FAIL (a timeout is a crash), the driver prints
+  `cell N TIMEOUT ...` and exits, so the series stops with the cell named; a
+  `begin N` progress line precedes every compile, a `wall=` follows it.
+- **Known red.** A `red` cell (K148, K150, K151, K154, K155) is listed, not a
   failure; when it starts passing the sweep fails until its `red` is removed.
 - Every cell runs under `scripts/watchdog` (wall 180 s, CPU 180 s, RSS 3 GB);
   run it through the box queue (`scripts/boxqueue`), it is heavy.

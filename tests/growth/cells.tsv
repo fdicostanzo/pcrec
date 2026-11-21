@@ -46,4 +46,4 @@ lit_past	memory	-	a	-	-	-	-	1000000	main	0	all	0	refuse:NFA exceeds	PCREC_MAX_NF
 ncgrp_past	memory	-	(?:a|b)	-	-	-	-	300000	main	0	all	0	refuse:NFA exceeds	PCREC_MAX_NFA_STATES	-
 cap_past	memory	-	(a)	-	-	-	-	100000	main	0	all	0	refuse:VM exceeds	PCREC_MAX_VM_NODES	-
 alt_past	memory	-	{i}x	|	-	-	-	500000	main	0	all	0	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	-
-alt_1m	memory	-	{i}x	|	-	-	-	1000000	main	0	all	0	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	NEW-1
+alt_1m	memory	-	{i}x	|	-	-	-	1000000	main	0	all	0	refuse:emitted code	PCREC_MAX_VM_EMIT_CODE_BYTES	K154

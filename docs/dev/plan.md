@@ -477,7 +477,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
 - [GROWTH-SWEEP] STATE:started — a test category for extreme growth (depth, length, memory): graceful refusals, never crashes
   filed: 2026-11-20 manager, from the owner's go ("growth-sweep: go") and the survey lane growsurv
-  status (2026-11-21): runner BUILT (lane grow1) (tests/growth/, `make test-growth`, opt-in); first run in docs/dev/lanes/grow1_report.md; red until fixed: K148, K150, K151 (+ NEW-1, NEW-2 to be filed)
+  status (2026-11-21): runner BUILT (lane grow1) (tests/growth/, `make test-growth`, opt-in); first run in docs/dev/lanes/grow1_report.md; red until fixed: K148, K150, K151, K154, K155; first full run and the library bound: grow2_report.md
   waits: nothing (the K147 landing came first); pairs with [LINT-FRAME]. Note (r64 F12): `item_first` stays on C recursion, 352 B/level, ~88 KB at 250 (within budget)
   next: after K147 lands, a lane builds the runner from the survey's product (construct kind x quantifier x branch position x core, at depth 250 and 251 on the budget thread; spine-length families at 16,384 and 100,000; memory families under scripts/watchdog -m) and absorbs tests/thread's DEPTH_FAMILIES
   refs: docs/dev/lanes/growsurv_report.md ("Suggested runner shape"); docs/dev/lanes/growsurv_evidence/; known_issues K147-K152; [LINT-FRAME]; [LM-SPINE-DEPTH]; docs/spec/limits.md §3.10
@@ -2250,6 +2250,16 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: a small lane: iterative spine descent in lm_flatten/lm_maxw (the house rule, coding.md), a limits.md §3.10 hunk, and the length family in [GROWTH-SWEEP]
   refs: known_issues K148; docs/dev/lanes/growsurv_report.md C1; [LANDWALK]; docs/dev/guide/coding.md (iterative spine descent)
   Against the house rule on recursion: descend the spine iteratively and recurse only into items hanging off it. The same fix applies to both.
+- [K154-ALT-1M-MEM] STATE:not-started — a 1,000,000-way literal alternation spends over 3 GB before any size refusal (K154)
+  filed: 2026-11-21 lane grow2, from grow1's first full run (NEW-1)
+  status (2026-11-21): filed; nothing built. 500,000 alternatives spend 2.8 GB then refuse; 1,000,000 are killed at the 3 GB watchdog
+  next: trigger the next crash-family lane (K150/K151's); refuse before the work: an alternative-count or pattern-size estimate against the emitted-code limit on entry, with a limits.md row; the growth cell memory/alt_1m loses its `red`
+  refs: known_issues K154; docs/dev/lanes/grow2_report.md; tests/growth/cells.tsv
+- [K155-STAMPS-LEAK] STATE:not-started — target_headers_render leaks its 32 KB pass-2 buffer on an out-of-memory refusal (K155)
+  filed: 2026-11-21 lane grow2, from grow1's library stage (NEW-2)
+  status (2026-11-21): filed; nothing built. LeakSanitizer in the growth sweep's ASan library stage names src/gen/memfn_stamps.c target_headers_render
+  next: trigger the next crash-family lane; free or arena-back the StrBuf on every exit of target_headers_render; the library stage of make test-growth goes green on it
+  refs: known_issues K155; docs/dev/lanes/grow2_report.md; src/gen/memfn_stamps.c
 - [K150-LMCAT-QUADRATIC] STATE:not-started — the landmark walk's lm_cat rebuilds a CAT spine per candidate: quadratic compile memory (K150)
   filed: 2026-11-20 lane growfile, from growsurv KR-D
   status (2026-11-20): filed; nothing built. `(?:a|b)` x 5,000 spends 3.46 GB with no refusal; the size cap fires only past about 8,000

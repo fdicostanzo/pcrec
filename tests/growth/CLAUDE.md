@@ -26,7 +26,9 @@ arm rides `make test-stackdepth`.
 - `cells.tsv` — explicit spine / width / memory cells; its header documents the
   columns (expect, limit, red).
 - `run_growth.sh` — the `make test-growth` body: CLI stage, then library stage
-  against an ASan+LSan build (`build-asan/`).
+  against an ASan+LSan build (`build-asan/`). The library stage bounds each
+  in-process compile by its own wall time (CLI walls in
+  `$PCREC_TMPDIR/growth-walls.tsv`, floor 120 s, margin x20; see testing.md).
 
 ## Rules
 

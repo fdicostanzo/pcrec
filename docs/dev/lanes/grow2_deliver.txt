@@ -1,0 +1,5 @@
+report: docs/dev/lanes/grow2_report.md
+sections: Summary; Library bound; Which cell hung; Sanitizer list; First-run numbers; Filings; Validation dispatched; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: grow2-lib

@@ -11,7 +11,14 @@
  *       and memory-capped failures included, to see whether a series in one
  *       process crashes or leaks (build it with ASan+LSan and the process
  *       exit reports a leak). SERIES_FILE has one TAB-separated line per cell:
- *       CAP STACK RAISE FEATURES ENGINE PATFILE. A CONTROL pattern is compiled
+ *       CAP STACK RAISE FEATURES ENGINE PATFILE [BOUND_S]. BOUND_S is that
+ *       cell's own wall-time bound in seconds (0 or absent = none): a
+ *       compile still running when it expires is a FAIL (a timeout is a
+ *       crash): the SIGALRM handler prints `cell <n> TIMEOUT bound=<s> pat=<file>`
+ *       and exits 124, naming the cell, so the series stops cleanly (one
+ *       in-process compile cannot be abandoned and the process go on). Before
+ *       each compile a `begin <n> bound=<s> pat=<file>` progress line is
+ *       printed, so a stuck cell is visible on the pipe. A CONTROL pattern is compiled
  *       before the series and again after it; both outputs are written to
  *       CONTROL_OUT.before / .after for the runner to compare and to run.
  *       Prints one `cell <n> rc=.. hw=.. msg=..` line per cell.
@@ -32,6 +39,8 @@
  */
 #define _GNU_SOURCE
 #include <pthread.h>
+#include <signal.h>
+#include <time.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,11 +188,40 @@ static int run_job(struct job *j, size_t want, size_t *hw)
     return 0;
 }
 
-static void job_report(const char *lead, struct job *j, size_t hw, int started)
+static void job_report(const char *lead, struct job *j, size_t hw, int started, double wall)
 {
-    if (!started) printf("%src=-9 hw=0 msg=could not start the thread (the cap is below what a thread needs)\n", lead);
-    else printf("%src=%d hw=%zu msg=%s\n", lead, j->rc, hw, j->rc ? j->err.msg : "");
+    char w[32] = "";   /* `one` mode (wall < 0) keeps the line the runner parses */
+    if (wall >= 0) snprintf(w, sizeof w, " wall=%.2f", wall);
+    if (!started) printf("%src=-9 hw=0%s msg=could not start the thread (the cap is below what a thread needs)\n", lead, w);
+    else printf("%src=%d hw=%zu%s msg=%s\n", lead, j->rc, hw, w, j->rc ? j->err.msg : "");
     fflush(stdout);
+}
+
+static double now_s(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (double)t.tv_sec + (double)t.tv_nsec / 1e9;
+}
+
+/* The per-cell bound: the current cell's line is prebuilt (async-signal-safe:
+ * write() only) when the alarm is armed. */
+static char timeout_line[8400];
+static size_t timeout_len;
+static void on_alarm(int sig)
+{
+    (void)sig;
+    ssize_t w = write(1, timeout_line, timeout_len);
+    (void)w;
+    _exit(124);
+}
+static void arm_bound(int n, unsigned bound, const char *pat)
+{
+    if (!bound) return;
+    int k = snprintf(timeout_line, sizeof timeout_line, "cell %d TIMEOUT bound=%u pat=%s\n", n, bound, pat);
+    timeout_len = k < 0 ? 0 : (size_t)k < sizeof timeout_line ? (size_t)k : sizeof timeout_line - 1;
+    signal(SIGALRM, on_alarm);
+    alarm(bound);
 }
 
 static int write_file(const char *path, const char *s)
@@ -224,7 +262,7 @@ int main(int argc, char **argv)
         j.engine = atoi(argv[6]);
         set_cap((size_t)strtoull(argv[2], NULL, 10));
         int started = run_job(&j, (size_t)strtoull(argv[3], NULL, 10), &hw) == 0;
-        job_report("", &j, hw, started);
+        job_report("", &j, hw, started, -1.0);
         return 0;
     }
     if (argc == 4 && strcmp(argv[1], "lib") == 0) {
@@ -236,11 +274,11 @@ int main(int argc, char **argv)
         char line[8192];
         int n = 0;
         while (fgets(line, sizeof line, f)) {
-            char *fld[6];
+            char *fld[7];
             char *s = line, *nl = strchr(line, '\n');
             if (nl) *nl = '\0';
             int k = 0;
-            for (; k < 6; k++) {
+            for (; k < 7; k++) {
                 fld[k] = s;
                 char *t = strchr(s, '\t');
                 if (!t) { k++; break; }
@@ -248,6 +286,7 @@ int main(int argc, char **argv)
                 s = t + 1;
             }
             if (k < 6) continue;
+            unsigned bound = k >= 7 ? (unsigned)strtoul(fld[6], NULL, 10) : 0;
             struct job j;
             size_t hw;
             memset(&j, 0, sizeof j);
@@ -257,12 +296,18 @@ int main(int argc, char **argv)
             j.features = fld[3];
             if (strcmp(j.features, "-") == 0) j.features = NULL;
             j.engine = atoi(fld[4]);
+            printf("begin %d bound=%u pat=%s\n", n, bound, fld[5]);
+            fflush(stdout);
             set_cap((size_t)strtoull(fld[0], NULL, 10));
+            double t0 = now_s();
+            arm_bound(n, bound, fld[5]);
             int started = run_job(&j, (size_t)strtoull(fld[1], NULL, 10), &hw) == 0;
+            alarm(0);
+            double wall = now_s() - t0;
             set_cap(0);
             char lead[64];
             snprintf(lead, sizeof lead, "cell %d ", n++);
-            job_report(lead, &j, hw, started);
+            job_report(lead, &j, hw, started, wall);
             free((void *)j.pattern);
         }
         fclose(f);
