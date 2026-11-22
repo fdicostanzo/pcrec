@@ -164,20 +164,26 @@ history:
 - 2026-11-14: the empty-match hazard ruling and its amendment; 2026-11-17: the names, the library path, the `pcrec.` prefix (core/diagnostics/warnings).
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; the selector rule stays stated in core/diagnostics/warnings, this piece is the name.
 
-## lib/builtin/options — @options.strict
-slugs:
+## lib/builtin/options — @options, @options.strict
+slugs: program-options
 rulings:
 - 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule"); (2) warnings become errors under a strictness setting declared in the source
 - 2026-11-17 ""One reading of mine: the setting covers...": @options.strict(/no-fail/)" (record: "2026-11-17 OWNER RULING — polarity-rule"); the ADDENDUM, same evening: strictness is SELECTIVE, a pattern over warning names; it corrects the manager's reading "the setting covers every warning"
+- 2026-11-22 "program-options: yes." (record: "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"); as put to him: "the lexical file scope above, starting with `m`, `s`, `n`, `x`; never across an import; a literal's own flags win"; the scope: the setting applies to literals written after the statement, in the same file; an inserted literal carries its own file's defaults into a hole.
+- 2026-11-22 (class: IDEA) "Using predicate language it's going to be more likely to use () in a literal to mean no capturing group." (record: "2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow"); his observation 1, quoted for `n`.
+- 2026-11-22 "hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program level settings that only affect literals in program scope." (record: "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"); the weak `i` is a program option of its file, never explicit.
 rejected:
 - the strictness setting covering every warning by default (the manager's reading) — by owner ruling — the polarity-rule addendum (`@options.strict(/no-fail/)`).
 readings:
 - `@options` as the family of the capability opt-ins (record "2026-11-17 OWNER IDEA — options written in the language", an IDEA, not a ruling: "Perhaps there should be an @options() in the language") — parked (parked/ideas/capability-optins).
 - `@config.strict()` and `@options.strict(...)` are one setting under two placeholder spellings (D193 add. 4) — the manager's reading.
-evidence:
+- (d) the program options and the weak `i` are one table, lexical, the file's own literals, from the statement on — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py LEXICAL; the weak `i` shown at the top of a file only: whether it may be set lower is not ruled).
+- (the lane's, at the brief) a file is a program file or a library file; a library keeps its own options — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py LIBFILE, the lines "A library keeps its own options", "Never across an import").
+evidence: docs/dev/lanes/predspot_evidence/ predspot_model.py LEXICAL, LIBFILE, FLAGGRID (lane predspot).
 history:
 - 2026-11-17: polarity-rule and its addendum.
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; `@options.strict` was stated only in core/diagnostics/warnings.
+- 2026-11-22 (lane predspot, program-options folded; record "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"): ruled 2026-11-17 re-dated 2026-11-22; heading "@options.strict" to "@options, @options.strict". Statement until then: "`@options.strict(sel)` makes the warnings whose names the selector `sel` matches into errors: strictness is selective, never every warning by default."; `defined:` until then "native (a compile-time effect on the compiler's diagnostics)"; "modes: n/a (a compile-time effect; no matching involved)" replaced by two run lines; four bullets added (program options, the weak `i`, his `n`, what is not ruled).
 
 ## lib/modifiers/padded — padded
 was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -256,6 +262,7 @@ readings:
 - status: held `open any-case-body` by the manager (the brief of lane preddoc3c); the question was never put to the owner.
 - a third parting: `any_case(/[a-z]x/ & /[A-Z]x/)` (the sides take the flag first, core/holes/flags/in-filter) — SUPPORTED by a run (predfix77 ANYCASE: over the 820 texts on `aAbBxXzZ7` to length 3 the body holds WHOLE on 16, as python `re` with each side under re.I does, the native definition on none, the argument having no member; sabotage s12 caught; the review's anycase.py found the same 16).
 - the `pcrec.flags.filter` warning fires inside the body on that argument, the warning the caller's to read (review r77 A7) — UNTESTED (a reading).
+- (a) the candidate body's `(?i:..)` is explicit, so it passes the hole under hole-flags; its printed lines stand — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py EXPLICIT: `any_case(w)` on `AB` HOLDS, w a library binding).
 evidence: preddoc3c PARTS CA, CAneg; the draft's rev 28 PART AC, rev 28.1 PART FF, rev 29 PART AC, rev 29.1 PART AC. predfix77_model.py ANYCASE; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-15: a primitive for now, the basis a follow-up ([PRED-REREAD], the draft §13 O70).
@@ -263,6 +270,7 @@ history:
 - 2026-11-19 (lane preddoc3c): converted, `open any-case-body`.
 - 2026-11-22 (lane predfix77, review r77 A7; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the standing reading's "every mode except two" was false since flags-in-filter (sides first); the third exception, the warning's behaviour and two lines added; the candidates read "those three".
 - 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): open any-case-body re-dated 2026-11-22. Statement until then: "Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay native (a string equal, up to letter case, to a member of rx)?"; the candidate body gains the list (the convention covers a provided body; any_case stays native for now, so the list is on the candidate only); a bullet added. The candidate's printed lines re-run in the flag engine (predspot_model.py FSWEEP, EXPLICIT).
+- 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): a bullet added (the body's flag is explicit); the line "The candidate body"'s tail `/(?i:${rx})/` to `/(?i:${[(=) = rx]})/`.
 
 ## lib/modifiers/limited — limited
 slugs:

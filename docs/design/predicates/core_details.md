@@ -94,11 +94,14 @@ history:
 slugs:
 rulings:
 - 2026-11-19 (class: a PRINCIPLE stated, in a DISCUSSION) "lets talk about the flags issue and make sure we understand it. if i write a binding A with a bunch of rx. then i use A like /(?i)${A}/ does A inherit or only direct // literals. i'd say it does. if the flag status is important to an rx, its that rx's responsibility to set them the way it wants and not assume. so if one builds up an rx, they inherit the flags of the surrounding. we might consider that on a flag by flag basis but that would be my expectation" (record: "2026-11-19 OWNER, discussing flags and a binding used in a hole")
+- 2026-11-22 (class: OBSERVATION) "Options m s really can't be inherited because they change semantics in confusing ways if you don't control them." (record: "2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow"); his point 4, quoted in the principle as the ground of hole-flags part 3.
+- 2026-11-22 "hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program level settings that only affect literals in program scope." (record: "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"); his reason, quoted in the principle (class: REASON).
 rejected:
 readings:
-evidence: PART FF of predspec29 (flags-scope), PART TX of predspec291.
+evidence: PART FF of predspec29 (flags-scope), PART TX of predspec291.; docs/dev/lanes/predspot_evidence/ predspot_model.py EXPLICIT, NOTINH, FLAGGRID (lane predspot).
 history:
 - 2026-11-19: the record classes it a DISCUSSION with a LEAN and "a PRINCIPLE stated"; "flag by flag" became flags-scope (core/holes/flags).
+- 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): principle 2026-11-19 re-dated 2026-11-22: his point 4 and his reason quoted; the sentence "Narrowed by hole-flags ..." added (the inheritance his second sentence states is now an explicit `i` only).
 
 ## core/principles/composed-at-point — Composed at the point of use
 was: core/principles/exact-wording (2026-11-19, deleted, not moved: a remark on the manager's method in the same record entry, not a language principle (review r59 RULING-2); its tag is retired here because this entry quotes the one record entry it came from)
@@ -390,13 +393,17 @@ rulings:
 - 2026-11-14 "I agree... I was mostly thinking about multi line predicate syntax" (record: "2026-11-14 RULINGS on predicates_draft.md §13")
 - 2026-11-18 "a hole takes the flags in force at the hole. each regex literal has its own flags." (record: "2026-11-18 OWNER RULING — hole-flags: a hole takes the flags in force at the hole; each regex literal has its own flags; and his question, do flags propagate down")
 - 2026-11-18 "flags-propagate: yes" (record: "2026-11-18 OWNER RULING — flags-propagate: yes")
+- 2026-11-22 "program-options: yes." (record: "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"); a file's program options are its literals' defaults, a literal's own flags win.
+- 2026-11-22 "hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program level settings that only affect literals in program scope." (record: "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"); explicit is what a literal writes.
 rejected:
 readings:
 - an `&` written at program level keeps each side's own flags; flags-in-filter as "reach" (the manager's reading after "by "flags propagate" i thought we decided that rx inherits the flags of the surrounding rx", a recollection) — UNTESTED here (core/holes/flags carries the hole case).
 - a sequence operand at program level has no surrounding rx and starts from its own flags (the same reading) — UNTESTED.
-evidence: preddoc3a_model.py FLAGS (`/a(?i)b/`: the flag applies from where it is written; python `re` `a(?i:b)` agrees).
+- (a) "explicit" is a flag written in a literal's text (`(?i)`, `(?-i)`, `(?i:..)`, `/.../i`), PCRE's scope inside it; `any_case`'s body writes one; a program option is never explicit — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py EXPLICIT: nine settings over a library `w := /ab/` on `AB`).
+evidence: preddoc3a_model.py FLAGS (`/a(?i)b/`: the flag applies from where it is written; python `re` `a(?i:b)` agrees).; docs/dev/lanes/predspot_evidence/ predspot_model.py FCONTROL, EXPLICIT, FSWEEP (lane predspot).
 history:
 - 2026-11-18: hole-flags and flags-propagate; 2026-11-19: flags-scope (which flags an inserted rx inherits) is core/holes/flags.
+- 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): ruled 2026-11-18 re-dated 2026-11-22. Statement until then: "A literal's flags are the ones it writes (`(?x)`, `(?i)`, `/.../x`), with PCRE's scope; the predicate opt-in implies none, and a literal standing on its own inherits none."; the bullet until then: "Built up inside another rx, an rx inherits the flags of what surrounds it: for a hole, core/holes/flags."; two bullets added (the file's options; explicit). The line `/a(?i)b/` stands (docs/dev/lanes/predspot_evidence/ predspot_model.py FSWEEP).
 
 ## core/patterns/sequence — The sequence operator
 slugs: sequence-operator sequence-precedence sequence-reading
@@ -999,17 +1006,21 @@ rulings:
 - 2026-11-19 "zero-in-sequence: you are a lawyer in your exact wording. this is what is needed now. the condition is always sees the regex composed at the point it is used. so the 0: is the match so far" (record: "2026-11-19 OWNER RULING — zero-in-sequence"); the statement's "`0` ... names the match so far" (the deciding piece: core/conditions/match-so-far)
 - 2026-11-17 "For A & B: from the perspective of B, the subject is now whatever A matched. There is no outside subject (unless we allow context, etc). That's its whole world. So all numbers are labels of groups in that world." (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
 - 2026-11-17 "Also, not recommended to use group numbers as it's confusing on bound values you can't see" (record: "2026-11-17 OWNER RULING — zero-place: a pattern's numbers are labels in its own world")
+- 2026-11-22 "program-options: yes." (record: "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"); `n` among the program options.
+- 2026-11-22 (class: IDEA) "Using predicate language it's going to be more likely to use () in a literal to mean no capturing group." (record: "2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow"); his ground for `n`.
 rejected:
 - "numbers name the groups of the nearest pattern to their left" and "numbers are not subject to the ambiguous-reference error" (the manager's readings, rev 25.1-26) — by owner ruling — number-names ("Only when there is no ambiguity"; the draft R.9).
 readings:
 - a number on a group whose name is shared inside one literal is refused (the draft R.1.13) — UNTESTED.
 - the numbered-label warning (the manager's proposal from his "not recommended", accepted: record "2026-11-17 OWNER — the numbered-label warning accepted") — the wording is core/diagnostics'.
-evidence: preddoc3a_model.py NUM (the draft's PART NUM (2) line; printed answers reproduced).
+- (the lane's, at the manager's brief, reading (f)) under `n` a plain `( )` is no capture and no numbered label; only named groups are numbered — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py NUMBERS: `/(\d):(\d)/` has 0 numbered groups under a file's `@options(n)`, 2 without). What it does to this piece: a number names fewer groups (under `n`, only named ones); to the name table's "capture only" cell: under `n` an unnamed group is not a capture at all, the cell empties.
+evidence: preddoc3a_model.py NUM (the draft's PART NUM (2) line; printed answers reproduced).; docs/dev/lanes/predspot_evidence/ predspot_model.py NUMBERS (lane predspot).
 history:
 - 2026-11-17: zero-place, label numbers tried, the warning accepted; 2026-11-18: number-names and its addendum.
 - 2026-11-19 (lane preddoc4): the statement's "`0` is always the entire match" now points at the deciding piece core/conditions/match-so-far (his addendum's words stay in the rulings items; after a complete pattern the match so far IS the entire match); the bullet "inside a loop body, the pass's" removed (the loop case is core/conditions/match-so-far/in-loop); the warning's trigger stated once, as the record's accepted proposal words it (review r59 ZERO, READ-10).
 - 2026-11-19 (lane preddoc6, review r60 DAMAGE-4): the statement carries zero-in-sequence's meaning ("names the match so far"), so that ruling is cited here and the status re-dated 2026-11-19 (doc_format: a later ruling rewrites status and statement together); the 2026-11-18 addendum stays, its "entire match" read as the match so far after a complete pattern.
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-5): slugs numbered-duplicate and sequence-numbers homed here: the draft's rev 25 asked them and rev 25.1 replaced both by number-names (the draft: "rev 25 asked two, **numbered-duplicate** and **sequence-numbers**; review r43 A folds them"); neither was answered under its own name.
+- 2026-11-22 (lane predspot, program-options folded; record "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"): ruled 2026-11-19 re-dated 2026-11-22: a bullet added (under `n`).
 
 ## core/labels/numbers/in-loop — A number on a group optional in a loop
 slugs: number-in-loop
@@ -1839,27 +1850,36 @@ history:
 - 2026-11-19 (lane preddoc4): a new sub-piece: the base pointed a reader at the frozen draft for the current rule (review r59 READ-9).
 
 ## core/holes/flags — Flags at a hole
-slugs: hole-flags flags-propagate flags-scope
+slugs: hole-flags flags-propagate flags-scope weak-meets-weak
 rulings:
 - 2026-11-18 "hole-flags: i have heard you say both that the ${} gets the flags in force and also that a hole has its own flags. i agree with your interpretation of flags and holes. a hole takes the flags in force at the hole. each regex literal has its own flags. do the flags propagate down though? /(?i)${/blah/}/ is blah case insensitive?" (record: "2026-11-18 OWNER RULING — hole-flags: a hole takes the flags in force at the hole; each regex literal has its own flags; and his question, do flags propagate down")
 - 2026-11-18 "flags-propagate: yes" (record: "2026-11-18 OWNER RULING — flags-propagate: yes")
 - 2026-11-19 "i agree with your inherit table excepting that U should also not be inherited. one could make a case that only i should be inherited" (record: "2026-11-19 OWNER RULING — flags-scope")
 - 2026-11-19 "by "flags propagate" i thought we decided that rx inherits the flags of the surrounding rx" (record: "2026-11-19 OWNER, on flags-in-filter: what "flags propagate" meant")
+- 2026-11-22 "hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program level settings that only affect literals in program scope." (record: "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"); all three parts as put to him: "1. Weak values do not propagate; they are the file's default for its own literals. 2. At a hole, only an explicit `i` or `-i` is inherited. It replaces what was in force. 3. `m` and `s` are no longer inherited at a hole." It REVISES flags-scope / flags-propagate (2026-11-19: `i`, `m`, `s`).
+- 2026-11-22 (class: PROPOSAL) "Proposal: Keep i inherited for now but this could set the "weak" value for i. By that I mean i has three settings: on, off, weak on, weak off." (record: "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"); he writes "three settings" and lists four; ruled in the form of hole-flags (on and off explicit, weak on and weak off the file's default).
+- 2026-11-22 (class: PROPOSAL) "Consider this: weak settings do not propagate." (record: "2026-11-22 OWNER, on weak-meets-weak: "Consider this: weak settings do not propagate.""); answer (b) of weak-meets-weak, ruled with hole-flags.
 rejected:
 - NO INHERITED FLAGS ("a hole keeps its own flags"; the draft's own rule, never his) — by owner ruling — flags-propagate.
 - every flag propagates (`n`, `U`, `xx`, `J`; the draft revision 28.1's reading) — by owner ruling — flags-scope; `/(?U)x${/a+/}/` SEARCHED `xaaa` gives `xaaa`@0, the text paste `xa`@0 (preddoc1 EX-flags-U, sabotage xEX-flags-U caught).
 - the inserted literal spelt `(?^ims:...)` as "the" text — by review r54 P29-1 — `(?^)` does not reset `U`, a paste is no parse of its own (PART TX of predspec291).
 - the hole's flags over a flag the literal writes — by owner ruling — flags-propagate, the override as asked (preddoc1 EX-flags-written, sabotage xEX-flags-written caught).
 - hole-flags' split, "plain text with no flags of its own (a read, a string constant, a number)" against "pattern text written with flags" (the manager's, in the question) — by owner — "under one type there is no "plain text" kind" (the draft R.9, R.1.15).
+- weak-meets-weak (a), the program's weak value flows into a library's literal — by owner proposal, then ruling — "Consider this: weak settings do not propagate."
+- the list `i`, `m`, `s` at a hole (flags-scope, 2026-11-19) — by owner ruling — "hole-flags: yes to all."
 readings:
 - "only i" inherited: his OBSERVATION, a possible narrowing, not ruled — UNTESTED.
 - the not-inherited flags are the inserted rx's own defaults at any depth; `m`, `s` stay inherited until he rules the narrowing (the manager's) — UNTESTED here.
 - the `r` and `a`-family flags inherited (the draft's reading, P29-2) — UNTESTED here (PART FA of predspec291).
-evidence: preddoc1 EX-flags, EX-flags-written, EX-flags-U; PARTS FF, FA, TX, SQ of predspec291; PART FL of predspec28.
+- (c) `x`, `xx`, `n`, `U` stay not inherited; `J` unchanged — SUPPORTED as run for `x`, `n`, and for `m`, `s` no longer inherited (docs/dev/lanes/predspot_evidence/ predspot_model.py NOTINH); `xx`, `U`, `J` not modelled.
+- (e) a binding of the SAME file inserted in a hole of that file has the same defaults, so nothing visible changes there — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py LIBFILE: `/x${w}/` under a weakly insensitive file holds on `XAB`).
+- weak meets weak, his pasted (b) line — SUPPORTED as run: the weak example under hole-flags reproduces the record's line (b) verbatim, under the 2026-11-19 rule its line (a) (docs/dev/lanes/predspot_evidence/ predspot_model.py EXAMPLES).
+evidence: preddoc1 EX-flags, EX-flags-written, EX-flags-U; PARTS FF, FA, TX, SQ of predspec291; PART FL of predspec28.; docs/dev/lanes/predspot_evidence/ predspot_model.py EXAMPLES, NOTINH, LIBFILE, FLAGGRID, FSWEEP (lane predspot).
 history:
 - 2026-11-18: hole-flags and flags-propagate reversed the draft's NO INHERITED FLAGS (§11, §13 O32).
 - 2026-11-19: flags-scope (`U` moved out); the r54 round made "parsed alone" the model (revision 29.1).
 - 2026-11-19 (lane preddoc4): flags-in-filter (an open question in a bullet) became the open sub-piece core/holes/flags/in-filter (review r59 READ-9).
+- 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): ruled 2026-11-19 re-dated 2026-11-22. Statement until then: "What is inserted in a hole starts with the flags in force at the hole for `i`, `m`, `s`, not for `U`, `x`, `xx`, `n`; a flag it writes for itself wins."; the bullet until then: "This holds for a direct literal and for a binding alike, at any depth (a binding in a hole inherits)." and "`J` has no effect across a hole (core/holes/same-name)."; bullets added (own file's defaults; his words on the three parts; a weak value does not propagate; the same-file reading (e); x, xx, n, U and J, the reading (c)). The line `/(?i)id-${/blah/}/` stands (an explicit `i`, docs/dev/lanes/predspot_evidence/ predspot_model.py FSWEEP); four lines added, the weak example and the s example (docs/dev/lanes/predspot_evidence/ predspot_model.py EXAMPLES).
 
 ## core/holes/flags/in-filter — Flags of an `&` inside a hole
 slugs: flags-in-filter flags-before-and flags-warning
@@ -1867,6 +1887,7 @@ rulings:
 - 2026-11-19 "flags-in-filter: both sides inherit." (record: "2026-11-19 OWNER RULING — flags-in-filter: both sides inherit; and a question on a bound `&` put in a hole")
 - 2026-11-19 "flags-in-filter: i cannot think of a different solution. I agree with the ruling that the environment of the hole sets the default options for the expression inside." (record: "2026-11-19 OWNER RULING — flags-in-filter confirmed: the environment of the hole sets the default options for the expression inside; and a request for a warning"); it answers flags-before-and: the sides take the flags before the intersection
 - 2026-11-19 "flags-warning: yes when it works. You can't do it if the expression refers to $x a label in the literal" (record: "2026-11-19 OWNER RULING — flags-warning: yes, when it works; not when the expression reads a label of the literal")
+- 2026-11-22 "hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program level settings that only affect literals in program scope." (record: "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"); the sides inherit an explicit `i` only (the manager's reading (b)).
 rejected:
 - a structural trigger for the warning (any `&` or complement in a flagged hole whose operand has a letter and sets no case flag) — by owner ruling — flags-warning: the exact trigger, "when it works"; it would fire on the harmless cases too.
 - resolve the expression on its own, then insert the result wrapped by the context options (his own proposal, "after") — by owner — dropped by him ("i cannot think of a different solution"): it collides with "a flag it writes for itself wins" (`A & A` against `A`, A := `/(?-i)ab/`).
@@ -1881,13 +1902,15 @@ readings:
 - flags-warning (d): the trigger is stated for `i`; `m` and `s` follow the same comparison — UNTESTED; marked a reading in the base. His lean that only `i` is inherited (record: "2026-11-21 OWNER, his "issue definition" for bare-nested-scope: bindings define scope; flags are a symptom of PCRE, probably only `i` inherits; the two languages differ by construction; a sketch `list_of_stuff(X, cmp, S)`") would narrow it; not ruled.
 - flags-before-and (a): a compile-time judgement of a binding ALONE reads it under its own flags and can say "nothing" of a binding that matches in a flagged hole, so such warnings belong at the USE — UNTESTED (record "2026-11-19 OWNER, after flags-in-filter: do the sides inherit before or after the intersection ("Tricky")").
 - flags-before-and (b): the same before/after split exists for a complement (`A & !B` in a flagged hole) — UNTESTED (the same entry).
-evidence: the draft's PART FF of predspec29 (REACH). The warning's trigger: the record's run flagswarn.py (brute force over 1,554 strings; 2 WARN, 4 quiet).
+- (b) the sides of an `&` inside a hole inherit an explicit `i` only; `pcrec.flags.filter` keeps its trigger — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py FILTER: the trigger computed at `/(?i)${..}/` warns on `/[a-z]x/ & /[A-Z]x/`, not on `/[a-z]+/ & /b.*/`; under a weakly insensitive program no flag reaches the sides).
+evidence: the draft's PART FF of predspec29 (REACH). The warning's trigger: the record's run flagswarn.py (brute force over 1,554 strings; 2 WARN, 4 quiet).; docs/dev/lanes/predspot_evidence/ predspot_model.py FILTER, FSWEEP (lane predspot).
 history:
 - 2026-11-19: his before/after question ("Tricky"), his resolve-then-wrap proposal, then the confirmation; the second example line is the record's run (flagsorder.py, hand-built). A warning for the case is asked of him (flags-warning), not in the language.
 - 2026-11-19 (lane preddoc4): a new open sub-piece, from a bullet of core/holes/flags (review r59 READ-9). The candidate (b) is the lane's statement of the rival the draft names (a filter operand's own world).
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 - 2026-11-19: ruled; the statement until then: "Do the two sides of an `&` written inside a hole start with the flags in force at the hole?" with the candidates (a) both sides inherit, (b) neither does; the example line is the record's run (flagsfilter.py, hand-built).
 - 2026-11-22 (lane predfix77, review r77 D3, D7 (RULING-8), D11; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the binding bullet's "a binding is its expression where it is used" scoped to flags and matching (its label reads are its own: bare-nested-scope case 2); the warning bullet marks readings (a) and (d) and is the one owner of the trigger (the warnings row cites it; the row's own trigger text until then, verbatim: "an `&` or a complement in a hole that inherits a flag, where the result differs from the expression alone with the flag on its result; not where the expression reads a label (`$x`) or the comparison cannot be made"); status date 2026-11-19 to 2026-11-21. The 2026-11-19 history line "A warning for the case is asked of him (flags-warning), not in the language" is superseded by the flags-warning ruling (folded).
+- 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): ruled 2026-11-21 re-dated 2026-11-22. Statement until then: "The two sides of an `&` written inside a hole each start with the flags in force at the hole, a flag a side writes for itself winning."; the bullet until then: "The inherited flags are the hole's own list (`i`, `m`, `s`: core/holes/flags)."; the trigger's sentence until then: "The trigger is stated for `i`; `m` and `s` follow the same comparison (a reading)." Both lines stand (an explicit `(?i)`, docs/dev/lanes/predspot_evidence/ predspot_model.py FSWEEP).
 
 ## core/holes/labels — Labels through a hole
 slugs: inner-label-read
@@ -2023,6 +2046,7 @@ history:
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): his example 1 (bullet and line "Example 1") marked "(awaits argument-default)": B(rx) := `/${rx}xx/` uses rx alone, so whether the caller's `A.d` is legal is the new open question (core/labels/paths/argument-default); under its candidate "error" the binding C is refused (preddef_model.py AWAITS). His example 3 is unchanged.
 - 2026-11-22 (lane predfix83, review r83 D2; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): CORRECTION 1 of the record entry: the VALUES bullet until then ended "the exception to "a compose and a literal rx have the same label behavior" (core/labels/flow), which holds for what a piece's USER reads (the lines "Two definitions", "One definition")." Default-export narrows case 2's "holds for what the user sees" as well: the user reads only what each piece exports (a consequence, the manager's reading; docs/dev/lanes/predfix83_evidence/ predfix83_model.py WITNESS).
 - 2026-11-22 (lane predspot, argument-default folded; record "2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern"): example 1's sentence until then: "Spelled under label-reference `C := B(A) & (A.d: <100)`: what his flat look meant is what `A.d` means (core/labels/paths/label-reference, core/labels/paths/call-prefix); under default-export B uses rx alone, so it awaits argument-default (core/labels/paths/argument-default)."; now REVISED, a compile error. The line "Example 1" (WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS) is a compile error; the line "Example 1, the spot labelled" (`C := B(A) & (B.dd.d: <100)`, B(rx) := `/${[dd = rx]}xx/`) gives the answers it gave.
+- 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): the bullet until then: "A used piece takes the flags at its hole (core/holes/flags) but not the labels around it: the two differ by construction ("bindings define scope")."
 
 ## core/holes/bare-condition/bound-condition — A condition bound to a name of its own
 slugs: bound-condition
@@ -2407,6 +2431,7 @@ evidence: docs/dev/lanes/predfix83_evidence/ predfix83_model.py GRID; docs/dev/l
 history:
 - 2026-11-22 (lane predfix83, review r83 (the brief's NAME TABLE piece, review r82's name table); record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): a new piece, status `reading`: the table of name kinds, the four-cell table, the one operator and the position rule, what is not merged, his agreement quoted.
 - 2026-11-22 (lane predspot, argument-default folded; record "2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern"): a binding row added: an argument at a call, a template, never labelled.
+- 2026-11-22 (lane predspot, program-options folded; record "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"): the "capture only" cell gains "(none under `n`)", the "neither" cell "a plain `( )` under `n`" (reading (f), at the brief).
 
 ## core/diagnostics/errors — Compile errors
 slugs:
@@ -2486,6 +2511,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-14): (a) core/labels/one-rule's "A label no match can set draws a warning" pointed at no row: by polarity-rule it is the test that can never pass, so the `pcrec.test.never` row names it and the one-rule bullet says so (no new warning); (b) the five nameless rows given placeholder names like the rest (`pcrec.label.hidden`, `pcrec.arith.nothing`, `pcrec.hit.nullable`, `pcrec.test.consumes`, `pcrec.class.join`: the manager's placeholders, to the spellings review); (c) the selector bullet writes `pcrec.warn.unused`, as the table does.
 - 2026-11-22 (lane predfix77, review r77 D11; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the `pcrec.flags.filter` row cites core/holes/flags/in-filter for its trigger (one owner per fact); its own trigger text is in that entry's history.
 - 2026-11-22 (lane predfix83, review r83 D11; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the row `pcrec.label.hidden` until then: "a binding that hides a label". Now its trigger restated as core/operators/statements reads it (a reading).
+- 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): ruled 2026-11-17 re-dated 2026-11-22: the `pcrec.flags.filter` row's "an `&` or a complement in a hole that inherits a flag" to "... that inherits an explicit `i` (the one flag a hole passes on)".
 
 ## core/diagnostics/dollar-form — The `$x & S` warning
 slugs: dollar-warning dollar-diagnostic
@@ -2571,6 +2597,7 @@ history:
 - 2026-11-21 (lane predscope): rows added or widened for his placeholders of 2026-11-21: `.` as the sequence operator and `[=year]` (record: "2026-11-21 OWNER, discussing bare-nested-scope: an EXERCISE asked for (construct moderately difficult rx from macros), with his predictions"); the capture forms, a wrapper and after the fact, "no spelling suggested" (pure-label).
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the ARRAY FORM row's "its index `h[k]` and the pass index `(h[2]: ..)`" became "its index `h[k]`, the k-th setting (`(h[2]: ..)`)".
 - 2026-11-22 (lane preddef, export-list folded; record "2026-11-22 OWNER RULING — export-list: yes"): a row: the export list on a part label.
+- 2026-11-22 (lane predspot, program-options folded; record "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"): ruled 2026-11-19 re-dated 2026-11-22: a row added, the program options statement `@options(..)`.
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:

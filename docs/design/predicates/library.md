@@ -165,18 +165,31 @@ defined: native (a compile-time effect on the compiler's diagnostics)
 - An effect: written after `@` only, as a statement.
 modes: n/a (a compile-time effect; no matching involved)
 
-### @options.strict   [lib/builtin/options]   ruled 2026-11-17
-`@options.strict(sel)` makes the warnings whose names the selector `sel` matches into errors: strictness is selective, never every warning by default.
-needs: core/operators/statements
-see: core/diagnostics/warnings lib/builtin/warn parked/ideas/capability-optins parked/ideas/severity-table
+### @options, @options.strict   [lib/builtin/options]   ruled 2026-11-22
+`@options(..)` sets the program options of the literals written after it in its file; `@options.strict(sel)` makes the warnings `sel` matches into errors, never every warning by default.
+needs: core/operators/statements core/patterns/flags
+see: core/diagnostics/warnings lib/builtin/warn parked/ideas/capability-optins parked/ideas/severity-table core/holes/flags core/labels/numbers
 module: ?
-defined: native (a compile-time effect on the compiler's diagnostics)
+defined: native (compile-time effects: how a file's literals are read; the compiler's diagnostics)
+- PROGRAM OPTIONS ("program-options: yes"): `@options(..)` applies to the literals written after it in the same
+  file, from the statement on: `m`, `s`, `n`, `x` and the weak `i`; never across an import (a library file keeps its
+  own options); a flag a literal writes for itself wins; an inserted literal carries its own file's defaults into a
+  hole (core/holes/flags). The spelling is a placeholder (his `@options()`).
+- The weak `i` (hole-flags): a file with no option is weakly case-sensitive, `@options(i)` makes it weakly
+  insensitive; a weak value is set only by a program option, and a program option is never explicit. The options
+  and the weak `i` are ONE lexical table (the manager's reading (d)); a file is a program file or a library file,
+  each with its own (a reading, run).
+- His `n`: "Using predicate language it's going to be more likely to use () in a literal to mean no capturing
+  group." Under `n` a plain `( )` is no capture and no numbered label (core/labels/numbers).
+- Not ruled: the spelling, and whether it may appear more than once; whether `i` may be set weakly insensitive only
+  at the top of a file; options beyond the four (`xx`, `J`, `U`, the `&`-in-rx switch: the idea's list).
 - `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
   (parked/ideas/capability-optins); one table for the controls of one fact is parked/ideas/severity-table.
 - An effect: written after `@` only, as a statement.
-modes: n/a (a compile-time effect; no matching involved)
+A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
+Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
 
 ## Modifiers   [lib/modifiers]
 
@@ -229,12 +242,13 @@ defined: native (for now, by the owner's ruling; whether the body defines it is 
   sides differ only in case (`any_case(/[a-z]x/ & /[A-Z]x/)`: the sides take the flag first, core/holes/flags/in-filter,
   so the body matches 16 of 820 texts over `aAbBxXzZ7` to length 3, the native none; the lines below).
 - The candidate body carries the export list on its spot (lib/convention/argument-labels); the list moves no match.
+- Its `(?i:..)` is EXPLICIT, so it passes the hole under hole-flags (the manager's reading (a)): its lines stand.
 - In the body the `pcrec.flags.filter` warning fires on that third argument: the hole is the library's, the
   warning the caller's to read (a reading).
 - Candidates: (a) the body is the definition, those three its stated behaviour; (b) the native definition stays,
   the body a lowering where it agrees.
 WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho`@0, `HO`@3] (the candidate body on `any_case("ho")`, `(?i:ho)`)
-The candidate body: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-Ax` `Ax`@1 / FIND-ALL `ax 7x AX` [`ax`@0, `AX`@6] (`any_case(/[a-z]x/ & /[A-Z]x/)`, the body `/(?i:${rx})/`)
+The candidate body: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-Ax` `Ax`@1 / FIND-ALL `ax 7x AX` [`ax`@0, `AX`@6] (`any_case(/[a-z]x/ & /[A-Z]x/)`, the body `/(?i:${[(=) = rx]})/`)
 Native: WHOLE `ax` FAILS, `AX` FAILS / SEARCHED `-Ax` FAILS / FIND-ALL `ax 7x AX` [] (the same call)
 
 ### limited   [lib/modifiers/limited]   under-construction 2026-11-19

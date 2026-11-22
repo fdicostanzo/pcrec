@@ -46,9 +46,13 @@ A refused form can be allowed later without changing any existing answer.
 His reason when the rule came: "It's consistent that alternations combine on the product and multiply the rx and
 produce more alternations".
 
-### An rx sets the flags it needs (the manager's name)   [core/principles/rx-owns-flags]   principle 2026-11-19
+### An rx sets the flags it needs (the manager's name)   [core/principles/rx-owns-flags]   principle 2026-11-22
 "if the flag status is important to an rx, its that rx's responsibility to set them the way it wants and not assume."
 "so if one builds up an rx, they inherit the flags of the surrounding."
+"Options m s really can't be inherited because they change semantics in confusing ways if you don't control them."
+"What i like about the i weak behavior is that it's consistent to the other program level settings that only affect literals in program scope."
+Narrowed by hole-flags (core/holes/flags): what an rx built up inside another inherits is an explicit `i` only;
+a file's program options set its own literals' defaults (lib/builtin/options).
 
 ### Composed at the point of use (the manager's name)   [core/principles/composed-at-point]   ruled 2026-11-21
 "the condition is always sees the regex composed at the point it is used. so the 0: is the match so far"
@@ -220,15 +224,19 @@ needs: core/model/match
 see: core/holes/insert core/holes/no-hole
 WHOLE `a b` HOLDS, `ab` FAILS / SEARCHED `xa b` `a b`@1 / FIND-ALL `c a b ab` [`c`@0, `a b`@2] (`/a b|c/`)
 
-### Flags in a literal   [core/patterns/flags]   ruled 2026-11-18
-A literal's flags are the ones it writes (`(?x)`, `(?i)`, `/.../x`), with PCRE's scope; the predicate opt-in implies none, and a literal standing on its own inherits none.
+### Flags in a literal   [core/patterns/flags]   ruled 2026-11-22
+A literal's flags are the ones it writes (`(?x)`, `(?i)`, `/.../x`), with PCRE's scope, over its file's program options; the predicate opt-in implies none.
 needs: core/patterns/literals
 by: core/principles/rx-owns-flags
 - No implicit extended mode: `/foo bar/` keeps its space and `#` is literal text.
-- Built up inside another rx, an rx inherits the flags of what surrounds it: for a hole, core/holes/flags.
+- Where it is written its file's program options are the literal's defaults (`m`, `s`, `n`, `x`, the weak `i`:
+  lib/builtin/options, "program-options: yes"); a flag the literal writes for itself wins.
+- EXPLICIT is a flag written in the literal's text (`(?i)`, `(?-i)`, `(?i:..)`, `/.../i`), with PCRE's scope inside
+  it; a program option is never explicit (the manager's reading (a) of hole-flags).
+- Built up inside another rx, an rx inherits an explicit `i` only: for a hole, core/holes/flags.
 - An `&` written at program level has no surrounding rx: each side keeps its own flags (a reading); so does a
   sequence operand at program level (a reading).
-see: core/holes/flags
+see: core/holes/flags lib/builtin/options
 WHOLE `aB` HOLDS, `AB` FAILS / SEARCHED `AB aB` `aB`@3 / FIND-ALL `ab aB Ab` [`ab`@0, `aB`@3] (`/a(?i)b/`)
 
 ### The sequence operator   [core/patterns/sequence]   ruled 2026-11-17
@@ -797,7 +805,7 @@ by: core/principles/namespace-at-reference
 see: core/holes/same-name
 WHOLE `733` HOLDS, `737` FAILS / SEARCHED `x737 733` `733`@5 / FIND-ALL `733 737 455` [`733`@0, `455`@8] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?<h>\d)\k<h>/`)
 
-### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-19
+### Numbers name groups only without ambiguity   [core/labels/numbers]   ruled 2026-11-22
 A number names a group only when there is no ambiguity; `0` is never refused and names the match so far (core/conditions/match-so-far).
 needs: core/labels/one-rule core/labels/flow
 by: core/principles/operand-world
@@ -806,6 +814,8 @@ by: core/principles/operand-world
   alternation of patterns, a repeat's operand, a chain of several patterns) it is the compile error "name the group".
 - Only capturing groups are numbered, plain `( )` and named alike, by their opening parenthesis; numbers are local
   to each literal. A group's name and its number are two names of one label (naming both is the label-twice error).
+- Under `n` (a program option or the literal's `(?n)`), a plain `( )` is no capture and no numbered label: only
+  named groups are numbered (a reading, run; lib/builtin/options).
 - `$1` reads label 1 as `$x` reads a name.
 - A number on a group whose name is shared inside one literal is refused too (a reading).
 - The numbered-label warning fires where a condition or a `$` reads a label by number on a pattern NOT written at
@@ -1441,21 +1451,35 @@ needs: core/holes/value core/holes/count core/holes/class core/holes/option
 - A group name from a read is a compile error (core/holes/name: a name is known at compile time).
 modes: n/a (compile-time verdicts; no matching involved)
 
-### Flags at a hole   [core/holes/flags]   ruled 2026-11-19
-What is inserted in a hole starts with the flags in force at the hole for `i`, `m`, `s`, not for `U`, `x`, `xx`, `n`; a flag it writes for itself wins.
+### Flags at a hole   [core/holes/flags]   ruled 2026-11-22
+What is inserted in a hole starts from its own file's defaults; only an explicit `i` or `-i` in force at the hole is inherited, replacing them; `m`, `s`, `x`, `xx`, `n`, `U` are not.
 needs: core/patterns/flags core/holes/pattern
 by: core/principles/rx-owns-flags
-see: core/holes/same-name
-- This holds for a direct literal and for a binding alike, at any depth (a binding in a hole inherits).
+see: core/holes/same-name lib/builtin/options
+- What is inserted in a hole starts from its own file's defaults, the program options in force where it is
+  written (lib/builtin/options); a flag it writes for itself wins.
+- His words: "hole-flags: yes to all.", on three parts: a weak value does not propagate, the file's default for its
+  own literals; at a hole only an explicit `i` or `-i` is inherited and replaces what was in force, down the hole,
+  until a nearer explicit setting; `m` and `s` are no longer inherited (revising the earlier list `i`, `m`, `s`).
+- A weak value does not propagate: not through a hole, not across an import. A pattern that needs `m` or `s` writes
+  it, or its file sets it as a program option (the lines "An `s` the inserted literal does not write").
+- This holds for a direct literal and for a binding alike, at any depth. A binding of the SAME file inserted in a
+  hole of that file has the same defaults, so nothing visible changes there (the manager's reading (e)).
 - The inserted literal is parsed alone: its comments, its `\Q`, its group numbers and its recursion are its own.
-- `J` has no effect across a hole (core/holes/same-name).
+- `x`, `xx`, `n`, `U` stay not inherited; `J` has no effect across a hole (core/holes/same-name) (the manager's
+  reading (c)).
 WHOLE `id-BLAH` HOLDS, `ID-blah` HOLDS / SEARCHED `x ID-BLAH` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-blah` [`id-blah`@0, `ID-BLAH`@8, `Id-blah`@16] (`/(?i)id-${/blah/}/`)
+A library word under a weakly insensitive program: WHOLE `id-abc` HOLDS, `ID-abc` HOLDS, `ID-ABC` FAILS / SEARCHED `x ID-ABC id-abc` `id-abc`@9 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `Id-ab`@12] (`/id-${word}/` in a program file opening `@options(i)`, word := `/[a-z]+/` in a library file that sets nothing)
+The program writes the flag: WHOLE `id-abc` HOLDS, `ID-abc` HOLDS, `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` `ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12] (`/(?i)id-${word}/` in a program file opening `@options(i)`, word := `/[a-z]+/` in a library file that sets nothing)
+An `s` the inserted literal does not write: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/(?s)a${dot}b/`, dot := `/./`)
+Written in the inserted literal: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/(?s)a${dot}b/`, dot := `/(?s)./`)
 
-### Flags of an `&` inside a hole   [core/holes/flags/in-filter]   ruled 2026-11-21
-The two sides of an `&` written inside a hole each start with the flags in force at the hole, a flag a side writes for itself winning.
+### Flags of an `&` inside a hole   [core/holes/flags/in-filter]   ruled 2026-11-22
+The two sides of an `&` written inside a hole each start from their own file's defaults and inherit only an explicit `i` in force at the hole; a flag a side writes for itself wins.
 needs: core/holes/flags
 see: core/holes/and-in-hole core/diagnostics/warnings
-- The inherited flags are the hole's own list (`i`, `m`, `s`: core/holes/flags).
+- The inherited flag is the hole's own: an explicit `i` or `-i` only (core/holes/flags; the manager's reading (b)
+  of hole-flags); `m` and `s` no longer reach a side.
 - A binding of an `&` put in a hole behaves the same: for flags and matching a binding is its expression where it
   is used (its label reads are its own: core/holes/bare-condition/nested-scope), so
   `C := /[a-z]+/ & /b.*/` at `/(?i)id-${C}/` is the `&` written in the hole (a reading). Used where no rx
@@ -1464,8 +1488,8 @@ see: core/holes/and-in-hole core/diagnostics/warnings
 - A warning fires at the hole "when it works": where the sides-first result differs from the expression alone
   with the flag applied to its result, an operand that writes the flag itself taken as it is; never where the
   expression reads a label of the literal (`$x`), a value known only at match time; nor where an operand is not
-  regular or the comparison is over its budget (a reading). The trigger is stated for `i`; `m` and `s` follow the
-  same comparison (a reading). This piece owns the trigger. Under `(?i)`:
+  regular or the comparison is over its budget (a reading). The trigger is stated for an explicit `i`, the one
+  flag a hole passes on, and is kept (the manager's reading (b)). This piece owns the trigger. Under `(?i)`:
   `/[a-z]x/ & /[A-Z]x/` and `/[a-z]+/ & !/[A-Z]+/` warn; `/[a-z]+/ & /b.*/` does not. The fix it names: write the
   flag in the operand. The name `pcrec.flags.filter` is a placeholder (core/diagnostics/warnings).
 - "the environment of the hole sets the default options for the expression inside": the sides take the flags
@@ -1563,8 +1587,8 @@ see: core/labels/flow core/operators/bindings/label-variables core/holes/bare-co
   (core/labels/flow) (the lines "Two definitions", "One definition"); for what a piece's USER reads, default-export narrows it too: the user reads only what each piece exports (a consequence, the manager's reading; core/labels/flow).
 - `0`: the match so far of the definition it is written in (core/conditions/match-so-far).
 - A group question in a bound piece: "if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (array-in-piece).
-- A used piece takes the flags at its hole (core/holes/flags) but not the labels around it: the two differ by
-  construction ("bindings define scope").
+- A used piece takes only an explicit `i` at its hole (core/holes/flags), its own file's defaults otherwise, and
+  not the labels around it: the two differ by construction ("bindings define scope").
 - His three examples, "rather than rules", with A := `[d = digits]` (his spelling; the runs use `rx.digits`):
   1. `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)` "is legal. C can see d as a flat look into A. C cannot see rx
      as its a binding variable not a label." (spelled `A.d` under label-reference); REVISED by argument-default
@@ -1906,7 +1930,7 @@ see: core/labels/labels-vs-captures core/labels/numbers core/values/metadata cor
 | | is a capture | is not a capture |
 |---|---|---|
 | has a label | a named group in a user's literal | a part label, a label-only group, an export-list entry |
-| has no label | an unnamed group `( )` where a number is refused | a non-capturing group `(?: )` |
+| has no label | an unnamed group `( )` where a number is refused (none under `n`) | a non-capturing group `(?: )`; a plain `( )` under `n` |
 - The one operator: "`.` has one meaning: a field of the map interface of the thing on its left" (core/modules/map).
   Position decides in a path left of `:`: the LAST step is a label, the earlier steps are sources (core/conditions/form).
 - Not merged: a label with a binding (match time against compile time; a binding scopes a label only by its place
@@ -1964,7 +1988,7 @@ The under-construction error keeps its own class, worded as under construction (
 by: core/principles/build-later
 modes: n/a (a compile error)
 
-### Warnings   [core/diagnostics/warnings]   ruled 2026-11-17
+### Warnings   [core/diagnostics/warnings]   ruled 2026-11-22
 Every warning is structural or defined by a library, has one stable name and can be switched off or made an error by a selector; a warning moves no answer.
 needs: core/values/arithmetic
 by: core/principles/structural-warnings
@@ -1992,7 +2016,7 @@ see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/idea
 | `pcrec.hit.nullable` | a hit argument that can match empty | core/diagnostics/nullable-hit |
 | `pcrec.test.consumes` | a bare pattern as the test of `when` | core/diagnostics/consuming-test |
 | `pcrec.class.join` | `[^${c}]` with two or more different values: it points at `[^${join(c)}]` | a reading (core/holes/negated-class) |
-| `pcrec.flags.filter` | an `&` or a complement in a hole that inherits a flag, its trigger as core/holes/flags/in-filter states it | core/holes/flags/in-filter |
+| `pcrec.flags.filter` | an `&` or a complement in a hole that inherits an explicit `i` (the one flag a hole passes on), its trigger as core/holes/flags/in-filter states it | core/holes/flags/in-filter |
 modes: n/a (warnings)
 
 ### The `$x & S` warning   [core/diagnostics/dollar-form]   ruled 2026-11-19
@@ -2024,7 +2048,7 @@ WHOLE `6:0,5:3,` HOLDS, `1:0,5:3,` FAILS / SEARCHED `1:0,5:3,6:0,` `5:3,6:0,`@4 
 
 ## Spellings   [core/spellings]
 
-### Every placeholder spelling   [core/spellings/placeholders]   ruled 2026-11-19
+### Every placeholder spelling   [core/spellings/placeholders]   ruled 2026-11-22
 Every spelling in these documents is a placeholder, settled together in one spellings review; the table names each thing to spell and where its meaning is.
 - A spelling never changes a meaning already settled. The MEANINGS are in the pieces named.
 | the thing to spell (the placeholder here) | its meaning |
@@ -2047,6 +2071,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | `padded`'s width and pad parameters | lib/modifiers/padded |
 | the LABEL-ONLY group (his `(?<:x>foo)`) | core/labels/label-only-group |
 | OPTIONS and STRICTNESS (`@options.strict(...)`); the suppression form (`@warn.off(...)`) | lib/builtin/options, lib/builtin/warn, core/diagnostics/warnings, parked/ideas/capability-optins |
+| the PROGRAM OPTIONS statement (`@options(..)`, his `@options()`; whether it may appear more than once) | lib/builtin/options, core/patterns/flags |
 | every WARNING name (`pcrec.test.never`, `pcrec.dollar.filter`, ...) and the under-construction error's name | core/diagnostics/warnings, core/diagnostics/under-construction |
 | `import(...)`, `@export(...)`, the filter inside the import | lib/builtin/import, lib/builtin/export, core/modules/export, lib/builtin/import/filter |
 | the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
