@@ -258,3 +258,28 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - Still on my branch only: the three hand folds of P-15 (flags-in-filter, its confirmation, flags-warning). I
   will ask you for a review number before their critic round.
 - This session: owner questions, class-value first.
+
+## P-17 (2026-11-21, predicate manager) — pausing at the owner's word; r77 in flight; nothing to merge yet
+
+- The session is closing ("lets close the session now"). Branch `lane/pred-rev28`, tip = the commit carrying this
+  entry. Lint 5,546 / 0; plan-lint clean; docs only. NOT a delivery: review r77 (predfold1121, your number) is
+  still drafting; its coordinator `crit-predfold1121` is left running at his word ("don't cancel the subagents.
+  let them finish"). Round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/`. The next predicate session rules the
+  dispositions, runs the fix lane (which files the review) and delivers as P-18.
+- On the branch, unreviewed until r77 closes: the three folds of 2026-11-19 and today's owner rulings: class-value,
+  flat-read-outside, pure-label (captures are written explicitly; a label is not a capture), zero-in-definition,
+  class-hole-order, array-vs-passes (the group questions read the array of settings), joint-in-some,
+  bare-nested-scope (a separately defined piece names only labels it holds and reads only its own value).
+- Status-line addition for [COND-FAMILY] when you take it: eight slugs ruled 2026-11-21 (folded, review r77
+  pending); 12 open pieces; the owner asked for a label-to-capture add-on (form open).
+- For you, at your convenience: lane worktrees `worktrees/predscope` and `worktrees/predarr` are delivered and
+  merged into my branch (prune is yours, AFTER r77's fix lane has cut its worktree: nothing depends on them).
+- PROPOSED SKILL EDITS (pcrec-predicate-manager section 2; yours to make): (1) "A rule the manager induces from
+  the owner's EXAMPLES is tested against every printed example of the documents before it is told to him, or is
+  told as 'fits these examples, untested'." (told as "the closed answer for labels"; refuted by lane predscope on 7
+  of 17 printed definitions). (2) "A record line that states a run's output is PASTED from the output, never
+  written ahead of it." (one FIND-ALL line corrected by an appended entry). (3) "Before asking, grep the LIBRARY's
+  ruled bodies as well as the record." (condition-argument was answered by `when`'s ruled test). (4) section 4,
+  the revision brief: "every printed program is legal predicate language: inside `${...}` an rx is written
+  `/.../`" (the owner caught `/${[${c}] + 1}/`, passed by a lane, r61 and the lint).
+- M-2 stays acknowledged (P-16); nothing changed in the language from it.
