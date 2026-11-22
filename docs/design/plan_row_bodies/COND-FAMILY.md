@@ -7031,3 +7031,19 @@ The manager's readings (marked; for lane predfix77, as R-1 of its rulings file, 
 (e) the path form (`x.@a`) and the user's own read of both parts are unchanged.
 His sentence, read literally, also bears on the open bound-condition (a condition bound alone can see nothing
 "at that point"): NOT taken as an answer to it; put to him as the next question.
+
+### 2026-11-22 OWNER, adding to array-in-piece: "or A SEQ /B definition/"
+tags: core/labels/labels-vs-captures core/holes/bare-condition/nested-scope core/labels/flow
+
+After the ruling entry above was recorded and **bound-condition** asked a third time. HIS WORDS, whole:
+
+"or A SEQ /B definition/"
+
+Class: an ADDITION to his array-in-piece statement ("if it was written A & /B-defintion/ then the some(h) would
+see the h from A"); nothing new asked. The reading taken, and told to him: "or", so BOTH compositions: B's text
+written in place beside A, joined by the sequence operator or by `&`, sees A's `h`; bound first, it does not.
+It REPLACES the manager's reading (a) of the entry above ("the `&` is taken as a placeholder for the
+composition"): he names the sequence form himself and keeps the `&` form beside it. The manager's reading, marked:
+for the `&` form the group question's array holds the settings of both sides; whether a PLAIN read of `h` there
+is still the ambiguous reference (core/labels/flow: "Across `&` a name both sides surface is an ambiguous
+reference") is not touched by his words and stays as ruled. bound-condition: not answered by this message.
