@@ -541,7 +541,7 @@ def main():
                     s['movers'] += 1
                     s['funcs'] += len(rec['sel'])
                     for vw in rec['sel'].values():
-                        st = next(l['stamp'] for l in levels if l['vw'] == vw)
+                        st = next((l['stamp'] for l in levels if l['vw'] == vw), 'w' + vw)   # an unadmitted width is the lint's to name, never a crash (S3535)
                         s['levels'][st] = s['levels'].get(st, 0) + 1
                     if rec['key'].startswith('named:'):
                         named_movers.add((rec['target'], rec['key']))
