@@ -205,29 +205,33 @@ defined: ?
 - His uses: `limited(padded(digits), 5)` and `padded(limited(digits, 5))` ("the padding could be infinite").
 - Whether the limit is "at most n" or "exactly n" is not settled by his words.
 
-### length   [lib/modifiers/length]   reading 2026-11-19
-`length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one setting of `ch` per character, their count tested by S.
-needs: core/filters/and core/values/reads core/values/computed-labels
-see: lib/counting/count
+### length   [lib/modifiers/length]   reading 2026-11-22
+`length(S)` reads the stretch's length: `length(S) := chars & (count((chars.ch: /(?s:.)/)): S)`, one setting of `ch` per character, their count tested by S.
+needs: core/filters/and core/values/reads core/values/computed-labels core/conditions/form/value-left
+see: lib/counting/count core/labels/paths/label-reference
 module: ?
 defined: language
-- The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral;
-  `nchars` (depends on the open bound-condition: core/holes/bare-condition/bound-condition).
+- The helper: `chars := ([ch = /(?s:.)/])*`; the count, a canonical numeral, is a value written in place left of
+  `:` (core/conditions/form/value-left). `ch` has its target in the binding: the body USES `chars`, which holds it
+  (core/labels/export; a count bound alone is a compile error: core/holes/bare-condition/bound-condition); not
+  written in the body's own text, it is referenced with its source, `chars.ch` (core/labels/paths/label-reference).
 - The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no
   capture (pure-label), so the caller receives none.
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
-WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
+WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)
 
-### month_numbered   [lib/modifiers/month-numbered]   reading 2026-11-19
-`month_numbered(S)` reads a month name as its number: `months & (mnum: S)`, `mnum` the 1-based index of the name matched.
+### month_numbered   [lib/modifiers/month-numbered]   reading 2026-11-22
+`month_numbered(S)` reads a month name as its number: `month_numbered(S) := months & (months.mname.index: S)`, the 1-based index of the name matched.
 needs: core/filters/and core/values/reads core/values/computed-labels core/values/metadata
 module: ?
 defined: language
 - `months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/,
   /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]` (an array is an alternation;
-  the twelve names in calendar order), `mnum := $mname.index` (a computed label over the member's 1-based index).
+  the twelve names in calendar order); `months.mname.index` is a label path (the part label `mname` reached through
+  `months`, core/labels/paths/label-reference), so the test is written in place (core/values/metadata; a value
+  bound alone is a compile error: core/holes/bare-condition/bound-condition).
 - The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
-  capture (pure-label). `mnum` (depends on the open bound-condition: core/holes/bare-condition/bound-condition).
+  capture (pure-label).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -457,13 +461,13 @@ defined: native (a count over a name's array of settings; no expression of the l
 - It counts SETTINGS (core/labels/labels-vs-captures/array-vs-passes), those visible where it is written, a bound
   piece's own (array-in-piece): zero on an empty array; on a condition of
   several entries what is counted is not stated (readings).
-- A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it may be bound and read
-  like a label: `n := count((d: "7"))`, then `(n: ==2)` (`n` depends on the open bound-condition:
-  core/holes/bare-condition/bound-condition).
+- A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it is a value
+  written in place, left of `:` (core/conditions/form/value-left): `(count((d: "7")): ==2)`. Bound alone
+  (`n := count((d: "7"))`) it is a compile error at the binding (core/holes/bare-condition/bound-condition).
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
 - A later optimisation may turn `count()` into `occurs` where the answers provably do not change.
-WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (n: ==2)`, n := `count((d: "7"))`)
+WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)`)
 
 ### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-22
 The `occurs` module counts the settings of a label meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.

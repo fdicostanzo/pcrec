@@ -184,6 +184,7 @@ A condition with a label parameter, bound where it is used.
 Trigger (the ideas file's words): `the library discussion (items 12, 20, 23, 25), or the first revision of the draft`
   `after rev 25 that takes up reusable conditions`.
 Source: the ideas file item 26 (its whole text in the details entry).
+see: core/operators/bindings/label-variables
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
@@ -247,6 +248,7 @@ modes: n/a (parked: not in the language)
 `example(g & /\d+/) := ...` (his placeholder): a restricted parameter; the same to limit or overload operators.
 Trigger: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
 Source: the ideas file item 34 (its whole text in the details entry).
+see: core/operators/bindings/macro-types
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19
@@ -287,4 +289,19 @@ Trigger: a use with "real value other than 'override a users own *'" (his words)
   author's own `*` loop (`some(^h)`) is not one.
 Source: the record, the field-reference entries and retire-paused (details).
 see: parked/ideas/field-count core/values/tuples
+modes: n/a (parked: not in the language)
+
+### A syntax to declare a binding's labels   [parked/ideas/declared-labels]   parked 2026-11-22
+A syntax to declare the labels a binding provides (the `ch` in `chars`), for clarity, not for correctness.
+Trigger: macro types being designed (core/operators/bindings/macro-types), or the first library file with labels.
+Source: the record, count-in-set's ruling entry (his words in the details entry): "aside: perhaps we will need a
+  syntax to declare the ch in chars. i am wonderings not for correctness but clarity."
+see: core/labels/export lib/modifiers/length core/labels/paths/binding-prefix
+modes: n/a (parked: not in the language)
+
+### Unqualified labels after a binding defined above   [parked/ideas/unqualified-after-definition]   parked 2026-11-22
+A binding defined above in the same program (`isodate := ...`) would let its later uses refer to its labels without qualification; parked by the owner himself.
+Trigger: his taking it up, or the idiom `isodate & (isodate.year: ..)` proving too heavy in the worked examples.
+Source: the record, the label-reference ruling entry (his words in the details entry).
+see: core/labels/paths/label-reference
 modes: n/a (parked: not in the language)

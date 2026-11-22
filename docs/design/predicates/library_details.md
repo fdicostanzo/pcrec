@@ -257,15 +257,17 @@ history:
 ## lib/modifiers/length — length
 slugs:
 rulings:
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); `nchars`, a count bound alone, is refused at its binding
+- 2026-11-22 "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); the count written in place left of `:`
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
 rejected:
 - `length(<=20)` read as an IMAGE function — by owner ruling — OWN-1 superseded the image forms (`unpad(S)`, `length(<=20)`).
 readings:
 - the body `chars & (nchars: S)` gives the length (S in ==0, ==3, ==20, ==21, <=20, even; the empty text, a newline, 20 and 21 characters) — SUPPORTED (preddoc3c PART LE; sabotage s21 caught); the draft's review r16 emulation, 27 cases, 0 differ.
-- under array-vs-passes `nchars := count((ch: /(?s:.)/))` counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
-- caveats (the draft's): two helper bindings beside the body; `count`'s budget applies to `nchars`; the label `ch` visible.
+- under array-vs-passes the count of `ch` (then the helper `nchars`) counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
+- caveats (the draft's): a helper binding beside the body; `count`'s budget applies to the count; the label `ch` visible.
 - `chars` re-spelled with a part label, `([ch = /(?s:.)/])*`, leaves every printed `length` line unchanged (review r77 D4; the brief's reading 4) — SUPPORTED by a run (predfix77 CHARS: the one printed line rebuilt from the old body and from the new, both equal to the printed text; the old body makes the capture `ch`, the new none; sabotage s11 caught).
-- `nchars` is a computed count bound alone, so it rests on the open core/holes/bare-condition/bound-condition (under his position (b) it would be refused) — UNTESTED.
+- the body written in place, `chars & (count((chars.ch: /(?s:.)/)): S)` (R-3 spelling), gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `length(==3)` and from the program form, both equal to the line printed at 1e0384941; WHOLE against length 3, 0 of 121 texts over `ab\n` differ); `length`'s binding is legal: its body uses `chars`, which holds `ch` (predbound LEGAL).
 evidence: preddoc3c PART LE; review r16 `bodies_check.out`. predfix77_model.py CHARS.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body (review r16 FIXIND-3).
@@ -275,14 +277,19 @@ history:
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `ch`, written as a group in rx text, is also a capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement's "one loop pass per character, its count tested by S" became "one setting of `ch` per character, their count tested by S". No answer moves.
 - 2026-11-22 (lane predfix77, review r77 D4, A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the helper until then, verbatim: "`chars := /(?:(?<ch>(?s:.)))*/`", and the bullet "The label `ch` is visible in the result; written as a group in rx text it is also a capture (a reading of pure-label)." A part label makes no capture, so `length` hands the caller none (his reason for the add-on: "isodate and all the other libraries don't want to presume everyone is interested in every label being a capture."); `length(==3) & length(<5)` no longer reaches caller-ambiguous for a capture.
+2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the statement until then, verbatim: "`length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one setting of `ch` per character, their count tested by S."; the helpers bullet until then: "The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral; `nchars` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)."; the readings item "`nchars` is a computed count bound alone ... UNTESTED" replaced by the run; two readings re-worded without `nchars`. The line's program `chars & (nchars: ==3)` became `chars & (count((ch: /(?s:.)/)): ==3)`; the answers do not move. Status date 2026-11-19 to 2026-11-22.
+2026-11-22 (lane predbound, R-3, label-reference ruled): the body's `ch` re-spelled `chars.ch` (statement and line); the answers do not move (predbound FIVE, LABELREF).
+
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
 rulings:
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); `mnum`, a value bound alone, is refused at its binding
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
 rejected:
 readings:
-- the body `months & (mnum: S)`, `mnum := $mname.index` (1-based) accepts `Jan` .. `Jun` for `between(1, 6)` — SUPPORTED (preddoc3c PART MN; sabotage s20, 0-based, caught); review r16's emulation, 170 cases, 0 differ, rests on the emulated `.index`.
-evidence: preddoc3c PART MN.
+- the body `months & (months.mname.index: S)` (R-3 spelling; then `months & (mname.index: S)`, and before it `months & (mnum: S)`, `mnum := $mname.index`; 1-based) accepts `Jan` .. `Jun` for `between(1, 6)` — SUPPORTED (preddoc3c PART MN; sabotage s20, 0-based, caught); review r16's emulation, 170 cases, 0 differ, rests on the emulated `.index`.
+- the path written in place gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `month_numbered(between(1, 6))` with the body read from library.md equals the line printed at 1e0384941; WHOLE against the six month names, 0 of 13 texts differ; the index is the matched member's, 1-based, sabotage s17 caught by META).
+evidence: preddoc3c PART MN. predbound_model.py FIVE, META.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body.
 - 2026-11-19 (lane preddoc3c): a new piece (not in the census's 61 rows; a provided name of the draft §2.7).
@@ -290,6 +297,8 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-15): the body's `...` written out as the twelve names in calendar order (the `.index` the example reads depends on the order); answers unchanged (preddoc6 PART MN).
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `[mname = ...]` makes no capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `mnum` points at the open core/holes/bare-condition/bound-condition.
+2026-11-22 (lane predbound, bound-condition ruled): the statement until then, verbatim: "`month_numbered(S)` reads a month name as its number: `months & (mnum: S)`, `mnum` the 1-based index of the name matched."; the binding `mnum := $mname.index` (a compile error now) removed, the path `mname.index` written in place; the pure-label bullet's "`mnum` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)." dropped. The answers do not move. Status date 2026-11-19 to 2026-11-22.
+2026-11-22 (lane predbound, R-3, label-reference ruled): `mname.index` re-spelled `months.mname.index` (the part label reached through the binding); the answers do not move (predbound FIVE).
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -590,6 +599,7 @@ history:
 ## lib/counting/count — count
 slugs: count-budget
 rulings:
+- 2026-11-22 "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); a count stands left of `:` written in place
 - 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); `count` reads the ARRAY OF SETTINGS; it REVISES "the number of passes of a loop that meet c"
 - 2026-11-15 "counts: perhaps the solution is both. you can use count() until you can't then you can use 'occurs' as a fallback" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING (lean) — counts: `count()` first, `occurs` as the fallback"
 - 2026-11-15 "i would refuse count() on budget or as a recommended way to reduce states rather than rules" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule"
@@ -597,18 +607,22 @@ rulings:
 - 2026-11-15 "Predicate count/occurs issue: it would be a later optimization plan item that if pcrec could show no change in semantics that it convert count() into occurs" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 OWNER NOTE — `count()` -> `occurs` as a LATER OPTIMIZATION"
 - 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
+- a count bound to a name of its own and read like a label (`n := count((d: "7"))`, `(n: ==2)`) — by owner ruling — bound-condition (the computed label bound alone, confirmed) and count-in-set: b (the value written in place).
 - `count()` refused in a set position by rule (the manager's "until you can't" reading) — by owner ruling — "by BUDGET, not by rule" (the reading WITHDRAWN in the record).
 readings:
-- `n := count((d: "7"))`, `/(?:(?<d>\d),)+/ & (n: ==2)`: WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL [`7,7,`@0, `1,7,7,`@7] — SUPPORTED (preddoc4 PART CO; sabotage s9, every pass counted, caught).
+- `/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)` written in place (then `n := count((d: "7"))`, `(n: ==2)`): WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL [`7,7,`@0, `1,7,7,`@7] — SUPPORTED (preddoc4 PART CO; sabotage s9, every pass counted, caught).
 - the printed line under the settings reading — the SAME answers (one setting per pass): SUPPORTED (predarr CHANGED). On an empty array the count is zero (a reading; predarr EMPTY: `count(NOT (d: "7"))` on `,` is 0 on the array, 1 on the passes). On a condition of several entries what is counted is not stated (the manager's reading (b); an owner question, count-several, proposed).
 - the budget is one measured quantity, named with the "too many classes" budget (the five open items, (3)); no number stated.
-evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS].
+- the in-place form gives the printed line unchanged — SUPPORTED (predbound FIVE: rebuilt from the program text, equal to the line printed at 1e0384941; WHOLE against "two 7s", 0 of 1,093 texts over `17,` differ).
+evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS]. predbound_model.py FIVE.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: `count(c)` was the body helper of `length` with no piece (review r59 PRIMITIVES-MISSING, READ-6). The slug count-budget is the lane's name for the budget ruling.
 - 2026-11-19 (lane preddoc6, review r60 COLD-2): the base's "`even()` on a count" (his word, "Allows "even()" or other checks for count", quoted above) written as the set it names, `/\d*[02468]/`: no piece provides `even`.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "`count(c)` is the number of passes of a loop that meet c, a canonical numeral used with the ordinary comparisons; it is refused only over the budget, the refusal naming `occurs`."; `defined: native (a count over a loop's passes; no expression of the language counts passes)`. A bullet added (settings, zero, several entries). Status date 2026-11-15 to 2026-11-21. The printed line does not move.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `n` points at the open core/holes/bare-condition/bound-condition.
 - 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
+2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the bullet's "it may be bound and read like a label: `n := count((d: \"7\"))`, then `(n: ==2)` (`n` depends on the open bound-condition: core/holes/bare-condition/bound-condition)." became the value written in place, and bound alone a compile error; the line's program `(n: ==2)`, n := `count((d: "7"))` became `(count((d: "7")): ==2)`; the answers do not move.
+
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:
 rulings:
