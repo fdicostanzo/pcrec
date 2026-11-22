@@ -29,3 +29,5 @@ Note: main carries the same stale row until this commit is merged.
 Branch lane/l3mechtri, committed. Cloud mech dispatched on the tip (owed:
 verdict only, via the usual monitors; not waited on). Rulings file empty at the
 last re-read.
+
+OWED: none (the cloud mech verdict is read by the monitors)
