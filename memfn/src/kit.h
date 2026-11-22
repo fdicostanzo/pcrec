@@ -1461,7 +1461,7 @@ static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
  * span_cards cell times. TEST entries (no
  * memfn.h change): the slot harness and tests/memfn/arm_fixtures.c read them. */
 typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST, MF_FH_RUNPART,
-               MF_FH_OFS } mf_form_shape_id;
+               MF_FH_OFS, MF_FH_SPAN } mf_form_shape_id;
 typedef struct {
     const char *id;
     const char *cls;        /* the class token; "-" for an id with one instance */
@@ -1478,6 +1478,9 @@ typedef struct {
     const char *deny;       /* mf_site.opts, NULL none                           */
     const char *lever;      /* a test-only lever on the scratch art (mf_lever),
                                NULL none                                         */
+    uint16_t    k;          /* SPAN: the stretch's k, the positions one loop
+                               tests (block_span.md §3.1): the site states
+                               k + 1 positions of `bytes`; 0 for other shapes     */
 } mf_form_entry;
 /* A shape's word (the slot harness's wrapper key), the kit entry that
  * reaches its form, and the C names its text reads and writes (NULL: not

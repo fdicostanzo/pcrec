@@ -1881,6 +1881,8 @@ static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
     { "mfind-w16", "-",  "i += 16",    "i += 15" },
     { "mfind-w32", "-",  "i += 32",    "i += 31" },
     { "fn-memchr", "-",  "pos = cand + 1", "pos = cand + 2" },
+    /* R-47 U5: the stretch's `__w32` loop bound, one instruction of V's text */
+    { "span-vector", "-", "i += 32",   "i += 31" },
 };
 static const struct { const char *from, *to; } hash_renames[] = {
     { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },
@@ -1932,7 +1934,7 @@ static int hash_mode(void)
 {
     static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
                                        "every-pos", "mfind-swar", "mfind-w16", "mfind-w32",
-                                       "fn-memchr", "V1", "W64", "NONE", "dispatch-twin", NULL };
+                                       "fn-memchr", "span-vector", "V1", "W64", "NONE", "dispatch-twin", NULL };
     for (unsigned i = 0; ids[i]; i++) {
         char h[17] = "-";
         int rc = mf_form_hash(ids[i], h);
@@ -2130,7 +2132,8 @@ static int f_set_shape(const FactIn *x) { return x->e->shape != MF_FH_RUNCMP; }
 static int f_ofs_shape(const FactIn *x) { return x->e->shape == MF_FH_OFS; }
 static int f_find_shape(const FactIn *x)
 {
-    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW || x->e->shape == MF_FH_OFS;
+    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW || x->e->shape == MF_FH_OFS ||
+           x->e->shape == MF_FH_SPAN;
 }
 /* the run's mask byte at i: 0xDF at a caseless letter, else 0xFF (fh_run's) */
 static uint8_t f_mask(const mf_form_entry *e, size_t i)

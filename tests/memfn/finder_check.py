@@ -181,13 +181,17 @@ FORM_IDS = {
     "mfind-w16":  ("mfind@w16",     {"-": None}, "-"),
     "mfind-w32":  ("mfind@w32+w16", {"-": None}, "-"),
     "fn-memchr":  ("fn-memchr",     {"-": None}, "-"),
+    # R-47 U5 (block_span.md §8): V, the block span, on one window site (the
+    # hex set, k 40, x86-64-v3); its row the MEMFN_FORMS token; card kit-grid@8
+    "span-vector": ("span-vector@w32", {"-": None}, "-"),
 }
 FORM_INSTANCE_FLOOR = 14
 # span_cards.md §2.4 [rev1.2 READY-2; rev1.3 r9-CHECKS-3]: the card guard's
 # population, EXACT (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3
 # 3): a card added with a kit:form. dep bumps it in the same change
-CARD_FORMDEP_COUNT = 20     # 18 at R-38 Part D: kit-grid@5's every_pos; 20 at
-                            # lane mfind: kit-grid@6's find_byte and find_hit
+CARD_FORMDEP_COUNT = 21     # 18 at R-38 Part D: kit-grid@5's every_pos; 20 at
+                            # lane mfind: kit-grid@6's find_byte and find_hit; 21 at
+                            # R-47 U5: kit-grid@8's span_vector
 # span_cards.md §2.4 (S2e): the measure_store pass's population floor, pinned
 # at landing as zen4-grid3@1's form-bearing row count (38 rows, 5 `enter`)
 STORE_FORMROW_FLOOR = 33
