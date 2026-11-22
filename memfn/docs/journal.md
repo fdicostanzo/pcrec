@@ -4784,3 +4784,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 
 - bsu4g DELIVERED (lane/bsu4g c0f615a49; lanecheck DONE): G2-V unit 1,216 renderings / 1,177,900 windows at both guard placements, 0 wrong 0 faults; whole 336 artifacts / 90,240 find-all runs 0 wrong; plants S3525 (a), S3526 (b) reached + detected; run_g2_win.sh 30,206/0. OWED 736-kit-bsu4g-test, 737-kit-bsu4g-mech. Lane stopped.
 - Findings to fold into block_span.md at U4 delivery: (1) §10.2's "plant (b) benign on HORS" is wrong where B divides K (moved final block leaves byte K-B untested; [0-9a-f]{17} misanswers; still caught). (2) "literal run beside a stretch" never reaches V (the literal is D1's stop): population 0, printed, not floored. (3) the empty set is refused at define, never reaches V.
+
+## 2026-11-22 08:47 (kit)
+
+- bsu4p DELIVERED (lane/bsu4p cc247853f; lanecheck DONE): tests/memfn/span_pins.py (20 T-table pin cells; SPAN-SEED census 28/31, k source == shipped text per site) called inside C18; C18 three NAMED span witnesses (v3-only), floor 3, FLOORS re-pinned x86-64 74 / v3 105 (x86-64 55 was already stale); routing_shape.py V leg + 7 selftest shapes 21/21; libc census funcs floor 141 -> 281; DIFFER_PINS verified unchanged. Plants S3530-S3536 (c,d,e,f + C18 controls 2-4) REACH 7/7, DETECTED in-lane except S3535 (first ANOMALY: C18 crashed on an unadmitted width; fixed, lint rejects it; matrix verdict owed). OWED 738-kit-bsu4p-test, 739-kit-bsu4p-mech. Lane stopped.
+- Findings: S3535 crash fix (a C18 robustness defect, kit-side); stale x86-64 floor; plant (c) edits the predicate since bsu3fix's static assert blocks a literal 15.
+- Next: code round r78 over both U4 branches while 736-739 run.
