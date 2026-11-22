@@ -792,3 +792,19 @@ still reach the caller). Asked main for a review number (REPLY pending). NEXT: a
 round with main's number (subject = diff from 30ca2520d); rule; fix lane; P-21.
 
 Main (2026-11-22): review number **r83** is ours for the default-export fold; P-20 (30ca2520d) is merged and pushed on main.
+
+## 2026-11-22 (night, later) — export-list ruled; preddef merged; critic round r83 launched
+
+RULED after default-export: export-list ("Export list: yes": `[(=year) = isodate]`, the named binding list on a
+part label; one form, two targets; his caveat "bindings used to scope labels (A.a: 8)"). AGREED framing (not a
+ruling): two base kinds of name, LABEL and BINDING, with properties; "captures can have no label" (his note: the
+label and capture properties are independent, four cells). His observation: label-reference solves a used
+binding's label hiding a binding. Lane preddef (R-1, R-2 applied) delivered and MERGED: tip 3e58abe9e, lint
+6,645 / 0, its model 22 / 0, 229 printed lines with no answer moved; 5 programs now compile errors, 10 kept
+"(awaits argument-default)". Its own reading, for the round: a labelled part still passes `pub.h` by name.
+LAUNCHED: coordinator `crit-preddef1122` (opus, background), review r83, subject = diff 30ca2520d..3e58abe9e,
+round dir `$PCREC_TMPDIR/scratch/crit-preddef1122/`, with a NAMES lens (the name-resolution table). The subject
+stays FROZEN until the draft. FOR THE r83 FIX LANE (beyond the round's findings): the name table as one piece
+(two kinds, the four-cell label/capture table, his agreement quoted); the hide-label warning's trigger and
+parked/ideas/label-hygiene restated (his observation). Owner questions: argument-default, capture-export,
+two-sources, idiom-confirm.

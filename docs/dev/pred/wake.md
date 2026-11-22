@@ -9,13 +9,14 @@ followups and we can continue this conversation later"). Committed docs win on a
   owner ruling through 2026-11-22 is folded AND reviewed: r77 (filed 2026-11-21) and r82 (filed 2026-11-22, RULED,
   applied by lane predfix82). Lanes predbound, predref, predcall, predfix82 are merged and stopped. Main merges at
   its convenience (P-19 = 399ef98f4 was the previous delivery).
-- IN FLIGHT (after P-20): the owner ruled **default-export: protected** (a part used alone is available inside
-  the binding and NOT exported; reverses hole-export). Lane **preddef** (opus; `worktrees/preddef`, cut at
-  0050e019a; `scripts/lanewatch preddef`) folds it and sweeps the examples. Then critic round **r83** (number given by
-  main; subject = diff 30ca2520d..tip), its ruling, a fix lane, P-21. New owner questions from it:
-  argument-default, capture-export (open pieces; neither applied). No cron. Nothing in the box queue (never ours). Worktrees for main to prune are listed in
-  P-20.
-- Lint `python3 -I scripts/pred_doc_lint.py`: 6,428 / 0 at P-20 (RUN IT BEFORE NAMING A TIP). The newest evidence
+- IN FLIGHT (after P-20, which main has merged and pushed): critic round **r83** (coordinator
+  `crit-preddef1122`, opus; round dir `$PCREC_TMPDIR/scratch/crit-preddef1122/`; subject frozen at 3e58abe9e, diff
+  from 30ca2520d): the fold of **default-export: protected** and **export-list: yes** by lane preddef (MERGED).
+  The subject stays FROZEN until the draft: record only. THEN: rule every disposition (record entry "MANAGER —
+  review r83"); ONE opus fix lane (it files the review as docs/dev/reviews/2026-11-22-r83-preddef1122.md, and
+  ALSO adds the name table piece and restates the hide-label warning and parked label-hygiene: see the journal's
+  last entry); merge; lint; P-21 `done:`; SendMessage main. No cron.
+- Lint `python3 -I scripts/pred_doc_lint.py`: 6,645 / 0 at the preddef merge (RUN IT BEFORE NAMING A TIP). The newest evidence
   model is `docs/dev/lanes/predfix82_evidence/predfix82_model.py` (22 checks; it carries the fixed engine: `_x`
   part labels close, a later `&` operand lowered once, uses counted in the definition's text; its SUCCESSOR check
   declares every older model's red). Known limit: a nullable loop body past the minimum is not modelled.
