@@ -819,3 +819,21 @@ NOT FOLDED: the documents are frozen for round r83. PLAN: after r83's fix lane m
 (predflags) for these two rulings (core/patterns/flags, core/holes/flags and in-filter, lib/builtin/options, the
 warnings row, any_case, the examples resting on an inherited `m`/`s` or a non-explicit `i`), then its own critic
 round (ask main for the number), then delivery.
+
+## 2026-11-22 (very late) — r83 drafted and RULED; fix lane predfix83 running
+
+r83 (five opus lenses incl. the NAMES grid, + verifier): every printed line agrees; no undeclared evidence red.
+Answer-level findings all sat in grid cells no printed line reaches: the evidence engine accepts what the text
+refuses (the `&` ambiguity from outside / through a part label / through an export list; an export list through
+a call; bare `$h`, `h[2]` across `&`); argument-default's question misstated its consequence (FIXED before he is
+asked); two cases decided twice. RULED (record entry "2026-11-22 MANAGER — review r83"): my readings on A4 (an
+outside read sees exported settings only), A5 (a binding's name reaches its unlabelled uses only), D4, D8, the
+cross case; CORRECTION: default-export also narrows label-flow (b) and bare-nested-scope case 2 for the user;
+idiom-confirm CLOSED on default-export (the statement put to him was "available locally as `A.h`"). Coordinator
+stopped. Lane predfix83 (opus; `worktrees/predfix83`, cut at 8619d21f1) RUNNING: the fixes, a successor model
+with the NAME-GRID check, the name table piece, the hide-label / label-hygiene restatement, the review filed as
+docs/dev/reviews/2026-11-22-r83-preddef1122.md. It does NOT fold the flag rulings. NEXT: accept, merge, lint,
+P-21 (done + status + worktrees preddef, predfix83 + the round's skill edits P1-P5), SendMessage main. THEN the
+flags fold (lane predflags + its own round; ask main for the number). Owner questions, in order:
+argument-default (with its library face), capture-export, two-sources; tell him: idiom-confirm closed, the
+correction, and the S1 view (textual ownership as a principle) if he wants it.

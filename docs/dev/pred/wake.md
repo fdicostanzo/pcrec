@@ -9,13 +9,12 @@ followups and we can continue this conversation later"). Committed docs win on a
   owner ruling through 2026-11-22 is folded AND reviewed: r77 (filed 2026-11-21) and r82 (filed 2026-11-22, RULED,
   applied by lane predfix82). Lanes predbound, predref, predcall, predfix82 are merged and stopped. Main merges at
   its convenience (P-19 = 399ef98f4 was the previous delivery).
-- IN FLIGHT (after P-20, which main has merged and pushed): critic round **r83** (coordinator
-  `crit-preddef1122`, opus; round dir `$PCREC_TMPDIR/scratch/crit-preddef1122/`; subject frozen at 3e58abe9e, diff
-  from 30ca2520d): the fold of **default-export: protected** and **export-list: yes** by lane preddef (MERGED).
-  The subject stays FROZEN until the draft: record only. THEN: rule every disposition (record entry "MANAGER —
-  review r83"); ONE opus fix lane (it files the review as docs/dev/reviews/2026-11-22-r83-preddef1122.md, and
-  ALSO adds the name table piece and restates the hide-label warning and parked label-hygiene: see the journal's
-  last entry); merge; lint; P-21 `done:`; SendMessage main. No cron.
+- IN FLIGHT (after P-20, which main has merged and pushed): review **r83** is drafted and RULED (record entry
+  "2026-11-22 MANAGER — review r83"). Lane **predfix83** (opus; `worktrees/predfix83`, cut at 8619d21f1;
+  `scripts/lanewatch predfix83`) applies it, adds a successor model with the NAME-GRID check, the name table
+  piece, and files the review. THEN: accept (lanewatch DONE; STATE AT HANDOFF; merge ALONE; lint;
+  `make -s test-plan-lint`; TaskStop), P-21 `done:` (status line; worktrees preddef, predfix83; the round's
+  process notes P1-P5 as proposed skill edits), SendMessage main. No cron.
 - RULED AFTER THE r83 FREEZE, IN THE RECORD ONLY, NOT FOLDED: **program-options** (file-scoped flags `m s n x`
   set by a statement, never across an import) and **hole-flags** (weak per-file `i`, not propagated; only an
   explicit `i` inherited at a hole; `m`, `s` no longer inherited). After r83's fix lane merges: ONE opus fold lane
@@ -63,7 +62,9 @@ end (about 20 entries). 4. `journal.md` from "2026-11-22 (about 12:30 EST)". 5. 
 
 ## The question queue (one per turn; grep the record AND read the same-day later entries first)
 
-1. **two-sources** (from r82; an open piece core/labels/paths/two-sources with the run lines for `7-3` and
+1. **argument-default** (the caller's `A.d` through a bare `${rx}`; with its library face: do `hits` /
+   `occurrences` export their argument's labels; the piece was corrected per r83 A3 before asking), then
+   **capture-export**, then **two-sources** (from r82; an open piece core/labels/paths/two-sources with the run lines for `7-3` and
    `1,7`), then **idiom-confirm** (open piece core/labels/paths/one-use-read; his 2026-11-17 point 4 made the
    one-use `A.h` an error; I took the isodate idiom on his silence). closed-argument is RULED (a).
 2. **zero-condition-binding** (`c := (0: 5)` bound alone; left open by him: do not push; ask when an example needs
