@@ -18,11 +18,19 @@
  * A fault prints `FAULT ART SUBJ PLACE OFF GUARD` (OFF the faulting byte's
  * offset from s[0]: -1 the byte below the subject, n the byte past it) and
  * exits 3. Exit 4 (`SKIPPED`) where the host lacks avx2/ssse3.
+ * THE GUARDS' SELF-WITNESS (r78 G2V-1): at start-up one deliberate read below
+ * the data and one past it, each under a sigsetjmp, print GUARD-LOW-LIVE /
+ * GUARD-HIGH-LIVE only when the read FAULTS in that guard page (else -DEAD);
+ * at the end `G2VW driver flush low N high M` counts the runs whose s[0] IS
+ * the first byte after the low guard (N) and whose s[n - 1] IS the last before
+ * the high guard (M), by address. The runner requires both LIVE lines and
+ * N == M == half the runs.
  *
  * SUBJECT FILE (argv[1]), little-endian: u32 N, then N times u32 PAT, u32
  * LEN, LEN bytes.
  */
 #define _GNU_SOURCE
+#include <setjmp.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -41,6 +49,9 @@ static unsigned char *g_lo, *g_hi;
 static size_t g_pg;
 static volatile int g_art, g_subj, g_place;
 static unsigned char *volatile g_s;
+static sigjmp_buf g_jb;
+static volatile int g_probe;
+static const char *volatile g_probe_hit;
 
 static void on_fault(int sig, siginfo_t *si, void *uc)
 {
@@ -49,10 +60,26 @@ static void on_fault(int sig, siginfo_t *si, void *uc)
     unsigned char *a = si->si_addr;
     const char *which = a >= g_lo && a < g_lo + g_pg ? "low-guard"
                       : a >= g_hi && a < g_hi + g_pg ? "high-guard" : "elsewhere";
+    if (g_probe) { g_probe_hit = which; siglongjmp(g_jb, 1); }
     int n = snprintf(m, sizeof m, "\nFAULT %d %d %s %ld %s sig=%d\n", g_art, g_subj,
                      g_place ? "high" : "low", (long)(a - g_s), which, sig);
     if (n > 0) { ssize_t w = write(1, m, (size_t)n); (void)w; }
     _exit(3);
+}
+
+/* one deliberate read of `a`: 1 iff it faults inside the guard page `want` names */
+static int probe(const unsigned char *a, const char *want)
+{
+    g_probe_hit = NULL;
+    g_probe = 1;
+    if (sigsetjmp(g_jb, 1) == 0) {
+        volatile unsigned char x = *(const volatile unsigned char *)a;
+        (void)x;
+        g_probe = 0;
+        return 0;
+    }
+    g_probe = 0;
+    return g_probe_hit && strcmp(g_probe_hit, want) == 0;
 }
 
 static uint32_t rd32(FILE *f)
@@ -100,8 +127,10 @@ int main(int argc, char **argv)
     g_hi = m + g_pg + data;
     if (mprotect(g_lo, g_pg, PROT_NONE) || mprotect(g_hi, g_pg, PROT_NONE)) { perror("mprotect"); return 2; }
     unsigned char *d = m + g_pg;
+    printf("GUARD-LOW-%s\n", probe(d - 1, "low-guard") ? "LIVE" : "DEAD");
+    printf("GUARD-HIGH-%s\n", probe(d + data, "high-guard") ? "LIVE" : "DEAD");
     static ptrdiff_t caps[64][2];
-    long runs = 0;
+    long runs = 0, flush_lo = 0, flush_hi = 0;
     for (unsigned a = 0; a < vw_narts; a++)
         for (uint32_t i = 0; i < n; i++) {
             if (pat[i] != vw_arts[a].pat) continue;
@@ -109,6 +138,8 @@ int main(int argc, char **argv)
                 unsigned char *s = place ? d + data - len[i] : d;
                 memcpy(s, sub[i], len[i]);
                 g_art = (int)a; g_subj = (int)i; g_place = place; g_s = s;
+                flush_lo += place == 0 && s == d;                    /* s[-1] is g_lo's last byte */
+                flush_hi += place == 1 && s + len[i] == d + data;    /* s[n] is g_hi's first byte */
                 uint64_t h = 1469598103934665603ull;
                 long cnt = 0;
                 int rc = 0;
@@ -129,5 +160,6 @@ int main(int argc, char **argv)
             }
         }
     printf("G2VW driver runs %ld\n", runs);
+    printf("G2VW driver flush low %ld high %ld\n", flush_lo, flush_hi);
     return 0;
 }

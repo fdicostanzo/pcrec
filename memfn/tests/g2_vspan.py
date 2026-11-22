@@ -30,9 +30,19 @@ at the match end) over subjects in the cards' six regimes and the forced near-mi
 (a failing index at each position of each stretch, at the first window and after a match),
 every subject FLUSH AGAINST A PROT_NONE PAGE at its start, and again at its end. THE CONTROL:
 python `re.finditer` over the same pattern string. Its V sites are counted by §10.1's k source
-(the traced harness's `MFTRACE FDROUTE` row and frame, k off the head-0 lever compile's loop
-text, the predicate D-hors 16..1000 / R7w 24..64 on E-find applied HERE), with the kit's own
-answer (the walk's selector calls) printed beside it; a disagreement is a failure.
+(the traced harness's `MFTRACE FDROUTE` row and frame, k and C-own off the head-0 lever
+compile's loop text, the predicate D-hors 16..1000 / R7w 24..64 on E-find, first eligible
+stretch), read and applied by tests/memfn/span_ksource.py, the ONE reader span_pins.py shares
+(r78 PINS-7); the kit's own answer (the walk's selector calls) is printed beside it; a
+disagreement is a failure. The unit's LO and K come from the same reader and are held to the
+case's own k and row (LO 0 on T-vwin, 1 on T-vscan; r78 G2V-2).
+
+WHAT WAS DRIVEN (r78 G2V-1), not only what was generated: each driver first reads one byte
+below its data and one past it under a sigsetjmp and prints GUARD-LOW-LIVE / GUARD-HIGH-LIVE
+only when each read faults in its own guard page (both lines required); it counts, BY ADDRESS,
+the calls flush against the low guard and against the high guard (each must equal the windows
+/ half the runs described); the whole's runs are floored per layer (SIMD-on and SIMD-off) and
+for SIMD-on artifacts with a V site, the unit's staircase windows have their own floor.
 
 Floors are LITERALS below (K35), measured on the Linux dev box, seed 20261122, less ~10%.
 Prints `checks passed: N` / `checks failed: M`; exit 0 iff M == 0.
@@ -43,6 +53,35 @@ import random
 import re
 import subprocess
 import sys
+
+ks = None    # tests/memfn/span_ksource.py, §10.1's ONE k-source reader (r78 PINS-7), from --root
+
+
+def load_ksource(root):
+    global ks
+    sys.path.insert(0, os.path.join(root, "tests", "memfn"))
+    import span_ksource
+    ks = span_ksource
+
+
+def coprime_stride(n, want=7):
+    """The fill's stride: the smallest >= want coprime to n, so `every member, cycled` visits
+    every member (r78 G2V-5: 7 divides `\\w`'s 63)."""
+    import math
+    st = want
+    while math.gcd(st, n) != 1:
+        st += 1
+    return st
+
+
+def guards(where, out):
+    """Both guard pages witnessed themselves (the driver's start-up probe reads)."""
+    for g in ("LOW", "HIGH"):
+        if re.search(r"^GUARD-%s-LIVE$" % g, out, re.M):
+            ok()
+        else:
+            bad("%s: the %s guard page did not witness itself (no GUARD-%s-LIVE: its probe read "
+                "did not fault in it)" % (where, g.lower(), g))
 
 # ---- THE FLOORS (K35): hand-written literals, measured 2026-11-22 (lane bsu4g, seed 20261122,
 # the dev box), each the measure less ~10%. Raise when the space grows; never lower one to pass.
@@ -63,6 +102,12 @@ WHOLE_FLOOR_SUBJECTS = 10150   # (11280)
 WHOLE_FLOOR_STAIR = 9400       # staircase subjects, a failing index per stretch position (10440)
 WHOLE_FLOOR_MATCHES = 5990     # matches python found over the V-site patterns' subjects (6659)
 WHOLE_FLOOR_MIXED = 7          # mixed patterns x widths with a V site (8)
+# ---- what was DRIVEN, not only generated (r78 G2V-1, lane bsu4fix, same seed and box) ----
+UNIT_FLOOR_STAIR = 44000    # staircase windows (a non-member at a stretch position) (48876)
+WHOLE_FLOOR_RUNS = {"off": 40600, "on": 40600}   # find-all runs per layer, both placements (45120 each)
+WHOLE_FLOOR_VON = 20400     # SIMD-on runs of an artifact whose (pattern, width) has a V site (22664)
+# Every placement is counted by ADDRESS in the drivers (`flush low N high M`) and must equal the
+# runs / windows described; each driver's guards witness themselves (GUARD-*-LIVE) at start-up.
 
 TARGET = "x86-64-v3"
 PASS = [0]
@@ -164,14 +209,11 @@ def bitmap_hex(mem):
     return bm.hex()
 
 
-LOOP_RE = re.compile(r"g2vh(\d+)_mf1_j = (-?\d+); for \(; g2vh\d+_mf1_j < (-?\d+);")
-
-
 def read_case(work, cid):
     """The facts this runner reads off the two texts: the k source and the kit's own numbers."""
     v = open(os.path.join(work, "v_%d.txt" % cid), encoding="latin-1").read()
     h = open(os.path.join(work, "h_%d.txt" % cid), encoding="latin-1").read()
-    loops = [(int(a), int(b)) for _, a, b in LOOP_RE.findall(h)]
+    loops = [(lo, end) for lo, end, _own in ks.loops(h).get(1, [])]     # the k source (span_ksource)
     p = "g2vu%d_mf1_" % cid
     f = {"loops": loops, "hors": "%ssh[256]" % p in v, "text": v}
     f["sel_calls"] = len(re.findall(r"\b%svs\d+\(%ss, %sc\)" % (p, p, p), v.split("/* ---- body ---- */")[-1]))
@@ -246,6 +288,13 @@ def unit(a):
         K = end - lo
         row = "vwin" if f["hors"] else "vscan"
         B = 32 if K >= 32 else 16
+        # the k source's geometry against the case's OWN k and row (r78 G2V-2): the stretch the
+        # test asked for (k positions, the probe the pattern's last), at LO 0 on T-vwin's window
+        # and LO 1 on T-vscan's walk (its first position is the walk's own byte)
+        if K != k or lo != (0 if row == "vwin" else 1):
+            bad("unit case %d (%s, %s, k %d): the k source reads LO %d K %d on %s; the case asks K %d, LO %d"
+                % (cid, cls, regime, k, lo, K, row, k, 0 if row == "vwin" else 1))
+            continue
         # the kit's own numbers beside the k source's
         kit = (f["kit_lo"], f["kit_k"], f["kit_b"], f["kit_tail"])
         if (f["kit_lo"], f["kit_k"], f["kit_b"], f["kit_tail"]) != (lo, K, B, (K, B)):
@@ -278,7 +327,7 @@ def unit(a):
     wfile = os.path.join(work, "windows.txt")
     expect = {}                  # cid -> list of expected '0'/'1' per window
     hashes = {}                  # (cid, idx) -> window bytes (sampled)
-    nfalse = 0
+    nfalse = nstairw = 0
     with open(wfile, "w") as wf:
         for cid, cls, mem, rx, lo, K, row, B in vcases:
             memb = [b for b in range(256) if rx.fullmatch(bytes([b]))]      # re's reading, per byte
@@ -288,11 +337,12 @@ def unit(a):
             if rnd.randrange(3) == 0:
                 fill = memb[:]                                               # every member, cycled
             nf = len(fill)
-            wf.write("C %d %d %d %d %s\n" % (cid, lo, K, nf, " ".join(map(str, fill))))
+            stride = coprime_stride(nf)
+            wf.write("C %d %d %d %d %d %s\n" % (cid, lo, K, nf, stride, " ".join(map(str, fill))))
             exp = []
 
             def window(fseed, ov):
-                w = bytearray(fill[(i * 7 + fseed) % nf] for i in range(K))
+                w = bytearray(fill[(i * stride + fseed) % nf] for i in range(K))
                 for p_, b_ in ov:
                     w[p_] = b_
                 return w
@@ -320,6 +370,7 @@ def unit(a):
             if non:
                 for p_ in stair:
                     emit_w(rnd.randrange(64), [(p_, rnd.choice(non))])
+                    nstairw += 1
             # random windows: 1..3 bytes from the whole byte space
             for _ in range(24):
                 emit_w(rnd.randrange(64), [(rnd.randrange(K), rnd.randrange(256)) for _ in range(1 + rnd.randrange(3))])
@@ -351,6 +402,7 @@ def unit(a):
         print("SKIPPED ARM w32: %s; G2-V unit's %d cases NOT run" % (out.strip(), len(vcases)))
         bad("unit: the host cannot run the x86-64-v3 text (a skip is not a pass)")
         return
+    guards("unit", out)
     for m in re.finditer(r"^FAULT .*$", out, re.M):
         bad("unit: " + m.group(0) + "  (a read past the window's guarded end or below its start)")
     if r.returncode:
@@ -394,6 +446,21 @@ def unit(a):
     print("G2VU windows %d (x2 placements) false %d wrong %d hashes %d" % (nwin, nfalse, wrong, hseen))
     floor("unit windows", nwin, UNIT_FLOOR_WINDOWS)
     floor("unit false windows", nfalse, UNIT_FLOOR_FALSE)
+    # what was DRIVEN (r78 G2V-1): every described window called at BOTH placements, each placement
+    # flush against its guard by address, and the staircase among them
+    described = sum(len(e) for e in expect.values())
+    m = re.search(r"^G2VU driver flush low (\d+) high (\d+)$", out, re.M)
+    mc = re.search(r"^G2VU driver calls (\d+)$", out, re.M)
+    flo, fhi = (int(m.group(1)), int(m.group(2))) if m else (-1, -1)
+    calls = int(mc.group(1)) if mc else -1
+    print("G2VU driven: calls %d, flush low %d high %d, of %d windows described; staircase windows %d"
+          % (calls, flo, fhi, described, nstairw))
+    if calls == 2 * described and flo == described and fhi == described:
+        ok()
+    else:
+        bad("unit: the driver made %d calls, %d flush low and %d flush high, for %d windows (2x, 1x, 1x)"
+            % (calls, flo, fhi, described))
+    floor("unit staircase windows", nstairw, UNIT_FLOOR_STAIR)
 
 
 # ======================================================================================
@@ -531,10 +598,6 @@ def w_subjects(rnd, toks, rx):
     return out, nst
 
 
-H0_LOOP = re.compile(r"\b\w+_mf(\d+)_j = (-?\d+); for \(; \w+_mf\d+_j < (-?\d+); \w+_mf\d+_j\+\+\) if \((.*?)\) break;")
-FDROUTE = re.compile(r"^MFTRACE FDROUTE \S+ site=(\d+) row=(\S+) \S+ \S+ frame=(\S+)", re.M)
-
-
 def k_source(htr, rx, width, work):
     """§10.1's k source for one (pattern, width): {site: (row, k)} of each site's FIRST eligible
     stretch, by the traced build's FDROUTE row and frame and the head-0 lever compile's loops."""
@@ -543,22 +606,10 @@ def k_source(htr, rx, width, work):
              "-o", out, "--pattern", rx], timeout=120)
     if r.returncode:
         return None, "the traced harness refused: " + r.stderr.decode()[-200:]
-    routes = {int(m.group(1)): (m.group(2), m.group(3)) for m in FDROUTE.finditer(r.stderr.decode())}
-    txt = open(out, encoding="latin-1").read()
-    loops = {}
-    for m in H0_LOOP.finditer(txt):
-        site, lo, end, cond = int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(4)
-        own = "[" not in re.sub(r"\w+_mf\d+_s\[[^\]]*\]", "", cond)     # C-own: no table read
-        loops.setdefault(site, []).append((end - lo, own))
-    v = {}
-    for site, (row, frame) in routes.items():
-        if frame != "E-find":
-            continue
-        for k, own in loops.get(site, []):
-            if own and ((row == "D-hors" and 16 <= k <= 1000) or (row == "R7w" and 24 <= k <= 64)):
-                v[site] = (row, k)
-                break
-    return v, None
+    # the reading and the predicate are span_ksource's (one reader with span_pins.py)
+    routes = ks.routes(r.stderr.decode("latin-1"))
+    loops = ks.loops(open(out, encoding="latin-1").read())
+    return {site: (row, k) for site, (row, k, _i, _lo, _end) in ks.v_sites(routes, loops).items()}, None
 
 
 def whole(a):
@@ -589,7 +640,7 @@ def whole(a):
         for lab, sb in subs:
             subjects.append((pi, lab, sb))
     arts = []               # (pat index, width, layer, prefix)
-    pop, kit_disagree, mixed_v, vsite_pats = {}, 0, 0, set()
+    pop, kit_disagree, mixed_v, vsite_pats, vsite_arts = {}, 0, 0, set(), set()
     for pi, (kind, rx, toks) in enumerate(pats):
         for width in (32, 4095):
             v, err = k_source(htr, rx, width, work)
@@ -624,6 +675,8 @@ def whole(a):
                         "(__w32 calls %d, %d expected)" % (rx, width, layer, sorted(v), sorted(calls), w32, want_w32))
                 else:
                     ok()
+                if v:
+                    vsite_arts.add(len(arts))
                 arts.append((pi, width, layer, pfx))
     print("G2VW patterns %d artifacts %d subjects %d (staircase %d)" % (len(pats), len(arts), len(subjects), nstair))
     print("G2VW population (k source, per pattern x width) " + " ".join(
@@ -671,6 +724,7 @@ def whole(a):
         print("SKIPPED ARM w32: %s; G2-V whole NOT run" % out.strip())
         bad("whole: the host cannot run the x86-64-v3 artifacts (a skip is not a pass)")
         return
+    guards("whole", out)
     for m in re.finditer(r"^FAULT (\d+) (\d+) (\S+) (-?\d+) (\S+).*$", out, re.M):
         ai, si = int(m.group(1)), int(m.group(2))
         pi, w_, l_, pfx = arts[ai]
@@ -694,10 +748,14 @@ def whole(a):
             nmatch += cnt
     nrun = wrong = 0
     seen = set()
+    by_layer, by_place, von = {"off": 0, "on": 0}, {0: 0, 1: 0}, 0
     for m in re.finditer(r"^M (\d+) (\d+) (\d) (-?\d+) (\d+) ([0-9a-f]{16})$", out, re.M):
         ai, si, place, rc, cnt, h = int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), m.group(6)
         seen.add((ai, si, place))
         nrun += 1
+        by_layer[arts[ai][2]] += 1
+        by_place[place] = by_place.get(place, 0) + 1
+        von += arts[ai][2] == "on" and ai in vsite_arts
         if rc or (cnt, h) != exp[si]:
             wrong += 1
             if wrong <= 12:
@@ -712,6 +770,20 @@ def whole(a):
         ok()
     print("G2VW find-all runs %d (both placements) wrong %d; matches over V-site patterns %d" % (nrun, wrong, nmatch))
     floor("whole matches", nmatch, WHOLE_FLOOR_MATCHES)
+    # what was DRIVEN (r78 G2V-1): runs per layer (SIMD-on executes the V text) and per placement,
+    # each placement flush against its guard by address
+    m = re.search(r"^G2VW driver flush low (\d+) high (\d+)$", out, re.M)
+    flo, fhi = (int(m.group(1)), int(m.group(2))) if m else (-1, -1)
+    print("G2VW driven: runs off %d on %d (V-site artifacts on %d), placement low %d high %d, flush low %d high %d"
+          % (by_layer["off"], by_layer["on"], von, by_place[0], by_place[1], flo, fhi))
+    for ly, want in sorted(WHOLE_FLOOR_RUNS.items()):
+        floor("whole runs at layer %s" % ly, by_layer[ly], want)
+    floor("whole SIMD-on runs of V-site artifacts", von, WHOLE_FLOOR_VON)
+    if by_place[0] == by_place[1] == flo == fhi and 2 * flo == nrun:
+        ok()
+    else:
+        bad("whole: placements low %d high %d, flush by address low %d high %d, of %d runs (each half)"
+            % (by_place[0], by_place[1], flo, fhi, nrun))
 
 
 def main():
@@ -722,6 +794,7 @@ def main():
     ap.add_argument("--work", required=True)
     ap.add_argument("--seed", type=int, default=20261122)
     a = ap.parse_args()
+    load_ksource(a.root)
     if a.what in ("unit", "both"):
         unit(a)
     if a.what in ("whole", "both"):

@@ -10,10 +10,12 @@
  * runner holds every answer to python `re` over the class it wrote.
  *
  * WINDOW FILE (stdin), per case:
- *   C ID LO K NFILL F0 .. F(NFILL-1)   the case; LO and K the stretch's first
- *                                      offset and length (the runner's k source)
+ *   C ID LO K NFILL STRIDE F0 .. F(NFILL-1)
+ *                                      the case; LO and K the stretch's first
+ *                                      offset and length (the runner's k source);
+ *                                      STRIDE the fill's stride, coprime to NFILL
  *   W FSEED N P1 B1 .. PN BN           one window: byte i is
- *                                      F[(i * 7 + FSEED) % NFILL], then byte Pj := Bj
+ *                                      F[(i * STRIDE + FSEED) % NFILL], then byte Pj := Bj
  *   S FSEED P                          a SWEEP: 256 windows, the W window with
  *                                      no override but byte P := v, v = 0..255
  *   E                                  the case ends
@@ -26,10 +28,20 @@
  * A fault prints `FAULT ID IDX PLACEMENT OFF` (OFF: the faulting byte's
  * offset from the window's first byte: -1 is the byte below it, K the byte
  * past it) and exits 3.
+ * THE GUARDS' SELF-WITNESS (r78 G2V-1): at start-up the driver reads one byte
+ * below the data (the low guard's last byte) and one past it (the high
+ * guard's first), each under a sigsetjmp, and prints GUARD-LOW-LIVE /
+ * GUARD-HIGH-LIVE only when that read FAULTS in that guard page (else
+ * GUARD-LOW-DEAD / GUARD-HIGH-DEAD). At the end it prints
+ * `G2VU driver flush low N high M`: the calls whose window's first byte IS
+ * the first byte after the low guard (N) and whose last byte IS the last
+ * before the high guard (M), by address. The runner requires both LIVE
+ * lines and N == M == the windows it described.
  * Exit 4 (and `SKIPPED`) where the host lacks the level the text was written
  * for (ssse3 and avx2): no answer is claimed then.
  */
 #define _GNU_SOURCE
+#include <setjmp.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -46,6 +58,9 @@ static unsigned char *g_lo, *g_hi;       /* the two guard pages */
 static size_t g_pg;
 static volatile int g_id, g_idx, g_place;
 static unsigned char *volatile g_win;
+static sigjmp_buf g_jb;
+static volatile int g_probe;
+static const char *volatile g_probe_hit;
 
 static void on_fault(int sig, siginfo_t *si, void *uc)
 {
@@ -54,10 +69,26 @@ static void on_fault(int sig, siginfo_t *si, void *uc)
     unsigned char *a = si->si_addr;
     const char *which = a >= g_lo && a < g_lo + g_pg ? "low-guard"
                       : a >= g_hi && a < g_hi + g_pg ? "high-guard" : "elsewhere";
+    if (g_probe) { g_probe_hit = which; siglongjmp(g_jb, 1); }
     int n = snprintf(m, sizeof m, "\nFAULT %d %d %s %ld %s sig=%d\n", g_id, g_idx,
                      g_place ? "high" : "low", (long)(a - g_win), which, sig);
     if (n > 0) { ssize_t w = write(1, m, (size_t)n); (void)w; }
     _exit(3);
+}
+
+/* one deliberate read of `a`: 1 iff it faults inside the guard page `want` names */
+static int probe(const unsigned char *a, const char *want)
+{
+    g_probe_hit = NULL;
+    g_probe = 1;
+    if (sigsetjmp(g_jb, 1) == 0) {
+        volatile unsigned char x = *(const volatile unsigned char *)a;
+        (void)x;
+        g_probe = 0;
+        return 0;
+    }
+    g_probe = 0;
+    return g_probe_hit && strcmp(g_probe_hit, want) == 0;
 }
 
 static uint64_t fnv(const unsigned char *p, size_t n)
@@ -90,18 +121,20 @@ int main(void)
     g_hi = m + g_pg + data;
     if (mprotect(g_lo, g_pg, PROT_NONE) || mprotect(g_hi, g_pg, PROT_NONE)) { perror("mprotect"); return 2; }
     unsigned char *d = m + g_pg;
+    printf("GUARD-LOW-%s\n", probe(d - 1, "low-guard") ? "LIVE" : "DEAD");
+    printf("GUARD-HIGH-%s\n", probe(d + data, "high-guard") ? "LIVE" : "DEAD");
     static unsigned char tmpl[MAXK];
     static char ans[2 * 300000 + 2];
     char line[1 << 16];
     g2vu_fn fn = NULL;
-    int id = -1, lo = 0, k = 0, nf = 0, nw = 0, na = 0;
+    int id = -1, lo = 0, k = 0, nf = 0, stride = 1, nw = 0, na = 0;
     unsigned fill[256];
-    long calls = 0;
+    long calls = 0, flush_lo = 0, flush_hi = 0;
     while (fgets(line, sizeof line, stdin)) {
         char *p = line;
         if (line[0] == 'C') {
-            if (sscanf(line, "C %d %d %d %d%n", &id, &lo, &k, &nf, &na) != 4 || k < 1 || k > MAXK ||
-                nf < 1 || nf > 256) {
+            if (sscanf(line, "C %d %d %d %d %d%n", &id, &lo, &k, &nf, &stride, &na) != 5 || k < 1 || k > MAXK ||
+                nf < 1 || nf > 256 || stride < 1) {
                 fprintf(stderr, "g2_vspan_drv: bad case line: %s", line);
                 return 2;
             }
@@ -128,7 +161,7 @@ int main(void)
         int fseed, c;
         if (sscanf(p + 1, " %d%n", &fseed, &c) != 1) { fprintf(stderr, "g2_vspan_drv: bad window\n"); return 2; }
         p += 1 + c;
-        for (int i = 0; i < k; i++) tmpl[i] = (unsigned char)fill[(unsigned)(i * 7 + fseed) % (unsigned)nf];
+        for (int i = 0; i < k; i++) tmpl[i] = (unsigned char)fill[(unsigned)(i * stride + fseed) % (unsigned)nf];
         int sweep_pos = -1, nv = 1;
         if (line[0] == 'W') {
             int n;
@@ -164,10 +197,13 @@ int main(void)
                 const unsigned char *s = win - 3 - lo;
                 ans[na++] = fn(s, 3) ? '1' : '0';
                 calls++;
+                flush_lo += place == 0 && win == d;                  /* win[-1] is g_lo's last byte */
+                flush_hi += place == 1 && win + k == d + data;       /* win[k] is g_hi's first byte */
             }
             nw++;
         }
     }
     printf("G2VU driver calls %ld\n", calls);
+    printf("G2VU driver flush low %ld high %ld\n", flush_lo, flush_hi);
     return 0;
 }
