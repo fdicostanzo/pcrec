@@ -11,8 +11,8 @@ followups and we can continue this conversation later"). Committed docs win on a
   its convenience (P-19 = 399ef98f4 was the previous delivery).
 - IN FLIGHT (after P-20): the owner ruled **default-export: protected** (a part used alone is available inside
   the binding and NOT exported; reverses hole-export). Lane **preddef** (opus; `worktrees/preddef`, cut at
-  0050e019a; `scripts/lanewatch preddef`) folds it and sweeps the examples. Then a critic round (number ASKED of
-  main, reply pending; subject = diff 30ca2520d..tip), its ruling, a fix lane, P-21. New owner questions from it:
+  0050e019a; `scripts/lanewatch preddef`) folds it and sweeps the examples. Then critic round **r83** (number given by
+  main; subject = diff 30ca2520d..tip), its ruling, a fix lane, P-21. New owner questions from it:
   argument-default, capture-export (open pieces; neither applied). No cron. Nothing in the box queue (never ours). Worktrees for main to prune are listed in
   P-20.
 - Lint `python3 -I scripts/pred_doc_lint.py`: 6,428 / 0 at P-20 (RUN IT BEFORE NAMING A TIP). The newest evidence

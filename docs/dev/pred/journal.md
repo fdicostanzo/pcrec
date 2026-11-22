@@ -790,3 +790,5 @@ argument-default (the caller's own `A.d` for an argument through a bare `${rx}`:
 closed-argument against the new default); capture-export (does a capture in rx text deep inside bare-used parts
 still reach the caller). Asked main for a review number (REPLY pending). NEXT: accept and merge preddef; critic
 round with main's number (subject = diff from 30ca2520d); rule; fix lane; P-21.
+
+Main (2026-11-22): review number **r83** is ours for the default-export fold; P-20 (30ca2520d) is merged and pushed on main.
