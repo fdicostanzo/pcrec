@@ -319,7 +319,7 @@ rejected:
 readings:
 - (a) `NOT some(c)` = `occurs.none(c)` — SUPPORTED by the draft's E12 (0 / 0 / 0), not re-run here.
 - (b) `occurs.none(NOT c)` differs from both (21 / 201 / 301 of 364, E12) — not re-run here.
-- on the array (array-vs-passes (a)), c := `(d: "7")` on `/(?:(?<d>\d)?,)+/`, 364 texts over `17,`: `NOT some(c)` against `occurs.none(c)` 0 / 0 / 0 (one question by definition); against `occurs.none(NOT c)` 28 / 216 / 244; `occurs.none(NOT c)` on the array against on the passes 17 / 237 / 245; `NOT some(c)` on the array against on the passes 0 / 0 / 0 — SUPPORTED (predarr TRUTH; sabotage s10 caught). The manager's reading (d) "now part on settings, not passes" is NOT SUPPORTED as worded: `NOT some(c)` and `occurs.none(NOT c)` part under both readings; what moves is `occurs.none(NOT c)` itself.
+- on the array (array-vs-passes (a)), c the condition `(d: "7")` written in place, on `/(?:(?<d>\d)?,)+/`, 364 texts over `17,`: `NOT some(c)` against `occurs.none(c)` 0 / 0 / 0 (one question by definition); against `occurs.none(NOT c)` 28 / 216 / 244; `occurs.none(NOT c)` on the array against on the passes 17 / 237 / 245; `NOT some(c)` on the array against on the passes 0 / 0 / 0 — SUPPORTED (predarr TRUTH; sabotage s10 caught). The manager's reading (d) "now part on settings, not passes" is NOT SUPPORTED as worded: `NOT some(c)` and `occurs.none(NOT c)` part under both readings; what moves is `occurs.none(NOT c)` itself.
 - the proposal (the lane's): close the question as answered by array-vs-passes for a condition of one entry, the several-entry case asked as record-in-some and count-several — UNTESTED (a proposal; the choice is the owner's).
 evidence: the draft §R.8 row group-truth / pass-table (E12); docs/dev/lanes/predarr_evidence/ TRUTH.
 history:
@@ -327,6 +327,8 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-20): the question restated as a choice: before, its candidates "(a) `NOT some(c)` = `occurs.none(c)`" and "(b) `occurs.none(NOT c)` is a different question" were both true at once; the reading (the draft §R.1.7, "Each remaining group question counts the REAL passes on which its condition is TRUE") is now candidate (a); lib/counting/some's sentence is marked as that reading.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): re-put over the array; the statement until then, verbatim: "After a loop, is the reading the definition: each group question counts the passes on which its condition is TRUE, each pass judged with its own labels, two-valued?"; the body's bullets "The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the finished passes.", "Under the reading `NOT some(c)` and `occurs.none(c)` are one question (they agree on every text run), and `occurs.none(NOT c)`, "no pass on which c fails", is another (it holds with no pass; on a pass lacking c's label c fails and `NOT c` holds)." and "Candidates: (a) yes, the reading; (b) no: he names which of the three forms he meant to be one question." The heading "Group questions over the pass table" renamed. Status date 2026-11-19 to 2026-11-21, still open.
 - 2026-11-22 (lane predfix77, review r77 D6 (RULING-5); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "The choice is the owner's or the manager's." became "The choice is the owner's.": nothing in force gives the manager the choice.
+2026-11-22 (lane predbound, bound-condition ruled): in the readings item on the array, "c := `(d: \"7\")`" (notation for the condition) became "c the condition `(d: \"7\")` written in place": a condition bound alone is a compile error now; nothing re-run.
+
 ## core/model/places — The place table
 slugs:
 rulings:
@@ -541,6 +543,7 @@ history:
 - 2026-11-21 (lane predarr): RULED (a), joint-in-some folded; the heading "The array of settings or the loop's passes" renamed. The piece until then, verbatim: statement "Do the group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a label's settings, or the passes of the loop that sets it?"; body "The rule today tells the group questions to the ARRAY (every setting, in order, the one outside the loop included; `h[k]` counts settings, a reading), while lib/counting defines them on a loop's PASSES, each pass with its own label, false where the loop made no pass. They part on two depths, two settings in one pass, and a setting outside the loop. Candidates: (a) the array of settings; (b) the passes of the outermost loop holding the group." Its six lines were labelled "Two depths, (a): Settings: ...", "Two depths, (b): Passes: ..." and so on; the (a) lines stay as "Two depths: Settings: ..." (the same answers, re-run), the (b) lines are under rejected above. Lines added: the label beside the array, a record of two entries, the record form, same item on the item, an empty array, a count of zero. Status open 2026-11-19 to ruled 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 A9, A11, A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): three readings added (order, past the end, a `$` read inside) with their lines; "pairing by index or by item can be allowed later" narrowed to "pairing a joint entry"; the record bullet's "(a reading; inside a group question a record and its joint form then part, core/conditions/form)" re-pointed to record-in-some; the line "A count of zero" names its `n` a bound condition (core/holes/bare-condition/bound-condition). No answer moved.
 - 2026-11-22 (lane predfix77, R-1 and R-2): array-in-piece folded (the array is read in the definition the question is written in; readings (c), (d)) with the line "In an `&` operand, one definition (a reading)"; status date 2026-11-21 to 2026-11-22.
+2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the line "A count of zero" written in place, `(count(NOT (d: "7")): ==0)`, its binding `n := `count(NOT (d: "7"))`` being a compile error now; the line until then ended "(`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`; `n` (depends on the open bound-condition: core/holes/bare-condition/bound-condition))"; the answers do not move (predbound FIVE).
 
 ## core/labels/one-rule — One label rule: branchings reset
 slugs: bare-loop-label before-and-inside shared-label repeated-means unsettable-label empty-pass optional-as-loop
@@ -718,6 +721,7 @@ history:
 ## core/conditions/form — The condition form
 slugs: condition-not condition-or dollar-condition label-twice-warn colon-scope label-twice joint-condition
 rulings:
+- 2026-11-22 "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); "so b": a value may stand left of `:`, written in place; it REVISES "An entry is `p: S`, p a label path, never an expression" (core/conditions/form/value-left)
 - 2026-11-16 "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." (record: "2026-11-16 OWNER RULING — record-is-product: yes")
 - 2026-11-16 "label-twice: agree an error. And that means it's also unofficially parked in case some other meaning becomes valuable" (record: "2026-11-16 OWNER RULING — label-twice: an error")
 - 2026-11-17 "Agree with all three." (record: "2026-11-17 OWNER RULING — the three remaining error-or-warning candidates")
@@ -739,6 +743,25 @@ history:
 - 2026-11-19: dollar-diagnostic answered dollar-condition (the form `$x & S` stays legal and gets a warning); the warning's wording is core/diagnostics/dollar-form's.
 - 2026-11-21 (lane predarr): a bullet added, a record and its joint form inside a group question (a reading).
 - 2026-11-22 (lane predfix77, review r77 A9; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the record-is-product clause qualified "outside a group question (open record-in-some: core/conditions/form/record-in-some)"; status date 2026-11-16 to 2026-11-21 (joint-in-some, ruled 2026-11-21, is what parts the two there). The question proposed by lane predarr is now its own open piece.
+2026-11-22 (lane predbound, count-in-set ruled (b); record "2026-11-22 OWNER RULING — count-in-set: b"): the statement until then, verbatim: "A condition is a record `(label: S, ...)` laid against the labels of the pattern it meets; it holds when every entry's label text is in its set."; the first bullet's "p a label path, never an expression" became "p a label path or a value written in place" (the manager found no owner words behind "never an expression", record); "Left of `:` names are labels" became "a bare name or a label path is a label". Status date 2026-11-21 to 2026-11-22. No printed line moves.
+
+## core/conditions/form/value-left — A value left of `:`
+slugs: count-in-set
+rulings:
+- 2026-11-22 "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); part 2 of the entry: "so b", a value may stand in the left part of a condition entry, written in place; part 3, "it suggests $h could go there which is also new", an OBSERVATION (the base states the `$h` form as a reading)
+- 2026-11-22 (class: QUESTION) "count-in-set: i don't understand your length(S) example: where do you define label ch?" (record: "2026-11-22 OWNER, on count-in-set: "where do you define label ch?""); answered: `ch` is the group of the helper `chars`, which `length`'s body uses; "ok, thats fine" in the ruling accepts it
+rejected:
+- (a) of count-in-set, a member of `occurs` taking the set (`occurs.in(S, c)`) — by owner ruling — count-in-set: b.
+readings:
+- (a) the parse: a bare name or label path left of `:` stays a LABEL, any other expression is a VALUE — the manager's call; run as the model's parse: the metadata line (`(w.index: >= 2)`, a path) and month_numbered's `(mname.index: S)` answer as printed before (predbound META, FIVE; sabotage s17 caught).
+- (b) the value is SINGLE; several strings there are a compile error for now — UNTESTABLE as a rule (the manager's call); the model refuses `(($h + ["1", "2"]): <5)` and accepts `(($h + ["1"]): <5)` (predbound SEVERAL; sabotage s10 caught).
+- (c) a value that yields nothing fails the entry, as an unset label does, and NOT holds on it — SUPPORTED as a run of the reading (predbound NOTHING: `(($a - 5): >= 0)` against `[5-9]`, its NOT against `[0-4]`, 0 / 0 / 0 of 31 texts over `0357x`; an unset input on `x`: the entry fails, NOT holds; sabotage s8 caught).
+- (d) `($h: S)` and `(h: S)` answer alike in every mode — SUPPORTED (predbound SAMEREAD: 18 programs, 3 patterns, 3 sets, with and without NOT, 0 / 0 / 0 of 341 texts over `37x;`; sabotage s9 caught).
+- (e) a default (`h = v`) and a joint entry stay label forms — UNTESTED (a parse rule; no printed line has a default or a joint entry left of a value).
+- the record's two examples: `P & (count((d: "7")): ==2)` and `(($a + $b): <10)` give the printed lines of `count` and of the sum unchanged (predbound FIVE).
+evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py NOTHING, SAMEREAD, SEVERAL, META, FIVE, SUMALT.
+history:
+- 2026-11-22 (lane predbound, count-in-set ruled (b)): a new piece: the ruling, the manager's readings (d) of the brief, the lines "Nothing fails the entry", "NOT holds on nothing", "A read on the left", and the printed lines of `count` and of the sum written in place.
 
 ## core/conditions/form/record-in-some — A record inside a group question
 slugs: record-in-some
@@ -852,6 +875,7 @@ rejected:
 - `$x` "as standard pcre" (pass-list-read's literal reading) — by owner ruling — the `$x` ruling: `$x` reads the label.
 - a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — by owner ruling — looped-warning: "I agree remove warning." (core/diagnostics/looped-compare).
 readings:
+- the test written in its hole, `${NOT (h: /\d/) | (n: >= $h)}`, gives the printed line of the bound `c` unchanged — SUPPORTED (predbound FIVE: the line rebuilt from the program text equals the line printed at 1e0384941; WHOLE against "the digits are non-decreasing" 0 of 19,531 texts over `3471;` differ; sabotage s2 caught on the sum).
 evidence: preddoc3a_model.py PSR (the draft's PART PS line; printed answers reproduced) and PSR2 (WHOLE equals "the items are non-decreasing" on 1,365 texts over `139;`); sabotage s12 caught.
 history:
 - the draft R.1.7; 2026-11-17 pass-start-read and the `$x` ruling.
@@ -859,6 +883,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 LOOPED / RECOUNT-1): the line above read a MANAGER's withdrawal as the end of an OWNER-ruled warning. The warning stands as joint-loops (3) left it (core/diagnostics/looped-compare, both rulings cited there); whether it is still wanted is open (core/diagnostics/looped-compare/still-wanted). The slugs looped-compare and looped-warning moved to those two pieces.
 - 2026-11-19 (lane predfix61, review r61 F-I, RULING-2, STALE-2): the rejected item until then: "a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — withdrawn by the manager (the draft §R.2); the question is open (core/diagnostics/looped-compare/still-wanted)." The question was answered (looped-warning) and the tag merged.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a pointer to the open core/holes/bare-condition/bound-condition: this piece's bound definition is read where it is used (a reading).
+2026-11-22 (lane predbound, bound-condition ruled; record "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"): the line's program until then, verbatim: "(`/(?:(?=(?<n>\d))${c}(?<h>\d);)*/`, c := `NOT (h: /\d/) | (n: >= $h)`)", and the bullet "The line's `c` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)."; `c` names `h` and `n`, which no pattern in its binding holds: a compile error now. Status date 2026-11-17 to 2026-11-22. The answers do not move.
 
 ## core/conditions/defaults — Defaults and absent labels
 slugs: default-set unset-component drop-mark default-value match-context zero-pass-empty domain-scope mark-narrows mark-in-none mark-range mark-under-not one-witness default-reaches-dollar default-scope mark-design
@@ -989,6 +1014,7 @@ history:
 - 2026-11-19 (lane predfix61, review r61 F-E, REACH-2): "the surrounding rx's labels as they stand at the hole" reached a private `_v` of an inserted binding and the labels behind `[_ = A]`; now "every label visible in the surrounding rx (core/labels/export)", and which rx, for a hole in an inserted literal or an `&` operand, a reading (core/holes/bare-condition/nested-scope). The sentence until then, verbatim: "A `$` read resolves in the namespace at the point it is written: in an `&` operand, the chain's labels; in a value hole, the surrounding rx's labels as they stand at the hole." Status date 2026-11-18 to 2026-11-19.
 - 2026-11-21 (lane predscope): the pointer to nested-scope restated (a definition used inside another, not "the literal is itself inserted"); no answer moves.
 - 2026-11-22 (lane predfix77, review r77 D2 (FIXIND-14), A8, A3, GENERAL-4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): status date 2026-11-19 to 2026-11-21 (its value-hole clause was changed by bare-nested-scope case 2); "PCRE's capture (the last value a group of the name set)" became "PCRE's capture (its value for the name: core/labels/labels-vs-captures)"; the NAMES clause points at bound-condition; the rx-text difference stated once.
+2026-11-22 (lane predbound, bound-condition ruled; record "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"): the namespace bullet's "a condition or computed label bound alone is the open core/holes/bare-condition/bound-condition" became the ruled compile error. Status date 2026-11-21 to 2026-11-22.
 
 ## core/values/one-type — One type: a match is an rx
 slugs: match-is-rx read-is-constant value-is-pattern hole-member-kind
@@ -1081,22 +1107,26 @@ history:
 - 2026-11-16: modifier-lift (the base bullet added by lane preddoc5, review r59 COMPA-1; the draft §2.7 MODIFIERS ON TUPLE SETS states it); library-not-syntax; retire-paused.
 - 2026-11-21 (lane predarr): a bullet added, a joint entry inside a group question is refused for now (joint-in-some). Status date 2026-11-16 to 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 A9; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "one mechanism" qualified "outside a group question (open record-in-some)".
-## core/values/computed-labels — Computed labels
+## core/values/computed-labels — A computed value in an entry
 slugs:
 rulings:
 - 2026-11-14 "I agree with both excepting the spelling ... no alpha operators ... with, check, in ... check is not `x := ...` ... don't want to go into new grammar lightly" (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
 rejected:
+- a computed label BOUND to a name of its own and named left of `:` like a label (`sum := $a + $b`, `(sum: <10)`) — by owner ruling — bound-condition: "a computed label bound alone ... is the same form and is illegal" (the manager's list, confirmed: record "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open").
 - a computed label's value is "a VALUE, not a pattern" (the draft §4.4, §11) — by the draft (rev 27.1, R.9 row 68), following value-is-pattern — CHANGED: a one-string rx known at run time.
 readings:
 - "a match-dependent binding is a computed label of the pattern whose labels it reads" — the manager's spelling LEAN in the same entry, the concept (compile-time checks and match-dependent bindings, no new grammar) agreed; the base's statement is that lean — a reading.
 - an unset input gives an unset computed label — the lane's reading (preddoc3c's proposal), UNTESTED.
-- `sum := $a + $b`, `/(?<a>\d)\+(?<b>\d)/ & (sum: <10)`: WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `2+2`@4 / FIND-ALL [`1+1`@0, `5+4`@8] — SUPPORTED (preddoc4 PART CL; sabotage s11, the concatenation, caught).
+- `(($a + $b): <10)` written in place gives the line once printed for `sum` unchanged — SUPPORTED (predbound FIVE: 0 of 140 texts differ from the direct sum < 10; sabotage s2 caught); `(a: <(10 - $b))` answers alike on the 100 digit pairs, 0 differ, 55 hold (predbound SUMALT; sabotage s12 caught).
+- (f) of the brief: the piece restated as a computed value in an entry, no binding form; `count`'s "it may be bound and read like a label" withdrawn — done (predbound MARKS).
 evidence: docs/dev/lanes/preddoc4_evidence/ PART CL; the draft §4.4.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: length and month_numbered name bindings left of `:` with no core rule allowing it (review r59 PRIMITIVES-MISSING, READ-8).
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the last bullet's "a computed label over a loop's passes is a group question" became "over a name's settings (its array)". No answer moves.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a pointer to the open core/holes/bare-condition/bound-condition: this piece's bound definition is read where it is used (a reading).
+2026-11-22 (lane predbound, bound-condition and count-in-set ruled): renamed from "Computed labels"; the statement until then, verbatim: "A binding whose expression reads a match label is a computed label of the pattern whose labels it reads: a one-string value per path, read by `$` and named left of `:` like a label."; the readings item until then, verbatim: "`sum := $a + $b`, `/(?<a>\d)\+(?<b>\d)/ & (sum: <10)`: WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `2+2`@4 / FIND-ALL [`1+1`@0, `5+4`@8] — SUPPORTED (preddoc4 PART CL; sabotage s11, the concatenation, caught)."; the line's program `(sum: <10)`, sum := `$a + $b` became `(($a + $b): <10)`. Status date 2026-11-19 to 2026-11-22; still a reading.
+
 ## core/values/metadata — Metadata of a member
 slugs:
 rulings:
@@ -1595,6 +1625,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 DIGIT / COLD-3 / FIXVER-9): a bare `digit` (the owner's own spelling, "like /${(0: digit)}/") written `rx.digit`, the form lib/rx/classes defines; built mechanically the bare name was an undeclared name, a compile error (core/operators/statements). Answers unchanged (preddoc6 PART DG).
 - 2026-11-21 (lane predscope, zero-in-definition folded): statement until then: "A condition alone in a hole sees the regex composed at the point the hole stands: its `0` is the surrounding rx's match so far; in `${A & (0: S)}` the `0` is only A." Bullet until then: "A binding whose whole body is a bare condition, used in a hole or as a sequence operand, behaves as the bare condition does (a reading, run)." Its `0` now stated as unsettled, two run lines added. Status date 2026-11-19 to 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 A4, A3, D6, D2; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "A condition alone in a hole is read in the definition the hole is written in: its `0` is that definition's match so far to the hole, holes filled; in `${A & (0: S)}` the `0` is only A." (it made `/\d/ SEQ B((0: /\d/))` FAIL against match-so-far's printed "An argument" line, HOLDS). The bound-condition bullet ("A binding whose whole body is a bare condition ... asked as zero-condition-binding.") and its two lines ("As if in place (the reading)", "Read as the binding's own `0`") moved to the open sub-piece core/holes/bare-condition/bound-condition, where the lines are re-run; "an rx" became "a definition" in two bullets.
+2026-11-22 (lane predbound, bound-condition ruled; record "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"): the bullet until then, verbatim: "A condition bound to a name of its own, or returned by a macro, used in a hole or as a sequence operand: open (core/holes/bare-condition/bound-condition)."; now the ruled compile error, and `0` alone open (core/holes/bare-condition/zero-binding). Status date 2026-11-21 to 2026-11-22.
 
 ## core/holes/bare-condition/labels — Labels a bare condition reads
 slugs: bare-condition-labels
@@ -1655,25 +1686,46 @@ history:
 - 2026-11-21 (lane predscope, zero-in-definition and the three examples folded): heading "Which rx a hole in an inserted literal reads" to "What a hole in a used definition may name"; statement before: "When the literal holding a hole is itself inserted into another rx, or is an `&` operand, do the hole's readers (a bare condition, `$y`, `0`) read that literal or the rx as composed?" Its candidates before: "(a) LEXICAL: the literal the hole is written in (a label it does not define is a compile error; its `0` starts where that literal starts); (b) COMPOSED: the rx as composed where that literal ends up." The `0` line ruled ("Match so far, (a)" now "Match so far (ruled)"; the "(b)" line moved here: WHOLE `3x` HOLDS, `7x` HOLDS / SEARCHED `a3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0, `7x`@3]); his three examples and their run lines added; the question narrowed to a label the definition's user sets. The status stays open (the lane's proposal: the Condition and Read lines are not decided by any ruling). Date 2026-11-19 to 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 A12, A3, A1, D1, D9, D10, D3, D5 (RULING-3); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): reading (c) withdrawn and folded (the loop pair printed agreeing, (d) marked "to be confirmed" in the base); the bound-condition exemption marked "(a reading; open bound-condition)"; the array collision pointed at; the flags/labels asymmetry stated once; the example lines' `[d = digits]` (no `digits` is provided) now `[d = rx.digits]`, his own words kept with "(his spelling)"; the VALUES bullet's "its own previous pass in a loop" narrowed to a loop written inside it. The class sentence of zero-in-definition, under `rulings:` until then: "It settles the `0` line of bare-nested-scope: candidate (a) of that piece, with the unit the DEFINITION (a binding or a macro body), not the literal" (the entry's class, the manager's words). Readings bullet until then, verbatim: "Readings (the manager's): a piece is a binding or a macro body, and what is written inside ONE definition (literals, operands, holes, an `&` operand's hole) is one piece; a bound condition or computed label has no rx of its own and is laid against the pattern it meets (core/conditions/form); an argument is the caller's text and reads the caller's labels; a piece looped by its user reads its own previous pass; two uses of one piece are two pieces." No printed answer moved.
 - 2026-11-22 (lane predfix77, R-1, R-2 and the bound-condition position): the VALUES bullet names the group questions and `h[k]` (array-in-piece), his sentence quoted; the NAMES bullet no longer states the withdrawn reading (a) for a bound condition, which is open.
+2026-11-22 (lane predbound, bound-condition ruled; record "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"): in the NAMES bullet, "a label variable is an idea (parked/ideas/label-parameter). A condition or computed label bound alone: open (core/holes/bare-condition/bound-condition)." became the under-construction pointer (core/operators/bindings/label-variables) and the ruled compile error; `see:` re-pointed from the parked idea. Status date 2026-11-21 to 2026-11-22. The line "Passing the condition" re-run unchanged (predbound INPLACE).
 
 ## core/holes/bare-condition/bound-condition — A condition bound to a name of its own
 slugs: bound-condition
 rulings:
-- 2026-11-21 (class: EXAMPLE) "bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/ C := /.${A & (0: 5)}/ the 0: is bound to A only" (record: "2026-11-21 OWNER, on bound-condition: two examples of what `0` is bound to"); they agree with what is ruled and do not reach a condition bound to a name of its own
-- 2026-11-21 (class: CONFIRMATION) "that settles it. my two examples are correct." (record: "2026-11-21 OWNER, confirming his two examples of `0`: "that settles it. my two examples are correct""); both examples confirmed, bound-condition still open
-- 2026-11-22 (class: POSITION) "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types B(d & isodate) := B(year: < 2100) (spellings tbd)" (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives"); (b) as his read, to be the ruling when he confirms after the response
-- 2026-11-22 (class: CORRECTION) "bound-condition: correction to rx: B(d & isodate) := (year: < 2100)" (record: "2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`"); his second alternative corrected, no confirmation of the ruling in it
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); RULED (b) by confirmation of the list put to him, every item but the `0` case; his slug typed "cound-condition"
+- 2026-11-22 "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types B(d & isodate) := B(year: < 2100) (spellings tbd)" (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives"); the two statements of the ruling, in his words: "the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target."
+- 2026-11-22 (class: CORRECTION) "bound-condition: correction to rx: B(d & isodate) := (year: < 2100)" (record: "2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`"); his second alternative corrected (core/operators/bindings/macro-types)
+- 2026-11-22 (class: CLARIFICATION) "illegal meaning a compiler error" (record: "2026-11-22 OWNER, on bound-condition: "illegal meaning a compiler error""); the forms he called illegal are compile errors, not the under-construction error
+- 2026-11-21 (class: EXAMPLE) "bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/ C := /.${A & (0: 5)}/ the 0: is bound to A only" (record: "2026-11-21 OWNER, on bound-condition: two examples of what `0` is bound to"); now in core/holes/bare-condition/zero-binding
+- 2026-11-21 (class: CONFIRMATION) "that settles it. my two examples are correct." (record: "2026-11-21 OWNER, confirming his two examples of `0`: "that settles it. my two examples are correct"")
 rejected:
-- the manager's leaning (a), a condition bound alone laid against the pattern it meets, as the reading in force — withdrawn by the manager on his position (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives") — the candidate stays in the open question; his position is (b).
+- (a) a condition bound alone laid against the pattern it meets where it is used (the manager's leaning, withdrawn on his position) — by owner ruling — bound-condition: b. Its line under (a), the macro case, verbatim as run (predfix77 BOUND): "A macro returning a condition, (a): WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x7 3` `3`@3 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`/(?<h>\d)${lt5(<5)}/`, lt5(S) := `(h: S)`)".
 readings:
-- the two candidates RUN (the manager's leaning (a) is withdrawn, rejected below): `/\d${c}x/`, c := `(0: rx.digit)`, (a) equals `\dx`, (b) never matches, 0 / 0 / 0 of 121 texts over `17x` (predfix77 BOUND; sabotage s9 caught).
-- the seven printed definitions that rest on (a) (review r77 A3, RULING-1, GENERAL-3, FIXIND-4): pass-start-read's `c`, `sum`, the `n` of "A count of zero" and of lib/counting/count, `nchars`, `mnum`, this piece's `c` — each points here (predfix77 MARKS; sabotage s17 caught). Under (b) each is refused at its definition as case 1 refuses `inner` (the model refuses `c := (h: <5)` and `lt5(S) := (h: S)` under (b)).
-- a macro whose body is a condition (review r77 GENERAL-3(c)) is the same question: under (a) `lt5(S) := (h: S)` in `/(?<h>\d)${lt5(<5)}/` reads h where used (WHOLE `3` HOLDS, `7` FAILS) — SUPPORTED as a run of the reading (predfix77 BOUND).
-- his two examples, lowered from his text: `/\d${(0: 5)}/` equals `5`, `/.${A & (0: 5)}/` with A := `/\d/` equals `.5`, 0 / 0 / 0 of 85 texts over `57x ` (predfix77 HISEX; sabotage s20 caught); the record's own run was of the hand-lowered `5` and `.5`.
-evidence: docs/dev/lanes/predfix77_evidence/ predfix77_model.py BOUND, HISEX, MARKS. Earlier: predscope_model.py ZCBIND (the two lines, then in core/holes/bare-condition).
+- the ruling as the model runs it: ten bindings refused at the binding, each naming the label it lacks: `late := (h: >5)`, `A := /x/ & (y: >5)`, `sum := $a + $b`, both `n`, `nchars`, `mnum`, pass-start-read's `c`, `lt5(S) := (h: S)`, case 1's `inner` (predbound REFUSE; sabotage s4 caught).
+- (a) a condition written in place, an argument included, is unchanged — SUPPORTED for the argument of `inner` and for `0` in `B`'s argument (predbound INPLACE: the lines "Passing the condition" and "An argument" equal those printed at 1e0384941; sabotage s6 caught); `when`'s test UNTESTED here (no `when` lowering in this model; lib/control/when-test's own run).
+- (b) a SET bound alone (`late := >5`, used `(h: late)`) is unchanged: it names no label — SUPPORTED (predbound SETBOUND: the same line as written in place and as the record's pasted `[6-9]` line, 0 / 0 / 0 of 85 texts over `37 9`; sabotage s3 caught).
+- (c) the five refused definitions written in place, every printed line unchanged — SUPPORTED (predbound FIVE: six lines, each rebuilt from the new program text and equal to the line printed at 1e0384941 in its answers, each WHOLE against a direct rule 0 differ; sabotage s2 caught). For `n` the in-place form is `(count((d: "7")): ==2)`, not the list's `occurs.exactly(2, (d: "7"))`: count-in-set ruled (b) after the list.
+- (e) the error is reported AT THE BINDING, used or not, and is an ordinary compile error — the class SUPPORTED by his words ("illegal meaning a compiler error"); the place a reading, from "x has no references in the binding" and "compile error at inner" (record "2026-11-21 OWNER RULING — bare-nested-scope, case 1: a compile error at inner; and a question on a label variable"); the model refuses an unused `late` and `sum` at their bindings (predbound ATBINDING; sabotage s5 caught).
+- (g) a binding whose body USES a pattern that holds the label is legal, by core/labels/export statement 2 — SUPPORTED as a run (predbound LEGAL: `chars`, `months`, `length`, `month_numbered`, `year` legal at their bindings; `year` against `>= 2000` 0 of 256 texts differ; sabotage s7 caught).
+- a macro whose body is a condition naming a label it does not hold (`lt5(S) := (h: S)`) is the same form — a reading (the ruling's words name `A := (x: blah)`; his alternative 1 is the macro form that would make it legal).
+- (h) the sweep: every binding printed in core.md, library.md and parked.md checked at its binding — at 1e0384941 the refused ones were the five definitions (`c`, `sum`, `n` twice in print, `nchars`, `mnum`), `length`'s body through `nchars`, `lt5`, and the two printed as refused already (`inner`, example 2's `B`); none beyond the five; now every refused binding in the base files is printed as refused (predbound SWEEP; sabotage s13 caught).
+evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py REFUSE, SETBOUND, ATBINDING, INPLACE, LEGAL, FIVE, SWEEP, QUOTES, MARKS. Earlier: predfix77_model.py BOUND, HISEX; predscope_model.py ZCBIND.
 history:
 - 2026-11-22 (lane predfix77, review r77 A3, D6 (RULING-2); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a new open sub-piece carrying the question as asked twice; the bullet and two lines that were in core/holes/bare-condition (under the proposed slug zero-condition-binding) moved here, their texts re-run: "As if in place (the reading)" is now "(a) where it is used", "Read as the binding's own `0`" is "(b) sealed, its own `0`", the same answers.
 - 2026-11-22 (lane predfix77, after the merge of the bound-condition position): the piece states his position (b) and his two alternatives (his placeholders), and no longer states (a) as the reading in force; the readers point here without an answer. Still OPEN (the lane's rulings file: "bound-condition is still OPEN").
+- 2026-11-22 (lane predbound, bound-condition RULED (b)): open to ruled; the piece until then, verbatim: statement "Does a condition bound or passed on its own, no pattern in it, read its labels and its `0` where it is used, (a), or is it sealed like a piece, (b)?"; its candidate lines (a)/(b) on `c := (0: rx.digit)` and his two examples moved to core/holes/bare-condition/zero-binding (the `0` case he left open); the line "A macro returning a condition, (a)" moved to `rejected:`; the five printed definitions rewritten in place in their own pieces; the lines "Written in place", "A set bound alone", "A binding that holds its label" added.
+
+## core/holes/bare-condition/zero-binding — A condition on `0` bound to a name of its own
+slugs: zero-condition-binding
+rulings:
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); the `0` case taken out of the confirmed list by him: neither answer applied
+- 2026-11-21 (class: EXAMPLE) "bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/ C := /.${A & (0: 5)}/ the 0: is bound to A only" (record: "2026-11-21 OWNER, on bound-condition: two examples of what `0` is bound to"); `0` written in place; agrees with what is ruled
+rejected:
+readings:
+- the candidates RUN on `/\d${c}x/`, c := `(0: rx.digit)`: (a) where it is used equals `\dx`; read as sealed, its own `0`, it equals the never-matching `(?!)`, 0 / 0 / 0 of 121 texts over `17x` each (predbound ZERO; sabotage s11 caught); under (b) as asked, a compile error at `c` (the model's option `error`).
+- his two examples, lowered from his text: `5` and `.5` (predfix77 HISEX; the lines re-run unchanged by predbound ZERO).
+evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py ZERO. Earlier: predfix77_model.py BOUND, HISEX; predscope_model.py ZCBIND.
+history:
+- 2026-11-22 (lane predbound, bound-condition ruled with this case left open): a new open piece under the slug zero-condition-binding (the name the manager had proposed); its lines moved from core/holes/bare-condition/bound-condition, the same text.
 
 ## core/holes/in-filter — A hole inside a filter operand
 slugs: hole-in-filter
@@ -1756,6 +1808,35 @@ history:
 - 2026-11-19 (lane preddoc3b): converted from `?`; the statements part split off as core/operators/statements (a different status).
 - 2026-11-19 (lane preddoc4): `NOT` named as the one exception to no-alphabetic-operators; the record bullet points at tuples (review r59 NEGATION, READ-15).
 - 2026-11-21 (lane predscope): a bullet added (a parameter's name is not a label, his words; an argument resolved in the caller, a reading). Status date 2026-11-15 to 2026-11-21.
+2026-11-22 (lane predbound, bound-condition ruled): `see:` gains the two under-construction sub-pieces of his alternatives. No rule moves.
+
+## core/operators/bindings/label-variables — Macro variables: a parameter that is a label
+slugs:
+rulings:
+- 2026-11-22 "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types B(d & isodate) := B(year: < 2100) (spellings tbd)" (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives"); alternative 1, "macro variables", his spelling a placeholder, "spellings tbd"
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); "Both alternatives are marked under construction: directions acknowledged, spellings open" was on the confirmed list
+rejected:
+readings:
+- the body names the parameter, so the label has its target at the call (the manager's reading of the direction) — UNTESTED (nothing defined).
+- his earlier words "we note that l is a label variable" (record "2026-11-21 OWNER RULING — bare-nested-scope, case 1: a compile error at inner; and a question on a label variable") are the same direction — a reading.
+evidence: none (under construction).
+history:
+- 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/label-parameter), pointing here.
+
+## core/operators/bindings/macro-types — Macro types: a parameter restricted to a pattern
+slugs:
+rulings:
+- 2026-11-22 "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types B(d & isodate) := B(year: < 2100) (spellings tbd)" (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives"); alternative 2, "macro types", as first typed
+- 2026-11-22 (class: CORRECTION) "bound-condition: correction to rx: B(d & isodate) := (year: < 2100)" (record: "2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`"); the body is the condition alone, the head gives `year` its target
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); under construction, by the confirmed list
+rejected:
+- the manager's reading of the body as `d & (year: < 2100)` — by owner correction — "correction to rx: B(d & isodate) := (year: < 2100)".
+readings:
+- B is a named condition whose target is declared in its head; `B(x)` lays `(year: < 2100)` against x — the manager's reading (record "2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`"), UNTESTED.
+- the two meanings of the restriction, (i) the intersection and (ii) a promise checked at the call — both stated in the record entry, neither chosen; UNTESTED.
+evidence: none (under construction).
+history:
+- 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/restricted-parameter), pointing here.
 
 ## core/operators/bindings/call-forms — Several bodies for one name
 slugs: call-forms
@@ -1977,6 +2058,7 @@ history:
 - 2026-11-19 (lane preddoc3b): converted from `?`; a `reading` piece because the index as a whole is the manager's.
 - 2026-11-19 (lane preddoc6, review r60 COLD-5): the index said every error below is ruled in its piece and read as complete; at least 12 stated compile errors have no row. It now says it is PARTIAL; a generated index (r59 PLACE-8) is a PLAN item of review r60.
 - 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-17); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): two rows added, a joint entry inside a group question (array-vs-passes) and a piece naming a label it does not hold (nested-scope case 1).
+2026-11-22 (lane predbound): two rows added, a condition or computed value bound alone naming a label its binding does not hold (bound-condition, ruled) and a value of several strings left of `:` (a reading, count-in-set).
 
 ## core/diagnostics/under-construction — The under-construction error
 slugs: under-construction-class

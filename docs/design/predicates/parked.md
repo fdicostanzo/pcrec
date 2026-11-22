@@ -184,6 +184,7 @@ A condition with a label parameter, bound where it is used.
 Trigger (the ideas file's words): `the library discussion (items 12, 20, 23, 25), or the first revision of the draft`
   `after rev 25 that takes up reusable conditions`.
 Source: the ideas file item 26 (its whole text in the details entry).
+see: core/operators/bindings/label-variables
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
@@ -247,6 +248,7 @@ modes: n/a (parked: not in the language)
 `example(g & /\d+/) := ...` (his placeholder): a restricted parameter; the same to limit or overload operators.
 Trigger: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
 Source: the ideas file item 34 (its whole text in the details entry).
+see: core/operators/bindings/macro-types
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19
@@ -287,4 +289,24 @@ Trigger: a use with "real value other than 'override a users own *'" (his words)
   author's own `*` loop (`some(^h)`) is not one.
 Source: the record, the field-reference entries and retire-paused (details).
 see: parked/ideas/field-count core/values/tuples
+modes: n/a (parked: not in the language)
+
+### A syntax to declare a binding's labels   [parked/ideas/declared-labels]   parked 2026-11-22
+A syntax to declare the labels a binding provides (the `ch` in `chars`), for clarity, not for correctness.
+Trigger: macro types being designed (core/operators/bindings/macro-types), or the first library file with labels.
+Source: the record, count-in-set's ruling entry (his words in the details entry): "aside: perhaps we will need a
+  syntax to declare the ch in chars. i am wonderings not for correctness but clarity."
+see: core/labels/export lib/modifiers/length
+modes: n/a (parked: not in the language)
+
+### A binding's name as a label prefix   [parked/ideas/binding-prefix]   parked 2026-11-22
+A binding's name used, under rules to be defined, as a label prefix (`chars.ch`); against it, his own earlier words that a binding is not a label.
+Trigger: his answer to the question the manager is putting to him now (a binding's name as a label prefix).
+Source: the record, count-in-set's ruling entry; his earlier words, the label-flow proposal, point 4 (details).
+see: core/labels/flow core/labels/paths
+- His idea: "it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that
+  is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining."
+- Against it, his words of the label-flow proposal, point 4: "A . B & (A.h: blah) error. A is a binding not a
+  label and could be ambigous if its used multiple times in an expression". In the language: a binding's name is
+  not a path (core/labels/flow).
 modes: n/a (parked: not in the language)

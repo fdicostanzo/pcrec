@@ -832,6 +832,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-3): the line above held only for the 2026-11-17 message; the record DOES carry the 2026-11-18 one (free-name, "(4) OBSERVATION, his, not a ruling ... Added to predicates_future item 26"), now a `rulings:` item.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-3): the base Trigger line restored to the ideas file's words (it had been reworded).
 - 2026-11-21 (lane predscope; a source line, nothing ruled): his question "does that mean that v is not a label but a label variable?" (record: "2026-11-21 OWNER, discussing bare-nested-scope: rules on literals or compiler rewrites; is `v` a label variable; `inner(digits)`; what the compiled C exports"); the manager's answer there: `v` is an ordinary rx parameter, and a macro that names the label to test itself (`small(L) := (L: <5)`) would need this parked label parameter. His example of the same day: "C cannot see rx as its a binding variable not a label." (pure-label). The trigger is unchanged.
+2026-11-22 (lane predbound, bound-condition ruled): `see:` the under-construction core/operators/bindings/label-variables, his alternative 1 ("macro variables"); the idea stays parked.
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 
@@ -1059,6 +1060,7 @@ history:
     arithmetic operators are stated this way (`+` on numbers; joining as a later second definition).
   - TRIGGER: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+2026-11-22 (lane predbound, bound-condition ruled): `see:` the under-construction core/operators/bindings/macro-types, his alternative 2 ("macro types"); the idea (operators included) stays parked.
 
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 
@@ -1161,3 +1163,26 @@ readings:
 evidence: the draft §16 (rev 19, the direction's record); review r19 (CENSUS, SIMULATE).
 history:
 - not an ideas-file item: the paused direction of the draft's rev 16-19 (§16), homed here by lane preddoc5 (2026-11-19, review r59 COMPA-6, COMPB-5). Its one use parked separately is parked/ideas/field-count.
+
+## parked/ideas/declared-labels — A syntax to declare a binding's labels
+slugs:
+rulings:
+- 2026-11-22 (class: IDEA) "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); part 4 of the entry, "aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity."
+rejected:
+readings:
+- the trigger (macro types being designed, or the first library file with labels) is the lane brief's — a reading.
+evidence: none (parked).
+history:
+- 2026-11-22 (lane predbound): a new parked piece.
+
+## parked/ideas/binding-prefix — A binding's name as a label prefix
+slugs:
+rulings:
+- 2026-11-22 (class: IDEA) "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); part 5 of the entry, "it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining."
+- 2026-11-17 (class: PROPOSAL) "A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an expression" (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error"); point 4, against the idea; core/labels/flow's "A binding's name is not a path" stands
+rejected:
+readings:
+- the trigger is his answer to the question the manager is putting to him now (the lane brief) — a reading.
+evidence: none (parked).
+history:
+- 2026-11-22 (lane predbound): a new parked piece.
