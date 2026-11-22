@@ -7150,3 +7150,39 @@ example left out the helper's definition. `ch` is the group in the library's hel
 (lib/modifiers/length), which `length`'s body USES; inside a binding "the public labels of everything written or
 used there are visible" (core/labels/export, statement 2), so `ch` has its target in the binding. The same body in
 one definition: `length(S) := /(?:(?<ch>(?s:.)))*/ & (count((ch: /(?s:.)/)): S)`.
+
+### 2026-11-22 OWNER RULING — count-in-set: b (a value may stand left of `:` in a condition); and three ideas (`$h` there; declaring a binding's labels; a binding's name as a label prefix)
+tags: core/conditions/form core/values/computed-labels lib/counting/count lib/modifiers/length core/labels/paths core/labels/flow core/labels/export parked/ideas/restricted-parameter
+
+Asked **count-in-set** ((a) a member of `occurs` taking the set, `occurs.in(S, c)`; (b) a value left of `:`,
+written in place, `P & (count((d: "7")): ==2)`, `(($a + $b): <10)`; the manager's leaning (b); the answers the
+documents' printed `count` line under both), and answered on where `ch` is defined (the helper `chars`). HIS
+WORDS, whole:
+
+"count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it
+suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i
+am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules
+as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need
+defining. respond"
+
+Class, part by part:
+1. "ok, thats fine": he ACCEPTS the answer on `ch` (the helper `chars`, used in `length`'s body).
+2. A RULING on the slug: "so b": a value may stand in the left part of a condition entry, written in place. It
+   REVISES the documents' sentence "An entry is `p: S`, p a label path, never an expression" (core/conditions/form;
+   the manager found no owner words behind "never an expression").
+3. An OBSERVATION: "it suggests $h could go there which is also new."
+4. An IDEA ("aside", "perhaps", "i am wonderings not for correctness but clarity"): a syntax to DECLARE the labels
+   of a binding (the `ch` in `chars`).
+5. An IDEA ("it suggests", "under certain rules"): a binding's name used as a label prefix (`chars.ch`), with the
+   case he says "would need defining": `chars seq ":" seq chars & (chars.ch: blah)` (the binding used twice). It
+   goes against his own label-flow words of 2026-11-17, point 4: "A . B & (A.h: blah) error. A is a binding not a
+   label and could be ambigous if its used multiple times in an expression" (recorded; told to him).
+6. A REQUEST: "respond".
+
+The manager's readings of the ruling, for the fold lane to test: (a) a bare name or label path left of `:` stays a
+LABEL (as today); any other expression there is a VALUE (the parse rule is the manager's call); (b) the value must
+be SINGLE (at most one string, at match time); a value of several strings there is a compile error for now; (c)
+a value that yields nothing fails the entry, as an unset label does, and `NOT` holds on it; (d) `($h: S)` and
+`(h: S)` answer alike in every mode ("`$x` and `x:` never disagree"), so the label form is the value form's
+common case; a default (`h = v`) and a joint entry stay label forms; (e) `length(S)` is `chars & (count((ch:
+/(?s:.)/)): S)`; `sum`'s test is `(($a + $b): <10)`; `mnum`'s is `(mname.index: S)`, already a path.
