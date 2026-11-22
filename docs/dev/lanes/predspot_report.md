@@ -5,6 +5,8 @@ Branch lane/predspot, cut from lane/pred-rev28 at 75d2318bd. Opus tier. Design o
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Group 1 (labels) is commit 17f9cc50f. Group 2 (flags), the evidence and this report are the commits after it on
   lane/predspot. Its tip is given in the reply to main.
 - The rulings file `docs/dev/lanes/predspot_rulings.md` stayed empty for the whole run. It was re-read before
