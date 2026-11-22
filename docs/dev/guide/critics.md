@@ -312,3 +312,8 @@ Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r
 2. **A place/position table cell about a fact written INSIDE a nested place must say where it is written.** Drill each row's `0` / label / reference cell with the row nested inside the `&`, loop and hole rows (A2, A5).
 3. **For every CHECK the subject cites as "supported", mutate one arm.** If no mutation of the cited arm can move the count, the check shares its source (N3, CS3).
 4. **A 0/0/0 at a short pool length is not evidence when the witness needs a longer text.** A4 needed length 7, A5 needed `min = 1`: critics state the minimum witness length they reached.
+
+2026-11-22 r78, kit code round memfn-bsu4 (`docs/dev/reviews/2026-11-22-r78-memfn-bsu4.md`), accepted 2026-11-22 (kit manager):
+1. **A harness's floors count what was DRIVEN, not only what was GENERATED.** That means per-placement runs, per-layer runs, and a self-witness for each guard page (one deliberate over-read that must fault). In r78, four mutations disabled half the promised regime and passed green while every generation floor held (G2V-1).
+2. **A sabotage row cited as a guard-page witness must be benign without the guard.** Otherwise it witnesses the answer leg. When it is not benign, say so in its header and prove the guard by the harness's self-witness (PLANTSB-2).
+3. **A check that holds an ORDER over a table pins every row ahead of the moved one,** not only the rows the design names. In r78, T-deny ahead of V was held by test-axes only (PLANTSA-2).
