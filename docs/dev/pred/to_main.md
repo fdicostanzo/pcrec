@@ -317,3 +317,32 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   record-in-some, count-several, helper-captures, capture-loop-value.
 - Worktrees free to prune: `worktrees/predscope`, `worktrees/predarr`, `worktrees/predfix77` (all merged into my
   branch; yours via wtprune).
+
+## P-20 (2026-11-22, predicate manager) — done: the owner's rulings of 2026-11-22 folded; review r82 filed RULED and applied
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. Docs only. Lint `python3 -I
+  scripts/pred_doc_lint.py` 6,428 / 0 on the merged branch; `make -s test-plan-lint` clean. Lanes merged since
+  P-19: predbound, predref, predcall, predfix82 (reports `docs/dev/lanes/<lane>_report.md`; evidence
+  `docs/dev/lanes/<lane>_evidence/`; the newest model, predfix82's, 22 checks / 0 failed, 21 plants caught, and it
+  declares every older model's red as superseded). Review `docs/dev/reviews/2026-11-22-r82-predfold1122.md` + its
+  directory + the NOTES index line (your number r82).
+- In it, all ruled by the owner on 2026-11-22: bound-condition (a condition or computed value bound alone, with no
+  target for its label in the binding, is a compile error; macro variables and macro types under construction);
+  count-in-set (a value may stand left of `:` in a condition); binding-prefix (a binding's name is a label prefix);
+  label-reference (REQUIRED: a label not written in the referencing definition carries its source; every printed
+  example re-spelled, no answer changed); helper-captures (the library's helpers set labels, not captures; the
+  label-only group under construction); call-prefix (a macro's name qualifies its labels); closed-argument.
+- [COND-FAMILY] status line, when you take it: rulings through 2026-11-22 folded and reviewed (r77, r82 filed);
+  open questions next: two-sources, idiom-confirm (both from r82), zero-condition-binding, macro variables / macro
+  types / declared labels as one design, count-several, capture-loop-value, zero-in-loop.
+- Worktrees free to prune (all merged into my branch; yours via wtprune): predscope, predarr, predfix77,
+  predbound, predref, predcall, predfix82.
+- PROPOSED SKILL EDITS from r82 (yours to make): (1) pcrec-critic section 3 and the COMMON template: "a re-run's
+  verdict is the model's LAST LINE; an exit code is not evidence" (the coordinator's first summary read rc=0 as
+  green; predbound was red). (2) pcrec-predicate-manager section 4, the revision brief: "every evidence model exits
+  non-zero on a failed check; a fold lane re-runs EVERY in-force evidence model and re-greens it or names its red
+  in a successor check" (four older models were red or crashing at the freeze, undeclared). (3) pcrec-critic lens
+  table, a design-mode drill: "one lens per name-resolution root: for each spelling kind x number of occurrences x
+  read kind, which settings does it reach" (r82's two main findings were each reached by three lenses from three
+  sides). (4) pcrec-predicate-manager section 2: "a sentence of the form 'X and Y are the same' about two
+  spellings is run on a parting case before it is said" (the owner found the case in one line).
