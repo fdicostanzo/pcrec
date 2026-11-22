@@ -514,6 +514,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Note (review r67 F7 + F10, 2026-11-21): a partial undo of K152 is invisible to every check (each piece alone, marks dropped or nfa_rep alone inlined, leaves the deepest DEPTH_FAMILIES row 7.6% under the budget, and run_compile_stack.sh reads the budget, not headroom): the frame census this row charters (`-fstack-usage` per recursive dispatcher; compile_ast 384 to 32 B is measurable directly) makes a partial undo visible; trigger = this row's own. Sibling listed, no witness: src/gen/emit_vm.c `vm_rev_emit` has the same inlined kind-switch shape (288 B frame, vm_revdet_rep 720 B; `x(?<=(?:a ... b ...))y` peaks at 66,960 B at depth 100, depth 250 is refused by the group-depth limit); trigger to mark it = a DEPTH_FAMILIES row through a lookbehind body over 70% of the budget, or a raise of PCREC_MAX_GROUP_DEPTH.
   Note (review r64 F13, 2026-11-20): the mech coverage of K147's explicit stack has one unwitnessed decision point, gk_build's CAT update order (plant V3i was silent on 8 probes, 0 emitted-byte movers): find a witness first, then a row; the rest (the depth-- leak, ss_walk's ALT over-approximation, an out-of-range member, stack growth caught only by test-stackdepth) are answer-silent by construction and NOTED. An "explicit stack, no cycle" category belongs here once [ARENA-REGROW] lands.
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
+- [K159-PLUS-SUPERLINEAR] STATE:started — the width walk is about quadratic in NFA states: nested + compiles x4.5 slower per level (K159)
+  filed: 2026-11-22 lane plusprof, from the manager's growth sweep measurement
+  status (2026-11-22): FIXED on lane/k159fix, not landed: the walk stops at a repeated frontier (Brent checkpoint), answers unchanged; d=14 20.2 s to 0.07 s CPU; guard [facts-width-cpu] + S3505; docs/dev/lanes/k159fix_report.md
+  trigger: owner ruling growth-time-bound 2026-11-21 ("fix first"): a fix lane stops the walk at a repeated frontier set (or another state-count-free bound) and keeps a CPU-second bound cell in the growth sweep
+  refs: known_issues K159; docs/dev/lanes/plusprof_report.md; src/facts/kset.c:385; [GROWTH-SWEEP]
 
 ## Candidates ([OPTLOOP])
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
@@ -2305,11 +2310,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-20): filed; nothing built. `(?<g0>a(?&g1)?)...` at N=200 passes 2 GB; N=160 refuses by size
   next: a refusal ceiling on targets x slots before the table is built, with a limits.md row; add the cell to [GROWTH-SWEEP]
   refs: known_issues K151; docs/dev/lanes/growsurv_report.md L2/C10; src/gen/emit_vm.c (vm_build_region_saves)
-- [K159-PLUS-SUPERLINEAR] STATE:not-started — the width walk is about quadratic in NFA states: nested + compiles x4.5 slower per level (K159)
-  filed: 2026-11-22 lane plusprof, from the manager's growth sweep measurement
-  status (2026-11-22): filed; nothing built. d=12 1.04 s, d=13 4.74 s, d=14 20.2 s CPU; 83% of the time in wdrain/wclose under pcrec_width_walk (src/facts/kset.c:385), which steps n+1 frontier closures over an unbounded pattern
-  trigger: owner ruling growth-time-bound 2026-11-21 ("fix first"): a fix lane stops the walk at a repeated frontier set (or another state-count-free bound) and keeps a CPU-second bound cell in the growth sweep
-  refs: known_issues K159; docs/dev/lanes/plusprof_report.md; src/facts/kset.c:385; [GROWTH-SWEEP]
 - [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 SLOT-6 (lane trailgc3)
   status (2026-10-29): BOONIES, unscheduled. The K134 trail checkpoint is its only member; tests/vm/trail_checkpoints.py would become the generic "every weighted cycle passes a safepoint" check.
