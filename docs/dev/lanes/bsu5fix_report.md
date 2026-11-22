@@ -12,11 +12,19 @@ RULING: FIX FIRST. Nothing was timed.
   commit that carries this report (it also records the rule sha in §8).
 - All fixes are DONE. In-lane checks are green (IN-LANE RUNS). The identity
   sample is 356 of 356 byte-identical against base `b51fd80bd`.
-- OWED: two box-queue jobs, `746-kit-bsu5fix-test` (make test) and
-  `747-kit-bsu5fix-mech` (S2930, S2931, S2933, after the test). C6 and C6c
+- OWED: three box-queue jobs, keys `kit-bsu5fix-test` (746, make test),
+  `kit-bsu5fix-mech` (747: S2930, S2931, S2933, after the test) and
+  `kit-bsu5fix-selftest` (748: cards.py's full selftest, cap 7200, after
+  the mech). 746 started on de36c27c9's tree; 57a38e78c, committed while it
+  ran, changes only cards.py's stdout buffering and a docstring line. C6 and C6c
   TIMING is owed to a window main clears (U6), on each bench box that runs
   V.
-- The rulings file `bsu5fix_rulings.md` was empty at every checkpoint.
+- The rulings file `bsu5fix_rulings.md` was empty until **R-1** (the
+  kit manager, ~14:20: bsu5's full `cards.py selftest` timed out). R-1 is
+  APPLIED (section R-1): the cause is the base's own ~90 min runtime, not
+  U5. The fix is commit `57a38e78c` (line-buffered stdout, the bound
+  stated). Per **R-2** (ACCEPTED: pre-existing; do not run it in-lane),
+  the full selftest is the third owed job, `748-kit-bsu5fix-selftest`.
 - Readings made, for the manager:
   - **F4.** `c6_hexb32`'s near-miss-in now calls the span (20,695 calls).
     Its plain near-miss still calls it 0 times, as at every window site
@@ -179,6 +187,56 @@ All logs are under `/var/tmp/pcrec-pcrec/scratch/bsu5fix/`.
   each anchor matches exactly once.
 - RESULTS: full dry `--quick`: rc 0, 1650 cells built and gated, 0 failures, 185 pools x 4 = 740 exes, 0 refused; C1-C5 deny check 42 arm-I loop-free, reach 122 (U5's was 124: the two c6_hex1001 artifacts are out of it, F9). Mech: `== mech run COMPLETE: 3 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at ac807e97a ==`; S2930 DETECTED 4 fail, S2931 DETECTED 17 fail, S2933 DETECTED 3 fail (memfnfinder).
 
+## R-1
+
+**(a) Why the full selftest takes more than 3000 s.** `cmd_selftest` is a
+Monte Carlo of the C1-C5 rule.
+- Its drills (F2, G2, F3, G3, H1, the r38 class drill, rev 11's and rev
+  12's rows) each synthesize up to `NOISE_TRIALS` = 300 nights
+  (`synth_night` -> `synth_rows` -> `analyse`).
+- Each night is 108 C1-C2 cells x 9 heads, plus the A/A cells, with
+  re-runs and confirms.
+- Rev 12's layout nights added r45's per-text interaction F test to
+  `analyse` (formsfixm's cProfile: `f_lower`'s bisection on a float
+  Satterthwaite df, which its lru_cache never hits, was 1.24 s of 1.95 s
+  per 20 nights).
+
+**C6/C6c add no cost:**
+- the synthetic nights generate C1 and C2 only (`for card in ("C1", "C2")`);
+- `launch_order` reads `cells(cards=STEP1)`, and STEP1 is C1, C2, C5 and AA;
+- `cmd_selftest`'s body is identical at base b51fd80bd, U5 28b2da326 and
+  this tip (the C6 drills are the separate `c6selftest`).
+
+Measured side by side for 240 s each on the same box, base, U5 and tip
+printed the same 33 rows and stopped at the same row, (G4).
+
+**Why the log was empty:** stdout to a file is block-buffered, and
+`timeout` killed the process before the buffer filled. formsfixm met the
+same thing ("the first attempt (timeout 5400, block-buffered) hit its bound
+with no output").
+
+**(c) The base's cost.** About 90 min alone on this box: formsfixm
+(2026-11-17) measured `selftest: 222 checks, 0 failed` from 07:38 to 09:08
+on be2994675. be2994675 is an ancestor of base b51fd80bd, whose cards.py
+differs from it by 4 comment lines. formsfixm asked for the selftest to be
+bounded at >= 7200 s; U5 used 3000 s. Earlier runs: formsfixl ~65 min
+(217 checks), formsfixk ~45 min (205).
+
+**(b) The fix** (commit 57a38e78c, small, no verdict change):
+- `main()` line-buffers stdout, so a killed run keeps its finished rows;
+- the docstring states the runtime and the >= 7200 s bound.
+
+formsfixm's named speedup (cache `f_lower` on a rounded df) is NOT done
+here. It changes the simulated numbers, can move the POWER_RECORD pins,
+and needs a full re-validation: more than small, so it is left for the
+manager's call.
+
+Per R-2 it is NOT run in-lane. The in-lane run, which had waited 8 min on
+the lock behind 746 and never started, was stopped with `scripts/safekill`.
+It is queued instead as `748-kit-bsu5fix-selftest` (key
+`kit-bsu5fix-selftest`, cap 7200, readiness `after kit-bsu5fix-mech`,
+TMPDIR set, log `scratch/bsu5fix/selftest_full.log`).
+
 ## OWED RUNS
 
 Queue jobs (non-timing), per `docs/dev/lanes/RUNS.md`:
@@ -187,6 +245,8 @@ Queue jobs (non-timing), per `docs/dev/lanes/RUNS.md`:
 - `747-kit-bsu5fix-mech`, key `kit-bsu5fix-mech`: S2930, S2931, S2933,
   readiness `after kit-bsu5fix-test`. No other row moved, and no row is
   new.
+- `748-kit-bsu5fix-selftest`, key `kit-bsu5fix-selftest`: cards.py's full
+  selftest (~90 min, cap 7200), readiness `after kit-bsu5fix-mech` (R-2).
 - **Timing** (U6, main's window, each bench box that runs V): C6's 108 timed
   cells and C6c's 84, under rule `9a2875a6bf089837`. The result writer must
   write the `#c6` header the rule's RECORD clause states.
