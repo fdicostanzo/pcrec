@@ -7898,3 +7898,21 @@ protected" was "a part used bare is available locally as `A.h` but exports nothi
 part used alone local access. That IS the one-use plain read through the binding's name; so `isodate &
 (isodate.year: < 2100)` at the top, where isodate is used alone, is ruled legal by default-export, and his
 2026-11-17 point 4 is revised by it. Told to him; not asked again.
+
+### 2026-11-22 OWNER, on argument-default: "would it change if the macro was B([a = A]) then a.d"
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings
+
+Asked **argument-default** (with B(rx) := `/${rx}xx/` using its argument alone, is the caller's `A.d` in `C :=
+B(A) & (A.d: <100)` (local) the caller's own read, legal, or (error) a compile error until the macro passes the
+label on; the two-use table where the candidates give different answers; the manager's leaning (error), with the
+transparent provided macros writing `[(=) = rx]`). HIS WORDS, whole:
+
+"argument-default: would it change if the macro was B([a = A]) then a.d"
+
+Class: a QUESTION on the question (the caller labels the argument at the call: `C := B([a = A]) & (a.d: <100)`);
+nothing answered on the slug. The manager's answer (told to him; from the rules, no matching run): it changes the
+SPELLING, not the question. `a` is a part label C writes, so the letter of label-reference is met ("a part label
+it writes"), and two arguments of one binding become distinguishable (`B([a = A], [b = A])`, `a.d` against
+`b.d`); but the part `[a = A]` is still handed to B, which still uses it alone, so where and whether its `d` is
+set is still B's doing: `a.d` and `A.d` are legal or refused together under either answer, and under
+closed-argument (ruled) both are errors where B closes the argument.
