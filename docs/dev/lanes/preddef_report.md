@@ -7,14 +7,16 @@ was not edited.
 
 ## STATE AT HANDOFF
 
-- Branch tip: the commit carrying this report (its WIP predecessors 9f9ebd437, ed37dc43a).
+- Branch tip: the commit carrying this report (report first committed at c31025fbe; WIP predecessors 9f9ebd437, ed37dc43a).
 - Rulings file `docs/dev/lanes/preddef_rulings.md`: last entry applied **R-2** (re-read before each commit and
   before this report; no R-3).
 - Lint: `timeout 120 python3 -I scripts/pred_doc_lint.py` → `checks passed 6628, failed 0`; `make -s
   test-plan-lint` clean.
 - Model: `timeout 900 python3 -I -B docs/dev/lanes/preddef_evidence/preddef_model.py` → `preddef_model: 22 checks,
   0 failed`; 22 plants each caught by their target check, none by traceback (`preddef_sabotage.out`).
-- Nothing in flight; nothing owed.
+- Nothing in flight.
+
+OWED: none
 
 ## RULINGS FOLDED
 
