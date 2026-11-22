@@ -8107,3 +8107,35 @@ nothing chosen is invisible to the definition), which is his after-the-fact add-
 One truth to add from pcrec itself: an extra capture does not change answers, but it is not free: what must be
 captured decides how the pattern can be compiled, so "do not interfere" holds for results, not for speed. A
 program that is ONE literal stays plain PCRE under either direction.
+
+### 2026-11-22 OWNER RULING — capture-export, in two parts: 1 no (a named group in a part of a composed program is not a capture by default); 2 yes (the program-level `capture(path)` asks for one); explicit and implicit captures
+tags: core/labels/export core/labels/export/capture-export core/labels/labels-vs-captures lib/structural/capture lib/structural/capture/add-on core/labels/export/caller-ambiguous core/patterns/literals
+
+Put to him as two smaller questions for a later time: "1. Is a named group in a part of a composed program a
+capture by default? 2. Is the program-level `capture(path)` the way to ask for one?" HIS WORDS, whole:
+
+"I can answer both now. 1. no. 2.  yes. But because 1 is no doesn't mean it couldn't become one depending on
+what is asked of it later. There's explicit captures that i want returned from the artifact then there are
+implicit ones need from what is requested of the predicate language."
+
+Class: a RULING on both parts, with a DISTINCTION in his words. (1) A named group in a part of a composed
+program is NOT a capture by default. (2) A capture is asked for at the program, by naming a label by its path
+(`capture(path)`; the spelling a placeholder). The distinction: EXPLICIT captures, "that i want returned from
+the artifact" (what the caller receives), and IMPLICIT ones, needed "from what is requested of the predicate
+language" (a group may be captured internally because a condition, a read or a backreference needs its text;
+his 2026-11-21 "although they might be internal captures"); "because 1 is no doesn't mean it couldn't become
+one depending on what is asked of it later". It answers the open capture-export (captures follow export, and
+further: they are asked for) and REVISES pure-label of 2026-11-21 ("captures are explicitly written either in
+literal form or using a macro like capture()") for the literal form inside a composed program.
+
+The manager's readings, for the fold lane to test and mark: (a) the caller receives exactly the EXPLICIT
+captures; an implicit one is never returned; (b) a program that is ONE literal stays plain PCRE, every group a
+capture, numbers included (said to him twice the same evening, not objected to; not ruled by these words); (c)
+"a part of a composed program" is read as every literal of a program that is more than one literal, the top
+level's own literals included (to be confirmed); (d) `capture(path)` names a label VISIBLE to the program, so
+the visibility path is the same one a test needs; the capture's name for the caller is the label's last step
+unless renamed (not stated); (e) the wrapper form `capture(name, x)` and "unless they are so declared"
+(helper-captures) are the EARLY forms his truths spoke against: not removed by these words; marked as awaiting;
+(f) caller-ambiguous: two captures of one name can now arise only from two `capture(..)` requests, an error at
+the second request (a reading); (g) capture-loop-value (what the caller gets for a captured label a loop sets)
+stays open.
