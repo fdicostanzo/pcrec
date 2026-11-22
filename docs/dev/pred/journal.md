@@ -808,3 +808,14 @@ stays FROZEN until the draft. FOR THE r83 FIX LANE (beyond the round's findings)
 (two kinds, the four-cell label/capture table, his agreement quoted); the hide-label warning's trigger and
 parked/ideas/label-hygiene restated (his observation). Owner questions: argument-default, capture-export,
 two-sources, idiom-confirm.
+
+## 2026-11-22 (night, later still) — program-options and hole-flags RULED (recorded only; subject frozen for r83)
+
+RULED: program-options (yes: a statement sets flags for the literals written after it in the same file; `m`,
+`s`, `n`, `x` first; never across an import; a literal's own flags win) and hole-flags (yes to all: `i` has a
+weak per-file value that does not propagate; at a hole only an EXPLICIT `i` / `-i` is inherited; `m` and `s` no
+longer inherited: reverses the 2026-11-19 list). His reason: consistent with the other program-level settings.
+NOT FOLDED: the documents are frozen for round r83. PLAN: after r83's fix lane merges, ONE opus fold lane
+(predflags) for these two rulings (core/patterns/flags, core/holes/flags and in-filter, lib/builtin/options, the
+warnings row, any_case, the examples resting on an inherited `m`/`s` or a non-explicit `i`), then its own critic
+round (ask main for the number), then delivery.

@@ -16,6 +16,10 @@ followups and we can continue this conversation later"). Committed docs win on a
   review r83"); ONE opus fix lane (it files the review as docs/dev/reviews/2026-11-22-r83-preddef1122.md, and
   ALSO adds the name table piece and restates the hide-label warning and parked label-hygiene: see the journal's
   last entry); merge; lint; P-21 `done:`; SendMessage main. No cron.
+- RULED AFTER THE r83 FREEZE, IN THE RECORD ONLY, NOT FOLDED: **program-options** (file-scoped flags `m s n x`
+  set by a statement, never across an import) and **hole-flags** (weak per-file `i`, not propagated; only an
+  explicit `i` inherited at a hole; `m`, `s` no longer inherited). After r83's fix lane merges: ONE opus fold lane
+  (predflags) for both, then its own critic round (ask main for the number), then delivery.
 - Lint `python3 -I scripts/pred_doc_lint.py`: 6,645 / 0 at the preddef merge (RUN IT BEFORE NAMING A TIP). The newest evidence
   model is `docs/dev/lanes/predfix82_evidence/predfix82_model.py` (22 checks; it carries the fixed engine: `_x`
   part labels close, a later `&` operand lowered once, uses counted in the definition's text; its SUCCESSOR check
