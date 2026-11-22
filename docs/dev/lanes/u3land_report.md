@@ -3,6 +3,8 @@
 ## STATE AT HANDOFF
 Branch lane/u3land (cut from main abb9db5d7). Merge commit e4f861642 (kit lane/memfn-k1108 @ d04ee5047), identity-pin commit dc28c5a50, ledger + plan commit 0ec0a8f35, this report after. Rulings file u3land_rulings.md: empty, no R-n applied. make strict clean, test-plan-lint clean, local test-codegen/registry/rxtsource GREEN at 0ec0a8f35. Note: the kit branch tip is ad3c8f1c2 (a journal-only commit past d04ee5047, `git diff --stat` = memfn/docs/journal.md); I merged d04ee5047 as briefed. The brief's premise check printed ad3c8f1c2, not d04ee5047; d04ee5047 is its ancestor.
 
+OWED: none (box-queue runs; the two cloud runs are listed under OWED RUNS)
+
 ## MERGE
 `git merge --no-ff d04ee5047` conflicted in the six predicted files; every hunk was an abi-number reader or U2's re-pin text, no two real code changes collided (src/gen/emit_dfa.c: one line, `PCREC_ARTIFACT_ABI`).
 - abi_changelog.md: new 111 entry (U3 text, re-pin noted) above U2's entry, which keeps main's "was 110" wording and the shared body.
