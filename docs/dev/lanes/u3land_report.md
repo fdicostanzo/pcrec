@@ -20,4 +20,4 @@ Branch lane/u3land (cut from main abb9db5d7). Merge commit e4f861642 (kit lane/m
 make -s strict: clean. make -s test-plan-lint: clean. `scripts/boxlock run --label u3land -- make test-codegen test-registry test-rxtsource` at 0ec0a8f35: no `*** [...test-X] Error` lines, every summary `checks failed: 0` (rxtsource 300 passed). One SKIP, the dogfood arm needing the bench checkout (known). Log: /var/tmp/pcrec-pcrec/scratch/u3land/val.log.
 
 ## OWED RUNS
-Cloud runs (below); lanecheck knows only box-queue keys, so the deliver file says owed: none.
+Cloud runs, ref 71a663754 (the report commit; differs from the validated 0ec0a8f35 by docs only), owner main, proven by ls-remote: `cloud/main/test/u3land` (kind test) and `cloud/main/recidentity/u3land` (kind recidentity), both at 71a663754. Verdicts arrive as CLOUD-DONE via queuewatch; not waited on. The full suite is owed per the ledger line. Lanecheck knows only box-queue keys, so the deliver file says owed: none.
