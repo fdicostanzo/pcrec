@@ -1,0 +1,58 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the loaded matcher, programs without conditions, against python `re`
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0), `(?:a|ab)??;` (0, 0, 0) over 341 texts; `atomic` (0, 0, 0), `hits` (its body as python `re`, `\Z` for `\z`: no newline in the texts) (0, 0, 0)
+== SCAN: every printed program span of the three base files against label-reference (textual checker)
+PASS SCAN: 203 program spans checked; 29 distinct spans still read a label bare, all on LEFT (F 16, Q 3, R 7, W 3); not on LEFT: none; on LEFT but no longer flagged: none
+   at 915b47e64: 193 spans checked, 44 distinct spans flagged; re-spelled since: 15
+   re-spelled: core.md `(B | A) & (l: <20)`
+   re-spelled: core.md `([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))`
+   re-spelled: core.md `/${days}/ & (w.index: >= 2)`
+   re-spelled: core.md `/${year}-x/ & (v: >= 2000)`
+   re-spelled: core.md `A & (B & (h: ..))`
+   re-spelled: core.md `atomic(B | A) & (l: <20)`
+   re-spelled: core.md `d & isodate & (year: < 2100)`
+   re-spelled: core.md `date & (v: <5)`
+   re-spelled: core.md `isodate & (year: ...)`
+   re-spelled: core.md `isodate & (year: years)`
+   re-spelled: core.md `pair & (x: <5)`
+   re-spelled: core.md `pub & (h: <5)`
+   re-spelled: core.md `time & ((h, m): >= (9, 30))`
+   re-spelled: core.md `x & isodate & (year: < 2100)`
+   re-spelled: library.md `hits(/\d+/) & occurs.none((hit: >= 100))`
+== RESPELL: each re-spelled printed line, the old program (read bare, as before) against the new
+   core/patterns/alternation: `(B | A) & (l: <20)` -> `[ab = B | A] & (ab.l: <20)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/patterns/atomic: `atomic(B | A) & (l: <20)` -> `[ab = atomic(B | A)] & (ab.l: <20)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/labels/labels-vs-captures/array-vs-passes: `([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))` -> `([ok = [it = item] & ((it.h, it.m): ("5", "3"))] | item)+ & some((ok: anything))`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/labels/export: `pub & (h: <5)` -> `pub & (pub.h: <5)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/labels/export/flat-read-outside: `pair & (x: <5)` -> `pair & (pair.x: <5)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/labels/export/flat-read-outside: `date & (v: <5)` -> `date & (date.v: <5)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/values/tuples: `time & ((h, m): >= (9, 30))` -> `time & ((time.h, time.m): >= (9, 30))`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/values/metadata: `/${days}/ & (w.index: >= 2)` -> `/${days}/ & (days.w.index: >= 2)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/holes/labels: `/${year}-x/ & (v: >= 2000)` -> `/${year}-x/ & (year.v: >= 2000)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+   core/holes/bare-condition/nested-scope: `C := B(A) & (d: <100)` -> `C := B(A) & (A.d: <100)`: new GIVES the printed answers; old read bare gives them; old under the rule refused
+PASS RESPELL: 10 lines re-spelled, every answer unchanged in every mode (annotated labels too); the old spelling refused under the rule; failing: none
+== HITS: his example and the atomic hit list; the record's four pasted lines, from the program text
+   record line 1 REPRODUCED: `[hits = occurrences(/\d+/)] & (hits.hit: <5)`
+   Plain read, the last hit: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0] (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`)
+   record line 2 REPRODUCED: `[hits = occurrences(/\d+/)] & occurs.none((hits.hit: >= 5))`
+   Every hit, a group question: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7] (`[hits = occurrences(/\d+/)] & occurs.none((hits.hit: >= 5))`)
+   record line 3 REPRODUCED: `[h = hits(/\d+/)] & (h.hit: <5)`
+   Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
+   record line 4 REPRODUCED: `[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`
+   Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
+PASS HITS: the record's four pasted lines reproduced: all 4; the bare `hits(/\d+/) & (hit: <5)` refused; "Every hit under 100" re-spelled `[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))`: its four prose answers agree, `1234`'s hit list [`1234`]
+== LABELONLY: the label-only group in the provided bodies; the census of provided bodies writing a group
+   provided bodies writing a group in rx text (library.md): {'hits': 'label-only', 'capture': 'hole-named', 'occurrences': 'label-only'}
+   `[hits = occurrences(/\d+/)] & (hits.hit: <5)`: label-only body against the old `(?<hit>...)` body (0, 0, 0) differing; captures now [], before ['hit']
+   `[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`: label-only body against the old `(?<hit>...)` body (0, 0, 0) differing; captures now [], before ['hit']
+   `hits(/a(?<g>x)?/) & (g: "x")`: label-only body against the old `(?<hit>...)` body (0, 0, 0) differing; captures now ['g'], before ['g', 'hit']
+   `occurrences(/(?<n>\d+)/ & (n: <100))`: label-only body against the old `(?<hit>...)` body (0, 0, 0) differing; captures now ['n'], before ['hit', 'n']
+PASS LABELONLY: census as stated; `(?<:hit>...)` answers as `(?<hit>...)` did on 4 programs and is no capture, the user's argument groups `g`, `n` stay captures; `hits(/a(?<g>x)?/) & (g: "x")`'s printed line reproduced
+== QUOTES: every owner sentence this lane prints, word for word in the record
+PASS QUOTES: 7 passages found in the record; missing: none; the four of this day printed: all
+== MARKS: statuses, the move, the statements rewritten
+PASS MARKS: label-only group under construction yes; parked piece gone yes; was: line on the new entry yes; call-prefix open yes; no statement says read flat yes; flat-read-outside statement yes; bodies label-only yes; no provided body called a capture yes
+== DOC: every formatted line verbatim in the documents
+PASS DOC: 14 lines; missing: none
+predref_model: 8 checks, 0 failed

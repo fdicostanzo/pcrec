@@ -334,6 +334,8 @@ defined: language
   M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED shape (each match of M reported as
   a match of the program) has no ruled spelling.
 WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `1 2 x 3` [`1 2 x 3`@0] (`occurrences(/\d+/, min = 2)`)
+Plain read, the last hit: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0] (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`)
+Every hit, a group question: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7] (`[hits = occurrences(/\d+/)] & occurs.none((hits.hit: >= 5))`)
 
 ### hits   [lib/search/hits]   ruled 2026-11-22
 `hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to: a fixed list of hits, judged after it.
@@ -352,6 +354,8 @@ defined: language
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
+Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
+Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
 
 ### contains   [lib/search/contains]   ruled 2026-11-15
 `contains(s)` is the plain gap body `/(?s:.*)(?:${s})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s.
