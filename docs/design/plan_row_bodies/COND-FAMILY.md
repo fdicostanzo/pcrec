@@ -7364,3 +7364,20 @@ or split (`9` is no hit; `43` gives the hits `4`, `3`). RUN (hand-built simulati
 & occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`):
 inner test: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` HOLDS (hits ['4', '3']) / WHOLE `43` HOLDS (hits ['4', '3']) / WHOLE `4 13` HOLDS (hits ['4', '1', '3']) / WHOLE `4 3 9` HOLDS (hits ['4', '3']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
 every number: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` FAILS (hits ['4', '9', '3']) / WHOLE `43` FAILS (hits ['43']) / WHOLE `4 13` FAILS (hits ['4', '13']) / WHOLE `4 3 9` FAILS (hits ['4', '3', '9']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+
+### 2026-11-22 OWNER, after the second hits example was checked: "critical is the @assert macros to test that it does what was intended"
+tags: lib/assert/assert lib/assert/each parked/ideas/assert parked/ideas/explainer parked/ideas/user-doc-traps lib/search/hits
+
+After the run showing that a test inside `hits`' argument chooses the hits (`4 9 3` HOLDS, `43` HOLDS) where
+"every number under 5" FAILS. HIS WORDS, whole:
+
+"nice. critical is the @assert macros to test that it does what was intended"
+
+Class: an OBSERVATION and a PRIORITY stated ("critical"); nothing asked as a ruling. The manager's answer (told
+to him; the manager's views): the ruled assertions (lib/assert/assert, 2026-11-14: `@assert.some(X)`,
+`@assert.none(X)`, `@assert.same(A, B)`; "Membership is `&`") already write this check for a WHOLE value: with
+`p` the program, `@assert.none("4 9 3" & p)` fails at compile time and shows the surprise; hand-worked from the
+run of the entry above, not run through a model. What they do NOT reach: an expectation about a SEARCHED or
+FIND-ALL report (which stretch, at which place) or about a label's value on a given subject ("on `4 13` the hits
+are 4 and 13"): no assertion form states those today. Recorded as a gap for the library discussion, with the
+under-construction lib/assert/each and parked/ideas/assert; nothing folded.
