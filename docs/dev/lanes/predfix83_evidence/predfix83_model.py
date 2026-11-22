@@ -45,7 +45,7 @@
 #   s3  BAREAMB: ANDTAG skips `$` and index reads                    s4  LISTCALL: LISTX off (an argument listed)
 #   s5  OUTSIDE: PROTECT off (an outside read sees protected sources) s6  OWNUSE: OWNUSE off (the loaded counting)
 #   s7  TWOUSE: (error) moves the labelled use of the argument too    s8  EXPR: EXPR off (a labelled expression exports)
-#   s9  PARAM: a parameter's label accepted in the body               s10 ARGOWN: ARGOWN off (the argument's reads moved)
+#   s9  PARAM: a parameter's label in the body accepted              s10 ARGOWN: ARGOWN off (the argument's reads moved)
 #   s11 LISTCOLL: two lists of one name read the FIRST mention        s12 EXAMPLE: PROTECT off for `B := A & A`
 #   s13 SETAND: the loaded set test back                              s14 VISIBLE: preddef's VISIBLE off (its s4)
 #   s15 GRID: one cell's deciding sentence read as legal (the bare index across `&`)
@@ -451,6 +451,9 @@ def own_reason(msg, scope):
 
 def use_definition(body, ctx, dname, params=None, mark=True):    # noqa: F811
     sc = "s%d" % (COUNTER[0] + 1)
+    if s83("s9") and params:                 # the plant: a parameter's label in the body accepted (dropped unread)
+        for pn in params:
+            body = re.sub(r"\s*&\s*\(%s\.\w+: [^)]*\)" % re.escape(pn), "", body)
     try:
         return OLD_D["use_definition"](body, ctx, dname, params, mark)
     except CompileError as e:
@@ -461,6 +464,10 @@ def binding_check(line):                                     # noqa: F811
     keep = len(NAMED)
     try:
         return OLD_D["binding_check"](line)
+    except CompileError as e:
+        if s83("s9") and "does not hold: rx." in str(e):
+            return None
+        raise
     finally:
         for d in (READPOS,):
             for i in [i for i in d if i >= keep]:
@@ -470,8 +477,6 @@ def binding_check(line):                                     # noqa: F811
 
 
 def prog(expr, binds=(), **opts):                            # noqa: F811
-    if s83("s9"):
-        opts = dict(opts, names="open")
     start = [None]
     _nm0 = len(NAMED)
     try:
