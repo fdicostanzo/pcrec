@@ -63,8 +63,9 @@ On every mover additionally:
       R-47 U3, docs/design/memfn/block_span.md §10.2) takes the -O0 RULE
       instead: no symbol of its family (`<fn>`, `<fn>__*`) is defined, and
       each function calling it holds a `pshufb` (any register width); its
-      control, judged by that rule ALONE, is an in-script plant (a `__w32`
-      without always_inline, V_O0_CONTROL; mech row S3516 disables the rule).
+      control, judged by that rule ALONE, is an in-script plant (the level
+      helper's pshufb replaced, text-neutral; V_O0_CONTROL; mech row S3516
+      disables the rule).
       A -O0 compile that fails or times out is an issue for EVERY selector,
       the always_inline ones included (o0_compile_issues; mech row S3517).
       Mech row S3515 plants the same `__w32` in the emitter: both the V head
@@ -291,8 +292,8 @@ def o0_inline_issues(ton, sel, obj, cell):
     §10.2 [R-7, R-8]): in the -O0 object (1) NO symbol of the selector's family
     (`<fn>`, `<fn>__*`) is defined, and (2) each function calling the selector
     holds at least one `pshufb` (`pshufb` or `vpshufb`, any register width: the
-    B = 16 rung is xmm only). Its control (1), a `__w32` without always_inline,
-    is the in-script V_O0_CONTROL (mech row S3516)."""
+    B = 16 rung is xmm only). Its control, a level helper holding no
+    shuffle (leg 2), is the in-script V_O0_CONTROL (mech row S3516)."""
     issues = []
     syms = subprocess.run(['nm', obj], capture_output=True, text=True).stdout
     defined = set(re.findall(r' [tT] (\w+)$', syms, re.M))
@@ -356,12 +357,14 @@ V_PLANTS = [
                            r'\1\2', ton, count=1)),
 ]
 # the -O0 rule's own control (CHECKS-1), judged by o0_inline_issues ALONE, on the
-# same clean V mover: `__w32` loses always_inline, so at -O0 it is a defined
-# symbol of the selector's family (rule leg 1). Applied to the artifact as
-# emitted (it is compiled), at the V_CONTROL_TARGETS' own -march.
-V_O0_CONTROL = ("__w32's always_inline dropped",
-                lambda raw: re.sub(r'(?m)^(static inline )__attribute__\(\(always_inline\)\) (int \w+_mf\d+_vs\d+__w32\()',
-                                   r'\1\2', raw, count=1))
+# same clean V mover: every head stays as emitted, but the level helper's
+# `_mm_shuffle_epi8` becomes `_mm_packus_epi16` (same arity, same 16 characters),
+# so at -O0 the function calling the selector holds no pshufb (rule leg 2) while
+# the text legs, (c)'s byte count included, see nothing. Applied to the artifact
+# as emitted (it is compiled) and to the preprocessed text the text legs read,
+# at the V_CONTROL_TARGETS' own -march.
+V_O0_CONTROL = ("the level helper's pshufb replaced by a packuswb",
+                lambda raw: raw.replace('_mm_shuffle_epi8(', '_mm_packus_epi16('))
 # the targets whose population must hold a clean V mover for V_PLANTS (K35): the
 # 32-byte one; at x86-64 (w16 only) the V selector calls `__body` (no mover)
 V_CONTROL_TARGETS = ('x86-64-v3',)
@@ -460,6 +463,7 @@ def main():
             if not mover:
                 continue
             rec['toff'], rec['ton'], rec['raw'] = toffm, ton, raw
+            rec['hdr'] = hoff   # the artifact's own a.h: it #includes it
             # (b) by the preprocessor: only the floor calls change
             onpp = on[:-2] + '_pp.c'
             with open(onpp, 'w', encoding='utf-8', errors='surrogateescape') as f:
@@ -580,21 +584,28 @@ def main():
                 ok('%s: control %s rejected by %s' % (tn, name, leg))
             else:
                 bad('%s: control %s NOT rejected by %s (%r)' % (tn, name, leg, why[:2]))
-        # CHECKS-1: the -O0 rule alone rejects a V level helper without always_inline
+        # CHECKS-1: the -O0 rule alone rejects a selector that does not reach its vector helper
         name, plant = V_O0_CONTROL
         planted = plant(vrec['raw'])
-        if planted == vrec['raw']:
+        planted_ton = plant(vrec['ton'])
+        if planted == vrec['raw'] or planted_ton == vrec['ton']:
             bad('%s: control %s did not apply' % (tn, name))
+        elif text_legs(vrec['toff'], planted_ton, t, adm)[2]:
+            bad('%s: control %s is seen by the text legs (%r)'
+                % (tn, name, text_legs(vrec['toff'], planted_ton, t, adm)[2][:2]))
         else:
+            ok('%s: control %s is invisible to the text legs' % (tn, name))
             cd = tempfile.mkdtemp(prefix='o0ctl.', dir=os.environ.get('TMPDIR'))
             with open(cd + '/a.c', 'w', encoding='utf-8', errors='surrogateescape') as f:
                 f.write(planted)
+            with open(cd + '/a.h', 'wb') as f:
+                f.write(vrec['hdr'])
             r = sh(['gcc', '-O0', '-c', '-march=' + tn, '-o', cd + '/a.o', cd + '/a.c'], 120, cwd=cd)
             if r is None or r.returncode:
                 bad('%s: control %s did not compile at -O0' % (tn, name))
             else:
                 why = o0_inline_issues(planted, vrec['sel'], cd + '/a.o', tn)
-                if any(' -O0: ' in w and 'yet its family defines' in w for w in why):
+                if any(' -O0: ' in w and 'holds no pshufb' in w for w in why):
                     ok('%s: control %s rejected by the -O0 rule alone' % (tn, name))
                 else:
                     bad('%s: control %s NOT rejected by the -O0 rule (%r)' % (tn, name, why[:2]))
