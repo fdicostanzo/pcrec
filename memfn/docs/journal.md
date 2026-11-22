@@ -4846,3 +4846,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - 09:57 Owner (via main, verbatim): "dense-not-target: close". No N for super dense; dense scope = 2+ hits per block; the plain loop is picked per case by the measured tables. Filed by main in plan_row_bodies/REQ-PAST-LAST.md.
 - 10:00 D3-FLOOR re-pin at l3land STOPPED under R-1 (rows outside the four classes: main's span_seed.rxt (U1) +41 compiles/cell, 38 members gained per c-vm cell, 3 at utf8/c-default; K146/K147 corpus rows add no member). No member lost, no floor drop. Kit ruled YES (gains only from committed corpus added after the 548b2a7ac pin); lane re-pins in worktrees/l3land, CHECK mode green, commits only the two tsvs.
 - 10:33 740 RED: one section, test-compound B4 G7 lever fence (c): span_pins.py, span_ksource.py, S3532 name --harness=span-head (new in U4, by design) outside the fence's ALLOW (triage /var/tmp/pcrec-pcrec/scratch/bsu4fix/triage740.md). Not a check defect. Fixed 23b325e99 (ALLOW + comment), make test-compound PASS; 740/741 requeued. Lesson: a U4 check that uses a harness lever needs its lever-fence row in the same commit (bsu4p's red, unseen because 738 was cancelled).
+
+## 2026-11-22 11:50 (kit)
+
+- 740 make test GREEN 11:13 (2318 s), 741 mech GREEN 11:48 (15 rows) on lane/bsu4fix 23b325e99.
+- Merged lane/bsu4fix into lane/memfn-k1108, then main (U3 landed at abi 111 e4f861642, K159, D202 add. 1-2) -> 0eceaaee1. Four append-only doc conflicts (critics.md, lanes history, reviews CLAUDE.md/NOTES.md): union, or main's side where main had already moved the same index lines. The abi readers auto-merged to main's 111. make strict clean, test-memfn-arch 32/0.
+- Tip validation queued on a detached worktree u4tip: 742 kit-u4tip-test, 743 kit-u4tip-mech. Delivery of U4 waits on both.
