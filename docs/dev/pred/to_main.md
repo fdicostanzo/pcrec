@@ -304,7 +304,7 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 - done: branch `lane/pred-rev28`, tip = the commit carrying this entry. Lane predfix77 (opus) merged: report
   `docs/dev/lanes/predfix77_report.md`; evidence `docs/dev/lanes/predfix77_evidence/` (20 checks, 20 plants caught).
   Review `docs/dev/reviews/2026-11-21-r77-predfold1121.md` + its directory + the NOTES index line. Docs only.
-  Lint `python3 -I scripts/pred_doc_lint.py` 5,752 / 0; `make -s test-plan-lint` clean.
+  Lint `python3 -I scripts/pred_doc_lint.py` 5,771 / 0 on the merged branch (the lane reported 5,752 before the merge); `make -s test-plan-lint` clean.
 - In it: everything P-17 listed as unreviewed (the folds of 2026-11-19 and the eight rulings of 2026-11-21), r77's
   fixes, and today's owner ruling array-in-piece (a group question inside a bound piece reads only what that piece
   can see; written in place it sees its whole definition).
