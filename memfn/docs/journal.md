@@ -4774,3 +4774,8 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - Merged lane/bsu3fix -> f861873a8, make strict clean; [responses] done (partial) R-47 U3 at d04ee5047.
 - Main accepted U3 for landing at abi 112 (L3 re-pins to 113 after it). Review numbers: U4 = r78, U5 = r79, U6 = r80.
 - Next: U4 (G2-V, T-table pins, rest of C18, sabotage (a)-(f)) per block_span.md §14.
+
+## 2026-11-22 08:13 (kit)
+
+- Main CORRECTION: U3 lands at abi 111 (main is 110; U2 was re-pinned 111 -> 110 at landing); L3 then 112; kit's next abi event asks main (113+). Kit branch merges main back after U3 lands.
+- U4 split into two disjoint lanes cut from ad3c8f1c2: bsu4g (opus) G2-V unit + whole with PROT_NONE guards, plants (a)(b), S3525-S3529; bsu4p (sonnet) 20 T-table pins, SPAN-SEED wiring, C18 rest, routing leg, DIFFER_PINS/FLOORS, plants (c)-(f), S3530-S3539. Both: no byte moves, no memfn/src edits; owed kit-bsu4{g,p}-{test,mech}. Code round r78 before U4 delivery.
