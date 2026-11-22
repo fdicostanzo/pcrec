@@ -7526,3 +7526,19 @@ through") and statement 3 ("the public labels of every part written or used ther
 sequence operator alike"); it differs from `[a = A]` only in the local name (the binding's own, `A.h`, by
 binding-prefix) and in giving later bindings no part-label step. If he MEANS the default to be protected, that is
 a new ruling reversing hole-export for an unlabelled part: put back to him as the question default-export.
+
+### 2026-11-22 OWNER, discussing the analogy: `B := A & A`, `C := B & (B.a: 9)`: "here B.a is always an error"
+tags: core/labels/export core/labels/flow core/labels/export/flat-read-outside core/labels/paths
+
+After the validation of his analogy (the default, A used alone, is public today) and the question default-export.
+HIS WORDS, whole:
+
+"Discussion: A := <label a> B := A & A   C := B & (B.a: 9) here B.a is always an error."
+
+Class: DISCUSSION, an example with his verdict; default-export not answered. CHECKED against the documents (told
+to him; a compile-time verdict, read from the rule text, no matching run): his verdict is what is ruled for the
+PLAIN read: across `&` a name both sides surface is the ambiguous reference, a compile error where it is
+referenced (label-flow, 2026-11-17), and a read from outside follows the inside rules (flat-read-outside,
+2026-11-21), so `(B.a: 9)` in C is an error, and nothing C can write repairs it: the two `A` are inside B. The
+group question is not an error there (`some((B.a: 9))` reads both sides' settings: the documents' line "Across
+`&`, a group question over both sides").
