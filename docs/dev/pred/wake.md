@@ -22,7 +22,7 @@ followups and we can continue this conversation later"). Committed docs win on a
   75d2318bd..tip; lenses RULING, EXAMPLES, GENERAL, the NAMES grid, a FLAGS grid, fix-induced; denylist as r83's
   launch prompt); rule (record entry "MANAGER — review r84"); ONE opus fix lane (files the review); merge;
   P-22 `done:`; SendMessage main. No cron.
-- ALSO RULED, RECORD ONLY (not in predspot's brief; for the lane AFTER r84, with its own round): **capture-export**
+- ALSO RULED, RECORD ONLY (not in predspot's brief; for the lane AFTER r84, with its own round): **zero-condition-binding: an error, reconsider later** (`c := (0: 5)`), and **capture-export**
   (a named group in a part of a composed program is NOT a capture by default; the program-level `capture(path)`
   asks for one; explicit captures returned from the artifact against implicit ones the language needs). And the
   SPELLING notes of the same night (journal: his reading of `[a = A]` as an array with a label set; `${=rx}`;
