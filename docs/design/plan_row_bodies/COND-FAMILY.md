@@ -7611,3 +7611,30 @@ inside it), and nothing else of the part. By the same ruled list: a rename `[(y 
 NOT STATED: a listed name the binding also writes itself (the manager's lean: the same label, last mention, as
 any two groups of one name); whether the part ALSO gets a path name; a listed label is an alias of the part's
 label (same settings, no new capture: a reading).
+
+### 2026-11-22 OWNER RULING — export-list: yes (a binding list on a part label selects which of the part's labels the binding takes); and a direction to clarify bindings against labels
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out core/conditions/form
+
+Asked "export-list: yes" to enter his proposal `[(=year) = isodate]` as ruled (the spelling a placeholder), with
+the manager's reading of it (the ruled named binding list applied to a part; the table of forms; three readings).
+HIS WORDS, whole (he typed the slug "Export list"):
+
+"Export list: yes. I will say that the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+Class: (1) a RULING on the slug: the form `[(=year) = isodate]` is in the language: the left side of a part
+label may be a named list; the binding takes the listed labels of the part as labels of its own (exported; read
+bare inside it) and nothing else of the part. The spelling stays a placeholder. (2) an OBSERVATION and a
+DIRECTION for the documents: "the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+The manager's readings, for the fold lane (R-1 of preddef's rulings file) to state and mark: (a) on his
+direction, the documents say: ONE form, the named list, with TWO targets decided by where it stands: left of
+`:=` it defines BINDING names from a map's members (core/modules/binding-list); left of `=` inside a part label
+it defines LABEL names from a part's exported labels; bindings and labels are two name spaces (a bare name left
+of `:` is a label, on the value side a binding: core/conditions/form), and the hide-label warning is where they
+meet; (b) the same ruled list forms carry over: a rename `[(y = year) = isodate]`, several, all `[(=) =
+isodate]`, all but one `[(=, _ = day) = isodate]`; (c) a listed label is an alias of the part's label: the same
+settings and array, no new capture; (d) a listed name the binding also writes itself is the same label (last
+mention); (e) the list form gives the part no path name; (f) only an EXPORTED label of the part can be listed
+(a `_` label or a label the part keeps protected is a compile error at the list).
