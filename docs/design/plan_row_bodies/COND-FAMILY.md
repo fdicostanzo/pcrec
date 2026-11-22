@@ -7667,3 +7667,15 @@ it arrives only as `B.x`, so the only labels that can meet a binding's name are 
 writes. What remains of the hide-label warning: a label written in the definition against a binding of the same
 name; and for BINDING names, a library adding a name under `(=) := import(..)` (core/modules/all-symbols). For
 the r83 fix lane: restate the hide-label warning's trigger and parked/ideas/label-hygiene accordingly.
+
+### 2026-11-22 OWNER, a question: the kinds of reference ("binding, label, macro argument, capture group name, ?")
+tags: core/operators/bindings core/labels/paths core/labels/backreferences core/labels/numbers core/modules/map core/values/metadata core/conditions/form
+
+HIS WORDS, whole: "So the types of reference are: binding, label, macro argument, capture group name, ?"
+
+Class: a QUESTION (a list to complete); nothing ruled. The manager's answer (told to him; collected from the
+pieces, a reading as a list): his four, plus: a group NUMBER (and `0`, the match so far); a MODULE MEMBER
+(`m.year`, a field by `.`); a METADATA field of a member (`.index`, `.label`); a parameter NAME at a call
+(`sep = ","`); the provided names reserved in call position and the `@` effects; and, under construction, a
+macro VARIABLE (a label parameter, `x:`) and a typed parameter. A table of these (what introduces each, where
+it may be written, what it resolves against) is proposed for the documents: the name table review r82 asked for.
