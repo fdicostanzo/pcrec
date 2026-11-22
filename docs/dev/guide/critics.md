@@ -318,3 +318,8 @@ Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r
 2. **A sabotage row cited as a guard-page witness must be benign without the guard.** Otherwise it witnesses the answer leg. When it is not benign, say so in its header and prove the guard by the harness's self-witness (PLANTSB-2).
 3. **A check that holds an ORDER over a table pins every row ahead of the moved one,** not only the rows the design names. In r78, T-deny ahead of V was held by test-axes only (PLANTSA-2).
 - (2026-11-22, r81 k159fix) **A stop or early-exit fix needs a BOUNDED witness beside its cost witness.** A CPU guard on an unbounded witness cannot tell a correct stop from an over-eager one (plant V1, a subset test in place of equality, moved 8 of 11 bounded widths and none of the existing table's rows).
+
+2026-11-22 r79, kit code round memfn-bsu5 (`docs/dev/reviews/2026-11-22-r79-memfn-bsu5.md`), accepted 2026-11-22 (kit manager):
+1. **A form-hash dep must cover every rendering the card times.** Enumerate the canonical instance's renderer branches against the card's cells, and plant one per branch (F1: the hash covered B = 32 only).
+2. **An A/A arm is a control only if it shares the comparison's axes,** and the rule says what a failed A/A does (F2: H64.b shared H64's layout pool).
+3. **"Written before data" includes the verdict clause and the unit.** Drill an all-unreadable run (F5, F6).
