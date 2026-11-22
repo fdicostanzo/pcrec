@@ -397,7 +397,9 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
  * the walk to `nfa->n` reaches, only sooner (nested `+` was n steps of an
  * n-state closure). The repeat is found by Brent's checkpoint: the set at
  * depths 0, 1, 2, 4, 8, … is kept (exactly, as membership stamps) and each
- * later frontier is compared with it exactly, so a cycle of period λ that
+ * later frontier is compared with it exactly (`w.cur` is duplicate-free: `wpush`
+ * admits a state once per generation across both closure phases, so equal size
+ * plus every member stamped IS set equality), so a cycle of period λ that
  * begins by depth μ is seen by depth 4·max(μ, λ); memory one set. The
  * `j > nfa->n` exit stays as the backstop: no walk is longer than before. */
 void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)

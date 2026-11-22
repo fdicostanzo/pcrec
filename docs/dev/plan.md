@@ -520,7 +520,18 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: owner ruling growth-time-bound 2026-11-21 ("fix first"): a fix lane stops the walk at a repeated frontier set (or another state-count-free bound) and keeps a CPU-second bound cell in the growth sweep
   refs: known_issues K159; docs/dev/lanes/plusprof_report.md; src/facts/kset.c:385; [GROWTH-SWEEP]
 
+
 ## Candidates ([OPTLOOP])
+- [WIDTH-PATH-BOUND] STATE:not-started — the width walk is still quadratic on acyclic and late-cycle patterns (path form is O(n+edges))
+  filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-1 (docs/dev/reviews/2026-11-22-r81-k159fix.md)
+  status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
+  trigger: a measured pattern where the walk's share of compile time matters (D77); a [GROWTH-SWEEP] row with the walk >= ~10% of an accepted compile
+  refs: known_issues K159; src/facts/kset.c; [K159-PLUS-SUPERLINEAR]; [GROWTH-SWEEP]; review r81 COMPLEXITY-3 (unlocks: a shared memoized frontier sequence for the kset + width walks, an emitted-size pre-check before E3 facts)
+- [K160-ALTNF-CUBIC] STATE:not-started — pcrec_altnf's class fold is about cubic in single-char alternatives; budget never binds
+  filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-2
+  status (2026-11-22): filed; nothing built. N distinct 4-byte characters, -e utf8: 0.61/3.38/24.2 s at 2000/4000/8000; the budget misses its own dominant term (K35 shape, a population nobody counts)
+  next: owner's fix go (growth-time-bound "fix first" applies), then profile (SUSPECTED: altnf.c:401-403 hash re-read inside the sweep :421-430; anf_cls_union over a growing list), count the dominant term in the budget; add a [GROWTH-SWEEP] cell (char-list alternation, -e utf8)
+  refs: known_issues K160; src/gen/altnf.c; [GROWTH-SWEEP]; docs/dev/reviews/2026-11-22-r81-k159fix.md
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
   filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
   status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped

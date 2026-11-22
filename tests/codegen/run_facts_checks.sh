@@ -579,11 +579,15 @@ fi
 # cost n frontier closures of an n-state frontier in `pcrec_width_walk`:
 # 20.2 s CPU at main 715b90b5f (lane plusprof) and the same at 92f5e77b6.
 # The repeated-frontier stop (src/facts/kset.c) brings the WHOLE compile to
-# 0.07 s CPU on the Linux dev box (lane k159fix, 2026-11-22). BOUND 5 s CPU,
-# DERIVED: 70x the fixed cost (a slower box or a sanitized build stays far
-# under it) and 4x under the unfixed cost on the FASTEST box we have (every
-# other box is slower, so the old walk fails everywhere); CPU, not wall, so
-# a loaded box does not move it, with a 120 s wall bound as the hang guard.
+# 0.05 s CPU on the Linux dev box (lane k159r81, 2026-11-22, 3 runs 0.04 to
+# 0.05 s, 52 MB RSS; the box was LOADED by the gate's count, phantom iowait
+# load, busy-cores 0.28; review r81 measured 0.28 s CPU under real load).
+# BOUND 5 s CPU, DERIVED: 18x the worst fixed cost measured (0.28 s; 100x
+# the quiet one) so a slower box or a sanitized build stays far under it,
+# and 4x under the unfixed cost on the FASTEST box we have (every other box
+# is slower, so the old walk fails everywhere); CPU, not wall, so a loaded
+# box does not move it, with a 120 s wall bound as the hang guard and a 1 GB
+# RSS bound (20x the measured 52 MB) as the allocation guard.
 # The value is written by hand: shortest match one byte (`c`), unbounded.
 wp='c|b'
 for i in $(seq 1 14); do
@@ -591,7 +595,7 @@ for i in $(seq 1 14); do
 done
 # ONE line: the K37 sweep reads a compiler site line by line, so the watchdog
 # must share the line with the compiler word.
-"$ROOT_DIR/scripts/watchdog" -l k159-width -c 5 -s 120 -L "$WORKDIR/wd.log" -- "$PCREC" --emit-facts --pattern "$wp" > "$WORKDIR/wb.l" 2> "$WORKDIR/wb.err"
+"$ROOT_DIR/scripts/watchdog" -l k159-width -c 5 -s 120 -m 1g -L "$WORKDIR/wd.log" -- "$PCREC" --emit-facts --pattern "$wp" > "$WORKDIR/wb.l" 2> "$WORKDIR/wb.err"
 wrc=$?
 wbv="$(sect "$WORKDIR/wb.l" facts | grep -F "$(printf 'fact=width\t')" | col value)"
 if [ "$wrc" -eq 123 ]; then
@@ -602,6 +606,37 @@ elif [ "$wbv" != '[1,inf)' ]; then
     bad "[facts-width-cpu] nested + 14 deep: width [$wbv], by hand [[1,inf)]"
 else
     ok "[facts-width-cpu] nested + 14 deep lists width [1,inf) within 5 CPU seconds"
+fi
+
+# 9c. [K159] BOUNDED WIDTH WITNESSES beside the cost guard (review r81
+# CHECK-1). The guard's witness is unbounded, so an over-eager stop (the
+# repeat test as a SUBSET test) also lists [1,inf) there and passes. These
+# bounded patterns have frontiers that share states across depths; an
+# over-eager stop turns their finite bmax into inf. Values by hand (shortest
+# and longest match in bytes) and identical on main 92f5e77b6 and this build:
+#   (?:a|bb)c      a|bb is 1 or 2 bytes, then c: [2,3]
+#   a{0,30}b       0 to 30 a's then b: [1,31]
+#   (?:ab){2,5}c   2 to 5 two-byte units then c: [5,11]
+printf '%s\n' \
+    '(?:a|bb)c	[2,3]' \
+    'a{0,30}b	[1,31]' \
+    '(?:ab){2,5}c	[5,11]' > "$WORKDIR/wbnd"
+nwb=0; wbbad=""
+while IFS=$'\t' read -r wpat wwant; do
+    nwb=$((nwb + 1))
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --emit-facts --pattern "$wpat" > "$WORKDIR/wbd.l" 2> "$WORKDIR/wbd.err"; then
+        wbbad="$wbbad '$wpat': refused ($(head -1 "$WORKDIR/wbd.err"));"; continue
+    fi
+    wgot="$(sect "$WORKDIR/wbd.l" facts | grep -F "$(printf 'fact=width\t')" | col value)"
+    [ "$wgot" = "$wwant" ] || wbbad="$wbbad '$wpat': width [$wgot], by hand [$wwant];"
+done < "$WORKDIR/wbnd"
+echo "REACH: $nwb bounded width witness(es)"
+if [ "$nwb" -ne 3 ]; then
+    bad "[facts-width-bounded] $nwb of 3 witnesses ran — the check is short"
+elif [ -n "$wbbad" ]; then
+    bad "[facts-width-bounded] bounded widths moved:$wbbad"
+else
+    ok "[facts-width-bounded] $nwb bounded patterns whose frontiers share states list the hand-derived finite width"
 fi
 
 # ---- [RUN-POS-SET] stage 2p: the piece set ----------------------------------
