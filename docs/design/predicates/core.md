@@ -428,7 +428,7 @@ Across `&`, a group question over both sides: WHOLE `12` HOLDS, `21` HOLDS, `33`
 A label is public unless its name begins with `_`; a binding exports the labels its own text writes and those a public part label passes; a part used alone is seen inside it and not exported.
 needs: core/labels/flow
 by: core/principles/namespace-at-reference
-see: core/labels/backreferences core/labels/export/flat-read-outside core/labels/export/capture-export
+see: core/labels/backreferences core/labels/export/flat-read-outside core/labels/export/capture-export core/labels/export/export-list
 1. A private label is visible only inside the binding it is written in.
 2. Inside a binding the public labels of everything written or used there are visible, read as labels are; a part
    USED ALONE (no part label) is reached by its own name, `A.h`, as under `[_A = A]` (a reading; the line "Used alone, inside").
@@ -452,8 +452,10 @@ see: core/labels/backreferences core/labels/export/flat-read-outside core/labels
   | `[_a = A]` | protected | none (statement 6) | `_a.h` (statement 6) |
   | `A` alone | protected, "with different access locally" | none (statement 3) | `A.h` (statement 2) |
   | `[_ = A]` | private | none (statement 7) | none, "not accessible locally to the binding" (statement 7) |
+  | `[(=year) = A]` | (export-list) | the listed `year` only, as the binding's own (core/labels/export/export-list) | `year` |
+- Some labels but not others: by part (`[year = ..]` beside parts used alone), by `_` on a group, or by the list.
 - A backreference or group number to a name its rx does not define is a compile error (core/labels/backreferences);
-  a `$` read resolves where written (core/values/reads); a filter operand's labels are visible like any others (a reading).
+  a `$` read resolves where written (core/values/reads); a filter operand's labels are visible as any (a reading).
 - A `_` label is, his words, "1. purely predicate labels and 2. cannot become exported captures (although they
   might be internal captures)"; its use: "a binding level label like the quote character in a string".
 Statement 3: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`pub & (pub.h: <5)`, pub := `[a = A] SEQ "!"`, A := `/(?<h>\d)/`)
@@ -516,13 +518,38 @@ see: core/labels/labels-vs-captures core/labels/export/caller-ambiguous lib/stru
 - The match is the same under both (the line below); the run lines name each candidate's captures.
 WHOLE `3!` HOLDS, `33!` FAILS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7! 4` [`3!`@0, `7!`@3] (`q`, q := `/${A}!/`, A := `/(?<h>\d)/`); the caller's captures: (a) none, (b) `h`
 
+### One label of a part, by a list   [core/labels/export/export-list]   ruled 2026-11-22
+The left side of a part label may be a named list: the binding takes the listed labels of the part as labels of its own (exported; read bare inside it) and nothing else of the part.
+needs: core/labels/export
+see: core/labels/paths core/spellings/placeholders core/modules/binding-list
+- His proposal: "I meant if isodate was defined and I wanted to reexport year only. [d = isodate] exports all. How
+  about this: [(=year) = isodate]". The spelling is a placeholder (core/spellings/placeholders).
+- It is the named binding list with a second target (one form, two name spaces: core/modules/binding-list).
+- The forms, from the binding list (a reading):
+  | the form | what the binding takes |
+  |---|---|
+  | `[(=year) = isodate]` | `year`, one label |
+  | `[(y = year) = isodate]` | `year` renamed `y` |
+  | `[(=year, =day) = isodate]` | several |
+  | `[(=) = isodate]` | all the part exports |
+  | `[(=, _ = month) = isodate]` | all but one |
+- A listed label is an alias of the part's label: the same settings and array, no new capture (a reading).
+- A listed name the binding also writes itself is the same label, the last mention (a reading).
+- The list gives the part no path name: `date.isodate.month` is no label (a reading, run).
+- Only an EXPORTED label of the part can be listed; a `_` label or one the part keeps protected is a compile error
+  at the list (a reading, run: `[(=hour) = isodate]`).
+date.year, from outside: WHOLE `2025-01-02!` HOLDS, `1999-01-02!` FAILS / SEARCHED `1999-01-02! 2025-03-04!` `2025-03-04!`@12 / FIND-ALL `2025-01-02! 1999-01-02! 2001-12-31!` [`2025-01-02!`@0, `2001-12-31!`@24] (`date & (date.year: >= 2000)`, date := `[(=year) = isodate] SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+date.month, from outside: modes: a compile error (`date & (date.month: "01")`, the same date: the list takes `year` only).
+All but one: WHOLE `2025-01-02!` HOLDS, `1999-02-03!` FAILS / SEARCHED `1999-02-03! 2025-01-02!` `2025-01-02!`@12 / FIND-ALL `2025-01-02! 1999-02-03! 2001-01-02!` [`2025-01-02!`@0, `2001-01-02!`@24] (`date & (date.day: "02")`, date := `[(=, _ = month) = isodate] SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+
 ### Part labels and paths   [core/labels/paths]   ruled 2026-11-22
 A part label `[x = A]` names part A; `x.h` is the label h as part A surfaces it, and a part label mentioned more than once names its last mention where the reference is written.
 needs: core/labels/flow core/labels/export
 - `[x = A]` makes a label and no capture: "setting labels is just the label using the group-label-not-capture
   syntax"; a named group in pattern text is a label and also a capture (core/labels/labels-vs-captures).
 - His `[=year]` is read as `[year = year]`, the part label named for the binding it holds (a reading; a
-  placeholder spelling, core/spellings/placeholders).
+  placeholder spelling, core/spellings/placeholders); it is the short way to export a part under its own name
+  (`pub := [=A] SEQ "!"` gives `pub.A.h`; a reading, run as `[A = A]`).
 - `x.h` is read under the one label rule inside A (a branching inside A resets `x.h`) (a reading).
 - A reference is ambiguous when the last mention of the name among the patterns it can see is not unique; the two
   sides of `&` are not ordered, across the sequence operator the later part's is the last (a reading).
@@ -771,6 +798,7 @@ needs: core/model/match core/labels/paths
   a group question (open record-in-some: core/conditions/form/record-in-some).
 - An entry runs to the next comma or the closing parenthesis; inside an entry `&` and `|` bind tighter than `:`.
 - Left of `:` a bare name, a number or a label path is a label; on the value side a bare name is a binding and a label is read `$x`.
+  A path's last step is the label; its earlier steps are sources, a binding's, a macro's name or a part label (a reading, his caveat: core/modules/binding-list).
 - A label named twice in one condition is a compile error, `$h` and `h` alike (`($h: <5, h: >2)`: a reading).
 - Inside a value left of `:`, a bare name (`((n + 1): <5)`) and `&` or `|` (`((h | m): <5)`) are compile errors
   for now (readings, run: model GAPS).
@@ -1711,6 +1739,12 @@ needs: core/modules/map
   `:=` and `.`, so a rename for a clash is `(wd = weekday) := import("dates")`.
 - Only what `.` reaches can be bound (public names).
 - The rule on a binding that hides a label applies to each bound name.
+- One form, two targets, decided by where it stands (a reading): left of `:=` it defines BINDING names from a
+  map's members; left of `=` inside a part label it defines LABEL names from a part's exported labels
+  (core/labels/export/export-list). Bindings and labels are two name spaces; the hide-label warning is where they meet.
+- His caveat, "Agree caveat bindings used to scope labels (A.a: 8)": left of `:` a path's LAST step is a label; its
+  earlier steps are sources, each a binding's name, a macro's name or a part label; a bare single name there is a
+  label the definition itself writes (a reading).
 modes: n/a (no matching involved)
 
 ### The shorthand in a call   [core/modules/call-shorthand]   ruled 2026-11-19
@@ -1933,6 +1967,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | every WARNING name (`pcrec.test.never`, `pcrec.dollar.filter`, ...) and the under-construction error's name | core/diagnostics/warnings, core/diagnostics/under-construction |
 | `import(...)`, `@export(...)`, the filter inside the import | lib/builtin/import, lib/builtin/export, core/modules/export, lib/builtin/import/filter |
 | the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
+| the EXPORT LIST on a part label (his `[(=year) = isodate]`) | core/labels/export/export-list |
 | a positional binding `(a, b) := X` | core/modules/positional |
 modes: n/a (spellings)
 
