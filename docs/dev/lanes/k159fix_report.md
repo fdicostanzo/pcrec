@@ -65,7 +65,7 @@ Dispatched: `scripts/cloudrun --owner main --kind test --name k159fix-a1e541f --
 
 ## STATE AT HANDOFF
 Committed on lane/k159fix; code complete at a1e541f8c. Last ruling applied: none (k159fix_rulings.md empty at every checkpoint, R-0).
-OWED: k159fix-sweep k159fix-widthcells k159fix-mech k159fix-timing (box queue) + cloud make test cloud/main/test/k159fix-a1e541f
+OWED: none as the deliver file declares it (written before any job was queued), but the lane DOES owe these four box-queue jobs and the cloud run: k159fix-sweep k159fix-widthcells k159fix-mech k159fix-timing + cloud/main/test/k159fix-a1e541f
 OWED box-queue jobs (queued 2026-11-22 ~09:10, behind kit 736; scripts in $PCREC_TMPDIR/scratch/k159fix/jobs/):
 - `k159fix-sweep`: emit_sweep vs 92f5e77b6, corpus + bench; green = rc 0.
 - `k159fix-widthcells` (after sweep): `differ=0 rc_diff=0`.
