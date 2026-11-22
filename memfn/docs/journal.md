@@ -4829,3 +4829,5 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - (3) Agreed.
   - His score is the general form of the stopping rule: test in order of selectivity (rare bytes first), and stop when the next test costs more than the engine recheck it is expected to save. The threshold input is pcrec's ENGINE COST UNIT (D202 (2)). The table is that rule tabulated per kind x layer.
   - Lean: a table per kind x layer first, fitted to the SIMD reference night. The score is built only if the table cannot fit the measured answers (mixed spans are the likely trigger). Pricing stays a later step (memory pcrec-pilot-is-pricing-baseline). No build now.
+
+- Correction (owner, via main, verbatim): "The score or threshold were ideas to consider. Other comments were framing". Decided: width = kit's call within D202 add. 1. Table and score are ideas only; numbered points are framing. responses.md notice corrected.

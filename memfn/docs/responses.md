@@ -3696,3 +3696,5 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - The cost per position is per layer (SIMD vs scalar).
     - Order: the table first, fitted at the SIMD reference night; the score only if the table cannot fit (mixed spans are the likely trigger).
   - No build go is asked or implied.
+
+- **correction to the D202 add. 2 notice above (2026-11-22)** — the owner corrected it, verbatim (relayed by main, filed in decisions.md D202 add. 2): "The score or threshold were ideas to consider. Other comments were framing". The only DECISION is that the width is the kit's call within add. 1. The table and the "sufficiently checked" score are ideas to consider. The three numbered points are framing, not rulings. The kit's readings stay readings. This supersedes the notice's "Proposed D202 addendum 2" sentence.
