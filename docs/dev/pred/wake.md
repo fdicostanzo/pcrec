@@ -22,7 +22,7 @@ Rewritten 2026-11-21 (box clock, about 19:15 EST; the record's entries are dated
   `docs/dev/reviews/2026-11-2x-r77-predfold1121.md` + directory + index line; denylist rule: no line-numbered
   plan.md or spec cites); (3) merge, lint, `make -s test-plan-lint`; (4) `done:` line in to_main.md (P-18) with the
   [COND-FAMILY] status line; SendMessage main.
-- Lint `python3 -I scripts/pred_doc_lint.py`: 5,546 / 0 at close (RUN IT BEFORE NAMING A TIP). Lanes predscope
+- Lint `python3 -I scripts/pred_doc_lint.py`: 5,569 / 0 at close (RUN IT BEFORE NAMING A TIP). Lanes predscope
   and predarr are merged and stopped; their worktrees (`worktrees/predscope`, `worktrees/predarr`) are for main to
   prune (in P-17). No cron. Nothing in the box queue (never ours).
 
