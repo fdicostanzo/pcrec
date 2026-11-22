@@ -22,6 +22,11 @@ followups and we can continue this conversation later"). Committed docs win on a
   75d2318bd..tip; lenses RULING, EXAMPLES, GENERAL, the NAMES grid, a FLAGS grid, fix-induced; denylist as r83's
   launch prompt); rule (record entry "MANAGER — review r84"); ONE opus fix lane (files the review); merge;
   P-22 `done:`; SendMessage main. No cron.
+- ALSO RULED, RECORD ONLY (not in predspot's brief; for the lane AFTER r84, with its own round): **capture-export**
+  (a named group in a part of a composed program is NOT a capture by default; the program-level `capture(path)`
+  asks for one; explicit captures returned from the artifact against implicit ones the language needs). And the
+  SPELLING notes of the same night (journal: his reading of `[a = A]` as an array with a label set; `${=rx}`;
+  `[ab = (B | A)]`; the comma form kept).
 - Lint `python3 -I scripts/pred_doc_lint.py`: 6,830 / 0 at P-21 (RUN IT BEFORE NAMING A TIP). The newest evidence
   model is `docs/dev/lanes/predfix82_evidence/predfix82_model.py` (22 checks; it carries the fixed engine: `_x`
   part labels close, a later `&` operand lowered once, uses counted in the definition's text; its SUCCESSOR check
