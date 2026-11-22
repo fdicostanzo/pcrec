@@ -103,6 +103,12 @@ A regex in his example or ruling is run before it is recorded; a mismatch with h
 ### Use the rules as defined (the manager's name)   [core/principles/labels-as-defined]   principle 2026-11-19
 "i say the strategy is to use labels as they are defined and see if there is a problem."
 
+### A label names a spot (the manager's name)   [core/principles/label-names-spot]   principle 2026-11-22
+"The label is not to the regex abstractly, it's to the spot in the pattern where the regex is being inserted."
+"It's not a piece of the pattern. It's a template of the rx that might be placed into the pattern."
+His ground for argument-default (core/labels/paths/argument-default): a macro's argument is a template, so a label
+reaches it only where a body lays it into the pattern.
+
 ## The model   [core/model]
 
 ### What a match is   [core/model/match]   ruled 2026-11-17
@@ -271,11 +277,11 @@ needs: core/model/match core/model/table
 - In a search an atomic part does not stop the search going on to later starts.
 - The name `atomic(X)` used here is the library's body around PCRE's atomic group (lib/control/atomic); the
   backtracking verbs and a no-re-entry sequence are ideas (parked).
-- `atomic(X)` uses X alone in its body, so a label on the call (`[ab = atomic(B | A)]`, `ab.l`) reaches none of X's
-  labels (default-export, by the manager's reading (e) of it); the label is written on the argument, the caller's own
-  text (awaits argument-default).
+- `atomic(X)` passes X's labels on at its spot (lib/control/atomic, lib/convention/argument-labels): the caller
+  reads them after it through the call, `atomic.l`; a part label written on the argument (`atomic([ab = B | A])`,
+  then `ab.l`) labels a template, a compile error (core/labels/paths/argument-default).
 see: lib/control/atomic parked/ideas/atomic
-WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic([ab = B | A]) & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`) (awaits argument-default)
+WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)`)
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
 Labels set inside a lookahead are visible after it, read by the usual label rules, as in PCRE.
@@ -642,7 +648,7 @@ see: lib/modifiers/length core/labels/export core/holes/bare-condition/nested-sc
   groups); the plain idiom is included (`isodate & (isodate.year: ..)`, ruled by default-export: core/labels/paths/one-use-read).
 - A label from a macro call's body is reached through the macro's name or a label on the call (ruled,
   core/labels/paths/call-prefix); from an argument that is a binding, through the binding where visible (ruled,
-  core/labels/paths/closed-argument; where the body uses it alone, core/labels/paths/argument-default); from a typed parameter the source is not ruled (core/operators/bindings/macro-types).
+  core/labels/paths/closed-argument; where the body uses it alone, a compile error, core/labels/paths/argument-default); from a typed parameter the source is not ruled (core/operators/bindings/macro-types).
 - It revises core/labels/export/flat-read-outside and hole-export (core/labels/export statement 3, which
   default-export since limits to what a binding exports), and his
   example 1 in core/holes/bare-condition/nested-scope ("C can see d as a flat look into A"): what a flat read
@@ -667,28 +673,28 @@ see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-sco
 - A labelled call stays legal and, for one call, reads the same label (the line "Labelled"); programs written
   that way are not re-spelled.
 - A prefix `X.d` reads `d` as X exports it (a reading, run): a call exports what its body exports (core/labels/export statement 3), so `B.d`, and
-  `c.d` under `[c = B(A)]`, are the body's own `d` or one a part label in the body passes (`B(rx) := /${[p = rx]}xx/`); where the body writes none and labels none (`B(rx) := /${rx}xx/`) both are compile errors. `A.d` is the caller's read of
-  its own argument (awaits argument-default; two sources: core/labels/paths/two-sources). A group in a USER macro's
+  `c.d` under `[c = B(A)]`, are the body's own `d` or one a part label in the body passes (`B(rx) := /${[p = rx]}xx/`); where the body writes none and labels none (`B(rx) := /${rx}xx/`) both are compile errors. `A.d` reads A's
+  `d` only where the body labels the spot or passes the labels on (case 2, below). A group in a USER macro's
   body is a capture as in any user literal: helper-captures is for provided bodies only (a reading).
-- Case 2, an argument that is a binding (`A.d` in `B(A)`), ruled with closed-argument: legal exactly where `d` is
-  visible through the call, reading A's own `d` as it reaches the caller (that `d`: a reading, as above) (`C :=
-  B(A) & (A.d: <100)`, core/holes/bare-condition/nested-scope); his words on it, "i'd say A.d is legal there"; where
-  the macro closes the argument's labels, a compile error (core/labels/paths/closed-argument). A body using the
-  argument alone passes it through no call: awaits argument-default (core/labels/paths/argument-default).
-- An argument the body uses twice (`pair(p) := /${p},${p}/`) is written once in the caller, so `A.d` is a plain
-  read of one use, the last mention as it reaches the caller (a reading, run: the line "An argument used twice by
-  the body"; awaits argument-default). An argument written in place is the caller's own text, read bare
-  (`hits(/a(?<g>x)?/) & (g: "x")`; awaits argument-default); a parameter's label inside the body is not nameable
+- Case 2, an argument that is a binding (`A.d` in `B(A)`), ruled with closed-argument ("i'd say A.d is legal
+  there") and settled strictly by argument-default: legal only where the body labels the spot or passes the labels
+  on, a compile error where it uses the argument alone or closes it (core/labels/paths/argument-default, closed-argument).
+- An argument used twice: with the list on both spots (`pair(p) := /${[(=) = p]},${[(=) = p]}/`) the caller reads
+  `pair.d`, the last mention (the manager's answer on wrapper-export; the line "An argument used twice by the
+  body"). A group written in an argument in place is the template's (`hits(/a(?<g>x)?/) & (g: "x")` is a compile
+  error; `hits.hit.g`: lib/search/hits); a parameter's label inside the body is not nameable
   (core/holes/bare-condition/nested-scope); a call's label reaches no argument by the argument's name (core/labels/paths).
 - A part label written in the definition named like the macro (`[hits = ..] & hits(..)`) wins: `hits.hit` is the
   part label's, with the hide-label warning (a reading, run: the line "A part label named like the macro").
 By the macro's name, his example: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`hits(/\d+/) & (hits.hit: 3)`)
 Labelled: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`[h = hits(/\d+/)] & (h.hit: 3)`)
 Called twice, a group question reads every call: WHOLE `9;1` HOLDS, `1;9` HOLDS, `1;1` FAILS / SEARCHED `x;1 9;` `x;1 9;`@0 / FIND-ALL `9;1 1;1 1;9` [`9;1 1;1 1;9`@0] (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & some((occurrences.hit: "9"))`)
-A's own d, through the argument (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`) (awaits argument-default)
+A's own d, the body using the argument alone (case 2): modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`: `d` is not visible through the call; argument-default).
+A's own d, the body labelling the spot (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
 d as the call exports it, the body's own: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
 By the macro's name: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (B.d: <5)`, the same A and B)
-An argument used twice by the body: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair(A) & (A.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${p},${p}/`) (awaits argument-default)
+An argument used twice by the body: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair(A) & (pair.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${[(=) = p]},${[(=) = p]}/`)
+Used twice alone: modes: a compile error (`pair(A) & (A.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${p},${p}/`: argument-default).
 Called twice, a plain read: modes: a compile error (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")`: label the call).
 By the macro's name, the body writing no `d`: modes: a compile error (`B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`; `[c = B(A)] & (c.d: <5)` alike: the argument is used alone in the body, so the call exports no `d`).
 A part label named like the macro: WHOLE `a1b3` HOLDS, `a3b9` HOLDS, `a12` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a3 b9 c1` [`a3 b9 c1`@0] (`[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)`); the part label wins, with the hide-label warning
@@ -703,69 +709,61 @@ needs: core/labels/paths/call-prefix core/labels/export
   B(A) ] does not allow c.A", is in core/labels/paths).
 - `[_ = A]` makes none of A's labels visible anywhere outside A (core/labels/export statement 7), so
   `B(rx) := /${[_ = rx]}xx/` closes them: where and whether A's `d` is set is then B's own business.
-- Readings (each a reading): "visible through the call" is by core/labels/export where the body labels the argument
-  (a `_` part label or `[_ = rx]` closes it); where the body uses it alone it awaits argument-default (below); an argument the body uses twice: `A.d` is the last mention as it reaches the caller (the
-  line "An argument used twice by the body", core/labels/paths/call-prefix); the error is at the reference and
-  names the macro that closes the label (its message the manager's call).
-- It settles call-prefix case 2: legal, under this condition. Under default-export a body that uses the argument
-  alone (`${rx}`) exports none of its labels, so whether `A.d` is then visible is open (awaits argument-default,
-  core/labels/paths/argument-default); `[_ = rx]` and a `_` part label close it under either candidate.
-Visible through the call: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`) (awaits argument-default)
+- "Visible through the call", settled strictly by argument-default (ruled): only where the body labels the spot
+  (`[p = rx]`, his example 3's `[dd = rx]`) or passes the labels on (the export list, lib/convention/argument-labels);
+  a `_` part label or `[_ = rx]` closes it; a body using the argument alone passes nothing, so `A.d` is a compile
+  error (core/labels/paths/argument-default). The error is at the reference and names its rule (its message the
+  manager's call; a reading).
+- It settles call-prefix case 2: legal, under this condition.
+Visible through the call: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
+Used alone by the body: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`: argument-default).
 Closed by the macro: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`; `[c = B(A)] & (c.d: <5)` alike: no `d` is exported, a compile error by the reading in core/labels/paths, a label not visible through its source).
 Closed by a `_` part label: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_p = rx]}xx/`; `c.d` and `B.d` alike; inside its binding a `_` part label is an ordinary one: the line "Statement 6", core/labels/export).
 
-### The caller's read of an argument the body uses alone   [core/labels/paths/argument-default]   open argument-default 2026-11-22
-Where a macro's body uses an argument alone, is the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) its own local read, legal, or a compile error?
-needs: core/labels/paths/closed-argument core/labels/export
-see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/control/peek lib/search/hits
-- What is ruled: "default-export: protected" (a part used alone exports nothing; read here, an argument the body
-  uses alone, `${rx}`, is not exported by the call, so `B.d` and `c.d` are compile errors under both candidates);
-  closed-argument, "`A.d` is legal in the caller exactly where `d` is visible through the call"; and his example 1
-  (core/holes/bare-condition/nested-scope), `C := B(A) & (d: <100)`, "is legal. C can see d as a flat look into A".
-- Candidates: (local) the caller wrote the argument, so `A.d`, or a group written in place, is its own local read
-  of its own part, legal (the line "(local)"); (error) no label of it is visible through the call, so the read is a
-  compile error, by his "what would A.d mean if d no longer was visible?" (the line "(error)"). The match is the
-  same under both except where a body uses its argument both alone and labelled: (local) reads the use alone,
-  (error) the labelled one's, which the call exports (the lines "Both uses", B(rx) := `/${[p = rx]}-${rx}/`).
-- The cost of (error) across the provided library: no caller spelling reaches an argument's label through any
-  provided macro whose body uses its argument alone (peek, hits, occurrences, atomic, endsWith, list_of, rx.repeat)
-  until the library labels its argument in each body. A read written INSIDE an argument beside the argument's own
-  group is the caller's own text, legal under both (a reading, the manager's; run: model ARGOWN,
-  `occurrences(/(?<n>\d+)/ & (n: <100))`, the re-split example of lib/search/occurrences).
-- The lines and sentences that await it (each line run under both: under (local) the printed answers, under (error)
-  a compile error): call-prefix's "A's own d" and "An argument used twice by the body", closed-argument's "Visible
-  through the call" and its reading of "visible through the call", two-sources' (b) in place and its (a) in place
-  (which source the bare read reaches), nested-scope's "Example 1", core/patterns/atomic, and in the library peek,
-  hits, endsWith, list_of, rx.repeat's labelled item, occurrences' argument group and when's "Labels the test sets
-  are visible in then".
-- Its library face (the manager's): do `hits` and `occurrences` export their argument's labels through the
-  label-only `hit` (`(?<:hit>${x})`: `h.hit.g` under `[h = hits(..)]`)? Its answer is this question's.
-- Under either, a macro passes an argument's labels on by labelling it in its body, his example 3 (the line
-  "Through a part label in the body").
-(local): WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
-(error): modes: a compile error (the same program: `d` is not visible through the call).
+### The caller's read of an argument the body uses alone   [core/labels/paths/argument-default]   ruled 2026-11-22
+Where a macro's body uses an argument alone, the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template.
+needs: core/labels/paths/closed-argument core/labels/export core/principles/label-names-spot
+see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/convention/argument-labels
+- His words: "argument-default: for me this is an error."; his reason is the principle core/principles/label-names-spot.
+- It revises his example 1 (core/holes/bare-condition/nested-scope): `C := B(A) & (A.d: <100)` with B(rx) :=
+  `/${rx}xx/` is a compile error; it settles call-prefix case 2 and closed-argument's "visible through the call" in
+  the strict sense: visible only where the body puts a label on the spot (his example 3, `[dd = rx]`) or passes the
+  labels on (the export list; lib/convention/argument-labels).
+- Readings of it (the manager's, each run): (a) a part label written ON an argument at a call labels a template, not
+  a spot: `B([a = A]) & (a.d: ..)` is a compile error, as is `rx.repeat([a = rx.digit], min = 1)` then `a`;
+  (b) a group written in an argument passed in place is not the caller's to read bare (`B(/(?<d>\d)/) & (d: <5)`
+  is a compile error): the body's `d` is the only one the caller reaches, as `B.d` (two-sources' first shape);
+  (c) a condition written INSIDE the argument beside its own group travels with the template and stays legal
+  (`occurrences(/(?<n>\d+)/ & (n: <100))`, the re-split example of lib/search/occurrences);
+  (d) a spot the body labels exports the argument's exported labels through that label (`B.dd.d`; core/labels/export
+  statement 3); the label-only `hit` of `hits` / `occurrences` is such a spot (`hits.hit.g`).
+- A binding used alone in a definition IS placed: its name stands for its spot there (core/labels/paths/binding-prefix).
+- A body using its argument both alone and labelled: the labelled spot's labels, which the call exports (the line
+  "Both uses").
+- The refusal is at the reference and names this rule; its message is the manager's call (a reading).
+The caller's own read: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: `d` is a label of the template, not of a spot).
+A label written on the argument: modes: a compile error (`C := B([a = A]) & (a.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`: the manager's reading (a)).
 Through a part label in the body: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)
-Both uses, (local): WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`, A := `/(?<d>\d)/`)
-Both uses, (error): WHOLE `7-3` FAILS, `3-7` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`, A := `/(?<d>\d)/`)
+Both uses: WHOLE `7-3` FAILS, `3-7` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`, A := `/(?<d>\d)/`)
 
 ### A name with two sources   [core/labels/paths/two-sources]   open two-sources 2026-11-22
 When a name read bare has two sources in its definition, a group written in the definition's own text and a label a part holds, does the read reach the last mention or the source written here?
 needs: core/labels/paths/closed-argument core/labels/flow
 see: core/labels/paths/call-prefix core/labels/paths/label-reference
-- The two shapes: an argument written in place, the body setting a `d` of its own (`B(/(?<d>\d)/) & (d: <5)`); a
-  name written in the definition and also held by a used binding (`/(?<h>\d)/ SEQ A & (h: <5)`).
+- The two shapes: (first) an argument written in place, the body setting a `d` of its own (`B(/(?<d>\d)/) & (d: <5)`); a
+  (second) name written in the definition and also held by a used binding (`/(?<h>\d)/ SEQ A & (h: <5)`).
 - The rules that part (the review's finding): label-reference, "a bare name is a label the definition itself
   writes", points at the source written here; flow, "a name both parts surface is one label, the last mention",
   at the last mention. Through a binding the printed `A.d` reads A's own `d` (core/labels/paths/call-prefix, a
   reading on the run lines he was shown before closed-argument, "it reads `d` as it reaches the caller").
-- Candidates: (a) the last mention, as the label reaches the caller (what the in-place forms answer today, the
-  lines (a)); (b) the source written here (the lines (b), spelled with a part label, which answer so under either
-  candidate). Neither answer is applied.
-- What default-export changes (a reading): the call exports its body's `d` and not the argument's, so the first
-  shape's in-place `d` is a source only if argument-default makes it visible to the caller (core/labels/paths/argument-default;
-  under its candidate "error" the line (b) in place is a compile error); the second shape, at the top, is unchanged.
-(a) the label as it reaches the caller, an argument written in place: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(/(?<d>\d)/) & (d: <5)`, B(rx) := `/${rx}-(?<d>\d)/`)
-(b) the source written here, as spelled with a part label: WHOLE `7-3` FAILS, `3-7` HOLDS / SEARCHED `3-7 7-3` `3-7`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B([x = /(?<d>\d)/]) & (x.d: <5)`, B(rx) := `/${rx}-(?<d>\d)/`) (awaits argument-default)
+- The FIRST shape is settled by argument-default (the manager's reading (b) of it): the in-place `d` is the
+  template's, not a source the caller reads; the body's `d` is the only one it reaches, as `B.d` (the line "The
+  first shape, settled"); the bare read and the part label on the argument are compile errors.
+- The SECOND shape stays open. Candidates: (a) the last mention, as the label reaches the caller (the line (a));
+  (b) the source written here (the line (b), spelled with a part label, which answers so under either candidate).
+  Neither answer is applied.
+The first shape, settled: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(/(?<d>\d)/) & (B.d: <5)`, B(rx) := `/${rx}-(?<d>\d)/`)
+The first shape, read bare: modes: a compile error (`B(/(?<d>\d)/) & (d: <5)`, B(rx) := `/${rx}-(?<d>\d)/`: the in-place `d` is the template's; `B([x = /(?<d>\d)/]) & (x.d: <5)` alike, by the reading (a)).
 (a) the last mention, a name written here and surfaced by a used binding: WHOLE `1,7` FAILS, `7,1` HOLDS / SEARCHED `7,1 1,7` `7,1`@0 / FIND-ALL `1,7 7,1 1,2 9,9` [`7,1`@4, `1,2`@8] (`/(?<h>\d)/ SEQ A & (h: <5)`, A := `/,(?<h>\d)/`)
 (b) the group written here, as spelled with a part label: WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9` [`1,7`@0, `1,2`@8] (`[w = /(?<h>\d)/] SEQ A & (w.h: <5)`, A := `/,(?<h>\d)/`)
 
@@ -1492,8 +1490,9 @@ by: core/principles/namespace-at-reference
   reading, the manager's; run: model TOPLEVEL).
 - Through a macro's parameter hole as well: in his example `C := B(A) & (d: <100)` (B(rx) := `/${rx}xx/`), "C can
   see d as a flat look into A"; under label-reference it is spelled `C := B(A) & (A.d: <100)`, what his flat look
-  meant (core/holes/bare-condition/nested-scope; the argument's source: core/labels/paths/call-prefix); awaits
-  argument-default, B using the argument alone (core/labels/paths/argument-default).
+  meant (core/holes/bare-condition/nested-scope); revised by argument-default: B using the argument alone, the
+  read is a compile error; it is legal where B labels the spot (his example 3) or passes the labels on
+  (core/labels/paths/argument-default).
 WHOLE `2025-x` HOLDS, `1999-x` FAILS / SEARCHED `1999-x 2025-x` `2025-x`@7 / FIND-ALL `2025-x 1999-x 2001-x` [`2025-x`@0, `2001-x`@14] (`/${year}-x/ & (year.v: >= 2000)`, year := `/(?<v>\d{4})/`)
 
 ### Same-name groups through a hole   [core/holes/same-name]   ruled 2026-11-19
@@ -1568,9 +1567,8 @@ see: core/labels/flow core/operators/bindings/label-variables core/holes/bare-co
   construction ("bindings define scope").
 - His three examples, "rather than rules", with A := `[d = digits]` (his spelling; the runs use `rx.digits`):
   1. `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)` "is legal. C can see d as a flat look into A. C cannot see rx
-     as its a binding variable not a label." Spelled under label-reference `C := B(A) & (A.d: <100)`: what his
-     flat look meant is what `A.d` means (core/labels/paths/label-reference, core/labels/paths/call-prefix);
-     under default-export B uses rx alone, so it awaits argument-default (core/labels/paths/argument-default).
+     as its a binding variable not a label." (spelled `A.d` under label-reference); REVISED by argument-default
+     ("for me this is an error"): a compile error (core/labels/paths/argument-default; the line "Example 1, the spot labelled").
   2. `B(rx) := /${rx}xx/ & (d: <100)` "is incorrect".
   3. `B(rx) := /${[dd = rx]}xx/ & (dd: <100)` "would be correct".
 - Readings (the manager's): a piece is a binding or a macro body, and what is written inside ONE definition
@@ -1579,7 +1577,8 @@ see: core/labels/flow core/operators/bindings/label-variables core/holes/bare-co
   each pass a fresh use and `B SEQ ";"` looped twice agrees with it written out (the lines "A user's loop",
   "Written out"; inside one definition the loop reads its previous pass, "One definition" with the loop).
 Match so far: WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
-Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (A.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`) (awaits argument-default)
+Example 1: modes: a compile error (`C := B(A) & (A.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`: argument-default).
+Example 1, the spot labelled: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)
 Example 3: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
 Passing the condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${inner((h: <5))}/`, inner(c) := `/x${c}/`)
 Two definitions: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
@@ -1901,6 +1900,7 @@ see: core/labels/labels-vs-captures core/labels/numbers core/values/metadata cor
 | binding | a module member | `m.year` | core/modules/map |
 | binding | a provided name | the built-ins, the library's names | core/operators/statements, core/modules/default-set |
 | binding | a parameter name at a call | `sep = ","` | core/operators/bindings |
+| binding | an argument at a call: a template, never labelled; its labels reach the caller only through the spot a body labels or lists | `A` in `B(A)` | core/labels/paths/argument-default, core/principles/label-names-spot |
 - "Has a label" and "is a capture" are independent (his note "I note that captures can have no label."; the
   manager's reading of it, core/labels/numbers for where a number is allowed):
 | | is a capture | is not a capture |
@@ -1941,6 +1941,7 @@ needs: core/values/functions core/operators/statements core/modules/conflicts
 | a value of several strings left of `:`; a value entry inside a group question (both for now) | core/conditions/form/value-left |
 | a plain read through a binding's or a macro's prefix, used more than once (it says to label the part); the index through `&`-joined uses (for now) | core/labels/paths/binding-prefix, core/labels/paths/call-prefix |
 | the caller's `A.d` where the macro closes its argument's labels (`[_ = rx]` or a `_` part label in its body) | core/labels/paths/closed-argument |
+| a read of an argument's label by the caller where the body uses the argument alone (`A.d`, a group written in place); a part label written on an argument at a call (`B([a = A])`, then `a.d`) | core/labels/paths/argument-default |
 | a quantifier on a condition | core/conditions/quantified |
 | a piece of a filter operand that might look outside the matched text | core/filters/operand-context |
 | an rx where the other kind is needed (can match, can filter) | core/filters/kinds |

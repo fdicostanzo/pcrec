@@ -622,9 +622,11 @@ rulings:
 - 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); his observation (discoverability, not a ruling) puts the "same item" idiom on this list: item 30
 - 2026-11-17 (class: PRINCIPLE, reflections) "Also, I and try to keep this in mind, it's a matching language not a finding language." (record: "2026-11-17 OWNER, on what kind of language this is")
 - 2026-11-17 (class: RULING; the trap a remark) "if there was a warning like blah.unused, the library could define mod.fn.unused and both could be ignored. Not sure if that's helpful or dangerous." (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path")
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); his two definitions, read as the two cases in their smallest form; NOT ruled as provided names; onto this list (the reading taken, told to him).
 rejected:
 readings:
-evidence:
+- a user's macro gets none of the provided library's convention unless its author writes the list — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py USERMACRO).
+evidence: docs/dev/lanes/predspot_evidence/ predspot_model.py USERMACRO (lane predspot).
 history:
 - the ideas file (`docs/design/predicates_future.md`) item 24, "For the user documentation: the things a reader will get wrong unless told", whole:
 
@@ -780,6 +782,8 @@ history:
 - 2026-11-21 (lane predarr, joint-in-some): item 30 appended to the list (the record's reading (b) of that entry); a rulings item for his observation.
 - 2026-11-22 (lane predfix82, review r82 FIXIND-1; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): items 13, 15, 21, 25, 30 restated under binding-prefix, bound-condition and label-reference (details text only).
 - 2026-11-22 (lane predfix83, review r83 D9; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): item 25 restated under default-export (it still taught that a part's public labels pass through a hole and the sequence operator).
+- 2026-11-22 (lane predspot, transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): parked 2026-11-19 re-dated 2026-11-22; a bullet added to the base: a user's macro passes none of its argument's labels on unless its author writes the list (`hide`, `identity`).
+
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
 rulings:

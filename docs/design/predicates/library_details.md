@@ -3,6 +3,23 @@
 One entry per tag of `library.md`, in the same order (fields as in `core_details.md`). The record
 is `docs/design/plan_row_bodies/COND-FAMILY.md`; a skeleton entry's source is `predicates_draft.md` revision 29.1.
 
+## lib/convention/argument-labels — An argument's labels pass on at its spot
+slugs: wrapper-export transform-export
+rulings:
+- 2026-11-22 "wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change. Do transforms in general then pass their labels on? Padded, etc." (record: "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"); answer (a) for the provided bodies that use their argument alone: the export list on the spot, `peek(A) := /(?=${[(=) = A]})/`, the caller reading `peek.d`.
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); the convention, as put to him: "A provided body that places its argument in the match passes that argument's labels on, by the export list on each spot, unless its piece says otherwise"; his two definitions are its worked example, not provided names.
+rejected:
+- (b) of wrapper-export (the wrappers stay as written and peek's "Labels A sets are readable after it" is withdrawn) — by owner ruling — "agree (a)".
+readings:
+- (d) (record "2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern") a spot the body labels exports the argument's exported labels through that label (`B.dd.d`); the label-only `hit` of `hits` / `occurrences` is such a spot, so those two keep the path through `hit` and do not also write `(=)` — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py SPOT: `hits(/a(?<g>x)?/) & (hits.hit.g: "x")`, `occurrences(/(?<n>\d+)/) & (occurrences.hit.n: "3")`; the library text has no `(=)` in either body).
+- "places" leaves out an argument used only as a filter or under a complement, the set arguments, the natives — SUPPORTED as a census (docs/dev/lanes/predspot_evidence/ predspot_model.py PLACES: every provided body of library.md that places a parameter writes the list or labels the spot; none of the left-out kinds does).
+- two spots of one argument: the same names, the label rules; several arguments: one label by the same rules; a looped spot: the loop's label rules, the array for a group question — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py TWOSPOT: `list_of(..) & (list_of.h: "5")` the last item; `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")` the last mention; `[r = rx.repeat(/(?<a>\d)/, min = 1)]` `r.a` the last item, `some((r.a: "7"))` every item).
+- a user's macro gets none of this unless its author writes the list — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py USERMACRO: `identity(A) & (identity.d: <5)` legal, `hide(A) & (hide.d: <5)` a compile error, both match as A does over every text of length 3 over `37 `).
+- what an argument exports (the lane's reading): a binding or a call exports what it exports; any other argument what its own text writes — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py SPOT: `atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)` legal, `atomic(B | A) & (atomic.l: <20)` refused).
+evidence: docs/dev/lanes/predspot_evidence/ predspot_model.py CONVENTION, SPOT, PLACES, TWOSPOT, USERMACRO.
+history:
+- 2026-11-22 (lane predspot, wrapper-export and transform-export folded): a new section lib/convention and its one piece; the convention stated once here, each provided body restated with the list on its spot and pointing at it.
+
 ## lib/builtin/enumerate — Enumerate
 was: core/arrays/enumerate (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
 was: lib/builtin/enumerate/class-index (2026-11-19, merged: the owner's ruling class-positions answered class-index, "descending class value order"; lane predloop)
@@ -171,6 +188,7 @@ rulings:
 - 2026-11-19 "i agree with your lean" (record: "2026-11-19 OWNER RULING — padded-order")
 - 2026-11-19 "padded-lazy-sparse: stated behavior." (record: "2026-11-19 OWNER RULING — padded-lazy-sparse; with remarks on `padded`'s width, a `limited` macro, and a direction on macros")
 - 2026-11-15 "cut-unpadded: agree" (record: "2026-11-15 RULING — `unpadded` is cut from the first spec")
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); the convention for provided bodies: this body writes the export list on each spot (lib/convention/argument-labels).
 rejected:
 - exact width (a value longer than n is nothing) — by owner ruling — padded-width; the run: `9999-10000` FAILS under it (preddoc3c PART PW, sabotage s3 caught).
 - the exact-width branch first, `(/0*${rx}/ & /(?s:.){${n}}/) | (rx & /(?s:.){${n},}/)` — by owner ruling — padded-order (the lean taken: any-length first); it differs SEARCHED on `x0129` (`012`@1) (PART PW, sabotage s1 caught).
@@ -186,7 +204,7 @@ readings:
 - "a macro whose body is one filter or one sequence keeps the argument's order; an alternation of filtered copies imposes its own" (the manager's reading in the padded-lazy-sparse entry) — UNTESTED here as a general law; it is what PART PW shows for `padded`.
 - his remark "i suspect it will always be broken for some use case and 0* will be default" is an OBSERVATION: the default (no width) is `0*`, as ruled; nothing reversed — the base says so.
 - his bounding observations ("restrict it to the rightmost 4", "<=9999") are compositions over the minimum form, not rules (the draft §2.7, rev 28's PART PW).
-evidence: preddoc3c PARTS PA, PW; the draft's rev 28 PART PW, rev 28.1 PART PO, rev 29 PART PO, rev 29.1 PART PO (predspec291); `$PCREC_TMPDIR/scratch/pred/padlazy.py` (the record).
+evidence: preddoc3c PARTS PA, PW; the draft's rev 28 PART PW, rev 28.1 PART PO, rev 29 PART PO, rev 29.1 PART PO (predspec291); `$PCREC_TMPDIR/scratch/pred/padlazy.py` (the record); docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-15: the plain macro; "Give or take details" (the group around the splice the spec writer's).
 - 2026-11-18: the width form, minimum (rev 28); the exact-first body as the draft's reading.
@@ -198,6 +216,7 @@ history:
 - (from lib/modifiers/unpadded) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided".
 - 2026-11-19 (lane preddoc4): the piece `lib/modifiers/unpadded` deleted, its content moved here (review r59 READ-13).
 - 2026-11-19 (lane preddoc6, review r60 COLD-9): a bullet points at the open question core/operators/bindings/call-forms: the two bodies are chosen by the call form, which the core's macro rule does not provide for.
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-19 re-dated 2026-11-22. Statement until then: "`padded(rx)` is the plain macro `/0*${rx}/`; `padded(rx, n)` reaches width n at least, the longer unpadded value tried first."; the bodies bullet until then: "`padded(rx) := /0*${rx}/`, ... `padded(rx, n) := (rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)`", each spot now with the list.
 
 ## lib/modifiers/quoted — quoted
 was: lib/modifiers/json-quoted (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -212,7 +231,7 @@ rejected:
 readings:
 - the body `/"${S & /[^"]*/}"/` while the quoted text holds no escape (the draft's LEAN, §2.7 bodies table) — SUPPORTED for its one printed claim (PART QU).
 - the names `padded`, `any_case`, `quoted`, `length`, `month_numbered` are ruled (OWN-1's list); the bodies are the draft's.
-evidence: preddoc3c PART QU.
+evidence: preddoc3c PART QU.; lane predspot (not modelled).
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 14): the body with `&` inside the hole (the draft).
 - 2026-11-19 (lane preddoc3c): converted.
@@ -220,6 +239,7 @@ history:
 - (from lib/modifiers/json-quoted) 2026-11-15: cut (rev 16).
 - (from lib/modifiers/json-quoted) 2026-11-19 (lane preddoc3c): the `?` piece written as "not provided"; `module: json` from the draft ("the `json` module keeps `json.string`").
 - 2026-11-19 (lane preddoc4): the piece `lib/modifiers/json-quoted` deleted, its content moved here (review r59 READ-13).
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): reading 2026-11-19 re-dated 2026-11-22. Statement until then: "`quoted(S)` reads only the text inside double quotes: the body `/"${S & /[^"]*/}"/`, S matched whole on that text."; a bullet added (S placed; the filter the body's own). Not modelled (the loaded hole reader stops at the `"` inside the hole).
 
 ## lib/modifiers/any-case — any_case
 slugs: any-case-body primitive-transforms
@@ -236,12 +256,13 @@ readings:
 - status: held `open any-case-body` by the manager (the brief of lane preddoc3c); the question was never put to the owner.
 - a third parting: `any_case(/[a-z]x/ & /[A-Z]x/)` (the sides take the flag first, core/holes/flags/in-filter) — SUPPORTED by a run (predfix77 ANYCASE: over the 820 texts on `aAbBxXzZ7` to length 3 the body holds WHOLE on 16, as python `re` with each side under re.I does, the native definition on none, the argument having no member; sabotage s12 caught; the review's anycase.py found the same 16).
 - the `pcrec.flags.filter` warning fires inside the body on that argument, the warning the caller's to read (review r77 A7) — UNTESTED (a reading).
-evidence: preddoc3c PARTS CA, CAneg; the draft's rev 28 PART AC, rev 28.1 PART FF, rev 29 PART AC, rev 29.1 PART AC. predfix77_model.py ANYCASE.
+evidence: preddoc3c PARTS CA, CAneg; the draft's rev 28 PART AC, rev 28.1 PART FF, rev 29 PART AC, rev 29.1 PART AC. predfix77_model.py ANYCASE; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-15: a primitive for now, the basis a follow-up ([PRED-REREAD], the draft §13 O70).
 - 2026-11-18 (rev 28): flags-propagate re-ran the candidate body; rev 28.1: the `(?-i)` difference; rev 29: T-c, equal for plain and positive filter-role arguments; rev 29.1: the negated operand differs; any-case-body named as a gap, not asked.
 - 2026-11-19 (lane preddoc3c): converted, `open any-case-body`.
 - 2026-11-22 (lane predfix77, review r77 A7; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the standing reading's "every mode except two" was false since flags-in-filter (sides first); the third exception, the warning's behaviour and two lines added; the candidates read "those three".
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): open any-case-body re-dated 2026-11-22. Statement until then: "Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay native (a string equal, up to letter case, to a member of rx)?"; the candidate body gains the list (the convention covers a provided body; any_case stays native for now, so the list is on the candidate only); a bullet added. The candidate's printed lines re-run in the flag engine (predspot_model.py FSWEEP, EXPLICIT).
 
 ## lib/modifiers/limited — limited
 slugs:
@@ -312,6 +333,7 @@ slugs: when-peek
 rulings:
 - 2026-11-18 "When: I agree peek A. Automatic or enforced? peek() transform" (record: "2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced")
 - 2026-11-18 "When peek: warn. A test pattern does consume and warns that it is." (record: "2026-11-18 OWNER RULING — when-peek: a bare pattern as the test CONSUMES, with a warning; `peek()` makes it a peek")
+- 2026-11-22 "wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change. Do transforms in general then pass their labels on? Padded, etc." (record: "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"); answer (a): this body writes the export list on its spot (lib/convention/argument-labels).
 rejected:
 - the test peeked automatically (a bare pattern silently a peek) — by owner ruling — when-peek: a bare pattern consumes; the user writes `peek()`.
 readings:
@@ -319,13 +341,14 @@ readings:
 - `NOT peek(A)` is the negative lookahead (the draft's reading, R.1.10 (8)) — SUPPORTED as a lowering (preddoc2 PART WN against the draft's printed answers and the semantic model).
 - `default: yes` (in the default-imported set) — the owner's LEAN, not a ruling ("there can be a special imported by default set which includes peek()"); the rest of the set is NOT stated (owner question default-set).
 - `module: ?`: no module is stated; `sys` in his `sys.peek()` is his example, not a ruling.
-evidence: preddoc2 PARTS PE, W1, WT, WD, WN; the draft R.1.10 (3), (4); rev 26.1's PART COND (the draft's own runs).
+evidence: preddoc2 PARTS PE, W1, WT, WD, WN; the draft R.1.10 (3), (4); rev 26.1's PART COND (the draft's own runs); docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-18: `peek()` is his placeholder for the transform (when-test), made THE way to test without consuming by when-peek.
 - 2026-11-19: the owner, after reading the pilot: "there is nothing particular about peek() other than its a useful transform"; "there can be a special imported by default set which includes peek()" (record: "2026-11-19 OWNER, after reading the pilot documents (doc-shape)"). Moved to the library with a body (lane preddoc2).
 - 2026-11-19: his aside on importing symbols so a call is not `sys.peek()` (`(left,right) := import("blah", /left|right/)`) is an IDEA to discuss, owner question import-symbols; carried then by the parked piece `parked/import-symbols/import`, deleted the same day by the manager's brief (lane preddoc3c); no piece carries it now.
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the bullet until then: "Labels A sets are readable after it, as after any lookahead and through any hole (only A's public labels)." Now: readable by the caller that wrote A, awaits argument-default (the body uses A alone); the line marked.
 - 2026-11-22 (lane predfix83, review r83 D6; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): "the call exports none of them" marked as the manager's reading (e) of default-export.
+- 2026-11-22 (lane predspot, wrapper-export folded; record "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"): ruled 2026-11-18 re-dated 2026-11-22. Statement until then: "`peek(A)` tests A where it stands without consuming it: the macro `/(?=${A})/`, a lookahead around a pattern hole."; the body `/(?=${A})/`; the labels bullet until then: "Labels A sets are readable after it by the caller that wrote A, as after any lookahead (awaits argument-default: the body uses A alone, so by the manager's reading (e) of default-export the call exports none of them, core/labels/paths/argument-default)."; the line's annotation `(d = `3`)` to `(peek.d = `3`)`, its "(awaits argument-default)" mark dropped; the line "Read through the call" added (predspot_model.py SPOT).
 
 ## lib/control/when — when
 was: core/conditional/when (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -337,6 +360,7 @@ rulings:
 - 2026-11-18 "when-alone: that wasn't my ruling but my interpretation. If it's wrong let's go with what's right." (record: "2026-11-18 OWNER on when-alone: his sentence was an interpretation; go with what is right")
 - 2026-11-18 "When: regardless, single arg has no value and should be an error. Ideally an @assert of some sort." (record: "2026-11-18 OWNER RULING — a `when` with a single argument is an error")
 - 2026-11-18 "When: start with required then. Use NOT to get else behavior" (record: "2026-11-18 OWNER RULING — `then` is required; NOT gives the else-only behaviour")
+- 2026-11-22 "wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change. Do transforms in general then pass their labels on? Padded, etc." (record: "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"); answer (a): this body writes the export list on its spot (lib/convention/argument-labels).
 rejected:
 - the naive form `(A|B|fail)|C`, falling through to C when A holds and B does not — by run — whole `1` holds through C where an if-then-else must fail (the record, "2026-11-18 OWNER, a question on the conditional form").
 - the missing else FAILS (`when(A, B)` = `A then B`) — by owner ruling — when-default.
@@ -349,13 +373,14 @@ readings:
 - `//` (his `null`) is "nothing required", not a new value — the manager's reading, UNTESTED (a reading of words).
 - the test is evaluated once per branch in principle (a cost statement) — NOT RUNNABLE.
 - the spelling (`when`, `then`, `else`, an operator form) is open: conditional-spelling.
-evidence: preddoc2 PARTS W1, WD, WN, WC, WS, WV, W8; the draft R.1.10 and rev 26.1's PART COND; PART C V13-V15 of the rev 24 lanes (the special case).
+evidence: preddoc2 PARTS W1, WD, WN, WC, WS, WV, W8; the draft R.1.10 and rev 26.1's PART COND; PART C V13-V15 of the rev 24 lanes (the special case); docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-17: `when(c, p)` := `x & (NOT c | p)`, "a LIBRARY DEFINITION, no primitive" (when-meaning).
 - 2026-11-18: the guarded form; when-default; when-alone; a single argument an error; `then` required (the draft R.1.10 (1), (2), (8)).
 - 2026-11-19: moved from the core to the library with its body (lane preddoc2; the owner's recommendation 1).
 - 2026-11-19 (lane preddoc4): `needs: core/filters/negation` (the body's `NOT peek(test)` is legal by that piece) and `see: lib/control/when-test` (review r59 NEGATION, READ-17).
 - 2026-11-22 (lane predfix83, review r83 A8; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet "Labels the test sets are visible in then" gains its dependence on argument-default: then reads the test's labels across two arguments the body uses alone, legal under (local), refused under (error) by the reading of argument-default (a read inside an argument beside its OWN group only stays legal).
+- 2026-11-22 (lane predspot, wrapper-export folded; record "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"): ruled 2026-11-18 re-dated 2026-11-22. Statement until then: "The conditional is the guarded form, `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)`: else is never tried where the test holds."; the labels bullet until then: "Labels the test sets are visible in then; in the else branch they are unset, a failed test setting nothing (a reading, run). Then reads the test's labels across two arguments the body uses alone (awaits argument-default, core/labels/paths/argument-default)." The read in then of the test's labels is now a reading refused by argument-default (a template's label); `when` is not modelled (its guard `NOT peek(test)`), the shape run on a user macro `W(a, b)`.
 
 ## lib/control/when-test — The test of `when`
 was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -395,10 +420,11 @@ rejected:
 readings:
 - the body `atomic(X) := /(?>${X})/` reproduces its example: `atomic(/a|ab/) SEQ "c"` WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac` [`ac`@0, `ac`@7] — SUPPORTED (preddoc4 PART AT, built from the body's text; sabotage: the group not atomic).
 - `atomic(...)` was the core's placeholder spelling for its atomic part (core/patterns/atomic); a name that is a body over a hole is a library piece (doc_format's rule; review r59 PLACE-2 (a)).
-evidence: docs/dev/lanes/preddoc4_evidence/ PART AT.
+evidence: docs/dev/lanes/preddoc4_evidence/ PART AT; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-17: atomic-search; `atomic(...)` the core's spelling of an atomic part.
 - 2026-11-19 (lane preddoc4): a new piece: the name moved out of core/patterns/atomic, which keeps the rule (review r59 PLACE-2 (a)).
+- 2026-11-22 (lane predspot, wrapper-export folded; record "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"): statement until then: "`atomic(X) := /(?>${X})/`: PCRE's atomic group around a pattern hole, so X keeps PCRE's atomic meaning."; a bullet added (the list on the spot).
 
 ## lib/search/occurrences — occurrences
 formerly: ?.search (2026-11-15, the owner renamed `search` to `occurrences` under his naming rule)
@@ -432,7 +458,7 @@ readings:
 - hit-carry's witness, as printed before bound-condition (`c` bound alone is now a compile error at `c`; today's spelling writes it in its hole, `occurrences(/${NOT (h: >= 5)}(?<h>\d)/, min = 2)`): `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5) (WHOLE `73` FAILS, SEARCHED `73` FAILS, FIND-ALL `3x73` [`3x73`@0 h = `7`]) — UNTESTED here (a condition before its group reads the previous hit: it needs the label engine; the draft's rev 26 PART H ran it on libpcre2).
 - hit-carry-depth (how deep the carry reaches) — asked in the draft's open table, not answered; not a library question.
 - `0` inside the argument (review r77 A6): three candidates part — see core/conditions/match-so-far (VERIFIED by predfix77 OCCZERO; PLAN).
-evidence: preddoc3c PART OC; the draft R.1.9, rev 26 PART H, rev 26.1 PART R47.
+evidence: preddoc3c PART OC; the draft R.1.9, rev 26 PART H, rev 26.1 PART R47; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-14: the `contains` family; 2026-11-15: PCRE's parse, `min` (0 or 1), no `max`; renamed from `search` (rev 13).
 - 2026-11-17: regex-settles (his one-pattern lazy-gap model, "It's essentially /(.*(${rx}))*.*/ So not global"); min-values.
@@ -448,6 +474,7 @@ history:
 - 2026-11-22 (lane predfix82, review r82 GENERAL-7, EXAMPLES-4; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): the bullet "two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix; each call reached through a label of its own (`a.hit`, `b.hit`) is not ambiguous (a reading)" restated with call-prefix and binding-prefix.
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the argument-group bullet gains: whether the caller reads it awaits argument-default and capture-export.
 - 2026-11-22 (lane predfix83, review r83 A8, D4 (iii); record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the re-split example marked legal under both candidates of argument-default (a read inside the argument beside its own group: the manager's reading, docs/dev/lanes/predfix83_evidence/ predfix83_model.py ARGOWN); the label-only `hit` passing its argument's labels on (`h.hit.n`) joins argument-default as its library face (D4 (iii)).
+- 2026-11-22 (lane predspot, argument-default and wrapper-export folded; record "2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern"): the argument-group bullet until then ended "whether the caller reads it awaits argument-default and capture-export (the body uses x alone; core/labels/paths/argument-default), as does whether the label-only `hit` passes its labels on (`h.hit.n`)."; now read through the spot, `occurrences.hit.n` (the manager's reading (d)); the re-split bullet's "legal under both candidates of argument-default" to the reading (c); the line "The argument's group, through the hit" added (predspot_model.py SPOT).
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass hit-list
@@ -466,7 +493,7 @@ readings:
 - "every hit under 100", as printed before label-reference (today `[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))`, the base line), written as `hits(/\d+/) & occurs.none((hit: >= 100))`, a group question on the array of `hit` (one setting per hit) — the lane's reading of the unwritten program; WHOLE `1234` FAILS, `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS under the settings and the pass readings alike — SUPPORTED (predarr HITS: the body read from library.md, against python `re` 0 / 0 / 0 of 1,365 texts; sabotage s13, the atomic group re-entered, caught).
 - hits-pass and some-own: a bare condition after it reads the last hit's own labels (closed by entailment, the draft §R.8) — SUPPORTED for the optional-label rows (PART HI).
 - `module: ?`; the spelling `hits` is a placeholder, his `all_matches(rx)`.
-evidence: preddoc3c PART HI; the draft R.1.9, rev 24.4 PART H.
+evidence: preddoc3c PART HI; the draft R.1.9, rev 24.4 PART H; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-17: "OWNER on what `hits` is" (questions), then the ruling: atomic and anchored (hits-committed, hits-text).
 - 2026-11-19 (lane preddoc3c): converted.
@@ -477,6 +504,7 @@ history:
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures folded: the body `(?<hit>${r})` to `(?<:hit>${r})`; the "Every hit under 100" program `hits(/\d+/) & occurs.none((hit: >= 100))` re-spelled `[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))` (label-reference: `hit` is not written in the program; its four prose answers re-run, docs/dev/lanes/predref_evidence/ predref_model.py HITS); the bullet "The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label; the tension with the add-on's reason and the question helper-captures: lib/search/occurrences)." replaced; the two lines "Plain read" and "Every hit" added. Status date 2026-11-17 to 2026-11-22.
 - 2026-11-22 (lane predcall, call-prefix case 1 folded): his second example printed with the record entry's two run lines, "inner test" and "every number" (the base labels "His second example, a test inside the argument" and "Every number tested after the call"), and the sentence "a test inside the argument chooses the hits; a test after the atomic `hits` judges them"; a bullet on reading one call by the macro's name. The first example's lines (lane predref) kept.
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the line `hits(/a(?<g>x)?/) & (g: "x")` marked "(awaits argument-default)" (under its candidate "error", `g` is not visible: preddef_model.py AWAITS).
+- 2026-11-22 (lane predspot, argument-default folded; record "2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern"): the line `hits(/a(?<g>x)?/) & (g: "x")` re-spelled `hits(/a(?<g>x)?/) & (hits.hit.g: "x")` (the manager's reading (d); its answers unchanged, predspot_model.py SWEEP), its "(awaits argument-default)" mark dropped; the bare form is the new line "Bare, the caller's own", a compile error (reading (b)); the bullet on `hit` as the spot added.
 
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
@@ -484,6 +512,7 @@ slugs:
 rulings:
 - 2026-11-15 "Your examples make me agree. /\d\d/ & between(1, 12) Without anchoring it would match "31"" (record: "2026-11-14 RULINGS on rev 3's contradictions")
 - 2026-11-15 "Ok I agree." (record: "2026-11-14 RULINGS on rev 3's contradictions")
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); the convention for provided bodies: this body writes the export list on each spot (lib/convention/argument-labels).
 rejected:
 - regex filters unanchored by default — by owner ruling — his `/\d\d/ & between(1, 12)` would match `31`.
 - an explicit anchor switching off the implicit ones — by owner ruling — the same entry, (4).
@@ -492,43 +521,48 @@ readings:
 - `contains(/err$/)` also accepts a value ending `err` and a newline (PCRE's `$`; `\z` for the exact end) — SUPPORTED (PART SW).
 - a CANDIDATE body, not the definition: `contains(x) := occurrences(x, min = 1)` (the draft's LEAN, §2.6, §8: chosen so x's labels read as the leftmost hit) — the same set as the ruled gap body, 0 / 0 / 0 of 121 texts (`ab` over `abx`, length <= 4) in all three modes; only the labels differ (the hit, and which occurrence x's labels read) — SUPPORTED (preddoc3c PART SWocc). Its printed run: `occurrences("ab", min = 1)` WHOLE `xabx` HOLDS, `ba` FAILS / SEARCHED `x ab` `x ab`@0 / FIND-ALL `ab ab` [`ab ab`@0].
 - the same candidate also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft; as printed before label-reference, today `some((occurrences.hit: /(?s).*/))`) — UNTESTED here.
-evidence: preddoc3c PART SW, PART SWocc.
+evidence: preddoc3c PART SW, PART SWocc; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-14/15: the `contains` family; the record's body (11-15); the draft kept `occurrences(x, min = 1)` (its reading above).
 - 2026-11-19 (lane preddoc3c): converted; the draft's spelling split into its own piece (one piece, one status).
 - 2026-11-15 (rev 9-12): the draft kept the occurrences spelling against the record's text, "the same sets".
 - 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "contains as occurrences" (`reading`, "`contains(x)` is written `occurrences(x, min = 1)`: the same set, and x's labels read leftmost, as a hit") merged back here as a candidate reading: the base had two present-tense definitions of one name.
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-15 re-dated 2026-11-22. Statement until then: "`contains(s)` is the plain gap body `/(?s:.*)(?:${s})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s."; a bullet added.
 
 ## lib/search/starts-with — startsWith
 slugs:
 rulings:
 - 2026-11-15 "Ok I agree." (record: "2026-11-14 RULINGS on rev 3's contradictions")
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); the convention for provided bodies: this body writes the export list on each spot (lib/convention/argument-labels).
 rejected:
 - his first sketch `startsWith(rx) := /^${rx}/` — by owner ruling (the advice he agreed to) — in filter position it means exactly rx: `/^5/` rejects `57` (preddoc3c PART SW, sabotage s7 caught).
 - folding `startsWith`/`endsWith` into `occurrences` with an anchored argument (the manager's lean) — by owner ruling — withdrawn in the same entry.
 readings:
 - the body `/(?:${s})(?s:.*)/` accepts `57` for `startsWith("5")`, and its gap crosses a line break (`a`, newline, `b`) — SUPPORTED (PART SW; sabotage s8, unscoped gaps, caught).
-evidence: preddoc3c PART SW.
+evidence: preddoc3c PART SW; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-15: the plain gap bodies (rev 12).
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-15 re-dated 2026-11-22. Statement until then: "`startsWith(s)` is the plain gap body `/(?:${s})(?s:.*)/`, no anchors of its own."
 
 ## lib/search/ends-with — endsWith
 was: lib/search/ends-with/lazy-gap (2026-11-19, merged: a second present-tense definition of `endsWith` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
 rulings:
 - 2026-11-15 "Ok I agree." (record: "2026-11-14 RULINGS on rev 3's contradictions")
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); the convention for provided bodies: this body writes the export list on each spot (lib/convention/argument-labels).
 rejected:
 readings:
 - the record's body `/.*${rx}/` with the gap crossing line breaks: on `ab123` with `(?<n>\d+)`, n = `3` (greedy) — SUPPORTED as the record's text (preddoc3c PART SW).
 - a CANDIDATE body, not the definition: the LAZY gap `/(?s:.*?)(?:${s})/` (the draft's LEAN since rev 9, kept against the record's text), so the argument starts as far LEFT as it can: n = `123` on `ab123`; rev 8's greedy `.*` gave `3` (libpcre2). As SETS nothing changes; the labels and the searched stretch differ: `(?s:.*?)(?:(?<n>\d+))` WHOLE `ab123` HOLDS (123) / SEARCHED `x12 34` `x12`@0 (the ruled body: `x12 34`@0) / FIND-ALL `a1 b2` [`a1`@0, ` b2`@2] — SUPPORTED (preddoc3c PART SW).
-evidence: preddoc3c PART SW.
+evidence: preddoc3c PART SW; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-15: the plain gap body (rev 12); the draft kept a lazy gap (its reading above).
 - 2026-11-19 (lane preddoc3c): converted; the lazy gap split into its own piece.
 - rev 9-10 (2026-11-15): the lazy gap chosen for how the argument's labels read; rev 12 kept it against the record's `/.*${rx}/`.
 - 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "endsWith with a lazy gap" (`reading`, "`endsWith(s)` is written with a LAZY gap, `/(?s:.*?)(?:${s})/`, so its argument starts as far LEFT as it can") merged back here as a candidate reading: the base had two present-tense definitions of one name; the ruled body is the definition.
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the bullet and line marked "(awaits argument-default)": the caller's read of the argument's `n`.
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-15 re-dated 2026-11-22. Statement until then: "`endsWith(s)` is the plain gap body `/(?s:.*)(?:${s})/`, no anchors of its own."; the bullet's "the caller's read of n awaits argument-default" to the read through the call, `endsWith.n`; the line's annotation `(3)` dropped, its "(awaits argument-default)" mark dropped.
 
 ## lib/search/anchored — anchored
 slugs: anchored-in-hole
@@ -537,6 +571,7 @@ rulings:
 - 2026-11-15 "Anchored def: agree." (record: "2026-11-15 RULINGS — `anchored` has exact ends; which `&` is the operator in rx text"); CORRECTED by the 21:20 entry (the item below): it answered the earlier `\A`/`\z` lean
 - 2026-11-15 "anchored-in-hole: agree" (record: "2026-11-15 RULINGS — no anchored-specific error in a hole; the anchor warning covers every whole-match place")
 - 2026-11-15 "The anchored comment was to a previous statement. What does new anchored suggestion mean." (record: "2026-11-15 CORRECTION and RULING"); part (a): his "Anchored def: agree" answered the manager's EARLIER statement (the `\A`/`\z` lean): RULED = `anchored` has EXACT ends; defining `anchored(P)` as "P in filter role on the enclosing scope" is NOT ruled
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); the convention for provided bodies: this body writes the export list on each spot (lib/convention/argument-labels).
 rejected:
 - his placeholder `anchored(rx) := /^${rx}$/` — by owner ruling — exact ends: its `$` also holds before a final newline (preddoc3c PART AC, sabotage s6 caught).
 - an error specific to `anchored` in a hole — by owner ruling — anchored-in-hole.
@@ -544,10 +579,11 @@ rejected:
 readings:
 - the body reproduces the nine printed rows (`anchored(/a|b/)` on `ab`; `/a|ab/`; `/foo/` on `foo` and on `foo` with a newline; `/foo$/`; `(?m)^a$`; `/x${anchored(/a/)}/`; `/${anchored(/a/)}b/`; `/\w+/ & anchored(/foo/)` on `xfoo` 1-4) — SUPPORTED (preddoc3c PART AC).
 - "no rule or table of the language depends on `anchored`" (the manager's consequence, told) — UNTESTED.
-evidence: preddoc3c PART AC; the draft §8, `predspec13_anchor.out`, `predspec14_anchor.out`, `predspec15_anchor.out`.
+evidence: preddoc3c PART AC; the draft §8, `predspec13_anchor.out`, `predspec14_anchor.out`, `predspec15_anchor.out`; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-15: added (the one anchoring rule); exact ends (rev 13); anchored-in-hole and anchor-warn-scope (rev 14); the tie with `&` (rev 15, warn-in-macro-body).
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-15 re-dated 2026-11-22. Statement until then: "`anchored(s)` is the plain macro `/\A(?:${s})\z/`: s matched whole on its scoped match, with exact ends."
 
 ## lib/search/within — within
 slugs:
@@ -791,12 +827,13 @@ rejected:
 - form (b), the two-copy definition `(?:X(?:S X)*)?` of the rx-module note — by the draft's proposal (R.1.7) — under the one label rule its one-item label is unset (preddoc3c PART LO, sabotage s15 caught).
 readings:
 - form (a), `(?:X S)*X` (THE DRAFT'S PROPOSAL, the manager's lean, not ruled): the label `7` on `7` and `5` on `7,3,5`, the empty text FAILS — SUPPORTED (PART LO).
-evidence: preddoc3c PART LO.
+evidence: preddoc3c PART LO; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-17 (rev 24.4): defined as form (a), a proposal; separator-label dissolved.
 - 2026-11-19 (lane preddoc3c): converted.
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): a bullet: the body uses X alone, so the caller's read of the item's label awaits argument-default; the line marked.
 - 2026-11-22 (lane predfix83, review r83 D6; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): "the call exports none of its labels" marked as the manager's reading (e) of default-export.
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): statement until then: "`list_of(X, sep = S)` is the separated list `/(?:${X}${S})*${X}/`: its label is the last item, its array every item."; the bullet until then: "The body uses X alone, so by the manager's reading (e) of default-export the call exports none of its labels; the caller's read of the item's label awaits argument-default (core/labels/paths/argument-default)."; the line's annotation `(5)` to `(list_of.h = `5`)`, its "(awaits argument-default)" mark dropped; the line "The last item, through the call" added (predspot_model.py TWOSPOT). The separator, placed too, carries the list (the convention).
 
 ## lib/records/param — param
 slugs:
@@ -861,6 +898,7 @@ rulings:
 - 2026-11-17 "i agree with the count proposal. i'm curious how the repeat functionality would work however. is it a primative?" (record: "2026-11-17 OWNER RULING — the count proposal")
 - 2026-11-17 "i agree with repeat. i agree with plurals, why not. can i name the item inside the repeat with [ a = rx.digit ]" (record: "2026-11-17 OWNER — the rx module: one repeat construct; plurals as conveniences")
 - 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); the convention for provided bodies: this body writes the export list on each spot (lib/convention/argument-labels).
 rejected:
 - `repeat` as a primitive — by the two-kinds entry — "`repeat` is therefore a library definition" (the draft R.1.14).
 - one binding of an array for every mention (`n` the same member in both places) — by run — `repeat(digit, n, n + 1)`, n := [2, 5], WHOLE `1234` HOLDS only through the cross copy (2,6) (rev 26.1's PART R47 B2; preddoc2 PART RB, sabotage s9 caught).
@@ -869,7 +907,7 @@ readings:
 - the three bodies, one per call form, reproduce every ruled example: RX5 (min = n, max = n), the one-argument exact count, every copy illegal, AL2 (`n + 1`), B2 (per mention), RX6 (a labelled item, a condition after it and inside it), the plural `digits` — SUPPORTED (preddoc2 PARTS RX, RB, R6; WHOLE against python's `\d{2,4}`, `\d{2}|\d{4}`, `\d+` on 63 texts, 0 differing).
 - "no maximum" written as a second body with the bound left out (the draft's reading; answer-free) — SUPPORTED as a lowering (PART R6, sabotage s11 caught).
 - the structural warning when a combination is removed, the can-never-match warning when all are (the manager's proposals) — NOT RUNNABLE.
-evidence: PARTS RX4-RX6 of predspec25; rev 26's PART AL; preddoc2 PARTS RX, RB, R6.
+evidence: PARTS RX4-RX6 of predspec25; rev 26's PART AL; preddoc2 PARTS RX, RB, R6; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-17: the count proposal and the one repeat construct (the draft R.1.14, COUNTS, ONE REPEAT CONSTRUCT).
 - 2026-11-19 (lane preddoc2): the core piece `core/patterns/repeat` (a skeleton) and this `?` piece made one, converted in full in the library; `module: rx` from the record's "the rx module".
@@ -881,6 +919,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 RULING-9): the first `was:` line's reason read "the core holds primitives only" as a standing rule; rewritten: it was the rule of that morning, and the owner withdrew the designation the same day ("my "primitive" designation doesn't work", record "2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or not"); the reason today: every call-form name is a library piece.
 - 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-4): "first hole slowest" points at the lift's loop (core/arrays/lift); no answer moves. Status date 2026-11-17 to 2026-11-19.
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the labelled-item bullet until then: "A labelled item, `rx.repeat([a = rx.digit], min = 1)`, is `(?:(?<a>\d))+`: a condition after it reads the last item; a condition inside the item is judged for every item." Now marked: awaits argument-default (the body uses x alone).
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-19 re-dated 2026-11-22. The bodies bullet until then: "`repeat(x, n) := /(?:${x}){${n}}/`; `repeat(x, min, max) := /(?:${x}){${min},${max}}/`; `repeat(x, min) := /(?:${x}){${min},}/`"; the labelled-item bullet until then: "A labelled item, `rx.repeat([a = rx.digit], min = 1)`, is `(?:(?<a>\d))+`: a condition after it reads the last item (awaits argument-default: the body uses x alone); a condition inside the item is judged for every item."; now a label on the argument is the reading (a) compile error and the item's label is read through a label on the call (the lines "The last item, through a label on the call", "Every item, a group question"; predspot_model.py TWOSPOT).
 
 ## lib/structural/capture — capture
 slugs:
@@ -894,12 +933,13 @@ readings:
 - `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN; the owner's sketch `group(x) := /(?<${x.label}>${x})/`, "lots of hand waving", record "2026-11-14 — compose instead of an option") names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP), but NOT BUILDABLE from the core as written (no field gives a part label's own name); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
 - what `capture(x)` returns for a looped x is not stated (the draft R.11 row 32).
 - (the manager's (d) of pure-label) `capture(name, x) := /(?<${name}>${x})/` is the wrapper method in its literal form — SUPPORTED as a wrapper that makes a capture (python `re` groups of its lowering: `d`; predscope_model.py CAPT); his wrapper placeholder `[ d = capture(digits) ]` names the capture from the part label, which this body cannot (the missing field above).
-evidence: preddoc3c PART CP.
+evidence: preddoc3c PART CP.; lane predspot (not modelled).
 history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
 - 2026-11-19 (lane preddoc6, review r60 COLD-8): the body could not be built from the core: `.label` is defined only for a part label over an array ("that member's name", core/values/metadata), and inside the body `x` is a parameter, not a path (core/labels/flow: "A binding's name is not a path"). The piece now states `capture(name, x) := /(?<${name}>${x})/` (the name passed as a string to the group-name hole) and keeps the draft's one-parameter sketch as a bullet naming the missing field; the example `capture(x)`, x := `[d = /\d+/]` became `capture("d", /\d+/)`, same answers (preddoc6 PART CP).
 - 2026-11-21 (lane predscope, pure-label folded): the bullet until then: "A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture." (wrong after pure-label: a label reaches the caller only as a capture). Two bullets added (the wrapper reading; the add-on pointer). Status date 2026-11-19 to 2026-11-21.
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): a bullet: the body writes a capture on purpose; helper-captures' "so declared" not stated for it. Status date 2026-11-21 to 2026-11-22.
+- 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): reading 2026-11-22 kept, date unchanged. Statement until then: "`capture(name, x) := /(?<${name}>${x})/` names a capture: the name in a group-name hole, x in a pattern hole." The one-parameter sketch until then: "`capture(x) := /(?<${x.label}>${x})/`", now with the list on its spot. Not modelled (the name hole).
 
 ## lib/structural/capture/add-on — Making a label a capture
 slugs: none
