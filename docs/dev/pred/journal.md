@@ -683,3 +683,16 @@ lane/pred-rev28 882bcf330 against main's 74f70152e: the three folds of 2026-11-1
 every mode + legal programs; general form and unlocks); lane reports, earlier reviews and my journal/wake denied.
 The subject stays FROZEN until the draft: rulings Frank gives meanwhile are RECORDED only, folded after the round.
 WAITING on: the coordinator's hand-back (read the round dir at each wake); Frank (bound-condition).
+
+## 2026-11-21 (19:20 EST) — close of the fourth predicate-manager session, at the owner's word
+
+bound-condition asked twice; his two examples of `0` (a bare condition reads the rx it sits in; in `${A & (0:
+S)}` only A) confirmed as ruled after my argument ("that settles it. my two examples are correct"); the named-
+condition case still open. His "issue definition" recorded ("bindings define scope"; the `i`-only lean; the
+list_of_stuff sketch, worked by me with a set-making macro). A misread run in the record corrected by an appended
+entry. Then: "lets close the session now" and "don't cancel the subagents. let them finish".
+IN FLIGHT, NOT CANCELLED: critic round r77 predfold1121 (critics and verifier done, the coordinator drafting;
+round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/`). Nothing else running; no cron. wake.md rewritten from
+scratch; owner.md current; P-17 written; main told. On the branch only: the three folds of 2026-11-19 and all of
+today's rulings. NEXT SESSION: rule r77's dispositions, one fix lane (it files the review), deliver (P-18), then
+/q with bound-condition first.

@@ -1,95 +1,99 @@
 # Predicate-language manager: wake-up brief
 
-Rewritten 2026-11-19 (box clock, about 23:50), at /close of the third predicate-manager session. Committed docs
-win on any disagreement.
+Rewritten 2026-11-21 (box clock, about 19:15 EST; the record's entries are dated 2026-11-21), at the owner's
+"lets close the session now", fourth predicate-manager session. Committed docs win on any disagreement.
 
 ## State
 
-- Branch `lane/pred-rev28` (worktree `worktrees/pred`). Main merged P-14 (74f70152e: seven rulings folded, review
-  r61 filed and applied). AFTER P-14 the branch carries three more HAND FOLDS, not yet through a critic round:
-  flags-in-filter (both sides inherit), its confirmation flags-before-and ("the environment of the hole sets the
-  default options for the expression inside"), and flags-warning (row `pcrec.flags.filter`). P-15 is the close
-  notice and names them. NOTHING running; no crons; every lane and coordinator stopped. Lane worktrees predloop,
-  predasc, predfix61 are merged (prune is main's, promised for the morning with the P-14 skill edits).
-- The language is defined by `docs/design/predicates/` (core, library, parked, each with `_details.md`); lint
-  `python3 -I scripts/pred_doc_lint.py` (5,267 checks, 0 failed at close: RUN IT BEFORE NAMING A TIP). The record is
-  `docs/design/plan_row_bodies/COND-FAMILY.md` (each entry has a `tags:` line).
-- Reviews of this work: r54, r56, r57, r59, r60, r61 (`docs/dev/reviews/2026-11-19-r61-predfold1119.md`; its PLAN
-  residuals with triggers are in the file: one piece for the label namespace and one for captures is the shape of
-  the NEXT document pass).
+- Branch `lane/pred-rev28` (worktree `worktrees/pred`); main was merged in at wake (clean). Main has everything
+  through P-14 (74f70152e). ON THE BRANCH ONLY, not delivered: the three hand folds of 2026-11-19
+  (flags-in-filter, its confirmation, flags-warning) and ALL of this session's rulings (below). P-17 is the pause
+  notice and says so.
+- IN FLIGHT AT CLOSE: critic round **r77 predfold1121** (design mode; number from main; one opus coordinator
+  `crit-predfold1121`, background). Round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/` (draft `review.md` there
+  when done; `.coord/process.md`; `verify.md`). At close: five critics (ruling, examples, general, modes, fixind)
+  and the verifier had finished (57 raw findings, heavy overlap on three roots: the array's scope against the
+  sealed piece; the bound-condition carve-out; a third I did not read); the coordinator was drafting. ITS
+  HAND-BACK MAY NEVER REACH A NEW SESSION: read the round dir. The coordinator's own evidence re-run found
+  predscope's model RED on two checks (CLOSEDB, DOC) and predfix61's DOC red: my hand fold of bare-nested-scope
+  flipped the line CLOSEDB pins (expected; its citations must be marked superseded), check the others.
+- NEXT, in order: (1) read `review.md` + `process.md`, RULE every disposition (record entry "MANAGER — review
+  r77"); (2) ONE opus fix lane on a worktree cut from this branch (it also files the review as
+  `docs/dev/reviews/2026-11-2x-r77-predfold1121.md` + directory + index line; denylist rule: no line-numbered
+  plan.md or spec cites); (3) merge, lint, `make -s test-plan-lint`; (4) `done:` line in to_main.md (P-18) with the
+  [COND-FAMILY] status line; SendMessage main.
+- Lint `python3 -I scripts/pred_doc_lint.py`: 5,546 / 0 at close (RUN IT BEFORE NAMING A TIP). Lanes predscope
+  and predarr are merged and stopped; their worktrees (`worktrees/predscope`, `worktrees/predarr`) are for main to
+  prune (in P-17). No cron. Nothing in the box queue (never ours).
 
 ## READ, IN THIS ORDER
 
-1. The skill, section 2. 2. `core.md`, `library.md` whole, `parked.md` scanned. 3. The record from "2026-11-19
-OWNER, on bare-condition-labels: a bare condition in a hole is the same condition just after the rx literal" to
-the end (this session). 4. `journal.md` from "2026-11-19 (box date) — third predicate-manager session". 5.
-`owner.md`. 6. r61's review file (residual list, and RULING.md's ruling table in its directory).
+1. The skill, section 2. 2. `core.md`, `library.md` whole, `parked.md` scanned. 3. The record from "2026-11-20
+OWNER, to main (relayed as M-2)" to the end (this whole session; about 60 entries; the late ones matter most).
+4. `journal.md` from "2026-11-21 (16:30) — fourth predicate-manager session: wake-up". 5. `owner.md`. 6. The round
+dir of r77. 7. `docs/dev/lanes/predscope_report.md`, `predarr_report.md` (readings tested, owner questions left).
 
-## Ruled this session (all in the record and the pieces)
+## Ruled this session (all in the record; all in the pieces unless marked)
 
-- bare-condition-labels: a bare condition in a hole sees the labels VISIBLE in the surrounding rx, each as it
-  stands at the hole; unset the first time through a loop; a name no group carries is a compile error.
-- looped-warning: the warning on labels that can repeat is REMOVED (reverses "looped-compare: warn").
-- hole-export: a part's public labels pass out of a binding through a hole and the sequence operator alike; a `_`
-  part label or `[_ = A]` still closes them (that clause is MY reading, marked).
-- array-scope: the array of a label is "by the scope of the entire rx"; a part label limits it (his `x.@a`).
-- class-positions + quantified-order: a lift is the nested loop over each operand's `enumerate`, first operand
-  outermost, for every function; PCRE's priority order inside a quantified operand; a class enumerates LOWEST TO
-  HIGHEST (he ruled "descending" then reversed it the same evening); nothing sorted unless the user sorts. So
-  `\d + 1` is `1|2|..|10` and bare SEARCHED `x10` gives `1`; between `\b`s it gives `10`.
-- flags-in-filter / flags-before-and: the hole's environment sets the default options for the expression inside;
-  the sides of an `&` take the flags FIRST (`[a-z]x & [A-Z]x` is nothing alone and matches under `(?i)` in a hole).
-- flags-warning: warn at the hole "when it works" (the sides-first result differs from the expression alone with
-  the flag on its result); never where the expression reads `$x`.
-- Not rulings: `longest_first(X)` is MY placeholder for his requested shorthand of
-  `sort(X, by = "length", order = "desc")`; `lengthSorted()` was his idea.
+- class-value: "ascending codepoints everywhere"; any other order is the user's, by a sort.
+- flat-read-outside: (a) a flat read outside a binding follows the inside rules; the path says which part.
+- pure-label: "captures are explicitly written either in literal form or using a macro like capture()"; `[x = A]`
+  is a label and no capture; export statement 5 narrowed to captures; `_` labels never export as captures. A
+  label-to-capture ADD-ON is REQUIRED by him, form and spelling open (under-construction piece
+  lib/structural/capture/add-on; his two methods: a wrapper, or after the fact for a library's label).
+- zero-in-definition: (a) `0` is the match so far of the definition it is written in. CONFIRMED by his two
+  examples at close: a bare condition's `0` is the rx it sits in; in `${A & (0: S)}` "the 0: is bound to A only".
+- class-hole-order: (a) written order under a lift (the example program corrected at his catch: `/${/[${c}]/ +
+  1}/`).
+- array-vs-passes: (a) `some`, `count`, `occurs`, `h[k]` read the ARRAY OF SETTINGS (lib/counting revised).
+- joint-in-some: a joint entry inside a group question is refused for now; "same item" is written on the item
+  (`[ok = item & ((h, m): ..)]`, then `some((ok: anything))`); his "no one would know to write it".
+- bare-nested-scope: case 1 "compile error at inner" (a piece may not NAME a label it does not hold); case 2 "i
+  meant b" (a piece reads its OWN value only), ruled with the two-spellings pair shown first: compose-equals-
+  literal now holds for what a piece's USER reads. His three examples (C sees d through B(A); B's body may not
+  name d; B may label its parameter) are in the piece verbatim. His later statement: "bindings define scope. if
+  they must refer to each other then construct in predicate with labels or create them in the same literal."
+- NOT rulings: his LEAN that only `i` will be inherited at a hole (today's ruled list is `i`, `m`, `s`); the
+  label variable (parked; pass the condition or the set today); my frame (finished rx, shaping / matching holes);
+  `list_of_stuff` (his sketch; my worked form passes a set-making macro: needs a named macro as an argument).
+- M-2 (his remark to main: rx and graph manipulation for intersection and subtraction) recorded as a LEAN.
 
 ## The question queue (one per turn; grep the record AND read the same-day later entries first)
 
-In the order I would take them: class-value (what "lowest to highest" is for a class that is not digits; reading
-today ascending codepoint; quick); the four from r61: flat-read-outside (his "I can't access x y z flat because
-it's ambiguous and therefore an error" against the rules, where a flat read across `|` is legal: he never answered
-my correction), bare-nested-scope (lexical or composed rx for a hole's readers when its literal is itself
-inserted), array-vs-passes (do `some` / `count` / `occurs` / `h[k]` read the array of settings or the passes),
-class-hole-order (a class-member hole's values under a lift); then the older queue: group-truth, number-in-loop,
-zero-in-loop, caller-ambiguous, not-test, condition-group, tuple-parts, default-imports, export-choice, call-forms,
-every-pass-spelling, any-case-body (held by me). `scripts/entry -g . -p predicates --state open` lists the pieces
-(15). Older, not yet pieces: hit-carry-depth, conditional-spelling, the `r`/`a` flags, sequence-operand flags.
-NOT asked (his direction on macros): limited, between's body, list_of, param, within, upperStart. His PROPOSALS not
-ruled: arrays written with `|` only; the label-only group. THE SPELLINGS REVIEW (one sitting) is still owed.
-Manager's calls owed: warning names; whether `pcrec.label.unset` also fires on an always-unset read (r61
-GENERAL-10's side question).
+1. **bound-condition** (ASKED twice, not answered; his two examples did not reach it): a condition under its own
+   name (`c := (0: 5)`, then `/\d${c}/`; `late := (h: >5)`): does it read its labels and `0` where it is USED?
+   Five printed definitions depend on it (pass-start-read's `c`, `sum`, `n := count(..)`, `nchars`, `mnum`). My
+   leaning (a): yes. r77 has findings on this carve-out: read them first.
+2. From the lanes: record-in-some (inside `some`, a two-entry record is "some h is 5 and some m is 3", parting
+   from the joint form there); count-several (my lean: refused for now); capture-loop-value; group-truth re-put
+   (close for one entry?); every-pass-spelling re-put (a named form would now mean every setting).
+3. To confirm (his statement, my withdrawal of reading (c)): a piece looped by its USER does not see its own
+   previous pass; a predecessor test belongs to the definition that writes the loop.
+4. Older: number-in-loop, zero-in-loop, caller-ambiguous, not-test, condition-group, tuple-parts,
+   default-imports, export-choice, call-forms, any-case-body (held by me). `scripts/entry -g . -p predicates --state
+   open` lists 12 open pieces. Still owed: THE SPELLINGS REVIEW (one sitting; new today: `[=year]`, `.` as the
+   sequence mark, the capture add-on's two forms); warning names (my call).
+For a pcre2-reader, not him: the members of `(?i)k` in libpcre2 per mode (class-value reading (a)).
 
-## Owed before the next delivery
+## Lessons (cases; the rule-shaped ones are proposed to main in P-17)
 
-A critic round on the three post-P-14 hand folds (ask main for the number first), with the readings listed in
-their record entries tested: a binding inside a binding in a flagged hole; a bound `&` as a sequence operand at
-program level; `m` and `s` under the warning's comparison; compile-time judgements of a binding alone (assert,
-enumerate, never-match) against its use in a flagged hole.
-
-## Asked of main (P-14, applied "in the morning")
-
-The [COND-FAMILY] status line; r61's critic-skill changes; my proposed skill rule (a manager fold QUOTES his scope
-words and never widens them; a reading listed "for the next lane to test" is folded as a reading); pruning the
-three lane worktrees. Check `from_main.md` and `git log main` at wake.
-
-## Lessons (cases)
-
-- My hand folds WIDENED his words three times in one evening ("the whole surrounding rx", "the inside view less
-  the private names", "the test can never pass"); r61's answer-level findings were those. Quote his scope words; a
-  consequence I derive is a marked reading in the base and an item in `readings:`.
-- A hand model runs the model's INTENT: I told him `123` for a lazy + greedy lift from a model that enumerated
-  count by count; the lane's mechanical one gave `12`, and the answer moved again when he reversed the class
-  order. Anything about ORDER goes through a mechanical model before it is said.
-- Before asking, the record often already answers (bare-condition-labels: hit-carry's and pass-start-read's
-  witnesses had the shape); ask it as a confirmation with the quotes, and he corrects fast.
-- When he restates a rule in his own words, RUN his sentence at the edges (hole last / middle / first) and show
-  where it parts; he then says which he meant.
-- A proposal of his that collides with a ruled rule: show ONE witness pair (same set, two spellings, two
-  answers); he rules in one turn ("That's a good one!").
-- A ruling that moves several pieces went to an opus lane each time (predloop, predasc), a single ruling was
-  folded by me; the critic round then found more in my hand folds than in the lanes' work.
-- A fold that supersedes a lane's rule leaves that lane's committed evidence red (predloop's model): mark its
-  citations superseded in the same fold.
-- Lanes: NO BACKGROUND JOBS, runs under 110 s per command (a sabotage loop gets batched); never `--no-verify`;
-  never `git reset --hard`. A lane's hand-back and idle notices can arrive long after its merge: check, do nothing.
+- I told him "That is the closed answer for labels" from three examples that covered a PARAMETER's labels only; the
+  lane refuted it against the 17 printed definitions. A rule I induce from his examples is tested against every
+  printed example BEFORE it is said, or said as "fits these three, untested".
+- His answer letter can be a typo ("no, c" for b) and his REASON can be wrong while the answer stands (the loop
+  case did not part (a) from (b): the reset rule). Check the reason by a run, show the ONE witness pair, ask again;
+  he answers in one turn.
+- I recorded a FIND-ALL line before reading the run's output (`55`@6 for ` 5`@5). The record is written FROM the
+  output, pasted, never from what I expect it to print. Corrected by an appended entry.
+- A rewrite I offered as equivalent was not (`inner($h)` consumes; the original tested). Run both sides of any
+  "write it this way instead" before offering it.
+- A printed program can be illegal predicate language and pass lane, review and lint (`/${[${c}] + 1}/`); he
+  caught it. Briefs now say: inside `${...}` an rx is written `/.../`.
+- "condition-argument" should not have been asked: `when`'s ruled condition test already answered it. Grep the
+  LIBRARY's ruled bodies too, not only the record, before asking.
+- When he asks for an EXERCISE, do it mechanically and report where the rules pinched; it moved the discussion
+  more than three rounds of framing did.
+- Two sequential opus fold lanes on overlapping pieces worked (second cut after the first merged); a single-piece
+  ruling folded by hand between them merged clean.
+- The lint's ruling-line parser takes the record title up to the LAST `")` on the line: nothing quoted in
+  parentheses after the `(record: "...")` cite.
