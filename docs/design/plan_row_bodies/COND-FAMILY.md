@@ -7679,3 +7679,30 @@ pieces, a reading as a list): his four, plus: a group NUMBER (and `0`, the match
 (`sep = ","`); the provided names reserved in call position and the `@` effects; and, under construction, a
 macro VARIABLE (a label parameter, `x:`) and a typed parameter. A table of these (what introduces each, where
 it may be written, what it resolves against) is proposed for the documents: the name table review r82 asked for.
+
+### 2026-11-22 OWNER, on the kinds of reference: "Nothing missed I see"; can some be COMBINED: a capture group name produces a label; macro arg, typed arg, label arg as variations of one thing
+tags: core/operators/bindings core/labels/labels-vs-captures core/labels/numbers core/modules/map core/values/metadata core/labels/paths
+
+After the manager's table of name kinds. HIS WORDS, whole (two messages; the second corrects a word of the first,
+read for the intended "not 'defined' but 'combined'"):
+
+"Nothing missed I see. but I do wonder if some of these can be defined. Maybe, same thing from a different
+perspective. A capture group name produces a label of the same name? A macro arg, typed arg, label arg, are all
+variations on the same thing. Thoughts?"
+
+"Mont "defined" but "combined""
+
+Class: an ACKNOWLEDGEMENT (the list is complete as far as he sees), and a QUESTION with two IDEAS ("I do wonder";
+"Maybe"; "Thoughts?"): kinds that are one thing seen from two sides. Nothing ruled.
+
+The manager's answer (told to him; a view, built on what is ruled): yes, to TWO base kinds. A LABEL: a name for
+a stretch of the match, known at match time; a group in rx text makes one that is ALSO a capture (ruled
+pure-label: a property, not another kind), the label-only group and a part label make one that is not; a group's
+NUMBER is a second name of the same label (ruled: "two names of one label"); a metadata field is a label the
+language provides on a member. A BINDING: a name for a value, known at compile time; a macro's PARAMETER is a
+binding whose value arrives at the call (his "a binding variable not a label"); a label parameter is a parameter
+whose value is a label's NAME, a typed parameter one whose value is an rx with a stated interface; a module
+member is a binding reached through a module; a provided name is a binding the language supplies. And ONE
+operator between them, ruled 2026-11-15: "`.` has one meaning: a field of the map interface of the thing on its
+left". What must NOT be merged: label with binding (match time against compile time; his caveat: a binding
+scopes a label, by position in a path), and a label's value with its capture's value (they part after a loop).
