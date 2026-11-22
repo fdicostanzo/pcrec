@@ -4790,3 +4790,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - bsu4p DELIVERED (lane/bsu4p cc247853f; lanecheck DONE): tests/memfn/span_pins.py (20 T-table pin cells; SPAN-SEED census 28/31, k source == shipped text per site) called inside C18; C18 three NAMED span witnesses (v3-only), floor 3, FLOORS re-pinned x86-64 74 / v3 105 (x86-64 55 was already stale); routing_shape.py V leg + 7 selftest shapes 21/21; libc census funcs floor 141 -> 281; DIFFER_PINS verified unchanged. Plants S3530-S3536 (c,d,e,f + C18 controls 2-4) REACH 7/7, DETECTED in-lane except S3535 (first ANOMALY: C18 crashed on an unadmitted width; fixed, lint rejects it; matrix verdict owed). OWED 738-kit-bsu4p-test, 739-kit-bsu4p-mech. Lane stopped.
 - Findings: S3535 crash fix (a C18 robustness defect, kit-side); stale x86-64 floor; plant (c) edits the predicate since bsu3fix's static assert blocks a literal 15.
 - Next: code round r78 over both U4 branches while 736-739 run.
+
+## 2026-11-22 08:51 (kit)
+
+- Combined U4 branch lane/bsu4 = bsu4g + merge bsu4p (023ab6eb8); one conflict, c4_allowlist.tsv, both sides' appended rows kept (88 rows). make test-memfn-arch 32/0, make strict clean.
+- r78 code round launched: coordinator crit-memfn-bsu4 (opus) on lane/bsu4, BASE = merge-base with the kit branch (ad3c8f1c2).
+- 736/737 (bsu4g) and 738/739 (bsu4p) validate the halves; the combined tip needs its own make test + mech after r78's fixes.
