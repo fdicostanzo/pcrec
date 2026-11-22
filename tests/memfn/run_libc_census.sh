@@ -63,7 +63,9 @@ else
     # took the fixed-width patterns, whose search defines no offset-skip function
     FLOORS=(artifacts=820 dfa=310 vm=500 composition=38 none=300 idiom=80
             calls-memchr=470 calls-memcmp=40 calls-strlen=40 calls-printf=38
-            calls-fprintf=85 funcs=141)
+            calls-fprintf=85 funcs=281)
+    # R-47 U4 (lane bsu4p): funcs 141 -> 281, pinned AT the measure: routing_shape.py now counts the
+    # vector span's selectors (the `_mf<h>_vs<j>` name rule) with the offset-skip functions
 fi
 fl=()
 for f in "${FLOORS[@]}"; do fl+=(--floor "$f"); done
