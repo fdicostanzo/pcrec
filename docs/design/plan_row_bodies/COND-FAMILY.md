@@ -7955,3 +7955,29 @@ spot (`hits.hit.g`); (e) a binding used alone in a definition IS placed: its nam
 (wrapper-export): the provided macros that use their argument alone (`peek`, `atomic`, `when`, `list_of`, the
 gap bodies): `peek`'s ruled piece says "Labels A sets are readable after it" (2026-11-18); under this ruling no
 caller spelling reaches them unless the body passes them on.
+
+### 2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general
+tags: lib/control/peek lib/control/atomic lib/control/when lib/records/list-of lib/search/contains lib/modifiers/padded lib/modifiers/quoted lib/search/anchored lib/rx/repeat core/labels/export/export-list
+
+Asked **wrapper-export** ((a) the provided macros that use their argument alone, `peek`, `atomic`, `when`,
+`list_of` and the gap bodies, pass its labels on by an export list on the spot, `peek(A) := /(?=${[(=) = A]})/`,
+the caller reading `peek.d`; (b) they stay as written and `peek`'s sentence "Labels A sets are readable after
+it" is withdrawn; the manager's leaning (a)). HIS WORDS, whole:
+
+"wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change. Do
+transforms in general then pass their labels on? Padded, etc."
+
+Class: (1) a RULING on the slug, answer (a) ("agree (a)"): those provided bodies write the export list on the
+spot where the argument is placed; `peek`'s ruled sentence of 2026-11-18 stays true, read as `peek.d`. With an
+OBSERVATION ("It's just a definition change"). (2) a QUESTION: "Do transforms in general then pass their labels
+on? Padded, etc.": not ruled; the manager's answer below, put back to him as transform-export.
+
+The manager's answer (told to him; a view): yes, as ONE convention for the provided library: a provided body
+that PLACES its argument in the match passes that argument's labels on, by the export list on each spot, unless
+its piece says otherwise: `padded`, `quoted`, `anchored`, `any_case`, `contains` / `startsWith` / `endsWith`,
+`rx.repeat`, `capture`, beside the four ruled above. Not covered by "places": an argument used only as a
+FILTER or under a complement (a complement's labels are never visible, ruled), the set arguments (`between`,
+`prefix_in`), the natives with no body. Cases to state: two spots of one argument (`list_of`, `padded`'s width
+form: the same names, read by the label rules: last mention, or the branch taken); several arguments (`when`:
+a name two of them hold is one label by the same rules); a looped spot (`rx.repeat`, `occurrences`: the label
+rules of a loop; the array for a group question); `hits` / `occurrences` keep the path through `hit`.
