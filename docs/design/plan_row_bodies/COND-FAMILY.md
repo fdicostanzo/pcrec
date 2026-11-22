@@ -7578,3 +7578,17 @@ bare `${rx}` passes nothing through the call, so is `A.d` still the caller's loc
 error; **capture-export**: export statement 5 gives the caller the CAPTURES visible from the top-level program:
 does a capture written in rx text inside a bare-used part two bindings down still reach the caller (as in PCRE),
 or does it follow the labels.
+
+### 2026-11-22 OWNER, a question after default-export: "can I somehow export some labels but not others. Like year only from isodate"
+tags: core/labels/export core/labels/paths parked/ideas/declared-labels lib/builtin/export
+
+HIS WORDS, whole: "Question, can I somehow export some labels but not others. Like year only from isodate"
+
+Class: a QUESTION; nothing ruled. The manager's answer (told to him; from the rules as ruled, no matching run):
+YES at the grain of a PART or of a group the binding writes: a binding exports the parts it labels and the groups
+it writes without `_`, so `isodate := [year = digits4] SEQ "-" SEQ month SEQ "-" SEQ day` (month and day used
+alone: protected) or `/(?<year>\d{4})-(?<_month>\d\d)-(?<_day>\d\d)/` exports `year` only. NOT today at a finer
+grain: a labelled part passes ALL of that part's exported labels (`[d = A]` gives `d.x` and `d.y`); there is no
+form that re-exports ONE label of a part and keeps the rest. That would be his parked idea of declaring a
+binding's labels (parked/ideas/declared-labels), an export list in the binding's head; `@export(names)` (open
+export-choice) selects among a FILE's names, not a binding's labels.
