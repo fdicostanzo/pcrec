@@ -61,7 +61,7 @@ CONFIRMED output; consumer impact SUSPECTED (latent). Severity: maintenance (a f
 - `check_c6`'s `layer == "on"` / `layer != "on"` split agrees with LAYER_FLAGS (only `on` carries SIMD): HELD today; it is a third reader that would need the table under SLOT-1's unlock (an `on-clang` would be read as SIMD by name).
 - The partial dry (`$RD/dry/dry.out`): C6 deny check 11 (pattern, layer) pairs, 0 failures; 216 cells built and gated, 0 failures; C6c's clang pools built with CLANG_ALIGN_OFF and not refused. HELD (not re-run).
 - finder_check CARD_FORMDEP_COUNT 20 -> 21 matches the one new `kit:form.span-vector` dep (subject.log "check C: 21 cards with a kit:form. dep"). HELD.
-- The owner quote: 3 copies compared (COMMON.md, decisions.md:10311, plan.md:338): identical; journal copy not readable (denied). HELD with that limit (SLOT-5).
-- [BSPAN-CLANG-DIFF] row read by its own 5 lines only (plan.md:337-341); neighbours not printed.
+- The owner quote: 3 copies compared (COMMON.md, decisions.md:10311, the plan row [BSPAN-CLANG-DIFF]): identical; journal copy not readable (denied). HELD with that limit (SLOT-5).
+- [BSPAN-CLANG-DIFF] row read by its own 5 lines only; neighbours not printed.
 
 CRITIC COMPLETE
