@@ -7047,3 +7047,32 @@ composition"): he names the sequence form himself and keeps the `&` form beside 
 for the `&` form the group question's array holds the settings of both sides; whether a PLAIN read of `h` there
 is still the ambiguous reference (core/labels/flow: "Across `&` a name both sides surface is an ambiguous
 reference") is not touched by his words and stays as ruled. bound-condition: not answered by this message.
+
+### 2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives
+tags: core/holes/bare-condition/nested-scope core/conditions/form core/values/computed-labels core/operators/bindings parked/ideas/label-parameter parked/ideas/restricted-parameter
+
+Asked **bound-condition** a third time (a condition bound under its own name, no pattern in it: (a) laid against
+the pattern it meets where it is used; (b) sealed at its binding, a compile error; the example `late := (h: >5)`,
+`/(?<h>\d)/ & late`: (a) hand-lowered `[6-9]`, run: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL
+`7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7]; (b) a compile error at `late`; the manager's leaning (a), narrowly,
+"weaker than yesterday"; the cost of (b) named: the computed labels). HIS WORDS, whole:
+
+"bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/
+& (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding
+decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types
+B(d & isodate) := B(year: < 2100) (spellings tbd)"
+
+Class: an ANSWER on the slug, (b), given as "my read" with a response asked for ("please respond"): recorded as
+his POSITION, to be entered as the RULING when he confirms after the response (the reading taken, told to him).
+Its two statements: (1) `A := (x: blah)` is illegal: "x has no references in the binding"; (2) `A := /x/ & (y:
+blah)` is illegal: "y has no target" (this second form is bare-nested-scope case 1, already ruled). His ground:
+"the only read consistent with the earlier binding decisions". And two ALTERNATIVES he names, spellings his
+placeholders ("spellings tbd"): (1) "macro variables", `A(x:) := (x: < 2100)`: a parameter marked as a label (the
+first of the two ways he named on 2026-11-21: "we note that l is a label variable"; parked/ideas/label-parameter);
+(2) "macro types", `B(d & isodate) := B(year: < 2100)`: a parameter restricted to a pattern whose labels the body
+may then name (parked/ideas/restricted-parameter has his earlier `example(g & /\d+/)`); the body as he typed it
+repeats `B`, read for the intended `d & (year: < 2100)` (a reading).
+
+WITHDRAWN by the manager on this position: the leaning (a) and the reading "a bound condition or computed label
+has no rx of its own and is laid against the pattern it meets" (case-2 entry, reading (b); zero-in-definition
+entry, reading (b)).
