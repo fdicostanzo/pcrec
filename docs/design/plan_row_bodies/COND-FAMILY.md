@@ -8004,3 +8004,23 @@ argument-default); `identity(x) := /${[(=) = x]}/` passes all of them on (export
 against the rules as ruled (no matching run: both match exactly what `x` matches; what differs is what the call
 exports): correct. NOT ruled as provided NAMES: whether `hide` and `identity` join the library is his to say;
 they go into the convention's piece as its worked pair and onto the user-documentation list.
+
+### 2026-11-22 OWNER, a question on transform-export: `A(rx) := /${=rx}/` then `B := A(/\d/) & (A.rx: 6)`
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/spellings/placeholders
+
+While **capture-export** was before him (not answered by this message). HIS WORDS, whole:
+
+"transform-export: question: can i A(rx) := /${=rx}/ then B := A(/\d/) & (A.rx: 6)"
+
+Class: a QUESTION with an example; nothing ruled. The spelling `${=rx}` is his placeholder. The manager's answer
+(told to him): YES in meaning, by what is ruled. Read `${=rx}` as `${[rx = rx]}` (his shorthand `[=year]`, read
+as `[year = year]`): the body puts a LABEL ON THE SPOT where the argument is laid, named for the parameter: his
+own principle of the same evening ("You can take a label to the spot that rx gets laid into the regex") and his
+example 3 of 2026-11-21 (`[dd = rx]`). A part label the body writes is exported by the call (default-export:
+what a binding's own text writes); the macro's name qualifies it (call-prefix case 1); one call, so the plain
+read is legal: `(A.rx: 6)` tests the text matched at that spot. RUN (hand-lowered `(?:6)`, python `re`; output
+pasted): WHOLE `6` HOLDS / WHOLE `7` FAILS / SEARCHED `x76` `6`@2 / FIND-ALL `6 7 66` [`6`@0, `6`@4, `6`@5].
+The manager's readings (marked): (a) `A.rx` is the SPOT's own text; the argument's inner labels are reached
+through it by path (`A.rx.g`), not flat: the third small form beside his `hide` (nothing) and `identity` (the
+inner labels flat); (b) a label named for the parameter by the `=` shorthand draws no hide-label warning (the
+shorthand asks for it); (c) `${=rx}` without the brackets is a spelling for the spellings review.
