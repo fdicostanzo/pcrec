@@ -7837,3 +7837,64 @@ inherit by the same rule: an explicit `i` only; the warning `pcrec.flags.filter`
 `xx`, `n`, `U` stay not inherited (as ruled); `J` unchanged; (d) the program options `m`, `s`, `n`, `x` and the
 weak `i` are one table: lexical, the file's own literals, from the statement on; (e) a binding of the SAME file
 inserted in a hole of that file has the same defaults, so nothing visible changes there.
+
+### 2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)
+tags: core/labels/export core/labels/paths core/labels/flow core/holes/labels core/labels/export/flat-read-outside core/modules/binding-list core/conditions/form lib/search/hits lib/search/occurrences core/diagnostics/errors
+
+Review r83 (design mode; five opus lenses, one of them the NAMES grid, and an opus verifier over the fold of
+default-export and export-list, diff 30ca2520d..3e58abe9e; draft `$PCREC_TMPDIR/scratch/crit-preddef1122/
+review.md`; verifier 13 HOLDS, 2 PARTLY; every printed line re-derived agrees; no undeclared red in the
+evidence). The manager's dispositions, by the draft's ids; every one is the manager's, none an owner ruling:
+
+- A1, A2, A7 (the evidence engine accepts what the text refuses: the `&` ambiguity on a read from outside,
+  through a part label over an `&` chain and through an export list across `&`; an export list through a call
+  whose body uses its argument alone; bare `$h` and `h[2]` across `&`): FIX-NOW in a successor model, with one
+  printed refusal line per shape and the error-table rows.
+- A3: FIX-NOW BEFORE the owner is asked argument-default: "The match is the same under both" corrected (false
+  when a body uses its argument both alone and labelled; the two-use run line printed); the cost of the (error)
+  answer across the provided library stated.
+- A4: FIX-NOW, the manager's reading: a read from OUTSIDE a binding sees its EXPORTED settings only; a source the
+  binding keeps protected does not exist for that read (so it neither supplies a value nor makes an `&`
+  ambiguity); a run line.
+- A5: FIX-NOW, the manager's reading: a binding's own name reaches its UNLABELLED uses only; a labelled use is
+  reached by its label; where a part label written in the definition has the binding's own name, the label wins
+  (with the hide-label warning).
+- A6: FIX-NOW: "a call exports what its body exports (core/labels/export statement 3)".
+- A8: FIX-NOW: the dependents marked and listed under argument-default; the manager's reading: a read written
+  INSIDE an argument beside the argument's own group is the caller's own text, legal under both candidates;
+  closed-argument's reading (a) re-worded as awaiting argument-default.
+- D1, D3, D5, D6, D7, D9, D10, D11, D12, D13, D14, D18: FIX-NOW as proposed (D3: ONE statement in
+  core/labels/export: "an unlabelled use carries the implicit label of the binding's name, protected", the other
+  pieces point at it; D6: every reading printed as a rule is marked, his caveat classed AGREEMENT, the citations
+  of readings "(g)/(h)" corrected to the letters the record has).
+- D2: FIX-NOW, with CORRECTION 1 below.
+- D4: (i) FIX-NOW, a reading: a part label over an EXPRESSION written in the definition reads, inside the
+  definition, the labels visible in that expression by the inside rules, and exports outward only what that
+  expression's own text exports; (ii) FIX-NOW, one sentence: a macro's parameter is not a part whose labels the
+  body may name (ruled 2026-11-21; statement 2 does not license `rx.d`); (iii) the label-only group around an
+  argument (`(?<:hit>${x})`: do `hits` and `occurrences` export their argument's labels as `h.hit.g`) joins the
+  OWNER QUESTION argument-default as its library face; (iv) natives: PLAN (trigger: the first native given a
+  body or an interface).
+- D8: FIX-NOW: the sentence in core/holes/labels marked "(awaits capture-export)"; the top level stated as a
+  reading (at the top nothing is outside: the program's own text and the parts it uses alone are both visible
+  to it).
+- D15, D16: PLAN (the access grid and the one-form table at the next full revision); NOW: `[=A]` added to the
+  table of the ways a part is used; the cross case `(=year) := isodate` and a collision between two lists stated
+  as readings (the cross case a compile error for now; a collision the same label, last mention).
+- D17: RULED BY THE RECORD, see below. E1, E2: FIX-NOW in the successor model. E3: NOTED.
+- S1 (the general form as a principle piece): PLAN: a principle needs his words; told to him as a view.
+- Process: the NAME-GRID check (one cell per spelling x occurrences x read kind, each naming its deciding
+  sentence and a run, undecided cells printed) is ACCEPTED and goes into the successor model in this fix lane;
+  the proposed skill edits go to main.
+
+CORRECTION 1 (review D2): the entry "2026-11-22 OWNER RULING — default-export: protected" names hole-export and
+statement 3 as reversed. It ALSO narrows two earlier rulings it does not name: label-flow (b), 2026-11-17 ("a
+compose and a literal rx have the same label behavior"), and bare-nested-scope case 2, 2026-11-21 (the identity
+"holds for what the user sees"): a binding composed from parts used alone exports nothing, where the same text
+written as one literal exports its groups (`D1 := A SEQ B` against `D2 := /(?<c>\d)(?<c>\d)/`). This is a
+consequence of the ruling, the manager's reading; told to the owner.
+idiom-confirm CLOSED on the record (review D17): the statement put to him before he ruled "default-export:
+protected" was "a part used bare is available locally as `A.h` but exports nothing", and his analogy gives the
+part used alone local access. That IS the one-use plain read through the binding's name; so `isodate &
+(isodate.year: < 2100)` at the top, where isodate is used alone, is ruled legal by default-export, and his
+2026-11-17 point 4 is revised by it. Told to him; not asked again.
