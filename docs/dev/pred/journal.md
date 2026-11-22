@@ -868,3 +868,16 @@ FOR THE r84 FIX LANE (spelling side; no meaning moves): his reading of `[a = A]`
 2026-11-22 (latest): RULED capture-export in two parts (a named group in a part of a composed program is NOT a capture by default; the program-level `capture(path)` asks for one; explicit captures returned from the artifact against implicit ones the language needs). RECORD ONLY: predspot is running and r84 follows; this fold (export statement 5, labels-vs-captures, lib/structural/capture and its add-on, caller-ambiguous, the name table four cells) goes to the lane AFTER r84 with its own round, together with the label-set spelling notes if the r84 fix lane has not taken them.
 
 2026-11-22 (latest, 2): RULED zero-condition-binding: an error, to be reconsidered later (his reasons recorded). RECORD ONLY; a single-piece fold (core/holes/bare-condition zero-binding piece, the two candidate lines to rejected): by hand or with the capture-export lane after r84.
+
+## 2026-11-22 (night's end) — predspot merged; critic round r84 launched
+
+Lane predspot (nudged once after 25 quiet minutes on its background plant run) delivered and MERGED: tip
+e6e95a2c5, lint 7,034 / 0, its model 27 / 0 (29 plants caught), NAME-GRID 144 cells all agree, FLAG-GRID 128
+cells (78 agree, 0 disagree, 50 n/a). Folded: argument-default (an error), wrapper-export, transform-export, the
+principle piece, program-options, hole-flags. One answer changed in group 1 (the two-use body now reads the
+labelled spot); none of the printed flag lines (all four had an explicit `(?i)`). LAUNCHED: coordinator
+`crit-predspot1122` (opus, background), review r84, subject = diff 75d2318bd..e6e95a2c5, round dir
+`$PCREC_TMPDIR/scratch/crit-predspot1122/`, lenses RULING, EXAMPLES, NAMES grid, FLAGS grid, fix-induced +
+general. Subject FROZEN until the draft. NEXT: rule r84; ONE opus fix lane (files the review; ALSO the spelling
+notes: label set, `${=rx}`, `[ab = (B | A)]`, the comma form, the third small form `A(rx) := /${=rx}/`); merge;
+P-22. THEN a fold lane for capture-export and zero-condition-binding with its own round (ask main for a number).
