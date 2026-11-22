@@ -11,6 +11,8 @@
 # is unchanged.
 # RE-AIMED 2026-11-22 (lane bsu5, R-47 U5): the entry struct gained its last column `k` (SPAN's stretch k), so the row ends
 # `NULL, NULL, 0 },`; the plant and the detector are unchanged.
+# RE-AIMED 2026-11-22 (lane bsu5fix, review r79 F16): SPAN folded into the WINDOW shape and the entry gained its last
+# column `ppm` (the stated byte-rate analysis), so the row ends `NULL, NULL, 0, 0 },`; the plant and the detector are unchanged.
 SAB_ID="S2930-formhash-two-ids-one-text"
 SAB_FILE="memfn/src/formhash.c"
 SAB_SUITES="memfnfinder"
@@ -18,5 +20,5 @@ SAB_DESC='the form-hash entry table renders two ids (pair, walk) from one site: 
 SAB_DOC_FIGURE='MEASURED by lane memfn-s2c (sub-lane fh) planted and reverted by hand; exact re-run: bash tests/mech/run_sabotage_matrix.sh S2930.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, NULL, 0 },'
-SAB_AFTER='    { "pair",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        "generic",          NULL, NULL, 0 },   /* SABOTAGE S2930 */'
+SAB_BEFORE='    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, NULL, 0, 0 },'
+SAB_AFTER='    { "pair",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        "generic",          NULL, NULL, 0, 0 },   /* SABOTAGE S2930 */'
