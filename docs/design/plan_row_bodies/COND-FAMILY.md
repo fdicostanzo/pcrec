@@ -7592,3 +7592,22 @@ grain: a labelled part passes ALL of that part's exported labels (`[d = A]` give
 form that re-exports ONE label of a part and keeps the rest. That would be his parked idea of declaring a
 binding's labels (parked/ideas/declared-labels), an export list in the binding's head; `@export(names)` (open
 export-choice) selects among a FILE's names, not a binding's labels.
+
+### 2026-11-22 OWNER PROPOSAL — re-exporting one label of a defined part: `[(=year) = isodate]`
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out parked/ideas/declared-labels
+
+After the manager's answer (yes at the grain of a part; no form re-exports one label of a part). HIS WORDS, whole:
+
+"I meant if isodate was defined and I wanted to reexport year only. [d = isodate] exports all. How about this:
+[(=year) = isodate]"
+
+Class: a CLARIFICATION of his question (isodate already defined; re-export `year` only) and a PROPOSAL ("How about
+this") of a form; nothing ruled; the spelling his placeholder. The manager's reading of the form (told to him): the
+left side of a part label is the NAMED BINDING LIST he ruled for maps on 2026-11-19 ("`(l = left, =right) := X`
+binds `l` to `X.left` and `right` to `X.right`, on any map; `=left` is `left = left`"), applied to a part: the
+binding takes the listed labels of the part as labels of its own (written in its text, so exported and read bare
+inside it), and nothing else of the part. By the same ruled list: a rename `[(y = year) = isodate]`; all of them
+`[(=) = isodate]` (the old public default, now asked for by name); all but one `[(=, _ = month) = isodate]`.
+NOT STATED: a listed name the binding also writes itself (the manager's lean: the same label, last mention, as
+any two groups of one name); whether the part ALSO gets a path name; a listed label is an alias of the part's
+label (same settings, no new capture: a reading).
