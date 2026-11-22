@@ -28595,3 +28595,6 @@ Next
 - 10:45 l3land: merge d92d672be (abi 112) done, tip 753d4f6e8; three boxlock runs queued behind kit 736-739. The D3FLOOR_REPIN=1 command was DENIED by the permission classifier; not routed around; asked Frank (d3-repin-permission).
 - 10:55 Frank (DIRECTION): the loop-in-loop rewrite belongs in the graph rewrite layer -> [AUTOMATON-KIT] body file (new docs/design/plan_row_bodies/AUTOMATON-KIT.md), moved off [SPELLING-INV]; note: must act before + copies its body.
 - 11:05 width-night-bench ANSWERED (in the kit session, relayed verbatim): D202 addendum 1 filed (width table per scanned kind incl. mixed; per-site proven-range vs candidate fact; kit's readings marked for the owner). Part B timing unruled; lean stands.
+- 11:10 SLIP: backgrounded `monread main --wait` with & in a foreground Bash again (the 11-20 lesson); safekilled 2227106 within seconds, re-armed properly.
+- 11:15 k159fix cloud test RED shard 5/18: K37 (a compiler call with no sanctioned bound), almost certainly the new [facts-width-cpu] guard (watchdog -c 5). Triage+fix lane k159k37 (sonnet) on lane/k159k37 off k159fix. kit acked D202 add. 1.
+- 11:20 D202 add. 1 follow-up filed (Frank via the kit: the range is an obligation, not a fence; kit's conditions marked for him).
