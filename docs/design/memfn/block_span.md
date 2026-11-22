@@ -951,7 +951,9 @@ Written before data:
   `memfn/tests/span_forms/c6_rule.md`**, written before any C6 timing; its
   sha is the first 16 hex of sha-256 over its fenced block (the bytes job
   710's sha covers in the committed `rule_710.md`, `6351bff3901e3955`),
-  COMPUTED by cards.py from the files, never typed. It fixes, now: the
+  COMPUTED by cards.py from the files, never typed; **at commit ac807e97a
+  it is `9a2875a6bf089837`** (read from `git show` of the committed file).
+  It fixes, now: the
   UNIT (an arm's median of its launches, the spread over the middle
   three of five, so one outlier launch cannot widen the floor; a
   comparison whose floor exceeds 0.30 is INCONCLUSIVE-NOISE, never a TIE);
