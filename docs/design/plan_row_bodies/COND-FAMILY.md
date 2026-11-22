@@ -7135,3 +7135,18 @@ Class: a CLARIFICATION of his own word in the bound-condition ruling (part of th
 illegal (`A := (x: blah)`; `A := /x/ & (y: blah)`; a computed label bound alone, by his confirmation) are COMPILE
 ERRORS, at the binding (the place is the manager's reading, from "x has no references in the binding" and his
 case-1 words "compile error at inner"). Not the under-construction error. count-in-set: not answered by this.
+
+### 2026-11-22 OWNER, on count-in-set: "where do you define label ch?"
+tags: lib/modifiers/length lib/counting/count core/labels/export
+
+Asked **count-in-set** (a count tested against a set now that `n := count(..)` bound alone is a compile error:
+(a) a member of `occurs` taking the set; (b) a value left of `:` in place; the manager's leaning (b), with the
+example `length(S) := chars & (count((ch: /(?s:.)/)): S)`). HIS WORDS, whole:
+
+"count-in-set: i don't understand your length(S) example: where do you define label ch?"
+
+Class: a QUESTION on the manager's example; nothing answered on the slug. The manager's answer (told to him): the
+example left out the helper's definition. `ch` is the group in the library's helper `chars := /(?:(?<ch>(?s:.)))*/`
+(lib/modifiers/length), which `length`'s body USES; inside a binding "the public labels of everything written or
+used there are visible" (core/labels/export, statement 2), so `ch` has its target in the binding. The same body in
+one definition: `length(S) := /(?:(?<ch>(?s:.)))*/ & (count((ch: /(?s:.)/)): S)`.
