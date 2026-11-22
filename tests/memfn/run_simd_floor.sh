@@ -29,5 +29,15 @@ if ! "$TIMEOUT_BIN" 120 "${CC:-gcc}" -O2 -I "$TREE/memfn/include" -o "$WORK/simd
     echo "FAIL: [simd-floor-build] the levels dumper did not build"; cat "$WORK/cc.log"
     echo "checks passed: 0"; echo "checks failed: 1"; exit 1
 fi
+# R-47 U4: the vector span's pin cells read the k source (block_span.md §10.1): the
+# finder row from a TRACED build (the kit swapped for its -DMF_TRACE copy), k from
+# the harness build's head-0 lever compile
+if ! "$TIMEOUT_BIN" 600 make -s -C "$TREE" build/libpcrec_mftrace.a > "$WORK/mftrace.log" 2>&1 \
+   || ! "$TIMEOUT_BIN" 300 "${CC:-gcc}" -O1 -I "$TREE/lib" -I "$TREE/src" -DPCREC_HARNESS \
+        -o "$WORK/pcrec-trace" "$TREE/cli/main.c" "$TREE/build/libpcrec_mftrace.a" 2>> "$WORK/mftrace.log"; then
+    echo "FAIL: [span-pins-build] the traced compiler did not build"; cat "$WORK/mftrace.log"
+    echo "checks passed: 0"; echo "checks failed: 1"; exit 1
+fi
 TMPDIR="$WORK" "$TIMEOUT_BIN" 2400 python3 "$TREE/tests/memfn/simd_floor_check.py" --pcrec "$PCREC" \
-    --levels "$WORK/simd_levels" --every "$EVERY" --jobs "${SIMD_FLOOR_JOBS:-4}"
+    --levels "$WORK/simd_levels" \
+    --harness "${PCREC_HARNESS:-$TREE/build/pcrec-harness}" --trace "$WORK/pcrec-trace" --every "$EVERY" --jobs "${SIMD_FLOOR_JOBS:-4}"

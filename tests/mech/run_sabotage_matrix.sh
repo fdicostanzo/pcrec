@@ -578,6 +578,16 @@
 #     whole family under ASan costs ~1.8x g2pres (measured by lane k383:
 #     the --plant ASan path 80 s vs 44 s per plant on the dev box). Rows:
 #     S3100, S3101.
+#   g2v — added 2026-11-22 ([MEMFN] R-47 U4, lane bsu4g); runs
+#     memfn/tests/run_g2_win.sh --v: section V alone, G2-V's unit (every
+#     vector-span rendering of a generated set x k space, windows flush
+#     against a PROT_NONE page at each end, against python re) and whole
+#     (pcrec's artifacts at both layers and widths 32/4095, find-all over the
+#     cards' regimes and the near-miss staircases, subjects flush against a
+#     PROT_NONE page at each end). ~30 s; its own arm because the window
+#     family's full run costs ~220 s and reads none of the vector span's
+#     text. Links the sabotaged tree's build/libpcrec.a and runs its
+#     build/pcrec. Rows: S3525, S3526.
 #   g2win — added 2026-11-14 (lane mechund); runs memfn/tests/run_g2_win.sh:
 #     G2's window family (generated window sites against g2/g2_win_ref.c's
 #     decision, the in-run sites under the lever run-tie-left included).
@@ -3543,6 +3553,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/g2presasan.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/g2presasan.log" | grep -oE '[0-9]+')"
                 score_arm "$work/g2presasan.log" "$f" "g2pres-asan:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            g2v)
+                # [MEMFN] R-47 U4 memfn/tests/run_g2_win.sh --v (G2-V) — see
+                # the vocabulary entry above. Links the sabotaged tree's own
+                # build/libpcrec.a and runs its build/pcrec.
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/memfn/tests/run_g2_win.sh" --v > "$work/g2v.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/g2v.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/g2v.log" | grep -oE '[0-9]+')"
+                score_arm "$work/g2v.log" "$f" "g2v:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnd27frame)
                 # [MEMFN] span_pick 3.0b tests/memfn/d27_frame/run.sh — see

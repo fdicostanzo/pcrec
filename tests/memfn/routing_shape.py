@@ -3,7 +3,8 @@
 offset-skip/pre-check function takes in an emitted artifact since R4e'.0b
 ([MEMFN] R-11; integration.md §R4.9.2.5/§R4.9.2.6; D155 item 6 and
 addendum 1). Read by libc_census.py (C11, `make test-memfn-stamps`) over its
-whole corpus population; `--selftest` runs the planted controls alone.
+whole corpus population; run with no argument (or `--selftest`) it runs the
+planted controls alone (they run on every invocation, before any FILE).
 
 THE RULE (Frank, D155 addendum 1): "A function that does work never contains
 #if. A selector function's whole body may be the #if chain, one call per
@@ -38,6 +39,12 @@ import sys
 FUNC_SUFFIXES = ('_reqrun_whole', '_reqrun', '_ofsskip')
 HEAD = re.compile(r'^static inline size_t (\w+)\(const unsigned char \*subject, size_t n, size_t pos'
                   r'((?:, const unsigned char \*\w+)*)\)$')
+# THE VECTOR SPAN'S FAMILY (R-47 U4, block_span.md §10.2 [R-11]): a FUNC is named by the
+# NAME rule `_mf<h>_vs<j>` and heads `static inline __attribute__((always_inline[, unused]))
+# int <fn>(const unsigned char *<s>, size_t <c>)`; its parameters are forwarded as `<s>, <c>`.
+VHEAD = re.compile(r'^static inline __attribute__\(\(always_inline(?:, unused)?\)\) int (\w+)'
+                   r'\(const unsigned char \*(\w+), size_t (\w+)\)$')
+VNAME = re.compile(r'_mf\d+_vs\d+$')
 ANY_HEAD = re.compile(r'^[A-Za-z_][^;{}]*\b(\w+)\s*\([^;]*\)\s*$')
 COND = re.compile(r'^\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b')
 CALL = re.compile(r'^    return (\w+)\((.*)\);$')
@@ -79,6 +86,30 @@ def check(text):
     funcs = [n for n in heads if n.endswith(FUNC_SUFFIXES)]
     bad = []
     selector_at = set()
+    vheads = {}
+    for i, ln in enumerate(lines):
+        m = VHEAD.match(ln)
+        if m:
+            vheads.setdefault(m.group(1), []).append((i, m.group(2), m.group(3)))
+    vfuncs = [n for n in vheads if VNAME.search(n)]
+    for fn in sorted(vfuncs):
+        if len(vheads[fn]) != 1:
+            bad.append('%s defined %d times' % (fn, len(vheads[fn])))
+            continue
+        at, s_, c_ = vheads[fn][0]
+        selector_at.add(at)
+        helper = vheads.get(fn + '__body')
+        if not helper:
+            bad.append('%s is not routed: no %s__body' % (fn, fn))
+            continue
+        if helper[0][0] > at:
+            bad.append('%s__body is defined below %s' % (fn, fn))
+        if helper[0][1:] != (s_, c_):
+            bad.append('%s__body does not take %s\'s parameters' % (fn, fn))
+        why = selector_body(fn, body_at(lines, at), '%s, %s' % (s_, c_),
+                            {h for h, d in vheads.items() if d[0][0] < at})
+        if why:
+            bad.append('%s: %s' % (fn, why))
     for fn in sorted(funcs):
         if len(heads[fn]) != 1:
             bad.append('%s defined %d times' % (fn, len(heads[fn])))
@@ -105,7 +136,7 @@ def check(text):
             if COND.match(ln):
                 bad.append('%s holds a directive: %s' % (name or '(a function)', ln.strip()))
                 break
-    return len(funcs), bad
+    return len(funcs) + len(vfuncs), bad
 
 
 def body_at(lines, head):
@@ -200,7 +231,35 @@ CONTROLS = [
      + LEVEL, True),
     ('one call to another FUNC\'s level', HELPER + LEVEL.replace('rx_reqrun__w16', 'rx_ofsskip__w16')
      + SELECTOR.replace('rx_reqrun__body(', 'rx_ofsskip__w16('), True),
+    # the helper-parameter rule's own control (r78 C18WIRE-2, the ofsskip sibling): the helper
+    # takes a table parameter the FUNC does not, so not the FUNC's own parameter list (HEAD fixes
+    # `subject, n, pos`; the rule compares the table parameters after them)
+    ('helper takes other parameters', HELPER.replace('size_t pos)', 'size_t pos, const unsigned char *t)')
+     + SELECTOR, True),
 ]
+
+
+# the vector span's shapes (U4): its heads, `int`, the forwarded `<s>, <c>`
+VH = 'static inline __attribute__((always_inline%s)) int %s(const unsigned char *s, size_t c)\n'
+VBODY = (VH % (', unused', 'rx_mf1_vs0__body') + '{\n    return c < 4 && s[c] == 97;\n}\n\n')
+VSEL = (VH % ('', 'rx_mf1_vs0') + '{\n    return rx_mf1_vs0__body(s, c);\n}\n\n')
+VLEVEL = (VH % ('', 'rx_mf1_vs0__w32') + '{\n    return rx_mf1_vs0__body(s, c);\n}\n\n')
+VCONTROLS = [
+    # (name, text, expect a violation, expected FUNC count)
+    ('V routed (SIMD off)', VBODY + VSEL, False, 1),
+    ('V one call to its level', VBODY + VLEVEL + VSEL.replace('__body(', '__w32('), False, 1),
+    ('V selector does work', VBODY + VSEL.replace('    return', '    c++;\n    return'), True, 1),
+    ('V selector drops a parameter', VBODY + VSEL.replace('(s, c)', '(s, 0)'), True, 1),
+    ('V helper below the selector', VSEL + VBODY, True, 1),
+    ('V level not defined above', VBODY + VSEL.replace('__body(', '__w32('), True, 1),
+    # r78 C18WIRE-1: the level IS defined, but BELOW the selector (tells "above" from "absent")
+    ('V level defined below', VBODY + VSEL.replace('__body(', '__w32(') + VLEVEL, True, 1),
+    # r78 C18WIRE-2: the helper's parameters renamed (the helper-parameter rule's control)
+    ('V helper takes other parameters', VBODY.replace('*s, size_t c', '*t, size_t c').replace(
+        's[c]', 't[c]') + VSEL, True, 1),
+    ('V unrouted', VBODY.replace('vs0__body', 'vs0'), True, 1),
+]
+
 
 
 def selftest():
@@ -209,6 +268,9 @@ def selftest():
     for name, text, expect in CONTROLS:
         n, why = check(text)
         out.append((name, bool(why) == expect, why))
+    for name, text, expect, nf in VCONTROLS:     # the V leg counts its FUNC, too
+        n, why = check(text)
+        out.append((name + ' (counts %d FUNC)' % nf, n == nf and bool(why) == expect, why))
     return out
 
 
@@ -217,8 +279,11 @@ if __name__ == '__main__':
     for name, ok, why in selftest():
         print('%s: control %s%s' % ('PASS' if ok else 'FAIL', name, '' if ok else ' (%s)' % why))
         bad += not ok
-    if len(sys.argv) > 1:
-        for path in sys.argv[1:]:
+    # `--selftest` (or no argument) runs the planted controls alone; the controls run on every
+    # invocation, and any other argument is an artifact's file path
+    paths = [x for x in sys.argv[1:] if x != '--selftest']
+    if paths:
+        for path in paths:
             n, why = check(open(path, encoding='utf-8', errors='surrogateescape').read())
             print('%s: %d FUNC(s)%s' % (path, n, ''.join('\n  ' + w for w in why)))
             bad += bool(why)
