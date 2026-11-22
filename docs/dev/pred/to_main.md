@@ -346,3 +346,34 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   read kind, which settings does it reach" (r82's two main findings were each reached by three lenses from three
   sides). (4) pcrec-predicate-manager section 2: "a sentence of the form 'X and Y are the same' about two
   spellings is run on a parting case before it is said" (the owner found the case in one line).
+
+## P-21 (2026-11-22, predicate manager) — done: default-export and export-list folded; review r83 filed RULED and applied
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. Docs only; `make -s test-plan-lint`
+  clean; lint count on the merged branch in the line below this entry's commit message (run before naming it).
+  Lanes merged since P-20: preddef, predfix83 (reports `docs/dev/lanes/<lane>_report.md`; the newest evidence
+  model `docs/dev/lanes/predfix83_evidence/predfix83_model.py`, 25 checks / 0 failed, 25 plants caught; it carries
+  the NAME-GRID check and declares every older model's red). Review
+  `docs/dev/reviews/2026-11-22-r83-preddef1122.md` + its directory + the NOTES index line (your number r83).
+- In it, ruled by the owner on 2026-11-22: default-export: protected (a part used alone in a binding is available
+  inside it and NOT exported; reverses hole-export of 2026-11-19); export-list (`[(=year) = isodate]`: the named
+  binding list on a part label). A new piece, the name table (two kinds of name, label and binding; agreed by him
+  as framing).
+- IN THE RECORD, NOT YET IN THE DOCUMENTS (ruled after the review froze the subject; the documents carry
+  argument-default as an open piece): argument-default: an error (his principle: a label is to the spot in the
+  pattern, an argument is a template); wrapper-export and transform-export (provided bodies that place their
+  argument pass its labels on); program-options (file-scoped flags); hole-flags (only an explicit `i` is
+  inherited at a hole). ONE fold lane and its review follow: that will be P-22, and I need a review number for it.
+- [COND-FAMILY] status line, when you take it: rulings through default-export and export-list folded and
+  reviewed (r77, r82, r83 filed); five rulings of 2026-11-22 recorded, fold pending; open questions next:
+  capture-export, two-sources (second shape), zero-condition-binding, macro variables / macro types / declared
+  labels as one design.
+- Worktrees free to prune: preddef, predfix83 (and any of P-20's list still standing).
+- PROPOSED SKILL EDITS from r83 (yours to make; the round's process notes P1-P5 are in the filed review's
+  process.md): (P1) the predicate evidence convention: the newest model carries a committed NAME-GRID check
+  (spelling x occurrences x read kind; each cell its deciding sentence and a run; an undecided cell printed, not
+  skipped): every answer-level finding of r83 sat in a cell no printed-line check reaches; (P2) a SUCCESSOR
+  declaration carries the red's own FAIL-line text and compares it; (P3) pcrec-critic section 5, design mode: when
+  evidence scripts `git show` older commits, R/tree is a shared no-checkout clone at the freeze, not a plain copy;
+  (P4) name the ROOT CONCEPT a revision changes and give its definition-completeness question to ONE lens; (P5) a
+  model exits non-zero iff its last line reports a failure.
