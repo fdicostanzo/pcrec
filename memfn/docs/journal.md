@@ -4760,3 +4760,10 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - Owed, gated not-before 2026-11-22T07:00: 729-kit-bsu3fix2-test, 730-kit-bsu3fix2-mech, 731-kit-bsu3fix2-ids.
 - Next session: read 729-731 via monread. All green -> merge lane/bsu3fix (it contains lane/bsu3) into k1108 alone, make strict, deliver U3 to main (abi 112; re-pin if L3 lands after it). Then the U4 lane.
 - The brief rules learned today went into the kit skill §4.
+
+## 2026-11-22 00:09 (kit, session wake 23:28 11-21)
+
+- Frank (via main's journal, then to me directly 23:3x): "you can edit the job files as needed". Pulled 729/730 to 23:30 inside main's hard line (end by 00:55); 729 started 23:34.
+- 729 RED 00:06 (rc=2, 1924s): ONE section, test-memfn-arch, class 6 (arch-noun) — 'pshufb' in S3516's comment + SAB_DESC, written by bsu3fix2 (6cf672b6a). Triage lane (sonnet, read-only), report /var/tmp/pcrec-pcrec/scratch/bsu3fix2/triage729.md. simdfloor GREEN (22771/0): 726's red is fixed. Stale wording, not a defect; no byte moved.
+- Fix 7c7e625b5 on lane/bsu3fix (bsu3fix3): "pshufb" -> "byte shuffle" in S3516 prose (the S3515 allowlist rows say "prose in the row is worded arch-free"; rewording beats an allowlist row). make test-memfn-arch: 32 passed / 0 failed.
+- 730 cancelled; 729/730 re-gated to 07:00 and requeued; 731 still 07:00. Main told. Lesson: a reworded sabotage's prose runs the arch-blind check too — run make test-memfn-arch on any fix lane that touches tests/ text (seconds).
