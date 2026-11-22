@@ -181,4 +181,6 @@ Full gained list per cell (d3diff.txt):
 - D3-FLOOR CHECK mode: red on all four cells, as expected for the stale pin (D3-FLOOR RE-PIN).
 
 ## OWED RUNS
-TBD
+- Cloud runs, owner main, all on ONE ref: abf70175e, the report commit. It differs from the validated f2f9dd867 by docs only (ledger, plan, register, report, index). Each was proven by `git ls-remote origin 'refs/heads/cloud/main/*/l3land*'`: `cloud/main/test/l3land`, `cloud/main/axes/l3land`, `cloud/main/mech/l3land` and `cloud/main/recidentity/l3land`, all four at abf70175e. Verdicts arrive as CLOUD-DONE via queuewatch and were not waited on. EXPECT axes RED on shard 1's D3-FLOOR (the stale pin, D3-FLOOR RE-PIN) until the re-pin lands. Re-run axes after it.
+- The D3-FLOOR re-pin (command in D3-FLOOR RE-PIN) is owed. It is stopped pending the kit's ruling on the span_seed.rxt rows.
+- The full suite is owed per the ledger line (D177 row 3 fires; row 4 counts 4 majors).
