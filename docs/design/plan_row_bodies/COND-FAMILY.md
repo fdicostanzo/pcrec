@@ -7381,3 +7381,33 @@ run of the entry above, not run through a model. What they do NOT reach: an expe
 FIND-ALL report (which stretch, at which place) or about a label's value on a given subject ("on `4 13` the hits
 are 4 and 13"): no assertion form states those today. Recorded as a gap for the library discussion, with the
 under-construction lib/assert/each and parked/ideas/assert; nothing folded.
+
+### 2026-11-22 OWNER RULING — call-prefix, case 1: the macro's name qualifies a label of its body; case 2: "i'd say A.d is legal there", with a doubt he is working through
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings lib/search/hits core/holes/bare-condition/nested-scope
+
+Asked **call-prefix** (case 1: a label set by a macro's own body, `hits(/\d+/) & (hits.hit: 3)` with the macro's
+name as the prefix, or only through a label on the call; case 2: a label of an argument, `C := B(A) & (d: <100)`:
+`(A.d: <100)` through the binding passed in, and/or `[c = B(A)] & (c.d: <100)`; the manager's leaning: one rule
+for every name, and for case 2 both spellings, "They are the same label"). HIS WORDS, whole:
+
+"call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is legal there. i'm
+trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go through [ c = B(A)
+] as B may defined d"
+
+Class: (1) a RULING on case 1: "yes use the macro name as shown to qualify the label": `hits.hit`. The reading
+taken, told to him: with binding-prefix's two rules as put in the question (called once, a legal plain read;
+called more than once, a plain read is the compile error and a group question reads every call). (2) on case 2 a
+LEAN ("i'd say A.d is legal there") and two THOUGHTS he is working through ("i'm trying to figure out"): whether
+`B(A)` could ever REMOVE the `d`; and that going through `[c = B(A)]` may change the answer, "as B may defined
+d". Not recorded as a ruling on case 2; to be confirmed after the response.
+
+CHECKED the same turn (told to him): his second thought is RIGHT and the manager's sentence "They are the same
+label" is WITHDRAWN. RUN (hand-lowered, python `re`; A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`; outputs
+pasted):
+A.d <5 (A's own d): WHOLE `7-3` FAILS / WHOLE `3-7` HOLDS / WHOLE `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]
+c.d <5 (d as B(A) surfaces it: the last mention, B's): WHOLE `7-3` HOLDS / WHOLE `3-7` FAILS / WHOLE `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+The manager's readings (marked): (a) a prefix `X.d` reads `d` AS X SURFACES IT: `A.d` is A's own `d`; `c.d`, and
+`B.d` by case 1, are `d` as the call surfaces it (the last mention among the body's and the argument's); (b) on
+his first thought: B CAN remove it, `B(rx) := /${[_ = rx]}xx/` ("`[_ = A]` makes none of A's labels visible
+anywhere outside A", core/labels/export statement 7); whether `A.d` is then still legal in the caller is NOT
+STATED: put to him.
