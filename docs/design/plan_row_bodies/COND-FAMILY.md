@@ -7506,3 +7506,23 @@ multiple times in an expression"). So the one-use plain read was an error by his
 today only as a READING (above), until he answers idiom-confirm. The two parts he ruled stand as recorded.
 CORRECTION 2 (review RULING-5): the bound-condition ruling REVISES the named-condition spelling of 2026-11-14
 (`isSmallYear := (year: <2000)`, "a plain DEFINE binding"): not said in the ruling entry; said here.
+
+### 2026-11-22 OWNER, an analogy to validate: the four ways a part is used, as C++ access levels
+tags: core/labels/export core/labels/paths core/labels/paths/label-reference core/labels/export/flat-read-outside
+
+After P-20 was delivered. HIS WORDS, whole:
+
+"Analogy, c++, please validate: [a = A ] is making the labels from A public to local and later bindings. [_a = A ]
+is making the labels from A protected and available locally but not exported to later bindings. [A ] (A alone,
+default) also makes the labels protected but with different access locally. [_ = A] makes the labels private to A
+and not accessible locally to the binding."
+
+Class: an ANALOGY with a REQUEST to validate; nothing asked as a ruling. Validated against core/labels/export as
+it stands (told to him): THREE of the four match what is ruled: `[a = A]` (statement 3: the part's public labels
+pass out, and are reached locally as `a.h`); `[_a = A]` (statement 6: "an ordinary part label inside its binding
+and exports nothing outside it"); `[_ = A]` (statement 7: "makes none of A's labels visible anywhere outside A").
+The THIRD does not match: A used alone is PUBLIC today, not protected: hole-export (2026-11-19, "both pass
+through") and statement 3 ("the public labels of every part written or used there pass through, a hole and the
+sequence operator alike"); it differs from `[a = A]` only in the local name (the binding's own, `A.h`, by
+binding-prefix) and in giving later bindings no part-label step. If he MEANS the default to be protected, that is
+a new ruling reversing hole-export for an unlabelled part: put back to him as the question default-export.
