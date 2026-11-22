@@ -10340,3 +10340,14 @@ D196 addendum 2 (2026-11-12, Frank): MECHANISM AND SYNTAX ARE UNTETHERED. "The &
     outside the range only if (a) every reject uses only sets pcrec states as NECESSARY at that position, and (b) every read stays
     inside the subject; so the fact also carries per-position sets past the range (exact inside, hull outside); and extra positions
     are TESTED, never PROVEN (they can only reject, never extend what the answer proves).
+- **Addendum 2 (Frank 2026-11-22, in the kit session, relayed verbatim; his words are only the quoted text):** "As far as the
+  width, that is your call within the above. I'm not sure the variables that determine the answer. We could use a table. An/or
+  there could be a mathematical idea of sufficiently checked where a match score keeps going up with each test until it passes
+  some threshold (that pcrec might provide). So rare bytes provide more, ranges less. 1. is this a width of check or coverage?
+  2. another variable is simd. If simd can prove 32 bytes cheap then that's different than scalar 3. simd is the reason the choice
+  is yours." Decision (his first sentence): the width is the KIT's call, within addendum 1; its form may be a table and/or a
+  "sufficiently checked" score (each test adds to a score until a threshold; rare bytes add more, ranges less). KIT'S READINGS,
+  for the owner to check (not his words): the threshold pcrec "might provide" is the engine cost unit (D202 (2)); his point 1
+  names two widths, COVERAGE (pcrec's fact: the range that must be proven) and CHECK (the kit's candidate test depth); the cost
+  per position is per layer (SIMD vs scalar, his point 2); order: the table first, fitted at the SIMD reference night, the score
+  only if the table cannot fit (mixed spans the likely trigger). No build go asked or implied.
