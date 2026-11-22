@@ -1,0 +1,88 @@
+s1 -> ARGNAME (argument-default's candidate (local) in place of the ruling): caught
+   last line: predspot_model: 27 checks, 5 failed (ARGNAME, ARGLABEL, INPLACE, GRID, DOC)
+   its FAIL line: FAIL ARGNAME: refused naming argument-default: `B(A) & (A.d: <5)` B alone False; his example 1 `C := B(A) & (A.d: <100)` False; the body with its own d False; `pair` using it twice alone False; the spot labelled `[p = rx]`: `A.d` legal, against "the FIRST digit under 5" differing 0; both uses (alone
+s2 -> ARGLABEL (TEMPLATE off: a part label written on an argument stays the caller's): caught
+   last line: predspot_model: 27 checks, 6 failed (ARGLABEL, INPLACE, SPOT, TWOSPOT, USERMACRO, GRID)
+   its FAIL line: FAIL ARGLABEL: refused naming argument-default: `B([a = A]) & (a.d: ..)` True; `atomic([ab = B | A]) & (ab.l: <20)` False; `rx.repeat([a = rx.digit], min = 1) & (a: "3")` False; through a body that lists the spot, the caller's own `a.d` False (the call's path `B.a.d`: refused)
+s3 -> CONTROL (the control pattern for `identity(A)` widened to `\d!?`): caught
+   last line: predspot_model: 27 checks, 1 failed (CONTROL)
+   its FAIL line: FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0); `identity(A)` against `\d` (2, 10, 14) over 40 texts
+s4 -> INPLACE (OWNTEXT off: a group written in an argument counts as the caller's own text): caught
+   last line: predspot_model: 27 checks, 2 failed (ARGLABEL, INPLACE)
+   its FAIL line: FAIL INPLACE: refused naming argument-default: bare `d` False, `x.d` on the argument True, `hits(..) & (g: "x")` True; `B.d` reads the body's own d, against "the SECOND digit under 5" differing 0 over 40 texts
+s5 -> SPOT (SPOTLIST off: the export list on a spot is the old list rule): caught
+   last line: predspot_model: 27 checks, 1 failed (SPOT)
+   its FAIL line: FAIL SPOT: legal: `B.dd.d` (his example 3's spot) / at C, `hits.hit.g`, `occurrences.hit.n`, `peek.d`, `atomic.l` over an expression, `endsWith.n`, `contains.n`, `padded.v`: [True, True, True, True, True, True, True, True, True]; `atomic(B | A) & (atomic.l: ..)` (bindings used alone in the argument 
+s6 -> SPOT (an argument's export widened: bindings used alone in an expression export): caught
+   last line: predspot_model: 27 checks, 1 failed (SPOT)
+   its FAIL line: FAIL SPOT: legal: `B.dd.d` (his example 3's spot) / at C, `hits.hit.g`, `occurrences.hit.n`, `peek.d`, `atomic.l` over an expression, `endsWith.n`, `contains.n`, `padded.v`: [True, True, True, True, True, True, True, True, True]; `atomic(B | A) & (atomic.l: ..)` (bindings used alone in the argument 
+s7 -> SPOT (SPOTGROUP off: the label-only `hit` is not a spot): caught
+   last line: predspot_model: 27 checks, 1 failed (SPOT)
+   its FAIL line: FAIL SPOT: legal: `B.dd.d` (his example 3's spot) / at C, `hits.hit.g`, `occurrences.hit.n`, `peek.d`, `atomic.l` over an expression, `endsWith.n`, `contains.n`, `padded.v`: [True, True, False, False, True, True, True, True, True]; `atomic(B | A) & (atomic.l: ..)` (bindings used alone in the argumen
+s8 -> ARGOWN (the expected WHOLE answer of `1234` flipped): caught
+   last line: predspot_model: 27 checks, 1 failed (ARGOWN)
+   its FAIL line: FAIL ARGOWN: `occurrences(/(?<n>\d+)/ & (n: <100))` legal True; WHOLE over ['1234', '123', '12', '1', '12345', '100']: [True, True, True, True, True, True] (every text splits into hits under 100)
+s9 -> PLACES (peek's body without its export list): caught
+   last line: predspot_model: 27 checks, 2 failed (SPOT, PLACES)
+   its FAIL line: FAIL PLACES: 34 (body, parameter) pairs read from library.md's body texts (`name(..) := ..`): alone 1, class position (no pattern) 2, count/name hole 7, listed 20, not placed in a hole 2, spot-labelled 2; a parameter placed alone in a hole: [('peek', 'A')]
+s10 -> TWOSPOT (pair's expected label the first spot's): caught
+   last line: predspot_model: 27 checks, 1 failed (TWOSPOT)
+   its FAIL line: FAIL TWOSPOT: differing from direct predicates: list_of's last item is 5 0; pair's two spots, the last mention (the second digit) 2; W's two arguments, one label, the last mention 0; rx.repeat's looped spot, the last item 0, a group question every item 0
+s11 -> USERMACRO (hide's body given the list): caught
+   last line: predspot_model: 27 checks, 1 failed (USERMACRO)
+   its FAIL line: FAIL USERMACRO: `identity(A) & (identity.d: <5)` legal, differing 0; `hide(A) & (hide.d: <5)` refused (hide exports no `d`) False; `hide(A)` against `identity(A)` differing (0, 0, 0) over 40 texts
+s12 -> CONVENTION (a piece the convention does not cover (between) expected to point at it): caught
+   last line: predspot_model: 27 checks, 1 failed (CONVENTION)
+   its FAIL line: FAIL CONVENTION: the convention sentence occurs 1 time(s) in library.md; covered pieces not pointing at lib/convention/argument-labels: ['lib/search/between'] (of 14)
+s13 -> GRID (an argument cell expected legal): caught
+   last line: predspot_model: 27 checks, 1 failed (GRID)
+   its FAIL line: FAIL GRID: 144 cells (9 spellings x 4 occurrences x 4 read kinds; predfix83's 96 and 48 new): AGREE 143, DISAGREE 1 [('argument', 'one', 'plain', '`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)')], UNDECIDED 0; s
+s14 -> AWAITS (the starting documents' count read as 0): caught
+   last line: predspot_model: 27 checks, 1 failed (AWAITS)
+   its FAIL line: FAIL AWAITS: "awaits argument-default" in the base files at the starting commit: 0 (`git show 75d2318bd:<file> | grep -c`); left now: none
+s15 -> SWEEP (one RESPELLED entry removed): caught
+   last line: predspot_model: 27 checks, 1 failed (SWEEP)
+   its FAIL line: FAIL SWEEP: 220 printed lines now (CRASH 1, DIFF 6, REFUSED 64, same 147, unparsed 2), 215 at the starting commit under the old engine; in both with the same program and texts 206, answers moved 0; gone 9 (respelled 5, an error now 2), added 14; bad 1 [('gone, unlisted', 'core.md', 278, 'atomic([ab 
+s16 -> NULLABLE (a nullable loop added to the programs run): caught
+   last line: predspot_model: 27 checks, 1 failed (NULLABLE)
+   its FAIL line: FAIL NULLABLE: 367 programs run by the checks above (SWEEP's included), walked node by node: 1 with a loop whose body can match empty: [('/(?:(?<d>\\d)*)+/', ())]
+s17 -> SUCCESSOR (one declared red removed): caught
+   last line: predspot_model: 27 checks, 1 failed (SUCCESSOR)
+   its FAIL line: FAIL SUCCESSOR: 9 earlier models re-run one at a time, each last line read; every red declared superseded with an unchanged FAIL line: [('predfix83', 'AWAITS', 'UNDECLARED')]
+s18 -> QUOTES (an owner sentence altered): caught
+   last line: predspot_model: 27 checks, 1 failed (QUOTES)
+   its FAIL line: FAIL QUOTES: 15 quoted sentences in the record and the documents, missing: ["The label is not to the regex abstractly, it's to the spot in the pattern where the regex is being inserted. (altered)"]; 7 record titles cited whole, not a title or not cited: none
+s19 -> DOC (a formatted line altered): caught
+   last line: predspot_model: 27 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 22 lines; missing: 1
+s20 -> LEXICAL (an option reaches back up its file): caught
+   last line: predspot_model: 27 checks, 1 failed (LEXICAL)
+   its FAIL line: FAIL LEXICAL: one file: `a := /a./`, then `@options(s, m)`, then `b := /b./`: `a` on `a\n` True (written before the statement); `b` on `b\n` True (from the statement on); the program's own literal after it on `x\n` True; the weak `i` in the same table (at the top): a program file opening `@options(i
+s21 -> EXPLICIT (the weak `i` passes a hole as if explicit): caught
+   last line: predspot_model: 27 checks, 7 failed (EXAMPLES, EXPLICIT, FILTER, LEXICAL, FLAGGRID, FSWEEP, DOC)
+   its FAIL line: FAIL EXPLICIT: 9 settings over `${w}`, w := `/ab/` in a library file, on `AB`: wrong [('the library alone, weakly insensitive', False), ('a program option `@options(i)`', True)]
+s22 -> NOTINH (`m` and `s` inherited at a hole again): caught
+   last line: predspot_model: 27 checks, 6 failed (EXAMPLES, NOTINH, LIBFILE, FLAGGRID, FSWEEP, DOC)
+   its FAIL line: FAIL NOTINH: `/(?x)${sp}/`, sp := `/a b/`: `ab` False, `a b` True (x not inherited); `/(?n)${g}/`, g := `/(a)/`: g's numbered groups 1 (n not inherited); `/(?s)${d}/` on a newline True; `/(?m)${e}\nb/`, e := `/a$/`, on `a\nb` True now, True under 2026-11-19's rule (m no longer inherited). U, xx, J: 
+s23 -> FCONTROL (a hand control loses its `(?i:`): caught
+   last line: predspot_model: 27 checks, 1 failed (FCONTROL)
+   its FAIL line: FAIL FCONTROL: 11 literals, each against its hand-written python `re` equivalent over 1111 texts: differing [('/a(?i)b/', 'a(?i:b)', (1, 21, 21)), ('/(a(?i)b|c)d/', '(a(?i:b)|(?i:c))d', (2, 22, 22)), ('/(?i:a)b/', '(?i:a)b', (1, 21, 21)), ('/ab/i', '(?i:ab)', (3, 63, 63)), ('/(?i)a(?-i)b/', '(?i:a)b
+s24 -> FLAGGRID (one cell expected to apply (`m` up the hole, a library binding)): caught
+   last line: predspot_model: 27 checks, 1 failed (FLAGGRID)
+   its FAIL line: FAIL FLAGGRID: 128 cells (8 flags x 4 places it is set x 4 readers): AGREE 77, DISAGREE 1 [('m', 'up the hole', 'inserted library binding', False, True)], n/a 50 (no such program), UNDECIDED 0; 18 cells answer differently under 2026-11-19's rule; sentences missing none
+s25 -> FSWEEP (a bad row planted): caught
+   last line: predspot_model: 27 checks, 1 failed (FSWEEP)
+   its FAIL line: FAIL FSWEEP: 4 flag lines at the starting commit (each reproduced under 2026-11-19's rule, then run under hole-flags: 4 stand, 0 changed); 9 flag lines now, each printed as hole-flags runs it; bad 1 [('planted',)]
+s26 -> EXAMPLES (the record's line (a) expected for (b)): caught
+   last line: predspot_model: 27 checks, 1 failed (EXAMPLES)
+   its FAIL line: FAIL EXAMPLES: the weak example under hole-flags reproduces the record's pasted line (b) False, under 2026-11-19's rule its line (a) True; `/(?i)id-${word}/` holds on all three True; the s example: `a\nb` FAILS now True, HELD under 2026-11-19's rule True, holds with `(?s)` in `dot` True
+s27 -> FILTER (the warning's trigger inverted): caught
+   last line: predspot_model: 27 checks, 1 failed (FILTER)
+   its FAIL line: FAIL FILTER: trigger at `/(?i)${..}/`: `/[a-z]x/ & /[A-Z]x/` False (warns), `/[a-z]+/ & /b.*/` True (does not); a library C := `/[a-z]x/ & /[A-Z]x/` under a weakly insensitive program: `/${C}/` on `ax` False (no flag reaches the sides: nothing to warn of), `/(?i)${C}/` True; the same sides written i
+s28 -> LIBFILE (a library file's options lost): caught
+   last line: predspot_model: 27 checks, 5 failed (EXPLICIT, LIBFILE, FLAGGRID, FSWEEP, DOC)
+   its FAIL line: FAIL LIBFILE: a library opening `@options(s)`: its `dot := /./` in `/a${dot}b/` on `a\nb` False; the program opening it instead: False (never across an import), the program's own `/a.b/` True; a binding of the SAME file inserted in a hole of that file has the same defaults (the record's reading (e))
+s29 -> NUMBERS (`n` ignored when counting numbered groups): caught
+   last line: predspot_model: 27 checks, 2 failed (NUMBERS, FLAGGRID)
+   its FAIL line: FAIL NUMBERS: `/(\d):(\d)/`: numbered groups under a file's `@options(n)` 2, without 2; `/(?<h>\d):(\d)/` under n 1 (a named group stays a capture and a label by its name)
+predspot_sabotage: 29 plants, 0 not caught

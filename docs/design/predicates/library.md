@@ -10,6 +10,42 @@ the acceptance cases of the frozen draft (`docs/design/predicates_draft.md` §12
 library (lib/planned/standard, core/modules/standard-library). Examples call every provided name bare, as if
 imported; how a `module: ?` name is reached is open (core/modules/default-set/members).
 
+## Conventions of the provided bodies   [lib/convention]
+
+How the provided bodies treat what they are given: a convention for provided bodies only, so no language rule moves.
+
+### An argument's labels pass on at its spot   [lib/convention/argument-labels]   ruled 2026-11-22
+A provided body that places its argument in the match passes that argument's labels on, by the export list on each spot, unless its piece says otherwise.
+needs: core/labels/export/export-list core/labels/paths/argument-default
+see: parked/ideas/user-doc-traps core/principles/label-names-spot
+module: ?
+- His words: "transform-export: yes." on the statement above, as put to him; before it, on the wrappers, "wrapper-export:
+  agree (a). I was worried you'd say peek() doesn't work. It's just a definition change."
+- The spot is each place a body lays its argument into its pattern; the list on it, `[(=) = x]`, takes every label the
+  argument exports as the body's own, so the caller reads them through the call (`peek.d`; `[c = peek(..)]`, `c.d`):
+  a call exports what its body exports (core/labels/export statement 3).
+- What an argument exports (a reading, run: the line "An expression exports what its text writes"): a binding or a
+  call exports what it exports; any other argument what its own text writes, a part used alone in it nothing.
+- Covered, each piece restating its body with the list on its spot: peek, atomic, when, list_of, padded, quoted,
+  anchored, any_case (its candidate body), contains, startsWith, endsWith, rx.repeat, capture.
+- "Places" leaves out (the manager's answer on wrapper-export, put to him with transform-export): an argument used only as a filter (the right side of `&` in a body)
+  or under a complement (a complement's labels are never visible), the set arguments (`between`, `prefix_in`, the S
+  of `length` and `month_numbered`), the natives with no body.
+- A spot the body labels exports through that label instead (the manager's reading (d)): `hits` and `occurrences` keep
+  the label-only `hit` around their argument and do not also write `(=)`; the caller reads `hits.hit.g`.
+- Two spots of one argument (list_of, padded's width form): the same names, read by the label rules (the last mention,
+  the branch taken); several arguments (when): a name two of them hold is one label by the same rules; a looped spot
+  (rx.repeat): the loop's label rules, the array for a group question (the same answer; the lines below).
+- A USER's macro gets none of this unless its author writes the list (the reading taken on his two definitions, transform-export;
+  parked/ideas/user-doc-traps). His pair, `hide(x) := /${x}/` and `identity(x) := /${[(=) = x]}/`, is the worked
+  example, NOT provided names (whether they join the library is his to say): both match what x matches; `identity`
+  passes x's labels on, `hide` none.
+identity: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
+hide: modes: a compile error (`hide(A) & (hide.d: <5)`, hide(x) := `/${x}/`: hide uses x alone, so its call exports no `d`).
+The same match, either body: WHOLE `3` HOLDS, `7` HOLDS / SEARCHED `7 3` `7`@0 / FIND-ALL `3 7 4` [`3`@0, `7`@2, `4`@4] (`hide(A)`, A := `/(?<d>\d)/`, hide(x) := `/${x}/`; `identity(A)` alike)
+Two arguments: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, the shape of when's then branch)
+An expression exports what its text writes: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)`); `atomic(B | A) & (atomic.l: <20)`, B and A bindings used alone in it, is a compile error
+
 ## Built-in names   [lib/builtin]
 
 The names reserved in call position by the program shape (core/operators/statements) that are not filed under a
@@ -129,30 +165,45 @@ defined: native (a compile-time effect on the compiler's diagnostics)
 - An effect: written after `@` only, as a statement.
 modes: n/a (a compile-time effect; no matching involved)
 
-### @options.strict   [lib/builtin/options]   ruled 2026-11-17
-`@options.strict(sel)` makes the warnings whose names the selector `sel` matches into errors: strictness is selective, never every warning by default.
-needs: core/operators/statements
-see: core/diagnostics/warnings lib/builtin/warn parked/ideas/capability-optins parked/ideas/severity-table
+### @options, @options.strict   [lib/builtin/options]   ruled 2026-11-22
+`@options(..)` sets the program options of the literals written after it in its file; `@options.strict(sel)` makes the warnings `sel` matches into errors, never every warning by default.
+needs: core/operators/statements core/patterns/flags
+see: core/diagnostics/warnings lib/builtin/warn parked/ideas/capability-optins parked/ideas/severity-table core/holes/flags core/labels/numbers
 module: ?
-defined: native (a compile-time effect on the compiler's diagnostics)
+defined: native (compile-time effects: how a file's literals are read; the compiler's diagnostics)
+- PROGRAM OPTIONS ("program-options: yes"): `@options(..)` applies to the literals written after it in the same
+  file, from the statement on: `m`, `s`, `n`, `x` and the weak `i`; never across an import (a library file keeps its
+  own options); a flag a literal writes for itself wins; an inserted literal carries its own file's defaults into a
+  hole (core/holes/flags). The spelling is a placeholder (his `@options()`).
+- The weak `i` (hole-flags): a file with no option is weakly case-sensitive, `@options(i)` makes it weakly
+  insensitive; a weak value is set only by a program option, and a program option is never explicit. The options
+  and the weak `i` are ONE lexical table (the manager's reading (d)); a file is a program file or a library file,
+  each with its own (a reading, run).
+- His `n`: "Using predicate language it's going to be more likely to use () in a literal to mean no capturing
+  group." Under `n` a plain `( )` is no capture and no numbered label (core/labels/numbers).
+- Not ruled: the spelling, and whether it may appear more than once; whether `i` may be set weakly insensitive only
+  at the top of a file; options beyond the four (`xx`, `J`, `U`, the `&`-in-rx switch: the idea's list).
 - `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
   (parked/ideas/capability-optins); one table for the controls of one fact is parked/ideas/severity-table.
 - An effect: written after `@` only, as a statement.
-modes: n/a (a compile-time effect; no matching involved)
+A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
+Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
 
 ## Modifiers   [lib/modifiers]
 
-### padded   [lib/modifiers/padded]   ruled 2026-11-19
-`padded(rx)` is the plain macro `/0*${rx}/`; `padded(rx, n)` reaches width n at least, the longer unpadded value tried first.
-needs: core/holes/pattern core/holes/count core/filters/and core/patterns/alternation
+### padded   [lib/modifiers/padded]   ruled 2026-11-22
+`padded(rx)` is the plain macro `/0*${[(=) = rx]}/`; `padded(rx, n)` reaches width n at least, the longer unpadded value tried first.
+needs: core/holes/pattern core/holes/count core/filters/and core/patterns/alternation lib/convention/argument-labels
 see: lib/sets/between lib/modifiers/limited
 module: ?
 defined: language
-- The bodies: `padded(rx) := /0*${rx}/`, the argument in a hole (one entry: `/0*(?:${rx})/` writes out the same);
-  `padded(rx, n) := (rx & /(?s:.){${n},}/) | (/0*${rx}/ & /(?s:.){${n}}/)`, the any-length branch first; n reaches
-  the counts through count holes (a bare `n` inside the literal would be the text `n`).
+- The bodies: `padded(rx) := /0*${[(=) = rx]}/`, the argument in a hole (one entry: `/0*(?:${[(=) = rx]})/` writes
+  out the same); `padded(rx, n) := ([(=) = rx] & /(?s:.){${n},}/) | (/0*${[(=) = rx]}/ & /(?s:.){${n}}/)`, the
+  any-length branch first; n reaches the counts through count holes (a bare `n` inside the literal would be the
+  text `n`). Each spot carries the list (lib/convention/argument-labels); the width form's two spots give the same
+  names, read in the branch taken.
 - Two bodies chosen by the call form, the width passed by position (his `padded(blah, 4)`): whether a name may have
   several bodies is open (core/operators/bindings/call-forms).
 - The width is a MINIMUM: zeros reach out to n characters; a value already n or longer stands unpadded.
@@ -168,19 +219,20 @@ defined: language
 WHOLE `005` HOLDS, `50` FAILS / SEARCHED `x05` `05`@1 / FIND-ALL `5 x005 50` [`5`@0, `005`@3, `5`@7] (`/${padded("5")}/` is `0*(?:5)`)
 WHOLE `0129` HOLDS / SEARCHED `x0129` `0129`@1 / FIND-ALL `0129 0000 12` [`0129`@0, `0000`@5] (`/${padded(/(?:\d\d)+?/, 3)}/`)
 
-### quoted   [lib/modifiers/quoted]   reading 2026-11-19
-`quoted(S)` reads only the text inside double quotes: the body `/"${S & /[^"]*/}"/`, S matched whole on that text.
-needs: core/holes/pattern core/filters/and
+### quoted   [lib/modifiers/quoted]   reading 2026-11-22
+`quoted(S)` reads only the text inside double quotes: the body `/"${[(=) = S] & /[^"]*/}"/`, S matched whole on that text.
+needs: core/holes/pattern core/filters/and lib/convention/argument-labels
 module: ?
 defined: language
 - The name is ruled (a filter modifier named for what it reads); the body is a reading.
 - S stands in a filter role over the quoted text: a `^` in S reads that text's start, so `quoted(/^a\w*/)` holds
   on `"ab"`; the plain splice `/"(?:${S})"/` would never match it (its `^` would read the stretch before the quote).
 - A quoted text holding an escaped quote is not covered by this body.
+- S is the pattern side of the `&` (placed), so its labels pass on; the filter `/[^"]*/` is the body's own.
 WHOLE `"ab"` HOLDS, `"ba"` FAILS / SEARCHED `x "ab"` `"ab"`@2 / FIND-ALL `"a" "b" "ax"` [`"a"`@0, `"ax"`@8] (`quoted(/^a\w*/)`)
 
-### any_case   [lib/modifiers/any-case]   open any-case-body 2026-11-19
-Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay native (a string equal, up to letter case, to a member of rx)?
+### any_case   [lib/modifiers/any-case]   open any-case-body 2026-11-22
+Does the body `any_case(rx) := /(?i:${[(=) = rx]})/` define `any_case`, or does it stay native (a string equal, up to letter case, to a member of rx)?
 needs: core/holes/flags core/filters/and
 module: ?
 defined: native (for now, by the owner's ruling; whether the body defines it is the open question)
@@ -189,12 +241,14 @@ defined: native (for now, by the owner's ruling; whether the body defines it is 
   own `(?-i)`, for a NEGATED filter operand in the argument (`any_case(/[abAB]{2}/ & !/ab/)`), and for an `&` whose
   sides differ only in case (`any_case(/[a-z]x/ & /[A-Z]x/)`: the sides take the flag first, core/holes/flags/in-filter,
   so the body matches 16 of 820 texts over `aAbBxXzZ7` to length 3, the native none; the lines below).
+- The candidate body carries the export list on its spot (lib/convention/argument-labels); the list moves no match.
+- Its `(?i:..)` is EXPLICIT, so it passes the hole under hole-flags (the manager's reading (a)): its lines stand.
 - In the body the `pcrec.flags.filter` warning fires on that third argument: the hole is the library's, the
   warning the caller's to read (a reading).
 - Candidates: (a) the body is the definition, those three its stated behaviour; (b) the native definition stays,
   the body a lowering where it agrees.
 WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho`@0, `HO`@3] (the candidate body on `any_case("ho")`, `(?i:ho)`)
-The candidate body: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-Ax` `Ax`@1 / FIND-ALL `ax 7x AX` [`ax`@0, `AX`@6] (`any_case(/[a-z]x/ & /[A-Z]x/)`, the body `/(?i:${rx})/`)
+The candidate body: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-Ax` `Ax`@1 / FIND-ALL `ax 7x AX` [`ax`@0, `AX`@6] (`any_case(/[a-z]x/ & /[A-Z]x/)`, the body `/(?i:${[(=) = rx]})/`)
 Native: WHOLE `ax` FAILS, `AX` FAILS / SEARCHED `-Ax` FAILS / FIND-ALL `ax 7x AX` [] (the same call)
 
 ### limited   [lib/modifiers/limited]   under-construction 2026-11-19
@@ -240,24 +294,24 @@ WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct 
 
 The conditional, the transform that makes its test a peek, and the name of the atomic part. Each is a body over the core's lookahead, atomic group, pattern hole, sequence and alternation.
 
-### peek   [lib/control/peek]   ruled 2026-11-18
-`peek(A)` tests A where it stands without consuming it: the macro `/(?=${A})/`, a lookahead around a pattern hole.
-needs: core/patterns/lookaround core/holes/pattern core/holes/labels
+### peek   [lib/control/peek]   ruled 2026-11-22
+`peek(A)` tests A where it stands without consuming it: the macro `/(?=${[(=) = A]})/`, a lookahead around a pattern hole that passes A's labels on.
+needs: core/patterns/lookaround core/holes/pattern core/holes/labels lib/convention/argument-labels
 module: ?
 default: yes
 defined: language
-- The body: `peek(A) := /(?=${A})/`. Nothing in it is particular to `peek`: it is a useful transform.
-- Labels A sets are readable after it by the caller that wrote A, as after any lookahead (awaits argument-default:
-  the body uses A alone, so by the manager's reading (e) of default-export the call exports none of them,
-  core/labels/paths/argument-default).
+- The body: `peek(A) := /(?=${[(=) = A]})/`. Nothing in it is particular to `peek`: it is a useful transform.
+- Labels A sets are readable after it, as after any lookahead, through the call: `peek.d` (wrapper-export, "agree
+  (a)"; lib/convention/argument-labels); the caller's `d` written in A is a template's, not its own to read bare.
 - `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (core/filters/negation).
 - A condition given as A is zero width already: `peek(c)` tests c where it stands, as c does (a reading).
 - `default: yes`: in the default-imported set, so written bare, not `module.peek` (the owner's lean).
-WHOLE `37` HOLDS (d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`) (awaits argument-default)
+WHOLE `37` HOLDS (peek.d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`)
+Read through the call: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `x73 37` `37`@4 / FIND-ALL `37 73 56` [`37`@0] (`peek(/(?<d>\d)/) SEQ /\d\d/ & (peek.d: <5)`)
 
-### when   [lib/control/when]   ruled 2026-11-18
-The conditional is the guarded form, `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)`: else is never tried where the test holds.
-needs: lib/control/peek core/patterns/sequence core/conditions/in-sequence core/filters/negation
+### when   [lib/control/when]   ruled 2026-11-22
+The conditional is the guarded form, `when(test, then, else = //) := ([(=) = test] SEQ [(=) = then]) | (NOT peek(test) SEQ [(=) = else])`: else is never tried where the test holds.
+needs: lib/control/peek core/patterns/sequence core/conditions/in-sequence core/filters/negation lib/convention/argument-labels
 see: lib/control/when-test
 module: ?
 defined: language
@@ -266,9 +320,12 @@ defined: language
 - The missing else is `//`, the empty pattern: where the test does not hold, `when` holds and matches nothing.
 - The else-only behaviour is NOT on the test: `when(NOT (h: <5), z)`, `when(NOT peek(x), z)`.
 - What the test may be, and what each kind consumes: lib/control/when-test.
-- Labels the test sets are visible in then; in the else branch they are unset, a failed test setting nothing (a
-  reading, run). Then reads the test's labels across two arguments the body uses alone (awaits argument-default,
-  core/labels/paths/argument-default).
+- Labels the test sets are visible after the call through it (`when.h`), set on the then branch and unset on the
+  else branch, a failed test setting nothing (a reading); each spot carries the list (lib/convention/argument-labels),
+  the guard's `NOT peek(test)` none (a negation's labels are never visible). A read written in then of a label the
+  test sets is a read of another argument's template: a compile error (a reading; core/labels/paths/argument-default).
+  A name test and then both hold is one label, the last mention (the manager's answer on wrapper-export; run on a user macro of
+  the same shape: lib/convention/argument-labels' line "Two arguments").
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 
@@ -296,13 +353,14 @@ Candidates: (a) a compile error (a complement in a test position, complement-pla
 The two clear forms, `when(NOT peek(x), z)` and a condition under NOT, are not in question.
 modes: n/a (a question; the runs are cited in the details entry)
 
-### atomic   [lib/control/atomic]   reading 2026-11-19
-`atomic(X) := /(?>${X})/`: PCRE's atomic group around a pattern hole, so X keeps PCRE's atomic meaning.
-needs: core/patterns/atomic core/holes/pattern
+### atomic   [lib/control/atomic]   reading 2026-11-22
+`atomic(X) := /(?>${[(=) = X]})/`: PCRE's atomic group around a pattern hole, so X keeps PCRE's atomic meaning and passes its labels on.
+needs: core/patterns/atomic core/holes/pattern lib/convention/argument-labels
 module: ?
 defined: language
 - The rule an atomic part follows (a condition inside it is tried before it commits; one outside never re-enters
   it) is the core's (core/patterns/atomic); this piece is only the name.
+- The export list on its spot is wrapper-export's (ruled, lib/convention/argument-labels): `atomic.l` reads X's `l`.
 - The name and its spelling are placeholders.
 WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac` [`ac`@0, `ac`@7] (`atomic(/a|ab/) SEQ "c"` is `(?>(?:a|ab))c`)
 
@@ -320,8 +378,8 @@ defined: language
 - A condition inside x after its group reads that hit's own labels; one BEFORE the group reads the previous hit's
   value (it carries). Writing the condition after the label gives the plain search's hits.
 - The hits are re-split whenever a condition rejects: `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with
-  the hits `12`, `34` (a read inside the argument beside its own group: legal under both candidates of
-  argument-default, the manager's reading, run).
+  the hits `12`, `34` (a read inside the argument beside its own group travels with the template: legal, the
+  manager's reading (c) of argument-default, run).
 - A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up
   to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
   empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
@@ -332,10 +390,10 @@ defined: language
   the argument (the lines below).
 - His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit`
   is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
-  caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n); whether the caller reads it awaits
-  argument-default and capture-export (the body uses x alone; core/labels/paths/argument-default), as does whether the
-  label-only `hit` passes its labels on (`h.hit.n`). How a helper declares a capture is not
-  stated (lib/structural/capture/add-on).
+  caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n); the caller reads it through the spot the
+  body labels, `occurrences.hit.n`, not bare (the manager's reading (d): `hit` is a spot, so the body writes no
+  `(=)`; core/labels/paths/argument-default); whether it reaches the caller as a capture awaits capture-export. How a
+  helper declares a capture is not stated (lib/structural/capture/add-on).
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
   metadata). Called twice in one definition, a plain read through the macro's name is binding-prefix's compile
   error, its fix to label the call (`a.hit`, `b.hit`); a group question through the name reads every call's
@@ -347,6 +405,7 @@ defined: language
 WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `1 2 x 3` [`1 2 x 3`@0] (`occurrences(/\d+/, min = 2)`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0] (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7] (`[hits = occurrences(/\d+/)] & occurs.none((hits.hit: >= 5))`)
+The argument's group, through the hit: WHOLE `a1b3` HOLDS, `a3b1` HOLDS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`occurrences(/(?<n>\d+)/) & (occurrences.hit.n: "3")`)
 
 ### hits   [lib/search/hits]   ruled 2026-11-22
 `hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to: a fixed list of hits, judged after it.
@@ -361,7 +420,9 @@ defined: language
 - "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS. Written as a
   group question on the array of `hit`, one setting per hit, the call labelled: `[h = hits(/\d+/)] &
   occurs.none((h.hit: >= 100))` (a reading; core/labels/paths/call-prefix).
-- The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences).
+- The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences). It is
+  the spot the body labels, so the argument's labels pass on through it (`hits.hit.g`) and the body writes no `(=)`
+  (the manager's reading (d); lib/convention/argument-labels).
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
 - One call may be read by the macro's name: `hits(/\d+/) & (hits.hit: <5)` gives the answers of the line
@@ -369,25 +430,27 @@ defined: language
 - His second example, `[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))` (his gloss: "<5 and last hit
   is 3 and some hit is 4"): a test inside the argument chooses the hits; a test after the atomic `hits` judges
   them (a reading, run: `4 9 3` and `43` HOLD with the test inside, FAIL with every number tested after).
-WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's) (awaits argument-default)
+WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (hits.hit.g: "x")`: the hit list is the whole subject's)
+Bare, the caller's own: modes: a compile error (`hits(/a(?<g>x)?/) & (g: "x")`: `g` is the template's, not a spot of the caller's pattern).
 Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
 His second example, a test inside the argument: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` HOLDS (hits [`4`, `3`]), `43` HOLDS (hits [`4`, `3`]), `4 13` HOLDS (hits [`4`, `1`, `3`]), `4 3 9` HOLDS (hits [`4`, `3`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))`)
 Every number tested after the call: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` FAILS (hits [`4`, `9`, `3`]), `43` FAILS (hits [`43`]), `4 13` FAILS (hits [`4`, `13`]), `4 3 9` FAILS (hits [`4`, `3`, `9`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`)
 
-### contains   [lib/search/contains]   ruled 2026-11-15
-`contains(s)` is the plain gap body `/(?s:.*)(?:${s})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s.
-needs: core/holes/pattern core/filters/and
+### contains   [lib/search/contains]   ruled 2026-11-22
+`contains(s)` is the plain gap body `/(?s:.*)(?:${[(=) = s]})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s.
+needs: core/holes/pattern core/filters/and lib/convention/argument-labels
 module: ?
 defined: language
 - The gaps cross line breaks. Inside the argument `^` and `$` are the ends of the value filtered:
   `contains(/^err/)` is "starts with `err`" (WHOLE, 0 of 1,365 texts differ from `startsWith("err")`).
 - The negated test is `!contains(x)`.
+- s's labels pass on (lib/convention/argument-labels): `contains.n`; under `!contains(x)` none is visible.
 WHOLE `xerrx` HOLDS, `er` FAILS / SEARCHED `a err b` `a err b`@0 / FIND-ALL `err err` [`err err`@0] (`contains("err")` is `(?s:.*)(?:err)(?s:.*)`)
 
-### startsWith   [lib/search/starts-with]   ruled 2026-11-15
-`startsWith(s)` is the plain gap body `/(?:${s})(?s:.*)/`, no anchors of its own.
-needs: core/holes/pattern
+### startsWith   [lib/search/starts-with]   ruled 2026-11-22
+`startsWith(s)` is the plain gap body `/(?:${[(=) = s]})(?s:.*)/`, no anchors of its own, passing s's labels on.
+needs: core/holes/pattern lib/convention/argument-labels
 module: ?
 defined: language
 - In a filter role it accepts a value starting with s (`startsWith("5")` accepts `57`); `/^${s}/` would not
@@ -395,18 +458,18 @@ defined: language
 - Outside a filter it is unanchored, as any rx.
 WHOLE `errx` HOLDS, `xerr` FAILS / SEARCHED `x err!` `err!`@2 / FIND-ALL `err1 err2` [`err1 err2`@0] (`startsWith("err")` is `(?:err)(?s:.*)`)
 
-### endsWith   [lib/search/ends-with]   ruled 2026-11-15
-`endsWith(s)` is the plain gap body `/(?s:.*)(?:${s})/`, no anchors of its own.
-needs: core/holes/pattern
+### endsWith   [lib/search/ends-with]   ruled 2026-11-22
+`endsWith(s)` is the plain gap body `/(?s:.*)(?:${[(=) = s]})/`, no anchors of its own, passing s's labels on.
+needs: core/holes/pattern lib/convention/argument-labels
 module: ?
 defined: language
 - The gap is greedy as the owner wrote it: the argument starts as far RIGHT as it can (`endsWith(/(?<n>\d+)/)`
-  on `ab123`: n = `3`; the caller's read of n awaits argument-default).
-WHOLE `ab123` HOLDS (3) / SEARCHED `x12 34` `x12 34`@0 / FIND-ALL `a1 b2` [`a1 b2`@0] (`endsWith(/(?<n>\d+)/)` is `(?s:.*)(?:(?<n>\d+))`) (awaits argument-default)
+  on `ab123`: n = `3`, read by the caller as `endsWith.n`, lib/convention/argument-labels).
+WHOLE `ab123` HOLDS / SEARCHED `x12 34` `x12 34`@0 / FIND-ALL `a1 b2` [`a1 b2`@0] (`endsWith(/(?<n>\d+)/)` is `(?s:.*)(?:(?<n>\d+))`)
 
-### anchored   [lib/search/anchored]   ruled 2026-11-15
-`anchored(s)` is the plain macro `/\A(?:${s})\z/`: s matched whole on its scoped match, with exact ends.
-needs: core/holes/pattern
+### anchored   [lib/search/anchored]   ruled 2026-11-22
+`anchored(s)` is the plain macro `/\A(?:${[(=) = s]})\z/`: s matched whole on its scoped match, with exact ends, its labels passed on.
+needs: core/holes/pattern lib/convention/argument-labels
 module: ?
 defined: language
 - Exact ends: `anchored(/foo/)` as a final pattern does not match `foo` followed by a newline.
@@ -608,17 +671,18 @@ defined: native (a compile-time search over a text)
 - The names are placeholders.
 modes: n/a (a compile-time tool over a file's text; it builds an array, it matches no subject)
 
-### list_of   [lib/records/list-of]   reading 2026-11-19
-`list_of(X, sep = S)` is the separated list `/(?:${X}${S})*${X}/`: its label is the last item, its array every item.
-needs: core/holes/pattern core/labels/one-rule
+### list_of   [lib/records/list-of]   reading 2026-11-22
+`list_of(X, sep = S)` is the separated list `/(?:${[(=) = X]}${[(=) = S]})*${[(=) = X]}/`: its label is the last item, its array every item.
+needs: core/holes/pattern core/labels/one-rule lib/convention/argument-labels
 module: ?
 defined: language
 - One item or more; written this way the label and the array are right at every length (one copy of X before
   the loop would leave the label unset on one item).
 - Its minimum (zero items) is not stated.
-- The body uses X alone, so by the manager's reading (e) of default-export the call exports none of its labels;
-  the caller's read of the item's label awaits argument-default (core/labels/paths/argument-default).
-WHOLE `7,3,5` HOLDS (5) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`) (awaits argument-default)
+- Every spot carries the list (wrapper-export; lib/convention/argument-labels): the caller reads the item's label
+  through the call, `list_of.h`, the last item by the label rules (two spots, the same names: the manager's answer on wrapper-export).
+WHOLE `7,3,5` HOLDS (list_of.h = `5`) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`)
+The last item, through the call: WHOLE `7,3,5` HOLDS, `7,5,3` FAILS / SEARCHED `x7,5 3,5` `7,5`@1 / FIND-ALL `1,5 3 5` [`1,5`@0, `5`@6] (`list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`)
 
 ### param   [lib/records/param]   reading 2026-11-19
 `param(rx)` is a run-time input: an rx whose string the caller fixes per match, read-only, validated against rx.
@@ -666,19 +730,23 @@ defined: language
 - The names are placeholders.
 WHOLE `123` HOLDS, `12a` FAILS / SEARCHED `ab12` `12`@2 / FIND-ALL `1 23` [`1`@0, `23`@2] (`rx.digits` is `(?:(?:\d)){1,}`)
 
-### rx.repeat   [lib/rx/repeat]   ruled 2026-11-19
+### rx.repeat   [lib/rx/repeat]   ruled 2026-11-22
 One `repeat` construct does all counting (one argument exact, min and max a range, no maximum unbounded); it is a library definition over count holes.
 needs: core/patterns/quantifiers core/holes/count core/arrays/lift
 module: rx
 defined: language
 - The bodies, one per call form (a reading; whether a name may have several bodies is open,
-  core/operators/bindings/call-forms): `repeat(x, n) := /(?:${x}){${n}}/`; `repeat(x, min, max) :=
-  /(?:${x}){${min},${max}}/`; `repeat(x, min) := /(?:${x}){${min},}/` ("no maximum" is a second body with the bound
-  left out).
+  core/operators/bindings/call-forms): `repeat(x, n) := /(?:${[(=) = x]}){${n}}/`; `repeat(x, min, max) :=
+  /(?:${[(=) = x]}){${min},${max}}/`; `repeat(x, min) := /(?:${[(=) = x]}){${min},}/` ("no maximum" is a second
+  body with the bound left out); each spot carries the list (lib/convention/argument-labels).
 - Several values make the count hole's copies: one copy per combination, first hole slowest (the lift's loop:
   core/arrays/lift), an illegal copy (min above max) removed; one array mentioned twice is independent per mention (`rx.repeat(rx.digit, n, n + 1)`).
-- A labelled item, `rx.repeat([a = rx.digit], min = 1)`, is `(?:(?<a>\d))+`: a condition after it reads the last
-  item (awaits argument-default: the body uses x alone); a condition inside the item is judged for every item.
+- An item's label passes on through the looped spot: a condition after the call reads the last item, a group
+  question every item, through a label on the call (`[r = rx.repeat(/(?<a>\d)/, min = 1)]`, `r.a`); a part label
+  written on the argument (`rx.repeat([a = rx.digit], min = 1)`, then `a`) labels a template: a compile error (the
+  manager's reading (a), core/labels/paths/argument-default). A condition inside the item is judged for every item.
+The last item, through a label on the call: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `x37 73` `3`@1 / FIND-ALL `73 37 13` [`73`@0, `3`@3, `13`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1)] & (r.a: "3")`)
+Every item, a group question: WHOLE `73` HOLDS, `33` FAILS / SEARCHED `x33 73` `73`@4 / FIND-ALL `73 33 17` [`73`@0, `17`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1)] & some((r.a: "7"))`)
 - Plurals are one-line definitions over it: `digits := rx.repeat(rx.digit, min = 1)` is `\d+`.
 - A count in braces is not an operator of the language; inside a regex literal it is regex's own.
 WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12`@0, `34`@2] (`rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4], is `(?|\d{2,2}|\d{2,4}|\d{4,4})`: the copy (4,2) removed)
@@ -688,8 +756,8 @@ WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12
 The compile-time tools over spelled arrays and the macro that names a capture.
 
 ### capture   [lib/structural/capture]   reading 2026-11-22
-`capture(name, x) := /(?<${name}>${x})/` names a capture: the name in a group-name hole, x in a pattern hole.
-needs: core/holes/name core/holes/pattern core/labels/export
+`capture(name, x) := /(?<${name}>${[(=) = x]})/` names a capture: the name in a group-name hole, x in a pattern hole that passes x's labels on.
+needs: core/holes/name core/holes/pattern core/labels/export lib/convention/argument-labels
 module: ?
 defined: language
 - A label reaches the caller only as a capture: "captures are explicitly written either in literal form or using
@@ -699,7 +767,7 @@ defined: language
 - Making an existing label a capture afterwards: lib/structural/capture/add-on.
 - Its body writes a capture on purpose, a capture being what it is for; whether that is "so declared" in his
   helper-captures ruling is not stated (a reading; lib/structural/capture/add-on).
-- The one-parameter sketch `capture(x) := /(?<${x.label}>${x})/` needs a field giving a part label's own name,
+- The one-parameter sketch `capture(x) := /(?<${x.label}>${[(=) = x]})/` needs a field giving a part label's own name,
   which the core does not define (`.label` is a field of a part label over an ARRAY, core/values/metadata); with it,
   `join(each(capture, a), sep = ".")` would name each entry's capture after its label.
 WHOLE `12` HOLDS (d = `12`) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture("d", /\d+/)` is `(?<d>(?:\d+))`)

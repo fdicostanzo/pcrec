@@ -167,10 +167,13 @@ Trigger: the next design step on warnings or on `@options` (item 20), or any bui
 Source: the ideas file item 23 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### For the user documentation: the things a reader will get wrong   [parked/ideas/user-doc-traps]   parked 2026-11-19
+### For the user documentation: the things a reader will get wrong   [parked/ideas/user-doc-traps]   parked 2026-11-22
 A list of the things a reader will get wrong unless told, for the user documentation.
 Trigger: the first user documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 Source: the ideas file item 24 (its whole text in the details entry).
+- A user's macro passes none of its argument's labels on unless its author writes the export list on the spot: his
+  pair, `hide(x) := /${x}/` (none) and `identity(x) := /${[(=) = x]}/` (all), match alike and export differently;
+  the provided library's convention covers provided bodies only (lib/convention/argument-labels).
 modes: n/a (parked: not in the language)
 
 ### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-22
