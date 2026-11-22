@@ -22,7 +22,7 @@ Rewritten 2026-11-21 (box clock, about 19:15 EST; the record's entries are dated
   breaks the ruled `A & B` = `A & (0: B)`; A7 any_case has a third parting; A8 for a duplicated name PCRE2 uses the
   FIRST set group; A9 record-is-product against the joint refusal; A12 loop against two uses (dissolved once my
   withdrawal of reading (c) is folded). Proposed FIX-NOW: A1+A2 as the owner question, A3, A4, A5, A7, A8, A9, A12,
-  D1-D12. FREEZE DRIFT: four owner entries landed mid-round, none a ruling, hand-mapped in the draft. Process:
+  D1-D12. A6 (`0` inside an `occurrences` argument) was NOT sent to the verifier (the draft proposes PLAN): verify it before ruling. FREEZE DRIFT: four owner entries landed mid-round, none a ruling, hand-mapped in the draft. Process:
   three of four evidence scripts were RED at the freeze while their committed outputs read 0 failed: after ANY
   direct fold of mine, re-run the lanes' DOC checks and mark superseded citations.
 - NEXT, in order: (1) read `review.md` + `process.md`, RULE every disposition (record entry "MANAGER — review
