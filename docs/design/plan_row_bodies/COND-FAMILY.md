@@ -7542,3 +7542,39 @@ referenced (label-flow, 2026-11-17), and a read from outside follows the inside 
 2026-11-21), so `(B.a: 9)` in C is an error, and nothing C can write repairs it: the two `A` are inside B. The
 group question is not an error there (`some((B.a: 9))` reads both sides' settings: the documents' line "Across
 `&`, a group question over both sides").
+
+### 2026-11-22 OWNER RULING — default-export: protected (a part used alone is available inside the binding and is not exported)
+tags: core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/flow core/holes/labels core/labels/paths/label-reference core/holes/bare-condition/nested-scope
+
+Asked **default-export** ("default-export: protected", or say what else the example was pointing at), after: his
+analogy ("[A ] (A alone, default) also makes the labels protected but with different access locally"); the
+validation that A used alone is PUBLIC today (hole-export, 2026-11-19: "both pass through"; export statement 3);
+what a protected default would say ("a part used bare is available locally as `A.h` but exports nothing. To
+export, the binding writes `[a = A]`, or your shorthand `[=A]`"); and his example `B := A & A`, `C := B & (B.a:
+9)`. HIS WORDS, whole:
+
+"default-export: protected"
+
+Class: a RULING on the slug: a part used alone in a binding (no part label) is PROTECTED: its labels are
+available inside that binding (through the binding's name, `A.h`) and are NOT exported to the bindings that use
+it. It REVERSES hole-export (2026-11-19) and export statement 3 for an unlabelled part, and with them the
+example lines that read a bare-used part's label from outside (`pub := /${A}!/`, then `pub.h`). His analogy of
+the same day is thereby the ruled picture: `[a = A]` public; `[_a = A]` and `A` alone protected (local only),
+differing in the local name; `[_ = A]` private to A.
+
+The manager's readings, for the fold lane to test and mark: (a) "used alone" is a bound name used as a sequence
+operand, in a hole or as an `&` operand without a part label: as `[_A = A]` would behave; (b) what a binding
+EXPORTS: the labels its own text writes (a group in one of its literals, a part label it writes, neither
+beginning with `_`), and through a public part label that part's exported labels (`pub.a.h`); (c) a read from
+outside of a label that only a bare-used part holds (`pub.h`) is a compile error (not visible); (d) his shorthand
+`[=A]` (read as `[A = A]`) is the short way to export a part under its own name; still a placeholder spelling;
+(e) a MACRO CALL exports what its body's text writes; an argument the body uses bare is not exported by the call
+(`B.d`, `c.d`), and his example 3 of 2026-11-21 (`B(rx) := /${[dd = rx]}xx/`) is the way a macro passes an
+argument's labels on; (f) array-in-piece is unchanged: inside the binding a bare-used part's settings are seen.
+NOT STATED by his words, to be asked, neither answer applied: **argument-default**: the caller's own `A.d` for
+an argument (`C := B(A) & (A.d: <100)`, B(rx) := `/${rx}xx/`): he called example 1 legal on 2026-11-21 and ruled
+closed-argument today as "legal exactly where `d` is visible through the call"; under a protected default the
+bare `${rx}` passes nothing through the call, so is `A.d` still the caller's local read of its own part, or an
+error; **capture-export**: export statement 5 gives the caller the CAPTURES visible from the top-level program:
+does a capture written in rx text inside a bare-used part two bindings down still reach the caller (as in PCRE),
+or does it follow the labels.
