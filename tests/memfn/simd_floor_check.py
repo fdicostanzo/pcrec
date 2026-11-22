@@ -560,7 +560,7 @@ def main():
               % (tn, s['movers'], s['funcs'], ' '.join('%s=%d' % kv for kv in sorted(s['levels'].items()))))
         for e in NAMED:
             n = e[0]
-            if len(e) > 3 and tn not in e[3]:
+            if len(e) > 3 and e[3] is not None and tn not in e[3]:
                 continue
             if (tn, 'named:' + n) in named_movers:
                 ok('%s: named witness %s is a mover' % (tn, n))

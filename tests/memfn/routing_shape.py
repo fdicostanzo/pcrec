@@ -3,7 +3,8 @@
 offset-skip/pre-check function takes in an emitted artifact since R4e'.0b
 ([MEMFN] R-11; integration.md §R4.9.2.5/§R4.9.2.6; D155 item 6 and
 addendum 1). Read by libc_census.py (C11, `make test-memfn-stamps`) over its
-whole corpus population; `--selftest` runs the planted controls alone.
+whole corpus population; run with no argument (or `--selftest`) it runs the
+planted controls alone (they run on every invocation, before any FILE).
 
 THE RULE (Frank, D155 addendum 1): "A function that does work never contains
 #if. A selector function's whole body may be the #if chain, one call per
@@ -230,6 +231,11 @@ CONTROLS = [
      + LEVEL, True),
     ('one call to another FUNC\'s level', HELPER + LEVEL.replace('rx_reqrun__w16', 'rx_ofsskip__w16')
      + SELECTOR.replace('rx_reqrun__body(', 'rx_ofsskip__w16('), True),
+    # the helper-parameter rule's own control (r78 C18WIRE-2, the ofsskip sibling): the helper
+    # takes a table parameter the FUNC does not, so not the FUNC's own parameter list (HEAD fixes
+    # `subject, n, pos`; the rule compares the table parameters after them)
+    ('helper takes other parameters', HELPER.replace('size_t pos)', 'size_t pos, const unsigned char *t)')
+     + SELECTOR, True),
 ]
 
 
@@ -246,6 +252,11 @@ VCONTROLS = [
     ('V selector drops a parameter', VBODY + VSEL.replace('(s, c)', '(s, 0)'), True, 1),
     ('V helper below the selector', VSEL + VBODY, True, 1),
     ('V level not defined above', VBODY + VSEL.replace('__body(', '__w32('), True, 1),
+    # r78 C18WIRE-1: the level IS defined, but BELOW the selector (tells "above" from "absent")
+    ('V level defined below', VBODY + VSEL.replace('__body(', '__w32(') + VLEVEL, True, 1),
+    # r78 C18WIRE-2: the helper's parameters renamed (the helper-parameter rule's control)
+    ('V helper takes other parameters', VBODY.replace('*s, size_t c', '*t, size_t c').replace(
+        's[c]', 't[c]') + VSEL, True, 1),
     ('V unrouted', VBODY.replace('vs0__body', 'vs0'), True, 1),
 ]
 
@@ -268,8 +279,11 @@ if __name__ == '__main__':
     for name, ok, why in selftest():
         print('%s: control %s%s' % ('PASS' if ok else 'FAIL', name, '' if ok else ' (%s)' % why))
         bad += not ok
-    if len(sys.argv) > 1:
-        for path in sys.argv[1:]:
+    # `--selftest` (or no argument) runs the planted controls alone; the controls run on every
+    # invocation, and any other argument is an artifact's file path
+    paths = [x for x in sys.argv[1:] if x != '--selftest']
+    if paths:
+        for path in paths:
             n, why = check(open(path, encoding='utf-8', errors='surrogateescape').read())
             print('%s: %d FUNC(s)%s' % (path, n, ''.join('\n  ' + w for w in why)))
             bad += bool(why)
