@@ -7186,3 +7186,31 @@ a value that yields nothing fails the entry, as an unset label does, and `NOT` h
 `(h: S)` answer alike in every mode ("`$x` and `x:` never disagree"), so the label form is the value form's
 common case; a default (`h = v`) and a joint entry stay label forms; (e) `length(S)` is `chars & (count((ch:
 /(?s:.)/)): S)`; `sum`'s test is `(($a + $b): <10)`; `mnum`'s is `(mname.index: S)`, already a path.
+
+### 2026-11-22 OWNER, on binding-prefix: "i like your read on this except that perhaps it does refer to all"
+tags: core/labels/paths core/labels/flow core/labels/labels-vs-captures lib/counting/count parked/ideas/field-count
+
+Put to him, on his idea of a binding's name as a label prefix: the definition "a binding used as a part carries a
+part label of its own name, as if written `[=chars]`"; for a binding used twice the candidates (a) legal when used
+once, an error otherwise (the manager's leaning), (b) always, the last mention when used twice, (c) an error as
+today; and his own label-flow words of 2026-11-17 against it. HIS WORDS, whole (he wrote the slug "binding in
+prefix"):
+
+"binding in prefix: i like your read on this except that perhaps it does refer to all. chars SEQ ":" SEQ chars &
+(count(chars.ch): ==5) says all chars must total 5"
+
+Class: a LEAN ("i like your read"; "perhaps"), with an EXAMPLE of the meaning he has in mind; not a ruling. The
+reading taken, told to him: he accepts the definition (the binding's name as an implicit part label) and, for a
+binding used more than once, proposes that the prefix reaches the settings of EVERY use, at least under a group
+question (his example is a count). His `count(chars.ch)` is a placeholder spelling: `count` takes a condition
+today (`count((chars.ch: anything))`); a count over a bare label path is parked/ideas/field-count.
+
+RUN the same turn (hand-built simulation in PCRE's order, `$PCREC_TMPDIR/scratch/pred/binding_prefix.py`; chars :=
+`/(?:(?<ch>(?s:.)))*/`; the output pasted; `(?s:.)` takes a `:` too):
+all: WHOLE `ab:cde` HOLDS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6]
+last: WHOLE `ab:cde` FAILS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0]
+
+The manager's view (told to him; nothing folded): his "all" is what array-vs-passes already gives a group
+question (the array is every setting, in order), so for `some`, `count`, `occurs`, `h[k]` through a prefix "all
+uses" needs no new rule; the twice-used case is a difficulty only for a PLAIN read of one value (`(chars.ch:
+blah)`), which is where his 2026-11-17 words apply. Asked back as binding-prefix in two parts.
