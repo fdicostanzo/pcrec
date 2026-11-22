@@ -7981,3 +7981,26 @@ FILTER or under a complement (a complement's labels are never visible, ruled), t
 form: the same names, read by the label rules: last mention, or the branch taken); several arguments (`when`:
 a name two of them hold is one label by the same rules); a looped spot (`rx.repeat`, `occurrences`: the label
 rules of a loop; the array for a group question); `hits` / `occurrences` keep the path through `hit`.
+
+### 2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`
+tags: lib/modifiers/padded lib/modifiers/quoted lib/search/anchored lib/search/contains lib/rx/repeat lib/structural/capture lib/control/peek core/labels/export/export-list core/labels/export parked/ideas/user-doc-traps
+
+Asked "transform-export: yes" for the convention: "A provided body that places its argument in the match passes
+that argument's labels on, by the export list on each spot, unless its piece says otherwise" (covering `peek`,
+`atomic`, `when`, `list_of`, `padded`, `quoted`, `anchored`, `any_case`, the gap bodies, `rx.repeat`, `capture`;
+leaving out an argument used only as a filter or under a complement, set arguments, the natives; the stated
+cases: two spots of one argument, several arguments, a looped spot, `hits` / `occurrences` through `hit`). HIS
+WORDS, whole:
+
+"transform-export: yes.
+hide(x) := /${x}/
+identity(x) := /${[(=) = x]}/"
+
+Class: (1) a RULING on the slug: the convention holds for the provided library ("a convention for provided
+bodies only, so no language rule moves", as put to him). (2) two DEFINITIONS he writes, with no words on them:
+read as the two cases of the day's rulings in their smallest form (the reading taken, told to him): `hide(x) :=
+/${x}/` uses its argument alone, so its call exports none of the argument's labels (default-export;
+argument-default); `identity(x) := /${[(=) = x]}/` passes all of them on (export-list; wrapper-export). Checked
+against the rules as ruled (no matching run: both match exactly what `x` matches; what differs is what the call
+exports): correct. NOT ruled as provided NAMES: whether `hide` and `identity` join the library is his to say;
+they go into the convention's piece as its worked pair and onto the user-documentation list.
