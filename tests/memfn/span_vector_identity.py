@@ -20,6 +20,12 @@ holds three things of them (r75 CHECKS-1..3):
       walk hunk per site whose only change is the stretch replaced by exactly
       one `<p>_mf<h>_vs<j>(S, C)`; one call per site, one definition pair per
       call. An extra byte, a doubled or a moved call at a V site fails.
+      AT THE w32 LAYER (-fmemfn-simd=x86-64-v3; U3, block_span.md §4.1, §5)
+      the site's insertion also holds its level block (`__w32_b`, `__w32`,
+      their lines as §4.1 spells them), its selector calls `__w32`, the
+      `<immintrin.h>` line may be inserted once, and the `MEMFN_FORMS` and
+      `SIMD_GUARDED_BYTES` stamp lines change: one `span-vector@w32` token
+      per site more, nothing else in the token list.
 
 THE MASK, DECLARED BEFORE DATA (§10.2, drilled on real artifacts and a real
 bump, §16 item 11): nine anchored spellings of the abi number, selected BY
@@ -83,9 +89,21 @@ VCALL = re.compile(rb"(\w+_mf\d+_vs\d+)\((\w+_mf\d+_s), (\w+_mf\d+_c)\)")
 DEF_HEAD = re.compile(r"^static inline __attribute__\(\(always_inline(?:, unused)?\)\) int "
                       r"(\w+_mf\d+_vs\d+)(__body)?\(const unsigned char \*\w+, size_t \w+\)$")
 DEF_OTHER = re.compile(r"^(?:\{|\}|    return [^\n]*;|)$")
+# the w32 layer's level block (§4.1), spelled HERE from the design, never read off the kit
+LEVEL_HEAD = re.compile(r"^static inline __attribute__\(\(always_inline\)\) int (\w+_mf\d+_vs\d+)__w32(_b)?"
+                        r"\((?:const unsigned char \*p|const unsigned char \*\w+, size_t \w+)\)$")
+LEVEL_BODY = [re.compile(r) for r in (
+    r"^    const __m(?:256|128)i (?:x|b0|b1|bm|hn|bit) = _mm(?:256)?_\w+\(.*\);$",
+    r"^    const unsigned char \*p = \w+ \+ \w+(?: [+-] \d+)?;$",
+    r"^    size_t i = 0;$",
+    r"^    for \(; i \+ (?:16|32) < \d+; i \+= (?:16|32)\) if \(!\w+__w32_b\(p \+ i\)\) return 0;$")]
+LEVEL_INCLUDE = "#include <immintrin.h>"
+LEVEL_STAMP = re.compile(r"^#define \w+_(MEMFN_FORMS|SIMD_GUARDED_BYTES) (.*)$")
+LEVEL_TOKEN = "span-vector@w32"
 HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 
 LAYERS = {"off": [], "x8664": ["-fmemfn-simd=x86-64"], "v3": ["-fmemfn-simd=x86-64-v3"]}
+LEVEL_LAYERS = ("v3",)          # the layers whose V sites carry the w32 level block (U3)
 ENCS = {"byte": [], "utf8": ["-e", "utf8"]}
 STREAMS = {"c-default": None, "c-vm": "vm"}
 DENY = ["--memfn=no-span-vector"]
@@ -144,11 +162,13 @@ def side_abi(es, binp, timeout, stated):
     return stated
 
 
-def walk_diff(deny, dflt):
-    """The default-vs-deny diff at a mover, in the declared shape. Returns
-    (problems, calls, defs): `calls` the vs names called in the walk hunks,
-    `defs` the selector names whose __body and selector heads were added."""
+def walk_diff(deny, dflt, level=False):
+    """The default-vs-deny diff at a mover, in the declared shape (with the w32
+    level block where `level`). Returns (problems, calls, defs): `calls` the vs
+    names called in the walk hunks, `defs` the selector names whose __body and
+    selector heads were added."""
     probs, calls, defs = [], [], []
+    tokens, includes, top_calls = 0, 0, set()
     with tempfile.TemporaryDirectory() as td:
         a, b = os.path.join(td, "deny.c"), os.path.join(td, "dflt.c")
         open(a, "wb").write(deny)
@@ -175,14 +195,39 @@ def walk_diff(deny, dflt):
             heads = {}
             for l in new:
                 dm = DEF_HEAD.match(l)
+                lm = LEVEL_HEAD.match(l) if level else None
                 if dm:
-                    heads.setdefault(dm.group(1), []).append(bool(dm.group(2)))
+                    heads.setdefault(dm.group(1), []).append("body" if dm.group(2) else "sel")
+                elif lm:
+                    heads.setdefault(lm.group(1), []).append("w32_b" if lm.group(2) else "w32")
+                elif level and l == LEVEL_INCLUDE:
+                    includes += 1
+                elif level and any(r.match(l) for r in LEVEL_BODY):
+                    pass
                 elif not DEF_OTHER.match(l):
                     probs.append(f"inserted line outside the definitions: {l[:80]!r}")
+                tm = re.match(r"^    return (\w+)__w32\((\w+), (\w+)\);$", l) if level else None
+                if tm:
+                    top_calls.add(tm.group(1))
+            want = ["body", "sel", "w32", "w32_b"] if level else ["body", "sel"]
             for nm, kinds in heads.items():
-                if sorted(kinds) != [False, True]:
-                    probs.append(f"{nm}: definitions are not one __body + one selector")
+                if sorted(kinds) != want:
+                    probs.append(f"{nm}: definitions are {sorted(kinds)}, not {want}")
                 defs.append(nm)
+        elif level and oc == nc and all(LEVEL_STAMP.match(x) for x in old + new) and \
+                [LEVEL_STAMP.match(x).group(1) for x in old] == [LEVEL_STAMP.match(x).group(1) for x in new]:
+            for o, n in zip(old, new):           # the moved stamps
+                mo, mn = LEVEL_STAMP.match(o), LEVEL_STAMP.match(n)
+                if mo.group(1) == "MEMFN_FORMS":
+                    to = [t for t in mo.group(2).strip('"').split(",") if t != "none"]
+                    tn = mn.group(2).strip('"').split(",")
+                    rest = list(tn)
+                    for t in to:
+                        if t in rest:
+                            rest.remove(t)
+                    if len(tn) != len(to) + len(rest) or any(t != LEVEL_TOKEN for t in rest):
+                        probs.append(f"MEMFN_FORMS {mo.group(2)} -> {mn.group(2)}: not tokens of {LEVEL_TOKEN} added")
+                    tokens += len(rest)
         elif oc == 1 and nc == 1:        # the walk line: stretch -> one call
             o, n = old[0].encode("utf-8", "surrogateescape"), new[0].encode("utf-8", "surrogateescape")
             ms = VCALL.findall(n)
@@ -200,10 +245,13 @@ def walk_diff(deny, dflt):
     if sorted(calls) != sorted(defs) or len(set(calls)) != len(calls):
         probs.append(f"calls {sorted(calls)} vs definitions {sorted(defs)}: "
                      "not one call per defined site")
+    if level and (tokens != len(defs) or top_calls != set(defs) or includes > 1):
+        probs.append(f"w32 layer: {tokens} {LEVEL_TOKEN} token(s), selectors calling __w32 "
+                     f"{sorted(top_calls)}, {includes} include line(s), for sites {sorted(defs)}")
     return probs, calls, defs
 
 
-def one(es, ref, binp, abis, pat, stream, flags, timeout):
+def one(es, ref, binp, abis, pat, stream, flags, timeout, level=False):
     """(pattern, ref_ok, deny_same, default_moves, vcalls, shape problems,
     ref mask hits, subject mask hits) for one cell."""
     eng = STREAMS[stream]
@@ -220,15 +268,15 @@ def one(es, ref, binp, abis, pat, stream, flags, timeout):
     vcalls = len(VCALL.findall(wtxt)) if wok else -1
     probs = []
     if moves and wok and dok:
-        probs, _, _ = walk_diff(dtxt, wtxt)
+        probs, _, _ = walk_diff(dtxt, wtxt, level)
     return pat, True, deny_same, moves, vcalls, probs, rh, sh
 
 
-def run_cell(es, args, abis, name, pats, stream, flags, floor):
+def run_cell(es, args, abis, name, pats, stream, flags, floor, level=False):
     deny_bad, mover_bad, movers, refused, n = [], [], 0, 0, 0
     rh, sh = collections.Counter(), collections.Counter()
     with cf.ThreadPoolExecutor(args.jobs) as ex:
-        futs = [ex.submit(one, es, args.ref_bin, args.bin, abis, p, stream, flags, args.timeout)
+        futs = [ex.submit(one, es, args.ref_bin, args.bin, abis, p, stream, flags, args.timeout, level)
                 for p in pats]
         for f in futs:
             pat, rok, same, moves, vc, probs, r1, s1 = f.result()
@@ -299,7 +347,7 @@ def main():
             for en, ef in ENCS.items():
                 for st in STREAMS:
                     ok, d, m, _ = run_cell(es, args, abis, f"{ly}_{en}", pats, st, ef + lf,
-                                           FLOORS[(st, en)])
+                                           FLOORS[(st, en)], ly in LEVEL_LAYERS)
                     total += ok
                     bad += d + m
     if "seed4095" in cells:
@@ -307,7 +355,7 @@ def main():
         for ly, lf in LAYERS.items():
             ok, d, m, _ = run_cell(es, args, abis, f"seed4095_{ly}", seed_pats, "c-default",
                                    ["--window-search-width=4095"] + lf,
-                                   FLOORS[("seed4095", "byte")])
+                                   FLOORS[("seed4095", "byte")], ly in LEVEL_LAYERS)
             total += ok
             bad += d + m
     print(f"span_vector_identity: compiled={total} failures={bad}")

@@ -3660,3 +3660,15 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - On the final tree, all GREEN: 719 make test, 720 mech (S3510, S3280), 721 gate, 722 ids (0 movers vs d9d86e39e), 723 mech (18 U2 rows).
   - **Reports:** docs/dev/lanes/bsu2_report.md, bsu2fix_report.md.
   - **Next:** U3 (the w32 helper; the first SIMD text).
+
+- **done (partial): R-47 unit U3** (2026-11-22) — branch lane/memfn-k1108 @ f861873a8 (merges lane/bsu3 ec578d053 + lane/bsu3fix 7c7e625b5; make strict clean).
+  - **The change:** the vector span's w32 level block, rendered at `-fmemfn-simd=x86-64-v3` only; SIMD-off and `x86-64` bytes are U2's apart from the abi number.
+  - **ABI EVENT 111 -> 112** in commit be192b04a. Readers were found by `git grep -n -w 111` and reviewed by hand (bsu3_report.md "ABI EVENT"). L3 holds 110; whichever of L3/U3 lands second re-pins.
+  - **Identity:** SIMD-off movers 0 (no mask, every arm, both streams). SIMD-on movers are exactly the V sites at w32: 28 byte / 20 utf8 at c-default, 0 at c-vm, and 31 for SPAN-SEED at w4095.
+  - **Reviews:** r76 (code), ruled FIX FIRST. The fixes are CHECKS-1/2/3, CONTRACT-1, SLOT-1 and SLOT-3 (37394534b), the -O0 control compiles and is the rule's alone (6cf672b6a), and the S3516 prose is now worded arch-free (7c7e625b5). No emitted byte moves in the fixes. The r76 gap critic DISCHARGED r75 SLOT-3/4.
+  - **Validation:**
+    - 726 RED on test-memfn-simdfloor (the -O0 control); fixed by bsu3fix2.
+    - 729 RED on test-memfn-arch (C4 class 6: 'pshufb' in S3516 prose); fixed by bsu3fix3.
+    - On the final tree, all GREEN: 729 make test (2021 s), 730 mech (17 rows), 731 ids.
+  - **Reports:** docs/dev/lanes/bsu3_report.md, bsu3fix_report.md, bsu3fix2_report.md.
+  - **Next:** U4 (G2-V, the T-table pins, the rest of C18, sabotage (a)-(f)), then U5 (card C6 incl. the clang arms) and U6 (the abi package and G1 dry run; C6 timing in a window main clears).
