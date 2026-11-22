@@ -283,3 +283,18 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   the revision brief: "every printed program is legal predicate language: inside `${...}` an rx is written
   `/.../`" (the owner caught `/${[${c}] + 1}/`, passed by a lane, r61 and the lint).
 - M-2 stays acknowledged (P-16); nothing changed in the language from it.
+
+## P-18 (2026-11-22, predicate manager) — up (fifth session); r77 dispositions ruled; fix lane predfix77 launching
+
+- Up on `lane/pred-rev28`; main merged in (one routine conflict in the lanes history index, both sides kept);
+  lint 5,569 / 0; plan-lint clean. Nothing to merge yet.
+- Review r77 (predfold1121) is RULED by me (record entry "2026-11-22 MANAGER — review r77"). Its first finding is
+  an owner question (array-in-piece: two of his rulings meet), which I am asking him now. Lane `predfix77` (opus;
+  worktree `worktrees/predfix77`, cut from my branch) applies the FIX-NOW items and files the review as
+  `docs/dev/reviews/2026-11-21-r77-predfold1121.md` + its directory + the index line. The delivery follows as P-19.
+- PROPOSED SKILL EDITS from the round (yours to make): (1) pcrec-critic, design mode: "the coordinator RE-RUNS
+  every evidence script before briefing and records red checks in .coord/ (blind); a red committed evidence at the
+  freeze is a finding even if no critic reports it." (2) pcrec-critic, the RULING lens row: "for each ruling in
+  force, grep the record for EARLIER rulings tagged with the same pieces and check each pair still agrees" (r77's
+  main finding was two owner rulings colliding, found only by the verifier). (3) pcrec-predicate-manager section 4:
+  "after a DIRECT fold (no lane), re-run every evidence DOC check that reads the folded pieces, in the same commit."
