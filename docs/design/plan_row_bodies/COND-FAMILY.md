@@ -8139,3 +8139,25 @@ unless renamed (not stated); (e) the wrapper form `capture(name, x)` and "unless
 (f) caller-ambiguous: two captures of one name can now arise only from two `capture(..)` requests, an error at
 the second request (a reading); (g) capture-loop-value (what the caller gets for a captured label a loop sets)
 stays open.
+
+### 2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)
+tags: core/holes/bare-condition core/conditions/match-so-far core/holes/bare-condition/nested-scope core/principles/conservative-first
+
+The question he left open the same morning ("mostly confirmed. i leave the c := (0: 5) open"), listed again as
+left on his list. HIS WORDS, whole:
+
+"c := (0: 5): A := (b: 8) is an error because b is not in scope. It cannot be applied to any arbitrary pattern
+nor could it be rewritten cleverly to make that legal and meaningful. (0: 5) could be applied to any pattern.
+All patterns have match 0. It could be rewritten to (like) /.*/ & (0: 5). That's why I wasn't sure of it.
+I think it's better to say it's an error and reconsider later."
+
+Class: a RULING on zero-condition-binding ("it's better to say it's an error and reconsider later"): a condition
+on `0` bound alone, `c := (0: 5)`, is a compile error, for now. With his REASONS for having hesitated, recorded
+for the reconsideration: unlike `A := (b: 8)` ("b is not in scope"; it "cannot be applied to any arbitrary
+pattern"), `(0: 5)` "could be applied to any pattern. All patterns have match 0", and "could be rewritten to
+(like) /.*/ & (0: 5)". And the stance is his conservative-first.
+
+The manager's readings (marked): (a) the error is at the binding, the same compile error as bound-condition's;
+(b) the condition written in place, or passed as an argument, is unchanged (the caller's text); (c) the
+reconsideration's trigger: a program that needs a reusable test on the whole match and cannot write it as a set
+bound alone (`five := 5`, then `(0: five)`), or macro variables being designed.
