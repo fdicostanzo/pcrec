@@ -754,3 +754,19 @@ subject = diff 399ef98f4..6f1fe4e84 of docs/design/predicates/, round dir
 `$PCREC_TMPDIR/scratch/crit-predfold1122/`. The subject stays FROZEN until the draft: anything he rules meanwhile
 is RECORDED only. WAITING on: the coordinator's hand-back (read the round dir at each wake). Frank: "do your
 followups and we can continue this conversation later".
+
+## 2026-11-22 (night) — r82 drafted and RULED; fix lane predfix82 running
+
+r82 (five opus lenses + verifier): every printed example HOLDS (35 of 35), quotes 107 of 107; 44 findings, none
+rejected. Answer-level: a name with two sources (ANS-1: OWNER QUESTION two-sources); the one-use plain read `A.h`
+folded as ruled on what was a lean, and my Class sentence misdescribed his 2026-11-17 point 4 (CORRECTED by a
+record entry; OWNER QUESTION idiom-confirm, with the isodate idiom taken on his silence); value entry inside a
+group question; the tier of a path to an invisible label; nested paths; the index through a prefix across `&`
+(the last four: my readings, ruled in the dispositions entry). Evidence: FOUR old models red or crashing at the
+freeze, undeclared; two models exit 0 while red; the engine exports through `_x` part labels and double-lowers a
+later `&` operand. RULED (record entry "2026-11-22 MANAGER — review r82"). Coordinator stopped. Lane predfix82
+(opus; `worktrees/predfix82`, cut at 0f6a556bc) RUNNING: applies the fixes, one model with the engine fixes and a
+successor check per old model, files the review as docs/dev/reviews/2026-11-22-r82-predfold1122.md. NEXT: accept,
+merge, lint, P-20 (done line + [COND-FAMILY] status + the three process lessons as proposed skill edits +
+worktrees to prune: predbound, predref, predcall, predfix82), SendMessage main. Questions for him, in order:
+two-sources; idiom-confirm; then the queue in wake.md.
