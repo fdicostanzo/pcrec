@@ -29,3 +29,4 @@ Not a main red: main's pin matches main's corpus; the +114 rows exist only on th
 
 ## STATE AT HANDOFF
 Rulings file empty (no R-n applied). No src/ or pin edit. Scratch: /var/tmp/pcrec-pcrec/scratch/l3axtri (logs). Re-pin OWED as above; no cloud dispatch made.
+OWED: none (the re-pin above is a follow-up for main to dispatch, not a run of this lane)
