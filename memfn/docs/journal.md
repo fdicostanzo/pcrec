@@ -4831,3 +4831,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - Lean: a table per kind x layer first, fitted to the SIMD reference night. The score is built only if the table cannot fit the measured answers (mixed spans are the likely trigger). Pricing stays a later step (memory pcrec-pilot-is-pricing-baseline). No build now.
 
 - Correction (owner, via main, verbatim): "The score or threshold were ideas to consider. Other comments were framing". Decided: width = kit's call within D202 add. 1. Table and score are ideas only; numbered points are framing. responses.md notice corrected.
+
+## 2026-11-22 09:44 (kit) — OWNER WORDS (d3-repin-permission, main's question, answered in the kit session), VERBATIM
+
+"d3-repin-permission: you have permission to run the repin script"
+
+- Relayed to main verbatim. Kit offer: if l3land's retry is still denied, the kit reads the member diff against its condition and runs D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh in that worktree only.
