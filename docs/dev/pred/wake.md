@@ -9,21 +9,20 @@ followups and we can continue this conversation later"). Committed docs win on a
   owner ruling through 2026-11-22 is folded AND reviewed: r77 (filed 2026-11-21) and r82 (filed 2026-11-22, RULED,
   applied by lane predfix82). Lanes predbound, predref, predcall, predfix82 are merged and stopped. Main merges at
   its convenience (P-19 = 399ef98f4 was the previous delivery).
-- IN FLIGHT (after P-20, which main has merged and pushed): review **r83** is drafted and RULED (record entry
-  "2026-11-22 MANAGER — review r83"). Lane **predfix83** (opus; `worktrees/predfix83`, cut at 8619d21f1;
-  `scripts/lanewatch predfix83`) applies it, adds a successor model with the NAME-GRID check, the name table
-  piece, and files the review. THEN: accept (lanewatch DONE; STATE AT HANDOFF; merge ALONE; lint;
-  `make -s test-plan-lint`; TaskStop), P-21 `done:` (status line; worktrees preddef, predfix83; the round's
-  process notes P1-P5 as proposed skill edits), SendMessage main. No cron.
-- RULED AFTER THE r83 FREEZE, IN THE RECORD ONLY, NOT FOLDED (five rulings for ONE next opus fold lane, then its
-  own critic round, number from main): **program-options** (file-scoped flags `m s n x`, never across an import);
-  **hole-flags** (weak per-file `i`, not propagated; only an explicit `i` inherited at a hole; `m`, `s` no longer
-  inherited); **argument-default: an error** (his principle: "The label is not to the regex abstractly, it's to
-  the spot in the pattern where the regex is being inserted"; an argument is a template; a label on an argument
-  at a call is a compile error: my reading); **wrapper-export (a)** and **transform-export: yes** (every provided
-  body that places its argument writes `[(=) = x]` on the spot; his pair `hide` / `identity` as the worked
-  example). The documents still carry argument-default as an OPEN piece until that lane.
-- Lint `python3 -I scripts/pred_doc_lint.py`: 6,645 / 0 at the preddef merge (RUN IT BEFORE NAMING A TIP). The newest evidence
+- DELIVERED: P-21 (tip 75d2318bd): default-export and export-list folded, r83 filed and applied, the name table
+  piece (core/modules/names). Main merges it after the kit's U4 lands.
+- IN FLIGHT: lane **predspot** (opus; `worktrees/predspot`, cut at 75d2318bd; `scripts/lanewatch predspot`) folds
+  FIVE rulings in two groups: labels (**argument-default: an error**, with his principle "The label is not to the
+  regex abstractly, it's to the spot in the pattern where the regex is being inserted"; **wrapper-export (a)**;
+  **transform-export: yes**: every provided body that places its argument writes `[(=) = x]` on the spot; his
+  pair `hide` / `identity`) and flags (**program-options**: file-scoped `m s n x`, never across an import;
+  **hole-flags**: weak per-file `i` not propagated, only an explicit `i` inherited at a hole, `m` / `s` no longer
+  inherited). THEN: accept (lanewatch DONE; STATE AT HANDOFF; merge ALONE; lint; `make -s test-plan-lint`;
+  TaskStop); critic round **r84** (number given by main; design mode, ONE opus coordinator; subject = diff
+  75d2318bd..tip; lenses RULING, EXAMPLES, GENERAL, the NAMES grid, a FLAGS grid, fix-induced; denylist as r83's
+  launch prompt); rule (record entry "MANAGER — review r84"); ONE opus fix lane (files the review); merge;
+  P-22 `done:`; SendMessage main. No cron.
+- Lint `python3 -I scripts/pred_doc_lint.py`: 6,830 / 0 at P-21 (RUN IT BEFORE NAMING A TIP). The newest evidence
   model is `docs/dev/lanes/predfix82_evidence/predfix82_model.py` (22 checks; it carries the fixed engine: `_x`
   part labels close, a later `&` operand lowered once, uses counted in the definition's text; its SUCCESSOR check
   declares every older model's red). Known limit: a nullable loop body past the minimum is not modelled.

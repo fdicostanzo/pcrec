@@ -850,3 +850,15 @@ compile error; a group inside an in-place argument is not the caller's to read (
 shape). THE NEXT FOLD LANE (after predfix83 merges and P-21) carries FIVE rulings: argument-default,
 wrapper-export, transform-export, program-options, hole-flags; then its own critic round (ask main for the
 number). A principle piece for "a label is to the spot" (core/principles; his words; the name mine).
+
+## 2026-11-22 (very late, 3) — predfix83 merged; P-21 delivered; fold lane predspot running; r84 assigned
+
+Lane predfix83 delivered (rulings file empty; NAME-GRID 96 cells: 89 agree, 0 disagree, 7 undecided, all
+argument-default's; one answer changed by my A5 reading: `[a = A] SEQ A & (A.h: <5)` now reads the unlabelled
+use) and MERGED: lint 6,830 / 0, its model 25 / 0. Review r83 filed. P-21 written and sent to main (tip
+75d2318bd); main merges after the kit's U4 lands. Main gave review number **r84** for the next fold's round.
+Lane **predspot** (opus; `worktrees/predspot`, cut at 75d2318bd) RUNNING: the five rulings in two groups
+(labels: argument-default, wrapper-export, transform-export, the principle piece "a label names a spot"; flags:
+program-options, hole-flags), a model with the NAME-GRID decided and a FLAG-GRID. NEXT: accept, merge, lint;
+critic round r84 (design mode; subject = diff 75d2318bd..tip; lenses RULING, EXAMPLES, GENERAL, NAMES grid, a
+FLAGS grid lens, fix-induced); rule; fix lane; P-22.
