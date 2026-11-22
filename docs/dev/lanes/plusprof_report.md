@@ -26,3 +26,4 @@ docs/dev/known_issues.md K159; docs/dev/plan.md [K159-PLUS-SUPERLINEAR]; `make -
 
 ## STATE AT HANDOFF
 Committed on lane/plusprof. Last ruling applied: none (rulings file empty, R-0). No make test run (doc-only). Scratch: /var/tmp/pcrec-pcrec/scratch/plusprof.
+OWED: none
