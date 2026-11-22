@@ -727,3 +727,53 @@ position). WAITING on him: count-in-set (he asked where `ch` is defined; answere
 opus follow-up lane folding bound-condition (+ count-in-set), a critic round on that fold (number from main), P-20.
 
 Main (2026-11-22): review number **r82** is ours for the bound-condition fold's critic round; main merges 399ef98f4 after reading P-19.
+
+## 2026-11-22 (later) — five more rulings; predbound merged; predref running
+
+RULED by him today after array-in-piece and bound-condition: count-in-set (b: a value left of `:`), binding-prefix
+(1 yes: a group question through a binding's prefix reads every use; 2 a: a plain read with several uses is a
+compile error), label-reference (required; the plain idiom included; his unqualified-after-definition idea parked
+by him), helper-captures (the library's helpers set labels, not captures; `(?<:x>...)` his proposal). Values
+allowed in the joint form (my reading withdrawn at his question). record-in-some CLOSED by me on his words of the
+21st (told to him; no objection yet). Lane predbound (R-1..R-3) delivered and MERGED (915b47e64; lint 6,088 / 0;
+its model 21 / 0). Lane predref (opus; worktree `worktrees/predref`) RUNNING: the label-reference sweep, the
+"read flat" statements, helper-captures. NEXT: accept and merge predref; critic round r82 (number from main) over
+today's folds (predbound + predref; subject = diff from 399ef98f4); rule it; fix lane; P-20. Question queue:
+call-prefix, zero-condition-binding, count-several, capture-loop-value, zero-in-loop with the occurrences-argument
+reading, macro variables / macro types (with declared labels), group-truth, every-pass-spelling, the older ones.
+
+2026-11-22, his direction after closed-argument (not confirmed as a ruling: his lean (a) stands recorded): "do your followups and we can continue this conversation later". Lane predref delivered and MERGED (lint 6,205 / 0; its model 8 / 0; no answer changed by the sweep). Launching lane predcall (opus): call-prefix case 1, the A.d / c.d lines, his second hits example, closed-argument as an open piece with his lean, c.A. Then r82.
+
+## 2026-11-22 (evening) — closed-argument ruled; predcall merged; critic round r82 launched
+
+RULED: closed-argument (a) (and with it call-prefix case 2: `A.d` legal exactly where `d` is visible through the
+call). Lane predcall delivered (R-1 applied) and MERGED: tip 6f1fe4e84, lint 6,289 / 0, its model 14 / 0. One
+model defect it reported: the evidence models keep `_x` part-label groups visible (against export statement 6):
+for the r82 fix lane. LAUNCHED: coordinator `crit-predfold1122` (opus, background), review r82, design mode,
+subject = diff 399ef98f4..6f1fe4e84 of docs/design/predicates/, round dir
+`$PCREC_TMPDIR/scratch/crit-predfold1122/`. The subject stays FROZEN until the draft: anything he rules meanwhile
+is RECORDED only. WAITING on: the coordinator's hand-back (read the round dir at each wake). Frank: "do your
+followups and we can continue this conversation later".
+
+## 2026-11-22 (night) — r82 drafted and RULED; fix lane predfix82 running
+
+r82 (five opus lenses + verifier): every printed example HOLDS (35 of 35), quotes 107 of 107; 44 findings, none
+rejected. Answer-level: a name with two sources (ANS-1: OWNER QUESTION two-sources); the one-use plain read `A.h`
+folded as ruled on what was a lean, and my Class sentence misdescribed his 2026-11-17 point 4 (CORRECTED by a
+record entry; OWNER QUESTION idiom-confirm, with the isodate idiom taken on his silence); value entry inside a
+group question; the tier of a path to an invisible label; nested paths; the index through a prefix across `&`
+(the last four: my readings, ruled in the dispositions entry). Evidence: FOUR old models red or crashing at the
+freeze, undeclared; two models exit 0 while red; the engine exports through `_x` part labels and double-lowers a
+later `&` operand. RULED (record entry "2026-11-22 MANAGER — review r82"). Coordinator stopped. Lane predfix82
+(opus; `worktrees/predfix82`, cut at 0f6a556bc) RUNNING: applies the fixes, one model with the engine fixes and a
+successor check per old model, files the review as docs/dev/reviews/2026-11-22-r82-predfold1122.md. NEXT: accept,
+merge, lint, P-20 (done line + [COND-FAMILY] status + the three process lessons as proposed skill edits +
+worktrees to prune: predbound, predref, predcall, predfix82), SendMessage main. Questions for him, in order:
+two-sources; idiom-confirm; then the queue in wake.md.
+
+## 2026-11-22 (late) — predfix82 merged; P-20 delivered; nothing in flight
+
+Lane predfix82 delivered (rulings file empty; all nine of my r82 readings supported; no printed line's answer
+moved: 220 lines under the old and the fixed engine) and MERGED: lint 6,428 / 0, its model 22 / 0. Review r82
+filed. P-20 written (done line, status line, seven worktrees to prune, four proposed skill edits). wake.md's State
+rewritten. Owner questions next: two-sources, idiom-confirm.

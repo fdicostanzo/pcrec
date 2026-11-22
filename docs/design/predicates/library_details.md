@@ -257,15 +257,17 @@ history:
 ## lib/modifiers/length — length
 slugs:
 rulings:
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); `nchars`, a count bound alone, is refused at its binding
+- 2026-11-22 "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); the count written in place left of `:`
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
 rejected:
 - `length(<=20)` read as an IMAGE function — by owner ruling — OWN-1 superseded the image forms (`unpad(S)`, `length(<=20)`).
 readings:
 - the body `chars & (nchars: S)` gives the length (S in ==0, ==3, ==20, ==21, <=20, even; the empty text, a newline, 20 and 21 characters) — SUPPORTED (preddoc3c PART LE; sabotage s21 caught); the draft's review r16 emulation, 27 cases, 0 differ.
-- under array-vs-passes `nchars := count((ch: /(?s:.)/))` counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
-- caveats (the draft's): two helper bindings beside the body; `count`'s budget applies to `nchars`; the label `ch` visible.
+- under array-vs-passes the count of `ch` (then the helper `nchars`) counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
+- caveats (the draft's): a helper binding beside the body; `count`'s budget applies to the count; the label `ch` visible.
 - `chars` re-spelled with a part label, `([ch = /(?s:.)/])*`, leaves every printed `length` line unchanged (review r77 D4; the brief's reading 4) — SUPPORTED by a run (predfix77 CHARS: the one printed line rebuilt from the old body and from the new, both equal to the printed text; the old body makes the capture `ch`, the new none; sabotage s11 caught).
-- `nchars` is a computed count bound alone, so it rests on the open core/holes/bare-condition/bound-condition (under his position (b) it would be refused) — UNTESTED.
+- the body written in place, `chars & (count((chars.ch: /(?s:.)/)): S)` (R-3 spelling), gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `length(==3)` and from the program form, both equal to the line printed at 1e0384941; WHOLE against length 3, 0 of 121 texts over `ab\n` differ); `length`'s binding is legal: its body uses `chars`, which holds `ch` (predbound LEGAL).
 evidence: preddoc3c PART LE; review r16 `bodies_check.out`. predfix77_model.py CHARS.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body (review r16 FIXIND-3).
@@ -275,14 +277,20 @@ history:
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `ch`, written as a group in rx text, is also a capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement's "one loop pass per character, its count tested by S" became "one setting of `ch` per character, their count tested by S". No answer moves.
 - 2026-11-22 (lane predfix77, review r77 D4, A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the helper until then, verbatim: "`chars := /(?:(?<ch>(?s:.)))*/`", and the bullet "The label `ch` is visible in the result; written as a group in rx text it is also a capture (a reading of pure-label)." A part label makes no capture, so `length` hands the caller none (his reason for the add-on: "isodate and all the other libraries don't want to presume everyone is interested in every label being a capture."); `length(==3) & length(<5)` no longer reaches caller-ambiguous for a capture.
+2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the statement until then, verbatim: "`length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one setting of `ch` per character, their count tested by S."; the helpers bullet until then: "The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral; `nchars` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)."; the readings item "`nchars` is a computed count bound alone ... UNTESTED" replaced by the run; two readings re-worded without `nchars`. The line's program `chars & (nchars: ==3)` became `chars & (count((ch: /(?s:.)/)): ==3)`; the answers do not move. Status date 2026-11-19 to 2026-11-22.
+2026-11-22 (lane predbound, R-3, label-reference ruled): the body's `ch` re-spelled `chars.ch` (statement and line); the answers do not move (predbound FIVE, LABELREF).
+- 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels dropped (value-left already named).
+
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
 rulings:
+- 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); `mnum`, a value bound alone, is refused at its binding
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
 rejected:
 readings:
-- the body `months & (mnum: S)`, `mnum := $mname.index` (1-based) accepts `Jan` .. `Jun` for `between(1, 6)` — SUPPORTED (preddoc3c PART MN; sabotage s20, 0-based, caught); review r16's emulation, 170 cases, 0 differ, rests on the emulated `.index`.
-evidence: preddoc3c PART MN.
+- the body `months & (months.mname.index: S)` (R-3 spelling; then `months & (mname.index: S)`, and before it `months & (mnum: S)`, `mnum := $mname.index`; 1-based) accepts `Jan` .. `Jun` for `between(1, 6)` — SUPPORTED (preddoc3c PART MN; sabotage s20, 0-based, caught); review r16's emulation, 170 cases, 0 differ, rests on the emulated `.index`.
+- the path written in place gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `month_numbered(between(1, 6))` with the body read from library.md equals the line printed at 1e0384941; WHOLE against the six month names, 0 of 13 texts differ; the index is the matched member's, 1-based, sabotage s17 caught by META).
+evidence: preddoc3c PART MN. predbound_model.py FIVE, META.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body.
 - 2026-11-19 (lane preddoc3c): a new piece (not in the census's 61 rows; a provided name of the draft §2.7).
@@ -290,6 +298,9 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-15): the body's `...` written out as the twelve names in calendar order (the `.index` the example reads depends on the order); answers unchanged (preddoc6 PART MN).
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `[mname = ...]` makes no capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `mnum` points at the open core/holes/bare-condition/bound-condition.
+2026-11-22 (lane predbound, bound-condition ruled): the statement until then, verbatim: "`month_numbered(S)` reads a month name as its number: `months & (mnum: S)`, `mnum` the 1-based index of the name matched."; the binding `mnum := $mname.index` (a compile error now) removed, the path `mname.index` written in place; the pure-label bullet's "`mnum` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)." dropped. The answers do not move. Status date 2026-11-19 to 2026-11-22.
+2026-11-22 (lane predbound, R-3, label-reference ruled): `mname.index` re-spelled `months.mname.index` (the part label reached through the binding); the answers do not move (predbound FIVE).
+- 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels retargeted to core/conditions/form/value-left.
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -386,6 +397,8 @@ history:
 formerly: ?.search (2026-11-15, the owner renamed `search` to `occurrences` under his naming rule)
 slugs: hit-carry hit-carry-depth min-values nullable-meaning helper-captures
 rulings:
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); RULING on helper-captures, answer (b): the body's `hit` is a label, no capture
+- 2026-11-22 (class: REQUEST to validate) "3. validate: you can label the results [ hits = occurences(...) ] & (hits.hit: <5)" (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); validated the same turn (the record's four pasted run lines), printed here and in lib/search/hits
 - 2026-11-15 "1. if I understand this question, it's asking if the search rx follows non-pcre matching behavior? If that's the question, then the answer is it should always follow it if for no other reason than that's what's expected." (record: "2026-11-14 RULINGS on rev 3's contradictions")
 - 2026-11-15 "1 occurances." (record: "2026-11-15 RULING — the provided transform `search` is renamed `occurrences`")
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
@@ -401,13 +414,16 @@ rejected:
 - an argument with a backreference or conditional that can run while its group is unset refused — by owner ruling — hit-carry: the carry is the rewrite's own behaviour.
 - "at most one hit, the first" for a nullable argument (the record's manager correction of 2026-11-18 afternoon) — by run — `occurrences(/\d*/)` on `1a` gives two hits [`1`@0, ``@1] (the draft's rev 26.1 PART R47 A1, libpcre2; preddoc3c PART OC, sabotage s9 caught).
 - "the program keeps PCRE's meaning for the empty hit, as the empty search does" — by run — NOT SUPPORTED: PCRE's find-all of `/\d*/` on `a1b` gives four hits, the loop fewer (the draft R.1.9, PART H H4, H5).
+- the label `hit` (written as a group in rx text) is a capture the caller receives, here and in lib/search/hits (a reading of pure-label; review r77 D4) — by owner ruling — helper-captures (b): "occurences et al should only set labels not captures unless they are so declared."
 readings:
+- his example `[hits = occurrences(/\d+/)] & (hits.hit: <5)` is legal (a part label the definition writes) and its plain read is the LAST hit's value, a rejecting condition re-choosing the hits — SUPPORTED (docs/dev/lanes/predref_evidence/ predref_model.py HITS: the record's two pasted `occurrences` lines reproduced from the program text in every mode; the documents' two lines verbatim, DOC)
+- a group written in the argument stays a capture (the brief's reading (d): a user's own literal keeps pure-label) — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py LABELONLY)
+- two calls each reached through a label of their own are not ambiguous — UNTESTED (lane predref's reading); restated with call-prefix (a plain read through the name of a twice-called macro is the compile error, label the call)
 - the body reproduces R.1.9's printed hits (`/\d*/` on `1a` and `12a3`; `min = 2` on the empty text, two empty hits; `min = 3` on `ab`, three) and `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with [`12`, `34`] — SUPPORTED (preddoc3c PART OC; sabotages s9, s10 caught).
 - the loop's priority equals python's own reading of the body text `(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)` with x := `\d+` and min 0, 1, 2: 0 / 0 / 0 of 31 texts over `1a` — SUPPORTED (PART OC).
 - the hits of a nullable argument: up to and including the first empty hit (the manager's second correction, review r47 V1) — the told reading, SUPPORTED as the draft printed it (PART OC).
-- hit-carry's witness `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5) (WHOLE `73` FAILS, SEARCHED `73` FAILS, FIND-ALL `3x73` [`3x73`@0 h = `7`]) — UNTESTED here (a condition before its group reads the previous hit: it needs the label engine; the draft's rev 26 PART H ran it on libpcre2).
+- hit-carry's witness, as printed before bound-condition (`c` bound alone is now a compile error at `c`; today's spelling writes it in its hole, `occurrences(/${NOT (h: >= 5)}(?<h>\d)/, min = 2)`): `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5) (WHOLE `73` FAILS, SEARCHED `73` FAILS, FIND-ALL `3x73` [`3x73`@0 h = `7`]) — UNTESTED here (a condition before its group reads the previous hit: it needs the label engine; the draft's rev 26 PART H ran it on libpcre2).
 - hit-carry-depth (how deep the carry reaches) — asked in the draft's open table, not answered; not a library question.
-- the label `hit` (written as a group in rx text) is a capture the caller receives, here and in lib/search/hits (a reading of pure-label; review r77 D4, RULING-6, GENERAL-7, FIXIND-16) — UNTESTED as meant: it sits against his reason for the add-on, "isodate and all the other libraries don't want to presume everyone is interested in every label being a capture." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); the re-spelling with a part label needs the expression form around the atomic group (hits). An owner question, helper-captures (queued, the manager's to ask).
 - `0` inside the argument (review r77 A6): three candidates part — see core/conditions/match-so-far (VERIFIED by predfix77 OCCZERO; PLAN).
 evidence: preddoc3c PART OC; the draft R.1.9, rev 26 PART H, rev 26.1 PART R47.
 history:
@@ -420,17 +436,25 @@ history:
 - 2026-11-19 (lane preddoc5): the slug nullable-meaning moved here from core/conditions/defaults, which named it this piece's fact (review r59 COMPA-13).
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 - 2026-11-22 (lane predfix77, review r77 D4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet states the `hit` capture as a reading with the tension named; status date 2026-11-18 to 2026-11-21 (pure-label changed what `hit` is).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures RULED (b) and folded: the body `(?<hit>${x})` to `(?<:hit>${x})` (core/labels/label-only-group); the bullet "A bare condition after it reads the LAST hit's own labels." and the bullet "The body writes `hit` as a group in rx text, so it is a capture the caller receives (a reading of pure-label), against his reason for the add-on: ... Whether a helper's label is a caller capture: an owner question (helper-captures)." replaced by the ruling, his example and the re-choosing sentence; the two lines "Plain read" and "Every hit" added (docs/dev/lanes/predref_evidence/ predref_model.py HITS). Status date 2026-11-21 to 2026-11-22.
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): the bullet "A condition after it reads the LAST hit's own labels, through a label on the call" names the macro's name beside the label (`occurrences(/\d+/) & (occurrences.hit: <5)`, one call; docs/dev/lanes/predcall_evidence/ predcall_model.py CASE1: the same answers as the printed `[hits = occurrences(/\d+/)] & ...` lines). No line moves; his example kept as written.
+- 2026-11-22 (lane predfix82, review r82 GENERAL-7, EXAMPLES-4; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): the bullet "two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix; each call reached through a label of its own (`a.hit`, `b.hit`) is not ambiguous (a reading)" restated with call-prefix and binding-prefix.
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass hit-list
 rulings:
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); the body's `hit` is a label, no capture
 - 2026-11-17 "hits-text: yes but spelling to be reviewed with all other spellings." (record: "2026-11-17 OWNER RULING — the hit list: atomic and anchored")
+- 2026-11-22 (class: EXAMPLE) "help-captures: right. [h = hits(/\d+/ & (0: <5)) ] & (h.hit: 3) & some((h.hit: 4))<5 and last hit is 3 and some hit is 4." (record: "2026-11-22 OWNER, on the helper-captures validation: "right", and a second example with a test inside the argument"); an acknowledgement and his example with its gloss, the program ending at `some((h.hit: 4))`
 rejected:
 - each hit atomic but not the loop, `\A(?:.*?(?>(?<n>\d+)))*\D*\z` with the list judged after it — by run — the lazy gap is re-entered and swallows a number's start: "every hit under 100" HOLDS on all four texts with hits [`34`], [`12`, `34`], [`12`, `45`], [`0`, `12`] (the draft R.1.9; preddoc3c PART HI reproduces the four lists; sabotage s11 caught).
 - the stretch reading (SEARCHED `x300 12` gives `x30`@0 with [`30`]) — by owner ruling — hits-text: standing alone the list is the whole subject's.
 readings:
+- a test inside the argument chooses the hits; a test after the atomic `hits` judges them: his second example `[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))` against `[h = hits(/\d+/)] & occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))` — SUPPORTED (docs/dev/lanes/predcall_evidence/ predcall_model.py HITS2: the record entry's two pasted lines, "inner test" and "every number", reproduced from the program text with their hit lists; WHOLE against the direct hits, every digit 0-4 inside / every number after, 0 and 0 of 781 texts over `49 31`; sabotage s7 caught)
+- one call read by the macro's name, `hits(/\d+/) & (hits.hit: <5)` and `hits(/\d+/) & occurs.none((hits.hit: >= 5))`, gives the printed labelled lines' answers — SUPPORTED (docs/dev/lanes/predcall_evidence/ predcall_model.py CASE1)
+- after the atomic `hits` a test on the hits judges a fixed list: the record's two pasted `hits` lines (`[h = hits(/\d+/)] & ...`) — SUPPORTED (docs/dev/lanes/predref_evidence/ predref_model.py HITS: reproduced from the program text, the hit lists included)
 - the body (an atomic group around the whole loop, anchored at both ends) gives the printed lists and verdicts: `1234` FAILS [`1234`], `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS; with an optional label `axa` FAILS (the last hit's own g unset), `aax` HOLDS — SUPPORTED (preddoc3c PART HI).
-- "every hit under 100" written as `hits(/\d+/) & occurs.none((hit: >= 100))`, a group question on the array of `hit` (one setting per hit) — the lane's reading of the unwritten program; WHOLE `1234` FAILS, `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS under the settings and the pass readings alike — SUPPORTED (predarr HITS: the body read from library.md, against python `re` 0 / 0 / 0 of 1,365 texts; sabotage s13, the atomic group re-entered, caught).
+- "every hit under 100", as printed before label-reference (today `[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))`, the base line), written as `hits(/\d+/) & occurs.none((hit: >= 100))`, a group question on the array of `hit` (one setting per hit) — the lane's reading of the unwritten program; WHOLE `1234` FAILS, `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS under the settings and the pass readings alike — SUPPORTED (predarr HITS: the body read from library.md, against python `re` 0 / 0 / 0 of 1,365 texts; sabotage s13, the atomic group re-entered, caught).
 - hits-pass and some-own: a bare condition after it reads the last hit's own labels (closed by entailment, the draft §R.8) — SUPPORTED for the optional-label rows (PART HI).
 - `module: ?`; the spelling `hits` is a placeholder, his `all_matches(rx)`.
 evidence: preddoc3c PART HI; the draft R.1.9, rev 24.4 PART H.
@@ -441,6 +465,9 @@ history:
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, the `hit` group written in rx text is a capture as well as a label (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the "every hit under 100" bullet names its program, a group question on the array of `hit` (a reading). No answer moves.
 - 2026-11-22 (lane predfix77, review r77 D4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the capture bullet points at the tension and the question helper-captures (lib/search/occurrences).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures folded: the body `(?<hit>${r})` to `(?<:hit>${r})`; the "Every hit under 100" program `hits(/\d+/) & occurs.none((hit: >= 100))` re-spelled `[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))` (label-reference: `hit` is not written in the program; its four prose answers re-run, docs/dev/lanes/predref_evidence/ predref_model.py HITS); the bullet "The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label; the tension with the add-on's reason and the question helper-captures: lib/search/occurrences)." replaced; the two lines "Plain read" and "Every hit" added. Status date 2026-11-17 to 2026-11-22.
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): his second example printed with the record entry's two run lines, "inner test" and "every number" (the base labels "His second example, a test inside the argument" and "Every number tested after the call"), and the sentence "a test inside the argument chooses the hits; a test after the atomic `hits` judges them"; a bullet on reading one call by the macro's name. The first example's lines (lane predref) kept.
+
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
@@ -454,7 +481,7 @@ readings:
 - the record's body `/.*${rx}.*/` with the gaps crossing line breaks is `/(?s:.*)(?:${s})(?s:.*)/`, and `contains(/^err/)` equals `startsWith("err")` WHOLE (0 of 1,365 texts over `erx` and a newline, length <= 5) — SUPPORTED (preddoc3c PART SW).
 - `contains(/err$/)` also accepts a value ending `err` and a newline (PCRE's `$`; `\z` for the exact end) — SUPPORTED (PART SW).
 - a CANDIDATE body, not the definition: `contains(x) := occurrences(x, min = 1)` (the draft's LEAN, §2.6, §8: chosen so x's labels read as the leftmost hit) — the same set as the ruled gap body, 0 / 0 / 0 of 121 texts (`ab` over `abx`, length <= 4) in all three modes; only the labels differ (the hit, and which occurrence x's labels read) — SUPPORTED (preddoc3c PART SWocc). Its printed run: `occurrences("ab", min = 1)` WHOLE `xabx` HOLDS, `ba` FAILS / SEARCHED `x ab` `x ab`@0 / FIND-ALL `ab ab` [`ab ab`@0].
-- the same candidate also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft) — UNTESTED here.
+- the same candidate also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft; as printed before label-reference, today `some((occurrences.hit: /(?s).*/))`) — UNTESTED here.
 evidence: preddoc3c PART SW, PART SWocc.
 history:
 - 2026-11-14/15: the `contains` family; the record's body (11-15); the draft kept `occurrences(x, min = 1)` (its reading above).
@@ -520,6 +547,7 @@ readings:
 evidence: the draft §12.7.
 history:
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-22 (lane predfix82, review r82 FIXIND-9; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): "a computed label" became "a computed value written in place". Status date 2026-11-19 to 2026-11-22.
 
 ## lib/sets/anything — anything
 slugs: anything-text
@@ -590,6 +618,7 @@ history:
 ## lib/counting/count — count
 slugs: count-budget
 rulings:
+- 2026-11-22 "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); a count stands left of `:` written in place
 - 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); `count` reads the ARRAY OF SETTINGS; it REVISES "the number of passes of a loop that meet c"
 - 2026-11-15 "counts: perhaps the solution is both. you can use count() until you can't then you can use 'occurs' as a fallback" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING (lean) — counts: `count()` first, `occurs` as the fallback"
 - 2026-11-15 "i would refuse count() on budget or as a recommended way to reduce states rather than rules" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule"
@@ -597,18 +626,22 @@ rulings:
 - 2026-11-15 "Predicate count/occurs issue: it would be a later optimization plan item that if pcrec could show no change in semantics that it convert count() into occurs" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 OWNER NOTE — `count()` -> `occurs` as a LATER OPTIMIZATION"
 - 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
+- a count bound to a name of its own and read like a label (`n := count((d: "7"))`, `(n: ==2)`) — by owner ruling — bound-condition (the computed label bound alone, confirmed) and count-in-set: b (the value written in place).
 - `count()` refused in a set position by rule (the manager's "until you can't" reading) — by owner ruling — "by BUDGET, not by rule" (the reading WITHDRAWN in the record).
 readings:
-- `n := count((d: "7"))`, `/(?:(?<d>\d),)+/ & (n: ==2)`: WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL [`7,7,`@0, `1,7,7,`@7] — SUPPORTED (preddoc4 PART CO; sabotage s9, every pass counted, caught).
+- `/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)` written in place (then `n := count((d: "7"))`, `(n: ==2)`): WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL [`7,7,`@0, `1,7,7,`@7] — SUPPORTED (preddoc4 PART CO; sabotage s9, every pass counted, caught).
 - the printed line under the settings reading — the SAME answers (one setting per pass): SUPPORTED (predarr CHANGED). On an empty array the count is zero (a reading; predarr EMPTY: `count(NOT (d: "7"))` on `,` is 0 on the array, 1 on the passes). On a condition of several entries what is counted is not stated (the manager's reading (b); an owner question, count-several, proposed).
 - the budget is one measured quantity, named with the "too many classes" budget (the five open items, (3)); no number stated.
-evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS].
+- the in-place form gives the printed line unchanged — SUPPORTED (predbound FIVE: rebuilt from the program text, equal to the line printed at 1e0384941; WHOLE against "two 7s", 0 of 1,093 texts over `17,` differ).
+evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS]. predbound_model.py FIVE.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: `count(c)` was the body helper of `length` with no piece (review r59 PRIMITIVES-MISSING, READ-6). The slug count-budget is the lane's name for the budget ruling.
 - 2026-11-19 (lane preddoc6, review r60 COLD-2): the base's "`even()` on a count" (his word, "Allows "even()" or other checks for count", quoted above) written as the set it names, `/\d*[02468]/`: no piece provides `even`.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "`count(c)` is the number of passes of a loop that meet c, a canonical numeral used with the ordinary comparisons; it is refused only over the budget, the refusal naming `occurs`."; `defined: native (a count over a loop's passes; no expression of the language counts passes)`. A bullet added (settings, zero, several entries). Status date 2026-11-15 to 2026-11-21. The printed line does not move.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `n` points at the open core/holes/bare-condition/bound-condition.
 - 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
+2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the bullet's "it may be bound and read like a label: `n := count((d: \"7\"))`, then `(n: ==2)` (`n` depends on the open bound-condition: core/holes/bare-condition/bound-condition)." became the value written in place, and bound alone a compile error; the line's program `(n: ==2)`, n := `count((d: "7"))` became `(count((d: "7")): ==2)`; the answers do not move.
+
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:
 rulings:
@@ -657,6 +690,7 @@ evidence: preddoc3c PART JO.
 history:
 - 2026-11-12/13: `join([name = rx, ...], sep = ...)` in the draft (§5.3); 2026-11-19: his `join(c)` in a negated class.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-22 (lane predfix82, review r82 FIXIND-6; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): "Joined parts stay reachable by their labels (`c.A`)." marked stale unless join is ruled an exception. Status date 2026-11-19 to 2026-11-22.
 
 ## lib/strings/left — left
 slugs:
@@ -703,6 +737,7 @@ history:
 slugs:
 rulings:
 - 2026-11-14 "I agree with both excepting the spelling ... no alpha operators ... with, check, in ... check is not `x := ...` ... don't want to go into new grammar lightly" (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
+- 2026-11-22 (class: OBSERVATION) "nice. critical is the @assert macros to test that it does what was intended" (record: "2026-11-22 OWNER, after the second hits example was checked: "critical is the @assert macros to test that it does what was intended""); a priority stated, nothing ruled; no meaning folded
 - 2026-11-15 "If someone is writing ambiguous rx they need to think about what that means and validate it with @check()" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — ONE reading everywhere (PCRE's); ambiguity is the author's to validate; no `max` on search for now"
 rejected:
 - `check` as a keyword or statement form, `x := check ...` — by owner ruling — "no alpha operators", "check is not `x := ...`" (Q9).
@@ -711,10 +746,13 @@ rejected:
 readings:
 - the CONCEPT (compile-time assertions) is agreed (Q6 + Q9); the spelling `@assert.some/none/same`, a module's effect calls, is the manager's lean after his `assert := import("assert")`, `assert.some("2024" & leap)` (record "2026-11-14 — import/export as functions") and the draft §5.6 (LEAN) — a placeholder spelling.
 - the set position and the edge-assertion error in its argument: the draft §5.6 — not run here.
+- the two gaps his remark "critical is the @assert macros" meets (no assertion form states what a search reports, nor a label's value on a given subject): the manager's answer in the record entry — a reading, UNTESTED (a statement about forms not defined; lib/assert/each, parked/ideas/assert).
 evidence: the draft §5.6.
 history:
 - 2026-11-19 (lane preddoc4): a new piece and section: the ruled assert module had no piece (review r59 COMPB-2).
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the last bullet's "that one asks about a loop's passes in a match" became "about a label's settings in a match".
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): one bullet quoting his remark and naming the two gaps as a reading. No rule changed, so the status date stays 2026-11-14.
+
 ## lib/assert/each — assert.each
 slugs:
 rulings:
@@ -837,6 +875,7 @@ rulings:
 rejected:
 - the keyword form `export capture(x) := ...` (rev 0) — by the draft — superseded by `@export`.
 readings:
+- its body's capture is its purpose, so it is left as written; whether that is "so declared" is not stated (lane predref's reading of the brief's reading (d)) — UNTESTED (a classification)
 - `capture(name, x) := /(?<${name}>${x})/`, the name passed (lane preddoc6, review r60 COLD-8) — SUPPORTED (preddoc6 PART CP).
 - `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN; the owner's sketch `group(x) := /(?<${x.label}>${x})/`, "lots of hand waving", record "2026-11-14 — compose instead of an option") names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP), but NOT BUILDABLE from the core as written (no field gives a part label's own name); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
 - what `capture(x)` returns for a looped x is not stated (the draft R.11 row 32).
@@ -846,10 +885,12 @@ history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
 - 2026-11-19 (lane preddoc6, review r60 COLD-8): the body could not be built from the core: `.label` is defined only for a part label over an array ("that member's name", core/values/metadata), and inside the body `x` is a parameter, not a path (core/labels/flow: "A binding's name is not a path"). The piece now states `capture(name, x) := /(?<${name}>${x})/` (the name passed as a string to the group-name hole) and keeps the draft's one-parameter sketch as a bullet naming the missing field; the example `capture(x)`, x := `[d = /\d+/]` became `capture("d", /\d+/)`, same answers (preddoc6 PART CP).
 - 2026-11-21 (lane predscope, pure-label folded): the bullet until then: "A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture." (wrong after pure-label: a label reaches the caller only as a capture). Two bullets added (the wrapper reading; the add-on pointer). Status date 2026-11-19 to 2026-11-21.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): a bullet: the body writes a capture on purpose; helper-captures' "so declared" not stated for it. Status date 2026-11-21 to 2026-11-22.
 
 ## lib/structural/capture/add-on — Making a label a capture
 slugs: none
 rulings:
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); "unless they are so declared": how is not stated, it joins this open form
 - 2026-11-21 (class: REQUIREMENT) "so an add on component that converted a label into a capture is needed." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); his reason: "the reason for the second one is that someone may use a library form like isodate."
 - 2026-11-21 (class: DISCUSSION, nothing ruled) "what i don't know is precisely what that looks like. two methods are to specify it like a wrapper like [ d = capture(digits) ] etc or specify it afterthefact like [ d = digits ] & capture(d) or something. no spelling suggested." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name")
 - 2026-11-21 (class: STATEMENT, marked agreed) "1. purely predicate labels and 2. cannot become exported captures (although they might be internal captures)" (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); of the `_t` labels
@@ -860,6 +901,7 @@ readings:
 evidence: predscope_model.py CAPT (what is a capture today).
 history:
 - 2026-11-21 (lane predscope): a new under-construction piece for his requirement of pure-label; both spellings are placeholders (core/spellings/placeholders).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): a bullet: how a provided body declares a capture joins this piece's open form (the brief's reading (d)). Status date 2026-11-21 to 2026-11-22.
 
 ## lib/structural/each — each, each_group, where, where_group
 slugs:
@@ -924,3 +966,4 @@ evidence:
 history:
 - 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-9); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
 - 2026-11-19 (lane preddoc6, review r60 COLD-19): `weekday` in the regular-twin bullet written `weekday_of`, as the piece calls it; the library header gives "the worked examples" their home (the frozen draft §12, the acceptance cases).
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): the manager's call on lane predref's question: the computed uses (`d := days($b) - days($a)` and its two siblings), bound alone and so refused by bound-condition, are KEPT as quoted uses of the frozen draft's worked examples, not re-spelled, with the line "written before bound-condition (2026-11-22), which refuses a computed value bound alone; restated when the standard library is designed". The status date 2026-11-19 to 2026-11-22 (the base line carries the ruling's date).

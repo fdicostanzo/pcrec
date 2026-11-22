@@ -7150,3 +7150,359 @@ example left out the helper's definition. `ch` is the group in the library's hel
 (lib/modifiers/length), which `length`'s body USES; inside a binding "the public labels of everything written or
 used there are visible" (core/labels/export, statement 2), so `ch` has its target in the binding. The same body in
 one definition: `length(S) := /(?:(?<ch>(?s:.)))*/ & (count((ch: /(?s:.)/)): S)`.
+
+### 2026-11-22 OWNER RULING — count-in-set: b (a value may stand left of `:` in a condition); and three ideas (`$h` there; declaring a binding's labels; a binding's name as a label prefix)
+tags: core/conditions/form core/values/computed-labels lib/counting/count lib/modifiers/length core/labels/paths core/labels/flow core/labels/export parked/ideas/restricted-parameter
+
+Asked **count-in-set** ((a) a member of `occurs` taking the set, `occurs.in(S, c)`; (b) a value left of `:`,
+written in place, `P & (count((d: "7")): ==2)`, `(($a + $b): <10)`; the manager's leaning (b); the answers the
+documents' printed `count` line under both), and answered on where `ch` is defined (the helper `chars`). HIS
+WORDS, whole:
+
+"count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it
+suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i
+am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules
+as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need
+defining. respond"
+
+Class, part by part:
+1. "ok, thats fine": he ACCEPTS the answer on `ch` (the helper `chars`, used in `length`'s body).
+2. A RULING on the slug: "so b": a value may stand in the left part of a condition entry, written in place. It
+   REVISES the documents' sentence "An entry is `p: S`, p a label path, never an expression" (core/conditions/form;
+   the manager found no owner words behind "never an expression").
+3. An OBSERVATION: "it suggests $h could go there which is also new."
+4. An IDEA ("aside", "perhaps", "i am wonderings not for correctness but clarity"): a syntax to DECLARE the labels
+   of a binding (the `ch` in `chars`).
+5. An IDEA ("it suggests", "under certain rules"): a binding's name used as a label prefix (`chars.ch`), with the
+   case he says "would need defining": `chars seq ":" seq chars & (chars.ch: blah)` (the binding used twice). It
+   goes against his own label-flow words of 2026-11-17, point 4: "A . B & (A.h: blah) error. A is a binding not a
+   label and could be ambigous if its used multiple times in an expression" (recorded; told to him).
+6. A REQUEST: "respond".
+
+The manager's readings of the ruling, for the fold lane to test: (a) a bare name or label path left of `:` stays a
+LABEL (as today); any other expression there is a VALUE (the parse rule is the manager's call); (b) the value must
+be SINGLE (at most one string, at match time); a value of several strings there is a compile error for now; (c)
+a value that yields nothing fails the entry, as an unset label does, and `NOT` holds on it; (d) `($h: S)` and
+`(h: S)` answer alike in every mode ("`$x` and `x:` never disagree"), so the label form is the value form's
+common case; a default (`h = v`) and a joint entry stay label forms; (e) `length(S)` is `chars & (count((ch:
+/(?s:.)/)): S)`; `sum`'s test is `(($a + $b): <10)`; `mnum`'s is `(mname.index: S)`, already a path.
+
+### 2026-11-22 OWNER, on binding-prefix: "i like your read on this except that perhaps it does refer to all"
+tags: core/labels/paths core/labels/flow core/labels/labels-vs-captures lib/counting/count parked/ideas/field-count
+
+Put to him, on his idea of a binding's name as a label prefix: the definition "a binding used as a part carries a
+part label of its own name, as if written `[=chars]`"; for a binding used twice the candidates (a) legal when used
+once, an error otherwise (the manager's leaning), (b) always, the last mention when used twice, (c) an error as
+today; and his own label-flow words of 2026-11-17 against it. HIS WORDS, whole (he wrote the slug "binding in
+prefix"):
+
+"binding in prefix: i like your read on this except that perhaps it does refer to all. chars SEQ ":" SEQ chars &
+(count(chars.ch): ==5) says all chars must total 5"
+
+Class: a LEAN ("i like your read"; "perhaps"), with an EXAMPLE of the meaning he has in mind; not a ruling. The
+reading taken, told to him: he accepts the definition (the binding's name as an implicit part label) and, for a
+binding used more than once, proposes that the prefix reaches the settings of EVERY use, at least under a group
+question (his example is a count). His `count(chars.ch)` is a placeholder spelling: `count` takes a condition
+today (`count((chars.ch: anything))`); a count over a bare label path is parked/ideas/field-count.
+
+RUN the same turn (hand-built simulation in PCRE's order, `$PCREC_TMPDIR/scratch/pred/binding_prefix.py`; chars :=
+`/(?:(?<ch>(?s:.)))*/`; the output pasted; `(?s:.)` takes a `:` too):
+all: WHOLE `ab:cde` HOLDS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6]
+last: WHOLE `ab:cde` FAILS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0]
+
+The manager's view (told to him; nothing folded): his "all" is what array-vs-passes already gives a group
+question (the array is every setting, in order), so for `some`, `count`, `occurs`, `h[k]` through a prefix "all
+uses" needs no new rule; the twice-used case is a difficulty only for a PLAIN read of one value (`(chars.ch:
+blah)`), which is where his 2026-11-17 words apply. Asked back as binding-prefix in two parts.
+
+### 2026-11-22 OWNER RULING — binding-prefix: 1 yes (a group question through a binding's prefix reads every use); 2 a (a plain read through it, the binding used more than once, is a compile error)
+tags: core/labels/paths core/labels/flow core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export
+
+Asked **binding-prefix** in two parts, after his lean and the run of his example (the entry above): "1. A group
+question through a binding's prefix reads the settings of every use."; "2. A plain read through the prefix, when
+the binding is used more than once: (a) a compile error that says to label the part (`[left = chars]`) ...; (b)
+the last use, as an explicit part label mentioned twice already behaves. My leaning is (a)." HIS WORDS, whole (he
+typed a `"` after the slug):
+
+"binding-prefix" 1. yes. 2. i agree with your lean (a)"
+
+Class: a RULING on both parts. (1) A binding's name may be used as a label prefix (`chars.ch`); under a group
+question (`some`, `count`, `occurs`, the index) it reads the settings of the label made inside EVERY use of the
+binding, in order: his "all chars must total 5". (2) A plain read of one value through the prefix (`(chars.ch:
+blah)`, `$chars.ch`) when the binding is used more than once is a COMPILE ERROR whose message says to label the
+part. It REVISES his label-flow point 4 of 2026-11-17 ("A . B & (A.h: blah) error. A is a binding not a label and
+could be ambigous if its used multiple times in an expression"): the error stays for exactly the case he named
+there, a plain read with several uses; with one use the prefix is legal.
+
+The manager's readings, for lane predbound (R-1 of its rulings file) to test and mark: (a) the definition he
+liked ("i like your read"): a binding used as a part carries a part label of its own name, as if written
+`[=chars]`; with ONE use `A.h` reads as `[aa = A]`, `aa.h` does (`A & B & (A.h: <2)` answers as the documents'
+printed `[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)` line); (b) "used more than once" is counted in the
+definition the reference is written in; (c) an EXPLICIT part label mentioned twice is unchanged (a plain read
+names its last mention; ruled 2026-11-21); (d) the prefix gives no access to anything private (export statement
+4), and under a `_` part label or `[_ = A]` nothing is reached; (e) a MACRO's name is not a prefix for now (`B(A)`
+is not reached as `B.x`): not ruled, conservative; (f) a label and a binding of one name: the existing hide-label
+warning; which one a prefix `x.h` names is not stated; (g) the error can be relaxed to the last use later without
+changing an answer.
+
+### 2026-11-22 OWNER, two points after binding-prefix: should a label be REQUIRED to be known textually at its reference ("i'm inclined to say yes"); and why would the joint form not allow values
+tags: core/labels/paths core/labels/export core/labels/export/flat-read-outside core/labels/flow core/conditions/form core/values/tuples lib/modifiers/length parked/ideas/label-hygiene
+
+After the binding-prefix ruling was read back and **helper-captures** asked (not answered by this message). HIS
+WORDS, whole:
+
+"label references: the remaining question is to whether it should be _required_ that the label is known textually
+at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes. thoughts? also, value
+in conditions: why would (x,y): () form not allow values?"
+
+Class: (1) a QUESTION he raises with his LEAN ("i'm inclined to say yes"; "thoughts?"): should a reference to a
+label that is not written in the text of the definition making the reference be REQUIRED to carry its source
+(`chars.ch`, not `ch`, in `length(S) := chars & (count((ch: /(?s:.)/)): S)`). DISCUSSION; nothing ruled. It would
+REVISE the spelling side of flat-read-outside (ruled 2026-11-21: "a flat read outside a binding follows the
+inside rules") and of hole-export, and his example 1 of 2026-11-21 ("C can see d as a flat look into A"). Slug
+for it: label-reference. (2) a QUESTION on the manager's reading (d) of count-in-set ("a default and a joint
+entry stay label forms"): "why would (x,y): () form not allow values?".
+
+The manager's answers (told to him): on (2): no reason; the reading is WITHDRAWN for the joint form: each
+component of a joint entry's left part may be a value, each SINGLE (a reading, to be tested by the lane); a
+default (`h = v`) stays a label form (it stands in for an absent label); inside a group question a joint entry
+stays refused (joint-in-some). On (1): the manager's view is in the reply (for his yes, with what it obliges).
+
+### 2026-11-22 OWNER RULING — label-reference: required (a label not written in the referencing definition's text is referenced with its source); and an idea he parks
+tags: core/labels/paths core/labels/export core/labels/export/flat-read-outside core/labels/flow core/holes/labels core/holes/bare-condition/nested-scope lib/modifiers/length parked/ideas/label-hygiene
+
+Asked **label-reference** ("label-reference: required", or with changes; "Say in particular whether the plain
+`isodate & (year: ...)` idiom is included"), after the manager's view for his yes: the requirement only refuses
+programs, so it can be relaxed later without changing an answer; what it obliges (the everyday idiom longer; a
+prefix for macro calls; arguments; typed parameters; a sweep of the printed examples); and the statement offered:
+"a bare name is a label written in this definition's own text (a group in one of its literals, or a part label
+`[x = ..]` it writes). Any other label is reached through the name that brings it into this definition: a
+binding, a part label, or a typed parameter." HIS WORDS, whole:
+
+"label-reference: required. we can relax it later as you say although i'm not inclined to. (i wrote then deleted
+an idea that if you defined isodate := ... above the binding then later usages of it in the same "program" could
+refer to isodate labels without qualifications but i'm not so sure of it so i will park it)"
+
+Class: (1) a RULING on the slug: "required": a reference to a label that is not known textually at the reference
+carries its source (`chars.ch`, not `ch`). (2) a STANCE: "we can relax it later ... although i'm not inclined
+to". (3) an IDEA he PARKS himself ("i'm not so sure of it so i will park it"): a binding defined above in the
+same program lets later uses refer to its labels without qualification.
+
+The reading taken, told to him: the plain idiom IS included (`isodate & (isodate.year: < 2100)`): he states no
+exception, and the idea he parks is exactly the relaxation that would exempt it. It REVISES the spelling side of
+flat-read-outside (2026-11-21) and hole-export (2026-11-19), and his example 1 of 2026-11-21 (`C := B(A) & (d:
+<100)`, "C can see d as a flat look into A"): what a flat read MEANT becomes what `binding.x` means.
+
+The manager's readings, for the sweep lane to test and mark: (a) "known textually": a bare name is a label
+written in the referencing definition's own text: a group in one of its literals, or a part label it writes; (b)
+any other label is reached through a binding's name (binding-prefix, ruled today) or a part label; (c) the same
+for `$x` reads, backreference-free rx text being untouched (rx text names only its own literal's groups already);
+(d) NOT STATED by his words, to be asked: the prefix for a label that comes from a MACRO CALL's body (`hits(..)`'s
+`hit`), from an ARGUMENT (`B(A)`: `A.d`), and from a typed PARAMETER (`d.year`); until asked, a call is labelled
+(`[x = hits(..)]`, `x.hit`) and an argument that is a binding is reached by the binding's name; (e) no answer of
+any printed example changes: only spellings.
+
+### 2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate
+tags: lib/search/occurrences lib/search/hits lib/modifiers/length lib/structural/capture lib/structural/capture/add-on parked/ideas/label-only-group core/labels/labels-vs-captures core/labels/paths
+
+Asked **helper-captures** (does a caller receive captures for the names a library helper uses internally: (a) as
+written, `hit` a capture; (b) labels only, a capture only where capturing is the body's purpose; the manager's
+leaning (b), which needs a label that is no capture inside rx text). HIS WORDS, whole (he typed the slug
+"help-captures"):
+
+"help-captures: 1. i propose the form (?<:x>...) for a label only group x. i've mentioned it before. 2. occurences
+et al should only set labels not captures unless they are so declared. 3. validate: you can label the results [
+hits = occurences(...) ] & (hits.hit: <5)"
+
+Class: (1) a PROPOSAL, in his word ("i propose"), of a spelling he has given before (2026-11-18; parked/ideas/
+label-only-group): `(?<:x>...)`, a group in rx text that is a label and no capture. Not ruled as a spelling; with
+(2) the THING is needed, so it leaves the parked list (under construction; his form the placeholder). (2) a
+RULING on the slug, answer (b), in his words: "occurences et al should only set labels not captures unless they
+are so declared." (3) a REQUEST to validate an example.
+
+VALIDATED the same turn (told to him). The form is legal under today's rulings: `[hits = occurrences(..)]` is a
+part label the definition writes, so `hits.hit` is known textually (label-reference); the part label `hits` is a
+label named like a provided macro, which "still works" (core/operators/statements). What it MEANS: `(hits.hit:
+<5)` is a plain read, the LAST hit's value; and after `occurrences` (not atomic) a rejecting condition re-splits
+or drops hits (ruled 2026-11-18), so it holds wherever SOME choice of hits ends in one under 5. RUN (hand-built
+simulations in PCRE's order, `$PCREC_TMPDIR/scratch/pred/hits_label.py`, `hits_atomic.py`; outputs pasted):
+`[hits = occurrences(/\d+/)] & ...`:
+plain (hits.hit: <5), the last hit: WHOLE `a1b3` HOLDS / WHOLE `a9b3` HOLDS / WHOLE `a3b9` HOLDS / WHOLE `a1b22` HOLDS / WHOLE `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0]
+occurs.none((hits.hit: >= 5)), every hit: WHOLE `a1b3` HOLDS / WHOLE `a9b3` HOLDS / WHOLE `a3b9` HOLDS / WHOLE `a1b22` HOLDS / WHOLE `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7]
+`[h = hits(/\d+/)] & ...` (the atomic hit list, a fixed list judged after it):
+plain (hits.hit: <5), the last hit: WHOLE `a1b3` HOLDS (hits ['1', '3']) / WHOLE `a9b3` HOLDS (hits ['9', '3']) / WHOLE `a3b9` FAILS (hits ['3', '9']) / WHOLE `a1b22` FAILS (hits ['1', '22']) / WHOLE `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` []
+occurs.none((hits.hit: >= 5)), every hit: WHOLE `a1b3` HOLDS (hits ['1', '3']) / WHOLE `a9b3` FAILS (hits ['9', '3']) / WHOLE `a3b9` FAILS (hits ['3', '9']) / WHOLE `a1b22` FAILS (hits ['1', '22']) / WHOLE `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` []
+(In the atomic runs the simulation's label text reads `hits.hit`; the part label there is `h`.)
+
+The manager's readings, for the sweep lane: (a) "occurences et al" is every provided body (the rule is for the
+library; a user's own literal keeps the pure-label rule: a group written in rx text is a capture); (b) "unless
+they are so declared": how a helper declares a capture is not stated; it joins the capture add-on's open form
+(lib/structural/capture/add-on) and the declared-labels idea; (c) `hits`, `occurrences`, `list_of`, `endsWith`'s
+examples and any other provided body writing a named group are restated with the label-only group, placeholder
+`(?<:hit>...)`; (d) the label-only group is a label under every label rule (reset, last mention, the array) and
+never a capture: `\k<x>` to it inside the same literal is not stated (a reading: a compile error for now).
+
+### 2026-11-22 OWNER, on the helper-captures validation: "right", and a second example with a test inside the argument
+tags: lib/search/hits lib/search/occurrences core/conditions/match-so-far core/labels/paths lib/counting/some
+
+After the validation of his labelled-call example (after `occurrences` a rejecting condition re-chooses the hits;
+a test on the hits belongs after the atomic `hits` or inside the argument). HIS WORDS, whole:
+
+"help-captures: right. [h = hits(/\d+/ & (0: <5)) ] & (h.hit: 3) & some((h.hit: 4))<5 and last hit is 3 and some
+hit is 4."
+
+Class: an ACKNOWLEDGEMENT ("right") and an EXAMPLE with his gloss; nothing asked as a ruling. Read for the
+intended text: the program ends at `some((h.hit: 4))`; the words after it are his gloss, "<5 and last hit is 3 and
+some hit is 4".
+
+CHECKED the same turn (check-his-regex; told to him). The program is legal under today's rulings (`h` is a part
+label written there; `h.hit` known through it; `(0: <5)` is joined by `&` to `/\d+/`, so its `0` is that operand's
+match: his confirmed example of 2026-11-21). "last hit is 3" and "some hit is 4" are as he says. "<5" is NOT
+"every number is under 5": written inside the argument it decides WHAT IS A HIT: a number of 5 or more is skipped
+or split (`9` is no hit; `43` gives the hits `4`, `3`). RUN (hand-built simulation,
+`$PCREC_TMPDIR/scratch/pred/hits_inner.py`; output pasted; the second line is the other meaning, `[h = hits(/\d+/)]
+& occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`):
+inner test: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` HOLDS (hits ['4', '3']) / WHOLE `43` HOLDS (hits ['4', '3']) / WHOLE `4 13` HOLDS (hits ['4', '1', '3']) / WHOLE `4 3 9` HOLDS (hits ['4', '3']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+every number: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` FAILS (hits ['4', '9', '3']) / WHOLE `43` FAILS (hits ['43']) / WHOLE `4 13` FAILS (hits ['4', '13']) / WHOLE `4 3 9` FAILS (hits ['4', '3', '9']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+
+### 2026-11-22 OWNER, after the second hits example was checked: "critical is the @assert macros to test that it does what was intended"
+tags: lib/assert/assert lib/assert/each parked/ideas/assert parked/ideas/explainer parked/ideas/user-doc-traps lib/search/hits
+
+After the run showing that a test inside `hits`' argument chooses the hits (`4 9 3` HOLDS, `43` HOLDS) where
+"every number under 5" FAILS. HIS WORDS, whole:
+
+"nice. critical is the @assert macros to test that it does what was intended"
+
+Class: an OBSERVATION and a PRIORITY stated ("critical"); nothing asked as a ruling. The manager's answer (told
+to him; the manager's views): the ruled assertions (lib/assert/assert, 2026-11-14: `@assert.some(X)`,
+`@assert.none(X)`, `@assert.same(A, B)`; "Membership is `&`") already write this check for a WHOLE value: with
+`p` the program, `@assert.none("4 9 3" & p)` fails at compile time and shows the surprise; hand-worked from the
+run of the entry above, not run through a model. What they do NOT reach: an expectation about a SEARCHED or
+FIND-ALL report (which stretch, at which place) or about a label's value on a given subject ("on `4 13` the hits
+are 4 and 13"): no assertion form states those today. Recorded as a gap for the library discussion, with the
+under-construction lib/assert/each and parked/ideas/assert; nothing folded.
+
+### 2026-11-22 OWNER RULING — call-prefix, case 1: the macro's name qualifies a label of its body; case 2: "i'd say A.d is legal there", with a doubt he is working through
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings lib/search/hits core/holes/bare-condition/nested-scope
+
+Asked **call-prefix** (case 1: a label set by a macro's own body, `hits(/\d+/) & (hits.hit: 3)` with the macro's
+name as the prefix, or only through a label on the call; case 2: a label of an argument, `C := B(A) & (d: <100)`:
+`(A.d: <100)` through the binding passed in, and/or `[c = B(A)] & (c.d: <100)`; the manager's leaning: one rule
+for every name, and for case 2 both spellings, "They are the same label"). HIS WORDS, whole:
+
+"call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is legal there. i'm
+trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go through [ c = B(A)
+] as B may defined d"
+
+Class: (1) a RULING on case 1: "yes use the macro name as shown to qualify the label": `hits.hit`. The reading
+taken, told to him: with binding-prefix's two rules as put in the question (called once, a legal plain read;
+called more than once, a plain read is the compile error and a group question reads every call). (2) on case 2 a
+LEAN ("i'd say A.d is legal there") and two THOUGHTS he is working through ("i'm trying to figure out"): whether
+`B(A)` could ever REMOVE the `d`; and that going through `[c = B(A)]` may change the answer, "as B may defined
+d". Not recorded as a ruling on case 2; to be confirmed after the response.
+
+CHECKED the same turn (told to him): his second thought is RIGHT and the manager's sentence "They are the same
+label" is WITHDRAWN. RUN (hand-lowered, python `re`; A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`; outputs
+pasted):
+A.d <5 (A's own d): WHOLE `7-3` FAILS / WHOLE `3-7` HOLDS / WHOLE `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]
+c.d <5 (d as B(A) surfaces it: the last mention, B's): WHOLE `7-3` HOLDS / WHOLE `3-7` FAILS / WHOLE `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+The manager's readings (marked): (a) a prefix `X.d` reads `d` AS X SURFACES IT: `A.d` is A's own `d`; `c.d`, and
+`B.d` by case 1, are `d` as the call surfaces it (the last mention among the body's and the argument's); (b) on
+his first thought: B CAN remove it, `B(rx) := /${[_ = rx]}xx/` ("`[_ = A]` makes none of A's labels visible
+anywhere outside A", core/labels/export statement 7); whether `A.d` is then still legal in the caller is NOT
+STATED: put to him.
+
+### 2026-11-22 OWNER, on closed-argument: "i thought you'd lean to (a). what would A.d mean if d no longer was visible?"; and "[ c = B(A) ] does not allow c.A"
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/holes/bare-condition/nested-scope
+
+Asked **closed-argument** (when a macro closes its argument's labels, `B(rx) := /${[_ = rx]}xx/`, is the caller's
+`A.d` (a) an error or (b) still legal; the manager's leaning (b): "a closure only needs to guard what the macro
+surfaces"). HIS WORDS, whole (he typed the slug "closed-arguments"):
+
+"closed-arguments: i thought you'd lean to (a). what would A.d mean if d no longer was visible? also: [ c = B(A) ]
+does not allow c.A"
+
+Class: (1) a POSITION by a question: he expected (a) and asks what `A.d` could mean once `d` is not visible; not
+worded as a ruling: recorded as his LEAN to (a), to be entered as the ruling on his confirmation. (2) a STATEMENT:
+"[ c = B(A) ] does not allow c.A": a path does not reach an ARGUMENT by the argument's name through the call's
+label.
+
+The manager's answer (told to him): leaning (b) is WITHDRAWN. His question has no good answer: once B closes the
+argument, where and whether A's `d` is set is B's private business (inside a lookahead, twice, or not at all), so
+`A.d` would name something the caller cannot know from its own text: against label-reference's purpose. So (a):
+`A.d` is legal in the caller exactly where `d` is visible through the call, and it then reads `d` as it reaches
+the caller. On (2): agreed, and it follows from what is ruled: inside B the argument is the parameter `rx`, "a
+binding variable not a label" (2026-11-21), so the call's label `c` holds no part named `A`.
+
+### 2026-11-22 OWNER RULING — closed-argument: a (where a macro closes its argument's labels, the caller's `A.d` is a compile error)
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings
+
+Asked to confirm, after the manager withdrew leaning (b): "(a), stated as I would enter it: `A.d` is legal in the
+caller exactly where `d` is visible through the call, and it reads `d` as it reaches the caller. Where B closes
+the argument, `A.d` is a compile error." ... "Reply "closed-argument: a" and I enter it as the ruling." HIS WORDS,
+whole (he typed the slug "closed-arguments"):
+
+"closed-arguments: a"
+
+Class: a RULING on the slug, answer (a), on the statement as put: for an argument that is a binding, the caller's
+`A.d` is legal exactly where `d` is visible through the call, and reads `d` as it reaches the caller; where the
+macro closes the argument's labels (`B(rx) := /${[_ = rx]}xx/`), `A.d` is a compile error. It also settles
+call-prefix case 2 (his lean "i'd say A.d is legal there"): legal, under this condition. His reason, from the
+entry before: "what would A.d mean if d no longer was visible?".
+
+The manager's readings (marked; for lane predcall as R-1): (a) "visible through the call" is by core/labels/export
+(a `_` part label or `[_ = rx]` in the macro's body closes it); (b) an argument the body uses twice: `A.d` is the
+last mention as it reaches the caller; (c) the compile error is at the reference, and names the macro that closes
+the label (the message is the manager's call).
+
+### 2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)
+tags: core/labels/paths core/labels/flow core/labels/export core/conditions/form core/labels/labels-vs-captures/array-vs-passes core/holes/bare-condition/nested-scope core/patterns/literals lib/search/occurrences lib/search/hits core/diagnostics/errors
+
+Review r82 (design mode; five opus lenses and an opus verifier over the fold of 2026-11-22, diff 399ef98f4..
+6f1fe4e84; draft `$PCREC_TMPDIR/scratch/crit-predfold1122/review.md`; 44 findings, none rejected; every printed
+example line HOLDS, 35 of 35; quotes 107 of 107 verbatim). The manager's dispositions, by the draft's ids; every
+one is the manager's, none an owner ruling:
+
+- ANS-1 (a name with two sources): FIX-NOW: "A's own `d`" marked a reading citing the checked entry; OWNER
+  QUESTION **two-sources** (an argument written in place; a name written in the definition and also surfaced by a
+  used binding), with the run lines for `7-3` and `1,7`. Neither answer applied.
+- ANS-2: (b) FIX-NOW ("for one use"); (d) FIX-NOW, a reading: uses are counted in the referencing definition's
+  TEXT, before macros expand; (c) FIX-NOW, a reading: the prefix reaches the uses written in the referencing
+  definition's own text, not a use nested inside another used binding; the model fixed to it; (a) the one-use
+  plain read `A.h` is marked a READING resting on label-reference ("required": the required form must be legal)
+  and on his own one-use examples (`(hits.hit: <5)`, `(h.hit: 3)`); OWNER QUESTION **idiom-confirm** covers it
+  together with RULING-9 (the plain idiom `isodate & (isodate.year: < 2100)`, taken as included on his silence).
+- ANS-3: FIX-NOW: "outside a group question"; a value entry inside a group question is a compile error for now
+  (a reading, parallel to joint-in-some); its error-table row.
+- ANS-4 (the tier of a path to a label its source does not pass): FIX-NOW, the manager's reading, no owner
+  question: a label NOT VISIBLE through its source is a compile error (bare-condition-labels, 2026-11-19: no such
+  label is an error; closed-argument, today); the never-pass WARNING is for a visible label no path sets
+  (one-rule). Both printed lines marked readings with that ground; a typo'd path is the same error.
+- ANS-5 (nested paths): FIX-NOW, the manager's reading: a source is a path of names, each step passed by the
+  previous one (export statement 3 as ruled; metadata fields by the same rule); the model supports it or the
+  lines are marked unrun.
+- ANS-6: FIX-NOW, the manager's reading (conservative): the index `h[k]` through a prefix whose uses are joined
+  by `&` is a compile error for now (the two sides of `&` are not ordered); through sequenced uses it is in text
+  order; the model takes an index on a path, or the promise is marked unrun.
+- EVID-1, EVID-2, EVID-3, EVID-5: FIX-NOW (every in-force model re-greened or its red named by a successor
+  check; every model exits non-zero on a failed check; the `_x` closure and the second-`&`-operand defects fixed
+  in the engine the new model loads; a contrast line where a prefix and the bare last mention differ; a
+  quantifier-order plant). EVID-4: FIX-NOW the stated limit in each model's header; PLAN the nullable-body engine
+  fix (trigger: the next lane that prints a nullable-body line).
+- DES-1: FIX-NOW, one sentence, the manager's reading in his words' shape: every label a binding's body names
+  has its target in that binding (so a SET that reads a label, `lim := <(10 - $b)`, bound alone is the same
+  compile error); the target table is PLAN (trigger: macro variables or macro types designed).
+- DES-2: FIX-NOW: the literals sentence amended (provided bodies also write the label-only group, under
+  construction). DES-3: FIX-NOW: "a bare name, a number or a label path"; the three gaps are compile errors for
+  now (readings). DES-6: FIX-NOW, a reading: the part label written in the definition wins, with the hide-label
+  warning. DES-4, DES-5 and the size of library.md: PLAN (triggers as the draft names them).
+- The doc batch (RULING-3, -4, -5, -8; GENERAL-5, -7, -8, -11; FIXIND-1..9; EXAMPLES-2, -4): FIX-NOW as proposed.
+- The round's three lessons are accepted and go to main as proposed skill edits.
+
+CORRECTION 1 (review ANS-2a) of the entry "2026-11-22 OWNER RULING — binding-prefix: 1 yes ...": its Class
+sentence says his label-flow point 4 of 2026-11-17 named "a plain read with several uses". His words there name a
+ONE-use program (`A . B & (A.h: blah)`) and give several uses as the REASON ("could be ambigous if its used
+multiple times in an expression"). So the one-use plain read was an error by his 2026-11-17 words and is legal
+today only as a READING (above), until he answers idiom-confirm. The two parts he ruled stand as recorded.
+CORRECTION 2 (review RULING-5): the bound-condition ruling REVISES the named-condition spelling of 2026-11-14
+(`isSmallYear := (year: <2000)`, "a plain DEFINE binding"): not said in the ruling entry; said here.
