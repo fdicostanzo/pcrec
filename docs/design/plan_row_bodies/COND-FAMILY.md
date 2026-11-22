@@ -7411,3 +7411,25 @@ The manager's readings (marked): (a) a prefix `X.d` reads `d` AS X SURFACES IT: 
 his first thought: B CAN remove it, `B(rx) := /${[_ = rx]}xx/` ("`[_ = A]` makes none of A's labels visible
 anywhere outside A", core/labels/export statement 7); whether `A.d` is then still legal in the caller is NOT
 STATED: put to him.
+
+### 2026-11-22 OWNER, on closed-argument: "i thought you'd lean to (a). what would A.d mean if d no longer was visible?"; and "[ c = B(A) ] does not allow c.A"
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/holes/bare-condition/nested-scope
+
+Asked **closed-argument** (when a macro closes its argument's labels, `B(rx) := /${[_ = rx]}xx/`, is the caller's
+`A.d` (a) an error or (b) still legal; the manager's leaning (b): "a closure only needs to guard what the macro
+surfaces"). HIS WORDS, whole (he typed the slug "closed-arguments"):
+
+"closed-arguments: i thought you'd lean to (a). what would A.d mean if d no longer was visible? also: [ c = B(A) ]
+does not allow c.A"
+
+Class: (1) a POSITION by a question: he expected (a) and asks what `A.d` could mean once `d` is not visible; not
+worded as a ruling: recorded as his LEAN to (a), to be entered as the ruling on his confirmation. (2) a STATEMENT:
+"[ c = B(A) ] does not allow c.A": a path does not reach an ARGUMENT by the argument's name through the call's
+label.
+
+The manager's answer (told to him): leaning (b) is WITHDRAWN. His question has no good answer: once B closes the
+argument, where and whether A's `d` is set is B's private business (inside a lookahead, twice, or not at all), so
+`A.d` would name something the caller cannot know from its own text: against label-reference's purpose. So (a):
+`A.d` is legal in the caller exactly where `d` is visible through the call, and it then reads `d` as it reaches
+the caller. On (2): agreed, and it follows from what is ruled: inside B the argument is the parameter `rx`, "a
+binding variable not a label" (2026-11-21), so the call's label `c` holds no part named `A`.
