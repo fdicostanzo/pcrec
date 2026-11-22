@@ -11,23 +11,19 @@ followups and we can continue this conversation later"). Committed docs win on a
   its convenience (P-19 = 399ef98f4 was the previous delivery).
 - DELIVERED: P-21 (tip 75d2318bd): default-export and export-list folded, r83 filed and applied, the name table
   piece (core/modules/names). Main merges it after the kit's U4 lands.
-- IN FLIGHT: lane **predspot** (opus; `worktrees/predspot`, cut at 75d2318bd; `scripts/lanewatch predspot`) folds
-  FIVE rulings in two groups: labels (**argument-default: an error**, with his principle "The label is not to the
-  regex abstractly, it's to the spot in the pattern where the regex is being inserted"; **wrapper-export (a)**;
-  **transform-export: yes**: every provided body that places its argument writes `[(=) = x]` on the spot; his
-  pair `hide` / `identity`) and flags (**program-options**: file-scoped `m s n x`, never across an import;
-  **hole-flags**: weak per-file `i` not propagated, only an explicit `i` inherited at a hole, `m` / `s` no longer
-  inherited). THEN: accept (lanewatch DONE; STATE AT HANDOFF; merge ALONE; lint; `make -s test-plan-lint`;
-  TaskStop); critic round **r84** (number given by main; design mode, ONE opus coordinator; subject = diff
-  75d2318bd..tip; lenses RULING, EXAMPLES, GENERAL, the NAMES grid, a FLAGS grid, fix-induced; denylist as r83's
-  launch prompt); rule (record entry "MANAGER — review r84"); ONE opus fix lane (files the review); merge;
-  P-22 `done:`; SendMessage main. No cron.
-- ALSO RULED, RECORD ONLY (not in predspot's brief; for the lane AFTER r84, with its own round): **zero-condition-binding: an error, reconsider later** (`c := (0: 5)`), and **capture-export**
+- IN FLIGHT: critic round **r84** (coordinator `crit-predspot1122`, opus; round dir
+  `$PCREC_TMPDIR/scratch/crit-predspot1122/`; subject frozen at e6e95a2c5, diff from 75d2318bd): lane predspot's
+  fold (MERGED) of argument-default (an error; the principle piece "a label names a spot"), wrapper-export,
+  transform-export, program-options, hole-flags. THEN: rule every disposition (record entry "MANAGER — review
+  r84"); ONE opus fix lane (files the review as docs/dev/reviews/2026-11-22-r84-predspot1122.md; ALSO the
+  spelling notes of the journal: the label set, `${=rx}`, `[ab = (B | A)]`, the comma form, the third small form);
+  merge; lint; P-22 `done:`; SendMessage main. No cron.
+- ALSO RULED, RECORD ONLY (for the fold lane AFTER r84's fix lane, with its own round: ask main for the number): **zero-condition-binding: an error, reconsider later** (`c := (0: 5)`), and **capture-export**
   (a named group in a part of a composed program is NOT a capture by default; the program-level `capture(path)`
   asks for one; explicit captures returned from the artifact against implicit ones the language needs). And the
   SPELLING notes of the same night (journal: his reading of `[a = A]` as an array with a label set; `${=rx}`;
   `[ab = (B | A)]`; the comma form kept).
-- Lint `python3 -I scripts/pred_doc_lint.py`: 6,830 / 0 at P-21 (RUN IT BEFORE NAMING A TIP). The newest evidence
+- Lint `python3 -I scripts/pred_doc_lint.py`: 7,034 / 0 at the predspot merge (RUN IT BEFORE NAMING A TIP). The newest evidence
   model is `docs/dev/lanes/predfix82_evidence/predfix82_model.py` (22 checks; it carries the fixed engine: `_x`
   part labels close, a later `&` operand lowered once, uses counted in the definition's text; its SUCCESSOR check
   declares every older model's red). Known limit: a nullable loop body past the minimum is not modelled.
