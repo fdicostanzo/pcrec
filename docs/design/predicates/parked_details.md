@@ -184,6 +184,7 @@ history:
     the draft's `length(S)` body, is a candidate to be argued, not a trigger met).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the field reference is the paused sigil.
+- 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-7); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the trigger's "counting every pass" became "counting every setting" (`length` and `count` count settings since array-vs-passes).
 
 ## parked/ideas/label-twice — A meaning for a label named twice in one condition
 slugs: 
@@ -1011,6 +1012,7 @@ history:
     opt-in (§6.2); the 11-09 "numbers are captures" against number-names (RULED 2026-11-18).
   - TRIGGER: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet: at the expression level `[x = A]` already makes a label and no capture (pure-label), so the idea is the rx TEXT spelling only; its second open point (does `(?<x>...)` return without the opt-in) is answered by pure-label statement 5.
 
 ## parked/ideas/array-in-hole — The array form in a hole, `${@y}`
 slugs: array-in-hole

@@ -15,7 +15,7 @@ imported; how a `module: ?` name is reached is open (core/modules/default-set/me
 The names reserved in call position by the program shape (core/operators/statements) that are not filed under a
 kind below. `param`, `file_text` and `records` are under lib/records.
 
-### Enumerate   [lib/builtin/enumerate]   ruled 2026-11-19
+### Enumerate   [lib/builtin/enumerate]   ruled 2026-11-21
 `enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order, a class ascending; an edge assertion in it, or an infinite or over-budget rx, is a compile error.
 needs: core/arrays/lift core/arrays/class-order
 see: lib/builtin/enumerate/class-value
@@ -25,8 +25,9 @@ defined: native (it lists an rx's strings; no expression of the language walks a
   copy first (a lazy repeat one fewer); so re-joining the entries reports the match the rx itself reports.
 - A class gives its members lowest to highest ("classes change to lowest to highest unless pcre priority order
   disagrees"), in the array and in a lift alike: `enumerate(/\d/)` is [`0`, `1`, .., `9`], so `.index` counts
-  from the bottom and `enumerate(/\d/) + 1` is `\d + 1` (core/arrays/class-order). Every class is in ascending
-  codepoint order (lib/builtin/enumerate/class-value).
+  from the bottom and `enumerate(/\d/) + 1` is `\d + 1` (core/arrays/class-order). Every written class is in
+  ascending codepoint order (lib/builtin/enumerate/class-value); a class holding a hole is an alternation of
+  classes (core/holes/class).
 - Positions nest in text order, each class ascending: `enumerate(/[ab]\d/)` is [`a0`, `a1`, .., `a9`, `b0`, .., `b9`]
   (a reading, run; the letters' order is class-value's, ruled). Equal strings from two paths are one entry (a reading).
 - Its argument is a compile-time set position: an assertion at its edge is the edge-assertion error
@@ -38,7 +39,7 @@ WHOLE `aba` HOLDS / SEARCHED `aba` `a`@0 / FIND-ALL `aab aba` [`aa`@0, `a`@4, `a
 WHOLE `10` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 3 11` [`1`@0, `3`@3, `1`@5, `1`@6] (`/${enumerate(/\d/) + 1}/` = `/${\d + 1}/`)
 
 ### The value of a class's members   [lib/builtin/enumerate/class-value]   ruled 2026-11-21
-A class's members are enumerated in ascending codepoint order, every class alike: "ascending codepoints everywhere makes sense".
+A class's members are enumerated in ascending codepoint order, every written class alike: "ascending codepoints everywhere makes sesne" (sense).
 needs: lib/builtin/enumerate
 see: parked/ideas/class-base lib/structural/sort
 module: ?
@@ -48,7 +49,8 @@ defined: native (a part of `enumerate`'s order)
   `enumerate(/[\dA-Fa-f]/)` is `0123456789ABCDEFabcdef`, so `A` is 11 and `a` is 17; `[a-cB]` gives `B`, `a`,
   `b`, `c` (run).
 - "it is more natural to enumerate classes lowest to highest. alternation order should be decided by transform
-  anyway for consistency": an order other than this one is the user's, by a sort (lib/structural/sort).
+  anyway for consistency" (his observation): an order other than this one is the user's, by a sort
+  (lib/structural/sort), as the ruled "Only solution is sorting output when needed." says (core/arrays/class-order).
 - A caseless single character is a class here: `(?i)k` gives `K`, `k`, U+212A (a reading).
 - Number operations over a declared ordered symbol set stay an idea (parked/ideas/class-base).
 - A class's members are one character each, so two never compete at one position: the order shows in the array
@@ -102,6 +104,7 @@ defined: native (it reads a group's written pattern, which no expression of the 
 - `/(?<x>\d+),${pattern($x)}/` reuses x's pattern; `\k<x>` would repeat x's text instead.
 - Two groups of the name give the union of their patterns; the flags in force where the group is written come
   along; a group that refers outside itself (a backreference, a call) is the error "not self-contained".
+- For a part label `[x = A]` (no group in rx text) the pattern is A's (a reading).
 - It stands out of the first build (the draft's reading).
 WHOLE `12,345` HOLDS, `12,` FAILS / SEARCHED `a1,2` `1,2`@1 / FIND-ALL `1,22 3,4` [`1,22`@0, `3,4`@5] (`/(?<x>\d+),${pattern($x)}/` is `(?<x>\d+),(?:\d+)`)
 
@@ -183,10 +186,16 @@ module: ?
 defined: native (for now, by the owner's ruling; whether the body defines it is the open question)
 - Today (ruled): `any_case` is native for now; a more fundamental basis is a follow-up.
 - The standing reading: the body equals the native definition in every mode except for an argument writing its
-  own `(?-i)` and for a NEGATED filter operand in the argument (`any_case(/[abAB]{2}/ & !/ab/)`).
-- Candidates: (a) the body is the definition, those two its stated behaviour; (b) the native definition stays, the
-  body a lowering where it agrees.
+  own `(?-i)`, for a NEGATED filter operand in the argument (`any_case(/[abAB]{2}/ & !/ab/)`), and for an `&` whose
+  sides differ only in case (`any_case(/[a-z]x/ & /[A-Z]x/)`: the sides take the flag first, core/holes/flags/in-filter,
+  so the body matches 16 of 820 texts over `aAbBxXzZ7` to length 3, the native none; the lines below).
+- In the body the `pcrec.flags.filter` warning fires on that third argument: the hole is the library's, the
+  warning the caller's to read (a reading).
+- Candidates: (a) the body is the definition, those three its stated behaviour; (b) the native definition stays,
+  the body a lowering where it agrees.
 WHOLE `hO` HOLDS, `hx` FAILS / SEARCHED `x Ho` `Ho`@2 / FIND-ALL `ho HO hx` [`ho`@0, `HO`@3] (the candidate body on `any_case("ho")`, `(?i:ho)`)
+The candidate body: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-Ax` `Ax`@1 / FIND-ALL `ax 7x AX` [`ax`@0, `AX`@6] (`any_case(/[a-z]x/ & /[A-Z]x/)`, the body `/(?i:${rx})/`)
+Native: WHOLE `ax` FAILS, `AX` FAILS / SEARCHED `-Ax` FAILS / FIND-ALL `ax 7x AX` [] (the same call)
 
 ### limited   [lib/modifiers/limited]   under-construction 2026-11-19
 `limited(rx, n)` is a length limit the owner wants as a macro, composed either way round with `padded`; it is not defined.
@@ -202,9 +211,10 @@ needs: core/filters/and core/values/reads core/values/computed-labels
 see: lib/counting/count
 module: ?
 defined: language
-- The helpers: `chars := /(?:(?<ch>(?s:.)))*/`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral.
-- The name is ruled; the body is a reading. The label `ch` is visible in the result; written as a group in rx
-  text it is also a capture (a reading of pure-label).
+- The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral;
+  `nchars` is a condition-free computed count read where it is used (core/holes/bare-condition/bound-condition).
+- The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no
+  capture (pure-label), so the caller receives none.
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
 WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
 
@@ -217,7 +227,7 @@ defined: language
   /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]` (an array is an alternation;
   the twelve names in calendar order), `mnum := $mname.index` (a computed label over the member's 1-based index).
 - The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
-  capture (pure-label).
+  capture (pure-label). `mnum` is read where it is used (core/holes/bare-condition/bound-condition).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -289,7 +299,7 @@ WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac`
 
 ## Search   [lib/search]
 
-### occurrences   [lib/search/occurrences]   ruled 2026-11-18
+### occurrences   [lib/search/occurrences]   ruled 2026-11-21
 `occurrences(x, min = 0)` is the lazy-gap loop `/(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/`: each hit one pass of the label `hit`.
 needs: core/holes/pattern core/holes/count core/patterns/quantifiers
 see: core/diagnostics/nullable-hit
@@ -306,6 +316,10 @@ defined: language
   to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
   empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
 - A bare condition after it reads the LAST hit's own labels.
+- The body writes `hit` as a group in rx text, so it is a capture the caller receives (a reading of pure-label),
+  against his reason for the add-on: "isodate and all the other libraries don't want to presume everyone is
+  interested in every label being a capture." Whether a helper's label is a caller capture: an owner question
+  (helper-captures).
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
   metadata); two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix.
 - A check of the whole text: `J & C & occurrences(M)` matched WHOLE, a parse J of the whole text, a check C on it,
@@ -325,7 +339,8 @@ defined: language
   is the whole subject.
 - "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS. Written as a
   group question on the array of `hit`, one setting per hit: `hits(/\d+/) & occurs.none((hit: >= 100))` (a reading).
-- The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label).
+- The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label; the
+  tension with the add-on's reason and the question helper-captures: lib/search/occurrences).
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
@@ -417,7 +432,7 @@ WHOLE `xyz` HOLDS, `abc` FAILS / SEARCHED `abxyq` `xyq`@2 / FIND-ALL `xy ab` [`x
 ## Counting   [lib/counting]
 
 ### some   [lib/counting/some]   ruled 2026-11-21
-`some(c)` holds when at least one setting in the array of c's label meets c; it is false on an empty array.
+`some(c)` holds when at least one setting in the array of c's label meets c; on an empty array it is false (a reading).
 needs: core/model/table core/conditions/form core/labels/labels-vs-captures/array-vs-passes
 see: core/model/table/group-truth lib/assert/assert
 module: ?
@@ -428,7 +443,8 @@ defined: native (a question over a name's array of settings; no expression of th
   inside the loop, on the item (core/conditions/in-sequence).
 - A record of several entries in it, and a joint entry, which is a compile error for now: the array piece. "Same
   item" is the on-item label, then `some((ok: anything))`.
-- `NOT some(c)` and `occurs.none(c)` are the same question over the array (a reading; core/model/table/group-truth).
+- `NOT some(c)` and `occurs.none(c)` are the same question over the array for a condition of one entry (a reading;
+  core/model/table/group-truth owns it).
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
 WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
 
@@ -440,7 +456,8 @@ defined: native (a count over a name's array of settings; no expression of the l
 - It counts SETTINGS (core/labels/labels-vs-captures/array-vs-passes): zero on an empty array; on a condition of
   several entries what is counted is not stated (readings).
 - A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it may be bound and read
-  like a label: `n := count((d: "7"))`, then `(n: ==2)`.
+  like a label: `n := count((d: "7"))`, then `(n: ==2)` (n is read where it is used:
+  core/holes/bare-condition/bound-condition).
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
 - A later optimisation may turn `count()` into `occurs` where the answers provably do not change.
@@ -467,11 +484,14 @@ module: ?
 defined: ?
 - Today: the condition is written inside the loop, on the item (core/conditions/in-sequence).
 - Over the array, `some(c) & occurs.none(NOT c)` says "c's label is set and every SETTING meets c": a pass that
-  sets nothing is not judged, so where the label is optional it is not the item form (a reading; the lines below).
+  sets nothing is not judged, so where the label is optional, or the loop can make no pass, it is not the item
+  form (a reading; the lines below).
 - Candidates: (a) no name, the item form; (b) a named group question (the settings form above, or a new one over
   the passes, which no group question reads); (c) a loop construct over a conditioned item.
 Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
 The item form: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?${(d: "7")},)+/`)
+No pass, every setting: WHOLE `x` FAILS, `7,x` HOLDS / SEARCHED `-x` FAILS / FIND-ALL `x 7,x 1,x` [`7,x`@2] (`/(?:(?<d>\d),)*x/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+No pass, the item form: WHOLE `x` HOLDS, `7,x` HOLDS / SEARCHED `-x` `x`@1 / FIND-ALL `x 7,x 1,x` [`x`@0, `7,x`@2, `x`@8] (`/(?:(?<d>\d)${(d: "7")},)*x/`)
 
 ## Strings   [lib/strings]
 
