@@ -2304,6 +2304,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-20): filed; nothing built. `(?<g0>a(?&g1)?)...` at N=200 passes 2 GB; N=160 refuses by size
   next: a refusal ceiling on targets x slots before the table is built, with a limits.md row; add the cell to [GROWTH-SWEEP]
   refs: known_issues K151; docs/dev/lanes/growsurv_report.md L2/C10; src/gen/emit_vm.c (vm_build_region_saves)
+- [K159-PLUS-SUPERLINEAR] STATE:not-started — the width walk is about quadratic in NFA states: nested + compiles x4.5 slower per level (K159)
+  filed: 2026-11-22 lane plusprof, from the manager's growth sweep measurement
+  status (2026-11-22): filed; nothing built. d=12 1.04 s, d=13 4.74 s, d=14 20.2 s CPU; 83% of the time in wdrain/wclose under pcrec_width_walk (src/facts/kset.c:385), which steps n+1 frontier closures over an unbounded pattern
+  trigger: owner ruling growth-time-bound 2026-11-21 ("fix first"): a fix lane stops the walk at a repeated frontier set (or another state-count-free bound) and keeps a CPU-second bound cell in the growth sweep
+  refs: known_issues K159; docs/dev/lanes/plusprof_report.md; src/facts/kset.c:385; [GROWTH-SWEEP]
 - [VM-SAFEPOINT] STATE:not-started — A BACK-EDGE SAFEPOINT PRIMITIVE IN THE VM (the trail checkpoint's general form)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 SLOT-6 (lane trailgc3)
   status (2026-10-29): BOONIES, unscheduled. The K134 trail checkpoint is its only member; tests/vm/trail_checkpoints.py would become the generic "every weighted cycle passes a safepoint" check.
