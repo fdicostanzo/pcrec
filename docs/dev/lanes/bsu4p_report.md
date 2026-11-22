@@ -8,7 +8,7 @@ Branch lane/bsu4p, cut from lane/memfn-k1108 at ad3c8f1c2. Checks only: no file 
 Rulings file docs/dev/lanes/bsu4p_rulings.md: empty at every checkpoint; no entry applied.
 Premise test (cells 1-4 at x86-64-v3, flags `-p rxa --features all -fmemfn-simd=x86-64-v3 --window-search-width=W`): `[0-9a-f]{16}` at 32 and 4095 reads 0 selector calls / 0 `__w32` calls; `{17}` reads 1 / 1 at both. Absent, absent, present, present, as expected.
 
-OWED keys: kit-bsu4p-test, kit-bsu4p-mech (see OWED RUNS).
+OWED keys: kit-bsu4p-test (738), kit-bsu4p-mech (739; 24 rows: S3530-S3536 plus the 17 U2/U3 rows of the bsu3fix2 set). Last rulings entry applied: none (file empty).
 
 ## T-TABLE PINS
 
