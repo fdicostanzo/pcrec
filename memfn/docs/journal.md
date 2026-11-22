@@ -4706,3 +4706,64 @@ That said, do track the clang issue with an item for follow-up to make sure no s
 
 ### 2026-11-21 15:38 — U2 + U2b delivered to main
 723 GREEN (the 18 U2 rows on the fix tree). lane/bsu2fix (contains lane/bsu2) merged into k1108 (005e35c7b, make strict clean). Delivered: [responses] 994de281c and a SendMessage. abi 111 (re-pin to 110 if U2 lands before L3). Final-tree validation 719/720/721/722/723 all GREEN. U3 next (the w32 helper, the first SIMD text).
+
+### 2026-11-21 15:39 — U2 merge OK; lane bsu3 (U3) launched
+- main gave MERGE OK at 994de281c. U2 lands FIRST, re-pinned to abi 110 by the landing lane u2land; L3 moves to 111.
+- Lane bsu3 (opus, S3515-S3529) builds U3: the w32 level block, the C18 head family, F2 first, and r75's PLAN items SLOT-3/SLOT-4/CHECKS-8 plus the S730 V witness.
+- abi 112, confirmed by main. Whichever of L3/U3 lands later re-pins.
+- Its brief adds the C4 rule (a -fmemfn-simd token outside memfn/ needs its allowlist row in the same commit) and keeps clear of main's 01:00-07:00 timing window.
+
+### 2026-11-21 17:08 — bsu3 delivered U3 (the w32 helper)
+lane/bsu3 delivered (be192b04a, 33953d7c2, 3f5d93969 + report; lanecheck DONE; TaskStop). abi 111 -> 112 (readers by grep -w 111).
+- F2 ran first: 82/82 routed cells MATCH 710's avx2-loop text.
+- SIMD-off movers: 0 (no mask, both engines, every arm, x86-64 included).
+- SIMD-on movers: at w32 only, c-default 28/20/31, c-vm 0. span_vector_identity PASS (62,841 compiles).
+- C18 simdfloor green 22,767/0. Guarded bound 1700, a construction bound (measured 1,315 / 1,102).
+- Sabotage: S3515 (C18 control (1)) and S730 (2/2) REACH. REACH_ONLY: only S1760/S1761 unreached ([PIN-MSG-DEPTH]).
+- C4 was red at 33953d7c2 and fixed by the lane at 3f5d93969: the brief's rule worked in-lane.
+- Owed: 724-kit-bsu3-test and 725-kit-bsu3-mech.
+- Lane slip: it left the deliver file's owed line at none against the brief; minor.
+
+### 2026-11-21 17:49 — r76 (U3 code round) ruled FIX FIRST; bsu3fix; gap critic
+r76 committed with its ruling at 847e8e74c, using a separate verifier and the consumer-flag columns. No answer or speed finding: 57k guard-paged subjects show 0 differences; F2 82/82; shipped equals timed at gcc -O2/-O3/-Os, clang -O2 and -march=native.
+- FIX-NOW: CHECKS-1/2/3, CONTRACT-1, SLOT-1 (a smallest-B constant + static asserts) and SLOT-3 (the define <-> V pairing check). Lane bsu3fix (sonnet, S3516-S3524).
+- GAP: r75's SLOT-3/SLOT-4 were not reviewed. The manager's 17:12 message with their texts was not read before hand-back, and it was a manager miss to rely on a mid-round message. The narrow critic crit-memfn-bsu3b reviews them; its findings go to bsu3fix as rulings R-n.
+- PLAN relayed to main: [BSPAN-VANY-RIDE] to name both lifts.
+- Process rule: quote every in-scope item whose only record is denied in the LAUNCH prompt.
+- 724 make test GREEN; 725 mech pending.
+
+### 2026-11-21 17:49 — r76 gap closed; process notes
+crit-memfn-bsu3b: r75 SLOT-3 and SLOT-4 are DISCHARGED at ec578d053. Its residue (define as the is-V flag; no pairing) is r76 SLOT-3, already in bsu3fix (rulings R-1). Findings committed beside r76.
+From the r76 coordinator's closing note:
+- The contract critic saw a few lines of the denied bsu3 report through one unfiltered diff; it used nothing from them and they were quarantined.
+- Proposed: deny docs/dev/history/claude_md/docs__dev__lanes.md (the lanes summary index) in every round, and self-test the kit's oracle before briefing (a wrong UTF option bit, caught by its first critic). Both go into the next launch prompt.
+
+### 2026-11-21 18:05 — bsu3fix delivered (validation owed)
+lane/bsu3fix delivered (37394534b + report; lanecheck DONE; TaskStop). Every r76 FIX-NOW item is applied:
+- CHECKS-1: V_O0_CONTROL, S3515 header, new row S3516.
+- CHECKS-2: o0_compile_issues + S3517.
+- CHECKS-3: named-vspan-w32 floor + S3518.
+- CONTRACT-1; SLOT-1 (WF_VBLK_MIN/MAX + static asserts); SLOT-3 (define<->render pairing), and R-1.
+In-lane green: make, strict, arch 32/0, census 68. Its simdfloor run, the plants and the sweep were NOT run in-lane (725 held the box), so they ride jobs 726 (make test), 727 (mech: S3516-S3518 must be DETECTED) and 728 (ids vs ec578d053, movers 0).
+
+### 2026-11-21 18:45 — 726 RED: the new -O0 control does not compile; lane bsu3fix2
+726-kit-bsu3fix-test went RED on test-memfn-simdfloor only. One FAIL: "x86-64-v3: control __w32's always_inline dropped did not compile at -O0".
+- The CHECKS-1 control as built cannot prove the -O0 rule. bsu3fix never ran simdfloor in-lane, because the box was held by 725.
+- 727 was cancelled; 728 ids is running.
+- Lane bsu3fix2 (sonnet) fixes the control, with light single-section runs until 20:00 (Frank's hold: box clear by 19:15, evening hold to 01:00, main's timing window 01:00-07:00). Its make test + mech are gated after 07:00 11-22.
+- Lesson: a lane must not hand off a CHECK change unrun because the box was busy. The brief should say: wait for the lock and run the touched section, or STOP and report.
+
+### 2026-11-21 19:15 — bsu3fix2 delivered; session CLOSE (Frank /close)
+bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
+- Cause of the 726 red: the -O0 control compiled a.c without the artifact's a.h ("No such file"). The old plant was also caught by the text legs, so it was never the rule's own control.
+- New control: the level helper's _mm_shuffle_epi8 becomes _mm_packus_epi16, which only rule leg 2 rejects. run_simd_floor 22771/0; with the rule stubbed, 22770/1.
+- Owed, gated not-before 2026-11-22T07:00: 729-kit-bsu3fix2-test, 730-kit-bsu3fix2-mech, 731-kit-bsu3fix2-ids.
+- Next session: read 729-731 via monread. All green -> merge lane/bsu3fix (it contains lane/bsu3) into k1108 alone, make strict, deliver U3 to main (abi 112; re-pin if L3 lands after it). Then the U4 lane.
+- The brief rules learned today went into the kit skill §4.
+
+## 2026-11-22 00:09 (kit, session wake 23:28 11-21)
+
+- Frank (via main's journal, then to me directly 23:3x): "you can edit the job files as needed". Pulled 729/730 to 23:30 inside main's hard line (end by 00:55); 729 started 23:34.
+- 729 RED 00:06 (rc=2, 1924s): ONE section, test-memfn-arch, class 6 (arch-noun) — 'pshufb' in S3516's comment + SAB_DESC, written by bsu3fix2 (6cf672b6a). Triage lane (sonnet, read-only), report /var/tmp/pcrec-pcrec/scratch/bsu3fix2/triage729.md. simdfloor GREEN (22771/0): 726's red is fixed. Stale wording, not a defect; no byte moved.
+- Fix 7c7e625b5 on lane/bsu3fix (bsu3fix3): "pshufb" -> "byte shuffle" in S3516 prose (the S3515 allowlist rows say "prose in the row is worded arch-free"; rewording beats an allowlist row). make test-memfn-arch: 32 passed / 0 failed.
+- 730 cancelled; 729/730 re-gated to 07:00 and requeued; 731 still 07:00. Main told. Lesson: a reworded sabotage's prose runs the arch-blind check too — run make test-memfn-arch on any fix lane that touches tests/ text (seconds).

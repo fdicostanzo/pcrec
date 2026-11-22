@@ -219,6 +219,13 @@ pcrec-manager/SKILL.md` §3 is the long form; memory
   (its `owed:` holds queue KEYS or `none`, never prose; lanecheck reads
   them as keys, 2026-11-06 and 11-07) and an empty `NAME_rulings.md` into
   the worktree BEFORE launch (memory pcrec-manager-writes-deliver-file).
+- **Brief rules learned 2026-11-21** (each cost a red or a nudge):
+  - TMPDIR=$PCREC_TMPDIR/scratch/LANE/tmp on every run.
+  - The rulings file is re-read BY NAME at every checkpoint.
+  - Lock waits are run in the foreground or polled, never idled.
+  - Any -fmemfn-simd token or ISA word outside memfn/ gets its c4_allowlist row in the same commit (run_arch_blind.sh in-lane).
+  - A lane never hands off a CHECK change it has not run, even when the box is busy: it waits for the lock or STOPS.
+  - Critic launches quote verbatim every in-scope item whose only record is denied, and require the separate verifier.
 - **Up to 3 concurrent lanes, disjoint**; their heavy runs are queue
   jobs (§3), which the queue orders against main's.
 - **Model tier:** sonnet wherever it fits (measurement runs, sweeps,

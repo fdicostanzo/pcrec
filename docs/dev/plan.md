@@ -320,17 +320,19 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     status (2026-11-21): filed; unmeasured; a Zen 1 LOSS would block the level (D155 item 2, D144 add. 4), not merely move the lower bounds
     trigger: the level is built and delivered behind the OFF switch; it stays CANDIDATE until a run on each bench box that runs it, Zen 1 (ubuntubudu) via main (kit review r69 R-31)
     refs: decisions D155 item 2, D144 add. 4, D201; docs/design/memfn/block_span.md (lane/bspan3) sections 8, 13
-  - [BSPAN-VANY-RIDE] STATE:not-started — block span: vany joins the lifted selector writer
+  - [BSPAN-VANY-RIDE] STATE:not-started — block span: vany joins both lifted writers (the selector and the level block)
     filed: 2026-11-21 manager (kit review r69 R-30 relay; bsrec)
     status (2026-11-21): filed as a ride-along, not built; U2 lifts ofsskip's two writers into one shared kit helper (r68 ruling R-4)
     trigger: vany's next touch (kit design note block_span.md section 5, "One writer")
     refs: docs/design/memfn/block_span.md (lane/bspan3) section 5; memfn/src/vany.c; decisions D201
+    NOTE (2026-11-21, kit relay of review r76): BOTH lifts ride here. Level-block members: ofsskip.c fn_level_block, vany.c vany_level, window.c vs_w32_block. Folds r76 SLOT-4 (V's level choice is an inline if beside the declared level rows), SLOT-5 (a) the name builders and (b) the sink-brackets predicate; SLOT-6's general form is NOTED (no build)
   - [BSPAN-SCALAR-RISK] STATE:not-started — block span: changed SIMD-off code for \w{17}/\w{20}/\w{32}-like shapes ships unmeasured
     filed: 2026-11-21 manager (Frank's scalar-check-cut answer "yes", relayed verbatim by the kit; D201 add. 4)
     status (2026-11-21): filed as a declared known risk; the scalar timing is dropped; U2b's census holds the 3 real bench sites identical and \w{20} is its floor witness
     trigger: a bench or user pattern of a changed shape (a \w-like run of that width) appears -> measure its SIMD-off code against today's
     refs: decisions D201 add. 3 (a), add. 4; docs/design/memfn/block_span.md (lane/bspan3) section 13
     NOTE (2026-11-21, lane u2land): R-47 U2+U2b LANDED on main (merge 2d8beeb2a of lane/memfn-k1108 994de281c; abi 110, re-pinned from the kit's 111; L3 takes 111); this row and [BSPAN-CLANG-DIFF] stay open
+    NOTE (2026-11-22, lane u3land): R-47 U3 (the vector span's w32 level block, SIMD layer only) LANDED on main (merge of lane/memfn-k1108 d04ee5047; abi 111, re-pinned from the kit's 112; L3 re-pins to 112 after); this row and [BSPAN-CLANG-DIFF] stay open
     NOTE (2026-11-21, kit relay): the census also differs at gcc -O2 on [aeiou]-like and [A-Za-z0-9_-]-like sets and utf8 hex/digit at some k; and the 3 REAL bench sites' SIMD-off code DIFFERS under clang -O2/-O3 and gcc -Os (identical only at gcc -O1..-O3). The kit asks the owner `wrap-clang` directly (it tests his scalar-wrap premise)
   - [BSPAN-CLANG-DIFF] STATE:not-started — block span: the 3 real bench sites' SIMD-off code differs under clang -O2/-O3 and gcc -Os
     filed: 2026-11-21 manager (Frank's wrap-clang answer: "do track the clang issue with an item for follow-up to make sure no surprises"; D201 add. 5)
@@ -343,6 +345,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: the L3 feature lane, then L2
   refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
   NOTE (2026-11-21): abi numbers RESERVED by main (revised 15:45): 110 = U2/U2b (landed), 111 = L3 (lane/l3tri4, after tonight's re-time), 112 = the kit's U3 (lane bsu3); a later lander re-pins to the next free number in the same change
+  NOTE (2026-11-21 close): L3 (lane/l3tri4 cc96bb7a8; cloud tables on lane/l3pop fcf710c02): planted bugs 16/17 detected + S3407 declared, cloud mech GREEN; cloud axes RED = stale D3-FLOOR pin (lane/l3axtri, class b, re-pin owed); re-time queued for 01:00 11-22; lands after both, rebased on U2, at abi 111
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
   Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
@@ -512,7 +515,18 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Note (review r64 F13, 2026-11-20): the mech coverage of K147's explicit stack has one unwitnessed decision point, gk_build's CAT update order (plant V3i was silent on 8 probes, 0 emitted-byte movers): find a witness first, then a row; the rest (the depth-- leak, ss_walk's ALT over-approximation, an out-of-range member, stack growth caught only by test-stackdepth) are answer-silent by construction and NOTED. An "explicit stack, no cycle" category belongs here once [ARENA-REGROW] lands.
   Charter: parse `-fcallgraph-info=su` (VCG) output into SCCs, a frame threshold per cycle member and an allowlist, as a `make lint` row.
 
+
 ## Candidates ([OPTLOOP])
+- [WIDTH-PATH-BOUND] STATE:not-started — the width walk is still quadratic on acyclic and late-cycle patterns (path form is O(n+edges))
+  filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-1 (docs/dev/reviews/2026-11-22-r81-k159fix.md)
+  status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
+  trigger: a measured pattern where the walk's share of compile time matters (D77); a [GROWTH-SWEEP] row with the walk >= ~10% of an accepted compile
+  refs: known_issues K159; src/facts/kset.c; [K159-PLUS-SUPERLINEAR]; [GROWTH-SWEEP]; review r81 COMPLEXITY-3 (unlocks: a shared memoized frontier sequence for the kset + width walks, an emitted-size pre-check before E3 facts)
+- [K160-ALTNF-CUBIC] STATE:not-started — pcrec_altnf's class fold is about cubic in single-char alternatives; budget never binds
+  filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-2
+  status (2026-11-22): filed; nothing built. N distinct 4-byte characters, -e utf8: 0.61/3.38/24.2 s at 2000/4000/8000; the budget misses its own dominant term (K35 shape, a population nobody counts)
+  next: owner's fix go (growth-time-bound "fix first" applies), then profile (SUSPECTED: altnf.c:401-403 hash re-read inside the sweep :421-430; anf_cls_union over a growing list), count the dominant term in the budget; add a [GROWTH-SWEEP] cell (char-list alternation, -e utf8)
+  refs: known_issues K160; src/gen/altnf.c; [GROWTH-SWEEP]; docs/dev/reviews/2026-11-22-r81-k159fix.md
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
   filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
   status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped
@@ -551,7 +565,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-13 manager (Frank: "the predicate section is likely to need a bunch of graph transformation work ... is the graph setup for it ... generic helpers ... as simple and generic as it could be ... am I off base?"; survey: not off base)
   status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); PREREQUISITE of the [COND-FAMILY] predicate base; first client [DFA-MIN-FAST]
   next: when scheduled: a plain automaton (byte-class transitions, accept tags, special conditions as symbols); shared worklist, state-set hash, bitset, ONE partition refinement; generic reachability, SCC, product, complement, reversal, Hopcroft; emission DFA derived after
-  refs: [DFA-MIN-FAST]; [COND-FAMILY]; D196 add. 2 (internal Boolean operators, lookaround lowering); D153 remodel-first; survey facts in the row's charter text below
+  refs: [DFA-MIN-FAST]; [COND-FAMILY]; D196 add. 2 (internal Boolean operators, lookaround lowering); D153 remodel-first; docs/design/plan_row_bodies/AUTOMATON-KIT.md (loop-in-loop rewrite, 2026-11-22); survey facts in the row's charter text below
   Survey 2026-11-13: no product/intersection/complement/dominators/graph reversal; 3 epsilon-closure walks (dfa.c clo_walk, kset.c wdrain, nfa.c cstart_check_omission), 4 hand-written hash tables, per-file seen[] arrays, 2 callgraph cycle detections, partition refinement twice (dfa.c refine_by static, minimize.c Moore); ~350 lines of context/island special cases inline in dfa.c, minimize declines islands; lookaround lowered to epsilon (a sound superset, UNSOUND under complement: &! needs exact operands); only direction (sides_of) and context-as-atoms are generic today.
   Unlock (Frank 2026-11-13, "a pure dfa graph could be used to randomly generate matchable strings"): uniform sampling by path counting; uses: subjects not from the author's alphabet (transition-covering sets; near misses via complement; oracle still checks), example strings in messages (ambiguity witness, cost tool, D196 --compare counterexample), library test data. Caveat: today's DFA is a lookaround superset (filter by the real matcher, or sample the exact automaton). Trigger: the kit exists AND the equivalence tool or a coverage push wants it.
 - [DFA-MIN-FAST] STATE:not-started — DFA minimization is quadratic on large counted repeats; make it n log n

@@ -11,3 +11,20 @@ Long-form record for plan.md row [GROWTH-SWEEP]; the row carries the pointer.
 - MANAGER (2026-11-21, under the standing RULE's "a cell with no limit to hit stays red until its fix adds one"): grow4's dropped `empty` ((?:) x n) and `inl` ((?i)(?-i) x n) families are RESTORED as red stability cells under K156 (no named limit bounds them; they compile at 400,000 units); lookbehind x backreference stays dropped (PCRE2 refuses it, so it tests no growth).
 - MANAGER (2026-11-21, applying limit-cell-matcher-cost; for the owner to check): the 92 matrix `+` edge limit tests (lane grow5's `plus-edge-matcher-cost`) sit at the same NFA-state / VM-node edge with the generated-code size limits lifted, so they fall under the same ruling: named compile-only exceptions, under the ruling's own name, not a second name.
 - MANAGER (2026-11-21, revising the K156 line above after grow5's measurement): with the SHIPPED size limits, `empty` and `inl` ARE refused (by the emitted-code cap), so they are ordinary stability tests at shipped limits (PASS = that refusal). Only with the limits lifted does no limit bind, and a caller who lifts the limits has opted out of them. So K156 closes as not-a-defect, and the caps-lifted variants are dropped.
+- RULING growth-time-bound (Frank 2026-11-21 23:45, his words: "growth-time-bound: go with your leaning"), the leaning as asked:
+  (1) FIX FIRST: file a K for pcrec's superlinear compile step on nested `+` (measured 23:37, load 24: ncgroup.plus.first.lit at
+  depth 10/11/12/13 compiles in 0.17/0.54/1.92/6.73 s, about x3.5 per level while the pattern doubles; predicts the 82 s at 15);
+  a profiling lane finds the step, then a fix lane. (2) The sweep's time bounds become CPU seconds, with a generous wall bound
+  kept only as a hang guard. (3) Edge cells that stay costly by nature after the fix (gcc on tens of MB of C) move to an
+  OCCASIONAL tier with generous time (his view: "it should work if specified, put it in a special testing box that only gets
+  run occasionally and give it most time"). (4) Lowering the limits is the LAST resort, only if the fix cannot bring the cost
+  down. Related, his DISCUSSION ("isn't the + form reducible?"): the reducible-nest fold is [SPELLING-INV]'s, not this row's.
+- RULING growth-doubling-report (Frank 2026-11-22 ~09:25, his word "Agree", to the manager's proposal as asked): once the sweep's
+  bounds are CPU seconds, it ALSO reports CPU time per doubling along each growth axis (ratio of a cell's CPU to its half-size
+  neighbour; ~x2 linear, ~x4 quadratic), so existing superlinear compile steps surface by measurement (the K159 class). Folded into
+  the growth-sweep work already ruled (growth-time-bound), not a lane of its own. Companion: the critic skill's **complexity** lens.
+- RULING keep-limits (Frank 2026-11-22 ~10:40, his words: "Keep the limits as they are"), after his remark "We could raise the depth
+  limit" and the manager's answer: PCREC_MAX_NFA_STATES (131,072; binds nested `+` at depth 15: 131,070 states at 15, 262,142 at 16,
+  from the lane's measured 2^(d+2)-2 counts) and the nesting-depth limit (250) keep their defaults; `--max-nfa-states` already raises
+  the cap per compile. Revisit trigger: a real (non-synthetic) pattern hits the cap, or the sweep's per-doubling report shows a cost
+  past it.
