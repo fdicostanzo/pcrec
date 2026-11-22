@@ -143,6 +143,9 @@ Branch lane/<lane>, committed, report committed, targeted validation run
 with numbers in the handback. RE-PIN EVERY MANIFEST/COUNT/PIN YOUR CHANGE
 MOVES in the same delivery (readers found by grep) — post-merge manager
 cleanup of your pins is a delivery failure. The full battery is the manager's at merge.
+Re-pin scripts (e.g. `D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh`) are YOURS to run in your own worktree (the owner,
+2026-11-22: "Lanes can run repin script in their lane"); a kit-owned floor still needs the kit's OK first, and its condition
+binds. If a permission check refuses the command anyway, report it; never route around it.
 A NEW OR CHANGED .rxt CORPUS FILE moves population pins well beyond
 the rxtsource census: the start-set mover manifests (tests/startset/manifests/),
 the axes allowances, size tripwires. Run `make test` (async), not only the
