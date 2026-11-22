@@ -7214,3 +7214,33 @@ The manager's view (told to him; nothing folded): his "all" is what array-vs-pas
 question (the array is every setting, in order), so for `some`, `count`, `occurs`, `h[k]` through a prefix "all
 uses" needs no new rule; the twice-used case is a difficulty only for a PLAIN read of one value (`(chars.ch:
 blah)`), which is where his 2026-11-17 words apply. Asked back as binding-prefix in two parts.
+
+### 2026-11-22 OWNER RULING — binding-prefix: 1 yes (a group question through a binding's prefix reads every use); 2 a (a plain read through it, the binding used more than once, is a compile error)
+tags: core/labels/paths core/labels/flow core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export
+
+Asked **binding-prefix** in two parts, after his lean and the run of his example (the entry above): "1. A group
+question through a binding's prefix reads the settings of every use."; "2. A plain read through the prefix, when
+the binding is used more than once: (a) a compile error that says to label the part (`[left = chars]`) ...; (b)
+the last use, as an explicit part label mentioned twice already behaves. My leaning is (a)." HIS WORDS, whole (he
+typed a `"` after the slug):
+
+"binding-prefix" 1. yes. 2. i agree with your lean (a)"
+
+Class: a RULING on both parts. (1) A binding's name may be used as a label prefix (`chars.ch`); under a group
+question (`some`, `count`, `occurs`, the index) it reads the settings of the label made inside EVERY use of the
+binding, in order: his "all chars must total 5". (2) A plain read of one value through the prefix (`(chars.ch:
+blah)`, `$chars.ch`) when the binding is used more than once is a COMPILE ERROR whose message says to label the
+part. It REVISES his label-flow point 4 of 2026-11-17 ("A . B & (A.h: blah) error. A is a binding not a label and
+could be ambigous if its used multiple times in an expression"): the error stays for exactly the case he named
+there, a plain read with several uses; with one use the prefix is legal.
+
+The manager's readings, for lane predbound (R-1 of its rulings file) to test and mark: (a) the definition he
+liked ("i like your read"): a binding used as a part carries a part label of its own name, as if written
+`[=chars]`; with ONE use `A.h` reads as `[aa = A]`, `aa.h` does (`A & B & (A.h: <2)` answers as the documents'
+printed `[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)` line); (b) "used more than once" is counted in the
+definition the reference is written in; (c) an EXPLICIT part label mentioned twice is unchanged (a plain read
+names its last mention; ruled 2026-11-21); (d) the prefix gives no access to anything private (export statement
+4), and under a `_` part label or `[_ = A]` nothing is reached; (e) a MACRO's name is not a prefix for now (`B(A)`
+is not reached as `B.x`): not ruled, conservative; (f) a label and a binding of one name: the existing hide-label
+warning; which one a prefix `x.h` names is not stated; (g) the error can be relaxed to the last use later without
+changing an answer.
