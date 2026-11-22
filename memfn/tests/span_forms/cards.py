@@ -823,15 +823,14 @@ def text_key(rundir, pat, arm, layer):
 
 
 @functools.lru_cache(maxsize=None)
-def cc_ident(cc=None):
-    """The compiler's identity for the exe cache key (r44 I): `cc` (default CC) as named and `$cc --version`'s whole
+def cc_ident(cc):
+    """The compiler's identity for the exe cache key (r44 I): `cc`, the caller's declared compiler, as named and `$cc --version`'s whole
     output (`-std=gnu11 -w` are constants of `build_cell`; the level is the layer's and rides the key's flags)."""
-    cc = cc or CC
     r = subprocess.run([cc, "--version"], capture_output=True, text=True, timeout=60)
     return ("%s\n%s" % (cc, r.stdout)).encode("ascii", "replace").decode()
 
 
-def variant_key(key, pre, fl, cc=None):
+def variant_key(key, pre, fl, cc):
     """The cache name's variant part: the text key, the prelude, the flags and the compiler (r44 I)."""
     return _h(key, str(pre), " ".join(fl), cc_ident(cc))
 
@@ -3839,8 +3838,8 @@ def selftest_rev12(check):
     try:
         ks = []
         for ident in ("gcc\ngcc (GCC) 15.2.0", "gcc\ngcc (GCC) 14.1.0"):
-            globals()["cc_ident"] = lambda ident=ident: ident
-            ks.append(variant_key("t0", 16, ["-fno-align-loops"]))
+            globals()["cc_ident"] = lambda cc, ident=ident: ident
+            ks.append(variant_key("t0", 16, ["-fno-align-loops"], CC))
     finally:
         globals()["cc_ident"] = real_cc
     check("(r44 I) the exe cache key carries the compiler", ks[0] != ks[1], "two compilers' keys %s / %s" % tuple(ks))
