@@ -1,0 +1,5 @@
+report: docs/dev/lanes/grow7_report.md
+sections: Summary; spine/uni timeout; proof2 classification; Load-sensitive cells; Reweigh; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
