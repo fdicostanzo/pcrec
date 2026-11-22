@@ -1929,7 +1929,15 @@ typedef struct {
  * box that runs V (D155 item 2). The window row's lower bound 16 is ALSO
  * the safety floor: below it no 16-byte block fits the stretch (§4.2), so a
  * re-measure may raise it, never lower it. */
-enum { WF_VWIN_LO = 16, WF_VWIN_HI = 1000, WF_VSCAN_LO = 24, WF_VSCAN_HI = 64 };
+enum { WF_VWIN_LO = 16, WF_VWIN_HI = 1000, WF_VSCAN_LO = 24, WF_VSCAN_HI = 64,
+      WF_VBLK_MIN = 16, WF_VBLK_MAX = 32 };
+/* THE BLOCK WIDTHS of V's level block (§4.1), in the enum above: the smallest B a stretch may
+ * use and the widest: vs_w32_block's safety assert, its refusal text and its
+ * B choice all read these. Both rows' lower bounds are at or above the
+ * smallest, so a re-measure that LOWERS a bound below it fails the build
+ * (r76 SLOT-1); one that RAISES a bound leaves the assert true. */
+_Static_assert(WF_VWIN_LO >= WF_VBLK_MIN, "T-vwin's lower bound is below the smallest block");
+_Static_assert(WF_VSCAN_LO >= WF_VBLK_MIN, "T-vscan's lower bound is below the smallest block");
 
 static int s_deny_holds(const wf_sx *x)  { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) < 0; }
 static int s_force_holds(const wf_sx *x) { return kit_opt_state(x->d->s->opts, WF_LOOP_ID) > 0; }
@@ -1963,9 +1971,11 @@ static int32_t s_lever_h(const wf_sx *x)
 }
 static int32_t s_head_h(const wf_sx *x)   { (void)x; return WF_SPAN_HEAD; }
 
-/* Each row's text of its stretch (E-FIND's TEXT, below). */
+/* Each row's text of its stretch (E-FIND's TEXT, below), and the file-scope
+ * text a row's stretch needs, or none (E-find's define, wf_find_define). */
 static int wf_span_h(wf_rc *rc, kb *t, const struct wf_stretch *st);
 static int wf_span_v(wf_rc *rc, kb *t, const struct wf_stretch *st);
+static int wf_span_v_define(wf_rc *rc, const struct wf_stretch *st, mf_sink *out);
 
 #define WF_CT_S(name, row) \
     static const gate_contract name = { "wfS", row, NU(use_nothing), { \
@@ -1985,16 +1995,26 @@ static const struct {
     int32_t (*h)(const wf_sx *x);       /* its form: the inline head h       */
     int     (*render)(wf_rc *rc, kb *t, const struct wf_stretch *st);
                                         /* the use's text of the stretch     */
+    int     (*define)(wf_rc *rc, const struct wf_stretch *st, mf_sink *out);
+                                        /* its file-scope text, or NULL. A
+                                           row with one IS the V family, and
+                                           this pointer is the V-family test
+                                           at its two reads: wf_stretches
+                                           (numbers the stretch j and counts
+                                           it in nv, s_v_ok's smallest-form
+                                           rule) and wf_find_define (writes
+                                           the text). wf_tables_check pairs
+                                           it with the V renderer, both ways */
     const gate_contract *ct;
     const char *opt;                    /* its options.def deny, or NULL     */
 } wf_spanrows[] = {
-    [S_DENY]  = { s_deny_holds,  s_inline_h, wf_span_h, &ct_s_deny,  NULL },
-    [S_FORCE] = { s_force_holds, s_loop_h,   wf_span_h, &ct_s_force, NULL },
-    [S_LEVER] = { s_lever_holds, s_lever_h,  wf_span_h, &ct_s_lever, NULL },
+    [S_DENY]  = { s_deny_holds,  s_inline_h, wf_span_h, NULL,             &ct_s_deny,  NULL },
+    [S_FORCE] = { s_force_holds, s_loop_h,   wf_span_h, NULL,             &ct_s_force, NULL },
+    [S_LEVER] = { s_lever_holds, s_lever_h,  wf_span_h, NULL,             &ct_s_lever, NULL },
     /* V's head is T-head's: its __body is the stretch's T-head text */
-    [S_VWIN]  = { s_vwin_holds,  s_head_h,   wf_span_v, &ct_s_vwin,  WF_SPAN_VECTOR_ID },
-    [S_VSCAN] = { s_vscan_holds, s_head_h,   wf_span_v, &ct_s_vscan, WF_SPAN_VECTOR_ID },
-    [S_HEAD]  = { s_head_holds,  s_head_h,   wf_span_h, &ct_s_head,  NULL },
+    [S_VWIN]  = { s_vwin_holds,  s_head_h,   wf_span_v, wf_span_v_define, &ct_s_vwin,  WF_SPAN_VECTOR_ID },
+    [S_VSCAN] = { s_vscan_holds, s_head_h,   wf_span_v, wf_span_v_define, &ct_s_vscan, WF_SPAN_VECTOR_ID },
+    [S_HEAD]  = { s_head_holds,  s_head_h,   wf_span_h, NULL,             &ct_s_head,  NULL },
 };
 #define WF_NSROWS (sizeof wf_spanrows / sizeof wf_spanrows[0])
 
@@ -2036,7 +2056,7 @@ static int wf_stretches(mf_arena *al, const wf_dec *d, struct wf_plan *w, unsign
         /* The last row holds always (wf_tables_check), so this is a stated
          * invariant, not an allocation failure: named, never "out of memory". */
         if (r >= WF_NSROWS) return kit_fail((mf_art *)art, "window family: no span form row holds");
-        unsigned j = wf_spanrows[r].render == wf_span_v ? nv++ : 0;
+        unsigned j = wf_spanrows[r].define ? nv++ : 0;
         w->str[w->nstr++] = (struct wf_stretch){ i, k, (unsigned)r, wf_spanrows[r].h(&x), j };
         i += k - 1;
     }
@@ -2552,7 +2572,8 @@ const char *wf_frame_name(wf_frame_row f)
 /* THE TABLES' SELF-CHECK (kit.h; refused at mf_art_begin): what no
  * initializer states. (1) Every Table E row has its predicate and contract
  * (a designated hole would be a NULL row), and so does every span form row
- * (with its form). (2) An E-find search renderer
+ * (with its form), and a span form row renders V's text iff it has V's
+ * define (the column's one reading). (2) An E-find search renderer
  * row takes no predicate: the renderable set asks it over the SITE (T-FIND's
  * gate, before any plan exists) and E-find's composition over the plan
  * (wf_bx), so the two could disagree; trigger to lift it: the first E-find
@@ -2567,6 +2588,9 @@ const char *wf_tables_check(void)
         if (!wf_spanrows[i].holds || !wf_spanrows[i].h || !wf_spanrows[i].render ||
             !wf_spanrows[i].ct)
             return "a span form row is a hole";
+    for (size_t i = 0; i < WF_NSROWS; i++)
+        if ((wf_spanrows[i].render == wf_span_v) != (wf_spanrows[i].define != NULL))
+            return "a span form row's define and the V renderer do not pair";
     if (!wf_spanrows[WF_NSROWS - 1].holds(NULL))
         return "the last span form row does not hold always";
     for (size_t i = 0; i < RB_N; i++) {
@@ -3743,9 +3767,13 @@ static int wf_span_h(wf_rc *rc, kb *t, const struct wf_stretch *st)
 /* A stretch's text in form V, the V rows' render column: the call of its
  * selector `<p>_mf<h>_vs<j>(S, C)` (block_span.md §5), which the define
  * wrote at file scope (wf_span_v_define). */
+static const char *vs_name(wf_rc *rc, const struct wf_stretch *st, const char *part, int blk);
+
 static int wf_span_v(wf_rc *rc, kb *t, const struct wf_stretch *st)
 {
-    kb_printf(t, "%s%u(%s, %s)", rc->VS, st->j, rc->S, rc->C);
+    const char *fn = vs_name(rc, st, NULL, 0);
+    if (!fn) return -1;
+    kb_printf(t, "%s(%s, %s)", fn, rc->S, rc->C);
     return 0;
 }
 
@@ -4290,14 +4318,38 @@ static int b_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h, const wf
            ofs_fn_define_at(art, handle, w->fsite, h, &w->fsite->pred, rc->FN, out) ? -1 : 0;
 }
 
-/* The V selector's line writers (kit_selector): its head, `static inline
- * __attribute__((always_inline)) int <name>(const unsigned char *S, size_t
- * C)` and the brace, and its one call line `    return <callee>(S, C);`. */
+/* A V function's name: the stretch's selector `<p>_mf<h>_vs<j>`, or with
+ * `part` its part `<p>_mf<h>_vs<j>__<part>`, `_b` appended where `blk` (the
+ * level's block helper). Arena text, NULL out of memory (recorded). */
+static const char *vs_name(wf_rc *rc, const struct wf_stretch *st, const char *part, int blk)
+{
+    kb b;
+    kb_init(&b, rc->art->a);
+    kb_printf(&b, "%s%u%s%s%s", rc->VS, st->j, part ? "__" : "", part ? part : "", blk ? "_b" : "");
+    if (b.oom || !b.p) {
+        kit_fail(rc->art, "window family: out of memory");
+        return NULL;
+    }
+    return b.p;
+}
+
+/* THE V HEAD, every V function's (block_span.md §4.1, §5): `static inline
+ * __attribute__((<attrs>)) int <name>(const unsigned char *<s>, size_t <c>)`
+ * and its brace; with no `c`, the one pointer parameter (the block helper). */
+static void vs_head(mf_sink *o, const char *attrs, const char *name, const char *s,
+                    const char *c)
+{
+    kit_out(o, "static inline __attribute__((%s)) int %s(const unsigned char *%s", attrs, name, s);
+    if (c) kit_out(o, ", size_t %s", c);
+    kit_out(o, ")\n{\n");
+}
+
+/* The V selector's line writers (kit_selector): its head (V's, always_inline)
+ * and its one call line `    return <callee>(S, C);`. */
 static int vs_sel_head(const void *ctx, const char *name, mf_sink *o)
 {
     const wf_rc *rc = ctx;
-    kit_out(o, "static inline __attribute__((always_inline)) int %s(const unsigned char *%s, "
-               "size_t %s)\n{\n", name, rc->S, rc->C);
+    vs_head(o, "always_inline", name, rc->S, rc->C);
     return 0;
 }
 
@@ -4308,34 +4360,119 @@ static int vs_sel_call(const void *ctx, const char *callee, mf_sink *o)
     return 0;
 }
 
+/* One nibble table of the block helper into `o`: `t` (16 entries, the bits
+ * of the high nibbles h0..h0+7 of each low nibble) written HIGHEST LANE FIRST
+ * (`_mm*_set_epi8`'s order: t[15] .. t[0]) `copies` times, a value over 127
+ * as its signed char (block_span.md §4.1 "Lane order"). */
+static void vs_table(mf_sink *o, const uint8_t t[16], unsigned copies)
+{
+    for (unsigned c = 0; c < copies; c++)
+        for (int l = 15; l >= 0; l--)
+            kit_out(o, "%s%d", c || l < 15 ? ", " : "", t[l] > 127 ? (int)t[l] - 256 : (int)t[l]);
+}
+
+/* V's LEVEL BLOCK at w32 for stretch `st` (block_span.md §4.1): the block
+ * helper `blk`, which tests B bytes from `p` by the nibble test, then `fn`,
+ * which tests the stretch's K bytes S[C + LO] .. S[C + LO + K - 1] by blocks
+ * of B, the last block flush with the stretch's end. B is 32 where K >= 32,
+ * else 16 (an SSSE3 xmm stream inside the w32 region, §4.4). Bracketed
+ * whole by the sink's simd_open/simd_close; the level's header is a fact,
+ * its bit on the art (ofsskip's fn_level_block idiom). READS exactly the
+ * stretch's bytes (§4.2: every trip reads [p + i, p + i + B) with i + B < K,
+ * the last [p + K - B, p + K), K >= B), which the hoisted bound placed inside
+ * the subject. So K >= 16 is a SAFETY precondition: below it no block fits,
+ * and the renderer refuses (a kit_fail, never a decline). */
+static int vs_w32_block(wf_rc *rc, const struct wf_stretch *st, const char *blk, const char *fn,
+                        mf_sink *o)
+{
+    mf_art *art = rc->art;
+    const struct wf_plan *w = rc->w;
+    const unsigned k = st->k;
+    if (k < WF_VBLK_MIN)
+        return kit_fail(art, "window family: a vector span of %u positions (%u at least)", k,
+                        (unsigned)WF_VBLK_MIN);
+    const unsigned b = k >= WF_VBLK_MAX ? WF_VBLK_MAX : WF_VBLK_MIN;
+    const char *v = b == 32 ? "__m256i" : "__m128i", *mm = b == 32 ? "_mm256" : "_mm";
+    const char *si = b == 32 ? "si256" : "si128";
+    /* the nibble tables of the stretch's set (spike708.py nibble_tables) */
+    uint8_t lo_t[16] = { 0 }, hi_t[16] = { 0 };
+    for (unsigned x = 0; x < 256; x++)
+        if (in_set(w->set[st->i], x)) {
+            if (x >> 4 < 8) lo_t[x & 15] |= (uint8_t)(1u << (x >> 4));
+            else            hi_t[x & 15] |= (uint8_t)(1u << ((x >> 4) - 8));
+        }
+    kb base;
+    kb_init(&base, art->a);
+    kb_printf(&base, "%s + %s", rc->S, rc->C);
+    kb at;
+    kb_init(&at, art->a);
+    wf_at(&at, base.p ? base.p : "", w->off[st->i]);
+    if (base.oom || at.oom || !at.p) return kit_fail(art, "window family: out of memory");
+
+    o->simd_open(o->u, LV_X86_W32);
+    art->includes |= kit_level(LV_X86_W32)->includes;
+    vs_head(o, "always_inline", blk, "p", NULL);
+    kit_out(o, "    const %s x = %s_loadu_%s((const %s *)p);\n", v, mm, si, v);
+    kit_out(o, "    const %s b0 = %s_shuffle_epi8(%s_set_epi8(", v, mm, mm);
+    vs_table(o, lo_t, b / 16);
+    kit_out(o, "), x);\n    const %s b1 = %s_shuffle_epi8(%s_set_epi8(", v, mm, mm);
+    vs_table(o, hi_t, b / 16);
+    kit_out(o, "), %s_xor_%s(x, %s_set1_epi8(-128)));\n", mm, si, mm);
+    kit_out(o, "    const %s bm = %s_or_%s(b0, b1);\n", v, mm, si);
+    kit_out(o, "    const %s hn = %s_and_%s(%s_srli_epi16(x, 4), %s_set1_epi8(15));\n", v, mm, si, mm, mm);
+    kit_out(o, "    const %s bit = %s_shuffle_epi8(%s_set_epi8(", v, mm, mm);
+    for (unsigned g = 0; g < b / 8; g++)
+        kit_out(o, "%s-128, 64, 32, 16, 8, 4, 2, 1", g ? ", " : "");
+    kit_out(o, "), hn);\n    return %s_movemask_epi8(%s_cmpeq_epi8(%s_and_%s(bm, bit), %s_setzero_%s())) "
+               "== 0;\n}\n\n", mm, mm, mm, si, mm, si);
+    vs_head(o, "always_inline", fn, rc->S, rc->C);
+    kit_out(o, "    const unsigned char *p = %s;\n    size_t i = 0;\n", at.p);
+    kit_out(o, "    for (; i + %u < %u; i += %u) if (!%s(p + i)) return 0;\n", b, k, b, blk);
+    kit_out(o, "    return %s(p + (%u - %u));\n}\n\n", blk, k, b);
+    o->simd_close(o->u);
+    return 0;
+}
+
 /* V's file-scope text for the site's V stretch `st` (block_span.md §5):
  * `<p>_mf<h>_vs<j>__body`, whose value is the stretch's text in its T-head
- * form (wf_span_h at st->h), then the selector `<p>_mf<h>_vs<j>`, ONE call
- * to it, by the kit-wide selector writer. Both are always_inline: the
- * wrapper is code organization in source (D201 add. 2); `__body` is also
- * `unused`, so its head is the same line at every layer once a level
- * helper takes the selector's call (unit U3; C18 (c)). The parameters keep
- * the walk's own names, so the body's text is the walk's, unchanged. */
+ * form (wf_span_h at st->h); at a target admitting w32, the level block
+ * (vs_w32_block); then the selector `<p>_mf<h>_vs<j>`, ONE call (to `__w32`
+ * where the block is written, else to `__body`) by the kit-wide selector
+ * writer, whose call line it brackets, and the site's MEMFN_FORMS token
+ * `span-vector@w32`. Every function is always_inline: the wrapper is code
+ * organization in source (D201 add. 2); `__body` is also `unused`, so its
+ * head is the same line at every layer (C18 (c)). The parameters keep the
+ * walk's own names, so the body's text is the walk's, unchanged. A target
+ * admitting w32 whose sink offers no bracket gets the body alone (ofsskip's
+ * prefix_holds: a host that cannot count guarded bytes gets no level). */
 static int wf_span_v_define(wf_rc *rc, const struct wf_stretch *st, mf_sink *out)
 {
     mf_art *art = rc->art;
-    kb fn, body, t;
-    kb_init(&fn, art->a);
-    kb_init(&body, art->a);
+    const char *fn = vs_name(rc, st, NULL, 0), *body = vs_name(rc, st, "body", 0);
+    kb t;
     kb_init(&t, art->a);
-    kb_printf(&fn, "%s%u", rc->VS, st->j);
-    kb_printf(&body, "%s__body", fn.p ? fn.p : "");
-    if (wf_span_h(rc, &t, st)) return -1;
-    if (fn.oom || body.oom || t.oom || !t.p) return kit_fail(art, "window family: out of memory");
-    kit_out(out, "static inline __attribute__((always_inline, unused)) int %s(const unsigned "
-                 "char *%s, size_t %s)\n{\n    return %s;\n}\n\n", body.p, rc->S, rc->C, t.p);
-    return kit_selector(fn.p, body.p, NULL, 0, vs_sel_head, vs_sel_call, rc, out);
+    if (!fn || !body || wf_span_h(rc, &t, st)) return -1;
+    if (t.oom || !t.p) return kit_fail(art, "window family: out of memory");
+    vs_head(out, "always_inline, unused", body, rc->S, rc->C);
+    kit_out(out, "    return %s;\n}\n\n", t.p);
+    const char *top = NULL;
+    if (art->levels >> LV_X86_W32 & 1 && out->simd_open && out->simd_close) {
+        const char *stamp = kit_level(LV_X86_W32)->stamp;
+        const char *blk = vs_name(rc, st, stamp, 1);
+        top = vs_name(rc, st, stamp, 0);
+        if (!blk || !top || vs_w32_block(rc, st, blk, top, out)) return -1;
+    }
+    if (kit_selector(fn, body, top, LV_X86_W32, vs_sel_head, vs_sel_call, rc, out)) return -1;
+    if (top)
+        kb_printf(&art->forms, "%s%s@%s", art->forms.len ? "," : "", WF_SPAN_VECTOR_ID,
+                  kit_level(LV_X86_W32)->stamp);
+    return 0;
 }
 
 /* E-find's define: at file scope, a fused row's text (B-fn's function),
  * else the run compares' word loads (runcmp.c), the stream row's own text
- * (S-shift: D-hors's shift table) and each V stretch's functions, read off
- * the stored stretch list (wf_span_v_define). */
+ * (S-shift: D-hors's shift table) and the file-scope text of each stored
+ * stretch whose span form row has one (its `define` column: V's). */
 static int wf_find_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *out)
 {
     site_rec *r = &art->sites[handle - 1];
@@ -4347,8 +4484,8 @@ static int wf_find_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_si
     if (w->runs->nterm && run_cmp_prepare(art, w->runs, out)) return -1;
     if (w->strm->define && w->strm->define(art, &rc, out)) return -1;
     for (unsigned i = 0; i < w->nstr; i++)
-        if (wf_spanrows[w->str[i].row].render == wf_span_v &&
-            wf_span_v_define(&rc, &w->str[i], out))
+        if (wf_spanrows[w->str[i].row].define &&
+            wf_spanrows[w->str[i].row].define(&rc, &w->str[i], out))
             return -1;
     return 0;
 }
