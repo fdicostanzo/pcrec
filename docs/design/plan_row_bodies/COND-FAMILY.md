@@ -7578,3 +7578,92 @@ bare `${rx}` passes nothing through the call, so is `A.d` still the caller's loc
 error; **capture-export**: export statement 5 gives the caller the CAPTURES visible from the top-level program:
 does a capture written in rx text inside a bare-used part two bindings down still reach the caller (as in PCRE),
 or does it follow the labels.
+
+### 2026-11-22 OWNER, a question after default-export: "can I somehow export some labels but not others. Like year only from isodate"
+tags: core/labels/export core/labels/paths parked/ideas/declared-labels lib/builtin/export
+
+HIS WORDS, whole: "Question, can I somehow export some labels but not others. Like year only from isodate"
+
+Class: a QUESTION; nothing ruled. The manager's answer (told to him; from the rules as ruled, no matching run):
+YES at the grain of a PART or of a group the binding writes: a binding exports the parts it labels and the groups
+it writes without `_`, so `isodate := [year = digits4] SEQ "-" SEQ month SEQ "-" SEQ day` (month and day used
+alone: protected) or `/(?<year>\d{4})-(?<_month>\d\d)-(?<_day>\d\d)/` exports `year` only. NOT today at a finer
+grain: a labelled part passes ALL of that part's exported labels (`[d = A]` gives `d.x` and `d.y`); there is no
+form that re-exports ONE label of a part and keeps the rest. That would be his parked idea of declaring a
+binding's labels (parked/ideas/declared-labels), an export list in the binding's head; `@export(names)` (open
+export-choice) selects among a FILE's names, not a binding's labels.
+
+### 2026-11-22 OWNER PROPOSAL — re-exporting one label of a defined part: `[(=year) = isodate]`
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out parked/ideas/declared-labels
+
+After the manager's answer (yes at the grain of a part; no form re-exports one label of a part). HIS WORDS, whole:
+
+"I meant if isodate was defined and I wanted to reexport year only. [d = isodate] exports all. How about this:
+[(=year) = isodate]"
+
+Class: a CLARIFICATION of his question (isodate already defined; re-export `year` only) and a PROPOSAL ("How about
+this") of a form; nothing ruled; the spelling his placeholder. The manager's reading of the form (told to him): the
+left side of a part label is the NAMED BINDING LIST he ruled for maps on 2026-11-19 ("`(l = left, =right) := X`
+binds `l` to `X.left` and `right` to `X.right`, on any map; `=left` is `left = left`"), applied to a part: the
+binding takes the listed labels of the part as labels of its own (written in its text, so exported and read bare
+inside it), and nothing else of the part. By the same ruled list: a rename `[(y = year) = isodate]`; all of them
+`[(=) = isodate]` (the old public default, now asked for by name); all but one `[(=, _ = month) = isodate]`.
+NOT STATED: a listed name the binding also writes itself (the manager's lean: the same label, last mention, as
+any two groups of one name); whether the part ALSO gets a path name; a listed label is an alias of the part's
+label (same settings, no new capture: a reading).
+
+### 2026-11-22 OWNER RULING — export-list: yes (a binding list on a part label selects which of the part's labels the binding takes); and a direction to clarify bindings against labels
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out core/conditions/form
+
+Asked "export-list: yes" to enter his proposal `[(=year) = isodate]` as ruled (the spelling a placeholder), with
+the manager's reading of it (the ruled named binding list applied to a part; the table of forms; three readings).
+HIS WORDS, whole (he typed the slug "Export list"):
+
+"Export list: yes. I will say that the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+Class: (1) a RULING on the slug: the form `[(=year) = isodate]` is in the language: the left side of a part
+label may be a named list; the binding takes the listed labels of the part as labels of its own (exported; read
+bare inside it) and nothing else of the part. The spelling stays a placeholder. (2) an OBSERVATION and a
+DIRECTION for the documents: "the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+The manager's readings, for the fold lane (R-1 of preddef's rulings file) to state and mark: (a) on his
+direction, the documents say: ONE form, the named list, with TWO targets decided by where it stands: left of
+`:=` it defines BINDING names from a map's members (core/modules/binding-list); left of `=` inside a part label
+it defines LABEL names from a part's exported labels; bindings and labels are two name spaces (a bare name left
+of `:` is a label, on the value side a binding: core/conditions/form), and the hide-label warning is where they
+meet; (b) the same ruled list forms carry over: a rename `[(y = year) = isodate]`, several, all `[(=) =
+isodate]`, all but one `[(=, _ = day) = isodate]`; (c) a listed label is an alias of the part's label: the same
+settings and array, no new capture; (d) a listed name the binding also writes itself is the same label (last
+mention); (e) the list form gives the part no path name; (f) only an EXPORTED label of the part can be listed
+(a `_` label or a label the part keeps protected is a compile error at the list).
+
+### 2026-11-22 OWNER, on the two name spaces: "Agree caveat bindings used to scope labels (A.a: 8)"
+tags: core/modules/binding-list core/labels/paths core/conditions/form core/labels/export
+
+Told the sentence the manager chose for his direction (one form, the named list, with two targets decided by
+where it stands; bindings and labels two name spaces: left of `:` a bare name is a label, on the value side a
+binding). HIS WORDS, whole:
+
+"Agree caveat bindings used to scope labels (A.a: 8)"
+
+Class: an AGREEMENT with the sentence ("they are the same thing with different targets"), and a CAVEAT to it: the
+two name spaces are not sealed from each other: a BINDING's name scopes a label (`(A.a: 8)`: binding-prefix,
+call-prefix, ruled today). The manager's wording for the documents, on his caveat (a reading): left of `:` a
+path's LAST step is a label; its earlier steps are sources, each a binding's name, a macro's name or a part
+label; a bare single name there is a label the definition itself writes.
+
+### 2026-11-22 OWNER, an observation: the textually-visible rule solves a label from a used binding hiding another binding
+tags: core/labels/paths/label-reference core/operators/statements core/diagnostics/warnings parked/ideas/label-hygiene core/modules/all-symbols
+
+HIS WORDS, whole: "The textually visible rules solves a problem of a label from a binding reference hiding another
+binding"
+
+Class: an OBSERVATION; nothing ruled. The manager's check against the documents (told to him; a reading): it
+holds. Before label-reference a used binding's label arrived bare, so it could meet a binding of the same name
+(the rule "a binding that hides a label draws a warning", core/operators/statements, `pcrec.label.hidden`); now
+it arrives only as `B.x`, so the only labels that can meet a binding's name are the ones the definition itself
+writes. What remains of the hide-label warning: a label written in the definition against a binding of the same
+name; and for BINDING names, a library adding a name under `(=) := import(..)` (core/modules/all-symbols). For
+the r83 fix lane: restate the hide-label warning's trigger and parked/ideas/label-hygiene accordingly.
