@@ -5,25 +5,19 @@ followups and we can continue this conversation later"). Committed docs win on a
 
 ## State
 
-- Branch `lane/pred-rev28` (worktree `worktrees/pred`). Main has (or is merging) P-19 = 399ef98f4: the rulings of
-  2026-11-19..21, array-in-piece, review r77 filed and applied. ON THE BRANCH ONLY, not delivered: everything
-  ruled after array-in-piece today (below), folded by lanes predbound (merged) and predref (merged), NOT YET
-  REVIEWED.
-- IN FLIGHT: critic round **r82** (coordinator `crit-predfold1122`, opus; round dir `$PCREC_TMPDIR/scratch/crit-predfold1122/`; subject frozen at 6f1fe4e84, diff from 399ef98f4). Lane predcall is MERGED (closed-argument ruled (a) is in it). The subject stays FROZEN until the draft: record only. (The next three lines describe predcall as it was launched.)
-  `scripts/lanewatch --follow predcall`): call-prefix case 1, the `A.d` / `c.d` lines, his second hits example, an
-  `open closed-argument` piece with his lean, `c.A`. Its rulings file was empty at launch.
-- NEXT, in order: (1) accept predcall (`scripts/lanewatch predcall` prints DONE; report's STATE AT HANDOFF; merge
-  ALONE; lint; `make -s test-plan-lint`; TaskStop). (2) Critic round **r82** (number given by main), design mode,
-  ONE opus coordinator via the pcrec-critic skill: subject = the predicate documents, diff `399ef98f4..<tip>`
-  (lanes predbound, predref, predcall); record entries from "2026-11-22 OWNER RULING — array-in-piece" to the end;
-  evidence dirs predbound/predref/predcall; denylist: the three lanes' reports, r77; standing lenses (RULING with
-  "for each new ruling find the EARLIER rulings on the same pieces"; every printed ruled example re-derived and
-  legal under label-reference; general form + unlocks); the coordinator re-runs the evidence scripts first. (3)
-  Rule every disposition (record entry "MANAGER — review r82"). (4) ONE opus fix lane (it files the review). (5)
-  merge, lint, P-20 `done:` in to_main.md with the [COND-FAMILY] status line; SendMessage main.
-- Lint `python3 -I scripts/pred_doc_lint.py`: 6,205 / 0 at the predref merge (RUN IT BEFORE NAMING A TIP).
-  Worktrees for main to prune: predscope, predarr, predfix77 (told in P-19); predbound, predref (tell in P-20).
-  No cron. Nothing in the box queue (never ours).
+- Branch `lane/pred-rev28` (worktree `worktrees/pred`). DELIVERED as P-20 (tip = the commit carrying P-20): every
+  owner ruling through 2026-11-22 is folded AND reviewed: r77 (filed 2026-11-21) and r82 (filed 2026-11-22, RULED,
+  applied by lane predfix82). Lanes predbound, predref, predcall, predfix82 are merged and stopped. Main merges at
+  its convenience (P-19 = 399ef98f4 was the previous delivery).
+- NOTHING IN FLIGHT. No cron. Nothing in the box queue (never ours). Worktrees for main to prune are listed in
+  P-20.
+- Lint `python3 -I scripts/pred_doc_lint.py`: 6,428 / 0 at P-20 (RUN IT BEFORE NAMING A TIP). The newest evidence
+  model is `docs/dev/lanes/predfix82_evidence/predfix82_model.py` (22 checks; it carries the fixed engine: `_x`
+  part labels close, a later `&` operand lowered once, uses counted in the definition's text; its SUCCESSOR check
+  declares every older model's red). Known limit: a nullable loop body past the minimum is not modelled.
+- NEXT: the question queue below, one per turn; a single ruling is folded by hand (record + piece + details +
+  lint + the predfix82 model re-run); several, or anything touching labels' sources, by an opus lane and a critic
+  round (ask main for the number first).
 
 ## READ, IN THIS ORDER
 
@@ -50,15 +44,19 @@ end (about 20 entries). 4. `journal.md` from "2026-11-22 (about 12:30 EST)". 5. 
   `(?<:x>...)` is a PROPOSAL (the label-only group is now under construction). Folded (predref).
 - call-prefix case 1: the macro's name qualifies a label of its body (`hits.hit`). In predcall.
 - record-in-some: CLOSED BY ME on his words of 2026-11-21 (told to him; he did not object).
-- NOT rulings: call-prefix case 2 (`A.d` legal: his lean); closed-argument (his lean (a): `A.d` is an error where
-  the macro closes the argument; my (b) withdrawn; AWAITS his one-word confirmation); "[ c = B(A) ] does not allow
+- closed-argument (a): the caller's `A.d` is legal exactly where `d` is visible through the call (this settles
+  call-prefix case 2). My readings from r82, marked as mine in the documents: a path to an invisible label is a
+  compile error; a value entry inside a group question is refused for now; the index through a prefix across `&`
+  is refused for now; nested paths compose; a set reading a label, bound alone, is the bound-condition error.
+- NOT rulings: "[ c = B(A) ] does not allow
   c.A" (his statement); declaring a binding's labels (his idea, parked); "critical is the @assert macros" (his
   priority; two gaps noted: what a search reports, a label's value on a subject).
 
 ## The question queue (one per turn; grep the record AND read the same-day later entries first)
 
-1. **closed-argument**: confirm (a) (the statement as I would enter it is in the record entry and in predcall's
-   open piece).
+1. **two-sources** (from r82; an open piece core/labels/paths/two-sources with the run lines for `7-3` and
+   `1,7`), then **idiom-confirm** (open piece core/labels/paths/one-use-read; his 2026-11-17 point 4 made the
+   one-use `A.h` an error; I took the isodate idiom on his silence). closed-argument is RULED (a).
 2. **zero-condition-binding** (`c := (0: 5)` bound alone; left open by him: do not push; ask when an example needs
    it), **zero-in-loop** WITH the occurrences-argument reading (three candidates part: predfix77 OCCZERO).
 3. Macro variables / macro types / declared labels as ONE design (his alternatives; restriction (i) intersection

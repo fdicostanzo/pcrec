@@ -770,3 +770,10 @@ successor check per old model, files the review as docs/dev/reviews/2026-11-22-r
 merge, lint, P-20 (done line + [COND-FAMILY] status + the three process lessons as proposed skill edits +
 worktrees to prune: predbound, predref, predcall, predfix82), SendMessage main. Questions for him, in order:
 two-sources; idiom-confirm; then the queue in wake.md.
+
+## 2026-11-22 (late) — predfix82 merged; P-20 delivered; nothing in flight
+
+Lane predfix82 delivered (rulings file empty; all nine of my r82 readings supported; no printed line's answer
+moved: 220 lines under the old and the fixed engine) and MERGED: lint 6,428 / 0, its model 22 / 0. Review r82
+filed. P-20 written (done line, status line, seven worktrees to prune, four proposed skill edits). wake.md's State
+rewritten. Owner questions next: two-sources, idiom-confirm.
