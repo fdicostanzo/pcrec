@@ -341,15 +341,69 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     refs: decisions D201 add. 5; [BSPAN-SCALAR-RISK]
 - [REQ-LOOKAROUND] STATE:started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
-  status (2026-11-20): L1 LANDED d68a1294c (full suite GREEN, baseline reset); L3 census GO (57 movers, bench 2) and its five remodels LANDED (lane/l3pin, review r63); L3 FEATURE next (brief carries r63 CONFORM-1)
-  next: the L3 feature lane, then L2
+  status (2026-11-22): L1 LANDED d68a1294c; L3 remodels 1c26d77ea; L3 FEATURE LANDED PENDING CLOUD: merge d92d672be (lane l3land) at abi 112, owner 2026-11-22 "land it with your lean"; cloud runs + D3-FLOOR re-pin owed (l3land_report.md)
+  next: the cloud verdicts and the D3-FLOOR re-pin for L3, then L2
   refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
-  NOTE (2026-11-21): abi numbers RESERVED by main (revised 15:45): 110 = U2/U2b (landed), 111 = L3 (lane/l3tri4, after tonight's re-time), 112 = the kit's U3 (lane bsu3); a later lander re-pins to the next free number in the same change
+  NOTE (2026-11-21): abi numbers RESERVED by main (revised 2026-11-22): 110 = U2/U2b, 111 = U3 (landed first), 112 = L3 (lane l3land); a later lander re-pins to the next free number in the same change
   NOTE (2026-11-21 close): L3 (lane/l3tri4 cc96bb7a8; cloud tables on lane/l3pop fcf710c02): planted bugs 16/17 detected + S3407 declared, cloud mech GREEN; cloud axes RED = stale D3-FLOOR pin (lane/l3axtri, class b, re-pin owed); re-time queued for 01:00 11-22; lands after both, rebased on U2, at abi 111
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
   Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
   NOTE (2026-11-18): architecture note docs/design/req_lookaround_arch.md ACCEPTED (review r50); Frank ruled context-producer-home (ONE span, one producer); remodel-go is the manager's call; both in docs/design/plan_row_bodies/REQ-LOOKAROUND.md
+  - [L3-CONS-REENTRY] STATE:not-started — the forward scan re-enters on a BACK run's consumed extent (K' >= 0)
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat A step 2, HOUSE-6 unlock 1; lane l3r65 wrote the row)
+    status (2026-11-20): filed; nothing designed. L3's pick rule keeps BASE's run where a re-entry exists; this would let BACK keep it too
+    trigger: L2's design (L2 must re-check every forward-scan re-entry anyway, span_arms §14.4 L2's REV 3.3 line)
+    refs: docs/design/span_arms.md §14.4 L3 REV 3.3/3.4; docs/dev/reviews/2026-11-20-r65-l3feat.md A, Q; docs/design/plan_row_bodies/REQ-LOOKAROUND.md on main, the LEAN paragraph (Frank's 2026-11-20 words, landed on main after this row's branch was cut; quoted verbatim in span_arms §14.4 L3 REV 3.4, review r66 TRADE-2)
+    The re-entry restricted to the run's consumed extent, K' = whole_maxoff + cons_lo >= 0, re-asks only consumed bytes, so it needs its own soundness argument (the decline's lesson: equal DFA states have equal futures only over consumed bytes). Frank's 2026-11-20 lean (a discussion, not a ruling): graph-based re-entry ("follow the proved bytes through the whole graph") waits for a general rx/graph manipulation layer, as the predicate language will need one.
+  - [L3-BOUNDED-RUN-REFINE] STATE:not-started — refine "bounded" toward "keeps re-entry" with gen-tier dominance facts
+    filed: 2026-11-20 manager (R-1 of lane l3chk; route 2 of the byte/UTF-8 run asymmetry, not taken)
+    status (2026-11-20): filed; nothing designed. Route 1 (declare the asymmetry, generalize the DD12a(i) checker) was taken instead
+    trigger: L2's design, or a measured loss from a bounded run that hands off nothing
+    refs: docs/dev/lanes/l3chk_report.md; docs/dev/lanes/l3r65tri_report.md; tests/codegen/manifests/k50_gate_refinement.txt [l3chk]; src/findings/default.rxt:42-46; D123-4
+    `(?<=a)(b)\1x` and `(?i)(?<=ab)(b)\1x` state a run under byte (the byte-only byte-rate tie-break) and none under UTF-8; neither side is slower than BASE. NOTED by review r66 EMIT-1: bounded one-byte consumed bests with no handoff (`(?<=foo)b`, `(?<=foo)[bc]`) block BACK too; the same shape, trigger unchanged. The refinement would make the pick rule decline a run that keeps no re-entry from gen-tier dominance facts, removing the asymmetry at its source rather than declaring it.
+  - [L3-BACK-CLIP] STATE:not-started — a BACK join that overflows the stored bound clips lookbehind bytes first, not consumed ones
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat L, EMIT-5; lane l3r65 wrote the row)
+    status (2026-11-20): filed; measured mixed (0.87 to +10%) on one shape, minor
+    trigger: a bench cell with a long lookbehind before a long consumed run (`(?<=a{20})b{8}zb{11}`'s shape)
+    refs: docs/dev/reviews/2026-11-20-r65-l3feat.md L; src/facts/req.c `rb_top_back`
+    `lg ++ head` keeps the first 32 positions, so a long lookbehind clips the consumed run from the right: `(?<=a{20})b{8}zb{11}`'s offsets 0..19 -> 0..11, consumed bytes BASE had are dropped.
+  - [L3-BYTE-LANDMARK-WIN] STATE:not-started — take BACK's run over a byte landmark where it wins (the given-up x6 on English text)
+    filed: 2026-11-21 manager (review 2026-11-21-r66-l3fix EMIT-3 ruling; lane l3r66 wrote the row)
+    status (2026-11-21): filed; given up at landing. The pick rule keeps BASE's byte-landmark handoff (no loss), which also gives up a win
+    trigger: L2's design, or a bench pattern that reaches the shape (an empty consumed run, a necessary byte at a bounded K, a lookbehind run)
+    refs: docs/design/span_arms.md §14.4 L3 REV 3.5; docs/dev/reviews/2026-11-21-r66-l3fix.md EMIT-3; D191 addendum 3; src/facts/req.c `rb_top_back_displaces`
+    `(?<=qz)(?:a.|.a)`, instructions:u, 1 MiB x 5 searches: BASE's handoff on `a` (K 1) costs 85,622,145 on English text, where BACK's `qz` at -2 costs 14,170,871 (x6 win), but 39,964,842 vs 8,998,891 on qz-dense text (x4.4 loss). Choosing between them needs the subject's byte rates (pricing) or a sound re-entry at K < 0 ([L3-CONS-REENTRY]); no corpus pattern reaches the shape today.
+  - [L3-RUN-CAP] STATE:not-started — a 33+-byte lookbehind keeps no consumed position in the 32-position run (D27 F1)
+    filed: 2026-11-21 manager (lane l3wire; the blinded L3 witnesses' finding F1)
+    status (2026-11-21): filed; a listing gap the spec allows, not a violation. Declared as limit `run-cap` (A35) in tests/lookaround/d27_l3/l3d27_limits.tsv
+    trigger: L2's design, or a bench pattern reaching the shape (a lookbehind of 33+ bytes before a consumed run)
+    refs: docs/dev/lanes/l3d27_report.md F1; tests/lookaround/d27_l3/; [L3-BACK-CLIP] (the sibling clip, consumed bytes dropped from the right)
+    Under `--engine=vm`, `(?<=<36 bytes>)!` lists the lookbehind's last 32 bytes at K -32 without `!`; the default lists `4142..4a`@0 for `(?<=<40 bytes>)ABCDEFGHIJ`. The cap itself is general (a plain 40-byte literal lists its first 32).
+  - [L3-MEET-WIDE] STATE:not-started — two lookbehinds combine where one has a wide class (D27 F2)
+    filed: 2026-11-21 manager (lane l3wire; finding F2)
+    status (2026-11-21): filed; a listing gap the spec allows. Limit `meet-wide` (A15)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F2; tests/lookaround/d27_l3/
+    `(?<=.b)(?<=a.)cd` lists `626364`@-1 where the meet `ab` would give `61626364`@-2; two lookbehinds that agree byte for byte do meet. L1's recorded limit (a wide class in a body is dropped), reached through a meet.
+  - [L3-NESTED-HEAD] STATE:not-started — a lookbehind nested at the start of a lookbehind body must not block the item (D27 F3)
+    filed: 2026-11-21 manager (lane l3wire; finding F3)
+    status (2026-11-21): filed; a listing gap the spec allows. Limit `nested-head` (A17)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F3; tests/lookaround/d27_l3/; docs/design/span_arms.md §10 U-nesteditem
+    `(?<=(?<=x)ab)cd` lists `6364`@0 (not even the outer `ab` joins); nested at the END it joins (`(?<=a(?<=a))bc` gives `616263`@-1).
+  - [L3-CLASS-ONE] STATE:not-started — a one-character class lookbehind before a single consumed byte joins (D27 F4)
+    filed: 2026-11-21 manager (lane l3wire; finding F4)
+    status (2026-11-21): filed; a listing gap the spec allows, possibly a deliberate weak-position choice the spec does not state. Limit `class-one` (A45)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F4; tests/lookaround/d27_l3/
+    `(?<=a|b)c` and `(?<=[ab])c` list no run under vm; with two consumed bytes `(?<=[ab])cd` joins (`[6162]6364`@-1), and a one-BYTE lookbehind joins either way.
+  - [REQ-CAND-STRUCT] STATE:not-started — the run candidate travels as one { run, lo, hi } record, not loose int pointers
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat P, HOUSE-5; lane l3r65 wrote the row)
+    status (2026-11-20): filed; maintenance only, no answer or speed change
+    trigger: L2's AHEAD candidate adds its own consumed extent
+    refs: docs/dev/reviews/2026-11-20-r65-l3feat.md P; src/facts/req.c TOP, src/facts/facts.c, src/facts/facts.h `pcrec_run_cons`
+    The consumed extent `[lo, hi)` passes as `int *lo, *hi` through four layers (TOP's rows, `rb_top`, `pcrec_req_walk`, the record).
 - [COVER-CAP] STATE:started — lift the cover route's 24-position cap (long exact literals and fixed shapes finish in the engine)
   filed: 2026-11-11 manager (lane paper), from the skipmeas measurement; set S3
   status (2026-11-19): stage 2 + the kit's span forms LANDED on main 77edff7ae (abi 109; full cloud suite green after triage covtri1119); the width default stays 32 (interim); owed: cover_cap.md §11.4 part B night timing (cover vs engine) to set it
@@ -1427,6 +1481,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-10-29): not started. Meant to remove one D27 cell; with no worktree NAMEs, `--apply` also removed all 9 gated REMOVE candidates (7 kit memfn-* trees). All merged, clean and quiet, branches kept: nothing lost.
   next: make `--dir` alone scope `--apply` to the named dirs (worktrees only when NAMEs are given too), plus a self-test row.
   refs: scripts/wtprune (arg parse, line 83); worktrees/.wtprune.log 2026-10-29T02:43
+- [WTPRUNE-QUIET] STATE:not-started — a `--quiet` wtprune teardown for critic rounds (it leaks denied lanes' commits)
+  filed: 2026-11-21 manager (review 2026-11-21-r66-l3fix PROCESS, accepted; lane l3r66 wrote the row)
+  status (2026-11-21): filed; not started. A critic round's teardown ran wtprune, whose report printed the commit subjects of lanes the critics were denied
+  next: a `--quiet` switch that prints only counts and the critic round's own targets, used by the pcrec-critic skill's teardown; plus a self-test row.
+  refs: scripts/wtprune; .claude/skills/pcrec-critic/SKILL.md; docs/dev/reviews/2026-11-21-r66-l3fix.md (Rulings, PROCESS)
 - [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
   filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
   status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.
@@ -2275,6 +2334,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
 
 ## Boonies
+- [LB-NEST-CAP] STATE:not-started — cap the BACK row by the walk's own reach, so sound nested-lookbehind runs are kept
+  filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat I speed half, WALK-1; lane l3r65 wrote the row)
+  status (2026-11-20): parked; the comment is fixed (review r65 I doc half); no answer is wrong
+  trigger: a corpus or bench pattern with a nested lookbehind whose guard reaches past the widest single lookbehind
+  refs: docs/dev/reviews/2026-11-20-r65-l3feat.md I; src/facts/facts_derive.h `ReqWalkParams.lb_bytes`
+  `lb_bytes` follows PCRE2's max_lookbehind (a max over nesting) while the walk's guard sums, so `(?<=(?<=x)a)b` (true run `xab` at -2) is declined; the design's §5.5 says why the cap exists before it moves.
 - [RUN-LOWINFO-HEAD] STATE:not-started — run's head position is a low-information class tail (`\w+`) after rule (1)
   filed: 2026-11-15 manager (review 2026-11-15 r1 posts2 EMITTED-1, NOTED; filed by lane fixposts2)
   status (2026-11-15): NOTED, unmeasured (a suspected speed cost, very low); the answer is sound and the scan byte is unchanged.

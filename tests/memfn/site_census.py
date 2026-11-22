@@ -75,6 +75,7 @@ CORPUS_CAP = 300            # compiles per pass
 # kind it guarantees.
 CORPUS_WITNESSES = (
     r'\b(?:true|false|null)\b',   # PF/DFA_HAT: the start-set DFA hat (tests/startset [dfa-wit])
+    r'(?m)^item',                   # MLINE/DFA_ATTEMPT: multiline line-start find (tests/litscan/handoff.rxt)
 )
 CORPUS_FLOOR = 100          # K35: a pass that compiled fewer is not a census
 # THE PASS'S CONFIGURATIONS, one row each, every corpus pattern compiled under

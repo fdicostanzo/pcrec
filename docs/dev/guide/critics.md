@@ -313,3 +313,9 @@ Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r
 3. **For every CHECK the subject cites as "supported", mutate one arm.** If no mutation of the cited arm can move the count, the check shares its source (N3, CS3).
 4. **A 0/0/0 at a short pool length is not evidence when the witness needs a longer text.** A4 needed length 7, A5 needed `min = 1`: critics state the minimum witness length they reached.
 - (2026-11-22, r81 k159fix) **A stop or early-exit fix needs a BOUNDED witness beside its cost witness.** A CPU guard on an unbounded witness cannot tell a correct stop from an over-eager one (plant V1, a subset test in place of equality, moved 8 of 11 bounded widths and none of the existing table's rows).
+
+Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat.md`); lessons ruled 2026-11-20 (manager).
+1. **A ruled decline is measured against BASE, not only against the build without it** (r65 l3feat A): its census carries a BASE -> SUBJECT column for every stamp the decline moves; R-1's with-vs-without census read "no stamp changes" while BASE -> SUBJECT moved `RX_DFA_PREFILTER`/`RX_REQ_WHY`, up to x10.
+2. **A check arm for a route the same change declines is either reached or deleted** (r65 l3feat C): [5.12l]'s K < 0 arm ran zero times and was red on correct text when planted.
+3. **When a design restates a premise in a code comment, grep the spec for the same premise** (r65 l3feat G): tuning ¶7a/¶8b were the spec twin of the restated presence comment.
+4. **The abi grep's hits are a checklist, ticked in the report** (r65 l3feat D): the grep listed the identity gate's pin and it was still missed.

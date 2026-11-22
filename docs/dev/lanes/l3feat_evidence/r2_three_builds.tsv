@@ -1,0 +1,361 @@
+pattern	build	pf	k	run	pscan	pscan_src	entry	rscan	verify	verify_lb
+(?<=foobar)\\d*x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=foobar)\\d*x	L3-nodecline	handoff	-6	666f6f626172@3	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @3 LOOKBEHIND	foob+obar	yes (6 lookbehind bytes)
+(?<=foobar)\\d*x	L3-decline	memchr	-6	666f6f626172@3	memchr x	match start (consumed)	entry asks run finder	b @3 LOOKBEHIND	foob+obar	yes (6 lookbehind bytes)
+(?<=a)b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+\\b(?<=bc)d	BASE	first-memchr-bounded	none	none	memchr d	match start (consumed)	no entry ask	-	-	no
+\\b(?<=bc)d	L3-nodecline	handoff	-2	626364@0	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @0 LOOKBEHIND	bc+cd	yes (2 lookbehind bytes)
+\\b(?<=bc)d	L3-decline	first-memchr-bounded	-2	626364@0	memchr d	match start (consumed)	entry asks run finder	b @0 LOOKBEHIND	bc+cd	yes (2 lookbehind bytes)
+\\B(?<=bc)d	BASE	first-memchr-bounded	none	none	memchr d	match start (consumed)	no entry ask	-	-	no
+\\B(?<=bc)d	L3-nodecline	handoff	-2	626364@0	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @0 LOOKBEHIND	bc+cd	yes (2 lookbehind bytes)
+\\B(?<=bc)d	L3-decline	first-memchr-bounded	-2	626364@0	memchr d	match start (consumed)	entry asks run finder	b @0 LOOKBEHIND	bc+cd	yes (2 lookbehind bytes)
+((?<=a)){2,3}-\\1*	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+((?<=a)){2,3}-\\1*	L3-nodecline	-	-1	612d@1	table/other (-)	match start (consumed)	entry asks run finder	- @1 consumed	a-	yes (1 lookbehind bytes)
+((?<=a)){2,3}-\\1*	L3-decline	-	-1	612d@1	table/other (-)	match start (consumed)	entry asks run finder	- @1 consumed	a-	yes (1 lookbehind bytes)
+((?<=a))+a\\1+?	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+((?<=a))+a\\1+?	L3-nodecline	-	-1	6161@1	table/other (-)	match start (consumed)	entry asks run finder	a @1 consumed	aa	yes (1 lookbehind bytes)
+((?<=a))+a\\1+?	L3-decline	-	-1	6161@1	table/other (-)	match start (consumed)	entry asks run finder	a @1 consumed	aa	yes (1 lookbehind bytes)
+(?<n>(?<=a))x\\k{n}	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(?<n>(?<=a))x\\k{n}	L3-nodecline	-	-1	6178@1	table/other (-)	match start (consumed)	entry asks run finder	x @1 consumed	ax	yes (1 lookbehind bytes)
+(?<n>(?<=a))x\\k{n}	L3-decline	-	-1	6178@1	table/other (-)	match start (consumed)	entry asks run finder	x @1 consumed	ax	yes (1 lookbehind bytes)
+(?<=(?:abc|abde|ab))z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<=(?:abc|abde|ab))z	L3-nodecline	handoff	-2	[616264][626365]7a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?<=(?:abc|abde|ab))z	L3-decline	memchr	-2	[616264][626365]7a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?<*a)b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<*a)b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<*a)b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*plb:a)b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*plb:a)b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*plb:a)b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)+b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)+b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)+b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a))b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a))b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a))b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=ab)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=ab)x	L3-nodecline	handoff	-2	616278@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	ab+bx	yes (2 lookbehind bytes)
+(?<=ab)x	L3-decline	memchr	-2	616278@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	ab+bx	yes (2 lookbehind bytes)
+(?<=(a))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(a))x	L3-nodecline	handoff	-1	6178@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @1 consumed	ax	yes (1 lookbehind bytes)
+(?<=(a))x	L3-decline	memchr	-1	6178@1	memchr x	match start (consumed)	entry asks run finder	x @1 consumed	ax	yes (1 lookbehind bytes)
+(?<=xyz)a+xyz	BASE	memchr	none	6178797a@3	memchr a	match start (consumed)	no entry ask	z @3 consumed	axyz	no
+(?<=xyz)a+xyz	L3-nodecline	handoff	-3	78797a61@2	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	z @2 LOOKBEHIND	xyza	yes (3 lookbehind bytes)
+(?<=xyz)a+xyz	L3-decline	memchr	-3	78797a61@2	memchr a	match start (consumed)	entry asks run finder	z @2 LOOKBEHIND	xyza	yes (3 lookbehind bytes)
+(?<=qz)x?a:	BASE	handoff	1	613a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	: @1 consumed	a:	no
+(?<=qz)x?a:	L3-nodecline	handoff	-2	717a@1	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	z @1 LOOKBEHIND	qz	yes (2 lookbehind bytes)
+(?<=qz)x?a:	L3-decline	memchr	-2	717a@1	memchr a	match start (consumed)	entry asks run finder	z @1 LOOKBEHIND	qz	yes (2 lookbehind bytes)
+(?<=q)a:	BASE	none	none	613a	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=q)a:	L3-nodecline	none	none	71613a	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=q)a:	L3-decline	none	none	71613a	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=ab)(?i:cdef)	BASE	handoff	0	43444546@3/dfdfdfdf	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	- @3 consumed	\337\337\337\337+CDEF	no
+(?<=ab)(?i:cdef)	L3-nodecline	handoff	-2	616243444546@1/ffffdfdfdfdf	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @1 LOOKBEHIND	\377\377\337\337+abCD+\337\337\337\337+CDEF	yes (2 lookbehind bytes)
+(?<=ab)(?i:cdef)	L3-decline	byte-class	-2	616243444546@1/ffffdfdfdfdf	table/other (byte-class)	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	\377\377\337\337+abCD+\337\337\337\337+CDEF	yes (2 lookbehind bytes)
+(?<=foo)bar	BASE	run-pinned	none	626172@0	table/other (run-pinned)	match start (consumed)	no entry ask	-	-	no
+(?<=foo)bar	L3-nodecline	run-pinned	-3	666f6f626172@3	table/other (run-pinned)	match start (consumed)	entry asks run finder	b @3 consumed	foob+obar	yes (3 lookbehind bytes)
+(?<=foo)bar	L3-decline	run-pinned	-3	666f6f626172@3	table/other (run-pinned)	match start (consumed)	entry asks run finder	b @3 consumed	foob+obar	yes (3 lookbehind bytes)
+(?<=ab)(?<=cb)c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=ab)(?<=cb)c	L3-nodecline	handoff	-1	6263@0	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @0 LOOKBEHIND	bc	yes (1 lookbehind bytes)
+(?<=ab)(?<=cb)c	L3-decline	memchr	-1	6263@0	memchr c	match start (consumed)	entry asks run finder	b @0 LOOKBEHIND	bc	yes (1 lookbehind bytes)
+(*positive_lookbehind:a)b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*positive_lookbehind:a)b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*positive_lookbehind:a)b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*naplb:a)b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*naplb:a)b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*naplb:a)b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*non_atomic_positive_lookbehind:a)b	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*non_atomic_positive_lookbehind:a)b	L3-nodecline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*non_atomic_positive_lookbehind:a)b	L3-decline	none	none	6162	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*plb:(a)|(ba))c\\2	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(*plb:(a)|(ba))c\\2	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*plb:(a)|(ba))c\\2	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*positive_lookbehind:(a)|(ba))c\\2	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(*positive_lookbehind:(a)|(ba))c\\2	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*positive_lookbehind:(a)|(ba))c\\2	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*naplb:(a)|(ba))c\\2	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(*naplb:(a)|(ba))c\\2	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*naplb:(a)|(ba))c\\2	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*non_atomic_positive_lookbehind:(a)|(ba))c\\2	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(*non_atomic_positive_lookbehind:(a)|(ba))c\\2	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*non_atomic_positive_lookbehind:(a)|(ba))c\\2	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=abc)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=abc)x	L3-nodecline	handoff	-3	61626378@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @3 consumed	abcx	yes (3 lookbehind bytes)
+(?<=abc)x	L3-decline	memchr	-3	61626378@3	memchr x	match start (consumed)	entry asks run finder	x @3 consumed	abcx	yes (3 lookbehind bytes)
+(?<=[ab][cd])x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=[ab][cd])x	L3-nodecline	handoff	-2	[6162][6364]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=[ab][cd])x	L3-decline	memchr	-2	[6162][6364]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=a{3})x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=a{3})x	L3-nodecline	handoff	-3	61616178@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @3 consumed	aaax	yes (3 lookbehind bytes)
+(?<=a{3})x	L3-decline	memchr	-3	61616178@3	memchr x	match start (consumed)	entry asks run finder	x @3 consumed	aaax	yes (3 lookbehind bytes)
+(?<=(?:ab){2})x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:ab){2})x	L3-nodecline	handoff	-4	6162616278@4	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @4 consumed	abab+babx	yes (4 lookbehind bytes)
+(?<=(?:ab){2})x	L3-decline	memchr	-4	6162616278@4	memchr x	match start (consumed)	entry asks run finder	x @4 consumed	abab+babx	yes (4 lookbehind bytes)
+(?<=ab|cd)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=ab|cd)x	L3-nodecline	handoff	-2	[6163][6264]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=ab|cd)x	L3-decline	memchr	-2	[6163][6264]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=ab|cd|ef)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=ab|cd|ef)x	L3-nodecline	handoff	-2	[616365][626466]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=ab|cd|ef)x	L3-decline	memchr	-2	[616365][626466]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(a)(b))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(a)(b))c	L3-nodecline	handoff	-2	616263@1	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=(a)(b))c	L3-decline	memchr	-2	616263@1	memchr c	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=(aa)|(ab))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(aa)|(ab))c	L3-nodecline	handoff	-2	61[6162]63@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @2 consumed	c	yes (2 lookbehind bytes)
+(?<=(aa)|(ab))c	L3-decline	memchr	-2	61[6162]63@2	memchr c	match start (consumed)	entry asks run finder	c @2 consumed	c	yes (2 lookbehind bytes)
+(?<=a(?=b))ab	BASE	offset-set	none	6162	table/other (offset-set)	match start (consumed)	no entry ask	-	-	no
+(?<=a(?=b))ab	L3-nodecline	offset-set	-1	616162@2	table/other (offset-set)	match start (consumed)	entry asks run finder	b @2 consumed	aa+ab	yes (1 lookbehind bytes)
+(?<=a(?=b))ab	L3-decline	offset-set	-1	616162@2	table/other (offset-set)	match start (consumed)	entry asks run finder	b @2 consumed	aa+ab	yes (1 lookbehind bytes)
+(?<=a(?!b))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=a(?!b))x	L3-nodecline	handoff	-1	6178@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @1 consumed	ax	yes (1 lookbehind bytes)
+(?<=a(?!b))x	L3-decline	memchr	-1	6178@1	memchr x	match start (consumed)	entry asks run finder	x @1 consumed	ax	yes (1 lookbehind bytes)
+((?<=a)b)+	BASE	handoff	0	none	memchr b	match start (consumed)	no entry ask	-	-	no
+((?<=a)b)+	L3-nodecline	handoff	-1	6162@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+((?<=a)b)+	L3-decline	memchr-bounded	-1	6162@1	memchr a	match start (consumed)	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+(?>(?<=a)b)	BASE	handoff	0	none	memchr b	match start (consumed)	no entry ask	-	-	no
+(?>(?<=a)b)	L3-nodecline	handoff	-1	6162@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+(?>(?<=a)b)	L3-decline	memchr-bounded	-1	6162@1	memchr a	match start (consumed)	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+(?<=(?>ab))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(?>ab))c	L3-nodecline	handoff	-2	616263@1	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=(?>ab))c	L3-decline	memchr	-2	616263@1	memchr c	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=ab)(?<=b)c	BASE	memchr-bounded	none	none	memchr b	match start (consumed)	no entry ask	-	-	no
+(?<=ab)(?<=b)c	L3-nodecline	handoff	-2	616263@1	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=ab)(?<=b)c	L3-decline	memchr-bounded	-2	616263@1	memchr b	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=\\n)x	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=\\n)x	L3-nodecline	none	none	0a78	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=\\n)x	L3-decline	none	none	0a78	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a{2})b	BASE	memchr	none	none	memchr b	match start (consumed)	no entry ask	-	-	no
+(?<=a{2})b	L3-nodecline	handoff	-2	616162@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	b @2 consumed	aa+ab	yes (2 lookbehind bytes)
+(?<=a{2})b	L3-decline	memchr	-2	616162@2	memchr b	match start (consumed)	entry asks run finder	b @2 consumed	aa+ab	yes (2 lookbehind bytes)
+(?<=a)\\Kb	BASE	handoff	0	none	memchr b	match start (consumed)	no entry ask	-	-	no
+(?<=a)\\Kb	L3-nodecline	handoff	-1	6162@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+(?<=a)\\Kb	L3-decline	memchr-bounded	-1	6162@1	memchr a	match start (consumed)	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+(?<=\\Ga)b	BASE	memchr	none	none	memchr b	match start (consumed)	no entry ask	-	-	no
+(?<=\\Ga)b	L3-nodecline	handoff	-1	6162@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+(?<=\\Ga)b	L3-decline	memchr	-1	6162@1	memchr b	match start (consumed)	entry asks run finder	b @1 consumed	ab	yes (1 lookbehind bytes)
+(?<=(?:ab|cd))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:ab|cd))x	L3-nodecline	handoff	-2	[6163][6264]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?:ab|cd))x	L3-decline	memchr	-2	[6163][6264]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?:ab|cd|ef))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:ab|cd|ef))x	L3-nodecline	handoff	-2	[616365][626466]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?:ab|cd|ef))x	L3-decline	memchr	-2	[616365][626466]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?i:ab|cd))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?i:ab|cd))x	L3-nodecline	handoff	-2	[41436163][42446264]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?i:ab|cd))x	L3-decline	memchr	-2	[41436163][42446264]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(*plb:(?:ab|cd))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(*plb:(?:ab|cd))x	L3-nodecline	handoff	-2	[6163][6264]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(*plb:(?:ab|cd))x	L3-decline	memchr	-2	[6163][6264]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?:a{2}|bc))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a{2}|bc))x	L3-nodecline	handoff	-2	[6162][6163]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	\375\377+ax	yes (2 lookbehind bytes)
+(?<=(?:a{2}|bc))x	L3-decline	memchr	-2	[6162][6163]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	\375\377+ax	yes (2 lookbehind bytes)
+(?<=(?:a(?:b|c)|d(?:e|f)))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a(?:b|c)|d(?:e|f)))x	L3-nodecline	handoff	-2	[6164][62636566]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?:a(?:b|c)|d(?:e|f)))x	L3-decline	memchr	-2	[6164][62636566]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?:a|bc)d)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a|bc)d)x	L3-nodecline	handoff	-2	616478@2/fdffff	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	\375\377+ad+dx	yes (2 lookbehind bytes)
+(?<=(?:a|bc)d)x	L3-decline	memchr	-2	616478@2/fdffff	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	\375\377+ad+dx	yes (2 lookbehind bytes)
+(?<=((a|bc)d))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=((a|bc)d))x	L3-nodecline	handoff	-2	616478@2/fdffff	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	\375\377+ad+dx	yes (2 lookbehind bytes)
+(?<=((a|bc)d))x	L3-decline	memchr	-2	616478@2/fdffff	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	\375\377+ad+dx	yes (2 lookbehind bytes)
+(?<=(a|aa))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(a|aa))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a|aa))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(a|aaa))c\\1	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(?<*(a|aaa))c\\1	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(a|aaa))c\\1	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=a{65535})x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=a{65535})x	L3-nodecline	handoff	-32	6161616161616161616161616161616161616161616161616161616161616161@31	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	a @31 LOOKBEHIND	aaaaaaaa	yes (32 lookbehind bytes)
+(?<=a{65535})x	L3-decline	memchr	-32	6161616161616161616161616161616161616161616161616161616161616161@31	memchr x	match start (consumed)	entry asks run finder	a @31 LOOKBEHIND	aaaaaaaa	yes (32 lookbehind bytes)
+(?<=(?:a{1000}){65})x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a{1000}){65})x	L3-nodecline	handoff	-32	6161616161616161616161616161616161616161616161616161616161616161@31	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	a @31 LOOKBEHIND	aaaaaaaa	yes (32 lookbehind bytes)
+(?<=(?:a{1000}){65})x	L3-decline	memchr	-32	6161616161616161616161616161616161616161616161616161616161616161@31	memchr x	match start (consumed)	entry asks run finder	a @31 LOOKBEHIND	aaaaaaaa	yes (32 lookbehind bytes)
+(?<=(a)|(aa))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(a)|(aa))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a)|(aa))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(aa)|(a))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(aa)|(a))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(aa)|(a))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a)|(aa)|(aaa))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(a)|(aa)|(aaa))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a)|(aa)|(aaa))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(aaa)|(aa)|(a))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(aaa)|(aa)|(a))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(aaa)|(aa)|(a))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(a)|(ba))c\\2	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(?<*(a)|(ba))c\\2	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(a)|(ba))c\\2	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a)|(ba))c\\2	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(?<=(a)|(ba))c\\2	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a)|(ba))c\\2	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(ba)|(a))c\\2	BASE	-	none	none	table/other (-)	match start (consumed)	no entry ask	-	-	no
+(?<*(ba)|(a))c\\2	L3-nodecline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(ba)|(a))c\\2	L3-decline	-	-1	6163@1	table/other (-)	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(a)|(ba))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<*(a)|(ba))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(a)|(ba))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*ab)c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<*ab)c	L3-nodecline	handoff	-2	616263@1	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<*ab)c	L3-decline	memchr	-2	616263@1	memchr c	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<*(a))a	BASE	memchr	none	none	memchr a	match start (consumed)	no entry ask	-	-	no
+(?<*(a))a	L3-nodecline	handoff	-1	6161@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	a @1 consumed	aa	yes (1 lookbehind bytes)
+(?<*(a))a	L3-decline	memchr	-1	6161@1	memchr a	match start (consumed)	entry asks run finder	a @1 consumed	aa	yes (1 lookbehind bytes)
+(?<=ab)c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=ab)c	L3-nodecline	handoff	-2	616263@1	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=ab)c	L3-decline	memchr	-2	616263@1	memchr c	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	ab+bc	yes (2 lookbehind bytes)
+(?<=ab|cd|ef|gh)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=ab|cd|ef|gh)x	L3-nodecline	handoff	-2	[61636567][62646668]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=ab|cd|ef|gh)x	L3-decline	memchr	-2	[61636567][62646668]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(a)(b))(c)(d)	BASE	offset-set	0	6364@0	table/other (offset-set)	match start (consumed)	entry asks run finder	c @0 consumed	cd	no
+(?<=(a)(b))(c)(d)	L3-nodecline	offset-set	-2	61626364@1	table/other (offset-set)	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	abcd	yes (2 lookbehind bytes)
+(?<=(a)(b))(c)(d)	L3-decline	offset-set	-2	61626364@1	table/other (offset-set)	match start (consumed)	entry asks run finder	b @1 LOOKBEHIND	abcd	yes (2 lookbehind bytes)
+(?<=a{3}|bb)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=a{3}|bb)x	L3-nodecline	handoff	-2	[6162][6162]78@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=a{3}|bb)x	L3-decline	memchr	-2	[6162][6162]78@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	x	yes (2 lookbehind bytes)
+(?<=(?:a{2})|(?:a{3}))x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=(?:a{2})|(?:a{3}))x	L3-nodecline	handoff	-2	616178@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	x @2 consumed	aa+ax	yes (2 lookbehind bytes)
+(?<=(?:a{2})|(?:a{3}))x	L3-decline	memchr	-2	616178@2	memchr x	match start (consumed)	entry asks run finder	x @2 consumed	aa+ax	yes (2 lookbehind bytes)
+(?<=a)z	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)z	L3-nodecline	none	none	617a	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)z	L3-decline	none	none	617a	table/other (none)	match start (consumed)	no entry ask	-	-	no
+((?<=a)z)	BASE	handoff	0	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<=a)z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<=a)z)	L3-decline	memchr-bounded	-1	617a@1	memchr a	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<=a)z)	BASE	handoff	0	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<=a)z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<=a)z)	L3-decline	memchr-bounded	-1	617a@1	memchr a	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<=abc)z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<=abc)z	L3-nodecline	handoff	-3	6162637a@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?<=abc)z	L3-decline	memchr	-3	6162637a@3	memchr z	match start (consumed)	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+z(?<=abc)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+z(?<=abc)	L3-nodecline	handoff	-2	61627a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	ab+bz	yes (2 lookbehind bytes)
+z(?<=abc)	L3-decline	memchr	-2	61627a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	ab+bz	yes (2 lookbehind bytes)
+y(?<=abc)z	BASE	offset-set	none	797a	table/other (offset-set)	match start (consumed)	no entry ask	-	-	no
+y(?<=abc)z	L3-nodecline	offset-set	-2	6162797a@3	table/other (offset-set)	match start (consumed)	entry asks run finder	z @3 consumed	abyz	yes (2 lookbehind bytes)
+y(?<=abc)z	L3-decline	offset-set	-2	6162797a@3	table/other (offset-set)	match start (consumed)	entry asks run finder	z @3 consumed	abyz	yes (2 lookbehind bytes)
+((?<=abc)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<=abc)z)	L3-nodecline	handoff	-3	6162637a@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+((?<=abc)z)	L3-decline	memchr	-3	6162637a@3	memchr z	match start (consumed)	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?>(?<=abc)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<=abc)z)	L3-nodecline	handoff	-3	6162637a@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?>(?<=abc)z)	L3-decline	memchr	-3	6162637a@3	memchr z	match start (consumed)	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?<=ab|cd)z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<=ab|cd)z	L3-nodecline	handoff	-2	[6163][6264]7a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?<=ab|cd)z	L3-decline	memchr	-2	[6163][6264]7a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+y(?<=ab|cd)z	BASE	offset-set	none	797a	table/other (offset-set)	match start (consumed)	no entry ask	-	-	no
+y(?<=ab|cd)z	L3-nodecline	offset-set	-1	61797a@2/fdffff	table/other (offset-set)	match start (consumed)	entry asks run finder	z @2 consumed	\375\377+ay+yz	yes (1 lookbehind bytes)
+y(?<=ab|cd)z	L3-decline	offset-set	-1	61797a@2/fdffff	table/other (offset-set)	match start (consumed)	entry asks run finder	z @2 consumed	\375\377+ay+yz	yes (1 lookbehind bytes)
+((?<=ab|cd)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<=ab|cd)z)	L3-nodecline	handoff	-2	[6163][6264]7a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+((?<=ab|cd)z)	L3-decline	memchr	-2	[6163][6264]7a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?>(?<=ab|cd)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<=ab|cd)z)	L3-nodecline	handoff	-2	[6163][6264]7a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?>(?<=ab|cd)z)	L3-decline	memchr	-2	[6163][6264]7a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?<=(a))z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<=(a))z	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<=(a))z	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<=(a))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<=(a))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<=(a))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<=(a))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<=(a))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<=(a))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<=a(?!b))z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<=a(?!b))z	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<=a(?!b))z	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<=a(?!b))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<=a(?!b))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<=a(?!b))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<=a(?!b))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<=a(?!b))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<=a(?!b))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<*a)z	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<*a)z	L3-nodecline	none	none	617a	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<*a)z	L3-decline	none	none	617a	table/other (none)	match start (consumed)	no entry ask	-	-	no
+((?<*a)z)	BASE	handoff	0	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<*a)z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<*a)z)	L3-decline	memchr-bounded	-1	617a@1	memchr a	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<*a)z)	BASE	handoff	0	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<*a)z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<*a)z)	L3-decline	memchr-bounded	-1	617a@1	memchr a	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<*abc)z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<*abc)z	L3-nodecline	handoff	-3	6162637a@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?<*abc)z	L3-decline	memchr	-3	6162637a@3	memchr z	match start (consumed)	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+z(?<*abc)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+z(?<*abc)	L3-nodecline	handoff	-2	61627a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	ab+bz	yes (2 lookbehind bytes)
+z(?<*abc)	L3-decline	memchr	-2	61627a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	ab+bz	yes (2 lookbehind bytes)
+y(?<*abc)z	BASE	offset-set	none	797a	table/other (offset-set)	match start (consumed)	no entry ask	-	-	no
+y(?<*abc)z	L3-nodecline	offset-set	-2	6162797a@3	table/other (offset-set)	match start (consumed)	entry asks run finder	z @3 consumed	abyz	yes (2 lookbehind bytes)
+y(?<*abc)z	L3-decline	offset-set	-2	6162797a@3	table/other (offset-set)	match start (consumed)	entry asks run finder	z @3 consumed	abyz	yes (2 lookbehind bytes)
+((?<*abc)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<*abc)z)	L3-nodecline	handoff	-3	6162637a@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+((?<*abc)z)	L3-decline	memchr	-3	6162637a@3	memchr z	match start (consumed)	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?>(?<*abc)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<*abc)z)	L3-nodecline	handoff	-3	6162637a@3	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?>(?<*abc)z)	L3-decline	memchr	-3	6162637a@3	memchr z	match start (consumed)	entry asks run finder	z @3 consumed	abcz	yes (3 lookbehind bytes)
+(?<*ab|cd)z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<*ab|cd)z	L3-nodecline	handoff	-2	[6163][6264]7a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?<*ab|cd)z	L3-decline	memchr	-2	[6163][6264]7a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+y(?<*ab|cd)z	BASE	offset-set	none	797a	table/other (offset-set)	match start (consumed)	no entry ask	-	-	no
+y(?<*ab|cd)z	L3-nodecline	offset-set	-1	61797a@2/fdffff	table/other (offset-set)	match start (consumed)	entry asks run finder	z @2 consumed	\375\377+ay+yz	yes (1 lookbehind bytes)
+y(?<*ab|cd)z	L3-decline	offset-set	-1	61797a@2/fdffff	table/other (offset-set)	match start (consumed)	entry asks run finder	z @2 consumed	\375\377+ay+yz	yes (1 lookbehind bytes)
+((?<*ab|cd)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<*ab|cd)z)	L3-nodecline	handoff	-2	[6163][6264]7a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+((?<*ab|cd)z)	L3-decline	memchr	-2	[6163][6264]7a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?>(?<*ab|cd)z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<*ab|cd)z)	L3-nodecline	handoff	-2	[6163][6264]7a@2	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?>(?<*ab|cd)z)	L3-decline	memchr	-2	[6163][6264]7a@2	memchr z	match start (consumed)	entry asks run finder	z @2 consumed	z	yes (2 lookbehind bytes)
+(?<*(a))z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<*(a))z	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<*(a))z	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<*(a))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<*(a))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<*(a))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<*(a))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<*(a))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<*(a))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<*a(?!b))z	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?<*a(?!b))z	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<*a(?!b))z	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<*a(?!b))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+((?<*a(?!b))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+((?<*a(?!b))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<*a(?!b))z)	BASE	memchr	none	none	memchr z	match start (consumed)	no entry ask	-	-	no
+(?>(?<*a(?!b))z)	L3-nodecline	handoff	-1	617a@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?>(?<*a(?!b))z)	L3-decline	memchr	-1	617a@1	memchr z	match start (consumed)	entry asks run finder	z @1 consumed	az	yes (1 lookbehind bytes)
+(?<=a)c	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)c	L3-nodecline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)c	L3-decline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*plb:a)c	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*plb:a)c	L3-nodecline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*plb:a)c	L3-decline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*positive_lookbehind:a)c	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*positive_lookbehind:a)c	L3-nodecline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(*positive_lookbehind:a)c	L3-decline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<*(a|ba))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<*(a|ba))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<*(a|ba))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*naplb:(a|ba))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(*naplb:(a|ba))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*naplb:(a|ba))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*non_atomic_positive_lookbehind:(a|ba))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(*non_atomic_positive_lookbehind:(a|ba))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*non_atomic_positive_lookbehind:(a|ba))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a|ba))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(?<=(a|ba))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=(a|ba))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*plb:(a|ba))c	BASE	memchr	none	none	memchr c	match start (consumed)	no entry ask	-	-	no
+(*plb:(a|ba))c	L3-nodecline	handoff	-1	6163@1	run finder (rx_reqrun)	scan byte consumed	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(*plb:(a|ba))c	L3-decline	memchr	-1	6163@1	memchr c	match start (consumed)	entry asks run finder	c @1 consumed	ac	yes (1 lookbehind bytes)
+(?<=nop)st	BASE	offset-set	0	7374@0	table/other (offset-set)	match start (consumed)	entry asks run finder	s @0 consumed	st	no
+(?<=nop)st	L3-nodecline	offset-set	-3	6e6f707374@2	table/other (offset-set)	match start (consumed)	entry asks run finder	p @2 LOOKBEHIND	nops+opst	yes (3 lookbehind bytes)
+(?<=nop)st	L3-decline	offset-set	-3	6e6f707374@2	table/other (offset-set)	match start (consumed)	entry asks run finder	p @2 LOOKBEHIND	nops+opst	yes (3 lookbehind bytes)
+(?<=a)(?<=[ab])c	BASE	none	none	none	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)(?<=[ab])c	L3-nodecline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=a)(?<=[ab])c	L3-decline	none	none	6163	table/other (none)	match start (consumed)	no entry ask	-	-	no
+(?<=item )done	BASE	offset-set	0	646f6e65@0	table/other (offset-set)	match start (consumed)	entry asks run finder	d @0 consumed	done	no
+(?<=item )done	L3-nodecline	offset-set	-5	6974656d20646f6e65@3	table/other (offset-set)	match start (consumed)	entry asks run finder	m @3 LOOKBEHIND	item don	yes (5 lookbehind bytes)
+(?<=item )done	L3-decline	offset-set	-5	6974656d20646f6e65@3	table/other (offset-set)	match start (consumed)	entry asks run finder	m @3 LOOKBEHIND	item don	yes (5 lookbehind bytes)
+(?<=\xc3\xa9)x	BASE	memchr	none	none	memchr x	match start (consumed)	no entry ask	-	-	no
+(?<=\xc3\xa9)x	L3-nodecline	handoff	-2	c3a978@1	run finder (rx_reqrun)	scan byte LOOKBEHIND	entry asks run finder	\xa9 @1 LOOKBEHIND	\303\251+\251x	yes (2 lookbehind bytes)
+(?<=\xc3\xa9)x	L3-decline	memchr	-2	c3a978@1	memchr x	match start (consumed)	entry asks run finder	\xa9 @1 LOOKBEHIND	\303\251+\251x	yes (2 lookbehind bytes)

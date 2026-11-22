@@ -57,16 +57,22 @@ static inline PfBound pcrec_bound_none(void)
 {
     return (PfBound){ .st = PF_OFF_NONE, .v = 0 };
 }
-/* The stated bound of an analysis offset: unbounded at or above
- * `PCREC_W_UNBOUNDED` (the saturated reading is the safe one), else bounded
- * (a negative `off` is a bounded, signed K, never none). `PfBound` is the
- * third encoding in the tree of "a bound that may be none or unbounded",
- * beside `WidthIv` and `Ast.u.call.cwmax` + `cwmax_known` ([BOUND-ENCODINGS]). */
+/* The stated bound of an analysis offset `off` of EITHER SIGN: unbounded at
+ * or above `PCREC_W_UNBOUNDED` (the saturated reading is the safe one), else
+ * bounded. A negative `off` is BOUNDED (span_arms §14.3 D-7: since L3 a run
+ * that begins inside a lookbehind has K < 0), never mapped to none. The tree
+ * spells "a bound that may be none or unbounded" three ways: `PfBound` here,
+ * `WidthIv` (`bmin == bmax == -1` none, `bmax == PCREC_W_UNBOUNDED`
+ * unbounded) and `Ast.u.call.cwmax` + `cwmax_known`, with `EndMark.width`'s
+ * -1 a weaker fourth (no unbounded state) ([BOUND-ENCODINGS]). */
 PfBound pcrec_bound_of(long long off);
 /* Is anything stated? */
 static inline bool pcrec_bound_stated(PfBound b) { return b.st != PF_OFF_NONE; }
 /* Is it stated AND bounded (a value a reader may compute with)? */
 static inline bool pcrec_bound_bounded(PfBound b) { return b.st == PF_OFF_BOUNDED; }
+/* Is the bound stated and NEGATIVE (a run that begins before the attempt
+ * start, span_arms L3)? The one spelling of that question (review r65 N). */
+static inline bool pcrec_bound_negative(PfBound b) { return pcrec_bound_bounded(b) && b.v < 0; }
 
 /* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN: `whole_len` contiguous
  * positions every match of the pattern must contain, as the analysis stored
@@ -98,13 +104,42 @@ typedef struct {
     const unsigned char *pos[PCREC_MAX_REQ_RUN_SCAN];
     int whole_len;   /* 0 exactly when the analysis found no run */
     /* [K82] THE RUN's position 0's MAXIMUM BYTE OFFSET FROM THE ATTEMPT
-     * START (`req_whole_run`): every successful attempt at `p` holds the run
-     * at some `q` in `[p, p + whole_maxoff]` (invariant F, litscan_k82h.md
-     * §1.3), which is what lets a search begin its scan `whole_maxoff`
-     * bytes before the pre-check's first hit. Since R-38 K38-2 it is K
+     * START (`req_whole_run`), SIGNED since span_arms L3: every successful
+     * attempt at `p` holds the run at some `q` in `[p + omin, p +
+     * whole_maxoff]`, `omin = pcrec_run_omin(run)` (invariant F,
+     * litscan_k82h.md §1.3; a run TOP's BACK row chose begins inside a
+     * lookbehind, `omin = whole_maxoff = -B`, so `q = p - B` exactly), which
+     * is what lets a search begin its scan `whole_maxoff` bytes before the
+     * pre-check's first hit (after it, at K < 0). Since R-38 K38-2 it is K
      * wherever a run is the landmark. */
     long long whole_maxoff;
+    /* span_arms L3 (§14.3 D-5) THE CONSUMED EXTENT: the positions `[cons_lo,
+     * cons_hi)` of the run every match CONSUMES; the rest lie inside a
+     * lookbehind, before the attempt start. `[0, whole_len)` for every run
+     * but one TOP's BACK row chose, and possibly EMPTY there (`(?<=foo)`).
+     * Read through `pcrec_run_cons` only: `req_byte`'s pick and the run pin
+     * lie inside it (D-6); the kit may scan any run position (D191.2). */
+    int cons_lo, cons_hi;
 } ReqRun;
+
+/* The run's consumed extent `[*lo, *hi)` (`ReqRun.cons_lo`/`cons_hi`),
+ * empty where `*lo == *hi`; a pick over it is `pcrec_run_scan_index`, which
+ * answers -1 for the empty one. */
+static inline void pcrec_run_cons(const ReqRun *r, int *lo, int *hi)
+{
+    *lo = r->cons_lo;
+    *hi = r->cons_hi;
+}
+
+/* The run's LEAST offset of its position 0 from the attempt start, the sound
+ * UNDER-ESTIMATE pcrec states (span_arms §14.3 D-7, review r51 CONFORM-8):
+ * `min(0, whole_maxoff)`, so a run that begins inside a lookbehind states
+ * `-B` and every other run 0. Not the true interval (`x.?bcd` states 0 where
+ * the true least offset is 1; [PRES-OMIN-TRUE]). */
+static inline long long pcrec_run_omin(const ReqRun *r)
+{
+    return r->whole_maxoff < 0 ? r->whole_maxoff : 0;
+}
 
 /* A run position's INFORMATION, `8 - ceil(log2 |S|)` over its member set
  * `pos` (8 for an exact byte, 7 for a pair, 0 past 128 members): the run's
@@ -117,8 +152,9 @@ bool pcrec_req_cube(const unsigned char *pos, int *t, int *k);
 
 /* THE RUN POSITION pcrec's own pick tests over the stretch `run->pos[lo..hi)`
  * (a run index in `[lo, hi)`), -1 where the stretch is empty: the one pick
- * the `req_byte` fact (src/facts/req.c `pcrec_req_pick`) and the trace
- * build's set-leads shadow ask (span_arms §14.3 D-6, RM-4). */
+ * the `req_byte` fact (src/facts/req.c `pcrec_req_pick`, over the consumed
+ * extent) and the trace build's set-leads shadow (over the whole run) ask
+ * (span_arms §14.3 D-6, RM-4). */
 int pcrec_run_scan_index(const uint32_t *rate, const ReqRun *run, int lo, int hi);
 
 /* Is byte `b` a member of the run's position `i`? */

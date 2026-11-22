@@ -20,5 +20,8 @@ SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_handoff_reach.sh" "$T
 SAB_REACH_EXPECT='PASS: (a)\1xyz (byte): declined (RX_REQ_HANDOFF none)'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return req_handoff_vm_run(s) && k >= 0 && k < PCREC_W_UNBOUNDED;'
-SAB_AFTER='    return req_handoff_vm_run(s) && k >= 0;   /* SABOTAGE S1706: unbounded admitted */'
+SAB_BEFORE='    return req_handoff_vm_run(s) && pcrec_bound_bounded(k);'
+SAB_AFTER='    return req_handoff_vm_run(s);   /* SABOTAGE S1706: unbounded admitted */'
+# RE-ANCHORED 2026-11-20 (lane l3feat2, span_arms L3 feature): the entry row reads K through `pcrec_bound_bounded`
+# (review r63 CONFORM-1) and its `k >= 0` conjunct is deleted (§5.4 A8); the plant drops the
+# bound test, as before. Intent unchanged.

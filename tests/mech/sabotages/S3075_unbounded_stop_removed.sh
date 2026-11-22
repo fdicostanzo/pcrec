@@ -17,10 +17,14 @@ SAB_REACH_EXPECT='REACH-STOP'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    long long k = kb.v;
-    pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);'
+    /* the re-ask'\''s condition, per sign of K: the kept hit is stale */'
 SAB_AFTER='    long long k = kb.v;
     if (!pcrec_bound_bounded(kb)) return;   /* SABOTAGE S3075: no stop */
-    pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);'
+    /* the re-ask'\''s condition, per sign of K: the kept hit is stale */'
 # RE-ANCHORED 2026-11-20 (lane l3build, span_arms L3 RM-2, D-7): K is a `PfBound` (state +
 # signed value); the re-entry's value line `k = kb.v` follows the ask, and the anchor is that
 # line plus the re-ask printf (the two-line site, review r51 READYL3-8). Intent unchanged.
+# RE-ANCHORED 2026-11-20 (lane l3feat2, span_arms L3 feature): the re-ask's condition is now chosen per sign of K
+# (D-8) before its printf, so the anchor is the value line plus that comment; the plant returns
+# before the re-ask at no bound, as before. Its REACH grep stays valid: `a+xyz` is unbounded,
+# whose condition is the plain `landmark_position < attempt_position`. Intent unchanged.

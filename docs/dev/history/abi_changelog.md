@@ -23,7 +23,19 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `111` on every artifact today (R-47 unit U3, the vector span's `w32` level
+- **`rx_info.abi` is `112` on every artifact today ([REQ-LOOKAROUND] span_arms L3, 111 -> 112; lanes
+  l3feat/l3feat2 2026-11-20 stamped 109 -> 110, and R-47 U2 and U3 landed first at 110 and 111, so lane
+  l3land re-pinned it to 112 at the landing, 2026-11-22; `docs/design/span_arms.md` §14.4 L3).**
+  A required run may begin inside a positive lookbehind (`(?<=foo)bar` states `foobar` at K -3).
+  New emitted text where K < 0: the landmark move's own row (an end clamp `if (len - hit < B)
+  return 0;`, then `hit + B` where that is ahead of the position), the re-entry's per-sign stale
+  test (`landmark_position < pos && pos - landmark_position > B`) on the VM attempt loop, and the
+  K comments' "at least B bytes after" sentence. Artifacts with no
+  run at K < 0 are byte-identical to abi 111 but this number. The forward scan's `handoff`
+  re-entry is declined at K < 0 (`<PREFIX>_DFA_PREFILTER` falls to the start-byte row there). No struct offset moves and no
+  `rx_info` member changes.
+
+- **`rx_info.abi` was `111` on every artifact (R-47 unit U3, the vector span's `w32` level
   block, 110 -> 111, lane bsu3 2026-11-21 (kit stamped 112; re-pinned to 111 at the landing, lane u3land, since main held 110 and L3 re-pins to 112 after); `docs/design/memfn/block_span.md` rev 4.2 §4.1, §5, §14;
   D201 add. 1-5; the kit's number was 112, bsu3_rulings.md R-2; the manager ruled U3 lands first at 111, 2026-11-22).**
   At a target admitting the 32-byte level (`-fmemfn-simd=x86-64-v3`) each vector span selector

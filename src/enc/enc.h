@@ -552,6 +552,14 @@ typedef struct {
      * loop the kit renders (PcrecEncSite above), terminated by a row with
      * `id == 0`. A D58 seam event recorded as the scalars above were. */
     const PcrecEncSite *sites;
+    /* span_arms L3 (§14.3 D-11) THE WIDEST CHARACTER IN BYTES: the most code
+     * units one character of this encoding takes (`byte` 1, `utf8` 4). Read
+     * once, where the req walk's `lb_bytes` parameter turns the declared
+     * lookbehind length in CHARACTERS (`pcrec_lb_max`) into the bytes a
+     * required run may begin before the attempt start (src/facts/facts.c
+     * `pf_derive_req_walk`). A D58 seam scalar, recorded as `max_cp`,
+     * `fold` and `onebyte_max` were. */
+    unsigned max_char_bytes;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a

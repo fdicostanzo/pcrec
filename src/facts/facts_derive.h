@@ -122,7 +122,7 @@ static inline bool rb_has(const RbSet *s, int b)
  * walk reads besides the tree, filled ONCE by its one caller
  * (`pf_derive_req_walk`, src/facts/facts.c) from the option word and the
  * harness lever, so the walk itself reads no option. One field per row of
- * the table; a later unit adds its row (L3's `lb_bytes`). The run's REACH is
+ * the table; a later unit adds its row. The run's REACH is
  * not a row: TOP's candidate rows carry the `look` arm instead (span_arms
  * §14.1 item 8, §14.3 D-4). */
 typedef struct {
@@ -144,6 +144,23 @@ typedef struct {
      * node's code-point set reads exactly as a byte set; an `A_CTX` set
      * with a member above it states no item */
     unsigned onebyte_max;
+    /* span_arms L3 (§14.3 D-11): the BACK row's cap in BYTES, the declared
+     * lookbehind length (`pcrec_lb_max`, PCRE2's max_lookbehind, characters)
+     * times the encoding's widest character (`PcrecEnc.max_char_bytes`);
+     * read only by TOP's BACK row, whose candidate begins `lg.n` bytes
+     * before the attempt and is offered only at `lg.n <= lb_bytes`. A
+     * nested lookbehind's guard may reach further (the declared length is a
+     * max over nesting, the walk's guard a sum), and is then declined
+     * (review r65 I). A cost cap, not a soundness bound (§5.5). */
+    long long lb_bytes;
+    /* review r65 A (span_arms §14.4 L3, REV 3.3 addendum): may this compile
+     * RE-ENTER A FORWARD SCAN on the run (the `handoff` row, declined at
+     * K < 0)? False only where no forward scan's re-entry can exist whatever
+     * route is chosen: `--engine=vm` without `-fprefilter` (no hybrid
+     * prefilter; `-fprefilter` forces one, review r66 EMIT-2) or
+     * `-fno-req-handoff` (no handoff row). Read only by TOP's BACK row's
+     * `displaces`. */
+    bool fwd_reentry;
 } ReqWalkParams;
 
 /* THE CORE FACTS from ONE walk of the lowered tree: the whole necessary set
@@ -156,17 +173,21 @@ typedef struct {
  * `p->max_pieces` width groups. span_arms L1: `*never` is the root's NEVER
  * bit (§14.3 D-9), true where the walk proved no attempt can match (an empty
  * meet of two necessary conditions, or an empty class), listed as
- * `req_whole_run`'s why `dead`. */
+ * `req_whole_run`'s why `dead`. span_arms L3 (§14.3 D-5): `[*cons_lo,
+ * *cons_hi)` is the run's CONSUMED EXTENT, the positions of `*run` every
+ * match consumes (`[0, run->n)` but where TOP's BACK row chose a run that
+ * begins inside a lookbehind; possibly empty). */
 void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
-                    RbSet *set, RbRun *run, PdDesc *pieces, bool *never);
+                    RbSet *set, RbRun *run, int *cons_lo, int *cons_hi,
+                    PdDesc *pieces, bool *never);
                                                         /* src/facts/req.c */
 
 /* THE DERIVED FACTS, speed choices over the core ones, composed in
  * src/facts/req.c from the rate readers in src/core/findings.c (whose header
  * says why each member choice is the argmin of a frequency prior under the
  * `byte` encoding and the rightmost elsewhere). `pcrec_req_pick`
- * answers the `req_byte` fact (pcrec's pick over the whole run, else the
- * set's; the `req_run` row and its window retired, review 2026-11-11 r1 k382
+ * answers the `req_byte` fact (pcrec's pick over the run's consumed
+ * extent, else the set's; the `req_run` row and its window retired, review 2026-11-11 r1 k382
  * F5). Each asks
  * the byte-rate accessor (`pcrec_find_byte_rate`) once, first, and hands its
  * answer to the readers untested. `*why` receives the rate rule that answered —

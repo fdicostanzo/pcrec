@@ -20,10 +20,13 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i:sele
 SAB_REACH_EXPECT="REACH-PAIR-PICK"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        int x = pcrec_run_byte(run, pcrec_run_scan_index(rate, run, 0, run->whole_len));'
-SAB_AFTER='        int t_, k_; pcrec_req_cube(run->pos[pcrec_run_scan_index(rate, run, 0, run->whole_len)], &t_, &k_); int x = t_;   /* SABOTAGE S453 */'
+SAB_BEFORE='        int x = i < 0 ? -1 : pcrec_run_byte(run, i);'
+SAB_AFTER='        int t_ = -1, k_; if (i >= 0) pcrec_req_cube(run->pos[i], &t_, &k_); int x = t_;   /* SABOTAGE S453 */'
 # RE-ANCHORED 2026-11-13 (lane rps3, [RUN-POS-SET] stage 3): the pick reads the scan
 # position's one member (`pcrec_run_byte`, -1 for a wider set); the plant takes its lower
 # member whatever its size, as before.
 # RE-ANCHORED 2026-11-20 (lane l3build, span_arms L3 RM-4, D-6): the pick is the facts accessor
 # `pcrec_run_scan_index` over `[0, whole_len)`; the plant is unchanged.
+# RE-ANCHORED 2026-11-20 (lane l3feat2, span_arms L3 feature): the pick reads the consumed extent's scan index `i`
+# (-1 for an empty extent, D-6); the plant takes that position's lower member whatever its size.
+# Intent unchanged.
