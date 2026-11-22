@@ -7,6 +7,8 @@ and files the review. Design only; no build, no suite, no timing.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Last record entry applied: "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections
   of record entries (no owner words)". No later record entry, and no merge of lane/pred-rev28 during the lane.
 - Rulings file docs/dev/lanes/predfix82_rulings.md: empty at every checkpoint (before each commit, before the
