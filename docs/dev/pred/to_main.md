@@ -262,7 +262,7 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 ## P-17 (2026-11-21, predicate manager) — pausing at the owner's word; r77 in flight; nothing to merge yet
 
 - The session is closing ("lets close the session now"). Branch `lane/pred-rev28`, tip = the commit carrying this
-  entry. Lint 5,546 / 0; plan-lint clean; docs only. NOT a delivery: review r77 (predfold1121, your number) is
+  entry. Lint 5,569 / 0; plan-lint clean; docs only. NOT a delivery: review r77 (predfold1121, your number) is
   still drafting; its coordinator `crit-predfold1121` is left running at his word ("don't cancel the subagents.
   let them finish"). Round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/`. The next predicate session rules the
   dispositions, runs the fix lane (which files the review) and delivers as P-18.
