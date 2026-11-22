@@ -106,3 +106,9 @@ a mover the default-vs-deny diff must be one definition insertion plus one walk
 line per site, one call per site; the `-fmemfn-simd=x86-64` layer is in. It is
 a DELIVERY step, not a ratchet (its reference is a pre-merge build): what
 repeats is memfn_arm.py's span-vector DIFFER rows (block_span.md §14).
+
+## proof_run guard-page layouts (moved from CLAUDE.md, lane bsu4p)
+Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject at a guard page after n, one before 0, and between SENTINEL pads (review S2's read-limit layouts); plant `S1408` (an over-read past n; wsc1's `WSC1-R1`, renamed by wsc2) is their witness.
+
+## span_pins.py (R-47 U4, lane bsu4p)
+The T-table pin cells and SPAN-SEED's V-site census, called from C18's main (one counter, one `checks passed` line, so the `simdfloor` mech arm scores it). `run_simd_floor.sh` builds `build/libpcrec_mftrace.a` and links a traced CLI (the finder row of §10.1's k source); the harness binary gives the head-0 loop text. Both are required arguments of simd_floor_check.py.

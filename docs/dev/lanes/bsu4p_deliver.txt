@@ -1,0 +1,6 @@
+report=docs/dev/lanes/bsu4p_report.md
+sections: STATE AT HANDOFF; T-TABLE PINS; C18 AMENDMENT; ROUTING LEG; SPAN-SEED WIRING; FLOORS; PLANTS; IN-LANE RUNS; OWED RUNS
+nonempty: all
+commit: yes
+owed: kit-bsu4p-test kit-bsu4p-mech
+dirty-ok: docs/dev/artifact_size_log.tsv
