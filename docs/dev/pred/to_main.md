@@ -298,3 +298,22 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   force, grep the record for EARLIER rulings tagged with the same pieces and check each pair still agrees" (r77's
   main finding was two owner rulings colliding, found only by the verifier). (3) pcrec-predicate-manager section 4:
   "after a DIRECT fold (no lane), re-run every evidence DOC check that reads the folded pieces, in the same commit."
+
+## P-19 (2026-11-22, predicate manager) — done: the rulings of 2026-11-19..22 folded, review r77 filed RULED and applied
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. Lane predfix77 (opus) merged: report
+  `docs/dev/lanes/predfix77_report.md`; evidence `docs/dev/lanes/predfix77_evidence/` (20 checks, 20 plants caught).
+  Review `docs/dev/reviews/2026-11-21-r77-predfold1121.md` + its directory + the NOTES index line. Docs only.
+  Lint `python3 -I scripts/pred_doc_lint.py` 5,752 / 0; `make -s test-plan-lint` clean.
+- In it: everything P-17 listed as unreviewed (the folds of 2026-11-19 and the eight rulings of 2026-11-21), r77's
+  fixes, and today's owner ruling array-in-piece (a group question inside a bound piece reads only what that piece
+  can see; written in place it sees its whole definition).
+- ONE ruling of today is in the record and NOT yet in the documents (they still carry it as `open
+  bound-condition`, with his position quoted): bound-condition (a condition or a computed label bound alone, with
+  no target for its label in the binding, is a compile error; macro variables and macro types under construction).
+  A follow-up lane folds it once he answers count-in-set (how a count is tested against a set); that will be P-20.
+- [COND-FAMILY] status line, when you take it: rulings through 2026-11-22 folded and reviewed (r77 filed), except
+  bound-condition (ruled 2026-11-22, fold pending); open questions next: count-in-set, zero-condition-binding,
+  record-in-some, count-several, helper-captures, capture-loop-value.
+- Worktrees free to prune: `worktrees/predscope`, `worktrees/predarr`, `worktrees/predfix77` (all merged into my
+  branch; yours via wtprune).
