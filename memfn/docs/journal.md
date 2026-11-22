@@ -4796,3 +4796,8 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - Combined U4 branch lane/bsu4 = bsu4g + merge bsu4p (023ab6eb8); one conflict, c4_allowlist.tsv, both sides' appended rows kept (88 rows). make test-memfn-arch 32/0, make strict clean.
 - r78 code round launched: coordinator crit-memfn-bsu4 (opus) on lane/bsu4, BASE = merge-base with the kit branch (ad3c8f1c2).
 - 736/737 (bsu4g) and 738/739 (bsu4p) validate the halves; the combined tip needs its own make test + mech after r78's fixes.
+
+## 2026-11-22 09:26 (kit)
+
+- r78 (memfn-bsu4, code) draft back: no answer/speed finding; 0 emitted movers (164 pairs), 9 plants LOUD with REACH; "every check can fail" PARTLY false. RULED FIX FIRST: drafted dispositions stand, plus PLANTSB-2 keep the row (guards proven by G2V-1's self-witness), PINS-7 cheap part FIX-NOW (one k-source reader), C18WIRE-8 fix both. 3 lessons into critics.md. Review committed 020f3766c (4 old index lines to NOTES.md for the size limit).
+- Lane bsu4fix (opus) on lane/bsu4fix from lane/bsu4 023ab6eb8; ids S3540-S3544; owed kit-bsu4fix-test/mech. Cancelled 737-739 (half-branch validation, superseded by the fixed combined tip); 736 left to finish.
