@@ -103,6 +103,7 @@ sys.path.insert(0, os.path.join(TREE, 'scripts'))
 sys.path.insert(0, HERE)
 import emit_sweep as es  # noqa: E402
 import routing_shape  # noqa: E402
+import span_pins  # noqa: E402
 from target_text import admitted, cut, moved_headers_aside, moved_out, read_table  # noqa: E402
 
 # Floors per target, pinned AT the measure (deterministic counts of emitted
@@ -113,11 +114,19 @@ from target_text import admitted, cut, moved_headers_aside, moved_out, read_tabl
 # the corpus grew since r1 C1), every selector at its target's top level.
 FLOORS = {
     # target: (movers, SIMD FUNCs, {level stamp: selectors calling it})
-    'x86-64': (55, 55, {'w16': 55}),
-    'x86-64-v3': (55, 55, {'w32': 55}),
+    'x86-64': (74, 74, {'w16': 74}),
+    'x86-64-v3': (105, 105, {'w32': 105}),
 }
+# R-47 U4 re-pin, at the measure (lane bsu4p, 2026-11-22, 5700 corpus patterns x 2 engines + the
+# named witnesses): x86-64 74 (the corpus grew since the 55 above; the vector span adds none: it
+# renders no mover there, block_span.md §11); x86-64-v3 105 = those 74 + the 28 vector span sites
+# of tests/memfn/span_seed.rxt at the default engine + the 3 span NAMED witnesses.
 LEVELS_FLOOR = 2       # mf_levels() rows: w16, w32 (R-13)
 TARGETS_FLOOR = 2      # targets whose family has a level (U2)
+# NAMED is (name, pattern, extra flags [, targets]): the optional fourth column names the
+# targets a witness is NAMED at (None: every target). The vector span's three witnesses
+# are NAMED at x86-64-v3 ONLY: x86-64 renders no V mover (§11), so a span witness there
+# would read "NOT a mover" on correct text (R-47 U4, block_span.md §10.2 [R71-1]).
 NAMED = [
     # `(?i)cat` is a fixed-width `cover` artifact by default (D172 S3); since code
     # review r1 C1 its window search's SIMD FUNC is fn-pair's again, on the DEFAULT
@@ -131,7 +140,15 @@ NAMED = [
     # stays outside the run, so the run is the cube pair cat again.
     ('no-DFA ON_MISS', '(?i).+cat', ['--engine=vm']),
     ('VM hybrid', '(?i)(.)+cat', []),
+    # R-47 U4: the vector span's three witnesses (block_span.md §10.2): HORS k 16 at B 16,
+    # R7w k 24 at B 16, and HORS k 40 at width 4095, the one B = 32 witness
+    ('span HORS k16 (B16)', '[0-9a-f]{17}', [], ('x86-64-v3',)),
+    ('span R7w k24 (B16)', '[0-9]{25}', [], ('x86-64-v3',)),
+    ('span HORS k40 (B32)', '[0-9a-f]{41}', ['--window-search-width=4095'], ('x86-64-v3',)),
 ]
+# the three span witnesses' LITERAL floor, written before the build: SIMD FUNCs that are
+# the vector span's (always_inline selector), one `vs0` selector each, at x86-64-v3
+SPAN_NAMED_FLOOR = 3
 # [COMPOUND] the artifact's own stamp lines: a compound's .c also carries its
 # PARTS' lines under `<prefix>__<role>` (match_api.md §3.7¶1, not contract),
 # and an artifact prefix never contains `__` (cli.md §1.6¶2's `parts` row).
@@ -374,6 +391,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--pcrec', required=True)
     ap.add_argument('--levels', required=True, help='the simd_levels binary')
+    ap.add_argument('--harness', required=True, help='the pcrec-harness binary (the span pins\' k source)')
+    ap.add_argument('--trace', required=True, help='the harness build linked against the traced kit')
     ap.add_argument('--every', type=int, default=1)
     ap.add_argument('--jobs', type=int, default=4)
     a = ap.parse_args()
@@ -409,7 +428,7 @@ def main():
     corpus = es.enumerate_corpus(a.pcrec, TREE, 30)
     pats = sorted({p for _, _, p in corpus})
     pats = [p for i, p in enumerate(pats) if i % a.every == 0]
-    pop = [('named:' + n, p, x) for n, p, x in NAMED]
+    pop = [('named:' + e[0], e[1], e[2]) for e in NAMED]
     pop += [('corpus', p, x) for p in pats for x in ([], ['--engine=vm'])]
     print('== C18/C9: %d population cells (%d corpus patterns x 2 engines, %d named) x %d targets'
           % (len(pop), len(pats), len(NAMED), len(targets)))
@@ -508,6 +527,7 @@ def main():
 
     stats = {t['name']: {'movers': 0, 'funcs': 0, 'levels': {}} for t in targets}
     named_movers = set()
+    span_named = {}        # (target, key) -> the vector span's selectors the witness renders
     first, first_v = {}, {}
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
         for recs in ex.map(one, enumerate(pop)):
@@ -521,10 +541,12 @@ def main():
                     s['movers'] += 1
                     s['funcs'] += len(rec['sel'])
                     for vw in rec['sel'].values():
-                        st = next(l['stamp'] for l in levels if l['vw'] == vw)
+                        st = next((l['stamp'] for l in levels if l['vw'] == vw), 'w' + vw)   # an unadmitted width is the lint's to name, never a crash (S3535)
                         s['levels'][st] = s['levels'].get(st, 0) + 1
                     if rec['key'].startswith('named:'):
                         named_movers.add((rec['target'], rec['key']))
+                        if rec['key'].startswith('named:span') and 'ton' in rec:
+                            span_named[(rec['target'], rec['key'])] = sorted(always_inline_sel(rec['ton']) & set(rec['sel']))
                     if rec['target'] not in first and not rec['issues'] and 'ton' in rec:
                         first[rec['target']] = rec
                     if rec['target'] not in first_v and not rec['issues'] and 'ton' in rec \
@@ -536,7 +558,10 @@ def main():
         s = stats[tn]
         print('%s: movers %d, SIMD FUNCs %d, selectors per level %s'
               % (tn, s['movers'], s['funcs'], ' '.join('%s=%d' % kv for kv in sorted(s['levels'].items()))))
-        for n, _, _ in NAMED:
+        for e in NAMED:
+            n = e[0]
+            if len(e) > 3 and tn not in e[3]:
+                continue
             if (tn, 'named:' + n) in named_movers:
                 ok('%s: named witness %s is a mover' % (tn, n))
             else:
@@ -618,6 +643,20 @@ def main():
                 bad('%s: a %s -O0 compile leaves selector(s) %s without an issue' % (tn, what, miss))
             else:
                 ok('%s: a %s -O0 compile is an issue for each of %d selector(s)' % (tn, what, len(vrec['sel'])))
+    # R-47 U4: the vector span's three NAMED witnesses carry one `vs0` selector each at
+    # x86-64-v3, and 3 span SIMD FUNCs in all (the literal floor, written before the build)
+    for tn in sorted({t for t, _ in span_named} | {t['name'] for t in targets if t['name'] == 'x86-64-v3'}):
+        got = {k: v for (t, k), v in span_named.items() if t == tn}
+        funcs = sum(len(v) for v in got.values())
+        odd = [k for k, v in sorted(got.items()) if len(v) != 1 or not re.search(r'_mf\d+_vs0$', v[0])]
+        if odd or funcs < SPAN_NAMED_FLOOR:
+            bad('%s: the span witnesses hold %d span SIMD FUNCs (floor %d); not one `vs0` selector: %r'
+                % (tn, funcs, SPAN_NAMED_FLOOR, odd))
+        else:
+            ok('%s: the three span witnesses render %d span SIMD FUNCs, one `vs0` selector each (floor %d)'
+               % (tn, funcs, SPAN_NAMED_FLOOR))
+    # R-47 U4: the T-table pin cells and SPAN-SEED's V-site census (tests/memfn/span_pins.py)
+    span_pins.run(a.pcrec, a.harness, a.trace, ok, bad, a.jobs)
     print('checks passed: %d' % passed[0])
     print('checks failed: %d' % len(failed))
     return 1 if failed else 0
