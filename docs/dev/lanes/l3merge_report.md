@@ -20,3 +20,5 @@ Conflicts: `docs/dev/full_suite_ledger.md`, `docs/dev/guide/critics.md`, `docs/d
 ## STATE AT HANDOFF
 
 Branch lane/l3merge, committed. The step-4 run was left queued on the box lock in the background (waiting). Cloud refs are named in the handback message. Rulings file last entry applied: none (empty).
+
+OWED: step 4 (test-codegen test-registry test-rxtsource under boxlock), log `$PCREC_TMPDIR/scratch/l3merge/b.log`; cloud test + recidentity on c3743ec58 (refs cloud/main/test/l3merge, cloud/main/recidentity/l3merge pushed and proven by ls-remote).
