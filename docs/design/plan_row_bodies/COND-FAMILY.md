@@ -6932,3 +6932,16 @@ AGAINST: today's "`0` is the match so far of the definition it is written in", r
 clause it was ruled with ("`${A & (0: S)}` unchanged: that `0` is only A").
 Hand-worked on the lowered forms: A only: `.5`, WHOLE `x5` HOLDS. C's match so far: two characters against the
 one-character set `5`: never matches.
+
+### 2026-11-21 OWNER, confirming his two examples of `0`: "that settles it. my two examples are correct"
+tags: core/conditions/match-so-far core/holes/bare-condition core/filters/and
+
+After the manager's argument for "A only" (the entry above), asked "Does that settle the second example for
+you?". HIS WORDS, whole: "that settles it. my two examples are correct. but lets close the session now"
+
+Class: a CONFIRMATION of both examples as ruled (nothing new ruled): (1) `A := /\d${(0: 5)}/`: the bare
+condition's `0` is the match so far of the rx it sits in ("binds the literal to 5"); (2) `A := /\d/`, `C :=
+/.${A & (0: 5)}/`: "the 0: is bound to A only". The manager's summary sentence, told to him, NOT his words: a bare
+condition belongs to the rx it sits in; a condition joined by `&` belongs to the pattern it is joined to. And a
+DIRECTION: close the session. STILL OPEN, not reached by either example: bound-condition (a condition under its
+own name, `c := (0: 5)`, then `/\d${c}/`; and a named condition's labels).
