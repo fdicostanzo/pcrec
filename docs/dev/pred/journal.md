@@ -727,3 +727,17 @@ position). WAITING on him: count-in-set (he asked where `ch` is defined; answere
 opus follow-up lane folding bound-condition (+ count-in-set), a critic round on that fold (number from main), P-20.
 
 Main (2026-11-22): review number **r82** is ours for the bound-condition fold's critic round; main merges 399ef98f4 after reading P-19.
+
+## 2026-11-22 (later) — five more rulings; predbound merged; predref running
+
+RULED by him today after array-in-piece and bound-condition: count-in-set (b: a value left of `:`), binding-prefix
+(1 yes: a group question through a binding's prefix reads every use; 2 a: a plain read with several uses is a
+compile error), label-reference (required; the plain idiom included; his unqualified-after-definition idea parked
+by him), helper-captures (the library's helpers set labels, not captures; `(?<:x>...)` his proposal). Values
+allowed in the joint form (my reading withdrawn at his question). record-in-some CLOSED by me on his words of the
+21st (told to him; no objection yet). Lane predbound (R-1..R-3) delivered and MERGED (915b47e64; lint 6,088 / 0;
+its model 21 / 0). Lane predref (opus; worktree `worktrees/predref`) RUNNING: the label-reference sweep, the
+"read flat" statements, helper-captures. NEXT: accept and merge predref; critic round r82 (number from main) over
+today's folds (predbound + predref; subject = diff from 399ef98f4); rule it; fix lane; P-20. Question queue:
+call-prefix, zero-condition-binding, count-several, capture-loop-value, zero-in-loop with the occurrences-argument
+reading, macro variables / macro types (with declared labels), group-truth, every-pass-spelling, the older ones.

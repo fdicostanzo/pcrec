@@ -7341,3 +7341,73 @@ they are so declared": how a helper declares a capture is not stated; it joins t
 examples and any other provided body writing a named group are restated with the label-only group, placeholder
 `(?<:hit>...)`; (d) the label-only group is a label under every label rule (reset, last mention, the array) and
 never a capture: `\k<x>` to it inside the same literal is not stated (a reading: a compile error for now).
+
+### 2026-11-22 OWNER, on the helper-captures validation: "right", and a second example with a test inside the argument
+tags: lib/search/hits lib/search/occurrences core/conditions/match-so-far core/labels/paths lib/counting/some
+
+After the validation of his labelled-call example (after `occurrences` a rejecting condition re-chooses the hits;
+a test on the hits belongs after the atomic `hits` or inside the argument). HIS WORDS, whole:
+
+"help-captures: right. [h = hits(/\d+/ & (0: <5)) ] & (h.hit: 3) & some((h.hit: 4))<5 and last hit is 3 and some
+hit is 4."
+
+Class: an ACKNOWLEDGEMENT ("right") and an EXAMPLE with his gloss; nothing asked as a ruling. Read for the
+intended text: the program ends at `some((h.hit: 4))`; the words after it are his gloss, "<5 and last hit is 3 and
+some hit is 4".
+
+CHECKED the same turn (check-his-regex; told to him). The program is legal under today's rulings (`h` is a part
+label written there; `h.hit` known through it; `(0: <5)` is joined by `&` to `/\d+/`, so its `0` is that operand's
+match: his confirmed example of 2026-11-21). "last hit is 3" and "some hit is 4" are as he says. "<5" is NOT
+"every number is under 5": written inside the argument it decides WHAT IS A HIT: a number of 5 or more is skipped
+or split (`9` is no hit; `43` gives the hits `4`, `3`). RUN (hand-built simulation,
+`$PCREC_TMPDIR/scratch/pred/hits_inner.py`; output pasted; the second line is the other meaning, `[h = hits(/\d+/)]
+& occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`):
+inner test: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` HOLDS (hits ['4', '3']) / WHOLE `43` HOLDS (hits ['4', '3']) / WHOLE `4 13` HOLDS (hits ['4', '1', '3']) / WHOLE `4 3 9` HOLDS (hits ['4', '3']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+every number: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` FAILS (hits ['4', '9', '3']) / WHOLE `43` FAILS (hits ['43']) / WHOLE `4 13` FAILS (hits ['4', '13']) / WHOLE `4 3 9` FAILS (hits ['4', '3', '9']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+
+### 2026-11-22 OWNER, after the second hits example was checked: "critical is the @assert macros to test that it does what was intended"
+tags: lib/assert/assert lib/assert/each parked/ideas/assert parked/ideas/explainer parked/ideas/user-doc-traps lib/search/hits
+
+After the run showing that a test inside `hits`' argument chooses the hits (`4 9 3` HOLDS, `43` HOLDS) where
+"every number under 5" FAILS. HIS WORDS, whole:
+
+"nice. critical is the @assert macros to test that it does what was intended"
+
+Class: an OBSERVATION and a PRIORITY stated ("critical"); nothing asked as a ruling. The manager's answer (told
+to him; the manager's views): the ruled assertions (lib/assert/assert, 2026-11-14: `@assert.some(X)`,
+`@assert.none(X)`, `@assert.same(A, B)`; "Membership is `&`") already write this check for a WHOLE value: with
+`p` the program, `@assert.none("4 9 3" & p)` fails at compile time and shows the surprise; hand-worked from the
+run of the entry above, not run through a model. What they do NOT reach: an expectation about a SEARCHED or
+FIND-ALL report (which stretch, at which place) or about a label's value on a given subject ("on `4 13` the hits
+are 4 and 13"): no assertion form states those today. Recorded as a gap for the library discussion, with the
+under-construction lib/assert/each and parked/ideas/assert; nothing folded.
+
+### 2026-11-22 OWNER RULING — call-prefix, case 1: the macro's name qualifies a label of its body; case 2: "i'd say A.d is legal there", with a doubt he is working through
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings lib/search/hits core/holes/bare-condition/nested-scope
+
+Asked **call-prefix** (case 1: a label set by a macro's own body, `hits(/\d+/) & (hits.hit: 3)` with the macro's
+name as the prefix, or only through a label on the call; case 2: a label of an argument, `C := B(A) & (d: <100)`:
+`(A.d: <100)` through the binding passed in, and/or `[c = B(A)] & (c.d: <100)`; the manager's leaning: one rule
+for every name, and for case 2 both spellings, "They are the same label"). HIS WORDS, whole:
+
+"call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is legal there. i'm
+trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go through [ c = B(A)
+] as B may defined d"
+
+Class: (1) a RULING on case 1: "yes use the macro name as shown to qualify the label": `hits.hit`. The reading
+taken, told to him: with binding-prefix's two rules as put in the question (called once, a legal plain read;
+called more than once, a plain read is the compile error and a group question reads every call). (2) on case 2 a
+LEAN ("i'd say A.d is legal there") and two THOUGHTS he is working through ("i'm trying to figure out"): whether
+`B(A)` could ever REMOVE the `d`; and that going through `[c = B(A)]` may change the answer, "as B may defined
+d". Not recorded as a ruling on case 2; to be confirmed after the response.
+
+CHECKED the same turn (told to him): his second thought is RIGHT and the manager's sentence "They are the same
+label" is WITHDRAWN. RUN (hand-lowered, python `re`; A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`; outputs
+pasted):
+A.d <5 (A's own d): WHOLE `7-3` FAILS / WHOLE `3-7` HOLDS / WHOLE `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]
+c.d <5 (d as B(A) surfaces it: the last mention, B's): WHOLE `7-3` HOLDS / WHOLE `3-7` FAILS / WHOLE `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+The manager's readings (marked): (a) a prefix `X.d` reads `d` AS X SURFACES IT: `A.d` is A's own `d`; `c.d`, and
+`B.d` by case 1, are `d` as the call surfaces it (the last mention among the body's and the argument's); (b) on
+his first thought: B CAN remove it, `B(rx) := /${[_ = rx]}xx/` ("`[_ = A]` makes none of A's labels visible
+anywhere outside A", core/labels/export statement 7); whether `A.d` is then still legal in the caller is NOT
+STATED: put to him.
