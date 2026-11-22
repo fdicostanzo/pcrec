@@ -7754,3 +7754,35 @@ refused at a hole today); `i` as a default; `J`; `U`; and the non-PCRE settings 
 already have or park: the `&`-in-rx-text switch (core/patterns/literals: "by a module or option"), the warning
 selectors and strictness, the capability opt-ins. With `n` as a program default the cell "a capture with no
 label" (an unnamed group) mostly empties, and the open number questions (number-in-loop) lose their subject.
+
+### 2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets
+tags: core/patterns/flags core/holes/flags core/holes/flags/in-filter lib/builtin/options core/principles/rx-owns-flags lib/modifiers/any-case
+
+Asked "program-options: yes", put as: "the lexical file scope above, starting with `m`, `s`, `n`, `x`; never
+across an import; a literal's own flags win" (the scope above: the setting applies to literals written after the
+statement, in the same file; an inserted literal carries its own file's defaults into a hole). HIS WORDS, whole:
+
+"program-options: yes.
+Proposal: Keep i inherited for now but this could set the "weak" value for i. By that I mean i has three
+settings: on, off, weak on, weak off. On and off are explicit and set the inheritance from there down the hole:
+Whatever was inherited is ignored. With no program specification, it's weakly case sensitive. Program
+specification can set weakly case insensitive. That will inherit as well but can easily be changed by an
+explicit i setting up the hole. Ask if clarification needed"
+
+Class: (1) a RULING on the slug: program-scoped options exist: a statement (placeholder `@options(..)`) sets
+flags for the literals written after it in the same file; starting with `m`, `s`, `n`, `x`; never across an
+import; a flag a literal writes for itself wins. (2) a PROPOSAL ("Proposal:"; "for now"; "could"): `i` stays
+inherited at a hole, with FOUR values (he writes "three settings" and lists four): on and off, EXPLICIT (written
+in a literal), which "set the inheritance from there down the hole: Whatever was inherited is ignored"; weak on
+and weak off, the DEFAULT: with no program specification "weakly case sensitive"; a program specification "can
+set weakly case insensitive", which "will inherit as well but can easily be changed by an explicit i setting up
+the hole". Not ruled. (3) an INVITATION: "Ask if clarification needed".
+
+The manager's reading of the proposal (told to him): the `i` in force at a point is the NEAREST explicit setting
+on the way up (in the literal, then up through each hole); with no explicit setting on the way, a weak value.
+ONE clarification asked (weak-meets-weak): WHICH weak value, when a program that sets weakly insensitive inserts
+a literal from a library file that sets nothing (or sets its own): (a) the program's weak value flows into the
+library's literal; (b) the library's literal keeps its own file's weak value. RUN (hand-lowered, python `re`;
+program: weak on, `/id-${word}/`, word := `/[a-z]+/` from a library file that sets nothing; outputs pasted):
+(a) the program's weak value flows into the library's literal: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` `ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12]
+(b) the library's literal keeps its own file's weak value: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` FAILS / SEARCHED `x ID-ABC id-abc` `id-abc`@9 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `Id-ab`@12]
