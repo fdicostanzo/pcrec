@@ -7301,3 +7301,43 @@ for `$x` reads, backreference-free rx text being untouched (rx text names only i
 `hit`), from an ARGUMENT (`B(A)`: `A.d`), and from a typed PARAMETER (`d.year`); until asked, a call is labelled
 (`[x = hits(..)]`, `x.hit`) and an argument that is a binding is reached by the binding's name; (e) no answer of
 any printed example changes: only spellings.
+
+### 2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate
+tags: lib/search/occurrences lib/search/hits lib/modifiers/length lib/structural/capture lib/structural/capture/add-on parked/ideas/label-only-group core/labels/labels-vs-captures core/labels/paths
+
+Asked **helper-captures** (does a caller receive captures for the names a library helper uses internally: (a) as
+written, `hit` a capture; (b) labels only, a capture only where capturing is the body's purpose; the manager's
+leaning (b), which needs a label that is no capture inside rx text). HIS WORDS, whole (he typed the slug
+"help-captures"):
+
+"help-captures: 1. i propose the form (?<:x>...) for a label only group x. i've mentioned it before. 2. occurences
+et al should only set labels not captures unless they are so declared. 3. validate: you can label the results [
+hits = occurences(...) ] & (hits.hit: <5)"
+
+Class: (1) a PROPOSAL, in his word ("i propose"), of a spelling he has given before (2026-11-18; parked/ideas/
+label-only-group): `(?<:x>...)`, a group in rx text that is a label and no capture. Not ruled as a spelling; with
+(2) the THING is needed, so it leaves the parked list (under construction; his form the placeholder). (2) a
+RULING on the slug, answer (b), in his words: "occurences et al should only set labels not captures unless they
+are so declared." (3) a REQUEST to validate an example.
+
+VALIDATED the same turn (told to him). The form is legal under today's rulings: `[hits = occurrences(..)]` is a
+part label the definition writes, so `hits.hit` is known textually (label-reference); the part label `hits` is a
+label named like a provided macro, which "still works" (core/operators/statements). What it MEANS: `(hits.hit:
+<5)` is a plain read, the LAST hit's value; and after `occurrences` (not atomic) a rejecting condition re-splits
+or drops hits (ruled 2026-11-18), so it holds wherever SOME choice of hits ends in one under 5. RUN (hand-built
+simulations in PCRE's order, `$PCREC_TMPDIR/scratch/pred/hits_label.py`, `hits_atomic.py`; outputs pasted):
+`[hits = occurrences(/\d+/)] & ...`:
+plain (hits.hit: <5), the last hit: WHOLE `a1b3` HOLDS / WHOLE `a9b3` HOLDS / WHOLE `a3b9` HOLDS / WHOLE `a1b22` HOLDS / WHOLE `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0]
+occurs.none((hits.hit: >= 5)), every hit: WHOLE `a1b3` HOLDS / WHOLE `a9b3` HOLDS / WHOLE `a3b9` HOLDS / WHOLE `a1b22` HOLDS / WHOLE `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7]
+`[h = hits(/\d+/)] & ...` (the atomic hit list, a fixed list judged after it):
+plain (hits.hit: <5), the last hit: WHOLE `a1b3` HOLDS (hits ['1', '3']) / WHOLE `a9b3` HOLDS (hits ['9', '3']) / WHOLE `a3b9` FAILS (hits ['3', '9']) / WHOLE `a1b22` FAILS (hits ['1', '22']) / WHOLE `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` []
+occurs.none((hits.hit: >= 5)), every hit: WHOLE `a1b3` HOLDS (hits ['1', '3']) / WHOLE `a9b3` FAILS (hits ['9', '3']) / WHOLE `a3b9` FAILS (hits ['3', '9']) / WHOLE `a1b22` FAILS (hits ['1', '22']) / WHOLE `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` []
+(In the atomic runs the simulation's label text reads `hits.hit`; the part label there is `h`.)
+
+The manager's readings, for the sweep lane: (a) "occurences et al" is every provided body (the rule is for the
+library; a user's own literal keeps the pure-label rule: a group written in rx text is a capture); (b) "unless
+they are so declared": how a helper declares a capture is not stated; it joins the capture add-on's open form
+(lib/structural/capture/add-on) and the declared-labels idea; (c) `hits`, `occurrences`, `list_of`, `endsWith`'s
+examples and any other provided body writing a named group are restated with the label-only group, placeholder
+`(?<:hit>...)`; (d) the label-only group is a label under every label rule (reset, last mention, the array) and
+never a capture: `\k<x>` to it inside the same literal is not stated (a reading: a compile error for now).
