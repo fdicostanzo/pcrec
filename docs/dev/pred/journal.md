@@ -696,3 +696,11 @@ round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/`). Nothing else running; no 
 scratch; owner.md current; P-17 written; main told. On the branch only: the three folds of 2026-11-19 and all of
 today's rulings. NEXT SESSION: rule r77's dispositions, one fix lane (it files the review), deliver (P-18), then
 /q with bound-condition first.
+
+## 2026-11-21 (19:45 EST) — r77 drafted (NOT READY); not ruled; session closed
+
+The coordinator handed back after the close paperwork: draft at `$PCREC_TMPDIR/scratch/crit-predfold1121/review.md`,
+verdict NOT READY; its first finding is an owner question (array-scope against own-value-only inside a used
+piece); the rest FIX-NOW text and example fixes, several on my hand fold of bare-nested-scope and on the
+bound-condition carve-out. wake.md's State and question queue updated; owner.md too. Dispositions NOT ruled
+(session closing at his word): first act of the next session.

@@ -9,14 +9,22 @@ Rewritten 2026-11-21 (box clock, about 19:15 EST; the record's entries are dated
   through P-14 (74f70152e). ON THE BRANCH ONLY, not delivered: the three hand folds of 2026-11-19
   (flags-in-filter, its confirmation, flags-warning) and ALL of this session's rulings (below). P-17 is the pause
   notice and says so.
-- IN FLIGHT AT CLOSE: critic round **r77 predfold1121** (design mode; number from main; one opus coordinator
-  `crit-predfold1121`, background). Round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/` (draft `review.md` there
-  when done; `.coord/process.md`; `verify.md`). At close: five critics (ruling, examples, general, modes, fixind)
-  and the verifier had finished (57 raw findings, heavy overlap on three roots: the array's scope against the
-  sealed piece; the bound-condition carve-out; a third I did not read); the coordinator was drafting. ITS
-  HAND-BACK MAY NEVER REACH A NEW SESSION: read the round dir. The coordinator's own evidence re-run found
-  predscope's model RED on two checks (CLOSEDB, DOC) and predfix61's DOC red: my hand fold of bare-nested-scope
-  flipped the line CLOSEDB pins (expected; its citations must be marked superseded), check the others.
+- REVIEW **r77 predfold1121** (design mode; number from main) is DRAFTED, NOT RULED: draft
+  `$PCREC_TMPDIR/scratch/crit-predfold1121/review.md` (critic texts and `verify.md` in `review/`, process notes in
+  `.coord/process.md`). VERDICT: NOT READY. Five opus lenses (ruling, examples, general, modes, fixind) and an opus
+  verifier: 57 raw findings; 13 verified HOLD, 4 PARTLY, none refuted. Answer-level, by the coordinator's ids: A1
+  (+A2) TWO OWNER RULINGS COLLIDE: array-scope ("the scope of the entire rx") against bare-nested-scope case 2 (own
+  value only): a group question inside a used piece has two answers (WHOLE `7` HOLDS against FAILS): an OWNER
+  QUESTION, not a rewording; A3 the ruled nested-scope statement read literally refuses 7 printed bound conditions
+  and computed labels (the exemption is my reading; bound-condition is unanswered and no piece carries its slug);
+  A4 a condition passed into a macro hole FAILS under the restated bare-condition statement while the "An
+  argument" line prints HOLDS (`when` / `peek` become a compile error); A5 `0` in an `&` used as a sequence operand
+  breaks the ruled `A & B` = `A & (0: B)`; A7 any_case has a third parting; A8 for a duplicated name PCRE2 uses the
+  FIRST set group; A9 record-is-product against the joint refusal; A12 loop against two uses (dissolved once my
+  withdrawal of reading (c) is folded). Proposed FIX-NOW: A1+A2 as the owner question, A3, A4, A5, A7, A8, A9, A12,
+  D1-D12. FREEZE DRIFT: four owner entries landed mid-round, none a ruling, hand-mapped in the draft. Process:
+  three of four evidence scripts were RED at the freeze while their committed outputs read 0 failed: after ANY
+  direct fold of mine, re-run the lanes' DOC checks and mark superseded citations.
 - NEXT, in order: (1) read `review.md` + `process.md`, RULE every disposition (record entry "MANAGER — review
   r77"); (2) ONE opus fix lane on a worktree cut from this branch (it also files the review as
   `docs/dev/reviews/2026-11-2x-r77-predfold1121.md` + directory + index line; denylist rule: no line-numbered
@@ -60,6 +68,7 @@ dir of r77. 7. `docs/dev/lanes/predscope_report.md`, `predarr_report.md` (readin
 
 ## The question queue (one per turn; grep the record AND read the same-day later entries first)
 
+0. **array-in-piece** (NEW, from r77 A1; ask FIRST, with the review's witness run): inside a separately defined piece, does a group question / the array of a name read "the scope of the entire rx" (array-scope, 2026-11-19) or the piece's own settings (bare-nested-scope case 2)?
 1. **bound-condition** (ASKED twice, not answered; his two examples did not reach it): a condition under its own
    name (`c := (0: 5)`, then `/\d${c}/`; `late := (h: >5)`): does it read its labels and `0` where it is USED?
    Five printed definitions depend on it (pass-start-read's `c`, `sum`, `n := count(..)`, `nchars`, `mnum`). My
