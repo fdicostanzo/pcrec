@@ -814,6 +814,29 @@ history:
 - 2026-11-22 (lane predcall, call-prefix case 1 folded): a new open piece, a sub-piece of core/labels/paths/call-prefix in all but its tag (a fifth tag word is not in the format). The manager's leaning (b) as put to him and its withdrawal are in the record entry.
 - 2026-11-22 (lane predcall, R-1 of its rulings file, closed-argument ruled (a)): open closed-argument to ruled (a). The statement until then, verbatim: "When a macro closes its argument's labels (`B(rx) := /${[_ = rx]}xx/`), is the caller's `A.d` in `B(A)` (a) a compile error, or (b) still legal?"; the bullets until then: his lean "put as a question, not worded as a ruling", the manager's earlier leaning (b) "not held now" (now under `rejected:`), "The statement the manager would enter on his confirmation, NOT YET RULED: ..." (now the ruling's own statement), "No printed program applies either answer." (now its two lines: "Visible through the call" and "Closed by the macro"). The line `modes: n/a (a question ...)` replaced.
 
+## core/labels/paths/two-sources — A name with two sources
+slugs: two-sources
+rulings:
+rejected:
+readings:
+- the four candidate lines RUN, each against a direct read of the first or the second digit on every text of length 3 over `37-,1`; the printed `B(A) & (A.d: <5)` (A's own `d`) answers as candidate (b)'s spelling, 0 / 0 / 0 differ (docs/dev/lanes/predfix82_evidence/ predfix82_model.py TWOSRC).
+evidence: docs/dev/lanes/predfix82_evidence/ predfix82_model.py TWOSRC.
+history:
+- 2026-11-22 (lane predfix82, review r82 ANS-1, the manager's disposition): a new open piece under the slug two-sources; the question the review found between label-reference and flow; neither answer applied.
+
+## core/labels/paths/one-use-read — A plain read through a prefix with one use
+slugs: idiom-confirm
+rulings:
+- 2026-11-17 (class: PROPOSAL) "4. A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an expression" (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error"); a one-use program called an error, several uses his reason
+- 2026-11-22 (class: LEAN) "binding in prefix: i like your read on this except that perhaps it does refer to all" (record: "2026-11-22 OWNER, on binding-prefix: "i like your read on this except that perhaps it does refer to all""); the group question through the prefix
+- 2026-11-22 ""binding-prefix" 1. yes. 2. i agree with your lean (a)" (record: "2026-11-22 OWNER RULING — binding-prefix: 1 yes (a group question through a binding's prefix reads every use); 2 a (a plain read through it, the binding used more than once, is a compile error)"); rules the several-use case only
+rejected:
+readings:
+- (a) legal with one use, the reading the documents print: the line "One use" RUN (docs/dev/lanes/predfix82_evidence/ predfix82_model.py CONTROL and SECOND).
+evidence: docs/dev/lanes/predfix82_evidence/ predfix82_model.py SECOND.
+history:
+- 2026-11-22 (lane predfix82, review r82 ANS-2a and RULING-9, the manager's disposition): a new open piece under the slug idiom-confirm; the one-use plain read and the isodate idiom stay as printed, marked readings pointing here.
+
 ## core/labels/backreferences — Backreferences
 slugs: backref-label backref-across-parts same-name-twice
 rulings:

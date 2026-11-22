@@ -207,7 +207,7 @@ defined: ?
 
 ### length   [lib/modifiers/length]   reading 2026-11-22
 `length(S)` reads the stretch's length: `length(S) := chars & (count((chars.ch: /(?s:.)/)): S)`, one setting of `ch` per character, their count tested by S.
-needs: core/filters/and core/values/reads core/values/computed-labels core/conditions/form/value-left
+needs: core/filters/and core/values/reads core/conditions/form/value-left
 see: lib/counting/count core/labels/paths/label-reference
 module: ?
 defined: language
@@ -222,7 +222,7 @@ WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`a
 
 ### month_numbered   [lib/modifiers/month-numbered]   reading 2026-11-22
 `month_numbered(S)` reads a month name as its number: `month_numbered(S) := months & (months.mname.index: S)`, the 1-based index of the name matched.
-needs: core/filters/and core/values/reads core/values/computed-labels core/values/metadata
+needs: core/filters/and core/values/reads core/conditions/form/value-left core/values/metadata
 module: ?
 defined: language
 - `months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/,
