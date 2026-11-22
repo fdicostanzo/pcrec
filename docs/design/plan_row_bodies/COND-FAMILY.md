@@ -7653,3 +7653,17 @@ two name spaces are not sealed from each other: a BINDING's name scopes a label 
 call-prefix, ruled today). The manager's wording for the documents, on his caveat (a reading): left of `:` a
 path's LAST step is a label; its earlier steps are sources, each a binding's name, a macro's name or a part
 label; a bare single name there is a label the definition itself writes.
+
+### 2026-11-22 OWNER, an observation: the textually-visible rule solves a label from a used binding hiding another binding
+tags: core/labels/paths/label-reference core/operators/statements core/diagnostics/warnings parked/ideas/label-hygiene core/modules/all-symbols
+
+HIS WORDS, whole: "The textually visible rules solves a problem of a label from a binding reference hiding another
+binding"
+
+Class: an OBSERVATION; nothing ruled. The manager's check against the documents (told to him; a reading): it
+holds. Before label-reference a used binding's label arrived bare, so it could meet a binding of the same name
+(the rule "a binding that hides a label draws a warning", core/operators/statements, `pcrec.label.hidden`); now
+it arrives only as `B.x`, so the only labels that can meet a binding's name are the ones the definition itself
+writes. What remains of the hide-label warning: a label written in the definition against a binding of the same
+name; and for BINDING names, a library adding a name under `(=) := import(..)` (core/modules/all-symbols). For
+the r83 fix lane: restate the hide-label warning's trigger and parked/ideas/label-hygiene accordingly.
