@@ -862,3 +862,5 @@ Lane **predspot** (opus; `worktrees/predspot`, cut at 75d2318bd) RUNNING: the fi
 program-options, hole-flags), a model with the NAME-GRID decided and a FLAG-GRID. NEXT: accept, merge, lint;
 critic round r84 (design mode; subject = diff 75d2318bd..tip; lenses RULING, EXAMPLES, GENERAL, NAMES grid, a
 FLAGS grid lens, fix-induced); rule; fix lane; P-22.
+
+FOR THE r84 FIX LANE (spelling side; no meaning moves): his reading of `[a = A]` (the brackets are the array / grouping; `a = A` the label set of the expression language; `[a = A | b = B]`); my four precedence points (label set looser than SEQ and `&`, tighter than `|`; written only inside `[ ]` or directly in a hole, so `${=rx}`; never bare in `( )`): my syntax reading, not ruled; `[ab = B | A]` (six places in core.md) becomes `[ab = (B | A)]`; the comma form `[a, b, c]` kept for now as `a | b | c`; the precedence table row 9 restated. Also: `A(rx) := /${=rx}/`, `A.rx`, `A.rx.g` as the third small form beside hide / identity.
