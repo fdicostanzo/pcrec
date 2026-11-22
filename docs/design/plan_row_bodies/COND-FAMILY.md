@@ -7638,3 +7638,18 @@ isodate]`, all but one `[(=, _ = day) = isodate]`; (c) a listed label is an alia
 settings and array, no new capture; (d) a listed name the binding also writes itself is the same label (last
 mention); (e) the list form gives the part no path name; (f) only an EXPORTED label of the part can be listed
 (a `_` label or a label the part keeps protected is a compile error at the list).
+
+### 2026-11-22 OWNER, on the two name spaces: "Agree caveat bindings used to scope labels (A.a: 8)"
+tags: core/modules/binding-list core/labels/paths core/conditions/form core/labels/export
+
+Told the sentence the manager chose for his direction (one form, the named list, with two targets decided by
+where it stands; bindings and labels two name spaces: left of `:` a bare name is a label, on the value side a
+binding). HIS WORDS, whole:
+
+"Agree caveat bindings used to scope labels (A.a: 8)"
+
+Class: an AGREEMENT with the sentence ("they are the same thing with different targets"), and a CAVEAT to it: the
+two name spaces are not sealed from each other: a BINDING's name scopes a label (`(A.a: 8)`: binding-prefix,
+call-prefix, ruled today). The manager's wording for the documents, on his caveat (a reading): left of `:` a
+path's LAST step is a label; its earlier steps are sources, each a binding's name, a macro's name or a part
+label; a bare single name there is a label the definition itself writes.
