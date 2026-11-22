@@ -22,6 +22,10 @@ Hand-written, append-only by version (a committed row never changes):
   (`span_cross`, `span_pop`, `span_long`, `span_size`, `span_engine`), whole-artifact cells (deps `-`)
   run by `../../tests/span_forms/cards.py`, UNMEASURED; here, not in kit-synthetic, because they are
   measured method cards.
+  `kit-grid@8` (R-47 U5, `block_span.md` §8): C6 `span_vector`, V against `--memfn=no-span-vector` on one binary at
+  `-fmemfn-simd=x86-64-v3` (and C6c, the SIMD-off layer under clang -O2 and gcc -Os), run by the same `cards.py`
+  under the committed rule `../../tests/span_forms/c6_rule.md`, UNMEASURED; its dep `kit:form.span-vector` folds
+  formhash.c's three instances (WINDOW at k 31 / 40 / 31-off: b16, b32, off).
 - `kit-synthetic.tsv` — `kit-synthetic@1` and `@2`: the cards of the synthetic sets
   (@1 is untouched; `kit-synthetic@2` = @1 plus `beta` for the sets' unit row, lane
   setdig: the loader refused sets without a unit row),
