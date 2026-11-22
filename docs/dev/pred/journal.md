@@ -837,3 +837,16 @@ P-21 (done + status + worktrees preddef, predfix83 + the round's skill edits P1-
 flags fold (lane predflags + its own round; ask main for the number). Owner questions, in order:
 argument-default (with its library face), capture-export, two-sources; tell him: idiom-confirm closed, the
 correction, and the S1 view (textual ownership as a principle) if he wants it.
+
+## 2026-11-22 (very late, 2) — argument-default, wrapper-export, transform-export RULED (record only)
+
+RULED while predfix83 runs (NOT folded; the documents carry argument-default as open): argument-default: an
+error, with his PRINCIPLE "The label is not to the regex abstractly, it's to the spot in the pattern where the
+regex is being inserted" (an argument is a template); wrapper-export (a) (`peek`, `atomic`, `when`, `list_of`,
+the gap bodies write `[(=) = A]` on the spot); transform-export: yes (the convention for every provided body
+that places its argument); his pair `hide(x) := /${x}/`, `identity(x) := /${[(=) = x]}/` (examples; not ruled
+as provided names). My reading told to him: a label written ON an argument at a call (`B([a = A])`) is a
+compile error; a group inside an in-place argument is not the caller's to read (answers two-sources' first
+shape). THE NEXT FOLD LANE (after predfix83 merges and P-21) carries FIVE rulings: argument-default,
+wrapper-export, transform-export, program-options, hole-flags; then its own critic round (ask main for the
+number). A principle piece for "a label is to the spot" (core/principles; his words; the name mine).
