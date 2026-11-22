@@ -71,7 +71,7 @@
  *           which row 2's may_end catches and A1 would skip, N2).
  *   - ARM B, a backreference's FIRST (`-fno-poss-bref-first`): the union
  *     over every member of refs[] of every A_CAP with that number of the
- *     TEXT the body can begin with (`text_first`: a zero-width item is
+ *     TEXT the body can begin with (`first_eval`'s `text` reading: a zero-width item is
  *     (no bytes, nullable) — a gate is in no text, N1's
  *     `(?:((?=a))a)?b+\1b`), folded when the REFERENCE is caseless, and
  *     nullable iff some member body is. Each clause is a refutation
@@ -208,10 +208,12 @@ static First fst_seq(First x, First rest)
  * One record per walk, so arm B's capture fact and both arms' deny bits live
  * on the walk and never in a file static (§3.1, R-4; [TS-3]'s re-entrancy).
  * [POSS-CTX-TABLE] is where this becomes a context record with a READER
- * field; until then the two readers are two functions, `first_of` (the next
- * character at a POSITION) and `text_first` (the first character of a
- * captured TEXT), and the difference is N1's miscompile. */
+ * field; until then the two readers are two readings of one fold,
+ * `first_of` (the next character at a POSITION) and `first_eval`'s `text`
+ * reading (the first character of a captured TEXT), and the difference is
+ * N1's miscompile. */
 typedef struct PossCap PossCap;
+typedef struct FqFrame FqFrame;
 
 typedef struct {
     Ctx     *cx;
@@ -222,6 +224,10 @@ typedef struct {
      * bit be set, so only then does `pcrec_possessify` pay the counterfactual
      * walk that decides it. */
     bool     a0_used, b_used;
+    /* The FIRST machine's explicit stack (`first_eval`, [DD-10] K147):
+     * arena-owned, grown by doubling, empty between calls. */
+    FqFrame *stk;
+    int      sp, nstk;
 } Fq;
 
 static First first_of(Fq *q, const Ast *a);
@@ -305,7 +311,7 @@ struct PossCap {
     const Ast ***caps;      /* per number: those nodes */
     uint8_t     *state;     /* CF_* */
     First       *val;
-    int          depth;     /* cap_group recursion in progress */
+    int          depth;     /* group resolutions in progress */
 };
 
 /* Counts (`fill` false) or records (`fill` true) every A_CAP under `a` by
@@ -368,87 +374,79 @@ static PossCap *cap_build(Ctx *cx, const Ast *root)
     return F;
 }
 
-static First text_first(Fq *q, const Ast *a);
+/* ---- the FIRST machine ([DD-10], K147) -----------------------------------
+ *
+ * `first_of` (the next character at a POSITION) and `first_eval`'s `text`
+ * reading (the first character of a captured TEXT) are one structural fold read two ways, and
+ * arm B makes that fold re-enter itself: a reference's FIRST is its groups'
+ * captured-TEXT FIRST, and resolving a group walks the group's body, which
+ * may hold references of its own. Written as a C recursion, the fold paid a
+ * frame per nesting level for every resolution in progress, and a chain of
+ * resolutions re-walks the nest from each level: `(a|b(a|b…\1\2…\N)*)*`
+ * stacked about N^2/2 levels and overflowed the compile thread from N=26,
+ * the one-reference shape from depth 174, and the reference-free
+ * `(abc|abd(…abe))*` from 238 (K147, K149). So the fold runs on an EXPLICIT
+ * stack of `FqFrame`s, arena-owned on the walk's `Fq`: the C stack pays one
+ * frame whatever the nesting and the reference chain, and the arena pays one
+ * `FqFrame` per level of either.
+ *
+ * THE ORDER IS THE RECURSION'S, child by child, and it is load-bearing: arm
+ * B's memo is order-dependent (a group asked while in progress widens, and
+ * a group resolved inside another group's resolution keeps the value it got
+ * there), so visiting the same nodes in another order could move a verdict.
+ * A CAT or ALT spine is visited top down (right to left in pattern text),
+ * its head last; a reference's members in `refs[]` order, stopping at the
+ * first that widens; a group's A_CAP nodes in index order.
+ *
+ * CAP(g), the capture fact's value for one group, is the union of TEXT_FIRST
+ * over every A_CAP numbered g, memoized per number (`PossCap`). A number with
+ * no A_CAP answers the empty, non-nullable set: a reference to it always
+ * fails. A group asked again while IN PROGRESS, or deeper than
+ * PCREC_MAX_POSS_REF_DEPTH, answers WIDEN, and so does every reference that
+ * names it: the sound direction. The depth bound now bounds the arena's
+ * frames rather than the C stack. */
+enum { FK_REP, FK_CAT, FK_ALT, FK_BREF, FK_CAPG };
 
-/* CAP(g) into `*out`; false = WIDEN (in progress, or past the depth bound).
- * A number with no A_CAP answers the empty, non-nullable set: a reference
- * to it always fails. */
-static bool cap_group(Fq *q, int g, First *out)
+struct FqFrame {
+    const Ast *a;       /* REP: the node; CAT/ALT: the spine cursor; BREF: the
+                           reference */
+    First      acc;     /* CAT: the folded suffix; ALT/BREF/CAPG: the union */
+    int        i;       /* BREF: next member of refs[]; CAPG: next A_CAP */
+    int        g;       /* CAPG: the group being resolved */
+    uint8_t    kind;    /* FK_* */
+    bool       text;    /* CAT/ALT: the reading the node was entered with */
+    bool       head;    /* CAT/ALT: the value due is the spine's head's */
+};
+
+/* Pushes a frame on `q`'s explicit stack, growing it (arena-owned, doubled,
+ * the old copy left to the arena) when full. */
+static FqFrame *fq_push(Fq *q, unsigned kind, const Ast *a, bool text,
+                        First acc)
 {
-    PossCap *F = q->cap;
-    if (g < 1 || g > F->ncap) return false;
-    if (F->state[g] == CF_DONE) { *out = F->val[g]; return true; }
-    if (F->state[g] == CF_BUSY) return false;
-    if (F->depth >= PCREC_MAX_POSS_REF_DEPTH) return false;
-    F->state[g] = CF_BUSY;
-    F->depth++;
-    First acc = fst_empty(false);
-    for (int i = 0; i < F->cnt[g]; i++) {
-        First f = text_first(q, F->caps[g][i]->l);
-        bs_or(acc.f, f.f);
-        acc.nullable = acc.nullable || f.nullable;
+    if (q->sp == q->nstk) {
+        int nc = q->nstk ? 2 * q->nstk : 64;
+        FqFrame *n = pcrec_arena_alloc(&q->cx->arena, (size_t)nc * sizeof *n);
+        if (q->sp) memcpy(n, q->stk, (size_t)q->sp * sizeof *n);
+        q->stk = n;
+        q->nstk = nc;
     }
-    F->depth--;
-    F->val[g]   = acc;
-    F->state[g] = CF_DONE;
-    *out = acc;
-    return true;
+    FqFrame *f = &q->stk[q->sp++];
+    f->a = a;
+    f->acc = acc;
+    f->i = 0;
+    f->g = 0;
+    f->kind = (uint8_t)kind;
+    f->text = text;
+    f->head = false;
+    return f;
 }
 
-/* "Which character can a captured TEXT begin with" (N1, §3.1) — `first_of`'s
- * fold with every ZERO-WIDTH kind answering (no bytes, nullable): a gate,
- * an anchor or `\K` contributes no character to a text, so this is exact.
- * Every consuming kind defers to `first_of`, whose A_BREF arm re-enters the
- * capture fact. Recursion is the parser's nesting plus the reference depth
- * bound; spines are iterative. */
-static First text_first(Fq *q, const Ast *a)
+/* `acc` |= `v`, for the union folds (ALT, a reference, a group). */
+static void fst_union(First *acc, const First *v)
 {
-    switch (a->k) {
-    case A_CAP: case A_ATOMIC:
-        return text_first(q, a->l);
-    case A_CAT: {
-        First acc = fst_empty(true);
-        const Ast *t = a;
-        while (t->k == A_CAT) {
-            acc = fst_seq(text_first(q, t->r), acc);
-            t = t->l;
-        }
-        return fst_seq(text_first(q, t), acc);
-    }
-    case A_ALT: {
-        First acc = fst_empty(false);
-        const Ast *t = a;
-        for (;;) {
-            const Ast *br = t->k == A_ALT ? t->r : t;
-            First r = text_first(q, br);
-            bs_or(acc.f, r.f);
-            acc.nullable = acc.nullable || r.nullable;
-            if (t->k != A_ALT) break;
-            t = t->l;
-        }
-        return acc;
-    }
-    case A_REP: {
-        First r = text_first(q, a->l);
-        r.nullable = r.nullable || a->u.rep.rmin == 0;
-        return r;
-    }
-    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
-     * met; LOUD, because `first_of`'s class arm would read the set. */
-    case A_WCLASS:
-        pcrec_wcls_misplaced(q->cx, "text_first");
-    case A_EMPTY: case A_EOL: case A_CTX:
-    case A_GSTART: case A_KRESET: case A_LOOK:
-    case A_CLASS: case A_BREF: case A_CALL: case A_VAR:
-    case A_CALLOUT:
-        /* [INLINE-C] 1a: the kind ROW's TEXT column answers: a ZERO kind adds
-         * no character to a text (exact); every other kind defers. */
-        return pcrec_ast_row(a).text == KTEXT_ZERO ? fst_empty(true)
-                                                   : first_of(q, a);
-    }
-    return first_of(q, a);   /* unreachable: every AKind is listed */
+    bs_or(acc->f, v->f);
+    acc->nullable = acc->nullable || v->nullable;
 }
-
 /* Closes `f` under the fold relation the CASELESS SPAN COMPARE of a
  * reference with `ucp` in force uses (`pcrec_enc_span_fold`, the relation
  * the seam is generated from), widening to all bytes when a partner falls
@@ -466,24 +464,6 @@ static void bref_fold(Ctx *cx, bool ucp, uint8_t f[32])
         if (out.iv[i].hi > 0xFFu) { bs_all(f); return; }
         for (unsigned c = out.iv[i].lo; c <= out.iv[i].hi; c++) cls_set(f, c);
     }
-}
-
-/* Arm B: FIRST(\n) = fold_ref(union over refs[] of CAP(g)), nullable iff a
- * member body is; false = WIDEN (some member is in progress or too deep).
- * An unset member contributes nothing, because a reference to it fails
- * (PCRE2_MATCH_UNSET_BACKREF has no producer; tests/registry tripwires it). */
-static bool bref_first(Fq *q, const Ast *a, First *out)
-{
-    First acc = fst_empty(false);
-    for (int i = 0; i < a->u.bref.nrefs; i++) {
-        First v;
-        if (!cap_group(q, a->u.bref.refs[i], &v)) return false;
-        bs_or(acc.f, v.f);
-        acc.nullable = acc.nullable || v.nullable;
-    }
-    if (a->u.bref.caseless) bref_fold(q->cx, a->u.bref.ucp, acc.f);
-    *out = acc;
-    return true;
 }
 
 /* [INLINE-C] 1a: the NEXT-CHARACTER answer of a node whose kind ROW answers
@@ -509,24 +489,16 @@ static First fst_row(const Ast *a)
     return r;
 }
 
-/* The byte SET that can begin whatever runs from a position at `a`, plus
- * whether `a` can match empty — the NEXT CHARACTER AT A POSITION, which is
- * what every reader here asks about (a captured text's first character is
- * `text_first`'s question, and the two differ at a gate). A structural fold
- * over `a`, walked TRANSPARENTLY through A_CAP/A_ATOMIC (a bracketing
- * construct's FIRST is its body's); it reads the walk's arms and arm B's
- * memo from `q` and writes only that memo and the `*_used` flags. Every set
- * is computed in the SOUND direction: anything unmodellable (a wide class, a
+/* The NEXT-CHARACTER answer at a position of a node that holds no other node
+ * the fold walks: every kind but the five the machine folds (A_CAP, A_ATOMIC,
+ * A_CAT, A_ALT, A_REP), and an A_BREF arm B does not resolve. Every set is
+ * computed in the SOUND direction: anything unmodellable (a wide class, a
  * call) widens to ALL BYTES rather than refusing, which can only cost a
- * possessification, never a wrong answer. Feeds §2.2's disjointness test in
- * `pss_walk` below. */
-static First first_of(Fq *q, const Ast *a)
+ * possessification, never a wrong answer. A leaf: `first_eval` does not
+ * recurse in C, so its frame is paid once and needs no mark ([DD-10]). */
+static First fst_leaf(Fq *q, const Ast *a)
 {
     switch (a->k) {
-    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
-     * met; LOUD, because this arm would read the set as bytes. */
-    case A_WCLASS:
-        pcrec_wcls_misplaced(q->cx, "first_of");
     case A_CLASS: {
         First r;
         /* [M5.0 stage 1] §2.5.1's DECLINE row 4. This pass runs inside
@@ -562,16 +534,10 @@ static First first_of(Fq *q, const Ast *a)
      * [ART-POSS-ARMS] ARM B makes it a compile-time fact after all: every
      * value a published capture can hold is a string some A_CAP with that
      * number matched, so FIRST(\n) is the union of those bodies' TEXT firsts
-     * (`bref_first`, §3.1). The widen above stays the answer when the arm is
+     * (the A_BREF arm of `first_eval`, §3.1). The widen above stays the answer when the arm is
      * denied, and for a member in progress or past the depth bound. */
-    case A_BREF: {
-        First r;
-        if (q->arm_b && q->cap && bref_first(q, a, &r)) {
-            q->b_used = true;
-            return r;
-        }
+    case A_BREF:
         return fst_row(a);
-    }
     case A_VAR:
     case A_CALLOUT:
         return fst_row(a);
@@ -747,58 +713,10 @@ static First first_of(Fq *q, const Ast *a)
             bs_all(r.f);
             return r;
         }
-
-    case A_CAP:
-    /* [M6.4.2] TRANSPARENT: FIRST is a property of the bytes a node can BEGIN
-     * with, and a cut removes whole matches rather than first bytes — every
-     * string `(?>X)` matches is one `X` matches, so FIRST(X) is a sound (and
-     * here exact) super-set. It is A_CAP's arm because it is A_CAP's answer.
-     *
-     * SOUND BUT MEASURABLY INCOMPLETE, and that is worth knowing rather than
-     * hiding: an atomic group is EXACTLY a unique-match guarantee, so a §2.2
-     * that understood `A_ATOMIC` instead of seeing through it would accept
-     * every one of the 8,820 patterns in `probe_puc_targeted.py`'s
-     * "quantifier WRAPPING the atomic group" position, where transparency
-     * accepts 0. Declining is always safe (this file's own invariant), so
-     * that is an opportunity and not a defect, and [M6.4.2] deliberately does
-     * not take it — the transparency is what §6.4a's 776,160-cell sweep was
-     * measured over. */
-    case A_ATOMIC:
-        return first_of(q, a->l);
-
-    case A_CAT: {
-        /* The spine is left-nested, so walking it from the top visits the
-         * sequence RIGHT TO LEFT — which is the direction this fold wants:
-         * each step composes one item in front of the suffix already folded.
-         * Iterative on the spine (see the recursion-discipline note above). */
-        First acc = fst_empty(true);          /* the empty suffix */
-        const Ast *t = a;
-        while (t->k == A_CAT) {
-            acc = fst_seq(first_of(q, t->r), acc);
-            t = t->l;
-        }
-        return fst_seq(first_of(q, t), acc);
-    }
-    case A_ALT: {
-        /* Union of the branches; order-independent, so a plain spine walk. */
-        First acc = fst_empty(false);
-        const Ast *t = a;
-        while (t->k == A_ALT) {
-            First r = first_of(q, t->r);
-            bs_or(acc.f, r.f);
-            acc.nullable = acc.nullable || r.nullable;
-            t = t->l;
-        }
-        First h = first_of(q, t);
-        bs_or(acc.f, h.f);
-        acc.nullable = acc.nullable || h.nullable;
-        return acc;
-    }
-    case A_REP: {
-        First r = first_of(q, a->l);
-        r.nullable = r.nullable || a->u.rep.rmin == 0;
-        return r;
-    }
+    /* The machine's own arms (`first_eval`), never asked here. */
+    case A_WCLASS: case A_CAP: case A_ATOMIC: case A_CAT: case A_ALT:
+    case A_REP:
+        break;
     }
     /* Unreachable today: every AKind is handled. A future node kind lands here
      * and widens, which declines rather than guesses. */
@@ -808,6 +726,202 @@ static First first_of(Fq *q, const Ast *a)
         r.nullable = true;
         return r;
     }
+}
+
+/* The fold itself: FIRST of `a` read as a POSITION (`text` false, `first_of`)
+ * or as the start of a captured TEXT (`text` true), on `q`'s
+ * explicit stack (the section header says why and in what order). It reads
+ * the walk's arms and arm B's memo from `q` and writes only that memo, the
+ * `*_used` flags and the stack, which it leaves as it found it. Re-entrant:
+ * frames below `base` belong to a caller. */
+static First first_eval(Fq *q, const Ast *a, bool text)
+{
+    const int base = q->sp;
+    PossCap *F = q->cap;
+    FqFrame *f;
+    First v;
+
+descend:
+    /* Enter `a` under the reading `text`: a leaf sets `v` and goes up; a
+     * folding kind pushes its frame and descends into its first child. */
+    for (;;) {
+        switch (a->k) {
+        /* TRANSPARENT in both readings: FIRST is a property of the bytes a
+         * node can BEGIN with, and a capture adds none; a cut removes whole
+         * matches rather than first bytes — every string `(?>X)` matches is
+         * one `X` matches, so FIRST(X) is a sound (and here exact) super-set.
+         *
+         * [M6.4.2] SOUND BUT MEASURABLY INCOMPLETE, and that is worth knowing
+         * rather than hiding: an atomic group is EXACTLY a unique-match
+         * guarantee, so a §2.2 that understood `A_ATOMIC` instead of seeing
+         * through it would accept every one of the 8,820 patterns in
+         * `probe_puc_targeted.py`'s "quantifier WRAPPING the atomic group"
+         * position, where transparency accepts 0. Declining is always safe
+         * (this file's own invariant), so that is an opportunity and not a
+         * defect, and [M6.4.2] deliberately does not take it — the
+         * transparency is what §6.4a's 776,160-cell sweep was measured
+         * over. */
+        case A_CAP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_REP:
+            fq_push(q, FK_REP, a, text, fst_empty(false));
+            a = a->l;
+            continue;
+        /* The spine is left-nested, so walking it from the top visits the
+         * sequence RIGHT TO LEFT — which is the direction this fold wants:
+         * each step composes one item in front of the suffix already folded.
+         * Iterative on the spine (see the recursion-discipline note above). */
+        case A_CAT:
+            fq_push(q, FK_CAT, a, text, fst_empty(true));   /* empty suffix */
+            a = a->r;
+            continue;
+        /* Union of the branches; order-independent, so a plain spine walk. */
+        case A_ALT:
+            fq_push(q, FK_ALT, a, text, fst_empty(false));
+            a = a->r;
+            continue;
+        /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+         * met; LOUD, because the class arm would read the set as bytes. */
+        case A_WCLASS:
+            pcrec_wcls_misplaced(q->cx, "first_eval");
+        case A_CLASS: case A_BREF: case A_VAR: case A_CALLOUT: case A_LOOK:
+        case A_CALL: case A_EMPTY: case A_KRESET: case A_EOL: case A_GSTART:
+        case A_CTX:
+            /* A captured TEXT: [INLINE-C] 1a, the kind ROW's TEXT column
+             * answers: a ZERO kind (a gate, an anchor, `\K`) adds no
+             * character to a text (exact, N1); every other kind is read as a
+             * position. */
+            if (text && pcrec_ast_row(a).text == KTEXT_ZERO) {
+                v = fst_empty(true);
+                goto up;
+            }
+            /* [ART-POSS-ARMS] ARM B: FIRST(\n) = fold_ref(union over refs[]
+             * of CAP(g)), nullable iff a member body is (`fst_leaf`'s A_BREF
+             * arm says why that is sound). */
+            if (a->k == A_BREF && q->arm_b && F) {
+                fq_push(q, FK_BREF, a, text, fst_empty(false));
+                goto refs;
+            }
+            v = fst_leaf(q, a);
+            goto up;
+        }
+        /* Unreachable: every AKind is listed above. */
+        pcrec_ctx_fail(q->cx, 0, "internal error: possessify: first_eval "
+                       "met a node kind it does not list");
+    }
+
+refs:
+    /* The reference on top resolves its next member: a value already known
+     * folds in place, a group to resolve pushes its frame and descends into
+     * its first A_CAP's body, read as TEXT. An unset member contributes
+     * nothing, because a reference to it fails (PCRE2_MATCH_UNSET_BACKREF
+     * has no producer; tests/registry tripwires it). */
+    f = &q->stk[q->sp - 1];
+    while (f->i < f->a->u.bref.nrefs) {
+        int g = f->a->u.bref.refs[f->i];
+        if (g < 1 || g > F->ncap) goto widen;
+        if (F->state[g] == CF_DONE) {
+            fst_union(&f->acc, &F->val[g]);
+            f->i++;
+            continue;
+        }
+        if (F->state[g] == CF_BUSY || F->depth >= PCREC_MAX_POSS_REF_DEPTH)
+            goto widen;
+        F->state[g] = CF_BUSY;
+        F->depth++;
+        f = fq_push(q, FK_CAPG, NULL, true, fst_empty(false));
+        f->g = g;
+        goto group;
+    }
+    /* Every member resolved: closed under the reference's caseless fold. */
+    if (f->a->u.bref.caseless) bref_fold(q->cx, f->a->u.bref.ucp, f->acc.f);
+    q->b_used = true;
+    v = f->acc;
+    q->sp--;
+    goto up;
+widen:
+    /* A member in progress, past the depth bound, or out of range: the
+     * reference widens (fst_leaf's answer), the members resolved before it
+     * keep their memo. */
+    v = fst_leaf(q, f->a);
+    q->sp--;
+    goto up;
+
+group:
+    /* The group on top: descend into its next A_CAP's body, or publish
+     * CAP(g) and hand it to the reference below. */
+    f = &q->stk[q->sp - 1];
+    if (f->i < F->cnt[f->g]) {
+        a = F->caps[f->g][f->i]->l;
+        text = true;
+        goto descend;
+    }
+    F->depth--;
+    F->val[f->g] = f->acc;
+    F->state[f->g] = CF_DONE;
+    q->sp--;
+    fst_union(&q->stk[q->sp - 1].acc, &f->acc);   /* `f` is still intact */
+    q->stk[q->sp - 1].i++;
+    goto refs;
+
+up:
+    /* `v` is the value of the child the top frame is waiting on. */
+    if (q->sp == base) return v;
+    f = &q->stk[q->sp - 1];
+    switch (f->kind) {
+    case FK_REP:
+        v.nullable = v.nullable || f->a->u.rep.rmin == 0;
+        q->sp--;
+        goto up;
+    case FK_CAT:
+        if (f->head) {
+            v = fst_seq(v, f->acc);
+            q->sp--;
+            goto up;
+        }
+        f->acc = fst_seq(v, f->acc);
+        f->a = f->a->l;
+        break;
+    case FK_ALT:
+        fst_union(&f->acc, &v);
+        if (f->head) {
+            v = f->acc;
+            q->sp--;
+            goto up;
+        }
+        f->a = f->a->l;
+        break;
+    case FK_CAPG:
+        fst_union(&f->acc, &v);
+        f->i++;
+        goto group;
+    case FK_BREF:
+        /* A reference waits on its group's frame, never on a child. */
+        pcrec_ctx_fail(q->cx, 0, "internal error: possessify: a FIRST value "
+                       "reached a reference's frame");
+    }
+    /* A CAT or ALT spine: its next element, the head once the cursor leaves
+     * the spine's kind. */
+    if (f->a->k == (f->kind == FK_CAT ? A_CAT : A_ALT)) {
+        a = f->a->r;
+    } else {
+        f->head = true;
+        a = f->a;
+    }
+    text = f->text;
+    goto descend;
+}
+
+/* The NEXT CHARACTER AT A POSITION at `a`, plus whether `a` can match empty —
+ * what every reader here asks about (a captured text's first character is
+ * the `text` reading's question, and the two differ at a gate). A structural fold
+ * over `a`, walked TRANSPARENTLY through A_CAP/A_ATOMIC (a bracketing
+ * construct's FIRST is its body's). Feeds §2.2's disjointness test in
+ * `pss_walk` below. */
+static First first_of(Fq *q, const Ast *a)
+{
+    return first_eval(q, a, false);
 }
 
 /* ---- (U1) one-unambiguity and (U2) prefix-freeness -----------------------
@@ -931,39 +1045,54 @@ static GkParts gk_row(Gk *g, const Ast *a)
     return gk_parts_empty(true);
 }
 
-/* Builds `a`'s fragment of the Glushkov position automaton `g` accumulates:
- * one interned POSITION per leaf byte-set, with the fragment's own FIRST
- * and LAST position sets returned so the caller can wire them into the
+/* The fragment of one class `a`: one interned position labelled with its
+ * byte set.
+ *
+ * [M5.0 stage 1] §2.5.1's DECLINE row 5, `first_of`'s argument verbatim one
+ * rung down: a Glushkov position's LABEL is a byte set, and a class reaching
+ * outside the byte range labels the position with ALL BYTES. A wider label
+ * makes (U1)'s at-most-one-live-position test and (U2)'s follow-set
+ * disjointness harder to prove, so the verdict is lost and no answer moves.
+ *
+ * ITS OWN FRAME ([DD-10], K149): the label is dead before `gk_build`
+ * recurses, so it must not sit in the frame every nesting level pays. */
+static PCREC_OWN_FRAME GkParts gk_class(Gk *g, const Ast *a)
+{
+    uint8_t lab[32];
+    pcrec_cls_bits_widen(g->cx, a, lab);
+    int p = gk_newpos(g, lab, a);
+    if (p < 0) return gk_parts_empty(true);
+    GkParts r = gk_parts_empty(false);
+    cls_set(r.first, (unsigned)p);
+    cls_set(r.last, (unsigned)p);
+    return r;
+}
+
+/* Builds `a`'s fragment of the Glushkov position automaton `g` accumulates
+ * into `*out`: one interned POSITION per leaf byte-set, with the fragment's
+ * own FIRST and LAST position sets so the caller can wire them into the
  * enclosing construct. This is what `pss_walk`'s (U1)/(U2) unique-iteration
  * test runs over. `g->ok` false means an earlier subtree already declined
  * the whole construction (a backreference, a wide class outside the byte
  * range, or the position budget) — every arm checks it first and refuses to
- * add positions to a build that has already given up. */
-static GkParts gk_build(Gk *g, const Ast *a)
+ * add positions to a build that has already given up.
+ *
+ * The fragment travels through `out`, so a nesting level pays one GkParts
+ * of its own and no by-value copies ([DD-10], K147/K149: the by-value form paid
+ * 368 bytes a frame, three frames a level). */
+static void gk_build(Gk *g, const Ast *a, GkParts *out)
 {
-    if (!g->ok) return gk_parts_empty(true);
+again:
+    if (!g->ok) { *out = gk_parts_empty(true); return; }
 
     switch (a->k) {
     /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
      * met; LOUD, because this arm would read the set as bytes. */
     case A_WCLASS:
         pcrec_wcls_misplaced(g->cx, "gk_build");
-    case A_CLASS: {
-        /* [M5.0 stage 1] §2.5.1's DECLINE row 5, `first_of`'s argument
-         * verbatim one rung down: a Glushkov position's LABEL is a byte set,
-         * and a class reaching outside the byte range labels the position with
-         * ALL BYTES. A wider label makes (U1)'s at-most-one-live-position test
-         * and (U2)'s follow-set disjointness harder to prove, so the verdict
-         * is lost and no answer moves. */
-        uint8_t lab[32];
-        pcrec_cls_bits_widen(g->cx, a, lab);
-        int p = gk_newpos(g, lab, a);
-        if (p < 0) return gk_parts_empty(true);
-        GkParts r = gk_parts_empty(false);
-        cls_set(r.first, (unsigned)p);
-        cls_set(r.last, (unsigned)p);
-        return r;
-    }
+    case A_CLASS:
+        *out = gk_class(g, a);
+        return;
     /* [M6.5.2] DECLINE THE WHOLE CONSTRUCTION. Every other member of the arm
      * below is a genuine epsilon in the position automaton this builds; a
      * backreference is not — it consumes a variable amount of text, so it has
@@ -974,7 +1103,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_BREF:
     case A_VAR:
     case A_CALLOUT:
-        return gk_row(g, a);
+        *out = gk_row(g, a);
+        return;
     /* [M6.6.2] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for a reason
      * one step subtler, and the subtlety is why it is written out.
      *
@@ -995,7 +1125,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * `g->ok`), and it costs only the possessification of a quantifier whose
      * body holds an assertion. */
     case A_LOOK:
-        return gk_row(g, a);
+        *out = gk_row(g, a);
+        return;
     /* [DD-14] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for `A_BREF`'s
      * reason and then some. This builds a POSITION AUTOMATON over the body's
      * byte-consuming positions to decide (U1) one-unambiguity and (U2)
@@ -1012,7 +1143,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * `g->ok`), and it costs only the possessification of a quantifier whose
      * body holds a call. */
     case A_CALL:
-        return gk_row(g, a);
+        *out = gk_row(g, a);
+        return;
     case A_EMPTY:
     case A_EOL:
     case A_CTX:
@@ -1025,7 +1157,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
         /* Zero-width: contributes no position and does not change
          * nullability, so the sequence rules below leave the surrounding
          * fold untouched — the reference probe's "modelled as absent". */
-        return gk_row(g, a);
+        *out = gk_row(g, a);
+        return;
 
     case A_CAP:
     /* [M6.4.2] TRANSPARENT, and here the transparency is load-bearing in the
@@ -1038,7 +1171,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * never less. Declining a possessification is always safe; wrongly
      * granting one is a miscompile. */
     case A_ATOMIC:
-        return gk_build(g, a->l);
+        a = a->l;   /* the body is the node: descend in place, no frame */
+        goto again;
 
     case A_CAT: {
         /* Right-to-left fold along the left-nested spine, the same direction
@@ -1048,54 +1182,46 @@ static GkParts gk_build(Gk *g, const Ast *a)
          *   link(last(x), first(acc))
          *   last  = nullable(acc) ? last(x) + last(acc) : last(acc)
          * Position IDS are therefore handed out in reverse text order, which
-         * nothing here depends on: every test below is order-independent. */
-        GkParts acc = gk_parts_empty(true);
-        const Ast *t = a;
-        for (;;) {
-            const Ast *item = (t->k == A_CAT) ? t->r : t;
-            GkParts x = gk_build(g, item);
-            gk_link(g, x.last, acc.first);
-            GkParts r;
-            memcpy(r.first, x.first, 32);
-            if (x.nullable) bs_or(r.first, acc.first);
-            if (acc.nullable) {
-                memcpy(r.last, x.last, 32);
-                bs_or(r.last, acc.last);
-            } else {
-                memcpy(r.last, acc.last, 32);
-            }
-            r.nullable = x.nullable && acc.nullable;
-            acc = r;
-            if (t->k != A_CAT) break;
-            t = t->l;
+         * nothing here depends on: every test below is order-independent.
+         * `*out` is `acc`, updated in place. */
+        GkParts *acc = out;
+        *acc = gk_parts_empty(true);
+        PCREC_SPINE_EACH(item, a, A_CAT) {
+            GkParts x;
+            gk_build(g, item, &x);
+            gk_link(g, x.last, acc->first);
+            const bool nullable = x.nullable && acc->nullable;
+            if (x.nullable) bs_or(x.first, acc->first);
+            memcpy(acc->first, x.first, 32);
+            if (acc->nullable) bs_or(acc->last, x.last);
+            acc->nullable = nullable;
         }
-        return acc;
+        return;
     }
     case A_ALT: {
-        GkParts acc = gk_parts_empty(false);
-        const Ast *t = a;
-        for (;;) {
-            const Ast *br = (t->k == A_ALT) ? t->r : t;
-            GkParts x = gk_build(g, br);
-            bs_or(acc.first, x.first);
-            bs_or(acc.last, x.last);
-            acc.nullable = acc.nullable || x.nullable;
-            if (t->k != A_ALT) break;
-            t = t->l;
+        GkParts *acc = out;
+        *acc = gk_parts_empty(false);
+        PCREC_SPINE_EACH(br, a, A_ALT) {
+            GkParts x;
+            gk_build(g, br, &x);
+            bs_or(acc->first, x.first);
+            bs_or(acc->last, x.last);
+            acc->nullable = acc->nullable || x.nullable;
         }
-        return acc;
+        return;
     }
     case A_REP: {
-        GkParts r = gk_build(g, a->l);
+        GkParts *r = out;
+        gk_build(g, a->l, r);
         /* The loop's own back edge exists exactly when two iterations can run
          * consecutively. `X{0,1}` and `X{0}` have no back edge. */
-        if (a->u.rep.rmax < 0 || a->u.rep.rmax > 1) gk_link(g, r.last, r.first);
-        r.nullable = r.nullable || a->u.rep.rmin == 0;
-        return r;
+        if (a->u.rep.rmax < 0 || a->u.rep.rmax > 1) gk_link(g, r->last, r->first);
+        r->nullable = r->nullable || a->u.rep.rmin == 0;
+        return;
     }
     }
     g->ok = false;
-    return gk_parts_empty(true);
+    *out = gk_parts_empty(true);
 }
 
 /* §2.2's "X admits a unique iteration", plus the non-nullability conjunct that
@@ -1106,7 +1232,8 @@ static bool body_admits_unique_iteration(Gk *g, const Ast *body,
     g->npos = 0;
     g->ok = true;
 
-    GkParts p = gk_build(g, body);
+    GkParts p;
+    gk_build(g, body, &p);
     memcpy(g->last, p.last, 32);
 
     if (!g->ok)     { *why = "model-error";    return false; }
@@ -1735,26 +1862,39 @@ static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
 static void pss_mark(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                      const uint8_t *encl, bool survey_this, PCont *k);
 
-/* `survey_this` is false at exactly one caller — the `A_ATOMIC` arm below,
- * which has already asked this node's verdict in a DIFFERENT context. */
-static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
-                    const uint8_t *encl, bool survey_this, PCont *k)
+/* `pss_rep`'s two contexts for its body, into `eff` and `inner`. ITS OWN
+ * FRAME ([DD-10], K147): the body's FIRST is dead before `pss_rep` descends.
+ * It is asked BEFORE the verdict, as it always was: arm B's memo is
+ * order-dependent (`first_eval`). */
+static PCREC_OWN_FRAME void pss_rep_ctx(Pss *P, const Ast *a,
+                                        const uint8_t *follow,
+                                        const uint8_t *encl, uint8_t *eff,
+                                        uint8_t *inner)
 {
     First body = first_of(&P->fq, a->l);
 
     /* The effective follow: what comes after Q here, plus what every
      * enclosing loop could restart with. */
-    uint8_t eff[32];
     memcpy(eff, follow, 32);
     bs_or(eff, encl);
 
-    if (!P->collect) pss_mark(P, a, follow, may_end, encl, survey_this, k);
-
-    /* Descend into the body. Its own quantifiers see this loop's follow AND
-     * this loop's FIRST as part of theirs. */
-    uint8_t inner[32];
+    /* The body's own quantifiers see this loop's follow AND this loop's
+     * FIRST as part of theirs. */
     memcpy(inner, encl, 32);
     bs_or(inner, body.f);
+}
+
+/* `survey_this` is false at exactly one caller — the `A_ATOMIC` arm below,
+ * which has already asked this node's verdict in a DIFFERENT context. */
+static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+                    const uint8_t *encl, bool survey_this, PCont *k)
+{
+    uint8_t eff[32], inner[32];
+    pss_rep_ctx(P, a, follow, encl, eff, inner);
+
+    if (!P->collect) pss_mark(P, a, follow, may_end, encl, survey_this, k);
+
+    /* Descend into the body under those contexts. */
     pss_walk(P, a->l, eff, may_end, inner, k);
 }
 
@@ -1786,6 +1926,125 @@ static void pss_mark(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         P->marked++;
     }
     if (a->u.rep.possessive) P->possessive++;
+}
+
+/* One step of `pss_cat`'s spine: `cur` (the follow of the suffix passed)
+ * becomes the follow of `item` followed by that suffix. ITS OWN FRAME
+ * ([DD-10]): the item's FIRST is dead before the spine's next descent. */
+static PCREC_OWN_FRAME void pss_cat_step(Pss *P, const Ast *item, uint8_t *cur,
+                                         bool *cur_end)
+{
+    First x = first_of(&P->fq, item);
+    uint8_t nf[32];
+    memcpy(nf, x.f, 32);
+    if (x.nullable) bs_or(nf, cur);
+    else            *cur_end = false;
+    memcpy(cur, nf, 32);
+}
+
+/* `pss_walk`'s arms that hold a context of their own across the descent.
+ * Each is ITS OWN FRAME ([DD-10], K147/K149): the walk recurses once per
+ * nesting level through its dispatcher, which would otherwise inline these
+ * arms and pay the union of their arrays at every level; marked, the
+ * dispatcher keeps only the frames on a level's own path. */
+
+/* The `A_CAP` arm. [K93] the group's lexical context joined with every call
+ * site's. EVERY `A_CAP` numbered `no` gets the join, not only the first the
+ * call graph binds: a superset, and the safe direction. */
+static PCREC_OWN_FRAME void pss_cap(Pss *P, Ast *a, const uint8_t *follow,
+                                    bool may_end, const uint8_t *encl,
+                                    PCont *k)
+{
+    uint8_t f[32], e[32];
+    bool    me = may_end;
+    memcpy(f, follow, 32);
+    memcpy(e, encl, 32);
+    cc_widen(P, a->u.cap.no, f, &me, e);
+    /* [ART-POSS-ARMS] and A1's continuation crosses the group's END,
+     * where it meets the same join (§2.3a). */
+    pss_walk(P, a->l, f, me, e, pc_new(P, NULL, a->u.cap.no, k));
+}
+
+/* The `A_ATOMIC` arm: the body walked as a self-contained pattern, with an
+ * EMPTY follow and `may_end` true (`pss_walk`'s comment at the arm says why,
+ * and why the survey asks with the group's own follow instead). */
+static PCREC_OWN_FRAME void pss_atomic(Pss *P, Ast *a, const uint8_t *follow,
+                                       bool may_end, const uint8_t *encl,
+                                       PCont *k)
+{
+    Ast *body = a->l;
+    uint8_t none[32];
+    bs_clear(none);
+    if (body->k == A_REP) {
+        /* THE SURVEY REPORTS THE `A_ATOMIC`, NOT ITS CHILD, and that is a
+         * MEASURED requirement rather than a naming choice. The discharge's
+         * question is about THIS GROUP — "would deleting it change the
+         * answer" — and its context is THIS group's follow. Reporting the
+         * `A_REP` made the answer look like a property of the quantifier,
+         * and NESTED atomics then shared it: `(?>a*+)a` parses to
+         * A_ATOMIC(A_ATOMIC(A_REP(a))), the inner group's verdict (follow
+         * EMPTY, positive) discharged the inner correctly, and the OUTER
+         * then found its own — now-spliced — `A_REP` child already in the
+         * set and discharged itself too, on a verdict computed for a
+         * different follow. Measured: `a*a` on "aaa" answers (0,3) where
+         * `(?>a*+)a` is NOMATCH in libpcre2. Keyed on the group, the outer
+         * is never reported (its child was not an `A_REP` when the survey
+         * ran) and simply keeps its cut, which is always safe.
+         *
+         * GREEDY ONLY, and this is CARVE-OUT TWO one consumer over. The
+         * discharge's claim is that the cut fires where §2.2 says the loop
+         * lands. For a GREEDY body the loop's FIRST exit IS the maximal
+         * exit, so the two coincide. For a LAZY one the first exit is the
+         * MINIMAL exit, while §2.2's positive verdict rests on the
+         * PREFERENCE COLLAPSE (emit_vm.c:2053-2062: under disjointness a
+         * lazy loop is FORCED to the maximal exit, because at any
+         * non-maximal exit the FOLLOW cannot begin) — and the cut fires
+         * BEFORE the follow is ever consulted. Measured: `(?>a*?)b` on
+         * "aaab" is (3,4) in libpcre2 and `a*?b` is (0,4), so deleting the
+         * group changes the answer on a positive verdict.
+         *
+         * §5.3's measurement could not have found this and says so once
+         * read carefully: `probe_free_discharge.py` drives the possessive
+         * SUFFIX spellings, and there is no lazy one — `a*?+` is an ERROR
+         * in both oracles — so its 532 positive-verdict patterns are all
+         * greedy. The `(?>X q?)` group spelling is outside its population.
+         * §14 item 9's pattern, a third time: another §2.2 consequence an
+         * emitted shape depended on. The EXACT-COUNT sub-case (`(?>a{2}?)`,
+         * where there is one exit and the preferences coincide) would be
+         * safe and is declined anyway — declining is always safe, and a
+         * second condition here would need its own evidence. */
+        bool by_a1;
+        if (P->fn && !P->collect && body->u.rep.greedy &&
+            pss_verdict(P, body, follow, may_end, encl, k, &by_a1))
+            P->fn(P->user, a);
+        pss_rep(P, body, none, true, encl, false, P->atomic_end);
+    } else {
+        /* [ART-POSS-ARMS] the continuation stops at the body's END, as
+         * the follow does (§8.7 R-5's one disagreement before it
+         * agreed: it used to run on to the root's (?R) join). */
+        pss_walk(P, body, none, true, encl, P->atomic_end);
+    }
+}
+
+/* The `A_CAT` arm: right-to-left along the spine, carrying the follow of the
+ * suffix already passed. Each item is visited with what follows IT, which is
+ * the whole reason this walk cannot be a plain recursive descent. */
+static PCREC_OWN_FRAME void pss_cat(Pss *P, Ast *a, const uint8_t *follow,
+                                    bool may_end, const uint8_t *encl,
+                                    PCont *k)
+{
+    uint8_t cur[32];
+    memcpy(cur, follow, 32);
+    bool cur_end = may_end;
+    PCont *ck = k;
+    Ast *t = a;
+    while (t->k == A_CAT) {
+        pss_walk(P, t->r, cur, cur_end, encl, ck);
+        ck = pc_new(P, t->r, 0, ck);
+        pss_cat_step(P, t->r, cur, &cur_end);
+        t = t->l;
+    }
+    pss_walk(P, t, cur, cur_end, encl, ck);   /* the spine's head */
 }
 
 /* Descends `a` computing §2.2's possessification verdict for every A_REP it
@@ -1897,20 +2156,9 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         if (P->collect) cc_join(P, a->u.call.target, follow, may_end, encl);
         return;
 
-    case A_CAP: {
-        /* [K93] the group's lexical context joined with every call site's.
-         * EVERY `A_CAP` numbered `no` gets the join, not only the first the
-         * call graph binds: a superset, and the safe direction. */
-        uint8_t f[32], e[32];
-        bool    me = may_end;
-        memcpy(f, follow, 32);
-        memcpy(e, encl, 32);
-        cc_widen(P, a->u.cap.no, f, &me, e);
-        /* [ART-POSS-ARMS] and A1's continuation crosses the group's END,
-         * where it meets the same join (§2.3a). */
-        pss_walk(P, a->l, f, me, e, pc_new(P, NULL, a->u.cap.no, k));
+    case A_CAP:
+        pss_cap(P, a, follow, may_end, encl, k);
         return;
-    }
 
     case A_REP:
         pss_rep(P, a, follow, may_end, encl, true, k);
@@ -1957,85 +2205,13 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * `PRE (?>QB q|QB xy) tail`-shaped, so a quantifier inside the group is
      * always followed by something INSIDE it, and the cell where the
      * quantifier ENDS the atomic body is not in its population. */
-    case A_ATOMIC: {
-        Ast *body = a->l;
-        uint8_t none[32];
-        bs_clear(none);
-        if (body->k == A_REP) {
-            /* THE SURVEY REPORTS THE `A_ATOMIC`, NOT ITS CHILD, and that is a
-             * MEASURED requirement rather than a naming choice. The discharge's
-             * question is about THIS GROUP — "would deleting it change the
-             * answer" — and its context is THIS group's follow. Reporting the
-             * `A_REP` made the answer look like a property of the quantifier,
-             * and NESTED atomics then shared it: `(?>a*+)a` parses to
-             * A_ATOMIC(A_ATOMIC(A_REP(a))), the inner group's verdict (follow
-             * EMPTY, positive) discharged the inner correctly, and the OUTER
-             * then found its own — now-spliced — `A_REP` child already in the
-             * set and discharged itself too, on a verdict computed for a
-             * different follow. Measured: `a*a` on "aaa" answers (0,3) where
-             * `(?>a*+)a` is NOMATCH in libpcre2. Keyed on the group, the outer
-             * is never reported (its child was not an `A_REP` when the survey
-             * ran) and simply keeps its cut, which is always safe.
-             *
-             * GREEDY ONLY, and this is CARVE-OUT TWO one consumer over. The
-             * discharge's claim is that the cut fires where §2.2 says the loop
-             * lands. For a GREEDY body the loop's FIRST exit IS the maximal
-             * exit, so the two coincide. For a LAZY one the first exit is the
-             * MINIMAL exit, while §2.2's positive verdict rests on the
-             * PREFERENCE COLLAPSE (emit_vm.c:2053-2062: under disjointness a
-             * lazy loop is FORCED to the maximal exit, because at any
-             * non-maximal exit the FOLLOW cannot begin) — and the cut fires
-             * BEFORE the follow is ever consulted. Measured: `(?>a*?)b` on
-             * "aaab" is (3,4) in libpcre2 and `a*?b` is (0,4), so deleting the
-             * group changes the answer on a positive verdict.
-             *
-             * §5.3's measurement could not have found this and says so once
-             * read carefully: `probe_free_discharge.py` drives the possessive
-             * SUFFIX spellings, and there is no lazy one — `a*?+` is an ERROR
-             * in both oracles — so its 532 positive-verdict patterns are all
-             * greedy. The `(?>X q?)` group spelling is outside its population.
-             * §14 item 9's pattern, a third time: another §2.2 consequence an
-             * emitted shape depended on. The EXACT-COUNT sub-case (`(?>a{2}?)`,
-             * where there is one exit and the preferences coincide) would be
-             * safe and is declined anyway — declining is always safe, and a
-             * second condition here would need its own evidence. */
-            bool by_a1;
-            if (P->fn && !P->collect && body->u.rep.greedy &&
-                pss_verdict(P, body, follow, may_end, encl, k, &by_a1))
-                P->fn(P->user, a);
-            pss_rep(P, body, none, true, encl, false, P->atomic_end);
-        } else {
-            /* [ART-POSS-ARMS] the continuation stops at the body's END, as
-             * the follow does (§8.7 R-5's one disagreement before it
-             * agreed: it used to run on to the root's (?R) join). */
-            pss_walk(P, body, none, true, encl, P->atomic_end);
-        }
+    case A_ATOMIC:
+        pss_atomic(P, a, follow, may_end, encl, k);
         return;
-    }
 
-    case A_CAT: {
-        /* Right-to-left along the spine, carrying the follow of the suffix
-         * already passed. Each item is visited with what follows IT, which is
-         * the whole reason this walk cannot be a plain recursive descent. */
-        uint8_t cur[32];
-        memcpy(cur, follow, 32);
-        bool cur_end = may_end;
-        PCont *ck = k;
-        Ast *t = a;
-        while (t->k == A_CAT) {
-            pss_walk(P, t->r, cur, cur_end, encl, ck);
-            ck = pc_new(P, t->r, 0, ck);
-            First x = first_of(&P->fq, t->r);
-            uint8_t nf[32];
-            memcpy(nf, x.f, 32);
-            if (x.nullable) bs_or(nf, cur);
-            else            cur_end = false;
-            memcpy(cur, nf, 32);
-            t = t->l;
-        }
-        pss_walk(P, t, cur, cur_end, encl, ck);   /* the spine's head */
+    case A_CAT:
+        pss_cat(P, a, follow, may_end, encl, k);
         return;
-    }
     case A_ALT: {
         /* Every branch is followed by the same thing. */
         Ast *t = a;

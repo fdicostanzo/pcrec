@@ -49,12 +49,12 @@ SAB_DOC_FIGURE="PREDICTED: atomicdiff RED on the cut2 family (30 patterns, all f
 # `SAB_COUNT=1` is honest rather than lucky, and S132 — the lookaround's own
 # scoping row — is anchored the same way for the same reason.
 SAB_COUNT=1
-SAB_BEFORE='static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
+SAB_BEFORE='static PCREC_OWN_FRAME void vm_atomic(Vm *v, int entry, const Ast *a, int next)
 {
     const char *sd = v->fdyn;
     long long   sf = v->fmin;
     v->fmin = 0;'
-SAB_AFTER='static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
+SAB_AFTER='static PCREC_OWN_FRAME void vm_atomic(Vm *v, int entry, const Ast *a, int next)
 {
     const char *sd = v->fdyn;
     long long   sf = v->fmin;

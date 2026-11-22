@@ -13,7 +13,8 @@ SAB_BEFORE='    case KTEXT_ANY:  rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;
 SAB_AFTER='    case KTEXT_ANY:  if (a->k == A_CALLOUT) { rb_assert_into(w, acc); return; } /* [SABOTAGE S1653] */ rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;'
 SAB_FILE2="src/facts/startset.c"
 SAB_COUNT2=1
-SAB_BEFORE2='    case KTEXT_ANY:  return ss_all();'
-SAB_AFTER2='    case KTEXT_ANY:  return a->k == A_CALLOUT ? acc : ss_all(); /* [SABOTAGE S1653] */'
+SAB_BEFORE2='    case KTEXT_ANY:  *acc = ss_all(); return;'
+SAB_AFTER2='    case KTEXT_ANY:  if (a->k != A_CALLOUT) *acc = ss_all(); return; /* [SABOTAGE S1653] */'
 # RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): the run walk's helpers take the
 # walk `w` (the run choice reads its byte-rate); same site, same plant.
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): site 2: ss_row updates `*acc` in place, so leaving it is the old `return acc`; same site, same plant.

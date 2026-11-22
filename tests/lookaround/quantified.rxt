@@ -104,6 +104,280 @@ pattern (?=a)*+a
 features lookaround,atomic-groups
 m "a" 0 1
 
+# K146's SHAPE with a CAPTURE in every level, three deep: a possessively
+# quantified lookahead whose first branch captures and whose second branch
+# nests the next one. Which branch each assertion committed to is observable
+# in the groups, so a lost or mis-slotted level changes an answer (the
+# capture-free spelling is the empty pattern, whatever the nest does). Nested
+# 180 deep the VM emitter and `vm_cost` overflowed the compile thread
+# (docs/spec/limits.md §3.10's budget); the depth-250 check is
+# tests/thread/run_compile_stack.sh's `lookrep` family.
+pattern (?=(a)|b(?=(a)|b(?=(a)|bc)*+)*+)*+
+features lookaround,atomic-groups
+m "a" 0 0
+g 1 0 1
+g 2 -1 -1
+g 3 -1 -1
+m "ba" 0 0
+g 1 -1 -1
+g 2 1 2
+g 3 -1 -1
+m "bba" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 2 3
+m "bbc" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+m "" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+
+# The same, forty deep: 40 capture slots, one set per case.
+pattern (?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|b(?=(a)|bc)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+)*+
+features lookaround,atomic-groups
+m "bbbbbba" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+g 7 6 7
+g 8 -1 -1
+g 9 -1 -1
+g 10 -1 -1
+g 11 -1 -1
+g 12 -1 -1
+g 13 -1 -1
+g 14 -1 -1
+g 15 -1 -1
+g 16 -1 -1
+g 17 -1 -1
+g 18 -1 -1
+g 19 -1 -1
+g 20 -1 -1
+g 21 -1 -1
+g 22 -1 -1
+g 23 -1 -1
+g 24 -1 -1
+g 25 -1 -1
+g 26 -1 -1
+g 27 -1 -1
+g 28 -1 -1
+g 29 -1 -1
+g 30 -1 -1
+g 31 -1 -1
+g 32 -1 -1
+g 33 -1 -1
+g 34 -1 -1
+g 35 -1 -1
+g 36 -1 -1
+g 37 -1 -1
+g 38 -1 -1
+g 39 -1 -1
+g 40 -1 -1
+m "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbba" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+g 7 -1 -1
+g 8 -1 -1
+g 9 -1 -1
+g 10 -1 -1
+g 11 -1 -1
+g 12 -1 -1
+g 13 -1 -1
+g 14 -1 -1
+g 15 -1 -1
+g 16 -1 -1
+g 17 -1 -1
+g 18 -1 -1
+g 19 -1 -1
+g 20 -1 -1
+g 21 -1 -1
+g 22 -1 -1
+g 23 -1 -1
+g 24 -1 -1
+g 25 -1 -1
+g 26 -1 -1
+g 27 -1 -1
+g 28 -1 -1
+g 29 -1 -1
+g 30 -1 -1
+g 31 -1 -1
+g 32 -1 -1
+g 33 -1 -1
+g 34 -1 -1
+g 35 -1 -1
+g 36 -1 -1
+g 37 -1 -1
+g 38 -1 -1
+g 39 -1 -1
+g 40 39 40
+m "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+g 7 -1 -1
+g 8 -1 -1
+g 9 -1 -1
+g 10 -1 -1
+g 11 -1 -1
+g 12 -1 -1
+g 13 -1 -1
+g 14 -1 -1
+g 15 -1 -1
+g 16 -1 -1
+g 17 -1 -1
+g 18 -1 -1
+g 19 -1 -1
+g 20 -1 -1
+g 21 -1 -1
+g 22 -1 -1
+g 23 -1 -1
+g 24 -1 -1
+g 25 -1 -1
+g 26 -1 -1
+g 27 -1 -1
+g 28 -1 -1
+g 29 -1 -1
+g 30 -1 -1
+g 31 -1 -1
+g 32 -1 -1
+g 33 -1 -1
+g 34 -1 -1
+g 35 -1 -1
+g 36 -1 -1
+g 37 -1 -1
+g 38 -1 -1
+g 39 -1 -1
+g 40 -1 -1
+
+# The same with a plain (greedy) star, a trailing consumer and fewer levels.
+pattern (?=(a)|b(?=(a)|b(?=(a)|bc)*)*)*x
+features lookaround,atomic-groups
+m "bax" 2 3
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+m "bbax" 3 4
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+m "x" 0 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+
+# Wrapped in a non-capturing group per level, with a consumer after each.
+pattern (?:(?=(a)|b(?:(?=(a)|b(?:(?=(a)|b(?:(?=(a)|b(?:(?=(a)|bc)*+b))*+b))*+b))*+b))*+b)
+features lookaround,atomic-groups
+m "bbba" 0 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+m "bbbbbbc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+n "a"
+
+# Captures in the SECOND branch, a consumer after the nest.
+pattern ^(?:(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)(?=a|(b)c)*+)*+)*+)*+)*+)*+)*+)*+)b
+features lookaround,atomic-groups
+m "b" 0 1
+g 1 0 1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+g 7 -1 -1
+g 8 -1 -1
+m "bbc" 0 1
+g 1 0 1
+g 2 1 2
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+g 7 -1 -1
+g 8 -1 -1
+m "bbbbbbbbc" 0 1
+g 1 0 1
+g 2 1 2
+g 3 2 3
+g 4 3 4
+g 5 4 5
+g 6 5 6
+g 7 6 7
+g 8 7 8
+n "a"
+
+# The NEGATIVE spelling, captures in the second branch.
+pattern (?!a|(b)(?!a|(b)(?!a|(b)(?!a|(b)(?!a|(b)(?!a|(b)c)*+)*+)*+)*+)*+)*+x
+features lookaround,atomic-groups
+m "x" 0 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+m "bx" 1 2
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+m "ax" 1 2
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+
+# Multi-literal first branches, so the assertion's island enumeration is used
+# per level.
+pattern (?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|b(?=abc|abd|(ab)|bc)*+)*+)*+)*+)*+)*+
+features lookaround,atomic-groups
+m "ab" 0 0
+g 1 0 2
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+m "babd" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+m "bbbc" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+g 5 -1 -1
+g 6 -1 -1
+
 # The LAZY spelling.
 pattern (?=a)*?a
 features lookaround

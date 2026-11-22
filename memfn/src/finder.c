@@ -354,6 +354,28 @@ static const fd_row fd_rows[] = {
 };
 #define FD_NROWS (sizeof fd_rows / sizeof fd_rows[0])
 
+/* kit.h fd_named: the id of each FIND row another table keys on. */
+static const char *const fd_named_id[] = { [FD_NAMED_DHORS] = "D-hors", [FD_NAMED_R7W] = "R7w" };
+
+/* kit.h: `brow` is fd_find's *row, a pointer into fd_rows[] (a decided
+ * row's own id, never a copy), so the identity is that pointer. */
+int fd_brow_is(const char *brow, fd_named which)
+{
+    for (size_t i = 0; brow && i < FD_NROWS; i++)
+        if (fd_rows[i].id == brow) return !strcmp(brow, fd_named_id[which]);
+    return 0;
+}
+
+const char *fd_tables_check(void)
+{
+    for (size_t w = 0; w < sizeof fd_named_id / sizeof fd_named_id[0]; w++) {
+        size_t i = 0;
+        while (i < FD_NROWS && (!fd_named_id[w] || strcmp(fd_rows[i].id, fd_named_id[w]))) i++;
+        if (i == FD_NROWS) return "a named FIND row's id is not a row of the finder table";
+    }
+    return NULL;
+}
+
 /* THE CHAIN ORDER of a link (mf_link.order; r17b_prime.md §1.4's LEAD), set
  * by fd_pres after the rows decide, over the spans it VERIFIES: the HEAD
  * member first (P4's leading pick where a run is stated; the set's pick
@@ -698,7 +720,7 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
         q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
     }
     gate_in in = { .s = s, .h = def, .fd = &q.ff, .wf = st ? st->wf : NULL };
-    gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
+    gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0, NULL };
     fd_decision d;
     fd_decide(&q, FD_FIND, &in, &tc, &d);
     if (d.terminal >= FD_NROWS) return FD_NO_ROW;
@@ -838,7 +860,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         }
         gate_in in = { .s = s, .fd = &q.ff };
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
-                         &in, 1, quiet, mode == FD_PRES_ASK };
+                         &in, 1, quiet, mode == FD_PRES_ASK, NULL };
         fd_decision d;
         fd_decide(&q, FD_PRES, &in, &tc, &d);
         if (d.terminal >= FD_NROWS) {

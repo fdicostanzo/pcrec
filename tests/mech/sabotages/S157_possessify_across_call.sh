@@ -122,6 +122,9 @@ SAB_AFTER='    case A_CALL: {   /* SABOTAGE S157: a call has an EMPTY first set 
 SAB_FILE2="src/opt/possessify.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    case A_CALL:
-        return gk_row(g, a);'
+        *out = gk_row(g, a);
+        return;'
 SAB_AFTER2='    case A_CALL:   /* SABOTAGE S157 (second site): modelled as an epsilon */
-        return gk_parts_empty(true);'
+        *out = gk_parts_empty(true);
+        return;'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): site 2: gk_build answers through `*out`; site 1 is fst_leaf's A_CALL arm; same site, same plant.

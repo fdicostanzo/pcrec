@@ -23,16 +23,44 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `110` on every artifact today ([REQ-LOOKAROUND] span_arms L3, 109 -> 110, lanes
-  l3feat/l3feat2 2026-11-20; `docs/design/span_arms.md` §14.4 L3).**
+- **`rx_info.abi` is `112` on every artifact today ([REQ-LOOKAROUND] span_arms L3, 111 -> 112; lanes
+  l3feat/l3feat2 2026-11-20 stamped 109 -> 110, and R-47 U2 and U3 landed first at 110 and 111, so lane
+  l3land re-pinned it to 112 at the landing, 2026-11-22; `docs/design/span_arms.md` §14.4 L3).**
   A required run may begin inside a positive lookbehind (`(?<=foo)bar` states `foobar` at K -3).
   New emitted text where K < 0: the landmark move's own row (an end clamp `if (len - hit < B)
   return 0;`, then `hit + B` where that is ahead of the position), the re-entry's per-sign stale
   test (`landmark_position < pos && pos - landmark_position > B`) on the VM attempt loop, and the
   K comments' "at least B bytes after" sentence. Artifacts with no
-  run at K < 0 are byte-identical to abi 109 but this number. The forward scan's `handoff`
+  run at K < 0 are byte-identical to abi 111 but this number. The forward scan's `handoff`
   re-entry is declined at K < 0 (`<PREFIX>_DFA_PREFILTER` falls to the start-byte row there). No struct offset moves and no
   `rx_info` member changes.
+
+- **`rx_info.abi` was `111` on every artifact (R-47 unit U3, the vector span's `w32` level
+  block, 110 -> 111, lane bsu3 2026-11-21 (kit stamped 112; re-pinned to 111 at the landing, lane u3land, since main held 110 and L3 re-pins to 112 after); `docs/design/memfn/block_span.md` rev 4.2 §4.1, §5, §14;
+  D201 add. 1-5; the kit's number was 112, bsu3_rulings.md R-2; the manager ruled U3 lands first at 111, 2026-11-22).**
+  At a target admitting the 32-byte level (`-fmemfn-simd=x86-64-v3`) each vector span selector
+  `<p>_mf<h>_vs<j>` gains its level block, bracketed as target-dependent text: the block helper
+  `__w32_b` (a 32- or, below 32 positions, 16-byte nibble-table test of the stretch's byte set)
+  and `__w32` (the stretch's K bytes by blocks, the last flush with the stretch's end), both
+  `static inline __attribute__((always_inline)) int`; the selector's one call names `__w32`
+  instead of `__body`; `<immintrin.h>` is placed ahead of the region; `MEMFN_FORMS` gains
+  `span-vector@w32` per site and `SIMD_GUARDED_BYTES` counts the block (at most 1,700 bytes per
+  site, `limits.md` §8.3¶3). Every other target and `-fno-memfn-simd` emit U2's bytes but this
+  number. No struct offset moves, no `rx_info` member changes, and no answer moves.
+
+- **`rx_info.abi` was `110` on every artifact (R-47 unit U2, the vector span's wrapper, 109 ->
+  110; the kit stamped 111 while L3 held 110, and U2 landed first, so lane u2land re-pinned it
+  to 110 at the landing, 2026-11-21; `docs/design/memfn/block_span.md` rev 4.1 §5, §14; D201
+  add. 2 and add. 4).**
+  The memfn kit's window search renders a one-class stretch of a window site (finder row D-hors
+  with 16 to 1000 positions, or R7w with 24 to 64, tested by the kit's own set test) as a call of
+  a selector function `<p>_mf<h>_vs<j>(S, C)`, at EVERY layer: its one body `__body` is the
+  stretch's former inline text, both `static inline __attribute__((always_inline))` (the body
+  also `unused`), written at file scope by the window define. At pcrec's default window width
+  (32) the corpus holds 28 such stretches, all in `tests/memfn/span_seed.rxt` (no real corpus
+  pattern), and the bench 3. The deny `--memfn=no-span-vector` restores every artifact's bytes
+  but this number, at every layer and target. The vector helper itself (unit U3) renders no byte
+  yet. No struct offset moves, no `rx_info` member changes, and no answer moves.
 
 - **`rx_info.abi` was `109` on every artifact ([COVER-CAP] stage 2, 108 -> 109, lane covs2b
   2026-11-16, the combined branch; `docs/design/cover_cap.md` §11, R-45).**

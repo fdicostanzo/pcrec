@@ -17,7 +17,7 @@ tt12_step0_profile.md.
 Replaces the chain's raw `make -k -jN -Otarget test` line. Picks the shape
 (J = make -j, P = PROCS) from `scripts/perfrun.shapes` (least-sampled
 UNCONTAMINATED shape; ties in file order; `--shape J,P` overrides; `--next`
-prints the pick), runs `gnutimeout 2700 make --debug=j -k -jJ -Otarget test`
+prints the pick), runs `gnutimeout 5000 make --debug=j -k -jJ -Otarget test`
 with `PROCS=P`, returns make's rc unchanged. The log is BYTE-IDENTICAL to the
 raw line's: `--debug=j` adds scheduler lines, and `scripts/sectiontimes stamp
 SIDE` diverts exactly those lines (a closed regex) to the per-run sections
@@ -52,7 +52,7 @@ shape's sample total or the decision rule.
 | green | rc 0 | none |
 | K44-ONLY | every red section is in {test-corpus, test-counterk, test-resource, test-cli} AND the log carries the 1807 or CPU-cap signature | FLAG, don't re-run in-chain. Re-run the named sections solo (`make test-counterk`...); green solo = GREEN-BY-DIAGNOSIS (K44) |
 | LOAD-SUSPECT | red with TIMED OUT / INCONCLUSIVE / CPU-limit / exit 123-124 text on a contaminated box | same: re-run the red sections solo before blaming the change |
-| WALL-TIMEOUT | the 2700 s cap fired (a too-serial shape) | a datum about the shape; sections that finished are in the log |
+| WALL-TIMEOUT | the 5000 s cap fired (a too-serial shape) | a datum about the shape; sections that finished are in the log |
 | RED-REAL | anything else | a real red |
 
 Flag, not re-run: the wrapper must give the chain exactly the verdict a raw

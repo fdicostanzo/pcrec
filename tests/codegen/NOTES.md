@@ -27,3 +27,6 @@
 ## `run_scan_edge_census.sh` sections (7)-(8) (moved from CLAUDE.md for size, 2026-11-06)
 
 Since [SCANEDGE-SET] also section (7) (every edge's run-test bytes vs the head's transition row, via **scan_set_check.py**, a coprocess on the corpus sweep) and section (8) (set witnesses per machine, the one-class control's text pin, two negative controls).
+
+## run_skip_pins.sh (r72 CHECKS-1, lane bsu1fix, 2026-11-21)
+Two CLI compiles (`[0-9a-f]{17}` D-hors, `ab[0-9]{26}` stop), literal spelling counts of the probed/stopped position in the candidate test. Plants V1/V2 of review r72 (hors_skip / stop_skip returning -1) moved bytes and were caught by NO existing suite (.rxt corpus, test-memfn-forms/-rows/-finder/-d27frame, test-codegen); S3500 and S3501 are those plants.

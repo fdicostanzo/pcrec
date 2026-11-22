@@ -123,3 +123,20 @@ MF_OPT("span-loop", MF_OPT_PAIR, MF_B_ANY, MF_L_SCALAR,
        "long window spans test a run of one byte set in a loop after an inline head; forced, "
        "every such run of two or more positions loops; denied, every position is tested "
        "inline (the text before the loop forms)")
+/* R-47 (block_span.md rev 4.1 §7, unit U2; D201 add. 2 and add. 4, option
+ * A): THE VECTOR SPAN. A window search's one-class stretch that the span
+ * form table's V rows take (finder row D-hors with 16 to 1000 positions, or
+ * R7w with 24 to 64, its positions tested by the kit's own set test) is
+ * tested by a call of a selector function at EVERY layer: at -fno-memfn-simd
+ * (and a target with no 32-byte vectors) its one body is the stretch's
+ * inline text; at a target admitting w32 (unit U3) the selector calls the
+ * block helper. Layer `scalar` on purpose: the deny is LIVE at both
+ * settings (`wrap-deny`), un-wrapping the stretch too, so
+ * `--memfn=no-span-vector` restores the bytes of the build before the
+ * vector span at every layer and target, the wrapper's escape hatch and its
+ * control. */
+MF_OPT("span-vector", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "long window spans of one byte set are tested by a call of a function, at every setting: "
+       "its one body is the inline test, or, where the SIMD layer admits a 32-byte level, a "
+       "block test of 32 (under 32 positions, 16) bytes per step; denied, the span is "
+       "tested inline as before, at every setting")

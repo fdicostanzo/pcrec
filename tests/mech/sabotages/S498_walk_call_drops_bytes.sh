@@ -17,9 +17,10 @@ SAB_REACH_EXPECT='REACH-CALL-VMHAT'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        case A_CALL:
-            return ss_all();'
-SAB_AFTER='        case A_CALL: {   /* SABOTAGE S498: the arm drops its bytes */
-            StartSet z = ss_empty();
-            z.nullable = false;
-            return z;
-        }'
+            *acc = ss_all();
+            return;'
+SAB_AFTER='        case A_CALL:     /* SABOTAGE S498: the arm drops its bytes */
+            *acc = ss_empty();
+            acc->nullable = false;
+            return;'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): ss_walk answers through `*acc`; same site, same plant.

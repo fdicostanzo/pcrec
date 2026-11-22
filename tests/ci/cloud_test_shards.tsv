@@ -4,7 +4,7 @@
 # plan: target=600s slots=20 setup=70s estimated_wall=1216s sections_total=9817s
 # predicted_shard_s=1146
 # indivisible_floor_s=1216 (setup 70s + largest unit test-memfn-g2 1146s)
-# unmeasured: 4 section(s) -- test-alloc cloudgate-strict cloudgate-lint test-memfn-d27frame
+# unmeasured: 5 section(s) -- test-spec test-alloc cloudgate-strict cloudgate-lint test-memfn-d27frame
 # measured from: runs (4): 43053664196 (CI run, pcrec-ci-sections-*); 42926942809 (CI run, pcrec-ci-sections-*); 42904468909 (CI run, pcrec-ci-sections-*); 42889667159 (CI run, pcrec-ci-sections-*)
 # floor: test-memfn-g2 1146s; test-corpus 683s
 # ci_scale=1.0
@@ -99,3 +99,4 @@ test-alloc	17	61	ESTIMATE (no measurement; previous table weight)
 test-ci-shards	3	7	ci-measured measured_test.tsv n=4 measured
 cloudgate-strict	18	60	ESTIMATE (no measurement; previous table weight)
 cloudgate-lint	18	210	ESTIMATE (no measurement; previous table weight)
+test-spec	17	30	ESTIMATE (no measurement; local `make test-spec` ~27s, docs/testing.md)

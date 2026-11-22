@@ -373,12 +373,13 @@ into eight sections (`test-codegen` wraps three scripts —
 `run_codegen_tests.sh`, `run_dfa_stamps.sh` ([DD-13], 2026-08-25) and
 `run_trie_identity.sh` — since this file already describes them as one
 "codegen structural checks" concept, and `test:` runs them back to back).
-`test-spec` is the ninth target and the one genuine divergence: it wraps
-`tests/spec_mod0/run_spec_mod0.sh`, which is **not** one of the nine `test:`
-lines (its own CLAUDE.md: "Not part of `make test`, and it does not run
-`make`") — it gets a target anyway because the plan row named it explicitly,
-and the script already runs standalone and was green (14/14) at the last
-project journal entry.
+`test-spec` was the ninth target and the one divergence: it wraps
+`tests/spec_mod0/run_spec_mod0.sh`, which used to be kept out of `make test`. It
+is a `make test` section since the specfix lane (2026-11-21): 13 of its 14
+checks had gone red unnoticed (the ORACLE-LINK direct-link move broke eight, the
+registry's growth moved four pins), which is what an opt-in suite does. It
+SKIPS loudly (exit 0, `SKIP:` lines on stderr) when libpcre2-8 is not
+resolvable, PC-3's pattern, since every invariant in it is decided by libpcre2.
 
 | Target | Runs | Part of `make test`? |
 |---|---|---|
@@ -399,7 +400,7 @@ project journal entry.
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |
 | `make test-rxtsource` | `tests/rxtsource/run_rxtsource_tests.sh` ([DD-13b.W1.1] INV-COMPAT — see below) | yes |
-| `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
+| `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` (the D27 spec-first suite; SKIPS loudly without libpcre2) | yes (since 2026-11-21) |
 | `make test-recursion-lbsweep` | `tests/recursion/run_lookbehind_call_sweep.py` | **no** — opt-in ([DD-14.LB]), see below |
 
 **[DD-14.LB] (2026-08-24) — `test-recursion-lbsweep`, and why its verdict is a
@@ -739,8 +740,18 @@ consistent with each other.
 
 **Sections added since, each with its own lane's one-run figure (NOT
 this table's method; Mac dev box, so directional):**
-- `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05): about
-  **52-62 s** wall over two runs, with `all` up to date. It is G2's `run_g2.sh --quick`:
+- `test-memfn-g2` **(2026-11-20, STALE figure below; current)**: **1004 s**
+  wall run ALONE on the Linux dev box (job 205-g2tri-g2alone, `make -j4`,
+  `G2_UNITS_OUT` per-unit seconds). The 29 units sum to 1791 s (they run
+  concurrently, so the sum exceeds the wall). Top units by time (s):
+  win 288, gcc 132, asan 93, w2-3 80, w2-1 77, w1w3 77, mfind 76. As one
+  section of a `make test` at j2p8 the section reads 960.2 s (job
+  202-main-k146land-test2); that whole `make test` measured 2677 s
+  (~45 min; 2677-2850 s over the j2p8 runs, ~45-48 min on a quiet box).
+  Earlier section readings from the same ledger: 470.6 s (11-09), 614.9 s
+  (11-12), 829.8 s (11-19). The next bullet's figure is the original one.
+- `test-memfn-g2` ([MEMFN] R4a, lane memfnfix, 2026-10-05; Mac, STALE: about
+  **52-62 s** wall over two runs, with `all` up to date). It is G2's `run_g2.sh --quick`:
   - gcc over every generated site at the quick subject tier;
   - ASan and the W1-W3 witnesses on every third batch, run
     concurrently, so it uses every core for most of that minute.

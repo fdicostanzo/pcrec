@@ -1,0 +1,2 @@
+phase tau 2% 10% win seed 3412 pt=True: h*=8 267, nights flagged 2
+phase tau 2% 10% win seed 3412 pt=False: h*=8 271, nights flagged 0

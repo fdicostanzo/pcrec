@@ -1,0 +1,5 @@
+report=docs/dev/lanes/bspan2_report.md
+sections: STATE AT HANDOFF; THE JOB; CHANGES IN REV 2; OPEN QUESTIONS; OWED RUNS
+nonempty: all
+commit: yes
+owed: none

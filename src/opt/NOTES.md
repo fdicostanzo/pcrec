@@ -110,7 +110,7 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
   NOT in `pss_walk` (self-contained, empty follow). `\G` takes `\A`'s (downward-closed)
   decline arm; `\K` is transparent (epsilon). [K93] call targets carry a JOINED
   `CallCtx`; [ART-POSS-ARMS] arms A (A_CTX gates; `PCont`/`PSum`, R-5 equality check)
-  and B (`A_BREF` FIRST via `text_first`); `Ctx.poss_arms` stamp
+  and B (`A_BREF` FIRST via `first_eval`'s `text` reading); `Ctx.poss_arms` stamp
   `<PREFIX>_VM_POSS_ARMS`; deny bits `-fno-poss-ctx-follow`/`-fno-poss-bref-first`;
   [DD-11.5] `pcrec_poss_ctx_admits` never narrows a row reading an absent side.
   Exports `pcrec_uniq_scratch`/`pcrec_uniq_iteration`. Tests tests/possessify/;

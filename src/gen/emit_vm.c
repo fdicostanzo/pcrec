@@ -2255,6 +2255,19 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
     }
 }
 
+/* How many capturing groups `vm_rev_caps` finds in `body` — the count alone,
+ * for the walks that size the rung (`vm_cost_rep`, `vm_count_slots_rep`) and
+ * never read the numbers. ITS OWN FRAME ([DD-10], K146): the scratch array
+ * is dead before those walks recurse into the body, so it must not sit in
+ * the frame every nesting level of a quantifier pays. */
+static PCREC_OWN_FRAME int vm_rev_ncaps(const Ast *body)
+{
+    int grp[PCREC_MAX_REVDET_BODY_GROUPS];
+    int ng = 0;
+    vm_rev_caps(body, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
+    return ng;
+}
+
 /* ---- capacity analysis (§2.5's two capacities, §4.5's SECOND bound) -------
  *
  * Two bounds, two errors, and they are different failures with different
@@ -2433,7 +2446,7 @@ static int vm_lit_run(Vm *v, const Ast *const *el, int n, int j,
  *
  * [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
  * TRUE only for the A_REP that is the direct child of a LIFTING A_ATOMIC. */
-static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
+static PCREC_OWN_FRAME Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 {
     const bool cuts = vm_cuts(a, under_atomic);
     int nc;
@@ -2564,10 +2577,8 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
     if (!cursor
         && vm_revdet_fits(a, under_atomic)) {
         const bool move = vm_rev_canmove(a, cuts);
-        int grp[PCREC_MAX_REVDET_BODY_GROUPS];
-        int ng = 0;
+        const int ng = vm_rev_ncaps(a->l);
         Cost body;
-        vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
         v->nocap++;
         body = vm_cost(v, a->l, false);
         v->nocap--;
@@ -2729,7 +2740,7 @@ static Cost vm_cost_kreset(void)
 /* Computes an `A_CAP` capture group's cost as its body's cost plus the
  * capture's own trailed writes -- see the trail charge below, beside the
  * arithmetic it explains. */
-static Cost vm_cost_cap(Vm *v, const Ast *a)
+static PCREC_OWN_FRAME Cost vm_cost_cap(Vm *v, const Ast *a)
 {
     Cost c = vm_cost(v, a->l, false);
     /* [ENG-BREP] no trail entry while capture writes are suppressed —
@@ -2753,7 +2764,7 @@ static Cost vm_cost_cap(Vm *v, const Ast *a)
  * the segfault that says why. The accumulation order reproduces the
  * recursive definition exactly: A_CAT sums both sides, so summing along the
  * spine is the same number. `cost_add` is the sum. */
-static Cost vm_cost_cat(Vm *v, const Ast *a)
+static PCREC_OWN_FRAME Cost vm_cost_cat(Vm *v, const Ast *a)
 {
     Cost c = { 0, 0, 0, 0, false, false };
     const Ast **el;
@@ -2768,6 +2779,17 @@ static Cost vm_cost_cat(Vm *v, const Ast *a)
         j++;
     }
     return c;
+}
+
+/* `vm_alt_island`'s charge: an island costs one frame if its trie pushes
+ * any, nothing else; -1 when `a` is not an island. ITS OWN FRAME ([DD-10],
+ * K146), for `vm_alt_island`'s reason: the trie is dead before
+ * `vm_cost_alt` recurses into the branches. */
+static PCREC_OWN_FRAME int vm_cost_alt_island(Vm *v, const Ast *a)
+{
+    VmIsl isl;
+    if (!vm_isl_build(v, &isl, a)) return -1;
+    return isl.pushes > 0 ? 1 : 0;
 }
 
 /* Computes an `A_ALT` alternation's cost as the WORST live branch plus one
@@ -2800,17 +2822,13 @@ static Cost vm_cost_cat(Vm *v, const Ast *a)
  * combiner, so this arm reads as ONE-PLUS-MAX against `vm_cost_cat`'s plain
  * SUM. `vm_alt_flatten` is the same branch-array walk `vm_alt`'s own
  * emission does — see its header. */
-static Cost vm_cost_alt(Vm *v, const Ast *a)
+static PCREC_OWN_FRAME Cost vm_cost_alt(Vm *v, const Ast *a)
 {
     Cost c = { 0, 0, 0, 0, false, false };
-    {
-        VmIsl isl;
-        if (vm_isl_build(v, &isl, a)) {
-            c.frames = isl.pushes > 0 ? 1 : 0;
-            c.trail = 0;
-            c.pf = c.pt = 0;
-            return c;
-        }
+    const int isl_frames = vm_cost_alt_island(v, a);
+    if (isl_frames >= 0) {
+        c.frames = isl_frames;
+        return c;
     }
     const Ast **br;
     int nbr = vm_alt_flatten(v->cx, a, &br);
@@ -2853,7 +2871,7 @@ static Cost vm_cost_alt(Vm *v, const Ast *a)
  * cap where FRAMES normally binds first. That is a shift in which cap
  * fires, not a new failure mode, and rx_info's stamped `subject_ceiling`
  * reports it honestly either way. */
-static Cost vm_cost_atomic(Vm *v, const Ast *a)
+static PCREC_OWN_FRAME Cost vm_cost_atomic(Vm *v, const Ast *a)
 {
     if (vm_lifts(a)) return vm_cost(v, a->l, true);
     Cost c = vm_cost(v, a->l, false);
@@ -2926,7 +2944,7 @@ static Cost vm_cost_atomic(Vm *v, const Ast *a)
  * while the next runs), hence `2 + (varying branches)`, whatever `hi - lo`
  * is. Witness W12: a per-candidate write, or the term one short per branch,
  * gives PCREC_ERR_FRAMES where libpcre2 answers. */
-static Cost vm_cost_look(Vm *v, const Ast *a)
+static PCREC_OWN_FRAME Cost vm_cost_look(Vm *v, const Ast *a)
 {
     Cost c = vm_cost(v, a->l, false);
     c.frames += 1 + a->u.look.nbranch;
@@ -2991,7 +3009,7 @@ static Cost vm_cost_look(Vm *v, const Ast *a)
  * B+C landed this arm was a loud `pcrec_ctx_fail` refusal instead of a
  * number; see `docs/design/subroutines_design.md` §4.4a/§5.7 for that
  * history. */
-static Cost vm_cost_call(Vm *v, const Ast *a)
+static PCREC_OWN_FRAME Cost vm_cost_call(Vm *v, const Ast *a)
 {
     Cost c = { 0, 0, 0, 0, false, false };
     int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
@@ -3183,10 +3201,8 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
      * extension step. The REVERSED body allocates no slots and pushes
      * nothing, so it is not walked here at all. */
     if (vm_revdet_fits(a, under_atomic)) {
-        int grp[PCREC_MAX_REVDET_BODY_GROUPS];
-        int ng = 0;
+        const int ng = vm_rev_ncaps(a->l);
         bool move = vm_rev_canmove(a, cuts);
-        vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
         if (ng > v->nrevcaps) v->nrevcaps = ng;
         v->nrev++;
         v->npush += 1 + (move ? 1 : 0);
@@ -3883,7 +3899,7 @@ long long pcrec_vm_fmul(long long a, long long b)
  * so here and nowhere else, and a site that says nothing correctly inherits.
  * `v->fdyn` is deliberately NOT touched -- a runtime term set by an enclosing
  * loop is still in force inside every node under it. */
-static void vm_emit_f(Vm *v, int entry, const Ast *a, int next, long long fmin)
+static PCREC_OWN_FRAME void vm_emit_f(Vm *v, int entry, const Ast *a, int next, long long fmin)
 {
     long long save = v->fmin;
     v->fmin = fmin;
@@ -4861,36 +4877,40 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
     }
 }
 
+/* [ENG-ISL] the island first, and it is a SELECTION rather than a special
+ * case: `vm_isl_build` either returns the trie for a flat alternation of
+ * literal branches or declines (false), and a declined alternation falls
+ * straight through to `vm_alt`'s chain unchanged — which is what makes
+ * `-fno-alt-island` a byte-identity control on every pattern the predicate
+ * declines. `v->nislands` is bumped HERE, in the call that emits, so
+ * `<PREFIX>_VM_ALT_ISLANDS` cannot drift from the program text.
+ *
+ * ITS OWN FRAME ([DD-10], K146): the trie (`VmIsl`) is dead before `vm_alt`
+ * recurses into its branches, so it must not sit in the frame every nesting
+ * level of an alternation pays. */
+static PCREC_OWN_FRAME bool vm_alt_island(Vm *v, int entry, const Ast *a,
+                                          int next)
+{
+    VmIsl isl;
+    if (!vm_isl_build(v, &isl, a)) return false;
+    v->nislands++;
+    vm_isl_emit(v, &isl, entry, next);
+    return true;
+}
+
 /* Emits an alternation at label `entry` whose every branch continues to
- * `next`. The flat branch list is offered to the island trie first, and that
- * is a SELECTION rather than a special case: a declined alternation falls
- * through unchanged, which is what makes `-fno-alt-island` byte-identical
- * wherever the predicate says no. Otherwise it writes the CHAIN — branch
- * j+1's resume frame pushed just before branch j runs, so one frame is live
- * per alternation at any instant rather than one per untried branch. The
- * branch spine is walked iteratively (D10), and `v->nislands` is bumped in
- * the call that emits so the stamp cannot drift from the program text. */
-static void vm_alt(Vm *v, int entry, const Ast *a, int next)
+ * `next`. `vm_alt_island` takes the flat literal alternations first (its
+ * header says how that is a selection); otherwise this writes the CHAIN —
+ * branch j+1's resume frame pushed just before branch j runs, so one frame is
+ * live per alternation at any instant rather than one per untried branch. The
+ * branch spine is walked iteratively (D10). */
+static PCREC_OWN_FRAME void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
     const Ast **br;
     int nbr = vm_alt_flatten(cx, a, &br);
 
-    /* [ENG-ISL] the island first, and it is a SELECTION rather than a special
-     * case: `vm_isl_build` either returns the trie for a flat alternation of
-     * literal branches or declines, and a declined alternation falls straight
-     * through to the chain below unchanged — which is what makes
-     * `-fno-alt-island` a byte-identity control on every pattern the predicate
-     * declines. `v->nislands` is bumped HERE, in the call that emits, so
-     * `<PREFIX>_VM_ALT_ISLANDS` cannot drift from the program text. */
-    {
-        VmIsl isl;
-        if (vm_isl_build(v, &isl, a)) {
-            v->nislands++;
-            vm_isl_emit(v, &isl, entry, next);
-            return;
-        }
-    }
+    if (vm_alt_island(v, entry, a, next)) return;
 
     int *bentry = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
     int *resume = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
@@ -6782,7 +6802,7 @@ static PCREC_OWN_FRAME bool vm_cursor_try(Vm *v, int entry, const Ast *a,
  * iteration's frame is discarded outright (a cut above it) or kept for a
  * real backtrack. Reached whenever no cheaper rung applies — the ladder's
  * last rung, never itself declined. */
-static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
+static PCREC_OWN_FRAME void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
 {
     const bool cuts = vm_cuts(a, under_atomic);
 
@@ -7048,7 +7068,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
  * answers for the UNCUT language, so its span end is not a bound on a cut
  * match's end; `v->fmin` answers for the follow, so it is not a bound on a cut
  * body's search. */
-static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
+static PCREC_OWN_FRAME void vm_atomic(Vm *v, int entry, const Ast *a, int next)
 {
     const char *sd = v->fdyn;
     long long   sf = v->fmin;
@@ -7614,7 +7634,8 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
  * from the END (a flat alternation is LEFT-NESTED) and takes what is left as
  * branch 0, which may itself be an alternation (K123); a spine SHORTER than
  * `nbranch` is `pcrec_ctx_fail`, not a silently mispaired table. */
-static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
+static PCREC_OWN_FRAME void vm_look_behind(Vm *v, const Ast *a, int okl,
+                                           int mslot, int pslot)
 {
     const int m = a->u.look.nbranch;
 
@@ -7660,12 +7681,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
         v->enc_mask |= PCREC_ENCE_FWD_STEP;
     }
 
-    /* The label table lives in the ARENA, not in this frame: this function
-     * is inlined into `vm_emit_node`, which recurses once per nesting level
-     * whatever the pattern holds, so a table on the stack here is paid at
-     * every level of a pattern with no lookbehind at all ([DD-10],
-     * limits.md §3.10; `PCREC_OWN_FRAME`'s rule, by the other route — an
-     * out-of-line frame would sit on the recursion of a nested lookbehind). */
+    /* The label table lives in the ARENA, not in this frame: this frame
+     * sits on the recursion of a nested lookbehind (the branches are emitted
+     * from here), so a table on the stack here would be paid at every level
+     * ([DD-10], limits.md §3.10). The frame is its own (`PCREC_OWN_FRAME`,
+     * K146) so that a nest with no lookbehind pays none of it. */
     Arena *ar = &v->cx->arena;
     const Ast **br = pcrec_arena_alloc(ar, (size_t)m * sizeof *br);
     VmLbLabels *L = pcrec_arena_alloc(ar, sizeof *L);
@@ -7705,7 +7725,7 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
  * lookbehind branches additionally record a mark slot and re-check the
  * cursor lands exactly where the width analysis said it would (the
  * "END-CHECK", this function's only runtime evidence that the two agree). */
-static void vm_look(Vm *v, int entry, const Ast *a, int next)
+static PCREC_OWN_FRAME void vm_look(Vm *v, int entry, const Ast *a, int next)
 {
 
     /* §3.2.1 — SAVE, ZERO, and (at the single exit below) RESTORE. */
@@ -8867,7 +8887,7 @@ static void vm_ctx_side(Vm *v, VmFrag *f, int ci, int side)
  * every producer asked first; failing it here is an internal error. */
 static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next);
 
-static void vm_ctx(Vm *v, int entry, const Ast *a, int next)
+static PCREC_OWN_FRAME void vm_ctx(Vm *v, int entry, const Ast *a, int next)
 {
     if (!ctxfn_reads_membership(a->u.ctx.fn)) {
         vm_ctx_row(v, entry, a->u.ctx.fn, -1, next);
@@ -8942,7 +8962,7 @@ static void vm_ctx_row(Vm *v, int entry, uint16_t fn, int si, int next)
  * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_CAP arm (lens 11's
  * F7), beside `vm_alt` / `vm_rep` / `vm_atomic` / `vm_look` / `vm_call`,
  * which the file already named. */
-static void vm_cap(Vm *v, int entry, const Ast *a, int next)
+static PCREC_OWN_FRAME void vm_cap(Vm *v, int entry, const Ast *a, int next)
 {
     /* §3.2 WRITE ON TRAVERSE: caps[k][0] when control passes the opening
      * position, caps[k][1] when it passes the closing one. Undo is EXACT
@@ -9027,7 +9047,7 @@ static unsigned vm_caseless_entry(const Vm *v, bool ucp)
  * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_BREF arm (lens 11's
  * F7) — at ~80 lines the largest of the four, and the one whose inline
  * presence hid five of this file's sabotage anchors inside a `switch`. */
-static void vm_bref(Vm *v, int entry, const Ast *a, int next)
+static PCREC_OWN_FRAME void vm_bref(Vm *v, int entry, const Ast *a, int next)
 {
     /* [M6.5.2] THE COMPARE (backrefs_design.md §3.2.3, §8.3).
      *
@@ -9164,7 +9184,7 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
  * instruction runs `run->var_value[slot]` is a concrete non-NULL span. A test
  * here would be D23's measured 26% per-POSITION indirection for a fact that
  * cannot change during a call. */
-static void vm_var(Vm *v, int entry, const Ast *a, int next)
+static PCREC_OWN_FRAME void vm_var(Vm *v, int entry, const Ast *a, int next)
 {
     const unsigned seam_entry = a->u.var.caseless
         ? vm_caseless_entry(v, a->u.var.ucp) : PCREC_ENCE_SPAN;
@@ -9248,7 +9268,7 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
  *
  * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_CAT arm (lens 11's
  * F7). */
-static void vm_cat(Vm *v, int entry, const Ast *a, int next)
+static PCREC_OWN_FRAME void vm_cat(Vm *v, int entry, const Ast *a, int next)
 {
     /* flatten the left-leaning spine iteratively (nfa.c's R-2 hardening,
      * for the same reason: a flat concatenation of any length must not
@@ -9364,7 +9384,25 @@ static void vm_callout(Vm *v, int entry, const Ast *a, int next)
  * caller has already counted. Only `A_WCLASS` recurses here directly: the
  * wrapper's own charge stands in for its child's, so the program's node count
  * is what it was before the kind existed and `PCREC_MAX_VM_NODES` refuses the
- * same patterns (D-4, docs/dev/cls_s3_reader_inventory.md §10). */
+ * same patterns (D-4, docs/dev/cls_s3_reader_inventory.md §10).
+ *
+ * THE ARMS THAT CARRY LOCALS ARE EACH THEIR OWN FRAME ([DD-10], K146;
+ * `PCREC_OWN_FRAME`, internal.h's second use):
+ * this switch is entered once per AST level, several times per paren level,
+ * so an arm inlined here would put its locals (and every other inlined arm's,
+ * the union) on every level of every nest. Marked out of line, the arms are
+ * tail calls and a level costs only the frames on its own path; `vm_cost`'s
+ * arms follow the same rule but are CALLS, not tail calls (each returns its
+ * `Cost` by value). Arms that recurse and are NOT marked:
+ * `vm_splice`, `vm_call` and `vm_callout` stay inlined here (nothing measured
+ * makes their frames matter, D77); `vm_ctx`, `vm_bref` and `vm_var` are marked
+ * without recursing, for the uniformity of the table. One more walk is
+ * exempt: `vm_count_slots`'s A_ALT arm keeps its `VmIsl` (the third
+ * `vm_isl_build` reader) in the recursive dispatcher itself; its frame is
+ * 0x70 bytes and no measured family needs it moved (D77), so if it ever is
+ * the cost, build the trie in a marked helper as `vm_alt_island` does. A new arm that recurses
+ * and carries locals is marked the same way; tests/thread/run_compile_stack.sh
+ * measures the result. */
 static void vm_emit_node(Vm *v, int entry, const Ast *a, int next)
 {
 

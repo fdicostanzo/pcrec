@@ -23,5 +23,6 @@ SAB_REACH_POP='tests/possessify/possessify.rxt|^pattern \(a\)A\+\(\?i:\\1\)$|1
 tests/possessify/arms_reach.tsv|^\(a\)A\+\(\?i:\\1\)[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (a->u.bref.caseless) bref_fold(q->cx, a->u.bref.ucp, acc.f);'
+SAB_BEFORE='    if (f->a->u.bref.caseless) bref_fold(q->cx, f->a->u.bref.ucp, f->acc.f);'
 SAB_AFTER='    /* SABOTAGE S563: caseless reference not folded */'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): arm B's resolution is first_eval's `refs:` block, the reference read off its frame; same site, same plant.

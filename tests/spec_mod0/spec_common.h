@@ -447,8 +447,9 @@ static inline void spec_start(const char *name, int argc, char **argv,
             "  not a skip. Install libpcre2-8-0.\n", name, why);
         exit(2);
     }
-    spec_pattern_info = (spec_fn_pattern_info)
-        dlsym(spec_abi.handle, "pcre2_pattern_info_8");
+    /* [ORACLE-LINK]: libpcre2 is direct-linked now; `handle` is no dlopen
+     * handle, so the entry comes from the binding's own pointer. */
+    spec_pattern_info = (spec_fn_pattern_info)spec_abi.pattern_info;
     if (!spec_pattern_info) {
         fprintf(stderr, "FAIL[%s]: ORACLE MISSING pcre2_pattern_info_8\n", name);
         exit(2);

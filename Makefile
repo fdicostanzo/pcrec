@@ -466,7 +466,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor test-memfn-d27region test-memfn-d27frame \
       test-memfn-rank test-memfn-finder \
-      test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-endmark test-partlayout \
+      test-spec test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-endmark test-partlayout \
       test-kitproof test-casemap test-findall test-subst test-subst-d27 test-alloc test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
@@ -599,10 +599,10 @@ cloud-reweight: all
 # depends on, one target per section, so a developer can spot-check just the
 # section a change touches instead of paying for the whole suite. See
 # docs/testing.md "Tiered testing" for the measured per-section runtimes, the
-# touched-path guidance table, and why `test-spec` exists even though it is
-# not (yet) one of `test:`'s ten prerequisites above.
+# touched-path guidance table; `test-spec` is
+# one of `test:`'s prerequisites (TEST_SECTIONS) since the specfix lane (2026-11-21).
 #
-# Each target rebuilds `all` first (bar test-spec, which treats build/pcrec
+# Each target rebuilds `all` first (test-spec too, though it treats build/pcrec
 # as a black box the way its own runner already does) so a stale binary never
 # reads as a pass.
 test-corpus: all
@@ -755,7 +755,8 @@ test-codegen: all
 	    'bash tests/codegen/run_landmark_walk.sh' \
 	    'bash tests/codegen/run_case_spelling_identity.sh' \
 	    'bash tests/codegen/run_residual_twins.sh' \
-	    'bash tests/codegen/run_stmt_writer.sh'
+	    'bash tests/codegen/run_stmt_writer.sh' \
+	    'bash tests/codegen/run_skip_pins.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a
@@ -1845,12 +1846,15 @@ test-capturediff: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-capturediff.ran"; fi
 	bash tests/fuzz/run_capturediff_gate.sh
 
-# Not one of the nine `test:` lines — tests/spec_mod0/run_spec_mod0.sh is a
-# standalone D27 suite, deliberately kept out of `make test` (its own
-# CLAUDE.md: "Not part of `make test`, and it does not run `make`"). It gets
-# a section target anyway because the plan row that created tiering named it
-# explicitly as one of the eight tiers a developer should be able to run.
+# specfix (2026-11-21): tests/spec_mod0/run_spec_mod0.sh is the standalone D27 suite (spec-first:
+# written blind of src/), and a `make test` section like any other: a registry row or a
+# module landing that moves one of its pins now fails in the SAME change instead of
+# reddening a suite nobody ran (13 of 14 red for months before this wiring; see
+# docs/dev/lanes/specfix_report.md). It treats build/pcrec as a black box, so it does
+# not rebuild beyond `all`; it SKIPS loudly (exit 0) if libpcre2-8 is not resolvable,
+# PC-3's pattern, because every invariant in it is decided by libpcre2.
 test-spec: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-spec.ran"; fi
 	bash tests/spec_mod0/run_spec_mod0.sh
 
 # [SPEC-CLEAN] docs/spec/ carries no build history (docs/spec/CLAUDE.md):

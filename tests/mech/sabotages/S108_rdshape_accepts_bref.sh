@@ -115,9 +115,13 @@ SAB_COUNT2=1
 SAB_BEFORE2='    case A_BREF:
     case A_VAR:
     case A_CALLOUT:
-        return gk_row(g, a);'
+        *out = gk_row(g, a);
+        return;'
 SAB_AFTER2='    case A_BREF:
     case A_VAR:
-        return gk_parts_empty(true);   /* SABOTAGE S108 site 2: no independent decline */
+        *out = gk_parts_empty(true);   /* SABOTAGE S108 site 2: no independent decline */
+        return;
     case A_CALLOUT:
-        return gk_row(g, a);'
+        *out = gk_row(g, a);
+        return;'
+# RE-ANCHORED (lane k147fix, 2026-11-20, K147/K149): site 2: gk_build answers through `*out`; same site, same plant.

@@ -3452,3 +3452,223 @@ the compiler, and is never adopted silently. Proposed for main to file
   - (2) Reach re-measure: run-verify-wide moved 0 patterns in every cell pre-S2; post-S2 58/117/99/181, refused 0 (equal to your arms sweep). Lists in scratch/memfn/r43/m1/.
   - FINDING, resolved in the check: D3's production-path premise ("an emitted stamped run carries exactly one run_part_terms record") is false since S2 for runs whose every position is a non-cube pair (c00049 [ab][ab][ab]): PRES row PD declines them, no derived part, the set member leads; _REQ_WHY "emitted" stays correct (match_api §6.3.7¶8). runpart_prod.py now classes by fact (@ hint -> 1 record; P0 scan-less -> 1, hint=-; shipped fd PD -> 0; @ with PD -> FAIL). Also fixed r33_sim/probe.c's art join (first art at a reused address).
 - ack: [FLAG-DEMOTE] set's kit piece (Frank 2026-11-14 22:20 "Agree with plan. Proceed", relayed by main as a build go). (b) the inline one-member finder: lane mfind (opus) on lane/memfn-mfind; landed UNPICKED (card only, 0 movers, no abi event); non-timing gates queued directly outside 20:00-01:00. (a) the smp20 price decomposition: lane smpdec (sonnet) on lane/memfn-smpdec. (c)/(d) timing keys named once (b) is green; (e) after (c).
+- done: [FLAG-DEMOTE] (a), the smp20 price decomposition — branch lane/memfn-smpdec @ 076c99337, report docs/dev/lanes/smpdec_report.md (docs only; no timing).
+  - census0's model reproduces the committed census0_cards.out (6) prices exactly. Pair beats libc by 86k / 41k per 1e6 bytes (hit gaps 256 / 1024).
+  - The HIT COUNT decides it, from the default rate PRIOR ('/' 4,154 ppm vs {X,x} 1,097 ppm, 3.79x), not a measured term. The measured costs go against pair: per byte 0.074 vs 0.038, per hit 95.7 / 141.1 vs 54.6 / 55.8.
+  - The sign follows the two bytes' rate ratio (prose favours libc; log and weblog favour pair).
+  - Prediction for the inline one-member finder at pair's byte speed: it beats libc only if its per-hit cost h < ~46 / 47 (15.8% under libc's), and pair {X,x} only if h < ~25 / 37. h is UNMEASURED: it is the intercept of (c)'s hit-gap sweep and the build's real gate.
+- ack: Frank 2026-11-15 "agree with kit options" (via main): slot-harness pieces 1 (per-arm target region), 3 (reject-rate dimension in find_hit), 4 (version-6 job planning) — lane slotx (opus) on lane/memfn-slotx, cut from lane/memfn-mfind; non-timing gates queued as usual. Piece 2 (w64) stays OWED as a measurement arm only. The (c)+(d) timing job keys follow when slotx is green.
+- notice: Frank 2026-11-15 (via main): the kit-mfcard-time window is the night of 11-15 -> 11-16 after 01:00 (queued after both gates are green and slotx merges into mfind). kit-ipv4-time (the rest of (d)) is DEFERRED under D77; trigger: (c) measures the inline finder's per-hit cost under ~46/47 walk-units (smpdec's libc threshold).
+- ack: R-40 (the minimum useful bytes after a site's candidate, `k`). REPLY ONLY; no build until the trigger fires (D77). The trigger as stated is fine.
+  - USABLE AS STATED: yes. The kit takes it as a frame fact on the window site and on the pre-check's FUNC parts, appended last (an MF_SITE_ABI event), 64-bit, stated on every FIND and pre-check site, 0 = nothing more, unstated refused where read. The proposed field name is `need_after`: it names what the consumer sees, the bytes a candidate needs after it.
+  - ONE PRECISION ASKED: state `k` from the value the site RETURNS to its consumer, per site kind. For OFS and LMHIT, is it the landmark hit or the start the consumer derives from it? The kit clamps the range of returned candidates to c <= n - k. It can't re-base an offset it isn't told about.
+  - HOLDBACK: keep both, as you propose; where both are stated the kit honours the larger. Your PF formula (k = max(W, 1 + holdback)) already subsumes holdback. Once every site states `k`, holdback is a simplification candidate (retire it into `k`). That is filed as an idea, not asked now.
+  - HOW THE KIT WOULD USE IT (kit's own choice, for your information): each find method's search end shrinks by k minus the bytes its own term reads. A corollary worth naming: where `k` covers the bytes a candidate's verify or second-byte read touches, that read needs no bound check. This touches the inline one-member finder's guarded-bytes bound and pair's second read. The build adds a measurement card in the same change; its arms are `k` honoured vs `k` ignored, the short-subject regime that is your trigger.
+- ack: R-43 follow-up FLOORS-4 (main's retroactive code round 2026-11-15-r1-posts2): wire the D3 floor (docs/dev/lanes/r33_sim/runpart_floor.py) into a kit gate. A fresh unit, lane/memfn-d3wire, cut after mfind and slotx deliver. The floor stays a literal, held as a MEASURED record (its command, tree, date and regen command), never derived live from the census it checks. The gate fails below the record and on a mover without a record. Tier (test-memfn or axes) is chosen by the census's measured cost. Its code round covers it.
+
+- notice (2026-11-15, kit): F5 of code round 2026-11-15-r2-memfn-mfind RULED by Frank (via main, "agree with instrument only"): the fused inline finder rows fn-mfind / mfind-w16 / mfind-w32 are an UNPICKED measuring instrument only, never a pick and never "stage 1". kit-mfcard-time is the one-sided test: a fused loss to libc settles row 1 against the finder; a fused win triggers the 2026-11-07 ruled split shape (T-FIND row, search renderer row + card, S-mask stream row, RESTART variant) under its own build go, then a re-measure. Recorded in the round file and labelled at the rows' declarations by lane mfindfix2 (rulings R1). Main files the decision entry.
+
+- ack: R-44 (2026-11-15, D3 floor script has no caller; review FLOORS-4): taken as a fresh unit lane/memfn-d3wire, cut AFTER the mfind/slotx landing reaches main (main's GO). Supersedes the 11-15 message-only ack of FLOORS-4 above where the texts differ; the R-44 text binds. Gate-read vs retire is decided in the lane's design step from the floor's measured cost and reach; the unit gets its own code round.
+
+- notice 2026-11-15 ([COVER-CAP] stage 2, owner direction recorded): received main's relay of Frank's direction (verbatim in memfn/docs/ideas.md, 2026-11-15 entry): long exact spans default to sub-span loops with a measured inline head; three forms carded (all inline, all loops, inline head then loops); all-inline only as a performance-dial option if measured faster. The kit holds it for the stage-2 request (spans up to 4095 positions, per-artifact span limit); no work started.
+
+- done: mfind + slotx combined unit (D197 instrument; slot harness for the mfcard timing) — branch lane/memfn-mfind @ 363fec82e (= lane/memfn-mcfixb 9d5bbd9dd + the r9 review). Reviews: docs/dev/reviews/2026-11-15-r5-memfn-mfindcomb, r6-memfn-mcfix, r7-memfn-mcfixb, r8-memfn-mcfixc, r9-memfn-pinfix (every FIX-NOW applied; owed after the window: ADQ-3-3, a sabotage row m8 for the manifest pin site; PLAN rows RULE-9, CHECKS-A2, ADQ-1, ADQ-4, RULE-3 general). Validation: box gate on ac097a76e: strict, G2-full, ident1-3 (BASE 04fe41c92, 0 movers), mech (6 ids incl. S3198) GREEN; its slot stage RED only by 2 stale anchors, superseded by 150-kit-mfinal2-strict + 150-kit-mfinal2-slot on 9d5bbd9dd GREEN (est selftest, d197 drill, dry JMB/JMH/J4, "== slot sabotage: 67 DETECTED, 0 MISSED of 67 rows"); cloud test 9d5bbd9dd GREEN (run 43768142764), cloud axes fe1b24e2a GREEN. Later fixes move no emitted byte (1200-pair emit identity, test-codegen; C edits are compile-time asserts only). What is timed (r5 Q1): the find-all loop over one offset-skip site, incl. the two-byte check and the continue-after-reject path, for 4 forms on find_byte@6/find_hit@6, inline as pcrec emits it, compared per ISA level with libc memchr as shipped (EVEX on the 7700X, variant recorded) and the AVX2-tunable libc, per docs/design/memfn/span_cards/slot/d197_rule.tsv (pinned in the run record at window time). FLAGS for main: lane mcfixd edited comments in src/core/internal.h and cli/CLAUDE.md (instrument wording; no code); a PLAN row for pinning the cells sha in main's records (FIDELITY-5) is main's to file; SABROWS-2 is main's (fixposts2b). Timing jobs 600-609 QUEUED (not-before 2026-11-16T01:00, RUN_ID mfcard-zen4-1, FROZEN 363fec82e); 610 (confirming re-run) only on a CONFIRM verdict.
+
+- ack: R-45 (window spans up to 4095 positions, [COVER-CAP] stage 2), READ 2026-11-15 21:10 from local main f126537e1. Order: tonight's mfcard timing (01:00) and d3wire (after main's push) first; then ONE design lane (opus) drafts the reply to the five asks (bounds and their scope, the MF_MAX_TERM coupling, the three forms' cards per the owner's direction, a reading of the dense near-miss regime, the carrier and its MF_SITE_ABI / MF_CLASS_V event), cut from main once the mfind merge is on origin; a design critic round on that draft before the reply is posted. No build before the reply. Expected: the reply in this file in the next kit session (2026-11-16), before any R-45 code.
+
+done: R-44 (D3 floor gate) — branch lane/memfn-d3wire @ ce6bfe8d5 (merges origin/main ea83fbc01). Gate: `make test-memfn-d3floor`
+(tests/memfn/d3_floor.py, run_d3floor.sh, d3_floor.tsv, d3_census.tsv 626 rows), also the last step of test-axes and cloud axes shard 1.
+Reviews r10, r11, r12, r14 (filed as 2026-11-16-r21-memfn-d3fix3) all RULED; last fixes d3fix3 (D3G-1..6) + d3fix4 (D3H-1/2/3).
+Validation: gate green, exactly 60 plants of 60 (a deleted plant -> red; an unwired refusal -> plants WRONG, rc 1); make strict rc 0;
+arch_blind 17/0; cloud test + axes GREEN at 505f4d631 (the later commits touch only tests/memfn/d3_floor.*, run_d3floor.sh, docs).
+No byte under src/ or memfn/src moved; no abi event. Reports: docs/dev/lanes/d3fix3_report.md, d3fix4_report.md.
+
+## R-45 reply (2026-11-16, kit; rev 4 after reviews r20, r22, r23) — window spans up to 4095 positions
+- READY: plan B alone (carrier + kit working state + the two witness rows) is ready now.
+  Plan A's rule has r23's text fixes applied, plus a kit-ruled clause for dominance cycles (keep the heads beaten by the fewest others).
+- (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
+  only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
+  end = max(last stated position + 2, last tested offset + 1). Kit refusals: tested offset out
+  of range; rows past caller storage; range self-check (message via mf_define only).
+  Your cover ask passes storage to the ceiling (4,104 rows): every over-read below 4096 reaches
+  B5. Witnesses: a kit row (self-check by message); a pcrec row on [0-9a-f]{32}, nothing after
+  (a cover at width 32, after side unstated; its REACH asserts both).
+- (2) Decoupled: MF_MAX_TERM 32, MF_WMAX_SPAN 32 stay; MF_MAX_SPAN_POS/MF_MAX_AHEAD retire now
+  (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
+- (3) Forms I/L/H(h) over the existing segmenter, at every window span; literals stay one
+  compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of t(H(h))/t(I); E =
+  within the A/A floor of the best W; drop heads another member of E beats somewhere and never
+  loses to; then the LARGEST. On a tie h* = 64, the grid's CHOSEN top, checked only by the
+  long cells, whose loss extends the grid. All-inline is the dial's reference, never the
+  default. A test-only lever sets h on one binary; a check proves the rebuilt binary's bytes
+  equal the lever's. Option span-loop (pair; deny wins); floor 13 -> 14.
+  Night order (agreed 2026-11-16, plan A only): our cards first on the frozen binary, h frozen
+  by its rule, identity check, then your width cells on the rebuilt binary (no harness option).
+  Your cover_cap edits: §11.4, §11.6.1, §11.6.4.
+- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build (D77).
+- (5) Arrays leave the seam structs: mf_wspan 1,164 -> 32 B, mf_class 2,932 -> 1,640 B,
+  mf_wreply 532 -> 136 B. Lists go into caller storage sized by mf_rows_need. 22 byte compares
+  become deep compares; 14 uint8_t casts widen. MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11.
+  Rows per cover attempt: ~291 KB at 4095, ~133 KB at 32. The build starts from main.
+- Questions (our leaning):
+  other-sites-at-32: keep your other window sites at 32 by your own asserts? Yes.
+  cover-ask-storage: give the cover ask room for the whole range? Yes.
+  caller-storage: let the asks take caller storage? Yes.
+  row-memory: accept the rows' memory until your compile-cost record? Yes.
+  night-order-edits: take the cover_cap edits, and run your width cells on the REBUILT binary after the identity check (refines the agreed step 3), if the owner picks forms now? Yes.
+  For the owner: forms-now-or-next (forms now: costs a timing slot, a later and larger
+  landing; if timing cannot run first, forms land off, decided by main with Frank): forms now.
+  keep-short-spans (keep spans <= 32 all-inline even on a measured win)? No.
+  near-miss-fix-later (fix near misses in the first build)? No, until a timed card shows it.
+  Design of record: docs/design/memfn/r45_reply.md rev 4, branch lane/memfn-r45 @ fee80b67b; reviews r20, r22, r23 filed there (all RULED).
+
+## R-45 reply (2026-11-16, kit; rev 6 after reviews r20, r22, r23, r25 and your check r45read) — window spans up to 4095 positions
+- READY; nothing open. Plan A (forms now, one joint landing) is the plan of record.
+- (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
+  only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
+  end = max(last stated position + 2, last tested offset + 1). Kit refusals: tested offset out
+  of range; rows past caller storage; range self-check (message via mf_define only).
+  Your cover ask passes storage to the ceiling (4,104 rows): every over-read below 4096 reaches
+  B5. Witnesses: a kit row (self-check by message); a pcrec row on [0-9a-f]{32}, nothing after,
+  R-short removed (a cover at width 32, after side unstated; its REACH asserts both).
+- (2) Decoupled: MF_MAX_TERM 32, MF_WMAX_SPAN 32 stay; MF_MAX_SPAN_POS/MF_MAX_AHEAD retire now
+  (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
+- (3) Forms I/L/H(h) over the existing segmenter, at EVERY window span; literals stay one
+  compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of t(H(h))/t(I) in
+  every regime (your §11.4 five by its methods + random bytes); E = within the A/A floor of the
+  best W; keep the members of E dominated (faster beyond f in at least one cell and never
+  slower beyond f) by the fewest others (RULED); then the LARGEST. On a tie h* = 64, CHOSEN. A
+  loss in any regime moves h, never your width default. Any C1-C2 cell void twice: h* = 64,
+  the read cells' pick recorded (a void never helps a head). Possible movers: every window
+  alternative (covers, pre-check runs, reseed/prefix) with >= 2 consecutive offsets of one
+  identical multi-member set (the per-offset meet, ACROSS span boundaries) whose last offset
+  is >= h*. Witness: \w{32}\B (its after side continues \w to offset 32). At width 32, h* = 64
+  moves nothing; h* = 32 moves only that kin. Predict from a NEW trace record of your own
+  statements (MFWSTMT, your build; a superset; red = a move outside it). uuid: a width event.
+  Test-only lever span-head=N (bench reads it only if a regime must run there); identity
+  check over every predicted mover + cards + census covers. Option span-loop (pair; deny wins;
+  the deny is the G1 arm, not the dial); memfn floor 13 -> 14. Night order (ruled): cards first via the lever; h*
+  compiled in + identity check; then your width cells on that REBUILT binary. Your cover_cap
+  edits: §11.4 (+ regimes), §11.6.1 (4a cards, 4b rebuild + identity; whether 4b gets its own
+  review is yours), §11.6.4, §11.1 prediction + the MFWSTMT record.
+- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build. The
+  forms are not a near-miss fix (every form restarts one byte later).
+- (5) Arrays leave the seam structs: mf_wspan 1,164 -> 32 B, mf_class 2,932 -> 1,640 B,
+  mf_wreply 532 -> 136 B. Lists go into caller storage sized by mf_rows_need. 22 byte compares
+  become deep compares; 14 uint8_t casts widen. MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11.
+  Rows per cover attempt: ~291 KB at 4095, ~133 KB at 32. The build starts from main.
+- Rulings recorded: yours, YES on other-sites-at-32, cover-ask-storage, caller-storage,
+  row-memory, night-order-edits (unconditional). The owner's: forms-now-or-next = forms now;
+  keep-short-spans = no; near-miss-fix-later = no. Ours: dominance-cycle as above.
+  Supersedes the rev 4 block above. Design of record: docs/design/memfn/r45_reply.md rev 6, lane/memfn-r45 @ 69acf5376; reviews r20, r22, r23, r25 filed there (all RULED).
+
+done: R-45 plan B (window-span carrier + kit working state + witness row (a)) — branch lane/memfn-span4k @ 60c2958ae (from main a66bf0877,
+origin/main 02bbd527f merged). MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11; MF_WREACH = MF_MAX_FWD = 4096; MF_WSPAN_POS stays 32 here.
+Zero emitted-byte movers (code round r27: 724 compiles 0 diff; 70 ASan/UBSan 0). Reviews r27 (code, RULED) + r28 (re-check) on the branch.
+Validation: cloud test GREEN (run 43955426138) and axes GREEN (run 43955499773) on 60c2958ae; locally strict, codegen, registry,
+rxtsource, link, g2, finder, d27frame, test-resource (allocation injector absorbs 0), arch-blind; moved sabotage rows DETECTED.
+HELD RAISE: lane/memfn-span4k-raise @ 9d4907a16 = 60c2958ae + ONE commit (MF_WSPAN_POS 4095; MF_MAX_SPAN_POS/MF_MAX_AHEAD retired;
+READ-1's declining contract + witnesses S3254/S3258). Builds only over lane/covs2afix (A1 + A3); validated on a combined approximation
+tree (0 movers at width 32; ASan/UBSan clean). Lands on main's combined branch WITH main's half: READ-2 (pcrec's asserts at 32 incl.
+PCREC_PREFIX_K_MAX, a pcrec name for the reach-64 bound) and CHECK-1 (their witness). Witness row (b) follows main's stage-2 B5 text.
+OWED (kit, next seam touch = the forms build): R28-2, R28-3 witness rows. Reports: docs/dev/lanes/span4k_report.md, span4kfix_report.md,
+raisefix_report.md (on the raise branch).
+
+done: R-45 plan A (the span forms + their cards harness) — branch lane/memfn-forms @ 105bf8ef4 (from main 02bbd527f).
+Validation: landing formsland6 on ff81f31ac (report-only commits after): strict, codegen, registry, rxtsource, finder,
+link, resource, cli, compound (fence) green; G2 quick 70,358,672/0; run_g2_win 0 failed; sabotage anchors 1,335 resolve;
+cloud_mech_check PASS (90 shards); emit_sweep movers 0 vs 27b18e75c (default width); cards.py full selftest 222/0
+(formsfixm, ~90 min); cards.py dry 1,374 cells built and answer-gated, 0 failures (420-kit-formsfixl-dry); cloud test
++ axes on 105bf8ef4: test GREEN (run 44342044441) and axes GREEN (run 44342138134). Reviews: r35-r41 (11-17), r44, r45 (on the branch), r46 (kit branch lane/memfn-k1108).
+pcrec-side readers (found by grep): abi stays 108 on this branch (no reader added; covs2b's 109 carries); emit_dfa.c,
+known.c, memfn_sites.{c,h} adopt MF_SITE_ABI 30 / MF_CLASS_V 11 (pcrec_memfn_rows, pcrec_memfn_wspan); cli
+--harness=span-head=N (harness-only lever); docs/spec registry.md span-loop pair row + memfn floor 13 -> 14; tuning.md
+2.43 para 3d; ~40 mech sabotages; no MEMFN_FORMS/MEMFN_LIBC stamp, identity pin or codegen expectation moves.
+Expected conflicts vs lane/covs2b @ 28af649c9 (trial merge, 6, none in src/ or cli/): tests/ci/cloud_mech_shards.tsv
+and cloud_axes_shards.tsv (both regenerated: REGENERATE after the merge, every id once, never a line merge);
+docs/spec/tuning.md 2.43 para 3d (hand merge); docs/dev/reviews/CLAUDE.md (take covs2b's de-bulked side, re-add the
+r44/r45 index lines); docs/dev/reviews/NOTES.md and docs/dev/history/claude_md/docs__dev__lanes.md (keep both).
+Known limits: h=64 shipped UNMEASURED (the 11-19 night measures it); power is RECORD (5 % win at tau 1 %: 203/300;
+tau 2 %: 25/300); the rho share is the body's own speed and is printed; one interaction flag voids the whole night
+(stated); INTER_CLIP tuned in-sample (r46 FORMS9-1); R0 nights counted as off-64 in P rows (FORMS9-4); rare
+very-noisy rows / t(3) tails on one variant fail the accept lines (FORMS9-3/-8); the pools never move data, main or
+the subject buffer (r44 F); full selftest ~90 min. The layout pool is ARM-GENERIC at the TU level (main's width
+arms could use it through a shared helper: [LAYOUT-DRAW]); cover_cap.md section 11.4's A/A floor gets checked
+WITH the kit before main's width cells are timed.
+Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.md, formsland6_report.md.
+
+- ack: R-46 (2026-11-18 18:23, kit manager) — taken as a design REPLY only (no build go on either side): a form for the weaker presence-site question (whole run at or after p? and some position at or after p where it occurs), what moves in the reply contract (ret_pred, serves, G2's leftmost reference), and whether it is a seam event with no mover. Planned: a design lane by day 11-19 after tonight's sets' verdicts, with a critic round on the reply before it is posted here.
+
+- done: R-46 (2026-11-20, kit manager) — DESIGN REPLY only (no build go either side; nothing built; critic round run).
+  The re-asked pre-check on dense occurrences ([REQ-PAST-LAST], unit U1-k of docs/design/dense_hit_arch.md).
+  - **(1) As it stands? NO.** ALL_PRESENT + ASSIGN answers one question, the LEFTMOST hit of preds[ret_pred] in [lo, n):
+    sound for the weaker question but the costliest answer, and the bounded row's move (`landmark_position - K`) is
+    sound only on the leftmost, so a weaker single answer breaks it. The site needs a SECOND answer beside the leftmost.
+  - **Form: the leftmost stays; a HORIZON is added** (precedent `count_by_caller` + `count`). Define fact
+    `mf_site.horizon_gap` (appended LAST, OBLIG, stated by NAME like `head_max`): 0 = no use asks a horizon (every
+    site today) or MF_GAP_UNBOUNDED; a finite gap (the general form) is refused by site_check, no customer (D77). Use
+    hook `mf_hooks.horizon` (appended LAST, an lvalue like `result`; NULL = not asked). On a hit `result` = the
+    leftmost c as today, `horizon` = an occurrence f with c <= f < n, which f is the kit's (D157), f = c always
+    correct; on a miss neither is promised and `on_miss` runs.
+  - **Who states it (CONTRACT-2, SOUND-2):** only the VM `handoff-attempts-unbounded` row's re-entry use. The bounded
+    row states none: its benefit falls only on hits within K + 1, read by main as SUPER-DENSE under the owner's
+    working scope (discussion, slug dense-not-target; docs/design/plan_row_bodies/REQ-PAST-LAST.md; revisitable);
+    its measured loss (§2.41¶8c) is NOT addressed here. The entry's use and the DFA/hybrid re-entry keep NULL.
+  - **Safe (inference; pcrec's design confirms; the critic's exhaustive model held it):** the unbounded row never
+    moves, so re-asking only once the attempt passes f runs today's attempt sequence exactly: answer- and
+    give-up-identical on every subject and step budget.
+  - **Kit's leading method (not the contract): FORWARD only** (CONTRACT-3/4): f = the last occurrence in (c, c + w],
+    w = min(B, max(1, lo - start)) (MEAS-1): per search call, look-ahead the search never needed is at most the
+    distance it already covered; O(log B) asks to reach B on dense occurrences; B = the page size (the owner's
+    constraint). Scalar arm composes today's forward FIND (one call per occurrence in the window, MEAS-2); a
+    one-pass forward "last occurrence in a range" form is NEW work with its own card and deny; no reverse form.
+  - **(2) What moves.** `ret_pred`'s meaning: nothing. Two fields.def rows plus a class for MF_GAP_UNBOUNDED;
+    non-serving rows declare `[FLD_horizon_gap] = CM(ZERO)` in the three shared serves macros, `horizon` needs no
+    entry off the serving rows (CONTRACT-1); serving rows: the pre-check ASSIGN rows and generic, first text
+    `horizon = result`. G2's leftmost reference UNCHANGED; NEW: a D27-blinded horizon reference and three fail-closed
+    gate cases; the presence family's site-file pins re-pinned by name (CONTRACT-7). No MF_VOCAB/MF_CLASS_V move;
+    DELEG_SITES `PRE` unchanged.
+  - **(3) Seam event, no mover? YES:** MF_SITE_ABI (next number at landing), ZERO emitted-byte movers while every site
+    states 0 (emit_sweep, arms.tsv, G2 quick verdicts, link/stack, the arch note's U1-k checks). Land it as U1-k's
+    first commit under pcrec's build go, not ahead (D77). The METHOD is a byte mover: one pcrec abi event with the
+    consumer step (new origin argument, CONTRACT-6; deny row + docs/spec hunk, D80; card; D144 alpha both layers),
+    and only if pcrec's owed post-K38-2 re-measure still shows the dense loss above noise (CONTRACT-8).
+  - **Card and controls (MEAS-4..7):** three arms (method; its own deny = today's text; the public deny); adversary
+    cells named; cold verified by mincore, not tmpfs; a deterministic COUNT control; value sabotages land with the
+    method row. Open: Q1-Q11 in the design notes (docs/dev/lanes/r46reply_report.md on lane/memfn-k1108; critic review docs/dev/reviews/2026-11-20-memfn-r46reply.md, to move into a
+    kit design note at the build go). Nothing filed, nothing built.
+
+- **NOTICE 2026-11-21 — owner ruling to the kit, for main to file (proposed D-entry text):** "block-build (Frank,
+  2026-11-21, to the kit): build the block span at the SIMD layer by the table 710 confirmed (rule 6351bff3901e3955):
+  window site 16<=k<=1000 or scan site 24<=k<=64 -> the avx2-loop block span; else today's H64. The scalar layer stays
+  H64. Trigger: job 710 (0 repeated LOSS / 722 readable cells; 127/144 new busy pick cells WIN, median busy win 3.5x).
+  Steps: kit design note + critic round, then the build under the same-commit abi ritual with its deny row and card."
+  Kit asks main to file the R-n for it.
+
+- **ack: R-47** (2026-11-21) — taken. The kit branch lane/memfn-k1108 merged main at 051e78af2 (merge 2af5a3fd5, make strict clean). Design lane `bspan` (opus) writes the design note docs/design/memfn/block_span.md on lane/bspan; then a critic round (design); then the build lane, under the same-commit abi ritual with its deny row, its card and G1 alpha at both layers. Main gets the note for its record, and the built branch after that.
+
+- **done (partial): R-47 unit U1** (2026-11-21) — branch lane/memfn-k1108 @ e8dea21a3 (merges lane/bsu1 4a098e1e4 + lane/bsu1fix). The span form table (wfS) replaces the head if-chain; the stretch list is stored once; skip is a plan fact; SPAN-SEED .rxt (41 patterns, 1145 python-verified cases); skip-column detector (run_skip_pins.sh, S3500/S3501); decider census +T-SPAN. ZERO emitted-byte movers (identity gate, 10 arms x c-default/c-vm, no mask), so no abi event. Reviews r68/r69/r71 (design) and r72 (code, FIX FIRST, fixed). Validation: 713 make test GREEN and 714 mech GREEN (U1); 715 make test GREEN and 716 mech GREEN (fixes, lane/bsu1fix tip). Reports docs/dev/lanes/bsu1_report.md, bsu1fix_report.md. Delivered ALONE ahead of U2 (D153). U2 onward next (D201 add. 4).
+
+- **done (partial): R-47 units U2 + U2b** (2026-11-21) — branch lane/memfn-k1108 @ 005e35c7b (merges lane/bsu2 d9d86e39e + lane/bsu2fix 2eccfecb8; make strict clean).
+  - **The change:** the vector span's wrapper (option A, every layer: `<p>_mf<h>_vs<j>` + `__body`, the selector through the kit-wide writer kit_selector) and the deny `--memfn=no-span-vector` (both layers).
+  - **ABI EVENT 109 -> 111** in commit c51fb2d36. 110 is L3's; whichever lands second re-pins (main plan.md [REQ-LOOKAROUND]). Re-pins were found by `git grep -n -w 109`; spec hunks in registry §6¶8a/¶8b, tuning §2.43¶3d, match_api §1/§6.
+  - **Identity:** the deny arm differs from the merge base in 0 compiles, under the declared abi mask. The default arm moves only the V sites: 28 byte / 20 utf8 / 31 seed on c-default, 0 on c-vm.
+  - **U2b census (D201 add. 4):** the 3 bench sites are IDENTICAL at gcc -O2 (w32, w4095); 48 of 128 grid cells DIFFER; \w{20} DIFFERS. Under clang/gcc -Os the real sites differ: D201 add. 5 (wrap-clang: a), [BSPAN-CLANG-DIFF].
+  - **Reviews:** r75 (code), ruled FIX FIRST, fixed in bsu2fix (identity-gate floors and shape, SLOT-1/2/5/6, CONTRACT-1..3, block_span.md rev 4.2).
+  - **Validation:**
+    - 717 RED on test-memfn-arch: the C4 vocabulary of S730's REACH. Fixed at 2eccfecb8.
+    - On the final tree, all GREEN: 719 make test, 720 mech (S3510, S3280), 721 gate, 722 ids (0 movers vs d9d86e39e), 723 mech (18 U2 rows).
+  - **Reports:** docs/dev/lanes/bsu2_report.md, bsu2fix_report.md.
+  - **Next:** U3 (the w32 helper; the first SIMD text).
+
+- **done (partial): R-47 unit U3** (2026-11-22) — branch lane/memfn-k1108 @ f861873a8 (merges lane/bsu3 ec578d053 + lane/bsu3fix 7c7e625b5; make strict clean).
+  - **The change:** the vector span's w32 level block, rendered at `-fmemfn-simd=x86-64-v3` only; SIMD-off and `x86-64` bytes are U2's apart from the abi number.
+  - **ABI EVENT 111 -> 112** in commit be192b04a. Readers were found by `git grep -n -w 111` and reviewed by hand (bsu3_report.md "ABI EVENT"). L3 holds 110; whichever of L3/U3 lands second re-pins.
+  - **Identity:** SIMD-off movers 0 (no mask, every arm, both streams). SIMD-on movers are exactly the V sites at w32: 28 byte / 20 utf8 at c-default, 0 at c-vm, and 31 for SPAN-SEED at w4095.
+  - **Reviews:** r76 (code), ruled FIX FIRST. The fixes are CHECKS-1/2/3, CONTRACT-1, SLOT-1 and SLOT-3 (37394534b), the -O0 control compiles and is the rule's alone (6cf672b6a), and the S3516 prose is now worded arch-free (7c7e625b5). No emitted byte moves in the fixes. The r76 gap critic DISCHARGED r75 SLOT-3/4.
+  - **Validation:**
+    - 726 RED on test-memfn-simdfloor (the -O0 control); fixed by bsu3fix2.
+    - 729 RED on test-memfn-arch (C4 class 6: 'pshufb' in S3516 prose); fixed by bsu3fix3.
+    - On the final tree, all GREEN: 729 make test (2021 s), 730 mech (17 rows), 731 ids.
+  - **Reports:** docs/dev/lanes/bsu3_report.md, bsu3fix_report.md, bsu3fix2_report.md.
+  - **Next:** U4 (G2-V, the T-table pins, the rest of C18, sabotage (a)-(f)), then U5 (card C6 incl. the clang arms) and U6 (the abi package and G1 dry run; C6 timing in a window main clears).

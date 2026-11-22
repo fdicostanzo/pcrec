@@ -1,4 +1,72 @@
-# u2land report — [UCP] U2 landed onto current main (2026-09-29, sonnet)
+# u2land report — the kit's R-47 U2+U2b landed on main at abi 110 (2026-11-21, sonnet)
+
+(This file name was used once before, by the [UCP] U2 landing of 2026-09-29; that report is kept
+verbatim at the end, under "Earlier lane of the same name".)
+
+## STATE AT HANDOFF
+
+Landed on main, NOT pushed, commits by named paths only: merge `2d8beeb2a` (lane/memfn-k1108), abi
+re-pin `1feeb3fe1` (111 -> 110, the last src commit), FILEPIN commit, then the ledger/plan/report
+commit. `make -s strict` clean; `python3 scripts/plan_lint.py` 0 violations. RULINGS FILE
+`docs/dev/lanes/u2land_rulings.md` exists and is EMPTY: last R-n applied: none. The three suites
+(test-codegen, test-registry, test-rxtsource) are QUEUED behind other jobs in the box lock and had not
+started when this lane handed back: OWED RUNS below. Cloud runs: see OWED RUNS.
+
+OWED: none (the local suites and both cloud runs have since read green; see OWED RUNS).
+
+## MERGE
+
+`git merge --no-ff lane/memfn-k1108` (tip 2cdff1794 = the manager-ruled 994de281c plus one
+memfn/docs/journal.md commit, three journal lines; the kit's validation was on 994de281c): clean, no
+conflicts (47 files, +1876/-171). The kit's branch is not pruned (the kit's).
+
+## PINS AND LEDGER
+
+Every reader of the number was found by grepping `-w 111` unfiltered over src tests docs/spec
+docs/testing.md memfn scripts and over the merge diff, and moved 111 -> 110 (seven readers):
+`src/gen/emit_dfa.c` PCREC_ARTIFACT_ABI; `tests/codegen/run_codegen_tests.sh` ABI_EXPECT and the
+failure message's 109->110 clause; `tests/mech/sabotages/S693_abi_not_bumped.sh` SAB_BEFORE (AFTER stays
+109) and its re-aim note; `docs/spec/match_api.md` (the `#if`/`#error`/`#define PCREC_RX_ABI_H` block,
+the rx_info table row, the §6 sentence: four lines of text, five spellings); `docs/dev/history/
+abi_changelog.md` entry; the identity gate's (B) `FILEPIN` in `tests/codegen/run_recursion_identity.sh`
+(re-pinned to `1feeb3fe1`, the re-pin commit, which is the last src-touching commit; ABASEPIN
+unchanged, the kit reported (A) 0 differing). The plan.md [REQ-LOOKAROUND] reservation NOTE now reads
+110 = U2/U2b (landed), 111 = L3. Left as is on purpose: the kit's own journal, responses, wake and the
+bsu2/r75 review texts, which are records of what the kit stamped (they say 111 and say it was to be
+re-pinned); `tests/memfn/pins/arms.tsv` and `docs/testing.md`'s "111" are unrelated numbers.
+No emitted byte moved beyond the abi spelling.
+
+Ledger: `docs/dev/full_suite_ledger.md` has a `major` line (kit byte move + abi event). D177
+triggers: row 3 (a refactor or new engine path lands) FIRES; row 4 (2-3 majors since the last green
+full suite) counts 2 (the L3 remodels and this); row 2 not applicable; row 1 discharged long ago.
+
+## PLAN ROWS
+
+[COVER-WIDTH-SIMD]'s status line no longer says the block span is absent from main; a NOTE on
+[BSPAN-SCALAR-RISK] records the landing; [BSPAN-SCALAR-RISK] and [BSPAN-CLANG-DIFF] stay open. The
+[MEMFN] umbrella's status line is at its 300-character cap (PL10), so the landing is recorded in the
+ledger, the NOTE and the history index instead.
+
+## PRUNE
+
+None (the kit's branch is the kit's).
+
+## OWED RUNS
+
+VERDICTS (read after handback): local `make test-codegen test-registry test-rxtsource` EXIT 0, no `*** [...test-X] Error` lines; cloud u2land-test and u2land-recid GREEN (per main); main pushed at 68521b3ad. Nothing is owed. The text below is the state at handback.
+
+- `scripts/boxlock run -- make test-codegen test-registry test-rxtsource`, queued 15:40 on 2026-11-21 and
+  waiting behind other holders. Log: `/var/tmp/pcrec-pcrec/scratch/u2land/suites.log`; completion
+  line `EXIT <rc>` at its end; verdict by `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` (none = green).
+  Red: report the failing section; patch no pins beyond the number move.
+- Cloud: `scripts/cloudrun --kind test` and `--kind recidentity` on the final landed sha (names
+  `u2land-test`, `u2land-recid`), LAUNCHED on 9c93cfdac (cloud/main/test/u2land-test, cloud/main/recidentity/u2land-recid; proved by git ls-remote).
+
+---
+
+# Earlier lane of the same name (2026-09-29, [UCP] U2) — verbatim
+
+## u2land report — [UCP] U2 landed onto current main (2026-09-29, sonnet)
 
 Branch `lane/u2land`, from `lane/ucpu3` (9220d01e), merged with main
 (31979ed3: [CLS-TREE] S1 + clstri + s1tri, clsid). Merge commit `aab32f9b`.

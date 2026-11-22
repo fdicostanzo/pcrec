@@ -73,29 +73,44 @@ static StartSet ss_all(void)
     return s;
 }
 
-/* The start set of node `a` followed by `acc`, for a kind whose ROW answers
- * for its text: ZERO consumes nothing, so the first byte comes from `acc`;
- * ANY is every byte, nullable. An OWN kind has its own arm; it would get
- * every byte, which is always sound. */
-static StartSet ss_row(const Ast *a, StartSet acc)
+/* `*acc` becomes the start set of `a` followed by `*acc`, for a kind whose
+ * ROW answers for its text: ZERO consumes nothing, so the first byte comes
+ * from `*acc`; ANY is every byte, nullable. An OWN kind has its own arm; it
+ * would get every byte, which is always sound. */
+static void ss_row(const Ast *a, StartSet *acc)
 {
     switch (pcrec_ast_row(a).text) {
-    case KTEXT_ZERO: return acc;
-    case KTEXT_ANY:  return ss_all();
+    case KTEXT_ZERO: return;
+    case KTEXT_ANY:  *acc = ss_all(); return;
     case KTEXT_OWN:  break;
     }
-    return ss_all();
+    *acc = ss_all();
 }
 
-/* The start set of `a` followed by `acc` (what lies to its right). */
-static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
+/* `*acc` becomes the start set of the class `a` followed by `*acc`. ITS OWN
+ * FRAME ([DD-10], K149): the class's byte set is dead before the walk
+ * recurses, so it must not sit in the frame every nesting level pays. */
+static PCREC_OWN_FRAME void ss_class(Ctx *cx, const Ast *a, StartSet *acc)
+{
+    StartSet c;
+    pcrec_cls_bits(cx, a, c.bits);
+    c.nullable = false;
+    *acc = ss_cat(c, acc);
+}
+
+/* `*acc` (what lies to the right of `a`) becomes the start set of `a`
+ * followed by it. In and out through one pointer, so a nesting level pays
+ * one StartSet of its own and no by-value copies ([DD-10], K149: the
+ * by-value form paid 400 bytes a frame, four frames a level). */
+static void ss_walk(Ctx *cx, const Ast *a, StartSet *acc)
 {
     for (;;) {
         switch (a->k) {
         case A_CAT: {
-            /* `a->r` sits between everything still to walk and `acc`. */
-            StartSet r = ss_walk(cx, a->r, ss_empty());
-            acc = ss_cat(r, &acc);
+            /* `a->r` sits between everything still to walk and `*acc`. */
+            StartSet r = ss_empty();
+            ss_walk(cx, a->r, &r);
+            *acc = ss_cat(r, acc);
             a = a->l;
             continue;
         }
@@ -108,29 +123,31 @@ static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
             a = a->l;
             continue;
         case A_ALT: {
-            StartSet u = ss_walk(cx, a->r, ss_empty()), b;
-            const Ast *t = a->l;
-            for (;;) {
-                b = ss_walk(cx, t->k == A_ALT ? t->r : t, ss_empty());
+            /* The union of the branches, each walked into `b` from the
+             * empty suffix and ORed into `u` (which starts as the empty
+             * union: no bytes, not nullable). */
+            StartSet u = ss_empty();
+            u.nullable = false;
+            PCREC_SPINE_EACH(br, a, A_ALT) {
+                StartSet b = ss_empty();
+                ss_walk(cx, br, &b);
                 for (int i = 0; i < 32; i++) u.bits[i] |= b.bits[i];
                 u.nullable = u.nullable || b.nullable;
-                if (t->k != A_ALT) break;
-                t = t->l;
             }
-            return ss_cat(u, &acc);
+            *acc = ss_cat(u, acc);
+            return;
         }
         case A_REP: {
             /* The body's set; a minimum of 0 admits the empty iteration. */
-            StartSet b = ss_walk(cx, a->l, ss_empty());
+            StartSet b = ss_empty();
+            ss_walk(cx, a->l, &b);
             if (a->u.rep.rmin < 1) b.nullable = true;
-            return ss_cat(b, &acc);
+            *acc = ss_cat(b, acc);
+            return;
         }
-        case A_CLASS: {
-            StartSet c;
-            pcrec_cls_bits(cx, a, c.bits);
-            c.nullable = false;
-            return ss_cat(c, &acc);
-        }
+        case A_CLASS:
+            ss_class(cx, a, acc);
+            return;
         /* Zero-width: consumes nothing, so the first byte comes from what
          * follows (§3.2). */
         case A_EMPTY:
@@ -145,10 +162,12 @@ static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
         case A_CALLOUT:
             /* [INLINE-C] 1a: the kind ROW answers (`ss_row`): text ZERO for
              * every kind above the backreference, ANY for the two. */
-            return ss_row(a, acc);
+            ss_row(a, acc);
+            return;
         /* A call's text is its callee's (row OWN), not looked into either. */
         case A_CALL:
-            return ss_all();
+            *acc = ss_all();
+            return;
         }
     }
 }
@@ -156,5 +175,6 @@ static StartSet ss_walk(Ctx *cx, const Ast *a, StartSet acc)
 /* THE START SET of the lowered tree `root` into `*out`. */
 void pcrec_start_set(Ctx *cx, const Ast *root, StartSet *out)
 {
-    *out = ss_walk(cx, root, ss_empty());
+    *out = ss_empty();
+    ss_walk(cx, root, out);
 }

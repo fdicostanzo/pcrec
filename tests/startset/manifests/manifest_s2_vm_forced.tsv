@@ -11,6 +11,8 @@
 # under --engine=vm); no existing row moved.
 # r4cpin (2026-10-06): +6 rows, every one a tests/litscan/handoff.rxt R4c VM-hybrid handoff witness block (lane r4cchecks); regenerated
 # with census_s1.py on the current build, no existing row moved.
+# k146land (2026-11-20): tests/lookaround/quantified.rxt gained 7 blocks (lane k146fix/k146f2): 3 new --engine=vm movers (:266 :282 :331, capture-bearing K146-shape cells)
+# and the 3 existing movers shifted by +274 lines (:108/:114/:121 -> :382/:388/:395, same patterns, hex unchanged); the 4 other new blocks are not movers. Hex read off the patterns, rows by the vm-movers check.
 #id	options	pattern_hex
 # k93tri (2026-10-07): +18 rows, every one a tests/recursion/k93.rxt block (lane k93fix's new file; census_s1.py on the k93fix build, ubuntubudu); no existing row moved.
 # k94tri (2026-10-07): +424 rows: 8 tests/backrefs/caseless_ucp.rxt blocks (lane k94fix's new file) and 416 tests/possessify/composition_d27.rxt blocks (main's D27 composition corpus, landed without this pin); census_s1.py on the merged tree, no existing row moved.
@@ -2563,9 +2565,12 @@ tests/lookaround/prefilter.rxt:67	--features lookaround	28283f3a61283f2171297c61
 tests/lookaround/prefilter.rxt:81	--features lookaround	283f3a61283f2171297c617129787b302c337d71
 tests/lookaround/prefilter.rxt:93	--features lookaround	792a28283f3a61283f2171297c617129283f3a7879297b302c347d7129
 tests/lookaround/quantified.rxt:103	--features lookaround,atomic-groups	283f3d61292a2b61
-tests/lookaround/quantified.rxt:108	--features lookaround	283f3d61292a3f61
-tests/lookaround/quantified.rxt:114	--features lookaround	28283f3d61292a2961
-tests/lookaround/quantified.rxt:121	--features lookaround	283f3a283f3d612961292b
+tests/lookaround/quantified.rxt:266	--features lookaround,atomic-groups	283f3d2861297c62283f3d2861297c62283f3d2861297c6263292a292a292a78
+tests/lookaround/quantified.rxt:282	--features lookaround,atomic-groups	283f3a283f3d2861297c62283f3a283f3d2861297c62283f3a283f3d2861297c62283f3a283f3d2861297c62283f3a283f3d2861297c6263292a2b6229292a2b6229292a2b6229292a2b6229292a2b6229
+tests/lookaround/quantified.rxt:331	--features lookaround,atomic-groups	283f21617c286229283f21617c286229283f21617c286229283f21617c286229283f21617c286229283f21617c28622963292a2b292a2b292a2b292a2b292a2b292a2b78
+tests/lookaround/quantified.rxt:382	--features lookaround	283f3d61292a3f61
+tests/lookaround/quantified.rxt:388	--features lookaround	28283f3d61292a2961
+tests/lookaround/quantified.rxt:395	--features lookaround	283f3a283f3d612961292b
 tests/lookaround/quantified.rxt:69	--features lookaround	283f3d61292a61
 tests/lookaround/quantified.rxt:74	--features lookaround	283f3d61292b61
 tests/lookaround/quantified.rxt:79	--features lookaround	283f3d61293f61
@@ -3311,6 +3316,8 @@ tests/possessify/possessify.rxt:895		7a617b302c327d3f
 tests/possessify/possessify.rxt:927		617b312c337d3f633f
 tests/possessify/possessify.rxt:95		5b61625d7b332c337d63
 tests/possessify/possessify.rxt:991		617b312c337d
+tests/possessify/possessify.rxt:4859	--features all --engine=vm	287829285c3129285c3229285c3329285c3429285c3529285c3629285c3729285c3829285c3929285c313029285c313129285c313229285c313329285c313429285c313529285c313629285c313729285c313829285c313929285c323029285c323129285c323229285c323329285c323429285c323529285c323629285c323729285c323829285c323929285c333029285c333129285c333229285c333329285c333429285c333529285c333629285c333729285c333829285c333929285c343029285c343129285c343229285c343329285c343429285c343529285c343629285c343729285c343829285c343929285c353029285c353129285c353229285c353329285c353429285c353529285c353629285c353729285c353829285c353929285c363029285c363129285c363229285c363329782b5c3634
+tests/possessify/possessify.rxt:4931	--features all --engine=vm	287829285c3129285c3229285c3329285c3429285c3529285c3629285c3729285c3829285c3929285c313029285c313129285c313229285c313329285c313429285c313529285c313629285c313729285c313829285c313929285c323029285c323129285c323229285c323329285c323429285c323529285c323629285c323729285c323829285c323929285c333029285c333129285c333229285c333329285c333429285c333529285c333629285c333729285c333829285c333929285c343029285c343129285c343229285c343329285c343429285c343529285c343629285c343729285c343829285c343929285c353029285c353129285c353229285c353329285c353429285c353529285c353629285c353729285c353829285c353929285c363029285c363129285c363229285c363329285c363429782b5c3635
 tests/quoting/d27/adjacent_escapes.rxt:10	--features quoting	5c515c645c45
 tests/quoting/d27/adjacent_escapes.rxt:16	--features quoting,classes	5c775c5178795c455c73
 tests/quoting/d27/adjacent_escapes.rxt:4	--features quoting,classes	5c645c512b5c45
@@ -4656,6 +4663,7 @@ tests/utf8/wclass_illformed.rxt:981	--features all --encoding=utf8	78283f69295b6
 # reqpast (2026-11-12, [REQ-PAST-LAST]): tests/litscan/handoff_vm.rxt regenerated (six unbounded-K blocks inserted before the declines): rows 485, 509, 550, 711 removed and the file's movers re-pinned under their new ids; the VM hat row read off each block's own compile on the lane build, no other file's row moved.
 # mechund (2026-11-14): +2 rows, the two --engine=vm blocks added to tests/base/vm_lazy_rmin_prefix.rxt (S711's alternative-wrapped witnesses, lines 268/276), correct movers never pinned; no existing row moved.
 # r1on (2026-11-14, [RUN-POS-SET] rule (1) on): tests/litscan/spanarms.rxt gains S-c's two blocks at its end (`xy(?:ab|abc)zw`, lines 683 default and 690 engine vm); vm_auto +1 row (690), vm_forced +2 (683, 690); no existing row moved.
+# k147f2 (2026-11-20, r64 F5): +2 rows, the two tests/possessify/possessify.rxt B-depth BOUND cells (K=64, K=65), appended at the end of the file so no existing row moved.
 tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	28617c61617c62292b6378797a
 tests/litscan/handoff_vm.rxt:549	--features all --encoding=byte --engine=vm	622a7878283f3d7129
 tests/litscan/handoff_vm.rxt:569	--features all --encoding=byte --engine=vm	612b78797a
@@ -5127,3 +5135,45 @@ tests/lookaround/d27_l3/l3d27_witnesses.rxt:13738	--features lookaround	622a283f
 tests/lookaround/d27_l3/l3d27_witnesses.rxt:13927	--features lookaround --engine=vm	622a283f3c3d61622963
 tests/lookaround/d27_l3/l3d27_witnesses.rxt:14117	--features lookaround	283f3c3d616229283f3c3d62622961
 tests/lookaround/d27_l3/l3d27_witnesses.rxt:14143	--features lookaround --engine=vm	283f3c3d616229283f3c3d62622961
+# bsu1 (2026-11-21, R-47 U1): +41 rows, every block of the new tests/memfn/span_seed.rxt (SPAN-SEED, block_span.md §9.3), VM-hat movers under --engine=vm; taken from census_s1.py on the lane's build (corpus rows only, no existing row moved; the regeneration's other differences are left as they were).
+tests/memfn/span_seed.rxt:1013		5b412d5a612d7a302d395f2d5d7b33327d
+tests/memfn/span_seed.rxt:1052		5b412d5a5d7b31377d
+tests/memfn/span_seed.rxt:1076		5b412d5a5d7b32357d
+tests/memfn/span_seed.rxt:1108		5b412d5a5d7b33327d
+tests/memfn/span_seed.rxt:1147		5b2b2e302d395d7b31377d
+tests/memfn/span_seed.rxt:1171		5b2b2e302d395d7b32357d
+tests/memfn/span_seed.rxt:1203		5b2b2e302d395d7b33327d
+tests/memfn/span_seed.rxt:129		5b302d39612d665d7b31367d
+tests/memfn/span_seed.rxt:152		5b302d39612d665d7b31377d
+tests/memfn/span_seed.rxt:176		5b302d39612d665d7b313030317d
+tests/memfn/span_seed.rxt:192		5b302d39612d665d7b313030327d
+tests/memfn/span_seed.rxt:208		5b302d395d7b32347d
+tests/memfn/span_seed.rxt:239		5b302d395d7b32357d
+tests/memfn/span_seed.rxt:271		5b302d395d7b36357d
+tests/memfn/span_seed.rxt:285		5b302d395d7b36367d
+tests/memfn/span_seed.rxt:300		61625b302d395d7b32367d
+tests/memfn/span_seed.rxt:335		5b78795d5b302d395d7b32367d
+tests/memfn/span_seed.rxt:369		5b302d39612d665d7b32307d5b672d7a5d7b32307d
+tests/memfn/span_seed.rxt:384		5b302d39612d665d7b32357d
+tests/memfn/span_seed.rxt:416		5b302d395d7b31377d
+tests/memfn/span_seed.rxt:440		5b302d395d7b33327d
+tests/memfn/span_seed.rxt:46	--features assertions	5c625b302d39612d665d7b33327d5c62
+tests/memfn/span_seed.rxt:479		5c777b31377d
+tests/memfn/span_seed.rxt:503		5c777b32357d
+tests/memfn/span_seed.rxt:535		5c777b33327d
+tests/memfn/span_seed.rxt:574		5b6165696f755d7b31377d
+tests/memfn/span_seed.rxt:598		5b6165696f755d7b32357d
+tests/memfn/span_seed.rxt:630		5b6165696f755d7b33327d
+tests/memfn/span_seed.rxt:669		5b5e5c6e5d7b31377d
+tests/memfn/span_seed.rxt:693		5b5e5c6e5d7b32357d
+tests/memfn/span_seed.rxt:7		5b302d39612d665d7b33327d
+tests/memfn/span_seed.rxt:725		5b5e5c6e5d7b33327d
+tests/memfn/span_seed.rxt:764	--encoding=byte	5b5c7838302d5c7862665d7b31377d
+tests/memfn/span_seed.rxt:789	--encoding=byte	5b5c7838302d5c7862665d7b32357d
+tests/memfn/span_seed.rxt:822	--encoding=byte	5b5c7838302d5c7862665d7b33327d
+tests/memfn/span_seed.rxt:862		5b612d665d7b31377d
+tests/memfn/span_seed.rxt:88		5c647b33327d
+tests/memfn/span_seed.rxt:886		5b612d665d7b32357d
+tests/memfn/span_seed.rxt:918		5b612d665d7b33327d
+tests/memfn/span_seed.rxt:957		5b412d5a612d7a302d395f2d5d7b31377d
+tests/memfn/span_seed.rxt:981		5b412d5a612d7a302d395f2d5d7b32357d
