@@ -5,6 +5,8 @@ Lane predfix77 (opus), branch lane/predfix77 cut from lane/pred-rev28 at dbf9336
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Commits: 9225a8dfe (dispositions applied, evidence model), 1ee7e8681 (merge of lane/pred-rev28, alone, R-1),
   fda5b12a6 (array-in-piece RULED (b) folded; bound-condition kept open, his position stated), and the final commit
   (R-3 marks, the filed review, evidence outputs, this report, history line).
