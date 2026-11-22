@@ -7123,3 +7123,15 @@ five printed definitions this refuses and their in-place forms: pass-start-read'
 `n := count((d: "7"))` against a constant (`occurs.exactly(2, (d: "7"))`); `nchars` in `length(S)`: NO spelling
 today (a count against a set): asked as **count-in-set**; (d) core/values/computed-labels (a reading) is
 withdrawn as a binding form; whether a computed value survives in place is count-in-set's question.
+
+### 2026-11-22 OWNER, on bound-condition: "illegal meaning a compiler error"
+tags: core/holes/bare-condition/nested-scope core/conditions/form core/values/computed-labels core/diagnostics/errors
+
+After the ruling entry above was read back to him and **count-in-set** asked. HIS WORDS, whole:
+
+"illegal meaning a compiler error"
+
+Class: a CLARIFICATION of his own word in the bound-condition ruling (part of that ruling): the forms he called
+illegal (`A := (x: blah)`; `A := /x/ & (y: blah)`; a computed label bound alone, by his confirmation) are COMPILE
+ERRORS, at the binding (the place is the manager's reading, from "x has no references in the binding" and his
+case-1 words "compile error at inner"). Not the under-construction error. count-in-set: not answered by this.
