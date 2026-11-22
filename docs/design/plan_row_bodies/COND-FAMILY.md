@@ -8051,3 +8051,25 @@ inside `[ ]` or directly inside a hole `${ }` (so his `${=rx}` needs no brackets
 belong to conditions, calls and binding lists. It REVERSES the documents' reading at core/operators/precedence
 ("inside an entry `&` and `|` bind tighter than `=`") for `|`; one printed program changes meaning under it and
 needs parentheses: `atomic([ab = B | A])` (lane preddef's re-spelling; `[ab = (B | A)]`).
+
+### 2026-11-22 OWNER, on arrays: `a | b | c` is an array and an rx; `A[]` is array access; the comma form in brackets stays for now, seen as a macro that makes an array
+tags: core/arrays/lift core/operators/precedence core/values/metadata core/spellings/placeholders core/labels/paths
+
+Asked, after the manager's four precedence points for the label set ("label-set: yes"), which way on the comma
+(are `,` and `|` both entry separators inside `[ ]`, or `|` only). HIS WORDS, whole:
+
+"Array: a | b | c is definitely an array and of course an rx. A[] is an array access. For now, comma in square
+brackets is an array form unless we can think of a better use. Is see them as a macro that takes a,b,c and turns
+it into an array."
+
+Class: STATEMENTS answering the comma question (not worded as a ruling; "For now"): (1) `a | b | c` "is
+definitely an array and of course an rx" (arrays are alternations: ruled 2026-11-19); (2) `A[]` "is an array
+access" (the index form after an operand); (3) the comma form `[a, b, c]` stays "For now ... unless we can think
+of a better use", and he sees it "as a macro that takes a,b,c and turns it into an array": so `[a, b, c]` is
+`a | b | c`. The four precedence points of the label set are NOT answered by this message: they stand as the
+manager's syntax reading (the manager's call), to be marked so.
+
+The manager's readings (marked): (a) inside `[ ]` both `|` and `,` separate entries, the comma binding loosest;
+(b) each entry may carry a label set (`[a = A, b = B]` is `[a = A | b = B]`); (c) `[ ]` after an OPERAND is the
+access (`h[2]`), after an operator or at the start it is the array form (core/operators/precedence already reads
+it so).
