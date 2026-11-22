@@ -8024,3 +8024,30 @@ The manager's readings (marked): (a) `A.rx` is the SPOT's own text; the argument
 through it by path (`A.rx.g`), not flat: the third small form beside his `hide` (nothing) and `identity` (the
 inner labels flat); (b) a label named for the parameter by the `=` shorthand draws no hide-label warning (the
 shorthand asks for it); (c) `${=rx}` without the brackets is a spelling for the spellings review.
+
+### 2026-11-22 OWNER, on the spelling `[a = A]`: his interpretation: `[ ]` is an array of one rx, acting as `( )`; `a = A` is the label set, usable in an expression; `[a = A | b = B]`
+tags: core/labels/paths core/arrays/lift core/values/metadata core/operators/precedence core/spellings/placeholders core/holes/pattern
+
+After the manager wrote his `${=rx}` as `${[=rx]}` ("recorded as your placeholder ... the documents' form").
+HIS WORDS, whole:
+
+"[a=A] was your elegant spelling but my interpretation was that [] was defining an array of one rx which is that
+rx so effectively they are acting as (). The a=A could be used as the binding like [a = A | b = B] which is also
+your example of an array/map. The label set in my mind can happen in expression but the precedence needs
+clarifying hence []"
+
+Class: his INTERPRETATION of a spelling and a DIRECTION for it ("the precedence needs clarifying"); DISCUSSION;
+nothing ruled; spellings stay placeholders. What he says: (1) the brackets are the ARRAY (an array of one rx
+is that rx), so they act as grouping; (2) `a = A` is the label set, an operation of the expression language,
+usable for each entry: `[a = A | b = B]`, an array / map of labelled entries; (3) the label set "can happen in
+expression"; the brackets are there because its precedence is unclear.
+
+The manager's view (told to him; the syntax call is the manager's, offered for his word): agreed, and it unifies
+two things the documents keep apart: a part label and a labelled array entry (core/values/metadata already gives
+a member a name, `.label`). The precedence the manager would state: the label set `x = E` binds LOOSER than the
+sequence operator and `&` (so `[ok = item & (c)]` labels the filtered item, as the documents write it) and
+TIGHTER than `|` (so `[a = A | b = B]` is two labelled entries); it is written only where something delimits it:
+inside `[ ]` or directly inside a hole `${ }` (so his `${=rx}` needs no brackets); never bare in `( )`, which
+belong to conditions, calls and binding lists. It REVERSES the documents' reading at core/operators/precedence
+("inside an entry `&` and `|` bind tighter than `=`") for `|`; one printed program changes meaning under it and
+needs parentheses: `atomic([ab = B | A])` (lane preddef's re-spelling; `[ab = (B | A)]`).
