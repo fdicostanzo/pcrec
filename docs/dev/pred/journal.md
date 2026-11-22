@@ -714,3 +714,14 @@ question array-in-piece (documents mark the collision meanwhile); A3-A5, A7-A9, 
 verified by the lane, then PLAN; A10, D13 and the de-duplication PLAN; a new owner question helper-captures queued.
 Witness for array-in-piece re-run by a hand-built simulation (`$PCREC_TMPDIR/scratch/pred/array_in_piece.py`).
 P-18 written. NEXT: launch lane predfix77 (opus; files the review), ask him array-in-piece, then bound-condition.
+
+## 2026-11-22 (afternoon) — array-in-piece and bound-condition ruled; predfix77 merged; P-19 delivered
+
+RULED by him: array-in-piece (b) ("because B is bound first, its internal references refer only to what can be
+seen at that point"; both in-place forms, `&` and SEQ, see A's h); bound-condition (b) ("mostly confirmed": `A :=
+(x: blah)` and `A := /x/ & (y: blah)` are compile errors, computed labels bound alone with them; macro variables
+and macro types under construction; `c := (0: 5)` left open by him). My leaning (a) and the "laid where it is
+used" reading WITHDRAWN. Lane predfix77 (R-1, R-2, R-3 applied) delivered and merged: r77 filed and applied; lint
+5,771 / 0. P-19 written. IN THE RECORD, NOT IN THE DOCUMENTS: bound-condition (documents carry it open with his
+position). WAITING on him: count-in-set (he asked where `ch` is defined; answered). NEXT: his answer, then ONE
+opus follow-up lane folding bound-condition (+ count-in-set), a critic round on that fold (number from main), P-20.
