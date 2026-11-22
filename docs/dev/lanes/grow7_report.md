@@ -8,13 +8,12 @@ PREMISE TEST held: `tests/ci/cloud_kinds.tsv` has a `growth` row.
 
 - Run 44935813132 (tip d41fca2b7, 54-shard table): 17 of 54 shard jobs red, plus `gather` red = the 18 failed jobs.
   12 are the K155 library-stage leak, 4 are the K157 star cells, 1 is the spine/uni timeout. Nothing else: no new kind.
-- spine/uni@131069 here (box load 55 to 58, one cell): CLI stage 7.4 s summed over its 4 runs, library stage (plain build) 8.1 s.
-  Library over CLI is about 1x, nowhere near the 20x bound. The cloud timeout fired in the ASan library pass; see the open
-  ASan reading in "spine/uni timeout".
+- spine/uni@131069 is REAL: plain library compile 2.1 s, ASan library compile over 300 s on an idle box (reproduced, over 140x). Filed
+  K158 plus plan row [K158-UNI-ASAN-SLOW]. The CLI path and the plain library path are normal (4.0 s and 4.3 s stage walls).
 - The growth shard table is regenerated from the run's measured seconds: 82 shards, 1,600 cells once each (population check
   PASS), predicted slowest shard 1,491 s (24.9 min) against the 45-min (2,700 s) job limit. The old prediction was 609 s.
 - Load-sensitive cells: the wall bound fired (watchdog `-s 180`, per run, and the library driver's `alarm()` wall bound);
-  a verdict CAN flip on box load alone. The smallest fix is proposed, not built. R-1: the `+`@15 limit cells are also slow on their own (named.plus.first.lit@15 alone here: 183 s wall, 267 s CPU, killed at 180 s), so they need a per-cell bound as well (proposed, section Load-sensitive cells).
+  a verdict CAN flip on box load alone. The smallest fix is proposed, not built. R-1: named.plus.first.lit@15 alone on an idle box costs 82 s (pcrec compile; gcc is not part of the cell), inside the 180 s bound by 2.2x; at load 41 it crossed it. Verdict re-size: a per-cell bound for the `+` edge cells (proposed).
 
 ## spine/uni timeout
 
@@ -30,13 +29,20 @@ Here, one cell under `scripts/watchdog` (single-cell probe, unlocked; box load 5
 | library, plain build, RLIMIT_DATA caps | the same 5 compiles in one process | PASS; uncapped compile 7.31 s; cell total 8.14 s; stage wall 12.0 s |
 | library, ASan+LSan build (the cloud stage that timed out) | see below | see below |
 
-Reading so far: the plain library path is 1.1x the CLI path here (8.1 s against 7.4 s); the 20x rule that sets the bound is not
-close to firing. The cloud timeout is therefore NOT a plain library-path defect. Whether the ASan pass of this cell is
-slow here (a K row) or only on the runner (a cloud-runner effect) is the ASan run below.
+Re-run on an IDLE box (load about 5, `boxlock`; the first rows above were at load 55 to 58 and are 2x to 3x slower):
 
-ASAN RESULT: PENDING. The ASan library probe (`/var/tmp/pcrec-pcrec/scratch/grow7/probe.sh`, log `/var/tmp/pcrec-pcrec/scratch/grow7/probe.log`,
-completion line `PROBE-DONE`) is queued behind `boxlock` jobs; the verdict and the K row (if any) are filled below once it
-runs. (K158 is the next free number if the cell is real.)
+| stage | idle box |
+|---|---|
+| CLI stage (4 runs) | stage wall 4.0 s; the cell 2.25 s |
+| library, plain build | stage wall 4.3 s; uncapped compile 2.11 s |
+| library, ASan+LSan build | TIMEOUT at the 300 s floor on series line 0 (the uncapped compile): `lib asan wall 301.79 s`, `library process exit 124` |
+
+Classification: REAL, not a cloud-runner effect. The cloud and the idle local box time out the same way, and the same cell is 2 s in the plain
+build; the ASan build is over 140x slower on it, where the 20x bound expects a few times. `spine/lit@131069` and `spine/z_cls@131069` pass the
+ASan pass in the cloud (35 s and 50 s per cell), so the cost is the Unicode class, not the state count. Filed: K158 in `docs/dev/known_issues.md`,
+plan row [K158-UNI-ASAN-SLOW] in `docs/dev/plan.md` (`plan_lint.py` 0 violations). Cause not investigated (no src/ edit); the first step is a
+profile of the ASan build. What in the bound would absorb it instead: nothing reasonable, since 300 s is already 140x the plain cost; raising the
+floor would hide a likely quadratic pass. The cell stays red honestly at the floor until the fix lane lands.
 
 ## proof2 classification
 
@@ -79,20 +85,34 @@ SIGPROF so the library bound counts the process's own CPU (the compile runs on t
 constants stay, the reported text names "CPU" (the 123/124 conflation goes away). This needs a build go; the harness change is
 in `tests/growth/` plus one C file under `tests/growth/` (not `src/`).
 
-R-1 (main, 14:58; cloud evidence): grow6-growth shard 20 timed out `matrix/named.plus.first.lit@15` at 180 s on a GitHub runner. Measured
-alone here (`--no-ladder`, uncapped run only, scratch two-shard table, box load 41 falling to 15 over the run): the cell TIMED OUT again,
-`FAIL ... [TIMEOUT] wall/CPU limit (180s)`; `/usr/bin/time` on the whole stage: wall 183.3 s, user 230.6 s, sys 36.2 s (about 267 s of CPU,
-more than the wall: the compile uses a second thread), max RSS 1.39 GB. The cell is a `compile:norun` limit cell (no gcc, no matcher run), so by
-construction the time is all in the one `growth_driver one` process: pcrec's compile plus writing the emitted C (22 to 119 MB on the `+` edges).
-Gcc and the matcher are not in this cell. So the `+`@15 limit cells are slow on their own: this one costs more than 180 s of wall AND of CPU
-at modest load, unlike grow6's `group.plus.first.lit@15` (about 100 s wall, 48 s CPU), so the `+` edge cells differ several-fold from one
-another and a single 180 s bound sits inside their range. The CPU-bound fix above does NOT help this cell (its CPU is over the bound).
-Verdict: RE-SIZE (a bound change), not a K row: the cost is the one the owner ruled (limit-cell-matcher-cost) and the cells pass answer-wise
-when given time. Proposal (not built): the 180 s wall/CPU bound becomes per cell from a measured value: the `+` edge cells (the `plus_edges.tsv`
-rows) take max(180, 4 x their measured CLI seconds) as the CPU bound, with the cell's seconds recorded by the next cloud run's `--units`; until
-measured, 900 s for that cell class. The cell's measured seconds are not known yet (this run killed it at 180 s, and the cloud red shard's units
-are dropped), so the first measurement run would use the 900 s class bound. Same arithmetic for the library stage: floor 300 s may also be low
-for a `+` edge cell's ASan compile; it takes 20 x the CLI wall once the cell has one.
+R-1 (main, 14:58; cloud evidence): grow6-growth shard 20 timed out `matrix/named.plus.first.lit@15` at 180 s on a GitHub runner. Measured here, in
+two runs of the same cell.
+
+Run A (unlocked, load 41 falling to 15, `--no-ladder`, bound 180 s): TIMEOUT again; stage wall 183.3 s, user 230.6 s, sys 36.2 s, max RSS 1.39 GB.
+
+Run B (under `boxlock`, idle box, load 2 to 3, bound raised to 900 s by direct `scripts/watchdog` flags, the harness untouched; the three stages timed
+separately by `/usr/bin/time`, driver built as `run_growth.py` builds it):
+
+| stage | wall | user | sys | max RSS | result |
+|---|---|---|---|---|---|
+| pcrec compile + emit C (`growth_driver one ... <csrc>`) | 82.4 s | 93.8 s | 8.9 s | 1.62 GB | rc=0, 41.4 MB of C |
+| gcc -O0 on that C | killed at 900 s | 135.4 s | 94.3 s | 1.5 GB | TIMEOUT (wall, over the raised bound) |
+| matcher on `""`, `a`, `abcabc` | not run (no executable) | | | | |
+
+Which stage spends the time: the harness does NOT run stages 2 and 3 for this cell (`compile:norun=limit-cell-matcher-cost`), so the harness's 180 s
+bound covers stage 1 only, and stage 1 is 82 s wall (about 103 s CPU, over wall because the compile uses a second thread) on an idle box. gcc is the
+reason the exception exists: the 41 MB of C does not build in 15 minutes (it spends more wall on I/O and memory than CPU: 229 s CPU of 900 s wall at
+load 2, so it is stalled on memory or disk, not compute; not investigated further).
+
+So the `+`@15 limit cells are NOT slow beyond the bound on their own on an idle box (82 s against 180 s, 2.2x margin); they become over-bound at load
+(run A: load 41 took the same compile past 180 s wall and about 267 s CPU) and on a runner 2.2x slower than this box (the cloud case). grow6's
+`group.plus.first.lit@15` (about 100 s wall, 48 s CPU at load 70) shows the cells also differ from one another. The CPU-bound fix above helps wall
+inflation but not CPU inflation from contention (run A's CPU rose from 103 s to 267 s with load), so it is not enough alone for these cells.
+
+Verdict: RE-SIZE (a bound change), not a K row: the idle cost is within the bound and is the cost the owner ruled for (limit-cell-matcher-cost).
+Proposal (not built): the `+` edge cells (the `plus_edges.tsv` rows, class `matrix/plus/limit`) take their own bound, max(180 s, 4 x the cell's
+measured seconds from the cloud `--units` record), 900 s until measured; the library stage's 300 s floor gets the same rule for the same cells.
+The measured seconds already exist for the green shards (`tests/ci/measured_growth.tsv`); the red shard's cells (this one) get theirs from the next run.
 
 ## Reweigh
 
@@ -119,7 +139,7 @@ measures them.
 
 ## STATE AT HANDOFF
 
-Branch lane/grow7, commit a41723e43 (measured_growth.tsv, cloud_growth_shards.tsv) plus this report. No rulings file content;
+Branch lane/grow7: commit a41723e43 (measured_growth.tsv, cloud_growth_shards.tsv), this report, K158 in known_issues.md and its plan row. Logs: /var/tmp/pcrec-pcrec/scratch/grow7/{probe,stages,plus}.log. No rulings file content;
 last R-n applied: none. No src/ edit. No cloud dispatch (main dispatches the proof run after review).
 
-OWED: the ASan library probe for spine/uni@131069 (queued behind box-lock jobs): `/var/tmp/pcrec-pcrec/scratch/grow7/probe.log`, completion line `PROBE-DONE`; it settles whether task 1 is real (K158 plus a plan row) or a cloud-runner effect.
+OWED: none

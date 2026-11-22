@@ -2261,6 +2261,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-21): the control already runs on growth_driver (r73 FIX-NOW); tests/thread/compile_stack_driver.c is a second copy of growth_driver.c still serving the width and unbuilt arms, and three expansion dialects remain (shell nest/rep/chain, Python nest() and spine())
   trigger: the next lane that touches tests/thread or tests/growth's drivers: move the width and unbuilt cases onto cells.tsv rows (the `red` ratchet carries the unbuilt flip), delete compile_stack_driver.c and the shell pattern builder, fold `post`'s escaping into printf_fmt
   refs: docs/dev/reviews/2026-11-21-r73-growth.md (HOUSE-1, HOUSE-2); tests/thread/run_compile_stack.sh; tests/growth/growth_driver.c; tests/growth/run_growth.py
+- [K158-UNI-ASAN-SLOW] STATE:not-started — compiling `[\p{L}\p{N}]` at the NFA-state edge takes 2 s plain, over 300 s under ASan (K158)
+  filed: 2026-11-21 lane grow7, from cloud growth run 44935813132 shard 27
+  status (2026-11-21): filed; nothing built. spine/uni@131069: plain library compile 2.11 s, ASan library compile over 300 s (reproduced on an idle box); the literal and `[ab]` edge cells are fine under ASan
+  next: profile the ASan build on the cell; find the repeated work; fix it or size the cell's library bound; the cloud growth library stage then loses its non-K155 red
+  refs: known_issues K158; docs/dev/lanes/grow7_report.md; tests/growth/cells.tsv (spine/uni)
 - [K157-STAR-NEST-FRAMES] STATE:not-started — a legal 250-deep `*` nest compiles; its matcher gives up on a 3-byte subject (K157)
   filed: 2026-11-21 lane grow6, from growcloud's finding (the four red matrix `*` cells)
   status (2026-11-21): filed; nothing built. group.star.last.lit starts giving up (exit 3) at depth 45 on 'abc'; stamped capacity 2048 resume / 3072 trail frames, .subject_ceiling 4; libpcre2 10.46 answers; four growth cells carry K157:MATCHER
