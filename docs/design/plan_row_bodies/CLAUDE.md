@@ -14,3 +14,4 @@ Each file is the row VERBATIM as it stood when it was moved (2026-10-12), indent
 
 Maintenance: add a file here when a plan row is split out; update this list.
 - `GROWTH-SWEEP.md` — [GROWTH-SWEEP]'s long-form rulings (growth-compile-cells).
+- `AUTOMATON-KIT.md` — [AUTOMATON-KIT]: the owner's loop-in-loop rewrite direction (2026-11-22).
