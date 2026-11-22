@@ -10334,8 +10334,9 @@ D196 addendum 2 (2026-11-12, Frank): MECHANISM AND SYNTAX ARE UNTETHERED. "The &
   [COVER-WIDTH-KIT] / [ENGINE-COST-UNIT] when built.
   - **Add. 1 follow-up (Frank 2026-11-22, in the kit session, relayed verbatim):** "width-night-bench: but this leaves kit options
     like the candidate check might be disjoint from the coverage or the cover check goes into the non coverage because the simd
-    form checks 32 bytes anyway". Folded: the stated range is an OBLIGATION (what the site's answer must prove), not a fence: the
-    kit may test positions outside it. KIT'S PROPOSED CONDITIONS, for the owner to check (derived, not his words): the kit may test
+    form checks 32 bytes anyway". His words are only that sentence. KIT'S READING AND PROPOSAL, for the owner to check (derived,
+    not his words): the stated range is an OBLIGATION (what the site's answer must prove), not a fence, so the kit may test
+    positions outside it; the kit may test
     outside the range only if (a) every reject uses only sets pcrec states as NECESSARY at that position, and (b) every read stays
     inside the subject; so the fact also carries per-position sets past the range (exact inside, hull outside); and extra positions
     are TESTED, never PROVEN (they can only reject, never extend what the answer proves).
