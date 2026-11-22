@@ -9,7 +9,7 @@ followups and we can continue this conversation later"). Committed docs win on a
   2026-11-19..21, array-in-piece, review r77 filed and applied. ON THE BRANCH ONLY, not delivered: everything
   ruled after array-in-piece today (below), folded by lanes predbound (merged) and predref (merged), NOT YET
   REVIEWED.
-- IN FLIGHT: lane **predcall** (opus; `worktrees/predcall`, branch lane/predcall cut at e10799e53; watcher
+- IN FLIGHT: critic round **r82** (coordinator `crit-predfold1122`, opus; round dir `$PCREC_TMPDIR/scratch/crit-predfold1122/`; subject frozen at 6f1fe4e84, diff from 399ef98f4). Lane predcall is MERGED (closed-argument ruled (a) is in it). The subject stays FROZEN until the draft: record only. (The next three lines describe predcall as it was launched.)
   `scripts/lanewatch --follow predcall`): call-prefix case 1, the `A.d` / `c.d` lines, his second hits example, an
   `open closed-argument` piece with his lean, `c.A`. Its rulings file was empty at launch.
 - NEXT, in order: (1) accept predcall (`scripts/lanewatch predcall` prints DONE; report's STATE AT HANDOFF; merge

@@ -743,3 +743,14 @@ call-prefix, zero-condition-binding, count-several, capture-loop-value, zero-in-
 reading, macro variables / macro types (with declared labels), group-truth, every-pass-spelling, the older ones.
 
 2026-11-22, his direction after closed-argument (not confirmed as a ruling: his lean (a) stands recorded): "do your followups and we can continue this conversation later". Lane predref delivered and MERGED (lint 6,205 / 0; its model 8 / 0; no answer changed by the sweep). Launching lane predcall (opus): call-prefix case 1, the A.d / c.d lines, his second hits example, closed-argument as an open piece with his lean, c.A. Then r82.
+
+## 2026-11-22 (evening) — closed-argument ruled; predcall merged; critic round r82 launched
+
+RULED: closed-argument (a) (and with it call-prefix case 2: `A.d` legal exactly where `d` is visible through the
+call). Lane predcall delivered (R-1 applied) and MERGED: tip 6f1fe4e84, lint 6,289 / 0, its model 14 / 0. One
+model defect it reported: the evidence models keep `_x` part-label groups visible (against export statement 6):
+for the r82 fix lane. LAUNCHED: coordinator `crit-predfold1122` (opus, background), review r82, design mode,
+subject = diff 399ef98f4..6f1fe4e84 of docs/design/predicates/, round dir
+`$PCREC_TMPDIR/scratch/crit-predfold1122/`. The subject stays FROZEN until the draft: anything he rules meanwhile
+is RECORDED only. WAITING on: the coordinator's hand-back (read the round dir at each wake). Frank: "do your
+followups and we can continue this conversation later".
