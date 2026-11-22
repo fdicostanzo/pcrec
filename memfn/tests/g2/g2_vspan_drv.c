@@ -54,7 +54,7 @@ static void on_fault(int sig, siginfo_t *si, void *uc)
     unsigned char *a = si->si_addr;
     const char *which = a >= g_lo && a < g_lo + g_pg ? "low-guard"
                       : a >= g_hi && a < g_hi + g_pg ? "high-guard" : "elsewhere";
-    int n = snprintf(m, sizeof m, "FAULT %d %d %s %ld %s sig=%d\n", g_id, g_idx,
+    int n = snprintf(m, sizeof m, "\nFAULT %d %d %s %ld %s sig=%d\n", g_id, g_idx,
                      g_place ? "high" : "low", (long)(a - g_win), which, sig);
     if (n > 0) { ssize_t w = write(1, m, (size_t)n); (void)w; }
     _exit(3);
@@ -74,6 +74,7 @@ int main(void)
         printf("SKIPPED: the host lacks ssse3/avx2; the V text was written for x86-64-v3\n");
         return 4;
     }
+    setvbuf(stdout, NULL, _IOLBF, 0);   /* every answer line out before a fault's _exit */
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
     sa.sa_sigaction = on_fault;
