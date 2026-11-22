@@ -6995,3 +6995,39 @@ dispositions, by the draft's ids; every one is the manager's, none an owner ruli
 WITHDRAWN or narrowed readings of the manager's, by this round: case-2 reading (c) (already withdrawn on his
 words); "a binding is its expression where it is used" narrowed to flags; the class gloss "(a binding or a macro
 body)" inside the ruled match-so-far statement becomes a marked reading.
+
+### 2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)
+tags: core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/holes/bare-condition/nested-scope lib/counting/some lib/counting/count lib/counting/occurs
+
+Asked **array-in-piece** (review r77, finding A1: inside a separately defined piece, does a group question
+(`some`, `count`, `occurs`, `h[k]`) read (a) the entire rx's settings of the name (array-scope, 2026-11-19: "the
+only way to do it is by the scope of the entire rx") or (b) the piece's own settings only (bare-nested-scope case
+2, 2026-11-21; "bindings define scope"); the witness `A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h:
+"7"))}/`, run as a hand-built simulation in PCRE's order (`$PCREC_TMPDIR/scratch/pred/array_in_piece.py`), the
+output pasted:
+entire: WHOLE `7` HOLDS / WHOLE `7;1` HOLDS / WHOLE `1;7` HOLDS / WHOLE `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14]
+own: WHOLE `7` FAILS / WHOLE `7;1` FAILS / WHOLE `1;7` HOLDS / WHOLE `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14]
+the manager's leaning (b), with: array-scope then stays the rule for whoever writes the question at a level that
+sees both parts). HIS WORDS, whole:
+
+"array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is
+bound first, its internal references refer only to what can be seen at that point."
+
+Class: a RULING on the slug, answer (b), in his own statement: a piece that is BOUND has its internal references
+(a group question's array included) "refer only to what can be seen at that point", the point of its binding;
+written in place in the definition that holds A, the same text "would see the h from A". The two rulings no
+longer collide: array-scope ("the scope of the entire rx") is read over the definition the question is written
+in, with everything visible there.
+
+The manager's readings (marked; for lane predfix77, as R-1 of its rulings file, to test and state):
+(a) his `A & /B-defintion/` is read as "B's text written in place beside A, in one definition": the witness is a
+    sequence, and across a real `&` a name both sides surface is the ambiguous reference (core/labels/flow); the
+    `&` is taken as a placeholder for the composition, not as a ruling on `&`;
+(b) "what can be seen at that point" includes the public labels of the parts the piece itself uses (a B whose
+    body uses A sees A's settings of `h`), by core/labels/export statement 2;
+(c) it covers `some`, `count`, `occurs` and the index `h[k]` alike;
+(d) a group question written in an `&` operand inside ONE definition (review A2) reads the settings visible in
+    that definition at that point: not separately ruled;
+(e) the path form (`x.@a`) and the user's own read of both parts are unchanged.
+His sentence, read literally, also bears on the open bound-condition (a condition bound alone can see nothing
+"at that point"): NOT taken as an answer to it; put to him as the next question.
