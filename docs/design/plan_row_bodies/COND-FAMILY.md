@@ -7244,3 +7244,26 @@ names its last mention; ruled 2026-11-21); (d) the prefix gives no access to any
 is not reached as `B.x`): not ruled, conservative; (f) a label and a binding of one name: the existing hide-label
 warning; which one a prefix `x.h` names is not stated; (g) the error can be relaxed to the last use later without
 changing an answer.
+
+### 2026-11-22 OWNER, two points after binding-prefix: should a label be REQUIRED to be known textually at its reference ("i'm inclined to say yes"); and why would the joint form not allow values
+tags: core/labels/paths core/labels/export core/labels/export/flat-read-outside core/labels/flow core/conditions/form core/values/tuples lib/modifiers/length parked/ideas/label-hygiene
+
+After the binding-prefix ruling was read back and **helper-captures** asked (not answered by this message). HIS
+WORDS, whole:
+
+"label references: the remaining question is to whether it should be _required_ that the label is known textually
+at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes. thoughts? also, value
+in conditions: why would (x,y): () form not allow values?"
+
+Class: (1) a QUESTION he raises with his LEAN ("i'm inclined to say yes"; "thoughts?"): should a reference to a
+label that is not written in the text of the definition making the reference be REQUIRED to carry its source
+(`chars.ch`, not `ch`, in `length(S) := chars & (count((ch: /(?s:.)/)): S)`). DISCUSSION; nothing ruled. It would
+REVISE the spelling side of flat-read-outside (ruled 2026-11-21: "a flat read outside a binding follows the
+inside rules") and of hole-export, and his example 1 of 2026-11-21 ("C can see d as a flat look into A"). Slug
+for it: label-reference. (2) a QUESTION on the manager's reading (d) of count-in-set ("a default and a joint
+entry stay label forms"): "why would (x,y): () form not allow values?".
+
+The manager's answers (told to him): on (2): no reason; the reading is WITHDRAWN for the joint form: each
+component of a joint entry's left part may be a value, each SINGLE (a reading, to be tested by the lane); a
+default (`h = v`) stays a label form (it stands in for an absent label); inside a group question a joint entry
+stays refused (joint-in-some). On (1): the manager's view is in the reply (for his yes, with what it obliges).
