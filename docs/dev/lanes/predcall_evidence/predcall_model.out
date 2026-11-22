@@ -16,7 +16,7 @@ PASS CASE1: his `hits(/\d+/) & (hits.hit: 3)` legal; against `[h = hits(/\d+/)] 
 PASS TWICE: a plain read through `occurrences` called twice refused, "label the part"; the group question `some((occurrences.hit: "9"))` against the direct "a `;` and a 9 anywhere" 0 differing over 121 texts (`9;1` HOLDS: the first call is read)
 == RECORD: reading (b), the call-prefix record entry's two pasted lines, from the program text
    record line `A.d <5 (A's own d): WH` REPRODUCED by `B(A) & (A.d: <5)`
-   A's own d, through the argument (case 2, a reading): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+   A's own d, through the argument (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
    record line `c.d <5 (d as B(A) surf` REPRODUCED by `[c = B(A)] & (c.d: <5)`
    d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
 PASS RECORD: the record's two lines reproduced: 2 of 2; WHOLE against the direct first digit / second digit under 5: 0, 0 differing over 40 texts
@@ -36,16 +36,21 @@ PASS PAIR: `pair(A) & (A.d: <5)` legal; WHOLE against the direct "the second dig
    record line `every number` REPRODUCED
    Every number tested after the call: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` FAILS (hits [`4`, `9`, `3`]), `43` FAILS (hits [`43`]), `4 13` FAILS (hits [`4`, `13`]), `4 3 9` FAILS (hits [`4`, `3`, `9`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`)
 PASS HITS2: the record's two lines reproduced with their hit lists: 2 of 2; WHOLE against the direct hits (inner: every digit 0-4; after: every number) 0, 0 differing over 781 texts
+== CLOSED: R-1, closed-argument ruled (a): `A.d` legal exactly where `d` is visible through the call
+   Visible through the call: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+   closed: `B(A) & (A.d: <5)` with B(rx) := `/${[_ = rx]}xx/`: `A.d`: `A` passes no public label `d` (reading (d))
+   closed: `[c = B(A)] & (c.d: <5)`: `c.d`: `c` passes no public label `d` (reading (d))
+PASS CLOSED: where B closes its argument (`[_ = rx]`) `A.d` refused and `c.d` refused, the call itself matching as `\dxx` ((0, 0, 0) differing over 31 texts); through an open B `A.d` legal, its line the record's A.d line; the compile-error line printed: yes
 == QUOTES: every owner sentence this lane prints, word for word in the record and in the documents
-PASS QUOTES: 5 passages found in the record; missing: none; the three of this lane in the documents: all
+PASS QUOTES: 6 passages found in the record; missing: none; this lane's four in the documents: all
 == MARKS: statuses and the statements moved
-PASS MARKS: call-prefix ruled yes; closed-argument open yes; no 'not a prefix' statement yes; the not-yet-ruled statement yes; c.A in the paths piece yes; standard's line yes; macro types d.year yes; assert remark yes
+PASS MARKS: call-prefix ruled yes; closed-argument ruled (R-1) yes; no 'not a prefix' statement yes; the ruled statement yes; c.A in the paths piece yes; standard's line yes; macro types d.year yes; errors index row yes; no 'lean' left for case 2 yes; assert remark yes
 == SCAN: predref's textual label-reference checker over every printed program span, this lane's LEFT list
-PASS SCAN: 218 program spans checked; 29 distinct spans read a label bare or through an unknown head, all on LEFT; not on LEFT: none; on LEFT but no longer flagged: none
+PASS SCAN: 221 program spans checked; 29 distinct spans read a label bare or through an unknown head, all on LEFT; not on LEFT: none; on LEFT but no longer flagged: none
 == PREDREF: lane predref's model on the folded documents; which of its checks go red, each covered here
    predref_model: 8 checks, 1 failed (MARKS)
    FAIL MARKS: label-only group under construction yes; parked piece gone yes; was: line on the new entry yes; call-prefix open NO; no statement says read flat yes; flat-read-outside statement yes; bodies label-only yes; no provided body called a capture yes
 PASS PREDREF: red: ['MARKS'] (expected ['MARKS']: its MARKS looks for the call-prefix piece still open, covered by MARKS here, which looks for it ruled; its other 7 checks stay green on the folded documents)
 == DOC: every formatted line verbatim in the documents
-PASS DOC: 9 lines; missing: none
-predcall_model: 13 checks, 0 failed
+PASS DOC: 10 lines; missing: none
+predcall_model: 14 checks, 0 failed

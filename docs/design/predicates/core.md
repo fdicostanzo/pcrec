@@ -533,7 +533,7 @@ With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-
 Bare: modes: a compile error (`chars & (count((ch: /(?s:.)/)): ==3)`: `ch` is not written in it).
 
 ### The source of a label from a call or an argument   [core/labels/paths/call-prefix]   ruled 2026-11-22
-A macro's name qualifies the labels its call surfaces (`hits(/\d+/) & (hits.hit: 3)`), under the two rules of a binding's prefix; a label on the call stays legal.
+A macro's name qualifies the labels its call surfaces (`hits(/\d+/) & (hits.hit: 3)`), under a binding prefix's two rules; an argument's labels are reached through its binding where visible.
 needs: core/labels/paths/binding-prefix core/labels/paths/label-reference
 see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-scope core/operators/bindings/macro-types core/labels/paths/closed-argument
 - His words, whole: "call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is
@@ -549,10 +549,10 @@ see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-sco
   call surfaces it, the last mention among the body's and the argument's; `A.d` is A's own `d`. So the spellings
   differ when the body sets a `d` of its own (the record's two run lines, below). A group written in a USER
   macro's body is a capture as in any user literal: helper-captures is for provided bodies only (a reading).
-- Case 2, a label of an argument that is a binding (`A.d` in `B(A)`): NOT RULED; the owner's lean, 2026-11-22: "i'd
-  say A.d is legal there". Meanwhile the reading: `A.d` is legal and reads A's own `d`, as printed in
-  core/holes/bare-condition/nested-scope (`C := B(A) & (A.d: <100)`). A macro that closes its argument's labels:
-  core/labels/paths/closed-argument.
+- Case 2, a label of an argument that is a binding (`A.d` in `B(A)`), ruled with closed-argument: legal exactly
+  where `d` is visible through the call, reading A's own `d` as it reaches the caller (`C := B(A) & (A.d: <100)`,
+  core/holes/bare-condition/nested-scope); his words on it, "i'd say A.d is legal there". Where the macro closes
+  the argument's labels it is a compile error: core/labels/paths/closed-argument.
 - An argument the body uses twice (`pair(p) := /${p},${p}/`) is written once in the caller, so `A.d` is a plain
   read of one use; it reads `d` as it reaches the caller, the last mention (a reading, run: the line "An argument
   used twice by the body").
@@ -562,26 +562,29 @@ see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-sco
 By the macro's name, his example: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`hits(/\d+/) & (hits.hit: 3)`)
 Labelled: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`[h = hits(/\d+/)] & (h.hit: 3)`)
 Called twice, a group question reads every call: WHOLE `9;1` HOLDS, `1;9` HOLDS, `1;1` FAILS / SEARCHED `x;1 9;` `x;1 9;`@0 / FIND-ALL `9;1 1;1 1;9` [`9;1 1;1 1;9`@0] (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & some((occurrences.hit: "9"))`)
-A's own d, through the argument (case 2, a reading): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+A's own d, through the argument (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
 d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
 By the macro's name: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (B.d: <5)`, the same A and B)
 An argument used twice by the body: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair(A) & (A.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${p},${p}/`)
 Called twice, a plain read: modes: a compile error (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")`: label the call).
 
-### When a macro closes its argument's labels   [core/labels/paths/closed-argument]   open closed-argument 2026-11-22
-When a macro closes its argument's labels (`B(rx) := /${[_ = rx]}xx/`), is the caller's `A.d` in `B(A)` (a) a compile error, or (b) still legal?
+### When a macro closes its argument's labels   [core/labels/paths/closed-argument]   ruled 2026-11-22
+For an argument that is a binding, the caller's `A.d` is legal exactly where `d` is visible through the call; where the macro closes the argument's labels it is a compile error.
 needs: core/labels/paths/call-prefix core/labels/export
-- `[_ = A]` makes none of A's labels visible anywhere outside A (core/labels/export statement 7), so through such
-  a B the call surfaces no `d`; whether the caller may still name A's `d` is the question.
-- His words: "closed-arguments: i thought you'd lean to (a). what would A.d mean if d no longer was visible? also:
-  [ c = B(A) ] does not allow c.A". His lean is to (a), put as a question, not worded as a ruling.
-- The manager's earlier leaning (b), "a closure only needs to guard what the macro surfaces", is not held now: once
-  B closes the argument, where and whether A's `d` is set is B's own business (in a lookahead, twice, or not at
-  all), so `A.d` would name what the caller cannot know from its own text.
-- The statement the manager would enter on his confirmation, NOT YET RULED: "`A.d` is legal in the caller exactly
-  where `d` is visible through the call, and it reads `d` as it reaches the caller."
-- No printed program applies either answer.
-modes: n/a (a question; the argument's run lines are in core/labels/paths/call-prefix)
+- His words: "closed-arguments: a", on the statement put to him: "`A.d` is legal in the caller exactly where `d` is
+  visible through the call, and it reads `d` as it reaches the caller. Where B closes the argument, `A.d` is a
+  compile error."
+- His reason, from his words before: "what would A.d mean if d no longer was visible?" (the rest of them, "[ c =
+  B(A) ] does not allow c.A", is in core/labels/paths).
+- `[_ = A]` makes none of A's labels visible anywhere outside A (core/labels/export statement 7), so
+  `B(rx) := /${[_ = rx]}xx/` closes them: where and whether A's `d` is set is then B's own business.
+- Readings (each a reading): "visible through the call" is by core/labels/export (a `_` part label or `[_ = rx]` in
+  the body closes it); an argument the body uses twice: `A.d` is the last mention as it reaches the caller (the
+  line "An argument used twice by the body", core/labels/paths/call-prefix); the error is at the reference and
+  names the macro that closes the label (its message the manager's call).
+- It settles call-prefix case 2: legal, under this condition.
+Visible through the call: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+Closed by the macro: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`; `[c = B(A)] & (c.d: <5)` alike: no `d` surfaces).
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
@@ -1665,6 +1668,7 @@ needs: core/values/functions core/operators/statements core/modules/conflicts
 | a condition or computed value bound alone naming a label no pattern in its binding holds, at the binding | core/holes/bare-condition/bound-condition |
 | a value of several strings left of `:` (for now) | core/conditions/form/value-left |
 | a plain read through a binding's prefix, the binding used more than once (it says to label the part) | core/labels/paths/binding-prefix |
+| the caller's `A.d` where the macro closes its argument's labels (`[_ = rx]` in its body) | core/labels/paths/closed-argument |
 | a quantifier on a condition | core/conditions/quantified |
 | a piece of a filter operand that might look outside the matched text | core/filters/operand-context |
 | an rx where the other kind is needed (can match, can filter) | core/filters/kinds |

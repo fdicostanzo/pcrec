@@ -33,6 +33,10 @@
 #   s10 a planted printed program reading a borrowed label bare (in memory)                    -> SCAN
 #   s11 predref's model run with one of its own plants (s3), so its red set differs            -> PREDREF
 #   s12 one formatted line's subject altered before the document lookup                        -> DOC
+#   s13 `[_ = X]` in a macro body passes X's labels on (the closure ignored)                    -> CLOSED
+# R-1 of the rulings file (closed-argument RULED (a)) adds the check CLOSED: where the macro closes its argument's
+# labels the caller's `A.d` is refused; where `d` is visible through the call it is legal and reads `d` as it
+# reaches the caller.
 import os
 import re
 import subprocess
@@ -92,6 +96,9 @@ _lower_atom2 = lower_atom
 def lower_atom(expr, ctx):                                   # noqa: F811
     """MACRO-PREFIX: a call of a pattern macro is a use of the macro's name, which prefixes what the call surfaces."""
     e = expr.strip()
+    if sabc("s13") and e.startswith("[_ = "):
+        e = "[_closed = " + e[len("[_ = "):]                 # a `_x` part label: the model keeps its groups' keys
+        return _lower_atom2(e, ctx)
     call = parse_call(e)
     if (call and call[0] in MACROS and re.fullmatch(r"[A-Za-z]\w*", call[0])
             and not is_cond(pick_macro(*call)[1]) and not sabc("s2")):
@@ -251,7 +258,7 @@ CPB = ["A := /(?<d>\\d)/", "B(rx) := /${rx}-(?<d>\\d)/"]
 RL1 = rec_line("A.d <5 (A's own d): ")
 RL2 = rec_line("c.d <5 (d as B(A) surfaces it: the last mention, B's): ")
 rows = []
-for RL, expr, label in [(RL1, "B(A) & (A.d: <5)", "A's own d, through the argument (case 2, a reading)"),
+for RL, expr, label in [(RL1, "B(A) & (A.d: <5)", "A's own d, through the argument (case 2)"),
                         (RL2, "[c = B(A)] & (c.d: <5)", "d as the call surfaces it, the last mention (B's)")]:
     wh, sr, fa = rec_texts(RL)
     Pg = safe_prog(expr, CPB)
@@ -334,6 +341,28 @@ check("HITS2", all(h_rows) and wi == 0 and we == 0,
       "the record's two lines reproduced with their hit lists: %d of 2; WHOLE against the direct hits (inner: every "
       "digit 0-4; after: every number) %d, %d differing over %d texts" % (sum(h_rows), wi, we, len(POPN)))
 
+print("== CLOSED: R-1, closed-argument ruled (a): `A.d` legal exactly where `d` is visible through the call")
+CLB = ["A := /(?<d>\\d)/", "B(rx) := /${[_ = rx]}xx/"]
+r_cl = refused("B(A) & (A.d: <5)", CLB)
+r_clc = refused("[c = B(A)] & (c.d: <5)", CLB)
+P_cl = safe_prog("B(A)", CLB)
+cl_ctl = safe_ndiff(P_cl, Re(r"\dxx"), pop("3x", 4))
+P_op = safe_prog("B(A) & (A.d: <5)", CPB)
+wh, sr, fa = rec_texts(RL1)
+L_vis = None
+if P_op:
+    L_vis = doc_line("Visible through the call: %s (`B(A) & (A.d: <5)`, A := `/(?<d>\\d)/`, B(rx) := `/${rx}-(?<d>\\d)/`)"
+                     % fmt(P_op, wh, sr, fa), "closed-argument")
+    print("   " + L_vis)
+print("   closed: `B(A) & (A.d: <5)` with B(rx) := `/${[_ = rx]}xx/`: %s" % r_cl)
+print("   closed: `[c = B(A)] & (c.d: <5)`: %s" % r_clc)
+check("CLOSED", r_cl is not None and r_clc is not None and cl_ctl == (0, 0, 0) and P_op is not None
+      and "modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\\d)/`, B(rx) := `/${[_ = rx]}xx/`" in NEW["core.md"],
+      "where B closes its argument (`[_ = rx]`) `A.d` %s and `c.d` %s, the call itself matching as `\\dxx` (%s "
+      "differing over 31 texts); through an open B `A.d` legal, its line the record's A.d line; the compile-error "
+      "line printed: %s" % ("refused" if r_cl else "ACCEPTED", "refused" if r_clc else "ACCEPTED", cl_ctl,
+                            "yes" if "modes: a compile error (`B(A) & (A.d: <5)`" in NEW["core.md"] else "NO"))
+
 print("== QUOTES: every owner sentence this lane prints, word for word in the record and in the documents")
 QUOTES = [
     "call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is legal there. i'm "
@@ -345,12 +374,13 @@ QUOTES = [
     "help-captures: right. [h = hits(/\\d+/ & (0: <5)) ] & (h.hit: 3) & some((h.hit: 4))<5 and last hit is 3 and some "
     "hit is 4.",
     "C cannot see rx as its a binding variable not a label.",
+    "closed-arguments: a",
 ]
 if sabc("s8"):
     QUOTES[0] = QUOTES[0].replace("qualify", "name")
 qbad = [q for q in QUOTES if ws(q) not in RECORD_WS]
-qdoc = [q[:40] for q in QUOTES[:3] if ws(q) not in ws(ALLDOC)]
-check("QUOTES", not qbad and not qdoc, "%d passages found in the record; missing: %s; the three of this lane in the "
+qdoc = [q[:40] for q in QUOTES[:3] + QUOTES[5:] if ws(q) not in ws(ALLDOC)]
+check("QUOTES", not qbad and not qdoc, "%d passages found in the record; missing: %s; this lane's four in the "
       "documents: %s" % (len(QUOTES) - len(qbad), [q[:40] for q in qbad] or "none", "all" if not qdoc else qdoc))
 
 print("== MARKS: statuses and the statements moved")
@@ -359,14 +389,16 @@ if sabc("s9"):
     core = core.replace("[core/labels/paths/call-prefix]   ruled 2026-11-22", "[core/labels/paths/call-prefix]   open call-prefix 2026-11-22")
 marks = {
     "call-prefix ruled": "[core/labels/paths/call-prefix]   ruled 2026-11-22" in core,
-    "closed-argument open": "[core/labels/paths/closed-argument]   open closed-argument 2026-11-22" in core,
+    "closed-argument ruled (R-1)": "[core/labels/paths/closed-argument]   ruled 2026-11-22" in core,
     "no 'not a prefix' statement": not re.search(r"not a prefix|is no prefix|never by the macro", core + lib),
-    "the not-yet-ruled statement": "`A.d` is legal in the caller exactly where `d` is visible through the call, and "
+    "the ruled statement": "`A.d` is legal in the caller exactly where `d` is visible through the call, and "
                                    "it reads `d` as it reaches the caller." in ws(core),
     "c.A in the paths piece": "does not allow c.A" in piece(core, "core/labels/paths"),
     "standard's line": "written before bound-condition (2026-11-22), which refuses a computed value bound alone; "
                        "restated when the standard library is designed" in ws(lib),
     "macro types d.year": "`d.year`" in piece(core, "core/operators/bindings/macro-types"),
+    "errors index row": "the caller's `A.d` where the macro closes its argument's labels" in piece(core, "core/diagnostics/errors"),
+    "no 'lean' left for case 2": "NOT RULED; the owner's lean" not in core,
     "assert remark": "critical is the @assert macros" in piece(lib, "lib/assert/assert"),
 }
 check("MARKS", all(marks.values()), "; ".join("%s %s" % (k, "yes" if v else "NO") for k, v in marks.items()))

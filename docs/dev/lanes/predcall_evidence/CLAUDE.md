@@ -14,9 +14,9 @@ lane brief tested. Design evidence only; nothing here rules, and no check under 
   one use of its name in the caller's text). The record's pasted lines are read from the record. It also runs
   predref's model as a subprocess and names its red checks (PREDREF). Every line it formats must occur verbatim in
   the documents (DOC).
-  Run: `timeout 300 python3 -I -B <this dir>/predcall_model.py`. `PREDCALL_SABOTAGE=sN` (s1..s12, its header)
-  plants one wrong rule or fact per check.
-- `predcall_model.out` — the committed clean run (13 checks, 0 failed).
-- `predcall_sabotage.out` — the 12 plants, each run alone, each caught by its target check, no traceback.
+  Run: `timeout 300 python3 -I -B <this dir>/predcall_model.py`. `PREDCALL_SABOTAGE=sN` (s1..s13, its header)
+  plants one wrong rule or fact per check. R-1 (closed-argument ruled) added CLOSED.
+- `predcall_model.out` — the committed clean run (14 checks, 0 failed).
+- `predcall_sabotage.out` — the 13 plants, each run alone, each caught by its target check, no traceback.
 
 Lane files are historical after merge; never edited then.
