@@ -61,7 +61,8 @@ THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR o
                            (exit 2; rev 12, r41 L6)
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest [--rev11] [--rev12]
+  selftest [--rev11] [--rev12]   (the full selftest is SLOW: ~90 min alone on the dev box, formsfixm 2026-11-17; bound
+                                  it at >= 7200 s, never 3000 s: bsu5's 3000 s run timed out, review r79 R-1)
                            the rule against every drill r45_reply rev 11 §3 lists, plus the noise
                            drill (F2), the unimodal drill (F3), the void/R0/re-run drills, the
                            CLASS drill (r38: noise, a step and a drift at every level) and rev
@@ -4775,6 +4776,9 @@ def cmd_c6selftest(args):
 
 
 def main():
+    # line-buffered (review r79 R-1): a long command killed by its bound (the full selftest, ~90 min) still
+    # leaves its finished rows in a redirected log; block buffering left U5's 3000 s run an empty file
+    sys.stdout.reconfigure(line_buffering=True)
     cmds = {"plan": cmd_plan, "dry": cmd_dry, "run": cmd_run, "rerun": cmd_rerun, "rule": cmd_rule,
             "c3": cmd_c3, "selftest": cmd_selftest, "identity": cmd_identity, "c6selftest": cmd_c6selftest}
     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
