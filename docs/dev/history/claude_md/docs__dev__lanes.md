@@ -4534,3 +4534,4 @@ never edited afterwards.
 - `l3repin_report.md` — the D3-FLOOR re-pin run for the L3 landing (2026-11-22, sonnet): re-pin run under R-2; census and floor left uncommitted for l3fin.
 - `l3fin_report.md` — check and commit of the L3 D3-FLOOR re-pin (2026-11-22, sonnet): diff holds only the R-3 classes (l3d27, failed +1, c-vm +7, span_seed, K146/K147), no member lost, no floor drops.
 - `l3merge_report.md` — merge of lane/l3mechtri 6dd4a4c7c (L3 at abi 112) onto main 0c8ee75dd (2026-11-22, lane l3merge, sonnet): three append-only doc conflicts, facts checks 18/18.
+- `u4land_report.md` — merge of the kit's R-47 U4 (3e62406e2, checks only, abi 112 unchanged) onto main 65ad0f18f (2026-11-22, lane u4land, sonnet): clean merge, strict/plan-lint/build green; cloud runs are the gate.
