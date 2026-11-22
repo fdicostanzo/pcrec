@@ -3698,3 +3698,28 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
   - No build go is asked or implied.
 
 - **correction to the D202 add. 2 notice above (2026-11-22)** — the owner corrected it, verbatim (relayed by main, filed in decisions.md D202 add. 2): "The score or threshold were ideas to consider. Other comments were framing". The only DECISION is that the width is the kit's call within add. 1. The table and the "sufficiently checked" score are ideas to consider. The three numbered points are framing, not rulings. The kit's readings stay readings. This supersedes the notice's "Proposed D202 addendum 2" sentence.
+
+- **done (partial): R-47 unit U4** (2026-11-22) — branch lane/memfn-k1108 @ 0eceaaee1, validated on that commit. The commits after it are kit-ledger only: journal, plus this line.
+  - **What is in it:**
+    - merge of lane/bsu4fix 23b325e99, which carries lane/bsu4 (= bsu4g c0f615a49 + bsu4p cc247853f) and the r78 fixes;
+    - then main merged in (U3 at abi 111, K159, D202 add. 1-2). make strict is clean.
+  - **The change (CHECKS ONLY):**
+    - G2-V unit and whole, with PROT_NONE guards at both ends, a start-up self-witness per guard, and floors on the DRIVEN counts;
+    - 22 T-table pin cells, the 20 of §10.2 plus 2 for T-deny;
+    - one k-source reader, tests/memfn/span_ksource.py;
+    - SPAN-SEED wiring;
+    - the rest of the C18 amendment (3 NAMED span witnesses, floors and controls);
+    - the routing leg's V shapes;
+    - FLOORS re-pinned (x86-64 74, v3 105) and the libc census funcs floor 281;
+    - sabotage rows S3525, S3526 and S3530-S3536 (plants (a)-(f) plus C18 controls 2-4), each with REACH.
+  - **No emitted byte moves and no abi event.** Nothing under memfn/src/, src/, cli/ or lib/ changed. r78 measured 164 emitted pairs identical.
+  - **Review:** r78 (code), docs/dev/reviews/2026-11-22-r78-memfn-bsu4.md, ruled FIX FIRST. Every FIX-NOW and DOC item is fixed in bsu4fix, with a mutation proof that all plants go RED. Two items stay PLAN: PINS-7's predicate table + TSV, and G2V-4 (a shared guard header). Three lessons went into docs/dev/guide/critics.md.
+  - **Validation:**
+    - 740 RED on test-compound (the G7 lever fence did not list the pin cells' legitimate `--harness=span-head` use). Fixed at 23b325e99.
+    - Then GREEN: 740 make test, 741 mech (15 rows) on lane/bsu4fix.
+    - On the merged tip 0eceaaee1, in a detached worktree: 742 make test GREEN (2656 s) and 743 mech GREEN (15 rows).
+  - **Findings for main:** none against pcrec. Design-text corrections are in block_span.md: §10.2 (b) "benign on HORS" is wrong where B divides K, and two populations are zero by construction (a literal beside a stretch; the empty set).
+  - **Reports:** docs/dev/lanes/bsu4g_report.md, bsu4p_report.md, bsu4fix_report.md.
+  - **Next:**
+    - U5 (card C6 incl. the clang arms, CANDIDATE; review r79);
+    - U6 (the abi package and G1 dry run; C6 timing in a window main clears, every bench box including Zen 1; review r80).
