@@ -4752,3 +4752,11 @@ In-lane green: make, strict, arch 32/0, census 68. Its simdfloor run, the plants
 - 727 was cancelled; 728 ids is running.
 - Lane bsu3fix2 (sonnet) fixes the control, with light single-section runs until 20:00 (Frank's hold: box clear by 19:15, evening hold to 01:00, main's timing window 01:00-07:00). Its make test + mech are gated after 07:00 11-22.
 - Lesson: a lane must not hand off a CHECK change unrun because the box was busy. The brief should say: wait for the lock and run the touched section, or STOP and report.
+
+### 2026-11-21 19:15 — bsu3fix2 delivered; session CLOSE (Frank /close)
+bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
+- Cause of the 726 red: the -O0 control compiled a.c without the artifact's a.h ("No such file"). The old plant was also caught by the text legs, so it was never the rule's own control.
+- New control: the level helper's _mm_shuffle_epi8 becomes _mm_packus_epi16, which only rule leg 2 rejects. run_simd_floor 22771/0; with the rule stubbed, 22770/1.
+- Owed, gated not-before 2026-11-22T07:00: 729-kit-bsu3fix2-test, 730-kit-bsu3fix2-mech, 731-kit-bsu3fix2-ids.
+- Next session: read 729-731 via monread. All green -> merge lane/bsu3fix (it contains lane/bsu3) into k1108 alone, make strict, deliver U3 to main (abi 112; re-pin if L3 lands after it). Then the U4 lane.
+- The brief rules learned today went into the kit skill §4.

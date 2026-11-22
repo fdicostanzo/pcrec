@@ -1,54 +1,51 @@
 # memfn kit — wake-up brief
 
-Updated 2026-11-21 08:57 by the kit session IN FLIGHT. Main (pcrec-main) is up.
+Updated 2026-11-21 19:20 by the kit session at CLOSE (Frank /close). Main (pcrec-main) is up.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). The ledger and journal branch is worktrees/memfn on lane/memfn-k1108.
 - Heartbeat cron: 17,47.
 - Waiting list: worktrees/.mgr/waiting_on.kit.
-- Verdicts come only via `scripts/monread kit --wait` (run_in_background).
-- Lanes are watched with `scripts/lanewatch --follow NAME`.
+- Queue verdicts: only via `scripts/monread kit --wait` (run_in_background).
+- Lane watching: `scripts/lanewatch --follow NAME`.
 
 ## Read in order
 1. This file.
-2. memfn/docs/journal.md, the 2026-11-20 evening and 2026-11-21 entries (710 CONFIRMED -> D201 build go -> block_span.md revs 1-4.1 -> r68/r69/r71/r72 -> U1 landed).
-3. docs/design/memfn/block_span.md rev 4.1 (§14 units U1..U6).
+2. memfn/docs/journal.md, the 2026-11-21 entries.
+3. docs/design/memfn/block_span.md rev 4.2 (§14 units, §18 dispositions).
 
-## CURRENT STATE
-- **R-47 / D201 (block span at the SIMD layer):**
-  - Owner rulings:
-    - block-build: "build with simd layer";
-    - add. 1: build regardless of the census;
-    - add. 2, scalar-wrap: option A;
-    - add. 4, scalar-check-cut: yes. The census replaces the scalar timing; T-keep is dropped; [BSPAN-SCALAR-RISK] is filed.
-  - Population: 3 bench sites (hex32, \b hex32 \b, \d{32}; all k31) and 0 in the corpus.
-  - U1 LANDED on main c279e7e26 (0 movers).
-  - **U2 + U2b in flight:** lane bsu2 (opus, worktrees/bsu2, S3505-S3519).
-    - abi 111 (L3 holds 110; re-pin by grep if main says U2 lands first).
-    - Its heavy steps wait on main's 300-grow2-lib job (box lock, until about 11:45). No jump granted.
-    - Then its make test/mech jobs, a merge into k1108 (merge alone, make strict), a code round (ask main for the number), and delivery.
-  - Then U3 (w32 helper), U4 (checks + the rest of C18), U5 (card C6, CANDIDATE), U6 (abi package, G1 dry run; C6 timing in main's window, every bench box incl. Zen 1).
-  - Review numbers come from main; main takes the next free number for its own rounds.
-- **Done 11-20 night:** 712 (the max ramp is the window rule; the method is OPEN), 711 (FRONT stays), 710 CONFIRMED.
-- **Prunable later:** bsu1fix (the <120 min guard), spancensus, spancensus2, rampchunk, rampfix, bcq, cofix, bcfix (unmerged lane branches holding only reports: archive via scripts/branchprune). A /tmp/pcrec-mech-sabotage.* dir was left by bsu1fix; it was told to Frank and left alone.
-- **OWED:**
-  - the g2 win-family triage lane (shrink it or move it to g2-full; tell main first);
-  - re-sync the rampfix branch copy of the 712 harness;
+## CURRENT STATE: R-47 / D201, the block span at the SIMD layer
+- **Owner rulings:** D201 and addenda 1-5:
+  - "build with simd layer";
+  - option A;
+  - "scalar-check-cut: yes";
+  - "wrap-clang: a", with [BSPAN-CLANG-DIFF] filed, which rides U5's C6 card: time the bench's clang arms on the 3 sites.
+  - D202: the cover width is the KIT's decision. [COVER-WIDTH-KIT] waits on a build go; a fixed engine-cost assumption is allowed.
+- **U1 LANDED** on main (c279e7e26).
+- **U2 + U2b LANDED and PUSHED** (68521b3ad, abi 110 on main).
+- **U3 is built:** lane/bsu3 ec578d053, abi 111 -> 112 on the kit branch. Code round r76 ruled FIX FIRST. The fixes are on lane/bsu3fix @ 6cf672b6a (bsu3fix + bsu3fix2). The r76 gap critic: r75 SLOT-3/4 DISCHARGED.
+- **OWED, gated not-before 2026-11-22T07:00:** 729-kit-bsu3fix2-test, 730-kit-bsu3fix2-mech, 731-kit-bsu3fix2-ids.
+  - Arm `scripts/monread kit --wait` at wake.
+  - All green -> `git -C worktrees/memfn merge lane/bsu3fix` ALONE, then make strict, a [responses] done line, and SendMessage main.
+  - Main lands U3. abi 112 is confirmed; whichever of L3/U3 lands later re-pins.
+- **Then:**
+  - U4 (G2-V, the T-table pins, the rest of C18, sabotage (a)-(f));
+  - U5 (card C6 incl. the clang arms, CANDIDATE);
+  - U6 (the abi package, G1 dry run; C6 timing in main's window on every bench box, Zen 1 included).
+  - Ask main for review numbers.
+- **Box:** Frank held it clear from 19:15 tonight; evening hold 20:00-01:00; main's TIMING window 01:00-07:00. Nothing of the kit's runs before 07:00.
+- **Prunable later (scripts/wtprune):** bsu2fix (<120 min guard), bsu3, bsu3fix once U3 lands. Unmerged report-only branches: spancensus, spancensus2, rampchunk, rampfix, bcq, cofix, bcfix. A /tmp/pcrec-mech-sabotage.* dir was left by a lane; Frank was told, and it was left alone.
+- **OWED (older):**
+  - the g2 win-family triage lane;
+  - re-sync the rampfix 712 harness;
   - the cards.py not-warm chunking defect;
   - gatebudget, mfcal and mfind decisions;
   - r46 PLAN/DOC, r24 SR-1..4, ADQ-3-3, the mfind witness.
+  - Ideas log: [COVER-NEARMISS-SKIP] backward verify (owner idea, unscheduled).
 
-## Lessons (2026-11-21)
-- **Lane briefs:**
-  - TMPDIR=$PCREC_TMPDIR/scratch/LANE/tmp on every run.
-  - Re-read the rulings file BY NAME at every checkpoint.
-  - Lock-waiting runs never wake a lane: run them in the foreground or poll them.
-  - Never pgrep/pkill.
-- **Rulings and records:**
-  - A reviewer's cut of a condition the owner was told is an owner question, never a manager ruling.
-  - A census reads site KIND by the table's own predicate on the trace record, never by a text proxy.
-  - Owner words given to the kit are journaled VERBATIM the same day.
-  - Journal times come from `date`, never estimated.
-- **Review mechanics:**
-  - When the kit branch has already merged the subject, a code round's BASE is the parent of the lane's first commit.
-  - In a heredoc journal entry, backticks run unless the heredoc is quoted ('EOF').
+## Lessons
+The kit skill §4 "Brief rules learned 2026-11-21" holds the lane-brief rules. Also:
+- A reviewer's cut of a condition the owner was told is an owner question.
+- Owner words go into the journal VERBATIM, the same day.
+- Journal times come from `date`.
+- A quoted heredoc ('EOF') stops backticks from running.
