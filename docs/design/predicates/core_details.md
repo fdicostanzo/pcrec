@@ -570,6 +570,7 @@ history:
 ## core/labels/flow — Labels across composed parts
 slugs: label-flow label-mark
 rulings:
+- 2026-11-22 ""binding-prefix" 1. yes. 2. i agree with your lean (a)" (record: "2026-11-22 OWNER RULING — binding-prefix: 1 yes"); part 2 keeps the error of his point 4 for a plain read with the binding used more than once; part 1 and the one-use case REVISE "a binding's name is not a path"
 - 2026-11-17 "a. yes. a label from an rx is whatever label is surfaced by that rx. b. thats a good point but list here is one rx so exposes one h. i adjust my rules to be such that a compose and a literal rx have the same label behavior" (record: "2026-11-17 OWNER RULING — label-flow")
 - 2026-11-17 "label-flow: 1. propose: it is an error to ambigously reference a label. so if A & B & (h: blah) and A and B both use label h, it is an error. this is different than "its an error for labels of the same name to exist at all in A & B"" (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error")
 rejected:
@@ -583,6 +584,7 @@ history:
 - 2026-11-21 (the manager, bare-nested-scope case 2): a bullet for the exception ruled under bare-nested-scope case 2 (what a piece reads inside itself is its own settings; compose-equals-literal is for the piece's user), and a `see:` pointer.
 - 2026-11-17: the proposal, then the ruling with his adjustment; shared-label's error revised to the reference.
 - 2026-11-22 (lane predfix77, review r77 D2 (FIXIND-14), D8; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "A label from a pattern is whatever label it surfaces; a composed pattern and a literal have the same label behaviour (the last mention wins)." It now carries the definition unit (within a definition, and for a piece's user); status date 2026-11-17 to 2026-11-21. In the exception bullet his quoted phrase is spelled as he wrote it, "behavior" (was "behaviour"). No answer moved.
+2026-11-22 (lane predbound, R-1, binding-prefix ruled): the bullet until then, verbatim: "A binding's name is not a path (`A.h` is an error where a label is referenced)." (from his label-flow point 4 of 2026-11-17: "A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an expression", record "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error"); now the binding's name is a prefix (core/labels/paths/binding-prefix). Status date 2026-11-21 to 2026-11-22.
 
 ## core/labels/export — Export and private labels
 slugs: export-rule export-scope free-name filter-captures hole-export
@@ -651,6 +653,7 @@ history:
 ## core/labels/paths — Part labels and paths
 slugs: path-and-ambiguity
 rulings:
+- 2026-11-22 ""binding-prefix" 1. yes. 2. i agree with your lean (a)" (record: "2026-11-22 OWNER RULING — binding-prefix: 1 yes"); a binding's name is a prefix of its own (core/labels/paths/binding-prefix)
 - 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); `[x = A]` makes a label and no capture
 - 2026-11-17 (class: STATEMENT) "setting labels is just the label using the group-label-not-capture syntax" (record: "2026-11-17 OWNER, three points on labels")
 - 2026-11-18 "so I agree the last reference" (record: "2026-11-18 OWNER on path-and-ambiguity: the part label used twice is RULED; the read-out is open")
@@ -666,6 +669,44 @@ evidence: preddoc3a_model.py PATH (the draft's PART LF line; printed answers rep
 history:
 - 2026-11-18: corner 1 ruled; corner 2 (the read-out) went to filter-captures, export-scope, export-rule.
 - 2026-11-21 (lane predscope, pure-label folded): the first bullet until then (the draft §3.1's reading): "`[x = A]` is the group form `(?<x>A)` read as a label; inside pattern text a named group is the same thing." It was wrong as to capture. The `[=year]` bullet added. Status date 2026-11-18 to 2026-11-21.
+2026-11-22 (lane predbound, R-1, binding-prefix ruled): a pointer bullet to the new sub-piece; status date 2026-11-21 to 2026-11-22; no line moves.
+
+## core/labels/paths/binding-prefix — A binding's name as a label prefix
+slugs: binding-prefix
+rulings:
+- 2026-11-22 ""binding-prefix" 1. yes. 2. i agree with your lean (a)" (record: "2026-11-22 OWNER RULING — binding-prefix: 1 yes"); part 1, a group question through a binding's prefix reads the settings of every use; part 2, (a), a plain read through it with the binding used more than once is a compile error that says to label the part
+- 2026-11-22 (class: LEAN) "binding in prefix: i like your read on this except that perhaps it does refer to all. chars SEQ ":" SEQ chars & (count(chars.ch): ==5) says all chars must total 5" (record: "2026-11-22 OWNER, on binding-prefix: "i like your read on this except that perhaps it does refer to all""); his example and "all"; the definition "as if written `[=chars]`" accepted, in his words "i like your read"
+- 2026-11-17 (class: PROPOSAL) "A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an expression" (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error"); his label-flow point 4, REVISED by the ruling: the error stays for a plain read with several uses
+- 2026-11-22 (class: IDEA) "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); part 5, where the idea first came: "bindings could be used under certain rules as label prefixes like chars.ch"
+rejected:
+- the last use only, for a group question through the prefix — by owner ruling — binding-prefix part 1 ("yes"); its line, run (predbound PREFIX; the record's pasted `last` line reproduced):
+  The last use only (not the ruling): WHOLE `ab:cde` FAILS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0] (the same program)
+- (b) a plain read through a twice-used prefix reads the last use — by owner ruling — binding-prefix part 2 ("i agree with your lean (a)").
+- (c) a binding's name is never a path (the rule until then) — by owner ruling — binding-prefix.
+readings:
+- the ruling as run: his example `chars SEQ ":" SEQ chars & (count((chars.ch: anything)): ==5)` reproduces the record's pasted `all` line in every mode; a plain read `(chars.ch: "a")` and `$chars.ch` through the twice-used `chars` refused with "label the part" (predbound PREFIX; sabotage s18 caught).
+- (a) a binding used as a part carries a part label of its own name; with ONE use `A & B & (A.h: <2)` answers as the printed `[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)` line — SUPPORTED (predbound PREFIX, the line "One use").
+- (b) "used more than once" is counted in the definition the reference is written in — SUPPORTED as a run of the reading (predbound PREFIXRD: `X SEQ X`, X := `chars & (chars.ch: "a")`, is legal, `chars` used once in X; WHOLE against the direct split, 0 of 31 texts over `ab` differ).
+- (c) an explicit part label mentioned twice is unchanged — SUPPORTED (predbound PREFIXRD: the printed line "A part label used twice" rebuilt, the same answers).
+- (d) no access to anything private, nothing under `_` or `[_ = A]` — SUPPORTED as a run of the reading (predbound PREFIXRD: `year._v` and `[_ = A] & (A.h: <5)` refused; sabotage s19 caught). That such a reference is a COMPILE ERROR rather than an unset label is the model's choice, not stated.
+- (e) a macro's name is not a prefix for now — SUPPORTED as a run of the reading (predbound PREFIXRD: `B(A) & (B.d: <100)` refused).
+- (f) a label and a binding of one name: which one `x.h` names is not stated — UNTESTED.
+- (g) the error may relax to the last use later without changing an answer — UNTESTABLE (a statement about a later change; a refused program has no answers).
+evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py PREFIX, PREFIXRD.
+history:
+- 2026-11-22 (lane predbound, R-1 of its rulings file, binding-prefix ruled): a new ruled piece. The brief's parked piece parked/ideas/binding-prefix, drafted in this lane and never delivered, is not made (the ruling replaced it).
+
+## core/labels/paths/label-reference — Must a label carry its source at the reference
+slugs: label-reference
+rulings:
+- 2026-11-22 (class: QUESTION) "label references: the remaining question is to whether it should be _required_ that the label is known textually at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes. thoughts? also, value in conditions: why would (x,y): () form not allow values?" (record: "2026-11-22 OWNER, two points after binding-prefix: should a label be REQUIRED to be known textually at its reference"); his lean, "i'm inclined to say yes"; nothing ruled
+rejected:
+readings:
+- with one use the two spellings answer alike: `chars & (count((ch: /(?s:.)/)): ==3)` and `chars & (count((chars.ch: /(?s:.)/)): ==3)`, 0 / 0 / 0 of 63 texts over `ab` (predbound LABELREF).
+- what a yes revises (flat-read-outside, hole-export, his example 1 of 2026-11-21) — the record entry's list, not run.
+evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py LABELREF.
+history:
+- 2026-11-22 (lane predbound, R-2 of its rulings file): a new open piece; neither answer applied.
 
 ## core/labels/backreferences — Backreferences
 slugs: backref-label backref-across-parts same-name-twice
@@ -748,20 +789,23 @@ history:
 ## core/conditions/form/value-left — A value left of `:`
 slugs: count-in-set
 rulings:
+- 2026-11-22 (class: QUESTION) "label references: the remaining question is to whether it should be _required_ that the label is known textually at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes. thoughts? also, value in conditions: why would (x,y): () form not allow values?" (record: "2026-11-22 OWNER, two points after binding-prefix: should a label be REQUIRED to be known textually at its reference"); his "why would (x,y): () form not allow values?"
 - 2026-11-22 "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); part 2 of the entry: "so b", a value may stand in the left part of a condition entry, written in place; part 3, "it suggests $h could go there which is also new", an OBSERVATION (the base states the `$h` form as a reading)
 - 2026-11-22 (class: QUESTION) "count-in-set: i don't understand your length(S) example: where do you define label ch?" (record: "2026-11-22 OWNER, on count-in-set: "where do you define label ch?""); answered: `ch` is the group of the helper `chars`, which `length`'s body uses; "ok, thats fine" in the ruling accepts it
 rejected:
+- (e) as first stated, "a joint entry stays a label form" — withdrawn by the manager on his question "why would (x,y): () form not allow values?" (record "2026-11-22 OWNER, two points after binding-prefix: should a label be REQUIRED to be known textually at its reference").
 - (a) of count-in-set, a member of `occurs` taking the set (`occurs.in(S, c)`) — by owner ruling — count-in-set: b.
 readings:
 - (a) the parse: a bare name or label path left of `:` stays a LABEL, any other expression is a VALUE — the manager's call; run as the model's parse: the metadata line (`(w.index: >= 2)`, a path) and month_numbered's `(mname.index: S)` answer as printed before (predbound META, FIVE; sabotage s17 caught).
 - (b) the value is SINGLE; several strings there are a compile error for now — UNTESTABLE as a rule (the manager's call); the model refuses `(($h + ["1", "2"]): <5)` and accepts `(($h + ["1"]): <5)` (predbound SEVERAL; sabotage s10 caught).
 - (c) a value that yields nothing fails the entry, as an unset label does, and NOT holds on it — SUPPORTED as a run of the reading (predbound NOTHING: `(($a - 5): >= 0)` against `[5-9]`, its NOT against `[0-4]`, 0 / 0 / 0 of 31 texts over `0357x`; an unset input on `x`: the entry fails, NOT holds; sabotage s8 caught).
 - (d) `($h: S)` and `(h: S)` answer alike in every mode — SUPPORTED (predbound SAMEREAD: 18 programs, 3 patterns, 3 sets, with and without NOT, 0 / 0 / 0 of 341 texts over `37x;`; sabotage s9 caught).
-- (e) a default (`h = v`) and a joint entry stay label forms — UNTESTED (a parse rule; no printed line has a default or a joint entry left of a value).
+- (e) each component of a joint entry's left part may be a value, each single (R-2) — SUPPORTED as a run of the reading (predbound JOINTV: `((($a + $b), c): (<10, /\d/))` WHOLE against the direct rule, 0 of 300 texts differ; a joint entry inside a group question still refused); a default (`h = v`) stays a label form — UNTESTED (a parse rule).
 - the record's two examples: `P & (count((d: "7")): ==2)` and `(($a + $b): <10)` give the printed lines of `count` and of the sum unchanged (predbound FIVE).
 evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py NOTHING, SAMEREAD, SEVERAL, META, FIVE, SUMALT.
 history:
 - 2026-11-22 (lane predbound, count-in-set ruled (b)): a new piece: the ruling, the manager's readings (d) of the brief, the lines "Nothing fails the entry", "NOT holds on nothing", "A read on the left", and the printed lines of `count` and of the sum written in place.
+2026-11-22 (lane predbound, R-2): the reading "A default (`h = v`) and a joint entry stay label forms" became "each component of a joint entry's left part may be a value"; the line "A joint entry with a value" added.
 
 ## core/conditions/form/record-in-some — A record inside a group question
 slugs: record-in-some
@@ -2059,6 +2103,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-5): the index said every error below is ruled in its piece and read as complete; at least 12 stated compile errors have no row. It now says it is PARTIAL; a generated index (r59 PLACE-8) is a PLAN item of review r60.
 - 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-17); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): two rows added, a joint entry inside a group question (array-vs-passes) and a piece naming a label it does not hold (nested-scope case 1).
 2026-11-22 (lane predbound): two rows added, a condition or computed value bound alone naming a label its binding does not hold (bound-condition, ruled) and a value of several strings left of `:` (a reading, count-in-set).
+2026-11-22 (lane predbound, R-1): a row added, a plain read through a binding's prefix with the binding used more than once (binding-prefix, ruled).
 
 ## core/diagnostics/under-construction — The under-construction error
 slugs: under-construction-class

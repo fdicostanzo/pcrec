@@ -377,18 +377,19 @@ needs: core/model/match core/labels/labels-vs-captures
 see: core/diagnostics/warnings
 WHOLE `3qxx` FAILS, `q3xx` HOLDS (a = `3`), `7q3xx` HOLDS (a = `3`) / SEARCHED `3qxx` FAILS / FIND-ALL `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10] (`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)`)
 
-### Labels across composed parts   [core/labels/flow]   ruled 2026-11-21
+### Labels across composed parts   [core/labels/flow]   ruled 2026-11-22
 A label from a pattern is whatever label it surfaces; within a definition, and for a piece's user, a composed pattern and a literal have the same label behaviour (the last mention wins).
 needs: core/labels/one-rule core/patterns/sequence
 - Across the sequence operator a name both parts surface is one label, the last mention, which is not always the
   last match.
 - Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$`
   references it, not for existing; a part's own label is reached through a label given to the part.
-- A binding's name is not a path (`A.h` is an error where a label is referenced).
+- A binding's name is a label prefix: `A.h` is h as A surfaces it; through it a group question reads every use, and
+  a plain read with A used more than once is a compile error (core/labels/paths/binding-prefix).
 - A chain `A & B` whose sides both surface h, itself used as a part, still surfaces h ambiguously (a reading).
 - The exception (ruled): what a separately defined piece reads INSIDE itself is its own settings only;
   "the same label behavior" is for what the piece's user reads (core/holes/bare-condition/nested-scope).
-see: core/labels/paths core/holes/bare-condition/nested-scope
+see: core/labels/paths core/holes/bare-condition/nested-scope core/labels/paths/binding-prefix
 WHOLE `7` HOLDS (h unset), `7,3` HOLDS (h = `3`) / SEARCHED `x7 7,3` `7`@1 (h unset) / FIND-ALL `7 7,3` [`7`@0, `7,3`@2] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`)
 
 ### Export and private labels   [core/labels/export]   ruled 2026-11-21
@@ -444,7 +445,7 @@ Candidates: (a) a compile error; (e) an error when the caller reads it. The matc
 from the left `1`, from the right `2`.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34` [`12`@0, `34`@3] (`A & B`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
 
-### Part labels and paths   [core/labels/paths]   ruled 2026-11-21
+### Part labels and paths   [core/labels/paths]   ruled 2026-11-22
 A part label `[x = A]` names part A; `x.h` is the label h as part A surfaces it, and a part label mentioned more than once names its last mention where the reference is written.
 needs: core/labels/flow core/labels/export
 - `[x = A]` makes a label and no capture: "setting labels is just the label using the group-label-not-capture
@@ -456,8 +457,42 @@ needs: core/labels/flow core/labels/export
   sides of `&` are not ordered, across the sequence operator the later part's is the last (a reading).
 - An ambiguity is judged where the reference is written: `A & (B & (h: ..))` reads B's h only (a reading).
 - In a value position `alt.x[1]` stays legal (a reading).
+- A binding's name is a prefix of its own, as if a part label `[A = A]`: core/labels/paths/binding-prefix.
 WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)`)
 A part label used twice: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)`)
+
+### A binding's name as a label prefix   [core/labels/paths/binding-prefix]   ruled 2026-11-22
+A binding's name is a label prefix (`chars.ch`): a group question through it reads every use's settings, in order; a plain read through it with the binding used twice or more is a compile error.
+needs: core/labels/paths core/labels/labels-vs-captures/array-vs-passes
+see: core/labels/flow core/labels/export core/labels/paths/label-reference
+- His words: "binding-prefix" 1. yes. 2. i agree with your lean (a)"; his example, "chars SEQ ":" SEQ chars &
+  (count(chars.ch): ==5) says all chars must total 5" (his `count(chars.ch)` written `count((chars.ch: anything))`).
+- The definition he liked (a reading): a binding used as a part carries a part label of its own name, as if
+  `[A = A]`; with ONE use `A.h` reads as `aa.h` does under `[aa = A]` (the line "One use").
+- The compile error's message says to label the part (`[left = chars]`), then read `left.ch`. "Used more than
+  once" is counted in the definition the reference is written in (a reading).
+- Readings: an explicit part label mentioned twice is unchanged (its last mention, core/labels/paths); the prefix
+  reaches nothing private, and nothing under `_` or `[_ = A]` (core/labels/export statement 4); a MACRO's name is
+  not a prefix for now (`B(A)` gives no `B.x`); which of a label and a binding of one name `x.h` names is not
+  stated; the error may later relax to the last use without changing an answer.
+His example, every use: WHOLE `ab:cde` HOLDS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6] (`chars SEQ ":" SEQ chars & (count((chars.ch: anything)): ==5)`)
+One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
+Twice used, a plain read: modes: a compile error (`chars SEQ ":" SEQ chars & (chars.ch: "a")`, `$chars.ch` alike).
+
+### Must a label carry its source at the reference   [core/labels/paths/label-reference]   open label-reference 2026-11-22
+Must a reference to a label not written in the text of the definition that makes it carry its source (`chars.ch`, not `ch`), (a), or may it stay bare, as today, (b)?
+needs: core/labels/paths/binding-prefix core/labels/export/flat-read-outside
+see: lib/modifiers/length core/labels/export core/holes/bare-condition/nested-scope
+- His words: "label references: the remaining question is to whether it should be _required_ that the label is
+  known textually at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes.
+  thoughts?" A lean, not a ruling: no answer is applied, and every printed program keeps its bare labels.
+- Candidates: (a) required: a label from a used binding is written with its source; (b) allowed bare, as today.
+- What a yes would revise: the spelling side of core/labels/export/flat-read-outside ("a flat read outside a
+  binding follows the inside rules") and of hole-export (core/labels/export), and his example 1 of
+  core/holes/bare-condition/nested-scope ("C can see d as a flat look into A").
+- With one use the two spellings answer alike (the lines; `length`'s body, `chars` used once).
+Bare, as today: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
+With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((chars.ch: /(?s:.)/)): ==3)`)
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
@@ -532,14 +567,16 @@ see: core/values/reads core/values/computed-labels lib/counting/count core/value
 - A value that yields nothing (an unset input, a result outside the number domain) fails the entry, as an unset
   label does, and `NOT` holds on it (a reading; the lines "Nothing fails the entry", "NOT holds on nothing").
 - `($h: S)` and `(h: S)` answer alike in every mode ("`$x` and `x:` never disagree", core/values/reads), so the
-  label form is the value form's common case (a reading; the line "A read on the left"). A default (`h = v`) and a
-  joint entry stay label forms (a reading).
+  label form is the value form's common case (a reading; the line "A read on the left"). Each component of a joint
+  entry's left part may be a value, each single (a reading; the line "A joint entry with a value"); a default
+  (`h = v`) stays a label form; inside a group question a joint entry stays refused.
 - His observation, "it suggests $h could go there which is also new": the `$h` form, the line below (a reading).
 WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)`)
 WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 5+4` [`1+1`@0, `5+4`@8] (`/(?<a>\d)\+(?<b>\d)/ & (($a + $b): <10)`)
 Nothing fails the entry: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `3 7 5 1` [`7`@2, `5`@4] (`/(?<a>\d)/ & (($a - 5): >= 0)`: `3 - 5` is nothing)
 NOT holds on nothing: WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x3 7` `3`@1 / FIND-ALL `3 7 5 1` [`3`@0, `1`@6] (`/(?<a>\d)/ & NOT (($a - 5): >= 0)`)
 A read on the left: WHOLE `3x` HOLDS, `x` FAILS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x x 7x` [`3x`@0] (`/(?<h>\d)?x/ & ($h: <5)`, as `(h: <5)`)
+A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
 
 ### A record inside a group question   [core/conditions/form/record-in-some]   open record-in-some 2026-11-22
 Inside a group question, is a record of several plain entries still the product of its entries, `some((h: "5", m: "3"))` = `some(((h, m): ("5", "3")))`?
@@ -1532,6 +1569,7 @@ needs: core/values/functions core/operators/statements core/modules/conflicts
 | a separately defined piece naming a label it does not hold, at its definition | core/holes/bare-condition/nested-scope |
 | a condition or computed value bound alone naming a label no pattern in its binding holds, at the binding | core/holes/bare-condition/bound-condition |
 | a value of several strings left of `:` (for now) | core/conditions/form/value-left |
+| a plain read through a binding's prefix, the binding used more than once (it says to label the part) | core/labels/paths/binding-prefix |
 | a quantifier on a condition | core/conditions/quantified |
 | a piece of a filter operand that might look outside the matched text | core/filters/operand-context |
 | an rx where the other kind is needed (can match, can filter) | core/filters/kinds |

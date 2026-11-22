@@ -1174,15 +1174,4 @@ readings:
 evidence: none (parked).
 history:
 - 2026-11-22 (lane predbound): a new parked piece.
-
-## parked/ideas/binding-prefix — A binding's name as a label prefix
-slugs:
-rulings:
-- 2026-11-22 (class: IDEA) "count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining. respond" (record: "2026-11-22 OWNER RULING — count-in-set: b"); part 5 of the entry, "it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining."
-- 2026-11-17 (class: PROPOSAL) "A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an expression" (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error"); point 4, against the idea; core/labels/flow's "A binding's name is not a path" stands
-rejected:
-readings:
-- the trigger is his answer to the question the manager is putting to him now (the lane brief) — a reading.
-evidence: none (parked).
-history:
-- 2026-11-22 (lane predbound): a new parked piece.
+2026-11-22 (lane predbound, R-1): `see:` the ruled core/labels/paths/binding-prefix, his other idea of the same message.

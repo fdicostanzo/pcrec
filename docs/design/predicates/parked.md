@@ -296,17 +296,5 @@ A syntax to declare the labels a binding provides (the `ch` in `chars`), for cla
 Trigger: macro types being designed (core/operators/bindings/macro-types), or the first library file with labels.
 Source: the record, count-in-set's ruling entry (his words in the details entry): "aside: perhaps we will need a
   syntax to declare the ch in chars. i am wonderings not for correctness but clarity."
-see: core/labels/export lib/modifiers/length
-modes: n/a (parked: not in the language)
-
-### A binding's name as a label prefix   [parked/ideas/binding-prefix]   parked 2026-11-22
-A binding's name used, under rules to be defined, as a label prefix (`chars.ch`); against it, his own earlier words that a binding is not a label.
-Trigger: his answer to the question the manager is putting to him now (a binding's name as a label prefix).
-Source: the record, count-in-set's ruling entry; his earlier words, the label-flow proposal, point 4 (details).
-see: core/labels/flow core/labels/paths
-- His idea: "it suggests that bindings could be used under certain rules as label prefixes like chars.ch as that
-  is clear here. chars seq ":" seq chars & (chars.ch: blah) would need defining."
-- Against it, his words of the label-flow proposal, point 4: "A . B & (A.h: blah) error. A is a binding not a
-  label and could be ambigous if its used multiple times in an expression". In the language: a binding's name is
-  not a path (core/labels/flow).
+see: core/labels/export lib/modifiers/length core/labels/paths/binding-prefix
 modes: n/a (parked: not in the language)

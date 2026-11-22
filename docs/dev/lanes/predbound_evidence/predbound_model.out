@@ -91,32 +91,32 @@ META      ok   the metadata line as printed at 1e0384941, and month_numbered's
       library.md:461  n := count((d: "7"))
       library.md:466  n := count((d: "7"))
    now: 8 refused bindings
-      core.md:811  sum := $a + $b
-      core.md:1209  inner := /x${(h: <5)}/
-      core.md:1225  B(rx) := /${rx}xx/ & (d: <100)
-      core.md:1249  sum := $a + $b
-      core.md:1249  n := count((d: "7"))
-      core.md:1253  lt5(S) := (h: S)
-      core.md:1263  late := (h: >5)
+      core.md:848  sum := $a + $b
+      core.md:1246  inner := /x${(h: <5)}/
+      core.md:1262  B(rx) := /${rx}xx/ & (d: <100)
+      core.md:1286  sum := $a + $b
+      core.md:1286  n := count((d: "7"))
+      core.md:1290  lt5(S) := (h: S)
+      core.md:1300  late := (h: >5)
       library.md:464  n := count((d: "7"))
    now, details: 27 refused bindings
       core_details.md:330  c := (d: \"7\")
       core_details.md:517  n := count(NOT (d: "7"))
       core_details.md:546  n := count(NOT (d: "7"))
       core_details.md:546  n := count(NOT (d: "7"))
-      core_details.md:886  c := NOT (h: /\d/) | (n: >= $h)
-      core_details.md:1115  sum := $a + $b
-      core_details.md:1128  sum := $a + $b
-      core_details.md:1128  sum := $a + $b
-      core_details.md:1666  inner := /x${(h: <5)}/
-      core_details.md:1666  inner := /x${$h}/
-      core_details.md:1701  lt5(S) := (h: S)
-      core_details.md:1703  late := (h: >5)
-      core_details.md:1703  A := /x/ & (y: >5)
-      core_details.md:1703  sum := $a + $b
-      core_details.md:1703  lt5(S) := (h: S)
-      core_details.md:1709  lt5(S) := (h: S)
-      core_details.md:1709  A := (x: blah)
+      core_details.md:930  c := NOT (h: /\d/) | (n: >= $h)
+      core_details.md:1159  sum := $a + $b
+      core_details.md:1172  sum := $a + $b
+      core_details.md:1172  sum := $a + $b
+      core_details.md:1710  inner := /x${(h: <5)}/
+      core_details.md:1710  inner := /x${$h}/
+      core_details.md:1745  lt5(S) := (h: S)
+      core_details.md:1747  late := (h: >5)
+      core_details.md:1747  A := /x/ & (y: >5)
+      core_details.md:1747  sum := $a + $b
+      core_details.md:1747  lt5(S) := (h: S)
+      core_details.md:1753  lt5(S) := (h: S)
+      core_details.md:1753  A := (x: blah)
       library_details.md:280  length(S) := chars & (nchars: S)
       library_details.md:280  nchars := count((ch: /(?s:.)/))
       library_details.md:289  mnum := $mname.index
@@ -128,10 +128,33 @@ META      ok   the metadata line as printed at 1e0384941, and month_numbered's
       parked_details.md:129  n := count((h: S))
       parked_details.md:834  small(L) := (L: <5)
 SWEEP     ok   start tree: ['B(rx)', 'c', 'inner', 'length(S)', 'lt5(S)', 'mnum', 'n', 'nchars', 'sum'] ; in the base files now, refused bindings not printed as refused: []
+== PREFIX: a binding's name as a label prefix (R-1): his example, every use; a plain read, two uses, refused
+   His example, every use: WHOLE `ab:cde` HOLDS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6] (`chars SEQ ":" SEQ chars & (count((chars.ch: anything)): ==5)`)
+   The last use only (not the ruling): WHOLE `ab:cde` FAILS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0] (the same program)
+   record form: all: WHOLE `ab:cde` HOLDS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6]
+   the record's: ['all: WHOLE `ab:cde` HOLDS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6]', 'last: WHOLE `ab:cde` FAILS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0]']
+   record form: last: WHOLE `ab:cde` FAILS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0]
+   One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
+   twice used, a plain read: `chars.ch`: chars is used 2 times here; label the part (`[left = chars]`) to read one use ; as a `$` read: `chars.ch`: chars is used 2 times here; label the part (`[left = chars]`) to read one use
+PREFIX    ok   his example reproduces the record's pasted `all` line, the last-use reading its `last` line ; one use equals the printed `[aa = ...]` line ; a plain read through a twice-used binding refused, saying to label the part
+== PREFIXRD: the binding-prefix entry's readings (b) the count of uses per definition, (c) an explicit part label twice, (d) private labels, (e) a macro's name
+   ('(b) X SEQ X, X := chars & (chars.ch: "a")', None, 0)
+   ('(c)', 'A part label used twice: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\\d)/] SEQ "," SEQ [aa = /(?<h>\\d)/] & (aa.h: <5)`)')
+   ('(d) year._v', '`year._v`: `year` passes no public label `_v` (reading (d))')
+   ('(d) [_ = A]', '`A.h`: `A` passes no public label `h` (reading (d))')
+   ('(e) B.d', '`B.d`: no part label or used binding `B` here')
+PREFIXRD  ok   (b) one use per definition of X, legal, X SEQ X against the direct split (two parts ending in `a`) over 31 texts: 0 differ ; (c) the last mention unchanged ; (d) `year._v` and `[_ = A]` then `A.h` refused ; (e) `B.d` refused
+== JOINTV: each component of a joint entry's left part may be a value (R-2, a reading)
+   A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
+JOINTV    ok   WHOLE against the direct rule (sum < 10 and c one digit) over 300 texts: 0 differ ; a joint entry inside a group question still refused: a joint entry inside a group question
+== LABELREF: the open label-reference: the bare `ch` (today) and `chars.ch` answer alike in `length`
+   Bare, as today: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
+   With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((chars.ch: /(?s:.)/)): ==3)`)
+LABELREF  ok   of 63 texts over `ab`: the two spellings (0, 0, 0) ; the bare line is length's printed line
 == QUOTES: the owner's words this lane quotes, verbatim in the record
-QUOTES    ok   9 quoted passages; missing from the record: []
+QUOTES    ok   12 quoted passages; missing from the record: []
 == MARKS: statuses, the withdrawn binding forms, the new pieces
-MARKS     ok   14 marks hold
+MARKS     ok   16 marks hold
 == DOC: every formatted line occurs verbatim in the documents
    [bound-condition] Written in place: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7] (`/(?<h>\d)/ & (h: >5)`; bound alone, `/(?<h>\d)/ & late` with late := `(h: >5)` is a compile error at `late`)
    [bound-condition] A set bound alone: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7] (`/(?<h>\d)/ & (h: late)`, late := `>5`)
@@ -152,5 +175,11 @@ MARKS     ok   14 marks hold
    [zero-binding] His first example: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5] (`A := /\d${(0: 5)}/`)
    [zero-binding] His second example: WHOLE `x5` HOLDS, `x7` FAILS, `55` HOLDS / SEARCHED `a7 b5` `b5`@3 / FIND-ALL `x5 y7 55` [`x5`@0, ` 5`@5] (`C := /.${A & (0: 5)}/`, A := `/\d/`)
    [metadata] WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon Wed` `Wed`@4 / FIND-ALL `Tue Mon Wed` [`Tue`@0, `Wed`@8] (`/${days}/ & (w.index: >= 2)`, days := `[w = [/Mon/, /Tue/, /Wed/]]`)
-DOC       ok   19 lines; missing: []
-predbound_model: 17 checks, 0 failed
+   [binding-prefix] His example, every use: WHOLE `ab:cde` HOLDS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6] (`chars SEQ ":" SEQ chars & (count((chars.ch: anything)): ==5)`)
+   [binding-prefix-d] The last use only (not the ruling): WHOLE `ab:cde` FAILS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0] (the same program)
+   [binding-prefix] One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
+   [value-left] A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
+   [label-reference] Bare, as today: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
+   [label-reference] With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((chars.ch: /(?s:.)/)): ==3)`)
+DOC       ok   25 lines; missing: []
+predbound_model: 21 checks, 0 failed

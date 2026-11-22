@@ -17,6 +17,8 @@
 #            nothing fails the entry (readings (d)). A value also stands where an rx stands (its one string).
 #   SETS     `>= $x` style comparison against a value; `between(lo, hi)` read from library.md's body.
 #   META     `[w = [a, b, ...]]`: the member that matched sets `w.index`, its 1-based position (core/values/metadata).
+# R-1 (binding-prefix ruled) and R-2 (values in a joint entry; the open label-reference) add PATHS, USES and JOINT
+# (their block below) and the checks PREFIX, PREFIXRD, JOINTV, LABELREF.
 # Every three-mode line formatted for the documents must occur VERBATIM in them (DOC). The OLD printed lines are
 # read from the starting commit 1e0384941 by `git show` (FIVE compares them, never typed by hand).
 #
@@ -39,6 +41,8 @@
 #   s15 the bound-condition piece's status read back as open (in memory)                  -> MARKS
 #   s16 one formatted line's subject altered before the document lookup                   -> DOC
 #   s17 a member's `.index` 0-based                                                       -> META
+#   s18 a plain read through a twice-used binding's prefix accepted                       -> PREFIX
+#   s19 a path to a label the prefix does not pass (private, under `_`) accepted          -> PREFIXRD
 # ---------------------------------------------------------------- copied from predfix77_model.py (begin)
 import itertools
 import os
@@ -1413,6 +1417,194 @@ def safe_ndiff(Pg, R, pop_):
     return ndiff(answers(Pg, pop_), answers(R, pop_)) if Pg is not None else ("refused",)
 
 
+# ================================================================== EXTENSIONS for R-1 and R-2 (binding-prefix, joint values)
+#   PATHS    a part label `[x = E]` and a USED binding `B` (the binding-prefix ruling, reading (a): as if `[B = B]`)
+#            give every public group inside them a second key `x.h` (`B.h`); a private `_` group gets none
+#            (reading (d)). A group's name in matcher text may carry several keys joined by `;`.
+#   USES     a binding used more than once IN THE DEFINITION the reference is written in (reading (b)) refuses a
+#            PLAIN read through its prefix, with an error that says to label the part (ruling part 2); a group
+#            question through it reads the settings of every use (part 1); OPT prefix = "last" is the rejected
+#            reading (the last use's settings only). A macro's name is no prefix (reading (e)).
+#   JOINT    R-2: each component of a joint entry's left part may be a label or a value; a joint entry is the
+#            product of its components' entries (record-is-product).
+def keys_of(name):                                           # noqa: F811
+    out = []
+    for part in name.split(";"):
+        base, _, sc = part.partition("@")
+        out += ["%s@%s" % (base, x) for x in (sc.split(",") if sc else ["top"])]
+    return tuple(out)
+
+
+GROUP_OPEN = re.compile(r"\(\?<([^>=!][^>]*)>")
+
+
+def add_prefix(text, prefix):
+    """Every public group opened in `text` also sets `prefix.base` under its scopes."""
+    if prefix.startswith("_"):
+        return text
+
+    def rep(mm):
+        name = mm.group(1)
+        first = name.split(";")[0]
+        base, _, sc = first.partition("@")
+        if base.startswith("_") or base.split(".")[0].startswith("_"):
+            return mm.group(0)
+        return "(?<%s;%s.%s@%s>" % (name, prefix, base, sc)
+    return GROUP_OPEN.sub(rep, text)
+
+
+USES, USE_SC, GQ_IDX = {}, {}, set()
+_base_binds0 = base_binds
+
+
+def base_binds():                                            # noqa: F811
+    _base_binds0()
+    USES.clear()
+    USE_SC.clear()
+    GQ_IDX.clear()
+
+
+_settings0 = settings
+
+
+def settings(log, key, scope):                               # noqa: F811
+    base = key.split("@")[0]
+    pre = base.split(".")[0] if "." in base else None
+    if OPT.get("prefix") == "last" and pre in USE_SC:
+        out = []
+        for e in log:
+            if e[0] == "enter" and e[1] in USE_SC[pre]:
+                out = []
+            elif e[0] == "enter" and e[1] == scope:
+                out = []
+            elif e[0] == "set" and e[1] == key:
+                out.append(e[2])
+        return out
+    return _settings0(log, key, scope)
+
+
+_lower_gq0 = lower_gq
+
+
+def lower_gq(text, ctx):                                     # noqa: F811
+    a = len(NAMED)
+    r = _lower_gq0(text, ctx)
+    GQ_IDX.update(range(a, len(NAMED)))
+    return r
+
+
+_count_getter0 = count_getter
+
+
+def count_getter(arg, ctx):                                  # noqa: F811
+    a = len(NAMED)
+    r = _count_getter0(arg, ctx)
+    GQ_IDX.update(range(a, len(NAMED)))
+    return r
+
+
+def plain_prefix_check(scope, start):
+    """Part 2 of the ruling: a plain read through a binding's prefix, the binding used more than once in this
+    definition, is a compile error that says to label the part."""
+    for i in range(start, len(NAMED)):
+        sc, nm = NAMED[i]
+        if sc != scope or "." not in nm or i in GQ_IDX:
+            continue
+        pre = nm.split(".")[0]
+        if USES.get((scope, pre), 0) > 1 and not sab("s18"):
+            raise CompileError("`%s`: %s is used %d times here; label the part (`[left = %s]`) to read one use"
+                               % (nm, pre, USES[(scope, pre)], pre))
+
+
+_lower_atom1 = lower_atom
+
+
+def lower_atom(expr, ctx):                                   # noqa: F811
+    expr = expr.strip()
+    mm = re.fullmatch(r"\[(\w*) = (.*)\]([+*?]?)", expr, re.S)
+    if mm and not mm.group(2).startswith("["):
+        name, e, q = mm.groups()
+        inner = lower(e, ctx)
+        if name == "_":                                      # `[_ = A]`: none of A's labels outside
+            return "(?:%s)%s" % (re.sub(r"\(\?<[^>=!][^>]*>", "(?:", inner), q)
+        ctx.held.add(name)
+        return "(?<%s@%s>%s)%s" % (name, ",".join(ctx.scopes), add_prefix(inner, name), q)
+    if expr in BINDS and not is_cond(BINDS[expr]) and not is_set_body(BINDS[expr]):
+        text = use_definition(BINDS[expr], ctx, expr)
+        sc = re.search(r"\$\{#(\d+)\}", text)
+        USES[(ctx.cur, expr)] = USES.get((ctx.cur, expr), 0) + 1
+        USE_SC.setdefault(expr, set()).add(NODES[int(sc.group(1))][1])
+        ctx.held.add(expr)
+        return add_prefix(text, expr)
+    return _lower_atom1(expr, ctx)
+
+
+_use_definition1 = use_definition
+
+
+def use_definition(body, ctx, dname, params=None, mark=True):    # noqa: F811
+    start = len(NAMED)
+    before = set(USES)
+    text = _use_definition1(body, ctx, dname, params, mark)
+    sc = NODES[int(re.search(r"\$\{#(\d+)\}", text).group(1))][1]
+    plain_prefix_check(sc, start)
+    return text
+
+
+_lower_cond1 = lower_cond
+
+
+def lower_cond(text, ctx, zero_key=None):                    # noqa: F811
+    t = text.strip()
+    neg = t.startswith("NOT ")
+    if neg:
+        t = t[4:].strip()
+    es = split_top(t[1:-1], ",")
+    out = []
+    joint = False
+    for e in es:
+        lr = split_colon(e.strip())
+        left, right = lr
+        comps = split_top(left[1:-1], ",") if left.startswith("(") and strip_parens(left) != left else None
+        if comps and len(comps) > 1:                         # a joint entry: the product of its components
+            joint = True
+            sets = split_top(right.strip()[1:-1], ",")
+            assert len(sets) == len(comps), (left, right)
+            out += ["%s: %s" % (c, s_) for c, s_ in zip(comps, sets)]
+        else:
+            out.append(e.strip())
+    if joint:
+        text = ("NOT " if neg else "") + "(" + ", ".join(out) + ")"
+    return _lower_cond1(text, ctx, zero_key)
+
+
+def prog(expr, binds=(), **opts):                            # noqa: F811
+    base_binds()
+    OPT.clear()
+    OPT.update(opts)
+    for b in binds:
+        define(b)
+    if not sab("s5") and not sab("s4"):
+        for b in binds:
+            r = binding_check(b)
+            if r:
+                raise CompileError("at the binding `%s`: %s" % (b, r))
+    top = Ctx()
+    start = len(NAMED)
+    text = lower(expr, top)
+    plain_prefix_check("top", start)
+    emitted = set(k.split("@")[0] for g in GROUP_OPEN.findall(text) for k in g.split(";"))
+    for sc, nm in NAMED[start:]:                             # a path names a part label or a used binding here
+        if sc == "top" and "." in nm and nm.split(".")[0] not in top.held and not nm.endswith(".index"):
+            raise CompileError("`%s`: no part label or used binding `%s` here" % (nm, nm.split(".")[0]))
+        if sc == "top" and "." in nm and not nm.endswith(".index") and nm not in emitted and not sab("s19"):
+            raise CompileError("`%s`: `%s` passes no public label `%s` (reading (d))" % (nm, nm.split(".")[0],
+                                                                                         nm.split(".", 1)[1]))
+    Pg = Prog(text)
+    Pg.expr = expr
+    return Pg
+
+
 # library bodies, read from library.md as it stands (the fold's)
 CHARS = lib_body(r"`chars := (\(\[ch = .*?\]\)\*)`")
 LENGTH = lib_body(r"`(length\(S\) := chars & .*?)`")
@@ -1690,6 +1882,104 @@ old_names = sorted(set(b.split(" :=")[0] for _, _, b, _ in S_OLD))
 check("SWEEP", {"c", "sum", "n", "nchars", "mnum", "lt5(S)"} <= set(old_names) and not bad_now,
       "start tree: %s ; in the base files now, refused bindings not printed as refused: %s" % (old_names, bad_now))
 
+# ---------------------------------------------------------------- PREFIX: R-1, binding-prefix ruled
+print("== PREFIX: a binding's name as a label prefix (R-1): his example, every use; a plain read, two uses, refused")
+
+
+def rec_form(Pg, whole, srch, fa):
+    """The record's pasted line form: `WHOLE `t` HOLDS / WHOLE ...`."""
+    w = " / ".join("WHOLE `%s` %s" % (t, "HOLDS" if Pg.whole(t) else "FAILS") for t in whole)
+    r = Pg.search(srch)
+    sm = "`%s`@%d" % (srch[r[0]:r[1]], r[0]) if r else "FAILS"
+    f = ", ".join("`%s`@%d" % x for x in Pg.findall(fa))
+    return "%s / SEARCHED `%s` %s / FIND-ALL `%s` [%s]" % (w, srch, sm, fa, f)
+
+
+EX = 'chars SEQ ":" SEQ chars & (count((chars.ch: anything)): ==5)'
+ANYB = "anything := " + lib_body(r"`anything` is `(.*?)`")
+ANYB = "anything := /%s/" % ANYB.split(":= ", 1)[1]
+ANYB = ANYB.replace("[\\s\\S]", "(?s:.)")                     # the matcher's classes know no \s: the same set
+TP = ["ab:cde", ":abcde", "ab:cd", "abcdef"], "ab:cde", "ab:cde 1:23456 xyz"
+PB = LIBB + [ANYB]
+L_PALL = show("His example, every use", EX, PB, *TP, " (`%s`)" % EX, "binding-prefix")
+L_PLAST = show("The last use only (not the ruling)", EX, PB, *TP, " (the same program)", "binding-prefix-d",
+               prefix="last")
+rall = rec_form(safe_prog(EX, PB), *TP) if safe_prog(EX, PB) else "REFUSED"
+rlast = rec_form(safe_prog(EX, PB, prefix="last"), *TP) if safe_prog(EX, PB, prefix="last") else "REFUSED"
+print("   " + L_PALL)
+print("   " + L_PLAST)
+print("   record form: all: %s" % rall)
+print("   the record's: %s" % [x for x in RECORD.split("\n") if x.startswith("all: ") or x.startswith("last: ")])
+print("   record form: last: %s" % rlast)
+E1U = "A & B & (A.h: <2)"
+B1U = ["A := /(?<h>\\d)\\d/", "B := /\\d(?<h>\\d)/"]
+L_P1 = show("One use", E1U, B1U, ["12", "21"], "21 12", "12 21 10",
+            " (`%s`, A := `/(?<h>\\d)\\d/`, B := `/\\d(?<h>\\d)/`)" % E1U, "binding-prefix")
+L_AA = printed(read(os.path.join(PRED, "core.md")), "(`[aa = /(?<h>\\d)\\d/] & /\\d(?<h>\\d)/ & (aa.h: <2)`)")
+print("   " + L_P1)
+r_two = refused('chars SEQ ":" SEQ chars & (chars.ch: "a")', PB)
+r_twod = refused('chars SEQ ":" SEQ chars & ($chars.ch: "a")', PB)
+print("   twice used, a plain read: %s ; as a `$` read: %s" % (r_two, r_twod))
+check("PREFIX", ("all: " + rall) in RECORD and ("last: " + rlast) in RECORD and answer_part(L_P1) == answer_part(L_AA)
+      and bool(r_two) and "label the part" in r_two and bool(r_twod) and "label the part" in r_twod,
+      "his example reproduces the record's pasted `all` line, the last-use reading its `last` line ; one use equals "
+      "the printed `[aa = ...]` line ; a plain read through a twice-used binding refused, saying to label the part")
+
+# ---------------------------------------------------------------- PREFIXRD: R-1's readings (b)..(e)
+print("== PREFIXRD: the binding-prefix entry's readings (b) the count of uses per definition, (c) an explicit part "
+      "label twice, (d) private labels, (e) a macro's name")
+# (b) the uses are counted in the definition the reference is written in
+XB = PB + ['X := chars & (chars.ch: "a")']
+r_b = refused("X SEQ X", XB)
+PX = safe_prog("X SEQ X", XB)
+xb = pop_whole(PX, pop("ab", 4), lambda t: any(t[:i].endswith("a") and t[i:].endswith("a")
+                                                for i in range(1, len(t)))) if PX else -1
+# (c) an explicit part label mentioned twice: the last mention, unchanged
+L_C2 = printed(read(os.path.join(PRED, "core.md")), "A part label used twice:")
+E_C2 = '[aa = /(?<h>\\d)/] SEQ "," SEQ [aa = /(?<h>\\d)/] & (aa.h: <5)'
+L_C2N = show("A part label used twice", E_C2, [], ["7,3", "3,7"], "3,7 7,3", "7,3 3,7 1,2", " (`%s`)" % E_C2, None)
+# (d) private: a `_` label is not reached through the prefix; `[_ = A]` passes nothing
+r_d1 = refused("year & (year._v: >= 2000)", [YEAR])
+r_d2 = refused("[_ = A] & (A.h: <5)", ["A := /(?<h>\\d)/"])
+# (e) a macro's name is not a prefix
+r_e = refused("B(A) & (B.d: <100)", ["A := [d = rx.digits]", "B(rx) := /${rx}xx/"])
+for x in (("(b) X SEQ X, X := chars & (chars.ch: \"a\")", r_b, xb), ("(c)", L_C2N), ("(d) year._v", r_d1),
+          ("(d) [_ = A]", r_d2), ("(e) B.d", r_e)):
+    print("   %s" % (x,))
+check("PREFIXRD", r_b is None and xb == 0 and answer_part(L_C2N) == answer_part(L_C2) and bool(r_d1) and bool(r_d2)
+      and bool(r_e),
+      "(b) one use per definition of X, legal, X SEQ X against the direct split (two parts ending in `a`) over 31 "
+      "texts: %s differ ; (c) the last mention "
+      "unchanged ; (d) `year._v` and `[_ = A]` then `A.h` refused ; (e) `B.d` refused" % xb)
+
+# ---------------------------------------------------------------- JOINTV: R-2 point 1, values in a joint entry
+print("== JOINTV: each component of a joint entry's left part may be a value (R-2, a reading)")
+EJV = "/(?<a>\\d)\\+(?<b>\\d)=(?<c>\\d+)/ & ((($a + $b), c): (<10, /\\d/))"
+L_JV = show("A joint entry with a value", EJV, [], ["3+4=7", "7+8=1", "1+2=34"], "7+8=1 2+2=4", "1+1=2 9+9=1 5+4=12",
+            " (`%s`)" % EJV, "value-left")
+print("   " + L_JV)
+POPJ = ["%d+%d=%s" % (a, b, c) for a in range(10) for b in range(10) for c in ("1", "12", "7")]
+jd = pop_whole(safe_prog(EJV), POPJ, lambda t: int(t[0]) + int(t[2]) < 10 and len(t) == 5)
+r_jg = refused("/(?:(?<a>\\d),)+/ & some(((($a + 1), a): (<5, \"3\")))")
+check("JOINTV", jd == 0 and bool(r_jg) and "REFUSED" not in L_JV,
+      "WHOLE against the direct rule (sum < 10 and c one digit) over %d texts: %d differ ; a joint entry inside a "
+      "group question still refused: %s" % (len(POPJ), jd, r_jg))
+
+# ---------------------------------------------------------------- LABELREF: R-2 point 2, the open label-reference
+print("== LABELREF: the open label-reference: the bare `ch` (today) and `chars.ch` answer alike in `length`")
+EBARE = "chars & (count((ch: /(?s:.)/)): ==3)"
+EPATH = "chars & (count((chars.ch: /(?s:.)/)): ==3)"
+TLR = ["abc", "ab"], "abcd", "abcdefg"
+L_LB = show("Bare, as today", EBARE, LIBB, *TLR, " (`%s`)" % EBARE, "label-reference")
+L_LP = show("With its source", EPATH, LIBB, *TLR, " (`%s`)" % EPATH, "label-reference")
+print("   " + L_LB)
+print("   " + L_LP)
+POPL = pop("ab", 5)
+lr = ndiff(answers(safe_prog(EBARE, LIBB), POPL), answers(safe_prog(EPATH, LIBB), POPL)) \
+    if safe_prog(EPATH, LIBB) else ("refused",)
+check("LABELREF", lr == (0, 0, 0) and answer_part(L_LB) == answer_part(L_FIVE["length"]),
+      "of %d texts over `ab`: the two spellings %s ; the bare line is length's printed line" % (len(POPL), lr))
+
 # ---------------------------------------------------------------- QUOTES
 print("== QUOTES: the owner's words this lane quotes, verbatim in the record")
 QUOTED = [
@@ -1709,6 +1999,12 @@ QUOTED = [
     "A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an "
     "expression",
     "we note that l is a label variable",
+    "\"binding-prefix\" 1. yes. 2. i agree with your lean (a)",
+    "binding in prefix: i like your read on this except that perhaps it does refer to all. chars SEQ \":\" SEQ chars "
+    "& (count(chars.ch): ==5) says all chars must total 5",
+    "label references: the remaining question is to whether it should be _required_ that the label is known "
+    "textually at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes. thoughts? "
+    "also, value in conditions: why would (x,y): () form not allow values?",
     "bound-condition: A := /\\d${(0: 5)}/ binds the literal to 5. A := /\\d/ C := /.${A & (0: 5)}/ the 0: is bound to A "
     "only",
 ]
@@ -1730,13 +2026,16 @@ marks = {
     "label-variables u-c": HEAD("core/operators/bindings/label-variables", "under-construction"),
     "macro-types u-c": HEAD("core/operators/bindings/macro-types", "under-construction"),
     "declared-labels parked": HEAD("parked/ideas/declared-labels", "parked"),
-    "binding-prefix parked": HEAD("parked/ideas/binding-prefix", "parked"),
     "computed-labels a reading": HEAD("core/values/computed-labels", "reading"),
     "no open marks": "depends on the open bound-condition" not in CORE_N + LIB_N,
     "never an expression gone": "never an expression" not in piece(CORE_N, "core/conditions/form"),
     "count not bound": "may be bound and read" not in piece(LIB_N, "lib/counting/count"),
     "no binding form": not re.search(r"\bn := `count|\bsum := `\$|`nchars := |`mnum := |\bc := `NOT", CORE_N + LIB_N),
-    "path rule kept": "A binding's name is not a path" in piece(CORE_N, "core/labels/flow"),
+    "path rule revised": "A binding's name is not a path" not in CORE_N
+    and "core/labels/paths/binding-prefix" in piece(CORE_N, "core/labels/flow"),
+    "binding-prefix ruled": HEAD("core/labels/paths/binding-prefix", "ruled"),
+    "label-reference open": HEAD("core/labels/paths/label-reference", "open label-reference"),
+    "no parked binding-prefix": "[parked/ideas/binding-prefix]" not in PARK_N,
     "both meanings": "(i) literally the intersection" in piece(CORE_N, "core/operators/bindings/macro-types")
     and "(ii) a promise checked at the call" in piece(CORE_N, "core/operators/bindings/macro-types"),
 }
