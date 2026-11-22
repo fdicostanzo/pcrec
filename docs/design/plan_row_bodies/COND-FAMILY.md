@@ -8161,3 +8161,78 @@ The manager's readings (marked): (a) the error is at the binding, the same compi
 (b) the condition written in place, or passed as an argument, is unchanged (the caller's text); (c) the
 reconsideration's trigger: a program that needs a reusable test on the whole match and cannot write it as a set
 bound alone (`five := 5`, then `(0: five)`), or macro variables being designed.
+
+### 2026-11-22 OWNER, an EXERCISE asked for: update the JSONL example's library code, build a search with it, return field values including fields not in the search
+tags: lib/json/members core/labels/export/export-list core/labels/export/capture-export lib/structural/capture core/labels/paths lib/modifiers/quoted
+
+HIS WORDS, whole: "Capture exercise: take the jsonl example library code and update. Then separately, use it to
+build a search for some jsonl line. Have it return the field values of that result which include fields not in
+the search. Evaluate exercise"
+
+Class: a REQUEST for an exercise; nothing ruled.
+
+### 2026-11-22 MANAGER — the JSONL capture exercise he asked for: the library updated, a search built, values returned; where the rules pinched (no owner words)
+tags: lib/json/members core/labels/export/export-list core/labels/export/capture-export lib/structural/capture core/labels/paths core/labels/paths/binding-prefix lib/modifiers/quoted core/holes/name parked/ideas/label-only-group
+
+Source: the frozen draft's §12.1 E-JSONL (`q := json.row("ts", quoted(dates.isodate & between(..))) &
+json.row("level", quoted("error")) & json.row("msg", json.string & contains("timeout"))`, `/^${q}$/m`); the `json`
+module's bodies were never written (lib/json/members, under construction). Written here under the rulings in
+force tonight, capture-export and the label-set spelling included (both recorded, not yet folded); every
+spelling a placeholder; the manager's sketch, nothing folded.
+
+THE LIBRARY FILE (json):
+    @options("n")                                   # a plain ( ) groups; nothing here is a capture
+    ws      := /[ \t]*/
+    string  := /"(?:[^"\\]|\\.)*"/
+    num     := /-?\d+(?:\.\d+)?/
+    value   := string | num | /true|false|null/
+    member_any := ws SEQ string SEQ ws SEQ ":" SEQ ws SEQ value SEQ ws
+    row(k, v)  := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${k}>${v & value})${ws}(?:,${member_any})*\}/
+`row(k, v)` puts a label ON THE SPOT of the value, named for the key (the label-only group with a name hole).
+THE SEARCH (the user's file):
+    json := import("json");  dates := import("dates")
+    tsdate := dates.isodate & between("2024-01-01", "2024-03-31")
+    line := [(=) = json.row("ts",    quoted(tsdate))]
+          & [(=) = json.row("level", quoted("error"))]
+          & [(=) = json.row("msg",   json.string & contains("timeout"))]
+          & [(=) = json.row("user",  json.value)]                     # not searched on; the member must exist
+          & [(=) = (json.row("host", json.value) | anything)]         # not searched on; the member may be absent
+    capture(line.ts)  capture(line.user)  capture(line.host)
+    /^${line}$/m
+RUN (hand-lowered model, python `re`, `$PCREC_TMPDIR/scratch/pred/jsonl_exercise.py`; the date set and
+`contains` lowered by hand; output pasted, the six lines also as one subject):
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db timeout","user":"ann","host":"db1"}` HOLDS (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`)
+WHOLE `{"user":7,"msg":"timeout","level":"error","ts":"2024-02-10"}` HOLDS (ts = `"2024-02-10"`, user = `7`, host = unset)
+WHOLE `{"ts":"2024-05-01","level":"error","msg":"timeout","user":"bob"}` FAILS
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db \"pool\" timeout","user":null}` HOLDS (ts = `"2024-02-10"`, user = `null`, host = unset)
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db timeout"}` FAILS
+WHOLE `{"user":"a","user":"b","ts":"2024-01-31","level":"error","msg":"timeout"}` HOLDS (ts = `"2024-01-31"`, user = `"b"`, host = unset)
+SEARCHED (the six lines as one subject): line 1 @0 (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`)
+FIND-ALL: line 1 @0 (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`); line 2 @81 (ts = `"2024-02-10"`, user = `7`, host = unset); line 4 @207 (ts = `"2024-02-10"`, user = `null`, host = unset); line 6 @338 (ts = `"2024-01-31"`, user = `"b"`, host = unset)
+
+WHERE THE RULES PINCHED (each a finding for the owner; none decided):
+1. A label named by an ARGUMENT. `row` wants its value label named for the key. The group-name hole gives that
+   to a group in rx text; the label-only group is under construction; a label set `[${k} = v]` in the expression
+   language has no name-hole rule. Without it every row's label is `val` and the caller must rename four times.
+2. "Called more than once" is too coarse. Four calls of `json.row` export four DIFFERENT names, yet the
+   call-prefix reading makes `row.ts` an error (several calls); the exercise went round it with `[(=) = ..]` on
+   each call. The ambiguity is per NAME, not per macro.
+3. Labels cannot be exported from inside an argument. `quoted(dates.isodate & between(..))` exports nothing of
+   isodate (isodate is used alone in the argument's expression, and a label written on an argument is refused):
+   to read `year` of the timestamp the caller must BIND the argument first and export there (`tsdate := [(=) =
+   dates.isodate] & between(..)`), then every wrapper on the way must pass it on (`quoted`, `row`): three
+   definitions must cooperate for one inner label.
+4. An OPTIONAL member has no idiom: `(row("host", value) | anything)` works because `anything` is a filter that
+   always holds, but nothing says so; a provided `maybe_row` or a stated idiom is wanted. The label set's
+   precedence (tighter than `|`) forces the parentheses.
+5. `capture(path)`: its place in a program (a statement, an `&` operand, an `@` effect), the caller's NAME for
+   the capture (the path's last step here; a rename is needed the moment two paths end alike), and whether an
+   unset label gives the caller an unset capture (`host` on lines 2, 4, 6) are all unstated.
+6. A value's text keeps its quotes (`"ann"`): the raw reading (ruled when `json.quoted` was cut); a caller who
+   wants `ann` needs a label on the spot INSIDE the quotes, which `quoted` does not offer.
+7. Duplicate keys: the label is the member PCRE's order reaches first, here the LAST one (`"b"`): the greedy
+   prefix; unstated in the library's piece.
+8. WHAT WORKED WITHOUT STRAIN: `&` of rows for any key order; the export list `(=)` as the one-word way to take
+   a call's labels; the protected default keeping `member_any`, `ws`, `string` out of the caller's sight with no
+   `_` anywhere; the flag ruling (`^`, `$` and `m` sit in the final literal; nothing needed to inherit); `n` as
+   a library option; fields not in the search are just more rows with `json.value`.
