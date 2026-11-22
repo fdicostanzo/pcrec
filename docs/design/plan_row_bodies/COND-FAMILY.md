@@ -8073,3 +8073,37 @@ The manager's readings (marked): (a) inside `[ ]` both `|` and `,` separate entr
 (b) each entry may carry a label set (`[a = A, b = B]` is `[a = A | b = B]`); (c) `[ ]` after an OPERAND is the
 access (`h[2]`), after an operator or at the start it is the array form (core/operators/precedence already reads
 it so).
+
+### 2026-11-22 OWNER, thoughts on capture-export: "No ruling. Just thoughts": two directions and four truths
+tags: core/labels/export core/labels/export/capture-export core/labels/labels-vs-captures lib/structural/capture lib/structural/capture/add-on core/labels/numbers core/labels/export/caller-ambiguous
+
+Asked **capture-export** ((a) captures follow the labels to the caller; (b) they reach it as PCRE's would; the
+manager's leaning (a) with a one-literal program staying plain PCRE). HIS WORDS, whole:
+
+"capture-export: this could go different directions. 1. capture default: everything is a capture that looks like
+a pcre capture. 2. capture explicit: you must specify a capture for
+It to exit to the caller using dedicated nonpcre spelling.
+Truths:
+if you use predicate language to construct patterns, you are not reasonably going to use group numbers to get
+capture values. Labels only.
+Therefore, extra captures do not interfere with the requested set of captures.
+With our current default privacy setup, you need to specifically create a visibility path for captures if you
+want to select them later.
+However if you select them early in binding macros, you need to make sure they are nevertheless visible because
+what if you use the same one twice? Also, You'd have a capture you cannot use in the rest of the definition.
+No ruling. Just thoughts"
+
+Class: THOUGHTS, in his word ("No ruling. Just thoughts"): two DIRECTIONS (1 "capture default": everything that
+looks like a PCRE capture is one; 2 "capture explicit": a capture must be specified, by a dedicated non-PCRE
+spelling, to exit to the caller) and four OBSERVATIONS he calls truths: values are taken by name, not by group
+number; so extra captures do not interfere with the requested set; under the default privacy a visibility path
+must be created to select a capture later; selecting early, inside binding macros, meets the same part used
+twice and gives "a capture you cannot use in the rest of the definition". capture-export stays OPEN.
+
+The manager's thoughts (told to him; nothing folded): his truths point at WHEN a capture is chosen more than at
+which direction: LATE, at the program, by naming a visible label (a path tells two uses of one part apart and
+nothing chosen is invisible to the definition), which is his after-the-fact add-on of 2026-11-21 (`[ d = digits ]
+& capture(d)`); EARLY selection (a named group deep in a binding) is where both of his last two problems live.
+One truth to add from pcrec itself: an extra capture does not change answers, but it is not free: what must be
+captured decides how the pattern can be compiled, so "do not interfere" holds for results, not for speed. A
+program that is ONE literal stays plain PCRE under either direction.
