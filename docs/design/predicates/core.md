@@ -405,6 +405,7 @@ see: core/labels/backreferences core/labels/export/flat-read-outside
    label. A part under a `_` part label, or `[_ = A]`, passes none of its labels (statements 6, 7; a reading).
    Read flat from outside, they are read as labels are inside (ruled: core/labels/export/flat-read-outside).
    `pub := [a = A] SEQ "!"` and `/${A}!/`, A := `/(?<h>\d)/`, both show `h`; `[_a = A] SEQ "!"` shows none.
+   Its spelling is revised by core/labels/paths/label-reference (ruled): a passed label is referenced with its source.
 4. A part label only disambiguates; it gives no access to anything private.
 5. The caller's captures are the CAPTURES visible from the top-level program by these rules: the groups written
    in rx text and the capture forms (lib/structural/capture); `[x = A]` makes a label and no capture.
@@ -429,6 +430,8 @@ see: core/labels/paths core/labels/one-rule
   reference, a compile error (core/labels/flow).
 - A flat read is by NAME: what the path that matched left in it. The path (`b.x`, `m.v`) says which part's group
   (core/labels/paths).
+- Its spelling is revised: a label not written in the referencing definition is referenced with its source
+  (core/labels/paths/label-reference, ruled); the lines below are re-spelled by the next lane.
 Across `|`: WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`pair & (x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`)
 Across a sequence: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8] (`date & (v: <5)`, date := `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`)
 
@@ -479,20 +482,22 @@ His example, every use: WHOLE `ab:cde` HOLDS, `:abcde` HOLDS, `ab:cd` FAILS, `ab
 One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
 Twice used, a plain read: modes: a compile error (`chars SEQ ":" SEQ chars & (chars.ch: "a")`, `$chars.ch` alike).
 
-### Must a label carry its source at the reference   [core/labels/paths/label-reference]   open label-reference 2026-11-22
-Must a reference to a label not written in the text of the definition that makes it carry its source (`chars.ch`, not `ch`), (a), or may it stay bare, as today, (b)?
+### A label is referenced with its source   [core/labels/paths/label-reference]   ruled 2026-11-22
+A label not written in the text of the definition that references it is referenced with its source: `chars.ch`, not `ch`; a bare name is a label the definition itself writes.
 needs: core/labels/paths/binding-prefix core/labels/export/flat-read-outside
-see: lib/modifiers/length core/labels/export core/holes/bare-condition/nested-scope
-- His words: "label references: the remaining question is to whether it should be _required_ that the label is
-  known textually at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes.
-  thoughts?" A lean, not a ruling: no answer is applied, and every printed program keeps its bare labels.
-- Candidates: (a) required: a label from a used binding is written with its source; (b) allowed bare, as today.
-- What a yes would revise: the spelling side of core/labels/export/flat-read-outside ("a flat read outside a
-  binding follows the inside rules") and of hole-export (core/labels/export), and his example 1 of
-  core/holes/bare-condition/nested-scope ("C can see d as a flat look into A").
-- With one use the two spellings answer alike (the lines; `length`'s body, `chars` used once).
-Bare, as today: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
+see: lib/modifiers/length core/labels/export core/holes/bare-condition/nested-scope parked/ideas/unqualified-after-definition
+- His words: "label-reference: required. we can relax it later as you say although i'm not inclined to."
+- Readings (each a reading): "known textually" means a group in one of the definition's literals or a part label `[x = ..]` it
+  writes; any other label is reached through a binding's name or a part label; `$x` reads alike, rx text is
+  untouched (it names only its own literal's groups); the plain idiom is included (`isodate & (isodate.year: ..)`).
+- Not stated by his words (a reading until asked): the source of a label from a macro call's body (label the call,
+  `[x = hits(..)]`, then `x.hit`), from an argument (`B(A)`: `A.d`), from a typed parameter.
+- It revises the spelling side of core/labels/export/flat-read-outside and of hole-export (core/labels/export
+  statement 3), and his example 1 in core/holes/bare-condition/nested-scope ("C can see d as a flat look into A").
+- No answer of a printed example changes, only spellings (a reading; the lines). The documents' other printed
+  programs still read used bindings' labels bare; they are re-spelled by the next lane.
 With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((chars.ch: /(?s:.)/)): ==3)`)
+Bare: modes: a compile error (`chars & (count((ch: /(?s:.)/)): ==3)`: `ch` is not written in it).
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
@@ -1258,7 +1263,7 @@ see: core/labels/flow core/operators/bindings/label-variables core/holes/bare-co
   construction ("bindings define scope").
 - His three examples, "rather than rules", with A := `[d = digits]` (his spelling; the runs use `rx.digits`):
   1. `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)` "is legal. C can see d as a flat look into A. C cannot see rx
-     as its a binding variable not a label."
+     as its a binding variable not a label." (its spelling revised: core/labels/paths/label-reference)
   2. `B(rx) := /${rx}xx/ & (d: <100)` "is incorrect".
   3. `B(rx) := /${[dd = rx]}xx/ & (dd: <100)` "would be correct".
 - Readings (the manager's): a piece is a binding or a macro body, and what is written inside ONE definition
@@ -1292,7 +1297,8 @@ see: core/conditions/pass-start-read core/values/computed-labels lib/counting/co
   bound alone (`late := >5`, used `(h: late)`): it names no label; a binding whose body USES a pattern that
   holds the label (`length`'s body uses `chars`; the line "A binding that holds its label"), by core/labels/export.
 - The refused definitions are written in place: pass-start-read's test in its hole, `(($a + $b): <10)`,
-  `(count((d: "7")): ==2)`, `length`'s `(count((ch: /(?s:.)/)): S)`, `month_numbered`'s `(mname.index: S)`.
+  `(count((d: "7")): ==2)`, `length`'s `(count((chars.ch: /(?s:.)/)): S)`, `month_numbered`'s
+  `(months.mname.index: S)`.
 - A condition naming only `0` bound alone (`c := (0: 5)`): left open by him (core/holes/bare-condition/zero-binding).
 - His two alternatives are under construction, spellings open: macro variables, `A(x:) := (x: < 2100)`
   (core/operators/bindings/label-variables); macro types, `B(d & isodate) := (year: < 2100)`

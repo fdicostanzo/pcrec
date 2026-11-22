@@ -1175,3 +1175,14 @@ evidence: none (parked).
 history:
 - 2026-11-22 (lane predbound): a new parked piece.
 2026-11-22 (lane predbound, R-1): `see:` the ruled core/labels/paths/binding-prefix, his other idea of the same message.
+
+## parked/ideas/unqualified-after-definition — Unqualified labels after a binding defined above
+slugs:
+rulings:
+- 2026-11-22 (class: IDEA) "label-reference: required. we can relax it later as you say although i'm not inclined to. (i wrote then deleted an idea that if you defined isodate := ... above the binding then later usages of it in the same "program" could refer to isodate labels without qualifications but i'm not so sure of it so i will park it)" (record: "2026-11-22 OWNER RULING — label-reference: required"); part (3), the idea he parks himself: "i wrote then deleted an idea that if you defined isodate := ... above the binding then later usages of it in the same "program" could refer to isodate labels without qualifications but i'm not so sure of it so i will park it"
+rejected:
+readings:
+- the trigger (his taking it up, or the idiom `isodate & (isodate.year: ..)` proving too heavy in the worked examples) is the manager's (R-3) — a reading.
+evidence: none (parked).
+history:
+- 2026-11-22 (lane predbound, R-3): a new parked piece.

@@ -43,6 +43,7 @@
 #   s17 a member's `.index` 0-based                                                       -> META
 #   s18 a plain read through a twice-used binding's prefix accepted                       -> PREFIX
 #   s19 a path to a label the prefix does not pass (private, under `_`) accepted          -> PREFIXRD
+#   s20 the label-reference requirement off (a bare borrowed label accepted)             -> LABELREF
 # ---------------------------------------------------------------- copied from predfix77_model.py (begin)
 import itertools
 import os
@@ -1450,6 +1451,12 @@ def add_prefix(text, prefix):
         if base.startswith("_") or base.split(".")[0].startswith("_"):
             return mm.group(0)
         return "(?<%s;%s.%s@%s>" % (name, prefix, base, sc)
+    for n in re.findall(r"\$\{#(\d+)\}", text):              # a member's `.index` (META) under the prefix too
+        nd = NODES[int(n)]
+        if nd[0] == "setv":
+            first = nd[1].split(";")[0]
+            base, _, sc = first.partition("@")
+            NODES[int(n)] = ("setv", "%s;%s.%s@%s" % (nd[1], prefix, base, sc), nd[2])
     return GROUP_OPEN.sub(rep, text)
 
 
@@ -1503,6 +1510,31 @@ def count_getter(arg, ctx):                                  # noqa: F811
     return r
 
 
+OWN_RX = (re.compile(r"\(\?<([A-Za-z_]\w*)>"), re.compile(r"\[(\w+) = "))
+
+
+def own_labels(text):
+    """The labels a definition WRITES: a group in one of its literals, a part label `[x = ..]` (reading (a))."""
+    return set(OWN_RX[0].findall(text)) | set(OWN_RX[1].findall(text))
+
+
+def source_check(scope, start, text):
+    """R-3, label-reference ruled "required": a bare label name must be written in the referencing definition's
+    own text; any other label is referenced with its source (`chars.ch`). OPT bare = True runs the documents'
+    lines not yet re-spelled (the next lane's sweep)."""
+    if OPT.get("bare") or sab("s20"):
+        return
+    own = own_labels(text)
+    for sc, nm in NAMED[start:]:
+        if sc != scope:
+            continue
+        head = nm.split(".")[0]
+        if "." not in nm and nm not in own:
+            raise CompileError("label `%s` is not written in this definition: reference it with its source" % nm)
+        if "." in nm and head not in own and not USES.get((scope, head)):
+            raise CompileError("path `%s`: `%s` is neither written nor a binding used in this definition" % (nm, head))
+
+
 def plain_prefix_check(scope, start):
     """Part 2 of the ruling: a plain read through a binding's prefix, the binding used more than once in this
     definition, is a compile error that says to label the part."""
@@ -1548,6 +1580,7 @@ def use_definition(body, ctx, dname, params=None, mark=True):    # noqa: F811
     text = _use_definition1(body, ctx, dname, params, mark)
     sc = NODES[int(re.search(r"\$\{#(\d+)\}", text).group(1))][1]
     plain_prefix_check(sc, start)
+    source_check(sc, start, body)
     return text
 
 
@@ -1593,6 +1626,7 @@ def prog(expr, binds=(), **opts):                            # noqa: F811
     start = len(NAMED)
     text = lower(expr, top)
     plain_prefix_check("top", start)
+    source_check("top", start, expr)
     emitted = set(k.split("@")[0] for g in GROUP_OPEN.findall(text) for k in g.split(";"))
     for sc, nm in NAMED[start:]:                             # a path names a part label or a used binding here
         if sc == "top" and "." in nm and nm.split(".")[0] not in top.held and not nm.endswith(".index"):
@@ -1724,7 +1758,7 @@ FIVES = [  # (piece, the old line's needle in the OLD file, the file, the new pr
     ("count", 'n := `count((d: "7"))`', "library.md", '/(?:(?<d>\\d),)+/ & (count((d: "7")): ==2)', None,
      (pop("17,", 6), lambda t: re.fullmatch(r"(?:\d,)+", t) is not None and t.count("7") == 2)),
     ("length", "as a program: `chars & (nchars: ==3)`", "library.md", "length(==3)",
-     " (`length(==3)` as a program: `chars & (count((ch: /(?s:.)/)): ==3)`)",
+     " (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)",
      (pop("ab\n", 4), lambda t: len(t) == 3)),
     ("month-numbered", "(`month_numbered(between(1, 6))`)", "library.md", "month_numbered(between(1, 6))", None,
      (["Jan", "January", "Jun", "June", "Jul", "July", "Dec", "Ma", "May", "Mar", "March", "Sept", "Sep"],
@@ -1742,7 +1776,7 @@ for tag, needle, f, expr, tail, (popf, direct) in FIVES:
         tail = " (`%s`)" % expr
     L = show(pre[:-2] if pre else "", expr, binds, wh, sr, fa, tail, tag)
     if tag == "length":                                         # the program form, also run
-        L2 = show(pre[:-2] if pre else "", "chars & (count((ch: /(?s:.)/)): ==3)", binds, wh, sr, fa, tail, None)
+        L2 = show(pre[:-2] if pre else "", "chars & (count((chars.ch: /(?s:.)/)): ==3)", binds, wh, sr, fa, tail, None)
     else:
         L2 = L
     Pg = safe_prog(expr, binds)
@@ -1835,10 +1869,16 @@ check("ZERO", b1 == b2 == (0, 0, 0) and bool(r_ze) and L_BA in OLD["core.md"] an
 print("== META: `.index` read as a label path (core/values/metadata), unchanged")
 EM = "/${days}/ & (w.index: >= 2)"
 L_ME = show("", EM, ["days := [w = [/Mon/, /Tue/, /Wed/]]"], ["Tue", "Mon"], "Mon Wed", "Tue Mon Wed",
-            " (`%s`, days := `[w = [/Mon/, /Tue/, /Wed/]]`)" % EM, "metadata")
+            " (`%s`, days := `[w = [/Mon/, /Tue/, /Wed/]]`)" % EM, "metadata", bare=True)
+EMS = "/${days}/ & (days.w.index: >= 2)"
+L_MES = show("", EMS, ["days := [w = [/Mon/, /Tue/, /Wed/]]"], ["Tue", "Mon"], "Mon Wed", "Tue Mon Wed", "", None)
+r_meb = refused(EM, ["days := [w = [/Mon/, /Tue/, /Wed/]]"])
 print("   " + L_ME)
-check("META", L_ME in OLD["core.md"] and L_FIVE["month-numbered"].startswith("WHOLE `Jun` HOLDS, `Jul` FAILS"),
-      "the metadata line as printed at %s, and month_numbered's" % START)
+print("   with its source (label-reference): " + L_MES)
+print("   the printed spelling under label-reference: %s" % r_meb)
+check("META", L_ME in OLD["core.md"] and answer_part(L_MES) == answer_part(L_ME) and bool(r_meb) and L_FIVE["month-numbered"].startswith("WHOLE `Jun` HOLDS, `Jul` FAILS"),
+      "the metadata line as printed at %s (run with the bare spelling the documents still print), the same answers "
+      "with its source `days.w.index` ; month_numbered's line" % START)
 
 # ---------------------------------------------------------------- SWEEP: reading (h)
 print("== SWEEP: every binding printed in the six files, checked at its binding (start tree and now)")
@@ -1857,6 +1897,7 @@ def sweep(texts):
                 base_binds()
                 OPT.clear()
                 OPT["lenient"] = True
+                OPT["bare"] = True                           # the bound-condition sweep, not label-reference's
                 try:
                     for e in ENV:
                         define(e)
@@ -1965,20 +2006,28 @@ check("JOINTV", jd == 0 and bool(r_jg) and "REFUSED" not in L_JV,
       "WHOLE against the direct rule (sum < 10 and c one digit) over %d texts: %d differ ; a joint entry inside a "
       "group question still refused: %s" % (len(POPJ), jd, r_jg))
 
-# ---------------------------------------------------------------- LABELREF: R-2 point 2, the open label-reference
-print("== LABELREF: the open label-reference: the bare `ch` (today) and `chars.ch` answer alike in `length`")
+# ---------------------------------------------------------------- LABELREF: R-3, label-reference ruled "required"
+print("== LABELREF: a label not written in the definition is referenced with its source (R-3)")
 EBARE = "chars & (count((ch: /(?s:.)/)): ==3)"
 EPATH = "chars & (count((chars.ch: /(?s:.)/)): ==3)"
 TLR = ["abc", "ab"], "abcd", "abcdefg"
-L_LB = show("Bare, as today", EBARE, LIBB, *TLR, " (`%s`)" % EBARE, "label-reference")
 L_LP = show("With its source", EPATH, LIBB, *TLR, " (`%s`)" % EPATH, "label-reference")
-print("   " + L_LB)
+L_LB = show("Bare, read as before the ruling", EBARE, LIBB, *TLR, " (`%s`)" % EBARE, "label-reference-d", bare=True)
+r_bare = refused(EBARE, LIBB)
+r_c1 = refused("B(A) & (d: <100)", ["A := [d = rx.digits]", "B(rx) := /${rx}xx/"])
+r_c1s = refused("B(A) & (A.d: <100)", ["A := [d = rx.digits]", "B(rx) := /${rx}xx/"])
 print("   " + L_LP)
+print("   " + L_LB)
+print("   bare under the ruling: %s" % r_bare)
+print("   his example 1, `C := B(A) & (d: <100)`: %s ; with `A.d` (the argument reached by the binding's name, "
+      "reading (d)): %s" % (r_c1, r_c1s))
 POPL = pop("ab", 5)
-lr = ndiff(answers(safe_prog(EBARE, LIBB), POPL), answers(safe_prog(EPATH, LIBB), POPL)) \
+lr = ndiff(answers(safe_prog(EBARE, LIBB, bare=True), POPL), answers(safe_prog(EPATH, LIBB), POPL)) \
     if safe_prog(EPATH, LIBB) else ("refused",)
-check("LABELREF", lr == (0, 0, 0) and answer_part(L_LB) == answer_part(L_FIVE["length"]),
-      "of %d texts over `ab`: the two spellings %s ; the bare line is length's printed line" % (len(POPL), lr))
+check("LABELREF", lr == (0, 0, 0) and answer_part(L_LP) == answer_part(L_FIVE["length"]) and bool(r_bare)
+      and "with its source" in r_bare and bool(r_c1),
+      "of %d texts over `ab`: the required spelling against the bare one read as before %s (no answer moves) ; the "
+      "bare spelling refused ; the required line is length's printed line" % (len(POPL), lr))
 
 # ---------------------------------------------------------------- QUOTES
 print("== QUOTES: the owner's words this lane quotes, verbatim in the record")
@@ -2000,6 +2049,9 @@ QUOTED = [
     "expression",
     "we note that l is a label variable",
     "\"binding-prefix\" 1. yes. 2. i agree with your lean (a)",
+    "label-reference: required. we can relax it later as you say although i'm not inclined to. (i wrote then deleted "
+    "an idea that if you defined isodate := ... above the binding then later usages of it in the same \"program\" "
+    "could refer to isodate labels without qualifications but i'm not so sure of it so i will park it)",
     "binding in prefix: i like your read on this except that perhaps it does refer to all. chars SEQ \":\" SEQ chars "
     "& (count(chars.ch): ==5) says all chars must total 5",
     "label references: the remaining question is to whether it should be _required_ that the label is known "
@@ -2034,7 +2086,8 @@ marks = {
     "path rule revised": "A binding's name is not a path" not in CORE_N
     and "core/labels/paths/binding-prefix" in piece(CORE_N, "core/labels/flow"),
     "binding-prefix ruled": HEAD("core/labels/paths/binding-prefix", "ruled"),
-    "label-reference open": HEAD("core/labels/paths/label-reference", "open label-reference"),
+    "label-reference ruled": HEAD("core/labels/paths/label-reference", "ruled"),
+    "unqualified parked": HEAD("parked/ideas/unqualified-after-definition", "parked"),
     "no parked binding-prefix": "[parked/ideas/binding-prefix]" not in PARK_N,
     "both meanings": "(i) literally the intersection" in piece(CORE_N, "core/operators/bindings/macro-types")
     and "(ii) a promise checked at the call" in piece(CORE_N, "core/operators/bindings/macro-types"),

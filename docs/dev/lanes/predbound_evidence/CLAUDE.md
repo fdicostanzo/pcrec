@@ -14,9 +14,9 @@ tested. Design evidence only; nothing here rules, and no check under `make` read
   read from the starting commit 1e0384941 by `git show` (FIVE). Every three-mode line it formats must occur
   verbatim in the documents (DOC). Controls: python `re` on hand regexes, direct counts, the record's words and
   its pasted line.
-  Run: `timeout 300 python3 -I -B <this dir>/predbound_model.py`. `PREDBOUND_SABOTAGE=sN` (s1..s17, its
+  Run: `timeout 300 python3 -I -B <this dir>/predbound_model.py`. `PREDBOUND_SABOTAGE=sN` (s1..s20, its
   header) plants one wrong rule or fact, one per check.
-- `predbound_model.out` — the committed clean run (17 checks, 0 failed).
-- `predbound_sabotage.out` — the 17 plants, each run alone, each caught by its target check, no traceback.
+- `predbound_model.out` — the committed clean run (21 checks, 0 failed).
+- `predbound_sabotage.out` — the 20 plants, each run alone, each caught by its target check, no traceback.
 
 Lane files are historical after merge; never edited then.

@@ -298,3 +298,10 @@ Source: the record, count-in-set's ruling entry (his words in the details entry)
   syntax to declare the ch in chars. i am wonderings not for correctness but clarity."
 see: core/labels/export lib/modifiers/length core/labels/paths/binding-prefix
 modes: n/a (parked: not in the language)
+
+### Unqualified labels after a binding defined above   [parked/ideas/unqualified-after-definition]   parked 2026-11-22
+A binding defined above in the same program (`isodate := ...`) would let its later uses refer to its labels without qualification; parked by the owner himself.
+Trigger: his taking it up, or the idiom `isodate & (isodate.year: ..)` proving too heavy in the worked examples.
+Source: the record, the label-reference ruling entry (his words in the details entry).
+see: core/labels/paths/label-reference
+modes: n/a (parked: not in the language)

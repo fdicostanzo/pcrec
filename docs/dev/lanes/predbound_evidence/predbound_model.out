@@ -1,4 +1,4 @@
-== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((ch: /(?s:.)/)): S) ; month_numbered(S) := months & (mname.index: S) ; between: >= lo & <= hi
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
 == months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
 == CONTROL: lowered programs without conditions against python `re` on hand regexes
 CONTROL   ok   of 341 texts over `ab;7`: `"ab" | "a"` (0, 0, 0), `(?:a|ab)??;` (0, 0, 0), rx.repeat(.., min = 2, max = 2) (0, 0, 0)
@@ -29,8 +29,8 @@ INPLACE   ok   both lines legal and the same as printed at 1e0384941
    A binding that holds its label: WHOLE `2001` HOLDS, `1999` FAILS / SEARCHED `x1999 2024` `2024`@6 / FIND-ALL `2024 1999 2000` [`2024`@0, `2000`@10] (`year`, year := `/(?<_v>\d{4})/ & (_v: >= 2000)`)
    chars := ([ch = /(?s:.)/])*                                  legal
    months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?: legal
-   length(S) := chars & (count((ch: /(?s:.)/)): S)              legal
-   month_numbered(S) := months & (mname.index: S)               legal
+   length(S) := chars & (count((chars.ch: /(?s:.)/)): S)        legal
+   month_numbered(S) := months & (months.mname.index: S)        legal
    year := /(?<_v>\d{4})/ & (_v: >= 2000)                       legal
 LEGAL     ok   chars, months, length, month_numbered, year legal at their bindings ; `year` WHOLE against the direct `>= 2000` over 256 four-digit texts: 0 differ
 == FIVE: the refused definitions written in place; every printed line unchanged
@@ -47,7 +47,7 @@ LEGAL     ok   chars, months, length, month_numbered, year legal at their bindin
    [count] new: WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)`)
    [count] answers the same: True ; WHOLE against the direct rule: 0 of 1093 differ
    [length] old: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
-   [length] new: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((ch: /(?s:.)/)): ==3)`)
+   [length] new: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)
    [length] answers the same: True ; WHOLE against the direct rule: 0 of 121 differ
    [month-numbered] old: WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
    [month-numbered] new: WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
@@ -74,7 +74,9 @@ SEVERAL   ok   refused: a value of several strings left of `:`: ["1", "2"]
 ZERO      ok   of 121 texts over `17x`: (a) against `\dx` (0, 0, 0), sealed against `(?!)` (0, 0, 0) ; the lines as printed at 1e0384941
 == META: `.index` read as a label path (core/values/metadata), unchanged
    WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon Wed` `Wed`@4 / FIND-ALL `Tue Mon Wed` [`Tue`@0, `Wed`@8] (`/${days}/ & (w.index: >= 2)`, days := `[w = [/Mon/, /Tue/, /Wed/]]`)
-META      ok   the metadata line as printed at 1e0384941, and month_numbered's
+   with its source (label-reference): WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon Wed` `Wed`@4 / FIND-ALL `Tue Mon Wed` [`Tue`@0, `Wed`@8]
+   the printed spelling under label-reference: path `w.index`: `w` is neither written nor a binding used in this definition
+META      ok   the metadata line as printed at 1e0384941 (run with the bare spelling the documents still print), the same answers with its source `days.w.index` ; month_numbered's line
 == SWEEP: every binding printed in the six files, checked at its binding (start tree and now)
    start: 13 refused bindings
       core.md:358  n := count(NOT (d: "7"))
@@ -91,40 +93,40 @@ META      ok   the metadata line as printed at 1e0384941, and month_numbered's
       library.md:461  n := count((d: "7"))
       library.md:466  n := count((d: "7"))
    now: 8 refused bindings
-      core.md:848  sum := $a + $b
-      core.md:1246  inner := /x${(h: <5)}/
-      core.md:1262  B(rx) := /${rx}xx/ & (d: <100)
-      core.md:1286  sum := $a + $b
-      core.md:1286  n := count((d: "7"))
-      core.md:1290  lt5(S) := (h: S)
-      core.md:1300  late := (h: >5)
-      library.md:464  n := count((d: "7"))
+      core.md:853  sum := $a + $b
+      core.md:1251  inner := /x${(h: <5)}/
+      core.md:1267  B(rx) := /${rx}xx/ & (d: <100)
+      core.md:1291  sum := $a + $b
+      core.md:1291  n := count((d: "7"))
+      core.md:1295  lt5(S) := (h: S)
+      core.md:1306  late := (h: >5)
+      library.md:466  n := count((d: "7"))
    now, details: 27 refused bindings
       core_details.md:330  c := (d: \"7\")
       core_details.md:517  n := count(NOT (d: "7"))
       core_details.md:546  n := count(NOT (d: "7"))
       core_details.md:546  n := count(NOT (d: "7"))
-      core_details.md:930  c := NOT (h: /\d/) | (n: >= $h)
-      core_details.md:1159  sum := $a + $b
-      core_details.md:1172  sum := $a + $b
-      core_details.md:1172  sum := $a + $b
-      core_details.md:1710  inner := /x${(h: <5)}/
-      core_details.md:1710  inner := /x${$h}/
-      core_details.md:1745  lt5(S) := (h: S)
-      core_details.md:1747  late := (h: >5)
-      core_details.md:1747  A := /x/ & (y: >5)
-      core_details.md:1747  sum := $a + $b
-      core_details.md:1747  lt5(S) := (h: S)
-      core_details.md:1753  lt5(S) := (h: S)
-      core_details.md:1753  A := (x: blah)
+      core_details.md:940  c := NOT (h: /\d/) | (n: >= $h)
+      core_details.md:1169  sum := $a + $b
+      core_details.md:1182  sum := $a + $b
+      core_details.md:1182  sum := $a + $b
+      core_details.md:1720  inner := /x${(h: <5)}/
+      core_details.md:1720  inner := /x${$h}/
+      core_details.md:1756  lt5(S) := (h: S)
+      core_details.md:1758  late := (h: >5)
+      core_details.md:1758  A := /x/ & (y: >5)
+      core_details.md:1758  sum := $a + $b
+      core_details.md:1758  lt5(S) := (h: S)
+      core_details.md:1764  lt5(S) := (h: S)
+      core_details.md:1764  A := (x: blah)
       library_details.md:280  length(S) := chars & (nchars: S)
       library_details.md:280  nchars := count((ch: /(?s:.)/))
-      library_details.md:289  mnum := $mname.index
-      library_details.md:299  mnum := $mname.index
-      library_details.md:608  n := count((d: "7"))
-      library_details.md:611  n := count((d: "7"))
-      library_details.md:622  n := count((d: \"7\"))
-      library_details.md:622  n := count((d: "7"))
+      library_details.md:290  mnum := $mname.index
+      library_details.md:300  mnum := $mname.index
+      library_details.md:610  n := count((d: "7"))
+      library_details.md:613  n := count((d: "7"))
+      library_details.md:624  n := count((d: \"7\"))
+      library_details.md:624  n := count((d: "7"))
       parked_details.md:129  n := count((h: S))
       parked_details.md:834  small(L) := (L: <5)
 SWEEP     ok   start tree: ['B(rx)', 'c', 'inner', 'length(S)', 'lt5(S)', 'mnum', 'n', 'nchars', 'sum'] ; in the base files now, refused bindings not printed as refused: []
@@ -142,19 +144,21 @@ PREFIX    ok   his example reproduces the record's pasted `all` line, the last-u
    ('(c)', 'A part label used twice: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\\d)/] SEQ "," SEQ [aa = /(?<h>\\d)/] & (aa.h: <5)`)')
    ('(d) year._v', '`year._v`: `year` passes no public label `_v` (reading (d))')
    ('(d) [_ = A]', '`A.h`: `A` passes no public label `h` (reading (d))')
-   ('(e) B.d', '`B.d`: no part label or used binding `B` here')
+   ('(e) B.d', 'path `B.d`: `B` is neither written nor a binding used in this definition')
 PREFIXRD  ok   (b) one use per definition of X, legal, X SEQ X against the direct split (two parts ending in `a`) over 31 texts: 0 differ ; (c) the last mention unchanged ; (d) `year._v` and `[_ = A]` then `A.h` refused ; (e) `B.d` refused
 == JOINTV: each component of a joint entry's left part may be a value (R-2, a reading)
    A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
 JOINTV    ok   WHOLE against the direct rule (sum < 10 and c one digit) over 300 texts: 0 differ ; a joint entry inside a group question still refused: a joint entry inside a group question
-== LABELREF: the open label-reference: the bare `ch` (today) and `chars.ch` answer alike in `length`
-   Bare, as today: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
+== LABELREF: a label not written in the definition is referenced with its source (R-3)
    With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((chars.ch: /(?s:.)/)): ==3)`)
-LABELREF  ok   of 63 texts over `ab`: the two spellings (0, 0, 0) ; the bare line is length's printed line
+   Bare, read as before the ruling: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
+   bare under the ruling: label `ch` is not written in this definition: reference it with its source
+   his example 1, `C := B(A) & (d: <100)`: label `d` is not written in this definition: reference it with its source ; with `A.d` (the argument reached by the binding's name, reading (d)): None
+LABELREF  ok   of 63 texts over `ab`: the required spelling against the bare one read as before (0, 0, 0) (no answer moves) ; the bare spelling refused ; the required line is length's printed line
 == QUOTES: the owner's words this lane quotes, verbatim in the record
-QUOTES    ok   12 quoted passages; missing from the record: []
+QUOTES    ok   13 quoted passages; missing from the record: []
 == MARKS: statuses, the withdrawn binding forms, the new pieces
-MARKS     ok   16 marks hold
+MARKS     ok   17 marks hold
 == DOC: every formatted line occurs verbatim in the documents
    [bound-condition] Written in place: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7] (`/(?<h>\d)/ & (h: >5)`; bound alone, `/(?<h>\d)/ & late` with late := `(h: >5)` is a compile error at `late`)
    [bound-condition] A set bound alone: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7] (`/(?<h>\d)/ & (h: late)`, late := `>5`)
@@ -165,7 +169,7 @@ MARKS     ok   16 marks hold
    [computed-labels] WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 5+4` [`1+1`@0, `5+4`@8] (`/(?<a>\d)\+(?<b>\d)/ & (($a + $b): <10)`)
    [array-vs-passes] A count of zero: WHOLE `,` HOLDS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` `,`@1 / FIND-ALL `1, , 7,` [`,`@1, `,`@3, `7,`@5] (`/(?:(?<d>\d)?,)+/ & (count(NOT (d: "7")): ==0)`)
    [count] WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)`)
-   [length] WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((ch: /(?s:.)/)): ==3)`)
+   [length] WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)
    [month-numbered] WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
    [value-left] Nothing fails the entry: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `3 7 5 1` [`7`@2, `5`@4] (`/(?<a>\d)/ & (($a - 5): >= 0)`: `3 - 5` is nothing)
    [value-left] NOT holds on nothing: WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x3 7` `3`@1 / FIND-ALL `3 7 5 1` [`3`@0, `1`@6] (`/(?<a>\d)/ & NOT (($a - 5): >= 0)`)
@@ -179,7 +183,7 @@ MARKS     ok   16 marks hold
    [binding-prefix-d] The last use only (not the ruling): WHOLE `ab:cde` FAILS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0] (the same program)
    [binding-prefix] One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
    [value-left] A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
-   [label-reference] Bare, as today: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
    [label-reference] With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((chars.ch: /(?s:.)/)): ==3)`)
+   [label-reference-d] Bare, read as before the ruling: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
 DOC       ok   25 lines; missing: []
 predbound_model: 21 checks, 0 failed

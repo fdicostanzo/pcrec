@@ -267,7 +267,7 @@ readings:
 - under array-vs-passes the count of `ch` (then the helper `nchars`) counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
 - caveats (the draft's): a helper binding beside the body; `count`'s budget applies to the count; the label `ch` visible.
 - `chars` re-spelled with a part label, `([ch = /(?s:.)/])*`, leaves every printed `length` line unchanged (review r77 D4; the brief's reading 4) — SUPPORTED by a run (predfix77 CHARS: the one printed line rebuilt from the old body and from the new, both equal to the printed text; the old body makes the capture `ch`, the new none; sabotage s11 caught).
-- the body written in place, `chars & (count((ch: /(?s:.)/)): S)`, gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `length(==3)` and from the program form, both equal to the line printed at 1e0384941; WHOLE against length 3, 0 of 121 texts over `ab\n` differ); `length`'s binding is legal: its body uses `chars`, which holds `ch` (predbound LEGAL).
+- the body written in place, `chars & (count((chars.ch: /(?s:.)/)): S)` (R-3 spelling), gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `length(==3)` and from the program form, both equal to the line printed at 1e0384941; WHOLE against length 3, 0 of 121 texts over `ab\n` differ); `length`'s binding is legal: its body uses `chars`, which holds `ch` (predbound LEGAL).
 evidence: preddoc3c PART LE; review r16 `bodies_check.out`. predfix77_model.py CHARS.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body (review r16 FIXIND-3).
@@ -278,6 +278,7 @@ history:
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement's "one loop pass per character, its count tested by S" became "one setting of `ch` per character, their count tested by S". No answer moves.
 - 2026-11-22 (lane predfix77, review r77 D4, A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the helper until then, verbatim: "`chars := /(?:(?<ch>(?s:.)))*/`", and the bullet "The label `ch` is visible in the result; written as a group in rx text it is also a capture (a reading of pure-label)." A part label makes no capture, so `length` hands the caller none (his reason for the add-on: "isodate and all the other libraries don't want to presume everyone is interested in every label being a capture."); `length(==3) & length(<5)` no longer reaches caller-ambiguous for a capture.
 2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the statement until then, verbatim: "`length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one setting of `ch` per character, their count tested by S."; the helpers bullet until then: "The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral; `nchars` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)."; the readings item "`nchars` is a computed count bound alone ... UNTESTED" replaced by the run; two readings re-worded without `nchars`. The line's program `chars & (nchars: ==3)` became `chars & (count((ch: /(?s:.)/)): ==3)`; the answers do not move. Status date 2026-11-19 to 2026-11-22.
+2026-11-22 (lane predbound, R-3, label-reference ruled): the body's `ch` re-spelled `chars.ch` (statement and line); the answers do not move (predbound FIVE, LABELREF).
 
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
@@ -286,7 +287,7 @@ rulings:
 - 2026-11-14 "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." (record: "2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS")
 rejected:
 readings:
-- the body `months & (mname.index: S)` (then `months & (mnum: S)`, `mnum := $mname.index`; 1-based) accepts `Jan` .. `Jun` for `between(1, 6)` — SUPPORTED (preddoc3c PART MN; sabotage s20, 0-based, caught); review r16's emulation, 170 cases, 0 differ, rests on the emulated `.index`.
+- the body `months & (months.mname.index: S)` (R-3 spelling; then `months & (mname.index: S)`, and before it `months & (mnum: S)`, `mnum := $mname.index`; 1-based) accepts `Jan` .. `Jun` for `between(1, 6)` — SUPPORTED (preddoc3c PART MN; sabotage s20, 0-based, caught); review r16's emulation, 170 cases, 0 differ, rests on the emulated `.index`.
 - the path written in place gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `month_numbered(between(1, 6))` with the body read from library.md equals the line printed at 1e0384941; WHOLE against the six month names, 0 of 13 texts differ; the index is the matched member's, 1-based, sabotage s17 caught by META).
 evidence: preddoc3c PART MN. predbound_model.py FIVE, META.
 history:
@@ -297,6 +298,7 @@ history:
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `[mname = ...]` makes no capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `mnum` points at the open core/holes/bare-condition/bound-condition.
 2026-11-22 (lane predbound, bound-condition ruled): the statement until then, verbatim: "`month_numbered(S)` reads a month name as its number: `months & (mnum: S)`, `mnum` the 1-based index of the name matched."; the binding `mnum := $mname.index` (a compile error now) removed, the path `mname.index` written in place; the pure-label bullet's "`mnum` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)." dropped. The answers do not move. Status date 2026-11-19 to 2026-11-22.
+2026-11-22 (lane predbound, R-3, label-reference ruled): `mname.index` re-spelled `months.mname.index` (the part label reached through the binding); the answers do not move (predbound FIVE).
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)

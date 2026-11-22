@@ -206,28 +206,30 @@ defined: ?
 - Whether the limit is "at most n" or "exactly n" is not settled by his words.
 
 ### length   [lib/modifiers/length]   reading 2026-11-22
-`length(S)` reads the stretch's length: `length(S) := chars & (count((ch: /(?s:.)/)): S)`, one setting of `ch` per character, their count tested by S.
+`length(S)` reads the stretch's length: `length(S) := chars & (count((chars.ch: /(?s:.)/)): S)`, one setting of `ch` per character, their count tested by S.
 needs: core/filters/and core/values/reads core/values/computed-labels core/conditions/form/value-left
-see: lib/counting/count
+see: lib/counting/count core/labels/paths/label-reference
 module: ?
 defined: language
 - The helper: `chars := ([ch = /(?s:.)/])*`; the count, a canonical numeral, is a value written in place left of
   `:` (core/conditions/form/value-left). `ch` has its target in the binding: the body USES `chars`, which holds it
-  (core/labels/export; a count bound alone is a compile error: core/holes/bare-condition/bound-condition).
+  (core/labels/export; a count bound alone is a compile error: core/holes/bare-condition/bound-condition); not
+  written in the body's own text, it is referenced with its source, `chars.ch` (core/labels/paths/label-reference).
 - The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no
   capture (pure-label), so the caller receives none.
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
-WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((ch: /(?s:.)/)): ==3)`)
+WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)
 
 ### month_numbered   [lib/modifiers/month-numbered]   reading 2026-11-22
-`month_numbered(S)` reads a month name as its number: `month_numbered(S) := months & (mname.index: S)`, the 1-based index of the name matched.
+`month_numbered(S)` reads a month name as its number: `month_numbered(S) := months & (months.mname.index: S)`, the 1-based index of the name matched.
 needs: core/filters/and core/values/reads core/values/computed-labels core/values/metadata
 module: ?
 defined: language
 - `months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/,
   /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]` (an array is an alternation;
-  the twelve names in calendar order); `mname.index` is a label path, so the test is written in place
-  (core/values/metadata; a value bound alone is a compile error: core/holes/bare-condition/bound-condition).
+  the twelve names in calendar order); `months.mname.index` is a label path (the part label `mname` reached through
+  `months`, core/labels/paths/label-reference), so the test is written in place (core/values/metadata; a value
+  bound alone is a compile error: core/holes/bare-condition/bound-condition).
 - The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
   capture (pure-label).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
