@@ -4779,3 +4779,8 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 
 - Main CORRECTION: U3 lands at abi 111 (main is 110; U2 was re-pinned 111 -> 110 at landing); L3 then 112; kit's next abi event asks main (113+). Kit branch merges main back after U3 lands.
 - U4 split into two disjoint lanes cut from ad3c8f1c2: bsu4g (opus) G2-V unit + whole with PROT_NONE guards, plants (a)(b), S3525-S3529; bsu4p (sonnet) 20 T-table pins, SPAN-SEED wiring, C18 rest, routing leg, DIFFER_PINS/FLOORS, plants (c)-(f), S3530-S3539. Both: no byte moves, no memfn/src edits; owed kit-bsu4{g,p}-{test,mech}. Code round r78 before U4 delivery.
+
+## 2026-11-22 08:47 (kit)
+
+- bsu4g DELIVERED (lane/bsu4g c0f615a49; lanecheck DONE): G2-V unit 1,216 renderings / 1,177,900 windows at both guard placements, 0 wrong 0 faults; whole 336 artifacts / 90,240 find-all runs 0 wrong; plants S3525 (a), S3526 (b) reached + detected; run_g2_win.sh 30,206/0. OWED 736-kit-bsu4g-test, 737-kit-bsu4g-mech. Lane stopped.
+- Findings to fold into block_span.md at U4 delivery: (1) §10.2's "plant (b) benign on HORS" is wrong where B divides K (moved final block leaves byte K-B untested; [0-9a-f]{17} misanswers; still caught). (2) "literal run beside a stretch" never reaches V (the literal is D1's stop): population 0, printed, not floored. (3) the empty set is refused at define, never reaches V.
