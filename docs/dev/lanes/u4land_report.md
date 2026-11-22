@@ -11,3 +11,4 @@ Local: `make -s strict` clean; `make -s test-plan-lint` PASS (2 checks, 0 failed
 
 ## STATE AT HANDOFF
 Branch lane/u4land committed. Rulings file u4land_rulings.md was empty on last re-read. Cloud runs (kind test, kind mech, name u4land) pushed as the gate; branch names are in the manager message.
+OWED: none (cloud verdicts test+mech on 25bbe01c6 arrive as CLOUD-DONE via queuewatch; refs cloud/main/test/u4land, cloud/main/mech/u4land proven by ls-remote)
