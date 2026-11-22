@@ -173,18 +173,25 @@ Trigger: the first user documentation of the predicate language (docs/guide/ tie
 Source: the ideas file item 24 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-19
+### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-22
 Label hygiene for libraries: the macro-variable problem.
 Trigger: the rx-module discussion, or the first library file with labels.
 Source: the ideas file item 25 (its whole text in the details entry).
+- Partly overtaken: a library label is reached only through its source (core/labels/paths/label-reference,
+  core/labels/paths/call-prefix), so two patterns' `h` meet only in the user's own prefixed text; a provided body's
+  groups are labels only (core/labels/label-only-group); a pattern exposing only what it declares is
+  parked/ideas/declared-labels. What stays parked: whether a collision left is worth a rule.
 modes: n/a (parked: not in the language)
 
-### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-19
+### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-22
 A condition with a label parameter, bound where it is used.
 Trigger (the ideas file's words): `the library discussion (items 12, 20, 23, 25), or the first revision of the draft`
   `after rev 25 that takes up reusable conditions`.
 Source: the ideas file item 26 (its whole text in the details entry).
 see: core/operators/bindings/label-variables
+- The THING is under construction as core/operators/bindings/label-variables, which supersedes this entry; kept as
+  the ideas file's record. Its question whether the body may read labels that are not parameters is answered: no
+  (core/holes/bare-condition/bound-condition, core/holes/bare-condition/nested-scope).
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
@@ -236,11 +243,13 @@ Trigger: a user program of the declared-then-used shape; or the array form's typ
 Source: the ideas file item 33 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### A parameter restricted by `&` in a definition's head   [parked/ideas/restricted-parameter]   parked 2026-11-19
+### A parameter restricted by `&` in a definition's head   [parked/ideas/restricted-parameter]   parked 2026-11-22
 `example(g & /\d+/) := ...` (his placeholder): a restricted parameter; the same to limit or overload operators.
 Trigger: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
 Source: the ideas file item 34 (its whole text in the details entry).
 see: core/operators/bindings/macro-types
+- The THING is under construction as core/operators/bindings/macro-types, which supersedes this entry; kept as the
+  ideas file's record.
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19

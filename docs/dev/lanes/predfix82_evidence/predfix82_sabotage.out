@@ -1,0 +1,63 @@
+=== PREDFIX82_SABOTAGE=s1  target ORDER  caught: yes  rc=1  tracebacks=0
+FAIL ORDER: the label h on the first whole path against python `re`'s group 1: greedy `(?<h>\d+)\d*` 28, lazy `(?<h>\d+?)\d*` 28 differing; the three modes (0, 72, 80), (0, 0, 0), over 121 texts
+predfix82_model: 22 checks, 5 failed (CONTROL, ORDER, REPRINT, SWEEP, DOC)
+=== PREDFIX82_SABOTAGE=s2  target CLOSEDX  caught: yes  rc=1  tracebacks=0
+FAIL CLOSEDX: under B(rx) := `/${[_p = rx]}xx/`: `A.d` ACCEPTED, `c.d` ACCEPTED, `B.d` ACCEPTED (the call itself matching as `\dxx`: (0, 0, 0) differing); inside its binding `(_a.h: <5)` legal, WHOLE against the direct "a digit under 5, then !" 0 differing; outside, `p6.h` ACCEPTED and `pub.h` throu
+predfix82_model: 22 checks, 2 failed (CLOSEDX, PATHS)
+=== PREDFIX82_SABOTAGE=s3  target SECOND  caught: yes  rc=1  tracebacks=0
+FAIL SECOND: `A.h` as the first operand 0, `B.h` as the second 3, `count((A.h: "1")): ==2` over `A & A` 3 differing from the direct reads over 40 texts; `A & A` counts 2 uses: yes
+predfix82_model: 22 checks, 3 failed (SECOND, AMBIG, DOC)
+=== PREDFIX82_SABOTAGE=s4  target AMBIG  caught: yes  rc=1  tracebacks=0
+FAIL AMBIG: the plain read ACCEPTED, the `$h` read ACCEPTED, by flow's ambiguity rule; `some((h: "1"))` against the direct "either digit is 1" 0 differing over 40 texts
+predfix82_model: 22 checks, 1 failed (AMBIG)
+=== PREDFIX82_SABOTAGE=s5  target TEXTUSES  caught: yes  rc=1  tracebacks=0
+FAIL TEXTUSES: `pair(A) & (A.d: <5)` (A written once, lowered twice) REFUSED, WHOLE against the direct second digit -1 differing; `/${A},${A}/ & (A.d: <5)` (written twice) refused, 2 uses
+predfix82_model: 22 checks, 2 failed (TEXTUSES, SWEEP)
+=== PREDFIX82_SABOTAGE=s6  target NESTED  caught: yes  rc=1  tracebacks=0
+FAIL NESTED: `D.h` against `[left = D] ... & (left.h: ..)` (34, 158, 158); the nested path `X.D.h` against `[x = D]` written in X's place (0, 0, 0), over 5461 texts
+predfix82_model: 22 checks, 2 failed (NESTED, DOC)
+=== PREDFIX82_SABOTAGE=s7  target CONTRAST  caught: yes  rc=1  tracebacks=0
+FAIL CONTRAST: `A.h` against the direct first digit 36 differing, the bare last mention against the direct last digit 0 differing, the two reads part on 0 of 121 texts
+predfix82_model: 22 checks, 7 failed (SECOND, CONTRAST, PATHS, TWOSRC, REPRINT, SWEEP, DOC)
+=== PREDFIX82_SABOTAGE=s8  target PATHS  caught: yes  rc=1  tracebacks=0
+FAIL PATHS: `pub.a.h` REFUSED, against `pub.h` ('refused',); `pair.b.x` REFUSED, WHOLE against the direct "a digit under 5 by b" -1 differing; `days.w.index` DIFFERS; a label not visible through its source is a compile error: `c.A.d` refused, the typo `c.e` refused, `A.d` under a closing B refused
+predfix82_model: 22 checks, 4 failed (NESTED, PATHS, REPRINT, SWEEP)
+=== PREDFIX82_SABOTAGE=s9  target INDEX  caught: yes  rc=1  tracebacks=0
+FAIL INDEX: `A.h[2]` through `A SEQ A` 0 differing from the direct second use's digit; `aa.h[2]` through a part label 0 differing; through `A & A` ACCEPTED
+predfix82_model: 22 checks, 1 failed (INDEX)
+=== PREDFIX82_SABOTAGE=s10  target VALUEGQ  caught: yes  rc=1  tracebacks=0
+FAIL VALUEGQ: `some(($h: "7"))` ACCEPTED, `count((($a + $b): <10))` refused; on `7;1;` `some((h: "7"))` HOLDS and `($h: "7")` FAILS: yes; outside a group question `($h: S)` against `(h: S)` (0, 0, 0) over 121 texts
+predfix82_model: 22 checks, 1 failed (VALUEGQ)
+=== PREDFIX82_SABOTAGE=s11  target HIDE  caught: yes  rc=1  tracebacks=0
+FAIL HIDE: `[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)` REFUSED, the warning NOT drawn; against the same program with the part label renamed `q` ('refused',)
+predfix82_model: 22 checks, 1 failed (HIDE)
+=== PREDFIX82_SABOTAGE=s12  target BOUNDSET  caught: yes  rc=1  tracebacks=0
+FAIL BOUNDSET: `lim := <(10 - $b)` bound alone NOT refused by the no-target rule; written in place, WHOLE against the direct h < 10 - b 0 differing
+predfix82_model: 22 checks, 1 failed (BOUNDSET)
+=== PREDFIX82_SABOTAGE=s13  target SUCCESSOR  caught: yes  rc=1  tracebacks=0
+FAIL SUCCESSOR: 6 earlier models re-run, each last line read; every red declared superseded: NO
+predfix82_model: 22 checks, 1 failed (SUCCESSOR)
+=== PREDFIX82_SABOTAGE=s14  target DOC  caught: yes  rc=1  tracebacks=0
+FAIL DOC: 15 lines; missing: [('core/labels/export', 'Statement 6, inside its binding: WHOLE `x3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 /')]
+predfix82_model: 22 checks, 1 failed (DOC)
+=== PREDFIX82_SABOTAGE=s15  target NULLABLE  caught: yes  rc=1  tracebacks=0
+FAIL NULLABLE: 32 programs run by the checks above, walked node by node: 1 with a loop whose body can match empty: [('/(?:(?<d>\\d)*)+/', ())]
+predfix82_model: 22 checks, 1 failed (NULLABLE)
+=== PREDFIX82_SABOTAGE=s16  target QUOTES  caught: yes  rc=1  tracebacks=0
+FAIL QUOTES: 9 quoted sentences in the record and the documents, missing: ['binding in prefix: i like your read on this except that surely it does refer to all']; 5 record titles cited, not a title: none
+predfix82_model: 22 checks, 1 failed (QUOTES)
+=== PREDFIX82_SABOTAGE=s17  target MARKS  caught: yes  rc=1  tracebacks=0
+FAIL MARKS: 35 dispositions' texts found where they landed; missing: ['ANS-2d']
+predfix82_model: 22 checks, 1 failed (MARKS)
+=== PREDFIX82_SABOTAGE=s18  target SWEEP  caught: yes  rc=1  tracebacks=0
+FAIL SWEEP: 220 printed lines (old engine 220); the fixed engine: CRASH 1, DIFF 15, REFUSED 77, same 125, unparsed 2; lines the old engine reproduced and the fixed one does not: 1 [('core.md', 120)]; lines only the fixed engine reproduces: 8 [('core.md', 421), ('core.md', 453), ('core.md', 454), ('c
+predfix82_model: 22 checks, 1 failed (SWEEP)
+=== PREDFIX82_SABOTAGE=s19  target GAPS  caught: yes  rc=1  tracebacks=0
+FAIL GAPS: refused: a bare name yes, `|` yes, `&` yes, named twice yes; the legal `(($n + 1): <5)` 0 differing from the direct
+predfix82_model: 22 checks, 1 failed (GAPS)
+=== PREDFIX82_SABOTAGE=s20  target TWOSRC  caught: yes  rc=1  tracebacks=0
+FAIL TWOSRC: the four candidate lines legal and each against its direct read (first or second digit): [True, False, True, True]; the printed `B(A) & (A.d: <5)` (A's own `d`) against candidate (b)'s spelling (0, 0, 0)
+predfix82_model: 22 checks, 1 failed (TWOSRC)
+=== PREDFIX82_SABOTAGE=s21  target REPRINT  caught: yes  rc=1  tracebacks=0
+FAIL REPRINT: 12 of 12 re-derived lines found verbatim in the documents (missing: none); the set form against value-left's `(($a + $b): <10)` on the 100 digit pairs: 9 differ
+predfix82_model: 22 checks, 1 failed (REPRINT)

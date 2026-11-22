@@ -207,7 +207,7 @@ defined: ?
 
 ### length   [lib/modifiers/length]   reading 2026-11-22
 `length(S)` reads the stretch's length: `length(S) := chars & (count((chars.ch: /(?s:.)/)): S)`, one setting of `ch` per character, their count tested by S.
-needs: core/filters/and core/values/reads core/values/computed-labels core/conditions/form/value-left
+needs: core/filters/and core/values/reads core/conditions/form/value-left
 see: lib/counting/count core/labels/paths/label-reference
 module: ?
 defined: language
@@ -222,7 +222,7 @@ WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`a
 
 ### month_numbered   [lib/modifiers/month-numbered]   reading 2026-11-22
 `month_numbered(S)` reads a month name as its number: `month_numbered(S) := months & (months.mname.index: S)`, the 1-based index of the name matched.
-needs: core/filters/and core/values/reads core/values/computed-labels core/values/metadata
+needs: core/filters/and core/values/reads core/conditions/form/value-left core/values/metadata
 module: ?
 defined: language
 - `months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/,
@@ -329,8 +329,10 @@ defined: language
   caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n). How a helper declares a capture is not
   stated (lib/structural/capture/add-on).
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
-  metadata); two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix;
-  each call reached through a label of its own (`a.hit`, `b.hit`) is not ambiguous (a reading).
+  metadata). Called twice in one definition, a plain read through the macro's name is binding-prefix's compile
+  error, its fix to label the call (`a.hit`, `b.hit`); a group question through the name reads every call's
+  settings, in order, joined by `SEQ` or by `&` alike; only the index `h[k]` across `&` is refused for now
+  (core/labels/paths/call-prefix, core/labels/paths/binding-prefix; a reading for `&`).
 - A check of the whole text: `J & C & occurrences(M)` matched WHOLE, a parse J of the whole text, a check C on it,
   M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED shape (each match of M reported as
   a match of the program) has no ruled spelling.
@@ -407,14 +409,14 @@ defined: language
   fires there.
 WHOLE `a` HOLDS, `ab` FAILS / SEARCHED `ab` FAILS / FIND-ALL `b` [`b`@0] (`anchored(/a|b/)` is `\A(?:a|b)\z`)
 
-### within   [lib/search/within]   under-construction 2026-11-19
+### within   [lib/search/within]   under-construction 2026-11-22
 `within(n, of = d)` (a placeholder) is a date within n days of a date d; the worked example names it and nothing defines it.
 module: ?
 defined: ?
 - Its use: `isodate & within(15, of = c)` with c a compile-time date, and `within(15, of = ref)` with
   `ref := param(isodate)` (a run-time input).
-- A day difference is a function of the fields, out of reach of a set written in the language: a computed label
-  or a blessed callout.
+- A day difference is a function of the fields, out of reach of a set written in the language: a computed value
+  written in place (core/values/computed-labels) or a blessed callout.
 
 ## Sets   [lib/sets]
 
@@ -518,14 +520,15 @@ No pass, the item form: WHOLE `x` HOLDS, `7,x` HOLDS / SEARCHED `-x` `x`@1 / FIN
 
 ## Strings   [lib/strings]
 
-### join   [lib/strings/join]   reading 2026-11-19
+### join   [lib/strings/join]   reading 2026-11-22
 `join(a, sep = s)` is one value: the members of a finite array in their order, s between them; with no `sep`, nothing between.
 needs: lib/builtin/enumerate core/holes/class
 module: ?
 defined: native (a function over an array's members; no expression of the language walks an array)
 - "None of these" is written with it: `[^${join(c)}]`, c := [x, y], is `[^xy]` (several values in `[^${c}]` stay
   the alternation of the class).
-- Joined parts stay reachable by their labels (`c.A`). Ordered, fixed: `join`; ordered, repeated: `list_of`.
+- Joined parts stay reachable by their labels (`c.A`): stale beside "[ c = B(A) ] does not allow c.A"
+  (core/labels/paths) unless join is ruled an exception; no printed line uses it. Ordered, fixed: `join`; ordered, repeated: `list_of`.
 WHOLE `ax` FAILS, `ab` HOLDS / SEARCHED `ax ab` `ab`@3 / FIND-ALL `ax ay ab` [`ab`@6] (`/a[^${join(c)}]/`, c := [x, y], is `a[^xy]`)
 
 ### left   [lib/strings/left]   reading 2026-11-19
