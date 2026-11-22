@@ -24,6 +24,6 @@ Design evidence only; nothing here rules, and no check under `make` reads it.
 
 KNOWN LIMIT (EVID-4, planned, not fixed here): a NULLABLE loop body past the minimum (PCRE's trailing empty pass)
 is not modelled; the check NULLABLE fails if any program the checks run has one. Verified present in both files by
-`grep -n 'KNOWN LIMIT (EVID-4' <this dir>/predfix82_model.py <this dir>/CLAUDE.md` (one hit each).
+`grep -n 'KNOWN LIMIT (EVID-4' <this dir>/predfix82_model.py <this dir>/CLAUDE.md` (each file hits; the grep line itself is one of CLAUDE.md's).
 
 Lane files are historical after merge; never edited then.
