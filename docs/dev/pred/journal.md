@@ -777,3 +777,16 @@ Lane predfix82 delivered (rulings file empty; all nine of my r82 readings suppor
 moved: 220 lines under the old and the fixed engine) and MERGED: lint 6,428 / 0, its model 22 / 0. Review r82
 filed. P-20 written (done line, status line, seven worktrees to prune, four proposed skill edits). wake.md's State
 rewritten. Owner questions next: two-sources, idiom-confirm.
+
+## 2026-11-22 (late night) — default-export RULED protected; fold lane preddef running
+
+After P-20: his C++ analogy (three of four matched; the default, A alone, was PUBLIC by hole-export); his example
+`B := A & A`, `C := B & (B.a: 9)` ("B.a is always an error"); then RULED "default-export: protected": a part used
+alone is available inside the binding and NOT exported. Reverses hole-export (2026-11-19) and export statement 3
+for an unlabelled part. Lane preddef (opus; `worktrees/preddef`, cut at 0050e019a) RUNNING: rule pieces restated,
+every printed program swept (explicit part labels to export), his analogy as a table, a model implementing the
+protected default with a SUCCESSOR check over all older models. Two NEW owner questions, neither applied:
+argument-default (the caller's own `A.d` for an argument through a bare `${rx}`: his example 1 of the 21st and
+closed-argument against the new default); capture-export (does a capture in rx text deep inside bare-used parts
+still reach the caller). Asked main for a review number (REPLY pending). NEXT: accept and merge preddef; critic
+round with main's number (subject = diff from 30ca2520d); rule; fix lane; P-21.

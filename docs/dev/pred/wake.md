@@ -9,7 +9,11 @@ followups and we can continue this conversation later"). Committed docs win on a
   owner ruling through 2026-11-22 is folded AND reviewed: r77 (filed 2026-11-21) and r82 (filed 2026-11-22, RULED,
   applied by lane predfix82). Lanes predbound, predref, predcall, predfix82 are merged and stopped. Main merges at
   its convenience (P-19 = 399ef98f4 was the previous delivery).
-- NOTHING IN FLIGHT. No cron. Nothing in the box queue (never ours). Worktrees for main to prune are listed in
+- IN FLIGHT (after P-20): the owner ruled **default-export: protected** (a part used alone is available inside
+  the binding and NOT exported; reverses hole-export). Lane **preddef** (opus; `worktrees/preddef`, cut at
+  0050e019a; `scripts/lanewatch preddef`) folds it and sweeps the examples. Then a critic round (number ASKED of
+  main, reply pending; subject = diff 30ca2520d..tip), its ruling, a fix lane, P-21. New owner questions from it:
+  argument-default, capture-export (open pieces; neither applied). No cron. Nothing in the box queue (never ours). Worktrees for main to prune are listed in
   P-20.
 - Lint `python3 -I scripts/pred_doc_lint.py`: 6,428 / 0 at P-20 (RUN IT BEFORE NAMING A TIP). The newest evidence
   model is `docs/dev/lanes/predfix82_evidence/predfix82_model.py` (22 checks; it carries the fixed engine: `_x`
