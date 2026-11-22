@@ -6995,3 +6995,102 @@ dispositions, by the draft's ids; every one is the manager's, none an owner ruli
 WITHDRAWN or narrowed readings of the manager's, by this round: case-2 reading (c) (already withdrawn on his
 words); "a binding is its expression where it is used" narrowed to flags; the class gloss "(a binding or a macro
 body)" inside the ruled match-so-far statement becomes a marked reading.
+
+### 2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)
+tags: core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/holes/bare-condition/nested-scope lib/counting/some lib/counting/count lib/counting/occurs
+
+Asked **array-in-piece** (review r77, finding A1: inside a separately defined piece, does a group question
+(`some`, `count`, `occurs`, `h[k]`) read (a) the entire rx's settings of the name (array-scope, 2026-11-19: "the
+only way to do it is by the scope of the entire rx") or (b) the piece's own settings only (bare-nested-scope case
+2, 2026-11-21; "bindings define scope"); the witness `A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h:
+"7"))}/`, run as a hand-built simulation in PCRE's order (`$PCREC_TMPDIR/scratch/pred/array_in_piece.py`), the
+output pasted:
+entire: WHOLE `7` HOLDS / WHOLE `7;1` HOLDS / WHOLE `1;7` HOLDS / WHOLE `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14]
+own: WHOLE `7` FAILS / WHOLE `7;1` FAILS / WHOLE `1;7` HOLDS / WHOLE `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14]
+the manager's leaning (b), with: array-scope then stays the rule for whoever writes the question at a level that
+sees both parts). HIS WORDS, whole:
+
+"array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is
+bound first, its internal references refer only to what can be seen at that point."
+
+Class: a RULING on the slug, answer (b), in his own statement: a piece that is BOUND has its internal references
+(a group question's array included) "refer only to what can be seen at that point", the point of its binding;
+written in place in the definition that holds A, the same text "would see the h from A". The two rulings no
+longer collide: array-scope ("the scope of the entire rx") is read over the definition the question is written
+in, with everything visible there.
+
+The manager's readings (marked; for lane predfix77, as R-1 of its rulings file, to test and state):
+(a) his `A & /B-defintion/` is read as "B's text written in place beside A, in one definition": the witness is a
+    sequence, and across a real `&` a name both sides surface is the ambiguous reference (core/labels/flow); the
+    `&` is taken as a placeholder for the composition, not as a ruling on `&`;
+(b) "what can be seen at that point" includes the public labels of the parts the piece itself uses (a B whose
+    body uses A sees A's settings of `h`), by core/labels/export statement 2;
+(c) it covers `some`, `count`, `occurs` and the index `h[k]` alike;
+(d) a group question written in an `&` operand inside ONE definition (review A2) reads the settings visible in
+    that definition at that point: not separately ruled;
+(e) the path form (`x.@a`) and the user's own read of both parts are unchanged.
+His sentence, read literally, also bears on the open bound-condition (a condition bound alone can see nothing
+"at that point"): NOT taken as an answer to it; put to him as the next question.
+
+### 2026-11-22 OWNER, adding to array-in-piece: "or A SEQ /B definition/"
+tags: core/labels/labels-vs-captures core/holes/bare-condition/nested-scope core/labels/flow
+
+After the ruling entry above was recorded and **bound-condition** asked a third time. HIS WORDS, whole:
+
+"or A SEQ /B definition/"
+
+Class: an ADDITION to his array-in-piece statement ("if it was written A & /B-defintion/ then the some(h) would
+see the h from A"); nothing new asked. The reading taken, and told to him: "or", so BOTH compositions: B's text
+written in place beside A, joined by the sequence operator or by `&`, sees A's `h`; bound first, it does not.
+It REPLACES the manager's reading (a) of the entry above ("the `&` is taken as a placeholder for the
+composition"): he names the sequence form himself and keeps the `&` form beside it. The manager's reading, marked:
+for the `&` form the group question's array holds the settings of both sides; whether a PLAIN read of `h` there
+is still the ambiguous reference (core/labels/flow: "Across `&` a name both sides surface is an ambiguous
+reference") is not touched by his words and stays as ruled. bound-condition: not answered by this message.
+
+### 2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives
+tags: core/holes/bare-condition/nested-scope core/conditions/form core/values/computed-labels core/operators/bindings parked/ideas/label-parameter parked/ideas/restricted-parameter
+
+Asked **bound-condition** a third time (a condition bound under its own name, no pattern in it: (a) laid against
+the pattern it meets where it is used; (b) sealed at its binding, a compile error; the example `late := (h: >5)`,
+`/(?<h>\d)/ & late`: (a) hand-lowered `[6-9]`, run: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL
+`7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7]; (b) a compile error at `late`; the manager's leaning (a), narrowly,
+"weaker than yesterday"; the cost of (b) named: the computed labels). HIS WORDS, whole:
+
+"bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/
+& (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding
+decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types
+B(d & isodate) := B(year: < 2100) (spellings tbd)"
+
+Class: an ANSWER on the slug, (b), given as "my read" with a response asked for ("please respond"): recorded as
+his POSITION, to be entered as the RULING when he confirms after the response (the reading taken, told to him).
+Its two statements: (1) `A := (x: blah)` is illegal: "x has no references in the binding"; (2) `A := /x/ & (y:
+blah)` is illegal: "y has no target" (this second form is bare-nested-scope case 1, already ruled). His ground:
+"the only read consistent with the earlier binding decisions". And two ALTERNATIVES he names, spellings his
+placeholders ("spellings tbd"): (1) "macro variables", `A(x:) := (x: < 2100)`: a parameter marked as a label (the
+first of the two ways he named on 2026-11-21: "we note that l is a label variable"; parked/ideas/label-parameter);
+(2) "macro types", `B(d & isodate) := B(year: < 2100)`: a parameter restricted to a pattern whose labels the body
+may then name (parked/ideas/restricted-parameter has his earlier `example(g & /\d+/)`); the body as he typed it
+repeats `B`, read for the intended `d & (year: < 2100)` (a reading).
+
+WITHDRAWN by the manager on this position: the leaning (a) and the reading "a bound condition or computed label
+has no rx of its own and is laid against the pattern it meets" (case-2 entry, reading (b); zero-in-definition
+entry, reading (b)).
+
+### 2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`
+tags: parked/ideas/restricted-parameter parked/ideas/label-parameter core/conditions/form core/labels/flow
+
+After the manager's response on bound-condition (agreement; the computed labels as the cost; alternative 1
+favoured, alternative 2 read as `d & (year: < 2100)` and called heavier). HIS WORDS, whole:
+
+"bound-condition: correction to rx: B(d & isodate) := (year: < 2100)"
+
+Class: a CORRECTION of his own example (alternative 2, "macro types"; the spelling still his placeholder); no
+confirmation of the ruling in it. It WITHDRAWS the manager's reading of the body as `d & (year: < 2100)`: the
+body is the condition alone, and the head `d & isodate` is what gives `year` its target. The manager's reading,
+marked, told to him: B is a named condition whose TARGET is declared in its head (2026-11-14: a condition is "a
+MACRO awaiting its target"); `B(x)` lays `(year: < 2100)` against x, which the head restricts to an isodate. Two
+meanings of the restriction are possible and not chosen by his words: (i) literally the intersection, `B(x)` =
+`x & isodate & (year: < 2100)`, which is writable today as `B(d) := d & isodate & (year: < 2100)` and makes `year`
+ambiguous when x itself surfaces `year` (core/labels/flow); (ii) a promise checked at the call that x holds
+isodate's labels, `year` then being x's own.
