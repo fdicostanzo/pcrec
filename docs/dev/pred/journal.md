@@ -741,3 +741,5 @@ its model 21 / 0). Lane predref (opus; worktree `worktrees/predref`) RUNNING: th
 today's folds (predbound + predref; subject = diff from 399ef98f4); rule it; fix lane; P-20. Question queue:
 call-prefix, zero-condition-binding, count-several, capture-loop-value, zero-in-loop with the occurrences-argument
 reading, macro variables / macro types (with declared labels), group-truth, every-pass-spelling, the older ones.
+
+2026-11-22, his direction after closed-argument (not confirmed as a ruling: his lean (a) stands recorded): "do your followups and we can continue this conversation later". Lane predref delivered and MERGED (lint 6,205 / 0; its model 8 / 0; no answer changed by the sweep). Launching lane predcall (opus): call-prefix case 1, the A.d / c.d lines, his second hits example, closed-argument as an open piece with his lean, c.A. Then r82.
