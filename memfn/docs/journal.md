@@ -4767,3 +4767,10 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - 729 RED 00:06 (rc=2, 1924s): ONE section, test-memfn-arch, class 6 (arch-noun) — 'pshufb' in S3516's comment + SAB_DESC, written by bsu3fix2 (6cf672b6a). Triage lane (sonnet, read-only), report /var/tmp/pcrec-pcrec/scratch/bsu3fix2/triage729.md. simdfloor GREEN (22771/0): 726's red is fixed. Stale wording, not a defect; no byte moved.
 - Fix 7c7e625b5 on lane/bsu3fix (bsu3fix3): "pshufb" -> "byte shuffle" in S3516 prose (the S3515 allowlist rows say "prose in the row is worded arch-free"; rewording beats an allowlist row). make test-memfn-arch: 32 passed / 0 failed.
 - 730 cancelled; 729/730 re-gated to 07:00 and requeued; 731 still 07:00. Main told. Lesson: a reworded sabotage's prose runs the arch-blind check too — run make test-memfn-arch on any fix lane that touches tests/ text (seconds).
+
+## 2026-11-22 08:11 (kit)
+
+- 729 make test GREEN 07:33 (2021 s), 730 mech GREEN 07:58 (17 rows), 731 ids GREEN 08:09.
+- Merged lane/bsu3fix -> f861873a8, make strict clean; [responses] done (partial) R-47 U3 at d04ee5047.
+- Main accepted U3 for landing at abi 112 (L3 re-pins to 113 after it). Review numbers: U4 = r78, U5 = r79, U6 = r80.
+- Next: U4 (G2-V, T-table pins, rest of C18, sabotage (a)-(f)) per block_span.md §14.
