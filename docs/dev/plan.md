@@ -332,6 +332,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: a bench or user pattern of a changed shape (a \w-like run of that width) appears -> measure its SIMD-off code against today's
     refs: decisions D201 add. 3 (a), add. 4; docs/design/memfn/block_span.md (lane/bspan3) section 13
     NOTE (2026-11-21, lane u2land): R-47 U2+U2b LANDED on main (merge 2d8beeb2a of lane/memfn-k1108 994de281c; abi 110, re-pinned from the kit's 111; L3 takes 111); this row and [BSPAN-CLANG-DIFF] stay open
+    NOTE (2026-11-22, lane u3land): R-47 U3 (the vector span's w32 level block, SIMD layer only) LANDED on main (merge of lane/memfn-k1108 d04ee5047; abi 111, re-pinned from the kit's 112; L3 re-pins to 112 after); this row and [BSPAN-CLANG-DIFF] stay open
     NOTE (2026-11-21, kit relay): the census also differs at gcc -O2 on [aeiou]-like and [A-Za-z0-9_-]-like sets and utf8 hex/digit at some k; and the 3 REAL bench sites' SIMD-off code DIFFERS under clang -O2/-O3 and gcc -Os (identical only at gcc -O1..-O3). The kit asks the owner `wrap-clang` directly (it tests his scalar-wrap premise)
   - [BSPAN-CLANG-DIFF] STATE:not-started — block span: the 3 real bench sites' SIMD-off code differs under clang -O2/-O3 and gcc -Os
     filed: 2026-11-21 manager (Frank's wrap-clang answer: "do track the clang issue with an item for follow-up to make sure no surprises"; D201 add. 5)
