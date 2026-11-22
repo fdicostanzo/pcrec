@@ -381,7 +381,25 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
  * `PCREC_W_UNBOUNDED` where a frontier is still live past the NFA's state
  * count: every consuming state consumes one byte, so a path that long repeats
  * a state, which is a cycle. `bmin` is -1 where no depth accepts. BYTES, from
- * the NFA, never `pcrec_cwmin`/`pcrec_cwmax` (characters, §3.1's table). */
+ * the NFA, never `pcrec_cwmin`/`pcrec_cwmax` (characters, §3.1's table).
+ *
+ * [K159] THE REPEATED-FRONTIER STOP. The walk's carried state is the closed
+ * frontier's consuming SET `w.cur` alone: `wadvance` reads nothing else (the
+ * successors of `cur`, closed), and the step's `accept` is computed by that
+ * same closure, so both `cur[j+1]` and `accept[j+1]` are pure functions of
+ * the SET `cur[j]` (its order is irrelevant: the closure of a seed set is a
+ * set). So once `cur[j]` equals an earlier `cur[c]` (c < j), the sequence from
+ * j repeats the one from c forever: every later frontier is one of
+ * `cur[c+1..j]`, all live, so the frontier never empties — the docstring's
+ * own "live past n" case, hence `PCREC_W_UNBOUNDED`, what the loop returns
+ * past `nfa->n` — and every later `accept` is one already met at a depth
+ * <= j, so no new FIRST accept (`bmin`) can appear. The answer is the one
+ * the walk to `nfa->n` reaches, only sooner (nested `+` was n steps of an
+ * n-state closure). The repeat is found by Brent's checkpoint: the set at
+ * depths 0, 1, 2, 4, 8, … is kept (exactly, as membership stamps) and each
+ * later frontier is compared with it exactly, so a cycle of period λ that
+ * begins by depth μ is seen by depth 4·max(μ, λ); memory one set. The
+ * `j > nfa->n` exit stays as the backstop: no walk is longer than before. */
 void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
 {
     *bmin = -1;
@@ -398,6 +416,11 @@ void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
     Walk w;
     wstart(cx, &w, nfa);
     int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    /* the checkpoint: `ck[s] == ckid` marks state s a member, `nck` its size */
+    int *ck = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    long long ckat = 0;
+    int ckid = 0;
+    int nck = -1;
     long long last = -1;
     for (long long j = 0;; j++) {
         if (w.accept) {
@@ -405,6 +428,17 @@ void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
             last = j;
         }
         if (w.ncur == 0) { *bmax = last; return; }
+        if (w.ncur == nck) {
+            int i = 0;
+            while (i < w.ncur && ck[w.cur[i]] == ckid) i++;
+            if (i == w.ncur) { *bmax = PCREC_W_UNBOUNDED; return; }
+        }
+        if (j == ckat) {
+            ckid++;
+            for (int i = 0; i < w.ncur; i++) ck[w.cur[i]] = ckid;
+            nck = w.ncur;
+            ckat = j ? 2 * j : 1;
+        }
         if (j > nfa->n) { *bmax = PCREC_W_UNBOUNDED; return; }
         wadvance(&w, next);
     }
