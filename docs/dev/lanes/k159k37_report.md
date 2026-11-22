@@ -13,4 +13,4 @@ tests/codegen/run_facts_checks.sh: `"$ROOT_DIR/scripts/watchdog" -c 5 -s 120 ...
 Cloud test dispatched: see STATE AT HANDOFF for the sha and branch; verdict not awaited.
 
 ## STATE AT HANDOFF
-Last ruling applied: none (rulings file empty, re-read at commit). Cloud run: see lane message.
+Last ruling applied: none (rulings file empty, re-read at commit). Cloud test: ref 5a7099389 pushed as cloud/k159k37/test/5a7099389-5a70993 (verdict via queuewatch, not awaited).
