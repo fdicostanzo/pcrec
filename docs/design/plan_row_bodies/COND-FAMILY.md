@@ -6904,3 +6904,31 @@ FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5]; (2) WHOL
 
 NOT ANSWERED by them (told to him): in neither example is the condition bound to a NAME of its own; the question
 is `c := (0: 5)` then `/\d${c}/`. The slug stays open; re-asked on his own example.
+
+### 2026-11-21 OWNER, on his second example: "make an argument because i am not so sure"; and a CORRECTION of the entry above (no ruling)
+tags: core/conditions/match-so-far core/holes/bare-condition core/filters/and core/holes/and-in-hole core/principles/operand-world
+
+CORRECTION by the manager of the entry above (the run was misread when the entry was written): example (2), the
+lowered `.5`, FIND-ALL `x5 y7 55` is [`x5`@0, ` 5`@5] (the `.` takes the space), NOT [`x5`@0, `55`@6]. Its WHOLE
+and SEARCHED lines stand.
+
+HIS WORDS, whole (he interrupted the turn): "you know what, make an argument because i am not so sure of the
+second example"
+
+Class: a REQUEST; he puts his own second example (`A := /\d/`, `C := /.${A & (0: 5)}/`, "the 0: is bound to A
+only") in doubt. Nothing ruled.
+
+The manager's argument (told to him), FOR "A only":
+1. His ruled words on this exact form (2026-11-19, zero-in-sequence discussion): "but not /${A & (0: digit)}/ where
+   it is only the A"; and operand-world (2026-11-17): "For A & B: from the perspective of B, the subject is now
+   whatever A matched. There is no outside subject ... That's its whole world."
+2. A law the documents state as ruled (core/filters/and): "`A & B` holds exactly when `A & (0: B)` holds, on the
+   same stretch", with and-in-hole (2026-11-15): "An `&` written inside a hole is judged on the stretch the hole
+   consumes". So `/.${A & /5/}/` is `.` then a digit that is `5`; if `0` in `/.${A & (0: 5)}/` were C's match so
+   far, the law would hold outside a hole and fail inside one.
+3. Nothing is lost: the other meaning has its own spelling, the BARE condition after the hole, `/.${A}${(0:
+   S)}/`, whose `0` is C's match so far (bare-condition, ruled).
+AGAINST: today's "`0` is the match so far of the definition it is written in", read alone, says C's; it needs the
+clause it was ruled with ("`${A & (0: S)}` unchanged: that `0` is only A").
+Hand-worked on the lowered forms: A only: `.5`, WHOLE `x5` HOLDS. C's match so far: two characters against the
+one-character set `5`: never matches.
