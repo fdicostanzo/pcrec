@@ -21,4 +21,4 @@ Review r81's FIX-NOW items applied on lane/k159r81 (from lane/k159k37 8174baa29)
 Last ruling applied: none (k159r81_rulings.md empty, re-read before commit and report).
 Commits: f77aeff78 (fixes + filings), 74bbac84b (comment figures), plus this report.
 OWED: mech job key `200-k159r81-mech` (S3541, expect rows=1 `== mech run COMPLETE`; DETECTED expected; verdict via scripts/monread). Cloud test: see below.
-Cloud test: see the line appended after dispatch.
+Cloud test: ref 8bc950eab58dfef9bdbb05ab37193da8d06dcd30 pushed as cloud/main/test/8bc950eab58dfef9bdbb05ab37193da8d06dcd30-8bc950e (owner=main kind=test; proven by `git ls-remote origin 'refs/heads/cloud/main/test/8bc950eab*'`; the brief's `*/k159r81*` glob cannot match because cloudrun names the ref by sha; verdict via queuewatch as CLOUD-DONE, not awaited).
