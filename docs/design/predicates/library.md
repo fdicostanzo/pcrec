@@ -212,7 +212,7 @@ see: lib/counting/count
 module: ?
 defined: language
 - The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral;
-  `nchars` is a computed count bound alone (the open core/holes/bare-condition/bound-condition).
+  `nchars` (depends on the open bound-condition: core/holes/bare-condition/bound-condition).
 - The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no
   capture (pure-label), so the caller receives none.
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
@@ -227,7 +227,7 @@ defined: language
   /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]` (an array is an alternation;
   the twelve names in calendar order), `mnum := $mname.index` (a computed label over the member's 1-based index).
 - The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
-  capture (pure-label). `mnum` is a computed label bound alone (the open core/holes/bare-condition/bound-condition).
+  capture (pure-label). `mnum` (depends on the open bound-condition: core/holes/bare-condition/bound-condition).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -458,7 +458,7 @@ defined: native (a count over a name's array of settings; no expression of the l
   piece's own (array-in-piece): zero on an empty array; on a condition of
   several entries what is counted is not stated (readings).
 - A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it may be bound and read
-  like a label: `n := count((d: "7"))`, then `(n: ==2)` (n is a count bound alone: the open
+  like a label: `n := count((d: "7"))`, then `(n: ==2)` (`n` depends on the open bound-condition:
   core/holes/bare-condition/bound-condition).
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.

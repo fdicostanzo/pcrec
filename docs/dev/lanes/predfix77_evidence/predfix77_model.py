@@ -656,7 +656,8 @@ def lower_cond(text, ctx, zero_key=None):
             entries.append((("zero", zero_key or ctx.zero), val))
         else:
             NAMED.append((ctx.cur, name))
-            entries.append((("lab", "%s@%s" % (name, ctx.cur)), val))
+            sc = "top" if OPT.get("names") == "shared" else ctx.cur     # the SHARED reading (rejected) reads the user's
+            entries.append((("lab", "%s@%s" % (name, sc)), val))
     return node_ref(("cond", neg, entries))
 
 
@@ -949,7 +950,11 @@ def doc_line(L, tag):
 
 
 def show(label, expr, binds, wh, sr, fa, tail, tag, **opts):
-    Pg = prog(expr, binds, **opts)
+    try:
+        Pg = prog(expr, binds, **opts)
+    except CompileError as e:                    # a refused program prints as refused; its DOC lookup then fails
+        L = (label + ": " if label else "") + "REFUSED (%s)" % e + tail
+        return doc_line(L, tag) if tag else L
     L = (label + ": " if label else "") + fmt(Pg, wh, sr, fa) + tail
     return doc_line(L, tag) if tag else L
 
@@ -1185,7 +1190,7 @@ s_2d = ndiff(answers(prog("A SEQ B", BS), POPS), answers(Re(r"(?!)"), POPS))
 s_1d = ndiff(answers(prog("/(?<c>\\d)${(c: >= 5)}(?<c>\\d)/"), POPS), answers(Re(r"[5-9]\d"), POPS))
 if sab("s8"):
     L_2D = shared
-check("SEALED", s_2d == (0, 0, 0) and s_1d == (0, 0, 0) and "FAILS" in L_2D.split(" / ")[0] and r_case1 and r_ex2,
+check("SEALED", s_2d == (0, 0, 0) and s_1d == (0, 0, 0) and "`73` FAILS" in L_2D and r_case1 and r_ex2,
       "of %d texts over `73`: two definitions against the never-matching `(?!)` %s, one definition against "
       "`[5-9]\\d` %s ; case 1 refused: %s ; example 2 refused: %s" % (len(POPS), s_2d, s_1d, r_case1, r_ex2))
 
