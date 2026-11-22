@@ -4801,3 +4801,11 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 
 - r78 (memfn-bsu4, code) draft back: no answer/speed finding; 0 emitted movers (164 pairs), 9 plants LOUD with REACH; "every check can fail" PARTLY false. RULED FIX FIRST: drafted dispositions stand, plus PLANTSB-2 keep the row (guards proven by G2V-1's self-witness), PINS-7 cheap part FIX-NOW (one k-source reader), C18WIRE-8 fix both. 3 lessons into critics.md. Review committed 020f3766c (4 old index lines to NOTES.md for the size limit).
 - Lane bsu4fix (opus) on lane/bsu4fix from lane/bsu4 023ab6eb8; ids S3540-S3544; owed kit-bsu4fix-test/mech. Cancelled 737-739 (half-branch validation, superseded by the fixed combined tip); 736 left to finish.
+
+## 2026-11-22 09:27 (kit) — OWNER WORDS to the kit (width-night-bench, via /q in the kit session), VERBATIM
+
+"width-night-bench: 1. so this shouldn't be a single number then but a table of numbers depending on what is being scanned including mixed types.
+2. pcrec needs to specifically tell kit that it wants the cover and not a candidate which can be fewer. That might be in the form of a start/end into the span for the coverage range. If the kit knows it needs to recheck, anything beyond a candidate is a waste"
+
+- Kit reading: (1) the cover width becomes a declared TABLE keyed by what the span scans (digit, hex, word, literal run, mixed), per layer; B-lite (job 310) already shows the sign flips by kind (digit near-miss x3-5 loss at 24-32, hex and literal wins). (2) the site states the STRENGTH of answer it needs as a fact: a proven range [start,end) of the span (cover / proven fraction) vs a candidate the engine rechecks; the kit picks its method per strength (D157 facts, not methods). Family: R-40 (minimum useful bytes after a candidate) and R-46 (the weaker question at the presence site) are the same "what question does the site ask" fact; three members -> propose one fact.
+- Posted as a responses.md notice (proposed D202 addendum) for main to file; no lane, no build.

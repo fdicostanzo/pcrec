@@ -3672,3 +3672,12 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - On the final tree, all GREEN: 729 make test (2021 s), 730 mech (17 rows), 731 ids.
   - **Reports:** docs/dev/lanes/bsu3_report.md, bsu3fix_report.md, bsu3fix2_report.md.
   - **Next:** U4 (G2-V, the T-table pins, the rest of C18, sabotage (a)-(f)), then U5 (card C6 incl. the clang arms) and U6 (the abi package and G1 dry run; C6 timing in a window main clears).
+
+- **notice: owner words to the kit on width-night-bench (2026-11-22), proposed D202 addendum** — Frank answered main's question in the kit session (/q), verbatim: "width-night-bench: 1. so this shouldn't be a single number then but a table of numbers depending on what is being scanned including mixed types. 2. pcrec needs to specifically tell kit that it wants the cover and not a candidate which can be fewer. That might be in the form of a start/end into the span for the coverage range. If the kit knows it needs to recheck, anything beyond a candidate is a waste".
+  - **Proposed D202 addendum text:**
+    - (1) The cover width is not one number. It is a declared TABLE, one entry per kind of scanned content (digit, hex, word, literal run, mixed), per layer. Part B and the SIMD reference night measure per kind, mixed spans included.
+    - (2) pcrec STATES the strength of answer each site needs: a proven range [start, end) of the span (the cover, or a proven fraction an engine resumes from), or a candidate that pcrec rechecks. This is a fact, not a method (D157). Where pcrec rechecks, the kit renders the cheapest candidate form.
+  - **Kit's readings for the owner to check:**
+    - (1) "Mixed types" means a span with more than one class kind along its length (e.g. `[0-9a-f]{8}-[0-9]{4}`), keyed by its composition, not by one class.
+    - (2) It joins R-40 (the minimum useful bytes after a candidate) and R-46 (the weaker question at a presence site) as one site fact: "what the site's answer must prove". That makes three members, so the kit proposes one fact rather than three.
+  - **Scheduling:** no build go is asked. The fact rides [COVER-WIDTH-KIT] / [ENGINE-COST-UNIT] when they are built. Part B's cell list gains the per-kind and mixed cells.
