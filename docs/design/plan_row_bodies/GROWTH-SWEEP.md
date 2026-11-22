@@ -23,3 +23,8 @@ Long-form record for plan.md row [GROWTH-SWEEP]; the row carries the pointer.
   bounds are CPU seconds, it ALSO reports CPU time per doubling along each growth axis (ratio of a cell's CPU to its half-size
   neighbour; ~x2 linear, ~x4 quadratic), so existing superlinear compile steps surface by measurement (the K159 class). Folded into
   the growth-sweep work already ruled (growth-time-bound), not a lane of its own. Companion: the critic skill's **complexity** lens.
+- RULING keep-limits (Frank 2026-11-22 ~10:40, his words: "Keep the limits as they are"), after his remark "We could raise the depth
+  limit" and the manager's answer: PCREC_MAX_NFA_STATES (131,072; binds nested `+` at depth 15: 131,070 states at 15, 262,142 at 16,
+  from the lane's measured 2^(d+2)-2 counts) and the nesting-depth limit (250) keep their defaults; `--max-nfa-states` already raises
+  the cap per compile. Revisit trigger: a real (non-synthetic) pattern hits the cap, or the sweep's per-doubling report shows a cost
+  past it.
