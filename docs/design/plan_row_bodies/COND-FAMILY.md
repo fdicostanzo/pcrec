@@ -7454,3 +7454,55 @@ The manager's readings (marked; for lane predcall as R-1): (a) "visible through 
 (a `_` part label or `[_ = rx]` in the macro's body closes it); (b) an argument the body uses twice: `A.d` is the
 last mention as it reaches the caller; (c) the compile error is at the reference, and names the macro that closes
 the label (the message is the manager's call).
+
+### 2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)
+tags: core/labels/paths core/labels/flow core/labels/export core/conditions/form core/labels/labels-vs-captures/array-vs-passes core/holes/bare-condition/nested-scope core/patterns/literals lib/search/occurrences lib/search/hits core/diagnostics/errors
+
+Review r82 (design mode; five opus lenses and an opus verifier over the fold of 2026-11-22, diff 399ef98f4..
+6f1fe4e84; draft `$PCREC_TMPDIR/scratch/crit-predfold1122/review.md`; 44 findings, none rejected; every printed
+example line HOLDS, 35 of 35; quotes 107 of 107 verbatim). The manager's dispositions, by the draft's ids; every
+one is the manager's, none an owner ruling:
+
+- ANS-1 (a name with two sources): FIX-NOW: "A's own `d`" marked a reading citing the checked entry; OWNER
+  QUESTION **two-sources** (an argument written in place; a name written in the definition and also surfaced by a
+  used binding), with the run lines for `7-3` and `1,7`. Neither answer applied.
+- ANS-2: (b) FIX-NOW ("for one use"); (d) FIX-NOW, a reading: uses are counted in the referencing definition's
+  TEXT, before macros expand; (c) FIX-NOW, a reading: the prefix reaches the uses written in the referencing
+  definition's own text, not a use nested inside another used binding; the model fixed to it; (a) the one-use
+  plain read `A.h` is marked a READING resting on label-reference ("required": the required form must be legal)
+  and on his own one-use examples (`(hits.hit: <5)`, `(h.hit: 3)`); OWNER QUESTION **idiom-confirm** covers it
+  together with RULING-9 (the plain idiom `isodate & (isodate.year: < 2100)`, taken as included on his silence).
+- ANS-3: FIX-NOW: "outside a group question"; a value entry inside a group question is a compile error for now
+  (a reading, parallel to joint-in-some); its error-table row.
+- ANS-4 (the tier of a path to a label its source does not pass): FIX-NOW, the manager's reading, no owner
+  question: a label NOT VISIBLE through its source is a compile error (bare-condition-labels, 2026-11-19: no such
+  label is an error; closed-argument, today); the never-pass WARNING is for a visible label no path sets
+  (one-rule). Both printed lines marked readings with that ground; a typo'd path is the same error.
+- ANS-5 (nested paths): FIX-NOW, the manager's reading: a source is a path of names, each step passed by the
+  previous one (export statement 3 as ruled; metadata fields by the same rule); the model supports it or the
+  lines are marked unrun.
+- ANS-6: FIX-NOW, the manager's reading (conservative): the index `h[k]` through a prefix whose uses are joined
+  by `&` is a compile error for now (the two sides of `&` are not ordered); through sequenced uses it is in text
+  order; the model takes an index on a path, or the promise is marked unrun.
+- EVID-1, EVID-2, EVID-3, EVID-5: FIX-NOW (every in-force model re-greened or its red named by a successor
+  check; every model exits non-zero on a failed check; the `_x` closure and the second-`&`-operand defects fixed
+  in the engine the new model loads; a contrast line where a prefix and the bare last mention differ; a
+  quantifier-order plant). EVID-4: FIX-NOW the stated limit in each model's header; PLAN the nullable-body engine
+  fix (trigger: the next lane that prints a nullable-body line).
+- DES-1: FIX-NOW, one sentence, the manager's reading in his words' shape: every label a binding's body names
+  has its target in that binding (so a SET that reads a label, `lim := <(10 - $b)`, bound alone is the same
+  compile error); the target table is PLAN (trigger: macro variables or macro types designed).
+- DES-2: FIX-NOW: the literals sentence amended (provided bodies also write the label-only group, under
+  construction). DES-3: FIX-NOW: "a bare name, a number or a label path"; the three gaps are compile errors for
+  now (readings). DES-6: FIX-NOW, a reading: the part label written in the definition wins, with the hide-label
+  warning. DES-4, DES-5 and the size of library.md: PLAN (triggers as the draft names them).
+- The doc batch (RULING-3, -4, -5, -8; GENERAL-5, -7, -8, -11; FIXIND-1..9; EXAMPLES-2, -4): FIX-NOW as proposed.
+- The round's three lessons are accepted and go to main as proposed skill edits.
+
+CORRECTION 1 (review ANS-2a) of the entry "2026-11-22 OWNER RULING — binding-prefix: 1 yes ...": its Class
+sentence says his label-flow point 4 of 2026-11-17 named "a plain read with several uses". His words there name a
+ONE-use program (`A . B & (A.h: blah)`) and give several uses as the REASON ("could be ambigous if its used
+multiple times in an expression"). So the one-use plain read was an error by his 2026-11-17 words and is legal
+today only as a READING (above), until he answers idiom-confirm. The two parts he ruled stand as recorded.
+CORRECTION 2 (review RULING-5): the bound-condition ruling REVISES the named-condition spelling of 2026-11-14
+(`isSmallYear := (year: <2000)`, "a plain DEFINE binding"): not said in the ruling entry; said here.
