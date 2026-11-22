@@ -4809,3 +4809,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 
 - Kit reading: (1) the cover width becomes a declared TABLE keyed by what the span scans (digit, hex, word, literal run, mixed), per layer; B-lite (job 310) already shows the sign flips by kind (digit near-miss x3-5 loss at 24-32, hex and literal wins). (2) the site states the STRENGTH of answer it needs as a fact: a proven range [start,end) of the span (cover / proven fraction) vs a candidate the engine rechecks; the kit picks its method per strength (D157 facts, not methods). Family: R-40 (minimum useful bytes after a candidate) and R-46 (the weaker question at the presence site) are the same "what question does the site ask" fact; three members -> propose one fact.
 - Posted as a responses.md notice (proposed D202 addendum) for main to file; no lane, no build.
+
+## 2026-11-22 09:29 (kit) — OWNER WORDS to the kit (width-night-bench, follow-up), VERBATIM
+
+"width-night-bench: but this leaves kit options like the candidate check might be disjoint from the coverage or the cover check goes into the non coverage because the simd form checks 32 bytes anyway"
+
+- Kit reading: the stated range is an OBLIGATION (what the answer must prove), not a fence on what the kit may read or test. The kit may test positions outside it (a candidate test disjoint from the range; a SIMD block that runs past it), as long as every reject is SOUND (it uses only sets pcrec states as necessary at that position) and every read stays in bounds (the existing guard rules). Consequence: pcrec hands the per-position sets beyond the range too (the exact sets inside, the necessary or hull sets outside), so the kit has something sound to test there.

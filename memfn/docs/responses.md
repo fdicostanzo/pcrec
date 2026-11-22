@@ -3681,3 +3681,10 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - (1) "Mixed types" means a span with more than one class kind along its length (e.g. `[0-9a-f]{8}-[0-9]{4}`), keyed by its composition, not by one class.
     - (2) It joins R-40 (the minimum useful bytes after a candidate) and R-46 (the weaker question at a presence site) as one site fact: "what the site's answer must prove". That makes three members, so the kit proposes one fact rather than three.
   - **Scheduling:** no build go is asked. The fact rides [COVER-WIDTH-KIT] / [ENGINE-COST-UNIT] when they are built. Part B's cell list gains the per-kind and mixed cells.
+
+- **notice: owner follow-up on width-night-bench (2026-11-22), for D202 addendum 1** — verbatim: "width-night-bench: but this leaves kit options like the candidate check might be disjoint from the coverage or the cover check goes into the non coverage because the simd form checks 32 bytes anyway".
+  - **Proposed text:** the per-site fact states an OBLIGATION, the range [start, end) the answer must prove (or "candidate"). It is not a limit on what the kit reads or tests. The kit may test positions outside the range, for example a candidate test disjoint from it, or a SIMD block that runs past its end. Two conditions hold:
+    - (a) every reject is sound: it uses only the sets pcrec states as NECESSARY at that position;
+    - (b) every read stays inside the subject (the existing over-read and guard rules).
+  - **Consequence for the fact's shape:** pcrec states per-position sets beyond the range too: exact inside, necessary (hull) outside, as far as it can prove them. Without them the kit has nothing sound to test there.
+  - **Reading for the owner to check:** "goes into the non coverage" means extra positions TESTED, never extra positions PROVEN. A match the kit reports still needs pcrec's proof (or recheck) for anything past the range.
