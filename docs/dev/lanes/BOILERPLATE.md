@@ -52,7 +52,9 @@ Read-only critics work in the main tree and never run make.
 - RULINGS FILE: if your brief names `<name>_rulings.md` in your worktree,
   re-read it before each commit, before any run over ~2 min, and before
   your report; name the last entry applied in STATE AT HANDOFF. Later
-  rulings come there, not by message.
+  rulings come there; the manager ALSO sends a one-line message naming
+  each new R-n (three lanes missed file-only rulings on 2026-11-21: grow6,
+  u2land, grow7). An empty-at-launch file is not a missing one: re-read it.
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - NEVER `git stash` (push or pop): the stash is ONE list shared by every worktree of the repo, so a pop takes another session's entry (langfix2 popped the K113 landing's stash, 2026-10-22). Park work in a WIP commit on your branch instead.
 - A HOOK refuses a subagent's Write/Edit to a main-tree path outside worktrees/ (scripts/hooks/lane_writes_in_worktree.sh, [HOOK-GUARDS]); another refuses `git commit -a`/`--all`. Blocked: write in your worktree, commit named paths. A lane the manager chartered to write the main tree (a landing lane) is admitted by `worktrees/.mgr/main_write_ok` (manager-written); never create that file yourself.
