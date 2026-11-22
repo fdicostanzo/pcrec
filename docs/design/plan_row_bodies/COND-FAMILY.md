@@ -6945,3 +6945,53 @@ condition's `0` is the match so far of the rx it sits in ("binds the literal to 
 condition belongs to the rx it sits in; a condition joined by `&` belongs to the pattern it is joined to. And a
 DIRECTION: close the session. STILL OPEN, not reached by either example: bound-condition (a condition under its
 own name, `c := (0: 5)`, then `/\d${c}/`; and a named condition's labels).
+
+### 2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)
+tags: core/labels/labels-vs-captures core/holes/bare-condition/nested-scope core/holes/bare-condition core/conditions/match-so-far core/labels/labels-vs-captures/array-vs-passes core/conditions/form core/values/tuples lib/modifiers/any-case lib/modifiers/length lib/search/hits lib/search/occurrences core/principles/composed-at-point core/labels/flow
+
+Review r77 (design mode; five opus lenses and an opus verifier; draft `$PCREC_TMPDIR/scratch/crit-predfold1121/
+review.md`; 57 raw findings, 13 verified HOLD, 4 PARTLY, none refuted; verdict NOT READY). The manager's
+dispositions, by the draft's ids; every one is the manager's, none an owner ruling:
+
+- A1 + A2 (array-scope against the sealed piece; whose array an `&` operand's group question reads): OWNER
+  QUESTION **array-in-piece**, asked first, with the witness pair. Until he answers the documents MARK THE
+  COLLISION at both pieces (core/labels/labels-vs-captures, core/holes/bare-condition/nested-scope) and state
+  neither answer. No rewording of either ruling by the manager.
+- A3 (bound conditions and computed labels rest on the manager's exemption): FIX-NOW, text: the exemption marked
+  "(a reading; open bound-condition)" in the nested-scope piece, an `open bound-condition` sub-piece carrying the
+  question as asked twice, the seven printed readers pointing at it; a condition-bodied MACRO goes into the same
+  question.
+- A4 (a condition passed into a macro's hole): FIX-NOW, text: "the definition the CONDITION is written in (an
+  argument is its caller's: a reading)" in both restated sentences.
+- A5 (`0` in an `&` written as a sequence operand): FIX-NOW, text, as a marked reading on the ground of
+  operand-world and the ruled `A & B` = `A & (0: B)`: the `0` of a condition joined by `&` is its left operand's
+  match, in a hole (his confirmed example) and as a sequence operand (the reading); one run line.
+- A6 (`0` in an `occurrences` argument; NOT verified by the round): the fix lane verifies it by a run; then PLAN:
+  a stated reading beside zero-in-loop, asked with it.
+- A7 (any_case's third parting): FIX-NOW, text, in the open any-case-body piece, with the warning's behaviour.
+- A8 (the capture of a duplicated name is PCRE's FIRST set group, not the last set): FIX-NOW, text, with the
+  verifier's libpcre2 line re-run by the lane; caller-ambiguous names the duplicate-name case.
+- A9 (record-is-product against the joint refusal): FIX-NOW, text: both ruled statements qualified "outside a
+  group question (open record-in-some)"; record-in-some gets an `open` piece.
+- A10 (do a hole's flags reach a condition's set): PLAN, an owner question riding his forecast "only i is
+  inherited"; trigger: that ruling.
+- A11 (array order with a lookaround; `h[k]` past the end; the "allowed later" promise): DOC, three one-clause
+  readings; the promise narrowed to joint entries.
+- A12 (a user's loop against two uses): FIX-NOW, text: the manager's withdrawal of reading (c) folded, the `{2}`
+  and written-out pair printed agreeing, reading (d) marked "to be confirmed" in the base piece.
+- D1, D3, D5, D6, D7, D10, D12: FIX-NOW, text, as proposed. D2: FIX-NOW for the scope note, the statements and
+  the re-dates; the "sealed definitions" principle is PLAN (a principle needs his words; "bindings define scope"
+  is recorded as his statement, not asked as a principle). D4: FIX-NOW: `chars` re-spelled with a part label (no
+  capture); for `hits` and `occurrences` the capture `hit` stays as written, stated as a reading with the tension
+  named, and an owner question **helper-captures** is queued. D8: the spelling fixes FIX-NOW ("sesne" as he wrote
+  it; "behavior" in his quoted phrase); RULING-9 NOTED: the record entry "bare-nested-scope, case 2: b" states
+  what was put to him before "lol. i meant b"; no session transcript is kept to check it further. D9: FIX-NOW: a
+  fresh evidence script for the manager's hand folds; the stale citations re-pointed; the red re-runs recorded;
+  lane files stay historical. D11: the four DISAGREE items FIX-NOW (one owner per fact, the others cite); the rest
+  PLAN (a de-duplication pass, at the next full revision). D13: PLAN (trigger: `within` being built).
+- GENERAL-4 (rx-text references keep the literal as their unit, language reads the definition): NOTED; stated
+  once as a deliberate difference, a reading.
+- The round's three process lessons are accepted and sent to main as proposed skill edits.
+WITHDRAWN or narrowed readings of the manager's, by this round: case-2 reading (c) (already withdrawn on his
+words); "a binding is its expression where it is used" narrowed to flags; the class gloss "(a binding or a macro
+body)" inside the ruled match-so-far statement becomes a marked reading.

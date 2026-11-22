@@ -704,3 +704,13 @@ verdict NOT READY; its first finding is an owner question (array-scope against o
 piece); the rest FIX-NOW text and example fixes, several on my hand fold of bare-nested-scope and on the
 bound-condition carve-out. wake.md's State and question queue updated; owner.md too. Dispositions NOT ruled
 (session closing at his word): first act of the next session.
+
+## 2026-11-22 (about 12:30 EST) — fifth predicate-manager session: wake-up; r77 ruled
+
+Registered (`session_role pred`); main merged into `lane/pred-rev28` (one conflict, the lanes history index: both
+sides kept); lint 5,569 / 0, plan-lint clean. Read core, library, parked whole; the record from zero-in-definition
+to the end; r77's draft and process notes. RULED r77's dispositions (record entry of today): A1+A2 the owner
+question array-in-piece (documents mark the collision meanwhile); A3-A5, A7-A9, A12 and D1-D12 FIX-NOW; A6 to be
+verified by the lane, then PLAN; A10, D13 and the de-duplication PLAN; a new owner question helper-captures queued.
+Witness for array-in-piece re-run by a hand-built simulation (`$PCREC_TMPDIR/scratch/pred/array_in_piece.py`).
+P-18 written. NEXT: launch lane predfix77 (opus; files the review), ask him array-in-piece, then bound-condition.
