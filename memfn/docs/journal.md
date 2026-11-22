@@ -4852,3 +4852,4 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - 740 make test GREEN 11:13 (2318 s), 741 mech GREEN 11:48 (15 rows) on lane/bsu4fix 23b325e99.
 - Merged lane/bsu4fix into lane/memfn-k1108, then main (U3 landed at abi 111 e4f861642, K159, D202 add. 1-2) -> 0eceaaee1. Four append-only doc conflicts (critics.md, lanes history, reviews CLAUDE.md/NOTES.md): union, or main's side where main had already moved the same index lines. The abi readers auto-merged to main's 111. make strict clean, test-memfn-arch 32/0.
 - Tip validation queued on a detached worktree u4tip: 742 kit-u4tip-test, 743 kit-u4tip-mech. Delivery of U4 waits on both.
+- 13:08 742 make test GREEN 12:34, 743 mech GREEN 13:08 on 0eceaaee1 (detached u4tip). [responses] done (partial) R-47 U4 at 3e62406e2; main told.
