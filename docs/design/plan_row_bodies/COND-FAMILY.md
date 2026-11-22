@@ -7706,3 +7706,20 @@ member is a binding reached through a module; a provided name is a binding the l
 operator between them, ruled 2026-11-15: "`.` has one meaning: a field of the map interface of the thing on its
 left". What must NOT be merged: label with binding (match time against compile time; his caveat: a binding
 scopes a label, by position in a path), and a label's value with its capture's value (they part after a loop).
+
+### 2026-11-22 OWNER, on the two-kind view: "I agree with your interpretation. I note that captures can have no label."
+tags: core/labels/labels-vs-captures core/labels/numbers core/operators/bindings core/modules/map
+
+After the manager's view (two base kinds, label and binding, with properties; `.` the one operator between them;
+label not merged with binding, a label's value not merged with its capture's). HIS WORDS, whole (the message
+before it, "Phones... mont = not", confirmed the reading of his correction):
+
+"I agree with your interpretation. I note that captures can have no label."
+
+Class: an AGREEMENT with the view (not asked as a ruling; recorded as agreed framing for the name table), and a
+NOTE: a capture can have no label. The manager's reading of the note (told to him): an unnamed group `( )` is a
+capture with no NAME; the documents give it its NUMBER as a label only where a number is allowed (core/labels/
+numbers, ruled 2026-11-19: one written literal, or an `&` chain with one pattern operand); everywhere else it is
+a capture with no label at all. So "also a capture" and "is a label" are two independent properties: label and
+capture (a named group in a user's literal); label only (a part label, a label-only group); capture only (an
+unnamed group where numbers are refused); neither (a non-capturing group).
