@@ -7805,3 +7805,35 @@ is inherited down a hole, replacing whatever was in force, until a nearer explic
 (b) line of the entry above (WHOLE `ID-ABC` FAILS for a library `word` under a weakly insensitive program; the
 program writes `/(?i)id-${word}/` to reach it). What his words do not yet say, asked with it: `m` and `s` at a
 hole (ruled inherited on 2026-11-19; his point 4 today: "really can't be inherited").
+
+### 2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)
+tags: core/patterns/flags core/holes/flags core/holes/flags/in-filter lib/builtin/options core/diagnostics/warnings lib/modifiers/any-case core/principles/rx-owns-flags
+
+Asked **hole-flags** as one ruling in three parts: "1. Weak values do not propagate; they are the file's default
+for its own literals. 2. At a hole, only an explicit `i` or `-i` is inherited. It replaces what was in force. 3.
+`m` and `s` are no longer inherited at a hole. This reverses the list of the 19th, by your point 4. A pattern
+that needs them writes them, or its file sets them as program options."; shown the weak example (program weakly
+insensitive, a library `word := /[a-z]+/`: `/id-${word}/` WHOLE `ID-ABC` FAILS; `/(?i)id-${word}/` HOLDS) and the
+`s` example (`/(?s)a${dot}b/`, dot := `/./`: WHOLE `a\nb` HOLDS today, FAILS when `s` is not inherited). HIS
+WORDS, whole:
+
+"hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program
+level settings that only affect literals in program scope."
+
+Class: a RULING on all three parts, and his REASON for the weak behaviour: "it's consistent to the other program
+level settings that only affect literals in program scope." So: (1) `i` has a WEAK value per file (weakly
+case-sensitive unless a program option sets weakly insensitive), the default of the literals written in that
+file; it does not propagate through a hole or across an import; (2) at a hole only an EXPLICIT `i` or `-i`
+(written in a literal) is inherited; it replaces what was in force, down the hole, until a nearer explicit
+setting; (3) `m` and `s` are not inherited at a hole. It REVISES flags-scope / flags-propagate (2026-11-19:
+"`i`, `m`, `s`") and, with it, the examples of core/holes/flags and core/holes/flags/in-filter that rest on an
+inherited flag (those with an explicit `(?i)` stand); his proposal of four `i` values is thereby ruled in this
+form (on and off explicit; weak on and weak off the file's default).
+
+The manager's readings, for the fold lane to test and mark: (a) "explicit" is a flag written in a literal's
+text (`(?i)`, `(?-i)`, `(?i:..)`, `/.../i`) with PCRE's scope inside that literal; `any_case(rx)`'s body writes
+one; a program option is never explicit; (b) the sides of an `&` inside a hole (flags-in-filter, 2026-11-19)
+inherit by the same rule: an explicit `i` only; the warning `pcrec.flags.filter` keeps its trigger; (c) `x`,
+`xx`, `n`, `U` stay not inherited (as ruled); `J` unchanged; (d) the program options `m`, `s`, `n`, `x` and the
+weak `i` are one table: lexical, the file's own literals, from the statement on; (e) a binding of the SAME file
+inserted in a hole of that file has the same defaults, so nothing visible changes there.
