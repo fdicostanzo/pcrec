@@ -181,6 +181,11 @@ Source: the ideas file item 25 (its whole text in the details entry).
   core/labels/paths/call-prefix), so two patterns' `h` meet only in the user's own prefixed text; a provided body's
   groups are labels only (core/labels/label-only-group); a pattern exposing only what it declares is
   parked/ideas/declared-labels. What stays parked: whether a collision left is worth a rule.
+- His observation, "The textually visible rules solves a problem of a label from a binding reference hiding another
+  binding": what is left of hiding (a reading): a label written in the definition against a binding of the same
+  name (`pcrec.label.hidden`, core/operators/statements), and a binding name a library adds under `(=) :=
+  import(..)` (core/modules/all-symbols). At the part grain default-export (a part used alone exports nothing) and
+  export-list (a part's labels taken one by one) narrow what can meet (core/labels/export/export-list).
 modes: n/a (parked: not in the language)
 
 ### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-22
