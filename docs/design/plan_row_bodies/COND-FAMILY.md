@@ -7094,3 +7094,32 @@ meanings of the restriction are possible and not chosen by his words: (i) litera
 `x & isodate & (year: < 2100)`, which is writable today as `B(d) := d & isodate & (year: < 2100)` and makes `year`
 ambiguous when x itself surfaces `year` (core/labels/flow); (ii) a promise checked at the call that x holds
 isodate's labels, `year` then being x's own.
+
+### 2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open
+tags: core/holes/bare-condition/nested-scope core/conditions/form core/values/computed-labels core/operators/bindings core/holes/bare-condition core/conditions/match-so-far parked/ideas/label-parameter parked/ideas/restricted-parameter lib/modifiers/length lib/modifiers/month-numbered lib/counting/count core/conditions/pass-start-read
+
+Asked to confirm the list put to him after his read and his correction: "`A := (x: blah)` is illegal: no reference
+for `x` in the binding. `A := /x/ & (y: blah)` is illegal: no target for `y`. `c := (0: 5)` likewise (my reading).
+Computed labels bound alone (`sum := $a + $b`, `n := count(...)`) are the same form and go with them (my reading).
+Both alternatives are marked under construction: directions acknowledged, spellings open." HIS WORDS, whole (he
+typed the slug "cound-condition"):
+
+"cound-condition: mostly confirmed. i leave the c := (0: 5) open"
+
+Class: a RULING on bound-condition, answer (b), by confirmation of the list, with ONE item taken out by him. The
+reading of "mostly confirmed" taken, and told to him: every item of the list except the `0` case. So, RULED, in
+his words of the entry "2026-11-22 OWNER, on bound-condition": "the form A := (x: blah) has to be illegal. x has
+no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target."; and, confirmed
+from the manager's list: a computed label bound alone (a binding that reads `$a`, or counts over a label, with no
+pattern in it that holds the label) is the same form and is illegal; his two alternatives (macro variables,
+`A(x:) := (x: < 2100)`; macro types, `B(d & isodate) := (year: < 2100)`) are under construction, spellings open.
+LEFT OPEN by him: `c := (0: 5)`, a condition on `0` bound alone (slug zero-condition-binding; neither answer
+applied).
+
+The manager's readings, for the follow-up lane to test: (a) a condition written in place, an argument included,
+is unchanged (the caller's text); (b) a set bound alone (`late := >5`, used `(h: late)`) is unchanged; (c) the
+five printed definitions this refuses and their in-place forms: pass-start-read's `c` (written in its hole);
+`sum` (`(a: <(10 - $b))`, 0 of 100 digit pairs differ from `(sum: <10)`, run); `mnum` (`(mname.index: S)`);
+`n := count((d: "7"))` against a constant (`occurs.exactly(2, (d: "7"))`); `nchars` in `length(S)`: NO spelling
+today (a count against a set): asked as **count-in-set**; (d) core/values/computed-labels (a reading) is
+withdrawn as a binding form; whether a computed value survives in place is count-in-set's question.
