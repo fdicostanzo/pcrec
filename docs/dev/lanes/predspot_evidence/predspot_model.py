@@ -47,7 +47,7 @@
 # PREDSPOT_SABOTAGE=sN (one at a time): a deliberately wrong rule or fact; its target check must FAIL.
 # PREDSPOT_SABOTAGE=all runs every plant in turn (a subprocess each) and prints the table predspot_sabotage.out holds.
 # PREDSPOT_LIGHT=1 skips SWEEP's old-engine run and SUCCESSOR (the plant runner sets it for plants not aimed there).
-#   (the plants are listed with their checks at the end of this header block, PLANTS below)
+#   (the plants are listed with their checks in PLANTS below)
 import hashlib
 import itertools
 import os
@@ -68,6 +68,62 @@ for v in list(os.environ):
 
 def ss(n):
     return n in SABS
+
+
+PLANTS = [   # (plant, its target check, what it plants)
+    ("s1", "ARGNAME", "argument-default's candidate (local) in place of the ruling"),
+    ("s2", "ARGLABEL", "TEMPLATE off: a part label written on an argument stays the caller's"),
+    ("s3", "CONTROL", "the control pattern for `identity(A)` widened to `\\d!?`"),
+    ("s4", "INPLACE", "OWNTEXT off: a group written in an argument counts as the caller's own text"),
+    ("s5", "SPOT", "SPOTLIST off: the export list on a spot is the old list rule"),
+    ("s6", "SPOT", "an argument's export widened: bindings used alone in an expression export"),
+    ("s7", "SPOT", "SPOTGROUP off: the label-only `hit` is not a spot"),
+    ("s8", "ARGOWN", "the expected WHOLE answer of `1234` flipped"),
+    ("s9", "PLACES", "peek's body without its export list"),
+    ("s10", "TWOSPOT", "pair's expected label the first spot's"),
+    ("s11", "USERMACRO", "hide's body given the list"),
+    ("s12", "CONVENTION", "a piece the convention does not cover (between) expected to point at it"),
+    ("s13", "GRID", "an argument cell expected legal"),
+    ("s14", "AWAITS", "the starting documents' count read as 0"),
+    ("s15", "SWEEP", "one RESPELLED entry removed"),
+    ("s16", "NULLABLE", "a nullable loop added to the programs run"),
+    ("s17", "SUCCESSOR", "one declared red removed"),
+    ("s18", "QUOTES", "an owner sentence altered"),
+    ("s19", "DOC", "a formatted line altered"),
+    ("s20", "LEXICAL", "an option reaches back up its file"),
+    ("s21", "EXPLICIT", "the weak `i` passes a hole as if explicit"),
+    ("s22", "NOTINH", "`m` and `s` inherited at a hole again"),
+    ("s23", "FCONTROL", "a hand control loses its `(?i:`"),
+    ("s24", "FLAGGRID", "one cell expected to apply (`m` up the hole, a library binding)"),
+    ("s25", "FSWEEP", "a bad row planted"),
+    ("s26", "EXAMPLES", "the record's line (a) expected for (b)"),
+    ("s27", "FILTER", "the warning's trigger inverted"),
+    ("s28", "LIBFILE", "a library file's options lost"),
+    ("s29", "NUMBERS", "`n` ignored when counting numbered groups"),
+]
+HEAVY = {"SWEEP", "SUCCESSOR"}
+if "all" in SABS:                                            # the plant runner: each plant alone, a subprocess each
+    rows, notc = [], 0
+    for pn, target, what in PLANTS:
+        env = {k: v for k, v in os.environ.items() if k != "PREDSPOT_SABOTAGE"}
+        env["PREDSPOT_SABOTAGE"] = pn
+        if target not in HEAVY:
+            env["PREDSPOT_LIGHT"] = "1"
+        r = subprocess.run([sys.executable, "-I", "-B", os.path.abspath(__file__)], capture_output=True, text=True,
+                           env=env, timeout=2400)
+        lines = (r.stdout + r.stderr).rstrip("\n").split("\n")
+        last = lines[-1]
+        fl_ = next((x for x in lines if x.startswith("FAIL %s:" % target)), "")
+        tb = any(x.startswith("Traceback") for x in lines)
+        ok = bool(fl_) and not tb and r.returncode != 0 and target in last
+        notc += not ok
+        rows.append((pn, target, what, "caught" if ok else "NOT CAUGHT", last, fl_))
+    for pn, target, what, st_, last, fl_ in rows:
+        print("%s -> %s (%s): %s" % (pn, target, what, st_))
+        print("   last line: %s" % last)
+        print("   its FAIL line: %s" % fl_[:300])
+    print("predspot_sabotage: %d plants, %d not caught" % (len(rows), notc))
+    sys.exit(1 if notc else 0)
 
 
 _src5 = open(P83, encoding="utf-8").read()
@@ -331,7 +387,7 @@ if ENGINE_S == "old":
 if ENGINE_S == "old":
     NEW.clear()
     NEW.update(OLDS)                                         # the starting commit's documents
-FLAGTAIL = re.compile(r"@options|library file|program file")
+FLAGTAIL = re.compile(r"@options|library file|program file|\(\?[imsxn]*-?[imsxn]+\)")   # FSWEEP's lines
 
 
 def sw_key(f, line, pt, tail):
@@ -1072,6 +1128,731 @@ check("SUCCESSOR", LIGHT or (succ_n == len(MODELS) and not succ_bad),
       "%d earlier models re-run one at a time, each last line read; every red declared superseded with an unchanged "
       "FAIL line: %s" % (succ_n, "yes" if not succ_bad else succ_bad))
 
+
+# ================================================================== GROUP 2: the FLAG engine (lane predspot)
+# A program is FILES: ("program" | "library", items), items an ordered list of ("opt", {flag: value}) and
+# ("bind", name, text); the program's expression is in the program file, after its items. A literal is parsed with
+# the defaults in force where it is WRITTEN (its file's option statements before it), then its own flags. The state
+# of `i` is (value, explicit); `m`, `s`, `x`, `n` are values. RULE "new" (hole-flags): at a hole the inserted
+# literal starts from ITS OWN file's defaults, and only an EXPLICIT `i` in force at the hole replaces its `i`.
+# RULE "old" (flags-scope, 2026-11-19): `i`, `m`, `s` in force at the hole replace its own.
+FRULE = ["new"]
+NUMBERED = []                 # the numbered (capturing, unnamed) groups each parsed literal makes
+
+
+class FErr(Exception):
+    pass
+
+
+def _m_flag(node, s, pos, st, k):
+    t = node[0]
+    if t == "bol":                                           # `^` under m
+        return k(pos, st) if pos == 0 or s[pos - 1] == "\n" else None
+    if t == "eol":                                           # `$` under m
+        return k(pos, st) if pos == len(s) or s[pos] == "\n" else None
+    if t == "eosnl":                                         # `$` without m: the end, or before a final newline
+        return k(pos, st) if pos == len(s) or (pos == len(s) - 1 and s[pos] == "\n") else None
+    return _m_before_flags(node, s, pos, st, k)
+
+
+_m_before_flags = m
+m = _m_flag                                                  # noqa: F811
+
+
+def file_defaults(files, fname, upto):
+    """The defaults in force at item `upto` of file `fname`: weak case-sensitive and no m, s, x, n, then the file's
+    option statements before it, in order (lexical: from the statement on)."""
+    st = {"i": (False, False), "m": False, "s": False, "x": False, "n": False}
+    if ss("s20"):                                           # LEXICAL's plant: an option reaches back up the file
+        upto = len(files[fname])
+    for it in files[fname][:upto]:
+        if it[0] == "opt" and not (ss("s28") and fname == "library"):    # LIBFILE's plant: a library's options lost
+            for f, v in it[1].items():
+                st[f] = (v, False) if f == "i" else v      # a program option is never explicit (reading (a))
+    return st
+
+
+def find_bind(files, name):
+    for fname, items in files.items():
+        for j, it in enumerate(items):
+            if it[0] == "bind" and it[1] == name:
+                return fname, j, it[2]
+    raise FErr("an undeclared name: %s" % name)
+
+
+FMACROS = {}                  # name -> (params, body text, file)
+
+
+def inherit(at_hole, own):
+    st = dict(own)
+    if FRULE[0] == "old":
+        st["i"] = at_hole["i"]
+        st["m"], st["s"] = at_hole["m"], at_hole["s"]
+    elif at_hole["i"][1] and not ss("s21"):                 # only an EXPLICIT i passes a hole (part 2)
+        st["i"] = at_hole["i"]
+    elif ss("s21"):                                         # EXPLICIT's plant: the weak i passes too
+        st["i"] = at_hole["i"]
+    if ss("s22") and FRULE[0] == "new":                     # NOTINH's plant: m and s inherited again
+        st["m"], st["s"] = at_hole["m"], at_hole["s"]
+    return st
+
+
+class FP:
+    """A literal's text -> loaded-matcher nodes, under the state `st`."""
+
+    def __init__(self, text, st, files, fname, params):
+        self.s, self.i, self.files, self.fname, self.params = text, 0, files, fname, params
+        self.st = dict(st)
+        self.numbered = 0
+
+    def peek(self, n=0):
+        return self.s[self.i + n] if self.i + n < len(self.s) else None
+
+    def take(self):
+        c = self.s[self.i]
+        self.i += 1
+        return c
+
+    def skipx(self):
+        while self.st["x"] and self.peek() is not None and (self.peek() in " \t\n" or self.peek() == "#"):
+            if self.peek() == "#":
+                while self.peek() is not None and self.peek() != "\n":
+                    self.i += 1
+            else:
+                self.i += 1
+
+    def alt(self):
+        alts = [self.seq()]
+        while self.peek() == "|":
+            self.take()
+            alts.append(self.seq())
+        return alts[0] if len(alts) == 1 else ("alt", alts, names_in(("alt", alts)))
+
+    def seq(self):
+        items = []
+        while True:
+            self.skipx()
+            if self.peek() is None or self.peek() in "|)":
+                break
+            mm = re.match(r"\(\?([imsxn]*)(?:-([imsxn]*))?\)", self.s[self.i:])
+            if mm and (mm.group(1) or mm.group(2)):         # `(?i)`: to the end of the enclosing group
+                self.i += mm.end()
+                self.setflags(mm.group(1), mm.group(2) or "")
+                continue
+            items.append(self.quant())
+        return ("seq", items)
+
+    def setflags(self, on, off):
+        for f in on:
+            self.st[f] = (True, True) if f == "i" else True
+        for f in off:
+            self.st[f] = (False, True) if f == "i" else False
+
+    def quant(self):
+        a = self.atom()
+        self.skipx()
+        c = self.peek()
+        lo = hi = None
+        if c == "?":
+            lo, hi = 0, 1
+        elif c == "*":
+            lo, hi = 0, None
+        elif c == "+":
+            lo, hi = 1, None
+        elif c == "{" and re.match(r"\{\d+(?:,\d*)?\}", self.s[self.i:]):
+            mm = re.match(r"\{(\d+)(?:,(\d*))?\}", self.s[self.i:])
+            lo = int(mm.group(1))
+            hi = lo if mm.group(2) is None else (int(mm.group(2)) if mm.group(2) else None)
+            self.i += mm.end() - 1
+        if lo is None:
+            return a
+        self.take()
+        lazy = False
+        if self.peek() == "?":
+            self.take()
+            lazy = True
+        return ("rep", a, lo, hi, names_in(a), lazy)
+
+    def cls(self):
+        mem, neg = set(), False
+        if self.peek() == "^":
+            self.take()
+            neg = True
+        first = True
+        while self.peek() != "]" or first:
+            first = False
+            a = self.take()
+            if a == "\\":
+                e = self.take()
+                mem |= DIG if e == "d" else WORD if e == "w" else set(" \t\n") if e == "s" else {"\n"} if e == "n" \
+                    else {e}
+                continue
+            if self.peek() == "-" and self.peek(1) not in ("]", None):
+                self.take()
+                b = self.take()
+                mem |= set(chr(x) for x in range(ord(a), ord(b) + 1))
+            else:
+                mem.add(a)
+        self.take()
+        if self.st["i"][0]:
+            mem |= set(c.swapcase() for c in mem)
+        if neg:
+            alpha = set(chr(x) for x in range(32, 127)) | {"\n", "\t"}
+            mem = alpha - mem
+        return ("cls", frozenset(mem))
+
+    def hole(self):
+        depth, j = 1, self.i
+        while depth:
+            j += 1
+            if self.s[j] == "{":
+                depth += 1
+            elif self.s[j] == "}":
+                depth -= 1
+        body = self.s[self.i + 1:j].strip()
+        self.i = j + 1
+        body = re.sub(r"^\[\(=\) = (\w+)\]$", r"\1", body)  # the export list on a spot moves no flag
+        return lower_fexpr(body, self.st, self.files, self.fname, self.params, at_hole=True, upto=self.upto)
+
+    def atom(self):
+        c = self.take()
+        if c == "$" and self.peek() == "{":
+            return self.hole()
+        if c == "(":
+            save = dict(self.st)
+            if self.s.startswith("?:", self.i):
+                self.i += 2
+                n = self.alt()
+            elif re.match(r"\?[imsxn]*(?:-[imsxn]*)?:", self.s[self.i:]):
+                mm = re.match(r"\?([imsxn]*)(?:-([imsxn]*))?:", self.s[self.i:])
+                self.i += mm.end()
+                self.setflags(mm.group(1), mm.group(2) or "")
+                n = self.alt()
+            elif self.s.startswith("?>", self.i):
+                self.i += 2
+                n = ("atomic", self.alt())
+            elif self.s.startswith("?=", self.i):
+                self.i += 2
+                n = ("look", self.alt())
+            elif self.s.startswith("?<", self.i) and self.s[self.i + 2] not in "=!":
+                j = self.s.index(">", self.i)
+                name = self.s[self.i + 2:j]
+                self.i = j + 1
+                n = ("grp", name, self.alt())
+            elif self.peek() == "?":
+                raise FErr("unsupported group")
+            else:
+                if not self.st["n"] or ss("s29"):           # NUMBERS's plant: n ignored
+                    self.numbered += 1                       # a plain `( )` is a numbered capture unless n
+                n = ("seq", [self.alt()])
+            self.st = save                                   # a group's flag settings end with it
+            if self.take() != ")":
+                raise FErr("unclosed group")
+            return n
+        if c == "\\":
+            e = self.take()
+            return {"d": ("cls", DIG), "w": ("cls", WORD), "s": ("cls", frozenset(" \t\n")), "A": ("bos",),
+                    "z": ("eos",), "n": ("lit", "\n", False)}.get(e, ("lit", e, self.st["i"][0]))
+        if c == "[":
+            return self.cls()
+        if c == ".":
+            return ("cls", ANY) if self.st["s"] else ("dot",)
+        if c == "^":
+            return ("bol",) if self.st["m"] else ("bos",)
+        if c == "$":
+            return ("eol",) if self.st["m"] else ("eosnl",)
+        return ("lit", c, self.st["i"][0])
+
+
+AMARK = [0]
+
+
+def lower_lit(text, st0, files, fname, params, upto=None):
+    """`/.../flags`: the literal's own suffix flags are explicit."""
+    mm = re.fullmatch(r"/(.*)/([imsxn]*)", text, re.S)
+    if not mm:
+        raise FErr("not a literal: %s" % text)
+    st = dict(st0)
+    for f in mm.group(2):
+        st[f] = (True, True) if f == "i" else True
+    p = FP(mm.group(1).replace("\\/", "/"), st, files, fname, params)
+    p.upto = upto
+    n = p.alt()
+    if p.i != len(p.s):
+        raise FErr("unbalanced `)`")
+    NUMBERED.append(p.numbered)
+    return n
+
+
+def lower_fexpr(e, at, files, fname, params, at_hole=False, upto=None):
+    """An expression: a literal, a name (a binding or a parameter), a call, or `A & B`; `at` is the state where it
+    is written (a hole's, or the file's defaults at the top)."""
+    e = e.strip()
+    upto = len(files[fname]) if upto is None else upto
+    parts = split_top(e, " & ")
+    if len(parts) > 1:
+        AMARK[0] += 1
+        k_ = "fe%d" % AMARK[0]
+        nodes = [lower_fexpr(x, at, files, fname, params, at_hole, upto) for x in parts]
+        return ("seq", [("mark", k_), nodes[0]] + [("andpat", k_, x) for x in nodes[1:]])
+    if e.startswith("/"):                                    # a literal written here: this file's defaults
+        own = file_defaults(files, fname, upto)
+        return lower_lit(e, inherit(at, own) if at_hole else at, files, fname, params, upto)
+    if e.startswith('"') and e.endswith('"'):
+        return lower_lit("/" + re.escape(e[1:-1]) + "/", inherit(at, file_defaults(files, fname, upto))
+                         if at_hole else at, files, fname, params, upto)
+    if e in params:                                          # a parameter: its argument, where the caller wrote it
+        arg, afile, aparams = params[e]
+        return lower_fexpr(arg, at, files, afile, aparams, at_hole)
+    mm = re.fullmatch(r"([\w.]+)\((.*)\)", e, re.S)
+    if mm and mm.group(1) in FMACROS:
+        ps, body, bfile = FMACROS[mm.group(1)]
+        args = [a.strip() for a in split_top(mm.group(2), ", ")]
+        newp = {p_: (a, fname, params) for p_, a in zip(ps, args)}
+        own = file_defaults(files, bfile, len(files[bfile]))
+        return lower_fexpr(body, inherit(at, own) if at_hole else own, files, bfile, newp, at_hole)
+    bf, j, text = find_bind(files, e)
+    own = file_defaults(files, bf, j)
+    return lower_fexpr(text, inherit(at, own) if at_hole else own, files, bf, {}, at_hole, j)
+
+
+def fprog(files, expr, rule="new"):
+    """The program `expr`, written at the end of the program file, under `rule`."""
+    FRULE[0] = rule
+    NUMBERED.clear()
+    try:
+        node = lower_fexpr(expr, file_defaults(files, "program", len(files["program"])), files, "program", {})
+    finally:
+        FRULE[0] = "new"
+    Pg = Prog.__new__(Prog)
+    Pg.rx, Pg.node = expr, node
+    RUN.append((expr, tuple(sorted(files)), node))
+    return Pg
+
+
+def esc_nl(t):
+    return t.replace("\n", "\\n")
+
+
+def ffmt(Pg, wh, sr, fa):
+    return esc_nl(fmt(Pg, wh, sr, fa))
+
+
+def opts_of(spec):
+    """`@options(i)`, `@options(s, -i)` -> {flag: value}."""
+    out = {}
+    for x in [y.strip() for y in spec.split(",") if y.strip()]:
+        out[x.lstrip("-")] = not x.startswith("-")
+    return out
+
+
+def files_of_line(pt, tail):
+    """The files a printed flag line names, read mechanically from its tail: `name := `text`` bindings (each in the
+    program file unless followed by "in a library file"), "the program file opening `@options(..)`", "a library
+    file opening `@options(..)`" / "that sets nothing"."""
+    prog_items, lib_items = [], []
+    mo = re.search(r"in a program file opening `@options\(([^)]*)\)`", tail)
+    if mo:
+        prog_items.append(("opt", opts_of(mo.group(1))))
+    ml = re.search(r"in a library file opening `@options\(([^)]*)\)`", tail)
+    if ml:
+        lib_items.append(("opt", opts_of(ml.group(1))))
+    for mm in re.finditer(r"([\w.]+) := `([^`]*)`( in a library file)?", tail):
+        (lib_items if mm.group(3) else prog_items).append(("bind", mm.group(1), mm.group(2)))
+    files = {"program": prog_items}
+    if lib_items:
+        files["library"] = lib_items
+    return files
+
+
+def fl(label, pt, tail, Pg, wh, sr, fa, tag):
+    return doc_line("%s%s (`%s`%s)" % ((label + ": ") if label else "", ffmt(Pg, wh, sr, fa), esc_nl(pt), tail), tag)
+
+
+def fr(pt, tail, rule="new"):
+    """The flag engine's program for a printed line's program text and tail."""
+    return fprog(files_of_line(pt, tail), pt, rule)
+
+
+print("== FCONTROL: the flag engine (no hole) against python `re`, each control written by hand")
+FC = [("/a(?i)b/", r"a(?i:b)"), ("/(?s)a.b/", r"(?s:a.b)"), ("/a.b/", r"a.b"), ("/(?m)^a$/", r"(?m:^a$)"),
+      ("/^a$/", r"^a$"), ("/(?x)a b # c/", r"ab"), ("/(a(?i)b|c)d/", r"(a(?i:b)|(?i:c))d"),
+      ("/(?i:a)b/", r"(?i:a)b"), ("/ab/i", r"(?i:ab)"), ("/(?i)a(?-i)b/", r"(?i:a)b"), ("/[a-c]x/i", r"(?i:[a-c]x)")]
+QF = pop("aAbBcCdx\n ", 3)
+fc_bad = []
+for lit, py in FC:
+    Pg = fprog({"program": []}, lit)
+    d_ = ndiff(answers(Pg, QF), answers(Re(py if not ss("s23") else py.replace("(?i:", "(?:")), QF))
+    if d_ != (0, 0, 0):
+        fc_bad.append((lit, py, d_))
+check("FCONTROL", not fc_bad, "%d literals, each against its hand-written python `re` equivalent over %d texts: "
+      "differing %s" % (len(FC), len(QF), fc_bad or "none"))
+
+print("== EXAMPLES: the weak example and the s example, the rule of hole-flags against the rule of 2026-11-19")
+WT = " in a program file opening `@options(i)`, word := `/[a-z]+/` in a library file that sets nothing"
+W1 = fr("/id-${word}/", WT)
+W2 = fr("/(?i)id-${word}/", WT)
+W1o = fr("/id-${word}/", WT, "old")
+S1 = fr("/(?s)a${dot}b/", ", dot := `/./`")
+S1o = fr("/(?s)a${dot}b/", ", dot := `/./`", "old")
+S2 = fr("/(?s)a${dot}b/", ", dot := `/(?s)./`")
+WH, WS, WF = ["id-abc", "ID-abc", "ID-ABC"], "x ID-ABC id-abc", "id-ab ID-AB Id-ab"
+SH, SS_, SF = ["a\nb", "axb"], "a\nb axb", "a\nb axb ayb"
+fl("A library word under a weakly insensitive program", "/id-${word}/", WT, W1, WH, WS, WF, "core/holes/flags")
+fl("The program writes the flag", "/(?i)id-${word}/", WT, W2, WH, WS, WF, "core/holes/flags")
+fl("An `s` the inserted literal does not write", "/(?s)a${dot}b/", ", dot := `/./`", S1, SH, SS_, SF,
+   "core/holes/flags")
+fl("Written in the inserted literal", "/(?s)a${dot}b/", ", dot := `/(?s)./`", S2, SH, SS_, SF, "core/holes/flags")
+REC_B = ("WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` FAILS / SEARCHED `x ID-ABC id-abc` "
+         "`id-abc`@9 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `Id-ab`@12]")
+if ss("s26"):                                                # EXAMPLES's plant: the record's line (a) for (b)
+    REC_B = ("WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` "
+             "`ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12]")
+REC_A = ("WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` "
+         "`ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12]")
+
+
+def rec_form(Pg, wh, sr, fa):
+    """The record's spelling of a run line (one WHOLE per text), for comparing with its pasted lines."""
+    a = fmt(Pg, wh, sr, fa)
+    w = a.split(" / SEARCHED ")[0][len("WHOLE "):]
+    return " / ".join("WHOLE " + x for x in w.split(", ")) + " / SEARCHED " + a.split(" / SEARCHED ")[1]
+
+
+ex_ok = (rec_form(W1, WH, WS, WF) == REC_B and ws(REC_B) in RECORD_WS and rec_form(W1o, WH, WS, WF) == REC_A and
+         ws(REC_A) in RECORD_WS and not W2.whole("x") and all(W2.whole(t_) for t_ in WH) and not S1.whole("a\nb")
+         and S1o.whole("a\nb") and S2.whole("a\nb"))
+check("EXAMPLES", ex_ok, "the weak example under hole-flags reproduces the record's pasted line (b) %s, under "
+      "2026-11-19's rule its line (a) %s; `/(?i)id-${word}/` holds on all three %s; the s example: `a\\nb` FAILS now "
+      "%s, HELD under 2026-11-19's rule %s, holds with `(?s)` in `dot` %s" %
+      (rec_form(W1, WH, WS, WF) == REC_B, rec_form(W1o, WH, WS, WF) == REC_A, all(W2.whole(t_) for t_ in WH),
+       not S1.whole("a\nb"), S1o.whole("a\nb"), S2.whole("a\nb")))
+
+print("== EXPLICIT (reading (a)): `(?i)`, `(?-i)`, `(?i:..)`, `/.../i` are explicit and pass a hole; a program option "
+      "never does; any_case's body writes one")
+LIBW = {"program": [], "library": [("bind", "w", "/ab/")]}
+LIBWI = {"program": [], "library": [("opt", {"i": True}), ("bind", "w", "/ab/")]}
+PRI = {"program": [("opt", {"i": True})], "library": [("bind", "w", "/ab/")]}
+ex = [("(?i)", fprog(LIBW, "/(?i)${w}/").whole("AB"), True),
+      ("(?i:..)", fprog(LIBW, "/(?i:${w})/").whole("AB"), True),
+      ("/.../i", fprog(LIBW, "/${w}/i").whole("AB"), True),
+      ("(?-i) over a weakly insensitive library", fprog(LIBWI, "/(?-i)${w}/").whole("AB"), False),
+      ("(?-i:..) over it", fprog(LIBWI, "/(?-i:${w})/").whole("AB"), False),
+      ("the library alone, weakly insensitive", fprog(LIBWI, "/${w}/").whole("AB"), True),
+      ("a program option `@options(i)`", fprog(PRI, "/${w}/").whole("AB"), False),
+      ("the program's own literal under it", fprog(PRI, "/ab/").whole("AB"), True)]
+FMACROS["any_case"] = (["rx"], "/(?i:${[(=) = rx]})/", "library")
+ex.append(("any_case's body", fprog(LIBW, "any_case(w)").whole("AB"), True))
+FMACROS.clear()
+ex_bad = [(n_, g_) for n_, g_, w_ in ex if g_ != w_]
+for n_, g_, w_ in ex:
+    print("   %-40s WHOLE `AB` %s (expected %s)" % (n_, "HOLDS" if g_ else "FAILS", "HOLDS" if w_ else "FAILS"))
+check("EXPLICIT", not ex_bad, "%d settings over `${w}`, w := `/ab/` in a library file, on `AB`: wrong %s" %
+      (len(ex), ex_bad or "none"))
+
+
+def trigger(side_a, side_b, files, alpha="abAB", n=3):
+    """`pcrec.flags.filter` (core/holes/flags/in-filter): at `/(?i)${A & B}/`, the sides-first result differs from
+    the expression alone with the flag applied to its result. False where no explicit `i` reaches the hole."""
+    texts = pop(alpha, n)[1:]
+    first = fprog(files, "/(?i)${%s & %s}/" % (side_a, side_b))
+    alone = fprog(files, "%s & %s" % (side_a, side_b))
+    folded = lambda t: any(alone.whole("".join(c)) for c in itertools.product(*[(x.lower(), x.upper()) for x in t]))  # noqa: E731,E501
+    r_ = any(first.whole(t_) != folded(t_) for t_ in texts)
+    return (not r_) if ss("s27") else r_                     # FILTER's plant: the trigger inverted
+
+
+print("== FILTER (reading (b)): the sides of an `&` in a hole inherit an explicit `i` only; the warning keeps its "
+      "trigger")
+FN = {"program": []}
+f1 = trigger("/[a-z]x/", "/[A-Z]x/", FN, "axAX", 2)
+f3 = trigger("/[a-z]+/", "/b.*/", FN, "abAB", 3)
+WEAKP = {"program": [("opt", {"i": True})], "library": [("bind", "C", "/[a-z]x/ & /[A-Z]x/")]}
+P_w = fprog(WEAKP, "/${C}/")
+P_e = fprog(WEAKP, "/(?i)${C}/")
+P_side = fprog({"program": [("opt", {"i": True})]}, "/${/[a-z]x/ & /[A-Z]x/}/")
+fil = (f1, f3, P_w.whole("ax"), P_e.whole("ax"), P_side.whole("ax"))
+check("FILTER", fil == (True, False, False, True, True),
+      "trigger at `/(?i)${..}/`: `/[a-z]x/ & /[A-Z]x/` %s (warns), `/[a-z]+/ & /b.*/` %s (does not); a library "
+      "C := `/[a-z]x/ & /[A-Z]x/` under a weakly insensitive program: `/${C}/` on `ax` %s (no flag reaches the sides: "
+      "nothing to warn of), `/(?i)${C}/` %s; the same sides written in place in that program's own hole take its weak "
+      "`i` as their own file's default: %s" % fil)
+
+print("== NOTINH (reading (c)): `x` and `n` stay not inherited; `m` and `s` no longer are (part 3)")
+LX = {"program": [], "library": [("bind", "sp", "/a b/"), ("bind", "g", "/(a)/"), ("bind", "d", "/./"),
+                                 ("bind", "e", "/a$/")]}
+ni = (fprog(LX, "/(?x)${sp}/").whole("ab"), fprog(LX, "/(?x)${sp}/").whole("a b"),
+      (fprog(LX, "/(?n)${g}/"), NUMBERED[0])[1],           # the inner literal's count: it is parsed first
+      fprog(LX, "/(?s)${d}/").whole("\n"),
+      fprog(LX, "/(?m)${e}\\nb/").whole("a\nb"), fprog(LX, "/(?m)${e}\\nb/", "old").whole("a\nb"))
+check("NOTINH", ni == (False, True, 1, False, False, True),
+      "`/(?x)${sp}/`, sp := `/a b/`: `ab` %s, `a b` %s (x not inherited); `/(?n)${g}/`, g := `/(a)/`: g's numbered "
+      "groups %s (n not inherited); `/(?s)${d}/` on a newline %s; `/(?m)${e}\\nb/`, e := `/a$/`, on `a\\nb` %s now, "
+      "%s under 2026-11-19's rule (m no longer inherited). U, xx, J: not modelled (U and xx not inherited as ruled; "
+      "J unchanged, core/holes/same-name)" % ni)
+
+print("== LEXICAL (reading (d)): the program options and the weak `i` are one table, from the statement on, the "
+      "file's own literals")
+# (one statement, after a binding: whether `i` may be set weakly insensitive below the top of a file and whether
+# `@options(..)` may appear more than once are NOT ruled; the weak `i` is shown at the top only)
+LF = {"program": [("bind", "a", "/a./"), ("opt", {"s": True, "m": True}), ("bind", "b", "/b./")]}
+LW = {"program": [("opt", {"i": True}), ("bind", "a", "/a/")], "library": [("bind", "c", "/c/")]}
+lx = (fprog(LF, "a").whole("a\n"), fprog(LF, "b").whole("b\n"), fprog(LF, "/x./").whole("x\n"),
+      fprog(LW, "/${a}${c}/").whole("AC"), fprog(LW, "/${a}${c}/").whole("Ac"))
+check("LEXICAL", lx == (False, True, True, False, True),
+      "one file: `a := /a./`, then `@options(s, m)`, then `b := /b./`: `a` on `a\\n` %s (written before the "
+      "statement); `b` on `b\\n` %s (from the statement on); the program's own literal after it on `x\\n` %s; the weak "
+      "`i` in the same table (at the top): a program file opening `@options(i)` with `a := /a/`, a library `c := /c/`: "
+      "`/${a}${c}/` on `AC` %s, on `Ac` %s (the file's own literals only)" % lx)
+
+print("== LIBFILE (reading (e), the brief's): a library keeps its own options; never across an import")
+LBT = ", dot := `/./` in a library file opening `@options(s)`"
+LB2T = " in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing"
+LB, LB2 = files_of_line("", LBT), files_of_line("", LB2T)
+fl("A library keeps its own options", "/a${dot}b/", LBT, fr("/a${dot}b/", LBT), SH, SS_, SF, "lib/builtin/options")
+fl("Never across an import", "/a${dot}b/", LB2T, fr("/a${dot}b/", LB2T), SH, SS_, SF, "lib/builtin/options")
+SAMEF = {"program": [("opt", {"i": True}), ("bind", "w", "/ab/")]}
+lb_ = (fprog(LB, "/a${dot}b/").whole("a\nb"), fprog(LB2, "/a${dot}b/").whole("a\nb"),
+       fprog(LB2, "/a.b/").whole("a\nb"), fprog(SAMEF, "/x${w}/").whole("XAB"))
+check("LIBFILE", lb_ == (True, False, True, True),
+      "a library opening `@options(s)`: its `dot := /./` in `/a${dot}b/` on `a\\nb` %s; the program opening it "
+      "instead: %s (never across an import), the program's own `/a.b/` %s; a binding of the SAME file inserted in "
+      "a hole of that file has the same defaults (the record's reading (e)): `/x${w}/` on `XAB` %s" % lb_)
+
+print("== NUMBERS (reading (f)): with n set, a plain `( )` is no capture and no numbered label")
+NB = {"program": [("opt", {"n": True})]}
+fprog(NB, "/(\\d):(\\d)/")
+n_on = NUMBERED[-1]
+fprog({"program": []}, "/(\\d):(\\d)/")
+n_off = NUMBERED[-1]
+fprog(NB, "/(?<h>\\d):(\\d)/")
+n_named = NUMBERED[-1]
+nb = (n_on, n_off, n_named)
+check("NUMBERS", nb == (0, 2, 0), "`/(\\d):(\\d)/`: numbered groups under a file's `@options(n)` %d, without %d; "
+      "`/(?<h>\\d):(\\d)/` under n %d (a named group stays a capture and a label by its name)" % nb)
+
+print("== FLAGGRID: flag x where it is set x what is read; each cell its deciding sentence and a run")
+# Each flag: (a probe literal it changes, a text the probe matches WHOLE iff the flag applies, the base state the
+# flag departs from). The probe is placed per READER; the flag set per WHERE. "applies" is read off the run.
+FLAGS_G = [
+    ("i explicit on", "/ab/", "AB", "(?i)", None),
+    ("i explicit off", "/ab/", "!AB", "(?-i)", "weakon-probe"),    # base: the probe's file weakly insensitive
+    ("weak on", "/ab/", "AB", None, None),
+    ("weak off", "/ab/", "!AB", None, "weakon-elsewhere"),       # "!": applies iff `AB` does NOT match
+    ("m", "/a$\\nb/", "a\nb", "(?m)", None),
+    ("s", "/a.b/", "a\nb", "(?s)", None),
+    ("n", "/(a)b/", None, "(?n)", None),                           # read: the probe's numbered groups (0 = applies)
+    ("x", "/a b/", "ab", "(?x)", None),
+]
+WHERE = ["the literal itself", "up the hole", "the file's option", "the importing file's option"]
+READ = ["own text", "inserted same-file binding", "inserted library binding", "a side of `&` in a hole"]
+OPT = {"i explicit on": None, "i explicit off": None, "weak on": {"i": True}, "weak off": {"i": False},
+       "m": {"m": True}, "s": {"s": True}, "n": {"n": True}, "x": {"x": True}}
+SG = {
+    "lit": ("core/patterns/flags", "A literal's flags are the ones it writes"),
+    "hole-i": ("core/holes/flags", "only an explicit `i` or `-i` in force at the hole is inherited"),
+    "hole-not": ("core/holes/flags", "`m`, `s`, `x`, `xx`, `n`, `U` are not"),
+    "opt-file": ("lib/builtin/options", "applies to the literals written after it in the same file"),
+    "opt-import": ("lib/builtin/options", "never across an import"),
+    "weak-no": ("core/holes/flags", "A weak value does not propagate"),
+    "never-explicit": ("lib/builtin/options", "a program option is never explicit"),
+    "na-weak": ("lib/builtin/options", "a weak value is set only by a program option"),
+    "na-opt": ("lib/builtin/options", "a program option is never explicit"),
+    "na-hole": ("core/holes/flags", "What is inserted in a hole starts from its own file's defaults"),
+}
+
+
+def wrap(probe_lit, flag_text):
+    """The probe with the flag written in it: `(?i)` at its start, inside the slashes."""
+    return "/" + flag_text + probe_lit[1:]
+
+
+def cell(fname_, where, reader):
+    """(the program files, the expression, how to read 'applies') or (None, sentence key, why n/a)."""
+    _, probe, text, ftext, base = next(x for x in FLAGS_G if x[0] == fname_)
+    opt = OPT[fname_]
+    weak = fname_.startswith("weak")
+    if where == "the literal itself" and weak:
+        return None, "na-weak", "a weak value is never written in a literal"
+    if where == "up the hole" and weak:
+        return None, "na-weak", "a weak value is never written in a literal"
+    if where in ("the file's option", "the importing file's option") and ftext and fname_.startswith("i explicit"):
+        return None, "na-opt", "an option sets a weak value, never an explicit one"
+    if where == "up the hole" and reader == "own text":
+        return None, "na-hole", "the own text is not inserted in a hole"
+    if where == "the importing file's option" and reader in ("own text", "inserted same-file binding"):
+        return None, "opt-file", "no importing file: the probe is in the program file itself"
+    prog_items, lib_items = [], []
+    probe_text = wrap(probe, ftext) if where == "the literal itself" else probe
+    base_on = {"i": True}
+    if base == "weakon-probe":                              # (?-i) departs from a weakly insensitive probe
+        (lib_items if reader == "inserted library binding" else prog_items).append(("opt", base_on))
+    if base == "weakon-elsewhere":                          # weak off departs from a weak on of the OTHER file
+        pass
+    if where == "the file's option":
+        (lib_items if reader == "inserted library binding" else prog_items).append(("opt", opt))
+    if where == "the importing file's option":
+        prog_items.append(("opt", opt))
+        if base == "weakon-elsewhere":
+            lib_items.insert(0, ("opt", base_on))
+            prog_items[-1] = ("opt", {"i": False})
+    if base == "weakon-elsewhere" and where == "the file's option" and reader == "inserted library binding":
+        prog_items.insert(0, ("opt", base_on))           # the OTHER file weakly insensitive (one statement a file)
+    outer_flag = ftext if where == "up the hole" else ""
+    if reader == "own text":
+        return {"program": prog_items}, probe_text, text
+    if reader == "inserted same-file binding":
+        prog_items.append(("bind", "p", probe_text))
+        return {"program": prog_items}, "/%s${p}/" % outer_flag, text
+    if reader == "inserted library binding":
+        lib_items.append(("bind", "p", probe_text))
+        return {"program": prog_items, "library": lib_items}, "/%s${p}/" % outer_flag, text
+    # a side of `&` in a hole: the probe is one side, written in the program's hole, or a library binding
+    if where == "the importing file's option":
+        lib_items.append(("bind", "p", probe_text))
+        return {"program": prog_items, "library": lib_items}, "/%s${p & /(?s:.*)/}/" % outer_flag, text
+    return {"program": prog_items}, "/%s${%s & /(?s:.*)/}/" % (outer_flag, probe_text), text
+
+
+def applies(files, expr, text, rule):
+    Pg = fprog(files, expr, rule)
+    if text is None:
+        return NUMBERED[0] == 0                              # n: the probe (parsed first) has no numbered group
+    if text.startswith("!"):
+        return not Pg.whole(text[1:])
+    return Pg.whole(text)
+
+
+def expect(fname_, where, reader):
+    if where == "the literal itself":
+        return True, "lit"
+    if where == "up the hole":
+        if fname_.startswith("i explicit"):
+            return True, "hole-i"
+        return False, "hole-not"
+    if where == "the file's option":
+        return True, "opt-file"
+    if fname_.startswith("weak"):
+        return False, "weak-no"
+    return False, "opt-import"
+
+
+FG = {"AGREE": 0, "DISAGREE": 0, "n/a": 0, "UNDECIDED": 0}
+FG_BAD, FG_MISS, FG_MOVED = [], [], []
+ALLDOC2 = ws("\n".join(NOWS[f] for f in ("core.md", "library.md", "parked.md")))
+for fname_, *_ in FLAGS_G:
+    for where in WHERE:
+        for reader in READ:
+            c_ = cell(fname_, where, reader)
+            if c_[0] is None:
+                tg_, words = SG[c_[1]]
+                if ws(words) not in ALLDOC2:
+                    FG_MISS.append((fname_, where, reader, c_[1]))
+                FG["n/a"] += 1
+                print("   %-14s | %-27s | %-26s | n/a: %s (%s: \"%s\")" % (fname_, where, reader, c_[2], tg_, words))
+                continue
+            files, expr, text = c_
+            want, sk = expect(fname_, where, reader)
+            if ss("s24") and (fname_, where, reader) == ("m", "up the hole", "inserted library binding"):
+                want = True
+            tg_, words = SG[sk]
+            if ws(words) not in ALLDOC2:
+                FG_MISS.append((fname_, where, reader, sk))
+            got_new = applies(files, expr, text, "new")
+            got_old = applies(files, expr, text, "old")
+            st_ = "AGREE" if got_new == want else "DISAGREE"
+            FG[st_] += 1
+            if st_ == "DISAGREE":
+                FG_BAD.append((fname_, where, reader, got_new, want))
+            if got_new != got_old:
+                FG_MOVED.append((fname_, where, reader))
+            fdesc = "; ".join("%s: %s" % (f_, " ".join("@options(%s)" % ",".join(("" if v else "-") + k for k, v in
+                                                                                  it[1].items())
+                                                         if it[0] == "opt" else "%s := %s" % (it[1], it[2])
+                                                         for it in its)) for f_, its in files.items() if its)
+            print("   %-14s | %-27s | %-26s | `%s` [%s] on `%s`: %s now, %s under 2026-11-19's rule | %s: \"%s\" | %s"
+                  % (fname_, where, reader, esc_nl(expr), fdesc or "no options", esc_nl(text or "(the numbered groups)"),
+                     "applies" if got_new else "does not apply", "applied" if got_old else "did not apply", tg_,
+                     words, st_))
+print("   FLAGGRID SUMMARY: %d cells: AGREE %d, DISAGREE %d, n/a %d, UNDECIDED %d; moved from 2026-11-19's rule: %d %s;"
+      " deciding sentences not found: %s" % (sum(FG.values()), FG["AGREE"], FG["DISAGREE"], FG["n/a"],
+                                             FG["UNDECIDED"], len(FG_MOVED), FG_MOVED, FG_MISS or "none"))
+check("FLAGGRID", sum(FG.values()) == 128 and not FG_BAD and not FG_MISS,
+      "%d cells (8 flags x 4 places it is set x 4 readers): AGREE %d, DISAGREE %d %s, n/a %d (no such program), "
+      "UNDECIDED %d; %d cells answer differently under 2026-11-19's rule; sentences missing %s" %
+      (sum(FG.values()), FG["AGREE"], FG["DISAGREE"], FG_BAD[:3], FG["n/a"], FG["UNDECIDED"], len(FG_MOVED),
+       FG_MISS or "none"))
+
+for tg_, L_ in LINES:
+    if "@options" in L_ or "${dot}" in L_ or "${word}" in L_:
+        print("   LINE [%s] %s" % (tg_, L_))
+
+print("== FSWEEP: every printed three-mode line resting on a flag (an unscoped flag, a program option, a file): the "
+      "starting documents under 2026-11-19's rule against these under hole-flags; no answer moves unless listed")
+
+
+def unesc(t_):
+    return t_.replace("\\n", "\n")
+
+
+def f_table(docs, rule):
+    out = {}
+    for f in DOCF:
+        for ln, line_ in enumerate(docs[f].split("\n"), 1):
+            if "WHOLE " not in line_ or " / FIND-ALL " not in line_:
+                continue
+            a = answer_part(line_)
+            if not a:
+                continue
+            tail = line_[line_.index(a) + len(a):]
+            mm = re.search(r"`([^`]*)`", tail)
+            if not mm or not FLAGTAIL.search(tail):
+                continue
+            pt = unesc(mm.group(1))
+            k = sw_key(f, line_, mm.group(1), tail)
+            try:
+                wh, sr, fa = modes_of(line_)
+                got = ffmt(fr(pt, tail[mm.end():], rule), [unesc(x) for x in wh], unesc(sr), unesc(fa))
+                st_ = "same" if got == strip_annot(a) else "DIFF"
+            except (FErr, CompileError, KeyError, IndexError, ValueError) as e:
+                st_, got = "REFUSED", "%s: %s" % (type(e).__name__, e)
+            out.setdefault(k, []).append((f, ln, st_, got))
+    return out
+
+
+FN_T = f_table(NOWS, "new")
+FO_T = f_table(OLDS, "old")
+FO_N = f_table(OLDS, "new")                                  # the starting lines under the new rule: what moves
+F_CHANGED = {}                                               # (program, binds) -> why its answer moves
+fs_bad, fs_rows = [], []
+for k, vs in FO_T.items():
+    f_, ln_, st_o, got_o = vs[0]
+    st_n, got_n = FO_N[k][0][2], FO_N[k][0][3]
+    fate = "stands" if got_o == got_n else ("CHANGED: %s" % F_CHANGED[(k[0], k[1])] if (k[0], k[1]) in F_CHANGED
+                                           else "MOVED, UNLISTED")
+    if fate == "MOVED, UNLISTED" or st_o != "same":
+        fs_bad.append((f_, ln_, k[0], st_o, fate))
+    explicit = bool(re.search(r"\(\?[imsx]*i[imsx]*[:)]|/[a-z]*i\b", k[0]))
+    fs_rows.append((f_, ln_, k[0], "explicit `i`" if explicit else "no explicit `i`", fate, k in FN_T))
+for k, vs in FN_T.items():
+    for f_, ln_, st_, got_ in vs:
+        if st_ != "same":
+            fs_bad.append((f_, ln_, k[0], st_, got_[:120]))
+for r_ in fs_rows:
+    print("   %s:%d `%s` (%s): %s under hole-flags; printed now: %s" % (r_[0], r_[1], esc_nl(r_[2]), r_[3], r_[4],
+                                                                     "yes" if r_[5] else "re-spelled or gone"))
+for k, vs in FN_T.items():
+    if k not in FO_T:
+        print("   ADDED %s:%d `%s`" % (vs[0][0], vs[0][1], esc_nl(k[0])))
+for x in fs_bad:
+    print("   BAD %s" % (x,))
+if ss("s25"):
+    fs_bad.append(("planted",))
+check("FSWEEP", FO_T and not fs_bad, "%d flag lines at the starting commit (each reproduced under 2026-11-19's rule, "
+      "then run under hole-flags: %d stand, %d changed); %d flag lines now, each printed as hole-flags runs it; "
+      "bad %d %s" % (len(FO_T), sum(1 for r_ in fs_rows if r_[4] == "stands"),
+                     sum(1 for r_ in fs_rows if r_[4].startswith("CHANGED")), len(FN_T), len(fs_bad), fs_bad[:3]))
+
 print("== QUOTES: every owner sentence this lane quotes occurs in the record and the documents; every cited title is one")
 QQ = ["The label is not to the regex abstractly, it's to the spot in the pattern where the regex is being inserted.",
       "It's not a piece of the pattern. It's a template of the rx that might be placed into the pattern.",
@@ -1080,13 +1861,28 @@ QQ = ["The label is not to the regex abstractly, it's to the spot in the pattern
       "wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change.",
       "transform-export: yes.",
       "hide(x) := /${x}/",
-      "identity(x) := /${[(=) = x]}/"]
+      "identity(x) := /${[(=) = x]}/",
+      "program-options: yes.",
+      "Using predicate language it's going to be more likely to use () in a literal to mean no capturing group.",
+      "Options m s really can't be inherited because they change semantics in confusing ways if you don't control them.",
+      "i has three settings: on, off, weak on, weak off.",
+      "Consider this: weak settings do not propagate.",
+      "hole-flags: yes to all.",
+      "What i like about the i weak behavior is that it's consistent to the other program level settings that only "
+      "affect literals in program scope."]
 TT = ["2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a "
       "parameter is a template, not a piece of the pattern",
       "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and "
       "a question: do transforms in general",
       "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); "
-      "and two definitions he writes: `hide`, `identity`"]
+      "and two definitions he writes: `hide`, `identity`",
+      "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a \"weak\" value the "
+      "program sets",
+      "2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the "
+      "bindings that follow",
+      "2026-11-22 OWNER, on weak-meets-weak: \"Consider this: weak settings do not propagate.\"",
+      "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is "
+      "inherited at a hole; `m` and `s` are no longer inherited)"]
 if ss("s18"):
     QQ[0] = QQ[0] + " (altered)"
 ALLNOW = "\n".join(NOWS.values())
