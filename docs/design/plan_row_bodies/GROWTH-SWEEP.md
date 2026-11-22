@@ -19,3 +19,7 @@ Long-form record for plan.md row [GROWTH-SWEEP]; the row carries the pointer.
   OCCASIONAL tier with generous time (his view: "it should work if specified, put it in a special testing box that only gets
   run occasionally and give it most time"). (4) Lowering the limits is the LAST resort, only if the fix cannot bring the cost
   down. Related, his DISCUSSION ("isn't the + form reducible?"): the reducible-nest fold is [SPELLING-INV]'s, not this row's.
+- RULING growth-doubling-report (Frank 2026-11-22 ~09:25, his word "Agree", to the manager's proposal as asked): once the sweep's
+  bounds are CPU seconds, it ALSO reports CPU time per doubling along each growth axis (ratio of a cell's CPU to its half-size
+  neighbour; ~x2 linear, ~x4 quadratic), so existing superlinear compile steps surface by measurement (the K159 class). Folded into
+  the growth-sweep work already ruled (growth-time-bound), not a lane of its own. Companion: the critic skill's **complexity** lens.
