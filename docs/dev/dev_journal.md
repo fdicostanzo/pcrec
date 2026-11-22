@@ -28566,3 +28566,10 @@ Next
   - Predicate session: r77 (predfold1121) drafting, coordinator left running at Frank's word; P-17 in to_main.md, nothing to merge.
   - Box cleared at 18:55 at Frank's ask (kit cancelled 727/728).
   LESSONS: (1) lanes idled on lock waits and did not wake when the run ended (grow7, l3axtri; DO-THEN-FINISH already says hand back OWED and END); (2) three file-only rulings missed in one day: BOILERPLATE now says the manager also messages each new R-n.
+
+## 2026-11-21 session 143 (main, from 23:20)
+
+- Wake: CI green on a561af740; main pushed; queue clean (kit's 726 red was its own, superseded by 729-731).
+- Frank 23:30: "machine is yours for the evening" (evening hold lifted tonight). Suggested the kit pull its U3 test+mech forward to end before 01:00.
+- D3-FLOOR "third re-pin" (wake item 2b) judged NOT a scope defect: run_d3floor.sh is the last step of test-axes, so every cloud axes run checks it; the three re-pins are L1's and L3's designed membership moves and one corpus file (l3d27_witnesses.rxt) wired after the pin. Re-pin at the L3 landing.
+- Lane grow8 (sonnet) launched: grow7's missed R-2 (classify 44940630891, fold both runs' walls, reweigh). No cloud run, no bound change.
