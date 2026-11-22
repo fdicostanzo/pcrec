@@ -10,7 +10,9 @@ default-export (no owner words)".
 
 ## STATE AT HANDOFF
 
-- STATE: done. Branch tip: the commit carrying this report (WIP predecessors 44afebc85, 595ff0d6b and the sabotage
+- STATE: done.
+OWED: none
+- Branch tip: the commit carrying this report (WIP predecessors 44afebc85, 595ff0d6b and the sabotage
   commit after them).
 - Rulings file `docs/dev/lanes/predfix83_rulings.md`: EMPTY at every checkpoint (before each commit, before the
   sabotage run, before this report). Last entry applied: none (no R-n).
