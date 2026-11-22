@@ -312,3 +312,4 @@ Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r
 2. **A place/position table cell about a fact written INSIDE a nested place must say where it is written.** Drill each row's `0` / label / reference cell with the row nested inside the `&`, loop and hole rows (A2, A5).
 3. **For every CHECK the subject cites as "supported", mutate one arm.** If no mutation of the cited arm can move the count, the check shares its source (N3, CS3).
 4. **A 0/0/0 at a short pool length is not evidence when the witness needs a longer text.** A4 needed length 7, A5 needed `min = 1`: critics state the minimum witness length they reached.
+- (2026-11-22, r81 k159fix) **A stop or early-exit fix needs a BOUNDED witness beside its cost witness.** A CPU guard on an unbounded witness cannot tell a correct stop from an over-eager one (plant V1, a subset test in place of equality, moved 8 of 11 bounded widths and none of the existing table's rows).
