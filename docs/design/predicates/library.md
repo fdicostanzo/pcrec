@@ -212,7 +212,7 @@ see: lib/counting/count
 module: ?
 defined: language
 - The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral;
-  `nchars` is a condition-free computed count read where it is used (core/holes/bare-condition/bound-condition).
+  `nchars` is a computed count bound alone (the open core/holes/bare-condition/bound-condition).
 - The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no
   capture (pure-label), so the caller receives none.
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
@@ -227,7 +227,7 @@ defined: language
   /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]` (an array is an alternation;
   the twelve names in calendar order), `mnum := $mname.index` (a computed label over the member's 1-based index).
 - The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
-  capture (pure-label). `mnum` is read where it is used (core/holes/bare-condition/bound-condition).
+  capture (pure-label). `mnum` is a computed label bound alone (the open core/holes/bare-condition/bound-condition).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -431,14 +431,15 @@ WHOLE `xyz` HOLDS, `abc` FAILS / SEARCHED `abxyq` `xyq`@2 / FIND-ALL `xy ab` [`x
 
 ## Counting   [lib/counting]
 
-### some   [lib/counting/some]   ruled 2026-11-21
+### some   [lib/counting/some]   ruled 2026-11-22
 `some(c)` holds when at least one setting in the array of c's label meets c; on an empty array it is false (a reading).
 needs: core/model/table core/conditions/form core/labels/labels-vs-captures/array-vs-passes
 see: core/model/table/group-truth lib/assert/assert
 module: ?
 defined: native (a question over a name's array of settings; no expression of the language walks the array)
 - The array is every setting of the name, in order, the one outside the loop included
-  (core/labels/labels-vs-captures/array-vs-passes); "false on an empty array" is a reading of that ruling.
+  (core/labels/labels-vs-captures/array-vs-passes), those visible in the definition the question is written in, a
+  bound piece's own (array-in-piece); "false on an empty array" is a reading of that ruling.
 - `some` is the one spelling of "at least one"; `all` is retired: every pass is written with the condition
   inside the loop, on the item (core/conditions/in-sequence).
 - A record of several entries in it, and a joint entry, which is a compile error for now: the array piece. "Same
@@ -448,29 +449,31 @@ defined: native (a question over a name's array of settings; no expression of th
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
 WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
 
-### count   [lib/counting/count]   ruled 2026-11-21
+### count   [lib/counting/count]   ruled 2026-11-22
 `count(c)` is the number of settings in the array of c's label that meet c, a canonical numeral for the comparisons; it is refused only over the budget, naming `occurs`.
 needs: lib/counting/some core/values/comparisons
 module: ?
 defined: native (a count over a name's array of settings; no expression of the language counts them)
-- It counts SETTINGS (core/labels/labels-vs-captures/array-vs-passes): zero on an empty array; on a condition of
+- It counts SETTINGS (core/labels/labels-vs-captures/array-vs-passes), those visible where it is written, a bound
+  piece's own (array-in-piece): zero on an empty array; on a condition of
   several entries what is counted is not stated (readings).
 - A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it may be bound and read
-  like a label: `n := count((d: "7"))`, then `(n: ==2)` (n is read where it is used:
+  like a label: `n := count((d: "7"))`, then `(n: ==2)` (n is a count bound alone: the open
   core/holes/bare-condition/bound-condition).
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
 - A later optimisation may turn `count()` into `occurs` where the answers provably do not change.
 WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (n: ==2)`, n := `count((d: "7"))`)
 
-### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-21
+### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-22
 The `occurs` module counts the settings of a label meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
 needs: core/labels/labels-vs-captures/array-vs-passes
 module: occurs
 defined: native (a count over a name's array of settings, a capped counter; no expression of the language counts them)
 - Its states: a capped counter (n + 2 states) multiplied in.
 - `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`), judged on each
-  setting of its label (core/labels/labels-vs-captures/array-vs-passes; several entries: not stated, a reading); n
+  setting of its label visible where it is written, a bound piece's own (core/labels/labels-vs-captures/array-vs-passes,
+  array-in-piece; several entries: not stated, a reading); n
   is a constant or a caller parameter.
 - These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form
   (lib/counting/count).

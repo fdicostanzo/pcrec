@@ -265,7 +265,7 @@ readings:
 - under array-vs-passes `nchars := count((ch: /(?s:.)/))` counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
 - caveats (the draft's): two helper bindings beside the body; `count`'s budget applies to `nchars`; the label `ch` visible.
 - `chars` re-spelled with a part label, `([ch = /(?s:.)/])*`, leaves every printed `length` line unchanged (review r77 D4; the brief's reading 4) — SUPPORTED by a run (predfix77 CHARS: the one printed line rebuilt from the old body and from the new, both equal to the printed text; the old body makes the capture `ch`, the new none; sabotage s11 caught).
-- `nchars` is a condition-free computed count read where it is used (the open core/holes/bare-condition/bound-condition) — UNTESTED (a reading).
+- `nchars` is a computed count bound alone, so it rests on the open core/holes/bare-condition/bound-condition (under his position (b) it would be refused) — UNTESTED.
 evidence: preddoc3c PART LE; review r16 `bodies_check.out`. predfix77_model.py CHARS.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body (review r16 FIXIND-3).
@@ -571,6 +571,7 @@ rulings:
 - 2026-11-15 "Do it" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
 - 2026-11-16 "all-question: retire" (record: "2026-11-16 OWNER RULING — all-question: retire")
 - 2026-11-17 "after-loop-read: ok I see it. Last pass own label makes sense" (record: "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label")
+- 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
 - `all` as a group question — by owner ruling — all-question: retire.
 - `occurs.some` — by the draft (rev 7's, removed, not aliased) — `some(c)` is the one spelling.
@@ -585,6 +586,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-20): "`NOT some(c)` and `occurs.none(c)` are the same question" marked as the reading of the open question core/model/table/group-truth (it is that question's candidate (a)); before, a ruled piece stated it as settled.
 - 2026-11-21 (lane predarr, array-vs-passes and joint-in-some ruled): the statement until then, verbatim: "`some(c)` holds when at least one pass of a loop meets the condition c, each pass judged with its own labels; it is false where the loop made no pass."; `defined: native (a question over a loop's passes; no expression of the language walks the passes)`; the bullet "`some` is the one spelling of "at least one pass"" lost "pass"; "`NOT some(c)` and `occurs.none(c)` are the same question under the reading of the open question core/model/table/group-truth (a reading)" became "the same question over the array". Bullets added: the array, the joint entry refused and the on-item idiom. Status date 2026-11-15 to 2026-11-21. The printed line does not move.
 - 2026-11-22 (lane predfix77, review r77 D7 (RULING-4), D11 (GENERAL-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "`some(c)` holds when at least one setting in the array of c's label meets c; it is false on an empty array." The empty-array clause is marked a reading in the statement; the `NOT some(c)` = `occurs.none(c)` bullet restricted "for a condition of one entry", group-truth owning it (under the product reading of several entries extended to `occurs` it fails on `5:1,`: hand-worked, review r77 GENERAL-8).
+- 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
 ## lib/counting/count — count
 slugs: count-budget
 rulings:
@@ -593,6 +595,7 @@ rulings:
 - 2026-11-15 "i would refuse count() on budget or as a recommended way to reduce states rather than rules" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule"
 - 2026-11-15 "4. agree. Allows "even()" or other checks for count." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — the five open items"
 - 2026-11-15 "Predicate count/occurs issue: it would be a later optimization plan item that if pcrec could show no change in semantics that it convert count() into occurs" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 OWNER NOTE — `count()` -> `occurs` as a LATER OPTIMIZATION"
+- 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
 - `count()` refused in a set position by rule (the manager's "until you can't" reading) — by owner ruling — "by BUDGET, not by rule" (the reading WITHDRAWN in the record).
 readings:
@@ -605,11 +608,13 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-2): the base's "`even()` on a count" (his word, "Allows "even()" or other checks for count", quoted above) written as the set it names, `/\d*[02468]/`: no piece provides `even`.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "`count(c)` is the number of passes of a loop that meet c, a canonical numeral used with the ordinary comparisons; it is refused only over the budget, the refusal naming `occurs`."; `defined: native (a count over a loop's passes; no expression of the language counts passes)`. A bullet added (settings, zero, several entries). Status date 2026-11-15 to 2026-11-21. The printed line does not move.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `n` points at the open core/holes/bare-condition/bound-condition.
+- 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:
 rulings:
 - 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); `occurs` reads the ARRAY OF SETTINGS (the record entry names lib/counting/occurs among the revised pieces)
 - 2026-11-14 "more obscure but valuable" (record: "2026-11-14 RULING — counting occurrences")
+- 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
 - `occurs.some` and `occurs.all` — by the draft (rev 7's, removed, not aliased; LEAN) — `some(c)` is the one spelling; `all` was retired (all-question).
 - a namespace `label` (`label.exactly(1, ...)`) — by the record — it clashes with element metadata `x.label`.
@@ -623,6 +628,7 @@ history:
 - 2026-11-14: agreed as a library family (all, some, none, exactly, at_least, at_most); 2026-11-15 (rev 8): counts only.
 - 2026-11-19 (lane preddoc3c): converted; the heading drops `.some` (withdrawn).
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`."; `defined: native (a count over the passes of a loop, a capped counter; no expression of the language counts passes)`; the bullet's "one record is one pass" became "judged on each setting of its label"; the `modes:` line's "a count over a loop's pass table; no example of the draft is printed in the three modes" re-pointed at the runs. `needs:` the array piece. Status date 2026-11-14 to 2026-11-21.
+- 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
 ## lib/counting/every-pass — Every pass, named
 slugs: every-pass-spelling
 rulings:

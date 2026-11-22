@@ -32,8 +32,8 @@
 # Run (W = the worktree; any cwd):  timeout 300 python3 -I -B W/docs/dev/lanes/predfix77_evidence/predfix77_model.py
 # PREDFIX77_SABOTAGE=sN (one at a time): a deliberately wrong rule or fact; its target check must FAIL.
 #   s1  the matcher tries alternatives last first                                         -> CONTROL
-#   s2  a piece's group question reads the composed array under the "own" candidate      -> ARRPIECE
-#   s3  the `&` chain's own array keeps the settings made before the chain               -> ARRCHAIN
+#   s2  a bound piece's group question reads the composed array (array-in-piece (a))     -> ARRPIECE
+#   s3  the `&` operand's own stretch read without the definition's settings      -> ARRREAD
 #   s4  a condition joined by `&` reads the definition's mark, not its left operand's    -> SEQZERO
 #   s5  occurrences' body reading puts the mark at the hit, not at the body's start      -> OCCZERO
 #   s6  the duplicate-name expectation reversed (the LAST set group in pattern order)    -> DUPNAME
@@ -47,7 +47,7 @@
 #   s14 a loop with no pass counted as one setting                                        -> EVERYNONE
 #   s15 the class-hole values sorted before the lift                                      -> LIFTORDER
 #   s16 a quoted owner sentence altered (in memory)                                       -> QUOTES
-#   s17 one pointer to the bound-condition piece dropped (in memory)                      -> MARKS
+#   s17 pass-start-read's pointer to the bound-condition piece dropped (in memory)       -> MARKS
 #   s18 one formatted line's subject altered before the document lookup                  -> DOC
 #   s19 the joint spelling inside a group question accepted                               -> RECORD
 #   s20 `0` of a hole condition joined by `&` read from the definition's start            -> HISEX
@@ -800,10 +800,10 @@ def lower_atom(expr, ctx):
         name, e, q = mm.groups()
         ctx.held.add(name)
         return "(?<%s@%s>%s)%s" % (name, ",".join(ctx.scopes), lower(e, ctx), q)
-    if IS_COND.match(expr):
-        return lower_cond(expr, ctx)
     if is_gq(expr):
         return lower_gq(expr, ctx)
+    if IS_COND.match(expr):
+        return lower_cond(expr, ctx)
     if expr.startswith("(") and expr.endswith(")"):
         return lower(expr[1:-1], ctx)
     if expr.startswith("/") and expr.endswith("/"):
@@ -970,33 +970,59 @@ check("CONTROL", (c1, c2, c3, c4) == ((0, 0, 0),) * 4,
       "of %d texts over `ab;7`: `\"ab\" | \"a\"` %s, `(?:a|ab)??;` %s, rx.repeat(.., min = 2, max = 2) %s, `(?i:a[b7])` %s"
       % (len(POPA), c1, c2, c3, c4))
 
-# ---------------------------------------------------------------- ARRPIECE (A1): a group question inside a used piece
-print("== ARRPIECE: `A SEQ B`, B's group question over the composed array or over B's own settings (array-in-piece)")
+# ---------------------------------------------------------------- ARRPIECE (A1; array-in-piece RULED (b), R-1, R-2)
+print("== ARRPIECE: array-in-piece (b): a bound piece's group question reads what the piece sees; in place, A's too")
 BA = ["A := /(?<h>\\d)/", 'B := /(?:;(?<h>\\d))*${some((h: "7"))}/']
-TAIL_A = ' (`A SEQ B`, A := `/(?<h>\\d)/`, B := `/(?:;(?<h>\\d))*${some((h: "7"))}/`)'
-WA, SA, FA_ = ["7;1", "1;7", "7"], "x7;1;2", "7;1;2 1;7;2 7;1"
-L_A_C = show("(a) The composed array", "A SEQ B", BA, WA, SA, FA_, TAIL_A, "array-in-piece", array="composed")
-L_A_O = show("(b) The piece's own settings", "A SEQ B", BA, WA, SA, FA_, TAIL_A, "array-in-piece", array="own")
-print("   " + L_A_C)
-print("   " + L_A_O)
+E_IN = 'A SEQ /(?:;(?<h>\\d))*${some((h: "7"))}/'
+WA, SA, FA_ = ["7", "7;1", "1;7", "1;2"], "x7;1 1;7", "7;1 1;7 3;4 7 2;7;5"
+L_A_B = show("Bound first", "A SEQ B", BA, WA, SA, FA_,
+             ' (`A SEQ B`, A := `/(?<h>\\d)/`, B := `/(?:;(?<h>\\d))*${some((h: "7"))}/`)', "labels-vs-captures")
+L_A_I = show("Written in place", E_IN, BA[:1], WA, SA, FA_, ' (`%s`, A := `/(?<h>\\d)/`)' % E_IN, "labels-vs-captures")
+print("   " + L_A_B)
+print("   " + L_A_I)
+# the record's pasted lines ("2026-11-22 OWNER RULING — array-in-piece: b ..."): own = bound first, entire = in place
+def rec_answers(label):
+    mm = re.search(r"^%s: (WHOLE .*)$" % label, RECORD[RECORD.index("### 2026-11-22 OWNER RULING — array-in-piece"):], re.M)
+    t = mm.group(1)
+    wh = re.findall(r"WHOLE `([^`]*)` (HOLDS|FAILS)", t)
+    sr = re.search(r"SEARCHED `[^`]*` (`[^`]*`@\d+|FAILS)", t).group(1)
+    fa = re.search(r"FIND-ALL `[^`]*` (\[.*?\])", t).group(1)
+    return wh, sr, fa
+def my_answers(L):
+    wh = re.findall(r"`([^`]*)` (HOLDS|FAILS)", L.split(" / SEARCHED")[0])
+    sr = re.search(r"SEARCHED `[^`]*` (`[^`]*`@\d+|FAILS)", L).group(1)
+    fa = re.search(r"FIND-ALL `[^`]*` (\[.*?\])", L).group(1)
+    return wh, sr, fa
+r_own, r_ent = rec_answers("own"), rec_answers("entire")
 POP1 = pop("71;x", 5)
-ca = ndiff(answers(prog("A SEQ B", BA, array="composed"), POP1), answers(Re(r"(?:7|\d(?:;\d)*;7)(?:;\d)*"), POP1))
-co = ndiff(answers(prog("A SEQ B", BA, array="own"), POP1), answers(Re(r"\d(?:;\d)*;7(?:;\d)*"), POP1))
-check("ARRPIECE", ca == (0, 0, 0) and co == (0, 0, 0) and "`7` HOLDS" in L_A_C and "`7` FAILS" in L_A_O,
-      "of %d texts over `71;x`: composed against `(?:7|\\d(?:;\\d)*;7)(?:;\\d)*` %s ; own against "
-      "`\\d(?:;\\d)*;7(?:;\\d)*` %s ; on `7` composed HOLDS, own FAILS (an empty own array)" % (len(POP1), ca, co))
+cb = ndiff(answers(prog("A SEQ B", BA), POP1), answers(Re(r"\d(?:;\d)*;7(?:;\d)*"), POP1))
+ci = ndiff(answers(prog(E_IN, BA[:1]), POP1), answers(Re(r"(?:7|\d(?:;\d)*;7)(?:;\d)*"), POP1))
+check("ARRPIECE", my_answers(L_A_B) == r_own and my_answers(L_A_I) == r_ent and cb == ci == (0, 0, 0),
+      "bound first = the record's `own` line: %s ; in place = its `entire` line: %s ; of %d texts over `71;x`: bound "
+      "first against `\\d(?:;\\d)*;7(?:;\\d)*` %s, in place against `(?:7|\\d(?:;\\d)*;7)(?:;\\d)*` %s"
+      % (my_answers(L_A_B) == r_own, my_answers(L_A_I) == r_ent, len(POP1), cb, ci))
 
-# ---------------------------------------------------------------- ARRCHAIN (A2): a group question in an `&` operand
-print("== ARRCHAIN: a group question in an `&` operand in a hole: the definition's array or the chain's own settings")
+# ---------------------------------------------------------------- ARRREAD: the entry's readings (b), (c), (d)
+print("== ARRREAD: readings (b) a piece using A sees A's settings, (c) count and h[k] alike, (d) an `&` operand in place")
+BU = ["A := /(?<h>\\d)/", 'U := A SEQ /(?:;(?<h>\\d))*${some((h: "7"))}/']
+ru = ndiff(answers(prog("U", BU), POP1), answers(prog(E_IN, BA[:1]), POP1))
+BK = ["A := /(?<h>\\d)/", 'K := /(?:;(?<h>\\d))*${(h[1]: "7")}/']
+EK_IN = 'A SEQ /(?:;(?<h>\\d))*${(h[1]: "7")}/'
+rk = (ndiff(answers(prog("A SEQ K", BK), POP1), answers(Re(r"\d;7(?:;\d)*"), POP1)),
+      ndiff(answers(prog(EK_IN, BK[:1]), POP1), answers(Re(r"7(?:;\d)*"), POP1)))
 E2 = '/(?<h>\\d)${/(?:;(?<h>\\d))*/ & some((h: "7"))}/'
-L_C_D = show("(a) In an `&` operand", E2, [], WA, SA, FA_, " (`%s`)" % E2, "array-in-piece", array="own")
-L_C_C = show("(b) In an `&` operand", E2, [], WA, SA, FA_, " (`%s`)" % E2, "array-in-piece", array="chain")
+L_C_D = show("In an `&` operand, one definition (a reading)", E2, [], WA, SA, FA_, " (`%s`)" % E2, "array-vs-passes")
+L_C_C = show("The operand's own stretch only (not the reading)", E2, [], WA, SA, FA_, " (the same program)", "report",
+             array="chain")
 print("   " + L_C_D)
 print("   " + L_C_C)
-cd = ndiff(answers(prog(E2, array="own"), POP1), answers(Re(r"(?:7|\d(?:;\d)*;7)(?:;\d)*"), POP1))
+cd = ndiff(answers(prog(E2), POP1), answers(Re(r"(?:7|\d(?:;\d)*;7)(?:;\d)*"), POP1))
 cc = ndiff(answers(prog(E2, array="chain"), POP1), answers(Re(r"\d(?:;\d)*;7(?:;\d)*"), POP1))
-check("ARRCHAIN", cd == (0, 0, 0) and cc == (0, 0, 0),
-      "of %d texts: the definition's array %s, the chain's own %s (against the two hand regexes above)" % (len(POP1), cd, cc))
+check("ARRREAD", ru == (0, 0, 0) and rk == ((0, 0, 0), (0, 0, 0)) and cd == (0, 0, 0) and cc == (0, 0, 0),
+      "of %d texts: (b) `U := A SEQ /..some../` against the in-place line's program %s ; (c) `h[1]` bound first "
+      "against `\\d;7(?:;\\d)*` and in place against `7(?:;\\d)*` %s ; (d) the definition's settings against "
+      "`(?:7|\\d(?:;\\d)*;7)(?:;\\d)*` %s, the operand-only rival against `\\d(?:;\\d)*;7(?:;\\d)*` %s"
+      % (len(POP1), ru, rk, cd, cc))
 
 # ---------------------------------------------------------------- SEQZERO (A5; the brief's reading 1)
 print("== SEQZERO: `0` of a condition joined by `&` written as a sequence operand, and in a hole")
@@ -1406,6 +1432,11 @@ QUOTED = [
     "we allow context, etc). That's its whole world.",
     "i am probably going to rule that only i is inherited this way as it doesn't make sense for any other flag.",
     "Only solution is sorting output when needed.",
+    "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is "
+    "bound first, its internal references refer only to what can be seen at that point.",
+    "or A SEQ /B definition/",
+    "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding.",
+    "bound-condition: correction to rx: B(d & isodate) := (year: < 2100)",
 ]
 if sab("s16"):
     QUOTED[1] = QUOTED[1].replace("lol", "ok")
@@ -1413,7 +1444,7 @@ qmiss = [q for q in QUOTED if ws(q) not in RECORD_WS]
 check("QUOTES", not qmiss, "%d quoted sentences; missing from the record: %s" % (len(QUOTED), qmiss))
 
 # ---------------------------------------------------------------- MARKS: what the dispositions put where
-print("== MARKS: the collision marked at both pieces, the bound-condition readers, the new open pieces")
+print("== MARKS: array-in-piece stated where the array is, the bound-condition readers, the new open pieces")
 
 
 def piece(text, tag):
@@ -1428,20 +1459,22 @@ def piece(text, tag):
 READERS = [("core", "core/conditions/pass-start-read"), ("core", "core/values/computed-labels"),
            ("core", "core/labels/labels-vs-captures/array-vs-passes"), ("lib", "lib/counting/count"),
            ("lib", "lib/modifiers/length"), ("lib", "lib/modifiers/month-numbered"), ("core", "core/holes/bare-condition")]
-if sab("s17"):
-    CORE_M = CORE.replace("(a bound condition: core/holes/bare-condition/bound-condition)", "", 1)
-else:
-    CORE_M = CORE
+CORE_M = CORE
+if sab("s17"):                                   # one reader's pointer dropped: pass-start-read's
+    _ps = piece(CORE, "core/conditions/pass-start-read")
+    CORE_M = CORE.replace(_ps, _ps.replace("core/holes/bare-condition/bound-condition", "core/holes/bare-condition"))
 pointers = [(t, "core/holes/bare-condition/bound-condition" in piece(CORE_M if f == "core" else LIB, t)) for f, t in READERS]
-coll = [(t, "core/labels/labels-vs-captures/array-in-piece" in piece(CORE, t))
-        for t in ("core/labels/labels-vs-captures", "core/holes/bare-condition/nested-scope")]
+ARR_Q = "its internal references refer only to what can be seen at that point"
+coll = [(t, "array-in-piece" in piece(CORE if t.startswith("core") else LIB, t) and
+         (ARR_Q in piece(CORE, t) if t in ("core/labels/labels-vs-captures", "core/holes/bare-condition/nested-scope") else True))
+        for t in ("core/labels/labels-vs-captures", "core/labels/labels-vs-captures/array-vs-passes",
+                  "core/holes/bare-condition/nested-scope", "lib/counting/some", "lib/counting/count", "lib/counting/occurs")]
 opens = [(t, re.search(r"\[%s\]\s+open %s " % (re.escape(t), s), CORE + LIB) is not None) for t, s in
-         (("core/labels/labels-vs-captures/array-in-piece", "array-in-piece"),
-          ("core/holes/bare-condition/bound-condition", "bound-condition"),
+         (("core/holes/bare-condition/bound-condition", "bound-condition"),
           ("core/conditions/form/record-in-some", "record-in-some"))]
 gloss = "(a binding or a macro body)" not in piece(CORE, "core/conditions/match-so-far").split("\n")[2]
 check("MARKS", all(x for _, x in pointers) and all(x for _, x in coll) and all(x for _, x in opens) and gloss,
-      "bound-condition readers %s ; collision marked %s ; open pieces %s ; the gloss out of match-so-far's statement: %s"
+      "bound-condition readers %s ; array-in-piece stated %s ; open pieces %s ; the gloss out of match-so-far's statement: %s"
       % (pointers, coll, opens, gloss))
 
 # ---------------------------------------------------------------- DOC

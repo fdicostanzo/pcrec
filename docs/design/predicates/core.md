@@ -285,7 +285,7 @@ WHOLE `1234` HOLDS (l = `4`, f = `1`), `4321` FAILS / SEARCHED `4321 1234` `1234
 
 ## Labels   [core/labels]
 
-### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-21
+### Labels and captures   [core/labels/labels-vs-captures]   ruled 2026-11-22
 A label read after a loop is the last pass's own value, unset where that pass did not set it; a capture is PCRE's carried value; `$x` and `x:` read the label.
 needs: core/model/match
 see: core/labels/one-rule lib/counting/some core/labels/export lib/structural/capture/add-on
@@ -308,15 +308,18 @@ see: core/labels/one-rule lib/counting/some core/labels/export lib/structural/ca
   `/(?<x>\d)+/` have one array, and two groups of one name in a sequence give it both settings. It holds the
   settings of the name where the name is visible, as they stand where it is read (composed at that point: a
   reading). A part label limits it (placeholder `x.@a`): the settings of `a` made inside part `x`, in order (a
-  reading), the part named as core/labels/paths names it. Inside a separately defined piece the array-scope ruling
-  and the piece's own settings (core/holes/bare-condition/nested-scope) give two answers; which holds is open
-  (core/labels/labels-vs-captures/array-in-piece).
+  reading), the part named as core/labels/paths names it.
+- The array is read in the definition the question is written in, with all that is visible there: B's text written
+  in place beside A ("or A SEQ /B definition/") sees A's settings; a BOUND piece does not, "if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point."
+  (array-in-piece, the lines "Bound first", "Written in place").
 - "All passes" is written with the condition inside the loop, on the item.
 WHOLE `9:45,10:45,45` HOLDS, `9:45,10,45` FAILS / SEARCHED `9:45,10,45 1:45,45` `1:45,45`@11 / FIND-ALL `9:45,10,45 1:45,45` [`1:45,45`@11] (`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")`)
 Captured in a loop: WHOLE `3;;` HOLDS, `3;` HOLDS / SEARCHED `x3;;` `3;;`@1 / FIND-ALL `3;; 7;` [`3;;`@0, `7;`@4] (`/(?:(?<h>\d)?;)+/`; on `3;;` the label h is unset, PCRE's capture `3`)
 Two groups of one name: WHOLE `7;37` HOLDS, `7;33` FAILS, `77` HOLDS / SEARCHED `x7;37` `7;37`@1 / FIND-ALL `7;37 7;33 33` [`7;37`@0, `33`@7, `33`@10] (`/(?J)(?<h>\d)(?:;(?<h>\d))?\k<h>/`: `\k<h>` reads the first set group in pattern order)
+Bound first: WHOLE `7` FAILS, `7;1` FAILS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h: "7"))}/`)
+Written in place: WHOLE `7` HOLDS, `7;1` HOLDS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14] (`A SEQ /(?:;(?<h>\d))*${some((h: "7"))}/`, A := `/(?<h>\d)/`)
 
-### The array of settings, not the loop's passes   [core/labels/labels-vs-captures/array-vs-passes]   ruled 2026-11-21
+### The array of settings, not the loop's passes   [core/labels/labels-vs-captures/array-vs-passes]   ruled 2026-11-22
 The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order, the one outside the loop included.
 needs: core/labels/labels-vs-captures
 see: lib/counting/some lib/counting/count lib/counting/occurs core/conditions/form core/values/tuples parked/ideas/user-doc-traps
@@ -333,6 +336,9 @@ see: lib/counting/some lib/counting/count lib/counting/occurs core/conditions/fo
 - A JOINT entry inside a group question (`some(((h, m): ("5", "3")))`) is a compile error for now; pairing a joint
   entry by index or by item can be allowed later without changing an answer. The error's message names the on-item
   form (the manager's call).
+- The array is the settings visible where the question is written, a bound piece's own (array-in-piece: `some`,
+  `count`, `occurs`, `h[k]` alike, a reading); in place in an `&` operand both sides' (a reading; "In an `&`
+  operand"), a plain read of a name both sides surface still the ambiguous reference (core/labels/flow).
 - The order is the order the settings are made along the path: a lookahead's setting comes before the group it
   precedes (a reading; the line "A lookahead in a pass").
 - `h[k]` past the array's end is an absent value: a test on it fails and NOT of it holds (a reading; "Past the end").
@@ -347,25 +353,12 @@ Outside the loop, the label beside it: WHOLE `7;` FAILS, `1;7;` HOLDS / SEARCHED
 A record of two entries: WHOLE `5:1,2:3,` HOLDS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` `5:1,2:3,`@5 / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:1,2:3,`@0, `5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`)
 The record form: WHOLE `5:3,` HOLDS, `5:1,2:3,` HOLDS, `5,2:3,` HOLDS, `2:3,5,` HOLDS / SEARCHED `x5,2:3,` `5,2:3,`@1 / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0, `5,2:3,`@5, `2:3,5,`@12, `5:1,2:3,`@19] (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/ & some((h: "5", m: "3"))`)
 Same item, on the item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3,`@0] (`([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))`, item := `/(?<h>\d)(?::(?<m>\d))?,/`)
+In an `&` operand, one definition (a reading): WHOLE `7` HOLDS, `7;1` HOLDS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14] (`/(?<h>\d)${/(?:;(?<h>\d))*/ & some((h: "7"))}/`)
 An empty array: WHOLE `,` FAILS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` FAILS / FIND-ALL `, 7, 1,` [`1,`@5] (`/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`)
-A count of zero: WHOLE `,` HOLDS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` `,`@1 / FIND-ALL `1, , 7,` [`,`@1, `,`@3, `7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`; n is a bound condition read where it is used: core/holes/bare-condition/bound-condition)
+A count of zero: WHOLE `,` HOLDS, `7,` HOLDS, `1,` FAILS / SEARCHED `1, ,` `,`@1 / FIND-ALL `1, , 7,` [`,`@1, `,`@3, `7,`@5] (`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`; n is a bound condition: the open core/holes/bare-condition/bound-condition)
 A lookahead in a pass: WHOLE `12` HOLDS, `123` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 12` [`123`@0, `12`@4] (`/(?:(?=\d(?<h>\d))(?<h>\d))+\d/ & (h[2]: "1")`)
 Past the end: WHOLE `3;` HOLDS, `3;;` HOLDS, `3;5;` FAILS / SEARCHED `x3;` `3;`@1 / FIND-ALL `3; 3;5;` [`3;`@0, `3;`@3, `5;`@5] (`/(?:(?<h>\d)?;)+/ & NOT (h[2]: "5")`)
 A read inside: WHOLE `11,23,` FAILS, `12,31,` HOLDS, `12,` FAILS / SEARCHED `x11,23,` `11,`@1 / FIND-ALL `11,23, 12,31, 12,` [`11,`@0, `12,31,`@7] (`/(?:(?<h>\d)(?<m>\d),)+/ & some((h: $m))`)
-
-### A group question inside a separately defined piece   [core/labels/labels-vs-captures/array-in-piece]   open array-in-piece 2026-11-22
-Does a group question or `h[k]` written inside a separately defined piece, or in an `&` operand, read the array of the whole rx or only the settings made inside that piece or operand?
-needs: core/labels/labels-vs-captures/array-vs-passes
-see: core/holes/bare-condition/nested-scope core/values/reads
-- Two rulings meet here: array-scope ("the only way to do it is by the scope of the entire rx") and
-  bare-nested-scope case 2: b (a separately defined piece reads its own value only). Neither answer is stated.
-- Candidates: (a) the composed array, the settings made before the piece included; (b) the piece's own settings
-  (in an `&` operand: the settings made in that operand's stretch).
-- The witness, `A SEQ B`, under both candidates; then the same question for a group question in an `&` operand.
-(a) The composed array: WHOLE `7;1` HOLDS, `1;7` HOLDS, `7` HOLDS / SEARCHED `x7;1;2` `7;1;2`@1 / FIND-ALL `7;1;2 1;7;2 7;1` [`7;1;2`@0, `1;7;2`@6, `7;1`@12] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h: "7"))}/`)
-(b) The piece's own settings: WHOLE `7;1` FAILS, `1;7` HOLDS, `7` FAILS / SEARCHED `x7;1;2` FAILS / FIND-ALL `7;1;2 1;7;2 7;1` [`1;7;2`@6] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h: "7"))}/`)
-(a) In an `&` operand: WHOLE `7;1` HOLDS, `1;7` HOLDS, `7` HOLDS / SEARCHED `x7;1;2` `7;1;2`@1 / FIND-ALL `7;1;2 1;7;2 7;1` [`7;1;2`@0, `1;7;2`@6, `7;1`@12] (`/(?<h>\d)${/(?:;(?<h>\d))*/ & some((h: "7"))}/`)
-(b) In an `&` operand: WHOLE `7;1` FAILS, `1;7` HOLDS, `7` FAILS / SEARCHED `x7;1;2` FAILS / FIND-ALL `7;1;2 1;7;2 7;1` [`1;7;2`@6] (`/(?<h>\d)${/(?:;(?<h>\d))*/ & some((h: "7"))}/`)
 
 ### One label rule: branchings reset   [core/labels/one-rule]   ruled 2026-11-17
 A label is a name; entering a branching (an alternation, an optional, a loop) resets every label whose group lies inside it, and in a sequence the last mention wins.
@@ -615,7 +608,7 @@ WHOLE `3;4;` FAILS / SEARCHED `3;4;` `3;`@0 / FIND-ALL `3;4; 5;` [`3;`@0, `4;`@2
 A condition reads the labels as they stand where it is written: after its group the current pass's, before it the previous pass's.
 needs: core/conditions/in-sequence core/labels/one-rule
 - In the first pass, before its group, the label is unset. No "a pass begins" rule is added.
-- The line's `c` is a bound condition read where it is used (core/holes/bare-condition/bound-condition).
+- The line's `c` is a bound condition (the open core/holes/bare-condition/bound-condition).
 - Its use: comparing an item with its predecessor.
 - A bare condition after the pattern reads the last pass's own value (core/labels/labels-vs-captures).
 WHOLE `3;4;7;` HOLDS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL `3;7;4; 9;1;` [`3;7;`@0, `4;`@4, ``@6, `9;`@7, `1;`@9, ``@11] (`/(?:(?=(?<n>\d))${c}(?<h>\d);)*/`, c := `NOT (h: /\d/) | (n: >= $h)`)
@@ -792,7 +785,7 @@ A binding whose expression reads a match label is a computed label of the patter
 needs: core/values/reads core/conditions/form
 see: core/values/arithmetic lib/modifiers/length lib/modifiers/month-numbered
 - `sum := $a + $b` with `/(?<a>\d)\+(?<b>\d)/`: `(sum: <10)` tests the sum on each path, as `(a: ..)` tests a (a
-  binding naming labels it does not hold, read where it is used: core/holes/bare-condition/bound-condition).
+  binding naming labels it does not hold: the open core/holes/bare-condition/bound-condition).
 - It is computed where it is read, from the labels as they stand there (core/conditions/pass-start-read); a binding
   that reads no label is pure, a compile-time value (core/operators/statements).
 - An unset input gives an unset computed label: a test on it fails, as on an absent label (a reading).
@@ -1191,15 +1184,14 @@ see: core/labels/flow parked/ideas/label-parameter core/holes/bare-condition/bou
 - NAMES: a piece that names a label it does not hold is a compile error at its definition ("case 1: compile error
   at inner"): `inner := /x${(h: <5)}/` is refused wherever it is used. The caller passes the condition instead
   (`inner(c) := /x${c}/`, `inner((h: <5))`); a label variable is an idea (parked/ideas/label-parameter). A
-  condition or computed label bound alone is laid against the pattern it meets (a reading; open bound-condition:
-  core/holes/bare-condition/bound-condition).
-- VALUES: a read inside a piece sees the piece's own settings only, unset before its own group the first time, the
+  condition or computed label bound alone: open (core/holes/bare-condition/bound-condition).
+- VALUES: a read inside a piece, a group question and `h[k]` included (array-in-piece), sees the piece's own
+  settings only, unset before its own group the first time, the
   previous pass of a loop written inside it ("i meant b"). So the same rx written as one definition and composed
   from two can answer differently: the exception to "a compose and a literal rx have the same label behavior"
   (core/labels/flow), which holds for what a piece's USER reads (the lines "Two definitions", "One definition").
-- A group question inside a piece: the array-scope ruling and this one give two answers, open
-  (core/labels/labels-vs-captures/array-in-piece).
 - `0`: the match so far of the definition it is written in (core/conditions/match-so-far).
+- A group question in a bound piece: "if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (array-in-piece).
 - A used piece takes the flags at its hole (core/holes/flags) but not the labels around it: the two differ by
   construction ("bindings define scope").
 - His three examples, "rather than rules", with A := `[d = digits]` (his spelling; the runs use `rx.digits`):
@@ -1229,12 +1221,14 @@ see: core/conditions/pass-start-read core/values/computed-labels lib/counting/co
 - The question as asked twice; his two examples, "bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/
   C := /.${A & (0: 5)}/ the 0: is bound to A only", agree with what is ruled and do not reach a condition bound to
   a NAME of its own (`c := (0: 5)`, then `/\d${c}/`).
-- The reading in force (the manager's, (a)): it is laid against the pattern it meets, so the printed definitions
-  that are a condition or a computed label alone read where they are used: pass-start-read's `c`, `sum`
-  (core/values/computed-labels), the `n` of the line "A count of zero" and of lib/counting/count, `nchars`
-  (lib/modifiers/length), `mnum` (lib/modifiers/month-numbered), and the `c` below.
-- Under (b) each of those is a piece naming labels it does not hold: a compile error at its definition.
-- A macro whose body is a condition (`lt5(S) := (h: S)`) is the same question.
+- His position, a response asked ("this is my read. please respond."): (b), "the form A := (x: blah) has to be
+  illegal. x has no references in the binding."; his alternatives, spellings his placeholders: "1. macro
+  variables A(x:) := (x: < 2100)" (parked/ideas/label-parameter) and "2. macro types", corrected to
+  "B(d & isodate) := (year: < 2100)" (parked/ideas/restricted-parameter).
+- The printed definitions that are a condition or a computed label alone rest on the answer: pass-start-read's
+  `c`, `sum` (core/values/computed-labels), the `n` of the line "A count of zero" and of lib/counting/count,
+  `nchars` (lib/modifiers/length), `mnum` (lib/modifiers/month-numbered), and the `c` below; under (b) each is a
+  compile error at its definition. A macro whose body is a condition (`lt5(S) := (h: S)`) is the same question.
 (a) where it is used: WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${c}x/`, c := `(0: rx.digit)`)
 (b) sealed, its own `0`: WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` [] (the same program)
 A macro returning a condition, (a): WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x7 3` `3`@3 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`/(?<h>\d)${lt5(<5)}/`, lt5(S) := `(h: S)`)
