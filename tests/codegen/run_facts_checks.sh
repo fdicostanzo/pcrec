@@ -585,13 +585,13 @@ fi
 # other box is slower, so the old walk fails everywhere); CPU, not wall, so
 # a loaded box does not move it, with a 120 s wall bound as the hang guard.
 # The value is written by hand: shortest match one byte (`c`), unbounded.
-WD="$ROOT_DIR/scripts/watchdog"
 wp='c|b'
 for i in $(seq 1 14); do
     if [ "$i" -lt 14 ]; then wp="(?:$wp)+|b"; else wp="(?:$wp)+"; fi
 done
-"$WD" -l k159-width -c 5 -s 120 -L "$WORKDIR/wd.log" -- \
-    "$PCREC" --emit-facts --pattern "$wp" > "$WORKDIR/wb.l" 2> "$WORKDIR/wb.err"
+# ONE line: the K37 sweep reads a compiler site line by line, so the watchdog
+# must share the line with the compiler word.
+"$ROOT_DIR/scripts/watchdog" -l k159-width -c 5 -s 120 -L "$WORKDIR/wd.log" -- "$PCREC" --emit-facts --pattern "$wp" > "$WORKDIR/wb.l" 2> "$WORKDIR/wb.err"
 wrc=$?
 wbv="$(sect "$WORKDIR/wb.l" facts | grep -F "$(printf 'fact=width\t')" | col value)"
 if [ "$wrc" -eq 123 ]; then
