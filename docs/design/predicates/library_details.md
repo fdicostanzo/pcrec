@@ -395,6 +395,8 @@ history:
 formerly: ?.search (2026-11-15, the owner renamed `search` to `occurrences` under his naming rule)
 slugs: hit-carry hit-carry-depth min-values nullable-meaning helper-captures
 rulings:
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); RULING on helper-captures, answer (b): the body's `hit` is a label, no capture
+- 2026-11-22 (class: REQUEST to validate) "3. validate: you can label the results [ hits = occurences(...) ] & (hits.hit: <5)" (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); validated the same turn (the record's four pasted run lines), printed here and in lib/search/hits
 - 2026-11-15 "1. if I understand this question, it's asking if the search rx follows non-pcre matching behavior? If that's the question, then the answer is it should always follow it if for no other reason than that's what's expected." (record: "2026-11-14 RULINGS on rev 3's contradictions")
 - 2026-11-15 "1 occurances." (record: "2026-11-15 RULING — the provided transform `search` is renamed `occurrences`")
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
@@ -411,6 +413,9 @@ rejected:
 - "at most one hit, the first" for a nullable argument (the record's manager correction of 2026-11-18 afternoon) — by run — `occurrences(/\d*/)` on `1a` gives two hits [`1`@0, ``@1] (the draft's rev 26.1 PART R47 A1, libpcre2; preddoc3c PART OC, sabotage s9 caught).
 - "the program keeps PCRE's meaning for the empty hit, as the empty search does" — by run — NOT SUPPORTED: PCRE's find-all of `/\d*/` on `a1b` gives four hits, the loop fewer (the draft R.1.9, PART H H4, H5).
 readings:
+- his example `[hits = occurrences(/\d+/)] & (hits.hit: <5)` is legal (a part label the definition writes) and its plain read is the LAST hit's value, a rejecting condition re-choosing the hits — SUPPORTED (docs/dev/lanes/predref_evidence/ predref_model.py HITS: the record's two pasted `occurrences` lines reproduced from the program text in every mode; the documents' two lines verbatim, DOC)
+- a group written in the argument stays a capture (the brief's reading (d): a user's own literal keeps pure-label) — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py LABELONLY)
+- two calls each reached through a label of their own are not ambiguous — UNTESTED (lane predref's reading)
 - the body reproduces R.1.9's printed hits (`/\d*/` on `1a` and `12a3`; `min = 2` on the empty text, two empty hits; `min = 3` on `ab`, three) and `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with [`12`, `34`] — SUPPORTED (preddoc3c PART OC; sabotages s9, s10 caught).
 - the loop's priority equals python's own reading of the body text `(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)` with x := `\d+` and min 0, 1, 2: 0 / 0 / 0 of 31 texts over `1a` — SUPPORTED (PART OC).
 - the hits of a nullable argument: up to and including the first empty hit (the manager's second correction, review r47 V1) — the told reading, SUPPORTED as the draft printed it (PART OC).
@@ -429,15 +434,18 @@ history:
 - 2026-11-19 (lane preddoc5): the slug nullable-meaning moved here from core/conditions/defaults, which named it this piece's fact (review r59 COMPA-13).
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
 - 2026-11-22 (lane predfix77, review r77 D4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet states the `hit` capture as a reading with the tension named; status date 2026-11-18 to 2026-11-21 (pure-label changed what `hit` is).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures RULED (b) and folded: the body `(?<hit>${x})` to `(?<:hit>${x})` (core/labels/label-only-group); the bullet "A bare condition after it reads the LAST hit's own labels." and the bullet "The body writes `hit` as a group in rx text, so it is a capture the caller receives (a reading of pure-label), against his reason for the add-on: ... Whether a helper's label is a caller capture: an owner question (helper-captures)." replaced by the ruling, his example and the re-choosing sentence; the two lines "Plain read" and "Every hit" added (docs/dev/lanes/predref_evidence/ predref_model.py HITS). Status date 2026-11-21 to 2026-11-22.
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass hit-list
 rulings:
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); the body's `hit` is a label, no capture
 - 2026-11-17 "hits-text: yes but spelling to be reviewed with all other spellings." (record: "2026-11-17 OWNER RULING — the hit list: atomic and anchored")
 rejected:
 - each hit atomic but not the loop, `\A(?:.*?(?>(?<n>\d+)))*\D*\z` with the list judged after it — by run — the lazy gap is re-entered and swallows a number's start: "every hit under 100" HOLDS on all four texts with hits [`34`], [`12`, `34`], [`12`, `45`], [`0`, `12`] (the draft R.1.9; preddoc3c PART HI reproduces the four lists; sabotage s11 caught).
 - the stretch reading (SEARCHED `x300 12` gives `x30`@0 with [`30`]) — by owner ruling — hits-text: standing alone the list is the whole subject's.
 readings:
+- after the atomic `hits` a test on the hits judges a fixed list: the record's two pasted `hits` lines (`[h = hits(/\d+/)] & ...`) — SUPPORTED (docs/dev/lanes/predref_evidence/ predref_model.py HITS: reproduced from the program text, the hit lists included)
 - the body (an atomic group around the whole loop, anchored at both ends) gives the printed lists and verdicts: `1234` FAILS [`1234`], `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS; with an optional label `axa` FAILS (the last hit's own g unset), `aax` HOLDS — SUPPORTED (preddoc3c PART HI).
 - "every hit under 100" written as `hits(/\d+/) & occurs.none((hit: >= 100))`, a group question on the array of `hit` (one setting per hit) — the lane's reading of the unwritten program; WHOLE `1234` FAILS, `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS under the settings and the pass readings alike — SUPPORTED (predarr HITS: the body read from library.md, against python `re` 0 / 0 / 0 of 1,365 texts; sabotage s13, the atomic group re-entered, caught).
 - hits-pass and some-own: a bare condition after it reads the last hit's own labels (closed by entailment, the draft §R.8) — SUPPORTED for the optional-label rows (PART HI).
@@ -450,6 +458,8 @@ history:
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, the `hit` group written in rx text is a capture as well as a label (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the "every hit under 100" bullet names its program, a group question on the array of `hit` (a reading). No answer moves.
 - 2026-11-22 (lane predfix77, review r77 D4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the capture bullet points at the tension and the question helper-captures (lib/search/occurrences).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures folded: the body `(?<hit>${r})` to `(?<:hit>${r})`; the "Every hit under 100" program `hits(/\d+/) & occurs.none((hit: >= 100))` re-spelled `[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))` (label-reference: `hit` is not written in the program; its four prose answers re-run, docs/dev/lanes/predref_evidence/ predref_model.py HITS); the bullet "The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label; the tension with the add-on's reason and the question helper-captures: lib/search/occurrences)." replaced; the two lines "Plain read" and "Every hit" added. Status date 2026-11-17 to 2026-11-22.
+
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
@@ -851,6 +861,7 @@ rulings:
 rejected:
 - the keyword form `export capture(x) := ...` (rev 0) — by the draft — superseded by `@export`.
 readings:
+- its body's capture is its purpose, so it is left as written; whether that is "so declared" is not stated (lane predref's reading of the brief's reading (d)) — UNTESTED (a classification)
 - `capture(name, x) := /(?<${name}>${x})/`, the name passed (lane preddoc6, review r60 COLD-8) — SUPPORTED (preddoc6 PART CP).
 - `capture(x) := /(?<${x.label}>${x})/` (the draft §5.3, LEAN; the owner's sketch `group(x) := /(?<${x.label}>${x})/`, "lots of hand waving", record "2026-11-14 — compose instead of an option") names the group by its argument's label — SUPPORTED as a lowering (preddoc3c PART CP), but NOT BUILDABLE from the core as written (no field gives a part label's own name); superseded in part by export-rule (rev 26); what the caller gets for a public label two parts both set is caller-ambiguous.
 - what `capture(x)` returns for a looped x is not stated (the draft R.11 row 32).
@@ -860,10 +871,12 @@ history:
 - 2026-11-19 (lane preddoc2): found as a body with no library piece; (lane preddoc3c): a new piece and section.
 - 2026-11-19 (lane preddoc6, review r60 COLD-8): the body could not be built from the core: `.label` is defined only for a part label over an array ("that member's name", core/values/metadata), and inside the body `x` is a parameter, not a path (core/labels/flow: "A binding's name is not a path"). The piece now states `capture(name, x) := /(?<${name}>${x})/` (the name passed as a string to the group-name hole) and keeps the draft's one-parameter sketch as a bullet naming the missing field; the example `capture(x)`, x := `[d = /\d+/]` became `capture("d", /\d+/)`, same answers (preddoc6 PART CP).
 - 2026-11-21 (lane predscope, pure-label folded): the bullet until then: "A binding's public labels reach the caller by export with no macro; `capture` stays a way to NAME a capture." (wrong after pure-label: a label reaches the caller only as a capture). Two bullets added (the wrapper reading; the add-on pointer). Status date 2026-11-19 to 2026-11-21.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): a bullet: the body writes a capture on purpose; helper-captures' "so declared" not stated for it. Status date 2026-11-21 to 2026-11-22.
 
 ## lib/structural/capture/add-on — Making a label a capture
 slugs: none
 rulings:
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); "unless they are so declared": how is not stated, it joins this open form
 - 2026-11-21 (class: REQUIREMENT) "so an add on component that converted a label into a capture is needed." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); his reason: "the reason for the second one is that someone may use a library form like isodate."
 - 2026-11-21 (class: DISCUSSION, nothing ruled) "what i don't know is precisely what that looks like. two methods are to specify it like a wrapper like [ d = capture(digits) ] etc or specify it afterthefact like [ d = digits ] & capture(d) or something. no spelling suggested." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name")
 - 2026-11-21 (class: STATEMENT, marked agreed) "1. purely predicate labels and 2. cannot become exported captures (although they might be internal captures)" (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); of the `_t` labels
@@ -874,6 +887,7 @@ readings:
 evidence: predscope_model.py CAPT (what is a capture today).
 history:
 - 2026-11-21 (lane predscope): a new under-construction piece for his requirement of pure-label; both spellings are placeholders (core/spellings/placeholders).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): a bullet: how a provided body declares a capture joins this piece's open form (the brief's reading (d)). Status date 2026-11-21 to 2026-11-22.
 
 ## lib/structural/each — each, each_group, where, where_group
 slugs:

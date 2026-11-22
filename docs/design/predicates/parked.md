@@ -230,14 +230,6 @@ Trigger (any one of its unlocks):
 Source: the ideas file item 31 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### The label-only group   [parked/ideas/label-only-group]   parked 2026-11-19
-`(?<:x>...)` (his stated form, a placeholder): a group that is labelled, not a capture.
-- At the expression level `[x = A]` already makes a label and no capture (core/labels/paths); the idea is the rx
-  TEXT spelling only.
-Trigger: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
-Source: the ideas file item 32 (its whole text in the details entry).
-modes: n/a (parked: not in the language)
-
 ### The array form in a hole, `${@y}`   [parked/ideas/array-in-hole]   parked 2026-11-19
 `${@y}` (a placeholder): one of the earlier values; a future direction, not built, not defined now.
 Trigger: a user program of the declared-then-used shape; or the array form's type being defined for conditions.

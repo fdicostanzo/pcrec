@@ -1,0 +1,10 @@
+s1: predref_model: 8 checks, 1 failed (SCAN) traceback=0
+s2: predref_model: 8 checks, 1 failed (SCAN) traceback=0
+s3: predref_model: 8 checks, 2 failed (CONTROL, RESPELL) traceback=0
+s4: predref_model: 8 checks, 1 failed (LABELONLY) traceback=0
+s5: predref_model: 8 checks, 2 failed (RESPELL, HITS) traceback=0
+s6: predref_model: 8 checks, 3 failed (HITS, LABELONLY, DOC) traceback=0
+s7: predref_model: 8 checks, 1 failed (RESPELL) traceback=0
+s8: predref_model: 8 checks, 1 failed (QUOTES) traceback=0
+s9: predref_model: 8 checks, 1 failed (MARKS) traceback=0
+s10: predref_model: 8 checks, 1 failed (DOC) traceback=0
