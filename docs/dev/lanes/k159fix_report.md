@@ -61,10 +61,10 @@ ID NOTE for the manager: the brief granted S3500-S3509, but the ledger worktrees
 `make -s strict`: clean. `make -s test-plan-lint`: 2 passed, 0 failed. The plan row moved from Boonies into Active, because PL13 refuses STATE:started outside Active.
 
 ## Cloud make test
-Dispatched as the lane's last act with `scripts/cloudrun --owner main --kind test --name k159fix-<sha> --ref <sha>` at the delivered tip. The sha and the `git ls-remote` proof are in STATE AT HANDOFF. The verdict reaches main through queuewatch as CLOUD-DONE. Not waited for.
+Dispatched: `scripts/cloudrun --owner main --kind test --name k159fix-a1e541f --ref a1e541f8c` printed `cloudrun: DONE rc=0 pushed a1e541f8c -> cloud/main/test/k159fix-a1e541f owner=main kind=test`. Proof: `git ls-remote origin 'refs/heads/cloud/main/*/k159fix*'` lists `a1e541f8c497c5bef768068a00724b1e51cdb99a refs/heads/cloud/main/test/k159fix-a1e541f`. a1e541f8c holds all of the lane's code; later commits are report text only. The verdict reaches main through queuewatch as CLOUD-DONE. Not waited for.
 
 ## STATE AT HANDOFF
-Committed on lane/k159fix (tip named in the handback). Last ruling applied: none (k159fix_rulings.md empty at every checkpoint, R-0).
+Committed on lane/k159fix; code complete at a1e541f8c. Last ruling applied: none (k159fix_rulings.md empty at every checkpoint, R-0).
 OWED box-queue jobs (queued 2026-11-22 ~09:10, behind kit 736; scripts in $PCREC_TMPDIR/scratch/k159fix/jobs/):
 - `k159fix-sweep`: emit_sweep vs 92f5e77b6, corpus + bench; green = rc 0.
 - `k159fix-widthcells` (after sweep): `differ=0 rc_diff=0`.
@@ -72,5 +72,5 @@ OWED box-queue jobs (queued 2026-11-22 ~09:10, behind kit 736; scripts in $PCREC
 - `k159fix-timing` (after mech): the quiet before/after table.
 
 Read the verdicts with `scripts/monread k159fix --wait` or `scripts/boxqueue state KEY`. A mover or a differ is a STOP: report it, do not land.
-OWED cloud: make test at the tip (see the Cloud make test section; the ls-remote proof is in the handback).
+OWED cloud: make test, branch cloud/main/test/k159fix-a1e541f at a1e541f8c (verdict via queuewatch CLOUD-DONE).
 Scratch: /var/tmp/pcrec-pcrec/scratch/k159fix (pcrec.base = the 92f5e77b6 build; nest.py the witness generator).
