@@ -3672,3 +3672,54 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - On the final tree, all GREEN: 729 make test (2021 s), 730 mech (17 rows), 731 ids.
   - **Reports:** docs/dev/lanes/bsu3_report.md, bsu3fix_report.md, bsu3fix2_report.md.
   - **Next:** U4 (G2-V, the T-table pins, the rest of C18, sabotage (a)-(f)), then U5 (card C6 incl. the clang arms) and U6 (the abi package and G1 dry run; C6 timing in a window main clears).
+
+- **notice: owner words to the kit on width-night-bench (2026-11-22), proposed D202 addendum** — Frank answered main's question in the kit session (/q), verbatim: "width-night-bench: 1. so this shouldn't be a single number then but a table of numbers depending on what is being scanned including mixed types. 2. pcrec needs to specifically tell kit that it wants the cover and not a candidate which can be fewer. That might be in the form of a start/end into the span for the coverage range. If the kit knows it needs to recheck, anything beyond a candidate is a waste".
+  - **Proposed D202 addendum text:**
+    - (1) The cover width is not one number. It is a declared TABLE, one entry per kind of scanned content (digit, hex, word, literal run, mixed), per layer. Part B and the SIMD reference night measure per kind, mixed spans included.
+    - (2) pcrec STATES the strength of answer each site needs: a proven range [start, end) of the span (the cover, or a proven fraction an engine resumes from), or a candidate that pcrec rechecks. This is a fact, not a method (D157). Where pcrec rechecks, the kit renders the cheapest candidate form.
+  - **Kit's readings for the owner to check:**
+    - (1) "Mixed types" means a span with more than one class kind along its length (e.g. `[0-9a-f]{8}-[0-9]{4}`), keyed by its composition, not by one class.
+    - (2) It joins R-40 (the minimum useful bytes after a candidate) and R-46 (the weaker question at a presence site) as one site fact: "what the site's answer must prove". That makes three members, so the kit proposes one fact rather than three.
+  - **Scheduling:** no build go is asked. The fact rides [COVER-WIDTH-KIT] / [ENGINE-COST-UNIT] when they are built. Part B's cell list gains the per-kind and mixed cells.
+
+- **notice: owner follow-up on width-night-bench (2026-11-22), for D202 addendum 1** — verbatim: "width-night-bench: but this leaves kit options like the candidate check might be disjoint from the coverage or the cover check goes into the non coverage because the simd form checks 32 bytes anyway".
+  - **Proposed text:** the per-site fact states an OBLIGATION, the range [start, end) the answer must prove (or "candidate"). It is not a limit on what the kit reads or tests. The kit may test positions outside the range, for example a candidate test disjoint from it, or a SIMD block that runs past its end. Two conditions hold:
+    - (a) every reject is sound: it uses only the sets pcrec states as NECESSARY at that position;
+    - (b) every read stays inside the subject (the existing over-read and guard rules).
+  - **Consequence for the fact's shape:** pcrec states per-position sets beyond the range too: exact inside, necessary (hull) outside, as far as it can prove them. Without them the kit has nothing sound to test there.
+  - **Reading for the owner to check:** "goes into the non coverage" means extra positions TESTED, never extra positions PROVEN. A match the kit reports still needs pcrec's proof (or recheck) for anything past the range.
+
+- **notice: owner ruling on the cover width (2026-11-22), for D202** — verbatim: "As far as the width, that is your call within the above. I'm not sure the variables that determine the answer. We could use a table. An/or there could be a mathematical idea of sufficiently checked where a match score keeps going up with each test until it passes some threshold (that pcrec might provide). So rare bytes provide more, ranges less. 1. is this a width of check or coverage? 2. another variable is simd. If simd can prove 32 bytes cheap then that's different than scalar 3. simd is the reason the choice is yours."
+  - **Proposed D202 addendum 2:** the width is the kit's call within add. 1. It is a table and/or a "sufficiently checked" score. The threshold pcrec may provide is the engine cost unit (D202 (2)).
+  - **Kit's readings, for the owner to check:**
+    - Two widths: COVERAGE (pcrec's fact, the range that must be proven) and CHECK (the kit's candidate test depth).
+    - The cost per position is per layer (SIMD vs scalar).
+    - Order: the table first, fitted at the SIMD reference night; the score only if the table cannot fit (mixed spans are the likely trigger).
+  - No build go is asked or implied.
+
+- **correction to the D202 add. 2 notice above (2026-11-22)** — the owner corrected it, verbatim (relayed by main, filed in decisions.md D202 add. 2): "The score or threshold were ideas to consider. Other comments were framing". The only DECISION is that the width is the kit's call within add. 1. The table and the "sufficiently checked" score are ideas to consider. The three numbered points are framing, not rulings. The kit's readings stay readings. This supersedes the notice's "Proposed D202 addendum 2" sentence.
+
+- **done (partial): R-47 unit U4** (2026-11-22) — branch lane/memfn-k1108 @ 0eceaaee1, validated on that commit. The commits after it are kit-ledger only: journal, plus this line.
+  - **What is in it:**
+    - merge of lane/bsu4fix 23b325e99, which carries lane/bsu4 (= bsu4g c0f615a49 + bsu4p cc247853f) and the r78 fixes;
+    - then main merged in (U3 at abi 111, K159, D202 add. 1-2). make strict is clean.
+  - **The change (CHECKS ONLY):**
+    - G2-V unit and whole, with PROT_NONE guards at both ends, a start-up self-witness per guard, and floors on the DRIVEN counts;
+    - 22 T-table pin cells, the 20 of §10.2 plus 2 for T-deny;
+    - one k-source reader, tests/memfn/span_ksource.py;
+    - SPAN-SEED wiring;
+    - the rest of the C18 amendment (3 NAMED span witnesses, floors and controls);
+    - the routing leg's V shapes;
+    - FLOORS re-pinned (x86-64 74, v3 105) and the libc census funcs floor 281;
+    - sabotage rows S3525, S3526 and S3530-S3536 (plants (a)-(f) plus C18 controls 2-4), each with REACH.
+  - **No emitted byte moves and no abi event.** Nothing under memfn/src/, src/, cli/ or lib/ changed. r78 measured 164 emitted pairs identical.
+  - **Review:** r78 (code), docs/dev/reviews/2026-11-22-r78-memfn-bsu4.md, ruled FIX FIRST. Every FIX-NOW and DOC item is fixed in bsu4fix, with a mutation proof that all plants go RED. Two items stay PLAN: PINS-7's predicate table + TSV, and G2V-4 (a shared guard header). Three lessons went into docs/dev/guide/critics.md.
+  - **Validation:**
+    - 740 RED on test-compound (the G7 lever fence did not list the pin cells' legitimate `--harness=span-head` use). Fixed at 23b325e99.
+    - Then GREEN: 740 make test, 741 mech (15 rows) on lane/bsu4fix.
+    - On the merged tip 0eceaaee1, in a detached worktree: 742 make test GREEN (2656 s) and 743 mech GREEN (15 rows).
+  - **Findings for main:** none against pcrec. Design-text corrections are in block_span.md: §10.2 (b) "benign on HORS" is wrong where B divides K, and two populations are zero by construction (a literal beside a stretch; the empty set).
+  - **Reports:** docs/dev/lanes/bsu4g_report.md, bsu4p_report.md, bsu4fix_report.md.
+  - **Next:**
+    - U5 (card C6 incl. the clang arms, CANDIDATE; review r79);
+    - U6 (the abi package and G1 dry run; C6 timing in a window main clears, every bench box including Zen 1; review r80).
