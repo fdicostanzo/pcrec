@@ -7723,3 +7723,34 @@ numbers, ruled 2026-11-19: one written literal, or an `&` chain with one pattern
 a capture with no label at all. So "also a capture" and "is a label" are two independent properties: label and
 capture (a named group in a user's literal); label only (a part label, a label-only group); capture only (an
 unnamed group where numbers are refused); neither (a non-capturing group).
+
+### 2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow
+tags: core/patterns/flags core/holes/flags lib/builtin/options core/labels/numbers core/labels/labels-vs-captures parked/ideas/capability-optins core/principles/rx-owns-flags
+
+After the two-kind framing and his note that captures can have no label. HIS WORDS, whole:
+
+"This discussion gave me an idea wrt this as well as options. 1. Using predicate language it's going to be more
+likely to use () in a literal to mean no capturing group. 2. we have options that set those but they don't
+inherit because it would be higgledy-piggledy. 3. What if some options were program scoped. Like "m s n"+ then
+you did a @options() to set them such that literals were interpreted that way in future bindings. 4. Options m s
+really can't be inherited because they change semantics in confusing ways if you don't control them. 5. other
+options?"
+
+Class: an IDEA ("What if"), with two OBSERVATIONS (1: in the predicate language `()` in a literal will more
+often be meant as no capturing group; 2: the options that say so are not inherited, "because it would be
+higgledy-piggledy"), a POSITION on inheritance (4: "Options m s really can't be inherited because they change
+semantics in confusing ways if you don't control them"; with his 2026-11-21 lean "probably going to rule that
+only i is inherited"; today's ruled list at a hole is still `i`, `m`, `s`, flags-scope 2026-11-19), and a
+QUESTION (5: "other options?"). Nothing ruled. Spellings his placeholders.
+
+The manager's view (told to him; nothing folded; the subject is frozen for review r83): for it. A program-scoped
+option is LEXICAL: a literal's meaning is fixed by where it is WRITTEN, which the reader sees above it, never by
+where it is used: the same stance as "bindings define scope", label-reference and rx-owns-flags, and the opposite
+of inheritance at a hole. What it would need stated: it applies to literals written after the statement in the
+SAME FILE and never reaches into an imported library (a pinned library cannot change meaning by its importer); a
+flag a literal writes for itself still wins; an inserted literal carries its own file's defaults into a hole.
+Candidates beyond `m s n` (his question 5): `x` / `xx` (how the literal's TEXT is read: the clearest case, and
+refused at a hole today); `i` as a default; `J`; `U`; and the non-PCRE settings of the same kind the documents
+already have or park: the `&`-in-rx-text switch (core/patterns/literals: "by a module or option"), the warning
+selectors and strictness, the capability opt-ins. With `n` as a program default the cell "a capture with no
+label" (an unnamed group) mostly empties, and the open number questions (number-in-loop) lose their subject.
