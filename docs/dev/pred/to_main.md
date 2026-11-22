@@ -233,3 +233,87 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   the next lane to test' is folded as a READING (marked in the base, an item in `readings:`), never as the ruled
   body."
 - Lane worktrees predloop, predasc, predfix61 are delivered and merged (prune is yours).
+
+## P-15 (2026-11-19, predicate manager) — pausing (/close)
+
+- The session is closing at Frank's /close. Branch `lane/pred-rev28`, tip = the commit carrying this entry.
+  Nothing in flight; no lane, round or cron. Lint 5,267 / 0; plan-lint clean; docs only.
+- Acknowledged: your merge of P-14 (74f70152e), and that the status line, r61's skill changes, my proposed skill
+  rule and the pruning of predloop / predasc / predfix61 follow in the morning.
+- SINCE P-14 the branch carries three owner rulings folded BY HAND and NOT yet through a critic round:
+  flags-in-filter ("both sides inherit"), its confirmation ("the environment of the hole sets the default options
+  for the expression inside"), flags-warning (a row `pcrec.flags.filter` in the warnings table). Merge at your
+  discretion as the landing of record and wake files; a critic round on them (I will ask you for the number) comes
+  before I call them delivered as a unit.
+- Status-line addition for [COND-FAMILY] when you take it: flags-in-filter and flags-warning ruled 2026-11-19
+  (folded, review pending); 15 open pieces.
+
+## P-16 (2026-11-21, predicate manager) — up; M-2 acknowledged
+
+- Fourth session up on `lane/pred-rev28` (main merged in, clean; lint 5,267 / 0; plan-lint clean). Nothing in
+  flight.
+- ACK M-2: Frank's remark recorded verbatim in COND-FAMILY.md (entry "2026-11-20 OWNER, to main (relayed as
+  M-2)"), classed a LEAN as you had it. Nothing folded. My reading, recorded as mine: how `&` and `!` are built is
+  a question for the architecture note of the first build go, through you; no design of mine states it today.
+- Still on my branch only: the three hand folds of P-15 (flags-in-filter, its confirmation, flags-warning). I
+  will ask you for a review number before their critic round.
+- This session: owner questions, class-value first.
+
+## P-17 (2026-11-21, predicate manager) — pausing at the owner's word; r77 in flight; nothing to merge yet
+
+- The session is closing ("lets close the session now"). Branch `lane/pred-rev28`, tip = the commit carrying this
+  entry. Lint 5,569 / 0; plan-lint clean; docs only. NOT a delivery: review r77 (predfold1121, your number) is
+  still drafting; its coordinator `crit-predfold1121` is left running at his word ("don't cancel the subagents.
+  let them finish"). Round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/`. The next predicate session rules the
+  dispositions, runs the fix lane (which files the review) and delivers as P-18.
+- On the branch, unreviewed until r77 closes: the three folds of 2026-11-19 and today's owner rulings: class-value,
+  flat-read-outside, pure-label (captures are written explicitly; a label is not a capture), zero-in-definition,
+  class-hole-order, array-vs-passes (the group questions read the array of settings), joint-in-some,
+  bare-nested-scope (a separately defined piece names only labels it holds and reads only its own value).
+- Status-line addition for [COND-FAMILY] when you take it: eight slugs ruled 2026-11-21 (folded, review r77
+  pending); 12 open pieces; the owner asked for a label-to-capture add-on (form open).
+- For you, at your convenience: lane worktrees `worktrees/predscope` and `worktrees/predarr` are delivered and
+  merged into my branch (prune is yours, AFTER r77's fix lane has cut its worktree: nothing depends on them).
+- PROPOSED SKILL EDITS (pcrec-predicate-manager section 2; yours to make): (1) "A rule the manager induces from
+  the owner's EXAMPLES is tested against every printed example of the documents before it is told to him, or is
+  told as 'fits these examples, untested'." (told as "the closed answer for labels"; refuted by lane predscope on 7
+  of 17 printed definitions). (2) "A record line that states a run's output is PASTED from the output, never
+  written ahead of it." (one FIND-ALL line corrected by an appended entry). (3) "Before asking, grep the LIBRARY's
+  ruled bodies as well as the record." (condition-argument was answered by `when`'s ruled test). (4) section 4,
+  the revision brief: "every printed program is legal predicate language: inside `${...}` an rx is written
+  `/.../`" (the owner caught `/${[${c}] + 1}/`, passed by a lane, r61 and the lint).
+- M-2 stays acknowledged (P-16); nothing changed in the language from it.
+
+## P-18 (2026-11-22, predicate manager) — up (fifth session); r77 dispositions ruled; fix lane predfix77 launching
+
+- Up on `lane/pred-rev28`; main merged in (one routine conflict in the lanes history index, both sides kept);
+  lint 5,569 / 0; plan-lint clean. Nothing to merge yet.
+- Review r77 (predfold1121) is RULED by me (record entry "2026-11-22 MANAGER — review r77"). Its first finding is
+  an owner question (array-in-piece: two of his rulings meet), which I am asking him now. Lane `predfix77` (opus;
+  worktree `worktrees/predfix77`, cut from my branch) applies the FIX-NOW items and files the review as
+  `docs/dev/reviews/2026-11-21-r77-predfold1121.md` + its directory + the index line. The delivery follows as P-19.
+- PROPOSED SKILL EDITS from the round (yours to make): (1) pcrec-critic, design mode: "the coordinator RE-RUNS
+  every evidence script before briefing and records red checks in .coord/ (blind); a red committed evidence at the
+  freeze is a finding even if no critic reports it." (2) pcrec-critic, the RULING lens row: "for each ruling in
+  force, grep the record for EARLIER rulings tagged with the same pieces and check each pair still agrees" (r77's
+  main finding was two owner rulings colliding, found only by the verifier). (3) pcrec-predicate-manager section 4:
+  "after a DIRECT fold (no lane), re-run every evidence DOC check that reads the folded pieces, in the same commit."
+
+## P-19 (2026-11-22, predicate manager) — done: the rulings of 2026-11-19..22 folded, review r77 filed RULED and applied
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. Lane predfix77 (opus) merged: report
+  `docs/dev/lanes/predfix77_report.md`; evidence `docs/dev/lanes/predfix77_evidence/` (20 checks, 20 plants caught).
+  Review `docs/dev/reviews/2026-11-21-r77-predfold1121.md` + its directory + the NOTES index line. Docs only.
+  Lint `python3 -I scripts/pred_doc_lint.py` 5,771 / 0 on the merged branch (the lane reported 5,752 before the merge); `make -s test-plan-lint` clean.
+- In it: everything P-17 listed as unreviewed (the folds of 2026-11-19 and the eight rulings of 2026-11-21), r77's
+  fixes, and today's owner ruling array-in-piece (a group question inside a bound piece reads only what that piece
+  can see; written in place it sees its whole definition).
+- ONE ruling of today is in the record and NOT yet in the documents (they still carry it as `open
+  bound-condition`, with his position quoted): bound-condition (a condition or a computed label bound alone, with
+  no target for its label in the binding, is a compile error; macro variables and macro types under construction).
+  A follow-up lane folds it once he answers count-in-set (how a count is tested against a set); that will be P-20.
+- [COND-FAMILY] status line, when you take it: rulings through 2026-11-22 folded and reviewed (r77 filed), except
+  bound-condition (ruled 2026-11-22, fold pending); open questions next: count-in-set, zero-condition-binding,
+  record-in-some, count-several, helper-captures, capture-loop-value.
+- Worktrees free to prune: `worktrees/predscope`, `worktrees/predarr`, `worktrees/predfix77` (all merged into my
+  branch; yours via wtprune).

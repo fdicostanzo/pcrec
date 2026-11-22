@@ -1,0 +1,67 @@
+== the library bodies read from library.md: /\d/ ; repeat(x, min) := /(?:${x}){${min},}/ ; rx.digits := rx.repeat(rx.digit, min = 1)
+== CONTROL: lowered programs against python `re` on independent hand regexes
+CONTROL  ok   example 1 against `(?:[1-9]\d?|0)xx` (0, 0, 0), `rx.digits` against `\d+` (0, 0, 0) of 1365 texts over `019x`; the ordered alternation (0, 0, 0)
+== PREMISE: the printed lines of the manager's folds of today (flat-read-outside, class-value)
+FLATR    ok   WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`pair & (x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`) | WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8] (`date & (v: <5)`, date := `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`)
+CLASSV   ok   `[\dA-Fa-f]` 0123456789ABCDEFabcdef (A 11, a 17) ; `[a-cB]` ['B', 'a', 'b', 'c'] ; `\d` 0123456789 ; the class-value lines in library.md: True
+== CAPT: what the caller gets (captures) against what the program reads (labels)
+   [d = rx.digits] & (d: <100)      captures [] ; labels ['d']
+   capture("d", /\d+/)              captures ['d'] ; labels ['d']
+   pub                              captures ['h'] ; labels ['a', 'h']
+   year                             captures [] ; labels ['_v']
+   B(A) & (d: <100)                 captures [] ; labels ['d']
+   months                           captures [] ; labels ['mname']
+CAPT     ok   every case as pure-label (a) and the `_` statement have it: True ; python `re` groups of `capture("d", /\d+/)`: ['d']
+== the owner's three examples (pure-label entry), lowered from their text
+EX1      ok   WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (d: <100)`, A := `[d = digits]`, B(rx) := `/${rx}xx/`)
+EX2      ok   the body names ['d'], writes []: refused (his "is incorrect"); composed it would equal example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17]
+EX3      ok   the body names ['dd'] and writes ['dd']: legal ; labels ['d', 'dd'], captures [] ; WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
+== NAMES: the manager's reading (a) of the three examples, against every definition the documents print
+         condition       core/conditions/pass-start-read          names ['h', 'n'] writes []                 REFUSED ['h', 'n']
+         computed label  core/values/computed-labels              names ['a', 'b'] writes []                 REFUSED ['a', 'b']
+         computed label  lib/counting/count                       names ['d']      writes []                 REFUSED ['d']
+         computed label  lib/modifiers/length                     names ['ch']     writes []                 REFUSED ['ch']
+         computed label  lib/modifiers/month-numbered             names ['mname']  writes []                 REFUSED ['mname']
+         rx              core/diagnostics/looped-compare          names ['h', 'm'] writes ['h', 'm']         legal
+         rx              core/labels/export                       names ['_v']     writes ['_v']             legal
+         rx              core/holes/bare-condition/labels         names ['c']      writes ['c']              legal
+         rx              core/holes/bare-condition/nested-scope   names ['h']      writes []                 REFUSED ['h']
+         rx              core/holes/bare-condition/nested-scope   names ['h']      writes []                 REFUSED ['h']
+         rx              core/holes/bare-condition/nested-scope   names []         writes []                 legal
+         rx              core/operators/bindings                  names ['year']   writes ['day', 'month', 'year'] legal
+         rx              lib/control/when                         names []         writes []                 legal
+         rx              lib/search/occurrences                   names []         writes ['hit']            legal
+         rx              lib/modifiers/length                     names ['nchars'] writes ['ch']             legal
+         rx              lib/structural/capture                   names []         writes []                 legal
+         rx              lib/records/list-of                      names []         writes []                 legal
+NAMES    ok   17 definitions, all present: True ; refused by the rule as stated: 7 (['computed label', 'condition', 'rx']), the rx definitions among them only nested-scope's two lines
+== CLOSEDB: bare-condition/labels' Composed line, composed against a definition closed to its user's labels
+CLOSEDB  ok   composed (the documents): WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`) | closed: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` []
+== zero-in-definition: `0` is the match so far of the definition it is written in
+ZSEQ     ok   WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`)
+ZNEST    ok   the ruled (a), the inner definition's own `0`: WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`) | the rejected (b): WHOLE `3x` HOLDS, `7x` HOLDS / SEARCHED `a3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0, `7x`@3]
+ZARG     ok   the argument in the caller's definition (the reading): WHOLE `5xx` HOLDS, `xx` FAILS / SEARCHED `a5xx` `5xx`@1 / FIND-ALL `5xx 55xx` [`5xx`@0, `5xx`@5] (`/\d/ SEQ B((0: /\d/))`, B(rx) := `/${rx}xx/`) | in the macro's: WHOLE `5xx` FAILS, `xx` FAILS / SEARCHED `a5xx` FAILS / FIND-ALL `5xx 55xx` []
+ZCBIND   ok   as if written in place, the using definition's `0`: WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${c}x/`, c := `(0: rx.digit)`) | the binding's own `0` (empty at its point): WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` []
+== LOOPVAL: the caller's value for a group in rx text set in a loop: the label against PCRE's capture
+LOOPVAL  ok   WHOLE `3;;` HOLDS, `3;` HOLDS / SEARCHED `x3;;` `3;;`@1 / FIND-ALL `3;; 7;` [`3;;`@0, `7;`@4] ; `3;;`: label None, python `re` capture 3 ; `3;`: ('3', '3') ; `7;`@4: ('7', '7')
+== the class-value readings: a caseless single character; byte mode
+CASELESS ok   python `re` (str mode), `(?i)k` over every codepoint, ascending: ['0x4b', '0x6b', '0x212a']
+BYTES    ok   byte mode `[A-C\xe9\x80]`: by byte value ['0x41', '0x42', '0x43', '0x80', '0xe9'] ; equals the Latin-1 codepoint order: True
+== WHEN: condition-argument's run, `when`'s body lowered from library.md, the test resolved in the caller
+WHEN     ok   WHOLE `n:42` HOLDS, `n:ab` FAILS, `w:ab` HOLDS, `w:42` HOLDS / SEARCHED `n:ab w:ab` `w:ab`@5 / FIND-ALL `n:42 n:ab w:ab n:7x` [`n:42`@0, `w:ab`@10, `n:7`@15] ; `when`'s body names [] (the test's `kind` is the caller's)
+RECORD   ok   missing from the record: [] ; the pure-label run re-run: WHOLE `42` HOLDS, `100` FAILS, `042` FAILS / SEARCHED `x100 42` `10`@1 / FIND-ALL `100 42 7` [`10`@0, `0`@2, `42`@4, `7`@7]
+QUOTES   ok   13 quoted sentences; missing from the record: [] ; not quoted in the documents: []
+== DOC: every formatted line occurs verbatim in the documents
+   [flat-read-outside] WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`pair & (x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`)
+   [flat-read-outside] WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8] (`date & (v: <5)`, date := `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`)
+   [nested-scope] WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (d: <100)`, A := `[d = digits]`, B(rx) := `/${rx}xx/`)
+   [nested-scope] WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
+   [match-so-far] WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`)
+   [nested-scope] WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
+   [match-so-far] WHOLE `5xx` HOLDS, `xx` FAILS / SEARCHED `a5xx` `5xx`@1 / FIND-ALL `5xx 55xx` [`5xx`@0, `5xx`@5] (`/\d/ SEQ B((0: /\d/))`, B(rx) := `/${rx}xx/`)
+   [bare-condition] WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${c}x/`, c := `(0: rx.digit)`)
+   [nested-scope] Example 2, the composed reading he refused: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17]
+   [bare-condition] the binding's own `0`: WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` []
+   [labels-vs-captures] WHOLE `3;;` HOLDS, `3;` HOLDS / SEARCHED `x3;;` `3;;`@1 / FIND-ALL `3;; 7;` [`3;;`@0, `7;`@4]
+DOC      ok   11 lines; missing: []
+predscope_model: 20 checks, 0 failed

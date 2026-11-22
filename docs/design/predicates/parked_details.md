@@ -184,6 +184,7 @@ history:
     the draft's `length(S)` body, is a candidate to be argued, not a trigger met).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the field reference is the paused sigil.
+- 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-7); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the trigger's "counting every pass" became "counting every setting" (`length` and `count` count settings since array-vs-passes).
 
 ## parked/ideas/label-twice — A meaning for a label named twice in one condition
 slugs: 
@@ -618,6 +619,7 @@ history:
 ## parked/ideas/user-doc-traps — For the user documentation: the things a reader will get wrong
 slugs: 
 rulings:
+- 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); his observation (discoverability, not a ruling) puts the "same item" idiom on this list: item 30
 - 2026-11-17 (class: PRINCIPLE, reflections) "Also, I and try to keep this in mind, it's a matching language not a finding language." (record: "2026-11-17 OWNER, on what kind of language this is")
 - 2026-11-17 (class: RULING; the trap a remark) "if there was a warning like blah.unused, the library could define mod.fn.unused and both could be ignored. Not sure if that's helpful or dangerous." (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path")
 rejected:
@@ -743,7 +745,7 @@ history:
     25. A NAME IS PRIVATE WHEN IT STARTS WITH `_`, AND `[_ = A]` HIDES ALL OF A's NAMES (export-rule, ruled
         2026-11-18). Outside a binding a part's public labels pass through, a hole and the sequence operator alike
         (hole-export, 2026-11-19); a flat `v` outside `date := [y = year] SEQ "-" SEQ [m = month]` reads the last
-        mention, the month's (the manager's reading; open: flat-read-outside): write `m.v` to say which. Spellings
+        mention, the month's (ruled 2026-11-21: flat-read-outside): write `m.v` to say which. Spellings
         are placeholders. Added by lane predspec26; restated by lane predfix61.
     26. A PART CANNOT REFER TO A NAME IT DOES NOT DEFINE (free-name, ruled 2026-11-18: "Catastrophic. The rx should
         export the group."). `B := /\k<h>/` used after a part that sets h is a compile error, not a reference to that
@@ -757,11 +759,18 @@ history:
         (product-order, removal, ruled 2026-11-18): `/a|\d{${m},${M}}/` with m := [5], M := [2] never matches, not
         even `a`; written through `repeat` (its own literal) the `a` survives. Order the values to change which copy
         is tried first (longest first). Added by lane predspec26.
+    30. "SAME ITEM" IS WRITTEN ON THE ITEM (joint-in-some, ruled 2026-11-21; the owner: "no one would know to write
+        it"). The group questions read the array of each name's settings (array-vs-passes, ruled 2026-11-21), so
+        `some((h: "5", m: "3"))` is "some h is 5 and some m is 3", not "one item holds both", and a joint entry
+        inside a group question is refused. To ask "some item has h 5 and m 3", label the item only where it meets
+        the condition, then ask on that label: `([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))`,
+        item := `/(?<h>\d)(?::(?<m>\d))?,/`: WHOLE `5:3,` HOLDS, `5,2:3,` FAILS (lane predarr, IDIOM). Added by lane
+        predarr.
   - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
     documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane predfix61, review r61 F-B, REACH-6): item 25 taught the rule hole-export revised ("a bare `v` an error"); its second sentence until then, verbatim: "Outside a binding a reader sees only its own public labels and its parts' public labels by path: with `date := [y = year] SEQ "-" SEQ [m = month]`, write `m.v`, not `v`." Restated under the reading that stands today (core/labels/export/flat-read-outside).
-
+- 2026-11-21 (lane predarr, joint-in-some): item 30 appended to the list (the record's reading (b) of that entry); a rulings item for his observation.
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
 rulings:
@@ -822,6 +831,7 @@ history:
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): the owner's message (2026-11-17, late evening) is not in the record; the ideas file's quote is its only text, so nothing for rulings:.
 - 2026-11-19 (lane preddoc6, review r60 FIXVER-3): the line above held only for the 2026-11-17 message; the record DOES carry the 2026-11-18 one (free-name, "(4) OBSERVATION, his, not a ruling ... Added to predicates_future item 26"), now a `rulings:` item.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-3): the base Trigger line restored to the ideas file's words (it had been reworded).
+- 2026-11-21 (lane predscope; a source line, nothing ruled): his question "does that mean that v is not a label but a label variable?" (record: "2026-11-21 OWNER, discussing bare-nested-scope: rules on literals or compiler rewrites; is `v` a label variable; `inner(digits)`; what the compiled C exports"); the manager's answer there: `v` is an ordinary rx parameter, and a macro that names the label to test itself (`small(L) := (L: <5)`) would need this parked label parameter. His example of the same day: "C cannot see rx as its a binding variable not a label." (pure-label). The trigger is unchanged.
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 
@@ -1002,6 +1012,7 @@ history:
     opt-in (§6.2); the 11-09 "numbers are captures" against number-names (RULED 2026-11-18).
   - TRIGGER: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet: at the expression level `[x = A]` already makes a label and no capture (pure-label), so the idea is the rx TEXT spelling only; its second open point (does `(?<x>...)` return without the opt-in) is answered by pure-label statement 5.
 
 ## parked/ideas/array-in-hole — The array form in a hole, `${@y}`
 slugs: array-in-hole

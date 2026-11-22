@@ -1,0 +1,121 @@
+== library bodies read from library.md: occurrences /(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/ ; repeat [('x, n', '/(?:${x}){${n}}/'), ('x, min, max', '/(?:${x}){${min},${max}}/'), ('x, min', '/(?:${x}){${min},}/')] ; rx.digit /\d/ ; rx.digits rx.repeat(rx.digit, min = 1) ; chars ([ch = /(?s:.)/])* ; nchars count((ch: /(?s:.)/)) ; any_case /(?i:${rx})/
+== libpcre2-8 10.46 2025-08-27
+== CONTROL: lowered programs without conditions against python `re` on hand regexes
+CONTROL   ok   of 341 texts over `ab;7`: `"ab" | "a"` (0, 0, 0), `(?:a|ab)??;` (0, 0, 0), rx.repeat(.., min = 2, max = 2) (0, 0, 0), `(?i:a[b7])` (0, 0, 0)
+== ARRPIECE: array-in-piece (b): a bound piece's group question reads what the piece sees; in place, A's too
+   Bound first: WHOLE `7` FAILS, `7;1` FAILS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h: "7"))}/`)
+   Written in place: WHOLE `7` HOLDS, `7;1` HOLDS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14] (`A SEQ /(?:;(?<h>\d))*${some((h: "7"))}/`, A := `/(?<h>\d)/`)
+ARRPIECE  ok   bound first = the record's `own` line: True ; in place = its `entire` line: True ; of 1365 texts over `71;x`: bound first against `\d(?:;\d)*;7(?:;\d)*` (0, 0, 0), in place against `(?:7|\d(?:;\d)*;7)(?:;\d)*` (0, 0, 0)
+== ARRREAD: readings (b) a piece using A sees A's settings, (c) count and h[k] alike, (d) an `&` operand in place
+   In an `&` operand, one definition (a reading): WHOLE `7` HOLDS, `7;1` HOLDS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14] (`/(?<h>\d)${/(?:;(?<h>\d))*/ & some((h: "7"))}/`)
+   The operand's own stretch only (not the reading): WHOLE `7` FAILS, `7;1` FAILS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14] (the same program)
+ARRREAD   ok   of 1365 texts: (b) `U := A SEQ /..some../` against the in-place line's program (0, 0, 0) ; (c) `h[1]` bound first against `\d;7(?:;\d)*` and in place against `7(?:;\d)*` ((0, 0, 0), (0, 0, 0)) ; (d) the definition's settings against `(?:7|\d(?:;\d)*;7)(?:;\d)*` (0, 0, 0), the operand-only rival against `\d(?:;\d)*;7(?:;\d)*` (0, 0, 0)
+== SEQZERO: `0` of a condition joined by `&` written as a sequence operand, and in a hole
+   As a sequence operand: WHOLE `12` HOLDS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34 5` [`12`@0, `34`@3] (`/\d/ SEQ (/\d/ & (0: /\d/))`)
+   hole spelling: WHOLE `12` HOLDS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34 5` [`12`@0, `34`@3] (`/\d${/\d/ & (0: /\d/)}/`)
+   `A & B` form:  WHOLE `12` HOLDS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34 5` [`12`@0, `34`@3] (`/\d/ SEQ (/\d/ & /\d/)`)
+   Definition-wide `0` (not the reading): WHOLE `12` FAILS / SEARCHED `x12` FAILS / FIND-ALL `12 34 5` [] (the same program)
+SEQZERO   ok   of 121 texts over `12x`: the sequence operand against `\d\d` (0, 0, 0) ; the hole spelling against `A & B` (0, 0, 0) ; sequence against hole (0, 0, 0) ; definition-wide `0` would FAIL on `12`
+== OCCZERO: `0` in an `occurrences` argument, three candidate marks (caller's definition, the body, the hit)
+   The caller's definition (the reading today): WHOLE `a5` FAILS, `x5` FAILS, `5` HOLDS / SEARCHED `-x5` `5`@2 / FIND-ALL `a5 x5` [`5 x5`@1] (`/x?/ SEQ occurrences(/\d/ SEQ (0: /\d/), min = 1)`)
+   The body of `occurrences`: WHOLE `a5` FAILS, `x5` HOLDS, `5` HOLDS / SEARCHED `-x5` `x5`@1 / FIND-ALL `a5 x5` [`5 x5`@1] (`/x?/ SEQ occurrences(/\d/ SEQ (0: /\d/), min = 1)`)
+   The hit's own text: WHOLE `a5` HOLDS, `x5` HOLDS, `5` HOLDS / SEARCHED `-x5` `-x5`@0 / FIND-ALL `a5 x5` [`a5 x5`@0] (`/x?/ SEQ occurrences(/\d/ SEQ (0: /\d/), min = 1)`)
+OCCZERO   ok   the three readings print 3 different lines ; of 121 texts over `12x`: the caller's against `\d(?s:.*)` (0, 0, 0), the body's against `x?\d(?s:.*)` (0, 0, 0), the hit's against `x?(?:(?s:.*?)\d){1,}(?s:.*)` (0, 0, 0)
+== DUPNAME: libpcre2-8: `\k<h>` and the by-name capture of a name two groups carry
+   Two groups of one name: WHOLE `7;37` HOLDS, `7;33` FAILS, `77` HOLDS / SEARCHED `x7;37` `7;37`@1 / FIND-ALL `7;37 7;33 33` [`7;37`@0, `33`@7, `33`@10] (`/(?J)(?<h>\d)(?:;(?<h>\d))?\k<h>/`: `\k<h>` reads the first set group in pattern order)
+DUPNAME   ok   WHOLE `7;37` `7;33` `77`: [True, False, True] ; by-name `h` on `7;3`: 7, on `7`: 7 ; without `(?J)` libpcre2 refuses: two named subpatterns have the same name (PCRE2_DUPNAMES not set) ; the label h on `7;3` (last mention): 3
+== LOOPPIECE: a user's loop around a piece against its written-out form, B reading its label before its group
+   A user's loop: WHOLE `7;3;` HOLDS, `3;7;` HOLDS / SEARCHED `x7;3;` `7;3;`@1 / FIND-ALL `7;3; 3;7;` [`7;3;`@0, `3;7;`@5] (`rx.repeat(B SEQ ";", min = 2, max = 2)`, B := `/${NOT (c: >= 5)}(?<c>\d)/`)
+   Written out: WHOLE `7;3;` HOLDS, `3;7;` HOLDS / SEARCHED `x7;3;` `7;3;`@1 / FIND-ALL `7;3; 3;7;` [`7;3;`@0, `3;7;`@5] (`B SEQ ";" SEQ B SEQ ";"`, B := `/${NOT (c: >= 5)}(?<c>\d)/`)
+   One definition, looped: WHOLE `7;3;` FAILS, `3;7;` HOLDS / SEARCHED `x7;3;` FAILS / FIND-ALL `7;3; 3;7;` [`3;7;`@5] (`/(?:${NOT (c: >= 5)}(?<c>\d);){2}/`)
+   A user's loop under the withdrawn reading: WHOLE `7;3;` FAILS, `3;7;` HOLDS / SEARCHED `x7;3;` FAILS / FIND-ALL `7;3; 3;7;` [`3;7;`@5]
+LOOPPIECE ok   of 364 texts over `37;`: the loop against the written-out form (0, 0, 0), against `\d;\d;` (0, 0, 0) ; one definition against `[0-4];\d;` (0, 0, 0) ; under the withdrawn reading the loop parts
+== SEALED: the nested-scope and bare-condition/labels lines the manager folded by hand, lowered here
+   Two definitions: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
+   One definition: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`/(?<c>\d)${(c: >= 5)}(?<c>\d)/`)
+   Passing the condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${inner((h: <5))}/`, inner(c) := `/x${c}/`)
+   Match so far: WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
+   Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`)
+   Example 3: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
+SEALED    ok   of 31 texts over `73`: two definitions against the never-matching `(?!)` (0, 0, 0), one definition against `[5-9]\d` (0, 0, 0) ; case 1 refused: inner names a label it does not hold: h ; example 2 refused: B names a label it does not hold: d
+== BOUND: a condition bound to a name of its own, under the two candidates of bound-condition
+   (a) where it is used: WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${c}x/`, c := `(0: rx.digit)`)
+   (b) sealed, its own `0`: WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` [] (the same program)
+   A macro returning a condition, (a): WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x7 3` `3`@3 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`/(?<h>\d)${lt5(<5)}/`, lt5(S) := `(h: S)`)
+   (b) on the macro: lt5 names a label it does not hold: h ; (b) on `c := (h: <5)`: c names a label it does not hold: h
+BOUND     ok   of 121 texts over `17x`: (a) against `\dx` (0, 0, 0), (b) against `(?!)` (0, 0, 0) ; under (b) the macro and a named condition naming h are refused at their definition
+== ZEROARG: `/\d/ SEQ B((0: /\d/))`: the argument read in its caller's definition (a reading)
+   An argument: WHOLE `5xx` HOLDS, `xx` FAILS / SEARCHED `a5xx` `5xx`@1 / FIND-ALL `5xx 55xx` [`5xx`@0, `5xx`@5] (`/\d/ SEQ B((0: /\d/))`, B(rx) := `/${rx}xx/`)
+   the hole's definition instead (the statement read without its clause): WHOLE `5xx` FAILS, `xx` FAILS / SEARCHED `a5xx` FAILS / FIND-ALL `5xx 55xx` []
+ZEROARG   ok   of 31 texts over `5x`: the caller's reading against `\dxx` (0, 0, 0) ; read in B's definition `5xx` FAILS
+== CHARS: `chars` re-spelled with a part label: every printed `length` line, old and new body
+   old body True | new body True | printed WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (nchars: ==3)`)
+CHARS     ok   1 printed `length` lines, each the same under the old body /(?:(?<ch>(?s:.)))*/ and the new ([ch = /(?s:.)/])*: [True] ; captures the bodies make: old [('chars', 'ch')], new []
+== ANYCASE: `any_case(/[a-z]x/ & /[A-Z]x/)`: the candidate body (sides take the flag first) against native
+   The candidate body: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-Ax` `Ax`@1 / FIND-ALL `ax 7x AX` [`ax`@0, `AX`@6] (`any_case(/[a-z]x/ & /[A-Z]x/)`, the body `/(?i:${rx})/`)
+   Native: WHOLE `ax` FAILS, `AX` FAILS / SEARCHED `-Ax` FAILS / FIND-ALL `ax 7x AX` [] (the same call)
+ANYCASE   ok   of 820 texts over `aAbBxXzZ7` (length <= 3): members of the argument [] ; the body WHOLE on 16 (python `re`, each side under re.I: 16), native on 0
+== ARRORDER: the array's order with a lookahead; `h[k]` past the array's end; a `$` read inside a group question
+   A lookahead in a pass: WHOLE `12` HOLDS, `123` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 12` [`123`@0, `12`@4] (`/(?:(?=\d(?<h>\d))(?<h>\d))+\d/ & (h[2]: "1")`)
+   Past the end: WHOLE `3;` HOLDS, `3;;` HOLDS, `3;5;` FAILS / SEARCHED `x3;` `3;`@1 / FIND-ALL `3; 3;5;` [`3;`@0, `3;`@3, `5;`@5] (`/(?:(?<h>\d)?;)+/ & NOT (h[2]: "5")`)
+   A read inside: WHOLE `11,23,` FAILS, `12,31,` HOLDS, `12,` FAILS / SEARCHED `x11,23,` `11,`@1 / FIND-ALL `11,23, 12,31, 12,` [`11,`@0, `12,31,`@7] (`/(?:(?<h>\d)(?<m>\d),)+/ & some((h: $m))`)
+ARRORDER  ok   the settings of h on `12` in the order made: ['2', '1'] (the lookahead's first) ; WHOLE past the end against the direct count (python `re` fullmatch `(?:\d?;)+` and the second digit not 5): 0 of 781 differ (a missing k-th setting fails the test, NOT of it holds) ; `$m` reads the last pass's m
+== EVERYNONE: every-pass's settings form and item form on a loop that can make no pass
+   No pass, every setting: WHOLE `x` FAILS, `7,x` HOLDS / SEARCHED `-x` FAILS / FIND-ALL `x 7,x 1,x` [`7,x`@2] (`/(?:(?<d>\d),)*x/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+   No pass, the item form: WHOLE `x` HOLDS, `7,x` HOLDS / SEARCHED `-x` `x`@1 / FIND-ALL `x 7,x 1,x` [`x`@0, `7,x`@2, `x`@8] (`/(?:(?<d>\d)${(d: "7")},)*x/`)
+EVERYNONE ok   on `x` (no pass): the settings form FAILS (`some` false on an empty array), the item form HOLDS
+== LIFTORDER: `/${/[${c}]/ + 1}/`, c := [`9`, `0`], and `/${/[09]/ + 1}/`, lowered from the program text
+   WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 1 101` [`10`@0, `1`@3, `10`@5, `1`@7] (`/${/[${c}]/ + 1}/`, c := [`9`, `0`]: the alternation `[9] | [0]`, `(?:10|1)`)
+   The class written by hand: WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 1 101` [`1`@0, `1`@3, `1`@5, `1`@7] (`/${/[09]/ + 1}/` is `(?:1|10)`)
+LIFTORDER ok   lowered from the text: (?:10|1) and (?:1|10)
+== RECORD: `some((h: "5", m: "3"))` read as the product of its entries; its joint spelling refused
+   The record, the reading today: WHOLE `5:1,2:3,` HOLDS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` `5:1,2:3,`@5 / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:1,2:3,`@0, `5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`; the joint spelling `some(((h, m): ("5", "3")))` is a compile error)
+RECORD    ok   of 341 texts over `53:,`: WHOLE against the direct product (some h is 5 and some m is 3) 0 differ ; the joint spelling refused: a joint entry inside a group question
+== HISEX: his two examples, lowered from the text (the record ran the hand-lowered `5` and `.5`)
+   His first example: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5] (`A := /\d${(0: 5)}/`)
+   His second example: WHOLE `x5` HOLDS, `x7` FAILS, `55` HOLDS / SEARCHED `a7 b5` `b5`@3 / FIND-ALL `x5 y7 55` [`x5`@0, ` 5`@5] (`C := /.${A & (0: 5)}/`, A := `/\d/`)
+HISEX     ok   of 85 texts over `57x `: his first against `5` (0, 0, 0), his second against `.5` (0, 0, 0)
+== QUOTES: the owner's words this lane quotes, verbatim in the record
+QUOTES    ok   17 quoted sentences; missing from the record: []
+== MARKS: array-in-piece stated where the array is, the bound-condition readers, the new open pieces
+MARKS     ok   bound-condition readers [('core/conditions/pass-start-read', True), ('core/values/computed-labels', True), ('core/labels/labels-vs-captures/array-vs-passes', True), ('lib/counting/count', True), ('lib/modifiers/length', True), ('lib/modifiers/month-numbered', True), ('core/holes/bare-condition', True)] ; array-in-piece stated [('core/labels/labels-vs-captures', True), ('core/labels/labels-vs-captures/array-vs-passes', True), ('core/holes/bare-condition/nested-scope', True), ('lib/counting/some', True), ('lib/counting/count', True), ('lib/counting/occurs', True)] ; open pieces [('core/holes/bare-condition/bound-condition', True), ('core/conditions/form/record-in-some', True)] ; the gloss out of match-so-far's statement: True
+== DOC: every formatted line occurs verbatim in the documents (report lines in the report)
+   [labels-vs-captures] Bound first: WHOLE `7` FAILS, `7;1` FAILS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14] (`A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h: "7"))}/`)
+   [labels-vs-captures] Written in place: WHOLE `7` HOLDS, `7;1` HOLDS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14] (`A SEQ /(?:;(?<h>\d))*${some((h: "7"))}/`, A := `/(?<h>\d)/`)
+   [array-vs-passes] In an `&` operand, one definition (a reading): WHOLE `7` HOLDS, `7;1` HOLDS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14] (`/(?<h>\d)${/(?:;(?<h>\d))*/ & some((h: "7"))}/`)
+   [report] The operand's own stretch only (not the reading): WHOLE `7` FAILS, `7;1` FAILS, `1;7` HOLDS, `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14] (the same program)
+   [match-so-far] As a sequence operand: WHOLE `12` HOLDS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34 5` [`12`@0, `34`@3] (`/\d/ SEQ (/\d/ & (0: /\d/))`)
+   [report] Definition-wide `0` (not the reading): WHOLE `12` FAILS / SEARCHED `x12` FAILS / FIND-ALL `12 34 5` [] (the same program)
+   [report] The caller's definition (the reading today): WHOLE `a5` FAILS, `x5` FAILS, `5` HOLDS / SEARCHED `-x5` `5`@2 / FIND-ALL `a5 x5` [`5 x5`@1] (`/x?/ SEQ occurrences(/\d/ SEQ (0: /\d/), min = 1)`)
+   [report] The body of `occurrences`: WHOLE `a5` FAILS, `x5` HOLDS, `5` HOLDS / SEARCHED `-x5` `x5`@1 / FIND-ALL `a5 x5` [`5 x5`@1] (`/x?/ SEQ occurrences(/\d/ SEQ (0: /\d/), min = 1)`)
+   [report] The hit's own text: WHOLE `a5` HOLDS, `x5` HOLDS, `5` HOLDS / SEARCHED `-x5` `-x5`@0 / FIND-ALL `a5 x5` [`a5 x5`@0] (`/x?/ SEQ occurrences(/\d/ SEQ (0: /\d/), min = 1)`)
+   [labels-vs-captures] Two groups of one name: WHOLE `7;37` HOLDS, `7;33` FAILS, `77` HOLDS / SEARCHED `x7;37` `7;37`@1 / FIND-ALL `7;37 7;33 33` [`7;37`@0, `33`@7, `33`@10] (`/(?J)(?<h>\d)(?:;(?<h>\d))?\k<h>/`: `\k<h>` reads the first set group in pattern order)
+   [nested-scope] A user's loop: WHOLE `7;3;` HOLDS, `3;7;` HOLDS / SEARCHED `x7;3;` `7;3;`@1 / FIND-ALL `7;3; 3;7;` [`7;3;`@0, `3;7;`@5] (`rx.repeat(B SEQ ";", min = 2, max = 2)`, B := `/${NOT (c: >= 5)}(?<c>\d)/`)
+   [nested-scope] Written out: WHOLE `7;3;` HOLDS, `3;7;` HOLDS / SEARCHED `x7;3;` `7;3;`@1 / FIND-ALL `7;3; 3;7;` [`7;3;`@0, `3;7;`@5] (`B SEQ ";" SEQ B SEQ ";"`, B := `/${NOT (c: >= 5)}(?<c>\d)/`)
+   [nested-scope] One definition, looped: WHOLE `7;3;` FAILS, `3;7;` HOLDS / SEARCHED `x7;3;` FAILS / FIND-ALL `7;3; 3;7;` [`3;7;`@5] (`/(?:${NOT (c: >= 5)}(?<c>\d);){2}/`)
+   [report] A user's loop under the withdrawn reading: WHOLE `7;3;` FAILS, `3;7;` HOLDS / SEARCHED `x7;3;` FAILS / FIND-ALL `7;3; 3;7;` [`3;7;`@5]
+   [nested-scope] Two definitions: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
+   [nested-scope] One definition: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`/(?<c>\d)${(c: >= 5)}(?<c>\d)/`)
+   [nested-scope] Passing the condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${inner((h: <5))}/`, inner(c) := `/x${c}/`)
+   [nested-scope] Match so far: WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
+   [nested-scope] Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`)
+   [nested-scope] Example 3: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
+   [bound-condition] (a) where it is used: WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${c}x/`, c := `(0: rx.digit)`)
+   [bound-condition] (b) sealed, its own `0`: WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` [] (the same program)
+   [bound-condition] A macro returning a condition, (a): WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x7 3` `3`@3 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`/(?<h>\d)${lt5(<5)}/`, lt5(S) := `(h: S)`)
+   [match-so-far] An argument: WHOLE `5xx` HOLDS, `xx` FAILS / SEARCHED `a5xx` `5xx`@1 / FIND-ALL `5xx 55xx` [`5xx`@0, `5xx`@5] (`/\d/ SEQ B((0: /\d/))`, B(rx) := `/${rx}xx/`)
+   [report] WHOLE `5xx` FAILS, `xx` FAILS / SEARCHED `a5xx` FAILS / FIND-ALL `5xx 55xx` []
+   [any-case] The candidate body: WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-Ax` `Ax`@1 / FIND-ALL `ax 7x AX` [`ax`@0, `AX`@6] (`any_case(/[a-z]x/ & /[A-Z]x/)`, the body `/(?i:${rx})/`)
+   [any-case] Native: WHOLE `ax` FAILS, `AX` FAILS / SEARCHED `-Ax` FAILS / FIND-ALL `ax 7x AX` [] (the same call)
+   [array-vs-passes] A lookahead in a pass: WHOLE `12` HOLDS, `123` HOLDS / SEARCHED `x123` `123`@1 / FIND-ALL `123 12` [`123`@0, `12`@4] (`/(?:(?=\d(?<h>\d))(?<h>\d))+\d/ & (h[2]: "1")`)
+   [array-vs-passes] Past the end: WHOLE `3;` HOLDS, `3;;` HOLDS, `3;5;` FAILS / SEARCHED `x3;` `3;`@1 / FIND-ALL `3; 3;5;` [`3;`@0, `3;`@3, `5;`@5] (`/(?:(?<h>\d)?;)+/ & NOT (h[2]: "5")`)
+   [array-vs-passes] A read inside: WHOLE `11,23,` FAILS, `12,31,` HOLDS, `12,` FAILS / SEARCHED `x11,23,` `11,`@1 / FIND-ALL `11,23, 12,31, 12,` [`11,`@0, `12,31,`@7] (`/(?:(?<h>\d)(?<m>\d),)+/ & some((h: $m))`)
+   [every-pass] No pass, every setting: WHOLE `x` FAILS, `7,x` HOLDS / SEARCHED `-x` FAILS / FIND-ALL `x 7,x 1,x` [`7,x`@2] (`/(?:(?<d>\d),)*x/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+   [every-pass] No pass, the item form: WHOLE `x` HOLDS, `7,x` HOLDS / SEARCHED `-x` `x`@1 / FIND-ALL `x 7,x 1,x` [`x`@0, `7,x`@2, `x`@8] (`/(?:(?<d>\d)${(d: "7")},)*x/`)
+   [lift-order] WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 1 101` [`10`@0, `1`@3, `10`@5, `1`@7] (`/${/[${c}]/ + 1}/`, c := [`9`, `0`]: the alternation `[9] | [0]`, `(?:10|1)`)
+   [lift-order] The class written by hand: WHOLE `10` HOLDS, `1` HOLDS / SEARCHED `x10` `1`@1 / FIND-ALL `10 1 101` [`1`@0, `1`@3, `1`@5, `1`@7] (`/${/[09]/ + 1}/` is `(?:1|10)`)
+   [record-in-some] The record, the reading today: WHOLE `5:1,2:3,` HOLDS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` `5:1,2:3,`@5 / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:1,2:3,`@0, `5:3,`@14] (`/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`; the joint spelling `some(((h, m): ("5", "3")))` is a compile error)
+   [bound-condition] His first example: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5] (`A := /\d${(0: 5)}/`)
+   [bound-condition] His second example: WHOLE `x5` HOLDS, `x7` FAILS, `55` HOLDS / SEARCHED `a7 b5` `b5`@3 / FIND-ALL `x5 y7 55` [`x5`@0, ` 5`@5] (`C := /.${A & (0: 5)}/`, A := `/\d/`)
+DOC       ok   37 lines (7 in the report); missing: []
+predfix77_model: 20 checks, 0 failed
