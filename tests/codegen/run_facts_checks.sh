@@ -573,6 +573,37 @@ else
     ok "[facts-sl1] $nsl witnesses list land_char and width exactly as the definitions give them (all 4 reachable declines)"
 fi
 
+# 9b. [K159] THE WIDTH WALK'S CPU BOUND (growth-time-bound ruling, Frank
+# 2026-11-21: CPU seconds). Nested `+` 14 deep (`(?:c|b)+` wrapped 13 more
+# times as `(?:X|b)+`; the NFA doubles per level, about 65,000 states) once
+# cost n frontier closures of an n-state frontier in `pcrec_width_walk`:
+# 20.2 s CPU at main 715b90b5f (lane plusprof) and the same at 92f5e77b6.
+# The repeated-frontier stop (src/facts/kset.c) brings the WHOLE compile to
+# 0.07 s CPU on the Linux dev box (lane k159fix, 2026-11-22). BOUND 5 s CPU,
+# DERIVED: 70x the fixed cost (a slower box or a sanitized build stays far
+# under it) and 4x under the unfixed cost on the FASTEST box we have (every
+# other box is slower, so the old walk fails everywhere); CPU, not wall, so
+# a loaded box does not move it, with a 120 s wall bound as the hang guard.
+# The value is written by hand: shortest match one byte (`c`), unbounded.
+WD="$ROOT_DIR/scripts/watchdog"
+wp='c|b'
+for i in $(seq 1 14); do
+    if [ "$i" -lt 14 ]; then wp="(?:$wp)+|b"; else wp="(?:$wp)+"; fi
+done
+"$WD" -l k159-width -c 5 -s 120 -L "$WORKDIR/wd.log" -- \
+    "$PCREC" --emit-facts --pattern "$wp" > "$WORKDIR/wb.l" 2> "$WORKDIR/wb.err"
+wrc=$?
+wbv="$(sect "$WORKDIR/wb.l" facts | grep -F "$(printf 'fact=width\t')" | col value)"
+if [ "$wrc" -eq 123 ]; then
+    bad "[facts-width-cpu] nested + 14 deep spent more than 5 CPU seconds (K159: the width walk lost its repeated-frontier stop)"
+elif [ "$wrc" -ne 0 ]; then
+    bad "[facts-width-cpu] nested + 14 deep: rc $wrc ($(head -1 "$WORKDIR/wb.err"))"
+elif [ "$wbv" != '[1,inf)' ]; then
+    bad "[facts-width-cpu] nested + 14 deep: width [$wbv], by hand [[1,inf)]"
+else
+    ok "[facts-width-cpu] nested + 14 deep lists width [1,inf) within 5 CPU seconds"
+fi
+
 # ---- [RUN-POS-SET] stage 2p: the piece set ----------------------------------
 # `req_pieces` (docs/design/alt_normal_form.md §3.4; facts_listing.md
 # §4.1.2) on witnesses whose values are an INDEPENDENT model's
