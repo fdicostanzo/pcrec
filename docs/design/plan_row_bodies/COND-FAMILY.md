@@ -7433,3 +7433,24 @@ argument, where and whether A's `d` is set is B's private business (inside a loo
 `A.d` is legal in the caller exactly where `d` is visible through the call, and it then reads `d` as it reaches
 the caller. On (2): agreed, and it follows from what is ruled: inside B the argument is the parameter `rx`, "a
 binding variable not a label" (2026-11-21), so the call's label `c` holds no part named `A`.
+
+### 2026-11-22 OWNER RULING — closed-argument: a (where a macro closes its argument's labels, the caller's `A.d` is a compile error)
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings
+
+Asked to confirm, after the manager withdrew leaning (b): "(a), stated as I would enter it: `A.d` is legal in the
+caller exactly where `d` is visible through the call, and it reads `d` as it reaches the caller. Where B closes
+the argument, `A.d` is a compile error." ... "Reply "closed-argument: a" and I enter it as the ruling." HIS WORDS,
+whole (he typed the slug "closed-arguments"):
+
+"closed-arguments: a"
+
+Class: a RULING on the slug, answer (a), on the statement as put: for an argument that is a binding, the caller's
+`A.d` is legal exactly where `d` is visible through the call, and reads `d` as it reaches the caller; where the
+macro closes the argument's labels (`B(rx) := /${[_ = rx]}xx/`), `A.d` is a compile error. It also settles
+call-prefix case 2 (his lean "i'd say A.d is legal there"): legal, under this condition. His reason, from the
+entry before: "what would A.d mean if d no longer was visible?".
+
+The manager's readings (marked; for lane predcall as R-1): (a) "visible through the call" is by core/labels/export
+(a `_` part label or `[_ = rx]` in the macro's body closes it); (b) an argument the body uses twice: `A.d` is the
+last mention as it reaches the caller; (c) the compile error is at the reference, and names the macro that closes
+the label (the message is the manager's call).
