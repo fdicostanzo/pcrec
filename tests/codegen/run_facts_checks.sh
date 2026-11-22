@@ -579,11 +579,11 @@ fi
 # cost n frontier closures of an n-state frontier in `pcrec_width_walk`:
 # 20.2 s CPU at main 715b90b5f (lane plusprof) and the same at 92f5e77b6.
 # The repeated-frontier stop (src/facts/kset.c) brings the WHOLE compile to
-# 0.05 s CPU on the Linux dev box (lane k159r81, 2026-11-22, 3 runs 0.04 to
-# 0.05 s, 52 MB RSS; the box was LOADED by the gate's count, phantom iowait
-# load, busy-cores 0.28; review r81 measured 0.28 s CPU under real load).
-# BOUND 5 s CPU, DERIVED: 18x the worst fixed cost measured (0.28 s; 100x
-# the quiet one) so a slower box or a sanitized build stays far under it,
+# 0.04 to 0.09 s CPU on the Linux dev box (lane k159r81, 2026-11-22, 6 runs,
+# 52 MB RSS; loadshame never read QUIET: busy-cores 0.28 to 5.8, some of the
+# load phantom iowait; review r81 measured 0.28 s CPU under load).
+# BOUND 5 s CPU, DERIVED: 18x the worst fixed cost measured (0.28 s; 50x
+# the lightest) so a slower box or a sanitized build stays far under it,
 # and 4x under the unfixed cost on the FASTEST box we have (every other box
 # is slower, so the old walk fails everywhere); CPU, not wall, so a loaded
 # box does not move it, with a 120 s wall bound as the hang guard and a 1 GB
