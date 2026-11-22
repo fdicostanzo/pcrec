@@ -7341,3 +7341,26 @@ they are so declared": how a helper declares a capture is not stated; it joins t
 examples and any other provided body writing a named group are restated with the label-only group, placeholder
 `(?<:hit>...)`; (d) the label-only group is a label under every label rule (reset, last mention, the array) and
 never a capture: `\k<x>` to it inside the same literal is not stated (a reading: a compile error for now).
+
+### 2026-11-22 OWNER, on the helper-captures validation: "right", and a second example with a test inside the argument
+tags: lib/search/hits lib/search/occurrences core/conditions/match-so-far core/labels/paths lib/counting/some
+
+After the validation of his labelled-call example (after `occurrences` a rejecting condition re-chooses the hits;
+a test on the hits belongs after the atomic `hits` or inside the argument). HIS WORDS, whole:
+
+"help-captures: right. [h = hits(/\d+/ & (0: <5)) ] & (h.hit: 3) & some((h.hit: 4))<5 and last hit is 3 and some
+hit is 4."
+
+Class: an ACKNOWLEDGEMENT ("right") and an EXAMPLE with his gloss; nothing asked as a ruling. Read for the
+intended text: the program ends at `some((h.hit: 4))`; the words after it are his gloss, "<5 and last hit is 3 and
+some hit is 4".
+
+CHECKED the same turn (check-his-regex; told to him). The program is legal under today's rulings (`h` is a part
+label written there; `h.hit` known through it; `(0: <5)` is joined by `&` to `/\d+/`, so its `0` is that operand's
+match: his confirmed example of 2026-11-21). "last hit is 3" and "some hit is 4" are as he says. "<5" is NOT
+"every number is under 5": written inside the argument it decides WHAT IS A HIT: a number of 5 or more is skipped
+or split (`9` is no hit; `43` gives the hits `4`, `3`). RUN (hand-built simulation,
+`$PCREC_TMPDIR/scratch/pred/hits_inner.py`; output pasted; the second line is the other meaning, `[h = hits(/\d+/)]
+& occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`):
+inner test: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` HOLDS (hits ['4', '3']) / WHOLE `43` HOLDS (hits ['4', '3']) / WHOLE `4 13` HOLDS (hits ['4', '1', '3']) / WHOLE `4 3 9` HOLDS (hits ['4', '3']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+every number: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` FAILS (hits ['4', '9', '3']) / WHOLE `43` FAILS (hits ['43']) / WHOLE `4 13` FAILS (hits ['4', '13']) / WHOLE `4 3 9` FAILS (hits ['4', '3', '9']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
