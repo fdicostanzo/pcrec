@@ -28630,3 +28630,7 @@ Next
 - 16:20 l3merge DONE (lane/l3merge 12853fa76, merge b4c2d4431): doc conflicts kept both sides; kset.c auto-merged with K159's stop intact; abi 112 (define + ABI_EXPECT checked by me); strict/plan-lint/build clean; facts 18/18. OWED: local codegen/registry/rxtsource (log scratch/l3merge/b.log, waits on the kit's 748 selftest). Cloud test + recidentity on c3743ec58 (proven). Main fast-forwards after all three are green.
 - 16:30 r83 assigned to the predicate manager (default-export fold, P-21 via lane preddef). Next free review: r84.
 - 17:00 L3 LANDED on main (ff to lane/l3merge 12853fa76, merge b4c2d4431, abi 112): local codegen/registry/rxtsource GREEN (0 make Error lines), cloud test + recidentity GREEN on c3743ec58. Next: push after CI read; U4 on top.
+- 17:05 L3 pushed (65ad0f18f); lane u4land (sonnet) merges the kit's U4 at 3e62406e2 onto main in worktrees/u4land, cloud test + mech. After U4: one cloud full suite.
+- 17:25 u4land DONE (lane/u4land b9704a5b4, merge dca22c35e; checks only, abi 112; strict/plan-lint/build clean). Cloud test + mech on 25bbe01c6 (proven). Main ff after both green.
+- 17:35 r84 assigned to the predicate manager (P-22 fold). P-21 (lane/pred-rev28 75d2318bd, docs) to merge AFTER U4 ff's main. Next free review r85.
+- 18:20 Kit delivered R-47 U5 partial (lane/memfn-k1108 6a0633259: cards C6/C6c + formhash span fold; no emitted byte; r79 fixed; 746/747/749 GREEN). Order: U4 lands -> kit merges main + tip test/mech -> I land U5. U6 = C6/C6c TIMING: needs a Frank-cleared window (ask when kit sends length).

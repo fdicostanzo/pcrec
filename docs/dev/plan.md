@@ -576,6 +576,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-22): ruled, nothing started. Stages: (1) after the in-flight effort, ONE arch review of the kit's sections with suggestions + possible refactors, smaller items favored; (2) then the arch step for every new kit feature
   trigger: the kit's in-flight effort completes (R-47 block span, U5 and after)
   refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
+- [FH-INTRIN] STATE:not-started — mf_form_hash alpha-renames _mm* intrinsics, so a SIMD form change can leave its hash unchanged
+  filed: 2026-11-22 main (kit review r79 F15; block_span.md §8 "[U5, r79 F15] PLAN, not built")
+  status (2026-11-22): filed; nothing built. cmpeq->cmpgt or loadu->load hashes the same. Fix: keep intrinsic families in kept[]; cost: every stored hash goes stale (a re-measure event)
+  trigger: the next formhash shape touch, or any card verdict that rests on a SIMD-form hash
+  refs: docs/design/memfn/block_span.md §8; kit review r79 (F15); [BSPAN-CLANG-DIFF]
 - [WIDTH-PATH-BOUND] STATE:not-started — the width walk is still quadratic on acyclic and late-cycle patterns (path form is O(n+edges))
   filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-1 (docs/dev/reviews/2026-11-22-r81-k159fix.md)
   status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
