@@ -31,6 +31,7 @@ history:
 - 2026-11-19 (lane predloop): class-positions. Status date 2026-11-14 to 2026-11-19; statement before: "`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order; an edge assertion in it, or an infinite or over-budget rx, is a compile error." The bullet "A class's members have no PCRE order; for a lift see core/arrays/class-order, for the entries' own order lib/builtin/enumerate/class-index." replaced by the descending order; class-index merged here; `needs:` gains core/arrays/class-order, `see:` names class-value.
 - the piece lib/builtin/enumerate/class-index (open class-index; merged here by lane predloop), its history: new with class-order; re-worded by review r54 P29-10; moved to the library by lane preddoc4. Its statement: "The order of a class's members in `enumerate`'s array (`.index`, `each`, a lift of `enumerate(X)`) is a question for the owner." Its candidates: (a) codepoint order for the ARRAY, the class order for a lift; (b) the array's codepoint order everywhere; (c) the longer result first, ties by codepoint. Its readings line: "(a) is the draft's reading (rev 29's narrowing of the codepoint lean, not the ruling's words) — the record says the lean "is replaced", with no carve-out; (a) vs (b) 0 / 250 / 570 of 3,906; (a) vs (c) 0 / 0 / 0 (PART CO of predspec291)." Its printed lines: (a) `/${enumerate(/\d/) + 1}/` WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6] (kept, now the ruled answer); (b) SEARCHED `x10` `1`@1, FIND-ALL [`1`@0, `3`@3, `1`@5, `1`@6] (rejected).
 - 2026-11-19 (lane predasc): quantified-order. Statement before: "`enumerate(rx)` lists a finite rx's strings one per entry, in PCRE's priority order, a class descending; an edge assertion in it, or an infinite or over-budget rx, is a compile error." Bullets before: "A class gives its members in "descending class value order", in the array and in a lift alike: `enumerate(/\d/)` is [`9`, `8`, .., `0`], so `.index` counts from the top and `enumerate(/\d/) + 1` is `\d + 1` (core/arrays/class-order). The value of a class that is not digits: lib/builtin/enumerate/class-value."; "Positions nest in text order, each class descending: `enumerate(/[ab]\d/)` is [`b9`, `b8`, .., `b0`, `a9`, .., `a0`] (a reading, run; the letters' order is class-value's)." The example line before: `/${enumerate(/\d/) + 1}/` WHOLE `10` HOLDS / SEARCHED `x10` `10`@1 / FIND-ALL `10 3 11` [`10`@0, `3`@3, `1`@5, `1`@6]. Rejected items it moves out of `rejected:` (each rejected by class-positions' "descending", which quantified-order replaced), verbatim: "codepoint (ascending) order for a class's members in a lift — by owner ruling — class-order, then class-positions (descending) (core/arrays/class-order)."; "class-index (a), codepoint ascending for the ARRAY and the class order for a lift (`enumerate(/[-\/.]/)` [`-`, `.`, `/`]) — by owner ruling — class-positions: one order, descending, for the array and every lift."; "class-index (b), the array's ascending codepoint order everywhere (`/${enumerate(/\d/) + 1}/` SEARCHED `x10` `1`@1) — by owner ruling — class-positions; run: the loop gives `10`@1 (predloop EXenumclass, sabotage s11 caught).". Readings before, verbatim: "(the manager's (e) of class-positions) a class inside a larger rx enumerates as nested positions in text order, each class descending: `enumerate(/[ab]\d/)` is [`b9`, .., `b0`, `a9`, .., `a0`] — SUPPORTED as rule-as-code (predloop EXpos, sabotage s12 caught); the letters' order rests on class-value."; "`enumerate(/\d/) + 1` = `\d + 1`, the array and the lift one order (follows from the ruling) — SUPPORTED (predloop EXenumclass: 0 / 0 / 0 by RB)."
+- 2026-11-22 (lane predfix77, review r77 D2 (FIXIND-14), D11 (GENERAL-10); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): status date 2026-11-19 to 2026-11-21 (class-value, class-hole-order); "Every class is in ascending codepoint order" became "Every written class ...; a class holding a hole is an alternation of classes (core/holes/class)".
 
 ## lib/builtin/enumerate/class-value — The value of a class's members
 slugs: class-value
@@ -53,6 +54,7 @@ history:
 - 2026-11-19 (lane predfix61, review r61 F-K: RULING-8, REACH-7, GENERAL-7): the statement until then: "What "lowest to highest" means for a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s order is a question for the owner." Its bullet until then: "The reading today (the manager's, not ruled): ascending codepoint, so `enumerate(/[abc]/)` is [`a`, `b`, `c`] and `.index` counts from the bottom (`a` is 1). The other candidate: an order the owner names." Now: his earlier discussion quoted, parked/ideas/class-base pointed at, the ordered symbol set named as candidate (b), and the caseless single character in the question (predfix61 FK: `(?i)k` takes `K`, `k`, U+212A; `(?i)[\da-f]` by codepoint `0..9A..Fa..f`).
 - 2026-11-19 (lane predasc): quantified-order turned the class order to lowest to highest; the question stays open, restated. Statement before: "What "class value" orders a class that is not digits (`[abc]`, `\w`, `.`) in `enumerate`'s descending order is a question for the owner." Bullet before: "The reading today (the manager's, not ruled): descending codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top (`c` is 1). The other candidate: an order the owner names." Reading before, verbatim: "(the manager's (a) of class-positions) the codepoint, so `enumerate(/[abc]/)` is [`c`, `b`, `a`] and `.index` counts from the top — UNTESTED as a rule (an owner question); the enumerator under that reading prints [`c`, `b`, `a`] (predloop EXpos)."
 - 2026-11-21 (lane predscope): the manager's two readings tested (above); the printed lines re-run: `[\dA-Fa-f]` 0123456789ABCDEFabcdef (A 11, a 17), `[a-cB]` B a b c (predscope_model.py CLASSV, python `re` over the codepoint range; sabotage s16 caught). The piece unchanged.
+- 2026-11-22 (lane predfix77, review r77 D8 (RULING-10), D11 (GENERAL-10); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "A class's members are enumerated in ascending codepoint order, every class alike: "ascending codepoints everywhere makes sense"." His word is "sesne" (read as "sense"), now quoted as he wrote it; "every class" became "every written class". The sort bullet marks his sentence an observation and cites the ruled "Only solution is sorting output when needed." (core/arrays/class-order) instead.
 
 ## lib/builtin/import — import
 was: core/modules/import (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
@@ -113,9 +115,11 @@ rejected:
 readings:
 - the built-in `pattern($x)`, the group's static pattern, PURE although it mentions a label; union of duplicate definitions; flags as compiled in place; inner named groups as fields; "not self-contained" an error — the manager's leaning in the record's 2026-11-14 00:10 notes (his question: how to get the group's PATTERN without its match); LEAN in the draft (§13 O48), OUT of phase 1 (the draft's census, CF:889).
 - `/(?<x>\d+),${pattern($x)}/` is `(?<x>\d+),(?:\d+)`: WHOLE `12,345` HOLDS / SEARCHED `1,2`@1 / FIND-ALL [`1,22`@0, `3,4`@5] — SUPPORTED (preddoc4 PART PT; sabotage s12, the backreference, caught).
+- for a part label `[x = A]` (no group in rx text) `pattern($x)` is A's pattern (review r77 FIXIND-8) — UNTESTED (a reading).
 evidence: docs/dev/lanes/preddoc4_evidence/ PART PT.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: a name on the closed built-in list with no piece (review r59 COMPB-3).
+- 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet for a part label (pure-label: `[x = A]` is no longer "the group form").
 
 ## lib/builtin/eval — eval
 slugs:
@@ -230,11 +234,14 @@ readings:
 - it differs for a NEGATED filter operand: `any_case(/[abAB]{2}/ & !/ab/)` 4 / 168 / 216 of 781 (`aAbB `), the primitive WHOLE `aB` HOLDS / SEARCHED `x aB ab` `aB`@2 / FIND-ALL `ab aB AB` [`ab`@0, `aB`@3, `AB`@6], the body (the `(?i)` reaching `!/ab/`) FAILS / FAILS / [] — SUPPORTED, reproduced (PART CAneg).
 - the primitive's argument is a whole-match role on the CASE-FOLDED reading of the stretch (the manager's LEAN, §2.7) — UNTESTED (no row rests on it).
 - status: held `open any-case-body` by the manager (the brief of lane preddoc3c); the question was never put to the owner.
-evidence: preddoc3c PARTS CA, CAneg; the draft's rev 28 PART AC, rev 28.1 PART FF, rev 29 PART AC, rev 29.1 PART AC.
+- a third parting: `any_case(/[a-z]x/ & /[A-Z]x/)` (the sides take the flag first, core/holes/flags/in-filter) — SUPPORTED by a run (predfix77 ANYCASE: over the 820 texts on `aAbBxXzZ7` to length 3 the body holds WHOLE on 16, as python `re` with each side under re.I does, the native definition on none, the argument having no member; sabotage s12 caught; the review's anycase.py found the same 16).
+- the `pcrec.flags.filter` warning fires inside the body on that argument, the warning the caller's to read (review r77 A7) — UNTESTED (a reading).
+evidence: preddoc3c PARTS CA, CAneg; the draft's rev 28 PART AC, rev 28.1 PART FF, rev 29 PART AC, rev 29.1 PART AC. predfix77_model.py ANYCASE.
 history:
 - 2026-11-15: a primitive for now, the basis a follow-up ([PRED-REREAD], the draft §13 O70).
 - 2026-11-18 (rev 28): flags-propagate re-ran the candidate body; rev 28.1: the `(?-i)` difference; rev 29: T-c, equal for plain and positive filter-role arguments; rev 29.1: the negated operand differs; any-case-body named as a gap, not asked.
 - 2026-11-19 (lane preddoc3c): converted, `open any-case-body`.
+- 2026-11-22 (lane predfix77, review r77 A7; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the standing reading's "every mode except two" was false since flags-in-filter (sides first); the third exception, the warning's behaviour and two lines added; the candidates read "those three".
 
 ## lib/modifiers/limited — limited
 slugs:
@@ -257,7 +264,9 @@ readings:
 - the body `chars & (nchars: S)` gives the length (S in ==0, ==3, ==20, ==21, <=20, even; the empty text, a newline, 20 and 21 characters) — SUPPORTED (preddoc3c PART LE; sabotage s21 caught); the draft's review r16 emulation, 27 cases, 0 differ.
 - under array-vs-passes `nchars := count((ch: /(?s:.)/))` counts the SETTINGS of `ch`, one per character: the printed line is the same under both readings — SUPPORTED (predarr CHANGED, the helpers read from library.md).
 - caveats (the draft's): two helper bindings beside the body; `count`'s budget applies to `nchars`; the label `ch` visible.
-evidence: preddoc3c PART LE; review r16 `bodies_check.out`.
+- `chars` re-spelled with a part label, `([ch = /(?s:.)/])*`, leaves every printed `length` line unchanged (review r77 D4; the brief's reading 4) — SUPPORTED by a run (predfix77 CHARS: the one printed line rebuilt from the old body and from the new, both equal to the printed text; the old body makes the capture `ch`, the new none; sabotage s11 caught).
+- `nchars` is a computed count bound alone, so it rests on the open core/holes/bare-condition/bound-condition (under his position (b) it would be refused) — UNTESTED.
+evidence: preddoc3c PART LE; review r16 `bodies_check.out`. predfix77_model.py CHARS.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body (review r16 FIXIND-3).
 - 2026-11-18: his `length($y)` (an image) is written `strlen($y)` (the draft's A26), so this filter keeps its name.
@@ -265,6 +274,7 @@ history:
 - 2026-11-19 (lane preddoc4): `needs:` the computed-label piece and lib/counting/count, the two names its body uses (review r59 READ-8).
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `ch`, written as a group in rx text, is also a capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement's "one loop pass per character, its count tested by S" became "one setting of `ch` per character, their count tested by S". No answer moves.
+- 2026-11-22 (lane predfix77, review r77 D4, A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the helper until then, verbatim: "`chars := /(?:(?<ch>(?s:.)))*/`", and the bullet "The label `ch` is visible in the result; written as a group in rx text it is also a capture (a reading of pure-label)." A part label makes no capture, so `length` hands the caller none (his reason for the add-on: "isodate and all the other libraries don't want to presume everyone is interested in every label being a capture."); `length(==3) & length(<5)` no longer reaches caller-ambiguous for a capture.
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
 rulings:
@@ -279,6 +289,7 @@ history:
 - 2026-11-19 (lane preddoc4): `join([...])` removed from `months` (join is one string, the members joined; an array is already the alternation); `needs:` the computed-label and metadata pieces; answers unchanged: preddoc3c PART MN built the body as the alternation (review r59 READ-5).
 - 2026-11-19 (lane preddoc6, review r60 COLD-15): the body's `...` written out as the twelve names in calendar order (the `.index` the example reads depends on the order); answers unchanged (preddoc6 PART MN).
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, `[mname = ...]` makes no capture (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
+- 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `mnum` points at the open core/holes/bare-condition/bound-condition.
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -373,7 +384,7 @@ history:
 
 ## lib/search/occurrences — occurrences
 formerly: ?.search (2026-11-15, the owner renamed `search` to `occurrences` under his naming rule)
-slugs: hit-carry hit-carry-depth min-values nullable-meaning
+slugs: hit-carry hit-carry-depth min-values nullable-meaning helper-captures
 rulings:
 - 2026-11-15 "1. if I understand this question, it's asking if the search rx follows non-pcre matching behavior? If that's the question, then the answer is it should always follow it if for no other reason than that's what's expected." (record: "2026-11-14 RULINGS on rev 3's contradictions")
 - 2026-11-15 "1 occurances." (record: "2026-11-15 RULING — the provided transform `search` is renamed `occurrences`")
@@ -396,6 +407,8 @@ readings:
 - the hits of a nullable argument: up to and including the first empty hit (the manager's second correction, review r47 V1) — the told reading, SUPPORTED as the draft printed it (PART OC).
 - hit-carry's witness `occurrences(/${c}(?<h>\d)/, min = 2)`, c := NOT (h: >= 5) (WHOLE `73` FAILS, SEARCHED `73` FAILS, FIND-ALL `3x73` [`3x73`@0 h = `7`]) — UNTESTED here (a condition before its group reads the previous hit: it needs the label engine; the draft's rev 26 PART H ran it on libpcre2).
 - hit-carry-depth (how deep the carry reaches) — asked in the draft's open table, not answered; not a library question.
+- the label `hit` (written as a group in rx text) is a capture the caller receives, here and in lib/search/hits (a reading of pure-label; review r77 D4, RULING-6, GENERAL-7, FIXIND-16) — UNTESTED as meant: it sits against his reason for the add-on, "isodate and all the other libraries don't want to presume everyone is interested in every label being a capture." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); the re-spelling with a part label needs the expression form around the atomic group (hits). An owner question, helper-captures (queued, the manager's to ask).
+- `0` inside the argument (review r77 A6): three candidates part — see core/conditions/match-so-far (VERIFIED by predfix77 OCCZERO; PLAN).
 evidence: preddoc3c PART OC; the draft R.1.9, rev 26 PART H, rev 26.1 PART R47.
 history:
 - 2026-11-14: the `contains` family; 2026-11-15: PCRE's parse, `min` (0 or 1), no `max`; renamed from `search` (rev 13).
@@ -406,6 +419,7 @@ history:
 - 2026-11-19 (lane preddoc4): the ruled per-call hit name added to the base (review r59 COMPB-8); its spelling stays a placeholder.
 - 2026-11-19 (lane preddoc5): the slug nullable-meaning moved here from core/conditions/defaults, which named it this piece's fact (review r59 COMPA-13).
 - 2026-11-19 (lane preddoc6, review r60 RECOUNT-6): the draft R.9 candidate for this piece, PARTIAL at r59 and left unchanged by preddoc5, now has its own `rejected:` line.
+- 2026-11-22 (lane predfix77, review r77 D4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet states the `hit` capture as a reading with the tension named; status date 2026-11-18 to 2026-11-21 (pure-label changed what `hit` is).
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass hit-list
@@ -426,6 +440,7 @@ history:
 - 2026-11-19 (lane preddoc5): the slug hit-list moved here from core/model/table, whose reading named this piece as the one deciding it (review r59 PLACE-4).
 - 2026-11-21 (lane predscope, pure-label folded): one sentence added, the `hit` group written in rx text is a capture as well as a label (a reading of the ruling, predscope_model.py CAPT for the two kinds); no answer moves.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the "every hit under 100" bullet names its program, a group question on the array of `hit` (a reading). No answer moves.
+- 2026-11-22 (lane predfix77, review r77 D4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the capture bullet points at the tension and the question helper-captures (lib/search/occurrences).
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
 slugs:
@@ -556,6 +571,7 @@ rulings:
 - 2026-11-15 "Do it" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
 - 2026-11-16 "all-question: retire" (record: "2026-11-16 OWNER RULING — all-question: retire")
 - 2026-11-17 "after-loop-read: ok I see it. Last pass own label makes sense" (record: "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label")
+- 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
 - `all` as a group question — by owner ruling — all-question: retire.
 - `occurs.some` — by the draft (rev 7's, removed, not aliased) — `some(c)` is the one spelling.
@@ -569,6 +585,8 @@ history:
 - 2026-11-19 (lane preddoc5): the slug some-own (the draft's, closed by entailment) moved here from lib/search/hits; there was no `some` piece when it was homed (review r59 PLACE-4).
 - 2026-11-19 (lane preddoc6, review r60 COLD-20): "`NOT some(c)` and `occurs.none(c)` are the same question" marked as the reading of the open question core/model/table/group-truth (it is that question's candidate (a)); before, a ruled piece stated it as settled.
 - 2026-11-21 (lane predarr, array-vs-passes and joint-in-some ruled): the statement until then, verbatim: "`some(c)` holds when at least one pass of a loop meets the condition c, each pass judged with its own labels; it is false where the loop made no pass."; `defined: native (a question over a loop's passes; no expression of the language walks the passes)`; the bullet "`some` is the one spelling of "at least one pass"" lost "pass"; "`NOT some(c)` and `occurs.none(c)` are the same question under the reading of the open question core/model/table/group-truth (a reading)" became "the same question over the array". Bullets added: the array, the joint entry refused and the on-item idiom. Status date 2026-11-15 to 2026-11-21. The printed line does not move.
+- 2026-11-22 (lane predfix77, review r77 D7 (RULING-4), D11 (GENERAL-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "`some(c)` holds when at least one setting in the array of c's label meets c; it is false on an empty array." The empty-array clause is marked a reading in the statement; the `NOT some(c)` = `occurs.none(c)` bullet restricted "for a condition of one entry", group-truth owning it (under the product reading of several entries extended to `occurs` it fails on `5:1,`: hand-worked, review r77 GENERAL-8).
+- 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
 ## lib/counting/count — count
 slugs: count-budget
 rulings:
@@ -577,6 +595,7 @@ rulings:
 - 2026-11-15 "i would refuse count() on budget or as a recommended way to reduce states rather than rules" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule"
 - 2026-11-15 "4. agree. Allows "even()" or other checks for count." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — the five open items"
 - 2026-11-15 "Predicate count/occurs issue: it would be a later optimization plan item that if pcrec could show no change in semantics that it convert count() into occurs" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 OWNER NOTE — `count()` -> `occurs` as a LATER OPTIMIZATION"
+- 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
 - `count()` refused in a set position by rule (the manager's "until you can't" reading) — by owner ruling — "by BUDGET, not by rule" (the reading WITHDRAWN in the record).
 readings:
@@ -588,11 +607,14 @@ history:
 - 2026-11-19 (lane preddoc4): a new piece: `count(c)` was the body helper of `length` with no piece (review r59 PRIMITIVES-MISSING, READ-6). The slug count-budget is the lane's name for the budget ruling.
 - 2026-11-19 (lane preddoc6, review r60 COLD-2): the base's "`even()` on a count" (his word, "Allows "even()" or other checks for count", quoted above) written as the set it names, `/\d*[02468]/`: no piece provides `even`.
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "`count(c)` is the number of passes of a loop that meet c, a canonical numeral used with the ordinary comparisons; it is refused only over the budget, the refusal naming `occurs`."; `defined: native (a count over a loop's passes; no expression of the language counts passes)`. A bullet added (settings, zero, several entries). Status date 2026-11-15 to 2026-11-21. The printed line does not move.
+- 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): `n` points at the open core/holes/bare-condition/bound-condition.
+- 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
 ## lib/counting/occurs — occurs.exactly, .at_least, .at_most, .none
 slugs:
 rulings:
 - 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); `occurs` reads the ARRAY OF SETTINGS (the record entry names lib/counting/occurs among the revised pieces)
 - 2026-11-14 "more obscure but valuable" (record: "2026-11-14 RULING — counting occurrences")
+- 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 rejected:
 - `occurs.some` and `occurs.all` — by the draft (rev 7's, removed, not aliased; LEAN) — `some(c)` is the one spelling; `all` was retired (all-question).
 - a namespace `label` (`label.exactly(1, ...)`) — by the record — it clashes with element metadata `x.label`.
@@ -606,6 +628,7 @@ history:
 - 2026-11-14: agreed as a library family (all, some, none, exactly, at_least, at_most); 2026-11-15 (rev 8): counts only.
 - 2026-11-19 (lane preddoc3c): converted; the heading drops `.some` (withdrawn).
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "The `occurs` module counts a repeated label's passes meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`."; `defined: native (a count over the passes of a loop, a capped counter; no expression of the language counts passes)`; the bullet's "one record is one pass" became "judged on each setting of its label"; the `modes:` line's "a count over a loop's pass table; no example of the draft is printed in the three modes" re-pointed at the runs. `needs:` the array piece. Status date 2026-11-14 to 2026-11-21.
+- 2026-11-22 (lane predfix77, R-1): array-in-piece folded where the piece states the array (those visible in the definition the question is written in, a bound piece's own); status date 2026-11-21 to 2026-11-22.
 ## lib/counting/every-pass — Every pass, named
 slugs: every-pass-spelling
 rulings:
@@ -614,10 +637,12 @@ rejected:
 readings:
 - OPEN in the draft (§R.8, row every-pass-home: "the conditioned item inside `repeat` is the item form"; the draft R.4's W1a, W1b); the owner, the evening of 2026-11-16 as the draft quotes him: "assign the condition inside the loop to get the all behavior" — the item form, today's way; whether a name exists is not asked.
 - `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, under the PASS reading; NOT SUPPORTED over the array where the label is optional: on `7,,` every setting is `7` and the form HOLDS while the item form FAILS (predarr EVERYPASS; sabotage s11 caught). The pass-reading line, verbatim as run: `Passes: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)`.
-evidence: the draft R.4, §R.8; docs/dev/lanes/predarr_evidence/ EVERYPASS.
+- the settings form and the item form part on a loop that can make no pass as well (review r77 MODES-12) — SUPPORTED by a run (predfix77 EVERYNONE: on `x` the settings form FAILS, `some` false on an empty array, the item form HOLDS; sabotage s14 caught).
+evidence: the draft R.4, §R.8; docs/dev/lanes/predarr_evidence/ EVERYPASS. predfix77_model.py EVERYNONE.
 history:
 - 2026-11-19 (lane preddoc4): a new open piece: the slug every-pass-spelling had no home (review r59 PRIMITIVES-MISSING).
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "Is there a named group question for "every pass meets c", equal to `some(c) & occurs.none(NOT c)`, or is every pass written only with the condition on the item?"; candidate (b) until then "a named group question equal to `some(c) & occurs.none(NOT c)`"; the `modes:` line "modes: n/a (a question; the draft's runs are cited in the details entry)" replaced by two run lines. Over the array the form says every SETTING, not every pass; the question stays open. Status date 2026-11-19 to 2026-11-21.
+- 2026-11-22 (lane predfix77, review r77 D12 (MODES-12); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "where the label is optional it is not the item form" became "where the label is optional, or the loop can make no pass, ..."; the two lines "No pass, every setting", "No pass, the item form" added.
 ## lib/strings/join — join
 slugs:
 rulings:

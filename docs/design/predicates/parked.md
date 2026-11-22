@@ -56,7 +56,7 @@ modes: n/a (parked: not in the language)
 `count(^h)`, `some(^h)`: counting or testing over a field reference.
 - The field reference is the paused sigil (parked/ideas/other-side-sigil); `some` and `count` over a condition stay
   (lib/counting/some, lib/counting/count).
-Trigger: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in the
+Trigger: a use of a field reference with real value beyond rejecting an empty loop (counting every setting, as in the
   draft's `length(S)` body, is a candidate to be argued, not a trigger met).
 Source: the ideas file item 8 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
@@ -231,6 +231,8 @@ modes: n/a (parked: not in the language)
 
 ### The label-only group   [parked/ideas/label-only-group]   parked 2026-11-19
 `(?<:x>...)` (his stated form, a placeholder): a group that is labelled, not a capture.
+- At the expression level `[x = A]` already makes a label and no capture (core/labels/paths); the idea is the rx
+  TEXT spelling only.
 Trigger: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
 Source: the ideas file item 32 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
