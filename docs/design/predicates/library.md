@@ -231,8 +231,9 @@ defined: language
   the twelve names in calendar order); `months.mname.index` is a label path (the part label `mname` reached through
   `months`, core/labels/paths/label-reference), so the test is written in place (core/values/metadata; a value
   bound alone is a compile error: core/holes/bare-condition/bound-condition).
-- The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
-  capture (pure-label).
+- The name is ruled; the body is a reading. The body uses `months` alone, so a call exports no `mname`:
+  `month_numbered.mname` is a compile error (default-export, core/labels/export; a reading); `months` itself exports
+  `mname`, a part label its text writes. `[mname = ...]` makes no capture (pure-label).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -247,7 +248,8 @@ default: yes
 defined: language
 - The body: `peek(A) := /(?=${A})/`. Nothing in it is particular to `peek`: it is a useful transform.
 - Labels A sets are readable after it by the caller that wrote A, as after any lookahead (awaits argument-default:
-  the body uses A alone, so the call exports none of them, core/labels/paths/argument-default).
+  the body uses A alone, so by the manager's reading (e) of default-export the call exports none of them,
+  core/labels/paths/argument-default).
 - `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (core/filters/negation).
 - A condition given as A is zero width already: `peek(c)` tests c where it stands, as c does (a reading).
 - `default: yes`: in the default-imported set, so written bare, not `module.peek` (the owner's lean).
@@ -265,7 +267,8 @@ defined: language
 - The else-only behaviour is NOT on the test: `when(NOT (h: <5), z)`, `when(NOT peek(x), z)`.
 - What the test may be, and what each kind consumes: lib/control/when-test.
 - Labels the test sets are visible in then; in the else branch they are unset, a failed test setting nothing (a
-  reading, run).
+  reading, run). Then reads the test's labels across two arguments the body uses alone (awaits argument-default,
+  core/labels/paths/argument-default).
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 
@@ -317,7 +320,8 @@ defined: language
 - A condition inside x after its group reads that hit's own labels; one BEFORE the group reads the previous hit's
   value (it carries). Writing the condition after the label gives the plain search's hits.
 - The hits are re-split whenever a condition rejects: `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with
-  the hits `12`, `34`.
+  the hits `12`, `34` (a read inside the argument beside its own group: legal under both candidates of
+  argument-default, the manager's reading, run).
 - A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up
   to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
   empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
@@ -329,7 +333,8 @@ defined: language
 - His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit`
   is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
   caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n); whether the caller reads it awaits
-  argument-default and capture-export (the body uses x alone; core/labels/paths/argument-default). How a helper declares a capture is not
+  argument-default and capture-export (the body uses x alone; core/labels/paths/argument-default), as does whether the
+  label-only `hit` passes its labels on (`h.hit.n`). How a helper declares a capture is not
   stated (lib/structural/capture/add-on).
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
   metadata). Called twice in one definition, a plain read through the macro's name is binding-prefix's compile
@@ -611,8 +616,8 @@ defined: language
 - One item or more; written this way the label and the array are right at every length (one copy of X before
   the loop would leave the label unset on one item).
 - Its minimum (zero items) is not stated.
-- The body uses X alone, so the call exports none of its labels; the caller's read of the item's label awaits
-  argument-default (core/labels/paths/argument-default).
+- The body uses X alone, so by the manager's reading (e) of default-export the call exports none of its labels;
+  the caller's read of the item's label awaits argument-default (core/labels/paths/argument-default).
 WHOLE `7,3,5` HOLDS (5) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`) (awaits argument-default)
 
 ### param   [lib/records/param]   reading 2026-11-19

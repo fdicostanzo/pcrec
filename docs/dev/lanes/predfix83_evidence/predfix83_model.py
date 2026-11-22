@@ -53,6 +53,7 @@
 #   s18 NULLABLE: a nullable loop body run    s19 QUOTES: a quote altered   s20 MARKS: a marker read as missing
 #   s21 DOC: a formatted line altered         s22 AWAITS: (error) closes nothing   s23 UNMARKED: one mark dropped
 #   s24 TOPLEVEL: a one-use plain read through a binding's name refused (the closed idiom-confirm's other candidate)
+#   s25 WITNESS: PROTECT off for the composed binding's parts (the composed and the literal read alike)
 import hashlib
 import os
 import re
@@ -398,7 +399,7 @@ def lower_atom(expr, ctx):                                   # noqa: F811
     finally:
         if direct:
             SUPPRESS.pop()
-    if pattern_use and alone and not (s83("s5") or s83("s12") and e == "A"):
+    if pattern_use and alone and not (s83("s5") or s83("s12") and e == "A" or s83("s25") and e in ("CA", "CB")):
         text = close_parts(text, ctx.scopes[:-1])              # PROTECT
     return text
 
@@ -564,6 +565,7 @@ AH = "A := /(?<h>\\d)/"
 AD = "A := /(?<d>\\d)/"
 AA = "A := /(?<a>\\d)/"
 FLOW = ("an ambiguous reference", "core/labels/flow")
+ISO = "isodate := [year = /\\d{4}/] SEQ \"-\" SEQ [month = /\\d\\d/] SEQ \"-\" SEQ [day = /\\d\\d/]"
 
 print("== CONTROL: the loaded matcher against python `re`")
 QD = pop("37!", 3)
@@ -614,10 +616,15 @@ r_l3 = ref("[(=l) = atomic(B | A)] & (l: <20)", ["A := /(?<l>\\d)\\d/", "B := /(
 LB2 = [AD, "B(rx) := /${rx}-(?<d>\\d)/"]
 P_l4 = tp("[(=d) = B(A)] & (d: <5)", LB2)
 own2 = lambda t: re.fullmatch(r"\d-\d", t) is not None and int(t[2]) < 5      # noqa: E731
-check("LISTCALL", all(has(r, *LISTERR) for r in (r_l1, r_l2, r_l3)) and wdiff(P_l4, own2, pop("37-", 3)) == 0,
+P_l5 = tp("B(A) & (B.d: <5)", [AD, "B(rx) := /${[p = rx]}xx/"])
+a6 = lambda t: re.fullmatch(r"\dxx", t) is not None and int(t[0]) < 5      # noqa: E731
+check("LISTCALL", all(has(r, *LISTERR) for r in (r_l1, r_l2, r_l3)) and wdiff(P_l4, own2, pop("37-", 3)) == 0 and
+      wdiff(P_l5, a6, pop("37x", 3)) == 0,
       "refused at the list: `[(=d) = B(A)]` in place %s, in a binding %s, `[(=l) = atomic(B | A)]` %s; the body's own "
-      "`d` listed (`/${rx}-(?<d>\\d)/`) differing %d" % (has(r_l1, *LISTERR), has(r_l2, *LISTERR),
-                                                         has(r_l3, *LISTERR), wdiff(P_l4, own2, pop("37-", 3))))
+      "`d` listed (`/${rx}-(?<d>\\d)/`) differing %d; A6, a call exports what its body exports: `B(A) & (B.d: <5)`, "
+      "B(rx) := `/${[p = rx]}xx/` (p's `d` by name) differing %d" %
+      (has(r_l1, *LISTERR), has(r_l2, *LISTERR), has(r_l3, *LISTERR), wdiff(P_l4, own2, pop("37-", 3)),
+       wdiff(P_l5, a6, pop("37x", 3))))
 print("   refusal: %s" % r_l1)
 
 print("== OUTSIDE (A4): a read from outside sees the binding's EXPORTED settings only")
@@ -683,7 +690,7 @@ lit = lambda t: re.fullmatch(r"\d\d;\d!", t) is not None and int(t[3]) < 5     #
 if P_x3 is not None:
     dl("Outward, what the expression's text writes", "X & (X.ab.l: <5)", ["X := [ab = A SEQ /;(?<l>\\d)/] SEQ \"!\"",
                                                                           LA[0]], P_x3,
-       ["13;3!", "13;7!"], "13;7! 13;3!", "13;3! 13;7! 22;1!", "core/labels/export")
+       ["13;3!", "13;7!"], "13;7! 13;3!", "13;3! 13;7! 22;1!", "core/labels/paths")
 check("EXPR", P_x1 is not None and has(r_x2, "not visible through `X`") and wdiff(P_x3, lit, pop("137;!", 5)) == 0
       and wdiff(P_x4, lambda t: re.fullmatch(r"\d\d", t) is not None, pop("25", 2)) == 0,
       "inside X `ab.l` legal %s; from outside `X.ab.l` refused (B, A used alone in the expression) %s; "
@@ -715,9 +722,15 @@ print("== LISTCOLL (D16): two lists naming one label: the same label, the last m
 LC = ["d := [(=year) = i1] SEQ [(=year) = i2]", I1, I2]
 P_lc = tp('d & (d.year: "20")', LC)
 lastyr = (lambda t: len(t) == 8 and t[6:] == "20") if not s83("s11") else (lambda t: len(t) == 8 and t[:2] == "20")
-check("LISTCOLL", wdiff(P_lc, lastyr, ["20192019", "19202020", "20202020", "19191919"]) == 0,
+r_lc2 = ref('[(=year) = isodate] SEQ "!" & (isodate.year: "2025")', [ISO])
+r_lc3 = ref('[(=h) = q] SEQ "!" & (q.a.h: <5)', ["q := [a = A] SEQ \";\"", AH])
+check("LISTCOLL", wdiff(P_lc, lastyr, ["20192019", "19202020", "20202020", "19191919"]) == 0 and
+      has(r_lc2, "isodate.year") and has(r_lc3, "q.a.h"),
       "`d.year`, d := `[(=year) = i1] SEQ [(=year) = i2]`, against \"i2's year (the last mention) is 20\": differing "
-      "%d of 4" % wdiff(P_lc, lastyr, ["20192019", "19202020", "20202020", "19191919"]))
+      "%d of 4; inside a binding that lists the part, its own prefix `isodate.year` refused %s, a listed part label's "
+      "path `q.a.h` refused %s (the list takes the listed labels only: %s)" %
+      (wdiff(P_lc, lastyr, ["20192019", "19202020", "20202020", "19191919"]), has(r_lc2, "isodate.year"),
+       has(r_lc3, "q.a.h"), r_lc2))
 
 print("== EXAMPLE (E1): his `B := A & A`, `C := B & (B.a: 9)`, \"here B.a is always an error\": the REASON compared")
 BAA = ["B := A & A", AA]
@@ -752,7 +765,6 @@ check("VISIBLE", has(r_v1, "not visible through `B` in C") and has(r_v2, "`g`: n
 print("   refusals: %s | %s" % (r_v1, r_v2))
 
 print("== TOPLEVEL (D8, D17): at the top nothing is outside; the plain idiom with one use (ruled by default-export)")
-ISO = "isodate := [year = /\\d{4}/] SEQ \"-\" SEQ [month = /\\d\\d/] SEQ \"-\" SEQ [day = /\\d\\d/]"
 P_t1 = tp("isodate & (isodate.year: < 2100)", [ISO])
 y2100 = lambda t: re.fullmatch(r"\d{4}-\d\d-\d\d", t) is not None and int(t[:4]) < 2100   # noqa: E731
 TD = ["2025-01-02", "2100-01-02", "1999-12-31", "2025-01-0"]
@@ -761,6 +773,25 @@ if P_t1 is not None:
        "2100-01-02 2025-03-04", "2025-01-02 2100-01-02 1999-12-31", "core/labels/paths/one-use-read")
 check("TOPLEVEL", wdiff(P_t1, y2100, TD) == 0, "`isodate & (isodate.year: < 2100)` (isodate used alone at the top) "
       "against \"year under 2100\": differing %d of %d" % (wdiff(P_t1, y2100, TD), len(TD)))
+
+print("== WITNESS (D2, CORRECTION 1): composed from parts used alone against one literal: the user reads what each exports")
+WC = ["CA := /(?<c>\\d)/", "CB := /(?<c>\\d)/"]
+P_c2 = tp('D2 & (D2.c: "3")', ["D2 := /(?<c>\\d)(?<c>\\d)/"])
+r_c1 = ref('D1 & (D1.c: "3")', ["D1 := CA SEQ CB"] + WC)
+if P_c2 is not None:
+    dl("One literal", 'D2 & (D2.c: "3")', ["D2 := /(?<c>\\d)(?<c>\\d)/"], P_c2, ["73", "37"], "37 73", "73 37 13",
+       "core/labels/flow")
+lastc = lambda t: re.fullmatch(r"\d3", t) is not None      # noqa: E731
+MN = ["mn(S) := months & (months.mname.index: S)", "months := [mname = [/Jan/, /Feb/, /Mar/, /Apr/, /May/, /Jun/, /Jul/]]"]
+r_c4 = ref('mn(<= 6) & (mn.mname: "Jun")', MN)
+P_c5 = tp('mn(<= 6)', MN)
+check("WITNESS", wdiff(P_c2, lastc, pop("37", 2)) == 0 and has(r_c1, "not visible through `D1`") and
+      has(r_c4, "not visible through `mn`") and P_c5 is not None and P_c5.whole("Jun") and not P_c5.whole("Jul"),
+      "`D2 & (D2.c: \"3\")`, D2 := `/(?<c>\\d)(?<c>\\d)/`, the last mention: differing %d; `D1 & (D1.c: \"3\")`, D1 := "
+      "`CA SEQ CB` (each used alone), refused for not visible %s: %s; month_numbered's shape (a body using `months` "
+      "alone): `mn.mname` refused %s, `mn(<= 6)` matching `Jun` not `Jul` %s" %
+      (wdiff(P_c2, lastc, pop("37", 2)), has(r_c1, "not visible through `D1`"), r_c1, has(r_c4, "not visible"),
+       P_c5 is not None and P_c5.whole("Jun") and not P_c5.whole("Jul")))
 
 print("== GRID (P1): the name grid: spelling x occurrences of its source x read kind; each cell its deciding sentence")
 # Each spelling: the read name and, per occurrence kind, (the pattern, its bindings). The read kinds are spelled
@@ -822,7 +853,7 @@ S = {
                  "to label the call, and a group question reads every call's settings, in order"),
     "cp-same": ("core/labels/paths/binding-prefix", "a MACRO's name is a prefix too, under the same two rules"),
     "occ-and": ("lib/search/occurrences", "only the index `h[k]` across `&` is refused for now"),
-    "paths-alone": ("core/labels/paths", "Used alone in a binding it is local there and exports nothing"),
+    "paths-alone": ("core/labels/paths", "an unlabelled use carries the implicit label of the binding's name, protected"),
     "pl-last": ("core/labels/paths", "a part label mentioned more than once names its last mention where the "
                 "reference is written"),
     "lr-dollar": ("core/labels/paths/label-reference", "`$x` reads alike"),
@@ -983,7 +1014,11 @@ check("UNMARKED", not um_bad, "%d unmarked lines reproduced under (local); moved
 
 print("== SWEEP: every printed three-mode line, old engine against the fixed one, both candidates; no printed answer "
       "moves unless listed under ANSWERS_CHANGED")
-ANSWERS_CHANGED = {}          # program text -> (candidate, the ruling or reading that carries the move)
+ANSWERS_CHANGED = {          # program text -> the ruling or reading that carries the move
+    "[a = A] SEQ A & (A.h: <5)": "A5, the manager's reading (record: the r83 dispositions entry): a binding's own "
+                                 "name reaches its UNLABELLED uses only, a labelled use not counted; the old engine "
+                                 "refused it (\"A is used 2 times here\"), the fixed one reads the unlabelled use",
+}
 NEW_SW = {k: dict(v[4]) for k, v in ROWS.items()}
 if s83("s16"):
     k_ = next(k for k, v in ROWS.items() if "(`pub & (pub.h: <5)`, pub := `[a = A] SEQ" in v[0])
@@ -1058,7 +1093,40 @@ check("NULLABLE", not nl, "%d programs run by the checks above, walked node by n
 print("== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded, with the "
       "digest of the red's own FAIL line (a red whose content changes under an unchanged name fails here)")
 LANES = os.path.normpath(os.path.join(HERE4, ".."))
-SUPERSEDED = {}               # model -> {red: (digest of its FAIL line or traceback line, "superseded by ...")}
+PD_ = "preddef's SUCCESSOR, which declared it, and "
+SUPERSEDED = {                # model -> {red: (digest of its FAIL line or traceback line, "superseded by ...")}
+    "preddef": {
+        "MARKS": ("346b15f9abc4", "MARKS here: its markers 'statement 3', 'call-prefix', 'form caveat' and 'errors row' "
+                                  "are texts this lane rewrote (review r83 D3/D7, A6/D10, D14, D12); MARKS here finds "
+                                  "the new texts"),
+        "UNMARKED": ("7dd755e4fe4e", "UNMARKED and TWOUSE here: the moved line is core/labels/paths/argument-default's "
+                                     "new \"Both uses, (local)\", a candidate's own line, which differs under (error) "
+                                     "by design (review r83 A3)")},
+    "predfix82": {
+        "MARKS": ("84df29d69537", "MARKS here (D17): its ANS-2a, ANS-2b and RULING-9 markers are the open idiom-confirm "
+                                  "texts, now ruled by default-export (one-use-read re-written); ANS-1 as preddef "
+                                  "declared it"),
+        "SUCCESSOR": ("7af0ee27f19f", "SUCCESSOR here: it re-runs the same six models, each red declared below")},
+    "predcall": {
+        "DOC": ("3d2c11f65046", PD_ + "MACRO there (the line renamed under default-export), unchanged"),
+        "PREDREF": ("16e7aa734111", PD_ + "predfix82's SUCCESSOR (it reads predref's last line), unchanged"),
+        "SCAN": ("a7c666fbda78", "GRID and LISTCALL here: one span more than preddef declared, the new refusal line's "
+                                 "`[(=d) = B(A)] & (d: <5)`, whose bare `d` is an export list's own label (review "
+                                 "r83 D7; its old SCAN knows no lists); the 32 spans before it as predfix82 declared")},
+    "predref": {
+        "DOC": ("04afb36e8d23", PD_ + "ATOMIC and SWEEP there, unchanged"),
+        "MARKS": ("8ca3596581eb", PD_ + "predcall's MARKS, unchanged"),
+        "SCAN": ("e69ff326bdc7", "GRID and LISTCALL here: the same one new span as predcall's SCAN (an export list's "
+                                 "own `d`, review r83 D7)")},
+    "predbound": {"DOC": ("197284e95806", PD_ + "predfix82's REPRINT, unchanged")},
+    "predfix77": {"TRACEBACK": ("455b59c946bc", PD_ + "predfix82's REPRINT and predbound's checks (the `chars` body "
+                                                       "reader), unchanged")},
+    "predarr": {"TRACEBACK": ("ce43d48c7e37", PD_ + "predfix82's REPRINT and predref's HITS, unchanged")},
+    "predscope": {
+        "NAMES": ("232a77f8ed09", PD_ + "predbound's bound-condition checks, unchanged"),
+        "CLOSEDB": ("5d36005cbb1e", PD_ + "predfix82's REPRINT, unchanged"),
+        "DOC": ("c71d491c3425", PD_ + "predfix82's REPRINT, unchanged")},
+}
 MODELS = ["preddef", "predfix82", "predcall", "predref", "predbound", "predfix77", "predarr", "predscope"]
 if s83("s17") and SUPERSEDED.get("preddef"):
     SUPERSEDED["preddef"].pop(next(iter(SUPERSEDED["preddef"])), None)
@@ -1107,8 +1175,28 @@ check("SUCCESSOR", not succ_bad, "%d earlier models re-run, each last line read;
       "an unchanged FAIL line: %s" % (len(procs), "yes" if not succ_bad else succ_bad))
 
 print("== QUOTES: every owner sentence this lane quotes occurs in the record and the documents; every cited title is one")
-QQ = []
-TT = []
+QQ = ["I agree with your interpretation. I note that captures can have no label.",
+      "So the types of reference are: binding, label, macro argument, capture group name, ?",
+      "Nothing missed I see.",
+      "Agree caveat bindings used to scope labels (A.a: 8)",
+      "The textually visible rules solves a problem of a label from a binding reference hiding another binding",
+      "default-export: protected",
+      "[A ] (A alone, default) also makes the labels protected but with different access locally",
+      "4. A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an "
+      "expression",
+      "a part used bare is available locally as `A.h` but exports nothing",
+      "`.` has one meaning: a field of the map interface of the thing on its left"]
+TT = ["2026-11-22 OWNER, on the two-kind view: \"I agree with your interpretation. I note that captures can have no "
+      "label.\"",
+      "2026-11-22 OWNER, a question: the kinds of reference (\"binding, label, macro argument, capture group name, ?\")",
+      "2026-11-22 OWNER, on the kinds of reference: \"Nothing missed I see\"; can some be COMBINED",
+      "2026-11-22 OWNER, an observation: the textually-visible rule solves a label from a used binding hiding another "
+      "binding",
+      "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on "
+      "default-export (no owner words)",
+      "2026-11-22 OWNER RULING — default-export: protected",
+      "2026-11-22 OWNER, on the two name spaces: \"Agree caveat bindings used to scope labels (A.a: 8)\"",
+      "2026-11-22 OWNER, discussing the analogy: `B := A & A`, `C := B & (B.a: 9)`: \"here B.a is always an error\""]
 if s83("s19") and QQ:
     QQ[0] = QQ[0] + " (altered)"
 DOCS_NOW = {f: read(os.path.join(PRED, f)) for f in NEW}
@@ -1120,7 +1208,44 @@ check("QUOTES", QQ and not q_miss and not t_miss, "%d quoted sentences in the re
       "%d record titles cited, not a title or not cited: %s" % (len(QQ), q_miss or "none", len(TT), t_miss or "none"))
 
 print("== MARKS: each disposition where it landed")
-MK = []
+MK = [("A1", "core.md", "From outside, a chain written in a binding: modes: a compile error"),
+      ("A2", "core.md", "Through a call that uses its argument alone: modes: a compile error"),
+      ("A3", "core.md", "except where a body uses its argument both alone and labelled"),
+      ("A3", "core.md", "The cost of (error) across the provided library"),
+      ("A4", "core.md", "A read from OUTSIDE sees the binding's EXPORTED settings only"),
+      ("A5", "core.md", "The name reaches the UNLABELLED uses only"),
+      ("A6", "core.md", "a call exports what its body exports (core/labels/export statement 3)"),
+      ("A7", "core.md", "Bare `$h` and the index across `&`: modes: a compile error"),
+      ("A8", "core.md", "when's \"Labels the test sets are visible in then\""),
+      ("A8", "library.md", "Then reads the test's labels across two arguments the body uses alone"),
+      ("A8", "core.md", "where the body uses it alone it awaits argument-default"),
+      ("D1", "core_details.md", "REVIVED by default-export (2026-11-22): it is the rule now"),
+      ("D2", "core.md", "default-export narrows \"the same label behavior\""),
+      ("D2", "core.md", "default-export narrows it too"),
+      ("D3", "core.md", "An UNLABELLED use carries the implicit label of the binding's name"),
+      ("D4", "core.md", "A part label over an EXPRESSION"),
+      ("D4", "core.md", "A macro's parameter is not a part whose labels the body may name"),
+      ("D4", "core.md", "Its library face (the manager's)"),
+      ("D5", "library.md", "`month_numbered.mname` is a compile error"),
+      ("D6", "core.md", "the manager's reading (c)"),
+      ("D6", "core_details.md", "(class: AGREEMENT) \"Agree caveat bindings used to scope labels (A.a: 8)\""),
+      ("D7", "core.md", "its OWN names (a group in its literals, a part label it writes, a label an export list it writes takes"),
+      ("D8", "core.md", "(core/labels/export, statement 5) (awaits capture-export)"),
+      ("D8", "core.md", "At the top nothing is outside"),
+      ("D9", "core.md", "the names the map exports"),
+      ("D9", "parked_details.md", "A PART USED ALONE EXPORTS NOTHING"),
+      ("D10", "core.md", "visibility goes by export, not by role"),
+      ("D11", "core.md", "so it fires on a label written in the definition against a binding of the same name"),
+      ("D11", "parked.md", "what is left of hiding"),
+      ("D12", "core.md", "an export list naming a label the part does not export"),
+      ("D13", "core.md", "a `_` PART LABEL is protected"),
+      ("D14", "core.md", "a metadata field alike, `w.index`"),
+      ("D15", "core.md", "`[=A]`, read `[A = A]`"),
+      ("D16", "core.md", "The cross case, a binding list over a part's labels"),
+      ("D16", "core.md", "Two lists that name one label give the same label, the last mention"),
+      ("D17", "core.md", "[core/labels/paths/one-use-read]   ruled 2026-11-22"),
+      ("D18", "core.md", "the part's own prefix (`isodate.year`)"),
+      ("NAMES", "core.md", "[core/modules/names]   reading 2026-11-22")]
 if s83("s20") and MK:
     MK[0] = (MK[0][0], MK[0][1], MK[0][2] + " (planted)")
 mk_miss = [i for i, f, sub in MK if ws(sub) not in ws(DOCS_NOW.get(f, ""))]
@@ -1130,7 +1255,7 @@ print("== DOC: every line this model formats occurs verbatim in the documents")
 DLN = list(LINES)
 if s83("s21") and DLN:
     DLN[0] = (DLN[0][0], DLN[0][1].replace("WHOLE `", "WHOLE `x", 1))
-d_miss = [(t, L[:100]) for t, L in DLN if ws(L) not in ws(ALLNOW)]
+d_miss = [(t, L) for t, L in DLN if ws(L) not in ws(ALLNOW)]
 for t, L in d_miss:
     print("   MISSING [%s] %s" % (t, L))
 check("DOC", DLN and not d_miss, "%d lines; missing: %d" % (len(DLN), len(d_miss)))
