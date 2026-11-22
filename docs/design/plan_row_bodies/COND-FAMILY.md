@@ -6884,3 +6884,23 @@ argument outside `each` (lib/structural/each takes one; core/operators/bindings:
 one"). His form, the comparison passed as a CONDITION `cmp`, needs the caller to name the macro's labels, so they
 must be public part labels (as `hit` is in `occurrences`), and needs a passed condition to read where it is used
 (the open bound-condition).
+
+### 2026-11-21 OWNER, on bound-condition: two examples of what `0` is bound to
+tags: core/conditions/match-so-far core/holes/bare-condition core/holes/bare-condition/nested-scope
+
+Asked **bound-condition** (does a condition bound or passed on its own, no pattern in it, read its labels and its
+`0` where it is used, (a), or is it sealed like a piece, (b); the lane's example `c := (0: rx.digit)` in
+`/\d${c}x/`; the manager's leaning (a)). HIS WORDS, whole:
+
+"bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/ C := /.${A & (0: 5)}/ the 0: is bound to A
+only"
+
+Class: two EXAMPLES with his reading of each; DISCUSSION. Both agree with what is ruled: (1) a bare condition in
+a hole reads the match so far of the rx it is written in (bare-condition, 2026-11-19; zero-in-definition today):
+`/\d${(0: 5)}/` is the digit `5`; (2) in `${A & (0: S)}` the `0` is only A (2026-11-19, "but not /${A & (0:
+digit)}/ where it is only the A"). RUN (the lowered regexes `5` and `.5`, hand-built): (1) WHOLE `5` HOLDS, `7`
+FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5]; (2) WHOLE `x5` HOLDS, `x7` FAILS, `55` HOLDS
+/ SEARCHED `a7 b5` `b5`@3 / FIND-ALL `x5 y7 55` [`x5`@0, `55`@6].
+
+NOT ANSWERED by them (told to him): in neither example is the condition bound to a NAME of its own; the question
+is `c := (0: 5)` then `/\d${c}/`. The slug stays open; re-asked on his own example.
