@@ -7076,3 +7076,21 @@ repeats `B`, read for the intended `d & (year: < 2100)` (a reading).
 WITHDRAWN by the manager on this position: the leaning (a) and the reading "a bound condition or computed label
 has no rx of its own and is laid against the pattern it meets" (case-2 entry, reading (b); zero-in-definition
 entry, reading (b)).
+
+### 2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`
+tags: parked/ideas/restricted-parameter parked/ideas/label-parameter core/conditions/form core/labels/flow
+
+After the manager's response on bound-condition (agreement; the computed labels as the cost; alternative 1
+favoured, alternative 2 read as `d & (year: < 2100)` and called heavier). HIS WORDS, whole:
+
+"bound-condition: correction to rx: B(d & isodate) := (year: < 2100)"
+
+Class: a CORRECTION of his own example (alternative 2, "macro types"; the spelling still his placeholder); no
+confirmation of the ruling in it. It WITHDRAWS the manager's reading of the body as `d & (year: < 2100)`: the
+body is the condition alone, and the head `d & isodate` is what gives `year` its target. The manager's reading,
+marked, told to him: B is a named condition whose TARGET is declared in its head (2026-11-14: a condition is "a
+MACRO awaiting its target"); `B(x)` lays `(year: < 2100)` against x, which the head restricts to an isodate. Two
+meanings of the restriction are possible and not chosen by his words: (i) literally the intersection, `B(x)` =
+`x & isodate & (year: < 2100)`, which is writable today as `B(d) := d & isodate & (year: < 2100)` and makes `year`
+ambiguous when x itself surfaces `year` (core/labels/flow); (ii) a promise checked at the call that x holds
+isodate's labels, `year` then being x's own.
