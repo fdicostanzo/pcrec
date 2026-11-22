@@ -1588,7 +1588,7 @@ see: parked/ideas/restricted-parameter parked/ideas/declared-labels
   `x & isodate & (isodate.year: < 2100)` (writable today as `B(d) := d & isodate & (isodate.year: < 2100)`; under
   label-reference the source names isodate's `year`, so x's own `year`, if any, no longer makes it ambiguous: a
   reading); (ii) a promise checked at the call that x holds isodate's labels, `year` then being x's own. The
-  head's bare `year` is his spelling, written an hour before label-reference was ruled; under that ruling the
+  head's bare `year` is his spelling, written before label-reference was ruled; under that ruling the
   body would name it through the parameter, `d.year` (a reading; not asked).
 
 ### Several bodies for one name   [core/operators/bindings/call-forms]   open call-forms 2026-11-19
@@ -1606,7 +1606,7 @@ see: lib/rx/repeat lib/modifiers/padded
 WHOLE `1234` FAILS / SEARCHED `12345` `123`@0 / FIND-ALL `1234567` [`123`@0, `456`@3] (`rx.repeat(rx.digit, 3)` by `repeat(x, n)`, `(?:\d){3}`)
 WHOLE `1234` HOLDS / SEARCHED `12345` `12345`@0 / FIND-ALL `1234567` [`1234567`@0] (`rx.repeat(rx.digit, 3)` by `repeat(x, min)`, `(?:\d){3,}`)
 
-### Program shape and statements   [core/operators/statements]   reading 2026-11-19
+### Program shape and statements   [core/operators/statements]   reading 2026-11-22
 A program is bindings, expressions, calls and `@` statements with ONE final expression, its pattern; a bare rx anywhere else is a compile error.
 needs: core/operators/bindings
 see: lib/builtin/warn lib/builtin/export lib/builtin/options lib/assert/assert lib/builtin/eval
@@ -1740,7 +1740,7 @@ modes: n/a (no matching involved)
 
 ## Diagnostics   [core/diagnostics]
 
-### Compile errors   [core/diagnostics/errors]   reading 2026-11-19
+### Compile errors   [core/diagnostics/errors]   reading 2026-11-22
 A program whose meaning is refused is a compile error, and no setting disables one; what is only probably a mistake is a warning instead (core/diagnostics/warnings).
 needs: core/values/functions core/operators/statements core/modules/conflicts
 - Each error below is ruled or read in its own piece; this index is PARTIAL: more compile errors are stated in

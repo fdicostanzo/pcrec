@@ -1,0 +1,103 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the loaded matcher against python `re`; a later `&` operand matched on the stretch
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0) over 341 texts; `/\d\d/ & /1\d/` against `1\d` (0, 0, 0), `/\d+/ & /\d*1/` against `\d*1(?<=\d)` (0, 0, 0) over 121 texts
+== ORDER: quantifier order (the order that carries meaning); the label against python `re`'s group
+PASS ORDER: the label h on the first whole path against python `re`'s group 1: greedy `(?<h>\d+)\d*` 0, lazy `(?<h>\d+?)\d*` 0 differing; the three modes (0, 0, 0), (0, 0, 0), over 121 texts
+== CLOSEDX: closed-argument's `_x` half, export statements 6 and 7 (EVID-2)
+   Statement 6, inside its binding: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`p6`, p6 := `[_a = A] SEQ "!" & (_a.h: <5)`, A := `/(?<h>\d)/`); outside it `p6 & (p6.h: <5)` is a compile error
+   `B(A) & (A.d: <5)`: `A.d`: `d` is not visible through `A` (a compile error, core/labels/paths)
+   `[c = B(A)] & (c.d: <5)`: `c.d`: `d` is not visible through `c` (a compile error, core/labels/paths)
+   `B(A) & (B.d: <5)`: `B.d`: `d` is not visible through `B` (a compile error, core/labels/paths)
+   `p6 & (p6.h: <5)`: `p6.h`: `h` is not visible through `p6` (a compile error, core/labels/paths)
+   `pub & (pub.h: <5), pub := [_a = A] SEQ "!"`: `pub.h`: `h` is not visible through `pub` (a compile error, core/labels/paths)
+PASS CLOSEDX: under B(rx) := `/${[_p = rx]}xx/`: `A.d` refused, `c.d` refused, `B.d` refused (the call itself matching as `\dxx`: (0, 0, 0) differing); inside its binding `(_a.h: <5)` legal, WHOLE against the direct "a digit under 5, then !" 0 differing; outside, `p6.h` refused and `pub.h` through `[_a = A]` refused
+== SECOND: a binding as the second `&` operand (EVID-3), binding-prefix's second-operand arm
+   One use, the second operand: WHOLE `12` FAILS, `21` HOLDS / SEARCHED `21 12` `21`@0 / FIND-ALL `12 21 10` [`21`@3, `10`@6] (`A & B & (B.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
+   `A & A & (A.h: <2)`: `A.h`: A is used 2 times here; label the part (`[left = A]`) to read one use
+PASS SECOND: `A.h` as the first operand 0, `B.h` as the second 0, `count((A.h: "1")): ==2` over `A & A` 0 differing from the direct reads over 40 texts; `A & A` counts 2 uses: yes
+== AMBIG: flow, a name both sides of `&` surface: a plain read refused, a group question legal
+   Across `&`, a group question over both sides: WHOLE `12` HOLDS, `21` HOLDS, `33` FAILS / SEARCHED `33 21` `21`@3 / FIND-ALL `12 33 31` [`12`@0, `31`@6] (`/(?<h>\d)\d/ & /\d(?<h>\d)/ & some((h: "1"))`); the plain read `/(?<h>\d)\d/ & /\d(?<h>\d)/ & (h: <2)` is a compile error
+   plain: `h`: both sides of `&` surface it, an ambiguous reference (core/labels/flow) ; `$h`: `h`: both sides of `&` surface it, an ambiguous reference (core/labels/flow)
+PASS AMBIG: the plain read refused, the `$h` read refused, by flow's ambiguity rule; `some((h: "1"))` against the direct "either digit is 1" 0 differing over 40 texts
+== TEXTUSES: uses counted in the referencing definition's text, before macros expand (ANS-2d)
+   `/${A},${A}/ & (A.d: <5)`: `A.d`: A is used 2 times here; label the part (`[left = A]`) to read one use
+PASS TEXTUSES: `pair(A) & (A.d: <5)` (A written once, lowered twice) legal, WHOLE against the direct second digit 0 differing; `/${A},${A}/ & (A.d: <5)` (written twice) refused, 2 uses
+== NESTED: the prefix reaches the uses written in the referencing definition's own text (ANS-2c)
+   A use inside another used binding: WHOLE `14;23!` HOLDS, `12;34!` FAILS / SEARCHED `12;34! 14;2!` `14;2!`@7 / FIND-ALL `14;23! 12;34! 4;1!` [`14;23!`@0, `4;1!`@14] (`D SEQ ";" SEQ X & (D.h: "4")`, D := `/(?<h>\d)+/`, X := `D SEQ "!"`); `D.h` reads the use written here, not X's
+PASS NESTED: `D.h` against `[left = D] ... & (left.h: ..)` (0, 0, 0); the nested path `X.D.h` against `[x = D]` written in X's place (0, 0, 0), over 5461 texts
+== CONTRAST: a prefix read and the bare last mention differ (EVID-5)
+   A prefix and the last mention differ: WHOLE `2219` HOLDS, `1222` FAILS, `1229` FAILS / SEARCHED `x2219` `2219`@1 / FIND-ALL `2219 1222 2212` [`2219`@0, `2212`@10] (`A SEQ B & (A.h: "2")`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
+   the bare last mention, written in place: WHOLE `2219` FAILS, `1222` HOLDS, `1229` FAILS / SEARCHED `x2219` FAILS / FIND-ALL `2219 1222 2212` [`1222`@5, `2212`@10] (`/(?<h>\d)\d/ SEQ /\d(?<h>\d)/ & (h: "2")`)
+PASS CONTRAST: `A.h` against the direct first digit 0 differing, the bare last mention against the direct last digit 0 differing, the two reads part on 36 of 121 texts
+== PATHS: a source is a path of names, each step passed by the previous one (ANS-5); the tier (ANS-4)
+   Through a part label inside the binding: WHOLE `3` HOLDS, `a3` FAILS, `7` FAILS / SEARCHED `a3 7 3` `3`@1 / FIND-ALL `3 a3 4 a4` [`3`@0, `3`@3, `4`@5, `4`@8] (`pair & (pair.b.x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`)
+   `c.A.d`: `c.A.d`: `A.d` is not visible through `c` (a compile error, core/labels/paths) ; typo'd `c.e`: `c.e`: `e` is not visible through `c` (a compile error, core/labels/paths) ; closed `A.d`: `A.d`: `d` is not visible through `A` (a compile error, core/labels/paths)
+PASS PATHS: `pub.a.h` legal, against `pub.h` (0, 0, 0); `pair.b.x` legal, WHOLE against the direct "a digit under 5 by b" 0 differing; `days.w.index` reproduces the printed line; a label not visible through its source is a compile error: `c.A.d` refused, the typo `c.e` refused, `A.d` under a closing B refused
+== INDEX: `x.h[k]` through a path; `&`-joined uses refused, sequenced uses in text order (ANS-6)
+   The index through sequenced uses: WHOLE `7,3,` HOLDS, `3,7,` FAILS / SEARCHED `x7,3,` `7,3,`@1 / FIND-ALL `7,3, 3,7, 1,3,` [`7,3,`@0, `1,3,`@10] (`A SEQ A & (A.h[2]: "3")`, A := `/(?<h>\d),/`); through `&`-joined uses, `A & A & (A.h[2]: "3")`, a compile error
+   `A & A & (A.h[2]: "3")`: `A.h[2]`: the uses of A are joined by `&`, which are not ordered (an index there is a compile error for now)
+PASS INDEX: `A.h[2]` through `A SEQ A` 0 differing from the direct second use's digit; `aa.h[2]` through a part label 0 differing; through `A & A` refused
+== VALUEGQ: a value entry inside a group question is a compile error for now (ANS-3)
+   `some(($h: "7"))`: a value entry `$h` inside a group question (a compile error for now) ; `count((($a + $b): <10))`: a value entry `($a + $b)` inside a group question (a compile error for now)
+PASS VALUEGQ: `some(($h: "7"))` refused, `count((($a + $b): <10))` refused; on `7;1;` `some((h: "7"))` HOLDS and `($h: "7")` FAILS: yes; outside a group question `($h: S)` against `(h: S)` (0, 0, 0) over 121 texts
+== HIDE: a part label named like a provided macro wins, with the hide-label warning (DES-6)
+   A part label named like the macro: WHOLE `a1b3` HOLDS, `a3b9` HOLDS, `a12` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a3 b9 c1` [`a3 b9 c1`@0] (`[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)`); the part label wins, with the hide-label warning
+PASS HIDE: `[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)` legal, the warning drawn; against the same program with the part label renamed `q` (0, 0, 0)
+== BOUNDSET: every label a binding's body names has its target in that binding; a SET reading a label (DES-1)
+   bound alone: at the binding `lim := <(10 - $b)`: lim is a set that reads `b`, which has no target in it
+PASS BOUNDSET: `lim := <(10 - $b)` bound alone refused at the binding by the no-target rule; written in place, WHOLE against the direct h < 10 - b 0 differing
+== GAPS: DES-3, three parse gaps left of `:`, each a compile error for now (readings)
+   `/(?<n>\d)/ & ((n + 1): <5)`: `n + 1`: a bare name inside a value left of `:` (a compile error for now)
+   `/(?<h>\d)(?<m>\d)/ & ((h | m): <5)`: `h | m`: `|` or `&` inside a value left of `:` (a compile error for now)
+   `/(?<h>\d)(?<m>\d)/ & ((h & m): <5)`: `h & m`: `|` or `&` inside a value left of `:` (a compile error for now)
+   `/(?<h>\d)/ & ($h: <5, h: >2)`: a label named twice in one condition: h
+PASS GAPS: refused: a bare name yes, `|` yes, `&` yes, named twice yes; the legal `(($n + 1): <5)` 0 differing from the direct
+== NULLABLE: EVID-4's limit: no program a check above runs has a nullable loop body
+PASS NULLABLE: 31 programs run by the checks above, walked node by node: 0 with a loop whose body can match empty
+== TWOSRC: the open two-sources question, both shapes, the run lines under each candidate (ANS-1)
+   (a) the label as it reaches the caller, an argument written in place: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(/(?<d>\d)/) & (d: <5)`, B(rx) := `/${rx}-(?<d>\d)/`)
+   (b) the source written here, as spelled with a part label: WHOLE `7-3` FAILS, `3-7` HOLDS / SEARCHED `3-7 7-3` `3-7`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B([x = /(?<d>\d)/]) & (x.d: <5)`, B(rx) := `/${rx}-(?<d>\d)/`)
+   (a) the last mention, a name written here and surfaced by a used binding: WHOLE `1,7` FAILS, `7,1` HOLDS / SEARCHED `7,1 1,7` `7,1`@0 / FIND-ALL `1,7 7,1 1,2 9,9` [`7,1`@4, `1,2`@8] (`/(?<h>\d)/ SEQ A & (h: <5)`, A := `/,(?<h>\d)/`)
+   (b) the group written here, as spelled with a part label: WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9` [`1,7`@0, `1,2`@8] (`[w = /(?<h>\d)/] SEQ A & (w.h: <5)`, A := `/,(?<h>\d)/`)
+PASS TWOSRC: the four candidate lines legal and each against its direct read (first or second digit): [True, True, True, True]; the printed `B(A) & (A.d: <5)` (A's own `d`) against candidate (b)'s spelling (0, 0, 0)
+== REPRINT: printed lines the earlier models owned, re-derived on the fixed engine (their successors)
+   metadata                     printed 
+   zero-binding (a)             printed 
+   bare-condition/labels        printed 
+   flat-read-outside |          printed 
+   flat-read-outside SEQ        printed 
+   nested-scope ex. 1           printed 
+   nested-scope ex. 3           printed 
+   array-in-piece bound first   printed 
+   array-in-piece in place      printed 
+   array-scope in an & operand  printed 
+   computed-labels in a set     printed 
+PASS REPRINT: 12 of 12 re-derived lines found verbatim in the documents (missing: none); the set form against value-left's `(($a + $b): <10)` on the 100 digit pairs: 0 differ
+== SUCCESSOR: EVID-1, every earlier in-force model re-run; its LAST LINE read; each red declared superseded
+   predbound  last line: predbound_model: 21 checks, 1 failed (DOC)
+      DOC: superseded by REPRINT: its two missing lines re-printed, zero-binding's sealed candidate re-lettered (c) (RULING-4) and the metadata read re-spelled `days.w.index` (label-reference)
+   predref    last line: predref_model: 8 checks, 2 failed (SCAN, MARKS)
+      MARKS: superseded by predcall's MARKS (call-prefix ruled; predref looked for it still open)
+      SCAN: superseded by VALUEGQ, BOUNDSET, REPRINT: its three new spans are this lane's fragments, the refused group question `count((($a + $b): <10))`, the set `<(10 - $b)` and the prose `some((h: "7"))`, none a bare read of a label from another definition
+   predcall   last line: predcall_model: 14 checks, 2 failed (SCAN, PREDREF)
+      PREDREF: superseded by SUCCESSOR (this check reads predref's last line itself; predcall expected MARKS only)
+      SCAN: superseded by VALUEGQ, BOUNDSET, REPRINT: the same three fragment spans as predref's SCAN
+   predfix77  last line: AssertionError: `chars := (.*?)`, `nchars
+      TRACEBACK: superseded by REPRINT and predbound's checks: its library-body reader asserts on `chars`'s body, re-spelled with the label-only group by helper-captures; its engine is carried unchanged in predbound, whose checks are green but DOC
+   predarr    last line: AssertionError: `chars := (/.*?/)`
+      TRACEBACK: superseded by REPRINT (the array-in-piece lines) and predref's HITS: the same `chars` body reader
+   predscope  last line: predscope_model: 20 checks, 3 failed (NAMES, CLOSEDB, DOC)
+      CLOSEDB: superseded by REPRINT `bare-condition/labels`: the Composed line became "Two definitions" under nested-scope (the definition reads its own settings only)
+      DOC: superseded by REPRINT: flat-read-outside's lines re-spelled `pair.x`/`date.v`, nested-scope's and bare-condition's lines re-spelled under label-reference and nested-scope
+      NAMES: superseded by predbound's bound-condition checks: the 7 definitions it refuses are bound-condition's ruled compile error (a computed label, a condition, an rx naming a label it lacks)
+PASS SUCCESSOR: 6 earlier models re-run, each last line read; every red declared superseded: yes
+== SWEEP: every printed three-mode line run by the old engine and the fixed one; no printed answer moves
+PASS SWEEP: 220 printed lines (old engine 220); the fixed engine: CRASH 1, DIFF 14, REFUSED 77, same 126, unparsed 2; lines the old engine reproduced and the fixed one does not: 0 []; lines only the fixed engine reproduces: 8 [('core.md', 421), ('core.md', 453), ('core.md', 454), ('core.md', 471), ('core.md', 540), ('core.md', 543)]
+== QUOTES: every owner sentence this lane quotes occurs in the record; every record title it cites is one
+PASS QUOTES: 9 quoted sentences in the record and the documents, missing: none; 5 record titles cited, not a title: none
+== MARKS: each FIX-NOW disposition's text where it landed
+PASS MARKS: 35 dispositions' texts found where they landed; missing: none
+== DOC: every line this model formats occurs verbatim in the documents
+PASS DOC: 15 lines; missing: none
+predfix82_model: 22 checks, 0 failed

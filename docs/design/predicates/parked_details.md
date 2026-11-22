@@ -126,7 +126,7 @@ history:
     the author's control is the optional mark or a default on the label. Kept as record.
   - NOTES: with the author-written form, every "all items" condition over an `x*` loop fails on the empty list
     unless the member is added (reverses CF:997-1000). Rejecting the empty case has spellings today: `+` in the
-    pattern, `some((h: S))`, a count (`n := count((h: S))`, `(n: >=1)`). "All are S, and at least one" takes two
+    pattern, `some((h: S))`, a count (`(count((h: S)): >=1)`; bound alone, `n := count((h: S))` is now a compile error at `n`, bound-condition). "All are S, and at least one" takes two
     conditions; a one-word form is not added without examples.
   - TRIGGER: an example where the empty case must be singled out and `+`, `some`, `count` do not serve.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
@@ -447,7 +447,7 @@ history:
     On `t2` with R = `(<9, <30)` and the text `10` (h = 10 already fails), the joint is FALSE, so under NOT it agrees
     with the record of the same tests: record-is-product (11:35) would hold under NOT too (0 / 0 of 11,110 differ, both
     modes, `predspec23d_model.out` PART Y; today 101 / 281).
-  - ITS COST: a POSITIVE joint test can pass with a part absent: `t2 & ((h, m): padded(>= (9, 30)))` on `10` HOLDS / HOLDS
+  - ITS COST: a POSITIVE joint test can pass with a part absent: `t2 & ((h, m): padded(>= (9, 30)))` (as printed before label-reference; today `(t2.h, t2.m)`) on `10` HOLDS / HOLDS
     (every minute completes it to a late time), against 23:48's "absence never matches, negated or not"; with R
     unpadded (§2.2) the same program stays FAILS / FAILS. The rule's domain (each label's value set) is the per-program
     DOM rev 23 retired from conditions, so it would bring a value-set reader back.
@@ -689,7 +689,8 @@ history:
         After the group it reads the current pass. Before it, the program "NOT (h: >=5)" means "every item except
         the LAST is under 5" (each item is tested by the pass after it): easy to get backwards. Its proper use is
         comparing an item with its predecessor: the sorted list, `/(?:(?=(?<n>\d))${c}(?<h>\d);)*/` with c :=
-        "there is no previous item, or n >= $h" (run on libpcre2: `3;4;7;` holds, `3;7;4;` fails, searched it
+        "there is no previous item, or n >= $h" (as first printed; bound alone `c` is now a compile error at `c`,
+        bound-condition: write the test in its hole) (run on libpcre2: `3;4;7;` holds, `3;7;4;` fails, searched it
         reports the sorted run `3;7;`). Most people should write the array form with `sorted`.
     14. PATTERN POSITIONS AND SET POSITIONS (hole-reading and operand-context, ruled 2026-11-17). A hole and a part
         of a sequence are PATTERN positions: the inserted pattern is a whole, in a non-capturing group, matched in
@@ -705,7 +706,8 @@ history:
         `h` UNSET (B's optional part is entered and resets the name), not 7. To keep A's value, label the part
         (`[aa = A]`, then `aa.h`) or use the array form. Parts from different authors that share a label name merge
         this way silently. Across `&` there is no order: a name both sides surface is an error where it is
-        REFERENCED (not for merely existing). A binding's name is not a path.
+        REFERENCED (not for merely existing). Revised by binding-prefix (2026-11-22): a binding's name IS a prefix,
+        `A.h` for one use; used twice, label the part. Under label-reference A's `h` is `A.h` anyway.
     16. `${}` IS NOT A STRING INSERT (ruled 2026-11-17: "i visualize ${} as a string insert but in this case it is
         not, it is a context aware rx insert"; "the kinds are all the various places it can be inserted"). What a
         hole inserts depends on WHERE it stands: where a pattern can stand, the pattern as a whole in a group,
@@ -730,7 +732,8 @@ history:
         the array are not pass numbers; to keep one entry per pass, label something every pass sets (the whole item).
     21. A CONDITION BEFORE ITS GROUP IN AN `occurrences` ARGUMENT READS THE PREVIOUS HIT (hit-carry, ruled 2026-11-18:
         "In cases where the user puts the condition before the label, they are expecting carries behavior").
-        `occurrences(/${c}(?<h>\d)/, min = 2)` with c := NOT (h: >= 5) FAILS on `73` (the second hit's test reads
+        `occurrences(/${NOT (h: >= 5)}(?<h>\d)/, min = 2)` (first printed with c := NOT (h: >= 5) bound alone, now a
+        compile error at `c`, bound-condition) FAILS on `73` (the second hit's test reads
         `7`); written after the label it reads its own hit. Added by lane predspec26.
     22. PUT A WORD-BOUNDARY CHECK ON THE PATTERN BEING FILTERED, NOT IN THE FILTER (hole-in-filter, ruled 2026-11-18):
         a filter sees only the matched text, so `/\d+/ & /\b\d+\b/` is a compile error, and so is the same through a
@@ -744,8 +747,9 @@ history:
         lane predspec26.
     25. A NAME IS PRIVATE WHEN IT STARTS WITH `_`, AND `[_ = A]` HIDES ALL OF A's NAMES (export-rule, ruled
         2026-11-18). Outside a binding a part's public labels pass through, a hole and the sequence operator alike
-        (hole-export, 2026-11-19); a flat `v` outside `date := [y = year] SEQ "-" SEQ [m = month]` reads the last
-        mention, the month's (ruled 2026-11-21: flat-read-outside): write `m.v` to say which. Spellings
+        (hole-export, 2026-11-19); outside `date := [y = year] SEQ "-" SEQ [m = month]`, `date.v` reads the last
+        mention, the month's (ruled 2026-11-21: flat-read-outside; the bare `v` refused since label-reference,
+        2026-11-22): write `date.m.v` to say which. Spellings
         are placeholders. Added by lane predspec26; restated by lane predfix61.
     26. A PART CANNOT REFER TO A NAME IT DOES NOT DEFINE (free-name, ruled 2026-11-18: "Catastrophic. The rx should
         export the group."). `B := /\k<h>/` used after a part that sets h is a compile error, not a reference to that
@@ -763,7 +767,8 @@ history:
         it"). The group questions read the array of each name's settings (array-vs-passes, ruled 2026-11-21), so
         `some((h: "5", m: "3"))` is "some h is 5 and some m is 3", not "one item holds both", and a joint entry
         inside a group question is refused. To ask "some item has h 5 and m 3", label the item only where it meets
-        the condition, then ask on that label: `([ok = item & ((h, m): ("5", "3"))] | item)+ & some((ok: anything))`,
+        the condition, then ask on that label: `([ok = [it = item] & ((it.h, it.m): ("5", "3"))] | item)+ & some((ok: anything))`
+        (re-spelled under label-reference),
         item := `/(?<h>\d)(?::(?<m>\d))?,/`: WHOLE `5:3,` HOLDS, `5,2:3,` FAILS (lane predarr, IDIOM). Added by lane
         predarr.
   - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the join-order entry and what followed). TRIGGER: the first user
@@ -771,6 +776,7 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane predfix61, review r61 F-B, REACH-6): item 25 taught the rule hole-export revised ("a bare `v` an error"); its second sentence until then, verbatim: "Outside a binding a reader sees only its own public labels and its parts' public labels by path: with `date := [y = year] SEQ "-" SEQ [m = month]`, write `m.v`, not `v`." Restated under the reading that stands today (core/labels/export/flat-read-outside).
 - 2026-11-21 (lane predarr, joint-in-some): item 30 appended to the list (the record's reading (b) of that entry); a rulings item for his observation.
+- 2026-11-22 (lane predfix82, review r82 FIXIND-1; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): items 13, 15, 21, 25, 30 restated under binding-prefix, bound-condition and label-reference (details text only).
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
 rulings:
@@ -796,6 +802,7 @@ history:
   - SOURCE: COND-FAMILY.md, 2026-11-17. TRIGGER: the rx-module discussion, or the first library file with labels.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc6, review r60 RULING-5): the gloss names label-flow's revision of the same evening ("across `&`, a name that both sides surface is an AMBIGUOUS REFERENCE and an error where it is referenced (not an error for merely existing: the shared-label ruling so revised)"), which already makes a collision nobody references harmless and so eases this item's problem; the ideas file's "One label name on both sides of `&` is refused" above is that item's text as written before it.
+- 2026-11-22 (lane predfix82, review r82 FIXIND-8, GENERAL-11; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: partly overtaken by label-reference, call-prefix, label-only-group and declared-labels. Status date 2026-11-19 to 2026-11-22.
 
 ## parked/ideas/label-parameter — A condition with a label parameter
 slugs: 
@@ -833,6 +840,7 @@ history:
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-3): the base Trigger line restored to the ideas file's words (it had been reworded).
 - 2026-11-21 (lane predscope; a source line, nothing ruled): his question "does that mean that v is not a label but a label variable?" (record: "2026-11-21 OWNER, discussing bare-nested-scope: rules on literals or compiler rewrites; is `v` a label variable; `inner(digits)`; what the compiled C exports"); the manager's answer there: `v` is an ordinary rx parameter, and a macro that names the label to test itself (`small(L) := (L: <5)`) would need this parked label parameter. His example of the same day: "C cannot see rx as its a binding variable not a label." (pure-label). The trigger is unchanged.
 2026-11-22 (lane predbound, bound-condition ruled): `see:` the under-construction core/operators/bindings/label-variables, his alternative 1 ("macro variables"); the idea stays parked.
+- 2026-11-22 (lane predfix82, review r82 GENERAL-11, FIXIND-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: superseded by core/operators/bindings/label-variables; its question on non-parameter labels answered. Status date 2026-11-19 to 2026-11-22.
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 
@@ -1040,6 +1048,7 @@ history:
   - TRIGGER: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 2026-11-22 (lane predbound, bound-condition ruled): `see:` the under-construction core/operators/bindings/macro-types, his alternative 2 ("macro types"); the idea (operators included) stays parked.
+- 2026-11-22 (lane predfix82, review r82 GENERAL-11; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: superseded by core/operators/bindings/macro-types. Status date 2026-11-19 to 2026-11-22.
 
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 

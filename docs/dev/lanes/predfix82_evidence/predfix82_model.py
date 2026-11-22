@@ -57,6 +57,10 @@
 #   s16 a quoted owner sentence altered (in memory)                                            -> QUOTES
 #   s17 one disposition's applied marker read back as missing (in memory)                       -> MARKS
 #   s18 one printed line's program given a wrong answer by the fixed engine (in memory)          -> SWEEP
+#   s19 `|` and `&` inside a value left of `:` accepted                                        -> GAPS
+#   s20 candidate (b)'s direct read taken on the second digit (a wrong control fact)            -> TWOSRC
+#   s21 the value-left comparison written `<=` (the 100-pair control altered)                   -> REPRINT
+# s1 also fails CONTROL (the matcher against python `re`), CONTROL's own plant.
 import os
 import re
 import subprocess
@@ -264,7 +268,7 @@ def lower_atom(expr, ctx):                                   # noqa: F811
     if e in BINDS and not is_cond(BINDS[e]) and not is_set_body(BINDS[e]):
         text = use_definition(BINDS[e], ctx, e)
         b = first_scope(text)
-        if s82("s5"):
+        if s82("s5"):                                        # plant: a use counted per lowering
             USES[(ctx.cur, e)] = USES.get((ctx.cur, e), 0) + 1
         USE_SC.setdefault(e, set()).add(b)
         ctx.held.add(e)
@@ -522,7 +526,7 @@ def lower_cond(text, ctx, zero_key=None):                    # noqa: F811
                     named.append(c)
                     continue
                 v = strip_parens(c)
-                if len(top_split(v, (" | ", " & "))) > 1:
+                if len(top_split(v, (" | ", " & "))) > 1 and not s82("s19"):
                     raise CompileError("`%s`: `|` or `&` inside a value left of `:` (a compile error for now)" % c)
                 bare = re.sub(r'"[^"]*"|\$[\w.]+|count\(.*\)|\b\d+\b', " ", v)
                 if re.search(r"[A-Za-z_]\w*", bare):
@@ -552,6 +556,8 @@ def prog(expr, binds=(), **opts):                            # noqa: F811
     return Pg
 
 
+if s82("s5"):                                                # plant: predcall's ARG-COUNT off too
+    use_param = _use_param2                                   # noqa: F811
 if ENGINE == "old":
     globals().update(OLD_ENGINE)
 
@@ -872,12 +878,14 @@ r_bs = ref("/(?<b>\\d)(?<h>\\d)/ & (h: lim)", BS)
 P_bi = prog("/(?<b>\\d)(?<h>\\d)/ & (h: <(10 - $b))")
 wbi = wdiff(P_bi, lambda t: len(t) == 2 and t.isdigit() and int(t[1]) < 10 - int(t[0]), pop("159", 2))
 print("   bound alone: %s" % r_bs)
-check("BOUNDSET", r_bs and "at the binding" in r_bs and wbi == 0,
+bs_rule = bool(r_bs) and "at the binding" in r_bs and "has no target" in r_bs
+check("BOUNDSET", bs_rule and wbi == 0,
       "`lim := <(10 - $b)` bound alone %s; written in place, WHOLE against the direct h < 10 - b %d differing"
-      % ("refused at the binding" if r_bs else "ACCEPTED", wbi))
+      % ("refused at the binding by the no-target rule" if bs_rule else "NOT refused by the no-target rule", wbi))
 
 print("== GAPS: DES-3, three parse gaps left of `:`, each a compile error for now (readings)")
 GP = [("/(?<n>\\d)/ & ((n + 1): <5)", "a bare name"), ("/(?<h>\\d)(?<m>\\d)/ & ((h | m): <5)", "`|`"),
+      ("/(?<h>\\d)(?<m>\\d)/ & ((h & m): <5)", "`&`"),
       ("/(?<h>\\d)/ & ($h: <5, h: >2)", "named twice")]
 gr = [(e, ref(e)) for e, _ in GP]
 for e, r in gr:
@@ -936,7 +944,7 @@ TS = [("(a) the label as it reaches the caller, an argument written in place", "
        lambda t: re.fullmatch(r"\d-\d", t) is not None and int(t[2]) < 5),
       ("(b) the source written here, as spelled with a part label", "B([x = /(?<d>\\d)/]) & (x.d: <5)", [BB],
        ", B(rx) := `/${rx}-(?<d>\\d)/`", ["7-3", "3-7"], "3-7 7-3", "7-3 3-7 1-2 9-9",
-       lambda t: re.fullmatch(r"\d-\d", t) is not None and int(t[0]) < 5),
+       lambda t: re.fullmatch(r"\d-\d", t) is not None and int(t[2 if s82("s20") else 0]) < 5),
       ("(a) the last mention, a name written here and surfaced by a used binding", "/(?<h>\\d)/ SEQ A & (h: <5)",
        ["A := /,(?<h>\\d)/"], ", A := `/,(?<h>\\d)/`", ["1,7", "7,1"], "7,1 1,7", "1,7 7,1 1,2 9,9",
        lambda t: re.fullmatch(r"\d,\d", t) is not None and int(t[2]) < 5),
@@ -992,8 +1000,174 @@ zs = P_zs is not None and ("(c) sealed, its own `0`: %s (the same program)" % fm
 rp.append(("zero-binding (c)", zs))
 cl100 = sum(1 for a_ in range(10) for b_ in range(10)
             if prog("/(?<a>\\d)\\+(?<b>\\d)/ & (a: <(10 - $b))").whole("%d+%d" % (a_, b_))
-            != prog("/(?<a>\\d)\\+(?<b>\\d)/ & (($a + $b): <10)").whole("%d+%d" % (a_, b_)))
+            != prog("/(?<a>\\d)\\+(?<b>\\d)/ & (($a + $b): %s10)" % ("<=" if s82("s21") else "<"))
+            .whole("%d+%d" % (a_, b_)))
 check("REPRINT", all(h for _, h in rp) and cl100 == 0,
       "%d of %d re-derived lines found verbatim in the documents (missing: %s); the set form against value-left's "
       "`(($a + $b): <10)` on the 100 digit pairs: %d differ" % (sum(1 for _, h in rp if h), len(rp),
                                                                [n for n, h in rp if not h] or "none", cl100))
+
+print("== SUCCESSOR: EVID-1, every earlier in-force model re-run; its LAST LINE read; each red declared superseded")
+LANES = os.path.normpath(os.path.join(HERE2, ".."))
+SUPERSEDED = {
+    "predbound": {"DOC": "REPRINT: its two missing lines re-printed, zero-binding's sealed candidate re-lettered (c) "
+                         "(RULING-4) and the metadata read re-spelled `days.w.index` (label-reference)"},
+    "predref": {"SCAN": "VALUEGQ, BOUNDSET, REPRINT: its three new spans are this lane's fragments, the refused "
+                        "group question `count((($a + $b): <10))`, the set `<(10 - $b)` and the prose `some((h: "
+                        "\"7\"))`, none a bare read of a label from another definition",
+                "MARKS": "predcall's MARKS (call-prefix ruled; predref looked for it still open)"},
+    "predcall": {"SCAN": "VALUEGQ, BOUNDSET, REPRINT: the same three fragment spans as predref's SCAN",
+                 "PREDREF": "SUCCESSOR (this check reads predref's last line itself; predcall expected MARKS only)"},
+    "predfix77": {"TRACEBACK": "REPRINT and predbound's checks: its library-body reader asserts on `chars`'s body, "
+                               "re-spelled with the label-only group by helper-captures; its engine is carried "
+                               "unchanged in predbound, whose checks are green but DOC"},
+    "predarr": {"TRACEBACK": "REPRINT (the array-in-piece lines) and predref's HITS: the same `chars` body reader"},
+    "predscope": {"NAMES": "predbound's bound-condition checks: the 7 definitions it refuses are bound-condition's "
+                           "ruled compile error (a computed label, a condition, an rx naming a label it lacks)",
+                  "CLOSEDB": "REPRINT `bare-condition/labels`: the Composed line became \"Two definitions\" under "
+                             "nested-scope (the definition reads its own settings only)",
+                  "DOC": "REPRINT: flat-read-outside's lines re-spelled `pair.x`/`date.v`, nested-scope's and "
+                         "bare-condition's lines re-spelled under label-reference and nested-scope"},
+}
+if s82("s13"):
+    SUPERSEDED["predscope"].pop("CLOSEDB")
+procs = {}
+for mname in SUPERSEDED:
+    env = {k: v for k, v in os.environ.items() if not k.endswith("_SABOTAGE") and k != "PREDFIX82_ENGINE"}
+    procs[mname] = subprocess.Popen([sys.executable, "-I", "-B", os.path.join(LANES, mname + "_evidence",
+                                                                               mname + "_model.py")],
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
+succ_ok = True
+for mname, pr in procs.items():
+    try:
+        out, _ = pr.communicate(timeout=540)
+    except subprocess.TimeoutExpired:
+        pr.kill()
+        out = "TIMEOUT"
+    last = out.rstrip("\n").split("\n")[-1]
+    mm = re.match(r"%s_model: (\d+) checks, (\d+) failed(?: \(([^)]*)\))?$" % mname, last)
+    if mm:
+        reds = set(x.strip() for x in (mm.group(3) or "").split(",") if x.strip())
+    else:
+        reds = {"TRACEBACK"}
+    undeclared = sorted(reds - set(SUPERSEDED[mname]))
+    gone = sorted(set(SUPERSEDED[mname]) - reds)
+    if undeclared:
+        succ_ok = False
+    print("   %-10s last line: %s" % (mname, last[:110]))
+    for r in sorted(reds):
+        print("      %s: %s" % (r, ("superseded by " + SUPERSEDED[mname][r]) if r in SUPERSEDED[mname]
+                                    else "UNDECLARED"))
+    if gone:
+        print("      declared but green now: %s" % gone)
+check("SUCCESSOR", succ_ok, "%d earlier models re-run, each last line read; every red declared superseded: %s" %
+      (len(procs), "yes" if succ_ok else "NO"))
+
+print("== SWEEP: every printed three-mode line run by the old engine and the fixed one; no printed answer moves")
+envo = {k: v for k, v in os.environ.items() if not k.endswith("_SABOTAGE")}
+envo["PREDFIX82_ENGINE"] = "old"
+oo = subprocess.run([sys.executable, "-I", "-B", os.path.abspath(__file__)], capture_output=True, text=True,
+                    env=envo, timeout=540).stdout
+OLD_SW = {}
+for l_ in oo.split("\n"):
+    if l_.startswith("SW\t"):
+        _, f_, ln_, st_, got_ = l_.split("\t", 4)
+        OLD_SW[(f_, int(ln_))] = (st_, got_)
+NEW_SW = {}
+for f, ln, line_, a, pt, tail in sweep_lines():
+    NEW_SW[(f, ln)] = sweep_one(line_, a, pt, tail)
+if s82("s18"):
+    k_ = next(k for k, v in NEW_SW.items() if v[0] == "same")
+    NEW_SW[k_] = ("DIFF", "planted")
+moved = [k for k in NEW_SW if OLD_SW.get(k, ("?",))[0] == "same" and NEW_SW[k][0] != "same"]
+gained = [k for k in NEW_SW if OLD_SW.get(k, ("?",))[0] != "same" and NEW_SW[k][0] == "same"]
+cnt = {}
+for v in NEW_SW.values():
+    cnt[v[0]] = cnt.get(v[0], 0) + 1
+check("SWEEP", len(OLD_SW) == len(NEW_SW) and not moved,
+      "%d printed lines (old engine %d); the fixed engine: %s; lines the old engine reproduced and the fixed one "
+      "does not: %d %s; lines only the fixed engine reproduces: %d %s" %
+      (len(NEW_SW), len(OLD_SW), ", ".join("%s %d" % kv for kv in sorted(cnt.items())), len(moved), moved[:4],
+       len(gained), gained[:6]))
+
+print("== QUOTES: every owner sentence this lane quotes occurs in the record; every record title it cites is one")
+QQ = ["4. A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an "
+      "expression",
+      "binding in prefix: i like your read on this except that perhaps it does refer to all",
+      "\"binding-prefix\" 1. yes. 2. i agree with your lean (a)",
+      "occurences et al should only set labels not captures unless they are so declared.",
+      "hits = occurences(...) ] & (hits.hit: <5)",
+      "(h.hit: 3)",
+      "[ c = B(A) ] does not allow c.A",
+      "x has no references in the binding",
+      "y has no target"]
+TT = ["2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error",
+      "2026-11-22 OWNER, on binding-prefix: \"i like your read on this except that perhaps it does refer to all\"",
+      "2026-11-22 OWNER RULING — binding-prefix: 1 yes (a group question through a binding's prefix reads every use); "
+      "2 a (a plain read through it, the binding used more than once, is a compile error)",
+      "2026-11-22 OWNER, on bound-condition: \"the form A := (x: blah) has to be illegal\"; his read, a response asked "
+      "for; two alternatives",
+      "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner "
+      "words)"]
+if s82("s16"):
+    QQ[1] = QQ[1].replace("perhaps", "surely")
+q_miss = [q for q in QQ if ws(q) not in RECORD_WS or ws(q) not in ws(ALLDOC)]
+heads = set(ws(re.sub(r"^(### |\*\*)", "", l_)) for l_ in RECORD.split("\n") if l_.startswith(("### ", "**")))
+t_miss = [t for t in TT if not any(h.startswith(ws(t)) for h in heads)]
+check("QUOTES", not q_miss and not t_miss, "%d quoted sentences in the record and the documents, missing: %s; %d "
+      "record titles cited, not a title: %s" % (len(QQ), q_miss or "none", len(TT), t_miss or "none"))
+
+print("== MARKS: each FIX-NOW disposition's text where it landed")
+CORE, CD = NEW["core.md"], NEW["core_details.md"]
+MK = [("ANS-1", CORE, "a name with two sources is open two-sources"),
+      ("ANS-2a", CORE, "open idiom-confirm (core/labels/paths/one-use-read)"),
+      ("ANS-2b", CORE, "as if a part label `[A = A]` for one use"),
+      ("ANS-2c", CORE, "not a use nested inside another\n  used binding"),
+      ("ANS-2d", CORE, "is counted in the TEXT of the definition the reference is written in, before macros expand"),
+      ("ANS-3", CORE, "a value\n  entry there is a compile error for now"),
+      ("ANS-4", CORE, "A path to a label NOT VISIBLE through its source is a compile error"),
+      ("ANS-5", CORE, "a source is a path of names, each step passed by the previous one"),
+      ("ANS-6", CORE, "through uses joined by `&` it is a\n  compile error for now"),
+      ("EVID-1", CORE, "Closed by a `_` part label: modes: a compile error"),
+      ("DES-1", CORE, "every label a binding's\n  body names has its target in that binding"),
+      ("DES-2", CORE, "a provided body also writes the label-only group"),
+      ("DES-3", CORE, "a bare name, a number or a label path is a label"),
+      ("DES-6", CORE, "the part label's, with the hide-label warning"),
+      ("RULING-3", CORE, "from a typed parameter the source is not ruled"),
+      ("RULING-4", CORE, "or sealed and legal, its own `0` (c)?"),
+      ("RULING-5", CORE, "bound alone it is bound-condition's compile error"),
+      ("RULING-8a", CD, "was written before label-reference was ruled)"),
+      ("RULING-9", CORE, "a reading taken on his silence; open idiom-confirm"),
+      ("GENERAL-5", CORE, "one naming only `0`\n  is open"),
+      ("GENERAL-7", NEW["library.md"], "only the index `h[k]` across `&` is refused for now"),
+      ("GENERAL-8", CORE, "may also stand in a set, written in place"),
+      ("GENERAL-11", NEW["parked.md"], "which supersedes this entry"),
+      ("FIXIND-1", NEW["parked_details.md"], "Revised by binding-prefix (2026-11-22)"),
+      ("FIXIND-2", NEW["library_details.md"], "— by owner ruling — helper-captures (b)"),
+      ("FIXIND-3", CD, "(as printed before label-reference; today `time & ((time.h, time.m): >= (9, 30))`"),
+      ("FIXIND-4", CD, "Its refusal of the bare read is revived by label-reference"),
+      ("FIXIND-5", CD, "- WITHDRAWN by the manager (record:"),
+      ("FIXIND-6", NEW["library.md"], "stale beside \"[ c = B(A) ] does not allow c.A\""),
+      ("FIXIND-7", CORE, "as composed in the definition the question is written in, not one literal"),
+      ("FIXIND-8", NEW["parked.md"], "Partly overtaken: a library label is reached only through its source"),
+      ("FIXIND-9", CORE, "is match-dependent: legal only where a pattern in it holds the label"),
+      ("EXAMPLES-2", CORE, "| a label not written in the referencing definition, read bare"),
+      ("EXAMPLES-4", NEW["library.md"], "a group question through the name reads every call's"),
+      ("EVID-4", open(os.path.abspath(__file__), encoding="utf-8").read(), "# KNOWN LIMIT (EVID-4, planned")]
+if s82("s17"):
+    MK[4] = (MK[4][0], MK[4][1], MK[4][2] + " (planted)")
+mk_miss = [i for i, t, sub in MK if ws(sub) not in ws(t)]
+check("MARKS", not mk_miss, "%d dispositions' texts found where they landed; missing: %s" %
+      (len(MK), mk_miss or "none"))
+
+print("== DOC: every line this model formats occurs verbatim in the documents")
+DL = list(LINES)
+if s82("s14"):
+    DL[0] = (DL[0][0], DL[0][1].replace("WHOLE `", "WHOLE `x", 1))
+d_miss = [(t, L_[:90]) for t, L_ in DL if ws(L_) not in ws(ALLDOC)]
+check("DOC", DL and not d_miss, "%d lines; missing: %s" % (len(DL), d_miss or "none"))
+
+failed = [n for n, ok in RESULTS if not ok]
+print("predfix82_model: %d checks, %d failed%s" % (len(RESULTS), len(failed),
+                                                    (" (%s)" % ", ".join(failed)) if failed else ""))
+sys.exit(1 if failed else 0)
