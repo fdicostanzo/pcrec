@@ -3723,3 +3723,15 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
   - **Next:**
     - U5 (card C6 incl. the clang arms, CANDIDATE; review r79);
     - U6 (the abi package and G1 dry run; C6 timing in a window main clears, every bench box including Zen 1; review r80).
+
+- **done (partial): R-47 unit U5** (2026-11-22, kit). Branch lane/memfn-k1108 @ 988ddf804, the merge of lane/bsu5fix2 412afe9f5. Measurement cards only: card C6 (V vs H64 vs the A/A arm H64.b, with H64.b's own salted layout pool) and card C6c (the SIMD-off wrapper on the 3 real bench sites, under clang -O2 and gcc -Os). kit-grid@8 is UNMEASURED. The span-vector form hash is folded into the WINDOW shape with per-entry k and has 3 instances (B=16, B=32, SIMD-off). The rule is committed at memfn/tests/span_forms/c6_rule.md (sha 9a2875a6bf089837): UNIT, VERDICT, READABLE, and the box is VOID at an A/A rate above 0.05.
+  - **NO emitted byte, NO stamp, NOTHING TIMED.** Identity: 356 of 356 pairs byte-identical vs b51fd80bd.
+  - **Review:** r79 (docs/dev/reviews/2026-11-22-r79-memfn-bsu5.md), ruled FIX FIRST and fixed in lane bsu5fix.
+  - **Validation:**
+    - 746 make test GREEN (2724 s) and 747 mech GREEN (S2930, S2931, S2933), at lane/bsu5fix de36c27c9.
+    - 749 full cards.py selftest GREEN (222 checks, 0 failed, 5661 s), at 412afe9f5.
+    - Between de36c27c9 and 412afe9f5, only cards.py changed: line-buffered stdout, the runtime/bound docstring, and cc_ident/variant_key requiring the compiler (80 of 80 keys unchanged; reports bsu5fix2_report.md / bsu5fix_report.md).
+    - A RED on the way: 748 crashed in the selftest's r44 I drill. A cc=None default from U5's 7f870f6d6 met a stub; the compiler is now required, with no default.
+  - **For [BSPAN-CLANG-DIFF]:** C6c covers clang -O2 and gcc -Os, SIMD-off, non-PIC executables. clang -O3 (no bench arm) and the bench's -fPIC -shared build are named gaps.
+  - **PLAN item for main and the kit (r79 F15):** mf_form_hash's rename normalization alpha-renames _mm* intrinsics, so cmpeq->cmpgt leaves a hash unchanged. Fixing it re-stales the stored hashes, so it is a decision, not a fix.
+  - **Remaining for R-47:** U6 (the abi package if any byte moves, test-axes, REACH_ONLY, G1's manifest + dry run, C6/C6c TIMING in a window you clear with Frank on each bench box including Zen 1; review r80).
