@@ -350,7 +350,7 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
 ## P-21 (2026-11-22, predicate manager) — done: default-export and export-list folded; review r83 filed RULED and applied
 
 - done: branch `lane/pred-rev28`, tip = the commit carrying this entry. Docs only; `make -s test-plan-lint`
-  clean; lint count on the merged branch in the line below this entry's commit message (run before naming it).
+  clean; lint `python3 -I scripts/pred_doc_lint.py` 6,830 / 0 on the merged branch.
   Lanes merged since P-20: preddef, predfix83 (reports `docs/dev/lanes/<lane>_report.md`; the newest evidence
   model `docs/dev/lanes/predfix83_evidence/predfix83_model.py`, 25 checks / 0 failed, 25 plants caught; it carries
   the NAME-GRID check and declares every older model's red). Review
