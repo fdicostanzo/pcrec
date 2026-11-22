@@ -707,11 +707,13 @@ rulings:
 - 2026-11-18 "so I agree the last reference" (record: "2026-11-18 OWNER on path-and-ambiguity: the part label used twice is RULED; the read-out is open")
 - 2026-11-18 "Naming [x = A] only disambiguates scope, it doesn't give additional access" (record: "2026-11-18 OWNER, export-scope discussion, third exchange")
 - 2026-11-17 "label-flow: 1. propose: it is an error to ambigously reference a label." (record: "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error")
+- 2026-11-22 (class: STATEMENT) "also: [ c = B(A) ] does not allow c.A" (record: "2026-11-22 OWNER, on closed-argument: "i thought you'd lean to (a). what would A.d mean if d no longer was visible?"; and "[ c = B(A) ] does not allow c.A""); a call's label reaches no argument by the argument's name
 rejected:
 - a part label used twice is an error — by owner — "I mean, harmless I guess ... so I agree the last reference".
 readings:
 - `x.h` follows the one label rule inside A; an ambiguity judged where the reference is written; `alt.x[1]` legal (the draft R.1.13) — UNTESTED.
 - the read-out corner (what a caller gets) — core/labels/export/caller-ambiguous.
+- the ground of "[ c = B(A) ] does not allow c.A": inside B the argument is the parameter, "a binding variable not a label" (2026-11-21, nested-scope example 1), so the call's label holds no part named for the argument (the manager's answer in the record entry) — SUPPORTED as run of the reading (docs/dev/lanes/predcall_evidence/ predcall_model.py CA: `[c = B(A)] & (c.A.d: <5)` refused, `c` passes no label `A.d`; sabotage s6 caught)
 - his `[=year]` (a placeholder in "an EXERCISE asked for", 2026-11-21) is `[year = year]`, the part label named for the binding it holds (the manager's reading, the `=x` shorthand of the binding list in a third place, not asked) — UNTESTED (a spelling).
 evidence: preddoc3a_model.py PATH (the draft's PART LF line; printed answers reproduced; `[01]\d` agrees) and PATH2 (his corner 1: the last mention); sabotage s18 caught.
 history:
@@ -719,6 +721,7 @@ history:
 - 2026-11-21 (lane predscope, pure-label folded): the first bullet until then (the draft §3.1's reading): "`[x = A]` is the group form `(?<x>A)` read as a label; inside pattern text a named group is the same thing." It was wrong as to capture. The `[=year]` bullet added. Status date 2026-11-18 to 2026-11-21.
 2026-11-22 (lane predbound, R-1, binding-prefix ruled): a pointer bullet to the new sub-piece; status date 2026-11-21 to 2026-11-22; no line moves.
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the ambiguity bullet's program `A & (B & (h: ..))` (a bare h not written in it) re-spelled with the parts written in place, `/(?<h>\d)/ & (/(?<h>\d)/ & (h: ..))`, and the binding form `A & (B & (B.h: ..))` named beside it; the bullet stays a reading, UNTESTED as before.
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): the pointer bullet names the macro's name beside the binding's (core/labels/paths/call-prefix); a bullet added for his statement "[ c = B(A) ] does not allow c.A" with its ground (a reading, run); no line moves.
 
 ## core/labels/paths/binding-prefix — A binding's name as a label prefix
 slugs: binding-prefix
@@ -732,18 +735,19 @@ rejected:
   The last use only (not the ruling): WHOLE `ab:cde` FAILS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0] (the same program)
 - (b) a plain read through a twice-used prefix reads the last use — by owner ruling — binding-prefix part 2 ("i agree with your lean (a)").
 - (c) a binding's name is never a path (the rule until then) — by owner ruling — binding-prefix.
+- (e) a macro's name is not a prefix for now (`B(A)` gives no `B.x`), the manager's conservative reading of 2026-11-22 — by owner ruling — call-prefix case 1, "yes use the macro name as shown to qualify the label" (core/labels/paths/call-prefix).
 readings:
 - the ruling as run: his example `chars SEQ ":" SEQ chars & (count((chars.ch: anything)): ==5)` reproduces the record's pasted `all` line in every mode; a plain read `(chars.ch: "a")` and `$chars.ch` through the twice-used `chars` refused with "label the part" (predbound PREFIX; sabotage s18 caught).
 - (a) a binding used as a part carries a part label of its own name; with ONE use `A & B & (A.h: <2)` answers as the printed `[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)` line — SUPPORTED (predbound PREFIX, the line "One use").
 - (b) "used more than once" is counted in the definition the reference is written in — SUPPORTED as a run of the reading (predbound PREFIXRD: `X SEQ X`, X := `chars & (chars.ch: "a")`, is legal, `chars` used once in X; WHOLE against the direct split, 0 of 31 texts over `ab` differ).
 - (c) an explicit part label mentioned twice is unchanged — SUPPORTED (predbound PREFIXRD: the printed line "A part label used twice" rebuilt, the same answers).
 - (d) no access to anything private, nothing under `_` or `[_ = A]` — SUPPORTED as a run of the reading (predbound PREFIXRD: `year._v` and `[_ = A] & (A.h: <5)` refused; sabotage s19 caught). That such a reference is a COMPILE ERROR rather than an unset label is the model's choice, not stated.
-- (e) a macro's name is not a prefix for now — SUPPORTED as a run of the reading (predbound PREFIXRD: `B(A) & (B.d: <100)` refused).
 - (f) a label and a binding of one name: which one `x.h` names is not stated — UNTESTED.
 - (g) the error may relax to the last use later without changing an answer — UNTESTABLE (a statement about a later change; a refused program has no answers).
 evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py PREFIX, PREFIXRD.
 history:
 - 2026-11-22 (lane predbound, R-1 of its rulings file, binding-prefix ruled): a new ruled piece. The brief's parked piece parked/ideas/binding-prefix, drafted in this lane and never delivered, is not made (the ruling replaced it).
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): reading (e) withdrawn by the ruling: the base's words until then, "a MACRO's name is not a prefix for now (`B(A)` gives no `B.x`)", became "a MACRO's name is a prefix too, under the same two rules (core/labels/paths/call-prefix)"; (e) and its run (predbound PREFIXRD) moved to `rejected:`. The status date stays 2026-11-22.
 
 ## core/labels/paths/label-reference — A label is referenced with its source
 slugs: label-reference
@@ -767,21 +771,42 @@ history:
 - 2026-11-22 (lane predbound, R-2): a new open piece, slug label-reference.
 - 2026-11-22 (lane predbound, R-3, label-reference RULED "required"): open to ruled; the statement until then, verbatim: "Must a reference to a label not written in the text of the definition that makes it carry its source (`chars.ch`, not `ch`), (a), or may it stay bare, as today, (b)?"; the line "Bare, as today" moved to `rejected:`; `length`'s and `month_numbered`'s bodies, and every program this lane wrote, use the required form; the other printed programs are left bare for the next lane (the manager's R-3).
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the sweep: the bullets on the unstated sources point at the new open piece core/labels/paths/call-prefix; "the documents' other printed programs still read used bindings' labels bare; they are re-spelled by the next lane" replaced by the sweep's result; the reading on rule-sentence capitals added.
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): the bullet "Not stated by his words (open call-prefix: core/labels/paths/call-prefix): the source of a label from a macro call's body, from an argument, from a typed parameter; meanwhile the conservative forms below." became: a call's body through the macro's name or a label on the call (ruled), an argument and a typed parameter not ruled. Reading (d) above stands as asked and since answered for the call's body.
 
 ## core/labels/paths/call-prefix — The source of a label from a call or an argument
 slugs: call-prefix
 rulings:
-- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); what it leaves unstated: the source of a label from a call's body, an argument, a parameter
+- 2026-11-22 "call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is legal there. i'm trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go through [ c = B(A) ] as B may defined d" (record: "2026-11-22 OWNER RULING — call-prefix, case 1: the macro's name qualifies a label of its body; case 2: "i'd say A.d is legal there", with a doubt he is working through"); case 1 RULED: the macro's name qualifies the labels its call surfaces (`hits(/\d+/) & (hits.hit: 3)`); case 2 NOT ruled, his lean "i'd say A.d is legal there" and two thoughts he is working through
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); the ruling that raised the question
 rejected:
+- (1) of the conservative forms, "never by the macro's name" (`[h = hits(/\d+/)] & (h.hit: <5)` the only way to a call body's labels) — by owner ruling — case 1, "yes use the macro name as shown to qualify the label"; the labelled call stays legal.
+- the manager's sentence for case 2, "They are the same label" (`A.d` and `c.d`) — by run — the record entry's two pasted lines differ when B sets a `d` of its own (A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`: `7-3` FAILS through `A.d`, HOLDS through `c.d`); withdrawn by the manager in the record entry, reproduced here (docs/dev/lanes/predcall_evidence/ predcall_model.py RECORD).
 readings:
-- (1) a call is labelled to reach its body's labels (`[h = hits(/\d+/)] & (h.hit: <5)`), never by the macro's name — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py HITS: the record's two `hits` lines reproduced from the program text; `hits(/\d+/) & (hit: <5)` refused, SCAN's checker and the model; the macro's name as a prefix refused, predbound PREFIXRD (e))
-- (2) an argument that is a binding is reached by that binding's name (`C := B(A) & (A.d: <100)`) — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL: example 1's line unchanged)
+- (a) binding-prefix's two rules carried to a macro's name (called once, a plain read legal; called more than once, a plain read the compile error saying to label the call, a group question reading every call) — SUPPORTED as run of the reading (docs/dev/lanes/predcall_evidence/ predcall_model.py TWICE: `occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")` refused, "label the part"; its group question `some((occurrences.hit: "9"))` against the direct "a `;` and a 9 anywhere", 0 of 121 texts over `9;1` differ, `9;1` HOLDS so the first call is read; CASE1: his example legal, against the labelled call 0 / 0 / 0 of 341 texts over `13 a`, WHOLE against the direct "the last number is 3" 0 differ; the four printed library lines, the call labelled, give the same answers by the macro's name; sabotage s2, s3 caught). The macro's name counts as a use of that name in the definition the call is written in, as a binding's does (the model's choice, the same rule).
+- (b) a prefix `X.d` reads `d` as X surfaces it, so `B(A) & (A.d: <5)` and `[c = B(A)] & (c.d: <5)` differ when the body sets a `d` of its own — SUPPORTED (docs/dev/lanes/predcall_evidence/ predcall_model.py RECORD: both pasted lines of the record entry reproduced from the program text; WHOLE against the direct "first digit" / "second digit under 5", 0 and 0 of 40 texts; sabotage s4 caught)
+- (c) `B.d` equals `c.d` for a single call — SUPPORTED (docs/dev/lanes/predcall_evidence/ predcall_model.py BDOT: `B(A) & (B.d: <5)` against `[c = B(A)] & (c.d: <5)`, 0 / 0 / 0 of 121 texts over `37-`; its line equals the record's c.d line)
+- (d) an argument the body uses twice (`pair(A) & (A.d: ..)`, pair(p) := `/${p},${p}/`): `A.d` reads `d` as it reaches the caller, the last mention — SUPPORTED as run of the reading (docs/dev/lanes/predcall_evidence/ predcall_model.py PAIR: WHOLE against the direct "the second digit under 5", 0 of 40 texts; against `[c = pair(A)] & (c.d: <5)` 0 / 0 / 0; a group question `some((A.d: "7"))` reads both uses; sabotage s5 caught). It needs "used more than once" counted in the caller's TEXT (A written once): counted per lowering of the parameter the same program is the compile error "A is used 2 times here" (the model's OPT argcount = lowered), so the reading also chooses the count, a reading of binding-prefix's reading (b).
+- case 2 meanwhile: `A.d` legal for an argument that is a binding and reading A's own `d` — the owner's lean, not ruled; run as the record's A.d line (RECORD) and the printed example 1 of core/holes/bare-condition/nested-scope.
 - (3) an argument written in place is the caller's own text, read bare — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py LABELONLY: `hits(/a(?<g>x)?/) & (g: "x")`, its printed line)
 - (4) a parameter's label inside the body is not nameable — ruled (nested-scope, 2026-11-21); nothing run here
-- the candidates (b), (c) only add spellings — UNTESTABLE (a statement about later spellings)
-evidence: docs/dev/lanes/predref_evidence/ predref_model.py HITS, RESPELL, LABELONLY.
+- a group in a USER macro's body (`(?<d>\d)` in B) is a capture and a label as in any user literal: helper-captures ("occurences et al") is for provided bodies — the manager's reading (a) of that ruling; UNTESTED as to capture (the model reads the labels only).
+evidence: docs/dev/lanes/predcall_evidence/ predcall_model.py CASE1, TWICE, RECORD, BDOT, PAIR; docs/dev/lanes/predref_evidence/ predref_model.py HITS, RESPELL, LABELONLY.
 history:
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): new open piece (the brief's reading (b), the manager's conservative form, listed as the open question call-prefix with candidates).
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): open call-prefix to ruled. The statement until then, verbatim: "Under label-reference, how is a label referenced that comes from a macro call's body, from an argument, or from a parameter inside a macro body?". The conservative form 1 until then: "a label from a call's body is reached by labelling the call, never by the macro's name: `[h = hits(/\d+/)] & (h.hit: <5)` (a macro's name is no prefix: core/labels/paths/binding-prefix)"; form 2 kept as the meanwhile reading of case 2; forms 3 and 4 kept. The candidates until then: "(a) keep the four forms; (b) as (a), and a macro called once in the definition is a prefix of its own, as a binding is (`hits.hit`); (c) as (a), and an argument is also reached through the parameter's name at the call (`B(rx = A)`, `rx.d`)"; the ruling is wider than (b): a macro called more than once is a prefix too, under binding-prefix's two rules (the manager's reading told to him). The line `modes: n/a (a question ...)` replaced by the run lines; programs written with a labelled call are not re-spelled.
+
+## core/labels/paths/closed-argument — When a macro closes its argument's labels
+slugs: closed-argument
+rulings:
+- 2026-11-22 (class: LEAN) "closed-arguments: i thought you'd lean to (a). what would A.d mean if d no longer was visible? also: [ c = B(A) ] does not allow c.A" (record: "2026-11-22 OWNER, on closed-argument: "i thought you'd lean to (a). what would A.d mean if d no longer was visible?"; and "[ c = B(A) ] does not allow c.A""); his lean to (a), put as a question; to be entered as the ruling on his confirmation
+rejected:
+readings:
+- the manager's leaning (b), "a closure only needs to guard what the macro surfaces" — not held now: the manager's answer in the record entry (his question has no good answer; `A.d` would name what the caller cannot know from its own text). Not a rejection by ruling.
+- the statement to enter on his confirmation, NOT YET RULED: "`A.d` is legal in the caller exactly where `d` is visible through the call, and it reads `d` as it reaches the caller." — UNTESTED (not applied to any printed program, by the brief).
+- B CAN remove A's `d` (`B(rx) := /${[_ = rx]}xx/`, core/labels/export statement 7): the manager's reading (b) of the call-prefix record entry, on his first thought — UNTESTED here (export statement 7's own evidence).
+evidence: none (a question).
+history:
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): a new open piece, a sub-piece of core/labels/paths/call-prefix in all but its tag (a fifth tag word is not in the format). The manager's leaning (b) as put to him and its withdrawal are in the record entry.
 
 ## core/labels/backreferences — Backreferences
 slugs: backref-label backref-across-parts same-name-twice
@@ -1963,12 +1988,14 @@ rejected:
 - the manager's reading of the body as `d & (year: < 2100)` — by owner correction — "correction to rx: B(d & isodate) := (year: < 2100)".
 readings:
 - meaning (i) under label-reference: `x & isodate & (isodate.year: < 2100)`, the source naming isodate's year so x's own year does not make it ambiguous — UNTESTED (lane predref's reading, from binding-prefix's "One use" line; no isodate body is run)
+- under label-reference the head's body would name `year` through the parameter, `d.year` (his example, `B(d & isodate) := (year: < 2100)`, was written an hour before label-reference was ruled) — the manager's reading, not asked; UNTESTED (macro types are not defined).
 - B is a named condition whose target is declared in its head; `B(x)` lays `(year: < 2100)` against x — the manager's reading (record "2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`"), UNTESTED.
 - the two meanings of the restriction, (i) the intersection and (ii) a promise checked at the call — both stated in the record entry, neither chosen; UNTESTED.
 evidence: none (under construction).
 history:
 - 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/restricted-parameter), pointing here.
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): meaning (i) until then: "literally the intersection, `B(x)` is `x & isodate & (year: < 2100)` (writable today as `B(d) := d & isodate & (year: < 2100)`, and `year` is then ambiguous where x itself surfaces `year`, core/labels/flow)"; now spelled with the source, the ambiguity remark replaced (a reading); his own spelling `B(d & isodate) := (year: < 2100)` quoted unchanged, its bare `year` pointed at call-prefix.
+- 2026-11-22 (lane predcall, call-prefix case 1 folded): the bullet's end until then, verbatim: "(the head's bare `year`: his spelling, what label-reference would make of it is open, core/labels/paths/call-prefix)." became the reading that under label-reference the body would name it through the parameter, `d.year`; his example predates that ruling by an hour; not asked. Lane predref's question on it answered by this reading (the manager's, in the brief). No line moves.
 
 ## core/operators/bindings/call-forms — Several bodies for one name
 slugs: call-forms

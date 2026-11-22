@@ -319,7 +319,8 @@ defined: language
 - A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up
   to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
   empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
-- A condition after it reads the LAST hit's own labels, through a label on the call; his example:
+- A condition after it reads the LAST hit's own labels, through the macro's name (`occurrences(/\d+/) &
+  (occurrences.hit: <5)`, one call) or a label on the call; his example:
   `[ hits = occurences(...) ] & (hits.hit: <5)` (core/labels/paths/call-prefix). A rejecting condition after it
   re-chooses the hits (re-splits or drops them), so a test on the hits belongs after the atomic `hits` or inside
   the argument (the lines below).
@@ -353,9 +354,16 @@ defined: language
 - The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences).
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
+- One call may be read by the macro's name: `hits(/\d+/) & (hits.hit: <5)` gives the answers of the line
+  "Plain read" (a reading, run; core/labels/paths/call-prefix).
+- His second example, `[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))` (his gloss: "<5 and last hit
+  is 3 and some hit is 4"): a test inside the argument chooses the hits; a test after the atomic `hits` judges
+  them (a reading, run: `4 9 3` and `43` HOLD with the test inside, FAIL with every number tested after).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
 Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
+His second example, a test inside the argument: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` HOLDS (hits [`4`, `3`]), `43` HOLDS (hits [`4`, `3`]), `4 13` HOLDS (hits [`4`, `1`, `3`]), `4 3 9` HOLDS (hits [`4`, `3`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))`)
+Every number tested after the call: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` FAILS (hits [`4`, `9`, `3`]), `43` FAILS (hits [`43`]), `4 13` FAILS (hits [`4`, `13`]), `4 3 9` FAILS (hits [`4`, `3`, `9`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`)
 
 ### contains   [lib/search/contains]   ruled 2026-11-15
 `contains(s)` is the plain gap body `/(?s:.*)(?:${s})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s.
@@ -564,6 +572,9 @@ defined: native (a compile-time check of a set's emptiness, not a pattern)
 - Reached by `assert := import("assert")`; a failed assertion is a compile error naming it.
 - It is how an author validates what an ambiguous rx means under PCRE's one reading.
 - Not the group question `some(c)` (lib/counting/some): that one asks about a label's settings in a match.
+- His remark after the second `hits` example: "nice. critical is the @assert macros to test that it does what was
+  intended". Two gaps (a reading): no assertion form states what a search reports (which stretch, at which place),
+  nor a label's value on a given subject.
 modes: n/a (compile-time checks; no matching involved)
 
 ### assert.each   [lib/assert/each]   under-construction 2026-11-19
@@ -746,11 +757,14 @@ defined: ?
 
 ## Names the worked examples call   [lib/planned]
 
-### days, weekday_of, days_in, luhn   [lib/planned/standard]   under-construction 2026-11-19
+### days, weekday_of, days_in, luhn   [lib/planned/standard]   under-construction 2026-11-22
 `days`, `weekday_of`, `days_in` and `luhn` are called by the worked examples and defined nowhere: planned content of the standard library.
 see: core/modules/standard-library
 module: ?
 defined: ?
 - The uses: `d := days($b) - days($a)`, `wd := weekday_of($rest.year, $rest.month, $rest.day)`,
   `dim := days_in($year, $month)` (computed labels), `card := /\d{4}( ?\d{4}){3}/ & luhn & startsWith("4")`.
+- The three computed uses are quoted from the frozen draft's worked examples, kept as found: written before
+  bound-condition (2026-11-22), which refuses a computed value bound alone; restated when the standard library is
+  designed.
 - A REGULAR TWIN (an automaton form beside a callout) is the lean for `luhn`, `weekday_of` and `days_in`.

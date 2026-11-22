@@ -486,7 +486,12 @@ needs: core/labels/flow core/labels/export
 - An ambiguity is judged where the reference is written: `/(?<h>\d)/ & (/(?<h>\d)/ & (h: ..))` reads the inner
   h only (a reading); through bindings the source names the part, `A & (B & (B.h: ..))`.
 - In a value position `alt.x[1]` stays legal (a reading).
-- A binding's name is a prefix of its own, as if a part label `[A = A]`: core/labels/paths/binding-prefix.
+- A binding's name is a prefix of its own, as if a part label `[A = A]`: core/labels/paths/binding-prefix; a
+  macro's name at its call likewise: core/labels/paths/call-prefix.
+- His statement "[ c = B(A) ] does not allow c.A": a call's label reaches no argument by the argument's name. The
+  ground (a reading): inside B the argument is the parameter, "a binding variable not a label"
+  (core/holes/bare-condition/nested-scope), so the call's label holds no part named for the argument
+  (`[c = B(A)] & (c.A.d: <5)` is refused, run).
 WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)`)
 A part label used twice: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)`)
 
@@ -501,8 +506,8 @@ see: core/labels/flow core/labels/export core/labels/paths/label-reference
 - The compile error's message says to label the part (`[left = chars]`), then read `left.ch`. "Used more than
   once" is counted in the definition the reference is written in (a reading).
 - Readings: an explicit part label mentioned twice is unchanged (its last mention, core/labels/paths); the prefix
-  reaches nothing private, and nothing under `_` or `[_ = A]` (core/labels/export statement 4); a MACRO's name is
-  not a prefix for now (`B(A)` gives no `B.x`); which of a label and a binding of one name `x.h` names is not
+  reaches nothing private, and nothing under `_` or `[_ = A]` (core/labels/export statement 4); a MACRO's name is a
+  prefix too, under the same two rules (core/labels/paths/call-prefix); which of a label and a binding of one name `x.h` names is not
   stated; the error may later relax to the last use without changing an answer.
 His example, every use: WHOLE `ab:cde` HOLDS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6] (`chars SEQ ":" SEQ chars & (count((chars.ch: anything)): ==5)`)
 One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
@@ -516,8 +521,9 @@ see: lib/modifiers/length core/labels/export core/holes/bare-condition/nested-sc
 - Readings (each a reading): "known textually" means a group in one of the definition's literals or a part label `[x = ..]` it
   writes; any other label is reached through a binding's name or a part label; `$x` reads alike, rx text is
   untouched (it names only its own literal's groups); the plain idiom is included (`isodate & (isodate.year: ..)`).
-- Not stated by his words (open call-prefix: core/labels/paths/call-prefix): the source of a label from a macro
-  call's body, from an argument, from a typed parameter; meanwhile the conservative forms below.
+- A label from a macro call's body is reached through the macro's name or a label on the call (ruled,
+  core/labels/paths/call-prefix); from an argument and from a typed parameter the source is not ruled (the
+  readings there and in core/operators/bindings/macro-types).
 - It revises core/labels/export/flat-read-outside and hole-export (core/labels/export statement 3), and his
   example 1 in core/holes/bare-condition/nested-scope ("C can see d as a flat look into A"): what a flat read
   meant is what `binding.x` means.
@@ -526,22 +532,56 @@ see: lib/modifiers/length core/labels/export core/holes/bare-condition/nested-sc
 With its source: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((chars.ch: /(?s:.)/)): ==3)`)
 Bare: modes: a compile error (`chars & (count((ch: /(?s:.)/)): ==3)`: `ch` is not written in it).
 
-### The source of a label from a call or an argument   [core/labels/paths/call-prefix]   open call-prefix 2026-11-22
-Under label-reference, how is a label referenced that comes from a macro call's body, from an argument, or from a parameter inside a macro body?
-needs: core/labels/paths/label-reference
-see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-scope core/operators/bindings/macro-types
-- Not stated by his words ("label-reference: required"); the conservative forms used meanwhile, each a reading:
-  1. a label from a call's body is reached by labelling the call, never by the macro's name:
-     `[h = hits(/\d+/)] & (h.hit: <5)` (a macro's name is no prefix: core/labels/paths/binding-prefix);
-  2. a label of an argument that is a binding is reached by that binding's name: `C := B(A) & (A.d: <100)`;
-  3. an argument written in place is the caller's own text, read bare: `hits(/a(?<g>x)?/) & (g: "x")`;
-  4. a parameter's label inside the macro body is not nameable (core/holes/bare-condition/nested-scope); it waits
-     for macro types (core/operators/bindings/macro-types).
-- Candidates (the lane's list; the choice is the owner's): (a) keep the four forms; (b) as (a), and a macro called
-  once in the definition is a prefix of its own, as a binding is (`hits.hit`); (c) as (a), and an argument is also
-  reached through the parameter's name at the call (`B(rx = A)`, `rx.d`).
-- Under every candidate the four forms stay legal: (b) and (c) only add spellings, so no answer moves.
-modes: n/a (a question; the forms' lines are in lib/search/hits and core/holes/bare-condition/nested-scope)
+### The source of a label from a call or an argument   [core/labels/paths/call-prefix]   ruled 2026-11-22
+A macro's name qualifies the labels its call surfaces (`hits(/\d+/) & (hits.hit: 3)`), under the two rules of a binding's prefix; a label on the call stays legal.
+needs: core/labels/paths/binding-prefix core/labels/paths/label-reference
+see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-scope core/operators/bindings/macro-types core/labels/paths/closed-argument
+- His words, whole: "call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is
+  legal there. i'm trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go
+  through [ c = B(A) ] as B may defined d".
+- Case 1, ruled: the macro's name is a prefix of the labels its call surfaces (its arguments' too: a reading).
+  With binding-prefix's two rules (a reading): called once in the definition, a plain read through the name is
+  legal; called more than once, a plain read is the compile error saying to label the call, and a group question
+  reads every call's settings, in order (the lines "By the macro's name, his example" and "Called twice").
+- A labelled call stays legal and, for one call, reads the same label (the line "Labelled"); programs written
+  that way are not re-spelled.
+- A prefix `X.d` reads `d` as X surfaces it (a reading, run): `B.d`, and `c.d` under `[c = B(A)]`, are `d` as the
+  call surfaces it, the last mention among the body's and the argument's; `A.d` is A's own `d`. So the spellings
+  differ when the body sets a `d` of its own (the record's two run lines, below). A group written in a USER
+  macro's body is a capture as in any user literal: helper-captures is for provided bodies only (a reading).
+- Case 2, a label of an argument that is a binding (`A.d` in `B(A)`): NOT RULED; the owner's lean, 2026-11-22: "i'd
+  say A.d is legal there". Meanwhile the reading: `A.d` is legal and reads A's own `d`, as printed in
+  core/holes/bare-condition/nested-scope (`C := B(A) & (A.d: <100)`). A macro that closes its argument's labels:
+  core/labels/paths/closed-argument.
+- An argument the body uses twice (`pair(p) := /${p},${p}/`) is written once in the caller, so `A.d` is a plain
+  read of one use; it reads `d` as it reaches the caller, the last mention (a reading, run: the line "An argument
+  used twice by the body").
+- An argument written in place is the caller's own text, read bare (`hits(/a(?<g>x)?/) & (g: "x")`); a
+  parameter's label inside the body is not nameable (core/holes/bare-condition/nested-scope); a call's label
+  reaches no argument by the argument's name (core/labels/paths).
+By the macro's name, his example: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`hits(/\d+/) & (hits.hit: 3)`)
+Labelled: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`[h = hits(/\d+/)] & (h.hit: 3)`)
+Called twice, a group question reads every call: WHOLE `9;1` HOLDS, `1;9` HOLDS, `1;1` FAILS / SEARCHED `x;1 9;` `x;1 9;`@0 / FIND-ALL `9;1 1;1 1;9` [`9;1 1;1 1;9`@0] (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & some((occurrences.hit: "9"))`)
+A's own d, through the argument (case 2, a reading): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+By the macro's name: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (B.d: <5)`, the same A and B)
+An argument used twice by the body: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair(A) & (A.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${p},${p}/`)
+Called twice, a plain read: modes: a compile error (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")`: label the call).
+
+### When a macro closes its argument's labels   [core/labels/paths/closed-argument]   open closed-argument 2026-11-22
+When a macro closes its argument's labels (`B(rx) := /${[_ = rx]}xx/`), is the caller's `A.d` in `B(A)` (a) a compile error, or (b) still legal?
+needs: core/labels/paths/call-prefix core/labels/export
+- `[_ = A]` makes none of A's labels visible anywhere outside A (core/labels/export statement 7), so through such
+  a B the call surfaces no `d`; whether the caller may still name A's `d` is the question.
+- His words: "closed-arguments: i thought you'd lean to (a). what would A.d mean if d no longer was visible? also:
+  [ c = B(A) ] does not allow c.A". His lean is to (a), put as a question, not worded as a ruling.
+- The manager's earlier leaning (b), "a closure only needs to guard what the macro surfaces", is not held now: once
+  B closes the argument, where and whether A's `d` is set is B's own business (in a lookahead, twice, or not at
+  all), so `A.d` would name what the caller cannot know from its own text.
+- The statement the manager would enter on his confirmation, NOT YET RULED: "`A.d` is legal in the caller exactly
+  where `d` is visible through the call, and it reads `d` as it reaches the caller."
+- No printed program applies either answer.
+modes: n/a (a question; the argument's run lines are in core/labels/paths/call-prefix)
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
@@ -1457,8 +1497,9 @@ see: parked/ideas/restricted-parameter parked/ideas/declared-labels
 - Two meanings of the restriction, neither chosen: (i) literally the intersection, `B(x)` is
   `x & isodate & (isodate.year: < 2100)` (writable today as `B(d) := d & isodate & (isodate.year: < 2100)`; under
   label-reference the source names isodate's `year`, so x's own `year`, if any, no longer makes it ambiguous: a
-  reading); (ii) a promise checked at the call that x holds isodate's labels, `year` then being x's own (the
-  head's bare `year`: his spelling, what label-reference would make of it is open, core/labels/paths/call-prefix).
+  reading); (ii) a promise checked at the call that x holds isodate's labels, `year` then being x's own. The
+  head's bare `year` is his spelling, written an hour before label-reference was ruled; under that ruling the
+  body would name it through the parameter, `d.year` (a reading; not asked).
 
 ### Several bodies for one name   [core/operators/bindings/call-forms]   open call-forms 2026-11-19
 May one name have several bodies, chosen by the arguments a call passes, or does every name have one head whose optional parts are keyword settings?

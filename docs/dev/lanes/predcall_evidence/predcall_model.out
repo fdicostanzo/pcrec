@@ -1,0 +1,51 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the loaded matcher, programs without conditions, against python `re`
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0) over 341 texts; `hits` (0, 0, 0); `B(A)` (A, B of the call-prefix run) against `\d-\d` (0, 0, 0)
+== CASE1: the ruling, the macro's name as the prefix; his example; one call reads as a labelled call
+   By the macro's name, his example: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`hits(/\d+/) & (hits.hit: 3)`)
+   Labelled: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`[h = hits(/\d+/)] & (h.hit: 3)`)
+   `hits(/\d+/) & (hits.hit: <5)` against the printed line (`[h = hits(/\d+/)] & (h.hit: <5)`: the same answers
+   `hits(/\d+/) & occurs.none((hits.hit: >= 5))` against the printed line (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`: the same answers
+   `occurrences(/\d+/) & (occurrences.hit: <5)` against the printed line (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`: the same answers
+   `occurrences(/\d+/) & occurs.none((occurrences.hit: >= 5))` against the printed line (`[hits = occurrences(/\d+/)] & occurs.none((hits.hit: >= 5))`: the same answers
+PASS CASE1: his `hits(/\d+/) & (hits.hit: 3)` legal; against `[h = hits(/\d+/)] & (h.hit: 3)` (0, 0, 0) differing over 341 texts; WHOLE against the direct "last number is 3" 0 differing; the four printed library lines, the call labelled, give the same answers by the macro's name: 4 of 4
+== TWICE: reading (a), binding-prefix's two rules carried to a macro's name
+   Called twice, a group question reads every call: WHOLE `9;1` HOLDS, `1;9` HOLDS, `1;1` FAILS / SEARCHED `x;1 9;` `x;1 9;`@0 / FIND-ALL `9;1 1;1 1;9` [`9;1 1;1 1;9`@0] (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & some((occurrences.hit: "9"))`)
+   plain read: `occurrences.hit`: occurrences is used 2 times here; label the part (`[left = occurrences]`) to read one use
+PASS TWICE: a plain read through `occurrences` called twice refused, "label the part"; the group question `some((occurrences.hit: "9"))` against the direct "a `;` and a 9 anywhere" 0 differing over 121 texts (`9;1` HOLDS: the first call is read)
+== RECORD: reading (b), the call-prefix record entry's two pasted lines, from the program text
+   record line `A.d <5 (A's own d): WH` REPRODUCED by `B(A) & (A.d: <5)`
+   A's own d, through the argument (case 2, a reading): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+   record line `c.d <5 (d as B(A) surf` REPRODUCED by `[c = B(A)] & (c.d: <5)`
+   d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+PASS RECORD: the record's two lines reproduced: 2 of 2; WHOLE against the direct first digit / second digit under 5: 0, 0 differing over 40 texts
+== BDOT: reading (c), `B.d` for a single call is `c.d`
+   By the macro's name: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (B.d: <5)`, the same A and B)
+PASS BDOT: `B(A) & (B.d: <5)` legal; against `[c = B(A)] & (c.d: <5)` (0, 0, 0) differing over 121 texts; its line equals the record's c.d line
+== CA: his statement "[ c = B(A) ] does not allow c.A"; the ground, the argument is the parameter
+   `[c = B(A)] & (c.A.d: <5)`: `c.A.d`: `c` passes no public label `A.d` (reading (d))
+PASS CA: `[c = B(A)] & (c.A.d: <5)` refused (the call's label holds no part named for the argument)
+== PAIR: reading (d), an argument used twice by the body, `A` written once in the caller
+   An argument used twice by the body: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair(A) & (A.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${p},${p}/`)
+   counted per lowering instead: `A.d`: A is used 2 times here; label the part (`[left = A]`) to read one use
+PASS PAIR: `pair(A) & (A.d: <5)` legal; WHOLE against the direct "the second digit under 5" 0 differing over 40 texts; against `[c = pair(A)] & (c.d: <5)` (0, 0, 0); counted per lowering it is refused (yes); a group question reads both (`7,3` HOLDS some 7)
+== HITS2: reading (e), his second hits example, the record's two pasted lines, from the program text
+   record line `inner test: ` REPRODUCED
+   His second example, a test inside the argument: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` HOLDS (hits [`4`, `3`]), `43` HOLDS (hits [`4`, `3`]), `4 13` HOLDS (hits [`4`, `1`, `3`]), `4 3 9` HOLDS (hits [`4`, `3`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))`)
+   record line `every number` REPRODUCED
+   Every number tested after the call: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` FAILS (hits [`4`, `9`, `3`]), `43` FAILS (hits [`43`]), `4 13` FAILS (hits [`4`, `13`]), `4 3 9` FAILS (hits [`4`, `3`, `9`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`)
+PASS HITS2: the record's two lines reproduced with their hit lists: 2 of 2; WHOLE against the direct hits (inner: every digit 0-4; after: every number) 0, 0 differing over 781 texts
+== QUOTES: every owner sentence this lane prints, word for word in the record and in the documents
+PASS QUOTES: 5 passages found in the record; missing: none; the three of this lane in the documents: all
+== MARKS: statuses and the statements moved
+PASS MARKS: call-prefix ruled yes; closed-argument open yes; no 'not a prefix' statement yes; the not-yet-ruled statement yes; c.A in the paths piece yes; standard's line yes; macro types d.year yes; assert remark yes
+== SCAN: predref's textual label-reference checker over every printed program span, this lane's LEFT list
+PASS SCAN: 218 program spans checked; 29 distinct spans read a label bare or through an unknown head, all on LEFT; not on LEFT: none; on LEFT but no longer flagged: none
+== PREDREF: lane predref's model on the folded documents; which of its checks go red, each covered here
+   predref_model: 8 checks, 1 failed (MARKS)
+   FAIL MARKS: label-only group under construction yes; parked piece gone yes; was: line on the new entry yes; call-prefix open NO; no statement says read flat yes; flat-read-outside statement yes; bodies label-only yes; no provided body called a capture yes
+PASS PREDREF: red: ['MARKS'] (expected ['MARKS']: its MARKS looks for the call-prefix piece still open, covered by MARKS here, which looks for it ruled; its other 7 checks stay green on the folded documents)
+== DOC: every formatted line verbatim in the documents
+PASS DOC: 9 lines; missing: none
+predcall_model: 13 checks, 0 failed
