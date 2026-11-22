@@ -10,5 +10,5 @@ SAB_SUITES="trie"
 SAB_DESC="A_ALT eligibility: add '&& nbr >= 100' so the trie only fires above 100 branches"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 0 differ — only the 4- and 8-branch controls fire"
 SAB_COUNT=1
-SAB_BEFORE="            elig[j] = TRIE_ENABLED && trie_key(b, br[j], &keys[j]);"
-SAB_AFTER="            elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(b, br[j], &keys[j]);"
+SAB_BEFORE="        elig[j] = TRIE_ENABLED && trie_key(b, br[j], &keys[j]);"
+SAB_AFTER="        elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(b, br[j], &keys[j]);"

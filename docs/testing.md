@@ -373,12 +373,13 @@ into eight sections (`test-codegen` wraps three scripts —
 `run_codegen_tests.sh`, `run_dfa_stamps.sh` ([DD-13], 2026-08-25) and
 `run_trie_identity.sh` — since this file already describes them as one
 "codegen structural checks" concept, and `test:` runs them back to back).
-`test-spec` is the ninth target and the one genuine divergence: it wraps
-`tests/spec_mod0/run_spec_mod0.sh`, which is **not** one of the nine `test:`
-lines (its own CLAUDE.md: "Not part of `make test`, and it does not run
-`make`") — it gets a target anyway because the plan row named it explicitly,
-and the script already runs standalone and was green (14/14) at the last
-project journal entry.
+`test-spec` was the ninth target and the one divergence: it wraps
+`tests/spec_mod0/run_spec_mod0.sh`, which used to be kept out of `make test`. It
+is a `make test` section since the specfix lane (2026-11-21): 13 of its 14
+checks had gone red unnoticed (the ORACLE-LINK direct-link move broke eight, the
+registry's growth moved four pins), which is what an opt-in suite does. It
+SKIPS loudly (exit 0, `SKIP:` lines on stderr) when libpcre2-8 is not
+resolvable, PC-3's pattern, since every invariant in it is decided by libpcre2.
 
 | Target | Runs | Part of `make test`? |
 |---|---|---|
@@ -399,7 +400,7 @@ project journal entry.
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |
 | `make test-rxtsource` | `tests/rxtsource/run_rxtsource_tests.sh` ([DD-13b.W1.1] INV-COMPAT — see below) | yes |
-| `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
+| `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` (the D27 spec-first suite; SKIPS loudly without libpcre2) | yes (since 2026-11-21) |
 | `make test-recursion-lbsweep` | `tests/recursion/run_lookbehind_call_sweep.py` | **no** — opt-in ([DD-14.LB]), see below |
 
 **[DD-14.LB] (2026-08-24) — `test-recursion-lbsweep`, and why its verdict is a

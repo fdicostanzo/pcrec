@@ -978,9 +978,10 @@ are allocating).
 - FUTURE, UNSCHEDULED FACT (not a requirement): subject streaming is not a feature (match_api.md 5.2 para 6); if it is scheduled, a bound on reads ahead of p becomes a fact pcrec states.
 - ASK: a reply: can the site state this question as it stands, and in what form. Also say: what in the reply contract (`mf_site.ret_pred`, the `serves` declarations, G2's leftmost reference) would move, and whether it is a seam event with no mover while no caller asks. REPLY: one entry in responses.md, either way.
 
-## R-47 (2026-11-21, pcrec manager) — build the block span at the SIMD layer by job 710's table (D201, block-build)
+## R-47 (2026-11-21, pcrec manager) — build the block span at the SIMD layer by job 710's table (D201, block-build) — U1 LANDED c279e7e26 (main)
 - CUSTOMER: the dense/busy pick cells job 710 measured; plan row [REQ-PAST-LAST]'s dense-hit remedy, as the kit's 712 window rule (the max ramp) and 710's table found.
 - GO: the owner's BUILD GO (D201, verbatim "build with simd layer", to the kit 2026-11-21). The order is the kit's: design note, critic round, then the build. No go for the scalar layer: it stays H64.
 - FACT: the table as declared before 710 ran (rule 6351bff3901e3955): window site 16<=k<=1000 or scan site 24<=k<=64 -> the avx2-loop block span; else today's H64. At SIMD-on: 0 repeated LOSS over 722 readable cells; 127/144 new busy cells WIN (median 3.5x, max 111x); A/A 6/448.
 - CONSTRAINTS: the same-commit abi ritual (a kit byte move is a pcrec abi event, D146/D147); the deny row; the measurement card in the same change (the owner, 2026-10-23); G1 alpha at both layers; off by default under -fmemfn-simd as today.
 - ASK: deliver the design note for main's record, then the built branch to main (never to main's tree directly); name the abi bump and the movers at delivery.
+- AMENDED (D201 add. 3, 2026-11-21): the GO line's "No go for the scalar layer: it stays H64" and the CONSTRAINTS line's "off by default under -fmemfn-simd as today" are amended: under option A (D201 add. 2) the selector wrapper is LIVE in the default (SIMD-off) build; its machine-code changes are checked for no loss (census, then a short timing in a cleared window) and a loser keeps today's text; the span form itself stays off by default under -fmemfn-simd.

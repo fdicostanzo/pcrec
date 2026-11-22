@@ -36,6 +36,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 PCREC="${PCREC:-$ROOT/build/pcrec}"
 . "${ROOT}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 . "${ROOT}/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
+. "${ROOT}/tests/lib/resolve_pcre2.sh" # [ORACLE-LINK] D98: PCRE2_AVAILABLE / PCRE2_CFLAGS / PCRE2_LIBS
 : "${TMPDIR:=/var/tmp}"
 export TMPDIR
 
@@ -48,6 +49,19 @@ for a in "$@"; do
         *) echo "unknown option: $a" >&2; exit 2 ;;
     esac
 done
+
+# Every check decides its invariant by libpcre2, so without it the suite is
+# vacuous: SKIP loudly (PC-3's pattern; `make test` section wiring relies on
+# exit 0 here) rather than fail or pass quietly.
+if [ "$PCRE2_AVAILABLE" != "1" ]; then
+    echo "SKIP: spec_mod0 (D27): libpcre2 not resolvable" >&2
+    echo "SKIP: (pkg-config libpcre2-8 absent, and a bare '-lpcre2-8' compile+link" >&2
+    echo "SKIP: probe with \$CC also failed)." >&2
+    echo "SKIP: the spec-first checks did NOT run; every invariant in this suite" >&2
+    echo "SKIP: is decided by libpcre2. Install the PCRE2 8-bit runtime + headers" >&2
+    echo "SKIP: (Debian/Ubuntu 'libpcre2-8-0 libpcre2-dev', Homebrew 'pcre2')." >&2
+    exit 0
+fi
 
 WORK="$(mktemp -d "${TMPDIR%/}/spec_mod0.XXXXXX")" || exit 2
 cleanup() { [ "$KEEP" -eq 1 ] || rm -rf "$WORK"; }
@@ -79,7 +93,7 @@ echo "registry: $(grep -vc '^#' "$REG") rows;  verbs: $(wc -l < "$VERBS") names"
 echo
 
 FLOORS="$HERE/floors.txt"
-CFLAGS="-O1 -Wall -Wextra -I $ROOT/tests/fuzz -I $HERE"
+CFLAGS="-O1 -Wall -Wextra -I $ROOT/tests/fuzz -I $HERE $PCRE2_CFLAGS"
 
 npass=0; nfail=0; nawait=0
 failed_names=""; await_names=""
@@ -96,7 +110,7 @@ run_c() {    # run_c <basename> [extra args...]
     local name="$1"; shift
     local src="$HERE/$name.c"
     local bin="$WORK/$name"
-    if ! $CC $CFLAGS -o "$bin" "$src" -ldl 2>"$WORK/$name.buildlog"; then
+    if ! $CC $CFLAGS -o "$bin" "$src" $PCRE2_LIBS -ldl 2>"$WORK/$name.buildlog"; then
         echo "== $name =="
         echo "FAIL: did not compile"
         sed 's/^/    /' "$WORK/$name.buildlog"

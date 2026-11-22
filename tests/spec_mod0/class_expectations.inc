@@ -16,7 +16,7 @@
  * regenerate with --emit-pins rather than hand-editing.
  */
 
-/* --- the 44 class-reachable rows (41 esc + 3 class-bracket) ------------- */
+/* --- the 57 class-reachable rows (54 esc + 3 class-bracket) ------------- */
 { "\\d", "set 10" },
 { "\\D", "set 246" },
 { "\\s", "set 6" },
@@ -38,6 +38,12 @@
 { "\\G", "err 107" },
 { "\\K", "err 107" },
 { "\\k<name>", "set 7" },
+{ "\\g<1>", "set 4" },
+{ "\\g'1'", "set 3" },
+{ "\\g<0>", "set 4" },
+{ "\\g<01>", "set 5" },
+{ "\\g'0'", "set 3" },
+{ "\\g'01'", "set 4" },
 { "\\g{-1}", "err 108" },
 { "\\p{L}", "set 117" },
 { "\\P{L}", "set 139" },
@@ -48,6 +54,13 @@
 { "\\C", "err 107" },
 { "\\cX", "char 0x18" },
 { "\\o{101}", "char 0x41" },
+{ "\\a", "char 0x07" },
+{ "\\e", "char 0x1b" },
+{ "\\f", "char 0x0c" },
+{ "\\n", "char 0x0a" },
+{ "\\r", "char 0x0d" },
+{ "\\t", "char 0x09" },
+{ "\\x41", "char 0x41" },
 { "\\0", "char 0x00" },
 { "\\1", "char 0x01" },
 { "\\2", "char 0x02" },

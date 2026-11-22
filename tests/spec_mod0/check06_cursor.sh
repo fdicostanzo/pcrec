@@ -177,11 +177,25 @@ fi
 # why giving it a doorway would cost the base tier a lookup on every
 # quantifier. So they land in this bucket by construction and will stay here.
 # It is a SET equality, not a count, so no floor absorbs the change.
-EXPECT_BASE_ANSWERED="(?:...)
+#
+# THE SET GREW BY FOUR MORE, again by the contract and not by measurement:
+# docs/spec/registry.md section 2 (`kind`) says `quant-suffix` AND `bare` have
+# no lexical doorway, and names the `bare` rows: `^`, `$`, the plain capturing
+# group `(a)` and `${name}`, "parsed directly in p_atom/p_group_body" (section
+# 9 p3 repeats it: `bare` is a no-doorway kind). Those four rows are in the
+# registry since the base-tier anchor/group rows and the `vars` module (D-VAR,
+# d755a9445, 2026-09-23) were added; --probe-ask (cli.md 2.14) drives a
+# DOORWAY, so it has none to drive for them, exactly as for the possessive
+# suffixes. The set is now (?:...) + the 4 quant-suffix rows + the 4 bare rows.
+EXPECT_BASE_ANSWERED='$
+${name}
+(?:...)
+(a)
+^
 a*+
 a++
 a?+
-a{1,2}+"
+a{1,2}+'
 
 FAILS=0
 CLEAR_COMPARED=0

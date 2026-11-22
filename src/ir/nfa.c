@@ -584,8 +584,10 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
  * classes. A_REP/A_ALT/A_EMPTY/A_EOL/A_CTX branches are not, and are chained
  * around the eligible runs at their original priority. Returns false and
  * leaves *out untouched when ineligible. In reverse mode the step order is
- * flipped, since rev(X.Y) = rev(Y).rev(X). */
-static bool trie_key(NB *b, const Ast *a, TItem *out)
+ * flipped, since rev(X.Y) = rev(Y).rev(X). Marked `PCREC_OWN_FRAME` for the
+ * mark's SECOND use: it recurses along the spine and sits under nfa_alt, so
+ * its frame stays out of every dispatcher level above it. */
+static PCREC_OWN_FRAME bool trie_key(NB *b, const Ast *a, TItem *out)
 {
     a = ast_bare(b, a);
     int nsp = 0;
@@ -650,6 +652,269 @@ static Frag frag_row(NB *b, const Ast *a)
                    "lowering reached the row-read arm of the machine builder");
 }
 
+/* ---- the recursive arms of compile_ast, each in its own frame ([DD-10], K152)
+ *
+ * `compile_ast` is the tree's one exhaustive switch and recurses through
+ * its three main arms (nfa_cat, nfa_alt, nfa_rep; ten functions in all carry
+ * the mark, the rest below), once per nesting level and up to
+ * `PCREC_MAX_GROUP_DEPTH` times on one stack (docs/spec/limits.md §3.10).
+ * Inlined, the dispatcher paid the UNION of their locals (and `trie_key`'s)
+ * at every level, about four 384-byte frames per level of
+ * `(?:abc|abd(?:…)*)*` (K152: 440,176 bytes at depth 250, over the budget
+ * on the compound route). Marked `PCREC_OWN_FRAME` for the mark's SECOND use
+ * (core/internal.h): a recursive arm kept out of its dispatcher's frame, so a
+ * level pays only the frames on its own path. The bodies are the old arms,
+ * moved out one indent level (a whitespace-only difference, except nfa_cat,
+ * whose two loops are merged into one recursion site, above); state
+ * numbering and every `nst` call are in the same order, so the machine is byte-identical. */
+static PCREC_OWN_FRAME Frag nfa_cat(NB *b, const Ast *a)
+{
+    /* flatten the left-leaning spine iteratively (R-2); in reverse mode
+     * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */
+    int nsp = 0;
+    const Ast *t = a;
+    while (t->k == A_CAT) { nsp++; t = ast_bare(b, t->l); }
+    const Ast **rs = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
+    int i = nsp;
+    t = a;
+    while (t->k == A_CAT) { rs[--i] = t->r; t = ast_bare(b, t->l); }
+    /* forward order: t, rs[0], ..., rs[nsp-1]; reverse: rs[nsp-1], ...,
+     * rs[0], t. ONE call site for the recursion, so the frame holds one
+     * result slot rather than one per site (K152); the calls and the joins
+     * are in the order the two loops made them. */
+    Frag f = { -1, {0} };
+    for (int j = 0; j <= nsp; j++) {
+        const Ast *x = !b->rev ? (j == 0 ? t : rs[j - 1])
+                               : (j == nsp ? t : rs[nsp - 1 - j]);
+        Frag c = compile_ast(b, x);
+        f = (j == 0) ? c : frag_cat2(b, f, c);
+    }
+    return f;
+}
+
+static PCREC_OWN_FRAME Frag nfa_alt(NB *b, const Ast *a)
+{
+    /* flatten, then chain splits so branch order = priority order */
+    int nbr = 1;
+    for (const Ast *t2 = a; t2->k == A_ALT; t2 = ast_bare(b, t2->l)) nbr++;
+    const Ast **br = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
+    int i = nbr;
+    const Ast *t2 = a;
+    while (t2->k == A_ALT) { br[--i] = t2->r; t2 = ast_bare(b, t2->l); }
+    br[0] = t2;
+
+    /* M2.8: factor shared prefixes. Eligible branches are grouped into
+     * maximal runs of CONSECUTIVE indices; each run of 2+ becomes a trie,
+     * everything else compiles as before. Contiguity is what keeps this
+     * sound. Note the invariant is NOT the loose "first matching branch
+     * in index order wins" — D3 deliberately keeps lower-priority threads
+     * alive past an accept so a later higher-priority one can override.
+     * The property a run fragment must have is stronger: its DFS leaf
+     * order, restricted to any set of branches that can match at one
+     * start, must equal index order. Composition is sound GIVEN that, so
+     * this rule is conditional on rule 2 being right, not independent of
+     * it (R3 critic correction). Contiguity is safe against empty
+     * branches for a structural reason: every eligible branch consumes at
+     * least one byte, since all its leaves are A_CLASS. */
+    TItem *keys = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
+    bool *elig = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr);
+    for (int j = 0; j < nbr; j++)
+        elig[j] = TRIE_ENABLED && trie_key(b, br[j], &keys[j]);
+
+    Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
+    int nf = 0;
+    for (int j = 0; j < nbr; ) {
+        if (!elig[j]) { fr[nf++] = compile_ast(b, br[j]); j++; continue; }
+        int e = j;
+        while (e < nbr && elig[e]) e++;
+        if (e - j == 1) fr[nf++] = compile_ast(b, br[j]);
+        else            fr[nf++] = trie_build(b, keys + j, e - j, 0, 0);
+        j = e;
+    }
+    return nf == 1 ? fr[0] : chain_alts(b, fr, nf);
+}
+
+static PCREC_OWN_FRAME Frag nfa_rep(NB *b, const Ast *a)
+{
+    int rmin = a->u.rep.rmin, rmax = a->u.rep.rmax;
+    /* [OPT-4] THE COUNT-COLLAPSE, and it is three lines because the whole
+     * mechanism is a change of BOUNDS — the construction below is
+     * untouched and every downstream stage sees an ordinary `A_REP`.
+     *
+     * `X{m,n}` becomes `X{min(m,1),}`. SOUND as a superset: every word of
+     * `X{m,n}` is k copies of X with m <= k <= n; k >= 0 = min(0,1) when
+     * m is 0 and k >= m >= 1 = min(m,1) otherwise, and k <= infinity
+     * always. The proof never mentions n, which is exactly why the
+     * resulting machine does not scale with the count.
+     *
+     * The guard is `rmin > 1 || rmax > 1`, not `n > 1`, so it covers the
+     * whole family in one arm — `{m,n}`, `{n}`, `{m,}` with m >= 2, and
+     * the lazy and nested spellings of all of them, since laziness is a
+     * preference the DFA does not have and nesting is this same recursion.
+     * A possessive bound needs nothing here: it parses to
+     * `A_ATOMIC(A_REP(X))` and the `A_ATOMIC` arm below already erases the
+     * wrapper before this arm sees the repeat. A repeat already satisfying
+     * the guard's negation replicates nothing, so collapsing it would buy
+     * no bytes and cost the filter its sharpness for free. */
+    if (b->collapse && (rmin > 1 || rmax > 1)) {
+        rmin = rmin ? 1 : 0;
+        rmax = -1;
+        b->nfa->erased |= NFA_ERASED_COUNT;   /* [OPT-REVEND] L0, LR-G3 */
+    }
+    if (rmin == 0 && rmax == 0) return frag_single(b, N_EPS);
+
+    Frag f = { -1, {0} };
+    for (int i = 0; i < rmin; i++) {
+        Frag c = compile_ast(b, a->l);
+        f = (f.start < 0) ? c : frag_cat2(b, f, c);
+    }
+    if (rmax < 0) {
+        Frag s = frag_star(b, a->l, a->u.rep.greedy);
+        f = (f.start < 0) ? s : frag_cat2(b, f, s);
+    } else {
+        /* X{m,n} tail is NESTED — (X(X(X)?)?)? — NOT chained optionals.
+         * The two accept the same language but differ in BACKTRACK
+         * PREFERENCE: with chained optionals a later copy's alternation
+         * choice outranks an earlier copy's, so lazy bounded repeats pick
+         * the wrong span (R2: '(?:ab|a){0,2}?b' on "abab" gave [0,2),
+         * PCRE2/python give [0,4)). Built innermost-first and
+         * iteratively, so depth cannot overflow the C stack. */
+        Frag tail = frag_single(b, N_EPS);
+        for (int i = rmin; i < rmax; i++) {
+            Frag body = compile_ast(b, a->l);
+            Frag cat = frag_cat2(b, body, tail);
+            int s = nst(b, N_SPLIT);
+            Nfa *nfa = b->nfa;
+            /* [M4.7b/K7] INHERIT `cat.out`'s array rather than copying into
+             * a fresh one. This loop runs n-m times and every iteration's
+             * out-set is the previous one PLUS this split's own exit, so
+             * copying it made NFA construction Theta((n-m)^2) in arena
+             * traffic while the state count — the only thing
+             * PCREC_MAX_NFA_STATES watches — stayed linear. That gap IS
+             * K7: `a{0,8000}` spent 332 MB per machine (664 MB for the
+             * forward/reverse pair) building 16,002 states worth 768 KB,
+             * and `a{0,65535}` needed ~34 GB it was SIGKILLed for, all
+             * without the cap ever having anything to object to. Growing
+             * one array geometrically instead makes the whole loop
+             * amortized O(1) per copy; measured below in this lane at
+             * 664 MB -> 5 MB for `a{0,8000}`.
+             *
+             * IT CANNOT CHANGE THE MACHINE, which is what makes this a
+             * fix and not a redesign. A Patch is an unordered SET of
+             * dangling edges — `patch_to` writes the same target into
+             * every entry and reads nothing about their order — and this
+             * rewrite calls `nst` exactly where the old one did, so state
+             * numbering is untouched. Only the order of entries within the
+             * patch array differs, and nothing observes that.
+             * `frag_cat2` above already inherits its right operand's array
+             * for the same reason; this is that idiom applied to the one
+             * site that had not adopted it. */
+            Frag w = { s, cat.out };
+            cat.out = (Patch){0};
+            if (a->u.rep.greedy) {
+                nfa->st[s].t1 = cat.start;
+                patch_push(b, &w.out, s * 2 + 1);
+            } else {
+                nfa->st[s].t2 = cat.start;
+                patch_push(b, &w.out, s * 2);
+            }
+            tail = w;
+        }
+        f = (f.start < 0) ? tail : frag_cat2(b, f, tail);
+    }
+    return f;
+}
+
+/* ---- the leaf arms and the two rarer recursive arms, likewise ([DD-10],
+ * K152): out of the dispatcher, so its own frame (paid once per level on
+ * every path through it) holds none of their locals. `nfa_eol` (a tail
+ * `$`'s body) and `nfa_splice` (a spliced call's callee) recurse; the
+ * others (nfa_class, nfa_ctx, nfa_wclass) are leaves, marked for the second
+ * use read for a leaf: kept out of the dispatcher's frame. Bodies moved out
+ * one indent level (whitespace only); their comments stay at their
+ * `case` labels in `compile_ast`. */
+/* The atomic arm's row read: the by-value `KindRow` is scratch dead before
+ * the arm recurses into its body, so it lives here (the mark's FIRST use)
+ * and not in the dispatcher's frame, where it also cost a stack-protector
+ * slot on every level. */
+static PCREC_OWN_FRAME void nfa_erase_by_row(NB *b, const Ast *a)
+{
+    b->nfa->erased |= pcrec_ast_row(a).erase;
+}
+
+static PCREC_OWN_FRAME Frag nfa_class(NB *b, const Ast *a)
+{
+    Frag f = frag_single(b, N_CLASS);
+    /* [M5.0 stage 1] §2.5.1's AFTER row 8, and the one place the whole
+     * milestone's shape is visible in three lines: an `N_CLASS` state's
+     * `cls[32]` is a BYTE set and stays one — the 256-entry class
+     * machinery, the DFA's equivalence classes and `d->rep[c]` are all
+     * below the lowering and none of them changes. What changed is that
+     * the 32 bytes are now RENDERED from a code-point interval list
+     * instead of copied from one. */
+    pcrec_cls_bits(b->cx, a, b->nfa->st[f.start].cls);
+    if (b->island) island_ascii_only(b, b->nfa->st[f.start].cls);
+    return f;
+}
+
+static PCREC_OWN_FRAME Frag nfa_eol(NB *b, const Ast *a)
+{
+    if (b->lower) {
+        for (int i = 0; i < b->lower->ntails; i++) {
+            if (b->lower->tails[i] != a) continue;
+            b->in_tail++;
+            Frag t = compile_ast(b, b->lower->body);
+            b->in_tail--;
+            return t;
+        }
+    }
+    return frag_single(b, N_EOL);
+}
+
+static PCREC_OWN_FRAME Frag nfa_ctx(NB *b, const Ast *a)
+{
+    Frag f = frag_single(b, N_CTX);
+    NState *st = &b->nfa->st[f.start];
+    /* [UCP] U3 an island build keeps the non-ASCII members, which the
+     * character atoms read; the byte image is the ASCII part. */
+    if (b->island) {
+        st->wiv = a->u.ctx.iv;
+        st->wn  = a->u.ctx.n;
+        island_ascii_bits(st->wiv, st->wn, st->cls);
+        st->ctxfn = a->u.ctx.fn;
+        return f;
+    }
+    if (!pcrec_enc_set_bytes(pcrec_enc_by_id(b->cx->opt->encoding),
+                             a->u.ctx.iv, a->u.ctx.n, st->cls))
+        pcrec_ctx_fail(b->cx, 0, "internal error: a context assertion's "
+                       "set is not byte-expressible under this encoding "
+                       "(ucp_design.md §2.3); it needs [UCP] U3/U4");
+    st->ctxfn = a->u.ctx.fn;
+    return f;
+}
+
+static PCREC_OWN_FRAME Frag nfa_wclass(NB *b, const Ast *a)   /* island builds only */
+{
+    Frag f = frag_single(b, N_WCHAR);
+    NState *st = &b->nfa->st[f.start];
+    st->wiv = pcrec_wcls_set(b->cx, a, &st->wn);
+    island_ascii_bits(st->wiv, st->wn, st->cls);
+    return f;
+}
+
+static PCREC_OWN_FRAME Frag nfa_splice(NB *b, const Ast *a)   /* CALL_SPLICE with a body */
+{
+    const int nt = pcrec_callgraph_ntargets(b->cx->callgraph);
+    if (++b->splice_depth > nt)
+        pcrec_ctx_fail(b->cx, 0,
+                 "internal error: a spliced subroutine call nested "
+                 "more than %d deep while building the machine, so "
+                 "the splice eligibility rule admitted a cycle", nt);
+    Frag f = compile_ast(b, a->u.call.body);
+    b->splice_depth--;
+    return f;
+}
+
 /* Lowers one AST subtree to its NFA fragment, recursively — the tree's
  * one exhaustive `AKind` switch with no `default:` arm, so a new kind is a
  * compile error here rather than a silent miscompile. Re-applies `ast_bare`
@@ -664,19 +929,7 @@ static Frag compile_ast(NB *b, const Ast *a)
 {
     a = ast_bare(b, a);   /* [M4.5b]: the group erasure, re-applied — see above */
     switch (a->k) {
-    case A_CLASS: {
-        Frag f = frag_single(b, N_CLASS);
-        /* [M5.0 stage 1] §2.5.1's AFTER row 8, and the one place the whole
-         * milestone's shape is visible in three lines: an `N_CLASS` state's
-         * `cls[32]` is a BYTE set and stays one — the 256-entry class
-         * machinery, the DFA's equivalence classes and `d->rep[c]` are all
-         * below the lowering and none of them changes. What changed is that
-         * the 32 bytes are now RENDERED from a code-point interval list
-         * instead of copied from one. */
-        pcrec_cls_bits(b->cx, a, b->nfa->st[f.start].cls);
-        if (b->island) island_ascii_only(b, b->nfa->st[f.start].cls);
-        return f;
-    }
+    case A_CLASS: return nfa_class(b, a);
     case A_EMPTY: return frag_row(b, a);   /* [INLINE-C] 1a: its row (exact) */
     /* [INLINE-C] 1b a callout site lowers by its width class (its row): a
      * check to epsilon, a `consume` site to any bytes; either is recorded in
@@ -689,16 +942,7 @@ static Frag compile_ast(NB *b, const Ast *a)
          * every byte it consumes marked: `(?=T)` in tail position IS the mark
          * followed by `T` consumed (endmark.md §1.2), and the mark is implicit
          * at the tail's first state, where the distance starts counting. */
-        if (b->lower) {
-            for (int i = 0; i < b->lower->ntails; i++) {
-                if (b->lower->tails[i] != a) continue;
-                b->in_tail++;
-                Frag t = compile_ast(b, b->lower->body);
-                b->in_tail--;
-                return t;
-            }
-        }
-        return frag_single(b, N_EOL);
+        return nfa_eol(b, a);
     /* [UCP] U2 A_CTX (`\b`, `\B`, a recognized one-character lookaround,
      * a `(?m)` anchor and, since [DD-11.5] P2e, `^`/`\A` and `\z`: the rows
      * SUBJECT_START/SUBJECT_END, which retired N_BOT/N_END at P2d and the
@@ -718,26 +962,7 @@ static Frag compile_ast(NB *b, const Ast *a)
      * it is refused here rather than sampled: every producer (`\b`'s port,
      * src/opt/ctxnode.c's recognizer) asks the same `pcrec_enc_set_bytes`
      * first, so this is reachable only through a producer that skipped it. */
-    case A_CTX: {
-        Frag f = frag_single(b, N_CTX);
-        NState *st = &b->nfa->st[f.start];
-        /* [UCP] U3 an island build keeps the non-ASCII members, which the
-         * character atoms read; the byte image is the ASCII part. */
-        if (b->island) {
-            st->wiv = a->u.ctx.iv;
-            st->wn  = a->u.ctx.n;
-            island_ascii_bits(st->wiv, st->wn, st->cls);
-            st->ctxfn = a->u.ctx.fn;
-            return f;
-        }
-        if (!pcrec_enc_set_bytes(pcrec_enc_by_id(b->cx->opt->encoding),
-                                 a->u.ctx.iv, a->u.ctx.n, st->cls))
-            pcrec_ctx_fail(b->cx, 0, "internal error: a context assertion's "
-                           "set is not byte-expressible under this encoding "
-                           "(ucp_design.md §2.3); it needs [UCP] U3/U4");
-        st->ctxfn = a->u.ctx.fn;
-        return f;
-    }
+    case A_CTX: return nfa_ctx(b, a);
     /* [M6.2 wave D] `\G`. Reversal is identity for `^`/N_EOL/`\z`'s
      * reason — it is an absolute-position assertion — and no reverse machine
      * is ever built for a pattern carrying it anyway: `pcrec_nfa_has_bot` answers
@@ -803,171 +1028,15 @@ static Frag compile_ast(NB *b, const Ast *a)
      * Reversal is identity for the same trivial reason `\K`'s is: an epsilon
      * has nothing to reverse. */
     case A_LOOK:   return frag_row(b, a);   /* [INLINE-C] 1a: its row records NFA_ERASED_LOOK ([OPT-REVEND] L0, LR-G3) */
-    case A_CAT: {
-        /* flatten the left-leaning spine iteratively (R-2); in reverse mode
-         * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */
-        int nsp = 0;
-        const Ast *t = a;
-        while (t->k == A_CAT) { nsp++; t = ast_bare(b, t->l); }
-        const Ast **rs = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
-        int i = nsp;
-        t = a;
-        while (t->k == A_CAT) { rs[--i] = t->r; t = ast_bare(b, t->l); }
-        /* forward order: t, rs[0], ..., rs[nsp-1] */
-        Frag f;
-        if (!b->rev) {
-            f = compile_ast(b, t);
-            for (int j = 0; j < nsp; j++)
-                f = frag_cat2(b, f, compile_ast(b, rs[j]));
-        } else {
-            f = compile_ast(b, rs[nsp - 1]);
-            for (int j = nsp - 2; j >= 0; j--)
-                f = frag_cat2(b, f, compile_ast(b, rs[j]));
-            f = frag_cat2(b, f, compile_ast(b, t));
-        }
-        return f;
-    }
-    case A_ALT: {
-        /* flatten, then chain splits so branch order = priority order */
-        int nbr = 1;
-        for (const Ast *t2 = a; t2->k == A_ALT; t2 = ast_bare(b, t2->l)) nbr++;
-        const Ast **br = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
-        int i = nbr;
-        const Ast *t2 = a;
-        while (t2->k == A_ALT) { br[--i] = t2->r; t2 = ast_bare(b, t2->l); }
-        br[0] = t2;
-
-        /* M2.8: factor shared prefixes. Eligible branches are grouped into
-         * maximal runs of CONSECUTIVE indices; each run of 2+ becomes a trie,
-         * everything else compiles as before. Contiguity is what keeps this
-         * sound. Note the invariant is NOT the loose "first matching branch
-         * in index order wins" — D3 deliberately keeps lower-priority threads
-         * alive past an accept so a later higher-priority one can override.
-         * The property a run fragment must have is stronger: its DFS leaf
-         * order, restricted to any set of branches that can match at one
-         * start, must equal index order. Composition is sound GIVEN that, so
-         * this rule is conditional on rule 2 being right, not independent of
-         * it (R3 critic correction). Contiguity is safe against empty
-         * branches for a structural reason: every eligible branch consumes at
-         * least one byte, since all its leaves are A_CLASS. */
-        TItem *keys = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
-        bool *elig = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr);
-        for (int j = 0; j < nbr; j++)
-            elig[j] = TRIE_ENABLED && trie_key(b, br[j], &keys[j]);
-
-        Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
-        int nf = 0;
-        for (int j = 0; j < nbr; ) {
-            if (!elig[j]) { fr[nf++] = compile_ast(b, br[j]); j++; continue; }
-            int e = j;
-            while (e < nbr && elig[e]) e++;
-            if (e - j == 1) fr[nf++] = compile_ast(b, br[j]);
-            else            fr[nf++] = trie_build(b, keys + j, e - j, 0, 0);
-            j = e;
-        }
-        return nf == 1 ? fr[0] : chain_alts(b, fr, nf);
-    }
-    case A_REP: {
-        int rmin = a->u.rep.rmin, rmax = a->u.rep.rmax;
-        /* [OPT-4] THE COUNT-COLLAPSE, and it is three lines because the whole
-         * mechanism is a change of BOUNDS — the construction below is
-         * untouched and every downstream stage sees an ordinary `A_REP`.
-         *
-         * `X{m,n}` becomes `X{min(m,1),}`. SOUND as a superset: every word of
-         * `X{m,n}` is k copies of X with m <= k <= n; k >= 0 = min(0,1) when
-         * m is 0 and k >= m >= 1 = min(m,1) otherwise, and k <= infinity
-         * always. The proof never mentions n, which is exactly why the
-         * resulting machine does not scale with the count.
-         *
-         * The guard is `rmin > 1 || rmax > 1`, not `n > 1`, so it covers the
-         * whole family in one arm — `{m,n}`, `{n}`, `{m,}` with m >= 2, and
-         * the lazy and nested spellings of all of them, since laziness is a
-         * preference the DFA does not have and nesting is this same recursion.
-         * A possessive bound needs nothing here: it parses to
-         * `A_ATOMIC(A_REP(X))` and the `A_ATOMIC` arm below already erases the
-         * wrapper before this arm sees the repeat. A repeat already satisfying
-         * the guard's negation replicates nothing, so collapsing it would buy
-         * no bytes and cost the filter its sharpness for free. */
-        if (b->collapse && (rmin > 1 || rmax > 1)) {
-            rmin = rmin ? 1 : 0;
-            rmax = -1;
-            b->nfa->erased |= NFA_ERASED_COUNT;   /* [OPT-REVEND] L0, LR-G3 */
-        }
-        if (rmin == 0 && rmax == 0) return frag_single(b, N_EPS);
-
-        Frag f = { -1, {0} };
-        for (int i = 0; i < rmin; i++) {
-            Frag c = compile_ast(b, a->l);
-            f = (f.start < 0) ? c : frag_cat2(b, f, c);
-        }
-        if (rmax < 0) {
-            Frag s = frag_star(b, a->l, a->u.rep.greedy);
-            f = (f.start < 0) ? s : frag_cat2(b, f, s);
-        } else {
-            /* X{m,n} tail is NESTED — (X(X(X)?)?)? — NOT chained optionals.
-             * The two accept the same language but differ in BACKTRACK
-             * PREFERENCE: with chained optionals a later copy's alternation
-             * choice outranks an earlier copy's, so lazy bounded repeats pick
-             * the wrong span (R2: '(?:ab|a){0,2}?b' on "abab" gave [0,2),
-             * PCRE2/python give [0,4)). Built innermost-first and
-             * iteratively, so depth cannot overflow the C stack. */
-            Frag tail = frag_single(b, N_EPS);
-            for (int i = rmin; i < rmax; i++) {
-                Frag body = compile_ast(b, a->l);
-                Frag cat = frag_cat2(b, body, tail);
-                int s = nst(b, N_SPLIT);
-                Nfa *nfa = b->nfa;
-                /* [M4.7b/K7] INHERIT `cat.out`'s array rather than copying into
-                 * a fresh one. This loop runs n-m times and every iteration's
-                 * out-set is the previous one PLUS this split's own exit, so
-                 * copying it made NFA construction Theta((n-m)^2) in arena
-                 * traffic while the state count — the only thing
-                 * PCREC_MAX_NFA_STATES watches — stayed linear. That gap IS
-                 * K7: `a{0,8000}` spent 332 MB per machine (664 MB for the
-                 * forward/reverse pair) building 16,002 states worth 768 KB,
-                 * and `a{0,65535}` needed ~34 GB it was SIGKILLed for, all
-                 * without the cap ever having anything to object to. Growing
-                 * one array geometrically instead makes the whole loop
-                 * amortized O(1) per copy; measured below in this lane at
-                 * 664 MB -> 5 MB for `a{0,8000}`.
-                 *
-                 * IT CANNOT CHANGE THE MACHINE, which is what makes this a
-                 * fix and not a redesign. A Patch is an unordered SET of
-                 * dangling edges — `patch_to` writes the same target into
-                 * every entry and reads nothing about their order — and this
-                 * rewrite calls `nst` exactly where the old one did, so state
-                 * numbering is untouched. Only the order of entries within the
-                 * patch array differs, and nothing observes that.
-                 * `frag_cat2` above already inherits its right operand's array
-                 * for the same reason; this is that idiom applied to the one
-                 * site that had not adopted it. */
-                Frag w = { s, cat.out };
-                cat.out = (Patch){0};
-                if (a->u.rep.greedy) {
-                    nfa->st[s].t1 = cat.start;
-                    patch_push(b, &w.out, s * 2 + 1);
-                } else {
-                    nfa->st[s].t2 = cat.start;
-                    patch_push(b, &w.out, s * 2);
-                }
-                tail = w;
-            }
-            f = (f.start < 0) ? tail : frag_cat2(b, f, tail);
-        }
-        return f;
-    }
+    case A_CAT: return nfa_cat(b, a);
+    case A_ALT: return nfa_alt(b, a);
+    case A_REP: return nfa_rep(b, a);
     /* [UCP] U3 an island build's character-level edge: ONE `N_WCHAR` that
      * consumes the set's ASCII members as bytes and its non-ASCII members as
      * whole characters (the island decodes them). Reversal is identity, a
      * character being one symbol. A byte-level build never reaches here. */
     case A_WCLASS:
-        if (b->island) {
-            Frag f = frag_single(b, N_WCHAR);
-            NState *st = &b->nfa->st[f.start];
-            st->wiv = pcrec_wcls_set(b->cx, a, &st->wn);
-            island_ascii_bits(st->wiv, st->wn, st->cls);
-            return f;
-        }
+        if (b->island) return nfa_wclass(b, a);
         break;   /* [CLS-TREE] S3: stripped by ast_bare() too */
     case A_CAP:
         break;   /* unreachable: ast_bare() above strips every A_CAP. Listed
@@ -1010,7 +1079,7 @@ static Frag compile_ast(NB *b, const Ast *a)
      * MISCOMPILE, which is what registry.c's own row comment has warned about
      * since before there was a producer, and what sabotage row S91 injects. */
     case A_ATOMIC:
-        b->nfa->erased |= pcrec_ast_row(a).erase;   /* [INLINE-C] 1a: its row's NFA_ERASED_ATOMIC ([OPT-REVEND] L0, LR-G3) */
+        nfa_erase_by_row(b, a);   /* [INLINE-C] 1a: its row's NFA_ERASED_ATOMIC ([OPT-REVEND] L0, LR-G3) */
         return compile_ast(b, a->l);
     /* [M6.5.2] NO MACHINE, AND THE ANSWER IS TO FALL INTO THE ERROR BELOW —
      * deliberately, not for want of an idea.
@@ -1095,17 +1164,8 @@ static Frag compile_ast(NB *b, const Ast *a)
      * `A_CALL` means the narrowing stopped being true, which is exactly what
      * S-SR17's twin sabotages. */
     case A_CALL:
-        if (a->u.call.link == CALL_SPLICE && a->u.call.body) {
-            const int nt = pcrec_callgraph_ntargets(b->cx->callgraph);
-            if (++b->splice_depth > nt)
-                pcrec_ctx_fail(b->cx, 0,
-                         "internal error: a spliced subroutine call nested "
-                         "more than %d deep while building the machine, so "
-                         "the splice eligibility rule admitted a cycle", nt);
-            Frag f = compile_ast(b, a->u.call.body);
-            b->splice_depth--;
-            return f;
-        }
+        if (a->u.call.link == CALL_SPLICE && a->u.call.body)
+            return nfa_splice(b, a);
         pcrec_ctx_fail(b->cx, 0,
                  "internal error: a LINKED subroutine call reached the machine "
                  "builder; a linked call is VM-only and carries no prefilter");

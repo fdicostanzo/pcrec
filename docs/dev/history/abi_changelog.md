@@ -23,9 +23,9 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `112` on every artifact today (R-47 unit U3, the vector span's `w32` level
-  block, 111 -> 112, lane bsu3 2026-11-21; `docs/design/memfn/block_span.md` rev 4.2 §4.1, §5, §14;
-  D201 add. 1-5; the number is the next after the kit branch's, bsu3_rulings.md R-2).**
+- **`rx_info.abi` is `111` on every artifact today (R-47 unit U3, the vector span's `w32` level
+  block, 110 -> 111, lane bsu3 2026-11-21 (kit stamped 112; re-pinned to 111 at the landing, lane u3land, since main held 110 and L3 re-pins to 112 after); `docs/design/memfn/block_span.md` rev 4.2 §4.1, §5, §14;
+  D201 add. 1-5; the kit's number was 112, bsu3_rulings.md R-2; the manager ruled U3 lands first at 111, 2026-11-22).**
   At a target admitting the 32-byte level (`-fmemfn-simd=x86-64-v3`) each vector span selector
   `<p>_mf<h>_vs<j>` gains its level block, bracketed as target-dependent text: the block helper
   `__w32_b` (a 32- or, below 32 positions, 16-byte nibble-table test of the stretch's byte set)
@@ -36,9 +36,10 @@ the bump's own commit.**
   site, `limits.md` §8.3¶3). Every other target and `-fno-memfn-simd` emit U2's bytes but this
   number. No struct offset moves, no `rx_info` member changes, and no answer moves.
 
-- **`rx_info.abi` was `111` on every artifact (R-47 unit U2, the vector span's wrapper, 109 ->
-  111, lane bsu2 2026-11-21; `docs/design/memfn/block_span.md` rev 4.1 §5, §14; D201 add. 2 and
-  add. 4; 110 is lane L3's number, the manager's ruling).**
+- **`rx_info.abi` was `110` on every artifact (R-47 unit U2, the vector span's wrapper, 109 ->
+  110; the kit stamped 111 while L3 held 110, and U2 landed first, so lane u2land re-pinned it
+  to 110 at the landing, 2026-11-21; `docs/design/memfn/block_span.md` rev 4.1 §5, §14; D201
+  add. 2 and add. 4).**
   The memfn kit's window search renders a one-class stretch of a window site (finder row D-hors
   with 16 to 1000 positions, or R7w with 24 to 64, tested by the kit's own set test) as a call of
   a selector function `<p>_mf<h>_vs<j>(S, C)`, at EVERY layer: its one body `__body` is the

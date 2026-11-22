@@ -143,3 +143,16 @@ The predicate language stays PURE (no loops, no recursion, no mutation), so ever
 - Both are syntax over the same evaluation: the [COND-FAMILY] machinery list is unchanged.
 
 **SYNTAX NOT SETTLED (Frank, 2026-11-10).** Every spelling in these notes (`=~ /…/`, `? :`, `let`, `where`, `&`, `in (…)`, `set()`, labels) is a PLACEHOLDER taken from the owner's examples. The rulings are the SEMANTICS (what a construct means, its anchoring, typing, purity, engine reach); the concrete syntax is designed later as its own step and owes nothing to the examples' spelling.
+
+## 2026-11-22 — Frank: a proved lookbehind sends the pattern back to the DFA (recorded, not scheduled)
+
+Frank (DISCUSSION, under back-findall-cost): "if a pattern has a lookbehind that causes it to use vm engine but the kit proves the
+lookbehind, that might cause the engine to switch back to dfa". Run 2026-11-22 (main cad46896b, `--features lookaround --emit-facts`):
+every lookaround routes to the VM today (`(?<=foo)bar`, `(?<=a|bc)x`, `(?<!foo)bar`, `foo(?=bar)` all `RX_ENGINE vm`, WHY the
+lookaround's offset); `foobar` is `dfa`. Manager reading (hand-worked, for the design step to test): it is the 2026-11-08 entry's
+"scan earlier and set a floor" reached from the search side. When the search's required run contains a positive lookbehind at the
+pattern's start and finds it at every candidate, each candidate start is already proved, so the remainder runs anchored there with
+no lookbehind left, and if the remainder has no other VM-only construct it is DFA-eligible. Conditions to test: positive, fixed
+length per branch (the 11-08 ordering argument), at the start, every candidate enumerated (not one hint), no capture inside.
+Negative lookbehind is not proved by a search. Home: the proved-ending step ([CTX-SIDES-PRODUCER], scheduled after L1-L3), whose
+"proved, search over" case (`(?<=foo)bar`) is the fully fixed instance of the same fact.

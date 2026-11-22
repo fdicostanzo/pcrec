@@ -51,3 +51,8 @@ The re-measure the row waited on (tuning.md §2.41¶8c's timings predated K38-2)
 - the no-match tail win persists, at 0.0074 vs 1.55 ms.
 
 The kit's R-46 byte mover was gated on this result, and the gate is now MET. Report: docs/dev/lanes/dhremeas_report.md.
+
+- 2026-11-22 RULING (Frank, "dense-not-target: close"): CLOSED. Super dense is not a target and gets no threshold N
+  (the 11-20 night measured no single N: about the literal length for plain C on hex/word, none up to 64 with AVX2, 2-4
+  for "not newline"). His "two or more hits per block" stays the dense scope; where the plain every-byte loop wins,
+  the measured choice tables pick it per case. Nothing is built.

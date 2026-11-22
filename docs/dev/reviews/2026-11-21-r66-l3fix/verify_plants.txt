@@ -1,0 +1,20 @@
+== V1-M2
+RED: [] (?<=foo) req_whole_run got[none|] want[666f6f|rate:builtin-prior]
+rows=49 red=1
+== V2-M5
+RED: [] (?<=xyz)a+xyz req_whole_run got[6178797a|rate:builtin-prior] want[78797a61|rate:builtin-prior]
+RED: [] (?<=xyz)a+xyz req_landmark_maxoff got[unbounded|decline:unbounded] want[-3|]
+rows=49 red=2
+== V3-Fa
+RED: [--engine=vm] (?<=ab)(?<=cb)c req_whole_run got[none|dead] want[6263|dead]
+RED: [--engine=vm] (?<=foo)bar req_whole_run got[626172|rate:builtin-prior] want[666f6f626172|rate:builtin-prior]
+RED: [--engine=vm] (?<=foo)bar req_landmark_maxoff got[0|] want[-3|]
+RED: [--engine=vm] (?<=ab|b)c req_whole_run got[none|] want[6263|rate:builtin-prior]
+RED: [--engine=vm] (?<=ab|b)c req_landmark_maxoff got[0|] want[-1|]
+RED: [--engine=vm] (?<=abc)x req_whole_run got[none|] want[61626378|rate:builtin-prior]
+RED: [--engine=vm] (?<=foobar)\d*x req_whole_run got[none|] want[666f6f626172|rate:builtin-prior]
+RED: [--engine=vm] (?<=a{32})b req_landmark_maxoff got[0|] want[-32|]
+RED: [--engine=vm] (?<=a{20})b{20} req_whole_run got[6262626262626262626262626262626262626262|rate:builtin-prior] want[6161616161616161616161616161616161616161626262626262626262626262|rate:builtin-prior]
+RED: [--engine=vm] (?<=a{20})b{20} req_landmark_maxoff got[0|] want[-20|]
+RED: [--engine=vm] (?<=foo)bar(?=baz) req_whole_run got[626172|rate:builtin-prior] want[666f6f626172|rate:builtin-prior]
+rows=49 red=11
