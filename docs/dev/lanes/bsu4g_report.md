@@ -145,7 +145,7 @@ Every floor is a literal in `memfn/tests/g2_vspan.py`, measured on this box at s
 All logs are in $PCREC_TMPDIR/scratch/bsu4g/.
 - **Premise test:** `build/pcrec -p rxa -fmemfn-simd=x86-64-v3 --pattern '[0-9a-f]{17}'` gives 1 walk call `rxa_mf1_vs0(rxa_mf1_s, rxa_mf1_c)` and 1 `return rxa_mf1_vs0__w32(rxa_mf1_s, rxa_mf1_c);` in the selector. The existing `run_g2_win.sh` before any edit: checks passed 27,376, failed 0 (win_base.log, 216 s).
 - **The file the suite runs, standalone:** `bash memfn/tests/run_g2_win.sh --v` (section V alone): checks passed 2,830, failed 0, 27 s (v1.log).
-- **The full window family with section V:** `bash memfn/tests/run_g2_win.sh` (what `run_g2.sh` section 4w runs): see win_full.log; the result is in my handback message. The traced pass (`G2W_TRACE=1`) skips section V by design.
+- **The full window family with section V:** `bash memfn/tests/run_g2_win.sh` (what `run_g2.sh` section 4w runs): checks passed 30,206, failed 0 (27,376 of the family as before plus section V's 2,830), 229 s, of which section V took 25 s (win_full.log). The traced pass (`G2W_TRACE=1`) skips section V by design.
 - **Mech, in-lane:**
   - `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh S3525 S3526`: 2 of 2 REACHED (reach1.log);
   - `bash tests/mech/run_sabotage_matrix.sh S3525 S3526` under `scripts/boxlock run`: 2 of 2 DETECTED, `== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)` (mech1.log).
