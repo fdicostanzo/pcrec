@@ -7916,3 +7916,42 @@ it writes"), and two arguments of one binding become distinguishable (`B([a = A]
 `b.d`); but the part `[a = A]` is still handed to B, which still uses it alone, so where and whether its `d` is
 set is still B's doing: `a.d` and `A.d` are legal or refused together under either answer, and under
 closed-argument (ruled) both are errors where B closes the argument.
+
+### 2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/holes/bare-condition/nested-scope core/principles lib/control/peek lib/search/hits lib/search/occurrences
+
+Asked **argument-default** ((local) the caller's `A.d` in `C := B(A) & (A.d: <100)`, B(rx) := `/${rx}xx/`, is the
+caller's own read; (error) a compile error until the macro passes the label on; and, from his question, a
+middle (labelled): read only through a label the caller writes on the argument, `B([a = A])`, `a.d`). HIS WORDS,
+whole:
+
+"argument-default: for me this is an error. I'm just trying to articulate why it's an error other than form. I
+get that it might not end up in the pattern. I think for me it has to do with whether or not it's definitively
+part of the pattern being constructed or if it's a parameter to it. B(rx) := you can't take a label against rx
+directly. You can take a label to the spot that rx gets laid into the regex. The label is not to the regex
+abstractly, it's to the spot in the pattern where the regex is being inserted. A parameter like rx in a call
+B(rx) cannot be labeled because it's not being placed into the pattern. It's not a piece of the pattern. It's a
+template of the rx that might be placed into the pattern."
+
+Class: (1) a RULING on the slug: (error): the caller's read of an argument's label by the argument's name (`A.d`
+for `B(A)` whose body uses `rx` alone) is a compile error. It REVISES his example 1 of 2026-11-21 ("C := B(A) &
+(d: <100) is legal. C can see d as a flat look into A") and settles call-prefix case 2 and closed-argument's
+"visible through the call" in the strict sense: visible only where the macro's body puts a label on the spot (his
+example 3, `[dd = rx]`) or passes the labels on. (2) his REASON, a PRINCIPLE in his words (stated while "trying
+to articulate why"; recorded as a principle he stated, the name the manager's): "The label is not to the regex
+abstractly, it's to the spot in the pattern where the regex is being inserted."; an argument "is not a piece of
+the pattern. It's a template of the rx that might be placed into the pattern."
+
+The manager's readings, for the fold lane to test and mark: (a) the middle (labelled) is refused by his words:
+"A parameter like rx in a call B(rx) cannot be labeled": a part label written ON an argument at a call (`B([a =
+A])`) labels a template, not a spot: a compile error (the reading taken, told to him); (b) the same for a group
+written in an argument passed in place (`B(/(?<d>\d)/) & (d: <5)`): the caller cannot read `d` by itself; this
+answers the first shape of two-sources (the body's `d` is the only one the caller reaches, as `B.d`); (c) a
+condition written INSIDE the argument beside its own group (`occurrences(/(?<n>\d+)/ & (n: <100))`) travels
+with the template and stays legal; (d) a spot the macro's body labels exports the argument's exported labels
+through that label (`B.dd.d`; export statement 3); the label-only `hit` in `hits` / `occurrences` is such a
+spot (`hits.hit.g`); (e) a binding used alone in a definition IS placed: its name stands for its spot there
+(binding-prefix), which is why one use reads plainly and several are ambiguous; (f) NOT STATED, to be asked
+(wrapper-export): the provided macros that use their argument alone (`peek`, `atomic`, `when`, `list_of`, the
+gap bodies): `peek`'s ruled piece says "Labels A sets are readable after it" (2026-11-18); under this ruling no
+caller spelling reaches them unless the body passes them on.
