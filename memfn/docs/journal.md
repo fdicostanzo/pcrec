@@ -4815,3 +4815,17 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 "width-night-bench: but this leaves kit options like the candidate check might be disjoint from the coverage or the cover check goes into the non coverage because the simd form checks 32 bytes anyway"
 
 - Kit reading: the stated range is an OBLIGATION (what the answer must prove), not a fence on what the kit may read or test. The kit may test positions outside it (a candidate test disjoint from the range; a SIMD block that runs past it), as long as every reject is SOUND (it uses only sets pcrec states as necessary at that position) and every read stays in bounds (the existing guard rules). Consequence: pcrec hands the per-position sets beyond the range too (the exact sets inside, the necessary or hull sets outside), so the kit has something sound to test there.
+
+## 2026-11-22 09:37 (kit) — OWNER WORDS to the kit (cover width), VERBATIM
+
+"As far as the width, that is your call within the above. I'm not sure the variables that determine the answer. We could use a table. An/or there could be a mathematical idea of sufficiently checked where a match score keeps going up with each test until it passes some threshold (that pcrec might provide). So rare bytes provide more, ranges less.
+1. is this a width of check or coverage?
+2. another variable is simd. If simd can prove 32 bytes cheap then that's different than scalar
+3. simd is the reason the choice is yours."
+
+- Kit answer (given to him the same turn):
+  - (1) There are TWO widths. COVERAGE is pcrec's fact: the range that must be proven if the kit answers without a recheck. CHECK is the kit's choice: how far a candidate filter tests before handing to the engine. Today's "cover width 32" is a limit on coverage: take the proof, or decline it to the engine.
+  - (2) Yes. Cost per position is per layer. A SIMD block tests 32 positions for about one unit, so proving coverage of 32 or less is near-free there; scalar pays per byte.
+  - (3) Agreed.
+  - His score is the general form of the stopping rule: test in order of selectivity (rare bytes first), and stop when the next test costs more than the engine recheck it is expected to save. The threshold input is pcrec's ENGINE COST UNIT (D202 (2)). The table is that rule tabulated per kind x layer.
+  - Lean: a table per kind x layer first, fitted to the SIMD reference night. The score is built only if the table cannot fit the measured answers (mixed spans are the likely trigger). Pricing stays a later step (memory pcrec-pilot-is-pricing-baseline). No build now.

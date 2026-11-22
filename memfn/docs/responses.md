@@ -3688,3 +3688,11 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - (b) every read stays inside the subject (the existing over-read and guard rules).
   - **Consequence for the fact's shape:** pcrec states per-position sets beyond the range too: exact inside, necessary (hull) outside, as far as it can prove them. Without them the kit has nothing sound to test there.
   - **Reading for the owner to check:** "goes into the non coverage" means extra positions TESTED, never extra positions PROVEN. A match the kit reports still needs pcrec's proof (or recheck) for anything past the range.
+
+- **notice: owner ruling on the cover width (2026-11-22), for D202** — verbatim: "As far as the width, that is your call within the above. I'm not sure the variables that determine the answer. We could use a table. An/or there could be a mathematical idea of sufficiently checked where a match score keeps going up with each test until it passes some threshold (that pcrec might provide). So rare bytes provide more, ranges less. 1. is this a width of check or coverage? 2. another variable is simd. If simd can prove 32 bytes cheap then that's different than scalar 3. simd is the reason the choice is yours."
+  - **Proposed D202 addendum 2:** the width is the kit's call within add. 1. It is a table and/or a "sufficiently checked" score. The threshold pcrec may provide is the engine cost unit (D202 (2)).
+  - **Kit's readings, for the owner to check:**
+    - Two widths: COVERAGE (pcrec's fact, the range that must be proven) and CHECK (the kit's candidate test depth).
+    - The cost per position is per layer (SIMD vs scalar).
+    - Order: the table first, fitted at the SIMD reference night; the score only if the table cannot fit (mixed spans are the likely trigger).
+  - No build go is asked or implied.
