@@ -725,3 +725,5 @@ used" reading WITHDRAWN. Lane predfix77 (R-1, R-2, R-3 applied) delivered and me
 5,771 / 0. P-19 written. IN THE RECORD, NOT IN THE DOCUMENTS: bound-condition (documents carry it open with his
 position). WAITING on him: count-in-set (he asked where `ch` is defined; answered). NEXT: his answer, then ONE
 opus follow-up lane folding bound-condition (+ count-in-set), a critic round on that fold (number from main), P-20.
+
+Main (2026-11-22): review number **r82** is ours for the bound-condition fold's critic round; main merges 399ef98f4 after reading P-19.
