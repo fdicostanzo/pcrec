@@ -7786,3 +7786,22 @@ library's literal; (b) the library's literal keeps its own file's weak value. RU
 program: weak on, `/id-${word}/`, word := `/[a-z]+/` from a library file that sets nothing; outputs pasted):
 (a) the program's weak value flows into the library's literal: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` `ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12]
 (b) the library's literal keeps its own file's weak value: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` FAILS / SEARCHED `x ID-ABC id-abc` `id-abc`@9 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `Id-ab`@12]
+
+### 2026-11-22 OWNER, on weak-meets-weak: "Consider this: weak settings do not propagate."
+tags: core/patterns/flags core/holes/flags lib/builtin/options core/principles/rx-owns-flags
+
+Asked **weak-meets-weak** ((a) the program's weak value flows into a library's literal; (b) the library's
+literal keeps its own file's weak value; the manager's leaning (a), on his words "That will inherit as well").
+HIS WORDS, whole: "Consider this: weak settings do not propagate."
+
+Class: a PROPOSAL to consider ("Consider this"): it changes his own sentence of the entry above ("That will
+inherit as well") to its opposite for the weak values; the answer is (b) in the question's terms. Not yet
+entered as a ruling: put back to him as hole-flags with its consequences.
+
+The manager's view (told to him): agreed, and leaning (a) is WITHDRAWN. With it the picture has no exception: a
+weak value is the file's default for the literals written in that file (a program option like `m`, `s`, `n`,
+`x`: lexical, never across an import, never through a hole); only an EXPLICIT `i` or `-i` written in a literal
+is inherited down a hole, replacing whatever was in force, until a nearer explicit setting. Its answers are the
+(b) line of the entry above (WHOLE `ID-ABC` FAILS for a library `word` under a weakly insensitive program; the
+program writes `/(?i)id-${word}/` to reach it). What his words do not yet say, asked with it: `m` and `s` at a
+hole (ruled inherited on 2026-11-19; his point 4 today: "really can't be inherited").
