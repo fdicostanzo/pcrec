@@ -7267,3 +7267,37 @@ The manager's answers (told to him): on (2): no reason; the reading is WITHDRAWN
 component of a joint entry's left part may be a value, each SINGLE (a reading, to be tested by the lane); a
 default (`h = v`) stays a label form (it stands in for an absent label); inside a group question a joint entry
 stays refused (joint-in-some). On (1): the manager's view is in the reply (for his yes, with what it obliges).
+
+### 2026-11-22 OWNER RULING — label-reference: required (a label not written in the referencing definition's text is referenced with its source); and an idea he parks
+tags: core/labels/paths core/labels/export core/labels/export/flat-read-outside core/labels/flow core/holes/labels core/holes/bare-condition/nested-scope lib/modifiers/length parked/ideas/label-hygiene
+
+Asked **label-reference** ("label-reference: required", or with changes; "Say in particular whether the plain
+`isodate & (year: ...)` idiom is included"), after the manager's view for his yes: the requirement only refuses
+programs, so it can be relaxed later without changing an answer; what it obliges (the everyday idiom longer; a
+prefix for macro calls; arguments; typed parameters; a sweep of the printed examples); and the statement offered:
+"a bare name is a label written in this definition's own text (a group in one of its literals, or a part label
+`[x = ..]` it writes). Any other label is reached through the name that brings it into this definition: a
+binding, a part label, or a typed parameter." HIS WORDS, whole:
+
+"label-reference: required. we can relax it later as you say although i'm not inclined to. (i wrote then deleted
+an idea that if you defined isodate := ... above the binding then later usages of it in the same "program" could
+refer to isodate labels without qualifications but i'm not so sure of it so i will park it)"
+
+Class: (1) a RULING on the slug: "required": a reference to a label that is not known textually at the reference
+carries its source (`chars.ch`, not `ch`). (2) a STANCE: "we can relax it later ... although i'm not inclined
+to". (3) an IDEA he PARKS himself ("i'm not so sure of it so i will park it"): a binding defined above in the
+same program lets later uses refer to its labels without qualification.
+
+The reading taken, told to him: the plain idiom IS included (`isodate & (isodate.year: < 2100)`): he states no
+exception, and the idea he parks is exactly the relaxation that would exempt it. It REVISES the spelling side of
+flat-read-outside (2026-11-21) and hole-export (2026-11-19), and his example 1 of 2026-11-21 (`C := B(A) & (d:
+<100)`, "C can see d as a flat look into A"): what a flat read MEANT becomes what `binding.x` means.
+
+The manager's readings, for the sweep lane to test and mark: (a) "known textually": a bare name is a label
+written in the referencing definition's own text: a group in one of its literals, or a part label it writes; (b)
+any other label is reached through a binding's name (binding-prefix, ruled today) or a part label; (c) the same
+for `$x` reads, backreference-free rx text being untouched (rx text names only its own literal's groups already);
+(d) NOT STATED by his words, to be asked: the prefix for a label that comes from a MACRO CALL's body (`hits(..)`'s
+`hit`), from an ARGUMENT (`B(A)`: `A.d`), and from a typed PARAMETER (`d.year`); until asked, a call is labelled
+(`[x = hits(..)]`, `x.hit`) and an argument that is a binding is reached by the binding's name; (e) no answer of
+any printed example changes: only spellings.
