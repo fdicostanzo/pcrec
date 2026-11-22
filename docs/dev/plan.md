@@ -517,6 +517,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 
 
 ## Candidates ([OPTLOOP])
+- [KIT-ARCH-STEP] STATE:not-started — the memfn kit adopts the architecture step, in three stages
+  filed: 2026-11-22 owner (ruling kit-arch-step)
+  status (2026-11-22): ruled, nothing started. Stages: (1) after the in-flight effort, ONE arch review of the kit's sections with suggestions + possible refactors, smaller items favored; (2) then the arch step for every new kit feature
+  trigger: the kit's in-flight effort completes (R-47 block span, U5 and after)
+  refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
 - [WIDTH-PATH-BOUND] STATE:not-started — the width walk is still quadratic on acyclic and late-cycle patterns (path form is O(n+edges))
   filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-1 (docs/dev/reviews/2026-11-22-r81-k159fix.md)
   status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
