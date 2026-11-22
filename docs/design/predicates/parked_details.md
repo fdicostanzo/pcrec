@@ -994,27 +994,6 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r48 (PREMISE-12), a critic's notes; nothing for rulings:.
 
-## parked/ideas/label-only-group — The label-only group
-slugs: 
-rulings:
-- 2026-11-18 (class: RECOLLECTION of a PROPOSAL; nothing ruled) "for capture group regex: i proposed /(<:x>foo)/ would be regex for a labeled group that is not a" (record: "2026-11-18 OWNER, a RECOLLECTION in the hole-reads-capture discussion: the label-only group")
-- 2026-11-18 (class: CORRECTION of the entry above, nothing ruled) "oops. yes, i missed the ?. it should look like the top row" (record: "2026-11-18 OWNER, correcting his spelling of the label-only group"); the spelling quoted above, `(<:x>foo)`, was a slip for `(?<:x>foo)`
-rejected:
-readings:
-evidence:
-history:
-- the ideas file (`docs/design/predicates_future.md`) item 32, "The label-only group: labelled, not a capture (`(?<:x>...)`, his stated form 2026-11-18; a placeholder)", whole:
-
-  - The owner's PROPOSAL of 2026-11-09 (POSTFACT.md, "Label spelling", "Names are labels, numbers are captures"),
-    recalled by him 2026-11-18 evening (COND-FAMILY, "a RECOLLECTION ... the label-only group"): a group's name and
-    its capture status are orthogonal; the fourth cell, named and non-capturing, sets a label and returns nothing.
-  - Checked: libpcre2 rejects `(?<:x>foo)` and `(?':x'foo)` (error 162), so neither changes a valid PCRE pattern.
-  - Open with it: what `\k<x>` on a label-only group means; whether `(?<x>...)` then returns without the `captures`
-    opt-in (§6.2); the 11-09 "numbers are captures" against number-names (RULED 2026-11-18).
-  - TRIGGER: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
-- 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
-- 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet: at the expression level `[x = A]` already makes a label and no capture (pure-label), so the idea is the rx TEXT spelling only; its second open point (does `(?<x>...)` return without the opt-in) is answered by pure-label statement 5.
-
 ## parked/ideas/array-in-hole — The array form in a hole, `${@y}`
 slugs: array-in-hole
 rulings:

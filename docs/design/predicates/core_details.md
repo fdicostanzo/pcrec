@@ -405,6 +405,7 @@ history:
 ## core/patterns/alternation — Alternation
 slugs:
 rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); the example re-spelled: `l` comes from the bindings A and B, so the alternation is labelled
 - 2026-11-17 "branch-scope: yes. I like that." (record: "2026-11-17 OWNER RULING — branch-scope: reading")
 - 2026-11-17 "join-order: left side decides. That's always how I thought of it." (record: "2026-11-17 OWNER RULING — join-order: the left side decides")
 rejected:
@@ -415,6 +416,7 @@ readings:
 evidence: preddoc3a_model.py ALT (the draft's PART A B1 line; printed answers reproduced; `\d\d` agrees).
 history:
 - 2026-11-17: branch-scope (ii); join-order gave the distribution over a `|` on the left.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `(B | A) & (l: <20)` re-spelled `[ab = B | A] & (ab.l: <20)` (label-reference: `l` is not written in the program); answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-17 to 2026-11-22 (a piece whose text a ruling changes takes the ruling's date).
 
 ## core/patterns/quantifiers — Postfix quantifier operators
 slugs:
@@ -434,6 +436,7 @@ history:
 ## core/patterns/atomic — Atomic parts
 slugs: atomic-search
 rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); the example re-spelled, the atomic part labelled
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-17 "Atomic as used by say atomic() would provide pcre behavior." (record: "2026-11-17 OWNER on atomic-search")
 rejected:
@@ -443,6 +446,7 @@ evidence: preddoc3a_model.py ATOM (the draft's B8 / V17 line; printed answers re
 history:
 - 2026-11-17: regex-settles (5); atomic-search moved the other reading to the backtracking verbs (parked/ideas/atomic). The slug came from core/model/modes (lane preddoc3a).
 - 2026-11-19 (lane preddoc4): the name `atomic(X)` is the library body lib/control/atomic; this piece keeps the rule (review r59 PLACE-2 (a)).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `atomic(B | A) & (l: <20)` re-spelled `[ab = atomic(B | A)] & (ab.l: <20)`; answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-17 to 2026-11-22.
 
 ## core/patterns/lookaround — Lookaround
 slugs: lookahead-labels
@@ -459,6 +463,7 @@ history:
 ## core/labels/labels-vs-captures — Labels and captures
 slugs: pass-own-labels pass-and joint-last-pass after-loop-read last-pass-default joint-loops pairing-loop array-slot array-scope array-in-piece
 rulings:
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); a provided body's groups are labels only (core/labels/label-only-group)
 - 2026-11-21 "they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); the group questions and the index read this piece's array of settings (core/labels/labels-vs-captures/array-vs-passes)
 - 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); answer (a): a group in rx text or a capture form makes a capture; `[x = A]` a label and no capture
 - 2026-11-17 (class: STATEMENT) "setting labels is just the label using the group-label-not-capture syntax" (record: "2026-11-17 OWNER, three points on labels"); his supporting words, recalled in the pure-label discussion
@@ -501,6 +506,8 @@ history:
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the array bullet's "its index `h[k]` counts settings (a reading). Settings or the loop's passes: core/labels/labels-vs-captures/array-vs-passes." became "which read this array, as its index `h[k]`, the k-th setting, does (core/labels/labels-vs-captures/array-vs-passes)". No answer moves.
 - 2026-11-22 (lane predfix77, review r77 A1, A8; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the CAPTURE bullet until then, verbatim: "The CAPTURE is regex's: the value from the last time a group of the name was set, read inside rx text (`\k<x>`, a conditional group, and a callout where one is allowed: a one-literal program, core/patterns/literals) and by the carried-capture form, a visibly different spelling." It parted from PCRE for a duplicated name (the line "Two groups of one name" added). The array-scope bullet gains the collision with bare-nested-scope case 2, stated as the open core/labels/labels-vs-captures/array-in-piece; neither answer stated.
 - 2026-11-22 (lane predfix77, R-1 and R-2 of its rulings file; array-in-piece RULED (b)): the array-scope bullet gains the ruled reading in the definition the question is written in, his words, and the lines "Bound first", "Written in place"; status date 2026-11-21 to 2026-11-22. The collision of review r77 A1 (array-scope against bare-nested-scope case 2) is settled by it; the open piece the lane had drafted for it was never delivered.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures: the second bullet names the label-only group beside `[x = A]` (no capture). No line moves.
+
 ## core/labels/labels-vs-captures/array-vs-passes — The array of settings, not the loop's passes
 slugs: array-vs-passes joint-in-some
 rulings:
@@ -545,6 +552,34 @@ history:
 - 2026-11-22 (lane predfix77, R-1 and R-2): array-in-piece folded (the array is read in the definition the question is written in; readings (c), (d)) with the line "In an `&` operand, one definition (a reading)"; status date 2026-11-21 to 2026-11-22.
 2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the line "A count of zero" written in place, `(count(NOT (d: "7")): ==0)`, its binding `n := `count(NOT (d: "7"))`` being a compile error now; the line until then ended "(`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`; `n` (depends on the open bound-condition: core/holes/bare-condition/bound-condition))"; the answers do not move (predbound FIVE).
 
+## core/labels/label-only-group — The label-only group in rx text
+was: parked/ideas/label-only-group (2026-11-22, moved: his helper-captures ruling needs the thing, so it leaves the parked list; under construction, his form the placeholder)
+slugs: -
+rulings:
+- 2026-11-22 (class: PROPOSAL) "help-captures: 1. i propose the form (?<:x>...) for a label only group x. i've mentioned it before." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate")
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate")
+- 2026-11-18 (class: RECOLLECTION of a PROPOSAL; nothing ruled) "for capture group regex: i proposed /(<:x>foo)/ would be regex for a labeled group that is not a" (record: "2026-11-18 OWNER, a RECOLLECTION in the hole-reads-capture discussion: the label-only group")
+- 2026-11-18 (class: CORRECTION of the entry above, nothing ruled) "oops. yes, i missed the ?. it should look like the top row" (record: "2026-11-18 OWNER, correcting his spelling of the label-only group"); the spelling quoted above, `(<:x>foo)`, was a slip for `(?<:x>foo)`
+rejected:
+readings:
+- the label-only group is a label under every label rule (reset, last mention, the array) and never a capture (the manager's reading (d) of the helper-captures entry) — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py LABELONLY: the bodies of `occurrences` and `hits` with `(?<:hit>...)` set the label `hit` as the old `(?<hit>...)` did, the same answers on the record's four programs and on `hits(/a(?<g>x)?/) & (g: "x")`; `hit` is no capture, the user's `g` and `n` in an argument are; sabotage s4 caught)
+- `\k<x>` to a label-only group inside its own literal is a compile error for now — UNTESTED (the manager's reading; nothing stated)
+- "occurences et al" is every provided body writing a group for its own use, a user's literal keeping pure-label (the manager's reading (a)) — run as a census (docs/dev/lanes/predref_evidence/ predref_model.py LABELONLY: library.md's provided bodies writing a named group in rx text are `occurrences`, `hits`, `capture`; the first two now write `(?<:hit>...)`; `capture`'s purpose is the capture, left as written)
+evidence: docs/dev/lanes/predref_evidence/ predref_model.py LABELONLY, HITS.
+history:
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): new under-construction piece, moved from parked/ideas/label-only-group (the `was:` line); its details there, whole:
+- the ideas file (`docs/design/predicates_future.md`) item 32, "The label-only group: labelled, not a capture (`(?<:x>...)`, his stated form 2026-11-18; a placeholder)", whole:
+
+  - The owner's PROPOSAL of 2026-11-09 (POSTFACT.md, "Label spelling", "Names are labels, numbers are captures"),
+    recalled by him 2026-11-18 evening (COND-FAMILY, "a RECOLLECTION ... the label-only group"): a group's name and
+    its capture status are orthogonal; the fourth cell, named and non-capturing, sets a label and returns nothing.
+  - Checked: libpcre2 rejects `(?<:x>foo)` and `(?':x'foo)` (error 162), so neither changes a valid PCRE pattern.
+  - Open with it: what `\k<x>` on a label-only group means; whether `(?<x>...)` then returns without the `captures`
+    opt-in (§6.2); the 11-09 "numbers are captures" against number-names (RULED 2026-11-18).
+  - TRIGGER: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
+- 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
+- 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet: at the expression level `[x = A]` already makes a label and no capture (pure-label), so the idea is the rx TEXT spelling only; its second open point (does `(?<x>...)` return without the opt-in) is answered by pure-label statement 5.
+
 ## core/labels/one-rule — One label rule: branchings reset
 slugs: bare-loop-label before-and-inside shared-label repeated-means unsettable-label empty-pass optional-as-loop
 rulings:
@@ -577,6 +612,7 @@ rejected:
 - across the sequence operator a name both parts set is ambiguous (point 2 of his proposal) — by owner — withdrawn by his adjustment ("a compose and a literal rx have the same label behavior").
 - the manager's readings (a) "names inside a part are resolved in that part, before the splice" and (d) "renaming groups apart before splicing" as the RULE — by owner — his clarification "it should be the last reference as labels" and free-name; renaming stays the evidence's model (the draft R.9).
 readings:
+- under label-reference the flow rules judge a name read bare where the parts are written in place, or through a label over the composition; one part's prefix reads that part's own label (lane predref's reading, from binding-prefix's "One use" line) — SUPPORTED as run for the alternation and the atomic part (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL: `[ab = B | A]`, `ab.l`), UNTESTED as a rule
 - a chain `A & B` with h on both sides, used as a part, still surfaces h ambiguously (the manager's) — UNTESTED.
 - label-mark (the single labelling form the rx module offers) is closed by entailment; its spelling stays in core/spellings — not a run question.
 evidence: preddoc3a_model.py FLOW (the draft R.1.13 (3)(i) line; printed answers reproduced; `\d(?:,\d)?` agrees on the spans).
@@ -585,11 +621,14 @@ history:
 - 2026-11-17: the proposal, then the ruling with his adjustment; shared-label's error revised to the reference.
 - 2026-11-22 (lane predfix77, review r77 D2 (FIXIND-14), D8; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "A label from a pattern is whatever label it surfaces; a composed pattern and a literal have the same label behaviour (the last mention wins)." It now carries the definition unit (within a definition, and for a piece's user); status date 2026-11-17 to 2026-11-21. In the exception bullet his quoted phrase is spelled as he wrote it, "behavior" (was "behaviour"). No answer moved.
 2026-11-22 (lane predbound, R-1, binding-prefix ruled): the bullet until then, verbatim: "A binding's name is not a path (`A.h` is an error where a label is referenced)." (from his label-flow point 4 of 2026-11-17: "A . B & (A.h: blah) error. A is a binding not a label and could be ambigous if its used multiple times in an expression", record "2026-11-17 OWNER PROPOSAL — label-flow: an ambiguous REFERENCE is the error"); now the binding's name is a prefix (core/labels/paths/binding-prefix). Status date 2026-11-21 to 2026-11-22.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): a bullet: what the flow rules judge under label-reference (a reading). No line moves.
 
 ## core/labels/export — Export and private labels
 slugs: export-rule export-scope free-name filter-captures hole-export
 was: core/holes/labels/hole-export (2026-11-19, merged: the question is answered here)
 rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); statement 3's spelling: a passed label is referenced with its source
+- 2026-11-22 "occurences et al should only set labels not captures unless they are so declared." (record: "2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate"); statement 5: a provided body's groups are label-only, no caller capture
 - 2026-11-21 "i agree that captures are explicitly written either in literal form or using a macro like capture()." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); NARROWS statement 5, ruled 2026-11-18 as "The caller's captures: agree": the caller gets captures, not every public label
 - 2026-11-21 (class: STATEMENT, marked agreed "as we discussed") "1. purely predicate labels and 2. cannot become exported captures (although they might be internal captures)" (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); of the `_t` labels; their use, his words: "they would be used in your examples to define a binding level label like the quote character in a string."
 - 2026-11-19 "they have to work the same. Agree both pass through." (record: "2026-11-19 OWNER RULING — hole-export: both pass through; and a question on the array of a label under composition"); it revises statement 3 of export-rule
@@ -617,22 +656,27 @@ history:
 - 2026-11-19 (lane predfix61, review r61 F-A, F-B, F-J (RUNOWN-6)): statement 3 contradicted statements 6 and 7 (a `[_a = A]` part's public `h` was "visible inside" and so outside, less only `_a`) and stated the manager's reading (a) as the ruled body. The statement until then: "A label is public unless its name begins with `_`; outside a binding every public label visible inside it is visible, a part's labels passing through a hole and the sequence operator alike." Statement 3 until then: "Outside a binding, what is visible is what is visible inside it, less the private names: the public labels of everything written or used there, read as labels are, and its public part labels, a part's public labels also reached by path through its part label. `B1 := isodate SEQ "!"` and `B2 := /${isodate}!/` both show `year`." (`isodate` was defined nowhere; the run line printed was the private-label program's). Now: the ruled part ("both pass through"), the closing parts (reading (b)), the flat read marked a reading with its owner question flat-read-outside, a defined binding and a run line.
 - 2026-11-21 (lane predscope, pure-label folded): statement 5 until then: "The caller's captures are what is visible from the top-level program by these rules." Now the CAPTURES visible from the top-level program (the groups in rx text and the capture forms); `[x = A]` makes a label and no capture. Bullets added: the `_` labels in his words; `pub` and `year` with their captures. Status date 2026-11-19 to 2026-11-21. Every printed line that shows label values in parentheses shows LABELS and stands.
 2026-11-22 (lane predbound, R-3, label-reference ruled): statement 3 gains one sentence, the spelling revised by core/labels/paths/label-reference (hole-export); the lines are left for the next lane's sweep.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): statement 3 until then, its last three sentences, verbatim: "Read flat from outside, they are read as labels are inside (ruled: core/labels/export/flat-read-outside). `pub := [a = A] SEQ "!"` and `/${A}!/`, A := `/(?<h>\d)/`, both show `h`; `[_a = A] SEQ "!"` shows none. Its spelling is revised by core/labels/paths/label-reference (ruled): a passed label is referenced with its source." Now: a passed label is referenced with its source (`pub.h`) and read as labels are inside. Statement 5 gains the label-only group and the provided bodies. The line "Statement 3" re-spelled `pub & (pub.h: <5)`, answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-21 to 2026-11-22.
 
 ## core/labels/export/flat-read-outside — A flat read of a part's label from outside
 slugs: flat-read-outside
 rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); what a flat read meant is what `binding.x` means (the manager's reading, told to him)
 - 2026-11-21 "flat-read-outside: a" (record: "2026-11-21 OWNER RULING — flat-read-outside: a (a flat read outside a binding follows the inside rules)"); (a) as put to him: "Flat reads follow the inside rules. Both examples stand as shown; the path is there when you want to say which part."
 - 2026-11-19 "they have to work the same. Agree both pass through." (record: "2026-11-19 OWNER RULING — hole-export: both pass through; and a question on the array of a label under composition"); the ruled part of statement 3; it does not say how a flat read from outside resolves
 rejected:
 - (b) a flat read of a part's labels from outside is a compile error, the path required (his sentence of 2026-11-19: "I can't access x y z flat because it's ambiguous and therefore an error. So it's b.x or a.b.x.") — by owner ruling — flat-read-outside: a; both programs of the piece would be refused (predfix61 FB).
 - (c) legal across `|`, an error where two parts in a sequence both set the name (the manager's third candidate when asked 2026-11-21) — by owner ruling — flat-read-outside: a.
 readings:
+- what a flat read MEANT is now what `binding.x` means: `pair.x` and `date.v` give the two printed lines unchanged (the manager's reading of the label-reference entry) — SUPPORTED (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL: each old line, read bare as before, against the re-spelled program, the same answers; the bare spelling now refused, SCAN)
+- a part label inside the binding reached through the binding's name (`pair.b.x`) — UNTESTED (lane predref's reading; the model gives a binding's prefix only to the labels a part surfaces)
 - (a) flat reads outside a binding follow the inside rules (the manager's reading (a) of hole-export) — RULED 2026-11-21, no longer a reading; the answers RUN (predfix61 FB; sabotage s2 caught).
 evidence: predfix61_model.py FB (both lines of candidate (a); candidate (b) refuses both programs).
 history:
 - 2026-11-21 (the manager, one ruling): flat-read-outside RULED (a). Status `open flat-read-outside 2026-11-19` to `ruled 2026-11-21`. Statement before: "Outside a binding, is a part's public label read flat (`x`, not `b.x`) under the inside rules, or is a flat read of a part's label an error, the path required?" Its candidates before: "(a) a flat read outside a binding follows the inside rules (the lines below); (b) a flat read of a part's labels from outside is a compile error; the path (`b.x`, `m.v`) is required (no line: refused)." His question back the same day ("so the read is based on match not group?") and the answer told him are in the record.
 - 2026-11-19 (lane predfix61, review r61 F-B, RULING-7): a new open sub-piece at the manager's ruling of review r61. The owner's words in the hole-export message, whole for this point: "Here's the issue: if I have [a = ([ b = rx]|[c = rx])] where rx has labels x y z, this would mean that a b c x y z are all flatly visible. I can't access x y z flat because it's ambiguous and therefore an error. So it's b.x or a.b.x. In practice there may not be ambiguity, but is having all those symbols an issue? I'm saying no." The manager's correction, told to him the same turn (record, that entry): "His "I can't access x y z flat because it's ambiguous and therefore an error" is NOT what the rules as defined say for an alternation: the ruled ambiguity is across `&` only ...; across `|` the branch taken sets the label and a bare read is legal". He did not answer the correction; his later "I can't think of a problem with the existing labeling rules so let's move on." (record: "2026-11-19 OWNER RULING — array-scope: the array of a label is by the scope of the entire rx; a part label limits it") is a direction, not an answer to it (the manager's ruling of review r61).
 2026-11-22 (lane predbound, R-3, label-reference ruled): a bullet: its spelling is revised by core/labels/paths/label-reference; the statement and lines are left for the next lane's sweep (the manager's R-3).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): heading "A flat read of a part's label from outside" to "A part's label read from outside through its binding" (the tag kept). Statement until then: "Outside a binding a part's public label is read flat (`x`, not only `b.x`) under the inside rules." Its second and third bullets until then: "A flat read is by NAME: what the path that matched left in it. The path (`b.x`, `m.v`) says which part's group (core/labels/paths)." and "Its spelling is revised: a label not written in the referencing definition is referenced with its source (core/labels/paths/label-reference, ruled); the lines below are re-spelled by the next lane." Lines re-spelled: `pair & (x: <5)` to `pair & (pair.x: <5)`, `date & (v: <5)` to `date & (date.v: <5)` (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-21 to 2026-11-22.
 
 ## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared capture
 slugs: caller-ambiguous read-out
@@ -643,6 +687,7 @@ rulings:
 rejected:
 - (b) h absent from the captures; (c) the last mention's value (the right side's); (d) the left side's value — by owner ruling — export-rule statement 5 (the caller's captures follow the program's rules, where a shared public name is an ambiguous reference).
 readings:
+- what label-reference and helper-captures change: the program never reads h bare across A & B; a helper's internal label is no capture, so two helper calls no longer raise the question (lane predref's reading, from the two rulings; the brief's reading (f)) — UNTESTED (a statement about which programs raise the question; the example's h is written in rx text in both parts and is unchanged)
 - the record's export-rule discussion: "a name two parts both make public is an ambiguous reference for the caller as for the program", pending a ruling (the manager's reading of "The caller's captures: agree") — favours (a) or (e); not ruled.
 - the question narrowed to a CAPTURE two parts both make (a label no capture makes never reaches the caller); the example's h is written in rx text in both parts, so the question and its run are unchanged (the lane's reading of pure-label) — UNTESTED as a rule; the spans are preddoc3a CALL's.
 evidence: preddoc3a_model.py CALL (the spans; the draft's PART R47 B13 printed the same spans under every candidate, reproduced).
@@ -651,6 +696,7 @@ history:
 - 2026-11-19 (lane preddoc4): narrowed to (a) against (e); (b)-(d) to `rejected:` by export-rule statement 5; the record's slug read-out (path-and-ambiguity's second corner) homed here (review r59 RULING-3). The base's slug stays caller-ambiguous.
 - 2026-11-21 (lane predscope, pure-label folded): heading "What the caller gets for an unreferenced shared label" to "... shared capture"; statement before: "For a public label two parts both set that the program never references, is the caller's ambiguous reference a compile error or an error when the caller reads it?" Body before: "The rule (export-rule, statement 5): the caller sees what is visible from the top-level program, so a name two parts both make public is an ambiguous reference for the caller as for the program. Open: WHEN it is refused." Status date 2026-11-19 to 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 A8; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a sentence names the duplicate-name case (two groups of one name in ONE literal under `(?J)`, PCRE's capture its first set group: core/labels/labels-vs-captures).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): a paragraph: what the two rulings of the day change for the question (a reading). Status date 2026-11-21 to 2026-11-22. No line moves.
 
 ## core/labels/paths — Part labels and paths
 slugs: path-and-ambiguity
@@ -672,6 +718,7 @@ history:
 - 2026-11-18: corner 1 ruled; corner 2 (the read-out) went to filter-captures, export-scope, export-rule.
 - 2026-11-21 (lane predscope, pure-label folded): the first bullet until then (the draft §3.1's reading): "`[x = A]` is the group form `(?<x>A)` read as a label; inside pattern text a named group is the same thing." It was wrong as to capture. The `[=year]` bullet added. Status date 2026-11-18 to 2026-11-21.
 2026-11-22 (lane predbound, R-1, binding-prefix ruled): a pointer bullet to the new sub-piece; status date 2026-11-21 to 2026-11-22; no line moves.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the ambiguity bullet's program `A & (B & (h: ..))` (a bare h not written in it) re-spelled with the parts written in place, `/(?<h>\d)/ & (/(?<h>\d)/ & (h: ..))`, and the binding form `A & (B & (B.h: ..))` named beside it; the bullet stays a reading, UNTESTED as before.
 
 ## core/labels/paths/binding-prefix — A binding's name as a label prefix
 slugs: binding-prefix
@@ -707,6 +754,8 @@ rejected:
 - (b) a label from a used binding referenced bare, as before — by owner ruling — label-reference: required. Its line, the bare spelling read as before the ruling (predbound LABELREF):
   Bare, read as before the ruling: WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`chars & (count((ch: /(?s:.)/)): ==3)`)
 readings:
+- (e) no answer of any printed example changes, only spellings — SUPPORTED for every re-spelled printed line (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL: each old line rebuilt from the program text at 915b47e64 read bare as before, against the re-spelled program; the same answers in every mode; DOC: each re-spelled line verbatim in the documents)
+- every printed program of the three base files obeys the rule — SUPPORTED as a textual check (docs/dev/lanes/predref_evidence/ predref_model.py SCAN: every backtick program span is checked; each span still holding a bare borrowed label is on the model's LEFT list with its reason (a fragment, a quotation, a printed refusal, his own spelling); a planted bare read is caught, sabotage s1)
 - the ruling as run: the bare `ch` in `chars & (count((ch: /(?s:.)/)): ==3)` refused, "reference it with its source"; `chars.ch` gives `length`'s printed line (predbound LABELREF; sabotage s20 caught); the documents' `(w.index: >= 2)` with `days` refused, `days.w.index` the same answers (predbound META).
 - (a) "known textually": a group in one of the definition's literals or a part label it writes — the model's rule (predbound LABELREF, META), a reading.
 - (b) any other label is reached through a binding's name (binding-prefix) or a part label — a reading; run for a binding (`chars.ch`, `days.w.index`) and for an argument that is a binding (`B(A) & (A.d: <100)` legal, `B(A) & (d: <100)` refused: predbound LABELREF).
@@ -717,6 +766,22 @@ evidence: docs/dev/lanes/predbound_evidence/ predbound_model.py LABELREF, META, 
 history:
 - 2026-11-22 (lane predbound, R-2): a new open piece, slug label-reference.
 - 2026-11-22 (lane predbound, R-3, label-reference RULED "required"): open to ruled; the statement until then, verbatim: "Must a reference to a label not written in the text of the definition that makes it carry its source (`chars.ch`, not `ch`), (a), or may it stay bare, as today, (b)?"; the line "Bare, as today" moved to `rejected:`; `length`'s and `month_numbered`'s bodies, and every program this lane wrote, use the required form; the other printed programs are left bare for the next lane (the manager's R-3).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the sweep: the bullets on the unstated sources point at the new open piece core/labels/paths/call-prefix; "the documents' other printed programs still read used bindings' labels bare; they are re-spelled by the next lane" replaced by the sweep's result; the reading on rule-sentence capitals added.
+
+## core/labels/paths/call-prefix — The source of a label from a call or an argument
+slugs: call-prefix
+rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); what it leaves unstated: the source of a label from a call's body, an argument, a parameter
+rejected:
+readings:
+- (1) a call is labelled to reach its body's labels (`[h = hits(/\d+/)] & (h.hit: <5)`), never by the macro's name — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py HITS: the record's two `hits` lines reproduced from the program text; `hits(/\d+/) & (hit: <5)` refused, SCAN's checker and the model; the macro's name as a prefix refused, predbound PREFIXRD (e))
+- (2) an argument that is a binding is reached by that binding's name (`C := B(A) & (A.d: <100)`) — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL: example 1's line unchanged)
+- (3) an argument written in place is the caller's own text, read bare — SUPPORTED as run (docs/dev/lanes/predref_evidence/ predref_model.py LABELONLY: `hits(/a(?<g>x)?/) & (g: "x")`, its printed line)
+- (4) a parameter's label inside the body is not nameable — ruled (nested-scope, 2026-11-21); nothing run here
+- the candidates (b), (c) only add spellings — UNTESTABLE (a statement about later spellings)
+evidence: docs/dev/lanes/predref_evidence/ predref_model.py HITS, RESPELL, LABELONLY.
+history:
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): new open piece (the brief's reading (b), the manager's conservative form, listed as the open question call-prefix with candidates).
 
 ## core/labels/backreferences — Backreferences
 slugs: backref-label backref-across-parts same-name-twice
@@ -1127,6 +1192,7 @@ history:
 ## core/values/tuples — Tuples
 slugs: tuple-value tuple-anywhere set-arity two-orders record-is-product modifier-lift library-not-syntax retire-paused tuple-compare tuple-names tuple-arg-order
 rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); the example's joint entry names `time`'s labels through its name
 - 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); a joint entry inside a group question is refused for now; "same item" is written on the item (core/labels/labels-vs-captures/array-vs-passes)
 - 2026-11-21 "if they wanted the h5,m3 condition to be held at the same time they could have specified (h,m): (5,3) but they did not." (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); his claim about the joint spelling, checked the same turn: inside a group question a joint entry meets two arrays and no rule paired them; then refused (joint-in-some)
 - 2026-11-16 "A pair as a value: I am ok with the tuple as a value. My request is that it's fleshed out and not the slice of an idea." (record: "2026-11-16 OWNER RULING + REQUEST — the tuple as a value: OK, to be fleshed out")
@@ -1161,6 +1227,8 @@ history:
 - 2026-11-16: modifier-lift (the base bullet added by lane preddoc5, review r59 COMPA-1; the draft §2.7 MODIFIERS ON TUPLE SETS states it); library-not-syntax; retire-paused.
 - 2026-11-21 (lane predarr): a bullet added, a joint entry inside a group question is refused for now (joint-in-some). Status date 2026-11-16 to 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 A9; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "one mechanism" qualified "outside a group question (open record-in-some)".
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `time & ((h, m): >= (9, 30))` re-spelled `time & ((time.h, time.m): >= (9, 30))`; answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL, the tuple comparison lowered as the dictionary order). Status date 2026-11-21 to 2026-11-22.
+
 ## core/values/computed-labels — A computed value in an entry
 slugs:
 rulings:
@@ -1194,6 +1262,7 @@ readings:
 evidence: docs/dev/lanes/preddoc4_evidence/ PART ME.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: `.index` and `.label` were used with no definition (review r59 PRIMITIVES-MISSING, READ-5).
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `/${days}/ & (w.index: >= 2)` re-spelled `/${days}/ & (days.w.index: >= 2)` (label-reference; predbound META had run it); the bullet "Read like labels" says where the bare form stands. Answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-19 to 2026-11-22.
 
 ## core/values/arithmetic — Arithmetic
 slugs: plus-operands number-edges
@@ -1626,6 +1695,7 @@ history:
 ## core/holes/labels — Labels through a hole
 slugs: inner-label-read
 rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); his example 1 and the line spelled with the source
 - 2026-11-18 "export-rule: Agee and add [_a = A] is a private reference that wouldn't export at all" (record: "2026-11-18 OWNER RULING — export-rule: public unless `_`; a binding shows its own public labels and its public part labels")
 - 2026-11-18 "Agree", under the manager's heading "Inserting through a hole." (record: "2026-11-18 OWNER, continuing the export-scope discussion"); his agreement to the manager's lean in a DISCUSSION (the entry says nothing is ruled by it): only the inserted part's exported names flow into the outer pattern
 - 2026-11-21 (class: EXAMPLE, given "rather than rules") "C can see d as a flat look into A." (record: "2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name"); of `A := [d = digits]`, `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)`: a label flows out through a macro's parameter hole
@@ -1638,6 +1708,7 @@ history:
 - 2026-11-18: the export-scope discussion and export-rule; 2026-11-19 same-name-count's "(and `$h`)" withdrawn, leaving inner-label-read, then answered by this piece.
 - 2026-11-21 (lane predscope, pure-label folded): two bullets added (what flows is labels; his example 1 through a parameter hole). Status date 2026-11-18 to 2026-11-21. evidence: predscope_model.py EX1 (and CONTROL: equal to `(?:[1-9]\d?|0)xx` on 1,365 texts).
 - 2026-11-22 (lane predfix77, review r77 D11 (GENERAL-6); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): bullet until then, verbatim: "What flows is LABELS: a capture is made only where it is written (core/labels/export, statement 5)." It now says a label carries whether it is a capture. No answer moved.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): bullets until then, verbatim: "The outer program reads an inserted pattern's public label by the label rules as defined (the last mention); a private `_` label never flows out." and "Through a macro's parameter hole as well: in his example `C := B(A) & (d: <100)` (B(rx) := `/${rx}xx/`), \"C can see d as a flat look into A\" (core/holes/bare-condition/nested-scope)." Now through the source (`year.v`, `A.d`). The line's program `/${year}-x/ & (v: >= 2000)` re-spelled `/${year}-x/ & (year.v: >= 2000)`; answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-21 to 2026-11-22.
 
 ## core/holes/same-name — Same-name groups through a hole
 slugs: same-name-count
@@ -1726,6 +1797,7 @@ rejected:
 - (b) composed for a label of the definition's USER (listed "open" in `readings:` until 2026-11-22, a residue) — by owner ruling — case 1 refuses that very case ("compile error at inner"); the answers RUN (predfix61 FE; predscope_model.py ZNEST).
 - (the manager's (b) of case 2 and of zero-in-definition) a bound condition or computed label has no rx of its own and is laid against the pattern it meets — withdrawn by the manager on his position (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives") — it stays the open core/holes/bare-condition/bound-condition, candidate (a).
 readings:
+- his example 1 spelled `C := B(A) & (A.d: <100)` means what his flat look meant (the manager's reading of the label-reference entry) — SUPPORTED (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL: the line "Example 1" rebuilt, the old bare spelling read as before against the new, the same answers)
 - (the manager's (a) of case 2) a piece is a binding or a macro body; what is written inside one definition is one piece — UNTESTED (for the next lane or critic round); his array-in-piece words ("because B is bound first") speak of a BOUND piece; his "bindings define scope" (record: "2026-11-21 OWNER, his "issue definition" for bare-nested-scope: bindings define scope; flags are a symptom of PCRE, probably only `i` inherits; the two languages differ by construction; a sketch `list_of_stuff(X, cmp, S)`") supports it, not as a ruling.
 - (the manager's (d) of case 2) two uses of one piece are two pieces, to be confirmed — SUPPORTED as a run of the reading (predfix77 LOOPPIECE: with (c) withdrawn, `rx.repeat(B SEQ ";", min = 2, max = 2)` and `B SEQ ";" SEQ B SEQ ";"`, B := `/${NOT (c: >= 5)}(?<c>\d)/`, agree, 0 / 0 / 0 of 364 texts over `37;`, both equal to `\d;\d;`; one definition looped, `/(?:${NOT (c: >= 5)}(?<c>\d);){2}/`, reads its previous pass, equal to `[0-4];\d;`; sabotage s7 caught).
 - (the manager's (e) of case 2) an argument is the caller's text and reads the caller's labels — SUPPORTED for a condition (predscope WHEN, ZARG).
@@ -1742,6 +1814,7 @@ history:
 - 2026-11-22 (lane predfix77, R-1, R-2 and the bound-condition position): the VALUES bullet names the group questions and `h[k]` (array-in-piece), his sentence quoted; the NAMES bullet no longer states the withdrawn reading (a) for a bound condition, which is open.
 2026-11-22 (lane predbound, bound-condition ruled; record "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"): in the NAMES bullet, "a label variable is an idea (parked/ideas/label-parameter). A condition or computed label bound alone: open (core/holes/bare-condition/bound-condition)." became the under-construction pointer (core/operators/bindings/label-variables) and the ruled compile error; `see:` re-pointed from the parked idea. Status date 2026-11-21 to 2026-11-22. The line "Passing the condition" re-run unchanged (predbound INPLACE).
 2026-11-22 (lane predbound, R-3, label-reference ruled): his example 1 marked "its spelling revised: core/labels/paths/label-reference"; the example is his and its lines are left for the next lane's sweep.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): example 1's tail until then: "(its spelling revised: core/labels/paths/label-reference)"; now the spelling under label-reference, his quote kept whole. The line "Example 1" re-spelled `C := B(A) & (A.d: <100)`, answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Example 2 stays a printed refusal; example 3 writes its part label `dd` and is unchanged.
 
 ## core/holes/bare-condition/bound-condition — A condition bound to a name of its own
 slugs: bound-condition
@@ -1837,6 +1910,7 @@ history:
 ## core/operators/bindings — Bindings and macros
 slugs:
 rulings:
+- 2026-11-22 "label-reference: required. we can relax it later as you say although i'm not inclined to." (record: "2026-11-22 OWNER RULING — label-reference: required"); the compile error's suggested text and `date_in`'s body spelled with the source
 - 2026-11-13 "Then macro binding is m(x) := /.../ & x" (record: "2026-11-13 evening: macro bindings `m(x) := …`")
 - 2026-11-15 "Agree with mapping" (record: "2026-11-14 RULINGS on rev 3's contradictions"); the operand is never an argument; positional, keyword and by-name parameters; sections
 - 2026-11-15 "1. start with & and then we'll see. 2. start no, 3. agree" (record: "2026-11-14 RULINGS on rev 3's contradictions"); sections start with `&`; no partial application
@@ -1864,6 +1938,7 @@ history:
 - 2026-11-19 (lane preddoc4): `NOT` named as the one exception to no-alphabetic-operators; the record bullet points at tuples (review r59 NEGATION, READ-15).
 - 2026-11-21 (lane predscope): a bullet added (a parameter's name is not a label, his words; an argument resolved in the caller, a reading). Status date 2026-11-15 to 2026-11-21.
 2026-11-22 (lane predbound, bound-condition ruled): `see:` gains the two under-construction sub-pieces of his alternatives. No rule moves.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the bullet's two programs until then: "write `isodate & (year: ...)`" and `date_in(years) := isodate & (year: years)`; now `isodate & (isodate.year: ...)` and `isodate & (isodate.year: years)` (the plain idiom is included: the label-reference entry). No line moves (no example runs them; isodate has no body here). Status date 2026-11-21 to 2026-11-22.
 
 ## core/operators/bindings/label-variables — Macro variables: a parameter that is a label
 slugs:
@@ -1887,11 +1962,13 @@ rulings:
 rejected:
 - the manager's reading of the body as `d & (year: < 2100)` — by owner correction — "correction to rx: B(d & isodate) := (year: < 2100)".
 readings:
+- meaning (i) under label-reference: `x & isodate & (isodate.year: < 2100)`, the source naming isodate's year so x's own year does not make it ambiguous — UNTESTED (lane predref's reading, from binding-prefix's "One use" line; no isodate body is run)
 - B is a named condition whose target is declared in its head; `B(x)` lays `(year: < 2100)` against x — the manager's reading (record "2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`"), UNTESTED.
 - the two meanings of the restriction, (i) the intersection and (ii) a promise checked at the call — both stated in the record entry, neither chosen; UNTESTED.
 evidence: none (under construction).
 history:
 - 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/restricted-parameter), pointing here.
+- 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): meaning (i) until then: "literally the intersection, `B(x)` is `x & isodate & (year: < 2100)` (writable today as `B(d) := d & isodate & (year: < 2100)`, and `year` is then ambiguous where x itself surfaces `year`, core/labels/flow)"; now spelled with the source, the ambiguity remark replaced (a reading); his own spelling `B(d & isodate) := (year: < 2100)` quoted unchanged, its bare `year` pointed at call-prefix.
 
 ## core/operators/bindings/call-forms — Several bodies for one name
 slugs: call-forms

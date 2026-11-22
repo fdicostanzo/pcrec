@@ -303,10 +303,10 @@ WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac`
 
 ## Search   [lib/search]
 
-### occurrences   [lib/search/occurrences]   ruled 2026-11-21
-`occurrences(x, min = 0)` is the lazy-gap loop `/(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/`: each hit one pass of the label `hit`.
+### occurrences   [lib/search/occurrences]   ruled 2026-11-22
+`occurrences(x, min = 0)` is the lazy-gap loop `/(?:(?s:.*?)(?<:hit>${x})){${min},}(?s:.*)/`: each hit one pass of the label `hit`, a label and no capture.
 needs: core/holes/pattern core/holes/count core/patterns/quantifiers
-see: core/diagnostics/nullable-hit
+see: core/diagnostics/nullable-hit core/labels/label-only-group core/labels/paths/call-prefix
 module: ?
 defined: language
 - A rewrite: x goes into the hole of the loop template, like any hole. Its first path has a plain search's hits,
@@ -319,32 +319,36 @@ defined: language
 - A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up
   to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
   empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
-- A bare condition after it reads the LAST hit's own labels.
-- The body writes `hit` as a group in rx text, so it is a capture the caller receives (a reading of pure-label),
-  against his reason for the add-on: "isodate and all the other libraries don't want to presume everyone is
-  interested in every label being a capture." Whether a helper's label is a caller capture: an owner question
-  (helper-captures).
+- A condition after it reads the LAST hit's own labels, through a label on the call; his example:
+  `[ hits = occurences(...) ] & (hits.hit: <5)` (core/labels/paths/call-prefix). A rejecting condition after it
+  re-chooses the hits (re-splits or drops them), so a test on the hits belongs after the atomic `hits` or inside
+  the argument (the lines below).
+- His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit`
+  is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
+  caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n). How a helper declares a capture is not
+  stated (lib/structural/capture/add-on).
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
-  metadata); two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix.
+  metadata); two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix;
+  each call reached through a label of its own (`a.hit`, `b.hit`) is not ambiguous (a reading).
 - A check of the whole text: `J & C & occurrences(M)` matched WHOLE, a parse J of the whole text, a check C on it,
   M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED shape (each match of M reported as
   a match of the program) has no ruled spelling.
 WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `1 2 x 3` [`1 2 x 3`@0] (`occurrences(/\d+/, min = 2)`)
 
-### hits   [lib/search/hits]   ruled 2026-11-17
+### hits   [lib/search/hits]   ruled 2026-11-22
 `hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to: a fixed list of hits, judged after it.
 needs: lib/search/occurrences core/patterns/atomic
 module: ?
 defined: language
-- The body: `hits(r) := /\A(?>(?:(?s:.*?)(?<hit>${r}))*[\s\S]*)\z/`: an atomic group around the WHOLE loop.
+- The body: `hits(r) := /\A(?>(?:(?s:.*?)(?<:hit>${r}))*[\s\S]*)\z/`: an atomic group around the WHOLE loop.
 - Once it has matched nothing re-enters it: its hits are a plain search's (with no condition before the group),
   and tests on them judge a fixed list.
 - Anchored: it covers the text it is applied to from end to end; standing alone in a searched program that text
   is the whole subject.
 - "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS. Written as a
-  group question on the array of `hit`, one setting per hit: `hits(/\d+/) & occurs.none((hit: >= 100))` (a reading).
-- The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label; the
-  tension with the add-on's reason and the question helper-captures: lib/search/occurrences).
+  group question on the array of `hit`, one setting per hit, the call labelled: `[h = hits(/\d+/)] &
+  occurs.none((h.hit: >= 100))` (a reading; core/labels/paths/call-prefix).
+- The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences).
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
@@ -655,7 +659,7 @@ WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12
 
 The compile-time tools over spelled arrays and the macro that names a capture.
 
-### capture   [lib/structural/capture]   reading 2026-11-21
+### capture   [lib/structural/capture]   reading 2026-11-22
 `capture(name, x) := /(?<${name}>${x})/` names a capture: the name in a group-name hole, x in a pattern hole.
 needs: core/holes/name core/holes/pattern core/labels/export
 module: ?
@@ -665,12 +669,14 @@ defined: language
 - `capture(name, x)` is the WRAPPER method in its literal form (a reading); his wrapper placeholder
   `[ d = capture(digits) ]` takes its name from the part label, which needs the field below.
 - Making an existing label a capture afterwards: lib/structural/capture/add-on.
+- Its body writes a capture on purpose, a capture being what it is for; whether that is "so declared" in his
+  helper-captures ruling is not stated (a reading; lib/structural/capture/add-on).
 - The one-parameter sketch `capture(x) := /(?<${x.label}>${x})/` needs a field giving a part label's own name,
   which the core does not define (`.label` is a field of a part label over an ARRAY, core/values/metadata); with it,
   `join(each(capture, a), sep = ".")` would name each entry's capture after its label.
 WHOLE `12` HOLDS (d = `12`) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture("d", /\d+/)` is `(?<d>(?:\d+))`)
 
-### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-21
+### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-22
 An add-on that makes a label a capture is required ("an add on component that converted a label into a capture is needed"); how it is asked for is not defined.
 needs: lib/structural/capture core/labels/export
 module: ?
@@ -683,6 +689,8 @@ defined: ?
 - After the fact it names its label by the visibility rules (core/labels/export), so a `_` label cannot be
   captured outside its binding (a reading); a `_` label "cannot become exported captures".
 - The after-the-fact form has no body in the language today (a reading).
+- How a provided body declares a capture ("unless they are so declared": helper-captures, lib/search/occurrences)
+  is not stated; it joins this open form.
 - What the caller receives for a captured label a loop sets is not stated (core/labels/labels-vs-captures).
 
 ### each, each_group, where, where_group   [lib/structural/each]   reading 2026-11-19
