@@ -12,3 +12,5 @@ make -s strict: clean. make -s test-plan-lint: PASS (398 rows, 0 violations). Fr
 ## STATE AT HANDOFF
 OWED: none
 Push and prune results are in the handback message.
+
+Pushed main to origin (cad46896b..6918cc42b); latest completed main CI run was success. Prune: `wtprune --apply k159fix k159k37 k159r81` removed 0 (k159fix and k159r81 hold only the manager's untracked *_deliver.txt; k159k37 modified <120 min). Branches not pruned (worktrees kept). Needs `--apply --force` by name, the manager's call.
