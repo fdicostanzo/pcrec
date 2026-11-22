@@ -10317,3 +10317,18 @@ D196 addendum 2 (2026-11-12, Frank): MECHANISM AND SYNTAX ARE UNTETHERED. "The &
 - **Decision.** (1) WHO: the cover width (take or decline a fixed span on the cover route) is the KIT's decision, per layer. pcrec keeps only hard ceilings that are not cost judgements (the walk's state ceiling, the emitted-size cap). AMENDS D198 addendum 1's reading that the width is a pcrec route limit. (2) INPUT: pcrec supplies the kit an ENGINE COST UNIT, a fact for what the engine route would cost, inexact allowed ([ENGINE-COST-UNIT]); until it exists the kit's decision may use a FIXED assumption about the engine's cost. (3) THE NIGHT: cover_cap.md §11.4 part B runs as planned (scalar layer, the default build), and its results are RECORDED; they are not ACTED on (no default move) until the SIMD layer's reference exists ([COVER-WIDTH-SIMD]): "it needs simd for reference eventually or it's not actionable".
 - **MANAGER'S READINGS (for the owner to check):** "not actionable" read as: the night's numbers do not move the shipped default 32 on their own; the run is still worth doing now because its cells, harness and the engine side of the comparison carry over to the SIMD run. "Can be fixed assumption now" read as: no build go for moving the decision yet; the move is filed ([COVER-WIDTH-KIT]) and built on a later go.
 - **Consequences.** Plan rows [COVER-WIDTH-KIT], [ENGINE-COST-UNIT], [COVER-WIDTH-SIMD]; the kit is told by message (facts only; its method is its own). A contract change when [COVER-WIDTH-KIT] is built (docs/spec: who decides the cover) and an abi event if emitted text moves.
+- **Addendum 1 (Frank 2026-11-22, answering width-night-bench as asked, in the kit session; relayed by the kit verbatim):**
+  "width-night-bench: 1. so this shouldn't be a single number then but a table of numbers depending on what is being scanned
+  including mixed types. 2. pcrec needs to specifically tell kit that it wants the cover and not a candidate which can be fewer.
+  That might be in the form of a start/end into the span for the coverage range. If the kit knows it needs to recheck, anything
+  beyond a candidate is a waste". Decision: (1) the cover width is a declared TABLE, one entry per kind of scanned content (digit,
+  hex, word, literal run, mixed), per layer; part B and the SIMD reference night measure per kind, mixed spans included. (2) pcrec
+  STATES, per site, the strength of answer it needs: a proven range [start, end) of the span (the cover, or a proven part an engine
+  resumes from), or a candidate pcrec rechecks; a fact, not a method (D157); where pcrec rechecks, the kit renders the cheapest
+  candidate form. Supporting facts (night 11-22, job 310, B-lite, records only): the cover's cost differs by kind at one width
+  (digit runs on near-miss text x3.1/x4.6 instructions at 24/32; literal hits x0.17-0.30; hex24 wall x1.5-1.8 while instructions
+  win), so one number cannot serve. KIT'S READINGS for the owner to check: "mixed types" = a span whose class kind changes along
+  its length (e.g. `[0-9a-f]{8}-[0-9]{4}`), keyed by composition; (2) is ONE site fact with R-40 (minimum useful bytes after a
+  candidate) and R-46 (the weaker question at a presence site), "what the site's answer must prove". Not ruled: WHEN part B runs;
+  the manager's lean stands (after the SIMD reference exists, with the bench session up, cells per kind). No build go; it rides
+  [COVER-WIDTH-KIT] / [ENGINE-COST-UNIT] when built.

@@ -28594,3 +28594,4 @@ Next
 - 10:40 RULING keep-limits: "Keep the limits as they are" (NFA state cap 131,072 and nesting depth 250 unchanged; trigger: a real pattern hits the cap). GROWTH-SWEEP.md.
 - 10:45 l3land: merge d92d672be (abi 112) done, tip 753d4f6e8; three boxlock runs queued behind kit 736-739. The D3FLOOR_REPIN=1 command was DENIED by the permission classifier; not routed around; asked Frank (d3-repin-permission).
 - 10:55 Frank (DIRECTION): the loop-in-loop rewrite belongs in the graph rewrite layer -> [AUTOMATON-KIT] body file (new docs/design/plan_row_bodies/AUTOMATON-KIT.md), moved off [SPELLING-INV]; note: must act before + copies its body.
+- 11:05 width-night-bench ANSWERED (in the kit session, relayed verbatim): D202 addendum 1 filed (width table per scanned kind incl. mixed; per-site proven-range vs candidate fact; kit's readings marked for the owner). Part B timing unruled; lean stands.
