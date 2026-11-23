@@ -9285,3 +9285,29 @@ The manager's readings (marked; for the fold to test): (a) "a binding" covers a 
 or a macro body: the standing reading); (b) the list of what follows regex at the edges is the five items of the
 entry above (an explicit `i` at a hole; an edge assertion; `^` / `$` in a filter role; which path is reported; an
 outside loop or branching resetting its labels for the outside reader), a list to check, not ruled as closed.
+
+### 2026-11-23 MANAGER — call-forms put to him again, with his own words of the two days and a run; no owner words
+tags: core/operators/bindings/call-forms core/operators/bindings lib/rx/repeat lib/modifiers/padded core/modules/leave-out core/holes/count
+
+Why now: the library writes several bodies for one name (`repeat` three, `padded` two), and his statement of
+2026-11-23 is "we currently don't have overloading so a macro defined for 3 args needs three args"; today he
+asked whether `?` could "define optional positional args without defaults". The two candidates of the open piece:
+(a) several bodies chosen by the arguments passed; (b) one head per name, which "needs a value or an absent
+setting for "no maximum" and "no width"".
+The manager's proposal for (b), from forms that exist (marked; not ruled): ONE head, defaults as today, a default
+allowed to name an earlier parameter, and `_` as the UNSPECIFIED argument in general (he ruled it for a label:
+"i agree that _ should be the unspecified label"), each position saying what unspecified means (a label: none,
+ruled; a count bound: left out). `repeat(x, min, max = min) := /(?:${x}){${min},${max}}/`. His `max?` would be
+the short way to write `max = _`.
+RUN (python `re`, the body filled mechanically by a three-line function; output pasted):
+- `repeat(rx.digit, 3)` is `(?:\d){3,3}`: WHOLE `12` FAILS, `123` HOLDS, `1234` FAILS / SEARCHED `12345` `123`@0 /
+  FIND-ALL `1234567 12` [`123`@0, `456`@3]
+- `repeat(rx.digit, 2, 3)` is `(?:\d){2,3}`: WHOLE `12` HOLDS, `123` HOLDS, `1234` FAILS / SEARCHED `12345`
+  `123`@0 / FIND-ALL `1234567 12` [`123`@0, `456`@3, `12`@8]
+- `repeat(rx.digit, 3, max = _)` is `(?:\d){3,}`: WHOLE `12` FAILS, `123` HOLDS, `1234` HOLDS / SEARCHED `12345`
+  `12345`@0 / FIND-ALL `1234567 12` [`1234567`@0]
+The three ruled meanings of `repeat` ("one argument exact, min and max a range, no maximum unbounded") are met by
+the one head; what changes for a user: "at least 3" is `repeat(x, 3, max = _)`, no longer `repeat(x, min = 3)`.
+NOT covered by absence alone (hand-worked): `padded(rx, n)`'s width form is an alternation of two filtered
+copies; with n unspecified it does not reduce to the no-width body `/0*${rx}/` (it becomes `rx | 0*rx`, another
+order), so `padded` would keep two names or a compile-time test of "is it specified".
