@@ -98,9 +98,15 @@ PLANTS84 = [   # (plant, its target check, what it plants)
     ("s32", "FCONTROL", "a hand control loses its `(?i:`"),
     ("s33", "EXAMPLES", "the record's line (a) expected for (b)"),
     ("s34", "PLACES", "peek's body without its export list"),
-    ("s35", "CONVENTION", "prefix_in's piece expected not to point at the convention"),
+    ("s35", "CONVENTION", "a piece that does not point at the convention (lib/builtin/eval) counted as covered"),
     ("s36", "ARGNAME", "argument-default's candidate (local) in place of the ruling"),
     ("s37", "SPOT", "SPOTGROUP off: the label-only `hit` is not a spot"),
+    ("s38", "ARGLABEL", "predspot's engine plant s2 (TEMPLATE off): a part label written on an argument stays the caller's"),
+    ("s39", "INPLACE", "predspot's engine plant s4 (OWNTEXT off): a group written in an argument counts as the caller's own text"),
+    ("s40", "ARGOWN", "the expected answers of the argument's own label inverted"),
+    ("s41", "TWOSPOT", "the two-spot body's expected pair read from the wrong spot"),
+    ("s42", "USERMACRO", "hide's body given the export list (a user macro passing its labels on)"),
+    ("s43", "AWAITS", "the starting commit's count of \"awaits argument-default\" read as zero (the control emptied)"),
 ]
 HEAVY84 = {"SWEEP", "SUCCESSOR"}
 if "all" in SAB84:                                           # the plant runner: each plant alone, a subprocess each
@@ -888,7 +894,7 @@ covered = ["lib/control/peek", "lib/control/atomic", "lib/control/when", "lib/re
            "lib/search/contains", "lib/search/starts-with", "lib/search/ends-with", "lib/rx/repeat",
            "lib/structural/capture"]
 if s84("s35"):
-    covered.append("lib/search/between")
+    covered.append("lib/builtin/eval")
 pieces = re.split(r"\n(?=### )", LIBNOW)
 nopoint = []
 for tg in covered:
@@ -1317,7 +1323,46 @@ check("NULLABLE", not nl, "%d programs run by the checks above (SWEEP's included
 print("== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded, with the "
       "digest of the red's own FAIL line (a red whose content changes under an unchanged name fails here)")
 LANES = os.path.normpath(os.path.join(HERE84, ".."))
+FOLD = "predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and "
+P83D = "predfix83's SUCCESSOR, which declared it, and "
 SUPERSEDED = {                # model -> {red: (digest of its FAIL line or traceback line, "superseded by ...")}
+    "predspot": {
+        "SWEEP": ("63d7d5d68877", "PREFIXIN and SWEEP here: its one bad line is prefix_in's \"S's labels, through the call\" "
+                          "(A5), which its engine, keeping prefix_in exempt from the list, refuses"),
+        "FSWEEP": ("897084e37c9f", "OPENFLAGS, PATFLAGS and FSWEEP here: its six bad lines are this lane's candidate lines "
+                           "(an option hole, a constant under `@options`, an argument literal a library body places) "
+                           "and the `pattern($x)` line, which its flag engine does not read or answers one way"),
+        "SUCCESSOR": ("9fd9cd62de81", "SUCCESSOR here: its one red, predcall's SCAN, is declared below with its new digest")},
+    "predfix83": {
+        "AWAITS": ("2b8a870671e7", "AWAITS here: argument-default is ruled, so no line awaits it (0 marked lines)"),
+        "DOC": ("05476f118e2f", FOLD + "SWEEP here (each gone line RESPELLED, ERROR NOW or DROPPED) and DOC here"),
+        "MARKS": ("6a4c7d7c60e5", FOLD + "ARGNAME, ARGLABEL, INPLACE, SPOT, CONVENTION here (the new texts)"),
+        "SUCCESSOR": ("09beed319b16", "SUCCESSOR here: it re-runs the same eight models, each red declared below")},
+    "preddef": {
+        "AWAITS": ("e8f86816cd7a", "AWAITS here, as predfix83's"),
+        "DOC": ("7fb8548abf05", FOLD + "SWEEP here (the line \"(local)\" an ERROR NOW, the rejected candidate)"),
+        "MARKS": ("1eb81766853a", FOLD + "ARGNAME, INPLACE and GRID here"),
+        "SUCCESSOR": ("9ce8705eed79", "SUCCESSOR here")},
+    "predfix82": {
+        "DOC": ("b83b570b827a", FOLD + "INPLACE here (two-sources' first shape settled) and SWEEP"),
+        "MARKS": ("84df29d69537", P83D + "predfix83's MARKS there, unchanged"),
+        "REPRINT": ("49e1c7ae12f2", FOLD + "SPOT here (example 1 revised; its spot-labelled line) and SWEEP"),
+        "SUCCESSOR": ("7af0ee27f19f", "SUCCESSOR here")},
+    "predcall": {
+        "DOC": ("ee72c84698ec", FOLD + "ARGNAME and TWOSPOT here (call-prefix's lines re-spelled) and SWEEP"),
+        "PREDREF": ("bdc1a3daaa39", "SUCCESSOR here: predref is now a traceback (below), so its expected red is gone"),
+        "SCAN": ("252edea9d2b0", "GRID and SPOT here, as predspot declared it (digest 5237c318c2b5): the same 33 spans "
+                                 "flagged, the same four not on LEFT; 312 spans checked where predspot saw 309, the "
+                                 "three this lane's new lines add")},
+    "predref": {"TRACEBACK": ("654619d66d03", "SPOT and PLACES here: the provided bodies now write the export list "
+                                              "on their spot (`atomic(X) := /(?>${[(=) = X]})/`, transform-export), "
+                                              "which predref's lowerer, older than export-list, cannot read")},
+    "predbound": {"TRACEBACK": ("f8b5d917c866", "SPOT and PLACES here, as predref's (its body reader meets "
+                                                "`[(=) = x]`)")},
+    "predfix77": {"TRACEBACK": ("455b59c946bc", P83D + "predfix82's REPRINT and predbound's checks, unchanged")},
+    "predarr": {"TRACEBACK": ("ce43d48c7e37", P83D + "predfix82's REPRINT and predref's HITS, unchanged")},
+    "predscope": {"TRACEBACK": ("17ab1e47c179", "TWOSPOT here: its reader of rx.repeat's third body expects "
+                                                "`${x}`; the body now writes `${[(=) = x]}` (transform-export)")},
 }
 MODELS = ["predspot", "predfix83", "preddef", "predfix82", "predcall", "predref", "predbound", "predfix77", "predarr",
           "predscope"]
@@ -1348,18 +1393,18 @@ if not LIGHT84:
             reds["TRACEBACK"] = last
         decl = SUPERSEDED.get(mname, {})
         print("   %-10s last line: %s" % (mname, last[:140]))
-        for r, fl in sorted(reds.items()):
-            dg = hashlib.sha256(fl.encode()).hexdigest()[:12]
+        for r, fline in sorted(reds.items()):
+            dg = hashlib.sha256(fline.encode()).hexdigest()[:12]
             d = decl.get(r)
             if d is None:
                 succ_bad.append((mname, r, "UNDECLARED"))
-                print("      %s [%s] UNDECLARED: %s" % (r, dg, fl[:300]))
+                print("      %s [%s] UNDECLARED: %s" % (r, dg, fline[:300]))
             elif d[0] != dg:
                 succ_bad.append((mname, r, "CONTENT CHANGED"))
-                print("      %s [%s, declared %s] CONTENT CHANGED: %s" % (r, dg, d[0], fl[:300]))
+                print("      %s [%s, declared %s] CONTENT CHANGED: %s" % (r, dg, d[0], fline[:300]))
             else:
                 print("      %s [%s]: superseded by %s" % (r, dg, d[1]))
-                print("         its FAIL line: %s" % fl[:240])
+                print("         its FAIL line: %s" % fline[:240])
         gone = sorted(set(decl) - set(reds))
         if gone:
             print("      declared but green now: %s" % gone)
