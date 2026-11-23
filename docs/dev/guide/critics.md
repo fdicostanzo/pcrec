@@ -329,3 +329,9 @@ Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat
 2. **A check arm for a route the same change declines is either reached or deleted** (r65 l3feat C): [5.12l]'s K < 0 arm ran zero times and was red on correct text when planted.
 3. **When a design restates a premise in a code comment, grep the spec for the same premise** (r65 l3feat G): tuning ¶7a/¶8b were the spec twin of the restated presence comment.
 4. **The abi grep's hits are a checklist, ticked in the report** (r65 l3feat D): the grep listed the identity gate's pin and it was still missed.
+
+2026-11-23 r80, kit code round memfn-bsu6 (`docs/dev/reviews/2026-11-23-r80-memfn-bsu6.md`), accepted 2026-11-23 (kit manager):
+1. **A harness's "fresh" or "new" claim is stated in the SAME descriptor its own proof uses** (F-1: new by bytes vs new by layout).
+2. **A DRY or synthetic probe keys its readings on the exe it is HANDED, not on the cell label,** or every wiring fault is invisible (F-2/C-3, found independently by two lenses).
+3. **A selftest that RECOMPUTES a command's exit code instead of calling the command shares its source with what it checks** (C-7).
+4. **A no-launch guard checks the inherited environment, not only explicit arguments** (C-5).
