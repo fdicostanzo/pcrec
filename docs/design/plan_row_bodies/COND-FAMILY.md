@@ -8841,3 +8841,30 @@ vanishes; for a capture request vanishing-on-absence is the point; (d) the form 
 the ruled default: `(h = "": capture("h"))` (the default stands in for the absent label in that one test), with
 the reading that the request names the real label, so the caller gets an unset capture. Put to him as slug
 capture-optional.
+
+### 2026-11-23 OWNER, on capture-optional: he likes the defaults way; proposes the mark on the label, `(h?: capture("h"))`
+tags: lib/structural/capture core/conditions/defaults core/conditions/form core/conditions/two-valued core/spellings/placeholders
+
+Asked **capture-optional** (three ways to give his `capture("h")?` a meaning: 1 an optional form of the request;
+2 an optional test; 3 the ruled default, `(h = "": capture("h"))`; the manager's leaning 1). HIS WORDS, whole:
+
+"i actually like your thinking with defaults. i don't like adding syntax and semantics if i don't have to. and
+adding something to h that already exists is more congruous. what about (h?: capture("h"))"
+
+Class: a LEAN toward the defaults way (way 3: "i actually like your thinking with defaults"), with his REASONS
+("i don't like adding syntax and semantics if i don't have to"; "adding something to h that already exists is
+more congruous": the mark belongs on the label's side, where the default already is), and a PROPOSAL as a
+question: `(h?: capture("h"))`, the optional mark on the LABEL. Nothing ruled. The manager's leaning 1 is
+withdrawn (it added a form to `capture`).
+The manager's reading of the proposal (told to him; marked): a GENERAL entry form, not a capture form: `(h?: S)`
+holds when h is absent or its text is in S, for any set S; it is the default form without having to name a
+member of S (`(h = v: S)` with v in S), and it also covers a set with no member to name. Then `capture("name")`
+on the set side is `anything` with a request and needs no rule of its own for absence.
+RUN (a path model, `$PCREC_TMPDIR/scratch/pred/optional_label.py`; `/(?<h>\d)?x/`):
+- `(h?: <5)`: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6]
+- `(h = "0": <5)`, the default inside the set: the same in every mode
+- `(h: <5)`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6]
+- `NOT (h?: <5)`: WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS / SEARCHED `7x x` `7x`@0 / FIND-ALL `7x 3x x` [`7x`@0]
+(SEARCHED and FIND-ALL agree for the first three because the pattern itself backs off the digit: `7x` fails and
+the `x` alone at 1 matches with h absent; the plain form parts from them only WHOLE on `x`.)
+Put to him as slug optional-label.
