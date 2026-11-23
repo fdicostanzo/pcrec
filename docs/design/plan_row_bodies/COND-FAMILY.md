@@ -8967,3 +8967,66 @@ full revision), G1 (three conventions under lib/convention: at the next full rev
 settings. NOTED: G3.
 OWNER QUESTIONS kept (queued, not urgent): option-hole-explicit, options-reach-constants, options-position,
 spot-read-name. The three lessons for the guide go to main (to_main.md).
+
+### 2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/values/tuples core/operators/bindings core/operators/bindings/call-forms core/conditions/two-valued parked/ideas/kleene-completion
+
+Asked **optional-label-general** (candidates: (a) `?` the only mark, on a label path, `h+` / `h*` compile errors
+for now; (b) his "devolve" reading; (c) a settings reading on the bare label; the manager's leaning (a); the run
+`$PCREC_TMPDIR/scratch/pred/optional_general.py`). HIS WORDS, whole:
+
+"I think the ? In conditions is a special case, but I'm trying to figure out how special. And where is it
+located: after the label or before the colon? (a,b)?: (...) or (a?,b):...  default x=4 didn't make sense with one
+label but it might with multiple. Could the ? Meaning be used in macro arguments to define optional positional
+args without defaults? Then conditional and macro arg definitions looks closer ( not the same). Also, do value
+definitions require exactly one label or at least one? ("Frank": ...) silly but useful for generated code.
+Thoughts."
+
+Class, part by part (DISCUSSION throughout; he asks for "Thoughts"; NOTHING RULED, optional-label-general not
+answered by letter):
+- A LEAN: "I think the ? In conditions is a special case" (toward the mark being a form of its own; "how
+  special" is open in his words).
+- A QUESTION: where the mark sits, after the label or before the colon: `(a,b)?: (...)` or `(a?,b):...`.
+- An OBSERVATION: "default x=4 didn't make sense with one label but it might with multiple".
+- An IDEA as a question: the `?` meaning for macro arguments, "optional positional args without defaults", so
+  that a condition and a macro head "looks closer ( not the same)".
+- A QUESTION: must a value left of `:` name exactly one label or at least one; `("Frank": ...)`, "silly but
+  useful for generated code".
+
+What the record and the documents already hold (checked before answering):
+- A default on one part of a joint entry is RULED (2026-11-16, "unset-component: yes", on `(h, m = 0): R`): "an
+  unset label fails the condition, single or joint, unless the author wrote a default for it".
+- The mark dropped on 2026-11-16 ("Drop-mark: yes") was written per part, `((h, m?): R)`, with the meaning "some
+  value the label could hold": not a test of one row. Yesterday's `(h?: S)` (absent or in S) is a one-row test.
+- value-left's parse (a reading): left of `:` a bare name, a number or a label path is a LABEL, any other
+  expression a VALUE; nothing says a value must read a label, so `("Frank": S)` is a value with no label by the
+  sentence as written (the manager's reading, not ruled); `(5: S)` is the LABEL 5 (a group number), `("5": S)`
+  the value.
+- call-forms (open, 2026-11-19), candidate (b): one head per name "needs a value or an absent setting for "no
+  maximum" and "no width"": an optional parameter without a default is that absent setting.
+
+RUN (a path model, `$PCREC_TMPDIR/scratch/pred/optional_place.py`; `/(?<a>\d)?,(?<b>\d)?/`, the set `>= (5, 3)`,
+output pasted):
+- plain `((a, b): >= (5, 3))`: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` FAILS, `,9` FAILS, `5,` FAILS,
+  `2,` FAILS, `,` FAILS / SEARCHED `5,1 ,1 6,0` `6,0`@7 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,4`@4]
+- the mark before the colon, `((a, b)?: >= (5, 3))`, holding when a part is absent: WHOLE `6,1` HOLDS, `5,3`
+  HOLDS, `5,1` FAILS, `,1` HOLDS, `,9` HOLDS, `5,` HOLDS, `2,` HOLDS, `,` HOLDS / SEARCHED `5,1 ,1 6,0` `5,`@0 /
+  FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,`@0, `5,4`@4, `,1`@8, `2,`@11, `7,`@14]
+- a default on one part, `((a = 5, b): >= (5, 3))`: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` FAILS, `,9`
+  HOLDS, `5,` FAILS, `2,` FAILS, `,` FAILS / SEARCHED `5,1 ,1 6,0` `6,0`@7 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,4`@4]
+`("Frank": /F.*/)`: python `re.fullmatch` True; against `/G.*/` False (a test fixed at compile time).
+
+The manager's thoughts (told to him; each marked, none ruled; for the fold to test only if he rules):
+- (a) The mark belongs BEFORE THE COLON, on the entry's left part as a whole: "the entry holds when its left part
+  has no value". One label: `(h?: S)` as ruled. A joint: `((a, b)?: R)` holds when a part is absent. A value:
+  `(($a + $b)?: <10)` holds when the value is nothing. Per-part absence in a joint is the ruled DEFAULT (the author
+  supplies the witness: his observation); a per-part mark `(a?, b)` has only the dropped mark's meaning.
+- (b) In a search the mark lets the pattern DROP an optional group to pass (`5,1`: `5,`@0 above): regex's
+  behaviour, to be said in the piece.
+- (c) For macro heads: an optional positional parameter without a default (`repeat(x, min, max?)`) answers
+  call-forms (b)'s "absent setting"; what an absent argument IS depends on where the body lays it (a count bound
+  left out; the empty pattern in a sequence; `anything` beside `&`; `_` for a label, ruled): a table by position,
+  not one value. A direction, not asked as a ruling.
+- (d) A value left of `:` reads zero or more labels; with none it is fixed at compile time and draws
+  `pcrec.test.always` / `pcrec.test.never`; bound alone it names no label, so bound-condition does not refuse it.
+Put to him as slug optional-place.
