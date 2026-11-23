@@ -9,7 +9,7 @@ SAB_SUITES="code"
 SAB_DESC="pcrec_rxt_reach_verify skips every edge, so an include/lib pin that does not match the file's SHA-256 is accepted"
 # The fixtures are copied to a SHORT path ([PIN-MSG-DEPTH]): pcrec_error.msg is cut at
 # 256 bytes and the phrase sits after the path, so a deep $TREE/$REACH_TMP hid it.
-SAB_REACH='S=$(mktemp -d "${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/r.XXXXXX"); cp -r "$TREE/tests/code/frag" "$S/f"; printf '\''include "%s/f/pin2_ok.rxt" sha256 0000000000000000000000000000000000000000000000000000000000000000\n\npattern z\n'\'' "$S" > "$S/e.rxt"; "$PCREC" -o "$S" "$S/e.rxt"; rc=$?; rm -rf "$S"; exit $rc'
+SAB_REACH='R="${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}"; mkdir -p "$R"; S=$(mktemp -d "$R/r.XXXXXX"); cp -r "$TREE/tests/code/frag" "$S/f"; printf '\''include "%s/f/pin2_ok.rxt" sha256 0000000000000000000000000000000000000000000000000000000000000000\n\npattern z\n'\'' "$S" > "$S/e.rxt"; "$PCREC" -o "$S" "$S/e.rxt"; rc=$?; rm -rf "$S"; exit $rc'
 SAB_REACH_EXPECT='sha256 pin mismatch'
 SAB_COUNT=1
 SAB_BEFORE='        if (!e->pin || !e->digest || !strcasecmp(e->pin, e->digest)) continue;'
