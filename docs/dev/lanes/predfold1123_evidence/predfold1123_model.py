@@ -85,6 +85,8 @@ PLANTSF = [   # (plant, its target check, what it plants)
     ("s19", "ARGLABEL", "TWOSRC off: a bare name the caller writes in place reads the body's group (the last mention)"),
     ("s20", "ZEROOPEN", "zero-open off: a group question, an index and a request on an open `0` accepted"),
     ("s21", "ARGSHAPES", "a part label written on an argument not widened to the caller (groups only)"),
+    ("s22", "ARGSHAPES", "the label set read tighter than `|` no longer: `[ab = B | A]` labels the whole alternation"),
+    ("s23", "ZEROOPEN", "`$0` read as nothing (the hole dropped)"),
 ]
 HEAVYF = {"SUCCESSOR"}
 if "all" in SABF:                                            # the plant runner: each plant alone, a subprocess each
@@ -362,6 +364,8 @@ def zero_open(t):
                                "now (zero-open)")
     for mm in re.finditer(r"\(0 (?:\?: |= )", t):
         WARNS.append(("pcrec.default.unused", t[mm.start():mm.start() + 12]))
+    for mm in re.finditer(r"\b\w+ = \"[^\"]*\" \?: ", t):          # optional-place reading (d): never used
+        WARNS.append(("pcrec.default.unused", mm.group(0).strip()))
 
 
 def opt_entries(t):
@@ -665,6 +669,83 @@ def strip_lits(t):
     return "".join(out)
 
 
+def _scan_close(t, i):
+    """The index of the `]` closing the `[` at i; regex literals, strings and holes skipped."""
+    depth, k = 0, i
+    while k < len(t):
+        c = t[k]
+        if c == "/" and (k == 0 or t[k - 1] in " ([=|,&{"):
+            k = t.index("/", k + 1) if "/" in t[k + 1:] else len(t)
+            while t[k - 1] == "\\":
+                k = t.index("/", k + 1)
+        elif c == '"':
+            k = t.index('"', k + 1)
+        elif c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0:
+                return k
+        k += 1
+    raise CompileError("unclosed `[`")
+
+
+def _top_alts(body):
+    """`body` split at its top-level `|` (regex literals, strings and brackets skipped)."""
+    out, depth, k, st = [], 0, 0, 0
+    while k < len(body):
+        c = body[k]
+        if c == "/" and (k == 0 or body[k - 1] in " ([=|,&{"):
+            k = body.index("/", k + 1)
+            while body[k - 1] == "\\":
+                k = body.index("/", k + 1)
+        elif c == '"':
+            k = body.index('"', k + 1)
+        elif c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == "|" and depth == 0:
+            out.append(body[st:k].strip())
+            st = k + 1
+        k += 1
+    out.append(body[st:].strip())
+    return out
+
+
+def label_set_prec(t):
+    """LABELSET (the manager's syntax reading on his `[a = A | b = B]`, 2026-11-22): the label set `x = E` binds
+    LOOSER than the sequence operator and `&`, TIGHTER than `|`: `[ab = B | A]` labels B only, `([ab = B] | A)`;
+    `[ab = (B | A)]` labels the alternation. Rewritten before lowering, so the loaded engine sees the bracketed
+    form it already reads."""
+    if sf("s22"):
+        return t
+    out, i = [], 0
+    for mm in re.finditer(r"\[(\w+) = ", t):
+        if mm.start() < i:
+            continue
+        j = _scan_close(t, mm.start())
+        alts = _top_alts(t[mm.end():j])
+        if len(alts) > 1:
+            out.append(t[i:mm.start()] + "([%s = %s] | %s)" % (mm.group(1), alts[0], " | ".join(alts[1:])))
+            i = j + 1
+    out.append(t[i:])
+    return "".join(out)
+
+
+def zero_read(t):
+    """ZEROREAD (zero-open (3), ruled; R1): `$0` is legal and reads the match so far at the point of the read, the
+    open prefix; in a value hole it is literal text (the value hole's rules: the manager's reading (c)). LIMIT: a
+    read in a value hole of a program that is ONE literal: lowered as a private label-only group around the
+    literal's text before the hole, read by the engine's own value-hole read (python `re`, `(\\w+)\\1`, checks it below)."""
+    mm = re.fullmatch(r"/(.*)\$\{\$0\}(.*)/", t)
+    if not mm:
+        return t
+    if sf("s23"):
+        return "/%s%s/" % (mm.group(1), mm.group(2))
+    return "/(?<:_z0>%s)${$_z0}%s/" % (mm.group(1), mm.group(2))
+
+
 def fold_text(expr, binds):
     LPMAC.clear()
     rest = []
@@ -675,11 +756,11 @@ def fold_text(expr, binds):
     out_b = []
     for b in rest:
         h, _, body = b.partition(" := ")
-        body = lp_expand(body)
+        body = lp_expand(label_set_prec(body))
         negation_check(body)
         zero_open(body)
         out_b.append(h + " := " + amp_capture(opt_entries(body)))
-    expr = lp_expand(expr)
+    expr = lp_expand(label_set_prec(zero_read(expr)))
     negation_check(expr)
     zero_open(expr)
     return two_sources(amp_capture(opt_entries(expr)), out_b), out_b
@@ -1007,13 +1088,18 @@ ok_zo4, r_zo4 = rl("A request on an open `0`", '/\\d${(0: capture("n"))}x/', [],
                    "pattern text follows the hole, so `0` is open there; for now", "lib/structural/capture")
 P_zo5 = pl("A request on `0` written last", '/\\d+${(0: capture("n"))}/', [], ["12", "x"], "a12", "1 22",
            "lib/structural/capture")
+P_zo7 = pl("`$0` in a value hole", '/\\w+${$0}/', [], ["abab", "aba", "aa"], "xabab", "abab cc d", "core/values/reads")
+zo7_ctl = answers(Re(r"(\w+)\1"), ["abab", "aba", "aa", "abba", "x", "aaaa", "abcabc", "abcab"])
+zo7_mod = answers(prog('/\\w+${$0}/'), ["abab", "aba", "aa", "abba", "x", "aaaa", "abcabc", "abcab"]) \
+    if P_zo7 is not None else None
 Pz6, _ = run('/\\d+/ & (0 ?: <5)')
 w6 = list(WARNS)
-check("ZEROOPEN", ok_zo2 and ok_zo3 and ok_zo4 and P_zo1 is not None and P_zo5 is not None and
+check("ZEROOPEN", ok_zo2 and ok_zo3 and ok_zo4 and P_zo1 is not None and P_zo5 is not None and zo7_ctl == zo7_mod and
       [w[0] for w in w6] == ["pcrec.default.unused"],
       "two reads of `0` on one path, the later extending the earlier, run %s; refused: a group question on `0` %s, an "
       "index %s, a request on an open `0` %s; a request written last legal %s (the manager's reading (a) of "
-      "\"complete\", as modelled); `?:` on `0` draws %s" % (P_zo1 is not None, ok_zo2, ok_zo3, ok_zo4, P_zo5 is not None,
+      "\"complete\", as modelled); `$0` in a value hole against python `re` `(\\w+)\\1` in every mode over 8 texts: %s; `?:` on "
+      "`0` draws %s" % (P_zo1 is not None, ok_zo2, ok_zo3, ok_zo4, P_zo5 is not None, zo7_ctl == zo7_mod,
                                                          [w[0] for w in w6]))
 
 print("== ARGSHAPES (review r84 A7): each shape of \"what an argument exports\" under argument-label")
@@ -1027,10 +1113,29 @@ P_as3 = pl("A read inside an argument, with its source", 'B(A & (A.h: "3"))', [A
            "7xx 3xx", "3xx 7xx", ARGT)
 P_as4 = pl("A part label over an expression in an argument", "atomic([ab = (B | A)]) & (ab.l: <20)",
            ["A := /(?<l>\\d)\\d/", "B := /(?<l>\\d\\d)/"], ["25", "13"], "25", "25 13", "core/patterns/atomic")
-check("ARGSHAPES", P_as1 is not None and ok_as2 and P_as3 is not None and P_as4 is not None,
+ok_as5, r_as5 = rl("A binding in parentheses", "identity((A)) & (identity.h: <5)", [A_H, IDN], "not visible",
+                   "the argument's own text writes no label, A used alone in it", ARGT)
+P_as6 = pl("A binding alone", "identity(A) & (identity.h: <5)", [A_H, IDN], ["3", "7"], "7 3", "3 7 4", ARGT)
+ok_as7, r_as7 = rl("A named list on a spot", "N(A) & (N.h: <5)", [A_H, "N(rx) := /${[(=h) = rx]}/"], "export-list",
+                   "a parameter exports nothing the definition can see, so the list names no exported label", ARGT)
+LS_B = ["A := /(?<l>\\d)\\d/", "B := /(?<l>\\d\\d)/"]
+P_ls1 = pl("The label set, the alternation in parentheses", "[ab = (B | A)] & (ab.l: <20)", LS_B, ["25", "13"], "25",
+           "25 13", "core/patterns/alternation")
+P_ls2 = pl("The label set beside `|`", "[ab = B | A] & (ab.l: <20)", LS_B, ["25", "13"], "25", "25 13",
+           "core/operators/precedence")
+ls_differ = P_ls1 is not None and P_ls2 is not None and \
+    answers(run("[ab = (B | A)] & (ab.l: <20)", LS_B)[0], ["25", "13"]) != \
+    answers(run("[ab = B | A] & (ab.l: <20)", LS_B)[0], ["25", "13"])
+P_dfo = run('/(?<h>\\d)?x/ & (h = "0" ?: <5)')[0]
+w_dfo = list(WARNS)
+check("ARGSHAPES", P_as1 is not None and ok_as2 and P_as3 is not None and P_as4 is not None and ok_as5 and
+      P_as6 is not None and ok_as7 and ls_differ and [w[0] for w in w_dfo] == ["pcrec.default.unused"],
       "`identity([a = A])` then `a.h` legal %s; a bare read inside an argument of a label its text does not write "
       "refused %s; with its source legal %s; `atomic([ab = (B | A)])` then `ab.l` legal %s" %
-      (P_as1 is not None, ok_as2, P_as3 is not None, P_as4 is not None))
+      (P_as1 is not None, ok_as2, P_as3 is not None, P_as4 is not None) +
+      "; `identity((A))` exports nothing %s, `identity(A)` exports `h` %s; a named list on a spot refused %s; the label "
+      "set tighter than `|` (`[ab = B | A]` and `[ab = (B | A)]` answer differently) %s; a default with `?:` draws %s"
+      % (ok_as5, P_as6 is not None, ok_as7, ls_differ, [w[0] for w in w_dfo]))
 
 JSONL = ['ws := /[ ]*/', 'string(l:) := /"(?<:${l}>(?:[^"\\\\]|\\\\.)*)"/',
          'number(l:) := /(?<:${l}>-?\\d+(?:\\.\\d+)?)/', 'literal(l:) := /(?<:${l}>true|false|null)/',
