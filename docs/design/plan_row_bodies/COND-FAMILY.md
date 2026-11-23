@@ -9814,3 +9814,22 @@ RUN (python `re`, the bodies filled mechanically; the label-only group modelled 
   `(?:\d){0,5}`; both unspecified `(?:\d){0,}`, ruled count-unspecified).
 - no form without the part (hand-worked from the rule; compile errors, nothing to run): `between(_, 12)` (a
   comparison `>=` with no number is not a construct), `n + 1` with n unspecified, a backreference's name.
+
+### 2026-11-23 OWNER RULING — unspecified-rule: "yes and elegant" (the underscore as an argument: the part is not written)
+tags: core/operators/bindings/call-forms core/operators/bindings core/holes/count core/holes/name core/holes/option core/modules/leave-out core/principles/positions-own-rules
+
+ASKED AS A RULING (slug unspecified-rule, the sentence put to him: "An argument given as the underscore says:
+this part is not written. The body then means what the construct at that position already means without that
+part. Where the construct has no form without the part, the call is a compile error."; with the runs of the
+entry above; the manager's leaning yes). HIS WORDS, whole:
+
+"unspecified-rule: yes and elegant"
+
+Class: a RULING: the sentence as put is the definition of the unspecified mark as an argument. With it stand the
+three positions already ruled (a label: label-parameter-omitted; an option: the option hole's `""`; a count
+bound: count-unspecified). The manager's readings (marked; for the fold to test): (a) the two play-out lines
+withdrawn earlier (a set: "no constraint"; a pattern in a sequence: "the empty pattern") are compile errors under
+the rule until an example argues one in; (b) the mark may be passed to ANY parameter (the rule decides at each
+position the body lays it into; a parameter laid into two positions is judged at each); (c) it is not "use the
+default": an omitted argument takes its default, the mark does not (told to him 2026-11-23; he asked, and the
+distinction was explained, not ruled as such).
