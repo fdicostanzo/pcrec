@@ -9591,3 +9591,29 @@ ruling words (a sentence of the draft, written for a STRING or number in the hol
 (marked, not ruled): the partial form stays for a string or number filling the hole (a generated CAPTURE name,
 `f_1`, `f_2`; as a label such a group is reached only with a source, never bare) and is refused for a label
 parameter. Put to him as slug label-hole-full.
+
+### 2026-11-23 OWNER, on the repeat head: "repeat(A, min = 0, ...) seems the natural definition. But _ in a repeat hole is empty "". But then repeat(A, _,_) ?"
+tags: core/operators/bindings/call-forms lib/rx/repeat core/holes/count core/holes/zero-values core/patterns/literals
+
+HIS WORDS, whole: "repeat: repeat(A, min = 0, ...) seems the natural definition. But _ in a repeat hole is empty
+"". But then repeat(A, _,_) ?"
+
+Class: DISCUSSION (nothing ruled): a SUGGESTION for the head (`min = 0` as the default), a STATEMENT of how he
+reads `_` in a count hole (the empty text, `""`), and a QUESTION it raises: both bounds `_`.
+RUN (libpcre2 10.46 through ctypes, WHOLE; output pasted): `a{,}`: WHOLE `` FAILS, `aaa` FAILS, `a{,}` HOLDS,
+`aaaaaaa` FAILS; `a{,5}`: `` HOLDS, `aaa` HOLDS, `a{,}` FAILS, `aaaaaaa` FAILS; `a{3,}`: `` FAILS, `aaa` HOLDS,
+`a{,}` FAILS, `aaaaaaa` HOLDS; `a{0,}`: `` HOLDS, `aaa` HOLDS, `a{,}` FAILS, `aaaaaaa` HOLDS. (python `re` reads
+`a{,}` as `a*`: `` and `aaa` HOLD, the text `a{,}` FAILS: the two engines part on it.)
+The manager's answer (told to him; a proposal, marked):
+- His question finds the hole in "the empty text": with both bounds empty PCRE2 reads `{,}` as the four literal
+  characters, not a quantifier (the run), so `repeat(A, _, _)` as TEXT would match `A{,}`. `_` in a count bound is
+  therefore stated by MEANING, never as text: no lower bound is 0, no upper bound is unbounded; `repeat(A, _, _)`
+  is `{0,}`, which is `A*`. It is the count position's own rule (each position has its own), beside the one that
+  already says a count is never converted to rx text (core/holes/count).
+- `min = 0` as the default: with it the default of max can no longer be `max = min` (`repeat(A)` would be
+  `{0,0}`). Two consistent heads, to choose between: (i) `repeat(x, min = _, max = min)`: one count is EXACT
+  (the proposal he agreed to on 2026-11-17: "i agree with repeat"), `repeat(A)` is `A*`, and unset differs from
+  `_` in the third position; (ii) `repeat(x, min = 0, max = _)`: his natural head; `repeat(A)` is `A*`,
+  `repeat(A, 3)` is 3 OR MORE, exactly 3 is `repeat(A, 3, 3)`; unset and `_` never differ and no default names
+  another parameter.
+Put to him as slug repeat-head.
