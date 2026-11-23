@@ -39,7 +39,7 @@ G2 (integration.md §10.2, §14.6) checks the kit's rendered code against G2's O
 - `run_g2_pres.sh`, `g2/g2_pres.h`, `g2/g2_pres_gen.c`, `g2/g2_pres_run.c` — the PRESENCE family (K38-2a, K38-2; run_g2.sh 4p): generated pre-check sites in MF_SITE_ABI 27's form (set-form run, signed omin/K, one derived run part), routes P0/P2/P3/P9, per U2 target x {default, `run-tie-left`}; reads the reply `mf_class.run` (FAM-2); C2's classifier, the §3.5 witnesses and the ORACLE RECORDS (ORC-3) piped to `tests/memfn/occurrence_oracle.py`. `--plants` S3007-S3012, S3043-S3047, S3060-S3064, S3098-S3103 (S3100/S3101 under ASan), S3106-S3114, S3119, S3125-S3127, `--reach`; its WIDE stream, deny pass, site pins, record census, generic pass and arm-entry cells: NOTES.md "The presence family".
 - `span_forms/cards.py` — NOT G2: cards C1-C6, C6c (kit-grid@7, @8); commands in its docstring; rules `c6_rule.md` (C6), `rule_710.md`.
 - `check_targets.sh` — NOT G2: the kit's CPU TARGET TABLE CHECK (unit K0, R-36; unit U2 level admission): targets.def and targets_c.def held to gcc's own `-march`. Run at `make` (warns), `make strict` and `make test-memfn-targets` (fail); exit 0 ok, 1 mismatch, 2 could not run. Detail: NOTES.md "check_targets.sh".
-- `parpool.py` — NOT G2: kit runners' ordered fork pool (`-j N`, a scratch per worker, output = `-j 1`'s); used by `cards.py selftest`; `parpool.py selftest`.
+- `parpool.py` — NOT G2: ordered unit pool (`-j N`; dead worker fails naming it); `cards.py selftest`, `span_forms/selftest_unit_costs.tsv`.
 - `G2*_REPORT.md` — lane reports (NOTES.md).
 
 ## Not here yet

@@ -10,15 +10,17 @@ value. `run(units, jobs)` runs them and writes every unit's printed text to stdo
 
   jobs <= 1   today's serial path: each unit called in order, in this process, its output streamed as it prints; no
               fork, no capture, no scratch change
-  jobs N > 1  a fork pool of N workers; each worker gets ITS OWN scratch directory (PCREC_TMPDIR, TMPDIR and
-              `tempfile.tempdir` point at <root>/w<pid>, root a fresh directory under the caller's PCREC_TMPDIR or
-              TMPDIR, removed at the end); a unit's stdout is captured in its worker and written by the parent once
-              every earlier unit's has been written
+  jobs N > 1  up to N forked processes, ONE FORK PER UNIT (no interpreter state carries between units); each gets ITS
+              OWN scratch directory (PCREC_TMPDIR, TMPDIR and `tempfile.tempdir` point at <root>/u<index>, root a fresh
+              directory under the caller's PCREC_TMPDIR or TMPDIR, removed at the end); a unit's stdout is captured in
+              its process and written by the parent once every earlier unit's has been written. Ready units start
+              LONGEST `Unit.cost` FIRST (ties in list order): speed only, never the output order
 
 A unit may NEED earlier units' values: `Unit(name, fn, needs=(i, j))` calls fn(value_i, value_j) once both are done (an
 index into the list, earlier than the unit itself), in the serial path too, so both paths compute the same thing.
 A unit that raises stops the run: the parent writes the output of every unit before it, then the failing unit's
 captured output, then raises UnitError carrying the worker's traceback (the serial path raises the exception itself).
+A worker that DIES without a result (os._exit, a kill) fails the run within a second: UnitError naming the unit.
 
 PARPOOL_TIMES=FILE appends one `name<TAB>seconds<TAB>pid` line per unit (a profile for sizing units; never stdout).
 PARPOOL_PLANT=shared-scratch gives EVERY worker the SAME scratch directory: the control that a race between workers
@@ -31,10 +33,11 @@ import io, os, shutil, sys, tempfile, time, traceback
 
 
 class Unit:
-    __slots__ = ("name", "fn", "needs")
+    __slots__ = ("name", "fn", "needs", "cost")
 
-    def __init__(self, name, fn, needs=()):
-        self.name, self.fn, self.needs = name, fn, tuple(needs)
+    def __init__(self, name, fn, needs=(), cost=0.0):
+        """`cost`: seconds the unit is expected to take; only the SUBMISSION order reads it (longest first)."""
+        self.name, self.fn, self.needs, self.cost = name, fn, tuple(needs), cost
 
 
 class UnitError(RuntimeError):
@@ -75,7 +78,7 @@ def jobs_from_args(args, default=None):
     return (jobs if jobs is not None else (default if default is not None else default_jobs())), rest
 
 
-_UNITS = None           # the unit list, set before the pool forks: the workers inherit it
+_UNITS = None           # the unit list, set before the children fork: they inherit it
 _SCRATCH = None
 
 
@@ -86,9 +89,9 @@ def _times(name, secs):
             f.write("%s\t%.2f\t%d\n" % (name, secs, os.getpid()))
 
 
-def _worker_init(root, plant):
+def _scratch_init(root, plant, i):
     global _SCRATCH
-    _SCRATCH = os.path.join(root, "w-shared" if plant == "shared-scratch" else "w%d" % os.getpid())
+    _SCRATCH = os.path.join(root, "w-shared" if plant == "shared-scratch" else "u%d" % i)
     os.makedirs(_SCRATCH, exist_ok=True)
     os.environ["PCREC_TMPDIR"] = os.environ["TMPDIR"] = _SCRATCH
     tempfile.tempdir = _SCRATCH
@@ -110,14 +113,37 @@ def _run_index(i, vals):
     return buf.getvalue(), v, err
 
 
+def _child(i, vals, conn, root, plant):
+    """One forked process per unit (STATE-CONTROL: no unit sees interpreter state another left behind)."""
+    try:
+        _scratch_init(root, plant, i)
+        conn.send(_run_index(i, vals))
+        conn.close()
+    finally:
+        os._exit(0)
+
+
 def _check(units):
     for i, u in enumerate(units):
         if any(not (isinstance(j, int) and 0 <= j < i) for j in u.needs):
             raise ValueError("unit %d (%s) needs %s: only earlier units" % (i, u.name, u.needs))
 
 
+def closure(units, want):
+    """The set `want` (unit indices) plus every unit they need, transitively (a need's own needs too)."""
+    want, todo = set(want), list(want)
+    while todo:
+        for j in units[todo.pop()].needs:
+            if j not in want:
+                want.add(j)
+                todo.append(j)
+    return want
+
+
 def run(units, jobs, out=None):
-    """Run `units` (a list of Unit); returns their values in order. Output goes to `out` (default sys.stdout)."""
+    """Run `units` (a list of Unit); returns their values in order. Output goes to `out` (default sys.stdout).
+    Pool mode: one forked process per unit, at most `jobs` at once, ready units submitted LONGEST `cost` FIRST (ties in
+    list order); a child that dies without a result fails the run at once, naming its unit (DEADWORKER)."""
     units = list(units)
     _check(units)
     out = out if out is not None else sys.stdout
@@ -136,53 +162,65 @@ def run(units, jobs, out=None):
                     sys.stdout = real
             _times(u.name, time.monotonic() - t0)
         return vals
-    import multiprocessing
+    import multiprocessing, multiprocessing.connection as mpc
     global _UNITS
     out.flush()
     sys.stdout.flush()
     base = os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR") or tempfile.gettempdir()
     os.makedirs(base, exist_ok=True)
     root = tempfile.mkdtemp(prefix="parpool.", dir=base)
+    plant = os.environ.get("PARPOOL_PLANT", "")
     _UNITS = units
-    done, pending, written = {}, {}, 0
+    done, live, started, written = {}, {}, set(), 0     # live: unit index -> (Process, parent's read end)
+    ctx = multiprocessing.get_context("fork")
     try:
-        ctx = multiprocessing.get_context("fork")
-        with ctx.Pool(min(jobs, len(units)), initializer=_worker_init,
-                      initargs=(root, os.environ.get("PARPOOL_PLANT", ""))) as pool:
-            submitted = set()
-
-            def submit_ready():
-                for i, u in enumerate(units):
-                    if i not in submitted and all(j in done for j in u.needs):
-                        submitted.add(i)
-                        pending[i] = pool.apply_async(_run_index, (i, [vals[j] for j in u.needs]))
-            submit_ready()
-            while written < len(units):
-                # wait on the earliest unfinished unit in submission order, but harvest every finished one so that
-                # units needing it are submitted as soon as possible
-                progressed = False
-                for i in sorted(pending):
-                    if pending[i].ready():
-                        text, v, err = pending.pop(i).get()
-                        done[i] = (text, err)
-                        vals[i] = v
-                        progressed = True
-                while written in done:
-                    text, err = done[written]
-                    out.write(text)
+        while written < len(units):
+            ready = sorted((i for i, u in enumerate(units)
+                            if i not in started and all(j in done for j in u.needs)), key=lambda i: (-units[i].cost, i))
+            for i in ready:
+                if len(live) >= jobs:
+                    break
+                started.add(i)
+                rc, wc = ctx.Pipe(duplex=False)
+                pr = ctx.Process(target=_child, args=(i, [vals[j] for j in units[i].needs], wc, root, plant))
+                pr.start()
+                wc.close()
+                live[i] = (pr, rc)
+            if not live:
+                raise UnitError("no unit runnable (a need never finished)")
+            mpc.wait([rc for _p, rc in live.values()], timeout=1.0)
+            for i in sorted(live):
+                pr, rc = live[i]
+                if not rc.poll():
+                    continue
+                try:
+                    text, v, err = rc.recv()
+                except EOFError:        # closed with no result: the child died (os._exit, a signal)
+                    pr.join(5)
+                    code = pr.exitcode
+                    while written in done:      # whatever completed in order before the dead unit is still written
+                        out.write(done[written][0])
+                        written += 1
                     out.flush()
-                    if err is not None:
-                        pool.terminate()
-                        raise UnitError("unit %d (%s) failed in its worker:\n%s" % (written, units[written].name, err))
-                    written += 1
-                if progressed:
-                    submit_ready()
-                elif written < len(units):
-                    nxt = min(pending) if pending else None
-                    if nxt is None:
-                        raise UnitError("no unit runnable (a need never finished)")
-                    pending[nxt].wait(0.05)
+                    raise UnitError("unit %d (%s): its worker died without a result (exit code %s)"
+                                    % (i, units[i].name, code))
+                rc.close()
+                pr.join()
+                del live[i]
+                done[i] = (text, err)
+                vals[i] = v
+            while written in done:
+                text, err = done[written]
+                out.write(text)
+                out.flush()
+                if err is not None:
+                    raise UnitError("unit %d (%s) failed in its worker:\n%s" % (written, units[written].name, err))
+                written += 1
     finally:
+        for pr, rc in live.values():
+            if pr.is_alive():
+                pr.terminate()
+            pr.join(5)
         _UNITS = None
         shutil.rmtree(root, ignore_errors=True)
     return vals
@@ -241,6 +279,48 @@ def selftest():
             msg = str(e)
         row("ZeroDivisionError" in msg and got.getvalue() == "before\n",
             "a failing unit is an error naming it, the units before it written, none after (%r)" % got.getvalue())
+        # DEADWORKER: a unit whose worker dies (os._exit) fails the run within seconds, naming the unit; never a hang
+        dying = [Unit("a", lambda: print("before")), Unit("dies", lambda: os._exit(7)),
+                 Unit("slow", lambda: time.sleep(30) or print("never"))]
+        got, msg, t0 = io.StringIO(), "", time.monotonic()
+        try:
+            run(dying, 3, out=got)
+        except UnitError as e:
+            msg = str(e)
+        dt = time.monotonic() - t0
+        row("dies" in msg and "died" in msg and dt < 10 and "never" not in got.getvalue(),
+            "a worker killed with os._exit fails the run in %.1f s, naming its unit (%r)" % (dt, msg))
+        # STATE-CONTROL: one fork per unit, so a global one unit sets is not seen by the next unit on any worker
+        leak = {"v": 0}
+
+        def setter():
+            leak["v"] += 1
+            return leak["v"]
+        sc = [Unit("set%d" % k, setter) for k in range(6)]
+        row(run(sc, 2, out=io.StringIO()) == [1] * 6 and leak["v"] == 0,
+            "one fork per unit: six units on two workers each see a fresh interpreter state")
+        # TAIL: submission order follows cost (longest first), the output stays in list order
+        stamp = os.path.join(own, "order.txt")
+
+        def logger(k):
+            def fn():
+                with open(stamp, "a") as f:
+                    f.write("%d\n" % k)
+                print("unit %d" % k)
+            return fn
+        cs = [Unit("c%d" % k, logger(k), cost=float(k)) for k in range(5)]
+        o1, o2 = io.StringIO(), io.StringIO()
+        run([Unit(u.name, u.fn) for u in cs], 1, out=o1)
+        os.remove(stamp)
+        run(cs, 1 + 1, out=o2)         # two workers: 4 and 3 start first
+        started = open(stamp).read().split()
+        row(o1.getvalue() == o2.getvalue() and sorted(started[:2]) == ["3", "4"],
+            "longest-first submission (started %s) with the output still in list order" % " ".join(started))
+        # CLOSURE: a depth-2 chain whose last unit lists only its direct need still pulls in the whole chain
+        chain = [Unit("c0", lambda: 1), Unit("c1", lambda x: x + 1, needs=(0,)), Unit("c2", lambda x: x + 1, needs=(1,)),
+                 Unit("c3", lambda x: x + 1, needs=(2,)), Unit("other", lambda: 9)]
+        row(closure(chain, {3}) == {0, 1, 2, 3} and closure(chain, {4}) == {4} and closure(chain, {1}) == {0, 1},
+            "closure of a depth-3 needs chain from its last unit: %s" % sorted(closure(chain, {3})))
         j = [jobs_from_args(a, default=5) for a in (["x"], ["-j", "3", "x"], ["-j7"], ["--jobs=2"], ["--jobs", "4"])]
         refused = 0
         for a in (["-j"], ["-j0"], ["--jobs=x"]):

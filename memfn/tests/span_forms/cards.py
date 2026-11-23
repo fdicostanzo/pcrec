@@ -5076,6 +5076,20 @@ def parpool():
     return mod
 
 
+SELFTEST_COSTS = os.path.join(HERE, "selftest_unit_costs.tsv")
+
+
+def unit_costs():
+    """name -> seconds from the COMMITTED table (source and date in its header: job 758's profile, 2026-11-23); it only
+    orders the pool's submission (longest first), never what is printed."""
+    out = {}
+    for ln in open(SELFTEST_COSTS):
+        if ln.strip() and not ln.startswith("#"):
+            name, _t, secs = ln.rstrip("\n").rpartition("\t")
+            out[name] = float(secs)
+    return out
+
+
 def selftest_units(add):
     """THE FULL SELFTEST as ordered units (memfn/tests/parpool.py; lane bsu6par, the owner 2026-11-23: a long or
     repeated test is reviewed for parallelism): `add(name, body, needs=())` returns the unit's index; `body(check,
@@ -5598,7 +5612,9 @@ def cmd_selftest(args):
     """The selftest's units (`selftest_units`; `--rev11` / `--rev12` their rows alone, a development aid) run on
     memfn/tests/parpool.py's ordered pool: `-j N` workers (default every CPU this process may use), `-j 1` the serial
     path (one process, in order); either prints the same text. `--list-units` prints each unit's index and name;
-    `--units SPEC` (comma-separated indices or ranges a-b) runs those units, and every unit they need, alone."""
+    `--units SPEC` (comma-separated indices or ranges a-b) runs those units, and every unit they need (transitively),
+    alone, and its summary line says SUBSET k of N units. Ready units are submitted longest-first by the committed
+    cost table selftest_unit_costs.tsv; the output stays in list order."""
     pp = parpool()
     try:
         jobs, args = pp.jobs_from_args(args)
@@ -5628,6 +5644,15 @@ def cmd_selftest(args):
         for i, u in enumerate(units):
             print("%d\t%s%s" % (i, u.name, "\tneeds %s" % ",".join(map(str, u.needs)) if u.needs else ""))
         return 0
+    total = len(units)
+    subset = "--units" in opt
+    costs = unit_costs()
+    missing = [u.name for u in units if u.name not in costs]
+    if missing:
+        sys.stderr.write("cards: selftest: WARNING: %d unit(s) not in %s, sorted as cost 0: %s\n"
+                         % (len(missing), os.path.basename(SELFTEST_COSTS), "; ".join(missing[:5]) + (" ..." if len(missing) > 5 else "")))
+    for u in units:
+        u.cost = costs.get(u.name, 0.0)
     if "--units" in opt:
         want = set()
         for part in opt["--units"].split(","):
@@ -5635,13 +5660,14 @@ def cmd_selftest(args):
             if not (a.isdigit() and (not b or b.isdigit())) or int(b or a) >= len(units) or int(a) > int(b or a):
                 raise SystemExit2("cards: selftest: --units %s: indices 0-%d, a list of N or A-B" % (opt["--units"], len(units) - 1))
             want.update(range(int(a), int(b or a) + 1))
-        for i in sorted(want, reverse=True):
-            want.update(units[i].needs)
+        want = pp.closure(units, want)      # the TRANSITIVE closure of `needs`
         keep = sorted(want)
         renum = {old: new for new, old in enumerate(keep)}
-        units = [pp.Unit(units[i].name, units[i].fn, tuple(renum[j] for j in units[i].needs)) for i in keep]
+        units = [pp.Unit(units[i].name, units[i].fn, tuple(renum[j] for j in units[i].needs), units[i].cost) for i in keep]
     oks = [ok for o, _v in pp.run(units, jobs) for ok in o]
     sys.stdout.flush()
+    if subset:
+        what = "%s (SUBSET %d of %d units)" % (what, len(units), total)
     print("%s: %d checks, %d failed" % (what, len(oks), oks.count(False)))
     return 1 if False in oks else 0
 
