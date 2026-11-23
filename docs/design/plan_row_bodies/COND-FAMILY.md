@@ -8313,3 +8313,36 @@ source, from outside (`row.ts`, `r.ts`: the reader writes the name there); the o
 (its text does not write the name) and has no other way (no hole in the expression language; a backreference's
 name takes no hole). Then a `_` name through a hole is a label nothing can read: proposed a compile error
 (replacing the proposal k-underscore's warning).
+
+### 2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference
+tags: core/operators/bindings/label-variables core/holes/name core/labels/label-only-group core/labels/paths/label-reference core/conditions/form/value-left core/labels/paths/call-prefix lib/json/members
+
+Said after the manager's hole-named-label proposal (not answered; set aside by these words). HIS WORDS, whole:
+
+"lets consider some other approaches. independent: 1. label binding in macros. this means a macro can take a
+label and, maybe, a label can be pre-defined as a symbol. A(l:,B) := [l = B] or A(l:) := /(?<:${l}>\d+)/ then
+A(x:) & (x: 5). this means row(dt:,"date", isodate) & (dt.year: 2000) 2. conditions allow expressions. perhaps
+row("date", isodate) & (row."date": 2000) or some expression on row to get the reference"
+
+Class: two PROPOSALS for discussion ("lets consider"), independent of each other; nothing ruled. Spellings are
+placeholders (`l:` on a parameter and at a call; `row."date"`). Approach 1 is the label-variable direction
+(core/operators/bindings/label-variables, his `A(x:) := (x: < 2100)` of 2026-11-22), now with the body SETTING
+the label (a part label `[l = B]`; the name of a label-only group through a name hole), and "maybe" a label
+pre-defined as a symbol (declared labels).
+
+Check-his-regex, RUN (a path model, `$PCREC_TMPDIR/scratch/pred/label_param.py`): `A(x:) & (x: 5)`, A(l:) :=
+`/(?<:${l}>\d+)/`: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2, `56` `5`@0 / FIND-ALL
+`5 7 56 15` [`5`@0, `5`@4, `5`@8]. His `(row."date": 2000)` in approach 2 tests the whole date's text against
+`2000`, which no ISO date is; his approach-1 line has `dt.year`: read as the same intent (told to him).
+
+The manager's readings (each marked, none ruled; told to him):
+- (a) Under approach 1 the caller WRITES the label's name in its own text (`x:`), so label-reference is met with
+  no source: `x`, `dt.year` are the caller's own names. That answers his "its not textually defined".
+- (b) The name is decoupled from the key: no legal-name restriction on the key, no array clash; `_t:` is the
+  caller's private label and works; four calls of `row` set four caller names, so no per-macro ambiguity.
+- (c) `dt.year` reads `year` through the label on the spot: argument-default's reading (d) (a spot the body
+  labels exports the argument's exported labels through that label).
+- (d) If the name hole in rx text takes a LABEL PARAMETER, a STRING there is no longer needed; the ruled
+  name-hole example (`n := "d"`) would be re-spelled; the ruling itself (an array is a compile error) stands.
+- (e) Approach 2 keeps the body naming by string (every k-restriction stays), needs ambiguity-per-name for
+  several calls, and meets value-left: left of `:` anything but a name or path is a VALUE today.
