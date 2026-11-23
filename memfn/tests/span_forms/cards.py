@@ -5881,9 +5881,25 @@ def cmd_c6selftest(args):
             lambda k: (({"V": "notrun", "H64": "notrun", "H64.b": "notrun"}, None) if k in late else ({}, None))),
             end="complete")),
     ]
+    # each refusal must be for ITS OWN reason (lane bsu6fix2: the no-#end refusal dropped, the #end cross-check still
+    # refused that record with exit 2, so an exit-code-only row could not see the clause go): the reason's text, by record
+    why = {"noend": r"no #end line", "oldrule": r"recorded under rule f{16}", "noharness": r"the header lacks harness",
+           "launches": r"recorded at LAUNCHES=%d" % (LAUNCHES + 2),
+           "owedmissing": r"owes a re-time and the record holds 0 re-time rows",
+           "notowed": r"owes no re-time and the record holds 3 re-time rows", "unknown": r"an unknown line 'bogus",
+           "nofirst": r"has no first-pass row for \['H64\.b'\]",
+           "rt2of3": r"owes a re-time and the record holds 2 re-time rows",
+           "stray": r"rows of cells outside the record's population \(C6/c6_nosuch",
+           "notrunrt": r"owes no re-time and the record holds 3 re-time rows",
+           "rtreuse": r"re-time ran first-pass exes", "strangerexe": r"exes \['f{16}', .* are not members of a recorded pool",
+           "noexes": r"exes None are not members of a recorded pool",
+           "endlies": r"#end says status complete, the rows say truncated"}
     for what, path in refusals:
-        rc, txt = decide(path)
-        row(rc == 2, "RECORD refusal %s: exit %s (want 2, refused)" % (what, rc))
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc, txt = decide(path)
+        want = why[os.path.basename(path)[:-4]]
+        row(rc == 2 and re.search(want, err.getvalue()), "RECORD refusal %s: exit %s (want 2, refused: /%s/)" % (what, rc, want))
     # ---- THE CPU-QUIET CONTROL (rule_710.md; R-1 (c)): a stubbed probe, stubbed counters, no clock
     class StubProbe:
         def __init__(self, busy, niv=0, secs=lambda i: 0.06, sample=0.01):
@@ -6139,6 +6155,42 @@ def cmd_c6selftest(args):
         rc_d, _t = run_time([d, "--deadline", "+60"])
     row(rc == 2 and rc_t == 2 and rc_d == 2, "TIME refusals: no manifest (exit %s), a timing without --job-start (%s), a "
                                              "timing with a DRY's --deadline (%s)" % (rc, rc_t, rc_d))
+    # THE WINDOW's own computation (c6_rule.md WINDOW; r80 RULE-3), called directly: a timing with NO window flag refused
+    # (through `time` it would reach a real probe, so never driven that way here), the deadline min(stop_at, start + cap
+    # - JOB_MARGIN_S) either way round, a DRY with none has none (lane bsu6fix2: no row reached the no-window refusal)
+    now = time.time()
+    win = []
+    for opt, dry, want in (({}, False, "needs its WINDOW"), ({"--cap": "3600", "--job-start": "%d" % (now - 100)}, False,
+                                                           now - 100 + 3600 - JOB_MARGIN_S),
+                           ({"--cap": "3600", "--job-start": "%d" % (now - 100), "--stop-at": "%d" % (now + 50)}, False,
+                            now + 50), ({}, True, None)):
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                got = c6_deadline(opt, dry, now)[0]
+        except SystemExit as e:
+            got = "refused %s: %s" % (e.code, err.getvalue().strip())
+        ok = (isinstance(want, str) and isinstance(got, str) and got.startswith("refused 2") and want in got) or \
+             (not isinstance(want, str) and got == (want if want is None else float(int(want))))
+        win.append((sorted(opt), dry, ok))
+    row(all(ok for _o, _d, ok in win), "WINDOW computed (c6_deadline): no window flag on a timing REFUSED, start + cap - %d, "
+        "min with --stop-at, a DRY without one has none: %s" % (JOB_MARGIN_S, win))
+    # DRY's probe reads the model of the exe's PROVED pool, never of the cell it is labelled with (r80 FIDELITY-2): called
+    # directly, past the wiring control (which refuses such a launch before the probe sees it, so `time` cannot show the
+    # probe's own keying; lane bsu6fix2): a first-pass V exe launched as H64 reads V's miss-heavy factor (1.3, not H64's
+    # 1.0), and a RE-TIME V exe launched while the control's pass says first reads the re-time's (1.0, not 1.3)
+    fake = {k: os.path.join(dd, "probe_%s" % k) for k in ("first", "retime")}
+    for f in fake.values():
+        open(f, "w").close()
+
+    class _Q:
+        pass_ = "first"
+    pr = DryProbe("exercise", 0.0, lambda: _Q, {fake["first"]: ("c6_hex32", "V", "on", 0),
+                                                fake["retime"]: ("c6_hex32", "V", "on", 1)})
+    f1 = pr.measure([fake["first"]], ("C6", "c6_hex32", "H64", "miss-heavy", "on"), {})[0]
+    f2 = pr.measure([fake["retime"]], ("C6", "c6_hex32", "V", "miss-heavy", "on"), {})[0]
+    row(abs(f1 - 1.3) < 0.02 and abs(f2 - 1.0) < 0.02, "DRY probe keyed on the exe's proved pool: a first-pass V exe "
+        "labelled H64 reads %.3f (want 1.3), a re-time V exe in a 'first' pass reads %.3f (want 1.0)" % (f1, f2))
     if man["pools"]:
         m2 = dict(man, harness="0" * 16)
         open(os.path.join(d2, C6_PREPARED), "w").write(json.dumps(m2))
