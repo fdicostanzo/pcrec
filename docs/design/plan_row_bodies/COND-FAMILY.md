@@ -9192,3 +9192,24 @@ tags: lib/structural/capture lib/control/when core/filters/negation core/labels/
   so no general set is proposed right of an array). The fold writes his own spelling of 2026-11-23 moved to the
   left part, as a PLACEHOLDER and a reading, under construction: `(@x.year ?: capture("years"))`, an array left
   part taking only a capture request for now.
+
+### 2026-11-23 OWNER, on two-sources (second shape): "isn't the A.h not visible bare?"
+tags: core/labels/paths/two-sources core/labels/paths/label-reference core/labels/flow
+
+Asked **two-sources** (`/(?<h>\d)/ SEQ A & (h: <5)`, A := `/,(?<h>\d)/`: (a) the last mention, A's `h`; (b) the
+group written here; the manager's leaning (b); the two printed lines of core/labels/paths/two-sources). HIS
+WORDS, whole:
+
+"two-sources: isn't the A.h not visible bare?"
+
+Class: a QUESTION that answers the question from the record (not a new ruling). The manager's answer (told to
+him): yes. label-reference, ruled 2026-11-22 ("label-reference: required. we can relax it later as you say
+although i'm not inclined to."): "A label not written in the text of the definition that references it is
+referenced with its source: `chars.ch`, not `ch`". A's `h` is not written in the referencing definition, so it is
+never read bare; the bare `h` can only be the group the definition writes: candidate (b), with the answers of the
+printed line (b) (WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9`
+[`1,7`@0, `1,2`@8]). The question should not have been asked: the record answered it. two-sources' second shape
+is CLOSED by the manager on label-reference (no new owner ruling; he may object). What the fold changes: the
+flow sentence "Across the sequence operator a name both parts surface is one label, the last mention" is stated
+for names read at ONE level (the definition's own groups read bare; a part's labels read through one prefix or one
+label over the composition), never across the bare / sourced line; candidate (a)'s line goes to rejected.
