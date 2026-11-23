@@ -8004,3 +8004,1212 @@ argument-default); `identity(x) := /${[(=) = x]}/` passes all of them on (export
 against the rules as ruled (no matching run: both match exactly what `x` matches; what differs is what the call
 exports): correct. NOT ruled as provided NAMES: whether `hide` and `identity` join the library is his to say;
 they go into the convention's piece as its worked pair and onto the user-documentation list.
+
+### 2026-11-22 OWNER, a question on transform-export: `A(rx) := /${=rx}/` then `B := A(/\d/) & (A.rx: 6)`
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/spellings/placeholders
+
+While **capture-export** was before him (not answered by this message). HIS WORDS, whole:
+
+"transform-export: question: can i A(rx) := /${=rx}/ then B := A(/\d/) & (A.rx: 6)"
+
+Class: a QUESTION with an example; nothing ruled. The spelling `${=rx}` is his placeholder. The manager's answer
+(told to him): YES in meaning, by what is ruled. Read `${=rx}` as `${[rx = rx]}` (his shorthand `[=year]`, read
+as `[year = year]`): the body puts a LABEL ON THE SPOT where the argument is laid, named for the parameter: his
+own principle of the same evening ("You can take a label to the spot that rx gets laid into the regex") and his
+example 3 of 2026-11-21 (`[dd = rx]`). A part label the body writes is exported by the call (default-export:
+what a binding's own text writes); the macro's name qualifies it (call-prefix case 1); one call, so the plain
+read is legal: `(A.rx: 6)` tests the text matched at that spot. RUN (hand-lowered `(?:6)`, python `re`; output
+pasted): WHOLE `6` HOLDS / WHOLE `7` FAILS / SEARCHED `x76` `6`@2 / FIND-ALL `6 7 66` [`6`@0, `6`@4, `6`@5].
+The manager's readings (marked): (a) `A.rx` is the SPOT's own text; the argument's inner labels are reached
+through it by path (`A.rx.g`), not flat: the third small form beside his `hide` (nothing) and `identity` (the
+inner labels flat); (b) a label named for the parameter by the `=` shorthand draws no hide-label warning (the
+shorthand asks for it); (c) `${=rx}` without the brackets is a spelling for the spellings review.
+
+### 2026-11-22 OWNER, on the spelling `[a = A]`: his interpretation: `[ ]` is an array of one rx, acting as `( )`; `a = A` is the label set, usable in an expression; `[a = A | b = B]`
+tags: core/labels/paths core/arrays/lift core/values/metadata core/operators/precedence core/spellings/placeholders core/holes/pattern
+
+After the manager wrote his `${=rx}` as `${[=rx]}` ("recorded as your placeholder ... the documents' form").
+HIS WORDS, whole:
+
+"[a=A] was your elegant spelling but my interpretation was that [] was defining an array of one rx which is that
+rx so effectively they are acting as (). The a=A could be used as the binding like [a = A | b = B] which is also
+your example of an array/map. The label set in my mind can happen in expression but the precedence needs
+clarifying hence []"
+
+Class: his INTERPRETATION of a spelling and a DIRECTION for it ("the precedence needs clarifying"); DISCUSSION;
+nothing ruled; spellings stay placeholders. What he says: (1) the brackets are the ARRAY (an array of one rx
+is that rx), so they act as grouping; (2) `a = A` is the label set, an operation of the expression language,
+usable for each entry: `[a = A | b = B]`, an array / map of labelled entries; (3) the label set "can happen in
+expression"; the brackets are there because its precedence is unclear.
+
+The manager's view (told to him; the syntax call is the manager's, offered for his word): agreed, and it unifies
+two things the documents keep apart: a part label and a labelled array entry (core/values/metadata already gives
+a member a name, `.label`). The precedence the manager would state: the label set `x = E` binds LOOSER than the
+sequence operator and `&` (so `[ok = item & (c)]` labels the filtered item, as the documents write it) and
+TIGHTER than `|` (so `[a = A | b = B]` is two labelled entries); it is written only where something delimits it:
+inside `[ ]` or directly inside a hole `${ }` (so his `${=rx}` needs no brackets); never bare in `( )`, which
+belong to conditions, calls and binding lists. It REVERSES the documents' reading at core/operators/precedence
+("inside an entry `&` and `|` bind tighter than `=`") for `|`; one printed program changes meaning under it and
+needs parentheses: `atomic([ab = B | A])` (lane preddef's re-spelling; `[ab = (B | A)]`).
+
+### 2026-11-22 OWNER, on arrays: `a | b | c` is an array and an rx; `A[]` is array access; the comma form in brackets stays for now, seen as a macro that makes an array
+tags: core/arrays/lift core/operators/precedence core/values/metadata core/spellings/placeholders core/labels/paths
+
+Asked, after the manager's four precedence points for the label set ("label-set: yes"), which way on the comma
+(are `,` and `|` both entry separators inside `[ ]`, or `|` only). HIS WORDS, whole:
+
+"Array: a | b | c is definitely an array and of course an rx. A[] is an array access. For now, comma in square
+brackets is an array form unless we can think of a better use. Is see them as a macro that takes a,b,c and turns
+it into an array."
+
+Class: STATEMENTS answering the comma question (not worded as a ruling; "For now"): (1) `a | b | c` "is
+definitely an array and of course an rx" (arrays are alternations: ruled 2026-11-19); (2) `A[]` "is an array
+access" (the index form after an operand); (3) the comma form `[a, b, c]` stays "For now ... unless we can think
+of a better use", and he sees it "as a macro that takes a,b,c and turns it into an array": so `[a, b, c]` is
+`a | b | c`. The four precedence points of the label set are NOT answered by this message: they stand as the
+manager's syntax reading (the manager's call), to be marked so.
+
+The manager's readings (marked): (a) inside `[ ]` both `|` and `,` separate entries, the comma binding loosest;
+(b) each entry may carry a label set (`[a = A, b = B]` is `[a = A | b = B]`); (c) `[ ]` after an OPERAND is the
+access (`h[2]`), after an operator or at the start it is the array form (core/operators/precedence already reads
+it so).
+
+### 2026-11-22 OWNER, thoughts on capture-export: "No ruling. Just thoughts": two directions and four truths
+tags: core/labels/export core/labels/export/capture-export core/labels/labels-vs-captures lib/structural/capture lib/structural/capture/add-on core/labels/numbers core/labels/export/caller-ambiguous
+
+Asked **capture-export** ((a) captures follow the labels to the caller; (b) they reach it as PCRE's would; the
+manager's leaning (a) with a one-literal program staying plain PCRE). HIS WORDS, whole:
+
+"capture-export: this could go different directions. 1. capture default: everything is a capture that looks like
+a pcre capture. 2. capture explicit: you must specify a capture for
+It to exit to the caller using dedicated nonpcre spelling.
+Truths:
+if you use predicate language to construct patterns, you are not reasonably going to use group numbers to get
+capture values. Labels only.
+Therefore, extra captures do not interfere with the requested set of captures.
+With our current default privacy setup, you need to specifically create a visibility path for captures if you
+want to select them later.
+However if you select them early in binding macros, you need to make sure they are nevertheless visible because
+what if you use the same one twice? Also, You'd have a capture you cannot use in the rest of the definition.
+No ruling. Just thoughts"
+
+Class: THOUGHTS, in his word ("No ruling. Just thoughts"): two DIRECTIONS (1 "capture default": everything that
+looks like a PCRE capture is one; 2 "capture explicit": a capture must be specified, by a dedicated non-PCRE
+spelling, to exit to the caller) and four OBSERVATIONS he calls truths: values are taken by name, not by group
+number; so extra captures do not interfere with the requested set; under the default privacy a visibility path
+must be created to select a capture later; selecting early, inside binding macros, meets the same part used
+twice and gives "a capture you cannot use in the rest of the definition". capture-export stays OPEN.
+
+The manager's thoughts (told to him; nothing folded): his truths point at WHEN a capture is chosen more than at
+which direction: LATE, at the program, by naming a visible label (a path tells two uses of one part apart and
+nothing chosen is invisible to the definition), which is his after-the-fact add-on of 2026-11-21 (`[ d = digits ]
+& capture(d)`); EARLY selection (a named group deep in a binding) is where both of his last two problems live.
+One truth to add from pcrec itself: an extra capture does not change answers, but it is not free: what must be
+captured decides how the pattern can be compiled, so "do not interfere" holds for results, not for speed. A
+program that is ONE literal stays plain PCRE under either direction.
+
+### 2026-11-22 OWNER RULING — capture-export, in two parts: 1 no (a named group in a part of a composed program is not a capture by default); 2 yes (the program-level `capture(path)` asks for one); explicit and implicit captures
+tags: core/labels/export core/labels/export/capture-export core/labels/labels-vs-captures lib/structural/capture lib/structural/capture/add-on core/labels/export/caller-ambiguous core/patterns/literals
+
+Put to him as two smaller questions for a later time: "1. Is a named group in a part of a composed program a
+capture by default? 2. Is the program-level `capture(path)` the way to ask for one?" HIS WORDS, whole:
+
+"I can answer both now. 1. no. 2.  yes. But because 1 is no doesn't mean it couldn't become one depending on
+what is asked of it later. There's explicit captures that i want returned from the artifact then there are
+implicit ones need from what is requested of the predicate language."
+
+Class: a RULING on both parts, with a DISTINCTION in his words. (1) A named group in a part of a composed
+program is NOT a capture by default. (2) A capture is asked for at the program, by naming a label by its path
+(`capture(path)`; the spelling a placeholder). The distinction: EXPLICIT captures, "that i want returned from
+the artifact" (what the caller receives), and IMPLICIT ones, needed "from what is requested of the predicate
+language" (a group may be captured internally because a condition, a read or a backreference needs its text;
+his 2026-11-21 "although they might be internal captures"); "because 1 is no doesn't mean it couldn't become
+one depending on what is asked of it later". It answers the open capture-export (captures follow export, and
+further: they are asked for) and REVISES pure-label of 2026-11-21 ("captures are explicitly written either in
+literal form or using a macro like capture()") for the literal form inside a composed program.
+
+The manager's readings, for the fold lane to test and mark: (a) the caller receives exactly the EXPLICIT
+captures; an implicit one is never returned; (b) a program that is ONE literal stays plain PCRE, every group a
+capture, numbers included (said to him twice the same evening, not objected to; not ruled by these words); (c)
+"a part of a composed program" is read as every literal of a program that is more than one literal, the top
+level's own literals included (to be confirmed); (d) `capture(path)` names a label VISIBLE to the program, so
+the visibility path is the same one a test needs; the capture's name for the caller is the label's last step
+unless renamed (not stated); (e) the wrapper form `capture(name, x)` and "unless they are so declared"
+(helper-captures) are the EARLY forms his truths spoke against: not removed by these words; marked as awaiting;
+(f) caller-ambiguous: two captures of one name can now arise only from two `capture(..)` requests, an error at
+the second request (a reading); (g) capture-loop-value (what the caller gets for a captured label a loop sets)
+stays open.
+
+### 2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)
+tags: core/holes/bare-condition core/conditions/match-so-far core/holes/bare-condition/nested-scope core/principles/conservative-first
+
+The question he left open the same morning ("mostly confirmed. i leave the c := (0: 5) open"), listed again as
+left on his list. HIS WORDS, whole:
+
+"c := (0: 5): A := (b: 8) is an error because b is not in scope. It cannot be applied to any arbitrary pattern
+nor could it be rewritten cleverly to make that legal and meaningful. (0: 5) could be applied to any pattern.
+All patterns have match 0. It could be rewritten to (like) /.*/ & (0: 5). That's why I wasn't sure of it.
+I think it's better to say it's an error and reconsider later."
+
+Class: a RULING on zero-condition-binding ("it's better to say it's an error and reconsider later"): a condition
+on `0` bound alone, `c := (0: 5)`, is a compile error, for now. With his REASONS for having hesitated, recorded
+for the reconsideration: unlike `A := (b: 8)` ("b is not in scope"; it "cannot be applied to any arbitrary
+pattern"), `(0: 5)` "could be applied to any pattern. All patterns have match 0", and "could be rewritten to
+(like) /.*/ & (0: 5)". And the stance is his conservative-first.
+
+The manager's readings (marked): (a) the error is at the binding, the same compile error as bound-condition's;
+(b) the condition written in place, or passed as an argument, is unchanged (the caller's text); (c) the
+reconsideration's trigger: a program that needs a reusable test on the whole match and cannot write it as a set
+bound alone (`five := 5`, then `(0: five)`), or macro variables being designed.
+
+### 2026-11-22 OWNER, an EXERCISE asked for: update the JSONL example's library code, build a search with it, return field values including fields not in the search
+tags: lib/json/members core/labels/export/export-list core/labels/export/capture-export lib/structural/capture core/labels/paths lib/modifiers/quoted
+
+HIS WORDS, whole: "Capture exercise: take the jsonl example library code and update. Then separately, use it to
+build a search for some jsonl line. Have it return the field values of that result which include fields not in
+the search. Evaluate exercise"
+
+Class: a REQUEST for an exercise; nothing ruled.
+
+### 2026-11-22 MANAGER — the JSONL capture exercise he asked for: the library updated, a search built, values returned; where the rules pinched (no owner words)
+tags: lib/json/members core/labels/export/export-list core/labels/export/capture-export lib/structural/capture core/labels/paths core/labels/paths/binding-prefix lib/modifiers/quoted core/holes/name parked/ideas/label-only-group
+
+Source: the frozen draft's §12.1 E-JSONL (`q := json.row("ts", quoted(dates.isodate & between(..))) &
+json.row("level", quoted("error")) & json.row("msg", json.string & contains("timeout"))`, `/^${q}$/m`); the `json`
+module's bodies were never written (lib/json/members, under construction). Written here under the rulings in
+force tonight, capture-export and the label-set spelling included (both recorded, not yet folded); every
+spelling a placeholder; the manager's sketch, nothing folded.
+
+THE LIBRARY FILE (json):
+    @options("n")                                   # a plain ( ) groups; nothing here is a capture
+    ws      := /[ \t]*/
+    string  := /"(?:[^"\\]|\\.)*"/
+    num     := /-?\d+(?:\.\d+)?/
+    value   := string | num | /true|false|null/
+    member_any := ws SEQ string SEQ ws SEQ ":" SEQ ws SEQ value SEQ ws
+    row(k, v)  := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${k}>${v & value})${ws}(?:,${member_any})*\}/
+`row(k, v)` puts a label ON THE SPOT of the value, named for the key (the label-only group with a name hole).
+THE SEARCH (the user's file):
+    json := import("json");  dates := import("dates")
+    tsdate := dates.isodate & between("2024-01-01", "2024-03-31")
+    line := [(=) = json.row("ts",    quoted(tsdate))]
+          & [(=) = json.row("level", quoted("error"))]
+          & [(=) = json.row("msg",   json.string & contains("timeout"))]
+          & [(=) = json.row("user",  json.value)]                     # not searched on; the member must exist
+          & [(=) = (json.row("host", json.value) | anything)]         # not searched on; the member may be absent
+    capture(line.ts)  capture(line.user)  capture(line.host)
+    /^${line}$/m
+RUN (hand-lowered model, python `re`, `$PCREC_TMPDIR/scratch/pred/jsonl_exercise.py`; the date set and
+`contains` lowered by hand; output pasted, the six lines also as one subject):
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db timeout","user":"ann","host":"db1"}` HOLDS (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`)
+WHOLE `{"user":7,"msg":"timeout","level":"error","ts":"2024-02-10"}` HOLDS (ts = `"2024-02-10"`, user = `7`, host = unset)
+WHOLE `{"ts":"2024-05-01","level":"error","msg":"timeout","user":"bob"}` FAILS
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db \"pool\" timeout","user":null}` HOLDS (ts = `"2024-02-10"`, user = `null`, host = unset)
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db timeout"}` FAILS
+WHOLE `{"user":"a","user":"b","ts":"2024-01-31","level":"error","msg":"timeout"}` HOLDS (ts = `"2024-01-31"`, user = `"b"`, host = unset)
+SEARCHED (the six lines as one subject): line 1 @0 (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`)
+FIND-ALL: line 1 @0 (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`); line 2 @81 (ts = `"2024-02-10"`, user = `7`, host = unset); line 4 @207 (ts = `"2024-02-10"`, user = `null`, host = unset); line 6 @338 (ts = `"2024-01-31"`, user = `"b"`, host = unset)
+
+WHERE THE RULES PINCHED (each a finding for the owner; none decided):
+1. A label named by an ARGUMENT. `row` wants its value label named for the key. The group-name hole gives that
+   to a group in rx text; the label-only group is under construction; a label set `[${k} = v]` in the expression
+   language has no name-hole rule. Without it every row's label is `val` and the caller must rename four times.
+2. "Called more than once" is too coarse. Four calls of `json.row` export four DIFFERENT names, yet the
+   call-prefix reading makes `row.ts` an error (several calls); the exercise went round it with `[(=) = ..]` on
+   each call. The ambiguity is per NAME, not per macro.
+3. Labels cannot be exported from inside an argument. `quoted(dates.isodate & between(..))` exports nothing of
+   isodate (isodate is used alone in the argument's expression, and a label written on an argument is refused):
+   to read `year` of the timestamp the caller must BIND the argument first and export there (`tsdate := [(=) =
+   dates.isodate] & between(..)`), then every wrapper on the way must pass it on (`quoted`, `row`): three
+   definitions must cooperate for one inner label.
+4. An OPTIONAL member has no idiom: `(row("host", value) | anything)` works because `anything` is a filter that
+   always holds, but nothing says so; a provided `maybe_row` or a stated idiom is wanted. The label set's
+   precedence (tighter than `|`) forces the parentheses.
+5. `capture(path)`: its place in a program (a statement, an `&` operand, an `@` effect), the caller's NAME for
+   the capture (the path's last step here; a rename is needed the moment two paths end alike), and whether an
+   unset label gives the caller an unset capture (`host` on lines 2, 4, 6) are all unstated.
+6. A value's text keeps its quotes (`"ann"`): the raw reading (ruled when `json.quoted` was cut); a caller who
+   wants `ann` needs a label on the spot INSIDE the quotes, which `quoted` does not offer.
+7. Duplicate keys: the label is the member PCRE's order reaches first, here the LAST one (`"b"`): the greedy
+   prefix; unstated in the library's piece.
+8. WHAT WORKED WITHOUT STRAIN: `&` of rows for any key order; the export list `(=)` as the one-word way to take
+   a call's labels; the protected default keeping `member_any`, `ws`, `string` out of the caller's sight with no
+   `_` anywhere; the flag ruling (`^`, `$` and `m` sit in the final literal; nothing needed to inherit); `n` as
+   a library option; fields not in the search are just more rows with `json.value`.
+
+### 2026-11-23 OWNER, on label-name-hole as first put: "the label set doesn't work because you can't put a hole in predicate"
+tags: core/holes/name core/labels/label-only-group core/labels/paths core/patterns/literals core/operators/bindings/label-variables
+
+Put to him (slug label-name-hole, the first JSONL pain point): may a macro name a label from an argument, in two
+positions: the label-only group in rx text `(?<:${k}>...)` and the label set at the expression level
+`[${k} = v]`; candidates (a) both, (b) rx text only, (c) no. With a run (a path model,
+`$PCREC_TMPDIR/scratch/pred/label_name_hole.py`) of `[r = kv("ts", /\d+/)] & (r.ts: <5)`, kv(k, v) :=
+`/${k}=(?<:${k}>${v})/`: WHOLE `ts=3` HOLDS, `ts=7` FAILS, `ts=12` FAILS / SEARCHED `ts=7 ts=3` `ts=3`@5 /
+FIND-ALL `ts=3 ts=7 id=1 ts=12 ts=4` [`ts=3`@0, `ts=1`@15, `ts=4`@21]. HIS WORDS, whole:
+
+"the label set doesn't work because you can't put a hole in predicate"
+
+Class: an OBSERVATION correcting the question (not a ruling on label-name-hole). He is right by the documents:
+core/patterns/literals, "Crossings: from rx text to the expression language only by `${...}`; from the expression
+language to rx only by `/.../`": a hole exists only in rx text, so `[${k} = v]` is not a form of the language and
+candidate (a) was not a candidate. The manager's question is withdrawn in that half. The manager's reading
+(marked): at the expression level a label named by an argument is then not a hole question at all; it is the
+label-variable direction (core/operators/bindings/label-variables, under construction). What remains to ask:
+whether the ruled name hole extends to the label-only group in rx text.
+
+### 2026-11-23 OWNER, a question on label-name-hole: "where does row() use the name?"
+tags: core/holes/name core/labels/label-only-group lib/json/members
+
+HIS WORDS, whole: "where does row() use the name?"
+
+Class: a QUESTION (DISCUSSION); nothing ruled. The manager's answer (told to him): in the exercise's body
+`row(k, v) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${k}>${v & value})${ws}(?:,${member_any})*\}/`
+`k` stands twice: as literal text in a pattern hole (`"${k}"`, the key the member must have) and as the name of
+the label-only group on the value's spot (`(?<:${k}>...)`). The body itself never READS that label: the name is
+only for the caller. Without the name hole the body writes a fixed name (`(?<:val>...)`) and each caller renames
+(`[(ts = val) = json.row("ts", ..)]`).
+
+### 2026-11-23 OWNER, on label-name-hole: "what are the proposed restrictions on k here? lets establish those now or they will come back as questions"
+tags: core/holes/name core/holes/pattern core/holes/value core/labels/label-only-group core/labels/export lib/json/members
+
+HIS WORDS, whole: "what are the proposed restrictions on k here? lets establish those now or they will come back
+as questions"
+
+Class: a REQUEST for the proposed restrictions; nothing ruled. The manager's PROPOSAL (each line a proposal, none
+ruled; slugs his to cite), for `k` in `row(k, v)`, used as key text (`"${k}"`) and as a label name
+(`(?<:${k}>...)`):
+- k-one-string: one string known at compile time. Already in the documents for the name position: an array is a
+  compile error (RULED, name-hole 2026-11-18); zero values and a `$` read are compile errors (readings). An rx
+  argument (`/t[sz]/`) is refused in the name position even where it denotes one string (proposal: a quoted
+  string only).
+- k-name-decides: the name position's rule governs the call: `row(["ts", "time"], v)` is a compile error though
+  the key-text position alone would take the array as an alternation (proposal).
+- k-legal-name: the string must be a legal group name by PCRE's rule; `"user-id"`, `"2fa"` are compile errors
+  reported at the CALL, naming the argument (proposal; run, python `re`: `user-id`, `2fa` rejected; `ts`, `_id`,
+  `Ts` accepted). No mangling of an illegal key into a legal name.
+- k-underscore: a name beginning with `_` is a private label as anywhere (`row("_id", v)` exports nothing);
+  proposal: no special case, with a warning at the call.
+- k-collision: a name the body also writes is the same label, the last mention (one-rule), no error (proposal:
+  as written).
+- k-text-literal: in the key-text position the string is literal text, never pattern (`"a.c"` matches only
+  `a.c`; run), under core/holes/value (a reading of which hole kind a string constant is).
+- k-case: the label name is the string as written; names are case-sensitive; an `i` in force does not fold the
+  name (proposal).
+- k-part-of-name: a hole may form part of a name (`(?<:f_${k}>...)`; in the documents for the ruled name hole).
+
+### 2026-11-23 OWNER, on k-underscore: "_t" doesn't work; and the general point: a label provided as a string is not "textually defined"
+tags: core/holes/name core/labels/paths/label-reference core/labels/export core/labels/label-only-group core/principles/label-names-spot
+
+HIS WORDS, whole: "1. "_t" doesn't work because its a string in the binding. but isn't that true of any label
+provided as string? its not "textually defined""
+
+Class: an OBSERVATION and a QUESTION (DISCUSSION); nothing ruled. The manager's answer (told to him): yes, it is
+true of every label named through a hole, the RULED group-name hole included (`/(?<${n}>\d)x/`, n := "d",
+core/holes/name): the documents do not say whose label it is. label-reference says "a bare name is a label the
+definition itself writes"; a hole-named label is written by NO definition's text: the body writes `${k}`, the
+caller writes a string. The manager's proposal (not ruled), put to him as slug hole-named-label: such a label
+belongs to the definition whose literal holds the group (the spot, label-names-spot); it is read only with a
+source, from outside (`row.ts`, `r.ts`: the reader writes the name there); the owning body cannot read it bare
+(its text does not write the name) and has no other way (no hole in the expression language; a backreference's
+name takes no hole). Then a `_` name through a hole is a label nothing can read: proposed a compile error
+(replacing the proposal k-underscore's warning).
+
+### 2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference
+tags: core/operators/bindings/label-variables core/holes/name core/labels/label-only-group core/labels/paths/label-reference core/conditions/form/value-left core/labels/paths/call-prefix lib/json/members
+
+Said after the manager's hole-named-label proposal (not answered; set aside by these words). HIS WORDS, whole:
+
+"lets consider some other approaches. independent: 1. label binding in macros. this means a macro can take a
+label and, maybe, a label can be pre-defined as a symbol. A(l:,B) := [l = B] or A(l:) := /(?<:${l}>\d+)/ then
+A(x:) & (x: 5). this means row(dt:,"date", isodate) & (dt.year: 2000) 2. conditions allow expressions. perhaps
+row("date", isodate) & (row."date": 2000) or some expression on row to get the reference"
+
+Class: two PROPOSALS for discussion ("lets consider"), independent of each other; nothing ruled. Spellings are
+placeholders (`l:` on a parameter and at a call; `row."date"`). Approach 1 is the label-variable direction
+(core/operators/bindings/label-variables, his `A(x:) := (x: < 2100)` of 2026-11-22), now with the body SETTING
+the label (a part label `[l = B]`; the name of a label-only group through a name hole), and "maybe" a label
+pre-defined as a symbol (declared labels).
+
+Check-his-regex, RUN (a path model, `$PCREC_TMPDIR/scratch/pred/label_param.py`): `A(x:) & (x: 5)`, A(l:) :=
+`/(?<:${l}>\d+)/`: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2, `56` `5`@0 / FIND-ALL
+`5 7 56 15` [`5`@0, `5`@4, `5`@8]. His `(row."date": 2000)` in approach 2 tests the whole date's text against
+`2000`, which no ISO date is; his approach-1 line has `dt.year`: read as the same intent (told to him).
+
+The manager's readings (each marked, none ruled; told to him):
+- (a) Under approach 1 the caller WRITES the label's name in its own text (`x:`), so label-reference is met with
+  no source: `x`, `dt.year` are the caller's own names. That answers his "its not textually defined".
+- (b) The name is decoupled from the key: no legal-name restriction on the key, no array clash; `_t:` is the
+  caller's private label and works; four calls of `row` set four caller names, so no per-macro ambiguity.
+- (c) `dt.year` reads `year` through the label on the spot: argument-default's reading (d) (a spot the body
+  labels exports the argument's exported labels through that label).
+- (d) If the name hole in rx text takes a LABEL PARAMETER, a STRING there is no longer needed; the ruled
+  name-hole example (`n := "d"`) would be re-spelled; the ruling itself (an array is a compile error) stands.
+- (e) Approach 2 keeps the body naming by string (every k-restriction stays), needs ambiguity-per-name for
+  several calls, and meets value-left: left of `:` anything but a name or path is a VALUE today.
+
+### 2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules
+tags: core/operators/bindings/label-variables core/labels/one-rule core/labels/labels-vs-captures/array-vs-passes core/labels/flow lib/json/members
+
+HIS WORDS, whole: "lets tentatively work with it. it seems like label-paramter-twice is answered by standard same
+label twice rules"
+
+Class: a LEAN / working direction ("tentatively"), NOT a ruling: approach 1, the label parameter, is the form the
+discussion works with; and an OBSERVATION ("it seems") that one label placed twice follows the standard rules
+for a label mentioned twice. The piece stays under construction.
+
+The manager's readings, RUN (a path model, `$PCREC_TMPDIR/scratch/pred/label_param_twice.py`; A(l:) :=
+`/(?<:${l}>\d+)/`, the program `A(x:) SEQ "," SEQ A(x:)` with each test), each a reading for the fold to test:
+- the plain read is the last mention: `& (x: 5)`: WHOLE `7,5` HOLDS, `5,7` FAILS, `5,5` HOLDS / SEARCHED
+  `5,7 7,5` `7,5`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`7,5`@0, `1,5`@8, `5,5`@12]
+- a group question reads both settings: `& some((x: "5"))`: WHOLE `7,5` HOLDS, `5,7` HOLDS, `7,7` FAILS /
+  SEARCHED `7,7 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,2 5,5` [`7,5`@0, `5,7`@4, `5,5`@12]
+- the index is in order: `& (x[1]: 5)`: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,7`@4 / FIND-ALL
+  `7,5 5,7 1,5 5,5` [`5,7`@4, `5,5`@12]
+- across `&` (`A(x:) & A(x:) & (x: 5)`) the plain read is the ambiguous reference, a compile error
+  (core/labels/flow), hand-worked from the rule, no run.
+
+The JSONL exercise under approach 1 (the manager's sketch; the same hand-lowered model re-run, the same answers,
+the labels now the caller's own):
+    row(l:, k, v) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${l}>${v & value})${ws}(?:,${member_any})*\}/
+    line := json.row(ts:,   "ts",    quoted(tsdate))
+          & json.row(lvl:,  "level", quoted("error"))
+          & json.row(msg:,  "msg",   json.string & contains("timeout"))
+          & json.row(user:, "user",  json.value)
+          & (json.row(host:, "host", json.value) | anything)
+    capture(line.ts)  capture(line.user)  capture(line.host)
+    /^${line}$/m
+What it changes among the exercise's findings (readings): finding 1 (a label named by an argument) and finding 2
+(per-macro ambiguity) do not arise; the four `[(=) = ..]` lists go; a key that is no legal name is no obstacle.
+Left: findings 3 (a label inside an argument: bind and export first), 4 (the optional member), 5 (capture
+details), 6, 7. New questions it raises: must every call pass the label (`lvl:`, `msg:` are never read); a label
+the body never places; a label pre-defined as a symbol.
+
+### 2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement
+tags: core/operators/bindings/label-variables core/operators/bindings core/operators/bindings/call-forms core/modules/leave-out core/labels/export
+
+ASKED AS A RULING (slug label-parameter-omitted: may a call leave a label parameter out; the manager's leaning: no,
+with `_:` as the explicit "none", as the leave-out of a binding list). HIS WORDS, whole:
+
+"label-parameter-omitted: this is two+ questions. we currently don't have overloading so a macro defined for 3
+args needs three args. they can be omitted by row(,"level", ...) if we choose to allow that but not omitted under
+current macro call rules regardless of labels. i agree that _ should be the unspecified label- it also comments
+on your meaning. also, label args are not special by position or requirement. in theory, one could have 2 label
+args."
+
+Class, part by part:
+- A CORRECTION of the question ("this is two+ questions"): omitting an argument is a question about macro calls,
+  not about labels.
+- A STATEMENT of the current rule: "we currently don't have overloading so a macro defined for 3 args needs three
+  args"; not omitted "under current macro call rules regardless of labels". It agrees with the documents
+  (core/operators/bindings: "a call binds every required parameter or is a compile error naming the missing
+  one"; several bodies for one name is the open call-forms).
+- An IDEA, not ruled ("if we choose to allow that"): an empty argument position, `row(,"level", ...)`. Spelling a
+  placeholder. To be parked with a trigger.
+- A RULING on the part asked ("i agree that _ should be the unspecified label"): at a call `_` is the unspecified
+  label; his reason added: "it also comments on your meaning". The reading taken of his "agree": the leaning as
+  put (`row(_:, "level", ..)`).
+- A STATEMENT on the parameter kind: "label args are not special by position or requirement. in theory, one could
+  have 2 label args": a label parameter is a parameter like any other (any position, any number).
+
+The manager's readings (marked; for the fold to test):
+- (a) What `_` means inside the body follows from the forms already ruled: `[l = B]` with `_` is `[_ = B]`, which
+  makes none of B's labels visible outside B (core/labels/export statement 7); in rx text `(?<:${l}>...)` with
+  `_` is a plain non-capturing group. So `row(_:, "level", ..)` exports nothing of its value.
+- (b) Two `_` passed to one call, or `_` placed twice, never collide: `_` is the unusable name.
+- (c) A body that READS a label parameter (`A(x:) := (x: < 2100)`) called with `_` is a compile error at the
+  call: there is nothing to read.
+- (d) "Not special by requirement": a label parameter may be an optional keyword setting like any parameter, its
+  default `_` (`row(k, v, l: = _)`, spelling a placeholder), so a call may leave it out by the EXISTING call rule
+  (keyword arguments are optional settings with defaults). Not his words: a consequence to confirm.
+- (e) The reading "a `:` in a head is a compile error" (core/operators/bindings) is lifted by the label mark when
+  the parameter kind is built.
+
+### 2026-11-23 OWNER RULING — label-parameter-default: yes (a label may be an optional parameter); his spelling lean `l = ts:`
+tags: core/operators/bindings/label-variables core/operators/bindings core/spellings/placeholders core/conditions/form
+
+ASKED AS A RULING (slug label-parameter-default: may a label parameter be a keyword setting with the default `_`,
+so that a call leaves it out by the existing call rule; the manager's leaning: yes; the manager's placeholder at
+the call `l: ts`). HIS WORDS, whole:
+
+"label-parameter-default: yes you could use a label in an optional parameter. i lean towards ..., l = ts:) ...
+spelling for consistency and l: ts looks like a condition"
+
+Class: a RULING ("yes you could use a label in an optional parameter"): a label parameter may be an optional
+(keyword) parameter under the existing call rule. And a SPELLING LEAN, not a ruling ("i lean towards"): passed by
+name it is written `l = ts:` (the keyword form `name = value` with the label mark on the label), "for
+consistency", and because "l: ts looks like a condition". For the spellings review; the manager's `l: ts` is
+withdrawn as a placeholder.
+The manager's reading (marked): the default `_` for such a parameter is the author's to declare in the head
+(`row(k, v, l = _:)`, spelling a placeholder); his words rule the optionality, not which default.
+
+### 2026-11-23 OWNER, on capture-place: "i lean (a)" (an `&` operand); capture() takes a label arg; early capture is no crime
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/export/capture-export core/operators/bindings/label-variables core/labels/export/caller-ambiguous
+
+Asked **capture-place** (where the capture request stands: (a) an `&` operand, as his 2026-11-21 sketch
+`[ d = digits ] & capture(d)`; (b) a program statement; the manager's leaning (b), on his "select them early"
+truth). HIS WORDS, whole:
+
+"capture-place discussion: i lean (a) and note that capture() takes a label arg. i don't think its a crime for
+early capture. in practice, library developers would not include capture in their definitions. all captures
+would probably be defined by the end users as in your json example. therefore, they know what they are doing and
+can see the whole program and decide how to set captures."
+
+Class: DISCUSSION, in his word, with a LEAN ("i lean (a)"): the request is an `&` operand. A NOTE: "capture()
+takes a label arg" (read: its argument is a label, the label-parameter kind of the same day). An OPINION on the
+early case: not "a crime"; in practice captures are the end user's, who sees the whole program. NOT a ruling.
+The manager's leaning (b) is withdrawn: its ground was preventing the early case, which he does not want
+prevented.
+
+The manager's readings (marked): (a) `capture(l:)` is then call-shaped like any macro taking a label, standing
+where a condition stands and always holding; its effect (a caller capture) is native; (b) what (a) leaves to
+state is one label captured from a definition USED TWICE (or two requests of one name): put to him as slug
+capture-twice with the proposal "the caller's captures are one flat set of names under the same-label-twice
+rules". RUN for that question (python `re`, the two uses as `d1`, `d2`): `A SEQ "," SEQ A`, A := `[d = /\d+/] &
+capture(d:)`: WHOLE `7,5` HOLDS (first `7`, last `5`), `7` FAILS / SEARCHED `x7,5 1,2` `7,5`@1 (first `7`, last
+`5`) / FIND-ALL `7,5 1,2` [`7,5`@0 (`7`, `5`), `1,2`@4 (`1`, `2`)].
+
+### 2026-11-23 OWNER RULING — capture-twice: (a) (the same-label-twice rules); and an OBSERVATION: two kinds of label reference, one that sets a new group, one that refers to a group that exists
+tags: lib/structural/capture core/labels/export/caller-ambiguous core/operators/bindings/label-variables core/holes/bare-condition/nested-scope core/holes/bare-condition/bound-condition core/labels/one-rule
+
+ASKED AS A RULING (slug capture-twice: a caller capture name requested twice: (a) the caller's captures are one
+flat set of names under the same-label-twice rules: in a sequence the last mention, across `|` the branch taken,
+across `&` an ambiguous name, a compile error; (b) a compile error whenever two requests can give one name; the
+manager's leaning (a)). HIS WORDS, whole:
+
+"capture-twice: (a). but your example did make me question some details: row(a:,...) defines a: which doesn't
+exist. capture(l.d:) is intended as a reference to l.d. if capture is defined to take a label, should it be
+provided as capture(l.d)? then we have two different kinds of label references. one you can set to a new group
+and one that is a reference to a group that exists. the second one is dangerous and can't be used like the
+first. A(a:, B) := B & (a: 5) then C:= [x = /\d/] | A(/\w/, x)"
+
+Class: a RULING on capture-twice: (a). It answers the open caller-ambiguous for requested captures (the manager's
+reading (f) of 2026-11-22, "an error at the second request", is WITHDRAWN). And an OBSERVATION with a QUESTION
+(DISCUSSION, nothing ruled): two kinds of label reference: one "you can set to a new group" (`row(a:, ...)`
+"defines a: which doesn't exist"), one "a reference to a group that exists" (`capture(l.d)`; his question whether
+it is then written without the mark); "the second one is dangerous and can't be used like the first", with his
+example.
+
+Check-his-regex: his call `A(/\w/, x)` has the arguments in the other order than the head `A(a:, B)`; read as
+`A(x, /\w/)` (told to him). RUN (python `re`, hand-lowered: in the second branch of the `|` x is unset, so
+`(x: 5)` fails): `C := [x = /\d/] | A(x, /\w/)`, A(a:, B) := `B & (a: 5)`: WHOLE `5` HOLDS, `7` HOLDS, `a` FAILS
+/ SEARCHED `a5` `5`@1 / FIND-ALL `a 5 b7` [`5`@2, `7`@5]: the second branch never matches; C answers as `/\d/`.
+
+The manager's readings (marked; told to him): (a) the SET kind keeps the body inside bare-nested-scope (the body
+holds the spot it labels); the READ kind is an exception to it ("A separately defined piece names only labels it
+holds and reads only its own settings"): the body reads the caller's label as it stands at the body's spot,
+which may be unset there (his example) or an earlier pass's; (b) the read kind is what bound-condition's first
+alternative was (`A(x:) := (x: < 2100)`, 2026-11-22); the way that works today is passing the CONDITION, written
+and resolved in the caller's text; (c) a body may read its own label parameter after placing it.
+
+### 2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now
+tags: core/operators/bindings/label-variables core/holes/bare-condition/nested-scope core/holes/bare-condition/bound-condition lib/structural/capture core/spellings/placeholders
+
+ASKED AS A RULING (slug label-kinds, the statement put to him: the mark `a:` means the SETTING kind only (the
+call defines a new label in the caller's text; a body may read its own label parameter after placing it); a
+reference to an EXISTING label is written as a plain path, no mark (`capture(l.d)`); only native forms take a
+reference for now; a user macro reading a caller's label stays under construction (pass the condition:
+`A(c, B) := B & c`, `A((x: 5), /\w/)`); so `A(a:, B) := B & (a: 5)` is a compile error at the definition). HIS
+WORDS, whole:
+
+"label-kinds: yes, one mark meaning. the reference kind can be used by natives but stays off limits for users
+until we see a valid, safe set of rules for it."
+
+Class: a RULING. (1) One mark, one meaning: the marked label parameter is the setting kind. (2) The reference
+kind (a path to a label that exists) "can be used by natives" and "stays off limits for users until we see a
+valid, safe set of rules for it" (a direction kept open, with its trigger in his words). It REVISES the
+under-construction piece label-variables as recorded on 2026-11-22: his first alternative `A(x:) := (x: < 2100)`
+is the reference kind, now off limits for users; the spelling `x:` is the setting kind's.
+The manager's readings (marked; for the fold to test): (a) a body that reads a label parameter it never places
+is a compile error at the definition; (b) a marked argument at a call is ONE new name, never a path (`l.d:` is a
+compile error); (c) `capture` takes a reference: `capture(l.d)`, no mark; (d) the group questions and conditions
+are unchanged (their labels are written in the caller's text).
+
+### 2026-11-23 OWNER RULING — capture-name: a (the label's last step, with an optional rename)
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/export/capture-export core/diagnostics/warnings
+
+ASKED AS A RULING (slug capture-name: the caller's name for a requested capture: (a) the last step, with an
+optional rename, `capture(l.d)` gives `d`, `capture(l.d, name = "first")` gives `first`, the name a string; (b) a
+name always required; (c) the whole path is the name; the manager's leaning (a), adding a warning when two
+requests end in one last step and neither is renamed). HIS WORDS, whole:
+
+"capture-name: a"
+
+Class: a RULING: (a). The reading taken: the candidate as lettered (the last step; an optional rename by a
+string; the keyword spelling `name =` a placeholder). The warning the manager added beside the leaning was not
+part of the lettered candidate: NOT ruled; kept as the manager's proposal (a structural warning, moving no
+answer). With capture-twice (a): two requests of one last step, not renamed, give the caller the last mention.
+The manager's readings (marked): (a) a rename to a string that is no legal capture name is a compile error at
+the request; (b) two requests RENAMED to one name follow capture-twice as well; (c) an unset label gives the
+caller an unset capture (regex's own behaviour for a group that did not take part), not asked.
+
+### 2026-11-23 OWNER, reconsidering "the last mention" for requested captures: "perhaps it should define all labels as capture then the rules for multi capture hold"
+tags: lib/structural/capture core/labels/labels-vs-captures core/labels/export/caller-ambiguous core/labels/export/capture-export core/principles/regex-default
+
+Said after capture-loop-value was put to him (not answered by these words directly), about the consequence of
+capture-twice (a) the manager had printed under capture-name ("the caller then gets the last mention"). HIS
+WORDS, whole:
+
+"capture-name: i noticed a comment late about accepting the last reference. perhaps it should define all labels
+as capture then the rules for multi capture hold. that way alternations, captures followed by loops, etc can be
+specified as they can now"
+
+Class: a PROPOSAL ("perhaps"), reconsidering capture-twice (a) of the same day; NOT a ruling; capture-twice (a)
+stands in the record until he rules on the proposal. The reading taken (the manager's, told to him to confirm):
+a request for a capture name makes EVERY group that carries the label a capture under that one name, and the
+caller's value then follows regex's own rules for several groups of one name and for groups in loops ("the rules
+for multi capture", "as they can now"), not the label rules.
+Where the two part, from runs already made: `[l = A] SEQ "," SEQ [r = A]` on `7,5`: the label rules give the
+caller `5` (the last mention); PCRE's rule for two groups of one name gives `7` (core/labels/labels-vs-captures:
+"PCRE's FIRST SET group in pattern order, not the last set (run, libpcre2)"). The loop `/(?:(?<h>\d)?;)+/` on
+`3;;`: the label unset, PCRE's carried `3` (run, python `re`, today). An alternation: the branch taken under
+both.
+The manager's readings (marked): (a) it would REPLACE capture-twice (a) and answer capture-loop-value as (b),
+PCRE's carried value; (b) it removes the seam the manager flagged (one group returning one value as a one-literal
+program and another once composed): "The CAPTURE is regex's" is already the core's sentence; (c) across `&`,
+which PCRE does not have, "pattern order" would be left then right, his left-decides; not stated by him.
+
+### 2026-11-23 OWNER, an alternative to capture-as-pcre: `capture(@x.year)`, an array capture; "thoughts?"
+tags: lib/structural/capture core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export/capture-export core/spellings/placeholders
+
+Asked **capture-as-pcre** (requested captures follow PCRE's rules for several groups of one name and for loops,
+replacing capture-twice (a) and closing capture-loop-value as the carried value; the manager's leaning: yes). HIS
+WORDS, whole:
+
+"capture-as-pcre: one alternative is to allow capture(@x.year) specifying arrays to get that behavior. thoughts?"
+
+Class: an ALTERNATIVE for discussion (a PROPOSAL; "thoughts?"); nothing ruled; capture-as-pcre not answered. The
+spelling `@x.year` is his placeholder for the array of a name's settings (the documents' placeholder is
+`x.@a`): for the spellings review.
+RUN (python `re`; `/(?:(?<h>\d)?;)+/`): WHOLE `3;4;;` carried `4`, label unset, array [`3`, `4`]; `3;;` carried
+`3`, label unset, array [`3`]; `3;4;` carried `4`, label `4`, array [`3`, `4`] / SEARCHED `x3;4;;` `3;4;;`@1
+(carried `4`, label unset, array [`3`, `4`]) / FIND-ALL `3;4;; 7; ;` [`3;4;;`@0, `7;`@6 (carried `7`, label `7`,
+array [`7`]), `;`@9 (carried unset, label unset, array [])].
+The manager's thoughts (told to him; marked): (a) it mirrors the two reads the language already has of one name,
+the label and the array (array-vs-passes): `capture(x)` hands the caller what `(x: ..)` reads, `capture(@x)` what
+the group questions and `x[k]` read; no third rule set (PCRE's duplicate-name and carried rules) enters composed
+programs; capture-twice (a) stands and capture-loop-value closes as the label; (b) the array holds MORE than
+PCRE's rules give (every setting, in order); PCRE's carried value is recoverable from it where one group sets the
+name, so nothing is lost; (c) an array capture is a new thing for the ARTIFACT (a list of stretches per name; a
+match-API matter of pcrec proper, with a matching cost): its meaning can be acknowledged and its build left
+under construction; a line for main; (d) the seam stays: one literal alone returns PCRE's carried value, the
+same group requested in a composed program returns the label; the manager's leaning moves from capture-as-pcre
+to this alternative for reason (a).
+
+### 2026-11-23 OWNER RULING — array-capture: yes (`capture(x)` the label, `capture(@x)` the array, unbuilt); capture-as-pcre dropped; capture-loop-value closed as the label
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export/capture-export core/diagnostics/under-construction
+
+ASKED AS A RULING (the statement put to him: `capture(x)` is the label; `capture(@x)` is the array, its build
+under construction; capture-as-pcre is dropped; "say "array-capture: yes" and I'll record it as ruled, with
+capture-loop-value closed as the label"). HIS WORDS, whole:
+
+"array-capture: yes and i think it was a plan item to allow array captures in the future. unbuilt as you say. so
+then capture-as-pcre: as last label ?"
+
+Class: a RULING: array-capture: yes, "unbuilt as you say" (under construction). With it, by the statement he
+answered: capture-as-pcre (his own "perhaps" of the same hour) is DROPPED; capture-twice (a) STANDS;
+capture-loop-value is CLOSED as (a), the label. A RECOLLECTION ("i think it was a plan item"), CHECKED against
+the plan: confirmed, two rows: [CAPTURE-ARRAY] (filed 2026-10-13, Frank: a repeated capture group records every
+iteration; opt-in per group) and [ARRAY-CAPTURE] (filed 2026-11-09, Frank: "array capture for (X){M, N} perhaps
+using special syntax. Cap N become N capture groups. No unbounded"). And a QUESTION seeking confirmation ("so
+then capture-as-pcre: as last label ?"): answered yes by the manager, with the precise statement: `capture(x)`
+gives the caller the LABEL as a plain read at the end of the match gives it: among several spots the last
+mention; after a loop the last pass's OWN value, unset where that pass set nothing (`3;;`: unset, not `3`); the
+earlier `3` is in the array.
+The manager's readings (marked): (a) `capture(@x)` is a client of the two plan rows; [ARRAY-CAPTURE]'s "No
+unbounded" is his constraint on that row, and the array of settings of a `+` loop is unbounded: a point for the
+build, noted to main, not a predicate ruling; (b) the seam stands and is to be stated: a one-literal program
+returns PCRE's carried value, a requested capture in a composed program the label.
+
+### 2026-11-23 OWNER, on argument-export: "show me why ts.year doesn't work. doesn't ts: point to the provided pattern in place?"
+tags: core/labels/paths/argument-default core/labels/paths core/labels/export core/operators/bindings/label-variables core/conditions/match-so-far lib/convention/argument-labels
+
+Asked **argument-export** (the manager's statement: in `row(ts:, "ts", quoted(dates.isodate & between(..))) &
+(ts.year: 2024)` the read `ts.year` is a compile error "as the rules stand", isodate being used alone inside the
+argument's expression; candidates: bind first, or allow an export list in place). HIS WORDS, whole:
+
+"argument-export: show me why ts.year doesn't work. doesn't ts: point to the provided pattern in place?"
+
+Class: a QUESTION challenging the manager's statement (DISCUSSION); nothing ruled.
+The manager's answer (told to him): the statement was OVER-CLAIMED and is WITHDRAWN as a statement of the rules.
+The chain: (1) `ts` is on the spot of row's body that holds `v & value`; a labelled spot exports "the argument's
+exported labels through that label" (argument-default, the manager's reading (d)); (2) `quoted` passes its
+argument's labels on (transform-export, ruled); (3) the argument is the expression `dates.isodate &
+between(..)`, written IN PLACE in the caller's definition. The error came from reading "the argument's exported
+labels" as what a BINDING holding that expression would export (isodate used alone: nothing; default-export).
+But the documents have a nearer rule for an expression written in place and read in the SAME definition: "A part
+label over an EXPRESSION (`[ab = B | A]`) reads, inside the definition, the labels visible in it by the inside
+rules, and exports outward only what the expression's own text exports" (core/labels/paths; the printed
+`[ab = B | A] & (ab.l: <20)` reads `l` of parts used alone); and "An expression written in place (an argument, a
+hole's content) belongs to the definition it is written in" (core/conditions/match-so-far, a reading). Under the
+label parameter both the label `ts` and the argument's text are the CALLER's, so `ts.year` is an inside read and,
+by that rule, legal. The finding 3 of the JSONL exercise (2026-11-22) was written when the label was the body's
+and read from outside (`line.ts`); it does not carry over unchanged.
+Then the cases reverse from what the manager told him: IN PLACE reads by the inside rules; a BOUND argument
+(`tsdate := dates.isodate & between(..)`) exports nothing of isodate (default-export) unless it exports there.
+RUN (python `re`, a SIMPLIFIED model: the object reduced to its one member; the date set and the year test
+lowered by hand): WHOLE `{"ts":"2024-02-10"}` HOLDS, `{"ts":"2024-05-01"}` FAILS, `{"ts":"2023-02-10"}` FAILS /
+SEARCHED `{"ts":"2023-02-10"} {"ts":"2024-03-31"} {"ts":"2024-01-15"}` the second @20 / FIND-ALL the second @20,
+the third @40.
+Put to him as the restated slug argument-export: a caller's label on a spot that holds the caller's in-place
+argument reads that argument by the inside rules, as a part label over an expression does; the manager's leaning
+yes.
+
+### 2026-11-23 OWNER, on argument-export restated: "this is a confusing one"; he wants yes and wants it to make sense; asks the JSON example's current state
+tags: core/labels/paths/argument-default core/labels/paths core/operators/bindings/label-variables lib/json/members lib/structural/capture
+
+HIS WORDS, whole: "this is a confusing one. i want to say yes because i want that to work but i want also to make
+sure it makes sense. so your saying things must work the way we have defined them? whats the current state of
+the json example given your current understanding and a yes to this issue?"
+
+Class: DISCUSSION; a LEAN toward yes, explicitly conditional ("i want also to make sure it makes sense"); NOT a
+ruling. Two questions to the manager: whether the claim is that the existing definitions already give the
+answer; and the JSON example's current state under a yes.
+The manager's answer (told to him): (1) yes in this sense: the two rules are in the documents (a label over an
+expression reads inside by the inside rules; an argument written in place is the caller's text); what is NEW and
+the manager's is the step that a label parameter's spot counts as "a label over the caller's expression": the
+label parameter itself is his tentative direction, so this is a reading of how they combine, not something
+already defined. (2) the example as written to him, with each line's standing (ruled / his lean / the manager's
+reading / unbuilt); one consequence found while writing it: read from OUTSIDE `line` (`line.ts.year`) the year
+is not exported (isodate is used alone in line's text: default-export), so the inner reads and the capture
+requests are written INSIDE `line` (his "early capture is no crime"), or the whole search is one definition.
+
+### 2026-11-23 OWNER, on the JSON picture: "this aligns with my understanding"; three follow-ups (a condition on `_x`; the quotes; threading the label to string)
+tags: core/labels/paths/argument-default core/operators/bindings/label-variables core/labels/export lib/json/members lib/modifiers/quoted lib/search/contains
+
+Asked whether the JSON picture under a yes to argument-export makes sense as a whole. HIS WORDS, whole:
+
+"this aligns with my understanding. 1. if i were to add a condition to json.row(_x:, "msg", json.string) & (_x:
+contains("timeout") would that also work the same? 2. the string _x matched would have quotes around it ? 3. we
+could thread the label to string to get the unlabeled portion"
+
+Class: an AGREEMENT with the picture ("this aligns with my understanding"). The reading taken, told to him so he
+can object: argument-export is answered YES (a caller's label on a spot holding the caller's in-place argument
+reads that argument by the inside rules), his earlier "i want to say yes" having waited on the picture making
+sense. Then two QUESTIONS and an IDEA (DISCUSSION): "unlabeled" in 3 is read as "unquoted" (the text inside the
+quotes; phone autocorrect), told to him.
+The manager's answers (told to him):
+1. Yes, the same answers. RUN (python `re`; `$PCREC_TMPDIR/scratch/pred/msg_two_forms.py`; form A the filter
+   inside the argument, `json.row(_:, "msg", json.string & contains("timeout"))`; form B `json.row(_x:, "msg",
+   json.string) & (_x: contains("timeout"))`, the row's paths enumerated in PCRE's order, the last `msg` member
+   first): WHOLE `{"msg":"db timeout"}` HOLDS, `{"msg":"ok"}` FAILS, `{"msg":"timeout a","msg":"ok"}` HOLDS (x =
+   `"timeout a"`), `{"msg":"ok","msg":"x timeout"}` HOLDS, `{"a":1,"msg":"t\"q timeout"}` HOLDS / SEARCHED (the
+   five as one subject) the first @0 / FIND-ALL @0, @34, @65, @96: A and B identical in every mode. `_x` is the
+   caller's private label, readable in the definition that writes it. The one difference is where the rejection
+   happens (inside the spot, or after the chain's patterns), not what survives.
+2. Yes: `json.string` includes its quotes, so `_x` is `"db timeout"` with them (the raw reading; finding 6 of the
+   exercise). `contains` is unaffected.
+3. A provided form taking a label for the inside, e.g. `string(l:) := /"(?<:${l}>(?:[^"\\]|\\.)*)"/` (the
+   manager's sketch), used in place: `json.row(_:, "msg", json.string(body:))`. It raises the question put to
+   him as slug label-in-argument: a label parameter passed INSIDE an in-place argument. It meets the manager's
+   reading (a) of argument-default ("a part label written ON an argument at a call labels a template": a compile
+   error), which a yes would narrow or withdraw.
+
+### 2026-11-23 OWNER RULING — label-in-argument: sending an unbound label inside an argument is ok, and `_` on the outer spot does not affect it ("an accepted backdoor"); second thoughts on a label SET in an argument, to re-examine
+tags: core/labels/paths/argument-default core/operators/bindings/label-variables core/labels/export core/principles/label-names-spot lib/json/members
+
+ASKED (slug label-in-argument: a label parameter passed inside an in-place argument,
+`json.row(_:, "msg", json.string(body:)) & (body: contains("timeout"))`; whether `_` on the outer spot closes it
+"is part of this question"; the manager's leaning yes, held loosely). HIS WORDS, whole:
+
+"label in argument: this is an interesting one. your use of body was not what i was thinking but it did raise
+interesting points that need examination. the rule about passing a label and templates and such was when we set
+a label like B(a=B), not when we sent an unbound label. (honestly, i'm having second thoughts even about the
+label setting in an argument. whats the difference between A:=[f="frank"], ... B(A) and ... B(f="frank") ? lets
+re-examine after if for no other reason than to remind me of the issues. ) for this issue, sending the unbound
+label is ok and! i would say it wouldn't be affected by the _ as it becomes an accepted backdoor into the inner
+pattern- which is almost the whole point."
+
+Class, part by part:
+- An OBSERVATION: the manager's `body` sketch "was not what i was thinking" for his point 3 (threading the label
+  to string); what he had in mind is NOT recorded (not said); to ask.
+- A CLARIFICATION of his own ruling: "the rule about passing a label and templates and such was when we set a
+  label like B(a=B), not when we sent an unbound label": argument-default's template rule is about a label SET on
+  an argument (his `B(a=B)`, the documents' `B([a = A])`), not about an unbound label sent in.
+- SECOND THOUGHTS, not a ruling, with a REQUEST: "i'm having second thoughts even about the label setting in an
+  argument. whats the difference between A:=[f="frank"], ... B(A) and ... B(f="frank") ? lets re-examine after if
+  for no other reason than to remind me of the issues." The manager's reading (a) of argument-default (a part
+  label written on an argument is a compile error) is to be RE-EXAMINED with him; it stands meanwhile, marked.
+- A RULING on the issue asked: "for this issue, sending the unbound label is ok": a label parameter may be passed
+  inside an in-place argument. And his answer on `_` ("i would say"): it "wouldn't be affected by the _ as it
+  becomes an accepted backdoor into the inner pattern- which is almost the whole point": `_` on the outer spot
+  does not close a label the caller sent in.
+The manager's readings (marked; for the fold to test): (a) the sent label is the caller's own name, read bare
+(`body`); (b) placed once / twice / never by the receiving body: set once / the same-label-twice rules / the
+never-pass warning; (c) the backdoor passes `[_ = rx]` and a `_` part label alike, since both are ways the outer
+body declines to NAME the spot, and the sent label needs no name from it; whether it also passes a body that
+uses the argument ALONE (no label on the spot at all) is the natural extension: taken as yes (the backdoor does
+not depend on the outer body's cooperation), to confirm.
+
+### 2026-11-23 MANAGER — the re-examination he asked for: a label SET in an argument (`B(A)` with `A := [f = "frank"]` against `B([f = "frank"])`); no owner words
+tags: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/closed-argument core/operators/bindings/label-variables core/principles/label-names-spot core/principles/meaning-not-spelling
+
+What was ruled on 2026-11-22 (his words): the caller's read `A.d` for `B(A)` whose body uses its argument alone
+is an error; "A parameter like rx in a call B(rx) cannot be labeled because it's not being placed into the
+pattern." What was the MANAGER'S reading, not his ruling: (a) a part label written ON an argument at a call
+(`B([a = A]) & (a.d: ..)`) is a compile error; (b) a group written in an in-place argument is not the caller's to
+read bare (`B(/(?<d>\d)/) & (d: <5)`).
+The issues behind the error, as discussed then: the template may be placed once, twice, in a loop or a branch,
+or never, and the caller cannot see which from the call; the body may close the argument on purpose
+(closed-argument); a read by the argument's name names no spot in the caller's own text.
+What today's rulings change: (1) argument-export (yes): a caller's label on a spot reads the caller's in-place
+argument by the inside rules; (2) label-in-argument (ruled): an unbound label sent inside an argument is the
+caller's, read bare, through `_` as well. With (2), `lab(l:, x) := [l = x]` makes `B(lab(f:, "frank"))` legal,
+and it is `B([f = "frank"])` by expansion: refusing the second refuses a spelling (meaning-not-spelling).
+The manager's proposal put to him (slug argument-label; readings (a) and (b) to be WITHDRAWN on a yes): a label
+the caller WRITES in its own text inside an argument (a part label, a group of an in-place literal, a sent
+label) is the caller's own label, set where the body places the template: once, set once; twice, the
+same-label-twice rules; never, the never-pass warning. His ruled error STANDS: `B(A) & (A.f: ..)` with A :=
+`[f = "frank"]`: `f` is written in A's text, not the caller's, and the caller's text gives A no spot. So the
+difference between his two programs is whose text writes the label. The way out of the error is then the
+caller's own label on the argument (`B([a = A]) & (a.f: ..)`), without the body's cooperation.
+RUN (python `re`): `B([f = /\d/]) & (f: <5)`, B(rx) := `/${rx}xx/`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED
+`7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]. Placed twice, `pair([f = /\d/]) & (f: <5)`,
+pair(p) := `/${p},${p}/` (the last mention): WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 /
+FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8].
+
+### 2026-11-23 OWNER RULING — argument-label: yes (a label the caller writes inside an argument is the caller's own); and: these mechanisms ease his concern about the default hiding
+tags: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/closed-argument core/operators/bindings/label-variables core/labels/export core/labels/paths/label-reference
+
+ASKED AS A RULING (slug argument-label, the proposal of the re-examination entry above; the manager's leaning
+yes). HIS WORDS, whole:
+
+"argument label: yes. these mechanisms, a: and B(x=A), alleviates some of my concerns about the default hiding
+the internal labels. if you want to access the isodate arguments you can B(d=isodate) & (d.year: 2000) although
+in this case you could just B(isodate & (year: 2000))."
+
+Class: a RULING: argument-label: yes: a label the caller writes in its own text inside an argument (a part
+label, a group of an in-place literal, a sent label) is the caller's own label, set where the body places the
+template (once; twice, the same-label-twice rules; never, the never-pass warning). The manager's readings (a)
+and (b) of argument-default (2026-11-22) are WITHDRAWN; two-sources' first shape is re-settled (the in-place `d`
+is the caller's, read bare; the body's own is `B.d`); his ruled error (`B(A) & (A.d: ..)`) stands. And an
+OBSERVATION: "these mechanisms, a: and B(x=A), alleviates some of my concerns about the default hiding the
+internal labels" (default-export, 2026-11-22). His spelling `B(d=isodate)` is the documents' `B([d = isodate])`
+(a placeholder; for the spellings review: the label set written directly as an argument).
+Check-his-regex: in `B(isodate & (year: 2000))` the bare `year` is not written in the caller's text; under
+label-reference (ruled required, 2026-11-22) it is `B(isodate & (isodate.year: 2000))` (told to him). RUN
+(python `re`, hand-lowered, B(rx) := `/${rx}xx/`, isodate reduced to `\d{4}-\d\d-\d\d` with its year; both of
+his programs lower to the same pattern and test): WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED
+`1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx`
+[`2000-01-02xx`@0, `2000-12-31xx`@26].
+
+### 2026-11-23 OWNER, a proposal for the capture request's shape: `isodate & (isodate.year: capture("year"))`
+tags: lib/structural/capture lib/structural/capture/add-on core/conditions/form core/conditions/two-valued core/principles/no-absence core/operators/bindings/label-variables
+
+After the manager's check of his `B(isodate & (year: 2000))` (bare `year`; label-reference). HIS WORDS, whole:
+
+"good catch on my rx! for capture, would it be better to isodate & (isodate.year: capture("year"))"
+
+Class: a PROPOSAL as a question ("would it be better"): the capture request written on the SET side of a
+condition entry, the label on the left of `:` where labels are always named, the caller's name as the argument.
+Nothing ruled; capture-place (his lean (a), an `&` operand `capture(path)`) and capture-name (a) (ruled the same
+day on that shape) stand until he rules.
+The manager's thoughts (told to him; marked):
+- For it: (a) the label is named where conditions name labels, so `capture` needs NO reference-kind argument:
+  the one native use of the reference kind (label-kinds) goes away; (b) the rename is the argument itself, no
+  keyword; (c) it composes inside an entry (`(isodate.year: >= 2000 & capture("year"))`) and across a record;
+  (d) read as a filter, `capture("d")` is `anything` with an effect, so `digits & capture("d")` (`A & B` =
+  `A & (0: B)`) captures the stretch: his wrapper form and his after-the-fact form of 2026-11-21 become one thing.
+- Against, RUN (python `re`; `/(?<h>\d)?x/`): an entry on an ABSENT label fails (two-valued; "A set never
+  contains absence"), so the request would FILTER: as an entry `(h: capture("h"))`: WHOLE `3x` HOLDS, `x` FAILS /
+  SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2]; as an always-holding operand: WHOLE `3x` HOLDS, `x` HOLDS
+  (h unset) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5]. The JSONL `host` (an optional
+  member) is this case. Also: under `NOT` or `!` a request has no sensible meaning (an error or a warning); the
+  array request needs a left side (`@x`) the condition form does not have today.
+- Put to him as slug capture-absent: what a capture entry does on an absent label.
+
+### 2026-11-23 OWNER, on capture-absent: "its already kind of an exceptional piece. can one clean it: (h: capture("h")?)"
+tags: lib/structural/capture core/conditions/form core/conditions/two-valued core/conditions/quantified core/conditions/defaults core/patterns/quantifiers core/holes/value
+
+Asked **capture-absent** (what a capture entry does on an absent label: (a) fails like any entry; (b) never
+rejects; (c) keep the operand shape; the manager's leaning (b), flagged as an exception to no-absence). HIS
+WORDS, whole:
+
+"capture absent: its already kind of an exceptional piece. can one clean it: (h: capture("h")?)"
+
+Class: an OBSERVATION ("already kind of an exceptional piece") and a PROPOSAL as a question: the optional mark
+`?` on the request, `(h: capture("h")?)`, as the explicit way to say "the label may be absent". Nothing ruled.
+The spelling is a placeholder.
+The manager's thoughts (told to him; marked; from the rules, no new run: the two behaviours are the run lines of
+the previous entry): (a) read this way the plain `(h: capture("h"))` stays REGULAR (it fails on an absent label,
+(a) of capture-absent) and the exception is asked for by name, his method; (b) as the documents stand, `?` on a
+SET already has a meaning: `S?` is regex's optional, S or the empty text, and an entry on an absent label fails
+whatever its set ("A set never contains absence"), so `(h: anything?)` still fails on absence: his form needs
+its meaning stated; (c) the regular meaning nearest to it is an OPTIONAL TEST: regex's optional around the whole
+entry, which on a failed test is skipped (the value hole's sentence: "an optional around it is skipped"); a
+quantifier on a condition is the ruled compile error (2026-11-18) because an optional plain test silently
+vanishes; for a capture request vanishing-on-absence is the point; (d) the form that works with NO new rule is
+the ruled default: `(h = "": capture("h"))` (the default stands in for the absent label in that one test), with
+the reading that the request names the real label, so the caller gets an unset capture. Put to him as slug
+capture-optional.
+
+### 2026-11-23 OWNER, on capture-optional: he likes the defaults way; proposes the mark on the label, `(h?: capture("h"))`
+tags: lib/structural/capture core/conditions/defaults core/conditions/form core/conditions/two-valued core/spellings/placeholders
+
+Asked **capture-optional** (three ways to give his `capture("h")?` a meaning: 1 an optional form of the request;
+2 an optional test; 3 the ruled default, `(h = "": capture("h"))`; the manager's leaning 1). HIS WORDS, whole:
+
+"i actually like your thinking with defaults. i don't like adding syntax and semantics if i don't have to. and
+adding something to h that already exists is more congruous. what about (h?: capture("h"))"
+
+Class: a LEAN toward the defaults way (way 3: "i actually like your thinking with defaults"), with his REASONS
+("i don't like adding syntax and semantics if i don't have to"; "adding something to h that already exists is
+more congruous": the mark belongs on the label's side, where the default already is), and a PROPOSAL as a
+question: `(h?: capture("h"))`, the optional mark on the LABEL. Nothing ruled. The manager's leaning 1 is
+withdrawn (it added a form to `capture`).
+The manager's reading of the proposal (told to him; marked): a GENERAL entry form, not a capture form: `(h?: S)`
+holds when h is absent or its text is in S, for any set S; it is the default form without having to name a
+member of S (`(h = v: S)` with v in S), and it also covers a set with no member to name. Then `capture("name")`
+on the set side is `anything` with a request and needs no rule of its own for absence.
+RUN (a path model, `$PCREC_TMPDIR/scratch/pred/optional_label.py`; `/(?<h>\d)?x/`):
+- `(h?: <5)`: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6]
+- `(h = "0": <5)`, the default inside the set: the same in every mode
+- `(h: <5)`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6]
+- `NOT (h?: <5)`: WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS / SEARCHED `7x x` `7x`@0 / FIND-ALL `7x 3x x` [`7x`@0]
+(SEARCHED and FIND-ALL agree for the first three because the pattern itself backs off the digit: `7x` fails and
+the `x` alone at 1 matches with h absent; the plain form parts from them only WHOLE on `x`.)
+Put to him as slug optional-label.
+
+### 2026-11-23 MANAGER — CORRECTION to the entry above (the plain row and the note under the run lines were written before the run was read)
+tags: core/conditions/defaults core/conditions/form
+
+In the entry "OWNER, on capture-optional: he likes the defaults way", the line for `(h: <5)`, plain, and the
+parenthesised note after the four lines are WRONG and are withdrawn. The run's output (the same script) is:
+- `(h: <5)`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` FAILS / FIND-ALL `7x 3x x` [`3x`@3]
+The other three lines are as the run printed them. So the plain form parts from `(h?: <5)` in every mode: a
+stretch whose h is absent (`x`) is rejected by the plain form and kept by the optional one. Not told to the owner
+in the wrong form: the answer given to him used the run's output.
+
+### 2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/conditions/two-valued lib/structural/capture core/patterns/quantifiers
+
+ASKED AS A RULING (slug optional-label: `(h?: S)` holds when h is absent or in S, as a general entry form; the
+conservative edges proposed: `?` on a joint entry's label, on a value left of `:`, inside a group question are
+compile errors for now; if yes, the capture shape is `(h: capture("h"))`, `(h?: capture("h"))`, `rx &
+capture("name")`, replacing the `capture(path)` operand and its `name =` keyword; the manager's leaning yes). HIS
+WORDS, whole:
+
+"optional-label: yes. flag an item to see if this is a special form or general. eg. (h+: blah) might work but
+has no meaning as it takes the last form. all the other greedies, *, etc basically devolve to the same ?. you
+suggested that the left of the : in a condition is an expression which i agree with so i am wondering if this is
+just a logical extension of that or not"
+
+Class: a RULING: optional-label: yes. By the statement he answered, the capture request's shape is the set-side
+`capture("name")` (requires the label), `(h?: capture("name"))` (if present), `rx & capture("name")` (the
+stretch); the `capture(path)` operand of capture-place (his lean of the morning) and the `name =` keyword of
+capture-name (a) are REPLACED; capture-twice (a) and array-capture carry over (the array request's spelling
+under the new shape is not stated). And a FLAG he asks to be filed, an open item, slug optional-label-general:
+whether `h?` is a special form or the general case, the left of `:` being an expression (value-left, which he
+recalls and agrees with: "which i agree with"); his observations: `(h+: blah)` "might work but has no meaning as
+it takes the last form"; "all the other greedies, *, etc basically devolve to the same ?".
+The manager's first note on the flag (marked; from the rules, hand-worked, no run): under value-left as written,
+left of `:` a bare name or path is a LABEL and any other expression is a VALUE. Read as a value, `$h?` is regex's
+optional of the read: h's text, or the EMPTY text when h is unset ("an optional around it is skipped"), and the
+entry then tests the empty text: `($h?: <5)` on an absent h FAILS (the empty text is no numeral), where the ruled
+`(h?: <5)` HOLDS. So the two part unless the set holds the empty text: as the rules stand `h?` is a form of its
+own on the LABEL, not the value expression `$h?`. To examine: whether the general reading should be made to
+agree, and what `h+` / `h*` denote (his "the last form"; as values, `$h+` is repetition of h's text).
+
+### 2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words
+tags: core/holes/flags core/holes/flags/in-filter core/patterns/flags core/patterns/literals core/model/places core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/paths/closed-argument core/labels/export lib/convention/argument-labels lib/sets/prefix-in lib/builtin/options lib/rx/repeat core/diagnostics/warnings
+
+The draft is `$PCREC_TMPDIR/scratch/crit-predspot1122/review.md` (frozen at e6e95a2c5; no finding REJECTED). Each
+line is the manager's ruling of a PROPOSED disposition. Two lanes take them: the FIX lane predfix84 (it files the
+review) and the FOLD lane that follows it (the rulings of 2026-11-22 late and 2026-11-23), because argument-label
+(ruled 2026-11-23) WITHDREW readings (a) and (b) of argument-default and so overtook part of the labels group.
+
+FIX-NOW, lane predfix84 (documents):
+- A1: reading (e) of hole-flags is scoped: a binding of the same file has the same defaults only where no
+  `@options` statement stands between the binding and the hole; whether the statement may stand mid-file is the
+  open options-position.
+- A2: for FLAGS a binding is its expression where it is WRITTEN, plus an explicit `i` from the hole; "where it is
+  used" stays for matching only (core/holes/flags/in-filter, core/model/places' binding row); a line that shows it.
+- A3: core/patterns/flags' "No implicit extended mode" and core/patterns/literals' "means exactly what PCRE means"
+  are conditioned on the file's program options; details name RULING C2 (2026-11-14) as revised in part by
+  program-options. The consequence (a library literal's meaning is no longer readable off the literal alone) is
+  told to the owner.
+- A5: `prefix_in` (and `suffix_in`, `slice_in`) lay S into a hole as `quoted` does, so S is PLACED and gets the
+  list. This CORRECTS the exemption list the manager gave with wrapper-export ("the set arguments (`between`,
+  `prefix_in`, ...)"): `prefix_in` leaves it. A reading, marked; no printed match moves (labels only).
+- A6: ONE statement in core/patterns/flags naming the sources of a flag at a point, in order (the literal's own
+  text; an explicit `i` or `-i` from the hole; the file's program options from the statement on; the file default).
+  (1) `r` and the a-family are NOT inherited (his hole-flags words: "only an explicit `i` or `-i`"); details'
+  P29-2 line marked superseded. (2) an `i` made by an option hole and (3) program options on string constants and
+  on an argument literal a library body places: listed OPEN (slugs option-hole-explicit, options-reach-constants),
+  no answer applied. (4) `pattern($x)` carries the flags in force where the group is written (the piece's own
+  sentence; a reading). (5) repeated statements and turning a flag off: OPEN, options-position.
+- A8: `pcrec.flags.filter` fires under an inherited `-i` by the same comparison (a reading; the trigger is the
+  manager's call); one clause.
+- C1, C2, C6, C7: as proposed (details marks; call-prefix case 2 is REVISED, not "settled").
+- C8: the format rule stands ("the base never carries history"): the revision marks named move to the details
+  entries; the label-names-spot quote gets its antecedent ("A parameter like rx in a call B(rx) cannot be labeled
+  because it's not being placed into the pattern.").
+- D1, D3, D4, D5, D6, D7, D8(e): as proposed. G2's doc fix (parked/ideas/severity-table: its trigger has fired,
+  said so). G4: a parked piece (a pass-through mark in a macro's head), trigger as the review gives it.
+FIX-NOW, lane predfix84 (the successor evidence model): B1 (parameters alpha-renamed at lowering; a rename drill
+in the grid), B2 (a two-step path through a part label), B3 (label-reference one argument deep), B4 (`@options`
+position for arguments and macro bodies), B5 (grid arms that can fail; a real undecided arm; one plant per
+repaired arm), B7 (the sweep fails on any non-same status not declared; history and `rejected:` lines skipped).
+
+OVERTAKEN by argument-label (2026-11-23), handed to the FOLD lane with the finding's id:
+- A4: `rx.repeat([a = rx.digit], min = 1)` then `a` is LEGAL again (the caller's own label, set where the body
+  places the template: in a loop, the loop's label rules). His "yes" of 2026-11-17 stands; reading (a) is
+  withdrawn. The review's owner question repeat-label is NOT asked: the record answers it.
+- A7: the sentence "what an argument exports" moves into core/labels/export, rewritten under argument-label,
+  argument-export and label-in-argument; each shape the review lists is closed as ruled, a marked reading or open.
+- C3: readings (a) and (b) are withdrawn, not re-marked. C5 and D2: an in-place group is the caller's own again;
+  the sentences are rewritten by the fold (capture-export moves "stays a capture" as well).
+- C4: the mark is fixed by the fold ("`A.d` legal where the body labels the spot" rests on closed-argument (a),
+  which he ruled on the statement "legal in the caller exactly where `d` is visible through the call"; WHICH spots
+  make it visible is the manager's reading). The review's question spot-read-name goes to the queue, low: the
+  caller's own label (`B([a = A])`, `a.d`) is now the way that needs no reading.
+PLAN (no lane now): B6 (nullable arguments in looped spots: the EVID-4 row), D8 (a one-owner pass at the next
+full revision), G1 (three conventions under lib/convention: at the next full revision), G2's table of file
+settings. NOTED: G3.
+OWNER QUESTIONS kept (queued, not urgent): option-hole-explicit, options-reach-constants, options-position,
+spot-read-name. The three lessons for the guide go to main (to_main.md).
+
+### 2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/values/tuples core/operators/bindings core/operators/bindings/call-forms core/conditions/two-valued parked/ideas/kleene-completion
+
+Asked **optional-label-general** (candidates: (a) `?` the only mark, on a label path, `h+` / `h*` compile errors
+for now; (b) his "devolve" reading; (c) a settings reading on the bare label; the manager's leaning (a); the run
+`$PCREC_TMPDIR/scratch/pred/optional_general.py`). HIS WORDS, whole:
+
+"I think the ? In conditions is a special case, but I'm trying to figure out how special. And where is it
+located: after the label or before the colon? (a,b)?: (...) or (a?,b):...  default x=4 didn't make sense with one
+label but it might with multiple. Could the ? Meaning be used in macro arguments to define optional positional
+args without defaults? Then conditional and macro arg definitions looks closer ( not the same). Also, do value
+definitions require exactly one label or at least one? ("Frank": ...) silly but useful for generated code.
+Thoughts."
+
+Class, part by part (DISCUSSION throughout; he asks for "Thoughts"; NOTHING RULED, optional-label-general not
+answered by letter):
+- A LEAN: "I think the ? In conditions is a special case" (toward the mark being a form of its own; "how
+  special" is open in his words).
+- A QUESTION: where the mark sits, after the label or before the colon: `(a,b)?: (...)` or `(a?,b):...`.
+- An OBSERVATION: "default x=4 didn't make sense with one label but it might with multiple".
+- An IDEA as a question: the `?` meaning for macro arguments, "optional positional args without defaults", so
+  that a condition and a macro head "looks closer ( not the same)".
+- A QUESTION: must a value left of `:` name exactly one label or at least one; `("Frank": ...)`, "silly but
+  useful for generated code".
+
+What the record and the documents already hold (checked before answering):
+- A default on one part of a joint entry is RULED (2026-11-16, "unset-component: yes", on `(h, m = 0): R`): "an
+  unset label fails the condition, single or joint, unless the author wrote a default for it".
+- The mark dropped on 2026-11-16 ("Drop-mark: yes") was written per part, `((h, m?): R)`, with the meaning "some
+  value the label could hold": not a test of one row. Yesterday's `(h?: S)` (absent or in S) is a one-row test.
+- value-left's parse (a reading): left of `:` a bare name, a number or a label path is a LABEL, any other
+  expression a VALUE; nothing says a value must read a label, so `("Frank": S)` is a value with no label by the
+  sentence as written (the manager's reading, not ruled); `(5: S)` is the LABEL 5 (a group number), `("5": S)`
+  the value.
+- call-forms (open, 2026-11-19), candidate (b): one head per name "needs a value or an absent setting for "no
+  maximum" and "no width"": an optional parameter without a default is that absent setting.
+
+RUN (a path model, `$PCREC_TMPDIR/scratch/pred/optional_place.py`; `/(?<a>\d)?,(?<b>\d)?/`, the set `>= (5, 3)`,
+output pasted):
+- plain `((a, b): >= (5, 3))`: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` FAILS, `,9` FAILS, `5,` FAILS,
+  `2,` FAILS, `,` FAILS / SEARCHED `5,1 ,1 6,0` `6,0`@7 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,4`@4]
+- the mark before the colon, `((a, b)?: >= (5, 3))`, holding when a part is absent: WHOLE `6,1` HOLDS, `5,3`
+  HOLDS, `5,1` FAILS, `,1` HOLDS, `,9` HOLDS, `5,` HOLDS, `2,` HOLDS, `,` HOLDS / SEARCHED `5,1 ,1 6,0` `5,`@0 /
+  FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,`@0, `5,4`@4, `,1`@8, `2,`@11, `7,`@14]
+- a default on one part, `((a = 5, b): >= (5, 3))`: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` FAILS, `,9`
+  HOLDS, `5,` FAILS, `2,` FAILS, `,` FAILS / SEARCHED `5,1 ,1 6,0` `6,0`@7 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,4`@4]
+`("Frank": /F.*/)`: python `re.fullmatch` True; against `/G.*/` False (a test fixed at compile time).
+
+The manager's thoughts (told to him; each marked, none ruled; for the fold to test only if he rules):
+- (a) The mark belongs BEFORE THE COLON, on the entry's left part as a whole: "the entry holds when its left part
+  has no value". One label: `(h?: S)` as ruled. A joint: `((a, b)?: R)` holds when a part is absent. A value:
+  `(($a + $b)?: <10)` holds when the value is nothing. Per-part absence in a joint is the ruled DEFAULT (the author
+  supplies the witness: his observation); a per-part mark `(a?, b)` has only the dropped mark's meaning.
+- (b) In a search the mark lets the pattern DROP an optional group to pass (`5,1`: `5,`@0 above): regex's
+  behaviour, to be said in the piece.
+- (c) For macro heads: an optional positional parameter without a default (`repeat(x, min, max?)`) answers
+  call-forms (b)'s "absent setting"; what an absent argument IS depends on where the body lays it (a count bound
+  left out; the empty pattern in a sequence; `anything` beside `&`; `_` for a label, ruled): a table by position,
+  not one value. A direction, not asked as a ruling.
+- (d) A value left of `:` reads zero or more labels; with none it is fixed at compile time and draws
+  `pcrec.test.always` / `pcrec.test.never`; bound alone it names no label, so bound-condition does not refuse it.
+Put to him as slug optional-place.
+
+### 2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/operators/precedence core/patterns/quantifiers core/spellings/placeholders core/conditions/two-valued
+
+ASKED AS A RULING (slug optional-place: is the mark the entry's, written before the colon, meaning "the entry
+holds when its left part has no value"; `(a?, b): R` a compile error pointing at the default; `h+` / `h*` refused
+for now; the manager's leaning yes). HIS WORDS, whole:
+
+"Before the colon: then perhaps it's an alternative operator to the colon like :  ?:  rather than a separate
+operator. I like that because then we aren't using ? For two different meanings"
+
+Class: an ANSWER on the place ("Before the colon:"), taken as the ruling on optional-place's first part: the mark
+is the entry's, before the colon (the reading taken, told to him so he can object). And a PROPOSAL with a LEAN
+("perhaps"; "I like that"): it is not a mark on the left part at all but a second ENTRY OPERATOR beside `:`,
+spelled `?:`, his reason: "then we aren't using ? For two different meanings" (`?` stays regex's optional and
+nothing else). The spelling is a placeholder. Not ruled by these words: the operator form itself (his "perhaps"),
+the joint and value cases, `(a?, b)`, `h+` / `h*`.
+
+The manager's thoughts (told to him; each marked, none ruled; hand-worked from the rules and from runs already in
+the record, no new run):
+- (a) Two entry operators: `p: S` (the left part has a value and it is in S) and `p ?: S` (the left part has no
+  value, or it is in S). Nothing about the left part changes: a label path, a joint, a value, each as today.
+- (b) It closes optional-label-general as "special, and not a quantifier": there is no `h?` to generalise, so
+  `h+` / `h*` do not arise; `(a?, b)` is not a form.
+- (c) `NOT (h ?: S)` is "h present and outside S", the answers of `(h: !S)`: yesterday's run of `NOT (h?: <5)`
+  (WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS) against the printed table of core/conditions/two-valued for
+  `(h: !<5)` (`x` / `3x` / `7x`: FAILS / FAILS / HOLDS).
+- (d) A default with it, `(h = v ?: S)`, is a default that can never be used: `pcrec.default.unused` (a warning
+  exists for that), or an error; the manager's call later.
+- (e) The token: `?:` is read whole, so a postfix `?` on a value directly before a colon needs parentheses; in
+  rx text `(?:` is untouched (the operator is of the expression language only).
+- (f) The macro-head idea of the previous entry (`max?`) would then be a different use of `?` from the entry
+  operator: "closer, not the same" gets a little further apart; noted for when call-forms is taken up.
+- (g) The capture request: `(h ?: capture("h"))`.
+
+### 2026-11-23 OWNER, on string-label: the row's label argument is set to the unquoted portion; "we'd need to send it to through to the string binding"
+tags: core/operators/bindings/label-variables lib/json/members core/labels/one-rule core/patterns/alternation core/principles/language-over-macros
+
+Asked **string-label** (what he meant on 2026-11-23 by "we could thread the label to string to get the unlabeled
+portion"; two guesses offered: the row's own label goes inward; something on `string` itself). HIS WORDS, whole:
+
+"String label: i liked your example but what i had in mind was that the row() label arg would be set to the
+unquoted portion of the string. Then all three value types would point directly at the data without json forms
+around it. In order to do that, i was saying we'd need to send it to through to the string binding."
+
+Class: a CLARIFICATION of his own remark (DISCUSSION; a design intent for the JSON library, not a language
+ruling): the label given to `row` is set on the DATA (for a string, the text inside the quotes), so that "all
+three value types would point directly at the data without json forms around it"; the means: the label is sent
+on from `row` "through to the string binding". "unlabeled" of 2026-11-23 was "unquoted" (confirmed by "the
+unquoted portion"). His "i liked your example" is about the manager's `json.string(body:)` sketch (a label sent
+by the caller inside an argument, ruled legal as label-in-argument); it was not what he meant.
+
+The manager's reading (marked; told to him): the LANGUAGE point in it is one a ruling does not yet state: a body
+passing its own label parameter ON to another macro's label parameter (`row`'s body calling `string(l:)`). The
+manager's sketch of the library under it (placeholders; the library's shape is his "not too deeply into any one
+macro"):
+    string(l:)  := /"(?<:${l}>(?:[^"\\]|\\.)*)"/
+    number(l:)  := /(?<:${l}>-?\d+(?:\.\d+)?)/
+    literal(l:) := /(?<:${l}>true|false|null)/
+    value(l:)   := string(l:) | number(l:) | literal(l:)
+    row(l:, k, f = anything) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}${value(l:) & (l: f)}${ws}(?:,${member_any})*\}/
+    json.row(msg:, "msg", contains("timeout"))      json.row(n:, "count", <5) & (n: >2)
+The label is then placed three times across a `|` (the branch taken sets it: one-rule), and the third argument is
+a filter on the DATA, read by the body after it places the label ("a body may read its own label parameter after
+placing it", in the label-kinds statement he ruled).
+
+RUN (python `re`, HAND-LOWERED and simplified: the object reduced to its one member `v`;
+`$PCREC_TMPDIR/scratch/pred/label_forward.py`; the program `json.row(v:, "v") & (v: "ok" | <5)`; output pasted):
+- the label on the data: WHOLE `{"v":"ok"}` HOLDS, `{"v":3}` HOLDS, `{"v":7}` FAILS, `{"v":"no"}` FAILS,
+  `{"v":true}` FAILS, `{"v":"3"}` HOLDS / SEARCHED `{"v":7} {"v":"ok"} {"v":3}` `{"v":"ok"}`@8 (v = `ok`) /
+  FIND-ALL `{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}` [`{"v":"ok"}`@0, `{"v":3}`@19, `{"v":"3"}`@38]
+- the label on the raw value (json.string as it stands): WHOLE `{"v":"ok"}` FAILS, `{"v":3}` HOLDS, `{"v":7}`
+  FAILS, `{"v":"no"}` FAILS, `{"v":true}` FAILS, `{"v":"3"}` FAILS / SEARCHED the same subject `{"v":3}`@19
+  (v = `3`) / FIND-ALL the same subject [`{"v":3}`@19]
+A consequence the run shows: on the data the string `"3"` and the number `3` read alike (`{"v":"3"}` HOLDS under
+`<5`); telling them apart needs the type.
+Put to him as slug label-forward.
+
+### 2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)
+tags: core/operators/bindings/label-variables core/labels/one-rule core/patterns/alternation core/labels/flow core/conditions/form core/holes/pattern lib/json/members
+
+ASKED AS A RULING (slug label-forward, the statement put to him: a body may pass its label parameter on to
+another macro's label parameter; that counts as placing it, and the usual rules apply to wherever it lands: once,
+set once; several times in sequence, the last mention; across `|`, the branch taken; across `&`, an ambiguous
+read, a compile error; never, the never-pass warning; the manager's leaning yes). HIS WORDS, whole:
+
+"Label forward: yes. Most of this could be achieved using the row third argument. Questions 1. could i then use
+this on the line call to filter combined arguments. That would've not been possible using row third arguments
+alone. 2. could i request multiple fields in a row argument meaning "or" i suppose"
+
+Class: a RULING: label-forward: yes, on the statement as put. An OBSERVATION: "Most of this could be achieved
+using the row third argument." Two QUESTIONS (DISCUSSION; nothing ruled by them).
+
+The manager's answers (told to him; each a reading of the rules as they stand, RUN on a HAND-LOWERED model, flat
+objects only, a row's paths taken in PCRE's order (the greedy member loop reaches the LAST fitting member first):
+`$PCREC_TMPDIR/scratch/pred/line_combined.py`; output pasted):
+1. Yes. The labels are the caller's own names, written in the line's text, each set by one side of the `&`, so a
+   condition over two of them is an ordinary entry (no ambiguous reference: no name is surfaced by both sides).
+   `json.row(lo:, "lo") & json.row(hi:, "hi") & (lo: <$hi)`: WHOLE `{"lo":3,"hi":7}` HOLDS (lo=`3`, hi=`7`),
+   `{"hi":7,"lo":3}` HOLDS (lo=`3`, hi=`7`), `{"lo":7,"hi":3}` FAILS, `{"lo":3}` FAILS, `{"lo":"3","hi":"7"}`
+   HOLDS (lo=`3`, hi=`7`), `{"lo":3,"x":true,"hi":7}` HOLDS (lo=`3`, hi=`7`) / SEARCHED
+   `{"lo":7,"hi":3} {"hi":9,"lo":8}` `{"hi":9,"lo":8}`@16 / FIND-ALL
+   `{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}` [`{"lo":3,"hi":7}`@0, `{"hi":2,"lo":1}`@41]
+2. Yes, as the rules stand: the key is laid into a pattern hole, where several values are one alternation
+   (core/holes/pattern), and the label is no longer tied to the key (the label parameter).
+   `json.row(x:, "a" | "b") & (x: <5)`: WHOLE `{"a":3}` HOLDS (a=`3`), `{"b":3}` HOLDS (b=`3`), `{"a":7,"b":3}`
+   HOLDS (b=`3`), `{"a":3,"b":7}` HOLDS (a=`3`), `{"a":7,"b":8}` FAILS, `{"c":3}` FAILS / SEARCHED
+   `{"a":7,"b":8} {"a":3,"b":7}` `{"a":3,"b":7}`@14 / FIND-ALL `{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}`
+   [`{"a":3}`@0, `{"b":4,"a":9}`@30]. Without the test, which member x holds: WHOLE `{"a":3,"b":7}` HOLDS
+   (b=`7`), `{"b":7,"a":3}` HOLDS (a=`3`), `{"c":3}` FAILS: the LAST fitting member in the object's order, not the
+   first key written in the alternation; a rejecting test moves to an earlier one. Which key matched is not known
+   to the caller unless the key's spot gets a label of its own (a second label parameter; his "in theory, one
+   could have 2 label args").
+
+RUN for the question put next (slug capture-negated; `$PCREC_TMPDIR/scratch/pred/capture_negated.py`, the
+optional-label path model, `/(?<h>\d)?x/`; output pasted):
+- `NOT (h: capture("h"))`, the request ignored, `capture(..)` as `anything`: WHOLE `x` HOLDS, `3x` FAILS, `7x`
+  FAILS / SEARCHED `3x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `x`@4, `x`@6]
+- `(h: !capture("h"))`, the complement of `anything` is the empty set: WHOLE `x` FAILS, `3x` FAILS, `7x` FAILS /
+  SEARCHED FAILS / FIND-ALL `7x 3x x` []
+- `(h: capture("h"))`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` HOLDS / SEARCHED `3x x` `3x`@0 / FIND-ALL
+  `7x 3x x` [`7x`@0, `3x`@3]
+
+### 2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation"
+tags: lib/structural/capture core/filters/negation core/filters/complement core/conditions/two-valued core/operators/statements lib/control/when core/diagnostics/errors
+
+ASKED AS A RULING (slug capture-negated: a capture request under `NOT`, under `!`, or inside a group question:
+(a) a compile error for now; (b) legal with the request ignored and a warning; the manager's leaning (a); the run
+lines of the previous entry). HIS WORDS, whole:
+
+"capture-negated: broaden to any effect macro cannot be under negation."
+
+Class: a RULING, broader than the question: an EFFECT macro cannot stand under negation (a compile error; the
+reading taken of "cannot": candidate (a)'s refusal, generalised from the capture request to every effect). The
+part of (a) about a group question (`some((h: capture("h")))`) is not in his words: it stays the manager's
+proposal (a compile error for now), marked, not ruled.
+The manager's readings (marked; for the fold to test):
+- (a) An EFFECT is a form whose meaning is more than which texts it accepts. Today's members: the capture request
+  (`capture("name")`, and the array request, unbuilt) inside an expression; the `@` statements (`@warn`,
+  `@options`, `@export`, the assertions) are effects too but stand alone as statements (core/operators/statements),
+  so they cannot be under a negation already.
+- (b) "Under negation": inside the operand of `NOT` (a condition, a peek) or of `!` (a set, a pattern), at any depth.
+- (c) An edge to put to him, NOT decided: a provided body that lays one argument both plainly and under a
+  negation: `when(test, then)` is `(test SEQ then) | (NOT peek(test) SEQ else)`, so a test that carries a capture
+  request reaches the guard's `NOT peek(test)`. Candidates: the rule refuses it (written where the body puts it);
+  or the guard copy drops the request (labels under a negation are never visible already). Slug effect-in-guard.
+
+### 2026-11-23 MANAGER — two notes after capture-negated (the guard edge taken literally; the array request's placeholder); no owner words
+tags: lib/structural/capture lib/control/when core/filters/negation core/labels/labels-vs-captures/array-vs-passes core/spellings/placeholders
+
+- effect-in-guard is NOT asked: his words cover it as written ("any effect macro cannot be under negation"), and
+  the conservative reading costs nothing: a `when` test that carries a capture request reaches the body's
+  `NOT peek(test)` and is a compile error (the manager's reading, marked; relaxing it later changes no answer).
+  The way to write it with forms that exist: the test without the request, the request after the call through the
+  call's name (lib/control/when: "Labels the test sets are visible after the call through it (`when.h`)"), with
+  the `?:` operator since the else branch leaves the label unset: `when(/(?<d>\d)/, ..) & (when.d ?: capture("d"))`.
+  Told to him in one line.
+- The array request in the set-side shape is NOT asked either (array captures are unbuilt; "all" as a group
+  question was retired on 2026-11-16, "all-question: retire", and "all" is the condition on the item, 2026-11-17,
+  so no general set is proposed right of an array). The fold writes his own spelling of 2026-11-23 moved to the
+  left part, as a PLACEHOLDER and a reading, under construction: `(@x.year ?: capture("years"))`, an array left
+  part taking only a capture request for now.
+
+### 2026-11-23 OWNER, on two-sources (second shape): "isn't the A.h not visible bare?"
+tags: core/labels/paths/two-sources core/labels/paths/label-reference core/labels/flow
+
+Asked **two-sources** (`/(?<h>\d)/ SEQ A & (h: <5)`, A := `/,(?<h>\d)/`: (a) the last mention, A's `h`; (b) the
+group written here; the manager's leaning (b); the two printed lines of core/labels/paths/two-sources). HIS
+WORDS, whole:
+
+"two-sources: isn't the A.h not visible bare?"
+
+Class: a QUESTION that answers the question from the record (not a new ruling). The manager's answer (told to
+him): yes. label-reference, ruled 2026-11-22 ("label-reference: required. we can relax it later as you say
+although i'm not inclined to."): "A label not written in the text of the definition that references it is
+referenced with its source: `chars.ch`, not `ch`". A's `h` is not written in the referencing definition, so it is
+never read bare; the bare `h` can only be the group the definition writes: candidate (b), with the answers of the
+printed line (b) (WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9`
+[`1,7`@0, `1,2`@8]). The question should not have been asked: the record answered it. two-sources' second shape
+is CLOSED by the manager on label-reference (no new owner ruling; he may object). What the fold changes: the
+flow sentence "Across the sequence operator a name both parts surface is one label, the last mention" is stated
+for names read at ONE level (the definition's own groups read bare; a part's labels read through one prefix or one
+label over the composition), never across the bare / sourced line; candidate (a)'s line goes to rejected.

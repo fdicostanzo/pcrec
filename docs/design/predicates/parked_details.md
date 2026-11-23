@@ -615,6 +615,7 @@ history:
     whichever comes first.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r42 (C3), the manager's disposition; nothing for rulings:.
+- 2026-11-23 (lane predfix84, review r84 G2; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a bullet: its trigger has fired (program-options, 2026-11-22, a design step on `@options`); the table of file settings (review r84 G2, FIXIND-14 (1)) is the manager's PLAN, not made; this table its warning column.
 
 ## parked/ideas/user-doc-traps — For the user documentation: the things a reader will get wrong
 slugs: 
@@ -622,9 +623,11 @@ rulings:
 - 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); his observation (discoverability, not a ruling) puts the "same item" idiom on this list: item 30
 - 2026-11-17 (class: PRINCIPLE, reflections) "Also, I and try to keep this in mind, it's a matching language not a finding language." (record: "2026-11-17 OWNER, on what kind of language this is")
 - 2026-11-17 (class: RULING; the trap a remark) "if there was a warning like blah.unused, the library could define mod.fn.unused and both could be ignored. Not sure if that's helpful or dangerous." (record: "2026-11-17 OWNER RULING — warnings: the list accepted; library warnings are named by the library path")
+- 2026-11-22 "transform-export: yes. hide(x) := /${x}/ identity(x) := /${[(=) = x]}/" (record: "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"); his two definitions, read as the two cases in their smallest form; NOT ruled as provided names; onto this list (the reading taken, told to him).
 rejected:
 readings:
-evidence:
+- a user's macro gets none of the provided library's convention unless its author writes the list — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py USERMACRO).
+evidence: docs/dev/lanes/predspot_evidence/ predspot_model.py USERMACRO (lane predspot).
 history:
 - the ideas file (`docs/design/predicates_future.md`) item 24, "For the user documentation: the things a reader will get wrong unless told", whole:
 
@@ -780,6 +783,8 @@ history:
 - 2026-11-21 (lane predarr, joint-in-some): item 30 appended to the list (the record's reading (b) of that entry); a rulings item for his observation.
 - 2026-11-22 (lane predfix82, review r82 FIXIND-1; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): items 13, 15, 21, 25, 30 restated under binding-prefix, bound-condition and label-reference (details text only).
 - 2026-11-22 (lane predfix83, review r83 D9; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): item 25 restated under default-export (it still taught that a part's public labels pass through a hole and the sequence operator).
+- 2026-11-22 (lane predspot, transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): parked 2026-11-19 re-dated 2026-11-22; a bullet added to the base: a user's macro passes none of its argument's labels on unless its author writes the list (`hide`, `identity`).
+
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
 rulings:
@@ -1053,6 +1058,15 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 2026-11-22 (lane predbound, bound-condition ruled): `see:` the under-construction core/operators/bindings/macro-types, his alternative 2 ("macro types"); the idea (operators included) stays parked.
 - 2026-11-22 (lane predfix82, review r82 GENERAL-11; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: superseded by core/operators/bindings/macro-types. Status date 2026-11-19 to 2026-11-22.
+
+## parked/ideas/pass-through-mark — A pass-through mark in a macro's head
+slugs: 
+rulings:
+rejected:
+readings:
+evidence:
+history:
+- 2026-11-23 (lane predfix84, review r84 G4; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a new parked piece. Its source is review r84 FIXIND-14 (4), a critic's unlock on label-names-spot generalised ("a name is visible where its spot is placed and listed"; members: argument-default, default-export, `_` closing, the label-only `hit`); the manager's disposition: PLAN, parked with the review's trigger, BOONIES weight unless the owner takes it up. No owner words; nothing for rulings:.
 
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 
