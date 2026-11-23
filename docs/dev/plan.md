@@ -778,7 +778,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-09 manager (Frank: "array capture for (X){M, N} perhaps using special syntax. Cap N become N capture groups. No unbounded")
   status (2026-11-09): UNSCHEDULED. Opt-in syntax only (PCRE2's last-iteration default stays); one group with n entries via its own accessor, never renumbering other groups
   trigger: (D77) a caller asking for it, or a pattern family that today re-runs a match per iteration to recover each one
-  refs: docs/design/plan_row_bodies/ARRAY-CAPTURE.md; [POSTFACT]
+  refs: docs/design/plan_row_bodies/ARRAY-CAPTURE.md; [POSTFACT]; [COND-FAMILY] (future client: the predicate `capture(@x)`; its array of a `+` loop's settings is UNBOUNDED, against this row's "No unbounded"; P-23, 2026-11-23)
 - [CAPS-VIEW-RERENDER] STATE:not-started — re-render cycle1_caps_view.md's CAPS table under the bench's I-99/I-100 classes
   filed: 2026-09-28 lane admin88
   status (2026-09-28): not started; FILED 2026-09-28, admin88, on `[OPTLOOP.2.analysis]`'s own residual #4, `docs/dev/optloop/cycle2_close.md` §2 item 4 — proposed, not ruled, per that document's own text
@@ -2223,7 +2223,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-10-13 Frank (session 111), witness `(?:(\d+)\s*\,?\s*){1,50}`
   status (2026-10-13): not started; idea stage; PCRE2 keeps only the last iteration (a pcrec extension, D26)
   next: discussion with Frank (opt-in syntax per group, API shape, oracle)
-  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry)
+  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry); [COND-FAMILY] (future client: the predicate `capture(@x)`, an unbounded array of a `+` loop's settings; P-23, 2026-11-23)
   Prior art: .NET Group.Captures, Python `regex` captures(). Opt-in PER GROUP so other groups pay nothing. Bounded repeats ({1,50}) give a fixed slot array; unbounded needs a caller buffer plus an overflow code. VM: slot i written by iteration i, the count trailed so backtracking discards abandoned iterations. DFA: only via tagged-DFA positions per iteration (bounded), likely VM-only first. An API addition and abi event; build it BEFORE [IFACE-PUSH] (Frank 2026-10-13: features first, so the push knows what the new API must hold). Oracle: python `regex` captures() is a new dependency (bench-side or opt-in).
 
 - [DEBUG-CHECKS] STATE:not-started — an opt-in CHECKED generation mode: caller-misuse and invariant checks for development
