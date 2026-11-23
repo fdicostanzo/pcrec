@@ -859,11 +859,13 @@ history:
 slugs: 
 rulings:
 - 2026-11-23 (class: IDEA) "they can be omitted by row(,"level", ...) if we choose to allow that" (record: "2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement")
+- 2026-11-23 "unspecified-rule: yes and elegant" (record: "2026-11-23 OWNER RULING — unspecified-rule: "yes and elegant" (the underscore as an argument: the part is not written)"); RULED on the sentence as put: "An argument given as the underscore says: this part is not written. The body then means what the construct at that position already means without that part. Where the construct has no form without the part, the call is a compile error."
 rejected:
 readings:
 evidence:
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement"): a new parked piece.
+- 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): its trigger "the call-forms ruling" has fired: call-forms and unspecified-rule are ruled; `_` covers a part not written; the empty position itself stays parked (a bullet).
 
 ## parked/ideas/reference-kind — A reference kind of label parameter for users
 slugs: 
@@ -889,12 +891,39 @@ history:
 slugs: 
 rulings:
 - 2026-11-23 (class: IDEA) "Could the ? Meaning be used in macro arguments to define optional positional args without defaults? Then conditional and macro arg definitions looks closer ( not the same)." (record: "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label")
+- 2026-11-23 "call-forms: yes." (record: "2026-11-23 OWNER RULING — call-forms: yes (one head per name; positional entries first, then named; a default is the macro's own text and may name an earlier parameter; unset takes the default, the underscore does not)"); RULED on the four lines as put: "1. One head per name. There is no overloading; a call is never matched against several bodies. 2. Positional entries first, then named ones. Positional entries fill the parameters in declared order, including those with defaults. Any parameter may be named. A positional entry after a named one is a compile error for now. 3. A default is the macro's own text. It is resolved in the macro's definition, and it may name an earlier parameter, never a later one. 4. Unset and the underscore are different. An argument left unset takes its default. The underscore does not take the default; it means "not written", by the rule you just ruled."; named as NOT part of it: which head `repeat` gets, a map written in place, a user macro that takes a macro.
 rejected:
 readings:
 evidence:
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label"): a new parked piece.
 - 2026-11-23 (lane predfix86, review r86 D3; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): a note that the idea would give `?` a second meaning, against his reason for the `?:` operator (optional-place); his words kept; `see:` gains core/conditions/form/optional-general.
+- 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): its trigger "the call-forms ruling" has fired without taking it: the play-out's note that his `max?` would be `max = _` (the manager's suggestion) added; the idea stays parked, not ruled.
+
+## parked/ideas/compile-time-conditional — A compile-time conditional in an expression
+slugs: repeat-head
+rulings:
+- 2026-11-23 "repeat-head: agree with your lean" (record: "2026-11-23 OWNER RULING — repeat-head: "agree with your lean" (head (i): `repeat(x, min = _, max = min)`)"); RULED head (i), `repeat(x, min = _, max = min)`: one count exact, a written 0 exactly 0; his conditional head not taken.
+- 2026-11-23 (class: SKETCH) "repeat: repeat(A, min = 0, max = ((min &  0)? _ :(min?min:)) := /${A}{${min|0},${max}}/" (record: "2026-11-23 OWNER RULING — label-hole-full: a pure label's name hole must be whole; a capture's name may be partial, "but again, the label portion is lost"; and a sketch of the repeat head with a conditional default"); the component his sketch uses.
+- 2026-11-23 (class: REMARK) "With proper ?: spelling And different semantics for repeat holes...lol" (record: "2026-11-23 OWNER, on his own repeat sketch: "With proper ?: spelling And different semantics for repeat holes...lol""); the spelling note.
+rejected:
+readings:
+- (the manager's, on the sketch) the language has the test (`@assert.some`) but no expression that chooses on it — UNTESTED (nothing to run).
+evidence:
+history:
+- 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): a new parked piece, at repeat-head's direction: "a compile-time conditional in an expression stays an idea (to park, with the trigger \"the first default or body that cannot be written without it\"; its `?` `:` spelling meets the optional entry operator: the spellings review)".
+
+## parked/ideas/call-head-forms — The head as a binding list, and the call forms beside it
+slugs: call-forms
+rulings:
+- 2026-11-23 "call-forms: yes." (record: "2026-11-23 OWNER RULING — call-forms: yes (one head per name; positional entries first, then named; a default is the macro's own text and may name an earlier parameter; unset takes the default, the underscore does not)"); RULED on the four lines as put: "1. One head per name. There is no overloading; a call is never matched against several bodies. 2. Positional entries first, then named ones. Positional entries fill the parameters in declared order, including those with defaults. Any parameter may be named. A positional entry after a named one is a compile error for now. 3. A default is the macro's own text. It is resolved in the macro's definition, and it may name an earlier parameter, never a later one. 4. Unset and the underscore are different. An argument left unset takes its default. The underscore does not take the default; it means "not written", by the rule you just ruled."; named as NOT part of it: which head `repeat` gets, a map written in place, a user macro that takes a macro.
+rejected:
+readings:
+- (c) of call-forms: the head as a binding list is the manager's framing, NOT ruled — applied (this piece).
+- the play-out's level 2 (a macro first class; an array, a tuple or a map applied to a macro; a macro as an argument, run: `tag(num, v:) & (v: <5)` and `tag(word, v:) & (v: "ab")`; the cost, termination) — a PROPOSAL; nothing applied (the record entry has its runs).
+evidence:
+history:
+- 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): a new parked piece for the play-out's parts call-forms did NOT rule (record "2026-11-23 MANAGER — the play-out he asked for: one head per name, from components the language already has (a PROPOSAL throughout; no owner words; nothing here is ruled)"): the head as a binding list (the "one idea"), a map written in place (item 8), a tuple or map spread (8), variable arguments (7), a user macro taking a macro and its termination rule (9, 11, 12), the interleaving beyond line 2 (6). One piece for the group, as the brief allowed.
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 
