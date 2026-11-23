@@ -39,4 +39,7 @@ None declined. One reconciled: P-26 "lanes poll their own long runs; a brief say
 Not in scope and untouched: pcrec-manager skill and its sub-files (no entry proposed an edit there); `docs/dev/pred/to_main.md` P-19, P-22, P-23 carry no proposed edits.
 
 ## STATE AT HANDOFF
-Branch lane/skilled, committed, docs only. No rulings file entries (it was empty). Validation complete: strict, test-plan-lint, CLAUDE.md size check. Nothing owed. For main: the plan.md hunk touches only the [COND-FAMILY] status line; `next:` on that row still reads "one revision folding the rulings made after rev 24.4", which is stale and was not in the proposed edits.
+Branch lane/skilled, committed, docs only. No rulings file entries (it was empty). Validation complete: strict, test-plan-lint, CLAUDE.md size check. 
+OWED: none
+
+For main: the plan.md hunk touches only the [COND-FAMILY] status line; `next:` on that row still reads "one revision folding the rulings made after rev 24.4", which is stale and was not in the proposed edits.
