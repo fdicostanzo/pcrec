@@ -24,8 +24,8 @@ module: ?
 - The spot is each place a body lays its argument into its pattern; the list on it, `[(=) = x]`, takes every label the
   argument exports as the body's own, so the caller reads them through the call (`peek.d`; `[c = peek(..)]`, `c.d`):
   a call exports what its body exports (core/labels/export statement 3).
-- What an argument exports (a reading, run: the line "An expression exports what its text writes"): a binding or a
-  call exports what it exports; any other argument what its own text writes, a part used alone in it nothing.
+- What an argument exports, and what the caller writes inside one: core/labels/export/arguments (the line
+  "An expression exports what its text writes" is run here).
 - Covered, each piece restating its body with the list on its spot: peek, atomic, when, list_of, padded, quoted,
   anchored, any_case (its candidate body), contains, startsWith, endsWith, rx.repeat, capture; and prefix_in,
   suffix_in, slice_in, whose S a body lays into a hole as quoted's (a reading).
@@ -325,9 +325,11 @@ Read through the call: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `x73 37` `37`@4 /
 ### when   [lib/control/when]   ruled 2026-11-22
 The conditional is the guarded form, `when(test, then, else = //) := ([(=) = test] SEQ [(=) = then]) | (NOT peek(test) SEQ [(=) = else])`: else is never tried where the test holds.
 needs: lib/control/peek core/patterns/sequence core/conditions/in-sequence core/filters/negation lib/convention/argument-labels
-see: lib/control/when-test
+see: lib/control/when-test core/filters/negation/effects
 module: ?
 defined: language
+- A capture request in the test reaches the guard's `NOT peek(test)`: a compile error (a reading;
+  core/filters/negation/effects).
 - `then` has no default: `when(x)` and `when(x, else = z)` are compile errors. The legal calls: `when(x, y)`,
   `when(x, y, z)`, `when(x, then = y)`, `when(x, then = y, else = z)`, `when(x, y, else = z)`.
 - The missing else is `//`, the empty pattern: where the test does not hold, `when` holds and matches nothing.
@@ -436,7 +438,8 @@ defined: language
   occurs.none((h.hit: >= 100))` (a reading; core/labels/paths/call-prefix).
 - The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences). It is
   the spot the body labels, so the argument's labels pass on through it (`hits.hit.g`) and the body writes no `(=)`
-  (the manager's reading (d); lib/convention/argument-labels).
+  (the manager's reading (d); lib/convention/argument-labels). A group written in the argument in place is the
+  caller's own, read bare too (`g`, the last hit's; core/labels/export/arguments).
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
 - One call may be read by the macro's name: `hits(/\d+/) & (hits.hit: <5)` gives the answers of the line
@@ -445,7 +448,7 @@ defined: language
   is 3 and some hit is 4"): a test inside the argument chooses the hits; a test after the atomic `hits` judges
   them (a reading, run: `4 9 3` and `43` HOLD with the test inside, FAIL with every number tested after).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (hits.hit.g: "x")`: the hit list is the whole subject's)
-Bare, the caller's own: modes: a compile error (`hits(/a(?<g>x)?/) & (g: "x")`: `g` is the template's, not a spot of the caller's pattern).
+Bare, the caller's own: WHOLE `ax` HOLDS, `a` FAILS, `axa` FAILS / SEARCHED `a ax` `a ax`@0 / FIND-ALL `a ax ax` [`a ax ax`@0] (`hits(/a(?<g>x)?/) & (g: "x")`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
 His second example, a test inside the argument: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` HOLDS (hits [`4`, `3`]), `43` HOLDS (hits [`4`, `3`]), `4 13` HOLDS (hits [`4`, `1`, `3`]), `4 3 9` HOLDS (hits [`4`, `3`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))`)
@@ -553,6 +556,7 @@ defined: native (a question over a name's array of settings; no expression of th
 - The array is every setting of the name, in order, the one outside the loop included
   (core/labels/labels-vs-captures/array-vs-passes), those visible in the definition the question is written in, a
   bound piece's own (array-in-piece); "false on an empty array" is a reading of that ruling.
+- `0` has no settings, so `some((0: ..))` is a compile error (core/conditions/match-so-far).
 - `some` is the one spelling of "at least one"; `all` is retired: every pass is written with the condition
   inside the loop, on the item (core/conditions/in-sequence).
 - A record of several entries in it, and a joint entry, which is a compile error for now: the array piece. "Same
@@ -764,9 +768,10 @@ defined: language
   core/arrays/lift), an illegal copy (min above max) removed; one array mentioned twice is independent per mention (`rx.repeat(rx.digit, n, n + 1)`).
 - An item's label passes on through the looped spot: a condition after the call reads the last item, a group
   question every item, through a label on the call (`[r = rx.repeat(/(?<a>\d)/, min = 1)]`, `r.a`); a part label
-  written on the argument (`rx.repeat([a = rx.digit], min = 1)`, then `a`) labels a template: a compile error (the
-  manager's reading (a), core/labels/paths/argument-default). A condition inside the item is judged for every item.
+  written on the argument (`rx.repeat([a = rx.digit], min = 1)`, then `a`) is the caller's own, read bare
+  (core/labels/export/arguments; the line below). A condition inside the item is judged for every item.
 The last item, through a label on the call: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `x37 73` `3`@1 / FIND-ALL `73 37 13` [`73`@0, `3`@3, `13`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1)] & (r.a: "3")`)
+A label written on the argument: WHOLE `3` HOLDS (a = `3`), `73` HOLDS (a = `3`), `37` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `37 73 4` [`3`@0, `73`@3, `4`@6] (`rx.repeat([a = rx.digit], min = 1) & (a: <5)`)
 Every item, a group question: WHOLE `73` HOLDS, `33` FAILS / SEARCHED `x33 73` `73`@4 / FIND-ALL `73 33 17` [`73`@0, `17`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1)] & some((r.a: "7"))`)
 - Plurals are one-line definitions over it: `digits := rx.repeat(rx.digit, min = 1)` is `\d+`.
 - A count in braces is not an operator of the language; inside a regex literal it is regex's own.
@@ -776,39 +781,55 @@ WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12
 
 The compile-time tools over spelled arrays and the macro that names a capture.
 
-### capture   [lib/structural/capture]   reading 2026-11-22
-`capture(name, x) := /(?<${name}>${[(=) = x]})/` names a capture: the name in a group-name hole, x in a pattern hole that passes x's labels on.
-needs: core/holes/name core/holes/pattern core/labels/export lib/convention/argument-labels
+### capture   [lib/structural/capture]   ruled 2026-11-23
+`capture("name")` on the set side of an entry asks for the label on its left as the caller's capture `name`; `rx & capture("name")` captures the stretch.
+needs: core/conditions/form core/conditions/form/optional-entry core/labels/export
+see: lib/structural/capture/add-on core/filters/negation/effects core/conditions/match-so-far core/labels/export/capture-export
 module: ?
-defined: language
-- A label reaches the caller only as a capture: "captures are explicitly written either in literal form or using
-  a macro like capture()" (core/labels/export, statement 5); `[x = A]` alone makes none.
-- `capture(name, x)` is the WRAPPER method in its literal form (a reading); his wrapper placeholder
-  `[ d = capture(digits) ]` takes its name from the part label, which needs the field below.
-- Making an existing label a capture afterwards: lib/structural/capture/add-on.
-- Its body writes a capture on purpose, a capture being what it is for; whether that is "so declared" in his
-  helper-captures ruling is not stated (a reading; lib/structural/capture/add-on).
-- The one-parameter sketch `capture(x) := /(?<${x.label}>${[(=) = x]})/` needs a field giving a part label's own name,
-  which the core does not define (`.label` is a field of a part label over an ARRAY, core/values/metadata); with it,
-  `join(each(capture, a), sep = ".")` would name each entry's capture after its label.
-WHOLE `12` HOLDS (d = `12`) / SEARCHED `x12` `12`@1 / FIND-ALL `1 23` [`1`@0, `23`@2] (`capture("d", /\d+/)` is `(?<d>(?:\d+))`)
+defined: ?
+- His words: "optional-label: yes." answered the statement that the request's shape is `(h: capture("h"))`, the
+  label required, `(h ?: capture("h"))`, if present, and `rx & capture("name")`, the stretch; the shape was his
+  proposal: "would it be better to isodate & (isodate.year: capture("year"))".
+- A capture is made only where the program asks for one (core/labels/export/capture-export); a named group in a
+  part makes none.
+- Read as a set, `capture("name")` is `anything` with a request: as an entry it requires the label, so it filters
+  (the line "Requires the label"); with `?:` it never rejects (the line "If present").
+- The label is named where conditions name labels, by its path (`isodate.year`): no label parameter of the
+  reference kind (core/operators/bindings/label-kinds).
+- The caller's name is the argument (capture-name: the last step with an optional rename; the rename is now always
+  written; whether a request with no name gives the last step is not stated).
+- Requested twice: the same-label-twice rules (the last mention in a sequence, the branch taken across `|`, a
+  compile error across `&`).
+- After a loop the caller gets the label as a plain read gives it: the last pass's own value, unset where that pass
+  set nothing; every pass is the array request (lib/structural/capture/add-on).
+- On `0` only where `0` is complete, `rx & capture("name")` or a hole written last; on an open `0` a compile error
+  for now (core/conditions/match-so-far). Under `NOT` or `!`: core/filters/negation/effects.
+- A one-literal program returns PCRE's own captures; a request in a composed program gives the label (a reading).
+Requires the label: WHOLE `x` FAILS, `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2] (`/(?<h>\d)?x/ & (h: capture("h"))`)
+If present: WHOLE `x` HOLDS (h unset), `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5] (`/(?<h>\d)?x/ & (h ?: capture("h"))`)
+The stretch: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+/ & capture("n")`)
+Requested twice, the last mention: WHOLE `7,5` HOLDS (d = `5`), `7` FAILS / SEARCHED `x7,5 1,2` `7,5`@1 / FIND-ALL `7,5 1,2` [`7,5`@0, `1,2`@4] (`A SEQ "," SEQ A`, A := `[d = /\d+/] & (d: capture("d"))`)
+Through the label's path: WHOLE `2025-01-02` HOLDS (year = `2025`) / SEARCHED `x 2025-01-02` `2025-01-02`@2 / FIND-ALL `2025-01-02 1999-12-31` [`2025-01-02`@0, `1999-12-31`@11] (`isodate & (isodate.year: capture("year"))`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+A request on an open `0`: modes: a compile error (`/\d${(0: capture("n"))}x/`: pattern text follows the hole, so `0` is open there; for now).
+A request on `0` written last: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `a12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+${(0: capture("n"))}/`)
 
-### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-22
-An add-on that makes a label a capture is required ("an add on component that converted a label into a capture is needed"); how it is asked for is not defined.
+### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-23
+A label is made the caller's capture after the fact by the request (lib/structural/capture); the request for every setting of a looped label, the array request, is ruled and unbuilt.
 needs: lib/structural/capture core/labels/export
 module: ?
 defined: ?
-- His two methods, both placeholders ("no spelling suggested"): a wrapper, `[ d = capture(digits) ]`, and after
-  the fact, `[ d = digits ] & capture(d)`. "what i don't know is precisely what that looks like."
-- His reason for the second: "isodate and all the other libraries don't want to presume everyone is interested in
-  every label being a capture." "but then, someone might later want the year of an isodate as a capture. so an add
-  on component that converted a label into a capture is needed."
-- After the fact it names its label by the visibility rules (core/labels/export), so a `_` label cannot be
-  captured outside its binding (a reading); a `_` label "cannot become exported captures".
-- The after-the-fact form has no body in the language today (a reading).
+- His requirement, "an add on component that converted a label into a capture is needed", is met by the request:
+  after the fact, `[d = digits] & (d: capture("d"))`; as a wrapper, `digits & capture("d")`: his two methods are one
+  form (a reading).
+- His reason: "isodate and all the other libraries don't want to presume everyone is interested in every label
+  being a capture."
+- The array request: "array-capture: yes ... unbuilt as you say" (`capture(@x)` as put to him); under the request's
+  shape its spelling is not stated (a placeholder: `(@x.year ?: capture("years"))`). It is a client of the plan's
+  array-capture rows; their "no unbounded" meets the unbounded array of a `+` loop: a point for the build.
+- The request names its label by the visibility rules, so a `_` label cannot be captured outside its binding (a
+  reading); a `_` label "cannot become exported captures".
 - How a provided body declares a capture ("unless they are so declared": helper-captures, lib/search/occurrences)
-  is not stated; it joins this open form.
-- What the caller receives for a captured label a loop sets is not stated (core/labels/labels-vs-captures).
+  is not stated (a reading: by writing the request in its body).
 
 ### each, each_group, where, where_group   [lib/structural/each]   reading 2026-11-19
 `each(f, A)` applies a macro or filter f to every entry of a spelled array A, keeping labels and order; several arrays zip by position.
@@ -850,12 +871,26 @@ defined: ?
 
 The `json` module's members, as the draft's JSONL example uses them.
 
-### json.row, json.string   [lib/json/members]   under-construction 2026-11-19
-The `json` module provides `json.row(key, filter)` and `json.string`, the rx of a JSON string literal read as its raw text; neither body is written.
+### json.row, json.string   [lib/json/members]   under-construction 2026-11-23
+The `json` module provides `json.row(key, filter)` and `json.string`, the rx of a JSON string literal read as its raw text; neither body is ruled.
+see: core/operators/bindings/label-forward core/operators/bindings/label-in-argument core/labels/export/arguments
 module: json
 defined: ?
 - The example's use: `json.row("msg", json.string & contains("timeout"))`, rows joined by `&` in any key order.
 - `json.string` reads the RAW literal (escapes not decoded); the decoding filter was cut (lib/modifiers/quoted).
+- A sketch with the label on the data (the manager's, run; module prefixes left out): `string(l:) :=
+  /"(?<:${l}>(?:[^"\\]|\\.)*)"/`, `number(l:)` and `literal(l:)` alike, `value(l:) := string(l:) | number(l:) |
+  literal(l:)`, the label forwarded (label-forward); `row(l:, k, f = anything) := /\{(?:${member_any},)*${ws}"${k}"
+  ${ws}:${ws}${value(l:) & (l: f)}${ws}(?:,${member_any})*\}/`, a member any member, `_:` its labels.
+- The label is set to the unquoted text, so the string `"3"` and the number `3` read alike (his string-label words:
+  "the row's label argument is set to the unquoted portion").
+- A filter inside the argument and a test on the label agree in every mode (`row(_:, "msg", contains("timeout"))`
+  and `row(_x:, "msg") & (_x: contains("timeout"))`; a reading, run).
+- Several rows joined by `&` read at the line: an ordinary entry over their labels; several keys in one row: the last
+  fitting member in the object's order (the lines below; readings, run).
+The label on the data: WHOLE `{"v":"ok"}` HOLDS, `{"v":3}` HOLDS, `{"v":7}` FAILS, `{"v":"no"}` FAILS, `{"v":true}` FAILS, `{"v":"3"}` HOLDS / SEARCHED `{"v":7} {"v":"ok"} {"v":3}` `{"v":"ok"}`@8 / FIND-ALL `{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}` [`{"v":"ok"}`@0, `{"v":3}`@19, `{"v":"3"}`@38] (`row(v:, "v") & (v: "ok" | <5)`, the sketch above)
+A filter over two rows at the line: WHOLE `{"lo":3,"hi":7}` HOLDS, `{"hi":7,"lo":3}` HOLDS, `{"lo":7,"hi":3}` FAILS, `{"lo":3}` FAILS, `{"lo":"3","hi":"7"}` HOLDS, `{"lo":3,"x":true,"hi":7}` HOLDS / SEARCHED `{"lo":7,"hi":3} {"hi":9,"lo":8}` `{"hi":9,"lo":8}`@16 / FIND-ALL `{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}` [`{"lo":3,"hi":7}`@0, `{"hi":2,"lo":1}`@41] (`row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)`, the sketch above)
+Several keys: WHOLE `{"a":3}` HOLDS (x = `3`), `{"b":3}` HOLDS (x = `3`), `{"a":7,"b":3}` HOLDS (x = `3`), `{"a":3,"b":7}` HOLDS (x = `3`), `{"a":7,"b":8}` FAILS, `{"c":3}` FAILS / SEARCHED `{"a":7,"b":8} {"a":3,"b":7}` `{"a":3,"b":7}`@14 / FIND-ALL `{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}` [`{"a":3}`@0, `{"b":4,"a":9}`@30] (`row(x:, "a" | "b") & (x: <5)`, the sketch above)
 
 ## Names the worked examples call   [lib/planned]
 

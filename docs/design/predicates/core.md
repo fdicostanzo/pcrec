@@ -2170,8 +2170,8 @@ modes: n/a (a table of names; no matching involved)
 A program whose meaning is refused is a compile error, and no setting disables one; what is only probably a mistake is a warning instead (core/diagnostics/warnings).
 needs: core/values/functions core/operators/statements core/modules/conflicts
 - Each error below is ruled or read in its own piece; this index is PARTIAL: more compile errors are stated in
-  their pieces only (a free name, a `:` in a definition head, a `when` without
-  `then`, a failed assertion, ...).
+  their pieces only (a free name, a `:` in a head not marking a label parameter, a body reading a label parameter it
+  never places, a path passed to one at a call, a `when` without `then`, a failed assertion, ...).
 | fires on | piece |
 |---|---|
 | an undeclared name that is not a label (with a suggestion); a bare rx not final; a bare statement without `@` | core/operators/statements |
@@ -2184,11 +2184,12 @@ needs: core/values/functions core/operators/statements core/modules/conflicts
 | an export list naming a label the part does not export (`[(=hour) = isodate]`; `[(=d) = B(A)]`, B's body using its argument alone); the cross case `(=year) := isodate` (for now) (readings) | core/labels/export/export-list |
 | a joint entry inside a group question (for now) | core/labels/labels-vs-captures/array-vs-passes |
 | a separately defined piece naming a label it does not hold, at its definition | core/holes/bare-condition/nested-scope |
-| a condition, computed value or set bound alone naming a label with no target in its binding, at the binding | core/holes/bare-condition/bound-condition |
+| a condition, computed value or set bound alone naming a label with no target in its binding, at the binding; a condition naming only `0` bound alone (for now) | core/holes/bare-condition/bound-condition, core/holes/bare-condition/zero-binding |
+| a group question or an index on `0`; a capture request on an open `0` (for now); an effect under `NOT` or `!`, `when`'s test included (a reading) | core/conditions/match-so-far, lib/structural/capture, core/filters/negation/effects |
 | a value of several strings left of `:`; a value entry inside a group question (both for now) | core/conditions/form/value-left |
 | a plain read through a binding's or a macro's prefix, used more than once (it says to label the part); the index through `&`-joined uses (for now) | core/labels/paths/binding-prefix, core/labels/paths/call-prefix |
 | the caller's `A.d` where the macro closes its argument's labels (`[_ = rx]` or a `_` part label in its body) | core/labels/paths/closed-argument |
-| a read of an argument's label by the caller where the body uses the argument alone (`A.d`, a group written in place); a part label written on an argument at a call (`B([a = A])`, then `a.d`) | core/labels/paths/argument-default |
+| a read of an argument's label by the caller where the body uses the argument alone (`A.d` in `B(A)`) | core/labels/paths/argument-default |
 | a quantifier on a condition | core/conditions/quantified |
 | a piece of a filter operand that might look outside the matched text | core/filters/operand-context |
 | an rx where the other kind is needed (can match, can filter) | core/filters/kinds |
@@ -2227,7 +2228,7 @@ see: lib/builtin/warn lib/builtin/options parked/ideas/known-nothing parked/idea
 | `pcrec.empty.search` | a searched final pattern that can report an empty find | empty-search-error |
 | `pcrec.dead.branch` | an alternative of a narrowing site (an `&` operand, a `label:` set) that can never match | the accepted list |
 | `pcrec.label.unset` | a label a condition names can be absent where it is read, with no default | the accepted list; core/conditions/two-valued |
-| `pcrec.default.unused` | a default that can never be used | default-unused; core/conditions/defaults |
+| `pcrec.default.unused` | a default that can never be used: one beside `?:`, one on `0`; `?:` on `0` | default-unused; core/conditions/defaults, core/conditions/form/optional-entry, core/conditions/match-so-far |
 | `pcrec.label.ambiguous` | an ambiguous label in the author's own pattern text | the accepted list |
 | `pcrec.anchor.whole` | an explicit anchor that provably sits at the edge of a filter role's stretch | anchor-warn-scope; core/filters/and |
 | `pcrec.warn.unused` | an `@warn.off` that suppresses nothing | the accepted list; the selector rule above |
@@ -2300,6 +2301,10 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
 | the EXPORT LIST on a part label (his `[(=year) = isodate]`) | core/labels/export/export-list |
 | a positional binding `(a, b) := X` | core/modules/positional |
+| the LABEL SET `[a = A]` and its place between `&` and `|`; `[a, b, c]`; `A[k]` | core/operators/precedence, core/labels/paths |
+| the LABEL PARAMETER (`A(l:)` in a head, `A(x:)` at a call, `_:`, `l = ts:` by name) | core/operators/bindings/label-variables, core/operators/bindings/label-default |
+| the CAPTURE REQUEST (`capture("name")`), its array form (`capture(@x)`) | lib/structural/capture |
+| the OPTIONAL ENTRY operator (`?:`, his lean) | core/conditions/form/optional-entry |
 modes: n/a (spellings)
 
 ### A condition keeps its parentheses   [core/spellings/condition-parentheses]   reading 2026-11-19
