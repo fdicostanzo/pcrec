@@ -499,3 +499,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-23 ffddc2380 none — merge lane/pinmsg df072ce0a ([PIN-MSG-DEPTH]: S1760/S1761 reach probes on a short temp path; test-only; review r85)
 - 2026-11-23 fc3824516 none — merge lane/pred-rev28 014ebc42f (review r84 applied; docs only; P-25)
 - 2026-11-23 b291a2f7c none — merge lane/memfn-k1108 e1b36b5cb (kit U6 addendum: parpool.py, parallel cards.py selftest; review r87; cloud test GREEN run 45258851130)
+- 2026-11-23 8769b1c09 none — merge lane/pred-rev28 7b61fd62a (fold of 11-22 late + 11-23 rulings, review r86 applied; docs only; P-26)
