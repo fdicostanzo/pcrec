@@ -9732,3 +9732,64 @@ The manager's answer (told to him; a view, marked):
   are WITHDRAWN from the play-out until an example asks for one; each would then be argued from "the construct
   without the part".
 Put to him as slug unspecified-rule.
+
+### 2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words
+tags: core/conditions/form/optional-entry core/operators/bindings/label-variables core/labels/export/arguments core/labels/export lib/control/when core/conditions/match-so-far lib/structural/capture core/labels/labels-vs-captures core/labels/flow core/labels/paths/argument-default core/filters/negation/effects core/holes/name core/labels/label-only-group core/spellings/placeholders core/operators/precedence
+
+The draft is `$PCREC_TMPDIR/scratch/crit-predfold1123/review.md` (frozen at 026090af8; 46 items; no finding
+REFUTED by its verifier; none REJECTED here). Lane predfix86 applies them and files the review.
+
+THE MANAGER'S OWN ERRORS the round found (each was in the fold lane's brief, not the lane's doing):
+- A1: the brief told the lane to print the joint and value left parts of the optional entry as legal ("the
+  manager's reading, with run lines"). The record says otherwise: optional-label was ruled on a statement whose
+  conservative edges were "`?` on a joint entry's label, on a value left of `:`, inside a group question are
+  compile errors for now", and today's optional-place entry says of the joint and value cases "Not ruled by these
+  words". The edges STAND. The reading is withdrawn.
+- A1 again: optional-label-general was closed in the documents on the manager's thought; it is his FLAG and it is
+  OPEN, its standing state his two leans ("a special case ... how special"; the operator spelling).
+- A8: the brief carried his spelling lean `l = ts:` as if it were a head default naming a label; his words are
+  about a label passed BY NAME at a call.
+
+FIX-NOW, lane predfix86 (documents):
+- A1: the three edges restored as compile errors for now, cited from the ASKED statement; the joint and value
+  lines become the candidates of an open line (slug optional-entry-edges; the joint candidate's cost printed: it
+  breaks the ruled identity `(h: A, m: B)` = `((h, m): (A, B))` on `,9`); optional-label-general re-opened; the
+  qualifier "taken as the ruling ... so he can object" restored on the place.
+- A2: `C(_:)` for a body that reads its label parameter: refused at the call (the manager's reading (c) of
+  label-parameter-omitted), a reading; "a plain non-capturing group" restored.
+- A3: the cell "a caller's own label (a part label, an in-place group) under a body that closes the spot" is
+  OPEN (slug closing-own-label), leaning PASS (the record: the caller's own label on the argument works "without
+  the body's cooperation", the proposal he answered yes); pointers at export statements 3 and 7. No answer applied.
+- A4: `when`: a read written in `then` of a label the CALLER writes in the test is legal (argument-label), a run
+  line; the sentence resting on the withdrawn reading (b) goes; `when(A, (A.h: ..))` is a marked reading by
+  closed-argument's condition.
+- A5: one sentence, the manager's reading: a condition passed as an argument and placed by the body beside `&`
+  reads the left operand's match as its `0` (operand-world: "from the perspective of B, the subject is now
+  whatever A matched"); placed in a sequence or a hole it reads the match so far of the definition it is WRITTEN
+  in, as today. A printed line each.
+- A6: a marked reading: "a one-literal program" is a program that is exactly one literal; any request makes the
+  requested name follow the label rules (`3;;`: unset); labels-vs-captures' "not stated" goes (array-capture
+  closed it).
+- A7: one sentence and one line: on a nullable loop body PCRE's trailing empty pass leaves the label unset, so
+  `?:` never rejects there and an "if present" request returns unset.
+- A8: a marked reading: a label parameter's head default is `_` only, for now; a default naming a label would
+  make a label the caller's text never wrote (label-reference).
+- A9: two rows, marked readings: a SENT label is read bare; through the macro's name or a label on the call it is
+  NOT offered, both spellings refused alike for now; `identity([a = A])`: `a.h` bare (the caller's own) and
+  `identity.a.h` (export statement 3, by path) are both legal.
+- A10, A11, A12, A14 (the tension named in the row), A15 with the ruling label-hole-full of 2026-11-23 folded
+  beside it (a user body may write the label-only group with a label-parameter name hole, whole; a capturing
+  group's name may be partial and is then a capture only, the reading taken of "the label portion is lost").
+- A13: OPEN (slug capture-in-set); the documents state the conservative reading meanwhile (a compile error for
+  now), marked.
+- C1 to C11, D1, D2, D3 (a note in the parked piece that the idea would give `?` a second meaning, against his
+  own reason for the `?:` operator; his words kept).
+FIX-NOW, lane predfix86 (the successor evidence model): B1, B2, B3, B4, B5, B6 (the two readings marked
+UNTESTED: capture output is not modelled), B7, B9, B10 (a pinned commit, never a branch name), B11, B12.
+PLAN (no lane now): B8 (independent controls for the engine-only lines), B13, G1 (the label OWNERSHIP table:
+at the next ruling that adds a row or column), G2 (effects as marks on the accepting path), G3 (one optionality
+table: at the call-forms ruling), G4 (one table for `_`: its trigger has arrived in the live discussion,
+unspecified-rule).
+OWNER QUESTIONS queued: closing-own-label; capture-in-set; optional-entry-edges. Not asked: blank-label-read
+(reading (c) restored), request-in-literal and named-label-default (marked readings, conservative).
+The four lessons for the guide go to main (to_main.md).
