@@ -9938,3 +9938,38 @@ pasted): `B(A) & (B.p.d: <5)`: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEA
 FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (the answers the documents print today for `A.d`).
 `B(A) & (B.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL
 `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (the body's own `d`).
+
+### 2026-11-23 OWNER, on spot-read-name: "I suppose it's ok under the following logic": the canonical form is chains of only labels; a binding used as a label is a shorthand, under three conditions
+tags: core/labels/paths/binding-prefix core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/export/arguments core/labels/paths/label-reference core/labels/paths/one-use-read core/principles/meaning-not-spelling
+
+Asked **spot-read-name** (for a call `B(A)`: (b) the caller's `A.d` is a compile error whatever the body does,
+the door being B's, his belief of the entry above and the manager's leaning; (a) as ruled 2026-11-22, legal where
+visible through the call). HIS WORDS, whole:
+
+"Spot read name: I suppose it's ok under the following logic: the general canonical form is that all labels are
+chains of only labels. However, there is a short hand where a binding can be used as a label where 1. the binding
+is unambiguously referenced 2. a label could be set on the binding 3. the binding reference is as though through
+the skipped label from #2"
+
+Class: a LEAN with its GROUND ("I suppose"), NOT a ruling by these words, and AMBIGUOUS to the manager in one
+point: what "it" is. Two readings: (r1) "it" is the caller's `A.d`: it is OK, as a shorthand; (r2) "it" is
+candidate (b). The ground he gives reads as (r1): a path is canonically a chain of LABELS only; a binding's name
+in a path is a SHORTHAND for a label that was skipped, allowed where (1) the binding is referenced
+unambiguously, (2) a label could have been set on it there, (3) the reference then reads as though through that
+label. NOT guessed: asked back (below).
+What the logic gives under the rules as they stand (the manager's working, marked; hand-worked from rulings, the
+run lines quoted from earlier entries): his three conditions are binding-prefix's own (ruled 2026-11-22: "an
+unlabelled use carries the implicit label of the binding's name"; used more than once, a plain read is the
+compile error) with ONE widening: condition (2) now holds for an ARGUMENT too, since argument-label (ruled
+2026-11-23) lets the caller write a label on an argument. Then `B(A) & (A.d: <5)` is `B([A = A]) & (A.d: <5)`,
+the caller's own label, "set where the body places the template", and by closing-own-label (ruled today) it also
+passes a body that closes the spot. So under (r1), for A referenced once:
+- the body uses its argument alone (`/${rx}xx/`): LEGAL (today a compile error: argument-default, his "for me
+  this is an error"); the answers of the explicit form run 2026-11-23, `B([f = /\d/]) & (f: <5)`: WHOLE `3xx`
+  HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8];
+- the body labels the spot: LEGAL (as today);
+- the body closes the spot: LEGAL (today a compile error: closed-argument (a)'s second sentence).
+That is the opposite of "an error regardless" (his belief of the entry above), and it would reverse
+argument-default's error and closed-argument's error case; what remains an error is ambiguity (the binding
+referenced more than once) and a place where no label could be written.
+Put to him as slug binding-as-label, with the three candidates and this table.
