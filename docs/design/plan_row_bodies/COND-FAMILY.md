@@ -8441,3 +8441,29 @@ consistency", and because "l: ts looks like a condition". For the spellings revi
 withdrawn as a placeholder.
 The manager's reading (marked): the default `_` for such a parameter is the author's to declare in the head
 (`row(k, v, l = _:)`, spelling a placeholder); his words rule the optionality, not which default.
+
+### 2026-11-23 OWNER, on capture-place: "i lean (a)" (an `&` operand); capture() takes a label arg; early capture is no crime
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/export/capture-export core/operators/bindings/label-variables core/labels/export/caller-ambiguous
+
+Asked **capture-place** (where the capture request stands: (a) an `&` operand, as his 2026-11-21 sketch
+`[ d = digits ] & capture(d)`; (b) a program statement; the manager's leaning (b), on his "select them early"
+truth). HIS WORDS, whole:
+
+"capture-place discussion: i lean (a) and note that capture() takes a label arg. i don't think its a crime for
+early capture. in practice, library developers would not include capture in their definitions. all captures
+would probably be defined by the end users as in your json example. therefore, they know what they are doing and
+can see the whole program and decide how to set captures."
+
+Class: DISCUSSION, in his word, with a LEAN ("i lean (a)"): the request is an `&` operand. A NOTE: "capture()
+takes a label arg" (read: its argument is a label, the label-parameter kind of the same day). An OPINION on the
+early case: not "a crime"; in practice captures are the end user's, who sees the whole program. NOT a ruling.
+The manager's leaning (b) is withdrawn: its ground was preventing the early case, which he does not want
+prevented.
+
+The manager's readings (marked): (a) `capture(l:)` is then call-shaped like any macro taking a label, standing
+where a condition stands and always holding; its effect (a caller capture) is native; (b) what (a) leaves to
+state is one label captured from a definition USED TWICE (or two requests of one name): put to him as slug
+capture-twice with the proposal "the caller's captures are one flat set of names under the same-label-twice
+rules". RUN for that question (python `re`, the two uses as `d1`, `d2`): `A SEQ "," SEQ A`, A := `[d = /\d+/] &
+capture(d:)`: WHOLE `7,5` HOLDS (first `7`, last `5`), `7` FAILS / SEARCHED `x7,5 1,2` `7,5`@1 (first `7`, last
+`5`) / FIND-ALL `7,5 1,2` [`7,5`@0 (`7`, `5`), `1,2`@4 (`1`, `2`)].
