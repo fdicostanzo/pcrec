@@ -10103,3 +10103,32 @@ SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6]; `[_x = [n = P]] 
 `(?P<_x>(?P<n>(?P<d>\d)\d))`: the same answers in every mode; n and `_x` equal on every match in both.
 Put to him as the ruling label-doors, five lines (the four, and "labels stacked on one spot are equal names of
 it; their order does not matter").
+
+### 2026-11-23 OWNER RULING — label-doors: "agree. Yes" (the general rule of labels, five lines)
+tags: core/labels core/labels/paths core/labels/export core/labels/export/arguments core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/principles/label-names-spot
+
+ASKED AS A RULING (slug label-doors, the statement put to him in five lines: "1. A label is owned by the text
+that writes its name; there it is read bare. 2. Any other label is read by a path, and a path is a chain of
+labels. 3. A binding's name may stand in a path for a skipped label, under your four conditions. 4. Each part
+decides the doors through itself, and closing one closes only that one. 5. Labels stacked on one spot are equal
+names of it; their order does not matter."; line 4's doors as told to him two entries before: a labelled spot
+opens through that label; an export list opens under the part's own names; a part used alone is open inside its
+definition and not exported; the blank mark is closed; a label keeps every other way to it, and its owner always
+reads it; line 5's sentence as told to him: "Labels stacked on one spot, with nothing between them, are equal
+names of that spot. Each is its own door to what the spot holds. One of them being private or blank closes only
+itself."; the manager's leaning yes). HIS WORDS, whole:
+
+"label-doors: agree. Yes"
+
+Class: a RULING: the five lines as put are the general rule of labels. Their grounds, each his: line 1:
+label-reference and argument-label; line 2: his "the general canonical form is that all labels are chains of only
+labels"; line 3: binding-as-label (his four conditions); line 4: his "It's closing that door but there may be
+other doors" (closing-own-label); line 5: his "would the nesting order of the labels matter? By my reading no".
+For the next fold: the five lines stand at the head of the labels section; ONE ownership table (who writes the
+name x what is done with the spot) is built under them and the pieces that say it piecemeal point at it (review
+r86 G1, whose trigger this is).
+The manager's readings (marked; for the fold to test): (a) "stacked ... with nothing between them" is label
+brackets (or label-only groups) nested directly; anything between makes two spots; (b) line 5 lets a caller's
+path through its own label pass a body's private label stacked on the same spot (`n.d` through `[n = [_x = P]]`),
+which "each step passed by the previous one" (export statement 3) did not; (c) a blank or private label stacked
+on a spot closes only its own door, so `[l = [_ = P]]` still opens P's labels through `l`.
