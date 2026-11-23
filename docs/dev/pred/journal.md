@@ -1014,3 +1014,14 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - To do without asking him: options-position's first half is in his own words ("in future bindings"; the ruled
   statement "literals written after the statement"): close it as "from the statement on" (an R-n for the lane);
   repeat / turning a flag off stay unstated.
+
+## 2026-11-23 — zero-open ruled; the call-forms play-out written at his request
+
+- RULED: zero-open, all four (R1 in predfold1123's rulings file). Discussion recorded: his count-prefixed list
+  example, "length(0:)", `0` as the one open name.
+- call-forms: his lean (b) ("i like your suggestion"), `repeat(X, _, 5)` "is 0 up to 5", and a request to play it
+  out (nine questions, two levels). WRITTEN as the record entry "2026-11-23 MANAGER — the play-out he asked for"
+  (a proposal throughout): a head is a binding list and a call binds it against the argument record; omitted /
+  unspecified `_` / open kept apart; array = lift, tuple = positions, map = names; a user macro taking a macro,
+  with its termination cost. Runs: `$PCREC_TMPDIR/scratch/pred/call_forms.py`. He "will be back later to go over".
+- IN FLIGHT: lane predfold1123 (R1 pending in its file). r86 round to launch at its delivery.

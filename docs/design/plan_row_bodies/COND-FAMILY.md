@@ -9417,3 +9417,129 @@ alternative was not taken). The manager's readings (marked; for the fold to test
 case (the left operand's match) and a condition written last in its definition; (b) the warning of (1) is
 `pcrec.default.unused` for a default and the same kind for the optional operator (the name the manager's call);
 (c) `$0` in a value hole follows the value hole's rules (literal text, the options in force at the hole).
+
+### 2026-11-23 OWNER, on call-forms: "i like your suggestion. Please play it out"; `repeat(X, _, 5)`; nine questions; "Key: self consistent definitions using basic semantic components"
+tags: core/operators/bindings/call-forms core/operators/bindings core/modules/binding-list core/modules/map core/values/tuples core/arrays/lift lib/structural/each lib/rx/repeat core/modules/positional
+
+Asked **call-forms** ((a) several bodies per name; (b) one head per name, defaults, a default naming an earlier
+parameter, `_` as the unspecified argument; the manager's leaning (b)). HIS WORDS, whole:
+
+"Call forms discussion: repeat(X, _, 5) is 0 up to 5. i like your suggestion. Please play it out: Is the right of
+the default = a pattern expression? Can any arg be keyword? Can keywords intersperse positional? How would
+variable arguments be specified if possible? Can the arguments be abstracted to a map? Then speculate level 2: is
+a macro first class? Can a map or array apply to a macro? Can it be an arg? What does that mean and how would it
+be used? Key: self consistent definitions using basic semantic components. I'll be back later to go over."
+
+Class: DISCUSSION, in his word; a LEAN toward (b) ("i like your suggestion"); a STATEMENT of one consequence he
+expects (`repeat(X, _, 5)` "is 0 up to 5": `_` passed for a count bound leaves the bound out); a REQUEST to play
+the design out against nine questions, in two levels, with his criterion: "self consistent definitions using
+basic semantic components". NOTHING RULED; call-forms stays open until he has gone over the play-out.
+
+### 2026-11-23 MANAGER — the play-out he asked for: one head per name, from components the language already has (a PROPOSAL throughout; no owner words; nothing here is ruled)
+tags: core/operators/bindings/call-forms core/operators/bindings core/modules/binding-list core/modules/all-symbols core/modules/call-shorthand core/modules/leave-out core/modules/map core/modules/positional core/values/tuples core/arrays/lift core/values/one-type lib/structural/each lib/rx/repeat lib/modifiers/padded core/holes/option core/holes/zero-values core/diagnostics/errors
+
+THE COMPONENTS ALREADY THERE (each quoted from the documents):
+- A RECORD: "a call is the macro applied to one record"; "A RECORD (the parentheses of a call or a condition) is
+  never a value: it is laid against fields only".
+- THE BINDING LIST: "`(l = left, =right) := X` binds `l` to `X.left` and `right` to `X.right`, on any map";
+  "In a macro call `f(=x)` is `f(x = x)`, the same degenerate form as in a binding list"; `(=) := X` binds every
+  member; "`_ = left` binds the member `left` to the unusable name `_`".
+- PARAMETERS: "positional arguments are the required parameters in declared order ...; keyword arguments are
+  optional settings with defaults ...; any parameter may be passed by name"; "NO PARTIAL APPLICATION"; "Macros
+  expand at compile time, inlined per use"; "No lambda until an example needs one".
+- COLLECTIONS: an array is an alternation and an operation LIFTS over it ("the nested loop over each operand's
+  `enumerate`"); a tuple is a value of fixed arity; a module is a map ("A map interface is not a created value:
+  no map value is passed around").
+- A macro already travels: "`name := expression` binds a name to whatever the expression is, an rx or a macro";
+  `each(f, A)` takes "a macro whose parameters the entries fill, or a filter passed as a section".
+
+THE ONE IDEA: a macro's HEAD is a binding list, and a CALL binds it against the argument record. Everything
+below is that sentence applied.
+
+LEVEL 1.
+1. The head: names in order; each may carry a default (`name = default`); a label parameter carries its mark.
+   There is ONE head per name (no overloading: his "we currently don't have overloading").
+2. The call's record: positional entries, then named entries (`name = value`, `=name` for `name = name`).
+   Positional entries fill the fields in declared order, a field with a default included (already so: "The legal
+   calls: `when(x, y)`, `when(x, y, z)`"); named entries fill by name. A field filled twice, or a name the head
+   does not have, is a compile error. "Required" means only: has no default.
+3. THREE WAYS a field has no value from the caller, kept apart:
+   - OMITTED: the field takes its default; legal only if it has one.
+   - UNSPECIFIED, `_`: passed, and says "nothing here". It is not the default (`repeat(x, 3, _)` must not become
+     `{3,3}`). Each POSITION the body lays the parameter into says what "nothing here" is, and it is always "as
+     if the slot were not written": a label: no label (RULED, label-parameter-omitted); a count bound: the bound
+     left out (his "0 up to 5"); a set, a comparison bound, an `&` operand: no constraint (`anything`); a pattern
+     in a sequence: the empty pattern; an option position: no options (RULED for `""`, the option hole). A
+     position with no row is a compile error at the call. Arithmetic on `_` is a compile error.
+   - OPEN (to be filled later): NOT in the language ("NO PARTIAL APPLICATION"; a section `(& f)` is the one open
+     form). `_` never means this: `repeat(_, 3)` is not a macro of one parameter.
+   His `max?` in a head is `max = _`: an optional field whose default is "unspecified".
+   UNSPECIFIED is not ZERO VALUES: `${[]}` in a pattern hole is the alternation of no members, the never-matching
+   rx (core/holes/zero-values); `_` there is the empty pattern.
+4. "Is the right of the default = a pattern expression?" It is an expression of the language of whatever kind
+   the parameter takes (an rx, a set, a condition, a label, `_`), and it is BODY TEXT: written in the macro's
+   definition, resolved there (its file's options, its names), under every rule of a body, never in the caller's
+   scope (binding-fixed, namespace-at-reference). It may name EARLIER parameters, left to right (`max = min`),
+   never later ones.
+5. "Can any arg be keyword?" Yes, already: "any parameter may be passed by name". And any may be positional (2).
+6. "Can keywords intersperse positional?" Proposal: no, for now: positional entries first, then named ones; a
+   positional entry after a named one is a compile error (conservative; it can relax without changing an
+   answer). `_` covers the need: `repeat(X, _, 5)`.
+7. "How would variable arguments be specified?" By a component that exists: ONE parameter that takes an ARRAY
+   (`join(a, sep = ".")`, `each(f, A)`, `any_order(a, ..)`): the caller writes `f([x, y, z])`. A "rest"
+   parameter that gathers the remaining positional entries into an array would be sugar for that, parked until
+   an example wants it. What a USER body can do with an array today is limited to handing it on (a hole, a
+   native such as `each` / `join`): "no expression of the language walks an array".
+8. "Can the arguments be abstracted to a map?" The record's two halves ARE the two collections: its positional
+   part is a TUPLE, its named part is a MAP. So a call can take them ready-made, by the binding list's own forms
+   mirrored: a tuple spread over the positions (the mirror of `(a, b) := T`, the OPEN tuple-parts) and a map
+   spread over the names (the mirror of `(=) := M`, ruled). Today's obstacle is on the map side: a map is only a
+   module or a thing with labels, never written in place ("no map value is passed around"; "A RECORD is never a
+   value"). Without changing that, an existing map can still be applied: a module of settings laid against a
+   head (`row(k, v, (=) = opts)`, the spelling a placeholder), taking the members whose names the head has.
+
+LEVEL 2 (speculation, as asked).
+9. "Is a macro first class?" Today it is half so: it is bound, renamed, imported as a module member, and passed
+   to natives (`each(capture, a)`). It cannot be written without a name (no lambda), left partly applied, or put
+   in a hole ("the unapplied-macro error"). Because every macro expands at compile time, the missing step is
+   small: a USER macro may take a macro as an argument and CALL its parameter in its body; passing is
+   substituting a name. No run-time value is involved.
+10. "Can a map or array apply to a macro?" Three collections, three meanings, none new:
+    an ARRAY applied to a macro is the LIFT, already ruled for any parameter that needs its operand single: one
+    call per member, the results the alternatives ("as though this was against fn() and not +"); `each(f, A)`
+    is its explicit form. A TUPLE applied is the positions (8). A MAP applied is the names (8).
+    An array is "or", a tuple is "then", a map is "named".
+11. "Can it be an arg? What does that mean and how would it be used?" Meaning: the parameter stands for an
+    unexpanded body with its head; calling it in the body expands it there, with the caller's kinds checked at
+    that expansion. Uses, each met in the record: the caller chooses the VALUE FORM of a row and the row forwards
+    its label to it (`row(msg:, "msg", json.string)`, the label-forward sketch with `value(l:)` replaced by a
+    parameter); the key of a sort (`sort(X, by = key)`); the test of `where(p, X)`; an item form for `list_of`.
+    RUN (python `re`, the bodies filled mechanically by one-line functions, the label-only group modelled as a
+    named group; `$PCREC_TMPDIR/scratch/pred/call_forms.py`; output pasted), with tag(kind, l:) :=
+    `/<${kind(l:)}>/`, num(l:) := `/(?<:${l}>\d+)/`, word(l:) := `/(?<:${l}>[a-z]+)/`:
+    `tag(num, v:) & (v: <5)` is `<(?P<v>\d+)>`: WHOLE `<3>` HOLDS, `<7>` FAILS, `<ab>` FAILS, `<03>` FAILS /
+    SEARCHED `<7> <ab> <4>` `<4>`@9 / FIND-ALL `<3> <7> <ab> <4>` [`<3>`@0, `<4>`@13]
+    `tag(word, v:) & (v: "ab")` is `<(?P<v>[a-z]+)>`: WHOLE `<ab>` HOLDS, `<abc>` FAILS, `<3>` FAILS / SEARCHED
+    `<3> <abc> <ab>` `<ab>`@10 / FIND-ALL `<ab> <3> <ab>` [`<ab>`@0, `<ab>`@9]
+12. THE COST of a macro as an argument: termination. Today's rule refuses a recursion "other than one integer
+    literal parameter strictly decreasing to a literal base case"; a macro that calls its parameter can hide one
+    (`w(f) := f(f)`, then `w(w)` never stops expanding). Two ways to keep expansion finite: an expansion BUDGET
+    with a compile error over it (as `enumerate` has), or parameter KINDS declared in the head so that a macro
+    parameter cannot receive itself (the under-construction "macro types"). The budget needs nothing new.
+
+RUN for level 1 (the same script; one head `repeat(x, min, max = min) := /(?:${x}){${min},${max}}/`):
+- `repeat(rx.digit, _, 5)` is `(?:\d){0,5}`: WHOLE `` HOLDS, `12` HOLDS, `12345` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12 x` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10, ``@11, ``@12]
+- `repeat(rx.digit, 3)` is `(?:\d){3,3}`: WHOLE `` FAILS, `12` FAILS, `12345` FAILS, `123456` FAILS / SEARCHED
+  `x1234567` `123`@1 / FIND-ALL `1234567 12 x` [`123`@0, `456`@3]
+- `repeat(rx.digit, 3, _)` is `(?:\d){3,}`: WHOLE `` FAILS, `12` FAILS, `12345` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` `1234567`@1 / FIND-ALL `1234567 12 x` [`1234567`@0]
+
+WHAT IT CHANGES in the documents if he takes it (for a later fold; nothing applied): lib/rx/repeat and
+lib/modifiers/padded lose their several bodies (repeat: the one head above; padded: the width form gets a name of
+its own, since an unspecified width does not reduce to the no-width body: hand-worked); "at least 3" is
+`repeat(x, 3, _)`; core/operators/bindings' sentence on positional and keyword arguments is restated as (2); the
+open call-forms closes as (b); tuple-parts (open) gains a second client.
+WHAT IS LEFT FOR HIM: the interleaving rule (6); whether `_` may be passed to ANY parameter or only to one whose
+head allows it (the play-out assumes any, as his `repeat(X, _, 5)` does); a map written in place (8); a user
+macro taking a macro (9, 11) and which of the two termination rules (12).
