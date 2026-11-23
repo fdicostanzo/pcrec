@@ -9859,3 +9859,18 @@ The manager's readings (marked; for the fold to test): (a) a parameter filled tw
 or a name the head does not have, is a compile error; (b) "the macro's own text" puts a default under every
 rule of a body (its file's options, its names; binding-fixed); (c) the head as a binding list (the play-out's
 "one idea") is the manager's framing, NOT ruled.
+
+### 2026-11-23 OWNER RULING — repeat-head: "agree with your lean" (head (i): `repeat(x, min = _, max = min)`)
+tags: lib/rx/repeat core/operators/bindings/call-forms core/holes/count
+
+ASKED AS A RULING (slug repeat-head: (i) `repeat(x, min = _, max = min)`: no conditional, one count is exact, a
+written 0 is exactly 0; or his conditional head, where a written 0 is "any number" and a compile-time conditional
+is needed; the manager's leaning (i)). HIS WORDS, whole:
+
+"repeat-head: agree with your lean"
+
+Class: a RULING: head (i) (the reading taken of "your lean": the leaning as put in the question he answered).
+`repeat(D)` is `D*`; one count is exact, 0 included; `repeat(D, 3, _)` is 3 or more; `repeat(D, _, 5)` is 0 to
+5. His conditional head is not taken; a compile-time conditional in an expression stays an idea (to park, with
+the trigger "the first default or body that cannot be written without it"; its `?` `:` spelling meets the
+optional entry operator: the spellings review).
