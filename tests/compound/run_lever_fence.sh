@@ -65,7 +65,11 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # (lane s1fix, review r1-s1 CHECKS-2); and the mfind lever witness's plant S3170
 # (lane mfindfix), whose SAB_BEFORE text is the lever arm itself, and that arm in
 # tests/memfn/simd_guarded_check.py (LEVER_ARMS: the unpicked mfind rows' only reach).
-ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S3131_|tests/mech/sabotages/S3170_|tests/mech/sabotages/S(446|807)_|tests/mech/sabotages/S3042_|tests/codegen/reqcube_check\.py|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/memfn/simd_guarded_check\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/run_prechecks\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/(cloud_[a-z]+_shards|measured_[a-z]+)\.tsv)'
+# R-47 U4's T-table pin cells (lane bsu4p, review r78): tests/memfn/span_pins.py's
+# lever and force cells (17-20) and its head-0 reference compile name `span-head`,
+# tests/memfn/span_ksource.py's docstring names that compile, and plant S3532
+# (V ahead of the lever and force) names the lever its reach needs.
+ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S3131_|tests/mech/sabotages/S3170_|tests/mech/sabotages/S(446|807)_|tests/mech/sabotages/S3042_|tests/codegen/reqcube_check\.py|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/memfn/simd_guarded_check\.py|tests/memfn/span_pins\.py|tests/memfn/span_ksource\.py|tests/mech/sabotages/S3532_|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/run_prechecks\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/(cloud_[a-z]+_shards|measured_[a-z]+)\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"
