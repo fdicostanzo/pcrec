@@ -1,0 +1,76 @@
+s1 -> CONTROL (the control's python `re` for `repeat(D, 3, _)` written `(?:\d){3}`): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (CONTROL)
+   its FAIL line: FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL) against python `re` over 1093 texts (the stacked line over 15): [('rx.repeat(rx.digit)', (0, 0, 0)), ('rx.repeat(rx.digit, 3)', (0, 0, 0)), ('rx.repeat(rx.digit, 3, _)', (112, 320, 320)), ('rx.repeat(rx.digit, _, 5)', (0, 0, 0)), ('rx.repeat(rx.dig
+s2 -> CALLFORMS (a positional entry after a named one accepted): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (CALLFORMS)
+   its FAIL line: FAIL CALLFORMS: named after positional legal (`{2,5}`) [False, True, False]; refused: positional after named False (None), filled twice True, a name the head lacks True, a default naming a later parameter True (the default of `min` in R names `max`, not an earlier parameter (a compile error, call-fo
+s3 -> CALLFORMS (a default naming a LATER parameter accepted (read as its text)): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (CALLFORMS)
+   its FAIL line: FAIL CALLFORMS: named after positional legal (`{2,5}`) [False, True, False]; refused: positional after named True (a call of rx.repeat: a positional entry after a named one (a compile error for now, call-forms line 2)), filled twice True, a name the head lacks True, a default naming a later paramete
+s4 -> CALLFORMS (a second head for one name accepted (the last one wins)): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (CALLFORMS)
+   its FAIL line: FAIL CALLFORMS: named after positional legal (`{2,5}`) [False, True, False]; refused: positional after named True (a call of rx.repeat: a positional entry after a named one (a compile error for now, call-forms line 2)), filled twice True, a name the head lacks True, a default naming a later paramete
+s5 -> UNSPEC (`_` for a count's upper bound read as the empty text (`{3,}` written `{3,` + `}` kept: `{3,}`) and the lower bound as the empty text (`{,5}`)): caught
+   last line: predfold1123b_model: 18 checks, 8 failed (CONTROL, REPEAT, UNSPEC, COUNT, EXPAND, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL UNSPEC: legal: a label True, an option (`opt(_)` = `/ab/` over 21 texts) True, a count bound True; refused: a pattern True (`_` passed for `a` of P2: the construct at that position has no form without the part (a compile error, unspecified-rule)), an exact count True, a comparison bound True, a
+s6 -> UNSPEC (`_` in a pattern position read as the empty pattern (the withdrawn play-out line)): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (UNSPEC)
+   its FAIL line: FAIL UNSPEC: legal: a label True, an option (`opt(_)` = `/ab/` over 21 texts) True, a count bound True; refused: a pattern False (None), an exact count False, a comparison bound False, a set True
+s7 -> REPEAT (`_` taken as "use the default" (call-forms line 4 undone)): caught
+   last line: predfold1123b_model: 18 checks, 7 failed (CONTROL, REPEAT, SHORTHAND, LIBLINES, EXPAND, SWEEP, DOC)
+   its FAIL line: FAIL REPEAT: WHOLE over ['', '12', '123', '123456'] against the ruled table: [('rx.repeat(rx.digit)', True), ('rx.repeat(rx.digit, 3)', True), ('rx.repeat(rx.digit, 3, _)', False), ('rx.repeat(rx.digit, _, 5)', True), ('rx.repeat(rx.digit, 2, 5)', True), ('rx.repeat(rx.digit, 0)', True)]; unset `max
+s8 -> REPEAT (head (ii): `min = 0, max = _`): caught
+   last line: predfold1123b_model: 18 checks, 5 failed (CONTROL, REPEAT, EXPAND, SWEEP, DOC)
+   its FAIL line: FAIL REPEAT: WHOLE over ['', '12', '123', '123456'] against the ruled table: [('rx.repeat(rx.digit)', True), ('rx.repeat(rx.digit, 3)', False), ('rx.repeat(rx.digit, 3, _)', True), ('rx.repeat(rx.digit, _, 5)', True), ('rx.repeat(rx.digit, 2, 5)', True), ('rx.repeat(rx.digit, 0)', False)]; unset `ma
+s9 -> SHORTHAND (the shorthand off: a read through the argument's name refused wherever the body uses it alone): caught
+   last line: predfold1123b_model: 18 checks, 8 failed (SHORTHAND, NOLABEL, LIBLINES, TABLE, EXPAND, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL SHORTHAND: alone: legal, A's d None; labelled: refused False (None), `B.p.d` [False, True, True]; listed: refused False, `B.d` [True, False]; closed: refused False and `c.d` True, `_p` False; the caller's own label under a closing body [True, False]; the caller's label then `A.h` refused True; 
+s10 -> SHORTHAND (condition 4 off: the shorthand also through a spot the body labels): caught
+   last line: predfold1123b_model: 18 checks, 4 failed (SHORTHAND, NOLABEL, LIBLINES, TABLE)
+   its FAIL line: FAIL SHORTHAND: alone: legal, A's d [False, True, True]; labelled: refused False (None), `B.p.d` [False, True, True]; listed: refused False, `B.d` [True, False]; closed: refused False and `c.d` True, `_p` False; the caller's own label under a closing body [True, False]; the caller's label then `A.h`
+s11 -> SHORTHAND (condition 1 off: a binding used twice in the caller's text takes the shorthand): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (SHORTHAND)
+   its FAIL line: FAIL SHORTHAND: alone: legal, A's d [False, True, True]; labelled: refused True (`A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4)), `B.p.d` [False, True, True]; listed: refused True, `B.d` [True, False]; closed
+s12 -> NOLABEL (`_:` on a spot written out as the blank mark `[_ = v]` again (reading (a))): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (NOLABEL)
+   its FAIL line: FAIL NOLABEL: `W(_:, A) & (A.h: ..)` legal True and as the body with no label on the spot True; the blank mark written out refused True; `[l = v]` with `_` lowered with no label (`[_ = v]`) False
+s13 -> STACK (stacked labels read in nesting order: the outer one passes only what the inner one exports): caught
+   last line: predfold1123b_model: 18 checks, 6 failed (CONTROL, STACK, TABLE, EXPAND, SWEEP, DOC)
+   its FAIL line: FAIL STACK: `[n = [_x = P]]` and `[_x = [n = P]]` alike over 15 texts False; `n.d` and `_x.d` alike False; `[l = [_ = P]]` opens through `l` [True, False]
+s14 -> STACK (a blank `_` in a stack closes the whole spot): caught
+   last line: predfold1123b_model: 18 checks, 3 failed (STACK, SWEEP, DOC)
+   its FAIL line: FAIL STACK: `[n = [_x = P]]` and `[_x = [n = P]]` alike over 15 texts True; `n.d` and `_x.d` alike True; `[l = [_ = P]]` opens through `l` None
+s15 -> EXPAND (the drill's written-out shorthand `B([A = A])` over a body using A alone replaced by the sugar over a body labelling the spot (the expansion wrong: condition 4 refuses it)): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (EXPAND)
+   its FAIL line: FAIL EXPAND: 12 sugar forms against their written-out expansions, legality and every mode over 21 texts; differing or refused: ['B(A) & (A.d: <5)']
+s16 -> COUNT (libpcre2 run on `a{0,}` where the record's run reads `a{,}`): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (COUNT)
+   its FAIL line: FAIL COUNT: `rx.repeat(rx.digit, _, _)` is `{0,}` [True, True, True, True]; libpcre2 `a{,}` WHOLE ``, `aaa`, `a{,}`: [('', True), ('aaa', True), ('a{,}', False)] (the four characters, the record's run)
+s17 -> READINGS (a reading's run moved: the shorthand set on EVERY spot of a body using the argument alone and labelled): caught
+   last line: predfold1123b_model: 18 checks, 5 failed (SHORTHAND, EXPAND, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL READINGS: 3 readings run: ['binding-as-label, both uses: the shorthand on the alone spot only (the second digit)']
+s18 -> SWEEP (one declared moved answer removed): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (SWEEP)
+   its FAIL line: FAIL SWEEP: 295 printed lines now (DIFF 8, REFUSED 58, same 248, unparsed 1), 274 at the starting commit under predfix86's engine; undeclared 0; moved or gone and not declared 2; declared moves 6; added 28; stale declarations 0
+s19 -> SUCCESSOR (one declared red removed): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (SUCCESSOR)
+   its FAIL line: FAIL SUCCESSOR: 13 earlier models re-run one at a time (predfix86, predfold1123 and predfix84 light: their SUCCESSOR is this list), each last line read; every red declared superseded with an unchanged FAIL line: [('predfix86', 'TRACEBACK', 'UNDECLARED')]
+s20 -> QUOTES (an owner sentence in the documents altered (a word dropped)): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (QUOTES)
+   its FAIL line: FAIL QUOTES: 26 quoted sentences, in the record at 89d26b6b3 and the documents, missing: ['label-doors: agree. Yes']; 8 record titles cited whole as a `rulings:` item's record, not a title or not cited: none
+s21 -> DOC (a formatted line altered): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 62 lines, each in its own piece; missing: 1
+s22 -> DOC (a line looked for under another piece's tag): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 62 lines, each in its own piece; missing: 1
+s23 -> TABLE (one cell of the ownership table changed to the opposite legality): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (TABLE)
+   its FAIL line: FAIL TABLE: 26 cells run (`3xx` holds, `7xx` fails where legal), each against its stated legality; disagreeing: [("an argument's binding, passed whole (`B(A)`, A writes `h`)", 'alone', 'B(A) & (A.h: <5)', 'legal')]
+s24 -> OWNERBODY (the owner's two-label body: `_:` written out as the blank mark (his body refused)): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (OWNERBODY)
+   its FAIL line: FAIL OWNERBODY: with `n:` [True, False, False], with `_:` None, the same answers; the caller's `n` read True
+s25 -> TABLE (the blank mark closes the groups its own definition's text writes (line 4's "its owner always reads it" undone)): caught
+   last line: predfold1123b_model: 18 checks, 1 failed (TABLE)
+   its FAIL line: FAIL TABLE: 26 cells run (`3xx` holds, `7xx` fails where legal), each against its stated legality; disagreeing: [("the reading definition's own text (`/(?<h>\\d)/` written there)", 'closed', '[_ = /(?<h>\\d)/] SEQ /xx/ & (h: <5)', '`h`: no group visible here sets it (a compile error, core/labels/exp
+predfold1123b_sabotage: 25 plants, 0 not caught (each plant turned its target check FAIL, no traceback)

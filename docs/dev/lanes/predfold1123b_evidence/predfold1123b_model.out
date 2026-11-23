@@ -1,0 +1,254 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the extended matcher against python `re`
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL) against python `re` over 1093 texts (the stacked line over 15): [('rx.repeat(rx.digit)', (0, 0, 0)), ('rx.repeat(rx.digit, 3)', (0, 0, 0)), ('rx.repeat(rx.digit, 3, _)', (0, 0, 0)), ('rx.repeat(rx.digit, _, 5)', (0, 0, 0)), ('rx.repeat(rx.digit, 2, 5)', (0, 0, 0)), ('rx.repeat(rx.digit, 0)', (0, 0, 0)), ('rx.digits', (0, 0, 0)), ('stacked', (0, 0, 0))]
+== CALLFORMS (call-forms, ruled): one head per name; positional first, then named; defaults
+   LINE [core/operators/bindings/call-forms] Named after positional: WHOLE `1` FAILS, `12` HOLDS, `123456` FAILS / SEARCHED `x1234567` `12345`@1 / FIND-ALL `1234567 1 12` [`12345`@0, `67`@5, `12`@10] (`rx.repeat(rx.digit, max = 5, min = 2)`)
+   LINE [core/operators/bindings/call-forms] A positional entry after a named one: modes: a compile error (`rx.repeat(rx.digit, max = 5, 2)`: a compile error for now).
+      (refusal: a call of rx.repeat: a positional entry after a named one (a compile error for now, call-forms line 2))
+   LINE [core/operators/bindings/call-forms] A parameter filled twice: modes: a compile error (`rx.repeat(rx.digit, 3, min = 2)`: `min` by position and by name).
+      (refusal: a call of rx.repeat fills `min` twice (a compile error, call-forms))
+   RUN `rx.repeat(rx.digit, low = 2)`: refused: a call of rx.repeat names `low`, which its head does not have (a compile error, call-forms)
+   LINE [core/operators/bindings/call-forms] A default naming a later parameter: modes: a compile error (`R(rx.digit)`, R(x, min = max, max = _) := `/(?:${x}){${min},${max}}/`: a default may name an earlier parameter only).
+      (refusal: the default of `min` in R names `max`, not an earlier parameter (a compile error, call-forms line 3))
+   LINE [core/operators/bindings/call-forms] Two heads for one name: modes: a compile error (`R(rx.digit)`, R(x) := `/${x}/`, R(x, y) := `/${x}${y}/`: one head per name, no overloading).
+      (refusal: `R` is defined twice: one head per name (a compile error, call-forms line 1))
+   RUN `rx.repeat()`: refused: a call of rx.repeat binds no `x` (a call binds every required parameter, call-forms)
+PASS CALLFORMS: named after positional legal (`{2,5}`) [False, True, False]; refused: positional after named True (a call of rx.repeat: a positional entry after a named one (a compile error for now, call-forms line 2)), filled twice True, a name the head lacks True, a default naming a later parameter True (the default of `min` in R names `max`, not an earlier parameter (a compile error, call-forms line 3)), two heads True, the required `x` unset True
+== REPEAT (repeat-head, ruled: head (i)): one count exact, 0 included; `_` leaves a bound out
+   LINE [lib/rx/repeat] No count: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` HOLDS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10] (`rx.repeat(rx.digit)`)
+   LINE [lib/rx/repeat] One count, exact: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` FAILS / SEARCHED `x1234567` `123`@1 / FIND-ALL `1234567 12` [`123`@0, `456`@3] (`rx.repeat(rx.digit, 3)`)
+   LINE [lib/rx/repeat] No maximum: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` HOLDS / SEARCHED `x1234567` `1234567`@1 / FIND-ALL `1234567 12` [`1234567`@0] (`rx.repeat(rx.digit, 3, _)`)
+   LINE [lib/rx/repeat] No minimum: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10] (`rx.repeat(rx.digit, _, 5)`)
+   LINE [lib/rx/repeat] A range: WHOLE `` FAILS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED `x1234567` `12345`@1 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, `12`@8] (`rx.repeat(rx.digit, 2, 5)`)
+   LINE [lib/rx/repeat] A written 0, exact: WHOLE `` HOLDS, `12` FAILS, `123` FAILS, `123456` FAILS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [``@0, ``@1, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, ``@9, ``@10] (`rx.repeat(rx.digit, 0)`)
+PASS REPEAT: WHOLE over ['', '12', '123', '123456'] against the ruled table: [('rx.repeat(rx.digit)', True), ('rx.repeat(rx.digit, 3)', True), ('rx.repeat(rx.digit, 3, _)', True), ('rx.repeat(rx.digit, _, 5)', True), ('rx.repeat(rx.digit, 2, 5)', True), ('rx.repeat(rx.digit, 0)', True)]; unset `max` (the default `min`, exact) and `max = _` (no maximum) differ True
+   LINE [core/operators/bindings/call-forms] No count: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` HOLDS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10] (`rx.repeat(rx.digit)`)
+   LINE [core/operators/bindings/call-forms] One count, exact: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` FAILS / SEARCHED `x1234567` `123`@1 / FIND-ALL `1234567 12` [`123`@0, `456`@3] (`rx.repeat(rx.digit, 3)`)
+   LINE [core/operators/bindings/call-forms] No maximum: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` HOLDS / SEARCHED `x1234567` `1234567`@1 / FIND-ALL `1234567 12` [`1234567`@0] (`rx.repeat(rx.digit, 3, _)`)
+   LINE [core/operators/bindings/call-forms] No minimum: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10] (`rx.repeat(rx.digit, _, 5)`)
+== UNSPEC (unspecified-rule, ruled): `_` is the construct without the part; no form, a compile error
+   LINE [core/operators/bindings/unspecified] A label: WHOLE `3!` HOLDS, `7!` HOLDS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0, `7!`@3] (`A(_:) SEQ "!"`, A(l:) := `/(?<:${l}>\d)/`)
+   LINE [core/operators/bindings/unspecified] An option: WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB Ab` [`ab`@0] (`opt(_)`, opt(o) := `/(?${o})ab/`)
+   LINE [core/operators/bindings/unspecified] A count bound: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` HOLDS / SEARCHED `x1234567` `1234567`@1 / FIND-ALL `1234567 12` [`1234567`@0] (`rx.repeat(rx.digit, 3, _)`)
+   LINE [core/operators/bindings/unspecified] A pattern: modes: a compile error (`P2(_, /b/)`, P2(a, b) := `/${a}${b}/`: a pattern position has no form without the part).
+      (refusal: `_` passed for `a` of P2: the construct at that position has no form without the part (a compile error, unspecified-rule))
+   LINE [core/operators/bindings/unspecified] An exact count: modes: a compile error (`E(rx.digit, _)`, E(x, n) := `/(?:${x}){${n}}/`: `{}` is no count).
+      (refusal: `_` passed for `n` of E: the construct at that position has no form without the part (a compile error, unspecified-rule))
+   LINE [core/operators/bindings/unspecified] Laid into two positions: WHOLE `1b` HOLDS, `bbbb` HOLDS, `1` HOLDS / SEARCHED `x1bb` ``@0 / FIND-ALL `1bb 2 b` [`1bb`@0, ``@3, `2`@4, ``@5, `b`@6, ``@7] (`T(rx.digit, _)`, T(x, n) := `/(?:${x}){${n},}b{0,${n}}/`)
+   RUN `G(_)`, G(n) := `/\d/ & (0: >= ${n})`: refused: `_` passed for `n` of G: the construct at that position has no form without the part (a compile error, unspecified-rule)
+   RUN `Q(_)`, Q(s) := `/x/ & (0: s)`: refused: `_` passed for `s` of Q: the construct at that position has no form without the part (a compile error, unspecified-rule)
+PASS UNSPEC: legal: a label True, an option (`opt(_)` = `/ab/` over 21 texts) True, a count bound True; refused: a pattern True (`_` passed for `a` of P2: the construct at that position has no form without the part (a compile error, unspecified-rule)), an exact count True, a comparison bound True, a set True
+== COUNT (count-unspecified, ruled): by meaning, never the empty text; libpcre2 reads `{,}` as text
+   LINE [core/holes/count] Both bounds unspecified: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` HOLDS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10] (`rx.repeat(rx.digit, _, _)`)
+   libpcre2 (ctypes, the installed library) WHOLE on `a{,}`: [('', False), ('aaa', False), ('a{,}', True)]
+PASS COUNT: `rx.repeat(rx.digit, _, _)` is `{0,}` [True, True, True, True]; libpcre2 `a{,}` WHOLE ``, `aaa`, `a{,}`: [('', False), ('aaa', False), ('a{,}', True)] (the four characters, the record's run)
+== SHORTHAND (binding-as-label, ruled): the four conditions, the table for `B(A)`
+   LINE [core/labels/paths/closed-argument] The body using the argument alone: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+   LINE [core/labels/paths/call-prefix] A's own d, the body using the argument alone (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+   LINE [core/labels/paths/closed-argument] The body labelling the spot: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`: a label is made on the spot; the read is `B.p.d`, the line "Through the body's path").
+      (refusal: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4))
+   LINE [core/labels/paths/call-prefix] A's own d, the body labelling the spot (case 2): modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`: a label is made on the spot; the read is `B.p.d` (core/labels/paths/closed-argument)).
+      (refusal: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4))
+   LINE [core/labels/paths/closed-argument] Through the body's path: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (B.p.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
+   LINE [core/labels/paths/closed-argument] The body listing the spot: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[(=) = rx]}xx/`: the list is a label made on the spot (the manager's reading (b)); the read is `B.d`).
+      (refusal: `A.`: a label is already made on the spot where B places `A` (the body lists the spot; the read is `B.<label>`; a compile error, binding-as-label condition 4))
+   LINE [core/labels/paths/closed-argument] Through the call, the list: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[(=) = rx]}xx/`)
+   LINE [core/labels/paths/closed-argument] Closed by the macro: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`: the blank mark is a label made on the spot; `[c = B(A)] & (c.d: <5)` alike).
+      (refusal: `A.`: a label is already made on the spot where B places `A` (the body closes the spot; a compile error, binding-as-label condition 4))
+   RUN `[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`: refused: `c.d`: `d` is not visible through `c` (a compile error, core/labels/paths)
+   LINE [core/labels/paths/closed-argument] Closed by a `_` part label: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_p = rx]}xx/`: `c.d` and `B.d` alike; inside its binding a `_` part label is an ordinary one).
+      (refusal: `A.`: a label is already made on the spot where B places `A` (the body closes the spot; a compile error, binding-as-label condition 4))
+   LINE [core/labels/paths/closed-argument] The caller's own label, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
+   RUN `B([a = A]) & (A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`: refused: path `A.h`: `A` is neither written nor a binding used in this definition
+   LINE [core/labels/paths/argument-default] Used twice in the caller's text: modes: a compile error (`B(A) SEQ A & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: the binding is not referenced unambiguously (condition 1); label the uses).
+      (refusal: `A.`: the binding `A` is used 2 times in this definition, so its name is no shorthand for a label (a compile error, binding-as-label condition 1))
+   LINE [core/labels/paths/argument-default] The caller's read through the shorthand: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
+   LINE [core/labels/export/arguments] The body using its argument alone: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
+   LINE [core/labels/paths/argument-default] Both uses: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`, A := `/(?<d>\d)/`)
+   LINE [core/labels/paths/call-prefix] Used twice alone, the last mention: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`pair(A) & (A.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${p},${p}/`)
+   LINE [core/holes/bare-condition/nested-scope] Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (A.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`)
+   LINE [core/operators/bindings/label-omitted] The unspecified label on a spot: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8] (`W(_:, A) & (A.h: <5)`, W(l:, v) := `/<${[l = v]}>/`, A := `/(?<h>\d)/`)
+PASS SHORTHAND: alone: legal, A's d [False, True, True]; labelled: refused True (`A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4)), `B.p.d` [False, True, True]; listed: refused True, `B.d` [True, False]; closed: refused True and `c.d` True, `_p` True; the caller's own label under a closing body [True, False]; the caller's label then `A.h` refused True; used twice: refused True; `/${rx}xx/` legal [True, False]; both uses (the alone spot) [True, False]; pair alone twice (the last mention) [True, False]; his example 1 [True, False]; `W(_:, A)` [True, False]
+== NOLABEL (reading (a) of label-parameter-omitted withdrawn): `_:` is the part with no label, not `[_ = v]`
+   RUN `W4(A) & (A.h: <5)`, W4(v) := `/<${[_ = v]}>/`, A := `/(?<h>\d)/`: refused: `A.`: a label is already made on the spot where W4 places `A` (the body closes the spot; a compile error, binding-as-label condition 4)
+   `[l = v]` with l passed `_` lowers to: (v)
+PASS NOLABEL: `W(_:, A) & (A.h: ..)` legal True and as the body with no label on the spot True; the blank mark written out refused True; `[l = v]` with `_` lowered with no label (`(v)`) True
+== STACK (label-doors line 5): labels stacked on one spot are equal names; the order does not matter
+   LINE [core/labels/rule] Outer the caller's, inner private: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[n = [_x = P]] & (n.d: <5)`, P := `/(?<d>\d)\d/`)
+   LINE [core/labels/rule] Outer private, inner the caller's: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[_x = [n = P]] & (n.d: <5)`, P := `/(?<d>\d)\d/`)
+   LINE [core/labels/ownership] A blank label in the stack: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[l = [_ = P]] & (l.d: <5)`, P := `/(?<d>\d)\d/`)
+   LINE [core/labels/rule] Something between the two labels: modes: a compile error (`[n = [_x = P] SEQ "!"] & (n.d: <5)`, P := `/(?<d>\d)\d/`: two spots: `_x`'s door is shut to `n` (the manager's reading (a))).
+      (refusal: `n.d`: `d` is not visible through `n` (a compile error, core/labels/paths))
+PASS STACK: `[n = [_x = P]]` and `[_x = [n = P]]` alike over 15 texts True; `n.d` and `_x.d` alike True; `[l = [_ = P]]` opens through `l` [True, False]
+== OWNERBODY: his two-label body, `A(l:, P) := [l = [_x = P]] & (_x: 5)`, with a name and with `_`
+   LINE [core/operators/bindings/label-omitted] His body, a name: WHOLE `5` HOLDS, `7` FAILS, `55` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 5 3` [`5`@0, `5`@4] (`A(n:, /\d/)`, A(l:, P) := `[l = [_x = P]] & (_x: 5)`)
+   LINE [core/operators/bindings/label-omitted] His body, the unspecified label: WHOLE `5` HOLDS, `7` FAILS, `55` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 5 3` [`5`@0, `5`@4] (`A(_:, /\d/)`, A(l:, P) := `[l = [_x = P]] & (_x: 5)`)
+PASS OWNERBODY: with `n:` [True, False, False], with `_:` [True, False, False], the same answers; the caller's `n` read True
+== LIBLINES: the library's lines under the one head (rx.repeat re-spelled `max = _`; padded_to; when)
+   LINE [lib/rx/repeat] The last item, through a label on the call: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `x37 73` `3`@1 / FIND-ALL `73 37 13` [`73`@0, `3`@3, `13`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & (r.a: "3")`)
+   LINE [lib/rx/repeat] A label written on the argument: WHOLE `3` HOLDS (a = `3`), `73` HOLDS (a = `3`), `37` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `37 73 4` [`3`@0, `73`@3, `4`@6] (`rx.repeat([a = rx.digit], min = 1, max = _) & (a: <5)`)
+   LINE [lib/rx/repeat] Every item, a group question: WHOLE `73` HOLDS, `33` FAILS / SEARCHED `x33 73` `73`@4 / FIND-ALL `73 33 17` [`73`@0, `17`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & some((r.a: "7"))`)
+   LINE [lib/modifiers/padded-to] WHOLE `0129` HOLDS / SEARCHED `x0129` `0129`@1 / FIND-ALL `0129 0000 12` [`0129`@0, `0000`@5] (`/${padded_to(/(?:\d\d)+?/, 3)}/`)
+   LINE [lib/modifiers/padded-to] Two digits at least: WHOLE `5` FAILS, `05` HOLDS, `005` FAILS, `55` FAILS / SEARCHED `x5 07` `07`@3 / FIND-ALL `5 07 123` [`07`@2] (`padded_to(rx.digit, 2)`)
+   LINE [lib/control/when] Through the argument's name: modes: a compile error (`W(A, (A.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`: the spot is listed, a label made (binding-as-label, the manager's reading (b)); `W([a = A], (a.h: <5))` reads it).
+      (refusal: `A.`: a label is already made on the spot where W places `A` (the body lists the spot; the read is `W.<label>`; a compile error, binding-as-label condition 4))
+   LINE [lib/control/when] The caller's own label: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W([a = A], (a.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`)
+   LINE [lib/control/peek] Through the argument's name: modes: a compile error (`peek(A) SEQ /\d/ & (A.d: <5)`, A := `/(?<d>\d)/`: the body lists the spot, a label made (binding-as-label); the read is `peek.d`).
+      (refusal: `A.`: a label is already made on the spot where peek places `A` (the body lists the spot; the read is `peek.<label>`; a compile error, binding-as-label condition 4))
+   LINE [lib/control/atomic] Through the argument's name: modes: a compile error (`atomic(A) & (A.d: <5)`, A := `/(?<d>\d)/`: the body lists the spot; the read is `atomic.d`).
+      (refusal: `A.`: a label is already made on the spot where atomic places `A` (the body lists the spot; the read is `atomic.<label>`; a compile error, binding-as-label condition 4))
+   LINE [lib/search/hits] Through the argument's name: modes: a compile error (`hits(A) & (A.d: <5)`, A := `/(?<d>\d)/`: the body labels the spot `hit`; the read is `hits.hit.d`).
+      (refusal: `A.`: a label is already made on the spot where hits places `A` (the body labels the spot `hit`; a compile error, binding-as-label condition 4))
+   RUN `occurrences(A) & (A.d: <5)`, A := `/(?<d>\d)/`: refused: `A.`: a label is already made on the spot where occurrences places `A` (the body labels the spot `hit`; a compile error, binding-as-label condition 4)
+   LINE [lib/convention/argument-labels] A binding used alone in a call, through its name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
+   LINE [lib/convention/argument-labels] The same read through the argument's name: modes: a compile error (`identity(A) & (A.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`: the list on the spot is a label made (binding-as-label, the manager's reading (b))).
+      (refusal: `A.`: a label is already made on the spot where identity places `A` (the body lists the spot; the read is `identity.<label>`; a compile error, binding-as-label condition 4))
+   rx.digits against `\d+`: (0, 0, 0) of 63 texts differ
+PASS LIBLINES: the re-spelled repeat lines [True, True, True]; padded_to [True, True]; `W(A, (A.h: ..))` refused True (`A.`: a label is already made on the spot where W places `A` (the body lists the spot; the read is `W.<label>`; a compile error, binding-as-label condition 4)), `W([a = A], ..)` True; through the argument's name refused in peek, atomic, hits, occurrences, identity [True, True, True, True, True]; rx.digits against `\d+` (0, 0, 0) of 63
+== TABLE (label-doors, the ownership table): each cell's legality, run
+   the reading definition's own text (`/(?<h>\d)/` wr alone     `/(?<h>\d)xx/ & (h: <5)`: legal [True, False]
+   the reading definition's own text (`/(?<h>\d)/` wr labelled  `[x = /(?<h>\d)/] SEQ /xx/ & (h: <5)`: legal [True, False]
+   the reading definition's own text (`/(?<h>\d)/` wr listed    `[(=) = /(?<h>\d)/] SEQ /xx/ & (h: <5)`: legal [True, False]
+   the reading definition's own text (`/(?<h>\d)/` wr closed    `[_ = /(?<h>\d)/] SEQ /xx/ & (h: <5)`: legal [True, False]
+   the reading definition's own text (`/(?<h>\d)/` wr stacked   `[n = [_x = /(?<h>\d)/]] SEQ /xx/ & (h: <5)`: legal [True, False]
+   an argument's binding, passed whole (`B(A)`, A wri alone     `B(A) & (A.h: <5)`: legal [True, False]
+   an argument's binding, passed whole (`B(A)`, A wri labelled  `B(A) & (A.h: <5)`: refused: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`
+   an argument's binding, passed whole (`B(A)`, A wri listed    `B(A) & (A.h: <5)`: refused: `A.`: a label is already made on the spot where B places `A` (the body lists the spot; the
+   an argument's binding, passed whole (`B(A)`, A wri closed    `B(A) & (A.h: <5)`: refused: `A.`: a label is already made on the spot where B places `A` (the body closes the spot; a 
+   an argument's binding, passed whole (`B(A)`, A wri stacked   `B(A) & (A.h: <5)`: refused: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `_x
+   the body (the label it writes on the spot)         alone     `B(A) & (B.h: <5)`: refused: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+   the body (the label it writes on the spot)         labelled  `B(A) & (B.p.h: <5)`: legal [True, False]
+   the body (the label it writes on the spot)         listed    `B(A) & (B.h: <5)`: legal [True, False]
+   the body (the label it writes on the spot)         closed    `B(A) & (B.h: <5)`: refused: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+   the body (the label it writes on the spot)         stacked   `B(A) & (B.n.h: <5)`: legal [True, False]
+   the caller, inside an argument (`B([a = A])`)      alone     `B([a = A]) & (a.h: <5)`: legal [True, False]
+   the caller, inside an argument (`B([a = A])`)      labelled  `B([a = A]) & (a.h: <5)`: legal [True, False]
+   the caller, inside an argument (`B([a = A])`)      listed    `B([a = A]) & (a.h: <5)`: legal [True, False]
+   the caller, inside an argument (`B([a = A])`)      closed    `B([a = A]) & (a.h: <5)`: legal [True, False]
+   the caller, inside an argument (`B([a = A])`)      stacked   `B([a = A]) & (a.h: <5)`: legal [True, False]
+   a sent label (`B(S(x:))`), or one a body passes on alone     `B(S(x:)) & (x: <5)`: legal [True, False]
+   a sent label (`B(S(x:))`), or one a body passes on labelled  `B(S(x:)) & (x: <5)`: legal [True, False]
+   a sent label (`B(S(x:))`), or one a body passes on listed    `B(S(x:)) & (x: <5)`: legal [True, False]
+   a sent label (`B(S(x:))`), or one a body passes on closed    `B(S(x:)) & (x: <5)`: legal [True, False]
+   a sent label (`B(S(x:))`), or one a body passes on stacked   `B(S(x:)) & (x: <5)`: legal [True, False]
+   a sent label (`B(S(x:))`), or one a body passes on forwarded `F(x:) & (x: <5)`: legal [True, False]
+PASS TABLE: 26 cells run (`3xx` holds, `7xx` fails where legal), each against its stated legality; disagreeing: none
+== EXPAND (the expansion drill): each sugar form against its written-out expansion; legality and answers agree
+   AGREE `B(A) & (A.d: <5)` / `B([A = A]) & (A.d: <5)`: legal, legal (the shorthand: the label `A` written on the argument)
+   AGREE `B(A) & (A.d: <5)` / `B2(A, [a = A]) & (a.d: <5)`: legal, legal (the shorthand, a body using the argument alone and labelled: the label on the alone spot only)
+   AGREE `W(_:, A) & (A.h: <5)` / `W3(A) & (A.h: <5)`: legal, legal (`_:` on a spot: the part with no label)
+   AGREE `A(_:, /\d/)` / `[_x = /\d/] & (_x: 5)`: legal, legal (his body with `_:`)
+   AGREE `A(x:) & (x: 5)` / `/(?<:x>\d+)/ & (x: 5)`: legal, legal (a label parameter)
+   AGREE `rx.repeat(rx.digit, 3)` / `rx.repeat(rx.digit, 3, 3)`: legal, legal (an unset parameter takes its default)
+   AGREE `rx.repeat(rx.digit, 3, _)` / `/(?:\d){3,}/`: legal, legal (`_` for the upper bound)
+   AGREE `rx.repeat(rx.digit)` / `/(?:\d){0,}/`: legal, legal (`_` for both bounds)
+   AGREE `rx.repeat(rx.digit, max = 5, min = 2)` / `rx.repeat(rx.digit, 2, 5)`: legal, legal (named entries)
+   AGREE `opt(_)` / `/ab/`: legal, legal (`_` for an option: no letters)
+   AGREE `[n = [_x = P]] & (n.d: <5)` / `[_x = [n = P]] & (n.d: <5)`: legal, legal (stacked labels, either order)
+   AGREE `/(?<h>\d)?x/ & (h ?: <5)` / `/(?<h>\d)?x/ & (h = "0": <5)`: legal, legal (`?:` as a default inside the set)
+PASS EXPAND: 12 sugar forms against their written-out expansions, legality and every mode over 21 texts; differing or refused: none
+== READINGS: the manager's readings of the range a run can decide (the rest: the report, by record line)
+   UNTESTABLE: binding-as-label (c), never placed: the never-pass warning (the engine refuses the written-out label too, `B([A = A])`, so no warning is modelled for a caller's label never placed; the shorthand and its expansion agree: `A.d`: no part label or used binding `A` here / `A.d`: no part label or used binding `A` here)
+   UNTESTABLE as a run: the repeat-head finding, `${min|0}` is two values in a count hole, which makes copies (the loaded engine runs no binding of several numbers; the rule sentence it rests on, core/holes/count: "Several values: ONE COPY OF THE LITERAL holding the holes per combination")
+   SUPPORTED: unspecified-rule (b): `_` may be passed to any parameter, judged at each position it is laid into
+   SUPPORTED: label-doors (a): anything between two labels makes two spots (the inner private label's door shut)
+   SUPPORTED: binding-as-label, both uses: the shorthand on the alone spot only (the second digit)
+PASS READINGS: 3 readings run: all SUPPORTED
+== SWEEP: every printed three-mode line (`rejected:` and history lines skipped): predfix86's engine (the FOLD extensions off) over the starting commit's documents against this one over these; every non-same status and every moved or gone answer DECLARED
+   DECLARED x1: `(?J)`: not modelled
+   DECLARED x4: a JSON sketch line: its bodies (`row`, `value`, `string`, ...) are in 
+   DECLARED x1: a condition bound alone and read where used: not modelled (the fold la
+   DECLARED x2: a group number read as a label (core/labels/numbers): not modelled
+   DECLARED x10: a name the line binds in its prose, not its tail (the sweep reads the 
+   DECLARED x16: a provided body this model does not read (native, or not modelled)
+   DECLARED x1: a readings line quoting a run as printed before label-reference (its S
+   DECLARED x1: a readings line quoting the draft's run of a form it marks NOT SUPPORT
+   DECLARED x7: a set, a negation or a conditional group as an operand: not parsed by 
+   DECLARED x4: a value list in a hole (`${[]}`, `${[2, 4] + ..}`): not modelled
+   DECLARED x7: not modelled (the header's list); the printed line is RIGHT (review r8
+   DECLARED x13: value arithmetic over a pattern or several strings: not modelled
+   ADDED core.md:357 `[n = [_x = P]] & (n.d: <5)`
+   ADDED core.md:358 `[_x = [n = P]] & (n.d: <5)`
+   ADDED core.md:382 `[l = [_ = P]] & (l.d: <5)`
+   ADDED core.md:687 `B(A) & (A.d: <5)`
+   ADDED core.md:823 `B(A) & (A.d: <5)`
+   ADDED core.md:825 `pair(A) & (A.d: <5)`
+   ADDED core.md:857 `B(A) & (B.d: <5)`
+   ADDED core.md:1572 `rx.repeat(rx.digit, _, _)`
+   ADDED core.md:1873 `C := B(A) & (A.d: <100)`
+   ADDED core.md:2049 `W(_:, A) & (A.h: <5)`
+   ADDED core.md:2050 `A(n:, /\d/)`
+   ADDED core.md:2051 `A(_:, /\d/)`
+   ADDED core.md:2143 `rx.repeat(rx.digit, max = 5, min = 2)`
+   ADDED core.md:2148 `rx.repeat(rx.digit)`
+   ADDED core.md:2149 `rx.repeat(rx.digit, 3)`
+   ADDED core.md:2150 `rx.repeat(rx.digit, 3, _)`
+   ADDED core.md:2151 `rx.repeat(rx.digit, _, 5)`
+   ADDED core.md:2169 `opt(_)`
+   ADDED core.md:2173 `T(rx.digit, _)`
+   ADDED library.md:241 `/${padded_to(/(?:\d\d)+?/, 3)}/`
+   ADDED library.md:242 `padded_to(rx.digit, 2)`
+   ADDED library.md:364 `W(/(?<h>\d)/, (h: <5))`
+   ADDED library.md:366 `W([a = A], (a.h: <5))`
+   ADDED library.md:807 `rx.repeat(rx.digit, 2, 5)`
+   ADDED library.md:808 `rx.repeat(rx.digit, 0)`
+   ADDED library.md:809 `[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & (r.a: "3")`
+   ADDED library.md:810 `rx.repeat([a = rx.digit], min = 1, max = _) & (a: <5)`
+   ADDED library.md:811 `[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & some((r.a: "7"))`
+   ANSWER MOVED (declared): `/${padded(/(?:\d\d)+?/, 3)}/`: call-forms (ruled): padded's width form is GONE from padded, re-spelled `padded_to` in lib/modifiers/padded-to (LIBLINES); its old engine refused it
+   ANSWER MOVED (declared): `B(A) & (A.d: <5)`: binding-as-label (ruled): every line of this program moved; alone: a compile error (argument-default) to LEGAL (SHORTHAND); labelled: legal (closed-argument (a), call-prefix case 2) to a compile error, read `B.p.d`; both uses: the labelled spot's `d` to the alone spot's (condition 4; READINGS); the old lines GONE where their label text changed
+   ANSWER MOVED (declared): `W(/(?<h>\d)/, (h: <5))`: the line's tail "`W(A, (A.h: <5))` ... the same answers" is GONE: under binding-as-label that program is a compile error (LIBLINES); the line kept, same answers, its key changed with the tail
+   ANSWER MOVED (declared): `[r = rx.repeat(/(?<a>\d)/, min = 1)] & (r.a: "3")`: repeat-head (ruled): `min = 1` alone is now EXACTLY 1; the line re-spelled `min = 1, max = _` (the same answers: LIBLINES)
+   ANSWER MOVED (declared): `[r = rx.repeat(/(?<a>\d)/, min = 1)] & some((r.a: "7"))`: repeat-head: re-spelled `min = 1, max = _`, the same answers
+   ANSWER MOVED (declared): `rx.repeat([a = rx.digit], min = 1) & (a: <5)`: repeat-head: re-spelled `min = 1, max = _`, the same answers
+   ANSWER MOVED (declared): `rx.repeat(rx.digit, 3)`: call-forms (ruled): the two lines by `repeat(x, n)` and by `repeat(x, min)` are GONE with the several bodies; one head, one count exact (REPEAT's line "One count, exact")
+PASS SWEEP: 295 printed lines now (DIFF 8, REFUSED 58, same 248, unparsed 1), 274 at the starting commit under predfix86's engine; undeclared 0; moved or gone and not declared 0; declared moves 7; added 28; stale declarations 0
+== NULLABLE: EVID-4's known limit: no program the extended engine ran has a loop whose body can match empty
+PASS NULLABLE: 582 programs run by the checks above (SWEEP's included), walked node by node: 0 with a loop whose body can match empty
+== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded, with the digest of the red's own FAIL line
+   predfix86    last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predfold1123 last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predfix84    last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predspot     last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predfix83    last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   preddef      last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predfix82    last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predcall     last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predref      last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predbound    last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predfix77    last line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+      TRACEBACK [b024bdc4e170]: superseded by its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)
+         its FAIL line: AssertionError: `rx\.digits := (rx\.repeat\(rx\.digit, min = 1\))`
+   predarr      last line: AssertionError: `chars := (/.*?/)`
+      TRACEBACK [ce43d48c7e37]: superseded by as predfix86 declared, unchanged: predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predref's HITS
+         its FAIL line: AssertionError: `chars := (/.*?/)`
+   predscope    last line: AssertionError: `(repeat\(x, min\) := /\(\?:\$\{x\}\)\{\$\{min\},\}/)`
+      TRACEBACK [17ab1e47c179]: superseded by as predfix86 declared, unchanged: its reader of rx.repeat's third body (now no body of that shape: one head, repeat-head)
+         its FAIL line: AssertionError: `(repeat\(x, min\) := /\(\?:\$\{x\}\)\{\$\{min\},\}/)`
+PASS SUCCESSOR: 13 earlier models re-run one at a time (predfix86, predfold1123 and predfix84 light: their SUCCESSOR is this list), each last line read; every red declared superseded with an unchanged FAIL line: yes
+== QUOTES: the owner's sentences and the rulings' titles of the range, in the record at the PINNED start commit and in the documents
+PASS QUOTES: 26 quoted sentences, in the record at 89d26b6b3 and the documents, missing: none; 8 record titles cited whole as a `rulings:` item's record, not a title or not cited: none
+== DOC: every line this model formats occurs verbatim in the piece its tag names
+PASS DOC: 62 lines, each in its own piece; missing: 0
+predfold1123b_model: 18 checks, 0 failed
