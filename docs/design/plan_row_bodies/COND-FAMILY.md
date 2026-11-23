@@ -9793,3 +9793,24 @@ unspecified-rule).
 OWNER QUESTIONS queued: closing-own-label; capture-in-set; optional-entry-edges. Not asked: blank-label-read
 (reading (c) restored), request-in-literal and named-label-default (marked readings, conservative).
 The four lessons for the guide go to main (to_main.md).
+
+### 2026-11-23 OWNER, on unspecified-rule: "please restate the rule and given an example"
+tags: core/operators/bindings/call-forms core/holes/count core/holes/name core/holes/option core/modules/leave-out
+
+HIS WORDS, whole: "unspecified-rule: please restate the rule and given an example"
+
+Class: a REQUEST (DISCUSSION; nothing ruled). The manager's restatement (told to him; the proposal, marked):
+"An argument given as the underscore says: this part is not written. The body then means what the construct at
+that position already means WITHOUT that part. Where the construct has no form without the part, the call is a
+compile error."
+RUN (python `re`, the bodies filled mechanically; the label-only group modelled as a named group; output pasted):
+- a label, A(l:) := `/(?<:${l}>\d+)x/`: `A(n:)` is `(?P<n>\d+)x`: WHOLE `12x` HOLDS, `x` FAILS, `12` FAILS /
+  SEARCHED `a12x 3x` `12x`@1 / FIND-ALL `12x 3x x` [`12x`@0, `3x`@4]; groups named: n. `A(_:)` is `(?:\d+)x`:
+  the same answers in every mode; groups named: none.
+- an option, opt(o) := `/(?${o})ab/`: `opt("i")` is `(?i)ab`: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab`
+  `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6]. `opt(_)` is `ab`: WHOLE `ab` HOLDS, `AB` FAILS /
+  SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB Ab` [`ab`@0].
+- a count bound: the runs of the entries above (`repeat(D, 3, _)` is `(?:\d){3,}`; `repeat(D, _, 5)` is
+  `(?:\d){0,5}`; both unspecified `(?:\d){0,}`, ruled count-unspecified).
+- no form without the part (hand-worked from the rule; compile errors, nothing to run): `between(_, 12)` (a
+  comparison `>=` with no number is not a construct), `n + 1` with n unspecified, a backreference's name.
