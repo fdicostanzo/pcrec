@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Re-aimed by lane bsu6fix2: scratch and tree paths to bsu6fix2, T6 re-stated on the window branch, N21 added.
+# Re-aimed by lane bsu6fix2: scratch and tree paths to bsu6fix2, T6 re-stated on the window branch, N21 added; the dry chain draws from a pinned run id and the base chain must repeat identically.
 """The checks critic's mutant harness (review r80, checks.md; mut.py/mut2.py/mut3.py in orig/), RE-AIMED at lane bsu6fix's
 cards.py: every one of the 62 mutants is re-stated on the fixed code (same clause, the new text where the fix moved it), plus
 new mutants on the fixes' own controls. Each mutant: a copy of cards.py with ONE edit; KILLED if `c6selftest` fails; else the
@@ -151,8 +151,22 @@ def dry_chain(cards, tag):
     rc, o = cards_run(cards, ["time", d, "--prepare", "--cards", "C6", "--patterns", "c6_dig32"])
     out.append((rc, o))
     for extra in ([], ["--deadline", "+63.5"], ["--deadline", "+65"]):
+        pin_draws(d)
         out.append(cards_run(cards, ["time", d, "--dry"] + extra))
     return out
+
+
+FIXED_RID = "b6f2b6f2b6f2b6f2"
+
+
+def pin_draws(d):
+    """bsu6fix2: every `time --dry` of the chain draws its launch variants from the SAME run id (RUNDIR/run_id, written
+    here; run_id.timed removed so start_timing does not re-mint it). Without it each run drew afresh, the number of
+    distinct exes per arm (so the near-miss model's voids, so the simulated wall) varied run to run, and the +63.5 step
+    (a deadline INSIDE the first pass) cut at a different launch: a mutant 'killed' there could be noise (R13, X6 were)."""
+    open(os.path.join(d, "run_id"), "w").write(FIXED_RID + "\n")
+    if os.path.exists(os.path.join(d, "run_id.timed")):
+        os.remove(os.path.join(d, "run_id.timed"))
 
 
 def main():
@@ -168,6 +182,13 @@ def main():
         return 1
     base = dry_chain(base_cards, "base")
     print("BASE dry chain rcs %s" % [r for r, _o in base], flush=True)
+    # the harness's own control (bsu6fix2): the base chain run AGAIN must read identical, step by step, or no
+    # dry-chain kill can be told from noise
+    again = dry_chain(base_cards, "base2")
+    unstable = [n for n, ((r1, o1), (r2, o2)) in enumerate(zip(base, again)) if r1 != r2 or norm(o1) != norm(o2)]
+    print("BASE dry chain repeat: %s" % ("identical" if not unstable else "UNSTABLE steps %s" % unstable), flush=True)
+    if unstable:
+        return 1
     res = {}
     for i, cl, old, new in M:
         if ONLY and i not in ONLY:
