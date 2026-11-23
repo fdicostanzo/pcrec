@@ -8908,3 +8908,62 @@ entry then tests the empty text: `($h?: <5)` on an absent h FAILS (the empty tex
 `(h?: <5)` HOLDS. So the two part unless the set holds the empty text: as the rules stand `h?` is a form of its
 own on the LABEL, not the value expression `$h?`. To examine: whether the general reading should be made to
 agree, and what `h+` / `h*` denote (his "the last form"; as values, `$h+` is repetition of h's text).
+
+### 2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words
+tags: core/holes/flags core/holes/flags/in-filter core/patterns/flags core/patterns/literals core/model/places core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/paths/closed-argument core/labels/export lib/convention/argument-labels lib/sets/prefix-in lib/builtin/options lib/rx/repeat core/diagnostics/warnings
+
+The draft is `$PCREC_TMPDIR/scratch/crit-predspot1122/review.md` (frozen at e6e95a2c5; no finding REJECTED). Each
+line is the manager's ruling of a PROPOSED disposition. Two lanes take them: the FIX lane predfix84 (it files the
+review) and the FOLD lane that follows it (the rulings of 2026-11-22 late and 2026-11-23), because argument-label
+(ruled 2026-11-23) WITHDREW readings (a) and (b) of argument-default and so overtook part of the labels group.
+
+FIX-NOW, lane predfix84 (documents):
+- A1: reading (e) of hole-flags is scoped: a binding of the same file has the same defaults only where no
+  `@options` statement stands between the binding and the hole; whether the statement may stand mid-file is the
+  open options-position.
+- A2: for FLAGS a binding is its expression where it is WRITTEN, plus an explicit `i` from the hole; "where it is
+  used" stays for matching only (core/holes/flags/in-filter, core/model/places' binding row); a line that shows it.
+- A3: core/patterns/flags' "No implicit extended mode" and core/patterns/literals' "means exactly what PCRE means"
+  are conditioned on the file's program options; details name RULING C2 (2026-11-14) as revised in part by
+  program-options. The consequence (a library literal's meaning is no longer readable off the literal alone) is
+  told to the owner.
+- A5: `prefix_in` (and `suffix_in`, `slice_in`) lay S into a hole as `quoted` does, so S is PLACED and gets the
+  list. This CORRECTS the exemption list the manager gave with wrapper-export ("the set arguments (`between`,
+  `prefix_in`, ...)"): `prefix_in` leaves it. A reading, marked; no printed match moves (labels only).
+- A6: ONE statement in core/patterns/flags naming the sources of a flag at a point, in order (the literal's own
+  text; an explicit `i` or `-i` from the hole; the file's program options from the statement on; the file default).
+  (1) `r` and the a-family are NOT inherited (his hole-flags words: "only an explicit `i` or `-i`"); details'
+  P29-2 line marked superseded. (2) an `i` made by an option hole and (3) program options on string constants and
+  on an argument literal a library body places: listed OPEN (slugs option-hole-explicit, options-reach-constants),
+  no answer applied. (4) `pattern($x)` carries the flags in force where the group is written (the piece's own
+  sentence; a reading). (5) repeated statements and turning a flag off: OPEN, options-position.
+- A8: `pcrec.flags.filter` fires under an inherited `-i` by the same comparison (a reading; the trigger is the
+  manager's call); one clause.
+- C1, C2, C6, C7: as proposed (details marks; call-prefix case 2 is REVISED, not "settled").
+- C8: the format rule stands ("the base never carries history"): the revision marks named move to the details
+  entries; the label-names-spot quote gets its antecedent ("A parameter like rx in a call B(rx) cannot be labeled
+  because it's not being placed into the pattern.").
+- D1, D3, D4, D5, D6, D7, D8(e): as proposed. G2's doc fix (parked/ideas/severity-table: its trigger has fired,
+  said so). G4: a parked piece (a pass-through mark in a macro's head), trigger as the review gives it.
+FIX-NOW, lane predfix84 (the successor evidence model): B1 (parameters alpha-renamed at lowering; a rename drill
+in the grid), B2 (a two-step path through a part label), B3 (label-reference one argument deep), B4 (`@options`
+position for arguments and macro bodies), B5 (grid arms that can fail; a real undecided arm; one plant per
+repaired arm), B7 (the sweep fails on any non-same status not declared; history and `rejected:` lines skipped).
+
+OVERTAKEN by argument-label (2026-11-23), handed to the FOLD lane with the finding's id:
+- A4: `rx.repeat([a = rx.digit], min = 1)` then `a` is LEGAL again (the caller's own label, set where the body
+  places the template: in a loop, the loop's label rules). His "yes" of 2026-11-17 stands; reading (a) is
+  withdrawn. The review's owner question repeat-label is NOT asked: the record answers it.
+- A7: the sentence "what an argument exports" moves into core/labels/export, rewritten under argument-label,
+  argument-export and label-in-argument; each shape the review lists is closed as ruled, a marked reading or open.
+- C3: readings (a) and (b) are withdrawn, not re-marked. C5 and D2: an in-place group is the caller's own again;
+  the sentences are rewritten by the fold (capture-export moves "stays a capture" as well).
+- C4: the mark is fixed by the fold ("`A.d` legal where the body labels the spot" rests on closed-argument (a),
+  which he ruled on the statement "legal in the caller exactly where `d` is visible through the call"; WHICH spots
+  make it visible is the manager's reading). The review's question spot-read-name goes to the queue, low: the
+  caller's own label (`B([a = A])`, `a.d`) is now the way that needs no reading.
+PLAN (no lane now): B6 (nullable arguments in looped spots: the EVID-4 row), D8 (a one-owner pass at the next
+full revision), G1 (three conventions under lib/convention: at the next full revision), G2's table of file
+settings. NOTED: G3.
+OWNER QUESTIONS kept (queued, not urgent): option-hole-explicit, options-reach-constants, options-position,
+spot-read-name. The three lessons for the guide go to main (to_main.md).
