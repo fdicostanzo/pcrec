@@ -1,0 +1,5 @@
+cells: 40 / 40, same: True
+launches: 200 / 200; launch plan (cell, argv incl. the drawn variant, in order) same: True
+output file: 4712 / 4712 bytes, row statuses ['ok'] / ['ok'], same bytes: True (sha 94efdfe5fed0216f)
+launch plan sha e8ee2fe4fc336f82
+j2plan: SAME

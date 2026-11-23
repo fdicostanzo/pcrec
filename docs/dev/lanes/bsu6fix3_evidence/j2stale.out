@@ -1,0 +1,6 @@
+== 412afe9f5
+launches 200, rows 40, statuses ['ok']
+first non-ok note: -
+== 9986aca43
+launches 0, rows 40, statuses ['void']
+first non-ok note: <lambda>() takes 3 positional arguments but 4 were given

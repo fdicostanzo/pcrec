@@ -1,0 +1,15 @@
+== tip
+ok   (r38 J2) time_cells interleaves the arms in rounds 200 launches over 40 arm cells (40 rows, 0 not ok): every round of 10 holds each arm once: True; the drills' order: True
+j2drill: 0 failed
+rc=0
+== tip, planted stale stub (9986aca43's)
+FAIL (r38 J2) time_cells interleaves the arms in rounds 0 launches over 40 arm cells (40 rows, 40 not ok: void selftest_j2.<locals>.<lambda>() takes 3 positional arguments but 4 were given): every round of 10 holds each arm once: False; the drills' order: False
+j2drill (planted stale stub): 1 failed
+rc=1
+== plan tip vs 412afe9f5
+cells: 40 / 40, same: True
+launches: 200 / 200; launch plan (cell, argv incl. the drawn variant, in order) same: True
+output file: 4712 / 4712 bytes, row statuses ['ok'] / ['ok'], same bytes: True (sha 94efdfe5fed0216f)
+launch plan sha e8ee2fe4fc336f82
+j2plan: SAME
+rc=0

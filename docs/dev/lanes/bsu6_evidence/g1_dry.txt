@@ -1,0 +1,17 @@
+#g1 span-vector manifest; compile pass over 6109 patterns; pcrec=/home/pcrec/projects/pcrec/worktrees/bsu6/build/pcrec; floor=8; excluded path tests/memfn/span_seed.rxt
+layer off movers: 28 distinct patterns | real 3 (corpus 0, bench 3, both 0) | SPAN-SEED-only 25
+layer off bin (scan, 10-99): 1 real movers -> UNREACHED (n < 8)
+layer off bin (window, 10-99): 2 real movers -> UNREACHED (n < 8)
+layer off   real mover: bench     window       [0-9a-f]{32} [byte/c-default,utf8/c-default]
+layer off   real mover: bench     window       \b[0-9a-f]{32}\b [byte/c-default,utf8/c-default]
+layer off   real mover: bench     scan         \d{32} [byte/c-default,utf8/c-default]
+layer off floor witness: SPAN-SEED movers 25
+layer on  movers: 28 distinct patterns | real 3 (corpus 0, bench 3, both 0) | SPAN-SEED-only 25
+layer on  bin (scan, 10-99): 1 real movers -> UNREACHED (n < 8)
+layer on  bin (window, 10-99): 2 real movers -> UNREACHED (n < 8)
+layer on    real mover: bench     window       [0-9a-f]{32} [byte/c-default,utf8/c-default]
+layer on    real mover: bench     window       \b[0-9a-f]{32}\b [byte/c-default,utf8/c-default]
+layer on    real mover: bench     scan         \d{32} [byte/c-default,utf8/c-default]
+layer on  floor witness: SPAN-SEED movers 25
+timing: NOT RUN (no window booked, block_span.md §9.4); trigger: a bin reaches 8 real movers
+g1 dry: OK

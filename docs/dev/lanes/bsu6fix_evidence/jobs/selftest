@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# kit-bsu6fix-selftest: the FULL `cards.py selftest` (~90 min) on worktrees/bsu6fix (lane bsu6fix's owed run), non-timing.
+# Modelled on 750-kit-u5tip-test. Cap 7200 > 3600: one selftest cannot be split. Verdict: cards.py's rc (exec'd) and the
+# log's own trailer in scratch/bsu6fix/selftest_full.log.
+set -u
+S=/var/tmp/pcrec-pcrec/scratch/bsu6fix
+W=/home/pcrec/projects/pcrec/worktrees/bsu6fix
+LOG=$S/selftest_full.log
+export TMPDIR=$S/tmp PCREC_TMPDIR=$S PCREC_TREE=$W
+case "${1:-}" in
+    --dry-run)
+        [ -f "$W/memfn/tests/span_forms/cards.py" ] && [ -x "$W/build/pcrec" ] || { echo "no cards.py / build/pcrec in $W" >&2; exit 1; }
+        echo "would run in $W: python3 -I memfn/tests/span_forms/cards.py selftest > $LOG"
+        echo "boxqueue: cap 7200"; echo "boxqueue: patience none"; echo "boxqueue: not-before 2026-11-23T01:00"; echo "boxqueue: est 5400"
+        echo "boxqueue: expect none reason=cards.py selftest is exec'd, so its rc is the job's rc; the verdict is its trailer in $LOG"
+        exit 0 ;;
+    --ready)
+        t=$(date +%H%M); t=$((10#$t)); if [ $t -lt 100 ] || [ $t -ge 1800 ]; then echo "evening hold: start only 01:00-18:00 (now $t)"; exit 75; fi
+        exec bash /home/pcrec/projects/pcrec/scripts/boxqueue after kit-bsu6fix-inlane ;;
+esac
+mkdir -p "$TMPDIR"
+exec > "$LOG" 2>&1
+exec python3 -I "$W/memfn/tests/span_forms/cards.py" selftest
