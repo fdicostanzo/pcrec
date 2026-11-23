@@ -468,7 +468,9 @@ fi
 # first-match table): the pre-check's run reply where its run part renders,
 # else the `cover`/run-pinned window site's member, else no `@` -- so a
 # `dominated` VM artifact whose prefilter is not run-pinned (`(a)(b)`,
-# `(?<=xyz)ab`, utf8's `é` here) stamps the run with no `@`.
+# `(?<=xyz)ab`, utf8's `é` here) stamps the run with no `@`. (`(?<=xyz)ab`
+# stated `xyzab` at K -3 at span_arms L3 until review r65 A's pick rule kept
+# the consumed `ab` where a forward scan may re-enter.)
 #
 # THE EXPECTED VALUES ARE LITERALS, hand-derived from the shipped prior and
 # from the walk's stated arms, NEVER recomputed here from
@@ -527,10 +529,18 @@ while IFS='%' read -r pat _sep want wantrun; do
         # [OPT-LITSCAN] S4 C3: an exact scan position is the stamped byte
         # (REQ_BYTE == bytes[idx]); a pair is scanned as both members and
         # REQ_BYTE names the set's pick instead (tuning.md §2.27).
+        # span_arms L3 (D-6, review r51 READYL3-9 (5)): `@idx` is the KIT's
+        # scan position over the WHOLE run, lookbehind bytes included, while
+        # REQ_BYTE is pcrec's pick over the CONSUMED positions; at a negative
+        # REQ_HANDOFF the two may differ (`(?<=xyz)ab`: `@2` is `z`, the byte
+        # `b`), so the scan is checked on `@idx`'s own member there, and on
+        # the stamped byte (their equality) everywhere else.
         if [ "$(run_scan_members "$gotrun" | wc -w)" -eq 1 ]; then
-            reqrun_scans "$a" "$got" \
-                && ok "[3.1b] $pat: the run scan's memchr carries the stamped byte $got" \
-                || bad "[3.1b] $pat: stamps \"$got\" with run \"$gotrun\" but no run-scan memchr for that byte is emitted"
+            mem="$got"
+            case "$(stamp "$a" REQ_HANDOFF)" in -*) mem="$(run_scan_members "$gotrun")" ;; esac
+            reqrun_scans "$a" "$mem" \
+                && ok "[3.1b] $pat: the run scan's memchr carries the scan position's byte $mem (stamped byte $got)" \
+                || bad "[3.1b] $pat: stamps \"$got\" with run \"$gotrun\" but no run-scan memchr for byte $mem is emitted"
         else
             reqrun_scans_run "$a" "$gotrun" \
                 && ok "[3.1b] $pat: the run's pair position is scanned on both members ($(run_scan_members "$gotrun"))" \
@@ -1735,7 +1745,9 @@ ROWS
 #       counted as one byte, `(?i)straße`'s U+017F) and S466 (an alternation
 #       taking its left branch's width).
 #   (b) PRESENCE: `handoff_position` is declared iff the stamp is not "none",
-#       and the subtraction and the comparison carry the stamp's K.
+#       and the subtraction and the comparison carry the stamp's K; at K < 0
+#       (span_arms L3, a run that begins inside a lookbehind) the end clamp,
+#       the comparison and the ADD carry B = -K (§14.3 D-8's K < 0 row).
 #   (c) BOUNDED: no artifact whose `req_landmark_maxoff` reads `unbounded` hands
 #       off (S467: answer-equivalent, so only this can see it), on the
 #       witnesses and on a corpus population with a floor (K35).
@@ -1792,6 +1804,15 @@ s512_presence() {
         handoff_block "$a" | grep -qx " *handoff_position -= $st;" \
             && handoff_block "$a" | grep -qx " *if (handoff_position - search_from > $st) {" \
             || bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but the block does not subtract and compare $st"
+    elif [ "$st" -lt 0 ]; then
+        # span_arms L3 (D-8's K < 0 row): B = -K, added after the end clamp,
+        # never subtracted; the block always exists at K < 0 (READYL3-1)
+        local b=$((-st))
+        handoff_block "$a" | grep -qx " *if (subject_length - handoff_position < $b) return 0;" \
+            && handoff_block "$a" | grep -qx " *if (handoff_position >= search_from || search_from - handoff_position < $b) {" \
+            && handoff_block "$a" | grep -qx " *handoff_position += $b;" \
+            && ! handoff_block "$a" | grep -q 'handoff_position -= ' \
+            || bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but the block does not clamp, compare and add $b"
     else
         handoff_block "$a" | grep -q 'handoff_position -= ' \
             && bad "[5.12b] $lbl: REQ_HANDOFF \"0\" but the block subtracts"
@@ -1836,8 +1857,13 @@ a.?b%-e byte%2%2%[REQ-HANDOFF-L1] a BYTE landmark b, after a and an optional byt
 .{1,3}:%-e utf8%12%12%[REQ-HANDOFF-L1] three characters of up to four bytes before the colon
 \w+:%-e byte%unbounded%none%[REQ-HANDOFF-L1] the colon after an unbounded run
 [a-y]\d{0,150}:%-e byte%151%151%[REQ-HANDOFF-L1] K ADMISSION's witness: the ENTRY hands off at any finite K (the re-entry declines, 5.12m)
+(?<=foo)bar(\w)\1%-e byte --engine=vm%-3%-3%span_arms L3 (under --engine=vm, review r65 A): the run foobar[\w] begins in the lookbehind foo, three bytes before every match (the VM attempt loop's row)
+(?<=e{10})eeeeeqzx%-e byte --engine=vm%-10%-10%span_arms L3 (under --engine=vm, review r65 A): e{10} is ten bytes before every match, the run e^15 qzx begins there
+(?<=éa)bc%-e utf8 --engine=vm%-3%-3%span_arms L3 (D-11; under --engine=vm, review r65 A): the lookbehind's BYTES, é's two (c3 a9) and a's one, not its two characters
+(?<=foo)bar(\w)\1%-e byte%0%0%review r65 A's pick rule: a compile that may re-enter a forward scan keeps the consumed run bar[\w] at K 0 (BASE's), not BACK's foobar[\w] at -3
+(?<=xyz)a+xyz%-e byte%-3%-3%review r65 A's pick rule: the consumed best xyz has no bound (after a+), so BACK's xyza at -3 is kept on the default route; the forward scan declines its re-entry at K < 0 (the start-byte row) and S3405 (the decline removed) refuses this compile at C's internal error
 ROWS
-[ "$s512_n" -ge 22 ] \
+[ "$s512_n" -ge 27 ] \
     && ok "[5.12a] the hand pin table's $s512_n rows all compiled" \
     || bad "[5.12a] only $s512_n hand pin rows compiled"
 
@@ -2022,6 +2048,9 @@ s512_reentry() {
     [ "$nd" -eq 1 ] && [ "$st" != "none" ] \
         || { bad "[5.12l] $lbl: DFA_PREFILTER \"handoff\" with $nd landmark declarations / REQ_HANDOFF \"$st\""; return 0; }
     b="$(reentry_block "$a")"
+    # K >= 0 only: the forward scan's `handoff` row is declined at K < 0
+    # (span_arms §14.4 L3's REV 3.3 addendum; review r65 C), so no artifact
+    # reaches a K < 0 restart block here; L2 brings its own arm and witness.
     printf '%s\n' "$b" | grep -qx ' *if (landmark_position < scan_position) {' \
         && printf '%s\n' "$b" | grep -qE '(landmark_position = rx_reqrun\(subject, subject_length, scan_position\);|landmark_position = \(\{.*(size_t rx_mf1_lo = scan_position;|rx_mf1_q = subject_length > scan_position \? memchr\(subject \+ scan_position, ))' \
         && printf '%s\n' "$b" | grep -qx " *if (landmark_position - scan_position > $st) {" \

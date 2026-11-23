@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 111
+#define PCREC_ARTIFACT_ABI 112
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -1061,25 +1061,53 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
     cx->job->mf_pre = req_site_define(cx, c);
 }
 
+/* The pre-check's miss: the search entry answers NOMATCH. It LEAVES the
+ * site, which the site states to the kit as `on_miss_leaves` (Q-G2-18); the
+ * landmark move's end clamp (`emit_req_move_open`, K < 0) exits by it too. */
+#define REQ_ON_MISS "return 0;"
+
 /* THE LANDMARK MOVE's ARITHMETIC, the one text of the entry's in-place move
  * (`emit_req_handoff_rest`, `target` IS `hit`) and the re-entry's
  * (`emit_req_landmark_move`, `target` the scan or attempt position): at
  * `ind`, the opening of the block that moves `target` to `hit - K` where that
- * is ahead of `pos`, `if (hit - pos > K) {`, and its assignment one level
- * in: in place `target -= K` (nothing at K = 0), else `target = hit - K`
- * (`target = hit` at K = 0). The caller prints the rest of the block (the
- * round-up, the reseed, its `else`, the close) and decides whether the block
- * exists at all (span_arms §14.3 D-8: every other difference stays in the
- * callers).
+ * is ahead of `pos`, and its assignment one level in. K is bounded; its two
+ * rows (span_arms §14.3 D-8, first match on K's sign):
  *
- * THE SUBTRACTION CANNOT UNDERFLOW: `hit >= pos` always (the entry's kit
- * contract; the re-entry's re-ask makes it true), so it compares the
- * DISTANCE `hit - pos` with K rather than computing `hit - K`, and never forms
- * `pos + K`, which could overflow near `SIZE_MAX`. K is bounded and >= 0. */
+ *   K >= 0  `if (hit - pos > K) {`, then in place `target -= K` (nothing at
+ *           K = 0), else `target = hit - K` (`target = hit` at K = 0).
+ *           NO SUBTRACTION CAN UNDERFLOW: `hit >= pos` here (the run's
+ *           `omin` is 0, so the kit's floor is `pos`; the re-entry's re-ask
+ *           makes it true), so it compares the DISTANCE `hit - pos` with K
+ *           rather than computing `hit - K`, and never forms `pos + K`, which
+ *           could overflow near `SIZE_MAX`.
+ *   K < 0   B = -K: the run begins B bytes BEFORE every match, and the kit's
+ *           floor is `max(0, pos - B)`, so `hit` may lie below `pos`. First
+ *           the END CLAMP, `if (len - hit < B) <miss>` (no match can begin
+ *           inside the subject: NOMATCH, the pre-check miss's own exit; the
+ *           kit verifies only a stretch of the run, which may lie in its
+ *           first B positions, so `hit + B` can pass `len`), then `if (hit >=
+ *           pos || pos - hit < B) {` (`hit + B` is ahead of `pos`), and in
+ *           place `target += B`, else `target = hit + B`. Neither forms a
+ *           value that can wrap: `hit <= len`, and `hit + B <= len` past the
+ *           clamp.
+ *
+ * The caller prints the rest of the block (the round-up, the reseed, its
+ * `else`, the close) and decides whether the block exists at all (D-8: every
+ * other difference stays in the callers). */
 static void emit_req_move_open(StrBuf *c, const char *ind, const char *hit,
-                               const char *pos, const char *target, long long k)
+                               const char *pos, const char *target, const char *len,
+                               long long k)
 {
     bool in_place = strcmp(target, hit) == 0;
+    if (k < 0) {
+        pcrec_sb_printf(c, "%sif (%s - %s < %lld) " REQ_ON_MISS "\n", ind, len, hit, -k);
+        pcrec_sb_printf(c, "%sif (%s >= %s || %s - %s < %lld) {\n", ind, hit, pos, pos, hit, -k);
+        if (in_place)
+            pcrec_sb_printf(c, "%s    %s += %lld;\n", ind, target, -k);
+        else
+            pcrec_sb_printf(c, "%s    %s = %s + %lld;\n", ind, target, hit, -k);
+        return;
+    }
     pcrec_sb_printf(c, "%sif (%s - %s > %lld) {\n", ind, hit, pos, k);
     if (in_place) {
         if (k > 0)
@@ -1093,14 +1121,17 @@ static void emit_req_move_open(StrBuf *c, const char *ind, const char *hit,
 /* [K82] (B) THE HANDOFF, pcrec's half: what follows the gate once the kit's
  * text has assigned `handoff_position` (the composite site's ASSIGN, §15.5;
  * rule 8, what follows a site is pcrec's text). The gate's block returns
- * `c`, the LEFTMOST position >= `posvar` where the window occurs (the kit's
- * offset-skip contract, memfn/src/ofsskip.c), or the subject's length;
- * every match begins at most K bytes before its window (invariant F,
- * litscan_k82h.md §1.2), so no attempt below `c - K` can succeed and the body
- * may begin its scan at `max(posvar, c - K)` and answer exactly what it
- * answers at `posvar` (the startpos contract, Claims 1-3). The move's
- * arithmetic, and the reason it cannot underflow, are
- * `emit_req_move_open`'s. Under a multibyte encoding the moved start is rounded UP to a
+ * `c`, the LEFTMOST position >= `max(0, posvar + omin)` where the landmark
+ * occurs (`omin = pcrec_run_omin`, 0 but for a run that begins inside a
+ * lookbehind, span_arms L3; the kit's offset-skip contract,
+ * memfn/src/ofsskip.c), or the subject's length; every match begins at most
+ * K bytes before its landmark (invariant F, litscan_k82h.md §1.2; at K < 0,
+ * at least -K bytes after it), so no attempt below `c - K` can succeed and
+ * the body may begin its scan at `max(posvar, c - K)` and answer exactly
+ * what it answers at `posvar` (the startpos contract, Claims 1-3). The
+ * move's arithmetic per sign of K, and why none of it can wrap, are
+ * `emit_req_move_open`'s; at K < 0 it also answers NOMATCH where `c - K`
+ * passes the subject's end. Under a multibyte encoding the moved start is rounded UP to a
  * character start (`PCREC_START0_ROUNDUP`, the backend's own predicate), so
  * it is a startpos the contract covers; only when it moved — `posvar` itself
  * is the caller's choice and stays exactly what it was ([r1 S-F6]). The
@@ -1139,16 +1170,26 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
         pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
                               "handoff_position", subjvar, lenvar,
                               PCREC_START0_ROUNDUP);
-        if (k > 0 || round.len > 0) {
+        /* the guard is per row of K's sign (span_arms §14.3 D-8, review
+           r51 READYL3-1): at K < 0 the block always exists, its move being
+           the one that keeps attempts at or after the start offset */
+        if (k != 0 || round.len > 0) {
             pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-            pcrec_sb_printf(c,
-                "%s/* [K82] every match begins at most %lld bytes before its %s\n"
-                "%s * %s, so no match begins before this. */\n",
-                indent, k, whole || run ? "whole" : "landmark",
-                indent, whole || run ? "run" : "byte");
+            if (k < 0)      /* D-16: the sentence that holds at K < 0 */
+                pcrec_sb_printf(c,
+                    "%s/* [K82] every match begins at least %lld bytes after the start of its %s\n"
+                    "%s * %s, so no match begins before this. */\n",
+                    indent, -k, whole || run ? "whole" : "landmark",
+                    indent, whole || run ? "run" : "byte");
+            else
+                pcrec_sb_printf(c,
+                    "%s/* [K82] every match begins at most %lld bytes before its %s\n"
+                    "%s * %s, so no match begins before this. */\n",
+                    indent, k, whole || run ? "whole" : "landmark",
+                    indent, whole || run ? "run" : "byte");
             pcrec_sb_cmt_close(c);
             emit_req_move_open(c, indent, "handoff_position", posvar,
-                               "handoff_position", k);
+                               "handoff_position", lenvar, k);
             if (round.len > 0) pcrec_sb_splice(c, &round);
             pcrec_sb_printf(c, "%s} else\n"
                                "%s    handoff_position = %s;\n",
@@ -1388,10 +1429,6 @@ static void req_site_note(void *u, mf_sink *c, uint32_t part)
     else             req_note_rest(sb, pu->indent);
 }
 
-/* The pre-check's miss: the search entry answers NOMATCH. It LEAVES the
- * site, which the site states to the kit as `on_miss_leaves` (Q-G2-18). */
-#define REQ_ON_MISS "return 0;"
-
 /* [MEMFN] R17-b' B2 THE CONSUMER KIND's sites (PR-3, r17b_prime.md §4.3):
  * the pre-check, the PF site, and the PF site of the DFA hat. */
 typedef enum { SKS_PRE, SKS_PF, SKS_HAT, SKS_ANY } SiteKindSite;
@@ -1453,8 +1490,10 @@ static uint8_t site_kind_of(Ctx *cx, SiteKindSite site)
  * REQUIRED on VM_ATTEMPT, the route no DFA scan fronts (the pre-check is
  * then the call's only linear no-match proof: K65's every member and K66's
  * whole run, §4.6), OPTIONAL elsewhere (a DFA scan proves absence itself);
- * `omin` 0, PR-6's sound under-estimate (presence is measured from the
- * attempt start, and every occurrence lies at or after it); `member_order`
+ * `omin`, PR-6's sound under-estimate of the least offset from the attempt
+ * start: 0 for every member (a set member is a consumed byte, at or after
+ * the attempt start) and `pcrec_run_omin` for the run (span_arms L3, D-7:
+ * `-B` where the run begins inside a lookbehind, else 0); `member_order`
  * the one pattern position the set carries, its walk's threaded rightmost
  * (the last necessary byte), every other member MF_ORDER_UNKNOWN.
  * THE RUN IN SET FORM (R-38 K38-2, MF_SITE_ABI 27; span_runs_sheet.md
@@ -1505,7 +1544,9 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
         p[i].need = need;
         p[i].plan_hint = MF_NO_PRED;
         p[i].span_class = MF_SPAN_PRESENCE;
-        p[i].omin = 0;
+        /* one writer per entry (review r65 H): the run's entry (stated
+         * last) carries its least offset, signed; every other entry 0 */
+        p[i].omin = run->whole_len >= 2 && i == np - 1 ? (int32_t)pcrec_run_omin(run) : 0;
     }
     return p;
 }
@@ -1571,8 +1612,11 @@ static bool req_run_tested_cx(Ctx *cx)
  * is kept. At the re-entry the scan is in its start state, whose future is a
  * fresh search's from `scan_position`: any match it can still complete (an
  * in-flight thread's included) implies one wholly in [scan_position, n), so
- * every part holds there; the presence facts hold no lookbehind byte (one
- * may lie below a match's start). Witnesses: tests/litscan/presence_deny.rxt,
+ * every part holds there. The set's members hold no lookbehind byte (one may
+ * lie below a match's start); the RUN may, since span_arms L3, and its span
+ * states that reach as its signed `omin` (`req_pres_spans`), so the kit's
+ * run part searches from `max(0, posvar + omin)` and its hit may lie up to
+ * `-omin` bytes before `posvar`. Witnesses: tests/litscan/presence_deny.rxt,
  * run under each PRES deny by tests/memfn/run_presence.sh (b3brev finding 2).
  * pcrec's own facts read the same choices (`req_byte` is the one-byte
  * landmark, whose K the handoff subtracts), so the head must BE `req_byte`
@@ -7950,19 +7994,33 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * jumped bytes begin no match (Claim 1), so the landing state is the fresh
  * one at the landing. The reseed runs only where the scan MOVED, which the
  * `> K` test makes true by construction (the conditional-reseed rule and
- * its `(?:\b|xy)a` witness, in the DFA hat's section below). An in-flight thread the start state carries
- * there completes only with a landmark at or after `scan_position`, so a
- * move happens only past every such thread's own reach. */
+ * its `(?:\b|xy)a` witness, in the DFA hat's section below). A move stays
+ * sound past an in-flight thread the start state carries there: equal DFA
+ * states have equal futures over CONSUMED bytes, so a completion of that
+ * thread implies a fresh match at some `s'' >= scan_position`, whose run
+ * lies at or after `s''` (K >= 0: the run is consumed), which the kit's
+ * floor finds; the move lands at `h - K <= s''` for that hit `h`, so it
+ * never passes the fresh match's start. At K < 0 the run begins inside a
+ * lookbehind, outside the machine's language, and the argument fails, so
+ * the row is declined there (`req_k_reentry_sound`, span_arms §14.4 L3's
+ * REV 3.3 addendum). */
 static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
 {
     Ctx *cx = f->cx;
     const char *ind = f->dir->bind;
     if (cand_finish_of(cx) == CAND_ROUTE_VM) cx->job->req_handoff_vm = true;
+    const PfBound kb = req_handoff_k(cx);
+    long long k = kb.v;
+    /* the row is declined at K < 0 (`req_k_reentry_sound`); its text there
+     * would state the refuted premise (span_arms §14.4 L3, REV 3.3) */
+    if (pcrec_bound_negative(kb))
+        pcrec_ctx_fail(cx, 0, "internal error: the forward scan's handoff "
+                              "re-entry emitted at a negative K");
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// this is a fresh search from here: the pre-check's landmark\n"
                  "%s// again, and no match begins more than %lld bytes before it.\n",
-                 ind, ind, ind, req_handoff_k(cx).v);
+                 ind, ind, ind, k);
     pcrec_sb_cmt_close(c);
     pf_open(c, f);
     emit_req_landmark_move(cx, c, ind, f->dir->posv, f);
@@ -7972,11 +8030,18 @@ static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
 /* THE RE-ENTERED HANDOFF's MOVE, the one text of its two consumers (the
  * forward scan's `pf_emit_handoff`, `f` its form, and the VM attempt loop's
  * `pcrec_emit_req_attempt_reentry`, `f` NULL), at `ind` plus one level:
- * where the kept landmark hit is behind `pos`, the pre-check re-asked from
- * `pos` (a miss is NOMATCH); then `pos` moved to the hit less K where that
- * is ahead, rounded up to a character start, and re-seeded where the form's
- * machine seeds (a VM attempt carries no seed). Every position it leaves
- * `pos` at is one no skipped position could begin a match before.
+ * where the kept landmark hit is STALE, the pre-check re-asked from `pos` (a
+ * miss is NOMATCH); then `pos` moved to the hit less K where that is ahead,
+ * rounded up to a character start, and re-seeded where the form's machine
+ * seeds (a VM attempt carries no seed). Every position it leaves `pos` at is
+ * one no skipped position could begin a match before. STALE is per sign of K
+ * (span_arms §14.3 D-8): at K >= 0 the hit is behind `pos`; at K < 0 (B =
+ * -K, a run that begins inside a lookbehind) the kit's floor is `max(0, pos
+ * - B)`, so a hit behind `pos` by B or less is still the least one and the
+ * hit is stale only further back (`pos - landmark_position > B`); a re-asked
+ * hit lies at or after that floor, so it is never stale and the re-ask
+ * cannot repeat. K < 0 reaches this text from the VM attempt loop only: the
+ * forward scan's row is declined there (`req_k_reentry_sound`).
  * [REQ-PAST-LAST] At no bound (K unbounded) there is no move:
  * the re-ask alone is the stop (a miss is NOMATCH), and its hit is kept in
  * `landmark_position`, which is what keeps the attempts linear. */
@@ -7985,7 +8050,11 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
 {
     const PfBound kb = req_handoff_k(cx);
     long long k = kb.v;
-    pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);
+    /* the re-ask's condition, per sign of K: the kept hit is stale */
+    const char *stale = pcrec_bound_negative(kb)
+        ? dfa_fragf(cx, "landmark_position < %s && %s - landmark_position > %lld", pos, pos, -k)
+        : dfa_fragf(cx, "landmark_position < %s", pos);
+    pcrec_sb_printf(c, "%s    if (%s) {\n", ind, stale);
     emit_req_reentry_use(cx, c, dfa_fragf(cx, "%s        ", ind), pos);
     pcrec_sb_printf(c, "%s    }\n", ind);
     if (!pcrec_bound_bounded(kb))       /* [REQ-PAST-LAST] no move to make */
@@ -7994,7 +8063,8 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s        ", ind), pos,
                           "subject", "subject_length", PCREC_START0_ROUNDUP);
-    emit_req_move_open(c, dfa_fragf(cx, "%s    ", ind), "landmark_position", pos, pos, k);
+    emit_req_move_open(c, dfa_fragf(cx, "%s    ", ind), "landmark_position", pos, pos,
+                       "subject_length", k);
     if (round.len > 0) pcrec_sb_splice(c, &round);
     if (f) pf_emit_ofs_reseed(c, f, dfa_fragf(cx, "%s        ", ind));
     pcrec_sb_printf(c, "%s    }\n", ind);
@@ -8023,6 +8093,10 @@ void pcrec_emit_req_attempt_reentry(Ctx *cx, StrBuf *c, const char *ind)
         pcrec_sb_printf(c, "%s    /* [REQ-PAST-LAST] a fresh search from here: past the last\n"
                            "%s     * occurrence of the whole run, no attempt can match. */\n",
                         ind, ind);
+    else if (pcrec_bound_negative(k))   /* D-16: the sentence that holds at K < 0 */
+        pcrec_sb_printf(c, "%s    /* [REQRUN-VM] a fresh search from here: the whole run again,\n"
+                           "%s     * and every match begins at least %lld bytes after the start of it. */\n",
+                        ind, ind, -k.v);
     else
         pcrec_sb_printf(c, "%s    /* [REQRUN-VM] a fresh search from here: the whole run again,\n"
                            "%s     * and no match begins more than %lld bytes before it. */\n",
@@ -9122,9 +9196,13 @@ static bool req_handoff_vm_run(const CandSel *s)
  *     route that has one, and the two never both apply);
  *   - MORE THAN ONE ATTEMPT: BOUND's row on the VM route is not one-start
  *     (`^`, `\A`, `\G`: [OPT-ANCHOR-VM] runs one attempt, nothing to skip);
- *   - A BOUND ON THE WHOLE RUN: it exists and its `whole_maxoff` is finite
- *     (backreferences, variables and linked calls before it are unbounded
- *     on the lowered tree, so they decline here).
+ *   - A BOUND ON THE WHOLE RUN: its K (`whole_maxoff`) is BOUNDED, read
+ *     through the offset bound's one predicate (`pcrec_bound_bounded`, D-7;
+ *     review r63 CONFORM-1) as the move emitters read it (backreferences,
+ *     variables and linked calls before it are unbounded on the lowered
+ *     tree, so they decline here). Of EITHER SIGN: a run that begins inside
+ *     a lookbehind has K < 0 and its own move (span_arms L3, D-8; §5.4 A8,
+ *     the retired `k >= 0` conjunct).
  *
  * WHY THE WHOLE RUN AND NOT THE WINDOW. A skipped attempt spends no budget,
  * so where the jump lands decides which give-ups become answers; with the
@@ -9142,8 +9220,8 @@ static bool req_handoff_vm_run(const CandSel *s)
  * the others are `req_handoff_vm_run`. */
 static bool req_handoff_entry_applies(const CandSel *s)
 {
-    long long k = pcrec_fact_req_whole_run(s->cx)->whole_maxoff;
-    return req_handoff_vm_run(s) && k >= 0 && k < PCREC_W_UNBOUNDED;
+    PfBound k = pcrec_bound_of(pcrec_fact_req_whole_run(s->cx)->whole_maxoff);
+    return req_handoff_vm_run(s) && pcrec_bound_bounded(k);
 }
 
 /* [REQRUN-VM] THE `handoff-attempts` ROW's predicate: the entry's row, and a
@@ -9170,8 +9248,11 @@ static bool req_handoff_attempts_applies(const CandSel *s)
  * row's direction), and where it moves is a fact of the whole run. */
 static bool req_handoff_unbounded_applies(const CandSel *s)
 {
+    /* `pcrec_bound_of` states every K (never none), so not bounded IS
+       unbounded; asked after the shared conjuncts, as the facts' `used`
+       record has it */
     return req_handoff_vm_run(s) &&
-           pcrec_fact_req_whole_run(s->cx)->whole_maxoff >= PCREC_W_UNBOUNDED &&
+           !pcrec_bound_bounded(pcrec_bound_of(pcrec_fact_req_whole_run(s->cx)->whole_maxoff)) &&
            req_parts_in_whole(s->cx);
 }
 
@@ -9359,6 +9440,24 @@ static bool req_landmark_admits(const CandSel *s, PfBound k)
 }
 
 
+/* Is the forward scan's re-entry sound at the landmark's K?
+ * DECLINED AT K < 0 (span_arms §14.4 L3, REV 3.3 addendum): the re-entry
+ * runs at a scan position where the machine is back in its start state,
+ * and treats that as a fresh search; at K < 0 it is not one. The DFA's
+ * language holds only the CONSUMED part of a match: a lookbehind's bytes
+ * are tested by the machine but are never in what the start state's
+ * future recognises, so a match begun BEFORE the scan position whose
+ * lookbehind run lies further back can be in flight in the start state
+ * (`(?<=foobar)\d*x` on "foobar12x": `\d*` keeps the start state at 7, a
+ * match begun at 6 is in flight, and the re-ask from 7 finds no `foobar` at
+ * or after 1, so NOMATCH where PCRE2 answers (6,9)). Equal DFA states have
+ * equal futures only over consumed bytes. The entry move and the VM
+ * attempt loop's re-entry stay: an attempt there is a real fresh start. */
+static bool req_k_reentry_sound(PfBound k)
+{
+    return !pcrec_bound_negative(k);
+}
+
 /* [REQ-HANDOFF-L1] NEXT's `handoff` row: a forward search machine — the
  * caller-facing body's, or since [REQRUN-VM] the VM hybrid's inlined
  * prefilter, whose own answer the re-entry leaves unchanged (the DFA
@@ -9370,7 +9469,8 @@ static bool req_landmark_admits(const CandSel *s, PfBound k)
  * the row it displaces. FIRST is READ, never restated: one fact, one proof,
  * one deny (`-fno-req-handoff` removes every handoff row). Inside a VM
  * hybrid's prefilter it is declined after the size-cap ladder's
- * `drop-handoff` row fired. */
+ * `drop-handoff` row fired.
+ * DECLINED AT K < 0 (`req_k_reentry_sound`, above). */
 static bool pf_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
@@ -9379,7 +9479,9 @@ static bool pf_handoff_applies(const CandSel *s)
     u = req_use_read(cx, CAND_SLOT_NEXT);
     if (cx->req_handoff_dropped && cand_finish_of(cx) == CAND_ROUTE_VM) return false;
     if (u->use != REQ_USE_HANDOFF || u->whole) return false;
-    return req_landmark_admits(s, req_landmark_k(cx));
+    PfBound k = req_landmark_k(cx);
+    if (!req_k_reentry_sound(k)) return false;
+    return req_landmark_admits(s, k);
 }
 
 /* NEXT's selection for the artifact's forward DFA machine (the body's, or
@@ -11406,8 +11508,10 @@ static bool req_set_leads_own(Ctx *cx)
     int q;
     if (r->whole_len < 2) return false;
     if ((q = req_set_pick_of(cx, pcrec_fact_req_set_stated(cx))) < 0) return false;
-    /* pcrec's own pick (`req_byte`'s derivation, src/facts/req.c): the shadow's source
-       is never the kit's */
+    /* pcrec's own pick over the WHOLE run (the scan the kit's P4 predicts,
+       which may sit on any run position, lookbehind bytes included, D191.2;
+       span_arms L3: no longer `req_byte`'s derivation, which reads only the
+       consumed extent, §14.3 D-6): the shadow's source is never the kit's */
     cand[0] = r->pos[pcrec_run_scan_index(pcrec_find_byte_rate(cx), r, 0, r->whole_len)];
     qs[q >> 3] = (uint8_t)(1u << (q & 7));
     cand[1] = qs;
@@ -14078,9 +14182,17 @@ static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent)
             req_handoff_assert_body(cx, &job->dfa, act);
     } else if (pcrec_req_site_in_prefilter(cx)) {
         /* [REQRUN-VM] the prefilter's own kept hit for its re-entry. Nothing
-         * is found yet, so it starts at the call's lower bound: a position
-         * no occurrence at or after `search_from` lies below, which is all
-         * the re-entry's move needs (it never moves past a hit it holds). */
+         * is found yet, so it starts at the call's lower bound: a position no
+         * occurrence at or after `search_from` lies below, which is all the
+         * re-entry's move needs (it never moves past a hit it holds, and
+         * from `search_from` it moves nothing). K >= 0 only: the forward
+         * scan's `handoff` row is declined at K < 0 (`req_k_reentry_sound`,
+         * span_arms §14.4 L3's REV 3.3 addendum), so no prefilter keeps a
+         * site there; L2 brings its own init with a witness if it re-enters
+         * on a negative K. */
+        if (pcrec_bound_negative(req_handoff_k(cx)))
+            pcrec_ctx_fail(cx, 0, "internal error: a prefilter keeps a re-entry "
+                                  "site at a negative K");
         pcrec_sb_puts(c, "    size_t landmark_position = search_from;\n");
     }
     emit_machine_tables(c, &fwd);

@@ -323,3 +323,9 @@ Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r
 1. **A form-hash dep must cover every rendering the card times.** Enumerate the canonical instance's renderer branches against the card's cells, and plant one per branch (F1: the hash covered B = 32 only).
 2. **An A/A arm is a control only if it shares the comparison's axes,** and the rule says what a failed A/A does (F2: H64.b shared H64's layout pool).
 3. **"Written before data" includes the verdict clause and the unit.** Drill an all-unreadable run (F5, F6).
+
+Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat.md`); lessons ruled 2026-11-20 (manager).
+1. **A ruled decline is measured against BASE, not only against the build without it** (r65 l3feat A): its census carries a BASE -> SUBJECT column for every stamp the decline moves; R-1's with-vs-without census read "no stamp changes" while BASE -> SUBJECT moved `RX_DFA_PREFILTER`/`RX_REQ_WHY`, up to x10.
+2. **A check arm for a route the same change declines is either reached or deleted** (r65 l3feat C): [5.12l]'s K < 0 arm ran zero times and was red on correct text when planted.
+3. **When a design restates a premise in a code comment, grep the spec for the same premise** (r65 l3feat G): tuning ¶7a/¶8b were the spec twin of the restated presence comment.
+4. **The abi grep's hits are a checklist, ticked in the report** (r65 l3feat D): the grep listed the identity gate's pin and it was still missed.

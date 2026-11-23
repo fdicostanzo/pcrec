@@ -1,0 +1,454 @@
+id	group	encoding	flags	config	pattern	claim	dead_claim	run	K	why	req_set_maxoff	engine	prefilter	pcre2_matches	searches	answer_disagree	soundness	status	note
+A01	A	byte		def	(?<=foo)bar	run:626172:0	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	spec 4.1.2p8 worked example
+A01	A	byte		vm	(?<=foo)bar	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	spec 4.1.2p8 worked example
+A01	A	byte		vmpf	(?<=foo)bar	run:626172:0	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	spec 4.1.2p8 worked example
+A02	A	byte		def	(?<=foo)	run:666f6f:-3	false	666f6f	-3	rate:builtin-prior	none	vm	none	144	262	0	ok	PASS	spec example: lookbehind only, no consumed position
+A02	A	byte		vm	(?<=foo)	run:666f6f:-3	false	666f6f	-3	rate:builtin-prior	none	vm	none	144	262	0	ok	PASS	spec example: lookbehind only, no consumed position
+A02	A	byte		vmpf	(?<=foo)	run:666f6f:-3	false	666f6f	-3	rate:builtin-prior	none	vm	hybrid	144	262	0	ok	PASS	spec example: lookbehind only, no consumed position
+A03	A	byte		def	(?<=foo)b	none	false	none	0		98:0	vm	hybrid	97	237	0	ok	PASS	spec example: consumed b not empty -> no run on re-entry routes; vm joins
+A03	A	byte		vm	(?<=foo)b	run:666f6f62:-3	false	666f6f62	-3	rate:builtin-prior	98:0	vm	none	97	237	0	ok	PASS	spec example: consumed b not empty -> no run on re-entry routes; vm joins
+A03	A	byte		vmpf	(?<=foo)b		false	none	0		98:0	vm	hybrid	97	237	0	ok	PASS	spec example: consumed b not empty -> no run on re-entry routes; vm joins
+A04	A	byte		def	(?<=qz)(?:a.|.a)	none	false	none	1		97:1	vm	hybrid	67	126	0	ok	PASS	spec example
+A04	A	byte		vm	(?<=qz)(?:a.|.a)	run:717a:-2	false	717a	-2	rate:builtin-prior	97:1	vm	none	67	126	0	ok	PASS	spec example
+A04	A	byte		vmpf	(?<=qz)(?:a.|.a)		false	none	1		97:1	vm	hybrid	67	126	0	ok	PASS	spec example
+A05	A	byte		def	(?<=xyz)a+xyz	run:78797a61:-3	false	78797a61	-3	rate:builtin-prior	97:0,120:unbounded,121:unbounded,122:unbounded	vm	hybrid	80	160	0	ok	PASS	spec example
+A05	A	byte		vm	(?<=xyz)a+xyz	run:78797a61:-3	false	78797a61	-3	rate:builtin-prior	97:0,120:unbounded,121:unbounded,122:unbounded	vm	none	80	160	0	ok	PASS	spec example
+A05	A	byte		vmpf	(?<=xyz)a+xyz	run:78797a61:-3	false	78797a61	-3	rate:builtin-prior	97:0,120:unbounded,121:unbounded,122:unbounded	vm	hybrid	80	160	0	ok	PASS	spec example
+A06	A	byte		def	(?<=ab)cd	run:6364:0	false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	45	115	0	ok	PASS	
+A06	A	byte		vm	(?<=ab)cd	run:61626364:-2	false	61626364	-2	rate:builtin-prior	99:0,100:1	vm	none	45	115	0	ok	PASS	
+A06	A	byte		vmpf	(?<=ab)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	45	115	0	ok	PASS	
+A07	A	byte	i	def	(?<=foo)bar	nojoin	false	424152/dfdfdf	0	rate:builtin-prior	none	vm	hybrid	128	237	0	ok	PASS	-i: masked join
+A07	A	byte	i	vm	(?<=foo)bar	K:-3	false	464f4f424152/dfdfdfdfdfdf	-3	rate:builtin-prior	none	vm	none	128	237	0	ok	PASS	-i: masked join
+A07	A	byte	i	vmpf	(?<=foo)bar		false	424152/dfdfdf	0	rate:builtin-prior	none	vm	hybrid	128	237	0	ok	PASS	-i: masked join
+A08	A	byte		def	(?<=(?i)foo)bar	nojoin	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	inline (?i) only in the body
+A08	A	byte		vm	(?<=(?i)foo)bar	K:-3	false	464f4f626172/dfdfdfffffff	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	inline (?i) only in the body
+A08	A	byte		vmpf	(?<=(?i)foo)bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	inline (?i) only in the body
+A09	A	byte		def	(?<=foo)(?i)bar	nojoin	false	424152/dfdfdf	0	rate:builtin-prior	none	vm	hybrid	88	237	0	ok	PASS	inline (?i) only on the consumed part
+A09	A	byte		vm	(?<=foo)(?i)bar	K:-3	false	666f6f424152/ffffffdfdfdf	-3	rate:builtin-prior	none	vm	none	88	237	0	ok	PASS	inline (?i) only on the consumed part
+A09	A	byte		vmpf	(?<=foo)(?i)bar		false	424152/dfdfdf	0	rate:builtin-prior	none	vm	hybrid	88	237	0	ok	PASS	inline (?i) only on the consumed part
+A10	A	byte		def	(?<=é)x	nojoin	false	none	0		120:0	vm	hybrid	45	77	0	ok	PASS	two-byte character in the body
+A10	A	byte		vm	(?<=é)x	run:c3a978:-2	false	c3a978	-2	rate:builtin-prior	120:0	vm	none	45	77	0	ok	PASS	two-byte character in the body
+A10	A	byte		vmpf	(?<=é)x		false	none	0		120:0	vm	hybrid	45	77	0	ok	PASS	two-byte character in the body
+A10	A	utf8		def	(?<=é)x	nojoin	false	none	0		120:0	vm	hybrid	35	65	0	ok	PASS	two-byte character in the body
+A10	A	utf8		vm	(?<=é)x	run:c3a978:-2	false	c3a978	-2	rate:none(utf8)->rightmost	120:0	vm	none	35	65	0	ok	PASS	two-byte character in the body
+A10	A	utf8		vmpf	(?<=é)x		false	none	0		120:0	vm	hybrid	35	65	0	ok	PASS	two-byte character in the body
+A11	A	byte		def	(?<=日本)語	nojoin	false	e8aa9e	0	rate:builtin-prior	158:2,170:1,232:0	vm	hybrid	88	132	0	ok	PASS	three-byte characters
+A11	A	byte		vm	(?<=日本)語	run:e697a5e69cace8aa9e:-6	false	e697a5e69cace8aa9e	-6	rate:builtin-prior	158:2,170:1,232:0	vm	none	88	132	0	ok	PASS	three-byte characters
+A11	A	byte		vmpf	(?<=日本)語		false	e8aa9e	0	rate:builtin-prior	158:2,170:1,232:0	vm	hybrid	88	132	0	ok	PASS	three-byte characters
+A11	A	utf8		def	(?<=日本)語	nojoin	false	e8aa9e	0	rate:none(utf8)->rightmost	158:2,170:1,232:0	vm	hybrid	38	60	0	ok	PASS	three-byte characters
+A11	A	utf8		vm	(?<=日本)語	run:e697a5e69cace8aa9e:-6	false	e697a5e69cace8aa9e	-6	rate:none(utf8)->rightmost	158:2,170:1,232:0	vm	none	38	60	0	ok	PASS	three-byte characters
+A11	A	utf8		vmpf	(?<=日本)語		false	e8aa9e	0	rate:none(utf8)->rightmost	158:2,170:1,232:0	vm	hybrid	38	60	0	ok	PASS	three-byte characters
+A12	A	byte	i	def	(?<=é)x	nojoin	false	none	none		none	vm	hybrid	25	62	0	ok	PASS	-i over a two-byte character: utf8 folds e-acute
+A12	A	byte	i	vm	(?<=é)x	K:-2	false	c3a958/ffffdf	-2	rate:builtin-prior	none	vm	none	25	62	0	ok	PASS	-i over a two-byte character: utf8 folds e-acute
+A12	A	byte	i	vmpf	(?<=é)x		false	none	none		none	vm	hybrid	25	62	0	ok	PASS	-i over a two-byte character: utf8 folds e-acute
+A12	A	utf8	i	def	(?<=é)x	nojoin	false	none	none		none	vm	hybrid	23	53	0	ok	PASS	-i over a two-byte character: utf8 folds e-acute
+A12	A	utf8	i	vm	(?<=é)x	K:-2	false	c38958/ffdfdf	-2	rate:none(utf8)->rightmost	none	vm	none	23	53	0	ok	PASS	-i over a two-byte character: utf8 folds e-acute
+A12	A	utf8	i	vmpf	(?<=é)x		false	none	none		none	vm	hybrid	23	53	0	ok	PASS	-i over a two-byte character: utf8 folds e-acute
+A13	A	byte		def	(?<=a)(?<=a)bc		false	6263	0	rate:builtin-prior	98:0,99:1	dfa		35	66	0	ok	PASS	two equal lookbehinds
+A13	A	byte		vm	(?<=a)(?<=a)bc	run:616263:-1	false	616263	-1	rate:builtin-prior	98:0,99:1	vm	none	35	66	0	ok	PASS	two equal lookbehinds
+A13	A	byte		vmpf	(?<=a)(?<=a)bc		false	6263	0	rate:builtin-prior	98:0,99:1	vm	hybrid	35	66	0	ok	PASS	two equal lookbehinds
+A13	A	byte		dfa	(?<=a)(?<=a)bc		false	6263	0	rate:builtin-prior	98:0,99:1	dfa		35	66	0	ok	PASS	two equal lookbehinds
+A14	A	byte		def	(?<=ab)(?<=b)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	43	78	0	ok	PASS	two lookbehinds at one point, compatible
+A14	A	byte		vm	(?<=ab)(?<=b)cd	run:61626364:-2	false	61626364	-2	rate:builtin-prior	99:0,100:1	vm	none	43	78	0	ok	PASS	two lookbehinds at one point, compatible
+A14	A	byte		vmpf	(?<=ab)(?<=b)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	43	78	0	ok	PASS	two lookbehinds at one point, compatible
+A15	A	byte		def	(?<=.b)(?<=a.)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	44	92	0	ok	PASS	two lookbehinds whose meet fixes both bytes
+A15	A	byte		vm	(?<=.b)(?<=a.)cd	run:61626364:-2 (NOT MET: want 61626364 K=-2)	false	626364	-1	rate:builtin-prior	99:0,100:1	vm	none	44	92	0	ok	LIMIT	two lookbehinds whose meet fixes both bytes
+A15	A	byte		vmpf	(?<=.b)(?<=a.)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	44	92	0	ok	PASS	two lookbehinds whose meet fixes both bytes
+A16	A	byte		def	(?<=a(?<=a))bc		false	6263	0	rate:builtin-prior	98:0,99:1	vm	hybrid	22	43	0	ok	PASS	nested lookbehind, same byte
+A16	A	byte		vm	(?<=a(?<=a))bc	join	false	616263	-1	rate:builtin-prior	98:0,99:1	vm	none	22	43	0	ok	PASS	nested lookbehind, same byte
+A16	A	byte		vmpf	(?<=a(?<=a))bc		false	6263	0	rate:builtin-prior	98:0,99:1	vm	hybrid	22	43	0	ok	PASS	nested lookbehind, same byte
+A17	A	byte		def	(?<=(?<=x)ab)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	57	96	0	ok	PASS	nested lookbehind before the body
+A17	A	byte		vm	(?<=(?<=x)ab)cd	join (NOT MET: want K<0)	false	6364	0	rate:builtin-prior	99:0,100:1	vm	none	57	96	0	ok	LIMIT	nested lookbehind before the body
+A17	A	byte		vmpf	(?<=(?<=x)ab)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	57	96	0	ok	PASS	nested lookbehind before the body
+A18	A	byte		def	(?<=(?:fo)o)bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	non-capturing group in the body
+A18	A	byte		vm	(?<=(?:fo)o)bar	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	non-capturing group in the body
+A18	A	byte		vmpf	(?<=(?:fo)o)bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	non-capturing group in the body
+A19	A	byte		def	((?<=foo)bar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	lookbehind inside a capturing group
+A19	A	byte		vm	((?<=foo)bar)	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	lookbehind inside a capturing group
+A19	A	byte		vmpf	((?<=foo)bar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	lookbehind inside a capturing group
+A20	A	byte		def	(?:(?<=foo)bar)+		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	126	269	0	ok	PASS	repeated group, first copy
+A20	A	byte		vm	(?:(?<=foo)bar)+	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	126	269	0	ok	PASS	repeated group, first copy
+A20	A	byte		vmpf	(?:(?<=foo)bar)+		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	126	269	0	ok	PASS	repeated group, first copy
+A21	A	byte		def	(?<=foo)ba\Kr		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	\K does not move the attempt start
+A21	A	byte		vm	(?<=foo)ba\Kr	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	\K does not move the attempt start
+A21	A	byte		vmpf	(?<=foo)ba\Kr		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	\K does not move the attempt start
+A22	A	byte		def	(?<=foo)bar\K		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	\K at the end
+A22	A	byte		vm	(?<=foo)bar\K	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	\K at the end
+A22	A	byte		vmpf	(?<=foo)bar\K		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	\K at the end
+A23	A	byte		def	(?<=foo)\Kbar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	\K straight after the lookbehind
+A23	A	byte		vm	(?<=foo)\Kbar	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	\K straight after the lookbehind
+A23	A	byte		vmpf	(?<=foo)\Kbar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	\K straight after the lookbehind
+A24	A	byte		def	(?>(?<=foo)bar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	inside an atomic group
+A24	A	byte		vm	(?>(?<=foo)bar)	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	inside an atomic group
+A24	A	byte		vmpf	(?>(?<=foo)bar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	inside an atomic group
+A25	A	byte		def	(?<=foo)(?>bar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	atomic consumed part
+A25	A	byte		vm	(?<=foo)(?>bar)	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	atomic consumed part
+A25	A	byte		vmpf	(?<=foo)(?>bar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	atomic consumed part
+A26	A	byte		def	(?<=(?>foo))bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	atomic group in the body
+A26	A	byte		vm	(?<=(?>foo))bar	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	atomic group in the body
+A26	A	byte		vmpf	(?<=(?>foo))bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	atomic group in the body
+A27	A	byte		def	(?>(?<=x)y|z)w		false	none	1		119:1	vm	hybrid	25	65	0	ok	PASS	atomic alternation, lookbehind on one branch: no join
+A27	A	byte		vm	(?>(?<=x)y|z)w	nojoin	false	none	1		119:1	vm	none	25	65	0	ok	PASS	atomic alternation, lookbehind on one branch: no join
+A27	A	byte		vmpf	(?>(?<=x)y|z)w		false	none	1		119:1	vm	hybrid	25	65	0	ok	PASS	atomic alternation, lookbehind on one branch: no join
+A28	A	byte		def	(?<=foo)bar|baz	nojoin	false	626172/fffff7	0	rate:builtin-prior	97:1,98:0	vm	hybrid	133	258	0	ok	PASS	lookbehind on one branch only: the run cannot include foo
+A28	A	byte		vm	(?<=foo)bar|baz	nojoin	false	626172/fffff7	0	rate:builtin-prior	97:1,98:0	vm	none	133	258	0	ok	PASS	lookbehind on one branch only: the run cannot include foo
+A28	A	byte		vmpf	(?<=foo)bar|baz	nojoin	false	626172/fffff7	0	rate:builtin-prior	97:1,98:0	vm	hybrid	133	258	0	ok	PASS	lookbehind on one branch only: the run cannot include foo
+A29	A	byte		def	(?:(?<=x)ab|cb)d		false	616264/fdffff	0	rate:builtin-prior	98:1,100:2	dfa		28	63	0	ok	PASS	one branch only (inner alternation)
+A29	A	byte		vm	(?:(?<=x)ab|cb)d	nojoin	false	616264/fdffff	0	rate:builtin-prior	98:1,100:2	vm	none	28	63	0	ok	PASS	one branch only (inner alternation)
+A29	A	byte		vmpf	(?:(?<=x)ab|cb)d		false	616264/fdffff	0	rate:builtin-prior	98:1,100:2	vm	hybrid	28	63	0	ok	PASS	one branch only (inner alternation)
+A29	A	byte		dfa	(?:(?<=x)ab|cb)d		false	616264/fdffff	0	rate:builtin-prior	98:1,100:2	dfa		28	63	0	ok	PASS	one branch only (inner alternation)
+A30	A	byte		def	(?<=foo)bar|(?<=foo)baz		false	626172/fffff7	0	rate:builtin-prior	97:1,98:0	vm	hybrid	126	258	0	ok	PASS	both branches carry the same lookbehind (join allowed, not required)
+A30	A	byte		vm	(?<=foo)bar|(?<=foo)baz	any	false	666f6f626172/fffffffffff7	-3	rate:builtin-prior	97:1,98:0	vm	none	126	258	0	ok	PASS	both branches carry the same lookbehind (join allowed, not required)
+A30	A	byte		vmpf	(?<=foo)bar|(?<=foo)baz		false	626172/fffff7	0	rate:builtin-prior	97:1,98:0	vm	hybrid	126	258	0	ok	PASS	both branches carry the same lookbehind (join allowed, not required)
+A31	A	byte		def	(?<=a[bc])d		false	none	0		100:0	vm	hybrid	51	80	0	ok	PASS	class in the body (one cube)
+A31	A	byte		vm	(?<=a[bc])d	run:616264/fffeff:-2	false	616264/fffeff	-2	rate:builtin-prior	100:0	vm	none	51	80	0	ok	PASS	class in the body (one cube)
+A31	A	byte		vmpf	(?<=a[bc])d		false	none	0		100:0	vm	hybrid	51	80	0	ok	PASS	class in the body (one cube)
+A32	A	byte		def	(?<=ab|cd)ef		false	6566	0	rate:builtin-prior	101:0,102:1	vm	hybrid	62	112	0	ok	PASS	same-length alternation in the body (per-position union)
+A32	A	byte		vm	(?<=ab|cd)ef	K:-2	false	[6163][6264]6566	-2	rate:builtin-prior	101:0,102:1	vm	none	62	112	0	ok	PASS	same-length alternation in the body (per-position union)
+A32	A	byte		vmpf	(?<=ab|cd)ef		false	6566	0	rate:builtin-prior	101:0,102:1	vm	hybrid	62	112	0	ok	PASS	same-length alternation in the body (per-position union)
+A33	A	byte		def	(?<=abc)\d		false	none	none		none	vm	hybrid	55	95	0	ok	PASS	class consumed part (no byte run of its own)
+A33	A	byte		vm	(?<=abc)\d	K:-3	false	616263[30-39]	-3	rate:builtin-prior	none	vm	none	55	95	0	ok	PASS	class consumed part (no byte run of its own)
+A33	A	byte		vmpf	(?<=abc)\d		false	none	none		none	vm	hybrid	55	95	0	ok	PASS	class consumed part (no byte run of its own)
+A34	A	byte		def	(?<=\x00\xff)z		false	none	0		122:0	vm	hybrid	29	54	0	ok	PASS	raw bytes
+A34	A	byte		vm	(?<=\x00\xff)z	run:00ff7a:-2	false	00ff7a	-2	rate:builtin-prior	122:0	vm	none	29	54	0	ok	PASS	raw bytes
+A34	A	byte		vmpf	(?<=\x00\xff)z		false	none	0		122:0	vm	hybrid	29	54	0	ok	PASS	raw bytes
+A35	A	byte		def	(?<=abcdefghijklmnopqrstuvwxyz0123456789)!		false	none	0		33:0	vm	hybrid	112	238	0	ok	PASS	long lookbehind (36 bytes)
+A35	A	byte		vm	(?<=abcdefghijklmnopqrstuvwxyz0123456789)!	K:-36 (NOT MET: want K=-36)	false	65666768696a6b6c6d6e6f707172737475767778797a30313233343536373839	-32	rate:builtin-prior	33:0	vm	none	112	238	0	ok	LIMIT	long lookbehind (36 bytes)
+A35	A	byte		vmpf	(?<=abcdefghijklmnopqrstuvwxyz0123456789)!		false	none	0		33:0	vm	hybrid	112	238	0	ok	PASS	long lookbehind (36 bytes)
+A36	A	byte		def	(?<=ab)c{3}		false	636363	0	rate:builtin-prior	99:0	vm	hybrid	33	78	0	ok	PASS	exact repeat after
+A36	A	byte		vm	(?<=ab)c{3}	run:6162636363:-2	false	6162636363	-2	rate:builtin-prior	99:0	vm	none	33	78	0	ok	PASS	exact repeat after
+A36	A	byte		vmpf	(?<=ab)c{3}		false	636363	0	rate:builtin-prior	99:0	vm	hybrid	33	78	0	ok	PASS	exact repeat after
+A37	A	byte		def	(?<=ab)c?d		false	none	1		100:1	vm	hybrid	22	77	0	ok	PASS	optional byte next to the lookbehind
+A37	A	byte		vm	(?<=ab)c?d	any	false	6162	-2	rate:builtin-prior	100:1	vm	none	22	77	0	ok	PASS	optional byte next to the lookbehind
+A37	A	byte		vmpf	(?<=ab)c?d		false	none	1		100:1	vm	hybrid	22	77	0	ok	PASS	optional byte next to the lookbehind
+A38	A	byte		def	(?<=ab)x*cd		false	6364	unbounded	rate:builtin-prior	99:unbounded,100:unbounded	vm	hybrid	40	89	0	ok	PASS	variable part next to the lookbehind
+A38	A	byte		vm	(?<=ab)x*cd	any	false	6162	-2	rate:builtin-prior	99:unbounded,100:unbounded	vm	none	40	89	0	ok	PASS	variable part next to the lookbehind
+A38	A	byte		vmpf	(?<=ab)x*cd		false	6364	unbounded	rate:builtin-prior	99:unbounded,100:unbounded	vm	hybrid	40	89	0	ok	PASS	variable part next to the lookbehind
+A39	A	byte		def	(?<=ab)(?:cd|ce)		false	none	0		99:0	vm	hybrid	22	80	0	ok	PASS	alternation after
+A39	A	byte		vm	(?<=ab)(?:cd|ce)	K:-2	false	61626364/fffffffe	-2	rate:builtin-prior	99:0	vm	none	22	80	0	ok	PASS	alternation after
+A39	A	byte		vmpf	(?<=ab)(?:cd|ce)		false	none	0		99:0	vm	hybrid	22	80	0	ok	PASS	alternation after
+A40	A	byte		def	(?<=\bfoo)bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	104	289	0	ok	PASS	zero-width \b in the body
+A40	A	byte		vm	(?<=\bfoo)bar	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	104	289	0	ok	PASS	zero-width \b in the body
+A40	A	byte		vmpf	(?<=\bfoo)bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	104	289	0	ok	PASS	zero-width \b in the body
+A41	A	byte		def	(?<=foo)(?=bar)b		false	none	0		98:0	vm	hybrid	88	237	0	ok	PASS	lookbehind and lookahead around one byte
+A41	A	byte		vm	(?<=foo)(?=bar)b	K:-3	false	666f6f62	-3	rate:builtin-prior	98:0	vm	none	88	237	0	ok	PASS	lookbehind and lookahead around one byte
+A41	A	byte		vmpf	(?<=foo)(?=bar)b		false	none	0		98:0	vm	hybrid	88	237	0	ok	PASS	lookbehind and lookahead around one byte
+A42	A	byte		def	(?<=foo)bar(?<=obar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	a second, overlapping lookbehind after
+A42	A	byte		vm	(?<=foo)bar(?<=obar)	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	a second, overlapping lookbehind after
+A42	A	byte		vmpf	(?<=foo)bar(?<=obar)		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	a second, overlapping lookbehind after
+A43	A	byte		def	(?<=ab)c(?<=bc)d		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	10	52	0	ok	PASS	lookbehind mid-pattern overlapping the consumed byte
+A43	A	byte		vm	(?<=ab)c(?<=bc)d	run:61626364:-2	false	61626364	-2	rate:builtin-prior	99:0,100:1	vm	none	10	52	0	ok	PASS	lookbehind mid-pattern overlapping the consumed byte
+A43	A	byte		vmpf	(?<=ab)c(?<=bc)d		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	10	52	0	ok	PASS	lookbehind mid-pattern overlapping the consumed byte
+A44	A	byte		def	(?<=^a)b		false	none	0		98:0	vm	hybrid	6	51	0	ok	PASS	anchor in the body
+A44	A	byte		vm	(?<=^a)b	run:6162:-1	false	6162	-1	rate:builtin-prior	98:0	vm	none	6	51	0	ok	PASS	anchor in the body
+A44	A	byte		vmpf	(?<=^a)b		false	none	0		98:0	vm	hybrid	6	51	0	ok	PASS	anchor in the body
+A45	A	byte		def	(?<=a|b)c		false	none	0		99:0	dfa		37	62	0	ok	PASS	one-char alternation body (a class)
+A45	A	byte		vm	(?<=a|b)c	K:-1 (NOT MET: want K=-1)	false	none	0		99:0	vm	none	37	62	0	ok	LIMIT	one-char alternation body (a class)
+A45	A	byte		vmpf	(?<=a|b)c		false	none	0		99:0	vm	hybrid	37	62	0	ok	PASS	one-char alternation body (a class)
+A45	A	byte		dfa	(?<=a|b)c		false	none	0		99:0	dfa		37	62	0	ok	PASS	one-char alternation body (a class)
+A46	A	byte		def	(?<=foo|bar)baz		false	62617a	0	rate:builtin-prior	97:1,98:0,122:2	vm	hybrid	29	104	0	ok	PASS	same-length word alternation body
+A46	A	byte		vm	(?<=foo|bar)baz	K:-3	false	[6266][616f][6f72]62617a	-3	rate:builtin-prior	97:1,98:0,122:2	vm	none	29	104	0	ok	PASS	same-length word alternation body
+A46	A	byte		vmpf	(?<=foo|bar)baz		false	62617a	0	rate:builtin-prior	97:1,98:0,122:2	vm	hybrid	29	104	0	ok	PASS	same-length word alternation body
+A47	A	byte		def	(?<=(?<!x)ab)c		false	none	0		99:0	vm	hybrid	29	60	0	ok	PASS	negative nested in positive (the positive bytes still fixed)
+A47	A	byte		vm	(?<=(?<!x)ab)c	run:616263:-2	false	616263	-2	rate:builtin-prior	99:0	vm	none	29	60	0	ok	PASS	negative nested in positive (the positive bytes still fixed)
+A47	A	byte		vmpf	(?<=(?<!x)ab)c		false	none	0		99:0	vm	hybrid	29	60	0	ok	PASS	negative nested in positive (the positive bytes still fixed)
+A48	A	byte		def	(?<=ab)(?<!xb)c		false	none	0		99:0	vm	hybrid	10	40	0	ok	PASS	positive plus negative lookbehind
+A48	A	byte		vm	(?<=ab)(?<!xb)c	run:616263:-2	false	616263	-2	rate:builtin-prior	99:0	vm	none	10	40	0	ok	PASS	positive plus negative lookbehind
+A48	A	byte		vmpf	(?<=ab)(?<!xb)c		false	none	0		99:0	vm	hybrid	10	40	0	ok	PASS	positive plus negative lookbehind
+A49	A	utf8		def	(?<=a)\x{100}		false	c480	0	rate:none(utf8)->rightmost	128:1,196:0	dfa		7	31	0	ok	PASS	utf8 consumed two-byte char
+A49	A	utf8		vm	(?<=a)\x{100}	run:61c480:-1	false	61c480	-1	rate:none(utf8)->rightmost	128:1,196:0	vm	none	7	31	0	ok	PASS	utf8 consumed two-byte char
+A49	A	utf8		vmpf	(?<=a)\x{100}		false	c480	0	rate:none(utf8)->rightmost	128:1,196:0	vm	hybrid	7	31	0	ok	PASS	utf8 consumed two-byte char
+A49	A	utf8		dfa	(?<=a)\x{100}		false	c480	0	rate:none(utf8)->rightmost	128:1,196:0	dfa		7	31	0	ok	PASS	utf8 consumed two-byte char
+A50	A	byte		def	(?<=\d{3})x		false	none	0		120:0	vm	hybrid	36	60	0	ok	PASS	counted class body
+A50	A	byte		vm	(?<=\d{3})x	K:-3	false	[30-39][30-39][30-39]78	-3	rate:builtin-prior	120:0	vm	none	36	60	0	ok	PASS	counted class body
+A50	A	byte		vmpf	(?<=\d{3})x		false	none	0		120:0	vm	hybrid	36	60	0	ok	PASS	counted class body
+A51	A	byte	i	def	(?<=foo)	K:-3	false	464f4f/dfdfdf	-3	rate:builtin-prior	none	vm	none	54	66	0	ok	PASS	-i lookbehind only
+A51	A	byte	i	vm	(?<=foo)	K:-3	false	464f4f/dfdfdf	-3	rate:builtin-prior	none	vm	none	54	66	0	ok	PASS	-i lookbehind only
+A51	A	byte	i	vmpf	(?<=foo)		false	464f4f/dfdfdf	-3	rate:builtin-prior	none	vm	hybrid	54	66	0	ok	PASS	-i lookbehind only
+A52	A	byte		def	(?<=a)	none	false	none	none		none	dfa		29	39	0	ok	PASS	one-byte lookbehind only: a one-byte run is shorter than two bytes and is not listed (4.1.2p8)
+A52	A	byte		vm	(?<=a)	none	false	none	none		none	vm	none	29	39	0	ok	PASS	one-byte lookbehind only: a one-byte run is shorter than two bytes and is not listed (4.1.2p8)
+A52	A	byte		vmpf	(?<=a)		false	none	none		none	vm	hybrid	29	39	0	ok	PASS	one-byte lookbehind only: a one-byte run is shorter than two bytes and is not listed (4.1.2p8)
+A52	A	byte		dfa	(?<=a)		false	none	none		none	dfa		29	39	0	ok	PASS	one-byte lookbehind only: a one-byte run is shorter than two bytes and is not listed (4.1.2p8)
+A53	A	byte		def	(?<=ab)	run:6162:-2	false	6162	-2	rate:builtin-prior	none	vm	none	41	51	0	ok	PASS	two-byte lookbehind only
+A53	A	byte		vm	(?<=ab)	run:6162:-2	false	6162	-2	rate:builtin-prior	none	vm	none	41	51	0	ok	PASS	two-byte lookbehind only
+A53	A	byte		vmpf	(?<=ab)		false	6162	-2	rate:builtin-prior	none	vm	hybrid	41	51	0	ok	PASS	two-byte lookbehind only
+A54	A	byte		def	(?<=xy)\w+		false	none	none		none	vm	hybrid	39	63	0	ok	PASS	variable consumed class run
+A54	A	byte		vm	(?<=xy)\w+	any	false	7879[30-3941-5a5f61-7a]	-2	rate:builtin-prior	none	vm	none	39	63	0	ok	PASS	variable consumed class run
+A54	A	byte		vmpf	(?<=xy)\w+		false	none	none		none	vm	hybrid	39	63	0	ok	PASS	variable consumed class run
+A55	A	utf8		def	(?<=foo)bar		false	626172	0	rate:none(utf8)->rightmost	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	ASCII under utf8
+A55	A	utf8		vm	(?<=foo)bar	run:666f6f626172:-3	false	666f6f626172	-3	rate:none(utf8)->rightmost	97:1,98:0,114:2	vm	none	88	237	0	ok	PASS	ASCII under utf8
+A55	A	utf8		vmpf	(?<=foo)bar		false	626172	0	rate:none(utf8)->rightmost	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	ASCII under utf8
+A56	A	utf8	i	def	(?<=foo)bar		false	424152/dfdfdf	0	rate:none(utf8)->rightmost	none	vm	hybrid	128	237	0	ok	PASS	-i ASCII under utf8
+A56	A	utf8	i	vm	(?<=foo)bar	K:-3	false	464f4f424152/dfdfdfdfdfdf	-3	rate:none(utf8)->rightmost	none	vm	none	128	237	0	ok	PASS	-i ASCII under utf8
+A56	A	utf8	i	vmpf	(?<=foo)bar		false	424152/dfdfdf	0	rate:none(utf8)->rightmost	none	vm	hybrid	128	237	0	ok	PASS	-i ASCII under utf8
+B01	B	byte		def	(?<=a)(?<=b)c		true	none	0	dead	99:0	dfa		0	85	0	ok	PASS	brief example
+B01	B	byte		vm	(?<=a)(?<=b)c		true	none	0	dead	99:0	vm	none	0	85	0	ok	PASS	brief example
+B01	B	byte		vmpf	(?<=a)(?<=b)c		true	none	0	dead	99:0	vm	hybrid	0	85	0	ok	PASS	brief example
+B01	B	byte		dfa	(?<=a)(?<=b)c		true	none	0	dead	99:0	dfa		0	85	0	ok	PASS	brief example
+B02	B	byte		def	(?<=ab)(?<=cb)d		true	none	0	dead	100:0	vm	hybrid	0	46	0	ok	PASS	
+B02	B	byte		vm	(?<=ab)(?<=cb)d		true	6264	-1	dead	100:0	vm	none	0	46	0	ok	PASS	
+B02	B	byte		vmpf	(?<=ab)(?<=cb)d		true	none	0	dead	100:0	vm	hybrid	0	46	0	ok	PASS	
+B03	B	byte		def	(?<=a)b(?<=a)		true	none	0	dead	98:0	dfa		0	40	0	ok	PASS	second lookbehind reads the consumed b
+B03	B	byte		vm	(?<=a)b(?<=a)		true	6162	-1	dead	98:0	vm	none	0	40	0	ok	PASS	second lookbehind reads the consumed b
+B03	B	byte		vmpf	(?<=a)b(?<=a)		true	none	0	dead	98:0	vm	hybrid	0	40	0	ok	PASS	second lookbehind reads the consumed b
+B03	B	byte		dfa	(?<=a)b(?<=a)		true	none	0	dead	98:0	dfa		0	40	0	ok	PASS	second lookbehind reads the consumed b
+B04	B	byte		def	x(?<=y)z		true	787a	0	dead	120:0,122:1	dfa		0	37	0	ok	PASS	lookbehind contradicts the consumed x
+B04	B	byte		vm	x(?<=y)z		true	787a	0	dead	120:0,122:1	vm	none	0	37	0	ok	PASS	lookbehind contradicts the consumed x
+B04	B	byte		vmpf	x(?<=y)z		true	787a	0	dead	120:0,122:1	vm	hybrid	0	37	0	ok	PASS	lookbehind contradicts the consumed x
+B04	B	byte		dfa	x(?<=y)z		true	787a	0	dead	120:0,122:1	dfa		0	37	0	ok	PASS	lookbehind contradicts the consumed x
+B05	B	byte		def	ab(?<=xb)c		true	616263	0	dead	97:0,98:1,99:2	vm	hybrid	0	46	0	ok	PASS	
+B05	B	byte		vm	ab(?<=xb)c		true	616263	0	dead	97:0,98:1,99:2	vm	none	0	46	0	ok	PASS	
+B05	B	byte		vmpf	ab(?<=xb)c		true	616263	0	dead	97:0,98:1,99:2	vm	hybrid	0	46	0	ok	PASS	
+B06	B	byte		def	(?<=foo)bar(?<=baz)		true	626172	0	dead	97:1,98:0,114:2	vm	hybrid	0	244	0	ok	PASS	
+B06	B	byte		vm	(?<=foo)bar(?<=baz)		true	666f6f626172	-3	dead	97:1,98:0,114:2	vm	none	0	244	0	ok	PASS	
+B06	B	byte		vmpf	(?<=foo)bar(?<=baz)		true	626172	0	dead	97:1,98:0,114:2	vm	hybrid	0	244	0	ok	PASS	
+B07	B	byte	i	def	(?<=a)(?<=B)c		true	none	none	dead	none	dfa		0	73	0	ok	PASS	-i: {a,A} vs {b,B}
+B07	B	byte	i	vm	(?<=a)(?<=B)c		true	none	none	dead	none	vm	none	0	73	0	ok	PASS	-i: {a,A} vs {b,B}
+B07	B	byte	i	vmpf	(?<=a)(?<=B)c		true	none	none	dead	none	vm	hybrid	0	73	0	ok	PASS	-i: {a,A} vs {b,B}
+B07	B	byte	i	dfa	(?<=a)(?<=B)c		true	none	none	dead	none	dfa		0	73	0	ok	PASS	-i: {a,A} vs {b,B}
+B08	B	byte		def	(?<=é)(?<=è)x		true	none	0	dead	120:0	vm	hybrid	0	29	0	ok	PASS	two-byte chars differing in the 2nd byte
+B08	B	byte		vm	(?<=é)(?<=è)x		true	none	0	dead	120:0	vm	none	0	29	0	ok	PASS	two-byte chars differing in the 2nd byte
+B08	B	byte		vmpf	(?<=é)(?<=è)x		true	none	0	dead	120:0	vm	hybrid	0	29	0	ok	PASS	two-byte chars differing in the 2nd byte
+B08	B	utf8		def	(?<=é)(?<=è)x		true	none	0	dead	120:0	vm	hybrid	0	23	0	ok	PASS	two-byte chars differing in the 2nd byte
+B08	B	utf8		vm	(?<=é)(?<=è)x		true	none	0	dead	120:0	vm	none	0	23	0	ok	PASS	two-byte chars differing in the 2nd byte
+B08	B	utf8		vmpf	(?<=é)(?<=è)x		true	none	0	dead	120:0	vm	hybrid	0	23	0	ok	PASS	two-byte chars differing in the 2nd byte
+B09	B	byte		def	(?<=a[bc])(?<=.d)e		true	none	0	dead	101:0	vm	hybrid	0	60	0	ok	PASS	
+B09	B	byte		vm	(?<=a[bc])(?<=.d)e		true	none	0	dead	101:0	vm	none	0	60	0	ok	PASS	
+B09	B	byte		vmpf	(?<=a[bc])(?<=.d)e		true	none	0	dead	101:0	vm	hybrid	0	60	0	ok	PASS	
+B10	B	byte		def	(?<=\d)(?<=[a-z])x		true	none	0	dead	120:0	dfa		0	37	0	ok	PASS	
+B10	B	byte		vm	(?<=\d)(?<=[a-z])x		true	none	0	dead	120:0	vm	none	0	37	0	ok	PASS	
+B10	B	byte		vmpf	(?<=\d)(?<=[a-z])x		true	none	0	dead	120:0	vm	hybrid	0	37	0	ok	PASS	
+B10	B	byte		dfa	(?<=\d)(?<=[a-z])x		true	none	0	dead	120:0	dfa		0	37	0	ok	PASS	
+B11	B	byte		def	(?<=a(?<=b))c		true	none	0	dead	99:0	vm	hybrid	0	40	0	ok	PASS	nested lookbehind contradicts its own body
+B11	B	byte		vm	(?<=a(?<=b))c		true	6163	-1	dead	99:0	vm	none	0	40	0	ok	PASS	nested lookbehind contradicts its own body
+B11	B	byte		vmpf	(?<=a(?<=b))c		true	none	0	dead	99:0	vm	hybrid	0	40	0	ok	PASS	nested lookbehind contradicts its own body
+B12	B	byte		def	(?>(?<=a)(?<=b))c		true	none	0	dead	99:0	dfa		0	85	0	ok	PASS	inside an atomic group
+B12	B	byte		vm	(?>(?<=a)(?<=b))c		true	none	0	dead	99:0	vm	none	0	85	0	ok	PASS	inside an atomic group
+B12	B	byte		vmpf	(?>(?<=a)(?<=b))c		true	none	0	dead	99:0	vm	hybrid	0	85	0	ok	PASS	inside an atomic group
+B13	B	byte		def	(?<=ab)c(?<=xc)		true	none	0	dead	99:0	vm	hybrid	0	43	0	ok	PASS	
+B13	B	byte		vm	(?<=ab)c(?<=xc)		true	none	0	dead	99:0	vm	none	0	43	0	ok	PASS	
+B13	B	byte		vmpf	(?<=ab)c(?<=xc)		true	none	0	dead	99:0	vm	hybrid	0	43	0	ok	PASS	
+B14	B	byte		def	(?<=a)(?<=b)		true	none	none	dead	none	dfa		0	85	0	ok	PASS	lookbehinds only, nothing consumed
+B14	B	byte		vm	(?<=a)(?<=b)		true	none	none	dead	none	vm	none	0	85	0	ok	PASS	lookbehinds only, nothing consumed
+B14	B	byte		vmpf	(?<=a)(?<=b)		true	none	none	dead	none	vm	hybrid	0	85	0	ok	PASS	lookbehinds only, nothing consumed
+B14	B	byte		dfa	(?<=a)(?<=b)		true	none	none	dead	none	dfa		0	85	0	ok	PASS	lookbehinds only, nothing consumed
+B15	B	utf8		def	(?<=a)(?<=b)c		true	none	0	dead	99:0	dfa		0	85	0	ok	PASS	
+B15	B	utf8		vm	(?<=a)(?<=b)c		true	none	0	dead	99:0	vm	none	0	85	0	ok	PASS	
+B15	B	utf8		vmpf	(?<=a)(?<=b)c		true	none	0	dead	99:0	vm	hybrid	0	85	0	ok	PASS	
+B15	B	utf8		dfa	(?<=a)(?<=b)c		true	none	0	dead	99:0	dfa		0	85	0	ok	PASS	
+B16	B	byte		def	(?<=[^\x00-\xff])x		true	none	0	dead	120:0	dfa		0	34	0	ok	PASS	byte: empty class in the body
+B16	B	byte		vm	(?<=[^\x00-\xff])x		true	none	0	dead	120:0	vm	none	0	34	0	ok	PASS	byte: empty class in the body
+B16	B	byte		vmpf	(?<=[^\x00-\xff])x		true	none	0	dead	120:0	vm	hybrid	0	34	0	ok	PASS	byte: empty class in the body
+B16	B	byte		dfa	(?<=[^\x00-\xff])x		true	none	0	dead	120:0	dfa		0	34	0	ok	PASS	byte: empty class in the body
+B17	B	byte		def	foo(?<=bar)		true	666f6f	0	dead	102:0,111:1	vm	hybrid	0	237	0	ok	PASS	
+B17	B	byte		vm	foo(?<=bar)		true	666f6f	0	dead	102:0,111:1	vm	none	0	237	0	ok	PASS	
+B17	B	byte		vmpf	foo(?<=bar)		true	666f6f	0	dead	102:0,111:1	vm	hybrid	0	237	0	ok	PASS	
+B18	B	byte		def	(?<=x)b(?<=c)		true	none	0	dead	98:0	dfa		0	37	0	ok	PASS	
+B18	B	byte		vm	(?<=x)b(?<=c)		true	7862	-1	dead	98:0	vm	none	0	37	0	ok	PASS	
+B18	B	byte		vmpf	(?<=x)b(?<=c)		true	none	0	dead	98:0	vm	hybrid	0	37	0	ok	PASS	
+B18	B	byte		dfa	(?<=x)b(?<=c)		true	none	0	dead	98:0	dfa		0	37	0	ok	PASS	
+B19	B	byte		def	(?:x(?<=y))+		true	none	0	dead	120:0	dfa		0	31	0	ok	PASS	a repeat taken at least once
+B19	B	byte		vm	(?:x(?<=y))+		true	none	0	dead	120:0	vm	none	0	31	0	ok	PASS	a repeat taken at least once
+B19	B	byte		vmpf	(?:x(?<=y))+		true	none	0	dead	120:0	vm	hybrid	0	31	0	ok	PASS	a repeat taken at least once
+B19	B	byte		dfa	(?:x(?<=y))+		true	none	0	dead	120:0	dfa		0	31	0	ok	PASS	a repeat taken at least once
+B20	B	byte		def	(ab)(?<=a)c		true	616263	0	dead	97:0,98:1,99:2	dfa		0	40	0	ok	PASS	lookbehind after a capturing group
+B20	B	byte		vm	(ab)(?<=a)c		true	616263	0	dead	97:0,98:1,99:2	vm	none	0	40	0	ok	PASS	lookbehind after a capturing group
+B20	B	byte		vmpf	(ab)(?<=a)c		true	616263	0	dead	97:0,98:1,99:2	vm	hybrid	0	40	0	ok	PASS	lookbehind after a capturing group
+B21	B	byte	i	def	(?<=foo)(?<=fox)		true	none	none	dead	none	vm	none	0	57	0	ok	PASS	-i: o vs x
+B21	B	byte	i	vm	(?<=foo)(?<=fox)		true	none	none	dead	none	vm	none	0	57	0	ok	PASS	-i: o vs x
+B21	B	byte	i	vmpf	(?<=foo)(?<=fox)		true	none	none	dead	none	vm	hybrid	0	57	0	ok	PASS	-i: o vs x
+B22	B	byte		def	(?<=ab)(?<=a)c		true	none	0	dead	99:0	vm	hybrid	0	40	0	ok	PASS	longer and shorter lookbehind disagree on the last byte
+B22	B	byte		vm	(?<=ab)(?<=a)c		true	none	0	dead	99:0	vm	none	0	40	0	ok	PASS	longer and shorter lookbehind disagree on the last byte
+B22	B	byte		vmpf	(?<=ab)(?<=a)c		true	none	0	dead	99:0	vm	hybrid	0	40	0	ok	PASS	longer and shorter lookbehind disagree on the last byte
+B23	B	byte	i	def	(?<=a)(?<=b)c		true	none	none	dead	none	dfa		0	85	0	ok	PASS	-i, no case overlap
+B23	B	byte	i	vm	(?<=a)(?<=b)c		true	none	none	dead	none	vm	none	0	85	0	ok	PASS	-i, no case overlap
+B23	B	byte	i	vmpf	(?<=a)(?<=b)c		true	none	none	dead	none	vm	hybrid	0	85	0	ok	PASS	-i, no case overlap
+B23	B	byte	i	dfa	(?<=a)(?<=b)c		true	none	none	dead	none	dfa		0	85	0	ok	PASS	-i, no case overlap
+B24	B	byte		def	(?<=ab)cd(?<=ad)		true	6364	0	dead	99:0,100:1	vm	hybrid	0	35	0	ok	PASS	trailing lookbehind over consumed c,d vs a,d
+B24	B	byte		vm	(?<=ab)cd(?<=ad)		true	61626364	-2	dead	99:0,100:1	vm	none	0	35	0	ok	PASS	trailing lookbehind over consumed c,d vs a,d
+B24	B	byte		vmpf	(?<=ab)cd(?<=ad)		true	6364	0	dead	99:0,100:1	vm	hybrid	0	35	0	ok	PASS	trailing lookbehind over consumed c,d vs a,d
+C01	C	byte		def	(?<!foo)bar	nojoin	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	81	237	0	ok	PASS	negative lookbehind
+C01	C	byte		vm	(?<!foo)bar	nojoin	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	none	81	237	0	ok	PASS	negative lookbehind
+C01	C	byte		vmpf	(?<!foo)bar	nojoin	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	81	237	0	ok	PASS	negative lookbehind
+C02	C	byte		def	(?<!a)(?<!b)c		false	none	0		99:0	dfa		18	85	0	ok	PASS	two negatives: not dead
+C02	C	byte		vm	(?<!a)(?<!b)c	nojoin	false	none	0		99:0	vm	none	18	85	0	ok	PASS	two negatives: not dead
+C02	C	byte		vmpf	(?<!a)(?<!b)c		false	none	0		99:0	vm	hybrid	18	85	0	ok	PASS	two negatives: not dead
+C02	C	byte		dfa	(?<!a)(?<!b)c		false	none	0		99:0	dfa		18	85	0	ok	PASS	two negatives: not dead
+C03	C	byte		def	(?<=ab|cde)f		false	none	0		102:0	vm	hybrid	24	71	0	ok	PASS	variable-length alternation body
+C03	C	byte		vm	(?<=ab|cde)f	nojoin (NOT MET: want no negative K)	false	[6164][6265]66	-2	rate:builtin-prior	102:0	vm	none	24	71	0	ok	INFO	variable-length alternation body
+C03	C	byte		vmpf	(?<=ab|cde)f		false	none	0		102:0	vm	hybrid	24	71	0	ok	PASS	variable-length alternation body
+C04	C	byte		def	(?<=a|bc)d		false	none	0		100:0	vm	hybrid	18	45	0	ok	PASS	variable-length alternation body
+C04	C	byte		vm	(?<=a|bc)d	nojoin	false	none	0		100:0	vm	none	18	45	0	ok	PASS	variable-length alternation body
+C04	C	byte		vmpf	(?<=a|bc)d		false	none	0		100:0	vm	hybrid	18	45	0	ok	PASS	variable-length alternation body
+C05	C	byte		def	(?<=(foo))bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	capturing body (brief: no join expected; spec silent)
+C05	C	byte		vm	(?<=(foo))bar	nojoin (NOT MET: want no negative K)	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	88	237	0	ok	INFO	capturing body (brief: no join expected; spec silent)
+C05	C	byte		vmpf	(?<=(foo))bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	88	237	0	ok	PASS	capturing body (brief: no join expected; spec silent)
+C06	C	byte		def	x*(?<=x)y		false	none	unbounded		121:unbounded	dfa		31	59	0	ok	PASS	lookbehind after a variable part
+C06	C	byte		vm	x*(?<=x)y	any	false	none	unbounded		121:unbounded	vm	none	31	59	0	ok	PASS	lookbehind after a variable part
+C06	C	byte		vmpf	x*(?<=x)y		false	none	unbounded		121:unbounded	vm	hybrid	31	59	0	ok	PASS	lookbehind after a variable part
+C06	C	byte		dfa	x*(?<=x)y		false	none	unbounded		121:unbounded	dfa		31	59	0	ok	PASS	lookbehind after a variable part
+C07	C	byte		def	\w+(?<=foo)bar		false	6f626172	unbounded	rate:builtin-prior	97:unbounded,98:unbounded,111:unbounded,114:unbounded	vm	hybrid	120	283	0	ok	PASS	lookbehind after a variable part
+C07	C	byte		vm	\w+(?<=foo)bar	nojoin	false	6f626172	unbounded	rate:builtin-prior	97:unbounded,98:unbounded,111:unbounded,114:unbounded	vm	none	120	283	0	ok	PASS	lookbehind after a variable part
+C07	C	byte		vmpf	\w+(?<=foo)bar		false	6f626172	unbounded	rate:builtin-prior	97:unbounded,98:unbounded,111:unbounded,114:unbounded	vm	hybrid	120	283	0	ok	PASS	lookbehind after a variable part
+C08	C	byte		def	(?<=a{1,3})b		false	none	0		98:0	vm	hybrid	18	45	0	ok	PASS	variable-length repeat body
+C08	C	byte		vm	(?<=a{1,3})b	nojoin	false	none	0		98:0	vm	none	18	45	0	ok	PASS	variable-length repeat body
+C08	C	byte		vmpf	(?<=a{1,3})b		false	none	0		98:0	vm	hybrid	18	45	0	ok	PASS	variable-length repeat body
+C09	C	byte		def	(?<=foo)?bar	nojoin	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	122	237	0	ok	PASS	optional lookbehind
+C09	C	byte		vm	(?<=foo)?bar	nojoin	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	none	122	237	0	ok	PASS	optional lookbehind
+C09	C	byte		vmpf	(?<=foo)?bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	122	237	0	ok	PASS	optional lookbehind
+C10	C	byte		def	(?<=foo){0}bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	122	237	0	ok	PASS	lookbehind repeated zero times
+C10	C	byte		vm	(?<=foo){0}bar	nojoin	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	none	122	237	0	ok	PASS	lookbehind repeated zero times
+C10	C	byte		vmpf	(?<=foo){0}bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	122	237	0	ok	PASS	lookbehind repeated zero times
+C11	C	byte		def	(?:(?<=a)|x)b		false	none	1		98:1	dfa		23	45	0	ok	PASS	lookbehind in one branch
+C11	C	byte		vm	(?:(?<=a)|x)b	nojoin	false	none	1		98:1	vm	none	23	45	0	ok	PASS	lookbehind in one branch
+C11	C	byte		vmpf	(?:(?<=a)|x)b		false	none	1		98:1	vm	hybrid	23	45	0	ok	PASS	lookbehind in one branch
+C11	C	byte		dfa	(?:(?<=a)|x)b		false	none	1		98:1	dfa		23	45	0	ok	PASS	lookbehind in one branch
+C12	C	byte		def	(?=foo)		false	none	none		none	vm	none	17	43	0	ok	PASS	lookahead only
+C12	C	byte		vm	(?=foo)	nojoin	false	none	none		none	vm	none	17	43	0	ok	PASS	lookahead only
+C12	C	byte		vmpf	(?=foo)		false	none	none		none	vm	hybrid	17	43	0	ok	PASS	lookahead only
+C13	C	byte		def	(?<!x(?<=y))z		false	none	0		122:0	vm	hybrid	31	45	0	ok	PASS	positive inside a negative
+C13	C	byte		vm	(?<!x(?<=y))z	nojoin	false	none	0		122:0	vm	none	31	45	0	ok	PASS	positive inside a negative
+C13	C	byte		vmpf	(?<!x(?<=y))z		false	none	0		122:0	vm	hybrid	31	45	0	ok	PASS	positive inside a negative
+C14	C	byte		def	(?<=a)(?<=b)c|d		false	none	none		none	dfa		36	104	0	ok	PASS	contradiction on one branch: not dead
+C14	C	byte		vm	(?<=a)(?<=b)c|d	nojoin	false	none	none		none	vm	none	36	104	0	ok	PASS	contradiction on one branch: not dead
+C14	C	byte		vmpf	(?<=a)(?<=b)c|d		false	none	none		none	vm	hybrid	36	104	0	ok	PASS	contradiction on one branch: not dead
+C14	C	byte		dfa	(?<=a)(?<=b)c|d		false	none	none		none	dfa		36	104	0	ok	PASS	contradiction on one branch: not dead
+C15	C	byte		def	(?:x(?<=y))*z		false	none	unbounded		122:unbounded	dfa		20	31	0	ok	PASS	contradiction under a zero-count repeat
+C15	C	byte		vm	(?:x(?<=y))*z	nojoin	false	none	unbounded		122:unbounded	vm	none	20	31	0	ok	PASS	contradiction under a zero-count repeat
+C15	C	byte		vmpf	(?:x(?<=y))*z		false	none	unbounded		122:unbounded	vm	hybrid	20	31	0	ok	PASS	contradiction under a zero-count repeat
+C15	C	byte		dfa	(?:x(?<=y))*z		false	none	unbounded		122:unbounded	dfa		20	31	0	ok	PASS	contradiction under a zero-count repeat
+C16	C	byte		def	(?<=a)?(?<=b)c		false	none	0		99:0	dfa		41	85	0	ok	PASS	optional first lookbehind: not dead
+C16	C	byte		vm	(?<=a)?(?<=b)c	any	false	6263	-1	rate:builtin-prior	99:0	vm	none	41	85	0	ok	PASS	optional first lookbehind: not dead
+C16	C	byte		vmpf	(?<=a)?(?<=b)c		false	none	0		99:0	vm	hybrid	41	85	0	ok	PASS	optional first lookbehind: not dead
+C16	C	byte		dfa	(?<=a)?(?<=b)c		false	none	0		99:0	dfa		41	85	0	ok	PASS	optional first lookbehind: not dead
+C17	C	byte		def	(?!(?<=a)(?<=b))c		false	none	0		99:0	vm	hybrid	65	85	0	ok	PASS	dead body inside a negative lookahead
+C17	C	byte		vm	(?!(?<=a)(?<=b))c	nojoin	false	none	0		99:0	vm	none	65	85	0	ok	PASS	dead body inside a negative lookahead
+C17	C	byte		vmpf	(?!(?<=a)(?<=b))c		false	none	0		99:0	vm	hybrid	65	85	0	ok	PASS	dead body inside a negative lookahead
+C18	C	byte	i	def	(?<=a)(?<=A)c		false	none	none		none	dfa		15	34	0	ok	PASS	-i: a and A agree
+C18	C	byte	i	vm	(?<=a)(?<=A)c	any	false	none	none		none	vm	none	15	34	0	ok	PASS	-i: a and A agree
+C18	C	byte	i	vmpf	(?<=a)(?<=A)c		false	none	none		none	vm	hybrid	15	34	0	ok	PASS	-i: a and A agree
+C18	C	byte	i	dfa	(?<=a)(?<=A)c		false	none	none		none	dfa		15	34	0	ok	PASS	-i: a and A agree
+C19	C	byte		def	.(?<=a)b		false	none	1		98:1	dfa		16	37	0	ok	PASS	lookbehind over the consumed byte
+C19	C	byte		vm	.(?<=a)b	nojoin	false	none	1		98:1	vm	none	16	37	0	ok	PASS	lookbehind over the consumed byte
+C19	C	byte		vmpf	.(?<=a)b		false	none	1		98:1	vm	hybrid	16	37	0	ok	PASS	lookbehind over the consumed byte
+C19	C	byte		dfa	.(?<=a)b		false	none	1		98:1	dfa		16	37	0	ok	PASS	lookbehind over the consumed byte
+C20	C	byte		def	(?<!(?<=a)(?<=b))c		false	none	0		99:0	vm	hybrid	65	85	0	ok	PASS	dead body inside a negative lookbehind
+C20	C	byte		vm	(?<!(?<=a)(?<=b))c	nojoin	false	none	0		99:0	vm	none	65	85	0	ok	PASS	dead body inside a negative lookbehind
+C20	C	byte		vmpf	(?<!(?<=a)(?<=b))c		false	none	0		99:0	vm	hybrid	65	85	0	ok	PASS	dead body inside a negative lookbehind
+C21	C	byte		def	(?<=a)(?<=b)?c		false	none	0		99:0	dfa		50	85	0	ok	PASS	optional second lookbehind
+C21	C	byte		vm	(?<=a)(?<=b)?c	any	false	6163	-1	rate:builtin-prior	99:0	vm	none	50	85	0	ok	PASS	optional second lookbehind
+C21	C	byte		vmpf	(?<=a)(?<=b)?c		false	none	0		99:0	vm	hybrid	50	85	0	ok	PASS	optional second lookbehind
+C21	C	byte		dfa	(?<=a)(?<=b)?c		false	none	0		99:0	dfa		50	85	0	ok	PASS	optional second lookbehind
+C22	C	byte		def	(ab)(?<=b)c		false	616263	0	rate:builtin-prior	97:0,98:1,99:2	vm	hybrid	4	37	0	ok	PASS	lookbehind after a group, consistent
+C22	C	byte		vm	(ab)(?<=b)c	nojoin	false	616263	0	rate:builtin-prior	97:0,98:1,99:2	vm	none	4	37	0	ok	PASS	lookbehind after a group, consistent
+C22	C	byte		vmpf	(ab)(?<=b)c		false	616263	0	rate:builtin-prior	97:0,98:1,99:2	vm	hybrid	4	37	0	ok	PASS	lookbehind after a group, consistent
+C23	C	byte		def	(?:(?<=a)(?<=b))?c		false	none	0		99:0	dfa		65	85	0	ok	PASS	dead item in an optional group
+C23	C	byte		vm	(?:(?<=a)(?<=b))?c	nojoin	false	none	0		99:0	vm	none	65	85	0	ok	PASS	dead item in an optional group
+C23	C	byte		vmpf	(?:(?<=a)(?<=b))?c		false	none	0		99:0	vm	hybrid	65	85	0	ok	PASS	dead item in an optional group
+C23	C	byte		dfa	(?:(?<=a)(?<=b))?c		false	none	0		99:0	dfa		65	85	0	ok	PASS	dead item in an optional group
+C24	C	utf8	i	def	(?<=é)(?<=É)x		false	none	none		none	vm	hybrid	15	23	0	ok	PASS	utf8 -i: e-acute and E-acute fold together, not dead
+C24	C	utf8	i	vm	(?<=é)(?<=É)x	any	false	c38958/ffdfdf	-2	rate:none(utf8)->rightmost	none	vm	none	15	23	0	ok	PASS	utf8 -i: e-acute and E-acute fold together, not dead
+C24	C	utf8	i	vmpf	(?<=é)(?<=É)x		false	none	none		none	vm	hybrid	15	23	0	ok	PASS	utf8 -i: e-acute and E-acute fold together, not dead
+B25	B	byte	i	def	(?<=é)(?<=É)x		true	none	none	dead	none	vm	hybrid	0	29	0	ok	PASS	byte -i: second bytes a9/89 are not letters under byte, so it IS dead (C24 is its utf8 twin)
+B25	B	byte	i	vm	(?<=é)(?<=É)x		true	none	none	dead	none	vm	none	0	29	0	ok	PASS	byte -i: second bytes a9/89 are not letters under byte, so it IS dead (C24 is its utf8 twin)
+B25	B	byte	i	vmpf	(?<=é)(?<=É)x		true	none	none	dead	none	vm	hybrid	0	29	0	ok	PASS	byte -i: second bytes a9/89 are not letters under byte, so it IS dead (C24 is its utf8 twin)
+C26	C	byte		def	(?<!foo)	nojoin	false	none	none		none	vm	none	41	43	0	ok	PASS	negative only
+C26	C	byte		vm	(?<!foo)	nojoin	false	none	none		none	vm	none	41	43	0	ok	PASS	negative only
+C26	C	byte		vmpf	(?<!foo)		false	none	none		none	vm	hybrid	41	43	0	ok	PASS	negative only
+C27	C	byte		def	(?<=a\d?)b		false	none	0		98:0	vm	hybrid	18	45	0	ok	PASS	optional item in the body (variable length)
+C27	C	byte		vm	(?<=a\d?)b	nojoin	false	none	0		98:0	vm	none	18	45	0	ok	PASS	optional item in the body (variable length)
+C27	C	byte		vmpf	(?<=a\d?)b		false	none	0		98:0	vm	hybrid	18	45	0	ok	PASS	optional item in the body (variable length)
+A60	A	byte		def	(?<=ab)ab		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	129	7254	0	ok	PASS	self-overlapping run [exhaustive abc^<=6]
+A60	A	byte		vm	(?<=ab)ab	run:61626162:-2	false	61626162	-2	rate:builtin-prior	97:0,98:1	vm	none	129	7254	0	ok	PASS	self-overlapping run [exhaustive abc^<=6]
+A60	A	byte		vmpf	(?<=ab)ab		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	129	7254	0	ok	PASS	self-overlapping run [exhaustive abc^<=6]
+A61	A	byte		def	(?<=aa)aab		false	616162	0	rate:builtin-prior	97:0,98:2	vm	hybrid	346	4285	0	ok	PASS	self-overlapping run [exhaustive ab^<=8]
+A61	A	byte		vm	(?<=aa)aab	join	false	6161616162	-2	rate:builtin-prior	97:0,98:2	vm	none	346	4285	0	ok	PASS	self-overlapping run [exhaustive ab^<=8]
+A61	A	byte		vmpf	(?<=aa)aab		false	616162	0	rate:builtin-prior	97:0,98:2	vm	hybrid	346	4285	0	ok	PASS	self-overlapping run [exhaustive ab^<=8]
+A62	A	byte		def	(?<=a)a		false	none	0		97:0	dfa		2188	4285	0	ok	PASS	one-byte lookbehind, periodic [exhaustive ab^<=8]
+A62	A	byte		vm	(?<=a)a	run:6161:-1	false	6161	-1	rate:builtin-prior	97:0	vm	none	2188	4285	0	ok	PASS	one-byte lookbehind, periodic [exhaustive ab^<=8]
+A62	A	byte		vmpf	(?<=a)a		false	none	0		97:0	vm	hybrid	2188	4285	0	ok	PASS	one-byte lookbehind, periodic [exhaustive ab^<=8]
+A62	A	byte		dfa	(?<=a)a		false	none	0		97:0	dfa		2188	4285	0	ok	PASS	one-byte lookbehind, periodic [exhaustive ab^<=8]
+A63	A	byte		def	(?<=aba)ba		false	6261	0	rate:builtin-prior	97:1,98:0	vm	hybrid	236	4285	0	ok	PASS	periodic [exhaustive ab^<=8]
+A63	A	byte		vm	(?<=aba)ba	join	false	6162616261	-3	rate:builtin-prior	97:1,98:0	vm	none	236	4285	0	ok	PASS	periodic [exhaustive ab^<=8]
+A63	A	byte		vmpf	(?<=aba)ba		false	6261	0	rate:builtin-prior	97:1,98:0	vm	hybrid	236	4285	0	ok	PASS	periodic [exhaustive ab^<=8]
+A64	A	byte		def	(?<=ab)a+b		false	616261	-2	rate:builtin-prior	97:0,98:unbounded	vm	hybrid	980	4285	0	ok	PASS	repeat after [exhaustive ab^<=8]
+A64	A	byte		vm	(?<=ab)a+b	join	false	616261	-2	rate:builtin-prior	97:0,98:unbounded	vm	none	980	4285	0	ok	PASS	repeat after [exhaustive ab^<=8]
+A64	A	byte		vmpf	(?<=ab)a+b		false	616261	-2	rate:builtin-prior	97:0,98:unbounded	vm	hybrid	980	4285	0	ok	PASS	repeat after [exhaustive ab^<=8]
+A65	A	byte		def	(?<=ab)(?:ab)+		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	129	7254	0	ok	PASS	repeated group after [exhaustive abc^<=6]
+A65	A	byte		vm	(?<=ab)(?:ab)+	join	false	61626162	-2	rate:builtin-prior	97:0,98:1	vm	none	129	7254	0	ok	PASS	repeated group after [exhaustive abc^<=6]
+A65	A	byte		vmpf	(?<=ab)(?:ab)+		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	129	7254	0	ok	PASS	repeated group after [exhaustive abc^<=6]
+A66	A	byte		def	(?<=ab)a*		false	6162	-2	rate:builtin-prior	none	vm	none	2528	7254	0	ok	PASS	nullable consumed part [exhaustive abc^<=6]
+A66	A	byte		vm	(?<=ab)a*	any	false	6162	-2	rate:builtin-prior	none	vm	none	2528	7254	0	ok	PASS	nullable consumed part [exhaustive abc^<=6]
+A66	A	byte		vmpf	(?<=ab)a*		false	6162	-2	rate:builtin-prior	none	vm	hybrid	2528	7254	0	ok	PASS	nullable consumed part [exhaustive abc^<=6]
+A67	A	byte		def	(?<=ba)\Kab		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	775	4285	0	ok	PASS	\K [exhaustive ab^<=8]
+A67	A	byte		vm	(?<=ba)\Kab	join	false	62616162	-2	rate:builtin-prior	97:0,98:1	vm	none	775	4285	0	ok	PASS	\K [exhaustive ab^<=8]
+A67	A	byte		vmpf	(?<=ba)\Kab		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	775	4285	0	ok	PASS	\K [exhaustive ab^<=8]
+A68	A	byte		def	(?<=ab)c|(?<=ca)b		false	none	none		none	vm	hybrid	1186	7254	0	ok	PASS	different lookbehinds per branch [exhaustive abc^<=6]
+A68	A	byte		vm	(?<=ab)c|(?<=ca)b	any	false	[6163][6162][6263]	-2	rate:builtin-prior	none	vm	none	1186	7254	0	ok	PASS	different lookbehinds per branch [exhaustive abc^<=6]
+A68	A	byte		vmpf	(?<=ab)c|(?<=ca)b		false	none	none		none	vm	hybrid	1186	7254	0	ok	PASS	different lookbehinds per branch [exhaustive abc^<=6]
+A69	A	byte		def	(?<=ab)|c		false	none	none		none	vm	none	5330	7254	0	ok	PASS	lookbehind-only branch beside a byte branch [exhaustive abc^<=6]
+A69	A	byte		vm	(?<=ab)|c	nojoin	false	none	none		none	vm	none	5330	7254	0	ok	PASS	lookbehind-only branch beside a byte branch [exhaustive abc^<=6]
+A69	A	byte		vmpf	(?<=ab)|c		false	none	none		none	vm	hybrid	5330	7254	0	ok	PASS	lookbehind-only branch beside a byte branch [exhaustive abc^<=6]
+A70	A	byte		def	(?<=a)(?<=ba)b		false	none	0		98:0	vm	hybrid	1531	4285	0	ok	PASS	two lookbehinds, the longer covers the shorter [exhaustive ab^<=8]
+A70	A	byte		vm	(?<=a)(?<=ba)b	run:626162:-2	false	626162	-2	rate:builtin-prior	98:0	vm	none	1531	4285	0	ok	PASS	two lookbehinds, the longer covers the shorter [exhaustive ab^<=8]
+A70	A	byte		vmpf	(?<=a)(?<=ba)b		false	none	0		98:0	vm	hybrid	1531	4285	0	ok	PASS	two lookbehinds, the longer covers the shorter [exhaustive ab^<=8]
+A71	A	byte	i	def	(?<=ab)b		false	none	none		none	vm	hybrid	760	1981	0	ok	PASS	-i periodic [exhaustive aB^<=7]
+A71	A	byte	i	vm	(?<=ab)b	join	false	414242/dfdfdf	-2	rate:builtin-prior	none	vm	none	760	1981	0	ok	PASS	-i periodic [exhaustive aB^<=7]
+A71	A	byte	i	vmpf	(?<=ab)b		false	none	none		none	vm	hybrid	760	1981	0	ok	PASS	-i periodic [exhaustive aB^<=7]
+A72	A	byte		def	(?<=éa)é		false	c3a9	0	rate:builtin-prior	169:1,195:0	vm	hybrid	263	2732	0	ok	PASS	utf8 periodic [exhaustive aéb^<=5]
+A72	A	byte		vm	(?<=éa)é	join	false	c3a961c3a9	-3	rate:builtin-prior	169:1,195:0	vm	none	263	2732	0	ok	PASS	utf8 periodic [exhaustive aéb^<=5]
+A72	A	byte		vmpf	(?<=éa)é		false	c3a9	0	rate:builtin-prior	169:1,195:0	vm	hybrid	263	2732	0	ok	PASS	utf8 periodic [exhaustive aéb^<=5]
+A72	A	utf8		def	(?<=éa)é		false	c3a9	0	rate:none(utf8)->rightmost	169:1,195:0	vm	hybrid	205	2151	0	ok	PASS	utf8 periodic [exhaustive aéb^<=5]
+A72	A	utf8		vm	(?<=éa)é	join	false	c3a961c3a9	-3	rate:none(utf8)->rightmost	169:1,195:0	vm	none	205	2151	0	ok	PASS	utf8 periodic [exhaustive aéb^<=5]
+A72	A	utf8		vmpf	(?<=éa)é		false	c3a9	0	rate:none(utf8)->rightmost	169:1,195:0	vm	hybrid	205	2151	0	ok	PASS	utf8 periodic [exhaustive aéb^<=5]
+A73	A	byte		def	(?<=ab)(?=ba)b		false	none	0		98:0	vm	hybrid	757	4285	0	ok	PASS	lookbehind plus lookahead [exhaustive ab^<=8]
+A73	A	byte		vm	(?<=ab)(?=ba)b	join	false	616262	-2	rate:builtin-prior	98:0	vm	none	757	4285	0	ok	PASS	lookbehind plus lookahead [exhaustive ab^<=8]
+A73	A	byte		vmpf	(?<=ab)(?=ba)b		false	none	0		98:0	vm	hybrid	757	4285	0	ok	PASS	lookbehind plus lookahead [exhaustive ab^<=8]
+A74	A	byte		def	(?>(?<=ab)a|b)c		false	none	1		99:1	vm	hybrid	1702	7254	0	ok	PASS	atomic one-branch [exhaustive abc^<=6]
+A74	A	byte		vm	(?>(?<=ab)a|b)c	any	false	none	1		99:1	vm	none	1702	7254	0	ok	PASS	atomic one-branch [exhaustive abc^<=6]
+A74	A	byte		vmpf	(?>(?<=ab)a|b)c		false	none	1		99:1	vm	hybrid	1702	7254	0	ok	PASS	atomic one-branch [exhaustive abc^<=6]
+A75	A	byte		def	(?<=abc)	run:616263:-3	false	616263	-3	rate:builtin-prior	none	vm	none	813	7254	0	ok	PASS	lookbehind only, empty matches [exhaustive abc^<=6]
+A75	A	byte		vm	(?<=abc)	run:616263:-3	false	616263	-3	rate:builtin-prior	none	vm	none	813	7254	0	ok	PASS	lookbehind only, empty matches [exhaustive abc^<=6]
+A75	A	byte		vmpf	(?<=abc)		false	616263	-3	rate:builtin-prior	none	vm	hybrid	813	7254	0	ok	PASS	lookbehind only, empty matches [exhaustive abc^<=6]
+A76	A	byte		def	(?<=ab)c(?<=bc)		false	none	0		99:0	vm	hybrid	671	7254	0	ok	PASS	trailing lookbehind [exhaustive abc^<=6]
+A76	A	byte		vm	(?<=ab)c(?<=bc)	run:616263:-2	false	616263	-2	rate:builtin-prior	99:0	vm	none	671	7254	0	ok	PASS	trailing lookbehind [exhaustive abc^<=6]
+A76	A	byte		vmpf	(?<=ab)c(?<=bc)		false	none	0		99:0	vm	hybrid	671	7254	0	ok	PASS	trailing lookbehind [exhaustive abc^<=6]
+A77	A	byte	i	def	(?<=ab)ab		false	none	none		none	vm	hybrid	496	7873	0	ok	PASS	-i self-overlap [exhaustive abAB^<=5]
+A77	A	byte	i	vm	(?<=ab)ab	join	false	41424142/dfdfdfdf	-2	rate:builtin-prior	none	vm	none	496	7873	0	ok	PASS	-i self-overlap [exhaustive abAB^<=5]
+A77	A	byte	i	vmpf	(?<=ab)ab		false	none	none		none	vm	hybrid	496	7873	0	ok	PASS	-i self-overlap [exhaustive abAB^<=5]
+C40	C	byte		def	(?<!ab)ab		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	1490	7254	0	ok	PASS	negative self-overlap [exhaustive abc^<=6]
+C40	C	byte		vm	(?<!ab)ab	nojoin	false	6162	0	rate:builtin-prior	97:0,98:1	vm	none	1490	7254	0	ok	PASS	negative self-overlap [exhaustive abc^<=6]
+C40	C	byte		vmpf	(?<!ab)ab		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	1490	7254	0	ok	PASS	negative self-overlap [exhaustive abc^<=6]
+C41	C	byte		def	a(?<=ba)b		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	1282	4285	0	ok	PASS	lookbehind reaching one byte before the attempt, mid-pattern [exhaustive ab^<=8]
+C41	C	byte		vm	a(?<=ba)b	any	false	626162	-1	rate:builtin-prior	97:0,98:1	vm	none	1282	4285	0	ok	PASS	lookbehind reaching one byte before the attempt, mid-pattern [exhaustive ab^<=8]
+C41	C	byte		vmpf	a(?<=ba)b		false	6162	0	rate:builtin-prior	97:0,98:1	vm	hybrid	1282	4285	0	ok	PASS	lookbehind reaching one byte before the attempt, mid-pattern [exhaustive ab^<=8]
+C42	C	byte		def	b*(?<=ab)c		false	none	unbounded		99:unbounded	vm	hybrid	671	7254	0	ok	PASS	lookbehind after a nullable repeat [exhaustive abc^<=6]
+C42	C	byte		vm	b*(?<=ab)c	any	false	none	unbounded		99:unbounded	vm	none	671	7254	0	ok	PASS	lookbehind after a nullable repeat [exhaustive abc^<=6]
+C42	C	byte		vmpf	b*(?<=ab)c		false	none	unbounded		99:unbounded	vm	hybrid	671	7254	0	ok	PASS	lookbehind after a nullable repeat [exhaustive abc^<=6]
+B40	B	byte		def	(?<=ab)(?<=bb)a		true	none	0	dead	97:0	vm	hybrid	0	1981	0	ok	PASS	dead, exhaustive [exhaustive ab^<=7]
+B40	B	byte		vm	(?<=ab)(?<=bb)a		true	6261	-1	dead	97:0	vm	none	0	1981	0	ok	PASS	dead, exhaustive [exhaustive ab^<=7]
+B40	B	byte		vmpf	(?<=ab)(?<=bb)a		true	none	0	dead	97:0	vm	hybrid	0	1981	0	ok	PASS	dead, exhaustive [exhaustive ab^<=7]
+A80	A	byte		def	(?<=foo)bar	run:626172:0	false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	26706	30972	0	ok	PASS	long subjects
+A80	A	byte		vm	(?<=foo)bar	run:666f6f626172:-3	false	666f6f626172	-3	rate:builtin-prior	97:1,98:0,114:2	vm	none	26706	30972	0	ok	PASS	long subjects
+A80	A	byte		vmpf	(?<=foo)bar		false	626172	0	rate:builtin-prior	97:1,98:0,114:2	vm	hybrid	26706	30972	0	ok	PASS	long subjects
+A81	A	byte		def	(?<=ab)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	26383	30564	0	ok	PASS	long subjects
+A81	A	byte		vm	(?<=ab)cd	run:61626364:-2	false	61626364	-2	rate:builtin-prior	99:0,100:1	vm	none	26383	30564	0	ok	PASS	long subjects
+A81	A	byte		vmpf	(?<=ab)cd		false	6364	0	rate:builtin-prior	99:0,100:1	vm	hybrid	26383	30564	0	ok	PASS	long subjects
+A82	A	byte	i	def	(?<=foo)bar		false	424152/dfdfdf	0	rate:builtin-prior	none	vm	hybrid	26706	30972	0	ok	PASS	long subjects, -i
+A82	A	byte	i	vm	(?<=foo)bar	K:-3	false	464f4f424152/dfdfdfdfdfdf	-3	rate:builtin-prior	none	vm	none	26706	30972	0	ok	PASS	long subjects, -i
+A82	A	byte	i	vmpf	(?<=foo)bar		false	424152/dfdfdf	0	rate:builtin-prior	none	vm	hybrid	26706	30972	0	ok	PASS	long subjects, -i
+A83	A	byte		def	(?<=é)x		false	none	0		120:0	vm	hybrid	25856	29892	0	ok	PASS	long subjects, utf8
+A83	A	byte		vm	(?<=é)x	run:c3a978:-2	false	c3a978	-2	rate:builtin-prior	120:0	vm	none	25856	29892	0	ok	PASS	long subjects, utf8
+A83	A	byte		vmpf	(?<=é)x		false	none	0		120:0	vm	hybrid	25856	29892	0	ok	PASS	long subjects, utf8
+A83	A	utf8		def	(?<=é)x		false	none	0		120:0	vm	hybrid	25808	29844	0	ok	PASS	long subjects, utf8
+A83	A	utf8		vm	(?<=é)x	run:c3a978:-2	false	c3a978	-2	rate:none(utf8)->rightmost	120:0	vm	none	25808	29844	0	ok	PASS	long subjects, utf8
+A83	A	utf8		vmpf	(?<=é)x		false	none	0		120:0	vm	hybrid	25808	29844	0	ok	PASS	long subjects, utf8
+A84	A	byte		def	(?<=abcdefghijklmnopqrstuvwxyz0123456789)!		false	none	0		33:0	vm	hybrid	36056	42132	0	ok	PASS	long subjects, 36-byte lookbehind (run clipped)
+A84	A	byte		vm	(?<=abcdefghijklmnopqrstuvwxyz0123456789)!	any	false	65666768696a6b6c6d6e6f707172737475767778797a30313233343536373839	-32	rate:builtin-prior	33:0	vm	none	36056	42132	0	ok	PASS	long subjects, 36-byte lookbehind (run clipped)
+A84	A	byte		vmpf	(?<=abcdefghijklmnopqrstuvwxyz0123456789)!		false	none	0		33:0	vm	hybrid	36056	42132	0	ok	PASS	long subjects, 36-byte lookbehind (run clipped)
+A85	A	byte		def	(?<=foo)		false	666f6f	-3	rate:builtin-prior	none	vm	none	25881	29892	0	ok	PASS	long subjects, lookbehind only
+A85	A	byte		vm	(?<=foo)	run:666f6f:-3	false	666f6f	-3	rate:builtin-prior	none	vm	none	25881	29892	0	ok	PASS	long subjects, lookbehind only
+A85	A	byte		vmpf	(?<=foo)		false	666f6f	-3	rate:builtin-prior	none	vm	hybrid	25881	29892	0	ok	PASS	long subjects, lookbehind only
+A86	A	byte		def	(?<=xyz)a+xyz		false	78797a61	-3	rate:builtin-prior	97:0,120:unbounded,121:unbounded,122:unbounded	vm	hybrid	27027	31428	0	ok	PASS	long subjects
+A86	A	byte		vm	(?<=xyz)a+xyz	run:78797a61:-3	false	78797a61	-3	rate:builtin-prior	97:0,120:unbounded,121:unbounded,122:unbounded	vm	none	27027	31428	0	ok	PASS	long subjects
+A86	A	byte		vmpf	(?<=xyz)a+xyz		false	78797a61	-3	rate:builtin-prior	97:0,120:unbounded,121:unbounded,122:unbounded	vm	hybrid	27027	31428	0	ok	PASS	long subjects

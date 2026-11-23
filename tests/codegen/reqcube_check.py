@@ -293,6 +293,13 @@ WIT = [
     # which the TOP set step joins to req_set; check 4 reads RX_REQ_BYTE (`q`)
     # against that set, so a set step that joined the wrong byte is red here
     ("ws4", "x(?=qr)[pq]r", ()),
+    # span_arms L3 W-S4c (§5.7, §14.4 L3): the run `qzab` begins 2 bytes
+    # inside the lookbehind; RX_REQ_BYTE is picked over the CONSUMED extent
+    # (`ab`), so it lies in req_set {97,98}; a pick over the whole run takes
+    # `z` (122), outside the set: check 4 red
+    # (review r65 A: under `--engine=vm`, where no forward scan re-enters and
+    # BACK is chosen; by default the consumed `ab` is kept)
+    ("ws4c", "(?<=qz)ab", ("--engine=vm",)),
 ]
 
 n_whole_route = 0

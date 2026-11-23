@@ -56,7 +56,7 @@ modes: n/a (parked: not in the language)
 `count(^h)`, `some(^h)`: counting or testing over a field reference.
 - The field reference is the paused sigil (parked/ideas/other-side-sigil); `some` and `count` over a condition stay
   (lib/counting/some, lib/counting/count).
-Trigger: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in the
+Trigger: a use of a field reference with real value beyond rejecting an empty loop (counting every setting, as in the
   draft's `length(S)` body, is a candidate to be argued, not a trigger met).
 Source: the ideas file item 8 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
@@ -173,17 +173,30 @@ Trigger: the first user documentation of the predicate language (docs/guide/ tie
 Source: the ideas file item 24 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-19
+### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-22
 Label hygiene for libraries: the macro-variable problem.
 Trigger: the rx-module discussion, or the first library file with labels.
 Source: the ideas file item 25 (its whole text in the details entry).
+- Partly overtaken: a library label is reached only through its source (core/labels/paths/label-reference,
+  core/labels/paths/call-prefix), so two patterns' `h` meet only in the user's own prefixed text; a provided body's
+  groups are labels only (core/labels/label-only-group); a pattern exposing only what it declares is
+  parked/ideas/declared-labels. What stays parked: whether a collision left is worth a rule.
+- His observation, "The textually visible rules solves a problem of a label from a binding reference hiding another
+  binding": what is left of hiding (a reading): a label written in the definition against a binding of the same
+  name (`pcrec.label.hidden`, core/operators/statements), and a binding name a library adds under `(=) :=
+  import(..)` (core/modules/all-symbols). At the part grain default-export (a part used alone exports nothing) and
+  export-list (a part's labels taken one by one) narrow what can meet (core/labels/export/export-list).
 modes: n/a (parked: not in the language)
 
-### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-19
+### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-22
 A condition with a label parameter, bound where it is used.
 Trigger (the ideas file's words): `the library discussion (items 12, 20, 23, 25), or the first revision of the draft`
   `after rev 25 that takes up reusable conditions`.
 Source: the ideas file item 26 (its whole text in the details entry).
+see: core/operators/bindings/label-variables
+- The THING is under construction as core/operators/bindings/label-variables, which supersedes this entry; kept as
+  the ideas file's record. Its question whether the body may read labels that are not parameters is answered: no
+  (core/holes/bare-condition/bound-condition, core/holes/bare-condition/nested-scope).
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
@@ -229,22 +242,19 @@ Trigger (any one of its unlocks):
 Source: the ideas file item 31 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### The label-only group   [parked/ideas/label-only-group]   parked 2026-11-19
-`(?<:x>...)` (his stated form, a placeholder): a group that is labelled, not a capture.
-Trigger: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
-Source: the ideas file item 32 (its whole text in the details entry).
-modes: n/a (parked: not in the language)
-
 ### The array form in a hole, `${@y}`   [parked/ideas/array-in-hole]   parked 2026-11-19
 `${@y}` (a placeholder): one of the earlier values; a future direction, not built, not defined now.
 Trigger: a user program of the declared-then-used shape; or the array form's type being defined for conditions.
 Source: the ideas file item 33 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### A parameter restricted by `&` in a definition's head   [parked/ideas/restricted-parameter]   parked 2026-11-19
+### A parameter restricted by `&` in a definition's head   [parked/ideas/restricted-parameter]   parked 2026-11-22
 `example(g & /\d+/) := ...` (his placeholder): a restricted parameter; the same to limit or overload operators.
 Trigger: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
 Source: the ideas file item 34 (its whole text in the details entry).
+see: core/operators/bindings/macro-types
+- The THING is under construction as core/operators/bindings/macro-types, which supersedes this entry; kept as the
+  ideas file's record.
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19
@@ -285,4 +295,19 @@ Trigger: a use with "real value other than 'override a users own *'" (his words)
   author's own `*` loop (`some(^h)`) is not one.
 Source: the record, the field-reference entries and retire-paused (details).
 see: parked/ideas/field-count core/values/tuples
+modes: n/a (parked: not in the language)
+
+### A syntax to declare a binding's labels   [parked/ideas/declared-labels]   parked 2026-11-22
+A syntax to declare the labels a binding provides (the `ch` in `chars`), for clarity, not for correctness.
+Trigger: macro types being designed (core/operators/bindings/macro-types), or the first library file with labels.
+Source: the record, count-in-set's ruling entry (his words in the details entry): "aside: perhaps we will need a
+  syntax to declare the ch in chars. i am wonderings not for correctness but clarity."
+see: core/labels/export lib/modifiers/length core/labels/paths/binding-prefix
+modes: n/a (parked: not in the language)
+
+### Unqualified labels after a binding defined above   [parked/ideas/unqualified-after-definition]   parked 2026-11-22
+A binding defined above in the same program (`isodate := ...`) would let its later uses refer to its labels without qualification; parked by the owner himself.
+Trigger: his taking it up, or the idiom `isodate & (isodate.year: ..)` proving too heavy in the worked examples.
+Source: the record, the label-reference ruling entry (his words in the details entry).
+see: core/labels/paths/label-reference
 modes: n/a (parked: not in the language)

@@ -19,7 +19,7 @@
 #   records       run_part_terms records on the shipped arts the sweep must see (a sweep whose summarize dropped the record
 #                 again, p14, reds here too); records_band as pop_band.
 cell	census_floor	census_band	compiles	failed	pop_band	records	records_band	provenance
-byte/c-default	89	0	5147	486	0	426	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
-byte/c-vm	184	0	5148	485	0	1132	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
-utf8/c-default	129	0	5217	416	0	558	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
-utf8/c-vm	257	0	5194	439	0	1251	0	repin L1 landing d68a1294c re-pin (lane l1pins, 2026-11-20)
+byte/c-default	90	0	5327	487	0	452	0	repin L3 landing d92d672be (abi 112): l3d27 witnesses + L3 c-vm +7 + main span_seed.rxt (U1) + K146/K147 corpus rows
+byte/c-vm	251	0	5328	486	0	1372	0	repin L3 landing d92d672be (abi 112): l3d27 witnesses + L3 c-vm +7 + main span_seed.rxt (U1) + K146/K147 corpus rows
+utf8/c-default	133	0	5398	416	0	603	0	repin L3 landing d92d672be (abi 112): l3d27 witnesses + L3 c-vm +7 + main span_seed.rxt (U1) + K146/K147 corpus rows
+utf8/c-vm	325	0	5375	439	0	1495	0	repin L3 landing d92d672be (abi 112): l3d27 witnesses + L3 c-vm +7 + main span_seed.rxt (U1) + K146/K147 corpus rows

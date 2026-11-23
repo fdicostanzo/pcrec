@@ -1,0 +1,24 @@
+# The stated LIMITS behind the D27 L3 witnesses that list LESS than the promise allows
+# (lane l3wire, 2026-11-21; the blinded author's findings F1-F4, docs/dev/lanes/l3d27_report.md
+# "Listing findings"; the manager's ruling: listing gaps the spec ALLOWS, not violations; each has a
+# plan row under [REQ-LOOKAROUND]). Written by the BUILD side, never by the blinded author:
+# l3d27_listing.tsv beside it is the author's and is not edited. check_listing.py reads both: a
+# witness with a LIMIT-status record must name at least one limit here, and no other may. F5/F6
+# (the INFO rows C03, C05: sound joins the brief did not expect) are not limits and name none.
+#
+# LIMIT KEYS (a key not declared here is a check error; the rows name WITNESS ids):
+#   run-cap      F1. A run is clipped to 32 positions, K clamped at -32 (A35; A84's 40-byte
+#                form lists the same clip and its record meets the spec as written): a lookbehind
+#                of 33+ bytes keeps no consumed position under --engine=vm. Row [L3-RUN-CAP].
+#   meet-wide    F2. Two lookbehinds do not combine where one has a wide class (A15,
+#                `(?<=.b)(?<=a.)cd`): the meet `ab` is not taken. Row [L3-MEET-WIDE].
+#   nested-head  F3. A lookbehind nested at the START of a lookbehind body blocks the whole item
+#                (A17, `(?<=(?<=x)ab)cd`); nested at the end it joins. Row [L3-NESTED-HEAD].
+#   class-one    F4. A one-character class lookbehind before a single consumed byte does not
+#                join (A45, `(?<=a|b)c`); before two consumed bytes it does. Row [L3-CLASS-ONE].
+#
+#id	limits
+A35	run-cap
+A15	meet-wide
+A17	nested-head
+A45	class-one

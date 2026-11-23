@@ -22,7 +22,8 @@ basename in two directories so the `#include` line cannot differ.
 [vm-anchor] a mover is unanchored (`RX_VM_START "unanchored"`): an anchored
     or `\\G`-start artifact runs one attempt (S492's detector).
 [vm-handoff] a mover's handoff is the VM attempt loop's ([REQRUN-VM],
-    tuning.md §2.41¶8b): `RX_REQ_HANDOFF` is `"none"` or a decimal K, and
+    tuning.md §2.41¶8b): `RX_REQ_HANDOFF` is `"none"` or a SIGNED decimal K
+    (negative where the run begins inside a lookbehind, span_arms L3), and
     the seek then starts at `attempt_position`, the whole run's hit less K,
     or `"unbounded"` ([REQ-PAST-LAST], ¶8c), where it starts at the startpos,
     a lower bound on the first match start like `search_from` (§6.4.3 item
@@ -218,7 +219,7 @@ def corpus_checks():
             if st.get("VM_START") != "unanchored":
                 viol["anchor"].append("%s: VM_START %s" % (key, st.get("VM_START")))
             ho = st.get("REQ_HANDOFF")
-            if ho != "none" and ho != "unbounded" and not (ho or "").isdigit():
+            if ho != "none" and ho != "unbounded" and not re.fullmatch(r"-?[0-9]+", ho or ""):
                 viol["handoff"].append("%s: REQ_HANDOFF %s" % (key, ho))
             elif ho != "none":
                 nmov_ho += 1
@@ -239,7 +240,7 @@ def corpus_checks():
     names = {"iff": "[vm-iff] the stamp names the emitted seek",
              "route": "[vm-route] every mover is a prefilter-less VM artifact",
              "anchor": "[vm-anchor] every mover is unanchored",
-             "handoff": "[vm-handoff] a mover's handoff is the attempt loop's (none, a decimal K or 'unbounded')",
+             "handoff": "[vm-handoff] a mover's handoff is the attempt loop's (none, a signed decimal K or 'unbounded')",
              "deny": "[vm-deny] the deny arm is today's emitter (non-movers identical; movers identical once the seek is removed)",
              "table": "[vm-table] every mover's table equals its start_set fact"}
     for k, label in names.items():

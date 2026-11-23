@@ -1,0 +1,5 @@
+report: docs/dev/lanes/l3tri3_report.md
+sections: Summary; Shard 5 empty-engine bucket; Shard 6 VM movers; Validation dispatched; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

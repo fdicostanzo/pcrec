@@ -1,0 +1,5 @@
+report: docs/dev/lanes/l3fin_report.md
+sections: Summary; Diff; CHECK; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

@@ -539,3 +539,314 @@ Not applied (mine to weigh): does label.unset also fire on an always-unset read;
 model. His follow-up on flags (inherit before or after the intersection) recorded as a question, flags-before-and,
 unanswered; the ruling stands as folded (before). P-14 written; main told.
 WAITING on: main's merge; Frank (flags-before-and, class-value, the four new questions, then group-truth...).
+
+## 2026-11-19 (23:15) — main merged P-14; his resolve-then-wrap proposal on flags recorded
+
+Main merged 74f70152e (lints clean there); it applies the status line, r61's skill changes and my skill edit in
+the morning, and prunes the lane worktrees then. Frank (discussion): an expression in a hole is resolved on its
+own, then the result is inserted wrapped by the context options ("after"); it would reverse "both sides inherit"
+as I folded it. Checked and told him: same answers as "before" except where the sides' case demands conflict (his
+`[a-z]x & [A-Z]x`); bound-and-inserted equals inserted-whole under both; it collides with the ruled "a flag it
+writes for itself wins" (`A & A` against `A` with `(?-i)`). Record tip 9d763c435. Nothing folded.
+WAITING on: Frank (flags-before-and).
+
+## 2026-11-19 (23:30) — flags-in-filter confirmed (before); a warning proposed to him
+
+"I agree with the ruling that the environment of the hole sets the default options for the expression inside."
+Folded by me (ruling item, his own proposal rejected by him, the `[a-z]x & [A-Z]x` line; lint 5,255 / 0). He
+asked for a warning; proposed flags-warning (fire when the sides-first result differs from the expression alone
+with the flag on its result; brute-force run on six examples, two WARN, four quiet). Not delivered yet (after
+P-14). WAITING on: Frank (flags-warning).
+
+## 2026-11-19 (23:40) — flags-warning RULED and folded
+
+"flags-warning: yes when it works. You can't do it if the expression refers to $x a label in the literal". Row
+`pcrec.flags.filter` (my placeholder) in the warnings table, a bullet on core/holes/flags/in-filter, rulings on
+both; lint 5,267 / 0; tip after this entry. Not yet delivered (two folds since P-14: flags-before-and,
+flags-warning): deliver with the next batch or at close; they were hand folds, so the next critic round covers
+them with flags-in-filter. WAITING on: Frank (class-value next).
+
+## 2026-11-19 (23:50) — /close of the third predicate-manager session
+
+Nothing in flight at /close. wake.md rewritten from scratch; owner.md current; P-15 written; main told. On main:
+everything through P-14. On my branch only: flags-in-filter with its confirmation and flags-warning (hand folds,
+no critic round yet). Next session: /q, class-value first, then the four r61 questions; a critic round on the
+three post-P-14 folds before the next delivery.
+
+## 2026-11-21 (16:30) — fourth predicate-manager session: wake-up
+
+Registered (role pred). Read wake.md, from_main (M-2 new), the three base files whole, the record from
+bare-condition-labels to the end, the journal tail. Merged main into `lane/pred-rev28` (clean; lint 5,267 / 0,
+plan-lint clean). Main had not merged P-15's three hand folds: branch is ahead of main by them. M-2 (Frank's
+remark to main on rx / graph manipulation for intersection and subtraction, a LEAN) recorded verbatim in the
+record; nothing folded. P-16 written (M-2 acknowledged). Nothing running. NEXT: /q with class-value first
+(run: `$PCREC_TMPDIR/scratch/pred/classvalue.py`); a critic round on the three post-P-14 hand folds before the
+next delivery (number from main first).
+WAITING on: Frank (class-value).
+
+## 2026-11-21 (16:50) — class-value RULED and folded
+
+"ascending codepoints everywhere makes sesne." Folded by me (one ruling): record entry, lib/builtin/enumerate/
+class-value to ruled (candidate (b) rejected as enumerate's order; class-base stays parked), pointers in
+enumerate, core/arrays/class-order and its details; lint 5,279 / 0. Two readings of mine listed for the next lane
+(a caseless single character; byte mode). On my branch only now: four hand folds since P-14. 14 open pieces.
+WAITING on: Frank (flat-read-outside next).
+
+## 2026-11-21 (17:10) — flat-read-outside RULED (a) and folded
+
+His question back ("so the read is based on match not group?") answered and recorded; then "flat-read-outside: a".
+Folded by me: the piece to ruled with both run lines (predfix61 FB), statement 3's clause, details ((b) and (c)
+rejected), the parked user-doc trap. Lint 5,289 / 0. 13 open pieces. Five hand folds on my branch since P-14.
+WAITING on: Frank (bare-nested-scope next).
+
+## 2026-11-21 (18:00) — bare-nested-scope in discussion; the construction exercise run
+
+He set my question's frame aside ("literals are not the way to think about it"; construction; fill order;
+descending and horizontal; hole kinds). My leaning (a) as put withdrawn; a frame proposed (meaning on the finished
+rx; shaping and matching holes; open or closed at a BINDING boundary). He asked for an exercise: build four rx from
+macros only. Done (`$PCREC_TMPDIR/scratch/pred/construct.py`, 0 differing on all four); recorded with findings: his
+bottom-up prediction supported; outer values reach a lower piece as READS PASSED AS ARGUMENTS; the closed rule
+never pinched; the dollar-form warning, label hygiene and `[=year]` did. Nothing folded.
+WAITING on: Frank (bare-nested-scope, his reaction to the exercise).
+
+## 2026-11-21 (19:10) — pure-label RULED (a); three examples on scope; NOT yet folded
+
+The bare-nested-scope thread: his three questions answered (my `inner($h)` rewrite corrected: it consumes; the
+faithful closed form passes the condition); then his correction "a label is not a capture"; pure-label asked and
+RULED: "captures are explicitly written either in literal form or using a macro like capture()"; a label-to-capture
+add-on is needed (after the fact, for library labels; spelling open); `_` labels never export as captures; three
+examples (C sees d through B(A); B's body may not name d; B may label its parameter). All recorded. NOT FOLDED:
+pure-label moves export statement 5, core/labels/paths, labels-vs-captures, lib/structural/capture: a fold LANE
+once the scope thread settles (with the readings listed in the record entry). On the branch: five hand folds since
+P-14 plus this unfolded ruling; a critic round (number from main) after the lane.
+WAITING on: Frank (the condition-as-argument edge of bare-nested-scope).
+
+## 2026-11-21 (19:40) — zero-in-definition RULED (a); fold lane predscope launched
+
+condition-argument withdrawn (his `B(A & (d: <100))` is equivalent, 0 of 19,530 differ; `when`'s ruled condition
+test already answers it). "zero-in-definition: a" recorded. Lane predscope (opus; worktree `worktrees/predscope`,
+branch `lane/predscope` from 36a74948f; deliver + empty rulings file written before launch; lanewatch armed) folds
+pure-label, the `_` statement, zero-in-definition and his three examples, and tests the readings of today's
+entries. NOT for the lane: the capture add-on's form (under construction), my frame (proposals).
+WAITING on: lane predscope (delivery by lanewatch DONE + report); Frank (array-vs-passes next; it touches
+core/labels/labels-vs-captures, which the lane edits: a ruling there goes to the rulings file or a follow-up fold).
+
+## 2026-11-21 (20:30) — array-vs-passes (a) and joint-in-some RULED; lane predscope merged
+
+Rulings recorded, NOT folded: array-vs-passes "option a" (the group questions and `h[k]` read the array of
+settings; revises lib/counting's pass wording, group-truth, outermost-view's bullet); joint-in-some (a joint entry
+inside a group question refused for now; same item written on the item; "no one would know to write it").
+class-hole-order asked, not answered yet. Lane predscope DELIVERED (lanewatch DONE; tip e86e2ce0c), merged (lint
+5,446 / 0; plan-lint clean), stopped. Its finding: my rule over his three examples is not supported as stated
+(bound conditions and computed labels are outside it; his examples cover a parameter's labels only), so
+bare-nested-scope stays open, narrowed to a label the USER of a definition sets. Three new owner questions queued
+(zero-condition-binding, bare-nested-scope narrowed, capture-loop-value).
+NEXT: a follow-up fold lane (predarr) for array-vs-passes + joint-in-some once class-hole-order is answered (it can
+ride along); then a critic round over all of today's folds and the three of 2026-11-19 (number from main).
+WAITING on: Frank (class-hole-order).
+
+## 2026-11-21 (21:10) — class-hole-order RULED (a), folded by me; lane predarr launched
+
+His correction first: the piece's example `/${[${c}] + 1}/` was not legal predicate language (it is `/${/[${c}]/ +
+1}/`); corrected in the piece, recorded. Then "class-hole-order: a": folded (one piece; lint 5,459 / 0). Lane
+predarr (opus; `worktrees/predarr`, branch `lane/predarr` from 96f25d7a0; deliver + empty rulings written first;
+lanewatch armed) folds array-vs-passes (a) and joint-in-some and tests the readings of those two entries.
+WAITING on: lane predarr; Frank (bare-nested-scope narrowed, next).
+
+## 2026-11-21 (22:20) — bare-nested-scope RULED in two cases and folded by me
+
+Case 1: "compile error at inner" (a piece may not name a label it does not hold). His label-variable question
+answered (the parked label parameter; pass the condition or the set today). Case 2: "no, c" (letter unclear; his
+loop reason checked: same under both, the loop resets), then, shown the witness pair against compose-equals-
+literal, "lol. i meant b": own value only. Folded by me: core/holes/bare-condition/nested-scope to ruled (the
+composed lines to rejected), bare-condition/labels' "Composed" line flipped to never matching with the
+one-definition line beside it, reads' value-hole clause, a bullet on core/labels/flow for the exception; details.
+Lint 5,487 / 0. Five readings of mine listed (the piece = a binding or macro body; user's loop; two uses).
+Lane predarr still running. WAITING on: lane predarr; Frank (zero-condition-binding next).
+
+## 2026-11-21 (23:00) — lane predarr merged; his "do you see an issue" answered
+
+Frank asked for issues with bare-nested-scope as ruled: three told him (extracting a definition changes an answer,
+with the never-pass warning at the definition; flags flow in, label values do not; what one piece is for a
+twice-used argument or a user's loop). bound-condition asked, not answered. Lane predarr DELIVERED (lanewatch
+DONE; tip 5133528c6), merged (lint 5,546 / 0; plan-lint clean), stopped. On the branch since P-14: the three folds
+of 2026-11-19 and today's class-value, flat-read-outside, pure-label + zero-in-definition (predscope),
+class-hole-order, bare-nested-scope (hand), array-vs-passes + joint-in-some (predarr). Review number asked of main.
+NEXT: the critic round over all of it; then deliver (P-17).
+WAITING on: main (review number); Frank (bound-condition).
+
+## 2026-11-21 (23:20) — critic round r77 predfold1121 launched
+
+Main gave r77. One opus coordinator `crit-predfold1121` (design mode; background) over the documents at
+lane/pred-rev28 882bcf330 against main's 74f70152e: the three folds of 2026-11-19 and all of today's. Round dir
+`$PCREC_TMPDIR/scratch/crit-predfold1121/`; standing lenses required (RULING; printed ruled examples re-derived in
+every mode + legal programs; general form and unlocks); lane reports, earlier reviews and my journal/wake denied.
+The subject stays FROZEN until the draft: rulings Frank gives meanwhile are RECORDED only, folded after the round.
+WAITING on: the coordinator's hand-back (read the round dir at each wake); Frank (bound-condition).
+
+## 2026-11-21 (19:20 EST) — close of the fourth predicate-manager session, at the owner's word
+
+bound-condition asked twice; his two examples of `0` (a bare condition reads the rx it sits in; in `${A & (0:
+S)}` only A) confirmed as ruled after my argument ("that settles it. my two examples are correct"); the named-
+condition case still open. His "issue definition" recorded ("bindings define scope"; the `i`-only lean; the
+list_of_stuff sketch, worked by me with a set-making macro). A misread run in the record corrected by an appended
+entry. Then: "lets close the session now" and "don't cancel the subagents. let them finish".
+IN FLIGHT, NOT CANCELLED: critic round r77 predfold1121 (critics and verifier done, the coordinator drafting;
+round dir `$PCREC_TMPDIR/scratch/crit-predfold1121/`). Nothing else running; no cron. wake.md rewritten from
+scratch; owner.md current; P-17 written; main told. On the branch only: the three folds of 2026-11-19 and all of
+today's rulings. NEXT SESSION: rule r77's dispositions, one fix lane (it files the review), deliver (P-18), then
+/q with bound-condition first.
+
+## 2026-11-21 (19:45 EST) — r77 drafted (NOT READY); not ruled; session closed
+
+The coordinator handed back after the close paperwork: draft at `$PCREC_TMPDIR/scratch/crit-predfold1121/review.md`,
+verdict NOT READY; its first finding is an owner question (array-scope against own-value-only inside a used
+piece); the rest FIX-NOW text and example fixes, several on my hand fold of bare-nested-scope and on the
+bound-condition carve-out. wake.md's State and question queue updated; owner.md too. Dispositions NOT ruled
+(session closing at his word): first act of the next session.
+
+## 2026-11-22 (about 12:30 EST) — fifth predicate-manager session: wake-up; r77 ruled
+
+Registered (`session_role pred`); main merged into `lane/pred-rev28` (one conflict, the lanes history index: both
+sides kept); lint 5,569 / 0, plan-lint clean. Read core, library, parked whole; the record from zero-in-definition
+to the end; r77's draft and process notes. RULED r77's dispositions (record entry of today): A1+A2 the owner
+question array-in-piece (documents mark the collision meanwhile); A3-A5, A7-A9, A12 and D1-D12 FIX-NOW; A6 to be
+verified by the lane, then PLAN; A10, D13 and the de-duplication PLAN; a new owner question helper-captures queued.
+Witness for array-in-piece re-run by a hand-built simulation (`$PCREC_TMPDIR/scratch/pred/array_in_piece.py`).
+P-18 written. NEXT: launch lane predfix77 (opus; files the review), ask him array-in-piece, then bound-condition.
+
+## 2026-11-22 (afternoon) — array-in-piece and bound-condition ruled; predfix77 merged; P-19 delivered
+
+RULED by him: array-in-piece (b) ("because B is bound first, its internal references refer only to what can be
+seen at that point"; both in-place forms, `&` and SEQ, see A's h); bound-condition (b) ("mostly confirmed": `A :=
+(x: blah)` and `A := /x/ & (y: blah)` are compile errors, computed labels bound alone with them; macro variables
+and macro types under construction; `c := (0: 5)` left open by him). My leaning (a) and the "laid where it is
+used" reading WITHDRAWN. Lane predfix77 (R-1, R-2, R-3 applied) delivered and merged: r77 filed and applied; lint
+5,771 / 0. P-19 written. IN THE RECORD, NOT IN THE DOCUMENTS: bound-condition (documents carry it open with his
+position). WAITING on him: count-in-set (he asked where `ch` is defined; answered). NEXT: his answer, then ONE
+opus follow-up lane folding bound-condition (+ count-in-set), a critic round on that fold (number from main), P-20.
+
+Main (2026-11-22): review number **r82** is ours for the bound-condition fold's critic round; main merges 399ef98f4 after reading P-19.
+
+## 2026-11-22 (later) — five more rulings; predbound merged; predref running
+
+RULED by him today after array-in-piece and bound-condition: count-in-set (b: a value left of `:`), binding-prefix
+(1 yes: a group question through a binding's prefix reads every use; 2 a: a plain read with several uses is a
+compile error), label-reference (required; the plain idiom included; his unqualified-after-definition idea parked
+by him), helper-captures (the library's helpers set labels, not captures; `(?<:x>...)` his proposal). Values
+allowed in the joint form (my reading withdrawn at his question). record-in-some CLOSED by me on his words of the
+21st (told to him; no objection yet). Lane predbound (R-1..R-3) delivered and MERGED (915b47e64; lint 6,088 / 0;
+its model 21 / 0). Lane predref (opus; worktree `worktrees/predref`) RUNNING: the label-reference sweep, the
+"read flat" statements, helper-captures. NEXT: accept and merge predref; critic round r82 (number from main) over
+today's folds (predbound + predref; subject = diff from 399ef98f4); rule it; fix lane; P-20. Question queue:
+call-prefix, zero-condition-binding, count-several, capture-loop-value, zero-in-loop with the occurrences-argument
+reading, macro variables / macro types (with declared labels), group-truth, every-pass-spelling, the older ones.
+
+2026-11-22, his direction after closed-argument (not confirmed as a ruling: his lean (a) stands recorded): "do your followups and we can continue this conversation later". Lane predref delivered and MERGED (lint 6,205 / 0; its model 8 / 0; no answer changed by the sweep). Launching lane predcall (opus): call-prefix case 1, the A.d / c.d lines, his second hits example, closed-argument as an open piece with his lean, c.A. Then r82.
+
+## 2026-11-22 (evening) — closed-argument ruled; predcall merged; critic round r82 launched
+
+RULED: closed-argument (a) (and with it call-prefix case 2: `A.d` legal exactly where `d` is visible through the
+call). Lane predcall delivered (R-1 applied) and MERGED: tip 6f1fe4e84, lint 6,289 / 0, its model 14 / 0. One
+model defect it reported: the evidence models keep `_x` part-label groups visible (against export statement 6):
+for the r82 fix lane. LAUNCHED: coordinator `crit-predfold1122` (opus, background), review r82, design mode,
+subject = diff 399ef98f4..6f1fe4e84 of docs/design/predicates/, round dir
+`$PCREC_TMPDIR/scratch/crit-predfold1122/`. The subject stays FROZEN until the draft: anything he rules meanwhile
+is RECORDED only. WAITING on: the coordinator's hand-back (read the round dir at each wake). Frank: "do your
+followups and we can continue this conversation later".
+
+## 2026-11-22 (night) — r82 drafted and RULED; fix lane predfix82 running
+
+r82 (five opus lenses + verifier): every printed example HOLDS (35 of 35), quotes 107 of 107; 44 findings, none
+rejected. Answer-level: a name with two sources (ANS-1: OWNER QUESTION two-sources); the one-use plain read `A.h`
+folded as ruled on what was a lean, and my Class sentence misdescribed his 2026-11-17 point 4 (CORRECTED by a
+record entry; OWNER QUESTION idiom-confirm, with the isodate idiom taken on his silence); value entry inside a
+group question; the tier of a path to an invisible label; nested paths; the index through a prefix across `&`
+(the last four: my readings, ruled in the dispositions entry). Evidence: FOUR old models red or crashing at the
+freeze, undeclared; two models exit 0 while red; the engine exports through `_x` part labels and double-lowers a
+later `&` operand. RULED (record entry "2026-11-22 MANAGER — review r82"). Coordinator stopped. Lane predfix82
+(opus; `worktrees/predfix82`, cut at 0f6a556bc) RUNNING: applies the fixes, one model with the engine fixes and a
+successor check per old model, files the review as docs/dev/reviews/2026-11-22-r82-predfold1122.md. NEXT: accept,
+merge, lint, P-20 (done line + [COND-FAMILY] status + the three process lessons as proposed skill edits +
+worktrees to prune: predbound, predref, predcall, predfix82), SendMessage main. Questions for him, in order:
+two-sources; idiom-confirm; then the queue in wake.md.
+
+## 2026-11-22 (late) — predfix82 merged; P-20 delivered; nothing in flight
+
+Lane predfix82 delivered (rulings file empty; all nine of my r82 readings supported; no printed line's answer
+moved: 220 lines under the old and the fixed engine) and MERGED: lint 6,428 / 0, its model 22 / 0. Review r82
+filed. P-20 written (done line, status line, seven worktrees to prune, four proposed skill edits). wake.md's State
+rewritten. Owner questions next: two-sources, idiom-confirm.
+
+## 2026-11-22 (late night) — default-export RULED protected; fold lane preddef running
+
+After P-20: his C++ analogy (three of four matched; the default, A alone, was PUBLIC by hole-export); his example
+`B := A & A`, `C := B & (B.a: 9)` ("B.a is always an error"); then RULED "default-export: protected": a part used
+alone is available inside the binding and NOT exported. Reverses hole-export (2026-11-19) and export statement 3
+for an unlabelled part. Lane preddef (opus; `worktrees/preddef`, cut at 0050e019a) RUNNING: rule pieces restated,
+every printed program swept (explicit part labels to export), his analogy as a table, a model implementing the
+protected default with a SUCCESSOR check over all older models. Two NEW owner questions, neither applied:
+argument-default (the caller's own `A.d` for an argument through a bare `${rx}`: his example 1 of the 21st and
+closed-argument against the new default); capture-export (does a capture in rx text deep inside bare-used parts
+still reach the caller). Asked main for a review number (REPLY pending). NEXT: accept and merge preddef; critic
+round with main's number (subject = diff from 30ca2520d); rule; fix lane; P-21.
+
+Main (2026-11-22): review number **r83** is ours for the default-export fold; P-20 (30ca2520d) is merged and pushed on main.
+
+## 2026-11-22 (night, later) — export-list ruled; preddef merged; critic round r83 launched
+
+RULED after default-export: export-list ("Export list: yes": `[(=year) = isodate]`, the named binding list on a
+part label; one form, two targets; his caveat "bindings used to scope labels (A.a: 8)"). AGREED framing (not a
+ruling): two base kinds of name, LABEL and BINDING, with properties; "captures can have no label" (his note: the
+label and capture properties are independent, four cells). His observation: label-reference solves a used
+binding's label hiding a binding. Lane preddef (R-1, R-2 applied) delivered and MERGED: tip 3e58abe9e, lint
+6,645 / 0, its model 22 / 0, 229 printed lines with no answer moved; 5 programs now compile errors, 10 kept
+"(awaits argument-default)". Its own reading, for the round: a labelled part still passes `pub.h` by name.
+LAUNCHED: coordinator `crit-preddef1122` (opus, background), review r83, subject = diff 30ca2520d..3e58abe9e,
+round dir `$PCREC_TMPDIR/scratch/crit-preddef1122/`, with a NAMES lens (the name-resolution table). The subject
+stays FROZEN until the draft. FOR THE r83 FIX LANE (beyond the round's findings): the name table as one piece
+(two kinds, the four-cell label/capture table, his agreement quoted); the hide-label warning's trigger and
+parked/ideas/label-hygiene restated (his observation). Owner questions: argument-default, capture-export,
+two-sources, idiom-confirm.
+
+## 2026-11-22 (night, later still) — program-options and hole-flags RULED (recorded only; subject frozen for r83)
+
+RULED: program-options (yes: a statement sets flags for the literals written after it in the same file; `m`,
+`s`, `n`, `x` first; never across an import; a literal's own flags win) and hole-flags (yes to all: `i` has a
+weak per-file value that does not propagate; at a hole only an EXPLICIT `i` / `-i` is inherited; `m` and `s` no
+longer inherited: reverses the 2026-11-19 list). His reason: consistent with the other program-level settings.
+NOT FOLDED: the documents are frozen for round r83. PLAN: after r83's fix lane merges, ONE opus fold lane
+(predflags) for these two rulings (core/patterns/flags, core/holes/flags and in-filter, lib/builtin/options, the
+warnings row, any_case, the examples resting on an inherited `m`/`s` or a non-explicit `i`), then its own critic
+round (ask main for the number), then delivery.
+
+## 2026-11-22 (very late) — r83 drafted and RULED; fix lane predfix83 running
+
+r83 (five opus lenses incl. the NAMES grid, + verifier): every printed line agrees; no undeclared evidence red.
+Answer-level findings all sat in grid cells no printed line reaches: the evidence engine accepts what the text
+refuses (the `&` ambiguity from outside / through a part label / through an export list; an export list through
+a call; bare `$h`, `h[2]` across `&`); argument-default's question misstated its consequence (FIXED before he is
+asked); two cases decided twice. RULED (record entry "2026-11-22 MANAGER — review r83"): my readings on A4 (an
+outside read sees exported settings only), A5 (a binding's name reaches its unlabelled uses only), D4, D8, the
+cross case; CORRECTION: default-export also narrows label-flow (b) and bare-nested-scope case 2 for the user;
+idiom-confirm CLOSED on default-export (the statement put to him was "available locally as `A.h`"). Coordinator
+stopped. Lane predfix83 (opus; `worktrees/predfix83`, cut at 8619d21f1) RUNNING: the fixes, a successor model
+with the NAME-GRID check, the name table piece, the hide-label / label-hygiene restatement, the review filed as
+docs/dev/reviews/2026-11-22-r83-preddef1122.md. It does NOT fold the flag rulings. NEXT: accept, merge, lint,
+P-21 (done + status + worktrees preddef, predfix83 + the round's skill edits P1-P5), SendMessage main. THEN the
+flags fold (lane predflags + its own round; ask main for the number). Owner questions, in order:
+argument-default (with its library face), capture-export, two-sources; tell him: idiom-confirm closed, the
+correction, and the S1 view (textual ownership as a principle) if he wants it.
+
+## 2026-11-22 (very late, 2) — argument-default, wrapper-export, transform-export RULED (record only)
+
+RULED while predfix83 runs (NOT folded; the documents carry argument-default as open): argument-default: an
+error, with his PRINCIPLE "The label is not to the regex abstractly, it's to the spot in the pattern where the
+regex is being inserted" (an argument is a template); wrapper-export (a) (`peek`, `atomic`, `when`, `list_of`,
+the gap bodies write `[(=) = A]` on the spot); transform-export: yes (the convention for every provided body
+that places its argument); his pair `hide(x) := /${x}/`, `identity(x) := /${[(=) = x]}/` (examples; not ruled
+as provided names). My reading told to him: a label written ON an argument at a call (`B([a = A])`) is a
+compile error; a group inside an in-place argument is not the caller's to read (answers two-sources' first
+shape). THE NEXT FOLD LANE (after predfix83 merges and P-21) carries FIVE rulings: argument-default,
+wrapper-export, transform-export, program-options, hole-flags; then its own critic round (ask main for the
+number). A principle piece for "a label is to the spot" (core/principles; his words; the name mine).

@@ -798,7 +798,18 @@ REQRUN_BLOCK_RE = re.compile(r'^\s*if \(rx_reqrun(?:_whole)?\(subject, subject_l
 # iff the stamp is not "none"), and the two sides' PRESENCE must match unless
 # `REQ_WHY` or `REQ_RUN` differs by encoding. The both-sides population is
 # counted and FLOORED (K35).
-HANDOFF_DECL_RE = re.compile(r'^(\s*)size_t handoff_position = rx_reqrun\(subject, subject_length, search_from\);$')
+HANDOFF_DECL_RE = re.compile(r'^(\s*)size_t handoff_position = rx_reqrun\(subject, subject_length, (?:search_from|\(search_from >= \d+ \? search_from - \d+ : 0\))\);$')
+# span_arms L3 (abi 110) THE SIGNED MOVE, K < 0 (B = -K; emit_dfa.c
+# `emit_req_move_open`): the gate searches from `max(0, search_from - B)` (the
+# alternative in HANDOFF_DECL_RE above), then the END CLAMP `if (subject_length
+# - handoff_position < B) return 0;` and the move block `if (handoff_position >=
+# search_from || search_from - handoff_position < B) { ... } else
+# handoff_position = search_from;`. B is a byte count (the lookbehind's declared
+# length times the encoding's widest character) and the block carries the utf8
+# round-up, so both are the same ENCODING-OWNED REGION as K82's block: the
+# clamp is excised with the gate, the block like HANDOFF_OPEN_RE's.
+HANDOFF_NEG_CLAMP_RE = re.compile(r'^\s*if \(subject_length - handoff_position < \d+\) return 0;$')
+HANDOFF_NEG_OPEN_RE = re.compile(r'^\s*if \(handoff_position >= search_from \|\| search_from - handoff_position < \d+\) \{$')
 # [REQ-HANDOFF-L1] (abi 75) THE LANDMARK MAY BE ONE BYTE: its gate keeps its
 # position through the kit's ASSIGN text (one statement-expression line, then
 # the miss test, `return 0;` and its close). The same on both sides, it is
@@ -816,7 +827,7 @@ HANDOFF_OPEN_RE = re.compile(r'^\s*if \(handoff_position - search_from > \d+\) \
 HANDOFF_CLOSE_RE = re.compile(r'^\s*handoff_position = search_from;$')
 HANDOFF_STAMP_RE = re.compile(r'^(#define RX_REQ_HANDOFF ")[^"]*(")$')
 HANDOFF_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_HANDOFF "([^"]*)"$', re.M)
-HANDOFF_GATE_RE = re.compile(r'^\s*size_t handoff_position = (?:rx_reqrun\(subject, subject_length, search_from\)|\(\{ .*\}\));$', re.M)
+HANDOFF_GATE_RE = re.compile(r'^\s*size_t handoff_position = (?:rx_reqrun\(subject, subject_length, (?:search_from|\(search_from >= \d+ \? search_from - \d+ : 0\))\)|\(\{ .*\}\));$', re.M)
 HANDOFF_MAX_LINES = 8
 
 
@@ -833,6 +844,8 @@ def excise_handoff(text, counts):
             out.append(md.group(1) + "if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;\n")
             counts['handoff_gate'] += 1
             i += 2
+            if i < n and HANDOFF_NEG_CLAMP_RE.match(lines[i].rstrip('\n')):
+                i += 1      # L3's end clamp (K < 0), part of the gate
             continue
         mb = HANDOFF_BYTE_DECL_RE.match(ln)
         if mb:
@@ -868,7 +881,12 @@ def excise_handoff(text, counts):
             counts['reentry_block'] += 1
             i = j + 1
             continue
-        if HANDOFF_OPEN_RE.match(ln):
+        if HANDOFF_NEG_CLAMP_RE.match(ln):
+            # L3's end clamp after a one-byte gate (K < 0)
+            out.append("/* [L3-handoff] end clamp excised for comparison */\n")
+            i += 1
+            continue
+        if HANDOFF_OPEN_RE.match(ln) or HANDOFF_NEG_OPEN_RE.match(ln):
             j = i
             while j < n and not HANDOFF_CLOSE_RE.match(lines[j].rstrip('\n')):
                 j += 1
@@ -1549,6 +1567,57 @@ def excise(text, backend, label, drop_run=False):
         i += 1
     return ''.join(out), counts
 
+# span_arms L3 (lane l3tri, 2026-11-20) THE PRESENCE ORDER. Beside a stated
+# run, an entry may also test the necessary set's bytes for PRESENCE (the
+# kit's PRES rows, memfn/src/precheck.c: the FIRST predicate's one byte is the
+# `if (subject_length <= search_from || !memchr(...)) return 0;` gate, every
+# later byte one `rq_set` table loop). The predicate ORDER reads the byte-keyed
+# prior (byte puts the rarer member first, utf8's NONE does not), so the same
+# members can take either form and either side of the run's gate: `ab(c)\1x`
+# (VM, K 1) shows it on main, and L3 moved the DD12a(ii) witness
+# `(?<=a)(b)\1x` (K -1) into the same shape (review r65 A's pick rule took it
+# out of it: under utf8 BACK no longer displaces, so only byte states a run,
+# `6162` at -1, and the pair is the one-sided-run arm's below (review r66
+# CHECK-2); `ab(c)\1x` is the explicit witness now). Where both sides state a run and
+# their presence statements differ in order or form, the presence MEMBERS are
+# compared as a multiset (equal, or a finding), and only then are the
+# statements removed from both sides (counted, `presence_order`), so the rest
+# of the entry still compares token for token and the REQ_BYTE rule reads the
+# run finder's own scan.
+RQSET_OPEN_RE = re.compile(r'^\s*\{$')
+RQSET_DECL_RE = re.compile(r'^\s*static const unsigned char rq_set\[\] = \{ ([\d, ]+) \};$')
+RQSET_FOR_RE = re.compile(r'^\s*for \(size_t rq_i = 0; rq_i < sizeof rq_set; rq_i\+\+\)$')
+RQSET_IF_RE = re.compile(r'^\s*if \(!memchr\(subject \+ search_from, rq_set\[rq_i\], subject_length - search_from\)\)$')
+RQSET_CLOSE_RE = re.compile(r'^\s*\}$')
+REQCHK_MEMCHR_BYTE_RE = re.compile(r'^\s*!memchr\(subject \+ search_from, (\d+), subject_length - search_from\)\)$')
+
+
+def presence_stmts(text):
+    """The entry's presence statements: (form, members, first line, line
+    count) in text order, and the text with them removed."""
+    lines = text.splitlines(keepends=True)
+    found, keep = [], []
+    i, n = 0, len(lines)
+    def ln(j):
+        return lines[j].rstrip('\n') if j < n else ''
+    while i < n:
+        mm = REQCHK_MEMCHR_BYTE_RE.match(ln(i + 1))
+        if REQCHK_IF_RE.match(ln(i)) and mm and REQCHK_RET_RE.match(ln(i + 2)):
+            found.append(('gate', (int(mm.group(1)),), i, 3))
+            i += 3
+            continue
+        md = RQSET_DECL_RE.match(ln(i + 1))
+        if (RQSET_OPEN_RE.match(ln(i)) and md and RQSET_FOR_RE.match(ln(i + 2))
+                and RQSET_IF_RE.match(ln(i + 3)) and REQCHK_RET_RE.match(ln(i + 4))
+                and RQSET_CLOSE_RE.match(ln(i + 5))):
+            found.append(('set', tuple(int(b) for b in md.group(1).split(',')), i, 6))
+            i += 6
+            continue
+        keep.append(lines[i])
+        i += 1
+    return found, ''.join(keep)
+
+
 def compile_pair(pat, workdir, idx):
     db = os.path.join(workdir, "p%d" % idx, "byte")
     du = os.path.join(workdir, "p%d" % idx, "utf8")
@@ -1623,7 +1692,7 @@ def main():
     # block (`L_n_i`, its cursor restore) nor the negative polarity's, and
     # the default slice holds no lookbehind block at all, so an
     # encoding-keyed splice there was green (S1988 is the plant).
-    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x',
+    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', 'ab(c)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x',
                  '(?<=a{1,2})x', '(*UCP)(?i)(a)\\1x', '(?<=a{1,2}|b)x', '(?<!a{1,2}|b)x',
                  '(*UCP)\\b\\w+\\b']
 
@@ -1642,6 +1711,8 @@ def main():
            'bind_checks': 0, 'search_split': 0, 'cover_pick': 0})
     nselect_bad = 0
     nhandoff_both = 0
+    npresence_order = 0
+    nrun_oneside = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
     ncompound = 0
@@ -1695,6 +1766,52 @@ def main():
                 drop_run = True
             ncov_pick = 0
             cov_bad = []
+            rsb, rsu = REQRUN_STAMP_VAL_RE.search(tb), REQRUN_STAMP_VAL_RE.search(tu)
+            if rsb and rsu and '@' in rsb.group(1) and '@' in rsu.group(1):
+                pb, sb_ = presence_stmts(tb)
+                pu, su_ = presence_stmts(tu)
+                seqb = [(f, m) for f, m, _a, _b in pb]
+                sequ = [(f, m) for f, m, _a, _b in pu]
+                if seqb != sequ:
+                    mb_ = sorted(b for _f, m in seqb for b in m)
+                    mu_ = sorted(b for _f, m in sequ for b in m)
+                    if mb_ != mu_:
+                        cov_bad.append("presence members differ by encoding: byte %s, utf8 %s"
+                                       % (mb_, mu_))
+                    else:
+                        tb, tu = sb_, su_
+                        npresence_order += 1
+            # [l3chk] A RUN STATED ON ONE ENCODING ONLY. The block above reads
+            # a run stated on BOTH sides. An encoding-only fact (the byte-rate
+            # prior is byte-only, D123-4) can break the run pick's tie so that
+            # one side states a run and the other states none (`(?<=a)(b)\1x`,
+            # `(?i)(?<=ab)(b)\1x`: byte a required run, utf8 none). The
+            # run-bearing side's presence gates sit BESIDE its run, so what
+            # the run-less side demands as presence must be covered by the
+            # run-bearing side's presence gates plus the bytes its run scans:
+            # every byte the other side asks for is asked for or scanned here.
+            # The run-bearing side's own gates are then not the "pre-check
+            # scans" its REQ_BYTE names (`gate_ok`), the run-less side keeps
+            # its ordinary check. A run on neither side, or on both, is the
+            # existing paths.
+            runs_ = ['@' in (r_.group(1) if r_ else '') for r_ in (rsb, rsu)]
+            gate_ok = {'byte': False, 'utf8': False}
+            if runs_[0] != runs_[1]:
+                rside = 'byte' if runs_[0] else 'utf8'
+                oside = 'utf8' if runs_[0] else 'byte'
+                tr_, to_ = (tb, tu) if runs_[0] else (tu, tb)
+                pr_, _x = presence_stmts(tr_)
+                po_, _y = presence_stmts(to_)
+                have = {b for _f, m, _a, _c in pr_ for b in m}
+                want = {b for _f, m, _a, _c in po_ for b in m}
+                got = {int(b) for body in REQRUN_FN_BODY_RE.findall(tr_)
+                       for b in REQRUN_MEMCHR_VAL_RE.findall(body)}
+                if not (have <= want and want - have <= got):
+                    cov_bad.append("one-sided run (%s states one, %s none): %s presence %s is not covered by %s's presence %s plus its run scan %s"
+                                   % (rside, oside, oside, sorted(want), rside, sorted(have), sorted(got)))
+                else:
+                    gate_ok[rside] = True
+                    nrun_oneside += 1
             if COVER_SCAN_RE.search(tb) and COVER_SCAN_RE.search(tu) and \
                     cover_pick_stamped(tb) != cover_pick_stamped(tu):
                 for side in ('byte', 'utf8'):
@@ -1768,7 +1885,8 @@ def main():
                 rbyte = mb.group(1) if mb else None
                 scanned = [b for body in REQRUN_FN_BODY_RE.findall(text)
                            for b in REQRUN_MEMCHR_VAL_RE.findall(body)]
-                scanned += REQCHK_MEMCHR_VAL_RE.findall(text)
+                if not gate_ok[side]:
+                    scanned += REQCHK_MEMCHR_VAL_RE.findall(text)
                 pair = None
                 setwide = False
                 if m and '@' in rstamp and '[' in rstamp:
@@ -1851,6 +1969,9 @@ def main():
                 if not mb2 or mb2.group(1) not in left:
                     bad_sel.append("REQ_WHY byte \"emitted\" vs utf8 \"dominated\" but the utf8 REQ_BYTE \"%s\" is not the byte its own DFA prefilter scans (%s) -- not the identity elision"
                                    % (mb2.group(1) if mb2 else '(absent)', ",".join(sorted(left)) or 'no memchr'))
+            elif wb != wu and runs_[0] != runs_[1] and \
+                    ((wb, wu) if runs_[0] else (wu, wb)) == ('emitted', 'none'):
+                pass    # [l3chk] the run-bearing side's run IS its pre-check; the other states none
             elif wb != wu and (wb, wu) != ('dominated', 'emitted'):
                 bad_sel.append("REQ_WHY byte \"%s\" vs utf8 \"%s\" -- not the byte-keyed dominance rule"
                                % (wb, wu))
@@ -1974,6 +2095,8 @@ def main():
               'forwarder', 'bind_checks', 'search_split', 'cover_pick'):
         print("EXCISED %s=%d" % (k, agg[k]))
     print("HANDOFF_BOTH=%d" % nhandoff_both)
+    print("PRESENCE_ORDER=%d" % npresence_order)
+    print("RUN_ONE_SIDED=%d" % nrun_oneside)
     for p in gate_pats:
         print("GATEPAT %s" % p)
     for p in gateform_pats:
@@ -2055,6 +2178,27 @@ else
         HANDOFF_BOTH_LANDING=13
         hboth="$(grep -oE '^HANDOFF_BOTH=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
         echo "  DD12a(i) handoff pairs excised on both sides: ${hboth:-?} (landing $HANDOFF_BOTH_LANDING)"
+        # THE PRESENCE ORDER (presence_stmts): counted, and floored at the one
+        # explicit witness that always reaches it, `ab(c)\1x` (K35; after review
+        # r65 A `(?<=a)(b)\1x` states a run under byte only, `6162` at -1, and
+        # utf8 none: the one-sided-run arm's pair, review r66 CHECK-2).
+        pord="$(grep -oE '^PRESENCE_ORDER=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
+        echo "  DD12a(i) presence-order pairs (members equal, statements removed from both sides): ${pord:-?} (floor 1)"
+        if [ "${pord:-0}" -lt 1 ]; then
+            bad "DD12a(i) no pair reached the presence-order normalization — the witness ab(c)\\1x no longer has a run beside a presence test; re-aim the floor"
+        fi
+        # [l3chk] THE ONE-SIDED RUN (review r66 CHECK-1, K35): pairs where one
+        # encoding states a run and the other none, whose run-less presence
+        # is covered by the run side's presence plus its run scan. Floored at
+        # the two pairs that reach it at landing, `(?<=a)(b)\1x` and
+        # `(?i)(?<=ab)(b)\1x` (byte a run, utf8 none); S3485 plants the
+        # coverage test's red branch.
+        RUN_ONE_SIDED_LANDING=2
+        roside="$(grep -oE '^RUN_ONE_SIDED=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
+        echo "  DD12a(i) one-sided-run pairs (a run on one encoding only, presence covered): ${roside:-?} (floor $RUN_ONE_SIDED_LANDING)"
+        if [ "${roside:-0}" -lt "$RUN_ONE_SIDED_LANDING" ]; then
+            bad "DD12a(i) only ${roside:-0} pair(s) reached the one-sided-run arm, floor $RUN_ONE_SIDED_LANDING — (?<=a)(b)\\1x / (?i)(?<=ab)(b)\\1x no longer state a run on one encoding only; re-aim the floor"
+        fi
         if [ "${hboth:-0}" -lt $(( HANDOFF_BOTH_LANDING * 8 / 10 )) ] || [ "${hboth:-0}" -eq 0 ]; then
             bad "DD12a(i) only ${hboth:-0} pair(s) hand off under both encodings, floor $(( HANDOFF_BOTH_LANDING * 8 / 10 )) — the handoff region's comparison may be vacuous"
         fi
@@ -2189,7 +2333,7 @@ else
         while IFS= read -r row; do
             [ -z "$row" ] && continue
             case "$row" in
-                'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x')
+                'a*'|'(?i)(?<=a)(b)\1x'|'(?<=a)(b)\1x'|'(?i)(?<=ab)(b)\1x')
                     printf '%s\n' "$row" >> "$WORKDIR/k50undecl_reachable.txt"; continue ;;
             esac
             rowb64="$(printf '%s' "$row" | base64 | tr -d '\n')"

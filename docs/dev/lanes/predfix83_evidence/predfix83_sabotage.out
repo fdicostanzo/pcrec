@@ -1,0 +1,76 @@
+s1  -> CONTROL   CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (CONTROL)
+     its FAIL line: FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0); `/${A}!/` against `\d!` (2, 26, 30) over 40 texts
+s2  -> AMBOUT    CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 3 failed (AMBOUT, BAREAMB, GRID)
+     its FAIL line: FAIL AMBOUT: refused for the flow rule: in-text chain read from outside `d.h` False, a part label over a chain `ab.h` False, each side labelled `d.h` False, two lists across `&` `d.year` False; legal: `B.x.a` differing 0, a group question `some((d.h: "1"))` differing 0 over 13 texts
+s3  -> BAREAMB   CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 2 failed (BAREAMB, GRID)
+     its FAIL line: FAIL BAREAMB: refused for the flow rule: `$h` after a chain False, `h[2]` across `&` False; a read written inside an operand reads that operand (`/(?<h>\d)/ & (/(?<h>\d)/ & (h: "3"))`) differing 0
+s4  -> LISTCALL  CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (LISTCALL)
+     its FAIL line: FAIL LISTCALL: refused at the list: `[(=d) = B(A)]` in place False, in a binding False, `[(=l) = atomic(B | A)]` False; the body's own `d` listed (`/${rx}-(?<d>\d)/`) differing 0; A6, a call exports what its body exports: `B(A) & (B.d: <5)`, B(rx) := `/${[p = rx]}xx/` (p's `d` by name) differing 0
+s5  -> OUTSIDE   CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 9 failed (OUTSIDE, EXPR, EXAMPLE, SETAND, VISIBLE, WITNESS, GRID, SWEEP, DOC)
+     its FAIL line: FAIL OUTSIDE: `pub.h`, pub := `[a = A] SEQ A`, against "the FIRST digit under 5" (the exported `a`'s, not the last mention): differing 2; `B.a`, B := `A & /(?<a>\d)/`, legal from outside (the protected side no source) differing -1; inside B the plain `a` refused as ambiguous True
+s6  -> OWNUSE    CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (OWNUSE)
+     its FAIL line: FAIL OWNUSE: `[a = A] SEQ "!"`: `A.h` refused (no unlabelled use) False; `[a = A] SEQ A`: `A.h` reads the unlabelled use (the second digit) differing -1, `a.h` the labelled one differing 0; `[A = A] SEQ A`: `A.h` is the label's (the first digit) differing -1, the hide-label warning True
+s7  -> TWOUSE    CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 3 failed (LISTCALL, TWOUSE, SWEEP)
+     its FAIL line: FAIL TWOUSE: `B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`: (local) reads the alone use (the second digit), differing 0; (error) reads `p`'s (the first digit), differing -1, over 40 texts
+s8  -> EXPR      CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (EXPR)
+     its FAIL line: FAIL EXPR: inside X `ab.l` legal True; from outside `X.ab.l` refused (B, A used alone in the expression) False; `[ab = A SEQ /;(?<l>\d)/]` exports the literal's `l` only, differing 0; at the top `[ab = B | A] & (ab.l: <20)` legal, differing 0
+s9  -> PARAM     CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (PARAM)
+     its FAIL line: FAIL PARAM: `(rx.d: <5)` in B's body refused at the binding False; the bare `(d: <5)` refused True: None
+s10 -> ARGOWN    CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (ARGOWN)
+     its FAIL line: FAIL ARGOWN: `occurrences(/(?<n>\d+)/ & (n: <100))`: legal under (local) True and (error) False, the same WHOLE answers over ['1234', '123', '12', '1', '12345'] (`1234` HOLDS under (error) None); a read OUTSIDE the argument (`hits(/a(?<g>x)?/) & (g: "x")`) still refused under (error) True
+s11 -> LISTCOLL  CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (LISTCOLL)
+     its FAIL line: FAIL LISTCOLL: `d.year`, d := `[(=year) = i1] SEQ [(=year) = i2]`, against "i2's year (the last mention) is 20": differing 2 of 4; inside a binding that lists the part, its own prefix `isodate.year` refused True, a listed part label's path `q.a.h` refused True (the list takes the listed labels only: path `isodate.year`: `isodate` is neither written nor a binding used in this definition)
+s12 -> EXAMPLE   CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 8 failed (OUTSIDE, EXPR, EXAMPLE, SETAND, VISIBLE, GRID, SWEEP, DOC)
+     its FAIL line: FAIL EXAMPLE: refused for the reason "`a` is not visible through `B`" (B exports no `a`): at C plain False, group question False; at the top plain False, group question False
+s13 -> SETAND    CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 3 failed (OUTSIDE, EXAMPLE, SETAND)
+     its FAIL line: FAIL SETAND: `B & (B.a: 9)`, B := `A & /(?<a>\d)/` (a pattern; its literal's `a` exported): differing -1; the program `B`, B := `A & A`, matching one digit: differing 0
+s14 -> VISIBLE   CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 5 failed (ARGOWN, EXAMPLE, VISIBLE, AWAITS, SWEEP)
+     its FAIL line: FAIL VISIBLE: inside C `B.h` refused False; at the top the bare `g` of an argument the body uses alone, under (error), refused False; `B.A.h` through B's part label legal True
+s15 -> GRID      CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (GRID)
+     its FAIL line: FAIL GRID: 96 cells (6 spellings x 4 occurrences x 4 read kinds): AGREE 88, DISAGREE 1 [('bare', 'and', 'index', '`h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow)')], UNDECIDED 7 ['argument/and/group', 'argument/one/$', 'argument/one/group', 'argument/one/index', 'argument/one/plain', 'argument/seq/group', 'argument/seq/index'];
+s16 -> SWEEP     CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (SWEEP)
+     its FAIL line: FAIL SWEEP: 236 printed lines (old engine 236: CRASH 1, DIFF 15, REFUSED 78, same 140, unparsed 2); the fixed engine (local): CRASH 1, DIFF 15, REFUSED 78, same 140, unparsed 2; moved and not listed: 1 [(('core.md', 469), 'local', 'same', 'REFUSED')]; ANSWERS_CHANGED 1
+s17 -> SUCCESSOR CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (SUCCESSOR)
+     its FAIL line: FAIL SUCCESSOR: 8 earlier models re-run, each last line read; every red declared superseded with an unchanged FAIL line: [('preddef', 'MARKS', 'UNDECLARED')]
+s18 -> NULLABLE  CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (NULLABLE)
+     its FAIL line: FAIL NULLABLE: 543 programs run by the checks above, walked node by node: 1 with a loop whose body can match empty: [('/(?:(?<d>\\d)*)+/', ())]
+s19 -> QUOTES    CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (QUOTES)
+     its FAIL line: FAIL QUOTES: 10 quoted sentences in the record and the documents, missing: ['I agree with your interpretation. I note that captures can have no label. (altered)']; 8 record titles cited, not a title or not cited: none
+s20 -> MARKS     CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (MARKS)
+     its FAIL line: FAIL MARKS: 38 dispositions found where they landed; missing: ['A1']
+s21 -> DOC       CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (DOC)
+     its FAIL line: FAIL DOC: 7 lines; missing: 1
+s22 -> AWAITS    CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 6 failed (TWOUSE, ARGOWN, VISIBLE, AWAITS, SWEEP, DOC)
+     its FAIL line: FAIL AWAITS: 10 marked lines; not (local same, error refused): [(('core.md', 278), 'same', 'same'), (('core.md', 688), 'same', 'same'), (('core.md', 691), 'same', 'same'), (('core.md', 713), 'same', 'same'), (('core.md', 768), 'same', 'same'), (('core.md', 1582), 'same', 'same'), (('library.md', 372), 'same', 'same')]; 3 with no read
+s23 -> UNMARKED  CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (UNMARKED)
+     its FAIL line: FAIL UNMARKED: 135 unmarked lines reproduced under (local); moved under (error): [(('core.md', 278), 'same', 'REFUSED')]
+s24 -> TOPLEVEL  CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 14 failed (AMBOUT, LISTCALL, OUTSIDE, OWNUSE, TWOUSE, EXPR, LISTCOLL, SETAND, TOPLEVEL, WITNESS, GRID, AWAITS, SWEEP, DOC)
+     its FAIL line: FAIL TOPLEVEL: `isodate & (isodate.year: < 2100)` (isodate used alone at the top) against "year under 2100": differing -1 of 4
+s25 -> WITNESS   CAUGHT rc=1 traceback=False
+     last line: predfix83_model: 25 checks, 1 failed (WITNESS)
+     its FAIL line: FAIL WITNESS: `D2 & (D2.c: "3")`, D2 := `/(?<c>\d)(?<c>\d)/`, the last mention: differing 0; `D1 & (D1.c: "3")`, D1 := `CA SEQ CB` (each used alone), refused for not visible False: None; month_numbered's shape (a body using `months` alone): `mn.mname` refused True, `mn(<= 6)` matching `Jun` not `Jul` True
+predfix83 sabotage: 25 plants, 0 not caught by their target

@@ -91,6 +91,15 @@ CASES = [
   "`a^15 b^17`; a guard that kept its first 32 positions instead narrows the run to a "
   "string absent from the subject and answers NOMATCH",
   ("", "vm")),
+ ("(?<=a{20})b{20}", "byte",
+  ["a" * 20 + "b" * 20, "x" + "a" * 20 + "b" * 20 + "x", "a" * 19 + "b" * 20,
+   "a" * 12 + "b" * 28],
+  "W-T3 (span_arms §5.7 and §14.1 item 6, span arms L3): the run `a^20 b^12` begins "
+  "20 bytes before every match (K -20); under --memfn=no-fd-pres-pick "
+  "(tests/memfn/run_presence.sh [deny-answers]) the pre-check tests the WHOLE run, and "
+  "a TOP `++` that kept the LAST positions states `a^12 b^20` at -20, found 8 bytes "
+  "late: the body starts past the match and answers NOMATCH",
+  ("", "vm")),
 ]
 
 
@@ -146,10 +155,20 @@ def main():
     print(f"presence_deny.rxt: {len(CASES)} cases; pcrec check failures {mism}")
 
 
+def tmp_root():
+    """pcrec's temp root (scripts/tmpdir.sh): $PCREC_TMPDIR, default
+    /var/tmp/pcrec-<user>, created 0700; never /tmp, a small RAM tmpfs (Frank
+    2026-10-28), whatever TMPDIR a plain shell carries."""
+    import pwd
+    root = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-" + pwd.getpwuid(os.getuid()).pw_name
+    os.makedirs(root, mode=0o700, exist_ok=True)
+    return root
+
+
 def check_with(pcrec, text):
     """The written file through the harness with `pcrec`, default and each deny:
     the failure count summed (a divergence is reported, not hidden)."""
-    path = os.path.join(tempfile.mkdtemp(dir=os.environ.get("TMPDIR")), "presence_deny.rxt")
+    path = os.path.join(tempfile.mkdtemp(dir=tmp_root()), "presence_deny.rxt")
     open(path, "w", encoding="utf-8", errors="surrogateescape").write(text)
     import subprocess
     n = 0
