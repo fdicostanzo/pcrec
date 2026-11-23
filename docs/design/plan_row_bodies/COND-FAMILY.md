@@ -9366,3 +9366,35 @@ The manager's answer (told to him; readings of the rules as they stand, marked):
   length-prefixed field counted in characters; a size limit on a loop, his `limited`); what it does not: a count
   of items when items vary in width. Under binding-fixed and zero-in-loop (b) it measures from the start of the
   definition it is written in, so a bound piece measures only itself.
+
+### 2026-11-23 OWNER, on `0`: "All other labels are completed at the condition. 0 is not. $0 is provisional. Later labels or captures can replace entirely but 0 grows."
+tags: core/conditions/match-so-far core/conditions/match-so-far/in-loop core/values/reads core/labels/one-rule core/labels/labels-vs-captures/array-vs-passes core/filters/and lib/structural/capture core/conditions/defaults
+
+After the manager's answer on the length of the match so far. HIS WORDS, whole:
+
+"You didn't mention recursion (or I missed it). All other labels are completed at the condition. 0 is not. $0 is
+provisional. Later labels or captures can replace entirely but 0 grows."
+
+Class: an OBSERVATION (DISCUSSION; nothing ruled), and a correct remark that the manager's answer left out the
+"recursive" side he had named (2026-11-23, zero-in-loop: "the (a) interpretation is a recursive interpretation
+of 0"): a condition on `0` speaks about the match it is itself a part of. His distinction: every other label is
+COMPLETE where a condition reads it; `0` is not; a read of it (`$0`) is "provisional"; another label is REPLACED
+whole by a later mention, `0` GROWS.
+
+The manager's answer (told to him; each marked, none ruled):
+- It agrees with the documents on labels: "A group's close sets its name" (one-rule): a label is read closed.
+  `0` is the one name read OPEN: "the text the definition the condition is written in has matched from its start
+  to the condition's point" (match-so-far). Two reads of `0` on one path differ, the later extending the earlier.
+- There are two cases under the one name: joined by `&`, `0` is the left operand's match and that operand is
+  COMPLETE there ("A condition joined by `&` reads its left operand's match as its `0`"); in a sequence or a hole
+  `0` is the open prefix. Only the second is provisional.
+- The recursive reading (`0` = the finished match, read from inside it) adds nothing a test written at the end
+  does not say, so the open-prefix reading is the one with a use; a reason for (b) not given before.
+- Consequences to state (readings): `0` is never absent (his own "every pattern has a match 0"), so a default or
+  the optional entry operator on it never applies; it has no settings, so no array and no group question; `$0`,
+  if a read of it is allowed, is the prefix at the point of the read.
+- RUN (python `re`, HAND-LOWERED, output pasted): `/\w+${$0}/` as `(\w+)\1`: WHOLE `abab` HOLDS, `aba` FAILS,
+  `aa` HOLDS / SEARCHED `xabab` `abab`@1 / FIND-ALL `abab cc d` [`abab`@0, `cc`@5]. Two reads on one path,
+  `/\d${(0: "3")}\d${(0: "34")}/` as `34`: WHOLE `34` HOLDS, `35` FAILS, `44` FAILS / SEARCHED `x34 35` `34`@1 /
+  FIND-ALL `34 35 34` [`34`@0, `34`@6].
+Put to him as slug zero-open.
