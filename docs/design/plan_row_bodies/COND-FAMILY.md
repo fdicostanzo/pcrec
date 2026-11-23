@@ -8383,3 +8383,43 @@ What it changes among the exercise's findings (readings): finding 1 (a label nam
 Left: findings 3 (a label inside an argument: bind and export first), 4 (the optional member), 5 (capture
 details), 6, 7. New questions it raises: must every call pass the label (`lvl:`, `msg:` are never read); a label
 the body never places; a label pre-defined as a symbol.
+
+### 2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement
+tags: core/operators/bindings/label-variables core/operators/bindings core/operators/bindings/call-forms core/modules/leave-out core/labels/export
+
+ASKED AS A RULING (slug label-parameter-omitted: may a call leave a label parameter out; the manager's leaning: no,
+with `_:` as the explicit "none", as the leave-out of a binding list). HIS WORDS, whole:
+
+"label-parameter-omitted: this is two+ questions. we currently don't have overloading so a macro defined for 3
+args needs three args. they can be omitted by row(,"level", ...) if we choose to allow that but not omitted under
+current macro call rules regardless of labels. i agree that _ should be the unspecified label- it also comments
+on your meaning. also, label args are not special by position or requirement. in theory, one could have 2 label
+args."
+
+Class, part by part:
+- A CORRECTION of the question ("this is two+ questions"): omitting an argument is a question about macro calls,
+  not about labels.
+- A STATEMENT of the current rule: "we currently don't have overloading so a macro defined for 3 args needs three
+  args"; not omitted "under current macro call rules regardless of labels". It agrees with the documents
+  (core/operators/bindings: "a call binds every required parameter or is a compile error naming the missing
+  one"; several bodies for one name is the open call-forms).
+- An IDEA, not ruled ("if we choose to allow that"): an empty argument position, `row(,"level", ...)`. Spelling a
+  placeholder. To be parked with a trigger.
+- A RULING on the part asked ("i agree that _ should be the unspecified label"): at a call `_` is the unspecified
+  label; his reason added: "it also comments on your meaning". The reading taken of his "agree": the leaning as
+  put (`row(_:, "level", ..)`).
+- A STATEMENT on the parameter kind: "label args are not special by position or requirement. in theory, one could
+  have 2 label args": a label parameter is a parameter like any other (any position, any number).
+
+The manager's readings (marked; for the fold to test):
+- (a) What `_` means inside the body follows from the forms already ruled: `[l = B]` with `_` is `[_ = B]`, which
+  makes none of B's labels visible outside B (core/labels/export statement 7); in rx text `(?<:${l}>...)` with
+  `_` is a plain non-capturing group. So `row(_:, "level", ..)` exports nothing of its value.
+- (b) Two `_` passed to one call, or `_` placed twice, never collide: `_` is the unusable name.
+- (c) A body that READS a label parameter (`A(x:) := (x: < 2100)`) called with `_` is a compile error at the
+  call: there is nothing to read.
+- (d) "Not special by requirement": a label parameter may be an optional keyword setting like any parameter, its
+  default `_` (`row(k, v, l: = _)`, spelling a placeholder), so a call may leave it out by the EXISTING call rule
+  (keyword arguments are optional settings with defaults). Not his words: a consequence to confirm.
+- (e) The reading "a `:` in a head is a compile error" (core/operators/bindings) is lifted by the label mark when
+  the parameter kind is built.
