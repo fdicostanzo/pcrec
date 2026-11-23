@@ -55,7 +55,7 @@ case "${1:-}" in
         tree_ok || exit 1
         [ -f "$WAITQUIET" ] && [ -f "$SLOTDIR/run.py" ] || { echo "u6time: waitquiet.py or the slot's run.py missing" >&2; exit 1; }
         echo "would run in $W (HEAD $TREE_SHA): prepare (cards.py time $RUNDIR --prepare --cards C6,C6c, JOBS=12; then --dry --dry-model tie must print 'clock calls 0' and 'DONE rc=0'); quiet wait 600 s (slot Waiter); CPU=$CPU_PIN (sibling $SIB) nice -n 5 cards.py time $RUNDIR --cap $CAP --job-start <epoch> --stop-at <the clearance's stop=>; c6decide read-back"
-        echo "boxqueue: not-before 2026-11-23T00:00"; echo "boxqueue: cap $CAP"; echo "boxqueue: patience none"; echo "boxqueue: est $EST"
+        echo "boxqueue: not-before 2026-11-24T01:00"; echo "boxqueue: cap $CAP"; echo "boxqueue: patience none"; echo "boxqueue: est $EST"
         echo "boxqueue: idle-ok"
         echo 'boxqueue: expect done=1 lines=^cards: time: DONE rc=0$'
         echo 'boxqueue: expect truncated=0 lines=^cards: time: TRUNCATED$'
