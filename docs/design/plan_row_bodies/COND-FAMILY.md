@@ -9152,3 +9152,27 @@ optional-label path model, `/(?<h>\d)?x/`; output pasted):
   SEARCHED FAILS / FIND-ALL `7x 3x x` []
 - `(h: capture("h"))`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` HOLDS / SEARCHED `3x x` `3x`@0 / FIND-ALL
   `7x 3x x` [`7x`@0, `3x`@3]
+
+### 2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation"
+tags: lib/structural/capture core/filters/negation core/filters/complement core/conditions/two-valued core/operators/statements lib/control/when core/diagnostics/errors
+
+ASKED AS A RULING (slug capture-negated: a capture request under `NOT`, under `!`, or inside a group question:
+(a) a compile error for now; (b) legal with the request ignored and a warning; the manager's leaning (a); the run
+lines of the previous entry). HIS WORDS, whole:
+
+"capture-negated: broaden to any effect macro cannot be under negation."
+
+Class: a RULING, broader than the question: an EFFECT macro cannot stand under negation (a compile error; the
+reading taken of "cannot": candidate (a)'s refusal, generalised from the capture request to every effect). The
+part of (a) about a group question (`some((h: capture("h")))`) is not in his words: it stays the manager's
+proposal (a compile error for now), marked, not ruled.
+The manager's readings (marked; for the fold to test):
+- (a) An EFFECT is a form whose meaning is more than which texts it accepts. Today's members: the capture request
+  (`capture("name")`, and the array request, unbuilt) inside an expression; the `@` statements (`@warn`,
+  `@options`, `@export`, the assertions) are effects too but stand alone as statements (core/operators/statements),
+  so they cannot be under a negation already.
+- (b) "Under negation": inside the operand of `NOT` (a condition, a peek) or of `!` (a set, a pattern), at any depth.
+- (c) An edge to put to him, NOT decided: a provided body that lays one argument both plainly and under a
+  negation: `when(test, then)` is `(test SEQ then) | (NOT peek(test) SEQ else)`, so a test that carries a capture
+  request reaches the guard's `NOT peek(test)`. Candidates: the rule refuses it (written where the body puts it);
+  or the guard copy drops the request (labels under a negation are never visible already). Slug effect-in-guard.
