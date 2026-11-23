@@ -6,6 +6,8 @@ decisions or reviews file touched.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - The rulings file `docs/dev/lanes/predfold1123b_rulings.md` stayed EMPTY (read before each commit, before each
   long run and before this report): no R-n applied.
 - Lint: `python3 -I scripts/pred_doc_lint.py`: `pred_doc_lint: checks passed 8502, failed 0`.
