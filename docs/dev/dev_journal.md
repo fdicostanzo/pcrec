@@ -28638,4 +28638,4 @@ Next
 - 19:35 U4 LANDED (merge 7af611f1e; cloud test + mech GREEN on 25bbe01c6). P-21 merged (9b36e5685, docs; lanes-index conflict kept both sides). strict + plan-lint green.
 - 19:45 Cloud FULL SUITE dispatched on main b204ffd8c (6 kinds, all 6 branches proven by ls-remote). Kit: main merged into its branch (26ef32ad5); 750/751 gated to 01:00; U5 handed ~03:00, lands in the morning.
 - 22:45 CLOUD FULL SUITE ALL GREEN on main b204ffd8c (6 of 6, first try): D177 trigger discharged for L3, U2, U3, U4, K159.
-- 03:50 (11-23) U5 LANDED (merge f27256133; memfn/src formhash.c + kit.h, no emitted byte; strict + plan-lint green; kit validated at 26ef32ad5 = this content + main docs).
+- 02:20 (11-23) U5 LANDED (merge f27256133; memfn/src formhash.c + kit.h, no emitted byte; strict + plan-lint green; kit validated at 26ef32ad5 = this content + main docs).
