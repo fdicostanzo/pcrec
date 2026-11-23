@@ -496,3 +496,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-22 9b36e5685 none — merge lane/pred-rev28 75d2318bd (predicate default-export + export-list, review r83; docs only)
 - RUN 2026-11-22 b204ffd8c CLOUD suite (suite-b204ffd): test, axes, ubsan, asan, mech, recidentity ALL GREEN on b204ffd8c (first try), covering L3 (abi 112), U2, U3, U4, K159
 - 2026-11-23 f27256133 minor — merge lane/memfn-k1108 6465df2c7 (R-47 U5: measurement cards C6/C6c, formhash span fold; no emitted byte, no abi event; kit 750 test + 751 mech GREEN at 26ef32ad5)
+- 2026-11-23 ffddc2380 none — merge lane/pinmsg df072ce0a ([PIN-MSG-DEPTH]: S1760/S1761 reach probes on a short temp path; test-only; review r85)
