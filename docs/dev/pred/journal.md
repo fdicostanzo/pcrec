@@ -1076,3 +1076,20 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   label-doors is ruled.
 - ASKED, waiting: label-doors (the four-line general rule). Queue: capture-in-set; optional-entry-edges (stays as
   ruled unless he wants it); the three flags questions; a map written in place; a user macro taking a macro.
+
+## 2026-11-23 — label-doors ruled; fold lane predfold1123b launched (review r88 to follow)
+
+- RULED: label-doors, five lines (owned by the text that writes it; a path is a chain of labels; a binding's name
+  as a skipped label under his four conditions; each part decides its doors, closing one closes only that one;
+  stacked labels are equal names of one spot). Before it: his two-label body (agreed, run); my reading (a) of
+  label-parameter-omitted WITHDRAWN (an unspecified label on a part is the part with no label, not the blank mark).
+- Main merged P-26 (7b61fd62a); r88 reserved for this fold's review.
+- LAUNCHED: lane predfold1123b (opus; worktree `worktrees/predfold1123b`, cut at 89d26b6b3; deliver + empty
+  rulings file first; lanewatch armed). Scope: every ruling after zero-open: count-unspecified, unspecified-rule,
+  call-forms, repeat-head, binding-as-label (reverses argument-default's error), label-doors with ONE ownership
+  table; rulings items for closing-own-label and label-hole-full; parked pieces for the play-out's level 2 and the
+  compile-time conditional. The brief makes each ruling's ASKED statement the source (the r86 lesson).
+- NEXT: at its delivery: merge, lints, coordinator `crit-predfold1123b` for r88 (design mode; the standing lenses
+  plus the EXPANSION drill and a grid over the ownership table), rule, fix lane, P-27.
+- Queue with the owner: capture-in-set; optional-entry-edges; the three flags questions; a map written in place; a
+  user macro taking a macro; the older list; the spellings review.
