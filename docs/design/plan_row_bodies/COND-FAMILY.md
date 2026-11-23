@@ -8423,3 +8423,21 @@ The manager's readings (marked; for the fold to test):
   (keyword arguments are optional settings with defaults). Not his words: a consequence to confirm.
 - (e) The reading "a `:` in a head is a compile error" (core/operators/bindings) is lifted by the label mark when
   the parameter kind is built.
+
+### 2026-11-23 OWNER RULING — label-parameter-default: yes (a label may be an optional parameter); his spelling lean `l = ts:`
+tags: core/operators/bindings/label-variables core/operators/bindings core/spellings/placeholders core/conditions/form
+
+ASKED AS A RULING (slug label-parameter-default: may a label parameter be a keyword setting with the default `_`,
+so that a call leaves it out by the existing call rule; the manager's leaning: yes; the manager's placeholder at
+the call `l: ts`). HIS WORDS, whole:
+
+"label-parameter-default: yes you could use a label in an optional parameter. i lean towards ..., l = ts:) ...
+spelling for consistency and l: ts looks like a condition"
+
+Class: a RULING ("yes you could use a label in an optional parameter"): a label parameter may be an optional
+(keyword) parameter under the existing call rule. And a SPELLING LEAN, not a ruling ("i lean towards"): passed by
+name it is written `l = ts:` (the keyword form `name = value` with the label mark on the label), "for
+consistency", and because "l: ts looks like a condition". For the spellings review; the manager's `l: ts` is
+withdrawn as a placeholder.
+The manager's reading (marked): the default `_` for such a parameter is the author's to declare in the head
+(`row(k, v, l = _:)`, spelling a placeholder); his words rule the optionality, not which default.
