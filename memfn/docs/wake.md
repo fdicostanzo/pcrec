@@ -26,7 +26,7 @@ The kit manager (`/pcrec-memfn-manager`). The ledger and journal branch is workt
 - **TIMING owed**:
   - Main asked Frank (u6-timing-window) for the dev box, leaning 01:00-01:30 tonight.
   - ubuntubudu is UNREACHABLE; main asked Frank if it is off.
-  - When cleared: build the timing job from docs/dev/lanes/bsu6fix_report.md "WINDOW REQUEST" (prepare + dry rehearsal, quiet, time; gated to the window), and show main its --dry-run.
+  - The job is BUILT and rehearsed (lane u6time; journal 11-23 has the queue command). ON CLEARANCE: write worktrees/.mgr/u6time.cleared "start=YYYY-MM-DDTHH:MM stop=YYYY-MM-DDTHH:MM [evening=ok]" from the window, then queue 760-kit-u6time. Keep worktrees/u6time (do not prune).
   - Read the verdict with `cards.py c6decide`. V stays CANDIDATE until then.
 - **Parallel selftest (owner ruling 11-23, verbatim in the journal)**:
   - lane/bsu6par 2061e7e98 adds memfn/tests/parpool.py and 218 selftest units; 758 -j16 GREEN in 780 s vs 5615 s serial, identical to 757 apart from the masked line.
