@@ -1244,8 +1244,13 @@ def time_cells(rundir, cl, path, with_approx=True, retime=0, launch=None, stop=N
         rid = run_id(rundir, create=True)
         for _key, cs in cell_groups(cl):
             if stop is not None and stop():
-                for c in cs:        # the window closed: no new cell starts (c6_rule.md WINDOW; 710's)
-                    f.write(prefix + row_line(c, "notrun", note="not started: the window's deadline passed"))
+                for c in cs:        # the window closed: no new cell starts (c6_rule.md WINDOW; 710's). A cell VOID BY
+                    # METHOD never starts at all (c6_rule.md N/A: "never timed"), so the window cannot cut it: it keeps
+                    # its `method` row (lane bsu6fix2: it read `notrun`, so a window closing after the last timed cell
+                    # marked the record TRUNCATED with every timed cell run)
+                    f.write(prefix + (row_line(c, "method", note="void by method: " + APPROX[c[3]])
+                                      if c[3] in APPROX and not with_approx else
+                                      row_line(c, "notrun", note="not started: the window's deadline passed")))
                 f.flush()
                 continue
             argv, launches, out, drawn, ran = {}, {}, {}, {}, {}
@@ -6093,9 +6098,14 @@ def cmd_c6selftest(args):
     rows_ = [x.split("\t") for x in open(rec.group(1))] if rec else []
     fnr = sum(1 for f in rows_ if f[0] == "first" and f[6] == "notrun")
     rnr = [f[6] for f in rows_ if f[0] == "retime"]
-    row(rc == 4 and fnr == 0 and rnr and all(x == "notrun" for x in rnr) and re.search(r"^C6 on: TRUNCATED: ", txt, re.M),
-        "DRY WINDOW: a deadline (+%.2f s) inside the first pass's last launch: first pass complete (%d NOT-RUN rows), every "
-        "re-time row NOT-RUN (%d), the verdict TRUNCATED (r80 RULE-4), exit %s" % (dl, fnr, len(rnr), rc))
+    # the VOID BY METHOD cells come after the last timed cell: the window, closed by then, must leave them `method` (they
+    # never start; lane bsu6fix2)
+    meth = [f[6] for f in rows_ if f[0] == "first" and f[4] in APPROX]
+    row(rc == 4 and fnr == 0 and rnr and all(x == "notrun" for x in rnr) and meth and all(x == "method" for x in meth)
+        and re.search(r"^C6 on: TRUNCATED: ", txt, re.M),
+        "DRY WINDOW: a deadline (+%.2f s) inside the first pass's last launch: first pass complete (%d NOT-RUN rows; its %d "
+        "void-by-method rows read method), every re-time row NOT-RUN (%d), the verdict TRUNCATED (r80 RULE-4), exit %s" % (
+            dl, fnr, sum(x == "method" for x in meth), len(rnr), rc))
     rc, txt = run_time([d, "--dry", "--dry-model", "gatefail"])
     row(rc == 1 and re.search(r"^GATE FAIL C6/c6_hex32/hit-dense/on V: ", txt, re.M),
         "DRY gatefail: a wrong answer at a TIMED launch is the row's gatefail and the run is RED (exit %s; r80 FIDELITY-4)" % rc)
