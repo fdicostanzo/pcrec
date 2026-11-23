@@ -1,120 +1,112 @@
 # Predicate-language manager: wake-up brief
 
-Rewritten 2026-11-22 (box clock, late night), at the owner's `/close` ("Let's discuss these pain points next
-time."), fifth predicate-manager session. Committed docs win on any disagreement.
+Rewritten 2026-11-23 at the owner's `/close`, sixth predicate-manager session (a discussion session: no lane ran).
+Committed docs win on any disagreement.
 
 ## State
 
-- Branch `lane/pred-rev28` (worktree `worktrees/pred`). DELIVERED to main: P-19 (r77), P-20 (r82), P-21 (r83:
-  default-export, export-list, the name table); main had merged P-20 and was to merge P-21 (tip 75d2318bd) after a
-  kit change landed: check `git log --oneline -5 main` and from_main.md.
-- ON THE BRANCH, MERGED, UNDER REVIEW: lane predspot's fold of FIVE rulings (tip e6e95a2c5): argument-default (an
-  error; the principle piece "a label names a spot"), wrapper-export, transform-export (the convention; his `hide`
-  / `identity` pair), program-options, hole-flags. Lint 7,034 / 0; its model
-  `docs/dev/lanes/predspot_evidence/predspot_model.py` 27 / 0 (several minutes to run; NAME-GRID 144 cells and
-  FLAG-GRID 128 cells, no disagreement).
-- REVIEW **r84** (number from main; design mode): coordinator `crit-predspot1122`, round dir
-  `$PCREC_TMPDIR/scratch/crit-predspot1122/` (`review.md` when drafted; critic texts in `review/`; `.coord/
-  process.md`). The DRAFT ARRIVED at the close (the last journal entry summarises its hand-back: answer-level
-  findings A1-A7 in the documents, B1-B7 in the evidence, four owner questions proposed); it is NOT RULED; the
-  coordinator is stopped.
-- IN THE RECORD ONLY, NOT FOLDED (ruled after the r84 freeze): **capture-export** (a named group in a part of a
-  composed program is NOT a capture by default; the program-level `capture(path)` asks for one; explicit captures
-  returned from the artifact against implicit ones the language needs); **zero-condition-binding** (`c := (0: 5)`
-  bound alone: an error, to be reconsidered later; his reasons recorded). And SPELLING notes, not rulings: his
-  reading of `[a = A]` (the brackets are the array / grouping; `a = A` the label set of the expression language;
-  `[a = A | b = B]`); my four precedence points (the label set looser than SEQ and `&`, tighter than `|`; written
-  only inside `[ ]` or directly in a hole, so `${=rx}`; never bare in `( )`): my syntax reading; `[ab = B | A]`
-  (six places in core.md) must become `[ab = (B | A)]`; the comma form `[a, b, c]` kept "for now" as `a | b | c`;
-  the third small form `A(rx) := /${=rx}/` (`A.rx`, `A.rx.g`) beside hide / identity.
-- NEXT, in order: (1) read r84's `review.md` + `process.md`; RULE every disposition (record entry "MANAGER —
-  review r84"). (2) ONE opus fix lane cut from this branch (it files the review as
-  `docs/dev/reviews/2026-11-22-r84-predspot1122.md` + directory + NOTES index line; ALSO the spelling notes
-  above; brief pattern: the predfix83 brief = BOILERPLATE first, every BRIEF_TEMPLATE field, deliver + empty
-  rulings file written into the worktree BEFORE launch, `scripts/lanewatch --follow NAME` in the background).
-  (3) merge ALONE, lint, `make -s test-plan-lint`, TaskStop; P-22 `done:` in to_main.md (status line; worktrees
-  predspot + the fix lane; r84's process notes as proposed skill edits); SendMessage main. (4) ONE opus fold lane
-  for capture-export + zero-condition-binding (export statement 5, labels-vs-captures, lib/structural/capture and
-  its add-on, caller-ambiguous, the name table's four cells, the zero-binding piece), then its own critic round:
-  ASK MAIN FOR THE NUMBER first.
-- No cron. Nothing in the box queue (never ours). Worktrees for main to prune: listed in P-20 and P-21; add
-  predspot and the r84 fix lane in P-22.
+- Branch `lane/pred-rev28` (worktree `worktrees/pred`); main merged in 2026-11-23 (lint 7,049 / 0 then;
+  `make -s test-plan-lint` green). On main already: everything through P-21 (default-export, export-list).
+- ON THE BRANCH, MERGED, UNDER REVIEW, NOT RULED: lane predspot's fold of five rulings of 2026-11-22 (argument-default,
+  wrapper-export, transform-export, program-options, hole-flags). REVIEW **r84** (number from main; round dir
+  `$PCREC_TMPDIR/scratch/crit-predspot1122/`: `review.md` 270 lines, `.coord/process.md`, critic texts in `review/`):
+  its draft was NOT read or ruled this session. NOTE: today's argument-label ruling WITHDRAWS two readings that fold
+  printed (argument-default readings (a), (b); two-sources' first shape): rule r84 with that in hand; some of its
+  findings on those pieces are overtaken.
+- IN THE RECORD ONLY, NOT FOLDED: from 2026-11-22 late: capture-export, zero-condition-binding, the spelling notes
+  (`[a = A]` as the label set, `[ab = (B | A)]`, `${=rx}`, the third small form). From 2026-11-23: everything below.
+- No lane, no cron, nothing in the box queue. P-23 in to_main.md is a NOTICE (array captures touch [CAPTURE-ARRAY] /
+  [ARRAY-CAPTURE]); the close notice is P-24.
 
 ## READ, IN THIS ORDER
 
-1. The skill, section 2. 2. `core.md`, `library.md` whole, `parked.md` scanned (they changed a great deal on
-2026-11-22: label-reference re-spelled every example; default-export; the export convention; the flag pieces).
-3. The record from "2026-11-22 OWNER, an analogy to validate" to the end (about 35 entries; the LAST TWO are the
-JSONL exercise he wants to discuss). 4. `journal.md` from "2026-11-22 (late night) — default-export RULED". 5.
-`owner.md`. 6. r84's round dir. 7. `docs/dev/lanes/predspot_report.md`, `predfix83_report.md`.
+1. The skill, section 2. 2. `core.md`, `library.md`, `parked.md` (this session read core's first half whole and the
+rest by heading + statement; library.md and parked.md were NOT read: read them). 3. The record from "2026-11-23 OWNER,
+on label-name-hole as first put" to the end (about 25 entries, one day). 4. `journal.md` from "2026-11-23 — sixth
+session: wake". 5. `owner.md`. 6. r84's round dir.
 
-## FIRST WITH HIM NEXT TIME: the JSONL exercise's pain points (his words at close)
+## Ruled 2026-11-23 (all in the record; NONE folded)
 
-The record entry "2026-11-22 MANAGER — the JSONL capture exercise he asked for" has the library, the search, the
-run and seven findings. He wants to discuss them. Mine to bring as questions, in the order of how much each
-improves the example (one per turn; grep the record first; a run before any claim):
-1. **label-name-hole**: a label named by an ARGUMENT (`row(k, v)` naming its value label for the key): the
-   group-name hole exists for rx text; the label-only group is under construction; the label set `[${k} = v]`
-   has no name-hole rule.
-2. **ambiguity-per-name**: "called more than once" is per MACRO in my call-prefix reading; four calls of
-   `json.row` export four different names and `row.ts` is refused. Should the plain-read error be per NAME (a
-   name more than one use holds)? It would also relax binding-prefix part 2 for bindings (HIS ruling (a) there
-   was on my wording: read it before asking).
-3. **capture details**: where `capture(path)` stands in a program; the caller's name for it (the last step; a
-   rename); an unset label giving an unset capture.
-4. Smaller: exporting from inside an argument (bind first: by design; is the three-definition chain acceptable);
-   an optional member (`(row(..) | anything)`: a provided `maybe_row` or a stated idiom); a label inside the
-   quotes (`quoted` offers none); duplicate keys (the last member wins by PCRE's order: state it).
+- THE LABEL PARAMETER (his "lets tentatively work with it": a WORKING DIRECTION, then built on by rulings): a macro
+  takes a label, `A(l:) := /(?<:${l}>\d+)/`, `A(l:, B) := [l = B]`; the caller writes the new name (`A(x:) & (x: 5)`),
+  so label-reference is met with no source. Same label twice: the standard rules (his observation; run).
+- label-parameter-omitted: `_` is the unspecified label (`row(_:, "level", ..)`); no argument is omitted under the
+  current call rules; label args are not special by position or requirement. IDEA to park: the empty position
+  `row(,"level", ..)`.
+- label-parameter-default: yes (a label may be an optional keyword parameter); spelling LEAN `l = ts:`.
+- label-kinds: one mark, one meaning (the SETTING kind); the REFERENCE kind (a path to an existing label) is for
+  natives, "off limits for users until we see a valid, safe set of rules for it". His `A(x:) := (x: < 2100)` of the
+  22nd is the reference kind: it waits.
+- capture-twice: (a) the same-label-twice rules (my "error at the second request" withdrawn).
+- capture-name: (a) the last step with an optional rename; then OVERTAKEN in shape by the set-side form (below).
+- array-capture: yes: the single request gives the LABEL's value (last mention; after a loop the last pass's own
+  value, unset on `3;;`), `@x` the ARRAY of settings, UNBUILT. capture-as-pcre (his "perhaps") dropped;
+  capture-loop-value CLOSED as the label. The seam (a one-literal program returns PCRE's carried value) is to be STATED.
+- argument-export: yes (taken from his "this aligns with my understanding"; told to him): a caller's label on a spot
+  holding the caller's in-place argument reads it by the inside rules (`ts.year` in place is legal; from outside
+  `line.ts.year` is not: default-export). A BOUND argument seals unless it exports.
+- label-in-argument: a label sent inside an in-place argument is ok and passes `_` ("an accepted backdoor into the
+  inner pattern- which is almost the whole point").
+- argument-label: yes: a label the caller WRITES in its own text inside an argument (a part label, a group of an
+  in-place literal, a sent label) is the caller's own, set where the body places the template (once / twice = the
+  same-label-twice rules / never = the never-pass warning). His ruled error `B(A) & (A.d: ..)` stands.
+- optional-label: yes: `(h?: S)` holds when h is absent or in S (= a default inside the set, member unnamed). THE
+  CAPTURE SHAPE IS NOW SET-SIDE: `(h: capture("name"))` requires the label; `(h?: capture("name"))` if present;
+  `rx & capture("name")` the stretch (`capture("name")` = `anything` with a request). It REPLACES the morning's
+  `capture(path)` operand (that was his LEAN, capture-place) and the `name =` keyword.
+His LEANS / not ruled: early capture "no crime"; `l = ts:`; the default way over new syntax ("i don't like adding
+syntax and semantics if i don't have to").
+My corrections on the record: "ts.year is a compile error as the rules stand" (over-claimed; withdrawn); the
+hole-named-label proposal (set aside by the label parameter); one run line written before its run was read
+(correction entry appended).
 
-## Ruled 2026-11-22 (all in the record; folded unless marked)
+## NEXT, in order
 
-array-in-piece (b) · bound-condition (b; "illegal meaning a compiler error") · count-in-set (b: a value left of
-`:`; values in the joint form too) · binding-prefix (a group question through a binding's prefix reads every use;
-a plain read with several uses is an error) · label-reference: REQUIRED · helper-captures (library helpers set
-labels, not captures; `(?<:x>...)` his PROPOSAL) · call-prefix case 1 (the macro's name qualifies its labels) ·
-closed-argument (a) · default-export: PROTECTED (a part used alone is available inside its binding, not
-exported; reverses hole-export; his C++ analogy) · export-list (`[(=year) = isodate]`; one form, two targets; his
-caveat that a binding scopes a label) · program-options (file-scoped `m s n x`, never across an import) ·
-hole-flags (weak per-file `i` not propagated; only an explicit `i` inherited at a hole; `m`, `s` no longer
-inherited) · argument-default: an ERROR (his principle: "The label is not to the regex abstractly, it's to the
-spot in the pattern where the regex is being inserted") · wrapper-export (a) · transform-export: yes ·
-capture-export (NOT FOLDED) · zero-condition-binding: an error for now (NOT FOLDED).
-Closed by me on the record, told to him, no objection: record-in-some (his words of 2026-11-21); idiom-confirm
-(the statement he ruled default-export on was "available locally as `A.h`").
-AGREED framing, not rulings: two kinds of name (label, binding) with properties; "captures can have no label".
-My corrections recorded: the binding-prefix Class sentence (his 2026-11-17 point 4 named a ONE-use program);
-default-export also narrows label-flow (b) and bare-nested-scope case 2 for a binding's user.
+1. RULE r84 (record entry "MANAGER — review r84"), reading each finding against today's withdrawals.
+2. ONE opus fix lane for r84 (files the review as `docs/dev/reviews/2026-11-22-r84-predspot1122.md` + directory +
+   index line; the spelling notes of the 22nd). Brief pattern: the predfix83 brief; deliver + empty rulings file
+   written into the worktree BEFORE launch; `scripts/lanewatch --follow NAME`. Merge ALONE, lint, plan-lint,
+   TaskStop; a real `done:` in to_main.md; SendMessage main.
+3. ONE opus FOLD lane (ask main for the review number first), pieces: core/operators/bindings/label-variables (the
+   label parameter: setting kind, `_`, optional, sent in an argument, the backdoor); core/holes/name (takes a label;
+   the `n := "d"` example re-spelled; the k-restrictions proposal is MOOT for labels); core/labels/paths/
+   argument-default, two-sources, closed-argument, call-prefix (argument-label; readings (a), (b) withdrawn);
+   core/conditions/form + defaults (optional-label; its edges are my proposal: `?` on a joint label, on a value,
+   inside a group question = errors for now); lib/structural/capture + add-on, core/labels/export statement 5,
+   capture-export, caller-ambiguous, labels-vs-captures (the set-side request; capture-twice; the array request,
+   unbuilt; the seam); zero-binding; lib/json sketch (the record has the current program); parked: the empty argument
+   position, the reference kind for users. MANAGER READINGS TO TEST are marked in each record entry of the day.
+4. Evidence: the day's scratch models are in `$PCREC_TMPDIR/scratch/pred/` (label_name_hole, label_param,
+   label_param_twice, msg_two_forms, optional_label, jsonl_exercise): hand-lowered; the lane rebuilds them mechanically.
 
-## The question queue after the pain points
+## The question queue
 
-two-sources' second shape (a name written in a definition that a used part also holds: mostly dissolved by
-default-export: confirm with a run, then close or ask); whether `hide` / `identity` are provided names;
-`@options(..)`: its spelling, whether it may repeat, weak `i` only at the top; macro variables / macro types /
-declared labels as ONE design (the body names `d.year` under label-reference); how a helper "declares" a
-capture and the wrapper `capture(name, x)` (the EARLY forms his truths argued against); capture-loop-value;
-count-several; zero-in-loop with the occurrences-argument reading; group-truth; every-pass-spelling;
-number-in-loop (mostly emptied by `n`); not-test; condition-group; `\k<x>` to a label-only group; older:
-tuple-parts, default-imports, export-choice, call-forms, any-case-body. THE SPELLINGS REVIEW (one sitting; new
-this session: `(?<:x>...)`, `A(x:)`, `B(d & isodate)`, a value left of `:`, the prefix forms, the export list,
-the label set and `${=rx}`, `@options(..)`, `capture(path)`).
-For a pcre2-reader, not him: the members of `(?i)k` in libpcre2 per mode.
+FIRST: **optional-label-general** (his flag): is `h?` a special form or the general case of an expression left of
+`:`; `(h+: blah)`. My note: as a value `$h?` gives the empty text on absence, so `($h?: <5)` fails where `(h?: <5)`
+holds; examine with the array spelling (`@x`), which also wants the left side; how the ARRAY capture is requested in
+the set-side shape. Then: what he meant by threading the label to `string` (my `body` sketch "was not what i was
+thinking"; ASK, do not guess again); the optional-member idiom (`(row(..) | anything)`); duplicate keys; a label
+pre-defined as a symbol (his "maybe"); a capture request under `NOT` / `!` (an error: my proposal); what is left of
+ambiguity-per-name (macro-name prefixes with several calls: probably only bodies' own fixed labels now).
+Older queue unchanged: two-sources' second shape; `hide` / `identity` as provided names; `@options` details; macro
+types / declared labels; count-several; zero-in-loop; group-truth; every-pass-spelling; number-in-loop; not-test;
+condition-group; `\k<x>` to a label-only group; tuple-parts, default-imports, export-choice, call-forms,
+any-case-body. THE SPELLINGS REVIEW (new today: `l:` at a head and a call, `l = ts:`, `_:`, `@x.year` against
+`x.@a`, `h?:`, `capture("name")`, `B(d=isodate)` for `B([d = isodate])`, the empty position).
+For a pcre2-reader, not him: the members of `(?i)k` in libpcre2 per mode; what a by-name read returns for a
+duplicate name (I inferred it from the backreference run; unverified).
 
-## Lessons (cases; the rule-shaped ones went to main in P-20 / P-21 as proposed skill edits)
+## Lessons (cases; rule-shaped ones go to main as proposed skill edits in P-24)
 
-- Three times my leaning needed an EXCEPTION to a rule he had just ruled (bound-condition (a), closed-argument
-  (b), weak-meets-weak (a)); each time his consistent read won in one message. Say "this leaning is an exception
-  to <ruling>" in the leaning itself; usually that sentence is enough to drop it.
-- "X and Y are the same" about two spellings is a claim about matches: run the parting case first (`A.d`
-  against `c.d`; he found it in one line).
-- His examples can be legal and not mean their gloss (`hits(/\d+/ & (0: <5))`): check-his-regex, show the table.
-- An EXERCISE he asks for, done mechanically with a run, produced seven concrete findings in one turn: more than
-  a critic round on the same pieces. Offer one when a cluster of rulings has just landed.
-- Rulings arrived faster than lanes: R-n files worked while a lane was early; a lane near its end (predref,
-  predfix83, predspot) does not see them: check `lanewatch NAME` before writing an R-n, else queue a fresh lane.
-- A lane can sit idle on its own background run (predspot, 25 minutes): the watcher exits with rc=10 QUIET; ONE
-  nudge by SendMessage ("check the run's output now; reply either way") was enough.
-- The NAME-GRID and FLAG-GRID checks (r83 P1) found every answer-level defect no printed-line check reached:
-  keep a grid lens in every round on names or flags.
-- After every lane merge: run the lint and the newest model on the MERGED branch and name those counts (the
-  record grows; a lane's own count is stale by the merge).
-- A late idle notification from a stopped lane or coordinator repeats its delivery: no action.
+- PASTE run output; never pre-write a run line into the record and run after (one wrong line today, corrected).
+- A conclusion carried over from before a ruling changed its premise is a new claim: re-derive it (the JSONL
+  finding "labels cannot be exported from inside an argument" was false under the label parameter; he caught it by
+  asking "show me why").
+- My readings of a ruling that EXTEND it to neighbouring cases (argument-default (a), (b)) are where he later says
+  "that was about X, not Y": mark the extension as such when first told to him, with the case it does not cover.
+- He prefers reusing a form that exists (defaults, `_`, same-label-twice) over a new one; lead with the existing
+  form that already answers, then the shorter spelling of it.
+- His questions on a question ("where does row() use the name?", "show me why") usually dissolve it: answer the
+  literal question first, with the text, before defending the leaning.
+- A discussion session this long (about 14 rulings) leaves a large unfolded backlog: next time start the r84 ruling
+  and its lane BEFORE the first question, so lanes run while he answers.

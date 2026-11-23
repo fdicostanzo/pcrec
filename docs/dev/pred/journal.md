@@ -957,3 +957,8 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - FLAG filed at his word: optional-label-general (special form or general; `(h+: blah)`).
 - MY ERROR: one run line and a note were written into the record before the run was read; corrected by an appended
   correction entry the same turn; the owner was shown the run's output only. Rule: paste run output, never pre-write it.
+
+## 2026-11-23 — close (/close)
+
+- Nothing in flight. wake.md rewritten; owner.md current; the record holds every word of the day. r84 NOT ruled;
+  nothing of 2026-11-22 late or 2026-11-23 folded. P-24 posted; main told.
