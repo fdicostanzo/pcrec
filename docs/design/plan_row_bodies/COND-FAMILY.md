@@ -8791,3 +8791,28 @@ label-reference (ruled required, 2026-11-22) it is `B(isodate & (isodate.year: 2
 his programs lower to the same pattern and test): WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED
 `1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx`
 [`2000-01-02xx`@0, `2000-12-31xx`@26].
+
+### 2026-11-23 OWNER, a proposal for the capture request's shape: `isodate & (isodate.year: capture("year"))`
+tags: lib/structural/capture lib/structural/capture/add-on core/conditions/form core/conditions/two-valued core/principles/no-absence core/operators/bindings/label-variables
+
+After the manager's check of his `B(isodate & (year: 2000))` (bare `year`; label-reference). HIS WORDS, whole:
+
+"good catch on my rx! for capture, would it be better to isodate & (isodate.year: capture("year"))"
+
+Class: a PROPOSAL as a question ("would it be better"): the capture request written on the SET side of a
+condition entry, the label on the left of `:` where labels are always named, the caller's name as the argument.
+Nothing ruled; capture-place (his lean (a), an `&` operand `capture(path)`) and capture-name (a) (ruled the same
+day on that shape) stand until he rules.
+The manager's thoughts (told to him; marked):
+- For it: (a) the label is named where conditions name labels, so `capture` needs NO reference-kind argument:
+  the one native use of the reference kind (label-kinds) goes away; (b) the rename is the argument itself, no
+  keyword; (c) it composes inside an entry (`(isodate.year: >= 2000 & capture("year"))`) and across a record;
+  (d) read as a filter, `capture("d")` is `anything` with an effect, so `digits & capture("d")` (`A & B` =
+  `A & (0: B)`) captures the stretch: his wrapper form and his after-the-fact form of 2026-11-21 become one thing.
+- Against, RUN (python `re`; `/(?<h>\d)?x/`): an entry on an ABSENT label fails (two-valued; "A set never
+  contains absence"), so the request would FILTER: as an entry `(h: capture("h"))`: WHOLE `3x` HOLDS, `x` FAILS /
+  SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2]; as an always-holding operand: WHOLE `3x` HOLDS, `x` HOLDS
+  (h unset) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5]. The JSONL `host` (an optional
+  member) is this case. Also: under `NOT` or `!` a request has no sensible meaning (an error or a warning); the
+  array request needs a left side (`@x`) the condition form does not have today.
+- Put to him as slug capture-absent: what a capture entry does on an absent label.
