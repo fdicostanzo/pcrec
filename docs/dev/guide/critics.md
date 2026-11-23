@@ -335,3 +335,14 @@ Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat
 2. **A DRY or synthetic probe keys its readings on the exe it is HANDED, not on the cell label,** or every wiring fault is invisible (F-2/C-3, found independently by two lenses).
 3. **A selftest that RECOMPUTES a command's exit code instead of calling the command shares its source with what it checks** (C-7).
 4. **A no-launch guard checks the inherited environment, not only explicit arguments** (C-5).
+
+2026-11-22 r84, predicate design round predspot1122 (`docs/dev/reviews/2026-11-22-r84-predspot1122.md`), accepted 2026-11-23 (predicate manager):
+1. **An "every printed line" sweep must FAIL on any non-same status not declared.** A sweep that only counts the same ones passes while answers move.
+2. **Drill a rename for name grids:** rename a binding to collide with a parameter name and rerun the grid.
+3. **A convention ruled "for provided bodies only" must not hold a language rule.** A rule the language needs is stated for every body.
+
+2026-11-23 r86, predicate design round predfold1123 (`docs/dev/reviews/2026-11-23-r86-predfold1123.md`), accepted 2026-11-23 (predicate manager):
+1. **Run an EXPANSION drill:** every sugar form against its written-out expansion.
+2. **A verifier that finds the evidence silent on a shape files it as a NEW item,** not as a refutation or a hold.
+3. **An evidence model never reads a BRANCH NAME:** it pins a commit (a lane rule).
+4. **A fold's conservative edges live in the ASKED statement:** the ruling lens diffs the asked text, edges included, against the documents, never the manager's summary of it (A1, A8).
