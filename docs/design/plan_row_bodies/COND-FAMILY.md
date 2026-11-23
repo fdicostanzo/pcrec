@@ -10048,3 +10048,35 @@ re-spelled with a named label (the lane's run: legal, the two forms agree); the 
 caller passes a name, a private `_x:` if it wants none exported). The JSON sketch is the manager's, under
 construction: that its filter-taking `row` refuses the blank label is a point of the LIBRARY's design, told to
 the owner, not asked as a language question.
+
+### 2026-11-23 OWNER, clarifying on label-doors: a body with two labels on one spot, its own and the user's: `A(l:,A) := [l =[_x = A]] &(_x: 5)`; "Do you agree?"
+tags: core/operators/bindings/label-variables core/labels/export core/labels/export/arguments core/labels/paths core/operators/bindings/call-forms lib/json/members
+
+Asked **label-doors** (the four-line general rule; not answered by these words). HIS WORDS, whole:
+
+"label-doors: I want to clarify, and it relates to json above:
+ A(l:,A) := [l =[_x = A]] &(_x: 5)
+I'm giving two labels. My internal one and a user provided one. If the user one was _ I'd nevertheless be able to
+apply my condition because both labels are visible to me.
+Do you agree?"
+
+Class: a CLARIFYING QUESTION with an example (DISCUSSION; nothing ruled; "relates to json above": the manager's
+note that a body which reads its label parameter refuses the blank label). His example's second parameter has the
+macro's own name (`A`); written `P` below (told to him; a placeholder).
+The manager's answer (told to him): AGREED, and by rules already ruled, no new one:
+- `_x` is written by the BODY's own text, so the body owns it and reads it bare (label-reference; line 1 of the
+  restated rule), whatever the caller passes for `l`.
+- With the user's label unspecified, unspecified-rule (ruled today) reads `[l = [_x = P]]` as the construct with
+  that part not written: `[_x = P]`; the body's test still has its label.
+- RUN (python `re`; the body lowered mechanically by a one-line function, a part label modelled as a named group;
+  output pasted): `A(n:, /\d/)` is `(?P<n>(?P<_x>\d))`: WHOLE `5` HOLDS, `7` FAILS, `55` FAILS / SEARCHED `7 5`
+  `5`@2 / FIND-ALL `5 7 5 3` [`5`@0, `5`@4]; labels the caller can name: n. `A(_:, /\d/)` is `(?P<_x>\d)`: the
+  same answers in every mode; labels the caller can name: none.
+- It is the way out of the JSON point: a `row` that tests its filter on a label of its OWN (`_d`) and places the
+  user's label beside it takes the blank label; reading (c) refuses only a body that reads the USER's label.
+A consequence the manager derives (marked; for the fold to test; told to him in one line): an unspecified label
+on a part is "the part with no label", NOT the blank mark `[_ = B]`. The manager's reading (a) of
+label-parameter-omitted (2026-11-23: "`[l = B]` with `_` is `[_ = B]`") is WITHDRAWN in favour of the ruled
+unspecified-rule; they differ for the shorthand of binding-as-label: with no label made, the caller's `P.d` is
+legal; with the blank mark made, it is not.
+Main's reply the same hour: P-26 merged; review number r88 reserved for the next fold (predfold1123b).
