@@ -9107,3 +9107,48 @@ RUN (python `re`, HAND-LOWERED and simplified: the object reduced to its one mem
 A consequence the run shows: on the data the string `"3"` and the number `3` read alike (`{"v":"3"}` HOLDS under
 `<5`); telling them apart needs the type.
 Put to him as slug label-forward.
+
+### 2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)
+tags: core/operators/bindings/label-variables core/labels/one-rule core/patterns/alternation core/labels/flow core/conditions/form core/holes/pattern lib/json/members
+
+ASKED AS A RULING (slug label-forward, the statement put to him: a body may pass its label parameter on to
+another macro's label parameter; that counts as placing it, and the usual rules apply to wherever it lands: once,
+set once; several times in sequence, the last mention; across `|`, the branch taken; across `&`, an ambiguous
+read, a compile error; never, the never-pass warning; the manager's leaning yes). HIS WORDS, whole:
+
+"Label forward: yes. Most of this could be achieved using the row third argument. Questions 1. could i then use
+this on the line call to filter combined arguments. That would've not been possible using row third arguments
+alone. 2. could i request multiple fields in a row argument meaning "or" i suppose"
+
+Class: a RULING: label-forward: yes, on the statement as put. An OBSERVATION: "Most of this could be achieved
+using the row third argument." Two QUESTIONS (DISCUSSION; nothing ruled by them).
+
+The manager's answers (told to him; each a reading of the rules as they stand, RUN on a HAND-LOWERED model, flat
+objects only, a row's paths taken in PCRE's order (the greedy member loop reaches the LAST fitting member first):
+`$PCREC_TMPDIR/scratch/pred/line_combined.py`; output pasted):
+1. Yes. The labels are the caller's own names, written in the line's text, each set by one side of the `&`, so a
+   condition over two of them is an ordinary entry (no ambiguous reference: no name is surfaced by both sides).
+   `json.row(lo:, "lo") & json.row(hi:, "hi") & (lo: <$hi)`: WHOLE `{"lo":3,"hi":7}` HOLDS (lo=`3`, hi=`7`),
+   `{"hi":7,"lo":3}` HOLDS (lo=`3`, hi=`7`), `{"lo":7,"hi":3}` FAILS, `{"lo":3}` FAILS, `{"lo":"3","hi":"7"}`
+   HOLDS (lo=`3`, hi=`7`), `{"lo":3,"x":true,"hi":7}` HOLDS (lo=`3`, hi=`7`) / SEARCHED
+   `{"lo":7,"hi":3} {"hi":9,"lo":8}` `{"hi":9,"lo":8}`@16 / FIND-ALL
+   `{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}` [`{"lo":3,"hi":7}`@0, `{"hi":2,"lo":1}`@41]
+2. Yes, as the rules stand: the key is laid into a pattern hole, where several values are one alternation
+   (core/holes/pattern), and the label is no longer tied to the key (the label parameter).
+   `json.row(x:, "a" | "b") & (x: <5)`: WHOLE `{"a":3}` HOLDS (a=`3`), `{"b":3}` HOLDS (b=`3`), `{"a":7,"b":3}`
+   HOLDS (b=`3`), `{"a":3,"b":7}` HOLDS (a=`3`), `{"a":7,"b":8}` FAILS, `{"c":3}` FAILS / SEARCHED
+   `{"a":7,"b":8} {"a":3,"b":7}` `{"a":3,"b":7}`@14 / FIND-ALL `{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}`
+   [`{"a":3}`@0, `{"b":4,"a":9}`@30]. Without the test, which member x holds: WHOLE `{"a":3,"b":7}` HOLDS
+   (b=`7`), `{"b":7,"a":3}` HOLDS (a=`3`), `{"c":3}` FAILS: the LAST fitting member in the object's order, not the
+   first key written in the alternation; a rejecting test moves to an earlier one. Which key matched is not known
+   to the caller unless the key's spot gets a label of its own (a second label parameter; his "in theory, one
+   could have 2 label args").
+
+RUN for the question put next (slug capture-negated; `$PCREC_TMPDIR/scratch/pred/capture_negated.py`, the
+optional-label path model, `/(?<h>\d)?x/`; output pasted):
+- `NOT (h: capture("h"))`, the request ignored, `capture(..)` as `anything`: WHOLE `x` HOLDS, `3x` FAILS, `7x`
+  FAILS / SEARCHED `3x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `x`@4, `x`@6]
+- `(h: !capture("h"))`, the complement of `anything` is the empty set: WHOLE `x` FAILS, `3x` FAILS, `7x` FAILS /
+  SEARCHED FAILS / FIND-ALL `7x 3x x` []
+- `(h: capture("h"))`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` HOLDS / SEARCHED `3x x` `3x`@0 / FIND-ALL
+  `7x 3x x` [`7x`@0, `3x`@3]

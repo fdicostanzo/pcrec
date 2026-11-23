@@ -979,3 +979,16 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   is no optional mark" (default-set, empty-value, macro-warning) move at the fold. To tell him.
 - ASKED: optional-label-general, with the run `$PCREC_TMPDIR/scratch/pred/optional_general.py`. Waiting on him;
   predfix84 in flight.
+
+## 2026-11-23 — seventh session: the entry operator `?:`; label-forward ruled
+
+- optional-label-general: his lean "a special case"; optional-place answered "Before the colon" (my reading: the
+  place is ruled); his PROPOSAL / lean: a second entry operator `?:` beside `:` (so `?` has one meaning). I write it
+  that way in the fold unless he objects; `h+` / `h*` and `(a?, b)` then do not arise. Ideas recorded, not ruled:
+  `?` for optional macro parameters without defaults (meets call-forms (b)); a value left of `:` with no label
+  (`("Frank": S)`: legal by the sentence as written, my reading).
+- string-label: his intent recorded (the row's label on the data, sent through to `string`).
+- RULED: label-forward: yes. Answered with runs: a filter over two rows at the line; several keys in one row.
+- ASKED: capture-negated. predfix84 still in flight.
+- Scratch models of the day: optional_general, optional_place, label_forward, line_combined, capture_negated
+  (`$PCREC_TMPDIR/scratch/pred/`): hand-lowered; the fold lane rebuilds them mechanically.
