@@ -9213,3 +9213,56 @@ is CLOSED by the manager on label-reference (no new owner ruling; he may object)
 flow sentence "Across the sequence operator a name both parts surface is one label, the last mention" is stated
 for names read at ONE level (the definition's own groups read bare; a part's labels read through one prefix or one
 label over the composition), never across the bare / sourced line; candidate (a)'s line goes to rejected.
+
+### 2026-11-23 OWNER RULING — zero-in-loop: (b) (from the definition's start); and a stated position, "not a ruling": the behaviour defined in a binding should not change due to how it is used
+tags: core/conditions/match-so-far/in-loop core/conditions/match-so-far core/holes/bare-condition/nested-scope core/conditions/pass-start-read core/principles/composed-at-point core/labels/one-rule core/labels/paths
+
+ASKED AS A RULING (slug zero-in-loop: inside a loop body `0` reads the match so far (b) from the start of the
+definition it is written in, or (a) from the start of the current pass; the manager's leaning (b), with the
+remark that the per-pass meaning is then written by binding the item and looping the binding). HIS WORDS, whole:
+
+"zero-in-loop: it has to be (b) or it's unusable because you couldn't put 0: in a loop. I'd even disagree with
+your alternative spelling for (b) being (a). I'm willing to alter the definition of 0: if need be. It's not a
+ruling but the behavior defined in a binding should not change due to how it's used. I'd say that's a principle
+but I don't know the ramifications and I'm sure there are exceptions. What if you put it first? Then would it
+refer to the previous pass? That might be ok. I could hear arguments that disagree with this position. For me,
+the (a) interpretation is a recursive interpretation of 0 and not an after the fact interpretation. Likes like
+[prefix = (/\d/)] seq (prefix: /\d/)... not [label = (/\d/ seq (label: /\d/) )]"
+
+Class, part by part:
+- A RULING on the question asked: zero-in-loop: (b) ("it has to be (b)"), held open to argument ("I could hear
+  arguments that disagree with this position"). The clause "or it's unusable because you couldn't put 0: in a
+  loop" is NOT clear to the manager (under (b) a fixed-shape test on `0` in a loop meets a growing text); the
+  reading taken, told to him: with (a) `0` would be a reference to the enclosing pass from inside it, which he
+  calls "recursive" below; to confirm.
+- A DISAGREEMENT with the manager's wording: binding the item and looping the binding is not "(a)". The reading
+  taken: it is (b) again, the binding's own definition being the start ("the behavior defined in a binding should
+  not change due to how it's used"); the manager's label "(a)" for that spelling is withdrawn.
+- AN OFFER, not acted on: "I'm willing to alter the definition of 0: if need be."
+- A POSITION, in his words "not a ruling" and "I'd say that's a principle": "the behavior defined in a binding
+  should not change due to how it's used", with "I don't know the ramifications and I'm sure there are
+  exceptions". NOT recorded as a principle of the documents until he rules it.
+- A QUESTION: `0` written first in the pass: "would it refer to the previous pass? That might be ok."
+- HIS PICTURE of `0`: "after the fact", like `[prefix = (/\d/)] seq (prefix: /\d/)`, a label on what came before
+  the condition; not "recursive", `[label = (/\d/ seq (label: /\d/) )]`, a label on the enclosing thing read
+  inside itself. (Spellings his placeholders.)
+
+The manager's answers (told to him; marked):
+- His picture agrees with the label rule as it stands: "A group's close sets its name" (core/labels/one-rule), so
+  a label read inside its own part is unset there; the recursive form is not available for labels either.
+- `0` first in the pass, under (b): it reads everything the definition has matched before that point, ALL the
+  earlier passes, empty in the first; not the previous pass alone. RUN (a path model,
+  `$PCREC_TMPDIR/scratch/pred/zero_first.py`; `((0: !contains("7")) SEQ /\d/ SEQ ";")+`; output pasted): WHOLE
+  `3;4;` HOLDS, `3;7;` HOLDS, `7;3;` FAILS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL
+  `3;7;4; 7;7; 1;2;` [`3;7;`@0, `4;`@4, `7;`@7, `7;`@9, `1;2;`@12].
+- The per-item test inside a loop is written his own way, a label on the part: `([d = /\d/] SEQ (d: /\d/) SEQ
+  ";")+` (the answers of the candidate-(a) row: the test reads this pass's digit, which is what that run computed).
+- Ramifications of the position, from the documents (each a pointer, none new): it CONFIRMS the manager's reading
+  awaiting confirmation "two uses of one piece are two pieces" (core/holes/bare-condition/nested-scope: the lines
+  "A user's loop" and "Written out" agree; "One definition, looped" differs). Known places where use DOES change
+  what a binding does, all in what its REGEX TEXT matches, none in what its conditions read: an explicit `i` at a
+  hole (hole-flags, ruled); an assertion at its edge reading its neighbours (core/holes/pattern); `^` / `$` in a
+  filter role meaning the stretch's ends (core/filters/and); which of its paths is reported when a condition
+  outside rejects (core/model/match); a loop or branching around it resetting its labels for the OUTSIDE reader
+  (core/labels/one-rule).
+Put to him as slug binding-fixed.
