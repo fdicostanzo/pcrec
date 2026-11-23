@@ -9398,3 +9398,22 @@ The manager's answer (told to him; each marked, none ruled):
   `/\d${(0: "3")}\d${(0: "34")}/` as `34`: WHOLE `34` HOLDS, `35` FAILS, `44` FAILS / SEARCHED `x34 35` `34`@1 /
   FIND-ALL `34 35 34` [`34`@0, `34`@6].
 Put to him as slug zero-open.
+
+### 2026-11-23 OWNER RULING — zero-open: yes, all four (`0` is the one name read open; never absent; no settings; `$0` legal; a capture request only where `0` is complete)
+tags: core/conditions/match-so-far core/values/reads core/conditions/defaults core/labels/labels-vs-captures/array-vs-passes lib/structural/capture core/labels/numbers core/diagnostics/errors
+
+ASKED AS A RULING (slug zero-open, the statement put to him: "`0` is the one name read open: the match so far,
+growing along the path. Every other label is read complete."; four consequences: (1) never absent: a default or
+the optional operator on `0` never applies and draws the unused warning; (2) no settings: no array, so a group
+question or an index on `0` is a compile error; (3) `$0` is legal and reads the prefix at the point of the read;
+(4) a capture request on `0` is legal only where `0` is complete, `rx & capture("name")`; on an open `0` in a
+sequence or a hole it is a compile error for now; the manager's leaning yes to all four; the alternative named:
+a separate name for the open prefix, `0` kept for the complete case). HIS WORDS, whole:
+
+"zero-open: yes all 4"
+
+Class: a RULING: the statement and its four consequences, as put. `0` keeps one name for both cases (the
+alternative was not taken). The manager's readings (marked; for the fold to test): (a) "complete" is the `&`
+case (the left operand's match) and a condition written last in its definition; (b) the warning of (1) is
+`pcrec.default.unused` for a default and the same kind for the optional operator (the name the manager's call);
+(c) `$0` in a value hole follows the value hole's rules (literal text, the options in force at the hole).
