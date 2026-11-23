@@ -615,6 +615,7 @@ history:
     whichever comes first.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r42 (C3), the manager's disposition; nothing for rulings:.
+- 2026-11-23 (lane predfix84, review r84 G2; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a bullet: its trigger has fired (program-options, 2026-11-22, a design step on `@options`); the table of file settings (review r84 G2, FIXIND-14 (1)) is the manager's PLAN, not made; this table its warning column.
 
 ## parked/ideas/user-doc-traps — For the user documentation: the things a reader will get wrong
 slugs: 
@@ -1057,6 +1058,15 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 2026-11-22 (lane predbound, bound-condition ruled): `see:` the under-construction core/operators/bindings/macro-types, his alternative 2 ("macro types"); the idea (operators included) stays parked.
 - 2026-11-22 (lane predfix82, review r82 GENERAL-11; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: superseded by core/operators/bindings/macro-types. Status date 2026-11-19 to 2026-11-22.
+
+## parked/ideas/pass-through-mark — A pass-through mark in a macro's head
+slugs: 
+rulings:
+rejected:
+readings:
+evidence:
+history:
+- 2026-11-23 (lane predfix84, review r84 G4; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a new parked piece. Its source is review r84 FIXIND-14 (4), a critic's unlock on label-names-spot generalised ("a name is visible where its spot is placed and listed"; members: argument-default, default-export, `_` closing, the label-only `hit`); the manager's disposition: PLAN, parked with the review's trigger, BOONIES weight unless the owner takes it up. No owner words; nothing for rulings:.
 
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 
