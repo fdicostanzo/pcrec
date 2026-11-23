@@ -9833,3 +9833,29 @@ the rule until an example argues one in; (b) the mark may be passed to ANY param
 position the body lays it into; a parameter laid into two positions is judged at each); (c) it is not "use the
 default": an omitted argument takes its default, the mark does not (told to him 2026-11-23; he asked, and the
 distinction was explained, not ruled as such).
+
+### 2026-11-23 OWNER RULING — call-forms: yes (one head per name; positional entries first, then named; a default is the macro's own text and may name an earlier parameter; unset takes the default, the underscore does not)
+tags: core/operators/bindings/call-forms core/operators/bindings lib/rx/repeat lib/modifiers/padded core/modules/binding-list core/modules/call-shorthand
+
+ASKED AS A RULING (slug call-forms, the statement put to him in four lines: "1. One head per name. There is no
+overloading; a call is never matched against several bodies. 2. Positional entries first, then named ones.
+Positional entries fill the parameters in declared order, including those with defaults. Any parameter may be
+named. A positional entry after a named one is a compile error for now. 3. A default is the macro's own text. It
+is resolved in the macro's definition, and it may name an earlier parameter, never a later one. 4. Unset and the
+underscore are different. An argument left unset takes its default. The underscore does not take the default; it
+means "not written", by the rule you just ruled."; shown with four calls of `repeat(x, min = _, max = min)` and
+their runs; named as NOT part of the ruling: which head `repeat` gets, a map written in place, a user macro that
+takes a macro; the manager's leaning yes). HIS WORDS, whole:
+
+"call-forms: yes."
+
+Class: a RULING: the four lines as put. The open piece core/operators/bindings/call-forms CLOSES as one head per
+name (candidate (b)); candidate (a), several bodies chosen by the arguments passed, is rejected by owner ruling.
+What it changes (for the next fold): lib/rx/repeat and lib/modifiers/padded lose their several bodies (repeat's
+head is the open repeat-head; padded's width form gets a name of its own, the manager's call as a placeholder);
+core/operators/bindings' sentence "positional arguments are the required parameters in declared order ...;
+keyword arguments are optional settings with defaults" is restated as line 2 ("required" = has no default).
+The manager's readings (marked; for the fold to test): (a) a parameter filled twice (by position and by name),
+or a name the head does not have, is a compile error; (b) "the macro's own text" puts a default under every
+rule of a body (its file's options, its names; binding-fixed); (c) the head as a binding list (the play-out's
+"one idea") is the manager's framing, NOT ruled.
