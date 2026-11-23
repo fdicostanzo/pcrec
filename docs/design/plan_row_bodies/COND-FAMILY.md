@@ -10002,3 +10002,35 @@ label that was written on it, else, where none was written, the binding's name. 
 The manager's reading of WHOSE label counts (marked; taken from "based on your examples", whose rows were the
 body's label and the body's blank mark): a label made by anyone on that use, the body included.
 Put to him as the ruling binding-as-label, in his four conditions.
+
+### 2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)
+tags: core/labels/paths/binding-prefix core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/paths/one-use-read core/labels/export/arguments core/labels/paths/label-reference core/labels/paths core/principles/label-names-spot
+
+ASKED AS A RULING (slug binding-as-label, the statement put to him: "A binding's name may be used in a path as
+shorthand for a skipped label where: 1. the binding is referenced unambiguously; 2. a label could have been set
+on it there; 3. the reference reads as though through that label; 4. no label has already been made on it
+there."; with the manager's reading that "already been made" is by anyone on that use, the body included, and
+the table for `B(A)`: the body uses the argument alone: `A.d` LEGAL; labels the spot: a compile error, read
+`B.p.d`; closes the spot: a compile error; the caller labels it: `a.d` whatever the body does, `A.d` a compile
+error; the two reversals named: argument-default's error, and the printed legal lines where the body labels the
+spot; the manager's leaning yes). HIS WORDS, whole:
+
+"binding-as-label: yes"
+
+Class: a RULING: the four conditions (the first three and the fourth are HIS, 2026-11-23, in the two entries
+above; the statement put to him quotes them) and the table as put. It REVERSES: argument-default (2026-11-22,
+"argument-default: for me this is an error."): where the body uses its argument alone the caller's `A.d` is now
+LEGAL, the shorthand label set where the body places the template; call-prefix case 2's lean ("i'd say A.d is
+legal there") and closed-argument (a)'s first sentence for a spot the body labels: there `A.d` is a compile
+error and the read is `B.p.d`. It KEEPS: closed-argument's error where the body closes the spot; binding-prefix
+(the same rule inside a definition; "used more than once" is condition 1); closing-own-label and argument-label
+(a label the caller writes is its own). It ANSWERS the open spot-read-name (review r84 C4): through a labelled
+spot the read is the body's path. The principle label-names-spot stands (the shorthand label, like a written
+one, is on the spot where the body places the template).
+The manager's readings (marked; for the fold to test): (a) "by anyone on that use, the body included" (told to
+him with the statement; he did not object); (b) a body that LISTS the spot (`[(=) = rx]`) has made a label on
+it: `A.d` is a compile error, the read is `B.d`; (c) a body that places the argument twice, alone: the shorthand
+label is set twice, the same-label-twice rules; never: the never-pass warning; (d) the canonical form ("all
+labels are chains of only labels") is his statement of the general form, to be written as such.
+NOT sent to the running fix lane predfix86 (a reversed design is a fresh lane's): the next fold takes it with
+call-forms, unspecified-rule, count-unspecified and repeat-head.
