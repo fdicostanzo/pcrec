@@ -8816,3 +8816,28 @@ The manager's thoughts (told to him; marked):
   member) is this case. Also: under `NOT` or `!` a request has no sensible meaning (an error or a warning); the
   array request needs a left side (`@x`) the condition form does not have today.
 - Put to him as slug capture-absent: what a capture entry does on an absent label.
+
+### 2026-11-23 OWNER, on capture-absent: "its already kind of an exceptional piece. can one clean it: (h: capture("h")?)"
+tags: lib/structural/capture core/conditions/form core/conditions/two-valued core/conditions/quantified core/conditions/defaults core/patterns/quantifiers core/holes/value
+
+Asked **capture-absent** (what a capture entry does on an absent label: (a) fails like any entry; (b) never
+rejects; (c) keep the operand shape; the manager's leaning (b), flagged as an exception to no-absence). HIS
+WORDS, whole:
+
+"capture absent: its already kind of an exceptional piece. can one clean it: (h: capture("h")?)"
+
+Class: an OBSERVATION ("already kind of an exceptional piece") and a PROPOSAL as a question: the optional mark
+`?` on the request, `(h: capture("h")?)`, as the explicit way to say "the label may be absent". Nothing ruled.
+The spelling is a placeholder.
+The manager's thoughts (told to him; marked; from the rules, no new run: the two behaviours are the run lines of
+the previous entry): (a) read this way the plain `(h: capture("h"))` stays REGULAR (it fails on an absent label,
+(a) of capture-absent) and the exception is asked for by name, his method; (b) as the documents stand, `?` on a
+SET already has a meaning: `S?` is regex's optional, S or the empty text, and an entry on an absent label fails
+whatever its set ("A set never contains absence"), so `(h: anything?)` still fails on absence: his form needs
+its meaning stated; (c) the regular meaning nearest to it is an OPTIONAL TEST: regex's optional around the whole
+entry, which on a failed test is skipped (the value hole's sentence: "an optional around it is skipped"); a
+quantifier on a condition is the ruled compile error (2026-11-18) because an optional plain test silently
+vanishes; for a capture request vanishing-on-absence is the point; (d) the form that works with NO new rule is
+the ruled default: `(h = "": capture("h"))` (the default stands in for the absent label in that one test), with
+the reading that the request names the real label, so the caller gets an unset capture. Put to him as slug
+capture-optional.
