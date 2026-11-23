@@ -1881,6 +1881,12 @@ static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
     { "mfind-w16", "-",  "i += 16",    "i += 15" },
     { "mfind-w32", "-",  "i += 32",    "i += 31" },
     { "fn-memchr", "-",  "pos = cand + 1", "pos = cand + 2" },
+    /* R-47 U5 (review r79 F1): one instruction of each rendering of V: the
+       `__w32` loop's step at B = 16 and B = 32, the SIMD-off `__body`'s last
+       position */
+    { "span-vector", "b16", "i += 16",  "i += 15" },
+    { "span-vector", "b32", "i += 32",  "i += 31" },
+    { "span-vector", "off", "mf_mf1_c + 30]", "mf_mf1_c + 29]" },
 };
 static const struct { const char *from, *to; } hash_renames[] = {
     { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },
@@ -1932,7 +1938,7 @@ static int hash_mode(void)
 {
     static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
                                        "every-pos", "mfind-swar", "mfind-w16", "mfind-w32",
-                                       "fn-memchr", "V1", "W64", "NONE", "dispatch-twin", NULL };
+                                       "fn-memchr", "span-vector", "V1", "W64", "NONE", "dispatch-twin", NULL };
     for (unsigned i = 0; ids[i]; i++) {
         char h[17] = "-";
         int rc = mf_form_hash(ids[i], h);
@@ -2229,9 +2235,17 @@ static void f_runmask(const FactIn *x, Text *o)
     for (size_t i = 0; i < L; i++) m[i] = f_mask(x->e, i);
     f_hex(o, m, L);
 }
+/* a WINDOW site's span: k + 1 positions of the set (k 0: the stop alone) */
+static void f_k(const FactIn *x, Text *o)
+{
+    char buf[24];
+    snprintf(buf, sizeof buf, "%u", (unsigned)x->e->k);
+    f_str(o, x->e->shape == MF_FH_WINDOW ? buf : NULL);
+}
 static void f_hit(const FactIn *x, Text *o)
 {
     f_str(o, f_ofs_shape(x) ? "a byte of `members` at the candidate; an answer iff the run holds there"
+             : x->e->shape == MF_FH_WINDOW && x->e->k ? "k + 1 consecutive bytes of `members`"
              : f_set_shape(x) ? "a byte of `members`"
                               : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
 }
@@ -2257,6 +2271,7 @@ static const struct { const char *key; fact_fn f; } facts[] = {
     { "table_members", f_table_members },
     { "members", f_members },       { "L", f_L },                 { "run", f_run },
     { "mask", f_runmask },          { "hit", f_hit },             { "miss_byte", f_miss_byte },
+    { "k", f_k },
     { "reads_past_cand", f_reads },
 };
 

@@ -12,7 +12,11 @@
 # K6's placed win, the power line's bracket, the checked power pins, the fixed axes named; lane formsfixm,
 # review r45's FORMS8-1..5: the interaction test per text, winsorized, the POOL_SIZE refusal, the docs).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
-identity check (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
+identity check; and CARD C6 `span_vector` (+ C6c, the SIMD-off layer under clang -O2 and gcc -Os; R-47 U5,
+block_span.md §8, kit-grid@8: V against `--memfn=no-span-vector` on one binary, patterns, widths and regimes
+declared below, THE RULE the committed c6_rule.md beside this file (review r79); `plan` and
+`dry [--cards C6,C6c]` read it, `c6selftest [RUNDIR]` drills its verdict, NO command times it: its
+timing is U6's, owed to a window main clears, on every bench box that runs V; UNMEASURED) (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -26,7 +30,9 @@ answers gated against python `re` before any timing.
 THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR one directory):
   plan                     every cell (card, pattern, arm, regime, layer), the counts and the
                            EXPECTED WALL TIME of each timing step (UNMEASURED constants, named)
-  dry RUNDIR [--quick]     builds EVERY cell (compile, gcc, the gate on every regime's
+  dry RUNDIR [--quick] [--cards C6,C6c]
+                           builds EVERY cell (--cards: only the named cards' cells, a PARTIAL dry: the C1-C5 deny checks and the
+                           identical-to-I record are the full dry's) (compile, gcc, the gate on every regime's
                            subject; C4's size record at the grid top) and prints the cell list
                            and count; no clock
   run RUNDIR [--with-approx]
@@ -55,7 +61,8 @@ THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR o
                            (exit 2; rev 12, r41 L6)
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest [--rev11] [--rev12]
+  selftest [--rev11] [--rev12]   (the full selftest is SLOW: ~90 min alone on the dev box, formsfixm 2026-11-17; bound
+                                  it at >= 7200 s, never 3000 s: bsu5's 3000 s run timed out, review r79 R-1)
                            the rule against every drill r45_reply rev 11 §3 lists, plus the noise
                            drill (F2), the unimodal drill (F3), the void/R0/re-run drills, the
                            CLASS drill (r38: noise, a step and a drift at every level) and rev
@@ -96,7 +103,23 @@ CC = os.environ.get("CC", "gcc")
 GRID = [0, 1, 2, 4, 8, 16, 24, 32, 64]
 GRID_TOP = 64
 SIMD = "-fmemfn-simd=x86-64-v3"
-LAYERS = {"off": [], "on": [SIMD]}
+CLANG = os.environ.get("CLANG", "clang")
+# THE LAYER TABLE (R-47 U5; review r79 F3, F13): one row per layer, every fact of a layer a DECLARED COLUMN, never read off
+# its name: the pcrec flags (the SIMD switch), the COMPILER (a row of COMPILERS, below: its command), the optimization
+# level and the pool's ALIGNMENT VARIANTS (a row of ALIGNS, below: a level that aligns nothing, -Os, needs another odd
+# variant). Read through `layer_flags` (artifact), `layer_simd` (check_c6), `cc_of`, `opt_of` and `align_variants_of`
+# (build_cell, its pool and its exe key; dry's pool proof) only. C1-C5 iterate LAYERS, the off/on subset (unchanged).
+# C6's compiler-axis card C6c reads the two SIMD-off legs of plan row [BSPAN-CLANG-DIFF] the bench has an arm for: clang -O2
+# (pcrec-auto-clang and siblings) and gcc -Os (pcrec-auto-os). clang -O3 has no bench arm and no row here, and every cell is
+# a non-PIC executable where the bench builds `-O2 -fPIC -shared`: both named gaps (c6_rule.md CLAIM, block_span.md §8).
+LAYER = {
+    # name:      (pcrec flags, compiler, level, alignment variants)
+    "off":       ([],     "gcc",   "-O2", "gcc"),
+    "on":        ([SIMD], "gcc",   "-O2", "gcc"),
+    "off-clang": ([],     "clang", "-O2", "clang"),
+    "off-os":    ([],     "gcc",   "-Os", "gcc-Os"),
+}
+LAYERS = {ly: LAYER[ly][0] for ly in ("off", "on")}     # C1-C5's layers
 
 # ---- the rule's statistical constants (r45_reply rev 11 §3 "The floor `f`", "Void") ----------
 # ALPHA: the rule's FAMILY-WISE false-pick budget, CHOSEN = the acceptance r35 F2 ruled (P(h* !=
@@ -193,18 +216,71 @@ PRELUDE_STEPS = 256
 # pools kept every hot loop's 32-B phase, the formsfixk dry run).
 ALIGN_VARIANTS = ([], ["-fno-align-functions", "-fno-align-loops", "-fno-align-jumps", "-fno-align-labels",
                        "-mtune-ctrl=^align_tight_loops"])
+# The ALIGNMENT VARIANT under clang (C6c; UNMEASURED DEFAULT, chosen by `dry`'s pool proof, which refuses a pool whose
+# variants share one relative layout): gcc's list above does not exist in clang (`-mtune-ctrl`, the loop/jump/label
+# alignment switches). The odd variant turns clang's function alignment off and its loop alignment off (LLVM's x86 default
+# aligns loops and functions to 16 B): `-fno-align-functions` and `-mllvm -x86-experimental-pref-innermost-loop-alignment=0`.
+CLANG_ALIGN_OFF = ["-fno-align-functions", "-mllvm", "-x86-experimental-pref-innermost-loop-alignment=0"]
+# The ALIGNMENT VARIANT at gcc -Os (C6c's `off-os`; UNMEASURED DEFAULT, accepted by `dry`'s pool proof): -Os aligns
+# nothing, so gcc's alignment-OFF list builds the default's layout again and the pool proof refuses every -Os pool (one
+# relative layout); the odd variant turns alignment ON instead, to 16 B (at 32 B every loop head sits at 32-B phase 0 in
+# both odd variants and the proof's 32-B half refuses the pool), the same instruction stream with other padding.
+ALIGN_OS_ON = ["-falign-functions=16", "-falign-loops=16", "-falign-jumps=16", "-falign-labels=16"]
+# THE COMPILER ROWS and THE ALIGNMENT ROWS the layer table names (variant v takes the row's [v % 2])
+COMPILERS = {"gcc": CC, "clang": CLANG}
+ALIGNS = {"gcc": ALIGN_VARIANTS, "clang": ([], CLANG_ALIGN_OFF), "gcc-Os": ([], ALIGN_OS_ON)}
 
 
-def pool_variants(textkey):
-    """The pool of the TEXT `textkey` (the hash of its TU): [(v, prelude bytes, gcc flags)], drawn
-    from the text's hash (one text, one pool, every night: the draws are the night's)."""
-    hd = hashlib.sha256(("pool|%s" % textkey).encode()).digest()
+def layer_flags(layer):
+    """The layer's pcrec flags (LAYER's first column)."""
+    return LAYER[layer][0]
+
+
+def layer_simd(layer):
+    """1 iff the layer compiles with the SIMD switch on (read off its flags, never its name)."""
+    return SIMD in LAYER[layer][0]
+
+
+def cc_of(layer):
+    """The command of the layer's compiler (LAYER's second column, a COMPILERS row)."""
+    return COMPILERS[LAYER[layer][1]]
+
+
+def opt_of(layer):
+    """The layer's optimization level (LAYER's third column)."""
+    return LAYER[layer][2]
+
+
+def align_variants_of(layer):
+    """The alignment variants of the layer's pools (LAYER's fourth column, an ALIGNS row)."""
+    return ALIGNS[LAYER[layer][3]]
+
+
+# AN ARM'S OWN POOL (review r79 F2): an A/A arm whose comparison moves the LAYOUT POOL axis draws a pool of its OWN: H64.b
+# times H64's text, but V vs H64 compares two pools, so the A/A arm compares two pools too (salted; c6_rule.md A/A). The
+# AA card's aa.b keeps aa's pool (r41 L9, unchanged). RETIME_SALT: a re-time builds a FRESH pool (c6_rule.md RE-TIME), four
+# new layouts per text, never the first pass's.
+POOL_SALT = {"H64.b": "aa"}
+RETIME_SALT = "retime"
+
+
+def pool_salt(arm, retime=0):
+    """The pool salt of arm `arm` (POOL_SALT) at re-time round `retime` (0: the first pass)."""
+    parts = [POOL_SALT.get(arm, "")] + (["%s%d" % (RETIME_SALT, retime)] if retime else [])
+    return "|".join(x for x in parts if x)
+
+
+def pool_variants(textkey, aligns=ALIGN_VARIANTS, salt=""):
+    """The pool of the TEXT `textkey` (the hash of its TU): [(v, prelude bytes, compile flags)], drawn
+    from the text's hash (one text, one pool, every night: the draws are the night's); `aligns` the
+    layer compiler's alignment variants; `salt` (pool_salt) draws ANOTHER pool of the same text."""
+    hd = hashlib.sha256(("pool|%s" % textkey + ("|" + salt if salt else "")).encode()).digest()
     r = hd[0] % 4
     out = []
     for v in range(POOL_SIZE):
         hi = hd[1 + v % 31] % (PRELUDE_STEPS // 4)
         j = 4 * hi + (r + PHASE_ORDER[v % 4]) % 4
-        out.append((v, 16 * j, ALIGN_VARIANTS[v % 2]))
+        out.append((v, 16 * j, aligns[v % 2]))
     return out
 
 
@@ -237,6 +313,11 @@ def arm_flags(arm):
         return HARNESS, ["--harness=span-head=%d" % int(arm[1:])]
     if arm == "aa":
         return HARNESS, []
+    # C6's arms (R-47 U5): ONE shipped binary, V the default compile, H64 the deny; H64.b is the A/A arm (H64's text)
+    if arm == "V":
+        return PCREC, []
+    if arm == "H64":
+        return PCREC, ["--memfn=no-span-vector"]
     raise SystemExit("cards: unknown arm %r" % arm)
 
 
@@ -273,7 +354,42 @@ PATTERNS = {
     "a4095": (r"a{4095}", rep("a", 4095)),
     "a32": (r"a{32}", rep("a", 32)),
     "lit16": (re.escape(LIT16), list(LIT16)),
+    # CARD C6's patterns (R-47 U5; block_span.md §0.1 and §8). Each states its WINDOW WIDTH (C6_WIDTH) and k, the number of
+    # positions one loop tests (§3.1: `{n}` is k = n - 1). The 3 REAL bench sites at width 32 (k 31 each; the window k 31
+    # cell IS the hex32 site: one text, one cell) ...
+    "c6_hex32": (r"[0-9a-f]{32}", rep(HEX, 32)),                    # bounded/hex32, D-hors, window
+    "c6_hexb32": (r"\b[0-9a-f]{32}\b", rep(HEX, 32)),               # loglines/hex32-id, D-hors, window
+    "c6_dig32": (r"\d{32}", rep(DIG, 32)),                          # bounded/dig-exact-32, R7w, scan
+    # ... and the six BOUND cells: window k 16 and 31 at width 32 (k 31 above), k 32 and 1000 at width 4095;
+    # scan k 24 at width 32, k 64 at width 4095. The outside-bound cells (window k 15, 1001; scan k 23, 65) are CUT: both
+    # arms render today's bytes there, so they are A/A by construction (the T-table pins check the flip in text, §10.2).
+    "c6_hex17": (r"[0-9a-f]{17}", rep(HEX, 17)),                    # window k 16, w32
+    "c6_hex33": (r"[0-9a-f]{33}", rep(HEX, 33)),                    # window k 32, w4095
+    "c6_hex1001": (r"[0-9a-f]{1001}", rep(HEX, 1001)),              # window k 1000, w4095
+    "c6_dig25": (r"\d{25}", rep(DIG, 25)),                          # scan k 24, w32
+    "c6_dig65": (r"\d{65}", rep(DIG, 65)),                          # scan k 64, w4095
 }
+# C6's per-pattern state: the window width the cell compiles at (`--window-search-width=`), the site kind (read from the
+# finder row, §0.1: window = D-hors, scan = R7w) and k. Patterns not named here take WIDTH_FLAG (the C1-C5 cards).
+C6_WIDTH = {"c6_hex32": 32, "c6_hexb32": 32, "c6_dig32": 32, "c6_hex17": 32, "c6_hex33": 4095, "c6_hex1001": 4095,
+            "c6_dig25": 32, "c6_dig65": 4095}
+C6_SITE = {"c6_hex32": ("window", 31), "c6_hexb32": ("window", 31), "c6_dig32": ("scan", 31), "c6_hex17": ("window", 16),
+           "c6_hex33": ("window", 32), "c6_hex1001": ("window", 1000), "c6_dig25": ("scan", 24), "c6_dig65": ("scan", 64)}
+C6_REAL = ["c6_hex32", "c6_hexb32", "c6_dig32"]
+C6_BOUND = ["c6_hex17", "c6_hex33", "c6_hex1001", "c6_dig25", "c6_dig65"]
+# the F2 DIFFERS patterns (§8: "every F2 DIFFERS pattern, at width 4095"): F2 (block_span.md §6, lane bsu3's report,
+# docs/dev/lanes/bsu3_report.md "F2 AND THE GUARDED BOUND") matched 82 of 82 routed cells, so the list is EMPTY; a later
+# F2 that DIFFERS adds its patterns here (a pattern id, its regex, its per-position sets) and C6 times them at 4095
+C6_F2_DIFFERS = []
+# hit-dense's separator after a whole match, for a pattern whose regex needs one (`\b` ... `\b`: two adjacent hex runs have
+# no boundary between them); every other pattern appends nothing, so C1-C5's subjects are unchanged
+C6_SEP = {"c6_hexb32": b" "}
+# the MISS BYTE of near-miss and near-miss-in, for a pattern whose boundary would swallow the default (review r79 F4): the
+# default is the first of "zZ#@!" outside the set, `z`, a WORD byte, so at `\b...\b` the left boundary fails after every
+# miss and the site never reaches the span (near-miss-in called it once per MiB); a space keeps the boundary. Every other
+# pattern takes the default, so C1-C5's subjects are unchanged
+C6_MISS = {"c6_hexb32": " "}
+NMI = "near-miss-in"
 
 # The regimes (r45_reply §3 C1; cover_cap.md §11.4's five plus uniform random bytes). Two take
 # their METHOD from the bench (D198 (f) NOT-WARM, the bench's `short-subject-search` subject);
@@ -294,7 +410,7 @@ def method_of(regime):
 # ---- the cards (r45_reply rev 11 §3 "The cards"; kit-grid@7) ---------------------------------
 FINITE = ["h%d" % h for h in GRID]
 CARD_ROWS = {"C1": "span_cross", "C2": "span_pop", "C3": "span_long", "C4": "span_size",
-             "C5": "span_engine"}
+             "C5": "span_engine", "C6": "span_vector", "C6c": "span_vector"}
 CARDS = [
     # card, patterns, arms, regimes, layers, kind
     ("C1", ["hex24", "dig24", "hex32", "dig32"], ["I"] + FINITE, REGIMES, ["off", "on"], "time"),
@@ -305,10 +421,31 @@ CARDS = [
     ("C5", ["hex24", "dig24", "hex32", "dig32", "uuid36", "lit40", "alt49", "abc60", "hex64",
             "hex500", "hex1000", "a500", "a1000"], ["engine"], REGIMES, ["off"], "time"),
     ("AA", ["lit16"], ["aa", "aa.b"], REGIMES, ["off", "on"], "time"),
+    # C6 `span_vector` (R-47 U5, kit-grid@8; block_span.md §8): the SHIPPED trade on ONE binary at -fmemfn-simd=x86-64-v3, V
+    # (the default compile) against H64@on (`--memfn=no-span-vector`); H64.b is the A/A arm (the deny exe, H64's text, timed as
+    # both arms on each C6 pattern). The six regimes, plus near-miss-in at the window sites (`regimes_of`). The 3 real sites,
+    # the six bound cells, the F2 DIFFERS list (empty today)
+    ("C6", C6_REAL + C6_BOUND + [p[0] for p in C6_F2_DIFFERS], ["V", "H64", "H64.b"], REGIMES, ["on"], "time"),
+    # C6c, C6's COMPILER-AXIS card (D201 add. 5; plan row [BSPAN-CLANG-DIFF]; block_span.md §8 "C6c"): the 3 real sites, the
+    # SIMD-off layer under the two compilers the bench has SIMD-off arms for, clang -O2 (`off-clang`) and gcc -Os (`off-os`):
+    # the V wrapper's text against `--memfn=no-span-vector`, the A/A arm as above. Says whether the wrapper costs anything
+    # where the census said the SIMD-off machine code differs (§2.2.1 `wrap-clang`, ANSWERED by add. 5). NOT covered: clang
+    # -O3 (no bench arm), the bench's -fPIC shared-object build (every cell is a non-PIC executable): named gaps
+    ("C6c", C6_REAL, ["V", "H64", "H64.b"], REGIMES, ["off-clang", "off-os"], "time"),
 ]
 CARD_PATS = {c[0]: c[1] for c in CARDS}
+C6_CARDS = ("C6", "C6c")                # C6's timing is U6's, in a window main clears: no step of `run` reads it
 STEP1 = ("C1", "C2", "C5", "AA")       # `run`: before h* exists
 STEP2B = ("C3", "C4")                   # `c3 H`: after the rule froze h* (rev 7, F4)
+
+
+def regimes_of(card, pat, regs):
+    """The regimes of pattern `pat` in card `card`: `regs`, plus near-miss-in at C6's WINDOW sites where k + 1 <= 255
+    (c6_rule.md N/A's named cuts: there the cards' near-miss never calls the span, the probe landing on each record's miss
+    byte; at k + 1 > 255, c6_hex1001, the shift table caps at 255 and the plain near-miss already calls it at failing depths
+    0..745, so no near-miss-in cell is built; every other cell is `regs`)."""
+    site = C6_SITE.get(pat)
+    return regs + [NMI] if card in C6_CARDS and site and site[0] == "window" and site[1] + 1 <= 255 else regs
 
 
 def cells(hstar=GRID_TOP, cards=None):
@@ -326,7 +463,7 @@ def cells(hstar=GRID_TOP, cards=None):
                     continue
                 seen.append(a)
                 for ly in layers:
-                    for r in (regs or ["-"]):
+                    for r in (regimes_of(card, p, regs) or ["-"]):
                         out.append((card, p, a, r, ly))
     return out
 
@@ -355,11 +492,21 @@ def subject(pat, regime, n, seed):
     out = bytearray()
     if regime == "hit-dense":
         while len(out) < n:
-            out += bytes(ord(rnd.choice(s)) for s in pos)
+            out += bytes(ord(rnd.choice(s)) for s in pos) + C6_SEP.get(pat, b"")
+    elif regime == NMI:
+        # near-miss-in (710's definition): runs of members of uniform random length g in [ceil(k/2), k] (k = positions - 1, never
+        # the full width: no match), each followed by ONE non-member. The window after a miss reaches the next miss at index g;
+        # unless that is the window's last byte the span runs and fails there: a staircase of failing depths per run
+        mem, mset = pos[0], set(pos[0])
+        miss = C6_MISS.get(pat) or next((c for c in "zZ#@!" if c not in mset), None) or next(
+            chr(x) for x in range(256) if chr(x) not in mset)
+        while len(out) < n:
+            g = rnd.randint(k // 2, k - 1)      # k positions: 710's k - 1 tested ones, g in [ceil((k-1)/2), k - 1]
+            out += bytes(ord(rnd.choice(mem)) for _ in range(g)) + miss.encode("latin-1")
     elif regime == "near-miss":
         # EMITTED-2's shape: the window's first k - 1 positions, then a byte outside the last set
         last = set(pos[-1])
-        miss = next(c for c in "zZ#@!" if c not in last)
+        miss = C6_MISS.get(pat) or next(c for c in "zZ#@!" if c not in last)
         while len(out) < n:
             out += bytes(ord(rnd.choice(s)) for s in pos[:-1]) + miss.encode()
     elif regime == "random":
@@ -506,8 +653,8 @@ SIZE_CAP = ["--max-emit-code-bytes=4000000"]
 def artifact(rundir, pat, arm, layer, size=False):
     """The cell's artifact (pcrec-level compile on the frozen binary), cached by its inputs."""
     binp, fl = arm_flags(arm)
-    wf = [] if WIDTH_FLAG == "none" else [WIDTH_FLAG]
-    args = [binp, "-p", PREFIX, "--features", "all"] + wf + (SIZE_CAP if size else []) + LAYERS[layer] + fl + [
+    wf = ["--window-search-width=%d" % C6_WIDTH[pat]] if pat in C6_WIDTH else [] if WIDTH_FLAG == "none" else [WIDTH_FLAG]
+    args = [binp, "-p", PREFIX, "--features", "all"] + wf + (SIZE_CAP if size else []) + layer_flags(layer) + fl + [
         "-o", "-", "--pattern", PATTERNS[pat][0]]
     d = os.path.join(rundir, "art")
     os.makedirs(d, exist_ok=True)
@@ -556,6 +703,114 @@ def check_deny(rundir, cl, reach_arm=None, vacuous_why="the loop text moved, or 
     return bad, nI, len(reach)
 
 
+V_SEL_RE = re.compile(rb"_vs[0-9]+\(")         # the selector's call (block_span.md §5)
+V_BODY_RE = re.compile(rb"_vs[0-9]+__body\(")
+V_W32_RE = re.compile(rb"_vs[0-9]+__w32\(")
+V_SELDEF_RE = re.compile(rb"int ([A-Za-z0-9_]+_vs[0-9]+)\(const unsigned char \*")     # the selector's definition
+V_LOOP_RE = re.compile(rb"for \(; i \+ ([0-9]+) < ([0-9]+); i \+= ([0-9]+)\)")            # __w32's block loop
+WINDOW_SH_RE = re.compile(rb"_mf[0-9]+_sh\[")            # D-hors's shift table: a WINDOW site (a SCAN site has none)
+C_COMMENT_RE = re.compile(rb"/\*.*?\*/", re.S)
+
+
+def _fn_text(t, name):
+    """The definition of function `name` in `t` (its head through the first `\\n}\\n`), or None."""
+    m = re.search(rb"int " + re.escape(name) + rb"\(const unsigned char \*[^\n]*\n\{\n", t)
+    if not m:
+        return None
+    e = t.find(b"\n}\n", m.end())
+    return t[m.start():e + 3] if e >= 0 else None
+
+
+def check_c6_texts(items, site=None):
+    """C6's DENY AND REACH CHECK over [(pattern, layer, V's text, H64's text)] (the card's own: the loop check reads arm I,
+    which C6 has none of; review r79 F10). Per (pattern, layer): the two arms render DIFFERENT text; the deny arm H64 carries
+    no V text; V carries `__body` and ONE selector, the site CALLS the selector (a call, not its definition), and the selector
+    calls `__w32` at a SIMD layer (whose definition exists, outside a comment) and `__body` elsewhere (no `__w32` at all);
+    at a SIMD layer the block loop's k and width B are C6_SITE's k and the B the renderer picks (32 iff k >= 32, else 16:
+    the rendering formhash's b16 / b32 instance hashes); the site kind (window: D-hors's shift table; scan: none) is C6_SITE's.
+    Comments are stripped first. A defect is a text the card would time as what it is not. Returns (failures, pairs read)."""
+    site = C6_SITE if site is None else site
+    bad = []
+    for pat, layer, v, d in items:
+        tag = "C6 %s %s" % (pat, layer)
+        v, d = C_COMMENT_RE.sub(b"", v), C_COMMENT_RE.sub(b"", d)
+        if v == d:
+            bad.append("%s: V and H64 render ONE text (an A/A cell by construction: the deny is ignored, or the stretch is "
+                       "outside the table)" % tag)
+        if V_SEL_RE.search(d) or V_BODY_RE.search(d) or V_W32_RE.search(d):
+            bad.append("%s: DENY IGNORED: arm H64 (--memfn=no-span-vector) carries V's wrapper text" % tag)
+        names = sorted({m.group(1) for m in V_SELDEF_RE.finditer(v) if b"__" not in m.group(1)})
+        if not V_BODY_RE.search(v) or len(names) != 1:
+            bad.append("%s: arm V carries no wrapper (`__body` and ONE selector; selectors %s)" % (tag, names))
+            continue
+        name = names[0]
+        sel = _fn_text(v, name)
+        calls = len(re.findall(rb"(?<![A-Za-z0-9_])" + re.escape(name) + rb"\(", v)) - 1
+        if calls < 1:
+            bad.append("%s: the site never calls the selector %s: V's text is dead code" % (tag, name.decode()))
+        w32def = _fn_text(v, name + b"__w32")
+        if layer_simd(layer):
+            if not (sel and name + b"__w32(" in sel and w32def):
+                bad.append("%s: arm V's selector does not call a defined `__w32` at the SIMD layer: the cell does not time "
+                           "the vector span" % tag)
+            else:
+                m = V_LOOP_RE.search(w32def)
+                k = site.get(pat, ("-", -1))[1]
+                if not m or int(m.group(2)) != k or int(m.group(1)) != (32 if k >= 32 else 16):
+                    bad.append("%s: the block loop %s is not C6_SITE's k %d at B %d" % (
+                        tag, m.group(0).decode() if m else "(none)", k, 32 if k >= 32 else 16))
+        else:
+            if not (sel and name + b"__body(" in sel) or V_W32_RE.search(v):
+                bad.append("%s: arm V's selector does not call `__body` alone at a layer that admits no level" % tag)
+        kind = "window" if WINDOW_SH_RE.search(v) else "scan"
+        if site.get(pat, ("-",))[0] != kind:
+            bad.append("%s: the site is a %s site, C6_SITE says %s" % (tag, kind, site.get(pat, ("-",))[0]))
+    return bad, len(items)
+
+
+def check_c6(rundir, cl):
+    """check_c6_texts over every C6 (pattern, layer) of `cl`'s artifacts. Returns (failures, pairs read)."""
+    items = [(pat, layer, open(artifact(rundir, pat, "V", layer), "rb").read(),
+              open(artifact(rundir, pat, "H64", layer), "rb").read())
+             for pat, layer in sorted({(c[1], c[4]) for c in cl if c[0] in C6_CARDS})]
+    return check_c6_texts(items)
+
+
+# THE REACH BUILD (c6_rule.md N/A; review r79 F4): the span calls of ONE UNTIMED pass of a C6 cell, read from an
+# INSTRUMENTED build of V's text (a counter at the top of the site's selector, printed at exit), at the layer's compiler and
+# level; never a timed arm. A cell reading 0 is N/A.
+def c6_reach(rundir, pat, layer, regime, n):
+    """The span calls of one untimed pass of V's (pat, layer) text over the regime's subject."""
+    v = open(artifact(rundir, pat, "V", layer), "rb").read().decode("latin-1")
+    defs = [m for m in re.finditer(r"int ([A-Za-z0-9_]+_vs[0-9]+)\(const unsigned char \*[^\n]*\n\{\n", v)
+            if "__" not in m.group(1)]
+    if len(defs) != 1:
+        raise RuntimeError("reach %s %s: %d selector definitions, not one" % (pat, layer, len(defs)))
+    m = defs[0]
+    src = v[:m.end()] + "    c6_reach_n++;\n" + v[m.end():]
+    tu_src = ("#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\nstatic unsigned long long c6_reach_n;\n" + src
+              + "\n" + DRIVER + "\n__attribute__((destructor)) static void c6_reach_out(void) "
+              "{ fprintf(stderr, \"REACH %llu\\n\", c6_reach_n); }\n")
+    key = _h(tu_src, cc_ident(cc_of(layer)), opt_of(layer))
+    exe = os.path.join(rundir, "reach", "r_%s" % key)
+    if not os.path.exists(exe):
+        os.makedirs(os.path.dirname(exe), exist_ok=True)
+        tu = _tmp(exe) + ".c"
+        open(tu, "w", encoding="latin-1").write(tu_src)
+        r = subprocess.run([cc_of(layer), "-std=gnu11", opt_of(layer), "-w", "-o", _tmp(exe), tu], capture_output=True,
+                           timeout=1800)
+        if r.returncode:
+            raise RuntimeError("reach build %s %s: %s" % (pat, layer, r.stderr.decode()[-400:]))
+        os.replace(_tmp(exe), exe)
+        os.replace(tu, exe + ".c")
+    sp, k, s = subj_file(rundir, pat, regime, n)
+    t = subprocess.run([exe, sp, str(REGIME_CODE.get(regime, 0)), k, s], capture_output=True, text=True, timeout=900)
+    got = re.search(r"REACH ([0-9]+)", t.stderr)
+    if t.returncode or not got:
+        raise RuntimeError("reach %s %s %s: rc %d %s" % (pat, regime, layer, t.returncode, (t.stdout + t.stderr).strip()[-300:]))
+    return int(got.group(1))
+
+
 def _tmp(p):
     return "%s.%d.%d" % (p, os.getpid(), threading.get_ident())
 
@@ -568,26 +823,29 @@ def text_key(rundir, pat, arm, layer):
 
 
 @functools.lru_cache(maxsize=None)
-def cc_ident():
-    """The compiler's identity for the exe cache key (r44 I): CC as named and `$CC --version`'s whole
-    output (`-O2 -std=gnu11 -w` are constants of `build_cell`, so they need no place in the key)."""
-    r = subprocess.run([CC, "--version"], capture_output=True, text=True, timeout=60)
-    return ("%s\n%s" % (CC, r.stdout)).encode("ascii", "replace").decode()
+def cc_ident(cc):
+    """The compiler's identity for the exe cache key (r44 I): `cc`, the caller's declared compiler, as named and `$cc --version`'s whole
+    output (`-std=gnu11 -w` are constants of `build_cell`; the level is the layer's and rides the key's flags)."""
+    r = subprocess.run([cc, "--version"], capture_output=True, text=True, timeout=60)
+    return ("%s\n%s" % (cc, r.stdout)).encode("ascii", "replace").decode()
 
 
-def variant_key(key, pre, fl):
+def variant_key(key, pre, fl, cc):
     """The cache name's variant part: the text key, the prelude, the flags and the compiler (r44 I)."""
-    return _h(key, str(pre), " ".join(fl), cc_ident())
+    return _h(key, str(pre), " ".join(fl), cc_ident(cc))
 
 
-def build_cell(rundir, pat, arm, layer, v=0):
+def build_cell(rundir, pat, arm, layer, v=0, retime=0):
     """Variant `v` of the cell's POOL (rev 12, RULED r41 L9): the artifact + driver TU with its
-    in-TU prelude and alignment variant, gcc -O2, linked; cached by the text key AND the variant's
-    parameters (prelude bytes, flags: a changed draw space is a new name, r41 L7) AND the compiler (CC and
-    its --version, r44 I: an exe another gcc built is never re-used)."""
+    in-TU prelude and alignment variant, at the layer's compiler and level (LAYER), linked; cached by the
+    text key AND the variant's parameters (prelude bytes, level and flags: a changed draw space is a new
+    name, r41 L7) AND the compiler (its command and --version, r44 I: an exe another compiler built is
+    never re-used). The pool is the arm's (pool_salt: H64.b its own) at re-time round `retime`."""
     a, src, key = text_key(rundir, pat, arm, layer)
-    _v, pre, fl = pool_variants(key)[v]
-    vk = variant_key(key, pre, fl)
+    cc = cc_of(layer)
+    _v, pre, fl = pool_variants(key, align_variants_of(layer), pool_salt(arm, retime))[v]
+    fl = [opt_of(layer)] + fl
+    vk = variant_key(key, pre, fl, cc)
     exe = os.path.join(rundir, "bin", "x_%s_v%d_%s" % (key, v, vk))
     if os.path.exists(exe):
         return exe, a
@@ -599,13 +857,13 @@ def build_cell(rundir, pat, arm, layer, v=0):
         "__asm__(\".text\\n\\t.skip %d\\n\");\n#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
         % pre + src + "\n" + DRIVER)
     # two arms can render the same text (H(h) is I where h >= k): each build its own temp names
-    r = subprocess.run([CC, "-std=gnu11", "-O2", "-w"] + fl + ["-x", "c", "-c", "-o", _tmp(obj), tu],
+    r = subprocess.run([cc, "-std=gnu11", "-w"] + fl + ["-x", "c", "-c", "-o", _tmp(obj), tu],
                        capture_output=True, timeout=1800)
     if r.returncode:
-        raise RuntimeError("gcc %s %s %s v%d: %s" % (pat, arm, layer, v, r.stderr.decode()[-400:]))
+        raise RuntimeError("%s %s %s %s v%d: %s" % (os.path.basename(cc), pat, arm, layer, v, r.stderr.decode()[-400:]))
     os.replace(_tmp(obj), obj)
     os.replace(tu, exe + ".c")
-    r = subprocess.run([CC, "-o", _tmp(exe), obj], capture_output=True, timeout=600)
+    r = subprocess.run([cc, "-o", _tmp(exe), obj], capture_output=True, timeout=600)
     if r.returncode:
         raise RuntimeError("link %s %s %s v%d: %s" % (pat, arm, layer, v, r.stderr.decode()[-400:]))
     os.replace(_tmp(exe), exe)
@@ -715,7 +973,7 @@ def size_record(rundir, pat, arm, layer):
     tu = obj + ".c"
     open(tu, "w", encoding="latin-1").write("#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                                              + open(a, encoding="latin-1").read())
-    r = subprocess.run(["/usr/bin/time", "-f", "%e %M", CC, "-std=gnu11", "-O2", "-w", "-c", "-o", obj, tu],
+    r = subprocess.run(["/usr/bin/time", "-f", "%e %M", cc_of(layer), "-std=gnu11", opt_of(layer), "-w", "-c", "-o", obj, tu],
                        capture_output=True, text=True, timeout=1800)
     if r.returncode:
         raise RuntimeError("gcc -c %s %s: %s" % (pat, arm, r.stderr[-300:]))
@@ -873,6 +1131,183 @@ def time_cells(rundir, cl, path, with_approx=True):
             f.flush()
 
 
+# ---- C6's RULE (R-47 U5; review r79 F2, F5-F8; block_span.md §8) ---------------------------------------------------
+# THE RULE is the COMMITTED file c6_rule.md beside this script (its fenced block, written before any C6 timing); job 710's,
+# which it adapts clause by clause, is the committed rule_710.md. Both shas are COMPUTED from the files (the fenced block's
+# lines, each followed by a newline; the bytes 710's recorded sha covers), never typed; the rule's CONSTANTS are parsed
+# from its CONSTANTS clause, so the code and the text cannot hold two values. `c6_decide` is the rule's VERDICT on a
+# cell set (U6's timer feeds it; `c6selftest` drills it on constructed outcomes); `c6_header` / `c6_header_check` the
+# RECORD clause's header line.
+C6_RULE_FILE = os.path.join(HERE, "c6_rule.md")
+C6_RULE_710_FILE = os.path.join(HERE, "rule_710.md")
+C6_RULE_710_RECORDED = "6351bff3901e3955"     # the sha job 710's record and every citation of it state (checked)
+
+
+def rule_block(path):
+    """The fenced block of a rule file: its lines between the first two ``` lines, each followed by a newline."""
+    ln = open(path, encoding="utf-8").read().split("\n")
+    f = [i for i, x in enumerate(ln) if x == "```"]
+    if len(f) < 2:
+        raise SystemExit("cards: %s holds no fenced rule block" % path)
+    return "".join(x + "\n" for x in ln[f[0] + 1:f[1]])
+
+
+def rule_sha(path):
+    return hashlib.sha256(rule_block(path).encode("utf-8")).hexdigest()[:16]
+
+
+def rule_constants(path):
+    """{name: value} from the rule's CONSTANTS clause (its line and the indented lines after it)."""
+    ln = rule_block(path).split("\n")
+    i = next(k for k, x in enumerate(ln) if x.startswith("CONSTANTS:"))
+    j = next((k for k in range(i + 1, len(ln)) if ln[k] and not ln[k].startswith(" ")), len(ln))
+    txt = " ".join(ln[i:j])
+    got = {m.group(1): float(m.group(2)) for m in re.finditer(r"\b([A-Z][A-Z_]+) ([0-9]+(?:\.[0-9]+)?)\b", txt)}
+    want = ("FLOOR_MIN", "SPREAD_MAX", "AA_VOID_MAX", "READABLE_MIN")
+    if any(w not in got for w in want):
+        raise SystemExit("cards: %s's CONSTANTS clause lacks %s" % (path, [w for w in want if w not in got]))
+    return {w: got[w] for w in want}
+
+
+C6_RULE_SHA = rule_sha(C6_RULE_FILE)
+C6_CONST = rule_constants(C6_RULE_FILE)
+
+
+def c6_arm(launches):
+    """An arm's reading (UNIT): (median, spread over the middle launches), or None (short of LAUNCHES valid launches)."""
+    if not launches or len(launches) < LAUNCHES:
+        return None
+    x = sorted(launches)
+    med = statistics.median(x)
+    return med, (x[-2] - x[1]) / med
+
+
+def c6_cmp(a, b):
+    """The cell rule on two arm readings: WIN / LOSS / TIE of A against B, or NOISE (an arm unread, or FLOOR > SPREAD_MAX)."""
+    if a is None or b is None:
+        return "NOISE"
+    floor = max(C6_CONST["FLOOR_MIN"], a[1], b[1])
+    if floor > C6_CONST["SPREAD_MAX"]:
+        return "NOISE"
+    return "WIN" if a[0] < b[0] / (1 + floor) else "LOSS" if a[0] > b[0] * (1 + floor) else "TIE"
+
+
+def _standing(first, again):
+    """RE-TIME: a first-pass verdict and its re-time's (None: not run) -> (standing verdict, note)."""
+    if first in ("TIE", "NOISE"):
+        return first, ""
+    if again == first:
+        return first, "repeated"
+    if again in (None, "NOISE"):
+        return ("LOSS", "re-time %s" % ("NOT-RUN" if again is None else "noisy")) if first == "LOSS" else (
+            "TIE", "%s not repeated (re-time %s)" % (first, "NOT-RUN" if again is None else "noisy"))
+    return "TIE", "%s not repeated" % first
+
+
+def c6_cell(cell):
+    """One cell's readings: cell = {key: (card, pat, regime, layer), calls, run, arms: {V, H64, H64.b: launches|None},
+    retime: the same arms dict or None (not run)}. -> (reading, A/A, notes)."""
+    if not cell.get("calls"):
+        return "N/A", "N/A", []
+    if not cell.get("run", True):
+        return "NOT-RUN", "NOT-RUN", []
+    arm = {a: c6_arm(cell["arms"].get(a)) for a in ("V", "H64", "H64.b")}
+    rt = cell.get("retime")
+    rarm = {a: c6_arm(rt.get(a)) for a in ("V", "H64", "H64.b")} if rt else None
+    rd, rn = _standing(c6_cmp(arm["V"], arm["H64"]), rarm and c6_cmp(rarm["V"], rarm["H64"]))
+    aa1 = c6_cmp(arm["H64.b"], arm["H64"])
+    aa, an = _standing(aa1, rarm and c6_cmp(rarm["H64.b"], rarm["H64"]))
+    notes = [x for x in (rn and "reading " + rn, an and "A/A " + an) if x]
+    if aa in ("WIN", "LOSS"):
+        rd = "HARNESS"
+    return rd, ("AA-NOISE" if aa == "NOISE" else aa), notes + (["A/A single-pass non-TIE"] if aa1 in ("WIN", "LOSS") else [])
+
+
+def c6_decide(cells):
+    """THE VERDICT (c6_rule.md VERDICT, first match) per (card, layer) over a cell set (VOID BY METHOD regimes are not
+    in the population). -> {(card, layer): {verdict, rate, lists}}."""
+    out = {}
+    groups = {}
+    for c in cells:
+        if c["key"][2] in APPROX:
+            continue
+        groups.setdefault((c["key"][0], c["key"][3]), []).append(c)
+    for g, cs in sorted(groups.items()):
+        rows = [(c["key"],) + c6_cell(c) for c in cs]
+        pop = [r for r in rows if r[1] != "N/A"]
+        aar = [r for r in pop if r[2] not in ("NOT-RUN", "AA-NOISE")]
+        aas = [r for r in aar if r[2] in ("WIN", "LOSS")]
+        single = sum(1 for r in aar if "A/A single-pass non-TIE" in r[3])
+        rate = len(aas) / len(aar) if aar else None
+        readable = [r for r in pop if r[1] in ("WIN", "LOSS", "TIE")]
+        loss = [r for r in readable if r[1] == "LOSS"]
+        cause = {w: sum(1 for r in pop if r[1] == w) for w in ("HARNESS", "NOISE", "NOT-RUN")}
+        if not pop:
+            v = "INCONCLUSIVE-N/A"
+        elif not aar:
+            v = "VOID (A/A UNREAD)"
+        elif rate > C6_CONST["AA_VOID_MAX"]:
+            v = "VOID (A/A FAILED: rate %.3f > %.3f)" % (rate, C6_CONST["AA_VOID_MAX"])
+        elif loss:
+            v = "LOSS"
+        elif len(readable) < C6_CONST["READABLE_MIN"] * len(pop):
+            v = "INCONCLUSIVE-%s" % max(("HARNESS", "NOISE", "NOT-RUN"), key=lambda w: (cause[w], -("HARNESS", "NOISE", "NOT-RUN").index(w)))
+        else:
+            v = "NO LOSS"
+        if cause["NOT-RUN"]:
+            v = "TRUNCATED: " + v
+        wtl = {w: sum(1 for r in readable if r[1] == w) for w in ("WIN", "TIE", "LOSS")}
+        out[g] = {"verdict": v, "rate": rate, "aa_readable": len(aar), "aa_standing": len(aas), "aa_single": single,
+                  "population": len(pop), "readable": len(readable), "wtl": wtl, "loss": [r[0] for r in loss],
+                  "na": [r[0] for r in rows if r[1] == "N/A"], "harness": [r[0] for r in pop if r[1] == "HARNESS"],
+                  "noise": [r[0] for r in pop if r[1] == "NOISE"], "notrun": [r[0] for r in pop if r[1] == "NOT-RUN"],
+                  "notes": [(r[0], n) for r in rows for n in r[3]]}
+    return out
+
+
+def c6_verdict_lines(dec):
+    """The REPORTED lines of a c6_decide result."""
+    out = []
+    for (card, layer), d in sorted(dec.items()):
+        out.append("%s %s: %s; readable %d of %d; W/T/L %d/%d/%d; A/A: %d standing non-TIE of %d readable (rate %s, "
+                   "AA_VOID_MAX %.3f), %d single-pass; N/A %d, HARNESS %d, NOISE %d, NOT-RUN %d" % (
+                       card, layer, d["verdict"], d["readable"], d["population"], d["wtl"]["WIN"], d["wtl"]["TIE"],
+                       d["wtl"]["LOSS"], d["aa_standing"], d["aa_readable"],
+                       "-" if d["rate"] is None else "%.3f" % d["rate"], C6_CONST["AA_VOID_MAX"], d["aa_single"],
+                       len(d["na"]), len(d["harness"]), len(d["noise"]), len(d["notrun"])))
+    return out
+
+
+# THE RECORD's header (c6_rule.md RECORD): the first line of every C6/C6c results file. The format is fixed here; the
+# writer that fills it (the form hash, the binary, the run id) is U6's timer.
+C6_HEADER_KEYS = ("rule", "rule710", "form", "binary", "widths", "run")
+
+
+def c6_header(form_hash, binary_sha, layers, run):
+    return "#c6\t" + "\t".join(["rule=%s" % C6_RULE_SHA, "rule710=%s" % rule_sha(C6_RULE_710_FILE), "form=%s" % form_hash,
+                                "binary=%s" % binary_sha]
+                               + ["cc.%s=%s" % (ly, hashlib.sha256(cc_ident(cc_of(ly)).encode()).hexdigest()[:16])
+                                  for ly in layers]
+                               + ["widths=%s" % ",".join("%s:%d:%s:%d" % (p, C6_WIDTH[p], C6_SITE[p][0], C6_SITE[p][1])
+                                                         for p in sorted(C6_WIDTH)), "run=%s" % run])
+
+
+def c6_header_check(line):
+    """None, or why the decider refuses a results file whose first line is `line`."""
+    if not line or not line.startswith("#c6\t"):
+        return "no #c6 RECORD header"
+    f = dict(x.split("=", 1) for x in line.rstrip("\n").split("\t")[1:] if "=" in x)
+    miss = [k for k in C6_HEADER_KEYS if k not in f]
+    if miss:
+        return "the header lacks %s" % ",".join(miss)
+    if f["rule"] != C6_RULE_SHA or f["rule710"] != rule_sha(C6_RULE_710_FILE):
+        return "recorded under rule %s / %s, the live files are %s / %s" % (
+            f["rule"], f["rule710"], C6_RULE_SHA, rule_sha(C6_RULE_710_FILE))
+    return None
+# What C6 settles (block_span.md §8): c6_rule.md CLAIM. The SIMD-off layer's wrapper under gcc -O2 is not timed (r68 F-14:
+# U2b's census is its record); C6c times it under clang -O2 and gcc -Os, where the census said the machine code differs.
+
+
 # ---- plan (with the expected wall time, r35 F11) ---------------------------------------------
 # UNMEASURED: the per-launch costs below are assumptions for the window request, never inputs to
 # the rule; F11 asks for one launch's wall time in the cards' own window to replace them.
@@ -899,9 +1334,10 @@ def cmd_plan(args):
         by[c[0]] = by.get(c[0], 0) + 1
     for c in cl:
         print("\t".join(c))
-    builds = {(c[1], arm_base(c[2]), c[4], c[0] == "C4") for c in cl}
+    # the pools' line counts C1-C5's population, whose alignment variants are gcc's (review r79 F9); C6/C6c have their block
+    builds = {(c[1], arm_base(c[2]), c[4], c[0] == "C4") for c in cl if c[0] not in C6_CARDS}
     timed = {b for b in builds if not b[3]}
-    print("# cells %d (%s); distinct pcrec compiles %d; LAYOUT POOLS (rev 12, r41 L9): %d timed texts at most "
+    print("# cells %d (%s); C1-C5: distinct pcrec compiles %d; LAYOUT POOLS (rev 12, r41 L9): %d timed texts at most "
           "(hash-equal arms share I's pool; `dry` counts the real number) x POOL_SIZE %d variants = %d gcc compiles + "
           "links at most (rev 11: one compile a text, %d, plus its twins' links); UNMEASURED DEFAULT: POOL_SIZE, the prelude draw space "
           "(%d 16-B steps mod %d B), the alignment variants %s" % (
@@ -941,16 +1377,46 @@ def cmd_plan(args):
     print("# timing order (rev 10, r38 J2): the cells above grouped by (card, pattern, regime, layer), each timed in "
           "%d ROUNDS of one launch per arm (`launch_order`): run %d cells, %d timed launches" % (
               LAUNCHES, len(cell_groups(s1_read)), len(launch_order(s1_read))))
+    # C6 (R-47 U5): its own block; no step of `run` reads it (its timing is U6's)
+    for card in C6_CARDS:
+        cc = cells(cards=(card,))
+        rd = [c for c in cc if c[3] not in APPROX]
+        lys = sorted({c[4] for c in cc})
+        print("# %s (kit-grid@8 %s; CANDIDATE, UNMEASURED): %d cells, %d timed (no approx regime), %.2f h expected (UNMEASURED constants); "
+              "layers %s; patterns %s" % (
+                  card, CARD_ROWS[card], len(cc), len(rd), sum(est_cell_s(c) for c in rd) / 3600.0,
+                  " ".join("%s(%s %s %s; pool alignment variants %s)" % (
+                      ly, os.path.basename(cc_of(ly)), opt_of(ly), " ".join(layer_flags(ly)) or "SIMD-off",
+                      " / ".join(" ".join(a) or "(default)" for a in align_variants_of(ly))) for ly in lys),
+                  " ".join("%s(w%d,%s k%d)" % (p, C6_WIDTH[p], C6_SITE[p][0], C6_SITE[p][1]) for p in CARD_PATS[card])))
+    print("# C6 pools: H64.b draws its OWN pool (POOL_SALT, review r79 F2); a re-time builds a FRESH pool (salt %s<n>)" % RETIME_SALT)
+    print("# C6 cut cells (c6_rule.md N/A's named cuts; A/A by construction: both arms render today's bytes outside the bounds, "
+          "block_span.md §8): window k 15, 1001; scan k 23, 65 (the T-table pins check the flip in text, §10.2); near-miss-in at the "
+          "window sites with k + 1 <= 255 only (c6_hex1001: the shift cap 255): %s; near-miss at the window sites k <= 32 is N/A by "
+          "construction (`dry`'s reach build counts it); F2 DIFFERS patterns timed at width 4095: %s (bsu3 report: 82 of 82 routed cells MATCH)" % (
+              ",".join(sorted(p for p, (st, k) in C6_SITE.items() if st == "window" and k + 1 <= 255)),
+              ",".join(p[0] for p in C6_F2_DIFFERS) or "none"))
+    print("# C6 rule: %s, sha %s (job 710's: %s, sha %s); constants %s; the RECORD header keys %s:" % (
+        os.path.relpath(C6_RULE_FILE, TREE), C6_RULE_SHA, os.path.relpath(C6_RULE_710_FILE, TREE), rule_sha(C6_RULE_710_FILE),
+        " ".join("%s=%g" % kv for kv in C6_CONST.items()), ",".join(C6_HEADER_KEYS + ("cc.<layer>",))))
+    for ln in rule_block(C6_RULE_FILE).rstrip("\n").split("\n"):
+        print("#   " + ln)
 
 
 def cmd_dry(args):
     """Builds every cell and runs its gate once (no clock): the cell list, the count, the
     distinct compiles, and every failure (a failure is the run's red)."""
-    (rundir,), opt = parse_args("dry", args, nflags=("--quick",))
+    (rundir,), opt = parse_args("dry", args, nflags=("--quick",), vflags=("--cards",))
     quick = "--quick" in opt
     n = 1 << 16 if quick else SUBJECT_N
     os.makedirs(rundir, exist_ok=True)
-    cl = cells()
+    # --cards C6,C6c: a PARTIAL dry over the named cards (a new card need not rebuild the night's 241 texts); the C1-C5 checks
+    # (the deny check on arm I, step 2b's, the identical-to-I record) are the full dry's and are named as skipped
+    sel = opt["--cards"].split(",") if "--cards" in opt else None
+    bad_sel = [c for c in sel or [] if c not in {x[0] for x in CARDS}]
+    if bad_sel:
+        raise SystemExit2("cards: dry: unknown card(s) %s (known: %s)" % (",".join(bad_sel), ",".join(x[0] for x in CARDS)))
+    cl = cells(cards=sel)
     jobs = int(os.environ.get("JOBS", "4"))
     bad, done = [], {}
     # the compiles first, one per (pattern, arm, layer), in parallel; the gates then reuse them
@@ -983,13 +1449,44 @@ def cmd_dry(args):
             if err:
                 bad.append(err)
             done[c] = out
-    dbad, nI, nreach = check_deny(rundir, cl)
-    bad += dbad
-    print("# dry: deny check: %d arm-I artifacts with no span loop, %d non-I artifacts with one (reach), "
-          "failures %d" % (nI, nreach, len(dbad)))
-    cbad, cI, creach = c3_deny_check(rundir)
-    print("# dry: step 2b's deny check (`c3` refuses on it; r37 H4): %d arm-I C3/C4 artifacts loop-free, reach "
-          "(h%d) %d%s" % (cI, GRID_TOP, creach, "; WOULD REFUSE: " + "; ".join(cbad) if cbad else ""))
+    if sel is None:
+        # C1-C5's population only (review r79 F9): C6's texts have their own check (check_c6), and two of them carry a span
+        # loop, which would keep this check's REACH control from going vacuous on C1-C5's own texts
+        dbad, nI, nreach = check_deny(rundir, [c for c in cl if c[0] not in C6_CARDS])
+        bad += dbad
+        print("# dry: deny check: %d arm-I artifacts with no span loop, %d non-I artifacts with one (reach), "
+              "failures %d" % (nI, nreach, len(dbad)))
+        cbad, cI, creach = c3_deny_check(rundir)
+        print("# dry: step 2b's deny check (`c3` refuses on it; r37 H4): %d arm-I C3/C4 artifacts loop-free, reach "
+              "(h%d) %d%s" % (cI, GRID_TOP, creach, "; WOULD REFUSE: " + "; ".join(cbad) if cbad else ""))
+    else:
+        print("# dry: PARTIAL (--cards %s): the C1-C5 deny checks and the identical-to-I record are the full dry's, not run" % opt["--cards"])
+    c6bad, c6n = check_c6(rundir, cl)
+    bad += c6bad
+    if any(c[0] in C6_CARDS for c in cl):
+        print("# dry: C6 deny and reach check: %d (pattern, layer) pairs: V and H64 render different text, the deny arm carries no V "
+              "text, the site calls V's ONE selector, which calls `w32` at a SIMD layer (its loop C6_SITE's k at B 16/32) and "
+              "`__body` elsewhere, the site kind C6_SITE's; failures %d" % (c6n, len(c6bad)))
+        # THE REACH BUILD (c6_rule.md N/A): span calls of one untimed pass per C6 (pattern, regime, layer)
+        rcells = sorted({(c[0], c[1], c[3], c[4]) for c in cl if c[0] in C6_CARDS})
+
+        def one_reach(k):
+            try:
+                return k, c6_reach(rundir, k[1], k[3], k[2], n), None
+            except Exception as e:      # noqa: BLE001
+                return k, None, str(e)
+        with ThreadPoolExecutor(max_workers=jobs) as ex:
+            reach = list(ex.map(one_reach, rcells))
+        for k, calls, err in reach:
+            print("# reach\t%s\t%s" % ("\t".join(k), calls if err is None else "FAIL " + err))
+            if err:
+                bad.append(err)
+        # the build's own control: every (pattern, layer)'s hit-dense pass calls the span
+        dead = sorted({(k[1], k[3]) for k, calls, _e in reach if k[2] == "hit-dense" and calls == 0})
+        bad += ["REACH CONTROL: %s %s: hit-dense calls the span 0 times (the counter or the selector moved)" % d for d in dead]
+        na = [k for k, calls, _e in reach if calls == 0]
+        print("# dry: C6 reach build (untimed, instrumented V; the N/A rule's input): %d cells, N/A (0 calls) %d: %s" % (
+            len(reach), len(na), " ".join("%s/%s/%s/%s" % k for k in na) or "none"))
     # THE POOLS' PROOF (rev 12, RULED r41 L9): every timed text's pool, each variant built and answer-gated
     # above (run_cell gates every variant in every regime); here each pool's hot-loop PHASES mod 32 / 64 and
     # its RELATIVE layouts, read from the built exes (nm, objdump: the backward-branch targets inside
@@ -997,7 +1494,9 @@ def cmd_dry(args):
     texts = {}
     for c in cl:
         if c[0] != "C4":
-            texts.setdefault(text_key(rundir, c[1], c[2], c[4])[2], (c[1], c[2], c[4]))
+            # one pool per text, arm salt, compiler and level: off-clang and off-os share a text, never a pool's exes
+            texts.setdefault((text_key(rundir, c[1], c[2], c[4])[2], pool_salt(c[2]), cc_of(c[4]), opt_of(c[4])),
+                             (c[1], c[2], c[4]))
     def one_pool(item):
         key, (p, a, ly) = item
         try:
@@ -1019,11 +1518,12 @@ def cmd_dry(args):
           "pools REFUSED %d" % (len(pools), POOL_SIZE, len(pools) * POOL_SIZE, min(spread64, default="-"),
                                 max(spread64, default="-"), min(nrel, default="-"), max(nrel, default="-"),
                                 len(prefused)))
-    same = identical_to_I(rundir)
     print("# dry: cells %d, built and gated %d, failures %d; distinct compiles %d; subject %d B" %
           (len(cl), len(cl) - len(bad), len(bad), len({(b[0], arm_base(b[1]), b[2], b[3]) for b in builds}), n))
-    print("# dry: H(h) artifact hash-equal to I's (I's pool, measured per layer): %s" % ", ".join(
-        "%s/%s:%s" % (p, ly, ",".join(map(str, hs))) for p, d in sorted(same.items()) for ly, hs in sorted(d.items())))
+    if sel is None:
+        same = identical_to_I(rundir)
+        print("# dry: H(h) artifact hash-equal to I's (I's pool, measured per layer): %s" % ", ".join(
+            "%s/%s:%s" % (p, ly, ",".join(map(str, hs))) for p, d in sorted(same.items()) for ly, hs in sorted(d.items())))
     for b in bad[:20]:
         print("FAIL", b)
     return 1 if bad else 0
@@ -3338,8 +3838,8 @@ def selftest_rev12(check):
     try:
         ks = []
         for ident in ("gcc\ngcc (GCC) 15.2.0", "gcc\ngcc (GCC) 14.1.0"):
-            globals()["cc_ident"] = lambda ident=ident: ident
-            ks.append(variant_key("t0", 16, ["-fno-align-loops"]))
+            globals()["cc_ident"] = lambda cc, ident=ident: ident
+            ks.append(variant_key("t0", 16, ["-fno-align-loops"], CC))
     finally:
         globals()["cc_ident"] = real_cc
     check("(r44 I) the exe cache key carries the compiler", ks[0] != ks[1], "two compilers' keys %s / %s" % tuple(ks))
@@ -4168,9 +4668,118 @@ def cmd_identity(args):
     return 1 if diff else 0
 
 
+def cmd_c6selftest(args):
+    """C6's checks of its own (review r79 F2, F5, F8, F10; no clock, no box): the rule files' shas and constants, the VERDICT
+    on constructed outcomes (each drill names the clause it reads and must read its stated word), the RECORD header's
+    refusals, and, given a RUNDIR (`dry`'s, or built here: 4 pcrec compiles), check_c6's plants, each red, beside its
+    unplanted control. Exit 0 only when every row holds."""
+    (rundir,), _opt = parse_args("c6selftest", args)
+    fails, n = [], 0
+
+    def row(ok, what):
+        nonlocal n
+        n += 1
+        print("%s  c6selftest: %s" % ("ok  " if ok else "FAIL", what))
+        if not ok:
+            fails.append(what)
+    row(rule_sha(C6_RULE_710_FILE) == C6_RULE_710_RECORDED,
+        "rule_710.md's block sha %s is job 710's recorded %s" % (rule_sha(C6_RULE_710_FILE), C6_RULE_710_RECORDED))
+    row(C6_RULE_SHA != C6_RULE_710_RECORDED and re.fullmatch(r"[0-9a-f]{16}", C6_RULE_SHA),
+        "c6_rule.md's block sha %s, computed from the file" % C6_RULE_SHA)
+    row(C6_CONST == {"FLOOR_MIN": 0.15, "SPREAD_MAX": 0.30, "AA_VOID_MAX": 0.05, "READABLE_MIN": 0.5},
+        "the rule's CONSTANTS clause parses to %s" % C6_CONST)
+    # ---- the VERDICT drills: constructed outcomes, LAUNCHES launches an arm
+    J = [1.00, 1.01, 0.99, 1.02, 0.98]          # 2 % launch noise, deterministic
+
+    def L(f, j=J):
+        return [f * x for x in j]
+
+    def cell(i, v=1.0, h=1.0, hb=1.0, rt=None, calls=1000, run=True, vj=J, layer="on"):
+        c = {"key": ("C6", "p%d" % i, "random", layer), "calls": calls, "run": run,
+             "arms": {"V": L(v, vj), "H64": L(h), "H64.b": L(hb)}}
+        if rt is not None:
+            c["retime"] = {"V": L(rt[0]), "H64": L(rt[1]), "H64.b": L(rt[2])}
+        return c
+
+    def verdict(cs):
+        d = c6_decide(cs)[("C6", "on")]
+        return d["verdict"], d
+    base = [cell(i) for i in range(40)]
+    drills = [
+        ("CELL RULE, all TIE", base, "NO LOSS"),
+        ("RE-TIME: a repeated LOSS (V 30 % slower twice)", base[1:] + [cell(99, v=1.3, rt=(1.3, 1.0, 1.0))], "LOSS"),
+        ("RE-TIME: a LOSS not repeated", base[1:] + [cell(99, v=1.3, rt=(1.0, 1.0, 1.0))], "NO LOSS"),
+        ("RE-TIME: a LOSS whose re-time did not run stands", base[1:] + [cell(99, v=1.3)], "LOSS"),
+        ("RE-TIME: a WIN whose re-time did not run is a TIE", base[1:] + [cell(99, v=0.7)], "NO LOSS"),
+        ("A/A: a standing A/A non-TIE at 4 of 40 cells (rate 0.10 > 0.05) VOIDS the box",
+         base[4:] + [cell(90 + i, hb=1.3, rt=(1.0, 1.0, 1.3)) for i in range(4)], "VOID (A/A FAILED: rate 0.100 > 0.050)"),
+        ("A/A: one standing A/A non-TIE of 40 (rate 0.025) makes its cell HARNESS, the box reads on",
+         base[1:] + [cell(99, v=1.3, hb=1.3, rt=(1.3, 1.0, 1.3))], "NO LOSS"),
+        ("A/A: no readable A/A cell is VOID", [dict(c, arms=dict(c["arms"], **{"H64.b": None})) for c in base],
+         "VOID (A/A UNREAD)"),
+        ("UNIT: a bimodal V (2 of 5 launches 40 % slow) is NOISE, never a TIE: all cells so -> INCONCLUSIVE-NOISE",
+         [cell(i, vj=[1.0, 1.0, 1.0, 1.4, 1.4]) for i in range(40)], "INCONCLUSIVE-NOISE"),
+        ("UNIT: one outlier launch does not hide a 25 % LOSS (the middle-three spread)",
+         base[1:] + [dict(cell(99, rt=(1.25, 1.0, 1.0)), arms={"V": [1.25, 1.26, 1.24, 1.25, 2.5], "H64": L(1.0),
+                                                                "H64.b": L(1.0)})], "LOSS"),
+        ("N/A: every cell calls the span 0 times", [cell(i, calls=0) for i in range(10)], "INCONCLUSIVE-N/A"),
+        ("WINDOW: 24 of 40 cells NOT-RUN", base[:16] + [cell(50 + i, run=False) for i in range(24)],
+         "TRUNCATED: INCONCLUSIVE-NOT-RUN"),
+        ("WINDOW: 4 of 40 cells NOT-RUN, the rest clean", base[:36] + [cell(50 + i, run=False) for i in range(4)],
+         "TRUNCATED: NO LOSS"),
+    ]
+    for what, cs, want in drills:
+        got, d = verdict(cs)
+        row(got == want, "VERDICT drill %s: reads %r (want %r); A/A rate %s" % (what, got, want, d["rate"]))
+    # the old unit's contrast (MEAS-3): the whole-range spread hides the same 25 % LOSS as a TIE
+    old = [1.25, 1.26, 1.24, 1.25, 2.5]
+    ofl = max(0.15, (max(old) - min(old)) / statistics.median(old))
+    row(not (statistics.median(old) > 1.0 * (1 + ofl)), "the contrast: the whole-range spread floor %.2f reads that LOSS as a TIE" % ofl)
+    # ---- the RECORD header
+    h = c6_header("0" * 16, "1" * 16, ["on"], "rid")
+    row(c6_header_check(h) is None, "RECORD: a header written now passes the check")
+    row(c6_header_check(h.replace(C6_RULE_SHA, "f" * 16)) is not None, "RECORD: a header of another rule sha is refused")
+    row(c6_header_check("#card\tpattern") is not None, "RECORD: a file with no #c6 header is refused")
+    # ---- check_c6's plants (on RUNDIR's artifacts: `dry`'s, or built here)
+    if True:
+        os.makedirs(rundir, exist_ok=True)
+        it = {(p, ly): (open(artifact(rundir, p, "V", ly), "rb").read(), open(artifact(rundir, p, "H64", ly), "rb").read())
+              for p, ly in (("c6_hex32", "on"), ("c6_dig32", "on"), ("c6_hex32", "off-clang"))}
+        items = [(p, ly, v, d) for (p, ly), (v, d) in sorted(it.items())]
+        b0, _n = check_c6_texts(items)
+        row(not b0, "check_c6 control: the 3 real (pattern, layer) texts read clean (%s)" % b0)
+        v, d = it[("c6_hex32", "on")]
+        name = sorted({m.group(1) for m in V_SELDEF_RE.finditer(v) if b"__" not in m.group(1)})[0]
+        sel = _fn_text(v, name)
+        dead_sel = v.replace(sel, sel.replace(name + b"__w32(", name + b"__body("))
+        cut = v.find(sel) + len(sel)
+        no_call = v[:cut] + re.sub(rb"(?<![A-Za-z0-9_])" + re.escape(name) + rb"\(", name + b"X(", v[cut:])
+        w32 = _fn_text(v, name + b"__w32")
+        cmt = dead_sel.replace(w32, b"/* " + name + b"__w32( */\n")
+        m = V_LOOP_RE.search(w32)
+        badk = v.replace(m.group(0), m.group(0).replace(b"< " + m.group(2), b"< " + str(int(m.group(2)) - 1).encode()))
+        plants = [
+            ("the selector calls `__body` while `__w32` is defined", [("c6_hex32", "on", dead_sel, d)], None),
+            ("the site never calls the selector (only its definition names it)", [("c6_hex32", "on", no_call, d)], None),
+            ("`__w32` only in a comment", [("c6_hex32", "on", cmt, d)], None),
+            ("the block loop's k is not C6_SITE's", [("c6_hex32", "on", badk, d)], None),
+            ("a scan site labelled window in C6_SITE", [("c6_dig32", "on") + it[("c6_dig32", "on")]],
+             dict(C6_SITE, c6_dig32=("window", 31))),
+            ("the deny arm carries V's text", [("c6_hex32", "on", v, v)], None),
+        ]
+        for what, its, site in plants:
+            b, _n = check_c6_texts(its, site)
+            row(bool(b), "check_c6 plant %s: RED (%s)" % (what, b[0] if b else "no failure"))
+    print("c6selftest: %d rows, %d failed" % (n, len(fails)))
+    return 1 if fails else 0
+
+
 def main():
+    # line-buffered (review r79 R-1): a long command killed by its bound (the full selftest, ~90 min) still
+    # leaves its finished rows in a redirected log; block buffering left U5's 3000 s run an empty file
+    sys.stdout.reconfigure(line_buffering=True)
     cmds = {"plan": cmd_plan, "dry": cmd_dry, "run": cmd_run, "rerun": cmd_rerun, "rule": cmd_rule,
-            "c3": cmd_c3, "selftest": cmd_selftest, "identity": cmd_identity}
+            "c3": cmd_c3, "selftest": cmd_selftest, "identity": cmd_identity, "c6selftest": cmd_c6selftest}
     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
         print(__doc__)
         return 2
