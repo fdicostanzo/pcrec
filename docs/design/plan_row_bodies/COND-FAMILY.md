@@ -9344,3 +9344,25 @@ The manager's answer (told to him; readings of the rules as they stand, marked):
   under construction (core/holes/value/other-positions: "A count from a read is known only at match time; the
   counted repeat over it is not built"); his form says the same with a condition, and it is the trigger U6 of
   parked/ideas/match-is-rx-unlocks ("a user program needing a length-prefixed field").
+
+### 2026-11-23 OWNER, on his count-prefixed example: "That was a leading question to using length(0:) in some form."
+tags: core/conditions/match-so-far core/conditions/match-so-far/in-loop lib/modifiers/length lib/strings/strlen lib/modifiers/limited core/values/computed-labels core/values/reads
+
+HIS WORDS, whole: "That was a leading question to using length(0:) in some form."
+
+Class: a REMARK on his own example (DISCUSSION; nothing ruled): the answer he was leading to is the LENGTH of the
+match so far (`0`), "in some form"; the manager's answer had gone to a labelled item and `count`.
+The manager's answer (told to him; readings of the rules as they stand, marked):
+- The form that exists today: `length(S)` is a filter on a stretch (lib/modifiers/length), so the length of the
+  match so far is `(0: length(S))`. His example without a label on the item, the items being two characters wide:
+  `[c = /\d/] SEQ ((0: length(< (1 + 2 * $c))) SEQ /\d/ SEQ ";")+` (a set whose bound is computed from a read,
+  written in place: core/values/computed-labels).
+- RUN (a path model, `$PCREC_TMPDIR/scratch/pred/length_zero.py`; output pasted): WHOLE `23;4;` HOLDS, `23;4;5;`
+  FAILS, `23;` HOLDS, `13;` HOLDS, `13;4;` FAILS, `03;` FAILS / SEARCHED `23;4;5;` `23;4;`@0 / FIND-ALL
+  `23;4;5; 13;4; 03;` [`23;4;`@0, `13;`@8]: the answers of the `count` form with `<`, in every mode.
+- The other form, as a VALUE: `(strlen($0): S)`. `$0` as a read is NOT stated anywhere in the documents (only
+  "`$1` reads label 1 as `$x` reads a name" and `0` left of `:`): a gap, noted for the fold as an open line.
+- What the length of `0` gives that a count does not: a measure in characters with no label on anything (a
+  length-prefixed field counted in characters; a size limit on a loop, his `limited`); what it does not: a count
+  of items when items vary in width. Under binding-fixed and zero-in-loop (b) it measures from the start of the
+  definition it is written in, so a bound piece measures only itself.
