@@ -67,11 +67,63 @@ power rows and the 600-night H2 gate rows (UNMEASURED per unit: the owed job wri
 
 ## DESIGN
 
-TBD at handoff.
+**One general helper, `memfn/tests/parpool.py`** (0BSD, ~150 lines, its own `selftest`), for any kit runner:
+
+- a runner lists UNITS (`Unit(name, fn, needs=())`); `run(units, jobs)` returns their values in order and writes each
+  unit's printed text to stdout IN LIST ORDER;
+- `jobs <= 1` is today's serial path: each unit called in order in this process, its output streamed as printed; no fork,
+  no capture, no scratch change;
+- `jobs > 1`: a `fork` pool of N workers (`multiprocessing.get_context("fork")`; closures are inherited, not pickled).
+  Each worker gets ITS OWN scratch: `PCREC_TMPDIR`, `TMPDIR` and `tempfile.tempdir` point at `<root>/w<pid>`, `root` a
+  fresh `mkdtemp` under the caller's temp root, removed at the end. A unit's stdout is captured in its worker; the parent
+  writes it once every earlier unit's text is written. Units are submitted as soon as their `needs` are done;
+- `needs=(i, j)`: the unit is called with units i and j's values (earlier units only; checked) on both paths, so the
+  serial and the pooled run compute the same thing;
+- a unit that raises stops the run: the text of every unit before it is written, then the failing unit's, then
+  `UnitError` with the worker's traceback (the serial path raises the exception itself);
+- `jobs_from_args` strips `-j N` / `-jN` / `--jobs N` / `--jobs=N` (default: every CPU in the process's affinity mask);
+- `PARPOOL_TIMES=FILE`: one `name, seconds, pid` line per unit (a profile for sizing; never stdout);
+- `PARPOOL_PLANT=shared-scratch`: every worker the SAME scratch, the pool's own control.
+
+Limits, named: fork only (Linux; macOS has `fork` but it is not Python's default there); stdout only (a unit's stderr goes
+straight to the inherited descriptor: the selftest writes none outside `redirect_stderr`).
+
+**`cards.py selftest` as units** (`selftest_units`, `rev11_units`, `rev12_units`; 218 units in the serial order):
+each former check block became a nested `def u(check, ...)` holding its ORIGINAL lines, re-indented (the splice script
+asserted the first line of every moved range, so nothing was retyped), loops turned into one unit per iteration (loop
+variables bound as defaults). `check` is a per-unit `SelftestRows` that prints the row exactly as before and counts it;
+the rule drills `tally` their own rows. The trailer `selftest: N checks, M failed` is summed over the units. No
+assertion, threshold, seed or printed text changed. Three structural moves, each output-neutral:
+
+- F2's first drill is the one unit others NEED (G3's `fmed`, H2's `fcell`); H2 used to re-run that identical drill
+  (`noise_drill(seed=1)`) for its floor and now reads F2's (one drill less, serially too);
+- a few multi-drill checks split into value units feeding a row unit (r38 J2: arm-major and rounds; the r38 power row:
+  four `power_rate`s; rev 11 K6: placed, nights, control nights; the FAST split and its control: one unit each);
+- rev 11's K6 reads its temp root INSIDE `k6_night` (a worker's own scratch), not once when the units are listed.
+
+CLI: `selftest [-j N] [--rev11] [--rev12] [--list-units] [--units SPEC]` (`--units` takes indices/ranges and pulls in
+every unit they need; used for the in-lane subset). `--rev11` / `--rev12` run on the same pool. The docstring's
+"bound it at >= 7200 s" now applies to `-j 1`.
 
 ## IDENTITY CONTROL
 
-TBD at handoff.
+- **The named exception** (the only text that differs between two SERIAL runs of the same code): the r44 E row's
+  `draws [..] / [..]` suffix, from two run ids minted by `os.urandom`. bsu5fix2's and bsu6fix2's serial full logs differ in
+  exactly that line plus bsu6fix2's J2 FAIL (a code difference); with the suffix masked they differ only in J2 (checked).
+  No other printed value is drawn from the clock, the pid, a hash seed or the order of work (job 757's first 63 lines,
+  a different process and hash seed, are byte-identical to bsu6fix2's).
+- **Owed (the real control)**: job `kit-bsu6par-selftest` runs the full selftest at `nproc` workers on this branch and
+  diffs its log against job 757's SERIAL log of the same code (`lane/bsu6fix3` c8116f8cb = this branch's base), the r44 E
+  suffix masked in both; red on ANY other difference, on exactly-one-masked-line failing, on a reference without its
+  trailer, or on the selftest's own rc != 0.
+- **In-lane**: serial vs `-j 4` over a subset that crosses every structural move (drills, the F2 need and two units
+  needing it, the r38 J2 value chain, rev 11's K6 chain, FORMS8-2's subprocess, rev 12's temp-dir block, J2, J7),
+  byte-compared; the subset's rows also read against job 757's log, present and in order.
+- **Planted race**: `parpool.py selftest` runs eight units that write their id to ONE fixed file name in their scratch,
+  sleep, and read it back: serial and 4 workers byte-identical with a scratch per worker; with
+  `PARPOOL_PLANT=shared-scratch` the output DIFFERS (red as designed). On the cards subset the same plant is expected
+  NOT to differ: no selftest unit names a fixed scratch file (every temp dir is `mkdtemp`-unique), which is why the plant
+  lives in the pool's own check.
 
 ## IN-LANE RUNS
 
