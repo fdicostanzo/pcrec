@@ -598,6 +598,16 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
   trigger: a measured pattern where the walk's share of compile time matters (D77); a [GROWTH-SWEEP] row with the walk >= ~10% of an accepted compile
   refs: known_issues K159; src/facts/kset.c; [K159-PLUS-SUPERLINEAR]; [GROWTH-SWEEP]; review r81 COMPLEXITY-3 (unlocks: a shared memoized frontier sequence for the kset + width walks, an emitted-size pre-check before E3 facts)
+- [WATCHDOG-CPU-CLOCK] STATE:not-started — the growth CPU bound is sampled by a bash /proc poller that costs about 45% of a core per run
+  filed: 2026-11-23 grow9fix, from review r89 CPU-7 / CPU-4 (docs/dev/reviews/2026-11-23-r89-grow9code.md)
+  status (2026-11-23): filed; nothing built. watchdog -i 0.1 on `sleep 5` burned 1.29 s user + 0.95 s sys, nproc/2 runs at once; the CPU it reports for a gcc build is a peak sampled sum (true tree CPU 0.66 s vs 0.58 s read)
+  trigger: the first REPORT line a -j 1 re-run does not reproduce, or the next growth shard re-fold
+  refs: scripts/watchdog; tests/growth/growth_driver.c (ITIMER_PROF arm_bound); tests/lib/gen_timeout.sh (RLIMIT_CPU); [GROWTH-SWEEP]; r89 standing question: verdict-deciding bounds use an exact clock, watchdog stays for RSS and wall
+- [GROWTH-AXES] STATE:not-started — the per-doubling report stops below the limit n and lacks several growth families
+  filed: 2026-11-23 grow9fix, from review r89 TIER-4 (design half; the doc half is landed)
+  status (2026-11-23): filed; nothing built. Axes double 500 up to the largest point under the limit n, so 65535/131069 are never points; five red-capped axes stop at 4000 where every point is under 0.25 s CPU and can never REPORT. Absent: memory cells, depth_families depths, cnt01/lazy/opt quantifiers, second/sole rows
+  trigger: the first growth bug found outside the measured axes (the K160 class lives in alternation width), or the next [GROWTH-SWEEP] axis review
+  refs: tests/growth/run_growth.py doubling_axes; known_issues K160, K161, K162; [GROWTH-SWEEP]; add the limit n as the last point (a non-doubling step, ratio normalised by log2 of the size ratio)
 - [K160-ALTNF-CUBIC] STATE:not-started — pcrec_altnf's class fold is about cubic in single-char alternatives; budget never binds
   filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-2
   status (2026-11-22): filed; nothing built. N distinct 4-byte characters, -e utf8: 0.61/3.38/24.2 s at 2000/4000/8000; the budget misses its own dominant term (K35 shape, a population nobody counts)

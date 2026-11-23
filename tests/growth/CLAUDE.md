@@ -93,12 +93,15 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
 - A cell's bound is CPU SECONDS (watchdog `-c`; the library stage's ITIMER_PROF); the wall bound is a hang guard only; a red
   names the bound that fired ("CPU bound" / "WALL hang guard"). `run_growth.py --bounds` prints each value and where it was derived
   (measured on the dev box; the cloud ratio is re-derived from the `CPU:` lines every run prints: slowest cells + headroom).
-- `--doubling`: compile CPU per size on each growth axis, the ratio to the half-size neighbour, `REPORT:` lines (ratio > x3.0 at
-  >= 0.25 s) that are never a red; a crashed/timed-out point IS a FAIL. The nested-`+` axes double the pattern per level.
-- OCCASIONAL tier = `Cell.occasional` = the named compile-only exceptions (107 cells: cells.tsv 15 + the 92 matrix `+` edges).
-  Excluded from the default tier, `--list`, the shard table and the cloud; `GROWTH_TIER=occasional bash tests/growth/run_growth.sh`
-  (CLI stage only, CPU 3600 s / wall 14400 s) runs them. Measured 2026-11-23 after K159: all 107 are cheap (25 s CPU at most, no
-  matcher is built), so the tier moves coverage out of the default run for no saving today; the owner may keep them default.
+- `--doubling`: compile CPU per size on each growth axis (spine n = 500 doubling up to the largest doubling under the limit n), the
+  ratio to the half-size neighbour per doubling (the depth 128 -> 250 step is normalised), `REPORT:` lines (ratio > x3.0 at
+  >= 0.25 s) that are never a red; a crashed/timed-out/refused point IS a FAIL. Runs serial by default (pool contention inflates
+  CPU): REPORT lines are the one output that is not `-j`-identical. The nested-`+` axes double the pattern per level.
+- OCCASIONAL tier = `Cell.occasional` = the ids in `OCCASIONAL_COSTLY` (cells MEASURED costly by nature; EMPTY today). The 107
+  compile-only cells (cells.tsv 15 + the 92 matrix `+` edges) measured <= 25 s CPU after K159, so they are in the default tier and
+  the shard table (r89 R89-11). An occasional cell is excluded from the default tier, `--list`, the shard table and the cloud;
+  `GROWTH_TIER=occasional bash tests/growth/run_growth.sh` (CLI stage only, CPU 3600 s / wall 14400 s) runs them.
+- `gate_check.sh`: run_growth.sh's stage gates over a stubbed copy (unset, 1/1, K<N, N/N shard); run it after any change to the script.
 
 ## Cloud (kind `growth`, [GROWTH-CLOUD])
 

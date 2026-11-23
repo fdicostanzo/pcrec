@@ -5540,7 +5540,7 @@ green with no green record, nothing left to run, simulated/real mismatch. Tests:
 
 ## Growth sweep (`make test-growth`, [GROWTH-SWEEP], 2026-11-21)
 
-Opt-in, like `make test-axes`: NOT in `make test` (1,600 cells: 1,493 default tier + 107 occasional, up to 5 runs each: the
+Opt-in, like `make test-axes`: NOT in `make test` (1,600 cells, all in the default tier; the occasional tier is empty today, up to 5 runs each: the
 ladder skips a rung under twice the pattern's bytes, and the run reports the count; plus a library-mode series under ASan+LSan). Its depth arm alone rides
 `make test-stackdepth`. The owner's rulings of 2026-11-21 (growth-compile-cells:
 "the purpose of that section is to test limits and look for crashes. If it
@@ -5619,12 +5619,12 @@ recorded per shard and stack-depth headroom is read per compiler.
   report, answer every cell, and compile a control pattern identically before
   and after the series and run its matcher on a known subject. Each in-process
   compile has its OWN CPU bound (a seventh series column, `growth_driver`'s
-  ITIMER_PROF; a wall guard of 10x it is only a hang guard): max(300 s, 20 x that cell's slowest CLI-stage compile CPU), the CLI stage
+  ITIMER_PROF; a wall guard of 10x it, capped at 2400 s so it sits under the cloud job's 2700 s kill, is only a hang guard): max(300 s, 20 x that cell's slowest CLI-stage compile CPU), the CLI stage
   writing its CPU seconds to `$PCREC_TMPDIR/growth-cpus-<tree key>.tsv` (`GROWTH_CPUS`; one file per tree
   root, and the library stage prints the file and how many cells it covered); a cell
   over its bound is a FAIL (a timeout is a crash), the driver prints
   `cell N TIMEOUT ...` and exits, so the series stops with the cell named; a
-  `begin N` progress line precedes every compile, a `wall=` follows it.
+  `begin N` progress line precedes every compile, a `wall=` follows it; the runner streams the `begin` lines (`library mode: begin cell ID`), so a job cut by its limit still names the cell it was on.
 - **Known red.** A cell with a `red` (the `red` column of cells.tsv, `ID:KIND`)
   is listed, not a failure, while it fails in that KIND; a different kind fails
   the sweep, and so does a pass, until its `red` is removed. K155 is the
@@ -5633,12 +5633,22 @@ recorded per shard and stack-depth headroom is read per compiler.
   growth-time-bound: the bound is CPU seconds, wall only guards a hang, and a red names which fired; values and
   their derivation: `run_growth.py --bounds`); run it through the box queue (`scripts/boxqueue`), it is heavy.
 - **Per-doubling report.** `run_growth.py --doubling` (and a last cloud shard / an unsharded `make test-growth`):
-  for each growth axis (spine series n = 500 doubling to the limit cell's n, the nested-`+` depths up to the edge,
-  the matrix depth axes 16..250 for none/star/plus/poss) it prints the compile CPU per size and its ratio to the half-size
-  neighbour (~x2 linear, ~x4 quadratic), and a `REPORT:` line (never a red) for a ratio over x3.0 at >= 0.25 CPU s.
+  for each growth axis (spine series n = 500 doubling up to the largest doubling of 500 under the limit cell's n, so the limit
+  n itself is not a point; the nested-`+` depths up to the edge; the matrix depth axes 16, 32, 64, 128 and the depth limit
+  250, a step of x1.95 that the ratio normalises to a doubling) it prints the compile CPU per size and its ratio to the half-size
+  neighbour per doubling (~x2 linear, ~x4 quadratic), and a `REPORT:` line (never a red) for a ratio over x3.0 at >= 0.25 CPU s.
+  A REFUSED point is a FAIL (every axis point sits at or under its compiling edge) and a point with no CPU figure never pairs
+  with its next neighbour. The report runs SERIAL (`--jobs` / `DOUBLING_JOBS` override): CPU is inflated by pool contention
+  (one compile read 1.86 to 3.40 s CPU inside one 8-wide batch), so its REPORT lines are the one output that is not
+  `-j`-identical, and a line near the threshold is a pointer to re-run at -j 1, never a verdict. Axes absent today: memory cells,
+  the `depth_families` depths, the cnt01/lazy/opt quantifiers (plan row [GROWTH-AXES]).
   Measured 2026-11-23 on the dev box: nested `+` is ~x2 per level after K159; the possessive/star depth nests are about
   x12-15 per doubling (group.poss.last.lit 0.33 s at depth 64, 5.2 s at 128, 45 s at 250 under -j8); the character spines
   (`lit`, `[ab]`, `(?:a|b)`, `\p{L}` classes) are quadratic from n=1000 to 4000, then drop at 8000.
-- **Tiers.** The default tier is every cell but the OCCASIONAL ones (the 107 named compile-only exceptions,
-  `limit-cell-matcher-cost`); only the default tier is sharded to the cloud. `GROWTH_TIER=occasional bash tests/growth/run_growth.sh`
-  (or `run_growth.py --tier occasional`) runs the occasional tier with CPU 3600 s / wall 14400 s, CLI stage only.
+- **Tiers.** The default tier is every cell but the OCCASIONAL ones, the cells MEASURED costly by nature
+  (`OCCASIONAL_COSTLY` in run_growth.py; owner ruling growth-time-bound (3): "edge cells that stay costly by nature after the fix").
+  The tier is EMPTY today: the 107 named compile-only cells (`limit-cell-matcher-cost`) measured at most 25 s CPU after K159, so
+  they run in the default tier (r89 R89-11; dropping them lost the K148 ratchet and the edge pairs' limit halves). Only the default
+  tier is sharded to the cloud. `GROWTH_TIER=occasional bash tests/growth/run_growth.sh` (or `run_growth.py --tier occasional`) would run
+  the tier with CPU 3600 s / wall 14400 s, CLI stage only. `tests/growth/gate_check.sh` runs a stubbed copy of run_growth.sh over the
+  stage gates (unset, 1/1, K<N, N/N shard): the doubling report runs unsharded and on the LAST shard only.

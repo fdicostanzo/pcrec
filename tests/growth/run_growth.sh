@@ -9,8 +9,8 @@
 # Usage: bash tests/growth/run_growth.sh   (env: JOBS, ONLY, SKIP_LIB=1, SKIP_CLI=1, SKIP_DOUBLING=1, GROWTH_TIER)
 #   3. run_growth.py --doubling: the per-doubling CPU report (REPORT lines, never a red), run by an unsharded run and by the
 #      LAST shard of a cloud run (the lightest, so it adds the least to the slowest shard's wall).
-# TIERS: GROWTH_TIER=occasional runs the OCCASIONAL cells only (the named compile-only exceptions, generous CPU/wall bounds),
-#      CLI stage only: no library stage, no doubling report, and never a cloud shard.  Default tier = everything else.
+# TIERS: GROWTH_TIER=occasional runs the OCCASIONAL cells only (cells MEASURED costly, OCCASIONAL_COSTLY in run_growth.py: EMPTY
+#      today; generous CPU/wall bounds), CLI stage only: no library stage, no doubling report, and never a cloud shard.  Default tier = everything else.
 # CLOUD ([GROWTH-CLOUD], kind `growth`): GROWTH_SHARD=K/N runs only shard K's cells of tests/ci/cloud_growth_shards.tsv, BOTH stages
 # (each library cell's bound comes from this runner's own CLI compile CPU); GROWTH_UNITS=FILE records per-cell seconds;
 # GROWTH_MAKE_J=N builds build-asan/ with make -jN. Unset, this is `make test-growth` exactly as before.
