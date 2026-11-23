@@ -8500,3 +8500,26 @@ holds and reads only its own settings"): the body reads the caller's label as it
 which may be unset there (his example) or an earlier pass's; (b) the read kind is what bound-condition's first
 alternative was (`A(x:) := (x: < 2100)`, 2026-11-22); the way that works today is passing the CONDITION, written
 and resolved in the caller's text; (c) a body may read its own label parameter after placing it.
+
+### 2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now
+tags: core/operators/bindings/label-variables core/holes/bare-condition/nested-scope core/holes/bare-condition/bound-condition lib/structural/capture core/spellings/placeholders
+
+ASKED AS A RULING (slug label-kinds, the statement put to him: the mark `a:` means the SETTING kind only (the
+call defines a new label in the caller's text; a body may read its own label parameter after placing it); a
+reference to an EXISTING label is written as a plain path, no mark (`capture(l.d)`); only native forms take a
+reference for now; a user macro reading a caller's label stays under construction (pass the condition:
+`A(c, B) := B & c`, `A((x: 5), /\w/)`); so `A(a:, B) := B & (a: 5)` is a compile error at the definition). HIS
+WORDS, whole:
+
+"label-kinds: yes, one mark meaning. the reference kind can be used by natives but stays off limits for users
+until we see a valid, safe set of rules for it."
+
+Class: a RULING. (1) One mark, one meaning: the marked label parameter is the setting kind. (2) The reference
+kind (a path to a label that exists) "can be used by natives" and "stays off limits for users until we see a
+valid, safe set of rules for it" (a direction kept open, with its trigger in his words). It REVISES the
+under-construction piece label-variables as recorded on 2026-11-22: his first alternative `A(x:) := (x: < 2100)`
+is the reference kind, now off limits for users; the spelling `x:` is the setting kind's.
+The manager's readings (marked; for the fold to test): (a) a body that reads a label parameter it never places
+is a compile error at the definition; (b) a marked argument at a call is ONE new name, never a path (`l.d:` is a
+compile error); (c) `capture` takes a reference: `capture(l.d)`, no mark; (d) the group questions and conditions
+are unchanged (their labels are written in the caller's text).
