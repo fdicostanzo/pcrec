@@ -917,3 +917,17 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - r84 (`$PCREC_TMPDIR/scratch/crit-predspot1122/review.md`, 270 lines): still to rule; not read yet this session.
 - First question put to the owner: label-name-hole, with the run `$PCREC_TMPDIR/scratch/pred/label_name_hole.py`
   (a path model of `[r = kv("ts", /\d+/)] & (r.ts: <5)`). Waiting on his answer.
+
+## 2026-11-23 — the label parameter (JSONL pain point 1) discussed; two rulings
+
+- label-name-hole as first put: withdrawn in half (his correction: no hole at the expression level); the k
+  restrictions proposed; his point that a hole-named label is not "textually defined" (true of the ruled name hole
+  too; my hole-named-label proposal set aside by his two approaches).
+- WORKING DIRECTION (tentative, his): a macro takes a LABEL (`A(l:) := /(?<:${l}>\d+)/`, `A(x:) & (x: 5)`;
+  `row(dt:, "date", isodate) & (dt.year: 2000)`). Same label twice: the standard rules (run).
+- RULED: label-parameter-omitted (`_` is the unspecified label; no argument omitted under the current call rules;
+  label args not special by position or requirement); label-parameter-default (yes, a label may be an optional
+  parameter; spelling lean `l = ts:`). IDEA to park: the empty position `row(,"level", ..)`.
+- NOT FOLDED: all of it (record only). Fold lane's list grows: capture-export, zero-condition-binding, the label
+  parameter (label-variables piece, the name hole taking a label, the JSONL sketch), the parked empty position.
+- Asked next: capture-place. r84 still to rule.
