@@ -86,8 +86,8 @@ PLANTSB = [   # (plant, its target check, what it plants: every plant changes th
     ("s12", "NOLABEL", "`_:` on a spot written out as the blank mark `[_ = v]` again (reading (a))"),
     ("s13", "STACK", "stacked labels read in nesting order: the outer one passes only what the inner one exports"),
     ("s14", "STACK", "a blank `_` in a stack closes the whole spot"),
-    ("s15", "EXPAND", "the drill's written-out shorthand is `[a = A]` read as `a.d` (a different name, the same "
-                      "answers) replaced by the body labelling the spot"),
+    ("s15", "EXPAND", "the drill's written-out shorthand `B([A = A])` over a body using A alone replaced by the "
+                      "sugar over a body labelling the spot (the expansion wrong: condition 4 refuses it)"),
     ("s16", "COUNT", "libpcre2 run on `a{0,}` where the record's run reads `a{,}`"),
     ("s17", "READINGS", "a reading's run moved: the shorthand set on EVERY spot of a body using the argument alone and "
                         "labelled"),
@@ -771,10 +771,13 @@ print("== NOLABEL (reading (a) of label-parameter-omitted withdrawn): `_:` is th
 P_nl1 = run("W(_:, A) & (A.h: <5)", [W_, A_H])[0]
 ok_nl2 = refused("W4(A) & (A.h: <5)", ["W4(v) := /<${[_ = v]}>/", A_H], "closes")
 P_nl3 = run("W3(A) & (A.h: <5)", ["W3(v) := /<${v}>/", A_H])[0]
+nl_low = _sub_labels("[l = v]", {"l": "_"}, {})            # the rule itself: `_:` lowers to the part, no label
+print("   `[l = v]` with l passed `_` lowers to: %s" % nl_low)
 check("NOLABEL", P_nl1 is not None and ok_nl2 and P_nl3 is not None and
-      answers(P_nl1, pop("<37>", 3)) == answers(P_nl3, pop("<37>", 3)),
+      answers(P_nl1, pop("<37>", 3)) == answers(P_nl3, pop("<37>", 3)) and "_ =" not in nl_low,
       "`W(_:, A) & (A.h: ..)` legal %s and as the body with no label on the spot %s; the blank mark written out "
-      "refused %s" % (P_nl1 is not None, P_nl3 is not None, ok_nl2))
+      "refused %s; `[l = v]` with `_` lowered with no label (`%s`) %s" % (P_nl1 is not None, P_nl3 is not None,
+                                                                         ok_nl2, nl_low, "_ =" not in nl_low))
 
 print("== STACK (label-doors line 5): labels stacked on one spot are equal names; the order does not matter")
 P_k1 = pl("Outer the caller's, inner private", "[n = [_x = P]] & (n.d: <5)", [P_], ["37", "73", "3"], "73 37",
@@ -789,11 +792,11 @@ QK = pop("37", 3)
 st_ok = P_k1 is not None and P_k2 is not None and answers(P_k1, QK) == answers(P_k2, QK) and \
     wh_(P_k1, ["37", "73", "3"]) == [True, False, False] and wh_(P_k3, ["37", "73"]) == [True, False] and \
     P_k4 is not None and answers(P_k4, QK) == answers(P_k1, QK) and ok_k5
+k12_ok = P_k1 is not None and P_k2 is not None and answers(P_k1, QK) == answers(P_k2, QK)
+k41_ok = P_k1 is not None and P_k4 is not None and answers(P_k4, QK) == answers(P_k1, QK)
 check("STACK", st_ok, "`[n = [_x = P]]` and `[_x = [n = P]]` alike over %d texts %s; `n.d` and `_x.d` alike %s; "
-      "`[l = [_ = P]]` opens through `l` %s" % (len(QK), P_k1 is not None and P_k2 is not None and
-                                              answers(P_k1, QK) == answers(P_k2, QK),
-                                              P_k4 is not None and answers(P_k4, QK) == answers(P_k1, QK),
-                                              wh_(P_k3, ["37", "73"])))
+      "`[l = [_ = P]]` opens through `l` %s" % (len(QK), k12_ok, k41_ok,
+                                              wh_(P_k3, ["37", "73"]) if P_k3 is not None else None))
 
 print("== OWNERBODY: his two-label body, `A(l:, P) := [l = [_x = P]] & (_x: 5)`, with a name and with `_`")
 P_o1 = pl("His body, a name", "A(n:, /\\d/)", [OWNB], ["5", "7", "55"], "7 5", "5 7 5 3", LO_T)
@@ -912,7 +915,7 @@ QX = ['3xx', '7xx', '7-3', '3-7', '<3>', '<7>', '5', '55', '7', '12', '123', '12
       'x', '3x', '7x', '']
 B2 = "B2(rx, rs) := /${[p = rx]}-${rs}/"
 DRILL = [   # (sugar, its binds, the written-out form, its binds, the documented expansion)
-    ("B(A) & (A.d: <5)", [A_D, B_XX], "B([A = A]) & (A.d: <5)" if not sb("s15") else "B([A = A]) & (A.d: <5)",
+    ("B(A) & (A.d: <5)", [A_D, B_XX], "B([A = A]) & (A.d: <5)" if not sb("s15") else "B(A) & (A.d: <5)",
      [A_D, B_XX] if not sb("s15") else [A_D, B_PH], "the shorthand: the label `A` written on the argument"),
     ("B(A) & (A.d: <5)", [A_D, B_BOTH], "B2(A, [a = A]) & (a.d: <5)", [A_D, B2],
      "the shorthand, a body using the argument alone and labelled: the label on the alone spot only"),
@@ -1086,7 +1089,21 @@ check("NULLABLE", not nlB, "%d programs run by the checks above (SWEEP's include
 
 print("== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded, with the "
       "digest of the red's own FAIL line")
+WHY_DIGITS = ("its load-time reader asserts `rx.digits := rx.repeat(rx.digit, min = 1)`; under the one repeat head (repeat-head, ruled) `min = 1` alone is exactly one, so the library re-spells it `min = 1, max = _` (the same `\\d+`: LIBLINES here); every check it ran is re-run here through its loaded engine (this model loads it with the library served from the starting commit)")
 SUPERSEDEDB = {               # model -> {red: (digest of its FAIL line or traceback line, "superseded by ...")}
+    'predfix86': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predfold1123': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predfix84': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predspot': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predfix83': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'preddef': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predfix82': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predcall': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predref': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predbound': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predfix77': {'TRACEBACK': ('b024bdc4e170', WHY_DIGITS)},
+    'predarr': {'TRACEBACK': ('ce43d48c7e37', "as predfix86 declared, unchanged: predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predref's HITS")},
+    'predscope': {'TRACEBACK': ('17ab1e47c179', "as predfix86 declared, unchanged: its reader of rx.repeat's third body (now no body of that shape: one head, repeat-head)")},
 }
 MODELSB = ["predfix86", "predfold1123", "predfix84", "predspot", "predfix83", "preddef", "predfix82", "predcall",
            "predref", "predbound", "predfix77", "predarr", "predscope"]
