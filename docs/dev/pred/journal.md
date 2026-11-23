@@ -931,3 +931,19 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - NOT FOLDED: all of it (record only). Fold lane's list grows: capture-export, zero-condition-binding, the label
   parameter (label-variables piece, the name hole taking a label, the JSONL sketch), the parked empty position.
 - Asked next: capture-place. r84 still to rule.
+
+## 2026-11-23 — captures and labels in arguments: seven more rulings (record only)
+
+- capture-place: his LEAN (a), an `&` operand taking a label reference; early capture "no crime".
+- RULED: capture-twice (a); label-kinds (one mark = the setting kind; references native-only); capture-name (a);
+  array-capture (yes: `capture(x)` the label, `capture(@x)` the array, unbuilt; capture-as-pcre dropped;
+  capture-loop-value closed as the label; plan rows [CAPTURE-ARRAY] / [ARRAY-CAPTURE] found; P-23 notice to main);
+  argument-export (yes, by his "this aligns with my understanding": told to him as the reading taken);
+  label-in-argument (a sent label is ok, passes `_`: "an accepted backdoor"); argument-label (yes: my readings (a),
+  (b) of argument-default withdrawn).
+- MY CORRECTION: "ts.year is a compile error as the rules stand" was over-claimed; withdrawn the same turn he asked.
+- OPEN with him: what he meant by threading the label to `string`; the optional-member idiom; duplicate keys; what
+  is left of ambiguity-per-name; a label pre-defined as a symbol; the empty argument position (to park).
+- NOT DONE: r84 dispositions; nothing of 2026-11-22 (late) or 2026-11-23 is folded. The fold is now a LANE (many
+  pieces: label-variables, name hole, argument-default, two-sources, closed-argument, capture, capture/add-on,
+  capture-export, caller-ambiguous, labels-vs-captures, zero-binding, lib/json sketch, parked empty position).

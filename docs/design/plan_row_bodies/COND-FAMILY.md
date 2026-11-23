@@ -8766,3 +8766,28 @@ RUN (python `re`): `B([f = /\d/]) & (f: <5)`, B(rx) := `/${rx}xx/`: WHOLE `3xx` 
 `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]. Placed twice, `pair([f = /\d/]) & (f: <5)`,
 pair(p) := `/${p},${p}/` (the last mention): WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 /
 FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8].
+
+### 2026-11-23 OWNER RULING — argument-label: yes (a label the caller writes inside an argument is the caller's own); and: these mechanisms ease his concern about the default hiding
+tags: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/closed-argument core/operators/bindings/label-variables core/labels/export core/labels/paths/label-reference
+
+ASKED AS A RULING (slug argument-label, the proposal of the re-examination entry above; the manager's leaning
+yes). HIS WORDS, whole:
+
+"argument label: yes. these mechanisms, a: and B(x=A), alleviates some of my concerns about the default hiding
+the internal labels. if you want to access the isodate arguments you can B(d=isodate) & (d.year: 2000) although
+in this case you could just B(isodate & (year: 2000))."
+
+Class: a RULING: argument-label: yes: a label the caller writes in its own text inside an argument (a part
+label, a group of an in-place literal, a sent label) is the caller's own label, set where the body places the
+template (once; twice, the same-label-twice rules; never, the never-pass warning). The manager's readings (a)
+and (b) of argument-default (2026-11-22) are WITHDRAWN; two-sources' first shape is re-settled (the in-place `d`
+is the caller's, read bare; the body's own is `B.d`); his ruled error (`B(A) & (A.d: ..)`) stands. And an
+OBSERVATION: "these mechanisms, a: and B(x=A), alleviates some of my concerns about the default hiding the
+internal labels" (default-export, 2026-11-22). His spelling `B(d=isodate)` is the documents' `B([d = isodate])`
+(a placeholder; for the spellings review: the label set written directly as an argument).
+Check-his-regex: in `B(isodate & (year: 2000))` the bare `year` is not written in the caller's text; under
+label-reference (ruled required, 2026-11-22) it is `B(isodate & (isodate.year: 2000))` (told to him). RUN
+(python `re`, hand-lowered, B(rx) := `/${rx}xx/`, isodate reduced to `\d{4}-\d\d-\d\d` with its year; both of
+his programs lower to the same pattern and test): WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED
+`1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx`
+[`2000-01-02xx`@0, `2000-12-31xx`@26].
