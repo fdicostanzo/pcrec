@@ -8256,3 +8256,15 @@ candidate (a) was not a candidate. The manager's question is withdrawn in that h
 (marked): at the expression level a label named by an argument is then not a hole question at all; it is the
 label-variable direction (core/operators/bindings/label-variables, under construction). What remains to ask:
 whether the ruled name hole extends to the label-only group in rx text.
+
+### 2026-11-23 OWNER, a question on label-name-hole: "where does row() use the name?"
+tags: core/holes/name core/labels/label-only-group lib/json/members
+
+HIS WORDS, whole: "where does row() use the name?"
+
+Class: a QUESTION (DISCUSSION); nothing ruled. The manager's answer (told to him): in the exercise's body
+`row(k, v) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${k}>${v & value})${ws}(?:,${member_any})*\}/`
+`k` stands twice: as literal text in a pattern hole (`"${k}"`, the key the member must have) and as the name of
+the label-only group on the value's spot (`(?<:${k}>...)`). The body itself never READS that label: the name is
+only for the caller. Without the name hole the body writes a fixed name (`(?<:val>...)`) and each caller renames
+(`[(ts = val) = json.row("ts", ..)]`).
