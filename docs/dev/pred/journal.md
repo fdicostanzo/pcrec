@@ -908,3 +908,12 @@ parameter), B2, B3 (label-reference bypassed inside an argument), B5 (grid arms 
 FIX-NOW: A1-A8, B1-B5, B7, C1-C8, D1-D7; four owner questions proposed (repeat-label, spot-read-name,
 option-hole-explicit / options-reach-constants, options-position). NOT RULED: first act of the next session, as
 wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 2026-11-17 entry before ruling).
+
+## 2026-11-23 — sixth session: wake
+
+- Registered (`session_role pred`); wake.md, the channel (nothing after M-2), core.md (first half whole, second half by
+  heading and statement), the record's last entries read. main merged into `lane/pred-rev28` cleanly (155 commits);
+  lint 7,049 / 0; `make -s test-plan-lint` green; P-21's tip 75d2318bd is on main. Main told (no reply asked).
+- r84 (`$PCREC_TMPDIR/scratch/crit-predspot1122/review.md`, 270 lines): still to rule; not read yet this session.
+- First question put to the owner: label-name-hole, with the run `$PCREC_TMPDIR/scratch/pred/label_name_hole.py`
+  (a path model of `[r = kv("ts", /\d+/)] & (r.ts: <5)`). Waiting on his answer.
