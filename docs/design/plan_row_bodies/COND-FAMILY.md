@@ -8619,3 +8619,37 @@ The manager's readings (marked): (a) `capture(@x)` is a client of the two plan r
 unbounded" is his constraint on that row, and the array of settings of a `+` loop is unbounded: a point for the
 build, noted to main, not a predicate ruling; (b) the seam stands and is to be stated: a one-literal program
 returns PCRE's carried value, a requested capture in a composed program the label.
+
+### 2026-11-23 OWNER, on argument-export: "show me why ts.year doesn't work. doesn't ts: point to the provided pattern in place?"
+tags: core/labels/paths/argument-default core/labels/paths core/labels/export core/operators/bindings/label-variables core/conditions/match-so-far lib/convention/argument-labels
+
+Asked **argument-export** (the manager's statement: in `row(ts:, "ts", quoted(dates.isodate & between(..))) &
+(ts.year: 2024)` the read `ts.year` is a compile error "as the rules stand", isodate being used alone inside the
+argument's expression; candidates: bind first, or allow an export list in place). HIS WORDS, whole:
+
+"argument-export: show me why ts.year doesn't work. doesn't ts: point to the provided pattern in place?"
+
+Class: a QUESTION challenging the manager's statement (DISCUSSION); nothing ruled.
+The manager's answer (told to him): the statement was OVER-CLAIMED and is WITHDRAWN as a statement of the rules.
+The chain: (1) `ts` is on the spot of row's body that holds `v & value`; a labelled spot exports "the argument's
+exported labels through that label" (argument-default, the manager's reading (d)); (2) `quoted` passes its
+argument's labels on (transform-export, ruled); (3) the argument is the expression `dates.isodate &
+between(..)`, written IN PLACE in the caller's definition. The error came from reading "the argument's exported
+labels" as what a BINDING holding that expression would export (isodate used alone: nothing; default-export).
+But the documents have a nearer rule for an expression written in place and read in the SAME definition: "A part
+label over an EXPRESSION (`[ab = B | A]`) reads, inside the definition, the labels visible in it by the inside
+rules, and exports outward only what the expression's own text exports" (core/labels/paths; the printed
+`[ab = B | A] & (ab.l: <20)` reads `l` of parts used alone); and "An expression written in place (an argument, a
+hole's content) belongs to the definition it is written in" (core/conditions/match-so-far, a reading). Under the
+label parameter both the label `ts` and the argument's text are the CALLER's, so `ts.year` is an inside read and,
+by that rule, legal. The finding 3 of the JSONL exercise (2026-11-22) was written when the label was the body's
+and read from outside (`line.ts`); it does not carry over unchanged.
+Then the cases reverse from what the manager told him: IN PLACE reads by the inside rules; a BOUND argument
+(`tsdate := dates.isodate & between(..)`) exports nothing of isodate (default-export) unless it exports there.
+RUN (python `re`, a SIMPLIFIED model: the object reduced to its one member; the date set and the year test
+lowered by hand): WHOLE `{"ts":"2024-02-10"}` HOLDS, `{"ts":"2024-05-01"}` FAILS, `{"ts":"2023-02-10"}` FAILS /
+SEARCHED `{"ts":"2023-02-10"} {"ts":"2024-03-31"} {"ts":"2024-01-15"}` the second @20 / FIND-ALL the second @20,
+the third @40.
+Put to him as the restated slug argument-export: a caller's label on a spot that holds the caller's in-place
+argument reads that argument by the inside rules, as a part label over an expression does; the manager's leaning
+yes.
