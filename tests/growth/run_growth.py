@@ -75,7 +75,7 @@ BOUNDS_BASIS = """\
 CPU_S 300 (default tier, each compile and each matcher build): MEASURED on the dev box (Ryzen 7700X, gcc 15.2, 2026-11-23, after
   K159): the costliest default-tier compile is a possessive/star nest at depth 250 (`group.poss.last.lit@250`: 27.5 s CPU alone at
   -j2, 45 s CPU at -j8 where the cores share caches; `atomic.star.last.lit@250` 33.7 s at -j8; `spine/named@65535` 25 s); gcc on the
-  limit cells' matchers costs at most 1.4 s CPU.  The cloud runners (4 cores, slower per core) are NOT measured against this box:
+  limit cells' matchers costs at most 3.9 s CPU (full sweep, -j8, 2026-11-23).  The cloud runners (4 cores, slower per core) are NOT measured against this box:
   the ratio is unknown until the first cloud run of this harness prints its own `CPU:` lines (the slowest cells and the headroom
   against this bound); 300 s is 6.7x this box's worst under load and 11x its worst alone.  D45's rule, written out: quiet worst
   (27.5 s) x ~2 for contention (CPU inflates up to ~1.9x under load, measured by review r89; this lane's own 27.5 vs 45 s is
@@ -88,17 +88,14 @@ WALL_S 1500 (default tier hang guard): below the cloud shard job's 45 min (2700 
   is cut (shard 31 of run 44940630891 was cut at the job limit with no cell named), and 5x the CPU bound for a box at one fifth
   of a core.  It never decides a cell's verdict by speed: a process that burns CPU is judged by CPU_S.  It names a cell only if
   the hung run STARTS in the job's first ~1200 s (2700 - 1500 s of guard); a hang that starts later is cut by the job first.
-MATCHER_CPU_S 60 / MATCHER_WALL_S 600 (each run of a limit cell's built matcher, on SUBJECTS of at most 6 bytes): the matcher
-  is generated code over a 6-byte subject; MEASURED worst CPU of a run over the default-tier limit cells is in MATCHER_MEASURED
-  below (filled from this lane's sweep); 60 s CPU is that x its margin, and the wall guard is the hang-guard multiple (10x) of the
-  CPU bound, as everywhere else: wall = CPU was NOT a hang guard (a loaded box reads wall >= CPU, so the wall fired first).
-OCC_CPU_S 3600 / OCC_WALL_S 14400 (occasional tier, EMPTY today: owner ruling growth-time-bound (3) read by the manager 2026-11-23,
-  r89 R89-11: the 107 compile-only cells measured at most 25 s CPU, so none stays costly and all run in the default tier,
-  where each is bounded by CPU_S): reserved for a cell MEASURED costly (OCCASIONAL_COSTLY).  Its figure was derived for work that
-  tier does not do today (gcc -O0 on 22 to 119 MB of emitted C, about 10 min and 3.4 GB measured by lane grow4/grow5, at 6x that,
-  4x for the wall): a compile-only cell never builds a matcher, so re-derive it from the first cell placed there.
+MATCHER_CPU_S 60 / MATCHER_WALL_S 600 (each run of a limit cell's built matcher, on SUBJECTS of at most 6 bytes): MEASURED 2026-11-23
+  on the dev box over every limit cell's matcher (the full uncapped sweep, one run per subject, 3 subjects): the worst run read 0.00 s CPU, under
+  watchdog's 0.1 s sampling, so every matcher run is below 0.1 s; the generated code walks a 6-byte subject.  60 s CPU is at least
+  600x that worst and is meant to hold a slow runner and a loaded box; a matcher over 60 CPU s is a runaway, not a slow run.  The
+  wall guard is the hang-guard multiple (10x) of the CPU bound (wall = CPU was NOT a hang guard: a loaded box reads wall >= CPU, so
+  the wall fired first).  Re-derive from the `CPU:` headroom line's `matcher run max` if a limit cell's matcher ever costs seconds.
 LIB_FLOOR_S 300 / LIB_MARGIN 20 (library stage, unchanged from lane grow2: the sanitizer build's slowdown), now applied to the
-  cell's CLI-stage compile CPU rather than its wall; the wall guard there is 10x the bound, capped at LIB_WALL_CAP_S (growth_driver.c
+  cell's CLI-stage compile CPU rather than its wall; the wall guard there is 10x the bound, capped at (growth_driver.c
   WALL_CAP) = 2400 s: the floor bound 300 x 10 = 3000 s sat PAST the cloud job's 2700 s kill (r89 R89-5), so a hang was never named.
   The library progress is streamed (a `begin` line per cell, library mode prints it as the cell starts), so a cut job still names
   the cell it was on.
