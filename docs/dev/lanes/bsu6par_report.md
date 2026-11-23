@@ -5,7 +5,18 @@ time it should be reviewed for parallelism". Branch `lane/bsu6par`, cut from `la
 
 ## STATE AT HANDOFF
 
-STATE: IN PROGRESS (draft; rewritten at handoff).
+STATE: delivered, validation OWED (one queue job). Rulings file `bsu6par_rulings.md`: empty at every checkpoint (no
+ruling applied). Commits on `lane/bsu6par` (base `lane/bsu6fix3` c8116f8cb): `memfn/tests/parpool.py` (new),
+`memfn/tests/span_forms/cards.py` (the selftest as units; no change to any assertion, seed or printed text),
+`memfn/tests/CLAUDE.md` (parpool's entry; the lane-report list moved to `memfn/tests/NOTES.md` for the 12 KB limit),
+the history index entry, this report and `bsu6par_evidence/` (inlane.sh, inlane.log, jobs/selftest). Nothing under
+`memfn/src` or `src/`; `c6_rule.md` untouched; no timing run.
+
+- In-lane: GREEN (below): the pool's selftest 4/4 including its planted race; the cards subset (59 checks, 25 of the
+  218 units plus their needs) byte-identical at `-j 1` and `-j 4` apart from the named exception, 158.7 s -> 44.8 s, and
+  every row present in order in job 757's serial log.
+- Job 757 (the serial reference) ended GREEN, `selftest: 222 checks, 0 failed`.
+- OWED: `758-kit-bsu6par-selftest` (key `kit-bsu6par-selftest`), queued 14:22, pending.
 
 ## SURVEY
 
@@ -127,8 +138,37 @@ every unit they need; used for the in-lane subset). `--rev11` / `--rev12` run on
 
 ## IN-LANE RUNS
 
-TBD at handoff.
+All under `scripts/boxlock run -l bsu6par` (the first attempts waited ~65 min behind job 757), script
+`bsu6par_evidence/inlane.sh`, log `bsu6par_evidence/inlane.log` (copy of `$PCREC_TMPDIR/scratch/bsu6par/inlane.log`):
+
+| run | result |
+|---|---|
+| `python3 -I memfn/tests/parpool.py selftest` | 4 ok, 0 failed: serial vs 4 workers byte-identical (8 race units finishing out of order + one unit needing all 8); CONTROL `PARPOOL_PLANT=shared-scratch` DIFFERS (6 of 8 race lines changed): red as designed; a failing unit raises naming itself, earlier output written, none after; `-j` parsing and 3 refusals |
+| `cards.py selftest -j 1 --units 0-23,24,26,35,53,74,159-162,176-179,205,215-217` | rc 0, `selftest: 59 checks, 0 failed`, 158.7 s |
+| the same at `-j 4` | rc 0, 59 checks, 0 failed, 44.8 s |
+| masked diff `-j 1` vs `-j 4` | IDENTICAL; raw, they differ in ONE line, the (r44 E) draws (the named exception) |
+| the subset's 59 rows vs job 757's complete serial log | 59 found, in order |
+| `PARPOOL_PLANT=shared-scratch` over the same subset | IDENTICAL after the mask: expected, cards' units name no fixed scratch file (see IDENTITY CONTROL) |
+
+The first in-lane pass (rc 1) compared the subsets RAW and read the r44 E line as a difference; the script now masks it,
+the same mask the owed job applies (checked earlier on bsu5fix2 vs bsu6fix2: exactly one masked line each, residual
+diff = only the J2 code change). Earlier spot runs: units 0-23 (`-j 1`) byte-identical to 757's first 24 lines; the
+H3-H7 block (17 rows), rev 12's cheap block (7), FORMS8-2 and J7 verbatim in bsu6fix2's log (bar r44 E's draws and
+the J2 row bsu6fix3 fixed). A static scan of every code object for names that resolve nowhere (the moved blocks' former
+locals) finds none beyond `__file__`, as on the base.
 
 ## OWED RUNS
 
-TBD at handoff.
+- **`758-kit-bsu6par-selftest`** (key `kit-bsu6par-selftest`; script `bsu6par_evidence/jobs/selftest`): the full
+  selftest at `nproc` (16) workers on `worktrees/bsu6par`, log `/var/tmp/pcrec-pcrec/scratch/bsu6par/selftest_par.log`,
+  then the masked diff against job 757's `/var/tmp/pcrec-pcrec/scratch/bsu6fix3/selftest_full.log` into
+  `.../scratch/bsu6par/identity.diff`. Its job log ends `JOB: GREEN` (rc 0) or `JOB: RED (...)` (rc 1); the verdict lines
+  are `SELFTEST rc=.. wall=.. s`, `IDENTITY: ...`, and `UNITS:` (the per-unit profile from
+  `.../scratch/bsu6par/unit_times.tsv`: the top 8 units and the sum, i.e. the serial cost; wall vs sum = the speedup).
+  Declarations: cap 3600, patience none, not-before 2026-11-23T01:00, est 900, expect none (rc is the verdict).
+  `--dry-run` rc 0 (shown above it in the queue's add output: `would run ... selftest -j 16 ...`); `--ready`: 75 outside
+  01:00-17:00, else `boxqueue after kit-bsu6fix3-selftest` (green now), so rc 0 at 14:22.
+- What a fresh agent does: read the job log (`boxqueue state kit-bsu6par-selftest`, then the done/ or failed/ entry);
+  GREEN = identity proven at full scale; record the wall and the unit profile here. A RED with an IDENTITY difference =
+  a unit that depends on another (STOP RULE: report, do not patch the assertion); `unit_times.tsv` names the slow units
+  for any re-split (the critical path is the largest unit; F2's base drill gates 28 units).

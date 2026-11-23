@@ -23,7 +23,9 @@ for j in 1 4; do
     echo "subset -j $j: rc $r, $(wc -l < "$S/sub_j$j.out") lines, wall $(echo "$(date +%s.%N) - $t0" | bc | cut -c1-6) s; $(tail -1 "$S/sub_j$j.out")"
     [ $r -eq 0 ] || rc=1
 done
-if cmp "$S/sub_j1.out" "$S/sub_j4.out"; then echo "IDENTITY subset: -j 1 and -j 4 byte-identical"; else echo "IDENTITY subset: DIFFER"; diff "$S/sub_j1.out" "$S/sub_j4.out" | head; rc=1; fi
+# the one named exception: the (r44 E) row's draws (os.urandom run ids; differs between two SERIAL runs too)
+nm=$(mask "$S/sub_j1.out" | grep -c 'draws <MASKED>')
+if diff <(mask "$S/sub_j1.out") <(mask "$S/sub_j4.out") > "$S/sub.diff" && [ "$nm" -eq 1 ]; then echo "IDENTITY subset: -j 1 and -j 4 byte-identical after masking $nm (r44 E) draws line; raw diff lines: $(cmp -l "$S/sub_j1.out" "$S/sub_j4.out" 2>/dev/null | wc -l) bytes differ (that line only: $(diff "$S/sub_j1.out" "$S/sub_j4.out" | grep -c '^<'))"; else echo "IDENTITY subset: DIFFER (masked $nm)"; head "$S/sub.diff"; rc=1; fi
 # every subset row in 757's serial log, in the same order (757 complete or not: the rows it has so far)
 python3 -I - "$S/sub_j1.out" "$REF" <<'PY' || rc=1
 import re, sys
@@ -44,7 +46,7 @@ for l in (miss + absent)[:8]:
 sys.exit(1 if miss or (absent and done) else 0)
 PY
 PARPOOL_PLANT=shared-scratch gnutimeout 1800 python3 -I "$CARDS" selftest -j 4 --units "$SUB" > "$S/sub_plant.out" 2>&1
-if cmp -s "$S/sub_j1.out" "$S/sub_plant.out"; then echo "PLANT shared-scratch on the cards subset: IDENTICAL (cards' units name no fixed scratch file: every temp dir is mkdtemp-unique)"; else echo "PLANT shared-scratch on the cards subset: DIFFERS"; fi
+if diff -q <(mask "$S/sub_j1.out") <(mask "$S/sub_plant.out") >/dev/null; then echo "PLANT shared-scratch on the cards subset: IDENTICAL (cards' units name no fixed scratch file: every temp dir is mkdtemp-unique)"; else echo "PLANT shared-scratch on the cards subset: DIFFERS"; fi
 echo "INLANE DONE rc=$rc"
 } > "$S/inlane.log" 2>&1
 tail -1 "$S/inlane.log"
